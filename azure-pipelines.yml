@@ -114,11 +114,6 @@ jobs:
     HTTP_RETRIES: 4
   steps:
     - pwsh: |
-        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
-        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
-        Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin' -depth 3
-      displayName: "Copy missing files"
-    - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\MSBuild' -depth 3
         Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 2
@@ -128,64 +123,29 @@ jobs:
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio 14.0' -depth 3
       displayName: "Show Directory Structure (Begin)"
     - pwsh: |
-        $NewPathInRegistry = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-        Write-Host $NewPathInRegistry
-      displayName: "Show PATH (Begin)"
+        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
+        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
+      displayName: "Copy missing files"
     - script: |
         choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
-      displayName: "Show Directory Structure (Begin)"
-    - pwsh: |
-        $NewPathInRegistry = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-        Write-Host $NewPathInRegistry
-      displayName: "Show PATH (Begin)"
-    - script: |
-        dir "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86"
-      displayName: "Fixing winsows kit"
-    - script: |
-        choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
-      displayName: "Show Directory Structure (Begin)"
-    - pwsh: |
-        $NewPathInRegistry = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-        Write-Host $NewPathInRegistry
-      displayName: "Show PATH (Begin)"
-    - script: |
-        dir "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86"
-      displayName: "Fixing winsows kit"
-    - script: |
-        choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
-        dir %MSYS2_ROOT%\usr\bin\
-      displayName: "In Msys"
+      displayName: "Install MSYS2"
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
-        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
-        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
-        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
-      displayName: "Update MSYS2"
-    - script: |
-        set MSYS2_PATH_TYPE=inherit
-        %MSYS2_ROOT%\usr\bin\bash -lc "echo $PWD; ls; mkdir -p $BUILD_SOURCESDIRECTORY/YYYYYYYYYY; ls;"
-        echo "--------------------------"
-        dir .
-        echo "--------------------------"
-        %MSYS2_ROOT%\usr\bin\mintty.exe -w hide /bin/env MSYSTEM=MINGW64 /bin/bash -lc "mkdir -p $BUILD_SOURCESDIRECTORY/XXXXXXXXXXXXXXXXXXXX"
-        dir .
-        echo "--------------------------"
-      displayName: "Dir create"
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
+      condition: eq(1,2)
+      displayName: "Install and update MSYS2"
     - script: |
         choco install --no-progress nsis --version 3.04 -y --allow-downgrade
       displayName: "Install NSIS"
-    - script: |
-        SET
-        %MSYS2_ROOT%\usr\bin\bash -lc "echo $PWD; env;"
-        %MSYS2_ROOT%\usr\bin\bash -lc "echo $PWD; cd $BUILD_SOURCESDIRECTORY; ls; echo $PWD;"
-      displayName: "Extra Check"
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.4.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.6.8.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe
-        #Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
-        #Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.2.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.2.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
       displayName: "Download Installers"
     - script: |
         msmpisetup.exe -unattend -installroot C:\ms-mpi
@@ -194,28 +154,19 @@ jobs:
         rename C:\ms-mpi\Bin  bin
         xcopy.exe "C:\Program Files (x86)\Microsoft SDKs\MPI\Include" "C:\ms-mpi\include\" /s /e /h
         xcopy.exe "C:\Program Files (x86)\Microsoft SDKs\MPI\Lib" "C:\ms-mpi\lib\" /s /e /h
-        ::move "C:\Program Files (x86)\Microsoft SDKs\MPI\Include" "C:\ms-mpi\include"
-        ::move "C:\Program Files (x86)\Microsoft SDKs\MPI\Lib" "C:\ms-mpi\lib"
         copy "c:\Windows\System32\msmpi.dll" "c:\ms-mpi\lib\x64\msmpi.dll"
         copy "c:\Windows\SysWoW64\msmpi.dll" "c:\ms-mpi\lib\x86\msmpi.dll"
-        dir C:\ms-mpi
       displayName: "Install MPI"
     - script: |
         python-3.5.4.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python354
         python-3.6.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python368
-        ::python-3.7.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python377
-        ::python-3.8.2.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python382
+        python-3.7.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python377
+        python-3.8.2.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python382
         C:\python354\python.exe -m pip install numpy
         C:\python368\python.exe -m pip install numpy
-        ::C:\python377\python.exe -m pip install numpy
-        ::C:\python382\python.exe -m pip install numpy
-        dir c:\
+        C:\python377\python.exe -m pip install numpy
+        C:\python382\python.exe -m pip install numpy
       displayName: "Install Python"
-    - script: |
-        set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
-        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
-        ::%MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
-      displayName: "Update MSYS2"
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
         if %COMPILER%==gcc ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-toolchain" ) else ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-clang" )
@@ -234,14 +185,9 @@ jobs:
         mingw-w64-%MSYS2_ARCH%-python3-pip ^
         %TOOLCHAIN%
       displayName: "Install MING2 Packages"
-    - pwsh: |
-        Get-Childitem 'C:\' -depth 1 -directory
-      displayName: "Show Directory Structure (End)"
     - script: |
-        ::%MSYS2_ROOT%\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
-        dir .
-      displayName: "Attempt Installation"
+      displayName: "Build and Create Installer"
     - task: PublishBuildArtifacts@1
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
