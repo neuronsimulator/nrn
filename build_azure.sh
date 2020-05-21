@@ -40,4 +40,11 @@ cd build
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/ms-mpi/lib/x64/msmpi.lib
 
 make -j VERBOSE=1
+
+echo "-----------------------"
+ls share/lib/python/neuron/rxd/geometry3d
+ls lib/python/neuron/rxd/geometry3d/
+echo "-----------------------"
+
 make install
+make setup_exe

@@ -114,6 +114,11 @@ jobs:
     HTTP_RETRIES: 4
   steps:
     - pwsh: |
+        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
+        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
+        Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin' -depth 3
+      displayName: "Copy missing files"
+    - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\MSBuild' -depth 3
         Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 2
