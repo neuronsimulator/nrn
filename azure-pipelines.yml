@@ -136,11 +136,6 @@ jobs:
         echo "--------------------------"
       displayName: "Dir create"
     - script: |
-        ::%MSYS2_ROOT%\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
-        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
-        dir .
-      displayName: "Attempt Installation"
-    - script: |
         choco install --no-progress nsis --version 3.04 -y --allow-downgrade
       displayName: "Install NSIS"
     - script: |
@@ -206,3 +201,8 @@ jobs:
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
       displayName: "Show Directory Structure (End)"
+    - script: |
+        ::%MSYS2_ROOT%\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
+        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
+        dir .
+      displayName: "Attempt Installation"
