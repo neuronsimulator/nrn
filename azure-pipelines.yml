@@ -116,11 +116,13 @@ jobs:
         Get-Childitem 'C:\' -depth 1 -directory
       displayName: "Show Directory Structure (Begin)"
     - script: |
-        choco install --no-progress msys2 --version=20180531.0.0 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
+        choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
         dir %MSYS2_ROOT%\usr\bin\
       displayName: "In Msys"
     - script: |
-        %MSYS2_ROOT%\usr\bin\pacman -Sy pacman
+        set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
         %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
       displayName: "Update MSYS2"
     - script: |
@@ -134,15 +136,9 @@ jobs:
         echo "--------------------------"
       displayName: "Dir create"
     - script: |
-        choco install msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
-      displayName: "Install MSYS2"
-    - script: |
+        ::%MSYS2_ROOT%\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
+        %MSYS2_ROOT%\usr\bin\bash -lc "./build_azure.sh"
         dir .
-        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "ls &> ls.log"
-        cat ls.log
-        C:\msys64\usr\bin\mintty.exe -w hide  /bin/env MSYSTEM=MINGW64 /bin/bash -lc "build_azure.sh &> build.log "
-        dir .
-        cat build.log
       displayName: "Attempt Installation"
     - script: |
         choco install --no-progress nsis --version 3.04 -y --allow-downgrade
