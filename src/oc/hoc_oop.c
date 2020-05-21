@@ -644,6 +644,17 @@ static void call_constructor(
 	hoc_thisobject = obsav;
 }
 
+/* When certain methods of some Objects are called, the gui-redirect macros
+   need Object* instead of Object*->u.this_pointer. Not worth changing the
+   prototype of the call as it is used in so many places. So store the Object*
+   to be obtained if needed.
+*/
+
+static Object* gui_redirect_obj_;
+Object* nrn_get_gui_redirect_obj() {
+  return gui_redirect_obj_;
+}
+
 void call_ob_proc(Object *ob, Symbol *sym, int narg){
 	Inst *pcsav, callcode[4];
 	Symlist *slsav;
@@ -657,6 +668,7 @@ void call_ob_proc(Object *ob, Symbol *sym, int narg){
 
    if (ob->template->sym->subtype & CPLUSOBJECT) {
 	hoc_thisobject = ob;
+	gui_redirect_obj_ = ob;
 	push_frame(sym, narg);
 	hoc_thisobject = obsav;
 	if (sym->type == OBFUNCTION) {
