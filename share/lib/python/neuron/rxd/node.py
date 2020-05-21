@@ -478,11 +478,11 @@ class Node1D(Node):
     
     @property
     def sec(self):
-        """The RxDSection containing the compartment."""
-        return self._sec
+        """The Section containing the compartment."""
+        return self._sec._sec
 
     def _in_sec(self, sec):
-        return sec == self.sec or sec == self.sec._sec
+        return sec == self.sec or sec == self._sec
 
     
     @property
