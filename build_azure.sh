@@ -2,6 +2,19 @@
 
 set -x
 
+export MSYSTEM_CHOST=x86_64-w64-mingw32
+export MSYSTEM=MINGW64
+export MINGW_PREFIX=/mingw64
+export MINGW_CHOST=x86_64-w64-mingw32
+export MSYSTEM_PREFIX=/mingw64
+export PATH=/mingw64/bin:$PATH
+
+ls
+
+rm -rf build
+mkdir -p build
+cd build
+
 /mingw64/bin/cmake .. \
 	-G 'Unix Makefiles'  \
 	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
