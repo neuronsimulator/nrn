@@ -242,3 +242,7 @@ jobs:
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
         dir .
       displayName: "Attempt Installation"
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
+        artifactName: FirstNeuronExe
