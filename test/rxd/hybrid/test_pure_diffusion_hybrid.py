@@ -35,8 +35,8 @@ def ics_diffusion_hybrid(neuron_instance):
 
     ca = rxd.Species(r, d=diff_constant,
                      initial=lambda node: 1 if 
-                        (0.8 < node.x and node.segment in dend1) or 
-                        (node.x < 0.2 and node.segment in dend2) else 0)
+                        (0.8 < node.x and node in dend1) or 
+                        (node.x < 0.2 and node in dend2) else 0)
     model = ([dend1, dend2, dend3], r, ca)
     yield (neuron_instance, model)
 
