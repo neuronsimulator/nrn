@@ -73,7 +73,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     
     dy = dz = dx   # ever going to change this?
 
-    margin = max(diams) + dx
+    margin = 3*max(diams)
     if mesh_grid:
         grid = mesh_grid
     else:
