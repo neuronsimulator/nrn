@@ -193,3 +193,14 @@ jobs:
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
         artifactName: FirstNeuronExe
+    - task: GithubRelease@0
+      displayName: 'Create GitHub Release'
+      inputs:
+        gitHubConnection: pramodk-nrn-fork
+        repositoryName: pramodk/nrn
+        tagSource: manual
+        tag: $(Build.BuildNumber)
+        title: 'First NEURON EXE from Azure CI'
+        isPreRelease: true
+        assets: |
+          $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
