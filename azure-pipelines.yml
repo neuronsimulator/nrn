@@ -115,10 +115,11 @@ jobs:
   steps:
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
+        Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
         Get-Childitem 'C:\Program Files (x86)\MSBuild' -depth 3
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 2
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\10' -depth 2
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\8.1' -depth 2
+        Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 3
+        Get-Childitem 'C:\Program Files (x86)\Windows Kits\10' -depth 3
+        Get-Childitem 'C:\Program Files (x86)\Windows Kits\8.1' -depth 3
         Get-Childitem 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\' -depth 2
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio 14.0' -depth 3
       displayName: "Show Directory Structure (Begin)"

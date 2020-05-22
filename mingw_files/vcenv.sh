@@ -8,4 +8,4 @@ export LIBPATH='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64
 export WindowsSdkDir='C:\Program Files (x86)\Windows Kits\10\'
 export UCRTVersion='10.0.10240.0'
 export UniversalCRTSdkDir='C:\Program Files (x86)\Windows Kits\10'
-export PATH='/c/Program Files (x86)/MSBuild/14.0/bin/amd64:/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64:/c/Program Files (x86)/Windows Kits/10/bin/x64:/c/Program Files (x86)/Windows Kits/10/bin/x86':$PATH
+export PATH='/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin/amd64:/c/Program Files (x86)/Windows Kits/10/bin/x64:/c/Program Files (x86)/Windows Kits/10/bin/x86':$PATH
