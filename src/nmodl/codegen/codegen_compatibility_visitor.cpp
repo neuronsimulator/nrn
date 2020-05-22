@@ -41,8 +41,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
           &CodegenCompatibilityVisitor::return_error_without_name<ConstructorBlock>},
          {AstNodeType::DESTRUCTOR_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<DestructorBlock>},
-         {AstNodeType::INDEPENDENT_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<IndependentBlock>},
          {AstNodeType::SOLVE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
          {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},
