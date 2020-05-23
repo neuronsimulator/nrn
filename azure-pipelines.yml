@@ -114,8 +114,14 @@ jobs:
     HTTP_RETRIES: 4
   steps:
     - script: |
-        echo %BUILD_SOURCESDIRECTORY%
-        dir %BUILD_SOURCESDIRECTORY%
+        dir .
+        dir %BUILD_SOURCESDIRECTORY%\tmp\xx
+        echo "1.------------------"
+        tmp\xx\nrn.exe //S
+        echo "2.------------------"
+        tmp\xx\nrn.exe //S //D=D:\a\1\s\tmp
+        echo "3.------------------"
+        dir C:/
         asas
       displayName: "Check"
     - pwsh: |
