@@ -113,6 +113,11 @@ jobs:
     COMPILER: gcc
     HTTP_RETRIES: 4
   steps:
+    - script: |
+        echo %BUILD_SOURCESDIRECTORY%
+        dir %BUILD_SOURCESDIRECTORY%
+        asas
+      displayName: "Check"
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
