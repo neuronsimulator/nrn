@@ -86,6 +86,7 @@ ld.exe
 libgmp-10.dll
 x86_64-w64-mingw32-gcc.exe
 zlib1.dll
+libzstd.dll
 '
 
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
