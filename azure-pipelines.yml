@@ -138,7 +138,7 @@ jobs:
       condition: eq(1,2)
       displayName: "Install and update MSYS2"
     - script: |
-        choco install --no-progress nsis --version 3.04 -y --allow-downgrade
+        choco install --no-progress nsis --version 3.05 -y --allow-downgrade
       displayName: "Install NSIS"
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
