@@ -198,10 +198,12 @@ jobs:
       inputs:
         gitHubConnection: pramodk-nrn-fork
         repositoryName: pramodk/nrn
+        action: edit
         tagSource: manual
         tag: nightly
         title: 'Latest nightly NEURON EXE release from Azure CI'
         isDraft: true
         assetUploadMode: delete
+        addChangeLog: true
         assets: |
           $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
