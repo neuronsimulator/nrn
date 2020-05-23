@@ -143,10 +143,11 @@ jobs:
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
-        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.4.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.6.8.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.2.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.6.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi
       displayName: "Download Installers"
     - script: |
         msmpisetup.exe -unattend -installroot C:\msmpi
@@ -161,14 +162,16 @@ jobs:
         copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
       displayName: "Install MPI"
     - script: |
-        python-3.5.4.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python354
-        python-3.6.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python368
-        python-3.7.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python377
-        python-3.8.2.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python382
-        C:\python354\python.exe -m pip install numpy
-        C:\python368\python.exe -m pip install numpy
-        C:\python377\python.exe -m pip install numpy
-        C:\python382\python.exe -m pip install numpy
+        python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
+        python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python36
+        python-3.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python37
+        python-3.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python38
+        start /wait msiexec /i python-2.7.msi /norestart /qn TARGETDIR="C:\python27" ADDLOCAL=ALL
+        C:\python35\python.exe -m pip install numpy
+        C:\python36\python.exe -m pip install numpy
+        C:\python37\python.exe -m pip install numpy
+        C:\python38\python.exe -m pip install numpy
+        C:\python27\python.exe -m pip install numpy
       displayName: "Install Python"
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
