@@ -197,12 +197,21 @@ jobs:
     - script: |
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
       displayName: "Build and Create Installer"
+    - script: |
+        start /wait %BUILD_SOURCESDIRECTORY%\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn-azure-install
+      displayName: "Install via Installer"
+    - script: |
+        C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+      displayName: "Test Installation"
     - task: PublishBuildArtifacts@1
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
         artifactName: FirstNeuronExe
     - task: GithubRelease@0
-      displayName: 'Create GitHub Release'
       inputs:
         gitHubConnection: pramodk-nrn-fork
         repositoryName: pramodk/nrn
@@ -215,3 +224,5 @@ jobs:
         addChangeLog: true
         assets: |
           $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
+      displayName: 'Create GitHub Release'
+      condition: succeeded()
