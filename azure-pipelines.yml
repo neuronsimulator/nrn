@@ -149,14 +149,16 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.2.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
       displayName: "Download Installers"
     - script: |
-        msmpisetup.exe -unattend -installroot C:\ms-mpi
-        msmpisdk.msi /passive
+        msmpisetup.exe -unattend -installroot C:\msmpi
+        start /wait msiexec /i msmpisdk.msi /norestart /qn INSTALLDIR="C:\msmpi" ADDLOCAL=ALL
         :: unify installation directory
-        rename C:\ms-mpi\Bin  bin
-        xcopy.exe "C:\Program Files (x86)\Microsoft SDKs\MPI\Include" "C:\ms-mpi\include\" /s /e /h
-        xcopy.exe "C:\Program Files (x86)\Microsoft SDKs\MPI\Lib" "C:\ms-mpi\lib\" /s /e /h
-        copy "c:\Windows\System32\msmpi.dll" "c:\ms-mpi\lib\x64\msmpi.dll"
-        copy "c:\Windows\SysWoW64\msmpi.dll" "c:\ms-mpi\lib\x86\msmpi.dll"
+        dir C:\msmpi
+        rename C:\msmpi\Bin  bin
+        rename C:\msmpi\Lib  lib
+        rename C:\msmpi\Include include
+        dir C:\msmpi
+        copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll"
+        copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
       displayName: "Install MPI"
     - script: |
         python-3.5.4.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python354

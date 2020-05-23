@@ -21,7 +21,7 @@ mkdir -p build && cd build
 	-G 'Unix Makefiles'  \
 	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
 	-DNRN_ENABLE_MPI=ON  \
-	-DCMAKE_PREFIX_PATH='/c/ms-mpi'  \
+	-DCMAKE_PREFIX_PATH='/c/msmpi'  \
 	-DNRN_ENABLE_INTERVIEWS=ON  \
 	-DNRN_ENABLE_PYTHON=ON  \
 	-DNRN_ENABLE_RX3D=ON  \
@@ -31,7 +31,7 @@ mkdir -p build && cd build
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
 	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
-	-DMPI_msmpi_LIBRARY:FILEPATH=c:/ms-mpi/lib/x64/msmpi.lib
+	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 make -j
 make install
 make setup_exe
