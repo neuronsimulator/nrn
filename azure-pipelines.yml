@@ -113,6 +113,15 @@ jobs:
     COMPILER: gcc
     HTTP_RETRIES: 4
   steps:
+    - pwsh: |
+        Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/20200522.3/nrn8.0setup-AMD64.exe
+        dir .
+    - script: |
+        echo "1.------------------"
+        .\nrn.exe /S
+        echo "2.------------------"
+        dir C:\nrn
+      displayName: "Install EXE"
     - script: |
         dir .
         dir %BUILD_SOURCESDIRECTORY%\tmp\xx
@@ -213,7 +222,6 @@ jobs:
         artifactName: FirstNeuronExe
     - script: |
         start /wait %BUILD_SOURCESDIRECTORY%\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn-azure-install
-      condition: eq(1,2)
       displayName: "Install via Installer"
     - script: |
         C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
