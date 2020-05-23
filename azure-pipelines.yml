@@ -210,7 +210,7 @@ jobs:
         tagSource: manual
         tag: nightly
         title: 'Latest nightly NEURON EXE release from Azure CI'
-        isDraft: true
+        isPreRelease: true
         assetUploadMode: delete
         addChangeLog: true
         assets: |
