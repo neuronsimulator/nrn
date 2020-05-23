@@ -163,7 +163,7 @@ jobs:
         dir C:\msmpi
         copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll"
         copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
-      displayName: "Install MPI"
+      displayName: "Install and Setup MPI"
     - script: |
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
         python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python36
