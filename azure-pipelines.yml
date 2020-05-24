@@ -225,19 +225,26 @@ jobs:
         artifactName: FirstNeuronExe
     - script: |
         echo "1............."
+        set
         .\build\src\mswin\nrn8.0setup-AMD64.exe /S
         echo "2............."
         dir  C:\nrn
+        dir C:\nrn\lib\python
+        dir C:\nrn\lib\python\neuron
+        set
+        timeout 10
       displayName: "1. Install via Installer"
       condition: eq(1,1)
     - script: |
+        set
         echo "1............."
-        start /wait %BUILD_SOURCESDIRECTORY%\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn2
+        start /wait .\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn2
         echo "2............."
-        dir  C:\nrn2
+        dir  C:\
       displayName: "2.Install via Installer"
       condition: eq(1,1)
     - script: |
+        set
         C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
