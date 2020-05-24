@@ -50,6 +50,7 @@ InstallDir c:\${NRN}
 InstallDirRegKey HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir"
 
 Function .onInit ; called when installer is nearly finished initializing.
+  SetSilent silent
   ReadRegStr $R1 HKCU "Software\NEURON_Simulator\${NRN}" "Install_Dir"
   StrCmp "$R1" "" ok +1
     MessageBox MB_OKCANCEL "${NEURON} already installed at $R1. Press OK to install again." IDOK ok
