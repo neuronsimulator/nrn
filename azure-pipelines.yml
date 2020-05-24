@@ -109,46 +109,20 @@ jobs:
     vmImage: windows-2019
   variables:
     MSYS2_ROOT: C:\msys64
-    MSYS2_ARCH: x86_64
-    COMPILER: gcc
     HTTP_RETRIES: 4
   steps:
-    - pwsh: |
-        #Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/20200522.3/nrn8.0setup-AMD64.exe
-        #Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
-        Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly1/nrn8.0setup-AMD64.exe
-        dir .
-      displayName: "Download Installer"
-    - script: |
-        echo "1.------------------"
-        .\nrn.exe /S
-        echo "2.------------------"
-        dir C:\nrn
-      displayName: "Install EXE"
-    - script: |
-        dir .
-        ::dir %BUILD_SOURCESDIRECTORY%\tmp\xx
-        ::echo "1.------------------"
-        ::tmp\xx\nrn.exe //S
-        ::echo "2.------------------"
-        ::tmp\xx\nrn.exe //S //D=D:\a\1\s\tmp
-        ::echo "3.------------------"
-        ::dir C:\
-      displayName: "Check"
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
         Get-Childitem 'C:\Program Files (x86)\MSBuild' -depth 3
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 3
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\10' -depth 3
-        Get-Childitem 'C:\Program Files (x86)\Windows Kits\8.1' -depth 3
+        Get-Childitem 'C:\Program Files (x86)\Windows Kits\' -depth 4
         Get-Childitem 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\' -depth 2
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio 14.0' -depth 3
-      displayName: "Show Directory Structure (Begin)"
+      displayName: "Inspect Directory Structure"
     - pwsh: |
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
-      displayName: "Copy missing files"
+      displayName: "Copy Windows Kit Files"
     - script: |
         choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
       displayName: "Install MSYS2"
@@ -158,7 +132,7 @@ jobs:
         %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syyuu
         %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Syuu
       condition: eq(1,2)
-      displayName: "Install and update MSYS2"
+      displayName: "Update MSYS2"
     - script: |
         choco install --no-progress nsis --version 3.05 -y --allow-downgrade
       displayName: "Install NSIS"
@@ -170,22 +144,20 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
-        Invoke-WebRequest -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
-        # extract this already as it's easy with powershell
-        Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
       displayName: "Download Installers"
+    - pwsh: |
+        Invoke-WebRequest -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
+        Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
+      displayName: "Install NSIS Plugin"
     - script: |
         msmpisetup.exe -unattend -installroot C:\msmpi
         start /wait msiexec /i msmpisdk.msi /norestart /qn INSTALLDIR="C:\msmpi" ADDLOCAL=ALL
-        :: unify installation directory
-        dir C:\msmpi
         rename C:\msmpi\Bin  bin
         rename C:\msmpi\Lib  lib
         rename C:\msmpi\Include include
-        dir C:\msmpi
         copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll"
         copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
-      displayName: "Install and Setup MPI"
+      displayName: "Install MPI and Setup Directories"
     - script: |
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
         python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python36
@@ -197,23 +169,23 @@ jobs:
         C:\python37\python.exe -m pip install numpy
         C:\python38\python.exe -m pip install numpy
         C:\python27\python.exe -m pip install numpy
-      displayName: "Install Python"
+      displayName: "Install MPI and Python"
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
-        if %COMPILER%==gcc ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-toolchain" ) else ( set "TOOLCHAIN=mingw-w64-%MSYS2_ARCH%-clang" )
+        set "TOOLCHAIN=mingw-w64-x86_64-toolchain"
         %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
         git ^
         zip ^
         unzip ^
         base-devel ^
-        mingw-w64-%MSYS2_ARCH%-cmake ^
-        mingw-w64-%MSYS2_ARCH%-ncurses ^
-        mingw-w64-%MSYS2_ARCH%-readline ^
-        mingw-w64-%MSYS2_ARCH%-python2 ^
-        mingw-w64-%MSYS2_ARCH%-python3 ^
-        mingw64/mingw-w64-%MSYS2_ARCH%-cython ^
-        mingw-w64-%MSYS2_ARCH%-python3-setuptools ^
-        mingw-w64-%MSYS2_ARCH%-python3-pip ^
+        mingw-w64-x86_64-cmake ^
+        mingw-w64-x86_64-ncurses ^
+        mingw-w64-x86_64-readline ^
+        mingw-w64-x86_64-python2 ^
+        mingw-w64-x86_64-python3 ^
+        mingw64/mingw-w64-x86_64-cython ^
+        mingw-w64-x86_64-python3-setuptools ^
+        mingw-w64-x86_64-python3-pip ^
         %TOOLCHAIN%
       displayName: "Install MING2 Packages"
     - script: |
@@ -222,32 +194,26 @@ jobs:
     - task: PublishBuildArtifacts@1
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
-        artifactName: FirstNeuronExe
+        artifactName: NeuronNightlyExecutable
     - task: GithubRelease@0
       inputs:
         gitHubConnection: pramodk-nrn-fork
         repositoryName: pramodk/nrn
         action: edit
         tagSource: manual
-        tag: nightly-withmessagebox
-        title: 'Latest nightly NEURON EXE release from Azure CI'
+        tag: nightly
+        title: 'Nightly NEURON Release'
         isPreRelease: true
-        assetUploadMode: delete
+        assetUploadMode: replace
         addChangeLog: true
         assets: |
           $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
-      displayName: 'Create GitHub Release'
+      displayName: 'Update GitHub Release'
     - script: |
-        echo "1............."
-        set
         .\build\src\mswin\nrn8.0setup-AMD64.exe /S
-        echo "2............."
-        dir C:\nrn
-        dir C:\nrn\lib\python
         dir C:\nrn\lib\python\neuron
-        set
-      displayName: "1. Install via Installer"
-      condition: eq(1,1)
+      displayName: "Install Installer"
+      condition: eq(1,2)
     - script: |
         set
         C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -256,4 +222,4 @@ jobs:
         C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       condition: eq(1,2)
-      displayName: "Test Installation"
+      displayName: "Test Installer"
