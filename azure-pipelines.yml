@@ -226,7 +226,7 @@ jobs:
     - script: |
         echo "1............."
         set
-        .\build\src\mswin\nrn8.0setup-AMD64.exe /S
+        start /wait .\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn2
         echo "2............."
         dir  C:\nrn
         dir C:\nrn\lib\python
@@ -238,7 +238,7 @@ jobs:
     - script: |
         set
         echo "1............."
-        start /wait .\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn2
+        .\build\src\mswin\nrn8.0setup-AMD64.exe /S
         echo "2............."
         dir  C:\
       displayName: "2.Install via Installer"
