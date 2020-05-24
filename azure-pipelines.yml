@@ -223,6 +223,20 @@ jobs:
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
         artifactName: FirstNeuronExe
+    - task: GithubRelease@0
+      inputs:
+        gitHubConnection: pramodk-nrn-fork
+        repositoryName: pramodk/nrn
+        action: edit
+        tagSource: manual
+        tag: nightly-withmessagebox
+        title: 'Latest nightly NEURON EXE release from Azure CI'
+        isPreRelease: true
+        assetUploadMode: delete
+        addChangeLog: true
+        assets: |
+          $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
+      displayName: 'Create GitHub Release'
     - script: |
         echo "1............."
         set
@@ -241,20 +255,5 @@ jobs:
         C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-      condition: eq(1,1)
+      condition: eq(1,2)
       displayName: "Test Installation"
-    - task: GithubRelease@0
-      inputs:
-        gitHubConnection: pramodk-nrn-fork
-        repositoryName: pramodk/nrn
-        action: edit
-        tagSource: manual
-        tag: nightly1
-        title: 'Latest nightly NEURON EXE release from Azure CI'
-        isPreRelease: true
-        assetUploadMode: delete
-        addChangeLog: true
-        assets: |
-          $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
-      displayName: 'Create GitHub Release'
-      condition: succeeded()
