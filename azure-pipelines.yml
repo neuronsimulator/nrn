@@ -115,7 +115,8 @@ jobs:
   steps:
     - pwsh: |
         #Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/20200522.3/nrn8.0setup-AMD64.exe
-        Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
+        #Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
+        Invoke-WebRequest -MaximumRetryCount 2 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly1/nrn8.0setup-AMD64.exe
         dir .
       displayName: "Download Installer"
     - script: |
