@@ -215,7 +215,7 @@ def nrnpylib_darwin_helper():
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
     name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
-    cmd = r'find %s -name %s\*.dylib' % (p, name)
+    cmd = r'find %s -maxdepth 1 -name %s\*.dylib' % (p, name)
     print ('# %s'%cmd)
     f = os.popen(cmd)
     libs = []
@@ -223,7 +223,7 @@ def nrnpylib_darwin_helper():
       libs.append(line.strip())
     if len(libs) == 0: # try again searching the parent folder
       p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
-      cmd = r'find %s -name %s\*.dylib' % (p, name)
+      cmd = r'find %s -maxdepth 1 -name %s\*.dylib' % (p, name)
       print ('# %s'%cmd)
       f = os.popen(cmd)
       for line in f:
@@ -301,7 +301,7 @@ def nrnpylib_linux():
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
     name = "libpython%d.%d" % (sys.version_info[0], sys.version_info[1])
-    cmd = r'find %s -name %s\*.so' % (p, name)
+    cmd = r'find %s -maxdepth 1 -name %s\*.so' % (p, name)
     print ('# %s'%cmd)
     f = os.popen(cmd)
     libs = []
@@ -309,7 +309,7 @@ def nrnpylib_linux():
       libs.append(line.strip())
     if len(libs) == 0: # try again searching the parent folder
       p = os.path.sep.join(os.__file__.split(os.path.sep)[:-2])
-      cmd = r'find %s -name %s\*.so' % (p, name)
+      cmd = r'find %s -maxdepth 1 -name %s\*.so' % (p, name)
       print ('# %s'%cmd)
       f = os.popen(cmd)
       for line in f:
