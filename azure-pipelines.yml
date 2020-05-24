@@ -226,22 +226,13 @@ jobs:
     - script: |
         echo "1............."
         set
-        start /wait .\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn2
+        .\build\src\mswin\nrn8.0setup-AMD64.exe /S
         echo "2............."
-        dir  C:\nrn
+        dir C:\nrn
         dir C:\nrn\lib\python
         dir C:\nrn\lib\python\neuron
         set
-        timeout 10
       displayName: "1. Install via Installer"
-      condition: eq(1,1)
-    - script: |
-        set
-        echo "1............."
-        .\build\src\mswin\nrn8.0setup-AMD64.exe /S
-        echo "2............."
-        dir  C:\
-      displayName: "2.Install via Installer"
       condition: eq(1,1)
     - script: |
         set
