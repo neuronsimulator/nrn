@@ -101,3 +101,5 @@ def test_nrntest_test_2():
     assert str(h.axon(0.5).hh) == "hh"
     assert str(h.axon(0.5).hh.name()) == "hh"
     assert h.axon(0.5).hh.gnabar == 0.12
+    assert h.axon(0.5) in h.axon
+    assert h.axon(0.5) not in h.soma
