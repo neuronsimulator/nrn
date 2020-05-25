@@ -216,6 +216,10 @@ jobs:
       condition: eq(1,1)
     - script: |
         set
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+        set
         C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
