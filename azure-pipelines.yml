@@ -213,7 +213,7 @@ jobs:
         .\build\src\mswin\nrn8.0setup-AMD64.exe /S
         dir C:\nrn\lib\python\neuron
       displayName: "Install Installer"
-      condition: eq(1,2)
+      condition: eq(1,1)
     - script: |
         set
         C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
