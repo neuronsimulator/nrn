@@ -20,8 +20,8 @@ NM=$N/mingw
 mkdir -p "$NM/usr/bin"
 mkdir -p "$NM/etc"
 mkdir -p "$NM/tmp"
-mkdir -p "$NM/usr/share/terminfo/63"
-cp /usr/share/terminfo/63/* $NM/usr/share/terminfo/63
+mkdir -p "$NM/usr/share/terminfo/78"
+cp /usr/share/terminfo/78/* $NM/usr/share/terminfo/78
 cp $HOME/.inputrc $NM/etc/inputrc
 
 #cp /msys2.ico $NM
