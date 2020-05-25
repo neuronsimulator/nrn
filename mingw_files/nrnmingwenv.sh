@@ -35,6 +35,8 @@ for i in $binprog ; do
   cp /usr/bin/$i.exe $NM/usr/bin/$i.exe
 done
 
+# first arg is the folder containing the *.exe .
+# Second arg is the folder into which to copy the dlls.
 cp_dlls() {
 (
   upath=`cygpath "$1"`
@@ -46,14 +48,14 @@ cp_dlls() {
   sort temp.tmp | uniq | grep 'msys64' | sed 's,\\,/,g' > temp2.tmp
   for i in $(cat temp2.tmp) ; do
     echo $i
-    cp "$i" "$1"
+    cp "$i" "$2"
   done
   rm temp.tmp
   rm temp2.tmp
 )
 }
 
-cp_dlls $NM/usr/bin
+cp_dlls $NM/usr/bin $NM/usr/bin
 
 # minimal gcc build system for mknrndll
 # this portion of the file started life as
@@ -83,10 +85,9 @@ copy() {
 copy mingw64/bin '
 as.exe
 ld.exe
-libgmp-10.dll
 x86_64-w64-mingw32-gcc.exe
-zlib1.dll
 '
+cp_dlls $NM/mingw64/bin $NM/mingw64/bin
 
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1.exe
@@ -94,6 +95,8 @@ libgcc.a
 libgcc_s.a
 liblto_plugin-0.dll
 '
+cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
+rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
 
 # copy all needed include files by processing output of gcc -E
 copyinc() {
