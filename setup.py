@@ -7,19 +7,14 @@
 
 import inspect
 import os
-import os.path as osp
-import platform
-import re
 import subprocess
 import sys
-import sysconfig
-from distutils.version import LooseVersion
 
-from distutils.cmd import Command
-from distutils.dir_util import copy_tree
-from setuptools import Extension, setup
-from setuptools.command.build_ext import build_ext
-from setuptools.command.test import test
+import subprocess
+import os
+
+from setuptools import Command
+from skbuild import setup
 
 
 class lazy_dict(dict):
@@ -42,112 +37,23 @@ def get_sphinx_command():
     return BuildDoc
 
 
-class InstallDoc(Command):
-    description = 'Install Sphinx documentation'
+class Docs(Command):
+    description = "Generate & optionally upload documentation to docs server"
     user_options = []
-    def initialize_options(self):
-        pass
-    def finalize_options(self):
-        pass
+    finalize_options = lambda self: None
+    initialize_options = lambda self: None
 
-    def run(self):
-        self.run_command("test")
+
+    def run(self, *args, **kwargs):
         self.run_command("doctest")
         self.run_command("buildhtml")
 
-class CMakeExtension(Extension):
-    def __init__(self, name, sourcedir=""):
-        Extension.__init__(self, name, sources=[])
-        self.sourcedir = osp.abspath(sourcedir)
 
 
-class CMakeBuild(build_ext):
-    def run(self):
-        try:
-            out = subprocess.check_output(["cmake", "--version"])
-        except OSError:
-            raise RuntimeError(
-                "CMake must be installed to build the following extensions: "
-                + ", ".join(e.name for e in self.extensions)
-            )
-
-        cmake_version = LooseVersion(
-            re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-        )
-        if cmake_version < "3.3.0":
-            raise RuntimeError("CMake >= 3.3.0 is required")
-
-        for ext in self.extensions:
-            self.build_extension(ext)
-
-    def build_extension(self, ext):
-        extdir = osp.abspath(osp.dirname(self.get_ext_fullpath(ext.name)))
-        extdir = osp.join(extdir, ext.name)
-        cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
-        ]
-
-        cfg = "Debug" if self.debug else "Release"
-        build_args = ["--config", cfg]
-
-        if platform.system() == "Windows":
-            cmake_args += [
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
-            ]
-            if sys.maxsize > 2 ** 32:
-                cmake_args += ["-A", "x64"]
-            build_args += ["--", "/m"]
-        else:
-            cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
-            build_args += ["--", "-j{}".format(max(1, os.cpu_count() - 3))]
-
-        env = os.environ.copy()
-        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get("CXXFLAGS", ""), self.distribution.get_version()
-        )
-        if not osp.exists(self.build_temp):
-            os.makedirs(self.build_temp)
-        subprocess.check_call(
-            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
-        )
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
-        )
-
-        # copy nmodl module with shared library to extension directory
-        copy_tree(os.path.join(self.build_temp, 'nmodl'), extdir)
-
-class NMODLTest(test):
-    """Custom disutils command that acts like as a replacement
-    for the "test" command.
-
-    It first executes the standard "test" command, then runs the
-    C++ tests and finally runs the "doctest" to also validate
-    code snippets in the sphinx documentation.
-    """
-
-    def distutils_dir_name(self, dname):
-        """Returns the name of a distutils build directory"""
-        dir_name = "{dirname}.{platform}-{version[0]}.{version[1]}"
-        return dir_name.format(
-            dirname=dname, platform=sysconfig.get_platform(), version=sys.version_info
-        )
-
-    def run(self):
-        super().run()
-        subprocess.check_call(
-            [
-                "cmake",
-                "--build",
-                os.path.join("build", self.distutils_dir_name("temp")),
-                "--target",
-                "test",
-            ]
-        )
-
-
-install_requirements = ["jinja2>=2.9.3", "PyYAML>=3.13", "sympy>=1.3"]
+install_requirements = [
+    "PyYAML>=3.13",
+    "sympy>=1.3,<1.6",
+]
 
 setup(
     name="NMODL",
@@ -158,17 +64,24 @@ setup(
     long_description="",
     packages=["nmodl"],
     include_package_data=True,
-    ext_modules=[CMakeExtension("nmodl")],
+    cmake_minimum_required_version="3.3.0",
+    cmake_args=["-DPYTHON_EXECUTABLE=" + sys.executable],
     cmdclass=lazy_dict(
-        build_ext=CMakeBuild,
-        test=NMODLTest,
-        install_doc=InstallDoc,
-        doctest=get_sphinx_command,
-        buildhtml=get_sphinx_command,
+        docs=Docs, doctest=get_sphinx_command, buildhtml=get_sphinx_command,
     ),
     zip_safe=False,
-    setup_requires=["nbsphinx>=0.3.2", "mistune<2.0", "m2r", "sphinx-rtd-theme", "sphinx>=2.0", "sphinx<3.0"]
+    setup_requires=[
+        "jinja2>=2.9.3",
+        "jupyter",
+        "m2r",
+        "mistune<2",  # prevents a version conflict with nbconvert
+        "nbconvert<6.0",  # prevents issues with nbsphinx
+        "nbsphinx>=0.3.2",
+        "pytest>=3.7.2",
+        "sphinx-rtd-theme",
+        "sphinx>=2.0",
+        "sphinx<3.0",  # prevents issue with m2r where m2r uses an old API no more supported with sphinx>=3.0
+    ]
     + install_requirements,
     install_requires=install_requirements,
-    tests_require=["pytest>=3.7.2"],
 )

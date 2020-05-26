@@ -63,11 +63,11 @@ If we simply print AST object, we can see JSON representation:
 
 
 Querying AST objects with Visitors
-===========
+==================================
 
 
 Lookup Visitor
------------
+--------------
 
 As name suggest, lookup visitor allows to search different NMODL constructs in the AST. The `visitor` module provides access to inbuilt visitors. In order to use this visitor, we create an object of :class:`nmodl.visitor.AstLookupVisitor`:
 
@@ -86,7 +86,7 @@ Assuming we have created :class:`nmodl.ast` object (as shown here), we can searc
 
 
 Symbol Table Visitor
-----------
+--------------------
 
 Symbol table visitor is used to find out all variables and their usage in mod file. To use this, just create a visitor object as:
 
@@ -107,7 +107,7 @@ Now we can query for variables in the symbol table based on name of variable:
 
 
 Custom AST Visitor
-----------
+------------------
 
 If predefined visitors are limited, we can implement new visitor using :class:`nmodl.visitor.AstVisitor` interface. Let us say we want to implement a visitor that prints every floating point numbers in MOD file. Here is how it can be done:
 
