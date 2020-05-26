@@ -47,33 +47,33 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.c */
 #endif // WIN32
 
 #if defined(NRNMECH_DLL_STYLE)
-    #if defined(DARWIN)
+#if defined(DARWIN)
 
-        #ifndef DLL_DEFAULT_FNAME
-        #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
-        #endif
+#ifndef DLL_DEFAULT_FNAME
+#define DLL_DEFAULT_FNAME "libnrnmech.dylib"
+#endif
 
-        #if __GNUC__ < 4
-        #include "osxdlfcn.h"
-        #include "osxdlfcn.c"
-        #else
-        #include <dlfcn.h>
-        #endif // __GNUC__
-
-    #else
-
-        #if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-        #include <dlfcn.h>
-        #endif
-
-        #ifndef DLL_DEFAULT_FNAME
-        #define DLL_DEFAULT_FNAME "./libnrnmech.so"
-        #endif
-    #endif
+#if __GNUC__ < 4
+#include "osxdlfcn.h"
+#include "osxdlfcn.c"
 #else
-    #if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-    #include <dlfcn.h>
-    #endif
+#include <dlfcn.h>
+#endif // __GNUC__
+
+#else
+
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+#include <dlfcn.h>
+#endif
+
+#ifndef DLL_DEFAULT_FNAME
+#define DLL_DEFAULT_FNAME "./libnrnmech.so"
+#endif
+#endif
+#else // !defined(NRNMECH_DLL_STYLE)
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+#include <dlfcn.h>
+#endif
 #endif
 
 # define	CHECK(name)	if (hoc_lookup(name) != (Symbol *)0){\
