@@ -38,6 +38,7 @@ extern char* dlerror();
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
+extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.c */
 #endif
 
 #if defined(WIN32)
@@ -352,7 +353,8 @@ void hoc_last_init(void)
 	hoc_register_limits(0, _hoc_parm_limits);
 	hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-	if (!nrn_mech_dll) { /* use the default if it exists */
+	/* use the default if it exists (and not a binary special) */
+	if (!nrn_mech_dll && !nrn_noauto_dlopen_nrnmech) {
 		FILE* ff = fopen(DLL_DEFAULT_FNAME, "r");
 		if (ff) {
 			fclose(ff);
