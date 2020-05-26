@@ -37,9 +37,9 @@ buffering = rxd.Reaction(Ca[r] + Buf[r], CaBuf[r], kf, kb)
 # set initial concentrations to ca0, b0, cab0 in soma, 
 # and to 0.001 in dend
 #
-Ca.initial = lambda node: (ca0 if node.sec._sec==soma else 0.001)
-Buf.initial = lambda node: (b0 if node.sec._sec==soma else 0.001)
-CaBuf.initial = lambda node:(cab0 if node.sec._sec==soma else 0.001)
+Ca.initial = lambda node: (ca0 if node.sec == soma else 0.001)
+Buf.initial = lambda node: (b0 if node.sec == soma else 0.001)
+CaBuf.initial = lambda node:(cab0 if node.sec == soma else 0.001)
 
 
 h.init()
