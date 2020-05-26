@@ -16,7 +16,7 @@ jobs:
       sudo apt install -y g++-8 flex bison
       sudo apt-get install -y python3.7 python3.7-dev
       python3.7 -m pip install -U pip setuptools
-      python3.7 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3'
+      python3.7 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3,<1.6'
       # we manually get version 3.10.2 to make sure that changes in the cmake
       # files do not require unsupported versions of cmake in our package. 
       wget "https://github.com/Kitware/CMake/releases/download/v3.10.2/$CMAKE_PKG.tar.gz" && tar xzpvf $CMAKE_PKG.tar.gz
@@ -45,7 +45,7 @@ jobs:
   - script: |
       brew install flex bison cmake python@3
       python3 -m pip install -U pip setuptools
-      python3 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3'
+      python3 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3,<1.6'
     displayName: 'Install Depdendencies'
   - script: |
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
@@ -53,6 +53,10 @@ jobs:
       cd $(Build.Repository.LocalPath)/build
       cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=RelWithDebInfo
       make -j 2
-      make test
+      if [ $? -ne 0 ]
+      then
+        make VERBOSE=1
+      fi
+      env CTEST_OUTPUT_ON_FAILURE=1 make test
     displayName: 'Build and Run Tests'
 

@@ -26,9 +26,11 @@ import sys
 import textwrap
 
 # The project needs to be built before documentation in the usual build folder
-sys.path.insert(0, os.path.abspath('../build/lib/python'))
+sys.path.insert(0, os.path.abspath('..'))
 
 import nmodl  # isort:skip
+
+os.environ['PYTHONPATH'] = ':'.join(sys.path)
 
 # Run doxygen
 subprocess.call('doxygen Doxyfile', shell=True)

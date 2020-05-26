@@ -105,9 +105,11 @@ endforeach()
 # =============================================================================
 # pybind11 tests
 # =============================================================================
-add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
-add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
-foreach(test_name Ode Pybind)
+add_test(NAME "pytest/ode" COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                   ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
+add_test(NAME "pytest/pybind" COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                                      ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
+foreach(test_name "pytest/ode" "pytest/pybind")
   set_tests_properties(${test_name} PROPERTIES ENVIRONMENT
                                                PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
 endforeach()

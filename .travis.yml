@@ -16,13 +16,13 @@ matrix:
   include:
     - language: cpp
       os: linux
-      dist: xenial
+      dist: bionic
       env:
         - MATRIX_EVAL="CXX=g++"
-        - PYTHON_VERSION=3.6.7
+        - PYTHON_VERSION=3.8
     - language: cpp
       os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       env:
         - MATRIX_EVAL="CXX=c++"
 
@@ -45,25 +45,29 @@ addons:
     packages:
       - flex
       - bison
-      - libboost-all-dev
       - cmake
+      - dvipng
+      - doxygen
+      - libboost-all-dev
+      - libfl-dev
+      - libopenmpi-dev
+      - openmpi-bin
+      - pandoc
       - python3-dev
       - python3-pip
-      - doxygen
-      - pandoc
       - texlive-base
-      - dvipng
   # for Mac builds, we use Homebrew
   homebrew:
     packages:
       - boost
       - cmake
       - flex
+      - openmpi
       - python@3
     update: true
 
 #=============================================================================
-# Install dependencies / setup Spack
+# Install dependencies
 #=============================================================================
 before_install:
   # brew installed flex and bison is not in $PATH
@@ -76,7 +80,6 @@ before_install:
         brew link --overwrite python;
     else
         pyenv global $PYTHON_VERSION;
-        ls /usr/bin/;
     fi
   - eval "${MATRIX_EVAL}"
 
@@ -89,35 +92,37 @@ install:
   # I will remove the sphinx downgrade. Change setup.py requirements when it
   # be the case, Katta
   - echo "------- Install Dependencies -------"
-  - pip3 install -U pip setuptools
-  - pip3 install Jinja2 PyYAML pytest sympy --user
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      pip3 install -U --user sphinx==2.4.4 nbsphinx>=0.3.2 m2r sphinx-rtd-theme jupyter;
-    fi
+  - pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest "sympy<1.6"
 
 #=============================================================================
 # Build, test and install
 #=============================================================================
 script:
   - echo "------- Build, Test and Install -------"
-  - mkdir build && cd build
+  - mkdir build && pushd build
   - cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
-  - make -j 2
-  - make test
+  - make -j 2;
+    if [ $? -ne 0 ]; then
+        make VERBOSE=1;
+    fi
+  - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
+  - popd
 
 #=============================================================================
 # Build Documentation, CoreNEURON and run tests
 #=============================================================================
 after_success:
-  - export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
+  # Scikit-build does not support build_ext --inplace in custom commands.
+  # More info at: https://github.com/scikit-build/scikit-build/issues/489
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       echo "------- Build Documentation -------";
+      python3 setup.py build_ext --inplace docs -j 2 -G "Unix Makefiles" || travis_terminate 1;
       cd $TRAVIS_BUILD_DIR/docs;
-      doxygen && make html;
       rm -rf _build/doctrees && touch _build/.nojekyll;
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > _build/index.html;
     fi
+
   - echo "------- Build and Test CoreNEURON -------"
   - cd $HOME
   - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
