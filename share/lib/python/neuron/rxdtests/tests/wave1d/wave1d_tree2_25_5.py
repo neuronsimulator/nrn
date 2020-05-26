@@ -135,7 +135,7 @@ ca[er].concentration = cae_init
 
 #ip3.nodes.concentration = 2
 for node in ip3.nodes:
-    if  node.x<.8 and node.x>=.6  and node.sec._sec==sec:
+    if  node.x<.8 and node.x>=.6  and node in sec:
         node.concentration = 2
 
 
