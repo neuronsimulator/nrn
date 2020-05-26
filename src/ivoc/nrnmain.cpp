@@ -9,6 +9,7 @@ extern "C" {
 	int nrn_isdouble(double*, double, double);
 	int ivocmain(int, const char**, const char**);
 	extern int nrn_main_launch;
+	extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
 	extern void nrnmpi_stubs();
 	extern char* nrnmpi_load(int is_python);
@@ -23,6 +24,11 @@ extern "C" {
 int main(int argc, char** argv, char** env) {
 	nrn_isdouble(0,0,0);
 	nrn_main_launch = 1;
+
+#if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
+	nrn_noauto_dlopen_nrnmech = 1;
+#endif
+
 #if 0
 printf("argc=%d\n", argc);
 for (int i=0; i < argc; ++i) {

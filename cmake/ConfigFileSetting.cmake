@@ -105,6 +105,16 @@ else()
   set(LegacyNPy "")
 endif()
 
+# Switch between binary special and script-based special
+# Works with CMAKE and autotools
+if(NRN_ENABLE_BINARY_SPECIAL)
+  set(NRN_BINARY_SPECIAL_TRUE "")
+  set(NRN_BINARY_SPECIAL_FALSE "#")
+else()
+  set(NRN_BINARY_SPECIAL_TRUE "#")
+  set(NRN_BINARY_SPECIAL_FALSE "")
+endif()
+
 if(NRN_ENABLE_MECH_DLL_STYLE)
   set(NRNMECH_DLL_STYLE 1)
 else()
