@@ -17,7 +17,6 @@ extern int hoc_stack_type();
 extern char** hoc_strpop();
 extern Object** hoc_objpop();
 extern Object* hoc_pop_object();
-extern void hoc_stkobj_unref(Object*);
 extern void hoc_tobj_unref(Object**);
 extern int hoc_ipop();
 PyObject* nrnpy_hoc2pyobject(Object*);
@@ -318,6 +317,7 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
 }
 
 static void hpoasgn(Object* o, int type) {
+  int err = 0;
   int nindex;
   Symbol* sym;
   PyObject* poleft;
@@ -340,12 +340,16 @@ static void hpoasgn(Object* o, int type) {
   nindex = hoc_ipop();
   // printf("hpoasgn %s %s %d\n", hoc_object_name(o), sym->name, nindex);
   if (nindex == 0) {
-    PyObject_SetAttrString(poleft, sym->name, poright);
+    err = PyObject_SetAttrString(poleft, sym->name, poright);
   } else if (nindex == 1) {
     PyObject* key = PyLong_FromDouble(hoc_xpop());
     PyObject* a = PyObject_GetAttrString(poleft, sym->name);
-    PyObject_SetItem(a, key, poright);
-    Py_DECREF(a);
+    if (a) {
+      err = PyObject_SetItem(a, key, poright);
+      Py_DECREF(a);
+    }else{
+      err = -1;
+    }
     Py_DECREF(key);
   } else {
     char buf[512];
@@ -355,8 +359,10 @@ static void hpoasgn(Object* o, int type) {
         "HOC cannot handle PythonObject assignment with more than one index.");
   }
   Py_DECREF(poright);
-  //	hoc_push_object(o);
-  hoc_stkobj_unref(o);
+  if (err) {
+    PyErr_Print();
+    hoc_execerror("Assignment to PythonObject failed", NULL);
+  }
 }
 
 void nrnpy_decref_defer(PyObject* po) {
