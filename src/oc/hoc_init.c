@@ -262,6 +262,7 @@ double hoc_default_dll_loaded_;
 
 char* neuron_home;
 char* nrn_mech_dll; /* but actually only for NEURON mswin and linux */
+int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
 

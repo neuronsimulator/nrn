@@ -11,6 +11,7 @@ static PyType_Slot nrnpy_SectionType_slots[] = {
     {Py_tp_init, (void*)NPySecObj_init},
     {Py_tp_new, (void*)NPySecObj_new},
     {Py_tp_doc, (void*)"Section objects"},
+    {Py_sq_contains, (void*) NPySecObj_contains},
     {0, 0},
 };
 static PyType_Spec nrnpy_SectionType_spec = {

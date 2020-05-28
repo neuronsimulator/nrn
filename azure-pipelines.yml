@@ -12,6 +12,7 @@ schedules:
   branches:
     include:
     - master
+  always: true
 
 # Auto cancel old PR builds
 pr:

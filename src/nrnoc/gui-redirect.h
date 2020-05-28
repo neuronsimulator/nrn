@@ -1,6 +1,20 @@
 #ifndef gui_redirect_h
 #define gui_redirect_h
 
+#include "hocdec.h"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+extern Object* nrn_get_gui_redirect_obj();
+extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
+extern double (*nrnpy_object_to_double_)(Object*);
+
+#if defined(__cplusplus)
+}
+#endif
+
 #define TRY_GUI_REDIRECT_OBJ(name, obj) {\
     Object** ngh_result;\
     if (nrnpy_gui_helper_) {\
@@ -12,35 +26,25 @@
 }
 
 #define TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE(name, sym, v) {\
-	Object** guiredirect_result = NULL; \
-	if (nrnpy_gui_helper_) {\
-		Object* obj = (Object*) malloc(sizeof(Object));\
-		obj->ctemplate = sym->u.ctemplate;\
-		obj->refcount = 1;\
-		obj->index = -1;\
-		obj->u.this_pointer = v;\
-		guiredirect_result = nrnpy_gui_helper_(name, obj);\
-        /*free(obj);*/ \
-        if (guiredirect_result) { \
-            return(nrnpy_object_to_double_(*guiredirect_result)); \
-        } \
-	}\
+    Object** guiredirect_result = NULL;\
+    if (nrnpy_gui_helper_) {\
+        Object* obj = nrn_get_gui_redirect_obj();\
+        guiredirect_result = nrnpy_gui_helper_(name, obj);\
+        if (guiredirect_result) {\
+            return(nrnpy_object_to_double_(*guiredirect_result));\
+        }\
+    }\
 }
 
 #define TRY_GUI_REDIRECT_METHOD_ACTUAL_OBJ(name, sym, v) {\
-	Object** guiredirect_result = NULL; \
-	if (nrnpy_gui_helper_) {\
-		Object* obj = (Object*) malloc(sizeof(Object));\
-		obj->ctemplate = sym->u.ctemplate;\
-		obj->refcount = 1;\
-		obj->index = -1;\
-		obj->u.this_pointer = v;\
-		guiredirect_result = nrnpy_gui_helper_(name, obj);\
-        /*free(obj);*/ \
-        if (guiredirect_result) { \
-            return(guiredirect_result); \
-        } \
-	}\
+    Object** guiredirect_result = NULL;\
+    if (nrnpy_gui_helper_) {\
+        Object* obj = nrn_get_gui_redirect_obj();\
+        guiredirect_result = nrnpy_gui_helper_(name, obj);\
+        if (guiredirect_result) {\
+            return(guiredirect_result);\
+        }\
+    }\
 }
 
 #define TRY_GUI_REDIRECT_NO_RETURN(name, obj) {\

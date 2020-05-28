@@ -169,6 +169,21 @@ static Object* pysec_cell(Section* sec) {
   return 0;
 }
 
+static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
+    /* report that we contain the object if it has a .sec that is equal to ourselves */
+    PyObject* obj_sec;
+    int result;
+    if (!PyObject_HasAttrString(obj, "sec")) {
+        return 0;
+    }
+    Py_INCREF(obj);
+    obj_sec = PyObject_GetAttrString(obj, "sec");
+    Py_DECREF(obj);
+    result = PyObject_RichCompareBool(sec, obj_sec, Py_EQ);    
+    Py_XDECREF(obj_sec);
+    return(result);
+}
+
 static int pysec_cell_equals(Section* sec, Object* obj) {
   PyObject* po = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
   return nrnpy_ho_eq_po(obj, po);

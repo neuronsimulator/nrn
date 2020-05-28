@@ -6,6 +6,20 @@
 #define ccast /**/
 #endif
 
+static PySequenceMethods pysec_sequence = {
+    NULL, /* sq_length */
+    NULL, /* sq_concat */
+    NULL, /* sq_repeat */
+    NULL, /* sq_item */
+    NULL, /* sq_slice */
+    NULL, /* sq_ass_item */
+    NULL, /* sq_ass_slice */
+    (objobjproc) NPySecObj_contains, /* sq_contains */
+    NULL, /* sq_inplace_concat */
+    NULL  /* sq_inplace_repeat */
+};
+
+
 static PyTypeObject nrnpy_SectionType = {
     PyObject_HEAD_INIT(NULL)0,                /*ob_size*/
     ccast "nrn.Section",                      /*tp_name*/
@@ -18,7 +32,7 @@ static PyTypeObject nrnpy_SectionType = {
     0,                                        /*tp_compare*/
     pysec_repr,                               /*tp_repr*/
     0,                                        /*tp_as_number*/
-    0,                                        /*tp_as_sequence*/
+    &pysec_sequence,                          /*tp_as_sequence*/
     0,                                        /*tp_as_mapping*/
     (hashfunc)pysec_hash,                     /*tp_hash*/
     (ternaryfunc)NPySecObj_call,              /*tp_call*/
