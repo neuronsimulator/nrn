@@ -104,6 +104,13 @@ import os
 
 embedded = True if 'hoc' in sys.modules else False
 
+try: # needed since python 3.8 on windows if python launched
+  # do this here as NEURONHOME may be changed below
+  nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
+  os.add_dll_directory(nrnbindir)
+except:
+  pass
+
 # With pip we need to rewrite the NEURONHOME
 nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
 if (os.path.isdir(nrn_path)):
@@ -126,7 +133,7 @@ except:
   try:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
-  except: # mingw name strategy
+  except: # mingw autotools name strategy
     exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
