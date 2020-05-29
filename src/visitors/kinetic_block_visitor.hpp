@@ -12,10 +12,10 @@
  * \brief \copybrief nmodl::visitor::KineticBlockVisitor
  */
 
-#include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "visitors/ast_visitor.hpp"
@@ -92,12 +92,12 @@ class KineticBlockVisitor: public AstVisitor {
     /// state variables vector
     std::vector<std::string> state_var;
 
-    /// map from state variable to corresponding index
-    std::map<std::string, int> state_var_index;
+    /// unordered_map from state variable to corresponding index
+    std::unordered_map<std::string, int> state_var_index;
 
-    /// map from array state variable to its size (for summing over each element of any array state
-    /// vars in a CONSERVE statement)
-    std::map<std::string, int> array_state_var_size;
+    /// unordered_map from array state variable to its size (for summing over each element of any
+    /// array state vars in a CONSERVE statement)
+    std::unordered_map<std::string, int> array_state_var_size;
 
     /// true if we are visiting a reaction statement
     bool in_reaction_statement = false;

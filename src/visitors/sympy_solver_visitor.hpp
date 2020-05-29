@@ -15,6 +15,7 @@
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "ast/ast.hpp"
@@ -124,7 +125,7 @@ class SympySolverVisitor: public AstVisitor {
     std::set<std::string> function_calls;
 
     /// map between derivative block names and associated solver method
-    std::map<std::string, std::string> derivative_block_solve_method{};
+    std::unordered_map<std::string, std::string> derivative_block_solve_method{};
 
     /// expression statements appearing in the block
     /// (these can be of type DiffEqExpression, LinEquation or NonLinEquation)
@@ -165,7 +166,7 @@ class SympySolverVisitor: public AstVisitor {
 
     /// map from state vars to the algebraic equation from CONSERVE statement that should replace
     /// their ODE, if any
-    std::map<std::string, std::string> conserve_equation;
+    std::unordered_map<std::string, std::string> conserve_equation;
 
     /// optionally replace cnexp solution with (1,1) pade approx
     bool use_pade_approx;
