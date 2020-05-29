@@ -64,6 +64,9 @@ int tstkchk_actual(int i, int j) {
 			case OBJECTTMP:	/* would use OBJECT if it existed */
 				s[k] = "(Object *)";
 				break;
+			case STKOBJ_UNREF:/* hoc_stkobj_unref allready called */
+				s[k] = "(Object * already unreffed on stack)";
+				break;
 			default:
 				s[k] = "(Unknown)";
 				break;
@@ -77,13 +80,29 @@ int tstkchk_actual(int i, int j) {
 
 #define USEMACROS 1
 
+/* warning! tstkchk(i,j) when i!=j will call execerror and error recovery
+   now uses stackp to recover OBJECTTMP resources. So it must be the case that
+   stackp - stack is an even number (since stack item, itemtype values
+   use a pair of stack locations). This invalidates the previous pop idiom
+   tstkchk((--stackp)->i, type), (--stackp)->val)) since if tstkchk calls
+   execerror without returning, stackp is no longer consistent since the
+   second decrement no longer takes place.
+
+   Furthermore, tstkchk(i,j) should be called prior to actually popping the
+   stack so that the execerror will properly unref the otherwise unexpected
+   possible OBJECTTMP.
+*/
+
 #if USEMACROS
+/* warning! tstkchk is a macro that uses each arg twice. So error if
+   the arg in the call has side effects. Eg avoid args like --stackp
+*/
+#define tstkchk(i,j)	(((i)!=(j))?tstkchk_actual(i,j):0)
 #define pushxm(d)	((stackp++)->val = (d));((stackp++)->i = NUMBER)
 #define pushsm(d)	((stackp++)->sym = (d));((stackp++)->i = SYMBOL)
-#define xpopm()		(tstkchk((--stackp)->i, NUMBER), (--stackp)->val)
-#define spopm()		(tstkchk((--stackp)->i, SYMBOL), (--stackp)->sym)
-#define nopopm()	(stackp -= 2)
-#define tstkchk(i,j)	(((i)!=(j))?tstkchk_actual(i,j):0)
+#define nopopm()	(stackp -= 2) /*provision at use made to deal with OBJECTTMP*/
+#define xpopm()		(tstkchk(stackp[-1].i, NUMBER), nopopm(), stackp->val)
+#define spopm()		(tstkchk(stackp[-1].i, SYMBOL), nopopm(), stackp->sym)
 #else
 #define pushxm(d) pushx(d)
 #define pushsm(d) pushs(d)
@@ -114,7 +133,6 @@ typedef struct Frame {	/* proc/func call stack frame */
 	Inst	*retpc;	/* where to resume after return */
 	Datum	*argn;	/* n-th argument on stack */
 	int	nargs;	/* number of arguments */
-	int	obtmp_stk_index; /* in case of error in ob.foo(...) */
 	Inst	*iter_stmt_begin; /* Iterator statement starts here */
 	Object	*iter_stmt_ob;	/* context of Iterator statement */
 	Object	*ob;	/* for stack frame debug message */
@@ -122,7 +140,6 @@ typedef struct Frame {	/* proc/func call stack frame */
 #define NFRAME	512 /* default size */
 #define nframe hoc_nframe
 static Frame *frame, *fp, *framelast; /* first, frame pointer, last */
-static int obtmp_stk_index; /* initialize to -1 */
 
 /* temporary object references come from this pool. This allows the
 stack to be aware if it is storing a temporary. We are trying to
@@ -241,9 +258,12 @@ printf("hoc_pop_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->ref
 /* should be called on each OBJECTTMP on the stack after adjusting the
 stack pointer downward */
 
-void hoc_stkobj_unref(Object* o) {
-	--tobj_count;
-	hoc_obj_unref(o);
+void hoc_stkobj_unref(Object* o, int stkindex) {
+	if (stack[stkindex+1].i == OBJECTTMP) {
+		--tobj_count;
+		hoc_obj_unref(o);
+		stack[stkindex+1].i = STKOBJ_UNREF;
+	}
 }
 
 /* check the args of the frame and unref any of type OBJECTTMP */
@@ -256,46 +276,58 @@ static void frameobj_clean(Frame* f) {
 	}
 	s = f->argn + 2;
 	for (i=f->nargs-1; i >= 0; --i) {
-		if ((--s)->i == OBJECTTMP) {
-			s->i = 0;
-			hoc_stkobj_unref((--s)->obj);
-		}else{
-			--s;
+		s -= 2;
+		if (s[1].i == OBJECTTMP) {
+			hoc_stkobj_unref(s->obj, (int)(s - stack));
 		}
 	}
 }
 
-/* unref OBJECTTMP items on the stack frame associated with localobj
-   along with the potential OBJECTTMP associated with ob of ob.meth(...)
-   in which an error occurs before meth returns.
-*/
-static void frame_objauto_clean(Frame* f) { /* only on error */
-  int i;
-  Symbol* sp = f->sp;
-  /* argn is the nargs argument on the stack. Stack items come in pairs
-     so stack increments are always multiples of 2.
-     Here, stkp is the last+1 localobj slot pair on the stack.
-  */
-  Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2;
-  for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
-    Object* ob = stkp[-2*i].obj;
-    hoc_obj_unref(ob);
-  }
-  /* clean OBJECTTMP ob of ob.meth(...) */
-  if (f->obtmp_stk_index >= 0) {
-    /* The stack item before arg items is ob of ob.meth(...) */
-    stkp = f->argn - 2*f->nargs;
-    if ((int)(stkp - stack) != f->obtmp_stk_index) {
-      printf("Stack index inconsistency %d != %d in error cleanup of ob of ob.meth...\n",
-        (int)(stkp - stack), f->obtmp_stk_index);
+/* unref items on the stack frame associated with localobj in case of error */
+static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
+  Frame* f;
+  for (f = fp; f > ff; --f) {
+    int i;
+    Symbol* sp = f->sp;
+    /* argn is the nargs argument on the stack. Stack items come in pairs
+       so stack increments are always multiples of 2.
+       Here, stkp is the last+1 localobj slot pair on the stack.
+    */  
+    Datum* stkp = f->argn + 2 + sp->u.u_proc->nauto*2;
+    for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+      Object* ob = stkp[-2*i].obj;
+      hoc_obj_unref(ob);
+      /* Note that these AUTOOBJECT stack locations have an itemtype that
+         are left over from the previous stack usage of that location.
+         Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
+         increment tobj_count so we need to guarantee that the subsequent
+         stack_obtmp_recover_on_err does not inadvertently free it again
+         by setting the itemtype to a non OBJECTTMP value.  I hope this is
+         the only place where stack space was used in which no item type
+         was specified.
+         We are doing this here which happens rarely to avoid having to
+         set them when the stack obj pointers are zeroed.
+      */
+      stkp[-2*i + 1].i = 0;
     }
-    /* unreffed only if OBJECTTMP */
-    if (stkp[1].i == OBJECTTMP) {
-      Object* ob = stkp[0].obj;
-      hoc_stkobj_unref(ob);
-    }else if (stkp[1].i != OBJECTVAR){
-      printf("Stack item %d is neither OBJECTTMP nor OBJECTVAR in error clean up of ob of ob.meth...\n",
-        (int)(stkp - stack));
+  }
+}
+
+static void stack_obtmp_recover_on_err(int tcnt) {
+  if (tobj_count > tcnt) {
+    Datum* stkp;
+    /* stackp - 2 because stackp is next available stack slot and
+       stack item,itemtype takes up two slots.
+    */
+    for (stkp = stackp - 2; stkp >= stack; stkp -= 2) {
+      if (stkp[1].i == OBJECTTMP) {
+        hoc_stkobj_unref(stkp->obj, (int)(stkp - stack));
+        if (tobj_count == tcnt) {
+          return;
+        }
+      }else if (stkp[1].i == STKOBJ_UNREF) {
+        printf("OBJECTTMP at stack index %ld already unreffed\n", stkp - stack);
+      }
     }
   }
 }
@@ -314,7 +346,6 @@ void hoc_init_space(void)	/* create space for stack and code */
 	fp = frame = (Frame *)emalloc(sizeof(Frame)*nframe);
 	framelast = frame + nframe;
 	hoc_temp_obj_pool_ = (Object**)emalloc(sizeof(Object*)*TOBJ_POOL_SIZE);
-	obtmp_stk_index = -1;
 }
 
 #define MAXINITFCNS 10
@@ -346,31 +377,6 @@ void hoc_on_init_register(Pfrv pf)
 	}
 }
 
-static void frame_clean_on_err(Frame* f) {
-  if (obtmp_stk_index >= 0) {
-    /* Typically means an error occurred in ob.xxx where xxx is not a method
-       so that obtmp_stk_index did not get copied to a stack frame and so
-       was not reset to 0.
-       Note that stack items come in pairs so that stkp[0] is the item and
-       stkp[1].i is the itemtype.
-    */
-    Datum* stkp = stack + obtmp_stk_index;
-    if (stkp[1].i == OBJECTTMP) {
-      Object* ob = stkp[0].obj;
-      hoc_stkobj_unref(ob);
-    }else if (stkp[1].i != OBJECTVAR) {
-      printf("Stack item %d is neither OBJECTTMP nor OBJECTVAR in error clean up of ob of ob.meth...\n",
-        obtmp_stk_index);
-    }
-    obtmp_stk_index = -1;
-  }
-  while(fp > f) {
-    frame_objauto_clean(fp);
-    frameobj_clean(fp);
-    --fp;
-  }
-}
-
 void initcode(void)	/* initialize for code generation */
 {
 	int i;
@@ -383,8 +389,9 @@ fprintf(stderr, "errno set %d times on last execution\n", hoc_errno_count);
 	progp = progbase;
 	hoc_unref_defer();
 
+	frame_objauto_recover_on_err(frame);
 if (tobj_count) {
-	frame_clean_on_err(frame);
+	stack_obtmp_recover_on_err(0);
 #if DEBUG_GARBAGE
 	if (tobj_count) {
 		printf("initcode failed with %d left\n", tobj_count);
@@ -454,8 +461,9 @@ void oc_restore_code(
 ){
 	progbase = *a1;
 	progp = *a2;
+	frame_objauto_recover_on_err(*a4);
 	if (tobj_count > *a12) {
-		frame_clean_on_err(*a4);
+		stack_obtmp_recover_on_err(*a12);
 #if DEBUG_GARBAGE
 if (tobj_count != *a12) {
 	printf("oc_restore_code tobj_count=%d should be %d\n", tobj_count, *a12);
@@ -746,6 +754,10 @@ Object* hoc_obj_look_inside_stack(int i) { /* stack pointer at depth i; i=0 is t
 	return *(d[0].pobj);
 }
 
+int hoc_obj_look_inside_stack_index(int i) {
+  return (int)((stackp - 2*i - 2) - stack);
+}
+
 int hoc_inside_stacktype(int i) { /* 0 is top */
 	return (stackp - 2*i - 1)->i;
 }
@@ -753,9 +765,9 @@ int hoc_inside_stacktype(int i) { /* 0 is top */
 double xpop(void) {	/* pop double and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, NUMBER);
-	return (--stackp)->val;
+	tstkchk(stackp[-1].i, NUMBER);
+	stackp -= 2;
+	return stackp->val;
 }
 
 #if 0
@@ -788,6 +800,10 @@ void pstack(void) {
 			case OBJECTTMP:	/* would use OBJECT if it existed */
 				printf("(Object *) %s\n", hoc_object_name(d->obj));
 				break;
+			case STKOBJ_UNREF: /* hoc_stkobj_ref already called */
+				printf("(Object * already unreffed by hoc_stkobj_ref at stkindex %ld. Following name print may cause a crash if already freed.\n", d - stack);
+				printf("    %s\n", hoc_object_name(d->obj));
+				break;
 			default:
 				printf("(Unknown)\n");
 				break;
@@ -799,17 +815,17 @@ void pstack(void) {
 double* hoc_pxpop(void) {/* pop double pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, VAR);
-	return (--stackp)->pval;
+	tstkchk(stackp[-1].i, VAR);
+	stackp -= 2;
+	return stackp->pval;
 }
 
 Symbol* spop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, SYMBOL);
-	return (--stackp)->sym;
+	tstkchk(stackp[-1].i, SYMBOL);
+	stackp -= 2;
+	return stackp->sym;
 }
 
 /*
@@ -821,47 +837,44 @@ When using objpop, after dealing with the pointer, one should call
 Object** hoc_objpop(void) {/* pop pointer to object pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	if (stackp->i == OBJECTTMP) {
-		return hoc_temp_objptr((--stackp)->obj);
+	stackp -= 2;
+	if (stackp[1].i == OBJECTTMP) {
+		return hoc_temp_objptr(stackp->obj);
 	}
-	tstkchk(stackp->i, OBJECTVAR);
-	return (--stackp)->pobj;
+	tstkchk(stackp[1].i, OBJECTVAR); /* safe because cannot be OBJECTTMP */
+	return stackp->pobj;
 }
 
 Object* hoc_pop_object(void ) {/* pop object and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, OBJECTTMP);
-	return (--stackp)->obj;
+	tstkchk(stackp[-1].i, OBJECTTMP);
+	stackp -= 2;
+	return stackp->obj;
 }
 
 char** hoc_strpop(void) { /* pop pointer to string pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, STRING);
-	return (--stackp)->pstr;
+	tstkchk(stackp[-1].i, STRING);
+	stackp -= 2;
+	return stackp->pstr;
 }
 
 int ipop(void) {/* pop symbol pointer and return top elem from stack */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	tstkchk(stackp->i, USERINT);
-	return (--stackp)->i;
+	tstkchk(stackp[-1].i, USERINT);
+	stackp -= 2;
+	return stackp->i;
 }
 
 void nopop(void) {/* just pop the stack without returning anything */
 	if (stackp <= stack)
 		execerror("stack underflow", (char *) 0);
-	--stackp;
-	if (stackp->i == OBJECTTMP) {
-		stackp->i = 0;
-		hoc_stkobj_unref((--stackp)->obj);
-	}else{
-		--stackp;
+	stackp -= 2;
+	if (stackp[1].i == OBJECTTMP) {
+		hoc_stkobj_unref(stackp->obj, (int)(stackp - stack));
 	}
 }
 
@@ -1307,19 +1320,6 @@ Fprintf(stderr, "%s", hoc_object_name(*f->argn[(j - f->nargs)*2].pobj));
 	}
 }
 
-void nrn_obtmp_stk_index_on_err(int i) {
-	if (i < 0) {
-		obtmp_stk_index = -1;
-	}else{
-		/* The stack index for ob in the context ob.name...
-		   stack items are in pairs of item, itemtype and hence
-		   the factor of 2.
-		*/
-		obtmp_stk_index = (int)(stackp - stack) - 2*i - 2;
-		assert(obtmp_stk_index >= 0);
-	}
-}
-
 void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls */
 	if (++fp >= framelast) {
 		--fp;
@@ -1329,8 +1329,6 @@ void push_frame(Symbol* sp, int narg) { /* helpful for explicit function calls *
 	fp->nargs = narg;
 	fp->argn = stackp - 2;	/* last argument */
 	fp->ob = hoc_thisobject;
-	fp->obtmp_stk_index = obtmp_stk_index;
-	obtmp_stk_index = -1;
 }
 
 void pop_frame(void) {
@@ -1354,9 +1352,8 @@ void call(void)		/* call a function */
 	fp->nargs = pc[1].i;
 	fp->retpc = pc + 2;
 	fp->ob = hoc_thisobject;
+	/*SUPPRESS 26*/
 	fp->argn = stackp - 2;	/* last argument */
-	fp->obtmp_stk_index = obtmp_stk_index;
-	obtmp_stk_index = -1;
 	BBSPOLL
 #if CABLE
 	isec = nrn_isecstack();

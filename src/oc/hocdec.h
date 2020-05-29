@@ -102,6 +102,7 @@ typedef char	*Upoint;
 #endif
 #define		SYMBOL		7	/* for stack type */
 #define		OBJECTTMP	8	/* temporary object on stack */
+#define		STKOBJ_UNREF	9	/* already unreffed temporary object on stack */
 #define		CPLUSOBJECT	16	/* c++ registered class */
 #define		JAVAOBJECT	32	/* c++ registered class */
 /* above two are bits, next must start at 64 */

@@ -129,7 +129,7 @@ Symbol* install(	/* install s in the list symbol table */
 	case FUN_BLTIN:
 	case OBFUNCTION:
 	case STRFUNCTION:
-		sp->u.u_proc = (Proc *)emalloc(sizeof(Proc));
+		sp->u.u_proc = (Proc *)ecalloc(1, sizeof(Proc));
 		sp->u.u_proc->list = (Symlist*)0;
 		sp->u.u_proc->size = 0;
 		break;
