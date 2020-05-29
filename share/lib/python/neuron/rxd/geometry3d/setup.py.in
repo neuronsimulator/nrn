@@ -34,7 +34,6 @@ except:
     setup()
 else:
     olevel = "@NRN_RX3D_OPT_LEVEL@"
-    olevel = '0'
     use_vc = have_vc()
     if mingw and sys.version_info[0] == 3:
       use_vc = True
