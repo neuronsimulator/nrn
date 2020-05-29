@@ -236,4 +236,6 @@ jobs:
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
         mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc
+        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
       displayName: "Test Installer (MPI)"
