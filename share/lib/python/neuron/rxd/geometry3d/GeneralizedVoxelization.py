@@ -5,12 +5,6 @@ def find_voxel(x,y,z,g):
     # g is grid boundaries
     if x >= g['xlo'] and y >= g['ylo'] and z >= g['zlo'] and x <= g['xhi'] and y <= g['yhi'] and z <= g['zhi']:
         i,j,k = int((x-g['xlo'])//g['dx']),int((y-g['ylo'])//g['dy']),int((z-g['zlo'])//g['dz'])
-        if x == g['xhi']:
-            i = int((x-g['dx'])//g['dx'])
-        if y == g['yhi']:
-            j = int((y-g['dy'])//g['dy'])
-        if z == g['zhi']:
-            k = int((z-g['dz'])//g['dz'])
         return (i,j,k)
     else:
         raise Exception("Coordinates must be within grid")
