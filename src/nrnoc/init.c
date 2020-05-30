@@ -128,6 +128,7 @@ static HocParmUnits _hoc_parm_units[] = {
 	0, 0
 };
 
+static Symlist* nrn_load_dll_called_;
 static int memb_func_size_;
 Memb_func* memb_func;
 Memb_list* memb_list;
@@ -200,23 +201,6 @@ int nrn_is_artificial(int pnttype) {
 
 int nrn_is_cable(void) {return 1;}
 
-#if 0 && defined(WIN32)
-int mswin_load_dll(char* cp1) {
-	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
-		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
-	}
-	dll = dll_load(cp1);
-	if (dll) {
-		Pfri mreg = dll_lookup(dll, "_modl_reg");
-		if (mreg) {
-			(*mreg)();
-		}
-		return 1;
-	}
-	return 0;
-}
-#endif
-
 int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
@@ -239,9 +223,7 @@ int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	return 0;
 }
 
-#if !MAC
 void hoc_nrn_load_dll(void) {
-	Symlist* sav;
 	int i;
 	FILE* f;
 	const char* fn;
@@ -249,18 +231,19 @@ void hoc_nrn_load_dll(void) {
 	f = fopen(fn, "rb");
 	if (f) {
 		fclose(f);
-		sav = hoc_symlist;
+		nrn_load_dll_called_ = hoc_symlist;
 		hoc_symlist = hoc_built_in_symlist;
 		hoc_built_in_symlist = (Symlist*)0;
+		/* If hoc_execerror, recover before that call */
 		i = mswin_load_dll(fn);
 		hoc_built_in_symlist = hoc_symlist;
-		hoc_symlist = sav;
+		hoc_symlist = nrn_load_dll_called_;
+		nrn_load_dll_called_ = (Symlist*)0;
 		hoc_retpushx((double)i);
 	}else{
 		hoc_retpushx(0.);
 	}	
 }
-#endif
 
 extern void nrn_threads_create(int);
 
@@ -428,6 +411,14 @@ void nrn_register_mech_common(
 	int j, k, modltype, pindx, modltypemax;
 	Symbol *s;
 	const char **m2;
+
+	if (nrn_load_dll_called_ && hoc_lookup(m[1]) != (Symbol *)0) {
+		/* recoverable error for nrn_load_dll interpreter call */
+		hoc_built_in_symlist = hoc_symlist;
+		hoc_symlist = nrn_load_dll_called_;
+		nrn_load_dll_called_ = (Symlist*)0;
+		hoc_execerror("The mechanism name already exists:", m[1]);
+	}
 
 	if (type >= memb_func_size_) {
 		memb_func_size_ += 20;
