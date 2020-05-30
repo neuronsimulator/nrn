@@ -117,6 +117,7 @@ jobs:
       displayName: "Download NRN"
     - script: |
         .\nrn.exe /S
+        dir C:\nrn
       displayName: "Install NRN"
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
