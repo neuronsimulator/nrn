@@ -112,6 +112,97 @@ jobs:
     MSYS2_ROOT: C:\msys64
     HTTP_RETRIES: 4
   steps:
+    - script: |
+        bash -c "echo 'aaa'"
+        %MSYS2_ROOT%\usr\bin\bash -c "echo 'aaa'"
+        %MSYS2_ROOT%\usr\bin\bash -c "ls /; \
+                                      echo $BUILD_SOURCESDIRECTORY; \
+                                      cd $BUILD_SOURCESDIRECTORY; \
+                                      ls; \
+                                      ls c:/; \
+                                      ls /"
+      displayName: "Test Installer (Bash)"
+    - script: |
+        %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
+        git ^
+        zip ^
+        unzip ^
+        base-devel ^
+        mingw-w64-x86_64-cmake ^
+        mingw-w64-x86_64-ncurses ^
+        mingw-w64-x86_64-readline ^
+        mingw-w64-x86_64-python2 ^
+        mingw-w64-x86_64-python3 ^
+        mingw64/mingw-w64-x86_64-cython ^
+        mingw-w64-x86_64-python3-setuptools ^
+        mingw-w64-x86_64-python3-pip ^
+        mingw-w64-x86_64-toolchain
+      displayName: "Install MING2 Packages"
+    - bash: |
+        export PATH="/mingw64/bin:/usr/bin:$PATH"
+        env
+        echo "A"
+        cd $BUILD_SOURCESDIRECTORY
+        ls
+        mkdir -p build && cd build
+        cmake .. -G 'Unix Makefiles' -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_RX3D=OFF
+        make -j
+        make install
+      displayName: "Bash"
+    - pwsh: |
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
+      displayName: "Download NRN"
+    - script: |
+        set
+        .\nrn.exe /S
+        dir C:\nrn\lib\python\neuron
+      displayName: "Install NRN"
+    - pwsh: |
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.6.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
+        Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
+      displayName: "Download Installers"
+    - script: |
+        python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
+        python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python36
+        python-3.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python37
+        python-3.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python38
+        start /wait msiexec /i python-2.7.msi /norestart /qn TARGETDIR="C:\python27" ADDLOCAL=ALL
+        C:\python35\python.exe -m pip install numpy
+        C:\python36\python.exe -m pip install numpy
+        C:\python37\python.exe -m pip install numpy
+        C:\python38\python.exe -m pip install numpy
+        C:\python27\python.exe -m pip install numpy
+      displayName: "Install Python"
+    - script: |
+        set
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+        set
+        C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+        set PATH=C:\python38;%PATH%
+        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
+      displayName: "Test Installer (Python)"
+      condition: eq(1,1)
+    - script: |
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc
+        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
+        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
+      displayName: "Test Installer (MPI)"
+    - script: |
+        where bash
+        bash -c "echo 'aaa'"
+      displayName: "Test Installer (Bash)"
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
@@ -124,9 +215,11 @@ jobs:
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
       displayName: "Copy Windows Kit Files"
+      condition: eq(1,2)
     - script: |
         choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
       displayName: "Install MSYS2"
+      condition: eq(1,2)
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
         %MSYS2_ROOT%\usr\bin\pacman --noconfirm -Sy pacman
@@ -137,6 +230,7 @@ jobs:
     - script: |
         choco install --no-progress nsis --version 3.05 -y --allow-downgrade
       displayName: "Install NSIS"
+      condition: eq(1,2)
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
@@ -146,10 +240,12 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
       displayName: "Download Installers"
+      condition: eq(1,2)
     - pwsh: |
         Invoke-WebRequest -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
         Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
       displayName: "Install NSIS Plugin"
+      condition: eq(1,2)
     - script: |
         msmpisetup.exe -unattend -installroot C:\msmpi
         start /wait msiexec /i msmpisdk.msi /norestart /qn INSTALLDIR="C:\msmpi" ADDLOCAL=ALL
@@ -159,6 +255,7 @@ jobs:
         copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll"
         copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
       displayName: "Install MPI and Setup Directories"
+      condition: eq(1,2)
     - script: |
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
         python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python36
@@ -171,6 +268,7 @@ jobs:
         C:\python38\python.exe -m pip install numpy
         C:\python27\python.exe -m pip install numpy
       displayName: "Install MPI and Python"
+      condition: eq(1,2)
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
         set "TOOLCHAIN=mingw-w64-x86_64-toolchain"
@@ -189,13 +287,16 @@ jobs:
         mingw-w64-x86_64-python3-pip ^
         %TOOLCHAIN%
       displayName: "Install MING2 Packages"
+      condition: eq(1,2)
     - script: |
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
       displayName: "Build and Create Installer"
+      condition: eq(1,2)
     - task: PublishBuildArtifacts@1
       inputs:
         pathToPublish: '$(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe'
         artifactName: NeuronNightlyExecutable
+      condition: eq(1,2)
     - task: GithubRelease@0
       inputs:
         gitHubConnection: pramodk-nrn-fork
@@ -210,11 +311,12 @@ jobs:
         assets: |
           $(Build.SourcesDirectory)\build\src\mswin\nrn8.0setup-AMD64.exe
       displayName: 'Update GitHub Release'
+      condition: eq(1,2)
     - script: |
         .\build\src\mswin\nrn8.0setup-AMD64.exe /S
         dir C:\nrn\lib\python\neuron
       displayName: "Install Installer"
-      condition: eq(1,1)
+      condition: eq(1,2)
     - script: |
         set
         set PATH=C:\nrn\bin;%PATH%
@@ -226,11 +328,10 @@ jobs:
         C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
         C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-
         set PATH=C:\python38;%PATH%
         nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
       displayName: "Test Installer (Python)"
-      condition: eq(1,1)
+      condition: eq(1,2)
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
@@ -239,3 +340,4 @@ jobs:
         mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
         mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
       displayName: "Test Installer (MPI)"
+      condition: eq(1,2)
