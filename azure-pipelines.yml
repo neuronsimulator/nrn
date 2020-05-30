@@ -171,9 +171,8 @@ jobs:
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc || goto :error
-        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 3 || goto :error
-        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2 || goto :error
+        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2 || goto :error
+        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi || goto :error
         goto :EOF
         :error
         exit /b %errorlevel%
