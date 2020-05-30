@@ -125,7 +125,7 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
-      condition: eq(1,2)
+      condition: eq(1,1)
       displayName: "Download Installers"
     - script: |
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\python35
@@ -138,22 +138,22 @@ jobs:
         C:\python37\python.exe -m pip install numpy
         C:\python38\python.exe -m pip install numpy
         C:\python27\python.exe -m pip install numpy
-      condition: eq(1,2)
+      condition: eq(1,1)
       displayName: "Install Python"
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        C:\python27\python -c "import neuron; neuron.test(); neuron.test_erxd(); quit()" || goto :error
+        C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
         C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
         C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
         C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
-        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rx(); quit()" || goto :error
+        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
         goto :EOF
         :error
         exit /b %errorlevel%
       displayName: "Test Installer (Python)"
-      condition: eq(1,2)
+      condition: eq(1,1)
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.6'
