@@ -116,9 +116,7 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
       displayName: "Download NRN"
     - script: |
-        set
         .\nrn.exe /S
-        dir C:\nrn\lib\python\neuron
       displayName: "Install NRN"
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
@@ -141,54 +139,43 @@ jobs:
         C:\python27\python.exe -m pip install numpy
       condition: eq(1,2)
       displayName: "Install Python"
+    - script: |
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+        C:\python27\python -c "import neuron; neuron.test(); neuron.test_erxd(); quit()" || goto :error
+        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rx(); quit()" || goto :error
+        goto :EOF
+        :error
+        exit /b %errorlevel%
+      displayName: "Test Installer (Python)"
+      condition: eq(1,2)
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.6'
-    - task: CmdLine@2
-      inputs:
-        failOnStandardError: false
-        scriptSource: inline
-        script: |
-          set PATH=C:\nrn\bin;%PATH%
-          set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
-          set NEURONHOME=C:\nrn
-          python -c "from neuron import h; s = h.Section(); print('inserting hhx'); s.insert('hh'); quit()" || goto :error
-          python -c "from neuron import h; s = h.Section(); print('inserting hhx'); s.insert('hhsx'); quit()" || goto :error
-          set NEURONHOME=C:\nrn
-          goto :EOF
-
-          :error
-          echo Failed with error #%errorlevel%.
-          exit /b %errorlevel%
-      displayName: "Try nrniv"
-    - script: |
-        set
-        set PATH=C:\nrn\bin;%PATH%
-        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
-        set NEURONHOME=C:\nrn
-        set
-        C:\python27\python -c "import neuron; neuron.test(); neuron.test_erxd(); quit()" || unknown-command
-        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
-        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
-        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
-        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rx(); quit()" || unknown-command
-        set PATH=C:\python38;%PATH%
-        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown-command
-      displayName: "Test Installer (Python)"
-      condition: eq(1,2)
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown-command
-      displayName: "Test Installer (Python)"
+        python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || goto :error
+        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || goto :error
+        goto :EOF
+        :error
+        exit /b %errorlevel%
+      displayName: "Test System Python"
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc || unknown-command
-        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 3 || unknown-command
-        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2 || unknown-command
+        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc || goto :error
+        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 3 || goto :error
+        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2 || goto :error
+        goto :EOF
+        :error
+        exit /b %errorlevel%
       displayName: "Test Installer (MPI)"
     - script: |
         set PATH=C:\nrn\bin;%PATH%
@@ -196,13 +183,12 @@ jobs:
         set NEURONHOME=C:\nrn
         cp share/examples/nrniv/nmodl/cacum.mod .
         set N=C:\nrn
-        C:\nrn\mingw\usr\bin\bash -c "mknrndll" || unknown-command
-        C:\python36\python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || unknown-command
+        C:\nrn\mingw\usr\bin\bash -c "mknrndll" || goto :error
+        python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || goto :error
+        goto :EOF
+        :error
+        exit /b %errorlevel%
       displayName: "Test mknrndll"
-    - script: |
-        where bash
-        bash -c "echo 'aaa'"
-      displayName: "Test Installer (Bash)"
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
