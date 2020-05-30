@@ -69,13 +69,16 @@ run_serial_test () {
     # Test 5: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 6: run basic tests via special : azure pipelines get stuck with their
+    # Test 6: run basic test to use compiled mod file
+    $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+
+    # Test 7: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
-    # Test 7: run demo
+    # Test 8: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 }
 
@@ -120,7 +123,7 @@ run_parallel_test() {
 test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
-    cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
+    cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="

@@ -112,43 +112,6 @@ jobs:
     MSYS2_ROOT: C:\msys64
     HTTP_RETRIES: 4
   steps:
-    - script: |
-        bash -c "echo 'aaa'"
-        %MSYS2_ROOT%\usr\bin\bash -c "echo 'aaa'"
-        %MSYS2_ROOT%\usr\bin\bash -c "ls /; \
-                                      echo $BUILD_SOURCESDIRECTORY; \
-                                      cd $BUILD_SOURCESDIRECTORY; \
-                                      ls; \
-                                      ls c:/; \
-                                      ls /"
-      displayName: "Test Installer (Bash)"
-    - script: |
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
-        git ^
-        zip ^
-        unzip ^
-        base-devel ^
-        mingw-w64-x86_64-cmake ^
-        mingw-w64-x86_64-ncurses ^
-        mingw-w64-x86_64-readline ^
-        mingw-w64-x86_64-python2 ^
-        mingw-w64-x86_64-python3 ^
-        mingw64/mingw-w64-x86_64-cython ^
-        mingw-w64-x86_64-python3-setuptools ^
-        mingw-w64-x86_64-python3-pip ^
-        mingw-w64-x86_64-toolchain
-      displayName: "Install MING2 Packages"
-    - bash: |
-        export PATH="/mingw64/bin:/usr/bin:$PATH"
-        env
-        echo "A"
-        cd $BUILD_SOURCESDIRECTORY
-        ls
-        mkdir -p build && cd build
-        cmake .. -G 'Unix Makefiles' -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_RX3D=OFF
-        make -j
-        make install
-      displayName: "Bash"
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
       displayName: "Download NRN"
@@ -199,6 +162,16 @@ jobs:
         mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
         mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
       displayName: "Test Installer (MPI)"
+    - script: |
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+        cp share/examples/nrniv/nmodl/cacum.mod .
+        set N=C:\nrn
+        C:\nrn\mingw\usr\bin\bash -c "mknrndll"
+        C:\python36\python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacumi'); quit()"
+        set N=C:\nrn
+      displayName: "Test mknrndll"
     - script: |
         where bash
         bash -c "echo 'aaa'"
