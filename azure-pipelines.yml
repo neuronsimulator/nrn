@@ -152,7 +152,14 @@ jobs:
           set PATH=C:\nrn\bin;%PATH%
           set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
           set NEURONHOME=C:\nrn
-          nrniv -python -c "from neuron import h; s = h.Section(); print('inserting hhx'); s.insert('hhx'); quit()"
+          python -c "from neuron import h; s = h.Section(); print('inserting hhx'); s.insert('hh'); quit()" || goto :error
+          python -c "from neuron import h; s = h.Section(); print('inserting hhx'); s.insert('hhsx'); quit()" || goto :error
+          set NEURONHOME=C:\nrn
+          goto :EOF
+
+          :error
+          echo Failed with error #%errorlevel%.
+          exit /b %errorlevel%
       displayName: "Try nrniv"
     - script: |
         set
@@ -160,28 +167,28 @@ jobs:
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
         set
-        C:\python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown_command
-        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown_command
-        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown_command
-        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown_command
-        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rx(); quit()" || unknown_command
+        C:\python27\python -c "import neuron; neuron.test(); neuron.test_erxd(); quit()" || unknown-command
+        C:\python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
+        C:\python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
+        C:\python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || unknown-command
+        C:\python38\python -c "import neuron; neuron.test(); neuron.test_rx(); quit()" || unknown-command
         set PATH=C:\python38;%PATH%
-        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown_command
+        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown-command
       displayName: "Test Installer (Python)"
       condition: eq(1,2)
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown_command
+        nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hhx'); quit()" || unknown-command
       displayName: "Test Installer (Python)"
     - script: |
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
-        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc || unknown_command
-        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 3 || unknown_command
-        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2 || unknown_command
+        mpiexec -n 2 nrniv -mpi C:\nrn\test0.hoc || unknown-command
+        mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 3 || unknown-command
+        mpiexec -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2 || unknown-command
       displayName: "Test Installer (MPI)"
     - script: |
         set PATH=C:\nrn\bin;%PATH%
@@ -189,8 +196,8 @@ jobs:
         set NEURONHOME=C:\nrn
         cp share/examples/nrniv/nmodl/cacum.mod .
         set N=C:\nrn
-        C:\nrn\mingw\usr\bin\bash -c "mknrndll" || unknown_command
-        C:\python36\python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || unknown_command
+        C:\nrn\mingw\usr\bin\bash -c "mknrndll" || unknown-command
+        C:\python36\python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || unknown-command
       displayName: "Test mknrndll"
     - script: |
         where bash
