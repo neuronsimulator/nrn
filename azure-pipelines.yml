@@ -116,16 +116,16 @@ jobs:
       inputs:
         filename: ci/win_download_deps.cmd
       displayName: "Download Dependencies"
-      condition: and(succeeded(), eq(1,1))
+      condition: and(succeeded(), eq(1,2))
     - task: BatchScript@1
       inputs:
         filename: ci/win_deps_install.cmd
       displayName: "Install Dependencies"
-      condition: and(succeeded(), eq(1,1))
+      condition: and(succeeded(), eq(1,2))
     - script: |
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
       displayName: "Build and Create Installer"
-      condition: and(succeeded(), eq(1,1))
+      condition: and(succeeded(), eq(1,2))
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '2.7'
