@@ -117,6 +117,11 @@ jobs:
         filename: ci/win_download_deps.cmd
       displayName: "Download Dependencies"
       condition: and(succeeded(), eq(1,1))
+    - task: BatchScript@1
+      inputs:
+        filename: ci/win_deps_install.cmd
+      displayName: "Install Dependencies"
+      condition: and(succeeded(), eq(1,1))
     - script: |
         :: install python
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python35
