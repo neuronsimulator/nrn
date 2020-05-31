@@ -124,12 +124,38 @@ jobs:
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
       displayName: "Download NRN"
-      condition: eq(1,2)
+      condition: eq(1,1)
     - script: |
         .\nrn.exe /S
         dir C:\nrn
       displayName: "Install NRN"
-      condition: eq(1,2)
+      condition: eq(1,1)
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
+      displayName: "Choose System Python"
+    - script: |
+        @echo on
+        set PATH=C:\nrn\bin;%PATH%
+        set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
+        set NEURONHOME=C:\nrn
+
+        :: test mknrndll
+        set N=C:\nrn
+        cp share/examples/nrniv/nmodl/cacum.mod .
+        C:\nrn\mingw\usr\bin\bash -c "mknrndll" || goto :error
+        python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || goto :error
+        echo Exit Code is %errorlevel%
+        echo "test done"
+
+        :: if all goes well, go to end
+        goto :EOF
+
+        :: something has failed, teminate with error code
+        :error
+        echo Exit Code is %errorlevel%
+        exit /b %errorlevel%
+      displayName: "Test Python + MPI"
 
 
     - pwsh: |
@@ -142,7 +168,6 @@ jobs:
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile nsis-3-05.exe https://fossies.org/windows/misc/nsis-3.05-setup.exe
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
         Invoke-WebRequest -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
-        Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
       condition: eq(1,1)
       displayName: "Download Installers"
 
@@ -163,6 +188,7 @@ jobs:
 
         :: install nsis
         nsis-3-05.exe /S
+        pwsh -command Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
 
         :: install mpi
         msmpisetup.exe -unattend -installroot C:\msmpi
@@ -176,6 +202,7 @@ jobs:
         :: copy files to necessary directories
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
         cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
+
       condition: eq(1,1)
       displayName: "Install Installers"
 
