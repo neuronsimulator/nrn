@@ -128,7 +128,8 @@ static HocParmUnits _hoc_parm_units[] = {
 	0, 0
 };
 
-static Symlist* nrn_load_dll_called_;
+extern Symlist* nrn_load_dll_called_;
+extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
 Memb_func* memb_func;
 Memb_list* memb_list;
@@ -412,13 +413,7 @@ void nrn_register_mech_common(
 	Symbol *s;
 	const char **m2;
 
-	if (nrn_load_dll_called_ && hoc_lookup(m[1]) != (Symbol *)0) {
-		/* recoverable error for nrn_load_dll interpreter call */
-		hoc_built_in_symlist = hoc_symlist;
-		hoc_symlist = nrn_load_dll_called_;
-		nrn_load_dll_called_ = (Symlist*)0;
-		hoc_execerror("The mechanism name already exists:", m[1]);
-	}
+	nrn_load_name_check(m[1]);
 
 	if (type >= memb_func_size_) {
 		memb_func_size_ += 20;
@@ -511,7 +506,7 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
 			m[1], m[0]);
 		nrn_exit(1);
 	}
-	CHECK(m[1]);
+
 	s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
 	s->subtype = type;
 	memb_func[type].sym = s;
@@ -746,7 +741,7 @@ int point_register_mech(
 	Symlist* sl;
 	Symbol* s, *s2;
 	void class2oc();
-	CHECK(m[1]);
+	nrn_load_name_check(m[1]);
 	class2oc(m[1], constructor, destructor, fmember, (void*)0, (void*)0, (void*)0);
 	s = hoc_lookup(m[1]);
 	sl = hoc_symlist;
