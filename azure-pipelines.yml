@@ -133,6 +133,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '3.6'
+      condition: eq(1,2)
       displayName: "Choose System Python"
     - script: |
         @echo on
@@ -159,6 +160,7 @@ jobs:
     - task: BatchScript@1
       inputs:
         filename: ci/win_test_release.cmd
+      condition: eq(1,2)
       displayName: "Test NEURON"
 
     - pwsh: |
