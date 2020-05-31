@@ -112,6 +112,17 @@ jobs:
     MSYS2_ROOT: C:\msys64
     HTTP_RETRIES: 4
   steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '2.7'
+      condition: eq(1,1)
+      displayName: "Choose System Python"
+    - script: |
+        @echo on
+        python --version
+        python -m pip install numpy
+        set PATH=C:\xxxx:%PATH%
+        set MYVAR=pppp
     - pwsh: |
         Get-Childitem 'C:\' -depth 1 -directory
         Get-Childitem 'C:\Program Files (x86)\Microsoft Visual Studio' -depth 5
@@ -130,6 +141,10 @@ jobs:
         dir C:\nrn
       displayName: "Install NRN"
       condition: eq(1,2)
+    - script: |
+        @echo on
+        echo %PATH%
+        set
     - script: |
         @echo on
         set PATH=C:\nrn\bin;%PATH%
@@ -202,7 +217,7 @@ jobs:
 
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.6'
+        versionSpec: '2.7'
       condition: eq(1,1)
       displayName: "Choose System Python"
 
