@@ -8,9 +8,6 @@ export MINGW_CHOST=x86_64-w64-mingw32
 export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
-cat /c/Python38/lib/distutils/cygwinccompiler.py
-cat /c/Python27/lib/distutils/cygwinccompiler.py
-
 mkdir -p $BUILD_SOURCESDIRECTORY/build
 cd $BUILD_SOURCESDIRECTORY/build
 
@@ -22,7 +19,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_ENABLE_INTERVIEWS=ON  \
 	-DNRN_ENABLE_PYTHON=ON  \
 	-DNRN_ENABLE_RX3D=ON  \
-    -DNRN_RX3D_OPT_LEVEL=2 \
+	-DNRN_RX3D_OPT_LEVEL=2 \
 	-DPYTHON_EXECUTABLE=/c/Python35/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
 	-DNRN_PYTHON_DYNAMIC='c:/Python35/python.exe;c:/Python36/python.exe;c:/Python37/python.exe;c:/Python38/python.exe;c:/Python27/python.exe'  \

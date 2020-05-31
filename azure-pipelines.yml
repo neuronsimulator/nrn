@@ -123,7 +123,7 @@ jobs:
       displayName: "Install Dependencies"
       condition: and(succeeded(), eq(1,1))
     - script: |
-        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
+        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
       displayName: "Build and Create Installer"
       condition: and(succeeded(), eq(1,1))
     - task: UsePythonVersion@0
