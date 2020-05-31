@@ -143,10 +143,12 @@ jobs:
         gitHubConnection: neuronsimulator-installers
         repositoryName: neuronsimulator/installers
         action: edit
-        target: $(Build.SourceVersion)
+        target: 'a5fedb875755de45377ab6a23058507e55fc313f'
         tagSource: manual
         tag: nightly
-        title: 'Nightly NEURON Release'
+        title: 'Nightly NEURON Developer Snapshot'
+        releaseNotesSource: input
+        releaseNotes: "Last NEURON Commit: $(Build.SourceVersionMessage)"
         isPreRelease: true
         assetUploadMode: replace
         addChangeLog: false
