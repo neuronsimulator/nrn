@@ -138,7 +138,7 @@ jobs:
     - task: GithubRelease@0
       inputs:
         gitHubConnection: pramodk-nrn-fork
-        repositoryName: pramodk/nrn
+        repositoryName: neuronsimulator/installers
         action: edit
         tagSource: manual
         tag: nightly
