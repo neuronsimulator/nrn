@@ -112,21 +112,11 @@ jobs:
     MSYS2_ROOT: C:\msys64
   continueOnError: false
   steps:
-    - pwsh: |
-        :: python
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.6.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi
-        :: mpi
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisetup.exe https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisetup.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile msmpisdk.msi https://download.microsoft.com/download/a/5/2/a5207ca5-1203-491a-8fb8-906fd68ae623/msmpisdk.msi
-        :: nsis + plugin
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile nsis-3-05.exe https://fossies.org/windows/misc/nsis-3.05-setup.exe
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile EnVar_pugin.zip https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip
-      condition: and(succeeded(), eq(1,1))
+    - task: BatchScript@1
+      inputs:
+        filename: ci/win_download_deps.cmd
       displayName: "Download Dependencies"
+      condition: and(succeeded(), eq(1,1))
     - script: |
         :: install python
         python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python35
