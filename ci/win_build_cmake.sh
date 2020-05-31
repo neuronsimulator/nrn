@@ -1,6 +1,7 @@
 #!/bin/bash
 set -ex
 
+# standard env variables from ming2 shell
 export MSYSTEM_CHOST=x86_64-w64-mingw32
 export MSYSTEM=MINGW64
 export MINGW_PREFIX=/mingw64
@@ -11,6 +12,7 @@ export PATH=/mingw64/bin:$PATH
 mkdir -p $BUILD_SOURCESDIRECTORY/build
 cd $BUILD_SOURCESDIRECTORY/build
 
+# build and create installer
 /mingw64/bin/cmake .. \
 	-G 'Unix Makefiles'  \
 	-DNRN_ENABLE_MPI_DYNAMIC=ON  \
@@ -30,3 +32,6 @@ cd $BUILD_SOURCESDIRECTORY/build
 make -j
 make install
 make setup_exe
+
+# copy installer with fixed name for nightly upload
+cp src/mswin/nrn*AMD64.exe $BUILD_SOURCESDIRECTORY/nrn-nightly-AMD64.exe

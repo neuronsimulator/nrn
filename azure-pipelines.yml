@@ -136,7 +136,7 @@ jobs:
       displayName: "Test Installer"
       condition: and(succeeded(), eq(1,2))
     - pwsh: |
-        Invoke-WebRequest -MaximumRetryCount 4 -OutFile nrn8.0setup-AMD64.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
+        Invoke-WebRequest -MaximumRetryCount 4 -OutFile nrn-nightly-AMD64.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
       displayName: "Download Installer"
     - task: GithubRelease@0
       inputs:
@@ -153,6 +153,6 @@ jobs:
         assetUploadMode: replace
         addChangeLog: false
         assets: |
-          $(Build.SourcesDirectory)\nrn8.0setup-AMD64.exe
+          $(Build.SourcesDirectory)\nrn-nightly-AMD64.exe
       displayName: 'Upload Installer'
       condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule', 'IndividualCI', 'PullRequest'))
