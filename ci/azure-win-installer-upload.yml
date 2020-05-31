@@ -1,0 +1,36 @@
+steps:
+
+  - pwsh: |
+      Invoke-WebRequest -MaximumRetryCount 4 -OutFile nrn-nightly-AMD64.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '2.7'
+    displayName: "Use System Python"
+
+  - task: BatchScript@1
+    inputs:
+      filename: ci/win_test_installer.cmd
+    displayName: "Test Installer"
+    condition: and(succeeded(), eq(1,2))
+
+  - task: GithubRelease@0
+    inputs:
+      gitHubConnection: neuronsimulator-installers
+      repositoryName: neuronsimulator/installers
+      action: edit
+      # note : if previous release doesn't exist, as we are pushing
+      # to different repository, we must need to provide commit id.
+      target: 'a5fedb875755de45377ab6a23058507e55fc313f'
+      tagSource: manual
+      tag: nightly
+      title: 'Nightly NEURON Developer Snapshot'
+      releaseNotesSource: input
+      releaseNotes: "Last NEURON Commit: $(Build.SourceVersionMessage)"
+      isPreRelease: true
+      assetUploadMode: replace
+      addChangeLog: false
+      assets: |
+        $(Build.SourcesDirectory)\nrn-nightly-AMD64.exe
+    displayName: 'Upload Installer'
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule', 'IndividualCI', 'PullRequest'))
