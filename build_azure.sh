@@ -8,17 +8,11 @@ export MINGW_CHOST=x86_64-w64-mingw32
 export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
-#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python35/lib/distutils/cygwinccompiler.py
-#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python36/lib/distutils/cygwinccompiler.py
-#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python37/lib/distutils/cygwinccompiler.py
-#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python38/lib/distutils/cygwinccompiler.py
-#sed -i "s/return \['msvcr100'\]/return \['msvcrt'\]/g" /c/Python3*/lib/distutils/cygwinccompiler.py
-#
-## python 27 cygwinccompiler.py doesn't need to update msc_ver
-#sed -i "s/return \['msvcr90'\]/return \['msvcrt'\]/g" /c/Python2*/lib/distutils/cygwinccompiler.py
+cat /c/Python38/lib/distutils/cygwinccompiler.py
+cat /c/Python27/lib/distutils/cygwinccompiler.py
 
-cd $BUILD_SOURCESDIRECTORY
-mkdir -p build && cd build
+mkdir -p $BUILD_SOURCESDIRECTORY/build
+cd $BUILD_SOURCESDIRECTORY/build
 
 /mingw64/bin/cmake .. \
 	-G 'Unix Makefiles'  \
@@ -28,6 +22,7 @@ mkdir -p build && cd build
 	-DNRN_ENABLE_INTERVIEWS=ON  \
 	-DNRN_ENABLE_PYTHON=ON  \
 	-DNRN_ENABLE_RX3D=ON  \
+    -DNRN_RX3D_OPT_LEVEL=2 \
 	-DPYTHON_EXECUTABLE=/c/Python35/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
 	-DNRN_PYTHON_DYNAMIC='c:/Python35/python.exe;c:/Python36/python.exe;c:/Python37/python.exe;c:/Python38/python.exe;c:/Python27/python.exe'  \

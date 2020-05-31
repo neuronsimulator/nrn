@@ -1,6 +1,6 @@
 @echo on
 
-:: install all installers
+:: install all dependencies
 
 :: install python
 start /wait msiexec /i python-2.7.msi /norestart /qn TARGETDIR="C:\Python27" ADDLOCAL=ALL || goto :error
@@ -46,9 +46,8 @@ copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll" || goto :error
 cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\' || goto :error
 cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\' || goto :error
 
-:: install msys2 / mingw packages
+:: install msys2 / mingw packages. NOTE : do not goto error because msys2 is already installed and might fail
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
-
 choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 
 %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
