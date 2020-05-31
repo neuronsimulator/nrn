@@ -8,14 +8,14 @@ export MINGW_CHOST=x86_64-w64-mingw32
 export MSYSTEM_PREFIX=/mingw64
 export PATH=/mingw64/bin:$PATH
 
-sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python35/lib/distutils/cygwinccompiler.py
-sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python36/lib/distutils/cygwinccompiler.py
-sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python37/lib/distutils/cygwinccompiler.py
-sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python38/lib/distutils/cygwinccompiler.py
-sed -i "s/return \['msvcr100'\]/return \['msvcrt'\]/g" /c/Python3*/lib/distutils/cygwinccompiler.py
-
-# python 27 cygwinccompiler.py doesn't need to update msc_ver
-sed -i "s/return \['msvcr90'\]/return \['msvcrt'\]/g" /c/Python2*/lib/distutils/cygwinccompiler.py
+#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python35/lib/distutils/cygwinccompiler.py
+#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python36/lib/distutils/cygwinccompiler.py
+#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1900':/g" /c/Python37/lib/distutils/cygwinccompiler.py
+#sed -i "s/elif msc_ver == '1600':/elif msc_ver == '1916':/g" /c/Python38/lib/distutils/cygwinccompiler.py
+#sed -i "s/return \['msvcr100'\]/return \['msvcrt'\]/g" /c/Python3*/lib/distutils/cygwinccompiler.py
+#
+## python 27 cygwinccompiler.py doesn't need to update msc_ver
+#sed -i "s/return \['msvcr90'\]/return \['msvcrt'\]/g" /c/Python2*/lib/distutils/cygwinccompiler.py
 
 cd $BUILD_SOURCESDIRECTORY
 mkdir -p build && cd build
