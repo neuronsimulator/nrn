@@ -85,6 +85,8 @@ copy() {
 copy mingw64/bin '
 as.exe
 ld.exe
+zlib1.dll
+libzstd.dll
 x86_64-w64-mingw32-gcc.exe
 '
 cp_dlls $NM/mingw64/bin $NM/mingw64/bin

@@ -194,16 +194,16 @@ SectionEnd
 ;FunctionEnd
 
 ; optional section
-Section /o "Documentation"
-  SetOutPath "$INSTDIR"
-  File /nonfatal /r "${MARSHALNRN}\..\nrnhtml"
-  IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
-    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
-next:
-  IfFileExists "$INSTDIR\lib\deskinst.dat" +1 next2
-    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
-next2:
-SectionEnd
+;Section /o "Documentation"
+;  SetOutPath "$INSTDIR"
+;  File /nonfatal /r "${MARSHALNRN}\..\nrnhtml"
+;  IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
+;    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
+;next:
+;  IfFileExists "$INSTDIR\lib\deskinst.dat" +1 next2
+;    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
+;next2:
+;SectionEnd
 
 ; uninstall stuff
 

@@ -18,7 +18,7 @@ srcdir="@PROJECT_SOURCE_DIR@"
 
 # Minimal runtime msmpi
 if test "@MPI_FOUND@" = "TRUE" ; then
-  mpiinst=@MPI_INCLUDE_PATH@/..
+  mpiinst=@MPI_C_HEADER_DIR@/..
   cp $mpiinst/bin/mpiexec.exe $N/bin
   cp $mpiinst/bin/smpd.exe $N/bin
   cp $mpiinst/lib/x64/msmpi.dll $N/bin
