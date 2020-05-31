@@ -123,61 +123,8 @@ jobs:
       displayName: "Install Dependencies"
       condition: and(succeeded(), eq(1,1))
     - script: |
-        :: install python
-        python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python35
-        python-3.6.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python36
-        python-3.7.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python37
-        python-3.8.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python38
-        start /wait msiexec /i python-2.7.msi /norestart /qn TARGETDIR="C:\Python27" ADDLOCAL=ALL
-        :: install numpy
-        C:\Python35\python.exe -m pip install numpy
-        C:\Python36\python.exe -m pip install numpy
-        C:\Python37\python.exe -m pip install numpy
-        C:\Python38\python.exe -m pip install numpy
-        C:\Python27\python.exe -m pip install numpy
-        :: install nsis
-        nsis-3-05.exe /S
-        pwsh -command Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS"
-        :: install mpi
-        msmpisetup.exe -unattend -installroot C:\msmpi
-        start /wait msiexec /i msmpisdk.msi /norestart /qn INSTALLDIR="C:\msmpi" ADDLOCAL=ALL
-        rename C:\msmpi\Bin  bin
-        rename C:\msmpi\Lib  lib
-        rename C:\msmpi\Include include
-        copy "c:\Windows\System32\msmpi.dll" "c:\msmpi\lib\x64\msmpi.dll"
-        copy "c:\Windows\SysWoW64\msmpi.dll" "c:\msmpi\lib\x86\msmpi.dll"
-        :: copy files to necessary directories
-        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rc.exe' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
-        cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\'
-      condition: and(succeeded(), eq(1,1))
-      displayName: "Install Depdendencies"
-    - script: |
-        set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
-        choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath"
-        %MSYS2_ROOT%\usr\bin\pacman --noconfirm --needed -S --disable-download-timeout ^
-        git ^
-        zip ^
-        unzip ^
-        base-devel ^
-        mingw-w64-x86_64-cmake ^
-        mingw-w64-x86_64-ncurses ^
-        mingw-w64-x86_64-readline ^
-        mingw-w64-x86_64-python2 ^
-        mingw-w64-x86_64-python3 ^
-        mingw64/mingw-w64-x86_64-cython ^
-        mingw-w64-x86_64-python3-setuptools ^
-        mingw-w64-x86_64-python3-pip ^
-        mingw-w64-x86_64-toolchain
-      displayName: "Install MSYS & MING2 Packages"
-      condition: and(succeeded(), eq(1,1))
-    - script: |
         %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/build_azure.sh"
       displayName: "Build and Create Installer"
-      condition: and(succeeded(), eq(1,1))
-    - script: |
-        .\build\src\mswin\nrn8.0setup-AMD64.exe /S
-        dir C:\nrn\lib\python\neuron
-      displayName: "Install Installer"
       condition: and(succeeded(), eq(1,1))
     - task: UsePythonVersion@0
       inputs:
