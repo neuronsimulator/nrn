@@ -6,8 +6,8 @@ python -m pip install numpy
 :: install installer
 ::pwsh -command Invoke-WebRequest -MaximumRetryCount 3 -OutFile nrn.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
 ::.\nrn.exe /S /D=C:\nrn_test
-.\build\src\mswin\nrn8.0setup-AMD64.exe /S
-dir C:\nrn
+::.\build\src\mswin\nrn8.0setup-AMD64.exe /S
+::dir C:\nrn
 .\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn_test
 
 :: setup environment
