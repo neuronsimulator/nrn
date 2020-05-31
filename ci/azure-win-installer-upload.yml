@@ -21,7 +21,7 @@ steps:
       action: edit
       # note : if previous release doesn't exist, as we are pushing
       # to different repository, we must need to provide commit id.
-      target: 'a5fedb875755de45377ab6a23058507e55fc313f'
+      target: '9d7b1e26717bd207f7ae6114f78f7ab7b958c998'
       tagSource: manual
       tag: nightly
       title: 'Nightly NEURON Developer Snapshot'

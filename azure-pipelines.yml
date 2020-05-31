@@ -105,25 +105,32 @@ jobs:
 
   - template: ci/azure-wheel-test-upload.yml
 
+
+# Jobs to build NEURON installer natively
 - job: 'WindowsInstaller'
+
   pool:
     vmImage: windows-2019
   variables:
     MSYS2_ROOT: C:\msys64
-  continueOnError: false
+
   steps:
+
   - task: BatchScript@1
     inputs:
       filename: ci/win_download_deps.cmd
     displayName: "Download Dependencies"
     condition: and(succeeded(), eq(1,2))
+
   - task: BatchScript@1
     inputs:
       filename: ci/win_install_deps.cmd
     displayName: "Install Dependencies"
     condition: and(succeeded(), eq(1,2))
+
   - script: |
       %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
     displayName: "Build and Create Installer"
     condition: and(succeeded(), eq(1,2))
+
   - template: ci/azure-win-installer-upload.yml
