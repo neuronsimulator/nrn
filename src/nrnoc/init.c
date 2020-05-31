@@ -129,6 +129,7 @@ static HocParmUnits _hoc_parm_units[] = {
 };
 
 extern Symlist* nrn_load_dll_called_;
+extern int nrn_load_dll_recover_error();
 extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
 Memb_func* memb_func;
@@ -497,14 +498,22 @@ void nrn_register_mech_common(
 /*printf("%s %s\n", m[0], m[1]);*/
 	if (strcmp(m[0], "0") == 0) { /* valid by nature */
 	}else if (m[0][0] > '9') { /* must be 5.1 or before */
-fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+Fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
 It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n", m[0]);
-		nrn_exit(1);
+		if (nrn_load_dll_recover_error()) {
+			hoc_execerror("Mechanism needs to be retranslated:", m[0]);
+		}else{
+			nrn_exit(1);
+		}
 	}else if (strcmp(m[0], nmodl_version_) != 0){
-fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+Fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
 It's version %s \"c\" code is incompatible with this neuron version.\n",
-			m[1], m[0]);
-		nrn_exit(1);
+m[1], m[0]);
+		if (nrn_load_dll_recover_error()) {
+			hoc_execerror("Mechanism needs to be retranslated:", m[1]);
+		}else{
+			nrn_exit(1);
+		}
 	}
 
 	s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
