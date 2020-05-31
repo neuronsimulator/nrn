@@ -139,7 +139,7 @@ jobs:
       inputs:
         gitHubConnection: pramodk-nrn-fork
         repositoryName: neuronsimulator/installers
-        action: edit
+        action: create
         tagSource: manual
         tag: nightly
         title: 'Nightly NEURON Release'
