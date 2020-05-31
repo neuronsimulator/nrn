@@ -4,7 +4,7 @@
 python -m pip install numpy
 
 :: install installer
-.\build\src\mswin\nrn8.0setup-AMD64.exe /S /D=C:\nrn_test
+.\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
 
 :: setup environment
 dir C:\nrn_test

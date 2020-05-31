@@ -1,8 +1,5 @@
 steps:
 
-  - pwsh: |
-      Invoke-WebRequest -MaximumRetryCount 4 -OutFile nrn-nightly-AMD64.exe https://github.com/pramodk/nrn/releases/download/nightly/nrn8.0setup-AMD64.exe
-
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '2.7'
@@ -12,7 +9,7 @@ steps:
     inputs:
       filename: ci/win_test_installer.cmd
     displayName: "Test Installer"
-    condition: and(succeeded(), eq(1,2))
+    condition: succeeded()
 
   - task: GithubRelease@0
     inputs:
