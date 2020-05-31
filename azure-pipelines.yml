@@ -140,9 +140,10 @@ jobs:
       displayName: "Download Installer"
     - task: GithubRelease@0
       inputs:
-        gitHubConnection: pramodk-nrn-fork
+        gitHubConnection: neuronsimulator-installers
         repositoryName: neuronsimulator/installers
         action: edit
+        target: 'afcae2cd0c71a99262695c4a34e33c1111254cb9'
         tagSource: manual
         tag: nightly
         title: 'Nightly NEURON Release'
