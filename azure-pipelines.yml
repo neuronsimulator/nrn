@@ -130,11 +130,6 @@ jobs:
         dir C:\nrn
       displayName: "Install NRN"
       condition: eq(1,2)
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.6'
-      condition: eq(1,2)
-      displayName: "Choose System Python"
     - script: |
         @echo on
         set PATH=C:\nrn\bin;%PATH%
@@ -156,12 +151,6 @@ jobs:
         exit /b %errorlevel%
       condition: eq(1,2)
       displayName: "Test Python + MPI"
-
-    - task: BatchScript@1
-      inputs:
-        filename: ci/win_test_release.cmd
-      condition: eq(1,2)
-      displayName: "Test NEURON"
 
     - pwsh: |
         Invoke-WebRequest -MaximumRetryCount $env:HTTP_RETRIES -OutFile python-3.5.exe https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe
@@ -210,6 +199,18 @@ jobs:
 
       condition: eq(1,1)
       displayName: "Install Installers"
+
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.6'
+      condition: eq(1,1)
+      displayName: "Choose System Python"
+
+    - task: BatchScript@1
+      inputs:
+        filename: ci/win_test_release.cmd
+      condition: eq(1,1)
+      displayName: "Test NEURON"
 
     - script: |
         set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem
@@ -270,6 +271,7 @@ jobs:
         :: something has failed, teminate with error code
         :error
         exit /b %errorlevel%
+      condition: eq(1,2)
       displayName: "Test Python + MPI"
 
     - task: UsePythonVersion@0
@@ -281,6 +283,7 @@ jobs:
         set PATH=C:\nrn\bin;%PATH%
         set PYTHONPATH=C:\nrn\lib\python;%PYTHONPATH%
         set NEURONHOME=C:\nrn
+        python --version
         python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || goto :error
         nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || goto :error
         mpiexec -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2 || goto :error

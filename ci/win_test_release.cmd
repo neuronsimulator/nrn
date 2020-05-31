@@ -13,7 +13,15 @@ set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
 set NEURONHOME=C:\nrn_test
 
-:: run basic tests
+:: test all pythons
+C:\Python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
+
+:: run also using whatever is system python
+python --version
 python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || goto :error
 
 :: test python and nrniv
