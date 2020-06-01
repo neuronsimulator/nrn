@@ -31,22 +31,6 @@ nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
 mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || goto :error
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || goto :error
 
-:: setup for mknrndll/nrnivmodl
-set N=C:\nrn_test
-set PATH=C:\nrn_test\mingw\usr\bin;%PATH%
-
-:: test mknrndll
-copy /A share\examples\nrniv\nmodl\cacum.mod .
-C:\nrn_test\mingw\usr\bin\bash -c "mknrndll" || goto :error
-python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || goto :error
-
-:: test nrnivmodl
-rm -f cacum* mod_func* nrnmech.dll
-copy /A share\examples\nrniv\nmodl\cacum.mod .
-call nrnivmodl
-echo "nrnivmodl successfull"
-python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || goto :error
-
 :: test of association with hoc files
 del temp.txt
 echo wopen("temp.txt") > .\temp.hoc
@@ -57,6 +41,22 @@ start .\temp.hoc
 ping -n 10 127.0.0.1
 cat temp.txt
 findstr /i "^hello$" temp.txt || goto :error
+
+:: setup for mknrndll/nrnivmodl
+set N=C:\nrn_test
+set PATH=C:\nrn_test\mingw\usr\bin;%PATH%
+
+:: test mknrndll
+copy /A share\examples\nrniv\nmodl\cacum.mod .
+C:\nrn_test\mingw\usr\bin\bash -c "mknrndll" || goto :error
+python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || goto :error
+
+:: test nrnivmodl
+rm -f cacum* mod_func* nrnmech.dll
+copy /A share\examples\nrniv\nmodl\cacum.mod .
+call nrnivmodl
+echo "nrnivmodl successfull"
+python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || goto :error
 
 echo "All tests finished!"
 
