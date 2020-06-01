@@ -12,6 +12,8 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 # include	<stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "section.h"
@@ -203,12 +205,33 @@ int nrn_is_artificial(int pnttype) {
 
 int nrn_is_cable(void) {return 1;}
 
-int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
+void* nrn_realpath_dlopen(const char* relpath, int flags) {
+  char* abspath = NULL;
+  void* handle = NULL;
+#if defined(HAVE_REALPATH)
+  abspath = realpath(relpath, NULL);
+#else
+  abspath = strdup(relpath);
+#endif
+  if (abspath) {
+    handle = dlopen(abspath, flags);
+    free(abspath);
+  }else{
+    int patherr = errno;
+    handle = dlopen(relpath, flags);
+    if (!handle) {
+      Fprintf(stderr, "realpath failed errno=%d (%s) and dlopen failed with %s\n", patherr, strerror(patherr), relpath);
+    }
+  }
+  return handle;
+}
+
+int mswin_load_dll(const char* cp1) {
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
-	handle = dlopen(cp1, RTLD_NOW);
+	handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
 	if (handle) {
 		Pfrv mreg = (Pfrv)dlsym(handle, "modl_reg");
 		if (mreg) {
