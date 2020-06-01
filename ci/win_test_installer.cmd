@@ -43,7 +43,8 @@ python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum
 :: test nrnivmodl
 rm -f cacum* mod_func* nrnmech.dll
 copy /A share\examples\nrniv\nmodl\cacum.mod .
-nrnivmodl
+call nrnivmodl
+echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()" || goto :error
 
 :: test of association with hoc files
