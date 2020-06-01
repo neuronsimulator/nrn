@@ -29,5 +29,5 @@ steps:
       addChangeLog: false
       assets: |
         $(Build.SourcesDirectory)\nrn-nightly-AMD64.exe
-    displayName: 'Upload Installer'
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule', 'IndividualCI', 'PullRequest'))
+    displayName: 'Upload installer to GitHub'
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'))
