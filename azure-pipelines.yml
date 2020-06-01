@@ -22,6 +22,7 @@ trigger:
 jobs:
 
 - job: 'ManyLinuxWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -57,6 +58,7 @@ jobs:
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'macOS-10.15'
   strategy:
@@ -105,7 +107,7 @@ jobs:
 
 # Jobs to build NEURON installer natively
 - job: 'WindowsInstaller'
-
+  timeoutInMinutes: 45
   pool:
     vmImage: windows-2019
   variables:
