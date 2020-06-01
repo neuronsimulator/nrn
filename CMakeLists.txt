@@ -418,6 +418,12 @@ if(MINGW)
   install(PROGRAMS ${BASH_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
 endif()
 
+if (NRN_LINUX_BUILD)
+  SET(CPACK_GENERATOR "DEB")
+  SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "MichaelHines")
+  INCLUDE(CPack)
+endif()
+
 # =============================================================================
 # Print build status
 # =============================================================================
