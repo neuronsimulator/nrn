@@ -13,9 +13,9 @@
  */
 
 #include <memory>
-#include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "visitors/ast_visitor.hpp"
@@ -127,7 +127,7 @@ class KineticBlockVisitor: public AstVisitor {
     std::vector<ast::KineticBlock*> kinetic_blocks;
 
     /// statements to remove from block
-    std::set<ast::Node*> statements_to_remove;
+    std::unordered_set<ast::Statement*> statements_to_remove;
 
     /// current statement block being visited
     ast::StatementBlock* current_statement_block = nullptr;
