@@ -31,7 +31,11 @@ jobs:
       cmake --version 
       cmake .. -DPYTHON_EXECUTABLE=$(which python3.7) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=Release
       make -j 2
-      make test
+      if [ $? -ne 0 ]
+      then
+        make VERBOSE=1
+      fi
+      env CTEST_OUTPUT_ON_FAILURE=1 make test
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
     displayName: 'Build and Run Tests'

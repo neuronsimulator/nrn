@@ -9,18 +9,14 @@
 
 #include <algorithm>
 
-#include <pybind11/embed.h>
-#include <pybind11/stl.h>
-
 #include "ast/all.hpp"
+#include "pybind/pyembed.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
-
-namespace py = pybind11;
-using namespace py::literals;
+namespace pywrap = nmodl::pybind_wrappers;
 
 namespace nmodl {
 namespace visitor {
@@ -79,26 +75,14 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
                                                  ordered_binary_exprs.begin() +
                                                      binary_expr_index[lhs_str] + 1);
             // differentiate dI/dV
-            auto locals = py::dict("expressions"_a = expressions, "vars"_a = used_names_in_block);
-            py::exec(R"(
-                            from nmodl.ode import differentiate2c
-                            exception_message = ""
-                            try:
-                                rhs = expressions[-1].split("=", 1)[1]
-                                solution = differentiate2c(rhs,
-                                                           "v",
-                                                           vars,
-                                                           expressions[:-1]
-                                           )
-                            except Exception as e:
-                                # if we fail, fail silently and return empty string
-                                solution = ""
-                                exception_message = str(e)
-                        )",
-                     py::globals(),
-                     locals);
-            auto dIdV = locals["solution"].cast<std::string>();
-            auto exception_message = locals["exception_message"].cast<std::string>();
+            auto analytic_diff =
+                pywrap::EmbeddedPythonLoader::get_instance().api()->create_ads_executor();
+            analytic_diff->expressions = expressions;
+            analytic_diff->used_names_in_block = used_names_in_block;
+            (*analytic_diff)();
+            auto dIdV = analytic_diff->solution;
+            auto exception_message = analytic_diff->exception_message;
+            pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_ads_executor(analytic_diff);
             if (!exception_message.empty()) {
                 logger->warn("SympyConductance :: python exception: {}", exception_message);
             }

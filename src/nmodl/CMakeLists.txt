@@ -15,12 +15,13 @@ target_link_libraries(
   visitor
   symtab
   util
-  lexer)
+  lexer
+  ${NMODL_WRAPPER_LIBS})
 
 # =============================================================================
 # Add dependency with nmodl pytnon module (for consumer projects)
 # =============================================================================
-add_dependencies(nmodl _nmodl)
+add_dependencies(nmodl _nmodl pywrapper)
 
 # =============================================================================
 # Install executable

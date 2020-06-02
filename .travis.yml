@@ -103,7 +103,7 @@ script:
   - cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
   - make -j 2;
     if [ $? -ne 0 ]; then
-        make VERBOSE=1;
+      make VERBOSE=1;
     fi
   - env CTEST_OUTPUT_ON_FAILURE=1 make test
   - make install
@@ -118,11 +118,10 @@ after_success:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       echo "------- Build Documentation -------";
       python3 setup.py build_ext --inplace docs -j 2 -G "Unix Makefiles" || travis_terminate 1;
-      cd $TRAVIS_BUILD_DIR/docs;
-      rm -rf _build/doctrees && touch _build/.nojekyll;
-      echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > _build/index.html;
+      cd $TRAVIS_BUILD_DIR/_skbuild/linux-x86_64-3.8/setuptools/sphinx;
+      rm -rf doctrees && touch html/.nojekyll;
+      echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > html/index.html;
     fi
-
   - echo "------- Build and Test CoreNEURON -------"
   - cd $HOME
   - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
