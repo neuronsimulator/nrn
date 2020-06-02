@@ -7,10 +7,10 @@
 
 #include "visitors/sympy_solver_visitor.hpp"
 
-#include <pybind11/pytypes.h>
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "pybind/pyembed.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
@@ -18,8 +18,7 @@
 #include "visitors/visitor_utils.hpp"
 
 
-namespace py = pybind11;
-using namespace py::literals;
+namespace pywrap = nmodl::pybind_wrappers;
 
 namespace nmodl {
 namespace visitor {
@@ -275,36 +274,21 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
     init_state_vars_vector();
     // call sympy linear solver
     bool small_system = (eq_system.size() <= SMALL_LINEAR_SYSTEM_MAX_STATES);
-    auto locals = py::dict("eq_strings"_a = eq_system,
-                           "state_vars"_a = state_vars,
-                           "vars"_a = vars,
-                           "small_system"_a = small_system,
-                           "do_cse"_a = elimination,
-                           "function_calls"_a = function_calls);
-    py::exec(R"(
-                from nmodl.ode import solve_lin_system
-                exception_message = ""
-                try:
-                    solutions, new_local_vars = solve_lin_system(eq_strings,
-                                                                 state_vars,
-                                                                 vars,
-                                                                 function_calls,
-                                                                 small_system,
-                                                                 do_cse)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solutions = [""]
-                    new_local_vars = [""]
-                    exception_message = str(e)
-                )",
-             py::globals(),
-             locals);
+    auto solver = pywrap::EmbeddedPythonLoader::get_instance().api()->create_sls_executor();
+    solver->eq_system = eq_system;
+    solver->state_vars = state_vars;
+    solver->vars = vars;
+    solver->small_system = small_system;
+    solver->elimination = elimination;
+    solver->function_calls = function_calls;
+    (*solver)();
     // returns a vector of solutions, i.e. new statements to add to block:
-    auto solutions = locals["solutions"].cast<std::vector<std::string>>();
+    auto solutions = solver->solutions;
     // and a vector of new local variables that need to be declared in the block:
-    auto new_local_vars = locals["new_local_vars"].cast<std::vector<std::string>>();
+    auto new_local_vars = solver->new_local_vars;
     // may also return a python exception message:
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto exception_message = solver->exception_message;
+    pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_sls_executor(solver);
     if (!exception_message.empty()) {
         logger->warn("SympySolverVisitor :: solve_lin_system python exception: " +
                      exception_message);
@@ -352,30 +336,18 @@ void SympySolverVisitor::solve_non_linear_system(
     // construct ordered vector of state vars used in non-linear system
     init_state_vars_vector();
     // call sympy non-linear solver
-    auto locals = py::dict("equation_strings"_a = eq_system,
-                           "state_vars"_a = state_vars,
-                           "vars"_a = vars,
-                           "function_calls"_a = function_calls);
-    py::exec(R"(
-                from nmodl.ode import solve_non_lin_system
-                exception_message = ""
-                try:
-                    solutions = solve_non_lin_system(equation_strings,
-                                                     state_vars,
-                                                     vars,
-                                                     function_calls)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solutions = [""]
-                    new_local_vars = [""]
-                    exception_message = str(e)
-                )",
-             py::globals(),
-             locals);
+
+    auto solver = pywrap::EmbeddedPythonLoader::get_instance().api()->create_nsls_executor();
+    solver->eq_system = eq_system;
+    solver->state_vars = state_vars;
+    solver->vars = vars;
+    solver->function_calls = function_calls;
+    (*solver)();
     // returns a vector of solutions, i.e. new statements to add to block:
-    auto solutions = locals["solutions"].cast<std::vector<std::string>>();
+    auto solutions = solver->solutions;
     // may also return a python exception message:
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto exception_message = solver->exception_message;
+    pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_nsls_executor(solver);
     if (!exception_message.empty()) {
         logger->warn("SympySolverVisitor :: solve_non_lin_system python exception: " +
                      exception_message);
@@ -424,47 +396,24 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     check_expr_statements_in_same_block();
 
     const auto node_as_nmodl = to_nmodl_for_sympy(node);
-    const auto locals = py::dict("equation_string"_a = node_as_nmodl,
-                                 "dt_var"_a = codegen::naming::NTHREAD_DT_VARIABLE,
-                                 "vars"_a = vars,
-                                 "use_pade_approx"_a = use_pade_approx,
-                                 "function_calls"_a = function_calls);
-
+    auto diffeq_solver = pywrap::EmbeddedPythonLoader::get_instance().api()->create_des_executor();
+    diffeq_solver->node_as_nmodl = node_as_nmodl;
+    diffeq_solver->dt_var = codegen::naming::NTHREAD_DT_VARIABLE;
+    diffeq_solver->vars = vars;
+    diffeq_solver->use_pade_approx = use_pade_approx;
+    diffeq_solver->function_calls = function_calls;
+    diffeq_solver->method = solve_method;
+    (*diffeq_solver)();
     if (solve_method == codegen::naming::EULER_METHOD) {
-        logger->debug("SympySolverVisitor :: EULER - solving: {}", node_as_nmodl);
         // replace x' = f(x) differential equation
         // with forwards Euler timestep:
         // x = x + f(x) * dt
-        py::exec(R"(
-                from nmodl.ode import forwards_euler2c
-                exception_message = ""
-                try:
-                    solution = forwards_euler2c(equation_string, dt_var, vars, function_calls)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solution = ""
-                    exception_message = str(e)
-            )",
-                 py::globals(),
-                 locals);
+        logger->debug("SympySolverVisitor :: EULER - solving: {}", node_as_nmodl);
     } else if (solve_method == codegen::naming::CNEXP_METHOD) {
         // replace x' = f(x) differential equation
         // with analytic solution for x(t+dt) in terms of x(t)
         // x = ...
         logger->debug("SympySolverVisitor :: CNEXP - solving: {}", node_as_nmodl);
-        py::exec(R"(
-                from nmodl.ode import integrate2c
-                exception_message = ""
-                try:
-                    solution = integrate2c(equation_string, dt_var, vars,
-                                           use_pade_approx)
-                except Exception as e:
-                    # if we fail, fail silently and return empty string
-                    solution = ""
-                    exception_message = str(e)
-            )",
-                 py::globals(),
-                 locals);
     } else {
         // for other solver methods: just collect the ODEs & return
         std::string eq_str = to_nmodl_for_sympy(node);
@@ -487,10 +436,11 @@ void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     }
 
     // replace ODE with solution in AST
-    auto solution = locals["solution"].cast<std::string>();
+    auto solution = diffeq_solver->solution;
     logger->debug("SympySolverVisitor :: -> solution: {}", solution);
 
-    auto exception_message = locals["exception_message"].cast<std::string>();
+    auto exception_message = diffeq_solver->exception_message;
+    pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_des_executor(diffeq_solver);
     if (!exception_message.empty()) {
         logger->warn("SympySolverVisitor :: python exception: " + exception_message);
         return;

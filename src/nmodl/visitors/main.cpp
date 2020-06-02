@@ -8,11 +8,11 @@
 #include <sstream>
 
 #include "CLI/CLI.hpp"
-#include "pybind11/embed.h"
 
 #include "ast/program.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
+#include "pybind/pyembed.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
@@ -88,7 +88,7 @@ int main(int argc, const char* argv[]) {
         {std::make_shared<UnitsVisitor>(NrnUnitsLib::get_path()), "units", "UnitsVisitor"},
     };
 
-    pybind11::initialize_interpreter();
+    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->initialize_interpreter();
 
     for (const auto& filename: files) {
         logger->info("Processing {}", filename);
@@ -111,7 +111,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    pybind11::finalize_interpreter();
+    nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->finalize_interpreter();
 
     return 0;
 }

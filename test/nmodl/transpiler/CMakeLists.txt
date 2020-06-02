@@ -60,7 +60,8 @@ target_link_libraries(
   lexer
   util
   test_util
-  printer)
+  printer
+  ${NMODL_WRAPPER_LIBS})
 target_link_libraries(
   testvisitor
   visitor
@@ -68,7 +69,8 @@ target_link_libraries(
   lexer
   util
   test_util
-  printer)
+  printer
+  ${NMODL_WRAPPER_LIBS})
 target_link_libraries(testprinter printer util)
 target_link_libraries(testsymtab symtab lexer util)
 target_link_libraries(testunitlexer lexer util)
@@ -78,6 +80,18 @@ target_link_libraries(testunitparser lexer test_util config)
 # Use catch_discover instead of add_test for granular test report if CMAKE ver is greater than 3.9,
 # else use the normal add_test method
 # =============================================================================
+set(testvisitor_env "PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH}")
+if(NOT LINK_AGAINST_PYTHON)
+  list(APPEND testvisitor_env "NMODL_PYLIB=$ENV{NMODL_PYLIB}")
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    list(APPEND testvisitor_env
+                "NMODL_WRAPLIB=${PROJECT_BINARY_DIR}/lib/python/nmodl/libpywrapper.so")
+  elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    list(APPEND testvisitor_env
+                "NMODL_WRAPLIB=${PROJECT_BINARY_DIR}/lib/python/nmodl/libpywrapper.dylib")
+  endif()
+endif()
+
 foreach(
   test_name
   testmodtoken
@@ -91,13 +105,16 @@ foreach(
   testunitparser)
 
   if(${CMAKE_VERSION} VERSION_GREATER "3.10")
-    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                         PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
+    if(${test_name} STREQUAL "testvisitor")
+      catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                           "${testvisitor_env}")
+    else()
+      catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/")
+    endif()
   else()
     add_test(NAME ${test_name} COMMAND ${test_name})
     if(${test_name} STREQUAL "testvisitor")
-      set_tests_properties(${test_name}
-                           PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
+      set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${testvisitor_env}")
     endif()
   endif()
 endforeach()
@@ -105,11 +122,10 @@ endforeach()
 # =============================================================================
 # pybind11 tests
 # =============================================================================
-add_test(NAME "pytest/ode" COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                   ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
-add_test(NAME "pytest/pybind" COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                      ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
-foreach(test_name "pytest/ode" "pytest/pybind")
-  set_tests_properties(${test_name} PROPERTIES ENVIRONMENT
-                                               PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH})
+add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
+add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
+foreach(test_name Ode Pybind)
+  set_tests_properties(
+    ${test_name} PROPERTIES ENVIRONMENT
+                            PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:$ENV{PYTHONPATH})
 endforeach()

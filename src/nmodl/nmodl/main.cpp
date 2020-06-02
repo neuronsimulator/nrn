@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "CLI/CLI.hpp"
-#include "pybind11/embed.h"
 
 #include "ast/program.hpp"
 #include "codegen/codegen_acc_visitor.hpp"
@@ -22,6 +21,7 @@
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "parser/unit_driver.hpp"
+#include "pybind/pyembed.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
@@ -256,7 +256,9 @@ int main(int argc, const char* argv[]) {
     utils::make_path(scratch_dir);
 
     if (sympy_opt) {
-        pybind11::initialize_interpreter();
+        nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance()
+            .api()
+            ->initialize_interpreter();
     }
 
     if (verbose) {
@@ -478,6 +480,6 @@ int main(int argc, const char* argv[]) {
     }
 
     if (sympy_opt) {
-        pybind11::finalize_interpreter();
+        nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->finalize_interpreter();
     }
 }

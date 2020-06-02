@@ -24,4 +24,7 @@ endif()
 
 if(NOT LINK_AGAINST_PYTHON)
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
+  set(NMODL_WRAPPER_LIBS pyembed dl)
+else()
+  set(NMODL_WRAPPER_LIBS pyembed pywrapper dl)
 endif()

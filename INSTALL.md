@@ -83,7 +83,7 @@ export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
 
 If flex / bison are not in your default $PATH, you can provide the path to cmake as:
 
-```
+```sh
 cmake .. -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex \
          -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison \
          -DCMAKE_INSTALL_PREFIX=$HOME/nmodl
@@ -100,6 +100,32 @@ pip3 install --user .
 
 This should build the NMODL framework and install it into your pip user `site-packages` folder such that it becomes
 available as a Python module.
+
+### When building without linking against libpython
+
+NMODL uses an embedded python to symbolically evaluate differential equations. For this to work we would usually link
+against libpython, which is automatically taken care of by pybind11. In some cases, for instance when building a
+python wheel, we cannot link against libpython, because we cannot know where it will be at runtime. Instead, we load
+the python library (along with a wrapper library that manages calls to embedded python) at runtime.
+To disable linking against python and enabling dynamic loading of libpython at runtime we need to configure the build 
+with the cmake option `-DLINK_AGAINST_PYTHON=False`.
+
+In order for NMODL binaries to know where to find libpython and our own libpywrapper two environment variables need to
+be present:
+
+* `NMODL_PYLIB`: This variable should point to the libpython shared-object (or dylib) file. On macos this could be
+for example:
+````sh
+export NMODL_PYLIB=/usr/local/Cellar/python/3.7.7/Frameworks/Python.framework/Versions/3.7/Python
+````
+* 'NMODL_WRAPLIB': This variable should point to the `libpywrapper.so` built as part of NMODL, for example:
+```sh
+export NMODL_WRAPLIB=/opt/nmodl/lib/python/nmodl/libpywrapper.dylib
+```
+
+**Note**: In order for all unit tests to function correctly when building without linking against libpython we must
+set `NMODL_PYLIB` before running cmake!
+
 
 ## Testing the Installed Module
 
@@ -150,18 +176,8 @@ NMODL is now setup correctly!
 In order to build the documentation you must have additionally `pandoc` installed. Use your
 system's package manager to do this (e.g. `sudo apt-get install pandoc`).
 
-Once you have installed NMODL and setup the correct `$PYTHONPATH`, you can build the documentation locally from the 
-docs folder as:
-
-```
-cd docs
-doxygen   # for API documentation
-make html # for user documentation
-```
-
-Alternatively, you can install the documentation using the Python setuptools script:
+You can build the entire documentation simply by using sphinx from `setup.py`:
 
 ```sh
-python3 setup.py install_doc
+python3 setup.py build_ext --inplace docs -G "Unix Makefiles"
 ```
-
