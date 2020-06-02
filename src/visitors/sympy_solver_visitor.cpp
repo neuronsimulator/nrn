@@ -219,7 +219,7 @@ void SympySolverVisitor::construct_eigen_solver_block(
 
     block_with_expression_statements->erase_statement(it, statements.end());
     // also remove diff/linear/non-linear eq statements from the statement block
-    remove_statements_from_block(*block_with_expression_statements, expression_statements);
+    block_with_expression_statements->erase_statement(expression_statements);
     // move any local variable declarations into variable_block
     ast::StatementVector variable_statements;
     // remaining statements in block should go into initialize_block
@@ -339,7 +339,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
             ++it;
         }
         /// remove original lineq statements from the block
-        remove_statements_from_block(*block_with_expression_statements, expression_statements);
+        block_with_expression_statements->erase_statement(expression_statements);
     } else {
         // otherwise it returns a linear matrix system to solve
         logger->debug("SympySolverVisitor :: Constructing linear newton solve block");

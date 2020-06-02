@@ -122,29 +122,6 @@ std::shared_ptr<StatementBlock> create_statement_block(
     return statement_block;
 }
 
-
-void remove_statements_from_block(ast::StatementBlock& block,
-                                  const std::set<ast::Node*>& statements) {
-    const auto& statement_vec = block.get_statements();
-
-    // loosely following the cpp reference of remove_if
-
-    auto first = statement_vec.begin();
-    auto last = statement_vec.end();
-    auto result = first;
-
-    while (first != last) {
-        if (statements.find(first->get()) == statements.end()) {
-            block.reset_statement(result, *first);
-            ++result;
-        }
-        ++first;
-    }
-
-    block.erase_statement(result, last);
-}
-
-
 std::set<std::string> get_global_vars(const Program& node) {
     std::set<std::string> vars;
     if (auto* symtab = node.get_symbol_table()) {

@@ -14,8 +14,8 @@
 
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
-#include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "ast/ast.hpp"
@@ -129,7 +129,7 @@ class SympySolverVisitor: public AstVisitor {
 
     /// expression statements appearing in the block
     /// (these can be of type DiffEqExpression, LinEquation or NonLinEquation)
-    std::set<ast::Node*> expression_statements;
+    std::unordered_set<ast::Statement*> expression_statements;
 
     /// current expression statement being visited (to track ODEs / (non)lineqs)
     ast::ExpressionStatement* current_expression_statement;

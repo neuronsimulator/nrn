@@ -347,7 +347,7 @@ void KineticBlockVisitor::visit_statement_block(ast::StatementBlock& node) {
     current_statement_block = &node;
     node.visit_children(*this);
     // remove processed statements from current statement block
-    remove_statements_from_block(*current_statement_block, statements_to_remove);
+    current_statement_block->erase_statement(statements_to_remove);
     current_statement_block = prev_statement_block;
 }
 
@@ -418,7 +418,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock& node) {
 
     const auto& kinetic_statement_block = node.get_statement_block();
     // remove any remaining kinetic statements
-    remove_statements_from_block(*kinetic_statement_block, statements_to_remove);
+    kinetic_statement_block->erase_statement(statements_to_remove);
     // add new statements
     for (const auto& ode: odes) {
         logger->debug("KineticBlockVisitor :: -> adding statement: {}", ode);
