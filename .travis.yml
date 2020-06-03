@@ -78,6 +78,7 @@ before_install:
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         brew unlink python@2;
         brew link --overwrite python;
+        export SDKROOT="$(xcrun --show-sdk-path)";
     else
         pyenv global $PYTHON_VERSION;
     fi
@@ -126,8 +127,8 @@ after_success:
   - cd $HOME
   - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
   - mkdir CoreNeuron/build && cd CoreNeuron/build
-  - cmake .. -DENABLE_MPI=OFF -DENABLE_NMODL=ON -DNMODL_ROOT=$HOME/nmodl -DNMODL_EXTRA_FLAGS="passes --verbatim-rename --inline sympy --analytic"
-  - make -j
+  - cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl -DCORENRN_NMODL_FLAGS="sympy --analytic"
+  - make -j 2
   - make test
 
 #=============================================================================

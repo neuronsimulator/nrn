@@ -224,6 +224,12 @@ enum class NmodlType : enum_type {
 };
 
 template <typename T>
+inline T operator~(T arg) {
+    using utype = enum_type;
+    return static_cast<T>(~static_cast<utype>(arg));
+}
+
+template <typename T>
 inline T operator|(T lhs, T rhs) {
     using utype = enum_type;
     return static_cast<T>(static_cast<utype>(lhs) | static_cast<utype>(rhs));
@@ -238,6 +244,12 @@ inline T operator&(T lhs, T rhs) {
 template <typename T>
 inline T& operator|=(T& lhs, T rhs) {
     lhs = lhs | rhs;
+    return lhs;
+}
+
+template <typename T>
+inline T& operator&=(T& lhs, T rhs) {
+    lhs = lhs & rhs;
     return lhs;
 }
 
