@@ -304,6 +304,11 @@ class Symbol {
         properties |= property;
     }
 
+    /// remove property from symbol
+    void remove_property(syminfo::NmodlType property) {
+        properties &= ~property;
+    }
+
     /// mark symbol as inlined (in case of procedure/function)
     void mark_inlined() noexcept {
         status |= syminfo::Status::inlined;

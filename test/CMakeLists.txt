@@ -27,6 +27,7 @@ add_executable(
   visitor/main.cpp
   visitor/constant_folder.cpp
   visitor/defuse_analyze.cpp
+  visitor/global_to_range.cpp
   visitor/inline.cpp
   visitor/json.cpp
   visitor/kinetic_block.cpp

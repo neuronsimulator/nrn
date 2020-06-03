@@ -128,6 +128,22 @@ SCENARIO("Multiple properties can be added to Symbol") {
                 REQUIRE(symbol.has_all_properties(property) == false);
             }
         }
+        WHEN("remove properties from symbol") {
+            symbol.add_property(property1);
+            symbol.add_property(property2);
+            THEN("remove property that exists") {
+                REQUIRE(symbol.has_any_property(property2) == true);
+                symbol.remove_property(property2);
+                REQUIRE(symbol.has_any_property(property2) == false);
+            }
+            THEN("remove property that doesn't exist") {
+                REQUIRE(symbol.has_any_property(property3) == false);
+                symbol.remove_property(property3);
+                REQUIRE(symbol.has_any_property(property3) == false);
+                auto properties = property1 | property2;
+                REQUIRE(symbol.has_all_properties(properties) == true);
+            }
+        }
         WHEN("combined properties") {
             NmodlType property = NmodlType::factor_def | NmodlType::global_var;
             THEN("symbol has union of all properties") {

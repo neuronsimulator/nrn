@@ -2026,6 +2026,7 @@
                             brief: "Vector of global variables"
                             type: GlobalVar
                             vector: true
+                            add: true
                             separator: ", "
                       brief: "Represents GLOBAL statement in NMODL"
 
