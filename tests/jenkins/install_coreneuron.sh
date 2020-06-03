@@ -66,7 +66,7 @@ elif [ "${CORENRN_TYPE}" = "AoS" ] || [ "${CORENRN_TYPE}" = "SoA" ]; then
       -DCMAKE_BUILD_TYPE=Debug  \
       -DCORENRN_ENABLE_SOA=$CORENRN_ENABLE_SOA \
       -DCORENRN_ENABLE_OPENMP=$ENABLE_OPENMP \
-      -DCORENRN_ENABLE_REPORTINGLIB=ON \
+      -DCORENRN_ENABLE_BIN_REPORTS=ON \
       -DCMAKE_PREFIX_PATH=$reportinglib_dir \
       -DTEST_MPI_EXEC_BIN="mpirun" \
       -DTEST_EXEC_PREFIX="mpirun;-n;2" \

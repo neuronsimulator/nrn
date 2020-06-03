@@ -40,8 +40,8 @@
 #include <vector>
 #include <set>
 
-#define MAX_REPORT_NAME_LEN 256
-#define MAX_FILEPATH_LEN 4096
+#define REPORT_MAX_NAME_LEN 256
+#define REPORT_MAX_FILEPATH_LEN 4096
 
 namespace coreneuron {
 // name of the variable in mod file that is used to indicate which synapse
@@ -54,14 +54,14 @@ namespace coreneuron {
 enum ReportType { SomaReport, CompartmentReport, SynapseReport, IMembraneReport };
 
 struct ReportConfiguration {
-    char name[MAX_REPORT_NAME_LEN];         // name of the report
-    char output_path[MAX_FILEPATH_LEN];     // full path of the report
-    char target_name[MAX_REPORT_NAME_LEN];  // target of the report
-    char mech_name[MAX_REPORT_NAME_LEN];    // mechanism name
-    char var_name[MAX_REPORT_NAME_LEN];     // variable name
-    char unit[MAX_REPORT_NAME_LEN];         // unit of the report
-    char format[MAX_REPORT_NAME_LEN];       // format of the report (bin, hdf5)
-    char type_str[MAX_REPORT_NAME_LEN];     // type of report string
+    char name[REPORT_MAX_NAME_LEN];         // name of the report
+    char output_path[REPORT_MAX_FILEPATH_LEN];     // full path of the report
+    char target_name[REPORT_MAX_NAME_LEN];  // target of the report
+    char mech_name[REPORT_MAX_NAME_LEN];    // mechanism name
+    char var_name[REPORT_MAX_NAME_LEN];     // variable name
+    char unit[REPORT_MAX_NAME_LEN];         // unit of the report
+    char format[REPORT_MAX_NAME_LEN];       // format of the report (Bin, hdf5, SONATA)
+    char type_str[REPORT_MAX_NAME_LEN];     // type of report string
     ReportType type;                        // type of the report
     int mech_id;                            // mechanism
     double report_dt;                       // reporting timestep
@@ -73,10 +73,8 @@ struct ReportConfiguration {
 };
 
 void setup_report_engine(double dt_report, double mindelay);
-void register_report(double dt, double tstop, double delay, ReportConfiguration& config);
 std::vector<ReportConfiguration> create_report_configurations(const char* filename,
                                                               const char* output_dir);
-void setup_report_engine(double dt_report, double mindelay);
 void finalize_report();
 void nrn_flush_reports(double t);
 void set_report_buffer_size(int n);

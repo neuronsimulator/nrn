@@ -46,7 +46,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/permute/cellorder.hpp"
-#include "coreneuron/io/nrnsection_mapping.h"
+#include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 // callbacks into nrn/src/nrniv/nrnbbcore_write.cpp

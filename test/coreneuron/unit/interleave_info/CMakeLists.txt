@@ -15,4 +15,4 @@ target_link_libraries(interleave_info_bin
                       ${sonatareport_LIBRARY})
 
 add_test(NAME interleave_info_constructor_test
-         COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/interleave_info_bin)
+        COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/interleave_info_bin)

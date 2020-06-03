@@ -100,6 +100,15 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 			set(CMAKE_${COMPILER_LANGUAGE}_GEN_NATIVE "-march=native")
 		endif()
 
+    ## CLANG
+	elseif(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_CLANG)
+		## Force same ld behavior as when called from gcc
+		## --as-needed forces the linker to check whether a dynamic library mentioned in the command line is actually
+		## needed by the objects being linked. Symbols needed in shared objects are already linked when building that
+		## library.
+		set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed")
+		set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
+
 	## rest of the world
 	else()
 		set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "-Wall")

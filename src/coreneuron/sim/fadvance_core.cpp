@@ -34,7 +34,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/sim/fast_imem.hpp"
 #include "coreneuron/gpu/nrn_acc_manager.hpp"
-#include "coreneuron/io/nrnreport.hpp"
+#include "coreneuron/io/reports/nrnreport.hpp"
 #include "coreneuron/network/netcvode.hpp"
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/network/partrans.hpp"
@@ -152,7 +152,7 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
         nrn_spike_exchange(nrn_threads);
 #endif
 
-#ifdef ENABLE_REPORTING
+#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
         nrn_flush_reports(nrn_threads[0]._t);
 #endif
         if (stoprun) {
