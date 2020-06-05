@@ -511,11 +511,6 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 
 	nrnmpi_numprocs = nrn_optargint("-bbs_nhost", &argc, argv, nrnmpi_numprocs);
 	hoc_usegui = 1;
-#if defined(IVX11_DYNAM)
-	if (ivx11_dyload()) {
-		hoc_usegui = 0;
-	}
-#endif
 	if (nrn_optarg_on("-nogui", &argc, argv)) {
 		hoc_usegui = 0;
 		hoc_print_first_instance = 0;
@@ -551,6 +546,13 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 	}
 
 #endif 		
+
+#if defined(IVX11_DYNAM)
+	if (hoc_usegui && ivx11_dyload()) {
+		hoc_usegui = 0;
+		hoc_print_first_instance = 0;
+	}
+#endif
 
 #if NRN_MUSIC
 	nrn_optarg_on("-music", &argc, argv);
