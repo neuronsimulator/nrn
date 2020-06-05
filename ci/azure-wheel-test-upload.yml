@@ -11,7 +11,6 @@ steps:
       versionSpec: '$(python.version)'
 
   - script: |
-      export SKIP_EMBEDED_PYTHON_TEST=true
       packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
     displayName: 'Test with System Python'
 

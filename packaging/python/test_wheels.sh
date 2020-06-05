@@ -39,10 +39,8 @@ run_mpi_test () {
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
 
   # run python test via nrniv and special (except on azure pipelines)
-  if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-    $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
-    $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
-  fi
+  $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
+  $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
@@ -71,9 +69,7 @@ run_serial_test () {
 
     # Test 6: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
-    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
-      ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-    fi
+    ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
     # Test 7: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
