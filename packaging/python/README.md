@@ -76,3 +76,18 @@ As we haven't setup proper policy yet, do not do this step. For testing purpose 
 pip3 install twine
 python3 -m twine upload --repository-url https://test.pypi.org/legacy/ nrn/wheelhouse/NEURON-*
 ```
+
+#### Updating neuron_wheel docker image
+
+If you have changed Dockerfile, you can build the new image as:
+
+```
+docker build -t neuronsimulator/neuron_wheel .
+```
+
+and then push image to hub.docker.com as:
+
+```
+docker login --username=<username>
+docker push neuronsimulator/neuron_wheel
+```
