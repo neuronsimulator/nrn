@@ -126,6 +126,8 @@ class CodeGenerator(
         outputs = dict()
         for task in tasks:
             inputs.add(task.input.relative_to(self.jinja_templates_dir))
+            for dep in task.extradeps:
+                inputs.add(dep.relative_to(self.jinja_templates_dir))
             dir, name = task.output.relative_to(self.base_dir).parts
             outputs.setdefault(dir, []).append(name)
 
@@ -158,7 +160,7 @@ class CodeGenerator(
         extradeps = collections.defaultdict(
             list,
             {
-                self.jinja_templates_dir / "ast" / "ast.hpp": [node_class_tpl],
+                self.jinja_templates_dir / "ast" / "all.hpp": [node_class_tpl],
                 node_hpp_tpl: [node_class_tpl],
             },
         )

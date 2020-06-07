@@ -9,6 +9,7 @@ set(CODE_GENERATOR_JINJA_FILES
     ${PROJECT_SOURCE_DIR}/src/language/templates/ast/ast.hpp
     ${PROJECT_SOURCE_DIR}/src/language/templates/ast/ast_decl.hpp
     ${PROJECT_SOURCE_DIR}/src/language/templates/ast/node.hpp
+    ${PROJECT_SOURCE_DIR}/src/language/templates/ast/node_class.template
     ${PROJECT_SOURCE_DIR}/src/language/templates/pybind/pyast.cpp
     ${PROJECT_SOURCE_DIR}/src/language/templates/pybind/pyast.hpp
     ${PROJECT_SOURCE_DIR}/src/language/templates/pybind/pysymtab.cpp
