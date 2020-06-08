@@ -33,7 +33,7 @@ find_program(nmodl_BINARY NAMES nmodl${CMAKE_EXECUTABLE_SUFFIX}
         HINTS "${CORENRN_NMODL_DIR}/bin" QUIET)
 
 find_path(nmodl_INCLUDE "nmodl/fast_math.ispc" HINTS "${CORENRN_NMODL_DIR}/include")
-find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}/lib/python")
+find_path(nmodl_PYTHONPATH "nmodl/__init__.py" HINTS "${CORENRN_NMODL_DIR}")
 
 # Checks 'REQUIRED', 'QUIET' and versions.
 include(FindPackageHandleStandardArgs)
