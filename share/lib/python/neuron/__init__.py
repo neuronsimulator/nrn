@@ -376,8 +376,18 @@ def init():
 
     Initialize the simulation kernel.  This should be called before a run(tstop) call.
 
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
+    
+    By default, the units used by h.finitialize are in mV, but you can be explicit using
+    NEURON's unit's library, e.g.
+    
+    .. code-block:: python
+    
+        from neuron.units import mV
+        h.finitialize(-65 * mV)
 
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
@@ -389,6 +399,30 @@ def run(tstop):
     function run(tstop)
 
     Run the simulation (advance the solver) until tstop [ms]
+    
+    `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
+    
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+    
+    For running a simulation, consider doing the following instead:
+    
+    Begin your code with
+    
+    .. code-block:: python
+    
+        from neuron import h
+        from neuron.units import ms, mV
+        h.load_file('stdrun.hoc')
+    
+    Then when it is time to initialize and run the simulation:
+    
+    .. code-block:: python
+    
+        h.finitialize(-65 * mV)
+        h.continuerun(100 * ms)
+    
+    where the initial membrane potential and the simulation run time are adjusted as appropriate
+    for your model.
 
     """
     h('tstop = %g' % tstop)
