@@ -5,7 +5,7 @@
 # environment as python
 
 # May specify the python executable with explicit first argument.
-# Without arg use python and if that does not exist then python3
+# Without arg use python3 and if that does not exist then python
 
 # Overcome environment issues when --with-nrnpython=dynamic .
 
@@ -112,6 +112,7 @@ fi
 echo "# PYTHON=`$WHICH $PYTHON`"
 
 # what is the python library for Darwin
+nrnpylib_provenance=""
 z=''
 if type -P uname > /dev/null ; then
   z=`uname`
@@ -132,6 +133,20 @@ if test "$z" = "Darwin" ; then
     unset p
     unset d
     unset l
+    nrnpylib_provenance="sysconfig LIBDIR"
+  elif test "$z" = "" ; then
+    z=$($p -c '
+try:
+  from neuron import h
+  s=h.libpython_path()
+  s = s if ".dylib" in s else ""
+  print(s)
+except:
+  print("")
+')
+    if test "$z" != "" ; then
+      nrnpylib_provenance="h.libpython_path()"
+    fi
   else
     DYLD_PRINT_LIBRARIES=1
     export DYLD_PRINT_LIBRARIES
@@ -140,12 +155,16 @@ if test "$z" = "Darwin" ; then
       z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
     unset DYLD_PRINT_LIBRARIES  
+    if test "$z" != "" ; then
+      nrnpylib_provenance=DYLD_PRINT_LIBRARIES
+    fi
   fi
   if test -f "$z" ; then
     PYLIB_DARWIN=$z
   else
     PYLIB_DARWIN=""
   fi
+  export nrnpylib_provenance
   export PYLIB_DARWIN
 fi
 
@@ -156,6 +175,9 @@ import sys, os, site
 
 usep = "/"
 upathsep = ":"
+
+nrnpylib_provenance = "not found"
+nrnpyhome_provenance = "not found"
 
 def upath(path):
   #return linux path
@@ -185,6 +207,7 @@ def u2d(p):
 
 #a copy of nrnpylib_linux() but with some os x specific modifications
 def nrnpylib_darwin_helper():
+  global nrnpylib_provenance
   import os, sys, re, subprocess
   #in case it was dynamically loaded by python
   pid = os.getpid()
@@ -203,6 +226,7 @@ def nrnpylib_darwin_helper():
       if re.search(r'libpython.*\.[ds]', line):
         print ("# nrn_pylib from lsof: %s" % line)
         nrn_pylib = line.strip()
+        nrnpylib_provenance = "lsof search for libpython..."
         return nrn_pylib
       if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
         cnt += 1  
@@ -211,6 +235,7 @@ def nrnpylib_darwin_helper():
         if re.search(r'[Pp]ython', line.split('/')[-1]):
           print ("# nrn_pylib from lsof: %s" % line)
           nrn_pylib = line.strip()
+          nrnpylib_provenance = 'lsof search for second occurrence of [Ll][Ii][Bb].*[Pp]ython'
           return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
@@ -230,6 +255,7 @@ def nrnpylib_darwin_helper():
         libs.append(line.strip())
     print ('# %s'%str(libs))
     if len(libs) == 1:
+      nrnpylib_provenance="search based on os.__file__, found unique"
       print ("# nrn_pylib from os.path %s"%str(libs[0]))
       return libs[0]
     if len(libs) > 1:
@@ -256,19 +282,23 @@ def nrnpylib_darwin_helper():
       for i in libs:
         if name in i:
           print ("# nrn_pylib from os.path %s" % i)
+          nrnpylib_provenance='search based on os.__file__, found one with version in name'
           return i
       print ("# nrn_pylib from os.path %s" % str(nrn_pylib))
   return nrn_pylib
 
 def nrnpylib_darwin():
+  global nrnpylib_provenance
   import os
   nrn_pylib = os.getenv("PYLIB_DARWIN")
   if nrn_pylib != "":
     print ("# nrn_pylib from PYLIB_DARWIN %s"%nrn_pylib)
+    nrnpylib_provenance = os.getenv("nrnivlib_provenance")
     return nrn_pylib
   return nrnpylib_darwin_helper()
           
 def nrnpylib_mswin():
+  global nrnpylib_provenance
   import os, sys, re
   e = '/'.join(sys.executable.split(os.path.sep))
   cmd = 'cygcheck "%s"' % e
@@ -277,11 +307,36 @@ def nrnpylib_mswin():
   for line in f:
     if re.search('ython[a-zA-Z0-9_.]*\.dll', line):
       nrn_pylib = '/'.join(line.split(os.path.sep)).strip()
+      nrnpylib_provenance="cygcheck"
   return nrn_pylib
 
 def nrnpylib_linux():
+  global nrnpylib_provenance
   import os, sys, re, subprocess
+
+  # Try the official way first
+  from distutils import sysconfig
+  libdir=sysconfig.get_config_var("LIBDIR")
+  try:
+    from os.path import isfile, join
+    for f in os.listdir(libdir):
+      if 'libpython' in f and '.so' in f:
+        nrn_pylib = join(libdir, f)
+        nrnpylib_provenance='sysconfig LIBDIR'
+        return nrn_pylib
+  except:
+    pass
+  
   #in case it was dynamically loaded by python
+  try:
+    from neuron import h
+    s=h.libpython_path()
+    s = s if ".so" in s else ""
+    if (s != ""):
+      nrnpylib_provenance="h.libpython_path()"
+      return s
+  except:
+    print("")
   pid = os.getpid()
   cmd = "lsof -p %d"%pid
   f = []
@@ -297,6 +352,7 @@ def nrnpylib_linux():
       if re.search(r'libpython.*\.so', line):
         print ("# from lsof: %s" % line)
         nrn_pylib = line.strip()
+        nrnpylib_provenance = 'lsof search for libpython.*\.so'
         return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
@@ -316,6 +372,7 @@ def nrnpylib_linux():
         libs.append(line.strip())
     print ('# %s'%str(libs))
     if len(libs) == 1:
+      nrnpylib_provenance="search based on os.__file__, found unique"
       return libs[0]
     if len(libs) > 1:
       # which one do we want? Check the name of an imported shared object
@@ -335,6 +392,7 @@ def nrnpylib_linux():
           pass
       for i in libs:
         if name in i:
+          nrnpylib_provenance='search based on os.__file__, found one with version in name'
           return i
   return nrn_pylib
 
@@ -346,23 +404,32 @@ elif 'win' in sys.platform:
 elif 'linux' in sys.platform:
   nrn_pylib = nrnpylib_linux()
 
+#Use sys.base_prefix for PYTHONHOME if available, otherwise sys.prefix
+try:
+  sp = upath(sys.base_prefix)
+  spname='sys.base_prefix'
+  base=True
+except:
+  sp = upath(sys.prefix)
+  spname='sys.prefix'
+  base=False
+
 #there is a question about whether to use sys.prefix for PYTHONHOME
 #or whether to derive from site.__file__.
 #to help answer, ask how many sys.path items begin with sys.prefix and
 #how many begin with site.__file__ - 3
 p = [upath(i) for i in sys.path]
 print ("# items in sys.path = " + str(len(p)))
-sp = upath(sys.prefix)
 print ("# beginning with sys.prefix = " + str(len([i for i in p if sp in i])))
 s = usep.join(upath(site.__file__).split(usep)[:-3])
 if s == sp:
-  print ("# site-3 same as sys.prefix")
+  print ("# site-3 same as " + spname)
 else:
   print ("# beginning with site-3 = " + str(len([i for i in p if s in i])))
 foo = [i for i in p if sp not in i]
 foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))
-print ("# sys.prefix = " + sp)
+print ("# " + spname + " = " + sp)
 print ("# site-3 = " + s)
 	
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
@@ -374,7 +441,8 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   if i > 1:
     path = newpath[:i]
 
-  pythonhome = upath(sys.prefix)
+  pythonhome = upath(sp)
+  print ("#pythonhome=" + pythonhome)
   pythonpath = upath(os.getenv("PYTHONPATH"))
 
   ldpath = ""
@@ -409,14 +477,18 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   if pythonpath:
     print ("\n# if launch python, then need:")
     print ("export PYTHONPATH=" + dq + pythonpath + dq)
+
+  if path:
+    print ("\n#PYTHON prepended the following to PATH")
+    print ("export PATH=" + dq + path + "$PATH" + dq)
+
+  print("\n#NRN_PYLIB provenance: " + nrnpylib_provenance)
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
     print ("export PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
-  if path:
-    print ("export PATH=" + dq + path + "$PATH" + dq)
   if nrn_pylib != None:
     print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
