@@ -134,7 +134,8 @@ if test "$z" = "Darwin" ; then
     unset d
     unset l
     nrnpylib_provenance="sysconfig LIBDIR"
-  elif test "$z" = "" ; then
+  fi
+  if test "$z" = "" ; then
     z=$($p -c '
 try:
   from neuron import h
@@ -147,7 +148,8 @@ except:
     if test "$z" != "" ; then
       nrnpylib_provenance="h.libpython_path()"
     fi
-  else
+  fi
+  if test "$z" = "" ; then
     DYLD_PRINT_LIBRARIES=1
     export DYLD_PRINT_LIBRARIES
     z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
@@ -293,7 +295,7 @@ def nrnpylib_darwin():
   nrn_pylib = os.getenv("PYLIB_DARWIN")
   if nrn_pylib != "":
     print ("# nrn_pylib from PYLIB_DARWIN %s"%nrn_pylib)
-    nrnpylib_provenance = os.getenv("nrnivlib_provenance")
+    nrnpylib_provenance = os.getenv("nrnpylib_provenance")
     return nrn_pylib
   return nrnpylib_darwin_helper()
           
@@ -482,7 +484,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     print ("\n#PYTHON prepended the following to PATH")
     print ("export PATH=" + dq + path + "$PATH" + dq)
 
-  print("\n#NRN_PYLIB provenance: " + nrnpylib_provenance)
+  print("\n#NRN_PYLIB provenance: " + str(nrnpylib_provenance))
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
