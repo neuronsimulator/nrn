@@ -30,6 +30,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
 make -j
+ctest -VV
 make install
 make setup_exe
 
