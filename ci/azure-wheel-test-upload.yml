@@ -1,5 +1,10 @@
 steps:
 
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
+    displayName: 'Publish wheel as build artifact'
+
   - script: |
       brew install python
       packaging/python/test_wheels.sh /usr/local/bin/python3 wheelhouse/*.whl
@@ -13,11 +18,6 @@ steps:
   - script: |
       packaging/python/test_wheels.sh $(which python) wheelhouse/*.whl
     displayName: 'Test with System Python'
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
-    displayName: 'Publish wheel as build artifact'
 
   - task: TwineAuthenticate@1
     inputs:
