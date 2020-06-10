@@ -42,10 +42,8 @@ struct SecMapping {
 
     /** @brief return number of segments in section list */
     size_t num_segments() const {
-        size_t count = 0;
-        std::accumulate(secmap.begin(), secmap.end(), 0,
+        return std::accumulate(secmap.begin(), secmap.end(), 0,
             [](int psum, const auto& item) { return psum + item.second.size(); });
-        return count;
     }
 
     /** @brief add section to associated segment */
