@@ -113,56 +113,55 @@ echo "# PYTHON=`$WHICH $PYTHON`"
 
 # what is the python library for Darwin
 nrnpylib_provenance=""
-z=''
+nrn_pylib=""
+kernel_name=''
 if type -P uname > /dev/null ; then
-  z=`uname`
+  kernel_name=`uname`
 fi
-if test "$z" = "Darwin" ; then
-  p=`$WHICH $PYTHON`
-  d=`dirname $p`
+if test "$kernel_name" = "Darwin" ; then
+  python_path=`$WHICH $PYTHON`
+  pyexedir=`dirname $python_path`
   # Get the python lib dir in an official way, working with virtualenv
-  PYLIB=$($p -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+  PYLIB=$($python_path -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
   for path in $PYLIB/libpython*.dylib; do
     if test -f "$path"; then
-      l="$path"
+      nrn_pylib="$path"
       break
     fi
   done
-  if test -f "$l" ; then
-    z="$l"
-    unset p
-    unset d
-    unset l
+  if test -f "$nrn_pylib" ; then
+    unset python_path
+    unset pyexedir
     nrnpylib_provenance="sysconfig LIBDIR"
   fi
-  if test "$z" = "" ; then
-    z=$($p -c '
+  if test "$nrn_pylib" = "" ; then
+    nrn_pylib=$($p -c '
 try:
   from neuron import h
-  s=h.libpython_path()
-  s = s if ".dylib" in s else ""
-  print(s)
+  shlib=h.libpython_path()
+  shlib = shlib if ".dylib" in shlib else ""
+  print(shlib)
 except:
   print("")
 ')
-    if test "$z" != "" ; then
+    if test "$nrn_pylib" != "" ; then
       nrnpylib_provenance="h.libpython_path()"
     fi
   fi
-  if test "$z" = "" ; then
+  if test "$nrn_pylib" = "" ; then
     DYLD_PRINT_LIBRARIES=1
     export DYLD_PRINT_LIBRARIES
-    z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
-    if test "$z" = "" ; then
-      z=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
+    nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n /libpython/p`
+    if test "$nrn_pylib" = "" ; then
+      nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
     unset DYLD_PRINT_LIBRARIES  
-    if test "$z" != "" ; then
+    if test "$nrn_pylib" != "" ; then
       nrnpylib_provenance=DYLD_PRINT_LIBRARIES
     fi
   fi
-  if test -f "$z" ; then
-    PYLIB_DARWIN=$z
+  if test -f "$nrn_pylib" ; then
+    PYLIB_DARWIN=$nrn_pylib
   else
     PYLIB_DARWIN=""
   fi
