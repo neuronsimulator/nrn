@@ -102,6 +102,7 @@ before_install:
   - echo $LC_ALL
   - $CXX -v
   - export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/;
+  - python3 -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
 
 install:
   - $PIP install --user wheel setuptools;

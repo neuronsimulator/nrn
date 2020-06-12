@@ -1,6 +1,6 @@
 #!/bin/bash
 # howto-cmake 36   # builds for 3.6
-# howto 27 35 36 37 38 # builds for all those
+# howto-cmake 27 35 36 37 38 # builds for all those
 
 set -e
 set -x
@@ -24,13 +24,13 @@ set -x
 # Install NSIS installer builder.
 
 # in msys terminal in nrnwinobj
-if test "x$OSTYPE" = "xmsys" ; then
+if test "x$OSTYPE" = "xmsys" ; then  #to end of file
 
 SRC=$HOME/neuron/nrncmake
 MARSHAL=/C/marshalnrn
 
 
-# PYVS helps to consruct setup.exe name. PYTHONS help with
+# PYVS helps to construct setup.exe name. PYTHONS help with
 # -DNRN_PYTHON_DYNAMIC argument.
 PYVS="py"
 PYTHONS=
@@ -43,12 +43,14 @@ export CYTHON=cython
 
 cd $SRC
 mkdir -p build
-ver="`sh ../nrn/nrnversion.sh 3`" # eg. 7.8
+export NSRC=$SRC
+ver="`sh nrnversion.sh 3`" # eg. 7.8
 n1=nrn"${ver}"setup-AMD64.exe # name of setup.exe
 #full distribution name
 n2=nrn-"`git describe --dirty=+`".w64-mingw-${PYVS}-setup.exe
 
 # building from scratch takes about 20 minutes on 2 core virtualbox guest
+# when NRN_RX3D_OPT_LEVEL=0 (default). Distributions should have opt level 2.
 #rm -r -f build/*
 rm -r -f $MARSHAL
 cd build
@@ -62,6 +64,7 @@ if test ! -f src/mswin/$n2 ; then
     -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC="$PYTHONS" \
     -DNRN_ENABLE_MPI_DYNAMIC=ON \
     -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
+    -DNRN_RX3D_OPT_LEVEL=2 \
     -DNRN_ENABLE_CORENEURON=OFF
 
   make -j install

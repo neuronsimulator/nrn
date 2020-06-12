@@ -344,6 +344,11 @@ case "$host_os" in
 	;;
 esac
 
+if test x${linux_nrnmech} = x ; then
+	# set even for MINGW
+	linux_nrnmech="yes"
+fi
+
 if test x${linux_nrnmech} = xyes ; then
 	AC_DEFINE(NRNMECH_DLL_STYLE, 1,[if 1 then dlopen nrnmech instead of special])
 	AC_MSG_NOTICE([Use the NRNMECH_DLL_STYLE for "special"])
@@ -351,6 +356,7 @@ else
 	AC_MSG_NOTICE([Use the default unix style for "special" (not NRNMECH_DLL_STYLE)])
 fi
 AM_CONDITIONAL(NRNMECH_DLL_STYLE, test x${linux_nrnmech} = xyes)
+AM_CONDITIONAL(NRN_BINARY_SPECIAL, test x${linux_nrnmech} != xyes)
 AM_CONDITIONAL(MAC_DARWIN, test x${macdarwin} = xyes)
 AM_CONDITIONAL(USING_CMAKE, false)
 
@@ -664,7 +670,6 @@ AC_CONFIG_FILES([
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
-	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

@@ -9,6 +9,9 @@
 #include "nrnpy_utils.h"
 #include "../nrniv/shapeplt.h"
 #include <vector>
+#if defined(HAVE_DLFCN_H)
+#include <dlfcn.h>
+#endif
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
@@ -1146,6 +1149,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         if (nrn_inpython_ == 2) {  // error in component
           nrn_inpython_ = 0;
           PyErr_SetString(PyExc_TypeError, "No value");
+          Py_DECREF(po);
           return NULL;
         }
         nrn_inpython_ = 0;
@@ -2670,6 +2674,25 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
   return Py_None;
 }
 
+static PyObject* libpython_path(PyObject* self, PyObject* args) {
+#if defined(HAVE_DLFCN_H)
+  Dl_info info;
+  int rval = dladdr((const void*)Py_Initialize, &info);
+  if (!rval) {
+    PyErr_SetString(PyExc_Exception, "dladdr: Py_Initialize could not be matched to a shared object");
+    return NULL;
+  }
+  if (!info.dli_fname) {
+    PyErr_SetString(PyExc_Exception, "dladdr: No symbol matching Py_Initialize could be found.");
+    return NULL;
+  }
+  return Py_BuildValue("s", info.dli_fname);
+#else
+  Py_INCREF(Py_None);
+  return Py_None;
+#endif
+}
+
 // available for every HocObject
 static PyMethodDef hocobj_methods[] = {
     {"baseattr", hocobj_baseattr, METH_VARARGS,
@@ -2694,6 +2717,8 @@ static PyMethodDef toplevel_methods[] = {
      "Return a new Section"},
     {"setpointer", setpointer, METH_VARARGS,
      "Assign hoc variable address to NMODL POINTER"},
+    {"libpython_path", libpython_path, METH_NOARGS,
+     "Return full path to file that contains Py_Initialize()"},
     {NULL, NULL, 0, NULL}};
 
 static void add2topdict(PyObject* dict) {

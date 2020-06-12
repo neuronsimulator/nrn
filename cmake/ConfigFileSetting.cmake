@@ -105,6 +105,16 @@ else()
   set(LegacyNPy "")
 endif()
 
+# Switch between binary special and script-based special
+# Works with CMAKE and autotools
+if(NRN_ENABLE_BINARY_SPECIAL)
+  set(NRN_BINARY_SPECIAL_TRUE "")
+  set(NRN_BINARY_SPECIAL_FALSE "#")
+else()
+  set(NRN_BINARY_SPECIAL_TRUE "#")
+  set(NRN_BINARY_SPECIAL_FALSE "")
+endif()
+
 if(NRN_ENABLE_MECH_DLL_STYLE)
   set(NRNMECH_DLL_STYLE 1)
 else()
@@ -269,8 +279,6 @@ endif()
 if(MINGW)
   dospath("${CMAKE_INSTALL_PREFIX}" WIN_MARSHAL_NRN_DIR)
   nrn_configure_file(nrnsetupmingw.nsi src/mswin)
-  nrn_configure_file(AddToPath.nsh src/mswin)
-  nrn_configure_file(EnvVarUpdate.nsh src/mswin)
   nrn_configure_file(pre_setup_exe.sh src/mswin)
   # Just name and not path since setup.exe user chooses location of install.
   set(CC x86_64-w64-mingw32-gcc.exe)

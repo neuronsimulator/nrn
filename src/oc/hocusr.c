@@ -9,10 +9,37 @@
 #include "hocusr.h"
 #endif
 
-# define	CHECK(name)	if (hoc_lookup(name) != (Symbol *)0){\
-		IGNORE(fprintf(stderr, CHKmes, name));\
-		nrn_exit(1);}
+# define	CHECK(name) nrn_load_name_check(name)
+
 static char	CHKmes[] = "The user defined name, %s, already exists.\n";
+
+Symlist* nrn_load_dll_called_;
+
+/* Return 0 if nrn_load_dll_called_ == NULL, otherwise recover and return 1.
+   If 1 is returned, then can recover with a hoc_execerror.
+*/
+int nrn_load_dll_recover_error() {
+  if (nrn_load_dll_called_) {
+    /* recoverable error for nrn_load_dll interpreter call */
+    hoc_built_in_symlist = hoc_symlist;
+    hoc_symlist = nrn_load_dll_called_;
+    nrn_load_dll_called_ = (Symlist*)0;
+    return 1;
+  }
+  return 0; 
+}
+
+void nrn_load_name_check(const char* name) {
+  if (hoc_lookup(name) != (Symbol *)0) {
+    if (nrn_load_dll_recover_error()) {
+      hoc_execerror("The user defined name already exists:", name);
+    }else{
+      fprintf(stderr, CHKmes, name);
+      nrn_exit(1);
+    }
+  }
+}
+
 
 static void arayinstal(Symbol* sp, int nsub, int sub1, int sub2, int sub3);
 

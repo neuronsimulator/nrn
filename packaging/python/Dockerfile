@@ -44,6 +44,19 @@ RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-
     && ./configure --prefix=/opt/openmpi \
     && make -j install
 
+RUN curl -L -o readline-7.0.tar.gz https://ftp.gnu.org/gnu/readline/readline-7.0.tar.gz \
+    && tar -xvzf readline-7.0.tar.gz \
+    && cd readline-7.0  \
+    && ./configure --prefix=/opt/readline --disable-shared CFLAGS="-fPIC" \
+    && make -j install
+
+# create readline with ncurses
+RUN cd /opt/readline/lib \
+    && ar -x libreadline.a \
+    && ar -x ../../ncurses/lib/libncurses.a \
+    && ar cq libreadline.a *.o \
+    && rm *.o
+
 ENV PATH /opt/openmpi/bin:/opt/cmake/bin:$PATH
 
 RUN yum -y install libX11-devel.x86_64 libXcomposite-devel.x86_64 vim-enhanced.x86_64

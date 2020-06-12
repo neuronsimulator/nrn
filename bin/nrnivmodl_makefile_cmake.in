@@ -51,7 +51,7 @@ mod_func_c = $(MODC_DIR)/mod_func.c
 
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
-mech_libname = nrnmech$(LIB_SUFFIX_).$(MECH_VERSION)
+mech_libname = nrnmech
 mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
@@ -68,9 +68,9 @@ C_GREEN := \033[32m
 # Take the main and link with nrnmech.
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
 special: $(mech_lib)
-	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGSE are: $(LDFLAGS)\n"
-	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode $(datadir)/nrnmain.cpp -o $(special) \
-	  $(mod_func_o) $(mod_objs) -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
+	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
+	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
+	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
 
 $(mech_lib): mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files)\n"

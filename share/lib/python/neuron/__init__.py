@@ -104,6 +104,13 @@ import os
 
 embedded = True if 'hoc' in sys.modules else False
 
+try: # needed since python 3.8 on windows if python launched
+  # do this here as NEURONHOME may be changed below
+  nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
+  os.add_dll_directory(nrnbindir)
+except:
+  pass
+
 # With pip we need to rewrite the NEURONHOME
 nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
 if (os.path.isdir(nrn_path)):
@@ -126,7 +133,7 @@ except:
   try:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
-  except: # mingw name strategy
+  except: # mingw autotools name strategy
     exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
@@ -369,8 +376,18 @@ def init():
 
     Initialize the simulation kernel.  This should be called before a run(tstop) call.
 
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
+    
+    By default, the units used by h.finitialize are in mV, but you can be explicit using
+    NEURON's unit's library, e.g.
+    
+    .. code-block:: python
+    
+        from neuron.units import mV
+        h.finitialize(-65 * mV)
 
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
@@ -382,6 +399,30 @@ def run(tstop):
     function run(tstop)
 
     Run the simulation (advance the solver) until tstop [ms]
+    
+    `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
+    
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+    
+    For running a simulation, consider doing the following instead:
+    
+    Begin your code with
+    
+    .. code-block:: python
+    
+        from neuron import h
+        from neuron.units import ms, mV
+        h.load_file('stdrun.hoc')
+    
+    Then when it is time to initialize and run the simulation:
+    
+    .. code-block:: python
+    
+        h.finitialize(-65 * mV)
+        h.continuerun(100 * ms)
+    
+    where the initial membrane potential and the simulation run time are adjusted as appropriate
+    for your model.
 
     """
     h('tstop = %g' % tstop)
