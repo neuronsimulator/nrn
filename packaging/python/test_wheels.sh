@@ -75,8 +75,12 @@ run_serial_test () {
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
-      ./x86_64/special -python -c "import neuron; from neuron import h; quit()"
       nrniv -python -c "import neuron; from neuron import h; quit()"
+      ./x86_64/special -python <<HERE
+import neuron
+from neuron import h
+quit()
+HERE
     fi
 
     # Test 7: run demo
