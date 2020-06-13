@@ -12,6 +12,8 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 # include	<stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "section.h"
@@ -203,12 +205,44 @@ int nrn_is_artificial(int pnttype) {
 
 int nrn_is_cable(void) {return 1;}
 
-int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
+void* nrn_realpath_dlopen(const char* relpath, int flags) {
+  char* abspath = NULL;
+  void* handle = NULL;
+
+  /* use realpath or _fullpath even if is already a full path */
+
+#if defined(HAVE_REALPATH)
+  abspath = realpath(relpath, NULL);
+#else /* not HAVE_REALPATH */
+#if defined(__MINGW32__)
+  abspath = _fullpath(NULL, relpath, 0);
+#else /* not __MINGW32__ */
+  abspath = strdup(relpath);
+#endif /* not __MINGW32__ */
+#endif /* not HAVE_REALPATH */
+  if (abspath) {
+    handle = dlopen(abspath, flags);
+    free(abspath);
+  }else{
+    int patherr = errno;
+    handle = dlopen(relpath, flags);
+    if (!handle) {
+      Fprintf(stderr, "realpath failed errno=%d (%s) and dlopen failed with %s\n", patherr, strerror(patherr), relpath);
+    }
+  }
+  return handle;
+}
+
+int mswin_load_dll(const char* cp1) {
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
+#if DARWIN
+	handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
+#else
 	handle = dlopen(cp1, RTLD_NOW);
+#endif
 	if (handle) {
 		Pfrv mreg = (Pfrv)dlsym(handle, "modl_reg");
 		if (mreg) {
