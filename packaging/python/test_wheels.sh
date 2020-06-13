@@ -70,17 +70,12 @@ run_serial_test () {
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
     # Test 6: run basic tests via special : azure pipelines get stuck with their
-    # own python from hosted cache (most likely security settings).
+    # own python from hosted cache (most likely security settings or bash behaviour).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
-      nrniv -python -c "import neuron; from neuron import h; quit()"
-      ./x86_64/special -python <<HERE
-import neuron
-from neuron import h
-quit()
-HERE
+      python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
     # Test 7: run demo
