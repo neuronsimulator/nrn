@@ -66,15 +66,19 @@ jobs:
         python.version: '3.5'
         python.org.version: '3.5.4'
       Python36:
-        python.version: '3.6'
+        python.version: '3.6.8'
         python.org.version: '3.6.8'
       Python37:
         python.version: '3.7'
         python.org.version: '3.7.7'
       Python38:
-        python.version: '3.8'
+        python.version: '3.8.2'
         python.org.version: '3.8.2'
   steps:
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
 
   - script: |
       if [ "$(python.org.version)" == "3.5.4" ]; then
