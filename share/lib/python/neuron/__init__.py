@@ -738,13 +738,14 @@ class _PlotShapePlot(_WrapperPlot):
   Limitations: many. Currently only supports plotting a full cell colored based on a variable.'''
   # TODO: handle pointmark, specified sections, color
   def __call__(self, graph, *args, **kwargs):
+    from neuron.gui2.utilities import _segment_3d_pts
+
     def _get_pyplot_axis3d(fig):
       '''requires matplotlib'''
       from matplotlib.pyplot import cm
       import matplotlib.pyplot as plt
       from mpl_toolkits.mplot3d import Axes3D
       import numpy as np
-      from neuron.gui2.utilities import _segment_3d_pts
 
       class Axis3DWithNEURON(Axes3D):
           def auto_aspect(self):
@@ -819,16 +820,7 @@ class _PlotShapePlot(_WrapperPlot):
                   for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                       line, = self.plot(xs, ys, zs, '-', **kwargs)
                       if variable is not None:
-                          try:
-                              if '.' in variable:
-                                  mech, var = variable.split('.')
-                                  val = getattr(getattr(seg, mech), var)
-                              else:
-                                  val = getattr(seg, variable)
-                          except AttributeError:
-                              # leave default color if no variable found
-                              val = None
-                          vals.append(val)
+                        vals.append(_get_variable_seg(seg, var))
                       lines[line] = '%s at %s' % (val, seg)
                       lines_list.append(line)
               if variable is not None:
@@ -842,7 +834,17 @@ class _PlotShapePlot(_WrapperPlot):
               return lines
       return Axis3DWithNEURON(fig)
 
-
+    def _get_variable_seg(seg, variable):
+      try:
+        if '.' in variable:
+            mech, var = variable.split('.')
+            val = getattr(getattr(seg, mech), var)
+        else:
+            val = getattr(seg, variable)
+      except AttributeError:
+        # leave default color if no variable found
+        val = None
+      return val
 
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
@@ -866,14 +868,103 @@ class _PlotShapePlot(_WrapperPlot):
       result.format_coord = format_coord
       return result
 
+    def _do_plot_on_plotly():
+      """requires matplotlib for colormaps if not specified explicitly"""
+      import ctypes
+      import plotly.graph_objects as go
 
-    if hasattr(graph, '__name__') and graph.__name__ == 'matplotlib.pyplot':
-      fig = graph.figure()
-      return _do_plot_on_matplotlib_figure(fig)
+      get_plotshape_data = nrn_dll_sym('get_plotshape_data')
+      get_plotshape_data.restype = ctypes.py_object
+      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if secs is None:
+        secs = list(h.allsec())
+
+      def color_to_hex(col):
+        items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+        return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+      
+      if variable is None:
+        kwargs.setdefault('color', 'black')
+        
+        for sec in secs:
+          xs = [sec.x3d(i) for i in range(sec.n3d())]
+          ys = [sec.y3d(i) for i in range(sec.n3d())]
+          zs = [sec.z3d(i) for i in range(sec.n3d())]
+          data.append(
+            go.Scatter3d(
+              x=xs,
+              y=ys,
+              z=zs,
+              name='',
+              hovertemplate=str(sec),
+              mode="lines",
+              line=go.scatter3d.Line(
+                  color=kwargs['color'],
+                  width=2
+              ))
+          )
+        return go.FigureWidget(data=data, layout={'showlegend': False})
+
+      else:
+        if 'cmap' not in kwargs:
+          # use same default colormap as the matplotlib version
+          from matplotlib.pyplot import cm
+          kwargs['cmap'] = cm.cool
+
+        cmap = kwargs['cmap']
+        show_diam = False
+
+        # calculate bounds
+
+        val_range = hi - lo
+
+        data = []
+        for sec in secs:
+          all_seg_pts = _segment_3d_pts(sec)
+          for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
+            val = _get_variable_seg(seg, variable)
+            if val is None:
+              col = 'black'
+            else:
+              col = color_to_hex(cmap(int(255 * (val - lo) / (val_range))))
+            if show_diam:
+              diam = seg.diam
+            else:
+              diam = 2
+            data.append(
+              go.Scatter3d(
+                x=xs,
+                y=ys,
+                z=zs,
+                name='',
+                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                mode="lines",
+                line=go.scatter3d.Line(
+                    color=col,
+                    width=diam
+                ))
+            )
+
+        fig = go.FigureWidget(data=data, layout={'showlegend': False})
+                              
+        fig.show()
+
+
+
+
+
+      
+
+
+    if hasattr(graph, '__name__'):
+      if graph.__name__ == 'matplotlib.pyplot':
+        fig = graph.figure()
+        return _do_plot_on_matplotlib_figure(fig)
+      elif graph.__name__ == 'plotly':
+        return _do_plot_on_plotly()
     elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
       return _do_plot_on_matplotlib_figure(graph)
-    else:
-      raise NotImplementedError
+    raise NotImplementedError
 
 def _nmodl():
   try:
