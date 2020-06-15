@@ -96,6 +96,22 @@ class NeuronTestCase(unittest.TestCase):
         d2 = '44366906aa94a50644bc734eb23afcc25d1206c0431c4e7908698eeb2597c385'
         assert d == d1 or d == d2
 
+    def testSectionListIterator(self):
+        """As of v8.0, iteration over a SectionList does not change the cas"""
+        # See issue 509. SectionList iterator bug requires change to
+        # longstanding behavior
+        soma = h.Section(name='soma')
+        soma.push()
+        sections = [h.Section(name='s%d'%i) for i in range(3)]
+        assert len([s for s in h.allsec()]) == 4
+        sl = h.SectionList(sections)
+        # Iteration over s SectionList does not change the currently accessed section
+        for s in sl:
+            assert 1 and h.cas() == soma
+        # If an iteration does not complete the section stack is still ok.
+        assert sections[1] in sl
+        assert 2 and h.cas() == soma
+
     @classmethod
     def ExtendedSection(cls):
         """test prsection (modified print statement)"""
