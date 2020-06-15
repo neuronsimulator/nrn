@@ -87,7 +87,7 @@ One of the primary advantage of CMake based build system is integration with oth
 
   ```
   mkdir build
-  pushd build
+  cd build
   ```
 
 3. Run cmake with the appropriate options (see below for list of common options). \
@@ -100,6 +100,12 @@ e.g. a bare-bones install:
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF
   ```
+
+Note that if you are building on Cray system with GNU toolchain, you have to set following environmental variable **before** calling above CMake comamnd:
+
+```
+export CRAYPE_LINK_TYPE=dynamic
+```
 
 4. Build the code:
 
