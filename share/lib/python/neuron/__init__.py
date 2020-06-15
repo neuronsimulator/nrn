@@ -769,21 +769,9 @@ class _PlotShapePlot(_WrapperPlot):
                   marker = matplotlib marker
                   **kwargs = passed to matplotlib's plot
               """
-              # TODO: there has to be a better way to do this
-              sec = segment.sec
-              n3d = sec.n3d()
-              arc3d = [sec.arc3d(i) for i in range(n3d)]
-              x3d = np.array([sec.x3d(i) for i in range(n3d)])
-              y3d = np.array([sec.y3d(i) for i in range(n3d)])
-              z3d = np.array([sec.z3d(i) for i in range(n3d)])
-              seg_l = sec.L * segment.x
-              x = np.interp(seg_l, arc3d, x3d)
-              y = np.interp(seg_l, arc3d, y3d)
-              z = np.interp(seg_l, arc3d, z3d)
+              x, y, z = _get_3d_pt(segment)
               self.plot([x], [y], [z], marker)
               return self
-
-
 
           def _do_plot(self, val_min, val_max,
                       sections,
@@ -849,6 +837,21 @@ class _PlotShapePlot(_WrapperPlot):
         val = None
       return val
 
+    def _get_3d_pt(segment):
+      import numpy as np
+      # TODO: there has to be a better way to do this
+      sec = segment.sec
+      n3d = sec.n3d()
+      arc3d = [sec.arc3d(i) for i in range(n3d)]
+      x3d = np.array([sec.x3d(i) for i in range(n3d)])
+      y3d = np.array([sec.y3d(i) for i in range(n3d)])
+      z3d = np.array([sec.z3d(i) for i in range(n3d)])
+      seg_l = sec.L * segment.x
+      x = np.interp(seg_l, arc3d, x3d)
+      y = np.interp(seg_l, arc3d, y3d)
+      z = np.interp(seg_l, arc3d, z3d)
+      return x, y, z
+
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
@@ -875,6 +878,27 @@ class _PlotShapePlot(_WrapperPlot):
       """requires matplotlib for colormaps if not specified explicitly"""
       import ctypes
       import plotly.graph_objects as go
+
+      class FigureWidgetWithNEURON(go.FigureWidget):
+        def mark(self, segment, marker='or', **kwargs):
+            """plot a marker on a segment
+
+            Args:
+                segment = the segment to mark
+                **kwargs = passed to go.Scatter3D plot
+            """
+            x, y, z = _get_3d_pt(segment)
+            # approximately match the appearance of the matplotlib defaults
+            kwargs.setdefault('marker_size', 5)
+            kwargs.setdefault('marker_color', 'red')
+            kwargs.setdefault('marker_opacity', 1)
+
+            self.add_trace(
+              go.Scatter3d(
+                x=[x], y=[y], z=[z], name='', hovertemplate=str(segment), **kwargs
+              )
+            )
+            return self
 
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
@@ -906,7 +930,7 @@ class _PlotShapePlot(_WrapperPlot):
                   width=2
               ))
           )
-        return go.FigureWidget(data=data, layout={'showlegend': False})
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
 
       else:
         if 'cmap' not in kwargs:
@@ -948,7 +972,7 @@ class _PlotShapePlot(_WrapperPlot):
                 ))
             )
 
-        return go.FigureWidget(data=data, layout={'showlegend': False})
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
 
     if hasattr(graph, '__name__'):
       if graph.__name__ == 'matplotlib.pyplot':
