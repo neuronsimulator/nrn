@@ -820,8 +820,11 @@ class _PlotShapePlot(_WrapperPlot):
                   for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                       line, = self.plot(xs, ys, zs, '-', **kwargs)
                       if variable is not None:
-                        vals.append(_get_variable_seg(seg, var))
-                      lines[line] = '%s at %s' % (val, seg)
+                        val = _get_variable_seg(seg, variable)
+                        vals.append(val)
+                        lines[line] = '%s at %s' % (val, seg)
+                      else:
+                        lines[line] = ''
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -945,16 +948,7 @@ class _PlotShapePlot(_WrapperPlot):
                 ))
             )
 
-        fig = go.FigureWidget(data=data, layout={'showlegend': False})
-                              
-        fig.show()
-
-
-
-
-
-      
-
+        return go.FigureWidget(data=data, layout={'showlegend': False})
 
     if hasattr(graph, '__name__'):
       if graph.__name__ == 'matplotlib.pyplot':
