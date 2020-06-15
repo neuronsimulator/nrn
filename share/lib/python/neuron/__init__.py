@@ -738,13 +738,14 @@ class _PlotShapePlot(_WrapperPlot):
   Limitations: many. Currently only supports plotting a full cell colored based on a variable.'''
   # TODO: handle pointmark, specified sections, color
   def __call__(self, graph, *args, **kwargs):
+    from neuron.gui2.utilities import _segment_3d_pts
+
     def _get_pyplot_axis3d(fig):
       '''requires matplotlib'''
       from matplotlib.pyplot import cm
       import matplotlib.pyplot as plt
       from mpl_toolkits.mplot3d import Axes3D
       import numpy as np
-      from neuron.gui2.utilities import _segment_3d_pts
 
       class Axis3DWithNEURON(Axes3D):
           def auto_aspect(self):
@@ -768,21 +769,9 @@ class _PlotShapePlot(_WrapperPlot):
                   marker = matplotlib marker
                   **kwargs = passed to matplotlib's plot
               """
-              # TODO: there has to be a better way to do this
-              sec = segment.sec
-              n3d = sec.n3d()
-              arc3d = [sec.arc3d(i) for i in range(n3d)]
-              x3d = np.array([sec.x3d(i) for i in range(n3d)])
-              y3d = np.array([sec.y3d(i) for i in range(n3d)])
-              z3d = np.array([sec.z3d(i) for i in range(n3d)])
-              seg_l = sec.L * segment.x
-              x = np.interp(seg_l, arc3d, x3d)
-              y = np.interp(seg_l, arc3d, y3d)
-              z = np.interp(seg_l, arc3d, z3d)
+              x, y, z = _get_3d_pt(segment)
               self.plot([x], [y], [z], marker)
               return self
-
-
 
           def _do_plot(self, val_min, val_max,
                       sections,
@@ -819,17 +808,11 @@ class _PlotShapePlot(_WrapperPlot):
                   for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                       line, = self.plot(xs, ys, zs, '-', **kwargs)
                       if variable is not None:
-                          try:
-                              if '.' in variable:
-                                  mech, var = variable.split('.')
-                                  val = getattr(getattr(seg, mech), var)
-                              else:
-                                  val = getattr(seg, variable)
-                          except AttributeError:
-                              # leave default color if no variable found
-                              val = None
-                          vals.append(val)
-                      lines[line] = '%s at %s' % (val, seg)
+                        val = _get_variable_seg(seg, variable)
+                        vals.append(val)
+                        lines[line] = '%s at %s' % (val, seg)
+                      else:
+                        lines[line] = ''
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -842,7 +825,32 @@ class _PlotShapePlot(_WrapperPlot):
               return lines
       return Axis3DWithNEURON(fig)
 
+    def _get_variable_seg(seg, variable):
+      try:
+        if '.' in variable:
+            mech, var = variable.split('.')
+            val = getattr(getattr(seg, mech), var)
+        else:
+            val = getattr(seg, variable)
+      except AttributeError:
+        # leave default color if no variable found
+        val = None
+      return val
 
+    def _get_3d_pt(segment):
+      import numpy as np
+      # TODO: there has to be a better way to do this
+      sec = segment.sec
+      n3d = sec.n3d()
+      arc3d = [sec.arc3d(i) for i in range(n3d)]
+      x3d = np.array([sec.x3d(i) for i in range(n3d)])
+      y3d = np.array([sec.y3d(i) for i in range(n3d)])
+      z3d = np.array([sec.z3d(i) for i in range(n3d)])
+      seg_l = sec.L * segment.x
+      x = np.interp(seg_l, arc3d, x3d)
+      y = np.interp(seg_l, arc3d, y3d)
+      z = np.interp(seg_l, arc3d, z3d)
+      return x, y, z
 
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
@@ -866,14 +874,115 @@ class _PlotShapePlot(_WrapperPlot):
       result.format_coord = format_coord
       return result
 
+    def _do_plot_on_plotly():
+      """requires matplotlib for colormaps if not specified explicitly"""
+      import ctypes
+      import plotly.graph_objects as go
 
-    if hasattr(graph, '__name__') and graph.__name__ == 'matplotlib.pyplot':
-      fig = graph.figure()
-      return _do_plot_on_matplotlib_figure(fig)
+      class FigureWidgetWithNEURON(go.FigureWidget):
+        def mark(self, segment, marker='or', **kwargs):
+            """plot a marker on a segment
+
+            Args:
+                segment = the segment to mark
+                **kwargs = passed to go.Scatter3D plot
+            """
+            x, y, z = _get_3d_pt(segment)
+            # approximately match the appearance of the matplotlib defaults
+            kwargs.setdefault('marker_size', 5)
+            kwargs.setdefault('marker_color', 'red')
+            kwargs.setdefault('marker_opacity', 1)
+
+            self.add_trace(
+              go.Scatter3d(
+                x=[x], y=[y], z=[z], name='', hovertemplate=str(segment), **kwargs
+              )
+            )
+            return self
+
+      get_plotshape_data = nrn_dll_sym('get_plotshape_data')
+      get_plotshape_data.restype = ctypes.py_object
+      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if secs is None:
+        secs = list(h.allsec())
+
+      def color_to_hex(col):
+        items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+        return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+      
+      if variable is None:
+        kwargs.setdefault('color', 'black')
+        
+        for sec in secs:
+          xs = [sec.x3d(i) for i in range(sec.n3d())]
+          ys = [sec.y3d(i) for i in range(sec.n3d())]
+          zs = [sec.z3d(i) for i in range(sec.n3d())]
+          data.append(
+            go.Scatter3d(
+              x=xs,
+              y=ys,
+              z=zs,
+              name='',
+              hovertemplate=str(sec),
+              mode="lines",
+              line=go.scatter3d.Line(
+                  color=kwargs['color'],
+                  width=2
+              ))
+          )
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
+
+      else:
+        if 'cmap' not in kwargs:
+          # use same default colormap as the matplotlib version
+          from matplotlib.pyplot import cm
+          kwargs['cmap'] = cm.cool
+
+        cmap = kwargs['cmap']
+        show_diam = False
+
+        # calculate bounds
+
+        val_range = hi - lo
+
+        data = []
+        for sec in secs:
+          all_seg_pts = _segment_3d_pts(sec)
+          for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
+            val = _get_variable_seg(seg, variable)
+            if val is None:
+              col = 'black'
+            else:
+              col = color_to_hex(cmap(int(255 * (val - lo) / (val_range))))
+            if show_diam:
+              diam = seg.diam
+            else:
+              diam = 2
+            data.append(
+              go.Scatter3d(
+                x=xs,
+                y=ys,
+                z=zs,
+                name='',
+                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                mode="lines",
+                line=go.scatter3d.Line(
+                    color=col,
+                    width=diam
+                ))
+            )
+
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
+
+    if hasattr(graph, '__name__'):
+      if graph.__name__ == 'matplotlib.pyplot':
+        fig = graph.figure()
+        return _do_plot_on_matplotlib_figure(fig)
+      elif graph.__name__ == 'plotly':
+        return _do_plot_on_plotly()
     elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
       return _do_plot_on_matplotlib_figure(graph)
-    else:
-      raise NotImplementedError
+    raise NotImplementedError
 
 def _nmodl():
   try:
