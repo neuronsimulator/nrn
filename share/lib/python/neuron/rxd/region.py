@@ -414,6 +414,7 @@ class Region(object):
         assert(position in (0, 1))
         # NOTE: some care is necessary in constructing normal vector... must be
         #       based on end frusta, not on vector between end points
+        dx = self.dx
         if position == 0:
             x = sec.x3d(0)
             y = sec.y3d(0)
@@ -426,10 +427,13 @@ class Region(object):
             x = sec.x3d(n - 1)
             y = sec.y3d(n - 1)
             z = sec.z3d(n - 1)
-            # NOTE: sign of the normal is irrelevant
             nx = x - sec.x3d(n - 2)
             ny = y - sec.y3d(n - 2)
             nz = z - sec.z3d(n - 2)
+            x -= dx * nx / (nx**2 + ny**2 + nz**2)**0.5
+            y -= dx * ny / (nx**2 + ny**2 + nz**2)**0.5
+            z -= dx * nz / (nx**2 + ny**2 + nz**2)**0.5
+
         else:
             raise RxDException('should never get here')
         #dn = (nx**2 + ny**2 + nz**2)**0.5
@@ -459,7 +463,6 @@ class Region(object):
         sphere_indices = [(i, j, k)
                           for i, j, k in itertools.product(i_indices, j_indices, k_indices)
                           if (xs[i] - x) ** 2 + (ys[j] - y) ** 2 + (zs[k] - z) ** 2 <= r ** 2]
-        dx = self.dx
         disc_indices = []
         for i, j, k in sphere_indices:
 #            a, b, c = xs[i], ys[j], zs[k]

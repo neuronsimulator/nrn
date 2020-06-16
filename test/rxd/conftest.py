@@ -7,7 +7,7 @@ from .testutils import collect_data
 
 def pytest_addoption(parser):
     parser.addoption("--mpi", action="store_true", default=False, help="use MPI")
-
+    parser.addoption("--save", action="store", default=None, help="save the test data")
 
 @pytest.fixture(scope="session")
 def neuron_import(request):
@@ -17,13 +17,14 @@ def neuron_import(request):
     if request.config.getoption("--mpi"):
         from mpi4py import MPI  # noqa: F401
 
+    save_path = request.config.getoption("--save")
+
     # we may not be not running in the test path so we have to load the mechanisms
     import neuron
 
     neuron.load_mechanisms(osp.abspath(osp.dirname(__file__)))
     from neuron import h, rxd
-
-    return h, rxd
+    return h, rxd, save_path
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ def neuron_instance(neuron_import):
     values for comparisons with the 'correct_data'.
     """
 
-    h, rxd = neuron_import
+    h, rxd, save_path = neuron_import
     data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')
     cvode = h.CVode()
@@ -44,7 +45,7 @@ def neuron_instance(neuron_import):
     h.stoprun = False
 
     def gather():
-        return collect_data(h, rxd, data)
+        return collect_data(h, rxd, data, save_path)
 
     cvode.extra_scatter_gather(0, gather)
     yield (h, rxd, data)

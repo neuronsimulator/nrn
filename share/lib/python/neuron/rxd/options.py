@@ -7,6 +7,10 @@ use_reaction_contribution_to_jacobian = True
 
 concentration_nodes_3d = "surface"
 
+# how far inside must a voxel be to be consider inside
+# the value is necessary to account for floating point precision
+ics_distance_threshold = -1e-12
+
 # the number of electrophysiology fixed steps per rxd step
 # WARNING: setting this to anything other than 1 is probably a very bad
 #          idea, numerically speaking, at least for now
