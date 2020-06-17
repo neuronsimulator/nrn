@@ -18,19 +18,20 @@ We should properties like is_enum, data_type, is_symbol, is_global etc.
 """
 
 # yapf: disable
-BASE_TYPES = {"short",
-              "int",
-              "float",
-              "double",
-              "std::string",
-              "BinaryOp",
-              "UnaryOp",
-              "ReactionOp",
-              "FirstLastType",
-              "QueueType",
-              "BAType",
-              "UnitStateType",
-              }
+INTEGRAL_TYPES = {"short",
+                  "int",
+                  "float",
+                  "double",
+                  "BinaryOp",
+                  "UnaryOp",
+                  "ReactionOp",
+                  "FirstLastType",
+                  "QueueType",
+                  "BAType",
+                  "UnitStateType",
+                  }
+
+BASE_TYPES = {"std::string" } | INTEGRAL_TYPES
 
 # base types which are enums
 ENUM_BASE_TYPES = {"BinaryOp",

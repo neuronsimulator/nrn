@@ -116,6 +116,10 @@ class BaseNode:
         return self.class_name in node_info.BASE_TYPES
 
     @property
+    def is_integral_type_node(self):
+        return self.class_name in node_info.INTEGRAL_TYPES
+
+    @property
     def is_string_node(self):
         return self.class_name == node_info.STRING_NODE
 
@@ -196,6 +200,13 @@ class ChildNode(BaseNode):
 
         return type_name
 
+    def get_rvalue_typename(self):
+        """returns rvalue reference type of the node"""
+        typename = self.get_typename()
+        if self.is_base_type_node and not self.is_integral_type_node or self.is_ptr_excluded_node:
+            return "const " + typename + "&"
+        return typename
+
     def get_shared_typename(self):
         """returns the shared pointer type of the node for declaration
 
@@ -226,6 +237,14 @@ class ChildNode(BaseNode):
             type_name = f"std::shared_ptr<{self.class_name}>"
 
         return type_name
+
+    @property
+    def member_rvalue_typename(self):
+        """returns rvalue reference type when used as returned or parameter type"""
+        typename = self.member_typename
+        if not self.is_integral_type_node:
+            return "const " + typename + "&"
+        return typename
 
     def get_add_methods(self):
         s = ''
@@ -381,12 +400,12 @@ class ChildNode(BaseNode):
     def get_getter_method(self, class_name):
         getter_method = self.getter_method if self.getter_method else "get_" + to_snake_case(self.varname)
         getter_override = " override" if self.getter_override else ""
-        return_type = self.member_typename
+        return_type = self.member_rvalue_typename
         return f"""
                    /**
-                    * \\brief Getter (const ref) for member variable \\ref {class_name}.{self.varname}
+                    * \\brief Getter for member variable \\ref {class_name}.{self.varname}
                     */
-                   const {return_type}& {getter_method}() const {getter_override} {{
+                   {return_type} {getter_method}() const noexcept {getter_override} {{
                        return {self.varname};
                    }}
                 """
@@ -547,6 +566,16 @@ class Node(BaseNode):
         return self.base_class == node_info.BASE_BLOCK
 
     @property
+    def has_setters(self):
+        """returns True if the class has at least one setter member method"""
+        return any([
+            self.is_name_node,
+            self.has_token,
+            self.is_symtab_needed,
+            self.is_data_type_node and not self.is_enum_node
+        ])
+
+    @property
     def is_base_block_node(self):
         """
         check if node is Block
@@ -593,11 +622,11 @@ class Node(BaseNode):
         return self.base_class == node_info.NUMBER_NODE
 
     def ctor_declaration(self):
-        args = [f'{c.get_typename()} {c.varname}' for c in self.children]
+        args = [f'{c.get_rvalue_typename()} {c.varname}' for c in self.children]
         return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_definition(self):
-        args = [f'{c.get_typename()} {c.varname}' for c in self.children]
+        args = [f'{c.get_rvalue_typename()} {c.varname}' for c in self.children]
         initlist = [f'{c.varname}({c.varname})' for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
@@ -606,11 +635,11 @@ class Node(BaseNode):
         return textwrap.dedent(s)
 
     def ctor_shrptr_declaration(self):
-        args = [f'{c.member_typename} {c.varname}' for c in self.children]
+        args = [f'{c.member_rvalue_typename} {c.varname}' for c in self.children]
         return f"explicit {self.class_name}({', '.join(args)});"
 
     def ctor_shrptr_definition(self):
-        args = [f'{c.member_typename} {c.varname}' for c in self.children]
+        args = [f'{c.member_rvalue_typename} {c.varname}' for c in self.children]
         initlist = [f'{c.varname}({c.varname})' for c in self.children]
 
         s = f"""{self.class_name}::{self.class_name}({', '.join(args)})
