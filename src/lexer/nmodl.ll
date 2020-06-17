@@ -231,7 +231,7 @@ ELSE                    {
                                   * as integer with token as it's name. Otherwise return it as
                                   * regular name token. */
                                 else if (driver.is_defined_var(yytext)) {
-                                    auto value = driver.get_defined_var_value(yytext);
+                                    const auto& value = driver.get_defined_var_value(yytext);
                                     return integer_symbol(value, loc, yytext);
                                 } else {
                                     return name_symbol(yytext, loc);
