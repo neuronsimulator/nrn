@@ -100,7 +100,7 @@ os.environ["CXX"]=mpicxx_bin
 #################################
 
 #include_dirs for hoc module
-include_dirs = [nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
+include_dirs = [nrn_srcdir+'/src/nrnpython', nrn_srcdir+'/src/oc', '../oc', nrn_srcdir+'/src/nrnmpi']
 #include dirs for all modules
 
 include_dirs_common = []

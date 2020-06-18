@@ -7,7 +7,7 @@
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
-#include <Python.h>
+#include "nrnpy_utils.h"
 #include <stdlib.h>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
@@ -49,20 +49,87 @@ extern int nrn_nobanner_;
 extern int ivocmain(int, char**, char**);
 extern int nrn_main_launch;
 
-#ifdef NRNMPI
-
-static const char* argv_mpi[] = {"NEURON", "-mpi", "-dll", 0};
-static int argc_mpi = 2;
-
-#endif
-
-static const char* argv_nompi[] = {"NEURON", "-dll", 0};
-static int argc_nompi = 1;
-
 #if USE_PTHREAD
 #include <pthread.h>
 static pthread_t main_thread_;
 #endif
+
+/**
+ * Manage argc,argv for calling ivocmain
+ * add_arg(...) will only add if name is not already in the arg list
+ * returns 1 if added, 0 if not
+*/
+static size_t arg_size;
+static int argc;
+static char** argv;
+static int add_arg(const char* name, const char* value) {
+  if (size_t(argc + 2) >= arg_size) {
+    arg_size += 10;
+    argv = (char**)realloc(argv, arg_size*sizeof(char*));
+  }
+  // Don't add if already in argv
+  for (int i=1; i < argc; ++i) {
+    if (strcmp(name, argv[i]) == 0) {
+      return 0;
+    }
+  }
+  argv[argc++] = strdup(name);
+  if (value) {
+    argv[argc++] = strdup(value);
+  }
+  return 1;
+}
+
+/**
+ * Return 1 if string, 0 otherwise.
+*/
+static int is_string(PyObject* po) {
+  if (PyUnicode_Check(po) || PyBytes_Check(po)) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * Add all name:value from __main__.neuron_options dict if exists
+ * to the argc,argv for calling ivocmain
+ * Note: if value is None then only name is added to argv.
+ * The special "-print-options" name is not added to argv but
+ * causes a return value of 1. Otherwise the return value is 0.
+*/
+static int add_neuron_options() {
+  PyObject* modules = PyImport_GetModuleDict();
+  PyObject* module = PyDict_GetItemString(modules, "__main__");
+  int rval = 0;
+  if (!module) {
+    PySys_WriteStdout("No __main__  module\n");
+    return rval;
+  }
+  PyObject* neuron_options = PyObject_GetAttrString(module, "neuron_options");
+  if (!neuron_options) {
+    return rval;
+  }
+  if (!PyDict_Check(neuron_options)) {
+    PySys_WriteStdout("__main__.neuron_options is not a dict\n");
+    return rval;
+  }
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  while(PyDict_Next(neuron_options, &pos, &key, &value)) {
+    if (!is_string(key) || (!is_string(value) && value != Py_None)) {
+     PySys_WriteStdout("A neuron_options key:value is not a string:string or string:None\n");
+     continue;
+    }
+    Py2NRNString skey(key);
+    Py2NRNString sval(value);
+    if (strcmp(skey.c_str(), "-print-options") == 0) {
+      rval = 1;
+      continue;
+    }
+    add_arg(skey.c_str(), sval.c_str());
+  }
+  return rval;
+}
 
 static void nrnpython_finalize() {
 #if USE_PTHREAD
@@ -110,8 +177,6 @@ void inithoc() {
 
   char buf[200];
 
-  int argc = argc_nompi;
-  char** argv = (char**)argv_nompi;
 #if USE_PTHREAD
   main_thread_ = pthread_self();
 #endif
@@ -124,6 +189,10 @@ void inithoc() {
     return;
 #endif //!PY_MAJOR_VERSION >= 3
   }
+
+  add_arg("NEURON", NULL);
+  int print_options = add_neuron_options();
+
 #ifdef NRNMPI
 
   int flag = 0;                 // true if MPI_Initialized is called
@@ -170,12 +239,10 @@ void inithoc() {
     nrnmpi_wrap_mpi_init(&flag);
     if (flag) {
       mpi_mes = 1;
-      argc = argc_mpi;
-      argv = (char**)argv_mpi;
+      add_arg("-mpi", NULL);
     } else if(env_mpi != NULL && strcmp(env_mpi, "1") == 0) {
       mpi_mes = 2;
-      argc = argc_mpi;
-      argv = (char**)argv_mpi;
+      add_arg("-mpi", NULL);
     }else{
       mpi_mes = 3;
     }
@@ -197,9 +264,7 @@ void inithoc() {
   FILE* f;
   if ((f = fopen(buf, "r")) != 0) {
     fclose(f);
-    argc += 2;
-    argv[argc - 1] = new char[strlen(buf) + 1];
-    strcpy(argv[argc - 1], buf);
+    add_arg("-dll", buf);
   }
 #endif // !defined(__CYGWIN__)
   nrn_is_python_extension = 1;
@@ -239,20 +304,24 @@ void inithoc() {
     const int nframe_env_value = strtol(env_nframe, &endptr, 10);
     if (*endptr == '\0') {
       if(nframe_env_value > 0) {
-        argc += 3;
-        argv[argc - 2] = new char[strlen("-NFRAME") + 1];
-        strcpy(argv[argc - 2], "-NFRAME");
-        argv[argc - 1] = new char[strlen(env_nframe) + 1];
-        strcpy(argv[argc - 1], env_nframe);
+        add_arg("-NFRAME", env_nframe);
       }else{
-         printf(
+         PySys_WriteStdout(
           "NEURON_NFRAME env value must be positive\n");
       }
     }else{
-      printf(
+      PySys_WriteStdout(
           "NEURON_NFRAME env value is invalid!\n");
     }
 
+  }
+
+  if (print_options) {
+    PySys_WriteStdout("ivocmain options:");
+    for (int i=1; i < argc; ++i ) {
+      PySys_WriteStdout(" '%s'", argv[i]);
+    }
+    PySys_WriteStdout("\n");
   }
 
   nrn_main_launch = 2;
