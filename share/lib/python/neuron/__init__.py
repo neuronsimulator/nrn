@@ -820,8 +820,8 @@ class _PlotShapePlot(_WrapperPlot):
                       for sec in sections:
                           for line, val in zip(lines_list, vals):
                               if val is not None:
-                                  col = cmap(int(255 * (val - val_min) / (val_range)))
-                                  line.set_color(col)
+                                col = _get_color(variable, val, cmap, val_min, val_max, val_range)
+                                line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
 
@@ -874,6 +874,25 @@ class _PlotShapePlot(_WrapperPlot):
       result.format_coord = format_coord
       return result
 
+    def _get_color(variable, val, cmap, lo, hi, val_range):
+      if variable is None or val is None:
+        col = 'black'
+      elif val_range == 0:
+        if val < lo:
+          col = color_to_hex(cmap(0))
+        elif val > hi:
+          col = color_to_hex(cmap(255))
+        else:
+          val = color_to_hex(128)
+      else:
+        col = color_to_hex(cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range))))
+      return col
+
+    def color_to_hex(col):
+      items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+      return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+
+
     def _do_plot_on_plotly():
       """requires matplotlib for colormaps if not specified explicitly"""
       import ctypes
@@ -906,9 +925,6 @@ class _PlotShapePlot(_WrapperPlot):
       if secs is None:
         secs = list(h.allsec())
 
-      def color_to_hex(col):
-        items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
-        return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
       
       if variable is None:
         kwargs.setdefault('color', 'black')
@@ -950,10 +966,7 @@ class _PlotShapePlot(_WrapperPlot):
           all_seg_pts = _segment_3d_pts(sec)
           for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
             val = _get_variable_seg(seg, variable)
-            if val is None:
-              col = 'black'
-            else:
-              col = color_to_hex(cmap(int(255 * (val - lo) / (val_range))))
+            col = _get_color(variable, val, cmap, lo, hi, val_range)
             if show_diam:
               diam = seg.diam
             else:
