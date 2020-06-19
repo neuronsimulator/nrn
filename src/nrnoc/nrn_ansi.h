@@ -129,6 +129,7 @@ extern void nrn_fast_imem_alloc();
 extern void nrn_calc_fast_imem(NrnThread*);
 extern Section* nrn_secarg(int iarg);
 extern void nrn_seg_or_x_arg(int iarg, Section** psec, double* px);
+extern void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px);
 extern Section* nrnpy_pysecname2sec(const char*);
 extern const char* nrnpy_sec2pysecname(Section* sec);
 extern void nrnpy_pysecname2sec_add(Section* sec);
