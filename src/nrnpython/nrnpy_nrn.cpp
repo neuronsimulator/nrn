@@ -497,6 +497,10 @@ static void o2loc2(Object* o, Section** psec, double* px) {
     Py_INCREF(obj);
     po = PyObject_GetAttrString(obj, "segment");
     Py_DECREF(obj);
+    if (free_po) {
+        // don't need the element from the list anymore
+        Py_DECREF(obj);
+    }
     free_po = true;
   }
   NPySegObj* pyseg = (NPySegObj*)po;
