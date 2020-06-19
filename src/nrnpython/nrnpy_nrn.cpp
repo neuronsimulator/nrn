@@ -120,6 +120,7 @@ static Section* o2sec(Object*);
 extern Section* (*nrnpy_o2sec_p_)(Object*);
 static void o2loc(Object*, Section**, double*);
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 static void nrnpy_unreg_mech(int);
 extern char* (*nrnpy_pysec_name_p_)(Section*);
 static char* pysec_name(Section*);
@@ -465,6 +466,45 @@ static void o2loc(Object* o, Section** psec, double* px) {
   NPySegObj* pyseg = (NPySegObj*)po;
   *psec = pyseg->pysec_->sec_;
   *px = pyseg->x_;
+}
+
+
+static void o2loc2(Object* o, Section** psec, double* px) {
+  bool free_po = false;
+  if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
+    hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", 0);
+  }
+  PyObject* po = nrnpy_hoc2pyobject(o);
+  if (!PyObject_TypeCheck(po, psegment_type)) {
+    if (PyList_Check(po)) {
+    	if (PyList_Size(po) != 1) {
+    	    hoc_execerror("If a list is supplied, it must be of length 1", 0);
+    	} else {
+    	    PyObject* old_po = po;
+    	    Py_INCREF(old_po);
+    	    po = PyList_GetItem(po, 0);
+    	    Py_DECREF(old_po);
+    	    free_po = true;
+    	}
+    } 
+    if (!PyObject_HasAttrString(po, "segment")) {
+        if (free_po) {
+            Py_DECREF(po);
+        }
+        hoc_execerror("not a Python nrn.Segment, rxd.node, or other with a segment property", 0);
+    }
+    PyObject* obj = po;
+    Py_INCREF(obj);
+    po = PyObject_GetAttrString(obj, "segment");
+    Py_DECREF(obj);
+    free_po = true;
+  }
+  NPySegObj* pyseg = (NPySegObj*)po;
+  *psec = pyseg->pysec_->sec_;
+  *px = pyseg->x_;
+  if (free_po) {
+      Py_DECREF(po);
+  }
 }
 
 static int NPyMechObj_init(NPyMechObj* self, PyObject* args, PyObject* kwds) {
@@ -2339,6 +2379,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_seg_from_sec_x = seg_from_sec_x;
   nrnpy_o2sec_p_ = o2sec;
   nrnpy_o2loc_p_ = o2loc;
+  nrnpy_o2loc2_p_ = o2loc2;
   nrnpy_pysec_name_p_ = pysec_name;
   nrnpy_pysec_cell_p_ = pysec_cell;
   nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;

@@ -26,6 +26,10 @@ class NodeList(list):
     def value(self, v):
         # TODO: change this when not everything is a concentration
         self.concentration = v
+        
+    @property
+    def segment(self):
+    	return [node.segment for node in self]    	        
     
     @property
     def concentration(self):
