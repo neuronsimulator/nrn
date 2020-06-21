@@ -102,11 +102,13 @@ static int add_neuron_options() {
   PyObject* module = PyDict_GetItemString(modules, "__main__");
   int rval = 0;
   if (!module) {
+    PyErr_Clear();
     PySys_WriteStdout("No __main__  module\n");
     return rval;
   }
   PyObject* neuron_options = PyObject_GetAttrString(module, "neuron_options");
   if (!neuron_options) {
+    PyErr_Clear();
     return rval;
   }
   if (!PyDict_Check(neuron_options)) {
