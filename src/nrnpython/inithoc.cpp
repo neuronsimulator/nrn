@@ -200,6 +200,19 @@ static int add_space_separated_options(const char* str) {
   return rval;
 }
 
+/**
+ * Return 1 if the option exists in argv[]
+*/
+static int have_opt(const char* arg) {
+  if (!arg) { return 0; }
+  for (int i=0; i < argc; ++i) {
+    if (strcmp(arg, argv[i]) == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 static void nrnpython_finalize() {
 #if USE_PTHREAD
   pthread_t now = pthread_self();
@@ -275,11 +288,12 @@ void inithoc() {
   nrnmpi_stubs();
   /**
    * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
+   * and there is no '-mpi' arg.
    * We call nrnmpi_load to load MPI library which returns:
    *  - nil if loading is successfull
    *  - error message in case of loading error
    */
-  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0) {
+  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {
     libnrnmpi_is_loaded = 0;
   }
   if (libnrnmpi_is_loaded) {
@@ -291,12 +305,14 @@ void inithoc() {
     }
     if (pmes && libnrnmpi_is_loaded) {
       printf(
-        "NEURON_INIT_MPI nonzero in env but NEURON cannot initialize MPI "
+        "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot initialize MPI "
         "because:\n%s\n",
         pmes);
       exit(1);
     }
   }
+#else
+  have_opt(NULL); // avoid 'defined but not used' warning
 #endif
 
   /**
