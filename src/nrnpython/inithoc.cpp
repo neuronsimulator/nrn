@@ -9,6 +9,7 @@
 #endif
 #include "nrnpy_utils.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
@@ -133,6 +134,72 @@ static int add_neuron_options() {
   return rval;
 }
 
+/**
+ * Space separated options. Must handle escaped space, '...' and "...".
+ * Return 1 if contains a -print-options (not added to options)
+*/
+
+static int add_space_separated_options(const char* str) {
+  int rval = 0;
+  if (!str) { return rval; }
+  char* s = strdup(str);
+  //int state = 0; // 1 means in "...", 2 means in '...'
+  for (char* cp = s; *cp; cp++) {
+    while (isspace(*cp)) { // skip spaces
+      ++cp;
+      if (*cp == '\0') {
+        free(s);
+        return rval;
+      }
+    }
+    // start processing a token
+    char* cpbegin = cp;
+    char* cp1 = cpbegin; // in token pointer, escapes cause to lag behind
+    while (!isspace(*cp) && *cp != '\0') { // to next space delimiter
+      *cp1++ = *cp++;
+      if (cp1[-1] == '\\' && (isspace(*cp) || *cp == '"' || *cp == '\'')) {
+        // escaped space, ", or '
+        cp1[-1] = *cp++;
+      }else if (cp1[-1] == '"') { // consume to next (unescaped) "
+        cp1--; // backup over the "
+        while (*cp != '"' && *cp != '\0') {
+          *cp1++ = *cp++;
+          if (cp1[-1] == '\\' && *cp == '"') { // escaped " inside "..."
+            cp1[-1] = *cp++;
+          }
+        }
+        if (*cp == '"') {
+          cp++; // skip over the closing "
+        }
+      }else if (cp1[-1] == '\'') { // consume to next (unescaped) '
+        cp1--; // backup over the '
+        while (*cp != '\'' && *cp != '\0') {
+          *cp1++ = *cp++;
+          if (cp1[-1] == '\\' && *cp == '\'') { // escaped ' inside '...'
+            cp1[-1] = *cp++;
+          }
+        }
+        if (*cp == '\'') {
+          cp++; // skip over the closing '
+        }
+      }
+    }
+    if (*cp == '\0') { // at end of s. 'for' will return after it increments.
+      --cp;
+    }
+    if (cp1 > cpbegin) {
+      *cp1 = '\0';
+    }
+    if (strcmp(cpbegin, "-print-options") == 0) {
+      rval = 1;
+    }else{
+      add_arg(cpbegin, NULL);
+    }
+  }
+  free(s);
+  return rval;
+}
+
 static void nrnpython_finalize() {
 #if USE_PTHREAD
   pthread_t now = pthread_self();
@@ -194,6 +261,7 @@ void inithoc() {
 
   add_arg("NEURON", NULL);
   int print_options = add_neuron_options();
+  print_options += add_space_separated_options(getenv("NEURON_MODULE_OPTIONS"));
 
 #ifdef NRNMPI
 
