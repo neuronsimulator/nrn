@@ -982,11 +982,11 @@ Mechanisms
     Syntax:
         ``section.insert('pas')``
 
-        ``section.pas.g -- mho/cm2	conductance``
+        ``section(x).pas.g -- mho/cm2	conductance``
 
-        ``section.pas.e -- mV		reversal potential``
+        ``section(x).pas.e -- mV		reversal potential``
 
-        ``section.pas.i -- mA/cm2		non-specific current``
+        ``section(x).pas.i -- mA/cm2		non-specific current``
 
 
     Description:
