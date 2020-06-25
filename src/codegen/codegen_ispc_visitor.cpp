@@ -63,6 +63,50 @@ void CodegenIspcVisitor::visit_var_name(ast::VarName& node) {
     CodegenCVisitor::visit_var_name(node);
 }
 
+void CodegenIspcVisitor::visit_local_list_statement(ast::LocalListStatement& node) {
+    if (!codegen) {
+        return;
+    }
+    /// Correct indentation
+    printer->add_newline();
+    printer->add_indent();
+
+    /// Name of the variable _dt given by
+    /// nmodl::visitor::SteadystateVisitor::create_steadystate_block()
+    const std::string steadystate_dt_variable_name = "dt_saved_value";
+    auto type = CodegenCVisitor::local_var_type() + " ";
+    printer->add_text(type);
+    auto local_variables = node.get_variables();
+    bool dt_saved_value_exists = false;
+
+    /// Remove dt_saved_value from local_variables if it exists
+    local_variables.erase(std::remove_if(local_variables.begin(),
+                                         local_variables.end(),
+                                         [&](const std::shared_ptr<ast::LocalVar>& local_variable) {
+                                             if (local_variable->get_node_name() ==
+                                                 steadystate_dt_variable_name) {
+                                                 dt_saved_value_exists = true;
+                                                 return true;
+                                             } else {
+                                                 return false;
+                                             }
+                                         }),
+                          local_variables.end());
+
+    /// Print the local_variables like normally
+    CodegenCVisitor::print_vector_elements(local_variables, ", ");
+
+    /// Print dt_saved_value as uniform
+    if (dt_saved_value_exists) {
+        printer->add_text(";");
+        /// Correct indentation
+        printer->add_newline();
+        printer->add_indent();
+
+        type = CodegenCVisitor::local_var_type() + " uniform ";
+        printer->add_text(type + steadystate_dt_variable_name);
+    }
+}
 
 /****************************************************************************************/
 /*                      Routines must be overloaded in backend                          */
