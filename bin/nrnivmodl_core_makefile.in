@@ -190,7 +190,7 @@ $(kinderiv_h): $(mod_all_cpp_files) build_always | $(MODC_DIR)
 	cd $(MODC_DIR) && mkdir -p _tmp &&	mv [^_]*.cpp _tmp/ && \
 	  mv $(addprefix _tmp/,$(notdir $(mod_all_cpp_files))) ./ || true
 	rm -rf $(MODC_DIR)/_tmp
-	cd $(MODC_DIR) && python $(datadir)/kinderiv.py
+	cd $(MODC_DIR) && @PYTHON_EXECUTABLE@ $(datadir)/kinderiv.py
 
 
 $(dimplic_c): $(dimplic_src) | $(MODC_DIR)

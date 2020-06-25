@@ -87,6 +87,11 @@ include(OpenAccHelper)
 include(ClangFormatHelper)
 
 # =============================================================================
+# Common dependencies
+# =============================================================================
+find_package(PythonInterp REQUIRED)
+
+# =============================================================================
 # ISPC should compile with --pic by default
 # =============================================================================
 set(CMAKE_ISPC_FLAGS "--pic ${CMAKE_ISPC_FLAGS}")
