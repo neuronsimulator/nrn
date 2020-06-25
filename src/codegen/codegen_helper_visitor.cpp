@@ -121,7 +121,7 @@ void CodegenHelperVisitor::find_ion_variables() {
         }
     }
 
-    /// check if worte_conc(...) will be needed
+    /// check if write_conc(...) will be needed
     for (const auto& ion: info.ions) {
         for (const auto& var: ion.writes) {
             if (!ion.is_ionic_current(var) && !ion.is_rev_potential(var)) {

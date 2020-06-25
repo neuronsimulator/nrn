@@ -28,17 +28,35 @@ jobs:
       export CXX='g++-8'
       mkdir -p $(Build.Repository.LocalPath)/build
       cd $(Build.Repository.LocalPath)/build
-      cmake --version 
+      cmake --version
       cmake .. -DPYTHON_EXECUTABLE=$(which python3.7) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=Release
       make -j 2
       if [ $? -ne 0 ]
       then
         make VERBOSE=1
       fi
+      make install
       env CTEST_OUTPUT_ON_FAILURE=1 make test
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
-    displayName: 'Build and Run Tests'
+    displayName: 'Build and Run Unit Tests'
+  - script: |
+      export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
+      export CXX='g++-8'
+      git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
+      mkdir CoreNeuron/build
+      cd CoreNeuron/build
+      cmake --version
+      cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl -DCORENRN_NMODL_FLAGS="sympy --analytic"
+      make -j 2
+      if [ $? -ne 0 ]
+      then
+        make VERBOSE=1
+      fi
+      ./bin/nrnivmodl-core $(Build.Repository.LocalPath)/test/integration/mod
+    env:
+      CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
+    displayName: 'Build and Run Integration Tests'
 - job: 'osx1014'
   pool:
     vmImage: 'macOS-10.14'
@@ -55,7 +73,7 @@ jobs:
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
       mkdir -p $(Build.Repository.LocalPath)/build
       cd $(Build.Repository.LocalPath)/build
-      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=RelWithDebInfo
       make -j 2
       if [ $? -ne 0 ]
       then

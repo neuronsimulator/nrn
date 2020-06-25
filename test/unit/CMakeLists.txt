@@ -8,8 +8,7 @@ include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/eigen)
 # =============================================================================
 # Common input data library
 # =============================================================================
-add_library(test_util STATIC ${CMAKE_CURRENT_SOURCE_DIR}/utils/nmodl_constructs.cpp
-                             ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.cpp)
+add_library(test_util STATIC utils/nmodl_constructs.cpp utils/test_utils.cpp)
 
 # =============================================================================
 # Common input data library
@@ -123,8 +122,9 @@ endforeach()
 # =============================================================================
 # pybind11 tests
 # =============================================================================
-add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/ode)
-add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/pybind)
+add_test(NAME Ode COMMAND ${PYTHON_EXECUTABLE} -m pytest ${NMODL_PROJECT_SOURCE_DIR}/test/unit/ode)
+add_test(NAME Pybind COMMAND ${PYTHON_EXECUTABLE} -m pytest
+                             ${NMODL_PROJECT_SOURCE_DIR}/test/unit/pybind)
 foreach(test_name Ode Pybind)
   set_tests_properties(
     ${test_name} PROPERTIES ENVIRONMENT
