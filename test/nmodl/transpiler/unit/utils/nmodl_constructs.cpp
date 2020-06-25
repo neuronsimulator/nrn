@@ -5,7 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include "test/utils/nmodl_constructs.hpp"
+#include "nmodl_constructs.hpp"
 
 namespace nmodl {
 /// custom type to represent nmodl construct for testing

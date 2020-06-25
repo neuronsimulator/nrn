@@ -9,7 +9,7 @@
 
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
-#include "test/utils/nmodl_constructs.hpp"
+#include "test/unit/utils/nmodl_constructs.hpp"
 #include "visitors/global_var_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"

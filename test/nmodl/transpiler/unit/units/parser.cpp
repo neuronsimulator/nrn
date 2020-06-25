@@ -15,7 +15,7 @@
 #include "config/config.h"
 #include "parser/diffeq_driver.hpp"
 #include "parser/unit_driver.hpp"
-#include "test/utils/test_utils.hpp"
+#include "test/unit/utils/test_utils.hpp"
 
 //=============================================================================
 // Parser tests
