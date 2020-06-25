@@ -233,6 +233,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void visit_function_call(ast::FunctionCall& node) override;
     void visit_var_name(ast::VarName& node) override;
     void visit_program(ast::Program& node) override;
+    void visit_local_list_statement(ast::LocalListStatement& node) override;
 };
 
 /** @} */  // end of codegen_backends
