@@ -94,6 +94,7 @@ extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
 extern int nrn_netcon_weight(void*, double**);
 extern int nrn_matrix_dim(void*, int);
+extern NPySecObj* newpysechelp(Section* sec);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
@@ -1634,6 +1635,12 @@ static hoc_Item* next_valid_secitem(hoc_Item* q, hoc_Item* ql) {
 }
 
 static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
+  // Note that the longstanding behavior of changing the currently
+  // accessed section during iteration no longer takes place because
+  // we cannot guarantee that an iterate will complete with state
+  // PyHoc::Last and so the previous Section would have been left on the
+  // hoc section stack.
+
   // Primarily the Section is pushed and the currently accessed python
   // Section is returned during sequential iteration over the list ql.
   // On re-entry here, the previous Section is popped.
@@ -1686,13 +1693,11 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
       }else{
         po->u.its_ = PyHoc::NextNotLast;
       }
-      nrn_pushsec(sec);
-      return nrnpy_cas(NULL, NULL);
+      return (PyObject*)newpysechelp(sec);
     }else{ // no valid current item so stop
       po->iteritem_ = NULL;
       return NULL;
     }
-
   } else if (po->u.its_ == PyHoc::NextNotLast) {
     nrn_popsec(); // pop the previous iteration.
     // it would be a bug if po->iteritem_ (now the curitem) has been delete_section
@@ -1718,11 +1723,8 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     if (po->iteritem_ == ql) {
       po->u.its_ = PyHoc::Last;
     }
-    nrn_pushsec(sec);
-    return nrnpy_cas(NULL, NULL);
-
+    return (PyObject*)newpysechelp(sec);
   } else if (po->u.its_ == PyHoc::Last) {
-    nrn_popsec();
     po->iteritem_ = NULL;
     return NULL;
   }

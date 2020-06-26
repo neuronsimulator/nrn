@@ -672,13 +672,17 @@ class _RangeVarPlot(_WrapperPlot):
   Additional arguments and keyword arguments are passed to the graph's
   plotting method.
 
-  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+  Example, showing plotting to NEURON graphics, bokeh, matplotlib,
+  plotnine/ggplot, and plotly:
 
   .. code::
 
     from matplotlib import pyplot
     from neuron import h, gui
     import bokeh.plotting as b
+    import plotly
+    import plotly.graph_objects as go
+    import plotnine as p9
     import math
 
     dend = h.Section(name='dend')
@@ -705,7 +709,22 @@ class _RangeVarPlot(_WrapperPlot):
     r.plot(bg, line_width=10)
     b.show(bg)
 
-    pyplot.show()"""
+    # plotly
+    r.plot(plotly).show()
+
+    # also plotly
+    fig = go.Figure()
+    r.plot(fig)
+    fig.show()
+
+    pyplot.show()
+    
+    # plotnine/ggplot
+    p9.ggplot() + r.plot(p9)
+
+    # alternative plotnine/ggplot
+    r.plot(p9.ggplot())
+    """
 
   def __call__(self, graph, *args, **kwargs):
       yvec = h.Vector()
@@ -713,13 +732,36 @@ class _RangeVarPlot(_WrapperPlot):
       self._data.to_vector(yvec, xvec)
       if isinstance(graph, hoc.HocObject):
         return yvec.line(graph, xvec, *args)
+      str_type_graph = str(type(graph))
+      if str_type_graph == "<class 'plotly.graph_objs._figure.Figure'>":
+        # plotly figure
+        import plotly.graph_objects as go
+        kwargs.setdefault('mode', 'lines')
+        return graph.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_type_graph == "<class 'plotnine.ggplot.ggplot'>":
+        # ggplot object
+        import plotnine as p9
+        import pandas as pd
+        return graph + p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
+      str_graph = str(graph)
+      if str_graph.startswith("<module 'plotly' from "):
+        # plotly module
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        kwargs.setdefault('mode', 'lines')
+        return fig.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_graph.startswith("<module 'plotnine' from "):
+        # plotnine module (contains ggplot)
+        import plotnine as p9
+        import pandas as pd
+        return p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
       if hasattr(graph, 'plot'):
         # works with e.g. pyplot or a matplotlib axis
         return graph.plot(xvec, yvec, *args, **kwargs)
       if hasattr(graph, 'line'):
         # works with e.g. bokeh
         return graph.line(xvec, yvec, *args, **kwargs)
-      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+      if str_type_graph == "<class 'matplotlib.figure.Figure'>":
         raise Exception('plot to a matplotlib axis not a matplotlib figure')
       raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
 
@@ -820,8 +862,8 @@ class _PlotShapePlot(_WrapperPlot):
                       for sec in sections:
                           for line, val in zip(lines_list, vals):
                               if val is not None:
-                                  col = cmap(int(255 * (val - val_min) / (val_range)))
-                                  line.set_color(col)
+                                col = _get_color(variable, val, cmap, val_min, val_max, val_range)
+                                line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
 
@@ -874,6 +916,25 @@ class _PlotShapePlot(_WrapperPlot):
       result.format_coord = format_coord
       return result
 
+    def _get_color(variable, val, cmap, lo, hi, val_range):
+      if variable is None or val is None:
+        col = 'black'
+      elif val_range == 0:
+        if val < lo:
+          col = color_to_hex(cmap(0))
+        elif val > hi:
+          col = color_to_hex(cmap(255))
+        else:
+          val = color_to_hex(128)
+      else:
+        col = color_to_hex(cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range))))
+      return col
+
+    def color_to_hex(col):
+      items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+      return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+
+
     def _do_plot_on_plotly():
       """requires matplotlib for colormaps if not specified explicitly"""
       import ctypes
@@ -906,9 +967,6 @@ class _PlotShapePlot(_WrapperPlot):
       if secs is None:
         secs = list(h.allsec())
 
-      def color_to_hex(col):
-        items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
-        return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
       
       if variable is None:
         kwargs.setdefault('color', 'black')
@@ -950,10 +1008,7 @@ class _PlotShapePlot(_WrapperPlot):
           all_seg_pts = _segment_3d_pts(sec)
           for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
             val = _get_variable_seg(seg, variable)
-            if val is None:
-              col = 'black'
-            else:
-              col = color_to_hex(cmap(int(255 * (val - lo) / (val_range))))
+            col = _get_color(variable, val, cmap, lo, hi, val_range)
             if show_diam:
               diam = seg.diam
             else:

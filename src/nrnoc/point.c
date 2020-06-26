@@ -24,6 +24,7 @@ static void create_artcell_prop(Point_process* pnt, short type);
 
 Prop* nrn_point_prop_;
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
 void* create_point_process(int pointtype, Object* ho)
 {
@@ -189,6 +190,22 @@ void nrn_seg_or_x_arg(int iarg, Section** psec, double* px) {
 		*psec = (Section*)0;
 		if (nrnpy_o2loc_p_) {
 			(*nrnpy_o2loc_p_)(o, psec, px);
+		}
+		if (!(*psec)) {
+			assert(0);
+		}
+	}
+}
+
+void nrn_seg_or_x_arg2(int iarg, Section** psec, double* px) {
+	if (hoc_is_double_arg(iarg)) {
+		*px = chkarg(iarg, 0., 1.);
+		*psec = chk_access();
+	}else{
+		Object* o = *hoc_objgetarg(iarg);
+		*psec = (Section*)0;
+		if (nrnpy_o2loc2_p_) {
+			(*nrnpy_o2loc2_p_)(o, psec, px);
 		}
 		if (!(*psec)) {
 			assert(0);
