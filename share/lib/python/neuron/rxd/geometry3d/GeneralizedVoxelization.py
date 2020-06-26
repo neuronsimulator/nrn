@@ -185,7 +185,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
         (i0,j0,k0) = find_voxel(x0,y0,z0,grid)
         # find the contained endpoints and start the set with initial row and initial endpoints
         s = set()
-        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0,i0+1),grid)
+        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0-1,i0+1),grid)
     
     # the given starting voxel is not actually found
     possibly_missed = False

@@ -11,6 +11,10 @@ concentration_nodes_3d = "surface"
 # the value is necessary to account for floating point precision
 ics_distance_threshold = -1e-12
 
+# resolution (relative to dx) of sampling points use to determine surface
+# volume fractions.
+ics_partial_volume_resolution = 2
+
 # the number of electrophysiology fixed steps per rxd step
 # WARNING: setting this to anything other than 1 is probably a very bad
 #          idea, numerically speaking, at least for now
