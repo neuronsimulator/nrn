@@ -251,10 +251,17 @@ endif()
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
 if(READLINE_FOUND)
-  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
+  target_link_libraries(nrniv_lib ${Readline_LIBRARY})
 else()
-  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+  target_link_libraries(nrniv_lib readline)
 endif()
+
+if(CURSES_FOUND)
+  target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
+elseif(TERMCAP_FOUND)
+  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
+endif()
+
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
