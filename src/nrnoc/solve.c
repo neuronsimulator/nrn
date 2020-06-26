@@ -70,6 +70,7 @@ void (*nrnmpi_splitcell_compute_)();
 
 void (*nrn_multisplit_solve_)();
 extern void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
+extern void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
 /* used for vectorization and distance calculations */
 int section_count;
@@ -232,23 +233,23 @@ void distance(void) {
 	}
 			
 	if (ifarg(2)) {
-		nrn_seg_or_x_arg(2, &sec, &d);
+		nrn_seg_or_x_arg2(2, &sec, &d);
 		if (hoc_is_double_arg(1)) {
 			mode = (int) chkarg(1, 0., 1.);
 		}else{
 			mode = 2;
 			Object* o = *hoc_objgetarg(1);
 			my_origin_sec = (Section*)0;
-			if (nrnpy_o2loc_p_) {
-				(*nrnpy_o2loc_p_)(o, &my_origin_sec, &d_origin);
+			if (nrnpy_o2loc2_p_) {
+				(*nrnpy_o2loc2_p_)(o, &my_origin_sec, &d_origin);
 			}
 			if (!my_origin_sec) {
-				hoc_execerror("Distance origin not valid.","If first argument is an Object, it needs to be a Python Segment object.");
+				hoc_execerror("Distance origin not valid.","If first argument is an Object, it needs to be a Python Segment object, a rxd.node object, or something with a segment property.");
 			}
 			my_origin_node = node_exact(my_origin_sec, d_origin);
 		}		
 	}else if (ifarg(1)) {
-		nrn_seg_or_x_arg(1, &sec, &d);
+		nrn_seg_or_x_arg2(1, &sec, &d);
 		mode = 1;
 	}else{
 		sec = chk_access();
