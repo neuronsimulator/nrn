@@ -112,10 +112,10 @@ set(NRN_RX3D_OPT_LEVEL
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+include(PlatformHelper)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
-include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
 
