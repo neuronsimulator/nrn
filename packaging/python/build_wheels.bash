@@ -60,7 +60,7 @@ build_wheel_linux() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-prefix="/opt/ncurses;/opt/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+        python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
     if [ "$TRAVIS" = true ] ; then
@@ -115,8 +115,8 @@ bare=$3
 case "$1" in
 
   linux)
-    # include here /opt/mpt/include if have MPT headers
-    MPI_INCLUDE_HEADERS="/opt/openmpi/include;/opt/mpich/include"
+    # include here /nrnwheel/mpt/include if have MPT headers
+    MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
     python_wheel_version=${python_wheel_version//[-._]/}
     for py_bin in /opt/python/cp${python_wheel_version}*/bin/python; do
         build_wheel_linux "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
