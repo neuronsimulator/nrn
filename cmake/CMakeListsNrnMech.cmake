@@ -30,6 +30,10 @@ foreach(link_lib ${NRN_LINK_LIBS})
   get_filename_component(dir_path ${link_lib} DIRECTORY)
   if(NOT dir_path)
     string(APPEND NRN_LINK_DEFS " -l${link_lib}")
+  # avoid library paths from special directory /nrnwheel which
+  # used to build wheels under docker container
+  elseif("${dir_path}" MATCHES "^/nrnwheel")
+     continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
     get_filename_component(libname ${link_lib} NAME_WE)
     string(REGEX REPLACE "^lib" "" libname ${libname})

@@ -22,10 +22,10 @@ Logout and log back in to have docker service properly configured.
 We mount local neuron repository inside docker as a volume to preserve any code changed. We can use -v option to mount the local folder as:
 
 ```
-docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt-headers/2.21:/usr/mpt -it neuronsimulator/neuron_wheel bash
+docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt-headers/2.21:/nrnwheel/mpt -it neuronsimulator/neuron_wheel bash
 ```
 
-where `/home/user/nrn` is a neuron repository on the host machine and `/home/user/mpt` is a directory containing MPT MPI headers. We mount those directories inside docker at location `/root/nrn` and `/usr/mpt` inside the container. The MPT hearders in the separate repository as it's not open source library. You can download the headers as:
+where `/home/user/nrn` is a neuron repository on the host machine and `/home/user/mpt` is a directory containing MPT MPI headers. We mount those directories inside docker at location `/root/nrn` and `/nrnwheel/mpt` inside the container. The MPT hearders in the separate repository as it's not open source library. You can download the headers as:
 
 ```
 git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
