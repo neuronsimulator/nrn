@@ -140,7 +140,7 @@ endif()
 # =============================================================================
 add_custom_command(OUTPUT "${KINDERIV_HEADER_FILE}"
                    DEPENDS ${NMODL_INBUILT_MOD_OUTPUTS} "${KINDERIV_PYTHON_SCRIPT}"
-                   COMMAND python ${KINDERIV_PYTHON_SCRIPT} ${CMAKE_CURRENT_BINARY_DIR}
+                   COMMAND ${PYTHON_EXECUTABLE} ${KINDERIV_PYTHON_SCRIPT} ${CMAKE_CURRENT_BINARY_DIR}
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                    COMMENT "Generating kinderiv.h by inspecting MOD files")
 add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
