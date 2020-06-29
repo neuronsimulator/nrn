@@ -59,6 +59,7 @@ static RandomPlayList* random_play_list_;
 
 extern "C" {
 double nrn_random_pick(Rand* r);
+void nrn_random_reset(Rand* r);
 Rand* nrn_random_arg(int);
 long nrn_get_random_sequence(Rand* r);
 void nrn_set_random_sequence(Rand* r, long seq);
@@ -391,6 +392,12 @@ double nrn_random_pick(Rand* r) {
 		return (*(r->rand))();
 	}else{
 		return .5;
+	}
+}
+
+void nrn_random_reset(Rand* r) {
+	if(r) {
+		r->gen->reset();
 	}
 }
 
