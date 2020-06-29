@@ -184,12 +184,14 @@ void nrnpython_start(int b) {
     if (nrnpy_nositeflag) {
       Py_NoSiteFlag = 1;
     }
-    // printf("Py_NoSiteFlag = %d\n", Py_NoSiteFlag);
-    // Even though nrnpy_pyhome holds the python root, we shall not call
-    // Py_SetPythonHome with it. With virtualenv it is mostly incompatible
-    // Do only if explicitly requested by the environment var
+    // nrnpy_pyhome hopefully holds the python base root and should
+    // work with virtual environments.
+    // But use only if not overridden by the PYTHONHOME environment variable.
     char * _p_pyhome = getenv("PYTHONHOME");
-    if (_p_pyhome) { //nrnpy_pyhome) {
+    if (_p_pyhome == NULL) {
+        _p_pyhome = nrnpy_pyhome;
+    }
+    if (_p_pyhome) {
 #if PY_MAJOR_VERSION >= 3
         Py_SetPythonHome(mywstrdup(_p_pyhome));
 #else
