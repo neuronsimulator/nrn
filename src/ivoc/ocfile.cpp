@@ -38,6 +38,14 @@ extern "C" int hoc_return_type_code;
 #include <direct.h>
 #endif
 
+#include "gui-redirect.h"
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
+
+static Symbol* file_class_sym_;
 extern char* ivoc_get_temp_file();
 static int ivoc_unlink(const char*);
 int ivoc_unlink(const char* s) {
@@ -191,6 +199,7 @@ static const char** f_dir(void* v) {
 }
 
 static double f_chooser(void* v){
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("File.chooser", file_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	OcFile* f = (OcFile*)v;
@@ -314,6 +323,7 @@ static Member_ret_str_func f_retstr_members[] = {
 
 void OcFile_reg() {
 	class2oc("File", f_cons, f_destruct, f_members, NULL, NULL, f_retstr_members);
+	file_class_sym_ = hoc_lookup("File");
 }
 
 void OcFile::close() {

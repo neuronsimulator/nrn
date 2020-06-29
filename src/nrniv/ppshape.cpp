@@ -7,10 +7,17 @@
 #if HAVE_IV
 #include "ppshape.h"
 #endif //HAVE_IV
+#include "gui-redirect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
 
 // ppshape registration
 
 static double pp_append(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PPShape.append", v);
 #if HAVE_IV
 IFGUI
 	Object* ob = *hoc_objgetarg(1);
@@ -27,6 +34,7 @@ static Member_func pp_members[] = {
 };
 
 static void* pp_cons(Object* ho) {
+	TRY_GUI_REDIRECT_OBJ("PPShape", NULL);
 #if HAVE_IV
 IFGUI
 	Object* ob = *hoc_objgetarg(1);
@@ -42,6 +50,7 @@ ENDGUI
 }
 
 static void pp_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~PPShape", v);
 #if HAVE_IV
 IFGUI
 	Resource::unref((PPShape*)v);

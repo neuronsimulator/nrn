@@ -10,7 +10,7 @@ dnl distribution file names, banner, nrniv --version, and
 dnl nrnversion(5). If the PACKAGE_VERSION changes then also do a
 dnl git tag -a major.minor.micro consistent with that.
 
-AC_INIT([nrn],[7.8])
+AC_INIT([nrn],[8.0])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
@@ -153,6 +153,9 @@ fi
 
 dnl Use to be only when configured with mpi. Now always since it is so useful.
 NRN_DEFINE_UNQUOTED(DLL_DEFAULT_FNAME,"$host_cpu/.libs/libnrnmech.so",[Define if want a automatic dll load])
+
+dnl Some things are specific to the PGI compiler
+AM_CONDITIONAL(USING_PGI_COMPILER, $CC --version | grep -q pgcc)
 
 dnl there are some os dependent properties in nrn.defaults.
 nrndef_unix="//"
@@ -341,6 +344,11 @@ case "$host_os" in
 	;;
 esac
 
+if test x${linux_nrnmech} = x ; then
+	# set even for MINGW
+	linux_nrnmech="yes"
+fi
+
 if test x${linux_nrnmech} = xyes ; then
 	AC_DEFINE(NRNMECH_DLL_STYLE, 1,[if 1 then dlopen nrnmech instead of special])
 	AC_MSG_NOTICE([Use the NRNMECH_DLL_STYLE for "special"])
@@ -348,6 +356,7 @@ else
 	AC_MSG_NOTICE([Use the default unix style for "special" (not NRNMECH_DLL_STYLE)])
 fi
 AM_CONDITIONAL(NRNMECH_DLL_STYLE, test x${linux_nrnmech} = xyes)
+AM_CONDITIONAL(NRN_BINARY_SPECIAL, test x${linux_nrnmech} != xyes)
 AM_CONDITIONAL(MAC_DARWIN, test x${macdarwin} = xyes)
 AM_CONDITIONAL(USING_CMAKE, false)
 
@@ -661,7 +670,6 @@ AC_CONFIG_FILES([
 	src/mac/macdist.pkgproj src/mac/postinstall.sh
 	src/mswin/nrnsetup.nsi src/mswin/lib/mknrndll.mak
 	src/mswin/nrnsetupmingw.nsi
-	src/mswin/EnvVarUpdate.nsh src/mswin/AddToPath.nsh
 	src/mswin/extra/Makefile src/mswin/rdln/Makefile
 	src/mswin/windll/Makefile
 	src/mswin/wnrnbbs/Makefile src/mswin/lib/Makefile

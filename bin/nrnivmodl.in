@@ -24,12 +24,24 @@ if test "${NRNHOME_EXEC}" != "" ; then
 	libdir="${exec_prefix}/lib"
 fi
 
+# Besides NRNHOME, one may set NRNBIN to override the default location of user binaries
+if test "x$NRNBIN" = "x"; then
+	NRNBIN=$bindir
+fi
+
 export prefix
-export exec_prefix
 export bindir
 export libdir
 
 MAKEFILEDIR="${bindir}"
+
+if which xcrun; then
+    export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
+    @USING_CMAKE_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
+    if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
+        unset MACOSX_DEPLOYMENT_TARGET
+    fi
+fi
 
 UserINCFLAGS=""
 if [ "$1" = "-incflags" ] ; then
@@ -150,34 +162,39 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
-@NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
+@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"
 
-@NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
-@NRNMECH_DLL_STYLE_TRUE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
-@NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
-@NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
-@NRNMECH_DLL_STYLE_TRUE@fi
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
-@NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
-@NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo 'if test "x${NRNBIN}" = "x" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNBIN='"\"${bindir}/\""'
-@NRNMECH_DLL_STYLE_TRUE@fi'>> special &&
-@NRNMECH_DLL_STYLE_TRUE@echo 'if test "@enable_carbon@" = "yes" ; then
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv.app/Contents/MacOS/nrniv"
-@NRNMECH_DLL_STYLE_TRUE@else
-@NRNMECH_DLL_STYLE_TRUE@	NRNIV="${NRNBIN}nrniv"
-@NRNMECH_DLL_STYLE_TRUE@fi' >> special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo '"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" >> special &&
-@NRNMECH_DLL_STYLE_TRUE@  chmod 755 special &&
-@NRNMECH_DLL_STYLE_TRUE@  echo "Successfully created $MODSUBDIR/special"
+@NRN_BINARY_SPECIAL_FALSE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
+@NRN_BINARY_SPECIAL_FALSE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
+@NRN_BINARY_SPECIAL_FALSE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
+@NRN_BINARY_SPECIAL_FALSE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
+@NRN_BINARY_SPECIAL_FALSE@fi
+@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
+@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
+@NRN_BINARY_SPECIAL_FALSE@  echo '#!/bin/sh
+@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNHOME}" = "x" ; then
+@NRN_BINARY_SPECIAL_FALSE@    NRNHOME='"\"${prefix}\""'
+@NRN_BINARY_SPECIAL_FALSE@fi
+@NRN_BINARY_SPECIAL_FALSE@if test "${NEURONHOME}" = "" ; then
+@NRN_BINARY_SPECIAL_FALSE@    NEURONHOME=${NRNHOME}/share/nrn
+@NRN_BINARY_SPECIAL_FALSE@    export NEURONHOME
+@NRN_BINARY_SPECIAL_FALSE@fi
+@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNBIN}" = "x" ; then
+@NRN_BINARY_SPECIAL_FALSE@    NRNBIN='"\"${NRNBIN}\""'
+@NRN_BINARY_SPECIAL_FALSE@fi
+@NRN_BINARY_SPECIAL_FALSE@if test "@enable_carbon@" = "yes" ; then
+@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv.app/Contents/MacOS/nrniv"
+@NRN_BINARY_SPECIAL_FALSE@else
+@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv"
+@NRN_BINARY_SPECIAL_FALSE@fi
+@NRN_BINARY_SPECIAL_FALSE@"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" > special &&
+@NRN_BINARY_SPECIAL_FALSE@  chmod 755 special &&
+@NRN_BINARY_SPECIAL_FALSE@  echo "Successfully created $MODSUBDIR/special"
 
-@NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_TRUE@if false ; then
-@NRNMECH_DLL_STYLE_TRUE@@MAC_DARWIN_FALSE@if false ; then
-@NRNMECH_DLL_STYLE_FALSE@if false ; then
+@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_TRUE@if false ; then
+@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_FALSE@if false ; then
+@NRN_BINARY_SPECIAL_TRUE@if false ; then
   false #for empty if block
 fi

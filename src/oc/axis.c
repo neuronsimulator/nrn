@@ -135,6 +135,10 @@ axis.c,v
 #include <stdlib.h>
 #include	<math.h>
 #include	"hoc.h"
+#include "gui-redirect.h"
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+
 # define	CLIP	1e9
 # define	XS	500.
 # define	YS	400.
@@ -181,6 +185,8 @@ static void plotflush(int);
 static void do_setup(void);
 
 void hoc_regraph(void) {
+	TRY_GUI_REDIRECT_DOUBLE("regraph", NULL);
+
 	if (regraph_index < max_regraph_index) {
 		regraph_y[regraph_index] = hoc_pgetarg(1);
 		regraph_index++;
@@ -217,6 +223,8 @@ static void save_regraph_item(int narg, int mode, double x)
 }
 
 void hoc_Plot(void) {
+	TRY_GUI_REDIRECT_DOUBLE("plot", NULL);
+
 	double ok;
 	int narg, mode;
 
@@ -301,6 +309,8 @@ void hoc_ploty(void) {
 # define	HEIGHT  10.
 void hoc_axis(void)
 {
+	TRY_GUI_REDIRECT_DOUBLE("axis", NULL);
+
 #if DOS
 	extern int newstyle;
 	extern unsigned text_style, text_orient, text_size;
@@ -484,6 +494,8 @@ typedef struct Grph {	/* holds info for graphing */
 static Grph *glist_head, *glist_tail; /* access for the queue */
 
 void hoc_Graph(void) {
+	TRY_GUI_REDIRECT_DOUBLE("graph", NULL);
+
 	Grph *g;
 	
 if (ifarg(2)) {
@@ -521,6 +533,7 @@ if (ifarg(2)) {
 
 void hoc_Graphmode(void)
 {
+	TRY_GUI_REDIRECT_DOUBLE("graphmode", NULL);
 	int mode;
 if (!badgraph) {
 	mode = *getarg(1);

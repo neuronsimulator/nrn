@@ -314,8 +314,22 @@ void delete_section(void) {
 	Symbol* sym;
 	int i;
 	sec = chk_access();
+	if (!sec->prop) { /* already deleted */
+		hoc_retpushx(0.0);
+		return;
+	}
+	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) { /* Python Section */
+		/* the Python Section will be a zombie section with a pointer
+		   to an invalid Section*.
+		*/
+		sec->prop->dparam[PROP_PY_INDEX]._pvoid = NULL;
+		section_ref(sec);
+		sec_free(sec->prop->dparam[8].itm);
+		hoc_retpushx(0.0);
+		return;
+	}
 	if (!sec->prop->dparam[0].sym) {
-		hoc_execerror("Cannot delete an unnamed section", (char*)0);
+		hoc_execerror("Cannot delete an unnamed hoc section", (char*)0);
 	}
 	sym = sec->prop->dparam[0].sym;
 	ob = sec->prop->dparam[6].obj;
@@ -327,7 +341,7 @@ void delete_section(void) {
 	}
 	sec_free(*pitm);
 	*pitm = 0;
-	hoc_retpushx(0.);
+	hoc_retpushx(1.);
 }
 
 /*

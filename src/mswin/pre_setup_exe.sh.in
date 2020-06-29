@@ -40,8 +40,9 @@ rm -r -f $N/lib/python/neuron/rxdtests/correct_data
 # Significantly reduces size if compiled with -g
 strip $N/bin/*.exe  `find $N/bin -name \*.dll` `find $N/lib -name \*.dll`
 # til mingw vs linux straightened out replace with old mingw scripts
-(cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll $N/bin )
+(cd $srcdir/src/mswin/bin ; cp neurondemo nrngui mknrndll nrnivmodl.bat $N/bin )
 cp $N/bin/mknrndll $N/bin/nrnivmodl
+cp $N/bin/nrnivmodl.bat $N/bin/mknrndll.bat
 
 cp_dlls() {
 (

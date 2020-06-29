@@ -8,10 +8,13 @@
 import bisect
 cimport cython
 
+"""
+The graphicsPrimitive module
+"""
+
 cdef extern from "math.h":
     double sqrt(double)
     double fabs(double)
-
 
 # I'm manually doing all maxes and mins here because I thought it would help
 # eliminate round-off issues at the surface. it doesn't
@@ -64,7 +67,7 @@ cdef class Intersection:
     def __repr__(self):
         return 'Intersection(%r)' % self.objects
     @cython.boundscheck(False)
-    @cython.wraparound(False)        
+    @cython.wraparound(False)
     cpdef double distance(self, px, py, pz):
         # CTNG: intdist
         dists = [obj.distance(px, py, pz) for obj in self.objects]
@@ -159,7 +162,7 @@ cdef class Sphere:
         self.clips = clips
     def get_clip(self):
         return self.clips
-        
+
 
 
 cdef class Cylinder:
@@ -195,10 +198,10 @@ cdef class Cylinder:
         self.axisx /= self.length
         self.axisy /= self.length
         self.axisz /= self.length
-        
-        
+
+
         self.h = self.length * 0.5
-        
+
         self._xlo = min(x0 - r, x1 - r)
         self._xhi = max(x0 + r, x1 + r)
         self._ylo = min(y0 - r, y1 - r)
@@ -208,7 +211,7 @@ cdef class Cylinder:
         self.neighbors = []
         self.clips = []
         self.neighbor_regions = []
-    
+
     property axislength:
         def __get__(self):
             return self.length
@@ -226,7 +229,7 @@ cdef class Cylinder:
     property _r0:
         def __get__(self):
             return self.r
-            
+
     property _x1:
         def __get__(self):
             return self.x1
@@ -249,20 +252,20 @@ cdef class Cylinder:
 
     def set_clip(self, clips):
         self.clips = clips
-    
+
     def axis(self):
         return (self.axisx, self.axisy, self.axisz)
 
     def set_neighbors(self, neighbors, neighbor_regions):
         self.neighbors = neighbors
         self.neighbor_regions = neighbor_regions
-    
+
     cpdef within_core(self, double px, double py, double pz):
         cdef double nx, ny, nz, y, yy, xx
         nx, ny, nz = px - self.cx, py - self.cy, pz - self.cz
         y = abs(self.axisx * nx + self.axisy * ny + self.axisz * nz)
         return y < self.h
-        
+
 
     def starting_points(self, xs, ys, zs):
         # TODO: this only works right if the entire object is inside the domain
@@ -290,7 +293,7 @@ cdef class Cylinder:
                 yy = y * y
                 x = sqrt(xx) - self.r
                 d = sqrt(yy + x * x)
-                
+
         for clip in self.clips:
             d = max(d, clip.distance(px, py, pz))
         return d
@@ -298,7 +301,7 @@ cdef class Cylinder:
 
 
 
-        
+
     cpdef bint overlaps_x(self, double lo, double hi):
         return lo <= self._xhi and hi >= self._xlo
     cpdef bint overlaps_y(self, double lo, double hi):
@@ -317,7 +320,7 @@ cdef class SphereCone:
 
     def __repr__(self):
         return 'SphereCone(%g, %g, %g, %g, %g, %g, %g, %g)' % (self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1)
-        
+
     def set_clip(self, clips):
         self.clips = clips
     def get_clip(self):
@@ -327,9 +330,9 @@ cdef class SphereCone:
     def __init__(self, double x0, double y0, double z0, double r0, double x1, double y1, double z1, double r1):
         if r1 > r0:
             x0, y0, z0, r0, x1, y1, z1, r1 = x1, y1, z1, r1, x0, y0, z0, r0
-            
+
         self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1 = x0, y0, z0, r0, x1, y1, z1, r1
-        
+
         self.rra, self.rrb = r0 * r0, r1 * r1
         self.axisx, self.axisy, self.axisz = (x1 - x0, y1 - y0, z1 - z0)
         self.length = sqrt(self.axisx ** 2 + self.axisy ** 2 + self.axisz ** 2)
@@ -361,7 +364,7 @@ cdef class SphereCone:
         self.side1 = -self.ha / self.r0
         self.side2 = self.hra / self.r0
         self.conelength = self.length * self.hra / self.r0
-        
+
         self._xlo = min(x0 - r0, x1 - r1)
         self._xhi = max(x0 + r0, x1 + r1)
         self._ylo = min(y0 - r0, y1 - r1)
@@ -397,13 +400,13 @@ cdef class SphereCone:
         else:
             rx = x * self.side2 - y * self.side1
             d = rx - self.r0
-            
+
         for clip in self.clips:
             d = max(d, clip.distance(px, py, pz))
         return d
 
 
-        
+
     cpdef bint overlaps_x(self, double lo, double hi):
         return lo <= self._xhi and hi >= self._xlo
     cpdef bint overlaps_y(self, double lo, double hi):
@@ -441,7 +444,7 @@ cdef class Cone:
             return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g; clips=%r)' % tuple(order + [self.clips])
         else:
             return 'Cone(%g, %g, %g, %g, %g, %g, %g, %g)' % tuple(order)
-    
+
     property _x0:
         def __get__(self):
             return self.x1 if self.reversed else self.x0
@@ -455,7 +458,7 @@ cdef class Cone:
     property _r0:
         def __get__(self):
             return self.r1 if self.reversed else self.r0
-            
+
     property _x1:
         def __get__(self):
             return self.x0 if self.reversed else self.x1
@@ -483,9 +486,9 @@ cdef class Cone:
             self.reversed = True
         else:
             self.reversed = False
-            
+
         self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1 = x0, y0, z0, r0, x1, y1, z1, r1
-        
+
         if r0 < 0:
             raise Exception('At least one Cone radius must be positive')
         if r1 < 0:
@@ -494,7 +497,7 @@ cdef class Cone:
             axisx /= length; axisy /= length; axisz /= length
             f = r1 / (r1 - r0)
             x1 -= f * axisx; y1 -= f * axisy; z1 -= f * axisz; r1 = 0
-        
+
         self.rra, self.rrb = r0 * r0, r1 * r1
         self.axisx, self.axisy, self.axisz = (x1 - x0, y1 - y0, z1 - z0)
         self.length = sqrt(self.axisx ** 2 + self.axisy ** 2 + self.axisz ** 2)
@@ -502,13 +505,13 @@ cdef class Cone:
         self.axisx /= self.length
         self.axisy /= self.length
         self.axisz /= self.length
-        
+
         self.conelength = sqrt((r1 - r0) ** 2 + self.length ** 2)
         self.side1 = (r1 - r0) / self.conelength
         self.side2 = self.length / self.conelength
-        
+
         cdef double rmax = max(r0, r1)
-        
+
         self._xlo = min(x0 - rmax, x1 - rmax)
         self._xhi = max(x0 + rmax, x1 + rmax)
         self._ylo = min(y0 - rmax, y1 - rmax)
@@ -520,7 +523,7 @@ cdef class Cone:
         self.h = self.length * .5
         self.clips = []
         self.neighbor_regions = []
-        
+
     def set_clip(self, clips):
         self.clips = clips
     def get_clip(self):
@@ -531,7 +534,7 @@ cdef class Cone:
         nx, ny, nz = px - self.cx, py - self.cy, pz - self.cz
         y = abs(self.axisx * nx + self.axisy * ny + self.axisz * nz)
         return y < self.h
-        
+
 
     def axis(self):
         if self.reversed:
@@ -589,7 +592,7 @@ cdef class Cone:
         return d
 
 
-        
+
     cpdef bint overlaps_x(self, double lo, double hi):
         return lo <= self._xhi and hi >= self._xlo
     cpdef bint overlaps_y(self, double lo, double hi):
@@ -634,29 +637,29 @@ cdef class SkewCone:
 
         if r1 > r0:
             x0, y0, z0, r0, x1, y1, z1, r1, x2, y2, z2 = x2, y2, z2, r1, x2 - (x1 - x0), y2 - (y1 - y0), z2 - (z1 - z0), r0, x0, y0, z0
-            
+
         self.x0, self.y0, self.z0, self.r0, self.x1, self.y1, self.z1, self.r1 = x0, y0, z0, r0, x1, y1, z1, r1
         self.rra, self.rrb = r0 * r0, r1 * r1
         self.axisx, self.axisy, self.axisz = (x1 - x0, y1 - y0, z1 - z0)
-        
+
         self.length = sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2 + (z1 - z0) ** 2)
         # skew data
         self.sx = (x2 - x1) / self.length
         self.sy = (y2 - y1) / self.length
         self.sz = (z2 - z1) / self.length
-                
+
         # normalize the axis
         self.axisx /= self.length
         self.axisy /= self.length
         self.axisz /= self.length
-        
+
         self.planed = - (self.axisx * x0 + self.axisy * y0 + self.axisz * z0)
-        
+
         self.conelength = sqrt((r1 - r0) ** 2 + self.length ** 2)
         self.side1 = (r1 - r0) / self.conelength
         self.side2 = self.length / self.conelength
         cdef double rmax = max(r0, r1)
-        
+
         self._xlo = min(x0 - rmax, x2 - rmax)
         self._xhi = max(x0 + rmax, x2 + rmax)
         self._ylo = min(y0 - rmax, y2 - rmax)
@@ -670,20 +673,20 @@ cdef class SkewCone:
         # TODO: this only works right if the entire object is inside the domain
         return [(bisect.bisect_left(xs, self.x0), bisect.bisect_left(ys, self.y0), bisect.bisect_left(zs, self.z0))]
         #return sum([c.starting_points(xs, ys, zs) for c in self.clips], [(bisect.bisect_left(xs, self._x0), bisect.bisect_left(ys, self.y0), bisect.bisect_left(zs, self.z0))])
-    
+
     # TODO: allow clipping?
     cpdef double distance(self, double px, double py, double pz):
         # CTNG:shearfrustdist
         cdef double nx, ny, nz, y, yy, xx, ry, rx, dist
-        
-        # compute signed distance of point to plane (note: axis vector has length 1)        
+
+        # compute signed distance of point to plane (note: axis vector has length 1)
         dist = px * self.axisx + py * self.axisy + pz * self.axisz + self.planed
 
         # deskew
         px -= dist * self.sx
         py -= dist * self.sy
-        pz -= dist * self.sz        
-        
+        pz -= dist * self.sz
+
         nx, ny, nz = px - self.x0, py - self.y0, pz - self.z0
         y = nx * self.axisx + ny * self.axisy + nz * self.axisz
         yy = y * y
@@ -716,7 +719,7 @@ cdef class SkewCone:
                         return max(rx, y - self.length)
 
 
-        
+
     cpdef bint overlaps_x(self, double lo, double hi):
         return lo <= self._xhi and hi >= self._xlo
     cpdef bint overlaps_y(self, double lo, double hi):

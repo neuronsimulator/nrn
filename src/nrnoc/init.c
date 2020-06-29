@@ -12,6 +12,8 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 # include	<stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include "section.h"
@@ -38,6 +40,7 @@ extern char* dlerror();
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it */
+extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.c */
 #endif
 
 #if defined(WIN32)
@@ -60,12 +63,18 @@ extern char* nrn_mech_dll; /* declared in hoc_init.c so ivocmain.cpp can see it 
 #endif // __GNUC__
 
 #else
+
 #if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
 #include <dlfcn.h>
 #endif
+
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "./libnrnmech.so"
 #endif
+#endif
+#else // !defined(NRNMECH_DLL_STYLE)
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+#include <dlfcn.h>
 #endif
 #endif
 
@@ -122,6 +131,9 @@ static HocParmUnits _hoc_parm_units[] = {
 	0, 0
 };
 
+extern Symlist* nrn_load_dll_called_;
+extern int nrn_load_dll_recover_error();
+extern void nrn_load_name_check(const char* name);
 static int memb_func_size_;
 Memb_func* memb_func;
 Memb_list* memb_list;
@@ -194,30 +206,44 @@ int nrn_is_artificial(int pnttype) {
 
 int nrn_is_cable(void) {return 1;}
 
-#if 0 && defined(WIN32)
-int mswin_load_dll(char* cp1) {
-	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
-		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
-	}
-	dll = dll_load(cp1);
-	if (dll) {
-		Pfri mreg = dll_lookup(dll, "_modl_reg");
-		if (mreg) {
-			(*mreg)();
-		}
-		return 1;
-	}
-	return 0;
-}
-#endif
+void* nrn_realpath_dlopen(const char* relpath, int flags) {
+  char* abspath = NULL;
+  void* handle = NULL;
 
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
+  /* use realpath or _fullpath even if is already a full path */
+
+#if defined(HAVE_REALPATH)
+  abspath = realpath(relpath, NULL);
+#else /* not HAVE_REALPATH */
+#if defined(__MINGW32__)
+  abspath = _fullpath(NULL, relpath, 0);
+#else /* not __MINGW32__ */
+  abspath = strdup(relpath);
+#endif /* not __MINGW32__ */
+#endif /* not HAVE_REALPATH */
+  if (abspath) {
+    handle = dlopen(abspath, flags);
+    free(abspath);
+  }else{
+    int patherr = errno;
+    handle = dlopen(relpath, flags);
+    if (!handle) {
+      Fprintf(stderr, "realpath failed errno=%d (%s) and dlopen failed with %s\n", patherr, strerror(patherr), relpath);
+    }
+  }
+  return handle;
+}
+
+int mswin_load_dll(const char* cp1) {
 	void* handle;
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
+#if DARWIN
+	handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
+#else
 	handle = dlopen(cp1, RTLD_NOW);
+#endif
 	if (handle) {
 		Pfrv mreg = (Pfrv)dlsym(handle, "modl_reg");
 		if (mreg) {
@@ -233,12 +259,8 @@ int mswin_load_dll(const char* cp1) { /* actually linux dlopen */
 	}
 	return 0;
 }
-#endif
 
-#if !MAC
 void hoc_nrn_load_dll(void) {
-#if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-	Symlist* sav;
 	int i;
 	FILE* f;
 	const char* fn;
@@ -246,22 +268,19 @@ void hoc_nrn_load_dll(void) {
 	f = fopen(fn, "rb");
 	if (f) {
 		fclose(f);
-		sav = hoc_symlist;
+		nrn_load_dll_called_ = hoc_symlist;
 		hoc_symlist = hoc_built_in_symlist;
 		hoc_built_in_symlist = (Symlist*)0;
+		/* If hoc_execerror, recover before that call */
 		i = mswin_load_dll(fn);
 		hoc_built_in_symlist = hoc_symlist;
-		hoc_symlist = sav;
+		hoc_symlist = nrn_load_dll_called_;
+		nrn_load_dll_called_ = (Symlist*)0;
 		hoc_retpushx((double)i);
 	}else{
 		hoc_retpushx(0.);
 	}	
-#else
-	hoc_warning("nrn_load_dll not available on this machine", (char*)0);
-	hoc_retpushx(0.);
-#endif
 }
-#endif
 
 extern void nrn_threads_create(int);
 
@@ -354,7 +373,8 @@ void hoc_last_init(void)
 	hoc_register_limits(0, _hoc_parm_limits);
 	hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-	if (!nrn_mech_dll) { /* use the default if it exists */
+	/* use the default if it exists (and not a binary special) */
+	if (!nrn_mech_dll && !nrn_noauto_dlopen_nrnmech) {
 		FILE* ff = fopen(DLL_DEFAULT_FNAME, "r");
 		if (ff) {
 			fclose(ff);
@@ -428,6 +448,8 @@ void nrn_register_mech_common(
 	int j, k, modltype, pindx, modltypemax;
 	Symbol *s;
 	const char **m2;
+
+	nrn_load_name_check(m[1]);
 
 	if (type >= memb_func_size_) {
 		memb_func_size_ += 20;
@@ -511,16 +533,24 @@ void nrn_register_mech_common(
 /*printf("%s %s\n", m[0], m[1]);*/
 	if (strcmp(m[0], "0") == 0) { /* valid by nature */
 	}else if (m[0][0] > '9') { /* must be 5.1 or before */
-fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+Fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
 It's pre version 6.0 \"c\" code is incompatible with this neuron version.\n", m[0]);
-		nrn_exit(1);
+		if (nrn_load_dll_recover_error()) {
+			hoc_execerror("Mechanism needs to be retranslated:", m[0]);
+		}else{
+			nrn_exit(1);
+		}
 	}else if (strcmp(m[0], nmodl_version_) != 0){
-fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
+Fprintf(stderr, "Mechanism %s needs to be re-translated.\n\
 It's version %s \"c\" code is incompatible with this neuron version.\n",
-			m[1], m[0]);
-		nrn_exit(1);
+m[1], m[0]);
+		if (nrn_load_dll_recover_error()) {
+			hoc_execerror("Mechanism needs to be retranslated:", m[1]);
+		}else{
+			nrn_exit(1);
+		}
 	}
-	CHECK(m[1]);
+
 	s = hoc_install(m[1], MECHANISM, 0.0, &hoc_symlist);
 	s->subtype = type;
 	memb_func[type].sym = s;
@@ -755,7 +785,7 @@ int point_register_mech(
 	Symlist* sl;
 	Symbol* s, *s2;
 	void class2oc();
-	CHECK(m[1]);
+	nrn_load_name_check(m[1]);
 	class2oc(m[1], constructor, destructor, fmember, (void*)0, (void*)0, (void*)0);
 	s = hoc_lookup(m[1]);
 	sl = hoc_symlist;

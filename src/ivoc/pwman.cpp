@@ -1,4 +1,5 @@
 #include <../../nrnconf.h>
+#include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
 extern "C" int hoc_return_type_code;
@@ -20,11 +21,13 @@ extern "C" int hoc_return_type_code;
 
 #include <ivstream.h>
 #include <string.h>
+#include "ivoc.h"
 #endif // HAVE_IV
 #include <stdio.h>
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
+
 #if HAVE_IV
 #include "utility.h"
 
@@ -186,10 +189,10 @@ private:
 };
 
 extern "C" {
-extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
-extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
-const char* (*p_java2nrn_classname)(Object* ho);
-bool (*p_java2nrn_identity)(Object* o1, Object* o2);
+	extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
+	extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
+	const char* (*p_java2nrn_classname)(Object* ho);
+	bool (*p_java2nrn_identity)(Object* o1, Object* o2);
 }
 
 //just enough info to get a java window represented in the PWM.
@@ -459,7 +462,14 @@ extern "C" {char* hoc_back2forward(char*);}
 #endif
 #endif //HAVE_IV
 
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+	extern char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr);
+}
+
 static void* pwman_cons(Object*) {
+	TRY_GUI_REDIRECT_OBJ("PWManager", NULL);
 	void* v = NULL;
 #if HAVE_IV
 IFGUI
@@ -469,11 +479,13 @@ ENDGUI
 	return v;
 }
 static void pwman_destruct(void* v) {
+	TRY_GUI_REDIRECT_NO_RETURN("~PWManager", v);
 }
 
 static double pwman_count(void* v) {
 	int cnt = 0;
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.count", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -484,6 +496,7 @@ ENDGUI
 }
 static double pwman_is_mapped(void* v) {
 	hoc_return_type_code = 2; // boolean
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.is_mapped", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -499,6 +512,7 @@ ENDGUI
 	return 0.;
 }
 static double pwman_map(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.map", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -514,6 +528,7 @@ ENDGUI
 	return 0.;
 }
 static double pwman_hide(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.hide", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -529,6 +544,7 @@ ENDGUI
 	return 0.;
 }
 static const char** pwman_name(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_STR("PWManager.name", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -546,6 +562,7 @@ ENDGUI
 	return 0;
 }
 static double pwman_close(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.close", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -570,6 +587,7 @@ ENDGUI
 #endif
 
 static double pwman_iconify(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.iconify", v);
 #if HAVE_IV
 IFGUI
 	PrintableWindow* pw = PrintableWindow::leader();
@@ -585,6 +603,7 @@ ENDGUI
 	return 0.;
 }
 static double pwman_deiconify(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.deiconify", v);
 #if HAVE_IV
 IFGUI
 	PrintableWindow* pw = PrintableWindow::leader();
@@ -595,6 +614,7 @@ ENDGUI
 }
 static double pwman_leader(void* v) {
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.leader", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -612,6 +632,7 @@ ENDGUI
 }
 static double pwman_manager(void* v) {
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.manager", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -629,6 +650,7 @@ ENDGUI
 }
 
 static double pwman_save(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.save", v);
 	int n = 0;
 #if HAVE_IV
 IFGUI
@@ -651,6 +673,7 @@ ENDGUI
 }
 
 static Object** pwman_group(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_OBJ("PWManager.group", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -669,6 +692,7 @@ ENDGUI
 }
 
 static double pwman_snap(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.snap", v);
 #if HAVE_IV
 IFGUI
 #if SNAPSHOT
@@ -686,6 +710,7 @@ ENDGUI
 // position size and show/hide a java window on session retrieve
 static double pwman_jwindow(void* v) {
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.jwindow", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -723,7 +748,8 @@ ENDGUI
 }
 #endif
 
-static double pwman_scale(void*) {
+static double pwman_scale(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.scale", v);
 	double scale = chkarg(1, .01, 100);
 #if HAVE_IV
 IFGUI
@@ -742,7 +768,8 @@ ENDGUI
 	return scale;
 }
 
-static double pwman_window_place(void*){
+static double pwman_window_place(void* v){
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.window_place", v);
 #if HAVE_IV
 IFGUI
 	int i;
@@ -759,7 +786,8 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_paper_place(void*){
+static double pwman_paper_place(void* v){
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.paper_place", v);
 #if HAVE_IV
 IFGUI
 	// index, show=0 or 1
@@ -783,7 +811,8 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_printfile(void*){
+static double pwman_printfile(void* v){
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.printfile", v);
 #if HAVE_IV
 IFGUI
 	// first arg is filename
@@ -811,7 +840,8 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_landscape(void*){
+static double pwman_landscape(void* v){
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.landscape", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -821,7 +851,8 @@ ENDGUI
 	return 1.;
 }
 
-static double pwman_deco(void*){
+static double pwman_deco(void* v){
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PWManager.deco", v);
 #if HAVE_IV
 IFGUI
 	PWMImpl* p = PrintableWindowManager::current()->pwmi_;
@@ -1410,6 +1441,7 @@ PrintableWindowManager::~PrintableWindowManager() {
 
 extern "C" {
 void hoc_pwman_place() {
+	TRY_GUI_REDIRECT_DOUBLE("pwman_place", NULL);
 #if HAVE_IV
 IFGUI
 	int x, y;
@@ -1424,6 +1456,7 @@ ENDGUI
 }
 
 void hoc_save_session() {
+	TRY_GUI_REDIRECT_DOUBLE("save_session", NULL);
 #if HAVE_IV
 IFGUI
 	if (pwm_impl) {
@@ -1442,6 +1475,7 @@ const char* pwm_session_filename() {
 }
 
 void hoc_print_session() {
+	TRY_GUI_REDIRECT_DOUBLE("print_session", NULL);
 #if HAVE_IV
 IFGUI
 	if (pwm_impl) {

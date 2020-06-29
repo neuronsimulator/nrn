@@ -87,7 +87,9 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
-if(NOT NRN_ENABLE_PYTHON_DYNAMIC AND NRN_ENABLE_PYTHON)
+# NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
+if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
+  # Include nrnpython in nrniv - useful for single lib neuron and wheels
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNPYTHON_SRC_FILES})
 endif()
 
@@ -153,7 +155,7 @@ add_custom_command(
     ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
     > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-  COMMAND python ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
+  COMMAND ${PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
           ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
@@ -211,6 +213,13 @@ set_property(
   APPEND
   PROPERTY COMPILE_FLAGS "-I${PROJECT_SOURCE_DIR}/src/scopmath")
 
+if(DEF_RL_GETC_FUNCTION)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
+endif()
+
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
@@ -241,7 +250,18 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+if(READLINE_FOUND)
+  target_link_libraries(nrniv_lib ${Readline_LIBRARY})
+else()
+  target_link_libraries(nrniv_lib readline)
+endif()
+
+if(CURSES_FOUND)
+  target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
+elseif(TERMCAP_FOUND)
+  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
+endif()
+
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
@@ -253,16 +273,26 @@ endif()
 
 if(NRN_ENABLE_MPI)
   if(NRN_ENABLE_MPI_DYNAMIC)
-    add_library(nrnmpi_lib SHARED ${NRN_NRNMPI_SRC_FILES})
-    target_link_libraries(nrnmpi_lib ${MPI_C_LIBRARIES})
-    if(MINGW)
-      add_dependencies(nrnmpi_lib nrniv_lib)
-      target_link_libraries(nrnmpi_lib nrniv_lib)
-    endif()
-    set_property(TARGET nrnmpi_lib PROPERTY OUTPUT_NAME nrnmpi)
-    install(TARGETS nrnmpi_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+    math(EXPR num_mpi "${_num_mpi} - 1")
+    foreach(val RANGE ${num_mpi})
+      list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+      list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+
+      add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
+      target_include_directories(${libname}_lib PUBLIC ${include})
+      # Note that we do not link here to libmpi. That is dlopen first.
+      if(MINGW) # type msmpi only
+        add_dependencies(${libname}_lib nrniv_lib)
+        target_link_libraries(${libname}_lib ${MPI_C_LIBRARIES})
+        target_link_libraries(${libname}_lib nrniv_lib)
+      endif()
+      set_property(TARGET ${libname}_lib PROPERTY OUTPUT_NAME ${libname})
+      install(TARGETS ${libname}_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+    endforeach(val)
   else()
     target_link_libraries(nrniv_lib ${MPI_C_LIBRARIES})
+    target_include_directories(nrniv_lib PUBLIC ${MPI_INCLUDE_PATH})
   endif()
 endif()
 
@@ -293,10 +323,11 @@ if(IV_ENABLE_X11_DYNAMIC)
     # can find libivx11dynam independent of CMAKE_INSTALL_PREFIX.
     # ~~~
     set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(LIBIVX11DYNAM_NAME libivx11dynam${_suffix})
     add_custom_command(
       TARGET nrniv_lib POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/libivx11dynam${_suffix}
-              ${PROJECT_BINARY_DIR}/lib/libivx11dynam${_suffix})
+      COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/${LIBIVX11DYNAM_NAME}
+              ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME})
   endif()
 else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
@@ -312,9 +343,10 @@ if(NOT MINGW)
 endif()
 
 # TODO: unset in top level CMake is not working
-if(NOT NRN_MACOS_BUILD AND ${READLINE_FOUND})
+if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
+
 
 # =============================================================================
 # Install binary and library targets
@@ -326,3 +358,22 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+if (LIBIVX11DYNAM_NAME)
+  install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+endif()
+
+# =============================================================================
+# Install / copy cpp and required headers for binary special flavor
+# =============================================================================
+
+# For testneuron CTest
+file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
+file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
+file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
+
+# For the installation
+install(FILES ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION share/nrn)
+install(FILES ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION include)
+install(FILES ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION include/nrncvode)
+install(FILES ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION include)

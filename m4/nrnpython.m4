@@ -42,7 +42,7 @@ Examine config.log to see error details. Something wrong with
 	PYLIB=$PYLIB
 or
 	PYLIBDIR=$PYLIBDIR
-or	
+or
 	PYLIBLINK=$PYLIBLINK
 or
 	PYINCDIR=$PYINCDIR
@@ -192,7 +192,7 @@ explicitly specify PYINCDIR])
 			fi
 		fi
 		if test "$EXTRAPYLIBS" = "" ; then
-			AC_NRN_PYCONF(EXTRAPYLIBS,get_config_var('LIBS'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(EXTRAPYLIBS,get_config_var('LIBS').replace('-lintl',''),"",$ac_nrn_python)
 		fi
 		setup_extra_link_args=extra_link_args
 		case "$host_os" in
@@ -205,7 +205,7 @@ explicitly specify PYINCDIR])
 		if test "$PYLIB" = "" ; then
 			AC_NRN_PYCONF(gcfLIBRARY, get_config_var('LIBRARY'),"",$ac_nrn_python)
 			AC_NRN_PYCONF(gcfLIBDIR, get_config_var('LIBDIR'),"",$ac_nrn_python)
-			AC_NRN_PYCONF(gcfLIBS, get_config_var('LIBS'),"",$ac_nrn_python)
+			AC_NRN_PYCONF(gcfLIBS, get_config_var('LIBS').replace('-lintl',''),"",$ac_nrn_python)
 			AC_NRN_PYCONF(gcfMODLIBS, get_config_var('MODLIBS'),"",$ac_nrn_python)
 			PYLIB=`echo $gcfLIBRARY|sed 's/lib\(.*\)\.a/\1/'`
 			if test "$PYLIB" != "" ; then

@@ -2,7 +2,7 @@
 lib_LTLIBRARIES = liboc.la libocxt.la
 
 nsrc=$(top_srcdir)/src
-includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi $(X_CFLAGS)
+includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi -I$(nsrc)/nrnoc $(X_CFLAGS)
 
 AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1 $(includes)
 AM_CFLAGS = @MINGW_CFLAG@

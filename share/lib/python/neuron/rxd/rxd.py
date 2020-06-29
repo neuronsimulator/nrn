@@ -18,7 +18,7 @@ import itertools
 from numpy.ctypeslib import ndpointer
 import re
 import platform
-
+from warnings import warn
 molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
@@ -214,6 +214,7 @@ def byeworld():
     # do not call __del__ that rearrange memory for states
     species.Species.__del__ = lambda x: None
     species._ExtracellularSpecies.__del__ = lambda x: None
+    species._IntracellularSpecies.__del__ = lambda x: None
     section1d.Section1D.__del__ = lambda x: None
     generalizedReaction.GeneralizedReaction.__del__ = lambda x: None
 
@@ -504,7 +505,7 @@ def _c_compile(formula):
         os.system(gcc_cmd)
     #TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll['./%s.so' % filename]
+    dll = ctypes.cdll['%s.so' % os.path.abspath(filename)]
     reaction = dll.reaction
     reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
     reaction.restype = ctypes.c_double
@@ -713,10 +714,13 @@ def _setup_matrices():
     #Hybrid logic
     if species._has_1d and species._has_3d:
         hybrid_neighbors = collections.defaultdict(lambda: [])
+        hybrid_vols = collections.defaultdict(lambda: [])
         hybrid_diams = {}
+        grid_id_dc = {}
         hybrid_index1d_grid_ids = {}
         grid_id_species = {}
         index1d_sec1d = {}
+        hybrid_vols1d = {}
         dxs = set()
         for sr in _species_get_all_species():
             s = sr()
@@ -728,6 +732,7 @@ def _setup_matrices():
                         if r in s._intracellular_instances:
                             grid_id = s._intracellular_instances[r]._grid_id
                             grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                            grid_id_dc[grid_id] = s.d
                             dxs.add(r._dx)
                             for sec in r._secs3d:
                                 parent_seg = sec.trueparentseg()
@@ -735,31 +740,38 @@ def _setup_matrices():
                                 # are any of these a match with a 1d section?
                                 if s._has_region_section(r, parent_sec):
                                     #this section has a 1d section that is a parent
-                                    #don't think I need to do sec=sec...can probably just do sec.section_orientation etc. Ask Robert
-                                    index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                    index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), parent_sec, h.parent_connection(sec=sec))
                                     hybrid_neighbors[index1d] += indices3d
+                                    hybrid_vols[index1d] += vols3d
                                     hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
                                     hybrid_index1d_grid_ids[index1d] = grid_id
                                     index1d_sec1d[index1d] = parent_sec
+                                    hybrid_vols1d[index1d] = vols1d
                                 else:
                                     for sec1d in r._secs1d:
                                         parent_1d_seg = sec1d.trueparentseg()
                                         parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
                                         if parent_1d == sec:
                                             # it is the parent of a 1d section
-                                            index1d, indices3d, vols3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
+                                            index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
                                             hybrid_neighbors[index1d] += indices3d
+                                            hybrid_vols[index1d] += vols3d
                                             hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                             hybrid_index1d_grid_ids[index1d] = grid_id
                                             index1d_sec1d[index1d] = sec1d
+                                            hybrid_vols1d[index1d] = vols1d
+
                                             
                                         elif parent_1d == parent_sec and parent_1d is not None:
                                             # it connects to the parent of a 1d section
-                                            index1d, indices3d, vols3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
+                                            index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), sec1d, sec1d.orientation())
                                             hybrid_neighbors[index1d] += indices3d
+                                            hybrid_vols[index1d] += vols3d
                                             hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
                                             hybrid_index1d_grid_ids[index1d] = grid_id
                                             index1d_sec1d[index1d] = sec1d
+                                            hybrid_vols1d[index1d] = vols1d
+
                                         
         if len(dxs) > 1:
             raise RxDException('currently require a unique value for dx')
@@ -783,11 +795,18 @@ def _setup_matrices():
         hybrid_grid_ids = sorted(grid_id_indices1d.keys())
         for grid_id in hybrid_grid_ids:
             sp = grid_id_species[grid_id]
+            # TODO: use 3D anisotropic diffusion coefficients
+            dc = grid_id_dc[grid_id]
             grids_dx.append(sp._dx**3)
             num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
             grid_3d_indices_cnt = 0
             for index1d in grid_id_indices1d[grid_id]:
-                neighbors3d = set(hybrid_neighbors[index1d])
+                neighbors3d = []
+                vols3d = []
+                for neigh, vol in zip(hybrid_neighbors[index1d], hybrid_vols[index1d]):
+                    if neigh not in neighbors3d:
+                        neighbors3d.append(neigh)
+                        vols3d.append(vol)
                 if len(neighbors3d) < 1:
                     raise RxDException('No 3D neighbors detected for 1D segment. Try perturbing dx')
                 sec1d = index1d_sec1d[index1d]
@@ -797,18 +816,17 @@ def _setup_matrices():
                     cnt_neighbors_3d = len(neighbors3d) 
                     num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
                     grid_3d_indices_cnt += cnt_neighbors_3d
-                    #TODO: need to make this by node
-                    d = sp._d
                     area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
                     areaT = sum([v**(2.0/3.0) for v in vols3d])
-                    volumes1d.append(node._volumes[index1d])
+                    volumes1d.append(hybrid_vols1d[index1d])
                     for i, vol in zip(neighbors3d, vols3d):
                         sp._region._vol[i] = vol
                         ratio = vol**(2.0/3.0) / areaT
-                        rate = ratio * d * area / (vol * (dx + seg_length1d) / 2)
+                        rate = ratio * dc * area / (vol * (dx + seg_length1d) / 2)
                         rates.append(rate)
                         volumes3d.append(vol)
                         hybrid_indices3d.append(i)
+                    
 
             num_3d_indices_per_grid.append(grid_3d_indices_cnt)
 
@@ -826,6 +844,8 @@ def _setup_matrices():
         volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
         dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
         set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d, dxs)
+
+
 
 
 
@@ -979,12 +999,6 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     inter, surf, mesh = geometry3d.voxelize2([sec1d, sec3d], region._dx,
                                               mesh_grid=region._mesh_grid,
                                               relevant_pts=[pt1d, pt3d])
-    from .geometry import FractionalVolume
-    frac = (region._geometry._volume_fraction if
-            isinstance(region._geometry,FractionalVolume) else 1)
-    points = [key for key in surf.keys()] + [key for key in inter.keys()]
-    points = sorted(points, key=lambda pt: pt[0])
-
 
     # TODO: remove need for this assumption
     assert(x1d in (0, 1))
@@ -992,20 +1006,23 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     #print '%r(%g) connects to the 1d section %r(%g)' % (sec3d, x3d, sec1d, x1d)
     #print 'disc indices: %r' % disc_indices
     indices3d = []
+    vols3d = []
     for point in disc_indices:
-        if point in _point_indices[region]:
+        if point in _point_indices[region] and _point_indices[region][point] not in indices3d:
             indices3d.append(_point_indices[region][point])
+            vols3d.append(surf[point][0] if point in surf else region.dx**3)
                     #print 'found node %d with coordinates (%g, %g, %g)' % (node._index, node.x3d, node.y3d, node.z3d)
     # discard duplicates...
     # TODO: really, need to figure out all the 3d nodes connecting to a given 1d endpoint, then unique that
-    indices3d = list(set(indices3d))
     #print '3d matrix indices: %r' % indices3d
     # TODO: remove the need for this assertion
     if x1d == sec1d.orientation():
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         #first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        index_1d = min([node._index for node in species.nodes(region)(sec1d)])
+        index_1d, vol1d = min([(node._index, node.volume) for node in 
+                                species.nodes(region)(sec1d)],
+                              key=lambda x: x[0])
         """for j in range(first_row):
             if _euler_matrix[first_row, j] != 0:
                 index_1d = j
@@ -1015,20 +1032,13 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
-        index_1d = max([node._index for node in species.nodes(region)(sec1d)]) + 1
+        index_1d, vol1d = max([(node._index, node.volume) for node in 
+                                species.nodes(region)(sec1d)],
+                               key=lambda x: x[0])
+        index_1d + 1
     else:
         raise RxDException('should never get here; _get_node_indices apparently only partly converted to allow connecting to 1d in middle')
-    #print '1d index is %d' % index_1d
-
-    vols = []
-    for i, p in enumerate(points):
-        if p in disc_indices:
-            if p in surf:
-                vols.append(surf[p][0])
-            else:
-                vols.append([p][0])
-
-    return index_1d, indices3d, vols
+    return index_1d, indices3d, vol1d, vols3d
 
 def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
@@ -1050,10 +1060,10 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in list(section1d._rxd_sec_lookup.keys()):
+    for nrnsec in section1d._rxd_sec_lookup:
         set_of_regions = set() # a set of the regions that occur in a given section
         for sec in section1d._rxd_sec_lookup[nrnsec]:
-            if sec(): set_of_regions.add(sec()._region)
+            if sec: set_of_regions.add(sec._region)
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()
@@ -1246,17 +1256,26 @@ def _compile_reactions():
                     species_id = creg._species_ids[s._id]
                     for reg in creg._react_regions[rptr]:
                         if reg() in r._rate:
-                            region_id = creg._region_ids[reg()._id]
-                            rate_str = localize_index(creg, r._rate[reg()][0])
+                            try:
+                                region_id = creg._region_ids[reg()._id]
+                                rate_str = localize_index(creg, r._rate[reg()][0])
+                            except KeyError:
+                                warn("Species not on the region specified, %r will be ignored.\n" % r)
+                                continue
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
                             fxn_string += "\n\trhs[%d][%d] %s %s;" % (species_id, region_id, operator, rate_str)
                             species_ids_used[species_id][region_id] = True
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     #Lookup the region_id for the reaction
-                    for reg in r._rate:
-                        rate_str = localize_index(creg, r._rate[reg][0])
-                        fxn_string += "\n\trate = %s;" % rate_str
-                        break
+                    try:
+                        for reg in r._rate:
+                            rate_str = localize_index(creg, r._rate[reg][0])
+                            fxn_string += "\n\trate = %s;" % rate_str
+                            break
+                    except KeyError:
+                        warn("Species not on the region specified, %r will be ignored.\n" % r)
+                        continue
+
                     for i, sptr in enumerate(r._sources + r._dests):
                         s = sptr()
                         if isinstance(s, species.SpeciesOnExtracellular):
@@ -1280,9 +1299,12 @@ def _compile_reactions():
                     mc_mult_list.extend(r._mult.flatten())
                 else:
                     for reg in creg._react_regions[rptr]:
-                        region_id = creg._region_ids[reg()._id]
-                        rate_str = localize_index(creg, r._rate[reg()][0])
-
+                        try:
+                            region_id = creg._region_ids[reg()._id]
+                            rate_str = localize_index(creg, r._rate[reg()][0])
+                        except KeyError:
+                            warn("Species not on the region specified, %r will be ignored.\n" % r)
+                            continue
                         fxn_string += "\n\trate = %s;" % rate_str
                         summed_mults = collections.defaultdict(lambda: 0)
                         for (mult, sp) in zip(r._mult, r._sources + r._dests):

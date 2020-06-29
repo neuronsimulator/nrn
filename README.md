@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/neuronsimulator/nrn.svg?branch=master)](https://travis-ci.org/neuronsimulator/nrn)
+[![Build Status](https://api.travis-ci.org/neuronsimulator/nrn.svg?branch=master)](https://travis-ci.org/neuronsimulator/nrn) [![Build Status](https://dev.azure.com/neuronsimulator/nrn/_apis/build/status/neuronsimulator.nrn?branchName=master)](https://dev.azure.com/neuronsimulator/nrn/_build/latest?definitionId=1&branchName=master)
 
 NEURON is a simulator for models of neurons and networks of neuron.
 See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code,
@@ -87,7 +87,7 @@ One of the primary advantage of CMake based build system is integration with oth
 
   ```
   mkdir build
-  pushd build
+  cd build
   ```
 
 3. Run cmake with the appropriate options (see below for list of common options). \
@@ -96,11 +96,16 @@ e.g. a bare-bones install:
 
   ```
   cmake .. \
-   -DNRN_ENABLE_CORENEURON=OFF \
-   -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF
   ```
+
+Note that if you are building on Cray system with GNU toolchain, you have to set following environmental variable **before** calling above CMake comamnd:
+
+```
+export CRAYPE_LINK_TYPE=dynamic
+```
 
 4. Build the code:
 
@@ -111,11 +116,12 @@ e.g. a bare-bones install:
 
 Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
 
+* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
 * **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
 * **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
 * **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
 * **-DNRN\_ENABLE\_RX3D=OFF** : Disable rx3d support
-* **-DNRN\_ENABLE\_CORENEURON=OFF** : Disable CoreNEURON support
+* **-DNRN\_ENABLE\_CORENEURON=ON** : Enable CoreNEURON support
 * **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing

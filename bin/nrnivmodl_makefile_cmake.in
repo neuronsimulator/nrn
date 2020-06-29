@@ -13,7 +13,7 @@ UserLDFLAGS =
 bindir := ${ROOT}/@CMAKE_INSTALL_BINDIR@
 libdir := ${ROOT}/@CMAKE_INSTALL_LIBDIR@
 incdir := ${ROOT}/@CMAKE_INSTALL_INCLUDEDIR@
-datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@/
+datadir:= ${ROOT}/@CMAKE_INSTALL_DATADIR@
 datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 
 # Additional variables set in CMAKE usable here
@@ -27,10 +27,9 @@ _cm =,
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. -I.. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
-INCLUDES += $(if @CMAKE_OSX_SYSROOT@, -isysroot @CMAKE_OSX_SYSROOT@)
 
-CC = @CMAKE_C_COMPILER@
-CXX = @CMAKE_CXX_COMPILER@
+CC ?= @CMAKE_C_COMPILER@
+CXX ?= @CMAKE_CXX_COMPILER@
 CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
 
@@ -52,7 +51,7 @@ mod_func_c = $(MODC_DIR)/mod_func.c
 
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
-mech_libname = nrnmech$(LIB_SUFFIX_).$(MECH_VERSION)
+mech_libname = nrnmech
 mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
@@ -68,10 +67,10 @@ C_GREEN := \033[32m
 
 # Take the main and link with nrnmech.
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
-$(special): $(mech_lib)
-	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special)\n"
-	$(CXX_LINK_EXE) -I $(incdir) $(datadir)/coreneuron.cpp -o $(special) \
-	  -L $(OUTPUT) -l$(mech_libname) $(NRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS)
+special: $(mech_lib)
+	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
+	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
+	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
 
 $(mech_lib): mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files)\n"
@@ -91,7 +90,7 @@ $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
 
 # Build c files with nocmodl
 $(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
-	@printf " -> $(C_GREEN)MOD2C$(C_RESET) $<\n"
+	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
 	MODLUNIT=$(datadir_lib)/nrnunits.lib \
 	  $(bindir)/nocmodl $<
 
@@ -99,7 +98,7 @@ $(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
 $(MODC_DIR)/%.cpp: $(datadir_lib)/%.cpp | $(MODC_DIR)
 	ln -s $< $@
 
-install: $(special) $(mech_lib)
+install: special $(mech_lib)
 	install -d $(DESTDIR)/bin $(DESTDIR)/lib
 	install $(mech_lib) $(DESTDIR)/lib
 	install $(special) $(DESTDIR)/bin

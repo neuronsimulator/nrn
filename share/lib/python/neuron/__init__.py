@@ -46,7 +46,7 @@ neuron.h
    >>> h('myobj = new Vector(10)')
 
    All Hoc defined variables are accessible by attribute access to h.
-   
+
    Example:
 
    >>> print h.myobj.x[9]
@@ -59,11 +59,11 @@ neuron.h
    More help is available for the respective class by looking in the object docstring:
 
    >>> help(h.Vector)
-   
+
 
 
 neuron.gui
-   
+
    Import this package if you are using NEURON as an extension to Python,
    and you would like to use the NEURON GUI.
 
@@ -100,15 +100,40 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 #  pass
 
 import sys
+import os
+
 embedded = True if 'hoc' in sys.modules else False
 
+try: # needed since python 3.8 on windows if python launched
+  # do this here as NEURONHOME may be changed below
+  nrnbindir = os.path.abspath(os.environ["NEURONHOME"] + "/bin")
+  os.add_dll_directory(nrnbindir)
+except:
+  pass
+
+# With pip we need to rewrite the NEURONHOME
+nrn_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".data/share/nrn"))
+if (os.path.isdir(nrn_path)):
+  os.environ["NEURONHOME"] = nrn_path
+
+# On OSX, dlopen might fail if not using full library path
 try:
-    import hoc
+  from sys import platform
+  if platform == "darwin":
+    from ctypes.util import find_library
+    mpi_library_path = find_library('mpi')
+    if mpi_library_path and 'MPI_LIB_NRN_PATH' not in os.environ:
+      os.environ["MPI_LIB_NRN_PATH"] = mpi_library_path
+except:
+  pass
+
+try:
+  import hoc
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
-  except: # mingw name strategy
+  except: # mingw autotools name strategy
     exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
@@ -157,21 +182,27 @@ except:
 
 # Global test-suite function
 
-def test():
+def test(exitOnError=True):
     """ Runs a global battery of unit tests on the neuron module."""
     import neuron.tests
     import unittest
 
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(neuron.tests.suite())
+    result = runner.run(neuron.tests.suite()).wasSuccessful()
+    if exitOnError and result is False:
+        sys.exit(1)
+    return result
 
-def test_rxd():
+def test_rxd(exitOnError=True):
     """ Runs a tests on the rxd and crxd modules."""
     import neuron.tests
     import unittest
 
     runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(neuron.tests.test_rxd.suite())
+    result = runner.run(neuron.tests.test_rxd.suite()).wasSuccessful()
+    if exitOnError and result is False:
+        sys.exit(1)
+    return result
 
 
 # ------------------------------------------------------------------------------
@@ -201,13 +232,13 @@ def load_mechanisms(path, warn_if_already_loaded=True):
     was created"""
 
     import platform
-    
+
     global nrn_dll_loaded
     if path in nrn_dll_loaded:
         if warn_if_already_loaded:
             print("Mechanisms already loaded from path: %s.  Aborting." % path)
         return True
-    
+
     # in case NEURON is assuming a different architecture to Python,
     # we try multiple possibilities
 
@@ -240,7 +271,7 @@ if 'NRN_NMODL_PATH' in os.environ:
         load_mechanisms(x)
         #print "\n"
     print("Done.\n")
-    
+
 
 
 # ------------------------------------------------------------------------------
@@ -260,7 +291,7 @@ class Wrapper(object):
                 return self.__getattribute__(name)
             except AttributeError:
                 return self.hoc_obj.__getattribute__(name)
-        
+
     def __setattr__(self, name, value):
         try:
             self.hoc_obj.__setattr__(name, value)
@@ -328,7 +359,7 @@ def psection(section):
 
     Print info about section in a hoc format which is executable.
     (length, parent, diameter, membrane information)
-    
+
     Use section.psection() instead to get a data structure that
     contains the same information and more.
 
@@ -345,19 +376,53 @@ def init():
 
     Initialize the simulation kernel.  This should be called before a run(tstop) call.
 
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
+    
+    By default, the units used by h.finitialize are in mV, but you can be explicit using
+    NEURON's unit's library, e.g.
+    
+    .. code-block:: python
+    
+        from neuron.units import mV
+        h.finitialize(-65 * mV)
 
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
-    
+
     """
     h.finitialize()
-    
+
 def run(tstop):
     """
     function run(tstop)
-    
+
     Run the simulation (advance the solver) until tstop [ms]
+    
+    `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
+    
+    ** This function exists for historical purposes. Use in new code is not recommended. **
+    
+    For running a simulation, consider doing the following instead:
+    
+    Begin your code with
+    
+    .. code-block:: python
+    
+        from neuron import h
+        from neuron.units import ms, mV
+        h.load_file('stdrun.hoc')
+    
+    Then when it is time to initialize and run the simulation:
+    
+    .. code-block:: python
+    
+        h.finitialize(-65 * mV)
+        h.continuerun(100 * ms)
+    
+    where the initial membrane potential and the simulation run time are adjusted as appropriate
+    for your model.
 
     """
     h('tstop = %g' % tstop)
@@ -370,20 +435,20 @@ _double_ptr = None
 _double_size = None
 def numpy_element_ref(numpy_array, index):
     """Return a HOC reference into a numpy array.
-    
+
     Parameters
     ----------
     numpy_array : :class:`numpy.ndarray`
         the numpy array
     index : int
         the index into the numpy array
-    
+
     .. warning::
-    
+
         No bounds checking.
-    
+
     .. warning::
-    
+
         Assumes a contiguous array of doubles. In particular, be careful when
         using slices. If the array is multi-dimensional,
         the user must figure out the integer index to the desired element.
@@ -392,7 +457,7 @@ def numpy_element_ref(numpy_array, index):
     import ctypes
     if _nrn_hocobj_ptr is None:
         _nrn_hocobj_ptr = nrn_dll_sym('nrn_hocobj_ptr')
-        _nrn_hocobj_ptr.restype = ctypes.py_object    
+        _nrn_hocobj_ptr.restype = ctypes.py_object
         _double_ptr = ctypes.POINTER(ctypes.c_double)
         _double_size = ctypes.sizeof(ctypes.c_double)
     void_p = ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value + index * _double_size
@@ -400,7 +465,7 @@ def numpy_element_ref(numpy_array, index):
 
 def nrn_dll_sym(name, type=None):
     """return the specified object from the NEURON dlls.
-    
+
     Parameters
     ----------
     name : string
@@ -454,9 +519,9 @@ def nrn_dll_sym_nt(name, type):
 
 def nrn_dll(printpath=False):
     """Return a ctypes object corresponding to the NEURON library.
-    
+
     .. warning::
-    
+
         This provides access to the C-language internals of NEURON and should
         be used with care.
     """
@@ -469,7 +534,7 @@ def nrn_dll(printpath=False):
         #extended? if there is a __file__, then use that
         if printpath: print ("hoc.__file__ %s" % _original_hoc_file)
         the_dll = ctypes.cdll[_original_hoc_file]
-        return the_dll        
+        return the_dll
     except:
         pass
 
@@ -511,13 +576,20 @@ def nrn_dll(printpath=False):
         raise Exception('unable to connect to the NEURON library')
     return the_dll
 
+def _modelview_mechanism_docstrings(dmech, tree):
+  if dmech.name not in ('Ra', 'capacitance'):
+    docs = getattr(h, dmech.name).__doc__
+    if docs.strip():
+      for line in docs.split("\n"):
+        tree.append(line, dmech.location, 0)
+
 # TODO: put this someplace else
 #       can't be in rxd because that would break things if no scipy
 _sec_db = {}
 def _declare_contour(secobj, secname):
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
-    x0, y0, z0 = [center_vec.x[i] for i in range(3)]    
+    x0, y0, z0 = [center_vec.x[i] for i in range(3)]
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
 
@@ -600,13 +672,17 @@ class _RangeVarPlot(_WrapperPlot):
   Additional arguments and keyword arguments are passed to the graph's
   plotting method.
 
-  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+  Example, showing plotting to NEURON graphics, bokeh, matplotlib,
+  plotnine/ggplot, and plotly:
 
   .. code::
 
     from matplotlib import pyplot
     from neuron import h, gui
     import bokeh.plotting as b
+    import plotly
+    import plotly.graph_objects as go
+    import plotnine as p9
     import math
 
     dend = h.Section(name='dend')
@@ -633,21 +709,59 @@ class _RangeVarPlot(_WrapperPlot):
     r.plot(bg, line_width=10)
     b.show(bg)
 
-    pyplot.show()"""
+    # plotly
+    r.plot(plotly).show()
+
+    # also plotly
+    fig = go.Figure()
+    r.plot(fig)
+    fig.show()
+
+    pyplot.show()
     
-  def __call__(self, graph, *args, **kwargs):      
+    # plotnine/ggplot
+    p9.ggplot() + r.plot(p9)
+
+    # alternative plotnine/ggplot
+    r.plot(p9.ggplot())
+    """
+
+  def __call__(self, graph, *args, **kwargs):
       yvec = h.Vector()
       xvec = h.Vector()
       self._data.to_vector(yvec, xvec)
       if isinstance(graph, hoc.HocObject):
         return yvec.line(graph, xvec, *args)
+      str_type_graph = str(type(graph))
+      if str_type_graph == "<class 'plotly.graph_objs._figure.Figure'>":
+        # plotly figure
+        import plotly.graph_objects as go
+        kwargs.setdefault('mode', 'lines')
+        return graph.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_type_graph == "<class 'plotnine.ggplot.ggplot'>":
+        # ggplot object
+        import plotnine as p9
+        import pandas as pd
+        return graph + p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
+      str_graph = str(graph)
+      if str_graph.startswith("<module 'plotly' from "):
+        # plotly module
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        kwargs.setdefault('mode', 'lines')
+        return fig.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_graph.startswith("<module 'plotnine' from "):
+        # plotnine module (contains ggplot)
+        import plotnine as p9
+        import pandas as pd
+        return p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
       if hasattr(graph, 'plot'):
         # works with e.g. pyplot or a matplotlib axis
         return graph.plot(xvec, yvec, *args, **kwargs)
       if hasattr(graph, 'line'):
         # works with e.g. bokeh
         return graph.line(xvec, yvec, *args, **kwargs)
-      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+      if str_type_graph == "<class 'matplotlib.figure.Figure'>":
         raise Exception('plot to a matplotlib axis not a matplotlib figure')
       raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
 
@@ -666,13 +780,14 @@ class _PlotShapePlot(_WrapperPlot):
   Limitations: many. Currently only supports plotting a full cell colored based on a variable.'''
   # TODO: handle pointmark, specified sections, color
   def __call__(self, graph, *args, **kwargs):
+    from neuron.gui2.utilities import _segment_3d_pts
+
     def _get_pyplot_axis3d(fig):
       '''requires matplotlib'''
       from matplotlib.pyplot import cm
       import matplotlib.pyplot as plt
       from mpl_toolkits.mplot3d import Axes3D
       import numpy as np
-      from neuron.gui2.utilities import _segment_3d_pts
 
       class Axis3DWithNEURON(Axes3D):
           def auto_aspect(self):
@@ -690,27 +805,15 @@ class _PlotShapePlot(_WrapperPlot):
 
           def mark(self, segment, marker='or', **kwargs):
               """plot a marker on a segment
-              
+
               Args:
                   segment = the segment to mark
                   marker = matplotlib marker
                   **kwargs = passed to matplotlib's plot
               """
-              # TODO: there has to be a better way to do this
-              sec = segment.sec
-              n3d = sec.n3d()
-              arc3d = [sec.arc3d(i) for i in range(n3d)]
-              x3d = np.array([sec.x3d(i) for i in range(n3d)])
-              y3d = np.array([sec.y3d(i) for i in range(n3d)])
-              z3d = np.array([sec.z3d(i) for i in range(n3d)])
-              seg_l = sec.L * segment.x
-              x = np.interp(seg_l, arc3d, x3d)
-              y = np.interp(seg_l, arc3d, y3d)
-              z = np.interp(seg_l, arc3d, z3d)
+              x, y, z = _get_3d_pt(segment)
               self.plot([x], [y], [z], marker)
               return self
-
-
 
           def _do_plot(self, val_min, val_max,
                       sections,
@@ -728,13 +831,13 @@ class _PlotShapePlot(_WrapperPlot):
               # Adapted from
               # https://github.com/ahwillia/PyNeuron-Toolbox/blob/master/PyNeuronToolbox/morphology.py
               # Accessed 2019-04-11, which had an MIT license
-              
-              # Default is to plot all sections. 
+
+              # Default is to plot all sections.
               if sections is None:
                   sections = list(h.allsec())
 
               h.define_shape()
-              
+
               # default color is black
               kwargs.setdefault('color', 'black')
 
@@ -747,17 +850,11 @@ class _PlotShapePlot(_WrapperPlot):
                   for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
                       line, = self.plot(xs, ys, zs, '-', **kwargs)
                       if variable is not None:
-                          try:
-                              if '.' in variable:
-                                  mech, var = variable.split('.')
-                                  val = getattr(getattr(seg, mech), var)
-                              else:
-                                  val = getattr(seg, variable)
-                          except AttributeError:
-                              # leave default color if no variable found
-                              val = None
-                          vals.append(val)
-                      lines[line] = '%s at %s' % (val, seg)
+                        val = _get_variable_seg(seg, variable)
+                        vals.append(val)
+                        lines[line] = '%s at %s' % (val, seg)
+                      else:
+                        lines[line] = ''
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -765,13 +862,38 @@ class _PlotShapePlot(_WrapperPlot):
                       for sec in sections:
                           for line, val in zip(lines_list, vals):
                               if val is not None:
-                                  col = cmap(int(255 * (val - val_min) / (val_range)))
-                                  line.set_color(col)
+                                col = _get_color(variable, val, cmap, val_min, val_max, val_range)
+                                line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
-    
 
-    
+    def _get_variable_seg(seg, variable):
+      try:
+        if '.' in variable:
+            mech, var = variable.split('.')
+            val = getattr(getattr(seg, mech), var)
+        else:
+            val = getattr(seg, variable)
+      except AttributeError:
+        # leave default color if no variable found
+        val = None
+      return val
+
+    def _get_3d_pt(segment):
+      import numpy as np
+      # TODO: there has to be a better way to do this
+      sec = segment.sec
+      n3d = sec.n3d()
+      arc3d = [sec.arc3d(i) for i in range(n3d)]
+      x3d = np.array([sec.x3d(i) for i in range(n3d)])
+      y3d = np.array([sec.y3d(i) for i in range(n3d)])
+      z3d = np.array([sec.z3d(i) for i in range(n3d)])
+      seg_l = sec.L * segment.x
+      x = np.interp(seg_l, arc3d, x3d)
+      y = np.interp(seg_l, arc3d, y3d)
+      z = np.interp(seg_l, arc3d, z3d)
+      return x, y, z
+
     def _do_plot_on_matplotlib_figure(fig):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
@@ -782,7 +904,7 @@ class _PlotShapePlot(_WrapperPlot):
       _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
       result._mouseover_text = ''
       def _onpick(event):
-        if event.artist in _lines: 
+        if event.artist in _lines:
           result._mouseover_text = _lines[event.artist]
         else:
           result._mouseover_text = ''
@@ -793,15 +915,245 @@ class _PlotShapePlot(_WrapperPlot):
         return result._mouseover_text
       result.format_coord = format_coord
       return result
-    
 
-    if hasattr(graph, '__name__') and graph.__name__ == 'matplotlib.pyplot':
-      fig = graph.figure()
-      return _do_plot_on_matplotlib_figure(fig)
+    def _get_color(variable, val, cmap, lo, hi, val_range):
+      if variable is None or val is None:
+        col = 'black'
+      elif val_range == 0:
+        if val < lo:
+          col = color_to_hex(cmap(0))
+        elif val > hi:
+          col = color_to_hex(cmap(255))
+        else:
+          val = color_to_hex(128)
+      else:
+        col = color_to_hex(cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range))))
+      return col
+
+    def color_to_hex(col):
+      items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+      return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+
+
+    def _do_plot_on_plotly():
+      """requires matplotlib for colormaps if not specified explicitly"""
+      import ctypes
+      import plotly.graph_objects as go
+
+      class FigureWidgetWithNEURON(go.FigureWidget):
+        def mark(self, segment, marker='or', **kwargs):
+            """plot a marker on a segment
+
+            Args:
+                segment = the segment to mark
+                **kwargs = passed to go.Scatter3D plot
+            """
+            x, y, z = _get_3d_pt(segment)
+            # approximately match the appearance of the matplotlib defaults
+            kwargs.setdefault('marker_size', 5)
+            kwargs.setdefault('marker_color', 'red')
+            kwargs.setdefault('marker_opacity', 1)
+
+            self.add_trace(
+              go.Scatter3d(
+                x=[x], y=[y], z=[z], name='', hovertemplate=str(segment), **kwargs
+              )
+            )
+            return self
+
+      get_plotshape_data = nrn_dll_sym('get_plotshape_data')
+      get_plotshape_data.restype = ctypes.py_object
+      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if secs is None:
+        secs = list(h.allsec())
+
+      
+      if variable is None:
+        kwargs.setdefault('color', 'black')
+        
+        for sec in secs:
+          xs = [sec.x3d(i) for i in range(sec.n3d())]
+          ys = [sec.y3d(i) for i in range(sec.n3d())]
+          zs = [sec.z3d(i) for i in range(sec.n3d())]
+          data.append(
+            go.Scatter3d(
+              x=xs,
+              y=ys,
+              z=zs,
+              name='',
+              hovertemplate=str(sec),
+              mode="lines",
+              line=go.scatter3d.Line(
+                  color=kwargs['color'],
+                  width=2
+              ))
+          )
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
+
+      else:
+        if 'cmap' not in kwargs:
+          # use same default colormap as the matplotlib version
+          from matplotlib.pyplot import cm
+          kwargs['cmap'] = cm.cool
+
+        cmap = kwargs['cmap']
+        show_diam = False
+
+        # calculate bounds
+
+        val_range = hi - lo
+
+        data = []
+        for sec in secs:
+          all_seg_pts = _segment_3d_pts(sec)
+          for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
+            val = _get_variable_seg(seg, variable)
+            col = _get_color(variable, val, cmap, lo, hi, val_range)
+            if show_diam:
+              diam = seg.diam
+            else:
+              diam = 2
+            data.append(
+              go.Scatter3d(
+                x=xs,
+                y=ys,
+                z=zs,
+                name='',
+                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                mode="lines",
+                line=go.scatter3d.Line(
+                    color=col,
+                    width=diam
+                ))
+            )
+
+        return FigureWidgetWithNEURON(data=data, layout={'showlegend': False})
+
+    if hasattr(graph, '__name__'):
+      if graph.__name__ == 'matplotlib.pyplot':
+        fig = graph.figure()
+        return _do_plot_on_matplotlib_figure(fig)
+      elif graph.__name__ == 'plotly':
+        return _do_plot_on_plotly()
     elif str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
       return _do_plot_on_matplotlib_figure(graph)
-    else:
-      raise NotImplementedError
+    raise NotImplementedError
+
+def _nmodl():
+  try:
+    import nmodl.dsl as nmodl
+    return nmodl
+  except ModuleNotFoundError:
+    raise Exception("Missing nmodl module; install from https://github.com/bluebrain/nmodl")
+
+class DensityMechanism:
+  def __init__(self, name):
+    """Initialize the DensityMechanism.
+
+    Takes the name of a range mechanism; call via e.g. neuron.DensityMechanism('hh')
+    """
+    self.__name = name
+    self.__mt = h.MechanismType(0)
+    self.__mt.select(-1)
+    self.__mt.select(name)
+    if self.__mt.selected() == -1:
+      raise Exception("No DensityMechanism: " + name)
+    self.__has_nmodl = False
+    self.__ast = None
+    self.__ions = None
+    try:
+      import nmodl
+      self.__has_nmodl = True
+    except ModuleNotFoundError:
+      pass
+
+  def __repr__(self):
+    return 'neuron.DensityMechanism(%r)' % self.__name
+
+  def __dir__(self):
+    my_dir = ['code', 'file', 'insert', 'uninsert', '__repr__', '__str__']
+    if self.__has_nmodl:
+      my_dir += ['ast', 'ions', 'ontology_ids']
+    return sorted(my_dir)
+
+  @property
+  def ast(self):
+    """Abstract Syntax Tree representation.
+
+    Requires the nmodl module, available from: https://github.com/bluebrain/nmodl
+
+    The model is parsed on first access, and the results are cached for quick reaccess
+    using the same neuron.DensityMechanism instance.
+    """
+    if self.__ast is None:
+      nmodl = _nmodl()
+      driver = nmodl.NmodlDriver()
+      self.__ast = driver.parse_string(self.code)
+    return self.__ast
+
+  @property
+  def code(self):
+    """source code"""
+    return self.__mt.code()
+
+  @property
+  def file(self):
+    """source file path"""
+    return self.__mt.file()
+
+  def insert(self, secs):
+    """insert this mechanism into a section or iterable of sections"""
+    if isinstance(secs, nrn.Section):
+      secs = [secs]
+    for sec in secs:
+      sec.insert(self.__name)
+
+  def uninsert(self, secs):
+    """uninsert (remove) this mechanism from a section or iterable of sections"""
+    if isinstance(secs, nrn.Section):
+      secs = [secs]
+    for sec in secs:
+      sec.uninsert(self.__name)
+
+  @property
+  def ions(self):
+    """Dictionary of the ions involved in this mechanism"""
+    if self.__ions is None:
+      nmodl = _nmodl()
+      lookup_visitor = nmodl.visitor.AstLookupVisitor()
+      ions = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.USEION)
+      result = {}
+      for ion in ions:
+        name = nmodl.to_nmodl(ion.name)
+        read = [nmodl.to_nmodl(item) for item in ion.readlist]
+        write = [nmodl.to_nmodl(item) for item in ion.writelist]
+        if ion.valence:
+          valence = int(nmodl.to_nmodl(ion.valence.value))
+        else:
+          valence = None
+        ontology_id = None
+        try:
+          ontology_id = ion.ontology_id
+        except:
+          # older versions of the NMODL library didn't support .ontology_id
+          pass
+        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': ontology_id}
+      self.__ions = result
+    # return a copy
+    return dict(self.__ions)
+
+  @property
+  def ontology_ids(self):
+    nmodl = _nmodl()
+    lookup_visitor = nmodl.visitor.AstLookupVisitor()
+
+    try:
+      onts = lookup_visitor.lookup(self.ast, nmodl.ast.AstNodeType.ONTOLOGY_STATEMENT)
+    except AttributeError:
+      raise Exception("nmodl module out of date; missing support for ontology declarations")
+
+    return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
+
 
 try:
   import ctypes
@@ -811,18 +1163,54 @@ try:
   def _plotshape_plot(ps):
     return _PlotShapePlot(ps)
 
+  _mech_classes = {}
 
-  set_graph_plots = nrn_dll_sym('nrnpy_set_graph_plots')
+  def _get_mech_object(name):
+    if name in _mech_classes:
+      my_class = _mech_classes[name]
+    else:
+      code = DensityMechanism(name).code
+      # docstring is the title and a leading comment, if any
+      inside_comment = False
+      title = ''
+      comment = []
+      for line in code.split('\n'):
+        line_s = line.strip()
+        lower = line_s.lower()
+        if inside_comment:
+          if lower.startswith('endcomment'):
+            break
+          comment.append(line)
+        elif lower.startswith('title '):
+          title = line_s[6:]
+        elif lower.startswith('comment'):
+          inside_comment = True
+        elif line_s:
+          break
+
+      docstring = title + '\n\n'
+
+      docstring += '\n'.join(comment)
+      docstring = docstring.strip()
+
+      clsdict = {'__doc__': docstring, 'title': title}
+      my_class = type(name, (DensityMechanism,), clsdict)
+      _mech_classes[name] = my_class
+    return my_class(name)
+
+
+  set_toplevel_callbacks = nrn_dll_sym('nrnpy_set_toplevel_callbacks')
   _rvp_plot_callback = ctypes.py_object(_rvp_plot)
   _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
-  set_graph_plots(_rvp_plot_callback, _plotshape_plot_callback)
+  _get_mech_object_callback = ctypes.py_object(_get_mech_object)
+  set_toplevel_callbacks(_rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback)
 except:
   pass
 
 def _has_scipy():
     """
     to check for scipy:
-    
+
     has_scipy = 0
     objref p
     if (nrnpython("import neuron")) {
@@ -835,8 +1223,8 @@ def _has_scipy():
     except:
         return 0
     return 1
-        
-        
+
+
 def _pkl(arg):
   #print 'neuron._pkl arg is ', arg
   return h.Vector(0)
@@ -913,3 +1301,13 @@ try:
 except:
   print("Failed to setup nrn.Section.psection")
 pass
+
+import atexit as _atexit
+@_atexit.register
+def clear_gui_callback():
+  try:
+    nrnpy_set_gui_callback = nrn_dll_sym('nrnpy_set_gui_callback')
+    nrnpy_set_gui_callback(None)
+  except:
+    pass
+

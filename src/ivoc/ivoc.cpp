@@ -8,6 +8,11 @@
 #include "oc2iv.h"
 #include "ocfunc.h"
 
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
+
 #if HAVE_IV
 #include "utility.h"
 #include "ivoc.h"
@@ -200,7 +205,9 @@ bool setAcceptInputCallback(bool b) {
 }
 }
 
-void ivoc_style() { IFGUI
+void ivoc_style() { 
+	TRY_GUI_REDIRECT_DOUBLE("ivoc_style", NULL);
+	IFGUI
 	if (Session::instance()) {
 		Style* s = Session::instance()->style();
 		s->remove_attribute(gargstr(1));
@@ -454,7 +461,8 @@ extern void nrniv_bind_call(void);
 }
 #endif
 
-void hoc_notify_iv() { IFGUI
+void hoc_notify_iv() {
+	IFGUI
 #ifdef MINGW
 	if (!nrn_is_gui_thread()) {
 		// allow gui thread to run

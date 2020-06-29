@@ -218,6 +218,45 @@ void penv() {
 }
 #endif
 
+extern "C" {
+#if DARWIN || defined(__linux__)
+#include <dlfcn.h>
+#include <string>
+
+/* It is definitely now the case on mac and I think sometimes the case on
+linux that dlopen needs a full path to the file. A path to the binary
+is not necessarily sufficent as one may launch python or nrniv on the
+target machine and the lib folder cannot be derived from the location of
+the python executable.This seems to be robust if this file is inside a
+shared library.
+The return value ends with a '/' and if the prefix cannot be determined
+the return value is "".
+*/
+const char* path_prefix_to_libnrniv() {
+  static char* path_prefix_to_libnrniv_ = NULL;
+  if (!path_prefix_to_libnrniv_) {
+    Dl_info info;
+    int rval = dladdr((void*)path_prefix_to_libnrniv, &info);
+    std::string name;
+    if (rval) {
+      if (info.dli_fname) {
+        name = info.dli_fname;
+        if (info.dli_fname[0] == '/') { // likely full path
+          size_t last_slash = name.rfind("/");
+          path_prefix_to_libnrniv_ = strndup(name.c_str(), last_slash+1);
+          path_prefix_to_libnrniv_[last_slash+1] = '\0';
+        }
+      }
+    }
+    if (!path_prefix_to_libnrniv_) {
+      path_prefix_to_libnrniv_ = strdup("");
+    }
+  }
+  return path_prefix_to_libnrniv_;
+}
+#endif // DARWIN || defined(__linux__)
+} // extern "C"
+
 #if MAC
 #include <string.h>
 #include <sioux.h>
@@ -472,11 +511,6 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 
 	nrnmpi_numprocs = nrn_optargint("-bbs_nhost", &argc, argv, nrnmpi_numprocs);
 	hoc_usegui = 1;
-#if defined(IVX11_DYNAM)
-	if (ivx11_dyload()) {
-		hoc_usegui = 0;
-	}
-#endif
 	if (nrn_optarg_on("-nogui", &argc, argv)) {
 		hoc_usegui = 0;
 		hoc_print_first_instance = 0;
@@ -512,6 +546,13 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 	}
 
 #endif 		
+
+#if defined(IVX11_DYNAM)
+	if (hoc_usegui && ivx11_dyload()) {
+		hoc_usegui = 0;
+		hoc_print_first_instance = 0;
+	}
+#endif
 
 #if NRN_MUSIC
 	nrn_optarg_on("-music", &argc, argv);
@@ -592,7 +633,7 @@ int ivocmain_session (int argc, const char** argv, const char** env, int start_s
 #endif
 	}
 #endif // !unix.
-    
+
 #if HAVE_IV
 #if OCSMALL
 	our_argc = 2;
@@ -883,3 +924,4 @@ int run_til_stdin() {return 1;}
 void hoc_notify_value(){}
 #endif
 }
+

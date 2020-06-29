@@ -608,13 +608,9 @@ void hoc_newobj(void) { /* template at pc+1 */
 		*(obp) = ob;
 		hoc_pushobj(obp);
 #if USE_PYTHON
-	}else{ /* PythonObject assignment */
+	}else{ /* Assignment to OBJECTTMP not allowed */
 		Object* o = hoc_obj_look_inside_stack(narg);
-		assert(o->template->sym == nrnpy_pyobj_sym_);
-		ob = hoc_newobj1(sym, narg);
-		hoc_push_object(ob);
-		(*nrnpy_hpoasgn)(o, OBJECTTMP);
-		hoc_obj_unref(ob);
+		hoc_execerror("Assignment to $o only allowed if caller arg was declared as objref", NULL);
 	}
 #endif
 }
@@ -644,6 +640,17 @@ static void call_constructor(
 	hoc_thisobject = obsav;
 }
 
+/* When certain methods of some Objects are called, the gui-redirect macros
+   need Object* instead of Object*->u.this_pointer. Not worth changing the
+   prototype of the call as it is used in so many places. So store the Object*
+   to be obtained if needed.
+*/
+
+static Object* gui_redirect_obj_;
+Object* nrn_get_gui_redirect_obj() {
+  return gui_redirect_obj_;
+}
+
 void call_ob_proc(Object *ob, Symbol *sym, int narg){
 	Inst *pcsav, callcode[4];
 	Symlist *slsav;
@@ -657,6 +664,7 @@ void call_ob_proc(Object *ob, Symbol *sym, int narg){
 
    if (ob->template->sym->subtype & CPLUSOBJECT) {
 	hoc_thisobject = ob;
+	gui_redirect_obj_ = ob;
 	push_frame(sym, narg);
 	hoc_thisobject = obsav;
 	if (sym->type == OBFUNCTION) {
@@ -1388,12 +1396,14 @@ void hoc_object_asgn(void) {
 #if USE_PYTHON
 	case OBJECTTMP: {   /* should be PythonObject */
 		Object* o;
+		int stkindex = hoc_obj_look_inside_stack_index(1);
 		o = hoc_obj_look_inside_stack(1);
 		assert(o->template->sym == nrnpy_pyobj_sym_);
 		if (op) {
 			hoc_execerror("Invalid assignment operator for PythonObject", (char*)0);
 		}
 		(*nrnpy_hpoasgn)(o, type1);
+		hoc_stkobj_unref(o, stkindex);
 		}
 		break;
 #endif

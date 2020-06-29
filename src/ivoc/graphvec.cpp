@@ -4,10 +4,16 @@
 #define USEGNU 1
 
 #include "graph.h"
+#include "ivoc.h"
 
 #if USEGNU
 #include "oc2iv.h"
 #include "ivocvect.h"
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+}
 
 Object** DataVec::new_vect(GLabel* gl) const {
 	int i, cnt;
@@ -27,6 +33,7 @@ Object** DataVec::new_vect(GLabel* gl) const {
 
 
 double gr_getline(void* v) {
+	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("Graph.getline", v);
 	Graph* g = (Graph*)v;
 	GlyphIndex i, cnt;
 	cnt = g->count();

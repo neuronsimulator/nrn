@@ -149,9 +149,7 @@ class _c_region:
             for sec in self._overlap:
                 for seg in sec:
                     (x,y,z) = species._xyz(seg)
-                    #TODO: Returns none, causing an error.
-                    node_idx = s().index_from_xyz(x,y,z)
-                    self.ecs_location_index[sid][seg_idx] = node_idx if node_idx else -1
+                    self.ecs_location_index[sid][seg_idx] = s().index_from_xyz(x,y,z)
                     seg_idx+=1
         self.ecs_location_index = self.ecs_location_index.transpose()
 
@@ -437,7 +435,7 @@ class Region(object):
         #dn = (nx**2 + ny**2 + nz**2)**0.5
         #nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
-        r = sec(position).diam * 0.5 + self.dx
+        r = sec(position).diam * 0.5 + self.dx * 3 ** 0.5
         plane_of_disc = geometry3d.graphicsPrimitives.Plane(x, y, z, nx, ny, nz)
         potential_coordinates = []
 

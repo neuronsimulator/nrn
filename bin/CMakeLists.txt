@@ -3,8 +3,6 @@
 # =============================================================================
 # TODO: for nrn.defaults but these are repeated in cmake_config/CMakeLists.txt
 set(modsubdir ${CMAKE_SYSTEM_PROCESSOR})
-set(NRNMECH_DLL_STYLE_FALSE "\#")
-set(NRNMECH_DLL_STYLE_TRUE "")
 
 set(nrndef_unix "//")
 set(nrndef_mac "//")
@@ -50,4 +48,5 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
                  ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

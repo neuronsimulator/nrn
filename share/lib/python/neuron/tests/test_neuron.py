@@ -71,6 +71,47 @@ class NeuronTestCase(unittest.TestCase):
         v.x[0] = 5
         assert v.x[0] == 5
 
+    def testIterators(self):
+        """Test section, segment, mechanism, rangevar iterators."""
+        # setup model
+        sections = [h.Section(name='s%d'%i) for i in range(3)]
+        iclamps = [h.IClamp(sec(.5)) for sec in sections]
+        for i, sec in enumerate(sections):
+            sec.nseg = 3
+            sec.insert('pas')
+            sec.insert('hh')
+        #iterate
+        import hashlib
+        sha = hashlib.sha256()
+        for sec in h.allsec():
+            for seg in sec:
+                for mech in seg:
+                    for var in mech:
+                        txt="%s(%g).%s.%s=%g" % (sec.name(), seg.x, mech.name(), var.name(), var[0])
+                        sha.update(txt.encode('utf-8'))
+        d = sha.hexdigest()
+        d1 = 'ac49344c054bc9e56e165fa75423d8bcb7cce96c4527f259362b527ee05103d8'
+        # in case NRN_ENABLE_MOD_COMPATIBILITY=ON
+        # (set by -DNRN_ENABLE_CORENEURON=ON)
+        d2 = '44366906aa94a50644bc734eb23afcc25d1206c0431c4e7908698eeb2597c385'
+        assert d == d1 or d == d2
+
+    def testSectionListIterator(self):
+        """As of v8.0, iteration over a SectionList does not change the cas"""
+        # See issue 509. SectionList iterator bug requires change to
+        # longstanding behavior
+        soma = h.Section(name='soma')
+        soma.push()
+        sections = [h.Section(name='s%d'%i) for i in range(3)]
+        assert len([s for s in h.allsec()]) == 4
+        sl = h.SectionList(sections)
+        # Iteration over s SectionList does not change the currently accessed section
+        for s in sl:
+            assert 1 and h.cas() == soma
+        # If an iteration does not complete the section stack is still ok.
+        assert sections[1] in sl
+        assert 2 and h.cas() == soma
+
     @classmethod
     def ExtendedSection(cls):
         """test prsection (modified print statement)"""
@@ -108,6 +149,17 @@ class NeuronTestCase(unittest.TestCase):
                    print("'basicRxD3D()' failed")
                    error = 1
         assert(error == 0)
+        return 0
+
+    def testHelp(self):
+        error = False
+        try:
+            from neuron import doc
+            print (doc.get_docstring('xpanel', ''))
+        except:
+            print("'doc.get_docstring('xpanel', '')' failed")
+            error = True
+        self.assertFalse(error)
         return 0
 
 

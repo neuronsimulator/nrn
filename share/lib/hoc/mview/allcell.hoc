@@ -1,6 +1,6 @@
 begintemplate ModelViewAllCell
 public mkdisplay, mechs, sall, dall, kschans
-objref disp, dall, sall, this, nil, tobj
+objref disp, dall, sall, this, nil, tobj, p
 objref dmech, dparm, dpelm, disp1, disp2, ms, mview
 strdef tstr, name
 
@@ -60,7 +60,12 @@ iterator kschans() {local i, j
 
 proc miu() {
 	for mechs(dmech) {
-		$o1.append(dmech.name, dmech.location, 0)
+		disp2 = new TreeViewItem($o1, dmech.name, dmech.location, -1)
+		// include docstrings (if any; needs Python)
+		if (nrnpython("import neuron")) {
+			p = new PythonObject()
+			p.neuron._modelview_mechanism_docstrings(dmech, disp2)
+		}
 	}
 }
 

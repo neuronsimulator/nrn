@@ -23,6 +23,8 @@
 #include "objcmd.h"
 #endif
 
+#include "gui-redirect.h"
+
 extern "C" {
 #include "parse.h"
 extern Object** hoc_temp_objptr(Object*);
@@ -30,6 +32,12 @@ extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
 }
+
+
+extern "C" {
+	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+	extern double (*nrnpy_object_to_double_)(Object*);
+};
 
 extern "C" int hoc_return_type_code;
 void handle_old_focus();
@@ -249,35 +257,37 @@ void OcList::remove_all() {
 }
 
 static double l_browser(void* v) {
-#if HAVE_IV
-IFGUI
-	char* s = 0;
-	char* i = 0;
-	char** p = 0;
-	OcList* o = (OcList*)v;
-	if (ifarg(1)) {
-		s = gargstr(1);
-	}
-	if (ifarg(3)) {
-		i = gargstr(3);
-		p = hoc_pgargstr(2);
-		o->create_browser(s, p, i);
-		return 1.;
-	}
-	if (ifarg(2)) {
-		if (hoc_is_object_arg(2)) {
-			o->create_browser(s, NULL, *hoc_objgetarg(2));
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.browser", list_class_sym_, v);
+	#if HAVE_IV
+	IFGUI
+		char* s = 0;
+		char* i = 0;
+		char** p = 0;
+		OcList* o = (OcList*)v;
+		if (ifarg(1)) {
+			s = gargstr(1);
+		}
+		if (ifarg(3)) {
+			i = gargstr(3);
+			p = hoc_pgargstr(2);
+			o->create_browser(s, p, i);
 			return 1.;
 		}
-		i = gargstr(2);
-	}
-	o->create_browser(s, i);
-ENDGUI
-#endif
+		if (ifarg(2)) {
+			if (hoc_is_object_arg(2)) {
+				o->create_browser(s, NULL, *hoc_objgetarg(2));
+				return 1.;
+			}
+			i = gargstr(2);
+		}
+		o->create_browser(s, i);
+	ENDGUI
+	#endif
 	return 1.;
 }
 
 static double l_select(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.select", list_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
@@ -290,6 +300,7 @@ ENDGUI
 	return 1.;
 }
 static double l_select_action(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.select_action", list_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
@@ -310,6 +321,7 @@ ENDGUI
 }
 static double l_selected(void* v) {
 	hoc_return_type_code = 1; // integer
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.selected", list_class_sym_, v);
 #if HAVE_IV
 	long i = -1;
 IFGUI
@@ -326,6 +338,7 @@ ENDGUI
 #endif
 }
 static double l_accept_action(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.accept_action", list_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	OcListBrowser* b = ((OcList*)v)->browser();
@@ -342,6 +355,7 @@ ENDGUI
 }
 
 static double l_scroll_pos(void* v) {
+	TRY_GUI_REDIRECT_METHOD_ACTUAL_DOUBLE("List.scroll_pos", list_class_sym_, v);
 #if HAVE_IV
 IFGUI
 	OcList* o = (OcList*)v;
