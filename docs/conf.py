@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'NEURON'
-copyright = '2019, Yale and the Blue Brain Project'
+copyright = '2020, Duke, Yale and the Blue Brain Project'
 author = 'Michael Hines'
 
 
