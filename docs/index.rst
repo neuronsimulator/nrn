@@ -12,7 +12,8 @@ Welcome to NEURON's documentation!
    hoc/index
    tutorials/index
 
-
+   doxygen_files.rst
+   
 Indices and tables
 ==================
 

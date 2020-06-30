@@ -1,9 +1,8 @@
 set -e
 
+echo "Submodule update"
 git submodule update --init
 
-# Py deps
-pip install sphinx sphinx_rtd_theme jupyter nbconvert
+echo "Build tutorials"
+(cd docs/tutorials && pwd && bash build_rst.sh)
 
-(cd docs/tutorials && bash build_rst.sh)
-make -C docs html

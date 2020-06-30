@@ -161,6 +161,29 @@ if(DOXYGEN_FOUND)
 endif()
 
 # =============================================================================
+# Setup Sphinx documentation
+# =============================================================================
+add_custom_target(
+        travisDocs
+        COMMAND bash ${PROJECT_SOURCE_DIR}/.travis_docs.sh
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
+find_package(Sphinx QUIET)
+if(SPHINX_FOUND)
+  set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
+  set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
+
+  add_custom_target(
+          sphinx
+          COMMAND ${SPHINX_EXECUTABLE} -b html
+          ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating documentation with Sphinx"
+  )
+  add_dependencies(sphinx travisDocs)
+endif()
+
+# =============================================================================
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
