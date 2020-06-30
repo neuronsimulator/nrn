@@ -81,6 +81,8 @@ void Ast::set_parent(Ast* p) {
     ///
 
     {% for child in node.children %}
+      {{ child.get_add_methods_definition(node) }}
+
       {{ child.get_node_name_method_definition(node) }}
     {% endfor %}
 

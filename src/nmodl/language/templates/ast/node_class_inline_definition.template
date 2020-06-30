@@ -1,0 +1,8 @@
+{#
+   this Jinja template is not used to directly generate
+   a file but included by other templates.
+#}
+{# doxygen for these methods is handled by nodes.py #}
+{% for child in node.children %}
+  {{ child.get_add_methods_inline_definition(node) }}
+{% endfor %}

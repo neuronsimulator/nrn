@@ -507,6 +507,7 @@
                                   brief: "Vector of assigned variables"
                                   type: AssignedDefinition
                                   vector: true
+                                  add: true
                             brief: "Represents a `ASSIGNED` block in the NMODL"
                             description: |
                                     The `ASSIGNED` block is used for declaring two kinds of variables :

@@ -154,15 +154,23 @@ class CodeGenerator(
         node_hpp_tpl = self.jinja_templates_dir / "ast" / "node.hpp"
         # special template only included by other templates
         node_class_tpl = self.jinja_templates_dir / "ast" / "node_class.template"
+        node_class_inline_def_tpl = self.jinja_templates_dir / "ast" / "node_class_inline_definition.template"
         # Jinja templates that should be ignored
         ignored_templates = {node_class_tpl}
         # Additional dependencies Path -> [Path, ...]
         extradeps = collections.defaultdict(
             list,
             {
-                self.jinja_templates_dir / "ast" / "all.hpp": [node_class_tpl],
-                node_hpp_tpl: [node_class_tpl],
+                self.jinja_templates_dir / "ast" / "all.hpp": [node_class_tpl, node_class_inline_def_tpl],
+                node_hpp_tpl: [node_class_tpl, node_class_inline_def_tpl],
             },
+        )
+        # Additional Jinja context set when rendering the template
+        extracontext = collections.defaultdict(
+            dict,
+            {
+                self.jinja_templates_dir / "ast" / "all.hpp": dict(render_ast_all=True)
+            }
         )
 
         tasks = []
@@ -181,7 +189,7 @@ class CodeGenerator(
                             app=self,
                             input=filepath,
                             output=self.base_dir / node.cpp_header,
-                            context=dict(node=node),
+                            context=dict(node=node, **extracontext[filepath]),
                             extradeps=extradeps[filepath],
                         )
                         tasks.append(task)
@@ -191,7 +199,7 @@ class CodeGenerator(
                         app=self,
                         input=filepath,
                         output=self.base_dir / sub_dir / filepath.name,
-                        context=dict(nodes=self.nodes, node_info=node_info),
+                        context=dict(nodes=self.nodes, node_info=node_info, **extracontext[filepath]),
                         extradeps=extradeps[filepath],
                     )
                     tasks.append(task)
