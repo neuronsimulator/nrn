@@ -17,6 +17,10 @@ if(CORENRN_COMPILE_FLAGS)
   endforeach()
 endif()
 
+# find_cuda uses FindThreads that adds below imported target
+# we shouldn't add imported target to link line
+list(REMOVE_ITEM CORENRN_LINK_LIBS "Threads::Threads")
+
 # replicate CMake magic to transform system libs to -l<libname>
 foreach(link_lib ${CORENRN_LINK_LIBS})
   get_filename_component(path ${link_lib} DIRECTORY)
