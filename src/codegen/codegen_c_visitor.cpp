@@ -583,25 +583,19 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements(BlockType type) {
         return ion_read_statements_optimized(type);
     }
     std::vector<std::string> statements;
-    std::unordered_set<std::string> ion_vars;  // used to keep track of the variables to not
-                                               // have doubles between read/write. Same name
-                                               // variables are allowed
     for (const auto& ion: info.ions) {
         auto name = ion.name;
         for (const auto& var: ion.reads) {
-            if (type == BlockType::Ode && ion.is_ionic_conc(var) && state_variable(var) ||
-                ion_vars.find(var) != ion_vars.end()) {
+            if (type == BlockType::Ode && ion.is_ionic_conc(var) && state_variable(var)) {
                 continue;
             }
             auto variable_names = read_ion_variable_name(var);
             auto first = get_variable_name(variable_names.first);
             auto second = get_variable_name(variable_names.second);
             statements.push_back("{} = {};"_format(first, second));
-            ion_vars.insert(var);
         }
         for (const auto& var: ion.writes) {
-            if (type == BlockType::Ode && ion.is_ionic_conc(var) && state_variable(var) ||
-                ion_vars.find(var) != ion_vars.end()) {
+            if (type == BlockType::Ode && ion.is_ionic_conc(var) && state_variable(var)) {
                 continue;
             }
             if (ion.is_ionic_conc(var)) {
@@ -609,7 +603,6 @@ std::vector<std::string> CodegenCVisitor::ion_read_statements(BlockType type) {
                 auto first = get_variable_name(variables.first);
                 auto second = get_variable_name(variables.second);
                 statements.push_back("{} = {};"_format(first, second));
-                ion_vars.insert(var);
             }
         }
     }
@@ -882,25 +875,29 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
 
     for (const auto& ion: info.ions) {
         bool need_style = false;
-        std::unordered_set<std::string> ion_vars;  // used to keep track of the variables to not
-                                                   // have doubles between read/write. Same name
-                                                   // variables are allowed
+        std::unordered_map<std::string, int> ion_vars;  // used to keep track of the variables to
+                                                        // not have doubles between read/write. Same
+                                                        // name variables are allowed
+        for (const auto& var: ion.reads) {
+            const std::string name = "ion_" + var;
+            variables.emplace_back(make_symbol(name));
+            variables.back().is_constant = true;
+            ion_vars[name] = variables.size() - 1;
+        }
         for (const auto& var: ion.writes) {
             const std::string name = "ion_" + var;
-            ion_vars.insert(name);
-            variables.emplace_back(make_symbol(name));
+
+            const auto ion_vars_it = ion_vars.find(name);
+            if (ion_vars_it != ion_vars.end()) {
+                variables[ion_vars_it->second].is_constant = false;
+            } else {
+                variables.emplace_back(make_symbol("ion_" + var));
+            }
             if (ion.is_ionic_current(var)) {
                 variables.emplace_back(make_symbol("ion_di" + ion.name + "dv"));
             }
             if (ion.is_intra_cell_conc(var) || ion.is_extra_cell_conc(var)) {
                 need_style = true;
-            }
-        }
-        for (const auto& var: ion.reads) {
-            const std::string name = "ion_" + var;
-            if (ion_vars.find(name) == ion_vars.end()) {
-                variables.emplace_back(make_symbol(name));
-                variables.back().is_constant = true;
             }
         }
         if (need_style) {
