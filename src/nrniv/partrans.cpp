@@ -27,10 +27,10 @@
 
 #if NRNLONGSGID
 #define sgid_t int64_t
-#define sgid_alltoallv nrnmpi_long_alltoallv
+#define sgid_alltoallv nrnmpi_long_alltoallv_sparse
 #else
 #define sgid_t int
-#define sgid_alltoallv nrnmpi_int_alltoallv
+#define sgid_alltoallv nrnmpi_int_alltoallv_sparse
 #endif
 
 extern "C" {

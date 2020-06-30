@@ -309,9 +309,16 @@ static int MPI_Alltoallv_sparse(void *sendbuf, int *sendcnts, int *sdispls,
 }
 
 
-extern void nrnmpi_dbl_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) 
-{
-  MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
+extern void nrnmpi_dbl_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+        MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_DOUBLE, r, rcnt, rdispl, MPI_DOUBLE, nrnmpi_comm);
+}
+
+extern void nrnmpi_int_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
+	MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT, r, rcnt, rdispl, MPI_INT, nrnmpi_comm);
+}
+
+extern void nrnmpi_long_alltoallv_sparse(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl) {
+	MPI_Alltoallv_sparse(s, scnt, sdispl, MPI_INT64_T, r, rcnt, rdispl, MPI_INT64_T, nrnmpi_comm);
 }
 
 

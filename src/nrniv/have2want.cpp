@@ -169,7 +169,7 @@ sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
   // That is, each item defines the rank from which information associated
   // with that key is coming from
   int* want_s_ownerranks = new int[want_s_displ[nhost]];
-  nrnmpi_int_alltoallv(want_r_ownerranks, want_r_cnt, want_r_displ,
+  nrnmpi_int_alltoallv_sparse(want_r_ownerranks, want_r_cnt, want_r_displ,
     want_s_ownerranks, want_s_cnt, want_s_displ);
   delete [] want_r_ownerranks;
   delete [] want_r_cnt;
