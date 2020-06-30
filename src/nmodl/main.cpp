@@ -30,6 +30,7 @@
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
+#include "visitors/local_to_assigned_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
 #include "visitors/localize_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
@@ -320,13 +321,22 @@ int main(int argc, const char* argv[]) {
             logger->info("Running GlobalToRange visitor");
             GlobalToRangeVisitor(ast).visit_program(*ast);
             SymtabVisitor(update_symtab).visit_program(*ast);
-            ast_to_nmodl(*ast, filepath("globaltorange"));
+            ast_to_nmodl(*ast, filepath("global_to_range"));
+        }
+
+        /// LOCAL to ASSIGNED visitor
+        {
+            logger->info("Running LOCAL to ASSIGNED visitor");
+            PerfVisitor().visit_program(*ast);
+            LocalToAssignedVisitor().visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("local_to_assigned"));
         }
 
         {
             // Compatibility Checking
             logger->info("Running code compatibility checker");
-            // run perfvisitor to update read/wrie counts
+            // run perfvisitor to update read/write counts
             PerfVisitor().visit_program(*ast);
             // If there is an incompatible construct and code generation is not forced exit NMODL
             if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast) && !force_codegen) {

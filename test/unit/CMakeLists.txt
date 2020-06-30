@@ -31,6 +31,7 @@ add_executable(
   visitor/json.cpp
   visitor/kinetic_block.cpp
   visitor/localize.cpp
+  visitor/local_to_assigned.cpp
   visitor/lookup.cpp
   visitor/loop_unroll.cpp
   visitor/misc.cpp
