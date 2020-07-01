@@ -11,6 +11,7 @@ Welcome to NEURON's documentation!
    python/index
    hoc/index
    tutorials/index
+   rxd-tutorials/index
 
    doxygen_files.rst
    
