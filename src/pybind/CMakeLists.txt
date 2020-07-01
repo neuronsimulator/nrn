@@ -3,8 +3,8 @@
 # =============================================================================
 set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
-# build nmodl python module under lib/python/nmodl
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/nmodl)
+# build nmodl python module under lib/nmodl
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl)
 
 foreach(
   file
@@ -23,6 +23,7 @@ set_property(TARGET pyembed PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(NOT LINK_AGAINST_PYTHON)
   add_library(pywrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
+  set_target_properties(pywrapper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 else()
   add_library(pywrapper ${CMAKE_CURRENT_SOURCE_DIR}/wrapper.cpp)
   set_property(TARGET pywrapper PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -61,13 +62,18 @@ add_dependencies(_nmodl pyastgen)
 add_dependencies(_nmodl lexer_obj)
 add_dependencies(_nmodl util_obj)
 
-target_link_libraries(_nmodl PRIVATE fmt::fmt pyembed pywrapper)
+target_link_libraries(_nmodl PRIVATE fmt::fmt pyembed)
+
+# in case of wheel, python module shouldn't link to wrapper library
+if(LINK_AGAINST_PYTHON)
+  target_link_libraries(_nmodl PRIVATE pywrapper)
+endif()
 
 add_custom_target(copy_python_files ALL DEPENDS ${NMODL_PYTHON_FILES_OUT})
 add_custom_command(
   OUTPUT ${NMODL_PYTHON_FILES_OUT}
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${NMODL_PROJECT_SOURCE_DIR}/nmodl
-          ${PROJECT_BINARY_DIR}/lib/python/nmodl
+          ${PROJECT_BINARY_DIR}/lib/nmodl
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:_nmodl> ${PROJECT_BINARY_DIR}/nmodl
   DEPENDS ${NMODL_PYTHON_FILES_IN} $<TARGET_FILE:_nmodl>
   COMMENT "-- COPYING NMODL PYTHON FILES --")
@@ -76,10 +82,20 @@ add_custom_command(
 # Copy python binding components and examples into build directory
 # =============================================================================
 file(GLOB NMODL_PYTHON_HELPER_FILES "${NMODL_PROJECT_SOURCE_DIR}/nmodl/*.py")
-file(COPY ${NMODL_PYTHON_HELPER_FILES} DESTINATION ${CMAKE_BINARY_DIR}/lib/python/nmodl/)
-file(COPY ${NMODL_PROJECT_SOURCE_DIR}/nmodl/ext DESTINATION ${CMAKE_BINARY_DIR}/lib/python/nmodl/)
+file(COPY ${NMODL_PYTHON_HELPER_FILES} DESTINATION ${CMAKE_BINARY_DIR}/lib/nmodl/)
+file(COPY ${NMODL_PROJECT_SOURCE_DIR}/nmodl/ext DESTINATION ${CMAKE_BINARY_DIR}/lib/nmodl/)
 
 # =============================================================================
 # Install python binding components
 # =============================================================================
-install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/python/nmodl/ DESTINATION nmodl)
+# scikit already installs the package in /nmodl. If we add it another time things are installed
+# twice with the wheel and in weird places. Let's just move the .so libs
+if(NOT LINK_AGAINST_PYTHON)
+  install(TARGETS _nmodl DESTINATION nmodl/)
+  install(TARGETS pywrapper DESTINATION nmodl/.data/)
+  install(FILES ${CMAKE_BINARY_DIR}/bin/nmodl DESTINATION nmodl/.data/)
+elseif(SKBUILD) # skbuild needs the installation dir to be in nmodl to do the correct inplace
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl DESTINATION .)
+else()
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/ DESTINATION lib)
+endif()

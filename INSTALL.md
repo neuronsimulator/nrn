@@ -76,7 +76,7 @@ make -j && make install
 And set PYTHONPATH as:
 
 ```sh
-export PYTHONPATH=$HOME/nmodl/lib/python:$PYTHONPATH
+export PYTHONPATH=$HOME/nmodl/lib:$PYTHONPATH
 ```
 
 #### Flex / Bison Paths
@@ -120,7 +120,7 @@ export NMODL_PYLIB=/usr/local/Cellar/python/3.7.7/Frameworks/Python.framework/Ve
 ````
 * 'NMODL_WRAPLIB': This variable should point to the `libpywrapper.so` built as part of NMODL, for example:
 ```sh
-export NMODL_WRAPLIB=/opt/nmodl/lib/python/nmodl/libpywrapper.dylib
+export NMODL_WRAPLIB=/opt/nmodl/lib/libpywrapper.so
 ```
 
 **Note**: In order for all unit tests to function correctly when building without linking against libpython we must

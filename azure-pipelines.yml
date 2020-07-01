@@ -35,7 +35,7 @@ jobs:
       then
         make VERBOSE=1
       fi
-      make install
+      make install #this is needed for the integration tests
       env CTEST_OUTPUT_ON_FAILURE=1 make test
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
@@ -47,7 +47,7 @@ jobs:
       mkdir CoreNeuron/build
       cd CoreNeuron/build
       cmake --version
-      cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl -DCORENRN_NMODL_FLAGS="sympy --analytic"
+      cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl/lib -DPYTHON_EXECUTABLE=$(which python3.7) -DCORENRN_NMODL_FLAGS="sympy --analytic"
       make -j 2
       if [ $? -ne 0 ]
       then
@@ -57,6 +57,22 @@ jobs:
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
     displayName: 'Build and Run Integration Tests'
+  - script: |
+      export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
+      export CXX='g++-8'
+      sudo apt-get install -y python3.7-venv
+      python3.7 -m pip install -U scikit-build
+      python3.7 setup.py sdist bdist_wheel -j 6
+      rm -rf venv _skbuild
+      python3.7 -m venv venv
+      source ./venv/bin/activate
+      pip install --upgrade pip
+      pip install dist/*.whl
+      nmodl $(Build.Repository.LocalPath)/test/integration/mod/cabpump.mod sympy --analytic
+      rm cabpump.cpp
+    env:
+      CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
+    displayName: 'Build and test pywheels'
 - job: 'osx1014'
   pool:
     vmImage: 'macOS-10.14'
@@ -81,4 +97,16 @@ jobs:
       fi
       env CTEST_OUTPUT_ON_FAILURE=1 make test
     displayName: 'Build and Run Tests'
-
+  - script: |
+      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
+      python3 -m pip install -U pip setuptools scikit-build auditwheel
+      python3 setup.py sdist bdist_wheel -j 2
+      auditwheel repair dist/*.whl
+      rm -rf venv _skbuild
+      python3 -m venv venv
+      source ./venv/bin/activate
+      pip install --upgrade pip
+      pip install dist/*.whl
+      nmodl $(Build.Repository.LocalPath)/test/integration/mod/cabpump.mod sympy --analytic
+      rm cabpump.cpp
+    displayName: 'Build and test pywheels'

@@ -5,6 +5,7 @@ spconfig.*
 *.swp
 .idea
 docs/Doxyfile
+*.srctrl*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
