@@ -68,6 +68,28 @@ env:
       CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
       BUILD_DOCUMENTATION=ON
       MATRIX_EVAL="CC=gcc CXX=g++"
+    - BUILD_MODE=setuptools
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    - BUILD_MODE=autotools
+      CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      PYTHON="$(which python2)"
+      PIP="$(which pip2)"
+      MATRIX_EVAL="CC=gcc CXX=g++"
+    - BUILD_MODE=autotools
+      CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+      MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
+      MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
+      MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+    - BUILD_MODE=cmake
+      NRN_ENABLE_PYTHON_DYNAMIC=ON
+      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 os:
   - linux
   - osx
@@ -195,7 +217,6 @@ after_success:
 branches:
   only:
     - master
-    - sphinx_doc #temporary for CI
 
 #=============================================================================
 # Documentation deployment
@@ -208,5 +229,5 @@ deploy:
   local_dir: $TRAVIS_BUILD_DIR/build/docs
   target_branch: gh-pages
   on:
-    branch: sphinx_doc # instead of master, temporary for CI
+    branch: master
     condition: $BUILD_DOCUMENTATION = ON && $CC_FOR_BUILD = gcc && $TRAVIS_OS_NAME = linux
