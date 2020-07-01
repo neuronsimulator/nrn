@@ -143,8 +143,8 @@ General
         Single pulse current clamp point process. This is an electrode current 
         so positive amp depolarizes the cell. i is set to amp when t is within 
         the closed interval delay to delay+dur. Time varying current stimuli can 
-        be simulated by setting delay=0, dur=1e9 and playing a vector into amp 
-        with the :meth:`~Vector.play` :class:`Vector` method. 
+        be simulated by setting delay=0, dur=1e9 and playing a vector into
+        _ref_amp  with the :meth:`~Vector.play` :class:`Vector` method. 
 
     .. note::
 
