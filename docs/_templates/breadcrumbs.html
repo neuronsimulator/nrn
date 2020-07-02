@@ -1,0 +1,13 @@
+{% extends "!breadcrumbs.html" %}
+
+{% block breadcrumbs_aside %}
+<li class="wy-breadcrumbs-aside">
+    {% if 'new_doc/' in pagename %}
+        <a href="/{{ pagename | replace("new_doc/", "py_doc/") }}.html" > {{ _('Switch to Python') }}</a>
+    {% endif %}
+    {% if 'py_doc/' in pagename %}
+        <a href="/{{ pagename | replace("py_doc/", "new_doc/") }}.html" > {{ _('Switch to HOC') }}</a>
+    {% endif %}
+    {{ super() }}
+</li>
+{% endblock %}
