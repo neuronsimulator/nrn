@@ -2512,5 +2512,3 @@ GENERATE_LEGEND        = YES
 
 DOT_CLEANUP            = YES
 
-### This would be needed by breathe (and exhale)
-# GENERATE_XML           = YES

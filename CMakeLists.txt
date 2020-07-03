@@ -164,9 +164,9 @@ endif()
 # Setup Sphinx documentation
 # =============================================================================
 add_custom_target(
-        travisDocs
-        COMMAND bash ${PROJECT_SOURCE_DIR}/.travis_docs.sh
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        prepare_docs
+        COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
 )
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
@@ -180,7 +180,7 @@ if(SPHINX_FOUND)
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating documentation with Sphinx"
   )
-  add_dependencies(sphinx travisDocs)
+  add_dependencies(sphinx prepare_docs)
 endif()
 
 # =============================================================================

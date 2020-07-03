@@ -12,8 +12,7 @@ Welcome to NEURON's documentation!
    new_doc/index
    tutorials/index
    rxd-tutorials/index
-
-   doxygen_files.rst
+   doxygen
    
 Indices and tables
 ==================

@@ -30,50 +30,7 @@ author = 'Michael Hines'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    # 'breathe',
-    # 'exhale'
 ]
-
-### Breathe + exhale is super slow at the moment. 
-### Keeping this for future implem (save a few hours)
-
-# breathe_projects = {
-#     "NEURON": "../doc_doxygen/xml"
-# }
-# breathe_default_project = "NEURON"
-
-# import textwrap
-
-# exhale_args = {
-#     # These arguments are required
-#     "containmentFolder":     "./api",
-#     "rootFileName":          "library_root.rst",
-#     "rootFileTitle":         "Library API",
-#     "doxygenStripFromPath":  "..",
-#     # Suggested optional arguments
-#     "createTreeView":        True,
-#     # TIP: if using the sphinx-bootstrap-theme, you need
-#     # "treeViewIsBootstrap": True,
-#     "exhaleExecutesDoxygen": True,
-#     "exhaleDoxygenStdin": textwrap.dedent('''
-#         EXTRACT_ALL = YES
-#         SOURCE_BROWSER = YES
-#         EXTRACT_STATIC = YES
-#         OPTIMIZE_OUTPUT_FOR_C  = YES
-#         HIDE_SCOPE_NAMES = YES
-#         QUIET = YES
-#         INPUT = ../src
-#         FILE_PATTERNS = *.c *.h *.cpp *.hpp
-#         EXAMPLE_RECURSIVE = YES
-#         GENERATE_TREEVIEW = YES
-#     ''')
-# }
-
-# # Tell sphinx what the primary language being documented is.
-# primary_domain = 'cpp'
-
-# # Tell sphinx what the pygments highlight language should be.
-# highlight_language = 'cpp'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
