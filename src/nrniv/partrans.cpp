@@ -27,10 +27,30 @@
 
 #if NRNLONGSGID
 #define sgid_t int64_t
-#define sgid_alltoallv nrnmpi_long_alltoallv_sparse
+extern "C" {
+  extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
+  {
+    if (nrn_sparse_partrans > 0)
+      {
+	nrnmpi_long_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+      } else {
+      nrnmpi_long_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+    }
+  }
+}
 #else
 #define sgid_t int
-#define sgid_alltoallv nrnmpi_int_alltoallv_sparse
+extern "C" {
+  extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
+  {
+    if (nrn_sparse_partrans > 0)
+      {
+	nrnmpi_int_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+      } else {
+      nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+    }
+  }
+}
 #endif
 
 extern "C" {
