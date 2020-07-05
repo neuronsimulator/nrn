@@ -8,11 +8,12 @@ Welcome to NEURON's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   python/index
-   hoc/index
+   py_doc/index
+   new_doc/index
    tutorials/index
-
-
+   rxd-tutorials/index
+   doxygen
+   
 Indices and tables
 ==================
 
