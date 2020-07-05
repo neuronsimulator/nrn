@@ -250,13 +250,16 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(READLINE_FOUND)
+if(NRN_WINDOWS_BUILD)
+  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
+elseif(READLINE_FOUND)
   target_link_libraries(nrniv_lib ${Readline_LIBRARY})
 else()
   target_link_libraries(nrniv_lib readline)
 endif()
 
-if(CURSES_FOUND)
+if(NRN_WINDOWS_BUILD)
+elseif(CURSES_FOUND)
   target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
 elseif(TERMCAP_FOUND)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
