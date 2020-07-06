@@ -27,6 +27,7 @@
 
 #if NRNLONGSGID
 #define sgid_t int64_t
+#if PARANEURON
 extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
   {
@@ -38,8 +39,10 @@ extern "C" {
     }
   }
 }
-#else
+#endif //PARANEURON
+#else // not NRNLONGSGID
 #define sgid_t int
+#if PARANEURON
 extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
   {
@@ -51,7 +54,8 @@ extern "C" {
     }
   }
 }
-#endif
+#endif //PARANEURON
+#endif // not NRNLONGSGID
 
 extern "C" {
 void nrnmpi_source_var();
