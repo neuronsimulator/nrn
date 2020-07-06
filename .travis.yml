@@ -217,6 +217,7 @@ after_success:
 branches:
   only:
     - master
+    - pramodk/ivan
 
 #=============================================================================
 # Documentation deployment
