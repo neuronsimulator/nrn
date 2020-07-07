@@ -4,7 +4,7 @@
 NEURON {
     POINT_PROCESS ggap
     RANGE g, i, vgap
-    NONSPECIFIC_CURRENT i
+    ELECTRODE_CURRENT i
 }
 
 PARAMETER { g = 1e-10 (microsiemens) }
@@ -15,6 +15,6 @@ ASSIGNED {
     i (nanoamp)
 }
 
-INITIAL { i = (v - vgap)*g }
+INITIAL { i = (vgap - v)*g }
 
-BREAKPOINT { i = (v - vgap)*g }
+BREAKPOINT { i = (vgap - v)*g }
