@@ -19,7 +19,7 @@ class MyCell:
         return 'MyCell[%d]' % self.id
     
     def __init__(self):
-        self.id = self._ids.next()
+        self.id = next(self._ids)
         # create the morphology and connect it
         self.soma = h.Section(name='soma', cell=self)
         self.dend = h.Section(name='dend', cell=self)
@@ -41,7 +41,7 @@ def mkgap(pc, sec, gid, secpos, sgid, dgid, w, gjlist):
     pc.target_var(gj, gj._ref_vgap, dgid)
 
     if myrank == 0:
-        print 'mkgap: gid %i: sec=%s sgid=%i dgid=%i w=%f' % (gid, str(sec), sgid, dgid, w)
+        print('mkgap: gid %i: sec=%s sgid=%i dgid=%i w=%f' % (gid, str(sec), sgid, dgid, w))
 
     gjlist.append(gj)
     
@@ -53,7 +53,7 @@ def mkcells(pc, ngids):
 
     assert(nranks <= ngids)
     
-    for gid in xrange(ngids):
+    for gid in range(ngids):
 
         if gid % nranks == myrank:
         
@@ -79,7 +79,7 @@ def mkcells(pc, ngids):
             vrecs.append(v)
 
             if myrank == 0:
-                print "Rank %i: created gid %i; stim delay = %.02f" % (myrank, gid, stim.delay)
+                print("Rank %i: created gid %i; stim delay = %.02f" % (myrank, gid, stim.delay))
 
 ## Creates gap junctional connections:
 ## The first halfgap is created on even gids and gid 0 and the second
@@ -89,7 +89,7 @@ def mkgjs(pc, ngids):
     myrank = int(pc.id())
 
     ggid = 2e6 ## gap junction id range is intended to not overlap with gid range
-    for gid in xrange(0, ngids, 2):
+    for gid in range(0, ngids, 2):
 
         # source gid: all even gids
         src = gid
@@ -121,11 +121,11 @@ def main():
     parser.add_argument('--sparse-partrans', dest='sparse_partrans', default=False, action='store_true',
                         help='use sparse parallel transfer')
     parser.add_argument('--result-prefix', default='.',
-                        help='place output files in given directory')
+                        help='place output files in given directory (must exist before launch)')
     parser.add_argument('--ngids', default=2, type=int,
                         help='number of gids to create (must be even)')
 
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     pc = h.ParallelContext()
     myrank = int(pc.id())
