@@ -66,7 +66,7 @@ void nrnpy_augment_path() {
     std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
 #endif
     if (isDirExist(lib + std::string("python/neuron"))) {
-      std::string cmd = std::string("sys.path.append('") + lib + std::string("python')");
+      std::string cmd = std::string("sys.path.append('") + lib + "python')";
       err = PyRun_SimpleString(cmd.c_str());
       assert(err == 0);
     }
