@@ -154,8 +154,8 @@ if not hasattr(hoc, "__file__"):
     except:
       pass
   else:
-    import importlib
-    mspec = importlib.util.find_spec("neuron")
+    from importlib import util
+    mspec = util.find_spec("neuron")
     if mspec:
       p = mspec.origin
   if p is not None:
