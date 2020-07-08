@@ -32,7 +32,6 @@ matrix:
     - os: linux
       dist: xenial
       env:
-        - cmake_option="-DCORENRN_ENABLE_NMODL=ON"
         - PYTHON_VERSION=3.6.7  # for nmodl pip3 install
         - USE_NMODL=ON
     - os: osx
@@ -54,7 +53,6 @@ matrix:
     - os: osx
       osx_image: xcode10.2
       env:
-        - cmake_option="-DCORENRN_ENABLE_NMODL=ON"
         - USE_NMODL=ON
     - os: linux
       dist: xenial
@@ -119,7 +117,7 @@ before_install:
     fi
   # install NMODL dependencies
   - if [[ "$USE_NMODL" == "ON" || "$USE_ISPC" == "ON" ]]; then
-        pip3 install jinja2 pyyaml pytest sympy;
+        pip3 install jinja2 pyyaml pytest "sympy<1.6";
     fi
   - if [ -n "$GCC_VERSION" ]; then
         export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}";
@@ -147,6 +145,9 @@ script:
   - mkdir build && cd build
   - if [[ "$USE_ISPC" == "ON" ]]; then
         cmake -DCORENRN_ENABLE_ISPC=ON -DCMAKE_ISPC_COMPILER=../ispc/bin/ispc
+              -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron -DPYTHON_EXECUTABLE=$(which python3) ..;
+    elif [[ "$USE_NMODL" == "ON" ]]; then
+        cmake -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_FLAGS="sympy --analytic"
               -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron -DPYTHON_EXECUTABLE=$(which python3) ..;
     else
         cmake ${cmake_option} -DCMAKE_INSTALL_PREFIX=$HOME/CoreNeuron -DPYTHON_EXECUTABLE=$(which python3) ..;

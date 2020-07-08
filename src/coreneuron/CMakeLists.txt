@@ -59,7 +59,7 @@ include(NmodlHelper)
 # Command for MOD to CPP conversion
 # =============================================================================
 set(CORENRN_NMODL_COMMAND env "MODLUNIT=${NMODL_UNITS_FILE}"
-                              "PYTHONPATH=$ENV{PYTHONPATH}:${CMAKE_BINARY_DIR}/lib/python"
+                              "PYTHONPATH=${CORENRN_NMODL_PYTHONPATH}"
                               ${CORENRN_NMODL_BINARY})
 
 if(${CORENRN_ENABLE_ISPC})
