@@ -751,7 +751,10 @@ void datumtransform(CellGroup* cgs) {
         datumindex_fill(ith, cg, di, ml);
       }
     }
-    if (corenrn_direct == false && cg.group_id < 0 && (cg.ntype > 0 || cg.n_output > 0)) {
+    // if model is being transferred via files, and
+    //   if there are no gids in the thread (group_id < 0), and
+    //     if the thread is not empty (mechanisms exist, n_mech > 0)
+    if (corenrn_direct == false && cg.group_id < 0 && cg.n_mech > 0) {
       hoc_execerror("A nonempty thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
     }
   }
