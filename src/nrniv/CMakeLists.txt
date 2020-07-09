@@ -184,7 +184,9 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
 set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+         ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
