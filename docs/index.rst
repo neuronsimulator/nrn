@@ -6,12 +6,18 @@ Welcome to NEURON's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User documentation:
 
    py_doc/index
    new_doc/index
    tutorials/index
    rxd-tutorials/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer documentation:
+
+   dev/index
    doxygen
    
 Indices and tables
