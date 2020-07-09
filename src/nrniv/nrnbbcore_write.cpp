@@ -705,7 +705,9 @@ CellGroup* mk_cellgroups() {
     }else if (cgs[i].group_id >= 0) {
       // set above to first artificial cell with a ps->output_index >= 0
     }else{
-      hoc_execerror("A thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
+      // Don't die yet as the thread may be empty. That just means no files
+      // output for this thread and no mention in files.dat.
+      // Can check for empty near end of datatransform(CellGroup* cgs)
     }
   }
 
@@ -748,6 +750,12 @@ void datumtransform(CellGroup* cgs) {
         // had tointroduce a memb_func[i].dparam_semantics registered by each mod file.
         datumindex_fill(ith, cg, di, ml);
       }
+    }
+    // if model is being transferred via files, and
+    //   if there are no gids in the thread (group_id < 0), and
+    //     if the thread is not empty (mechanisms exist, n_mech > 0)
+    if (corenrn_direct == false && cg.group_id < 0 && cg.n_mech > 0) {
+      hoc_execerror("A nonempty thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
     }
   }
 }
