@@ -60,10 +60,13 @@ void nrnpy_augment_path() {
 #if !defined(NRNCMAKE)
     // For an autotools build on an x86_64, it ends with x86_64/lib/
     const char* lastpart = NRNHOSTCPU "/lib/";
-    assert(lib.length() > strlen(lastpart));
-    size_t pos = lib.length() - strlen(lastpart);
-    assert(lib.find(lastpart, pos) != std::string::npos);
-    lib.replace(pos, std::string::npos, "lib/");
+    if (lib.length() > strlen(lastpart)) {
+      size_t pos = lib.length() - strlen(lastpart);
+      pos = lib.find(lastpart, pos);
+      if (pos != std::string::npos) {
+        lib.replace(pos, std::string::npos, "lib/");
+      }
+    }
 #endif //!NRNCMAKE
 #else // not defined(__linux__) || defined(DARWIN)
     std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
