@@ -17,6 +17,7 @@ Welcome to NEURON's documentation!
    :maxdepth: 2
    :caption: Developer documentation:
 
+   scm/index
    dev/index
    doxygen
    

@@ -115,7 +115,7 @@ install:
       brew link --overwrite python;
     fi
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
-      $PIP install --user sphinx sphinx_rtd_theme jupyter nbconvert recommonmark --upgrade;
+      $PIP install --user -r docs/docs_requirements.txt --upgrade;
     fi
 
 #=============================================================================
