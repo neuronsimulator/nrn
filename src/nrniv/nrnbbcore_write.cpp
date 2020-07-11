@@ -1971,10 +1971,31 @@ int nrncore_run(const char* arg) {
 #endif
   return r(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
 }
-#else
+
+char* (*nrnpy_nrncore_arg_p_)(double tstop);
+
+int nrncore_psolve(double tstop) {
+  if (nrnpy_nrncore_arg_p_) {
+    char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
+    if (arg) {
+      nrncore_run(arg);
+      free(arg);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+#else // !HAVE_DLFCN_H
+
 int nrncore_run(const char*) {
   return 0;
 }
-#endif //HAVE_DLFCN_H
+
+int nrncore_psolve(double tstop) {
+  return 0;
+}
+
+#endif //!HAVE_DLFCN_H
 
 } // end of extern "C"

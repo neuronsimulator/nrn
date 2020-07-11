@@ -73,7 +73,7 @@ extern "C" {
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
-
+	extern int nrncore_psolve(double tstop);
 }
 
 class OcBBS : public BBS , public Resource {
@@ -666,7 +666,10 @@ static double spike_record(void* v) {
 
 static double psolve(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
-	bbs->netpar_solve(chkarg(1, t, 1e9));
+	double tstop = chkarg(1, t, 1e9);
+	if (!nrncore_psolve(tstop)) {
+		bbs->netpar_solve(tstop);
+	}
 	return 0.;
 }
 

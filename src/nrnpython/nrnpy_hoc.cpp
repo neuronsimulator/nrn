@@ -2884,6 +2884,35 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
+extern char* (*nrnpy_nrncore_arg_p_)(double tstop);
+static char* nrncore_arg(double tstop) {
+  PyObject* modules = PyImport_GetModuleDict();
+  if (modules) {
+    PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
+    if (module) {
+      PyObject* callable = PyObject_GetAttrString(module, "nrncore_arg");
+      if (callable) {
+        PyObject* ts = Py_BuildValue("(d)", tstop);
+        if (ts) {
+          PyObject* arg = PyObject_CallObject(callable, ts);
+          Py_DECREF(ts);
+          if (arg) {
+            Py2NRNString str(arg);
+            Py_DECREF(arg);
+            if (strlen(str.c_str()) > 0) {
+              return strdup(str.c_str());
+            }
+          }
+        }
+      }
+    }
+  }
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+  }
+  return NULL;
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
@@ -2893,6 +2922,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_gui_helper_ = gui_helper_;
   nrnpy_gui_helper3_ = gui_helper_3_;
   nrnpy_gui_helper3_str_ = gui_helper_3_str_;
+  nrnpy_nrncore_arg_p_ = nrncore_arg;
 
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
