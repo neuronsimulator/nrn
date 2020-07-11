@@ -1,4 +1,3 @@
-from neuron import h
 
 # Properties settable by user
 enable = False     # Use CoreNEURON when calling ParallelContext.psolve(tstop).
@@ -14,11 +13,17 @@ def property_check(tstop):
   '''
   Check type and value in range for the user properties.
   '''
-  assert(type(tstop) is float)
-  assert(type(enable) is bool)
-  assert(type(gpu) is bool)
-  assert(type(cell_permute) is int and cell_permute in range(3))
+  global enable, gpu, cell_permute, warp_balance, verbose, prcellstate
+  tstop = float(tstop) # error if can't be a float
+  enable = bool(enable)
+  gpu = bool(gpu)
+  cell_permute = int(cell_permute)
+  assert(cell_permute in range(3))
   assert(cell_permute in (range(3) if gpu else range(2)))
+  warp_balance = int(warp_balance)
+  assert(warp_balance >= 0)
+  verbose = int(verbose)
+  prcellstate = int(prcellstate)
 
 def nrncore_arg(tstop):
   """
@@ -27,6 +32,7 @@ def nrncore_arg(tstop):
   :param tstop: Simulation time (ms)
 
   """
+  from neuron import h
   arg = ''
   property_check(tstop)
   if not enable:
