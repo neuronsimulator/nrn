@@ -1972,8 +1972,18 @@ int nrncore_run(const char* arg) {
   return r(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
 }
 
-char* (*nrnpy_nrncore_arg_p_)(double tstop);
+int (*nrnpy_nrncore_enable_value_p_)();
+/** Return neuron.coreneuron.enable */
+int nrncore_is_enabled() {
+  if (nrnpy_nrncore_enable_value_p_) {
+    int b = (*nrnpy_nrncore_enable_value_p_)();
+    return b;
+  }
+  return 0;
+}
 
+char* (*nrnpy_nrncore_arg_p_)(double tstop);
+/** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop) */
 int nrncore_psolve(double tstop) {
   if (nrnpy_nrncore_arg_p_) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
@@ -1989,6 +1999,10 @@ int nrncore_psolve(double tstop) {
 #else // !HAVE_DLFCN_H
 
 int nrncore_run(const char*) {
+  return 0;
+}
+
+int nrncore_is_enabled() {
   return 0;
 }
 

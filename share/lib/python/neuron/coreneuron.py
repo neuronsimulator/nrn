@@ -15,7 +15,7 @@ def property_check(tstop):
   '''
   global enable, gpu, cell_permute, warp_balance, verbose, prcellstate
   tstop = float(tstop) # error if can't be a float
-  enable = bool(enable)
+  enable = bool(int(enable))
   gpu = bool(gpu)
   cell_permute = int(cell_permute)
   assert(cell_permute in range(3))

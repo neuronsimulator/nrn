@@ -73,6 +73,7 @@ extern "C" {
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
+	extern int nrncore_is_enabled();
 	extern int nrncore_psolve(double tstop);
 }
 
@@ -667,10 +668,14 @@ static double spike_record(void* v) {
 static double psolve(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	double tstop = chkarg(1, t, 1e9);
-	if (!nrncore_psolve(tstop)) {
+        int enabled = nrncore_is_enabled();
+	if (enabled == 1) {
+		nrncore_psolve(tstop);
+	}else if (enabled == 0) {
+		// Classic case
 		bbs->netpar_solve(tstop);
 	}
-	return 0.;
+	return double(enabled);
 }
 
 static double set_maxstep(void* v) {

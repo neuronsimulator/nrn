@@ -2884,6 +2884,35 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
+/** value of neuron.coreneuron.enable as 0, 1 (-1 if error) */
+extern int (*nrnpy_nrncore_enable_value_p_)();
+static int nrncore_enable_value() {
+  PyObject* modules = PyImport_GetModuleDict();
+  if (modules) {
+    PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
+    if (module) {
+      PyObject* val = PyObject_GetAttrString(module, "enable");
+      if (val) {
+        long b = PyLong_AsLong(val);
+        Py_DECREF(val);
+        if (b != -1) {
+          return b;
+        }
+      }
+    }
+  }
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+    return -1;
+  }
+  return 0;
+}
+
+/** Gets the python string returned by  neuron.coreneuron.nrncore_arg(tstop)
+    return a strdup() copy of the string which should be free when the caller
+    finishes with it. Return NULL if error or bool(neuron.coreneuron.enable)
+    is False.
+*/
 extern char* (*nrnpy_nrncore_arg_p_)(double tstop);
 static char* nrncore_arg(double tstop) {
   PyObject* modules = PyImport_GetModuleDict();
@@ -2923,6 +2952,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_gui_helper3_ = gui_helper_3_;
   nrnpy_gui_helper3_str_ = gui_helper_3_str_;
   nrnpy_nrncore_arg_p_ = nrncore_arg;
+  nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
 
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
