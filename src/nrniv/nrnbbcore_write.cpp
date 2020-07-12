@@ -1983,23 +1983,25 @@ int nrncore_is_enabled() {
 }
 
 char* (*nrnpy_nrncore_arg_p_)(double tstop);
-/** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop) */
+/** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
+ *  Return 0 on success
+*/
 int nrncore_psolve(double tstop) {
   if (nrnpy_nrncore_arg_p_) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
     if (arg) {
       nrncore_run(arg);
       free(arg);
-      return 1;
+      return 0;
     }
   }
-  return 0;
+  return -1;
 }
 
 #else // !HAVE_DLFCN_H
 
 int nrncore_run(const char*) {
-  return 0;
+  return -1;
 }
 
 int nrncore_is_enabled() {

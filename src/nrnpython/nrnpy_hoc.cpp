@@ -2884,7 +2884,10 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
-/** value of neuron.coreneuron.enable as 0, 1 (-1 if error) */
+/** value of neuron.coreneuron.enable as 0, 1 (-1 if error)
+ *  TODO: seems like this could be generalized so that
+ *  additional cases would require less code.
+*/
 extern int (*nrnpy_nrncore_enable_value_p_)();
 static int nrncore_enable_value() {
   PyObject* modules = PyImport_GetModuleDict();
@@ -2893,10 +2896,10 @@ static int nrncore_enable_value() {
     if (module) {
       PyObject* val = PyObject_GetAttrString(module, "enable");
       if (val) {
-        long b = PyLong_AsLong(val);
+        long enable = PyLong_AsLong(val);
         Py_DECREF(val);
-        if (b != -1) {
-          return b;
+        if (enable != -1) {
+          return enable;
         }
       }
     }

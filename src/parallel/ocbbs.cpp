@@ -668,7 +668,7 @@ static double spike_record(void* v) {
 static double psolve(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	double tstop = chkarg(1, t, 1e9);
-        int enabled = nrncore_is_enabled();
+	int enabled = nrncore_is_enabled();
 	if (enabled == 1) {
 		nrncore_psolve(tstop);
 	}else if (enabled == 0) {
