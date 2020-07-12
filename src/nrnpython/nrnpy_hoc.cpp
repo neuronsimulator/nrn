@@ -1711,7 +1711,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
       // will go to 0, thus invalidating po->iteritem_->element.sec->prop
       po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
       if (po->iteritem_ == ql) {
-        po->u.its_ == PyHoc::Last;
+        po->u.its_ = PyHoc::Last;
         po->iteritem_ = NULL;
         return NULL;
       }else{
