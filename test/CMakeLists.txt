@@ -106,8 +106,19 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
+    file(COPY ${PROJECT_SOURCE_DIR}/test/coreneuron/mod DESTINATION ${PROJECT_BINARY_DIR}/test/)
+    add_custom_target(
+      coreneuron_mod ALL
+      COMMAND
+        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl mod
+      COMMAND
+        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core mod
+       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test)
+    add_dependencies(coreneuron_mod nrniv nrniv-core)
+
     add_test(NAME coreneuron_direct COMMAND ${PYTHON_EXECUTABLE} -m pytest
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron)
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test)
     list(APPEND TESTS coreneuron_direct)
   endif()
 endif()

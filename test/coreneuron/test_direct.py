@@ -13,6 +13,9 @@ def test_direct_memory_transfer():
     ic.dur = 0.1
     ic.amp = 0.3
 
+    #for testing external mod file
+    h.soma.insert("Sample")
+
     h.cvode.use_fast_imem(1)
     h.cvode.cache_efficient(1)
 
@@ -27,9 +30,12 @@ def test_direct_memory_transfer():
     tvstd = tv.cl()
     i_memstd = i_mem.cl()
 
+    from neuron import coreneuron
+    coreneuron.enable = True
+
     pc = h.ParallelContext()
     h.stdinit()
-    pc.nrncore_run("-e %g"%h.tstop, 0)
+    pc.psolve(h.tstop)
 
     assert(tv.eq(tvstd))
     assert(v.cl().sub(vstd).abs().max() < 1e-10)
