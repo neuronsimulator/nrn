@@ -276,6 +276,7 @@ if(NRN_ENABLE_SHARED)
     set(NRN_LIRARY_TYPE "SHARED")
 else()
     set(NRN_LIRARY_TYPE "STATIC")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # =============================================================================
