@@ -1892,7 +1892,7 @@ extern char* neuron_home;
 /** Check if coreneuron is loaded into memory */
 bool is_coreneuron_loaded() {
     bool is_loaded = false;
-    // check if corenrn_version symbole can be found
+    // check if corenrn_version symbol can be found
     void * handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
     if (handle) {
         void* fn = dlsym(handle, "corenrn_version");
@@ -1941,7 +1941,7 @@ void* get_coreneuron_handle() {
 	std::string corenrn_mechlib_name("libcorenrnmech.so");
 	#endif
 
-	// first check if coreneuron specific library exist in <arhc>/.libs
+	// first check if coreneuron specific library exist in <arch>/.libs
 	std::stringstream s_path;
 	s_path << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
 	std::string path = s_path.str();
