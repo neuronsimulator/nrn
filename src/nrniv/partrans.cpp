@@ -27,11 +27,35 @@
 
 #if NRNLONGSGID
 #define sgid_t int64_t
-#define sgid_alltoallv nrnmpi_long_alltoallv
-#else
+#if PARANEURON
+extern "C" {
+  extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
+  {
+    if (nrn_sparse_partrans > 0)
+      {
+	nrnmpi_long_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+      } else {
+      nrnmpi_long_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+    }
+  }
+}
+#endif //PARANEURON
+#else // not NRNLONGSGID
 #define sgid_t int
-#define sgid_alltoallv nrnmpi_int_alltoallv
-#endif
+#if PARANEURON
+extern "C" {
+  extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
+  {
+    if (nrn_sparse_partrans > 0)
+      {
+	nrnmpi_int_alltoallv_sparse(s, scnt, sdispl, r, rcnt, rdispl);
+      } else {
+      nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
+    }
+  }
+}
+#endif //PARANEURON
+#endif // not NRNLONGSGID
 
 extern "C" {
 void nrnmpi_source_var();
@@ -134,6 +158,7 @@ extern int nrnmpi_int_allmax(int);
 extern void sgid_alltoallv(sgid_t*, int*, int*, sgid_t*, int*, int*);
 extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
+extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*,  double*, int*, int*);
 #endif
 }
 
@@ -594,8 +619,16 @@ void mpi_transfer() {
 #if PARANEURON
 	if (nrnmpi_numprocs > 1) {
 		double wt = nrnmpi_wtime();
-		nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
-			insrc_buf_, insrccnt_, insrcdspl_);
+                if (nrn_sparse_partrans > 0)
+                  {
+                    nrnmpi_dbl_alltoallv_sparse(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                                insrc_buf_, insrccnt_, insrcdspl_);
+                  }
+                else
+                  {
+                    nrnmpi_dbl_alltoallv(outsrc_buf_, outsrccnt_, outsrcdspl_,
+                                         insrc_buf_, insrccnt_, insrcdspl_);
+                  }
 		nrnmpi_transfer_wait_ += nrnmpi_wtime() - wt;
 		errno = 0;
 	}

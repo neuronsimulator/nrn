@@ -705,7 +705,9 @@ CellGroup* mk_cellgroups() {
     }else if (cgs[i].group_id >= 0) {
       // set above to first artificial cell with a ps->output_index >= 0
     }else{
-      hoc_execerror("A thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
+      // Don't die yet as the thread may be empty. That just means no files
+      // output for this thread and no mention in files.dat.
+      // Can check for empty near end of datatransform(CellGroup* cgs)
     }
   }
 
@@ -748,6 +750,12 @@ void datumtransform(CellGroup* cgs) {
         // had tointroduce a memb_func[i].dparam_semantics registered by each mod file.
         datumindex_fill(ith, cg, di, ml);
       }
+    }
+    // if model is being transferred via files, and
+    //   if there are no gids in the thread (group_id < 0), and
+    //     if the thread is not empty (mechanisms exist, n_mech > 0)
+    if (corenrn_direct == false && cg.group_id < 0 && cg.n_mech > 0) {
+      hoc_execerror("A nonempty thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
     }
   }
 }
@@ -1963,10 +1971,47 @@ int nrncore_run(const char* arg) {
 #endif
   return r(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
 }
-#else
-int nrncore_run(const char*) {
+
+int (*nrnpy_nrncore_enable_value_p_)();
+/** Return neuron.coreneuron.enable */
+int nrncore_is_enabled() {
+  if (nrnpy_nrncore_enable_value_p_) {
+    int b = (*nrnpy_nrncore_enable_value_p_)();
+    return b;
+  }
   return 0;
 }
-#endif //HAVE_DLFCN_H
+
+char* (*nrnpy_nrncore_arg_p_)(double tstop);
+/** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
+ *  Return 0 on success
+*/
+int nrncore_psolve(double tstop) {
+  if (nrnpy_nrncore_arg_p_) {
+    char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
+    if (arg) {
+      nrncore_run(arg);
+      free(arg);
+      return 0;
+    }
+  }
+  return -1;
+}
+
+#else // !HAVE_DLFCN_H
+
+int nrncore_run(const char*) {
+  return -1;
+}
+
+int nrncore_is_enabled() {
+  return 0;
+}
+
+int nrncore_psolve(double tstop) {
+  return 0;
+}
+
+#endif //!HAVE_DLFCN_H
 
 } // end of extern "C"

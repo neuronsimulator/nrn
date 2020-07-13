@@ -1713,7 +1713,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
       // will go to 0, thus invalidating po->iteritem_->element.sec->prop
       po->iteritem_ = next_valid_secitem((hoc_Item*)(po->iteritem_), ql);
       if (po->iteritem_ == ql) {
-        po->u.its_ == PyHoc::Last;
+        po->u.its_ = PyHoc::Last;
         po->iteritem_ = NULL;
         return NULL;
       }else{
@@ -2906,6 +2906,67 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
+/** value of neuron.coreneuron.enable as 0, 1 (-1 if error)
+ *  TODO: seems like this could be generalized so that
+ *  additional cases would require less code.
+*/
+extern int (*nrnpy_nrncore_enable_value_p_)();
+static int nrncore_enable_value() {
+  PyObject* modules = PyImport_GetModuleDict();
+  if (modules) {
+    PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
+    if (module) {
+      PyObject* val = PyObject_GetAttrString(module, "enable");
+      if (val) {
+        long enable = PyLong_AsLong(val);
+        Py_DECREF(val);
+        if (enable != -1) {
+          return enable;
+        }
+      }
+    }
+  }
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+    return -1;
+  }
+  return 0;
+}
+
+/** Gets the python string returned by  neuron.coreneuron.nrncore_arg(tstop)
+    return a strdup() copy of the string which should be free when the caller
+    finishes with it. Return NULL if error or bool(neuron.coreneuron.enable)
+    is False.
+*/
+extern char* (*nrnpy_nrncore_arg_p_)(double tstop);
+static char* nrncore_arg(double tstop) {
+  PyObject* modules = PyImport_GetModuleDict();
+  if (modules) {
+    PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
+    if (module) {
+      PyObject* callable = PyObject_GetAttrString(module, "nrncore_arg");
+      if (callable) {
+        PyObject* ts = Py_BuildValue("(d)", tstop);
+        if (ts) {
+          PyObject* arg = PyObject_CallObject(callable, ts);
+          Py_DECREF(ts);
+          if (arg) {
+            Py2NRNString str(arg);
+            Py_DECREF(arg);
+            if (strlen(str.c_str()) > 0) {
+              return strdup(str.c_str());
+            }
+          }
+        }
+      }
+    }
+  }
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+  }
+  return NULL;
+}
+
 myPyMODINIT_FUNC nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
@@ -2917,6 +2978,8 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_gui_helper3_str_ = gui_helper_3_str_;
   nrnpy_get_pyobj = nrnpy_get_pyobj_;
   nrnpy_decref = nrnpy_decref_;
+  nrnpy_nrncore_arg_p_ = nrncore_arg;
+  nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
 

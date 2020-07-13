@@ -209,6 +209,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # ~~~
   set_property(
     SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
+           ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 

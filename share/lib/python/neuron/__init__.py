@@ -143,24 +143,46 @@ version = h.nrnversion(5)
 __version__ = version
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
-  import platform
-  import os
-  p = h.nrnversion(6)
-  if "--prefix=" in p:
-    p = p[p.find('--prefix=') + 9:]
-    p = p[:p.find("'")]
+  # first try is to derive from neuron.__file__
+  origin = None # path to neuron/__init__.py
+  if sys.version_info[0] == 2:
+    # python 2 seems to have hoc.__file__ already filled in so never get here.
+    try:
+      import imp
+      mspec = imp.find_module("neuron")
+      origin = mspec[1]
+    except:
+      pass
   else:
-    p = "/usr/local/nrn"
-  if sys.version_info >= (3, 0):
+    from importlib import util
+    mspec = util.find_spec("neuron")
+    if mspec:
+      origin = mspec.origin
+  if origin is not None:
     import sysconfig
-    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
+    setattr(hoc, "__file__", hoc_path)
   else:
-    phoc = p + "/lib/python/neuron/hoc.so"
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
-  setattr(hoc, "__file__", phoc)
+    # if the above is robust, maybe all this can be removed.
+    # next try is to derive from nrnversion(6) (only works for autotools build)
+    import platform
+    import os
+    p = h.nrnversion(6)
+    if "--prefix=" in p:
+      p = p[p.find('--prefix=') + 9:]
+      p = p[:p.find("'")]
+    else:
+      p = "/usr/local/nrn"
+    if sys.version_info >= (3, 0):
+      import sysconfig
+      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    else:
+      hoc_path = p + "/lib/python/neuron/hoc.so"
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
+    setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time

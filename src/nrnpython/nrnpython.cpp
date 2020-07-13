@@ -8,6 +8,8 @@
 #include <nrnoc2iv.h>
 #include <nrnpy_reg.h>
 #include <hoccontext.h>
+#include <string>
+#include <ocfile.h> // bool isDirExist(const std::string& path);
 
 extern "C" {
 #include <hocstr.h>
@@ -21,6 +23,9 @@ extern char* hoc_ctp;
 extern FILE* hoc_fin;
 extern const char* hoc_promptstr;
 extern char* neuronhome_forward();
+#if DARWIN || defined(__linux__)
+extern const char* path_prefix_to_libnrniv();
+#endif
 // extern char*(*PyOS_ReadlineFunctionPointer)(FILE*, FILE*, char*);
 #if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
 static char* nrnpython_getline(FILE*, FILE*, const char*);
@@ -45,16 +50,32 @@ int nrnpy_site_problem;
 
 void nrnpy_augment_path() {
   static int augmented = 0;
-  char buf[1024];
   if (!augmented && strlen(neuronhome_forward()) > 0) {
-    // printf("augment_path\n");
     augmented = 1;
-    sprintf(buf, "sys.path.append('%s/lib/python')", neuronhome_forward());
     int err = PyRun_SimpleString("import sys");
     assert(err == 0);
-    err = PyRun_SimpleString(buf);
-    assert(err == 0);
-    sprintf(buf, "sys.path.prepend('')");
+#if defined(__linux__) || defined(DARWIN)
+    // If /where/installed/lib/python/neuron exists, then append to sys.path
+    std::string lib = std::string(path_prefix_to_libnrniv());
+#if !defined(NRNCMAKE)
+    // For an autotools build on an x86_64, it ends with x86_64/lib/
+    const char* lastpart = NRNHOSTCPU "/lib/";
+    if (lib.length() > strlen(lastpart)) {
+      size_t pos = lib.length() - strlen(lastpart);
+      pos = lib.find(lastpart, pos);
+      if (pos != std::string::npos) {
+        lib.replace(pos, std::string::npos, "lib/");
+      }
+    }
+#endif //!NRNCMAKE
+#else // not defined(__linux__) || defined(DARWIN)
+    std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
+#endif //not defined(__linux__) || defined(DARWIN)
+    if (isDirExist(lib + std::string("python/neuron"))) {
+      std::string cmd = std::string("sys.path.append('") + lib + "python')";
+      err = PyRun_SimpleString(cmd.c_str());
+      assert(err == 0);
+    }
     err = PyRun_SimpleString("sys.path.insert(0, '')");
     assert(err == 0);
   }
