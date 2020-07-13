@@ -77,7 +77,7 @@ before_install:
         brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/187c0d5/Formula/bison.rb;
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         brew unlink python@2;
-        brew link --overwrite python;
+        brew link --overwrite python@3.8;
         export SDKROOT="$(xcrun --show-sdk-path)";
     else
         pyenv global $PYTHON_VERSION;
@@ -123,13 +123,6 @@ after_success:
       rm -rf doctest doctrees && touch .nojekyll;
       echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > index.html;
     fi
-  - echo "------- Build and Test CoreNEURON -------"
-  - cd $HOME
-  - git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
-  - mkdir CoreNeuron/build && cd CoreNeuron/build
-  - cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl -DCORENRN_NMODL_FLAGS="sympy --analytic"
-  - make -j 2
-  - make test
 
 #=============================================================================
 # Notifications

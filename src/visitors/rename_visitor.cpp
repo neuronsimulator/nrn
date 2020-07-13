@@ -9,17 +9,47 @@
 
 #include "ast/all.hpp"
 #include "parser/c11_driver.hpp"
+#include "utils/logger.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
 namespace visitor {
 
+std::string RenameVisitor::new_name_generator(const std::string old_name) {
+    std::string new_name;
+    if (add_random_suffix) {
+        if (renamed_variables.find(old_name) != renamed_variables.end()) {
+            new_name = renamed_variables[old_name];
+        } else {
+            const auto& vars = get_global_vars(*ast);
+            if (add_prefix) {
+                new_name = suffix_random_string(vars, new_var_name_prefix + old_name);
+            } else {
+                new_name = suffix_random_string(vars, new_var_name);
+            }
+            renamed_variables[old_name] = new_name;
+        }
+    } else {
+        if (add_prefix) {
+            new_name = new_var_name_prefix + old_name;
+        } else {
+            new_name = new_var_name;
+        }
+    }
+    return new_name;
+}
+
 /// rename matching variable
 void RenameVisitor::visit_name(ast::Name& node) {
     const auto& name = node.get_node_name();
-    if (name == var_name) {
-        auto& value = node.get_value();
-        value->set(new_var_name);
+    if (std::regex_match(name, var_name_regex)) {
+        std::string new_name = new_name_generator(name);
+        node.get_value()->set(new_name);
+        logger->warn("RenameVisitor :: Renaming variable {} in {} to {}",
+                     name,
+                     node.get_token()->position(),
+                     new_name);
     }
 }
 
@@ -49,8 +79,14 @@ void RenameVisitor::visit_verbatim(ast::Verbatim& node) {
 
     std::string result;
     for (auto& token: tokens) {
-        if (token == var_name) {
-            result += new_var_name;
+        if (std::regex_match(token, var_name_regex)) {
+            /// Check if variable is already renamed and use the same naming otherwise add the
+            /// new_name to the renamed_variables map
+            std::string new_name = new_name_generator(token);
+            result += new_name;
+            logger->warn("RenameVisitor :: Renaming variable {} in VERBATIM block to {}",
+                         token,
+                         new_name);
         } else {
             result += token;
         }

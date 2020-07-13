@@ -13,6 +13,7 @@
 
 #include "ast/all.hpp"
 #include "parser/nmodl_driver.hpp"
+#include "utils/string_utils.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
@@ -23,6 +24,21 @@ namespace visitor {
 
 using namespace ast;
 using symtab::syminfo::NmodlType;
+
+std::string suffix_random_string(const std::set<std::string>& vars,
+                                 const std::string& original_string) {
+    std::string new_string = original_string;
+    std::string random_string;
+    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
+    // Check if there is a variable defined in the mod file as original_string and if yes
+    // try to use a different string in the form "original_string"_"random_string"
+    while (vars.find(new_string) != vars.end()) {
+        random_string = singleton_random_string_class->reset_random_string(original_string);
+        new_string = original_string;
+        new_string += "_" + random_string;
+    }
+    return new_string;
+}
 
 std::string get_new_name(const std::string& name,
                          const std::string& suffix,

@@ -12,7 +12,9 @@
  * \brief \copybrief nmodl::visitor::RenameVisitor
  */
 
+#include <regex>
 #include <string>
+#include <unordered_map>
 
 #include "visitors/ast_visitor.hpp"
 
@@ -40,24 +42,60 @@ namespace visitor {
  */
 class RenameVisitor: public AstVisitor {
   private:
-    /// variable to rename
-    std::string var_name;
+    /// ast::Ast* node
+    std::shared_ptr<ast::Program> ast;
+
+    /// regex for searching which variables to replace
+    std::regex var_name_regex;
 
     /// new name
     std::string new_var_name;
 
-    // rename verbatim blocks as well
+    /// variable prefix
+    std::string new_var_name_prefix;
+
+    /// Map that keeps the renamed variables to keep the same random suffix when a variable is
+    /// renamed accross the whole file
+    std::unordered_map<std::string, std::string> renamed_variables;
+
+    /// add prefix to variable name
+    bool add_prefix = false;
+
+    /// add random suffix
+    bool add_random_suffix = false;
+
+    /// rename verbatim blocks as well
     bool rename_verbatim = true;
 
   public:
     RenameVisitor() = default;
 
     RenameVisitor(std::string old_name, std::string new_name)
-        : var_name(std::move(old_name))
+        : var_name_regex(std::move(old_name))
         , new_var_name(std::move(new_name)) {}
 
+    RenameVisitor(std::shared_ptr<ast::Program> ast,
+                  std::string old_name,
+                  std::string new_var_name_or_prefix,
+                  bool add_prefix,
+                  bool add_random_suffix)
+        : ast(std::move(ast))
+        , var_name_regex(std::move(old_name))
+        , add_prefix(std::move(add_prefix))
+        , add_random_suffix(std::move(add_random_suffix)) {
+        if (add_prefix) {
+            new_var_name_prefix = std::move(new_var_name_or_prefix);
+        } else {
+            new_var_name = std::move(new_var_name_or_prefix);
+        }
+    }
+
+    /// Check if variable is already renamed and use the same naming otherwise add the new_name
+    /// to the renamed_variables map
+    std::string new_name_generator(const std::string old_name);
+
     void set(std::string old_name, std::string new_name) {
-        var_name = std::move(old_name);
+        var_name_regex = std::move(old_name);
         new_var_name = std::move(new_name);
     }
 

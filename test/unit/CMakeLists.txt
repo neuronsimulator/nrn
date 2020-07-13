@@ -28,6 +28,7 @@ add_executable(
   visitor/defuse_analyze.cpp
   visitor/global_to_range.cpp
   visitor/inline.cpp
+  visitor/ispc_rename.cpp
   visitor/json.cpp
   visitor/kinetic_block.cpp
   visitor/localize.cpp

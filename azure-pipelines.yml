@@ -20,6 +20,13 @@ jobs:
       # we manually get version 3.10.2 to make sure that changes in the cmake
       # files do not require unsupported versions of cmake in our package. 
       wget "https://github.com/Kitware/CMake/releases/download/v3.10.2/$CMAKE_PKG.tar.gz" && tar xzpvf $CMAKE_PKG.tar.gz
+      # install ISPC compiler for integration testing
+      ispc_version="v1.12.0";
+      url_os="linux";
+      ispc_version_suffix="b";
+      url="https://github.com/ispc/ispc/releases/download/${ispc_version}/ispc-${ispc_version}${ispc_version_suffix}-${url_os}.tar.gz";
+      wget -O ispc.tar.gz $url;
+      mkdir $(pwd)/$CMAKE_PKG/ispc && tar -xvzf ispc.tar.gz -C $(pwd)/$CMAKE_PKG/ispc --strip 1;
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
     displayName: 'Install Depdendencies'
@@ -53,10 +60,29 @@ jobs:
       then
         make VERBOSE=1
       fi
+      make test
       ./bin/nrnivmodl-core $(Build.Repository.LocalPath)/test/integration/mod
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
     displayName: 'Build and Run Integration Tests'
+  - script: |
+      export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
+      export CXX='g++-8'
+      git clone --recursive https://github.com/BlueBrain/CoreNeuron.git
+      mkdir CoreNeuron/build_ispc
+      cd CoreNeuron/build_ispc
+      cmake --version
+      cmake .. -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -DPYTHON_EXECUTABLE=$(which python3.7) -DCORENRN_NMODL_FLAGS="sympy --analytic" -DCORENRN_ENABLE_ISPC=ON -DCMAKE_ISPC_COMPILER=$(Build.Repository.LocalPath)/$CMAKE_PKG/ispc/bin/ispc
+      make -j 2
+      if [ $? -ne 0 ]
+      then
+        make VERBOSE=1
+      fi
+      make test
+      ./bin/nrnivmodl-core $(Build.Repository.LocalPath)/test/integration/mod
+    env:
+      CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
+    displayName: 'Build and Run Integration Tests with ISPC compiler'
   - script: |
       export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
       export CXX='g++-8'
