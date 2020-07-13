@@ -1924,6 +1924,7 @@ void* get_handle_for_lib(const char* path) {
 void* get_coreneuron_handle() {
 	// if already loaded into memory, directly return handle
 	if (is_coreneuron_loaded()) {
+        std::cout << "0. Returning directly... \n";
 		return dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 	}
 
@@ -1952,7 +1953,7 @@ void* get_coreneuron_handle() {
 	std::string path = s_path.str();
 
 	if (file_exist(path)) {
-        std::cout << "==> Would have returned this : " << path << "\n";
+        std::cout << "==>1.  returned this : " << path << "\n";
 		return get_handle_for_lib(path.c_str());
 	}
 
@@ -1966,7 +1967,7 @@ void* get_coreneuron_handle() {
         hoc_execerror("Could not find CoreNEURON library", NULL);
 	}
 
-    std::cout << "==> But returning this : " << path << "\n";
+    std::cout << "==>2. returning this : " << path << "\n";
 	return get_handle_for_lib(path.c_str());
 }
 
