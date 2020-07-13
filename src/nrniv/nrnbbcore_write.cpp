@@ -1952,7 +1952,8 @@ void* get_coreneuron_handle() {
 	std::string path = s_path.str();
 
 	if (file_exist(path)) {
-		return get_handle_for_lib(path.c_str());
+        std::cout << "==> Would have returned this : " << path << "\n";
+		//return get_handle_for_lib(path.c_str());
 	}
 
 	// last fallback is minimal library with internal mechanisms
@@ -1965,6 +1966,7 @@ void* get_coreneuron_handle() {
         hoc_execerror("Could not find CoreNEURON library", NULL);
 	}
 
+    std::cout << "==> But returning this : " << path << "\n";
 	return get_handle_for_lib(path.c_str());
 }
 
