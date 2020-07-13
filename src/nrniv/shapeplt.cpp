@@ -90,9 +90,11 @@ ENDGUI
 	return 1.;
 }
 
-void ShapePlot:: has_iv_view(bool value) {
+#if HAVE_IV
+void ShapePlot::has_iv_view(bool value) {
 	has_iv_view_ = value;
 }
+#endif
 
 static double sh_view(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view", v);
