@@ -46,6 +46,8 @@ extern "C" {
 extern "C" {
 	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 	extern double (*nrnpy_object_to_double_)(Object*);
+	void* (*nrnpy_get_pyobj)(Object* obj) = 0;
+	void (*nrnpy_decref)(void* pyobj) = 0;
 }	
 
 // PlotShape class registration for oc
@@ -88,11 +90,19 @@ ENDGUI
 	return 1.;
 }
 
+void ShapePlot:: has_iv_view(bool value) {
+	has_iv_view_ = value;
+}
+
 static double sh_view(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.view", v);
 #if HAVE_IV
 IFGUI
 	ShapePlot* sh = (ShapePlot*)v;
+	sh->has_iv_view(true);
+	if (sh->varobj()) {
+		hoc_execerror("InterViews only supports string variables.", NULL);
+	}
 	if (ifarg(8)) {
 		Coord x[8]; int i;
 		for (i=0; i < 8; ++i) {
@@ -107,17 +117,56 @@ ENDGUI
 
 static double sh_variable(void* v) {
 	TRY_GUI_REDIRECT_ACTUAL_DOUBLE("PlotShape.variable", v);
+	ShapePlotData* spd = (ShapePlotData*) v;
+#if HAVE_IV
+    // NOTE: only sh OR spd is valid, but both may be safely set
+	ShapePlot* sh = (ShapePlot*) v;
+#endif
+	if (hoc_is_object_arg(1) && nrnpy_get_pyobj) {
+		// note that we only get inside here when Python is available
+		void* py_var_ = nrnpy_get_pyobj(*hoc_objgetarg(1));
+		if (!py_var_) {
+			hoc_execerror("variable must be either a string or Python object", NULL);
+		}
+#if HAVE_IV
+IFGUI
+		if (sh->has_iv_view()) {
+			nrnpy_decref(py_var_);
+			hoc_execerror("InterViews only supports string variables.", NULL);
+		}
+		nrnpy_decref(sh->varobj());
+		sh->varobj(py_var_);
+		return 1;
+ENDGUI
+#endif
+		nrnpy_decref(spd->varobj());
+		spd->varobj(py_var_);
+		return 1;
+	}
 	Symbol* s;
 	s = hoc_table_lookup(gargstr(1), hoc_built_in_symlist);
 	if (s) {
 #if HAVE_IV
 IFGUI
-		((ShapePlot*) v) -> variable(s);
+		if (nrnpy_decref) {
+			nrnpy_decref(sh->varobj());
+		}
+
+		sh->varobj(NULL);
+		sh -> variable(s);
 } else {
-		((ShapePlotData*) v) -> variable(s);
+		if (nrnpy_decref) {
+			nrnpy_decref(spd->varobj());
+		}
+		spd->varobj(NULL);
+		spd -> variable(s);
 ENDGUI
 #else
-		((ShapePlotData*) v) -> variable(s);
+		if (nrnpy_decref) {
+			nrnpy_decref(spd->varobj());
+		}
+		spd->varobj(NULL);
+		spd -> variable(s);
 #endif
 	}
 	return 1.;
@@ -320,6 +369,8 @@ ENDGUI
 IFGUI
 	ShapePlot* sh = NULL;
 	sh = new ShapePlot(NULL, sl);
+	sh->has_iv_view(i ? true : false);
+	sh->varobj(NULL);
 	Resource::unref(sl);
 	sh->ref();
 	sh->hoc_obj_ptr(ho);
@@ -341,9 +392,25 @@ static void sh_destruct(void* v) {
 	TRY_GUI_REDIRECT_NO_RETURN("~PlotShape", v);
 #if HAVE_IV
 IFGUI
+	if (nrnpy_decref) {
+		ShapePlot* sp = (ShapePlot*) v;
+		nrnpy_decref(sp->varobj());
+	}
+
 	((ShapeScene*)v)->dismiss();
+} else {
+	if (nrnpy_decref) {
+		ShapePlotData* sp = (ShapePlotData*) v;
+		nrnpy_decref(sp->varobj());
+	}
 ENDGUI
 	Resource::unref((ShapeScene*)v);
+#else
+	if (nrnpy_decref) {
+		ShapePlotData* sp = (ShapePlotData*) v;
+		nrnpy_decref(sp->varobj());
+	}
+
 #endif
 }
 void PlotShape_reg() {
@@ -399,6 +466,7 @@ declareActionCallback(ShapePlotImpl);
 implementActionCallback(ShapePlotImpl);
 
 ShapePlot::ShapePlot(Symbol* sym, SectionList* sl) : ShapeScene(sl) {
+	py_var_ = NULL;
 	if (sl) {
 		sl_ = sl->nrn_object();
 	} else {
@@ -498,6 +566,23 @@ void ShapePlot::variable(Symbol* sym) {
 const char* ShapePlot::varname()const {
 	return spi_->sym_->name;
 }
+
+void* ShapePlot::varobj() const {
+	return py_var_;
+}
+
+void* ShapePlotData::varobj() const {
+	return py_var_;
+}
+
+void ShapePlot::varobj(void* obj) {
+	py_var_ = obj;
+}
+
+void ShapePlotData::varobj(void* obj) {
+	py_var_ = obj;
+}
+
 
 void ShapePlot::scale(float min, float max) {
 	color_value()->set_scale(min, max);
@@ -1143,6 +1228,10 @@ void Hinton::fast_draw(Canvas* c, Coord x, Coord y, bool) const {
 	}
 }
 
+bool ShapePlot::has_iv_view() {
+	return has_iv_view_;
+}
+
 #endif //HAVE_IV
 
 ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
@@ -1151,12 +1240,17 @@ ShapePlotData::ShapePlotData(Symbol* sym, Object* sl) {
 	if (sl_) {
 		++sl_->refcount;
 	}
+	varobj(NULL);
 }
 
 ShapePlotData::~ShapePlotData() {
 	if (sl_) {
 		hoc_dec_refcount(&sl_);
 	}
+}
+
+bool ShapePlotData::has_iv_view() {
+	return false;
 }
 
 float ShapePlotData::low() {

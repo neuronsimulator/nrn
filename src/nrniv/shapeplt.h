@@ -15,10 +15,13 @@ class ShapePlotInterface {
 public:
 	virtual void scale(float min, float max) = 0;
 	virtual const char* varname() const = 0;
+	virtual void* varobj() const = 0;
+	virtual void varobj(void* obj) = 0;
 	virtual void variable(Symbol*) = 0;
 	virtual float low() = 0;
 	virtual float high() = 0;
 	virtual Object* neuron_section_list() = 0;
+	virtual bool has_iv_view() = 0;
 };
 
 class ShapePlotData : public ShapePlotInterface {
@@ -27,15 +30,19 @@ public:
 	virtual ~ShapePlotData();
 	virtual void scale(float min, float max);
 	virtual const char* varname() const;
+	virtual void* varobj() const;
+	virtual void varobj(void* obj);
 	virtual void variable(Symbol*);
 	virtual float low();
 	virtual float high();
 	virtual Object* neuron_section_list();
+	virtual bool has_iv_view();
 
 private:
 	Symbol* sym_;
 	float lo, hi;
 	Object* sl_;
+	void* py_var_;
 };
 
 #if HAVE_IV
@@ -49,6 +56,9 @@ public:
 	virtual void draw(Canvas*, const Allocation&) const;
 	virtual void variable(Symbol*);
 	virtual const char* varname()const;
+	virtual void* varobj() const;
+	virtual void varobj(void* obj);
+
 	virtual void scale(float min, float max);
 	virtual void save_phase1(std::ostream&);
 
@@ -60,11 +70,15 @@ public:
 	virtual void fast_flush();
 	virtual float low();
 	virtual float high();
+	virtual bool has_iv_view();
 	virtual Object* neuron_section_list();
 	void update_ptrs();
+	void has_iv_view(bool);
 private:
 	ShapePlotImpl* spi_;
 	Object* sl_;
+	bool has_iv_view_;
+	void* py_var_;
 
 };
 
