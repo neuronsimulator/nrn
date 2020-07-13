@@ -29,7 +29,6 @@ using symtab::syminfo::NmodlType;
 //=============================================================================
 
 std::shared_ptr<ast::Program> run_global_to_var_visitor(const std::string& text) {
-    std::map<std::string, std::string> rval;
     NmodlDriver driver;
     auto ast = driver.parse_string(text);
 

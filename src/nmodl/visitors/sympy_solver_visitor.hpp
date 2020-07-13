@@ -110,11 +110,6 @@ class SympySolverVisitor: public AstVisitor {
                                                   const std::string& original_string,
                                                   const std::string& substitution_string) const;
 
-    /// Return a std::string in the form "original_string"_"random_string", where
-    /// random_string is a string defined in the nmodl::utils::SingletonRandomString
-    /// for the original_string
-    std::string suffix_random_string(const std::string& original_string) const;
-
     /// global variables
     std::set<std::string> global_vars;
 

@@ -13,7 +13,6 @@
 #include "pybind/pyembed.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "utils/string_utils.hpp"
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -155,31 +154,16 @@ std::vector<std::string> SympySolverVisitor::filter_string_vector(
     return filtered_vector;
 }
 
-std::string SympySolverVisitor::suffix_random_string(const std::string& original_string) const {
-    std::string new_string = original_string;
-    std::string random_string;
-    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
-    // Check if there is a variable defined in the mod file as original_string and if yes
-    // try to use a different string for the matrices created by sympy in the form
-    // "original_string"_"random_string"
-    while (vars.find(new_string) != vars.end()) {
-        random_string = singleton_random_string_class->reset_random_string(original_string);
-        new_string = original_string;
-        new_string += "_" + random_string;
-    }
-    return new_string;
-}
-
 void SympySolverVisitor::construct_eigen_solver_block(
     const std::vector<std::string>& pre_solve_statements,
     const std::vector<std::string>& solutions,
     bool linear) {
     // Provide random string to append to X, J, Jm and F matrices that
     // are produced by sympy
-    std::string unique_X = suffix_random_string("X");
-    std::string unique_J = suffix_random_string("J");
-    std::string unique_Jm = suffix_random_string("Jm");
-    std::string unique_F = suffix_random_string("F");
+    std::string unique_X = suffix_random_string(vars, "X");
+    std::string unique_J = suffix_random_string(vars, "J");
+    std::string unique_Jm = suffix_random_string(vars, "Jm");
+    std::string unique_F = suffix_random_string(vars, "F");
 
     // filter solutions for matrices named "X", "J", "Jm" and "F" and change them to
     // unique_X, unique_J, unique_Jm and unique_F respectively

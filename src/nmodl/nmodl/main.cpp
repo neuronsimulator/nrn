@@ -28,6 +28,7 @@
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
+#include "visitors/ispc_rename_visitor.hpp"
 #include "visitors/json_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
 #include "visitors/local_to_assigned_visitor.hpp"
@@ -309,6 +310,14 @@ int main(int argc, const char* argv[]) {
         {
             logger->info("Running symtab visitor");
             SymtabVisitor(update_symtab).visit_program(*ast);
+        }
+
+        /// Rename variables that match ISPC compiler double constants
+        if (ispc_backend) {
+            logger->info("Running ISPC variables rename visitor");
+            IspcRenameVisitor(ast).visit_program(*ast);
+            SymtabVisitor(update_symtab).visit_program(*ast);
+            ast_to_nmodl(*ast, filepath("ispc_double_rename"));
         }
 
         /// GLOBAL to RANGE rename visitor
