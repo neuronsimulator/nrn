@@ -420,6 +420,14 @@ void PlotShape_reg() {
 	class2oc("PlotShape", sh_cons, sh_destruct, sh_members, NULL, retobj_members, NULL);
 }
 
+void* ShapePlotData::varobj() const {
+	return py_var_;
+}
+
+void ShapePlotData::varobj(void* obj) {
+	py_var_ = obj;
+}
+
 #if HAVE_IV
 
 /* static */ class ShapePlotImpl : public Observer {
@@ -573,15 +581,7 @@ void* ShapePlot::varobj() const {
 	return py_var_;
 }
 
-void* ShapePlotData::varobj() const {
-	return py_var_;
-}
-
 void ShapePlot::varobj(void* obj) {
-	py_var_ = obj;
-}
-
-void ShapePlotData::varobj(void* obj) {
 	py_var_ = obj;
 }
 
