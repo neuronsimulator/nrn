@@ -1950,6 +1950,7 @@ void* get_coreneuron_handle() {
 	}
 
 	// last fallback is minimal library with internal mechanisms
+	s_path.str("");
 	s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
 	path = s_path.str();
 
