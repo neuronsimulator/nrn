@@ -14,7 +14,7 @@ def test_direct_memory_transfer():
     ic.amp = 0.3
 
     #for testing external mod file
-    h.soma.insert("Sample")
+    #h.soma.insert("Sample")
 
     h.cvode.use_fast_imem(1)
     h.cvode.cache_efficient(1)
