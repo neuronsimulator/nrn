@@ -21,7 +21,7 @@ set(CODE_GENERATOR_YAML_FILES
 {% endfor %}
 )
 
-{% for dir, files in outputs.items() | sort(attribute="1") %}
+{% for dir, files in outputs | dictsort %}
 set({{ dir | upper }}_GENERATED_SOURCES
   {% for file in files | sort %}
     ${PROJECT_BINARY_DIR}/src/{{ dir }}/{{ file }}
