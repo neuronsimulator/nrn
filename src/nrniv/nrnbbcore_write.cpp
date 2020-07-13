@@ -102,6 +102,7 @@ correctness has not been validated for cells without gids.
 #include <nrnmpi.h>
 #include <netcon.h>
 #include <nrndae_c.h>
+#include <unistd.h>
 #include <algorithm>
 #include <nrnhash_alt.h>
 #include <nrnbbcore_write.h>
@@ -1942,9 +1943,14 @@ void* get_coreneuron_handle() {
 	#endif
 
 	// first check if coreneuron specific library exist in <arch>/.libs
+	// note that we need to get full path especially for OSX
+	char pwd[FILENAME_MAX];
+	getcwd(pwd, FILENAME_MAX);
+
 	std::stringstream s_path;
-	s_path << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
+	s_path << pwd << "/" << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
 	std::string path = s_path.str();
+
 	if (file_exist(path)) {
 		return get_handle_for_lib(path.c_str());
 	}
