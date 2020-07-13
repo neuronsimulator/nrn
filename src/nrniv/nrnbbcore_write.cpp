@@ -1953,7 +1953,7 @@ void* get_coreneuron_handle() {
 
 	if (file_exist(path)) {
         std::cout << "==> Would have returned this : " << path << "\n";
-		//return get_handle_for_lib(path.c_str());
+		return get_handle_for_lib(path.c_str());
 	}
 
 	// last fallback is minimal library with internal mechanisms
