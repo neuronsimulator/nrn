@@ -251,7 +251,7 @@ endif()
 # =============================================================================
 # All source directories to include
 # =============================================================================
-add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
+add_library(nrniv_lib ${NRN_LIRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
