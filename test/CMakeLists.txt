@@ -116,10 +116,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_dependencies(coreneuron_mod nrniv nrniv-core)
 
-    add_test(NAME coreneuron_direct COMMAND ${PYTHON_EXECUTABLE}
+    add_test(NAME coreneuron_direct_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    list(APPEND TESTS coreneuron_direct)
+    add_test(NAME coreneuron_direct_hoc COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.hoc
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc)
   endif()
 endif()
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
