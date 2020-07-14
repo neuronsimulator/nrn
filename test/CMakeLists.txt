@@ -22,8 +22,10 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
           ${PROJECT_BINARY_DIR}/share/nrn/lib)
 
+# Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
 set(TEST_ENV
-    NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR})
+    NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
+    LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
 if(NRN_ENABLE_PYTHON)
   list(
     APPEND
