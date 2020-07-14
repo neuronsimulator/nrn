@@ -91,6 +91,7 @@ jobs:
       brew cask install xquartz
       brew install flex bison mpich
       echo "127.0.0.1 $(sudo scutil --get LocalHostName).local" | sudo tee -a /etc/hosts
+      cat /etc/hosts
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
 
