@@ -24,7 +24,7 @@ rm $srcdir/nrnversion.h.tmp
 if test ! -f config.guess ; then
 	sh build.sh
 fi
-
+TEST
 ostype="`sh config.guess | sed 's/^\([^-]*\)-\([^-]*\)-\([A-Za-z]*\).*/\3/'`"
 ver="`sh nrnversion.sh 2`"
 
