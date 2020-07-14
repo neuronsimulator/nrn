@@ -18,6 +18,8 @@ if false ; then
   make install
 fi
 
+
+
 rm -r -f $INST/nrn
 cd $HOME/neuron/nrnobj
 rm -r -f $HOME/neuron/nrnobj/*
