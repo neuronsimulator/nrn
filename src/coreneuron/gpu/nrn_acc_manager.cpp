@@ -25,13 +25,18 @@ extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(IvocVect*& iv, IvocVect*& div);
 void nrn_ion_global_map_copyto_device();
 void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
-void init_gpu(int nthreads, NrnThread* threads);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef _OPENACC
+    // initialize NrnThreads for gpu execution
+    // empty thread or only artificial cells should be on cpu
+    for (int i = 0; i < nthreads; i++) {
+        NrnThread* nt = threads + i;
+        nt->compute_gpu = (nt->end > 0) ? 1 : 0;
+        nt->_dt = dt;
+    }
 
-    init_gpu(nthreads, threads);
     nrn_ion_global_map_copyto_device();
 
 #ifdef UNIFIED_MEMORY
@@ -946,7 +951,7 @@ void nrn_ion_global_map_copyto_device() {
     }
 }
 
-void init_gpu(int nthreads, NrnThread* threads) {
+void init_gpu() {
     // choose nvidia GPU by default
     acc_device_t device_type = acc_device_nvidia;
 
@@ -968,13 +973,6 @@ void init_gpu(int nthreads, NrnThread* threads) {
 
     if (nrnmpi_myid == 0) {
         std::cout << " Info : " << num_devices << " GPUs shared by " << local_size << " ranks per node\n";
-    }
-
-    for (int i = 0; i < nthreads; i++) {
-        // empty thread or only artificial cells should be on cpu
-        NrnThread* nt = threads + i;
-        nt->compute_gpu = (nt->end > 0) ? 1 : 0;
-        nt->_dt = dt;
     }
 }
 

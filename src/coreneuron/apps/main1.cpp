@@ -138,7 +138,6 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
 void nrn_init_and_load_data(int argc,
                             char* argv[],
                             bool is_mapping_needed = false,
-                            bool nrnmpi_under_nrncontrol = true,
                             bool run_setup_cleanup = true) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
@@ -146,11 +145,6 @@ void nrn_init_and_load_data(int argc,
 
     /// profiler like tau/vtune : do not measure from begining
     Instrumentor::stop_profile();
-
-// mpi initialisation
-#if NRNMPI
-    nrnmpi_init(nrnmpi_under_nrncontrol ? 1 : 0, &argc, &argv);
-#endif
 
     // memory footprint after mpi initialisation
     report_mem_usage("After MPI_Init");
@@ -427,17 +421,25 @@ using namespace coreneuron;
 
 
 extern "C" void mk_mech_init(int argc, char** argv) {
-#if NRNMPI
-    nrnmpi_init(1, &argc, &argv);
-#endif
     // read command line parameters and parameter config files
-
     try {
         corenrn_param.parse(argc, argv);
     }
     catch (...) {
         nrn_abort(1);
     }
+
+#if NRNMPI
+    if (corenrn_param.mpi_enable) {
+        nrnmpi_init(1, &argc, &argv);
+    }
+#endif
+
+#ifdef _OPENACC
+    if (corenrn_param.gpu) {
+        init_gpu();
+    }
+#endif
 
     if (!corenrn_param.writeParametersFilepath.empty()) {
         std::ofstream out(corenrn_param.writeParametersFilepath, std::ios::trunc);

@@ -256,7 +256,9 @@ void nrn_partrans::gap_thread_setup(NrnThread& nt) {
 }
 
 void nrn_partrans::gap_indices_permute(NrnThread& nt) {
-    printf("nrn_partrans::gap_indices_permute\n");
+    if (nrnmpi_myid == 0) {
+        printf("nrn_partrans::gap_indices_permute\n");
+    }
     nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[nt.id];
     // sources
     if (ttd.nsrc > 0 && nt._permute) {

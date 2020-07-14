@@ -151,6 +151,9 @@ extern DEVICE double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
 /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
 
 /* missing declaration in coreneuron */
+#if !defined(DISABLE_OPENACC)
+#pragma acc routine seq
+#endif
 extern DEVICE double nrnran123_normal(nrnran123_State*);
 
 extern DEVICE double nrnran123_gauss(nrnran123_State*); /* mean 0.0, std 1.0 */
