@@ -1925,7 +1925,7 @@ void* get_coreneuron_handle() {
 	// if already loaded into memory, directly return handle
 	if (is_coreneuron_loaded()) {
         std::cout << "0. Returning directly... \n";
-		return dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+		return dlopen(NULL, RTLD_NOW);
 	}
 
 	// env variable get highest preference
@@ -1949,7 +1949,7 @@ void* get_coreneuron_handle() {
 	getcwd(pwd, FILENAME_MAX);
 
 	std::stringstream s_path;
-	s_path << pwd << "/" << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
+	s_path << pwd << "/" << NRNHOSTCPU << "/" << corenrn_mechlib_name;
 	std::string path = s_path.str();
 
 	if (file_exist(path)) {
