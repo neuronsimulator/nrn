@@ -157,6 +157,6 @@ Then in your CMake build folder:
 make doxygen
 make sphinx
 ```  
-That will build everything in the `build/docs` folder and you can tehn open `index.html` locally.
+That will build everything in the `build/docs` folder and you can then open `index.html` locally.
 
 Sidenote: these actions can be observed in [.travis.yml](.travis.yml)
