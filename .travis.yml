@@ -125,7 +125,11 @@ script:
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON2 -c "from neuron import h; import neuron; neuron.test()";
              NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON3 -c "from neuron import h; import neuron; neuron.test()";
       fi;
-      make install;
+      #make install;
+      echo `pwd`;
+      ls -lrt test/mod/x86_64/;
+      ls -lrt test/mod/x86_64/core/mod2c/;
+      nm test/mod/x86_64/.libs/libcorenrnmech.dylib;
       export PATH=$INSTALL_DIR/bin:$PATH;
       ctest -VV && make install;
     elif [ "$BUILD_MODE" == "setuptools" ]; then
