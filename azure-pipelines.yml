@@ -89,7 +89,8 @@ jobs:
 
   - script: |
       brew cask install xquartz
-      brew install flex bison mpich
+      brew install flex bison
+      brew install https://homebrew.bintray.com/bottles/mpich-3.3.2.catalina.bottle.tar.gz
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
 
