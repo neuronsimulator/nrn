@@ -98,6 +98,14 @@ os:
 # Setup environment and Install dependencies
 #=============================================================================
 before_install:
+  - |
+    echo "Travis commit range: ${TRAVIS_COMMIT_RANGE}"
+    git diff --name-only ${TRAVIS_COMMIT_RANGE}
+    if ! git diff --name-only ${TRAVIS_COMMIT_RANGE} | grep -qvE '(README\.md$)|^(docs/)|(\.travis\.yml)'
+    then
+      echo "Skipping CI build since we have docs-only changes for ${TRAVIS_COMMIT_RANGE}"
+      exit
+    fi
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
