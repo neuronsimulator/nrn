@@ -130,7 +130,6 @@ script:
       ls -lrt test/mod/x86_64/core/mod2c/;
       export PATH=$INSTALL_DIR/bin:$PATH;
       find . -name libcorenrnmech.dylib;
-      rm ./lib/libcorenrnmech.dylib
       ctest -VV;
       ctest -VV && make install;
     elif [ "$BUILD_MODE" == "setuptools" ]; then
