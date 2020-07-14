@@ -1924,7 +1924,6 @@ void* get_handle_for_lib(const char* path) {
 void* get_coreneuron_handle() {
 	// if already loaded into memory, directly return handle
 	if (is_coreneuron_loaded()) {
-        std::cout << "0. Returning directly... \n";
 		return dlopen(NULL, RTLD_NOW|RTLD_GLOBAL);
 	}
 
@@ -1953,21 +1952,23 @@ void* get_coreneuron_handle() {
 	std::string path = s_path.str();
 
 	if (file_exist(path)) {
-        std::cout << "==>1.  returned this : " << path << "\n";
 		return get_handle_for_lib(path.c_str());
 	}
 
 	// last fallback is minimal library with internal mechanisms
 	s_path.str("");
+	#if defined(MINGW)
+	s_path << neuron_home << "/lib/" << corenrn_mechlib_name;
+	#else
 	s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
+	#endif
 	path = s_path.str();
 
-    // if this last path doesn't exist then it's an error
+	// if this last path doesn't exist then it's an error
 	if (!file_exist(path)) {
         hoc_execerror("Could not find CoreNEURON library", NULL);
 	}
 
-    std::cout << "==>2. returning this : " << path << "\n";
 	return get_handle_for_lib(path.c_str());
 }
 
