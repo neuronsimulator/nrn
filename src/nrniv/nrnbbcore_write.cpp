@@ -1936,11 +1936,11 @@ void* get_coreneuron_handle() {
 
 	// name of coreneuron library based on platform
 	#if defined(MINGW)
-	std::string cn_mechlib_suffix(".dll");
+	std::string corenrn_mechlib_name("libcorenrnmech.dll");
 	#elif defined(DARWIN)
-	std::string cn_mechlib_suffix(".dylib");
+	std::string corenrn_mechlib_name("libcorenrnmech.dylib");
 	#else
-	std::string cn_mechlib_suffix(".so");
+	std::string corenrn_mechlib_name("libcorenrnmech.so");
 	#endif
 
 	// first check if coreneuron specific library exist in <arch>/.libs
@@ -1949,7 +1949,7 @@ void* get_coreneuron_handle() {
 	getcwd(pwd, FILENAME_MAX);
 
 	std::stringstream s_path;
-	s_path << pwd << "/" << NRNHOSTCPU << "/" << "libcorenrnmech" << cn_mechlib_suffix;
+	s_path << pwd << "/" << NRNHOSTCPU << "/" << corenrn_mechlib_name;
 	std::string path = s_path.str();
 
 	if (file_exist(path)) {
@@ -1959,11 +1959,7 @@ void* get_coreneuron_handle() {
 
 	// last fallback is minimal library with internal mechanisms
 	s_path.str("");
-	#if defined(MINGW)
-	s_path << neuron_home << "/lib/libcorenrnmech_default" << cn_mechlib_suffix;
-	#else
-	s_path << neuron_home << "/../../lib/libcorenrnmech_default" << cn_mechlib_suffix;
-	#endif
+	s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
 	path = s_path.str();
 
     // if this last path doesn't exist then it's an error
