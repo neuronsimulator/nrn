@@ -1911,7 +1911,7 @@ bool file_exist(const std::string& path) {
 
 /** Open library with given path and return dlopen handle **/
 void* get_handle_for_lib(const char* path) {
-    void* handle = dlopen(path, RTLD_NOW|RTLD_FIRST);
+    void* handle = dlopen(path, RTLD_NOW|RTLD_GLOBAL);
     if (!handle) {
       fputs(dlerror(), stderr);
       fputs("\n", stderr);
