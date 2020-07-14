@@ -26,6 +26,7 @@ trigger:
 jobs:
 
 - job: 'ManyLinuxWheels'
+  condition: eq(1,2)
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -75,6 +76,23 @@ jobs:
         python.version: '3.8'
         python.org.version: '3.8.2'
   steps:
+
+  - script: |
+      brew install gcc
+      brew install https://homebrew.bintray.com/bottles/mpich-3.3.2.catalina.bottle.tar.gz
+      ls /usr/local/lib/libmpi*
+      /usr/local/opt/mpich/bin/mpirun -n 2 hostname
+      /usr/local/opt/mpich/bin/mpicxx test.cpp
+      /usr/local/opt/mpich/bin/mpirun -n 2 ./a.out
+      brew unlink mpich && brew install openmpi
+      /usr/local/opt/open-mpi/bin/mpirun -n 2 ./a.out
+      ls /usr/local/lib/libmpi*
+    displayName: 'Debug MPI'
+
+  - script: |
+      export SKIP_EMBEDED_PYTHON_TEST=true
+      packaging/python/test_wheels.sh $(which python) neuron-nightly
+    displayName: 'Test with System Python'
 
   - script: |
       if [ "$(python.org.version)" == "3.5.4" ]; then
