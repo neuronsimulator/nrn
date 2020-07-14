@@ -128,8 +128,9 @@ script:
       echo `pwd`;
       ls -lrt test/mod/x86_64/;
       ls -lrt test/mod/x86_64/core/mod2c/;
-      nm test/mod/x86_64/.libs/libcorenrnmech.dylib;
       export PATH=$INSTALL_DIR/bin:$PATH;
+      rm lib/libcorenrnmech.dylib;
+      find . -name libcorenrnmech.dylib;
       ctest -VV && make install;
     elif [ "$BUILD_MODE" == "setuptools" ]; then
       ./packaging/python/build_wheels.bash travis;
