@@ -1911,7 +1911,7 @@ bool file_exist(const std::string& path) {
 
 /** Open library with given path and return dlopen handle **/
 void* get_handle_for_lib(const char* path) {
-    void* handle = dlopen(path, RTLD_NOW|RTLD_GLOBAL);
+    void* handle = dlopen(path, RTLD_NOW|RTLD_FIRST);
     if (!handle) {
       fputs(dlerror(), stderr);
       fputs("\n", stderr);
@@ -1925,7 +1925,7 @@ void* get_coreneuron_handle() {
 	// if already loaded into memory, directly return handle
 	if (is_coreneuron_loaded()) {
         std::cout << "0. Returning directly... \n";
-		return dlopen(NULL, RTLD_NOW);
+		return dlopen(NULL, RTLD_NOW|RTLD_GLOBAL);
 	}
 
 	// env variable get highest preference
