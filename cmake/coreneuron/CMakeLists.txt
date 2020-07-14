@@ -69,6 +69,7 @@ option(CORENRN_ENABLE_LIKWID_PROFILING "Enable LIKWID instrumentation" OFF)
 option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" OFF)
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC" OFF)
+option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
 
 set(CORENRN_NMODL_DIR "" CACHE PATH "Path to nmodl source-to-source compiler installation")
 set(LIKWID_DIR "" CACHE PATH "Path to likwid performance analysis suite")
@@ -115,6 +116,14 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI")
   add_definitions(-DSWAP_ENDIAN_DISABLE_ASM)
   # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
   add_definitions(-DEIGEN_DONT_VECTORIZE=1)
+endif()
+
+# OpenACC needs to build static library in order to have global/routines
+# working. See https://www.pgroup.com/userforum/viewtopic.php?t=5350
+if(CORENRN_ENABLE_SHARED AND NOT CORENRN_ENABLE_GPU)
+  set(COMPILE_LIBRARY_TYPE "SHARED")
+else()
+  set(COMPILE_LIBRARY_TYPE "STATIC")
 endif()
 
 if(CORENRN_ENABLE_ISPC)
@@ -287,6 +296,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------------+--------------------------------------------------------")
 
   message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
+  message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
   message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
   if(CORENRN_ENABLE_MPI)
     message(STATUS "  INC               | ${MPI_C_INCLUDE_PATH}")

@@ -5,10 +5,6 @@
 # =============================================================================
 
 if(CORENRN_ENABLE_GPU)
-  # openacc needs to build static library in order to have global/routines
-  # working. See https://www.pgroup.com/userforum/viewtopic.php?t=5350
-  set(COMPILE_LIBRARY_TYPE "STATIC")
-
   # cuda unified memory support
   if(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY)
     add_definitions(-DUNIFIED_MEMORY)
