@@ -89,8 +89,8 @@ jobs:
 
   - script: |
       brew cask install xquartz
-      brew install flex bison
-      HOMEBREW_NO_AUTO_UPDATE=1 brew install https://homebrew.bintray.com/bottles/mpich-3.3.2.catalina.bottle.tar.gz
+      brew install flex bison mpich
+      echo "127.0.0.1 $(sudo scutil --get LocalHostName).local" | sudo tee -a /etc/hosts
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
 
