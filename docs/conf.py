@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'NEURON'
-copyright = '2019, Yale and the Blue Brain Project'
+copyright = '2020, Duke, Yale and the Blue Brain Project'
 author = 'Michael Hines'
 
 
@@ -30,8 +30,15 @@ author = 'Michael Hines'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    #'nbsphinx'
+    'sphinx.ext.autosectionlabel',
+    'recommonmark',
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

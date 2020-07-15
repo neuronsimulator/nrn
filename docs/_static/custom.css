@@ -3,3 +3,6 @@
     margin-right: auto;
 }
 
+#notebook-container {
+    width: inherit;
+}

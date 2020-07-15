@@ -184,7 +184,9 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
 set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+         ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
@@ -249,12 +251,23 @@ endif()
 # =============================================================================
 # All source directories to include
 # =============================================================================
-add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(READLINE_FOUND)
+add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
-  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+  if(READLINE_FOUND)
+    target_link_libraries(nrniv_lib ${Readline_LIBRARY})
+  else()
+    target_link_libraries(nrniv_lib readline)
+  endif()
+
+  if(CURSES_FOUND)
+    target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
+  elseif(TERMCAP_FOUND)
+    target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
+  endif()
 endif()
+
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================

@@ -1997,7 +1997,11 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
   int mnamelen = strlen(mname);
   int bufsz = strlen(n) + mnamelen + 2;
   char *buf = new char[bufsz];
-  sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+  if (nrn_is_ion(self->prop_->type)) {
+    strcpy(buf, isptr ? n + 5 : n);
+  }else{
+    sprintf(buf, "%s_%s", isptr ? n + 5 : n, mname);
+  }
   Symbol* sym = np.find(buf);
   delete [] buf;
   if (sym) {

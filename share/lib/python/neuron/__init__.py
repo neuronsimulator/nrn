@@ -143,24 +143,46 @@ version = h.nrnversion(5)
 __version__ = version
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
-  import platform
-  import os
-  p = h.nrnversion(6)
-  if "--prefix=" in p:
-    p = p[p.find('--prefix=') + 9:]
-    p = p[:p.find("'")]
+  # first try is to derive from neuron.__file__
+  origin = None # path to neuron/__init__.py
+  if sys.version_info[0] == 2:
+    # python 2 seems to have hoc.__file__ already filled in so never get here.
+    try:
+      import imp
+      mspec = imp.find_module("neuron")
+      origin = mspec[1]
+    except:
+      pass
   else:
-    p = "/usr/local/nrn"
-  if sys.version_info >= (3, 0):
+    from importlib import util
+    mspec = util.find_spec("neuron")
+    if mspec:
+      origin = mspec.origin
+  if origin is not None:
     import sysconfig
-    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
+    setattr(hoc, "__file__", hoc_path)
   else:
-    phoc = p + "/lib/python/neuron/hoc.so"
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
-  setattr(hoc, "__file__", phoc)
+    # if the above is robust, maybe all this can be removed.
+    # next try is to derive from nrnversion(6) (only works for autotools build)
+    import platform
+    import os
+    p = h.nrnversion(6)
+    if "--prefix=" in p:
+      p = p[p.find('--prefix=') + 9:]
+      p = p[:p.find("'")]
+    else:
+      p = "/usr/local/nrn"
+    if sys.version_info >= (3, 0):
+      import sysconfig
+      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    else:
+      hoc_path = p + "/lib/python/neuron/hoc.so"
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
+    setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time
@@ -852,9 +874,12 @@ class _PlotShapePlot(_WrapperPlot):
                       if variable is not None:
                         val = _get_variable_seg(seg, variable)
                         vals.append(val)
-                        lines[line] = '%s at %s' % (val, seg)
+                        if val is not None:
+                          lines[line] = '%s at %s' % (val, seg)
+                        else:
+                          lines[line] = str(seg)
                       else:
-                        lines[line] = ''
+                        lines[line] = str(seg)
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -868,15 +893,23 @@ class _PlotShapePlot(_WrapperPlot):
       return Axis3DWithNEURON(fig)
 
     def _get_variable_seg(seg, variable):
-      try:
-        if '.' in variable:
-            mech, var = variable.split('.')
-            val = getattr(getattr(seg, mech), var)
-        else:
-            val = getattr(seg, variable)
-      except AttributeError:
-        # leave default color if no variable found
-        val = None
+      if isinstance(variable, str):
+        try:
+          if '.' in variable:
+              mech, var = variable.split('.')
+              val = getattr(getattr(seg, mech), var)
+          else:
+              val = getattr(seg, variable)
+        except AttributeError:
+          # leave default color if no variable found
+          val = None
+      else:
+        try:
+          vals = variable.nodes(seg).concentration
+          val = sum(vals) / len(vals)
+        except:
+          val = None
+
       return val
 
     def _get_3d_pt(segment):
@@ -898,7 +931,9 @@ class _PlotShapePlot(_WrapperPlot):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       kwargs.setdefault('picker', 2)
       result = _get_pyplot_axis3d(fig)
       _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
@@ -963,7 +998,9 @@ class _PlotShapePlot(_WrapperPlot):
 
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       if secs is None:
         secs = list(h.allsec())
 
@@ -971,6 +1008,7 @@ class _PlotShapePlot(_WrapperPlot):
       if variable is None:
         kwargs.setdefault('color', 'black')
         
+        data = []
         for sec in secs:
           xs = [sec.x3d(i) for i in range(sec.n3d())]
           ys = [sec.y3d(i) for i in range(sec.n3d())]
@@ -1008,6 +1046,9 @@ class _PlotShapePlot(_WrapperPlot):
           all_seg_pts = _segment_3d_pts(sec)
           for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
             val = _get_variable_seg(seg, variable)
+            hover_template = str(seg)
+            if val is not None:
+              hover_template += '<br>' + ('%.3f' % val)
             col = _get_color(variable, val, cmap, lo, hi, val_range)
             if show_diam:
               diam = seg.diam
@@ -1019,7 +1060,7 @@ class _PlotShapePlot(_WrapperPlot):
                 y=ys,
                 z=zs,
                 name='',
-                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                hovertemplate=hover_template,
                 mode="lines",
                 line=go.scatter3d.Line(
                     color=col,

@@ -95,6 +95,8 @@ class NeuronTestCase(unittest.TestCase):
         # (set by -DNRN_ENABLE_CORENEURON=ON)
         d2 = '44366906aa94a50644bc734eb23afcc25d1206c0431c4e7908698eeb2597c385'
         assert d == d1 or d == d2
+        sections[0](0.5).na_ion.ena = 40.0 # issue #651
+        assert(sections[0](0.5).na_ion.ena == 40.0)
 
     def testSectionListIterator(self):
         """As of v8.0, iteration over a SectionList does not change the cas"""
