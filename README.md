@@ -27,7 +27,7 @@ Following packages are optional (see build options):
 ### Build using Autotools
 
 If you would like to have GUI support, you first need to install Interviews package available from GitHub [here](http://github.com/neuronsimulator/iv) or tarball provided [here](http://neuron.yale.edu/ftp/neuron/versions/alpha/). In case of git repository, first you need to run `build.sh` script to create the automake, autoconf, libtool generated files:
-
+TEST
 ```bash
 sh build.sh
 ```

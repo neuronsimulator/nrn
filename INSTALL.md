@@ -27,7 +27,7 @@ following:
 # the above special may be only a script with the actual executable in
 # i686/.libs/special
 # this latter can be moved to another location and executed.
-
+TEST
 -------------------------------------------------------------------------------
 MACHINE PROBLEMS
 
