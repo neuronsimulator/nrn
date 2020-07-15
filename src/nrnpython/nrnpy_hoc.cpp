@@ -46,6 +46,8 @@ extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
 extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
+extern void* (*nrnpy_get_pyobj)(Object* obj);
+extern void (*nrnpy_decref)(void* pyobj);
 void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
@@ -2337,6 +2339,21 @@ static double object_to_double_(Object* obj) {
   return result;
 }
 
+static void* nrnpy_get_pyobj_(Object* obj) {
+  // returns something wrapping a PyObject if it is a PyObject else NULL
+  if (obj->ctemplate->sym == nrnpy_pyobj_sym_) {
+    return (void*) nrnpy_ho2po(obj);
+  }
+  return NULL;
+}
+
+static void nrnpy_decref_(void* pyobj) {
+  // note: this assumes that pyobj is really a PyObject
+  if (pyobj) {
+    Py_DECREF((PyObject*) pyobj);
+  }
+}
+
 static PyObject* gui_helper_3_helper_(const char* name, Object* obj, int handle_strptr) {
   int narg = 1;
   while (ifarg(narg)) {
@@ -2532,7 +2549,12 @@ ENDGUI
 #endif
   Object* sl = spi->neuron_section_list();
   PyObject* py_sl = nrnpy_ho2po(sl);
-  return Py_BuildValue("sffN",spi->varname(), spi->low(), spi->high(), py_sl);
+  PyObject* py_obj = (PyObject*) spi->varobj();
+  if (!py_obj) {
+    py_obj = Py_None;
+  }
+  // NOte: O increases the reference count; N does not
+  return Py_BuildValue("sOffN",spi->varname(), py_obj, spi->low(), spi->high(), py_sl);
 }
 
 // poorly follows __reduce__ and __setstate__
@@ -2954,9 +2976,10 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_gui_helper_ = gui_helper_;
   nrnpy_gui_helper3_ = gui_helper_3_;
   nrnpy_gui_helper3_str_ = gui_helper_3_str_;
+  nrnpy_get_pyobj = nrnpy_get_pyobj_;
+  nrnpy_decref = nrnpy_decref_;
   nrnpy_nrncore_arg_p_ = nrncore_arg;
   nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
-
   nrnpy_object_to_double_ = object_to_double_;
   PyLockGIL lock;
 
