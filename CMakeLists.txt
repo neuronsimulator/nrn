@@ -270,6 +270,16 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 
 # =============================================================================
+# Set library type
+# =============================================================================
+if(NRN_ENABLE_SHARED)
+    set(NRN_LIBRARY_TYPE "SHARED")
+else()
+    set(NRN_LIBRARY_TYPE "STATIC")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
+# =============================================================================
 # Add helpder CMake modules AFTER setting options
 # =============================================================================
 include(NeuronFileLists)
