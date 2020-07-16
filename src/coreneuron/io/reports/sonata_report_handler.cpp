@@ -42,17 +42,16 @@ void SonataReportHandler::register_report(const NrnThread& nt,
                          config.type_str);
     sonata_set_report_max_buffer_size_hint(config.output_path, config.buffer_size);
 
-    const char* population_name = "All";
     for (const auto& kv : vars_to_report) {
         int gid = kv.first;
         const std::vector<VarWithMapping>& vars = kv.second;
         if (!vars.size())
             continue;
 
-        sonata_add_node(config.output_path, population_name, gid);
+        sonata_add_node(config.output_path, config.population_name, gid);
         sonata_set_report_max_buffer_size_hint(config.output_path, config.buffer_size);
         for (const auto& variable : vars) {
-            sonata_add_element(config.output_path, population_name, gid, variable.id, variable.var_value);
+            sonata_add_element(config.output_path, config.population_name, gid, variable.id, variable.var_value);
         }
     }
 }

@@ -155,7 +155,7 @@ void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& spikevec_
  *  \todo : MPI related code should be factored into nrnmpi.c
  *          Check spike record length which is set to 64 chars
  */
-void output_spikes_parallel(const char* outpath) {
+void output_spikes_parallel(const char* outpath, const std::string& population_name) {
     std::stringstream ss;
     ss << outpath << "/out.dat";
     std::string fname = ss.str();
@@ -165,9 +165,7 @@ void output_spikes_parallel(const char* outpath) {
         remove(fname.c_str());
     }
 #ifdef ENABLE_SONATA_REPORTS
-    // TODO: Move population_name as input parameter
-    const char* population_name = "All";
-    sonata_write_spikes(population_name, spikevec_time.data(), spikevec_time.size(), spikevec_gid.data(),
+    sonata_write_spikes(population_name.data(), spikevec_time.data(), spikevec_time.size(), spikevec_gid.data(),
                         spikevec_gid.size(), outpath);
 #endif  // ENABLE_SONATA_REPORTS
     sort_spikes(spikevec_time, spikevec_gid);
@@ -253,10 +251,10 @@ void output_spikes_serial(const char* outpath) {
     fclose(f);
 }
 
-void output_spikes(const char* outpath) {
+void output_spikes(const char* outpath, const std::string& population_name) {
 #if NRNMPI
     if (nrnmpi_initialized()) {
-        output_spikes_parallel(outpath);
+        output_spikes_parallel(outpath, population_name);
     } else {
         output_spikes_serial(outpath);
     }

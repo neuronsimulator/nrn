@@ -62,6 +62,7 @@ struct ReportConfiguration {
     char unit[REPORT_MAX_NAME_LEN];         // unit of the report
     char format[REPORT_MAX_NAME_LEN];       // format of the report (Bin, hdf5, SONATA)
     char type_str[REPORT_MAX_NAME_LEN];     // type of report string
+    char population_name[REPORT_MAX_NAME_LEN];  // population name of the report
     ReportType type;                        // type of the report
     int mech_id;                            // mechanism
     double report_dt;                       // reporting timestep
@@ -74,7 +75,8 @@ struct ReportConfiguration {
 
 void setup_report_engine(double dt_report, double mindelay);
 std::vector<ReportConfiguration> create_report_configurations(const char* filename,
-                                                              const char* output_dir);
+                                                              const char* output_dir,
+                                                              std::string& spikes_population_name);
 void finalize_report();
 void nrn_flush_reports(double t);
 void set_report_buffer_size(int n);

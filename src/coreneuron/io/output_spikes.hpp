@@ -32,7 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <utility>
 namespace coreneuron {
-void output_spikes(const char* outpath);
+void output_spikes(const char* outpath, const std::string& population_name);
 void mk_spikevec_buffer(int);
 
 extern std::vector<double> spikevec_time;
