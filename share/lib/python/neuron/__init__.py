@@ -1202,6 +1202,7 @@ try:
     return _RangeVarPlot(rvp)
 
   def _plotshape_plot(ps):
+    h.define_shape()
     return _PlotShapePlot(ps)
 
   _mech_classes = {}
