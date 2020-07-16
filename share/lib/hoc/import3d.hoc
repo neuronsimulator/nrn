@@ -1,3 +1,4 @@
+{load_file("stdlib.hoc")}
 {xopen("import3d/import3d_sec.hoc")}
 {xopen("import3d/read_swc.hoc")}
 {xopen("import3d/read_nlcda.hoc")}
