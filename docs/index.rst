@@ -12,6 +12,7 @@ Welcome to NEURON's documentation!
    new_doc/index
    tutorials/index
    rxd-tutorials/index
+   coreneuron/index
 
 .. toctree::
    :maxdepth: 2
