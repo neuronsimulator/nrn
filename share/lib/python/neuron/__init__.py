@@ -1178,7 +1178,7 @@ class DensityMechanism:
         except:
           # older versions of the NMODL library didn't support .ontology_id
           pass
-        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': ontology_id}
+        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': nmodl.to_nmodl(ontology_id)}
       self.__ions = result
     # return a copy
     return dict(self.__ions)
