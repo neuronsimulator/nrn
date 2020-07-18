@@ -199,7 +199,7 @@ script:
     fi;
   # with setuptools / pip, use wheel for global install
   - if [ "$BUILD_MODE" == "setuptools" ]; then
-      neuron_wheel=wheelhouse/NEURON-*;
+      neuron_wheel=wheelhouse/NEURON*.whl;
       ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false;
     fi;
 
