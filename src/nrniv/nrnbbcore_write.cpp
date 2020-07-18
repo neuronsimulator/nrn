@@ -135,6 +135,10 @@ extern int secondorder, diam_changed, v_structure_change, tree_changed;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
 
+/* access the neuron.coreneuron pure python module */
+int (*nrnpy_nrncore_enable_value_p_)();
+char* (*nrnpy_nrncore_arg_p_)(double tstop);
+
 typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 extern bbcore_write_t* nrn_bbcore_write_;
 
@@ -2045,7 +2049,6 @@ int nrncore_run(const char* arg) {
     return result;
 }
 
-int (*nrnpy_nrncore_enable_value_p_)();
 /** Return neuron.coreneuron.enable */
 int nrncore_is_enabled() {
   if (nrnpy_nrncore_enable_value_p_) {
@@ -2055,7 +2058,6 @@ int nrncore_is_enabled() {
   return 0;
 }
 
-char* (*nrnpy_nrncore_arg_p_)(double tstop);
 /** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
  *  Return 0 on success
 */
