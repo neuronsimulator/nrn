@@ -81,7 +81,7 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
     }
 #endif
 
-#ifdef ENABLE_REPORTING
+#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
     nrn_flush_reports(nrn_threads[0]._t);
 #endif
     t = nrn_threads[0]._t;
