@@ -1701,7 +1701,6 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
       return NULL;
     }
   } else if (po->u.its_ == PyHoc::NextNotLast) {
-    nrn_popsec(); // pop the previous iteration.
     // it would be a bug if po->iteritem_ (now the curitem) has been delete_section
     Section* sec = ((hoc_Item*)(po->iteritem_))->element.sec;
     if (!sec->prop) {
@@ -1730,6 +1729,7 @@ static PyObject* iternext_sl(PyHocObject* po, hoc_Item* ql) {
     po->iteritem_ = NULL;
     return NULL;
   }
+  return NULL; // never get here as po->u.its_ is always a defined state.
 }
 
 static PyObject* hocobj_iternext(PyObject* self) {
