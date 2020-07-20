@@ -72,7 +72,6 @@ add_custom_target(
   "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb"
   &&
   clean_ipynb
-  --keep-output
   "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
 
 # =============================================================================
