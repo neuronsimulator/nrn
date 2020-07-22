@@ -33,8 +33,28 @@ extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     t_ptr = my_t_ptr -> u.px_;
 }
 
+static double get_alpha_scalar(double* alpha, int)
+{
+	return alpha[0];
+}
+static double get_alpha_array(double* alpha, int idx)
+{
+	return alpha[idx];
+}
+
+
+static double get_lambda_scalar(double*, int)
+{
+	return 1.; /*already rescale the diffusion coefficients*/
+}
+static double get_lambda_array(double* lambda, int idx)
+{
+	return lambda[idx];
+}
+
 // Make a new Grid_node given required Grid_node parameters
-ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x, 
+ECS_Grid_node::ECS_Grid_node() {};
+ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
 	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
@@ -156,9 +176,6 @@ ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x,
     new_Grid->node_flux_scale = NULL;
     new_Grid->node_flux_src = NULL;
     new_Grid->volume_setup();
-
-
-    return new_Grid;
 }
 
 
@@ -170,9 +187,7 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
     double atolscale) {
-    int i = 0;
-
-    Grid_node *new_Grid = ECS_make_Grid(my_states, my_num_states_x, my_num_states_y, 
+    Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
 
@@ -181,7 +196,6 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
 
 ICS_Grid_node::ICS_Grid_node() {};
 ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neighbors, 
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dc, double* dcgrid, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
@@ -329,24 +343,21 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
 /* returns the grid number
    TODO: change this to returning the pointer */
 int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
-            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors,
+            x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, dcs, NULL, dx, is_diffusable, atolscale, ics_alphas);
 
     return new_Grid->insert(grid_list_index);
 }
 
 int ICS_insert_inhom(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
-            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, NULL, dcs, dx, is_diffusable, atolscale, ics_alphas);
     return new_Grid->insert(grid_list_index);
 }
@@ -396,7 +407,7 @@ void ICS_Grid_node::set_diffusion(double* dc, int length)
 
 
 /*Set the diffusion coefficients*/
-void ECS_Grid_node::set_diffusion(double* dc, int length)
+void ECS_Grid_node::set_diffusion(double* dc, int)
 {
     if(get_lambda == &get_lambda_scalar)
     {
@@ -416,12 +427,8 @@ void ECS_Grid_node::set_diffusion(double* dc, int length)
 extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers) {
     Grid_node* g;
     ssize_t i;
-    ssize_t j;
-    ssize_t num_nodes;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. 
                                                         
-    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
-
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
@@ -441,11 +448,10 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
 
 }
 
-extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers, double* scale_factors, int total_nodes){
+extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, PyObject* neuron_pointers, double* scale_factors) {
     Grid_node*g;
-    ssize_t i, j, num_nodes;
+    ssize_t i;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers); 
-    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
@@ -621,39 +627,16 @@ void empty_list(int list_index) {
     }
 }
 
-static double get_alpha_scalar(double* alpha, int idx)
-{
-	return alpha[0];
-}
-static double get_alpha_array(double* alpha, int idx)
-{
-	return alpha[idx];
-}
-
-
-static double get_lambda_scalar(double* lambda, int idx)
-{
-	return 1.; /*already rescale the diffusion coefficients*/
-}
-static double get_lambda_array(double* lambda, int idx)
-{
-	return lambda[idx];
-}
-
 int Grid_node::insert(int grid_list_index){
 
     int i = 0;
-    Grid_node* grid;
     Grid_node **head = &(Parallel_grids[grid_list_index]);
-    Grid_node *save;
 
     if(!(*head)) {
         *head = this;
-        save = *head;
     }
     else {
 		i++;	/*count the head as the first grid*/
-        save = *head;
         Grid_node *end = *head;
         while(end->next != NULL) {
             i++;
@@ -724,7 +707,6 @@ static void* gather_currents(void* dataptr)
 void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
 {
     ssize_t m, n, i;
-    Current_Triple* c;
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
@@ -893,12 +875,12 @@ void ECS_Grid_node::hybrid_connections()
 {
 }
 
-void ECS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)
+void ECS_Grid_node::variable_step_hybrid_connections(const double* , double* const, const double*, double *const)
 {
 }
 
 //TODO: Implement this
-void ECS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
+void ECS_Grid_node::variable_step_ode_solve( double*, double)
 {
 }
 
@@ -1308,7 +1290,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
     apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
 }
 
-void ICS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
+void ICS_Grid_node::do_grid_currents(double* output, double dt, int)
 {
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
     if(ics_current_seg_ptrs != NULL){
@@ -1378,11 +1360,11 @@ void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
     }*/
 }
 
-void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
+void ICS_Grid_node::variable_step_ode_solve(double* RHS, double dt)
 {
     if (diffusable)
     {
-        ics_ode_solve_helper(this, dt, states, RHS);
+        ics_ode_solve_helper(this, dt, RHS);
     }
 }
 
@@ -1399,12 +1381,10 @@ void ICS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_
 void ICS_Grid_node::scatter_grid_concentrations()
 {
     ssize_t i, j, n;
-    double* my_states;
     double total_seg_concentration;  
     double average_seg_concentration;
     int seg_start_index, seg_stop_index;
 
-    my_states = states;
     n = ics_num_segs;
 
     for (i = 0; i < n; i++) {

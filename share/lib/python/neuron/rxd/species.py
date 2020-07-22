@@ -40,9 +40,6 @@ ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=int),
     numpy.ctypeslib.ndpointer(dtype=int),
-    numpy.ctypeslib.ndpointer(dtype=int),
-    numpy.ctypeslib.ndpointer(dtype=int),
-    numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
@@ -76,7 +73,7 @@ _set_grid_currents = nrn_dll_sym('set_grid_currents')
 _set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 
 _ics_set_grid_currents = nrn_dll_sym('ics_set_grid_currents')
-_ics_set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, numpy.ctypeslib.ndpointer(dtype=numpy.int64), numpy.ctypeslib.ndpointer(dtype=numpy.int64), ctypes.py_object, numpy.ctypeslib.ndpointer(dtype=numpy.float_)]
+_ics_set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object, numpy.ctypeslib.ndpointer(dtype=numpy.float_)]
 
 
 _delete_by_id = nrn_dll_sym('delete_by_id')
@@ -553,13 +550,10 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         if hasattr(self,'_dgrid'):
             self._grid_id = ICS_insert_inhom(0, self._states._ref_x[0], len(self.states), self.neighbors,
-                                             self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
-                                             self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                              len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                              self._dgrid, self._dx, is_diffusable, self._atolscale, self._alphas)
         else:
             self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
-                                       self._ordered_x_nodes, self._ordered_y_nodes, self._ordered_z_nodes,
                                        self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                        len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                        self._d, self._dx, is_diffusable, self._atolscale, self._alphas)
@@ -723,7 +717,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     scale = sum(node_area)/geom_area
                     scale_factors = [sign * area * scale * scale_factor for area in node_area]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=numpy.float_)
-                    _ics_set_grid_currents(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._current_neuron_pointers, self._scale_factors)
+                    _ics_set_grid_currents(grid_list_start, self._grid_id, self._current_neuron_pointers, self._scale_factors)
 
 
     def _semi_compile(self, region, instruction):
