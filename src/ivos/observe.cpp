@@ -42,8 +42,10 @@ Observable::Observable() {
 Observable::~Observable() {
     ObserverList* list = observers_;
     if (list != nil) {
-	for (ListItr(ObserverList) i(*list); i.more(); i.next()) {
-	    i.cur()->disconnect(this);
+	// in case a disconnect removes items from the ObserverList
+	for (long i = list->count() - 1; i >= 0; --i) {
+	    list->item(i)->disconnect(this);
+	    if (i > list->count()) { i = list->count(); }
 	}
 	delete list;
     }
