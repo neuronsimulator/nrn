@@ -109,6 +109,8 @@ correctness has not been validated for cells without gids.
 #include <netcvode.h> // for nrnbbcore_vecplay_write
 #include <vrecitem.h> // for nrnbbcore_vecplay_write
 #include <nrnsection_mapping.h>
+#include <errno.h>
+#include <string.h>
 #include <fstream>
 #include <sstream>
 
@@ -1949,8 +1951,9 @@ void* get_coreneuron_handle() {
 	// first check if coreneuron specific library exist in <arch>/.libs
 	// note that we need to get full path especially for OSX
 	char pwd[FILENAME_MAX];
-	getcwd(pwd, FILENAME_MAX);
-
+	if (getcwd(pwd, FILENAME_MAX) == NULL) {
+		hoc_execerror("getcwd failed:", strerror(errno));
+	}
 	std::stringstream s_path;
 	s_path << pwd << "/" << NRNHOSTCPU << "/" << corenrn_mechlib_name;
 	std::string path = s_path.str();

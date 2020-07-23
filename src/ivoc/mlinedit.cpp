@@ -133,9 +133,8 @@ IFGUI
 	e->ref();
 	return (void*)e;
 ENDGUI
-#else 
-	return (void*)0;
 #endif /* HAVE_IV  */
+	return (void*)0;
 }
 
 static void destruct(void* v) {
