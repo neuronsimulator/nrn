@@ -132,7 +132,7 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
             if(g->size_z > 1)
                 RHS[0] += (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z;
             RHS[0] *= (dt/ALPHA(0,y,z));
-            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
+            RHS[0] += state[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
         }
         return;
     }
@@ -166,14 +166,14 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
 	    l_diag[g->size_x-2] = -dt*prev/SQ(g->dx);
 
 	    x=0;
-	    RHS[x] = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+	    RHS[x] = state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 					((Fxx(x+1,x)/SQ(g->dx)) 
 				+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 				+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
                 + g->states_cur[IDX(x,y,z)];
 
         x = g->size_x-1;
-        RHS[x]  = g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+        RHS[x]  = state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 				((Fxx(x-1,x))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
@@ -192,13 +192,13 @@ static void ecs_dg_adi_vol_x(ECS_Grid_node* g, const double dt, const int y, con
 	for(x=1;x<g->size_x-1;x++)
 	{
 #ifndef __PGI
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ypd,z)]), 0, 0);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ymd,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,y,z)]), 0, 1);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,yp,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,ym,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,ypd,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,ymd,z)]), 0, 0);
 #endif
-		RHS[x] =  g->states[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
+		RHS[x] =  state[IDX(x,y,z)] + (dt/ALPHA(x,y,z))*
 				((Fxx(x+1,x) - Fxx(x,x-1))/SQ(g->dx) 
 			+    (Fxy(yp,ypd,y) - Fxy(y,ymd,ym))/div_y 
 			+ 	 (Fxz(zp,zpd,z) - Fxz(z,zmd,zm))/div_z)
@@ -484,11 +484,11 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
         {
             RHS[0] = 0;
             if(g->size_y > 1)
-                RHS[0] += (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy));
+                RHS[0] += (DcY(0,ypd,z)*state[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*state[IDX(0,y,z)] + DcY(0,ymd,z)*state[IDX(0,ym,z)])/(div_y*SQ(g->dy));
             if(g->size_z > 1)
-                RHS[0] += (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz));
+                RHS[0] += (DcZ(0,y,zpd)*state[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*state[IDX(0,y,z)] + DcZ(0,y,zmd)*state[IDX(0,y,zm)])/(div_z*SQ(g->dz));
             RHS[0] *= dt;
-            RHS[0] += g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
+            RHS[0] += state[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)];
         }
         return;
     }
@@ -513,16 +513,16 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
 	    l_diag[g->size_x-2] = -0.5*dt*DcX(g->size_x-1,y,z)/SQ(g->dx);
         
 
-	    RHS[0] =  g->states[IDX(0,y,z)]
-			    + dt*((DcX(1,y,z)*g->states[IDX(1,y,z)] - DcX(1,y,z)*g->states[IDX(0,y,z)])/(2.*SQ(g->dx))
-			    +	  (DcY(0,ypd,z)*g->states[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*g->states[IDX(0,y,z)] + DcY(0,ymd,z)*g->states[IDX(0,ym,z)])/(div_y*SQ(g->dy))
-			    +	  (DcZ(0,y,zpd)*g->states[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*g->states[IDX(0,y,z)] + DcZ(0,y,zmd)*g->states[IDX(0,y,zm)])/(div_z*SQ(g->dz)))
+	    RHS[0] =  state[IDX(0,y,z)]
+			    + dt*((DcX(1,y,z)*state[IDX(1,y,z)] - DcX(1,y,z)*state[IDX(0,y,z)])/(2.*SQ(g->dx))
+			    +	  (DcY(0,ypd,z)*state[IDX(0,yp,z)] - (DcY(0,ypd,z)+DcY(0,ymd,z))*state[IDX(0,y,z)] + DcY(0,ymd,z)*state[IDX(0,ym,z)])/(div_y*SQ(g->dy))
+			    +	  (DcZ(0,y,zpd)*state[IDX(0,y,zp)] - (DcZ(0,y,zpd)+DcZ(0,y,zmd))*state[IDX(0,y,z)] + DcZ(0,y,zmd)*state[IDX(0,y,zm)])/(div_z*SQ(g->dz)))
                 + g->states_cur[IDX(0,y,z)];
         x = g->size_x-1;
-        RHS[x] =  g->states[IDX(x,y,z)]
-				+ dt*((DcX(x,y,z)*g->states[IDX(x-1,y,z)] - DcX(x,y,z)*g->states[IDX(x,y,z)])/(2.*SQ(g->dx))
-				+	  (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-				+	  (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
+        RHS[x] =  state[IDX(x,y,z)]
+				+ dt*((DcX(x,y,z)*state[IDX(x-1,y,z)] - DcX(x,y,z)*state[IDX(x,y,z)])/(2.*SQ(g->dx))
+				+	  (DcY(x,ypd,z)*state[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*state[IDX(x,y,z)] + DcY(x,ymd,z)*state[IDX(x,ym,z)])/(div_y*SQ(g->dy))
+				+	  (DcZ(x,y,zpd)*state[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*state[IDX(x,y,z)] + DcZ(x,y,zmd)*state[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
                 + g->states_cur[IDX(x,y,z)];
 
     }
@@ -539,15 +539,15 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
 	for(x=1;x<g->size_x-1;x++)
 	{
 #ifndef __PGI
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,y,z)]), 0, 1);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,yp,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,ym,z)]), 0, 0);
 #endif
  
-		RHS[x] =  g->states[IDX(x,y,z)]
-			+ dt*((DcX(x+1,y,z)*g->states[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*g->states[IDX(x,y,z)] + DcX(x,y,z)*g->states[IDX(x-1,y,z)])/(2.*SQ(g->dx))
-            + (DcY(x,ypd,z)*g->states[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*g->states[IDX(x,y,z)] + DcY(x,ymd,z)*g->states[IDX(x,ym,z)])/(div_y*SQ(g->dy))
-            + (DcZ(x,y,zpd)*g->states[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*g->states[IDX(x,y,z)] + DcZ(x,y,zmd)*g->states[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
+		RHS[x] =  state[IDX(x,y,z)]
+			+ dt*((DcX(x+1,y,z)*state[IDX(x+1,y,z)] - (DcX(x+1,y,z)+DcX(x,y,z))*state[IDX(x,y,z)] + DcX(x,y,z)*state[IDX(x-1,y,z)])/(2.*SQ(g->dx))
+            + (DcY(x,ypd,z)*state[IDX(x,yp,z)] - (DcY(x,ypd,z)+DcY(x,ymd,z))*state[IDX(x,y,z)] + DcY(x,ymd,z)*state[IDX(x,ym,z)])/(div_y*SQ(g->dy))
+            + (DcZ(x,y,zpd)*state[IDX(x,y,zp)] - (DcZ(x,y,zpd)+DcZ(x,y,zmd))*state[IDX(x,y,z)] + DcZ(x,y,zmd)*state[IDX(x,y,zm)])/(div_z*SQ(g->dz)))
             + g->states_cur[IDX(x,y,z)];
 	}
 	
@@ -557,6 +557,7 @@ static void ecs_dg_adi_tort_x(ECS_Grid_node* g, const double dt, const int y, co
 	free(l_diag);
 	free(u_diag);
 }
+
 
 /* dg_adi_tort_y performs the second of 3 steps in DG-ADI
  * g    -   the parameters and state of the grid
@@ -826,7 +827,7 @@ void _rhs_variable_step_helper_tort(Grid_node* g, double const * const states, d
         }
     }
     else {
-        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+        for (i = 0, index = 0, prev_i = 0, next_i = num_states_y*num_states_z; 
              i < num_states_x; i++) {
             for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
                 
@@ -938,7 +939,7 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
         }
     }
     else {
-        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+        for (i = 0, index = 0, prev_i = 0, next_i = num_states_y*num_states_z; 
              i < num_states_x; i++) {
             for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
                 
