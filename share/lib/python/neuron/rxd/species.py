@@ -550,6 +550,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         if hasattr(self,'_dgrid'):
             self._grid_id = ICS_insert_inhom(0, self._states._ref_x[0], len(self.states), self.neighbors,
+                                             self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
                                              len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                              self._dgrid, self._dx, is_diffusable, self._atolscale, self._alphas)
         else:

@@ -57,125 +57,123 @@ ECS_Grid_node::ECS_Grid_node() {};
 ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
+	PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
     int k;
-    ECS_Grid_node *new_Grid = new ECS_Grid_node();
-    assert(new_Grid);
-
-    new_Grid->states = my_states->u.px_;
+    states = my_states->u.px_;
     
     /*TODO: When there are multiple grids share the largest intermediate arrays to save memory*/
     /*intermediate states for DG-ADI*/
-    new_Grid->states_x = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
-    new_Grid->states_y = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
-    new_Grid->states_cur = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_x = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_y = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_cur = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
 
-    new_Grid->size_x = my_num_states_x;
-    new_Grid->size_y = my_num_states_y;
-    new_Grid->size_z = my_num_states_z;
+    size_x = my_num_states_x;
+    size_y = my_num_states_y;
+    size_z = my_num_states_z;
     
-    new_Grid->diffusable = true;
-    new_Grid->dc_x = my_dc_x;
-    new_Grid->dc_y = my_dc_y;
-    new_Grid->dc_z = my_dc_z;
+    diffusable = true;
+    dc_x = my_dc_x;
+    dc_y = my_dc_y;
+    dc_z = my_dc_z;
 
-    new_Grid->dx = my_dx;
-    new_Grid->dy = my_dy;
-    new_Grid->dz = my_dz;
+    dx = my_dx;
+    dy = my_dy;
+    dz = my_dz;
 
-    new_Grid->concentration_list = NULL;
-    new_Grid->num_concentrations = 0;
-    new_Grid->current_list = NULL;
-    new_Grid->num_currents = 0;
+    concentration_list = NULL;
+    num_concentrations = 0;
+    current_list = NULL;
+    num_currents = 0;
 
-    new_Grid->next = NULL;
-	new_Grid->VARIABLE_ECS_VOLUME = FALSE;
+    next = NULL;
+	VARIABLE_ECS_VOLUME = FALSE;
 
 	/*Check to see if variable tortuosity/volume fraction is used*/
 	if(PyFloat_Check(my_lambda))
 	{
 		/*apply the tortuosity*/
-		new_Grid->dc_x = my_dc_x/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-    	new_Grid->dc_y = my_dc_y/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-	    new_Grid->dc_z = my_dc_z/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
+		dc_x = my_dc_x/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
+    	dc_y = my_dc_y/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
+	    dc_z = my_dc_z/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
 		
-		new_Grid->lambda = (double*)malloc(sizeof(double));
-		new_Grid->lambda[0] = SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-		new_Grid->get_lambda = &get_lambda_scalar;
+		lambda = (double*)malloc(sizeof(double));
+		lambda[0] = SQ(PyFloat_AsDouble((PyObject*)my_lambda));
+		get_lambda = &get_lambda_scalar;
 	}
 	else
 	{
-		new_Grid->lambda = my_lambda->u.px_;
-		new_Grid->VARIABLE_ECS_VOLUME = TORTUOSITY;
-		new_Grid->get_lambda = &get_lambda_array;
+		lambda = my_lambda->u.px_;
+		VARIABLE_ECS_VOLUME = TORTUOSITY;
+		get_lambda = &get_lambda_array;
 	}
 	
 	if(PyFloat_Check(my_alpha))
 	{
-		new_Grid->alpha = (double*)malloc(sizeof(double));
-		new_Grid->alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
-		new_Grid->get_alpha = &get_alpha_scalar;
+		alpha = (double*)malloc(sizeof(double));
+		alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+		get_alpha = &get_alpha_scalar;
 
 	}
 	else
 	{
-		new_Grid->alpha = my_alpha->u.px_;
-		new_Grid->VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
-		new_Grid->get_alpha = &get_alpha_array;	
+		alpha = my_alpha->u.px_;
+		VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
+		get_alpha = &get_alpha_array;	
 
 	}
 #if NRNMPI
     if(nrnmpi_use)
     {
-        new_Grid->proc_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
     }
 #endif
-    new_Grid->num_all_currents = 0;
-    new_Grid->current_dest = NULL;
-    new_Grid->all_currents = NULL;
+    num_all_currents = 0;
+    current_dest = NULL;
+    all_currents = NULL;
     
 
-    new_Grid->bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
-    new_Grid->bc->type=bc;
-    new_Grid->bc->value=bc_value;
+    bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
+    bc->type=bc_type;
+    bc->value=bc_value;
 
-    new_Grid->ecs_tasks = NULL;
-    new_Grid->ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
+    ecs_tasks = NULL;
+    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
     for(k=0; k<NUM_THREADS; k++)
     {
-        new_Grid->ecs_tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
-        new_Grid->ecs_tasks[k].g = new_Grid;
+        ecs_tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
+        ecs_tasks[k].g = this;
     }
 
 
-    new_Grid->ecs_adi_dir_x = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_x->states_in = new_Grid->states;
-    new_Grid->ecs_adi_dir_x->states_out = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_x->line_size = my_num_states_x;
+    ecs_adi_dir_x = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_x->states_in = states;
+    ecs_adi_dir_x->states_out = states_x;
+    ecs_adi_dir_x->line_size = my_num_states_x;
 
 
-    new_Grid->ecs_adi_dir_y = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_y->states_in = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_y->states_out = new_Grid->states_y;
-    new_Grid->ecs_adi_dir_y->line_size = my_num_states_y;
+    ecs_adi_dir_y = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_y->states_in = states_x;
+    ecs_adi_dir_y->states_out = states_y;
+    ecs_adi_dir_y->line_size = my_num_states_y;
 
 
 
-    new_Grid->ecs_adi_dir_z = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_z->states_in = new_Grid->states_y;
-    new_Grid->ecs_adi_dir_z->states_out = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_z->line_size = my_num_states_z;
+    ecs_adi_dir_z = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_z->states_in = states_y;
+    ecs_adi_dir_z->states_out = states_x;
+    ecs_adi_dir_z->line_size = my_num_states_z;
 
-    new_Grid->atolscale = atolscale;
+    this->atolscale = atolscale;
 
-    new_Grid->node_flux_count = 0;
-    new_Grid->node_flux_idx = NULL;
-    new_Grid->node_flux_scale = NULL;
-    new_Grid->node_flux_src = NULL;
-    new_Grid->volume_setup();
+    node_flux_count = 0;
+    node_flux_idx = NULL;
+    node_flux_scale = NULL;
+    node_flux_src = NULL;
+    hybrid = false;
+    volume_setup();
 }
 
 
@@ -187,7 +185,7 @@ int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
     double atolscale) {
-    Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
+    ECS_Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
 			my_alpha, my_lambda, bc, bc_value, atolscale);
 
@@ -923,7 +921,6 @@ ECS_Grid_node::~ECS_Grid_node(){
         }
     }
     free(ecs_tasks);
-    free(this);
 }
 
 /*****************************************************************************
