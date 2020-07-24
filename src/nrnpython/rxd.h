@@ -145,7 +145,7 @@ void ics_dg_adi_y_inhom(ICS_Grid_node* g, int, int, int, double, double*, double
 void ics_dg_adi_z_inhom(ICS_Grid_node* g, int, int, int, double, double*, double*, double*, double*, double*, double*);
 
 /*Variable step function declarations*/
-void _rhs_variable_step(const double, const double*, double*);
+void _rhs_variable_step(const double*, double*);
 
 void _ode_reinit(double*);
 
@@ -163,16 +163,15 @@ void _ics_rhs_variable_step_helper(ICS_Grid_node*, double const* const, double*)
 void _rhs_variable_step_helper(Grid_node*, double const * const, double*);
 
 void ics_ode_solve(double, double*, const double*);
-void ics_ode_solve_helper(ICS_Grid_node*, double, const double*, double*);
+void ics_ode_solve_helper(ICS_Grid_node*, double, double*);
 
 void _rhs_variable_step_helper_tort(Grid_node*, double const * const, double*);
 
 void _rhs_variable_step_helper_vol(Grid_node*, double const * const, double*);
 
-static void ecs_refresh_reactions(int);
 void set_num_threads_3D(int n);
 
-void _rhs_variable_step_ecs(const double, const double*, double*, const int);
+void _rhs_variable_step_ecs(const double*, double*);
 
 void clear_rates_ecs();
 void do_ics_reactions(double*, double*, double*, double*);
