@@ -180,7 +180,6 @@ if(SPHINX_FOUND)
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating documentation with Sphinx"
   )
-  add_dependencies(sphinx prepare_docs)
 endif()
 
 # =============================================================================

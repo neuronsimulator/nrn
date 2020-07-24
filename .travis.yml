@@ -211,6 +211,9 @@ after_success:
       echo "------- Build Doxygen Documentation -------";
       pushd $TRAVIS_BUILD_DIR/build;
       make doxygen;
+      echo "------- Prepare Docs for Sphinx -------";
+      pushd $TRAVIS_BUILD_DIR/build;
+      make prepare_docs;
       echo "-------- Build Sphinx documentation --------";
       pushd $TRAVIS_BUILD_DIR/build;
       make sphinx;
