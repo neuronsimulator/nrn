@@ -343,7 +343,7 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
@@ -352,7 +352,6 @@ endif()
 if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
-
 
 # =============================================================================
 # Install binary and library targets

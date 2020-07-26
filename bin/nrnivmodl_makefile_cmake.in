@@ -53,12 +53,17 @@ special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
 mech_libname = nrnmech
 
+# In case of static library we need to link NRNLIB_FLAGS twice to avoid undefined
+# symbols from circular dependencies. But for shared library we don't do it to avoid
+# pthread linking with wheels.
 ifeq (@NRN_ENABLE_SHARED@, ON)
     mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
     mech_lib_type = mech_lib_shared
+    extra_lib_link =
 else
     mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_STATIC_LIBRARY_SUFFIX@
     mech_lib_type = mech_lib_static
+    extra_lib_link = $(NRNLIB_FLAGS)
 endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
@@ -77,7 +82,7 @@ C_GREEN := \033[32m
 special: $(mech_lib_type)
 	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
 	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
-	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(NRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
+	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(extra_lib_link) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
 
 mech_lib_shared: mod_func.o $(mod_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib) Mod files: $(mod_files)\n"
