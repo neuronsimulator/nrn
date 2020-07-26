@@ -52,7 +52,14 @@ mod_func_c = $(MODC_DIR)/mod_func.c
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
 mech_libname = nrnmech
-mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+
+ifeq (@NRN_ENABLE_SHARED@, ON)
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_shared
+else
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_STATIC_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_static
+endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
 _ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
@@ -67,16 +74,20 @@ C_GREEN := \033[32m
 
 # Take the main and link with nrnmech.
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
-special: $(mech_lib)
+special: $(mech_lib_type)
 	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
 	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
-	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
+	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(NRNLIB_FLAGS) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
 
-$(mech_lib): mod_func.o $(mod_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files)\n"
+mech_lib_shared: mod_func.o $(mod_objs) build_always
+	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib) Mod files: $(mod_files)\n"
 	(cd .. ; $(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
 	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS))
 	(cd .. ; rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; ln -s ../../$(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so)
+
+mech_lib_static: mod_func.o $(mod_objs) build_always
+	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib) Mod files: $(mod_files)\n"
+	(cd .. ; ar cq ${mech_lib} $(mod_func_o) $(mod_objs);)
 
 mod_func.o: mod_func.c
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
