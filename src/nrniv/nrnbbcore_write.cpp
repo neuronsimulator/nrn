@@ -1902,7 +1902,7 @@ bool is_coreneuron_loaded() {
     // check if corenrn_version symbol can be found
     void * handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
     if (handle) {
-        void* fn = dlsym(handle, "corenrn_version");
+        void* fn = dlsym(handle, "corenrn_embedded_run");
         is_loaded = fn == NULL ? false : true;
         dlclose(handle);
     }
