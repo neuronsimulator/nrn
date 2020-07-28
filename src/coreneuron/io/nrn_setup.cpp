@@ -985,11 +985,34 @@ inline void mech_layout(FileHandler& F, T* data, int cnt, int sz, int layout) {
     }
 }
 
+/**
+ * Cleanup global ion map created during mechanism registration
+ *
+ * In case of coreneuron standalone execution nrn_ion_global_map
+ * can be deleted at the end of execution. But in case embedded
+ * run via neuron, mechanisms are registered only once i.e. during
+ * first call to coreneuron. This is why we call cleanup only in
+ * case of standalone coreneuron execution via nrniv-core or
+ * special-core.
+ *
+ * @todo coreneuron should have finalise callback which can be
+ * called from NEURON for final memory cleanup including global
+ * state like registered mechanisms and ions map.
+ */
+void nrn_cleanup_ion_map() {
+    for (int i = 0; i < nrn_ion_global_map_size; i++) {
+        free_memory(nrn_ion_global_map[i]);
+    }
+    free_memory(nrn_ion_global_map);
+    nrn_ion_global_map = nullptr;
+    nrn_ion_global_map_size = 0;
+}
+
 /* nrn_threads_free() presumes all NrnThread and NrnThreadMembList data is
  * allocated with malloc(). This is not the case here, so let's try and fix
  * things up first. */
 
-void nrn_cleanup(bool clean_ion_global_map) {
+void nrn_cleanup() {
     clear_event_queue();  // delete left-over TQItem
     gid2in.clear();
     gid2out.clear();
@@ -998,15 +1021,6 @@ void nrn_cleanup(bool clean_ion_global_map) {
     if (nrnthread_chkpnt) {
         delete[] nrnthread_chkpnt;
         nrnthread_chkpnt = nullptr;
-    }
-
-    // clean ions global maps
-    if (clean_ion_global_map) {
-        for (int i = 0; i < nrn_ion_global_map_size; i++)
-            free_memory(nrn_ion_global_map[i]);
-        free_memory(nrn_ion_global_map);
-        nrn_ion_global_map = nullptr;
-        nrn_ion_global_map_size = 0;
     }
 
     // clean NrnThreads

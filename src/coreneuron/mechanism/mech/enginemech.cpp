@@ -28,6 +28,8 @@ void modl_reg() {
 extern bool nrn_have_gaps;
 extern bool nrn_use_fast_imem;
 
+/// function defined in coreneuron library
+extern void nrn_cleanup_ion_map();
 }  // namespace coreneuron
 
 /** Initialize mechanisms and run simulation using CoreNEURON
@@ -37,7 +39,9 @@ extern bool nrn_use_fast_imem;
 int solve_core(int argc, char** argv) {
     mk_mech_init(argc, argv);
     coreneuron::modl_reg();
-    return run_solve_core(argc, argv);
+    int ret = run_solve_core(argc, argv);
+    coreneuron::nrn_cleanup_ion_map();
+    return ret;
 }
 
 extern "C" {

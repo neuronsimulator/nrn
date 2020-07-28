@@ -27,8 +27,10 @@ vstd = v.cl()
 tvstd = tv.cl()
 i_memstd = i_mem.cl()
 
-#h.CoreNeuronRun[0].run()
 pc = h.ParallelContext()
+h.stdinit()
+pc.nrncore_run("-e %g"%h.tstop, 0)
+# running second time for testing multiple executions
 h.stdinit()
 pc.nrncore_run("-e %g"%h.tstop, 0)
 
