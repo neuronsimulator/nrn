@@ -25,11 +25,14 @@ namespace visitor {
 using namespace ast;
 using symtab::syminfo::NmodlType;
 
+using nmodl::utils::UseNumbersInString;
+
 std::string suffix_random_string(const std::set<std::string>& vars,
-                                 const std::string& original_string) {
+                                 const std::string& original_string,
+                                 const UseNumbersInString use_num) {
     std::string new_string = original_string;
     std::string random_string;
-    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
+    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance(use_num);
     // Check if there is a variable defined in the mod file as original_string and if yes
     // try to use a different string in the form "original_string"_"random_string"
     while (vars.find(new_string) != vars.end()) {
@@ -38,6 +41,11 @@ std::string suffix_random_string(const std::set<std::string>& vars,
         new_string += "_" + random_string;
     }
     return new_string;
+}
+
+std::string suffix_random_string(const std::set<std::string>& vars,
+                                 const std::string& original_string) {
+    return suffix_random_string(vars, original_string, UseNumbersInString::WithNumbers);
 }
 
 std::string get_new_name(const std::string& name,
