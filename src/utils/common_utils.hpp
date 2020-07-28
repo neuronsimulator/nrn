@@ -81,9 +81,13 @@ bool make_path(const std::string& path);
 /// Check if directory with given path exist
 bool is_dir_exist(const std::string& path);
 
+/// Enum to wrap bool variable to select if random string
+/// should have numbers or not
+enum UseNumbersInString : bool { WithNumbers = true, WithoutNumbers = false };
+
 /// Generate random std::string of length len based on a
 /// uniform distribution
-std::string generate_random_string(int len);
+std::string generate_random_string(int len, UseNumbersInString use_numbers);
 
 /**
  * \class SingletonRandomString
@@ -103,8 +107,9 @@ class SingletonRandomString {
     SingletonRandomString& operator=(SingletonRandomString const&) = delete;
 
     /// Function to instantiate the SingletonRandomString class
-    static std::shared_ptr<SingletonRandomString> instance() {
+    static std::shared_ptr<SingletonRandomString> instance(const UseNumbersInString use_numbers_) {
         static std::shared_ptr<SingletonRandomString> s{new SingletonRandomString};
+        s->use_numbers = use_numbers_;
         return s;
     }
 
@@ -135,9 +140,9 @@ class SingletonRandomString {
     std::string reset_random_string(const std::string& var_name) {
         if (random_string_exists(var_name)) {
             random_strings.erase(var_name);
-            random_strings.insert({var_name, generate_random_string(SIZE)});
+            random_strings.insert({var_name, generate_random_string(SIZE, use_numbers)});
         } else {
-            random_strings.insert({var_name, generate_random_string(SIZE)});
+            random_strings.insert({var_name, generate_random_string(SIZE, use_numbers)});
         }
         return random_strings[var_name];
     }
@@ -153,6 +158,9 @@ class SingletonRandomString {
 
     /// std::map that keeps the random strings assigned to variables as suffix
     std::map<std::string, std::string> random_strings;
+
+    /// bool to control if random string will include numbers or not
+    UseNumbersInString use_numbers = WithNumbers;
 };
 
 /** @} */  // end of utils

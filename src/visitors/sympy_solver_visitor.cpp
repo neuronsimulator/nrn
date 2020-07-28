@@ -24,6 +24,8 @@ namespace visitor {
 
 using symtab::syminfo::NmodlType;
 
+using nmodl::utils::UseNumbersInString;
+
 void SympySolverVisitor::init_block_data(ast::Node* node) {
     // clear any previous data
     expression_statements.clear();

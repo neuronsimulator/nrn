@@ -17,14 +17,27 @@
 #include <string>
 
 #include <ast/ast_decl.hpp>
+#include <utils/common_utils.hpp>
 
 namespace nmodl {
 namespace visitor {
 
+using nmodl::utils::UseNumbersInString;
+
 /// Return a std::string in the form "original_string"_"random_string", where
 /// random_string is a string defined in the nmodl::utils::SingletonRandomString
 /// for the original_string. Vars is a const ref to std::set<std::string> which
-/// holds the names that need to be checked for uniqueness
+/// holds the names that need to be checked for uniqueness. Choose if the
+/// "random_string" will include numbers using "use_num"
+std::string suffix_random_string(const std::set<std::string>& vars,
+                                 const std::string& original_string,
+                                 const UseNumbersInString use_num);
+
+/// Return a std::string in the form "original_string"_"random_string", where
+/// random_string is a string defined in the nmodl::utils::SingletonRandomString
+/// for the original_string. Vars is a const ref to std::set<std::string> which
+/// holds the names that need to be checked for uniqueness. Adds numbers in the
+/// "random_string"
 std::string suffix_random_string(const std::set<std::string>& vars,
                                  const std::string& original_string);
 
