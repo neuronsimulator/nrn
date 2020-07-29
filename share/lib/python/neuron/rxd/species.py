@@ -604,6 +604,16 @@ class _IntracellularSpecies(_SpeciesMathable):
                         newflux['region'].append(region)
                 node._has_node_fluxes = newflux != node._node_fluxes 
                 node._node_fluxes = newflux
+
+                # if this is the only intracellular species using
+                # node._point_indices, then remove the corresponding region.
+                for sp in _intracellular_diffusion_objects:
+                    if sp._region == self._region:
+                        break
+                else:
+                    if self._region in node._point_indices:
+                        del node._point_indices[self._region]
+
                 nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
  
     #Line Definitions for each direction
@@ -1216,9 +1226,9 @@ class Species(_SpeciesMathable):
             if hasattr(d,'__len__') and all([di == d[0] for di in d]) and not callable(d[0]):
                 self._d = d[0]
             else:
-                from .rxd import _dimensions
+                from .rxd import _domain_lookup
                 reglist = regions if hasattr(regions,'__len__') else [regions]
-                dims = [_dimensions[sec] for reg in reglist for sec in reg.secs]
+                dims = [_domain_lookup(sec) for reg in reglist for sec in reg.secs]
                 if not all([dim == dims[0] for dim in dims]):
                     raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
                 else:
@@ -1394,17 +1404,12 @@ class Species(_SpeciesMathable):
         self._register_cptrs()
 
     def __del__(self):
+        global _all_species, _defined_species, _all_defined_species
         if hasattr(self,'deleted'):
             return
         self.deleted = True
         remove_species_atolscale(self._id)
         
-        global _all_species, _defined_species, _all_defined_species
-        try:
-            from . import section1d, node
-        except:
-            # may not be able to import on exit
-            return 
         name = self.name if self.name else self._id
         if name in _defined_species:
             for r in self.regions:

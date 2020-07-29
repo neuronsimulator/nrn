@@ -75,10 +75,10 @@ int* _regions;
 int _curr_count;
 int* _curr_indices = NULL;
 double* _curr_scales = NULL; 
-PyHocObject** _curr_ptrs = NULL;
+double** _curr_ptrs = NULL;
 int  _conc_count;
 int* _conc_indices = NULL;
-PyHocObject** _conc_ptrs = NULL;
+double** _conc_ptrs = NULL;
 double*** _mult = NULL;
 int* _mc_mult_count = NULL;
 int*** _ecs_indices = NULL;
@@ -103,7 +103,7 @@ int* _memb_species_count;   /*array of length _memb_count
                              current*/
 
 /*arrays of size _memb_count by _memb_species_count*/
-PyHocObject*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
+double*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
 int** _memb_cur_charges;    
 int*** _memb_cur_mapped;      /*array of pairs of indices*/
 int*** _memb_cur_mapped_ecs;  /*array of pointer into ECS grids*/
@@ -129,7 +129,7 @@ static void transfer_to_legacy()
 	int i;
 	for(i = 0; i < _conc_count; i++)
 	{
-		*(double*)_conc_ptrs[i]->u.px_ = states[_conc_indices[i]];
+		*(double*)_conc_ptrs[i] = states[_conc_indices[i]];
 	}
 }
 
@@ -211,6 +211,7 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* c
 						  PyHocObject** curr_ptrs, int conc_count, 
 						  int* conc_index, PyHocObject** conc_ptrs)
 {
+    int i;
     free_curr_ptrs();
 	/* info for NEURON currents - to update states */
 	_curr_count = num_currents;
@@ -220,22 +221,24 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* c
 	_curr_scales = (double*)malloc(sizeof(double)*num_currents);
 	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
 
-	_curr_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_currents);
-	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
+	_curr_ptrs = (double**)malloc(sizeof(double*)*num_currents);
+    for(i = 0; i < num_currents; i++)
+        _curr_ptrs[i] = (double*)curr_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, 
                          PyHocObject** conc_ptrs)
 {
 	/* info for NEURON concentration - to transfer to legacy */
-
+    int i;
     free_conc_ptrs();
 	_conc_count = conc_count;
 	_conc_indices = (int*)malloc(sizeof(int)*conc_count);
 	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
 
-	_conc_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*conc_count);
-	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
+	_conc_ptrs = (double**)malloc(sizeof(double*)*conc_count);
+    for(i = 0; i < conc_count; i++)
+        _conc_ptrs[i] = (double*)conc_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
@@ -523,7 +526,7 @@ static void add_currents(double * result)
     short side;
     /*Add currents to the result*/
         for (k = 0; k < _curr_count; k++)
-            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
+            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]);
 
     /*Subtract rxd induced currents*/
     if(_membrane_flux)
@@ -741,7 +744,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _membrane_lookup = (int*)malloc(sizeof(int)*num_states);
      memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
 
-    _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);
+    _memb_cur_ptrs = (double***)malloc(sizeof(double**)*num_currents);
     _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
@@ -750,7 +753,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 
     for(i = 0, idx = 0, k = 0; i < num_currents; i++)
     {
-        _memb_cur_ptrs[i] = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_species[i]);
+        _memb_cur_ptrs[i] = (double**)malloc(sizeof(double*)*num_species[i]);
         //memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
         _memb_cur_mapped_ecs[i] = (int**)malloc(sizeof(int*)*num_species[i]);
         _memb_cur_mapped[i] =  (int**)malloc(sizeof(int*)*num_species[i]);
@@ -758,7 +761,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 
         for(j = 0; j < num_species[i]; j++, k++)
         {
-            _memb_cur_ptrs[i][j] = ptrs[k];
+            _memb_cur_ptrs[i][j] = (double*)ptrs[k]->u.px_;
             _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
 
@@ -816,7 +819,6 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 static void _currents(double* rhs)
 {
     int i, j, k, idx, side;
-    
     if(!_membrane_flux)
         return;
     get_all_reaction_rates(states, NULL, NULL);
@@ -830,7 +832,7 @@ static void _currents(double* rhs)
         for(j = 0; j < _memb_species_count[i]; j++, k++)
         {
             rhs[idx] -= _rxd_induced_currents[k];
-            *(_memb_cur_ptrs[i][j]->u.px_) += _rxd_induced_currents[k];
+            *(_memb_cur_ptrs[i][j]) += _rxd_induced_currents[k];
  
             for(side = 0; side < 2; side++)
             {
@@ -849,11 +851,11 @@ static void _currents(double* rhs)
 
 
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int thread_id) {
-        if(method > 0 && initialized && structure_change_cnt != prev_structure_change_cnt)
-        {
-            /*TODO: Exclude irrelevant (non-rxd) structural changes*/
-            _setup_matrices(); 
-        }
+        //if(method > 0 && initialized && structure_change_cnt != prev_structure_change_cnt)
+        //{
+        //  /*TODO: Exclude irrelevant (non-rxd) structural changes*/
+        //    _setup_matrices(); 
+        //}
         switch (method) {
         case 0:
             _setup();
@@ -906,12 +908,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             printf("Unknown rxd_nonvint_block call: %d\n", method);
             break;
     }
-    /*
-    int i;
-    for(i=0; i<size; i++)
-    {
-        fprintf(stderr,"%i] \t %1.12e \t %1.12e \n", i, (p1==NULL?-1e9:p1[i]), (p2==NULL?-1e9:p2[i]));
-    }*/
     return 0;
 }
 
@@ -1167,7 +1163,7 @@ extern "C" void clear_rates()
         SAFE_FREE(react->ecs_state);
         prev = react;
         react = react->next;
-        free(prev);
+        SAFE_FREE(prev);
     }
     _reactions = NULL;
     /*clear extracellular reactions*/
@@ -1598,7 +1594,9 @@ void _ode_reinit(double* y)
             if(zvi[j] == i)
                 j++;
             else
+            {
                 y[i-j] = states[i];
+            }
         }
     }
     else
@@ -1630,8 +1628,9 @@ void _rhs_variable_step(const double t, const double* p1, double* p2)
         {
             if(zvi[j] == i)
                 j++;
-            else
-                states[i] = my_states[i-j];
+            else{
+                states[i] =  my_states[i-j];
+           }
         }
     }
     else
