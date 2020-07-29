@@ -251,13 +251,13 @@ one:
     RMDir /r "$DESKTOP\${NEURON}"
     IfErrors +1 two
       IfSilent two +1
-        MessageBox MB_OK "$DESKTOP\${NEURON} could not be removed. Perhaps it is is use."
+        MessageBox MB_OK "$DESKTOP\${NEURON} could not be removed. Perhaps it is in use."
 two:
     ClearErrors
     RMDir /r "$INSTDIR"
     IfErrors +1 three
       IfSilent three +1
-        MessageBox MB_OK "$SMPROGRAMS\${NEURON} could not be removed. Perhaps it is is use."
+        MessageBox MB_OK "$SMPROGRAMS\${NEURON} could not be removed. Perhaps it is in use."
 three:
 SectionEnd
 

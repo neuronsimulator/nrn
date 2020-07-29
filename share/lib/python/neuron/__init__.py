@@ -143,24 +143,46 @@ version = h.nrnversion(5)
 __version__ = version
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
-  import platform
-  import os
-  p = h.nrnversion(6)
-  if "--prefix=" in p:
-    p = p[p.find('--prefix=') + 9:]
-    p = p[:p.find("'")]
+  # first try is to derive from neuron.__file__
+  origin = None # path to neuron/__init__.py
+  if sys.version_info[0] == 2:
+    # python 2 seems to have hoc.__file__ already filled in so never get here.
+    try:
+      import imp
+      mspec = imp.find_module("neuron")
+      origin = mspec[1]
+    except:
+      pass
   else:
-    p = "/usr/local/nrn"
-  if sys.version_info >= (3, 0):
+    from importlib import util
+    mspec = util.find_spec("neuron")
+    if mspec:
+      origin = mspec.origin
+  if origin is not None:
     import sysconfig
-    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
+    setattr(hoc, "__file__", hoc_path)
   else:
-    phoc = p + "/lib/python/neuron/hoc.so"
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
-  setattr(hoc, "__file__", phoc)
+    # if the above is robust, maybe all this can be removed.
+    # next try is to derive from nrnversion(6) (only works for autotools build)
+    import platform
+    import os
+    p = h.nrnversion(6)
+    if "--prefix=" in p:
+      p = p[p.find('--prefix=') + 9:]
+      p = p[:p.find("'")]
+    else:
+      p = "/usr/local/nrn"
+    if sys.version_info >= (3, 0):
+      import sysconfig
+      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    else:
+      hoc_path = p + "/lib/python/neuron/hoc.so"
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
+    setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time
@@ -672,13 +694,17 @@ class _RangeVarPlot(_WrapperPlot):
   Additional arguments and keyword arguments are passed to the graph's
   plotting method.
 
-  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+  Example, showing plotting to NEURON graphics, bokeh, matplotlib,
+  plotnine/ggplot, and plotly:
 
   .. code::
 
     from matplotlib import pyplot
     from neuron import h, gui
     import bokeh.plotting as b
+    import plotly
+    import plotly.graph_objects as go
+    import plotnine as p9
     import math
 
     dend = h.Section(name='dend')
@@ -705,7 +731,22 @@ class _RangeVarPlot(_WrapperPlot):
     r.plot(bg, line_width=10)
     b.show(bg)
 
-    pyplot.show()"""
+    # plotly
+    r.plot(plotly).show()
+
+    # also plotly
+    fig = go.Figure()
+    r.plot(fig)
+    fig.show()
+
+    pyplot.show()
+    
+    # plotnine/ggplot
+    p9.ggplot() + r.plot(p9)
+
+    # alternative plotnine/ggplot
+    r.plot(p9.ggplot())
+    """
 
   def __call__(self, graph, *args, **kwargs):
       yvec = h.Vector()
@@ -713,13 +754,36 @@ class _RangeVarPlot(_WrapperPlot):
       self._data.to_vector(yvec, xvec)
       if isinstance(graph, hoc.HocObject):
         return yvec.line(graph, xvec, *args)
+      str_type_graph = str(type(graph))
+      if str_type_graph == "<class 'plotly.graph_objs._figure.Figure'>":
+        # plotly figure
+        import plotly.graph_objects as go
+        kwargs.setdefault('mode', 'lines')
+        return graph.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_type_graph == "<class 'plotnine.ggplot.ggplot'>":
+        # ggplot object
+        import plotnine as p9
+        import pandas as pd
+        return graph + p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
+      str_graph = str(graph)
+      if str_graph.startswith("<module 'plotly' from "):
+        # plotly module
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        kwargs.setdefault('mode', 'lines')
+        return fig.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_graph.startswith("<module 'plotnine' from "):
+        # plotnine module (contains ggplot)
+        import plotnine as p9
+        import pandas as pd
+        return p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
       if hasattr(graph, 'plot'):
         # works with e.g. pyplot or a matplotlib axis
         return graph.plot(xvec, yvec, *args, **kwargs)
       if hasattr(graph, 'line'):
         # works with e.g. bokeh
         return graph.line(xvec, yvec, *args, **kwargs)
-      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+      if str_type_graph == "<class 'matplotlib.figure.Figure'>":
         raise Exception('plot to a matplotlib axis not a matplotlib figure')
       raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
 
@@ -810,9 +874,12 @@ class _PlotShapePlot(_WrapperPlot):
                       if variable is not None:
                         val = _get_variable_seg(seg, variable)
                         vals.append(val)
-                        lines[line] = '%s at %s' % (val, seg)
+                        if val is not None:
+                          lines[line] = '%s at %s' % (val, seg)
+                        else:
+                          lines[line] = str(seg)
                       else:
-                        lines[line] = ''
+                        lines[line] = str(seg)
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -820,21 +887,29 @@ class _PlotShapePlot(_WrapperPlot):
                       for sec in sections:
                           for line, val in zip(lines_list, vals):
                               if val is not None:
-                                  col = cmap(int(255 * (val - val_min) / (val_range)))
-                                  line.set_color(col)
+                                col = _get_color(variable, val, cmap, val_min, val_max, val_range)
+                                line.set_color(col)
               return lines
       return Axis3DWithNEURON(fig)
 
     def _get_variable_seg(seg, variable):
-      try:
-        if '.' in variable:
-            mech, var = variable.split('.')
-            val = getattr(getattr(seg, mech), var)
-        else:
-            val = getattr(seg, variable)
-      except AttributeError:
-        # leave default color if no variable found
-        val = None
+      if isinstance(variable, str):
+        try:
+          if '.' in variable:
+              mech, var = variable.split('.')
+              val = getattr(getattr(seg, mech), var)
+          else:
+              val = getattr(seg, variable)
+        except AttributeError:
+          # leave default color if no variable found
+          val = None
+      else:
+        try:
+          vals = variable.nodes(seg).concentration
+          val = sum(vals) / len(vals)
+        except:
+          val = None
+
       return val
 
     def _get_3d_pt(segment):
@@ -856,7 +931,9 @@ class _PlotShapePlot(_WrapperPlot):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       kwargs.setdefault('picker', 2)
       result = _get_pyplot_axis3d(fig)
       _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
@@ -873,6 +950,25 @@ class _PlotShapePlot(_WrapperPlot):
         return result._mouseover_text
       result.format_coord = format_coord
       return result
+
+    def _get_color(variable, val, cmap, lo, hi, val_range):
+      if variable is None or val is None:
+        col = 'black'
+      elif val_range == 0:
+        if val < lo:
+          col = color_to_hex(cmap(0))
+        elif val > hi:
+          col = color_to_hex(cmap(255))
+        else:
+          val = color_to_hex(128)
+      else:
+        col = color_to_hex(cmap(int(255 * (min(max(val, lo), hi) - lo) / (val_range))))
+      return col
+
+    def color_to_hex(col):
+      items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
+      return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
+
 
     def _do_plot_on_plotly():
       """requires matplotlib for colormaps if not specified explicitly"""
@@ -902,17 +998,17 @@ class _PlotShapePlot(_WrapperPlot):
 
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       if secs is None:
         secs = list(h.allsec())
 
-      def color_to_hex(col):
-        items = [hex(int(255 * col_item))[2:] for col_item in col][:-1]
-        return '#' + ''.join([item if len(item) == 2 else '0' +item for item in items])
       
       if variable is None:
         kwargs.setdefault('color', 'black')
         
+        data = []
         for sec in secs:
           xs = [sec.x3d(i) for i in range(sec.n3d())]
           ys = [sec.y3d(i) for i in range(sec.n3d())]
@@ -950,10 +1046,10 @@ class _PlotShapePlot(_WrapperPlot):
           all_seg_pts = _segment_3d_pts(sec)
           for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
             val = _get_variable_seg(seg, variable)
-            if val is None:
-              col = 'black'
-            else:
-              col = color_to_hex(cmap(int(255 * (val - lo) / (val_range))))
+            hover_template = str(seg)
+            if val is not None:
+              hover_template += '<br>' + ('%.3f' % val)
+            col = _get_color(variable, val, cmap, lo, hi, val_range)
             if show_diam:
               diam = seg.diam
             else:
@@ -964,7 +1060,7 @@ class _PlotShapePlot(_WrapperPlot):
                 y=ys,
                 z=zs,
                 name='',
-                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                hovertemplate=hover_template,
                 mode="lines",
                 line=go.scatter3d.Line(
                     color=col,
@@ -1082,7 +1178,7 @@ class DensityMechanism:
         except:
           # older versions of the NMODL library didn't support .ontology_id
           pass
-        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': ontology_id}
+        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': nmodl.to_nmodl(ontology_id)}
       self.__ions = result
     # return a copy
     return dict(self.__ions)
@@ -1106,6 +1202,7 @@ try:
     return _RangeVarPlot(rvp)
 
   def _plotshape_plot(ps):
+    h.define_shape()
     return _PlotShapePlot(ps)
 
   _mech_classes = {}

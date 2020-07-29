@@ -112,10 +112,10 @@ set(NRN_RX3D_OPT_LEVEL
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
+include(PlatformHelper)
 include(CompilerHelper)
 include(MacroHelper)
 include(RpathHelper)
-include(PlatformHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
 
@@ -158,6 +158,28 @@ if(DOXYGEN_FOUND)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM)
+endif()
+
+# =============================================================================
+# Setup Sphinx documentation
+# =============================================================================
+add_custom_target(
+        prepare_docs
+        COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+)
+find_package(Sphinx QUIET)
+if(SPHINX_FOUND)
+  set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
+  set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
+
+  add_custom_target(
+          sphinx
+          COMMAND ${SPHINX_EXECUTABLE} -b html
+          ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating documentation with Sphinx"
+  )
 endif()
 
 # =============================================================================
@@ -247,6 +269,16 @@ if(NRN_ENABLE_CORENEURON)
 endif()
 
 # =============================================================================
+# Set library type
+# =============================================================================
+if(NRN_ENABLE_SHARED)
+    set(NRN_LIBRARY_TYPE "SHARED")
+else()
+    set(NRN_LIBRARY_TYPE "STATIC")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
+# =============================================================================
 # Add helpder CMake modules AFTER setting options
 # =============================================================================
 include(NeuronFileLists)
@@ -291,7 +323,10 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.c
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
+  find_package(Curses QUIET)
+  find_package(Termcap QUIET)
 else()
+  find_package(Curses REQUIRED QUIET)
   add_subdirectory(src/readline)
   set(INTERNAL_READLINE readline)
   unset(Readline_LIBRARY CACHE)
@@ -489,6 +524,14 @@ if(cmake_generator_tolower MATCHES "makefile")
         message(STATUS "    INSTALL C | ${exe} setup.py install ${NRN_MODULE_INSTALL_OPTIONS}")
       endforeach(val)
     endif()
+  endif()
+  if(READLINE_FOUND)
+    message(STATUS "Readline      | ${Readline_LIBRARY}")
+  endif()
+  if(CURSES_FOUND)
+    message(STATUS "Curses        | ${CURSES_LIBRARIES}")
+  elseif(TERMCAP_FOUND)
+    message(STATUS "Termcap       | ${TERMCAP_LIBRARIES}")
   endif()
   message(STATUS "RX3D          | ${NRN_ENABLE_RX3D}")
   if(${NRN_ENABLE_RX3D})

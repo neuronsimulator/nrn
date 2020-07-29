@@ -64,6 +64,10 @@ env:
     - PIP="$(which pip3)"
     - INSTALL_DIR="$HOME/install"
   jobs:
+    - BUILD_MODE=cmake
+      CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
+      BUILD_DOCUMENTATION=ON
+      MATRIX_EVAL="CC=gcc CXX=g++"
     - BUILD_MODE=setuptools
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
     - BUILD_MODE=autotools
@@ -74,10 +78,6 @@ env:
     - BUILD_MODE=autotools
       CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
-      BUILD_DOCUMENTATION=ON
-      MATRIX_EVAL="CC=gcc CXX=g++"
     - BUILD_MODE=cmake
       CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
       MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
@@ -98,6 +98,14 @@ os:
 # Setup environment and Install dependencies
 #=============================================================================
 before_install:
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+      if ! git diff --name-only ${TRAVIS_COMMIT_RANGE} | grep -qvE '(\.md)$|^(Copyright)$|^(docs/)' ; then
+        echo "Skipping CI build since we have docs-only changes for ${TRAVIS_COMMIT_RANGE} :"
+        git diff --name-only ${TRAVIS_COMMIT_RANGE}
+        exit
+      fi
+    fi
   - echo $LANG
   - echo $LC_ALL
   - $CXX -v
@@ -113,6 +121,9 @@ install:
       export CYTHON_EXE=$(echo $CYTHON_LIB | awk '{print $2}' | awk -F "lib" '{print$1}')"bin";
       export PATH=$CYTHON_EXE:$PATH;
       brew link --overwrite python;
+    fi
+  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
+      $PIP install --user -r docs/docs_requirements.txt --upgrade;
     fi
 
 #=============================================================================
@@ -183,12 +194,12 @@ script:
 
   # with setuptools / pip, use wheel under virtual environment
   - if [ "$BUILD_MODE" == "setuptools" ]; then
-      neuron_wheel=wheelhouse/NEURON-*;
+      neuron_wheel=wheelhouse/NEURON*.whl;
       ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel;
     fi;
   # with setuptools / pip, use wheel for global install
   - if [ "$BUILD_MODE" == "setuptools" ]; then
-      neuron_wheel=wheelhouse/NEURON-*;
+      neuron_wheel=wheelhouse/NEURON*.whl;
       ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false;
     fi;
 
@@ -197,16 +208,18 @@ script:
 #=============================================================================
 after_success:
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
-      echo "------- Prepare Documentation -------";
+      echo "------- Build Doxygen Documentation -------";
       pushd $TRAVIS_BUILD_DIR/build;
       make doxygen;
-      pushd $TRAVIS_BUILD_DIR/build/doc_doxygen;
+      echo "------- Prepare Docs for Sphinx -------";
+      pushd $TRAVIS_BUILD_DIR/build;
+      make prepare_docs;
+      echo "-------- Build Sphinx documentation --------";
+      pushd $TRAVIS_BUILD_DIR/build;
+      make sphinx;
+      echo "-------- Disable jekyll --------";
+      pushd $TRAVIS_BUILD_DIR/build/docs;
       touch .nojekyll;
-      echo "<meta http-equiv=\"refresh\" content=\"0; url=./doxygen/index.html\" />" > index.html;
-      popd; popd;
-      echo "-------- Build sphinx documentation --------";
-      cd $TRAVIS_BUILD_DIR;
-      bash .travis_docs.sh;
     fi
 
 #=============================================================================
@@ -224,7 +237,7 @@ deploy:
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
   keep_history: false
-  local_dir: $TRAVIS_BUILD_DIR/build/doc_doxygen
+  local_dir: $TRAVIS_BUILD_DIR/build/docs
   target_branch: gh-pages
   on:
     branch: master

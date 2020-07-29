@@ -1217,6 +1217,16 @@ int nrn_set_timeout(int timeout) {
 }
 
 void BBS::netpar_solve(double tstop) {
+	// temporary check to be eventually replaced by verify_structure()
+	extern int tree_changed, v_structure_change, diam_changed;
+	if (tree_changed || v_structure_change) {
+	  hoc_execerror("NEURON model internal structures are out of date",NULL);
+        }
+	if (diam_changed) {
+	  recalc_diam();
+	}
+	// if cvode_active, and anything at all has changed, should call re_init
+
 #if NRNMPI
 	double mt, md;
 	tstopunset;

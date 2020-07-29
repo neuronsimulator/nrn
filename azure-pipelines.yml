@@ -2,10 +2,6 @@
 # Azure Pipeline settings
 #=============================================================================
 
-# Used for neuron-nightly wheel
-variables:
-  NEURON_NIGHTLY_TAG: '-nightly'
-
 # Nightly build master for pypi upload
 schedules:
 - cron: "0 0 * * *"
@@ -44,6 +40,9 @@ jobs:
         -w /root/nrn \
         -v $PWD:/root/nrn \
         -e NEURON_NIGHTLY_TAG \
+        -e NRN_NIGHTLY_UPLOAD \
+        -e NRN_RELEASE_UPLOAD \
+        -e NEURON_WHEEL_VERSION \
         'neuronsimulator/neuron_wheel' \
         packaging/python/build_wheels.bash linux $(python.version)
     displayName: 'Building ManyLinux Wheel'

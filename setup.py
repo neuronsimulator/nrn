@@ -21,6 +21,10 @@ try:
     v = subprocess.run(['git', 'describe', '--tags'],
                        stdout=subprocess.PIPE).stdout.strip().decode()
     __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
+    # allow to override version during development/testing
+    if "NEURON_WHEEL_VERSION" in os.environ:
+        __version__ = os.environ['NEURON_WHEEL_VERSION']
+
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo") from e
 
@@ -303,10 +307,12 @@ def setup_package():
 
     log.info("RX3D is %s", "ENABLED" if RX3D else "DISABLED")
 
-    # For CI, we want to build separate wheel
+    # For CI, we want to build separate wheel with "-nightly" suffix
     package_name = 'NEURON'
     if "NEURON_NIGHTLY_TAG" in os.environ:
         package_name += os.environ['NEURON_NIGHTLY_TAG']
+    else:
+        package_name += "-nightly"
 
     setup(
         name=package_name,

@@ -227,7 +227,7 @@ extern "C" {
 linux that dlopen needs a full path to the file. A path to the binary
 is not necessarily sufficent as one may launch python or nrniv on the
 target machine and the lib folder cannot be derived from the location of
-the python executable.This seems to be robust if this file is inside a
+the python executable.This seems to be robust if nrn_version is inside a
 shared library.
 The return value ends with a '/' and if the prefix cannot be determined
 the return value is "".
@@ -236,7 +236,7 @@ const char* path_prefix_to_libnrniv() {
   static char* path_prefix_to_libnrniv_ = NULL;
   if (!path_prefix_to_libnrniv_) {
     Dl_info info;
-    int rval = dladdr((void*)path_prefix_to_libnrniv, &info);
+    int rval = dladdr((void*)nrn_version, &info);
     std::string name;
     if (rval) {
       if (info.dli_fname) {

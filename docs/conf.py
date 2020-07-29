@@ -10,15 +10,15 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'NEURON'
-copyright = '2019, Yale and the Blue Brain Project'
+copyright = '2020, Duke, Yale and the Blue Brain Project'
 author = 'Michael Hines'
 
 
@@ -30,8 +30,24 @@ author = 'Michael Hines'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    #'nbsphinx'
+    'sphinx.ext.autosectionlabel',
+    'recommonmark',
+    'sphinx.ext.mathjax'
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'markdown',
+    '.md': 'markdown',
+}
+
+import sphinx.writers.html
+import sphinx.ext.mathjax
+import html2
+
+def setup(app):
+    """Setup conntects events to the sitemap builder"""
+    app.set_translator('html', html2.HTMLTranslator)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

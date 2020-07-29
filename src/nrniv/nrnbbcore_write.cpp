@@ -102,12 +102,15 @@ correctness has not been validated for cells without gids.
 #include <nrnmpi.h>
 #include <netcon.h>
 #include <nrndae_c.h>
+#include <unistd.h>
 #include <algorithm>
 #include <nrnhash_alt.h>
 #include <nrnbbcore_write.h>
 #include <netcvode.h> // for nrnbbcore_vecplay_write
 #include <vrecitem.h> // for nrnbbcore_vecplay_write
 #include <nrnsection_mapping.h>
+#include <errno.h>
+#include <string.h>
 #include <fstream>
 #include <sstream>
 
@@ -133,6 +136,10 @@ extern int secondorder, diam_changed, v_structure_change, tree_changed;
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
+
+/* access the neuron.coreneuron pure python module */
+int (*nrnpy_nrncore_enable_value_p_)();
+char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 extern bbcore_write_t* nrn_bbcore_write_;
@@ -705,7 +712,9 @@ CellGroup* mk_cellgroups() {
     }else if (cgs[i].group_id >= 0) {
       // set above to first artificial cell with a ps->output_index >= 0
     }else{
-      hoc_execerror("A thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
+      // Don't die yet as the thread may be empty. That just means no files
+      // output for this thread and no mention in files.dat.
+      // Can check for empty near end of datatransform(CellGroup* cgs)
     }
   }
 
@@ -749,6 +758,12 @@ void datumtransform(CellGroup* cgs) {
         datumindex_fill(ith, cg, di, ml);
       }
     }
+    // if model is being transferred via files, and
+    //   if there are no gids in the thread (group_id < 0), and
+    //     if the thread is not empty (mechanisms exist, n_mech > 0)
+    if (corenrn_direct == false && cg.group_id < 0 && cg.n_mech > 0) {
+      hoc_execerror("A nonempty thread has no real cell or ARTIFICIAL_CELL with a gid", NULL);
+    }
   }
 }
 
@@ -767,7 +782,7 @@ int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
   if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
     type = voltage; // signifies an index into voltage array portion of _data
     index = pd - nt._actual_v;
-  } else if (pd >= nt._nrn_fast_imem->_nrn_sav_rhs && pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+  } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs && pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
     type = i_membrane_; // signifies an index into i_membrane_ array portion of _data
     index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
   }else{
@@ -1876,97 +1891,205 @@ static core2nrn_callback_t cnbs[]  = {
   {NULL, NULL}
 };
 
-extern int nrn_use_fast_imem;
-
-/** check if file with given path exist */
-bool file_exist(const std::string& path) {
-  std::ifstream f(path.c_str());
-  return f.good();
-}
-
-extern "C" {
-  extern char* neuron_home;
-}
-
 #if defined(HAVE_DLFCN_H)
+
+extern int nrn_use_fast_imem;
+extern char* neuron_home;
+
+/** Check if coreneuron is loaded into memory */
+bool is_coreneuron_loaded() {
+    bool is_loaded = false;
+    // check if corenrn_embedded_run symbol can be found
+    void * handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+    if (handle) {
+        void* fn = dlsym(handle, "corenrn_embedded_run");
+        is_loaded = fn == NULL ? false : true;
+        dlclose(handle);
+    }
+    return is_loaded;
+}
+
+/** Check if file with given path exist */
+bool file_exist(const std::string& path) {
+    std::ifstream f(path.c_str());
+    return f.good();
+}
+
+/** Open library with given path and return dlopen handle **/
+void* get_handle_for_lib(const char* path) {
+    void* handle = dlopen(path, RTLD_NOW|RTLD_GLOBAL);
+    if (!handle) {
+      fputs(dlerror(), stderr);
+      fputs("\n", stderr);
+      hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", path);
+    }
+    return handle;
+}
+
+/** Get CoreNEURON mechanism library */
+void* get_coreneuron_handle() {
+	// if already loaded into memory, directly return handle
+	if (is_coreneuron_loaded()) {
+		return dlopen(NULL, RTLD_NOW|RTLD_GLOBAL);
+	}
+
+	// env variable get highest preference
+	const char* corenrn_lib = getenv("CORENEURONLIB");
+	if (corenrn_lib && file_exist(corenrn_lib)) {
+		return get_handle_for_lib(corenrn_lib);
+	}
+
+	// name of coreneuron library based on platform
+	#if defined(MINGW)
+	std::string corenrn_mechlib_name("libcorenrnmech.dll");
+	#elif defined(DARWIN)
+	std::string corenrn_mechlib_name("libcorenrnmech.dylib");
+	#else
+	std::string corenrn_mechlib_name("libcorenrnmech.so");
+	#endif
+
+	// first check if coreneuron specific library exist in <arch>/.libs
+	// note that we need to get full path especially for OSX
+	char pwd[FILENAME_MAX];
+	if (getcwd(pwd, FILENAME_MAX) == NULL) {
+		hoc_execerror("getcwd failed:", strerror(errno));
+	}
+	std::stringstream s_path;
+	s_path << pwd << "/" << NRNHOSTCPU << "/" << corenrn_mechlib_name;
+	std::string path = s_path.str();
+
+	if (file_exist(path)) {
+		return get_handle_for_lib(path.c_str());
+	}
+
+	// last fallback is minimal library with internal mechanisms
+	s_path.str("");
+	#if defined(MINGW)
+	s_path << neuron_home << "/lib/" << corenrn_mechlib_name;
+	#else
+	s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
+	#endif
+	path = s_path.str();
+
+	// if this last path doesn't exist then it's an error
+	if (!file_exist(path)) {
+        hoc_execerror("Could not find CoreNEURON library", NULL);
+	}
+
+	return get_handle_for_lib(path.c_str());
+}
+
+/** Check if neuron & coreneuron are compatible */
+void check_coreneuron_compatibility(void* handle) {
+    // get handle to function in coreneuron
+    void* cn_version_sym = dlsym(handle, "corenrn_version");
+    if (!cn_version_sym) {
+      hoc_execerror("Could not get symbol corenrn_version from CoreNEURON", NULL);
+    }
+    // call coreneuron function and get version string
+    const char* cn_bbcore_read_version = (*(const char*(*)())cn_version_sym)();
+
+    // make sure neuron and coreneuron version are same; otherwise throw an error
+    if (strcmp(bbcore_write_version, cn_bbcore_read_version) != 0) {
+      std::stringstream s_path;
+      s_path << bbcore_write_version << " vs " << cn_bbcore_read_version;
+      hoc_execerror("Incompatible NEURON and CoreNEURON versions :", s_path.str().c_str());
+    }
+}
+
+/** Populate function pointers by mapping function pointers for callback */
+void map_coreneuron_callbacks(void* handle) {
+    for (int i=0; cnbs[i].name; ++i) {
+        void* sym = dlsym(handle, cnbs[i].name);
+        if (!sym) {
+            fprintf(stderr, "Could not get symbol %s from CoreNEURON\n", cnbs[i].name);
+            hoc_execerror("dlsym returned NULL", NULL);
+        }
+        void** c = (void**)sym;
+        *c = (void*)(cnbs[i].f);
+    }
+}
+
+/** Launch CoreNEURON in direct memory mode */
 int nrncore_run(const char* arg) {
-  corenrn_direct = true;
+    // using direct memory mode
+    corenrn_direct = true;
 
-  // check that model can be transferred.
-  model_ready();
+    // check that model can be transferred
+    model_ready();
 
-  // name of coreneuron library based on platform
-#if defined(MINGW)
-  std::string corenrn_mechlib_name("libcorenrnmech.dll");
-#elif defined(DARWIN)
-  std::string corenrn_mechlib_name("libcorenrnmech.dylib");
-#else
-  std::string corenrn_mechlib_name("libcorenrnmech.so");
-#endif
+    // get coreneuron library handle
+    void* handle = get_coreneuron_handle();
 
-  // first check if coreneuron specific library exist in <arhc>/.libs
-  std::stringstream s_path;
-  s_path << NRNHOSTCPU << "/.libs/" << corenrn_mechlib_name;
+    // make sure coreneuron & neuron are compatible
+    check_coreneuron_compatibility(handle);
 
-  std::string path = s_path.str();
-  const char* corenrn_lib = path.c_str();
+    // setup the callback functions between neuron & coreneuron
+    map_coreneuron_callbacks(handle);
 
-  if (!file_exist(corenrn_lib)) {
-    // otherwise, look for CORENEURONLIB env variable
-    corenrn_lib = getenv("CORENEURONLIB");
-    if (!corenrn_lib) {
-      s_path.str("");
-      // last fallback is minimal library with internal mechanisms
-      s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;
-      path = s_path.str();
-      corenrn_lib = path.c_str();
+    // lookup symbol from coreneuron for launching
+    void* launcher_sym = dlsym(handle, "corenrn_embedded_run");
+    if (!launcher_sym) {
+        hoc_execerror("Could not get symbol corenrn_embedded_run from", NULL);
     }
-  }
 
-  void* handle = dlopen(corenrn_lib, RTLD_NOW|RTLD_GLOBAL);
-  if (!handle) {
-    fputs(dlerror(), stderr);
-    fputs("\n", stderr);
-    hoc_execerror("Could not dlopen CoreNEURON mechanism library : ", corenrn_lib);
-  }else{
-    void* sym = dlsym(handle, "corenrn_version");
-    if (!sym) {
-      hoc_execerror("Could not get symbol corenrn_version from", corenrn_lib);
-    }
-    const char* cnver = (*(const char*(*)())sym)();
-    if (strcmp(bbcore_write_version, cnver) != 0) {
-      s_path.str("");
-      s_path << bbcore_write_version << " and " << cnver;
-      path = s_path.str();
-      hoc_execerror("Incompatible NEURON and CoreNEURON data versions:", path.c_str());
-    }
-  }
-  for (int i=0; cnbs[i].name; ++i) {
-    void* sym = dlsym(handle, cnbs[i].name);
-    if (!sym) {
-      fprintf(stderr, "Could not get symbol %s in %s\n", cnbs[i].name, corenrn_lib);
-      hoc_execerror("dlsym returned NULL", NULL);
-    }
-    void** c = (void**)sym;
-    *c = (void*)(cnbs[i].f);
-  }
+    // prepare the model
+    part1();
 
-  void* sym = dlsym(handle, "corenrn_embedded_run");
-  if (!sym) {
-    hoc_execerror("Could not get symbol corenrn_embedded_run from", corenrn_lib);
-  }
-  part1();
-  int (*r)(int, int, int, int, const char*) = (int (*)(int, int, int, int, const char*))sym;
-  int have_gap = nrnthread_v_transfer_ ? 1 : 0;
+    int have_gap = nrnthread_v_transfer_ ? 1 : 0;
 #if !NRNMPI
 #define nrnmpi_use 0
 #endif
-  return r(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
+
+    // typecast function pointer pointer
+    int (*coreneuron_launcher)(int, int, int, int, const char*) = (int (*)(int, int, int, int, const char*))launcher_sym;
+
+    // launch coreneuron
+    int result = coreneuron_launcher(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
+
+    // close handle and return result
+    dlclose(handle);
+    return result;
 }
-#else
-int nrncore_run(const char*) {
+
+/** Return neuron.coreneuron.enable */
+int nrncore_is_enabled() {
+  if (nrnpy_nrncore_enable_value_p_) {
+    int b = (*nrnpy_nrncore_enable_value_p_)();
+    return b;
+  }
   return 0;
 }
-#endif //HAVE_DLFCN_H
+
+/** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
+ *  Return 0 on success
+*/
+int nrncore_psolve(double tstop) {
+  if (nrnpy_nrncore_arg_p_) {
+    char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
+    if (arg) {
+      nrncore_run(arg);
+      free(arg);
+      return 0;
+    }
+  }
+  return -1;
+}
+
+#else // !HAVE_DLFCN_H
+
+int nrncore_run(const char*) {
+  return -1;
+}
+
+int nrncore_is_enabled() {
+  return 0;
+}
+
+int nrncore_psolve(double tstop) {
+  return 0;
+}
+
+#endif //!HAVE_DLFCN_H
 
 } // end of extern "C"

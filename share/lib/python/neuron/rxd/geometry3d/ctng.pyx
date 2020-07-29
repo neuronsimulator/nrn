@@ -29,10 +29,6 @@ cdef tuple seg_line_intersection(double x1, double y1, double x2, double y2, dou
     if clip and not (0 <= u <= 1): return None
     return (x1 + u * (x2 - x1), y1 + u * (y2 - y1))
 
-cdef tuple convert3dto2d(double x, double y, double z, double px, double py, double pz, double xx, double xy, double xz, double yx, double yy, double yz):
-    x -= px; y -= py; z -= pz
-    return project(x, y, z, xx, xy, xz), project(x, y, z, yx, yy, yz)
-
 cdef tuple closest_pt(pt, list pts, z2):
     dist = float('inf')
     closest = None
@@ -43,10 +39,6 @@ cdef tuple closest_pt(pt, list pts, z2):
             dist = d
             closest = p
     return tuple(closest)
-
-cdef double project(double fromx, double fromy, double fromz, double tox, double toy, double toz):
-    """scalar projection"""
-    return (fromx * tox + fromy * toy + fromz * toz) / (tox ** 2 + toy ** 2 + toz ** 2) ** 0.5
 
 cdef tuple extreme_pts(list pts):
     if len(pts) < 2: raise Exception('extreme points computation failed')
@@ -77,37 +69,6 @@ cdef int count_outside(region, list pts, double err):
     for pt in pts:
         if region.distance(pt[0], pt[1], pt[2]) > err:
             result += 1
-    return result
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef list convert2dto3d(double ptx, double pty, double x1, double y1, double z1, numpy.ndarray[numpy.float_t, ndim=1] axis, numpy.ndarray[numpy.float_t, ndim=1] radial_vec):
-    return [x1 + ptx * axis[0] + pty * radial_vec[0], y1 + ptx * axis[1] + pty * radial_vec[1], z1 + ptx * axis[2] + pty * radial_vec[2]]
-
-cdef double qsolve(double a, double b, double c):
-    """solve a quadratic equation"""
-    cdef double discrim = b ** 2 - 4 * a * c
-    assert(discrim >= 0)
-    return (-b - numpy.sqrt(discrim)) / (2 * a), (-b + numpy.sqrt(discrim)) / (2 * a)
-
-cdef tangent_sphere(cone, int whichend):
-    pt0 = numpy.array([cone._x0, cone._y0, cone._z0])
-    pt1 = numpy.array([cone._x1, cone._y1, cone._z1])
-    cdef double rnear, rfar, shift
-    if whichend == 0:
-        pt = pt0
-        rnear = cone._r0
-        rfar = cone._r1
-        shift_sign = 1
-    elif whichend == 1:
-        pt = pt1
-        rnear, rfar = cone._r1, cone._r0
-        shift_sign = -1
-    else:
-        raise Exception('whichend for tangent_sphere must be 0 or 1')
-    shift = (rnear * rfar - rnear ** 2) / cone.axislength
-    axis = (pt1 - pt0) / cone.axislength
-    result = Sphere(*(list(pt + shift_sign * shift * axis) + [numpy.sqrt(shift ** 2 + rnear ** 2)]))
     return result
 
 @cython.boundscheck(False)
