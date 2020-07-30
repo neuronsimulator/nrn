@@ -179,7 +179,7 @@ void nrn_init_and_load_data(int argc,
     std::string filesdat(corenrn_param.datpath + "/" + corenrn_param.filesdat);
 
     // read the global variable names and set their values from globals.dat
-    set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed==0),
+    set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed>=0),
                 corenrn_param.seed);
 
     // set global variables for start time, timestep and temperature
