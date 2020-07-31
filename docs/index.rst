@@ -5,6 +5,12 @@ Welcome to NEURON's documentation!
 ==================================
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Building:
+
+   cmake_doc/index
+
+.. toctree::
    :maxdepth: 2
    :caption: User documentation:
 
