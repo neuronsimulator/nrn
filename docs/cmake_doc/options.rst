@@ -189,7 +189,8 @@ Python options:
 
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
-  Enable Python interpreter support (default python3, fallback to python)  
+  Enable Python interpreter support
+  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)  
 
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
@@ -203,7 +204,7 @@ NRN_PYTHON_DYNAMIC:STRING=
   semicolon (;) separated list of python executables to create interfaces. (default python3)  
 
   If the string is empty use the python specified by PYTHON_EXECUTABLE
-  or else the default python. Binary distibutions often specify a list
+  or else the default python. Binary distributions often specify a list
   of python versions so that if any one of them is available on the
   target machine, NEURON + Python will be fully functional. Eg. the
   mac package build script on my machine, nrn/bldnrnmacpkgcmake.sh uses
@@ -216,18 +217,18 @@ NRN_PYTHON_DYNAMIC:STRING=
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
-  Use this python instead of the python cmake finds by default.  
+  Use this python instead of the python cmake finds by default.
   Must be a full path. I generally use
 
-  .. code-block::shell
+  .. code-block:: shell
 
     -DPYTHON_EXECUTABLE=`which python3.7`
 
 NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 ---------------------------------
-  Enable installation of NEURON Python module  
+  Enable installation of NEURON Python module.
 
-  By default, the neuron module is installed in CMAKE_INSTALL_PREFIX/lib/python
+  By default, the neuron module is installed in CMAKE_INSTALL_PREFIX/lib/python.
 
 NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
 ---------------------------------------------------
@@ -284,7 +285,7 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 Occasionally useful advanced options:
 =====================================
 
-  See all the options with ``cmake ..`` in the build folder. They are
+  See all the options with ``ccmake ..`` in the build folder. They are
   also in the CMakeCache.txt file. Following is a definitely incomplete list.
 
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
@@ -382,6 +383,12 @@ NRN_ENABLE_BINARY_SPECIAL:BOOL=OFF
   nrnivmodl by default creates shell script called 'special' which runs nrniv and specifies the argument
   ``-dll /path/to/libnrnmech.so`` or whatever the name is of the shared library created by nrnivmodl.
   This option forces nrnivmodl to create a binary version of special that can be run, for example, with gdb or valgrind.
+
+  It is not often needed as nrniv has a ``-dll <path/to/libnrnmech.so>`` option.
+  Also by default, if the current working directory on launch has a folder named
+  ``x86_64`` (or whatever the CPU happens to be), the nrnmech library in that
+  folder will be automatically loaded.
+
 
 NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
 -------------------------------------
