@@ -189,9 +189,14 @@ endif()
 if(DOXYGEN_FOUND AND SPHINX_FOUND)
   add_custom_target(
           docs
+          COMMAND make doxygen
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND make prepare_docs
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+          COMMAND make sphinx
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating full documentation"
   )
-  add_dependencies(docs doxygen prepare_docs sphinx)
 else()
   add_custom_target(
     docs
