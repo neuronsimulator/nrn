@@ -64,7 +64,7 @@ _fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
 rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
 setup_solver = nrn_dll_sym('setup_solver')
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int, ctypes.py_object, ctypes.py_object]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int]
 
 #states = None
 _set_num_threads = nrn_dll_sym('set_num_threads')
@@ -147,8 +147,6 @@ set_euler_matrix.argtypes = [
     _long_ptr,
     _long_ptr,
     _double_ptr,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
-    ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -379,6 +377,7 @@ def _setup_memb_currents():
                 r._update_indices()
                 r._setup_membrane_fluxes(cur_node_indices, cur_map)
     if not curr_indices:
+        free_curr_ptrs()
         return
     rxd_setup_curr_ptrs(len(curr_indices),
                         _list_to_cint_array(curr_indices),
@@ -540,9 +539,7 @@ def _update_node_data(force=False, newspecies=False):
                         s._update_region_indices(True)
                         s._register_cptrs()
                 #if species._has_1d and species._1d_submatrix_n():
-                volumes = node._get_data()[0]
-                zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-                setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
+                _setup_matrices();
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
                 _setup_memb_currents()
@@ -567,7 +564,6 @@ def _matrix_to_rxd_sparse(m):
     return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
 
-_euler_matrix = None
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
 
@@ -575,9 +571,6 @@ def _setup_matrices():
     _include_flux()
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
-
-    # if the shape has changed update the nodes
-    _update_node_data()
 
     n = len(_node_get_states())
     
@@ -600,6 +593,8 @@ def _setup_matrices():
         _nonzero_volume_indices = list(range(len(_node_get_states())))
         
     """
+    volumes = node._get_data()[0]
+    zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
     if species._has_1d:
         # TODO: initialization is slow. track down why
         
@@ -609,10 +604,6 @@ def _setup_matrices():
             if s is not None:
                 s._assign_parents()
         
-        _update_node_data(True)
-
-        volumes = node._get_data()[0]
-        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
 
         # remove old linearmodeladdition
         _linmodadd_cur = None
@@ -855,25 +846,24 @@ def _setup_matrices():
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
     """
     #CRxD
+    setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices))
     if species._has_1d and n and euler_matrix_nnonzero > 0:
-        _update_node_data()
         section1d._transfer_to_legacy()
         set_euler_matrix(n, euler_matrix_nnonzero,
                          _list_to_clong_array(euler_matrix_i),
                          _list_to_clong_array(euler_matrix_j),
                          _list_to_cdouble_array(euler_matrix_nonzero),
-                         zero_volume_indices,
-                         len(zero_volume_indices),
                          c_diagonal)
     else:
         rxd_set_no_diffusion()
-        #setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
    
 
     if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
         rxd_setup_conc_ptrs(len(section1d._all_cindices), 
              _list_to_cint_array(section1d._all_cindices), 
              _list_to_pyobject_array(section1d._all_cptrs))
+    else:
+        free_conc_ptrs()
 
     # we do this last because of performance issues with changing sparsity of csr matrices
     """
@@ -1145,7 +1135,6 @@ def _compile_reactions():
                         c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
-    #setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
@@ -1497,9 +1486,9 @@ def _init():
             s._finitialize()
     _setup_matrices()
     #if species._has_1d and species._1d_submatrix_n():
-    volumes = node._get_data()[0]
-    zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-    setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
+    #volumes = node._get_data()[0]
+    #zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+    #setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
     _setup_memb_currents()
     _compile_reactions()
 

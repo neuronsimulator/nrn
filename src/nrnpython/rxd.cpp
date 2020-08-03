@@ -19,7 +19,7 @@ extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
-unsigned char initialized = 0;
+unsigned char initialized = FALSE;
 
 /*
     Globals
@@ -32,8 +32,6 @@ TaskQueue* AllTasks = NULL;
 
 extern double *dt_ptr;
 extern double *t_ptr;
-extern double *h_dt_ptr;
-extern double *h_t_ptr;
 
 
 fptr _setup, _initialize, _setup_matrices;
@@ -121,7 +119,20 @@ long* _node_flux_idx = NULL;
 double* _node_flux_scale = NULL;
 PyObject** _node_flux_src = NULL;
 
-
+static void free_zvi_child()
+{
+    int i;
+    /*Clear previous _rxd_zvi_child*/
+    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
+    {
+        for(i = 0; i < _rxd_num_zvi; i++)
+            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
+        free(_rxd_zvi_child);
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child_count = NULL;
+        _rxd_zvi_child = NULL;
+    }
+}
 
 static void transfer_to_legacy()
 {
@@ -143,8 +154,6 @@ static inline void* allocopy(void* src, size_t size)
 extern "C" void rxd_set_no_diffusion()
 {
     int i;
-    prev_structure_change_cnt = structure_change_cnt;
-    initialized = 1;
     diffusion = FALSE;
     if(_rxd_a != NULL)
     {
@@ -157,27 +166,6 @@ extern "C" void rxd_set_no_diffusion()
         free(_rxd_euler_nonzero_j);
         free(_rxd_euler_nonzero_values);
         _rxd_a = NULL;
-    }
-    /*Clear previous _rxd_zvi_child*/
-    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
-    {
-        for(i = 0; i < _rxd_num_zvi; i++)
-            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
-        free(_rxd_zvi_child);
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child = NULL;
-        _rxd_zvi_child_count = NULL;
-        
-    }
-    if(_rxd_zvi_child_count != NULL)
-    {
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count = NULL;
-    }
-    if(_rxd_zvi_child != NULL)
-    {
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count=NULL;
     }
 }
 
@@ -409,8 +397,7 @@ static void apply_node_flux1D(double dt, double *states)
 
 extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
-                          long* zero_volume_indices,
-                          int num_zero_volume_indices, double* c_diagonal)
+                          double* c_diagonal)
 {
     long i, j, idx;
     double val;
@@ -427,29 +414,16 @@ extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
         free(_rxd_euler_nonzero_i);
         free(_rxd_euler_nonzero_j);
         free(_rxd_euler_nonzero_values);
+        _rxd_a = NULL;
     }
-    prev_structure_change_cnt = structure_change_cnt;
-    initialized = 1;
     diffusion = TRUE;
+
 	_rxd_euler_nrow = nrow;
     _rxd_euler_nnonzero = nnonzero;
     _rxd_euler_nonzero_i = (long*)allocopy(nonzero_i, sizeof(long) * nnonzero);
     _rxd_euler_nonzero_j = (long*)allocopy(nonzero_j, sizeof(long) * nnonzero);
     _rxd_euler_nonzero_values = (double*)allocopy(nonzero_values, sizeof(double) * nnonzero);
 
-    /*Clear previous _rxd_zvi_child*/
-    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
-    {
-        for(i = 0; i < _rxd_num_zvi; i++)
-            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
-        free(_rxd_zvi_child);
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count = NULL;
-        _rxd_zvi_child = NULL;
-    }
-    _rxd_num_zvi = num_zero_volume_indices; 
-    _rxd_zero_volume_indices = zero_volume_indices;
-    
     _rxd_a = (double*)calloc(nrow,sizeof(double));
     _rxd_b = (double*)calloc(nrow,sizeof(double));
     _rxd_c = (double*)calloc(nrow,sizeof(double));
@@ -847,8 +821,13 @@ static void _currents(double* rhs)
     }
 }
 
-
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
+        if(initialized && structure_change_cnt != prev_structure_change_cnt)
+        {
+            /*TODO: Exclude irrelevant (non-rxd) structural changes*/
+            /*Needed for node.include_flux*/
+            _setup_matrices();
+        }
         switch (method) {
         case 0:
             _setup();
@@ -1216,17 +1195,23 @@ extern "C" void remove_species_atolscale(int id)
     }
 }
 
-extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
+extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;
+    free_zvi_child();
     _rxd_num_zvi = num_zvi;
-    _rxd_zero_volume_indices = zvi;
+    if (_rxd_zero_volume_indices != NULL)
+        free(_rxd_zero_volume_indices);
+    if (num_zvi == 0)
+        _rxd_zero_volume_indices = NULL;
+    else
+        _rxd_zero_volume_indices = (long*)allocopy(zvi, num_zvi * sizeof(long));
     dt_ptr = &nrn_threads->_dt;
     t_ptr = &nrn_threads->_t;
-    h_t_ptr = h_t_ref->u.px_;
-    h_dt_ptr = h_dt_ref->u.px_;
     set_num_threads(NUM_THREADS);
+    initialized = TRUE;
+    prev_structure_change_cnt = structure_change_cnt;
 }
 
 void start_threads(const int n)
@@ -1616,7 +1601,7 @@ void _rhs_variable_step(const double* p1, double* p2)
     }
     else
     {
-        memcpy(states,my_states,sizeof(double)*num_states); //Invalid read & write of size 8
+        memcpy(states,my_states,sizeof(double)*num_states);
     }
 
     if(diffusion)
