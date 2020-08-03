@@ -163,13 +163,14 @@ endif()
 # =============================================================================
 # Setup Sphinx documentation
 # =============================================================================
-add_custom_target(
-        prepare_docs
-        COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-)
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
+  add_custom_target(
+          prepare_docs
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+  )
+
   set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
   set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
 
@@ -185,11 +186,19 @@ endif()
 # =============================================================================
 # Build full docs
 # =============================================================================
-add_custom_target(
-        docs
-        COMMENT "Generating full documentation"
-)
-add_dependencies(docs doxygen prepare_docs sphinx)
+if(DOXYGEN_FOUND AND SPHINX_FOUND)
+  add_custom_target(
+          docs
+          COMMENT "Generating full documentation"
+  )
+  add_dependencies(docs doxygen prepare_docs sphinx)
+else()
+  add_custom_target(
+    docs
+    VERBATIM COMMAND echo "Please install docs requirements (see docs/README.md)!"
+    COMMENT "Documentation generation not possible!"
+  )
+endif()
 
 # =============================================================================
 # Enable MPI
