@@ -183,6 +183,15 @@ if(SPHINX_FOUND)
 endif()
 
 # =============================================================================
+# Build full docs
+# =============================================================================
+add_custom_target(
+        docs
+        COMMENT "Generating full documentation"
+)
+add_dependencies(docs doxygen prepare_docs sphinx)
+
+# =============================================================================
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
@@ -477,7 +486,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make docs     | Build the API documentation")
+  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, prepare_docs, sphinx")
   message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")

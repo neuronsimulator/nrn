@@ -30,12 +30,13 @@ pip3 install --user -r docs/docs_requirements.txt --upgrade
 
 Then in your CMake build folder:
 ```
-make doxygen
-make prepare_docs
-make sphinx
+make docs
 ```  
 That will build everything in the `build/docs` folder and you can then open `index.html` locally.
 
-Sidenotes:
- * these actions can be observed in [.travis.yml](../.travis.yml)
- * `prepare_docs` converts jupyter notebooks to html
+When working locally on documentation, be aware of the following targets to speed up building process:
+
+* `doxygen` - build the API documentation only
+* `prepare_docs` - convert jupyter notebooks to html, see [.prepare_docs.sh](.prepare_docs.sh)
+* `sphinx` - build Sphinx documentation
+
