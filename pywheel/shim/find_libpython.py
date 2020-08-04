@@ -84,7 +84,8 @@ def _linked_libpython_unix():
     dlinfo = Dl_info()
     retcode = libdl.dladdr(
         ctypes.cast(ctypes.pythonapi.Py_GetVersion, ctypes.c_void_p),
-        ctypes.pointer(dlinfo))
+        ctypes.pointer(dlinfo),
+    )
     if retcode == 0:  # means error
         return None
     path = os.path.realpath(dlinfo.dli_fname.decode())
@@ -106,9 +107,9 @@ def library_name(name, suffix=SHLIB_SUFFIX, is_windows=is_windows):
     'python37'
     """
     if not is_windows and name.startswith("lib"):
-        name = name[len("lib"):]
+        name = name[len("lib") :]
     if suffix and name.endswith(suffix):
-        name = name[:-len(suffix)]
+        name = name[: -len(suffix)]
     return name
 
 
@@ -132,9 +133,11 @@ def uniquifying(items):
 
 def uniquified(func):
     """ Wrap iterator returned from `func` by `uniquifying`. """
+
     @functools.wraps(func)
     def wrapper(*args, **kwds):
         return uniquifying(func(*args, **kwds))
+
     return wrapper
 
 
@@ -159,10 +162,15 @@ def candidate_names(suffix=SHLIB_SUFFIX):
     sysdata = dict(
         v=sys.version_info,
         # VERSION is X.Y in Linux/macOS and XY in Windows:
-        VERSION=(sysconfig.get_config_var("VERSION") or
-                 "{v.major}.{v.minor}".format(v=sys.version_info)),
-        ABIFLAGS=(sysconfig.get_config_var("ABIFLAGS") or
-                  sysconfig.get_config_var("abiflags") or ""),
+        VERSION=(
+            sysconfig.get_config_var("VERSION")
+            or "{v.major}.{v.minor}".format(v=sys.version_info)
+        ),
+        ABIFLAGS=(
+            sysconfig.get_config_var("ABIFLAGS")
+            or sysconfig.get_config_var("abiflags")
+            or ""
+        ),
     )
 
     for stem in [
@@ -172,7 +180,6 @@ def candidate_names(suffix=SHLIB_SUFFIX):
         "python",
     ]:
         yield dlprefix + stem + suffix
-
 
 
 @uniquified
@@ -190,8 +197,8 @@ def candidate_paths(suffix=SHLIB_SUFFIX):
 
     # List candidates for directories in which libpython may exist
     lib_dirs = []
-    append_truthy(lib_dirs, sysconfig.get_config_var('LIBPL'))
-    append_truthy(lib_dirs, sysconfig.get_config_var('srcdir'))
+    append_truthy(lib_dirs, sysconfig.get_config_var("LIBPL"))
+    append_truthy(lib_dirs, sysconfig.get_config_var("srcdir"))
     append_truthy(lib_dirs, sysconfig.get_config_var("LIBDIR"))
 
     # LIBPL seems to be the right config_var to use.  It is the one
@@ -203,9 +210,9 @@ def candidate_paths(suffix=SHLIB_SUFFIX):
     if is_windows:
         lib_dirs.append(os.path.join(os.path.dirname(sys.executable)))
     else:
-        lib_dirs.append(os.path.join(
-            os.path.dirname(os.path.dirname(sys.executable)),
-            "lib"))
+        lib_dirs.append(
+            os.path.join(os.path.dirname(os.path.dirname(sys.executable)), "lib")
+        )
 
     # For macOS:
     append_truthy(lib_dirs, sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"))
@@ -222,6 +229,7 @@ def candidate_paths(suffix=SHLIB_SUFFIX):
     # In macOS and Windows, ctypes.util.find_library returns a full path:
     for basename in lib_basenames:
         yield ctypes.util.find_library(library_name(basename))
+
 
 # Possibly useful links:
 # * https://packages.ubuntu.com/bionic/amd64/libpython3.6/filelist
@@ -249,8 +257,7 @@ def normalize_path(path, suffix=SHLIB_SUFFIX, is_apple=is_apple):
     if os.path.exists(path + suffix):
         return os.path.realpath(path + suffix)
     if is_apple:
-        return normalize_path(_remove_suffix_apple(path),
-                              suffix=".so", is_apple=False)
+        return normalize_path(_remove_suffix_apple(path), suffix=".so", is_apple=False)
     return None
 
 
@@ -265,9 +272,9 @@ def _remove_suffix_apple(path):
     'libpython3.7'
     """
     if path.endswith(".dylib"):
-        return path[:-len(".dylib")]
+        return path[: -len(".dylib")]
     if path.endswith(".so"):
-        return path[:-len(".so")]
+        return path[: -len(".so")]
     return path
 
 
@@ -312,14 +319,13 @@ def print_all(items):
 
 def cli_find_libpython(cli_op, verbose):
     import logging
+
     # Importing `logging` module here so that using `logging.debug`
     # instead of `logger.debug` outside of this function becomes an
     # error.
 
     if verbose:
-        logging.basicConfig(
-            format="%(levelname)s %(message)s",
-            level=logging.DEBUG)
+        logging.basicConfig(format="%(levelname)s %(message)s", level=logging.DEBUG)
 
     if cli_op == "list-all":
         print_all(finding_libpython())
@@ -336,25 +342,34 @@ def cli_find_libpython(cli_op, verbose):
 
 def main(args=None):
     import argparse
-    parser = argparse.ArgumentParser(
-        description=__doc__)
+
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--verbose", "-v", action="store_true",
-        help="Print debugging information.")
+        "--verbose", "-v", action="store_true", help="Print debugging information."
+    )
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--list-all",
-        action="store_const", dest="cli_op", const="list-all",
-        help="Print list of all paths found.")
+        action="store_const",
+        dest="cli_op",
+        const="list-all",
+        help="Print list of all paths found.",
+    )
     group.add_argument(
         "--candidate-names",
-        action="store_const", dest="cli_op", const="candidate-names",
-        help="Print list of candidate names of libpython.")
+        action="store_const",
+        dest="cli_op",
+        const="candidate-names",
+        help="Print list of candidate names of libpython.",
+    )
     group.add_argument(
         "--candidate-paths",
-        action="store_const", dest="cli_op", const="candidate-paths",
-        help="Print list of candidate paths of libpython.")
+        action="store_const",
+        dest="cli_op",
+        const="candidate-paths",
+        help="Print list of candidate paths of libpython.",
+    )
 
     ns = parser.parse_args(args)
     parser.exit(cli_find_libpython(**vars(ns)))

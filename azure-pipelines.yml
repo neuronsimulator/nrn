@@ -133,6 +133,8 @@ jobs:
       source ./venv/bin/activate
       pip install --upgrade pip
       pip install dist/*.whl
+      # TODO : change this when we fix the issue with nmodl module
+      export PYTHONPATH=$(pwd)/venv/lib/python3.8/site-packages:$PYTHONPATH
       nmodl $(Build.Repository.LocalPath)/test/integration/mod/cabpump.mod sympy --analytic
       rm cabpump.cpp
     displayName: 'Build and test pywheels'

@@ -89,6 +89,13 @@ include(PythonLinkHelper)
 include(RpathHelper)
 
 # =============================================================================
+# Adjust install prefix for wheel
+# =============================================================================
+if(NOT LINK_AGAINST_PYTHON)
+  set(NMODL_INSTALL_DIR_SUFFIX "nmodl/.data/")
+endif()
+
+# =============================================================================
 # Find required python packages
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
@@ -194,4 +201,4 @@ add_subdirectory(src/solver)
 # =============================================================================
 # Install unit database, examples and utility scripts from share
 # =============================================================================
-install(DIRECTORY share/ DESTINATION share)
+install(DIRECTORY share/ DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share)

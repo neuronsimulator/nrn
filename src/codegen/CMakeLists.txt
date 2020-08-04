@@ -34,4 +34,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc
 # =============================================================================
 # Install include files
 # =============================================================================
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc DESTINATION include/nmodl)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}include/nmodl)

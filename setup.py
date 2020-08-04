@@ -98,16 +98,10 @@ cmake_args = ["-DPYTHON_EXECUTABLE=" + sys.executable]
 if "bdist_wheel" in sys.argv:
     cmake_args.append("-DLINK_AGAINST_PYTHON=FALSE")
 
-
-def exclude_nmodl(cmake_manifest):
-    return list(filter(lambda name: not name.endswith('bin/nmodl'), cmake_manifest))
-
-
 # For CI, we want to build separate wheel
 package_name = 'NMODL'
 if "NMODL_NIGHTLY_TAG" in os.environ:
     package_name += os.environ['NMODL_NIGHTLY_TAG']
-
 
 setup(
     name=package_name,
@@ -118,7 +112,6 @@ setup(
     long_description="",
     packages=["nmodl"],
     scripts=["pywheel/shim/nmodl", "pywheel/shim/find_libpython.py"],
-    cmake_process_manifest_hook=exclude_nmodl,
     include_package_data=True,
     cmake_minimum_required_version="3.3.0",
     cmake_args=cmake_args,

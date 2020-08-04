@@ -26,5 +26,5 @@ add_dependencies(nmodl _nmodl pywrapper)
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl DESTINATION bin)
-install(FILES nmodl.hpp DESTINATION include)
+install(TARGETS nmodl DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin)
+install(FILES nmodl.hpp DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}include)
