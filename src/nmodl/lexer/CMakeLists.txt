@@ -189,10 +189,12 @@ target_link_libraries(lexer fmt::fmt)
 target_link_libraries(nmodl_lexer lexer util)
 target_link_libraries(c_lexer lexer util)
 target_link_libraries(units_lexer lexer util)
+
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl_lexer DESTINATION bin/lexer)
-install(TARGETS c_lexer DESTINATION bin/lexer)
-install(TARGETS units_lexer DESTINATION bin/lexer)
+install(TARGETS nmodl_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer)
+install(TARGETS c_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer)
+install(TARGETS units_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer)
+
 add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES})
