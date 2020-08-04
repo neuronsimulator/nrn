@@ -2,8 +2,10 @@
 # Various project components and their source files
 # =============================================================================
 set(BISON_GENERATED_SOURCE_FILES
+    ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
     ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.hpp
+    ${PROJECT_BINARY_DIR}/src/parser/nmodl/position.hh
     ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.hpp
     ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
