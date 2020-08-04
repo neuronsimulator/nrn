@@ -10,9 +10,7 @@
 
 %code requires
 {
-    #include <string>
-    #include <sstream>
-
+    #include "parser/nmodl/location.hh"
     #include "parser/unit_driver.hpp"
     #include "units/units.hpp"
 }
@@ -52,6 +50,9 @@
 
 /** keep track of the current position within the input */
 %locations
+
+/** specify own location class */
+%define api.location.type {nmodl::parser::location}
 
 %token                  END    0     "end of file"
 %token                  INVALID_TOKEN

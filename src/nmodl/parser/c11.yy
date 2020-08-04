@@ -15,6 +15,7 @@
     #include <sstream>
 
     #include "parser/c11_driver.hpp"
+    #include "parser/nmodl/location.hh"
 }
 
 /** use C++ parser interface of bison */
@@ -52,6 +53,9 @@
 
 /** keep track of the current position within the input */
 %locations
+
+/** specify own location class */
+%define api.location.type {nmodl::parser::location}
 
 %token    <std::string>    IDENTIFIER
 %token    <std::string>    I_CONSTANT

@@ -21,6 +21,7 @@
     #include "parser/diffeq_context.hpp"
     #include "parser/diffeq_driver.hpp"
     #include "parser/diffeq_helper.hpp"
+    #include "parser/nmodl/location.hh"
 }
 
 /** use C++ parser interface of bison */
@@ -34,9 +35,6 @@
 
 /** enable tracing parser for debugging */
 %define parse.trace
-
-/** enable location tracking */
-%locations
 
 /** add extra arguments to yyparse() and yylexe() methods */
 %parse-param {class DiffeqLexer& scanner}
@@ -61,6 +59,8 @@
 /** keep track of the current position within the input */
 %locations
 
+/** specify own location class */
+%define api.location.type {nmodl::parser::location}
 
 %token  <std::string>   ATOM
 %token  <std::string>   NEWLINE
