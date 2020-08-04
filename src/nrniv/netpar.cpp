@@ -37,8 +37,8 @@ static int n_bgp_interval;
 static Symbol* netcon_sym_;
 static Gid2PreSyn* gid2out_;
 static Gid2PreSyn* gid2in_;
-static IvocVect* all_spiketvec = nullptr;
-static IvocVect* all_spikegidvec = nullptr;
+static IvocVect* all_spiketvec = NULL;
+static IvocVect* all_spikegidvec = NULL;
 static double t_exchange_;
 static double dt1_; // 1/dt
 static void alloc_space();
@@ -68,7 +68,15 @@ extern Object* nrn_gid2obj(int);
 extern PreSyn* nrn_gid2presyn(int);
 extern int nrn_gid_exists(int);
 extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
-void nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
+
+/**
+ * @brief NEURON callback used from CORENEURON to transfer all spike vectors after simulation
+ *
+ * @param spiketvec - vector of spikes
+ * @param spikegidvec - vector of gids
+ * @return true if we copy incoming vectors' data
+ */
+int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
 // BGPDMA can be 0,1,2,3,6,7
 // (BGPDMA & 1) > 0 means multisend ISend allowed
@@ -1292,8 +1300,14 @@ void BBS::netpar_solve(double tstop) {
 	tstopunset;
 }
 
-void nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec){
-    if(all_spiketvec != nullptr && all_spikegidvec != nullptr) {
+int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec){
+    /*
+     * if all_spiketvec and all_spikegidvec are set (pc.spike_record with gid=-1 was called) 
+     * and they are still reference counted (obj_->refcount), then copy over incoming vectors
+     */
+    if(all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
+        all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
+        
         all_spiketvec->resize(spiketvec.size());
         all_spikegidvec->resize(spikegidvec.size());
         assert(all_spiketvec->capacity() == all_spikegidvec->capacity());
@@ -1301,7 +1315,9 @@ void nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vec
             all_spiketvec->elem(i) = spiketvec[i];
             all_spikegidvec->elem(i) = spikegidvec[i];
         }
+        return 1;
     }
+    return 0;
 }
 
 

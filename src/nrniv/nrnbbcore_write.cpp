@@ -1869,7 +1869,7 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
 }
 
 extern "C" {
-extern void nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
+extern int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 }
 
 static core2nrn_callback_t cnbs[]  = {
