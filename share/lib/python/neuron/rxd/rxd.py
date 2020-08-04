@@ -544,9 +544,6 @@ def _update_node_data(force=False, newspecies=False):
                 _include_flux(True)
                 _setup_memb_currents()
                 _compile_reactions()
-                if _cvode_object.active():
-                    _cvode_object.re_init()
-
 
             #end#if
 

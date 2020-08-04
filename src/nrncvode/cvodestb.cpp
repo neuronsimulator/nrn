@@ -101,7 +101,11 @@ void nrn_solver_prepare() {
 void cvode_fadvance(double tstop) { // tstop = -1 means single step
 #if USECVODE
 	int err;
+    extern int tree_changed;
 	if (net_cvode_instance) {
+        if (tree_changed) {
+            net_cvode_instance->re_init();
+	    }
 		nrn_random_play();
 		err = net_cvode_instance->solve(tstop);
 		if (err != 0) {
