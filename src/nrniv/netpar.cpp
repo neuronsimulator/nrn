@@ -74,7 +74,7 @@ extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
  *
  * @param spiketvec - vector of spikes
  * @param spikegidvec - vector of gids
- * @return true if we copy incoming vectors' data
+ * @return 1 if CORENEURON shall drop writing `out.dat`; 0 otherwise
  */
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
@@ -1108,12 +1108,12 @@ void BBS::outputcell(int gid) {
 void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
     if (gid >= 0) {
+        all_spiketvec = NULL, all_spikegidvec = NULL; // invalidate global spike vectors
         nrn_assert(gid2out_->find(gid, ps));
         assert(ps);
         ps->record(spikevec, gidvec, gid);
-    }else{ // record all output spikes
-        all_spiketvec = spikevec;
-        all_spikegidvec = gidvec;
+    }else{ // record all output spikes.
+        all_spiketvec = spikevec, all_spikegidvec = gidvec; // track global spike vectors (optimisation)
         NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
             if (ps->output_index_ >= 0) {
                 ps->record(all_spiketvec, all_spikegidvec, ps->output_index_);
@@ -1124,6 +1124,7 @@ void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 
 void BBS::spike_record(IvocVect* gids, IvocVect* spikevec, IvocVect* gidvec) {
 	int sz = vector_capacity(gids);
+    all_spiketvec = NULL, all_spikegidvec = NULL; // invalidate global spike vectors
 	double* pd = vector_vec(gids);
 	for (int i = 0; i < sz; ++i) {
 		PreSyn* ps;
@@ -1301,23 +1302,31 @@ void BBS::netpar_solve(double tstop) {
 }
 
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec){
-    /*
-     * if all_spiketvec and all_spikegidvec are set (pc.spike_record with gid=-1 was called) 
-     * and they are still reference counted (obj_->refcount), then copy over incoming vectors
-     */
-    if(all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
-        all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
-        
-        all_spiketvec->resize(spiketvec.size());
-        all_spikegidvec->resize(spikegidvec.size());
-        assert(all_spiketvec->capacity() == all_spikegidvec->capacity());
-        for(int i = 0; i < all_spiketvec->capacity(); ++i ) {
-            all_spiketvec->elem(i) = spiketvec[i];
-            all_spikegidvec->elem(i) = spikegidvec[i];
+    assert(spiketvec.size() == spikegidvec.size());
+    if( spiketvec.size() ) {
+        /* Optimisation:
+         *  if all_spiketvec and all_spikegidvec are set (pc.spike_record with gid=-1 was called)
+         *  and they are still reference counted (obj_->refcount), then copy over incoming vectors.
+         */
+        if (all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
+            all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
+
+            all_spiketvec->resize(spiketvec.size());
+            all_spikegidvec->resize(spikegidvec.size());
+            for (int i = 0; i < all_spiketvec->capacity(); ++i) {
+                all_spiketvec->elem(i) = spiketvec[i];
+                all_spikegidvec->elem(i) = spikegidvec[i];
+            }
+        }else{ // different underlying vectors for PreSyns
+            for (int i = 0; i < spikegidvec.size(); ++i ) {
+                PreSyn* ps;
+                if (gid2out_->find(spikegidvec[i], ps)) {
+                    ps->record(spiketvec[i]);
+                }
+            }
         }
-        return 1;
     }
-    return 0;
+    return 1;
 }
 
 
