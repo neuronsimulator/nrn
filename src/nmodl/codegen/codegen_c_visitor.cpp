@@ -1638,12 +1638,11 @@ void CodegenCVisitor::print_function(ast::FunctionBlock& node) {
 }
 
 std::string CodegenCVisitor::find_var_unique_name(const std::string& original_name) const {
-    auto singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance(
-        UseNumbersInString::WithNumbers);
+    auto& singleton_random_string_class = utils::SingletonRandomString<4>::instance();
     std::string unique_name = original_name;
-    if (singleton_random_string_class->random_string_exists(original_name)) {
+    if (singleton_random_string_class.random_string_exists(original_name)) {
         unique_name = original_name;
-        unique_name += "_" + singleton_random_string_class->get_random_string(original_name);
+        unique_name += "_" + singleton_random_string_class.get_random_string(original_name);
     };
     return unique_name;
 }

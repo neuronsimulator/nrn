@@ -107,10 +107,9 @@ class SingletonRandomString {
     SingletonRandomString& operator=(SingletonRandomString const&) = delete;
 
     /// Function to instantiate the SingletonRandomString class
-    static std::shared_ptr<SingletonRandomString> instance(const UseNumbersInString use_numbers_) {
-        static std::shared_ptr<SingletonRandomString> s{new SingletonRandomString};
-        s->use_numbers = use_numbers_;
-        return s;
+    static SingletonRandomString& instance() {
+        static SingletonRandomString srs;
+        return srs;
     }
 
     /** Check if there is a random string assigned as suffix for the var_name variable
@@ -135,9 +134,10 @@ class SingletonRandomString {
      * and assign a new one, else simply insert a new random string for var_name
      *
      * @param var_name Variable name for which to reset the random string
+     * @param use_numbers control whether random string can include numeric characters or not
      * @return Random string assigned to var_name
      */
-    std::string reset_random_string(const std::string& var_name) {
+    std::string reset_random_string(const std::string& var_name, UseNumbersInString use_numbers) {
         if (random_string_exists(var_name)) {
             random_strings.erase(var_name);
             random_strings.insert({var_name, generate_random_string(SIZE, use_numbers)});
@@ -152,15 +152,12 @@ class SingletonRandomString {
     /// \{
 
     /// Constructor used by instance()
-    SingletonRandomString() {}
+    SingletonRandomString() = default;
 
     /// \}
 
     /// std::map that keeps the random strings assigned to variables as suffix
     std::map<std::string, std::string> random_strings;
-
-    /// bool to control if random string will include numbers or not
-    UseNumbersInString use_numbers = WithNumbers;
 };
 
 /** @} */  // end of utils
