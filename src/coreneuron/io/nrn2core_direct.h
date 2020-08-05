@@ -106,6 +106,9 @@ extern void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double
 
 /* Filled the Vector data arrays and send back the sizes at end of run */
 extern void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** vpr, double t);
+
+/* send all spikes vectors to NEURON */  
+extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::vector<int>& gidvec);
 }
 
 #endif /* nrn2core_direct_h */

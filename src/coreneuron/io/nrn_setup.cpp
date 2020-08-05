@@ -146,6 +146,8 @@ void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
 
 void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** vpr, double t);
 
+int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::vector<int>& gidvec);
+
 // file format defined in cooperation with nrncore/src/nrniv/nrnbbcore_write.cpp
 // single integers are ascii one per line. arrays are binary int or double
 // Note that regardless of the gid contents of a group, since all gids are

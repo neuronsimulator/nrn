@@ -36,6 +36,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
+#include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/utils/nrnmutdec.h"
@@ -45,6 +46,18 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef ENABLE_SONATA_REPORTS
 #include "bbp/sonata/reports.h"
 #endif  // ENABLE_SONATA_REPORTS
+
+/**
+ * @brief Return all spike vectors to NEURON
+ *
+ * @param spiketvec - vector of spikes at the end of CORENEURON simulation
+ * @param spikegidvec - vector of gids at the end of CORENEURON simulation
+ * @return true if we are in embedded_run and NEURON has successfully retrieved the vectors
+ */
+static bool all_spikes_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec) {
+    return corenrn_embedded && nrn2core_all_spike_vectors_return_ &&
+            (*nrn2core_all_spike_vectors_return_)(spiketvec, spikegidvec);
+}
 
 namespace coreneuron {
 
@@ -168,6 +181,7 @@ void output_spikes_parallel(const char* outpath, const std::string& population_n
     sonata_write_spikes(population_name.data(), spikevec_time.data(), spikevec_time.size(), spikevec_gid.data(),
                         spikevec_gid.size(), outpath);
 #endif  // ENABLE_SONATA_REPORTS
+
     sort_spikes(spikevec_time, spikevec_gid);
     nrnmpi_barrier();
 
@@ -226,6 +240,7 @@ void output_spikes_parallel(const char* outpath, const std::string& population_n
 #endif
 
 void output_spikes_serial(const char* outpath) {
+
     std::stringstream ss;
     ss << outpath << "/out.dat";
     std::string fname = ss.str();
@@ -252,6 +267,9 @@ void output_spikes_serial(const char* outpath) {
 }
 
 void output_spikes(const char* outpath, const std::string& population_name) {
+    // try to transfer spikes to NEURON. If successfull, don't write out.dat
+    if (all_spikes_return(spikevec_time, spikevec_gid))
+        return;
 #if NRNMPI
     if (nrnmpi_initialized()) {
         output_spikes_parallel(outpath, population_name);
