@@ -3,7 +3,9 @@ import sys
 
 from neuron import h, gui
 
-def test_spikes():
+def test_spikes(use_mpi4py=False):
+    if use_mpi4py:
+        from mpi4py import MPI
     h('''create soma''')
     h.soma.L=5.6419
     h.soma.diam=5.6419
@@ -40,40 +42,31 @@ def test_spikes():
     nrn_spike_t = nrn_spike_t.to_python()
     nrn_spike_gids = nrn_spike_gids.to_python()
 
-    # CORENEURON spike_record(-1):
+    # CORENEURON spike_record(-1) / spike_record(gidlist):
     from neuron import coreneuron
     coreneuron.enable = True
+    coreneuron.verbose = 0
     h.stdinit()
     corenrn_all_spike_t = h.Vector()
     corenrn_all_spike_gids = h.Vector()
     
-    pc.spike_record(-1, corenrn_all_spike_t, corenrn_all_spike_gids)
+    pc.spike_record( -1 if pc.id() == 0 else (pc.id()),
+                     corenrn_all_spike_t,
+                     corenrn_all_spike_gids )
     pc.psolve(h.tstop)
 
     corenrn_all_spike_t = corenrn_all_spike_t.to_python()
     corenrn_all_spike_gids = corenrn_all_spike_gids.to_python()
 
 
-    # CORENEURON spike_record(gidlist):
-    h.stdinit()
-    corenrn_gidlist_spike_t = h.Vector()
-    corenrn_gidlist_spike_gids = h.Vector()
-    pc.spike_record((pc.id()+1), corenrn_gidlist_spike_t, corenrn_gidlist_spike_gids)
-    pc.psolve(h.tstop)  
-
-    corenrn_gidlist_spike_t = corenrn_gidlist_spike_t.to_python()
-    corenrn_gidlist_spike_gids = corenrn_gidlist_spike_gids.to_python()
-
     # check spikes match
     assert(len(nrn_spike_t)) # check we've actually got spikes
     assert(len(nrn_spike_t) == len(nrn_spike_gids)); # matching no. of gids
     assert(nrn_spike_t == corenrn_all_spike_t)
     assert(nrn_spike_gids == corenrn_all_spike_gids)
-    assert(corenrn_gidlist_spike_t == corenrn_all_spike_t)
-    assert(corenrn_gidlist_spike_gids == corenrn_all_spike_gids)
 
     h.quit()
   
 
 if __name__ == "__main__":
-    test_spikes()
+    test_spikes('mpi4py' in sys.argv)
