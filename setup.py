@@ -10,18 +10,26 @@ import os
 import subprocess
 import sys
 
-import subprocess
-import os
-
 from setuptools import Command
 from skbuild import setup
+
+"""
+A generic wrapper to access nmodl binaries from a python installation
+Please create a softlink with the binary name to be called.
+"""
+import stat
+from pkg_resources import working_set
+from pywheel.shim.find_libpython import find_libpython
 
 
 # Main source of the version. Dont rename, used by Cmake
 try:
-    v = subprocess.run(['git', 'describe', '--tags'],
-                       stdout=subprocess.PIPE).stdout.strip().decode()
-    __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
+    v = (
+        subprocess.run(["git", "describe", "--tags"], stdout=subprocess.PIPE)
+        .stdout.strip()
+        .decode()
+    )
+    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo") from e
 
@@ -52,35 +60,27 @@ class Docs(Command):
     finalize_options = lambda self: None
     initialize_options = lambda self: None
 
-
     def run(self, *args, **kwargs):
         self.run_command("doctest")
         self.run_command("buildhtml")
 
 
-"""
-A generic wrapper to access nmodl binaries from a python installation
-Please create a softlink with the binary name to be called.
-"""
-import os
-import stat
-import sys
-from pkg_resources import working_set
-from pywheel.shim.find_libpython import find_libpython
-
-
 def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
 
-    package_name = 'nmodl'
+    package_name = "nmodl"
 
-    assert package_name in working_set.by_key, "NMODL package not found! Verify PYTHONPATH"
-    NMODL_PREFIX = os.path.join(working_set.by_key[package_name].location, 'nmodl')
-    NMODL_PREFIX_DATA = os.path.join(NMODL_PREFIX, '.data')
-    if sys.platform == "darwin" :
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_PREFIX_DATA, 'libpywrapper.dylib')
+    assert (
+        package_name in working_set.by_key
+    ), "NMODL package not found! Verify PYTHONPATH"
+    NMODL_PREFIX = os.path.join(working_set.by_key[package_name].location, "nmodl")
+    NMODL_PREFIX_DATA = os.path.join(NMODL_PREFIX, ".data")
+    if sys.platform == "darwin":
+        os.environ["NMODL_WRAPLIB"] = os.path.join(
+            NMODL_PREFIX_DATA, "libpywrapper.dylib"
+        )
     else:
-        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_PREFIX_DATA, 'libpywrapper.so')
+        os.environ["NMODL_WRAPLIB"] = os.path.join(NMODL_PREFIX_DATA, "libpywrapper.so")
 
     # find libpython*.so in the system
     os.environ["NMODL_PYLIB"] = find_libpython()
@@ -99,9 +99,9 @@ if "bdist_wheel" in sys.argv:
     cmake_args.append("-DLINK_AGAINST_PYTHON=FALSE")
 
 # For CI, we want to build separate wheel
-package_name = 'NMODL'
+package_name = "NMODL"
 if "NMODL_NIGHTLY_TAG" in os.environ:
-    package_name += os.environ['NMODL_NIGHTLY_TAG']
+    package_name += os.environ["NMODL_NIGHTLY_TAG"]
 
 setup(
     name=package_name,
