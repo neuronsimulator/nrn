@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -25,8 +26,8 @@ class CParser;
 class location;
 
 /**
- * @addtogroup parser
- * @{
+ * \addtogroup parser
+ * \{
  */
 
 /**
@@ -51,10 +52,10 @@ class CDriver {
     bool trace_parser = false;
 
     /// pointer to the lexer instance being used
-    CLexer* lexer = nullptr;
+    std::unique_ptr<CLexer> lexer;
 
     /// pointer to the parser instance being used
-    CParser* parser = nullptr;
+    std::unique_ptr<CParser> parser;
 
     /// print messages from lexer/parser
     bool verbose = false;
@@ -63,41 +64,42 @@ class CDriver {
     /// file or input stream name (used by scanner for position), see todo
     std::string streamname;
 
-    CDriver() = default;
+    CDriver();
     CDriver(bool strace, bool ptrace);
+    ~CDriver();
 
-    void error(const std::string& m);
+    void error(const std::string& m) const;
 
     bool parse_stream(std::istream& in);
     bool parse_string(const std::string& input);
     bool parse_file(const std::string& filename);
-    void scan_string(std::string& text);
+    void scan_string(const std::string& text);
     void add_token(const std::string&);
 
-    void error(const std::string& m, const location& l);
+    void error(const std::string& m, const location& l) const;
 
-    void set_verbose(bool b) {
+    void set_verbose(bool b) noexcept {
         verbose = b;
     }
 
-    bool is_verbose() const {
+    bool is_verbose() const noexcept {
         return verbose;
     }
 
-    bool is_typedef(std::string type) const {
+    bool is_typedef(const std::string& type) const noexcept {
         return typedefs.find(type) != typedefs.end();
     }
 
-    bool is_enum_constant(std::string constant) const {
+    bool is_enum_constant(const std::string& constant) const noexcept {
         return std::find(enum_constants.begin(), enum_constants.end(), constant) !=
                enum_constants.end();
     }
 
-    std::vector<std::string> all_tokens() const {
+    const std::vector<std::string>& all_tokens() const noexcept {
         return tokens;
     }
 
-    bool has_token(std::string token) {
+    bool has_token(const std::string& token) const noexcept {
         if (std::find(tokens.begin(), tokens.end(), token) != tokens.end()) {
             return true;
         }
@@ -105,7 +107,7 @@ class CDriver {
     }
 };
 
-/** @} */  // end of parser
+/** \} */  // end of parser
 
 }  // namespace parser
 }  // namespace nmodl

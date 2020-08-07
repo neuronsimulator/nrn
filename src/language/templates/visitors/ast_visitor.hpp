@@ -27,25 +27,31 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @ingroup visitor_classes
- * @{
+ * \ingroup visitor_classes
+ * \{
  */
 
 /**
  * \brief Concrete visitor for all AST classes
- *
- * This class defines interface for all concrete visitors implementation.
- * Note that this class only provides interface that could be implemented
- * by concrete visitors like ast::AstVisitor.
  */
-class AstVisitor : public Visitor {
+class AstVisitor: public Visitor {
   public:
     {% for node in nodes %}
     void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
     {% endfor %}
 };
 
-/** @} */  // end of visitor_classes
+/**
+ * \brief Concrete constant visitor for all AST classes
+ */
+class ConstAstVisitor: public ConstVisitor {
+  public:
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
+    {% endfor %}
+};
+
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

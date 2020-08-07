@@ -35,7 +35,7 @@ namespace visitor {
  * generating report of all verbatim blocks from all mod files
  * in ModelDB.
  */
-class VerbatimVisitor: public AstVisitor {
+class VerbatimVisitor: public ConstAstVisitor {
   private:
     /// flag to enable/disable printing blocks as we visit them
     bool verbose = false;
@@ -46,11 +46,11 @@ class VerbatimVisitor: public AstVisitor {
   public:
     VerbatimVisitor() = default;
 
-    explicit VerbatimVisitor(bool flag) {
-        verbose = flag;
+    explicit VerbatimVisitor(bool verbose) {
+        this->verbose = verbose;
     }
 
-    void visit_verbatim(ast::Verbatim& node) override;
+    void visit_verbatim(const ast::Verbatim& node) override;
 
     const std::vector<std::string>& verbatim_blocks() const noexcept {
         return blocks;

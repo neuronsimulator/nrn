@@ -26,8 +26,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -55,7 +55,7 @@ namespace visitor {
  *       start_measurement, there should be "empty" ast visitor from
  *       which PerfVisitor should be inherited.
  */
-class PerfVisitor: public AstVisitor {
+class PerfVisitor: public ConstAstVisitor {
   private:
     /// symbol table of current block being visited
     symtab::SymbolTable* current_symtab = nullptr;
@@ -135,17 +135,17 @@ class PerfVisitor: public AstVisitor {
 
     bool symbol_to_skip(const std::shared_ptr<symtab::Symbol>& symbol);
 
-    bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol);
+    bool is_local_variable(const std::shared_ptr<symtab::Symbol>& symbol) const;
 
-    bool is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol);
+    bool is_constant_variable(const std::shared_ptr<symtab::Symbol>& symbol) const;
 
     void count_variables();
 
-    void measure_performance(ast::Ast* node);
+    void measure_performance(const ast::Ast& node);
 
     void print_memory_usage();
 
-    void add_perf_to_printer(utils::PerfStat& perf);
+    void add_perf_to_printer(const utils::PerfStat& perf) const;
 
   public:
     PerfVisitor() = default;
@@ -154,7 +154,7 @@ class PerfVisitor: public AstVisitor {
 
     void compact_json(bool flag);
 
-    utils::PerfStat get_total_perfstat() const noexcept {
+    const utils::PerfStat& get_total_perfstat() const noexcept {
         return total_perf;
     }
 
@@ -178,88 +178,88 @@ class PerfVisitor: public AstVisitor {
         return num_state_variables;
     }
 
-    void visit_binary_expression(ast::BinaryExpression& node) override;
+    void visit_binary_expression(const ast::BinaryExpression& node) override;
 
-    void visit_function_call(ast::FunctionCall& node) override;
+    void visit_function_call(const ast::FunctionCall& node) override;
 
-    void visit_name(ast::Name& node) override;
+    void visit_name(const ast::Name& node) override;
 
-    void visit_prime_name(ast::PrimeName& node) override;
+    void visit_prime_name(const ast::PrimeName& node) override;
 
-    void visit_solve_block(ast::SolveBlock& node) override;
+    void visit_solve_block(const ast::SolveBlock& node) override;
 
-    void visit_statement_block(ast::StatementBlock& node) override;
+    void visit_statement_block(const ast::StatementBlock& node) override;
 
-    void visit_unary_expression(ast::UnaryExpression& node) override;
+    void visit_unary_expression(const ast::UnaryExpression& node) override;
 
-    void visit_if_statement(ast::IfStatement& node) override;
+    void visit_if_statement(const ast::IfStatement& node) override;
 
-    void visit_else_if_statement(ast::ElseIfStatement& node) override;
+    void visit_else_if_statement(const ast::ElseIfStatement& node) override;
 
-    void visit_program(ast::Program& node) override;
+    void visit_program(const ast::Program& node) override;
 
-    void visit_plot_block(ast::PlotBlock& node) override;
+    void visit_plot_block(const ast::PlotBlock& node) override;
 
     /// skip initial block under net_receive block
-    void visit_initial_block(ast::InitialBlock& node) override;
+    void visit_initial_block(const ast::InitialBlock& node) override;
 
-    void visit_constructor_block(ast::ConstructorBlock& node) override;
+    void visit_constructor_block(const ast::ConstructorBlock& node) override;
 
-    void visit_destructor_block(ast::DestructorBlock& node) override;
+    void visit_destructor_block(const ast::DestructorBlock& node) override;
 
-    void visit_derivative_block(ast::DerivativeBlock& node) override;
+    void visit_derivative_block(const ast::DerivativeBlock& node) override;
 
-    void visit_linear_block(ast::LinearBlock& node) override;
+    void visit_linear_block(const ast::LinearBlock& node) override;
 
-    void visit_non_linear_block(ast::NonLinearBlock& node) override;
+    void visit_non_linear_block(const ast::NonLinearBlock& node) override;
 
-    void visit_discrete_block(ast::DiscreteBlock& node) override;
+    void visit_discrete_block(const ast::DiscreteBlock& node) override;
 
-    void visit_partial_block(ast::PartialBlock& node) override;
+    void visit_partial_block(const ast::PartialBlock& node) override;
 
-    void visit_function_table_block(ast::FunctionTableBlock& node) override;
+    void visit_function_table_block(const ast::FunctionTableBlock& node) override;
 
-    void visit_function_block(ast::FunctionBlock& node) override;
+    void visit_function_block(const ast::FunctionBlock& node) override;
 
-    void visit_procedure_block(ast::ProcedureBlock& node) override;
+    void visit_procedure_block(const ast::ProcedureBlock& node) override;
 
-    void visit_net_receive_block(ast::NetReceiveBlock& node) override;
+    void visit_net_receive_block(const ast::NetReceiveBlock& node) override;
 
-    void visit_breakpoint_block(ast::BreakpointBlock& node) override;
+    void visit_breakpoint_block(const ast::BreakpointBlock& node) override;
 
-    void visit_terminal_block(ast::TerminalBlock& node) override;
+    void visit_terminal_block(const ast::TerminalBlock& node) override;
 
-    void visit_before_block(ast::BeforeBlock& node) override;
+    void visit_before_block(const ast::BeforeBlock& node) override;
 
-    void visit_after_block(ast::AfterBlock& node) override;
+    void visit_after_block(const ast::AfterBlock& node) override;
 
-    void visit_ba_block(ast::BABlock& node) override;
+    void visit_ba_block(const ast::BABlock& node) override;
 
-    void visit_for_netcon(ast::ForNetcon& node) override;
+    void visit_for_netcon(const ast::ForNetcon& node) override;
 
-    void visit_kinetic_block(ast::KineticBlock& node) override;
+    void visit_kinetic_block(const ast::KineticBlock& node) override;
 
-    void visit_match_block(ast::MatchBlock& node) override;
+    void visit_match_block(const ast::MatchBlock& node) override;
 
     /// certain constructs needs to be excluded from usage counting
     /// and hence need to provide empty implementations
 
-    void visit_conductance_hint(ast::ConductanceHint& /*node*/) override {}
+    void visit_conductance_hint(const ast::ConductanceHint& /*node*/) override {}
 
-    void visit_local_list_statement(ast::LocalListStatement& /*node*/) override {}
+    void visit_local_list_statement(const ast::LocalListStatement& /*node*/) override {}
 
-    void visit_suffix(ast::Suffix& /*node*/) override {}
+    void visit_suffix(const ast::Suffix& /*node*/) override {}
 
-    void visit_useion(ast::Useion& /*node*/) override {}
+    void visit_useion(const ast::Useion& /*node*/) override {}
 
-    void visit_valence(ast::Valence& /*node*/) override {}
+    void visit_valence(const ast::Valence& /*node*/) override {}
 
     void print(std::ostream& ss) const {
         ss << stream.str();
     }
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

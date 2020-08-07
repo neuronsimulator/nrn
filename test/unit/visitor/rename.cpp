@@ -41,7 +41,7 @@ static std::string run_var_rename_visitor(
     NmodlPrintVisitor(stream).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return stream.str();
 }

@@ -15,7 +15,7 @@
 namespace nmodl {
 namespace visitor {
 
-void VerbatimVisitor::visit_verbatim(ast::Verbatim& node) {
+void VerbatimVisitor::visit_verbatim(const ast::Verbatim& node) {
     std::string block;
     const auto& statement = node.get_statement();
     if (statement) {

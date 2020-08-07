@@ -10,14 +10,13 @@
 #include "ast/all.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
-#include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
+
 
 using namespace fmt::literals;
 
 namespace nmodl {
 namespace codegen {
-
-using visitor::AstLookupVisitor;
 
 const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
     CodegenCompatibilityVisitor::unhandled_ast_types_func(
@@ -92,7 +91,7 @@ std::string CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write(
     ast::Ast& node,
     const std::shared_ptr<ast::Ast>& ast_node) {
     std::stringstream error_message_no_bbcore_read_write;
-    auto verbatim_nodes = AstLookupVisitor().lookup(node, AstNodeType::VERBATIM);
+    const auto& verbatim_nodes = collect_nodes(node, {AstNodeType::VERBATIM});
     auto found_bbcore_read = false;
     auto found_bbcore_write = false;
     for (const auto& it: verbatim_nodes) {
@@ -140,7 +139,7 @@ bool CodegenCompatibilityVisitor::find_unhandled_ast_nodes(Ast& node) {
     for (auto kv: unhandled_ast_types_func) {
         unhandled_ast_types.push_back(kv.first);
     }
-    unhandled_ast_nodes = AstLookupVisitor().lookup(node, unhandled_ast_types);
+    unhandled_ast_nodes = collect_nodes(node, unhandled_ast_types);
 
     std::stringstream ss;
     for (const auto& it: unhandled_ast_nodes) {

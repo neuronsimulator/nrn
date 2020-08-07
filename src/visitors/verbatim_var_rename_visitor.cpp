@@ -76,17 +76,17 @@ std::string VerbatimVarRenameVisitor::rename_variable(const std::string& name) {
  */
 void VerbatimVarRenameVisitor::visit_verbatim(ast::Verbatim& node) {
     const auto& statement = node.get_statement();
-    auto text = statement->eval();
+    const auto& text = statement->eval();
     parser::CDriver driver;
 
     driver.scan_string(text);
-    auto tokens = driver.all_tokens();
+    const auto& tokens = driver.all_tokens();
 
-    std::string result;
+    std::ostringstream oss;
     for (const auto& token: tokens) {
-        result += rename_variable(token);
+        oss << rename_variable(token);
     }
-    statement->set(result);
+    statement->set(oss.str());
 }
 
 }  // namespace visitor

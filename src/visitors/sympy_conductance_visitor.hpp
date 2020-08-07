@@ -80,16 +80,16 @@ class SympyConductanceVisitor: public AstVisitor {
     std::map<std::string, std::size_t> binary_expr_index;
 
     /// use ion ast nodes
-    std::vector<std::shared_ptr<ast::Ast>> use_ion_nodes;
+    std::vector<std::shared_ptr<const ast::Ast>> use_ion_nodes;
 
     /// non specific currents
-    std::vector<std::shared_ptr<ast::Ast>> nonspecific_nodes;
+    std::vector<std::shared_ptr<const ast::Ast>> nonspecific_nodes;
 
     std::vector<std::string> generate_statement_strings(ast::BreakpointBlock& node);
     void lookup_useion_statements();
     void lookup_nonspecific_statements();
 
-    static std::string to_nmodl_for_sympy(ast::Ast& node);
+    static std::string to_nmodl_for_sympy(const ast::Ast& node);
 
   public:
     SympyConductanceVisitor() = default;

@@ -13,7 +13,7 @@
 #include "pybind/pyembed.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitors/lookup_visitor.hpp"
+#include "utils/string_utils.hpp"
 #include "visitors/visitor_utils.hpp"
 
 
@@ -47,8 +47,9 @@ void SympySolverVisitor::init_block_data(ast::Node* node) {
             vars.insert(var_name);
         }
     }
-    AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
-    for (const auto& call: lv.lookup(*node->get_statement_block())) {
+    const auto& fcall_nodes = collect_nodes(*node->get_statement_block(),
+                                            {ast::AstNodeType::FUNCTION_CALL});
+    for (const auto& call: fcall_nodes) {
         function_calls.insert(call->get_node_name());
     }
 }
@@ -603,11 +604,10 @@ void SympySolverVisitor::visit_program(ast::Program& node) {
     global_vars = get_global_vars(node);
 
     // get list of solve statements with names & methods
-    AstLookupVisitor ast_lookup_visitor;
-    auto solve_block_nodes = ast_lookup_visitor.lookup(node, ast::AstNodeType::SOLVE_BLOCK);
+    const auto& solve_block_nodes = collect_nodes(node, {ast::AstNodeType::SOLVE_BLOCK});
     for (const auto& block: solve_block_nodes) {
-        if (auto block_ptr = std::dynamic_pointer_cast<ast::SolveBlock>(block)) {
-            const auto block_name = block_ptr->get_block_name()->get_value()->eval();
+        if (auto block_ptr = std::dynamic_pointer_cast<const ast::SolveBlock>(block)) {
+            const auto& block_name = block_ptr->get_block_name()->get_value()->eval();
             if (block_ptr->get_method()) {
                 // Note: solve method name is an optional parameter
                 // LINEAR and NONLINEAR blocks do not have solve method specified

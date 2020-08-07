@@ -23,25 +23,25 @@ namespace test {
 using namespace fmt::literals;
 using namespace ast;
 
-int CheckParentVisitor::check_ast(Ast* node) {
+int CheckParentVisitor::check_ast(const Ast& node) {
 
     parent = nullptr;
 
-    node->accept(*this);
+    node.accept(*this);
 
     return 0;
 }
 
-void CheckParentVisitor::check_parent(ast::Ast* node) const {
+void CheckParentVisitor::check_parent(const ast::Ast& node) const {
     if (!parent) {
-        if (is_root_with_null_parent && node->get_parent()) {
+        if (is_root_with_null_parent && node.get_parent()) {
             const auto& parent_type = parent->get_node_type_name();
             throw std::runtime_error("root->parent: {} is set when it should be nullptr"_format(parent_type));
         }
     } else {
-        if (parent != node->get_parent()) {
-            std::string parent_type = (parent  == nullptr) ? "nullptr" : parent->get_node_type_name();
-            std::string node_parent_type = (node->get_parent() == nullptr) ? std::string("nullptr") : node->get_parent()->get_node_type_name();
+        if (parent != node.get_parent()) {
+            const std::string parent_type = (parent  == nullptr) ? "nullptr" : parent->get_node_type_name();
+            const std::string node_parent_type = (node.get_parent() == nullptr) ? "nullptr" : node.get_parent()->get_node_type_name();
             throw std::runtime_error("parent: {} and child->parent: {} missmatch"_format(parent_type, node_parent_type));
         }
     }
@@ -49,7 +49,9 @@ void CheckParentVisitor::check_parent(ast::Ast* node) const {
 
 
 {% for node in nodes %}
-void CheckParentVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
+void CheckParentVisitor::visit_{{ node.class_name|snake_case }}(const {{ node.class_name }}& node) {
+    // check the node
+    check_parent(node);
 
     // Set this node as parent. and go down the tree
     parent = &node;

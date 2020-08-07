@@ -39,7 +39,7 @@ std::string run_loop_unroll_visitor(const std::string& text) {
     ConstantFolderVisitor().visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return to_nmodl(ast, {AstNodeType::DEFINE});
 }

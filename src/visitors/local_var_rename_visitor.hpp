@@ -22,8 +22,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -75,7 +75,7 @@ class LocalVarRenameVisitor: public AstVisitor {
     void visit_statement_block(ast::StatementBlock& node) override;
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

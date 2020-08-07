@@ -22,8 +22,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -54,7 +54,7 @@ namespace visitor {
  * replacing tau and beta with local variables. Many mod files from BlueBrain
  * and other open source projects could be hugely benefited by inlining pass.
  * The goal of this pass is to implement procedure and function inlining in
- * the nmodl programs. After inlining we should be asble to translate AST back
+ * the nmodl programs. After inlining we should be able to translate AST back
  * to "transformed" nmodl program which can be compiled and run by NEURON or
  * CoreNEURON simulator.
  *
@@ -159,7 +159,7 @@ class InlineVisitor: public AstVisitor {
     std::map<std::string, int> inlined_variables;
 
     /// true if given statement block can be inlined
-    bool can_inline_block(ast::StatementBlock& block);
+    bool can_inline_block(const ast::StatementBlock& block) const;
 
     /// true if statement can be replaced with inlined body
     /// this is possible for standalone function/procedure call as statement
@@ -175,7 +175,7 @@ class InlineVisitor: public AstVisitor {
                               ast::FunctionCall& node,
                               ast::StatementBlock& caller);
 
-    /// add assignement statements into given statement block to inline arguments
+    /// add assignment statements into given statement block to inline arguments
     void inline_arguments(ast::StatementBlock& inlined_block,
                           const ast::ArgumentVector& callee_parameters,
                           const ast::ExpressionVector& caller_expressions);
@@ -196,7 +196,7 @@ class InlineVisitor: public AstVisitor {
     void visit_program(ast::Program& node) override;
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

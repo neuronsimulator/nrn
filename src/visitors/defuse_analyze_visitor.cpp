@@ -50,8 +50,7 @@ std::string to_string(DUState state) {
 }
 
 std::ostream& operator<<(std::ostream& os, DUState state) {
-    os << to_string(state);
-    return os;
+    return os << to_string(state);
 }
 
 /// DUInstance to JSON string
@@ -60,7 +59,7 @@ void DUInstance::print(JSONPrinter& printer) const {
         printer.add_node(to_string(state));
     } else {
         printer.push_block(to_string(state));
-        for (auto& inst: children) {
+        for (const auto& inst: children) {
             inst.print(printer);
         }
         printer.pop_block();
@@ -69,12 +68,12 @@ void DUInstance::print(JSONPrinter& printer) const {
 
 /// DUChain to JSON string
 std::string DUChain::to_string(bool compact) const {
-    std::stringstream stream;
+    std::ostringstream stream;
     JSONPrinter printer(stream);
     printer.compact_json(compact);
 
     printer.push_block(name);
-    for (auto& instance: chain) {
+    for (const auto& instance: chain) {
         instance.print(printer);
     }
     printer.pop_block();
@@ -87,10 +86,10 @@ std::string DUChain::to_string(bool compact) const {
  *  As these are innermost blocks, we have to just check first use
  *  of variable in this block and that's the result of this block.
  */
-DUState DUInstance::sub_block_eval() {
+DUState DUInstance::sub_block_eval() const {
     DUState result = DUState::NONE;
-    for (auto& chain: children) {
-        auto child_state = chain.eval();
+    for (const auto& chain: children) {
+        const auto& child_state = chain.eval();
         if (child_state == DUState::U || child_state == DUState::D) {
             result = child_state;
             break;
@@ -128,11 +127,11 @@ DUState DUInstance::sub_block_eval() {
  *    block encountered, this means every block has either "D" or "CD". In
  *    this case we can say that entire block effectively has "D".
  */
-DUState DUInstance::conditional_block_eval() {
+DUState DUInstance::conditional_block_eval() const {
     DUState result = DUState::NONE;
     bool block_with_none = false;
 
-    for (auto& chain: children) {
+    for (const auto& chain: children) {
         auto child_state = chain.eval();
         if (child_state == DUState::U) {
             result = child_state;
@@ -156,7 +155,7 @@ DUState DUInstance::conditional_block_eval() {
  *  Note that we are interested in "global" variable usage
  *  and hence we consider only [U,D] states and not [LU, LD]
  */
-DUState DUInstance::eval() {
+DUState DUInstance::eval() const {
     auto result = state;
     if (state == DUState::IF || state == DUState::ELSEIF || state == DUState::ELSE) {
         result = sub_block_eval();
@@ -168,7 +167,7 @@ DUState DUInstance::eval() {
 
 /// first usage of a variable in a block decides whether it's definition
 /// or usage. Note that if-else blocks already evaluated.
-DUState DUChain::eval() {
+DUState DUChain::eval() const {
     auto result = DUState::NONE;
     for (auto& inst: chain) {
         auto re = inst.eval();
@@ -183,7 +182,7 @@ DUState DUChain::eval() {
     return result;
 }
 
-void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node& node) {
+void DefUseAnalyzeVisitor::visit_unsupported_node(const ast::Node& node) {
     unsupported_node = true;
     node.visit_children(*this);
     unsupported_node = false;
@@ -194,7 +193,7 @@ void DefUseAnalyzeVisitor::visit_unsupported_node(ast::Node& node) {
  *  there is no inlining happened. In this case we mark the call as
  *  unsupported.
  */
-void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall& node) {
+void DefUseAnalyzeVisitor::visit_function_call(const ast::FunctionCall& node) {
     const auto& function_name = node.get_node_name();
     const auto& symbol = global_symtab->lookup_in_scope(function_name);
     if (symbol == nullptr || symbol->is_external_variable()) {
@@ -204,7 +203,7 @@ void DefUseAnalyzeVisitor::visit_function_call(ast::FunctionCall& node) {
     }
 }
 
-void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock& node) {
+void DefUseAnalyzeVisitor::visit_statement_block(const ast::StatementBlock& node) {
     const auto& symtab = node.get_symbol_table();
     if (symtab != nullptr) {
         current_symtab = symtab;
@@ -219,7 +218,7 @@ void DefUseAnalyzeVisitor::visit_statement_block(ast::StatementBlock& node) {
 /** Nmodl grammar doesn't allow assignment operator on rhs (e.g. a = b + (b=c)
  *  and hence not necessary to keep track of assignment operator using stack.
  */
-void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression& node) {
+void DefUseAnalyzeVisitor::visit_binary_expression(const ast::BinaryExpression& node) {
     node.get_rhs()->visit_children(*this);
     if (node.get_op().get_value() == ast::BOP_ASSIGN) {
         visiting_lhs = true;
@@ -228,7 +227,7 @@ void DefUseAnalyzeVisitor::visit_binary_expression(ast::BinaryExpression& node) 
     visiting_lhs = false;
 }
 
-void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement& node) {
+void DefUseAnalyzeVisitor::visit_if_statement(const ast::IfStatement& node) {
     /// store previous chain
     auto previous_chain = current_chain;
 
@@ -266,7 +265,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(ast::IfStatement& node) {
  * \todo One simple way would be to look for p_name in the string
  *        of verbatim block to find the variable usage.
  */
-void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim& node) {
+void DefUseAnalyzeVisitor::visit_verbatim(const ast::Verbatim& node) {
     if (!ignore_verbatim) {
         current_chain->push_back(DUInstance(DUState::U));
     }
@@ -275,41 +274,41 @@ void DefUseAnalyzeVisitor::visit_verbatim(ast::Verbatim& node) {
 /// unsupported statements : we aren't sure how to handle this "yet" and
 /// hence variables used in any of the below statements are handled separately
 
-void DefUseAnalyzeVisitor::visit_reaction_statement(ast::ReactionStatement& node) {
+void DefUseAnalyzeVisitor::visit_reaction_statement(const ast::ReactionStatement& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_non_lin_equation(ast::NonLinEquation& node) {
+void DefUseAnalyzeVisitor::visit_non_lin_equation(const ast::NonLinEquation& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_lin_equation(ast::LinEquation& node) {
+void DefUseAnalyzeVisitor::visit_lin_equation(const ast::LinEquation& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_partial_boundary(ast::PartialBoundary& node) {
+void DefUseAnalyzeVisitor::visit_partial_boundary(const ast::PartialBoundary& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_from_statement(ast::FromStatement& node) {
+void DefUseAnalyzeVisitor::visit_from_statement(const ast::FromStatement& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_conserve(ast::Conserve& node) {
+void DefUseAnalyzeVisitor::visit_conserve(const ast::Conserve& node) {
     visit_unsupported_node(node);
 }
 
-void DefUseAnalyzeVisitor::visit_var_name(ast::VarName& node) {
+void DefUseAnalyzeVisitor::visit_var_name(const ast::VarName& node) {
     const std::string& variable = to_nmodl(node);
     process_variable(variable);
 }
 
-void DefUseAnalyzeVisitor::visit_name(ast::Name& node) {
+void DefUseAnalyzeVisitor::visit_name(const ast::Name& node) {
     const std::string& variable = to_nmodl(node);
     process_variable(variable);
 }
 
-void DefUseAnalyzeVisitor::visit_indexed_name(ast::IndexedName& node) {
+void DefUseAnalyzeVisitor::visit_indexed_name(const ast::IndexedName& node) {
     const auto& name = node.get_node_name();
     const auto& length = node.get_length();
 
@@ -332,11 +331,11 @@ void DefUseAnalyzeVisitor::visit_indexed_name(ast::IndexedName& node) {
 
 /// statements / nodes that should not be used for def-use chain analysis
 
-void DefUseAnalyzeVisitor::visit_conductance_hint(ast::ConductanceHint& /*node*/) {}
+void DefUseAnalyzeVisitor::visit_conductance_hint(const ast::ConductanceHint& /*node*/) {}
 
-void DefUseAnalyzeVisitor::visit_local_list_statement(ast::LocalListStatement& /*node*/) {}
+void DefUseAnalyzeVisitor::visit_local_list_statement(const ast::LocalListStatement& /*node*/) {}
 
-void DefUseAnalyzeVisitor::visit_argument(ast::Argument& /*node*/) {}
+void DefUseAnalyzeVisitor::visit_argument(const ast::Argument& /*node*/) {}
 
 
 /**
@@ -352,11 +351,11 @@ void DefUseAnalyzeVisitor::visit_argument(ast::Argument& /*node*/) {}
  * whereas the one on rhs are marked as "usages".
  */
 void DefUseAnalyzeVisitor::update_defuse_chain(const std::string& name) {
-    auto symbol = current_symtab->lookup_in_scope(name);
+    const auto& symbol = current_symtab->lookup_in_scope(name);
     assert(symbol != nullptr);
     // variable properties that make variable local
-    auto properties = NmodlType::local_var | NmodlType::argument;
-    auto is_local = symbol->has_any_property(properties);
+    const auto properties = NmodlType::local_var | NmodlType::argument;
+    const auto is_local = symbol->has_any_property(properties);
 
     if (unsupported_node) {
         current_chain->push_back(DUInstance(DUState::U));
@@ -382,14 +381,15 @@ void DefUseAnalyzeVisitor::process_variable(const std::string& name) {
 }
 
 void DefUseAnalyzeVisitor::process_variable(const std::string& name, int index) {
-    std::string fullname = name + "[" + std::to_string(index) + "]";
-    if (fullname == variable_name) {
+    std::ostringstream fullname;
+    fullname << name << '[' << std::to_string(index) + ']';
+    if (fullname.str() == variable_name) {
         update_defuse_chain(name);
     }
 }
 
-void DefUseAnalyzeVisitor::visit_with_new_chain(ast::Node& node, DUState state) {
-    auto last_chain = current_chain;
+void DefUseAnalyzeVisitor::visit_with_new_chain(const ast::Node& node, DUState state) {
+    const auto last_chain = current_chain;
     start_new_chain(state);
     node.visit_children(*this);
     current_chain = last_chain;
@@ -400,7 +400,7 @@ void DefUseAnalyzeVisitor::start_new_chain(DUState state) {
     current_chain = &current_chain->back().children;
 }
 
-DUChain DefUseAnalyzeVisitor::analyze(ast::Ast& node, const std::string& name) {
+DUChain DefUseAnalyzeVisitor::analyze(const ast::Ast& node, const std::string& name) {
     /// re-initialize state
     variable_name = name;
     visiting_lhs = false;

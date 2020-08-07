@@ -10,7 +10,6 @@
 #include "ast/program.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 using namespace nmodl;
@@ -25,11 +24,6 @@ using symtab::syminfo::NmodlType;
 //=============================================================================
 // Ast lookup visitor tests
 //=============================================================================
-
-std::vector<std::shared_ptr<ast::Ast>> run_lookup_visitor(ast::Program& node,
-                                                          const std::vector<AstNodeType>& types) {
-    return AstLookupVisitor().lookup(node, types);
-}
 
 SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") {
     auto to_ast = [](const std::string& text) {
@@ -56,40 +50,36 @@ SCENARIO("Searching for ast nodes using AstLookupVisitor", "[visitor][lookup]") 
 
         WHEN("Looking for existing nodes") {
             THEN("Can find RANGE variables") {
-                std::vector<AstNodeType> types{AstNodeType::RANGE_VAR};
-                auto result = run_lookup_visitor(*ast, types);
+                const auto& result = collect_nodes(*ast, {AstNodeType::RANGE_VAR});
                 REQUIRE(result.size() == 2);
                 REQUIRE(to_nmodl(result[0]) == "tau");
                 REQUIRE(to_nmodl(result[1]) == "h");
             }
 
             THEN("Can find NEURON block") {
-                AstLookupVisitor v(AstNodeType::NEURON_BLOCK);
-                ast->accept(v);
-                auto nodes = v.get_nodes();
+                const auto& nodes = collect_nodes(*ast, {AstNodeType::NEURON_BLOCK});
                 REQUIRE(nodes.size() == 1);
 
-                std::string neuron_block = R"(
+                const std::string neuron_block = R"(
                     NEURON {
                         RANGE tau, h
                     })";
-                auto result = reindent_text(to_nmodl(nodes[0]));
-                auto expected = reindent_text(neuron_block);
+                const auto& result = reindent_text(to_nmodl(nodes[0]));
+                const auto& expected = reindent_text(neuron_block);
                 REQUIRE(result == expected);
             }
 
             THEN("Can find Binary Expressions and function call") {
-                std::vector<AstNodeType> types{AstNodeType::BINARY_EXPRESSION,
-                                               AstNodeType::FUNCTION_CALL};
-                auto result = run_lookup_visitor(*ast, types);
+                const auto& result =
+                    collect_nodes(*ast,
+                                  {AstNodeType::BINARY_EXPRESSION, AstNodeType::FUNCTION_CALL});
                 REQUIRE(result.size() == 4);
             }
         }
 
         WHEN("Looking for missing nodes") {
             THEN("Can not find BREAKPOINT block") {
-                std::vector<AstNodeType> types{AstNodeType::BREAKPOINT_BLOCK};
-                auto result = run_lookup_visitor(*ast, types);
+                const auto& result = collect_nodes(*ast, {AstNodeType::BREAKPOINT_BLOCK});
                 REQUIRE(result.empty());
             }
         }

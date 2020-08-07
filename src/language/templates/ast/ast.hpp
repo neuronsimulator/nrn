@@ -137,7 +137,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * statement can be returned as a std::string for printing to
    * text/json form.
    *
-   * @return name of the statement as a string
+   * \return name of the statement as a string
    *
    * \sa Ast::get_nmodl_name
    */
@@ -152,7 +152,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * accept allows to visit the current node itself using the concrete
    * visitor provided.
    *
-   * @param v Concrete visitor that will be used to recursively visit children
+   * \param v Concrete visitor that will be used to recursively visit children
    *
    * \note Below is an example of `accept` method implementation which shows how
    *       visitor method corresponding to ast::IndexedName node is called allowing
@@ -168,12 +168,19 @@ struct Ast: public std::enable_shared_from_this<Ast> {
   virtual void accept(visitor::Visitor& v) = 0;
 
   /**
+   * \brief Accept (or visit) the AST node using a given visitor
+   * \param v constant visitor visiting the AST node
+   * \ref accept(visitor::Visitor&);
+   */
+  virtual void accept(visitor::ConstVisitor& v) const = 0;
+
+  /**
    * \brief Visit children i.e. member of AST node using provided visitor
    *
    * Different nodes in the AST have different members (i.e. children). This method
    * recursively visits children using provided concrete visitor.
    *
-   * @param v Concrete visitor that will be used to recursively visit node
+   * \param v Concrete visitor that will be used to recursively visit node
    *
    * \note Below is an example of `visit_children` method implementation which shows
    *       ast::IndexedName node children are visited instead of node itself.
@@ -188,6 +195,11 @@ struct Ast: public std::enable_shared_from_this<Ast> {
   virtual void visit_children(visitor::Visitor& v) = 0;
 
   /**
+   * \copydoc visit_children(visitor::Visitor& v)
+   */
+  virtual void visit_children(visitor::ConstVisitor& v) const = 0;
+
+  /**
    * \brief Create a copy of the current node
    *
    * Recursively make a new copy/clone of the current node including
@@ -195,7 +207,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * passes like nmodl::visitor::InlineVisitor where nodes are cloned in the
    * ast.
    *
-   * @return pointer to the clone/copy of the current node
+   * \return pointer to the clone/copy of the current node
    */
   virtual Ast* clone() const;
 
@@ -212,7 +224,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * name. Note that this is different from ast node type name and not every
    * ast node has name.
    *
-   * @return name of the node as std::string
+   * \return name of the node as std::string
    *
    * \sa Ast::get_node_type_name
    */
@@ -225,7 +237,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * can insert new nodes in the ast as a solution of ODEs. In this case, we return
    * nullptr to store in the nmodl::symtab::SymbolTable.
    *
-   * @return pointer to token if exist otherwise nullptr
+   * \return pointer to token if exist otherwise nullptr
    */
   virtual const ModToken* get_token() const;
 
@@ -236,7 +248,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    * symbol table. These nodes have nmodl::symtab::SymbolTable as member
    * and it can be accessed using this method.
    *
-   * @return pointer to the symbol table
+   * \return pointer to the symbol table
    *
    * \sa nmodl::symtab::SymbolTable nmodl::visitor::SymtabVisitor
    */
@@ -259,7 +271,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
    *
    * This method return enclosing statement block.
    *
-   * @return pointer to the statement block if exist
+   * \return pointer to the statement block if exist
    *
    * \sa ast::StatementBlock
    */
@@ -306,7 +318,7 @@ struct Ast: public std::enable_shared_from_this<Ast> {
 
   /**
    *\brief Check if the ast node is an instance of ast::Ast
-   * @return true if object of type ast::Ast
+   * \return true if object of type ast::Ast
    */
   virtual bool is_ast() const noexcept;
 

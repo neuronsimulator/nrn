@@ -18,7 +18,6 @@
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/var_usage_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -30,7 +29,6 @@ namespace codegen {
 
 using namespace ast;
 
-using visitor::AstLookupVisitor;
 using visitor::RenameVisitor;
 using visitor::VarUsageVisitor;
 
@@ -1402,10 +1400,7 @@ void CodegenCVisitor::print_function_prototypes() {
 static TableStatement* get_table_statement(ast::Block& node) {
     // TableStatementVisitor v;
 
-    AstLookupVisitor v(AstNodeType::TABLE_STATEMENT);
-    node.accept(v);
-
-    auto table_statements = v.get_nodes();
+    const auto& table_statements = collect_nodes(node, {AstNodeType::TABLE_STATEMENT});
 
     if (table_statements.size() != 1) {
         auto message =

@@ -12,7 +12,6 @@
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
 #include "visitor_utils.hpp"
-#include "visitors/lookup_visitor.hpp"
 
 
 namespace nmodl {
@@ -466,7 +465,7 @@ void KineticBlockVisitor::visit_program(ast::Program& node) {
         }
     }
 
-    auto kineticBlockNodes = AstLookupVisitor().lookup(node, ast::AstNodeType::KINETIC_BLOCK);
+    const auto& kineticBlockNodes = collect_nodes(node, {ast::AstNodeType::KINETIC_BLOCK});
     // replace reaction statements within each kinetic block with equivalent ODEs
     for (const auto& ii: kineticBlockNodes) {
         ii->accept(*this);

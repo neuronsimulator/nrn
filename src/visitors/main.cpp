@@ -15,6 +15,7 @@
 #include "pybind/pyembed.hpp"
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
+#include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/json_visitor.hpp"
@@ -41,6 +42,26 @@ using namespace fmt::literals;
  * \brief Standalone program demonstrating usage of different visitors and driver classes.
  **/
 
+template <typename T>
+struct ClassInfo {
+    std::shared_ptr<T> v;
+    std::string id;
+    std::string description;
+};
+using VisitorInfo = ClassInfo<Visitor>;
+using ConstVisitorInfo = ClassInfo<ConstVisitor>;
+
+template <typename Visitor>
+void visit_program(const std::string& mod_file,
+                   const ClassInfo<Visitor>& visitor,
+                   ast::Program& ast) {
+    logger->info("Running {}", visitor.description);
+    visitor.v->visit_program(ast);
+    const std::string file = "{}.{}.mod"_format(mod_file, visitor.id);
+    NmodlPrintVisitor(file).visit_program(ast);
+    logger->info("NMODL visitor generated {}", file);
+};
+
 int main(int argc, const char* argv[]) {
     CLI::App app{
         "NMODL Visitor : Runs standalone visitor classes({})"_format(Version::to_string())};
@@ -59,17 +80,9 @@ int main(int argc, const char* argv[]) {
         logger->set_level(spdlog::level::debug);
     }
 
-    struct VisitorInfo {
-        std::shared_ptr<Visitor> v;
-        std::string id;
-        std::string description;
-    };
-
-    std::vector<VisitorInfo> visitors = {
+    const std::vector<VisitorInfo> visitors = {
         {std::make_shared<AstVisitor>(), "astvis", "AstVisitor"},
         {std::make_shared<SymtabVisitor>(), "symtab", "SymtabVisitor"},
-        {std::make_shared<JSONVisitor>(), "json", "JSONVisitor"},
-        {std::make_shared<VerbatimVisitor>(), "verbatim", "VerbatimVisitor"},
         {std::make_shared<VerbatimVarRenameVisitor>(),
          "verbatim-rename",
          "VerbatimVarRenameVisitor"},
@@ -83,9 +96,15 @@ int main(int argc, const char* argv[]) {
          "SympyConductanceVisitor"},
         {std::make_shared<SympySolverVisitor>(), "sympy-solve", "SympySolverVisitor"},
         {std::make_shared<NeuronSolveVisitor>(), "neuron-solve", "NeuronSolveVisitor"},
-        {std::make_shared<LocalizeVisitor>(), "localize", "LocalizeVisitor"},
-        {std::make_shared<PerfVisitor>(), "perf", "PerfVisitor"},
         {std::make_shared<UnitsVisitor>(NrnUnitsLib::get_path()), "units", "UnitsVisitor"},
+    };
+
+    const std::vector<ConstVisitorInfo> const_visitors = {
+        {std::make_shared<JSONVisitor>(), "json", "JSONVisitor"},
+        {std::make_shared<test::CheckParentVisitor>(), "check-parent", "CheckParentVisitor"},
+        {std::make_shared<PerfVisitor>(), "perf", "PerfVisitor"},
+        {std::make_shared<LocalizeVisitor>(), "localize", "LocalizeVisitor"},
+        {std::make_shared<VerbatimVisitor>(), "verbatim", "VerbatimVisitor"},
     };
 
     nmodl::pybind_wrappers::EmbeddedPythonLoader::get_instance().api()->initialize_interpreter();
@@ -103,11 +122,10 @@ int main(int argc, const char* argv[]) {
 
         /// run all visitors and generate mod file after each run
         for (const auto& visitor: visitors) {
-            logger->info("Running {}", visitor.description);
-            visitor.v->visit_program(*ast);
-            const std::string file = mod_file + "." + visitor.id + ".mod";
-            NmodlPrintVisitor(file).visit_program(*ast);
-            logger->info("NMODL visitor generated {}", file);
+            visit_program(mod_file, visitor, *ast);
+        }
+        for (const auto& visitor: const_visitors) {
+            visit_program(mod_file, visitor, *ast);
         }
     }
 

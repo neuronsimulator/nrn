@@ -112,6 +112,18 @@ void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_nam
     PYBIND11_OVERLOAD(void, AstVisitor, visit_{{ node.class_name|snake_case }}, node);
 }
 {% endfor %}
+
+{% for node in nodes %}
+void PyConstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
+PYBIND11_OVERLOAD_PURE(void, ConstVisitor, visit_{{ node.class_name|snake_case }}, node);
+}
+{% endfor %}
+
+{% for node in nodes %}
+void PyConstAstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
+PYBIND11_OVERLOAD(void, ConstAstVisitor, visit_{{ node.class_name|snake_case }}, node);
+}
+{% endfor %}
 // clang-format on
 
 
@@ -139,7 +151,7 @@ class PyNmodlPrintVisitor: private VisitorOStreamResources, public NmodlPrintVis
 
     // clang-format off
     {% for node in nodes %}
-    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override {
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override {
         NmodlPrintVisitor::visit_{{ node.class_name|snake_case }}(node);
         flush();
     }
@@ -159,17 +171,34 @@ void init_visitor_module(py::module& m) {
         {% if loop.last -%};{% endif %}
     {% endfor %}  // clang-format on
 
+    py::class_<ConstVisitor, PyConstVisitor> const_visitor(m_visitor, "ConstVisitor", docstring::visitor_class);
+    const_visitor.def(py::init<>())
+    // clang-format off
+    {% for node in nodes %}
+    .def("visit_{{ node.class_name | snake_case }}", &ConstVisitor::visit_{{ node.class_name | snake_case }})
+    {% if loop.last -%};{% endif %}
+    {% endfor %}  // clang-format on
+
+    py::class_<ConstAstVisitor, ConstVisitor, PyConstAstVisitor>
+        const_ast_visitor(m_visitor, "ConstAstVisitor", docstring::ast_visitor_class);
+    const_ast_visitor.def(py::init<>())
+    // clang-format off
+    {% for node in nodes %}
+        .def("visit_{{ node.class_name | snake_case }}", &ConstAstVisitor::visit_{{ node.class_name | snake_case }})
+        {% if loop.last -%};{% endif %}
+    {% endfor %} // clang-format on
+
     py::class_<AstVisitor, Visitor, PyAstVisitor>
-        ast_visitor(m_visitor, "AstVisitor", docstring::ast_visitor_class);
+            ast_visitor(m_visitor, "AstVisitor", docstring::ast_visitor_class);
     ast_visitor.def(py::init<>())
     // clang-format off
     {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
+    .def("visit_{{ node.class_name | snake_case }}", &AstVisitor::visit_{{ node.class_name | snake_case }})
+    {% if loop.last -%};{% endif %}
     {% endfor %}
     // clang-format on
 
-    py::class_<PyNmodlPrintVisitor, Visitor>
+    py::class_<PyNmodlPrintVisitor, ConstVisitor>
         nmodl_visitor(m_visitor, "NmodlPrintVisitor", docstring::nmodl_print_visitor_class);
     nmodl_visitor.def(py::init<std::string>());
     nmodl_visitor.def(py::init<py::object>());
@@ -187,13 +216,9 @@ void init_visitor_module(py::module& m) {
         .def(py::init<ast::AstNodeType>())
         .def("get_nodes", &AstLookupVisitor::get_nodes)
         .def("clear", &AstLookupVisitor::clear)
-        .def("lookup", (std::vector<std::shared_ptr<ast::Ast>> (AstLookupVisitor::*)(ast::Ast&)) &AstLookupVisitor::lookup)
-        .def("lookup", (std::vector<std::shared_ptr<ast::Ast>> (AstLookupVisitor::*)(ast::Ast&, ast::AstNodeType)) &AstLookupVisitor::lookup)
-        .def("lookup", (std::vector<std::shared_ptr<ast::Ast>> (AstLookupVisitor::*)(ast::Ast&, const std::vector<ast::AstNodeType>&)) &AstLookupVisitor::lookup)
-    {% for node in nodes %}
-        .def("visit_{{ node.class_name | snake_case }}", &AstLookupVisitor::visit_{{ node.class_name | snake_case }})
-        {% if loop.last -%};{% endif %}
-    {% endfor %}
+        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&)>(&AstLookupVisitor::lookup))
+        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&, ast::AstNodeType)>(&AstLookupVisitor::lookup))
+        .def("lookup", static_cast<const std::vector<std::shared_ptr<ast::Ast>>& (AstLookupVisitor::*)(ast::Ast&, const std::vector<ast::AstNodeType>&)>(&AstLookupVisitor::lookup));
 
     py::class_<ConstantFolderVisitor, AstVisitor> constant_folder_visitor(m_visitor, "ConstantFolderVisitor", docstring::constant_folder_visitor_class);
     constant_folder_visitor.def(py::init<>())

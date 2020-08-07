@@ -17,17 +17,27 @@ def test_lookup_visitor(ch_ast):
     assert eq_str == "m' = mInf-m"
 
 
+def test_lookup_visitor_any_node():
+    """Ensure the AstLookupVisitor.lookup methods accept any node"""
+    lookup_visitor = visitor.AstLookupVisitor(ast.AstNodeType.INTEGER)
+    int42 = ast.Integer(42, None)
+
+    eqs = lookup_visitor.lookup(int42)
+    assert len(eqs) == 1
+
+    eqs = lookup_visitor.lookup(int42, ast.AstNodeType.DOUBLE)
+    assert len(eqs) == 0
+
+
 def test_lookup_visitor_constructor(ch_ast):
     lookup_visitor = visitor.AstLookupVisitor(ast.AstNodeType.DIFF_EQ_EXPRESSION)
-    ch_ast.accept(lookup_visitor)
-    eqs = lookup_visitor.get_nodes()
+    eqs = lookup_visitor.lookup(ch_ast)
     eq_str = nmodl.dsl.to_nmodl(eqs[0])
 
 
 def test_json_visitor(ch_ast):
     lookup_visitor = visitor.AstLookupVisitor(ast.AstNodeType.PRIME_NAME)
-    ch_ast.accept(lookup_visitor)
-    primes = lookup_visitor.get_nodes()
+    primes = lookup_visitor.lookup(ch_ast)
 
     # test compact json
     prime_str = nmodl.dsl.to_nmodl(primes[0])

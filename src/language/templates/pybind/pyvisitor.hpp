@@ -61,3 +61,38 @@ public:
     {% endfor %}
 };
 
+/**
+ * \brief Class mirroring nmodl::visitor::ConstVisitor for Python bindings
+ *
+ * \details \copydetails nmodl::visitor::ConstVisitor
+ *
+ * This class is used to interface nmodl::visitor::ConstVisitor with the Python
+ * world using `pybind11`.
+ */
+class PyConstVisitor : public ConstVisitor {
+public:
+    using ConstVisitor::ConstVisitor;
+
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
+    {% endfor %}
+};
+
+
+/**
+ * \brief Class mirroring nmodl::visitor::ConstAstVisitor for Python bindings
+ *
+ * \details \copydetails nmodl::visitor::ConstAstVisitor
+ *
+ * This class is used to interface nmodl::visitor::ConstAstVisitor with the Python
+ * world using `pybind11`.
+ */
+class PyConstAstVisitor : public ConstAstVisitor {
+public:
+    using ConstAstVisitor::ConstAstVisitor;
+
+    {% for node in nodes %}
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
+    {% endfor %}
+};
+

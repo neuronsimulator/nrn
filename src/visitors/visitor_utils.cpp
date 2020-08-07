@@ -51,12 +51,13 @@ std::string suffix_random_string(const std::set<std::string>& vars,
 std::string get_new_name(const std::string& name,
                          const std::string& suffix,
                          std::map<std::string, int>& variables) {
-    int counter = 0;
-    if (variables.find(name) != variables.end()) {
-        counter = variables[name];
-    }
-    variables[name] = counter + 1;
-    return (name + "_" + suffix + "_" + std::to_string(counter));
+    auto it = variables.emplace(name, 0);
+    auto counter = it.first->second;
+    ++it.first->second;
+
+    std::ostringstream oss;
+    oss << name << '_' << suffix << '_' << counter;
+    return oss.str();
 }
 
 std::shared_ptr<ast::LocalListStatement> get_local_list_statement(const StatementBlock& node) {
@@ -170,20 +171,32 @@ std::set<std::string> get_global_vars(const Program& node) {
 }
 
 
-bool calls_function(ast::Ast& node, const std::string& name) {
-    AstLookupVisitor lv(ast::AstNodeType::FUNCTION_CALL);
-    for (const auto& f: lv.lookup(node)) {
-        if (std::dynamic_pointer_cast<ast::FunctionCall>(f)->get_node_name() == name) {
-            return true;
-        }
-    }
-    return false;
+bool calls_function(const ast::Ast& node, const std::string& name) {
+    const auto& function_calls = collect_nodes(node, {ast::AstNodeType::FUNCTION_CALL});
+    return std::any_of(
+        function_calls.begin(),
+        function_calls.end(),
+        [&name](const std::shared_ptr<const ast::Ast>& f) {
+            return std::dynamic_pointer_cast<const ast::FunctionCall>(f)->get_node_name() == name;
+        });
 }
 
 }  // namespace visitor
 
+std::vector<std::shared_ptr<const ast::Ast>> collect_nodes(
+    const ast::Ast& node,
+    const std::vector<ast::AstNodeType>& types) {
+    visitor::ConstAstLookupVisitor visitor;
+    return visitor.lookup(node, types);
+}
 
-std::string to_nmodl(ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types) {
+std::vector<std::shared_ptr<ast::Ast>> collect_nodes(ast::Ast& node,
+                                                     const std::vector<ast::AstNodeType>& types) {
+    visitor::AstLookupVisitor visitor;
+    return visitor.lookup(node, types);
+}
+
+std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;
     visitor::NmodlPrintVisitor v(stream, exclude_types);
     node.accept(v);
@@ -191,7 +204,7 @@ std::string to_nmodl(ast::Ast& node, const std::set<ast::AstNodeType>& exclude_t
 }
 
 
-std::string to_json(ast::Ast& node, bool compact, bool expand, bool add_nmodl) {
+std::string to_json(const ast::Ast& node, bool compact, bool expand, bool add_nmodl) {
     std::stringstream stream;
     visitor::JSONVisitor v(stream);
     v.compact_json(compact);

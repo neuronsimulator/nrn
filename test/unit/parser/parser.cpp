@@ -19,10 +19,10 @@
 #include "test/unit/utils/nmodl_constructs.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
+
 
 using namespace nmodl::test_utils;
-using nmodl::visitor::AstLookupVisitor;
 //=============================================================================
 // Parser tests
 //=============================================================================
@@ -170,7 +170,7 @@ SCENARIO("Check parents in valid NMODL constructs") {
         GIVEN(construct.second.name) {
             THEN("Check the parents in : " + construct.second.input) {
                 // check the parents
-                REQUIRE(!nmodl::visitor::test::CheckParentVisitor().check_ast(ast.get()));
+                REQUIRE(!nmodl::visitor::test::CheckParentVisitor().check_ast(*ast));
             }
         }
     }
@@ -213,9 +213,9 @@ void parse_neuron_block_string(const std::string& name, nmodl::ModToken& value) 
     driver.parse_string(name);
 
     const auto& ast_program = driver.get_ast();
-    const auto& neuron_blocks = AstLookupVisitor().lookup(*ast_program->get_shared_ptr(),
-                                                          nmodl::ast::AstNodeType::NEURON_BLOCK);
-    value = *(neuron_blocks[0]->get_token());
+    const auto& neuron_blocks = nmodl::collect_nodes(*ast_program->get_shared_ptr(),
+                                                     {nmodl::ast::AstNodeType::NEURON_BLOCK});
+    value = *(neuron_blocks.front()->get_token());
 }
 
 SCENARIO("Check if a NEURON block is parsed with correct location info in its token") {

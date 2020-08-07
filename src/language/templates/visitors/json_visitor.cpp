@@ -20,7 +20,7 @@ namespace visitor {
 using namespace ast;
 
 {% for node in nodes %}
-void JSONVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
+void JSONVisitor::visit_{{ node.class_name|snake_case }}(const {{ node.class_name }}& node) {
     {% if node.has_children() %}
     printer->push_block(node.get_node_type_name());
     if (embed_nmodl) {
