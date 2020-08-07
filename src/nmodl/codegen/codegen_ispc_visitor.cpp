@@ -13,7 +13,6 @@
 #include "codegen/codegen_naming.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/logger.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/rename_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -24,7 +23,6 @@ namespace codegen {
 
 using symtab::syminfo::Status;
 
-using visitor::AstLookupVisitor;
 using visitor::RenameVisitor;
 
 /****************************************************************************************/
@@ -686,11 +684,13 @@ void CodegenIspcVisitor::print_backend_compute_routine_decl() {
 }
 
 void CodegenIspcVisitor::determine_target() {
-    AstLookupVisitor node_lv(incompatible_node_types);
+    const auto& has_incompatible_nodes = [this](const ast::Ast& node) {
+        return !collect_nodes(node, incompatible_node_types).empty();
+    };
 
     if (info.initial_node) {
         emit_fallback[BlockType::Initial] =
-            !node_lv.lookup(*info.initial_node).empty() ||
+            has_incompatible_nodes(*info.initial_node) ||
             visitor::calls_function(*info.initial_node, "net_send") || info.require_wrote_conc;
     } else {
         emit_fallback[BlockType::Initial] = info.net_receive_initial_node ||
@@ -698,14 +698,14 @@ void CodegenIspcVisitor::determine_target() {
     }
 
     if (info.net_receive_node) {
-        emit_fallback[BlockType::NetReceive] = !node_lv.lookup(*info.net_receive_node).empty() ||
+        emit_fallback[BlockType::NetReceive] = has_incompatible_nodes(*info.net_receive_node) ||
                                                visitor::calls_function(*info.net_receive_node,
                                                                        "net_send");
     }
 
     if (nrn_cur_required()) {
         if (info.breakpoint_node) {
-            emit_fallback[BlockType::Equation] = !node_lv.lookup(*info.breakpoint_node).empty();
+            emit_fallback[BlockType::Equation] = has_incompatible_nodes(*info.breakpoint_node);
         } else {
             emit_fallback[BlockType::Equation] = false;
         }
@@ -713,7 +713,7 @@ void CodegenIspcVisitor::determine_target() {
 
     if (nrn_state_required()) {
         if (info.nrn_state_block) {
-            emit_fallback[BlockType::State] = !node_lv.lookup(*info.nrn_state_block).empty();
+            emit_fallback[BlockType::State] = has_incompatible_nodes(*info.nrn_state_block);
         } else {
             emit_fallback[BlockType::State] = false;
         }
@@ -724,9 +724,8 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     auto nameset = std::set<std::string>();
 
     auto populate_nameset = [&nameset](ast::Block* block) {
-        AstLookupVisitor name_lv(ast::AstNodeType::NAME);
         if (block) {
-            const auto& names = name_lv.lookup(*block);
+            const auto& names = collect_nodes(*block, {ast::AstNodeType::NAME});
             for (const auto& name: names) {
                 nameset.insert(name->get_node_name());
             }
@@ -736,11 +735,14 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     populate_nameset(info.nrn_state_block);
     populate_nameset(info.breakpoint_node);
 
-    AstLookupVisitor node_lv(incompatible_node_types);
+    const auto& has_incompatible_nodes = [this](const ast::Ast& node) {
+        return !collect_nodes(node, incompatible_node_types).empty();
+    };
+
     auto target_procedures = std::vector<ast::ProcedureBlock*>();
     for (const auto& procedure: info.procedures) {
         const auto& name = procedure->get_name()->get_node_name();
-        if (nameset.find(name) == nameset.end() || !node_lv.lookup(*procedure).empty()) {
+        if (nameset.find(name) == nameset.end() || has_incompatible_nodes(*procedure)) {
             wrapper_procedures.push_back(procedure);
         } else {
             target_procedures.push_back(procedure);
@@ -750,7 +752,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     auto target_functions = std::vector<ast::FunctionBlock*>();
     for (const auto& function: info.functions) {
         const auto& name = function->get_name()->get_node_name();
-        if (nameset.find(name) == nameset.end() || !node_lv.lookup(*function).empty()) {
+        if (nameset.find(name) == nameset.end() || has_incompatible_nodes(*function)) {
             wrapper_functions.push_back(function);
         } else {
             target_functions.push_back(function);

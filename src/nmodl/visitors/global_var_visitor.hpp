@@ -23,8 +23,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -33,7 +33,7 @@ namespace visitor {
  *
  * Some of the existing mod files have GLOBAL variables that are updated in BREAKPOINT
  * or DERIVATIVE blocks. These variables have a single copy and works well when they
- * are read only. If such variables that are written as well, they result into race condition.
+ * are read only. If such variables are written as well, they result into race condition.
  * For example,
  *
  * \code{.mod}
@@ -51,7 +51,7 @@ namespace visitor {
  *      }
  * \endcode
  *
- * In above example, x will be simultaneously updated in case of vectorization. In NEURON,
+ * In above example, \a x will be simultaneously updated in case of vectorization. In NEURON,
  * such race condition is avoided by promoting these variables to thread variable (i.e. separate
  * copy per thread). In case of CoreNEURON, this is not sufficient because of vectorisation or
  * GPU execution. To address this issue, this visitor converts GLOBAL variables to RANGE variables
@@ -85,7 +85,7 @@ class GlobalToRangeVisitor: public AstVisitor {
     void visit_neuron_block(ast::NeuronBlock& node) override;
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

@@ -12,7 +12,6 @@
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/sympy_solver_visitor.hpp"
@@ -55,13 +54,11 @@ std::vector<std::string> run_sympy_solver_visitor(
     SympySolverVisitor(pade, cse).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     // run lookup visitor to extract results from AST
-    AstLookupVisitor v_lookup;
-    auto res = v_lookup.lookup(*ast, ret_nodetype);
-    for (const auto& r: res) {
-        results.push_back(to_nmodl(r));
+    for (const auto& eq: collect_nodes(*ast, {ret_nodetype})) {
+        results.push_back(to_nmodl(eq));
     }
 
     return results;

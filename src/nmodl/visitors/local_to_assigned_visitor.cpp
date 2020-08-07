@@ -42,7 +42,7 @@ void LocalToAssignedVisitor::visit_program(ast::Program& node) {
             top_level_node);
 
         for (const auto& local_variable: local_list_statement->get_variables()) {
-            auto variable_name = local_variable->get_node_name();
+            const auto& variable_name = local_variable->get_node_name();
             /// check if local variable is being updated in the mod file
             if (symbol_table->lookup(variable_name)->get_write_count() > 0) {
                 assigned_variables.emplace_back(
@@ -75,7 +75,7 @@ void LocalToAssignedVisitor::visit_program(ast::Program& node) {
         assigned_block = std::make_shared<ast::AssignedBlock>(assigned_variables);
         node.emplace_back_node(std::static_pointer_cast<ast::Node>(assigned_block));
     } else {
-        for (auto& assigned_variable: assigned_variables) {
+        for (const auto& assigned_variable: assigned_variables) {
             assigned_block->emplace_back_assigned_definition(assigned_variable);
         }
     }

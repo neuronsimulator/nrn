@@ -61,7 +61,7 @@ void GlobalToRangeVisitor::visit_neuron_block(ast::NeuronBlock& node) {
     /// insert new range variables replacing global ones
     if (!range_variables.empty()) {
         auto range_statement = new ast::Range(range_variables);
-        (*statement_block).emplace_back_statement(range_statement);
+        statement_block->emplace_back_statement(range_statement);
     }
 }
 

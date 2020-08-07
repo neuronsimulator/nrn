@@ -80,14 +80,23 @@ void remove_statements_from_block(ast::StatementBlock& block,
 std::set<std::string> get_global_vars(const ast::Program& node);
 
 
-/// Checks whether block contains a call to a perticular function
-bool calls_function(ast::Ast& node, const std::string& name);
+/// Checks whether block contains a call to a particular function
+bool calls_function(const ast::Ast& node, const std::string& name);
 
 }  // namespace visitor
 
+/// traverse \a node recursively and collect nodes of given \a types
+std::vector<std::shared_ptr<const ast::Ast>> collect_nodes(
+    const ast::Ast& node,
+    const std::vector<ast::AstNodeType>& types = {});
+
+/// traverse \a node recursively and collect nodes of given \a types
+std::vector<std::shared_ptr<ast::Ast>> collect_nodes(
+    ast::Ast& node,
+    const std::vector<ast::AstNodeType>& types = {});
 
 /// Given AST node, return the NMODL string representation
-std::string to_nmodl(ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types = {});
+std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types = {});
 
 /// Given a shared pointer to an AST node, return the NMODL string representation
 template <typename T>
@@ -98,7 +107,7 @@ typename std::enable_if<std::is_base_of<ast::Ast, T>::value, std::string>::type 
 }
 
 /// Given AST node, return the JSON string representation
-std::string to_json(ast::Ast& node,
+std::string to_json(const ast::Ast& node,
                     bool compact = false,
                     bool expand = false,
                     bool add_nmodl = false);

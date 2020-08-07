@@ -34,7 +34,7 @@ std::string run_nmodl_visitor(const std::string& text) {
     NmodlPrintVisitor(stream).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return stream.str();
 }
@@ -42,8 +42,8 @@ std::string run_nmodl_visitor(const std::string& text) {
 SCENARIO("Convert AST back to NMODL form", "[visitor][nmodl]") {
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
-        std::string input_nmodl_text = reindent_text(test_case.input);
-        std::string output_nmodl_text = reindent_text(test_case.output);
+        const std::string& input_nmodl_text = reindent_text(test_case.input);
+        const std::string& output_nmodl_text = reindent_text(test_case.output);
         GIVEN(test_case.name) {
             THEN("Visitor successfully returns : " + input_nmodl_text) {
                 auto result = run_nmodl_visitor(input_nmodl_text);

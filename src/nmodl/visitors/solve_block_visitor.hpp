@@ -19,8 +19,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -50,7 +50,7 @@ class SolveBlockVisitor: public AstVisitor {
     void visit_program(ast::Program& node) override;
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

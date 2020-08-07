@@ -34,7 +34,7 @@ namespace visitor {
  * Convert AST into JSON form form using AST visitor. This is used
  * for debugging or visualization purpose.
  */
-class JSONVisitor: public AstVisitor {
+class JSONVisitor: public ConstAstVisitor {
   private:
     /// json printer
     std::unique_ptr<printer::JSONPrinter> printer;
@@ -49,28 +49,38 @@ class JSONVisitor: public AstVisitor {
     JSONVisitor(std::string filename)
         : printer(new printer::JSONPrinter(filename)) {}
 
-    JSONVisitor(std::stringstream& ss)
+    JSONVisitor(std::ostream& ss)
         : printer(new printer::JSONPrinter(ss)) {}
 
-    void flush() {
+    JSONVisitor& write(const ast::Program& program) {
+        visit_program(program);
+        return *this;
+    }
+
+    JSONVisitor& flush() {
         printer->flush();
+        return *this;
     }
 
-    void compact_json(bool flag) {
+    JSONVisitor& compact_json(bool flag) {
         printer->compact_json(flag);
+        return *this;
     }
 
-    void add_nmodl(bool flag) {
+    JSONVisitor& add_nmodl(bool flag) {
         embed_nmodl = flag;
+        return *this;
     }
 
-    void expand_keys(bool flag) {
+    JSONVisitor& expand_keys(bool flag) {
         printer->expand_keys(flag);
+        return *this;
     }
 
+  protected:
     // clang-format off
     {% for node in nodes %}
-    void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
+    void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
     {% endfor %}
     // clang-format on
 };

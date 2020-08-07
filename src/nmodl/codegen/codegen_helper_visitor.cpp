@@ -12,7 +12,6 @@
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
-#include "visitors/lookup_visitor.hpp"
 
 
 namespace nmodl {

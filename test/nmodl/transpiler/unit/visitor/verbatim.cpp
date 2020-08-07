@@ -30,14 +30,14 @@ std::vector<std::string> run_verbatim_visitor(const std::string& text) {
     v.visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return v.verbatim_blocks();
 }
 
 TEST_CASE("Parse VERBATIM block using Verbatim Visitor") {
     SECTION("Single Block") {
-        std::string text = "VERBATIM int a; ENDVERBATIM";
+        const std::string text = "VERBATIM int a; ENDVERBATIM";
         auto blocks = run_verbatim_visitor(text);
 
         REQUIRE(blocks.size() == 1);

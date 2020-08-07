@@ -18,13 +18,13 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @defgroup visitor Visitor Implementation
- * @brief All visitors related implementation details
+ * \defgroup visitor Visitor Implementation
+ * \brief All visitors related implementation details
  *
- * @defgroup visitor_classes Visitors
- * @ingroup visitor
- * @brief Different visitors implemented in NMODL
- * @{
+ * \defgroup visitor_classes Visitors
+ * \ingroup visitor
+ * \brief Different visitors implemented in NMODL
+ * \{
  */
 
 /**
@@ -32,23 +32,40 @@ namespace visitor {
  *
  * This class defines interface for all concrete visitors implementation.
  * Note that this class only provides interface that could be implemented
- * by oncrete visitors like ast::AstVisitor.
+ * by concrete visitors like ast::AstVisitor.
  *
  * \sa ast::AstVisitor
  */
 class Visitor {
+  public:
+    virtual ~Visitor() = default;
 
-    public:
-        virtual ~Visitor() = default;
+    {% for node in nodes %}
+      /// visit node of type ast::{{ node.class_name }}
+      virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) = 0;
+    {% endfor %}
+};
 
-        {% for node in nodes %}
-        /// visit node of type ast::{{ node.class_name }}
-        virtual void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) = 0;
-        {% endfor %}
+/**
+ * \brief Abstract base class for all constant visitors implementation
+ *
+ * This class defines interface for all concrete constant visitors implementation.
+ * Note that this class only provides interface that could be implemented
+ * by concrete visitors like ast::ConstAstVisitor.
+ *
+ * \sa ast::ConstAstVisitor
+ */
+class ConstVisitor {
+  public:
+    virtual ~ConstVisitor() = default;
+
+    {% for node in nodes %}
+      /// visit node of type ast::{{ node.class_name }}
+      virtual void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) = 0;
+    {% endfor %}
 };
 
 }  // namespace visitor
 }  // namespace nmodl
 
-/** @} */  // end of visitor_classes
-
+/** \} */  // end of visitor_classes

@@ -38,7 +38,7 @@ std::string run_inline_visitor(const std::string& text) {
 
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return stream.str();
 }

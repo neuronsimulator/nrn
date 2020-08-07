@@ -24,8 +24,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -80,12 +80,12 @@ class UnitsVisitor: public AstVisitor {
 
     /// Get the parser::UnitDriver to be able to use it outside the visitor::UnitsVisitor
     /// scope keeping the same units::UnitTable
-    parser::UnitDriver get_unit_driver() const noexcept {
+    const parser::UnitDriver& get_unit_driver() const noexcept {
         return units_driver;
     }
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

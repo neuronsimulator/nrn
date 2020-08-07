@@ -23,8 +23,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -40,7 +40,7 @@ namespace visitor {
  *
  * \todo Add log/warning messages.
  */
-class RenameVisitor: public AstVisitor {
+class RenameVisitor: public ConstAstVisitor {
   private:
     /// ast::Ast* node
     std::shared_ptr<ast::Program> ast;
@@ -92,23 +92,23 @@ class RenameVisitor: public AstVisitor {
 
     /// Check if variable is already renamed and use the same naming otherwise add the new_name
     /// to the renamed_variables map
-    std::string new_name_generator(const std::string old_name);
+    std::string new_name_generator(const std::string& old_name);
 
     void set(std::string old_name, std::string new_name) {
         var_name_regex = std::move(old_name);
         new_var_name = std::move(new_name);
     }
 
-    void enable_verbatim(bool state) {
+    void enable_verbatim(bool state) noexcept {
         rename_verbatim = state;
     }
 
-    void visit_name(ast::Name& node) override;
-    void visit_prime_name(ast::PrimeName& node) override;
-    void visit_verbatim(ast::Verbatim& node) override;
+    void visit_name(const ast::Name& node) override;
+    void visit_prime_name(const ast::PrimeName& node) override;
+    void visit_verbatim(const ast::Verbatim& node) override;
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

@@ -13,7 +13,6 @@
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -59,14 +58,14 @@ std::vector<std::string> run_steadystate_visitor(
     SteadystateVisitor().visit_program(*ast);
 
     // run lookup visitor to extract results from AST
-    auto res = AstLookupVisitor().lookup(*ast, ret_nodetypes);
+    const auto& res = collect_nodes(*ast, ret_nodetypes);
     results.reserve(res.size());
     for (const auto& r: res) {
         results.push_back(to_nmodl(r));
     }
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return results;
 }

@@ -37,7 +37,7 @@ std::string run_constant_folding_visitor(const std::string& text) {
     NmodlPrintVisitor(stream).visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return stream.str();
 }

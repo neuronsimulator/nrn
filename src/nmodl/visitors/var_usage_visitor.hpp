@@ -21,8 +21,8 @@ namespace nmodl {
 namespace visitor {
 
 /**
- * @addtogroup visitor_classes
- * @{
+ * \addtogroup visitor_classes
+ * \{
  */
 
 /**
@@ -32,21 +32,21 @@ namespace visitor {
  * \todo Check if macro is considered as variable
  */
 
-class VarUsageVisitor: protected AstVisitor {
+class VarUsageVisitor: protected ConstAstVisitor {
   private:
     /// variable to check usage
     std::string var_name;
     bool used = false;
 
-    void visit_name(ast::Name& node) override;
+    void visit_name(const ast::Name& node) override;
 
   public:
     VarUsageVisitor() = default;
 
-    bool variable_used(ast::Node& node, std::string name);
+    bool variable_used(const ast::Node& node, std::string name);
 };
 
-/** @} */  // end of visitor_classes
+/** \} */  // end of visitor_classes
 
 }  // namespace visitor
 }  // namespace nmodl

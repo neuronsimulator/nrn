@@ -28,16 +28,16 @@ using namespace ast;
  */
 
 /**
- * @defgroup nmodl_python Python Interface
- * @brief Python Bindings Implementation
+ * \defgroup nmodl_python Python Interface
+ * \brief Python Bindings Implementation
  */
 
 /**
  *
- * @defgroup ast_python AST Python Interface
- * @ingroup nmodl_python
- * @brief Ast classes for Python bindings
- * @{
+ * \defgroup ast_python AST Python Interface
+ * \ingroup nmodl_python
+ * \brief Ast classes for Python bindings
+ * \{
  */
 
 /**
@@ -58,10 +58,21 @@ struct PyAst: public Ast {
         );
     }
 
+    void visit_children(visitor::ConstVisitor& v) const override {
+        PYBIND11_OVERLOAD_PURE(void,            /// Return type
+                               Ast,             /// Parent class
+                               visit_children,  /// Name of function in C++ (must match Python name)
+                               v                /// Argument(s)
+        );
+    }
+
     void accept(visitor::Visitor& v) override {
         PYBIND11_OVERLOAD_PURE(void, Ast, accept, v);
     }
 
+    void accept(visitor::ConstVisitor& v) const override {
+        PYBIND11_OVERLOAD_PURE(void, Ast, accept, v);
+    }
 
     Ast* clone() const override {
         PYBIND11_OVERLOAD(Ast*, Ast, clone, );
@@ -128,5 +139,4 @@ struct PyAst: public Ast {
     {% endfor %}
 };
 
-/** @} */  // end of ast_python
-
+/** \} */  // end of ast_python

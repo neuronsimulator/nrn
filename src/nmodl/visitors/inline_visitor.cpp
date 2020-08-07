@@ -20,7 +20,7 @@ namespace visitor {
 
 using namespace ast;
 
-bool InlineVisitor::can_inline_block(StatementBlock& block) {
+bool InlineVisitor::can_inline_block(const StatementBlock& block) const {
     bool to_inline = true;
     const auto& statements = block.get_statements();
     for (const auto& statement: statements) {

@@ -23,7 +23,12 @@ using namespace ast;
 void AstVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
     node.visit_children(*this);
 }
+{% endfor %}
 
+{% for node in nodes %}
+void ConstAstVisitor::visit_{{ node.class_name|snake_case }}(const {{ node.class_name }}& node) {
+    node.visit_children(*this);
+}
 {% endfor %}
 
 }  // namespace visitor

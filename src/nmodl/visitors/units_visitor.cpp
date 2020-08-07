@@ -35,7 +35,7 @@ void UnitsVisitor::visit_program(ast::Program& node) {
  * On \c nrnunits.lib constant "1" is defined as "fuzz", so it must be converted.
  */
 void UnitsVisitor::visit_unit_def(ast::UnitDef& node) {
-    std::stringstream ss;
+    std::ostringstream ss;
     /*
      * In nrnunits.lib file "1" is defined as "fuzz", so there
      * must be a conversion to be able to parse "1" as unit
@@ -80,8 +80,8 @@ void UnitsVisitor::visit_unit_def(ast::UnitDef& node) {
  * care of all the units calculations.
  */
 void UnitsVisitor::visit_factor_def(ast::FactorDef& node) {
-    std::stringstream ss;
-    auto node_has_value_defined_in_modfile = node.get_value() != nullptr;
+    std::ostringstream ss;
+    const auto node_has_value_defined_in_modfile = node.get_value() != nullptr;
     if (node_has_value_defined_in_modfile) {
         /*
          * In nrnunits.lib file "1" is defined as "fuzz", so
@@ -97,7 +97,7 @@ void UnitsVisitor::visit_factor_def(ast::FactorDef& node) {
         // Parse the generated string for the defined unit using the units::UnitParser
         units_driver.parse_string(ss.str());
     } else {
-        std::stringstream ss_unit1, ss_unit2;
+        std::ostringstream ss_unit1, ss_unit2;
         std::string unit1_name, unit2_name;
         /*
          * In nrnunits.lib file "1" is defined as "fuzz", so

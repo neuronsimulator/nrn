@@ -2610,14 +2610,13 @@ threadsafe_var_list : NAME_PTR
  *  "empty" Verbatim parser which scan and return same string. */
 
 std::string parse_with_verbatim_parser(std::string str) {
-    auto is = new std::istringstream(str.c_str());
+    std::istringstream is(str.c_str());
 
-    VerbatimDriver extcontext(is);
+    VerbatimDriver extcontext(&is);
     Verbatim_parse(&extcontext);
 
     std::string ss(*(extcontext.result));
 
-    delete is;
     return ss;
 }
 

@@ -11,7 +11,7 @@
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
-#include "visitors/lookup_visitor.hpp"
+#include "visitor_utils.hpp"
 
 namespace nmodl {
 namespace visitor {
@@ -23,14 +23,14 @@ void SolveBlockVisitor::visit_breakpoint_block(ast::BreakpointBlock& node) {
 }
 
 /// check if given node contains sympy solution
-static bool has_sympy_solution(ast::Ast& node) {
-    return !AstLookupVisitor().lookup(node, ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK).empty();
+static bool has_sympy_solution(const ast::Ast& node) {
+    return !collect_nodes(node, {ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK}).empty();
 }
 
 /**
  * Create solution expression node that will be used for solve block
- * @param solve_block solve block used to describe node to solve and method
- * @return solution expression that will be used to replace the solve block
+ * \param solve_block solve block used to describe node to solve and method
+ * \return solution expression that will be used to replace the solve block
  *
  * Depending on the solver used, solve block is converted to solve expression statement
  * that will be used to replace solve block. Note that the blocks are clones instead of
@@ -40,8 +40,8 @@ static bool has_sympy_solution(ast::Ast& node) {
 ast::SolutionExpression* SolveBlockVisitor::create_solution_expression(
     ast::SolveBlock& solve_block) {
     /// find out the block that is going to solved
-    std::string block_name = solve_block.get_block_name()->get_node_name();
-    auto solve_node_symbol = symtab->lookup(block_name);
+    const auto& block_name = solve_block.get_block_name()->get_node_name();
+    const auto& solve_node_symbol = symtab->lookup(block_name);
     assert(solve_node_symbol != nullptr);
     auto node_to_solve = solve_node_symbol->get_node();
 

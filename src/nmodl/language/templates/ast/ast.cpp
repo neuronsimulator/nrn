@@ -109,7 +109,34 @@ void Ast::set_parent(Ast* p) {
     {% endfor %}
     }
 
+    void {{ node.class_name }}::visit_children(visitor::ConstVisitor& v) const {
+    {% for child in node.non_base_members %}
+        {% if child.is_vector %}
+        /// visit each element of vector
+        for (auto& item : this->{{ child.varname }}) {
+            item->accept(v);
+        }
+        {% elif child.optional %}
+        /// optional member could be nullptr
+        if (this->{{ child.varname }}) {
+            this->{{ child.varname }}->accept(v);
+        }
+        {% elif child.is_pointer_node %}
+        /// use -> for pointer member
+        {{ child.varname }}->accept(v);
+        {% else %}
+        /// use . for object member
+        {{ child.varname }}.accept(v);
+        {% endif %}
+        (void)v;
+    {% endfor %}
+    }
+
     void {{ node.class_name }}::accept(visitor::Visitor& v) {
+        v.visit_{{ node.class_name | snake_case }}(*this);
+    }
+
+    void {{ node.class_name }}::accept(visitor::ConstVisitor& v) const {
         v.visit_{{ node.class_name | snake_case }}(*this);
     }
 

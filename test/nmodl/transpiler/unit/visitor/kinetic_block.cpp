@@ -13,7 +13,6 @@
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/kinetic_block_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/loop_unroll_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -50,16 +49,15 @@ std::vector<std::string> run_kinetic_block_visitor(const std::string& text) {
     KineticBlockVisitor().visit_program(*ast);
 
     // run lookup visitor to extract DERIVATIVE block(s) from AST
-    AstLookupVisitor v_lookup;
-    auto res = v_lookup.lookup(*ast, AstNodeType::DERIVATIVE_BLOCK);
-    results.reserve(res.size());
-    for (const auto& r: res) {
-        results.push_back(to_nmodl(r));
+    const auto& blocks = collect_nodes(*ast, {AstNodeType::DERIVATIVE_BLOCK});
+    results.reserve(blocks.size());
+    for (const auto& block: blocks) {
+        results.push_back(to_nmodl(block));
     }
 
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return results;
 }

@@ -39,15 +39,15 @@ void run_visitor_passes(const std::string& text) {
         v1.visit_program(*ast);
         v2.visit_program(*ast);
         v3.visit_program(*ast);
-        v4.visit_program(*ast);
-        v4.visit_program(*ast);
+        v4.check_ast(*ast);
+        v4.check_ast(*ast);
         v1.visit_program(*ast);
         v1.visit_program(*ast);
-        v4.visit_program(*ast);
+        v4.check_ast(*ast);
         v2.visit_program(*ast);
         v3.visit_program(*ast);
         v2.visit_program(*ast);
-        v4.visit_program(*ast);
+        v4.check_ast(*ast);
     }
 }
 

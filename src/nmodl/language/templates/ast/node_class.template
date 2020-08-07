@@ -293,7 +293,19 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    *
    * \sa Ast::visit_children for example.
    */
-  {{ virtual(node) }} void visit_children (visitor::Visitor& v) override;
+  {{ virtual(node) }} void visit_children(visitor::Visitor& v) override;
+
+  /**
+   * \brief visit children i.e. member variables of current node using provided visitor
+   *
+   * Different nodes in the AST have different members (i.e. children). This method
+   * recursively visits children using provided visitor.
+   *
+   * \param v Concrete constant visitor that will be used to recursively visit children
+   *
+   * \sa Ast::visit_children for example.
+   */
+  {{ virtual(node) }} void visit_children(visitor::ConstVisitor& v) const override;
 
   /**
    * \brief accept (or visit) the current AST node using provided visitor
@@ -307,6 +319,11 @@ class {{ node.class_name }} : public {{ node.base_class }} {
    * \sa Ast::accept for example.
    */
   {{ virtual(node) }} void accept(visitor::Visitor& v) override;
+
+  /**
+   * \copydoc accept(visitor::Visitor&)
+   */
+  {{ virtual(node) }} void accept(visitor::ConstVisitor& v) const override;
 
   /// \}
 

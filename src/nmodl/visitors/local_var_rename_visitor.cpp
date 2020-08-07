@@ -50,7 +50,7 @@ void LocalVarRenameVisitor::visit_statement_block(ast::StatementBlock& node) {
         parent_symtab = symtab->get_parent_table();
     }
 
-    auto variables = get_local_list_statement(node);
+    const auto& variables = get_local_list_statement(node);
 
     /// global blocks do not change (do no have parent symbol table)
     /// if no variables in the block then there is nothing to do

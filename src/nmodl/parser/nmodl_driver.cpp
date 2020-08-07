@@ -54,11 +54,11 @@ std::shared_ptr<ast::Program> NmodlDriver::parse_string(const std::string& input
 }
 
 void NmodlDriver::error(const std::string& m, const class location& l) {
-    std::cerr << l << " : " << m << std::endl;
+    std::cerr << l << " : " << m << '\n';
 }
 
 void NmodlDriver::error(const std::string& m) {
-    std::cerr << m << std::endl;
+    std::cerr << m << '\n';
 }
 
 /// add macro definition and it's value (DEFINE keyword of nmodl)

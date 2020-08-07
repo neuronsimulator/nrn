@@ -31,7 +31,7 @@ void PerfVisitor::compact_json(bool flag) {
 
 
 /// count math operations from all binary expressions
-void PerfVisitor::visit_binary_expression(ast::BinaryExpression& node) {
+void PerfVisitor::visit_binary_expression(const ast::BinaryExpression& node) {
     bool assign_op = false;
 
     if (start_measurement) {
@@ -114,9 +114,9 @@ void PerfVisitor::visit_binary_expression(ast::BinaryExpression& node) {
 }
 
 /// add performance stats to json printer
-void PerfVisitor::add_perf_to_printer(PerfStat& perf) {
-    auto keys = perf.keys();
-    auto values = perf.values();
+void PerfVisitor::add_perf_to_printer(const PerfStat& perf) const {
+    const auto& keys = perf.keys();
+    const auto& values = perf.values();
     assert(keys.size() == values.size());
 
     for (size_t i = 0; i < keys.size(); i++) {
@@ -129,10 +129,10 @@ void PerfVisitor::add_perf_to_printer(PerfStat& perf) {
  *  all children visited, we get total performance by summing
  *  perfstat of all children.
  */
-void PerfVisitor::measure_performance(ast::Ast* node) {
+void PerfVisitor::measure_performance(const ast::Ast& node) {
     start_measurement = true;
 
-    node->visit_children(*this);
+    node.visit_children(*this);
 
     PerfStat perf;
     while (!children_blocks_perf.empty()) {
@@ -140,15 +140,15 @@ void PerfVisitor::measure_performance(ast::Ast* node) {
         children_blocks_perf.pop();
     }
 
-    auto symtab = node->get_symbol_table();
+    auto symtab = node.get_symbol_table();
     if (symtab == nullptr) {
         throw std::runtime_error("Perfvisitor : symbol table not setup for " +
-                                 node->get_node_type_name());
+                                 node.get_node_type_name());
     }
 
     auto name = symtab->name();
-    if (node->is_derivative_block()) {
-        name = node->get_node_type_name();
+    if (node.is_derivative_block()) {
+        name = node.get_node_type_name();
     }
 
     if (printer) {
@@ -172,7 +172,7 @@ void PerfVisitor::measure_performance(ast::Ast* node) {
 }
 
 /// count function calls and "most useful" or "commonly used" math functions
-void PerfVisitor::visit_function_call(ast::FunctionCall& node) {
+void PerfVisitor::visit_function_call(const ast::FunctionCall& node) {
     under_function_call = true;
 
     if (start_measurement) {
@@ -199,25 +199,25 @@ void PerfVisitor::visit_function_call(ast::FunctionCall& node) {
 }
 
 /// every variable used is of type name, update counters
-void PerfVisitor::visit_name(ast::Name& node) {
+void PerfVisitor::visit_name(const ast::Name& node) {
     update_memory_ops(node.get_node_name());
     node.visit_children(*this);
 }
 
 /// prime name derived from identifier and hence need to be handled here
-void PerfVisitor::visit_prime_name(ast::PrimeName& node) {
+void PerfVisitor::visit_prime_name(const ast::PrimeName& node) {
     update_memory_ops(node.get_node_name());
     node.visit_children(*this);
 }
 
-void PerfVisitor::visit_if_statement(ast::IfStatement& node) {
+void PerfVisitor::visit_if_statement(const ast::IfStatement& node) {
     if (start_measurement) {
         current_block_perf.n_if++;
         node.visit_children(*this);
     }
 }
 
-void PerfVisitor::visit_else_if_statement(ast::ElseIfStatement& node) {
+void PerfVisitor::visit_else_if_statement(const ast::ElseIfStatement& node) {
     if (start_measurement) {
         current_block_perf.n_elif++;
         node.visit_children(*this);
@@ -321,7 +321,7 @@ void PerfVisitor::print_memory_usage() {
     }
 }
 
-void PerfVisitor::visit_program(ast::Program& node) {
+void PerfVisitor::visit_program(const ast::Program& node) {
     if (printer) {
         printer->push_block("BlockPerf");
     }
@@ -343,100 +343,100 @@ void PerfVisitor::visit_program(ast::Program& node) {
     print_memory_usage();
 }
 
-void PerfVisitor::visit_plot_block(ast::PlotBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_plot_block(const ast::PlotBlock& node) {
+    measure_performance(node);
 }
 
 /// skip initial block under net_receive block
-void PerfVisitor::visit_initial_block(ast::InitialBlock& node) {
+void PerfVisitor::visit_initial_block(const ast::InitialBlock& node) {
     if (!under_net_receive_block) {
-        measure_performance(&node);
+        measure_performance(node);
     }
 }
 
-void PerfVisitor::visit_constructor_block(ast::ConstructorBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_constructor_block(const ast::ConstructorBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_destructor_block(ast::DestructorBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_destructor_block(const ast::DestructorBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_derivative_block(const ast::DerivativeBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_linear_block(ast::LinearBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_linear_block(const ast::LinearBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_non_linear_block(const ast::NonLinearBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_discrete_block(ast::DiscreteBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_discrete_block(const ast::DiscreteBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_partial_block(ast::PartialBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_partial_block(const ast::PartialBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_function_table_block(ast::FunctionTableBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_function_table_block(const ast::FunctionTableBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_function_block(ast::FunctionBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_function_block(const ast::FunctionBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_procedure_block(ast::ProcedureBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_procedure_block(const ast::ProcedureBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_net_receive_block(ast::NetReceiveBlock& node) {
+void PerfVisitor::visit_net_receive_block(const ast::NetReceiveBlock& node) {
     under_net_receive_block = true;
-    measure_performance(&node);
+    measure_performance(node);
     under_net_receive_block = false;
 }
 
-void PerfVisitor::visit_breakpoint_block(ast::BreakpointBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_breakpoint_block(const ast::BreakpointBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_terminal_block(ast::TerminalBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_terminal_block(const ast::TerminalBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_before_block(ast::BeforeBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_before_block(const ast::BeforeBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_after_block(ast::AfterBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_after_block(const ast::AfterBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_ba_block(ast::BABlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_ba_block(const ast::BABlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_for_netcon(ast::ForNetcon& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_for_netcon(const ast::ForNetcon& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_kinetic_block(ast::KineticBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_kinetic_block(const ast::KineticBlock& node) {
+    measure_performance(node);
 }
 
-void PerfVisitor::visit_match_block(ast::MatchBlock& node) {
-    measure_performance(&node);
+void PerfVisitor::visit_match_block(const ast::MatchBlock& node) {
+    measure_performance(node);
 }
 
 /** Blocks like function can have multiple statement blocks and
  * blocks like net receive has nested initial blocks. Hence need
  * to maintain separate stack.
  */
-void PerfVisitor::visit_statement_block(ast::StatementBlock& node) {
+void PerfVisitor::visit_statement_block(const ast::StatementBlock& node) {
     /// starting new block, store current state
     blocks_perf.push(current_block_perf);
 
@@ -466,13 +466,13 @@ void PerfVisitor::visit_statement_block(ast::StatementBlock& node) {
 /// and hence could/should not be skipped completely
 /// we can't ignore the block because it could have associated
 /// statement block (in theory)
-void PerfVisitor::visit_solve_block(ast::SolveBlock& node) {
+void PerfVisitor::visit_solve_block(const ast::SolveBlock& node) {
     under_solve_block = true;
     node.visit_children(*this);
     under_solve_block = false;
 }
 
-void PerfVisitor::visit_unary_expression(ast::UnaryExpression& node) {
+void PerfVisitor::visit_unary_expression(const ast::UnaryExpression& node) {
     if (start_measurement) {
         auto value = node.get_op().get_value();
         switch (value) {
@@ -513,7 +513,7 @@ bool PerfVisitor::symbol_to_skip(const std::shared_ptr<Symbol>& symbol) {
     return skip;
 }
 
-bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) {
+bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) const {
     bool is_local = false;
     /// in the function when we write to function variable then consider it as local variable
     auto properties = NmodlType::local_var | NmodlType::argument | NmodlType::function_block;
@@ -523,7 +523,7 @@ bool PerfVisitor::is_local_variable(const std::shared_ptr<Symbol>& symbol) {
     return is_local;
 }
 
-bool PerfVisitor::is_constant_variable(const std::shared_ptr<Symbol>& symbol) {
+bool PerfVisitor::is_constant_variable(const std::shared_ptr<Symbol>& symbol) const {
     bool is_constant = false;
     auto properties = NmodlType::param_assign;
     if (symbol->has_any_property(properties)) {

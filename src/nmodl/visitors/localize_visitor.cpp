@@ -51,7 +51,7 @@ bool LocalizeVisitor::node_for_def_use_analysis(const ast::Node& node) const {
     auto it = std::find(blocks_to_analyze.begin(), blocks_to_analyze.end(), type);
     auto node_to_analyze = !(it == blocks_to_analyze.end());
     auto solve_procedure = is_solve_procedure(node);
-    return (node_to_analyze || solve_procedure);
+    return node_to_analyze || solve_procedure;
 }
 
 /*
@@ -69,6 +69,7 @@ bool LocalizeVisitor::is_solve_procedure(const ast::Node& node) const {
 }
 
 std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
+    std::vector<std::string> result;
     // clang-format off
     const NmodlType excluded_var_properties = NmodlType::extern_var
                                      | NmodlType::extern_neuron_variable
@@ -81,11 +82,10 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
                                      | NmodlType::electrode_cur_var
                                      | NmodlType::section_var;
 
-    NmodlType global_var_properties = NmodlType::range_var
-                                       | NmodlType::assigned_definition
-                                       | NmodlType::param_assign;
+    const NmodlType global_var_properties = NmodlType::range_var
+                                     | NmodlType::assigned_definition
+                                     | NmodlType::param_assign;
     // clang-format on
-
 
     /**
      *  \todo Voltage v can be global variable as well as external. In order
@@ -94,7 +94,6 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
      */
     const auto& variables = program_symtab->get_variables_with_properties(global_var_properties);
 
-    std::vector<std::string> result;
     for (const auto& variable: variables) {
         if (!variable->has_any_property(excluded_var_properties)) {
             result.push_back(variable->get_name());
@@ -103,7 +102,7 @@ std::vector<std::string> LocalizeVisitor::variables_to_optimize() const {
     return result;
 }
 
-void LocalizeVisitor::visit_program(ast::Program& node) {
+void LocalizeVisitor::visit_program(const ast::Program& node) {
     /// symtab visitor pass need to be run before
     program_symtab = node.get_symbol_table();
     if (program_symtab == nullptr) {
@@ -119,8 +118,8 @@ void LocalizeVisitor::visit_program(ast::Program& node) {
         /// compute def use chains
         for (const auto& block: blocks) {
             if (node_for_def_use_analysis(*block)) {
-                DefUseAnalyzeVisitor v(program_symtab, ignore_verbatim);
-                auto usages = v.analyze(*block, varname);
+                DefUseAnalyzeVisitor v(*program_symtab, ignore_verbatim);
+                const auto& usages = v.analyze(*block, varname);
                 auto result = usages.eval();
                 block_usage[result].push_back(block);
             }
@@ -142,18 +141,17 @@ void LocalizeVisitor::visit_program(ast::Program& node) {
                     auto symbol = program_symtab->lookup(varname);
 
                     if (symbol->is_array()) {
-                        variable = add_local_variable(*statement_block.get(),
-                                                      varname,
-                                                      symbol->get_length());
+                        variable =
+                            add_local_variable(*statement_block, varname, symbol->get_length());
                     } else {
-                        variable = add_local_variable(*statement_block.get(), varname);
+                        variable = add_local_variable(*statement_block, varname);
                     }
 
                     /// mark variable as localized in global symbol table
                     symbol->mark_localized();
 
                     /// insert new symbol in the symbol table of current block
-                    auto symtab = statement_block->get_symbol_table();
+                    const auto& symtab = statement_block->get_symbol_table();
                     auto new_symbol = std::make_shared<Symbol>(varname, variable);
                     new_symbol->add_property(NmodlType::local_var);
                     new_symbol->mark_created();

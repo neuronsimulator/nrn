@@ -42,12 +42,12 @@ namespace test {
  * the tree. Once all the children were checked we set the parent of the
  * current node as parent (it was checked before) and return.
  */
-class CheckParentVisitor : public AstVisitor {
+class CheckParentVisitor : public ConstAstVisitor {
     private:
         /**
         * \brief Keeps track of the parents while going down the tree
         */
-        ast::Ast* parent = nullptr;
+        const ast::Ast* parent = nullptr;
         /**
         * \brief Flag to activate the parent check on the root node
         *
@@ -55,32 +55,37 @@ class CheckParentVisitor : public AstVisitor {
         * root node, from which we start the visit, is the root node and
         * thus, it should have nullptr parent
         */
-        bool is_root_with_null_parent = false;
+        const bool is_root_with_null_parent = false;
+
+        /**
+         * \brief Check the parent, throw an error if not
+         */
+        void check_parent(const ast::Ast& node) const;
+
     public:
 
         /**
-        * \brief Standard constructor
-        *
-        * If is_root_with_null_parent is set to true, also the initial
-        * node is checked to be sure that is really the root (parent = nullptr)
-        */
-        CheckParentVisitor(const bool is_root_with_null_parent = true) {}
+         * \brief Standard constructor
+         *
+         * If \a is_root_with_null_parent is set to true, also the initial
+         * node is checked to be sure that is really the root (parent == nullptr)
+         */
+        CheckParentVisitor(bool is_root_with_null_parent = true)
+          : is_root_with_null_parent(is_root_with_null_parent) {}
 
         /**
-        * \brief A small wrapper to have a nicer call in parser.cpp
-        */
-        int check_ast(ast::Ast* node);
+         * \brief A small wrapper to have a nicer call in parser.cpp
+         * \return 0
+         */
+        int check_ast(const ast::Ast& node);
 
-        /**
-        * \brief Check the parent, throw an error if not
-        */
-        void check_parent(ast::Ast* node) const;
+    protected:
 
         {% for node in nodes %}
         /**
         * \brief Go through the tree while checking the parents
         */
-        void visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) override;
+        void visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) override;
         {% endfor %}
 };
 

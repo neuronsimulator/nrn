@@ -8,13 +8,11 @@
 #include "codegen/codegen_info.hpp"
 
 #include "ast/all.hpp"
-#include "visitors/lookup_visitor.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
 namespace codegen {
-
-using visitor::AstLookupVisitor;
 
 /// if any ion has write variable
 bool CodegenInfo::ion_has_write_variable() const {
@@ -100,9 +98,7 @@ bool CodegenInfo::nrn_state_has_eigen_solver_block() const {
     if (nrn_state_block == nullptr) {
         return false;
     }
-    return !AstLookupVisitor()
-                .lookup(*nrn_state_block, ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK)
-                .empty();
+    return !collect_nodes(*nrn_state_block, {ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK}).empty();
 }
 
 }  // namespace codegen

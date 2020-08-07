@@ -22,38 +22,47 @@ namespace visitor {
 using namespace ast;
 
 {% for node in nodes %}
-void AstLookupVisitor::visit_{{ node.class_name|snake_case }}({{ node.class_name }}& node) {
+template <typename DefaultVisitor>
+void MetaAstLookupVisitor<DefaultVisitor>::visit_{{ node.class_name|snake_case }}(typename visit_arg_trait<{{ node.class_name }}>::type& node) {
     const auto type = node.get_node_type();
     if (std::find(types.begin(), types.end(), type) != types.end()) {
         nodes.push_back(node.get_shared_ptr());
     }
     node.visit_children(*this);
 }
-
 {% endfor %}
 
-
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node, const std::vector<AstNodeType>& _types) {
-    nodes.clear();
-    types = _types;
+template <typename DefaultVisitor>
+const typename MetaAstLookupVisitor<DefaultVisitor>::nodes_t&
+MetaAstLookupVisitor<DefaultVisitor>::lookup(typename MetaAstLookupVisitor<DefaultVisitor>::ast_t& node,
+                                             const std::vector<AstNodeType>& t_types) {
+    clear();
+    this->types = t_types;
     node.accept(*this);
     return nodes;
 }
 
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node, AstNodeType type) {
-    nodes.clear();
-    types.clear();
-    types.push_back(type);
+template <typename DefaultVisitor>
+const typename MetaAstLookupVisitor<DefaultVisitor>::nodes_t&
+MetaAstLookupVisitor<DefaultVisitor>::lookup(typename MetaAstLookupVisitor<DefaultVisitor>::ast_t& node,
+                                             AstNodeType type) {
+    clear();
+    this->types.push_back(type);
     node.accept(*this);
     return nodes;
 }
 
-std::vector<std::shared_ptr<ast::Ast>> AstLookupVisitor::lookup(Ast& node) {
+template <typename DefaultVisitor>
+const typename MetaAstLookupVisitor<DefaultVisitor>::nodes_t&
+MetaAstLookupVisitor<DefaultVisitor>::lookup(typename MetaAstLookupVisitor<DefaultVisitor>::ast_t& node) {
     nodes.clear();
     node.accept(*this);
     return nodes;
 }
+
+// explicit template instantiation definitions
+template class MetaAstLookupVisitor<Visitor>;
+template class MetaAstLookupVisitor<ConstVisitor>;
 
 }  // namespace visitor
 }  // namespace nmodl
-

@@ -13,7 +13,6 @@
 #include "pybind/pyembed.hpp"
 #include "symtab/symbol.hpp"
 #include "utils/logger.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 namespace pywrap = nmodl::pybind_wrappers;
@@ -39,10 +38,8 @@ using symtab::syminfo::NmodlType;
  * @param node Ast node for breakpoint block
  * @return true if it is safe to insert conductance statements otherwise false
  */
-static bool conductance_statement_possible(ast::BreakpointBlock& node) {
-    AstLookupVisitor v({AstNodeType::IF_STATEMENT, AstNodeType::VERBATIM});
-    node.accept(v);
-    return v.get_nodes().empty();
+static bool conductance_statement_possible(const ast::BreakpointBlock& node) {
+    return collect_nodes(node, {AstNodeType::IF_STATEMENT, AstNodeType::VERBATIM}).empty();
 }
 
 
@@ -54,9 +51,9 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
     // instead of passing all variables in the symbol table find out variables
     // that are used in the current block and then pass to sympy
     // name could be parameter or unit so check if it exist in symbol table
-    auto names_in_block = AstLookupVisitor().lookup(node, AstNodeType::NAME);
+    const auto& names_in_block = collect_nodes(node, {AstNodeType::NAME});
     string_set used_names_in_block;
-    for (auto& name: names_in_block) {
+    for (const auto& name: names_in_block) {
         auto varname = name->get_node_name();
         if (all_vars.find(varname) != all_vars.end()) {
             used_names_in_block.insert(varname);
@@ -144,8 +141,10 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
         for (const auto& ns_curr_ast: nonspecific_nodes) {
             logger->debug("SympyConductance :: Found NONSPECIFIC_CURRENT statement");
             for (const auto& write_name:
-                 std::dynamic_pointer_cast<ast::Nonspecific>(ns_curr_ast).get()->get_currents()) {
-                std::string curr_write = write_name->get_node_name();
+                 std::dynamic_pointer_cast<const ast::Nonspecific>(ns_curr_ast)
+                     .get()
+                     ->get_currents()) {
+                const std::string& curr_write = write_name->get_node_name();
                 logger->debug("SympyConductance :: -> Adding non-specific current write name: {}",
                               curr_write);
                 i_name[curr_write] = "";
@@ -154,7 +153,7 @@ void SympyConductanceVisitor::lookup_nonspecific_statements() {
     }
 }
 
-std::string SympyConductanceVisitor::to_nmodl_for_sympy(ast::Ast& node) {
+std::string SympyConductanceVisitor::to_nmodl_for_sympy(const ast::Ast& node) {
     return to_nmodl(node, {ast::AstNodeType::UNIT, ast::AstNodeType::UNIT_DEF});
 }
 
@@ -162,7 +161,7 @@ std::string SympyConductanceVisitor::to_nmodl_for_sympy(ast::Ast& node) {
 void SympyConductanceVisitor::lookup_useion_statements() {
     // add USEION statements to i_name map between write vars and names
     for (const auto& useion_ast: use_ion_nodes) {
-        const auto& ion = std::dynamic_pointer_cast<ast::Useion>(useion_ast);
+        const auto& ion = std::dynamic_pointer_cast<const ast::Useion>(useion_ast);
         const std::string& ion_name = ion->get_node_name();
         logger->debug("SympyConductance :: Found USEION statement {}", to_nmodl_for_sympy(*ion));
         if (i_ignore.find(ion_name) != i_ignore.end()) {
@@ -238,9 +237,9 @@ void SympyConductanceVisitor::visit_breakpoint_block(ast::BreakpointBlock& node)
 
 void SympyConductanceVisitor::visit_program(ast::Program& node) {
     all_vars = get_global_vars(node);
-    AstLookupVisitor ast_lookup_visitor;
-    use_ion_nodes = ast_lookup_visitor.lookup(node, AstNodeType::USEION);
-    nonspecific_nodes = ast_lookup_visitor.lookup(node, AstNodeType::NONSPECIFIC);
+    const auto& program = node;
+    use_ion_nodes = collect_nodes(program, {AstNodeType::USEION});
+    nonspecific_nodes = collect_nodes(program, {AstNodeType::NONSPECIFIC});
 
     node.visit_children(*this);
 }

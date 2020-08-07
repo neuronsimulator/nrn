@@ -14,21 +14,22 @@
 namespace nmodl {
 namespace parser {
 
+CDriver::CDriver() = default;
+
 CDriver::CDriver(bool strace, bool ptrace)
     : trace_scanner(strace)
     , trace_parser(ptrace) {}
 
+CDriver::~CDriver() = default;
+
 /// parse c file provided as istream
 bool CDriver::parse_stream(std::istream& in) {
-    CLexer scanner(*this, &in);
-    CParser parser(scanner, *this);
+    lexer.reset(new CLexer(*this, &in));
+    parser.reset(new CParser(*lexer, *this));
 
-    this->lexer = &scanner;
-    this->parser = &parser;
-
-    scanner.set_debug(trace_scanner);
-    parser.set_debug_level(trace_parser);
-    return (parser.parse() == 0);
+    lexer->set_debug(trace_scanner);
+    parser->set_debug_level(trace_parser);
+    return parser->parse() == 0;
 }
 
 //// parse c file
@@ -48,8 +49,8 @@ bool CDriver::parse_string(const std::string& input) {
     return parse_stream(iss);
 }
 
-void CDriver::error(const std::string& m) {
-    std::cerr << m << std::endl;
+void CDriver::error(const std::string& m) const {
+    std::cerr << m << '\n';
 }
 
 void CDriver::add_token(const std::string& text) {
@@ -57,16 +58,14 @@ void CDriver::add_token(const std::string& text) {
     // here we will query and look into symbol table or register callback
 }
 
-void CDriver::error(const std::string& m, const location& l) {
-    std::cerr << l << " : " << m << std::endl;
+void CDriver::error(const std::string& m, const location& l) const {
+    std::cerr << l << " : " << m << '\n';
 }
 
-void CDriver::scan_string(std::string& text) {
+void CDriver::scan_string(const std::string& text) {
     std::istringstream in(text);
-    CLexer scanner(*this, &in);
-    CParser parser(scanner, *this);
-    this->lexer = &scanner;
-    this->parser = &parser;
+    lexer.reset(new CLexer(*this, &in));
+    parser.reset(new CParser(*lexer, *this));
     while (true) {
         auto sym = lexer->next_token();
         auto token_type = sym.type_get();

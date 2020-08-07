@@ -16,9 +16,8 @@
 namespace nmodl {
 namespace visitor {
 
-using nmodl::utils::UseNumbersInString;
 
-std::string RenameVisitor::new_name_generator(const std::string old_name) {
+std::string RenameVisitor::new_name_generator(const std::string& old_name) {
     std::string new_name;
     if (add_random_suffix) {
         if (renamed_variables.find(old_name) != renamed_variables.end()) {
@@ -46,7 +45,7 @@ std::string RenameVisitor::new_name_generator(const std::string old_name) {
 }
 
 /// rename matching variable
-void RenameVisitor::visit_name(ast::Name& node) {
+void RenameVisitor::visit_name(const ast::Name& node) {
     const auto& name = node.get_node_name();
     if (std::regex_match(name, var_name_regex)) {
         std::string new_name = new_name_generator(name);
@@ -63,40 +62,40 @@ void RenameVisitor::visit_name(ast::Name& node) {
  * macro. In practice this won't be an issue as we order is set
  * by parser. To be safe we are only renaming prime variable.
  */
-void RenameVisitor::visit_prime_name(ast::PrimeName& node) {
+void RenameVisitor::visit_prime_name(const ast::PrimeName& node) {
     node.visit_children(*this);
 }
 
 /**
  * Parse verbatim blocks and rename variable if it is used.
  */
-void RenameVisitor::visit_verbatim(ast::Verbatim& node) {
+void RenameVisitor::visit_verbatim(const ast::Verbatim& node) {
     if (!rename_verbatim) {
         return;
     }
 
     const auto& statement = node.get_statement();
-    auto text = statement->eval();
+    const auto& text = statement->eval();
     parser::CDriver driver;
 
     driver.scan_string(text);
     auto tokens = driver.all_tokens();
 
-    std::string result;
+    std::ostringstream result;
     for (auto& token: tokens) {
         if (std::regex_match(token, var_name_regex)) {
             /// Check if variable is already renamed and use the same naming otherwise add the
             /// new_name to the renamed_variables map
-            std::string new_name = new_name_generator(token);
-            result += new_name;
+            const std::string& new_name = new_name_generator(token);
+            result << new_name;
             logger->warn("RenameVisitor :: Renaming variable {} in VERBATIM block to {}",
                          token,
                          new_name);
         } else {
-            result += token;
+            result << token;
         }
     }
-    statement->set(result);
+    statement->set(result.str());
 }
 
 }  // namespace visitor

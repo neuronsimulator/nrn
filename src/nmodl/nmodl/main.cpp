@@ -364,7 +364,7 @@ int main(int argc, const char* argv[]) {
         if (json_ast) {
             logger->info("Writing AST into {}", file);
             auto file = scratch_dir + "/" + modfile + ".ast.json";
-            JSONVisitor(file).visit_program(*ast);
+            JSONVisitor(file).write(*ast);
         }
 
         if (verbatim_rename) {

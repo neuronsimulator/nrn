@@ -199,8 +199,9 @@ void init_ast_module(py::module& m) {
 
     py::class_<Ast, PyAst, std::shared_ptr<Ast>> ast_(m_ast, "Ast", docstring::ast_class);
     ast_.def(py::init<>())
-        .def("visit_children", &Ast::visit_children, "v"_a, docstring::visit_children_method)
-        .def("accept", &Ast::accept, "v"_a, docstring::accept_method)
+        .def("visit_children", static_cast<void (Ast::*)(visitor::Visitor&)>(&Ast::visit_children), "v"_a, docstring::visit_children_method)
+        .def("accept", static_cast<void (Ast::*)(visitor::Visitor&)>(&Ast::accept), "v"_a, docstring::accept_method)
+        .def("accept", static_cast<void (Ast::*)(visitor::ConstVisitor&) const>(&Ast::accept), "v"_a, docstring::accept_method)
         .def("get_node_type", &Ast::get_node_type, docstring::get_node_type_method)
         .def("get_node_type_name", &Ast::get_node_type_name, docstring::get_node_type_name_method)
         .def("get_node_name", &Ast::get_node_name, docstring::get_node_name_method)
@@ -258,8 +259,9 @@ void init_ast_module(py::module& m) {
     {% endif %}
     {% endfor %}
 
-    {{ var(node) }}.def("visit_children", &{{ node.class_name }}::visit_children, docstring::visit_children_method)
-    .def("accept", &{{ node.class_name }}::accept, docstring::accept_method)
+    {{ var(node) }}.def("visit_children", static_cast<void ({{ node.class_name }}::*)(visitor::Visitor&)>(&{{ node.class_name }}::visit_children), docstring::visit_children_method)
+    .def("accept", static_cast<void ({{ node.class_name }}::*)(visitor::Visitor&)>(&{{ node.class_name }}::accept), docstring::accept_method)
+    .def("accept", static_cast<void ({{ node.class_name }}::*)(visitor::ConstVisitor&) const>(&{{ node.class_name }}::accept), docstring::accept_method)
     .def("clone", &{{ node.class_name }}::clone, docstring::clone_method)
     .def("get_node_type", &{{ node.class_name }}::get_node_type, docstring::get_node_type_method)
     .def("get_node_type_name", &{{ node.class_name }}::get_node_type_name, docstring::get_node_type_name_method)

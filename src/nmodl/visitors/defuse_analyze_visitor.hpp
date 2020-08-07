@@ -86,13 +86,13 @@ class DUInstance {
         : state(state) {}
 
     /// analyze all children and return "effective" usage
-    DUState eval();
+    DUState eval() const;
 
     /// if, elseif and else evaluation
-    DUState sub_block_eval();
+    DUState sub_block_eval() const;
 
     /// evaluate global usage i.e. with [D,U] states of children
-    DUState conditional_block_eval();
+    DUState conditional_block_eval() const;
 
     void print(printer::JSONPrinter& printer) const;
 };
@@ -115,7 +115,7 @@ class DUChain {
         : name(std::move(name)) {}
 
     /// return "effective" usage of a variable
-    DUState eval();
+    DUState eval() const;
 
     /// return json representation
     std::string to_string(bool compact = true) const;
@@ -181,7 +181,7 @@ class DUChain {
  * in any of the if-elseif-else part then it is considered as "used". And
  * this is done recursively from innermost level to the top.
  */
-class DefUseAnalyzeVisitor: protected AstVisitor {
+class DefUseAnalyzeVisitor: protected ConstAstVisitor {
   private:
     /// symbol table containing global variables
     symtab::SymbolTable* global_symtab = nullptr;
@@ -212,25 +212,25 @@ class DefUseAnalyzeVisitor: protected AstVisitor {
     void process_variable(const std::string& name, int index);
 
     void update_defuse_chain(const std::string& name);
-    void visit_unsupported_node(ast::Node& node);
-    void visit_with_new_chain(ast::Node& node, DUState state);
+    void visit_unsupported_node(const ast::Node& node);
+    void visit_with_new_chain(const ast::Node& node, DUState state);
     void start_new_chain(DUState state);
 
   public:
     DefUseAnalyzeVisitor() = delete;
 
-    explicit DefUseAnalyzeVisitor(symtab::SymbolTable* symtab)
-        : global_symtab(symtab) {}
+    explicit DefUseAnalyzeVisitor(symtab::SymbolTable& symtab)
+        : global_symtab(&symtab) {}
 
-    DefUseAnalyzeVisitor(symtab::SymbolTable* symtab, bool ignore_verbatim)
-        : global_symtab(symtab)
+    DefUseAnalyzeVisitor(symtab::SymbolTable& symtab, bool ignore_verbatim)
+        : global_symtab(&symtab)
         , ignore_verbatim(ignore_verbatim) {}
 
-    void visit_binary_expression(ast::BinaryExpression& node) override;
-    void visit_if_statement(ast::IfStatement& node) override;
-    void visit_function_call(ast::FunctionCall& node) override;
-    void visit_statement_block(ast::StatementBlock& node) override;
-    void visit_verbatim(ast::Verbatim& node) override;
+    void visit_binary_expression(const ast::BinaryExpression& node) override;
+    void visit_if_statement(const ast::IfStatement& node) override;
+    void visit_function_call(const ast::FunctionCall& node) override;
+    void visit_statement_block(const ast::StatementBlock& node) override;
+    void visit_verbatim(const ast::Verbatim& node) override;
 
     /**
      * /\name unsupported statements
@@ -239,23 +239,23 @@ class DefUseAnalyzeVisitor: protected AstVisitor {
      * \{
      */
 
-    void visit_reaction_statement(ast::ReactionStatement& node) override;
+    void visit_reaction_statement(const ast::ReactionStatement& node) override;
 
-    void visit_non_lin_equation(ast::NonLinEquation& node) override;
+    void visit_non_lin_equation(const ast::NonLinEquation& node) override;
 
-    void visit_lin_equation(ast::LinEquation& node) override;
+    void visit_lin_equation(const ast::LinEquation& node) override;
 
-    void visit_partial_boundary(ast::PartialBoundary& node) override;
+    void visit_partial_boundary(const ast::PartialBoundary& node) override;
 
-    void visit_from_statement(ast::FromStatement& node) override;
+    void visit_from_statement(const ast::FromStatement& node) override;
 
-    void visit_conserve(ast::Conserve& node) override;
+    void visit_conserve(const ast::Conserve& node) override;
 
-    void visit_var_name(ast::VarName& node) override;
+    void visit_var_name(const ast::VarName& node) override;
 
-    void visit_name(ast::Name& node) override;
+    void visit_name(const ast::Name& node) override;
 
-    void visit_indexed_name(ast::IndexedName& node) override;
+    void visit_indexed_name(const ast::IndexedName& node) override;
 
     /** \} */
 
@@ -265,16 +265,16 @@ class DefUseAnalyzeVisitor: protected AstVisitor {
      * \{
      */
 
-    void visit_conductance_hint(ast::ConductanceHint& node) override;
+    void visit_conductance_hint(const ast::ConductanceHint& node) override;
 
-    void visit_local_list_statement(ast::LocalListStatement& node) override;
+    void visit_local_list_statement(const ast::LocalListStatement& node) override;
 
-    void visit_argument(ast::Argument& node) override;
+    void visit_argument(const ast::Argument& node) override;
 
     /** \} */
 
     /// compute def-use chain for a variable within the node
-    DUChain analyze(ast::Ast& node, const std::string& name);
+    DUChain analyze(const ast::Ast& node, const std::string& name);
 };
 
 /** @} */  // end of visitor_classes

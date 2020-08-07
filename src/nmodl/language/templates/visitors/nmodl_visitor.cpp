@@ -86,7 +86,7 @@ using namespace ast;
 
 
 {%- for node in nodes %}
-void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}({{ node.class_name }}& node) {
+void NmodlPrintVisitor::visit_{{ node.class_name|snake_case}}(const {{ node.class_name }}& node) {
     if (is_exclude_type(node.get_node_type())) {
         return;
     }

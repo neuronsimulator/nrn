@@ -10,7 +10,6 @@
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "utils/logger.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
@@ -104,10 +103,10 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
 
 void SteadystateVisitor::visit_program(ast::Program& node) {
     // get DERIVATIVE blocks
-    const auto& deriv_blocks = AstLookupVisitor().lookup(node, ast::AstNodeType::DERIVATIVE_BLOCK);
+    const auto& deriv_blocks = collect_nodes(node, {ast::AstNodeType::DERIVATIVE_BLOCK});
 
     // get list of STEADYSTATE solve statements with names & methods
-    const auto& solve_block_nodes = AstLookupVisitor().lookup(node, ast::AstNodeType::SOLVE_BLOCK);
+    const auto& solve_block_nodes = collect_nodes(node, {ast::AstNodeType::SOLVE_BLOCK});
 
     // create new DERIVATIVE blocks for the STEADYSTATE solves
     for (const auto& solve_block_ptr: solve_block_nodes) {

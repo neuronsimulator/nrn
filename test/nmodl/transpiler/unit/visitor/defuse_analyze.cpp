@@ -13,7 +13,6 @@
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/defuse_analyze_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 
 using namespace nmodl;
@@ -36,17 +35,17 @@ std::vector<DUChain> run_defuse_visitor(const std::string& text, const std::stri
     InlineVisitor().visit_program(*ast);
 
     std::vector<DUChain> chains;
-    DefUseAnalyzeVisitor v(ast->get_symbol_table());
+    DefUseAnalyzeVisitor v(*ast->get_symbol_table());
 
     /// analyse only derivative blocks in this test
-    auto blocks = AstLookupVisitor().lookup(*ast, AstNodeType::DERIVATIVE_BLOCK);
+    const auto& blocks = nmodl::collect_nodes(*ast, {AstNodeType::DERIVATIVE_BLOCK});
     chains.reserve(blocks.size());
-    for (auto& block: blocks) {
+    for (const auto& block: blocks) {
         chains.push_back(v.analyze(*block, variable));
     }
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     return chains;
 }

@@ -14,7 +14,6 @@
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/local_var_rename_visitor.hpp"
-#include "visitors/lookup_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
 #include "visitors/symtab_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
@@ -50,12 +49,11 @@ std::string run_sympy_conductance_visitor(const std::string& text) {
     SympyConductanceVisitor().visit_program(*ast);
 
     // check that, after visitor rearrangement, parents are still up-to-date
-    CheckParentVisitor().visit_program(*ast);
+    CheckParentVisitor().check_ast(*ast);
 
     // run lookup visitor to extract results from AST
-    AstLookupVisitor v_lookup;
     // return BREAKPOINT block as JSON string
-    return reindent_text(to_nmodl(v_lookup.lookup(*ast, AstNodeType::BREAKPOINT_BLOCK)[0]));
+    return reindent_text(to_nmodl(collect_nodes(*ast, {AstNodeType::BREAKPOINT_BLOCK}).front()));
 }
 
 std::string breakpoint_to_nmodl(const std::string& text) {
@@ -67,9 +65,8 @@ std::string breakpoint_to_nmodl(const std::string& text) {
     SymtabVisitor().visit_program(*ast);
 
     // run lookup visitor to extract results from AST
-    AstLookupVisitor v_lookup;
     // return BREAKPOINT block as JSON string
-    return reindent_text(to_nmodl(v_lookup.lookup(*ast, AstNodeType::BREAKPOINT_BLOCK)[0]));
+    return reindent_text(to_nmodl(collect_nodes(*ast, {AstNodeType::BREAKPOINT_BLOCK}).front()));
 }
 
 void run_sympy_conductance_passes(ast::Program& node) {
