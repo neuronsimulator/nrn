@@ -31,6 +31,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <cstring>
 
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/sim/multicore.hpp"
@@ -217,6 +218,7 @@ int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::ve
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
 namespace coreneuron {
+extern corenrn_parameters corenrn_param;
 int nrn_setup_multiple = 1; /* default */
 int nrn_setup_extracon = 0; /* default */
 static int maxgid;
@@ -805,7 +807,7 @@ void nrn_setup(const char* filesdat,
     delete[] gidgroups;
     delete[] imult;
 
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
     }
 }

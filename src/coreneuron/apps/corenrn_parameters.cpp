@@ -42,6 +42,7 @@ corenrn_parameters::corenrn_parameters(){
     app.add_option("-e, --tstop", this->tstop, "Stop Time in ms.")
         ->check(CLI::Range(0., 1e9));
     app.add_flag("--show");
+    app.add_set("--verbose", this->verbose, {verbose_level::NONE, verbose_level::ERROR, verbose_level::INFO, verbose_level::DEBUG}, "Verbose level: 0 = NONE, 1 = ERROR, 2 = INFO, 3 = DEBUG. Default is INFO");
 
     auto sub_gpu = app.add_option_group("GPU", "Commands relative to GPU.");
     sub_gpu -> add_option("-W, --nwarp", this->nwarp, "Number of warps to balance.", true)
@@ -110,6 +111,9 @@ void corenrn_parameters::parse (int argc, char** argv) {
 
     try {
         app.parse(argc, argv);
+        if(verbose == verbose_level::NONE) {
+            nrn_nobanner_ = 1;
+        }
     } catch (const CLI::ExtrasError &e) {
         std::cerr << "Single-dash arguments such as -mpi are deleted, please check ./coreneuron_exec --help for more information. \n" << std::endl;
         app.exit(e);
@@ -171,7 +175,7 @@ std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_par
     return os;
 }
 
-
 corenrn_parameters corenrn_param;
+int nrn_nobanner_{0};
 
 } // namespace coreneuron

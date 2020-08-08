@@ -57,6 +57,15 @@ namespace coreneuron {
 
 struct corenrn_parameters {
 
+    enum verbose_level : std::uint32_t
+    {
+      NONE = 0,
+      ERROR = 1,
+      INFO = 2,
+      DEBUG = 3,
+      DEFAULT = INFO
+    };
+
     const int report_buff_size_default=4;
 
     unsigned spikebuf=100'000;     /// Internal buffer used on every rank for spikes
@@ -77,6 +86,8 @@ struct corenrn_parameters {
     bool threading=false;          /// Enable pthread/openmp
     bool gpu=false;                /// Enable GPU computation.
     bool binqueue=false;           /// Use bin queue.
+
+    verbose_level verbose{verbose_level::DEFAULT}; /// Verbosity-level
 
     double tstop=100;              /// Stop time of simulation in msec
     double dt=-1000.0;             /// Timestep to use in msec
@@ -102,11 +113,14 @@ struct corenrn_parameters {
 
     void parse(int argc, char* argv[]); /// Runs the CLI11_PARSE macro.
 
+    inline bool is_quiet() { return verbose == verbose_level::NONE; }
+
 };
 
 std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_param);    /// Printing method.
 
 extern corenrn_parameters corenrn_param;    /// Declaring global corenrn_parameters object for this instance of CoreNeuron.
+extern int nrn_nobanner_;                   /// Global no banner setting
 
 }  // namespace coreneuron
 

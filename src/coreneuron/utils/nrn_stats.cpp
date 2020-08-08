@@ -36,6 +36,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdio>
 #include <climits>
 #include <vector>
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/utils/nrn_stats.h"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/sim/multicore.hpp"
@@ -44,6 +45,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/io/output_spikes.hpp"
 namespace coreneuron {
 extern NetCvode* net_cvode_instance;
+extern corenrn_parameters corenrn_param;
 
 const int NUM_STATS = 12;
 #if COLLECT_TQueue_STATISTICS
@@ -155,7 +157,7 @@ void report_cell_stats(void) {
     memcpy(gstat_array, stat_array, sizeof(stat_array));
 #endif
 
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf("\n\n Simulation Statistics\n");
         printf(" Number of cells: %ld\n", gstat_array[0]);
         printf(" Number of compartments: %ld\n", gstat_array[10]);
@@ -209,9 +211,5 @@ void report_cell_stats(void) {
         nrnmpi_barrier();
     }
 #endif
-    if (nrnmpi_myid == 0) {
-        printf("\n\n");
-        fflush(stdout);
-    }
 }
 }  // namespace coreneuron

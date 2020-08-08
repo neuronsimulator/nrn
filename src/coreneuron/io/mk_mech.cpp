@@ -43,10 +43,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/mechanism//eion.hpp"
 
-static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2019";
+static char banner[] = "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2020";
 
 namespace coreneuron {
-int nrn_nobanner_;
+extern int nrn_nobanner_;
 
 // NB: this should go away
 extern const char* nrn_version(int);

@@ -147,7 +147,9 @@ void nrn_init_and_load_data(int argc,
     Instrumentor::stop_profile();
 
     // memory footprint after mpi initialisation
-    report_mem_usage("After MPI_Init");
+    if (!corenrn_param.is_quiet()) {
+        report_mem_usage("After MPI_Init");
+    }
 
     // initialise default coreneuron parameters
     initnrn();
@@ -216,7 +218,9 @@ void nrn_init_and_load_data(int argc,
         nrn_set_extra_thread0_vdata();
     }
 
-    report_mem_usage("Before nrn_setup");
+    if (!corenrn_param.is_quiet()) {
+        report_mem_usage("Before nrn_setup");
+    }
 
     // set if need to interleave cells
     interleave_permute_type = corenrn_param.cell_interleave_permute;
@@ -255,7 +259,9 @@ void nrn_init_and_load_data(int argc,
     int spkcompress = corenrn_param.spkcompress;
     nrnmpi_spike_compress(spkcompress, (spkcompress ? true : false), use_multisend_);
 
-    report_mem_usage("After nrn_setup ");
+    if (!corenrn_param.is_quiet()) {
+        report_mem_usage("After nrn_setup ");
+    }
 
     // Invoke PatternStim
     if (!corenrn_param.patternstim.empty()) {
@@ -266,7 +272,7 @@ void nrn_init_and_load_data(int argc,
     nrn_set_timeout(200.);
 
     // show all configuration parameters for current run
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         std::cout << corenrn_param << std::endl;
         std::cout << " Start time (t) = " << t << std::endl << std::endl;
     }
@@ -274,7 +280,9 @@ void nrn_init_and_load_data(int argc,
     // allocate buffer for mpi communication
     mk_spikevec_buffer(corenrn_param.spikebuf);
 
-    report_mem_usage("After mk_spikevec_buffer");
+    if (!corenrn_param.is_quiet()) {
+        report_mem_usage("After mk_spikevec_buffer");
+    }
 
     if (corenrn_param.gpu) {
         setup_nrnthreads_on_device(nrn_threads, nrn_nthread);
@@ -460,7 +468,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
     std::string spikes_population_name;
     bool reports_needs_finalize = false;
 
-    report_mem_usage("After mk_mech");
+    if (!corenrn_param.is_quiet()) {
+        report_mem_usage("After mk_mech");
+    }
 
     // Create outpath if it does not exist
     if (nrnmpi_myid == 0) {
@@ -534,7 +544,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
             nrn_finitialize(v != 1000., v);
         }
 
-        report_mem_usage("After nrn_finitialize");
+        if (!corenrn_param.is_quiet()) {
+            report_mem_usage("After nrn_finitialize");
+        }
 
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;

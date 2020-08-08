@@ -32,6 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/mpi/nrnmpidec.h"
@@ -50,6 +51,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace coreneuron {
 
+extern corenrn_parameters corenrn_param;
 class PreSyn;
 class InputPreSyn;
 
@@ -728,7 +730,7 @@ void BBS_netpar_solve(double tstop) {
 #endif
     tstopunset;
 
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf("\nSolver Time : %g\n", nrn_wtime() - time);
     }
 }

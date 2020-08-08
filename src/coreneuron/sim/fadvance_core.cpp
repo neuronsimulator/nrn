@@ -30,6 +30,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/sim/fast_imem.hpp"
@@ -45,6 +46,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace coreneuron {
 
+extern corenrn_parameters corenrn_param;
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*, int, int, int&);
 
@@ -94,20 +96,20 @@ integration interval before joining
 static progressbar* progress;
 
 void initialize_progress_bar(int nstep) {
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf("\n");
         progress = progressbar_new(" psolve", nstep);
     }
 }
 
 void update_progress_bar(int step, double time) {
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         progressbar_update(progress, step, time);
     }
 }
 
 void finalize_progress_bar() {
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         progressbar_finish(progress);
     }
 }
