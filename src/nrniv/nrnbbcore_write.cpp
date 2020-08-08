@@ -1868,6 +1868,10 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
 void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
 }
 
+extern "C" {
+extern int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
+}
+
 static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
   {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
@@ -1888,6 +1892,8 @@ static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_get_trajectory_requests_", (CNB)nrnthread_get_trajectory_requests},
   {"nrn2core_trajectory_values_", (CNB)nrnthread_trajectory_values},
   {"nrn2core_trajectory_return_", (CNB)nrnthread_trajectory_return},
+
+  {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
   {NULL, NULL}
 };
 
