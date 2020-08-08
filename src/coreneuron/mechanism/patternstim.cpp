@@ -58,7 +58,7 @@ extern void pattern_stim_setup_helper(int size,
                                       NrnThread* _nt,
                                       double v);
 
-static size_t read_raster_file(const char* fname, double** tvec, int** gidvec);
+static size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double tstop);
 
 int nrn_extra_thread0_vdata;
 
@@ -77,7 +77,7 @@ void nrn_set_extra_thread0_vdata() {
 
 // fname is the filename of an output_spikes.h format raster file.
 // todo : add function for memory cleanup (to be called at the end of simulation)
-void nrn_mkPatternStim(const char* fname) {
+void nrn_mkPatternStim(const char* fname, double tstop) {
     int type = nrn_get_mechtype("PatternStim");
     if (!corenrn.get_memb_func(type).sym) {
         printf("nrn_set_extra_thread_vdata must be called (after mk_mech, and before nrn_setup\n");
@@ -93,7 +93,7 @@ void nrn_mkPatternStim(const char* fname) {
     int* gidvec;
 
     // todo : handle when spike raster will be very large (int < size_t)
-    size_t size = read_raster_file(fname, &tvec, &gidvec);
+    size_t size = read_raster_file(fname, &tvec, &gidvec, tstop);
 
     Point_process* pnt = nrn_artcell_instantiate("PatternStim");
     NrnThread* nt = nrn_threads + pnt->_tid;
@@ -123,7 +123,8 @@ static bool spike_comparator(const spike_type& l, const spike_type& r) {
     return l.first < r.first;
 }
 
-size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
+
+size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double tstop) {
     FILE* f = fopen(fname, "r");
     nrn_assert(f);
 
@@ -138,7 +139,9 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec) {
     int gid;
 
     while (fscanf(f, "%lf %d\n", &stime, &gid) == 2) {
-        spikes.push_back(std::make_pair(stime, gid));
+        if ( stime >= t && stime <= tstop) {
+            spikes.push_back(std::make_pair(stime, gid));
+        }
     }
 
     fclose(f);

@@ -265,7 +265,7 @@ void nrn_init_and_load_data(int argc,
 
     // Invoke PatternStim
     if (!corenrn_param.patternstim.empty()) {
-        nrn_mkPatternStim(corenrn_param.patternstim.c_str());
+        nrn_mkPatternStim(corenrn_param.patternstim.c_str(), corenrn_param.tstop);
     }
 
     /// Setting the timeout

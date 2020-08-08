@@ -116,6 +116,8 @@ void pattern_stim_setup_helper(int size, double* tv, int* gv, _threadargsproto_)
 	info->size = size;
 	info->tvec = tv;
 	info->gidvec = gv;
+    // initiate event chain (needed in case of restore)
+	artcell_net_send ( _tqitem, -1, (Point_process*) _nt->_vdata[_ppvar[1*_STRIDE]], t +  0.0 , 1.0 ) ;
 }
 } // namespace coreneuron
 ENDVERBATIM
