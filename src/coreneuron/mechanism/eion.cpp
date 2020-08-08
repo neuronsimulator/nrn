@@ -214,7 +214,7 @@ void nrn_wrote_conc(int type,
         flag = 0;
     }
 #endif
-    if (it & 04) {
+    if (it & 040) {
 #if LAYOUT <= 0 /* SoA */
         int _iml = 0;
 /* passing _nt to this function causes cray compiler to segfault during compilation
