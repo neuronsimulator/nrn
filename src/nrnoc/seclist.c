@@ -60,6 +60,9 @@ Section* nrn_secarg(int i) {
 static double append(void* v)
 {
 	Section* sec = nrn_secarg(1);
+	if (ifarg(2)) {
+	    hoc_execerror("Too many parameters. SectionList.append takes 0 or 1 arguments", (char*)0);
+	}
 	lvappendsec_and_ref(v, sec);
 	return 1.;
 }
