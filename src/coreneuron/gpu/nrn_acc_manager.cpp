@@ -752,6 +752,21 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #endif
 }
 
+/**
+ * Copy voltage vector from GPU to CPU
+ *
+ * \todo Currently we are copying all voltage vector from GPU
+ *       to CPU. We need fine-grain implementation to copy
+ *       only requested portion of the voltage vector.
+ */
+void update_voltage_from_gpu(NrnThread* nt) {
+    if (nt->compute_gpu && nt->end > 0) {
+        double* voltage = nt->_actual_v;
+        int num_voltage = nrn_soa_padded_size(nt->end, 0);
+        #pragma acc update host(voltage[0 : num_voltage])
+    }
+}
+
 void update_matrix_from_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {

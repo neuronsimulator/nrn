@@ -286,6 +286,11 @@ void nrncore2nrn_send_values(NrnThread* nth) {
 
     TrajectoryRequests* tr = nth->trajec_requests;
     if (tr) {
+        // \todo Check if user has requested voltages for this NrnThread object.
+        //       Currently we are updating voltages if there is any trajectory
+        //       requested by NEURON.
+        update_voltage_from_gpu(nth); 
+
         if (tr->varrays) {  // full trajectories into Vector data
             double** va = tr->varrays;
             int vs = tr->vsize++;
