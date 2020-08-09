@@ -28,6 +28,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <sstream>
 #include <cassert>
+#include <memory>
 
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -60,11 +61,11 @@ class FileHandlerWrap {
     std::fstream G;
     FileHandlerWrap(){};
 
-    void open(const char* filename, bool reorder, std::ios::openmode mode = std::ios::in) {
-        F.open(filename, reorder, mode);
+    void open(const std::string& filename, std::ios::openmode mode = std::ios::in) {
+        F.open(filename, mode);
         std::ostringstream fname;
         fname << filename << ".txt";
-        G.open(fname.str().c_str(), mode);
+        G.open(fname.str(), mode);
     }
 
     void close() {
@@ -143,13 +144,12 @@ int patstimtype;
 
 // output directory to for checkpoint
 static const char* output_dir;
-static bool swap_bytes;
 
 static void write_phase2(NrnThread& nt, FileHandlerWrap& file_handle);
 static void write_tqueue(NrnThread& nt, FileHandlerWrap& file_handle);
 static void write_time(const char* dir);
 
-void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_bytes_order) {
+void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir) {
     // empty directory means the option is not enabled
     if (!strlen(dir)) {
         return;
@@ -162,7 +162,6 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir, bool swap_
 #if NRNMPI
     nrnmpi_barrier();
 #endif
-    swap_bytes = swap_bytes_order;
 
     /**
      * if openmp threading needed:
@@ -189,7 +188,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     filename << output_dir << "/" << ntc.file_id << "_2.dat";
 
-    fh.open(filename.str().c_str(), swap_bytes, std::ios::out);
+    fh.open(filename.str(), std::ios::out);
     fh.checkpoint(2);
 
     int n_outputgid = 0;  // calculate PreSyn with gid >= 0
@@ -580,10 +579,10 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
 #endif
         if (vtype == VecPlayContinuousType) {
             VecPlayContinuous* vpc = (VecPlayContinuous*)pr;
-            int sz = vector_capacity(vpc->y_);
+            int sz = vpc->y_.size();
             fh << sz << "\n";
-            fh.write_array<double>(vector_vec(vpc->y_), sz);
-            fh.write_array<double>(vector_vec(vpc->t_), sz);
+            fh.write_array<double>(vpc->y_.data(), sz);
+            fh.write_array<double>(vpc->t_.data(), sz);
         } else {
             std::cerr << "Error checkpointing vecplay type" << std::endl;
             assert(0);
@@ -605,7 +604,7 @@ static void write_time(const char* output_dir) {
     std::ostringstream filename;
     FileHandler f;
     filename << output_dir << "/time.dat";
-    f.open(filename.str().c_str(), swap_bytes, std::ios::out);
+    f.open(filename.str(), std::ios::out);
     f.write_array(&t, 1);
     f.close();
 }
@@ -617,7 +616,7 @@ double restore_time(const char* restore_dir) {
         std::ostringstream filename;
         FileHandler f;
         filename << restore_dir << "/time.dat";
-        f.open(filename.str().c_str(), swap_bytes, std::ios::in);
+        f.open(filename.str(), std::ios::in);
         f.read_array(&rtime, 1);
         f.close();
     }
@@ -698,48 +697,40 @@ static void write_tqueue(TQItem* q, NrnThread& nt, FileHandlerWrap& fh) {
 static int patstim_index;
 static double patstim_te;
 
-static void checkpoint_restore_tqitem(int type, NrnThread& nt, FileHandler& fh) {
-    double te;
-    fh.read_array(&te, 1);
-    // printf("restore tqitem type=%d te=%.20g\n", type, te);
+static void checkpoint_restore_tqitem(int type, std::shared_ptr<Phase2::EventTypeBase> event, NrnThread& nt) {
+    // printf("restore tqitem type=%d time=%.20g\n", type, time);
 
     switch (type) {
         case NetConType: {
-            int ncindex = fh.read_int();
-            // printf("  NetCon %d\n", ncindex);
-            NetCon* nc = nt.netcons + ncindex;
-            nc->send(te, net_cvode_instance, &nt);
+            auto e = static_cast<Phase2::NetConType_*>(event.get());
+            // printf("  NetCon %d\n", netcon_index);
+            NetCon* nc = nt.netcons + e->netcon_index;
+            nc->send(e->time, net_cvode_instance, &nt);
             break;
         }
         case SelfEventType: {
-            int target_type = fh.read_int();  // not really needed (except for assert below)
-            int pinstance = fh.read_int();
-            int target_instance = fh.read_int();
-            double flag;
-            fh.read_array(&flag, 1);
-            int movable = fh.read_int();
-            int weight_index = fh.read_int();
-            if (target_type == patstimtype) {
+            auto e = static_cast<Phase2::SelfEventType_*>(event.get());
+            if (e->target_type == patstimtype) {
                 if (nt.id == 0) {
-                    patstim_te = te;
+                    patstim_te = e->time;
                 }
                 break;
             }
-            Point_process* pnt = nt.pntprocs + pinstance;
-            // printf("  SelfEvent %d %d %d %g %d %d\n", target_type, pinstance, target_instance,
+            Point_process* pnt = nt.pntprocs + e->point_proc_instance;
+            // printf("  SelfEvent %d %d %d %g %d %d\n", target_type, point_proc_instance, target_instance,
             // flag, movable, weight_index);
-            assert(target_instance == pnt->_i_instance);
-            assert(target_type == pnt->_type);
-            net_send(nt._vdata + movable, weight_index, pnt, te, flag);
+            nrn_assert(e->target_instance == pnt->_i_instance);
+            nrn_assert(e->target_type == pnt->_type);
+            net_send(nt._vdata + e->movable, e->weight_index, pnt, e->time, e->flag);
             break;
         }
         case PreSynType: {
-            int psindex = fh.read_int();
-            // printf("  PreSyn %d\n", psindex);
-            PreSyn* ps = nt.presyns + psindex;
+            auto e = static_cast<Phase2::PreSynType_*>(event.get());
+            // printf("  PreSyn %d\n", presyn_index);
+            PreSyn* ps = nt.presyns + e->presyn_index;
             int gid = ps->output_index_;
             ps->output_index_ = -1;
-            ps->send(te, net_cvode_instance, &nt);
+            ps->send(e->time, net_cvode_instance, &nt);
             ps->output_index_ = gid;
             break;
         }
@@ -749,13 +740,9 @@ static void checkpoint_restore_tqitem(int type, NrnThread& nt, FileHandler& fh) 
             break;
         }
         case PlayRecordEventType: {
-            int prtype = fh.read_int();
-            if (prtype == VecPlayContinuousType) {
-                VecPlayContinuous* vpc = (VecPlayContinuous*)(nt._vecplay[fh.read_int()]);
-                vpc->e_->send(te, net_cvode_instance, &nt);
-            } else {
-                assert(0);
-            }
+            auto e = static_cast<Phase2::PlayRecordEventType_*>(event.get());
+            VecPlayContinuous* vpc = (VecPlayContinuous*)(nt._vecplay[e->vecplay_index]);
+            vpc->e_->send(e->time, net_cvode_instance, &nt);
             break;
         }
         default: {
@@ -817,38 +804,50 @@ static void write_tqueue(NrnThread& nt, FileHandlerWrap& fh) {
 
 static bool checkpoint_restored_ = false;
 
-void checkpoint_restore_tqueue(NrnThread& nt, FileHandler& fh) {
+// Read a tqueue/checkpoint
+// int :: should be equal to the previous n_vecplay
+// n_vecplay:
+//   int: last_index
+//   int: discon_index
+//   int: ubound_index
+// int: patstim_index
+// int: should be -1
+// n_presyn:
+//   int: flags of presyn_helper
+// int: should be -1
+// null terminated:
+//   int: type
+//   array of size 1:
+//     double: time
+//   ... depends of the type
+// int: should be -1
+// null terminated:
+//   int: TO BE DEFINED
+//   ... depends of the type
+void checkpoint_restore_tqueue(NrnThread& nt, const Phase2& p2) {
     int type;
     checkpoint_restored_ = true;
 
-    // VecPlayContinuous
-    assert(fh.read_int() == nt.n_vecplay);  // VecPlayContinuous state
     for (int i = 0; i < nt.n_vecplay; ++i) {
         VecPlayContinuous* vpc = (VecPlayContinuous*)nt._vecplay[i];
-        vpc->last_index_ = fh.read_int();
-        vpc->discon_index_ = fh.read_int();
-        vpc->ubound_index_ = fh.read_int();
+        auto& vec = p2.vec_play_continuous[i];
+        vpc->last_index_ = vec.last_index;
+        vpc->discon_index_ = vec.discon_index;
+        vpc->ubound_index_ = vec.ubound_index;
     }
 
     // PatternStim
-    patstim_index = fh.read_int();  // PatternStim
+    patstim_index = p2.patstim_index;  // PatternStim
     if (nt.id == 0) {
         patstim_te = -1.0;  // changed if relevant SelfEvent;
     }
 
-    assert(fh.read_int() == -1);  // -1 PreSyn ConditionEvent flags
     for (int i = 0; i < nt.n_presyn; ++i) {
-        nt.presyns_helper[i].flag_ = fh.read_int();
+        nt.presyns_helper[i].flag_ = p2.preSynConditionEventFlags[i];
     }
 
-    assert(fh.read_int() == -1);  // -1 TQItems from atomic_dq
-    while ((type = fh.read_int()) != 0) {
-        checkpoint_restore_tqitem(type, nt, fh);
-    }
-
-    assert(fh.read_int() == -1);  // -1 TQItems from binq_
-    while ((type - fh.read_int()) != 0) {
-        checkpoint_restore_tqitem(type, nt, fh);
+    for (const auto& event: p2.events) {
+        checkpoint_restore_tqitem(event.first, event.second, nt);
     }
 }
 

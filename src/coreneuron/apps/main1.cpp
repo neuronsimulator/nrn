@@ -603,7 +603,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     {
         Instrumentor::phase p("checkpoint");
-        write_checkpoint(nrn_threads, nrn_nthread, corenrn_param.checkpointpath.c_str(), nrn_need_byteswap);
+        write_checkpoint(nrn_threads, nrn_nthread, corenrn_param.checkpointpath.c_str());
     }
 
     // must be done after checkpoint (to avoid deleting events)

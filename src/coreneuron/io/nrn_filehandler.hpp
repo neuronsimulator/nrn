@@ -34,8 +34,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <sys/stat.h>
 
-#include "coreneuron/utils/endianness.hpp"
-#include "coreneuron/utils/swap_endian.h"
 #include "coreneuron/utils/nrn_assert.h"
 
 namespace coreneuron {
@@ -43,11 +41,7 @@ namespace coreneuron {
  *
  * Error handling is simple: abort()!
  *
- * Reader will abort() if native integer size is not 4 bytes,
- * or if need a convoluted byte reordering between native
- * and file endianness. Complicated endianness configurations and
- * the possibility of non-IEEE floating point representations
- * are happily ignored.
+ * Reader will abort() if native integer size is not 4 bytes.
  *
  * All automatic allocations performed by read_int_array()
  * and read_dbl_array() methods use new [].
@@ -58,7 +52,6 @@ const int max_line_length = 1024;
 
 class FileHandler {
     std::fstream F;                        //!< File stream associated with reader.
-    bool reorder_bytes;                    //!< True if we need to reorder for native endiannes.
     std::ios_base::openmode current_mode;  //!< File open mode (not stored in fstream)
     int chkpnt;                            //!< Current checkpoint number state.
     int stored_chkpnt;                     //!< last "remembered" checkpoint number state.
@@ -75,20 +68,20 @@ class FileHandler {
     FileHandler& operator=(const FileHandler&);
 
   public:
-    FileHandler() : reorder_bytes(false), chkpnt(0), stored_chkpnt(0) {
+    FileHandler() : chkpnt(0), stored_chkpnt(0) {
     }
 
-    explicit FileHandler(const char* filename, bool reorder = false);
+    explicit FileHandler(const std::string& filename);
 
     /** Preserving chkpnt state, move to a new file. */
-    void open(const char* filename, bool reorder, std::ios::openmode mode = std::ios::in);
+    void open(const std::string& filename, std::ios::openmode mode = std::ios::in);
 
     /** Is the file not open */
     bool fail() const {
         return F.fail();
     }
 
-    bool file_exist(const char* filename) const;
+    bool file_exist(const std::string& filename) const;
 
     /** nothing more to read */
     bool eof();
@@ -194,8 +187,6 @@ class FileHandler {
                 break;
             case read:
                 F.read((char*)p, count * sizeof(T));
-                if (reorder_bytes)
-                    endian::swap_endian_range(p, p + count);
                 break;
         }
 
@@ -205,7 +196,7 @@ class FileHandler {
 
     // convenience interfaces:
 
-    /** Read and optionally allocate an integer array of fixed length. */
+    /** Read an integer array of fixed length. */
     template <typename T>
     inline T* read_array(T* p, size_t count) {
         return parse_array(p, count, read);
@@ -217,6 +208,13 @@ class FileHandler {
         return parse_array(new T[count], count, read);
     }
 
+    template <typename T>
+    inline std::vector<T> read_vector(size_t count) {
+        std::vector<T> vec(count);
+        parse_array(vec.data(), count, read);
+        return vec;
+    }
+
     /** Close currently open file. */
     void close();
 
@@ -226,13 +224,7 @@ class FileHandler {
         nrn_assert(F.is_open());
         nrn_assert(current_mode & std::ios::out);
         write_checkpoint();
-        if (reorder_bytes) {
-            endian::swap_endian_range(p, p + nb_elements);
-            F.write((const char*)p, nb_elements * (sizeof(T)));
-            endian::swap_endian_range(p, p + nb_elements);
-        } else {
-            F.write((const char*)p, nb_elements * (sizeof(T)));
-        }
+        F.write((const char*)p, nb_elements * (sizeof(T)));
         nrn_assert(!F.fail());
     }
 
@@ -257,9 +249,6 @@ class FileHandler {
             }
         } else {
             memcpy(temp_cpy, p, nb_elements * sizeof(T) * nb_lines);
-        }
-        if (reorder_bytes) {
-            endian::swap_endian_range(temp_cpy, temp_cpy + nb_elements * nb_lines);
         }
         // AoS never use padding, SoA is translated above, so one write
         // operation is enought in both cases

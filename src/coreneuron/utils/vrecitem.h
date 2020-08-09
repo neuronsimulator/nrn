@@ -78,9 +78,8 @@ class PlayRecord {
 
 class VecPlayContinuous : public PlayRecord {
   public:
-    VecPlayContinuous(double*, IvocVect* yvec, IvocVect* tvec, IvocVect* discon, int ith);
+    VecPlayContinuous(double*, IvocVect&& yvec, IvocVect&& tvec, IvocVect* discon, int ith);
     virtual ~VecPlayContinuous();
-    void init(IvocVect* yvec, IvocVect* tvec, IvocVect* tdiscon);
     virtual void play_init();
     virtual void deliver(double tt, NetCvode*);
     virtual PlayRecordEvent* event() {
@@ -99,8 +98,8 @@ class VecPlayContinuous : public PlayRecord {
         return VecPlayContinuousType;
     }
 
-    IvocVect* y_;
-    IvocVect* t_;
+    IvocVect y_;
+    IvocVect t_;
     IvocVect* discon_indices_;
     size_t last_index_;
     size_t discon_index_;

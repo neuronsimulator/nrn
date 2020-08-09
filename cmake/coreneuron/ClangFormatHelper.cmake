@@ -23,12 +23,6 @@ if(CLANG_FORMAT_FOUND)
                     ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/*.h*
                     ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/*.ipp*)
 
-  # exclude ezoption headers
-  list(REMOVE_ITEM SRC_FILES_FOR_CLANG_FORMAT
-                   ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/utils/ezoption/ezOptionParser.hpp
-                   ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/utils/endianness.h
-                   ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/utils/swap_endian.h)
-
   # exclude random123
   file(GLOB_RECURSE RANDOM123_FILES
                     ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/utils/randoms/Random123/*.cpp

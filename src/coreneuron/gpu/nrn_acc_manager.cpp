@@ -22,7 +22,7 @@
 #endif
 namespace coreneuron {
 extern InterleaveInfo* interleave_info;
-void copy_ivoc_vect_to_device(IvocVect*& iv, IvocVect*& div);
+void copy_ivoc_vect_to_device(const IvocVect& iv, IvocVect& div);
 void nrn_ion_global_map_copyto_device();
 void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
 
@@ -389,21 +389,19 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #endif
 }
 
-void copy_ivoc_vect_to_device(IvocVect*& iv, IvocVect*& div) {
+void copy_ivoc_vect_to_device(const IvocVect& from, IvocVect& to) {
 #ifdef _OPENACC
-    if (iv) {
-        IvocVect* d_iv = (IvocVect*)acc_copyin(iv, sizeof(IvocVect));
-        acc_memcpy_to_device(&div, &d_iv, sizeof(IvocVect*));
+    IvocVect* d_iv = (IvocVect*)acc_copyin((void*)&from, sizeof(IvocVect));
+    acc_memcpy_to_device(&to, d_iv, sizeof(IvocVect));
 
-        size_t n = iv->size();
-        if (n) {
-            double* d_data = (double*)acc_copyin(iv->data(), sizeof(double) * n);
-            acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
-        }
+    size_t n = from.size();
+    if (n) {
+        double* d_data = (double*)acc_copyin((void*)from.data(), sizeof(double) * n);
+        acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
     }
 #else
-    (void)iv;
-    (void)div;
+    (void)from;
+    (void)to;
 #endif
 }
 
@@ -1004,8 +1002,10 @@ void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay) {
         /** copy y_, t_ and discon_indices_ */
         copy_ivoc_vect_to_device(vecplay_instance->y_, d_vecplay_instance->y_);
         copy_ivoc_vect_to_device(vecplay_instance->t_, d_vecplay_instance->t_);
-        copy_ivoc_vect_to_device(vecplay_instance->discon_indices_,
-                                 d_vecplay_instance->discon_indices_);
+        if (vecplay_instance->discon_indices_) {
+            copy_ivoc_vect_to_device(*(vecplay_instance->discon_indices_),
+                                 *(d_vecplay_instance->discon_indices_));
+         }
 
         /** copy PlayRecordEvent : todo: verify this */
         PlayRecordEvent* d_e_ =

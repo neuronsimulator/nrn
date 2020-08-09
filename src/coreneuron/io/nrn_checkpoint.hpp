@@ -28,6 +28,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef _H_NRNCHECKPOINT_
 #define _H_NRNCHECKPOINT_
+
+#include "coreneuron/io/phase2.hpp"
+
 namespace coreneuron {
 class NrnThread;
 class FileHandler;
@@ -36,10 +39,9 @@ extern bool nrn_checkpoint_arg_exists;
 
 void write_checkpoint(NrnThread* nt,
                       int nb_threads,
-                      const char* dir,
-                      bool swap_bytes_order = false);
+                      const char* dir);
 
-void checkpoint_restore_tqueue(NrnThread&, FileHandler&);
+void checkpoint_restore_tqueue(NrnThread&, const Phase2& p2);
 
 int* inverse_permute(int* p, int n);
 void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout);

@@ -30,19 +30,37 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define ivoc_vector_h
 
 #include <cstdio>
+#include <utility>
 #include "coreneuron/utils/nrnmutdec.h"
 
 namespace coreneuron {
 template <typename T>
 class fixed_vector {
     size_t n_;
-    MUTDEC
 
   public:
     T* data_; /*making public for openacc copying */
+
+    fixed_vector() = default;
+
     fixed_vector(size_t n) : n_(n) {
         data_ = new T[n_];
     }
+
+    fixed_vector(const fixed_vector& vec) = delete;
+    fixed_vector& operator=(const fixed_vector& vec) = delete;
+    fixed_vector(fixed_vector&& vec)
+        : data_(nullptr), n_(vec.n_)
+    {
+        std::swap(data_, vec.data_);
+    }
+    fixed_vector& operator=(fixed_vector&& vec) {
+        data_ = nullptr;
+        std::swap(data_, vec.data_);
+        n_ = vec.n_;
+        return *this;
+    }
+
     ~fixed_vector() {
         delete[] data_;
     }
@@ -63,22 +81,6 @@ class fixed_vector {
 
     size_t size() const {
         return n_;
-    }
-
-#if defined(_OPENMP)
-    void mutconstruct(int mkmut) {
-        if (!mut_)
-            MUTCONSTRUCT(mkmut)
-    }
-#else
-    void mutconstruct(int) {
-    }
-#endif
-    void lock() {
-        MUTLOCK
-    }
-    void unlock() {
-        MUTUNLOCK
     }
 };
 
