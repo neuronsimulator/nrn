@@ -17,6 +17,7 @@ matrix:
       dist: xenial
       env:
         - cmake_option="-DCORENRN_ENABLE_MPI=ON"
+        - BUILD_DOCUMENTATION=ON
     - os: linux
       dist: xenial
       env:
@@ -84,6 +85,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
+      - doxygen
       - bison
       - flex
       - libboost-all-dev
@@ -105,6 +107,15 @@ addons:
 # Set up environments
 #=============================================================================
 before_install:
+  # quickly return if this is a docs-only PR
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+      if ! git diff --name-only ${TRAVIS_COMMIT_RANGE} | grep -qvE '(\.md)$|(\.txt)$|^(docs/)' ; then
+        echo "Skipping CI build since we have docs-only changes for ${TRAVIS_COMMIT_RANGE} :"
+        git diff --name-only ${TRAVIS_COMMIT_RANGE}
+        exit
+      fi
+    fi
   # brew installed flex and bison is not in $PATH
   # unlink python2 and use python3 as it's required for nmodl
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -114,27 +125,36 @@ before_install:
     else
         pyenv global $PYTHON_VERSION;
     fi
-  # install NMODL dependencies
-  - if [[ "$USE_NMODL" == "ON" || "$USE_ISPC" == "ON" ]]; then
-        pip3 install jinja2 pyyaml pytest "sympy<1.6";
-    fi
   - if [ -n "$GCC_VERSION" ]; then
         export CXX="g++-${GCC_VERSION}" CC="gcc-${GCC_VERSION}";
         $CXX --version;
     fi
+
+install:
   # install ISPC compiler (only for mac or linux build for now)
   - if [[ "$USE_ISPC" == "ON" ]]; then
-        ispc_version="v1.12.0";
-        if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-            url_os="linux";
-            ispc_version_suffix="b";
-        else
-            url_os="macOS";
-            ispc_version_suffix="";
-        fi;
-        url="https://github.com/ispc/ispc/releases/download/${ispc_version}/ispc-${ispc_version}${ispc_version_suffix}-${url_os}.tar.gz";
-        wget -O ispc.tar.gz $url;
-        mkdir ispc && tar -xvzf ispc.tar.gz -C ispc --strip 1;
+      ispc_version="v1.12.0";
+      if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+        url_os="linux";
+        ispc_version_suffix="b";
+      else
+        url_os="macOS";
+        ispc_version_suffix="";
+      fi;
+      url="https://github.com/ispc/ispc/releases/download/${ispc_version}/ispc-${ispc_version}${ispc_version_suffix}-${url_os}.tar.gz";
+      wget -O ispc.tar.gz $url;
+      mkdir ispc && tar -xvzf ispc.tar.gz -C ispc --strip 1;
+    fi
+
+  # install NMODL dependencies
+  - if [[ "$USE_NMODL" == "ON" || "$USE_ISPC" == "ON" ]]; then
+      pip3 install --upgrade pip;
+      pip3 install jinja2 pyyaml pytest "sympy<1.6";
+    fi
+  # install documentation dependencies
+  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      pip3 install --upgrade pip;
+      pip3 install --user -r docs/docs_requirements.txt --upgrade;
     fi
 #=============================================================================
 # Build, test and install
@@ -154,3 +174,32 @@ script:
   - cmake --build .
   - ctest --output-on-failure
   - make install
+
+
+#=============================================================================
+# Prepare Documentation
+#=============================================================================
+after_success:
+  - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      echo "------- Build Doxygen Documentation -------";
+      pushd $TRAVIS_BUILD_DIR/build;
+      make docs;
+      echo "-------- Disable jekyll --------";
+      pushd $TRAVIS_BUILD_DIR/build/docs;
+      touch .nojekyll;
+    fi
+
+
+#=============================================================================
+# Documentation deployment
+#=============================================================================
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  keep_history: false
+  local_dir: $TRAVIS_BUILD_DIR/build/docs
+  target_branch: gh-pages
+  on:
+    branch: master
+    condition: $BUILD_DOCUMENTATION = ON && $TRAVIS_OS_NAME = linux
