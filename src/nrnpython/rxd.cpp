@@ -19,7 +19,7 @@ extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
 int prev_structure_change_cnt = 0;
-unsigned char initialized = 0;
+unsigned char initialized = FALSE;
 
 /*
     Globals
@@ -32,8 +32,6 @@ TaskQueue* AllTasks = NULL;
 
 extern double *dt_ptr;
 extern double *t_ptr;
-extern double *h_dt_ptr;
-extern double *h_t_ptr;
 
 
 fptr _setup, _initialize, _setup_matrices;
@@ -75,10 +73,10 @@ int* _regions;
 int _curr_count;
 int* _curr_indices = NULL;
 double* _curr_scales = NULL; 
-PyHocObject** _curr_ptrs = NULL;
+double** _curr_ptrs = NULL;
 int  _conc_count;
 int* _conc_indices = NULL;
-PyHocObject** _conc_ptrs = NULL;
+double** _conc_ptrs = NULL;
 double*** _mult = NULL;
 int* _mc_mult_count = NULL;
 int*** _ecs_indices = NULL;
@@ -103,7 +101,7 @@ int* _memb_species_count;   /*array of length _memb_count
                              current*/
 
 /*arrays of size _memb_count by _memb_species_count*/
-PyHocObject*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
+double*** _memb_cur_ptrs; /*hoc pointers TODO: replace with index for _curr_ptrs*/
 int** _memb_cur_charges;    
 int*** _memb_cur_mapped;      /*array of pairs of indices*/
 int*** _memb_cur_mapped_ecs;  /*array of pointer into ECS grids*/
@@ -121,7 +119,20 @@ long* _node_flux_idx = NULL;
 double* _node_flux_scale = NULL;
 PyObject** _node_flux_src = NULL;
 
-
+static void free_zvi_child()
+{
+    int i;
+    /*Clear previous _rxd_zvi_child*/
+    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
+    {
+        for(i = 0; i < _rxd_num_zvi; i++)
+            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
+        free(_rxd_zvi_child);
+        free(_rxd_zvi_child_count);
+        _rxd_zvi_child_count = NULL;
+        _rxd_zvi_child = NULL;
+    }
+}
 
 static void transfer_to_legacy()
 {
@@ -129,7 +140,7 @@ static void transfer_to_legacy()
 	int i;
 	for(i = 0; i < _conc_count; i++)
 	{
-		*(double*)_conc_ptrs[i]->u.px_ = states[_conc_indices[i]];
+		*(double*)_conc_ptrs[i] = states[_conc_indices[i]];
 	}
 }
 
@@ -143,8 +154,6 @@ static inline void* allocopy(void* src, size_t size)
 extern "C" void rxd_set_no_diffusion()
 {
     int i;
-    prev_structure_change_cnt = structure_change_cnt;
-    initialized = 1;
     diffusion = FALSE;
     if(_rxd_a != NULL)
     {
@@ -157,27 +166,6 @@ extern "C" void rxd_set_no_diffusion()
         free(_rxd_euler_nonzero_j);
         free(_rxd_euler_nonzero_values);
         _rxd_a = NULL;
-    }
-    /*Clear previous _rxd_zvi_child*/
-    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
-    {
-        for(i = 0; i < _rxd_num_zvi; i++)
-            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
-        free(_rxd_zvi_child);
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child = NULL;
-        _rxd_zvi_child_count = NULL;
-        
-    }
-    if(_rxd_zvi_child_count != NULL)
-    {
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count = NULL;
-    }
-    if(_rxd_zvi_child != NULL)
-    {
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count=NULL;
     }
 }
 
@@ -210,6 +198,7 @@ extern "C" void free_conc_ptrs()
 extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* curr_scale,
 						  PyHocObject** curr_ptrs)
 {
+    int i;
     free_curr_ptrs();
 	/* info for NEURON currents - to update states */
 	_curr_count = num_currents;
@@ -219,22 +208,24 @@ extern "C" void rxd_setup_curr_ptrs(int num_currents, int* curr_index, double* c
 	_curr_scales = (double*)malloc(sizeof(double)*num_currents);
 	memcpy(_curr_scales, curr_scale, sizeof(double)*num_currents); 
 
-	_curr_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_currents);
-	memcpy(_curr_ptrs, curr_ptrs, sizeof(PyHocObject*)*num_currents);
+	_curr_ptrs = (double**)malloc(sizeof(double*)*num_currents);
+    for(i = 0; i < num_currents; i++)
+        _curr_ptrs[i] = (double*)curr_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_setup_conc_ptrs(int conc_count, int* conc_index, 
                          PyHocObject** conc_ptrs)
 {
 	/* info for NEURON concentration - to transfer to legacy */
-
+    int i;
     free_conc_ptrs();
 	_conc_count = conc_count;
 	_conc_indices = (int*)malloc(sizeof(int)*conc_count);
 	memcpy(_conc_indices, conc_index, sizeof(int)*conc_count); 
 
-	_conc_ptrs = (PyHocObject**)malloc(sizeof(PyHocObject*)*conc_count);
-	memcpy(_conc_ptrs, conc_ptrs, sizeof(PyHocObject*)*conc_count);
+	_conc_ptrs = (double**)malloc(sizeof(double*)*conc_count);
+    for(i = 0; i < conc_count; i++)
+        _conc_ptrs[i] = (double*)conc_ptrs[i]->u.px_;
 }
 
 extern "C" void rxd_include_node_flux3D(int grid_count, int* grid_counts,
@@ -406,8 +397,7 @@ static void apply_node_flux1D(double dt, double *states)
 
 extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
                           long* nonzero_j, double* nonzero_values,
-                          long* zero_volume_indices,
-                          int num_zero_volume_indices, double* c_diagonal)
+                          double* c_diagonal)
 {
     long i, j, idx;
     double val;
@@ -424,29 +414,16 @@ extern "C" void rxd_set_euler_matrix(int nrow, int nnonzero, long* nonzero_i,
         free(_rxd_euler_nonzero_i);
         free(_rxd_euler_nonzero_j);
         free(_rxd_euler_nonzero_values);
+        _rxd_a = NULL;
     }
-    prev_structure_change_cnt = structure_change_cnt;
-    initialized = 1;
     diffusion = TRUE;
+
 	_rxd_euler_nrow = nrow;
     _rxd_euler_nnonzero = nnonzero;
     _rxd_euler_nonzero_i = (long*)allocopy(nonzero_i, sizeof(long) * nnonzero);
     _rxd_euler_nonzero_j = (long*)allocopy(nonzero_j, sizeof(long) * nnonzero);
     _rxd_euler_nonzero_values = (double*)allocopy(nonzero_values, sizeof(double) * nnonzero);
 
-    /*Clear previous _rxd_zvi_child*/
-    if(_rxd_zvi_child != NULL && _rxd_zvi_child_count != NULL)
-    {
-        for(i = 0; i < _rxd_num_zvi; i++)
-            if(_rxd_zvi_child_count[i]>0) free(_rxd_zvi_child[i]);
-        free(_rxd_zvi_child);
-        free(_rxd_zvi_child_count);
-        _rxd_zvi_child_count = NULL;
-        _rxd_zvi_child = NULL;
-    }
-    _rxd_num_zvi = num_zero_volume_indices; 
-    _rxd_zero_volume_indices = zero_volume_indices;
-    
     _rxd_a = (double*)calloc(nrow,sizeof(double));
     _rxd_b = (double*)calloc(nrow,sizeof(double));
     _rxd_c = (double*)calloc(nrow,sizeof(double));
@@ -521,7 +498,7 @@ static void add_currents(double * result)
     short side;
     /*Add currents to the result*/
         for (k = 0; k < _curr_count; k++)
-            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]->u.px_);
+            result[_curr_indices[k]] += _curr_scales[k] * (*_curr_ptrs[k]);
 
     /*Subtract rxd induced currents*/
     if(_membrane_flux)
@@ -739,7 +716,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _membrane_lookup = (int*)malloc(sizeof(int)*num_states);
      memset(_membrane_lookup, SPECIES_ABSENT, sizeof(int)*num_states);
 
-    _memb_cur_ptrs = (PyHocObject***)malloc(sizeof(PyHocObject**)*num_currents);
+    _memb_cur_ptrs = (double***)malloc(sizeof(double**)*num_currents);
     _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
@@ -748,7 +725,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 
     for(i = 0, k = 0; i < num_currents; i++)
     {
-        _memb_cur_ptrs[i] = (PyHocObject**)malloc(sizeof(PyHocObject*)*num_species[i]);
+        _memb_cur_ptrs[i] = (double**)malloc(sizeof(double*)*num_species[i]);
         //memcpy(_memb_cur_ptrs[i], &ptrs[k], sizeof(PyHocObject*)*num_species[i]);
         _memb_cur_mapped_ecs[i] = (int**)malloc(sizeof(int*)*num_species[i]);
         _memb_cur_mapped[i] =  (int**)malloc(sizeof(int*)*num_species[i]);
@@ -756,7 +733,7 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 
         for(j = 0; j < num_species[i]; j++, k++)
         {
-            _memb_cur_ptrs[i][j] = ptrs[k];
+            _memb_cur_ptrs[i][j] = (double*)ptrs[k]->u.px_;
             _memb_cur_mapped[i][j] = (int*)malloc(2*sizeof(int));
             _memb_cur_mapped_ecs[i][j] = (int*)malloc(2*sizeof(int));
 
@@ -814,7 +791,6 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
 static void _currents(double* rhs)
 {
     int i, j, k, idx, side;
-    
     if(!_membrane_flux)
         return;
     get_all_reaction_rates(states, NULL, NULL);
@@ -828,7 +804,7 @@ static void _currents(double* rhs)
         for(j = 0; j < _memb_species_count[i]; j++, k++)
         {
             rhs[idx] -= _rxd_induced_currents[k];
-            *(_memb_cur_ptrs[i][j]->u.px_) += _rxd_induced_currents[k];
+            *(_memb_cur_ptrs[i][j]) += _rxd_induced_currents[k];
  
             for(side = 0; side < 2; side++)
             {
@@ -845,12 +821,12 @@ static void _currents(double* rhs)
     }
 }
 
-
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
-        if(method > 0 && initialized && structure_change_cnt != prev_structure_change_cnt)
+        if(initialized && structure_change_cnt != prev_structure_change_cnt)
         {
             /*TODO: Exclude irrelevant (non-rxd) structural changes*/
-            _setup_matrices(); 
+            /*Needed for node.include_flux*/
+            _setup_matrices();
         }
         switch (method) {
         case 0:
@@ -904,12 +880,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             printf("Unknown rxd_nonvint_block call: %d\n", method);
             break;
     }
-    /*
-    int i;
-    for(i=0; i<size; i++)
-    {
-        fprintf(stderr,"%i] \t %1.12e \t %1.12e \n", i, (p1==NULL?-1e9:p1[i]), (p2==NULL?-1e9:p2[i]));
-    }*/
     return 0;
 }
 
@@ -1165,7 +1135,7 @@ extern "C" void clear_rates()
         SAFE_FREE(react->ecs_state);
         prev = react;
         react = react->next;
-        free(prev);
+        SAFE_FREE(prev);
     }
     _reactions = NULL;
     /*clear extracellular reactions*/
@@ -1225,17 +1195,23 @@ extern "C" void remove_species_atolscale(int id)
     }
 }
 
-extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi, PyHocObject* h_t_ref, PyHocObject* h_dt_ref) {
+extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, int num_zvi) {
     free_currents();
     states = my_states;
     num_states = my_num_states;
+    free_zvi_child();
     _rxd_num_zvi = num_zvi;
-    _rxd_zero_volume_indices = zvi;
+    if (_rxd_zero_volume_indices != NULL)
+        free(_rxd_zero_volume_indices);
+    if (num_zvi == 0)
+        _rxd_zero_volume_indices = NULL;
+    else
+        _rxd_zero_volume_indices = (long*)allocopy(zvi, num_zvi * sizeof(long));
     dt_ptr = &nrn_threads->_dt;
     t_ptr = &nrn_threads->_t;
-    h_t_ptr = h_t_ref->u.px_;
-    h_dt_ptr = h_dt_ref->u.px_;
     set_num_threads(NUM_THREADS);
+    initialized = TRUE;
+    prev_structure_change_cnt = structure_change_cnt;
 }
 
 void start_threads(const int n)
@@ -1584,7 +1560,9 @@ void _ode_reinit(double* y)
             if(zvi[j] == i)
                 j++;
             else
+            {
                 y[i-j] = states[i];
+            }
         }
     }
     else
@@ -1616,13 +1594,14 @@ void _rhs_variable_step(const double* p1, double* p2)
         {
             if(zvi[j] == i)
                 j++;
-            else
-                states[i] = my_states[i-j];
+            else{
+                states[i] =  my_states[i-j];
+           }
         }
     }
     else
     {
-        memcpy(states,my_states,sizeof(double)*num_states); //Invalid read & write of size 8
+        memcpy(states,my_states,sizeof(double)*num_states);
     }
 
     if(diffusion)

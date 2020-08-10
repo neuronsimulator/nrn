@@ -1,6 +1,7 @@
 import os.path as osp
 import numpy
 import pytest
+import gc
 
 from .testutils import collect_data
 
@@ -25,7 +26,6 @@ def neuron_import(request):
 
     return h, rxd
 
-
 @pytest.fixture
 def neuron_instance(neuron_import):
     """Sets/Resets the rxd test environment.
@@ -37,6 +37,13 @@ def neuron_instance(neuron_import):
     h, rxd = neuron_import
     data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')
+    
+    # pytest fixtures at the function scope that require neuron_instance will go    # out of scope after neuron_instance. So species, sections, etc. will go 
+    # out of scope after neuron_instance is torn down. 
+    # Here we assert that no section left alive. If the assertion fails it is
+    # due to a problem with the previous test, not the test which failed.
+    gc.collect()
+    for sec in h.allsec(): assert(False)
     cvode = h.CVode()
     cvode.active(False)
     cvode.atol(1e-3)
@@ -48,33 +55,25 @@ def neuron_instance(neuron_import):
 
     cvode.extra_scatter_gather(0, gather)
     yield (h, rxd, data)
-    rxd.region._all_regions = []
-    rxd.region._region_count = 0
-    rxd.region._c_region_lookup = None
     for r in rxd.rxd._all_reactions[:]:
         if r():
             rxd.rxd._unregister_reaction(r)
 
-    for s in rxd.species._all_species:
+    for s in rxd.species._all_species[:]:
         if s():
             s().__del__()
+    rxd.region._all_regions = []
+    rxd.region._region_count = 0
+    rxd.region._c_region_lookup = None
     rxd.species._species_counts = 0
-    rxd.section1d._rxd_sec_lookup = {}
     rxd.section1d._purge_cptrs()
     rxd.initializer.has_initialized = False
     rxd.rxd.free_conc_ptrs()
     rxd.rxd.free_curr_ptrs()
     rxd.rxd.rxd_include_node_flux1D(0, None, None, None)
-    for sec in h.allsec():
-        h.disconnect(sec=sec)
-        sref = h.SectionRef(sec=sec)
-        sref.rename('delete')
-        h.delete_section(sec=sec)
     rxd.species._has_1d = False
     rxd.species._has_3d = False
-    rxd.rxd._memb_cur_ptrs = []
-    rxd.rxd._rxd_induced_currents = None
-    rxd.rxd._curr_indices = None
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
     rxd.set_solve_type(dimension=1)
     cvode.extra_scatter_gather_remove(gather)
+    
