@@ -36,11 +36,32 @@ for srcgid in range(ncell):
 spiketime = h.Vector()
 spikegid = h.Vector()
 pc.spike_record(-1, spiketime, spikegid)
-pc.set_maxstep(10)
-h.finitialize(-65)
-pc.psolve(8)
 
+tstop = 8
+
+def run(tstop):
+  pc.set_maxstep(10)
+  h.finitialize(-65)
+  pc.psolve(tstop)
+
+run(tstop) # NEURON run
+
+spiketime_std = spiketime.c()
+spikegid_std = spikegid.c()
 print("src*10000+tar \tnpre \ttpre \tnpost \ttpost")
 for nc in nclist:
   w = nc.weight
   print("%g \t\t%g \t%.5f \t%g \t%.5f" % (w[0], w[1], w[2], w[3], w[4]))
+
+spiketime.resize(0)
+spikegid.resize(0)
+
+print("CoreNEURON run")
+h.CVode().cache_efficient(1)
+from neuron import coreneuron
+coreneuron.enable = True
+run(tstop)
+print (spiketime_std.eq(spiketime))
+print (spikegid_std.eq(spikegid))
+
+quit()
