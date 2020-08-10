@@ -238,7 +238,7 @@ double nrn_nernst(ci, co, z) double z, ci, co; {
 }
 
 void nrn_wrote_conc(sym, pe, it) Symbol* sym; double* pe; int it; {
-	if (it & 04) {
+	if (it & 040) {
 		pe[0] = nrn_nernst(pe[1], pe[2], nrn_ion_charge(sym));
 	}
 }

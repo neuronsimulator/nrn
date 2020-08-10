@@ -210,13 +210,7 @@ after_success:
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
       echo "------- Build Doxygen Documentation -------";
       pushd $TRAVIS_BUILD_DIR/build;
-      make doxygen;
-      echo "------- Prepare Docs for Sphinx -------";
-      pushd $TRAVIS_BUILD_DIR/build;
-      make prepare_docs;
-      echo "-------- Build Sphinx documentation --------";
-      pushd $TRAVIS_BUILD_DIR/build;
-      make sphinx;
+      make docs;
       echo "-------- Disable jekyll --------";
       pushd $TRAVIS_BUILD_DIR/build/docs;
       touch .nojekyll;

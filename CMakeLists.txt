@@ -163,13 +163,14 @@ endif()
 # =============================================================================
 # Setup Sphinx documentation
 # =============================================================================
-add_custom_target(
-        prepare_docs
-        COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-)
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
+  add_custom_target(
+          prepare_docs
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+  )
+
   set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
   set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
 
@@ -179,6 +180,28 @@ if(SPHINX_FOUND)
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating documentation with Sphinx"
+  )
+endif()
+
+# =============================================================================
+# Build full docs
+# =============================================================================
+if(DOXYGEN_FOUND AND SPHINX_FOUND)
+  add_custom_target(
+          docs
+          COMMAND make doxygen
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND make prepare_docs
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+          COMMAND make sphinx
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating full documentation"
+  )
+else()
+  add_custom_target(
+    docs
+    VERBATIM COMMAND echo "Please install docs requirements (see docs/README.md)!"
+    COMMENT "Documentation generation not possible!"
   )
 endif()
 
@@ -477,7 +500,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make docs     | Build the API documentation")
+  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, prepare_docs, sphinx")
   message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")

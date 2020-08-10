@@ -122,7 +122,20 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(NAME coreneuron_direct_hoc COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.hoc
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc)
+    add_test(NAME coreneuron_spikes_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc coreneuron_spikes_py)
+    if(NRN_ENABLE_MPI)
+      find_python_module(mpi4py)
+      if(mpi4py_FOUND)
+        add_test(
+                NAME coreneuron_mpi_spikes_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
+                                              ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
+                                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+        list(APPEND TESTS coreneuron_mpi_spikes_py)
+      endif()
+    endif()
   endif()
 endif()
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
