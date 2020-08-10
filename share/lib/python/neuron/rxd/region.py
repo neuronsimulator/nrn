@@ -41,7 +41,7 @@ class _c_region:
     def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
-        self._overlap = self._regions[0]()._secs1d
+        self._overlap = h.SectionList(self._regions[0]()._secs1d)
         self.num_regions = len(self._regions)
         self.num_species = 0
         self.num_params = 0
@@ -61,7 +61,7 @@ class _c_region:
         self._vptrs = None
         for rptr in self._regions:
             r = rptr()
-            self._overlap = [sec for sec in r._secs1d if sec in self._overlap]
+            self._overlap = h.SectionList([sec for sec in r._secs1d if sec in self._overlap])
             if r in _c_region_lookup:
                 _c_region_lookup[rptr].append(self)
             else:
@@ -339,9 +339,9 @@ class Region(object):
         self._secs1d = []
         self._secs3d = []
         
-        dims = rxd._dimensions
+        dims = rxd._domain_lookup
         for sec in self._secs:
-            dim = dims[sec]
+            dim = dims(sec)
             if dim == 1:
                 self._secs1d.append(sec)
             elif dim == 3:

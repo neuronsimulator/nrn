@@ -64,7 +64,7 @@ _fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
 rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
 setup_solver = nrn_dll_sym('setup_solver')
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int, ctypes.py_object, ctypes.py_object]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int]
 
 #states = None
 _set_num_threads = nrn_dll_sym('set_num_threads')
@@ -147,8 +147,6 @@ set_euler_matrix.argtypes = [
     _long_ptr,
     _long_ptr,
     _double_ptr,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
-    ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -239,23 +237,16 @@ _cvode_object = h.CVode()
 last_diam_change_cnt = None
 last_structure_change_cnt = None
 
-_linmodadd_c = None
-_diffusion_matrix = None
-_curr_scales = None
-_curr_ptrs = None
-_curr_indices = None
 
 _all_reactions = []
-
-_zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
-_nonzero_volume_indices = []
 
 nrn_tree_solve = nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
 
-_dimensions = collections.defaultdict(lambda: 1)
+_dimensions = {1: h.SectionList(), 3: h.SectionList()}
+_dimensions_default = 1
 _default_dx = 0.25
 _default_method = 'deterministic'
 
@@ -264,13 +255,25 @@ _diffusion_d = None
 _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
-_cur_node_indices = [] 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
+
+def _domain_lookup(sec, dim=None):
+    for d, sl in _dimensions.items():
+        if sec in sl:
+            if dim is not None and d != dim:
+                sl.remove(sec)
+                return _domain_lookup(sec, dim)
+            return d
+    dimension = dim if dim else _dimensions_default
+    _dimensions[dimension].append(sec)
+    return dimension
 
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
     
     domain -- a section or Python iterable of sections"""
+
+    global _dimensions_default, _dimensions
     setting_default = False
     if domain is None:
         domain = h.allsec()
@@ -288,11 +291,10 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
     if dimension is not None:
         if dimension not in (1, 3):
             raise RxDException('invalid option to set_solve_type: dimension must be 1 or 3')
-        factory = lambda: dimension
         if setting_default:
-            _dimensions.default_factory = factory
+            _dimensions_default = dimension
         for sec in domain:
-            _dimensions[sec] = dimension 
+            _domain_lookup(sec, dimension)
     if dx is not None:
         raise RxDException('using set_solve_type to specify dx is not yet implemented')
     if nsubseg is not None:
@@ -344,112 +346,100 @@ def re_init():
 
     _external_solver_initialized = False
     
-def _invalidate_matrices():
-    # TODO: make a separate variable for this?
-    global _diffusion_matrix, _external_solver_initialized, last_structure_change_cnt
-    _diffusion_matrix = None
-    last_structure_change_cnt = None
-    _external_solver_initialized = False
-
-_rxd_offset = None
-
-def _ode_count(offset):
-    global _rxd_offset, last_structure_change_cnt, _structure_change_count
-    initializer._do_init()
-    _rxd_offset = offset - len(_nonzero_volume_indices)
-    if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
-    last_structure_change_cnt = _structure_change_count.value
-    return len(_nonzero_volume_indices)
-
-
-_rxd_induced_currents = None
-_memb_cur_ptrs= []
 def _setup_memb_currents():
-    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
     # need this; think it's because of initialization of mod files
-    if _curr_indices is None: return
+    # setup for induced membrane currents
+    cur_node_indices = []
+    cur_map = {}
+    curr_indices = []
+    curr_scales = []
+    curr_ptrs = []
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None: s._setup_currents(curr_indices, curr_scales, curr_ptrs, cur_map)
+        num = len(curr_ptrs)
+        if num:
+            curr_ptr_vector = _h_ptrvector(num)
+            curr_ptr_vector.ptr_update_callback(_donothing)
+            for i, ptr in enumerate(curr_ptrs):
+                curr_ptr_vector.pset(i, ptr)
+                curr_ptr_storage_nrn = _h_vector(num)
+        else:
+            curr_ptr_vector = None
+            curr_ptr_storage_nrn = None
+    for rptr in _all_reactions:
+        r = rptr()
+        if r is not None:
+                r._update_indices()
+                r._setup_membrane_fluxes(cur_node_indices, cur_map)
+    if not curr_indices:
+        free_curr_ptrs()
+        return
+    rxd_setup_curr_ptrs(len(curr_indices),
+                        _list_to_cint_array(curr_indices),
+                        numpy.concatenate(curr_scales),
+                         _list_to_pyobject_array(curr_ptrs))
+
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    _memb_cur_ptrs = []
+    memb_cur_ptrs = []
     memb_cur_mapped = []
     memb_cur_mapped_ecs = []
+    memb_cur_ptrs= []
     for rptr in _all_reactions:
         r = rptr()
         if r and r._membrane_flux:
+            r._do_memb_scales(cur_map)
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            _memb_cur_ptrs += r._cur_ptrs
+            memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if _memb_cur_ptrs:
+    if memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]  #TODO: is len(x) the same for all x?
         num_fluxes = numpy.array(cur_counts).sum()
-        num_currents = len(_memb_cur_ptrs)
-        _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
-        """
-        print("num_currents",num_currents)
+        num_currents = len(memb_cur_ptrs)
+        memb_cur_ptrs = list(itertools.chain.from_iterable(memb_cur_ptrs))
+        """print("num_currents",num_currents)
         print("num_fluxes",num_fluxes)
-        print("num_nodes",_curr_indices)
+        print("num_nodes",curr_indices)
         print("num_species",cur_counts)
-        print("cur_idxs",_curr_indices)
-        print("node_idxs",_cur_node_indices)
+        print("cur_idxs",curr_indices)
+        print("node_idxs",cur_node_indices)
         print("scales",rxd_memb_scales)
-        print("ptrs",_memb_cur_ptrs)
+        print("ptrs",memb_cur_ptrs)
         print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",ecs_map,max(ecs_map))
-        """
+        print("mapped_ecs",ecs_map,max(ecs_map))"""
         setup_currents(num_currents,
             num_fluxes,
             _list_to_cint_array(cur_counts),
-            _list_to_cint_array(_cur_node_indices),
+            _list_to_cint_array(cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
-            _list_to_pyobject_array(_memb_cur_ptrs),
+            _list_to_pyobject_array(memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
-def _currents(rhs):
-    return
-    if rxd_memb_flux:
-        # TODO: remove the asserts when this is verified to work
-        assert(len(rxd_memb_flux) == len(_cur_node_indices))
-        assert(len(rxd_memb_flux) == len(memb_cur_ptrs))
-        assert(len(rxd_memb_flux) == len(memb_cur_charges))
-        assert(len(rxd_memb_flux) == len(memb_net_charges))
-        for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
-            rhs[i] -= net_charge * flux
-            #import sys
-            #sys.exit()
-            # TODO: remove this assert when more thoroughly tested
-            assert(len(cur_ptrs) == len(cur_maps))
-            for ptr, charge, cur_map_i in zip(cur_ptrs, cur_charges, cur_maps):
-                # this has the opposite sign of the above because positive
-                # currents lower the membrane potential
-                cur = charge * flux
-                ptr[0] += cur
-                for c in cur_map_i:
-                    _rxd_induced_currents[c] += cur
-                #for sign, c in zip([-1, 1], cur_maps):
-                #    if c is not None:
-                #        _rxd_induced_currents[c] += sign * cur
 
-_last_dt = None
 
 def _setup():
+    from . import initializer 
     if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
-    global _last_dt, _external_solver_initialized
-    _last_dt = None
+    global _external_solver_initialized, last_diam_change_cnt, last_structure_change_cnt
     _external_solver_initialized = False
     
+
     # Using C-code for reactions
     options.use_reaction_contribution_to_jacobian = False
+    _update_node_data()
+
 
 def _find_librxdmath():
     import glob
@@ -519,20 +509,7 @@ def _c_compile(formula):
     return reaction
 
 
-def _conductance(d):
-    pass
-    
-def _ode_jacobian(dt, t, ypred, fpred):
-    #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    lo = _rxd_offset
-    hi = lo + len(_nonzero_volume_indices)    
-    _reaction_matrix_setup(dt, ypred[lo : hi])
 
-_curr_ptr_vector = None
-_curr_ptr_storage = None
-_curr_ptr_storage_nrn = None
-pinverse = None
-_cur_map = None
 _h_ptrvector = h.PtrVector
 _h_vector = h.Vector
 
@@ -542,10 +519,9 @@ _diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 def _donothing(): pass
 
 def _update_node_data(force=False, newspecies=False):
-    global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _cur_node_indices, _curr_scales, _curr_ptrs, _cur_map
-    global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
+    global last_diam_change_cnt, last_structure_change_cnt
     if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
-        _cur_map = {}
+        
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
@@ -562,41 +538,14 @@ def _update_node_data(force=False, newspecies=False):
                     if s is not None:
                         s._update_region_indices(True)
                         s._register_cptrs()
-                if species._has_1d and species._1d_submatrix_n():
-                    volumes = node._get_data()[0]
-                    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-                setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+                #if species._has_1d and species._1d_submatrix_n():
+                _setup_matrices();
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
-                for rptr in _all_reactions:
-                    r = rptr()
-                    if r is not None:
-                       r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
                 _setup_memb_currents()
                 _compile_reactions()
 
             #end#if
-            for rptr in _all_reactions:
-                r = rptr()
-                if r is not None: r._update_indices()
-            _curr_indices = []
-            _curr_scales = []
-            _curr_ptrs = []
-            for sr in _species_get_all_species():
-                s = sr()
-                if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
-        
-            num = len(_curr_ptrs)
-            if num:
-                _curr_ptr_vector = _h_ptrvector(num)
-                _curr_ptr_vector.ptr_update_callback(_donothing)
-                for i, ptr in enumerate(_curr_ptrs):
-                    _curr_ptr_vector.pset(i, ptr)
-            
-                _curr_ptr_storage_nrn = _h_vector(num)
-                _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
-            else:
-                _curr_ptr_vector = None
 
             #_curr_scales = _numpy_array(_curr_scales)        
 
@@ -612,21 +561,13 @@ def _matrix_to_rxd_sparse(m):
     return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
 
-_euler_matrix = None
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-    global _curr_ptrs
-    global _cur_node_indices
-    global _zero_volume_indices
-    global _diffusion_matrix
 
     # update _node_fluxes in C
     _include_flux()
 
     # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
-
-    # if the shape has changed update the nodes
-    _update_node_data()
 
     n = len(_node_get_states())
     
@@ -649,6 +590,8 @@ def _setup_matrices():
         _nonzero_volume_indices = list(range(len(_node_get_states())))
         
     """
+    volumes = node._get_data()[0]
+    zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
     if species._has_1d:
         # TODO: initialization is slow. track down why
         
@@ -658,11 +601,6 @@ def _setup_matrices():
             if s is not None:
                 s._assign_parents()
         
-        _update_node_data(True)
-
-        volumes = node._get_data()[0]
-        _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-        _nonzero_volume_indices = volumes.nonzero()[0]
 
         # remove old linearmodeladdition
         _linmodadd_cur = None
@@ -676,16 +614,16 @@ def _setup_matrices():
             #if not species._has_3d:
             #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
             from collections import OrderedDict
-            _diffusion_matrix = [OrderedDict() for idx in range(n)]
+            diffusion_matrix = [OrderedDict() for idx in range(n)]
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
-                    s._setup_diffusion_matrix(_diffusion_matrix)
+                    s._setup_diffusion_matrix(diffusion_matrix)
                     s._setup_c_matrix(c_diagonal)
                     #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
             euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
             for i in range(n):
-                mat_i = _diffusion_matrix[i]
+                mat_i = diffusion_matrix[i]
                 euler_matrix_i.extend(itertools.repeat(i,len(mat_i)))
                 euler_matrix_j.extend(mat_i.keys())
                 euler_matrix_nonzero.extend(mat_i.values())
@@ -698,14 +636,6 @@ def _setup_matrices():
             #        _linmodadd_c[i, i] = 1
 
             
-            # setup for induced membrane currents
-            _cur_node_indices = []
-
-            for rptr in _all_reactions:
-                r = rptr()
-                if r is not None:
-                    r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
-                    
             #_cvode_object.re_init()    
 
             #if species._has_3d:
@@ -913,29 +843,24 @@ def _setup_matrices():
             #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
     """
     #CRxD
+    setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices))
     if species._has_1d and n and euler_matrix_nnonzero > 0:
-        _update_node_data()
         section1d._transfer_to_legacy()
         set_euler_matrix(n, euler_matrix_nnonzero,
                          _list_to_clong_array(euler_matrix_i),
                          _list_to_clong_array(euler_matrix_j),
                          _list_to_cdouble_array(euler_matrix_nonzero),
-                         _zero_volume_indices,
-                         len(_zero_volume_indices),
                          c_diagonal)
     else:
         rxd_set_no_diffusion()
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
-    
-    if _curr_indices is not None and len(_curr_indices) > 0:
-        #_curr_ptrs = _curr_ptrs if isinstance(_curr_ptrs, ctypes.py_object) else _list_to_pyobject_array(_curr_ptrs)
-        rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
-            numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
+   
 
     if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
         rxd_setup_conc_ptrs(len(section1d._all_cindices), 
              _list_to_cint_array(section1d._all_cindices), 
              _list_to_pyobject_array(section1d._all_cptrs))
+    else:
+        free_conc_ptrs()
 
     # we do this last because of performance issues with changing sparsity of csr matrices
     """
@@ -1060,9 +985,10 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in section1d._rxd_sec_lookup:
+    rxd_sec_lookup = section1d._SectionLookup()
+    for nrnsec in rxd_sec_lookup:
         set_of_regions = set() # a set of the regions that occur in a given section
-        for sec in section1d._rxd_sec_lookup[nrnsec]:
+        for sec in rxd_sec_lookup[nrnsec]:
             if sec: set_of_regions.add(sec._region)
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
@@ -1206,7 +1132,6 @@ def _compile_reactions():
                         c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
-    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
@@ -1557,8 +1482,13 @@ def _init():
             s._register_cptrs()
             s._finitialize()
     _setup_matrices()
-    _compile_reactions()
+    #if species._has_1d and species._1d_submatrix_n():
+    #volumes = node._get_data()[0]
+    #zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+    #setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
     _setup_memb_currents()
+    _compile_reactions()
+
 
 def _include_flux(force=False):
     from .node import _node_fluxes
