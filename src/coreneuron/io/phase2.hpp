@@ -70,7 +70,7 @@ class Phase2 {
     void fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>& memb_func);
     void pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>& memb_func);
     void set_dependencies(const NrnThread& nt, const std::vector<Memb_func>& memb_func);
-    void handle_extracon(NrnThread& nt, int n_netcon, const std::vector<int>& pnt_offset);
+    void handle_weights(NrnThread& nt, int n_netcon);
     void get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& memb_func);
     void set_vec_play(NrnThread& nt);
 

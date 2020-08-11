@@ -29,6 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef output_spikes_h
 #define output_spikes_h
 
+#include <string>
 #include <vector>
 #include <utility>
 namespace coreneuron {

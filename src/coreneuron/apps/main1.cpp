@@ -242,9 +242,6 @@ void nrn_init_and_load_data(int argc,
         use_solve_interleave = true;
     }
 
-    // pass by flag so existing tests do not need a changed nrn_setup prototype.
-    nrn_setup_multiple = corenrn_param.multiple;
-    nrn_setup_extracon = corenrn_param.extracon;
     // multisend options
     use_multisend_ = corenrn_param.multisend ? 1 : 0;
     n_multisend_interval = corenrn_param.ms_subint;
@@ -478,15 +475,10 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     if (!corenrn_param.reportfilepath.empty()) {
-        if (corenrn_param.multiple > 1) {
-            if (nrnmpi_myid == 0)
-                printf("\n WARNING! : Can't enable reports with model duplications feature! \n");
-        } else {
-            configs = create_report_configurations(corenrn_param.reportfilepath.c_str(),
-                                                   corenrn_param.outpath.c_str(),
-                                                   spikes_population_name);
-            reports_needs_finalize = configs.size();
-        }
+        configs = create_report_configurations(corenrn_param.reportfilepath.c_str(),
+                                               corenrn_param.outpath.c_str(),
+                                               spikes_population_name);
+        reports_needs_finalize = configs.size();
     }
 
     // initializationa and loading functions moved to separate

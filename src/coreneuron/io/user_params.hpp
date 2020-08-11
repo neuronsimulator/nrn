@@ -6,11 +6,10 @@ namespace coreneuron {
 /// Before it was globals variables, group them to give them as a single argument.
 /// They have for the most part, nothing related to each other.
 struct UserParams {
-    UserParams(int ngroup_, int* gidgroups_, int* imult_,
+    UserParams(int ngroup_, int* gidgroups_,
         const char* path_, const char* restore_path_)
     : ngroup(ngroup_)
     , gidgroups(gidgroups_)
-    , imult(imult_)
     , path(path_)
     , restore_path(restore_path_)
     , file_reader(ngroup_)
@@ -21,9 +20,6 @@ struct UserParams {
     const int ngroup;
     /// Array of cell group numbers (indices)
     const int* const gidgroups;
-    /// Array of duplicate indices. Normally, with nrn_setup_multiple=1,
-    //   they are ngroup values of 0.
-    const int* const imult;
     /// path to dataset file
     const char* const path;
     /// Dataset path from where simulation is being restored

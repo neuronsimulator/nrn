@@ -89,10 +89,6 @@ corenrn_parameters::corenrn_parameters(){
         ->check(CLI::Range(0., 1e9));
     sub_config -> add_option("-l, --celsius", this->celsius, "Temperature in degC. The default value is set in defaults.dat or else is 34.0.", true)
         ->check(CLI::Range(-1000., 1000.));
-    sub_config -> add_option("-x, --extracon", this->extracon, "Number of extra random connections in each thread to other duplicate models.")
-        ->check(CLI::Range(0, 10'000'000));
-    sub_config -> add_option("-z, --multiple", this->multiple, "Model duplication factor. Model size is normal size * multiple")
-        ->check(CLI::Range(1, 10'000'000));
     sub_config -> add_option("--mindelay", this->mindelay, "Maximum integration interval (likely reduced by minimum NetCon delay).", true)
         ->check(CLI::Range(0., 1e9));
     sub_config -> add_option("--report-buffer-size", this->report_buff_size, "Size in MB of the report buffer.")
@@ -162,8 +158,6 @@ std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_par
         << "--prcellgid=" << corenrn_param.prcellgid << std::endl
         << "--forwardskip=" << corenrn_param.forwardskip << std::endl
         << "--celsius=" << corenrn_param.celsius << std::endl
-        << "--extracon=" << corenrn_param.extracon << std::endl
-        << "--multiple=" << corenrn_param.multiple << std::endl
         << "--mindelay=" << corenrn_param.mindelay << std::endl
         << "--report-buffer-size=" << corenrn_param.report_buff_size << std::endl
         << std::endl

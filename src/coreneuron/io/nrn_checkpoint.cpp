@@ -372,7 +372,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         }
     }
 
-    int nnetcon = nt.n_netcon - nrn_setup_extracon;
+    int nnetcon = nt.n_netcon;
 
     int* output_vindex = new int[nt.n_presyn];
     double* output_threshold = new double[nt.ncell];

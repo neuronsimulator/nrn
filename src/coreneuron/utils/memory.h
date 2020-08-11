@@ -29,6 +29,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _H_MEMORY_
 #define _H_MEMORY_
 
+#include <cstdint>
 #include <cstring>
 
 #include "coreneuron/utils/nrn_assert.h"

@@ -90,12 +90,6 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "--celsius",
         "25.12",
 
-        "--extracon",
-        "1000",
-
-        "--multiple",
-        "3",
-
         "--mindelay",
         "0.1",
 
@@ -140,10 +134,6 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     BOOST_CHECK(corenrn_param_test.voltage == -32);
 
     BOOST_CHECK(corenrn_param_test.nwarp == 8);
-
-    BOOST_CHECK(corenrn_param_test.extracon == 1000);
-
-    BOOST_CHECK(corenrn_param_test.multiple == 3);
 
     BOOST_CHECK(corenrn_param_test.multisend == true);
 

@@ -159,8 +159,8 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     }
     output_vindex = F.read_vector<int>(nt.n_presyn);
     output_threshold = F.read_vector<double>(n_real_output);
-    pnttype = F.read_vector<int>(nt.n_netcon - nrn_setup_extracon);
-    pntindex = F.read_vector<int>(nt.n_netcon - nrn_setup_extracon);
+    pnttype = F.read_vector<int>(nt.n_netcon);
+    pntindex = F.read_vector<int>(nt.n_netcon);
     weights = F.read_vector<double>(n_weight);
     delay = F.read_vector<double>(nt.n_netcon);
     num_point_process = F.read_int();
@@ -310,7 +310,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     output_threshold = std::vector<double>(output_threshold_, output_threshold_ + n_real_output);
     delete[] output_threshold_;
 
-    int n_netcon = nt.n_netcon - nrn_setup_extracon;
+    int n_netcon = nt.n_netcon;
     pnttype = std::vector<int>(pnttype_, pnttype_ + n_netcon);
     delete[] pnttype_;
 
@@ -690,77 +690,31 @@ void Phase2::set_dependencies(const NrnThread& nt, const std::vector<Memb_func>&
     free(mech_deps);
 }
 
-void Phase2::handle_extracon(NrnThread& nt, int n_netcon, const std::vector<int>& pnt_offset) {
-    int extracon_target_nweight = 0;
-    if (nrn_setup_extracon > 0) {
-        // Fill in the extracon target_ and active_.
-        // Simplistic.
-        // Rotate through the pntindex and use only pnttype for ProbAMPANMDA_EMS
-        // (which happens to have a weight vector length of 5.)
-        // Edge case: if there is no such synapse, let the target_ be nullptr
-        //   and the netcon be inactive.
-        // Same pattern as algorithm for extracon netcon_srcgid above in phase1.
-        int extracon_target_type = nrn_get_mechtype("ProbAMPANMDA_EMS");
-        assert(extracon_target_type > 0);
-        extracon_target_nweight = corenrn.get_pnt_receive_size()[extracon_target_type];
-        int j = 0;
-        for (int i = 0; i < nrn_setup_extracon; ++i) {
-            bool extracon_find = false;
-            for (int k = 0; k < n_netcon; ++k) {
-                if (pnttype[j] == extracon_target_type) {
-                    extracon_find = true;
-                    break;
-                }
-                j = (j + 1) % n_netcon;
-            }
-            NetCon& nc = nt.netcons[i + n_netcon];
-            nc.active_ = extracon_find ? 1 : 0;
-            if (extracon_find) {
-                nc.target_ = nt.pntprocs + (pnt_offset[extracon_target_type] + pntindex[j]);
-            } else {
-                nc.target_ = nullptr;
-            }
+void Phase2::handle_weights(NrnThread& nt, int n_netcon) {
+    nt.n_weight = weights.size();
+    // weights in netcons order in groups defined by Point_process target type.
+    nt.weights = (double*)ecalloc_align(nt.n_weight, sizeof(double));
+    std::copy(weights.begin(), weights.end(), nt.weights);
+
+    int iw = 0;
+    for (int i = 0; i < n_netcon; ++i) {
+        NetCon& nc = nt.netcons[i];
+        nc.u.weight_index_ = iw;
+        if (pnttype[i] != 0) {
+            iw += corenrn.get_pnt_receive_size()[pnttype[i]];
+        } else {
+            iw += 1;
         }
     }
-
-    {
-        nt.n_weight = weights.size();
-        int nweight = nt.n_weight;
-        // weights in netcons order in groups defined by Point_process target type.
-        nt.n_weight += nrn_setup_extracon * extracon_target_nweight;
-        nt.weights = (double*)ecalloc_align(nt.n_weight, sizeof(double));
-        std::copy(weights.begin(), weights.end(), nt.weights);
-
-        int iw = 0;
-        for (int i = 0; i < n_netcon; ++i) {
-            NetCon& nc = nt.netcons[i];
-            nc.u.weight_index_ = iw;
-            if (pnttype[i] != 0) {
-                iw += corenrn.get_pnt_receive_size()[pnttype[i]];
-            } else {
-                iw += 1;
-            }
-        }
-        assert(iw == nweight);
+    assert(iw == nt.n_weight);
 
 #if CHKPNTDEBUG
-        ntc.delay = new double[n_netcon];
-        memcpy(ntc.delay, delay, n_netcon * sizeof(double));
+    ntc.delay = new double[n_netcon];
+    memcpy(ntc.delay, delay, n_netcon * sizeof(double));
 #endif
-        for (int i = 0; i < n_netcon; ++i) {
-            NetCon& nc = nt.netcons[i];
-            nc.delay_ = delay[i];
-        }
-
-        if (nrn_setup_extracon > 0) {
-            // simplistic. delay is 1 and weight is 0.001
-            for (int i = 0; i < nrn_setup_extracon; ++i) {
-                NetCon& nc = nt.netcons[n_netcon + i];
-                nc.delay_ = 1.0;
-                nc.u.weight_index_ = nweight + i * extracon_target_nweight;
-                nt.weights[nc.u.weight_index_] = 2.0;  // this value 2.0 is extracted from .dat files
-            }
-        }
+    for (int i = 0; i < n_netcon; ++i) {
+        NetCon& nc = nt.netcons[i];
+        nc.delay_ = delay[i];
     }
 }
 
@@ -852,7 +806,6 @@ void Phase2::set_vec_play(NrnThread& nt) {
 }
 
 void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
-    nrn_assert(userParams.imult[nt.id] >= 0);  // avoid imult unused warning
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
     ntc.file_id = userParams.gidgroups[nt.id];
 
@@ -1203,9 +1156,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     nt._net_send_buffer_size = nt.ncell;
     nt._net_send_buffer = (int*)ecalloc_align(nt._net_send_buffer_size, sizeof(int));
 
-    // do extracon later as the target and weight info
-    // is not directly in the file
-    int nnetcon = nt.n_netcon - nrn_setup_extracon;
+    int nnetcon = nt.n_netcon;
 
     // it may happen that Point_process structures will be made unnecessary
     // by factoring into NetCon.
@@ -1227,7 +1178,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         }
     }
 
-    handle_extracon(nt, nnetcon, pnt_offset);
+    handle_weights(nt, nnetcon);
 
     get_info_from_bbcore(nt, memb_func);
 

@@ -43,93 +43,19 @@ void Phase1::read_direct(int thread_id) {
     delete[] netcon_srcgid;
 }
 
-void Phase1::shift_gids(int imult) {
-    // maxgid is the maxgid to have the different multiple in the same gid space.
-    int maxgid = 0x7fffffff / nrn_setup_multiple;
-    // this value is the beginning of the new cluster of gids.
-    // the correct cluster is choose with imult.
-    int offset_gids = imult * maxgid;  // offset for each gid
-
-    // offset the (non-negative) gids according to multiple
-    // make sure everything fits into gid space.
-    for (auto& gid: this->output_gids) {
-        if (gid >= 0) {
-            nrn_assert(gid < maxgid);
-            gid += offset_gids;
-        }
-    }
-
-    for (auto& srcgid: this->netcon_srcgids) {
-        if (srcgid >= 0) {
-            nrn_assert(srcgid < maxgid);
-            srcgid += offset_gids;
-        }
-    }
-}
-
-void Phase1::add_extracon(NrnThread& nt, int imult) {
-    int maxgid = 0x7fffffff / nrn_setup_multiple;
-    if (nrn_setup_extracon <= 0) {
-        return;
-    }
-
-    // very simplistic
-    // Use this threads positive source gids - zz in nt.netcon order as the
-    // source gids for extracon.
-    // The edge cases are:
-    // The 0th duplicate uses uses source gids for the last duplicate.
-    // If there are fewer positive source gids than extracon, then keep
-    // rotating through the nt.netcon .
-    // If there are no positive source gids, use a source gid of -1.
-    // Would not be difficult to modify so that random positive source was
-    // used, and/or random connect to another duplicate.
-    // Note that we increment the nt.n_netcon at the end of this function.
-    int sidoffset = 0;  // how much to increment the corresponding positive gid
-    // like ring connectivity
-    if (imult > 0) {
-        sidoffset = -maxgid;
-    } else if (nrn_setup_multiple > 1) {
-        sidoffset = (nrn_setup_multiple - 1) * maxgid;
-    }
-    // set up the extracon srcgid_
-    int* nc_srcgid = netcon_srcgid[nt.id];
-    int j = 0;  // rotate through the n_netcon netcon_srcgid
-    for (int i = 0; i < nrn_setup_extracon; ++i) {
-        int sid = -1;
-        for (int k = 0; k < nt.n_netcon; ++k) {
-            // potentially rotate j through the entire n_netcon but no further
-            sid = nc_srcgid[j];
-            j = (j + 1) % nt.n_netcon;
-            if (sid >= 0) {
-                break;
-            }
-        }
-        if (sid < 0) {  // only connect to real cells.
-            sid = -1;
-        } else {
-            sid += sidoffset;
-        }
-        nc_srcgid[nt.n_netcon + i] = sid;
-    }
-    // finally increment the n_netcon
-    nt.n_netcon += nrn_setup_extracon;
-}
-
 #ifdef _OPENMP
-void Phase1::populate(NrnThread& nt, int imult, OMP_Mutex& mut) {
+void Phase1::populate(NrnThread& nt, OMP_Mutex& mut) {
 #else
-void Phase1::populate(NrnThread& nt, int imult) {
+void Phase1::populate(NrnThread& nt) {
 #endif
     nt.n_presyn = this->output_gids.size();
     nt.n_netcon = this->netcon_srcgids.size();
 
-    shift_gids(imult);
-
-    netcon_srcgid[nt.id] = new int[nt.n_netcon + nrn_setup_extracon];
+    netcon_srcgid[nt.id] = new int[nt.n_netcon];
     std::copy(this->netcon_srcgids.begin(), this->netcon_srcgids.end(),
               netcon_srcgid[nt.id]);
 
-    nt.netcons = new NetCon[nt.n_netcon + nrn_setup_extracon];
+    nt.netcons = new NetCon[nt.n_netcon];
     nt.presyns_helper = (PreSynHelper*)ecalloc_align(nt.n_presyn, sizeof(PreSynHelper));
 
     nt.presyns = new PreSyn[nt.n_presyn];
@@ -177,8 +103,6 @@ void Phase1::populate(NrnThread& nt, int imult) {
 
         ++ps;
     }
-
-    add_extracon(nt, imult);
 }
 
 }  // namespace coreneuron

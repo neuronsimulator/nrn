@@ -14,15 +14,12 @@ class Phase1 {
     void read_file(FileHandler& F);
     void read_direct(int thread_id);
 #ifdef _OPENMP
-    void populate(NrnThread& nt, int imult, OMP_Mutex& mut);
+    void populate(NrnThread& nt, OMP_Mutex& mut);
 #else
-    void populate(NrnThread& nt, int imult);
+    void populate(NrnThread& nt);
 #endif
 
     private:
-    void shift_gids(int imult);
-    void add_extracon(NrnThread& nt, int imult);
-
     std::vector<int> output_gids;
     std::vector<int> netcon_srcgids;
 };

@@ -161,33 +161,6 @@ int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::ve
 // stored in the nt.presyns array and nt.netcons array respectively
 namespace coreneuron {
 extern corenrn_parameters corenrn_param;
-int nrn_setup_multiple = 1; /* default */
-int nrn_setup_extracon = 0; /* default */
-
-// nrn_setup_extracon extra connections per NrnThread.
-// i.e. nrn_setup_extracon * nrn_setup_multiple * nrn_nthread
-// extra connections on this process.
-// The targets of the connections on a NrnThread are randomly selected
-// (with replacement) from the set of ProbAMPANMDA_EMS on the thread.
-// (This synapse type is not strictly appropriate to be used as
-// a generalized synapse with multiple input streams since some of its
-// range variables store quantities that should be stream specific
-// and therefore should be stored in the NetCon weight vector. But it
-// might be good enough for our purposes. In any case, we'd like to avoid
-// creating new POINT_PROCESS instances with all the extra complexities
-// involved in adjusting the data arrays.)
-// The nrn_setup_extracon value is used to allocate the appropriae
-// amount of extra space for NrnThread.netcons and NrnThread.weights
-//
-// The most difficult problem is to augment the rank wide inputpresyn_ list.
-// We wish to randomly choose source gids for the extracon NetCons from the
-// set of gids not in "multiple" instance of the model the NrnThread is a
-// member of. We need to take into account the possibilty of multiple
-// NrnThread in multiple "multiple" instances having extra NetCon with the
-// same source gid. That some of the source gids may be already be
-// associated with already existing PreSyn on this rank is a minor wrinkle.
-// This is done between phase1 and phase2 during the call to
-// determine_inputpresyn().
 
 #ifdef _OPENMP
 static OMP_Mutex mut;
@@ -208,17 +181,12 @@ std::vector<NetCon*> netcon_in_presyn_order_;
 std::vector<int*> netcon_srcgid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
-void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const char* filesdat) {
+void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     patstimtype = nrn_get_mechtype("PatternStim");
     if (corenrn_embedded) {
         ngrp = corenrn_embedded_nthread;
-        nrn_assert(multiple == 1);
         grp = new int[ngrp + 1];
-        imult = new int[ngrp + 1];
         (*nrn2core_group_ids_)(grp);
-        for (int i = 0; i <= ngrp; ++i) {
-            imult[i] = 0;
-        }
         return;
     }
 
@@ -251,24 +219,16 @@ void nrn_read_filesdat(int& ngrp, int*& grp, int multiple, int*& imult, const ch
     }
 
     ngrp = 0;
-    grp = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
-    imult = new int[iNumFiles * multiple / nrnmpi_numprocs + 1];
+    grp = new int[iNumFiles / nrnmpi_numprocs + 1];
 
     // irerate over gids in files.dat
-    for (int iNum = 0; iNum < iNumFiles * multiple; ++iNum) {
+    for (int iNum = 0; iNum < iNumFiles; ++iNum) {
         int iFile;
 
         nrn_assert(fscanf(fp, "%d\n", &iFile) == 1);
         if ((iNum % nrnmpi_numprocs) == nrnmpi_myid) {
             grp[ngrp] = iFile;
-            imult[ngrp] = iNum / iNumFiles;
             ngrp++;
-        }
-        if ((iNum + 1) % iNumFiles == 0) {
-            // re-read file for each multiple (skipping the two header lines)
-            rewind(fp);
-            nrn_assert(fscanf(fp, "%*s\n") == 0);
-            nrn_assert(fscanf(fp, "%*d\n") == 0);
         }
     }
 
@@ -448,11 +408,9 @@ void nrn_setup(const char* filesdat,
 
     int ngroup;
     int* gidgroups;
-    int* imult;
-    nrn_read_filesdat(ngroup, gidgroups, nrn_setup_multiple, imult, filesdat);
+    nrn_read_filesdat(ngroup, gidgroups, filesdat);
     UserParams userParams(ngroup,
                           gidgroups,
-                          imult,
                           datpath,
                           strlen(restore_path) == 0 ? datpath : restore_path);
    
@@ -497,7 +455,6 @@ void nrn_setup(const char* filesdat,
 
     // gap junctions
     if (nrn_have_gaps) {
-        assert(nrn_setup_multiple == 1);
         nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
         nrn_partrans::setup_info_ = new nrn_partrans::SetupInfo[userParams.ngroup];
         if (!corenrn_embedded) {
@@ -522,9 +479,9 @@ void nrn_setup(const char* filesdat,
             NrnThread& nt = *n;
             {
 #ifdef _OPENMP
-                p1.populate(nt, 0, mut);
+                p1.populate(nt, mut);
 #else
-                p1.populate(nt, 0);
+                p1.populate(nt);
 #endif
             }
         });
@@ -565,7 +522,6 @@ void nrn_setup(const char* filesdat,
 
     model_size();
     delete[] userParams.gidgroups;
-    delete[] userParams.imult;
 
     if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
@@ -593,7 +549,6 @@ void setup_ThreadData(NrnThread& nt) {
 }
 
 void read_phasegap(NrnThread& nt, UserParams& userParams) {
-    nrn_assert(userParams.imult[nt.id] == 0);
     nrn_partrans::SetupInfo& si = nrn_partrans::setup_info_[nt.id];
     si.ntar = 0;
     si.nsrc = 0;
@@ -903,9 +858,9 @@ void read_phase1(NrnThread& nt, UserParams& userParams) {
     
     { // Protect gid2in, gid2out and neg_gid2out
 #ifdef _OPENMP
-        p1.populate(nt, userParams.imult[nt.id], mut);
+        p1.populate(nt, mut);
 #else
-        p1.populate(nt, userParams.imult[nt.id]);
+        p1.populate(nt);
 #endif
     }
 }
