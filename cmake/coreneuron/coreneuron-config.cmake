@@ -9,8 +9,9 @@
 get_filename_component(CONFIG_PATH "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 find_path(CORENEURON_INCLUDE_DIR "coreneuron/coreneuron.h" HINTS "${CONFIG_PATH}/../../include")
-find_path(CORENEURON_LIB_DIR
-          NAMES libcoreneuron.a libcoreneuron.so libcoreneuron.dylib
-          HINTS "${CONFIG_PATH}/../../lib")
+find_path(
+  CORENEURON_LIB_DIR
+  NAMES libcoreneuron.a libcoreneuron.so libcoreneuron.dylib
+  HINTS "${CONFIG_PATH}/../../lib")
 
 include(${CONFIG_PATH}/coreneuron.cmake)

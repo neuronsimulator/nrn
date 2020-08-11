@@ -1,16 +1,18 @@
 # =============================================================================
-# Copyright (C) 2016-2019 Blue Brain Project
+# Copyright (C) 2016-2020 Blue Brain Project
 #
 # See top-level LICENSE file for details.
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-project(coreneuron VERSION 0.18.0)
+project(coreneuron VERSION 0.21.0)
 
+# ~~~
 # It is a bad idea having floating point versions, since macros cant handle them
 # We therefore, have version as an int, which is pretty much standard
+# ~~~
 math(EXPR CORENEURON_VERSION_COMBINED
-  "${coreneuron_VERSION_MAJOR} * 100 + ${coreneuron_VERSION_MINOR}")
+     "${coreneuron_VERSION_MAJOR} * 100 + ${coreneuron_VERSION_MINOR}")
 
 # =============================================================================
 # CMake common project settings
@@ -19,8 +21,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE
-        RelWithDebInfo
-        CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
+    RelWithDebInfo
+    CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
 
 # =============================================================================
 # Settings to enable project as submodule
@@ -32,10 +34,21 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 # =============================================================================
+# HPC Coding Conventions
+# =============================================================================
+set(CODING_CONV_PREFIX "CORENRN")
+set(CORENRN_ClangFormat_EXCLUDES_RE
+    ".*/external/.*$$"
+    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
+set(CORENRN_CMakeFormat_EXCLUDES_RE
+    ".*/external/.*$$" ".*/CMake/packages/.*$$"
+    CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
+add_subdirectory(CMake/hpc-coding-conventions/cpp)
+
+# =============================================================================
 # Include cmake modules path
 # =============================================================================
-list(APPEND CMAKE_MODULE_PATH
-            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
+list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
             ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/packages
             ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/config)
 
@@ -71,13 +84,21 @@ option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
 
-set(CORENRN_NMODL_DIR "" CACHE PATH "Path to nmodl source-to-source compiler installation")
-set(LIKWID_DIR "" CACHE PATH "Path to likwid performance analysis suite")
+set(CORENRN_NMODL_DIR
+    ""
+    CACHE PATH "Path to nmodl source-to-source compiler installation")
+set(LIKWID_DIR
+    ""
+    CACHE PATH "Path to likwid performance analysis suite")
 
-set(CORENRN_FRONTEND_C_COMPILER gcc CACHE FILEPATH "C compiler for building mod2c [frontend]")
-set(CORENRN_FRONTEND_CXX_COMPILER g++ CACHE FILEPATH "C++ compiler for building mod2c [frontend]")
+set(CORENRN_FRONTEND_C_COMPILER
+    gcc
+    CACHE FILEPATH "C compiler for building mod2c [frontend]")
+set(CORENRN_FRONTEND_CXX_COMPILER
+    g++
+    CACHE FILEPATH "C++ compiler for building mod2c [frontend]")
 
-if (CORENEURON_AS_SUBPROJECT)
+if(CORENEURON_AS_SUBPROJECT)
   set(CORENRN_ENABLE_UNIT_TESTS OFF)
 endif()
 
@@ -118,8 +139,10 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI")
   add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 endif()
 
-# OpenACC needs to build static library in order to have global/routines
-# working. See https://www.pgroup.com/userforum/viewtopic.php?t=5350
+# ~~~
+# OpenACC needs to build static library in order to have global/routines working.
+# See https://www.pgroup.com/userforum/viewtopic.php?t=5350
+# ~~~
 if(CORENRN_ENABLE_SHARED AND NOT CORENRN_ENABLE_GPU)
   set(COMPILE_LIBRARY_TYPE "SHARED")
 else()
@@ -174,7 +197,7 @@ endif()
 if(CORENRN_ENABLE_REPORTING)
   find_package(reportinglib)
   find_package(sonata)
-  find_program (H5DUMP_EXECUTABLE h5dump)
+  find_program(H5DUMP_EXECUTABLE h5dump)
   if(NOT reportinglib_FOUND AND NOT sonata_FOUND)
     message(SEND_ERROR "Neither reportinglib nor SONATA libraries were found")
   elseif(reportinglib_FOUND AND sonata_FOUND)
@@ -206,7 +229,7 @@ endif()
 # =============================================================================
 if(CORENRN_ENABLE_NMODL)
   find_package(nmodl)
-  if (nmodl_FOUND)
+  if(nmodl_FOUND)
     set(CORENRN_NMODL_BINARY ${nmodl_BINARY})
     set(CORENRN_NMODL_INCLUDE ${nmodl_INCLUDE})
     # path to python interface
@@ -222,7 +245,9 @@ if(CORENRN_ENABLE_NMODL)
   endif()
   include_directories(${CORENRN_NMODL_INCLUDE})
   # set correct arguments for nmodl for cpu/gpu target
-  set(CORENRN_NMODL_FLAGS "" CACHE STRING "Extra NMODL options such as passes")
+  set(CORENRN_NMODL_FLAGS
+      ""
+      CACHE STRING "Extra NMODL options such as passes")
   if(CORENRN_ENABLE_GPU)
     string(APPEND CORENRN_NMODL_FLAGS " acc --oacc")
   endif()
@@ -232,7 +257,6 @@ else()
   set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
 endif()
-
 
 # =============================================================================
 # Profiler/Instrumentation Options
@@ -277,7 +301,6 @@ else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
 
-
 # =============================================================================
 # Setup Doxygen documentation
 # =============================================================================
@@ -286,11 +309,11 @@ if(DOXYGEN_FOUND)
   # generate Doxyfile with correct source paths
   configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
   add_custom_target(
-          doxygen
-          COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMENT "Generating API documentation with Doxygen"
-          VERBATIM)
+    doxygen
+    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
 endif()
 
 # =============================================================================
@@ -302,12 +325,10 @@ if(SPHINX_FOUND)
   set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
 
   add_custom_target(
-          sphinx
-          COMMAND ${SPHINX_EXECUTABLE} -b html
-          ${SPHINX_SOURCE} ${SPHINX_BUILD}
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMENT "Generating documentation with Sphinx"
-  )
+    sphinx
+    COMMAND ${SPHINX_EXECUTABLE} -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating documentation with Sphinx")
 endif()
 
 # =============================================================================
@@ -315,21 +336,18 @@ endif()
 # =============================================================================
 if(DOXYGEN_FOUND AND SPHINX_FOUND)
   add_custom_target(
-          docs
-          COMMAND make doxygen
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make sphinx
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMENT "Generating full documentation"
-  )
+    docs
+    COMMAND make doxygen
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMAND make sphinx
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating full documentation")
 else()
   add_custom_target(
-          docs
-          VERBATIM COMMAND echo "Please install docs requirements (see docs/README.md)!"
-          COMMENT "Documentation generation not possible!"
-  )
+    docs VERBATIM
+    COMMAND echo "Please install docs requirements (see docs/README.md)!"
+    COMMENT "Documentation generation not possible!")
 endif()
-
 
 # =============================================================================
 # Build status
