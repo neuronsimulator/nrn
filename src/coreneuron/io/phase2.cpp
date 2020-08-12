@@ -8,6 +8,7 @@
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/io/mem_layout_util.hpp"
+#include "coreneuron/io/setup_fornetcon.hpp"
 
 int (*nrn2core_get_dat2_1_)(int tid,
                             int& ngid,
@@ -707,6 +708,10 @@ void Phase2::handle_weights(NrnThread& nt, int n_netcon) {
         }
     }
     assert(iw == nt.n_weight);
+
+    // Nontrivial if FOR_NETCON in use by some mechanisms
+    setup_fornetcon_info(nt);
+
 
 #if CHKPNTDEBUG
     ntc.delay = new double[n_netcon];

@@ -47,7 +47,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #undef pdata
 #undef prop
 #undef nodecount
-#undef type
 #undef pval
 #undef id
 #undef weights
@@ -59,7 +58,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #define pdata _pdata
 #define prop _prop
 #define nodecount _nodecount
-#define type _type
 #define pval _pval
 #define id _id
 #define weights _weights

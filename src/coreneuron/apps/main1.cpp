@@ -593,6 +593,16 @@ extern "C" int run_solve_core(int argc, char** argv) {
         output_spikes(output_dir.c_str(), spikes_population_name);
     }
 
+    // copy weights back to NEURON NetCon
+    if (nrn2core_all_weights_return_) {
+        std::vector<double*> weights(nrn_nthread, NULL);
+        // could be one thread more (empty) than in NEURON but does not matter
+        for (int i=0; i < nrn_nthread; ++i) {
+          weights[i] = nrn_threads[i].weights;
+        }
+        (*nrn2core_all_weights_return_)(weights);
+    }
+
     {
         Instrumentor::phase p("checkpoint");
         write_checkpoint(nrn_threads, nrn_nthread, corenrn_param.checkpointpath.c_str());

@@ -109,6 +109,10 @@ extern void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** 
 
 /* send all spikes vectors to NEURON */  
 extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::vector<int>& gidvec);
-}
+
+/* send all weights to NEURON */
+extern void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
+
+} // extern "C"
 
 #endif /* nrn2core_direct_h */

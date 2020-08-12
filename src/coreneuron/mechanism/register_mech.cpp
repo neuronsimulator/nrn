@@ -236,10 +236,10 @@ void hoc_register_prop_size(int type, int psize, int dpsize) {
 void hoc_register_dparam_semantics(int type, int ix, const char* name) {
     /* needed for SoA to possibly reorder name_ion and some "pointer" pointers. */
     /* only interested in area, iontype, cvode_ieq,
-       netsend, pointer, pntproc, bbcorepointer, watch, diam
+       netsend, pointer, pntproc, bbcorepointer, watch, diam, fornetcon
        xx_ion and #xx_ion which will get
        a semantics value of -1, -2, -3,
-       -4, -5, -6, -7, -8, -9,
+       -4, -5, -6, -7, -8, -9, -10,
        type, and type+1000 respectively
     */
     auto& memb_func = corenrn.get_memb_funcs();
@@ -261,6 +261,8 @@ void hoc_register_dparam_semantics(int type, int ix, const char* name) {
         memb_func[type].dparam_semantics[ix] = -8;
     } else if (strcmp(name, "diam") == 0) {
         memb_func[type].dparam_semantics[ix] = -9;
+    } else if (strcmp(name, "fornetcon") == 0) {
+        memb_func[type].dparam_semantics[ix] = -10;
     } else {
         int i = name[0] == '#' ? 1 : 0;
         int etype = nrn_get_mechtype(name + i);

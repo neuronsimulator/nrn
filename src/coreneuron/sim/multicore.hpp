@@ -32,6 +32,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/mechanism/membfunc.hpp"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/mpi/nrnmpi.h"
+#include <vector>
 
 namespace coreneuron {
 class NetCon;
@@ -150,6 +151,10 @@ struct NrnThread : public MemoryManaged {
     int* _watch_types = nullptr;                   /* nullptr or 0 terminated array of integers */
     void* mapping = nullptr;                       /* section to segment mapping information */
     TrajectoryRequests* trajec_requests = nullptr; /* per time step values returned to NEURON */
+
+    /* Needed in case there are FOR_NETCON statements in use. */
+    std::vector<size_t> _fornetcon_perm_indices; /* displacement like list of indices */
+    std::vector<size_t> _fornetcon_weight_perm;  /* permutation indices into weight */
 };
 
 extern void nrn_threads_create(int n);

@@ -26,32 +26,18 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef nmodl2_redef_h
-#define nmodl2_redef_h
+#ifndef _H_SETUP_FORNETCON_
+#define _H_SETUP_FORNETCON_
 
-#undef v
-#undef area
-#undef thisnode
-#undef GC
-#undef EC
-#undef extnode
-#undef xain
-#undef xbout
-#undef i
-#undef sec
+#include "coreneuron/sim/multicore.hpp"
 
-#undef NrnThread
-#undef Memb_list
-#undef nodelist
-#undef nodeindices
-#undef data
-#undef pdata
-#undef prop
-#undef nodecount
-#undef pval
-#undef weights
-#undef weight_index_
+namespace coreneuron {
 
-#undef id
+/**
+   If FOR_NETCON in use, setup NrnThread fornetcon related info.
+**/
 
-#endif
+void setup_fornetcon_info(NrnThread& nt);
+
+}  // namespace coreneuron
+#endif //_H_SETUP_FORNETCON_
