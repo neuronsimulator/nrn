@@ -2,6 +2,8 @@
 # the NetCons connecting to ForNetConTest instances are created
 # in random order.
 
+import pytest
+
 from neuron import h
 pc = h.ParallelContext()
 h.dt = 1.0/32
@@ -18,50 +20,62 @@ class Cell():
     # random start times for the internal events
     self.syn.tbegin = self.r.discunif(0,100)*h.dt
 
-ncell = 10
-gids = range(pc.id(), ncell, pc.nhost()) # round robin
+def test_fornetcon():
+  from neuron import coreneuron
+  coreneuron.enable = False
 
-cells = [Cell(gid) for gid in gids]
-nclist = []
+  ncell = 10
+  gids = range(pc.id(), ncell, pc.nhost()) # round robin
 
-# src first to more easily randomize NetCon creation order
-# so that NetCon to target not all adjacent
-for srcgid in range(ncell):
-  for tarcell in cells:
-    if int(tarcell.r.discunif(0,1)) == 1:
-      nclist.append(pc.gid_connect(srcgid, tarcell.syn))
-      nclist[-1].delay = tarcell.r.discunif(10, 50)*h.dt
-      nclist[-1].weight[0] = srcgid*10000 + tarcell.gid
+  cells = [Cell(gid) for gid in gids]
+  nclist = []
 
-spiketime = h.Vector()
-spikegid = h.Vector()
-pc.spike_record(-1, spiketime, spikegid)
+  # src first to more easily randomize NetCon creation order
+  # so that NetCon to target not all adjacent
+  for srcgid in range(ncell):
+    for tarcell in cells:
+      if int(tarcell.r.discunif(0,1)) == 1:
+        nclist.append(pc.gid_connect(srcgid, tarcell.syn))
+        nclist[-1].delay = tarcell.r.discunif(10, 50)*h.dt
+        nclist[-1].weight[0] = srcgid*10000 + tarcell.gid
 
-tstop = 8
+  spiketime = h.Vector()
+  spikegid = h.Vector()
+  pc.spike_record(-1, spiketime, spikegid)
 
-def run(tstop):
-  pc.set_maxstep(10)
-  h.finitialize(-65)
-  pc.psolve(tstop)
+  tstop = 8
 
-run(tstop) # NEURON run
+  def run(tstop):
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    pc.psolve(tstop)
 
-spiketime_std = spiketime.c()
-spikegid_std = spikegid.c()
-print("src*10000+tar \tnpre \ttpre \tnpost \ttpost")
-for nc in nclist:
-  w = nc.weight
-  print("%g \t\t%g \t%.5f \t%g \t%.5f" % (w[0], w[1], w[2], w[3], w[4]))
+  run(tstop) # NEURON run
 
-spiketime.resize(0)
-spikegid.resize(0)
+  spiketime_std = spiketime.c()
+  spikegid_std = spikegid.c()
+  def get_weights():
+    weight = []
+    for nc in nclist:
+      w = nc.weight
+      weight.append((w[0], w[1], w[2], w[3], w[4]))
+    return weight
 
-print("CoreNEURON run")
-h.CVode().cache_efficient(1)
-from neuron import coreneuron
-coreneuron.enable = True
-run(tstop)
-print (spiketime_std.eq(spiketime))
-print (spikegid_std.eq(spikegid))
+  weight_std = get_weights()
 
-quit()
+  spiketime.resize(0)
+  spikegid.resize(0)
+
+  print("CoreNEURON run")
+  h.CVode().cache_efficient(1)
+  coreneuron.enable = True
+  run(tstop)
+  coreneuron.enable = False
+  assert (len(spiketime) > 0)
+  assert (spiketime_std.eq(spiketime) == 1.0)
+  assert (spikegid_std.eq(spikegid) == 1.0)
+  assert (len(weight_std) > 0)
+  assert (weight_std == get_weights())
+
+if __name__ == "__main__":
+  test_fornetcon()
