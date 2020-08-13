@@ -12,10 +12,37 @@ _c_ptr_vector = None
 _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
-_rxd_sec_lookup = dict()
-_keep_alive = []
 
 def _donothing(): pass
+
+class _SectionLookup:
+    class Lookup:
+        def __init__(self):
+            self.rxd_sec_lookup = {}
+    _instance = None
+    
+    def __init__(self):
+        if _SectionLookup._instance is None:
+           _SectionLookup._instance = _SectionLookup.Lookup()
+
+    def __getitem__(self, key):
+        return _SectionLookup._instance.rxd_sec_lookup[key]
+
+    def __setitem__(self, key, value):
+        _SectionLookup._instance.rxd_sec_lookup[key] = value
+    
+    def __delitem__(self, key):
+        del _SectionLookup._instance.rxd_sec_lookup[key]
+
+    def __iter__(self):
+        return iter(_SectionLookup._instance.rxd_sec_lookup)
+
+    def values(self):
+        return _SectionLookup._instance.rxd_sec_lookup.values()
+
+    def items(self):
+        return _SectionLookup._instance.rxd_sec_lookup.items()
+
 
 
 def add_values(mat, i, js, vals):
@@ -49,6 +76,7 @@ def _parent(sec):
 
 def _purge_cptrs():
     """purges all cptr information"""
+
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
     global _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     _all_cptrs = []
@@ -89,7 +117,7 @@ def replace(rmsec, offset, nseg):
     rmsec._offset = offset
     rmsec._nseg = nseg
 
-    for secs in _rxd_sec_lookup.values():
+    for secs in _SectionLookup().values():
         for sec in secs:
             if sec and sec._offset > old_offset:
                 sec._offset -= dur
@@ -105,11 +133,11 @@ class Section1D(rxdsection.RxDSection):
         self._nseg = sec.nseg
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
-        global _rxd_sec_lookup
-        if sec in _rxd_sec_lookup:
-            _rxd_sec_lookup[sec].append(self)
+        self._rxd_sec_lookup = _SectionLookup()
+        if sec in self._rxd_sec_lookup:
+            self._rxd_sec_lookup[sec].append(self)
         else:
-            _rxd_sec_lookup[sec] = [self]
+            self._rxd_sec_lookup[sec] = [self]
 
     def __req__(self, other):
         if isinstance(other, nrn.Section):
@@ -152,7 +180,7 @@ class Section1D(rxdsection.RxDSection):
 
     def _delete(self):
         # memory in node global variables is handled by the species
-        global _rxd_sec_lookup
+        _rxd_sec_lookup = _SectionLookup()
         
         # remove ref to this section -- at exit weakref.ref might be none 
         if self._sec in _rxd_sec_lookup:
