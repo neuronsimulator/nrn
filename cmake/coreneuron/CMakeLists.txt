@@ -34,6 +34,13 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 # =============================================================================
+# Include cmake modules path
+# =============================================================================
+list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
+            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/packages
+            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/config)
+
+# =============================================================================
 # HPC Coding Conventions
 # =============================================================================
 set(CODING_CONV_PREFIX "CORENRN")
@@ -43,14 +50,8 @@ set(CORENRN_ClangFormat_EXCLUDES_RE
 set(CORENRN_CMakeFormat_EXCLUDES_RE
     ".*/external/.*$$" ".*/CMake/packages/.*$$"
     CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
+include(AddHpcCodingConvSubmodule)
 add_subdirectory(CMake/hpc-coding-conventions/cpp)
-
-# =============================================================================
-# Include cmake modules path
-# =============================================================================
-list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
-            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/packages
-            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/config)
 
 # =============================================================================
 # Include common cmake modules
@@ -62,6 +63,7 @@ include(SetRpath)
 include(CTest)
 include(AddRandom123Submodule)
 include(AddCLI11Submodule)
+
 add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11)
 
 # =============================================================================
@@ -106,7 +108,6 @@ endif()
 # Include cmake modules after cmake options
 # =============================================================================
 include(OpenAccHelper)
-include(ClangFormatHelper)
 
 # =============================================================================
 # Common dependencies
