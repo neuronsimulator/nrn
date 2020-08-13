@@ -73,14 +73,16 @@ class CodegenOmpVisitor: public CodegenCVisitor {
     CodegenOmpVisitor(std::string mod_file,
                       std::string output_dir,
                       LayoutType layout,
-                      std::string float_type)
-        : CodegenCVisitor(mod_file, output_dir, layout, float_type) {}
+                      std::string float_type,
+                      const bool optimize_ionvar_copies)
+        : CodegenCVisitor(mod_file, output_dir, layout, float_type, optimize_ionvar_copies) {}
 
     CodegenOmpVisitor(std::string mod_file,
                       std::stringstream& stream,
                       LayoutType layout,
-                      std::string float_type)
-        : CodegenCVisitor(mod_file, stream, layout, float_type) {}
+                      std::string float_type,
+                      const bool optimize_ionvar_copies)
+        : CodegenCVisitor(mod_file, stream, layout, float_type, optimize_ionvar_copies) {}
 };
 
 /** @} */  // end of codegen_backends

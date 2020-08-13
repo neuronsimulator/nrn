@@ -122,9 +122,12 @@ int main(int argc, const char* argv[]) {
     /// true if verbatim blocks
     bool verbatim_rename(true);
 
-    /// true if code generation is forced to happed even if there
+    /// true if code generation is forced to happen even if there
     /// is any incompatibility
     bool force_codegen(false);
+
+    /// true if ion variable copies should be avoided
+    bool optimize_ionvar_copies_codegen(true);
 
     /// directory where code will be generated
     std::string output_dir(".");
@@ -251,6 +254,9 @@ int main(int argc, const char* argv[]) {
     codegen_opt->add_flag("--force",
         force_codegen,
         "Force code generation even if there is any incompatibility");
+    codegen_opt->add_flag("--opt-ionvar-copy",
+        optimize_ionvar_copies_codegen,
+        "Optimize copies of ion variables ({})"_format(optimize_ionvar_copies_codegen))->ignore_case();
 
     // clang-format on
 
@@ -488,31 +494,36 @@ int main(int argc, const char* argv[]) {
 
             if (ispc_backend) {
                 logger->info("Running ISPC backend code generator");
-                CodegenIspcVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                CodegenIspcVisitor visitor(
+                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
-                CodegenAccVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                CodegenAccVisitor visitor(
+                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (omp_backend) {
                 logger->info("Running OpenMP backend code generator");
-                CodegenOmpVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                CodegenOmpVisitor visitor(
+                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (c_backend) {
                 logger->info("Running C backend code generator");
-                CodegenCVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                CodegenCVisitor visitor(
+                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             if (cuda_backend) {
                 logger->info("Running CUDA backend code generator");
-                CodegenCudaVisitor visitor(modfile, output_dir, mem_layout, data_type);
+                CodegenCudaVisitor visitor(
+                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
         }

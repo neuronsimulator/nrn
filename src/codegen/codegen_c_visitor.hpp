@@ -205,6 +205,11 @@ class CodegenCVisitor: public visitor::AstVisitor {
     bool codegen = false;
 
     /**
+     * Flag to indicate if visitor should avoid ion variable copies
+     */
+    bool optimize_ionvar_copies = true;
+
+    /**
      * Variable name should be converted to instance name (but not for function arguments)
      */
     bool enable_variable_name_lookup = true;
@@ -996,7 +1001,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
 
 
     /**
-     * Check if ion variable are copies avoided
+     * Check if ion variable copies should be avoided
      */
     bool optimize_ion_variable_copies() const;
 
@@ -1594,6 +1599,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
                     const std::string& output_dir,
                     LayoutType layout,
                     const std::string& float_type,
+                    const bool optimize_ionvar_copies,
                     const std::string& extension,
                     const std::string& wrapper_ext)
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
@@ -1601,7 +1607,8 @@ class CodegenCVisitor: public visitor::AstVisitor {
         , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
-        , float_type(float_type) {}
+        , float_type(float_type)
+        , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
 
   public:
@@ -1627,12 +1634,14 @@ class CodegenCVisitor: public visitor::AstVisitor {
                     const std::string& output_dir,
                     LayoutType layout,
                     const std::string& float_type,
+                    const bool optimize_ionvar_copies,
                     const std::string& extension = ".cpp")
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
-        , float_type(float_type) {}
+        , float_type(float_type)
+        , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
     /**
      * \copybrief nmodl::codegen::CodegenCVisitor
@@ -1654,12 +1663,14 @@ class CodegenCVisitor: public visitor::AstVisitor {
     CodegenCVisitor(const std::string& mod_filename,
                     std::ostream& stream,
                     LayoutType layout,
-                    const std::string& float_type)
+                    const std::string& float_type,
+                    const bool optimize_ionvar_copies)
         : target_printer(new CodePrinter(stream))
         , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
-        , float_type(float_type) {}
+        , float_type(float_type)
+        , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
 
     /**
@@ -1683,12 +1694,14 @@ class CodegenCVisitor: public visitor::AstVisitor {
     CodegenCVisitor(std::string mod_filename,
                     LayoutType layout,
                     std::string float_type,
+                    const bool optimize_ionvar_copies,
                     std::shared_ptr<CodePrinter>& target_printer)
         : target_printer(target_printer)
         , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
-        , float_type(float_type) {}
+        , float_type(float_type)
+        , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
 
     /**
