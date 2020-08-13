@@ -1,4 +1,4 @@
-def test(files):
+def test(files, correct_data):
     import os
     import sys
     import filecmp
@@ -18,8 +18,7 @@ def test(files):
     passed_list = []
     failed_list = []
     incomplete_list = []
-    correct_data = os.path.join(os.pardir, os.pardir, os.pardir, os.pardir, 
-                                os.pardir, 'test','rxd','testdata','rxdtests')
+
     for f in files:
         base_name = f[: -3]
         print('%s: ' % base_name)
@@ -86,8 +85,8 @@ def test(files):
                 print('failed')
 
                 failed_list.append(base_name)
-        except:
-            print('incomplete')
+        except Exception as e:
+            print('incomplete',e)
             incomplete_list.append(base_name)
 
     print('')
@@ -110,11 +109,19 @@ if __name__ == '__main__':
     import os
     import sys
     import shutil
+    import subprocess
     
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
-    
+
+    rxd_data = os.path.join(os.pardir, os.pardir, os.pardir, os.pardir,
+                                os.pardir, 'test','rxd','testdata')
+    # get the rxd test data
+    subprocess.call(["git", "submodule", "update", "--init", 
+                     "--recursive", rxd_data])
+    correct_data = os.path.abspath(os.path.join(rxd_data, 'rxdtests'))
+
     files = [f for f in os.listdir('tests') if f[-3:].lower() == '.py']
     #dirs = [name for name in os.listdir('tests') if os.path.isdir(os.path.join('tests', name))]
     dirs = [os.path.join(*d.split(os.path.sep)[1:]) for d in [wlk[0] for wlk in os.walk('tests')][1:]]
@@ -135,4 +142,4 @@ if __name__ == '__main__':
             os.chdir(dname)
             with open(fname) as f:
                 files += [os.path.join(dr, s) for s in f.read().splitlines()]
-    sys.exit(test(files))
+    sys.exit(test(files, correct_data))
