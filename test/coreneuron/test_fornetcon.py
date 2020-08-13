@@ -77,5 +77,8 @@ def test_fornetcon():
   assert (len(weight_std) > 0)
   assert (weight_std == get_weights())
 
+  # teardown
+  pc.gid_clear()
+
 if __name__ == "__main__":
   test_fornetcon()

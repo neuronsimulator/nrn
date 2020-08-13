@@ -125,6 +125,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(NAME coreneuron_spikes_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(NAME coreneuron_fornetcon_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_fornetcon.py
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc coreneuron_spikes_py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
