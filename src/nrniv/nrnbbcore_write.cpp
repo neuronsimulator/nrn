@@ -540,8 +540,7 @@ DatumIndices::~DatumIndices() {
 **/
 
 static void nrnthreads_all_weights_return(std::vector<double*>& weights) {
-  std::vector<int> iw; // index for each thread
-  iw.resize(std::size_t(nrn_nthread));
+  std::vector<int> iw(nrn_nthread); // index for each thread
   Symbol* ncsym = hoc_lookup("NetCon");
   hoc_List* ncl = ncsym->u.ctemplate->olist;
   hoc_Item* q;
