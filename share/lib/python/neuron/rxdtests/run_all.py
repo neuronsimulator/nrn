@@ -18,6 +18,8 @@ def test(files):
     passed_list = []
     failed_list = []
     incomplete_list = []
+    correct_data = os.path.join(os.pardir, os.pardir, os.pardir, os.pardir, 
+                                os.pardir, 'test','rxd','testdata','rxdtests')
     for f in files:
         base_name = f[: -3]
         print('%s: ' % base_name)
@@ -37,7 +39,7 @@ def test(files):
             sobj = re.search( r'<BAS_RL (\d*) BAS_RL>', outp.decode('utf-8'), re.M)
             rlen =  int(sobj.group(1))
             success = False
-            corr_dat = numpy.fromfile(os.path.join('correct_data', base_name + '.dat')).reshape(-1, rlen)
+            corr_dat = numpy.fromfile(os.path.join(correct_data, base_name + '.dat')).reshape(-1, rlen)
             tst_dat = numpy.fromfile(output_file).reshape(-1, rlen)
             t1 = corr_dat[:,0]
             t2 = tst_dat[:,0]

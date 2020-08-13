@@ -16,8 +16,8 @@ def ics_example(neuron_instance):
     # create cell1 where `x` will be created and leak out
     cell1 = h.Section(name='cell1')
     cell1.pt3dclear()
-    cell1.pt3dadd(-20, 0, 0, 10)
-    cell1.pt3dadd(-10, 0, 0, 10)
+    cell1.pt3dadd(-1, 0, 0, 1)
+    cell1.pt3dadd(1, 0, 0, 1)
     cell1.nseg = 11
     cell1.insert('pump')
 

@@ -13,8 +13,8 @@ def ics_pure_diffusion_anisotropic(neuron_instance):
         dend = h.Section(name='dend')
         dend.nseg = 11
         dend.pt3dclear()
-        dend.pt3dadd(-5,0,0,5)
-        dend.pt3dadd(5,0,0,5)
+        dend.pt3dadd(-3,0,0,3)
+        dend.pt3dadd(3,0,0,3)
         rxd.set_solve_type(dimension=3)
         r = rxd.Region(h.allsec(),dx=0.75)
         ca = rxd.Species(r, d=diff_constant,
