@@ -55,6 +55,16 @@ Use ``nrnpy_numbercheck(po)`` where ``po`` is the ``PyObject*`` to check.
 This is built-on but has modified semantics from the CPython API ``PyNumber_Check`` to detect things that NEURON cannot treat directly as numbers,
 like complex numbers.
 
+To reference a NEURON Object
+----------------------------
+
+Use ``hoc_obj_ref(obj)`` where ``obj`` is an ``Object*``. This is defined in :file:`src/oc/hoc_oop.c`. Include :file:`src/oc/oc_ansi.h` to define the function prototype.
+
+To dereference a NEURON Object
+------------------------------
+
+Use ``hoc_obj_unref(obj)`` where ``obj`` is an ``Object*``. This is defined in :file:`src/oc/hoc_oop.c`. Include :file:`src/oc/oc_ansi.h` to define the function prototype.
+
 Arguments
 =========
 
