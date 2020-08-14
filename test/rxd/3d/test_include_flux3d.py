@@ -13,9 +13,9 @@ def ics_include_flux(neuron_instance):
 
     h, rxd, data = neuron_instance
     sec = h.Section(name="sec")
-    sec.L = 10 
-    sec.nseg = 11
-    sec.diam = 5 
+    sec.L = 1 
+    sec.nseg = 11 
+    sec.diam = 2 
     rxd.set_solve_type(dimension=3)
 
     cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
