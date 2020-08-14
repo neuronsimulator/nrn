@@ -27,12 +27,18 @@ vstd = v.cl()
 tvstd = tv.cl()
 i_memstd = i_mem.cl()
 
+from neuron import coreneuron
+coreneuron.enable = True
+coreneuron.verbose = 0
+
 pc = h.ParallelContext()
+
 h.stdinit()
-pc.nrncore_run("-e %g"%h.tstop, 0)
+pc.psolve(h.tstop)
+
 # running second time for testing multiple executions
 h.stdinit()
-pc.nrncore_run("-e %g"%h.tstop, 0)
+pc.psolve(h.tstop)
 
 if not bool(tv.eq(tvstd)):
     print("Voltage times are different")
