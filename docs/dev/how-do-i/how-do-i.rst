@@ -103,6 +103,7 @@ Relevant functions include:
    
        PyObject* obj = nrnpy_ho2po(*hoc_objgetarg(n))
 
+- ``vector_arg(n)`` -- returns a ``Vect*``
 - ``hoc_pgetarg(n)`` -- returns a ``double**``
 - ``gargstr(n)``
 - ``getarg(n)`` -- returns a ``double*``. Python bools, ints, and floats are all valid inputs.
