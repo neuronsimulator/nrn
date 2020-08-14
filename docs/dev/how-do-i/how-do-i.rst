@@ -44,7 +44,8 @@ To encapsule a PyObject in a NEURON Object
 ------------------------------------------
 
 Use ``nrnpy_po2ho``. If the object is wrapping a NEURON Object, it increments the NEURON object's reference count by 1 and returns the original
-NEURON object. Otherwise it returns a new NEURON Object* wrapping the ``PyObject``. In particular, it *always* returns a NEURON object, even for
+NEURON object. Otherwise it returns a new NEURON Object* wrapping the ``PyObject`` and increments the ``PyObject`` reference count (remember, this
+can be checked using the macro ``Py_REFCNT``). In particular, this function *always* returns a NEURON object, even for
 strings and floats that would be more naturally represented in NEURON as their respective datatypes.
 
 To check if a PyObject is a number
