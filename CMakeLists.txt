@@ -427,6 +427,7 @@ if(NRN_ENABLE_TESTS)
     message(SEND_ERROR "pytest Python package is required.")
   endif()
   add_subdirectory(test)
+  initialize_submodule("test/rxd/testdata")
 endif()
 
 # =============================================================================

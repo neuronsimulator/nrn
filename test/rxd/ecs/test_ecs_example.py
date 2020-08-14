@@ -20,16 +20,16 @@ def ecs_example(neuron_instance):
         # create cell1 where `x` will be created and leak out
         cell1 = h.Section(name='cell1')
         cell1.pt3dclear()
-        cell1.pt3dadd(-20, 0, 0, 10)
-        cell1.pt3dadd(-10, 0, 0, 10)
+        cell1.pt3dadd(-2, 0, 0, 1)
+        cell1.pt3dadd(-1, 0, 0, 1)
         cell1.nseg = 11
         cell1.insert('pump')
     
         # create cell2 where `x` will be pumped in and accumulate
         cell2 = h.Section(name='cell2')
         cell2.pt3dclear()
-        cell2.pt3dadd(10, 0, 0, 10)
-        cell2.pt3dadd(20, 0, 0, 10)
+        cell2.pt3dadd(1, 0, 0, 1)
+        cell2.pt3dadd(2, 0, 0, 1)
         cell2.nseg = 11
         cell2.insert('pump')
     
@@ -52,7 +52,7 @@ def ecs_example(neuron_instance):
     
         # the extracellular space
         ecs = rxd.Extracellular(
-            -55, -55, -55, 55, 55, 55, dx=10, volume_fraction=alpha, tortuosity=lambd
+            -55, -55, -55, 55, 55, 55, dx=33, volume_fraction=alpha, tortuosity=lambd
         )
     
         # Who?

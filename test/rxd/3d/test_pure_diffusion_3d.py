@@ -10,8 +10,8 @@ def ics_pure_diffusion(neuron_instance):
     h, rxd, data = neuron_instance
     dend = h.Section(name='dend')
     dend.diam = 2
-    dend.nseg = 101
-    dend.L = 100
+    dend.nseg = 11
+    dend.L = 5
     rxd.set_solve_type(dimension=3)
     diff_constant = 1
     r = rxd.Region(h.allsec(),dx=0.75)
