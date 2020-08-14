@@ -721,7 +721,7 @@ RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
 		if (nrnpy_rvp_rxd_to_callable) {
 			cmd_ = new HocCommand(nrnpy_rvp_rxd_to_callable(pycall));
 		} else {
-			cmd_ = new HocCommand(nrnpy_rvp_rxd_to_callable(pycall));
+			cmd_ = new HocCommand(pycall);
 		}
 		return;
 	}
