@@ -127,7 +127,7 @@ int main(int argc, const char* argv[]) {
     bool force_codegen(false);
 
     /// true if ion variable copies should be avoided
-    bool optimize_ionvar_copies_codegen(true);
+    bool optimize_ionvar_copies_codegen(false);
 
     /// directory where code will be generated
     std::string output_dir(".");
