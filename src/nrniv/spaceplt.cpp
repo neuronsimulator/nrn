@@ -199,9 +199,8 @@ static double s_color(void* v) {
 	return old_color;
 }
 
-static double to_vector(void* v) {
-	RangeVarPlot* rvp = (RangeVarPlot*)v;
-	Vect* y = vector_arg(1);
+
+static long to_vector_helper(RangeVarPlot* rvp, Vect* y) {
 #if HAVE_IV
 	long i, cnt = rvp->py_data()->count();
 #else
@@ -220,6 +219,27 @@ static double to_vector(void* v) {
 	    }
 #endif
 	}
+	return cnt;
+}
+
+static Object** rvp_vector(void* v) {
+	if (ifarg(1)) {
+		hoc_execerror("Too many arguments", "RangeVarPlot.vector takes no arguments; were you thinking of .to_vector?");
+	}
+	Vect* y = new Vect(0);
+	RangeVarPlot* rvp = (RangeVarPlot*)v;
+	to_vector_helper(rvp, y);
+	return y->temp_objvar();
+}
+
+static double to_vector(void* v) {
+	if (ifarg(3)) {
+		hoc_execerror("Too many arguments", "RangeVarPlot.to_vector takes 1 or 2 arguments.");
+	}
+	long i;
+	RangeVarPlot* rvp = (RangeVarPlot*)v;
+	Vect* y = vector_arg(1);
+	long cnt = to_vector_helper(rvp, y);
 	if (ifarg(2)) {
 		Vect* x = vector_arg(2);
 		x->resize(cnt);
@@ -267,6 +287,11 @@ static Member_func s_members[] = {
 	0, 0
 };
 
+static Member_ret_obj_func rvp_retobj_members[] = {
+	"vector", rvp_vector,
+	0, 0
+};
+
 static void* s_cons(Object*) {
 	char* var = NULL;
 	Object* pyobj = NULL;
@@ -300,7 +325,7 @@ static void s_destruct(void* v) {
 
 void RangeVarPlot_reg() {
 //printf("RangeVarPlot_reg\n");
-	class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, NULL, NULL);
+	class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
 }
 
 #if HAVE_IV
