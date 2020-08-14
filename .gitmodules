@@ -22,3 +22,6 @@
 [submodule "docs/new_doc"]
 	path = docs/new_doc
 	url = https://github.com/neuronsimulator/progref-hoc.git
+[submodule "test/rxd/testdata"]
+	path = test/rxd/testdata
+	url = https://github.com/neuronsimulator/rxdtestdata

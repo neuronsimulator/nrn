@@ -15,7 +15,7 @@ def ecs_include_flux(neuron_instance):
     sec = h.Section(name='dend')
     # the extracellular space
     ecs = rxd.Extracellular(
-        -55, -55, -55, 55, 55, 55, dx=10, volume_fraction=0.2, tortuosity=1.6
+        -55, -55, -55, 55, 55, 55, dx=33, volume_fraction=0.2, tortuosity=1.6
     )
 
     # Who?
@@ -24,11 +24,11 @@ def ecs_include_flux(neuron_instance):
     def callbackfun():
         return 1000
 
-    x[ecs].node_by_location(-20, 0, 0).include_flux(1000)
+    x[ecs].node_by_location(-40, 0, 0).include_flux(1000)
 
     x[ecs].node_by_location(0, 0, 0).include_flux(callbackfun)
 
-    x[ecs].node_by_location(20, 0, 0).include_flux(sec(0.5)._ref_v)
+    x[ecs].node_by_location(40, 0, 0).include_flux(sec(0.5)._ref_v)
 
     yield (neuron_instance, (sec, ecs, x, callbackfun))
 
