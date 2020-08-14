@@ -44,7 +44,8 @@ To encapsule a PyObject in a NEURON Object
 ------------------------------------------
 
 Use ``nrnpy_po2ho``. If the object is wrapping a NEURON Object, it increments the NEURON object's reference count by 1 and returns the original
-NEURON object. Otherwise it returns a new NEURON Object* wrapping the ``PyObject``. In particular, it *always* returns a NEURON object, even for
+NEURON object. Otherwise it returns a new NEURON Object* wrapping the ``PyObject`` and increments the ``PyObject`` reference count (remember, this
+can be checked using the macro ``Py_REFCNT``). In particular, this function *always* returns a NEURON object, even for
 strings and floats that would be more naturally represented in NEURON as their respective datatypes.
 
 To check if a PyObject is a number
@@ -54,6 +55,16 @@ Use ``nrnpy_numbercheck(po)`` where ``po`` is the ``PyObject*`` to check.
 
 This is built-on but has modified semantics from the CPython API ``PyNumber_Check`` to detect things that NEURON cannot treat directly as numbers,
 like complex numbers.
+
+To reference a NEURON Object
+----------------------------
+
+Use ``hoc_obj_ref(obj)`` where ``obj`` is an ``Object*``. This is defined in :file:`src/oc/hoc_oop.c`. Include :file:`src/oc/oc_ansi.h` to define the function prototype.
+
+To dereference a NEURON Object
+------------------------------
+
+Use ``hoc_obj_unref(obj)`` where ``obj`` is an ``Object*``. This is defined in :file:`src/oc/hoc_oop.c`. Include :file:`src/oc/oc_ansi.h` to define the function prototype.
 
 Arguments
 =========
