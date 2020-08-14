@@ -24,6 +24,7 @@ extern int hoc_execerror_messages;
 extern int node_index(Section*, double);
 extern int structure_change_cnt, nrn_shape_changed_;
 extern int hoc_return_type_code;
+Object* (*nrnpy_rvp_rxd_to_callable)(Object*) = 0;
 };
 
 class SecPos {
@@ -692,7 +693,11 @@ RangeExpr::RangeExpr(const char* expr, Object* pycall, SecPosList* spl) {
 	val_ = NULL;
 	exist_ = NULL;
 	if (pycall) {
-		cmd_ = new HocCommand(pycall);
+		if (nrnpy_rvp_rxd_to_callable) {
+			cmd_ = new HocCommand(nrnpy_rvp_rxd_to_callable(pycall));
+		} else {
+			cmd_ = new HocCommand(nrnpy_rvp_rxd_to_callable(pycall));
+		}
 		return;
 	}
 	char buf[256];

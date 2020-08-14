@@ -1331,11 +1331,35 @@ def nrnpy_vec_math(op, flag, arg1, arg2=None):
 
   return NotImplemented
 
+def _nrnpy_rvp_pyobj_callback(f):
+  # unless f is an rxd variable, we return it directly
+  f_type = str(type(f))
+  if f_type not in ("<class 'neuron.rxd.species.SpeciesOnRegion'>", "<class 'neuron.rxd.species.Species'>"):
+    return f
+  
+  # if we're here, f is an rxd variable, and we return a function that looks
+  # up the weighted average concentration given an x and h.cas()
+  # this is not particularly efficient so it is probably better to use this for
+  # fixed timepoints rather than displays that update mid-simulation
+  def result(x):
+    nodes = f.nodes(h.cas()(x))
+    total_volume = sum(node.volume for node in nodes)
+    return sum(node.concentration * node.volume for node in nodes) / total_volume
+
+  return result
+
+
 try:
   nrnpy_vec_math_register = nrn_dll_sym('nrnpy_vec_math_register')
   nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
 except:
   print("Failed to setup nrnpy_vec_math")
+
+try:
+  _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym('nrnpy_rvp_pyobj_callback_register')
+  _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
+except:
+  print("Failed to setup _nrnpy_rvp_pyobj_callback")
 
 try:
   from neuron.psection import psection
