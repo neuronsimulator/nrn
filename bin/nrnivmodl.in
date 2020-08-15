@@ -168,6 +168,11 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
+# call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
+if [ "$LinkCoreNEURON" = true ] ; then
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ $bindir/nrnivmodl-core .
+fi
+
 @NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 @NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 @NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"

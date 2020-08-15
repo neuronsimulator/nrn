@@ -25,7 +25,7 @@ OS_NAME := $(shell uname)
 _cm =,
 
 # CoreNEURON link flags
-CORENRN_LD_FLAGS=@VAR_CORENRN_LINK_FLAGS_FOR_NRN@
+CORENRN_LD_FLAGS=@CORENEURON_LIB_LINK_FLAGS@
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. -I.. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
