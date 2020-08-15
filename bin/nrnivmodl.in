@@ -43,6 +43,12 @@ if which xcrun; then
     fi
 fi
 
+LinkCoreNEURON=false
+if [ "$1" = "-coreneuron" ] ; then
+      LinkCoreNEURON=true
+      shift
+fi
+
 UserINCFLAGS=""
 if [ "$1" = "-incflags" ] ; then
       UserINCFLAGS="$2"
@@ -162,8 +168,8 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
-@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 @NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRN_BINARY_SPECIAL_FALSE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
@@ -171,8 +177,8 @@ fi
 @NRN_BINARY_SPECIAL_FALSE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRN_BINARY_SPECIAL_FALSE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
-@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
+@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" libnrnmech.la
+@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" libnrnmech.la VERBOSE=1
 @NRN_BINARY_SPECIAL_FALSE@  echo '#!/bin/sh
 @NRN_BINARY_SPECIAL_FALSE@if test "x${NRNHOME}" = "x" ; then
 @NRN_BINARY_SPECIAL_FALSE@    NRNHOME='"\"${prefix}\""'
