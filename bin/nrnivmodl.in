@@ -171,6 +171,11 @@ fi
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 if [ "$LinkCoreNEURON" = true ] ; then
+  :
+  @USING_CMAKE_FALSE@ printf "ERROR : CoreNEURON is not enabled, build with CMake build system!\n"
+  @USING_CMAKE_FALSE@ exit 1
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ printf "ERROR : CoreNEURON support is not enabled!\n"
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ exit 1
   @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $USER_PWD
   @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ $bindir/nrnivmodl-core $MODSUBDIR
   @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $MODSUBDIR
