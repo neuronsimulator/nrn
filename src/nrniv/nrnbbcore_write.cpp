@@ -532,6 +532,31 @@ DatumIndices::~DatumIndices() {
   if (ion_index) delete [] ion_index;
 }
 
+/**
+   Copy weights from all coreneuron::NrnThread to NetCon instances.
+   This depends on the CoreNEURON weight order for each thread to be
+   the same as was originally sent from NEURON.  See how that order
+   was constructed in mk_cgs_netcon_info below.
+**/
+
+static void nrnthreads_all_weights_return(std::vector<double*>& weights) {
+  std::vector<int> iw(nrn_nthread); // index for each thread
+  Symbol* ncsym = hoc_lookup("NetCon");
+  hoc_List* ncl = ncsym->u.ctemplate->olist;
+  hoc_Item* q;
+  ITERATE(q, ncl) {
+    Object* ho = (Object*)VOIDITM(q);
+    NetCon* nc = (NetCon*)ho->u.this_pointer;  
+    std::size_t ith = 0; // if no _vnt, put in thread 0
+    if (nc->target_ && nc->target_->_vnt) {
+      ith = std::size_t(((NrnThread*)(nc->target_->_vnt))->id);
+    }
+    for (int i = 0; i < nc->cnt_; ++i) {
+      nc->weight_[i] = weights[ith][iw[ith]++];
+    }
+  }
+}
+
 // use the Hoc NetCon object list to segregate according to threads
 // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
 // netcon_pntindex (called at end of mk_cellgroups);
@@ -873,6 +898,9 @@ void datumindex_fill(int ith, CellGroup& cg, DatumIndices& di, Memb_list* ml) {
         eindex = vdata_offset++;
       }else if (dmap[j] == -8) { // watch
         etype = -8;
+        eindex = 0;
+      }else if (dmap[j] == -10) { // fornetcon
+        etype = -10;
         eindex = 0;
       }else if (dmap[j] == -9) { // diam
         cg.ndiam = nt.end;
@@ -1894,6 +1922,7 @@ static core2nrn_callback_t cnbs[]  = {
   {"nrn2core_trajectory_return_", (CNB)nrnthread_trajectory_return},
 
   {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
+  {"nrn2core_all_weights_return_", (CNB)nrnthreads_all_weights_return},
   {NULL, NULL}
 };
 
