@@ -290,6 +290,7 @@ if(NRN_ENABLE_CORENEURON)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
   endif()
   get_property (CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
 # =============================================================================
