@@ -67,7 +67,6 @@ NMODL_C_Ext="c"
 if [ "$1" = "-cpp" ] ; then
        NMODL_C_Ext="cpp"
        shift
-       shift
 fi
 
 pwd
