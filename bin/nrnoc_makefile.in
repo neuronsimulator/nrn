@@ -36,9 +36,18 @@ INCLUDES = -I. -I$(pkgincludedir) -I$(libdir)
 LIBTOOL = $(pkgdatadir)/libtool
 CC = @CC@
 CFLAGS = @CFLAGS@
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
+
+ifeq ($(NMODL_C_Ext),cpp)
+COMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CCLD = $(CXX)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS)
+else
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS)
+endif
 
 NRNOCLIBS = -L$(libdir) $(libdir)/libnrnoc.la -loc @MEMACSLIB@ \
 	-lscopmath -lsparse13 @READLINE_LIBS@ \
@@ -47,14 +56,14 @@ NRNOCLIBS = -L$(libdir) $(libdir)/libnrnoc.la -loc @MEMACSLIB@ \
 NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
 
 .SUFFIXES:
-.SUFFIXES: .c .mod .o
+.SUFFIXES: .$(NMODL_C_Ext) .mod .o
 #
 # How to make a .o file from a .mod file.  Note that we have to delete the
 # .c file, or else make will get confused.  We have to go directly from
 # a .mod to a .o file because otherwise GNU make will try to use a rule
 # involving m2c.  Argh!!  Why did they have to build in so many implicit
 # rules?
-# 
+#
 #.mod.o:
 #	$(bindir)/nocmodl $* || (rm -f $*.c; exit 1)
 #	$(COMPILE) -c $*.c
@@ -66,15 +75,15 @@ NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
 
 #%.o : %.mod
 
-.mod.c:
-	$(bindir)/nocmodl $*
-	
-.c.o:
-	$(COMPILE) -c $*.c
+.mod.$(NMODL_C_Ext):
+	$(bindir)/nocmodl $* ext=${NMODL_C_Ext}
+
+.$(NMODL_C_Ext).o:
+	$(COMPILE) -c $*.$(NMODL_C_Ext)
 
 .mod.o:
-	$(bindir)/nocmodl $*
-	$(COMPILE) -c $*.c
+	$(bindir)/nocmodl $* ext=${NMODL_C_Ext}
+	$(COMPILE) -c $*.$(NMODL_C_Ext)
 
 mod_func.o: mod_func.c
 	$(COMPILE) -c $<
