@@ -280,7 +280,8 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
     }
 
-    int nwarp, nstride, *stride, *firstnode, *lastnode, *cellsize, *stridedispl;
+    int nwarp = 0, nstride=0, *stride=nullptr, *firstnode=nullptr;
+    int *lastnode=nullptr, *cellsize=nullptr, *stridedispl=nullptr;
 
     int* order = node_order(ncell, nnode, parent, nwarp, nstride, stride, firstnode, lastnode,
                             cellsize, stridedispl);
