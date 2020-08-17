@@ -37,11 +37,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/tqueue.hpp"
 
-#if COLLECT_TQueue_STATISTICS
-#define STAT(arg) ++arg;
-#else
-#define STAT(arg) /**/
-#endif
 namespace coreneuron {
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
@@ -62,11 +57,6 @@ TQueue<C>::TQueue() {
     spinit(sptree_);
     binq_ = new BinQ;
     least_ = 0;
-
-#if COLLECT_TQueue_STATISTICS
-    nmove = ninsert = nrem = nleast = nbal = ncmplxrem = 0;
-    nfastmove = ncompare = nleastsrch = nfind = nfindsrch = 0;
-#endif
 }
 
 template <container C>
@@ -102,10 +92,6 @@ TQueue<C>::~TQueue() {
 template <container C>
 TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
     MUTLOCK
-#if COLLECT_TQueue_STATISTICS
-    STAT(ninsert);
-    record_stat_event(enq, td);
-#endif
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = td;
@@ -113,24 +99,6 @@ TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
     MUTUNLOCK
     return i;
 }
-
-#if COLLECT_TQueue_STATISTICS
-template <container C>
-void TQueue<C>::record_stat_event(int type, double time) {
-    if (time_map_events[type].find(time) == time_map_events[type].end())
-        time_map_events[type][time] = 1;
-    else
-        ++time_map_events[type][time];
-}
-
-template <container C>
-void TQueue<C>::statistics() {
-    printf("insertions=%lu  moves=%lu removals=%lu calls to least=%lu\n", ninsert, nmove, nrem,
-           nleast);
-    printf("calls to find=%lu\n", nfind);
-    printf("comparisons=%d\n", sptree_->enqcmps);
-}
-#endif
 
 /// Splay tree priority queue implementation
 template <>
@@ -167,7 +135,6 @@ inline void TQueue<pq_que>::move_least_nolock(double tnew) {
 template <>
 inline void TQueue<spltree>::move(TQItem* i, double tnew) {
     MUTLOCK
-    STAT(nmove)
     if (i == least_) {
         move_least_nolock(tnew);
     } else if (tnew < least_->t_) {
@@ -187,7 +154,6 @@ inline void TQueue<spltree>::move(TQItem* i, double tnew) {
 template <>
 inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
     MUTLOCK
-    STAT(nmove)
     if (i == least_) {
         move_least_nolock(tnew);
     } else if (tnew < least_->t_) {
@@ -213,10 +179,6 @@ inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
 template <>
 inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
     MUTLOCK
-#if COLLECT_TQueue_STATISTICS
-    STAT(ninsert);
-    record_stat_event(enq, tt);
-#endif
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -242,10 +204,6 @@ inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
 template <>
 inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
     MUTLOCK
-#if COLLECT_TQueue_STATISTICS
-    STAT(ninsert);
-    record_stat_event(enq, tt);
-#endif
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -271,10 +229,6 @@ inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
 template <>
 inline void TQueue<spltree>::remove(TQItem* q) {
     MUTLOCK
-#if COLLECT_TQueue_STATISTICS
-    STAT(nrem);
-    record_stat_event(deq, q->t_);
-#endif
     if (q) {
         if (q == least_) {
             if (sptree_->root) {
@@ -294,10 +248,6 @@ inline void TQueue<spltree>::remove(TQItem* q) {
 template <>
 inline void TQueue<pq_que>::remove(TQItem* q) {
     MUTLOCK
-#if COLLECT_TQueue_STATISTICS
-    STAT(nrem);
-    record_stat_event(deq, q->t_);
-#endif
     if (q) {
         if (q == least_) {
             if (pq_que_.size()) {
@@ -320,10 +270,6 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
     MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
-#if COLLECT_TQueue_STATISTICS
-        STAT(nrem);
-        record_stat_event(deq, tt);
-#endif
         if (sptree_->root) {
             least_ = spdeq(&sptree_->root);
         } else {
@@ -341,10 +287,6 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
     MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
-#if COLLECT_TQueue_STATISTICS
-        STAT(nrem);
-        record_stat_event(deq, tt);
-#endif
         //        int qsize = pq_que_.size();
         //        printf("map size: %d\n", msize);
         /// This while loop is to delete events whose times have been moved with the ::move

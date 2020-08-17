@@ -171,10 +171,6 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
     for (size_t i = 0; i < inter_thread_events_.size(); ++i) {
         InterThreadEvent ite = inter_thread_events_[i];
         nc->bin_event(ite.t_, ite.de_, nt);
-#if COLLECT_TQueue_STATISTICS
-        /// TQueue::qtype::ite = 2
-        tqe_->record_stat_event(2, ite.t_);
-#endif
     }
     inter_thread_events_.clear();
     MUTUNLOCK
@@ -525,11 +521,6 @@ void InputPreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
         if (d->active_ && d->target_) {
             NrnThread* n = PP2NT(d->target_);
 
-#if COLLECT_TQueue_STATISTICS
-            /// TQueue::qtype::spike = 1
-            ns->p[nt->id].tqe_->record_stat_event(1, tt);
-#endif
-
             if (nt == n)
                 ns->bin_event(tt + d->delay_, d, n);
             else
@@ -767,11 +758,6 @@ tryagain:
             if (print_event_) {
                 db->pr("binq deliver", nrn_threads->_t, this);
             }
-#endif
-
-#if COLLECT_TQueue_STATISTICS
-            /// TQueue::qtype::deq = 3
-            p[tid].tqe_->record_stat_event(3, q->t_);
 #endif
 
             delete q;

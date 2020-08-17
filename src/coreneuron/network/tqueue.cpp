@@ -34,11 +34,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/tqueue.hpp"
 
-#if COLLECT_TQueue_STATISTICS
-#define STAT(arg) ++arg;
-#else
-#define STAT(arg) /**/
-#endif
 namespace coreneuron {
 // splay tree + bin queue limited to fixed step method
 // for event-sets or priority queues
@@ -65,9 +60,6 @@ BinQ::BinQ() {
     }
     qpt_ = 0;
     tt_ = 0.;
-#if COLLECT_TQueue_STATISTICS
-    nfenq = nfdeq = 0;
-#endif
 }
 
 BinQ::~BinQ() {
@@ -115,17 +107,11 @@ void BinQ::enqueue(double td, TQItem* q) {
     q->cnt_ = idt;  // only for iteration
     q->left_ = bins_[idt];
     bins_[idt] = q;
-#if COLLECT_TQueue_STATISTICS
-    ++nfenq;
-#endif
 }
 TQItem* BinQ::dequeue() {
     TQItem* q = bins_[qpt_];
     if (q) {
         bins_[qpt_] = q->left_;
-#if COLLECT_TQueue_STATISTICS
-        ++nfdeq;
-#endif
     }
     return q;
 }

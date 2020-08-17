@@ -56,7 +56,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/nrnmutdec.h"
 
 namespace coreneuron {
-#define COLLECT_TQueue_STATISTICS 0
 #define STRCMP(a, b) (a - b)
 
 class TQItem;
@@ -134,10 +133,6 @@ class BinQ {
     TQItem* next(TQItem*);
     void remove(TQItem*);
     void resize(int);
-#if COLLECT_TQueue_STATISTICS
-  public:
-    int nfenq, nfdeq;
-#endif
   private:
     double tt_;  // time at beginning of qpt_ interval
     int nbin_, qpt_;
@@ -172,10 +167,6 @@ class TQueue {
     inline TQItem* atomic_dq(double til);
     inline void remove(TQItem*);
     inline void move(TQItem*, double tnew);
-#if COLLECT_TQueue_STATISTICS
-    inline void statistics();
-    inline void record_stat_event(int type, double time);
-#endif
     int nshift_;
 
     /// Priority queue of vectors for queuing the events. enqueuing for move() and
@@ -183,10 +174,6 @@ class TQueue {
     std::priority_queue<TQPair, std::vector<TQPair>, less_time> pq_que_;
     /// Types of queuing statistics
     enum qtype { enq = 0, spike, ite, deq };
-#if COLLECT_TQueue_STATISTICS
-    /// Map for queuing statistics
-    std::map<double, long> time_map_events[4];
-#endif
 
   private:
     double least_t_nolock() {
@@ -208,10 +195,6 @@ class TQueue {
         return TQPair(p->t_, p);
     }
     MUTDEC
-#if COLLECT_TQueue_STATISTICS
-    unsigned long ninsert, nrem, nleast, nbal, ncmplxrem;
-    unsigned long ncompare, nleastsrch, nfind, nfindsrch, nmove, nfastmove;
-#endif
 };
 }  // namespace coreneuron
 #include "coreneuron/network/tqueue.ipp"
