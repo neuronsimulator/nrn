@@ -53,11 +53,6 @@ static MPI_Group grp_net;
 
 extern void nrnmpi_spike_initialize();
 
-#define nrnmpidebugleak 0
-#if nrnmpidebugleak
-extern void nrnmpi_checkbufleak();
-#endif
-
 static int nrnmpi_under_nrncontrol_;
 
 void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
@@ -117,10 +112,6 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
     nrnmpi_numprocs = nrnmpi_numprocs_bbs = nrnmpi_numprocs_world;
     nrnmpi_myid = nrnmpi_myid_bbs = nrnmpi_myid_world;
     nrnmpi_spike_initialize();
-/*begin instrumentation*/
-#if USE_HPM
-    hpmInit(nrnmpi_myid_world, "mpineuron");
-#endif
 
     if (nrnmpi_myid == 0) {
 #if defined(_OPENMP)
@@ -147,16 +138,10 @@ void nrnmpi_finalize(void) {
 
 void nrnmpi_terminate() {
     if (nrnmpi_use) {
-#if USE_HPM
-        hpmTerminate(nrnmpi_myid_world);
-#endif
         if (nrnmpi_under_nrncontrol_) {
             MPI_Finalize();
         }
         nrnmpi_use = false;
-#if nrnmpidebugleak
-        nrnmpi_checkbufleak();
-#endif
     }
 }
 

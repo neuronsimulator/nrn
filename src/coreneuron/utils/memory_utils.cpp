@@ -47,9 +47,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/memory_utils.h"
 #include "coreneuron/mpi/nrnmpi.h"
 
-#ifdef HAVE_MEMORY_H
-#include <spi/include/kernel/memory.h>
-#elif defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
 #elif defined HAVE_MALLOC_H
 #include <malloc.h>
@@ -61,13 +59,8 @@ double nrn_mallinfo(void) {
     // -ve mem usage for non-supported platforms
     double mbs = -1.0;
 
-// on bg-q use kernel/memory.h to get heap statistics
-#ifdef HAVE_MEMORY_H
-    uint64_t heap = 0;
-    Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
-    mbs = heap / (1024.0 * 1024.0);
 // on os x returns the current resident set size (physical memory in use)
-#elif defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__)
     struct mach_task_basic_info info;
     mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount) !=
