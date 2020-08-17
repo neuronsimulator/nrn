@@ -37,10 +37,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/io/mem_layout_util.hpp"
 
 namespace coreneuron {
-static void read_phase1(NrnThread& nt, UserParams& userParams);
-static void read_phase2(NrnThread& nt, UserParams& userParams);
-static void read_phase3(NrnThread& nt, UserParams& userParams);
-static void read_phasegap(NrnThread& nt, UserParams& userParams);
+void read_phase1(NrnThread& nt, UserParams& userParams);
+void read_phase2(NrnThread& nt, UserParams& userParams);
+void read_phase3(NrnThread& nt, UserParams& userParams);
+void read_phasegap(NrnThread& nt, UserParams& userParams);
 static void setup_ThreadData(NrnThread& nt);
 
 // Functions to load and clean data;

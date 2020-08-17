@@ -595,7 +595,13 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // copy weights back to NEURON NetCon
     if (nrn2core_all_weights_return_) {
+
+        // first update weights from gpu
+        update_weights_from_gpu(nrn_threads, nrn_nthread);
+
+        // store weight pointers
         std::vector<double*> weights(nrn_nthread, NULL);
+
         // could be one thread more (empty) than in NEURON but does not matter
         for (int i=0; i < nrn_nthread; ++i) {
           weights[i] = nrn_threads[i].weights;

@@ -765,6 +765,24 @@ void update_voltage_from_gpu(NrnThread* nt) {
     }
 }
 
+/**
+ * Copy weights from GPU to CPU
+ *
+ * User may record NetCon weights at the end of simulation.
+ * For this purpose update weights of all NrnThread objects
+ * from GPU to CPU.
+ */
+void update_weights_from_gpu(NrnThread* threads, int nthreads) {
+    for (int i = 0; i < nthreads; i++) {
+        NrnThread* nt = threads + i;
+        size_t n_weight = nt->n_weight;
+        if (nt->compute_gpu && n_weight > 0) {
+            double* weights = nt->weights;
+            #pragma acc update host(weights[0 : n_weight])
+        }
+    }
+}
+
 void update_matrix_from_gpu(NrnThread* _nt) {
 #ifdef _OPENACC
     if (_nt->compute_gpu && (_nt->end > 0)) {

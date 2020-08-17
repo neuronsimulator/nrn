@@ -168,7 +168,7 @@ add_library(corenrnmech ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${ENG
 
 target_link_libraries(
   coreneuron
-  ${MPI_CXX_LIBRARIES}
+  ${MPI_C_LIBRARIES}
   ${reportinglib_LIBRARY}
   ${sonatareport_LIBRARY}
   ${link_cudacoreneuron}
@@ -207,8 +207,7 @@ add_dependencies(coreneuron scopmath)
 include_directories(${CORENEURON_PROJECT_SOURCE_DIR})
 add_executable(nrniv-core "apps/coreneuron.cpp")
 
-target_link_libraries(nrniv-core corenrnmech ${reportinglib_LIBRARY} ${sonatareport_LIBRARY}
-                      ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(nrniv-core corenrnmech ${reportinglib_LIBRARY} ${sonatareport_LIBRARY})
 
 set_target_properties(nrniv-core PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
