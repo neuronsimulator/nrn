@@ -268,8 +268,10 @@ void output_spikes_serial(const char* outpath) {
 
 void output_spikes(const char* outpath, const std::string& population_name) {
     // try to transfer spikes to NEURON. If successfull, don't write out.dat
-    if (all_spikes_return(spikevec_time, spikevec_gid))
+    if (all_spikes_return(spikevec_time, spikevec_gid)) {
+        clear_spike_vectors();
         return;
+    }
 #if NRNMPI
     if (nrnmpi_initialized()) {
         output_spikes_parallel(outpath, population_name);
@@ -279,6 +281,7 @@ void output_spikes(const char* outpath, const std::string& population_name) {
 #else
     output_spikes_serial(outpath);
 #endif
+    clear_spike_vectors();
 }
 
 void clear_spike_vectors() {
