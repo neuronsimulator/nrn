@@ -355,6 +355,7 @@ def mac_osx_setenv():
 
     macos_target = "%d.%d" % tuple(py_osx_framework[:2])
     log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
+    print("Setting MACOSX_DEPLOYMENT_TARGET="+macos_target)
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = macos_target
 
 
