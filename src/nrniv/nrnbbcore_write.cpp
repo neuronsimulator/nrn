@@ -1781,6 +1781,40 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
 }
 
 
+/** @brief Return location for CoreNEURON to copy data into.
+ *  The type is mechanism type or special negative type for voltage,
+ *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:stdindex2ptr.
+ *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
+ *  how its data is arranged (SoA and possibly permuted).
+ *  This function figures out the size (just for sanity check)
+ *  and data pointer to be returned based on type and thread id.
+ */
+size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata) {
+  size_t n = 0;
+  data = NULL;
+  mdata = NULL;
+  if (tid >= nrn_nthread) {
+    return n;
+  }
+  NrnThread& nt = nrn_threads[tid];
+  if (type == voltage) {
+    data = nt._actual_v;
+    n = size_t(nt.end);
+  } else if (type == i_membrane_) { // i_membrane_
+    data = nt._nrn_fast_imem->_nrn_sav_rhs;
+    n = size_t(nt.end);
+  } else if (type == 0) { // time
+    data = &nt._t;
+    n = 1;
+  } else if (type > 0 && type < n_memb_func) {
+    Memb_list* ml = nt._ml_list[type];
+    mdata = ml->data;
+    n = ml->nodecount;
+  }
+  return n;
+}
+
+
 /** @brief Count number of unique elements in the array.
  *  there is a copy of the vector but we are primarily
  *  using it for small section list vectors.
@@ -1923,6 +1957,7 @@ static core2nrn_callback_t cnbs[]  = {
 
   {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
   {"nrn2core_all_weights_return_", (CNB)nrnthreads_all_weights_return},
+  {"nrn2core_type_return_", (CNB)nrnthreads_type_return},
   {NULL, NULL}
 };
 

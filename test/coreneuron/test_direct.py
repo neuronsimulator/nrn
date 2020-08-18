@@ -29,6 +29,8 @@ def test_direct_memory_transfer():
     vstd = v.cl()
     tvstd = tv.cl()
     i_memstd = i_mem.cl()
+    # Save current (after run) value to compare with transfer back from coreneuron
+    tran_std = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
 
     from neuron import coreneuron
     coreneuron.enable = True
@@ -36,10 +38,13 @@ def test_direct_memory_transfer():
     pc = h.ParallelContext()
     h.stdinit()
     pc.psolve(h.tstop)
+    tran = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
 
     assert(tv.eq(tvstd))
     assert(v.cl().sub(vstd).abs().max() < 1e-10)
     assert(i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
+    print (tran_std)
+    print (tran)
 
 if __name__ == "__main__":
     test_direct_memory_transfer()
