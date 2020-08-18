@@ -834,6 +834,8 @@ void nrn_cleanup() {
     if (!corenrn.get_pnttype2presyn().empty()) {
         corenrn.get_pnttype2presyn().clear();
     }
+
+    destroy_interleave_info();
 }
 
 void delete_trajectory_requests(NrnThread& nt) {

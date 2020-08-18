@@ -277,7 +277,10 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         offset = nrn_soa_byte_align(offset);
 
         tml.type = type;
-        tml.nodeindices.resize(nodecounts[i]);
+        // artificial cell don't use nodeindices
+        if (!corenrn.get_is_artificial()[type]) {
+            tml.nodeindices.resize(nodecounts[i]);
+        }
         tml.pdata.resize(nodecounts[i] * dparam_sizes[type]);
 
         int* nodeindices_ = nullptr;
