@@ -336,23 +336,18 @@ def setup_package():
 
 def mac_osx_setenv():
     """Set MacOS environment to build high-compat wheels"""
-    # Because we need "wheel" before calling setup() we shall bring it ourselves
-    try:
-        import wheel
-    except ImportError:
-        from setuptools.dist import Distribution
-        Distribution().fetch_build_eggs(["wheel"])
-    from wheel import pep425tags
-
     sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
                                        ).decode().strip()
     log.info("Setting SDKROOT=%s", sdk_root)
     os.environ['SDKROOT'] = sdk_root
 
     # Match Python OSX framework
-    py_osx_framework = pep425tags.extract_macosx_min_system_version(sys.executable)
+    import sysconfig
+    py_osx_framework = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
     if py_osx_framework is None:
         py_osx_framework=[10, 9]
+    else:
+        py_osx_framework=[int(num) for num in py_osx_framework.split('.')] 
     if py_osx_framework[1] > 9:
         log.warn("[ WARNING ] You are building a wheel with a Python built "
               "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
