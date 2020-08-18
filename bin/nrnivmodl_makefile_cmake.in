@@ -24,9 +24,6 @@ NRNLIB_FLAGS = -L$(libdir) -lnrniv
 OS_NAME := $(shell uname)
 _cm =,
 
-# CoreNEURON link flags
-CORENRN_LD_FLAGS=@CORENEURON_LIB_LINK_FLAGS@
-
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. -I.. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
@@ -69,8 +66,9 @@ else
     extra_lib_link = $(NRNLIB_FLAGS)
 endif
 
+# add coreneuron flags
 ifeq ($(LinkCoreNEURON), true)
-    EXTRA_LDFLAGS = $(CORENRN_LD_FLAGS)
+    EXTRA_LDFLAGS = @CORENEURON_LIB_LINK_FLAGS@
 endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
