@@ -110,9 +110,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_custom_target(
       coreneuron_mod ALL
       COMMAND
-        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl .
-      COMMAND
-        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core .
+        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl -coreneuron .
        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_dependencies(coreneuron_mod nrniv nrniv-core)
 
@@ -124,6 +122,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_test(NAME coreneuron_spikes_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(NAME coreneuron_fornetcon_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_fornetcon.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc coreneuron_spikes_py)
     if(NRN_ENABLE_MPI)

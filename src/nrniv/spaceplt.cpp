@@ -625,8 +625,8 @@ void SpacePlot::plot() {
 #endif
 
 void RangeVarPlot::set_x() {
-	sec_list_->remove_all();
 	if (!begin_section_ || !end_section_ || !begin_section_->prop || !end_section_->prop) {
+		sec_list_->remove_all();
 		return;
 	}
 	SecPos spos;
@@ -636,6 +636,7 @@ void RangeVarPlot::set_x() {
 	sec1 = begin_section_;
 	sec2 = end_section_;
 	v_setup_vectors();
+	sec_list_->remove_all(); // v_setup_vectors() may recurse once.
 	nd1 = node_exact(sec1, x_begin_);
 	nd2 = node_exact(sec2, x_end_);
 

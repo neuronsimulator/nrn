@@ -47,6 +47,14 @@ set(libdir \${exec_prefix}/lib)
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
+if(NRN_ENABLE_CORENEURON)
+  set(CORENEURON_ENABLED_TRUE "")
+  set(CORENEURON_ENABLED_FALSE "#")
+else()
+  set(CORENEURON_ENABLED_TRUE "#")
+  set(CORENEURON_ENABLED_FALSE "")
+endif()
+
 # ~~~
 # A variable that doesn't start out as #undef but as #define needs an
 # explicit @...@ replacement in the .h.in files.
@@ -68,12 +76,14 @@ endforeach()
 set(nrndef_unix "//")
 set(nrndef_mac "//")
 set(nrndef_mswin "//")
+set(NRN_OSX_BUILD_TRUE "#")
 
 if(NRN_LINUX_BUILD)
   set(nrndef_unix "")
 elseif(NRN_MACOS_BUILD)
   set(nrndef_mac "")
   set(DARWIN 1)
+  set(NRN_OSX_BUILD_TRUE "")
 elseif(NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
 endif()
