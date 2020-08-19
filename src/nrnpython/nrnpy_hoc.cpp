@@ -90,6 +90,7 @@ static void pyobject_in_objptr(Object**, PyObject*);
 extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
+extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
 int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
 int nrnpy_set_gui_callback(PyObject*);
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
@@ -201,6 +202,7 @@ static PyObject* rvp_plot = NULL;
 static PyObject* plotshape_plot = NULL;
 static PyObject* cpp2refstr(char** cpp);
 static PyObject* get_mech_object_ = NULL;
+static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 
 PyTypeObject* hocobject_type;
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
@@ -2530,6 +2532,25 @@ static Object** nrnpy_vec_to_python(void* v) {
   return hoc_temp_objptr(ho);
 }
 
+static Object* rvp_rxd_to_callable_(Object* obj) {
+  if (obj) {
+    PyObject* py_obj = nrnpy_ho2po(obj);
+    PyObject* result = PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj, NULL);
+    Py_DECREF(py_obj);
+    if (py_obj != result) {
+      // for now, this only happens when using rangevarplot with rxd
+      // prevents keeping section references that should not exist
+      hoc_obj_unref(obj);
+    }
+    Object* obj_result = nrnpy_po2ho(result);
+    Py_DECREF(result);  // the previous line incremented the reference count
+    return obj_result;
+  } else {
+    return 0;
+  }
+}
+
+
 PyObject* get_plotshape_data(PyObject* sp) {
   PyHocObject* pho = (PyHocObject*) sp;
   ShapePlotInterface* spi;
@@ -2767,6 +2788,11 @@ int nrnpy_vec_math_register(PyObject* callback) {
   return 0;
 }
 
+int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+  nrnpy_rvp_pyobj_callback = callback;
+  return 0;
+}
+
 static bool pyobj_is_vector(PyObject* obj) {
   if (PyObject_TypeCheck(obj, hocobject_type)) {
     PyHocObject* obj_h = (PyHocObject*) obj;
@@ -2981,6 +3007,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_nrncore_arg_p_ = nrncore_arg;
   nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
   nrnpy_object_to_double_ = object_to_double_;
+  nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
   PyLockGIL lock;
 
   char endian_character = 0;
