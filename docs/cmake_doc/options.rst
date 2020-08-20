@@ -122,7 +122,7 @@ IV_DIR:PATH=<path-to-external-installation-of-interviews>
   The directory containing a CMake configuration file for iv.  
 
   IV_DIR is the install location of iv and the directory actually containing
-  the cmake configuration files is ``IV_DIR/share/cmake``.
+  the cmake configuration files is ``IV_DIR/lib/cmake``.
   This is useful when you have many clones of nrn for different development
   purposes and wish to use a single independent InterViews installation
   for many/all of them. E.g. I generally invoke
