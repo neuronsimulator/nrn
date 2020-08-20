@@ -323,6 +323,29 @@ RangeVarPlot
 
 
 
+.. method:: RangeVarPlot.vector
+
+
+    Syntax:
+        ``yvec = rvp.vector()``
+
+    Description:
+        Copy the range variable values to a new :class:`Vector` yvec.
+        (``len(yvec)`` will be equal to the number of range points.)
+
+    Note:
+        New in NEURON 8.0.
+
+    .. seealso::
+        :meth:`Graph.addobject`
+
+         
+
+
+----
+
+
+
 .. method:: RangeVarPlot.to_vector
 
 
@@ -336,12 +359,12 @@ RangeVarPlot
         Copy the range variable values to the :func:`Vector` yvec. yvec is resized 
         to the number of range points. If the second arg is present then 
         the locations are copied to xvec. A plot of \ ``yvec.line(g, xvec)`` would 
-        be identical to a plot using \ ``g.addobject(rvp)``. 
+        be identical to a plot using \ ``g.addobject(rvp)``. Returns the number of
+        range points.
 
     .. seealso::
         :meth:`Graph.addobject`
 
-         
 
 ----
 
