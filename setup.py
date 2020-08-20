@@ -343,10 +343,15 @@ def mac_osx_setenv():
 
     # Match Python OSX framework
     import sysconfig
+    from packaging import version
     py_osx_framework = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
     if py_osx_framework is None:
         py_osx_framework=[10, 9]
-    else:
+    elif version.parse(py_osx_framework) < version.parse('10.9'):
+        py_osx_framework=[10, 9]
+        log.warn("[ WARNING ] MACOSX_DEPLOYMENT_TARGET is lower than minimal "
+              "supported target. Setting to 10.9\n")
+    else:    
         py_osx_framework=[int(num) for num in py_osx_framework.split('.')] 
     if py_osx_framework[1] > 9:
         log.warn("[ WARNING ] You are building a wheel with a Python built "
