@@ -218,6 +218,11 @@ set(NRNIV_FILE_LIST
     netpar.cpp
     nonlinz.cpp
     nrnbbcore_write.cpp
+    nrnbbcore_write/callbacks/bbcore_callbacks.cpp
+    nrnbbcore_write/data/cell_group.cpp
+    nrnbbcore_write/data/datum_indices.cpp
+    nrnbbcore_write/io/bbcore_write.cpp
+    nrnbbcore_write/utils/corenrn_utils.cpp
     nrndae.cpp
     nrndaspk.cpp
     nrnmenu.cpp
