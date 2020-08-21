@@ -4,6 +4,8 @@
 #include "datum_indices.h"
 #include <vector>
 #include <map>
+#include <cstddef>
+#include <cassert>
 
 struct Memb_list;
 class PreSyn;

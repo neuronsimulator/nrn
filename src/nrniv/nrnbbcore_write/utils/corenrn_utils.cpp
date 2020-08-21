@@ -11,6 +11,8 @@
 #include "parse.h"
 #include <string>
 #include <unistd.h>
+#include <algorithm>
+#include <cerrno>
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>

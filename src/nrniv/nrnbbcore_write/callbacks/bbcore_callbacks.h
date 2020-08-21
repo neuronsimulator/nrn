@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 typedef void*(*CNB)(...);
 typedef struct core2nrn_callback_t {

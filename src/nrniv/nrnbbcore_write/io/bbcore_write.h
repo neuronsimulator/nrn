@@ -2,6 +2,7 @@
 #define NRN_BBCORE_WRITE_H
 
 #include <string>
+#include <vector>
 
 class CellGroup;
 class NrnThread;
