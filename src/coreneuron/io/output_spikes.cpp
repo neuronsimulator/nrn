@@ -65,29 +65,23 @@ namespace coreneuron {
 std::vector<double> spikevec_time;
 std::vector<int> spikevec_gid;
 
-#ifdef _OPENMP
-static MUTDEC
-#endif
+static OMP_Mutex mut;
 
-    void
-    mk_spikevec_buffer(int sz) {
+void mk_spikevec_buffer(int sz) {
     try {
         spikevec_time.reserve(sz);
         spikevec_gid.reserve(sz);
     } catch (const std::length_error& le) {
         std::cerr << "Lenght error" << le.what() << std::endl;
     }
-    if (!MUTCONSTRUCTED) {
-        MUTCONSTRUCT(1);
-    }
 }
 
 void spikevec_lock() {
-    MUTLOCK
+    mut.lock();
 }
 
 void spikevec_unlock() {
-    MUTUNLOCK
+    mut.unlock();
 }
 
 void local_spikevec_sort(std::vector<double>& isvect,

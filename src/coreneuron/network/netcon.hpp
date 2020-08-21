@@ -57,7 +57,7 @@ class DiscreteEvent {
     virtual ~DiscreteEvent();
     virtual void send(double deliverytime, NetCvode*, NrnThread*);
     virtual void deliver(double t, NetCvode*, NrnThread*);
-    virtual int type() {
+    virtual int type() const {
         return DiscreteEventType;
     }
     virtual bool require_checkpoint() {
@@ -81,12 +81,12 @@ class NetCon : public DiscreteEvent {
 
     NetCon();
     virtual ~NetCon();
-    virtual void send(double sendtime, NetCvode*, NrnThread*);
-    virtual void deliver(double, NetCvode* ns, NrnThread*);
-    virtual int type() {
+    virtual void send(double sendtime, NetCvode*, NrnThread*) override;
+    virtual void deliver(double, NetCvode* ns, NrnThread*) override;
+    virtual int type() const override {
         return NetConType;
     }
-    virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t, NetCvode*) override;
 };
 
 class SelfEvent : public DiscreteEvent {
@@ -98,12 +98,12 @@ class SelfEvent : public DiscreteEvent {
 
     SelfEvent();
     virtual ~SelfEvent();
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() {
+    virtual void deliver(double, NetCvode*, NrnThread*) override;
+    virtual int type() const override {
         return SelfEventType;
     }
 
-    virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t, NetCvode*) override;
 
   private:
     void call_net_receive(NetCvode*);
@@ -138,13 +138,13 @@ class PreSyn : public ConditionEvent {
 
     PreSyn();
     virtual ~PreSyn();
-    virtual void send(double sendtime, NetCvode*, NrnThread*);
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() {
+    virtual void send(double sendtime, NetCvode*, NrnThread*) override;
+    virtual void deliver(double, NetCvode*, NrnThread*) override;
+    virtual int type() const override {
         return PreSynType;
     }
 
-    virtual double value(NrnThread*);
+    virtual double value(NrnThread*) override;
     void record(double t);
 #if NRN_MULTISEND
     int multisend_index_;
@@ -158,9 +158,9 @@ class InputPreSyn : public DiscreteEvent {
 
     InputPreSyn();
     virtual ~InputPreSyn();
-    virtual void send(double sendtime, NetCvode*, NrnThread*);
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() {
+    virtual void send(double sendtime, NetCvode*, NrnThread*) override;
+    virtual void deliver(double, NetCvode*, NrnThread*) override;
+    virtual int type() const override {
         return InputPreSynType;
     }
 #if NRN_MULTISEND
@@ -174,14 +174,14 @@ class NetParEvent : public DiscreteEvent {
     double wx_, ws_;  // exchange time and "spikes to Presyn" time
 
     NetParEvent();
-    virtual ~NetParEvent();
-    virtual void send(double, NetCvode*, NrnThread*);
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual int type() {
+    virtual ~NetParEvent() = default;
+    virtual void send(double, NetCvode*, NrnThread*) override;
+    virtual void deliver(double, NetCvode*, NrnThread*) override;
+    virtual int type() const override {
         return NetParEventType;
     }
 
-    virtual void pr(const char*, double t, NetCvode*);
+    virtual void pr(const char*, double t, NetCvode*) override;
 };
 }  // namespace coreneuron
 #endif

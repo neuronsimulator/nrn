@@ -164,9 +164,7 @@ void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 namespace coreneuron {
 extern corenrn_parameters corenrn_param;
 
-#ifdef _OPENMP
 static OMP_Mutex mut;
-#endif
 
 static size_t model_size(void);
 
@@ -479,13 +477,7 @@ void nrn_setup(const char* filesdat,
             Phase1 p1; 
             p1.read_direct(n->id);
             NrnThread& nt = *n;
-            {
-#ifdef _OPENMP
-                p1.populate(nt, mut);
-#else
-                p1.populate(nt);
-#endif
-            }
+            p1.populate(nt, mut);
         });
     }
 
@@ -538,9 +530,7 @@ void setup_ThreadData(NrnThread& nt) {
             ml->_thread = (ThreadDatum*)ecalloc_align(mf.thread_size_, sizeof(ThreadDatum));
             if (mf.thread_mem_init_) {
                 {
-#ifdef _OPENMP
                     const std::lock_guard<OMP_Mutex> lock(mut);
-#endif
                     (*mf.thread_mem_init_)(ml->_thread);
                 }
             }
@@ -860,13 +850,8 @@ void read_phase1(NrnThread& nt, UserParams& userParams) {
     Phase1 p1;
     p1.read_file(userParams.file_reader[nt.id]);
     
-    { // Protect gid2in, gid2out and neg_gid2out
-#ifdef _OPENMP
-        p1.populate(nt, mut);
-#else
-        p1.populate(nt);
-#endif
-    }
+    // Protect gid2in, gid2out and neg_gid2out
+    p1.populate(nt, mut);
 }
 
 void read_phase2(NrnThread& nt, UserParams& userParams) {

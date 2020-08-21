@@ -13,11 +13,7 @@ class Phase1 {
     public:
     void read_file(FileHandler& F);
     void read_direct(int thread_id);
-#ifdef _OPENMP
     void populate(NrnThread& nt, OMP_Mutex& mut);
-#else
-    void populate(NrnThread& nt);
-#endif
 
     private:
     std::vector<int> output_gids;

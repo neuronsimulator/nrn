@@ -132,6 +132,32 @@ class OMP_Mutex {
 #define MUTDESTRUCT         /**/
 #define MUTLOCK             /**/
 #define MUTUNLOCK           /**/
+
+// This class respects the requirement *Mutex*
+class OMP_Mutex {
+    public:
+        // Default constructible
+        OMP_Mutex() = default;
+
+        // Destructible
+        ~OMP_Mutex() = default;
+
+        // Not copyable
+        OMP_Mutex(const OMP_Mutex&) = delete;
+        OMP_Mutex& operator=(const OMP_Mutex&) = delete;
+
+        // Not movable
+        OMP_Mutex(const OMP_Mutex&&) = delete;
+        OMP_Mutex& operator=(const OMP_Mutex&&) = delete;
+
+        // Basic Lockable
+        void lock() {}
+
+        void unlock() {}
+
+        // Lockable
+        bool try_lock() {}
+};
 #endif
 
 #endif

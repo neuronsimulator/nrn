@@ -43,11 +43,7 @@ void Phase1::read_direct(int thread_id) {
     delete[] netcon_srcgid;
 }
 
-#ifdef _OPENMP
 void Phase1::populate(NrnThread& nt, OMP_Mutex& mut) {
-#else
-void Phase1::populate(NrnThread& nt) {
-#endif
     nt.n_presyn = this->output_gids.size();
     nt.n_netcon = this->netcon_srcgids.size();
 
@@ -68,9 +64,7 @@ void Phase1::populate(NrnThread& nt) {
         }
 
         {
-#ifdef _OPENMP
             const std::lock_guard<OMP_Mutex> lock(mut);
-#endif
             // Note that the negative (type, index)
             // coded information goes into the neg_gid2out[tid] hash table.
             // See netpar.cpp for the netpar_tid_... function implementations.
