@@ -129,6 +129,7 @@ static int* bbcore_dparam_size; // cvodeieq not present
 extern char* pnt_map;
 extern short* nrn_is_artificial_;
 extern int nrn_is_ion(int type);
+extern double t; // see nrncore_psolve
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
 extern int secondorder, diam_changed, v_structure_change, tree_changed;
@@ -2139,6 +2140,8 @@ int nrncore_psolve(double tstop) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
     if (arg) {
       nrncore_run(arg);
+      // data return nt._t so copy to t
+      t = nrn_threads[0]._t;
       free(arg);
       return 0;
     }
