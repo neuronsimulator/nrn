@@ -113,6 +113,7 @@ correctness has not been validated for cells without gids.
 #include <string.h>
 #include <fstream>
 #include <sstream>
+#include <map>
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
@@ -144,6 +145,14 @@ char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 extern bbcore_write_t* nrn_bbcore_write_;
+
+// nrnthreads_type_return needs deferred_type2artdata when
+// there are threads and artificial cells
+typedef std::pair<int, double**> Deferred_pair;
+typedef std::map<int, Deferred_pair> Deferred_map;
+typedef std::vector<Deferred_map> Deferred_Type2ArtData;
+//typedef std::vector<std::map<int, std::pair<int, double**> > > Deferred_Type2ArtData;
+static Deferred_Type2ArtData deferred_type2artdata;
 
 static CellGroup* cellgroups_;
 static CellGroup* mk_cellgroups(); // gid, PreSyn, NetCon, Point_process relation.
@@ -345,6 +354,30 @@ static void part2_clean() {
     delete artdata2index_;
     artdata2index_ = NULL;
   }
+
+  // clean up the art Memb_list of CellGroup[].mlwithart
+  // But if multithread and direct transfer mode defer deletion of
+  // data for artificial cells.
+  if (corenrn_direct && nrn_nthread > 0) {
+    deferred_type2artdata.resize(nrn_nthread);
+  }
+  for (int ith=0; ith < nrn_nthread; ++ith) {
+    MlWithArt& mla = cellgroups_[ith].mlwithart;
+    for (size_t i = 0; i < mla.size(); ++i) {
+      int type = mla[i].first;
+      Memb_list* ml = mla[i].second;
+      if (nrn_is_artificial_[type]) {
+        if (!deferred_type2artdata.empty()) {
+          deferred_type2artdata[ith][type] = Deferred_pair(ml->nodecount, ml->data);
+        }else{
+          delete [] ml->data;
+        }
+        delete [] ml->pdata;
+        delete ml;
+      }
+    }
+  }
+
   delete [] cellgroups_;
   cellgroups_ = NULL;
 }
@@ -387,21 +420,25 @@ static void part2(const char* path) {
     write_nrnthread_task(path, cgs);
   }
 
-  // clean up the art Memb_list of CellGroup[].mlwithart
-  for (int ith=0; ith < nrn_nthread; ++ith) {
-    MlWithArt& mla = cgs[ith].mlwithart;
-    for (size_t i = 0; i < mla.size(); ++i) {
-      int type = mla[i].first;
-      Memb_list* ml = mla[i].second;
-      if (nrn_is_artificial_[type]) {
-        delete [] ml->data;
-        delete [] ml->pdata;
-        delete ml;
-      }
+  part2_clean();
+}
+
+static void clean_deferred_type2artdata(Deferred_Type2ArtData& d) {
+#if 0
+  for (auto& m: d) {
+    for (auto& t: m) {
+      delete [] t.second.second;
     }
   }
-
-  part2_clean();
+#else
+  for (int tid=0; tid < nrn_nthread; ++tid) {
+    Deferred_map& m = d[tid];
+    for (Deferred_map::iterator mit = m.begin(); mit != m.end(); ++mit) {
+      delete [] mit->second.second;
+    }
+  }
+#endif
+  d.clear();
 }
 
 int nrncore_art2index(double* d) {
@@ -1789,6 +1826,8 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
  *  how its data is arranged (SoA and possibly permuted).
  *  This function figures out the size (just for sanity check)
  *  and data pointer to be returned based on type and thread id.
+ *  The ARTIFICIAL_CELL type case is special as there is no thread specific
+ *  Memb_list for those.
  */
 size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata) {
   size_t n = 0;
@@ -1809,8 +1848,30 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
     n = 1;
   } else if (type > 0 && type < n_memb_func) {
     Memb_list* ml = nt._ml_list[type];
-    mdata = ml->data;
-    n = ml->nodecount;
+    if (ml) {
+      mdata = ml->data;
+      n = ml->nodecount;
+    }else{
+      // The single thread case is easy
+      if (nrn_nthread == 1) {
+        ml = memb_list + type;
+        mdata = ml->data;
+        n = ml->nodecount;
+      }else{
+        // mk_tml_with_art() created a cgs[id].mlwithart which appended
+        // artificial cells to the end. Turns out that
+        // cellgroups_[tid].type2ml[type]
+        // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
+        // has already been deleted.  So we defer deletion of the necessary
+        // cellgroups_ portion (deleting it on return from nrncore_run).
+
+        assert(deferred_type2artdata.size() > tid);
+        //auto& p = deferred_type2artdata[tid][type];
+        std::pair<int, double**>&p = deferred_type2artdata[tid][type];
+        n = size_t(p.first);
+        mdata = p.second;
+      }
+    }
   }
   return n;
 }
@@ -2120,6 +2181,11 @@ int nrncore_run(const char* arg) {
 
     // close handle and return result
     dlclose(handle);
+
+    if (nrn_nthread > 1) {
+      clean_deferred_type2artdata(deferred_type2artdata);
+    }
+
     return result;
 }
 
