@@ -3,6 +3,7 @@ set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
+USER_PWD=`pwd`
 
 if test "x${NRNHOME}" = x ; then
 	prefix=@prefix@
@@ -41,6 +42,12 @@ if which xcrun; then
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
         unset MACOSX_DEPLOYMENT_TARGET
     fi
+fi
+
+LinkCoreNEURON=false
+if [ "$1" = "-coreneuron" ] ; then
+      LinkCoreNEURON=true
+      shift
 fi
 
 UserINCFLAGS=""
@@ -162,7 +169,19 @@ if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
-@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+# call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
+if [ "$LinkCoreNEURON" = true ] ; then
+  :
+  @USING_CMAKE_FALSE@ printf "ERROR : CoreNEURON is not compatible with autotools, build with CMake build system!\n"
+  @USING_CMAKE_FALSE@ exit 1
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ printf "ERROR : CoreNEURON support is not enabled!\n"
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ exit 1
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $USER_PWD
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ $bindir/nrnivmodl-core $MODSUBDIR
+  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $MODSUBDIR
+fi
+
+@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 @NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
 @NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"
 
@@ -172,7 +191,7 @@ fi
 @NRN_BINARY_SPECIAL_FALSE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRN_BINARY_SPECIAL_FALSE@fi
 @NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
-@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
+@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" libnrnmech.la VERBOSE=1
 @NRN_BINARY_SPECIAL_FALSE@  echo '#!/bin/sh
 @NRN_BINARY_SPECIAL_FALSE@if test "x${NRNHOME}" = "x" ; then
 @NRN_BINARY_SPECIAL_FALSE@    NRNHOME='"\"${prefix}\""'
