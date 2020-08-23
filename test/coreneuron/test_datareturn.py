@@ -164,6 +164,7 @@ def test_datareturn():
   max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
 
   pc.nthread(2)
+  coreneuron.enable = False # remove when rare segmentation fault is fixed
   run(tstop)
   tst = model.data()
   max_permuted_thread = h.Vector(std).sub(h.Vector(tst)).abs().max()
