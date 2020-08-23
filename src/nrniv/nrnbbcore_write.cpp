@@ -149,8 +149,7 @@ extern bbcore_write_t* nrn_bbcore_write_;
 // nrnthreads_type_return needs deferred_type2artdata when
 // there are threads and artificial cells
 typedef std::pair<int, double**> Deferred_pair;
-typedef std::map<int, Deferred_pair> Deferred_map;
-typedef std::vector<Deferred_map> Deferred_Type2ArtData;
+typedef std::vector<std::map<int, Deferred_pair > > Deferred_Type2ArtData;
 //typedef std::vector<std::map<int, std::pair<int, double**> > > Deferred_Type2ArtData;
 static Deferred_Type2ArtData deferred_type2artdata;
 
@@ -424,20 +423,11 @@ static void part2(const char* path) {
 }
 
 static void clean_deferred_type2artdata(Deferred_Type2ArtData& d) {
-#if 0
   for (auto& m: d) {
     for (auto& t: m) {
       delete [] t.second.second;
     }
   }
-#else
-  for (int tid=0; tid < nrn_nthread; ++tid) {
-    Deferred_map& m = d[tid];
-    for (Deferred_map::iterator mit = m.begin(); mit != m.end(); ++mit) {
-      delete [] mit->second.second;
-    }
-  }
-#endif
   d.clear();
 }
 
@@ -1864,10 +1854,7 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
         // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
         // has already been deleted.  So we defer deletion of the necessary
         // cellgroups_ portion (deleting it on return from nrncore_run).
-
-        assert(deferred_type2artdata.size() > tid);
-        //auto& p = deferred_type2artdata[tid][type];
-        std::pair<int, double**>&p = deferred_type2artdata[tid][type];
+        auto& p = deferred_type2artdata[tid][type];
         n = size_t(p.first);
         mdata = p.second;
       }

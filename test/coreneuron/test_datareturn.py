@@ -157,11 +157,13 @@ def test_datareturn():
   run(tstop)
   tst = model.data()
   max_unpermuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
+  print("max diff unpermuted = %g"% max_unpermuted )
 
   coreneuron.cell_permute = 1
   run(tstop)
   tst = model.data()
   max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
+  print("max diff permuted = %g"% max_permuted)
 
   pc.nthread(2)
   coreneuron.enable = False # remove when rare segmentation fault is fixed
