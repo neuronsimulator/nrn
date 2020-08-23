@@ -1310,8 +1310,8 @@ static int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& 
 
   assert(cg.n_real_output == nt.ncell);
 
-  // if not NULL then copy (for direct transfer target space already allocated)
-  bool copy = v_parent_index ? true : false;
+  // If direct transfer, copy, because target space already allocated
+  bool copy = corenrn_direct;
   int n = nt.end;
   if (copy) {
     for (int i=0; i < nt.end; ++i) {
