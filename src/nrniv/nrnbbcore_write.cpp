@@ -148,9 +148,7 @@ extern bbcore_write_t* nrn_bbcore_write_;
 
 // nrnthreads_type_return needs deferred_type2artdata when
 // there are threads and artificial cells
-typedef std::pair<int, double**> Deferred_pair;
-typedef std::vector<std::map<int, Deferred_pair > > Deferred_Type2ArtData;
-//typedef std::vector<std::map<int, std::pair<int, double**> > > Deferred_Type2ArtData;
+typedef std::vector<std::map<int, std::pair<int, double**> > > Deferred_Type2ArtData;
 static Deferred_Type2ArtData deferred_type2artdata;
 
 static CellGroup* cellgroups_;
@@ -367,7 +365,7 @@ static void part2_clean() {
       Memb_list* ml = mla[i].second;
       if (nrn_is_artificial_[type]) {
         if (!deferred_type2artdata.empty()) {
-          deferred_type2artdata[ith][type] = Deferred_pair(ml->nodecount, ml->data);
+          deferred_type2artdata[ith][type] = {ml->nodecount, ml->data};
         }else{
           delete [] ml->data;
         }
