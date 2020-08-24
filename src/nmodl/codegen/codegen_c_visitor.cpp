@@ -1222,6 +1222,14 @@ void CodegenCVisitor::print_memory_allocation_routine() const {
 }
 
 
+void CodegenCVisitor::print_abort_routine() const {
+    printer->add_newline(2);
+    printer->add_line("static inline void coreneuron_abort() {");
+    printer->add_line("    abort();");
+    printer->add_line("}");
+}
+
+
 std::string CodegenCVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
@@ -1256,8 +1264,8 @@ std::string CodegenCVisitor::k_const() {
 
 
 void CodegenCVisitor::visit_watch_statement(ast::WatchStatement& node) {
-    printer->add_text(
-        "nrn_watch_activate(inst, id, pnodecount, {})"_format(current_watch_statement++));
+    printer->add_text("nrn_watch_activate(inst, id, pnodecount, {}, v, watch_remove)"_format(
+        current_watch_statement++));
 }
 
 
@@ -1488,7 +1496,7 @@ void CodegenCVisitor::print_table_check_function(Block& node) {
                 printer->add_line("save_{} = {};"_format(name, instance_name));
             }
         }
-        printer->end_block();
+        printer->end_block(1);
     }
     printer->end_block(1);
 }
@@ -1563,7 +1571,6 @@ void CodegenCVisitor::print_check_table_thread_function() {
     printer->add_line("    setup_instance(nt, ml);");
     printer->add_line("    {0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
     printer->add_line("    double v = 0;");
-    printer->add_line("    IonCurVar ionvar;");
 
     for (const auto& function: info.functions_with_table) {
         auto name = method_name("check_" + function->get_node_name());
@@ -1601,7 +1608,7 @@ void CodegenCVisitor::print_function_or_procedure(ast::Block& node, const std::s
 }
 
 
-void CodegenCVisitor::print_procedure(ast::ProcedureBlock& node) {
+void CodegenCVisitor::print_function_procedure_helper(ast::Block& node) {
     codegen = true;
     auto name = node.get_node_name();
 
@@ -1618,19 +1625,30 @@ void CodegenCVisitor::print_procedure(ast::ProcedureBlock& node) {
 }
 
 
+void CodegenCVisitor::print_procedure(ast::ProcedureBlock& node) {
+    print_function_procedure_helper(node);
+}
+
+
 void CodegenCVisitor::print_function(ast::FunctionBlock& node) {
-    codegen = true;
     auto name = node.get_node_name();
-    auto return_var = "ret_" + name;
+
+    // name of return variable
+    std::string return_var;
+    if (info.function_uses_table(name)) {
+        return_var = "ret_f_" + name;
+    } else {
+        return_var = "ret_" + name;
+    }
 
     // first rename return variable name
     auto block = node.get_statement_block().get();
     RenameVisitor v(name, return_var);
     block->accept(v);
 
-    print_function_or_procedure(node, name);
-    codegen = false;
+    print_function_procedure_helper(node);
 }
+
 
 std::string CodegenCVisitor::find_var_unique_name(const std::string& original_name) const {
     auto& singleton_random_string_class = utils::SingletonRandomString<4>::instance();
@@ -2655,6 +2673,11 @@ void CodegenCVisitor::print_mechanism_register() {
         printer->add_line("hoc_register_dparam_semantics({});"_format(args));
     }
 
+    if (info.is_watch_used()) {
+        auto watch_fun = compute_method_name(BlockType::Watch);
+        printer->add_line("hoc_register_watch_check({}, mech_type);"_format(watch_fun));
+    }
+
     if (info.write_concentration) {
         printer->add_line("nrn_writes_conc(mech_type, 0);");
     }
@@ -3180,6 +3203,11 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
     std::string method = compute_method_name(type);
     auto args = "NrnThread* nt, Memb_list* ml, int type";
 
+    // watch statement function doesn't have type argument
+    if (type == BlockType::Watch) {
+        args = "NrnThread* nt, Memb_list* ml";
+    }
+
     print_global_method_annotation();
     printer->start_block("void {}({})"_format(method, args));
     print_kernel_data_present_annotation_block_begin();
@@ -3222,9 +3250,15 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         int list_num = info.derivimplicit_list_num;
         // clang-format off
         printer->add_line("*deriv{}_advance(thread) = 0;"_format(list_num));
-        printer->add_line("if (*newtonspace{}(thread) == NULL) {}"_format(list_num, "{"));
-        printer->add_line("    *newtonspace{}(thread) = nrn_cons_newtonspace({}, pnodecount);"_format(list_num, nequation));
-        printer->add_line("    thread[dith{}()].pval = makevector(2*{}*pnodecount*sizeof(double));"_format(list_num, nequation));
+        printer->add_line("auto ns = newtonspace{}(thread);"_format(list_num));
+        printer->add_line("auto& th = thread[dith{}()];"_format(list_num));
+
+        printer->add_line("if (*ns == nullptr) {");
+        printer->add_line("    int vec_size = 2*{}*pnodecount*sizeof(double);"_format(nequation));
+        printer->add_line("    double* vec = makevector(vec_size);"_format(nequation));
+        printer->add_line("    th.pval = vec;"_format(list_num));
+        printer->add_line("    *ns = nrn_cons_newtonspace({}, pnodecount);"_format(nequation));
+        print_newtonspace_transfer_to_device();
         printer->add_line("}");
         // clang-format on
     }
@@ -3281,14 +3315,16 @@ void CodegenCVisitor::print_watch_activate() {
     auto inst = "{}* inst"_format(instance_struct());
 
     printer->start_block(
-        "static void nrn_watch_activate({}, int id, int pnodecount, int watch_id) "_format(inst));
+        "static void nrn_watch_activate({}, int id, int pnodecount, int watch_id, double v, bool &watch_remove) "_format(
+            inst));
 
     // initialize all variables only during first watch statement
-    printer->add_line("if (watch_id == 0) {");
+    printer->add_line("if (watch_remove == false) {");
     for (int i = 0; i < info.watch_count; i++) {
         auto name = get_variable_name("watch{}"_format(i + 1));
         printer->add_line("    {} = 0;"_format(name));
     }
+    printer->add_line("    watch_remove = true;");
     printer->add_line("}");
 
     /**
@@ -3301,10 +3337,10 @@ void CodegenCVisitor::print_watch_activate() {
 
         auto varname = get_variable_name("watch{}"_format(i + 1));
         printer->add_indent();
-        printer->add_text("{} = 2 + "_format(varname));
+        printer->add_text("{} = 2 + ("_format(varname));
         auto watch = statement->get_statements().front();
         watch->get_expression()->visit_children(*this);
-        printer->add_text(";");
+        printer->add_text(");");
         printer->add_newline();
 
         printer->end_block(1);
@@ -3329,6 +3365,11 @@ void CodegenCVisitor::print_watch_check() {
     print_channel_iteration_tiling_block_begin(BlockType::Watch);
     print_channel_iteration_block_begin(BlockType::Watch);
     print_post_channel_iteration_common_code();
+
+    if (info.is_voltage_used_by_watch_statements()) {
+        printer->add_line("int node_id = node_index[id];");
+        printer->add_line("double v = voltage[node_id];");
+    }
 
     for (int i = 0; i < info.watch_statements.size(); i++) {
         auto statement = info.watch_statements[i];
@@ -3380,6 +3421,8 @@ void CodegenCVisitor::print_watch_check() {
 
     print_channel_iteration_block_end();
     print_send_event_move();
+    print_channel_iteration_tiling_block_end();
+    print_kernel_data_present_annotation_block_end();
     printer->end_block(1);
     codegen = false;
 }
@@ -3670,7 +3713,7 @@ void CodegenCVisitor::print_net_send_buffering() {
     printer->add_line("nsb->_cnt++;");
     printer->add_line("if(nsb->_cnt >= nsb->_size) {");
     printer->add_line("    printf({}, nsb->_cnt);"_format(error));
-    printer->add_line("    abort();");
+    printer->add_line("    coreneuron_abort();");
     printer->add_line("}");
     printer->add_line("nsb->_sendtype[i] = type;");
     printer->add_line("nsb->_vdata_index[i] = vdata_index;");
@@ -3720,7 +3763,20 @@ void CodegenCVisitor::print_net_receive_kernel() {
     if (info.artificial_cell) {
         printer->add_line("double t = nt->_t;");
     }
+
+    // set voltage variable if it is used in the block (e.g. for WATCH statement)
+    auto v_used = VarUsageVisitor().variable_used(*node->get_statement_block(), "v");
+    if (v_used) {
+        printer->add_line("int node_id = ml->nodeindices[id];");
+        printer->add_line("v = nt->_actual_v[node_id];");
+    }
+
     printer->add_line("{} = t;"_format(get_variable_name("tsave")));
+
+    if (info.is_watch_used()) {
+        printer->add_line("bool watch_remove = false;");
+    }
+
     printer->add_indent();
     node->get_statement_block()->accept(*this);
     printer->add_newline();
@@ -3822,11 +3878,13 @@ void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
     printer->add_line(slist1);
     printer->add_line(dlist1);
     printer->add_line(dlist2);
+    codegen = true;
     print_statement_block(*block->get_statement_block(), false, false);
+    codegen = false;
     printer->add_line("int counter = -1;");
     printer->add_line("for (int i=0; i<{}; i++) {}"_format(info.num_primes, "{"));
     printer->add_line("    if (*deriv{}_advance(thread)) {}"_format(list_num, "{"));
-    printer->add_line("        dlist{0}[(++counter){1}] = data[dlist{2}[i]{1}]-(data[slist{2}[i]{1}]-savstate{2}[i{1}])/dt;"_format(list_num + 1, stride, list_num));
+    printer->add_line("        dlist{0}[(++counter){1}] = data[dlist{2}[i]{1}]-(data[slist{2}[i]{1}]-savstate{2}[i{1}])/nt->_dt;"_format(list_num + 1, stride, list_num));
     printer->add_line("    }");
     printer->add_line("    else {");
     printer->add_line("        dlist{0}[(++counter){1}] = data[slist{2}[i]{1}]-savstate{2}[i{1}];"_format(list_num + 1, stride, list_num));
@@ -3836,6 +3894,12 @@ void CodegenCVisitor::print_derivimplicit_kernel(Block* block) {
     printer->end_block();
     // clang-format on
 }
+
+
+void CodegenCVisitor::print_newtonspace_transfer_to_device() const {
+    // nothing to do on cpu
+}
+
 
 void CodegenCVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& node) {
     if (!codegen) {
@@ -4199,6 +4263,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_global_variables_for_hoc();
     print_common_getters();
     print_memory_allocation_routine();
+    print_abort_routine();
     print_thread_memory_callbacks();
     print_global_variable_setup();
     print_instance_variable_setup();

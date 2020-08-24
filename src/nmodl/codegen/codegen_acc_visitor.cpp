@@ -58,9 +58,18 @@ void CodegenAccVisitor::print_atomic_reduction_pragma() {
 
 
 void CodegenAccVisitor::print_backend_includes() {
-    printer->add_line("#include <cuda.h>");
-    printer->add_line("#include <cuda_runtime_api.h>");
-    printer->add_line("#include <openacc.h>");
+    /**
+     * Artificial cells are executed on CPU. As Random123 is allocated on GPU by default,
+     * we have to disable GPU allocations using `DISABLE_OPENACC` macro.
+     */
+    if (info.artificial_cell) {
+        printer->add_line("#undef DISABLE_OPENACC");
+        printer->add_line("#define DISABLE_OPENACC");
+    } else {
+        printer->add_line("#include <cuda.h>");
+        printer->add_line("#include <cuda_runtime_api.h>");
+        printer->add_line("#include <openacc.h>");
+    }
 }
 
 
@@ -70,6 +79,11 @@ std::string CodegenAccVisitor::backend_name() const {
 
 
 void CodegenAccVisitor::print_memory_allocation_routine() const {
+    // memory for artificial cells should be allocated on CPU
+    if (info.artificial_cell) {
+        CodegenCVisitor::print_memory_allocation_routine();
+        return;
+    }
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
     printer->add_line("static inline void* mem_alloc({}) {}"_format(args, "{"));
@@ -85,6 +99,23 @@ void CodegenAccVisitor::print_memory_allocation_routine() const {
     printer->add_line("}");
 }
 
+/**
+ * OpenACC kernels running on GPU doesn't support `abort()`. CUDA/OpenACC supports
+ * `assert()` in device kernel that can be used for similar purpose. Also, `printf`
+ * is supported on device.
+ *
+ * @todo : we need to implement proper error handling mechanism to propogate errors
+ *         from GPU to CPU. For example, error code can be returned like original
+ *         neuron implementation. For now we use `assert(0==1)` pattern which is
+ *         used for OpenACC/CUDA.
+ */
+void CodegenAccVisitor::print_abort_routine() const {
+    printer->add_newline(2);
+    printer->add_line("static inline void coreneuron_abort() {");
+    printer->add_line("    printf(\"Error : Issue while running OpenACC kernel \\n\");");
+    printer->add_line("    assert(0==1);");
+    printer->add_line("}");
+}
 
 /**
  * Each kernel like nrn_init, nrn_state and nrn_cur could be offloaded
@@ -166,11 +197,13 @@ void CodegenAccVisitor::print_global_variable_device_create_annotation() {
     }
 }
 
+
 void CodegenAccVisitor::print_global_variable_device_update_annotation() {
     if (!info.artificial_cell) {
         printer->add_line("#pragma acc update device ({}_global)"_format(info.mod_suffix));
     }
 }
+
 
 std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& variable,
                                                            const std::string& type) const {
@@ -179,6 +212,23 @@ std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& va
     }
     return "({}) acc_deviceptr({})"_format(type, variable);
 }
+
+
+void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
+    int list_num = info.derivimplicit_list_num;
+    printer->add_line("if (nt->compute_gpu) {");
+    printer->add_line("    auto device_vec = static_cast<double*>(acc_copyin(vec, vec_size));");
+    printer->add_line("    auto device_ns = static_cast<NewtonSpace*>(acc_deviceptr(ns));");
+    printer->add_line("    auto device_thread = static_cast<ThreadDatum*>(acc_deviceptr(thread));");
+    printer->add_line(
+        "    acc_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns, sizeof(void*));"_format(
+            info.thread_data_index - 1));
+    printer->add_line(
+        "    acc_memcpy_to_device(&(device_thread[dith{}()].pval), &device_vec, sizeof(double*));"_format(
+            list_num));
+    printer->add_line("}");
+}
+
 
 }  // namespace codegen
 }  // namespace nmodl

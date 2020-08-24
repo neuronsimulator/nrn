@@ -960,6 +960,12 @@ class CodegenCVisitor: public visitor::AstVisitor {
 
 
     /**
+     * Print backend specific abort routine
+     */
+    virtual void print_abort_routine() const;
+
+
+    /**
      * Print standard C/C++ includes
      */
     void print_standard_includes();
@@ -1313,6 +1319,12 @@ class CodegenCVisitor: public visitor::AstVisitor {
 
 
     /**
+     * Common helper function to help printing function or procedure blocks
+     * \param node the AST node representing the function or procedure in NMODL
+     */
+    void print_function_procedure_helper(ast::Block& node);
+
+    /**
      * Print thread related memory allocation and deallocation callbacks
      */
     void print_thread_memory_callbacks();
@@ -1412,6 +1424,12 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param block The corresponding AST node represening an NMODL \c derivimplicit block
      */
     void print_derivimplicit_kernel(ast::Block* block);
+
+
+    /**
+     * Print code block to transfer newtonspace structure to device
+     */
+    virtual void print_newtonspace_transfer_to_device() const;
 
 
     /**

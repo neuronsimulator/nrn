@@ -828,6 +828,7 @@ void CodegenIspcVisitor::print_codegen_wrapper_routines() {
 
     print_memory_allocation_routine();
     print_thread_memory_callbacks();
+    print_abort_routine();
     print_global_variable_setup();
     /* this is a godawful mess.. the global variables have to be copied over into the fallback
      * such that they are available to the fallback generator.
