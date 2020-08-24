@@ -385,6 +385,9 @@ struct CodegenInfo {
     /// true if EigenNewtonSolver is used in nrn_state block
     bool nrn_state_has_eigen_solver_block() const;
 
+    /// true if WatchStatement uses voltage v variable
+    bool is_voltage_used_by_watch_statements() const;
+
     /// if we need a call back to wrote_conc in neuron/coreneuron
     bool require_wrote_conc = false;
 };

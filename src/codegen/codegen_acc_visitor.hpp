@@ -49,6 +49,10 @@ class CodegenAccVisitor: public CodegenCVisitor {
     void print_memory_allocation_routine() const override;
 
 
+    /// abort routine
+    void print_abort_routine() const override;
+
+
     /// annotations like "acc enter data present(...)" for main kernel
     void print_kernel_data_present_annotation_block_begin() override;
 
@@ -80,6 +84,9 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
     /// update global variable from host to the device
     void print_global_variable_device_update_annotation() override;
+
+    /// transfer newtonspace structure to device
+    void print_newtonspace_transfer_to_device() const override;
 
     std::string get_variable_device_pointer(const std::string& variable,
                                             const std::string& type) const override;

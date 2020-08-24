@@ -125,16 +125,24 @@ jobs:
     displayName: 'Build and Run Tests'
   - script: |
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
-      python3 -m pip install -U pip setuptools scikit-build auditwheel
+      python3 -m pip install -U pip setuptools scikit-build delocate
       python3 setup.py sdist bdist_wheel -j 2
-      auditwheel repair dist/*.whl
+      delocate-wheel -w wheelhouse -v dist/*.whl
       rm -rf venv _skbuild
+    displayName: 'Build wheel'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
+    displayName: 'Publish wheel as build artifact'
+  - script: |
       python3 -m venv venv
       source ./venv/bin/activate
       pip install --upgrade pip
-      pip install dist/*.whl
+      pip install wheelhouse/*.whl
       # TODO : change this when we fix the issue with nmodl module
       export PYTHONPATH=$(pwd)/venv/lib/python3.8/site-packages:$PYTHONPATH
-      nmodl $(Build.Repository.LocalPath)/test/integration/mod/cabpump.mod sympy --analytic
+      cd $(Build.Repository.LocalPath)/test/integration/mod
+      nmodl cabpump.mod sympy --analytic
+      nmodl watch_test.mod sympy --analytic
       rm cabpump.cpp
-    displayName: 'Build and test pywheels'
+    displayName: 'Test wheel'
