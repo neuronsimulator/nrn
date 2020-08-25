@@ -353,8 +353,9 @@ static void part2_clean() {
   }
 
   // clean up the art Memb_list of CellGroup[].mlwithart
-  // But if multithread and direct transfer mode defer deletion of
-  // data for artificial cells.
+  // But if multithread and direct transfer mode, defer deletion of
+  // data for artificial cells, so that the artificial cell ml->data
+  // can be used when nrnthreads_type_return is called.
   if (corenrn_direct && nrn_nthread > 0) {
     deferred_type2artdata.resize(nrn_nthread);
   }
@@ -2167,7 +2168,8 @@ int nrncore_run(const char* arg) {
     // close handle and return result
     dlclose(handle);
 
-    if (nrn_nthread > 1) {
+    // Note: possibly non-empty only if nrn_nthread > 1
+    if (!deferred_type2artdata.empty()) {
       clean_deferred_type2artdata(deferred_type2artdata);
     }
 
