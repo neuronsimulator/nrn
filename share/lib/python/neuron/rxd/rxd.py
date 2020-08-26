@@ -104,11 +104,6 @@ setup_currents.argtypes = [
 ]
     
 
-set_reaction_indices = nrn_dll_sym('set_reaction_indices')
-set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
-    _int_ptr,_int_ptr,_double_ptr, ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
-    _int_ptr]
-
 ics_register_reaction = nrn_dll_sym('ics_register_reaction')
 ics_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,
                                   _int_ptr,
