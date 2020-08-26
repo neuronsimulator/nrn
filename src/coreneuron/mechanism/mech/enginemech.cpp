@@ -95,8 +95,11 @@ int corenrn_embedded_run(int nthread,
     mk_mech_init(argc, argv);
 
     // initialize extra arguments built into special-core
-    coreneuron::modl_reg();
-
+    static bool modl_reg_called = false;
+    if (!modl_reg_called) {
+        coreneuron::modl_reg();
+        modl_reg_called = true;
+    }
     // run simulation
     run_solve_core(argc, argv);
 

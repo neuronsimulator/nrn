@@ -62,6 +62,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
+#include "coreneuron/io/core2nrn_data_return.hpp"
 
 extern "C" {
 const char* corenrn_version() {
@@ -608,6 +609,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
         }
         (*nrn2core_all_weights_return_)(weights);
     }
+
+    core2nrn_data_return();
 
     {
         Instrumentor::phase p("checkpoint");

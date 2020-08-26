@@ -107,6 +107,7 @@ if(CORENRN_ENABLE_GPU)
       ${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/nrn_setup.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/setup_fornetcon.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
 
   set_source_files_properties(${DIMPLIC_CODE_FILE} ${NMODL_INBUILT_MOD_OUTPUTS} PROPERTIES
