@@ -18,7 +18,6 @@ Grid_node *Parallel_grids[100] = {NULL};
 /* globals used by ECS do_currents */
 extern TaskQueue* AllTasks;
 /*Current from multicompartment reations*/
-extern unsigned char _membrane_flux;
 extern int _memb_curr_total;
 extern int* _rxd_induced_currents_grid;
 extern int* _rxd_induced_currents_ecs_idx;
@@ -126,12 +125,27 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
         proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
         proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_reactions = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_reaction_states = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
+        proc_induced_current_count = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
+        proc_induced_current_offset = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
     }
 #endif
+    all_reaction_indices = NULL;
+    reaction_indices = NULL;
+    all_reaction_states = NULL;
+    react_offsets = (int*)calloc(1, sizeof(int));
+    multicompartment_inititalized = TRUE;
+    total_reaction_states = 0;
+    react_offset_count = 1;
     num_all_currents = 0;
     current_dest = NULL;
     all_currents = NULL;
-    
+    induced_currents_scale = NULL;
+    induced_currents_index = NULL;
+    induced_currents = NULL;
+    local_induced_currents = NULL;
+    induced_current_count = 0; 
 
     bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
     bc->type=bc_type;
@@ -234,11 +248,10 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
             proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
         }
     #endif
-
     num_all_currents = 0;
     current_dest = NULL;
     all_currents = NULL;
-    
+
     _ics_alphas = ics_alphas;
     VARIABLE_ECS_VOLUME=ICS_ALPHA; 
 
@@ -740,6 +753,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
     if(nrnmpi_use)
     {
         nrnmpi_dbl_allgatherv_inplace(all_currents, proc_num_currents, proc_offsets);
+        nrnmpi_dbl_allgatherv_inplace(induced_currents, proc_induced_current_count, proc_induced_current_offset);
         for(i = 0; i < n; i++)
             output[current_dest[i]] += dt * all_currents[i];
     }
@@ -750,22 +764,44 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
             output[current_list[i].destination] += dt * all_currents[i];
         }
     }
+    
 #else
     for(i = 0; i < n; i++)
         output[current_list[i].destination] +=  dt * all_currents[i];
 #endif
+
     /*Remove the contribution from membrane currents*/
-    if(_membrane_flux)
+    for(i = 0; i < induced_current_count; i++)
+        output[induced_currents_index[i]] -= dt * (induced_currents[i] * induced_currents_scale[i]);
+    MEM_ZERO(induced_currents, induced_current_count*sizeof(double));
+}
+
+double* ECS_Grid_node::set_rxd_currents(int current_count, int* current_indices, PyHocObject** ptrs)
+{
+    int i, j;
+    double volume_fraction;
+
+    free(induced_currents_scale);
+    free(induced_currents_index);
+    induced_currents_scale = (double*)calloc(current_count, sizeof(double));
+    multicompartment_inititalized = FALSE;
+    induced_current_count = current_count;
+    induced_currents_index = current_indices;
+    for(i = 0; i < current_count; i++)
     {
-        for(i = 0; i < _memb_curr_total; i++)
+        for(j = 0; j < num_all_currents; j++)
         {
-            if(_rxd_induced_currents_grid[i] == grid_id)
+            if(ptrs[i]->u.px_ == current_list[j].source)
             {
-                if(_rxd_induced_currents_ecs_idx[i] != SPECIES_ABSENT)
-                    output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
+                volume_fraction = (VARIABLE_ECS_VOLUME == VOLUME_FRACTION ? 
+                                   alpha[current_list[j].destination] : alpha[0]);
+                induced_currents_scale[i] = current_list[j].scale_factor/volume_fraction;
+                assert(current_list[j].destination == current_indices[i]);
+                break;
             }
         }
     }
+    return induced_currents_scale;
 }
 
 void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
@@ -875,6 +911,195 @@ void ECS_Grid_node::variable_step_hybrid_connections(const double* , double* con
 {
 }
 
+int ECS_Grid_node::add_multicompartment_reaction(int nstates, int* indices, int step)
+{
+    //Set the current reaction offsets and increment the local offset count
+    //This is stored as an array/pointer so it can be updated if the grid is
+    //on multiple MPI nodes.
+    int i = 0, j = 0;
+    int offset = react_offsets[react_offset_count-1];
+    //Increase the size of the reaction indices to accomidate the maximum
+    //number of potential new indicies
+    reaction_indices = (int*)realloc(reaction_indices,(offset+nstates)*sizeof(int));
+    //TODO: Aggregate the common indicies on the local node, so the state
+    // changes can be added together before they are broadcast.
+    for(i = 0, j = 0; i < nstates; i++, j+=step)
+    {
+        if(indices[j] != SPECIES_ABSENT)
+            reaction_indices[offset++] = indices[j];
+    }
+    //Resize to remove ununused indices
+    if(offset < react_offsets[react_offset_count-1] + nstates)
+        reaction_indices = (int*)realloc((void*)reaction_indices, offset*sizeof(int));
+
+    //Store the new offset and return the start offset to the Reaction
+    react_offsets = (int*)realloc((void*)react_offsets,(++react_offset_count)*sizeof(int));
+    react_offsets[react_offset_count-1] = offset;
+    multicompartment_inititalized = FALSE;
+    return react_offset_count-2;
+}
+
+void ECS_Grid_node::clear_multicompartment_reaction()
+{
+    free(all_reaction_states);
+    free(react_offsets);
+    if(multicompartment_inititalized)
+        free(all_reaction_indices);
+    else
+        free(reaction_indices);
+    all_reaction_indices = NULL;
+    all_reaction_states = NULL;
+    reaction_indices = NULL;
+    react_offsets = (int*)calloc(1, sizeof(int));
+    react_offset_count = 1;
+    multicompartment_inititalized = induced_current_count == 0;
+    total_reaction_states = 0;
+}
+
+
+void ECS_Grid_node::initialize_multicompartment_reaction()
+{
+#if NRNMPI 
+    int i, j; 
+    int total_react = 0;
+    int start_state;
+    int* proc_num_init;
+    int* all_indices;
+    double* all_scales;
+    //Copy the reaction indices across all nodes and update the local
+    //react_offsets used by Reaction to access the indicies.
+    if(nrnmpi_use)
+    {
+        proc_num_init = (int*)calloc(nrnmpi_numprocs, sizeof(int));
+        proc_num_init[nrnmpi_myid] = (int)multicompartment_inititalized;
+        nrnmpi_int_allgather_inplace(proc_num_init, 1);
+        for(i = 0; i < nrnmpi_numprocs; i++)
+            if(!proc_num_init[i]) break;
+        
+        if(i != nrnmpi_numprocs)
+        {
+            //number of offsets (Reaction) stored in each process
+            proc_num_reactions = (int*)calloc(nrnmpi_numprocs, sizeof(int));
+            proc_num_reactions[nrnmpi_myid] = react_offset_count;
+
+            //number of states/indices stored in each process
+            proc_num_reaction_states =  (int*)calloc(nrnmpi_numprocs, sizeof(int));
+            proc_num_reaction_states[nrnmpi_myid] = react_offsets[react_offset_count-1];
+            nrnmpi_int_allgather_inplace(proc_num_reactions, 1);
+            nrnmpi_int_allgather_inplace(proc_num_reaction_states, 1);
+            
+            for(i = 0; i < nrnmpi_numprocs; i++)
+            {   
+                if(i == nrnmpi_myid)
+                    start_state = total_reaction_states;
+                proc_num_reactions[i] = total_reaction_states;
+                total_react += proc_num_reactions[i];
+                total_reaction_states += proc_num_reaction_states[i];
+            }
+
+            //Move the offsets for each reaction so they reference the
+            //corresponding indices in the all_reaction_indices array
+            for(j = 0; j < react_offset_count; j++)
+                react_offsets[j] += start_state;
+        
+            all_reaction_indices = (int*)malloc(total_reaction_states*sizeof(int));
+            all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+
+            memcpy(&all_reaction_indices[start_state], reaction_indices,
+                   proc_num_reaction_states[nrnmpi_myid]*sizeof(int));
+            nrnmpi_int_allgatherv_inplace(all_reaction_indices,
+                                          proc_num_reaction_states,
+                                          proc_num_reactions);
+            free(reaction_indices);
+            reaction_indices = NULL;
+            multicompartment_inititalized = TRUE;
+        
+            //Handle currents induced by multicompartment reactions.
+            proc_induced_current_count[nrnmpi_myid] = induced_current_count;
+            nrnmpi_int_allgather_inplace(proc_induced_current_count, 1);
+            proc_induced_current_offset[0] = 0; 
+            for(i = 1; i < nrnmpi_numprocs; i++)
+                proc_induced_current_offset[i] =  proc_induced_current_offset[i-1] + proc_induced_current_count[i-1];
+            induced_current_count = proc_induced_current_offset[nrnmpi_numprocs-1] + proc_induced_current_count[nrnmpi_numprocs-1];
+       
+            all_scales = (double*)malloc(induced_current_count*sizeof(double));
+            all_indices = (int*)malloc(induced_current_count*sizeof(double));
+            memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]], 
+                   induced_currents_scale,
+                   sizeof(double)*proc_induced_current_count[nrnmpi_myid]);
+
+            memcpy(&all_indices[proc_induced_current_offset[nrnmpi_myid]], 
+                   induced_currents_index,
+                   sizeof(int)*proc_induced_current_count[nrnmpi_myid]);
+
+            nrnmpi_dbl_allgatherv_inplace(all_scales,
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
+
+            nrnmpi_int_allgatherv_inplace(all_indices,
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
+            free(induced_currents_scale);
+            free(induced_currents_index);
+            free(induced_currents);
+            induced_currents_scale = all_scales;
+            induced_currents_index = all_indices;
+            induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+            local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
+        }
+    }
+    else
+    {
+        if(!multicompartment_inititalized)
+        {
+            total_reaction_states = react_offsets[react_offset_count-1];
+            all_reaction_indices = reaction_indices;
+            all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+            multicompartment_inititalized = TRUE;
+            induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+            local_induced_currents = induced_currents;
+        }
+
+    }
+#else
+    if(!multicompartment_inititalized)
+    {
+        total_reaction_states = react_offsets[react_offset_count-1];
+        all_reaction_indices = reaction_indices;
+        all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+        multicompartment_inititalized = TRUE;
+        induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+        local_induced_currents = induced_currents;
+    }
+#endif
+
+}
+
+void ECS_Grid_node::do_multicompartment_reactions(double* result)
+{
+    int i;
+#if NRNMPI 
+    if(nrnmpi_use)
+    {
+        //Copy the states between all of the nodes
+        nrnmpi_dbl_allgatherv_inplace(all_reaction_states,
+                                      proc_num_reaction_states,
+                                      proc_num_reactions);
+    }
+#endif
+    if(result == NULL) //fixed step
+    {
+        for(i = 0; i < total_reaction_states; i++)
+            states[all_reaction_indices[i]] += all_reaction_states[i];
+    }
+    else //variable step
+    {
+        for(i = 0; i < total_reaction_states; i++)
+            result[states_cvode_offset+all_reaction_indices[i]] += all_reaction_states[i];
+    }
+    MEM_ZERO(all_reaction_states,react_offsets[react_offset_count-1]*sizeof(int));
+}
+
 //TODO: Implement this
 void ECS_Grid_node::variable_step_ode_solve( double*, double)
 {
@@ -897,6 +1122,8 @@ ECS_Grid_node::~ECS_Grid_node(){
         free(proc_num_currents);
         free(proc_flux_offsets);
         free(proc_num_fluxes);
+        free(proc_num_reaction_states);
+        free(proc_num_reactions);
     }
 #endif
     free(all_currents);
@@ -1411,10 +1638,8 @@ ICS_Grid_node::~ICS_Grid_node(){
         free(proc_offsets);
         free(proc_num_currents);
         free(proc_num_fluxes);
-        free(proc_flux_offsets);
     }
 #endif
-    free(all_currents);
     free(ics_adi_dir_x->ordered_start_stop_indices);
     free(ics_adi_dir_x->line_start_stop_indices);
     free(ics_adi_dir_x->ordered_nodes);

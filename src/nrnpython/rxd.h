@@ -73,6 +73,8 @@ typedef struct ICSReactions {
     int num_ecs_species;
     int num_ecs_params;
     double*** ecs_state;    /*[segment][ecs_species]*/
+    int* ecs_offset_index;
+    ECS_Grid_node** ecs_grid;
     int** ecs_index;
     int ecsN;    /*total number of ecs species*regions per segment*/
     
