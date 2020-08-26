@@ -1015,6 +1015,7 @@ void ECS_Grid_node::initialize_multicompartment_reaction()
             multicompartment_inititalized = TRUE;
         
             //Handle currents induced by multicompartment reactions.
+            proc_induced_current_count[nrnmpi_myid] = induced_current_count;
             nrnmpi_int_allgather_inplace(proc_induced_current_count, 1);
             proc_induced_current_offset[0] = 0; 
             for(i = 1; i < nrnmpi_numprocs; i++)
@@ -1025,26 +1026,26 @@ void ECS_Grid_node::initialize_multicompartment_reaction()
             all_indices = (int*)malloc(induced_current_count*sizeof(double));
             memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]], 
                    induced_currents_scale,
-                   sizeof(int)*proc_induced_current_count[nrnmpi_myid]);
+                   sizeof(double)*proc_induced_current_count[nrnmpi_myid]);
 
             memcpy(&all_indices[proc_induced_current_offset[nrnmpi_myid]], 
                    induced_currents_index,
                    sizeof(int)*proc_induced_current_count[nrnmpi_myid]);
 
             nrnmpi_dbl_allgatherv_inplace(all_scales,
-                                          proc_induced_current_offset,
-                                          proc_induced_current_count);
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
 
-        nrnmpi_int_allgatherv_inplace(all_indices,
-                                      proc_induced_current_offset,
-                                      proc_induced_current_count);
-        free(induced_currents_scale);
-        free(induced_currents_index);
-        free(induced_currents);
-        induced_currents_scale = all_scales;
-        induced_currents_index = all_indices;
-        induced_currents = (double*)malloc(induced_current_count*sizeof(double));
-        local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
+            nrnmpi_int_allgatherv_inplace(all_indices,
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
+            free(induced_currents_scale);
+            free(induced_currents_index);
+            free(induced_currents);
+            induced_currents_scale = all_scales;
+            induced_currents_index = all_indices;
+            induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+            local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
         }
     }
     else

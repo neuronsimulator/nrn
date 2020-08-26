@@ -537,6 +537,7 @@ def _update_node_data(force=False, newspecies=False):
                 _setup_matrices();
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
+                clear_rates()
                 _setup_memb_currents()
                 _compile_reactions()
 
@@ -964,7 +965,6 @@ def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
     #supporting indexes
     #_windows_remove_dlls()
-    clear_rates()
     
     regions_inv = dict() #regions -> reactions that occur there
     species_by_region = dict()
@@ -1481,6 +1481,7 @@ def _init():
     #volumes = node._get_data()[0]
     #zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
     #setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
+    clear_rates()
     _setup_memb_currents()
     _compile_reactions()
 
