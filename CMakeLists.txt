@@ -6,7 +6,7 @@ project(NEURON C CXX)
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 8)
 set(PROJECT_VERSION_MINOR 0)
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

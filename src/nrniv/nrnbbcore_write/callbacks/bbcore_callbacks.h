@@ -4,12 +4,18 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <cstdlib>
 
 typedef void*(*CNB)(...);
 typedef struct core2nrn_callback_t {
     const char* name;
     CNB f;
 } core2nrn_callback_t;
+
+// Mechanism type to be used from stdindex2ptr (in CoreNeuron) and nrn_dblpntr2nrncore.
+// Values of the mechanism types should be negative numbers to avoid any conflict with
+// mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
+enum mech_type {voltage = -1, i_membrane_ = -2};
 
 class Memb_list;
 class NrnThread;
@@ -61,6 +67,7 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
 extern "C" {
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 void nrnthreads_all_weights_return(std::vector<double*>& weights);
+size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata);
 }
 
 static core2nrn_callback_t cnbs[]  = {
@@ -86,6 +93,7 @@ static core2nrn_callback_t cnbs[]  = {
 
         {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
         {"nrn2core_all_weights_return_", (CNB)nrnthreads_all_weights_return},
+        {"nrn2core_type_return_", (CNB)nrnthreads_type_return},
         {NULL, NULL}
 };
 

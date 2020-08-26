@@ -21,6 +21,7 @@ extern "C" {
 typedef std::pair < int, Memb_list* > MlWithArtItem;
 typedef std::vector < MlWithArtItem > MlWithArt;
 typedef std::map<double*, int> PVoid2Int;
+typedef std::vector<std::map<int, std::pair<int, double**>>> Deferred_Type2ArtData;
 
 class CellGroup {
 public:
@@ -59,9 +60,24 @@ public:
     static void clean_art(CellGroup*);
 
     static void setup_nrn_has_net_event();
+    static inline void clear_artdata2index() {
+        artdata2index_.clear();
+    }
+
+    static inline void clean_deferred_type2artdata() {
+        for (auto& m: deferred_type2artdata_) {
+            for (auto& t: m) {
+                delete [] t.second.second;
+            }
+        }
+        deferred_type2artdata_.clear();
+    }
+
+    static Deferred_Type2ArtData deferred_type2artdata_;
 
 private:
     static PVoid2Int artdata2index_;
+
     static int* has_net_event_;
 
     static inline int nrncore_art2index(double* d) {

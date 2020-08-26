@@ -103,6 +103,7 @@ correctness has not been validated for cells without gids.
 #include "nrnbbcore_write/utils/corenrn_utils.h"
 #include "nrnbbcore_write/io/bbcore_write.h"
 #include "nrnbbcore_write/callbacks/bbcore_callbacks.h"
+#include <map>
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
@@ -115,6 +116,7 @@ extern "C" { // to end of file
 
 extern int* nrn_prop_dparam_size_;
 int* bbcore_dparam_size; // cvodeieq not present
+extern double t; // see nrncore_psolve
 
 /* not NULL, need to write gap information */
 extern void (*nrnthread_v_transfer_)(NrnThread*);
@@ -220,8 +222,6 @@ static void part2(const char* path) {
     write_nrnthread_task(path, cgs);
   }
 
-  CellGroup::clean_art(cgs);
-
   part2_clean();
 }
 
@@ -266,6 +266,10 @@ int nrncore_run(const char* arg) {
 
     // close handle and return result
     dlclose(handle);
+
+    // Note: possibly non-empty only if nrn_nthread > 1
+    CellGroup::clean_deferred_type2artdata();
+
     return result;
 }
 
@@ -282,15 +286,17 @@ int nrncore_is_enabled() {
  *  Return 0 on success
 */
 int nrncore_psolve(double tstop) {
-    if (nrnpy_nrncore_arg_p_) {
-        char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
-        if (arg) {
-            nrncore_run(arg);
-            free(arg);
-            return 0;
-        }
+  if (nrnpy_nrncore_arg_p_) {
+    char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
+    if (arg) {
+      nrncore_run(arg);
+      // data return nt._t so copy to t
+      t = nrn_threads[0]._t;
+      free(arg);
+      return 0;
     }
-    return -1;
+  }
+  return -1;
 }
 
 #else // !HAVE_DLFCN_H

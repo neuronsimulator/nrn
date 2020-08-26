@@ -24,7 +24,6 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
-
 };
 
 /** Populate function pointers by mapping function pointers for callback */
@@ -134,6 +133,61 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights) {
     }
 }
 
+/** @brief Return location for CoreNEURON to copy data into.
+ *  The type is mechanism type or special negative type for voltage,
+ *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:stdindex2ptr.
+ *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
+ *  how its data is arranged (SoA and possibly permuted).
+ *  This function figures out the size (just for sanity check)
+ *  and data pointer to be returned based on type and thread id.
+ *  The ARTIFICIAL_CELL type case is special as there is no thread specific
+ *  Memb_list for those.
+ */
+size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata) {
+    size_t n = 0;
+    data = NULL;
+    mdata = NULL;
+    if (tid >= nrn_nthread) {
+        return n;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    if (type == voltage) {
+        data = nt._actual_v;
+        n = size_t(nt.end);
+    } else if (type == i_membrane_) { // i_membrane_
+        data = nt._nrn_fast_imem->_nrn_sav_rhs;
+        n = size_t(nt.end);
+    } else if (type == 0) { // time
+        data = &nt._t;
+        n = 1;
+    } else if (type > 0 && type < n_memb_func) {
+        Memb_list* ml = nt._ml_list[type];
+        if (ml) {
+            mdata = ml->data;
+            n = ml->nodecount;
+        }else{
+            // The single thread case is easy
+            if (nrn_nthread == 1) {
+                ml = memb_list + type;
+                mdata = ml->data;
+                n = ml->nodecount;
+            }else{
+                // mk_tml_with_art() created a cgs[id].mlwithart which appended
+                // artificial cells to the end. Turns out that
+                // cellgroups_[tid].type2ml[type]
+                // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
+                // has already been deleted.  So we defer deletion of the necessary
+                // cellgroups_ portion (deleting it on return from nrncore_run).
+                auto& p = CellGroup::deferred_type2artdata_[tid][type];
+                n = size_t(p.first);
+                mdata = p.second;
+            }
+        }
+    }
+    return n;
+}
+
+
 void nrnthread_group_ids(int* grp) {
     for (int i = 0; i < nrn_nthread; ++i) {
         grp[i] = cellgroups_[i].group_id;
@@ -207,8 +261,8 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 
     assert(cg.n_real_output == nt.ncell);
 
-    // if not NULL then copy (for direct transfer target space already allocated)
-    bool copy = v_parent_index ? true : false;
+    // If direct transfer, copy, because target space already allocated
+    bool copy = corenrn_direct;
     int n = nt.end;
     if (copy) {
         for (int i=0; i < nt.end; ++i) {
@@ -443,6 +497,10 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
 }
 
 void part2_clean() {
+    CellGroup::clear_artdata2index();
+
+    CellGroup::clean_art(cellgroups_);
+
     delete [] cellgroups_;
     cellgroups_ = NULL;
 }

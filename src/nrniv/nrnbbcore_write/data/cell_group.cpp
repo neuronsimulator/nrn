@@ -17,6 +17,7 @@ extern short* nrn_is_artificial_;
 }
 
 PVoid2Int CellGroup::artdata2index_;
+Deferred_Type2ArtData CellGroup::deferred_type2artdata_;
 int* CellGroup::has_net_event_;
 
 CellGroup::CellGroup() {
@@ -552,13 +553,23 @@ size_t CellGroup::get_mla_rankbytes(CellGroup* cellgroups_) {
 
 void CellGroup::clean_art(CellGroup* cgs) {
     // clean up the art Memb_list of CellGroup[].mlwithart
+    // But if multithread and direct transfer mode, defer deletion of
+    // data for artificial cells, so that the artificial cell ml->data
+    // can be used when nrnthreads_type_return is called.
+    if (corenrn_direct && nrn_nthread > 0) {
+        deferred_type2artdata_.resize(nrn_nthread);
+    }
     for (int ith=0; ith < nrn_nthread; ++ith) {
         MlWithArt& mla = cgs[ith].mlwithart;
         for (size_t i = 0; i < mla.size(); ++i) {
             int type = mla[i].first;
             Memb_list* ml = mla[i].second;
             if (nrn_is_artificial_[type]) {
-                delete [] ml->data;
+                if (!deferred_type2artdata_.empty()) {
+                    deferred_type2artdata_[ith][type] = {ml->nodecount, ml->data};
+                }else{
+                    delete [] ml->data;
+                }
                 delete [] ml->pdata;
                 delete ml;
             }
