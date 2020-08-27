@@ -113,6 +113,7 @@ correctness has not been validated for cells without gids.
 #include <string.h>
 #include <fstream>
 #include <sstream>
+#include <map>
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
@@ -129,6 +130,7 @@ static int* bbcore_dparam_size; // cvodeieq not present
 extern char* pnt_map;
 extern short* nrn_is_artificial_;
 extern int nrn_is_ion(int type);
+extern double t; // see nrncore_psolve
 extern double nrn_ion_charge(Symbol* sym);
 extern Symbol* hoc_lookup(const char*);
 extern int secondorder, diam_changed, v_structure_change, tree_changed;
@@ -143,6 +145,11 @@ char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 extern bbcore_write_t* nrn_bbcore_write_;
+
+// nrnthreads_type_return needs deferred_type2artdata when
+// there are threads and artificial cells
+typedef std::vector<std::map<int, std::pair<int, double**> > > Deferred_Type2ArtData;
+static Deferred_Type2ArtData deferred_type2artdata;
 
 static CellGroup* cellgroups_;
 static CellGroup* mk_cellgroups(); // gid, PreSyn, NetCon, Point_process relation.
@@ -344,6 +351,31 @@ static void part2_clean() {
     delete artdata2index_;
     artdata2index_ = NULL;
   }
+
+  // clean up the art Memb_list of CellGroup[].mlwithart
+  // But if multithread and direct transfer mode, defer deletion of
+  // data for artificial cells, so that the artificial cell ml->data
+  // can be used when nrnthreads_type_return is called.
+  if (corenrn_direct && nrn_nthread > 0) {
+    deferred_type2artdata.resize(nrn_nthread);
+  }
+  for (int ith=0; ith < nrn_nthread; ++ith) {
+    MlWithArt& mla = cellgroups_[ith].mlwithart;
+    for (size_t i = 0; i < mla.size(); ++i) {
+      int type = mla[i].first;
+      Memb_list* ml = mla[i].second;
+      if (nrn_is_artificial_[type]) {
+        if (!deferred_type2artdata.empty()) {
+          deferred_type2artdata[ith][type] = {ml->nodecount, ml->data};
+        }else{
+          delete [] ml->data;
+        }
+        delete [] ml->pdata;
+        delete ml;
+      }
+    }
+  }
+
   delete [] cellgroups_;
   cellgroups_ = NULL;
 }
@@ -386,21 +418,16 @@ static void part2(const char* path) {
     write_nrnthread_task(path, cgs);
   }
 
-  // clean up the art Memb_list of CellGroup[].mlwithart
-  for (int ith=0; ith < nrn_nthread; ++ith) {
-    MlWithArt& mla = cgs[ith].mlwithart;
-    for (size_t i = 0; i < mla.size(); ++i) {
-      int type = mla[i].first;
-      Memb_list* ml = mla[i].second;
-      if (nrn_is_artificial_[type]) {
-        delete [] ml->data;
-        delete [] ml->pdata;
-        delete ml;
-      }
+  part2_clean();
+}
+
+static void clean_deferred_type2artdata(Deferred_Type2ArtData& d) {
+  for (auto& m: d) {
+    for (auto& t: m) {
+      delete [] t.second.second;
     }
   }
-
-  part2_clean();
+  d.clear();
 }
 
 int nrncore_art2index(double* d) {
@@ -1282,8 +1309,8 @@ static int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& 
 
   assert(cg.n_real_output == nt.ncell);
 
-  // if not NULL then copy (for direct transfer target space already allocated)
-  bool copy = v_parent_index ? true : false;
+  // If direct transfer, copy, because target space already allocated
+  bool copy = corenrn_direct;
   int n = nt.end;
   if (copy) {
     for (int i=0; i < nt.end; ++i) {
@@ -1781,6 +1808,61 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
 }
 
 
+/** @brief Return location for CoreNEURON to copy data into.
+ *  The type is mechanism type or special negative type for voltage,
+ *  i_membrane_, or time. See coreneuron/io/nrn_setup.cpp:stdindex2ptr.
+ *  We allow coreneuron to copy to NEURON's AoS data as CoreNEURON knows
+ *  how its data is arranged (SoA and possibly permuted).
+ *  This function figures out the size (just for sanity check)
+ *  and data pointer to be returned based on type and thread id.
+ *  The ARTIFICIAL_CELL type case is special as there is no thread specific
+ *  Memb_list for those.
+ */
+size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata) {
+  size_t n = 0;
+  data = NULL;
+  mdata = NULL;
+  if (tid >= nrn_nthread) {
+    return n;
+  }
+  NrnThread& nt = nrn_threads[tid];
+  if (type == voltage) {
+    data = nt._actual_v;
+    n = size_t(nt.end);
+  } else if (type == i_membrane_) { // i_membrane_
+    data = nt._nrn_fast_imem->_nrn_sav_rhs;
+    n = size_t(nt.end);
+  } else if (type == 0) { // time
+    data = &nt._t;
+    n = 1;
+  } else if (type > 0 && type < n_memb_func) {
+    Memb_list* ml = nt._ml_list[type];
+    if (ml) {
+      mdata = ml->data;
+      n = ml->nodecount;
+    }else{
+      // The single thread case is easy
+      if (nrn_nthread == 1) {
+        ml = memb_list + type;
+        mdata = ml->data;
+        n = ml->nodecount;
+      }else{
+        // mk_tml_with_art() created a cgs[id].mlwithart which appended
+        // artificial cells to the end. Turns out that
+        // cellgroups_[tid].type2ml[type]
+        // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
+        // has already been deleted.  So we defer deletion of the necessary
+        // cellgroups_ portion (deleting it on return from nrncore_run).
+        auto& p = deferred_type2artdata[tid][type];
+        n = size_t(p.first);
+        mdata = p.second;
+      }
+    }
+  }
+  return n;
+}
+
+
 /** @brief Count number of unique elements in the array.
  *  there is a copy of the vector but we are primarily
  *  using it for small section list vectors.
@@ -1923,6 +2005,7 @@ static core2nrn_callback_t cnbs[]  = {
 
   {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
   {"nrn2core_all_weights_return_", (CNB)nrnthreads_all_weights_return},
+  {"nrn2core_type_return_", (CNB)nrnthreads_type_return},
   {NULL, NULL}
 };
 
@@ -1952,7 +2035,7 @@ bool file_exist(const std::string& path) {
 
 /** Open library with given path and return dlopen handle **/
 void* get_handle_for_lib(const char* path) {
-    void* handle = dlopen(path, RTLD_NOW|RTLD_GLOBAL);
+    void* handle = dlopen(path, RTLD_NOW|RTLD_GLOBAL|RTLD_NODELETE);
     if (!handle) {
       fputs(dlerror(), stderr);
       fputs("\n", stderr);
@@ -2084,6 +2167,12 @@ int nrncore_run(const char* arg) {
 
     // close handle and return result
     dlclose(handle);
+
+    // Note: possibly non-empty only if nrn_nthread > 1
+    if (!deferred_type2artdata.empty()) {
+      clean_deferred_type2artdata(deferred_type2artdata);
+    }
+
     return result;
 }
 
@@ -2104,6 +2193,8 @@ int nrncore_psolve(double tstop) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
     if (arg) {
       nrncore_run(arg);
+      // data return nt._t so copy to t
+      t = nrn_threads[0]._t;
       free(arg);
       return 0;
     }
