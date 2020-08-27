@@ -688,7 +688,6 @@ int ode_count(const int offset) {
     states_cvode_offset = offset;
     Grid_node* grid;
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        grid->states_cvode_offset = count;
         count += grid->size_x * grid->size_y * grid->size_z;
     }
     return count;

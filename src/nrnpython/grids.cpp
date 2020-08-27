@@ -1095,9 +1095,9 @@ void ECS_Grid_node::do_multicompartment_reactions(double* result)
     else //variable step
     {
         for(i = 0; i < total_reaction_states; i++)
-            result[states_cvode_offset+all_reaction_indices[i]] += all_reaction_states[i];
+            result[all_reaction_indices[i]] += all_reaction_states[i];
     }
-    MEM_ZERO(all_reaction_states,react_offsets[react_offset_count-1]*sizeof(int));
+    MEM_ZERO(all_reaction_states,total_reaction_states*sizeof(int));
 }
 
 //TODO: Implement this

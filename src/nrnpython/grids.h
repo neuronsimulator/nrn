@@ -141,7 +141,6 @@ class Grid_node {
     int* proc_num_fluxes;
     long* current_dest;
     double* all_currents;
-    int states_cvode_offset;
 
     /*Extension to handle a variable diffusion characteristics of a grid*/
     unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
