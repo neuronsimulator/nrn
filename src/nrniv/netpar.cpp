@@ -1560,7 +1560,7 @@ void nrn_gidout_iter(PFIO callback) {
 	}}}
 }
 
-#include "nrnbbcore_write.h"
+#include "nrncore_write.h"
 extern "C" {
 extern int* nrn_prop_param_size_;
 extern int* pnt_receive_size;

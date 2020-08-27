@@ -1,6 +1,6 @@
-#include "bbcore_write.h"
-#include "nrnbbcore_write/data/cell_group.h"
-#include "nrnbbcore_write/callbacks/bbcore_callbacks.h"
+#include "nrncore_io.h"
+#include "nrncore_write/data/cell_group.h"
+#include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include <cstdlib>
 #include "nrnmpi.h"

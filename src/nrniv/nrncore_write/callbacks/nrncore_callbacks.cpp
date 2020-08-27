@@ -1,11 +1,11 @@
-#include "bbcore_callbacks.h"
+#include "nrncore_callbacks.h"
 #include "nrnconf.h"
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
 #include "hocdec.h"
-#include "nrnbbcore_write/data/cell_group.h"
-#include "nrnbbcore_write/io/bbcore_write.h"
+#include "nrncore_write/data/cell_group.h"
+#include "nrncore_write/io/nrncore_io.h"
 #include "parse.h"
 #include "nrnran123.h" // globalindex written to globals.
 #include "netcvode.h" // for nrnbbcore_vecplay_write

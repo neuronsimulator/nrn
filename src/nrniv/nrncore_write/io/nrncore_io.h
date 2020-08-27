@@ -1,5 +1,5 @@
-#ifndef NRN_BBCORE_WRITE_H
-#define NRN_BBCORE_WRITE_H
+#ifndef NRN_NRNCORE_IO_H
+#define NRN_NRNCORE_IO_H
 
 #include <string>
 #include <vector>
@@ -45,4 +45,4 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo);
 
 }
 
-#endif //NRN_BBCORE_WRITE_H
+#endif //NRN_NRNCORE_IO_H

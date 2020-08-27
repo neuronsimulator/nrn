@@ -1,5 +1,5 @@
-#ifndef NRN_BBCORE_CALLBACKS_H
-#define NRN_BBCORE_CALLBACKS_H
+#ifndef NRN_NRNCORE_CALLBACKS_H
+#define NRN_NRNCORE_CALLBACKS_H
 
 #include <fstream>
 #include <sstream>
@@ -100,4 +100,4 @@ static core2nrn_callback_t cnbs[]  = {
 
 void map_coreneuron_callbacks(void* handle);
 
-#endif //NRN_BBCORE_CALLBACKS_H
+#endif //NRN_NRNCORE_CALLBACKS_H

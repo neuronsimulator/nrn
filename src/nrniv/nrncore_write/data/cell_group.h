@@ -91,6 +91,4 @@ private:
 
 };
 
-
-
 #endif //NRN_CELL_GROUP_H

@@ -1,7 +1,7 @@
-#ifndef nrnbbcore_write_h
-#define nrnbbcore_write_h
+#ifndef nrncore_write_h
+#define nrncore_write_h
 
-#include "nrnbbcore_write/data/cell_group.h"
+#include "nrncore_write/data/cell_group.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -17,4 +17,4 @@ int nrncore_psolve(double tstop);
 }
 #endif
 
-#endif
+#endif // nrncore_write_h

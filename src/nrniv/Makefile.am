@@ -86,13 +86,13 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
 	$(PARSRC1) bgpmeminfo.c \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
-	bbsavestate.cpp nrnbbcore_write.cpp pysecname2sec.cpp \
+	bbsavestate.cpp nrncore_write.cpp pysecname2sec.cpp \
 	nrndae.cpp matrixmap.cpp geometry3d.cpp \
-    nrnbbcore_write/callbacks/bbcore_callbacks.cpp \
-    nrnbbcore_write/data/cell_group.cpp \
-    nrnbbcore_write/data/datum_indices.cpp \
-    nrnbbcore_write/io/bbcore_write.cpp \
-    nrnbbcore_write/utils/corenrn_utils.cpp
+	nrncore_write/callbacks/nrncore_callbacks.cpp \
+	nrncore_write/data/cell_group.cpp \
+	nrncore_write/data/datum_indices.cpp \
+	nrncore_write/io/nrncore_io.cpp \
+	nrncore_write/utils/nrncore_utils.cpp
 
 libnrniv_la_LIBADD = @MUSIC_LIBLA@
 
@@ -165,14 +165,14 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	$(PARINC1) \
 	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
 	multisplitcontrol.h nvector_nrnthread.h \
-	bbsavestate.h nrnbbcore_write.h nrnsection_mapping.h\
+	bbsavestate.h nrncore_write.h nrnsection_mapping.h\
 	nrnmusic.cpp nrndae.h matrixmap.h \
 	structpool.h nrnhash_alt.h \
-	nrnbbcore_write/callbacks/bbcore_callbacks.h \
-    nrnbbcore_write/data/cell_group.h \
-    nrnbbcore_write/data/datum_indices.h \
-    nrnbbcore_write/io/bbcore_write.h \
-    nrnbbcore_write/utils/corenrn_utils.h
+	nrncore_write/callbacks/nrncore_callbacks.h \
+	nrncore_write/data/cell_group.h \
+	nrncore_write/data/datum_indices.h \
+	nrncore_write/io/nrncore_io.h \
+	nrncore_write/utils/nrncore_utils.h
 
 ## We have to play a trick on automake to get it to install the .o files in
 ## an architecture-dependent subdirectory.  (Apparently automake's authors

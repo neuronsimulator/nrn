@@ -1,5 +1,5 @@
-#include "corenrn_utils.h"
-#include "nrnbbcore_write/callbacks/bbcore_callbacks.h"
+#include "nrncore_utils.h"
+#include "nrncore_write/callbacks/nrncore_callbacks.h"
 
 #include "nrnconf.h"
 #include <cstdlib>
@@ -25,6 +25,7 @@ extern int diam_changed, v_structure_change, tree_changed;
 extern const char *bbcore_write_version;
 extern NrnMappingInfo mapinfo;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
+extern short* nrn_is_artificial_;
 
 
 // prerequisites for a NEURON model to be transferred to CoreNEURON.
@@ -115,6 +116,41 @@ bool file_exist(const std::string& path) {
     std::ifstream f(path.c_str());
     return f.good();
 }
+
+
+// This function is related to stdindex2ptr in CoreNeuron to determine which values should
+// be transferred from CoreNeuron. Types correspond to the value to be transferred based on
+// mech_type enum or non-artificial cell mechanisms.
+// Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
+// data of non-artificial cell mechanisms.
+// Requires cache_efficient mode.
+// Input double* and NrnThread. Output type and index.
+// type == 0 means could not determine index.
+int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+    assert(use_cachevec);
+    int nnode = nt.end;
+    type = 0;
+    if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
+        type = voltage; // signifies an index into voltage array portion of _data
+        index = pd - nt._actual_v;
+    } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs && pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
+        type = i_membrane_; // signifies an index into i_membrane_ array portion of _data
+        index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
+    }else{
+        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            if (nrn_is_artificial_[tml->index]) { continue; }
+            Memb_list* ml1 = tml->ml;
+            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
+            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
+                type = tml->index;
+                index = pd - ml1->data[0];
+                break;
+            }
+        }
+    }
+    return type == 0 ? 1 : 0;
+}
+
 
 #if defined(HAVE_DLFCN_H)
 

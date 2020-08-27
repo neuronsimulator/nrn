@@ -99,10 +99,10 @@ correctness has not been validated for cells without gids.
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 #include "nrnsection_mapping.h"
 
-#include "nrnbbcore_write.h"
-#include "nrnbbcore_write/utils/corenrn_utils.h"
-#include "nrnbbcore_write/io/bbcore_write.h"
-#include "nrnbbcore_write/callbacks/bbcore_callbacks.h"
+#include "nrncore_write.h"
+#include "nrncore_write/utils/nrncore_utils.h"
+#include "nrncore_write/io/nrncore_io.h"
+#include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
 #if defined(HAVE_DLFCN_H)
@@ -146,10 +146,10 @@ static void part2(const char*);
 size_t nrnbbcore_write() {
   corenrn_direct = false;
   model_ready();
+  const std::string& path = get_write_path();
 
   size_t rankbytes = part1(); // can arrange to be just before part2
 
-  const std::string& path = get_write_path();
   write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
   write_globals(get_filename(path, "globals.dat").c_str());
 
@@ -314,38 +314,5 @@ int nrncore_psolve(double tstop) {
 }
 
 #endif //!HAVE_DLFCN_H
-
-// This function is related to stdindex2ptr in CoreNeuron to determine which values should
-// be transferred from CoreNeuron. Types correspond to the value to be transferred based on
-// mech_type enum or non-artificial cell mechanisms.
-// Limited to pointers to voltage, nt._nrn_fast_imem->_nrn_sav_rhs (fast_imem value) or
-// data of non-artificial cell mechanisms.
-// Requires cache_efficient mode.
-// Input double* and NrnThread. Output type and index.
-// type == 0 means could not determine index.
-int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
-    assert(use_cachevec);
-    int nnode = nt.end;
-    type = 0;
-    if (pd >= nt._actual_v && pd < (nt._actual_v + nnode)) {
-        type = voltage; // signifies an index into voltage array portion of _data
-        index = pd - nt._actual_v;
-    } else if (nt._nrn_fast_imem && pd >= nt._nrn_fast_imem->_nrn_sav_rhs && pd < (nt._nrn_fast_imem->_nrn_sav_rhs + nnode)) {
-        type = i_membrane_; // signifies an index into i_membrane_ array portion of _data
-        index = pd - nt._nrn_fast_imem->_nrn_sav_rhs;
-    }else{
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            if (nrn_is_artificial_[tml->index]) { continue; }
-            Memb_list* ml1 = tml->ml;
-            int nn = nrn_prop_param_size_[tml->index] * ml1->nodecount;
-            if (pd >= ml1->data[0] && pd < (ml1->data[0] + nn)) {
-                type = tml->index;
-                index = pd - ml1->data[0];
-                break;
-            }
-        }
-    }
-    return type == 0 ? 1 : 0;
-}
 
 } // end of extern "C"
