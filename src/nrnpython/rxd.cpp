@@ -858,8 +858,10 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             Grid_node* grid;
             ECS_Grid_node* g;
             for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+            {
                 g = dynamic_cast<ECS_Grid_node*>(grid);
                 if(g) g->initialize_multicompartment_reaction();
+            }
             break;
         case 2:
             /* compute outward current to be subtracted from rhs */
