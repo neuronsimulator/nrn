@@ -50,24 +50,6 @@ extern int nrn_nobanner_;
 
 // NB: this should go away
 extern const char* nrn_version(int);
-
-bool nrn_need_byteswap;
-// following copied (except for nrn_need_byteswap line) from NEURON ivocvect.cpp
-#define BYTEHEADER   \
-    uint32_t _II__;  \
-    char* _IN__;     \
-    char _OUT__[16]; \
-    bool BYTESWAP_FLAG = false;
-#define BYTESWAP(_X__, _TYPE__)                                 \
-    BYTESWAP_FLAG = nrn_need_byteswap;                          \
-    if (BYTESWAP_FLAG) {                                        \
-        _IN__ = (char*)&(_X__);                                 \
-        for (_II__ = 0; _II__ < sizeof(_TYPE__); _II__++) {     \
-            _OUT__[_II__] = _IN__[sizeof(_TYPE__) - _II__ - 1]; \
-        }                                                       \
-        (_X__) = *((_TYPE__*)&_OUT__);                          \
-    }
-
 std::map<std::string, int> mech2type;
 
 extern "C" {
@@ -99,27 +81,6 @@ void mk_mech(const char* datpath) {
         mk_mech(fs);
         fs.close();
     }
-
-    {
-        std::string fname = std::string(datpath) + "/byteswap1.dat";
-        FILE* f = fopen(fname.c_str(), "r");
-        if (!f) {
-            fprintf(stderr, "Error: couldn't find byteswap1.dat file in the dataset directory \n");
-        }
-        nrn_assert(f);
-        // file consists of int32_t binary 1 . After reading can decide if
-        // binary info in files needs to be byteswapped.
-        int32_t x;
-        nrn_assert(fread(&x, sizeof(int32_t), 1, f) == 1);
-        nrn_need_byteswap = false;
-        if (x != 1) {
-            BYTEHEADER;
-            nrn_need_byteswap = true;
-            BYTESWAP(x, int32_t);
-            nrn_assert(x == 1);
-        }
-        fclose(f);
-    }
 }
 
 // we are embedded in NEURON, get info as stringstream from nrnbbcore_write.cpp
@@ -128,7 +89,6 @@ static void mk_mech() {
     if (already_called) {
         return;
     }
-    nrn_need_byteswap = false;
     std::stringstream ss;
     nrn_assert(nrn2core_mkmech_info_);
     (*nrn2core_mkmech_info_)(ss);

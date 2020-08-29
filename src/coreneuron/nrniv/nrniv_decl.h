@@ -57,7 +57,6 @@ extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
 extern void nrn_setup(const char* filesdat,
                       bool is_mapping_needed,
-                      bool byte_swap, // We keep it for backward API compatibility but it is not used
                       bool run_setup_cleanup = true,
                       const char* datapath = "",
                       const char* restore_path = "",
@@ -73,7 +72,6 @@ extern void nrn_set_extra_thread0_vdata(void);
 extern Point_process* nrn_artcell_instantiate(const char* mechname);
 extern int nrnmpi_spike_compress(int nspike, bool gidcompress, int xchng);
 extern bool nrn_use_bin_queue_;
-extern bool nrn_need_byteswap;
 
 extern void nrn_outputevent(unsigned char, double);
 extern void ncs2nrn_integrate(double tstop);

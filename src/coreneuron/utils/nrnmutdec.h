@@ -156,7 +156,9 @@ class OMP_Mutex {
         void unlock() {}
 
         // Lockable
-        bool try_lock() {}
+        bool try_lock() {
+            return true;
+        }
 };
 #endif
 
