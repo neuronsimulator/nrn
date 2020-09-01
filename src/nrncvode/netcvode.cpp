@@ -41,7 +41,7 @@
 #include "netcon.h"
 #include "netcvode.h"
 #include "htlist.h"
-#include "nrnbbcore_write.h"
+#include "nrncore_write/utils/nrncore_utils.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
