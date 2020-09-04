@@ -153,6 +153,7 @@ set(SUNDIALS_USE_GENERIC_MATH 1)
 # =============================================================================
 nrn_check_include_files(alloca.h HAVE_ALLOCA_H)
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
+nrn_check_include_files(execinfo.h HAVE_EXECINFO_H)
 nrn_check_include_files(fcntl.h HAVE_FCNTL_H)
 nrn_check_include_files(fenv.h HAVE_FENV_H)
 nrn_check_include_files(float.h HAVE_FLOAT_H)

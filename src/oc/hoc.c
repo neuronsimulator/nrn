@@ -182,6 +182,9 @@ NrnFILEWrap	*fin;				/* input file pointer */
 const char	*progname;	/* for error messages */
 int	lineno;
 
+#if HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif
 #include <signal.h>
 #include <setjmp.h>
 static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
@@ -745,6 +748,30 @@ void hoc_coredump_on_error(void) {
 	pushx(1.);
 }
 
+void print_bt() {
+#if HAVE_EXECINFO_H
+	void *frames[10];
+	size_t size;
+	char** bt_strings = NULL;
+
+	// get void*'s for maximum last 16 entries on the stack
+	size = backtrace(array, 16);
+
+	// print out all the frames to stderr
+	Fprintf(stderr, "Backtrace:\n");
+
+	bt_strings = backtrace_symbols(frames, size);
+    if (bt_strings) {
+		for(size_t i = 1; i < size; ++i) {
+			Fprintf(stderr, "\t#%d: %s\n", i, bt_strings[i]);
+		}
+		free(bt_strings);
+    }
+#else
+	Fprintf(stderr, "No backtrace info available.\n");
+#endif
+}
+
 RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 {
 	/*ARGSUSED*/
@@ -758,7 +785,9 @@ _fpreset();
 		abort();
 	}
 	signal(SIGFPE, fpecatch);
-	execerror("floating point exception", (char *) 0);
+	Fprintf(stderr, "Floating point exception\n");
+	print_bt();
+	execerror("Aborting.", (char *) 0);
 }
 
 #if HAVE_SIGSEGV
@@ -768,7 +797,9 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 	if (coredump) {
 		abort();
 	}
-	execerror("Segmentation violation", (char*)0);
+	Fprintf(stderr, "Segmentation violation\n");
+	print_bt();
+	execerror("Aborting.", (char*)0);
 }
 #endif
 
@@ -779,7 +810,9 @@ RETSIGTYPE sigbuscatch(int sig)
 	if (coredump) {
 		abort();
 	}
-	execerror("Bus error", "See $NEURONHOME/lib/help/oc.help");
+	Fprintf(stderr, "Bus error\n");
+    print_bt();
+	execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
 
@@ -1307,7 +1340,7 @@ static void restore_signals(void) {
 	signals[3] = signal(SIGBUS, signals[3]);
 #endif
 }
-	
+
 static void hoc_run1(void)	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
