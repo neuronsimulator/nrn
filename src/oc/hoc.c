@@ -755,7 +755,7 @@ void print_bt() {
 	char** bt_strings = NULL;
 
 	// get void*'s for maximum last 16 entries on the stack
-	size = backtrace(array, 16);
+	size = backtrace(frames, 16);
 
 	// print out all the frames to stderr
 	Fprintf(stderr, "Backtrace:\n");
@@ -763,7 +763,7 @@ void print_bt() {
 	bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
 		for(size_t i = 1; i < size; ++i) {
-			Fprintf(stderr, "\t#%d: %s\n", i, bt_strings[i]);
+			Fprintf(stderr, "\t%s\n", bt_strings[i]);
 		}
 		free(bt_strings);
     }
@@ -781,24 +781,24 @@ _fpreset();
 #if 1 && NRN_FLOAT_EXCEPTION
 	matherr1();
 #endif
+	Fprintf(stderr, "Floating point exception\n");
+    print_bt();
 	if (coredump) {
 		abort();
 	}
 	signal(SIGFPE, fpecatch);
-	Fprintf(stderr, "Floating point exception\n");
-	print_bt();
 	execerror("Aborting.", (char *) 0);
 }
 
 #if HAVE_SIGSEGV
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
+	Fprintf(stderr, "Segmentation violation\n");
+	print_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
 	}
-	Fprintf(stderr, "Segmentation violation\n");
-	print_bt();
 	execerror("Aborting.", (char*)0);
 }
 #endif
@@ -806,12 +806,12 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig)
 {
+	Fprintf(stderr, "Bus error\n");
+    print_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
 	}
-	Fprintf(stderr, "Bus error\n");
-    print_bt();
 	execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
