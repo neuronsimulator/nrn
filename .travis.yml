@@ -65,34 +65,34 @@ env:
     - INSTALL_DIR="$HOME/install"
   jobs:
     - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON"
+      CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_RX3D=OFF"
       BUILD_DOCUMENTATION=ON
       MATRIX_EVAL="CC=gcc CXX=g++"
-    - BUILD_MODE=setuptools
-      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=autotools
-      CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
-      PYTHON="$(which python2)"
-      PIP="$(which pip2)"
-      MATRIX_EVAL="CC=gcc CXX=g++"
-    - BUILD_MODE=autotools
-      CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
-      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
-      MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
-      MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
-    - BUILD_MODE=cmake
-      CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
-      MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
-    - BUILD_MODE=cmake
-      NRN_ENABLE_PYTHON_DYNAMIC=ON
-      MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+      #- BUILD_MODE=setuptools
+      #  MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+      #- BUILD_MODE=autotools
+      #  CONFIG_OPTIONS="--without-x --without-paranrn --with-nrnpython=$(which python2) PYTHON_BLD=$(which python2)"
+      #  PYTHON="$(which python2)"
+      #  PIP="$(which pip2)"
+      #  MATRIX_EVAL="CC=gcc CXX=g++"
+      #- BUILD_MODE=autotools
+      #  CONFIG_OPTIONS="--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON"
+      #  MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
+      #- BUILD_MODE=cmake
+      #  CMAKE_OPTION="-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON"
+      #  MATRIX_EVAL="CC=gcc-5 CXX=g++-5"
+      #- BUILD_MODE=cmake
+      #  CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF"
+      #  MATRIX_EVAL="CC=gcc-6 CXX=g++-6"
+      #- BUILD_MODE=cmake
+      #  CMAKE_OPTION="-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON"
+      #  MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
+      #- BUILD_MODE=cmake
+      #  NRN_ENABLE_PYTHON_DYNAMIC=ON
+      #  MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 os:
   - linux
-  - osx
+    #- osx
 
 #=============================================================================
 # Setup environment and Install dependencies
@@ -159,6 +159,8 @@ script:
       fi;
       make install;
       export PATH=$INSTALL_DIR/bin:$PATH;
+      cat `python3 -c "import neuron; print(neuron.__file__)"`;
+      python3 -c "import neuron; neuron.test();";
       ctest -VV && make install;
     elif [ "$BUILD_MODE" == "setuptools" ]; then
       ./packaging/python/build_wheels.bash travis;
@@ -222,6 +224,7 @@ after_success:
 branches:
   only:
     - master
+    - pramodk/travis-ci-fixes
 
 #=============================================================================
 # Documentation deployment
