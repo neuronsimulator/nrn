@@ -139,7 +139,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
 
     // use the Hoc NetCon object list to segregate according to threads
     // and fill the CellGroup netcons, netcon_srcgid, netcon_pnttype, and
-    // netcon_pntindex
+    // netcon_pntindex (and, if nrn_nthread > 1, netcon_negsrcgid_tid).
     CellGroup::mk_cgs_netcon_info(cgs);
 
     return cgs;
@@ -403,6 +403,15 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
             }else{
                 if (ps->osrc_) {
                     assert(ps->thvar_ == NULL);
+                    if (nrn_nthread > 1) { // negative gid and multiple threads.
+                        cgs[ith].netcon_negsrcgid_tid.push_back(ps->nt_->id);
+                        // Raise error if file mode transfer and nc and ps not
+                        // in same thread. In that case we cannot guarantee that
+                        // the PreSyn will end up in the same coreneuron process.
+                        if (!corenrn_direct && ith != ps->nt_->id) {
+                            hoc_execerror("NetCon and NetCon source with no gid are not in the same thread", NULL);
+                        }
+                    }
                     Point_process* pnt = (Point_process*)ps->osrc_->u.this_pointer;
                     int type = pnt->prop->type;
                     if (nrn_is_artificial_[type]) {
