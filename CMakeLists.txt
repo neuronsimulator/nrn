@@ -255,6 +255,7 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 2.8 2.7)
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
