@@ -109,6 +109,11 @@ set(NRN_RX3D_OPT_LEVEL
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
 # =============================================================================
+# Set Python additional versions earlier (especially for old CMake)
+# =============================================================================
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
+
+# =============================================================================
 # Include cmake modules
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
@@ -255,7 +260,6 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 2.8 2.7)
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
