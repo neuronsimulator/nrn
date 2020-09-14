@@ -6,7 +6,7 @@ project(NEURON C CXX)
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 8)
 set(PROJECT_VERSION_MINOR 0)
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -107,6 +107,11 @@ set(NRN_MPI_DYNAMIC
 set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
+
+# =============================================================================
+# Set Python additional versions earlier (especially for old CMake)
+# =============================================================================
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
 
 # =============================================================================
 # Include cmake modules
@@ -289,6 +294,8 @@ if(NRN_ENABLE_CORENEURON)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
   endif()
+  get_property (CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
 # =============================================================================
@@ -506,6 +513,8 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
   message(STATUS "--------------+--------------------------------------------------------------")
+  message(STATUS "C COMPILER    | ${CMAKE_C_COMPILER}")
+  message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
   message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
   message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
@@ -574,6 +583,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "CoreNEURON    | ${NRN_ENABLE_CORENEURON}")
   if(NRN_ENABLE_CORENEURON)
     message(STATUS "  PATH        | ${CORENEURON_DIR}")
+    message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
   endif()
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

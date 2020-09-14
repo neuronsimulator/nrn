@@ -16,6 +16,8 @@ AC_CONFIG_SRCDIR(src/memacs/main.c)
 AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE([enable])
 
+AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+
 m4_pattern_allow([^AC_MSG_ERROR$])
 
 AC_PROG_CC_STDC

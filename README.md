@@ -69,6 +69,8 @@ If you want to customize build, particularly useful configure options are:
 For more details see the [INSTALL.md](https://github.com/neuronsimulator/nrn/blob/master/INSTALL.md)
 file.
 
+For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
+
 ### Build using CMake
 
 NEURON can now also be built and installed using [CMake build system](https://cmake.org/). Currently we are supporting two build systems i.e. Autoconf and CMake. In the future, based on the feedback from the community we will decide on switching to CMake build system. Therefore, we would be grateful for any feedback or issues you encounter using CMake based build system. Please [report an issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help.
@@ -127,8 +129,7 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
 
-For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
-
+Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on the CMake options.
 
 ## Developer documentation
 
