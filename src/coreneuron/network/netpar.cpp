@@ -641,10 +641,17 @@ double set_mindelay(double maxdelay) {
 
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         NrnThread& nt = nrn_threads[ith];
+        // if single thread or file transfer then definitely empty.
+        std::vector<int>& negsrcgid_tid = nrnthreads_netcon_negsrcgid_tid[ith];
+        size_t i_tid = 0;
         for (int i = 0; i < nt.n_netcon; ++i) {
             NetCon* nc = nt.netcons + i;
             bool chk = false;  // ignore nc.delay_
-            int gid = netcon_srcgid[ith][i];
+            int gid = nrnthreads_netcon_srcgid[ith][i];
+            int tid = ith;
+            if (!negsrcgid_tid.empty() && gid < -1) {
+              tid = negsrcgid_tid[i_tid++];
+            }  
             PreSyn* ps;
             InputPreSyn* psi;
             netpar_tid_gid2ps(ith, gid, &ps, &psi);

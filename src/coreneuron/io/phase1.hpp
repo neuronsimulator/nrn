@@ -18,6 +18,7 @@ class Phase1 {
     private:
     std::vector<int> output_gids;
     std::vector<int> netcon_srcgids;
+    std::vector<int> netcon_negsrcgid_tid; // entries only for negative srcgids
 };
 
 }  // namespace coreneuron

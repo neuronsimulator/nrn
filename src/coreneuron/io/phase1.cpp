@@ -10,7 +10,8 @@ int (*nrn2core_get_dat1_)(int tid,
                           int& n_presyn,
                           int& n_netcon,
                           int*& output_gid,
-                          int*& netcon_srcgid);
+                          int*& netcon_srcgid,
+                          std::vector<int>& netcon_negsrcgid_tid);
 
 namespace coreneuron {
 void Phase1::read_file(FileHandler& F) {
@@ -20,6 +21,8 @@ void Phase1::read_file(FileHandler& F) {
 
     this->output_gids = F.read_vector<int>(n_presyn);
     this->netcon_srcgids = F.read_vector<int>(n_netcon);
+    // For file mode transfer, it is not allowed that negative gids exist
+    // in different threads. So this->netcon_tids remains clear.
 
     F.close();
 }
@@ -32,7 +35,7 @@ void Phase1::read_direct(int thread_id) {
 
     // TODO : check error codes for NEURON - CoreNEURON communication
     int valid =
-        (*nrn2core_get_dat1_)(thread_id, n_presyn, n_netcon, output_gids, netcon_srcgid);
+        (*nrn2core_get_dat1_)(thread_id, n_presyn, n_netcon, output_gids, netcon_srcgid, this->netcon_negsrcgid_tid);
     if (!valid) {
         return;
     }
@@ -47,9 +50,12 @@ void Phase1::populate(NrnThread& nt, OMP_Mutex& mut) {
     nt.n_presyn = this->output_gids.size();
     nt.n_netcon = this->netcon_srcgids.size();
 
-    netcon_srcgid[nt.id] = new int[nt.n_netcon];
+    nrnthreads_netcon_srcgid[nt.id] = new int[nt.n_netcon];
     std::copy(this->netcon_srcgids.begin(), this->netcon_srcgids.end(),
-              netcon_srcgid[nt.id]);
+              nrnthreads_netcon_srcgid[nt.id]);
+
+    // netcon_negsrcgid_tid is empty if file transfer or single thread
+    coreneuron::nrnthreads_netcon_negsrcgid_tid[nt.id] = this->netcon_negsrcgid_tid;
 
     nt.netcons = new NetCon[nt.n_netcon];
     nt.presyns_helper = (PreSynHelper*)ecalloc_align(nt.n_presyn, sizeof(PreSynHelper));

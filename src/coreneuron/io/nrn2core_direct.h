@@ -30,7 +30,8 @@ extern int (*nrn2core_get_dat1_)(int tid,
                                  int& n_presyn,
                                  int& n_netcon,
                                  int*& output_gid,
-                                 int*& netcon_srcgid);
+                                 int*& netcon_srcgid,
+                                 std::vector<int>& netcon_negsrcgid_tid);
 
 extern int (*nrn2core_get_dat2_1_)(int tid,
                                    int& ngid,

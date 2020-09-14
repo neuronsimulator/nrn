@@ -48,8 +48,11 @@ extern std::map<int, InputPreSyn*> gid2in;
 
 /// InputPreSyn.nc_index_ to + InputPreSyn.nc_cnt_ give the NetCon*
 extern std::vector<NetCon*> netcon_in_presyn_order_;
-/// Only for setup vector of netcon source gids
-extern std::vector<int*> netcon_srcgid;
+/// Only for setup vector of netcon source gids and mindelay determination
+extern std::vector<int*> nrnthreads_netcon_srcgid;
+/// Companion to nrnthreads_netcon_srcgid when src gid is negative to allow
+/// determination of the NrnThread of the source PreSyn.
+extern std::vector<std::vector<int> > nrnthreads_netcon_negsrcgid_tid;
 
 extern void mk_mech(const char* path);
 extern void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_value);
