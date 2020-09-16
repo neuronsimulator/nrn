@@ -141,6 +141,7 @@ class Grid_node {
     int* proc_num_fluxes;
     long* current_dest;
     double* all_currents;
+
     /*Extension to handle a variable diffusion characteristics of a grid*/
     unsigned char	VARIABLE_ECS_VOLUME;	/*FLAG which variable volume fraction
                                             methods should be used*/
@@ -167,6 +168,7 @@ class Grid_node {
     double * node_flux_scale;
     PyObject ** node_flux_src;
 
+    
     virtual ~Grid_node(){};
     virtual void set_diffusion(double*, int) = 0;
     virtual void set_num_threads(const int n) = 0;
@@ -193,6 +195,25 @@ class ECS_Grid_node : public Grid_node{
         struct ECSAdiDirection* ecs_adi_dir_x;
         struct ECSAdiDirection* ecs_adi_dir_y;
         struct ECSAdiDirection* ecs_adi_dir_z;
+        
+        //Data for multicompartment reactions
+        int induced_idx;
+        int* react_offsets;
+        int react_offset_count;
+        int* reaction_indices;
+        int* all_reaction_indices;
+        int* proc_num_reactions;
+        int* proc_num_reaction_states;
+        int total_reaction_states;
+        unsigned char multicompartment_inititalized;
+        int* induced_currents_index;
+        int induced_current_count;
+        int* proc_induced_current_count;
+        int* proc_induced_current_offset;
+        double* all_reaction_states;
+        double* induced_currents;
+        double* local_induced_currents;
+        double* induced_currents_scale;
 
         void set_num_threads(const int n);
         void do_grid_currents(double *, double, int);
@@ -205,6 +226,11 @@ class ECS_Grid_node : public Grid_node{
         void scatter_grid_concentrations();
         void hybrid_connections();
         void set_diffusion(double*, int);
+        void do_multicompartment_reactions(double*);
+        void initialize_multicompartment_reaction();
+        void clear_multicompartment_reaction();
+        int add_multicompartment_reaction(int, int*, int);
+        double* set_rxd_currents(int, int*, PyHocObject**);
 };
 
 typedef struct ECSAdiDirection{
@@ -257,7 +283,7 @@ class ICS_Grid_node : public Grid_node{
         struct ICSAdiDirection* ics_adi_dir_x;
         struct ICSAdiDirection* ics_adi_dir_y;
         struct ICSAdiDirection* ics_adi_dir_z;
-       
+ 
         ICS_Grid_node(PyHocObject*, long, long*, long*, long, long*, long,
                       long*, long, double*, double*, double, bool, double,
                       double*); 
@@ -276,6 +302,11 @@ class ICS_Grid_node : public Grid_node{
         void scatter_grid_concentrations();
         void run_threaded_ics_dg_adi(struct ICSAdiDirection*);
         void set_diffusion(double*, int);
+        void do_multicompartment_reactions(double*);
+        void initialize_multicompartment_reaction();
+        void clear_multicompartment_reaction();
+        int add_multicompartment_reaction(int, int*, int);
+        double* set_rxd_currents(int, int*, PyHocObject**);
 };
 
 typedef struct ICSAdiDirection{

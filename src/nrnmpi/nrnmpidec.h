@@ -75,6 +75,7 @@ extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root);
 extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgather_inplace(int* srcdest, int n);
+extern void nrnmpi_int_allgatherv_inplace(int* srcdest, int* n, int* dspl);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl);
 extern void nrnmpi_int_alltoall(int* s, int* r, int n);

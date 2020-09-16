@@ -27,15 +27,6 @@ extern double* states;
 
 Reaction* ecs_reactions = NULL;
 
-/*Current from multicompartment reations*/
-extern unsigned char _membrane_flux;
-extern int _memb_curr_total;
-extern int* _rxd_induced_currents_grid;
-extern int* _rxd_induced_currents_ecs_idx;
-extern double* _rxd_induced_currents_ecs;
-extern double* _rxd_induced_currents_scale;
-
-
 int states_cvode_offset;
 
 /*Update the global array of reaction tasks when the number of reactions 
@@ -75,6 +66,9 @@ void set_num_threads_3D(const int n)
 void clear_rates_ecs(void)
 {
 	Reaction *r, *tmp;
+    Grid_node * grid;
+    ECS_Grid_node * g;
+
 	for (r = ecs_reactions; r != NULL; r = tmp)
 	{
 		SAFE_FREE(r->species_states);
@@ -89,6 +83,11 @@ void clear_rates_ecs(void)
 	ecs_reactions = NULL;
 	
 	ecs_refresh_reactions(NUM_THREADS);
+    for (Grid_node* grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+    {
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if (g) g->clear_multicompartment_reaction();
+    }
 }
 
 /*Create a reaction
@@ -156,7 +155,7 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params,
 
 	r->num_species_involved = num_species;
     r->num_params_involved = num_params;
-	r->species_states = (double**)malloc(sizeof(Grid_node*)*(num_species + num_params));
+    r->species_states = (double**)malloc(sizeof(Grid_node*)*(num_species + num_params));
 	assert(r->species_states);
 
 	for(i = 0; i < num_species + num_params; i++)
@@ -637,6 +636,7 @@ static void run_threaded_reactions(ReactGridData* tasks)
 
 void _fadvance_fixed_step_3D(void) {
     Grid_node* grid;
+    ECS_Grid_node* g;
     double dt = (*dt_ptr);
 
     /*Currents to broadcast via MPI*/
@@ -649,6 +649,8 @@ void _fadvance_fixed_step_3D(void) {
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->do_multicompartment_reactions(NULL);
         grid->do_grid_currents(grid->states_cur, dt, id);
         grid->apply_node_flux3D(dt, NULL);
         
@@ -709,6 +711,8 @@ void ecs_atolscale(double* y)
 
 void _ecs_ode_reinit(double* y) {
     Grid_node* grid;
+    ECS_Grid_node* g;
+
     ssize_t i;
     int grid_size;
     double* grid_states;
@@ -721,12 +725,15 @@ void _ecs_ode_reinit(double* y) {
             y[i] = grid_states[i];
         }
         y += grid_size;
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->initialize_multicompartment_reaction();
     }
 }
 
 
 void _rhs_variable_step_ecs( const double* states, double* ydot) {
 	Grid_node *grid;
+    ECS_Grid_node* g;
     ssize_t i;
     int grid_size;
 	double dt = *dt_ptr;
@@ -777,6 +784,8 @@ void _rhs_variable_step_ecs( const double* states, double* ydot) {
     /* process currents */
     for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
     {
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->do_multicompartment_reactions(ydot);
         grid->do_grid_currents(ydot, 1.0, i);
 
         /*Add node fluxes to the result*/

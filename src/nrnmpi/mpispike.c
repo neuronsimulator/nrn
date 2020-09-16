@@ -389,6 +389,11 @@ void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl) {
 		r, n, dspl, MPI_INT, nrnmpi_comm);
 }
 
+void nrnmpi_int_allgatherv_inplace(int* srcdest, int* n, int* dspl) {
+	MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, srcdest,
+		n, dspl, MPI_INT, nrnmpi_comm);
+}
+
 void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl) {
 	MPI_Allgatherv(s, n[nrnmpi_myid],  MPI_CHAR,
 		r, n, dspl, MPI_CHAR, nrnmpi_comm);
