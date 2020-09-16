@@ -184,6 +184,7 @@ class _SpeciesMathable(object):
                 return 'species[%d][%d]' % (self._id, reg._id)
             else:
                 raise RxDException("Species %r is not defined on region %r." % (self, reg))
+        raise RxDException("_semi_compile received inconsistent state")
     
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
@@ -745,6 +746,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 return 'params_3d[%d]' %  (self._grid_id)
             else:
                 return 'species_3d[%d]' % (self._grid_id)
+        raise RxDException("_semi_compile received inconsistent state")
 
     def _register_cptrs(self):
         self._isalive()
@@ -1919,6 +1921,7 @@ class Parameter(Species):
                 return 'params[%d][%d]' % (self._id, self._regions[0]._id)
             else:
                 raise RxDException("Parameter %r is not defined on region %r" % (self, reg))
+        raise RxDException("_semi_compile received inconsistent state")
 
 
     def __repr__(self):

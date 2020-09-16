@@ -64,12 +64,6 @@ SpeciesIndexList* species_indices = NULL;
 double* states;
 unsigned int num_states=0;
 int _num_reactions = 0;
-int* _num_species = NULL;
-int _max_species_per_location = 0;
-int _num_locations = 0;
-int** _indices = NULL;
-int** _species_idx = NULL;
-int* _regions;
 int _curr_count;
 int* _curr_indices = NULL;
 double* _curr_scales = NULL; 
@@ -77,13 +71,6 @@ double** _curr_ptrs = NULL;
 int  _conc_count;
 int* _conc_indices = NULL;
 double** _conc_ptrs = NULL;
-double*** _mult = NULL;
-int* _mc_mult_count = NULL;
-int*** _ecs_indices = NULL;
-int** _ecs_grid_ids = NULL;
-int* _ecs_species_count = NULL;
-int _num_ecs_species = 0;
-Grid_node*** _mc_ecs_grids;
 
 /*membrane fluxes*/
 int _memb_curr_total = 0;   /*number of membrane currents (sum of 
@@ -107,9 +94,7 @@ int*** _memb_cur_mapped;      /*array of pairs of indices*/
 int*** _memb_cur_mapped_ecs;  /*array of pointer into ECS grids*/
 
 double* _rxd_induced_currents = NULL;       /*set when calculating reactions*/
-double* _rxd_induced_currents_ecs = NULL;
-int* _rxd_induced_currents_grid = NULL;
-int* _rxd_induced_currents_ecs_idx = NULL;
+ECS_Grid_node** _rxd_induced_currents_grid = NULL;
 
 unsigned char _membrane_flux = FALSE;   /*TRUE if any membrane fluxes are in the model*/
 int* _membrane_lookup; /*states index -> position in _rxd_induced_currents*/
@@ -688,8 +673,6 @@ static void free_currents()
     free(_membrane_lookup);
     free(_memb_cur_mapped_ecs);
     free(_rxd_induced_currents_grid);
-    free(_rxd_induced_currents_ecs);
-    free(_rxd_induced_currents_ecs_idx);
     free(_rxd_induced_currents_scale);
     _membrane_flux = FALSE; 
 }
@@ -698,9 +681,17 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
         int* num_species, int* node_idxs, double* scales,
         PyHocObject** ptrs, int* mapped, int* mapped_ecs)
 {
-    int i, j, k, id, side;
+    int i, j, k, id, side, count;
+    int* induced_currents_ecs_idx;
+    int* induced_currents_grid_id;
+    int* ecs_indices;
+    double* current_scales;
+    PyHocObject** ecs_ptrs;
+
     Current_Triple* c;
-    Grid_node* grid;
+    Grid_node* g;
+    ECS_Grid_node* grid;
+
     
     free_currents();
     
@@ -719,9 +710,8 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _memb_cur_ptrs = (double***)malloc(sizeof(double**)*num_currents);
     _memb_cur_mapped_ecs = (int***)malloc(sizeof(int*)*num_currents);        
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
-    _rxd_induced_currents_grid = (int*)malloc(sizeof(int)*_memb_curr_total);
-    memset(_rxd_induced_currents_grid, SPECIES_ABSENT, sizeof(int)*_memb_curr_total);
-    _rxd_induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
+    induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
+    induced_currents_grid_id = (int*)malloc(sizeof(int)*_memb_curr_total);
 
     for(i = 0, k = 0; i < num_currents; i++)
     {
@@ -751,32 +741,47 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
                     _rxd_flux_scale[k] = scales[i];
                     if(_memb_cur_mapped[i][j][(side+1)%2] == SPECIES_ABSENT)
                     {
-                        _rxd_induced_currents_grid[k] = _memb_cur_mapped_ecs[i][j][0];
-                        _rxd_induced_currents_ecs_idx[k] = _memb_cur_mapped_ecs[i][j][1];
+                        induced_currents_grid_id[k] = _memb_cur_mapped_ecs[i][j][0];
+                        induced_currents_ecs_idx[k] = _memb_cur_mapped_ecs[i][j][1];
                     }
                 }
             }
         }
     }
+    _rxd_induced_currents_grid = (ECS_Grid_node**)calloc(_memb_curr_total,sizeof(ECS_Grid_node*));
     _rxd_induced_currents_scale = (double*)calloc(_memb_curr_total,sizeof(double));
-    /*TODO: Should be passed in from python*/
-    for(i = 0; i < _memb_curr_total; i++)
+    for (id = 0, g = Parallel_grids[0]; g != NULL; g = g -> next, id++)
     {
-        for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++)
+        grid = dynamic_cast<ECS_Grid_node*>(g);
+        if(grid == NULL) continue; // ignore ICS grids
+  
+        for(count = 0, k = 0; k < _memb_curr_total; k++)
         {
-            if(_rxd_induced_currents_grid[i] == id)
+            if(induced_currents_grid_id[k] == id)
             {
-                c = grid->current_list;
-                for(j = 0; j < grid->num_all_currents; j++)
+                _rxd_induced_currents_grid[k] = grid;
+                count++;
+            }
+        }
+        if(count > 0)
+        {
+            ecs_indices = (int*)malloc(count * sizeof(int));
+            ecs_ptrs = (PyHocObject**)malloc(count * sizeof(PyHocObject*));
+            for(i = 0, k = 0; k < _memb_curr_total; k++)
+            {
+                if(induced_currents_grid_id[k] == id)
                 {
-                    if(ptrs[i]->u.px_ == c[j].source)
-                    {
-                        _rxd_induced_currents_scale[i] = c[j].scale_factor/(grid->VARIABLE_ECS_VOLUME == VOLUME_FRACTION ? grid->alpha[c[j].destination] : grid->alpha[0]);
-                        assert(c[j].destination == _rxd_induced_currents_ecs_idx[i]);
-                        break;
-                    }
+                    ecs_indices[i] = induced_currents_ecs_idx[k];
+                    ecs_ptrs[i++] = ptrs[k];
                 }
-                break;
+            }
+            current_scales = grid->set_rxd_currents(count, ecs_indices, ecs_ptrs);
+            free(ecs_ptrs);
+
+            for(i = 0, k = 0; k < _memb_curr_total; k++)
+            {
+                if(induced_currents_grid_id[k] == id)
+                    _rxd_induced_currents_scale[k] = current_scales[i];
             }
         }
     }
@@ -785,17 +790,32 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     memcpy(_cur_node_indices, node_idxs, sizeof(int)*num_currents);
     _membrane_flux = TRUE;
     _rxd_induced_currents = (double*)malloc(sizeof(double)*_memb_curr_total);
-    _rxd_induced_currents_ecs = (double*)malloc(sizeof(double)*_memb_curr_total);
+    free(induced_currents_ecs_idx);
+    free(induced_currents_grid_id);
+
 }
 
 static void _currents(double* rhs)
 {
     int i, j, k, idx, side;
+    Grid_node* g;
+    ECS_Grid_node* grid;
     if(!_membrane_flux)
         return;
     get_all_reaction_rates(states, NULL, NULL);
-    MEM_ZERO(_rxd_induced_currents_ecs, _memb_curr_total*sizeof(double));
 
+    for (g = Parallel_grids[0]; g != NULL; g = g -> next)
+    {
+        grid = dynamic_cast<ECS_Grid_node*>(g);
+        if(grid)
+        {
+            grid->induced_idx = 0;
+            //TODO: Find a better place to initialize multicompartment reactions
+            //This method if often called before all multicompartment reactions
+            //have been added but after nonvint initialization.
+            grid->initialize_multicompartment_reaction();
+        }
+    }
 
     for(i = 0, k = 0; i < _memb_count; i++)
     {
@@ -811,14 +831,14 @@ static void _currents(double* rhs)
                 if(_memb_cur_mapped[i][j][side] == SPECIES_ABSENT)
                 {
                         /*Extracellular region is within the ECS grid*/
-                        if(_memb_cur_mapped[i][j][(side+1)%2] != SPECIES_ABSENT)
-                        {
-                            _rxd_induced_currents_ecs[k] = _rxd_induced_currents[k];
-                        }
+                        grid = _rxd_induced_currents_grid[k];
+                        if(grid != NULL &&_memb_cur_mapped[i][j][(side+1)%2] != SPECIES_ABSENT)
+                            grid->local_induced_currents[grid->induced_idx++] = _rxd_induced_currents[k];
                 }
             }
         }
     }
+    
 }
 
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
@@ -834,6 +854,14 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
             break;
         case 1:
             _initialize();
+            //TODO: is there a better place to initialize multicompartment reactions
+            Grid_node* grid;
+            ECS_Grid_node* g;
+            for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+            {
+                g = dynamic_cast<ECS_Grid_node*>(grid);
+                if(g) g->initialize_multicompartment_reaction();
+            }
             break;
         case 2:
             /* compute outward current to be subtracted from rhs */
@@ -892,97 +920,6 @@ extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, i
 *****************************************************************************/
 
 
-
-/*unset_reaction_indices clears the global arrays storing the indices than
- * link reactions to a state variable
- */
-static void unset_reaction_indices()
-{
-	int i, j;
-	if(_indices != NULL)
-	{
-		for(i=0; i < _num_locations; i++)
-			if(_indices[i] != NULL) free(_indices[i]);
-		free(_indices);
-		_indices = NULL;
-	}
-
-	if(_species_idx != NULL)
-	{
-		for(i=0;i<_num_reactions;i++)
-			if(_species_idx[i] != NULL) free(_species_idx[i]);
-		free(_species_idx);
-		_species_idx = NULL;
-	}
-	if(_mult != NULL)
-	{
-		if(_mc_mult_count != NULL)
-		{
-			if(_regions != NULL)
-			{
-				for(i = 0;  i < _num_reactions; i++)
-				{
-					if(_mc_mult_count[i] != 0)
-					{
-						for(j = 0; j < _regions[i]; j++)
-						{
-							if(_mult[i][j] != NULL) free(_mult[i][j]);
-						}
-						free(_mult[i]);
-					}
-				}
-			}
-			free(_mc_mult_count);
-			_mc_mult_count = NULL;
-		}
-		free(_mult);
-		_mult = NULL;
-	}
-
-	if(_num_ecs_species > 0)
-	{
-		for(i = 0; i < _num_reactions; i++)
-		{
-			if(_ecs_species_count[i]>0)
-			{
-				free(_ecs_grid_ids[i]);
-				free(_mc_ecs_grids[i]);
-			}
-		}
-		free(_ecs_species_count);
-
-		for(i = 0; i < _num_ecs_species; i++)
-		{
-			for(j = 0; j < _num_reactions; j++)
-			{
-					free(_ecs_indices[i][j]);
-			}
-			free(_ecs_indices[i]);
-		}
-		free(_ecs_indices);
-	
-		_num_ecs_species = 0;
-		_ecs_indices = NULL;
-		_ecs_species_count = NULL;
-		_ecs_grid_ids = NULL;
-		_mc_ecs_grids = NULL;
-	}
-
-	if(_num_species != NULL)
-	{
-		free(_num_species);
-		_num_species = NULL;
-	}
-	if(_regions != NULL)
-	{
-		free(_num_species);
-		_num_species = NULL;
-	}
-	_num_locations = 0;
-	_max_species_per_location = 0;
-}
-
-
 extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
                               int* sidx, int necs, int necsparam, int* ecs_ids,
                               int* ecsidx, int nmult, double* mult,
@@ -990,7 +927,8 @@ extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
 {
     int i,j,k,idx, ecs_id, ecs_index, ecs_offset;
     unsigned char counted;
-    Grid_node* grid;
+    Grid_node* g;
+    ECS_Grid_node* grid;
     ICSReactions* react = (ICSReactions*)malloc(sizeof(ICSReactions));
     react->reaction = f;
     react->num_species = nspecies;
@@ -1046,23 +984,35 @@ extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
 
     if(react->num_ecs_species + react->num_ecs_params > 0)
     {
+        react->ecs_grid = (ECS_Grid_node**)malloc(react->num_ecs_species*sizeof(Grid_node*));
         react->ecs_state = (double***)malloc(nseg*sizeof(double**));
         react->ecs_index = (int**)malloc(nseg*sizeof(int*));
+        react->ecs_offset_index = (int*)malloc(react->num_ecs_species*sizeof(int));
         for(i = 0; i < nseg; i++)
         {
             react->ecs_state[i] = (double**)malloc((necs+necsparam)*sizeof(double*));
             react->ecs_index[i] = (int*)malloc((necs+necsparam)*sizeof(int));
+
         }
         for(j = 0; j < necs + necsparam; j++)
         {
             ecs_offset = num_states - _rxd_num_zvi;
-            for(ecs_id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, ecs_id++)
+
+            for(ecs_id = 0, g = Parallel_grids[0]; g != NULL; g = g -> next, ecs_id++)
 		    {
+            
 	            if (ecs_id == ecs_ids[j])
 		    	{
+                    grid = dynamic_cast<ECS_Grid_node*>(g);
+                    assert(grid != NULL);
+                    if (j < necs)
+                    {
+                        react->ecs_grid[j] = grid;
+                        react->ecs_offset_index[j] = grid->add_multicompartment_reaction(nseg, &ecsidx[j], necs + necsparam);
+                    }
+                    
                     for(i = 0, counted=FALSE; i < nseg; i++)
                     {
-                        //react->ecs_state[i][j][k] = (double*)malloc(sizeof(double));
                         //nseg x nregion x nspecies
                         ecs_index = ecsidx[i*(necs + necsparam) + j];
 
@@ -1081,8 +1031,8 @@ extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
                             react->ecs_state[i][j] = NULL;
                         }
                     }
+                    ecs_offset += grid->size_x*grid->size_y*grid->size_z;
                 }
-                ecs_offset += grid->size_x*grid->size_y*grid->size_z;
             }
         }
     }
@@ -1364,145 +1314,6 @@ int get_num_threads(void) {
 }
 
 
-
-extern "C" void set_reaction_indices( int num_locations, int* regions, int* num_species, 
-	int* species_index,  int* indices, int* mc_mult_count, double* mc_mult,
-	int num_ecs_species, int* ecs_grid_ids, int* ecs_species_counts, 
-	int* ecs_species_grid_ids, int* ecs_indices)
-{
-	int i, j, k, r, idx;
-	Grid_node* grid;
-	unset_reaction_indices();
-	_num_locations = num_locations;
-
-	/*Note: assumes each region has exactly one aggregated reaction*/
-	_regions = (int*)malloc(sizeof(int)*_num_reactions);
-	memcpy(_regions,regions,sizeof(int)*_num_reactions);
-	
-	_num_species = (int*)malloc(sizeof(int)*_num_reactions);
-	memcpy(_num_species,num_species,sizeof(int)*_num_reactions);
-
-	_species_idx = (int**)malloc(sizeof(int)*_num_reactions);
-	for(idx=0, i=0; i < _num_reactions; i++)
-	{
-		_species_idx[i] = (int*)malloc(sizeof(int)*_num_species[i]);
-		_max_species_per_location = MAX(_max_species_per_location,_num_species[i]);
-		for(j=0; j<_num_species[i]; j++)
-			_species_idx[i][j] = species_index[idx++];
-	}
-	
-	_indices = (int**)malloc(sizeof(int*)*num_locations);
-	for(idx=0, r=0, k=0; r < _num_reactions; r++)
-	{
-		for(i = 0; i < regions[r]; i++, k++)
-		{
-			_indices[k] = (int*)malloc(sizeof(int)*_num_species[r]);
-			for(j=0; j < _num_species[r]; j++)
-			{
-				_indices[k][j] = indices[idx++];
-			}
-		}
-	}
-
-	_mc_mult_count = (int*)malloc(sizeof(int)*_num_reactions);
-	memcpy(_mc_mult_count, mc_mult_count, sizeof(int)*_num_reactions);
-
-	_mult = (double***)malloc(sizeof(double**)*_num_reactions);
-	for(idx = 0, i = 0;  i < _num_reactions; i++)
-	{
-		if(mc_mult_count[i] == 0)
-		{
-			_mult[i] = NULL;
-		}
-		else
-		{
-			_mult[i] = (double**)malloc(sizeof(double*)*_regions[i]);
-			for(j = 0; j < mc_mult_count[i]; j++)
-			{
-				for(k = 0; k < _regions[i]; k++)
-				{
-					if(j==0)
-						_mult[i][k] = (double*)malloc(sizeof(double)*mc_mult_count[i]);
-					_mult[i][k][j] = mc_mult[idx++];
-				}	
-			}
-		}
-	}
-
-	_num_ecs_species = num_ecs_species;
-	if(num_ecs_species > 0)
-	{
-		/*Store an array of pointers to the relevant grids*/
-		_mc_ecs_grids = (Grid_node***)malloc(sizeof(Grid_node**)*_num_reactions);
-
-		/*an array that maps the species number in the current reaction to
-		 * the relevant index stored in _ecs_indices*/
-		_ecs_grid_ids = (int**)malloc(sizeof(int*)*_num_reactions);
-
-		_ecs_species_count = (int*)malloc(sizeof(int)*_num_reactions);
-
-
-		for(i = 0, idx = 0; i < _num_reactions; i++)
-		{
-			_ecs_species_count[i] = ecs_species_counts[i];
-			if(ecs_species_counts[i]>0)
-			{
-				_mc_ecs_grids[i] = (Grid_node**)malloc(sizeof(Grid_node*)*ecs_species_counts[i]);
-				_ecs_grid_ids[i] = (int*)malloc(sizeof(int)*ecs_species_counts[i]);
-
-				for(j = 0; j<ecs_species_counts[i]; j++, idx++)
-				{
-					/*TODO: handle multiple Parallel_grids */
-					for(k = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, k++)
-					{
-						if (k == ecs_species_grid_ids[idx])
-						{
-							_mc_ecs_grids[i][j] = grid;
-							break;
-						}
-					}
-
-					for(k = 0; k < num_ecs_species; k++)
-					{
-						if(ecs_grid_ids[k] == ecs_species_grid_ids[idx])
-							_ecs_grid_ids[i][j] = k;
-					}
-				}
-			}
-			else
-			{
-				_mc_ecs_grids[i] = NULL;
-				_ecs_grid_ids[i] = NULL;
-			}
-
-			/*Store an array of pointers to the relevant grid states index*/
-			_ecs_indices = (int***)malloc(sizeof(int**)*num_ecs_species);
-			for(i = 0, idx = 0; i < num_ecs_species; i++)
-			{
-				/*Store an array of indices to the grid states
-			 	* indexed by ecs species number, region and segment*/
-				_ecs_indices[i] = (int**)malloc(sizeof(int*)*_num_reactions);
-				for(r = 0; r < _num_reactions; r++)
-				{
-					_ecs_indices[i][r] = (int*)malloc(sizeof(int)*regions[r]);
-
-					for(j = 0; j < regions[r]; j++, idx++)
-					{
-						_ecs_indices[i][r][j] = ecs_indices[idx];
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		_mc_ecs_grids = NULL;
-		_ecs_grid_ids = NULL;
-		_ecs_indices = NULL;
-		_ecs_species_count = NULL;
-	}
-}
-
 void _fadvance(void) {
 	double dt = *dt_ptr;
 	long i;
@@ -1696,6 +1507,7 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
     double* ecs_states_for_reaction = NULL;
     double* ecs_params_for_reaction = NULL;
     double* ecs_result = NULL;
+    int * ecsindex = NULL;
     double v = 0;
     if(react->num_ecs_species > 0)
     {
@@ -1720,6 +1532,10 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
     }
     for(i = 0; i < react->num_params; i++)
         params_for_reaction[i] = (double*)calloc(react->num_regions,sizeof(double));
+    ecsindex = (int*)malloc(react->num_ecs_species*sizeof(int));
+    for(i = 0; i < react->num_ecs_species; i++)
+        ecsindex[i] = react->ecs_grid[i]->react_offsets[react->ecs_offset_index[i]];
+
     for(segment = 0; segment < react->num_segments; segment++)
     {
         for(i = 0; i < react->num_species; i++)
@@ -1812,7 +1628,8 @@ void get_reaction_rates(ICSReactions* react, double* states, double* rates, doub
             for(i = 0;  i < react->num_ecs_species; i++)
 	        {
 	            if(react->ecs_state[segment][i] != NULL)
-	                ydot[react->ecs_index[segment][i]] += ecs_result[i];
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = ecs_result[i];
+	                //ydot[react->ecs_index[segment][i]] += ecs_result[i];
 	        }
         }
     }
@@ -1878,8 +1695,13 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
     double* ecs_result = NULL;
     double* ecs_result_dx = NULL;
     double v = 0;
+    int* ecsindex = NULL;
+    
     if(react->num_ecs_species > 0)
     {
+        ecsindex = (int*)malloc(react->num_ecs_species*sizeof(int));
+        for(i = 0; i < react->num_ecs_species; i++)
+            ecsindex[i] = react->ecs_grid[i]->react_offsets[react->ecs_offset_index[i]];
         ecs_states_for_reaction = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_states_for_reaction_dx = (double*)malloc(react->num_ecs_species*sizeof(double));
         ecs_result = (double*)malloc(react->num_ecs_species*sizeof(double));
@@ -2109,7 +1931,8 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
             for(i = 0; i < react->num_ecs_species; i++)
 	        {
 	            if(react->ecs_state[segment][i] != NULL)
-                    cvode_b[react->ecs_index[segment][i]] = v_get_val(x, jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,jac_idx++);
+                    //cvode_b[react->ecs_index[segment][i]] = v_get_val(x, jac_idx++);
 	        }
         }
 	    else  //fixed-step
@@ -2126,11 +1949,11 @@ void solve_reaction(ICSReactions* react, double* states, double *bval, double* c
             for(i = 0; i < react->num_ecs_species; i++)
 	        {
 	            if(react->ecs_state[segment][i] != NULL)
-	                *(react->ecs_state[segment][i]) += v_get_val(x,jac_idx++);
+                    react->ecs_grid[i]->all_reaction_states[ecsindex[i]++] = v_get_val(x,jac_idx++);
 	        }
 	    }
     }
-
+    free(ecsindex);
     m_free(jacobian);
     v_free(b);
     v_free(x);
