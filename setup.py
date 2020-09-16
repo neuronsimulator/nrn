@@ -150,6 +150,7 @@ class CMakeAugmentedBuilder(build_ext):
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
             '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
+            '-DCORENRN_ENABLE_OPENMP=OFF',
         ] + ext.cmake_flags
 
         if self.cmake_prefix:
