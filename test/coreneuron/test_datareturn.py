@@ -153,7 +153,6 @@ def test_datareturn():
   h.CVode().cache_efficient(1)
   coreneuron.enable = True
 
-  '''
   coreneuron.cell_permute = 0
   run(tstop)
   tst = model.data()
@@ -165,9 +164,7 @@ def test_datareturn():
   tst = model.data()
   max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
   print("max diff permuted = %g"% max_permuted)
-  '''
 
-  coreneuron.cell_permute = 1
   pc.nthread(2)
   run(tstop)
   tst = model.data()
@@ -175,12 +172,12 @@ def test_datareturn():
 
   coreneuron.enable = False
 
-#  print("max diff unpermuted = %g"% max_unpermuted )
-#  print("max diff permuted = %g"% max_permuted)
+  print("max diff unpermuted = %g"% max_unpermuted )
+  print("max diff permuted = %g"% max_permuted)
   print("max diff permuted with %d threads = %g"% (pc.nthread(), max_permuted_thread))
 
-#  assert(max_unpermuted < 1e-10)
-#  assert(max_permuted < 1e-10)
+  assert(max_unpermuted < 1e-10)
+  assert(max_permuted < 1e-10)
   assert(max_permuted_thread < 1e-10)
 
   if __name__ != "__main__":
