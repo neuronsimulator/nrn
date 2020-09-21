@@ -64,6 +64,7 @@ addons:
       - boost
       - cmake
       - flex
+      - bison
       - openmpi
       - python@3
     update: true
