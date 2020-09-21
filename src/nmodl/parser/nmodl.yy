@@ -2281,7 +2281,7 @@ neuron_statement :
                     }
                 |   neuron_statement ELECTRODE_CURRENT electrode_current_var_list
                     {
-                        $1.emplace_back(new ast::ElctrodeCurrent($3));
+                        $1.emplace_back(new ast::ElectrodeCurrent($3));
                         $$ = $1;
                     }
                 |   neuron_statement SECTION section_var_list
