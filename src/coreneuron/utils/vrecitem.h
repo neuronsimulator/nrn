@@ -42,13 +42,13 @@ class PlayRecordEvent : public DiscreteEvent {
   public:
     PlayRecordEvent();
     virtual ~PlayRecordEvent();
-    virtual void deliver(double, NetCvode*, NrnThread*);
-    virtual void pr(const char*, double t, NetCvode*);
+    virtual void deliver(double, NetCvode*, NrnThread*) override;
+    virtual void pr(const char*, double t, NetCvode*) override;
     virtual NrnThread* thread();
     PlayRecord* plr_;
     static unsigned long playrecord_send_;
     static unsigned long playrecord_deliver_;
-    virtual int type() {
+    virtual int type() const override {
         return PlayRecordEventType;
     }
 };
@@ -68,7 +68,7 @@ class PlayRecord {
         return nullptr;
     }
     virtual void pr();  // print identifying info
-    virtual int type() {
+    virtual int type() const {
         return 0;
     }
 
@@ -80,21 +80,21 @@ class VecPlayContinuous : public PlayRecord {
   public:
     VecPlayContinuous(double*, IvocVect&& yvec, IvocVect&& tvec, IvocVect* discon, int ith);
     virtual ~VecPlayContinuous();
-    virtual void play_init();
-    virtual void deliver(double tt, NetCvode*);
-    virtual PlayRecordEvent* event() {
+    virtual void play_init() override;
+    virtual void deliver(double tt, NetCvode*) override;
+    virtual PlayRecordEvent* event() override {
         return e_;
     }
-    virtual void pr();
+    virtual void pr() override;
 
-    void continuous(double tt);
+    void continuous(double tt) override;
     double interpolate(double tt);
     double interp(double th, double x0, double x1) {
         return x0 + (x1 - x0) * th;
     }
     void search(double tt);
 
-    virtual int type() {
+    virtual int type() const override {
         return VecPlayContinuousType;
     }
 
