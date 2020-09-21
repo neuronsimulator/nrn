@@ -60,6 +60,7 @@ addons:
   # for Mac builds, we use Homebrew
   homebrew:
     packages:
+      - bison
       - boost
       - cmake
       - flex
@@ -75,7 +76,6 @@ before_install:
   # unlink python2 and use python3 as it's required for nmodl
   # install older bison because of #314
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/187c0d5/Formula/bison.rb;
         export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
         brew unlink python@2;
         brew link --overwrite python@3.8;

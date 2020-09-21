@@ -80,7 +80,7 @@ class CodegenHelperVisitor: public visitor::AstVisitor {
     /// run visitor and return information for code generation
     codegen::CodegenInfo analyze(ast::Program& node);
 
-    void visit_elctrode_current(ast::ElctrodeCurrent& node) override;
+    void visit_electrode_current(ast::ElectrodeCurrent& node) override;
     void visit_suffix(ast::Suffix& node) override;
     void visit_function_call(ast::FunctionCall& node) override;
     void visit_binary_expression(ast::BinaryExpression& node) override;

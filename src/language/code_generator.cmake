@@ -82,8 +82,8 @@ set(AST_GENERATED_SOURCES
     ${PROJECT_BINARY_DIR}/src/ast/double_unit.hpp
     ${PROJECT_BINARY_DIR}/src/ast/eigen_linear_solver_block.hpp
     ${PROJECT_BINARY_DIR}/src/ast/eigen_newton_solver_block.hpp
-    ${PROJECT_BINARY_DIR}/src/ast/elctrode_current.hpp
     ${PROJECT_BINARY_DIR}/src/ast/electrode_cur_var.hpp
+    ${PROJECT_BINARY_DIR}/src/ast/electrode_current.hpp
     ${PROJECT_BINARY_DIR}/src/ast/else_if_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/else_statement.hpp
     ${PROJECT_BINARY_DIR}/src/ast/expression.hpp

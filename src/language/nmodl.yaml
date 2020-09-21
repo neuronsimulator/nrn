@@ -1989,7 +1989,7 @@
                             separator: ", "
                       brief: "Represents NONSPECIFIC_CURRENT variables statement in NMODL"
 
-                  - ElctrodeCurrent:
+                  - ElectrodeCurrent:
                       nmodl: "ELECTRODE_CURRENT "
                       members:
                         - currents:
