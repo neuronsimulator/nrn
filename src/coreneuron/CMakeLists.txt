@@ -50,47 +50,10 @@ set(KINDERIV_PYTHON_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/kinderiv.py")
 set(KINDERIV_HEADER_FILE "${CMAKE_CURRENT_BINARY_DIR}/_kinderiv.h")
 
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/nrnunits.lib")
-set(INBUILT_MOD_PATH "mechanism/mech/modfile")
-set(INBUILT_MOD_FILES
-    expsyn.mod
-    exp2syn.mod
-    hh.mod
-    netstim.mod
-    passive.mod
-    pattern.mod
-    stim.mod)
 
-# Has helper macro for generating cpp file from mod2c
-include(NmodlHelper)
-
-# =============================================================================
-# Command for MOD to CPP conversion
-# =============================================================================
-set(CORENRN_NMODL_COMMAND env "MODLUNIT=${NMODL_UNITS_FILE}"
-                          "PYTHONPATH=${CORENRN_NMODL_PYTHONPATH}" ${CORENRN_NMODL_BINARY})
-
-if(${CORENRN_ENABLE_ISPC})
-  set(NMODL_CODEGEN_TARGET ispc)
-else()
-  set(NMODL_CODEGEN_TARGET serial)
-endif()
-
-# configure every mod file to configure with mod2c/nmodl
-foreach(MOD ${INBUILT_MOD_FILES})
-  nmodl_to_cpp_target(KEY INBUILT_MOD MODFILE "${INBUILT_MOD_PATH}/${MOD}" TARGET
-                      ${NMODL_CODEGEN_TARGET})
-endforeach()
-
-set_source_files_properties(${NMODL_INBUILT_MOD_OUTPUTS} PROPERTIES GENERATED TRUE)
-
-# for ispc generated files, we need add extra compilation flags
-if(CORENRN_ENABLE_ISPC)
-  set(NMODL_ISPC_INBUILT_MOD_OUTPUTS ${NMODL_INBUILT_MOD_OUTPUTS})
-  list(FILTER NMODL_ISPC_INBUILT_MOD_OUTPUTS INCLUDE REGEX ".*\.ispc$")
-  set_source_files_properties(${NMODL_ISPC_INBUILT_MOD_OUTPUTS} PROPERTIES LANGUAGE ISPC)
-  set_source_files_properties(${NMODL_ISPC_INBUILT_MOD_OUTPUTS} PROPERTIES COMPILE_FLAGS
-                              "-I${CORENRN_NMODL_INCLUDE} --pic")
-endif()
+# copy inbuilt mod files to share
+file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/mechanism/mech/modfile
+     DESTINATION ${CMAKE_BINARY_DIR}/share)
 
 # =============================================================================
 # coreneuron GPU library
@@ -155,17 +118,13 @@ add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
 # main coreneuron library
 add_library(
   coreneuron ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${CORENEURON_TEMPLATE_FILES}
-             ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
+                    ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
 
 # need to have _kinderiv.h for mod2c generated files
 add_dependencies(coreneuron kin_deriv_header)
 
 # scopmath is created separately for nrnivmodl-core workflow
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
-
-# minimal main and dimplic file for nrnivmodl-core workflow
-add_library(corenrnmech ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${ENGINEMECH_CODE_FILE}
-                        ${DIMPLIC_CODE_FILE})
 
 target_link_libraries(
   coreneuron
@@ -182,35 +141,26 @@ target_include_directories(coreneuron SYSTEM
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
-target_link_libraries(corenrnmech scopmath coreneuron)
-
 set_target_properties(
-  coreneuron corenrnmech scopmath ${link_cudacoreneuron}
+  coreneuron scopmath ${link_cudacoreneuron}
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib LIBRARY_OUTPUT_DIRECTORY
              ${CMAKE_BINARY_DIR}/lib POSITION_INDEPENDENT_CODE ON)
 
 # =============================================================================
 # create special-core with halfgap.mod for tests
 # =============================================================================
-add_custom_command(
-  TARGET coreneuron POST_BUILD
-  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core
+add_custom_target(
+  nrniv-core ALL
+  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b STATIC
           ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-  BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
+  WORKING_DIRECTORY
+    ${CMAKE_BINARY_DIR}/bin
+    BYPRODUCTS
+    ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
   COMMENT "Running nrnivmodl-core with halfgap.mod")
-add_dependencies(coreneuron scopmath)
+add_dependencies(nrniv-core scopmath coreneuron ${NMODL_TARGET_TO_DEPEND})
 
-# =============================================================================
-# create nrnivmodl-core
-# =============================================================================
-# coreneuron executable
 include_directories(${CORENEURON_PROJECT_SOURCE_DIR})
-add_executable(nrniv-core "apps/coreneuron.cpp")
-
-target_link_libraries(nrniv-core corenrnmech ${reportinglib_LIBRARY} ${sonatareport_LIBRARY})
-
-set_target_properties(nrniv-core PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # =============================================================================
 # Extract link definitions to be used with nrnivmodl-core
@@ -255,6 +205,7 @@ if(NOT CORENRN_ENABLE_NMODL)
   file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/share/mod2c/")
   add_custom_target(link_units ALL COMMAND ${CMAKE_COMMAND} -E create_symlink "${NMODL_UNITS_FILE}"
                                            "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
+  add_dependencies(nrniv-core link_units)
 endif()
 
 # main program required for building special-core
@@ -266,7 +217,7 @@ file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)
 
 # coreneuron main libraries
 install(
-  TARGETS coreneuron corenrnmech ${link_cudacoreneuron}
+  TARGETS coreneuron ${link_cudacoreneuron}
   EXPORT coreneuron
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -297,8 +248,14 @@ if(NOT CORENRN_ENABLE_NMODL)
 endif()
 
 # install nrniv-core app
-install(TARGETS nrniv-core DESTINATION bin)
+install(
+  PROGRAMS ${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/special-core
+  DESTINATION bin
+  RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
 
 # install random123 and nmodl headers
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
+
+# install mod files
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/modfile DESTINATION share)

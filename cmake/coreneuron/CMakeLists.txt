@@ -113,6 +113,7 @@ include(OpenAccHelper)
 # Common dependencies
 # =============================================================================
 find_package(PythonInterp REQUIRED)
+find_package(Perl REQUIRED)
 
 # =============================================================================
 # ISPC should compile with --pic by default
@@ -144,7 +145,11 @@ endif()
 # OpenACC needs to build static library in order to have global/routines working.
 # See https://www.pgroup.com/userforum/viewtopic.php?t=5350
 # ~~~
-if(CORENRN_ENABLE_SHARED AND NOT CORENRN_ENABLE_GPU)
+if(CORENRN_ENABLE_GPU)
+  set(CORENRN_ENABLE_SHARED OFF)
+endif()
+
+if(CORENRN_ENABLE_SHARED)
   set(COMPILE_LIBRARY_TYPE "SHARED")
 else()
   set(COMPILE_LIBRARY_TYPE "STATIC")
@@ -247,6 +252,7 @@ if(CORENRN_ENABLE_NMODL)
     set(ENV{PYTHONPATH} "$ENV{PYTHONPATH}")
     set(nmodl_PYTHONPATH "${CMAKE_BINARY_DIR}/lib")
     set(CORENRN_NMODL_PYTHONPATH "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
+    set(NMODL_TARGET_TO_DEPEND nmodl)
   endif()
   include_directories(${CORENRN_NMODL_INCLUDE})
   # set correct arguments for nmodl for cpu/gpu target

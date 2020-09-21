@@ -1,104 +1,135 @@
 #!/bin/bash
+
 # -----------------------------------------------------------------------------
-# nrnivmodl-core uses make to compile additonal mod files for coreneuron
-# Copyright 2019 Blue Brain Project
+# Copyright 2020 Blue Brain Project
+# nrnivmodl-core is used to compile mod files for coreneuron
 # -----------------------------------------------------------------------------
+
 set -e
 
+# name of the script
 APP_NAME=$(basename $0)
-_PARENT="$(dirname $BASH_SOURCE)/.."
-ROOTDIR=$(perl -e "use Cwd 'abs_path'; print abs_path('$_PARENT')")
-MAKE_OPTIONS="MECH_NAME NMODL_BINARY DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE"
-PARALLELISM=4
-SAVE_FILE="@CMAKE_HOST_SYSTEM_PROCESSOR@/nrnivmodl_options.txt"
+
+# directory and parent directory of this script
+PARENT_DIR="$(dirname $BASH_SOURCE)/.."
+ROOT_DIR=$(@PERL_EXECUTABLE@ -e "use Cwd 'abs_path'; print abs_path('$PARENT_DIR')")
+
+# default arguments : number of parallel builds and default mod file path
+PARALLEL_BUILDS=4
 params_MODS_PATH="."
+params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
 
-# To support build + install later we save/restore options
-# Attempt to load previous definitions
-if [ -f "$SAVE_FILE" ]; then
-    echo "[INFO] Loading definitions from previous nrnivmodl-core execution"
-    while read line; do
-        echo " + $line" && eval "$line"
-    done < "$SAVE_FILE"
-fi
+# prefix for common options : make sure to rename these if options are changed.
+MAKE_OPTIONS="MECHLIB_SUFFIX NMODL_BINARY DEST_DIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE"
 
-# Parse args (overriding)
-while getopts "n:m:v:d:i:l:p:hV" OPT; do
+# parse CLI args
+while getopts "n:m:v:d:i:l:p:b:hV" OPT; do
     case "$OPT" in
     n)
-        params_MECH_NAME="$OPTARG";;
+        # suffix for mechanism library
+        params_MECHLIB_SUFFIX="$OPTARG";;
     m)
+        # nmodl or mod2c binary to use
         params_NMODL_BINARY="$OPTARG";;
     d)
-        params_DESTDIR="$OPTARG";;
+        # destination install directory
+        params_DEST_DIR="$OPTARG";;
     i)
+        # extra include flags
         params_INCFLAGS="$OPTARG";;
     l)
+        # extra link flags
         params_LINKFLAGS="$OPTARG";;
     V)
+        # make with verbose
         params_VERBOSE=1;;
     p)
-        PARALLELISM="$OPTARG";;
+        # option for parallel build (with -j)
+        PARALLEL_BUILDS="$OPTARG";;
+    b)
+        # make with verbose
+        params_BUILD_TYPE="$OPTARG";;
     h)
         echo "$APP_NAME [options, ...] [mods_path]"
         echo "Options:"
-        echo "  -n <name>       The model name, used as a suffix in the shared library"
-        echo "  -m <mod2c_bin>  NMODL code generation compiler path"
-        echo "  -i <incl_flags> Definitions passed to the compiler, typically '-I dir..'"
-        echo "  -l <link_flags> Definitions passed to the linker, typically '-Lx -lylib..'"
-        echo "  -d <dest_dir>   Install to dest_dir. Default: off - Only build in {ARCH}"\
-             "        Consider using this option on a second call. Params are preserved."
-        echo "  -V              Verbose: show commands executed by make"
-        echo "  -p <n_procs>    Make parallelism. Default: 4"
+        echo "  -n <name>          The model name, used as a suffix in the shared library"
+        echo "  -m <mod2c_bin>     NMODL code generation compiler path"
+        echo "  -i <incl_flags>    Definitions passed to the compiler, typically '-I dir..'"
+        echo "  -l <link_flags>    Definitions passed to the linker, typically '-Lx -lylib..'"
+        echo "  -d <dest_dir>      Install to dest_dir. Default: Off."
+        echo "  -V                 Verbose: show commands executed by make"
+        echo "  -p <n_procs>       Number of parallel builds (Default: $PARALLEL_BUILDS)"
+        echo "  -b <STATIC|SHARED> libcorenrnmech library type"
         exit 0;;
     ?)
         exit 1;;
     esac
 done
 
+# consume an option
 shift $(($OPTIND - 1))
 
+# only one mod files directory is supported in neuron and coreneuron
 if [ $# -gt 1 ]; then
     echo "[ERROR] $APP_NAME expects at most one mod dir. See syntax: '$APP_NAME -h' "
     exit 1
 fi
 
-
-# If defined mods dir be in $1
+# if defined mods dir be in $1
 if [ $# -eq 1 ]; then
     # Note: due to bug #712 makefile wont handle mod dir with spaces, so we let it fail here
     params_MODS_PATH=$1
 fi
+
+# warn if no mod files provided
 if [ -d $params_MODS_PATH ]; then
-    # warn if no mod files provided
-    ls $params_MODS_PATH/*.mod || echo "WARNING: No mods found!"
+    ls $params_MODS_PATH/*.mod &>/dev/null || echo "WARNING: No mod files found, compiling default ones only!"
 else
     echo "FATAL: Invalid mods directory: '$params_MODS_PATH'"
     exit 1
 fi
 
-# Output options & populate make_params
-mkdir -p "$(dirname "$SAVE_FILE")"
-echo "# nrnivmodl-core options. Mods location: $params_MODS_PATH" > $SAVE_FILE
+# temporary directory where mod files will be copied
+temp_mod_dir=@CMAKE_HOST_SYSTEM_PROCESSOR@/core/mods
+mkdir -p $temp_mod_dir
 
+# copy mod files with include files. note that ${ROOT_DIR}/share
+# has inbuilt mod files and user provided mod files are in $params_MODS_PATH.
+set +e
+for mod_dir in ${ROOT_DIR}/share/modfile $params_MODS_PATH;
+do
+    # copy mod files and include files
+    files=`ls $mod_dir/*.mod $mod_dir/*.inc 2>/dev/null`
+    for f in $files;
+    do
+        # copy mod files only if it's changed (to avoid rebuild)
+        target_file_path=$temp_mod_dir/`basename $f`
+        if ! diff -q $f $target_file_path &>/dev/null;  then
+            cp $f $target_file_path
+        fi
+    done
+done
+set -e
 
-# Build params to make command (and save them to file)
-make_params=("ROOT=${ROOTDIR}")
+# use new mod files directory for compilation
+params_MODS_PATH=$temp_mod_dir
 
+# build params to make command
+make_params=("ROOT=${ROOT_DIR}")
 for param in $MAKE_OPTIONS; do
     var="params_${param}"
     if [ "${!var+x}" ]; then
         make_params+=("$param=${!var}")
-        echo "$var=\"${!var}\""
     fi
-done >> "$SAVE_FILE"
+done
 
-# If -d (deploy) provided, call "make install"
-if [ "$params_DESTDIR" ]; then
+# if -d (deploy) provided, call "make install"
+if [ "$params_DEST_DIR" ]; then
     make_params+=("install")
 fi
 
+# run makefile
 echo "[INFO] Running make with params: ${make_params[@]}"
-make -j$PARALLELISM -f "${ROOTDIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
+make -j$PARALLEL_BUILDS -f "${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
-echo "[INFO] mods built successfully."
+echo "[INFO] MOD files built successfully for CoreNEURON"
