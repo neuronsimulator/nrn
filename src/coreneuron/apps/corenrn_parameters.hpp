@@ -85,6 +85,8 @@ struct corenrn_parameters {
     bool gpu=false;                /// Enable GPU computation.
     bool binqueue=false;           /// Use bin queue.
 
+    bool show_version=false;       /// Print version and exit.
+
     verbose_level verbose{verbose_level::DEFAULT}; /// Verbosity-level
 
     double tstop=100;              /// Stop time of simulation in msec

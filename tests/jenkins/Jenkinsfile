@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'bb5'
+        label 'bb5 && !bb5-07'
     }
     parameters {
         string(name: 'sha1', defaultValue: 'master',

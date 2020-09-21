@@ -49,7 +49,7 @@ namespace coreneuron {
 extern int nrn_nobanner_;
 
 // NB: this should go away
-extern const char* nrn_version(int);
+extern std::string cnrn_version();
 std::map<std::string, int> mech2type;
 
 extern "C" {
@@ -140,7 +140,7 @@ static void mk_mech(std::istream& s) {
     if (nrnmpi_myid < 1 && nrn_nobanner_ == 0) {
         fprintf(stderr, " \n");
         fprintf(stderr, " %s\n", banner);
-        fprintf(stderr, " %s\n", nrn_version(1));
+        fprintf(stderr, " Version : %s\n", cnrn_version().c_str());
         fprintf(stderr, " \n");
         fflush(stderr);
     }

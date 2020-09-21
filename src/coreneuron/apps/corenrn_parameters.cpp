@@ -28,7 +28,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
+
 namespace coreneuron {
+
+extern std::string cnrn_version();
+
 corenrn_parameters::corenrn_parameters(){
 
     app.set_config("--read-config", "", "Read parameters from ini file", false)
@@ -100,6 +104,8 @@ corenrn_parameters::corenrn_parameters(){
     sub_output -> add_option("-o, --outpath", this->outpath, "Path to place output data files.", true);
     sub_output -> add_option("--checkpoint", this->checkpointpath, "Enable checkpoint and specify directory to store related files.");
 
+    app.add_flag("-v, --version", this->show_version, "Show version information and quit.");
+
     CLI::retire_option(app, "--show");
 };
 
@@ -111,13 +117,21 @@ void corenrn_parameters::parse (int argc, char** argv) {
             nrn_nobanner_ = 1;
         }
     } catch (const CLI::ExtrasError &e) {
-        std::cerr << "Single-dash arguments such as -mpi are deleted, please check ./coreneuron_exec --help for more information. \n" << std::endl;
+        // in case of parsing errors, show message with exception
+        std::cerr << "CLI parsing error, see nrniv-core --help for more information. \n" << std::endl;
         app.exit(e);
         throw e;
 
     } catch (const CLI::ParseError &e) {
+        // use --help is also ParseError; in this case exit by showing all options
         app.exit(e);
-        throw e;
+        exit(0);
+    }
+
+    // is user has asked for version info, print it and exit
+    if (show_version) {
+        std::cout << "CoreNEURON Version : " << cnrn_version() << std::endl;
+        exit(0);
     }
 };
 

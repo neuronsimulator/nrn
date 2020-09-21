@@ -1,0 +1,7 @@
+#include "coreneuron/config/config.h"
+
+/// Git version of the project
+const std::string coreneuron::version::GIT_REVISION = "@CN_GIT_REVISION@";
+
+/// CoreNEURON version
+const std::string coreneuron::version::CORENEURON_VERSION = "@CN_PROJECT_VERSION@";

@@ -654,7 +654,7 @@ double set_mindelay(double maxdelay) {
             }  
             PreSyn* ps;
             InputPreSyn* psi;
-            netpar_tid_gid2ps(ith, gid, &ps, &psi);
+            netpar_tid_gid2ps(tid, gid, &ps, &psi);
             if (psi) {
                 chk = true;
             } else if (all) {

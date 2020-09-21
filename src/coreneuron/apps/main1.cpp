@@ -37,6 +37,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
+#include "coreneuron/config/config.h"
 #include "coreneuron/engine.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
@@ -339,12 +340,12 @@ void handle_forward_skip(double forwardskip, int prcellgid) {
     t = savet;
     dt2thread(-1.);
 
-    // clear spikes generated during forward skip (with negative time) 
+    // clear spikes generated during forward skip (with negative time)
     clear_spike_vectors();
 }
 
-const char* nrn_version(int) {
-    return "version id unimplemented";
+std::string cnrn_version() {
+    return coreneuron::version::to_string();
 }
 
 // bsize = 0 then per step transfer
@@ -428,12 +429,7 @@ using namespace coreneuron;
 
 extern "C" void mk_mech_init(int argc, char** argv) {
     // read command line parameters and parameter config files
-    try {
-        corenrn_param.parse(argc, argv);
-    }
-    catch (...) {
-        nrn_abort(1);
-    }
+    corenrn_param.parse(argc, argv);
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {

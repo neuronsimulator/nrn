@@ -63,6 +63,7 @@ include(SetRpath)
 include(CTest)
 include(AddRandom123Submodule)
 include(AddCLI11Submodule)
+include(GitRevision)
 
 add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11)
 
@@ -103,6 +104,15 @@ set(CORENRN_FRONTEND_CXX_COMPILER
 if(CORENEURON_AS_SUBPROJECT)
   set(CORENRN_ENABLE_UNIT_TESTS OFF)
 endif()
+
+# =============================================================================
+# Project version from git and project directories
+# =============================================================================
+set(CN_PROJECT_VERSION ${PROJECT_VERSION})
+
+# generate file with version number from git and nrnunits.lib file path
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/coreneuron/config/config.cpp.in
+               ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp @ONLY)
 
 # =============================================================================
 # Include cmake modules after cmake options
