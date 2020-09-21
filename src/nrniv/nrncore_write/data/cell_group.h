@@ -44,6 +44,9 @@ public:
     NetCon** netcons;
     int* netcon_srcgid; // -(type + 1000*index) refers to acell with no gid
     // -1 means the netcon has no source
+    std::vector<int> netcon_negsrcgid_tid; // if some srcgid above are negative,
+    // need to know their thread id for Phase1::read_direct. Entries here only
+    // for negative srcgid in the order of netcon_srcgid and if nrn_nthread > 1.
     int* netcon_pnttype;
     int* netcon_pntindex;
     // Datum.pval info

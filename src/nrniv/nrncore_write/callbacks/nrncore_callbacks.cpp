@@ -197,7 +197,8 @@ void nrnthread_group_ids(int* grp) {
 
 
 int nrnthread_dat1(int tid, int& n_presyn, int& n_netcon,
-                          int*& output_gid, int*& netcon_srcgid) {
+                          int*& output_gid, int*& netcon_srcgid,
+                          std::vector<int>& netcon_negsrcgid_tid) {
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
@@ -205,6 +206,7 @@ int nrnthread_dat1(int tid, int& n_presyn, int& n_netcon,
     n_netcon = cg.n_netcon;
     output_gid = cg.output_gid;  cg.output_gid = NULL;
     netcon_srcgid = cg.netcon_srcgid;  cg.netcon_srcgid = NULL;
+    netcon_negsrcgid_tid = cg.netcon_negsrcgid_tid;
     return 1;
 }
 
