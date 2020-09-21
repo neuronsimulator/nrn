@@ -214,7 +214,10 @@ void init_symtab_module(py::module& m) {
     symbol_table.def("name", &SymbolTable::name)
         .def("title", &SymbolTable::title)
         .def("is_method_defined", &SymbolTable::is_method_defined)
-        .def("get_variables", &SymbolTable::get_variables)
+        .def("get_variables",
+             &SymbolTable::get_variables,
+             py::arg("with") = syminfo::NmodlType::empty,
+             py::arg("without") = syminfo::NmodlType::empty)
         .def("get_variables_with_properties",
              &SymbolTable::get_variables_with_properties,
              py::arg("properties"),

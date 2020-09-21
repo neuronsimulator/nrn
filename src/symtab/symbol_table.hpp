@@ -131,9 +131,26 @@ class SymbolTable {
         return parent ? parent->name() : "None";
     }
 
-    std::vector<std::shared_ptr<Symbol>> get_variables(syminfo::NmodlType with,
-                                                       syminfo::NmodlType without);
+    /**
+     * get variables
+     *
+     * \param with variables with properties. 0 matches everything
+     * \param without variables without properties. 0 matches nothing
+     *
+     * The two different behaviors for 0 depend on the fact that we get
+     * get variables with ALL the with properties and without ANY of the
+     * without properties
+     */
+    std::vector<std::shared_ptr<Symbol>> get_variables(
+        syminfo::NmodlType with = syminfo::NmodlType::empty,
+        syminfo::NmodlType without = syminfo::NmodlType::empty);
 
+    /**
+     * get variables with properties
+     *
+     * \param properties variables with properties. -1 matches everything
+     * \param all all/any
+     */
     std::vector<std::shared_ptr<Symbol>> get_variables_with_properties(
         syminfo::NmodlType properties,
         bool all = false) const;
