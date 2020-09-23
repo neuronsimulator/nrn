@@ -852,8 +852,8 @@ void CodegenIspcVisitor::print_codegen_wrapper_routines() {
 
     print_check_table_thread_function();
 
-    print_net_init();
     print_net_send_buffering();
+    print_net_init();
     print_watch_activate();
     fallback_codegen.print_watch_check();  // requires C style variable declarations and loops
 

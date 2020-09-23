@@ -4243,8 +4243,8 @@ void CodegenCVisitor::print_compute_functions() {
         auto block = callback->get_node_to_solve().get();
         print_derivimplicit_kernel(block);
     }
-    print_net_init();
     print_net_send_buffering();
+    print_net_init();
     print_watch_activate();
     print_watch_check();
     print_net_receive_kernel();
