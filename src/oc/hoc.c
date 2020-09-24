@@ -20,6 +20,7 @@
 #include <dos.h>
 #include <go32.h>
 #endif
+#include "../nrniv/backtrace_utils.h"
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -750,23 +751,41 @@ void hoc_coredump_on_error(void) {
 
 void print_bt() {
 #if HAVE_EXECINFO_H
-	void *frames[10];
+    const size_t nframes = 12;
+	void *frames[nframes];
 	size_t size;
 	char** bt_strings = NULL;
+    size_t funcname_size = 256;
+    char* symbol = malloc(sizeof(char)*funcname_size);
+    char* offset = malloc(sizeof(char)*10);
+    char* funcname = malloc(sizeof(char)*funcname_size);
 
 	// get void*'s for maximum last 16 entries on the stack
-	size = backtrace(frames, 16);
+	size = backtrace(frames, nframes);
 
 	// print out all the frames to stderr
 	Fprintf(stderr, "Backtrace:\n");
 
 	bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
-		for(size_t i = 1; i < size; ++i) {
-			Fprintf(stderr, "\t%s\n", bt_strings[i]);
+		for(size_t i = 2; i < size; ++i) {
+            int status = parse_bt_symbol(bt_strings[i], symbol, offset);
+            if (status) {
+                status = cxx_demangle(symbol, &funcname, &funcname_size);
+                if (status == 0) {
+                    Fprintf(stderr, "\t%s : %s+%s\n",
+                            bt_strings[i], funcname, offset);
+                } else {
+                    Fprintf(stderr, "\t%s : %s()+%s\n",
+                            bt_strings[i], symbol, offset);
+                }
+            } else {
+                Fprintf(stderr, "\t%s\n", bt_strings[i]);
+            }
 		}
 		free(bt_strings);
     }
+    free(funcname);
 #else
 	Fprintf(stderr, "No backtrace info available.\n");
 #endif
