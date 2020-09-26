@@ -6,7 +6,7 @@ project(NEURON C CXX)
 # =============================================================================
 set(PROJECT_VERSION_MAJOR 8)
 set(PROJECT_VERSION_MINOR 0)
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -107,6 +107,11 @@ set(NRN_MPI_DYNAMIC
 set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
+
+# =============================================================================
+# Set Python additional versions earlier (especially for old CMake)
+# =============================================================================
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
 
 # =============================================================================
 # Include cmake modules

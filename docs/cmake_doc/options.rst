@@ -217,8 +217,8 @@ NRN_PYTHON_DYNAMIC:STRING=
 
 PYTHON_EXECUTABLE:PATH=
 -----------------------
-  Use this python instead of the python cmake finds by default.
-  Must be a full path. I generally use
+  Use provided python binary instead of the one found by CMake.
+  This must be a full path. We generally use
 
   .. code-block:: shell
 
