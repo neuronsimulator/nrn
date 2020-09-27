@@ -8,6 +8,32 @@
 #include	"units.h"
 #include	<assert.h>
 
+/**
+  The strategy for dynamic units selection between Legacy and modern units
+  is to maintain two complete tables respectively. Legacy and modern in the
+  nrnunits.lib.in file are distinquished by, e.g.,
+  @LegacyY@faraday                        9.6485309+4 coul
+  @LegacyN@faraday                        96485.3321233100184 coul
+  The reason for two complete tables, as opposed to a main table and several
+  short legacy and modern tables, is that units are often defined in terms
+  of modified units. eg, "R = (k-mole) (joule/degC)"
+
+  Nmodl, via the parser, uses only unit_pop, unit_mag, Unit_push,
+  install_units, unit_div, and modl_units.
+
+  The issue of unit magnitude arises only when declaring a unit factor as in
+  the gasconstant (R) above or with the equivalent "name = (unit) -> (unit)"
+  syntax. If the magnitude difers between legacy and modern, then instead of
+  emitting code like "static double FARADAY = 96485.3;\n" we can emit
+  #define FARADAY _nrnunit_FARADAY_[_nrnunit_use_legacy_]
+  static double _nrnunit_FARADAY_[2] = {96485.3321233100184, 96485.3};
+**/
+
+/* modlunit can do its thing in the old way */
+#if !defined(NRN_DYNAMIC_UNITS)
+#define NRN_DYNAMIC_UNITS 0
+#endif
+
 #if defined(CYGWIN)
 #include "../mswin/extra/d2upath.c"
 #endif
@@ -245,8 +271,10 @@ void unitcheck(s)
 char *
 unit_str() {
 	/* return top of stack as units string */
+        char* s;
 	if (!UnitsOn) return "";
-	return Unit_str(usp);
+	s = Unit_str(usp);
+	return s;
 }
 
 void install_units(s1, s2) /* define s1 as s2 */
@@ -993,4 +1021,22 @@ static void fperr(sig) int sig;
 
 	signal(8, fperr);
 	fperrc++;
+}
+
+void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
+#if 0 && NRN_DYNAMIC_UNITS
+
+#else
+
+  Unit_push(u1);
+  Unit_push(u2);
+  unit_div();
+#if (defined(LegacyFR) && LegacyFR == 1)
+  sprintf(buf, "static double %s = %g;\n", name, unit_mag());
+#else
+  sprintf(buf, "static double %s = %.12g;\n", name, unit_mag());
+#endif
+  unit_pop();
+
+#endif
 }

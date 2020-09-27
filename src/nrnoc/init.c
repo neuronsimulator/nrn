@@ -94,6 +94,7 @@ int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
 hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
+int _nrnunit_use_legacy_; /* allow dynamic switching between legacy and modern units */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
@@ -1015,4 +1016,12 @@ double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 	}
 	x = hoc_call_func(s, narg);
 	return x;
+}
+
+void nrnunit_use_legacy() {
+  if (ifarg(1)) {
+    int arg = (int)chkarg(1, 0, 1);
+    _nrnunit_use_legacy_ = arg;
+  }
+  hoc_retpushx((double)_nrnunit_use_legacy_);
 }
