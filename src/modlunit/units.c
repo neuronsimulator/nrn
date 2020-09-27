@@ -1023,8 +1023,33 @@ static void fperr(sig) int sig;
 	fperrc++;
 }
 
+static void switch2units(int legacy) {
+#if NRN_DYNAMIC_UNITS
+
+#endif
+}
+
+static double dynam_unit_str(int legacy, char* u1, char* u2) {
+  double result;
+  switch2units(legacy);
+  Unit_push(u1);
+  Unit_push(u2);
+  unit_div();
+  result = unit_mag();
+  unit_pop();
+  return result;
+}
+
 void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
-#if 0 && NRN_DYNAMIC_UNITS
+#if NRN_DYNAMIC_UNITS
+
+  double legacy = dynam_unit_str(1, u1, u2);
+  double modern = dynam_unit_str(0, u1, u2);
+  sprintf(buf,"\n"
+"#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
+/* since c++17 %a instead of %.18g for exact hex representation of double */
+"static double _nrnunit_%s[2] = {%a, %g};\n",
+    name, name, name, modern, legacy);
 
 #else
 
