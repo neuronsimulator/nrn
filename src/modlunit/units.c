@@ -49,23 +49,30 @@ extern void diag();
 #define OUTTOLERANCE(arg1,arg2) (fabs(arg2/arg1 - 1.) > 1.e-5)
 
 #define	NTAB	601
+
+#if NRN_DYNAMIC_UNITS
+#define SUFFIX ".in"
+#else
+#define SUFFIX ""
+#endif
+
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if MAC
-static char	*dfile	= ":lib:nrnunits.lib";
+static char	*dfile	= ":lib:nrnunits.lib"SUFFIX;
 #else
 #if defined(NEURON_DATA_DIR)
-static char	*dfile	= NEURON_DATA_DIR"/lib/nrnunits.lib";
+static char	*dfile	= NEURON_DATA_DIR"/lib/nrnunits.lib"SUFFIX;
 #else
 static char	*dfile	= "/usr/lib/units";
 #endif
 #endif
 #if defined(__TURBOC__) || defined(__GO32__)
-static char	*dfilealt	= "/nrn/lib/nrnunits.lib";
+static char	*dfilealt	= "/nrn/lib/nrnunits.lib"SUFFIX;
 #else
 #if MAC
-static char *dfilealt = "::lib:nrnunits.lib";
+static char *dfilealt = "::lib:nrnunits.lib"SUFFIX;
 #else
-static char	*dfilealt	= "../../share/lib/nrnunits.lib";
+static char	*dfilealt	= "../../share/lib/nrnunits.lib"SUFFIX;
 #endif
 #endif
 static char	*unames[NDIM];
@@ -92,8 +99,17 @@ static struct table
 	signed char	dim[NDIM];
 #endif
 	char	*name;
-} table[NTAB];
-static char	names[NTAB*10];
+} *table;
+
+static char	*names;
+
+#if NRN_DYNAMIC_UNITS
+static struct dynam {
+  struct table* table; /* size NTAB */
+  char* names; /* size NTAB*10 */
+} dynam[2];
+#endif
+
 static struct prefix
 {
 	double	factor;
@@ -515,14 +531,37 @@ void unit_stk_clean() {
 	usp = unit_stack - 1;
 }
 	
+static void switch_units(int legacy) {
+#if NRN_DYNAMIC_UNITS
+  table = dynam[legacy].table;
+  names = dynam[legacy].names;
+#endif
+}
+
 #if MODL||NMODL||HMODL||SIMSYS
 extern void unit_init();
 
 void modl_units() {
+	int i;
 	static int first=1;
 	unitonflag = 1;
 	if (first) {
+#if NRN_DYNAMIC_UNITS
+		for (i=0; i < 2; ++i) {
+			dynam[i].table = calloc(NTAB, sizeof(struct table));
+			assert(dynam[i].table);
+			dynam[i].names = calloc(NTAB*10, sizeof(char*));
+			assert(dynam[i].names);
+			switch_units(i);
+			unit_init();
+		}
+#else
+		table = calloc(NDIM, sizeof(struct table));
+		assert(table);
+		names = calloc(NTAB*10, sizeof(char*));
+		assert(names);
 		unit_init();
+#endif
 		first = 0;
 	}
 }
@@ -539,7 +578,8 @@ void unit_init() {
 		/* note that on mingw, even if MODLUNIT set to /cygdrive/c/...
 		 * it ends up here as c:/... and that is good*/
 		/* printf("MODLUNIT=|%s|\n", s); */
-		if ((inpfile = fopen(s, "r")) == (FILE *)0) {
+		sprintf(buf, "%s%s", s, SUFFIX);
+		if ((inpfile = fopen(buf, "r")) == (FILE *)0) {
 diag("Bad MODLUNIT environment variable. Cant open:", s);
 		}
 	}
@@ -549,9 +589,9 @@ diag("Bad MODLUNIT environment variable. Cant open:", s);
 		if (s) {
 			if (strncmp(s, "/cygdrive/", 10) == 0) {
 				/* /cygdrive/x/... to c:/... */
-				sprintf(buf, "%c:%s/lib/nrnunits.lib", s[10], s+11);
+				sprintf(buf, "%c:%s/lib/nrnunits.lib"SUFFIX, s[10], s+11);
 			}else{
-				sprintf(buf, "%s/lib/nrnunits.lib", s);
+				sprintf(buf, "%s/lib/nrnunits.lib"SUFFIX, s);
 			}
 			inpfile = fopen(buf, "r");
 			free(s);
@@ -562,7 +602,7 @@ diag("Bad MODLUNIT environment variable. Cant open:", s);
 		if ((inpfile = fopen(dfilealt, "r")) == (FILE *)0) {
 			s = neuronhome();
 			if (s) {
-				sprintf(buf, "%s/lib/nrnunits.lib", s);
+				sprintf(buf, "%s/lib/nrnunits.lib"SUFFIX, s);
 				inpfile = fopen(buf, "r");
 			}
 		}
@@ -844,7 +884,7 @@ l0:
 	c = get();
 	if(c == 0) {
 #if 0
-		printf("%d units; %d bytes\n\n", i, cp-names);
+		printf("%d units; %ld bytes\n\n", i, cp-names);
 #endif
 		if(dumpflg)
 		for(tp = table; tp < table+NTAB; tp++) {
@@ -853,6 +893,7 @@ l0:
 			printf("%s", tp->name);
 			units((struct unit *)tp);
 		}
+
 		fclose(inpfile);
 		inpfile = stdin;
 		return;
@@ -862,8 +903,40 @@ l0:
 			c = get();
 		goto l0;
 	}
+
+#if NRN_DYNAMIC_UNITS
+  if (c == '@') {
+    /**
+       Dynamic unit line beginning with @LegacyY@ or @LegacyN@.
+       If the Y or N does not match the modern or legacy table, skip the
+       entire line. For a match, just leave file at char after the final '@'.
+    **/
+    int i;
+    int legacy;
+    char legstr[7];
+    char y_or_n;
+    for (i = 0; i < 6; ++i) {
+      legstr[i] = get();
+    }
+    legstr[6] = '\0';
+    assert(strcmp(legstr, "Legacy") == 0);
+    y_or_n = get();
+    assert(y_or_n == 'Y' || y_or_n == 'N');
+    legacy = (y_or_n == 'Y') ? 1 : 0;
+    assert(get() == '@');
+    if (dynam[legacy].table != table) { /* skip the line */
+      while(c != '\n' && c != 0) {
+        c = get();
+      }
+      goto l0;
+    }
+    c = get();
+  }
+#endif
+
 	if(c == '\n')
 		goto l0;
+
 	np = cp;
 	while(c != ' ' && c != '\t') {
 		*cp++ = c;
@@ -1023,15 +1096,9 @@ static void fperr(sig) int sig;
 	fperrc++;
 }
 
-static void switch2units(int legacy) {
-#if NRN_DYNAMIC_UNITS
-
-#endif
-}
-
 static double dynam_unit_str(int legacy, char* u1, char* u2) {
   double result;
-  switch2units(legacy);
+  switch_units(legacy);
   Unit_push(u1);
   Unit_push(u2);
   unit_div();
@@ -1047,7 +1114,7 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
   double modern = dynam_unit_str(0, u1, u2);
   sprintf(buf,"\n"
 "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
-/* since c++17 %a instead of %.18g for exact hex representation of double */
+/*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
 "static double _nrnunit_%s[2] = {%a, %g};\n",
     name, name, name, modern, legacy);
 
