@@ -54,6 +54,7 @@ includes = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sp
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1 $(includes)
 NMODL = ../nmodl/nocmodl
 NRNUNITSLIB = $(top_builddir)/share/lib/nrnunits.lib
+NRNUNITSLIB_IN = $(abs_top_builddir)/share/lib/nrnunits.lib.in
 
 FORCE:
 
@@ -81,7 +82,10 @@ $(srcdir)/nrnversion.h: FORCE
 
 nrnversion.o nrnversion.lo: nrnversion.h
 
-$(MODFILES_C): $(NMODL) $(NRNUNITSLIB)
+$(NRNUNITSLIB_IN): $(abs_top_srcdir)/share/lib/nrnunits.lib.in
+	cp $(abs_top_srcdir)/share/lib/nrnunits.lib.in $(NRNUNITSLIB_IN)
+
+$(MODFILES_C): $(NMODL) $(NRNUNITSLIB) $(NRNUNITSLIB_IN)
 
 %.c: %.mod
 	(export MODLUNIT=$(NRNUNITSLIB); $(NMODL) $<)
