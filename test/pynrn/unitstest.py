@@ -13,6 +13,7 @@ def test_mod_legacy():
     print ("%s = %s (%s)" %(n, str(val.hex()), str(val)))
     legacy_value = float.fromhex(legacy_hex_values[i])
     assert (val == legacy_value)
+  assert (ut.avogadro == float.fromhex(legacy_hex_values[0]))
   h.nrnunit_use_legacy(0)
   h.finitialize()
   assert (ut.mole != float.fromhex(legacy_hex_values[0]))

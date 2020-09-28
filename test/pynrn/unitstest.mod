@@ -1,6 +1,6 @@
 NEURON {
   ARTIFICIAL_CELL UnitsTest
-  RANGE mole, e, faraday, planck, hbar, gasconst
+  RANGE mole, e, faraday, planck, hbar, gasconst, avogadro
 }
 
 
@@ -11,6 +11,9 @@ UNITS {
   h = (planck) (joule-sec)
   hb = (hbar) (joule-sec)
   R = (k-mole) (joule/degC)
+
+  (avogadro) = (mole)
+  avo  = (avogadro) (1)
 }
 
 ASSIGNED {
@@ -20,6 +23,7 @@ ASSIGNED {
   planck (joule-sec)
   hbar (joule-sec)
   gasconst (joule/degC)
+  avogadro (1)
 }
 
 INITIAL {
@@ -29,5 +33,6 @@ INITIAL {
   planck = h
   hbar = hb
   gasconst = R
+  avogadro = avo
 }
 

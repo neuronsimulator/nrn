@@ -293,7 +293,7 @@ unit_str() {
 	return s;
 }
 
-void install_units(s1, s2) /* define s1 as s2 */
+static void install_units_help(s1, s2) /* define s1 as s2 */
 	char *s1, *s2;
 {
 	struct table *tp;
@@ -315,6 +315,25 @@ void install_units(s1, s2) /* define s1 as s2 */
 		tp->dim[i] = usp->dim[i];
 	}
 	unit_pop();
+}
+
+static void switch_units(int legacy) {
+#if NRN_DYNAMIC_UNITS
+  table = dynam[legacy].table;
+  names = dynam[legacy].names;
+#endif
+}
+
+void install_units(char* s1, char* s2) {
+#if NRN_DYNAMIC_UNITS
+  int i;
+  for (i = 0; i < 2; ++i) {
+    switch_units(i);
+    install_units_help(s1, s2);
+  }
+#else
+  install_units_help(s1, s2);
+#endif
 }
 
 void check_num()
@@ -531,13 +550,6 @@ void unit_stk_clean() {
 	usp = unit_stack - 1;
 }
 	
-static void switch_units(int legacy) {
-#if NRN_DYNAMIC_UNITS
-  table = dynam[legacy].table;
-  names = dynam[legacy].names;
-#endif
-}
-
 #if MODL||NMODL||HMODL||SIMSYS
 extern void unit_init();
 
