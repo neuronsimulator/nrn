@@ -13,7 +13,7 @@ dnl git tag -a major.minor.micro consistent with that.
 AC_INIT([nrn],[8.0])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_MAINTAINER_MODE([enable])
 
 AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
