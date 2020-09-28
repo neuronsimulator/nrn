@@ -242,7 +242,7 @@ if(NRN_ENABLE_INTERVIEWS)
     include_directories(${X11_INCLUDE_DIR})
   endif()
 
-  find_package(iv QUIET PATHS ${IV_DIR}/share/cmake ${IV_DIR})
+  find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
   if(iv_FOUND)
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)

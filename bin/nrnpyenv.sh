@@ -320,8 +320,9 @@ def nrnpylib_linux():
   libdir=sysconfig.get_config_var("LIBDIR")
   try:
     from os.path import isfile, join
+    ver = "%d.%d"%(sys.version_info[0], sys.version_info[1])
     for f in os.listdir(libdir):
-      if 'libpython' in f and '.so' in f:
+      if 'libpython' in f and '.so' in f and ver in f:
         nrn_pylib = join(libdir, f)
         nrnpylib_provenance='sysconfig LIBDIR'
         return nrn_pylib
