@@ -87,11 +87,20 @@ list(APPEND TESTS connect_dend)
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   add_test(NAME basic_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
   add_custom_target(
+    pynrn_mod ALL
+    COMMAND
+      ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn
+    DEPENDS ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod nocmodl)
+  add_dependencies(pynrn_mod nrniv)
+
+  add_custom_target(
     rxdmod ALL
     COMMAND
       ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ecs
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
   add_dependencies(rxdmod nrniv)
+
   add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
   list(APPEND TESTS basic_tests rxd_tests)
   if(NRN_ENABLE_MPI)
