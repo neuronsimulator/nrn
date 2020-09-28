@@ -548,17 +548,17 @@ void modl_units() {
 	if (first) {
 #if NRN_DYNAMIC_UNITS
 		for (i=0; i < 2; ++i) {
-			dynam[i].table = calloc(NTAB, sizeof(struct table));
+			dynam[i].table = (struct table*)calloc(NTAB, sizeof(struct table));
 			assert(dynam[i].table);
-			dynam[i].names = calloc(NTAB*10, sizeof(char*));
+			dynam[i].names = (char*)calloc(NTAB*10, sizeof(char));
 			assert(dynam[i].names);
 			switch_units(i);
 			unit_init();
 		}
 #else
-		table = calloc(NDIM, sizeof(struct table));
+		table = (struct table*)calloc(NDIM, sizeof(struct table));
 		assert(table);
-		names = calloc(NTAB*10, sizeof(char*));
+		names = (char*)calloc(NTAB*10, sizeof(char));
 		assert(names);
 		unit_init();
 #endif
@@ -580,7 +580,7 @@ void unit_init() {
 		/* printf("MODLUNIT=|%s|\n", s); */
 		sprintf(buf, "%s%s", s, SUFFIX);
 		if ((inpfile = fopen(buf, "r")) == (FILE *)0) {
-diag("Bad MODLUNIT environment variable. Cant open:", s);
+diag("Bad MODLUNIT environment variable. Cant open:", buf);
 		}
 	}
 #if defined(__MINGW32__)
@@ -1096,7 +1096,7 @@ static void fperr(sig) int sig;
 	fperrc++;
 }
 
-static double dynam_unit_str(int legacy, char* u1, char* u2) {
+static double dynam_unit_mag(int legacy, char* u1, char* u2) {
   double result;
   switch_units(legacy);
   Unit_push(u1);
@@ -1110,8 +1110,8 @@ static double dynam_unit_str(int legacy, char* u1, char* u2) {
 void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
 #if NRN_DYNAMIC_UNITS
 
-  double legacy = dynam_unit_str(1, u1, u2);
-  double modern = dynam_unit_str(0, u1, u2);
+  double legacy = dynam_unit_mag(1, u1, u2);
+  double modern = dynam_unit_mag(0, u1, u2);
   sprintf(buf,"\n"
 "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
 /*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
