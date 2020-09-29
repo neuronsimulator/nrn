@@ -131,10 +131,17 @@ class GeneralizedReaction(object):
 
         sp_regions = None
         if self._trans_membrane and (sources or dests):   #assume sources share common regions and destinations share common regions
-            sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region() for sptr in dests}))
+            sp_regions = list({sptr()._region() for sptr in sources}.union({sptr()._region() for sptr in dests}))
         elif sources and dests:
             sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
         #The reactants do not share a common region
+        if sp_regions:
+            # check that the regions have sections
+            for reg in sp_regions:
+                if reg._secs1d or reg._secs3d:
+                    break
+            else:
+                    return
         if not sp_regions:
             active_regions = [s()._extracellular()._region for s in sources_ecs + dests_ecs if s()]
             # if a region is specified the reaction should only take place there
@@ -144,6 +151,13 @@ class GeneralizedReaction(object):
             # reaction should only take place on those extracellular regions
             elif active_regions:
                 self._active_regions = active_regions
+
+            # check that the regions have sections
+            for reg in active_regions:
+                if reg._secs1d or reg._secs3d:
+                    break
+            else: return
+
             # if neither were specified don't set the '_has_regions' attribute
             # so the reaction takes place everywhere the species is defined
             for sptr in self._involved_species:

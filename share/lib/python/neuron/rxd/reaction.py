@@ -135,16 +135,19 @@ class Reaction(GeneralizedReaction):
         
         # if a region is specified -- use it
         if self._regions and self._regions != [None]:
-            self._react_regions = self._regions
+            self._react_regions = [r for r in self._regions if r._secs1d or r._secs3d]
         else:
         # else find the common regions shared by all sources and  destinations
             self._react_regions = []
             regs = []
             for sptr in self._sources + self._dests:
                 s = sptr() if isinstance(sptr(), species.Species) else sptr()._species()
-                regs.append(set(s._regions))
+                regs.append(set([r for r in s._regions if r._secs1d or r._secs3d]))
             self._react_regions = list(set.intersection(*regs))
-        self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
+        if self._react_regions:
+            self._rate, self._involved_species = rxdmath._compile(rate, self._react_regions)
+        else:
+            self._rate, self._involved_species = None, []
 
         #Species are in at most one region
         trans_membrane = len({s()._region() for s in self._sources + self._dests + self._involved_species if isinstance(s(), species.SpeciesOnRegion)}) + len({s()._extracellular()._region for s in self._sources + self._dests + self._involved_species if isinstance(s(), species.SpeciesOnExtracellular)}) > 1 
