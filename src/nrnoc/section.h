@@ -298,7 +298,6 @@ typedef struct Eqnblock {
 
 extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer contiguous */
 extern hoc_List* section_list;	/* Where the Sections live */
-extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 
 extern Section* chk_access();
 extern Section	*sec_alloc();		/* Allocates a single section */
