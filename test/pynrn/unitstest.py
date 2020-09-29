@@ -1,8 +1,14 @@
 from neuron import h
 
+def switch_units(legacy):
+  try:
+    h.nrnunit_use_legacy(legacy)
+  except:
+    pass
+
 def test_mod_legacy():
   ut = h.UnitsTest()
-  h.nrnunit_use_legacy(1)
+  switch_units(1)
   h.finitialize()
   names =  ["mole", "e", "faraday", "planck", "hbar", "gasconst"]
   legacy_hex_values = ["0x1.fe18fef60659ap+78", "0x1.7a4e7164efbbcp-63",
@@ -14,9 +20,30 @@ def test_mod_legacy():
     legacy_value = float.fromhex(legacy_hex_values[i])
     assert (val == legacy_value)
   assert (ut.avogadro == float.fromhex(legacy_hex_values[0]))
-  h.nrnunit_use_legacy(0)
+  switch_units(0)
   h.finitialize()
-  assert (ut.mole != float.fromhex(legacy_hex_values[0]))
+#  assert (ut.mole != float.fromhex(legacy_hex_values[0]))
+
+def test_hoc_legacy():
+  switch_units(1) # legacy
+  print ("R = %s" % str(h.R))
+  print ("FARADAY = %s" % str(h.FARADAY))
+  celsius = 6.3
+  ghk = h.ghk(30, .01, 10, 1) # nernst requires a Section to get voltage
+  print ("ghk = %s" % str(ghk))
+
+  assert(h.R == 8.31441)
+  assert(h.FARADAY == 96485.309)
+  assert(ghk == -483.7914803097116)
+
+  switch_units(0) # Modern
+  print ("R = %s" % str(h.R))
+  print ("FARADAY = %s" % str(h.FARADAY))
+  ghk = h.ghk(30, .01, 10, 1)
+  print ("ghk = %s" % str(ghk))
+  assert(h.R == 8.3144598)
+  assert(ghk == -483.8379745440489)
 
 if __name__ == "__main__":
   test_mod_legacy()
+  test_hoc_legacy()

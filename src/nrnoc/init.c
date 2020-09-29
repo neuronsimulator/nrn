@@ -94,7 +94,6 @@ int nrn_netrec_state_adjust = 0;
 int nrn_sparse_partrans = 0;
 hoc_List* section_list;
 int nrn_global_ncell = 0; /* used to be rootnodecount */
-int _nrnunit_use_legacy_; /* allow dynamic switching between legacy and modern units */
 extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;

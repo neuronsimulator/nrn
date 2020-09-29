@@ -89,16 +89,18 @@ static struct {	/* Constants */
 	"GAMMA",0.57721566490153286060,	/* Euler */
 	"DEG", 57.29577951308232087680,	/* deg/radian */
 	"PHI",	1.61803398874989484820,	/* golden ratio */
-#if defined(LegacyFR) && LegacyFR == 1
-	"FARADAY", 96485.309,	/*coulombs/mole*/
-	"R", 8.31441,		/*molar gas constant, joules/mole/deg-K*/
-#else
-	/* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
-	/* also see FARADAY and gasconstant in ../nrnoc/eion.c */
-	"FARADAY", 96485.33289,	/*coulombs/mole*/
-	"R", 8.3144598,		/*molar gas constant, joules/mole/deg-K*/
-#endif
 	0,	0
+};
+
+/* Nov, 2017, from https://physics.nist.gov/cuu/Constants/index.html */
+/* also see FARADAY and gasconstant in ../nrnoc/eion.c */
+static struct { /* Modern, Legacy units constants */
+	char *name;
+	double cval[2];
+} uconsts[] = {
+	"FARADAY", {96485.33289, 96485.309}, /*coulombs/mole*/
+	"R", {8.3144598, 8.31441}, /*molar gas constant, joules/mole/deg-K*/
+	0, {0., 0.}
 };
 
 static struct {	/* Built-ins */
@@ -265,6 +267,7 @@ char* nrn_mech_dll; /* but actually only for NEURON mswin and linux */
 int nrn_noauto_dlopen_nrnmech; /* 0 except when binary special. */
 int use_mcell_ran4_;
 int nrn_xopen_broadcast_;
+int _nrnunit_use_legacy_; /* allow dynamic switching between legacy and modern units */
 
 void hoc_init(void)	/* install constants and built-ins table */
 {
@@ -281,6 +284,12 @@ void hoc_init(void)	/* install constants and built-ins table */
 		s->type = VAR;
 		s->u.pval = &consts[i].cval;
 		s->subtype = USERDOUBLE;
+	}
+	for (i = 0; uconsts[i].name; i++) {
+		s = install(uconsts[i].name, UNDEF, uconsts[i].cval[0], &symlist);
+		s->type = VAR;
+		s->u.pval = &uconsts[i].cval[0];
+		s->subtype = DYNAMICUNITS;
 	}
 	for (i = 0; builtins[i].name; i++)
 	{
