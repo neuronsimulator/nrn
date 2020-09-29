@@ -699,7 +699,6 @@ AC_CONFIG_FILES([
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
 	share/lib/python/neuron/crxd/Makefile
-	share/lib/python/neuron/rxd/constants.py
 	])
 fi
 

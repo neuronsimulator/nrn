@@ -280,7 +280,6 @@ nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
-nrn_configure_file(constants.py share/lib/python/neuron/rxd)
 # NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
 file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
 

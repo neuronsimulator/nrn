@@ -19,7 +19,7 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 from warnings import warn
-molecules_per_mM_um3 = constants.NA / 1e18
+molecules_per_mM_um3 = constants.NA() / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array

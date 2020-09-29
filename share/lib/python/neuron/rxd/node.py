@@ -30,7 +30,7 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
-molecules_per_mM_um3 = constants.NA / 1e18
+molecules_per_mM_um3 = constants.NA() / 1e18
 
 def _get_data():
     return (_volumes, _surface_area, _diffs)
