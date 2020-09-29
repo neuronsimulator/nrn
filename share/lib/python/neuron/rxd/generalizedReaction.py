@@ -13,7 +13,7 @@ _numpy_array = numpy.array
 # converting from mM um^3 to molecules
 # = 6.02214129e23 * 1000. / 1.e18 / 1000
 # = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)
-molecules_per_mM_um3 = constants.NA / 1e18
+molecules_per_mM_um3 = constants.NA() / 1e18
 
 def ref_list_with_mult(obj):
     result = []
