@@ -141,6 +141,7 @@ class GeneralizedReaction(object):
                 if reg._secs1d or reg._secs3d:
                     break
             else:
+                if not sources_ecs or not dests_ecs:
                     return
         if not sp_regions:
             active_regions = [s()._extracellular()._region for s in sources_ecs + dests_ecs if s()]
@@ -151,13 +152,15 @@ class GeneralizedReaction(object):
             # reaction should only take place on those extracellular regions
             elif active_regions:
                 self._active_regions = active_regions
-
-            # check that the regions have sections
-            for reg in active_regions:
-                if reg._secs1d or reg._secs3d:
-                    break
-            else: return
-
+            
+            if hasattr(self,'_active_regions'):
+                for reg in self._active_regions:
+                    if reg._secs1d or reg._secs3d:
+                        break
+                else:
+                    if not sources_ecs or not dests_ecs:
+                        return
+                
             # if neither were specified don't set the '_has_regions' attribute
             # so the reaction takes place everywhere the species is defined
             for sptr in self._involved_species:
