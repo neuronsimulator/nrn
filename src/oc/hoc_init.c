@@ -274,6 +274,7 @@ void hoc_init(void)	/* install constants and built-ins table */
 	int i;
 	Symbol *s;
 
+	_nrnunit_use_legacy_ = 1;
 	use_mcell_ran4_ = 0;
 	nrn_xopen_broadcast_ = 255;
 	hoc_init_space();
