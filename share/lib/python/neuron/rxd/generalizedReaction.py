@@ -10,11 +10,6 @@ _weakref_ref = weakref.ref
 _itertools_chain = itertools.chain
 _numpy_array = numpy.array
 
-# converting from mM um^3 to molecules
-# = 6.02214129e23 * 1000. / 1.e18 / 1000
-# = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)
-molecules_per_mM_um3 = constants.NA() / 1e18
-
 def ref_list_with_mult(obj):
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
@@ -228,6 +223,8 @@ class GeneralizedReaction(object):
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
         if self._trans_membrane and active_regions:
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
+
+            molecules_per_mM_um3 = constants.molecules_per_mM_um3()
 
             # TODO: verify the areas and volumes are in the same order!
             areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in active_secs_list])))

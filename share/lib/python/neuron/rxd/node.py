@@ -30,8 +30,6 @@ _point_indices = {}
 _concentration_node = 0
 _molecule_node = 1
 
-molecules_per_mM_um3 = constants.NA() / 1e18
-
 def _get_data():
     return (_volumes, _surface_area, _diffs)
 
@@ -275,7 +273,7 @@ class Node(object):
         # once this is done, we need to divide by volume to get mM
         # TODO: is division still slower than multiplication? Switch to mult.
         if units == 'molecule/ms':
-            scale = molecules_per_mM_um3
+            scale = constants.molecules_per_mM_um3()
         elif units == 'mol/ms':
             # You have: mol
             # You want: (millimol/L) * um^3

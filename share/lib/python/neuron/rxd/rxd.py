@@ -19,7 +19,6 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 from warnings import warn
-molecules_per_mM_um3 = constants.NA() / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -223,9 +222,6 @@ def byeworld():
     _windows_remove_dlls()
     
 atexit.register(byeworld)
-
-# Faraday's constant (store to reduce number of lookups)
-FARADAY = h.FARADAY
 
 _cvode_object = h.CVode()
 
@@ -1244,6 +1240,7 @@ def _compile_reactions():
                           _c_compile(fxn_string))
 
     #Setup intracellular 3D reactions
+    molecules_per_mM_um3 = constants.molecules_per_mM_um3()
     if regions_inv_3d:
         for reg in regions_inv_3d:
             ics_grid_ids = []

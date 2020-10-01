@@ -233,7 +233,7 @@ class Section1D(rxdsection.RxDSection):
                 sign = 1
             else:
                 raise RxDException('bad nrn_region for setting up currents (should never get here)')
-            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
+            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * h.FARADAY * volumes[self.indices]))
             for i in range(self.nseg):
                 seg = self._sec((i + 0.5) / self.nseg)
                 cur_map[self.species.name + self.nrn_region][seg] = len(ptrs)
