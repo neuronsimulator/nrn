@@ -320,8 +320,28 @@ NRN_ENABLE_TESTS:BOOL=OFF
 
   Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using 
   ``make`` can run the tests with ``make test``.
-  May also need to ``pip install pytest``
-  If a test fails, how does one examine it in more detail?
+  May also need to ``pip install pytest``.
+  ``make test`` is quite terse. To get the same verbose output that is
+  seen with the travis-ci tests, use ``ctest -VV`` (executed in the
+  build folder). One can also run individual test files
+  with ``python3 -m pytest <testfile.py>`` or all the test files in that
+  folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
+  first to ensure any mod files needed are available to the tests. If
+  running a test outside the folder where the test is located, it may be
+  necessary to add the folder to PYTHONPATH.
+
+  Example
+
+  .. code-block:: shell
+
+    mkdir build
+    cmake .. -DNRN_ENABLE_TESTS=ON ...
+    make -j
+    make test
+    ctest -VV
+    cd ../test/pynrn
+    python3 -m pytest
+    python3 -m pytest test_currents.py
 
 NEURON_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
