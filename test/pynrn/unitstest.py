@@ -44,6 +44,19 @@ def test_hoc_legacy():
   assert(h.R == 8.3144598)
   assert(ghk == -483.8379745440489)
 
+def test_env_legacy():
+  for i in [0,1]:
+    a = None
+    try: # test NRNUNIT_USE_LEGACY not whether we can successfully run a subprocess
+      import sys, subprocess
+      a = "NRNUNIT_USE_LEGACY=%d %s -c 'from neuron import h; print (h.nrnunit_use_legacy())'"%(i, sys.executable)
+      a = subprocess.check_output(a, shell=True)
+      a = int(float(a.decode().split()[0]))
+    except:
+      pass
+    assert(a == i)
+
 if __name__ == "__main__":
   test_mod_legacy()
   test_hoc_legacy()
+  test_env_legacy()

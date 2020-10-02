@@ -274,7 +274,18 @@ void hoc_init(void)	/* install constants and built-ins table */
 	int i;
 	Symbol *s;
 
-	_nrnunit_use_legacy_ = 1;
+	_nrnunit_use_legacy_ = 1; /* default */
+	{ /* but check the environment variable if it exists */
+		const char* envvar = getenv("NRNUNIT_USE_LEGACY");
+		if (envvar) {
+			if (strcmp(envvar, "1") == 0) {
+				_nrnunit_use_legacy_ = 1;
+			}else if (strcmp(envvar, "0") == 0) {
+				_nrnunit_use_legacy_ = 0;
+			}
+		}
+	}
+
 	use_mcell_ran4_ = 0;
 	nrn_xopen_broadcast_ = 255;
 	hoc_init_space();
