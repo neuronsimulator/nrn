@@ -328,7 +328,11 @@ NRN_ENABLE_TESTS:BOOL=OFF
   folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
   first to ensure any mod files needed are available to the tests. If
   running a test outside the folder where the test is located, it may be
-  necessary to add the folder to PYTHONPATH.
+  necessary to add the folder to PYTHONPATH. Note: The last python
+  mentioned in the ``-DNRN_PYTHON_DYNAMIC=...`` (if the semicolon separated
+  list is non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
+  is the one used for ``make test`` and ``ctest -VV``. Otherwise the
+  value specified by ``PYTHON_EXECUTABLE`` is used.
 
   Example
 
