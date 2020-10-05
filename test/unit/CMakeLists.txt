@@ -24,6 +24,7 @@ add_executable(testparser parser/parser.cpp)
 add_executable(
   testvisitor
   visitor/main.cpp
+  visitor/after_cvode_to_cnexp.cpp
   visitor/constant_folder.cpp
   visitor/defuse_analyze.cpp
   visitor/global_to_range.cpp

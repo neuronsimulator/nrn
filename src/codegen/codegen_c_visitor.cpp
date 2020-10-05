@@ -15,6 +15,7 @@
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "config/config.h"
+#include "lexer/token_mapping.hpp"
 #include "parser/c11_driver.hpp"
 #include "utils/logger.hpp"
 #include "utils/string_utils.hpp"
@@ -1332,6 +1333,9 @@ void CodegenCVisitor::print_function_call(FunctionCall& node) {
         if (!arguments.empty()) {
             printer->add_text(", ");
         }
+    } else if (nmodl::details::needs_neuron_thread_first_arg(function_name) &&
+               arguments.front()->get_node_name() != "nt") {
+        arguments.insert(arguments.begin(), std::make_shared<ast::String>("nt"));
     }
 
     print_vector_elements(arguments, ", ");

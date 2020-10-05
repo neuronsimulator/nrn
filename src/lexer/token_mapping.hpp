@@ -25,4 +25,10 @@ parser::NmodlParser::token_type token_type(const std::string& name);
 std::vector<std::string> get_external_variables();
 std::vector<std::string> get_external_functions();
 
+namespace details {
+
+bool needs_neuron_thread_first_arg(const std::string& token);
+
+}  // namespace details
+
 }  // namespace nmodl

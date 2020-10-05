@@ -11,6 +11,7 @@
 
 #include "ast/ast.hpp"
 #include "lexer/modl.h"
+#include "lexer/token_mapping.hpp"
 #include "parser/nmodl/nmodl_parser.hpp"
 
 namespace nmodl {
@@ -33,97 +34,98 @@ namespace details {
  * in multiple context and hence we are keeping original names.
  * Once we finish code generation part then we change this.
  */
-static std::map<std::string, TokenType> keywords = {{"VERBATIM", Token::VERBATIM},
-                                                    {"COMMENT", Token::BLOCK_COMMENT},
-                                                    {"TITLE", Token::MODEL},
-                                                    {"CONSTANT", Token::CONSTANT},
-                                                    {"PARAMETER", Token::PARAMETER},
-                                                    {"INDEPENDENT", Token::INDEPENDENT},
-                                                    {"ASSIGNED", Token::ASSIGNED},
-                                                    {"INITIAL", Token::INITIAL1},
-                                                    {"TERMINAL", Token::TERMINAL},
-                                                    {"DERIVATIVE", Token::DERIVATIVE},
-                                                    {"EQUATION", Token::BREAKPOINT},
-                                                    {"BREAKPOINT", Token::BREAKPOINT},
-                                                    {"CONDUCTANCE", Token::CONDUCTANCE},
-                                                    {"SOLVE", Token::SOLVE},
-                                                    {"STATE", Token::STATE},
-                                                    {"STEPPED", Token::STEPPED},
-                                                    {"LINEAR", Token::LINEAR},
-                                                    {"NONLINEAR", Token::NONLINEAR},
-                                                    {"DISCRETE", Token::DISCRETE},
-                                                    {"FUNCTION", Token::FUNCTION1},
-                                                    {"FUNCTION_TABLE", Token::FUNCTION_TABLE},
-                                                    {"PROCEDURE", Token::PROCEDURE},
-                                                    {"PARTIAL", Token::PARTIAL},
-                                                    {"DEL2", Token::DEL2},
-                                                    {"DEL", Token::DEL},
-                                                    {"LOCAL", Token::LOCAL},
-                                                    {"METHOD", Token::USING},
-                                                    {"STEADYSTATE", Token::STEADYSTATE},
-                                                    {"SENS", Token::SENS},
-                                                    {"STEP", Token::STEP},
-                                                    {"WITH", Token::WITH},
-                                                    {"FROM", Token::FROM},
-                                                    {"FORALL", Token::FORALL1},
-                                                    {"TO", Token::TO},
-                                                    {"BY", Token::BY},
-                                                    {"if", Token::IF},
-                                                    {"else", Token::ELSE},
-                                                    {"while", Token::WHILE},
-                                                    {"START", Token::START1},
-                                                    {"DEFINE", Token::DEFINE1},
-                                                    {"KINETIC", Token::KINETIC},
-                                                    {"CONSERVE", Token::CONSERVE},
-                                                    {"PLOT", Token::PLOT},
-                                                    {"VS", Token::VS},
-                                                    {"LAG", Token::LAG},
-                                                    {"RESET", Token::RESET},
-                                                    {"MATCH", Token::MATCH},
-                                                    {"MODEL_LEVEL", Token::MODEL_LEVEL},
-                                                    {"SWEEP", Token::SWEEP},
-                                                    {"FIRST", Token::FIRST},
-                                                    {"LAST", Token::LAST},
-                                                    {"COMPARTMENT", Token::COMPARTMENT},
-                                                    {"LONGITUDINAL_DIFFUSION", Token::LONGDIFUS},
-                                                    {"PUTQ", Token::PUTQ},
-                                                    {"GETQ", Token::GETQ},
-                                                    {"IFERROR", Token::IFERROR},
-                                                    {"SOLVEFOR", Token::SOLVEFOR},
-                                                    {"UNITS", Token::UNITS},
-                                                    {"UNITSON", Token::UNITSON},
-                                                    {"UNITSOFF", Token::UNITSOFF},
-                                                    {"TABLE", Token::TABLE},
-                                                    {"DEPEND", Token::DEPEND},
-                                                    {"NEURON", Token::NEURON},
-                                                    {"SUFFIX", Token::SUFFIX},
-                                                    {"POINT_PROCESS", Token::SUFFIX},
-                                                    {"ARTIFICIAL_CELL", Token::SUFFIX},
-                                                    {"NONSPECIFIC_CURRENT", Token::NONSPECIFIC},
-                                                    {"ELECTRODE_CURRENT", Token::ELECTRODE_CURRENT},
-                                                    {"SECTION", Token::SECTION},
-                                                    {"RANGE", Token::RANGE},
-                                                    {"USEION", Token::USEION},
-                                                    {"READ", Token::READ},
-                                                    {"WRITE", Token::WRITE},
-                                                    {"VALENCE", Token::VALENCE},
-                                                    {"CHARGE", Token::VALENCE},
-                                                    {"GLOBAL", Token::GLOBAL},
-                                                    {"POINTER", Token::POINTER},
-                                                    {"BBCOREPOINTER", Token::BBCOREPOINTER},
-                                                    {"EXTERNAL", Token::EXTERNAL},
-                                                    {"INCLUDE", Token::INCLUDE1},
-                                                    {"CONSTRUCTOR", Token::CONSTRUCTOR},
-                                                    {"DESTRUCTOR", Token::DESTRUCTOR},
-                                                    {"NET_RECEIVE", Token::NETRECEIVE},
-                                                    {"BEFORE", Token::BEFORE},
-                                                    {"AFTER", Token::AFTER},
-                                                    {"WATCH", Token::WATCH},
-                                                    {"FOR_NETCONS", Token::FOR_NETCONS},
-                                                    {"THREADSAFE", Token::THREADSAFE},
-                                                    {"PROTECT", Token::PROTECT},
-                                                    {"MUTEXLOCK", Token::NRNMUTEXLOCK},
-                                                    {"MUTEXUNLOCK", Token::NRNMUTEXUNLOCK}};
+const static std::map<std::string, TokenType> keywords = {
+    {"VERBATIM", Token::VERBATIM},
+    {"COMMENT", Token::BLOCK_COMMENT},
+    {"TITLE", Token::MODEL},
+    {"CONSTANT", Token::CONSTANT},
+    {"PARAMETER", Token::PARAMETER},
+    {"INDEPENDENT", Token::INDEPENDENT},
+    {"ASSIGNED", Token::ASSIGNED},
+    {"INITIAL", Token::INITIAL1},
+    {"TERMINAL", Token::TERMINAL},
+    {"DERIVATIVE", Token::DERIVATIVE},
+    {"EQUATION", Token::BREAKPOINT},
+    {"BREAKPOINT", Token::BREAKPOINT},
+    {"CONDUCTANCE", Token::CONDUCTANCE},
+    {"SOLVE", Token::SOLVE},
+    {"STATE", Token::STATE},
+    {"STEPPED", Token::STEPPED},
+    {"LINEAR", Token::LINEAR},
+    {"NONLINEAR", Token::NONLINEAR},
+    {"DISCRETE", Token::DISCRETE},
+    {"FUNCTION", Token::FUNCTION1},
+    {"FUNCTION_TABLE", Token::FUNCTION_TABLE},
+    {"PROCEDURE", Token::PROCEDURE},
+    {"PARTIAL", Token::PARTIAL},
+    {"DEL2", Token::DEL2},
+    {"DEL", Token::DEL},
+    {"LOCAL", Token::LOCAL},
+    {"METHOD", Token::USING},
+    {"STEADYSTATE", Token::STEADYSTATE},
+    {"SENS", Token::SENS},
+    {"STEP", Token::STEP},
+    {"WITH", Token::WITH},
+    {"FROM", Token::FROM},
+    {"FORALL", Token::FORALL1},
+    {"TO", Token::TO},
+    {"BY", Token::BY},
+    {"if", Token::IF},
+    {"else", Token::ELSE},
+    {"while", Token::WHILE},
+    {"START", Token::START1},
+    {"DEFINE", Token::DEFINE1},
+    {"KINETIC", Token::KINETIC},
+    {"CONSERVE", Token::CONSERVE},
+    {"PLOT", Token::PLOT},
+    {"VS", Token::VS},
+    {"LAG", Token::LAG},
+    {"RESET", Token::RESET},
+    {"MATCH", Token::MATCH},
+    {"MODEL_LEVEL", Token::MODEL_LEVEL},
+    {"SWEEP", Token::SWEEP},
+    {"FIRST", Token::FIRST},
+    {"LAST", Token::LAST},
+    {"COMPARTMENT", Token::COMPARTMENT},
+    {"LONGITUDINAL_DIFFUSION", Token::LONGDIFUS},
+    {"PUTQ", Token::PUTQ},
+    {"GETQ", Token::GETQ},
+    {"IFERROR", Token::IFERROR},
+    {"SOLVEFOR", Token::SOLVEFOR},
+    {"UNITS", Token::UNITS},
+    {"UNITSON", Token::UNITSON},
+    {"UNITSOFF", Token::UNITSOFF},
+    {"TABLE", Token::TABLE},
+    {"DEPEND", Token::DEPEND},
+    {"NEURON", Token::NEURON},
+    {"SUFFIX", Token::SUFFIX},
+    {"POINT_PROCESS", Token::SUFFIX},
+    {"ARTIFICIAL_CELL", Token::SUFFIX},
+    {"NONSPECIFIC_CURRENT", Token::NONSPECIFIC},
+    {"ELECTRODE_CURRENT", Token::ELECTRODE_CURRENT},
+    {"SECTION", Token::SECTION},
+    {"RANGE", Token::RANGE},
+    {"USEION", Token::USEION},
+    {"READ", Token::READ},
+    {"WRITE", Token::WRITE},
+    {"VALENCE", Token::VALENCE},
+    {"CHARGE", Token::VALENCE},
+    {"GLOBAL", Token::GLOBAL},
+    {"POINTER", Token::POINTER},
+    {"BBCOREPOINTER", Token::BBCOREPOINTER},
+    {"EXTERNAL", Token::EXTERNAL},
+    {"INCLUDE", Token::INCLUDE1},
+    {"CONSTRUCTOR", Token::CONSTRUCTOR},
+    {"DESTRUCTOR", Token::DESTRUCTOR},
+    {"NET_RECEIVE", Token::NETRECEIVE},
+    {"BEFORE", Token::BEFORE},
+    {"AFTER", Token::AFTER},
+    {"WATCH", Token::WATCH},
+    {"FOR_NETCONS", Token::FOR_NETCONS},
+    {"THREADSAFE", Token::THREADSAFE},
+    {"PROTECT", Token::PROTECT},
+    {"MUTEXLOCK", Token::NRNMUTEXLOCK},
+    {"MUTEXUNLOCK", Token::NRNMUTEXUNLOCK}};
 
 
 /**
@@ -155,25 +157,25 @@ struct MethodInfo {
  *
  * \todo MethodInfo::subtype should be changed from integer flag to proper type
  */
-static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
-                                                    {"runge", MethodInfo(DERF | KINF, 0)},
-                                                    {"euler", MethodInfo(DERF | KINF, 0)},
-                                                    {"adeuler", MethodInfo(DERF | KINF, 1)},
-                                                    {"heun", MethodInfo(DERF | KINF, 0)},
-                                                    {"adrunge", MethodInfo(DERF | KINF, 1)},
-                                                    {"gear", MethodInfo(DERF | KINF, 1)},
-                                                    {"newton", MethodInfo(NLINF, 0)},
-                                                    {"simplex", MethodInfo(NLINF, 0)},
-                                                    {"simeq", MethodInfo(LINF, 0)},
-                                                    {"seidel", MethodInfo(LINF, 0)},
-                                                    {"_advance", MethodInfo(KINF, 0)},
-                                                    {"sparse", MethodInfo(KINF, 0)},
-                                                    {"derivimplicit", MethodInfo(DERF, 0)},
-                                                    {"cnexp", MethodInfo(DERF, 0)},
-                                                    {"clsoda", MethodInfo(DERF | KINF, 1)},
-                                                    {"after_cvode", MethodInfo(0, 0)},
-                                                    {"cvode_t", MethodInfo(0, 0)},
-                                                    {"cvode_t_v", MethodInfo(0, 0)}};
+const static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | KINF, 0)},
+                                                          {"runge", MethodInfo(DERF | KINF, 0)},
+                                                          {"euler", MethodInfo(DERF | KINF, 0)},
+                                                          {"adeuler", MethodInfo(DERF | KINF, 1)},
+                                                          {"heun", MethodInfo(DERF | KINF, 0)},
+                                                          {"adrunge", MethodInfo(DERF | KINF, 1)},
+                                                          {"gear", MethodInfo(DERF | KINF, 1)},
+                                                          {"newton", MethodInfo(NLINF, 0)},
+                                                          {"simplex", MethodInfo(NLINF, 0)},
+                                                          {"simeq", MethodInfo(LINF, 0)},
+                                                          {"seidel", MethodInfo(LINF, 0)},
+                                                          {"_advance", MethodInfo(KINF, 0)},
+                                                          {"sparse", MethodInfo(KINF, 0)},
+                                                          {"derivimplicit", MethodInfo(DERF, 0)},
+                                                          {"cnexp", MethodInfo(DERF, 0)},
+                                                          {"clsoda", MethodInfo(DERF | KINF, 1)},
+                                                          {"after_cvode", MethodInfo(0, 0)},
+                                                          {"cvode_t", MethodInfo(0, 0)},
+                                                          {"cvode_t_v", MethodInfo(0, 0)}};
 
 
 /**
@@ -192,13 +194,11 @@ static std::map<std::string, MethodInfo> methods = {{"adams", MethodInfo(DERF | 
  * - DefinitionType::EXT_4      : functions that need a first arg of \c NrnThread*
  * - DefinitionType::EXT_5      : external definition names that are not \c threadsafe
  *
- * \todo These types were implemented for easy migration from old implementation.
- *       As first draft of code generation is complete, this can be now refactored.
  */
-
 enum class DefinitionType { EXT_DOUBLE, EXT_2, EXT_3, EXT_4, EXT_5 };
 
-static std::map<std::string, DefinitionType> extern_definitions = {
+
+const static std::map<std::string, DefinitionType> extern_definitions = {
     {"first_time", DefinitionType::EXT_DOUBLE},
     {"error", DefinitionType::EXT_DOUBLE},
     {"f_flux", DefinitionType::EXT_DOUBLE},
@@ -265,7 +265,6 @@ static std::map<std::string, DefinitionType> extern_definitions = {
     {"net_move", DefinitionType::EXT_DOUBLE},
     {"net_event", DefinitionType::EXT_DOUBLE},
     {"nrn_random_play", DefinitionType::EXT_DOUBLE},
-    {"at_time", DefinitionType::EXT_DOUBLE},
     {"nrn_ghk", DefinitionType::EXT_DOUBLE},
     {"romberg", DefinitionType::EXT_2},
     {"legendre", DefinitionType::EXT_2},
@@ -304,6 +303,19 @@ static std::map<std::string, DefinitionType> extern_definitions = {
 
 
 /**
+ * Checks if \c token is one of the functions coming from NEURON/CoreNEURON and needs
+ * passing NrnThread* as first argument (typical name of variable \c nt)
+ *
+ * @param token Name of function
+ * @return True or false depending if the function needs NrnThread* argument
+ */
+bool needs_neuron_thread_first_arg(const std::string& token) {
+    auto extern_def = extern_definitions.find(token);
+    return extern_def != extern_definitions.end() && extern_def->second == DefinitionType::EXT_4;
+}
+
+
+/**
  * Variables from NEURON that are directly used in NMODL
  *
  * NEURON exposes certain variable that can be directly used in NMODLvar.
@@ -315,7 +327,7 @@ static std::vector<std::string> NEURON_VARIABLES = {"t", "dt", "celsius", "v", "
 
 /// Return token type for the keyword
 TokenType keyword_type(const std::string& name) {
-    return keywords[name];
+    return keywords.at(name);
 }
 
 }  // namespace details

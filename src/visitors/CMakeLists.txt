@@ -6,6 +6,8 @@ set(VISITOR_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/neuron_solve_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/constant_folder_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/constant_folder_visitor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/after_cvode_to_cnexp_visitor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/after_cvode_to_cnexp_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/defuse_analyze_visitor.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/global_var_visitor.cpp
