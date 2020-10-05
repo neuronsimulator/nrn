@@ -464,23 +464,9 @@ void Phase2::set_net_send_buffer(Memb_list** ml_list, const std::vector<int>& pn
         // Does this thread have this type.
         Memb_list* ml = ml_list[type];
         if (ml) {  // needs a NetSendBuffer
-            NetSendBuffer_t* nsb = (NetSendBuffer_t*)ecalloc_align(1, sizeof(NetSendBuffer_t));
-            ml->_net_send_buffer = nsb;
-
             // begin with a size equal to twice number of instances
-            // at present there is no provision for dynamically increasing this.
-            nsb->_size = ml->nodecount * 2;
-            nsb->_cnt = 0;
-
-            nsb->_sendtype = (int*)ecalloc_align(nsb->_size, sizeof(int));
-            nsb->_vdata_index = (int*)ecalloc_align(nsb->_size, sizeof(int));
-            nsb->_pnt_index = (int*)ecalloc_align(nsb->_size, sizeof(int));
-            nsb->_weight_index = (int*)ecalloc_align(nsb->_size, sizeof(int));
-            // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy
-            // and recopy new data
-            nsb->reallocated = 1;
-            nsb->_nsb_t = (double*)ecalloc_align(nsb->_size, sizeof(double));
-            nsb->_nsb_flag = (double*)ecalloc_align(nsb->_size, sizeof(double));
+            NetSendBuffer_t* nsb = new NetSendBuffer_t(ml->nodecount * 2);
+            ml->_net_send_buffer = nsb;
         }
     }
 }

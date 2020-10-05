@@ -27,7 +27,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <string.h>
+
 #include "coreneuron/nrnconf.h"
+#include "coreneuron/utils/memory.h"
 
 namespace coreneuron {
 #if PG_ACC_BUGS
@@ -66,7 +69,7 @@ struct NetReceiveBuffer_t {
     int _pnt_offset;
 };
 
-struct NetSendBuffer_t {
+struct NetSendBuffer_t : MemoryManaged {
     int* _sendtype;  // net_send, net_event, net_move
     int* _vdata_index;
     int* _pnt_index;
@@ -76,6 +79,56 @@ struct NetSendBuffer_t {
     int _cnt;
     int _size;       /* capacity */
     int reallocated; /* if buffer resized/reallocated, needs to be copy to cpu */
+
+    NetSendBuffer_t(int size) : _size(size) {
+        _cnt = 0;
+
+        _sendtype = (int*)ecalloc_align(_size, sizeof(int));
+        _vdata_index = (int*)ecalloc_align(_size, sizeof(int));
+        _pnt_index = (int*)ecalloc_align(_size, sizeof(int));
+        _weight_index = (int*)ecalloc_align(_size, sizeof(int));
+        // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy
+        // and recopy new data
+        reallocated = 1;
+        _nsb_t = (double*)ecalloc_align(_size, sizeof(double));
+        _nsb_flag = (double*)ecalloc_align(_size, sizeof(double));
+    }
+
+    ~NetSendBuffer_t() {
+        free_memory(_sendtype);
+        free_memory(_vdata_index);
+        free_memory(_pnt_index);
+        free_memory(_weight_index);
+        free_memory(_nsb_t);
+        free_memory(_nsb_flag);
+    }
+
+    void grow() {
+#if defined(_OPENACC)
+        int cannot_reallocate_on_device = 0;
+        assert(cannot_reallocate_on_device);
+#else
+        int new_size = _size * 2;
+        grow_buf(&_sendtype, _size, new_size);
+        grow_buf(&_vdata_index, _size, new_size);
+        grow_buf(&_pnt_index, _size, new_size);
+        grow_buf(&_weight_index, _size, new_size);
+        grow_buf(&_nsb_t, _size, new_size);
+        grow_buf(&_nsb_flag, _size, new_size);
+        _size = new_size;
+#endif
+    }
+
+    private:
+        template <typename T>
+        void grow_buf(T** buf, int size, int new_size) {
+            T* new_buf = nullptr;
+            new_buf = (T*)ecalloc_align(new_size, sizeof(T));
+            memcpy(new_buf, *buf, size * sizeof(T));
+            free(*buf);
+            *buf = new_buf;
+        }
+
 };
 
 struct Memb_list {
