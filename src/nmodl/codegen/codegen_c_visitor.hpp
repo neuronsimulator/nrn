@@ -1373,6 +1373,13 @@ class CodegenCVisitor: public visitor::AstVisitor {
 
 
     /**
+     * Print statement that grows NetSendBuffering_t structure if needed.
+     * This function should be overridden for backends that cannot dynamically reallocate the buffer
+     */
+    virtual void print_net_send_buffering_grow();
+
+
+    /**
      * Print kernel for buffering net_send events
      *
      * This kernel is only needed for accelerator backends where \c net\_send needs to be executed

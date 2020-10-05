@@ -3704,13 +3704,15 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     printer->end_block(1);
 }
 
+void CodegenCVisitor::print_net_send_buffering_grow() {
+    printer->add_line("nsb->grow();");
+}
 
 void CodegenCVisitor::print_net_send_buffering() {
     if (!net_send_buffer_required()) {
         return;
     }
 
-    auto error = add_escape_quote("Error : netsend buffer size (%d) exceeded\\n");
     printer->add_newline(2);
     print_device_method_annotation();
     auto args =
@@ -3720,8 +3722,9 @@ void CodegenCVisitor::print_net_send_buffering() {
     printer->add_line("int i = nsb->_cnt;");
     printer->add_line("nsb->_cnt++;");
     printer->add_line("if(nsb->_cnt >= nsb->_size) {");
-    printer->add_line("    printf({}, nsb->_cnt);"_format(error));
-    printer->add_line("    coreneuron_abort();");
+    printer->increase_indent();
+    print_net_send_buffering_grow();
+    printer->decrease_indent();
     printer->add_line("}");
     printer->add_line("nsb->_sendtype[i] = type;");
     printer->add_line("nsb->_vdata_index[i] = vdata_index;");
