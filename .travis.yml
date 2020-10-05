@@ -60,7 +60,6 @@ addons:
   # for Mac builds, we use Homebrew
   homebrew:
     packages:
-      - bison
       - boost
       - cmake
       - flex

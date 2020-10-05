@@ -29,6 +29,9 @@ const std::string EULER_METHOD("euler");
 /// cnexp method in nmodl
 const std::string CNEXP_METHOD("cnexp");
 
+/// cvode method in nmodl
+const std::string AFTER_CVODE_METHOD("after_cvode");
+
 /// sparse method in nmodl
 const std::string SPARSE_METHOD("sparse");
 

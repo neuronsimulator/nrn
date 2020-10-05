@@ -56,7 +56,8 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     const std::set<std::string> handled_solvers{codegen::naming::CNEXP_METHOD,
                                                 codegen::naming::EULER_METHOD,
                                                 codegen::naming::DERIVIMPLICIT_METHOD,
-                                                codegen::naming::SPARSE_METHOD};
+                                                codegen::naming::SPARSE_METHOD,
+                                                codegen::naming::AFTER_CVODE_METHOD};
 
     /// Vector that stores all the ast::Node that are unhandled
     /// by the NMODL \c C++ code generator
