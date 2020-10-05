@@ -92,6 +92,9 @@ class CodegenAccVisitor: public CodegenCVisitor {
                                             const std::string& type) const override;
 
 
+    void print_net_send_buffering_grow() override;
+
+
   public:
     CodegenAccVisitor(const std::string& mod_file,
                       const std::string& output_dir,

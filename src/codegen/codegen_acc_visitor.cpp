@@ -117,6 +117,13 @@ void CodegenAccVisitor::print_abort_routine() const {
     printer->add_line("}");
 }
 
+void CodegenAccVisitor::print_net_send_buffering_grow() {
+    auto error = add_escape_quote("Error : netsend buffer size (%d) exceeded\\n");
+
+    printer->add_line("printf({}, nsb->_cnt);"_format(error));
+    printer->add_line("coreneuron_abort();");
+}
+
 /**
  * Each kernel like nrn_init, nrn_state and nrn_cur could be offloaded
  * to accelerator. In this case, at very top level, we print pragma
