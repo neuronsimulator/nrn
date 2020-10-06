@@ -806,7 +806,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 return(len(sig.parameters))
             else:
                 sig = inspect.getargspec(fun)
-                if sig.args != None or sig.keywords != None:
+                if sig.varargs != None or sig.keywords != None:
                     raise RxDException("Intracellular diffusion coefficient function may not include *args or *kwargs")
                 return len(sig.args)
         dc = None
