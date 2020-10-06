@@ -806,7 +806,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 return(len(sig.parameters))
             else:
                 sig = inspect.getargspec(fun)
-                if sig.args != None or sig.keywords != None:
+                if sig.varargs != None or sig.keywords != None:
                     raise RxDException("Intracellular diffusion coefficient function may not include *args or *kwargs")
                 return len(sig.args)
         dc = None
@@ -1690,7 +1690,7 @@ class Species(_SpeciesMathable):
                 charge = self.charge
                 namei = self._name + 'i'
                 nameo = self._name + 'o'
-                tenthousand_over_charge_faraday = 10000. / (charge * rxd.FARADAY)
+                tenthousand_over_charge_faraday = 10000. / (charge * h.FARADAY)
                 for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
                         r = nodeobj.region
