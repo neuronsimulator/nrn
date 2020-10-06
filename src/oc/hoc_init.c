@@ -274,7 +274,7 @@ void hoc_init(void)	/* install constants and built-ins table */
 	int i;
 	Symbol *s;
 
-	_nrnunit_use_legacy_ = 1; /* default */
+	_nrnunit_use_legacy_ = 0; /* default */
 	{ /* but check the environment variable if it exists */
 		const char* envvar = getenv("NRNUNIT_USE_LEGACY");
 		if (envvar) {
