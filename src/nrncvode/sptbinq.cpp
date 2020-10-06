@@ -23,10 +23,8 @@ of struct _spblk, we are really using TQItem
 #define key t_
 #include <sptree.h>
 
-extern "C" {
 //extern double dt;
 #define nt_dt nrn_threads->_dt
-}
 
 void (*nrn_binq_enqueue_error_handler)(double, TQItem*);
 
@@ -387,7 +385,7 @@ void BinQ::remove(TQItem* q) {
 	}
 }
 
-#include <spaux.c>
-#include <sptree.c>
-#include <spdaveb.c>
+#include <spaux.cpp>
+#include <sptree.cpp>
+#include <spdaveb.cpp>
 

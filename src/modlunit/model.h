@@ -78,16 +78,16 @@ typedef struct Symbol {
  * the item is 
  */
 #if DEBUG || 1
-extern Symbol *_SYM();
-extern char *_STR();
-extern Item *_ITM();
-extern Item **_ITMA();	/* array of item pointers */
-extern List *_LST();
-#define SYM(q)	_SYM(q,__FILE__,__LINE__)
-#define STR(q)	_STR(q,__FILE__,__LINE__)
-#define ITM(q)	_ITM(q,__FILE__,__LINE__)
-#define ITMA(q)	_ITMA(q,__FILE__,__LINE__)
-#define LST(q)	_LST(q,__FILE__,__LINE__)
+extern Symbol *_SYM(Item*, char*, int);
+extern char *_STR(Item* q, char* file, int line);
+extern Item *_ITM(Item* q, char* file, int line);
+extern Item **_ITMA(Item* q, char* file, int line);	/* array of item pointers */
+extern List *_LST(Item* q, char* file, int line);
+#define SYM(q)	_SYM(q,(char*)__FILE__,__LINE__)
+#define STR(q)	_STR(q,(char*)__FILE__,__LINE__)
+#define ITM(q)	_ITM(q,(char*)__FILE__,__LINE__)
+#define ITMA(q)	_ITMA(q,(char*)__FILE__,__LINE__)
+#define LST(q)	_LST(q,(char*)__FILE__,__LINE__)
 #else
 #define SYM(q)	((Symbol *)((q)->element))
 #define STR(q)	((char *)((q)->element))
@@ -137,17 +137,17 @@ extern List *_LST();
 #define EXPLICIT_DECL 01	/* usage field, variable occurs in input file */
 
 #if LINT
-extern double	*emalloc();	/* lint thinks doubles align with anything*/
+extern double	*emalloc(unsigned);	/* lint thinks doubles align with anything*/
 #else
-extern char	*emalloc();	/* malloc with out of space checking */
+extern char	*emalloc(unsigned);	/* malloc with out of space checking */
 #endif
-extern char
-		*stralloc(),	/* copies string to new space */
-		*inputline(),	/* used only by parser to get title line */
-		*inputtopar(),	/* used only by parser to get units */
-		*decode_units(),
-		*unit_str(),
-		*Gets();	/* used only in io.c to get string from fin. */
+extern char	*stralloc(char*, char*);	/* copies string to new space */
+
+extern char	*inputline(),	/* used only by parser to get title line */
+		    *inputtopar(),	/* used only by parser to get units */
+		    *decode_units(Symbol*),
+		    *unit_str(),
+		    *Gets(char*);	/* used only in io.c to get string from fin. */
 
 extern List
 #if HAVE_STDARG_H || MAC
@@ -162,26 +162,29 @@ extern List
 		*inputtext();	/* used by parser to get block text from
 				 * VERBATIM and COMMENT */
 extern Item
-		*putintoken(),	/* construct symbol and store input tokens */
-		*insertstr(),	/* before a known Item */
-		*insertsym(),
-		*linsertstr(),	/* prepend to list */
-		*lappendstr(),	/* append to list */
-		*linsertsym(),
-		*lappendsym(),
-		*lappenditem(),
+        *putintoken(char *s, short type, short),	/* construct symbol and store input tokens */
+        *insertstr(Item* item, char* str),	/* before a known Item */
+        *insertsym(List* list, Symbol* sym),
+        *linsertstr(List* list, char* str),	/* prepend to list */
+        *lappendstr(List* list, char* str),	/* append to list */
+        *linsertsym(List* list, Symbol* sym),
+        *lappendsym(List* list, Symbol* sym),
+        *lappenditem(List* list, Item* item),
 		*listtype(),
-		*next_parstok(),
-		*prev_parstok(),
-		*car(),
-		*next(),
-		*prev();
+		*next_parstok(Item*),
+		*prev_parstok(Item*),
+		*car(List*),
+		*next(Item*),
+		*prev(Item*);
+
+
+
 
 #include "modlunit.h" /* void functions */
 
 extern Symbol
-		*install(),	/* Install token in symbol table */
-		*lookup(),	/* lookup name in symbol table */
+		*install(char*, int),	/* Install token in symbol table */
+		*lookup(char*),	/* lookup name in symbol table */
 		*ifnew_constinstall();	/* new .var info only if
 					 * not already done. */
 

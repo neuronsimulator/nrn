@@ -74,52 +74,43 @@ typedef struct hoc_Item {
 /*
  * An item type, STRING is also used as an item type 
  */
+//
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern char *hoc_l_stralloc(const char *, char *release);
+extern hoc_List *hoc_l_newlist();
+extern hoc_Item *hoc_l_insertstr(hoc_Item *, const char *);
+extern hoc_Item *hoc_l_insertsym(hoc_Item *, struct Symbol *);
+extern hoc_Item *hoc_l_insertitem(hoc_Item *, hoc_Item *);
+extern hoc_Item *hoc_l_insertlist(hoc_Item *, hoc_List *);
+extern hoc_Item *hoc_l_insertsec(hoc_Item *, struct Section *);
+extern hoc_Item *hoc_l_insertvoid(hoc_Item *, void *);
+extern hoc_Item *hoc_l_linsertstr(hoc_List *, const char *);
+extern hoc_Item *hoc_l_linsertsym(hoc_List *, struct Symbol *);
+extern hoc_Item *hoc_l_lappendstr(hoc_List *, const char *);
+extern hoc_Item *hoc_l_lappendsym(hoc_List *, struct Symbol *);
+extern hoc_Item *hoc_l_lappenditem(hoc_List *, hoc_Item *);
+extern hoc_Item *hoc_l_lappendlst(hoc_List *, hoc_List *);
+extern hoc_Item *hoc_l_lappendsec(hoc_List *, struct Section *);
+extern hoc_Item *hoc_l_lappendvoid(hoc_List *, void *);
+extern hoc_Item *hoc_l_lappendobj(hoc_List *, struct Object *);
+extern void hoc_l_freelist(hoc_List **);
+extern hoc_Item *hoc_l_next(hoc_Item *);
+extern hoc_Item *hoc_l_prev(hoc_Item *);
+extern void hoc_l_delete(hoc_Item *);
+extern void hoc_l_move(hoc_Item *, hoc_Item *, hoc_Item *);
+extern void hoc_l_movelist(hoc_Item *, hoc_Item *, hoc_List *);
+extern void hoc_l_replacstr(hoc_Item *, const char *);
 
-extern char* hoc_l_stralloc(const char*, char* release);
-extern hoc_List* hoc_l_newlist();
-extern hoc_Item* hoc_l_insertstr(hoc_Item*, const char*);
-extern hoc_Item* hoc_l_insertsym(hoc_Item*, struct Symbol*);
-extern hoc_Item* hoc_l_insertitem(hoc_Item*, hoc_Item*);
-extern hoc_Item* hoc_l_insertlist(hoc_Item*, hoc_List*);
-extern hoc_Item* hoc_l_insertsec(hoc_Item*, struct Section*);
-extern hoc_Item* hoc_l_insertvoid(hoc_Item*, void*);
+#define Insertstr    insertstr
+#define Insertsym    insertsym
+#define Insertsec    insertsec
+#define Linsertsym    linsertsym
+#define Linsertstr    linsertstr
+#define Lappendsym    lappendsym
+#define Lappendstr    lappendstr
+#define Lappenditem    lappenditem
+#define Lappendlst    lappendlst
+#define Lappendsec    lappendsec
 
-extern hoc_Item* hoc_l_linsertstr(hoc_List*, const char*);
-extern hoc_Item* hoc_l_linsertsym(hoc_List*, struct Symbol*);
-
-extern hoc_Item* hoc_l_lappendstr(hoc_List*, const char*);
-extern hoc_Item* hoc_l_lappendsym(hoc_List*, struct Symbol*);
-extern hoc_Item* hoc_l_lappenditem(hoc_List*, hoc_Item*);
-extern hoc_Item* hoc_l_lappendlst(hoc_List*, hoc_List*);
-extern hoc_Item* hoc_l_lappendsec(hoc_List*, struct Section*);
-extern hoc_Item* hoc_l_lappendvoid(hoc_List*, void*);
-extern hoc_Item* hoc_l_lappendobj(hoc_List*, struct Object*);
-
-extern void hoc_l_freelist(hoc_List**);
-extern hoc_Item* hoc_l_next(hoc_Item*);
-extern hoc_Item* hoc_l_prev(hoc_Item*);
-extern void hoc_l_delete(hoc_Item*);
-extern void hoc_l_move(hoc_Item*, hoc_Item*, hoc_Item*);
-extern void hoc_l_movelist(hoc_Item*, hoc_Item*, hoc_List*);
-extern void hoc_l_replacstr(hoc_Item*, const char*);
-
-#define Insertstr	insertstr
-#define Insertsym	insertsym
-#define Insertsec	insertsec
-#define Linsertsym	linsertsym
-#define Linsertstr	linsertstr
-#define Lappendsym	lappendsym
-#define Lappendstr	lappendstr
-#define Lappenditem	lappenditem
-#define Lappendlst	lappendlst
-#define Lappendsec	lappendsec
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -9,7 +9,7 @@
 #include <nrnste.h>
 #include <netcon.h>
 
-extern "C" int hoc_return_type_code;
+/*extern "C"*/ extern int hoc_return_type_code;
 
 static double ste_transition(void* v) {
 	StateTransitionEvent* ste = (StateTransitionEvent*)v;

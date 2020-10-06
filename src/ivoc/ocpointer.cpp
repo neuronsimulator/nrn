@@ -26,7 +26,7 @@ extern "C" {
 extern void hoc_free_list(Symlist**);
 extern Symbol* hoc_parse_stmt(const char*, Symlist**);
 extern void hoc_run_stmt(Symbol*);
-}
+} // extern "C"
 
 OcPointer::OcPointer(const char* st, double* d) : Observer() {
 	sti_ = NULL;

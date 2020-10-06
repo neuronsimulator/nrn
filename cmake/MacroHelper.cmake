@@ -31,15 +31,15 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
   if(${HAVE_HEADER})
     # if header is found, create a code from template
     string(REPLACE "@dir_header@" ${HEADER} CONFTEST_DIR "${CONFTEST_DIR_TPL}")
-    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_DIR})
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_DIR})
     # try to compile
-    try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+    try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
     if(${RESULT_VAR})
       set(${VARIABLE} 1)
     else()
       set(${VARIABLE} 0)
     endif()
-    file(REMOVE "conftest.c")
+    file(REMOVE "conftest.cpp")
   endif()
 endmacro()
 
@@ -59,13 +59,13 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
     }")
   string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
   string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_TYPE})
+  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_TYPE})
 
-  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(NOT ${RESULT_VAR})
     set(${VARIABLE} ${DEFAULT_TYPE})
   endif()
-  file(REMOVE "conftest.c")
+  file(REMOVE "conftest.cpp")
 endmacro()
 
 # =============================================================================
@@ -81,14 +81,14 @@ macro(nrn_check_signal_return_type VARIABLE)
     int main () {
       return *(signal (0, 0)) (0) == 1;
     }")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_RETSIGTYPE})
-  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
+  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(RESULT_VAR)
     set(${VARIABLE} int)
   else()
     set(${VARIABLE} void)
   endif()
-  file(REMOVE "conftest.c")
+  file(REMOVE "conftest.cpp")
 endmacro()
 
 # =============================================================================
@@ -254,6 +254,7 @@ macro(nocmodl_mod_to_c modfile_basename)
     COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
             ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
     COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
+#    COMMAND sed "'s/__cplusplus/__cminusminus/'" ${modfile_basename}.c.tmp > ${modfile_basename}.c.tmp2
     COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
     DEPENDS nocmodl ${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)

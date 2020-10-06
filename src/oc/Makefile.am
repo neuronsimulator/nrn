@@ -7,35 +7,35 @@ includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi -I$(nsrc
 AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1 $(includes)
 AM_CFLAGS = @MINGW_CFLAG@
 
-RanFiles = isaac64.c mcran4.c nrnisaac.c nrnran123.c
+RanFiles = isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp
 
 if BUILD_NRNMPI_DYNAMIC
 nrnmpila =
-nrnmpidynam = nrnmpi_dynam.c
+nrnmpidynam = nrnmpi_dynam.cpp
 else
 nrnmpila = ../nrnmpi/libnrnmpi.la
 nrnmpidynam =
 endif
 
-liboc_la_SOURCES = parse.y bksub.c getelm.c lineq.c subrows.c prmat.c \
-	code2.c debug.c ocerf.c fileio.c ftime.c \
-	getsym.c hoc.c hocedit.c math.c nonlin.c \
-	list.c regexp.c audit.c symbol.c \
-	version.c xred.c parallel.c functabl.c plot.c plt.c axis.c \
-	settext.c x.c fmenu.c termio.c isoc99.c $(nrnmpidynam)\
-	scoprand.c $(RanFiles) cygwinprt.c nrnfilewrap.c
+liboc_la_SOURCES = parse.y bksub.cpp getelm.cpp lineq.cpp subrows.cpp prmat.cpp \
+	code2.cpp debug.cpp ocerf.cpp fileio.cpp ftime.cpp \
+	getsym.cpp hoc.cpp hocedit.cpp math.cpp nonlin.cpp \
+	list.cpp regexp.cpp audit.cpp symbol.cpp \
+	version.cpp xred.cpp parallel.cpp functabl.cpp plot.cpp plt.cpp axis.cpp \
+	settext.cpp x.cpp  termio.cpp isoc99.cpp $(nrnmpidynam)\
+	scoprand.cpp $(RanFiles) cygwinprt.cpp nrnfilewrap.cpp
 
 ## MAC OS X does not allow multiple definitions in separate dyld files
 ## therefore we create a separate library for the oc objects that
 ## should appear in oc and ivoc but not nrnoc and nrniv
-## modlreg.c is another special case since it should be missing only
+## modlreg.cpp is another special case since it should be missing only
 ## in a special so we will put it explicitly into nrnoc and nrniv
-libocxt_la_SOURCES = code.c hoc_init.c hoc_oop.c \
-	spinit.c spinit1.c spinit2.c
+libocxt_la_SOURCES = code.cpp hoc_init.cpp hoc_oop.cpp \
+	spinit.cpp spinit1.cpp spinit2.cpp
 
 AM_YFLAGS = -d
 
-EXTRA_DIST = mk_hocusr_h.py hocusr.c macprt.c mswinprt.c system.c \
+EXTRA_DIST = mk_hocusr_h.py hocusr.cpp macprt.cpp mswinprt.cpp system.cpp \
 	$(nrnmpidynam)
 
 if BUILD_MINGW
@@ -46,9 +46,9 @@ endif
 
 bin_PROGRAMS = oc
 
-## modlreg.c is here because the newer libtool no longer
+## modlreg.cpp is here because the newer libtool no longer
 ## always makes a .o link to the .lo file
-oc_SOURCES = ocmain.c ocnoiv.c nocable.c modlreg.c ockludge.c
+oc_SOURCES = ocmain.cpp ocnoiv.cpp nocable.cpp modlreg.cpp ockludge.cpp
 
 oc_LDADD = libocxt.la liboc.la \
 	$(nrnmpila) \
@@ -68,7 +68,7 @@ pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
 ## to be installed:
 noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
 	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h \
-	nrnfilewrap.h nrn_vsscanf.c classreg.h
+	nrnfilewrap.h nrn_vsscanf.cpp classreg.h
 
 ## files that depend on the existence of parse.h
 ## this allows parallel make -j to work at the beginning when parse.h

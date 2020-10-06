@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include    "nrnconf.h"
 #include	<stdio.h>
 #include	<errno.h>
 #include	<math.h>
@@ -8,14 +8,12 @@
 #include	"nonvintblock.h"
 
 typedef int (*Pfridot)(...);
-extern "C" {
 
 #include	"membfunc.h"
 #include	"neuron.h"
 
 extern int	diam_changed;
 extern int	tree_changed;
-}
 
 void Cvode::rhs(NrnThread* _nt) {
 	int i;

@@ -13,7 +13,6 @@
 #include "nonvintblock.h"
 #include "nrnmpi.h"
 
-extern "C" {
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
@@ -25,7 +24,6 @@ static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
-}
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
@@ -41,21 +39,17 @@ char* hoc_forward2back(char* s);
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
 #define RTLD_NOLOAD 0
-extern "C" {
 extern void* dlopen_noerr(const char* name, int mode);
 #define dlopen dlopen_noerr
 extern void* dlsym(void* handle, const char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
-}
 #else
 //#define _GNU_SOURCE
 #include <dlfcn.h>
 #endif
 
-extern "C" {
 extern char* neuron_home;
-}
 
 #if NRNPYTHON_DYNAMICLOAD >= 20 && NRNPYTHON_DYNAMICLOAD < 30
 
@@ -84,11 +78,9 @@ static void* python_already_loaded();
 static void* load_python();
 static void load_nrnpython(int, const char*);
 #else //!defined(NRNPYTHON_DYNAMICLOAD)
-extern "C" {
-extern void nrnpython_start(int);
-extern void nrnpython_reg_real();
-extern void nrnpython_real();
-}
+extern "C" void nrnpython_start(int);
+extern "C" void nrnpython_reg_real();
+extern "C" void nrnpython_real();
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
 
 char* nrnpy_pyhome;

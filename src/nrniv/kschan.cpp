@@ -21,10 +21,9 @@ implementPtrList(KSChanList, KSChan)
 
 static KSChanList* channels;
 
-extern "C" {
 extern char* hoc_symbol_units(Symbol*, const char*);
 extern void nrn_mk_table_check();
-}
+extern spREAL *spGetElement(char*, int ,int);
 
 static Symbol* ksstate_sym;
 static Symbol* ksgate_sym;
@@ -993,7 +992,7 @@ void KSChan::setname(const char* s) {
 			if (cp) {
 				int nbase = cp - sp->name;
 				int n = nbase + strlen(suffix) + 2;
-				char* s1 = (char*)hoc_Emalloc(n); hoc_malchk();
+				char* s1 = static_cast<char *>(hoc_Emalloc(n)); hoc_malchk();
 				strncpy(s1, sp->name, nbase);
 				sprintf(s1 + nbase, "_%s", suffix);
 //printf("KSChan::setname change %s to %s\n", sp->name, s1);

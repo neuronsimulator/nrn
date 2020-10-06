@@ -13,7 +13,6 @@
 #include "ivoc.h"
 #endif
 
-extern "C" {
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_top_level_symlist;
 extern Symlist* hoc_symlist;
@@ -21,7 +20,6 @@ extern Object* hoc_thisobject;
 extern void hoc_execute1();
 extern bool hoc_valid_stmt(const char* stmt, Object* ob);
 extern int hoc_execerror_messages;
-}
 
 static bool valid_stmt1(const char* stmt, Object* ob) {
 	char* s = new char[strlen(stmt)+2];
@@ -168,9 +166,7 @@ void OcJumpImpl::ljmp() {
 
 OcJumpImpl* OcJumpImpl::oji_;
 
-extern "C" {
-	void hoc_execute(Inst*);
-}
+void hoc_execute(Inst*);
 
 bool OcJumpImpl::execute(Inst* p) {
 	begin();
@@ -221,27 +217,24 @@ void* OcJumpImpl::fpycall(void*(*f)(void*, void*), void* a, void* b) {
 	return c;
 }
 
-extern "C" {
+
 	extern void (*oc_jump_target_)(void);
 	extern int hoc_intset;
 //	extern int hoc_pipeflag;
-
-	void oc_save_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
-	void oc_restore_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
-
-	void oc_save_code(Inst**, Inst**, Datum**, OcFrame**, int*, int*,
-		Inst**, OcFrame**, Datum**, Symlist**, Inst**, int*);
-	void oc_restore_code(Inst**, Inst**, Datum**, OcFrame**, int*, int*,
-		Inst**, OcFrame**, Datum**, Symlist**, Inst**, int*);
-
+extern "C" {
+    void oc_save_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
+    void oc_restore_hoc_oop(Object**, Objectdata**, int**, int*, Symlist**);
+    void oc_save_code(Inst **, Inst **, Datum **, OcFrame **, int *, int *,
+                      Inst **, OcFrame **, Datum **, Symlist **, Inst **, int *);
+    void oc_restore_code(Inst **, Inst **, Datum **, OcFrame **, int *, int *,
+                         Inst **, OcFrame **, Datum **, Symlist **, Inst **, int *);
 	void oc_save_input_info(char**, int*, int*, NrnFILEWrap**);
 	void oc_restore_input_info(char*, int, int, NrnFILEWrap*);
-
 #if CABLE
 	void oc_save_cabcode(int*, int*);
 	void oc_restore_cabcode(int*, int*);
 #endif
-}
+} // extern "C"
 
 void OcJumpImpl::begin(){
 // not complete but it is good for expressions and it can be improved

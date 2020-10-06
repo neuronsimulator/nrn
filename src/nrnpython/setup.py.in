@@ -217,7 +217,7 @@ if not using_cmake and build_rx3d:
                              define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.surfaces",
-                             sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.c", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.c"],
+                             sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.cpp", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.cpp"],
                              define_macros = define_macros,
                              extra_compile_args = extra_compile_args,
                              include_dirs=include_dirs)]

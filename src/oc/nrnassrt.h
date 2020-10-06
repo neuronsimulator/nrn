@@ -14,7 +14,9 @@ has side effects which need to be executed regardles of NDEBUG.
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
 extern void hoc_execerror(const char*, const char*);
+
 #if defined(__cplusplus)
 }
 #endif

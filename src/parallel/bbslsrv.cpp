@@ -103,7 +103,9 @@ class MessageList {};
 class WorkList {};
 class ReadyList{};
 class ResultList{};
-extern "C" { extern void hoc_execerror(const char*, const char*);}
+extern "C" {
+    extern void hoc_execerror(const char*, const char*);
+} // extern "C"
 static void nostl() {
 hoc_execerror("BBSLocalServer not working", "Compiled without STL");
 }

@@ -10,6 +10,6 @@ struct unit
 	int	isnum;
 };
 
-extern char *Unit_str();
+extern char *Unit_str(unit*);
 extern int unit_diff();
 extern int unit_cmp_exact();

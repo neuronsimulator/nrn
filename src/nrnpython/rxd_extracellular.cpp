@@ -667,7 +667,7 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
-void scatter_concentrations(void) {
+extern "C" void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
 

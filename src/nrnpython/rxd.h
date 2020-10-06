@@ -1,7 +1,7 @@
-extern "C"{
+extern "C" {
     #include <pthread.h>
     #include <matrix2.h>
-}
+} // extern "C"
 /*borrowed from Meschach Version 1.2b*/
 #define	v_get_val(x,i)		((x)->ve[(i)])
 #define	m_get_val(A,i,j)	((A)->me[(i)][(j)])

@@ -71,7 +71,7 @@ extern int dladdr(const void * dl_restrict, Dl_info * dl_restrict);
 #define	RTLD_DEFAULT	((void *) -2)	/* Use default search algorithm. */
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #endif /* _DLFCN_H_ */

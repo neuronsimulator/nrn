@@ -23,7 +23,7 @@
  * OF THIS SOFTWARE.
  */
 
-/* hacked by Michael Hines from filechooser.c */
+/* hacked by Michael Hines from filechooser.cpp */
 
 /*
  * SymChooser -- select a name
@@ -60,10 +60,8 @@
 
 #include "classreg.h"
 #include "gui-redirect.h"
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 #if HAVE_IV
 
@@ -169,7 +167,7 @@ IFGUI
 ENDGUI
 	return (void*)sc;
 #else
-	return (void*)0;
+	return nullptr;
 #endif /* HAVE_IV */
 }
 static void sdestruct(void* v) {

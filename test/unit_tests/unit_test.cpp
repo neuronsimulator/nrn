@@ -2,7 +2,7 @@
 
 #include <catch2/catch.hpp>
 
-extern "C" {
+//extern "C" {
 #include <ocfunc.h>
 #include <code.h>
 #include <section.h>
@@ -10,11 +10,11 @@ extern "C" {
 
 extern void nrn_threads_create(int, int);
 extern void nrn_threads_free();
-extern int ivocmain_session(int, char**, char**, int);
+extern int ivocmain_session(int, const char**, const char**, int);
 
 extern int nrn_main_launch;
 extern int nrn_nobanner_;
-}
+//} // extern "C"
 
 /// Needed for compilation
 void modl_reg() { }
@@ -31,7 +31,7 @@ int main( int argc, char* argv[] ) {
     const char* argv_nompi[] = {"NEURON", "-nogui"};
     nrn_nobanner_ = 1;
 
-    ivocmain_session(argc_nompi, (char **) &argv_nompi, NULL, 0);
+    ivocmain_session(argc_nompi, argv_nompi, NULL, 0);
 #undef run
     int result = Catch::Session().run( argc, argv );
 #define run hoc_run

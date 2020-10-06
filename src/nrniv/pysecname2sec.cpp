@@ -4,9 +4,7 @@
 #include <hocparse.h>
 #include <nrnpython_config.h>
 
-extern "C" {
 #include <parse.h>
-}
 
 #include <nrnoc2iv.h>
 

@@ -1,7 +1,7 @@
 ## The program that we make from this directory.
 bin_PROGRAMS = nrnoc
 
-nrnoc_SOURCES = ocmain.c nrnnoiv.c ocnoiv.c cprop.c
+nrnoc_SOURCES = ocmain.cpp nrnnoiv.cpp ocnoiv.cpp cprop.cpp
 
 if BUILD_NRNMPI_DYNAMIC
 nrnmpila =

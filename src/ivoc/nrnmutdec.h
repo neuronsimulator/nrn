@@ -18,7 +18,7 @@
 #define MUTDESTRUCT {if (mut_){pthread_mutex_destroy(mut_); delete mut_; mut_ = (pthread_mutex_t*)0;}}
 #else
 #define MUTCONSTRUCT(mkmut) {if (mkmut) {mut_ = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t)); pthread_mutex_init(mut_, 0);}else{mut_ = 0;}}
-#define MUTDESTRUCT {if (mut_){pthread_mutex_destroy(mut_); free((char*)mut_); mut_ = (pthread_mutex_t*)0;}}
+#define MUTDESTRUCT {if (mut_){pthread_mutex_destroy(mut_); free(mut_); mut_ = (pthread_mutex_t*)0;}}
 #endif
 #define MUTLOCK {if (mut_) {pthread_mutex_lock(mut_);}}
 #define MUTUNLOCK {if (mut_) {pthread_mutex_unlock(mut_);}}

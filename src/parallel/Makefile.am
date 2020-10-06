@@ -1,4 +1,4 @@
-# This makefile does nothing except to copy some .c and .h files into
+# This makefile does nothing except to copy some .cpp and .h files into
 # the distribution tar file.
 
 EXTRA_DIST = bbs.cpp bbs.h bbsdirect.h bbsimpl.h \

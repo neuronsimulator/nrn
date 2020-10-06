@@ -23,10 +23,71 @@
 
 int lexcontext = 0;
 extern int Getc();
-extern int unGetc();
-extern int unput();
+extern int unGetc(int);
+extern int unput(int);
+static int input();
+static int yyinput();
+//TODO - does this actually work?
+int newinput() {
+    #ifdef __cplusplus
+    return yyinput();
+    #else
+    return input ();
+    #endif
+}
+
 
 #define debug(arg1,arg2) /*printf("lex:arg1|%s|\n", arg2);*/
+
+#ifndef FLEX_SCANNER
+int input()
+{
+	int c;
+	c = Getc();
+	if (c == EOF) {
+		c = 0;
+	}
+	return c;
+}
+#endif
+
+
+int unput(int c) {
+	return unGetc(c);
+}
+
+
+int output(int c) {
+#if LINT
+	IGNORE(c);
+#endif
+	diag("internal error: ", "called output");
+	return 0;
+}
+
+extern "C" int yywrap() {
+	return 1;
+}
+
+char * inputtopar()
+{				/* returns string up to and not including
+				 * next closing parenthesis */
+	/* main usage is to read the units string */
+	char            *cp;
+	int             c;
+
+	cp = buf;
+	while ((c = newinput()) != ')' && c != '\n' && c != 0) {
+		*cp++ = c;
+	}
+	if (c != ')')
+		diag("Syntax error:", " no closing ')'");
+	*cp = '\0';
+	unput(c);
+	return stralloc(buf, (char *) 0);
+}
+
+
 %}
 D	[0-9]
 E	[Ee][-+]?{D}+
@@ -52,7 +113,7 @@ E	[Ee][-+]?{D}+
 		Sprintf(buf, "D%s", yytext);
 	}
 	/* determine if really a constant */
-	if ((i = input()) == '0') {
+	if ((i = newinput()) == '0') {
 		Strcat(buf, "0");
 		yylval.qp = putintoken(buf, NAME);
 		return NAME;
@@ -181,57 +242,10 @@ REPRESENTS	{
 
 \?.*	{/*ignore inline comments*/;}
 
-\{	{ yylval.qp = putintoken("{", 0); return yytext[0]; }
-\}	{ yylval.qp = putintoken("}", 0); return yytext[0]; }
+\{	{ yylval.qp = putintoken( "{", 0); return yytext[0]; }
+\}	{ yylval.qp = putintoken( "}", 0); return yytext[0]; }
 .	{ yylval.qp = putintoken(yytext, 0); return yytext[0]; }
 
 %%
 
 
-#ifndef FLEX_SCANNER
-int input()
-{
-	int c;
-	c = Getc();
-	if (c == EOF) {
-		c = 0;
-	}
-	return c;
-}
-#endif
-
-
-int unput(c) int c; {
-	return unGetc(c);
-}
-
-
-int output(c) int c; {
-#if LINT
-	IGNORE(c);
-#endif
-	diag("internal error: ", "called output");
-	return 0;
-}
-
-int yywrap() {
-	return 1;
-}
-
-char * inputtopar()
-{				/* returns string up to and not including
-				 * next closing parenthesis */
-	/* main usage is to read the units string */
-	char            *cp;
-	int             c;
-
-	cp = buf;
-	while ((c = input()) != ')' && c != '\n' && c != 0) {
-		*cp++ = c;
-	}
-	if (c != ')')
-		diag("Syntax error:", " no closing ')'");
-	*cp = '\0';
-	unput(c);
-	return stralloc(buf, (char *) 0);
-}

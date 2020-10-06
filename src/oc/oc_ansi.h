@@ -1,6 +1,8 @@
 #ifndef oc_ansi_h
 #define oc_ansi_h
 
+#include <stdbool.h>
+
 
 /**
  * \dir
@@ -20,11 +22,54 @@
  * @{
  */
 
+
+#if defined(__cplusplus)
+//#include "ivocvect.h"
+class IvocVect;
+#else
+#define IvocVect void
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+    // nocpout.cpp
+extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
+extern void ivoc_help(const char*);
+
+extern Symbol* hoc_lookup(const char*);
+
+extern void* hoc_Ecalloc(size_t nmemb, size_t size);
+extern void* hoc_Emalloc(size_t size);
+extern void hoc_malchk(void);
+
+extern void hoc_execerror(const char*, const char*);
+extern char* hoc_object_name(Object*);
+extern void hoc_retpushx(double);
+
+extern double* getarg(int);
+extern int ifarg(int);
+
+extern int vector_instance_px(void*, double**);
+extern void install_vector_method(const char*, double(*)(void*));
+
+extern IvocVect* vector_arg(int);
+extern int vector_arg_px(int i, double** p);
+extern double* vector_vec(IvocVect*);
+extern int vector_capacity(IvocVect*);
+extern void vector_resize(IvocVect*, int);
+
+#if defined(__cplusplus)
+}
+#endif
+
 extern int nrnignore;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 
 /**
  * \brief Brief explanation of hoc_obj_run
@@ -40,11 +85,11 @@ extern int hoc_is_str_arg(int);
 extern int hoc_is_object_arg(int);
 extern char* gargstr(int);
 extern char** hoc_pgargstr(int);
-extern double* getarg(int);
+
 extern double* hoc_pgetarg(int);
 extern Object** hoc_objgetarg(int);
 extern Object* hoc_name2obj(const char* name, int index);
-extern int ifarg(int);
+
 extern char** hoc_temp_charptr(void);
 extern int hoc_is_temp_charptr(char** cpp);
 extern void hoc_assign_str(char** pstr, const char* buf);
@@ -54,13 +99,13 @@ extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction wi
 extern double hoc_ac_;
 extern double hoc_epsilon;
 extern int nrn_inpython_;
-extern int stoprun;
+
 extern int hoc_color;
 extern int hoc_set_color(int);
 extern void hoc_plt(int, double, double);
 extern void hoc_plprint(const char*);
 extern void hoc_ret(void); /* but need to push before returning */
-extern void hoc_retpushx(double);
+
 extern void hoc_pushx(double);
 extern void hoc_pushstr(char**);
 extern void hoc_pushobj(Object**);
@@ -76,11 +121,10 @@ extern Object*  hoc_pop_object(void);
 extern char** hoc_strpop(void);
 extern int hoc_ipop(void);
 extern void hoc_nopop(void);
-extern void hoc_execerror(const char*, const char*);
+
 extern void hoc_execerror_mes(const char*, const char*, int);
 extern void hoc_warning(const char*, const char*);
 extern double* hoc_val_pointer(const char*);
-extern Symbol* hoc_lookup(const char*);
 extern Symbol* hoc_table_lookup(const char*, Symlist*);
 extern Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
@@ -90,7 +134,7 @@ extern int hoc_obj_look_inside_stack_index(int);
 extern void hoc_stkobj_unref(Object*, int stkindex);
 extern size_t hoc_total_array_data(Symbol*, Objectdata*);
 extern char* hoc_araystr(Symbol*, int, Objectdata*);
-extern char* hoc_object_name(Object*);
+
 extern char* hoc_object_pathname(Object*);
 extern const char* expand_env_var(const char*);
 extern void check_obj_type(Object*, const char*);
@@ -107,13 +151,11 @@ extern Object* hoc_obj_get(int i);
 extern void hoc_obj_set(int i, Object*);
 extern void nrn_hoc_lock(void);
 extern void nrn_hoc_unlock(void);
-extern void* hoc_Emalloc(size_t size);
-extern void* hoc_Ecalloc(size_t nmemb, size_t size);
+
 extern void* hoc_Erealloc(void* ptr, size_t size);
-extern void hoc_malchk(void);
+
 extern void* nrn_cacheline_alloc(void** memptr, size_t size);
 extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
-extern char* cxx_char_alloc(size_t size);
 extern void nrn_exit(int);
 extern void hoc_free_list(Symlist**);
 extern int hoc_errno_check(void);
@@ -127,9 +169,7 @@ extern int hoc_xopen_run(Symbol*, const char*);
 extern void hoc_symbol_limits(Symbol*, float, float);
 extern void sym_extra_alloc(Symbol*);
 extern int hoc_chdir(const char* path);
-extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
-extern int nrn_isdouble(void*, double, double);
-extern int hoc_main1(int, const char**, const char**);
+
 extern void hoc_final_exit();
 extern void hoc_sprint1(char**, int);
 extern double hoc_scan(FILE*);
@@ -145,28 +185,19 @@ extern void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
 extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 
-#if defined(__cplusplus)
-class IvocVect;
-#else
-#define IvocVect void
-#endif
 extern void vector_append(IvocVect*, double);
-extern int vector_arg_px(int, double**);
-extern int vector_instance_px(void*, double**);
-extern void install_vector_method(const char*, double(*)(void*));
 extern IvocVect* vector_new(int, Object*); /*use this if possible*/
 extern IvocVect* vector_new0();
 extern IvocVect* vector_new1(int);
 extern IvocVect* vector_new2(IvocVect*);
 extern void vector_delete(IvocVect*);
 extern int vector_buffer_size(IvocVect*);
-extern int vector_capacity(IvocVect*);
-extern void vector_resize(IvocVect*, int);
+
 extern Object** vector_temp_objvar(IvocVect*);
-extern double* vector_vec(IvocVect*);
 extern Object** vector_pobj(IvocVect*);
-extern IvocVect* vector_arg(int);
+
 extern int is_vector_arg(int);
+
 extern char* vector_get_label(IvocVect*);
 extern void vector_set_label(IvocVect*, char*);
 
@@ -204,7 +235,6 @@ extern void hoc_edit_quit(void);
 extern size_t hoc_pipegets_need(void);
 extern void ivoc_cleanup(void);
 extern void ivoc_final_exit(void);
-extern void ivoc_help(const char*);
 extern int hoc_oc(const char*);
 extern void hoc_pipeflush(void);
 extern void hoc_initcode(void);
@@ -244,17 +274,22 @@ extern int nrnpy_pr(const char* fmt, ...);
 extern int Fprintf(FILE*, const char* fmt, ...);
 extern void nrnpy_pass();
 
-#if defined (__cplusplus)
+//#if defined (__cplusplus)
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
-#else
-extern void hoc_free_allobjects(Template*, Symlist*, Objectdata*);
-#endif
+//#else
+//extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
+//#endif
 
 extern int nrn_is_cable(void);
+extern int nrn_isdouble(double*, double, double);
 
 #if defined(__cplusplus)
 }
 #endif
+
+extern int hoc_main1(int, const char**, const char**);
+extern char* cxx_char_alloc(size_t size);
+extern int stoprun;
 
 #endif
 

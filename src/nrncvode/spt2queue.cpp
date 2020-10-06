@@ -255,7 +255,7 @@ double TQueue::q2least_t() {
 	return 1e50; // must be larger than any possible t
 }
 
-#include <spaux.c>
-#include <sptree.c>
-#include <spdaveb.c>
+#include <spaux.cpp>
+#include <sptree.cpp>
+#include <spdaveb.cpp>
 

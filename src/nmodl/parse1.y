@@ -25,7 +25,7 @@
 #define ldebug(arg1, arg2) qdebug(arg1, arg2->next)
 
 extern int yylex(), yyparse();
-static void yyerror();
+void yyerror(char*);
 
 #if YYBISON
 #define myerr(arg) static int ierr=0;\
@@ -193,10 +193,10 @@ define1: DEFINE1 NAME INTEGER
 	 sp->u.str = STR($3);
 	 sp->type = DEFINEDVAR;
 	 deltokens($1, $3);}
-	| DEFINE1 error {myerr("syntax: DEFINE name integer");}
+	| DEFINE1 error {myerr( "syntax: DEFINE name integer");}
 	;
 Name:	NAME
-		{ Symbol *checklocal();
+		{ Symbol *checklocal(Symbol*);
 		  SYM($1) = checklocal(SYM($1));  /* it was a bug
 			when this was done to the lookahead token in lex */
 		}
@@ -229,7 +229,7 @@ units:	/*nothing*/ {$$ = stralloc("", (char *)0);}
 	;
 unit:	'(' {$<str>$ = inputtopar();} /*string*/ ')'
 		/*does not include parentheses*/
-		 {$$ = $<str>2; delete($1); delete($3);}
+		 {$$ = $<str>2; dlete($1); dlete($3);}
 	;
 uniton: UNITSON {replacstr($1, "");}
 	| UNITSOFF {replacstr($1, "");}
@@ -263,7 +263,7 @@ number: NUMBER	{lastok = $1;}
 		/* replace the string with -string and discard '-'*/
                 { Sprintf(buf, "-%s", STR($2));
 		 STR($2) = stralloc(buf, STR($2)); $$ = $2;
-		delete($1); lastok = $2;
+		dlete($1); lastok = $2;
 		}
  	;
 NUMBER: integer | REAL
@@ -409,7 +409,7 @@ locallist: LOCAL
 		  Insertstr(lastok->next, ";\n");
 		  possible_local_current(blocktype, toplocal1_);
 		}
-	| LOCAL error {myerr("Illegal LOCAL declaration");}
+	| LOCAL error {myerr( "Illegal LOCAL declaration");}
 	;
 locallist1: NAME locoptarray
 		/* locals are placed in a stack of symbol lists and given
@@ -490,7 +490,7 @@ ostmt:	fromstmt
 	| NRNMUTEXLOCK { nrnmutex(1,$1); }
 	| NRNMUTEXUNLOCK { nrnmutex(0,$1); }
 	| error
-		{myerr("Illegal statement");}
+		{myerr( "Illegal statement");}
 	;	
 astmt:	asgn
 		/* ';' is added when relevant */
@@ -536,14 +536,14 @@ asgn:	varname '=' expr
 		Insertstr($2, " -(");
 		replacstr($3, ") + ");
 		if (nstate == 0)
-{yyerror("previous equation contains no state variables"); YYERROR;}
+{yyerror( "previous equation contains no state variables"); YYERROR;}
 		 eqnqueue($1);
 		}
 	| lineqn leftlinexpr '=' linexpr
 		{ inequation = 0;
-		delete($3);
+		dlete($3);
 		if (nstate == 0)
-{yyerror("previous equation contains no state variables"); YYERROR;}
+{yyerror( "previous equation contains no state variables"); YYERROR;}
 		}
 	;
 varname: name
@@ -551,7 +551,7 @@ varname: name
 		{lastok = $1;
 		if (!extdef2){SYM($1)->usage |= DEP;}
 		if (SYM($1)->subtype & ARRAY && !extdef2)
-			{myerr("variable needs an index");}
+			{myerr( "variable needs an index");}
 		if (inequation && (SYM($1)->subtype & STAT) && in_solvefor(SYM($1))) {
 			SYM($1)->used++;
 			nstate++; pstate++; tstate++;
@@ -568,7 +568,7 @@ varname: name
 		}
 		SYM($1)->usage |= DEP;
 		if ((SYM($1)->subtype & ARRAY) == 0)
-			{myerr("variable is not an array");}
+			{myerr( "variable is not an array");}
 		if (inequation && (SYM($1)->subtype & STAT) && in_solvefor(SYM($1))) {
 			SYM($1)->used++;
 			nstate++; pstate++; tstate++;
@@ -609,7 +609,7 @@ intexpr: Name
 		lastok = $4;
 		replacstr($1, " (int)");
 		}
-	| error {myerr("Illegal integer expression");}
+	| error {myerr( "Illegal integer expression");}
 	;
 expr:	varname
 	| real units
@@ -632,7 +632,7 @@ expr:	varname
 	| expr NE expr {replacstr($2, " !=");}
 	| NOT expr	 {replacstr($1, " !");}
 	| '-' expr %prec UNARYMINUS
-	| error {myerr("Illegal expression");}
+	| error {myerr( "Illegal expression");}
 	;
 nonlineqn: NONLIN1 {inequation = 1; nstate = 0;}
 	;
@@ -647,13 +647,13 @@ linexpr: primary
 		/* put terms in a list */
 		{linterm($1, lastok, pstate, leftside); pstate = 0;}
 	| '-' primary
-		{delete($1);
+		{dlete($1);
 		linterm($2, lastok, pstate, -leftside); pstate = 0;}
 	| linexpr '+' primary
-		{delete($2);
+		{dlete($2);
 		linterm($3, lastok, pstate, leftside); pstate = 0;}
 	| linexpr '-' primary
-		{delete($2);
+		{dlete($2);
 		linterm($3, lastok, pstate, -leftside); pstate = 0;}
 	;
 primary: term
@@ -733,7 +733,7 @@ fromstmt: FROM NAME {pushlocal(); SYM($2) = copylocal(SYM($2));
 		Insertstr($10, "}");
 		}
 	|FROM error {
-myerr("FROM intvar = intexpr TO intexpr BY intexpr { statements }");}
+myerr( "FROM intvar = intexpr TO intexpr BY intexpr { statements }");}
 	;
 opinc: /*nothing*/ {$$ = ITEM0;}
 	| BY intexpr
@@ -758,7 +758,7 @@ diag("FORALL range is undefined since no arrays used", " within the statement");
 		Insertstr($5, "}");
 		}
 	|FORALL1 error {
-myerr("FORALL intvar { statements }");}
+myerr( "FORALL intvar { statements }");}
 	;
 whilestmt: WHILE '(' expr ')' stmtlist '}'
 	;
@@ -909,9 +909,9 @@ netrecblk: NETRECEIVE '(' arglist ')'
 			nr_argcnt_ = argcnt_;
 			/* add flag arg */
 			if ($3 == LIST0) {
-diag("NET_RECEIVE block"," must have at least one argument");
+diag("NET_RECEIVE block",(char*)" must have at least one argument");
 			}
-			Lappendsym($3, copylocal(install("flag", NAME)));
+			Lappendsym($3, copylocal(install( "flag", NAME)));
 		}
 	     stmtlist '}'
 		{
@@ -922,7 +922,7 @@ diag("NET_RECEIVE block"," must have at least one argument");
 #endif
 		poplocal(); freelist(&$3);
 		}
-	| NETRECEIVE error { myerr("syntax: NET_RECEIVE ( weight ) {stmtlist}");}
+	| NETRECEIVE error { myerr( "syntax: NET_RECEIVE ( weight ) {stmtlist}");}
 	;
 initstmt: INITIAL1 stmtlist '}'
 		{
@@ -937,7 +937,7 @@ solveblk: SOLVE NAME ifsolerr
 		{ solvequeue($2, ITEM0, blocktype, $3); }
 	| SOLVE NAME USING METHOD ifsolerr
 		{ solvequeue($2, $4, blocktype, $5); }
-	| SOLVE error { myerr("Illegal SOLVE statement");}
+	| SOLVE error { myerr( "Illegal SOLVE statement");}
 	;
 ifsolerr: /*nothing*/
 		{ $$ = ITEM0; }
@@ -953,11 +953,11 @@ solvefor: /*nothing*/
 	;
 solvefor1: SOLVEFOR NAME
 		{ solveforlist = newlist(); Lappendsym(solveforlist, SYM($2));
-		  delete($1); delete($2);
+		  dlete($1); dlete($2);
 		}
 	| solvefor1 ',' NAME
-		{ Lappendsym(solveforlist, SYM($3)); delete($2); delete($3);}
-	| SOLVEFOR error { myerr("Syntax: SOLVEFOR name, name, ...");}
+		{ Lappendsym(solveforlist, SYM($3)); dlete($2); dlete($3);}
+	| SOLVEFOR error { myerr( "Syntax: SOLVEFOR name, name, ...");}
 	;
 brkptblk: BREAKPOINT stmtlist '}'
 		/* move it all to modelfunc */
@@ -974,13 +974,13 @@ bablk: BREAKPOINT stmtlist '}'
 		{bablk(blocktype, INITIAL1, $2, $3);}
 	| STEP stmtlist '}'
 		{bablk(blocktype, STEP, $2, $3);}
-	| error {myerr("[BEFORE AFTER] [BREAKPOINT SOLVE INITIAL STEP] { stmt }");}
+	| error {myerr( "[BEFORE AFTER] [BREAKPOINT SOLVE INITIAL STEP] { stmt }");}
 	;
 watchstmt: WATCH watch1
-		{$$ = $2; delete($1);}
+		{$$ = $2; dlete($1);}
 	| watchstmt ',' watch1
-		{delete($2);}
-	| WATCH error {myerr("WATCH (expr > expr) flag");}
+		{dlete($2);}
+	| WATCH error {myerr( "WATCH (expr > expr) flag");}
 	;
 watch1:	'(' aexpr watchdir aexpr ')' real
 		{watchstmt($1, $3, $5, $6, blocktype); $$=$6;}
@@ -998,7 +998,7 @@ fornetcon: FOR_NETCONS '(' arglist ')' {
 		}
 	stmtlist '}'
 		{fornetcon($1, $2, $3, $4, $6, $7); $$ = $7; }
-	| FOR_NETCONS error { myerr("syntax: FOR_NETCONS(args,like,netreceive) { stmtlist}");}
+	| FOR_NETCONS error { myerr( "syntax: FOR_NETCONS(args,like,netreceive) { stmtlist}");}
 	;
 aexpr:	varname
 	| real units
@@ -1012,19 +1012,19 @@ aexpr:	varname
 		{ $$ = insertstr($1, "pow("); replacstr($2, ",");
 			lastok = insertstr(lastok->next, ")"); }
 	| '-' aexpr %prec UNARYMINUS
-	| error {myerr("Illegal expression");}
+	| error {myerr( "Illegal expression");}
 	;
 
 sens:	SENS senslist
 		/* sensused flag is true */
 		{ sensused = 1;
-		  delete($1);
+		  dlete($1);
 		}
-	|SENS error {myerr("syntax is SENS var1, var2, var3, etc");}
+	|SENS error {myerr( "syntax is SENS var1, var2, var3, etc");}
 	;
 senslist: varname
 		/* put in list. Used when enclosing block is massaged */
-		{ sensparm($1); delete($1);}
+		{ sensparm($1); dlete($1);}
 	| senslist ',' varname
 		{ sensparm($3); deltokens($2, $3);}
 	;
@@ -1033,7 +1033,7 @@ conserve: CONSERVE {extdef2 = 0; } react '=' expr
 		{/* react originally designed for reactions and is unchanged*/
 		extdef2 = 0;
 		massageconserve($1, $4, lastok);}
-	| CONSERVE error {myerr("Illegal CONSERVE syntax");}
+	| CONSERVE error {myerr( "Illegal CONSERVE syntax");}
 	;
 compart: COMPARTMENT NAME ','
 	 {pushlocal(); SYM($2) = copylocal(SYM($2));}
@@ -1065,7 +1065,7 @@ reaction: REACTION react REACT1 {leftreact();} react '(' expr ',' expr ')'
 		{flux($1, $3, $7);}
 	| REACTION react '-' GT '(' expr ')'
 		{flux($1, $3, $7);}
-	| REACTION error {myerr("Illegal reaction syntax");}
+	| REACTION error {myerr( "Illegal reaction syntax");}
 	;
 react:	varname {reactname($1, lastok, ITEM0);}
 	|integer varname	{reactname($2, lastok, $1);}
@@ -1074,7 +1074,7 @@ react:	varname {reactname($1, lastok, ITEM0);}
 	;
 lagstmt: LAG name BY NAME
 		{lag_stmt($1, blocktype);}
-	| LAG error {myerr("Lag syntax is: LAG name BY const");}
+	| LAG error {myerr( "Lag syntax is: LAG name BY const");}
 	;
 queuestmt: PUTQ name {queue_stmt($1, $2);}
 	| GETQ name {queue_stmt($1, $2);}
@@ -1095,7 +1095,7 @@ match:	name
 		  }
 		}
 	| error
-		{myerr("MATCH syntax is state0 or state(expr)=expr or\
+		{myerr( "MATCH syntax is state0 or state(expr)=expr or\
 state[i](expr(i)) = expr(i)");}
 	;
 matchname: name
@@ -1115,7 +1115,7 @@ unitbody: /*nothing*/
 	;
 unitdef: unit '=' unit
 		{install_units($1, $3);}
-	| unit error {myerr("Unit definition syntax: (units) = (units)");}
+	| unit error {myerr( "Unit definition syntax: (units) = (units)");}
 	;
 factordef: NAME '=' real unit
 		{ SYM($1)->subtype |= nmodlCONST;
@@ -1135,7 +1135,7 @@ factordef: NAME '=' real unit
 		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $6);
 		    Lappendstr(firstlist, buf);
 		}
-	| error {myerr("Unit factor syntax: examples:\n\
+	| error {myerr( "Unit factor syntax: examples:\n\
 foot2inch = (foot) -> (inch)\n\
 F = 96520 (coulomb)\n\
 R = (k-mole) (joule/degC)");
@@ -1166,7 +1166,7 @@ tablestmt: TABLE tablst dependlst FROM expr TO expr WITH INTEGER
 		  Lappendlst(table_list, $3);
 		  deltokens($1, $9);
 		}
-	| TABLE error { myerr("syntax: TABLE [list] [DEPEND list] FROM expr TO expr WITH integer");}
+	| TABLE error { myerr( "syntax: TABLE [list] [DEPEND list] FROM expr TO expr WITH integer");}
 	;
 tablst: /*Nothing*/
 		{$$ = LIST0;}
@@ -1216,16 +1216,16 @@ nrnuse: USEION NAME READ nrnlist valence optontology
 	|USEION NAME READ nrnlist WRITE nrnlist valence optontology
 		{nrn_use($2, $4, $6, $7);}
 	|USEION error
-		{myerr("syntax is: USEION ion READ list WRITE list REPRESENTS curie");}
+		{myerr( "syntax is: USEION ion READ list WRITE list REPRESENTS curie");}
 	;
 optontology: { $$ = NULL; }
            | REPRESENTS ONTOLOGY_ID
              { $$ = $2; }
 nrnlist: NAME
 	| nrnlist ',' NAME
-		{ delete($2); $$ = $3;}
+		{ dlete($2); $$ = $3;}
 	| error
-		{myerr("syntax is: keyword name , name, ..., name");}
+		{myerr( "syntax is: keyword name , name, ..., name");}
 	;
 optnrnlist: /*nothing*/
 		{$$ = NULL;}
@@ -1239,12 +1239,11 @@ valence: /*nothing*/
 		/* replace the string with -string and discard '-'*/
                 { Sprintf(buf, "-%s", STR($3));
 		 STR($3) = stralloc(buf, STR($3)); $$ = $3;
-		delete($2); lastok = $3;
+		dlete($2); lastok = $3;
 		}
 	;
 %%
-void yyerror(s)	/* called for yacc syntax error */
-	char *s;
+void yyerror(char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }

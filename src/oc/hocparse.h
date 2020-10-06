@@ -3,9 +3,6 @@
 
 #include "hoc.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 /* do not know why this is not in parse.h */
 extern int yyparse(void);
@@ -17,9 +14,7 @@ extern int hoc_yyparse(void);
 extern void hoc_define(Symbol*);
 extern void hoc_iterator_object(Symbol*, int, Inst*, Inst*, Object*);
 extern int hoc_zzdebug;
-extern void hoc_debugzz(Inst*);
 extern int hoc_moreinput(void);
-extern void hoc_free_symspace(Symbol*);
 extern Symlist* hoc_p_symlist;
 extern void hoc_defnonly(const char*);
 extern Symbol* hoc_decl(Symbol*);
@@ -43,8 +38,5 @@ extern void hoc_help(void);
 extern char* hoc_strgets(char*, int);
 extern int hoc_strgets_need(void);
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

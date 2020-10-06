@@ -6,8 +6,8 @@
 */
 /*
 Macros changed with
-sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.c > temp
-mv temp nvector_nrnthread_ld.c
+sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.cpp > temp
+mv temp nvector_nrnthread_ld.cpp
 sed 's/NV_\([A-Za-z_]*\)_NT/NV_\1_NT_LD/g' nvector_nrnthread_ld.h >temp
 mv temp nvector_nrnthread_ld.h
 */
@@ -62,13 +62,12 @@ mv temp nvector_nrnthread_ld.h
 #ifndef _NVECTOR_NRNTHREAD_LD_H
 #define _NVECTOR_NRNTHREAD_LD_H
 
-#ifdef __cplusplus  /* wrapper to enable C++ usage */
-extern "C" {
-#endif
 
 #include "nvector.h"
 #include "sundialstypes.h"
+extern "C" {
 extern void N_VOneMask_Serial(N_Vector x);
+}
 
 /*
  * -----------------------------------------------------------------
@@ -296,8 +295,5 @@ booleantype N_VInvTest_NrnThreadLD(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_NrnThreadLD(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_NrnThreadLD(N_Vector num, N_Vector denom);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

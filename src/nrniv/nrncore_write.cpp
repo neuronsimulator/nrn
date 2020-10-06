@@ -112,7 +112,6 @@ correctness has not been validated for cells without gids.
 
 extern NetCvode* net_cvode_instance;
 
-extern "C" { // to end of file
 
 extern int* nrn_prop_dparam_size_;
 int* bbcore_dparam_size; // cvodeieq not present
@@ -314,5 +313,3 @@ int nrncore_psolve(double tstop) {
 }
 
 #endif //!HAVE_DLFCN_H
-
-} // end of extern "C"

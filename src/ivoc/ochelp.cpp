@@ -29,17 +29,15 @@ static FILE* help_pipe;
 //#include "../uxnrnbbs/nrnbbs.h"
 #endif
 
-extern "C" {
-extern void ivoc_help(const char*);
+//extern void ivoc_help(const char*);
 extern const char* hoc_current_xopen();
-};
 
 declareList(CopyStringList, CopyString)
 implementList(CopyStringList, CopyString)
 
 static CopyStringList* filequeue;
 
-void ivoc_help(const char* s) {
+extern "C" void ivoc_help(const char* s) {
 #if 1
 //	printf("online help not currently working\n");	
 	return;

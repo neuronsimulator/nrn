@@ -1,5 +1,7 @@
 #ifndef newton_struct_h
 #define newton_struct_h
+
+#include <stdlib.h>
 /* avoid incessant alloc/free memory */
 typedef struct NewtonSpace {
 	int n;
@@ -14,7 +16,7 @@ typedef struct NewtonSpace {
 typedef int (*FUN)(double*, void*, void*, void*);
 
 
-extern void* hoc_Emalloc(unsigned long);
+extern void* hoc_Emalloc(size_t);
 extern void hoc_malchk();
 #define emalloc(arg) hoc_Emalloc(arg); hoc_malchk()
 extern int freevector();

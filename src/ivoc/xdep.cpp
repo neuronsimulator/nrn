@@ -204,7 +204,6 @@ void get_position(XDisplay* dpy, XWindow window, int* rx, int* ry)
 //if (xoff != -999) {
 //  *rx -= xoff;
 //  *ry -= yoff;
-//}
 }
 
 #endif

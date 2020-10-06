@@ -19,7 +19,6 @@ inline T *begin_ptr(std::vector <T> &v) {
 }
 
 
-extern "C" {
 
 // to avoid incompatible dataset between neuron and coreneuron
 // add version string to the dataset files
@@ -43,6 +42,5 @@ void nrnbbcore_vecplay_write(FILE *f, NrnThread &nt);
 
 void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo);
 
-}
 
 #endif //NRN_NRNCORE_IO_H

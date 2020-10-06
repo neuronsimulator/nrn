@@ -12,7 +12,6 @@
 #include "membfunc.h"
 #include "nonvintblock.h"
 typedef int (*Pfridot)(...);
-extern "C" {
 extern void setup_topology(), v_setup_vectors();
 extern void nrn_mul_capacity(NrnThread*, Memb_list*);
 extern void nrn_div_capacity(NrnThread*, Memb_list*);
@@ -47,7 +46,6 @@ extern void nrn_multisplit_adjust_rhs(NrnThread*);
 #if PARANEURON
 extern void (*nrn_multisplit_solve_)();
 #endif
-};
 
 static Symbol* vsym; // for absolute tolerance
 #define SETUP 1
@@ -58,7 +56,7 @@ J=df/dy.
 
 The NEURON fixed step method sets up C*dv/dt = F(v)
 by first calculating F(v) and storing it on the right hand side of
-the matrix equation ( see src/nrnoc/treeset.c nrn_rhs() ).
+the matrix equation ( see src/nrnoc/treeset.cpp nrn_rhs() ).
 It then sets up the left hand side of the matrix equation using
 nrn_set_cj(1./dt); setup1_tree_matrix(); setup2_tree_matrix();
 to form
@@ -451,9 +449,7 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 	return N_VGetArrayPointer(v);
 }
 
-extern "C" {
 extern void nrn_extra_scatter_gather(int, int);
-}
 
 void Cvode::scatter_y(double* y, int tid){
 	int i;
@@ -690,7 +686,7 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 	}
 #endif
 	before_after(z.before_breakpoint_, nt);
-	rhs(nt); // similar to nrn_rhs in treeset.c
+	rhs(nt); // similar to nrn_rhs in treeset.cpp
 #if PARANEURON
 	if (nrn_multisplit_solve_) { // non-zero area nodes need an adjustment
 		nrn_multisplit_adjust_rhs(nt);
@@ -749,7 +745,7 @@ void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
 	CvodeThreadData& z = ctd_[nt->id];
 	if (z.nvsize_ == 0) { return; }
 	before_after(z.before_breakpoint_, nt);
-	rhs(nt); // similar to nrn_rhs in treeset.c
+	rhs(nt); // similar to nrn_rhs in treeset.cpp
 	nrn_multisplit_adjust_rhs(nt);
 	do_ode(nt);
 	// divide by cm and compute capacity current
@@ -918,7 +914,7 @@ static void* nonode_thread(NrnThread* nt) {
 	return 0;
 }
 void Cvode::do_nonode(NrnThread* _nt) { // all the hacked integrators, etc, in SOLVE procedure
-//almost a verbatim copy of nonvint in fadvance.c
+//almost a verbatim copy of nonvint in fadvance.cpp
 	if (!_nt) {
 		if (nrn_nthread > 1) {
 			nonode_cv = this;

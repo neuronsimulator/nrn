@@ -6,7 +6,7 @@
 #include <math.h>
 #include <stdio.h>
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 static double distance_to_line(void*) {
 	return MyMath::distance_to_line(*getarg(1), *getarg(2),
@@ -24,7 +24,7 @@ static double inside(void*) {
 		*getarg(5), *getarg(6));
 }
 
-extern "C" { int nrn_feround(int); }
+int nrn_feround(int);
 // return last rounding mode and set to given mode if 1,2,3,4.
 // order is FE_DOWNWARD, FE_TONEAREST, FE_TOWARDZERO, FE_UPWARD
 #if defined(HAVE_FENV_H) && defined(HAVE_FESETROUND)

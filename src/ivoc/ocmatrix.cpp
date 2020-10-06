@@ -16,8 +16,10 @@ extern "C" {
 #include "matrix2.h"
 #include "sparse.h"
 #include "sparse2.h"
+extern MAT *m_get(int,int);
+} // extern "C"
+
 int nrn_matrix_dim(void*, int );
-}
 
 #include "ocmatrix.h"
 using std::vector;

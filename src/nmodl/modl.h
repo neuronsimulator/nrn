@@ -216,11 +216,11 @@ typedef struct Symbol {
 #define EXPLICIT_DECL 01	/* usage field, variable occurs in input file */
 
 extern char
-		*emalloc(),	/* malloc with out of space checking */
-		*stralloc(),	/* copies string to new space */
-		*inputline(),	/* used only by parser to get title line */
-		*inputtopar(),	/* used only by parser to get units */
-		*Gets();	/* used only in io.c to get string from fin. */
+        *emalloc(unsigned),	        /* malloc with out of space checking */
+        *stralloc(char*, char*),	/* copies string to new space */
+		*inputline(),	            /* used only by parser to get title line */
+		*inputtopar(),	            /* used only by parser to get units */
+		*Gets(char*);	            /* used only in io.c to get string from fin. */
 
 #if 0
 #if __TURBOC__ || SYSV || NeXT || LINUX
@@ -237,23 +237,23 @@ extern List
 		*inputtext();	/* used by parser to get block text from
 				 * VERBATIM and COMMENT */
 extern Item
-		*putintoken(),	/* construct symbol and store input tokens */
-		*insertstr(),	/* before a known Item */
-		*insertsym(),
-		*linsertstr(),	/* prepend to list */
-		*lappendstr(),	/* append to list */
-		*linsertsym(),
-		*lappendsym(),
-		*lappenditem(),
-		*lappendlst(),
+		*putintoken(char *s, short type),	/* construct symbol and store input tokens */
+		*insertstr(Item* item, char* str),	/* before a known Item */
+		*insertsym(List* list, Symbol* sym),
+		*linsertstr(List* list, char* str),	/* prepend to list */
+		*lappendstr(List* list, char* str),	/* append to list */
+		*linsertsym(List* list, Symbol* sym),
+		*lappendsym(List* list, Symbol* sym),
+		*lappenditem(List* list, Item* item),
+		*lappendlst(List* list, List* lst),
 		*next(),	/* not used but should be instead of q->next */
 		*prev();
 
 extern Symbol
-		*install(),	/* Install token in symbol table */
-		*lookup(),	/* lookup name in symbol table */
-		*copylocal(),	/* install LOCAL variable symbol */
-		*ifnew_parminstall();	/* new .var info only if
+		*install(char*, int),	/* Install token in symbol table */
+		*lookup(char*),	/* lookup name in symbol table */
+		*copylocal(Symbol*),	/* install LOCAL variable symbol */
+		*ifnew_parminstall(char* name, char* num, char* units, char* limits);	/* new .var info only if
 					 * not already done. */
 #include "nmodlfunc.h"
 
@@ -328,4 +328,6 @@ extern Item    *qlint;
 #define Free(arg)	free((void *)(arg))
 #endif
 
+
+void verbatim_adjust(char* q);
 /** @} */  // end of hoc_functions

@@ -3,6 +3,9 @@
 #ifndef  hoc_redef_h
 #define hoc_redef_h
 
+
+
+
 # define	Break	hoc_Break
 # define	Continue	hoc_Continue
 # define	Exp	hoc_Exp
@@ -136,5 +139,6 @@
 # define	wopen	hoc_wopen
 # define	xopen	hoc_xopen
 # define	zzdebug	hoc_zzdebug
+
 
 #endif

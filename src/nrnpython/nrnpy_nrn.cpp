@@ -8,7 +8,6 @@
 #define M_PI (3.14159265358979323846)
 #endif
 
-extern "C" {
 #include <membfunc.h>
 #include <parse.h>
 extern void nrn_pt3dremove(Section* sec, int i0);
@@ -102,7 +101,7 @@ extern void nrn_length_change(Section*, double);
 extern int diam_changed;
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-extern PyObject* nrn_hocobj_ptr(double*);
+extern "C" PyObject* nrn_hocobj_ptr(double*);
 extern int nrn_is_hocobj_ptr(PyObject*, double*&);
 extern PyObject* nrnpy_forall(PyObject* self, PyObject* args);
 extern Object* nrnpy_po2ho(PyObject*);
@@ -2467,4 +2466,3 @@ void nrnpy_unreg_mech(int type) {
   // not implemented but needed when KSChan name changed.
 }
 
-}  // end of extern c

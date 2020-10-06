@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+extern void hoc_register_prop_size(int type, int psize, int dpsize);
+
+#if defined(__cplusplus)
+}
+#endif
+
 #include "nrnoc_ml.h"
 
 typedef Datum *(*Pfrpdat)();
@@ -61,7 +67,7 @@ typedef struct Memb_func {
 
 #define nrnocCONST 1
 #define DEP 2
-#define STATE 3	/*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define STATE 3	/*See init.cpp and cabvars.h for order of nrnocCONST, DEP, and STATE */
 
 #define BEFORE_INITIAL 0
 #define AFTER_INITIAL 1
@@ -80,7 +86,6 @@ extern Memb_func* memb_func;
 extern int n_memb_func;
 extern int* nrn_prop_param_size_;
 extern int* nrn_prop_dparam_size_;
-extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #if VECTORIZE
 extern Memb_list* memb_list;
@@ -93,9 +98,5 @@ pointers which connect variables  from other mechanisms via the _ppval array.
 */
 
 #define _AMBIGUOUS 5
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif /* nrn_memb_func_h */

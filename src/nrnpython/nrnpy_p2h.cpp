@@ -8,7 +8,6 @@
 #include <hoccontext.h>
 #include "nrnpy_utils.h"
 
-extern "C" {
 #include "parse.h"
 extern void hoc_nopop();
 extern void hoc_pop_defer();
@@ -52,7 +51,7 @@ typedef struct {
 } NPySecObj;
 extern NPySecObj* newpysechelp(Section* sec);
 extern void (*nrnpy_call_python_with_section)(Object*, Section*);
-void nrnpython_reg_real();
+extern "C" void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
 PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
@@ -81,7 +80,6 @@ static hoc_List* dlist;
 extern int nrnpy_site_problem;
 extern int* nrnpy_site_problem_p;
 #endif
-}
 
 class Py2Nrn {
  public:
@@ -112,7 +110,7 @@ static void call_python_with_section(Object* pyact, Section* sec) {
 }
 
 
-void nrnpython_reg_real() {
+extern "C" void nrnpython_reg_real() {
   //printf("nrnpython_reg_real()\n");
   class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
   Symbol* s = hoc_lookup("PythonObject");
@@ -377,7 +375,7 @@ void nrnpy_decref_defer(PyObject* po) {
 }
 
 #if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 3)
-// copied from /Modules/_ctypes/_ctypes.c
+// copied from /Modules/_ctypes/_ctypes.cpp
 static PyObject* PyTuple_Pack(int n, ...) {
   int i;
   PyObject* o;

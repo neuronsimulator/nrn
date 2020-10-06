@@ -134,7 +134,7 @@ For example
   FUNCTION bbsavestate() {
     bbsavestate = 0
   VERBATIM
-    double *xdir, *xval, *hoc_pgetarg();
+    double *xdir, *xval; // , *hoc_pgetarg();
     xdir = hoc_pgetarg(1);
     if (*xdir == -1.) { *xdir = 2; return 0.0; }
     xval = hoc_pgetarg(2);
@@ -194,7 +194,6 @@ static void bbss_early(double td, TQItem* tq);
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-extern "C" {
 #include "membfunc.h"
 extern int section_count;
 extern void nrn_shape_update();
@@ -203,17 +202,19 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern void clear_event_queue();
+extern "C" void clear_event_queue();
 extern cTemplate** nrn_pnt_template_;
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_netcon_event(NetCon*, double);
-extern void net_send(void**, double*, Point_process*, double, double);
 extern double t;
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern short* nrn_is_artificial_;
+extern "C" {
+extern void net_send(void**, double*, Point_process*, double, double);
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
+} // extern "C"
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
@@ -262,7 +263,7 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 extern int use_bgpdma_;
 #endif
 
-extern Point_process* ob2pntproc(Object*);
+extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
 extern Symlist* hoc_built_in_symlist;
 
@@ -295,7 +296,7 @@ static void bbss_queuecheck();
 // process.
 
 
-void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
+extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
 // First call to return the information needed to make the other
 // calls. Returns a pointer used by the other methods.
 // Caller is reponsible for freeing (using free() and not delete [])
@@ -313,20 +314,20 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
 // of the number of concatenated buffers for each base gid.
 // Global_size will only be non_zero for host 0.
 
-void bbss_save_global(void* bbss, char* buffer, int sz);
+extern "C" void bbss_save_global(void* bbss, char* buffer, int sz);
 // call only on host 0 with a buffer of size equal to the
 // global_size returned from the bbss_buffer_counts call on host 0
 // sz is the size of the buffer (for error checking only, buffer+sz is
 // out of bounds)
 
-void bbss_restore_global(void* bbss, char* buffer, int sz);
+extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz);
 // call on all hosts with the buffer contents returned from the call
 // to bbss_save_global
 // This must be called prior to any calls to bbss_restore
 // sz is the size of the buffer (error checking only)
 // This also does some other important restore initializations.
 
-void bbss_save(void* bbss, int gid, char* buffer, int sz);
+extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz);
 // Call this for each item of the gids from bbss_buffer_counts along with
 // a buffer of size from the corresponding sizes array. The buffer will
 // be filled in with savestate information. The gid may be the same on
@@ -334,23 +335,22 @@ void bbss_save(void* bbss, int gid, char* buffer, int sz);
 // concatentate buffers at some point to allow calling of bbss_restore
 // sz is the size of the buffer (error checking only)
 
-void bbss_restore(void* bbss, int gid, int npiece, char* buffer, int sz);
+extern "C" void bbss_restore(void* bbss, int gid, int npiece, char* buffer, int sz);
 // Call this for each item of the gids from bbss_buffer_counts, the
 // number of buffers that were concatenated for the gid, and the
 // concatenated buffer (the concatenated buffer does NOT contain npiece
 // as the first value in the char* buffer pointer)
 // sz is the size of the buffer (error checking only)
 
-void bbss_save_done(void* bbss);
+extern "C" void bbss_save_done(void* bbss);
 // At the end of the save process, call this to cleanup.
 // when this call returns, bbss will be invalid.
 
-void bbss_restore_done(void* bbss);
+extern "C" void bbss_restore_done(void* bbss);
 // At the end of the restore process, call this to do
 // some extra setting up and cleanup.
 // when this call returns, bbss will be invalid.
 
-};
 
 
 // 0 no debug, 1 print to stdout, 2 read/write to IO file
@@ -694,7 +694,7 @@ static int ignored(Prop* p) {
 	return 0;
 }
 
-void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
+extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
 	usebin_ = 1;
 	BBSaveState* ss = new BBSaveState();
 	*global_size = 0;
@@ -707,13 +707,13 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
 	*len = ss->counts(gids, sizes);
 	return ss;
 }
-void bbss_save_global(void* bbss, char* buffer, int sz) { // call only on host 0
+extern "C" void bbss_save_global(void* bbss, char* buffer, int sz) { // call only on host 0
 	usebin_ = 1;
 	BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
 	io->d(1, nrn_threads->_t);
 	delete io;
 }
-void bbss_restore_global(void* bbss, char* buffer, int sz) { // call on all hosts
+extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz) { // call on all hosts
 	usebin_ = 1;
 	BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
 	io->d(1, nrn_threads->_t);
@@ -730,7 +730,7 @@ void bbss_restore_global(void* bbss, char* buffer, int sz) { // call on all host
 		nrn_binq_enqueue_error_handler = bbss_early;
 	}
 }
-void bbss_save(void* bbss, int gid, char* buffer, int sz) {
+extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
 	usebin_ = 1;
 	BBSaveState* ss = (BBSaveState*) bbss;
 	BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
@@ -738,7 +738,7 @@ void bbss_save(void* bbss, int gid, char* buffer, int sz) {
 	ss->gidobj(gid);
 	delete io;
 }
-void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
+extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
 	usebin_ = 1;
 	BBSaveState* ss = (BBSaveState*) bbss;
 	BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
@@ -749,7 +749,7 @@ void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
 	}
 	delete io;
 }
-void bbss_save_done(void* bbss) {
+extern "C" void bbss_save_done(void* bbss) {
 	BBSaveState* ss = (BBSaveState*) bbss;
 	delete ss;
 }
@@ -789,7 +789,7 @@ printf("%d type=%d\n", nrnmpi_myid, type);
 	delete tq_removal_list;
 }
 
-void bbss_restore_done(void* bbss) {
+extern "C" void bbss_restore_done(void* bbss) {
 	if (bbss) {
 		BBSaveState* ss = (BBSaveState*) bbss;
 		delete ss;
@@ -910,7 +910,7 @@ static double restore_test_bin(void* v) { //assumes whole cells
 		fclose(f);
 		//if (sz != sizes[i]) {
 		//	printf("%d note sz=%d size=%d\n", nrnmpi_myid, sz, sizes[i]);
-		//}
+        //}
 
 		buf = new char[sz];
 		sprintf(fname, "binbufin/%d.%d", gids[i], sz);
@@ -1010,7 +1010,7 @@ static void ssi_def() {
 		ssi[im].callback = hoc_table_lookup("bbsavestate", ts->symtable);
 		//if (ssi[im].callback) {
 		//	printf("callback %s.%s\n", ts->sym->name, ssi[im].callback->name);
-		//}
+        //}
 	    }else{
 		// check for callback named bbsavestate in a density mechanism
 		char name[256];
@@ -1018,8 +1018,8 @@ static void ssi_def() {
 		ssi[im].callback = hoc_table_lookup(name, hoc_built_in_symlist);
 		//if (ssi[im].callback) {
 		//	printf("callback %s\n", ssi[im].callback->name);
-		//}
-	    }
+        //}
+        }
 	    delete np;
 	}
 }
@@ -1593,7 +1593,7 @@ void BBSaveState::cell(Object* c) {
 	f->s(buf);
 	if (!is_point_process(c)) { // must be cell object
 	    if (f->type() != BBSS_IO::IN) { // writing, counting
-		// from forall_section in cabcode.c
+		// from forall_section in cabcode.cpp
 		// count, and iterate from first to last
 		hoc_Item* qsec, *first, *last;
 		qsec = c->secelm_;

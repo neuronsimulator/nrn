@@ -145,7 +145,7 @@ public class NrnKSChan implements DataListener{
 //System.out.println("structure_ ");
 //for (i=0; i < st.length; ++i) {
 //	System.out.println(i + " " +st[i]);
-//}
+} // extern "C"
 		structure_.toHoc(st);
 		ho_.dMethod("setstructure", new Object[]{structure_});
 		ho_.dMethod("setion", new Object[]{
@@ -217,7 +217,7 @@ public class NrnKSChan implements DataListener{
 //System.out.println("sync_rates ");
 //for (int k=0; k < rat[j].length; ++k) {
 //	System.out.println(k + " " +rat[j][k]);
-//}
+} // extern "C"
 			}
 		}
 		ch_.setData(data);

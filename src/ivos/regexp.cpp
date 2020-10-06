@@ -102,7 +102,7 @@ Regexp::~Regexp () {
     	delete [] pattern_;
     }
     if (c_pattern) {
-        delete [] (char*)c_pattern;
+        delete [] c_pattern;
     }
 }
 
@@ -430,7 +430,7 @@ regcomp(const char* exp) {
 	regcode = r->program;
 	regc(REGEXP_MAGIC);
 	if (reg(0, &flags) == nil) {
-		delete [] (char*)r;
+		delete [] r;
 		return(nil);
 	}
 

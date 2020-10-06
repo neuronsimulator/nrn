@@ -15,13 +15,11 @@
 #if HAVE_IV
 #include <ocbox.h>
 #endif
-extern "C" {
 extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
-}
 
-extern "C" int hoc_return_type_code;
+extern /*"C"*/ int hoc_return_type_code;
 
 inline unsigned long key_to_hash(String& s) {return s.hash();}
 implementTable(SymbolTable, String, Symbol*)
@@ -98,7 +96,6 @@ static double l_is_name(void*) {
 }
 
 
-extern "C" {
 extern void hoc_free_symspace(Symbol*);
 extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_top_level_symlist;
@@ -116,7 +113,6 @@ extern void ivoc_free_alias(Object* ob) {
 	if (a) delete a;
 }
 
-}
 
 static double l_alias(void*) {
 	char* name;
@@ -364,7 +360,7 @@ Symbol* IvocAliases::lookup(const char* name){
 Symbol* IvocAliases::install(const char* name){
 	Symbol* sp;
 	sp = (Symbol*)emalloc(sizeof(Symbol));
-	sp->name = (char*)emalloc(strlen(name)+1);
+	sp->name = static_cast<char*>(emalloc(strlen(name)+1));
 	strcpy(sp->name, name);
 	sp->type = VARALIAS;
 	sp->cpublic = 0; // cannot be 2 or cannot be freed

@@ -15,7 +15,6 @@
 #include <dlfcn.h>
 #endif
 
-extern "C" {
 extern bbcore_write_t* nrn_bbcore_write_;
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
@@ -24,7 +23,6 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
-};
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {

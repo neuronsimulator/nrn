@@ -7,9 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <InterViews/resource.h>
-extern "C" {
 #include "spmatrix.h"
-}
 #include "nrnoc2iv.h"
 #include "cvodeobj.h"
 #include "nrndaspk.h"
@@ -29,7 +27,6 @@ static int solve_state_;
 
 double Daspk::dteps_;
 
-extern "C" {
 	
 extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
@@ -37,10 +34,12 @@ extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern void nrn_solve(NrnThread*);
 void nrn_daspk_init_step(double, double, int);
-// this is private in ida.c but we want to check if our initialization
+// this is private in ida.cpp but we want to check if our initialization
 // is good. Unfortunately ewt is set on the first call to solve which
 // is too late for us.
+extern "C" {
 extern booleantype IDAEwtSet(IDAMem IDA_mem, N_Vector ycur);
+} // extern "C"
 
 //extern double t, dt;
 #define nt_dt nrn_threads->_dt
@@ -67,7 +66,6 @@ static int msolve(IDAMem mem, N_Vector b, N_Vector ycur, N_Vector ypcur,
 
 static int mfree(IDAMem);
 
-}
 
 
 // at least in DARWIN the following is already declared so avoid conflict
@@ -494,7 +492,7 @@ for (i=0; i < z.nvsize_; ++i) {
 	printf("   %d %g %g %g\n", i, y[i], yprime[i], delta[i]);
 }
 #endif
-	// the cap nodes : see nrnoc/capac.c for location of cm, etc.
+	// the cap nodes : see nrnoc/capac.cpp for location of cm, etc.
 	// these are not in same order as for cvode but are in
 	// spmatrix order mixed with nocap nodes and extracellular
 	// therefore we use the Node.eqn_index to calculate the delta index.
@@ -536,7 +534,7 @@ for (i=0; i < z.nvsize_; ++i) {
 			}
 		}
 	}
-	// See nrnoc/excelln.c for location of cx.
+	// See nrnoc/excelln.cpp for location of cx.
 	if (z.cmlext_) {
 		Memb_list* ml = z.cmlext_->ml;
 		int n = ml->nodecount;
@@ -638,7 +636,7 @@ printf("\n");
 	scatter_ydot(b, _nt->id);
 #if 0
 printf("before nrn_solve matrix cj=%g\n", cj);
-spPrint((char*)sp13mat_, 1,1,1);
+spPrint(sp13mat_, 1,1,1);
 printf("before nrn_solve actual_rhs=\n");
 for (i=0; i < z.neq_v_; ++i) {
 	printf("%d %g\n", i+1, actual_rhs[i+1]);
@@ -647,7 +645,7 @@ for (i=0; i < z.neq_v_; ++i) {
 	daspk_nrn_solve(_nt); // not the cvode one
 #if 0
 //printf("after nrn_solve matrix\n");
-//spPrint((char*)sp13mat_, 1,1,1);
+//spPrint(sp13mat_, 1,1,1);
 printf("after nrn_solve actual_rhs=\n");
 for (i=0; i < neq_v_; ++i) {
 	printf("%d %g\n", i+1, actual_rhs[i+1]);

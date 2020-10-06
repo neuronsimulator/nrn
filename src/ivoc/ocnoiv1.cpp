@@ -4,7 +4,6 @@
 
 // things we DO NOT want
 
-extern "C" {
 #include "hocdec.h"
 
 extern void hoc_ret();
@@ -173,6 +172,5 @@ void ivoc_style() {
 	}
     hoc_ret();
     hoc_pushx(0.);
-}
 }
 #endif

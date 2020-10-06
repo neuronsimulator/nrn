@@ -4,20 +4,16 @@
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "classreg.h"
-extern "C" {
 double (*nrnpy_guigetval)(Object*);
 void (*nrnpy_guisetval)(Object*, double);
 int (*nrnpy_guigetstr)(Object*, char**);
-}
 
 #include "gui-redirect.h"
 
-extern "C" {
-	Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
-	double (*nrnpy_object_to_double_)(Object*) = NULL;
-	Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
-	char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
-};
+Object** (*nrnpy_gui_helper_)(const char* name, Object* obj) = NULL;
+double (*nrnpy_object_to_double_)(Object*) = NULL;
+Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr) = NULL;
+char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strptr) = NULL;
 
 #if HAVE_IV // to end of file except for a few small fragments.
 
@@ -165,12 +161,11 @@ static String* xvalue_format;
 #define Editor_Default		"DefaultValueEditor"
 #define Editor_Stepper		"DefaultValueEditor"
 
-extern "C" {
 
 extern int units_on_flag_;
-extern Symbol* hoc_get_symbol(const char*);
+extern "C" Symbol* hoc_get_symbol(const char*);
 extern Symbol* hoc_get_last_pointer_symbol();
-extern double* nrn_recalc_ptr(double*);
+extern "C" double* nrn_recalc_ptr(double*);
 void hoc_notify_value() {
 	Oc oc;
 	oc.notify();
@@ -532,7 +527,6 @@ void hoc_xslider() {
 	hoc_pushx(0.);
 }
 
-} /* end extern "C" */
 
 class HocButton : public Button {
 public:
@@ -1466,9 +1460,7 @@ void HocLabel::write(ostream& o) {
 }
 
 #if 0
-extern "C" {
 extern void purify_watch_rw_4(char**);
-}
 #endif
 
 //HocVarLabel

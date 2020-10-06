@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
 
-extern "C" {
+//extern "C" {
 #include <hocdec.h>
 #include <ocfunc.h>
 #include <code.h>
-}
+//} // extern "C
 
 TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     hoc_init_space();

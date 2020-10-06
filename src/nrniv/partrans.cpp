@@ -28,7 +28,6 @@
 #if NRNLONGSGID
 #define sgid_t int64_t
 #if PARANEURON
-extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
   {
     if (nrn_sparse_partrans > 0)
@@ -38,12 +37,10 @@ extern "C" {
       nrnmpi_long_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     }
   }
-}
 #endif //PARANEURON
 #else // not NRNLONGSGID
 #define sgid_t int
 #if PARANEURON
-extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
   {
     if (nrn_sparse_partrans > 0)
@@ -53,11 +50,9 @@ extern "C" {
       nrnmpi_int_alltoallv(s, scnt, sdispl, r, rcnt, rdispl);
     }
   }
-}
 #endif //PARANEURON
 #endif // not NRNLONGSGID
 
-extern "C" {
 void nrnmpi_source_var();
 void nrnmpi_target_var();
 void nrnmpi_setup_transfer();
@@ -67,12 +62,12 @@ static void thread_transfer(NrnThread*);
 static void thread_vi_compute(NrnThread*);
 static void mk_ttd();
 extern double t;
-extern int v_structure_change;
-extern int structure_change_cnt;
+extern "C" int v_structure_change;
+extern "C" int structure_change_cnt;
 extern int nrn_node_ptr_change_cnt_;
-extern double* nrn_recalc_ptr(double*);
+extern "C" double* nrn_recalc_ptr(double*);
 extern const char *bbcore_write_version;
-// see lengthy comment in ../nrnoc/fadvance.c
+// see lengthy comment in ../nrnoc/fadvance.cpp
 // nrnmpi_v_transfer requires existence of nrnthread_v_transfer even if there
 // is only one thread.
 // Thread 0 does the nrnmpi_v_transfer into incoming_src_buf.
@@ -160,7 +155,6 @@ extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
 extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*,  double*, int*, int*);
 #endif
-}
 
 struct TransferThreadData {
 	int cnt;
@@ -1041,9 +1035,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
   }
 }
 
-extern "C" {
 extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
-}
 
 /*
   file format for <path>/<group_id>_gap.dat
@@ -1099,8 +1091,8 @@ static void sidsort(int* sids, int cnt, int* indices);
 
 extern "C" {
 void get_partrans_setup_info(int tid, int& ntar, int& nsrc,
-  int& type, int& ix_vpre, int*& sid_target, int*& sid_src, int*& v_indices);
-}
+int& type, int& ix_vpre, int*& sid_target, int*& sid_src, int*& v_indices);
+} // extern "C"
 
 void get_partrans_setup_info(int tid, int& ntar, int& nsrc,
   int& type, int& ix_vpre, int*& sid_target, int*& sid_src, int*& v_indices) {

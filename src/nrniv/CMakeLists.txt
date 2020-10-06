@@ -15,9 +15,9 @@
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
-flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.c)
+flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.cpp)
 
-bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.y ${NRN_MODLUNIT_SRC_DIR}/parse1.c
+bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.y ${NRN_MODLUNIT_SRC_DIR}/parse1.cpp
              DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
 
 set_property(
@@ -30,12 +30,12 @@ add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
-flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
+flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.cpp)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.y ${NRN_NMODL_SRC_DIR}/parse1.c DEFINES_FILE
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.y ${NRN_NMODL_SRC_DIR}/parse1.cpp DEFINES_FILE
              ${NRN_NMODL_SRC_DIR}/parse1.h)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/diffeq.c DEFINES_FILE
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/diffeq.cpp DEFINES_FILE
              ${NRN_NMODL_SRC_DIR}/diffeq.h)
 
 set_property(
@@ -59,7 +59,7 @@ set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
 # =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
-bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.y ${NRN_OC_SRC_DIR}/parse.c DEFINES_FILE
+bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.y ${NRN_OC_SRC_DIR}/parse.cpp DEFINES_FILE
              ${NRN_OC_SRC_DIR}/parse.h)
 
 # =============================================================================
@@ -83,7 +83,7 @@ if(NRN_ENABLE_MPI)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
+  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
 else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
@@ -146,7 +146,7 @@ add_custom_target(
 
 add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
 
-# avoid error with nvector_serial.c for #include <../../../nrnconf.h>
+# avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
@@ -180,13 +180,13 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
 set_property(
-  SOURCE ${NRN_NRNOC_SRC_DIR}/code.c ${NRN_NRNOC_SRC_DIR}/hoc_init.c ${NRN_NRNOC_SRC_DIR}/hoc_oop.c
+  SOURCE ${NRN_NRNOC_SRC_DIR}/code.cpp ${NRN_NRNOC_SRC_DIR}/hoc_init.cpp ${NRN_NRNOC_SRC_DIR}/hoc_oop.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
 set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
          ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
@@ -218,14 +218,14 @@ set_property(
 
 if(DEF_RL_GETC_FUNCTION)
   set_property(
-    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
 endif()
 
 if(NRN_USE_BACKWARD)
   set_property(
-    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
   set_property(
@@ -234,21 +234,21 @@ if(NRN_USE_BACKWARD)
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
 endif()
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.c PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)
 
-set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.c PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c PROPERTIES
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.c PROPERTIES OBJECT_DEPENDS
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp PROPERTIES OBJECT_DEPENDS
                               ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c PROPERTIES
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 
@@ -335,7 +335,7 @@ if(IV_ENABLE_X11_DYNAMIC)
   # ~~~
   set_property(
     SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
-           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
+           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
   if((NOT IV_ENABLE_SHARED) AND IV_LIB_DIR)

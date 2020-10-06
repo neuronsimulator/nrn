@@ -22,8 +22,8 @@
 static char linebuf[512], *cp;
 int lexcontext;
 
-extern int unput();
-extern int unGetc();
+extern int unput(int);
+extern int unGetc(int);
 extern int Getc();
 
 #define debug(arg1,arg2) /*printf("lex:arg1|%s|\n", arg2);*/
@@ -126,14 +126,14 @@ E	[Ee][-+]?{D}+
 
 <O>[ \t]+	{ putintoken(yytext, SPACE, SPACE);}
 
-<O>\r\n	{ putintoken("\n", NEWLINE, 0);}
-<O>\r	{ putintoken("\n", NEWLINE, 0);}
+<O>\r\n	{ putintoken( "\n", NEWLINE, 0);}
+<O>\r	{ putintoken( "\n", NEWLINE, 0);}
 <O>\n	{ putintoken(yytext, NEWLINE, 0);}
 
 <O>[:\?].*	{ putintoken(yytext, STRING, STUFF);}
 
-<O>\{	{ yylval.qp = putintoken("{", 0, '{'); return yytext[0]; }
-<O>\}	{ yylval.qp = putintoken("}", 0, '}'); return yytext[0]; }
+<O>\{	{ yylval.qp = putintoken( "{", 0, '{'); return yytext[0]; }
+<O>\}	{ yylval.qp = putintoken( "}", 0, '}'); return yytext[0]; }
 <O>.	{ yylval.qp = putintoken(yytext, 0, yytext[0]); return yytext[0]; }
 
 <to_eocom>ENDCOMMENT {
@@ -213,11 +213,11 @@ int input() {
 }
 #endif
 
-int unput(c) int c; {
+int unput(int c) {
 	return unGetc(c);
 }
 
-int output(c) int c; {
+int output(int c) {
 #if LINT
 	IGNORE(c);
 #endif
@@ -228,11 +228,11 @@ int output(c) int c; {
 int yywrap() {
 	if (YYSTATE == to_eoverb) {
 		diag("End of file while in VERBATIM mode.\n",
-			"Missing ENDVERBATIM?");
+			 "Missing ENDVERBATIM?");
 	}
 	if (YYSTATE == to_eocom) {
 		diag("End of file while in COMMENT mode.\n",
-			"Missing ENDCOMMENT?");
+			 "Missing ENDCOMMENT?");
 	}
 	return 1;
 }

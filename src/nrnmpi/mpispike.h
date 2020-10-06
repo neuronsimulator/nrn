@@ -13,9 +13,6 @@ typedef struct {
 } NRNMPI_Spikebuf;
 #endif
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 #define icapacity_ nrnmpi_i_capacity_
 #define spikeout_ nrnmpi_spikeout_
@@ -52,8 +49,5 @@ extern NRNMPI_Spikebuf* spbufout_;
 extern NRNMPI_Spikebuf* spbufin_;
 #endif
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

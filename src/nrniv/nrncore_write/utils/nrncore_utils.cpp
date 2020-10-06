@@ -24,8 +24,6 @@
 #define RTLD_NODELETE 0
 #endif
 
-extern "C" {
-
 extern bool corenrn_direct;
 extern int diam_changed, v_structure_change, tree_changed;
 extern const char *bbcore_write_version;
@@ -132,7 +130,7 @@ bool file_exist(const std::string& path) {
 // Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
     assert(use_cachevec);
     int nnode = nt.end;
     type = 0;
@@ -272,4 +270,4 @@ void check_coreneuron_compatibility(void* handle) {
 }
 
 #endif //!HAVE_DLFCN_H
-}
+

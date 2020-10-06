@@ -59,11 +59,12 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 // needs to be fired to execute the NET_RECEIVE block.
 //#define POINT_RECEIVE(type, tar, w, f) ns->point_receive(type, tar, w, f)
 
-extern "C" {
 #include "membfunc.h"
 extern void single_event_run();
 extern void setup_topology(), v_setup_vectors();
-extern int structure_change_cnt, v_structure_change, tree_changed, nrn_matrix_cnt_;
+extern "C" int structure_change_cnt;
+extern int v_structure_change;
+extern int tree_changed, nrn_matrix_cnt_;
 extern int diam_changed;
 extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
@@ -83,21 +84,21 @@ extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
 extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
-void net_send(void**, double*, Point_process*, double, double);
-void net_move(void**, Point_process*, double);
-void artcell_net_send(void**, double*, Point_process*, double, double);
-void artcell_net_move(void**, Point_process*, double);
+extern "C" void net_send(void**, double*, Point_process*, double, double);
+extern "C" void net_move(void**, Point_process*, double);
+//void artcell_net_send(void**, double*, Point_process*, double, double);
+//void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-void net_event(Point_process*, double);
-void _nrn_watch_activate(Datum*, double (*)(Point_process*), int, Point_process*, int, double);
-void _nrn_free_watch(Datum*, int, int);
+//void net_event(Point_process*, double);
+extern "C" void _nrn_watch_activate(Datum*, double (*)(Point_process*), int, Point_process*, int, double);
+extern "C" void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
 extern int hoc_stacktype();
-extern Point_process* ob2pntproc(Object*);
-extern Point_process* ob2pntproc_0(Object*);
+extern "C" Point_process* ob2pntproc(Object*);
+extern "C" Point_process* ob2pntproc_0(Object*);
 void nrn_use_daspk(int);
 extern int nrn_use_daspk_;
 int linmod_extra_eqn_count();
@@ -109,25 +110,25 @@ extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
-extern double* nrn_recalc_ptr(double*);
+extern "C" double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
-void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays);
-void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
-void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+extern "C" void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays);
+extern "C" void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
+extern "C" void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
 #endif
 
-extern "C" int hoc_return_type_code;
+extern /*"C"*/ int hoc_return_type_code;
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
 void _nrn_free_fornetcon(void**);
-int _nrn_netcon_args(void*, double***);
+//int _nrn_netcon_args(void*, double***);
 
 // for use in mod files
 double nrn_netcon_get_delay(NetCon* nc) { return nc->delay_; }
@@ -136,7 +137,7 @@ int nrn_netcon_weight(NetCon* nc, double** pw) {
 	*pw = nc->weight_;
 	return nc->cnt_;
 }
-double nrn_event_queue_stats(double* stats) {
+extern "C" double nrn_event_queue_stats(double* stats) {
 #if COLLECT_TQueue_STATISTICS
 	net_cvode_instance_event_queue(nrn_threads)->spike_stat(stats);  
 	return (stats[0]-stats[2]);
@@ -236,7 +237,6 @@ void nrn2ncs_netcons();
 #if NRNMPI
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 #endif
-}; //extern "C"
 
 #if BGPDMA
 extern void bgp_dma_send(PreSyn*, double t);
@@ -2285,7 +2285,7 @@ int Cvode::handle_step(NetCvode* ns, double te) {
 	return err;
 }
 
-void net_move(void** v, Point_process* pnt, double tt) {
+extern "C" void net_move(void** v, Point_process* pnt, double tt) {
 	if (!(*v)) {
 		hoc_execerror( "No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
 	}
@@ -2302,7 +2302,7 @@ void net_move(void** v, Point_process* pnt, double tt) {
 	net_cvode_instance->move_event(q, tt, PP2NT(pnt));
 }
 
-void artcell_net_move(void** v, Point_process* pnt, double tt) {
+extern "C" void artcell_net_move(void** v, Point_process* pnt, double tt) {
     if (nrn_use_selfqueue_) {
 	if (!(*v)) {
 		hoc_execerror( "No event with flag=1 for net_move in ", hoc_object_name(pnt->ob));
@@ -2357,7 +2357,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
 	STATISTICS(SelfEvent::selfevent_send_);
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2392,7 +2392,7 @@ void net_send(void** v, double* weight, Point_process* pnt, double td, double fl
 //printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+extern "C" void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
 	STATISTICS(SelfEvent::selfevent_send_);
 	NrnThread* nt = PP2NT(pnt);
@@ -2426,7 +2426,7 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
     }
 }
 
-void net_event(Point_process* pnt, double time) {
+extern "C" void net_event(Point_process* pnt, double time) {
 	STATISTICS(net_event_cnt_);
 	PreSyn* ps = (PreSyn*)pnt->presyn_;
 	if (ps) {
@@ -2448,7 +2448,7 @@ void net_event(Point_process* pnt, double time) {
 	}
 }
 
-void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, int r, double flag) {
+extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, int r, double flag) {
 //	printf("_nrn_cond_activate %s flag=%g first return = %g\n", hoc_object_name(pnt->ob), flag, c(pnt));
 	if (!d->_pvoid) {
 		d->_pvoid = (void*)new WatchList();
@@ -2474,7 +2474,7 @@ void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_pro
 	wc->activate(flag);
 }
 
-void _nrn_free_watch(Datum* d, int offset, int n) {
+extern "C" void _nrn_free_watch(Datum* d, int offset, int n) {
 	int i;
 	int nn = offset + n;
 	if (d[offset]._pvoid) {
@@ -4044,14 +4044,14 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 	delete [] t2i;
 }
 
-int _nrn_netcon_args(void* v, double*** argslist) {
+extern "C" int _nrn_netcon_args(void* v, double*** argslist) {
 	ForNetConsInfo* fnc = (ForNetConsInfo*)v;
 	assert(fnc);
 	*argslist = fnc->argslist;
 	return fnc->size;
 }
 
-void _nrn_free_fornetcon(void** v) {
+extern "C" void _nrn_free_fornetcon(void** v) {
 	ForNetConsInfo* fnc = (ForNetConsInfo*)(*v);
 	if (fnc) {
 		if (fnc->argslist) {
@@ -4062,12 +4062,10 @@ void _nrn_free_fornetcon(void** v) {
 	}
 }	
 
-extern "C" {
 void record_init_clear(const TQItem* q, int) {
 	DiscreteEvent* d = (DiscreteEvent*)q->data_;
 	d->frecord_init((TQItem*)q);
 }
-};
 
 void NetCvode::record_init() {
 	int i, cnt = prl_->count();

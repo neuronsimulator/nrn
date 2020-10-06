@@ -38,7 +38,9 @@ int operator != (doubleVec& a, doubleVec& b)
 // error handling
 
 
-extern "C" {extern void hoc_execerror(const char*, const char*);}
+extern "C" {
+    extern void hoc_execerror(const char*, const char*);
+} // extern "C"
 
 void default_doubleVec_error_handler(const char* msg)
 {

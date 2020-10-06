@@ -99,7 +99,6 @@ data depending on type. eg for VAR && NOTUSER it is
 #endif
 #include "checkpnt.h"
 
-extern "C" {
 #include "redef.h"
 #include "hoclist.h"
 #include "parse.h"
@@ -107,7 +106,6 @@ extern "C" {
 #include "equation.h"
 	int hoc_readcheckpoint(char*);
 	extern int hoc_resize_toplevel(int);
-}
 
 static struct HocInst {
 	Pfrv pi;
@@ -375,12 +373,10 @@ bool Checkpoint::xdr(Object*& o) {
 
 
 #else
-extern "C"{
 void hoc_checkpoint();
 int hoc_readcheckpoint(char*);
 void hoc_ret();
 void hoc_pushx(double);
-}
 
 
 

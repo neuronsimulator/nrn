@@ -16,8 +16,8 @@ and a pointer to their declaration. All "used" names are marked with
 their usage for later error checking.
 */
 
-extern Symbol *checklocal();
-extern int next_intoken();
+extern Symbol *checklocal(Symbol*);
+extern int next_intoken(Item**);
 extern Item *title;
 extern int declare_level;
 extern int parse_pass, restart_pass;
@@ -35,7 +35,7 @@ extern int breakpoint_local_seen_;
 #define R1	IFR(1)
 
 static int yylex();
-static void yyerror();
+static void yyerror(char *);
 
 #if YYBISON 
 #define myerr(arg) static int ierr=0;\
@@ -293,7 +293,7 @@ factordef: NAME '=' real Units
 		    Unit_push(STR($3));
 			Unit_push(STR($4)); unit_div();
 			dimensionless();
-			Sprintf(buf, "%g", unit_mag());
+			Sprintf(buf, "%g",unit_mag());
 			$$ = itemarray(3, $1, $4, lappendstr(misc, buf));
 /*printf("%s has value %s and units (%s)\n", SYM($1)->name, buf, STR($5));*/
 		    unit_pop();
@@ -503,7 +503,7 @@ expr:	varname {P3{unit_push($1);}}
 	| expr LE expr	{P3{unit_logic(2, $1, $2, lastok);}}
 	| expr EQ expr	{P3{unit_logic(2, $1, $2, lastok);}}
 	| expr NE expr	{P3{unit_logic(2, $1, $2, lastok);}}
-	| NOT expr	{P3{unit_pop(); Unit_push("");}}
+	| NOT expr	{P3{unit_pop(); Unit_push( "");}}
 	| '-' expr %prec UNARYMINUS
 	| error {myerr("Illegal expression");}
 	;
@@ -671,14 +671,14 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 			if (s1->u.str) { /* s2 must be nil or same */
 				if (s2->u.str) {
 					if (strcmp(s1->u.str, s2->u.str) != 0) {
-						diag(s1->name, " in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
+						diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
 					}
 				}else{
 					s2->u.str = s1->u.str;
 				}
 			}else{ /* s2 must be nil */
 				if (s2->u.str) {
-					diag(s1->name, " in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
+					diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
 				}
 			}
 /*printf("|%s|%s|  |%s|%s|\n", s1->name, s1->u.str, s2->name, s2->u.str);*/
@@ -788,10 +788,10 @@ reaction: REACTION react REACT1 react '(' expr ',' expr ')'
 	| REACTION error {myerr("Illegal reaction syntax");}
 	;
 react:	varname {P3{R1{ureactadd($1);} unit_push($1);}}
-	|INTEGER varname {P3{R1{ureactadd($2);} unit_push($2); Unit_push((char*)0); unit_exponent($1,$1);}}
+	|INTEGER varname {P3{R1{ureactadd($2);} unit_push($2); Unit_push(0); unit_exponent($1,$1);}}
 	|react '+' varname {P3{R1{ureactadd($3);}unit_push($3); unit_mul();}}
 	|react '+' INTEGER varname {
-		  P3{R1{ureactadd($4);}unit_push($4); Unit_push((char*)0); unit_exponent($3,$3); unit_mul();}
+		  P3{R1{ureactadd($4);}unit_push($4); Unit_push(0); unit_exponent($3,$3); unit_mul();}
 		}
 	;
 lagstmt: LAG name BY NAME
@@ -886,8 +886,7 @@ valence: /*nothing*/
 %%
 	/* end of grammar */
 
-static void yyerror(s)	/* called for yacc syntax error */
-	char *s;
+static void yyerror(char* s)	/* called for yacc syntax error */
 {
 	Fprintf(stderr, "%s:\n ", s);
 }
@@ -895,13 +894,11 @@ static void yyerror(s)	/* called for yacc syntax error */
 static int yylex() {return next_intoken(&(yylval.qp));}
 
 #if !NRNUNIT
-void nrn_list(q1, q2)
-	Item *q1, *q2;
+void nrn_list(Item *q1, Item* q2)
 {
 	/*ARGSUSED*/
 }
-void nrn_use(q1, q2, q3)
-	Item *q1, *q2, *q3;
+void nrn_use(Item* q1, Item* q2, Item* q3)
 {
 	/*ARGSUSED*/
 }

@@ -1,5 +1,5 @@
 #ifndef H_nrnpython_config_included
-#define H_nrnpython_config_included 1
+#define H_nrnpython_config_included // 1
 /* Define if Python available */
 #undef USE_PYTHON
 /* Define to sys.api_version if dynamic loading desired */

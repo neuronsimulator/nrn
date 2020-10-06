@@ -139,31 +139,38 @@ echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-' > mod_func.c
+#if defined(__cplusplus)
+extern "C" {
+#endif
+' > mod_func.cpp
 for i in $bfiles ; do
 	echo 'extern void _'$i'_reg(void);'
-done >> mod_func.c
+done >> mod_func.cpp
 echo '
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, "Additional mechanisms from files'$newline'");
-' >> mod_func.c
+' >> mod_func.cpp
 
 for i in $files
 do
 	echo '    fprintf(stderr," '$i'.mod");'
-done >>mod_func.c
+done >>mod_func.cpp
 
 echo '    fprintf(stderr, "'$newline'");
-  }' >>mod_func.c
+  }' >>mod_func.cpp
 
 for i in $bfiles; do
 	echo '  _'$i'_reg();'
 	MODOBJS="$MODOBJS $i.o"
-done >> mod_func.c
+done >> mod_func.cpp
 
-echo "}" >> mod_func.c
+echo "}" >> mod_func.cpp
 
+echo '
+#if defined(__cplusplus)
+}
+#endif' >> mod_func.cpp
 
 if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`

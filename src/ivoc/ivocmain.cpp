@@ -1,16 +1,12 @@
 #include <../../nrnconf.h>
 #include <../nrnpython/nrnpython_config.h>
 
-extern "C" {
 long hoc_nframe, hoc_nstack;
-}
 
 #if !HAVE_IV
 #define Session void
-extern "C" {
-	int hoc_main1(int, const char**, const char**);
+int hoc_main1(int, const char**, const char**);
 	void hoc_main1_init(const char*, const char**);
-}
 #endif
 
 #include <stdio.h>
@@ -57,7 +53,7 @@ void iv_display_scale(float);
 #endif
 
 #if 1
-extern "C" { void pr_profile(); }
+void pr_profile();
 #define PR_PROFILE pr_profile();
 #else
 #define PR_PROFILE /**/
@@ -119,8 +115,8 @@ static PropertyData properties[] = {
 {"*CBWidget_ncolor", "10"},
 {"*CBWidget_nbrush", "10"},
 {"*units_on_flag", "on"},
-{"*NFRAME", "0"}, // see src/oc/code.c for the default value
-{"*NSTACK", "0"}, // see src/oc/code.c for the default value
+{"*NFRAME", "0"}, // see src/oc/code.cpp for the default value
+{"*NSTACK", "0"}, // see src/oc/code.cpp for the default value
 {"*Py_NoSiteFlag", "0"}, 
 {"*python", "off"},
 {"*nopython", "off"},
@@ -155,7 +151,6 @@ static OptionDesc options[] = {
 };
 #endif // HAVE_IV
 
-extern "C" {
 	extern int hoc_obj_run(const char*, Object*);
 	extern int nrn_istty_;
 	extern char* nrn_version(int);
@@ -171,7 +166,6 @@ extern "C" {
 	extern void (*p_nrnpython_start)(int);
 	char* nrnpy_pyexe;
 #endif
-}
 
 /*****************************************************************************/
 //exported initialized data so shared libraries can have assert pure-text
@@ -187,13 +181,10 @@ extern void ivoc_cleanup();
 static char* ocsmall_argv[] = {0, "difus.hoc"};
 #endif
 #if defined(WIN32) && HAVE_IV
-extern "C" {
 extern HWND hCurrWnd;
-}
 #endif
 
 
-extern "C" {
 	extern void setneuronhome(const char*);
 	extern const char* neuron_home;
 	int hoc_xopen1(const char* filename, const char* rcs);
@@ -201,7 +192,6 @@ extern "C" {
 	extern double hoc_default_dll_loaded_;
 	extern int hoc_print_first_instance;
 	int nrnpy_nositeflag;
-}
 
 #if !defined(WIN32) && !MAC && !defined(CYGWIN)
 void setneuronhome(const char*) {
@@ -218,7 +208,6 @@ void penv() {
 }
 #endif
 
-extern "C" {
 #if DARWIN || defined(__linux__)
 #include <dlfcn.h>
 #include <string>
@@ -255,13 +244,11 @@ const char* path_prefix_to_libnrniv() {
   return path_prefix_to_libnrniv_;
 }
 #endif // DARWIN || defined(__linux__)
-} // extern "C"
 
 #if MAC
 #include <string.h>
 #include <sioux.h>
 extern bool mac_load_dll(const char*);
-extern "C" {
 void mac_open_doc(const char* s) {
 	// only chdir and load dll on the first opendoc
 	static bool done = false;
@@ -283,17 +270,15 @@ void mac_open_doc(const char* s) {
 void mac_open_app(){
 	hoc_xopen1(":lib:hoc:macload.hoc", 0);
 }
-}
 #endif
 
 #ifdef MAC
 #pragma export on
 #endif
 
-extern "C" {
-        int ivocmain(int, const char**, const char**);
-        int ivocmain_session(int, const char**, const char**, int start_session);
-        int (*p_neosim_main)(int, const char**, const char**);
+//    int ivocmain(int, const char**, const char**);
+    int ivocmain_session(int, const char**, const char**, int start_session);
+    int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;
 	extern const char** nrn_global_argv;
 	int always_false;
@@ -303,7 +288,6 @@ extern "C" {
         extern void nrnmpi_stubs();
         extern char* nrnmpi_load(int is_python);
 #endif
-}
 
 // some things are defined in libraries earlier than they are used so...
 #include <nrnisaac.h>
@@ -318,7 +302,7 @@ static void force_load() {
 #include <sys/stat.h>
 static bool isdir(const char* p) {
 	struct stat st;
-	bool b =  stat((char*)p, &st) == 0 && S_ISDIR(st.st_mode);
+	bool b =  stat(p, &st) == 0 && S_ISDIR(st.st_mode);
 	//printf("isdir %s returns %d\n", p, b);
 	return b;
 }
@@ -426,7 +410,7 @@ void hoc_nrnmpi_init() {
  * \param env environment variable array as optionally found in main functions.
  * \return 0 on success, otherwise error code.
  */
-int ivocmain (int argc, const char** argv, const char** env) {
+int ivocmain(int argc, const char** argv, const char** env) {
 
   return ivocmain_session(argc, argv, env, 1);
 
@@ -455,7 +439,7 @@ int ivocmain (int argc, const char** argv, const char** env) {
  * either.
  * \return 0 on success, otherwise error code.
  */
-int ivocmain_session (int argc, const char** argv, const char** env, int start_session) {
+int ivocmain_session(int argc, const char** argv, const char** env, int start_session) {
 // third arg should not be used as it might become invalid
 // after putenv or setenv. Instead, if necessary use
 // #include <unistd.h>
@@ -780,7 +764,7 @@ ENDGUI
 		// but not different arguments. So the -dll is insufficient.
 		// Therefore we check to see if it makes sense to load
 		// a dll from the usual location.
-		// Actually this is done by default in src/nrnoc/init.c
+		// Actually this is done by default in src/nrnoc/init.cpp
 	}
 #endif
 
@@ -902,10 +886,11 @@ void ivoc_final_exit() {
 }
 
 extern "C" {
-
-extern void hoc_ret(), hoc_pushx(double);
 extern double *getarg(int i);
 extern int ifarg(int);
+} // extern "C"
+
+extern void hoc_ret(), hoc_pushx(double);
 
 void hoc_single_event_run() {
 #if HAVE_IV
@@ -923,5 +908,4 @@ ENDGUI
 int run_til_stdin() {return 1;}
 void hoc_notify_value(){}
 #endif
-}
 

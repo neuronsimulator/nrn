@@ -13,7 +13,6 @@
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
-extern "C" {
 #include "membfunc.h"
 extern int section_count;
 extern void nrn_shape_update();
@@ -21,13 +20,12 @@ extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
-extern void clear_event_queue();
+extern "C" void clear_event_queue();
 extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
-};
 
 #define ASSERTfgets(a,b,c) nrn_assert(fgets(a,b,c) != 0)
 #define ASSERTfread(a,b,c,d) nrn_assert(fread(a,b,c,d) == c)
@@ -712,7 +710,7 @@ void SaveState::read(OcFile* ocf, bool close) {
 		ocf->close();
 		hoc_execerror("Bad SaveState binary file", " Not version 6.0");
 	}
-	ASSERTfread((char*)&t_, sizeof(double), 1, f);
+	ASSERTfread(&t_, sizeof(double), 1, f);
 //	fscanf(f, "%d %d\n", &nsec_, &nrootnode_);
 // on some os's fscanf leaves file pointer at wrong place for next fread
 //	can check it with ftell(f)
@@ -732,11 +730,11 @@ void SaveState::read(OcFile* ocf, bool close) {
 			NodeState& ns = ss.ns[inode];
 			if (ns.nmemb) {
 				ns.type = new int[ns.nmemb];
-				ASSERTfread((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfread(ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
 				ns.state = new double[ns.nstate];
-				ASSERTfread((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfread(ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 		if (ss.root) {
@@ -744,11 +742,11 @@ void SaveState::read(OcFile* ocf, bool close) {
 			NodeState& ns = *ss.root;
 			if (ns.nmemb) {
 				ns.type = new int[ns.nmemb];
-				ASSERTfread((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfread(ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
 				ns.state = new double[ns.nstate];
-				ASSERTfread((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfread(ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 	}
@@ -764,7 +762,7 @@ void SaveState::read(OcFile* ocf, bool close) {
 		assert(ns == nc * ssi[i].size);
 		acell_[j].ncell = nc;
 		acell_[j].state = new double[ns];
-		ASSERTfread((char*)acell_[j].state, sizeof(double), ns, f);
+		ASSERTfread(acell_[j].state, sizeof(double), ns, f);
 		++j;
 	}
 	ASSERTfgets(buf, 20, f);
@@ -788,7 +786,7 @@ void SaveState::write(OcFile* ocf, bool close) {
 	BinaryMode(ocf)
 	FILE* f = ocf->file();
 	fprintf(f, "SaveState binary file version 6.0\n");
-	ASSERTfwrite((char*)&t_, sizeof(double), 1, f);
+	ASSERTfwrite(&t_, sizeof(double), 1, f);
 	fprintf(f, "%d %d\n", nsec_, nroot_);
 	fwrite_SecState(ss_, nsec_, f);
 	for (int isec=0; isec < nsec_; ++isec) {
@@ -797,20 +795,20 @@ void SaveState::write(OcFile* ocf, bool close) {
 		for (int inode = 0; inode < ss.nnode; ++inode) {
 			NodeState& ns = ss.ns[inode];
 			if (ns.nmemb){
-				ASSERTfwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfwrite(ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
-				ASSERTfwrite((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfwrite(ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 		if (ss.root) {
 			fwrite_NodeState(ss.root, 1, f);
 			NodeState& ns = *ss.root;
 			if (ns.nmemb){
-				ASSERTfwrite((char*)ns.type, sizeof(int), ns.nmemb, f);
+				ASSERTfwrite(ns.type, sizeof(int), ns.nmemb, f);
 			}
 			if (ns.nstate) {
-				ASSERTfwrite((char*)ns.state, sizeof(double), ns.nstate, f);
+				ASSERTfwrite(ns.state, sizeof(double), ns.nstate, f);
 			}
 		}
 	}
@@ -818,7 +816,7 @@ void SaveState::write(OcFile* ocf, bool close) {
 	for (int i=0, j=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		int sz = acell_[j].ncell * ssi[i].size;
 		fprintf(f, "%d %d %d\n", acell_[j].type, acell_[j].ncell, sz);
-		ASSERTfwrite((char*)acell_[j].state, sizeof(double), sz, f);
+		ASSERTfwrite(acell_[j].state, sizeof(double), sz, f);
 		++j;
 	}
 	fprintf(f, "%d\n", nprs_);
@@ -936,7 +934,7 @@ void SaveState::readnet(FILE* f) {
 		sscanf(buf, "%d %d\n", &ncs_[i].object_index, &ncs_[i].nstate);
 		if (ncs_[i].nstate) {
 			ncs_[i].state = new double[ncs_[i].nstate];
-			ASSERTfread((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
+			ASSERTfread(ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
 		}
 	}
 	// PreSyn's
@@ -944,7 +942,7 @@ void SaveState::readnet(FILE* f) {
 	sscanf(buf, "%d\n", &npss_);
 	if (npss_ != 0) {
 		pss_ = new PreSynState[npss_];
-		ASSERTfread((char*)pss_, sizeof(PreSynState), npss_, f);
+		ASSERTfread(pss_, sizeof(PreSynState), npss_, f);
 		PreSyn* ps;
 		i = 0;
 		hoc_Item* q;
@@ -962,7 +960,7 @@ void SaveState::readnet(FILE* f) {
 	if (n) {
 		tqs_->items = new DiscreteEvent*[n];
 		tqs_->tdeliver = new double[n];
-		ASSERTfread((char*)tqs_->tdeliver, sizeof(double), n, f);
+		ASSERTfread(tqs_->tdeliver, sizeof(double), n, f);
 		for (i=0; i < n; ++i) {
 			DiscreteEvent* de = NULL;
 			ASSERTfgets(buf, 200, f);
@@ -1007,17 +1005,17 @@ void SaveState::writenet(FILE* f) {
 	for (i=0; i < nncs_; ++i) {
 		fprintf(f, "%d %d\n", ncs_[i].object_index, ncs_[i].nstate);
 		if (ncs_[i].nstate) {
-			ASSERTfwrite((char*)ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
+			ASSERTfwrite(ncs_[i].state, sizeof(double), ncs_[i].nstate, f);
 		}
 	}
 	fprintf(f, "%d\n", npss_);
 	if (npss_) {
-		ASSERTfwrite((char*)pss_, sizeof(PreSynState), npss_, f);
+		ASSERTfwrite(pss_, sizeof(PreSynState), npss_, f);
 	}
 	n = tqs_->nstate;
 	fprintf(f, "%d\n", n);
 	if (n) {
-		ASSERTfwrite((char*)tqs_->tdeliver, sizeof(double), n, f);
+		ASSERTfwrite(tqs_->tdeliver, sizeof(double), n, f);
 		for (i=0; i < n; ++i) {
 			tqs_->items[i]->savestate_write(f);
 		}

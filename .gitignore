@@ -3,17 +3,28 @@
 nmodlconf.h.in
 nrnconf.h.in
 build
+.DS_Store
+.eggs/
+.idea/
+CMakeFiles/
+Makefile
+Makefile.in
+.deps
+x86_64
+__pycache__
+venv
+virtualenv
 
 # These files are generated at build time
 # It would be a good idea to create them in the
 # build directory in the future.
-src/modlunit/lex.c
-src/modlunit/parse1.c
+src/modlunit/lex.cpp
+src/modlunit/parse1.cpp
 src/modlunit/parse1.h
-src/nmodl/diffeq.c
+src/nmodl/diffeq.cpp
 src/nmodl/diffeq.h
-src/nmodl/lex.c
-src/nmodl/parse1.c
+src/nmodl/lex.cpp
+src/nmodl/parse1.cpp
 src/nmodl/parse1.h
 src/nrnoc/apcount.c
 src/nrnoc/exp2syn.c
@@ -35,5 +46,5 @@ src/nrnoc/stim.c
 src/nrnoc/svclmp.c
 src/nrnoc/syn.c
 src/nrnoc/vclmp.c
-src/oc/parse.c
+src/oc/parse.cpp
 src/oc/parse.h

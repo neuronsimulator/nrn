@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include <sys/stat.h>
-//extern "C" { extern int mkdir(const char*, int); }
+extern "C" { extern int mkdir(const char*, int); }
 
 #include <OS/list.h>
 #include <OS/string.h>

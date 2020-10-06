@@ -6,18 +6,18 @@
 #include "ocmatrix.h"
 #include "classreg.h"
 #include "singlech.h"
-extern "C" {
 #include "membfunc.h"
-}
 #include "random1.h"
 #include "NegExp.h"
 
 extern "C" {
+
+extern double exprand(double); // must be changed!
+
+} // extern "C"
 void hoc_reg_singlechan(int, void (*)(...));
 void _singlechan_declare(void (*)(double, double*, Datum*), int*, int);
 void _nrn_single_react(int, int, double);
-extern double exprand(double); // must be changed!
-}
 
 /*
 encoded in the order of the rates and to_states below is the order
@@ -88,7 +88,6 @@ void SingleChanState::rate(int to_state, double value) {
 	++n_;
 }
 
-extern "C" { // bug in cray compiler. But it cant hurt.
 void hoc_reg_singlechan(int type, void (*f)(...)){
 	if (!infolist) {
 		infolist = new SingleChanInfoList();
@@ -109,7 +108,6 @@ void _singlechan_declare(void (*f)(double, double*, Datum*), int* slist, int n) 
 	info->f_ = f;
 	info->slist_ = slist;
 	info->n_ = n;
-}
 }
 
 void _nrn_single_react(int i, int j, double rate) {

@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-extern "C" int hoc_return_type_code;
+extern /*"C"*/ int hoc_return_type_code;
 
 #ifdef WIN32
 #include <errno.h>
@@ -39,10 +39,8 @@ extern "C" int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 
 static Symbol* file_class_sym_;
@@ -52,12 +50,10 @@ int ivoc_unlink(const char* s) {
 	return unlink(s);
 }
 
-extern "C" {
 #include "hocstr.h"
-	FILE* hoc_obj_file_arg(int i);
-}
+extern "C" FILE* hoc_obj_file_arg(int i);
 
-FILE* hoc_obj_file_arg(int i) {
+extern "C" FILE* hoc_obj_file_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	check_obj_type(ob, "File");
 	OcFile* f = (OcFile*)(ob->u.this_pointer);
@@ -184,7 +180,7 @@ static double f_flush(void* v){
 static const char** f_get_name(void* v){
 	OcFile* f = (OcFile*)v;
 	char** ps = hoc_temp_charptr();
-	*ps = (char*)f->get_name();
+    *ps = (char*)f->get_name();
 	if (ifarg(1)) {
 		hoc_assign_str(hoc_pgargstr(1), *ps);
 	}
@@ -254,7 +250,7 @@ static double f_vread(void* v){
 	OcFile* f = (OcFile*)v;
 	size_t n = 1;
 	if (ifarg(2)) n = int(chkarg(1, 1., 2.e18));
-	char* x = (char*)hoc_pgetarg(ifarg(2)+1);
+	double* x = hoc_pgetarg(ifarg(2)+1);
 	BinaryMode(f)
 	return (double)fread(x,sizeof(double),n,f->file());
 }

@@ -5,13 +5,42 @@
 extern "C" {
 #endif
 
+    //nocpout.cpp
+extern void hoc_register_limits(int, HocParmLimits*);
+extern void hoc_register_units(int, HocParmUnits*);
+extern void hoc_register_dparam_semantics(int, int, const char*);
+extern void add_nrn_fornetcons(int, int);
+extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);
+
+extern void oc_save_cabcode(int* a1, int* a2);
+extern void oc_restore_cabcode(int* a1, int* a2);
+
+extern void modl_reg(void);
+
+// nrnmech stuff
+extern void _nrn_free_fornetcon(void**);
+
+
+// mod stuff
+extern void _nrn_free_watch(Datum *, int, int);
+extern void _nrn_watch_activate(Datum *, double(*)(Point_process *), int, Point_process *, int, double);
+extern void hoc_reg_ba(int, nrn_bamech_t, int);
+extern int nrn_pointing(double *);
+
+extern void nrn_pushsec(Section*);
+extern void nrn_popsec(void);
+extern Section* chk_access(void);
+
+
+#if defined(__cplusplus)
+}
+#endif
+
 extern int state_discon_allowed_;
 extern int section_object_seen;
 
 extern int nrn_isecstack(void);
 extern void nrn_secstack(int);
-extern void oc_save_cabcode(int* a1, int* a2);
-extern void oc_restore_cabcode(int* a1, int* a2);
 extern void new_sections(Object* ob, Symbol* sym, hoc_Item** pitm, int size);
 extern void cable_prop_assign(Symbol* sym, double* pd, int op);
 extern void nrn_parent_info(Section* s);
@@ -44,9 +73,6 @@ extern void nrn_initcode();
 extern int segment_limits(double*);
 extern void second_order_cur(NrnThread*);
 extern void hoc_register_dparam_size(int, int);
-extern void hoc_register_limits(int, HocParmLimits*);
-extern void hoc_register_units(int, HocParmUnits*);
-extern void hoc_register_dparam_semantics(int, int, const char*);
 extern void setup_topology(void);
 extern int nrn_errno_check(int);
 extern void long_difus_solve(int method, NrnThread* nt);
@@ -56,8 +82,7 @@ extern void ob_sec_access_push(hoc_Item*);
 extern void nrn_mk_prop_pools(int);
 extern void SectionList_reg(void);
 extern void SectionRef_reg(void);
-extern void modl_reg(void);
-extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);
+
 extern void hoc_symbol_tolerance(Symbol*, double);
 extern void node_destruct(Node**, int);
 extern void nrn_sec_ref(Section**, Section*);
@@ -78,12 +103,7 @@ extern void nrn_multisplit_ptr_update(void);
 extern void nrn_cache_prop_realloc();
 extern void nrn_use_daspk(int);
 extern void nrn_update_ps2nt(void);
-extern void _nrn_free_fornetcon(void**);
-extern void add_nrn_fornetcons(int, int);
-extern void _nrn_free_watch(Datum*, int, int);
-extern void _nrn_watch_activate(Datum*, double(*)(Point_process*), int, Point_process*, int, double);
-extern void hoc_reg_ba(int, nrn_bamech_t, int);
-extern int nrn_pointing(double*);
+
 
 extern void activstim_rhs(void);
 extern void activclamp_rhs(void);
@@ -99,9 +119,6 @@ extern void section_ref(Section*);
 extern void section_unref(Section*);  
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
-extern void nrn_pushsec(Section*);
-extern void nrn_popsec(void); 
-extern Section* chk_access(void);
 extern void nrn_rangeconst(Section*, Symbol*, double* value, int op);
 extern Prop* nrn_mechanism(int type, Node*);
 extern int nrn_exists(Symbol*, Node*);
@@ -141,9 +158,5 @@ extern void nrn_length_change(Section*, double);
 extern void stor_pt3d(Section*, double x, double y, double z, double d);
 extern int nrn_netrec_state_adjust;
 extern int nrn_sparse_partrans;
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif
