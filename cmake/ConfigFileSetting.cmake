@@ -101,6 +101,11 @@ else()
   set(DISCRETE_EVENT_OBSERVER 0)
 endif()
 
+# No longer a user option. Default modern units. Controlled at launch by
+# the environment variable NRNUNIT_USE_LEGACY, and dynamically after launch
+# by h.nrnunit_use_legacy(0or1). Left here solely to obtain a nrnunits.lib
+# file for modlunit. Nmodl uses the nrnunits.lib.in file.
+set(NRN_ENABLE_LEGACY_FR 0)
 if(NRN_ENABLE_LEGACY_FR)
   set(LegacyFR 1)
   set(LegacyY "")

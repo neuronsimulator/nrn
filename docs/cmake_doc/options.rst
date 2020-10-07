@@ -369,7 +369,13 @@ NRN_ENABLE_LEGACY_FR:BOOL=ON
 ----------------------------
   Use original faraday, R, etc. instead of 2019 nist constants  
 
-  The default for version 8.0 onward is likely to become OFF in order to use the latest physical constants (at the cost of slight changes to legacy results). 
+  This option has been removed as a configure/cmake option of version 8.0
+  and default is to use modern units. At launch time (or import neuron),
+  use of legacy or modern units can be specified with the
+  ``NRNUNIT_USE_LEGACY=0or1`` environment variable. The use of legacy or
+  modern units can be dynamically specified after launch with the
+  ``h.nrnunit_use_legacy(0or1)`` function (with no args, returns the
+  current use flag).
 
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
