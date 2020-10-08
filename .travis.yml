@@ -35,10 +35,8 @@ addons:
         - openmpi-bin
         - patchelf
         - python-pip
-        - python-scipy
         - python-tk
         - python3-pip
-        - python3-scipy
         - python3-tk
         - python3-venv
         - g++-5
@@ -114,7 +112,7 @@ before_install:
 
 install:
   - $PIP install --user wheel setuptools;
-  - $PIP install --user scipy matplotlib bokeh ipython cython pytest mpi4py --upgrade;
+  - $PIP install --user matplotlib bokeh ipython cython pytest mpi4py --upgrade;
   # add cython location to PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CYTHON_LIB=$($PIP show cython | grep Location);

@@ -129,27 +129,22 @@ class NeuronTestCase(unittest.TestCase):
 
     @classmethod
     def RxDexistence(cls):
-        """test import rxd and geometry3d if scipy"""
+        """test import rxd and geometry3d"""
         error = 0
         try:
-            import scipy
+            from neuron import rxd
+            from neuron.rxd import geometry
+            print("has_geometry3d is " + str(geometry.has_geometry3d))
         except:
-            print ("scipy not available")
+            print("'from neuron import rxd' failed")
+            error = 1
         else:
-            try:
-                from neuron import rxd
-                from neuron.rxd import geometry
-                print("has_geometry3d is " + str(geometry.has_geometry3d))
-            except:
-                print("'from neuron import rxd' failed")
-                error = 1
-            else:
-               try:
-                   a = basicRxD3D()
-                   print("    basicRxD3D() ran with no exception")
-               except:
-                   print("'basicRxD3D()' failed")
-                   error = 1
+           try:
+               a = basicRxD3D()
+               print("    basicRxD3D() ran with no exception")
+           except:
+               print("'basicRxD3D()' failed")
+               error = 1
         assert(error == 0)
         return 0
 
