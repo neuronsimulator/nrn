@@ -196,3 +196,11 @@ extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 
 }  // namespace coreneuron
+
+/*
+ * at_time function declared outside of coreneuron namespace
+ * because it can be also called from ISPC code. That's also
+ * the reason for extern "C".
+ */
+#pragma acc routine seq
+extern "C" int at_time(coreneuron::NrnThread*, double);

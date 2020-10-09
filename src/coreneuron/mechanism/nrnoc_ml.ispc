@@ -167,3 +167,6 @@ struct NrnThread {
 };
 
 extern uniform double ispc_celsius;
+
+extern "C"
+int at_time(NrnThread* nt, varying double te);
