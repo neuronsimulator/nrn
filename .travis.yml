@@ -36,6 +36,8 @@ addons:
         - patchelf
         - python-pip
         - python-tk
+        - python-numpy
+        - python3-numpy
         - python3-pip
         - python3-tk
         - python3-venv
