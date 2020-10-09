@@ -141,6 +141,13 @@ ALL_OBJS = $(MOD_FUNC_OBJ) $(DIMPLIC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
 C_RESET := \033[0m
 C_GREEN := \033[32m
 
+# Default nmodl flags. Override if NMODL_RUNTIME_FLAGS is not empty
+NMODL_FLAGS_ISPC = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_ispc@)
+NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_c@)
+$(info Default nmodl flags: $(if (@CORENRN_ENABLE_ISPC@ == ON), @nmodl_arguments_ispc@, @nmodl_arguments_c@))
+ifneq ($(NMODL_RUNTIME_FLAGS),)
+    $(warning Runtime nmodl flags (they replace the default ones): $(NMODL_RUNTIME_FLAGS))
+endif
 
 # ======== MAIN BUILD RULES ============
 
@@ -186,11 +193,11 @@ $(MOD_OBJS_DIR)/%.obj: $(MOD_TO_CPP_DIR)/%.ispc | $(MOD_OBJS_DIR)
 
 # translate MOD files to ISPC using NMODL
 $(mod_ispc_files): $(MOD_TO_CPP_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ @nmodl_arguments_ispc@
+	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_ISPC)
 
 # translate MOD files to CPP using mod2c/NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ @nmodl_arguments_c@
+	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_C)
 
 # static pattern to set up the dependencies for the previous recipe
 $(mod_ispc_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MOD_TO_CPP_DIR)/%.ispc
