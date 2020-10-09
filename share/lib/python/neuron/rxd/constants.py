@@ -5,7 +5,10 @@ NA_modern = 6.02214076e23
 def NA():
   try:
     from neuron import h
-    val = NA_legacy if h.nrnunit_use_legacy() else NA_modern
+    #val = NA_legacy if h.nrnunit_use_legacy() else NA_modern
+    val = h.Avogadro_constant
+    # Note: h.Avogadro_constant is consistent with the above NA legacy and
+    # modern values.
   except:
     val = NA_modern
   return val

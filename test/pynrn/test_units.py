@@ -22,7 +22,13 @@ def test_mod_legacy():
   assert (ut.avogadro == float.fromhex(legacy_hex_values[0]))
   switch_units(0)
   h.finitialize()
-#  assert (ut.mole != float.fromhex(legacy_hex_values[0]))
+  assert (ut.mole != float.fromhex(legacy_hex_values[0]))
+  assert (ut.e*ut.avogadro == ut.faraday)
+  assert (abs(ut.faraday - h.FARADAY) < 1e-10)
+  assert (ut.gasconst == h.R)
+  assert (ut.k*ut.avogadro == ut.gasconst)
+  assert (abs(ut.planck - ut.hbar*2.0*h.PI) < 1e-49)
+  assert (ut.avogadro == h.Avogadro_constant)
 
 def test_hoc_legacy():
   switch_units(1) # legacy
@@ -41,8 +47,8 @@ def test_hoc_legacy():
   print ("FARADAY = %s" % str(h.FARADAY))
   ghk = h.ghk(30, .01, 10, 1)
   print ("ghk = %s" % str(ghk))
-  assert(h.R == 8.3144598)
-  assert(ghk == -483.8379745440489)
+  assert(h.R == 8.31446261815324)
+  assert(ghk == -483.8380971405879)
 
 def test_env_legacy():
   for i in [0,1]:

@@ -1127,8 +1127,8 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
   sprintf(buf,"\n"
 "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
 /*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
-"static double _nrnunit_%s[2] = {%a, %g};\n",
-    name, name, name, modern, legacy);
+"static double _nrnunit_%s[2] = {%a, %g}; /* %.18g */\n",
+    name, name, name, modern, legacy, modern);
 
 #else
 

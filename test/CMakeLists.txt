@@ -85,7 +85,8 @@ list(APPEND TESTS connect_dend)
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  add_test(NAME basic_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn)
+  add_test(NAME basic_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn
+           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn)
   add_custom_target(
     pynrn_mod ALL
     COMMAND

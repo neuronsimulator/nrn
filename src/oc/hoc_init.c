@@ -5,6 +5,7 @@
 #include "parse.h"
 #include <math.h>
 #include "equation.h"
+#include "nrnunits_modern.h"
 
 #include "ocfunc.h"
 extern void hoc_nrnmpi_init();
@@ -98,8 +99,9 @@ static struct { /* Modern, Legacy units constants */
 	char *name;
 	double cval[2];
 } uconsts[] = {
-	"FARADAY", {96485.33289, 96485.309}, /*coulombs/mole*/
-	"R", {8.3144598, 8.31441}, /*molar gas constant, joules/mole/deg-K*/
+	"FARADAY", {_faraday_codata2018, 96485.309}, /*coulombs/mole*/
+	"R", {_gasconstant_codata2018, 8.31441}, /*molar gas constant, joules/mole/deg-K*/
+        "Avogadro_constant", {_avogadro_number_codata2018, 6.02214129e23}, /* note that the legacy value in nrnunits.lib.in is 6.022169+23 */
 	0, {0., 0.}
 };
 
