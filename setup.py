@@ -150,6 +150,7 @@ class CMakeAugmentedBuilder(build_ext):
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             '-DCMAKE_BUILD_TYPE=' + cfg,
             '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
+            '-DCMAKE_VERBOSE_MAKEFILE=ON'
         ] + ext.cmake_flags
 
         if self.cmake_prefix:
@@ -178,6 +179,11 @@ class CMakeAugmentedBuilder(build_ext):
                 [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
                 cwd=self.build_temp, env=env
             )
+            if sys.platform[:6] == "darwin":
+                subprocess.check_call(
+                    ['otool', '-L', ext.cmake_install_prefix+'/share/nrn/demo/release/x86_64/libnrnmech.dylib'],
+                    cwd=self.build_temp, env=env
+                )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
