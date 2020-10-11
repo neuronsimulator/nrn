@@ -1817,13 +1817,10 @@ const char* nrn_sec2pysecname(Section* sec) {
 #if USE_PYTHON
   static char buf[256];
   const char* name = secname(sec);
-#if USE_PYTHON
   if (sec && sec->prop->dparam[PROP_PY_INDEX]._pvoid
     && strncmp(name, "__nrnsec_0x", 11) != 0) {
     sprintf(buf, "_pysec.%s", name);
-  }else
-#endif
-  {
+  }else{
     strcpy(buf, name);
   }
   return buf;
