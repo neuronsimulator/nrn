@@ -70,6 +70,7 @@ Simulation Control
     simctrl/programmatic.rst
     simctrl/stdrun.rst
     compilationoptions.rst
+    envvariables.rst
     simctrl/interpretermanagement.rst
 
 Visualization

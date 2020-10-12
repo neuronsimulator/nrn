@@ -211,7 +211,21 @@ Functions
         :func:`fadvance` modifies NODED and NODERHS 
         but leaves NODEA and NODEB unchanged. 
 
-         
+----
+
+.. function:: nrnunit_use_legacy
+
+  Syntax:
+    ``h.nrnunit_use_legacy(0or1)``
+
+  Description:
+    | Arg of 0 uses modern codata2018 units for FARADAY, R, etc. (default as of version 8.0)
+    | Arg of 1 uses legacy units (default prior to October, 2020)
+    | No arg, returns current units usage.
+
+  .. seealso::
+    :ref:`NRNUNIT_USE_LEGACY` :ref:`CONSTANTS`
+
 ----
 
 .. data:: secondorder
