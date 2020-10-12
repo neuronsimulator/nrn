@@ -3,7 +3,7 @@ set -xe
 # A script to loop over the available pythons installed
 # on Linux/OSX and build wheels
 #
-# Note: It should be involed from nrn directory
+# Note: It should be invoked from nrn directory
 #
 # PREREQUESITES:
 #  - cmake (>=3.5)
@@ -96,6 +96,9 @@ build_wheel_osx() {
 
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
+
+    cd dist ; whl=`ls *.whl` ; cd ..
+    sh packaging/python/demo_update_libnrnmech.sh wheelhouse $whl
 
     deactivate
 }
