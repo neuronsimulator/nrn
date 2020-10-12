@@ -180,14 +180,8 @@ class CMakeAugmentedBuilder(build_ext):
                 cwd=self.build_temp, env=env
             )
             if sys.platform[:6] == "darwin":
-                print('otool -L ...libnrnmech.dylib')
                 subprocess.check_call(
                     ['otool', '-L', ext.cmake_install_prefix+'/share/nrn/demo/release/x86_64/libnrnmech.dylib'],
-                    cwd=self.build_temp, env=env
-                )
-                print('otool -l ...libnrnmech.dylib')
-                subprocess.check_call(
-                    ['otool', '-l', ext.cmake_install_prefix+'/share/nrn/demo/release/x86_64/libnrnmech.dylib'],
                     cwd=self.build_temp, env=env
                 )
         except subprocess.CalledProcessError as exc:
