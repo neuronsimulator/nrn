@@ -10,7 +10,7 @@
 #include	"section.h"
 #include	"membfunc.h"
 #include	"neuron.h"
-#include	"parse.h"
+#include	"parse.hpp"
 #include	"nrnmpi.h"
 #include	"multisplit.h"
 #include "spmatrix.h"

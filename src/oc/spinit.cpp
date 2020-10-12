@@ -31,6 +31,6 @@ spinit.cpp,v
 */
 
 
-void hoc_spinit(void)	/* Dummy special init */
+extern "C" void hoc_spinit(void)	/* Dummy special init */
 {
 }

@@ -5,7 +5,7 @@
 #include "nrnoc2iv.h"
 #include "nrniv_mf.h"
 
-#include "parse.h"
+#include "parse.hpp"
 extern int point_reg_helper(Symbol*);
 extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_symlist;

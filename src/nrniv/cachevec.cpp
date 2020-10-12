@@ -13,7 +13,7 @@
 #include <ocnotify.h>
 #include <mymath.h>
 #include <nrnoc2iv.h>
-#include <parse.h>
+#include <parse.hpp>
 #include <cvodeobj.h>
 #include <netcvode.h>
 #include <hoclist.h>

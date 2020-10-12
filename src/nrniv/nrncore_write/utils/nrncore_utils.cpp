@@ -8,7 +8,7 @@
 #include "hocdec.h"
 #include "nrnsection_mapping.h"
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
-#include "parse.h"
+#include "parse.hpp"
 #include <string>
 #include <unistd.h>
 #include <algorithm>

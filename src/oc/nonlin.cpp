@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "hoc.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include "equation.h"
 #include "lineq.h"

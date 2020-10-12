@@ -7,7 +7,7 @@
  * bad style) to work.
  */
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 extern Item  **scop_indep;

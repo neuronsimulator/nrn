@@ -1,12 +1,12 @@
 lib_LTLIBRARIES = libnrnmpi.la
 
 nsrc=$(top_srcdir)/src
-includes = -I$(nsrc)/oc @NRN_REALTIME_INCLUDE@ -I@MUSIC_INCDIR@
-AM_CFLAGS = @MINGW_CFLAG@ $(includes)
+includes = -I$(nsrc)/oc @NRN_REALTIME_INCLUDE@ -I@MUSIC_INCDIR@ -I$(nsrc)/ivos
+AM_CPPFLAGS = $(includes)
 
 libnrnmpi_la_SOURCES = nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp
 
-CC = @MPICCnrnmpi@
+CXX = @MPICCnrnmpi@
 
 if BUILD_NRNMPI_DYNAMIC
 

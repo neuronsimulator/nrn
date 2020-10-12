@@ -9,7 +9,7 @@
 #include <SIOUX.h>
 #endif
 #undef METHOD
-#include "parse1.h"
+#include "parse1.hpp"
 Item *lastok; /*should be last token accepted by parser that gives
 successful reduction */
 

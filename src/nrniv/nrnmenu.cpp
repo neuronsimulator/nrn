@@ -22,7 +22,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 /*extern "C"*/ extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
-#include "parse.h"
+#include "parse.hpp"
 extern Symlist *hoc_built_in_symlist;
 extern Symbol **pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);

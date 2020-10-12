@@ -13,8 +13,7 @@ redef.h,v
 */
 
 /*Publics by module*/
-
-#define exit emacs_exit
+#define exit(int) emacs_exit(int)
 
 /*ANSI size = 250*/
 #define ansibeep emacs_ansibeep

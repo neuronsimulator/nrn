@@ -2,7 +2,7 @@
 /* /local/src/master/nrn/src/modlunit/symbol.c,v 1.1.1.1 1994/10/12 17:22:50 hines Exp */
 
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 List	*symlist[128];	/* symbol table: linked list

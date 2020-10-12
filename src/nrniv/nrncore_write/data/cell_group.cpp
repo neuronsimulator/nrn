@@ -1,7 +1,7 @@
 #include "cell_group.h"
 #include "nrnran123.h" // globalindex written to globals.dat
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
 

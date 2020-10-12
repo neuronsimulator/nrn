@@ -1,7 +1,7 @@
 #include <../../nmodlconf.h>
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 List	*symlist[128];	/* symbol table: linked list

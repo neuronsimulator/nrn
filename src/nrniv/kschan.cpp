@@ -7,7 +7,7 @@
 #include "classreg.h"
 #include "kschan.h"
 #include "kssingle.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0

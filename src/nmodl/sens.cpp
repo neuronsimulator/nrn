@@ -89,7 +89,7 @@ sens.c,v
 */
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 static List *sensinfo; /* list of pairs: first is the block symbol where
 				the SENS statement appeared.  The second is

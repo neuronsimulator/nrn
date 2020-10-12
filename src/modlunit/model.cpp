@@ -25,7 +25,7 @@
  */
  
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 extern int yyparse();
 

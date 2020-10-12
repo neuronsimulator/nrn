@@ -15,7 +15,7 @@
 #include "classreg.h"
 #include "oc2iv.h"
 #include "ocpointer.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ocnotify.h"
 
 #if HAVE_IV

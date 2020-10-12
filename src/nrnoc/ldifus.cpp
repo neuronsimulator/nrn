@@ -7,7 +7,7 @@
 #include        "membfunc.h"
 #include        "neuron.h"
 #include	"nrniv_mf.h"
-#include        "parse.h"
+#include        "parse.hpp"
 
 
 #define nt_t nrn_threads->_t

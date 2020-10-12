@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrniv_mf.h"
 #include "cabvars.h"
 #include "neuron.h"

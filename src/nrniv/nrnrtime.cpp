@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 
 extern int stoprun;
 extern double t;

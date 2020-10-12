@@ -9,7 +9,7 @@
 // for alias
 #include <symdir.h>
 #include <oclist.h>
-#include <parse.h>
+#include <parse.hpp>
 // for references
 #include <hoclist.h>
 #if HAVE_IV

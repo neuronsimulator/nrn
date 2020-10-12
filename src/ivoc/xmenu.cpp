@@ -47,7 +47,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "ivoc.h"
 #include "bndedval.h"
 #include "objcmd.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "utility.h"
 #include "scenepic.h"
 

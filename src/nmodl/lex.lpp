@@ -1,5 +1,5 @@
 %{
-/* /local/src/master/nrn/src/nmodl/lex.l,v 4.2 1997/11/05 17:59:02 hines Exp */
+/* /local/src/master/nrn/src/nmodl/lex.lpp,v 4.2 1997/11/05 17:59:02 hines Exp */
 
 #include <../../nmodlconf.h>
 
@@ -19,7 +19,7 @@
 
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 int lexcontext = 0;
 extern int Getc();

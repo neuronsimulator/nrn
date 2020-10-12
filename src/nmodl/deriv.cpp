@@ -5,7 +5,7 @@
 #include "../oc/nrnassrt.h"
 #include <ctype.h>
 #undef METHOD
-#include "parse1.h"
+#include "parse1.hpp"
 
 static List *deriv_imp_list;	/* list of derivative blocks that were
 	translated in form suitable for the derivimplicit method */
@@ -186,7 +186,7 @@ Note that we had to use Dx0 since x'0 is illegal. Also Dx0 has a
 value of -10.
 
 Implementation :
-	In parse1.y we see that asgn: varname '=' expr and that
+	In parse1.ypp we see that asgn: varname '=' expr and that
 	varname gets marked if it is type PRIME.  With respect to
 	higher order derivatives, therefore, only the highest order
 	actually used in the equations in that block

@@ -59,6 +59,12 @@ const char* path_prefix_to_libnrniv() { return NULL; }
 #endif
 
 #if !defined(SOME_IV)
+#if defined(__cplusplus)
+class IvocVect;
+#else
+#define IvocVect void
+#endif
+extern "C" {
 /*ARGSUSED*/
 int ivoc_list_look(Object* ob, Object* oblook, char* path, int depth)
 {
@@ -76,35 +82,38 @@ void hoc_template_notify(Object* ob, int create) {}
 #endif
 
 /*ARGSUSED*/
-int hoc_readcheckpoint(char* f) { return 0; }
-
-/*ARGSUSED*/
-extern "C" int vector_arg_px(int i, double** p) {
+extern int vector_arg_px(int i, double** p) {
 	hoc_execerror("implemented in ivoc library", "vector_arg_px");
 	return 0;
 }
-int vector_capacity(void* v) {return 0;}
-extern "C" void install_vector_method(const char* name, Pfrd_vp f) {}
-extern "C" int vector_instance_px(void* vv, double** px){return 0;}
-void vector_resize(v, n) void* v; int n; {
+int vector_capacity(IvocVect* v) {return 0;}
+void install_vector_method(const char* name, Pfrd_vp f) {}
+ int vector_instance_px(void* vv, double** px){return 0;}
+void vector_resize(IvocVect* v, int n) {
 	hoc_execerror("implemented in ivoc library", "vector_resize");
 }
-void vector_append(void* vv, double x) {}
-void vector_delete(void* v) {}
+void vector_append(IvocVect* vv, double x) {}
+void vector_delete(IvocVect* v) {}
 
-void* vector_arg(int i) { return nullptr;}
-void* vector_new2(void* v) { return nullptr;}
-Object** vector_pobj(void* v) { return (Object**)0;}
-double* vector_vec(void* v) {
-	hoc_execerror("implemented in ivoc library", "vector_vec");
-	return (double*)0;
+IvocVect *vector_arg(int i) { return nullptr; }
+IvocVect *vector_new2(IvocVect *v) { return nullptr; }
+Object **vector_pobj(IvocVect *v) { return (Object **) 0; }
+double *vector_vec(IvocVect *v) {
+    hoc_execerror("implemented in ivoc library", "vector_vec");
+    return (double *) 0;
 }
 
-extern "C" Object* ivoc_list_item(Object* list, int item) {
-	hoc_execerror("implemented in ivoc library", "ivoc_list_item");
-	return nullptr;
+Object *ivoc_list_item(Object *list, int item) {
+    hoc_execerror("implemented in ivoc library", "ivoc_list_item");
+    return nullptr;
 }
-int ivoc_list_count(list) Object* list; { return 0; }
+int ivoc_list_count(Object *list) { return 0; }
+#if defined(__cplusplus)
+}
+#endif
+/*ARGSUSED*/
+int hoc_readcheckpoint(char* f) { return 0; }
+
 void bbs_done(void){}
 
 Symbol* ivoc_alias_lookup(const char* name, Object* ob) {return (Symbol*)0;}
@@ -117,4 +126,4 @@ int stdin_event_ready(void) {}
 void nrnbbs_context_wait(void) {}
 void ivoc_final_exit(void) {}
 
-char* cxx_char_alloc(size_t len) { return hoc_Emalloc(len); }
+char* cxx_char_alloc(size_t len) { return static_cast<char *>(hoc_Emalloc(len)); }

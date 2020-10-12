@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hoc.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hoclist.h"
 #if MAC
 #undef HAVE_MALLOC_H

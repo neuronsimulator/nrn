@@ -11,11 +11,11 @@ extern void* hoc_Emalloc(size_t size);
 extern void hoc_malchk();
 extern void* hoc_Erealloc(void* buf, size_t size);
 
+extern MPI_Comm nrnmpi_world_comm;
+extern MPI_Comm nrnmpi_comm;
+
 #if defined(__cplusplus)
 }
 #endif
-
-extern MPI_Comm nrnmpi_world_comm;
-extern MPI_Comm nrnmpi_comm;
 
 #endif

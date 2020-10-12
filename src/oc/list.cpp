@@ -33,7 +33,7 @@ following function calls.
 #include <stdlib.h>
 #include	"hoclist.h"
 #include	"hocdec.h"
-#include	"parse.h"
+#include	"parse.hpp"
 
 #define Free free
 

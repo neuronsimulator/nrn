@@ -9,7 +9,7 @@
 #include    "ocmisc.h"
 #include    "hocstr.h"
 #include	"hoclist.h"
-#include	"parse.h"
+#include	"parse.hpp"
 #include    "hocparse.h"
 #include	<setjmp.h>
 #include	<errno.h>

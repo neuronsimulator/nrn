@@ -31,7 +31,7 @@ saved and much greater clarity could be attained if each type had its own
 sub stucture.  Currently many of the structure elements serve very different
 purposes depending on the type.
 The following is a list of the current element usage:
- type		token number from parse1.y
+ type		token number from parse1.ypp
  subtype	see definitions below
  u.i		integration method - flag for variable step
  		equation block - function number for generating variables

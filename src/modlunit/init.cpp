@@ -2,7 +2,7 @@
 /* /local/src/master/nrn/src/modlunit/init.c,v 1.9 1998/03/25 14:33:55 hines Exp */
 
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 extern int	unitonflag;
 List    *initlist, *initfunc, *firstlist, *termfunc, *modelfunc;
@@ -17,9 +17,9 @@ static struct {			/* Keywords */
 	short           kval;
 }               keywords[] = {
 	                "VERBATIM", VERBATIM,
-	                "ENDVERBATIM", END_VERBATIM, /* explicit in lex.l */
+	                "ENDVERBATIM", END_VERBATIM, /* explicit in lex.lpp */
 	                "COMMENT", COMMENT,
-	                "ENDCOMMENT", END_COMMENT, /* explicit in lex.l */
+	                "ENDCOMMENT", END_COMMENT, /* explicit in lex.lpp */
 	                "TITLE", TITLE,
 	                "CONSTANT", CONSTANT,
 	                "PARAMETER", PARAMETER,

@@ -110,7 +110,7 @@ cout.c,v
  * file and set to 0 on entry to a derivative or kinetic block.
  * 
  * Revision 9.41  90/10/30  08:36:37  hines
- * saber warning free except for ytab.c and lex.c
+ * saber warning free except for ytab.c and lex.cpp
  * 
  * Revision 9.40  90/10/30  08:06:00  hines
  * nmodl: Passive.mod working with index vectors. No longer copying
@@ -214,7 +214,7 @@ cout.c,v
 /* print the .c file from the lists */
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 #define P(arg) fputs(arg, fcout)

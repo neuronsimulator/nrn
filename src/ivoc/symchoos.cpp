@@ -54,7 +54,7 @@
 #include "symdir.h"
 
 #include "oc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivoc.h"
 #endif /* HAVE_IV */
 

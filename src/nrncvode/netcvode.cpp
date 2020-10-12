@@ -15,7 +15,7 @@
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "cvodeobj.h"
 #include "hoclist.h"
 #include "pool.h"

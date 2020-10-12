@@ -42,7 +42,7 @@ struct DLL* dll_load(const char*){return NULL;}
 #include "oc2iv.h"
 #endif
 
-#include "parse.h"
+#include "parse.hpp"
 extern Symlist* hoc_built_in_symlist;
 extern Symlist* hoc_top_level_symlist;
 extern Objectdata* hoc_top_level_data;

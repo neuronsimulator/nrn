@@ -25,7 +25,7 @@
 
 #include "gui-redirect.h"
 
-#include "parse.h"
+#include "parse.hpp"
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);

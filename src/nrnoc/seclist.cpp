@@ -3,7 +3,7 @@
 #include <nrnpython_config.h>
 #include "section.h"
 #include "neuron.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
 #include "hoc_membf.h"

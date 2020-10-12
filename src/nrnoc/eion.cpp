@@ -5,7 +5,7 @@
 #include	"section.h"
 #include	"neuron.h"
 #include	"membfunc.h"
-#include	"parse.h"
+#include	"parse.hpp"
 #include	"membdef.h"
 #include	"nrniv_mf.h"
 

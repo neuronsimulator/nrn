@@ -28,11 +28,13 @@ MODFILES_C = hh.c feature.c passive.c stim.c syn.c \
     netstim.c intfire1.c intfire2.c intfire4.c     \
     expsyn.c exp2syn.c ppmark.c pattern.c
 
-libnrnoc_la_SOURCES = $(MODFILES_C) cabcode.c capac.c clamp.c eion.c      \
-    extcelln.c fadvance.c fstim.c init.c nrnnemo.c point.c		\
-    psection.c solve.c synapse.c treeset.c hoc_init.c code.c hoc_oop.c    \
-    seclist.c method3.c hocprax.c secref.c ldifus.c hocusr.c nrnversion.c \
-    nrnversion.h nrntimeout.c passive0.c
+libnrnoc_la_SOURCES = $(MODFILES_C) cabcode.cpp capac.cpp clamp.cpp eion.cpp      \
+    extcelln.cpp fadvance.cpp fstim.cpp init.cpp nrnnemo.cpp point.cpp		\
+    psection.cpp solve.cpp synapse.cpp treeset.cpp hoc_init.cpp code.cpp hoc_oop.cpp    \
+    seclist.cpp method3.cpp hocprax.cpp secref.cpp ldifus.cpp hocusr.cpp nrnversion.cpp \
+    nrnversion.h nrntimeout.cpp passive0.cpp
+
+libnrnoc_la_LIBADD = -lpthread
 
 ##
 ## The list of .c files which are actually built during the build procedure.
@@ -50,7 +52,7 @@ PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
 PTHREAD_LIBS=@PTHREAD_LIBS@
 AM_CFLAGS = @MINGW_CFLAG@ $(PTHREAD_CFLAGS)
 nsrc=$(top_srcdir)/src
-includes = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13 -I$(nsrc)/nrnmpi
+includes = -I$(top_builddir)/src/oc -I$(nsrc)/oc -I$(nsrc)/scopmath -I$(nsrc)/sparse13 -I$(nsrc)/nrnmpi -I$(nsrc)/ivos
 AM_CPPFLAGS = -DCABLE=1 -DOOP=1 $(includes)
 NMODL = ../nmodl/nocmodl
 NRNUNITSLIB = $(top_builddir)/share/lib/nrnunits.lib
@@ -109,7 +111,7 @@ pkginclude_HEADERS = neuron.h md1redef.h md2redef.h section.h nrnoc_ml.h \
 
 ## Header files that need to be included in the distribution but not installed:
 noinst_HEADERS = hocusr.h \
-	osxdlfcn.h osxdlfcn.c multicore.c \
+	osxdlfcn.h osxdlfcn.cpp multicore.cpp \
 	nonvintblock.h nrndae_c.h
 
 ## We have to play a trick on automake to get it to install the .o files in

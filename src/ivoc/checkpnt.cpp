@@ -101,7 +101,7 @@ data depending on type. eg for VAR && NOTUSER it is
 
 #include "redef.h"
 #include "hoclist.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "code.h"
 #include "equation.h"
 	int hoc_readcheckpoint(char*);

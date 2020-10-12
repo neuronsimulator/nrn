@@ -715,7 +715,7 @@ NEURON 5.3 2002/06/04
  * FARADAY and R (molar gas constant) added as built-in constants.
  * 
  * Revision 1.68  92/08/10  16:00:05  hines
- * forgot to checkin parse.y last time
+ * forgot to checkin parse.ypp last time
  * 
  * Revision 1.67  92/08/10  15:59:38  hines
  * lists of sections with seclistdef ,,,

@@ -26,7 +26,7 @@
 #include "rubband.h"
 #include "symchoos.h"
 #include "symdir.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "utility.h"
 #include "objcmd.h"
 #include "idraw.h"

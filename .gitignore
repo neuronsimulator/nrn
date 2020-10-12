@@ -14,18 +14,20 @@ x86_64
 __pycache__
 venv
 virtualenv
+*.o 
+*.lo
 
 # These files are generated at build time
 # It would be a good idea to create them in the
 # build directory in the future.
 src/modlunit/lex.cpp
 src/modlunit/parse1.cpp
-src/modlunit/parse1.h
+src/modlunit/parse1.hpp
 src/nmodl/diffeq.cpp
 src/nmodl/diffeq.h
 src/nmodl/lex.cpp
 src/nmodl/parse1.cpp
-src/nmodl/parse1.h
+src/nmodl/parse1.hpp
 src/nrnoc/apcount.c
 src/nrnoc/exp2syn.c
 src/nrnoc/expsyn.c
@@ -47,4 +49,4 @@ src/nrnoc/svclmp.c
 src/nrnoc/syn.c
 src/nrnoc/vclmp.c
 src/oc/parse.cpp
-src/oc/parse.h
+src/oc/parse.hpp

@@ -2,10 +2,10 @@
 lib_LTLIBRARIES = liboc.la libocxt.la
 
 nsrc=$(top_srcdir)/src
-includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi -I$(nsrc)/nrnoc $(X_CFLAGS)
+IV_INCLUDES = @IV_INCLUDE@ $(X_CFLAGS)
+includes = -I$(nsrc) -I$(nsrc)/memacs -I$(nsrc)/sparse -I$(nsrc)/nrnmpi -I$(nsrc)/nrnoc $(IV_INCLUDES)
 
 AM_CPPFLAGS = -DOOP=1 -DINTERVIEWS=1 -DHOC=1 $(includes)
-AM_CFLAGS = @MINGW_CFLAG@
 
 RanFiles = isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp
 
@@ -17,10 +17,10 @@ nrnmpila = ../nrnmpi/libnrnmpi.la
 nrnmpidynam =
 endif
 
-liboc_la_SOURCES = parse.y bksub.cpp getelm.cpp lineq.cpp subrows.cpp prmat.cpp \
+liboc_la_SOURCES = parse.ypp bksub.cpp getelm.cpp lineq.cpp subrows.cpp prmat.cpp \
 	code2.cpp debug.cpp ocerf.cpp fileio.cpp ftime.cpp \
 	getsym.cpp hoc.cpp hocedit.cpp math.cpp nonlin.cpp \
-	list.cpp regexp.cpp audit.cpp symbol.cpp \
+	list.cpp regexp.cpp audit.cpp symbol.cpp fmenu.cpp \
 	version.cpp xred.cpp parallel.cpp functabl.cpp plot.cpp plt.cpp axis.cpp \
 	settext.cpp x.cpp  termio.cpp isoc99.cpp $(nrnmpidynam)\
 	scoprand.cpp $(RanFiles) cygwinprt.cpp nrnfilewrap.cpp
@@ -67,20 +67,20 @@ pkginclude_HEADERS = hoc.h hoclist.h hocdec.h hocassrt.h nrnisaac.h \
 ## Header files that need to be copied into the distribution but do not need
 ## to be installed:
 noinst_HEADERS = code.h equation.h hocmodl.h hocstr.h \
-	profile.h redef.h parse.h mcran4.h nrnmpi.h nrnrt.h isaac64.h \
+	profile.h redef.h parse.hpp mcran4.h nrnmpi.h nrnrt.h isaac64.h \
 	nrnfilewrap.h nrn_vsscanf.cpp classreg.h
 
-## files that depend on the existence of parse.h
-## this allows parallel make -j to work at the beginning when parse.h
+## files that depend on the existence of parse.hpp
+## this allows parallel make -j to work at the beginning when parse.hpp
 ## does not exist and dependencies have not yet been determined
 ## I am not sure whether both .lo and .o lists are necessary.
-## Also, oc/parse.h is included in files in the nrnoc, ivoc, and
-## nrniv directories so we hope that parse.h is created before
+## Also, oc/parse.hpp is included in files in the nrnoc, ivoc, and
+## nrniv directories so we hope that parse.hpp is created before
 ## make -v gets into those.
 
 code2.lo code.lo fileio.lo getsym.lo hoc.lo hoc_init.lo hoc_oop.lo \
-list.lo nonlin.lo parallel.lo symbol.lo: parse.h
+list.lo nonlin.lo parallel.lo symbol.lo: parse.hpp
 
 code2.o code.o fileio.o getsym.o hoc.o hoc_init.o hoc_oop.o \
-list.o nonlin.o parallel.o symbol.o: parse.h
+list.o nonlin.o parallel.o symbol.o: parse.hpp
 

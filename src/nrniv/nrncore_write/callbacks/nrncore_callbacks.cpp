@@ -6,7 +6,7 @@
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
 #include "netcvode.h" // for nrnbbcore_vecplay_write
 #include "vrecitem.h" // for nrnbbcore_vecplay_write

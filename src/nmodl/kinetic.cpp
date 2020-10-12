@@ -16,7 +16,7 @@ order.  Here is the C code from a kinetic block:
 
 #include <stdlib.h>
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 extern int numlist;
 extern int thread_data_index;

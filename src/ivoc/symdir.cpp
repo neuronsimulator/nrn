@@ -16,7 +16,7 @@
 #include "membfunc.h"
 extern double* point_process_pointer(Point_process*, Symbol*, int);
 #endif
-#include "parse.h"
+#include "parse.hpp"
 #include "hoclist.h"
 extern Symlist* hoc_symlist;
 extern Objectdata* hoc_top_level_data;

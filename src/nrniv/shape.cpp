@@ -36,7 +36,7 @@
 #include "idraw.h"
 #include "hocmark.h"
 #include "ocobserv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivoc.h"
 
 #define Shape_Section_			"Section PlotShape"

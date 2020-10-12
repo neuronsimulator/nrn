@@ -63,7 +63,7 @@ getsym.cpp,v
 #else
 
 #include "hocgetsym.h"
-#include  "parse.h"
+#include  "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
 

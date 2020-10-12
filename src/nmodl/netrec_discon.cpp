@@ -56,7 +56,7 @@ that only dsi/dt that is affected by sj will change si.
 #include <stdlib.h>
 #include <string.h>
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 extern int vectorize;
 extern int cvode_not_allowed;

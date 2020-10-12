@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <errno.h>
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include "ocfunc.h"
 #include "ocmisc.h"
@@ -396,7 +396,7 @@ int yylex(void)			/* hoc6 */
 		  void* nrn_parsing_pysec_ is 1 to signal the beginning
 		  of parsing and as a sub-dictionary pointer in case the
 		  first level __psec.name[int] is the name of a cell.
-		  On error or success in parse.y, nrn_parsing_pysec_ is
+		  On error or success in parse.ypp, nrn_parsing_pysec_ is
 		  set back to NULL.
 		*/
 		if (strcmp(sbuf, "_pysec") == 0) {

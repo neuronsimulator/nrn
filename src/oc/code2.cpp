@@ -3,7 +3,7 @@
 
 #include "hoc.h"
 #include "hocstr.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include <stdio.h>
 #include <stdlib.h>

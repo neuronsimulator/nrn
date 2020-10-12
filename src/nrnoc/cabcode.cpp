@@ -9,7 +9,7 @@
 #include "section.h"
 #include "nrniv_mf.h"
 #include "membfunc.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include "membdef.h"
 

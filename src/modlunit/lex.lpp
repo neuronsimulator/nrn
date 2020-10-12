@@ -17,7 +17,7 @@
 
 #include <../../nmodlconf.h>
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 static char linebuf[512], *cp;
 int lexcontext;

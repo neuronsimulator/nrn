@@ -10,7 +10,7 @@ C implementations of Java native methods
 
 #include "ivoc.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #include "neuron_Neuron.h"	// generated JNI Header file

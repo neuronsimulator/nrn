@@ -5,7 +5,7 @@
 #include "oc2iv.h"
 #include "ocpointer.h"
 
-#include "parse.h"
+#include "parse.hpp"
 extern Symlist* hoc_top_level_symlist;
 extern Objectdata *hoc_top_level_data;
 extern Object* hoc_thisobject;

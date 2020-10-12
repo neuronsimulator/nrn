@@ -9,7 +9,7 @@
 #include "hoc.h"
 #include "code.h"
 #include "hocstr.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "hocparse.h"
@@ -308,21 +308,23 @@ static void frame_objauto_recover_on_err(Frame *ff) { /* only on error */
            Here, stkp is the last+1 localobj slot pair on the stack.
         */
         Datum *stkp = f->argn + 2 + sp->u.u_proc->nauto * 2;
-        for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
-            Object *ob = stkp[-2 * i].obj;
-            hoc_obj_unref(ob);
-            /* Note that these AUTOOBJECT stack locations have an itemtype that
-               are left over from the previous stack usage of that location.
-               Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
-               increment tobj_count so we need to guarantee that the subsequent
-               stack_obtmp_recover_on_err does not inadvertently free it again
-               by setting the itemtype to a non OBJECTTMP value.  I hope this is
-               the only place where stack space was used in which no item type
-               was specified.
-               We are doing this here which happens rarely to avoid having to
-               set them when the stack obj pointers are zeroed.
-            */
-            stkp[-2 * i + 1].i = 0;
+        if(sp->u.u_proc != 0) {
+            for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+                Object *ob = stkp[-2 * i].obj;
+                hoc_obj_unref(ob);
+                /* Note that these AUTOOBJECT stack locations have an itemtype that
+                   are left over from the previous stack usage of that location.
+                   Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
+                   increment tobj_count so we need to guarantee that the subsequent
+                   stack_obtmp_recover_on_err does not inadvertently free it again
+                   by setting the itemtype to a non OBJECTTMP value.  I hope this is
+                   the only place where stack space was used in which no item type
+                   was specified.
+                   We are doing this here which happens rarely to avoid having to
+                   set them when the stack obj pointers are zeroed.
+                */
+                stkp[-2 * i + 1].i = 0;
+            }
         }
     }
 }

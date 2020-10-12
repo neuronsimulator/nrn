@@ -15,10 +15,10 @@
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
-flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.cpp)
+flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.lpp ${NRN_MODLUNIT_SRC_DIR}/lex.cpp)
 
-bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.y ${NRN_MODLUNIT_SRC_DIR}/parse1.cpp
-             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
+bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.ypp ${NRN_MODLUNIT_SRC_DIR}/parse1.cpp
+             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.hpp)
 
 set_property(
   SOURCE ${NRN_MODLUNIT_SRC_FILES}
@@ -30,13 +30,13 @@ add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
-flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.cpp)
+flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.lpp ${NRN_NMODL_SRC_DIR}/lex.cpp)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.y ${NRN_NMODL_SRC_DIR}/parse1.cpp DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/parse1.h)
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.ypp ${NRN_NMODL_SRC_DIR}/parse1.cpp DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/parse1.hpp)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/diffeq.cpp DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/diffeq.h)
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.ypp ${NRN_NMODL_SRC_DIR}/diffeq.cpp DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/diffeq.hpp)
 
 set_property(
   SOURCE ${NRN_NMODL_SRC_FILES}
@@ -59,8 +59,8 @@ set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
 # =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
-bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.y ${NRN_OC_SRC_DIR}/parse.cpp DEFINES_FILE
-             ${NRN_OC_SRC_DIR}/parse.h)
+bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.ypp ${NRN_OC_SRC_DIR}/parse.cpp DEFINES_FILE
+             ${NRN_OC_SRC_DIR}/parse.hpp)
 
 # =============================================================================
 # Source code lists
@@ -235,7 +235,7 @@ if(NRN_USE_BACKWARD)
 endif()
 
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
-                            ${NRN_OC_SRC_DIR}/parse.h)
+                            ${NRN_OC_SRC_DIR}/parse.hpp)
 
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)

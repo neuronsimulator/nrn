@@ -8,7 +8,7 @@
 #include "bbs.h"
 #include "bbsimpl.h"
 #include "ivocvect.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
 #include <nrnmpi.h>

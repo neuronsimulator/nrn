@@ -1,7 +1,7 @@
 #include <../../nmodlconf.h>
 #include <stdlib.h>
 #include "model.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>

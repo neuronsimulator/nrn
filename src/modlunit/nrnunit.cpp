@@ -1,7 +1,7 @@
 #include <../../nmodlconf.h>
 #include "model.h"
 #include "units.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 #define IONCUR  0
 #define IONEREV 1

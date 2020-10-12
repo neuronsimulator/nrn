@@ -99,7 +99,7 @@ static double dmaxint_;
 #include "utility.h"
 #endif
 #include "oc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ocfile.h"
 
 extern Object* hoc_thisobject;

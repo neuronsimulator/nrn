@@ -8,7 +8,7 @@
 #include <hoccontext.h>
 #include "nrnpy_utils.h"
 
-#include "parse.h"
+#include "parse.hpp"
 extern void hoc_nopop();
 extern void hoc_pop_defer();
 extern Object* hoc_new_object(Symbol*, void*);

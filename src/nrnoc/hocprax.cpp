@@ -38,7 +38,7 @@ pval = pval_praxis(i, Vector)
 
 #include <stdlib.h>
 #include "hocdec.h"
-#include "parse.h"
+#include "parse.hpp"
 
 #if defined(__cplusplus)
 extern "C" {

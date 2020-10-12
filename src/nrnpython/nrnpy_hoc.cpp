@@ -39,7 +39,7 @@ typedef struct {
 } NPySecObj;
 
 
-#include "parse.h"
+#include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);

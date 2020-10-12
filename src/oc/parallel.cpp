@@ -14,7 +14,7 @@
 #include <crt_externs.h>
 #endif
 #include "hoc.h"
-#include "parse.h" /* OBJECTVAR */
+#include "parse.hpp" /* OBJECTVAR */
 
 static int parallel_seen;
 

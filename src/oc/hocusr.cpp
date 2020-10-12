@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "hocdec.h"
-#include "parse.h"
+#include "parse.hpp"
 #if 1
 #include "hocusr.h"
 #endif
@@ -44,7 +44,7 @@ void nrn_load_name_check(const char *name) {
 
 static void arayinstal(Symbol *sp, int nsub, int sub1, int sub2, int sub3);
 
-void hoc_spinit(void)    /* install user variables and functions */
+extern "C" void hoc_spinit(void)    /* install user variables and functions */
 {
     int i;
     Symbol *s;

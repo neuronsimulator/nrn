@@ -2,7 +2,7 @@
 /* /local/src/master/nrn/src/nmodl/solve.c,v 4.4 1998/08/20 21:07:34 hines Exp */
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 /* make it an error if 2 solve statements are called on a single call to

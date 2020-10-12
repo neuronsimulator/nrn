@@ -6,7 +6,7 @@
  * bad style) to work in some circumstances. 
  */
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 extern Symbol *scop_indep;

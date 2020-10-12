@@ -228,7 +228,7 @@ extern void hoc_audit_from_emacs(const char*, const char*);
 extern int hoc_retrieving_audit (void);
 extern int hoc_retrieve_audit (int id);
 extern int hoc_saveaudit (void);
-extern void bbs_done(void);
+
 extern void hoc_close_plot(void);
 extern void hoc_edit(void);
 extern void hoc_edit_quit(void);
@@ -287,6 +287,7 @@ extern int nrn_isdouble(double*, double, double);
 }
 #endif
 
+extern void bbs_done(void);
 extern int hoc_main1(int, const char**, const char**);
 extern char* cxx_char_alloc(size_t size);
 extern int stoprun;

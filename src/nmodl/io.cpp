@@ -8,7 +8,7 @@
 #include <SIOUX.h>
 #endif
 #undef METHOD
-#include "parse1.h"
+#include "parse1.hpp"
 
 int isend(char*, char*);
 static void pop_file_stack();

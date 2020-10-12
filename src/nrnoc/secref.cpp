@@ -17,7 +17,7 @@ access s1.sec	// soma becomes the default section
 
 #include <stdlib.h>
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hoc_membf.h"
 
 extern int hoc_return_type_code; 

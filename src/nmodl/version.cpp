@@ -647,7 +647,7 @@ NEURON 5.3 2002/06/04
  * file and set to 0 on entry to a derivative or kinetic block.
  * 
  * Revision 9.44  90/10/30  10:25:16  hines
- * modl: saber warning free except for ytab.c and lex.c
+ * modl: saber warning free except for ytab.c and lex.cpp
  * 
  * Revision 9.43  90/10/30  10:21:30  hines
  * ytab.o was not placed in proper directory
@@ -656,7 +656,7 @@ NEURON 5.3 2002/06/04
  * hmodl saber warning free and test.mod works
  * 
  * Revision 9.41  90/10/30  08:37:13  hines
- * saber warning free except for ytab.c and lex.c
+ * saber warning free except for ytab.c and lex.cpp
  * 
  * Revision 9.40  90/10/30  08:07:07  hines
  * nmodl: Passive.mod working with index vectors. No longer copying

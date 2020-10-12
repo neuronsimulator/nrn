@@ -101,7 +101,7 @@ method3.cpp,v
 #if METHOD3 && VECTORIZE
 #include	"membfunc.h"
 #include	"neuron.h"
-#include	"parse.h"
+#include	"parse.hpp"
 
 extern int	diam_changed;
 extern int	tree_changed;

@@ -92,7 +92,7 @@ correctness has not been validated for cells without gids.
 #include <cstdlib>
 
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
 

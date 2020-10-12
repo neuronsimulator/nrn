@@ -1,6 +1,6 @@
 #include <../../nmodlconf.h>
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include "symbol.h"
 
 extern int sens_parm;

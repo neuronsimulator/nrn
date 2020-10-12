@@ -64,7 +64,7 @@ directly by hoc.
 #define GLOBFUNCT 1
 
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 #include <stdlib.h>
 #include <unistd.h>
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)

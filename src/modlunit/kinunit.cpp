@@ -2,7 +2,7 @@
 #include "model.h"
 #include "symbol.h"
 #include "units.h"
-#include "parse1.h"
+#include "parse1.hpp"
 extern char *indepunits;
 static List *reactnames;
 

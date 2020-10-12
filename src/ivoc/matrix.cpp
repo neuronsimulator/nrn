@@ -5,7 +5,7 @@
 #include <math.h>
 #include "ocmatrix.h"
 #include "oc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #define EPS hoc_epsilon

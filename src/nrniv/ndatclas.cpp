@@ -5,7 +5,7 @@
 #include "classreg.h"
 
 #include "membfunc.h"
-#include "parse.h"
+#include "parse.hpp"
 extern Prop* prop_alloc(Prop**, int, Node*);
 extern void single_prop_free(Prop*);
 extern Symlist* hoc_built_in_symlist;

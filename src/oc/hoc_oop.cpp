@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <classreg.h>
 #include "hocstr.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "hocparse.h"
 #include "code.h"
 #include "hocassrt.h"

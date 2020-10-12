@@ -1,13 +1,13 @@
 #include <../../nmodlconf.h>
 
 /*
- * some parse actions to reduce size of parse.y the installation routines can
+ * some parse actions to reduce size of parse.ypp the installation routines can
  * also be used, e.g. in sens to automattically construct variables 
  */
 
 #include <stdlib.h>
 #include "modl.h"
-#include "parse1.h"
+#include "parse1.hpp"
 
 Symbol	       *scop_indep;	/* independent used by SCoP */
 Symbol         *indepsym;	/* only one independent variable */
@@ -37,7 +37,7 @@ static char *previous_str;	/* u.str on last install */
 
 void explicit_decl(int level, Item* q)
 {
-	/* used to be inside parse1.y without the lastvars condition
+	/* used to be inside parse1.ypp without the lastvars condition
 	   Without the condition it served two purposes.
 	   1) variables explicitly declared were so marked so that they
 	      would appear first in the .var file.  Unmarked variables
