@@ -417,7 +417,11 @@ proc opt_connect() {local i, j, d, dmin, imin, n, ip   localobj psec, xx
 		if (psec == $o1) { continue }
 		n = psec.raw.ncol
 		for j=0, n-1 {
-			d = xx.c.sub(psec.raw.getcol(j)).set(2,0).mag
+			if ($o1.type == 2) { //axon, then find nearest in 3d
+				d = xx.c.sub(psec.raw.getcol(j)).mag
+			}else {
+				d = xx.c.sub(psec.raw.getcol(j)).set(2,0).mag
+			}
 			if (d < dmin) {
 				dmin = d
 				imin = i
