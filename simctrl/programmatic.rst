@@ -219,9 +219,10 @@ Functions
     ``bool = h.nrnunit_use_legacy(bool)``
 
   Description:
+    | Return current units usage as 0 or 1.
+    | An argument is not required.
     | Arg, False uses modern codata2018 units for FARADAY, R, etc. (default as of version 8.0)
     | Arg, True uses legacy units (default prior to October, 2020)
-    | No arg, returns current units usage.
 
   .. seealso::
     :ref:`NRNUNIT_USE_LEGACY` :ref:`CONSTANTS`
