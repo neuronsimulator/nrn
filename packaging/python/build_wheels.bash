@@ -97,6 +97,10 @@ build_wheel_osx() {
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
 
+    # above delocate-wheel effectively rewrites the location for libnrniv in
+    # neurondemo libnrnmech to @loader_path/...../neuron/.dylibs/libnrniv.dylib
+    # This causes segfault when launching neurondemo. Fix is to rewrite
+    # again effectively to @loader_path/...../neuron/.data/lib/libnrniv.dylib
     cd dist ; whl=`ls *.whl` ; cd ..
     sh packaging/python/demo_update_libnrnmech.sh wheelhouse $whl
 

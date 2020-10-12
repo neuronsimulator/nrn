@@ -1,6 +1,12 @@
 #!/bin/sh
 set -ex
 
+# On mac delocate-wheel rewrites the location for libnrniv to a copy of
+# that in neuron/.dylibs/libnrniv.dylib. This causes a segfault.
+# Here we rewrite again to find neuron/.data/lib/libnrniv.dylib
+# Although neurondemo only dlopens ..../release/x86_64/.libs/libnrnmech.so
+# we also rewrite the copy in ..../release/x86_64/libnrnmech.dylib
+
 if test "`uname -s`" != "Darwin" ; then
   echo "ERROR: demo_update_libnrnmech.sh only for Darwin"
   exit 1
