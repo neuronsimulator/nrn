@@ -144,7 +144,7 @@ C_GREEN := \033[32m
 # Default nmodl flags. Override if NMODL_RUNTIME_FLAGS is not empty
 NMODL_FLAGS_ISPC = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_ispc@)
 NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_c@)
-$(info Default nmodl flags: $(if (@CORENRN_ENABLE_ISPC@ == ON), @nmodl_arguments_ispc@, @nmodl_arguments_c@))
+$(info Default nmodl flags: $(if $(@CORENRN_ENABLE_ISPC@ == ON), @nmodl_arguments_ispc@, @nmodl_arguments_c@))
 ifneq ($(NMODL_RUNTIME_FLAGS),)
     $(warning Runtime nmodl flags (they replace the default ones): $(NMODL_RUNTIME_FLAGS))
 endif
