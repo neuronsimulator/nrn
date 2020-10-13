@@ -29,4 +29,5 @@ zip $NRNWHEEL neuron/.data/share/nrn/demo/release/x86_64/.libs/libnrnmech.so
 unzip $NRNWHEEL neuron/.data/share/nrn/demo/release/x86_64/libnrnmech.dylib
 install_name_tool -change '@loader_path/../../../../../../.dylibs/libnrniv.dylib' '@loader_path/../../../../../lib/libnrniv.dylib' neuron/.data/share/nrn/demo/release/x86_64/libnrnmech.dylib
 zip $NRNWHEEL neuron/.data/share/nrn/demo/release/x86_64/libnrnmech.dylib
+zip -d $NRNWHEEL neuron/.dylibs/libnrniv.dylib
 rm -r -f neuron
