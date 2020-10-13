@@ -95,10 +95,11 @@ build_wheel_osx() {
     fi
 
     echo " - Repairing..."
-    # Note: Using .data/lib to prevent libnrniv.dylib from being copied into
+    # Note: Tried using -L .data/lib to prevent libnrniv.dylib from being copied into
     # ..../neuron/.dylibs and pointed to by neurondemo's libnrnmech thus
     # resulting in segfault when neurondemo launched on target machine.
-    delocate-wheel -w wheelhouse -L .data/lib -v dist/*.whl  # we started clean, there's a single wheel
+    # Unfortunately, generated a DelocationError:...neuron/.data/lib already exists in wheel but need to copy...
+    delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
 
     # above delocate-wheel effectively rewrites the location for libnrniv in
     # neurondemo libnrnmech to @loader_path/...../neuron/.dylibs/libnrniv.dylib
