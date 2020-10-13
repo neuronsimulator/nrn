@@ -135,15 +135,15 @@ class NeuronTestCase(unittest.TestCase):
             from neuron import rxd
             from neuron.rxd import geometry
             print("has_geometry3d is " + str(geometry.has_geometry3d))
-        except:
-            print("'from neuron import rxd' failed")
+        except Exception as e:
+            print("'from neuron import rxd' failed", e)
             error = 1
         else:
            try:
                a = basicRxD3D()
                print("    basicRxD3D() ran with no exception")
-           except:
-               print("'basicRxD3D()' failed")
+           except Exception as e:
+               print("'basicRxD3D()' failed", e)
                error = 1
         assert(error == 0)
         return 0
