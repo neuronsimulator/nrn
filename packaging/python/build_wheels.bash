@@ -95,7 +95,10 @@ build_wheel_osx() {
     fi
 
     echo " - Repairing..."
-    delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
+    # Note: Using .data/lib to prevent libnrniv.dylib from being copied into
+    # ..../neuron/.dylibs and pointed to by neurondemo's libnrnmech thus
+    # resulting in segfault when neurondemo launched on target machine.
+    delocate-wheel -w wheelhouse -L .data/lib -v dist/*.whl  # we started clean, there's a single wheel
 
     deactivate
 }
