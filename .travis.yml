@@ -89,6 +89,7 @@ env:
       MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
+      PIP2="$(which pip2)"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 os:
   - linux
@@ -121,6 +122,9 @@ install:
       export CYTHON_EXE=$(echo $CYTHON_LIB | awk '{print $2}' | awk -F "lib" '{print$1}')"bin";
       export PATH=$CYTHON_EXE:$PATH;
       brew link --overwrite python;
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+        $PIP2 install numpy
+      fi
     fi
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
       $PIP install --user -r docs/docs_requirements.txt --upgrade;
