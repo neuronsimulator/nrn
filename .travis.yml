@@ -123,7 +123,7 @@ install:
       export PATH=$CYTHON_EXE:$PATH;
       brew link --overwrite python;
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-        $PIP2 install numpy
+        $PIP2 install numpy;
       fi
     fi
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
