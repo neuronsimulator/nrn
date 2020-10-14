@@ -24,6 +24,10 @@ struct SecMapping {
 	/** list sections associated with each segment */
     std::vector<int> sections;
 
+	/** list of segment positions */
+    std::vector<double> segpositions_start;
+    std::vector<double> segpositions_end;
+
     SecMapping(int n, std::string s) : nsec(n), name(s) {}
 
     size_t size() {

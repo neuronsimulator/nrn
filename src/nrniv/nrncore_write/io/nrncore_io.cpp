@@ -446,12 +446,15 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
         for(size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
             /** section list name, number of sections, number of segments */
-            fprintf(f, "%s %d %zd\n", s->name.c_str(), s->nsec, s->size());
+            size_t segpos_size = 3 * s->size();
+            fprintf(f, "%s %d %zd %d\n", s->name.c_str(), s->nsec, s->size(), segpos_size);
 
             /** section - segment mapping */
             if(s->size()) {
                 writeint(&(s->sections.front()), s->size());
                 writeint(&(s->segments.front()), s->size());
+                writedbl(&(s->segpositions_start.front()), segpos_size);
+                writedbl(&(s->segpositions_end.front()), segpos_size);
             }
         }
     }

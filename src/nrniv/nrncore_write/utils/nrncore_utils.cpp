@@ -82,6 +82,8 @@ int count_distinct(double *data, int len) {
  *      nsec : number of sections
  *      sections : list of sections
  *      segments : list of segments
+ *      segpos_start : list of start positions of the segments
+ *      segpos_end : list of end positions of the segments
  */
 void nrnbbcore_register_mapping() {
 
@@ -94,15 +96,25 @@ void nrnbbcore_register_mapping() {
     // hoc vectors: sections and segments
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
+    Vect* pos_start = vector_arg(5);
+    Vect* pos_end = vector_arg(6);
 
     double* sections  = vector_vec(sec);
     double* segments  = vector_vec(seg);
+    double* segpos_start  = vector_vec(pos_start);
+    double* segpos_end  = vector_vec(pos_end);
 
     int nsec = vector_capacity(sec);
     int nseg = vector_capacity(seg);
+    int npos_start = vector_capacity(pos_start);
+    int npos_end = vector_capacity(pos_end);
 
     if( nsec != nseg ) {
         std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
+        abort();
+    }
+    if( npos_start != npos_end ) {
+        std::cout << "Error: Segment position vectors start and end should have same size!\n";
         abort();
     }
 
@@ -112,6 +124,8 @@ void nrnbbcore_register_mapping() {
     SecMapping *smap = new SecMapping(nsec, name);
     smap->sections.assign(sections, sections+nseg);
     smap->segments.assign(segments, segments+nseg);
+    smap->segpositions_start.assign(segpos_start, segpos_start + npos_start);
+    smap->segpositions_end.assign(segpos_end, segpos_end + npos_end);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
