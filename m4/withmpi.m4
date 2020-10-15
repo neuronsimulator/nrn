@@ -26,6 +26,10 @@ dnl AC_SUBST(LIBTOOL)
 		    if test "$nrnmpi_dynamic" = "no" ; then
 			CC=$MPICC
 			CXX=$MPICXX
+			dnl above line loses the earlier -std=c++11 flag
+                        dnl so re-evaluate CXX and copy to MPICXX
+			AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+			MPICXX="$CXX"
 		    fi
 			MPICCnrnmpi=$MPICC
 			LIBTOOLTAG='--tag=CC'
