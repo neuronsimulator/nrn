@@ -1690,7 +1690,7 @@ class Species(_SpeciesMathable):
                 charge = self.charge
                 namei = self._name + 'i'
                 nameo = self._name + 'o'
-                tenthousand_over_charge_faraday = 10000. / (charge * rxd.FARADAY)
+                tenthousand_over_charge_faraday = 10000. / (charge * h.FARADAY)
                 for i, nodeobj in enumerate(self._nodes):
                     if surface_area[i]:
                         r = nodeobj.region

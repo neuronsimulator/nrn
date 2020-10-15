@@ -1801,6 +1801,9 @@ if (!ISARRAY(sym)) {
 		case USERINT:
 			d = (double)(*(sym->u.pvalint));
 			break;
+		case DYNAMICUNITS:
+			d = sym->u.pval[_nrnunit_use_legacy_];
+			break;
 #if	CABLE
 		case USERPROPERTY:
 			d = cable_prop_eval(sym);
@@ -1883,6 +1886,9 @@ if (!ISARRAY(sym)) {
 		case USERINT:
 		case USERFLOAT:
 			execerror("can use pointer only to doubles", sym->name);
+			break;
+		case DYNAMICUNITS:
+			d = sym->u.pval + _nrnunit_use_legacy_;
 			break;
 #if	CABLE
 		case USERPROPERTY:
