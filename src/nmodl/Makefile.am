@@ -12,7 +12,7 @@ nocmodl_SOURCES = parse1.y diffeq.y lex.l consist.c deriv.c discrete.c \
 
 nsrc=$(top_srcdir)/src
 includes = -I$(nsrc)/src/modlunit
-AM_CPPFLAGS = -DNMODL=1 -DNOCMODL=1 -DCVODE=1 -DVECTORIZE=1 $(includes)
+AM_CPPFLAGS = -DNRN_DYNAMIC_UNITS=1 -DNMODL=1 -DNOCMODL=1 -DCVODE=1 -DVECTORIZE=1 $(includes)
 
 EXTRA_DIST = cout.c lex.c nmodl.mak
 

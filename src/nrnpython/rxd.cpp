@@ -18,7 +18,9 @@ static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
 extern int states_cvode_offset;
+extern int _nrnunit_use_legacy_;
 int prev_structure_change_cnt = 0;
+int prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
 unsigned char initialized = FALSE;
 
 /*
@@ -34,7 +36,7 @@ extern double *dt_ptr;
 extern double *t_ptr;
 
 
-fptr _setup, _initialize, _setup_matrices;
+fptr _setup, _initialize, _setup_matrices, _setup_units;
 extern NrnThread* nrn_threads;
 
 /*intracellular diffusion*/
@@ -528,6 +530,11 @@ extern "C" void set_setup_matrices(fptr setup_matrices) {
     _setup_matrices = setup_matrices;
 }
 
+extern "C" void set_setup_units(fptr setup_units) {
+    _setup_units = setup_units;
+    _setup_units();
+}
+
 /* nrn_tree_solve modified from nrnoc/ldifus.c */
 static void nrn_tree_solve(double* a, double* b, double* c, double* dbase, double* rhs, long* pindex, long n, double dt) {
     /*
@@ -842,11 +849,19 @@ static void _currents(double* rhs)
 }
 
 extern "C" int rxd_nonvint_block(int method, int size, double* p1, double* p2, int) {
-        if(initialized && structure_change_cnt != prev_structure_change_cnt)
+        if(initialized)
         {
-            /*TODO: Exclude irrelevant (non-rxd) structural changes*/
-            /*Needed for node.include_flux*/
-            _setup_matrices();
+            if(structure_change_cnt != prev_structure_change_cnt)
+            {
+                /*TODO: Exclude irrelevant (non-rxd) structural changes*/
+                /*Needed for node.include_flux*/
+                _setup_matrices();
+            }
+            if (prev_nrnunit_use_legacy != _nrnunit_use_legacy_)
+            {
+                _setup_units();
+                prev_nrnunit_use_legacy = _nrnunit_use_legacy_;
+            }
         }
         switch (method) {
         case 0:

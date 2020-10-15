@@ -63,6 +63,7 @@ K			*j*
 / constants
 
 fuzz			1
+two			2
 pi			3.14159265358979323846
 c			2.99792458+8 m/sec fuzz
 g			9.80665 m/sec2
@@ -393,8 +394,8 @@ ev			e-volt
 / faraday			9.652000+04 coul
 / faraday  from  host: physics.nist.gov
 /          	 path: /PhysRefData/fundconst/html/keywords.html
-@LegacyY@faraday			9.6485309+4 coul
-@LegacyN@faraday			96485.3321233100184 coul
+@LegacyY@faraday		9.6485309+4 coul
+@LegacyN@faraday		e-mole
 fathom			6 ft
 fermi			1-15 m
 fifth			4|5 qt
@@ -430,7 +431,8 @@ hyl			gm force sec2/m
 hz			/sec
 imaginarycubicfoot	1.4 ft3
 jeroboam		4|5 gal
-boltzmann		1.38064852-23 joule/K
+@LegacyY@boltzmann		1.38064852-23 joule/K
+@LegacyN@boltzmann		1.380649-23 joule/K
 k			boltzmann
 karat			1|24
 kcal			kilocal
@@ -499,7 +501,8 @@ quarter			9 in
 quartersection		1|4 mi2
 quintal			100 kg
 quire			25
-gasconstant		8.3144598 joule/K
+@LegacyY@gasconstant		8.3144598 joule/K
+@LegacyN@gasconstant		k-mole
 R			gasconstant
 rad			100 erg/gm
 ream			500
@@ -571,7 +574,7 @@ flemishell		27 inch
 @LegacyY@planck			6.626-34 joule-sec
 @LegacyN@planck			6.62607015-34 joule-sec
 @LegacyY@hbar			1.055-34 joule-sec
-@LegacyN@hbar			1.0545718176461565-34 joule-sec
+@LegacyN@hbar			planck/two-pi
 electronmass		9.1095-31 kg
 protonmass		1.6726-27 kg
 neutronmass		1.6606-27 kg

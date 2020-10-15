@@ -143,6 +143,7 @@ extern void hoc_spec_table(void** pfunctable, int n);
 extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 extern void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
+extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 
 #if defined(__cplusplus)
 class IvocVect;

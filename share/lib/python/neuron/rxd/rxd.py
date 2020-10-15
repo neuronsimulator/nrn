@@ -19,7 +19,6 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 from warnings import warn
-molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -224,13 +223,11 @@ def byeworld():
     
 atexit.register(byeworld)
 
-# Faraday's constant (store to reduce number of lookups)
-FARADAY = h.FARADAY
-
 _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
+last_nrn_legacy_units = h.nrnunit_use_legacy()
 
 
 _all_reactions = []
@@ -513,6 +510,18 @@ _diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _donothing(): pass
 
+def _setup_units(force=False):
+    global last_nrn_legacy_units
+    if initializer.is_initialized():
+        if(force or last_nrn_legacy_units != h.nrnunit_use_legacy()):
+            last_nrn_legacy_units = h.nrnunit_use_legacy()
+            clear_rates()
+            _setup_memb_currents()
+            _compile_reactions()
+            if _cvode_object.active():
+                _cvode_object.re_init()
+        
+
 def _update_node_data(force=False, newspecies=False):
     global last_diam_change_cnt, last_structure_change_cnt
     if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
@@ -534,12 +543,10 @@ def _update_node_data(force=False, newspecies=False):
                         s._update_region_indices(True)
                         s._register_cptrs()
                 #if species._has_1d and species._1d_submatrix_n():
-                _setup_matrices();
+                _setup_matrices()
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
-                clear_rates()
-                _setup_memb_currents()
-                _compile_reactions()
+                _setup_units(force=True)
 
             #end#if
 
@@ -1244,6 +1251,7 @@ def _compile_reactions():
                           _c_compile(fxn_string))
 
     #Setup intracellular 3D reactions
+    molecules_per_mM_um3 = constants.molecules_per_mM_um3()
     if regions_inv_3d:
         for reg in regions_inv_3d:
             ics_grid_ids = []
@@ -1545,8 +1553,9 @@ def _init_concentration():
 _has_nbs_registered = False
 _nbs = None
 do_setup_matrices_fptr = None
+do_setup_units_fptr = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr
+    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr, do_setup_units_fptr
     
     if not _has_nbs_registered:
         #from neuron import nonvint_block_supervisor as _nbs
@@ -1564,6 +1573,12 @@ def _do_nbs_register():
         set_setup_matrices.argtypes = [fptr_prototype]
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
         set_setup_matrices(do_setup_matrices_fptr)
+
+
+        set_setup_units = nrn_dll_sym('set_setup_units')
+        set_setup_units.argtypes = [fptr_prototype]
+        do_setup_units_fptr = fptr_prototype(_setup_units)
+        set_setup_units(do_setup_units_fptr)
 
         _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
 
