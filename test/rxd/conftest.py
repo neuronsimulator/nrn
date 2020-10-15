@@ -25,7 +25,6 @@ def neuron_import(request):
 
     neuron.load_mechanisms(osp.abspath(osp.dirname(__file__)))
     from neuron import h, rxd
-
     return h, rxd, save_path
 
 @pytest.fixture
@@ -39,6 +38,8 @@ def neuron_instance(neuron_import):
     h, rxd, save_path = neuron_import
     data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')
+
+    h.nrnunit_use_legacy(True) 
     
     # pytest fixtures at the function scope that require neuron_instance will go    # out of scope after neuron_instance. So species, sections, etc. will go 
     # out of scope after neuron_instance is torn down. 
