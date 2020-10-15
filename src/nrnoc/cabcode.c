@@ -300,7 +300,9 @@ Section* nrnpy_newsection(void* v) {
 	Item* itm;
 	Section* sec;
 	sec = new_section((Object*)0, (Symbol*)0, 0);
+#if USE_PYTHON
 	sec->prop->dparam[PROP_PY_INDEX]._pvoid = v;
+#endif
 	itm = lappendsec(section_list, sec);
 	sec->prop->dparam[8].itm = itm;
 	return sec;
@@ -318,6 +320,7 @@ void delete_section(void) {
 		hoc_retpushx(0.0);
 		return;
 	}
+#if USE_PYTHON
 	if (sec->prop->dparam[PROP_PY_INDEX]._pvoid) { /* Python Section */
 		/* the Python Section will be a zombie section with a pointer
 		   to an invalid Section*.
@@ -328,6 +331,7 @@ void delete_section(void) {
 		hoc_retpushx(0.0);
 		return;
 	}
+#endif
 	if (!sec->prop->dparam[0].sym) {
 		hoc_execerror("Cannot delete an unnamed hoc section", (char*)0);
 	}
