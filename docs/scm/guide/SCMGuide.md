@@ -163,12 +163,12 @@ When working on a feature branch, especially if development spans over some days
 1. The branch is public: **Merge**!
  Especially critical with long-running, public branches must not have their histories rewritten. Really want a rebase? Then use a new branch for that: checkout the target branch with a new name and merge the source branch.
 2. Feature branch to be &quot;_merge squashed_&quot;. Without conflicts consider **merging**. Decisive factors could be keeping reviews valid, or easier conflict resolution:
-  1. **Merge** (GitHub model): With original commits we ensure no behavior changes and GitHub Reviews are kept valid. Extra merge commits squashed anyway at the end.
-  2. **Rebase** (Gerrit model). Simplifies the branch. Re-testing the last commit is required.
+    1. **Merge** (GitHub model): With original commits we ensure no behavior changes and GitHub Reviews are kept valid. Extra merge commits squashed anyway at the end.
+    2. **Rebase** (Gerrit model). Simplifies the branch. Re-testing the last commit is required.
 3. Feature branch to be &quot;_traditionally merged_&quot;: **depends** :
-  1. Consider **merging,** mainly if everything is tidy. It&#39;s no-op, keeps reviews valid, etc.
+    1. Consider **merging,** mainly if everything is tidy. It&#39;s no-op, keeps reviews valid, etc.
  If you need cleanup/prefer rebase **→**  **do rebase** and **retest all commits**
-  2. If fast-forwarded is required, you must **rebase** (and **retest all commits** )
+    2. If fast-forwarded is required, you must **rebase** (and **retest all commits** )
 
 ### Reviewing
 
@@ -177,12 +177,12 @@ Reviewers share responsibility on the merged code and thus should dedicate some 
 1. **Make sure the requirements are fulfilled**.
  Patches should do what they advertise. They don&#39;t need to solve a full issue - contributions are even encouraged to be split in several independent patches. However there should be a clear description matching the implementation.
 2. **Ensure the patch works as expected**
-  1. Quick review on Web UI may be sufficient if the patch is simple (e.g. single line or documentation) and risk of breaking things is reduced
-  2. Otherwise checkout locally the code to have the full picture.
+    1. Quick review on Web UI may be sufficient if the patch is simple (e.g. single line or documentation) and risk of breaking things is reduced
+    2. Otherwise checkout locally the code to have the full picture.
 3. **Ensure high code quality standards**
-  1. Minimalistic, self-contained changes
-  2. Simple implementations, avoiding globals, long functions, side-effects
-  3. Compliance with code style conventions, self-explanatory code/comments
+    1. Minimalistic, self-contained changes
+    2. Simple implementations, avoiding globals, long functions, side-effects
+    3. Compliance with code style conventions, self-explanatory code/comments
 4. **Use comments and suggestions.** Give the author the possibility of argumenting for/against a request. In case you, as a reviewer, want to suggest a specific and significant change you may open a sub-Pull-Request.
 5. **Quick changes &amp; fixes**. Such non-functional modifications (e.g. typos, code style, ...) may be pushed directly to save review cycles and thus time.
 
