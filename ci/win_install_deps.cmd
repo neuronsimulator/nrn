@@ -30,7 +30,8 @@ C:\Python38\python.exe -m pip install numpy || goto :error
 C:\Python27\python.exe -m pip install numpy || goto :error
 
 :: install nsis
-nsis-3-05.exe /S || goto :error
+:: nsis-3-05.exe /S || goto :error
+choco install nsis --no-progress -y  --version=3.05 --params="/InstallDir:C\Program Files\ (x86)\NSIS /NoUpdate /NoPath" || goto :error
 pwsh -command Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS" || goto :error
 
 :: install mpi
