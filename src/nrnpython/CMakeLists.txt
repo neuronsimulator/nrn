@@ -219,12 +219,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_custom_command(
     TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-            ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
-
-  add_custom_command(
-    TARGET hoc_module PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
             ${NRN_BUILD_SHARE_DIR}/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib

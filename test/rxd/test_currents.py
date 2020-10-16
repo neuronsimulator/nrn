@@ -22,7 +22,7 @@ def model_pump(neuron_instance):
     nai, nao, ki, ko = na[cyt], na[ecs], k[cyt], k[ecs]
     exp = rxd.rxdmath.exp
     pump = (0.8 / (1.0 + exp((25.0 - nai)/3.0))) * (1.0 / (1.0 + exp(3.5 - ko)))
-    volume_scale = 1e-18 * rxd.constants.NA * (dend.diam/4.0)
+    volume_scale = 1e-18 * rxd.constants.NA() * (dend.diam/4.0)
     pump_current = rxd.MultiCompartmentReaction(2*ko + 3*nai, 2*ki + 3*nao,
                                                 pump*volume_scale,
                                                 mass_action=False, membrane=mem,
@@ -36,7 +36,10 @@ def test_currents(model_pump):
 
     neuron_instance, model = model_pump
     h, rxd, data = neuron_instance
+    # check changing the units after initialization
+    h.nrnunit_use_legacy(False)
     h.finitialize(-65)
+    h.nrnunit_use_legacy(True)
     h.continuerun(10)
     max_err = compare_data(data)
     assert max_err < tol
@@ -46,8 +49,11 @@ def test_currents_cvode(model_pump):
 
     neuron_instance, model = model_pump
     h, rxd, data = neuron_instance
+    # check changing the units after initialization
     h.CVode().active(True)
+    h.nrnunit_use_legacy(False)
     h.finitialize(-65)
+    h.nrnunit_use_legacy(True)
     h.continuerun(10)
     max_err = compare_data(data)
     assert max_err < tol
