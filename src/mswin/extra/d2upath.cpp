@@ -19,7 +19,7 @@ char* hoc_dos2cygdrivepath(const char* d, int cygdrive) {
 #if 0
    	u = new char[strlen(d) + 12];
 #else
-	u = malloc(strlen(d) + 12);
+	u = static_cast<char*>(malloc(strlen(d) + 12));
 	assert(u);
 #endif
 	i = j = 0;

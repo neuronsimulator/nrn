@@ -25,14 +25,16 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 #ifdef WIN32
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
+#if defined(HAVE_DLFCN_H) && !defined(MINGW)
 #include <dlfcn.h>
 #else
 #define RTLD_NOW 0
+extern "C" {
 extern void* dlopen(const char* name, int mode);
 extern void* dlsym(void* handle, char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
+}
 #endif
 /*#include "../mswin/windll/dll.h"*/
 /*static struct DLL* dll;*/

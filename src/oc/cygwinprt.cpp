@@ -19,7 +19,7 @@ my_off64_t lseek64(int fd, my_off64_t offset, int whence) {
 
 /* mingw does not have dlfcn.h */
 #if !defined(HAVE_DLFCN_H) || defined(__MINGW32__)
-
+extern "C" {
 void* dlopen(const char *name, int mode) {
 	void *ret;
 	/* handle for the named library */
@@ -47,6 +47,7 @@ int dlclose(void* handle) {
 static char* dler_="";
 char* dlerror() {
 	return dler_;
+}
 }
 #endif /* HAVE_DLFCN_H */
 

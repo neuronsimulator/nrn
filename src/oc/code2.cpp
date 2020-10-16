@@ -187,11 +187,11 @@ hoc_execerror("Cannot find the symbol associated with the pointer when called fr
 	hoc_pushstr(units);
 }
 
+extern "C" char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
 	extern char* neuron_home;
 #if defined(WIN32)
 	static char* buf;
-	extern char* hoc_back2forward();
 	extern void hoc_forward2back();
 	if (!buf) {
 		buf = static_cast<char *>(emalloc(strlen(neuron_home)+1));
@@ -205,12 +205,12 @@ char* neuronhome_forward(void) {
 }
 
 char *neuron_home_dos;
+extern void setneuronhome(const char*);
 void hoc_neuronhome(void) {
 	extern char* neuron_home;
 #if defined(WIN32)||defined(CYGWIN)
 	if (ifarg(1) && (int)chkarg(1, 0., 1.) == 1) {
 		if (!neuron_home_dos) {
-			extern void setneuronhome(const char*);
 			setneuronhome(NULL);
 		}
 		hoc_ret();

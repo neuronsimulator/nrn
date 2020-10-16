@@ -36,7 +36,7 @@ extern int bad_install_ok;
 int bad_install_ok;
 #endif // HAVE_IV
 extern FILE* hoc_redir_stdout;
-void setneuronhome(p) char* p; {
+void setneuronhome(const char* p) {
 	// if the program lives in .../bin/neuron.exe
 	// and .../lib exists then use ... as the
 	// NEURONHOME
@@ -109,7 +109,7 @@ void setneuronhome(p) char* p; {
 void HandleOutput(char* s) {
 	printf("%s", s);
 }
-static long exception_filter(p) LPEXCEPTION_POINTERS p; {
+static long exception_filter(LPEXCEPTION_POINTERS p) {
 //	hoc_execerror("unhandled exception", "");
 //	return EXCEPTION_CONTINUE_EXECUTION;
 	static int n = 0;
@@ -137,7 +137,7 @@ BOOL hoc_copyfile(const char* src, const char* dest) {
 
 static FILE* dll_stdio_[] = {(FILE*)0x0, (FILE*)0x20, (FILE*)0x40};
 
-void nrn_mswindll_stdio(i,o,e) FILE* i, *o, *e; {
+void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
 	if (o != dll_stdio_[1]) {
 		printf("nrn_mswindll_stdio stdio in dll = %p but expected %p\n", o, dll_stdio_[1]);
 	}
@@ -190,7 +190,7 @@ void hoc_forward2back(char* s) {
 		}
 }
 
-char* hoc_back2forward(char* s) {
+extern "C" char* hoc_back2forward(char* s) {
 	char* cp = s;
 	while(*cp) {
 		if (*cp == '\\') {

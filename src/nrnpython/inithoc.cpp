@@ -94,9 +94,9 @@ static char* env[] = {0};
 // It is conceivable that this strategy will work for linux and mac as well,
 // but for now setup.py names them differently anyway.
 #if PY_MAJOR_VERSION >= 3
-PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
 #else //!PY_MAJOR_VERSION >= 3
-void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #else // ! defined __MINGW32__

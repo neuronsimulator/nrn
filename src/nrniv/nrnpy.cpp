@@ -22,7 +22,7 @@ extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
-char* hoc_back2forward(char* s);
+extern "C" char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
 
 // following is undefined or else has the value of sys.api_version
@@ -39,11 +39,13 @@ char* hoc_forward2back(char* s);
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
 #define RTLD_NOLOAD 0
+extern "C" {
 extern void* dlopen_noerr(const char* name, int mode);
 #define dlopen dlopen_noerr
 extern void* dlsym(void* handle, const char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
+}
 #else
 //#define _GNU_SOURCE
 #include <dlfcn.h>

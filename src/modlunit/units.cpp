@@ -35,7 +35,7 @@
 #endif
 
 #if defined(CYGWIN)
-#include "../mswin/extra/d2upath.c"
+#include "../mswin/extra/d2upath.cpp"
 #endif
 #if defined(WIN32)
 #include <windows.h>

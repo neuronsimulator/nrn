@@ -1,4 +1,7 @@
 #include <math.h>
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
 
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py

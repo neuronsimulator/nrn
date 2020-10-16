@@ -11,8 +11,21 @@
 #include "netcvode.h" // for nrnbbcore_vecplay_write
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#endif
 #endif
 
 extern bbcore_write_t* nrn_bbcore_write_;

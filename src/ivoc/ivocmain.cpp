@@ -194,7 +194,7 @@ extern HWND hCurrWnd;
 	int nrnpy_nositeflag;
 
 #if !defined(WIN32) && !MAC && !defined(CYGWIN)
-void setneuronhome(const char*) {
+extern void setneuronhome(const char*) {
 	neuron_home = getenv("NEURONHOME");
 }
 #endif

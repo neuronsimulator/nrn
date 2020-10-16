@@ -31,7 +31,7 @@ int oc_print_from_dll(char* buf) { /* interchange \n and \r !*/
 }
 
 /* jijun 4/22/97, 4/23/97 */
-void setneuronhome(const char* p) {
+extern void setneuronhome(const char* p) {
     CInfoPBRec myPB;
     short vRefNum;
     long dirID;

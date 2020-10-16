@@ -1000,7 +1000,7 @@ and term=xterm we set it to neuronhome/lib and get neuronhome/lib/x/xterm
 */
 	if (!getenv("TERMINFO") && strcmp(term, "xterm") == 0) {
 		extern char* neuron_home;
-		extern char* hoc_back2forward();
+		extern char* hoc_back2forward(char*);
 		sprintf(term_buffer, "TERMINFO=%s/lib", hoc_back2forward(neuron_home));
 		putenv(term_buffer);
 	}

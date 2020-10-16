@@ -38,7 +38,7 @@ extern char **hoc_strpop();
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord); // Make if fit into the screen
-char* hoc_back2forward(char*);
+extern "C" char* hoc_back2forward(char*);
 #endif
 
 #if defined(WIN32) && !defined(CYGWIN)
@@ -60,7 +60,7 @@ extern int unlink(const char *);
 // but any existing trailing info remains! So be sure to unlink first.
 #undef IOS_OUT
 #define IOS_OUT (ios::out)
-char* hoc_back2forward(char*);
+extern "C" char* hoc_back2forward(char*);
 #else //!WIN32
 #if MAC && !defined(carbon)
 #include <fstream.h>
@@ -451,7 +451,7 @@ void PWMDismiss::execute() {
 
 #else //!HAVE_IV
 #if defined(CYGWIN)
-char* hoc_back2forward(char*);
+extern "C" char* hoc_back2forward(char*);
 #endif
 #endif //HAVE_IV
 

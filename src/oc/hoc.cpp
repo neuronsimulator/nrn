@@ -1043,9 +1043,6 @@ int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 		hoc_run1();
 	return 0;
 }
-#if defined(WIN32) && HAVE_IV
-extern void ivcleanup();
-#endif
 
 #if carbon
 #include <sys/select.h>
@@ -1087,7 +1084,7 @@ static pthread_mutex_t inputMutex_;
 static pthread_cond_t inputCond_;
 static int inputReadyFlag_;
 static int inputReadyVal_;
-extern int getch();
+extern "C" int getch();
 
 void* inputReadyThread(void* input) {
 	int i, j;
@@ -1130,7 +1127,6 @@ void hoc_final_exit(void) {
 	   by default they are then closed when the master process ends */
 	NOT_PARALLEL_SUB(hoc_close_plot();)
 #if defined(WIN32) && HAVE_IV
-	ivcleanup();
 #ifndef CYGWIN
 	if (winio_exists()) {
 		winio_closeall();

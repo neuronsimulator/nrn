@@ -82,7 +82,7 @@ static const char *error(int setget, const char *str, ...) {
 }
 
 /* dlopen */
-void *dlopen(const char *path, int mode) {
+extern "C" void *dlopen(const char *path, int mode) {
     void *module = 0;
     NSObjectFileImage ofi = 0;
     NSObjectFileImageReturnCode ofirc;
@@ -171,11 +171,11 @@ void *dlsymIntern(void *handle, const char *symbol) {
     return NSAddressOfSymbol(nssym);
 }
 
-const char *dlerror(void) {
+extern "C" const char *dlerror(void) {
     return error(1, (char *) NULL);
 }
 
-int dlclose(void *handle) {
+extern "C" int dlclose(void *handle) {
     if ((((struct mach_header *) handle)->magic == MH_MAGIC) ||
         (((struct mach_header *) handle)->magic == MH_CIGAM)) {
         error(-1, "Can't remove dynamic libraries on darwin");
@@ -190,7 +190,7 @@ int dlclose(void *handle) {
 
 
 /* dlsym, prepend the underscore and call dlsymIntern */
-void *dlsym(void *handle, const char *symbol) {
+extern "C" void *dlsym(void *handle, const char *symbol) {
     static char undersym[257];    /* Saves calls to malloc(3) */
     int sym_len = strlen(symbol);
     void *value = NULL;

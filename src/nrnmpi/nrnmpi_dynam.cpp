@@ -12,11 +12,13 @@
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
 #define RTLD_NOLOAD 0
+extern "C" {
 extern void* dlopen_noerr(const char* name, int mode);
 #define dlopen dlopen_noerr
 extern void* dlsym(void* handle, const char* name);
 extern int dlclose(void* handle);
 extern char* dlerror();
+}
 #else
 #include <dlfcn.h>
 #endif

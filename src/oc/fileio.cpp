@@ -817,7 +817,7 @@ static int hoc_Load_file(int always, const char* name) {
 	
 	return b;
 }
-
+extern "C" char* hoc_back2forward(char*);
 void hoc_getcwd(void) {
 	int len;
 	static char* buf;
@@ -828,7 +828,7 @@ void hoc_getcwd(void) {
 		hoc_execerror("getcwd failed. Perhaps the path length is > hoc_load_file_size_", (char*)0);
 	}
 #if defined(WIN32)
-{extern char* hoc_back2forward();
+{
 	strcpy(buf, hoc_back2forward(buf));
 }
 #endif

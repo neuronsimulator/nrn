@@ -105,7 +105,7 @@ int nrnpy_pyrun(const char* fname) {
   the C runtime that this DLL uses.  Using PyFile_AsFile is a
   work-around...
   */
-  PyObject* pfo = PyFile_FromString(fname, (char*)"r");
+  PyObject* pfo = PyFile_FromString((char*)fname, (char*)"r");
   if (pfo == NULL) {
     PyErr_Print();
     PyErr_Clear();
