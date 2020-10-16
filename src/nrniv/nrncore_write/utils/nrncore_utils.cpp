@@ -18,6 +18,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifndef RTLD_NODELETE
+#define RTLD_NODELETE 0
+#endif
+
 extern "C" {
 
 extern bool corenrn_direct;
