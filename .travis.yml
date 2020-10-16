@@ -35,10 +35,10 @@ addons:
         - openmpi-bin
         - patchelf
         - python-pip
-        - python-scipy
         - python-tk
+        - python-numpy
+        - python3-numpy
         - python3-pip
-        - python3-scipy
         - python3-tk
         - python3-venv
         - g++-5
@@ -89,6 +89,7 @@ env:
       MATRIX_EVAL="CC=gcc-9 CXX=g++-9"
     - BUILD_MODE=cmake
       NRN_ENABLE_PYTHON_DYNAMIC=ON
+      PIP2="$(which pip2)"
       MATRIX_EVAL="CC=gcc-8 CXX=g++-8"
 os:
   - linux
@@ -115,13 +116,16 @@ before_install:
 
 install:
   - $PIP install --user wheel setuptools;
-  - $PIP install --user scipy matplotlib bokeh ipython cython pytest mpi4py --upgrade;
+  - $PIP install --user matplotlib bokeh ipython cython pytest mpi4py --upgrade;
   # add cython location to PATH
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export CYTHON_LIB=$($PIP show cython | grep Location);
       export CYTHON_EXE=$(echo $CYTHON_LIB | awk '{print $2}' | awk -F "lib" '{print$1}')"bin";
       export PATH=$CYTHON_EXE:$PATH;
       brew link --overwrite python;
+      if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+        $PIP2 install numpy;
+      fi
     fi
   - if [ "$BUILD_DOCUMENTATION" = "ON" ] && [ "$CC_FOR_BUILD" = "gcc" ]; then
       $PIP install --user -r docs/docs_requirements.txt --upgrade;
