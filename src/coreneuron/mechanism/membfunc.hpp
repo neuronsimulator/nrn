@@ -188,6 +188,8 @@ extern void artcell_net_move(void**, Point_process*, double);
 extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 extern bool nrn_use_localgid_;
 extern void net_sem_from_gpu(int sendtype, int i_vdata, int, int ith, int ipnt, double, double);
+#pragma acc routine seq
+extern int at_time(NrnThread*, double);
 
 // _OPENACC and/or NET_RECEIVE_BUFFERING
 extern void net_sem_from_gpu(int, int, int, int, int, double, double);
@@ -196,11 +198,3 @@ extern void hoc_malchk(void); /* just a stub */
 extern void* hoc_Emalloc(size_t);
 
 }  // namespace coreneuron
-
-/*
- * at_time function declared outside of coreneuron namespace
- * because it can be also called from ISPC code. That's also
- * the reason for extern "C".
- */
-#pragma acc routine seq
-extern "C" int at_time(coreneuron::NrnThread*, double);
