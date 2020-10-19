@@ -1124,27 +1124,16 @@ factordef: NAME '=' real unit
 		  Lappendstr(firstlist, buf);
 		}
 	| NAME '=' unit unit
-		{Item *q; double d, unit_mag();
-		    Unit_push($3);
-			Unit_push($4); unit_div();
+		{
 		    SYM($1)->subtype |= nmodlCONST;
-#if defined(LegacyFR) && LegacyFR == 1
-		    Sprintf(buf, "static double %s = %g;\n", SYM($1)->name,
-#else
-		    Sprintf(buf, "static double %s = %.12g;\n", SYM($1)->name,
-#endif
-			unit_mag());
+		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $4);
 		    Lappendstr(firstlist, buf);
-		    unit_pop();
 		}
 	| NAME '=' unit '-' GT unit 
-		{ double unit_mag();
-		    Unit_push($3); Unit_push($6); unit_div();
+		{
 		    SYM($1)->subtype |= nmodlCONST;
-		    Sprintf(buf, "static double %s = %g;\n", SYM($1)->name,
-			unit_mag());
+		    nrnunit_dynamic_str(buf, SYM($1)->name, $3, $6);
 		    Lappendstr(firstlist, buf);
-		    unit_pop();
 		}
 	| error {myerr("Unit factor syntax: examples:\n\
 foot2inch = (foot) -> (inch)\n\

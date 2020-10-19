@@ -90,6 +90,7 @@ jobs:
       brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
+      cmake --version
     displayName: 'Install OSX System Depdendencies'
 
   - script: |

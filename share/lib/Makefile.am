@@ -4,7 +4,7 @@
 
 ## Files that need to be installed from this directory.
 neuronhomedir = $(prefix)/share/@PACKAGE@/lib
-data_and_dist = helpdict nrnunits.lib \
+data_and_dist = helpdict nrnunits.lib nrnunits.lib.in \
 	prologue.id shape.cm1 shape.cm2
 neuronhome_DATA = $(data_and_dist) nrn.defaults
 neuronhome_SCRIPTS = cleanup hocload.sh

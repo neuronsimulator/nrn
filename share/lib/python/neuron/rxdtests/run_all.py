@@ -4,8 +4,6 @@ def test(files, correct_data):
     import filecmp
     import subprocess
     import re, array, numpy
-    from scipy import interpolate
-    
     
     tol = 1e-10
     dt_eps = 1e-20
@@ -71,10 +69,10 @@ def test(files, correct_data):
             while t2[t2_0]<t1[0]:
                 t2_0 = t2_0 + 1
             #interpolate and compare
-            corr_int = interpolate.interp1d(t1, corr_dat[:,1:].T)
-            corr_vals = corr_int(t2[t2_0:t2_n])
+            corr_vals = numpy.array(
+                [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:, i].T) 
+                for i in range(1, rlen)])
             max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))
-#            max_err = numpy.amax(abs(corr1 - tst1))
             
             if(max_err<tol): success = True
 

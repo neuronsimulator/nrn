@@ -1,12 +1,11 @@
 import weakref
 from . import rxdmath, rxd, node, species, region, initializer
 import numpy
-from .generalizedReaction import GeneralizedReaction, molecules_per_mM_um3, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
+from .generalizedReaction import GeneralizedReaction, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
+from .constants import molecules_per_mM_um3
 from neuron import h
 import itertools
 from .rxdException import RxDException
-
-FARADAY = h.FARADAY
 
 def _ref_list_with_mult(obj):
     result = []
@@ -233,7 +232,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         area_ratios = areas / neuron_areas
         
         # still needs to be multiplied by the valence of each molecule
-        self._memb_scales = -area_ratios * FARADAY / (10000 * molecules_per_mM_um3)
+        self._memb_scales = -area_ratios * h.FARADAY / (10000 * molecules_per_mM_um3())
         
         # since self._memb_scales is only used to compute currents as seen by the rest of NEURON,
         # we only use NEURON's areas 
