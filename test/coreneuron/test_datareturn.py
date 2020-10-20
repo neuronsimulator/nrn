@@ -178,8 +178,7 @@ def test_datareturn():
 
   assert(max_unpermuted < 1e-10)
   assert(max_permuted < 1e-10)
-  # reactivate when independent bug is fixed
-  #assert(max_permuted_thread < 1e-10)
+  assert(max_permuted_thread < 1e-10)
 
   if __name__ != "__main__":
     # tear down

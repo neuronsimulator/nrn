@@ -39,6 +39,9 @@ nrn_configure_file(nrnivmodl bin)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 
+# if running from the build folder (e.g. make test) may need this.
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh DESTINATION ${PROJECT_BINARY_DIR}/bin)
+
 # =============================================================================
 # Install targets
 # =============================================================================

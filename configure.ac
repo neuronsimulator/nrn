@@ -13,7 +13,7 @@ dnl git tag -a major.minor.micro consistent with that.
 AC_INIT([nrn],[8.0])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src/memacs/main.c)
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_MAINTAINER_MODE([enable])
 
 AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
@@ -590,14 +590,11 @@ echo "NRNOC_X11 = $NRNOC_X11"
 AC_DEFINE_UNQUOTED(NRNOC_X11,$NRNOC_X11, if nrnoc can use X11)
 
 dnl Use legacy values for FARADAY and R, or 2019 NIST values?
-AC_ARG_ENABLE([LegacyFR],
-	AC_HELP_STRING([--enable-LegacyFR], [Use legacy instead of NIST (as of 2019) values for FARADAY and gas constant R. (default is legacy enabled)]),[
-	if test "$enable_LegacyFR" != "yes" ; then
-		enable_LegacyFR="no"
-	fi
-],[
-	enable_LegacyFR="yes"
-])
+dnl Default, modern units. No longer a configure option.
+dnl Can be specified at launch with the environment variable NRNUNIT_USE_LEGACY
+dnl or dynamically by the hoc function h.nrnunit_use_legacy(0or1)
+enable_LegacyFR="no"
+
 if test "$enable_LegacyFR" = "yes" ; then
 	LegacyY=""
 	LegacyN="/"
@@ -699,7 +696,6 @@ AC_CONFIG_FILES([
 	share/lib/python/neuron/Makefile
 	share/lib/python/neuron/rxd/Makefile
 	share/lib/python/neuron/crxd/Makefile
-	share/lib/python/neuron/rxd/constants.py
 	])
 fi
 

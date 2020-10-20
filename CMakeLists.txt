@@ -33,8 +33,6 @@ option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
 option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
        ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
-       ${NRN_ENABLE_LEGACY_FR_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
         ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
@@ -108,6 +106,11 @@ set(NRN_MPI_DYNAMIC
 set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
+
+# =============================================================================
+# Set Python additional versions earlier (especially for old CMake)
+# =============================================================================
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
 
 # =============================================================================
 # Include cmake modules
@@ -247,7 +250,7 @@ if(NRN_ENABLE_INTERVIEWS)
     include_directories(${X11_INCLUDE_DIR})
   endif()
 
-  find_package(iv QUIET PATHS ${IV_DIR}/share/cmake ${IV_DIR})
+  find_package(iv QUIET PATHS ${IV_DIR}/lib/cmake ${IV_DIR})
   if(iv_FOUND)
     message(STATUS "Using external Interviews from ${IV_DIR}")
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
@@ -524,7 +527,6 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
-  message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)
     message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")

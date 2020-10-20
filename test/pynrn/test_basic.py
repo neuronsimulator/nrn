@@ -83,13 +83,13 @@ def test_nrntest_test_2():
     assert str(h.dend[1].name()) == "dend[1]"
 
     def e(stmt):
+        err = 0
         try:
-            exec(stmt)
+            exec(stmt, globals(), locals())
         except Exception:
-            assert (
-                str(sys.exc_info()[0]) + ': ' + str(sys.exc_info()[1])
-                == "<class 'TypeError'>: not assignable"
-            )
+            assert ('not assignable' in str(sys.exc_info()[1]))
+            err = 1
+        assert(err == 1)
 
     e('h.axon = 1')
     e('h.dend[1] = 1')
