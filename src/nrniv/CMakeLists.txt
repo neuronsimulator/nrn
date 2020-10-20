@@ -271,6 +271,11 @@ endif()
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 
 # =============================================================================
+# Link with backward-cpp if enabled
+# =============================================================================
+add_backward(nrniv_lib)
+
+# =============================================================================
 # Link with all libraries
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)

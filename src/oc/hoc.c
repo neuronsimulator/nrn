@@ -749,6 +749,9 @@ void hoc_coredump_on_error(void) {
 	pushx(1.);
 }
 
+void print_backward_bt() {
+    backward_wrapper();
+}
 void print_bt() {
 #if HAVE_EXECINFO_H
     const size_t nframes = 12;
@@ -759,7 +762,7 @@ void print_bt() {
     char* symbol = malloc(sizeof(char)*funcname_size);
     char* offset = malloc(sizeof(char)*10);
     char* funcname = malloc(sizeof(char)*funcname_size);
-
+    void* addr = NULL;
 	// get void*'s for maximum last 16 entries on the stack
 	size = backtrace(frames, nframes);
 
@@ -769,7 +772,7 @@ void print_bt() {
 	bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
 		for(size_t i = 2; i < size; ++i) {
-            int status = parse_bt_symbol(bt_strings[i], symbol, offset);
+            int status = parse_bt_symbol(bt_strings[i], &addr, symbol, offset);
             if (status) {
                 status = cxx_demangle(symbol, &funcname, &funcname_size);
                 if (status == 0) {
@@ -801,7 +804,7 @@ _fpreset();
 	matherr1();
 #endif
 	Fprintf(stderr, "Floating point exception\n");
-    print_bt();
+    print_backward_bt();
 	if (coredump) {
 		abort();
 	}
@@ -813,7 +816,7 @@ _fpreset();
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
 	Fprintf(stderr, "Segmentation violation\n");
-	print_bt();
+	print_backward_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
@@ -826,7 +829,7 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 RETSIGTYPE sigbuscatch(int sig)
 {
 	Fprintf(stderr, "Bus error\n");
-    print_bt();
+    print_backward_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
