@@ -770,7 +770,8 @@ void print_bt() {
     Fprintf(stderr, "Backtrace:\n");
     bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
-        for(size_t i = 2; i < size; ++i) {
+        size_t i;
+        for(i = 2; i < size; ++i) {
             int status = parse_bt_symbol(bt_strings[i], &addr, symbol, offset);
             if (status) {
                 status = cxx_demangle(symbol, &funcname, &funcname_size);
