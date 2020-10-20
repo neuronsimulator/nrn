@@ -5,7 +5,12 @@
 extern "C" {
 #endif
 
+extern int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offset);
+
+extern int cxx_demangle(char* symbol, char** funcname, size_t* funcname_sz);
+
 extern void backward_wrapper();
+
 
 #if defined(__cplusplus)
 }

@@ -183,6 +183,9 @@ NrnFILEWrap	*fin;				/* input file pointer */
 const char	*progname;	/* for error messages */
 int	lineno;
 
+#if HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif
 #include <signal.h>
 #include <setjmp.h>
 static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
@@ -746,8 +749,49 @@ void hoc_coredump_on_error(void) {
 	pushx(1.);
 }
 
-void print_backward_bt() {
+void print_bt() {
+#ifdef USE_BACKWARD 
     backward_wrapper();
+#else
+#if HAVE_EXECINFO_H
+    const size_t nframes = 12;
+    void *frames[nframes];
+    size_t size;
+    char** bt_strings = NULL;
+    size_t funcname_size = 256;
+    char* symbol = malloc(sizeof(char)*funcname_size);
+    char* offset = malloc(sizeof(char)*10);
+    char* funcname = malloc(sizeof(char)*funcname_size);
+    void* addr = NULL;
+    // get void*'s for maximum last 16 entries on the stack
+    size = backtrace(frames, nframes);
+
+    // print out all the frames to stderr
+    Fprintf(stderr, "Backtrace:\n");
+    bt_strings = backtrace_symbols(frames, size);
+    if (bt_strings) {
+        for(size_t i = 2; i < size; ++i) {
+            int status = parse_bt_symbol(bt_strings[i], &addr, symbol, offset);
+            if (status) {
+                status = cxx_demangle(symbol, &funcname, &funcname_size);
+                if (status == 0) {
+                    Fprintf(stderr, "\t%s : %s+%s\n",
+                            bt_strings[i], funcname, offset);
+                } else {
+                    Fprintf(stderr, "\t%s : %s()+%s\n",
+                            bt_strings[i], symbol, offset);
+                }
+            } else {
+                Fprintf(stderr, "\t%s\n", bt_strings[i]);
+            }
+        }
+        free(bt_strings);
+    }
+    free(funcname);
+#else
+    Fprintf(stderr, "No backtrace info available.\n");
+#endif
+#endif
 }
 
 RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
@@ -760,7 +804,7 @@ _fpreset();
 	matherr1();
 #endif
 	Fprintf(stderr, "Floating point exception\n");
-    print_backward_bt();
+    print_bt();
 	if (coredump) {
 		abort();
 	}
@@ -772,7 +816,7 @@ _fpreset();
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
 	Fprintf(stderr, "Segmentation violation\n");
-	print_backward_bt();
+	print_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
@@ -785,7 +829,7 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 RETSIGTYPE sigbuscatch(int sig)
 {
 	Fprintf(stderr, "Bus error\n");
-    print_backward_bt();
+    print_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();

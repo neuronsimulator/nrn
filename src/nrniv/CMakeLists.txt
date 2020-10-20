@@ -273,7 +273,9 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with backward-cpp if enabled
 # =============================================================================
+if(NRN_ENABLE_BACKWARD)
 add_backward(nrniv_lib)
+endif()
 
 # =============================================================================
 # Link with all libraries
