@@ -49,7 +49,7 @@ int cxx_demangle(char* symbol, char** funcname, size_t* funcname_sz) {
 
 void backward_wrapper() {
 #ifdef USE_BACKWARD
-    backward::StackTrace st; st.load_here(32);
+    backward::StackTrace st; st.load_here(12);
     backward::Printer p; p.print(st);
 #endif
 }

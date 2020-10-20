@@ -750,7 +750,7 @@ void hoc_coredump_on_error(void) {
 }
 
 void print_bt() {
-#ifdef USE_BACKWARD 
+#ifdef USE_BACKWARD
     backward_wrapper();
 #else
 #if HAVE_EXECINFO_H

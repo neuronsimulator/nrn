@@ -222,6 +222,19 @@ if(DEF_RL_GETC_FUNCTION)
     PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
 endif()
 
+if(USE_BACKWARD)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+  set_property(
+    SOURCE ${NRN_NRNIV_SRC_DIR}/backtrace_utils.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+endif()
+
+
+
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
@@ -273,7 +286,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # =============================================================================
 # Link with backward-cpp if enabled
 # =============================================================================
-if(NRN_ENABLE_BACKWARD)
+if(USE_BACKWARD)
 add_backward(nrniv_lib)
 endif()
 
