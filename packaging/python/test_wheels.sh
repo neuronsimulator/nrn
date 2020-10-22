@@ -70,12 +70,7 @@ run_serial_test () {
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
     # Test 6: run basic test to use compiled mod file
-    if [[ "$AGENT_OS" == "Darwin" ]] && [[ "$python_ver" == "37" ]]; then
-        # TODO: skip this on Azure CI because of https://github.com/neuronsimulator/nrn/issues/574
-        echo "WARNING : Skipping mechanism insert test!"
-    else
-      $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
-    fi
+    $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
 
     # Test 7: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).

@@ -4,7 +4,8 @@
 python -m pip install numpy
 
 :: install installer
-start /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
+:: TODO : need to fix this as next command will not wait till installer finishes
+.\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
 
 :: take a look
 dir C:\nrn_test
@@ -71,7 +72,8 @@ echo "Uninstalled NEURON"
 goto :EOF
 
 :: something has failed, teminate with error code
-:: TODO - fix silent installer and exit from here
 :error
 echo ERROR : NOT exiting with error code %errorlevel% foor now ..
+
+:: TODO - fix silent installer and exit from here
 :: exit /b %errorlevel%

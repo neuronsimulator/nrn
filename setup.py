@@ -276,7 +276,7 @@ def setup_package():
         rxd_params = extension_common_params.copy()
         rxd_params['libraries'].append("rxdmath")
         rxd_params.update(dict(
-            extra_compile_args=["-O2"],
+            extra_compile_args=["-O0"],  # cython files take too long to compile with O3
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
 

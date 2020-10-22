@@ -18,6 +18,8 @@
 #include <dlfcn.h>
 #endif
 
+// RTLD_NODELETE is used with dlopen
+// if not defined it's safe to define as 0
 #ifndef RTLD_NODELETE
 #define RTLD_NODELETE 0
 #endif
