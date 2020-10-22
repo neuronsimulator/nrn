@@ -3,7 +3,7 @@ set -xe
 # A script to loop over the available pythons installed
 # on Linux/OSX and build wheels
 #
-# Note: It should be involed from nrn directory
+# Note: It should be invoked from nrn directory
 #
 # PREREQUESITES:
 #  - cmake (>=3.5)
