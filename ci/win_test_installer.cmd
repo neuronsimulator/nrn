@@ -4,7 +4,7 @@
 python -m pip install numpy
 
 :: install installer
-.\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
+start /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
 
 :: setup environment
 dir C:\nrn_test
