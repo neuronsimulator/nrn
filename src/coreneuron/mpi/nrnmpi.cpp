@@ -43,8 +43,6 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 
 #if NRNMPI
-int nrnmusic;
-
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 MPI_Comm nrn_bbs_comm;
@@ -55,52 +53,23 @@ extern void nrnmpi_spike_initialize();
 
 static int nrnmpi_under_nrncontrol_;
 
-void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
+void nrnmpi_init(int* pargc, char*** pargv) {
     nrnmpi_use = true;
-    nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
-    if (nrnmpi_under_nrncontrol_) {
-#if !ALWAYS_CALL_MPI_INIT
-        bool b = false;
-        /* this is not good. depends on mpirun adding at least one
-           arg that starts with -p4 but that probably is dependent
-           on mpich and the use of the ch_p4 device. We are trying to
-           work around the problem that MPI_Init may change the working
-           directory and so when not invoked under mpirun we would like to
-           NOT call MPI_Init.
-        */
-        for (int i = 0; i < *pargc; ++i) {
-            if (strncmp("-p4", (*pargv)[i], 3) == 0) {
-                b = true;
-                break;
-            }
-            if (strcmp("--mpi", (*pargv)[i]) == 0) {
-                b = true;
-                break;
-            }
-        }
-        if (nrnmusic) {
-            b = true;
-        }
-        if (!b) {
-            nrnmpi_use = false;
-            nrnmpi_under_nrncontrol_ = 0;
-            return;
-        }
-#endif
-        int flag = 0;
-        MPI_Initialized(&flag);
+    nrnmpi_under_nrncontrol_ = 1;
 
-        if (!flag) {
+    int flag = 0;
+    MPI_Initialized(&flag);
+
+    if (!flag) {
 #if defined(_OPENMP)
-            int required = MPI_THREAD_FUNNELED;
-            int provided;
-            nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
+        int required = MPI_THREAD_FUNNELED;
+        int provided;
+        nrn_assert(MPI_Init_thread(pargc, pargv, required, &provided) == MPI_SUCCESS);
 
-            nrn_assert(required <= provided);
+        nrn_assert(required <= provided);
 #else
-            nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
+        nrn_assert(MPI_Init(pargc, pargv) == MPI_SUCCESS);
 #endif
-        }
     }
     grp_bbs = MPI_GROUP_NULL;
     grp_net = MPI_GROUP_NULL;

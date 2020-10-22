@@ -433,7 +433,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
-        nrnmpi_init(1, &argc, &argv);
+        nrnmpi_init(&argc, &argv);
     }
 #endif
 
