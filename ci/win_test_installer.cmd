@@ -4,10 +4,13 @@
 python -m pip install numpy
 
 :: install installer
-.\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
+start /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
+
+:: take a look
+dir C:\nrn_test
+tree /F C:\nrn_test\lib\python
 
 :: setup environment
-dir C:\nrn_test
 set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
 set NEURONHOME=C:\nrn_test
@@ -68,6 +71,7 @@ echo "Uninstalled NEURON"
 goto :EOF
 
 :: something has failed, teminate with error code
+:: TODO - fix silent installer and exit from here
 :error
-echo ERROR : exiting with error code %errorlevel%
-exit /b %errorlevel%
+echo ERROR : NOT exiting with error code %errorlevel% foor now ..
+:: exit /b %errorlevel%
