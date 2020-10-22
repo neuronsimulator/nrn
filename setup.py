@@ -174,6 +174,10 @@ class CMakeAugmentedBuilder(build_ext):
                 [cmake, '--build', '.', '--target', 'install'] + build_args,
                 cwd=self.build_temp, env=env
             )
+            subprocess.check_call(
+                [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
+                cwd=self.build_temp, env=env
+            )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
