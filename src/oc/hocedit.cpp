@@ -6,7 +6,7 @@ hocedit.c,v
  * Revision 1.6  1999/07/03  14:20:24  hines
  * no limit on input string size or execute strings.
  * (although an execute string could overrun the program buffer if
- * it generates more than NPROG instructions, see code.c)
+ * it generates more than NPROG instructions, see code.cpp)
  *
  * Revision 1.5  1997/03/21  21:28:33  hines
  * syntax errors now give correct file and line number message

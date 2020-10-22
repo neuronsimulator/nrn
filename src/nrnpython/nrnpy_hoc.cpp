@@ -2018,7 +2018,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 }
 
 static PyObject* cpp2refstr(char** cpp) {
-  // If cpp is from a hoc_temp_charptr (see src/oc/code.c) then create a
+  // If cpp is from a hoc_temp_charptr (see src/oc/code.cpp) then create a
   // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
   // or a HocRefStr which is persistent over the life time of this returned
   // PyObject so that it is safe to create a HocRefPStr such that
@@ -2718,7 +2718,7 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
       BYTESWAP(x[i], double)
     }
   }
-  memcpy(vector_vec(vec), datastr, len);
+  memcpy((char*)vector_vec(vec), datastr, len);
   Py_DECREF(rawdata);
   Py_INCREF(Py_None);
   return Py_None;

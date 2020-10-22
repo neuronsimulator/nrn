@@ -27,7 +27,7 @@ extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
 extern void this_section(), this_node(), parent_section(), parent_node();
 extern void parent_connection(), section_orientation();
-
+extern void nrnunit_use_legacy();
 /* Functions */
 static VoidFunc functions[] = {
 
@@ -105,6 +105,7 @@ static VoidFunc functions[] = {
 "parent_node", parent_node,
 "parent_connection", parent_connection,
 "section_orientation", section_orientation,
+"nrnunit_use_legacy", nrnunit_use_legacy,
 0, 0
 };
 

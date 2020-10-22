@@ -243,7 +243,7 @@ void hoc_unref_defer(void) {
         printf("hoc_unref_defer %s %d\n", hoc_object_name(unref_defer_), unref_defer_->refcount);
 #endif
         hoc_obj_unref(unref_defer_);
-        unref_defer_ = nullptr;
+		unref_defer_ = (Object*)0;
     }
 }
 
@@ -540,51 +540,48 @@ int hoc_ParseExec(int yystart) {
     Datum *sstackp, *sstack;
     Symlist *sp_symlist;
 
-    if (yystart) {
-        sframe = rframe;
-        sfp = fp;
-        sprogbase = progbase;
-        sprogp = progp;
-        spc = pc,
-                sprog_parse_recover = prog_parse_recover;
-        sstackp = stackp;
-        sstack = rstack;
-        sp_symlist = p_symlist;
-        rframe = fp;
-        rstack = stackp;
-        progbase = progp;
-        p_symlist = (Symlist *) 0;
-    }
+	if (yystart) {
+		sframe=rframe;sfp=fp;
+		sprogbase=progbase; sprogp=progp; spc=pc,
+		sprog_parse_recover=prog_parse_recover;
+		sstackp=stackp; sstack=rstack;
+		sp_symlist=p_symlist;
+		rframe = fp;
+		rstack = stackp;
+		progbase = progp;
+		p_symlist = (Symlist *)0;
+	}
 
-    if (yystart) {
-        rinitcode();
-    }
-    if (hoc_in_yyparse) {
-        hoc_execerror("Cannot reenter parser.",
-                      "Maybe you were in the middle of a direct command.");
-    }
-    yret = yyparse();
-    switch (yret) {
-        case 1:
-            execute(progbase);
-            rinitcode();
-            break;
-        case -3 :
-            hoc_execerror("incomplete statement parse not allowed\n", (char *) 0);
-        default:
-            break;
-    }
-    if (yystart) {
-        rframe = sframe;
-        fp = sfp;
-        progbase = sprogbase;
-        progp = sprogp;
-        pc = spc;
-        prog_parse_recover = sprog_parse_recover;
-        stackp = sstackp;
-        rstack = sstack;
-        p_symlist = sp_symlist;
-    }
+	if (yystart) {
+		rinitcode();
+	}
+	if (hoc_in_yyparse) {
+		hoc_execerror("Cannot reenter parser.",
+		"Maybe you were in the middle of a direct command.");
+	}
+	yret = yyparse();
+	switch (yret) {
+	case 1:
+		execute(progbase);
+		rinitcode();
+		break;
+	case 'e':
+		hoc_edit();
+		for (rinitcode(); hoc_yyparse(); rinitcode()) {
+			execute(progbase);
+		}
+		break;
+	case -3 :
+		hoc_execerror("incomplete statement parse not allowed\n", (char*)0);
+	default:
+		break;
+	}
+	if (yystart) {
+		rframe=sframe; fp=sfp;
+		progbase=sprogbase; progp=sprogp; pc=spc;
+		prog_parse_recover=sprog_parse_recover;
+		stackp=sstackp; rstack=sstack; p_symlist=sp_symlist;
+	}
 
     return yret;
 }
@@ -592,44 +589,38 @@ int hoc_ParseExec(int yystart) {
 int hoc_xopen_run(Symbol *sp, const char *str) { /*recursively parse and execute for xopen*/
 /* if sp != 0 then parse string and save code */
 /* without executing. Note str must be a 'list'*/
-    int n = 0;
-    Frame *sframe = rframe, *sfp = fp;
-    Inst *sprogbase = progbase, *sprogp = progp, *spc = pc,
-            *sprog_parse_recover = prog_parse_recover;
-    Datum *sstackp = stackp, *sstack = rstack;
-    Symlist *sp_symlist = p_symlist;
-    rframe = fp;
-    rstack = stackp;
-    progbase = progp;
-    p_symlist = (Symlist *) 0;
+	int n=0;
+	Frame *sframe=rframe, *sfp=fp;
+	Inst *sprogbase=progbase, *sprogp=progp, *spc=pc,
+		*sprog_parse_recover=prog_parse_recover;
+	Datum *sstackp=stackp, *sstack=rstack;
+	Symlist *sp_symlist=p_symlist;
+	rframe = fp;
+	rstack = stackp;
+	progbase = progp;
+	p_symlist = (Symlist *)0;
 
-    if (sp == (Symbol *) 0) {
-        for (rinitcode(); hoc_yyparse(); rinitcode())
-            execute(progbase);
-    } else {
-        int savpipeflag;
-        rinitcode();
-        savpipeflag = hoc_pipeflag;
-        hoc_pipeflag = 2;
-        parsestr = str;
-        if (!hoc_yyparse()) {
-            execerror("Nothing to parse", (char *) 0);
-        }
-        n = (int) (progp - progbase);
-        hoc_pipeflag = savpipeflag;
-        hoc_define(sp);
-        rinitcode();
-    }
-    rframe = sframe;
-    fp = sfp;
-    progbase = sprogbase;
-    progp = sprogp;
-    pc = spc;
-    prog_parse_recover = sprog_parse_recover;
-    stackp = sstackp;
-    rstack = sstack;
-    p_symlist = sp_symlist;
-    return n;
+	if (sp == (Symbol *)0) {
+		for (rinitcode(); hoc_yyparse(); rinitcode())
+			execute(progbase);
+	}else{ int savpipeflag;
+		rinitcode();
+		savpipeflag = hoc_pipeflag;
+		hoc_pipeflag = 2;
+		parsestr=str;
+		if(!hoc_yyparse()) {
+			execerror("Nothing to parse", (char *)0);
+		}
+		n = (int)(progp-progbase);
+		hoc_pipeflag = savpipeflag;
+		hoc_define(sp);
+		rinitcode();
+	}
+	rframe=sframe; fp=sfp;
+	progbase=sprogbase; progp=sprogp; pc=spc;
+	prog_parse_recover=sprog_parse_recover;
+	stackp=sstackp; rstack=sstack; p_symlist=sp_symlist;
+	return n;
 }
 
 #define HOC_TEMP_CHARPTR_SIZE 128
@@ -953,6 +944,18 @@ void forcode(void) {
         pc = relative(savepc + 1);    /* next statement */
 }
 
+static void warn_assign_dynam_unit(const char* name) {
+  static int first = 1;
+  if (first) {
+    char mes[100];
+    first = 0;
+    sprintf(mes, "Assignment to %s physical constant %s",
+      _nrnunit_use_legacy_ ? "legacy" : "modern",
+      name);
+    hoc_warning(mes, NULL);
+  }
+}
+
 void shortfor(void) {
     Inst *savepc = pc;
     double begin, end, *pval = 0;
@@ -972,6 +975,9 @@ void shortfor(void) {
                     execerror("integer iteration variable", sym->name);
                 } else if (sym->subtype == USERDOUBLE) {
                     pval = sym->u.pval;
+		}else if (sym->subtype == DYNAMICUNITS) {
+			pval = sym->u.pval + _nrnunit_use_legacy_;
+			warn_assign_dynam_unit(sym->name);
                 } else {
                     pval = OPVAL(sym);
                 }
@@ -1046,7 +1052,7 @@ void hoc_iterator_object(
     stackp += sym->u.u_proc->nauto * 2;
     /* clear the autoobject pointers */
     for (i = sym->u.u_proc->nobjauto; i > 0; --i) {
-        stackp[-2 * i].obj = nullptr;
+		stackp[-2*i].obj = (Object*)0;
     }
     fp->iter_stmt_begin = beginpc;
     fp->iter_stmt_ob = ob;
@@ -1142,12 +1148,16 @@ static void for_segment2(Symbol *sym, int mode) {
         hoc_execerror(sym->name, "undefined variable");
     case VAR:
 if (!ISARRAY(sym)) {
-        if (sym->subtype == USERINT)
+		if (sym->subtype == USERINT) {
             execerror("integer iteration variable", sym->name);
-        else if (sym->subtype == USERDOUBLE)
+		}else if (sym->subtype == USERDOUBLE){
             pval = sym->u.pval;
-        else
+		}else if (sym->subtype == DYNAMICUNITS) {
+			pval = sym->u.pval + _nrnunit_use_legacy_;
+			warn_assign_dynam_unit(sym->name);
+		}else{
             pval = OPVAL(sym);
+		}
         break;
 } else {
         if (sym->subtype == USERINT)
@@ -1391,7 +1401,7 @@ void call(void)        /* call a function */
         STACKCHK
         /* clear the autoobject pointers. */
         for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
-            stackp[-2 * i].obj = nullptr;
+			stackp[-2*i].obj = (Object*)0;
         }
         if (sp->cpublic == 2) {
             Objectdata *odsav = hoc_objectdata_save();
@@ -1828,6 +1838,9 @@ void eval(void)            /* evaluate variable on stack */
                     case USERINT:
                         d = (double) (*(sym->u.pvalint));
                         break;
+		case DYNAMICUNITS:
+			d = sym->u.pval[_nrnunit_use_legacy_];
+			break;
 #if    CABLE
                         case USERPROPERTY:
                             d = cable_prop_eval(sym);
@@ -1911,6 +1924,9 @@ void hoc_evalpointer(void)            /* leave pointer to variable on stack */
                     case USERFLOAT:
                         execerror("can use pointer only to doubles", sym->name);
                         break;
+		case DYNAMICUNITS:
+			d = sym->u.pval + _nrnunit_use_legacy_;
+			break;
 #if    CABLE
                         case USERPROPERTY:
                             d = cable_prop_eval_pointer(sym);
@@ -2123,14 +2139,14 @@ void eq(void) {
             d1 = (double) (strcmp(*hoc_strpop(), *hoc_strpop()) == 0);
             break;
         case OBJECTTMP:
-        case OBJECTVAR: {
-            Object **o1, **o2;
-            o1 = hoc_objpop();
-            o2 = hoc_objpop();
-            d1 = (double) (*o1 == *o2);
-            hoc_tobj_unref(o1);
-            hoc_tobj_unref(o2);
-        }
+	    case OBJECTVAR:
+            { Object** o1, **o2;
+                o1 = hoc_objpop();
+                o2 = hoc_objpop();
+                d1 = (double) (*o1 == *o2);
+                hoc_tobj_unref(o1);
+                hoc_tobj_unref(o2);
+            }
             break;
         default:
             hoc_execerror("don't know how to compare these types", (char *) 0);
@@ -2154,8 +2170,8 @@ void ne(void) {
             d1 = (double) (strcmp(*hoc_strpop(), *hoc_strpop()) != 0);
             break;
         case OBJECTTMP:
-        case OBJECTVAR: {
-            Object **o1, **o2;
+	    case OBJECTVAR:
+		    { Object** o1, **o2;
             o1 = hoc_objpop();
             o2 = hoc_objpop();
             d1 = (double) (*o1 != *o2);
@@ -2250,6 +2266,13 @@ void assign(void)    /* assign result of execute to top symbol */
                             d2 = hoc_opasgn(op, (double) (*(sym->u.pvalfloat)), d2);
                         }
                         *(sym->u.pvalfloat) = (float) (d2);
+			break;
+		case DYNAMICUNITS:
+			if (op) {
+				d2 = hoc_opasgn(op, sym->u.pval[_nrnunit_use_legacy_], d2);
+			}
+			sym->u.pval[_nrnunit_use_legacy_] = (float)(d2);
+			warn_assign_dynam_unit(sym->name);
                         break;
                     default:
                         if (op) {
@@ -2580,9 +2603,8 @@ void varread(void)    /* read into variable */
 static Inst *codechk(void) {
     if (progp >= prog + NPROG - 1)
         execerror("procedure too big", (char *) 0);
-    if (zzdebug) {
+	if (zzdebug)
         debugzz(progp);
-    }
     return progp++;
 }
 

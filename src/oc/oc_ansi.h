@@ -1,8 +1,6 @@
 #ifndef oc_ansi_h
 #define oc_ansi_h
 
-#include <stdbool.h>
-
 
 /**
  * \dir
@@ -183,7 +181,6 @@ extern void hoc_spec_table(void** pfunctable, int n);
 extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
 extern void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
-extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 
 extern void vector_append(IvocVect*, double);
 extern IvocVect* vector_new(int, Object*); /*use this if possible*/
@@ -287,6 +284,7 @@ extern int nrn_isdouble(double*, double, double);
 }
 #endif
 
+extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 extern void bbs_done(void);
 extern int hoc_main1(int, const char**, const char**);
 extern char* cxx_char_alloc(size_t size);

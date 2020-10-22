@@ -60,21 +60,21 @@ extern void diag(char*, char*);
 
 /* if MODLUNIT environment variable not set then look in the following places*/
 #if MAC
-static char	*dfile	= ":lib:nrnunits.lib"SUFFIX;
+static char	*dfile	= ":lib:nrnunits.lib" SUFFIX;
 #else
 #if defined(NEURON_DATA_DIR)
-static char	*dfile	= NEURON_DATA_DIR"/lib/nrnunits.lib"SUFFIX;
+static char	*dfile	= NEURON_DATA_DIR "/lib/nrnunits.lib" SUFFIX;
 #else
 static char	*dfile	= "/usr/lib/units";
 #endif
 #endif
 #if defined(__TURBOC__) || defined(__GO32__)
-static char	*dfilealt	= "/nrn/lib/nrnunits.lib"SUFFIX;
+static char	*dfilealt	= "/nrn/lib/nrnunits.lib" SUFFIX;
 #else
 #if MAC
-static char *dfilealt = "::lib:nrnunits.lib"SUFFIX;
+static char *dfilealt = "::lib:nrnunits.lib" SUFFIX;
 #else
-static char	*dfilealt	= "../../share/lib/nrnunits.lib"SUFFIX;
+static char	*dfilealt	= "../../share/lib/nrnunits.lib" SUFFIX;
 #endif
 #endif
 static char	*unames[NDIM];
@@ -314,7 +314,7 @@ unit_str() {
 	return s;
 }
 
-void install_units(char* s1, char* s2) /* define s1 as s2 */
+static void install_units_help(char* s1, char* s2) /* define s1 as s2 */
 {
 	struct table *tp;
 	int i;
@@ -637,9 +637,9 @@ diag("Bad MODLUNIT environment variable. Cant open:", buf);
 		if (s) {
 			if (strncmp(s, "/cygdrive/", 10) == 0) {
 				/* /cygdrive/x/... to c:/... */
-				sprintf(buf, "%c:%s/lib/nrnunits.lib"SUFFIX, s[10], s+11);
+				sprintf(buf, "%c:%s/lib/nrnunits.lib" SUFFIX, s[10], s+11);
 			}else{
-				sprintf(buf, "%s/lib/nrnunits.lib"SUFFIX, s);
+				sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
 			}
 			inpfile = fopen(buf, "r");
 			free(s);
@@ -650,7 +650,7 @@ diag("Bad MODLUNIT environment variable. Cant open:", buf);
 		if ((inpfile = fopen(dfilealt, "r")) == (FILE *)0) {
 			s = neuronhome();
 			if (s) {
-				sprintf(buf, "%s/lib/nrnunits.lib"SUFFIX, s);
+				sprintf(buf, "%s/lib/nrnunits.lib" SUFFIX, s);
 				inpfile = fopen(buf, "r");
 			}
 		}
