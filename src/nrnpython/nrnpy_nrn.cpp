@@ -456,7 +456,7 @@ static Section* o2sec(Object* o) {
 }
 
 static void o2loc(Object* o, Section** psec, double* px) {
-  if (o == NULL  || o->ctemplate->sym != nrnpy_pyobj_sym_) {
+  if (o->ctemplate->sym != nrnpy_pyobj_sym_) {
     hoc_execerror("not a Python nrn.Segment", 0);
   }
   PyObject* po = nrnpy_hoc2pyobject(o);

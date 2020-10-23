@@ -1393,7 +1393,7 @@ def _compile_reactions():
                 if ele == []:
                     mults[i] = numpy.ones(len(reg._xs))
             mults = list(itertools.chain.from_iterable(mults))
-            ics_register_reaction(0, len(all_ics_gids), len(ics_param_gids), _list_to_cint_array(all_ics_gids + ics_param_gids), numpy.asarray(mc3d_indices_start, dtype=numpy.int64), mc3d_region_size, numpy.asarray(mults), _c_compile(fxn_string))               
+            ics_register_reaction(0, len(all_ics_gids), len(ics_param_gids), _list_to_cint_array(all_ics_gids + ics_param_gids), numpy.asarray(mc3d_indices_start), mc3d_region_size, numpy.asarray(mults), _c_compile(fxn_string))               
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
         for reg in ecs_regions_inv:
@@ -1603,10 +1603,7 @@ def _windows_remove_dlls():
             handle = dll._handle
             del dll
             ctypes.windll.kernel32.FreeLibrary(handle)
-        try:
-            os.remove(filepath)
-        except:
-            pass
+        os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
         
