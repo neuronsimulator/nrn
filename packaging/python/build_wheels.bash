@@ -55,7 +55,7 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
-    pip install -i https://nero-mirror.stanford.edu/pypi/web/simple -r packaging/python/build_requirements.txt
+    pip install -r packaging/python/build_requirements.txt
 
     echo " - Building..."
     rm -rf dist build
