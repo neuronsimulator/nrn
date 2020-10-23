@@ -101,6 +101,11 @@ else()
   set(DISCRETE_EVENT_OBSERVER 0)
 endif()
 
+# No longer a user option. Default modern units. Controlled at launch by
+# the environment variable NRNUNIT_USE_LEGACY, and dynamically after launch
+# by h.nrnunit_use_legacy(0or1). Left here solely to obtain a nrnunits.lib
+# file for modlunit. Nmodl uses the nrnunits.lib.in file.
+set(NRN_ENABLE_LEGACY_FR 0)
 if(NRN_ENABLE_LEGACY_FR)
   set(LegacyFR 1)
   set(LegacyY "")
@@ -280,7 +285,10 @@ nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
-nrn_configure_file(constants.py share/lib/python/neuron/rxd)
+# NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
+file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
+
+
 if(NRN_MACOS_BUILD)
   set(abs_top_builddir ${PROJECT_BINARY_DIR})
   nrn_configure_file(macdist.pkgproj src/mac)
@@ -298,7 +306,7 @@ if(MINGW)
   nrn_configure_file(mknrndll.mak src/mswin/lib)
 endif()
 # TODO temporary workaround for mingw
-file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
+file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
 # =============================================================================
 # If Interviews is not provided, configure local files

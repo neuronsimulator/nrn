@@ -20,6 +20,7 @@ extern void ion_style(), ion_register(), ion_charge(), nernst(), ghk();
 extern void section_owner(); /* returns object that created section */
 extern void make_mechanism(), make_pointprocess();
 extern void nrnpython();
+extern void nrnunit_use_legacy();
 #if !SEJNOWSKI
 extern void fsyn(), fsyng(), fsyni();
 #endif
