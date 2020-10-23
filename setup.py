@@ -174,6 +174,16 @@ class CMakeAugmentedBuilder(build_ext):
                 [cmake, '--build', '.', '--target', 'install'] + build_args,
                 cwd=self.build_temp, env=env
             )
+            subprocess.check_call(
+                [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
+                cwd=self.build_temp, env=env
+            )
+            # mac: libnrnmech of neurondemo need to point to relative libnrniv
+            REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
+            subprocess.check_call(
+                [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
+                cwd=self.build_temp, env=env
+            )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
