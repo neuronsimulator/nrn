@@ -28,7 +28,15 @@ See :func:`nrnunit_use_legacy`
 
 .. warning::
     Constants are not treated specially by the interpreter and 
-    may be changed with assignment statements. 
+    may be changed with assignment statements. However a change of
+    ``FARADAY``, ``R``, or ``Avogadro_constant`` generate a warning message
+    (default once).
+    Python warning messages can be managed with
+    ``import warnings; warnings.filterwarnings(action)`` where useful actions
+    are ``"error"``, ``"ignore"``, ``"always"``, or ``"once"``.
+    If assignment takes
+    place due to execution of a hoc interpreter statement, the warning occurs
+    only once but cannot be avoided.
      
     The legacy FARADAY is a bit different than the legacy faraday of the units database. 
     The legacy faraday in a :file:`.mod` mechanism is 96520.
