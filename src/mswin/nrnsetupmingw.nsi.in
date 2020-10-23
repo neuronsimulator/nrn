@@ -188,22 +188,23 @@ Section "!Set DOS environment. (Useful if you wish to launch Python from a termi
   FileClose $r1
 SectionEnd
 
+; NOTE : Currently we are not adding documentation and hence this needs to be commented ( or removed in the future)
 ;Function .onSelChange
 ;Function .onMouseOverSection
 ;  SectionSetText ${nrnenvvar} "!For all users, Set NEURONHOME=$INSTDIR and append $INSTDIR\lib\python to PYTHONPATH. This is needed if you wish to launch Python from a terminal other than the bash icon."
 ;FunctionEnd
 
 ; optional section
-Section /o "Documentation"
-  SetOutPath "$INSTDIR"
-  File /nonfatal /r "${MARSHALNRN}\..\nrnhtml"
-  IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
-    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
-next:
-  IfFileExists "$INSTDIR\lib\deskinst.dat" +1 next2
-    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
-next2:
-SectionEnd
+;Section /o "Documentation"
+;  SetOutPath "$INSTDIR"
+;  File /nonfatal /r "${MARSHALNRN}\..\nrnhtml"
+;  IfFileExists "$INSTDIR\lib\smsinst.dat" +1 next
+;    CreateShortCut "$SMPROGRAMS\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
+;next:
+;  IfFileExists "$INSTDIR\lib\deskinst.dat" +1 next2
+;    CreateShortCut "$DESKTOP\${NEURON}\Documentation.lnk" "$INSTDIR\nrnhtml\helpfils.html"
+;next2:
+;SectionEnd
 
 ; uninstall stuff
 

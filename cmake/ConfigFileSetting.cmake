@@ -306,7 +306,7 @@ if(MINGW)
   nrn_configure_file(mknrndll.mak src/mswin/lib)
 endif()
 # TODO temporary workaround for mingw
-file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
+file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
 # =============================================================================
 # If Interviews is not provided, configure local files
