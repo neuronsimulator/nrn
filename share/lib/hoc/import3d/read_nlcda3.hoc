@@ -99,8 +99,9 @@ public filetype, input, file, sections
 public label, id2pt, id2line, pt2id, pt2sec, sec2pt, helptxt, mark, err, b2spanel
 public x, y, z, d, iline, lines, quiet
 public spines
+public connect_axon_nearest
 external hoc_sf_
-objref type, firstpoints, gm, plist
+objref type, firstpoints, gm, plist, import3dgui
 objref current, look_ahead, look_ahead2
 objref file, tokens, sections, cursec, parentsec, nil
 objref x, y, z, d, iline, lines
@@ -413,10 +414,14 @@ proc opt_connect() {local i, j, d, dmin, imin, n, ip   localobj psec, xx
 	xx = $o1.raw.getcol(1)
 	for i=0, sections.count - 1 {
 		psec = sections.object(i)
-		if (psec == $o1) { break }
+		if (psec == $o1) { continue }
 		n = psec.raw.ncol
 		for j=0, n-1 {
-			d = xx.c.sub(psec.raw.getcol(j)).set(2,0).mag
+			if ($o1.type == 2) { //axon, then find nearest in 3d
+				d = xx.c.sub(psec.raw.getcol(j)).mag
+			}else {
+				d = xx.c.sub(psec.raw.getcol(j)).set(2,0).mag
+			}
 			if (d < dmin) {
 				dmin = d
 				imin = i
@@ -432,8 +437,20 @@ proc opt_connect() {local i, j, d, dmin, imin, n, ip   localobj psec, xx
 	}
 }
 
+proc connect_axon_nearest() {local i  localobj b2s
+  for i=0, b2sinfo.count - 1 {
+    b2s = b2sinfo.object(i)
+    if (b2s.sec.type == 2) {
+      printf("connect_axon_nearest\n")
+      b2s.connected2p = 1
+      b2soption_act(i, import3dgui)
+    }
+  }
+}
+
 proc b2spanel() {local i  localobj b2s
 	if (b2sinfo.count == 0) { return }
+	import3dgui = $o1
 	xpanel("Possible root branch errors")
 	xlabel("Default logical connection to nearest soma.")
 	xlabel("Check to physically connect to closest parent")
@@ -443,8 +460,8 @@ proc b2spanel() {local i  localobj b2s
 		b2s = b2sinfo.object(i)
 sprint(tstr, "Line #%d connect to #%d %g (um) away", pt2id(sec2pto(b2s.sec, 1)), \
 pt2id(sec2pto(b2s.pbranch, b2s.ipoint)), b2s.d2p)
-sprint(tstr2, "b2soption_act(%d, \"%s\")", i, $o1)
-		xcheckbox(tstr, &b2s.connected2p(), tstr2)
+sprint(tstr2, "b2soption_act(%d)", i)
+		xcheckbox(tstr, &b2s.connected2p, tstr2)
 	}
 	xpanel()
 }
@@ -476,8 +493,9 @@ proc b2soption_act() {local i  localobj b2s, sec, parent, soma, xx
 		sec.first = 1
 		sec.fid = 1
 	}
-	sprint(tstr, "%s.redraw()", $s2)
-	execute(tstr)
+	if (object_id(import3dgui)) {
+		import3dgui.redraw()
+	}
 }
 
 proc b2soption_split() {local i, n, id, ip  localobj p, newsec, tobj

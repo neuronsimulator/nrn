@@ -8,6 +8,7 @@
 #include	"parse.h"
 #include	"membdef.h"
 #include	"nrniv_mf.h"
+#include	"nrnunits_modern.h"
 #undef hoc_retpushx
 
 extern double chkarg();
@@ -214,13 +215,10 @@ at least one model using this ion\n", s->name);
   }
 }
 
-#if defined(LegacyFR) && LegacyFR == 1
-#define FARADAY 96485.309
-#define gasconstant 8.3134
-#else
-#define FARADAY 96485.33289
-#define gasconstant 8.3144598
-#endif
+#define FARADAY _faraday_[_nrnunit_use_legacy_]
+static double _faraday_[2] = {_faraday_codata2018, 96485.309};
+#define gasconstant _gasconstant_[_nrnunit_use_legacy_]
+static double _gasconstant_[2] = {_gasconstant_codata2018, 8.3134};
 
 #define ktf (1000.*gasconstant*(celsius + 273.15)/FARADAY)
 double nrn_nernst(ci, co, z) double z, ci, co; {

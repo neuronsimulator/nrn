@@ -22,6 +22,7 @@ extern void nrn_pt3dstyle0(Section* sec);
 extern void nrn_area_ri(Section* sec);
 extern void sec_free(hoc_Item*);
 extern Symlist* hoc_built_in_symlist;
+extern Section* nrn_noerr_access();
 double* nrnpy_rangepointer(Section*, Symbol*, double, int*);
 extern PyObject* nrn_ptr_richcmp(void* self_ptr, void* other_ptr, int op);
 extern int has_membrane(char*, Section*);
@@ -2251,7 +2252,11 @@ static PyMethodDef NPyRangeVar_methods[] = {
 static PyMemberDef NPyMechObj_members[] = {{NULL}};
 
 PyObject* nrnpy_cas(PyObject* self, PyObject* args) {
-  Section* sec = chk_access();
+  Section* sec = nrn_noerr_access();
+  if (!sec) {
+    PyErr_SetString(PyExc_TypeError, "Section access unspecified");
+    return NULL;
+  }
   // printf("nrnpy_cas %s\n", secname(sec));
   return (PyObject*)newpysechelp(sec);
 }

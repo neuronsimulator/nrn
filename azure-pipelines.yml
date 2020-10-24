@@ -22,6 +22,7 @@ trigger:
 jobs:
 
 - job: 'ManyLinuxWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -57,6 +58,7 @@ jobs:
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'macOS-10.15'
   strategy:
@@ -90,6 +92,7 @@ jobs:
       brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
+      cmake --version
     displayName: 'Install OSX System Depdendencies'
 
   - script: |
@@ -100,3 +103,33 @@ jobs:
     displayName: 'Build MacOS Wheel'
 
   - template: ci/azure-wheel-test-upload.yml
+
+
+# Jobs to build NEURON installer natively
+- job: 'WindowsInstaller'
+  timeoutInMinutes: 45
+  pool:
+    vmImage: windows-2019
+  variables:
+    MSYS2_ROOT: C:\msys64
+
+  steps:
+
+  - task: BatchScript@1
+    inputs:
+      filename: ci/win_download_deps.cmd
+    displayName: "Download Dependencies"
+    condition: succeeded()
+
+  - task: BatchScript@1
+    inputs:
+      filename: ci/win_install_deps.cmd
+    displayName: "Install Dependencies"
+    condition: succeeded()
+
+  - script: |
+      %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+    displayName: "Build and Create Installer"
+    condition: succeeded()
+
+  - template: ci/azure-win-installer-upload.yml
