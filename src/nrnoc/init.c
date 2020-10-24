@@ -1016,3 +1016,11 @@ double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 	x = hoc_call_func(s, narg);
 	return x;
 }
+
+void nrnunit_use_legacy() {
+  if (ifarg(1)) {
+    int arg = (int)chkarg(1, 0, 1);
+    _nrnunit_use_legacy_ = arg;
+  }
+  hoc_retpushx((double)_nrnunit_use_legacy_);
+}
