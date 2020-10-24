@@ -669,6 +669,8 @@ void (*oc_jump_target_)();	/* see ivoc/SRC/ocjump.c */
 
 int yystart;
 
+extern void hoc_newobj1_err();
+
 void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from run-time error */
 	hoc_in_yyparse = 0;
 	yystart = 1;
@@ -699,6 +701,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	*ctp = '\0';
 
 	if (oc_jump_target_) {
+		hoc_newobj1_err();
 		(*oc_jump_target_)();
 	}
 #if NRNMPI
@@ -714,8 +717,10 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 		hoc_win_normal_cursor();
 #endif
 	if (hoc_oc_jmpbuf) {
+		hoc_newobj1_err();
 		longjmp(hoc_oc_begin, 1);
 	}
+	hoc_newobj1_err();
 	longjmp(begin, 1);
 }
 

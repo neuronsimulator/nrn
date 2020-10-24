@@ -500,6 +500,21 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v){
 	return hoc_temp_objptr(hoc_new_object(symtemp, v));
 }
 
+/** If hoc_newob1 fails after creating a new object, that object needs to be
+  unreffed. Not going to work if constructors themselves create new objects
+  before the error. Or if the destructor doesn't work with a partially filled
+  object.
+**/
+
+static Object* hoc_newobj1_err_;
+void hoc_newobj1_err() { /* called from hoc_execerror */
+	if (hoc_newobj1_err_) {
+		Object* ob = hoc_newobj1_err_;
+		hoc_newobj1_err_ = NULL;
+		hoc_obj_unref(ob);
+	}
+}
+
 Object* hoc_newobj1(Symbol* sym, int narg) {
 	Object *ob;
 	Objectdata *obd;
@@ -508,6 +523,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	
 	ob = hoc_new_object(sym, (void*)0);
 	ob->refcount = 1;
+	hoc_newobj1_err_ = ob; /* allow unref if execerror before return */
    if (sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
 	call_constructor(ob, sym, narg);
    }else{
@@ -569,7 +585,8 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	}
    }
 	hoc_template_notify(ob, 1);
-	return ob;	
+	hoc_newobj1_err_ = NULL;
+	return ob;
 }
 
 void hoc_newobj_arg(void) {

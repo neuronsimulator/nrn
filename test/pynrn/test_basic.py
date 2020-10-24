@@ -103,3 +103,13 @@ def test_nrntest_test_2():
     assert h.axon(0.5).hh.gnabar == 0.12
     assert h.axon(0.5) in h.axon
     assert h.axon(0.5) not in h.soma
+
+def test_newobject_err_recover():
+  err = 0
+  try:
+    nc = h.NetCon(5, 12) # raises error
+  except:
+    err = 1
+  assert(err == 1)
+  h.finitialize() # succeeds without seg fault
+
