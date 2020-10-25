@@ -29,10 +29,10 @@ DERIVIMPLICIT_CPP_FILE = $(CORENRN_SHARE_CORENRN_DIR)/dimplic.cpp
 SPECIAL_EXE  = $(OUTPUT_DIR)/special-core
 
 # Directory where cpp files are generated for each mod file
-MOD_TO_CPP_DIR = $(OUTPUT_DIR)/core/mod2c
+MOD_TO_CPP_DIR = $(OUTPUT_DIR)/corenrn/mod2c
 
 # Directory where cpp files are compiled
-MOD_OBJS_DIR = $(OUTPUT_DIR)/core/build
+MOD_OBJS_DIR = $(OUTPUT_DIR)/corenrn/build
 
 # Linked libraries gathered by CMake
 LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
