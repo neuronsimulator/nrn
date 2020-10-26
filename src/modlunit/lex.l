@@ -30,11 +30,24 @@ extern int Getc();
 %}
 D	[0-9]
 E	[Ee][-+]?{D}+
-%START O to_eocom to_par to_eoverb to_eol
+
+%START O to_eocom to_par to_eoverb to_eol ontology
 %%
 <O>[a-zA-Z][a-zA-Z0-9_]*'+ { /*PRIME possibly high order*/
 	yylval.qp = putintoken(yytext, PRIME, 0);
 	return PRIME;
+}
+
+<O>REPRESENTS {
+	BEGIN ontology;
+}
+
+<ontology>\n {
+	BEGIN O;
+}
+
+<ontology>\[[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]*\]|[a-zA-Z][a-zA-Z0-9_]*:[a-zA-Z0-9_]* { /*ONTOLOGY_ID*/
+	BEGIN O;
 }
 
 <O>[a-zA-Z][a-zA-Z0-9_]* { /*NAME*/
