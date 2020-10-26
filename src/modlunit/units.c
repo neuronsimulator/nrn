@@ -550,6 +550,29 @@ void unit_stk_clean() {
 	usp = unit_stack - 1;
 }
 	
+// allow the outside world to call either modl_units() or unit_init().
+static void units_alloc() {
+  int i;
+  static int units_alloc_called = 0;
+  if (!units_alloc_called) {
+    units_alloc_called = 1;
+#if NRN_DYNAMIC_UNITS
+    for (i=0; i < 2; ++i) {
+      dynam[i].table = (struct table*)calloc(NTAB, sizeof(struct table));
+      assert(dynam[i].table);
+      dynam[i].names = (char*)calloc(NTAB*10, sizeof(char));
+      assert(dynam[i].names);
+      switch_units(i);
+    }
+#else
+    table = (struct table*)calloc(NTAB, sizeof(struct table));
+    assert(table);
+    names = (char*)calloc(NTAB*10, sizeof(char));
+    assert(names);
+#endif
+  }
+}
+
 #if MODL||NMODL||HMODL||SIMSYS
 extern void unit_init();
 
@@ -558,20 +581,13 @@ void modl_units() {
 	static int first=1;
 	unitonflag = 1;
 	if (first) {
+		units_alloc();
 #if NRN_DYNAMIC_UNITS
 		for (i=0; i < 2; ++i) {
-			dynam[i].table = (struct table*)calloc(NTAB, sizeof(struct table));
-			assert(dynam[i].table);
-			dynam[i].names = (char*)calloc(NTAB*10, sizeof(char));
-			assert(dynam[i].names);
 			switch_units(i);
 			unit_init();
 		}
 #else
-		table = (struct table*)calloc(NDIM, sizeof(struct table));
-		assert(table);
-		names = (char*)calloc(NTAB*10, sizeof(char));
-		assert(names);
 		unit_init();
 #endif
 		first = 0;
@@ -584,6 +600,7 @@ void unit_init() {
 	char* s;
 	char buf[1024];
 	inpfile = (FILE*)0;
+	units_alloc();
 	UnitsOn = 1;
 	s = getenv("MODLUNIT");
 	if (s) {
