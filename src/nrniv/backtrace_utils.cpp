@@ -1,5 +1,7 @@
 #include <iostream>
+#if HAVE_CXXABI_H
 #include <cxxabi.h>
+#endif
 #include <cstring>
 #include <regex>
 #include <string>
@@ -40,11 +42,14 @@ int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offse
 }
 
 int cxx_demangle(char* symbol, char** funcname, size_t* funcname_sz) {
-
+#if HAVE_CXXABI_H
     int status = 0;
     char* ret = abi::__cxa_demangle(symbol, *funcname, funcname_sz, &status);
     *funcname = ret;
     return status;
+#else
+    return -4; // return something non-zero to indicate failure
+#endif
 }
 
 void backward_wrapper() {

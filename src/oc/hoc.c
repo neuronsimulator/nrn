@@ -789,6 +789,8 @@ void print_bt() {
         free(bt_strings);
     }
     free(funcname);
+    free(offset);
+    free(symbol);
 #else
     Fprintf(stderr, "No backtrace info available.\n");
 #endif
@@ -829,13 +831,13 @@ RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg t
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig)
 {
-	Fprintf(stderr, "Bus error\n");
+    Fprintf(stderr, "Bus error\n");
     print_bt();
-	/*ARGSUSED*/
-	if (coredump) {
-		abort();
-	}
-	execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
+    /*ARGSUSED*/
+    if (coredump) {
+        abort();
+    }
+    execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
 

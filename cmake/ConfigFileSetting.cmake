@@ -194,7 +194,12 @@ nrn_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
 # =============================================================================
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h"
                     STDC_HEADERS)
-check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
+check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
+
+# =============================================================================
+# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
+# =============================================================================
+check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
 
 # =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}

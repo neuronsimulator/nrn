@@ -225,10 +225,10 @@ endif()
 # Enable backward
 # =============================================================================
 if(NRN_ENABLE_BACKTRACE)
-    set(USE_BACKWARD 1)
+    set(NRN_USE_BACKWARD 1)
     add_external_project(backward)
 else()
-    set(USE_BACKWARD 0)
+    set(NRN_USE_BACKWARD 0)
 endif()
 # =============================================================================
 # Enable Interviews
