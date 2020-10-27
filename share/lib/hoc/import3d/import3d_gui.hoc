@@ -896,8 +896,39 @@ proc cbexport() {local i, j, k  localobj sec, cell
 				cell.append(sec)
 			}
 		}
+		// make sure cell is in root to leaf order (reorder if needed)
+                cell = secorder_root2leaf(cell)
 		cbexport1(cell)
 	}
+}
+
+obfunc secorder_root2leaf() {local i, ok  localobj sec, porder, ordered_cell
+  for i=0, $o1.count-1 {
+    sec= $o1.o(i)
+    sec.volatile = i
+  }
+  porder = new Vector($o1.count)
+  for i=0, $o1.count-1 {
+    sec = $o1.o(i)
+    if (sec.parentsec != nil) {
+      if (sec.parentsec.volatile > sec.volatile) {
+        ok = 0
+      }
+      porder.x[i] = sec.parentsec.volatile
+    }else{
+      porder.x[i] = -1
+    }
+  }
+  if (ok) {
+    return $o1
+  }
+  // need to reorder
+  porder = porder.sortindex()
+  ordered_cell = new List()
+  for i=0, porder.size()-1 {
+    ordered_cell.append($o1.o(porder.x[i]))
+  }
+  return ordered_cell
 }
 
 proc sphere_rep() { local i  localobj x, y, z, d

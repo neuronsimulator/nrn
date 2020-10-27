@@ -270,6 +270,12 @@ endif()
 # =============================================================================
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
+  # start afresh with PythonLibsNew's find_library
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3;python2"
+  # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
+  # /usr/lib/x86_64-linux-gnu/libpython2.7.so
+  unset(PYTHON_LIBRARY CACHE)
+
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
   set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
   set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
