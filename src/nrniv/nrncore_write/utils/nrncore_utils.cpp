@@ -265,9 +265,9 @@ void check_coreneuron_compatibility(void* handle) {
     if (!cn_nrnunit_use_legacy_sym) {
         hoc_execerror("Could not get symbol corenrn_units_use_legacy from CoreNEURON", NULL);
     }
-    int cn_nrnunit_use_legacy = (*(int(*)())cn_nrnunit_use_legacy_sym)();
-    if (cn_nrnunit_use_legacy != _nrnunit_use_legacy_) {
-      
+    bool cn_nrnunit_use_legacy = (*(bool(*)())cn_nrnunit_use_legacy_sym)();
+    if (cn_nrnunit_use_legacy != (_nrnunit_use_legacy_ == 1)) {
+      hoc_execerror("nrnunit_use_legacy() inconsistent with corenrn_units_use_legacy", NULL);
     }
 }
 
