@@ -267,7 +267,7 @@ void check_coreneuron_compatibility(void* handle) {
     }
     bool cn_nrnunit_use_legacy = (*(bool(*)())cn_nrnunit_use_legacy_sym)();
     if (cn_nrnunit_use_legacy != (_nrnunit_use_legacy_ == 1)) {
-      hoc_execerror("nrnunit_use_legacy() inconsistent with corenrn_units_use_legacy", NULL);
+      hoc_execerror("nrnunit_use_legacy() inconsistent with CORENRN_ENABLE_LEGACY_UNITS", NULL);
     }
 }
 
