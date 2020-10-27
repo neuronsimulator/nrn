@@ -329,11 +329,20 @@ std::shared_ptr<Symbol> ModelSymbolTable::insert(const std::shared_ptr<Symbol>& 
      *  within the same scope. Otherwise, there is variable with same name
      *  in parent scopes and it will shadow the definition. In this case just
      *  emit the warning and insert the symbol.
+     *
+     *  Note:
+     *  We suppress the warning for the voltage since in most cases it is extern
+     *  as well as argument and it is fine like that.
      */
     if (search_symbol->get_scope() == current_symtab->name()) {
         emit_message(symbol, search_symbol, true);
     } else {
-        emit_message(symbol, search_symbol, false);
+        /**
+         * Suppress warning for voltage since it is often extern and argument.
+         */
+        if (symbol->get_name() != "v") {
+            emit_message(symbol, search_symbol, false);
+        }
         current_symtab->insert(symbol);
     }
     return symbol;
