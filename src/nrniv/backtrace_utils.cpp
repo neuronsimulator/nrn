@@ -17,6 +17,7 @@
 extern "C" {
 
 int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offset) {
+#ifndef _WIN32
 #ifdef __APPLE__ 
     std::regex btline("(\\d+)\\s+([\\w\\.]+)\\s+(0x[\\da-f]+)\\s+(\\w+)\\s+\\+\\s+(\\d+)");
 #define ADDR 3
@@ -38,6 +39,7 @@ int parse_bt_symbol(char* backtrace_line, void** addr, char* symbol, char* offse
         backtrace_line[backtrace_match.position(OBJPOS)-1] = '\0';
         return 1;
     }
+#endif
     return 0;
 }
 
