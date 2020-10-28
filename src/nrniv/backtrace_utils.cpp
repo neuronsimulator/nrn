@@ -50,7 +50,7 @@ int cxx_demangle(char* symbol, char** funcname, size_t* funcname_sz) {
     *funcname = ret;
     return status;
 #else
-    return -4; // return something non-zero to indicate failure
+    return 1; // return non-zero to indicate failure
 #endif
 }
 
