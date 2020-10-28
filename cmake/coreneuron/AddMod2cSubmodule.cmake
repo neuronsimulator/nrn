@@ -4,7 +4,6 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
-include(ExternalProject)
 find_package(FindPkgConfig QUIET)
 
 find_path(
@@ -29,14 +28,4 @@ else()
   message(STATUS "Using mod2c submodule from ${MOD2C_PROJ}")
 endif()
 
-set(ExternalProjectCMakeArgs
-    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-    -DCMAKE_C_COMPILER=${CORENRN_FRONTEND_C_COMPILER}
-    -DCMAKE_CXX_COMPILER=${CORENRN_FRONTEND_CXX_COMPILER})
-
-ExternalProject_Add(
-  mod2c
-  BUILD_ALWAYS 1
-  SOURCE_DIR ${CORENEURON_PROJECT_SOURCE_DIR}/external/mod2c
-  GIT_SUBMODULES
-  CMAKE_ARGS ${ExternalProjectCMakeArgs})
+add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/mod2c)

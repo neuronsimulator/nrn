@@ -7,6 +7,12 @@
 
 set -e
 
+# TODO : mod2c_core can be linked with (HPE-)MPI library
+# and running that under slurm allocation result into
+# runtime error. For now, unset PMI_RANK variable
+# which is sufficint to avoid issue with HPE-MPI+SLURM.
+unset PMI_RANK
+
 # name of the script
 APP_NAME=$(basename $0)
 

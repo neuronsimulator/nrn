@@ -275,7 +275,7 @@ if(CORENRN_ENABLE_NMODL)
   separate_arguments(NMODL_EXTRA_FLAGS_LIST UNIX_COMMAND "${CORENRN_NMODL_FLAGS}")
 else()
   include(AddMod2cSubmodule)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/external/mod2c/src/mod2c_core/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
 endif()
 
