@@ -698,7 +698,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	ctp = cbuf;
 	*ctp = '\0';
 
-	if (oc_jump_target_) {
+	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
 		(*oc_jump_target_)();
 	}
 #if NRNMPI
