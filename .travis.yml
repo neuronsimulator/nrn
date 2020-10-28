@@ -193,7 +193,7 @@ script:
     fi;
 
   # with autotools run rxd tests manually
-  - if [[ "$BUILD_MODE" == "autotools" && "$TRAVIS_OS_NAME" != "osx" ]]; then
+  - if [ "$BUILD_MODE" == "autotools" ]; then
       $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
     fi;
 
