@@ -763,31 +763,39 @@ void print_bt() {
     void *frames[nframes];
     size_t size;
     char** bt_strings = NULL;
+    // parsed elements from stacktrace line:
     size_t funcname_size = 256;
+    // symbol stores the symbol at which the signal was invoked
     char* symbol = malloc(sizeof(char)*funcname_size);
-    char* offset = malloc(sizeof(char)*10);
+    // the function name where the signal was invoked
     char* funcname = malloc(sizeof(char)*funcname_size);
+    // offset stores the relative address from the function where the signal was invoked
+    char* offset = malloc(sizeof(char)*10);
+    // the memory address of the function
     void* addr = NULL;
     // get void*'s for maximum last 16 entries on the stack
     size = backtrace(frames, nframes);
 
     // print out all the frames to stderr
     Fprintf(stderr, "Backtrace:\n");
+    // get the stacktrace as an array of strings
     bt_strings = backtrace_symbols(frames, size);
     if (bt_strings) {
         size_t i;
+        // start printing at third frame to skip the signal handler and printer function
         for(i = 2; i < size; ++i) {
+            // parse the stack frame line
             int status = parse_bt_symbol(bt_strings[i], &addr, symbol, offset);
             if (status) {
                 status = cxx_demangle(symbol, &funcname, &funcname_size);
-                if (status == 0) {
+                if (status == 0) { // demangling worked
                     Fprintf(stderr, "\t%s : %s+%s\n",
                             bt_strings[i], funcname, offset);
-                } else {
+                } else { // demangling failed, fallback
                     Fprintf(stderr, "\t%s : %s()+%s\n",
                             bt_strings[i], symbol, offset);
                 }
-            } else {
+            } else { // could not parse, simply print the stackframe as is
                 Fprintf(stderr, "\t%s\n", bt_strings[i]);
             }
         }
