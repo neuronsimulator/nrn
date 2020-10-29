@@ -92,9 +92,7 @@ void stop_praxis(void) {
 static double minerr, *minarg; /* too bad this is not recursive */
 
 void fit_praxis(void) {
-//	extern Symbol* hoc_lookup(char *);
-//	extern char* gargstr();
-	char* after_quad;	
+	char* after_quad;
 	int i;
 	double err, fmin;
 	double* px;
@@ -285,7 +283,6 @@ static double efun(double* v, int n)
 		v[i] = px[i];
 	}
     }else{
-//	extern double hoc_call_func();
 	int i;
 	hoc_pushx((double)n);
 	hoc_pushpx(v);

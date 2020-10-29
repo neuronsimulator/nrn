@@ -92,12 +92,12 @@ static void set_flux_units(unit* up)
 	Symbol *s;
 
 	Sprintf(buf, "%s", Unit_str(up));
-	if ((s = lookup( "f_flux")) == SYM0) {
-		s = install( "f_flux", NAME);
+	if ((s = lookup("f_flux")) == SYM0) {
+		s = install("f_flux", NAME);
 	}
 	s->u.str = stralloc(buf, (char *)0);
-	if ((s = lookup( "b_flux")) == SYM0) {
-		s = install( "b_flux", NAME);
+	if ((s = lookup("b_flux")) == SYM0) {
+		s = install("b_flux", NAME);
 	}
 	s->u.str = stralloc(buf, (char *)0);
 	
@@ -139,13 +139,13 @@ void unit_ldifuslist(Item* q, int flag)
 	if (!ustr) {
 		diag(SYM(q)->name, "not declared in previous COMPARTMENT");
 	}
-	Unit_push( "micron4/ms");
+	Unit_push("micron4/ms");
 	if (!unit_cmp_exact()) {
 		unit_pop();
 diag(unit_str(), ": relevant area * diffusion constant must\n   be micron2 micron2/ms (1-21 m4/s)");
 	}
 	unit_pop();
-	Unit_push( "micron2");
+	Unit_push("micron2");
 	Unit_push(ustr);
 	if (!unit_cmp_exact()) {
 		diag(ustr, ": With LONGDITUDINAL_DIFFUSION the compartment \

@@ -165,12 +165,12 @@ void declare_implied()
 		Item* name, *units, *from, *to, *with, *num;
 		save = intoken;
 		intoken = newlist();
-		name = putintoken( "t", NAME, 0);
-		units = putintoken( "ms", STRING, UNITS);
-		from = putintoken( "0", INTEGER, INTEGER);
-		to = putintoken( "1", INTEGER, INTEGER);
-		with = putintoken( "WITH", NAME, 0);
-		num = putintoken( "1", INTEGER, INTEGER);
+		name = putintoken("t", NAME, 0);
+		units = putintoken("ms", STRING, UNITS);
+		from = putintoken("0", INTEGER, INTEGER);
+		to = putintoken("1", INTEGER, INTEGER);
+		with = putintoken("WITH", NAME, 0);
+		num = putintoken("1", INTEGER, INTEGER);
 		qa = itemarray(8, name, units, from, to, with, num, ITEM0, ITEM0);
 		declare(INDEP, ITMA(qa)[0], qa);
 		intoken = save;

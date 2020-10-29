@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #ifdef WIN32
 #include <errno.h>
@@ -180,7 +180,7 @@ static double f_flush(void* v){
 static const char** f_get_name(void* v){
 	OcFile* f = (OcFile*)v;
 	char** ps = hoc_temp_charptr();
-    *ps = (char*)f->get_name();
+	*ps = (char*)f->get_name();
 	if (ifarg(1)) {
 		hoc_assign_str(hoc_pgargstr(1), *ps);
 	}
@@ -250,7 +250,7 @@ static double f_vread(void* v){
 	OcFile* f = (OcFile*)v;
 	size_t n = 1;
 	if (ifarg(2)) n = int(chkarg(1, 1., 2.e18));
-	double* x = hoc_pgetarg(ifarg(2)+1);
+	char* x = (char*)hoc_pgetarg(ifarg(2)+1);
 	BinaryMode(f)
 	return (double)fread(x,sizeof(double),n,f->file());
 }

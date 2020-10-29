@@ -548,7 +548,6 @@ static void reverse_sibling_list(Section* sec)
 	}
 	pch = &sec->child;
 	while(scnt--) {
-//		Object** hoc_objpop();
 		ch = (Section*)hoc_objpop();
 		*pch = ch;
 		pch = &ch->sibling;
@@ -1120,7 +1119,7 @@ static Datum* pdprop(Symbol* s, int indx, Section* sec, short inode) {
 void connectpointer(void) { /* pointer symbol at pc, target variable on stack, maybe
 	range variable location on stack */
 	Datum *dat;
-	double *pd;//, *hoc_pxpop();
+	double *pd;
 	double d;
 	Symbol *s = (pc++)->sym;
 	pd = hoc_pxpop();
@@ -1150,7 +1149,7 @@ void range_interpolate_single(void) /*symbol at pc, 2 values on stack*/
 	double x, y;
 	Symbol* s;
 	Section* sec;
-	double* pd; //, *nrn_rangepointer();
+	double* pd;
 	int op;
 	
 	s = (pc++)->sym;
@@ -1449,7 +1448,7 @@ void rangevarevalpointer(void) /* symbol at pc, location on stack, return pointe
 
 void rangevareval(void) /* symbol at pc, location on stack, return value on stack */
 {
-	double *pd;//, *hoc_pxpop();
+	double *pd;
 
 	rangevarevalpointer();
 	pd = hoc_pxpop();
@@ -1781,7 +1780,6 @@ void setup_topology(void)
 
 const char* secname(Section* sec) /* name of section (for use in error messages) */
 {
-//	extern char* hoc_araystr();
 	static char name[512];
 	Symbol *s;
 	int indx;
@@ -2156,7 +2154,6 @@ void forall_section(void) {
 	extern int hoc_returning;
 	char buf[200];
 	char** s;
-//	char** hoc_strpop();
 	int istk;
 
 	/* fast forall within an object asserts that the object sections
@@ -2219,7 +2216,6 @@ void hoc_ifsec(void) {
 	Inst *savepc = pc;
 	char buf[200];
 	char** s;
-//	char** hoc_strpop();
 	extern int hoc_returning;
 	
 	s = hoc_strpop();

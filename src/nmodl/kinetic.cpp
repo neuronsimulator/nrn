@@ -1202,7 +1202,7 @@ compart: COMPARTMENT NAME ',' expr '{' namelist '}'
 		{massagecompart($4, $5, $7, SYM($2));}
 	| COMPARTMENT expr '{' namelist '}'
 		{massagecompart($2, $3, $5, SYM0);}
-	| COMPARTMENT error {myerr( "Correct syntax is:	\
+	| COMPARTMENT error {myerr("Correct syntax is:	\
 COMPARTMENT index, expr { vectorstates }\n\
 			COMPARTMENT expr { scalarstates }");}
 	;
@@ -1243,7 +1243,7 @@ void massagecompart(Item* qexp, Item* qb1, Item* qb2, Symbol* indx)
 	for (q = qb1->next; q != qb2; q = qs) {
 		qs = q->next;
 		if (!(SYM(q)->subtype & STAT) && in_solvefor(SYM(q))) {
-			dlete(q);
+			remove(q);
 #if 0
 diag(SYM(q)->name, "must be a (solved) STATE in a COMPARTMENT statement");
 #endif
@@ -1287,7 +1287,7 @@ void massageldifus(Item* qexp, Item* qb1, Item* qb2, Symbol* indx)
 		s = SYM(q);
 		s2 = SYM0;
 		if (!(s->subtype & STAT) && in_solvefor(s)) {
-			dlete(q);
+			remove(q);
 diag(SYM(q)->name, "must be a (solved) STATE in a LONGITUDINAL_DIFFUSION statement");
 		}
 		lappendsym(ldifuslist, s);
@@ -1431,7 +1431,7 @@ prn(cvode_sbegin, cvode_send);
 		while (ITM(q) != q2) {
 			assert(q2 != cvode_send); /* past the list */
 			q2 = q2->next;
-			dlete(q2->prev);
+			remove(q2->prev);
 		}
 		q2 = q2->next;
 	}
@@ -1475,7 +1475,7 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum)
 	if (done_list) for (q = done_list->next; q != done_list; q = qn) {
 		qn = q->next;
 		if (SYM(q) == fun) {
-			dlete(q);
+			remove(q);
 		}
 	}
 	kinetic_intmethod(fun, "NEURON's CVode");
@@ -1529,11 +1529,11 @@ void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum)
 			/* delete the statement */
 			while (q->itemtype != SYMBOL || SYM(q)->name[0] != ';') {
 				qnext = q->next;
-				dlete(q);
+				remove(q);
 				q = qnext;
 			}
 			qnext = q->next;
-			dlete(q);
+			remove(q);
 		}
 	}
 #endif
@@ -1641,11 +1641,11 @@ return;
 			/* delete the statement */
 			while (q->itemtype != SYMBOL || SYM(q)->name[0] != ';') {
 				qnext = q->next;
-				dlete(q);
+				remove(q);
 				q = qnext;
 			}
 			qnext = q->next;
-			dlete(q);
+			remove(q);
 		}
 	}
 #endif

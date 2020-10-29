@@ -169,7 +169,7 @@ lappenditem(List* list, Item* item)
 	return insertitem(list, item);
 }
 
-void dlete(Item* item)
+void remove(Item* item)
 {
 	assert(item->itemtype); /* can't delete list */
 	item->next->prev = item->prev;
@@ -266,7 +266,7 @@ putintoken(char* s, short type, short toktype)
 		Fprintf(stderr, "%s|", s);
 	}
 	if (s == (char *)0)
-		diag( "internal error", " in putintoken");
+		diag("internal error", " in putintoken");
 	switch (type) {
 		
 	case STRING:

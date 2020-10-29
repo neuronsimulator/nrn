@@ -503,7 +503,7 @@ expr:	varname {P3{unit_push($1);}}
 	| expr LE expr	{P3{unit_logic(2, $1, $2, lastok);}}
 	| expr EQ expr	{P3{unit_logic(2, $1, $2, lastok);}}
 	| expr NE expr	{P3{unit_logic(2, $1, $2, lastok);}}
-	| NOT expr	{P3{unit_pop(); Unit_push( "");}}
+	| NOT expr	{P3{unit_pop(); Unit_push("");}}
 	| '-' expr %prec UNARYMINUS
 	| error {myerr("Illegal expression");}
 	;

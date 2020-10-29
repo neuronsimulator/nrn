@@ -55,10 +55,9 @@ Object* nrn_new_pointprocess(Symbol* sym)
 {
 	void* v;
     extern Object* hoc_new_object(Symbol*, void*);
-    extern Object* hoc_new_opoint(int); //, *hoc_new_opoint();
+    extern Object* hoc_new_opoint(int);
 	Object* ob;
 	extern Symlist* hoc_built_in_symlist;
-//	Symbol* hoc_table_lookup(char *);
 	int pointtype;
 	assert(sym->type == MECHANISM && memb_func[sym->subtype].is_point);
 	pointtype = pnt_map[sym->subtype];
@@ -223,7 +222,7 @@ extern "C" double loc_point_process(int pointtype, void* v)
 	Point_process* pnt = (Point_process*)v;
 	double x;
 	Section *sec;
-	Node *node; //, *node_exact();
+	Node *node;
 	
 	if (nrn_is_artificial_[pointsym[pointtype]->subtype]) {
 		hoc_execerror("ARTIFICIAL_CELLs are not located in a section", (char*)0);
@@ -300,7 +299,7 @@ double* point_process_pointer(Point_process* pnt, Symbol* sym, int index)
 
 extern "C" void steer_point_process(void* v) /* put the right double pointer on the stack */
 {
-	Symbol* sym; //, *hoc_spop();
+	Symbol* sym;
 	int index;
 	Point_process *pnt = (Point_process*)v;
 	sym = hoc_spop();
@@ -317,7 +316,6 @@ void nrn_cppp(void) {
 }
 
 void connect_point_process_pointer(void) {
-//	double* hoc_pxpop();
 	if (cppp_semaphore != 2) {
 		cppp_semaphore = 0;
 		hoc_execerror("not a point process pointer", (char*)0);

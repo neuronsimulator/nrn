@@ -143,7 +143,6 @@ static void free_clamp(void) {
 
 void clamp_prepare(void)    /*fill in the section info*/
 {
-//	Node *node_ptr();
     double area;
 
     if (!maxlevel) {

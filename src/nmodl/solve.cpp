@@ -101,13 +101,13 @@ diag("The SOLVE statement must be before the DERIVATIVE block for ", SYM(lq)->na
 			cvode_cnexp_solve = lq;
 #endif
 		}
-		dlete(q2->prev);
-		dlete(q2);
+		remove(q2->prev);
+		remove(q2);
 	}else{
 		qtemp = q1->next;
 		Lappendsym(solvq, SYM0);
 	}
-	dlete(q1->prev);
+	remove(q1->prev);
 
 	/* handle the error statement */
 	/* put one in if it isn't already there */
@@ -192,7 +192,7 @@ void solvhandler()
 
 		case DERF:
 			if (method == SYM0) {
-				method = lookup( "adrunge");
+				method = lookup("adrunge");
 			}
 			if (btype == BREAKPOINT && !steadystate) {
 				/* derivatives recalculated after while loop */
@@ -213,7 +213,7 @@ fprintf(stderr, "Notice: %s is not thread safe. Complain to Hines\n", method->na
 			break;
 		case KINF:
 			if (method == SYM0) {
-				method = lookup( "_advance");
+				method = lookup("_advance");
 			}
 			if (btype == BREAKPOINT && (method->subtype & DERF)) {
 #if VECTORIZE
@@ -244,7 +244,7 @@ fprintf(stderr, "Notice: NONLINEAR is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (method == SYM0) {
-				method = lookup( "newton");
+				method = lookup("newton");
 			}
 			solv_nonlin(qsol, fun, method, numeqn, listnum);
 			break;
@@ -254,7 +254,7 @@ fprintf(stderr, "Notice: LINEAR is not thread safe.\n");
 			vectorize = 0;
 #endif
 			if (method == SYM0) {
-				method = lookup( "simeq");
+				method = lookup("simeq");
 			}
 			solv_lineq(qsol, fun, method, numeqn, listnum);
 			break;
@@ -391,9 +391,6 @@ which is trapped in scop */
 	case DISCRETE:
 		if (firstderf) { /* time dependent process so create a deltastep */
 			double d[3];
-//#ifndef NeXT
-//			double atof();
-//#endif
 			int i;
 			Item *q;
 			char sval[256];

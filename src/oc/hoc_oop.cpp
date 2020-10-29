@@ -866,7 +866,7 @@ void hoc_objectvar(void) { /* object variable symbol at pc+1. */
 void hoc_objectarg(void) { /* object arg index at pc+1. */
 		  /* pointer to correct object left on stack */
 	int i;
-	Object **obp; //, **hoc_objgetarg();
+	Object **obp;
 #if PDEBUG
 	printf("code for hoc_objectarg()\n");
 #endif
@@ -923,7 +923,7 @@ Object* hoc_name2obj(const char* name, int index) {
 }
 
 void hoc_object_id(void) {
-	Object *ob;//, **hoc_objgetarg();
+	Object *ob;
 
 	ob = *(hoc_objgetarg(1));
 	if (ifarg(2) && chkarg(2, 0., 1.) == 1.) {
@@ -1046,15 +1046,15 @@ hoc_execerror("Cannot assign to a PythonObject function call:", sym0->name);
 			sym = *psym;
 		}else{
 		    if (obp->aliases == 0 || (sym = ivoc_alias_lookup(sym0->name, obp)) == 0) {
-			/* lookup only has to be done once if the name is not an alias
-			and the ptid of the object is still the same. */
-			sym = hoc_table_lookup(sym0->name, obp->ctemplate->symtable);
-			if (!sym || sym->cpublic != PUBLIC_TYPE) {
-fprintf(stderr, "%s not a public member of %s\n", sym0->name, obp->ctemplate->sym->name);
-hoc_execerror(obp->ctemplate->sym->name, sym0->name);
-			}
-			*ptid = obp->ctemplate->id;
-			*psym = sym;
+                /* lookup only has to be done once if the name is not an alias
+                and the ptid of the object is still the same. */
+                sym = hoc_table_lookup(sym0->name, obp->ctemplate->symtable);
+                if (!sym || sym->cpublic != PUBLIC_TYPE) {
+                    fprintf(stderr, "%s not a public member of %s\n", sym0->name, obp->ctemplate->sym->name);
+                    hoc_execerror(obp->ctemplate->sym->name, sym0->name);
+                }
+                *ptid = obp->ctemplate->id;
+                *psym = sym;
 		    }
 		}
 	}else{
@@ -1154,7 +1154,7 @@ hoc_execerror(obp->ctemplate->sym->name, sym0->name);
 	case SECTIONREF: {
 		extern Symbol* nrn_sec_sym;
 		Section* sec;
-		extern Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex); //, *nrn_sectionref_steer();
+		extern Section* nrn_sectionref_steer(Section* sec, Symbol* sym, int* pnindex);
 		section_object_seen = 1;
 		sec = (Section*)obp->u.this_pointer;
 		if (sym != nrn_sec_sym) {
@@ -1272,7 +1272,6 @@ void hoc_object_eval(void) {
 #if CABLE
 		Datum* d = hoc_look_inside_stack(0, SYMBOL);
 		if (d->sym->type == RANGEVAR) {		
-//			double* nrn_rangepointer();
 			Symbol* sym = hoc_spop();
 			int narg = hoc_ipop();
 			struct Section* sec = nrn_sec_pop();
@@ -1315,7 +1314,6 @@ void hoc_ob_pointer(void) {
 			}
 			hoc_pushpx(nrn_rangepointer(sec, sym, x));
 		}else if (d->sym->type == VAR && d->sym->subtype == USERPROPERTY) {
-//			double* cable_prop_eval_pointer();
 			hoc_pushpx(cable_prop_eval_pointer(hoc_spop()));
 		}else{
 			hoc_execerror("Not a double pointer", 0);
@@ -1514,15 +1512,15 @@ void hoc_endtemplate(Symbol* t) {
 	hoc_in_template = (poptemplate())->i;
 	hoc_objectdata = (poptemplate())->odata;
 	icntobjectdata =  (poptemplate())->i;
-ts->u.ctemplate->init = s = hoc_table_lookup("init", ts->u.ctemplate->symtable);
+    ts->u.ctemplate->init = s = hoc_table_lookup("init", ts->u.ctemplate->symtable);
 	if (s && s->type != PROCEDURE) {
-hoc_execerror("'init' can only be used as the initialization procedure for new objects",
-				(char *)0);
+        hoc_execerror("'init' can only be used as the initialization procedure for new objects",
+				nullptr);
 	}
-ts->u.ctemplate->unref = s = hoc_table_lookup("unref", ts->u.ctemplate->symtable);
+    ts->u.ctemplate->unref = s = hoc_table_lookup("unref", ts->u.ctemplate->symtable);
 	if (s && s->type != PROCEDURE) {
-hoc_execerror("'unref' can only be used as the callback procedure when the reference count is decremented",
-				(char *)0);
+        hoc_execerror("'unref' can only be used as the callback procedure when the reference count is decremented",
+				nullptr);
 	}
 }
 
@@ -1983,7 +1981,7 @@ printf("unreffing %s with refcount %d\n", hoc_object_name(obj), obj->refcount);
 		if (--obj->ctemplate->count <= 0) {
 			obj->ctemplate->index = 0;
 		}
-		obj->ctemplate = (cTemplate *)0;
+		obj->ctemplate = nullptr;
 		/* for testing purposes we don't free the object in order
 		to make sure no object variable ever uses a freed object */
 #if 1
@@ -2027,7 +2025,6 @@ static void free_objectdata(Objectdata *od, cTemplate *ctemplate){
 		case SECTION:
 			total = hoc_total_array(s);
 			for (i = 0; i < total; ++i) {
-//				extern void sec_free();
 				sec_free(*(OPSECITM(s) + i));
 			}
 			free(OPSECITM(s));

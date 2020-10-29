@@ -56,13 +56,13 @@ void unit_exponent(Item* y, Item* lastok) /*x ^ y*/
 		assert(i == 1);
 		if (yval - (double)((int)yval)) {
 			unit_less();
-			Unit_push( "");
+			Unit_push("");
 		} else {
 			Unit_exponent((int)yval);
 		}
 	}else{
 		unit_less();
-		Unit_push( "");
+		Unit_push("");
 	}
 }
 
@@ -103,7 +103,7 @@ void unit_logic(int type, Item* q1, Item* q2, Item* q3)
 		unit_pop();
 	}
 	unit_pop();
-	Unit_push( "");
+	Unit_push("");
 }
 
 #define NLEVEL	10 /* 10 levels of call! */
@@ -173,12 +173,12 @@ void unit_del(int i)	/* push 1/delta_x ^ i units */
 	Symbol *s;
 	char *cp;
 	
-	s = lookup( "delta_x");
+	s = lookup("delta_x");
 	if(!s) {
 		diag("delta_x not declared", (char *)0);
 	}
 	cp = decode_units(s);
-	Unit_push( "");
+	Unit_push("");
 	while(i--) {
 		Unit_push(cp);
 		unit_div();

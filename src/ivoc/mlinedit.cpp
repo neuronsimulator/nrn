@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #include <stdio.h>
 

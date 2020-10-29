@@ -126,14 +126,14 @@ E	[Ee][-+]?{D}+
 
 <O>[ \t]+	{ putintoken(yytext, SPACE, SPACE);}
 
-<O>\r\n	{ putintoken( "\n", NEWLINE, 0);}
-<O>\r	{ putintoken( "\n", NEWLINE, 0);}
+<O>\r\n	{ putintoken("\n", NEWLINE, 0);}
+<O>\r	{ putintoken("\n", NEWLINE, 0);}
 <O>\n	{ putintoken(yytext, NEWLINE, 0);}
 
 <O>[:\?].*	{ putintoken(yytext, STRING, STUFF);}
 
-<O>\{	{ yylval.qp = putintoken( "{", 0, '{'); return yytext[0]; }
-<O>\}	{ yylval.qp = putintoken( "}", 0, '}'); return yytext[0]; }
+<O>\{	{ yylval.qp = putintoken("{", 0, '{'); return yytext[0]; }
+<O>\}	{ yylval.qp = putintoken("}", 0, '}'); return yytext[0]; }
 <O>.	{ yylval.qp = putintoken(yytext, 0, yytext[0]); return yytext[0]; }
 
 <to_eocom>ENDCOMMENT {

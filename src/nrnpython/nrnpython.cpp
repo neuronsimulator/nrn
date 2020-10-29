@@ -152,7 +152,7 @@ static void del_wcargv(int argc) {
 
 static void copy_argv_wcargv(int argc, char** argv) {
   del_wcargv(argc);
-  // basically a copy of code from Modules/python.cpp
+  // basically a copy of code from Modules/python.c
   wcargv = (wchar_t**)PyMem_Malloc(sizeof(wchar_t*) * argc);
   if (!wcargv) {
     fprintf(stderr, "out of memory\n");

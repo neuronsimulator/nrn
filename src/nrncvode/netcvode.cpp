@@ -86,13 +86,13 @@ extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 extern "C" void net_send(void**, double*, Point_process*, double, double);
 extern "C" void net_move(void**, Point_process*, double);
-//void artcell_net_send(void**, double*, Point_process*, double, double);
-//void artcell_net_move(void**, Point_process*, double);
+extern "C" void artcell_net_send(void**, double*, Point_process*, double, double);
+extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
 static void all_pending_selfqueue(double tt);
 static void* pending_selfqueue(NrnThread*);
-//void net_event(Point_process*, double);
+extern "C" void net_event(Point_process*, double);
 extern "C" void _nrn_watch_activate(Datum*, double (*)(Point_process*), int, Point_process*, int, double);
 extern "C" void _nrn_free_watch(Datum*, int, int);
 extern int hoc_araypt(Symbol*, int);
@@ -122,7 +122,7 @@ bool nrn_trajectory_request_per_time_step_ = false;
 extern void nrnmusic_injectlist(void*, double);
 #endif
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;

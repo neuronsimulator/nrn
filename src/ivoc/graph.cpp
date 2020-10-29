@@ -6,7 +6,7 @@
 #include <math.h>
 #include <assert.h>
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -1182,7 +1182,7 @@ IFGUI
 ENDGUI
 	return (void*)g;
 #else 
-	return nullptr;
+	return (void*)0;
 #endif /* HAVE_IV  */
 }
 static void gr_destruct(void* v) {
@@ -1595,6 +1595,7 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
 	long i, cnt = line_list_.count();
 //if (!extension_flushed_) {
 	Scene::draw(c, a);
+//}
 	if (extension_flushed_) {
 		for (i = 0; i < cnt; ++i) {
 			line_list_.item(i)->extension()->draw(c, a);

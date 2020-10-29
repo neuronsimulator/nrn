@@ -58,7 +58,7 @@ void prn(Item* q1, Item* q2);
 void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum);
 void single_channel(Item* qsol, Symbol*  fun, int numeqn, int listnum);
 void freelist(List**);
-void dlete(Item*);
+void remove(Item*);
 void deltokens(Item*, Item*);
 void move(Item* q1, Item* q2, Item* q3);
 void movelist(Item* q1, Item* q2, List* s);

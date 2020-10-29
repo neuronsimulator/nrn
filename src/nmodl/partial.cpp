@@ -87,8 +87,8 @@ void solv_partial(Item* qsol, Symbol* fun)
 	Item *q;
 	Symbol *dspace;
 	
-	if ((dspace = lookup( "delta_x")) == SYM0) {
-		dspace = install( "delta_x", NAME);
+	if ((dspace = lookup("delta_x")) == SYM0) {
+		dspace = install("delta_x", NAME);
 		parminstall(dspace, "1", "", "");
 	}
 	Sprintf(buf, "%s();\n", fun->name);

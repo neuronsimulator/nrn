@@ -214,7 +214,7 @@ void nrninit() {
 	useion = newlist();
 	nrnpointers = newlist();
 	using_default_indep = 0;
-	indepinstall(install( "t", NAME), "0", "1", "100", (Item*)0, "ms", 0);
+	indepinstall(install("t", NAME), "0", "1", "100", (Item*)0, "ms", 0);
 	using_default_indep = 1;
 	debugging_ = 1;
 	thread_cleanup_list = newlist();
@@ -1197,13 +1197,13 @@ if (_nd->_extnode) {\n\
 		lst = get_ion_variables(0);
 		if (lst->next != lst->prev) {
 			move(lst->next, lst->prev, ITM(q));
-			freelist(&lst); //TODO - check this List**
+			freelist((List**)lst);
 		}
 		q = q->next;
 		lst = set_ion_variables(0);
 		if (lst->next != lst->prev) {
 			move(lst->next, lst->prev, ITM(q));
-			freelist(&lst); //TODO - check this List**
+			freelist((List**)lst);
 		}
 		q = q->next;
 		sprintf(buf, "\thoc_reg_ba(_mechtype, _ba%d, %s);\n", i, STR(q));
@@ -1756,13 +1756,13 @@ void nrndeclare() {
 	Symbol *s;
 	Item *q;
 	
-	s=lookup( "diam"); if (s) {
+	s=lookup("diam"); if (s) {
 		if (s->nrntype & (NRNRANGE|NRNGLOBAL)) {
 diag(s->name, "cannot be a RANGE or GLOBAL variable for this mechanism");
 		}
 		s->nrntype |= NRNNOTP|NRNPRANGEIN; diamdec=1;
 	}
-	s=lookup( "area"); if (s) {
+	s=lookup("area"); if (s) {
 		if (s->nrntype & (NRNRANGE|NRNGLOBAL)) {
 diag(s->name, "cannot be a RANGE or GLOBAL variable for this mechanism");
 		}
@@ -1784,9 +1784,9 @@ diag(s->name, "cannot be a RANGE or GLOBAL variable for this mechanism");
 	s->nrntype |= NRNEXTRN | NRNNOTP;
 	vectorize_substitute(lappendstr(defs_list, "\n#define t nrn_threads->_t\n#define dt nrn_threads->_dt\n"), "\n#define t _nt->_t\n#define dt _nt->_dt\n");
 
-	s=lookup( "usetable"); if (s) { s->nrntype |= NRNGLOBAL | NRNNOTP;}
-	s=lookup( "celsius");if(s){s->nrntype |= NRNEXTRN | NRNNOTP;}
-	s=lookup( "celcius"); if (s) diag("celcius should be spelled celsius",
+	s=lookup("usetable"); if (s) { s->nrntype |= NRNGLOBAL | NRNNOTP;}
+	s=lookup("celsius");if(s){s->nrntype |= NRNEXTRN | NRNNOTP;}
+	s=lookup("celcius"); if (s) diag("celcius should be spelled celsius",
 					(char *)0);
 	
  	ITERATE(q, syminorder) {
@@ -1828,7 +1828,7 @@ void del_range(List* range)
 		q1 = q->next;
 		s = SYM(q);
 		if (s->nrntype & (NRNPRANGEIN | NRNPRANGEOUT)) {
-			dlete(q);
+			remove(q);
 		}
 	}
 }
@@ -2589,7 +2589,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend)
 		   called between integrator steps and before a re_init
 		   But no need to do so if it is not used.
 		*/
-		Symbol* vsym = lookup( "v");
+		Symbol* vsym = lookup("v");
 		netrec_need_v = 1;
 		for (q = qstmt; q != qend; q = q->next) {
 			if (q->itemtype == SYMBOL && SYM(q) == vsym) {

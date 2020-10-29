@@ -22,12 +22,6 @@ extern "C" {
 #endif
 extern Point_process *ob2pntproc(Object *);
 extern Point_process* ob2pntproc_0(Object*);
-
-
-
-
-
-
 extern double* _getelm(int, int);
 extern double* _nrn_thread_getelm(void*, int, int);
 extern int sparse(void**, int, int*, int*, double*, double*, double,

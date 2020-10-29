@@ -19,7 +19,7 @@ extern double (*nrnpy_object_to_double_)(Object*);
 
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
-/*extern "C"*/ extern int hoc_return_type_code;
+extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
 #include "parse.hpp"

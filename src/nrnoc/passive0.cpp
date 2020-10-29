@@ -5,8 +5,6 @@
 #include	"membdef.h"
 #include	"nrniv_mf.h"
 
-
-
 #define	nparm 2
 static const char *mechanism[] = {
 	"0", "fastpas", "g_fastpas", "e_fastpas", 0,0,0

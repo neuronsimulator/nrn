@@ -503,8 +503,6 @@ void hoc_sprint1(char** ppbuf, int argn) {	/* convert args to right type for con
 
 		case 's':
 			if (hoc_is_object_arg(argn)) {
-//				char* hoc_object_name();
-//				Object** hoc_objgetarg();
 				cp = hoc_object_name(*hoc_objgetarg(argn));
 			}else{
 				cp = gargstr(argn);

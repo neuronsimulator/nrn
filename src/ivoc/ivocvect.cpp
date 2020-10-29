@@ -144,7 +144,7 @@ extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleCom
 extern int vector_arg_px(int, double**);
 extern void notify_freed_val_array(double*, size_t);
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
 IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
@@ -1245,9 +1245,9 @@ static Object** v_smhist(void* v) {
 	v1->fill(0.,0,size);
 	for (i=0;i<size;i++) if (ans[i] > EPSILON) v1->elem(i) = ans[i];
 
-	free( series);
-	free( gauss);
-	free( ans);
+	free(series);
+	free(gauss);
+	free(ans);
 	
 	return v1->temp_objvar();
 }
@@ -2663,11 +2663,11 @@ Label3:;
 	}
 
 	for(i=0;i<n;i++) p[i]=vortex[eminp*n+i];
-	free( gvortex );
-	free( evortex );
-	free( vortex );
-	free( nvortex );
-	return( emin );
+	free(gvortex);
+	free(evortex);
+	free(vortex);
+	free(nvortex);
+	return(emin);
 }
 
 

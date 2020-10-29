@@ -84,7 +84,7 @@ void disc_var_seen(Item* q1, Item* q2, Item* q3, int array)	/*NAME '@' NUMBER --
 	}
 	Sprintf(buf, "__%s", s->name);
 	replacstr(q1, buf);
-	dlete(q2);
+	remove(q2);
 	Sprintf(buf, "[%d]", num);
 	replacstr(q3, buf);
 }

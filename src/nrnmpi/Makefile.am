@@ -6,7 +6,8 @@ AM_CPPFLAGS = $(includes)
 
 libnrnmpi_la_SOURCES = nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp
 
-CXX = @MPICCnrnmpi@
+CC = @MPICCnrnmpi@
+CXX = @MPICXXnrnmpi@
 
 if BUILD_NRNMPI_DYNAMIC
 

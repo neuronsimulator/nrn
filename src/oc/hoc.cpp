@@ -653,7 +653,7 @@ value of oc_run()
 */
 static int debug_message_;
 void hoc_show_errmess_always(void) {
-	double x; //, chkarg();
+	double x;
 	x = chkarg(1, 0., 1.);
 	debug_message_ = (int)x;
 	ret();
@@ -764,11 +764,11 @@ void print_bt() {
     // parsed elements from stacktrace line:
     size_t funcname_size = 256;
     // symbol stores the symbol at which the signal was invoked
-    char* symbol = malloc(sizeof(char)*funcname_size);
+    char* symbol = static_cast<char*>(malloc(sizeof(char)*funcname_size));
     // the function name where the signal was invoked
-    char* funcname = malloc(sizeof(char)*funcname_size);
+    char* funcname = static_cast<char*>(malloc(sizeof(char)*funcname_size));
     // offset stores the relative address from the function where the signal was invoked
-    char* offset = malloc(sizeof(char)*10);
+    char* offset = static_cast<char*>(malloc(sizeof(char)*10));
     // the memory address of the function
     void* addr = NULL;
     // get void*'s for maximum last 16 entries on the stack
@@ -1389,7 +1389,7 @@ static void hoc_run1(void)	/* execute until EOF */
 	}
 	hoc_execerror_messages = 1;
 	if (pipeflag == 1) {	/*at this location multiple emacs errors */
-//		hoc_pipeflush(); /* don't eat up stack space */
+        hoc_pipeflush(); /* don't eat up stack space */
 	}else{
 		pipeflag=0;
 	}
@@ -1632,6 +1632,10 @@ int hoc_yyparse(void) {
 		i = yyparse();
 		hoc_in_yyparse = 0;
 		switch (i) {
+        case 'e':
+            i = '\n';
+            hoc_edit();
+            break;
         case -3 : /* need more input */
 			hoc_in_yyparse = 1;
 			i = '\n';

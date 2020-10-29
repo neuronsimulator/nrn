@@ -6,7 +6,7 @@ long hoc_nframe, hoc_nstack;
 #if !HAVE_IV
 #define Session void
 int hoc_main1(int, const char**, const char**);
-	void hoc_main1_init(const char*, const char**);
+void hoc_main1_init(const char*, const char**);
 #endif
 
 #include <stdio.h>
@@ -276,7 +276,7 @@ void mac_open_app(){
 #pragma export on
 #endif
 
-//    int ivocmain(int, const char**, const char**);
+    int ivocmain(int, const char**, const char**);
     int ivocmain_session(int, const char**, const char**, int start_session);
     int (*p_neosim_main)(int, const char**, const char**);
 	extern int nrn_global_argc;

@@ -208,8 +208,6 @@ two USEION statements (%g and %g)\n",
                    after all mod files have been dealt with to verify
                    that they all have a defined valence.
         */
-#if 0
-#endif
     } else if (valence != VAL_SENTINAL) {
         global_charge(s->subtype) = valence;
     }
@@ -265,7 +263,6 @@ void nernst(void) {
         Symbol *s = hoc_lookup(gargstr(1));
         if (s && ion_global_map[s->u.rng.type]) {
             Section *sec = chk_access();
-//			double* nrn_rangepointer();
             Symbol *ion = memb_func[s->u.rng.type].sym;
             double z = global_charge(s->u.rng.type);
             double *ci, *co, *e, x;
@@ -429,7 +426,7 @@ void ion_style(void) {
     Symbol *s;
     int istyle, i, oldstyle;
     Section *sec;
-    Prop *p; //, *nrn_mechanism();
+    Prop *p;
 
     s = hoc_lookup(gargstr(1));
     if (!s || s->type != MECHANISM || !nrn_is_ion(s->subtype)) {
@@ -481,7 +478,7 @@ int nrn_vartype(Symbol *sym) {
     i = sym->subtype;
     if (i == _AMBIGUOUS) {
         Section *sec;
-        Prop *p; //, *nrn_mechanism();
+        Prop *p;
         sec = nrn_noerr_access();
         if (!sec) {
             return nrnocCONST;

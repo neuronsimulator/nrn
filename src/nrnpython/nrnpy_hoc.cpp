@@ -102,8 +102,8 @@ extern NPySecObj* newpysechelp(Section* sec);
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
-extern /*"C"*/ int hoc_max_builtin_class_id;
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_max_builtin_class_id;
+extern int hoc_return_type_code;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;

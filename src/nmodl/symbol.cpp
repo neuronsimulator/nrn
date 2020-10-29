@@ -99,9 +99,9 @@ void poplocal() /* a lot of storage leakage here for symbols we are guaranteed
 	sl = LST(symlistlist->next);
 	for (i = sl->next; i != sl; i = j) {
 		j = i->next;
-		dlete(i);
+		remove(i);
 	}
-	dlete(symlistlist->next);
+	remove(symlistlist->next);
 }
 
 Symbol *copylocal(Symbol* s)

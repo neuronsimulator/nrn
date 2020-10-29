@@ -82,9 +82,7 @@ static double s_unname(void* v) {
 extern "C" Object* ivoc_list_item(Object*, int);
 
 static double s_rename(void* v) {
-//	extern Object* hoc_thisobject, **hoc_objgetarg();
 	extern Objectdata* hoc_top_level_data;
-//	extern Symbol* hoc_table_lookup();
 	extern Symlist* hoc_top_level_symlist;
 
 	char* name;
@@ -364,7 +362,7 @@ extern void class2oc(const char *,
 
 
 void SectionRef_reg(void) {
-	Symbol* s, *sr; //, *hoc_table_lookup();
+	Symbol* s, *sr;
 
 	class2oc("SectionRef", cons, destruct, members, nullptr, nullptr, nullptr);
 	/* now make the sec variable an actual SECTIONREF */

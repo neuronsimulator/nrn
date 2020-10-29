@@ -437,7 +437,7 @@ static void pop_file_stack() {
 	lappendstr(filetxtlist, buf);
 	FileStackItem* fsi;
 	fsi = (FileStackItem*)(SYM(filestack->prev));
-	dlete(filestack->prev);
+	remove(filestack->prev);
 	linenum = fsi->linenum;
 	inlinep = fsi->inlinep;
 	fclose(fin);

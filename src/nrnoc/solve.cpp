@@ -60,8 +60,6 @@ node.v + extnode.v[0]
 #include	"membfunc.h"
 #include 	"spmatrix.h"
 
-
-
 extern int	tree_changed;
 static void node_free();
 static void triang(NrnThread*), bksub(NrnThread*);
@@ -222,9 +220,9 @@ double topol_distance(Section* sec1, Node* node1, Section* sec2, Node* node2,
 static Section *origin_sec;
 
 void distance(void) {
-	double d, d_origin; //, chkarg();
+	double d, d_origin;
 	int mode;
-	Node* node;//, *node_exact();
+	Node* node;
 	Section *sec;	
 	static Node* origin_node;
 	Node* my_origin_node;
@@ -300,8 +298,7 @@ static void dashes(Section* sec, int offset, int first)
 	int i, scnt;
 	Section* ch;
 	char direc[30];
-//	extern double nrn_section_orientation();
-	
+
 	i = (int)nrn_section_orientation(sec);
 	sprintf(direc, "(%d-%d)", i, 1-i);
 	for (i=0; i<offset; i++) Printf(" ");
@@ -320,7 +317,6 @@ static void dashes(Section* sec, int offset, int first)
 		hoc_pushobj((Object**)ch);
 	}
 	while(scnt--) {		
-//		Object** hoc_objpop();
 		ch = (Section*)hoc_objpop();
 		i = node_index_exact(sec, nrn_connection_position(ch));
 		Printf(" ");
@@ -681,7 +677,7 @@ extern int keep_nseg_parm_;
 static Node* node_clone(Node* nd1) {
 	Node* nd2;
 	Prop* p1, *p2;
-    extern Prop* prop_alloc(Prop**, int, Node*);//, *prop_alloc();
+    extern Prop* prop_alloc(Prop**, int, Node*);
 	int i, imax;
 	nd2 = (Node *)ecalloc(1, sizeof(Node));
 #if CACHEVEC

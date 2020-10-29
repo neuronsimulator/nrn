@@ -75,8 +75,7 @@ Symbol* hoc_name2sym(const char* name) {
 
 void hoc_Symbol_limits(void) {
 	Symbol* sym;
-    extern Symbol* hoc_get_last_pointer_symbol();//, *hoc_get_last_pointer_symbol();
-//	double* hoc_pgetarg();
+    extern Symbol* hoc_get_last_pointer_symbol();
 
 	if (hoc_is_str_arg(1)) {
 		char* name = gargstr(1);
@@ -146,10 +145,8 @@ char* hoc_symbol_units(Symbol* sym, const char* units) {
 
 void hoc_Symbol_units(void) {
 	Symbol* sym;
-    extern Symbol* hoc_get_last_pointer_symbol(); //, *hoc_get_last_pointer_symbol();
+    extern Symbol* hoc_get_last_pointer_symbol();
 	extern double* hoc_pgetarg(int);
-//	int hoc_is_str_arg();
-//	char** hoc_temp_charptr();
 	char** units = hoc_temp_charptr();
 
 	if (hoc_is_double_arg(1)) {
@@ -249,7 +246,7 @@ void hoc_sscanf(void) {
 
 static int hoc_vsscanf(const char* buf) {
 	/* assumes arg2 format string from hoc as well as remaining args */
-	char *pf, *format, errbuf[100]; //, **hoc_pgargstr();
+	char *pf, *format, errbuf[100];
 	void* arglist[20];
 	int n=0, iarg, i, islong, convert, sawnum;
    extern double* hoc_pgetarg(int);
@@ -453,7 +450,6 @@ void System(void)
 	static char stdoutfile[]="/systmp.tmp";
 #endif
 	double d;
-//	int system();
 	FILE *fp;
 
 	if (hoc_plttext && !strchr(gargstr(1), '>')) {
@@ -508,7 +504,6 @@ hoc_execerror("Internal error in System(): can't open", stdoutfile);
 void Xred(void)	/* read with prompt string and default and limits */
 {
 	double d;
-//	double xred();
 
 	d = xred(gargstr(1), *getarg(2), *getarg(3), *getarg(4));
 	ret();

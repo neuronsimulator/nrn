@@ -2,7 +2,6 @@
 
 #include <catch2/catch.hpp>
 
-//extern "C" {
 #include <ocfunc.h>
 #include <code.h>
 #include <section.h>
@@ -14,7 +13,6 @@ extern int ivocmain_session(int, const char**, const char**, int);
 
 extern int nrn_main_launch;
 extern int nrn_nobanner_;
-//} // extern "C"
 
 /// Needed for compilation
 void modl_reg() { }

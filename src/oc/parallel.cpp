@@ -41,8 +41,7 @@ void hoc_parallel_begin(void) {
 #if !OCSMALL
     Symbol *sym;
     double first, last;
-    char *method; //, *getenv();
-//        int parallel_hoc_main();
+    char *method;
     int i, j;
 
 

@@ -421,10 +421,10 @@ void lag_stmt(Item* q1, int blocktype)	/* LAG name1 BY name2 */
 	/*ARGSUSED*/
 	/* parse */
 	name1 = SYM(q1->next);
-	dlete(q1->next);
-	dlete(q1->next);
+	remove(q1->next);
+	remove(q1->next);
 	name2 = SYM(q1->next);
-	dlete(q1->next);
+	remove(q1->next);
 	name1->usage |= DEP;
 	name2->usage |= DEP;
 	/* check */
@@ -590,7 +590,7 @@ void table_massage(List* tablist, Item* qtype, Item* qname, List* arglist)
 	depend = LST(q = q->next);
 	type = SYM(qtype)->type;
 
-	ifnew_parminstall( "usetable", "1", "", "0 1");
+	ifnew_parminstall("usetable", "1", "", "0 1");
 	if (!check_table_statements) {
 		check_table_statements = newlist();
 	}

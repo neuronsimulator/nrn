@@ -146,11 +146,10 @@ static struct {			/* numerical methods */
 			        "sparse", KINF, 0,
 			        "derivimplicit", DERF, 0, /* name hard wired in deriv.c */
 			        "cnexp", DERF, 0,
-	                "clsoda", DERF | KINF, 0,   /* Tolerance built in to
-scopgear.c */
-			        "after_cvode", 0, 0,
-			        "cvode_t", 0, 0,
-			        "cvode_t_v", 0, 0,
+	                "clsoda", DERF | KINF, 0,   /* Tolerance built in to scopgear.c */
+                    "after_cvode", 0, 0,
+                    "cvode_t", 0, 0,
+                    "cvode_t_v", 0, 0,
 	                0, 0, 0
 };
 

@@ -242,8 +242,8 @@ REPRESENTS	{
 
 \?.*	{/*ignore inline comments*/;}
 
-\{	{ yylval.qp = putintoken( "{", 0); return yytext[0]; }
-\}	{ yylval.qp = putintoken( "}", 0); return yytext[0]; }
+\{	{ yylval.qp = putintoken("{", 0); return yytext[0]; }
+\}	{ yylval.qp = putintoken("}", 0); return yytext[0]; }
 .	{ yylval.qp = putintoken(yytext, 0); return yytext[0]; }
 
 %%

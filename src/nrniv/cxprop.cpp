@@ -19,18 +19,11 @@ greater cache efficiency
 extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
-//void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
 #if EXTRACELLULAR
-void nrn_extcell_update_param();
+extern void nrn_extcell_update_param();
 #endif
 extern void nrn_recalc_ptrs(double*(*)(double*));
 static double* recalc_ptr(double*);
-
-//void* nrn_pool_create(long count, int itemsize);
-//void nrn_pool_delete(void* pool);
-//void* nrn_pool_alloc(void* pool);
-//void nrn_pool_free(void* pool, void* item);
-//void nrn_pool_freeall(void* pool);
 
 
 declareArrayPool(CharArrayPool, char)

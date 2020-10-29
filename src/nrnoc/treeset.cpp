@@ -619,7 +619,7 @@ static int disallow_needmemb = 0; /* point processes cannot use need_memb
 
 Section* nrn_pnt_sec_for_need_;
 
-extern Prop *prop_alloc(Prop **, int, Node *);//, *prop_alloc();
+extern Prop *prop_alloc(Prop **, int, Node *);
 
 
 extern "C" Prop* need_memb(Symbol* sym)
@@ -939,7 +939,6 @@ void recalc_diam(void) {
 void area(void) { /* returns area (um^2) of segment containing x */
 	double x;
 	Section *sec;
-//	Node *node_ptr();
 	x = *getarg(1);
 	if (x == 0. || x == 1.) {
 		hoc_retpushx(0.);
@@ -956,7 +955,7 @@ void area(void) { /* returns area (um^2) of segment containing x */
 void ri(void) { /* returns resistance (Mohm) between center of segment containing x
 		and the center of the parent segment */
 	double area;
-	Node *np; //, *node_ptr();
+	Node *np;
 	np = node_ptr(chk_access(), *getarg(1), &area);
 	if (NODERINV(np)) {
 		hoc_retpushx(1./NODERINV(np)); /* Megohms */
@@ -1399,11 +1398,10 @@ static void nrn_translate_shape(Section* sec, float x, float y, float z)
 void nrn_define_shape(void) {
 	static int changed_;
 	int i, j;
-	Section* sec, *psec, *ch; //, *nrn_trueparent();
+	Section* sec, *psec, *ch;
 	float x, y, z, dz, x1, y1;
 	float nch, ich=0.0, angle;
 	double arc, len;
-//	double nrn_connection_position();
 	if (changed_ == nrn_shape_changed_ && !diam_changed && !tree_changed) {
 		return;
 	}

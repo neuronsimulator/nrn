@@ -1,4 +1,4 @@
-(char*)"force",
+"force",
 "deflate",
 "expfit",
 "derivs",

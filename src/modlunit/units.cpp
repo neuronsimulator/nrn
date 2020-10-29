@@ -87,7 +87,7 @@ void chkfperror();
 void units(unit*);
 int pu(int, int, int);
 int convr(unit*);
-void units_cpp_init(); //TODO - was this init() used somewhere else? avoiding duplicate symbol: nmold/init.cpp init()
+void units_cpp_init();
 int get();
 
 extern void Unit_push(char*);

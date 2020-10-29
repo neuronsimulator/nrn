@@ -192,7 +192,6 @@ void hoc_pipeflush(void)
 }
 
 size_t hoc_pipegets_need(void) {
-//    int hoc_strgets_need();
 #if !OCSMALL
     if (hoc_pipeflag == 1) {
         if (lp == lhead) {

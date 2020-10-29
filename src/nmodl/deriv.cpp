@@ -515,7 +515,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 	lappendstr(procfunc, "return _reset;\n}\n");
 
 /* don't emit _ode_matsol if the user has defined cvodematsol */
-  if (!lookup( "cvodematsol")) {
+  if (!lookup("cvodematsol")) {
 	Item* qq;
 	Item* qextra = q1->next->next->next->next;
 	Sprintf(buf, "static int _ode_matsol%d", numlist);
@@ -597,7 +597,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 Sprintf(buf, "{int _id; for(_id=0; _id < %d; _id++) {\n\
 if (_deriv%d_advance) {\n", count, numlist);
 		Insertstr(q4, buf);
-		sp = install( "D", STRING);
+		sp = install("D", STRING);
 		sp->araydim = count; /*this breaks SENS*/
 		q = insertsym(q4, sp);
 		eqnqueue(q);
@@ -776,7 +776,7 @@ void matchmassage(int nderiv)
 		s = SYM(q);
 		ITERATE(q1, deriv_state_list) {
 			if (SYM(q1) == s) {
-				dlete(q1);
+				remove(q1);
 				break;
 			}
 		}
@@ -1034,7 +1034,7 @@ int cvode_cnexp_success(Item* q1, Item* q2) {
 		/* convert Method to nil and the type of the block to
 		   PROCEDURE */
 		SYM(cvode_cnexp_solve->next)->name = stralloc("cnexp", 0);
-		dlete(deriv_imp_list->next);
+		remove(deriv_imp_list->next);
 
 		/* replace the Dstate = f(state) equations */
 		qeq = cvode_eqn->next;
@@ -1066,7 +1066,7 @@ sprintf(buf," %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
 			q2 = q2->next;
 			for(q3=q1->prev->prev; q3 != q2; q3 = q4) {
 				q4 = q3->next;
-				dlete(q3);
+				remove(q3);
 			}
 		}
 		

@@ -117,6 +117,10 @@ typedef struct Symbol {	/* symbol table entry */
 	char	*name;
 	short	type;
 	short	subtype;	/* Flag for user integers */
+/**
+ * Note: `public` is a reserved keyword. Keeping following __cplusplus comments a bit longer
+ * for future reference,  with upcoming work for NMODL + eventual mod files to support cpp.
+ */
 //#if defined(__cplusplus)
 	short	cpublic;		/* flag set public variable */
 //#else

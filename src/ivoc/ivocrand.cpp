@@ -59,12 +59,12 @@ implementPtrList(RandomPlayList, RandomPlay)
 static RandomPlayList* random_play_list_;
 
 extern "C" {
-//double nrn_random_pick(Rand* r);
+double nrn_random_pick(Rand* r);
 void nrn_random_reset(Rand* r);
-//Rand* nrn_random_arg(int);
+Rand* nrn_random_arg(int);
 long nrn_get_random_sequence(Rand* r);
 void nrn_set_random_sequence(Rand* r, long seq);
-//int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
 } // extern "C"
 
 #include <mcran4.h>

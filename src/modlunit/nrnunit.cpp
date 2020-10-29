@@ -26,12 +26,12 @@ void nrn_unit_init() {
 void nrn_unit_chk() {
 	Item *q;
 	
-	unit_chk("v",        "millivolt");
-	unit_chk("t",        "ms");
-	unit_chk("dt",       "ms");
+	unit_chk("v", "millivolt");
+	unit_chk("t", "ms");
+	unit_chk("dt", "ms");
 	unit_chk("celsius", "degC");
-	unit_chk("diam",     "micron");
-	unit_chk("area",     "micron2");
+	unit_chk("diam", "micron");
+	unit_chk("area", "micron2");
 
     if (breakpoint_local_seen_ == 0 || conductance_seen_ == 0) {
 	ITERATE(q, current) {

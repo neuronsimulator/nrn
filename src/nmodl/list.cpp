@@ -217,7 +217,7 @@ Item *lappendlst(List* list, List* lst)
 	return insertlist(list, lst);
 }
 
-void dlete(Item *item)
+void remove(Item *item)
 {
 	assert(item->itemtype); /* can't delete list */
 	item->next->prev = item->prev;
@@ -256,9 +256,9 @@ void deltokens(Item* q1, Item* q2) /* delete tokens from q1 to q2 */
 	Item *q;
 	for (q = q1; q != q2;) {
 		q = q->next;
-		dlete(q->prev);
+		remove(q->prev);
 	}
-	dlete(q2);
+	remove(q2);
 		
 }
 

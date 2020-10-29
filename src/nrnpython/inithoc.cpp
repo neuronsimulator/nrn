@@ -272,4 +272,3 @@ extern "C" void inithoc() {
 #if !defined(CYGWIN)
 extern "C" void modl_reg() {}
 #endif // !defined(CYGWIN)
-//

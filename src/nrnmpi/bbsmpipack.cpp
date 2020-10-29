@@ -272,13 +272,13 @@ void nrnmpi_pkstr(const char* s, bbsmpibuf* r) {
 	int len;
 	len = strlen(s);
 	pack(&len, 1, my_MPI_INT, r, "pkstr length");
-	pack(&s, len, my_MPI_CHAR, r, "pkstr string");
+	pack((char*)s, len, my_MPI_CHAR, r, "pkstr string");
 }
 
 void nrnmpi_pkpickle(const char* s, size_t size, bbsmpibuf* r) {
 	int len = size;
 	pack(&len, 1, my_MPI_INT, r, "pkpickle length");
-	pack(&s, len, my_MPI_PICKLE, r, "pkpickle data");
+	pack((char*)s, len, my_MPI_PICKLE, r, "pkpickle data");
 }
 
 void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r) {

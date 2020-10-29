@@ -366,7 +366,7 @@ void nrn_fixed_step() {
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
-//		}
+        //}
 	}else{
 		nrn_multithread_job(nrn_fixed_step_thread);
 /* if there is no nrnthread_v_transfer then there cannot be
@@ -459,7 +459,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
 	deliver_net_events(nth);
 	wt = nrnmpi_wtime();
-	nrn_random_play(/*nth*/); // TODO nrnthread fn?
+	nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
 	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
@@ -518,7 +518,7 @@ void* nrn_ms_treeset_through_triang(NrnThread* nth) {
 	double wt;
 	deliver_net_events(nth);
 	wt = nrnmpi_wtime();
-    nrn_random_play(/*nth*/); // TODO nrnthread fn?
+	nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
 	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
@@ -823,7 +823,7 @@ void nrn_finitialize(int setv, double v) {
     nrn_thread_table_check();
     clear_event_queue();
     nrn_spike_exchange_init();
-    nrn_random_play(/*_nt*/); // TODO nrnthread fn?
+    nrn_random_play();
 #if VECTORIZE
     nrn_play_init(); /* Vector.play */
     for (i = 0; i < nrn_nthread; ++i) {
@@ -993,7 +993,6 @@ static void batch_out() {
 }
 
 void batch_save(void) {
-//	double* hoc_pgetarg();
     int i;
     if (!ifarg(1)) {
         batch_n = 0;

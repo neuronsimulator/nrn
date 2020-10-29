@@ -991,7 +991,7 @@ static void conductance_cout() {
   ITERATE(q, m) {
     if (q->itemtype == SYMBOL) {
       if (strcmp(SYM(q)->name, "{") == 0) {
-        dlete(q);
+        remove(q);
         break;
       }
     }
@@ -1000,7 +1000,7 @@ static void conductance_cout() {
   for (q = m->prev; q != m; q = q->prev) {
     if (q->itemtype == SYMBOL) {
       if (strcmp(SYM(q)->name, "}") == 0) {
-        dlete(q);
+        remove(q);
         break;
       }
     }

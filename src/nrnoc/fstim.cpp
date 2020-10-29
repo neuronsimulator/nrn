@@ -133,7 +133,6 @@ static void free_stim(void) {
 
 static void stim_record(int i)    /*fill in the section info*/
 {
-//	Node *node_ptr();
     double area;
     Section *sec;
 

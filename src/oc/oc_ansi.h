@@ -270,13 +270,7 @@ extern int hoc_sred(const char*, char*, char*);
 extern int nrnpy_pr(const char* fmt, ...);
 extern int Fprintf(FILE*, const char* fmt, ...);
 extern void nrnpy_pass();
-
-//#if defined (__cplusplus)
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
-//#else
-//extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
-//#endif
-
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
 

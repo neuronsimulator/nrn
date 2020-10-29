@@ -74,7 +74,6 @@ typedef struct hoc_Item {
 /*
  * An item type, STRING is also used as an item type 
  */
-//
 
 extern char *hoc_l_stralloc(const char *, char *release);
 extern hoc_List *hoc_l_newlist();

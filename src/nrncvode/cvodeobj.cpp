@@ -8,7 +8,7 @@ extern "C" void cvode_fadvance();
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #include <math.h>
 #include <stdlib.h>

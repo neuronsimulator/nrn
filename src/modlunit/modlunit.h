@@ -15,7 +15,7 @@ void declare_array(Symbol*);
 void declare_implied();
 void declare_indep(Symbol*);
 void define_value(Item* q1, Item* q2);
-void dlete(Item*);
+void remove(Item *item);
 void deltokens(Item* q1, Item* q2);
 void diag(char*, char*);
 void dimensionless();

@@ -2211,7 +2211,6 @@ void hoc_not(void) {
 void power(void)            /* arg1 raised to arg2 */
 {
     double d1, d2;
-//	extern double Pow();
     d2 = xpopm();
     d1 = xpopm();
     d1 = Pow(d1, d2);
@@ -2485,7 +2484,6 @@ void print(void) /* pop top value from stack, print it */
 void prexpr(void)    /* print numeric value */
 {
     static HocStr *s;
-//	 char *hoc_object_name();
     char *ss;
 #if CABLE
     extern char* secaccessname();

@@ -375,7 +375,7 @@ void nrnpy_decref_defer(PyObject* po) {
 }
 
 #if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 3)
-// copied from /Modules/_ctypes/_ctypes.cpp
+// copied from /Modules/_ctypes/_ctypes.c
 static PyObject* PyTuple_Pack(int n, ...) {
   int i;
   PyObject* o;

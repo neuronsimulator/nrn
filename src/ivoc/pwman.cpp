@@ -2,7 +2,7 @@
 #include "gui-redirect.h"
 
 extern char* ivoc_get_temp_file();
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #if HAVE_IV
 #if (MAC && !defined(carbon)) || defined(WIN32)

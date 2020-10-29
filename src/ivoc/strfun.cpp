@@ -19,7 +19,7 @@ extern Objectdata* hoc_top_level_data;
 extern Symlist* hoc_built_in_symlist;
 extern int nrn_is_artificial(int);
 
-extern /*"C"*/ int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 inline unsigned long key_to_hash(String& s) {return s.hash();}
 implementTable(SymbolTable, String, Symbol*)

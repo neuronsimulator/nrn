@@ -14,7 +14,7 @@ extern void nrn_play_init(void);
 extern void fixed_record_continuous(NrnThread* nt);
 extern void fixed_play_continuous(NrnThread* nt);
 extern void nrn_solver_prepare(void);
-extern "C" void nrn_random_play(/*NrnThread**/); // TODO nrnthread fn?
+extern "C" void nrn_random_play();
 extern void nrn_daspk_init_step(double, double, int);
 extern void nrndae_init(void);
 extern void nrndae_update(void);
