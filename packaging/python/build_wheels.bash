@@ -53,10 +53,10 @@ pip_numpy_install() {
     # numpy is special as we want the minimum wheel version
     numpy_ver="numpy"
     case "$py_ver" in
-      35) numpy_ver="numpy==1.10.1" ;;
+      35) numpy_ver="numpy==1.10.4" ;;
       36) numpy_ver="numpy==1.12.1" ;;
-      37) numpy_ver="numpy==1.15.1" ;;
-      38) numpy_ver="numpy==1.17.4" ;;
+      37) numpy_ver="numpy==1.14.6" ;;
+      38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
       *) numpy_ver="numpy";;
     esac
