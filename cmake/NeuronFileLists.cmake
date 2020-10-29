@@ -186,6 +186,7 @@ endif()
 # Files in nrniv directory
 # =============================================================================
 set(NRNIV_FILE_LIST
+    backtrace_utils.cpp
     bbs.cpp
     bbsavestate.cpp
     bbsdirect.cpp

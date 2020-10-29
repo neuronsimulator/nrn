@@ -44,6 +44,7 @@ option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
@@ -220,6 +221,15 @@ else()
   set(PARANEURON 0)
 endif()
 
+# =============================================================================
+# Enable backward
+# =============================================================================
+if(NRN_ENABLE_BACKTRACE)
+    set(NRN_USE_BACKWARD 1)
+    add_external_project(backward)
+else()
+    set(NRN_USE_BACKWARD 0)
+endif()
 # =============================================================================
 # Enable Interviews
 # =============================================================================
