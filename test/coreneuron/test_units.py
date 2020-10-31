@@ -18,11 +18,11 @@ def test_units():
   h.finitialize(-65)
   pc.psolve(h.dt)
 
-  print("R %.17g %.17g" %(pp.gasconst, R_std))
+  print("\nR %.17g %.17g" %(pp.gasconst, R_std))
   print("erev %.17g %.17g" % (pp.erev, erev_std))
   print("ghk %.17g %.17g" % (pp.ghk, ghk_std))
 
-#  assert(R_std == pp.gasconst) # mod2c needs nrnunits.lib.in
+  assert(R_std == pp.gasconst) # mod2c needs nrnunits.lib.in
   assert(erev_std == pp.erev)
   assert(ghk_std == pp.ghk)
 
