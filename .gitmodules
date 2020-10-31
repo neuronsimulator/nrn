@@ -25,3 +25,6 @@
 [submodule "test/rxd/testdata"]
 	path = test/rxd/testdata
 	url = https://github.com/neuronsimulator/rxdtestdata
+[submodule "external/backward"]
+	path = external/backward
+	url = https://github.com/bombela/backward-cpp.git
