@@ -55,7 +55,7 @@ class RenameVisitor: public ConstAstVisitor {
     std::string new_var_name_prefix;
 
     /// Map that keeps the renamed variables to keep the same random suffix when a variable is
-    /// renamed accross the whole file
+    /// renamed across the whole file
     std::unordered_map<std::string, std::string> renamed_variables;
 
     /// add prefix to variable name

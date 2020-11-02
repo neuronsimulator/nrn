@@ -1855,6 +1855,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
     void visit_watch_statement(ast::WatchStatement& node) override;
     void visit_while_statement(ast::WhileStatement& node) override;
     void visit_derivimplicit_callback(ast::DerivimplicitCallback& node) override;
+    void visit_for_netcon(ast::ForNetcon& node) override;
 };
 
 
