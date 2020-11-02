@@ -91,6 +91,8 @@ Development conventions:
 NEURON code is being built according to C/C++, Python best-practices. The easiest way to figure out what this is is to take a look at current code and copy the way things are
 formatted, indented, documented, and commented.
 
+The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.html) section of the documentation provides a starting point for understanding NEURON's internals.
+
 ### Code Formatting
 
 Currently we have enabled CMake code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format). Before submitting PR, if you have changed any CMake build related code, make sure to run cmake-format as below:
