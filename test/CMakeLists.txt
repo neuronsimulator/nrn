@@ -117,11 +117,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       endif()
     endif()
   endif()
-  add_test(
-    NAME parallel_tests
-    COMMAND
-      ${MPIEXEC} -np 6 ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
-  list(APPEND TESTS parallel_tests)
+  if (NRN_ENABLE_MPI)
+    add_test(
+      NAME parallel_tests
+      COMMAND
+        ${MPIEXEC} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
+    list(APPEND TESTS parallel_tests)
+  endif()
 
   if(NRN_ENABLE_CORENEURON)
     file(COPY ${PROJECT_SOURCE_DIR}/test/coreneuron/mod DESTINATION ${PROJECT_BINARY_DIR}/test/)
