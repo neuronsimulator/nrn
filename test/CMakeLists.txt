@@ -105,7 +105,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
 
   if(NRN_ENABLE_RX3D)
     add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
-    list(APPEND TESTS basic_tests)
+    list(APPEND TESTS rxd_tests)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
