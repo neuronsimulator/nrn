@@ -89,10 +89,9 @@ if(CORENRN_ENABLE_GPU)
   # compile cuda files for multiple architecture
   cuda_add_library(
     "cudacoreneuron" ${CORENEURON_CUDA_FILES}
-    OPTIONS -arch=sm_30
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
+    OPTIONS -arch=sm_60
+            -gencode=arch=compute_60,code=sm_60
+            -gencode=arch=compute_72,code=sm_72
             -gencode=arch=compute_52,code=compute_52
             -Xcompiler
             -fPIC)

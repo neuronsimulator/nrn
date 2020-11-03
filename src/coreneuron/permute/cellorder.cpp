@@ -463,9 +463,13 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
 #if !defined(_OPENACC)
     int ii = i;
 #endif
+
+    // execute until all tree depths are executed
+    bool has_subtrees_to_compute = true;
+
 // clang-format off
     #pragma acc loop seq
-    for (;;) {  // ncycle loop
+    for (; has_subtrees_to_compute; ) {  // ncycle loop
 #if !defined(_OPENACC)
         // serial test, gpu does this in parallel
         for (int icore = 0; icore < warpsize; ++icore) {
@@ -483,8 +487,11 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
 #if !defined(_OPENACC)
         }
 #endif
+        // if finished with all tree depths then ready to break
+        // (note that break is not allowed in OpenACC)
         if (icycle == 0) {
-            break;
+            has_subtrees_to_compute = false;
+            continue;
         }
         --icycle;
         istride = stride[icycle];
