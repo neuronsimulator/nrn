@@ -24,3 +24,6 @@ NRNUNIT_USE_LEGACY
 
   The purpose of allowing legacy unit values is to easily validate
   results of old models (double precision identity).
+
+  This environment variable takes precedence over the CMake option
+  ``NRN_DYNAMIC_UNITS_USE_LEGACY``.
