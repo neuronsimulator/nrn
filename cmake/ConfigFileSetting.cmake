@@ -147,6 +147,12 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(NRNPYTHON_DYNAMICLOAD 3)
 endif()
 
+if(NRN_DYNAMIC_UNITS_USE_LEGACY)
+  set(DYNAMIC_UNITS_USE_LEGACY_DEFAULT 1)
+else()
+  unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
+endif()
+
 # =============================================================================
 # Dependencies option
 # =============================================================================
