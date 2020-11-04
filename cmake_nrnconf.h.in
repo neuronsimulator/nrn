@@ -269,6 +269,9 @@
 /* if 1 then dlopen nrnmech instead of special */
 #undef NRNMECH_DLL_STYLE
 
+/* if 1 then dynamic units default is legacy units */
+#undef DYNAMIC_UNITS_USE_LEGACY_DEFAULT
+
 /* if nrnoc can use X11 */
 #undef NRNOC_X11
 
