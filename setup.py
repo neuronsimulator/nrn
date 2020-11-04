@@ -283,10 +283,20 @@ def setup_package():
             "share/lib/python/neuron/rxd/geometry3d",
             numpy.get_include()
         ]
+
+        # Cython files take a long time to compile with O2 so default O0
+        # But pay the price if uploading distribution
+        extra_compile_args=["-O0"]
+        if "NRN_BUILD_FOR_UPLOAD" in os.environ:
+          extra_compile_args=["-O2"]
+        print("RX3D extra_compile_args %s" % str(extra_compile_args))
+
         rxd_params = extension_common_params.copy()
         rxd_params['libraries'].append("rxdmath")
         rxd_params.update(dict(
-            extra_compile_args=["-O0"],  # cython files take too long to compile with O3
+            # Cython files take a long time to compile with O2 but this
+            # is a distribution...
+            extra_compile_args=extra_compile_args,
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
 
