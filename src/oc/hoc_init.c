@@ -276,7 +276,11 @@ void hoc_init(void)	/* install constants and built-ins table */
 	int i;
 	Symbol *s;
 
-	_nrnunit_use_legacy_ = 0; /* default */
+#if	defined(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
+	_nrnunit_use_legacy_ = 1; /* legacy as default */
+#else
+    _nrnunit_use_legacy_ = 0; /* new units as default */
+#endif
 	{ /* but check the environment variable if it exists */
 		const char* envvar = getenv("NRNUNIT_USE_LEGACY");
 		if (envvar) {
