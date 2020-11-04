@@ -23,9 +23,11 @@ if [ ! -f setup.py ]; then
     exit 1
 fi
 
+py_ver=""
+
 setup_venv() {
     local py_bin="$1"
-    local py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
+    py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
     local venv_dir="nrn_build_venv$py_ver"
 
     if [ "$py_ver" -lt 35 ]; then
@@ -47,6 +49,21 @@ setup_venv() {
 }
 
 
+pip_numpy_install() {
+    # numpy is special as we want the minimum wheel version
+    numpy_ver="numpy"
+    case "$py_ver" in
+      35) numpy_ver="numpy==1.10.4" ;;
+      36) numpy_ver="numpy==1.12.1" ;;
+      37) numpy_ver="numpy==1.14.6" ;;
+      38) numpy_ver="numpy==1.17.5" ;;
+      39) numpy_ver="numpy==1.19.3" ;;
+      *) numpy_ver="numpy";;
+    esac
+    echo " - pip install $numpy_ver"
+    pip install $numpy_ver
+}
+
 build_wheel_linux() {
     echo "[BUILD WHEEL] Building with interpreter $1"
     local skip=
@@ -56,6 +73,7 @@ build_wheel_linux() {
     echo " - Installing build requirements"
     pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
     pip install -r packaging/python/build_requirements.txt
+    pip_numpy_install
 
     echo " - Building..."
     rm -rf dist build
@@ -85,6 +103,7 @@ build_wheel_osx() {
 
     echo " - Installing build requirements"
     pip install -U delocate -r packaging/python/build_requirements.txt
+    pip_numpy_install
 
     echo " - Building..."
     rm -rf dist build
