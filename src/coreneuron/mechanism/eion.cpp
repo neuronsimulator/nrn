@@ -81,7 +81,6 @@ static const char* mechanism[] = {/*just a template*/
 void nrn_init_ion(NrnThread*, Memb_list*, int);
 void nrn_alloc_ion(double*, Datum*, int);
 
-double nrn_nernst(), nrn_ghk();
 static int na_ion, k_ion, ca_ion; /* will get type for these special ions */
 
 int nrn_is_ion(int type) {
@@ -182,8 +181,19 @@ the USEION statement of any model using this ion\n",
     }
 }
 
+#ifndef CORENRN_USE_LEGACY_UNITS
+#define CORENRN_USE_LEGACY_UNITS 0
+#endif
+
+#if CORENRN_USE_LEGACY_UNITS == 1
 #define FARADAY 96485.309
-#define ktf (1000. * 8.3134 * (celsius + 273.15) / FARADAY)
+#define gasconstant 8.3134
+#else
+#include "coreneuron/nrnoc/nrnunits_modern.h"
+#define FARADAY _faraday_codata2018
+#define gasconstant _gasconstant_codata2018
+#endif
+#define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
 
 double nrn_nernst(double ci, double co, double z, double celsius) {
     /*printf("nrn_nernst %g %g %g\n", ci, co, z);*/

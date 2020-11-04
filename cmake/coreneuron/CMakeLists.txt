@@ -86,6 +86,7 @@ option(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY "Enable CUDA unified memory support" O
 option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
+option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 
 set(CORENRN_NMODL_DIR
     ""
@@ -240,6 +241,13 @@ if(CORENRN_ENABLE_REPORTING)
   include_directories(${sonatareport_INCLUDE_DIR})
 endif()
 
+if(CORENRN_ENABLE_LEGACY_UNITS)
+  set(CORENRN_USE_LEGACY_UNITS 1)
+else()
+  set(CORENRN_USE_LEGACY_UNITS 0)
+endif()
+set(MOD2C_ENABLE_LEGACY_UNITS ${CORENRN_ENABLE_LEGACY_UNITS} CACHE BOOL "" FORCE)
+
 if(MINGW)
   add_definitions("-DMINGW")
 endif()
@@ -275,7 +283,7 @@ if(CORENRN_ENABLE_NMODL)
   separate_arguments(NMODL_EXTRA_FLAGS_LIST UNIX_COMMAND "${CORENRN_NMODL_FLAGS}")
 else()
   include(AddMod2cSubmodule)
-  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/external/mod2c/src/mod2c_core/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
+  set(CORENRN_NMODL_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
   set(CORENRN_NMODL_INCLUDE ${CMAKE_BINARY_DIR}/include)
 endif()
 
@@ -398,6 +406,7 @@ if(cmake_generator_tolower MATCHES "makefile")
     message(STATUS "  INC               | ${MPI_C_INCLUDE_PATH}")
   endif()
   message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
+  message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
   message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
   if(CORENRN_ENABLE_NMODL)
     message(STATUS "  PATH              | ${CORENRN_NMODL_BINARY}")
