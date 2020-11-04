@@ -277,7 +277,7 @@ void hoc_init(void)	/* install constants and built-ins table */
 	Symbol *s;
 
 #if	defined(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
-	_nrnunit_use_legacy_ = 1; /* legacy as default */
+    _nrnunit_use_legacy_ = 1; /* legacy as default */
 #else
     _nrnunit_use_legacy_ = 0; /* new units as default */
 #endif
