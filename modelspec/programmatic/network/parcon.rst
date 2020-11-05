@@ -347,11 +347,10 @@ ParallelContext
         type as the args of the "function_name". They do not have to be unpacked. 
         Saving args is time efficient since it does not imply extra communication 
         with the server. 
-         
 
-        Arguments may be any pickleable objects (NEURON objects like :class:`Vector` are
-        not currently pickleable, but most built-in Python objects and user-defined
-        classes are pickleable). The callable is executed on some indeterminate MPI/PVM
+        Arguments may be any pickleable objects (The NEURON :class:`Vector` is
+        pickleable, and  most built-in Python objects and user-defined
+        classes are pickleable). The callable is executed on some indeterminate MPI
         host. The return value is a Python object and may be retrieved with
         :meth:`pyret`.  Python object arguments 
         may be retrieved with :func:`upkpyobj`. 
@@ -1944,10 +1943,12 @@ Description:
     the :meth:`ParallelContext.context` method. In particular, without subworlds, 
     it is impossible to correctly submit bulletin board tasks, each of which 
     simulates a network specfied with the :ref:`ParallelNetwork` 
-    methods --- even if the network is complete on a single process. 
+    methods --- even if the network is complete on a single process. This is
+    because network simulations internally call MPI collectives which would
+    deadlock due to not every worker participating in the collective.
      
     The :meth:`ParallelContext.subworlds` method divides the world of processors into subworlds, 
-    each of which can execute a task that independently and assynchronously 
+    each of which can execute a task (in parallel within the subworld) that independently and assynchronously 
     creates and simulates (and destroys if the task networks are different) 
     a separate 
     network described using the :ref:`ParallelNetwork` and 
@@ -1959,17 +1960,21 @@ Description:
     each subworld utilizes a distinct MPI communicator. In a subworld, the 
     :meth:`ParallelContext.id` and :meth:`ParallelContext.nhost` refer to the rank and 
     number of processors in the subworld. (Note that every subworld has 
-    a :meth:`ParallelContext.id` == 0 rank processor.) 
+    a :meth:`ParallelContext.id` == 0 rank processor.)
      
     Only the rank :meth:`ParallelContext.id` == 0 subworld processors communicate 
-    with the bulletin board. Of these processors, one (:meth:`~ParallelContext.id_world` == 0) is 
-    the master processor and the others are the workers. The master 
-    submits tasks to the bulletin board (and executes a task if no results 
-    are available) and the workers execute tasks and post the results 
+    with the bulletin board. Of these processors, one
+    (:meth:`~ParallelContext.id_world` == 0, i.e. :meth:`~ParallelContext.id_bbs` == 0 and :meth:`~ParallelContext.id` == 0)
+    is the master processor and the others
+    (:meth:`~ParallelContext.id_bbs` > 0 and :meth:`~ParallelContext.id` == 0)
+    are the workers. The master 
+    submits tasks to the bulletin board (and executes the task in parallel as a subworld with its total nhost ranks if no results 
+    are available) and the workers execute tasks and id == 0 processes post the results 
     to the bulletin board. Remember, all the workers also have :meth:`ParallelContext.id` 
     == 0 but different :meth:`~ParallelContext.id_world` and :meth:`~ParallelContext.id_bbs` ranks. The subworld 
-    :meth:`ParallelContext.id` ranks greater than 0 are not called workers --- their 
-    global rank is :meth:`~ParallelContext.id_world` but their bulletin board rank, :meth:`~ParallelContext.id_bbs` is -1. 
+    :meth:`ParallelContext.id` ranks greater than 0 are not workers in the sense of directly interacting with the bulletin board by posting and taking messages --- their 
+    global rank is :meth:`~ParallelContext.id_world` but their bulletin board rank, :meth:`~ParallelContext.id_bbs` is -1. To reduce confusion, it would be nice if the id_bbs value was the same as that of rank 0 of the subworld. But see the following paragraph for why the -1 value has the edge in usefulness. Fortunately the subworld (id_bbs) identifier is for these id()>0 ranks is easy to calculate as ``pc.id_world()//requested_subworld_size`` where the denominator is the argument used in :meth:`ParallelContext.subworlds`.
+    (One cannot use ``pc.nhost()`` in place of the ``requested_subworld_size`` arg if ``pc.nhost_world()`` is not an integer multiple of ```requested_subworld_size`` since the last subworld will have ``pc.nhost() < requested_subworld_size``.)
     When a worker (or the master) receives a task to execute, the exact same 
     function with arguments that define the task will be executed on all the 
     processes of the subworld. A subworld is exactly analogous to the old 
@@ -1979,8 +1984,8 @@ Description:
      
     A runtime error will result if an :meth:`~ParallelContext.id_bbs` == -1 rank processor tries 
     to communicate with the bulletin board, thus the general idiom for 
-    a task posting or taking information from the bulletin board should be either 
-    ``if (pc.id == 0) { ... }`` or ``if (pc.id_bbs != -1) { ... }``. 
+    a task posting or taking information from the bulletin board should be 
+    ``if (pc.id == 0) { ... }`` or if (pc.id_bbs != -1) { ... }. 
     The latter is more general since the former would not be correct if 
     :meth:`~ParallelContext.subworlds` has NOT been called since in that case 
     ``pc.id == pc.id_world == pc.id_bbs`` and 
@@ -2004,10 +2009,11 @@ Description:
         Divides the world of all processors 
         into :func:`nhost_world` / subworld_size subworlds. 
         Note that the total number of processes, nhost_world, should be 
-        an integer multiple of subworld_size. 
+        an integer multiple of subworld_size. If that is not the case, the
+        last subworld will have ``pc.nhost() < subworld_size``.
         The most useful subworld sizes are 1 and :func:`nhost_world` . 
         After return, for the processes 
-        in each subworld, :meth:`ParallelContext.nhost` is equal to subworld_size 
+        in each subworld, :meth:`ParallelContext.nhost` is equal to subworld_size (except the last if nhost_world is not in integer multiple of subworld_size).
         and the :meth:`ParallelContext.id` is the rank of the process with respect 
         to the subworld of which it is a part. 
          
@@ -2041,7 +2047,7 @@ Description:
         progresses the function "f" prints its rank and number of processors 
         for the world, bulletin board, and net (subworld) as well as argument, 
         return value, and bulletin board defined userid. Prior to the runworker 
-        call all processes call f. After the runworker call, only the master 
+        call, all processes call f. After the runworker call, only the master 
         process returns and calls f. The master submits 4 tasks and then enters 
         a while loop waiting for results and, when a result is ready, prints 
         the userid, argument, and return value of the task. 
