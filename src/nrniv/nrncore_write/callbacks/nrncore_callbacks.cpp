@@ -64,12 +64,14 @@ void write_memb_mech_types_direct(std::ostream& s) {
 
 
 
-// just for secondorder and Random123_globalindex
+// just for secondorder and Random123_globalindex and legacy units flag
 int get_global_int_item(const char* name) {
     if (strcmp(name, "secondorder") == 0) {
         return secondorder;
     }else if(strcmp(name, "Random123_global_index") == 0) {
         return nrnran123_get_globalindex();
+    }else if (strcmp(name, "_nrnunit_use_legacy_") == 0) {
+        return _nrnunit_use_legacy_;
     }
     return 0;
 }
