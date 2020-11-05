@@ -260,9 +260,6 @@ static double rank_bbs(void* v) {
 
 static double subworlds(void* v) {
 	int n = int(chkarg(1, 1, nrnmpi_numprocs_world));
-	if (nrnmpi_numprocs_world%n) {
-		hoc_execerror("nhost_world must be an integer multiple of subworld size", 0);
-	}
 #if NRNMPI
 	nrnmpi_subworld_size(n);
 #endif

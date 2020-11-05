@@ -87,6 +87,7 @@ list(APPEND TESTS connect_dend)
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   add_test(NAME basic_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/pynrn
            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn)
+  list(APPEND TESTS basic_tests)
   add_custom_target(
     pynrn_mod ALL
     COMMAND
@@ -102,17 +103,26 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
   add_dependencies(rxdmod nrniv)
 
-  add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
-  list(APPEND TESTS basic_tests rxd_tests)
-  if(NRN_ENABLE_MPI)
-    find_python_module(mpi4py)
-    if(mpi4py_FOUND)
-      add_test(
-        NAME rxd_mpi_tests
-        COMMAND
-          ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
-      list(APPEND TESTS rxd_mpi_tests)
+  if(NRN_ENABLE_RX3D)
+    add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd)
+    list(APPEND TESTS rxd_tests)
+    if(NRN_ENABLE_MPI)
+      find_python_module(mpi4py)
+      if(mpi4py_FOUND)
+        add_test(
+          NAME rxd_mpi_tests
+          COMMAND
+            ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
+        list(APPEND TESTS rxd_mpi_tests)
+      endif()
     endif()
+  endif()
+  if (NRN_ENABLE_MPI)
+    add_test(
+      NAME parallel_tests
+      COMMAND
+        ${MPIEXEC} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
+    list(APPEND TESTS parallel_tests)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
