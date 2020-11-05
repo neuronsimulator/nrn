@@ -127,6 +127,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
 
   if(NRN_ENABLE_CORENEURON)
     file(COPY ${PROJECT_SOURCE_DIR}/test/coreneuron/mod DESTINATION ${PROJECT_BINARY_DIR}/test/)
+    file(COPY ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
     add_custom_target(
       coreneuron_mod ALL
       COMMAND
@@ -149,9 +150,12 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(NAME coreneuron_datareturn_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_datareturn.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(NAME coreneuron_test_units_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_units.py
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc
                       coreneuron_spikes_py coreneuron_fornetcon_py
-                      coreneuron_datareturn_py)
+                      coreneuron_datareturn_py coreneuron_test_units_py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)

@@ -7,7 +7,9 @@ def switch_units(legacy):
     pass
 
 def test_mod_legacy():
-  ut = h.UnitsTest()
+  s = h.Section()
+  ut = h.UnitsTest(s(.5))
+  h.ion_style("na_ion", 1, 2, 1, 1, 0, sec=s)
   switch_units(1)
   h.finitialize()
   names =  ["mole", "e", "faraday", "planck", "hbar", "gasconst"]
@@ -20,8 +22,14 @@ def test_mod_legacy():
     legacy_value = float.fromhex(legacy_hex_values[i])
     assert (val == legacy_value)
   assert (ut.avogadro == float.fromhex(legacy_hex_values[0]))
+  ghk_std = h.ghk(-50, .001, 10, 2)
+  erev_std = h.nernst(s(.5).nai, s(.5).nao, 1)
+  assert (ut.ghk == ghk_std)
+  assert (ut.erev == erev_std)
   switch_units(0)
   h.finitialize()
+  ghk_std = h.ghk(-50, .001, 10, 2)
+  erev_std = h.nernst(s(.5).nai, s(.5).nao, 1)
   assert (ut.mole != float.fromhex(legacy_hex_values[0]))
   assert (ut.e*ut.avogadro == ut.faraday)
   assert (abs(ut.faraday - h.FARADAY) < 1e-10)
@@ -29,6 +37,8 @@ def test_mod_legacy():
   assert (ut.k*ut.avogadro == ut.gasconst)
   assert (abs(ut.planck - ut.hbar*2.0*h.PI) < 1e-49)
   assert (ut.avogadro == h.Avogadro_constant)
+  assert (ut.ghk == h.ghk(-50, .001, 10, 2))
+  assert (ut.erev == h.nernst(s(.5).nai, s(.5).nao, 1))
 
 def test_hoc_legacy():
   switch_units(1) # legacy

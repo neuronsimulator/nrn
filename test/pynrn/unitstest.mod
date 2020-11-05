@@ -1,10 +1,14 @@
 NEURON {
-  ARTIFICIAL_CELL UnitsTest
+  POINT_PROCESS UnitsTest
   RANGE mole, e, faraday, planck, hbar, gasconst, avogadro, k
+  RANGE erev, ghk
+  USEION na READ ena WRITE ina
 }
 
 
 UNITS {
+  (mM) = (milli/liter)
+  (mV) = (millivolt)
   mol = (mole) (1)
   E = (e) (coul)
   FARADAY = (faraday) (coul)
@@ -26,6 +30,10 @@ ASSIGNED {
   gasconst (joule/degC)
   avogadro (1)
   k (joule/degC)
+  erev (mV)
+  ghk (millicoul/cm3)
+  ena (mV)
+  ina (nanoamp)
 }
 
 INITIAL {
@@ -37,5 +45,10 @@ INITIAL {
   gasconst = R
   avogadro = avo
   k = boltzmann
+  erev = ena
+  ghk = nrn_ghk(-50(mV), .001(mM), 10(mM), 2)
 }
 
+BREAKPOINT {
+  ina = 0
+}
