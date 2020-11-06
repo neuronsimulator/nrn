@@ -1,5 +1,10 @@
 steps:
 
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)\nrn-nightly-AMD64.exe'
+    displayName: 'Publish windows installer as build artifact'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '2.7'
