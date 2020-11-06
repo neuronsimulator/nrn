@@ -85,7 +85,7 @@ run_serial_test () {
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 
     # Test 9: modlunit available (and can find nrnunits.lib)
-    modlunit tmp.mod
+    modlunit tmp_mod
 }
 
 run_parallel_test() {
