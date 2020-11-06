@@ -67,7 +67,7 @@ void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv) {
 {int i;
 printf("nrnmpi_init: argc=%d\n", *pargc);
 for (i=0; i < *pargc; ++i) {
-	printf("%d |%s|\n", i, (*pargv)[i]);
+        printf("%d |%s|\n", i, (*pargv)[i]);
 }
 }
 #endif
@@ -155,7 +155,7 @@ for (i=0; i < *pargc; ++i) {
 {int i;
 printf("nrnmpi_init: argc=%d\n", *pargc);
 for (i=0; i < *pargc; ++i) {
-	printf("%d |%s|\n", i, (*pargv)[i]);
+        printf("%d |%s|\n", i, (*pargv)[i]);
 }
 }
 #endif
@@ -181,7 +181,7 @@ void nrnmpi_terminate() {
 #if NRNMPI
     if (nrnmpi_use) {
 #if 0
-		printf("%d nrnmpi_terminate\n", nrnmpi_myid_world);
+                printf("%d nrnmpi_terminate\n", nrnmpi_myid_world);
 #endif
 #if USE_HPM
         hpmTerminate(nrnmpi_myid_world);
@@ -218,21 +218,30 @@ void nrnmpi_abort(int errcode) {
 
 #if NRNMPI
 void nrnmpi_subworld_size(int n) {
-    /* n is the size of a subworld, nrnmpi_numprocs (pc.nhost) */
+    /* n is the (desired) size of a subworld (pc.nhost) */
+    /* A subworld (net) is contiguous */
+    /* In case pc.nhost_world/n is not an integer, there are
+       pc.nhost_world/n + 1 subworlds and the last subworld
+       has pc.nhost_world%n ranks. All the other subworlds have n ranks.
+    */
     if (nrnmpi_use != 1) {
         return;
     }
     if (nrnmpi_comm != MPI_COMM_NULL) {
         asrt(MPI_Comm_free(&nrnmpi_comm));
+        nrnmpi_comm = MPI_COMM_NULL;
     }
     if (nrn_bbs_comm != MPI_COMM_NULL) {
         asrt(MPI_Comm_free(&nrn_bbs_comm));
+        nrn_bbs_comm = MPI_COMM_NULL;
     }
     if (grp_bbs != MPI_GROUP_NULL) {
         asrt(MPI_Group_free(&grp_bbs));
+        grp_bbs = MPI_GROUP_NULL;
     }
     if (grp_net != MPI_GROUP_NULL) {
         asrt(MPI_Group_free(&grp_net));
+        grp_net = MPI_GROUP_NULL;
     }
     MPI_Group wg;
     asrt(MPI_Comm_group(nrnmpi_world_comm, &wg));
@@ -262,28 +271,43 @@ void nrnmpi_subworld_size(int n) {
     } else {
         int nw = nrnmpi_numprocs_world;
         int nb = nw / n; /* nrnmpi_numprocs_bbs */
+        int ib;
         int range[3];
-        /* net is contiguous */
-        range[0] = r / n;
-        range[0] *= n;               /* first */
-        range[1] = range[0] + n - 1; /* last */
+        if (nw%n) {
+                nb += 1; /* and the last will have pc.nhost = nw%n */
+        }
+        /* A subworld (net) has contiguous ranks. */
+        /* Every rank is in a specific nrnmpi_comm communicator */
+        ib = r / n;
+        range[0] = ib*n;               /* first rank in group */
+        range[1] = range[0] + n - 1; /* last rank in group */
+        if (range[1] >= nw) {
+                range[1] = nw - 1;
+        }
         range[2] = 1;                /* stride */
         asrt(MPI_Group_range_incl(wg, 1, &range, &grp_net));
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_net, &nrnmpi_comm));
         asrt(MPI_Comm_rank(nrnmpi_comm, &nrnmpi_myid));
         asrt(MPI_Comm_size(nrnmpi_comm, &nrnmpi_numprocs));
 
-        range[0] = 0;      /* first */
-        range[1] = nw - n; /* last */
+        /* nrn_bbs_com ranks stride is nrnmpi_numprocs */
+        /* only rank 0 of each subworld participates in nrn_bbs_comm */
+        range[0] = 0;      /* first world rank in nrn_bbs_comm */
+        range[1] = (nb - 1)*n; /* last world rank in nrn_bbs_comm */
         range[2] = n;      /* stride */
         asrt(MPI_Group_range_incl(wg, 1, &range, &grp_bbs));
         asrt(MPI_Comm_create(nrnmpi_world_comm, grp_bbs, &nrn_bbs_comm));
-        if (r % n == 0) { /* only rank 0 of the subworlds */
+        if (r % n == 0) { /* only rank 0 participates in nrn_bbs_comm */
             asrt(MPI_Comm_rank(nrn_bbs_comm, &nrnmpi_myid_bbs));
             asrt(MPI_Comm_size(nrn_bbs_comm, &nrnmpi_numprocs_bbs));
         } else {
+#if 1
             nrnmpi_myid_bbs = -1;
             nrnmpi_numprocs_bbs = -1;
+#else
+            nrnmpi_myid_bbs = r/n;
+            nrnmpi_numprocs_bbs = nb;
+#endif
         }
     }
     asrt(MPI_Group_free(&wg));

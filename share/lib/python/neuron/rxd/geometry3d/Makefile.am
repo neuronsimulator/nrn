@@ -7,14 +7,14 @@ all:
 endif
 
 ctng.cpp: ctng.pyx
-	$(CYTHON) $(geosrc)/ctng.pyx -o ctng.cpp
+	$(CYTHON) -2 $(geosrc)/ctng.pyx -o ctng.cpp
 
 surfaces.cpp: surfaces.pyx 
-	$(CYTHON) $(geosrc)/surfaces.pyx -o surfaces.cpp
+	$(CYTHON) -2 $(geosrc)/surfaces.pyx -o surfaces.cpp
 
 
 graphicsPrimitives.cpp: graphicsPrimitives.pyx
-	$(CYTHON) $(geosrc)/graphicsPrimitives.pyx -o graphicsPrimitives.cpp
+	$(CYTHON) -2 $(geosrc)/graphicsPrimitives.pyx -o graphicsPrimitives.cpp
 
 pkginclude_HEADERS = 
 EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \

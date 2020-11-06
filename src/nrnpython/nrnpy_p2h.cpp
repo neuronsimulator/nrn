@@ -704,6 +704,39 @@ static Object* pickle2po(char* s, size_t size) {
   return ho;
 }
 
+/** Full python traceback error message returned as string.
+ *  free the return value.
+**/
+char* nrnpyerr_str() {
+  static char** pmes;
+  if (PyErr_Occurred()) {
+    PyObject *ptype, *pvalue, *ptraceback;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+    // try for full backtrace
+    PyObject* module_name = PyString_FromString("traceback");
+    if (!module_name) { return NULL; }
+    PyObject* pyth_module = PyImport_Import(module_name);
+    if (!pyth_module) { return NULL; }
+    Py_DECREF(module_name);   
+    PyObject* pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
+    if (!pyth_func) { return NULL; }
+    PyObject* pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback);
+    if (!pyth_val) { return NULL; }
+    Py_DECREF(pyth_func);
+    Py_XDECREF(ptype);
+    Py_XDECREF(pvalue);
+    Py_XDECREF(ptraceback);
+    PyObject* py_str = PyObject_Str(pyth_val);
+    Py_DECREF(pyth_func);
+    Py2NRNString mes(py_str);
+    Py_DECREF(py_str);
+    char* cmes = strdup(mes.c_str());
+    return cmes;
+  }
+  return NULL;
+}
+
 char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
   // fname is a pickled callable, narg is the number of args on the
   // hoc stack with types double, char*, hoc Vector, and PythonObject
@@ -735,13 +768,11 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
   result = nrnpy_pyCallObject(callable, args);
   Py_DECREF(callable);
   Py_DECREF(args);
-#if PY_MAJOR_VERSION >= 3
-  if (PyBytes_Check(result)) {
-#else
   if (!result) {
-#endif
-    PyErr_Print();
-    hoc_execerror("PyObject method call failed:", 0);
+    char* mes = nrnpyerr_str();
+    Fprintf(stderr, "%s\n", mes);
+    free(mes);
+    hoc_execerror("PyObject method call failed:", NULL);
   }
   char* rs = pickle(result, retsize);
   Py_XDECREF(result);

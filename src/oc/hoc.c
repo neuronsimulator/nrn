@@ -20,6 +20,7 @@
 #include <dos.h>
 #include <go32.h>
 #endif
+#include "../nrniv/backtrace_utils.h"
 
 /* for eliminating "ignoreing return value" warnings. */
 int nrnignore;
@@ -182,6 +183,9 @@ NrnFILEWrap	*fin;				/* input file pointer */
 const char	*progname;	/* for error messages */
 int	lineno;
 
+#if HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif
 #include <signal.h>
 #include <setjmp.h>
 static int control_jmpbuf = 0; /* don't change jmp_buf if being controlled */
@@ -700,7 +704,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	ctp = cbuf;
 	*ctp = '\0';
 
-	if (oc_jump_target_) {
+	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
 		hoc_newobj1_err();
 		(*oc_jump_target_)();
 	}
@@ -750,6 +754,62 @@ void hoc_coredump_on_error(void) {
 	pushx(1.);
 }
 
+void print_bt() {
+#ifdef USE_BACKWARD
+    backward_wrapper();
+#else
+#if HAVE_EXECINFO_H
+    const size_t nframes = 12;
+    void *frames[nframes];
+    size_t size;
+    char** bt_strings = NULL;
+    // parsed elements from stacktrace line:
+    size_t funcname_size = 256;
+    // symbol stores the symbol at which the signal was invoked
+    char* symbol = malloc(sizeof(char)*funcname_size);
+    // the function name where the signal was invoked
+    char* funcname = malloc(sizeof(char)*funcname_size);
+    // offset stores the relative address from the function where the signal was invoked
+    char* offset = malloc(sizeof(char)*10);
+    // the memory address of the function
+    void* addr = NULL;
+    // get void*'s for maximum last 16 entries on the stack
+    size = backtrace(frames, nframes);
+
+    // print out all the frames to stderr
+    Fprintf(stderr, "Backtrace:\n");
+    // get the stacktrace as an array of strings
+    bt_strings = backtrace_symbols(frames, size);
+    if (bt_strings) {
+        size_t i;
+        // start printing at third frame to skip the signal handler and printer function
+        for(i = 2; i < size; ++i) {
+            // parse the stack frame line
+            int status = parse_bt_symbol(bt_strings[i], &addr, symbol, offset);
+            if (status) {
+                status = cxx_demangle(symbol, &funcname, &funcname_size);
+                if (status == 0) { // demangling worked
+                    Fprintf(stderr, "\t%s : %s+%s\n",
+                            bt_strings[i], funcname, offset);
+                } else { // demangling failed, fallback
+                    Fprintf(stderr, "\t%s : %s()+%s\n",
+                            bt_strings[i], symbol, offset);
+                }
+            } else { // could not parse, simply print the stackframe as is
+                Fprintf(stderr, "\t%s\n", bt_strings[i]);
+            }
+        }
+        free(bt_strings);
+    }
+    free(funcname);
+    free(offset);
+    free(symbol);
+#else
+    Fprintf(stderr, "No backtrace info available.\n");
+#endif
+#endif
+}
+
 RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 {
 	/*ARGSUSED*/
@@ -759,32 +819,38 @@ _fpreset();
 #if 1 && NRN_FLOAT_EXCEPTION
 	matherr1();
 #endif
+	Fprintf(stderr, "Floating point exception\n");
+    print_bt();
 	if (coredump) {
 		abort();
 	}
 	signal(SIGFPE, fpecatch);
-	execerror("floating point exception", (char *) 0);
+	execerror("Aborting.", (char *) 0);
 }
 
 #if HAVE_SIGSEGV
 RETSIGTYPE sigsegvcatch(int sig) /* segmentation violation probably due to arg type error */
 {
+	Fprintf(stderr, "Segmentation violation\n");
+	print_bt();
 	/*ARGSUSED*/
 	if (coredump) {
 		abort();
 	}
-	execerror("Segmentation violation", (char*)0);
+	execerror("Aborting.", (char*)0);
 }
 #endif
 
 #if HAVE_SIGBUS
 RETSIGTYPE sigbuscatch(int sig)
 {
-	/*ARGSUSED*/
-	if (coredump) {
-		abort();
-	}
-	execerror("Bus error", "See $NEURONHOME/lib/help/oc.help");
+    Fprintf(stderr, "Bus error\n");
+    print_bt();
+    /*ARGSUSED*/
+    if (coredump) {
+        abort();
+    }
+    execerror("Aborting. ", "See $NEURONHOME/lib/help/oc.help");
 }
 #endif
 
@@ -1312,7 +1378,7 @@ static void restore_signals(void) {
 	signals[3] = signal(SIGBUS, signals[3]);
 #endif
 }
-	
+
 static void hoc_run1(void)	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
