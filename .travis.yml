@@ -144,6 +144,8 @@ script:
     fi
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
+      # Use early version of cmake
+      sudo -H $PIP install cmake==3.6.3
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
         export PYTHON3=$(which python3);
