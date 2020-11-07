@@ -94,7 +94,7 @@ jobs:
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
       cmake --version
-    displayName: 'Install OSX System Depdendencies'
+    displayName: 'Install OSX System Dependencies'
 
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9

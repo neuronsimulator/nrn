@@ -168,4 +168,50 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
 endif()
+
+#============================================
+# Test modlunit
+#============================================
+
+# Strategy. Create a bash script that runs modlunit on a list of mod file
+# expecting success and a list expecting failure. Then run the script
+# with a custom target.
+
+file(
+  WRITE ${PROJECT_BINARY_DIR}/run_modlunit.bash
+  "\
+#!bash\n\
+set -e\n\
+M=${PROJECT_BINARY_DIR}/bin/modlunit
+for i in $1 ; do\n\
+  echo \"expect accept $i\"\n\
+  $M $i\n\
+done\n\
+for i in $2 ; do\n\
+  echo \"expect reject $i\"\n\
+  if $M $i ; then\n\
+    exit 1\n\
+  fi\n\
+done\n\
+exit 0\n\
+")
+
+set(MODFILES_ACCEPT
+  ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod
+  ${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod
+  ${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod
+)
+set(MODFILES_REJECT
+  ${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod
+)
+
+add_custom_target(
+  modlunit_test ALL
+  COMMAND
+    ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  DEPENDS ${PROJECT_BINARY_DIR}/bin/modlunit)
+
+#list(APPEND TESTS modlunit_test)
+
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
