@@ -29,7 +29,10 @@ extern char* pnt_map;
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
     for (int i=0; cnbs[i].name; ++i) {
-        void* sym = dlsym(handle, cnbs[i].name);
+        void* sym = NULL;
+#if defined(HAVE_DLFCN_H)
+        sym = dlsym(handle, cnbs[i].name);
+#endif
         if (!sym) {
             fprintf(stderr, "Could not get symbol %s from CoreNEURON\n", cnbs[i].name);
             hoc_execerror("dlsym returned NULL", NULL);
