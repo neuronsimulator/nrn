@@ -9,6 +9,8 @@ language: cpp
 osx_image: xcode11.3
 dist: bionic
 
+sudo: required
+
 #=============================================================================
 # Git Clone
 #=============================================================================
@@ -144,8 +146,9 @@ script:
     fi
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
-      $PIP install cmake==3.6.3;
-      echo "PATH=$PATH";
+      sudo -H $PIP install cmake==3.6.3;
+      which cmake;
+      cmake --version;
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
         export PYTHON3=$(which python3);
