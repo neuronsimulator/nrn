@@ -146,7 +146,9 @@ script:
     fi
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
+      sudo -H apt remove cmake;
       sudo -H $PIP install cmake==3.6.3;
+      echo "PATH=$PATH";
       which cmake;
       cmake --version;
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
