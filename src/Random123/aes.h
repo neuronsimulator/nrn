@@ -87,6 +87,8 @@ R123_STATIC_INLINE void aesni1xm128iexpand(aesni1xm128i_ukey_t uk, __m128i ret[1
     tmp2 = _mm_aeskeygenassist_si128(rkey, 0x10);
     rkey = AES_128_ASSIST(rkey, tmp2);
     ret[5] = rkey;
+  
+  
 
     tmp2 = _mm_aeskeygenassist_si128(rkey, 0x20);
     rkey = AES_128_ASSIST(rkey, tmp2);
