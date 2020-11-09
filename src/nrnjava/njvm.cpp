@@ -248,7 +248,7 @@ static void initialize_jvm1() {
 	args.classpath = classpath;
 	//for (int i = 0;  args.properties[i]; ++i) {
 		//printf("properties |%s|\n", args.properties[i]);
-	} // extern "C"
+    //}
 	//args.debugging = 1;
 	//args.vfprintf = myvfprintf;
 	printf("classpath |%s|\n", args.classpath);

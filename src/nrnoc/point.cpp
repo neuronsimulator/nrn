@@ -87,7 +87,7 @@ void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node
     extern Prop* prop_alloc(Prop**, int, Node*);
 	extern Section* nrn_pnt_sec_for_need_;
 	Prop* p;
-	double x; //, nrn_arc_position();
+	double x;
 	
 	assert(!nrn_is_artificial_[pointsym[pointtype]->subtype]);
 	x = nrn_arc_position(sec, node);
@@ -238,7 +238,7 @@ extern "C" double get_loc_point_process(void* v)
 #if METHOD3
 	extern int _method3;
 #endif
-	double x; //, nrn_arc_position();
+	double x;
 	Point_process *pnt = (Point_process*)v;
 	Section* sec;
 	

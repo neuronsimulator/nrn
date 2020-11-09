@@ -1302,7 +1302,6 @@ void hoc_ob_pointer(void) {
 #if CABLE
 		Datum* d = hoc_look_inside_stack(0, SYMBOL);
 		if (d->sym->type == RANGEVAR) {		
-//			double* nrn_rangepointer(Symbol *);
 			Symbol* sym = hoc_spop();
 			int nindex = hoc_ipop();
 			struct Section* sec = nrn_sec_pop();

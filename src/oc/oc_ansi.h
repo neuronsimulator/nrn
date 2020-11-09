@@ -22,7 +22,6 @@
 
 
 #if defined(__cplusplus)
-//#include "ivocvect.h"
 class IvocVect;
 #else
 #define IvocVect void
