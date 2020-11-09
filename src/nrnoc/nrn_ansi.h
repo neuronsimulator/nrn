@@ -19,7 +19,8 @@ extern void modl_reg(void);
 
 // nrnmech stuff
 extern void _nrn_free_fornetcon(void**);
-
+extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
+extern Prop* nrn_mechanism(int type, Node*);
 
 // mod stuff
 extern void _nrn_free_watch(Datum *, int, int);
@@ -31,6 +32,7 @@ extern void nrn_pushsec(Section*);
 extern void nrn_popsec(void);
 extern Section* chk_access(void);
 
+extern Node* node_exact(Section*, double);
 
 #if defined(__cplusplus)
 }
@@ -120,14 +122,12 @@ extern void section_unref(Section*);
 extern const char* secname(Section*);
 extern const char* nrn_sec2pysecname(Section*);
 extern void nrn_rangeconst(Section*, Symbol*, double* value, int op);
-extern Prop* nrn_mechanism(int type, Node*);
 extern int nrn_exists(Symbol*, Node*);
 extern double* nrn_rangepointer(Section*, Symbol*, double x);
 extern double* cable_prop_eval_pointer(Symbol*); // section on stack will be popped
 extern char* hoc_section_pathname(Section*);
 extern double nrn_arc_position(Section*, Node*);
 extern double node_dist(Section*, Node*); // distance of node to parent position
-extern Node* node_exact(Section*, double);
 extern double nrn_section_orientation(Section*);
 extern double nrn_connection_position(Section*);
 extern Section* nrn_trueparent(Section*);
@@ -139,7 +139,6 @@ extern short nrn_value_mark(Section*);
 extern int is_point_process(Object*);
 extern int nrn_vartype(Symbol*); // nrnocCONST, DEP, STATE
 extern void recalc_diam(void);
-extern double nrn_call_mech_func(Symbol*, int narg, Prop*, int type);
 extern Prop* nrn_mechanism_check(int type, Section* sec, int inode);
 extern int nrn_use_fast_imem;
 extern void nrn_fast_imem_alloc();

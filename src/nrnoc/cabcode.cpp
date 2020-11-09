@@ -1070,7 +1070,7 @@ static int range_vec_indx(Symbol* s)
 	return indx;
 }
 
-Prop* nrn_mechanism(int type, Node* nd) /* returns property for mechanism at the node */
+extern "C" Prop* nrn_mechanism(int type, Node* nd) /* returns property for mechanism at the node */
 {
 	Prop *m;
 	for (m = nd->prop; m; m = m->next) {
@@ -1947,7 +1947,7 @@ int segment_limits(double* pdx)
 #undef PI
 #define PI	3.14159265358979323846
 
-Node* node_exact(Section* sec, double x)
+extern "C" Node* node_exact(Section* sec, double x)
 {
 	/* like node_index but give proper node when
 		x is 0 or 1 as well as in between

@@ -1019,7 +1019,7 @@ extern "C" void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
 	memb_func[i].setdata_ = call;
 }
 /* there is some question about the _extcall_thread variables, if any. */
-double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
+extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
 	double x;	
 	extern double hoc_call_func(Symbol*, int);
 	void (*call)(Prop*) = memb_func[type].setdata_;

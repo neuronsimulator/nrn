@@ -430,7 +430,7 @@ void hoc_oop_initaftererror(void) {
 extern "C" void oc_save_hoc_oop(
 	Object*		*a1,
 	Objectdata*	*a2,
-	int     **a3, // TODO a3 was missing
+	// a3 is missing, do not add it
 	int		*a4,
 	Symlist*	*a5
 ){
