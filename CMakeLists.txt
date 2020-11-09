@@ -18,10 +18,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+option(NMODL_ENABLE_LEGACY_UNITS "Use original faraday, R, etc. instead of 2019 nist constants" OFF)
+
 # =============================================================================
 # Settings to enable project as submodule
 # =============================================================================
 set(NMODL_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(NMODL_PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(NMODL_AS_SUBPROJECT OFF)
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   set(NMODL_AS_SUBPROJECT ON)
@@ -199,6 +202,19 @@ add_subdirectory(src/pybind)
 add_subdirectory(src/solver)
 
 # =============================================================================
-# Install unit database, examples and utility scripts from share
+# Prepare units database file from nrnunits.lib.in
 # =============================================================================
-install(DIRECTORY share/ DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share)
+if(NMODL_ENABLE_LEGACY_UNITS)
+  set(LegacyY "")
+  set(LegacyN "/")
+else()
+  set(LegacyY "/")
+  set(LegacyN "")
+endif()
+configure_file(share/nrnunits.lib.in ${CMAKE_CURRENT_BINARY_DIR}/share/nrnunits.lib @ONLY)
+
+# =============================================================================
+# Install unit database to share
+# =============================================================================
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/nrnunits.lib
+        DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}share)

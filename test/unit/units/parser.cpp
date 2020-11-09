@@ -182,7 +182,7 @@ SCENARIO("Unit parser accepting dependent/nested units definition", "[unit][pars
                 REQUIRE(is_substring(parsed_units, "dummy3 0.02500000: -2 0 0 0 0 0 0 0 0 0"));
                 REQUIRE(is_substring(parsed_units, "dummy4 -0.02500000: -2 0 0 0 0 0 0 0 0 0"));
                 REQUIRE(is_substring(parsed_units, "dummy5 0.02500000: 0 0 0 0 0 0 0 0 0 0"));
-                REQUIRE(is_substring(parsed_units, "R 8.31449872: 2 1 -2 0 0 0 0 0 0 -1"));
+                REQUIRE(is_substring(parsed_units, "R 8.31446262: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE(is_substring(parsed_units, "R1 8.31400000: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE(is_substring(parsed_units, "R2 8.31400000: 2 1 -2 0 0 0 0 0 0 -1"));
                 REQUIRE(is_substring(parsed_units, "m kg sec coul candela dollar bit erlang K"));
