@@ -18,6 +18,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/nmodl_constructs.hpp"
 #include "test/unit/utils/test_utils.hpp"
+#include "utils/common_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/visitor_utils.hpp"
 
@@ -121,6 +122,7 @@ SCENARIO("NMODL parser accepts empty unit specification") {
 }
 
 SCENARIO("NMODL parser running number of valid NMODL constructs") {
+    nmodl::utils::TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         GIVEN(test_case.name) {
@@ -139,6 +141,28 @@ SCENARIO("NMODL parser running number of invalid NMODL constructs") {
                 REQUIRE_THROWS(is_valid_construct(test_case.input));
             }
         }
+    }
+}
+
+//=============================================================================
+// Ensure that the parser can handle invalid INCLUDE constructs
+//=============================================================================
+
+SCENARIO("Check that the parser doesn't crash when passing invalid INCLUDE constructs") {
+    GIVEN("An empty filename") {
+        REQUIRE_THROWS_WITH(is_valid_construct("INCLUDE \"\""), Catch::Contains("empty filename"));
+    }
+
+    GIVEN("An missing included file") {
+        REQUIRE_THROWS_WITH(is_valid_construct("INCLUDE \"unknown.file\""),
+                            Catch::Contains("can not open file : unknown.file"));
+    }
+
+    GIVEN("An invalid included file") {
+        nmodl::utils::TempFile included("included.file",
+                                        nmodl_invalid_constructs.at("title_1").input);
+        REQUIRE_THROWS_WITH(is_valid_construct("INCLUDE \"included.file\""),
+                            Catch::Contains("unexpected End of file"));
     }
 }
 
@@ -163,10 +187,10 @@ SCENARIO("NEURON block can add CURIE information", "[parser][represents]") {
 
 SCENARIO("Check parents in valid NMODL constructs") {
     nmodl::parser::NmodlDriver driver;
-    std::shared_ptr<nmodl::ast::Program> ast;
+    nmodl::utils::TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         // parse the string and get the ast
-        ast = driver.parse_string(construct.second.input);
+        const auto ast = driver.parse_string(construct.second.input);
         GIVEN(construct.second.name) {
             THEN("Check the parents in : " + construct.second.input) {
                 // check the parents

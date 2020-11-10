@@ -488,9 +488,6 @@ class ChildNode(BaseNode):
                    }}
                 """
 
-
-
-
     def get_setter_method_declaration(self, class_name):
         setter_method = "set_" + to_snake_case(self.varname)
         setter_type = self.member_typename

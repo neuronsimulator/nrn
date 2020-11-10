@@ -151,10 +151,13 @@ PYBIND11_MODULE(_nmodl, m_nmodl) {
              &nmodl::PyNmodlDriver::parse_string,
              "input"_a,
              nmodl::docstring::driver_parse_string)
-        .def("parse_file",
-             &nmodl::PyNmodlDriver::parse_file,
-             "filename"_a,
-             nmodl::docstring::driver_parse_file)
+        .def(
+            "parse_file",
+            [](nmodl::PyNmodlDriver& driver, const std::string& file) {
+                return driver.parse_file(file, nullptr);
+            },
+            "filename"_a,
+            nmodl::docstring::driver_parse_file)
         .def("parse_stream",
              &nmodl::PyNmodlDriver::parse_stream,
              "in"_a,

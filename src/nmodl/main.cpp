@@ -5,7 +5,6 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -20,7 +19,6 @@
 #include "codegen/codegen_omp_visitor.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
-#include "parser/unit_driver.hpp"
 #include "pybind/pyembed.hpp"
 #include "utils/common_utils.hpp"
 #include "utils/logger.hpp"
@@ -376,8 +374,8 @@ int main(int argc, const char* argv[]) {
         ast_to_nmodl(*ast, filepath("ast"));
 
         if (json_ast) {
-            logger->info("Writing AST into {}", file);
             auto file = scratch_dir + "/" + modfile + ".ast.json";
+            logger->info("Writing AST into {}", file);
             JSONVisitor(file).write(*ast);
         }
 

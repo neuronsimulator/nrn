@@ -9,6 +9,11 @@
 
 #include <map>
 #include <memory>
+#include <string>
+#include <sys/param.h>
+#include <unistd.h>
+#include <vector>
+
 
 /**
  *
@@ -74,12 +79,48 @@ typename std::vector<T>::const_iterator const_iter_cast(
 }
 #endif
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+/// The character used by the operating system to separate pathname components
+static constexpr char pathsep{'\\'};
+/// The character conventionally used by the operating system to separate search path components
+static constexpr char envpathsep{';'};
+/// Maximum size of a directory path
+static constexpr int max_path_len{_MAX_DIR};
+#else
+/// The character used by the operating system to separate pathname components
+static constexpr char pathsep{'/'};
+/// The character conventionally used by the operating system to separate search path components
+static constexpr char envpathsep{':'};
+/// Maximum size of a directory path
+static constexpr int max_path_len{MAXPATHLEN};
+#endif
 
 /// Given directory path, create sub-directories
 bool make_path(const std::string& path);
 
-/// Check if directory with given path exist
+/// Check if directory with given path exists
 bool is_dir_exist(const std::string& path);
+
+/// Check if specified file path exists
+bool file_exists(const std::string& path);
+
+/// Check if specified file path is absolute
+bool file_is_abs(const std::string& path);
+
+/// get current working directory
+std::string cwd();
+
+/**
+ * \brief Create an empty file which is then removed when the C++ object is destructed
+ */
+struct TempFile {
+    explicit TempFile(std::string path);
+    TempFile(std::string path, const std::string& content);
+    ~TempFile();
+
+  private:
+    std::string path_;
+};
 
 /// Enum to wrap bool variable to select if random string
 /// should have numbers or not
@@ -126,7 +167,7 @@ class SingletonRandomString {
      * @param var_name Variable name for which to get the random string
      * @return Random string assigned to var_name
      */
-    std::string get_random_string(const std::string& var_name) const {
+    const std::string& get_random_string(const std::string& var_name) const {
         return random_strings.at(var_name);
     }
 
@@ -137,14 +178,15 @@ class SingletonRandomString {
      * @param use_numbers control whether random string can include numeric characters or not
      * @return Random string assigned to var_name
      */
-    std::string reset_random_string(const std::string& var_name, UseNumbersInString use_numbers) {
-        if (random_string_exists(var_name)) {
-            random_strings.erase(var_name);
-            random_strings.insert({var_name, generate_random_string(SIZE, use_numbers)});
-        } else {
-            random_strings.insert({var_name, generate_random_string(SIZE, use_numbers)});
+    const std::string& reset_random_string(const std::string& var_name,
+                                           UseNumbersInString use_numbers) {
+        const auto new_string = generate_random_string(SIZE, use_numbers);
+        auto status = random_strings.emplace(var_name, new_string);
+        if (!status.second) {
+            // insertion didn't take place since element was already there.
+            status.first->second = new_string;
         }
-        return random_strings[var_name];
+        return status.first->second;
     }
 
   private:

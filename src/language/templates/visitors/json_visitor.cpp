@@ -42,7 +42,9 @@ void JSONVisitor::visit_{{ node.class_name|snake_case }}(const {{ node.class_nam
         {% endif %}
     printer->pop_block();
         {% if node.is_program_node %}
-    flush();
+    if (node.get_parent() == nullptr) {
+        flush();
+    }
         {% endif %}
     {% else %}
     (void)node;
