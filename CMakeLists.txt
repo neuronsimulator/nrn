@@ -19,6 +19,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 option(NMODL_ENABLE_LEGACY_UNITS "Use original faraday, R, etc. instead of 2019 nist constants" OFF)
+if(NMODL_ENABLE_LEGACY_UNITS)
+  add_definitions(-DUSE_LEGACY_UNITS)
+endif()
 
 # =============================================================================
 # Settings to enable project as submodule

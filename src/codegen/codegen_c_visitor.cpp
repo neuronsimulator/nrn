@@ -986,17 +986,17 @@ std::vector<SymbolType> CodegenCVisitor::get_shadow_variables() {
 /****************************************************************************************/
 
 std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
-    std::stringstream param_ss;
+    std::string param{};
     for (auto iter = params.begin(); iter != params.end(); iter++) {
-        param_ss << "{}{} {}{}"_format(std::get<0>(*iter),
-                                       std::get<1>(*iter),
-                                       std::get<2>(*iter),
-                                       std::get<3>(*iter));
+        param += "{}{} {}{}"_format(std::get<0>(*iter),
+                                    std::get<1>(*iter),
+                                    std::get<2>(*iter),
+                                    std::get<3>(*iter));
         if (!utils::is_last(iter, params)) {
-            param_ss << ", ";
+            param += ", ";
         }
     }
-    return param_ss.str();
+    return param;
 }
 
 
@@ -1994,10 +1994,14 @@ void CodegenCVisitor::print_nmodl_constants() {
         printer->add_newline(2);
         printer->add_line("/** constants used in nmodl */");
         for (const auto& it: info.factor_definitions) {
-            std::stringstream ss;
-            ss << "static const double " << it->get_node_name() << " = ";
-            ss << it->get_value()->get_value() << ";";
-            printer->add_line(ss.str());
+#ifdef USE_LEGACY_UNITS
+            std::string format_string = "static const double {} = {:g};";
+#else
+            std::string format_string = "static const double {} = {:.18g};";
+#endif
+            printer->add_line(fmt::format(format_string.c_str(),
+                                          it->get_node_name(),
+                                          it->get_value()->get_value()));
         }
     }
 }
