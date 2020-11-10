@@ -4,7 +4,8 @@ NEURON {
         SUFFIX cadyn
         USEION ca READ cai,ica WRITE cai 
         RANGE ca 
-	GLOBAL depth,cainf,taur 
+	GLOBAL depth,cainf,taur
+		RANGE var
      
 }
 
@@ -27,6 +28,7 @@ PARAMETER {
 ASSIGNED {
 	ica		(mA/cm2)
 	drive_channel	(mM/ms)
+    var     (mV)
 }
 
 STATE {
@@ -38,13 +40,17 @@ BREAKPOINT {
 	SOLVE state METHOD euler
 }
 
-DERIVATIVE state { 
+INCLUDE "var_init.inc"
+
+DERIVATIVE state {
 
 	drive_channel =  - (10000) * ica / (2 * FARADAY * depth)
 	if (drive_channel <= 0.) { drive_channel = 0.  }   : cannot pump inward 
         ca' = drive_channel/18 + (cainf -ca)/taur*11
 	cai = ca
 }
+
 INITIAL {
-	ca = cainf
+    var_init(var)
+    ca = cainf
 }

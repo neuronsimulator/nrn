@@ -1416,12 +1416,16 @@
                       brief: "Represents a `DEFINE` statement in NMODL"
 
                   - Include:
-                      brief: "TODO"
+                      brief: "Represents an `INCLUDE` statement in NMODL"
                       nmodl: "INCLUDE "
                       members:
                         - filename:
-                            brief: "TODO"
+                            brief: "path to the file to include"
                             type: String
+                        - blocks:
+                            brief: "AST of the included file"
+                            type: Node
+                            vector: true
 
                   - ParamAssign:
                       brief: "TODO"

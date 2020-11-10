@@ -2,15 +2,17 @@
 # Utility sources
 # =============================================================================
 set(UTIL_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/string_utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/common_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/perf_stat.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/table_data.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/table_data.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/logger.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/logger.cpp
+    common_utils.cpp
+    common_utils.hpp
+    file_library.cpp
+    file_library.hpp
+    logger.cpp
+    logger.hpp
+    perf_stat.cpp
+    perf_stat.hpp
+    string_utils.hpp
+    table_data.cpp
+    table_data.hpp
     ${PROJECT_BINARY_DIR}/src/config/config.cpp)
 
 # =============================================================================

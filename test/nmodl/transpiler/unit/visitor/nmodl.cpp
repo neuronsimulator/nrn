@@ -11,6 +11,7 @@
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/nmodl_constructs.hpp"
 #include "test/unit/utils/test_utils.hpp"
+#include "utils/common_utils.hpp"
 #include "visitors/checkparent_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
@@ -40,6 +41,7 @@ std::string run_nmodl_visitor(const std::string& text) {
 }
 
 SCENARIO("Convert AST back to NMODL form", "[visitor][nmodl]") {
+    nmodl::utils::TempFile unit("Unit.inc", nmodl_valid_constructs.at("unit_statement_1").input);
     for (const auto& construct: nmodl_valid_constructs) {
         auto test_case = construct.second;
         const std::string& input_nmodl_text = reindent_text(test_case.input);

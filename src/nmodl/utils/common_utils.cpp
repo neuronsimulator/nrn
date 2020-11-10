@@ -5,14 +5,20 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
+#include "common_utils.hpp"
+
+#include <cassert>
 #include <cerrno>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
 
-#include "common_utils.hpp"
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define IS_WINDOWS
+#endif
 
 namespace nmodl {
 namespace utils {
@@ -25,6 +31,27 @@ bool is_dir_exist(const std::string& path) {
     return (info.st_mode & S_IFDIR) != 0;
 }
 
+bool file_exists(const std::string& path) {
+    struct stat info;
+    return stat(path.c_str(), &info) == 0;
+}
+
+bool file_is_abs(const std::string& path) {
+#ifdef IS_WINDOWS
+    return path.find(":\\") != std::string::npos;
+#else
+    return path.find(pathsep) == 0;
+#endif
+}
+
+std::string cwd() {
+    char cwd[MAXPATHLEN + 1];
+
+    if (nullptr == getcwd(cwd, MAXPATHLEN + 1)) {
+        throw std::runtime_error("working directory name too long");
+    }
+    return {cwd};
+}
 bool make_path(const std::string& path) {
     mode_t mode = 0755;
     int ret = mkdir(path.c_str(), mode);
@@ -54,6 +81,23 @@ bool make_path(const std::string& path) {
     default:
         auto msg = "Can not create directory " + path;
         throw std::runtime_error(msg);
+    }
+}
+
+TempFile::TempFile(std::string path)
+    : path_(std::move(path)) {
+    std::ofstream output(path_);
+}
+
+TempFile::TempFile(std::string path, const std::string& content)
+    : path_(std::move(path)) {
+    std::ofstream output(path_);
+    output << content;
+}
+
+TempFile::~TempFile() {
+    if (remove(path_.c_str()) != 0) {
+        perror("Cannot delete temporary file");
     }
 }
 

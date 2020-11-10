@@ -500,8 +500,7 @@ all             :   {
                     }
                 |   all INCLUDE1 STRING_PTR
                     {
-                        auto statement = new ast::Include($3);
-                        $1->emplace_back_node(statement);
+                        $1->emplace_back_node(driver.parse_include(driver.check_include_argument(scanner.loc, $3->get_value()), scanner.loc));
                         $$ = $1;
                     }
                 ;
@@ -2626,7 +2625,5 @@ std::string parse_with_verbatim_parser(std::string str) {
  */
 
 void NmodlParser::error(const location &loc , const std::string &msg) {
-    std::stringstream ss;
-    ss << "NMODL Parser Error : " << msg << " [Location : " << loc << "]";
-    throw std::runtime_error(ss.str());
+    driver.parse_error(loc, msg);
 }
