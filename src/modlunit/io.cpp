@@ -337,7 +337,7 @@ void include_file(Item* q)
 void pop_file_stack() {
 	FileStackItem* fsi;
 	fsi = (FileStackItem*)(SYM(filestack->prev));
-	delete(filestack->prev);	
+	remove(filestack->prev);
 	linenum = fsi->linenum;
 	inlinep = fsi->inlinep;
 	fclose(fin);

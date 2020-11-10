@@ -222,9 +222,9 @@ void deltokens(Item* q1, Item* q2) /* delete tokens from q1 to q2 */
 	Item *q;
 	for (q = q1; q != q2;) {
 		q = q->next;
-		delete(q->prev);
+		remove(q->prev);
 	}
-	delete(q2);
+	remove(q2);
 		
 }
 

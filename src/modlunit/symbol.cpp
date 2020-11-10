@@ -98,9 +98,9 @@ void poplocal()
 	sl = (List *)symlistlist->next->element;
 	for (i = sl->next; i != sl; i = j) {
 		j = i->next;
-		delete(i);
+		remove(i);
 	}
-	delete(symlistlist->next);
+	remove(symlistlist->next);
 }
 
 void install_local(Item* q, Item* qdim)
