@@ -79,7 +79,7 @@ class LoopTimer(threading.Thread) :
       self.fun()
       time.sleep(self.interval)
 
-if h.nrnversion(9) == '2' or h.nrnversion(8).find('mingw') > 0:
+if h.nrnversion(9) == '2' or h.nrnversion(8).find('mingw') > 0 or h.nrnversion(8).find('Windows'):
   timer = LoopTimer(0.1, process_events)
   timer.start()
   while not timer.started:
