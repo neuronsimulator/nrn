@@ -704,3 +704,10 @@ AC_CONFIG_FILES([
 fi
 
 AC_OUTPUT
+
+AC_MSG_WARN([
+    !!!
+        Autotools build system will be supported only until release 8.0 inclusively, and will be removed right after.
+        We highly recommend shifting to CMake as of now, please have a look at README.md.
+    !!!
+])
