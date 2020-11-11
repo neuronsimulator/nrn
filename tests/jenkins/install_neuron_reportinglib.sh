@@ -26,7 +26,7 @@ source ${JENKINS_DIR:-.}/_env_setup.sh
 spack install reportinglib%intel
 
 patch_neuron
-spack install neuron+debug@develop
+spack install neuron+debug@develop~legacy-unit
 source $SPACK_ROOT/share/spack/setup-env.sh
 module av neuron reportinglib
 
