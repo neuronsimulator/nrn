@@ -151,7 +151,7 @@ script:
       if test -f "$a" ; then
         sudo -H rm -f $a;
       fi;
-      sudo -H $PIP install cmake==3.6.3;
+      sudo -H $PIP install cmake==3.7.2;
       PATH=/usr/local/bin:$PATH;
       export PATH;
       echo "PATH=$PATH";
