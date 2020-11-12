@@ -146,11 +146,16 @@ script:
     fi
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
-      sudo -H apt remove cmake;
+
+      a="`which cmake`"
+      if test -f "$a" ; then
+        sudo -H rm -f $a
+      fi
       sudo -H $PIP install cmake==3.6.3;
       echo "PATH=$PATH";
       which cmake;
       cmake --version;
+
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
         export PYTHON3=$(which python3);
