@@ -138,8 +138,12 @@ if [ "$params_DEST_DIR" ]; then
     make_params+=("install")
 fi
 
+if [ "$params_VERBOSE" ]; then
+    make_params+=("VERBOSE=1")
+fi
+
 # run makefile
-echo "[INFO] Running make with params: ${make_params[@]}"
+echo "[INFO] Running: make -j$PARALLEL_BUILDS -f ${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile ${make_params[@]}"
 make -j$PARALLEL_BUILDS -f "${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
 
 echo "[INFO] MOD files built successfully for CoreNEURON"
