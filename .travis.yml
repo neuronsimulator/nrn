@@ -147,7 +147,7 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
-      a="`which cmake`"
+      a="`which cmake`";
       if test -f "$a" ; then
         sudo -H rm -f $a;
       fi;
