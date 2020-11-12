@@ -241,3 +241,6 @@ install: $(SPECIAL_EXE) coremech_lib_target
 .PHONY: build_always
 
 $(VERBOSE).SILENT:
+
+# delete cpp files if mod2c error, otherwise they are not generated again
+.DELETE_ON_ERROR:
