@@ -158,7 +158,7 @@ script:
         echo "PATH=$PATH";
         which cmake;
         cmake --version;
-        exit 1;
+        travis_terminate 1;
       fi;
       cmake --version;
 
