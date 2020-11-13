@@ -62,7 +62,15 @@ class Reaction(GeneralizedReaction):
 
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
-        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
+        for ar in [scheme, rate_f, rate_b]:
+            try:
+                if ar._voltage_dependent:
+                    self._voltage_dependent = True
+                    break
+            except AttributeError:
+                pass
+        else:
+            self._voltage_dependent = False    
         self._membrane_flux = False
         self._dir = scheme._dir
         self._custom_dynamics = custom_dynamics
