@@ -145,9 +145,9 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
-      DESIRED_CMAKE_VERSION=3.14.4;
+      DESIRED_CMAKE_VERSION=3.16.3;
       DEFAULT_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
-      $PIP install cmake==$DESIRED_CMAKE_VERSION;
+      $PIP install --prefix /usr/local cmake==$DESIRED_CMAKE_VERSION;
       PATH=/usr/local/bin:$PATH;
       export PATH;
       ACTUAL_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
@@ -160,6 +160,7 @@ script:
         cmake --version;
         travis_terminate 1;
       fi;
+      which cmake;
       cmake --version;
 
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
