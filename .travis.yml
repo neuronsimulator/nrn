@@ -145,7 +145,10 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
+      echo "existing `cmake --version` location `which cmake`";
       $PIP install cmake==3.14.4;
+      PATH=/usr/local/bin:$PATH;
+      export PATH;
       echo "PATH=$PATH";
       which cmake;
       cmake --version;
