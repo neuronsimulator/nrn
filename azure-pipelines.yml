@@ -94,7 +94,7 @@ jobs:
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
       cmake --version
-    displayName: 'Install OSX System Depdendencies'
+    displayName: 'Install OSX System Dependencies'
 
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
@@ -129,7 +129,11 @@ jobs:
     displayName: "Install Dependencies"
     condition: succeeded()
 
+  # WSL is enabled by default in the image, with no installed linux distribution.
+  # WSL creates an unusable `bash.EXE` that can be resolved first from the environment.
+  # This is why we remove that file.
   - script: |
+      rm.exe "C:/WINDOWS/system32/bash.EXE"
       %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
     displayName: "Build and Create Installer"
     condition: succeeded()
