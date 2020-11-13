@@ -145,10 +145,7 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
-      sudo true;
-      $PIP install cmake==3.8.2;
-      PATH=/usr/local/bin:$PATH;
-      export PATH;
+      $PIP install cmake==3.14.4;
       echo "PATH=$PATH";
       which cmake;
       cmake --version;
