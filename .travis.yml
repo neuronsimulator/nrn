@@ -147,7 +147,7 @@ script:
 
       DESIRED_CMAKE_VERSION=3.16.3;
       DEFAULT_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
-      $PIP install --prefix /usr/local cmake==$DESIRED_CMAKE_VERSION;
+      $PIP install cmake==$DESIRED_CMAKE_VERSION;
       PATH=/usr/local/bin:$PATH;
       export PATH;
       ACTUAL_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
