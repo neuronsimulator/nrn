@@ -115,7 +115,7 @@ jobs:
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
       mkdir -p $(Build.Repository.LocalPath)/build
       cd $(Build.Repository.LocalPath)/build
-      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$HOME/nmodl -DCMAKE_BUILD_TYPE=RelWithDebInfo -DNMODL_ENABLE_PYTHON_BINDINGS=OFF
       make -j 2
       if [ $? -ne 0 ]
       then

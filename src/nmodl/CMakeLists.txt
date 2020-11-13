@@ -21,7 +21,11 @@ target_link_libraries(
 # =============================================================================
 # Add dependency with nmodl pytnon module (for consumer projects)
 # =============================================================================
-add_dependencies(nmodl _nmodl pywrapper)
+add_dependencies(nmodl pywrapper)
+
+if(NMODL_ENABLE_PYTHON_BINDINGS)
+  add_dependencies(nmodl _nmodl)
+endif()
 
 # =============================================================================
 # Install executable
