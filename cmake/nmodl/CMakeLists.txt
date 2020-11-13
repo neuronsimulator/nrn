@@ -6,13 +6,14 @@
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
-project(NMODL CXX)
+project(
+  NMODL
+  VERSION 0.2
+  LANGUAGES CXX)
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MINOR 2)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -145,11 +146,6 @@ set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
 # Include path from external libraries
 # =============================================================================
 include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/cli11/include)
-
-# =============================================================================
-# Project version from git and project directories
-# =============================================================================
-set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # generate file with version number from git and nrnunits.lib file path
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in
