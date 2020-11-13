@@ -145,12 +145,21 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
-      echo "existing `cmake --version` location `which cmake`";
-      $PIP install cmake==3.14.4;
+      DESIRED_CMAKE_VERSION=3.14.4;
+      DEFAULT_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
+      $PIP install cmake==$DESIRED_CMAKE_VERSION;
       PATH=/usr/local/bin:$PATH;
       export PATH;
-      echo "PATH=$PATH";
-      which cmake;
+      ACTUAL_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
+      if test "$DESIRED_CMAKE_VERSION" != "$ACTUAL_CMAKE_VERSION" ; then
+        echo "DEFAULT_CMAKE_VERSION $DEFAULT_CMAKE_VERSION";
+        echo "DESIRED_CMAKE_VERSION $DESIRED_CMAKE_VERSION";
+        echo "ACTUAL_CMAKE_VERSION $ACTUAL_CMAKE_VERSION";
+        echo "PATH=$PATH";
+        which cmake;
+        cmake --version;
+        exit 1;
+      fi;
       cmake --version;
 
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
