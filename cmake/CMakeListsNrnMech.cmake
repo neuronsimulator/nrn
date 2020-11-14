@@ -34,11 +34,13 @@ foreach(link_lib ${NRN_LINK_LIBS})
   # avoid library paths from special directory /nrnwheel which
   # used to build wheels under docker container
   elseif("${dir_path}" MATCHES "^/nrnwheel")
-     continue()
+    continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-    get_filename_component(libname ${link_lib} NAME_WLE)
-    string(REGEX REPLACE "^lib" "" libname ${libname})
-    string(APPEND NRN_LINK_DEFS " -l${libname}")
+    # NAME_WLE not avaialble with CMake version < 3.14
+    get_filename_component(libname ${link_lib} NAME)
+    string(REGEX REPLACE "\\.[^.]*$" "" libname_wle ${libname})
+    string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
+    string(APPEND NRN_LINK_DEFS " -l${libname_wle}")
   else()
     string(APPEND NRN_LINK_DEFS " ${link_lib}")
     if(NRN_ENABLE_BINARY_SPECIAL)
