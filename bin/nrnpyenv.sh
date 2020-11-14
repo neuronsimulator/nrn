@@ -88,15 +88,25 @@ else
   # Often people install Anaconda on Windows without adding it to PATH
   if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
     smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
-    trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
+      # Anaconda3 2020 may need more PATH for numpy to work.
+      if test "$PYTHON" != "" ; then
+        if ! $PYTHON -c 'import numpy' >& /dev/null ; then
+          # first item added in trypy
+          a="`echo $PATH | sed 's/:.*//'`"
+          export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
+        fi
+      fi
+    fi
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    fi
     if test "$PYTHON" = "" ; then
       trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
     fi
     if test "$PYTHON" = "" ; then
       trypy "$smenu" Anaconda "Anaconda Prompt.lnk" activate.bat
-    fi
-    if test "$PYTHON" = "" ; then
-      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
     fi
 
     if test "$PYTHON" = "" ; then #brittle but try Enthought
