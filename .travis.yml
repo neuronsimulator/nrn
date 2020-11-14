@@ -145,7 +145,7 @@ script:
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
 
-      DESIRED_CMAKE_VERSION=3.16.3;
+      DESIRED_CMAKE_VERSION=3.8.2;
       DEFAULT_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
       $PIP install --upgrade pip;
       $PIP install cmake==$DESIRED_CMAKE_VERSION;
