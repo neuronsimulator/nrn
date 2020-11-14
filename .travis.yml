@@ -144,6 +144,26 @@ script:
     fi
   # different builds with CMake
   - if [ "$BUILD_MODE" == "cmake" ]; then
+
+      DESIRED_CMAKE_VERSION=3.8.2;
+      DEFAULT_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
+      $PIP install --upgrade pip;
+      $PIP install cmake==$DESIRED_CMAKE_VERSION;
+      PATH=/usr/local/bin:$PATH;
+      export PATH;
+      ACTUAL_CMAKE_VERSION="`cmake --version|sed -n '1s/^.* //p'`";
+      if test "$DESIRED_CMAKE_VERSION" != "$ACTUAL_CMAKE_VERSION" ; then
+        echo "DEFAULT_CMAKE_VERSION $DEFAULT_CMAKE_VERSION";
+        echo "DESIRED_CMAKE_VERSION $DESIRED_CMAKE_VERSION";
+        echo "ACTUAL_CMAKE_VERSION $ACTUAL_CMAKE_VERSION";
+        echo "PATH=$PATH";
+        which cmake;
+        cmake --version;
+        travis_terminate 1;
+      fi;
+      which cmake;
+      cmake --version;
+
       if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
         export PYTHON2=$(which python2);
         export PYTHON3=$(which python3);
