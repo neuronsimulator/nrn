@@ -58,7 +58,7 @@ function trypy {
   a=`ls "$1" |grep "$2"`
   if test "$a" != "" ; then
     b=`cygpath -U "$1/$a/$3"`
-    c=`nrnbinstr "$4" "$b"`
+    c=`nrnbinstr "$4" "$b" 2> /dev/null`
     if test "$c" != "" ; then
       c=`cygpath -U "$c"`
       c=`dirname "$c"`
@@ -95,6 +95,10 @@ else
     if test "$PYTHON" = "" ; then
       trypy "$smenu" Anaconda "Anaconda Prompt.lnk" activate.bat
     fi
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
+    fi
+
     if test "$PYTHON" = "" ; then #brittle but try Enthought
       a=`cygpath -U "$APPDATA/../local/enthought/canopy/edm/envs/user"`
       if test -d "$a" ; then
@@ -433,7 +437,7 @@ foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))
 print ("# " + spname + " = " + sp)
 print ("# site-3 = " + s)
-	
+
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   # What, if anything, did python prepend to PATH
   path=""
