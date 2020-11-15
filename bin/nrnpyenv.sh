@@ -105,12 +105,17 @@ while true ; do
     if $PYTHON -c 'quit()' >& /dev/null ; then #working
       break
     else # remove from PATH
+      oldpath="$PATH"
       a="`$WHICH $PYTHON`"
       b="`dirname \"$a\"`"
       PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
       PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`" #remove b from path if begin
       PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
       export PATH
+      if test "$oldpath" = "$PATH" ; then
+        echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
+        exit 1
+      fi
     fi
   fi
 done
