@@ -132,6 +132,8 @@ if test "$PYTHON" = "" ; then
           # first item added in trypy
           a="`echo $PATH | sed 's/:.*//'`"
           export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
+          # Actually get this PATH when scripts do a -- eval "`nrnpyenv.sh`"
+          echo "export PATH=\"$PATH\""
         fi
       fi
     fi
