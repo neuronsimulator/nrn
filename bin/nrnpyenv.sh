@@ -58,7 +58,7 @@ function trypy {
   a=`ls "$1" |grep "$2"`
   if test "$a" != "" ; then
     b=`cygpath -U "$1/$a/$3"`
-    c=`nrnbinstr "$4" "$b"`
+    c=`nrnbinstr "$4" "$b" 2> /dev/null`
     if test "$c" != "" ; then
       c=`cygpath -U "$c"`
       c=`dirname "$c"`
@@ -75,20 +75,71 @@ function trypy {
   fi
 }
 
-PYTHON=""
-if test "$1" != "" ; then
-  if $WHICH "$1" >& /dev/null ; then
-    PYTHON="$1"
+# On some windows systems python is an empty executable which, when
+# launched in a Command Prompt, directs the user to the Microsoft Store.
+# With bash, it returns a 128 exit status. So we loop until we
+# find a working python (or no python). Each time a python is non-working
+# we remove that path from the PATH. If not Windows, break out after first
+# attempt at finding a Python.
+while true ; do
+  PYTHON=""
+  # Priority is the argument, python3, python
+  if test "$1" != "" ; then
+    if $WHICH "$1" >& /dev/null ; then
+      PYTHON="$1"
+    fi
+  elif $WHICH python3 >& /dev/null ; then
+    PYTHON=python3
+  elif $WHICH python >& /dev/null ; then
+    PYTHON=python
   fi
-elif $WHICH python3 >& /dev/null ; then
-  PYTHON=python3
-elif $WHICH python >& /dev/null ; then
-  PYTHON=python
-else
+
+  # do not do the following craziness if not Windows.
+  if test "$OS" != "Windows_NT" ; then
+    break
+  fi
+
+  if test "$PYTHON" == "" ; then
+    break
+  else
+    if $PYTHON -c 'quit()' >& /dev/null ; then #working
+      break
+    else # remove from PATH
+      oldpath="$PATH"
+      a="`$WHICH $PYTHON`"
+      b="`dirname \"$a\"`"
+      PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
+      PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`" #remove b from path if begin
+      PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
+      export PATH
+      if test "$oldpath" = "$PATH" ; then
+        echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
+        exit 1
+      fi
+    fi
+  fi
+done
+
+if test "$PYTHON" = "" ; then
   # Often people install Anaconda on Windows without adding it to PATH
   if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
     smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
-    trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
+      # Anaconda3 2020 may need more PATH for numpy to work.
+      if test "$PYTHON" != "" ; then
+        if ! $PYTHON -c 'import numpy' >& /dev/null ; then
+          # first item added in trypy
+          a="`echo $PATH | sed 's/:.*//'`"
+          export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
+          # Actually get this PATH when scripts do a -- eval "`nrnpyenv.sh`"
+          echo "export PATH=\"$PATH\""
+        fi
+      fi
+    fi
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    fi
     if test "$PYTHON" = "" ; then
       trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
     fi
@@ -103,10 +154,11 @@ else
       fi
     fi
   fi
-  if test "$PYTHON" = "" ; then
-    echo "Cannot find executable python3 or python" 1>&2
-    exit 1;
-  fi
+fi
+
+if test "$PYTHON" = "" ; then
+  echo "Cannot find executable python3 or python" 1>&2
+  exit 1;
 fi
 
 echo "# PYTHON=`$WHICH $PYTHON`"
@@ -433,7 +485,7 @@ foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))
 print ("# " + spname + " = " + sp)
 print ("# site-3 = " + s)
-	
+
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   # What, if anything, did python prepend to PATH
   path=""
