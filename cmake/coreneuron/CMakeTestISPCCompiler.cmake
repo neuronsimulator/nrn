@@ -1,3 +1,4 @@
+include(CMakeTestCompilerCommon)
 if(CMAKE_ISPC_COMPILER_FORCED)
   # ~~~
   # The compiler configuration was forced by the user. Assume the user has
