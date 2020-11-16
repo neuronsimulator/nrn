@@ -158,9 +158,10 @@ class _Function:
                 item._ensure_extracellular(extracellular=extracellular)
     @property
     def _voltage_dependent(self):
-        if hasattr(self._obj,'_voltage_dependent') and self._obj._voltage_dependent:
-            return True
-        return False
+        try:
+            return self._obj._voltage_dependent
+        except AttributeError:
+            return False
 
 
 
@@ -197,8 +198,11 @@ class _Function2:
     @property
     def _voltage_dependent(self):
         for item in [self._obj1, self._obj2]:
-            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
-                return True
+            try:
+                if item._voltage_dependent:
+                    return True
+            except AttributeError:
+                pass
         return False
 
 
@@ -334,8 +338,11 @@ class _Product:
     @property
     def _voltage_dependent(self):
         for item in [self._a, self._b]:
-            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
-                return True
+            try:
+                if item._voltage_dependent:
+                    return True
+            except AttributeError:
+                pass
         return False
 
     def _semi_compile(self, region, instruction):
@@ -382,8 +389,11 @@ class _Quotient:
     @property
     def _voltage_dependent(self):
         for item in [self._a, self._b]:
-            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
-                return True
+            try:
+                if item._voltage_dependent:
+                    return True
+            except AttributeError:
+                pass
         return False
 
     def _semi_compile(self, region, instruction):
@@ -405,8 +415,11 @@ class _Reaction:
     @property
     def _voltage_dependent(self):
         for item in [self._lhs, self._rhs]:
-            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
-                return True
+            try:
+                if item._voltage_dependent:
+                    return True
+            except AttributeError:
+                pass
         return False
 
 
@@ -522,8 +535,11 @@ class _Arithmeticed:
     @property
     def _voltage_dependent(self):
         for item in self._items:
-            if hasattr(item,'_voltage_dependent') and item._voltage_dependent:
-                return True
+            try:
+                if item._voltage_dependent:
+                    return True
+            except AttributeError:
+                pass
         return False
 
     def _semi_compile(self, region, instruction):

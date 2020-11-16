@@ -63,7 +63,17 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._scale_by_area = scale_by_area
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
-        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
+
+        for ar in [scheme, rate_f, rate_b]:
+            try:
+                if ar._voltage_dependent:
+                    self._voltage_dependent = True
+                    break
+            except AttributeError:
+                pass
+        else:
+            self._voltage_dependent = False
+
         if custom_dynamics is not None and mass_action is not None:
             raise RxDException('Cannot specify both custom_dynamics and mass_action.')
         elif custom_dynamics is None and mass_action is None:
