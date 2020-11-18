@@ -107,7 +107,13 @@ if(NOT LINK_AGAINST_PYTHON)
   endif()
 elseif(SKBUILD)
   # skbuild needs the installation dir to be in nmodl to do the correct inplace
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl DESTINATION .)
+  install(
+    DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl
+    DESTINATION .
+    PATTERN "__pycache__" EXCLUDE)
 else()
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/ DESTINATION lib)
+  install(
+    DIRECTORY ${CMAKE_BINARY_DIR}/lib/
+    DESTINATION lib
+    PATTERN "__pycache__" EXCLUDE)
 endif()

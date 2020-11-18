@@ -86,4 +86,5 @@ target_link_libraries(
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl_visitor DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor)
+install(TARGETS nmodl_visitor DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor CONFIGURATIONS
+                Debug)
