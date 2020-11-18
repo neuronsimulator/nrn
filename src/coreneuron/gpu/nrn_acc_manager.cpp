@@ -464,7 +464,7 @@ void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
 #endif
 }
 
-typedef std::pair<int, int> NRB_P;
+using NRB_P = std::pair<int, int>;
 
 struct comp {
     bool operator()(const NRB_P& a, const NRB_P& b) {

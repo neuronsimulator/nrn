@@ -39,9 +39,9 @@ namespace coreneuron {
 
 #define NRNBBCORE 1
 
-typedef int Datum;
-typedef int (*Pfri)();
-typedef char Symbol;
+using Datum = int;
+using Pfri = int(*)();
+using Symbol = char;
 
 #define VEC_A(i) (_nt->_actual_a[(i)])
 #define VEC_B(i) (_nt->_actual_b[(i)])

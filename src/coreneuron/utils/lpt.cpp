@@ -6,7 +6,7 @@
 #include "coreneuron/utils/lpt.hpp"
 #include "coreneuron/utils/nrn_assert.h"
 
-typedef std::pair<size_t, size_t> P;
+using P = std::pair<size_t, size_t>;
 
 // always want the largest remaining piece
 bool piece_comp(const P& a, const P& b) {

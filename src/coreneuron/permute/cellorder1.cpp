@@ -84,9 +84,9 @@ static void admin2(int ncell,
 static void check(VecTNode&);
 static void prtree(VecTNode&);
 
-typedef std::pair<TNode*, int> TNI;
-typedef std::map<size_t, std::pair<TNode*, int> > HashCnt;
-typedef std::vector<TNI> TNIVec;
+using TNI = std::pair<TNode*, int>;
+using HashCnt = std::map<size_t, std::pair<TNode*, int>>;
+using TNIVec = std::vector<TNI>;
 
 static char* stree(TNode* nd) {
     char s[1000];

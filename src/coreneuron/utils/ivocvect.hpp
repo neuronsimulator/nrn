@@ -84,7 +84,7 @@ class fixed_vector {
     }
 };
 
-typedef fixed_vector<double> IvocVect;
+using IvocVect = fixed_vector<double>;
 
 extern IvocVect* vector_new(int n);
 extern int vector_capacity(IvocVect* v);

@@ -48,17 +48,9 @@ double t, dt, celsius;
 #endif
 int rev_dt;
 
-
-
-typedef void (*Pfrv)();
-
-
-
-
-
+using Pfrv = void (*)();
 
 static void ion_write_depend(int type, int etype);
-
 
 void hoc_reg_bbcore_read(int type, bbcore_read_t f) {
     if (type == -1) {

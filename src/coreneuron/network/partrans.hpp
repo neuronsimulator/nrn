@@ -16,9 +16,9 @@ namespace nrn_partrans {
 #endif
 
 #if NRNLONGSGID
-typedef int64_t sgid_t;
+using sgid_t = int64_t;
 #else
-typedef int sgid_t;
+using sgid_t = int;
 #endif
 
 struct HalfGap_Info {

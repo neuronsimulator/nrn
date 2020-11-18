@@ -15,9 +15,9 @@ using namespace std;
 // groupindex aleady defined that keeps identical cells together
 // begin with leaf to root ordering
 namespace coreneuron {
-typedef VecTNode VTN;        // level of nodes
-typedef vector<VTN> VVTN;    // group of levels
-typedef vector<VVTN> VVVTN;  // groups
+using VTN = VecTNode;        // level of nodes
+using VVTN = vector<VTN>;    // group of levels
+using VVVTN = vector<VVTN>;  // groups
 
 // verify level in groups of nident identical nodes
 void chklevel(VTN& level, size_t nident = 8) {

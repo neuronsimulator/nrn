@@ -71,16 +71,16 @@ extern int patstimtype;
 // nrn_setup.cpp and debugging only information which is retrievable from
 // NrnThread and Memb_list. Ideally, this should all go away
 
-typedef struct Memb_list_ckpnt {
+struct Memb_list_ckpnt {
     // debug only
     double* data_not_permuted;
     Datum* pdata_not_permuted;
     int* nodeindices_not_permuted;
-} Memb_list_chkpnt;
+};
 
 #endif  // CHKPNTDEBUG but another section for it below
 
-typedef struct NrnThreadChkpnt {
+struct NrnThreadChkpnt {
     int file_id;
 
 #if CHKPNTDEBUG
@@ -109,7 +109,7 @@ typedef struct NrnThreadChkpnt {
     int* vecplay_ix;
 #endif  // CHKPNTDEBUG
 
-} NrnThreadChkpnt;
+};
 
 extern NrnThreadChkpnt* nrnthread_chkpnt;
 }  // namespace coreneuron

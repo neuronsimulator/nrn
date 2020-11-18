@@ -31,10 +31,10 @@ namespace coreneuron {
  *        and need to be refactored.
  */
 
-typedef int DIFUN;
-typedef int NEWTFUN;
-typedef int SPFUN;
-typedef int EULFUN;
+using DIFUN = int;
+using NEWTFUN = int;
+using SPFUN = int;
+using EULFUN = int;
 #pragma acc routine seq
 extern int nrn_derivimplicit_steer(int, _threadargsproto_);
 #define difun(arg) nrn_derivimplicit_steer(arg, _threadargs_);
@@ -45,7 +45,7 @@ extern int nrn_newton_steer(int, _threadargsproto_);
 extern int nrn_euler_steer(int, _threadargsproto_);
 #define eulerfun(arg) nrn_euler_steer(arg, _threadargs_);
 
-typedef struct Elm {
+struct Elm {
     unsigned row;        /* Row location */
     unsigned col;        /* Column location */
     double* value;       /* The value SOA  _cntml_padded of them*/
@@ -53,20 +53,20 @@ typedef struct Elm {
     struct Elm* r_down;  /*       in solution order */
     struct Elm* c_left;  /* Link to left element in same row */
     struct Elm* c_right; /*       in solution order (see getelm) */
-} Elm;
+};
 #define ELM0 (Elm*)0
 
-typedef struct Item {
+struct Item {
     Elm* elm;
     unsigned norder; /* order of a row */
     struct Item* next;
     struct Item* prev;
-} Item;
+};
 #define ITEM0 (Item*)0
 
-typedef Item List; /* list of mixed items */
+using List = Item; /* list of mixed items */
 
-typedef struct SparseObj {  /* all the state information */
+struct SparseObj {  /* all the state information */
     Elm** rowst;            /* link to first element in row (solution order)*/
     Elm** diag;             /* link to pivot element in row (solution order)*/
     void* elmpool;          /* no interthread cache line sharing for elements */
@@ -87,7 +87,7 @@ typedef struct SparseObj {  /* all the state information */
     List* orderlist; /* list of rows sorted by norder
                              that haven't been used */
     int do_flag;
-} SparseObj;
+};
 
 #pragma acc routine seq
 extern double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);

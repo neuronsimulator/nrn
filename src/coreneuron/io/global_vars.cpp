@@ -16,8 +16,8 @@ int (*nrn2core_get_global_int_item_)(const char* name);
 
 using namespace std;
 namespace coreneuron {
-typedef pair<size_t, double*> PSD;
-typedef map<string, PSD> N2V;
+using PSD = pair<size_t, double*>;
+using N2V = map<string, PSD>;
 
 static N2V* n2v;
 

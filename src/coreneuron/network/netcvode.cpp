@@ -51,7 +51,7 @@ namespace coreneuron {
 #define PP2t(pp) (PP2NT(pp)->_t)
 //#define POINT_RECEIVE(type, tar, w, f) (*pnt_receive[type])(tar, w, f)
 
-typedef void (*ReceiveFunc)(Point_process*, double*, double);
+using ReceiveFunc = void (*)(Point_process*, double*, double);
 
 double NetCvode::eps_;
 NetCvode* net_cvode_instance;

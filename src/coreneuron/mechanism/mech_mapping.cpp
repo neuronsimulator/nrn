@@ -8,9 +8,9 @@
 #include "coreneuron/permute/data_layout.hpp"
 
 namespace coreneuron {
-typedef size_t Offset;
-typedef int MechId;
-typedef const char* VariableName;
+using Offset = size_t;
+using MechId = int;
+using VariableName = const char*;
 
 struct cmp_str {
     bool operator()(char const* a, char const* b) const {
@@ -21,7 +21,7 @@ struct cmp_str {
 /*
  * Structure that map variable names of mechanisms to their value's location (offset) in memory
  */
-typedef std::map<MechId, std::map<VariableName, Offset, cmp_str> > MechNamesMapping;
+using MechNamesMapping = std::map<MechId, std::map<VariableName, Offset, cmp_str>>;
 static MechNamesMapping mechNamesMapping;
 
 static void set_an_offset(int mech_id, const char* variable_name, int offset) {

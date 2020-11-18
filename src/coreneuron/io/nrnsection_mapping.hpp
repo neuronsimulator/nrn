@@ -11,9 +11,9 @@
 namespace coreneuron {
 
 /** type to store every section and associated segments */
-typedef std::vector<int> segvec_type;
-typedef std::map<int, segvec_type> secseg_map_type;
-typedef secseg_map_type::iterator secseg_it_type;
+using segvec_type = std::vector<int>;
+using secseg_map_type = std::map<int, segvec_type>;
+using secseg_it_type = secseg_map_type::iterator;
 
 /** @brief Section to segment mapping
  *

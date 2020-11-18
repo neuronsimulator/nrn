@@ -33,13 +33,13 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/mechanism/mechanism.hpp"
 namespace coreneuron {
 
-typedef Datum* (*Pfrpdat)(void);
+using Pfrpdat = Datum* (*)(void);
 
 struct NrnThread;
 
-typedef void (*mod_alloc_t)(double*, Datum*, int);
-typedef void (*mod_f_t)(NrnThread*, Memb_list*, int);
-typedef void (*pnt_receive_t)(Point_process*, int, double);
+using mod_alloc_t = void (*)(double*, Datum*, int);
+using mod_f_t =  void (*)(NrnThread*, Memb_list*, int);
+using pnt_receive_t = void (*)(Point_process*, int, double);
 
 /*
  * Memb_func structure contains all related informations of a mechanism
@@ -114,12 +114,12 @@ extern int point_register_mech(const char**,
                                void* (*constructor)(),
                                void (*destructor)(),
                                int vectorized);
-typedef void (*NetBufReceive_t)(NrnThread*);
+using NetBufReceive_t = void (*)(NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
 
 extern void hoc_register_net_send_buffering(int);
 
-typedef void (*nrn_watch_check_t)(NrnThread*, Memb_list*);
+using nrn_watch_check_t = void (*)(NrnThread*, Memb_list*);
 extern void hoc_register_watch_check(nrn_watch_check_t, int);
 
 extern void nrn_jacob_capacitance(NrnThread*, Memb_list*, int);
@@ -150,19 +150,7 @@ extern void _nrn_layout_reg(int, int);
 extern void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*));
 extern void _nrn_thread_reg1(int i, void (*f)(ThreadDatum*));
 
-typedef void (*bbcore_read_t)(double*,
-                              int*,
-                              int*,
-                              int*,
-                              int,
-                              int,
-                              double*,
-                              Datum*,
-                              ThreadDatum*,
-                              NrnThread*,
-                              double);
-
-typedef void (*bbcore_write_t)(double*,
+using bbcore_read_t = void (*)(double*,
                                int*,
                                int*,
                                int*,
@@ -173,6 +161,18 @@ typedef void (*bbcore_write_t)(double*,
                                ThreadDatum*,
                                NrnThread*,
                                double);
+
+using bbcore_write_t = void (*)(double*,
+                                int*,
+                                int*,
+                                int*,
+                                int,
+                                int,
+                                double*,
+                                Datum*,
+                                ThreadDatum*,
+                                NrnThread*,
+                                double);
 
 extern int nrn_mech_depend(int type, int* dependencies);
 extern int nrn_fornetcon_cnt_;

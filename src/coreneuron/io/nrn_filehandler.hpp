@@ -157,7 +157,7 @@ class FileHandler {
     }
 
     /** Defined flag values for parse_array() */
-    typedef enum parse_action { read, seek } parse_action;
+    enum parse_action { read, seek };
 
     /** Generic parse function for an array of fixed length.
      *

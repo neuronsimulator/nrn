@@ -32,12 +32,12 @@ NET_RECEIVE (w) {LOCAL nst
 
 VERBATIM
 
-typedef struct {
+struct Info {
 	int size;
 	double* tvec;
 	int* gidvec;
 	int index;
-} Info;
+};
 
 #define INFOCAST Info** ip = (Info**)(&(_p_ptr))
 

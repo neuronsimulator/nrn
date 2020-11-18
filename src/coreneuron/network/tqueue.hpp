@@ -100,7 +100,7 @@ class TQItem {
     int cnt_;  // reused: -1 means it is in the splay tree, >=0 gives bin
 };
 
-typedef std::pair<double, TQItem*> TQPair;
+using TQPair = std::pair<double, TQItem*>;
 
 struct less_time {
     bool operator()(const TQPair& x, const TQPair& y) const {

@@ -21,7 +21,7 @@
 namespace coreneuron {
 struct Memb_list;
 
-typedef const char** SerializedNames;
+using SerializedNames = const char**;
 
 // return pointer to value of a variable's mechanism, or nullptr if not found
 extern double* get_var_location_from_var_name(int mech_id,

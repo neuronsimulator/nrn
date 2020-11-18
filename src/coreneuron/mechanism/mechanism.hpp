@@ -49,11 +49,11 @@ union ThreadDatum {
 #endif
 
 /* will go away at some point */
-typedef struct Point_process {
+struct Point_process {
     int _i_instance;
     short _type;
     short _tid; /* NrnThread id */
-} Point_process;
+};
 
 struct NetReceiveBuffer_t {
     int* _displ;     /* _displ_cnt + 1 of these */

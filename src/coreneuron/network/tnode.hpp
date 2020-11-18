@@ -7,7 +7,7 @@
 namespace coreneuron {
 class TNode;
 
-typedef std::vector<TNode*> VecTNode;
+using VecTNode = std::vector<TNode*>;
 
 class TNode {
   public:

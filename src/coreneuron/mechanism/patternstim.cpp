@@ -118,7 +118,7 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
 }
 
 // comparator to sort spikes based on time
-typedef std::pair<double, int> spike_type;
+using spike_type = std::pair<double, int>;
 static bool spike_comparator(const spike_type& l, const spike_type& r) {
     return l.first < r.first;
 }
