@@ -20,7 +20,7 @@ CORENRN_BIN_DIR := $(ROOT)/bin
 CORENRN_LIB_DIR := $(ROOT)/lib
 CORENRN_INC_DIR := $(ROOT)/include
 CORENRN_SHARE_CORENRN_DIR:= $(ROOT)/share/coreneuron
-CORENRN_SHARE_MOD2C_DIR := $(ROOT)/share/mod2c
+CORENRN_SHARE_MOD2CPP_DIR := $(ROOT)/share/mod2c
 
 # file provided by coreneuron for solver
 DERIVIMPLICIT_CPP_FILE = $(CORENRN_SHARE_CORENRN_DIR)/dimplic.cpp
@@ -57,7 +57,7 @@ ISPC = @CMAKE_ISPC_COMPILER@
 ISPC_COMPILE_CMD = $(ISPC) @CMAKE_ISPC_FLAGS@ -I$(CORENRN_INC_DIR)
 
 # env variables required for mod2c or nmodl
-NMODL_ENV_VAR = PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2C_DIR)/nrnunits.lib
+MOD2CPP_ENV_VAR = PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2CPP_DIR)/nrnunits.lib
 
 # name of the mechanism library with suffix if provided
 COREMECH_LIB_NAME = corenrnmech$(if $(MECHLIB_SUFFIX),_$(MECHLIB_SUFFIX),)
@@ -82,11 +82,11 @@ endif
 
 # Binary of MOD2C/NMODL depending on CMake option activated
 ifeq (@nmodl_FOUND@, TRUE)
-    NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), @CORENRN_NMODL_BINARY@)
-    INCLUDES += -I@CORENRN_NMODL_INCLUDE@
-    ISPC_COMPILE_CMD += -I@CORENRN_NMODL_INCLUDE@
+    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), @CORENRN_MOD2CPP_BINARY@)
+    INCLUDES += -I@CORENRN_MOD2CPP_INCLUDE@
+    ISPC_COMPILE_CMD += -I@CORENRN_MOD2CPP_INCLUDE@
 else
-    NMODL_BINARY_PATH = $(if $(NMODL_BINARY),$(NMODL_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
+    MOD2CPP_BINARY_PATH = $(if $(MOD2CPP_BINARY),$(MOD2CPP_BINARY), $(CORENRN_BIN_DIR)/@nmodl_binary_name@)
 endif
 
 # MOD files with full path, without path and names without .mod extension
@@ -141,16 +141,16 @@ ALL_OBJS = $(MOD_FUNC_OBJ) $(DIMPLIC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
 C_RESET := \033[0m
 C_GREEN := \033[32m
 
-# Default nmodl flags. Override if NMODL_RUNTIME_FLAGS is not empty
-NMODL_FLAGS_ISPC = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_ispc@)
-NMODL_FLAGS_C = $(if $(NMODL_RUNTIME_FLAGS),$(NMODL_RUNTIME_FLAGS),@nmodl_arguments_c@)
+# Default nmodl flags. Override if MOD2CPP_RUNTIME_FLAGS is not empty
+NMODL_FLAGS_ISPC = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),@nmodl_arguments_ispc@)
+MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),@nmodl_arguments_c@)
 ifeq (@CORENRN_ENABLE_ISPC@, ON)
     $(info Default nmodl flags: @nmodl_arguments_ispc@)
 else
     $(info Default nmodl flags: @nmodl_arguments_c@)
 endif
-ifneq ($(NMODL_RUNTIME_FLAGS),)
-    $(warning Runtime nmodl flags (they replace the default ones): $(NMODL_RUNTIME_FLAGS))
+ifneq ($(MOD2CPP_RUNTIME_FLAGS),)
+    $(warning Runtime nmodl flags (they replace the default ones): $(MOD2CPP_RUNTIME_FLAGS))
 endif
 
 # ======== MAIN BUILD RULES ============
@@ -197,11 +197,11 @@ $(MOD_OBJS_DIR)/%.obj: $(MOD_TO_CPP_DIR)/%.ispc | $(MOD_OBJS_DIR)
 
 # translate MOD files to ISPC using NMODL
 $(mod_ispc_files): $(MOD_TO_CPP_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_ISPC)
+	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_ISPC)
 
 # translate MOD files to CPP using mod2c/NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(NMODL_ENV_VAR) $(NMODL_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_C)
+	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_C)
 
 # static pattern to set up the dependencies for the previous recipe
 $(mod_ispc_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MOD_TO_CPP_DIR)/%.ispc
@@ -218,7 +218,7 @@ $(KINDERIV_H_PATH): $(mod_cpp_files) build_always | $(MOD_TO_CPP_DIR)
 	@PYTHON_EXECUTABLE@ $(CORENRN_SHARE_CORENRN_DIR)/kinderiv.py;
 
 # symlink to cpp files provided by coreneuron
-$(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2C_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
+$(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2CPP_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
 	ln -s $< $@
 
 # to recompile dimplic.cpp for solvers

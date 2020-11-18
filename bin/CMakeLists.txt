@@ -56,7 +56,7 @@ else()
 endif()
 
 # name of nmodl/mod2c binary
-get_filename_component(nmodl_name ${CORENRN_NMODL_BINARY} NAME)
+get_filename_component(nmodl_name ${CORENRN_MOD2CPP_BINARY} NAME)
 set(nmodl_binary_name ${nmodl_name})
 
 # =============================================================================
