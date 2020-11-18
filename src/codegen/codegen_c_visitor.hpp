@@ -50,8 +50,10 @@ namespace codegen {
  * \enum BlockType
  * \brief Helper to represent various block types
  *
+ * Note: do not assign integers to these enums
+ *
  */
-enum class BlockType {
+enum BlockType {
     /// initial block
     Initial,
 
@@ -68,7 +70,10 @@ enum class BlockType {
     Watch,
 
     /// net_receive block
-    NetReceive
+    NetReceive,
+
+    /// fake ending block type for loops on the enums. Keep it at the end
+    BlockTypeEnd
 };
 
 
@@ -882,6 +887,24 @@ class CodegenCVisitor: public visitor::AstVisitor {
      */
     virtual std::string ptr_type_qualifier();
 
+    /**
+     * The used global type qualifier
+     *
+     * For C code generation this is empty
+     * \return ""
+     *
+     * For ispc
+     * \return "uniform "
+     */
+    virtual std::string global_var_struct_type_qualifier();
+
+    /**
+     * Instantiate global var instance
+     *
+     * For C code generation this is empty
+     * \return ""
+     */
+    virtual void print_global_var_struct_decl();
 
     /**
      * The used parameter type qualifier
@@ -1035,9 +1058,8 @@ class CodegenCVisitor: public visitor::AstVisitor {
 
     /**
      * Print the structure that wraps all global variables used in the NMODL
-     * \param wrapper
      */
-    virtual void print_mechanism_global_var_structure(bool wrapper);
+    void print_mechanism_global_var_structure();
 
 
     /**
@@ -1590,7 +1612,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print all classes
      *
      */
-    virtual void print_data_structures();
+    void print_data_structures();
 
 
     /**

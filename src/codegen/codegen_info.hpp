@@ -335,9 +335,6 @@ struct CodegenInfo {
     /// non specific and ionic currents
     std::vector<std::string> currents;
 
-    /// if mod file used dervimplicit method
-    bool derivimplicit_used = false;
-
     /// all top level global blocks
     std::vector<ast::Node*> top_blocks;
 
@@ -378,7 +375,9 @@ struct CodegenInfo {
     }
 
     /// if legacy derivimplicit solver from coreneuron to be used
-    bool derivimplicit_coreneuron_solver() const;
+    inline bool derivimplicit_used() const {
+        return !derivimplicit_callbacks.empty();
+    }
 
     bool function_uses_table(std::string& name) const;
 
