@@ -15,6 +15,6 @@ target_link_libraries(units_parser util visitor lexer)
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser)
-install(TARGETS c_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser)
-install(TARGETS units_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser)
+install(TARGETS nmodl_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser CONFIGURATIONS Debug)
+install(TARGETS c_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser CONFIGURATIONS Debug)
+install(TARGETS units_parser DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/parser CONFIGURATIONS Debug)
