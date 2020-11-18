@@ -81,18 +81,6 @@ bool CodegenInfo::function_uses_table(std::string& name) const {
 }
 
 /**
- * Check if coreneuron internal derivimplicit solver needs to be used
- *
- * - if derivimplicit method is not used or solve block is empty
- *   then there is nothing to do
- * - if eigen solver block is used then coreneuron solver is not needed
- */
-
-bool CodegenInfo::derivimplicit_coreneuron_solver() const {
-    return !derivimplicit_callbacks.empty();
-}
-
-/**
  * Check if NrnState node in the AST has EigenSolverBlock node
  *
  * @return True if EigenSolverBlock exist in the node

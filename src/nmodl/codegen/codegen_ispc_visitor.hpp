@@ -42,12 +42,9 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// ast nodes which are not compatible with ISPC target
-    const std::vector<ast::AstNodeType> incompatible_node_types{
-        ast::AstNodeType::VERBATIM,
-        ast::AstNodeType::EIGEN_NEWTON_SOLVER_BLOCK,
-        ast::AstNodeType::EIGEN_LINEAR_SOLVER_BLOCK,
-        ast::AstNodeType::WATCH_STATEMENT,
-        ast::AstNodeType::TABLE_STATEMENT};
+    static const std::vector<ast::AstNodeType> incompatible_node_types;
+
+    static const std::unordered_set<std::string> incompatible_var_names;
 
     /// flag to indicate if visitor should print the the wrapper code
     bool wrapper_codegen = false;
@@ -56,7 +53,8 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     /// supported
     CodegenCVisitor fallback_codegen;
 
-    std::map<BlockType, bool> emit_fallback;
+    std::vector<bool> emit_fallback =
+        std::vector<bool>(static_cast<size_t>(BlockType::BlockTypeEnd), false);
 
     std::vector<ast::ProcedureBlock*> wrapper_procedures;
     std::vector<ast::FunctionBlock*> wrapper_functions;
@@ -83,6 +81,9 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
     std::string ptr_type_qualifier() override;
 
+    std::string global_var_struct_type_qualifier() override;
+
+    void print_global_var_struct_decl() override;
 
     std::string param_type_qualifier() override;
 
@@ -168,18 +169,8 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     void print_wrapper_routine(const std::string& wrapper_function, BlockType type);
 
 
-    /// wrapper/caller routines for nrn_state and nrn_cur
-    void codegen_wrapper_routines();
-
-
-    /// structure that wraps all global variables in the mod file
-    void print_mechanism_global_var_structure(bool wrapper) override;
-
-
-    void print_data_structures() override;
-
-
-    void print_wrapper_data_structures();
+    /// print initial equation and state wrapper
+    void print_block_wrappers_initial_equation_state();
 
 
     void print_ispc_globals();
@@ -201,8 +192,19 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// find out for main compute routines whether they are suitable to be emitted in ISPC backend
-    void determine_target();
+    bool check_incompatibilities();
 
+    /// check incompatible name var
+    template <class T>
+    bool check_incompatible_var_name(const std::vector<T>& vec,
+                                     const std::string& get_name(const T&)) {
+        for (const auto& var: vec) {
+            if (incompatible_var_names.count(get_name(var))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /// move procedures and functions unused by compute kernels into the wrapper
     void move_procs_to_wrapper();
@@ -211,8 +213,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     /// entry point to code generation
     void print_codegen_routines() override;
 
-
-    void print_codegen_wrapper_routines();
+    void print_wrapper_routines() override;
 
   public:
     CodegenIspcVisitor(const std::string& mod_file,

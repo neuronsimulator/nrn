@@ -219,7 +219,7 @@ void CodegenHelperVisitor::find_non_range_variables() {
      * slist and dlist represent the offsets for prime variables used. For
      * euler or derivimplicit methods its always first number.
      */
-    if (info.derivimplicit_used) {
+    if (info.derivimplicit_used()) {
         info.derivimplicit_var_thread_id = 0;
         info.thread_data_index = 3;
         info.derivimplicit_list_num = 1;
@@ -455,7 +455,6 @@ void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock& node) {
 }
 
 void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& node) {
-    info.derivimplicit_used = true;
     info.derivimplicit_callbacks.push_back(&node);
 }
 
