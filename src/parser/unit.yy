@@ -5,7 +5,7 @@
  * Parsing Unit definition file for use in NMODL.
  *
  * The parser is designed to parse the nrnunits.lib file which is also used by MOD2C
- * https://github.com/BlueBrain/mod2c/blob/master/share/nrnunits.lib
+ * https://github.com/BlueBrain/nmodl/blob/master/share/nrnunits.lib.in
  *****************************************************************************/
 
 %code requires

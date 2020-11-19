@@ -3,7 +3,7 @@
  * @brief Flex lexer implementation reading Units of Neuron like MOD2C
  *
  * @brief Parsing unit definition file for use in NMODL
- *        https://github.com/BlueBrain/mod2c/blob/master/share/nrnunits.lib
+ *        https://github.com/BlueBrain/nmodl/blob/master/share/nrnunits.lib.in
  *****************************************************************************/
 
 %{

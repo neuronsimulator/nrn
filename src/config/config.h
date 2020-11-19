@@ -53,7 +53,7 @@ struct NrnUnitsLib {
     static std::string get_path() {
         // first look for NMODLHOME env variable
         if (const char* nmodl_home = std::getenv("NMODLHOME")) {
-            auto path = std::string(nmodl_home) + "/share/nrnunits.lib";
+            auto path = std::string(nmodl_home) + "/share/nmodl/nrnunits.lib";
             NRNUNITSLIB_PATH.emplace(NRNUNITSLIB_PATH.begin(), path);
         }
 
