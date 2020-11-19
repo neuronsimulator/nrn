@@ -192,12 +192,13 @@ proc init() {localobj s
 }
 endtemplate NewObj
 ''')
-        a = h.NewObj(4, 2)
+        args = (4, 2)
+        a = h.NewObj(*args)
         b = h.List("NewObj")
         print("#NewObj in existence", b.count())
         for i in range(b.count()):
           print(b.o(i), b.o(i).ob)
-        assert(b.count() == 3)
+        assert(b.count() == args[0] - args[1] + 1)
 
         del a
         del b

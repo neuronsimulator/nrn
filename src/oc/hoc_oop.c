@@ -506,19 +506,31 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v){
   object.
 **/
 
-#define NEWOBJ1_ERR_SIZE 100
+#define NEWOBJ1_ERR_SIZE 32
 typedef struct {
   Object* ob;
   void* oji;
 } newobj1_err_t;
 	
 extern void* nrn_get_oji();
-void (*oc_jump_target_)();
+extern void (*oc_jump_target_)();
 static int newobj1_err_index_;
-static newobj1_err_t newobj1_err_[NEWOBJ1_ERR_SIZE];
+static int newobj1_err_size_;
+static newobj1_err_t* newobj1_err_;
 
 void push_newobj1_err(Object* ob) {
-  assert(newobj1_err_index_ < NEWOBJ1_ERR_SIZE);
+  if (newobj1_err_index_ >= newobj1_err_size_) {
+    if (newobj1_err_size_ == 0) {
+      newobj1_err_size_ = NEWOBJ1_ERR_SIZE;
+      newobj1_err_ = (newobj1_err_t*)calloc(newobj1_err_size_, sizeof(newobj1_err_t));
+      assert(newobj1_err_);
+    }else{
+      newobj1_err_size_ *= 2;
+      newobj1_err_ = (newobj1_err_t*)realloc(newobj1_err_, newobj1_err_size_*sizeof(newobj1_err_t));
+      assert(newobj1_err_);
+    }
+  }
+
   newobj1_err_t* ne = newobj1_err_ + newobj1_err_index_++;
   ne->ob = ob;
   ne->oji = oc_jump_target_ ? nrn_get_oji() : (void*)oc_jump_target_;
