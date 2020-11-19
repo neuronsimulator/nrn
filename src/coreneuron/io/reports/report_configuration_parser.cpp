@@ -40,19 +40,36 @@
 namespace coreneuron {
 
 /*
+ * Defines the type of target, as per the following syntax:
+ *   0=Compartment, 1=Cell/Soma, Section { 2=Axon, 3=Dendrite, 4=Apical }
+ * The "Comp" variations are compartment-based (all segments, not middle only)
+ */
+enum class TargetType
+{
+    Compartment = 0,
+    Soma = 1,
+    Axon = 2,
+    Dendrite = 3,
+    Apical = 4,
+    AxonComp = 5,
+    DendriteComp = 6,
+    ApicalComp = 7,
+};
+
+/*
  * Split filter string ("mech.var_name") into mech_id and var_name
  */
 void parse_filter_string(char* filter, ReportConfiguration& config) {
     char* token = strtok(filter, ".");
     if (!token) {
         std::cerr << "Error : Invalid report variable, should be mch_name.var_name" << std::endl;
-        abort();
+        nrn_abort(1);
     }
     strcpy(config.mech_name, token);
     token = strtok(nullptr, "\n");
     if (!token) {
         std::cerr << "Error : Invalid report variable, should be mch_name.var_name" << std::endl;
-        abort();
+        nrn_abort(1);
     }
     strcpy(config.var_name, token);
 }
@@ -65,14 +82,14 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
     char report_on[REPORT_MAX_NAME_LEN] = "";
     char raw_line[REPORT_MAX_FILEPATH_LEN] = "";
     char spikes_population[REPORT_MAX_NAME_LEN] = "";
-    int is_soma;
+    TargetType target_type;
     int* gids;
 
     FILE* fp = fopen(conf_file, "r");
     if (!fp) {
         std::cerr << "Cannot open configuration file: " << conf_file << ", aborting execution"
                   << std::endl;
-        abort();
+        nrn_abort(1);
     }
 
     fgets(raw_line, REPORT_MAX_FILEPATH_LEN, fp);
@@ -85,7 +102,7 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
         report.buffer_size = 4;  // default size to 4 Mb
         fgets(raw_line, REPORT_MAX_FILEPATH_LEN, fp);
         sscanf(raw_line, "\n%s %s %s %s %s %s %d %lf %lf %lf %d %d %s\n", report.name,
-               report.target_name, report.type_str, report_on, report.unit, report.format, &is_soma,
+               report.target_name, report.type_str, report_on, report.unit, report.format, &target_type,
                &report.report_dt, &report.start, &report.stop, &report.num_gids,
                &report.buffer_size, report.population_name);
         for (int i = 0; i < REPORT_MAX_NAME_LEN; i++) {
@@ -96,15 +113,54 @@ std::vector<ReportConfiguration> create_report_configurations(const char* conf_f
             if (strcmp(report_on, "i_membrane") == 0) {
                 nrn_use_fast_imem = true;
                 report.type = IMembraneReport;
-            } else if (is_soma)
-                report.type = SomaReport;
-            else
-                report.type = CompartmentReport;
+            } else {
+                switch (target_type) {
+                    case TargetType::Soma:
+                        report.type = SomaReport;
+                        break;
+                    case TargetType::Compartment:
+                        report.type = CompartmentReport;
+                        break;
+                    case TargetType::Axon:
+                        report.type = SectionReport;
+                        report.section_type = Axon;
+                        report.section_all_compartments = false;
+                        break;
+                    case TargetType::AxonComp:
+                        report.type = SectionReport;
+                        report.section_type = Axon;
+                        report.section_all_compartments = true;
+                        break;
+                    case TargetType::Dendrite:
+                        report.type = SectionReport;
+                        report.section_type = Dendrite;
+                        report.section_all_compartments = false;
+                        break;
+                    case TargetType::DendriteComp:
+                        report.type = SectionReport;
+                        report.section_type = Dendrite;
+                        report.section_all_compartments = true;
+                        break;
+                    case TargetType::Apical:
+                        report.type = SectionReport;
+                        report.section_type = Apical;
+                        report.section_all_compartments = false;
+                        break;
+                    case TargetType::ApicalComp:
+                        report.type = SectionReport;
+                        report.section_type = Apical;
+                        report.section_all_compartments = true;
+                        break;
+                    default:
+                        std::cerr << "Report error: unsupported target type" << std::endl;
+                        nrn_abort(1);
+                }
+            }
         } else if (strcmp(report.type_str, "synapse") == 0) {
             report.type = SynapseReport;
         } else {
-            std::cerr << "Report error: unsupported type " << report.type_str << "\n";
-            abort();
+            std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
+            nrn_abort(1);
         }
 
         if (report.type == SynapseReport)

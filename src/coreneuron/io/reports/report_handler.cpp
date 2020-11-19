@@ -39,6 +39,12 @@ void ReportHandler::create_report(double dt, double tstop, double delay) {
                                                                 nt.nrn_fast_imem->nrn_sav_rhs);
                 register_compartment_report(nt, m_report_config, vars_to_report);
                 break;
+            case SectionReport:
+                vars_to_report = get_section_vars_to_report(nt, m_report_config.target, nt._actual_v,
+                                                            m_report_config.section_type,
+                                                            m_report_config.section_all_compartments);
+                register_compartment_report(nt, m_report_config, vars_to_report);
+                break;
             default:
                 vars_to_report = get_custom_vars_to_report(nt, m_report_config, nodes_to_gid);
                 register_custom_report(nt, m_report_config, vars_to_report);
@@ -155,6 +161,76 @@ VarsToReport ReportHandler::get_compartment_vars_to_report(const NrnThread& nt,
     return vars_to_report;
 }
 
+std::string getSectionTypeStr(SectionType type) {
+    switch (type) {
+        case Axon:
+            return "axon";
+        case Dendrite:
+            return "dend";
+        case Apical:
+            return "apic";
+        default:
+            std::cerr << "SectionType not handled in getSectionTypeStr" << std::endl;
+            nrn_abort(1);
+    }
+}
+
+VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
+                                                       const std::set<int>& target,
+                                                       double* report_variable,
+                                                       SectionType section_type,
+                                                       bool all_compartments) const {
+    VarsToReport vars_to_report;
+    const auto& section_type_str = getSectionTypeStr(section_type);
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    if (!mapinfo) {
+        std::cerr << "[COMPARTMENTS] Error : mapping information is missing for a Cell group "
+                  << nt.ncell << '\n';
+        nrn_abort(1);
+    }
+
+    for (int i = 0; i < nt.ncell; i++) {
+        int gid = nt.presyns[i].gid_;
+        if (target.find(gid) != target.end()) {
+            CellMapping* cell_mapping = mapinfo->get_cell_mapping(gid);
+            if (cell_mapping == nullptr) {
+                std::cerr
+                    << "[COMPARTMENTS] Error : Compartment mapping information is missing for gid "
+                    << gid << '\n';
+                nrn_abort(1);
+            }
+            std::vector<VarWithMapping> to_report;
+            to_report.reserve(cell_mapping->size());
+            
+            /** get section list mapping for the type, if available */
+            if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
+                SecMapping* s = cell_mapping->get_seclist_mapping(section_type_str);
+                for (const auto& sm : s->secmap) {
+                    int compartment_id = sm.first;
+                    const auto& vec = sm.second;
+
+                    /** get all compartment values (otherwise, just middle point) */
+                    if (all_compartments) {
+                        for (const auto& idx : vec) {
+                            /** corresponding voltage in coreneuron voltage array */
+                            double* variable = report_variable + idx;
+                            to_report.push_back(VarWithMapping(compartment_id, variable));
+                        }
+                    } else {
+                        nrn_assert(vec.size() % 2);
+                        /** corresponding voltage in coreneuron voltage array */
+                        const auto idx = vec[vec.size() / 2];
+                        double* variable = report_variable + idx;
+                        to_report.push_back(VarWithMapping(compartment_id, variable));
+                    }
+                }
+                vars_to_report[gid] = to_report;
+            }
+        }
+    }
+    return vars_to_report;
+}
+
 VarsToReport ReportHandler::get_custom_vars_to_report(const NrnThread& nt,
                                                       ReportConfiguration& report,
                                                       const std::vector<int>& nodes_to_gids) const {
@@ -188,7 +264,7 @@ VarsToReport ReportHandler::get_custom_vars_to_report(const NrnThread& nt,
                     get_var_location_from_var_name(report.mech_id, report.var_name, ml, j);
                 const auto synapse_id = static_cast<int>(
                     *get_var_location_from_var_name(report.mech_id, SYNAPSE_ID_MOD_NAME, ml, j));
-                assert(synapse_id && var_value);
+                nrn_assert(synapse_id && var_value);
                 to_report.emplace_back(synapse_id, var_value);
             }
         }

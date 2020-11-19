@@ -51,7 +51,12 @@ namespace coreneuron {
 /// name of the variable in mod file used for setting synapse id
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
-enum ReportType { SomaReport, CompartmentReport, SynapseReport, IMembraneReport };
+// enumerate that defines the type of target report requested
+enum ReportType { SomaReport, CompartmentReport, SynapseReport,
+                  IMembraneReport, SectionReport };
+
+// enumerate that defines the section type for a Section report
+enum SectionType { Axon, Dendrite, Apical };
 
 struct ReportConfiguration {
     char name[REPORT_MAX_NAME_LEN];         // name of the report
@@ -64,6 +69,8 @@ struct ReportConfiguration {
     char type_str[REPORT_MAX_NAME_LEN];     // type of report string
     char population_name[REPORT_MAX_NAME_LEN];  // population name of the report
     ReportType type;                        // type of the report
+    SectionType section_type;               // type of section report
+    bool section_all_compartments;          // flag for section report (all values)
     int mech_id;                            // mechanism
     double report_dt;                       // reporting timestep
     double start;                           // start time of report
