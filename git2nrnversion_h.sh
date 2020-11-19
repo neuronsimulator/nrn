@@ -20,7 +20,7 @@ if git log > /dev/null && test -d .git ; then
 elif test -f src/nrnoc/nrnversion.h ; then
         sed -n '1,$p' src/nrnoc/nrnversion.h
 else
-        echo "#define GIT_DATE \"$(date "+%Y-%m-%d-%H:%M:%S")\""
+        echo "#define GIT_DATE \"Build Time: $(date "+%Y-%m-%d-%H:%M:%S")\""
         echo "#define GIT_BRANCH \"unknown branch\""
         echo "#define GIT_CHANGESET \"unknown commit id\""
         echo "#define GIT_DESCRIBE \"${PROJECT_VERSION}.dev0\""
