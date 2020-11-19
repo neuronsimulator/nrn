@@ -7,7 +7,7 @@ fi
 
 cd $a
 
-if git log > /dev/null && test -d .git ; then
+if git log &> /dev/null && test -d .git ; then
         describe="`git describe --tags`"
         branch="`git rev-parse --abbrev-ref HEAD`" # branch name
         modified="`git status -s -uno --porcelain | sed -n '1s/.*/+/p'`" # + if modified
@@ -20,10 +20,9 @@ if git log > /dev/null && test -d .git ; then
 elif test -f src/nrnoc/nrnversion.h ; then
         sed -n '1,$p' src/nrnoc/nrnversion.h
 else
-        echo "#define GIT_DATE \"1999-12-31\""
-        echo "#define GIT_BRANCH \"?\""
-        echo "#define GIT_CHANGESET \"?\""
-        echo "#define GIT_DESCRIBE \"?\""
-        exit 1
+        echo "#define GIT_DATE \"1970-01-01\""
+        echo "#define GIT_BRANCH \"unknown branch\""
+        echo "#define GIT_CHANGESET \"unknown commit id \""
+        echo "#define GIT_DESCRIBE \"no git\""
 fi
 
