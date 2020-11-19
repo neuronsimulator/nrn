@@ -21,6 +21,7 @@ extern Object* hoc_thisobject;
 extern void hoc_execute1();
 extern bool hoc_valid_stmt(const char* stmt, Object* ob);
 extern int hoc_execerror_messages;
+void* nrn_get_oji();
 }
 
 static bool valid_stmt1(const char* stmt, Object* ob) {
@@ -76,11 +77,11 @@ therefore hoc_execerror looks at a function pointer and if it's non-NULL
 here and can do an explicit longjump using the begin_ */
 	static void ljmptarget();
 	void ljmp();
+	static OcJumpImpl* oji_;
 private:
 	void begin();
 	void restore();
 	void finish();
-	static OcJumpImpl* oji_;
 private:
 	OcJumpImpl* prev_;
 	jmp_buf begin_;
@@ -118,6 +119,10 @@ private:
 	int cc2;
 #endif
 };
+
+void* nrn_get_oji() {
+  return (void*)OcJumpImpl::oji_;
+}
 
 //------------------------------------------------------------------
 

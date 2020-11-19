@@ -168,6 +168,46 @@ class NeuronTestCase(unittest.TestCase):
         assert(p.exitcode == 0)
         return 0
 
+    def test_newobj_err(self):
+        '''Test deletion of incompletely constructed objects'''
+        h.load_file("stdlib.hoc")
+        h('''
+begintemplate NewObj
+objref this, ob
+proc init() {localobj s
+  print this, $1, $2
+  if ($1 == 0) {
+    execerror("generate an error")
+  } else if ($1 == $2) {
+    print "calling execute1"
+    s = new String()
+    sprint(s.s, "ob = new NewObj(%d, %d)", $1-1, $2)
+    execute1(s.s, this)
+    print "return from execute1"
+  } else {
+    print "else before ", this, ob, $1, $2
+    ob = new NewObj($1-1, $2)
+    print "else after ", this, ob, $1, $2
+  }
+}
+endtemplate NewObj
+''')
+        a = h.NewObj(4, 2)
+        b = h.List("NewObj")
+        print("#NewObj in existence", b.count())
+        for i in range(b.count()):
+          print(b.o(i), b.o(i).ob)
+        assert(b.count() == 3)
+
+        del a
+        del b
+        b = h.List("NewObj")
+        print("after del a #NewObj in existence", b.count())
+        for i in range(b.count()):
+          print(b.o(i), b.o(i).ob)
+        assert(b.count() == 0)
+
+        return 1
 
 def basicRxD3D():
     from neuron import h, rxd

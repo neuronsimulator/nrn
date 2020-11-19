@@ -506,13 +506,55 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v){
   object.
 **/
 
-static Object* hoc_newobj1_err_;
-void hoc_newobj1_err() { /* called from hoc_execerror */
-	if (hoc_newobj1_err_) {
-		Object* ob = hoc_newobj1_err_;
-		hoc_newobj1_err_ = NULL;
-		hoc_obj_unref(ob);
-	}
+#define NEWOBJ1_ERR_SIZE 100
+typedef struct {
+  Object* ob;
+  void* oji;
+} newobj1_err_t;
+	
+extern void* nrn_get_oji();
+void (*oc_jump_target_)();
+static int newobj1_err_index_;
+static newobj1_err_t newobj1_err_[NEWOBJ1_ERR_SIZE];
+
+void push_newobj1_err(Object* ob) {
+  assert(newobj1_err_index_ < NEWOBJ1_ERR_SIZE);
+  newobj1_err_t* ne = newobj1_err_ + newobj1_err_index_++;
+  ne->ob = ob;
+  ne->oji = oc_jump_target_ ? nrn_get_oji() : (void*)oc_jump_target_;
+//printf("push %d %p %s\n", newobj1_err_index_ - 1, ob, hoc_object_name(ob));
+}
+
+void pop_newobj1_err() {
+  --newobj1_err_index_;
+  assert(newobj1_err_index_ >= 0);
+#if 0
+ newobj1_err_t* ne = newobj1_err_[newobj1_err_index_];
+//printf("pop  %d %p %s\n", newobj1_err_index_, ne->ob, hoc_object_name(ne->ob));
+#endif
+}
+
+void hoc_newobj1_err(void* jmp) { /* called from hoc_execerror */
+  if (newobj1_err_index_ > 0) {
+    int i;
+    void* oji = (jmp == (void*)oc_jump_target_) ? nrn_get_oji() : (void*)oc_jump_target_;
+#if 0
+    printf("newobj1_err    current oji=%p\n", oji);
+    for (i = 0; i < newobj1_err_index_; ++i) {
+      newobj1_err_t* ne = newobj1_err_ + i;
+printf("newobj1_err[%d] with oji=%p ob=%p %s\n", i, ne->oji, ne->ob, hoc_object_name(ne->ob));
+    }
+#endif
+    while (newobj1_err_index_ > 0) {
+      newobj1_err_t* ne = newobj1_err_ + (newobj1_err_index_ - 1);
+      if (ne->oji == oji) {
+        hoc_obj_unref(ne->ob);
+        pop_newobj1_err();
+      }else{
+        break;
+      }
+    }
+  }
 }
 
 Object* hoc_newobj1(Symbol* sym, int narg) {
@@ -523,7 +565,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	
 	ob = hoc_new_object(sym, (void*)0);
 	ob->refcount = 1;
-	hoc_newobj1_err_ = ob; /* allow unref if execerror before return */
+	push_newobj1_err(ob); /* allow unref if execerror before return */
    if (sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
 	call_constructor(ob, sym, narg);
    }else{
@@ -585,7 +627,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	}
    }
 	hoc_template_notify(ob, 1);
-	hoc_newobj1_err_ = NULL;
+	pop_newobj1_err();
 	return ob;
 }
 
