@@ -101,19 +101,19 @@ VarsToReport ReportHandler::get_soma_vars_to_report(const NrnThread& nt,
         // only one element for each gid in this case
         std::vector<VarWithMapping> to_report;
         if (target.find(gid) != target.end()) {
-            CellMapping* m = mapinfo->get_cell_mapping(gid);
-            if (m == nullptr) {
+            const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+            if (cell_mapping == nullptr) {
                 std::cerr << "[SOMA] Error : Soma mapping information is missing for gid " << gid
                           << '\n';
                 nrn_abort(1);
             }
             /** get  section list mapping for soma */
-            SecMapping* s = m->get_seclist_mapping("soma");
+            const auto& section = cell_mapping->get_seclist_mapping("soma");
             /** 1st key is section-id and 1st value is segment of soma */
-            int section_id = s->secmap.begin()->first;
-            int idx = s->secmap.begin()->second.front();
-            double* variable = report_variable + idx;
-            to_report.push_back(VarWithMapping(section_id, variable));
+            int section_id = section->secmap.begin()->first;
+            int segment_id = section->secmap.begin()->second.front();
+            double* variable = report_variable + segment_id;
+            to_report.emplace_back(VarWithMapping(section_id, variable));
             vars_to_report[gid] = to_report;
         }
     }
@@ -134,7 +134,7 @@ VarsToReport ReportHandler::get_compartment_vars_to_report(const NrnThread& nt,
     for (int i = 0; i < nt.ncell; i++) {
         int gid = nt.presyns[i].gid_;
         if (target.find(gid) != target.end()) {
-            CellMapping* cell_mapping = mapinfo->get_cell_mapping(gid);
+            const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
             if (cell_mapping == nullptr) {
                 std::cerr
                     << "[COMPARTMENTS] Error : Compartment mapping information is missing for gid "
@@ -143,15 +143,16 @@ VarsToReport ReportHandler::get_compartment_vars_to_report(const NrnThread& nt,
             }
             std::vector<VarWithMapping> to_report;
             to_report.reserve(cell_mapping->size());
-            const auto& secmapvec = cell_mapping->secmapvec;
-            for (const auto& s : secmapvec) {
-                for (auto& sm : s->secmap) {
-                    int compartment_id = sm.first;
-                    auto& vec = sm.second;
-                    for (const auto& idx : vec) {
+            const auto& section_mapping = cell_mapping->secmapvec;
+            for (const auto& sections : section_mapping) {
+                for (auto& section : sections->secmap) {
+                    // compartment_id
+                    int section_id = section.first;
+                    auto& segment_ids = section.second;
+                    for (const auto& segment_id : segment_ids) {
                         /** corresponding voltage in coreneuron voltage array */
-                        double* variable = report_variable + idx;
-                        to_report.push_back(VarWithMapping(compartment_id, variable));
+                        double* variable = report_variable + segment_id;
+                        to_report.emplace_back(VarWithMapping(section_id, variable));
                     }
                 }
             }
@@ -192,7 +193,7 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
     for (int i = 0; i < nt.ncell; i++) {
         int gid = nt.presyns[i].gid_;
         if (target.find(gid) != target.end()) {
-            CellMapping* cell_mapping = mapinfo->get_cell_mapping(gid);
+            const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
             if (cell_mapping == nullptr) {
                 std::cerr
                     << "[COMPARTMENTS] Error : Compartment mapping information is missing for gid "
@@ -204,24 +205,25 @@ VarsToReport ReportHandler::get_section_vars_to_report(const NrnThread& nt,
             
             /** get section list mapping for the type, if available */
             if (cell_mapping->get_seclist_section_count(section_type_str) > 0) {
-                SecMapping* s = cell_mapping->get_seclist_mapping(section_type_str);
-                for (const auto& sm : s->secmap) {
-                    int compartment_id = sm.first;
-                    const auto& vec = sm.second;
+                const auto& sections = cell_mapping->get_seclist_mapping(section_type_str);
+                for (const auto& section : sections->secmap) {
+                    // compartment_id
+                    int section_id = section.first;
+                    const auto& segment_ids = section.second;
 
                     /** get all compartment values (otherwise, just middle point) */
                     if (all_compartments) {
-                        for (const auto& idx : vec) {
+                        for (const auto& segment_id : segment_ids) {
                             /** corresponding voltage in coreneuron voltage array */
-                            double* variable = report_variable + idx;
-                            to_report.push_back(VarWithMapping(compartment_id, variable));
+                            double* variable = report_variable + segment_id;
+                            to_report.emplace_back(VarWithMapping(section_id, variable));
                         }
                     } else {
-                        nrn_assert(vec.size() % 2);
+                        nrn_assert(segment_ids.size() % 2);
                         /** corresponding voltage in coreneuron voltage array */
-                        const auto idx = vec[vec.size() / 2];
-                        double* variable = report_variable + idx;
-                        to_report.push_back(VarWithMapping(compartment_id, variable));
+                        const auto segment_id = segment_ids[segment_ids.size() / 2];
+                        double* variable = report_variable + segment_id;
+                        to_report.emplace_back(VarWithMapping(section_id, variable));
                     }
                 }
                 vars_to_report[gid] = to_report;
