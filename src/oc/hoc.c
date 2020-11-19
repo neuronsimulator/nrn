@@ -721,10 +721,10 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 		hoc_win_normal_cursor();
 #endif
 	if (hoc_oc_jmpbuf) {
-		hoc_newobj1_err((void(*)())2);
+		hoc_newobj1_err((void*)2);
 		longjmp(hoc_oc_begin, 1);
 	}
-	hoc_newobj1_err((void(*)())1);
+	hoc_newobj1_err((void*)1);
 	longjmp(begin, 1);
 }
 
