@@ -172,40 +172,41 @@ class NeuronTestCase(unittest.TestCase):
         '''Test deletion of incompletely constructed objects'''
         h.load_file("stdlib.hoc")
         h('''
+begintemplate Foo
+endtemplate Foo
+
 begintemplate NewObj
-objref this, ob
+objref this, ob, foo1, foo2
 proc init() {localobj s
-  print this, $1, $2
+  foo1 = new Foo()
   if ($1 == 0) {
     execerror("generate an error")
   } else if ($1 == $2) {
-    print "calling execute1"
     s = new String()
     sprint(s.s, "ob = new NewObj(%d, %d)", $1-1, $2)
     execute1(s.s, this)
-    print "return from execute1"
   } else {
-    print "else before ", this, ob, $1, $2
     ob = new NewObj($1-1, $2)
-    print "else after ", this, ob, $1, $2
   }
+  foo2 = new Foo()
 }
 endtemplate NewObj
 ''')
         args = (4, 2)
         a = h.NewObj(*args)
         b = h.List("NewObj")
-        print("#NewObj in existence", b.count())
-        for i in range(b.count()):
-          print(b.o(i), b.o(i).ob)
-        assert(b.count() == args[0] - args[1] + 1)
+        c = h.List("Foo")
+        print("#NewObj and #Foo in existence", b.count(), c.count())
+        z = args[0] - args[1] + 1
+        assert(b.count() == z)
+        assert(c.count() == 2*z)
 
         del a
         del b
+        del c
         b = h.List("NewObj")
-        print("after del a #NewObj in existence", b.count())
-        for i in range(b.count()):
-          print(b.o(i), b.o(i).ob)
+        c = h.List("Foo")
+        print("after del a #NewObj and #Foo in existence", b.count(), c.count())
         assert(b.count() == 0)
 
         return 1
