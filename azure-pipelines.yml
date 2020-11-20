@@ -76,6 +76,9 @@ jobs:
       Python38:
         python.version: '3.8'
         python.org.version: '3.8.2'
+      Python39:
+        python.version: '3.9'
+        python.org.version: '3.9.0'
   steps:
 
   - script: |
