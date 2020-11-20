@@ -208,6 +208,7 @@ endtemplate NewObj
         c = h.List("Foo")
         print("after del a #NewObj and #Foo in existence", b.count(), c.count())
         assert(b.count() == 0)
+        assert(c.count() == 0)
 
         return 1
 
