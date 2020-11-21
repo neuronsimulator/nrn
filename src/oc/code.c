@@ -289,6 +289,9 @@ static void frame_objauto_recover_on_err(Frame* ff) { /* only on error */
   for (f = fp; f > ff; --f) {
     int i;
     Symbol* sp = f->sp;
+    if (sp->u.u_proc == NULL) { /* skip if the procedure is not defined */
+       continue;
+    }
     /* argn is the nargs argument on the stack. Stack items come in pairs
        so stack increments are always multiples of 2.
        Here, stkp is the last+1 localobj slot pair on the stack.
