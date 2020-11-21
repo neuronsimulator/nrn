@@ -673,6 +673,7 @@ void (*oc_jump_target_)();	/* see ivoc/SRC/ocjump.c */
 
 int yystart;
 
+/* what to do about partially constructed objects at hoc_execerror */
 extern void hoc_newobj1_err(void* jmp);
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from run-time error */
@@ -705,7 +706,7 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	*ctp = '\0';
 
 	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
-		hoc_newobj1_err(oc_jump_target_);
+		hoc_newobj1_err(oc_jump_target_); /* arg used just to distinguish between the other two cases below */
 		(*oc_jump_target_)();
 	}
 #if NRNMPI

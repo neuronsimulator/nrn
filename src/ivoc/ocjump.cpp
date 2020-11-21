@@ -120,6 +120,9 @@ private:
 #endif
 };
 
+/** Return handle for the current longjump buffer info.
+ *  Valid until finish is called on the oji_ instance.
+**/
 void* nrn_get_oji() {
   return (void*)OcJumpImpl::oji_;
 }

@@ -170,7 +170,8 @@ class NeuronTestCase(unittest.TestCase):
 
     def test_newobj_err(self):
         '''Test deletion of incompletely constructed objects'''
-        h.load_file("stdlib.hoc")
+        print() # Error message not on above line
+        h.load_file("stdlib.hoc") # need hoc String
         h('''
 begintemplate Foo
 endtemplate Foo
@@ -178,20 +179,27 @@ endtemplate Foo
 begintemplate NewObj
 objref this, ob, foo1, foo2
 proc init() {localobj s
-  foo1 = new Foo()
+  foo1 = new Foo() // Constructed before error, even partial constructions fill this field.
   if ($1 == 0) {
-    execerror("generate an error")
+    execerror("generate an error") // All NewObj instances undergoing construction
   } else if ($1 == $2) {
+    // This and all NewObj instances prior to this will construct successfully.
+    // All after this will be partially constructed.
+    // The execerror should cause only the partially constructed NewObj to
+    // be destroyed.
     s = new String()
     sprint(s.s, "ob = new NewObj(%d, %d)", $1-1, $2)
     execute1(s.s, this)
   } else {
     ob = new NewObj($1-1, $2)
   }
-  foo2 = new Foo()
+  foo2 = new Foo() // Only instances prior to execute1 reach here.
 }
 endtemplate NewObj
 ''')
+        # arg[0] recursion depth
+        # arg[0] - arg[1] + 1 should be successfully constructed
+        # arg[1] should be partially constructed and destroyed.
         args = (4, 2)
         a = h.NewObj(*args)
         b = h.List("NewObj")
