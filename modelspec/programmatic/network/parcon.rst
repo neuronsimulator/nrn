@@ -219,6 +219,7 @@ ParallelContext
         Not much checking for correctness or help in finding common bugs. 
 
         The best sanity test of a working mpi environment is testmpi.py
+
         .. code-block::
             python
 
@@ -232,7 +233,9 @@ ParallelContext
             h.quit()            
          
         which gives ( the output lines are in indeterminate order)
+
         .. code-block::
+
             mpiexec -n 3 python testmpi.py
             numprocs=3
             I am 0 of 3
