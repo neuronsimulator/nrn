@@ -1,9 +1,11 @@
 find_package(Git QUIET)
 
 if(${GIT_FOUND} AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
-  execute_process(COMMAND git --git-dir=${CMAKE_SOURCE_DIR}/.git describe
-          RESULT_VARIABLE NOT_A_GIT_REPO
-          ERROR_QUIET)
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} --git-dir=.git describe --all
+    RESULT_VARIABLE NOT_A_GIT_REPO
+    ERROR_QUIET
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 else()
   set(NOT_A_GIT_REPO "NotAGitRepo")
 endif()
@@ -17,7 +19,7 @@ function(initialize_submodule path)
   message(STATUS "Sub-module : missing ${path} : running git submodule update --init --recursive")
   execute_process(
     COMMAND
-      git submodule update --init --recursive -- ${path}
+      ${GIT_EXECUTABLE}  submodule update --init --recursive -- ${path}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
