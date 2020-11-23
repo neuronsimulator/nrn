@@ -100,7 +100,7 @@ Currently we have enabled CMake code formatting using [cmake-format](https://git
 * Make sure to install cmake-format utility with Python version you are using:
 
 ```
-pip3.7 install cmake-format==0.6.0 --user
+pip3.7 install cmake-format==0.6.0 pyyaml --user
 ```
 Now you should have `cmake-format` command available.
 
