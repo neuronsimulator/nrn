@@ -32,7 +32,7 @@ RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-5.9.tar.gz \
     && ./configure --prefix=/nrnwheel/ncurses --without-shared CFLAGS="-fPIC" \
     && make -j install
 
-RUN wget http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
+RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \
     && cd mpich-3.3.2 \
     && ./configure --prefix=/nrnwheel/mpich \
