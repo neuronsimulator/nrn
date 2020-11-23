@@ -150,10 +150,13 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 endif()
 
 # Install package files that were created in build (e.g. .py.in)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
-        DESTINATION ${NRN_LIBDIR}
-        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib)
-
+install(
+  DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
+  DESTINATION ${NRN_LIBDIR}
+  FILES_MATCHING
+  PATTERN *.py
+  PATTERN *.so
+  PATTERN *.dylib)
 
 # =============================================================================
 # If NEURON python module installation is enabled
@@ -242,12 +245,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
 
-  #~~~
+  # ~~~
   # neuron module (possibly with multiple extension versions) was built
   # in NRN_PYTHON_BUILD_LIB. Not a problem if install overwrites multiple
   # times to same install folder or if each install ends up in different
   # place.
-  #~~~
+  # ~~~
   file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
     "\
@@ -259,6 +262,7 @@ $1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODU
 ")
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     install(
-      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})")
+      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})"
+    )
   endforeach(pyexe)
 endif()

@@ -41,8 +41,7 @@ bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/di
 set_property(
   SOURCE ${NRN_NMODL_SRC_FILES}
   APPEND
-  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1
-    NRN_DYNAMIC_UNITS=1)
+  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1 NRN_DYNAMIC_UNITS=1)
 
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
 
@@ -141,7 +140,9 @@ set(NRN_INCLUDE_DIRS
 # ~~~
 add_custom_target(
   nrnversion_h
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} $ENV{SHELL} ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
+  COMMAND
+    ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} $ENV{SHELL}
+    ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
   COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
@@ -186,8 +187,7 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
 set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
          ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
@@ -287,7 +287,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # Link with backward-cpp if enabled
 # =============================================================================
 if(NRN_USE_BACKWARD)
-    add_backward(nrniv_lib)
+  add_backward(nrniv_lib)
 endif()
 
 # =============================================================================
@@ -363,7 +363,8 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT}
+                      ${CMAKE_DL_LIBS})
 if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
@@ -383,7 +384,7 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-if (LIBIVX11DYNAM_NAME)
+if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
 endif()
 
@@ -394,7 +395,8 @@ endif()
 # For testneuron CTest
 file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
 file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
-file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
+file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+     DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
 file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
 
 # For the installation

@@ -120,7 +120,8 @@ macro(nrn_configure_dest_src bfile bdir sfile sdir)
     INPUT_FILE ${infile}
     OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
   configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile} RESULT_VARIABLE result)
+  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile}
+                  RESULT_VARIABLE result)
   if(result EQUAL 0)
     file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
   else()
@@ -139,8 +140,8 @@ macro(nrn_configure_file file dir)
 endmacro()
 
 # =============================================================================
-# Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist
-# Passing an optional CXX will call check_include_files_cxx instead.
+# Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
+# CXX will call check_include_files_cxx instead.
 # =============================================================================
 macro(nrn_check_include_files filename variable)
   set(options CXX)

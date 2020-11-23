@@ -22,17 +22,17 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
-  # skip static readline library as it will be linked to nrniv (e.g. with wheel)
-  # also stub libraries from OSX can be skipped
-  if ("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
+  # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
+  # from OSX can be skipped
+  if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
     continue()
   endif()
 
   get_filename_component(dir_path ${link_lib} DIRECTORY)
   if(NOT dir_path)
     string(APPEND NRN_LINK_DEFS " -l${link_lib}")
-  # avoid library paths from special directory /nrnwheel which
-  # used to build wheels under docker container
+    # avoid library paths from special directory /nrnwheel which used to build wheels under docker
+    # container
   elseif("${dir_path}" MATCHES "^/nrnwheel")
     continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")

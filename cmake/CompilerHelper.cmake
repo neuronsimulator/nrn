@@ -18,8 +18,8 @@ else()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "PGI")
-  # CMake adds strict standard complaint PGI flag "-A" which breaks
-  # compilation of old codes (e.g. python2 files, spdlog, fmt)
+  # CMake adds strict standard complaint PGI flag "-A" which breaks compilation of old codes (e.g.
+  # python2 files, spdlog, fmt)
   set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
   set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
