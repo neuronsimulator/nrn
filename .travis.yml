@@ -45,7 +45,6 @@ addons:
     packages:
       - flex
       - bison
-      - cmake
       - dvipng
       - doxygen
       - libboost-all-dev
@@ -61,7 +60,6 @@ addons:
   homebrew:
     packages:
       - boost
-      - cmake
       - flex
       - bison
       - openmpi
@@ -80,9 +78,14 @@ before_install:
         brew unlink python@2;
         brew link --overwrite python@3.8;
         export SDKROOT="$(xcrun --show-sdk-path)";
+        curl -L -o cmake-3.3.2.tar.gz https://github.com/Kitware/CMake/releases/download/v3.3.2/cmake-3.3.2-Darwin-x86_64.tar.gz;
+        mkdir cmake && tar -xzf cmake-3.3.2.tar.gz -C cmake --strip-components=3;
     else
         pyenv global $PYTHON_VERSION;
+        curl -L -o cmake-3.3.2.tar.gz https://github.com/Kitware/CMake/releases/download/v3.3.2/cmake-3.3.2-Linux-x86_64.tar.gz;
+        mkdir cmake && tar -xzf cmake-3.3.2.tar.gz -C cmake --strip-components=1;
     fi
+  -	export PATH=$(pwd)/cmake/bin:$PATH
   - eval "${MATRIX_EVAL}"
 
 #=============================================================================
