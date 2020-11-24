@@ -477,12 +477,17 @@ void CodegenIspcVisitor::print_headers_include() {
 }
 
 void CodegenIspcVisitor::print_nmodl_constants() {
-    printer->add_newline(2);
-    printer->add_line("/** constants used in nmodl. */");
-    // we use here macros to work around ispc's PI being declared in global namespace
-    printer->add_line("static const uniform double FARADAY = 96485.3d;");
-    printer->add_line("static const uniform double ISPC_PI = 3.14159d;");
-    printer->add_line("static const uniform double R = 8.3145d;");
+    if (!info.factor_definitions.empty()) {
+        printer->add_newline(2);
+        printer->add_line("/** constants used in nmodl */");
+        for (auto& it: info.factor_definitions) {
+            const std::string name = it->get_node_name() == "PI" ? "ISPC_PI" : it->get_node_name();
+            std::string format_string = "static const uniform double {} = {};";
+            printer->add_line(fmt::format(format_string.c_str(),
+                                          name,
+                                          double_to_string(it->get_value()->get_value())));
+        }
+    }
 }
 
 void CodegenIspcVisitor::print_wrapper_headers_include() {
