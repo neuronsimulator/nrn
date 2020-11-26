@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
 project(NEURON C CXX)
 
 # =============================================================================
@@ -33,8 +33,6 @@ option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
 option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
        ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
-option(NRN_ENABLE_LEGACY_FR "Use original faraday, R, etc. instead of 2019 nist constants"
-       ${NRN_ENABLE_LEGACY_FR_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
         ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
@@ -46,7 +44,9 @@ option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
+option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
+option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units" ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
@@ -223,6 +223,15 @@ else()
 endif()
 
 # =============================================================================
+# Enable backward
+# =============================================================================
+if(NRN_ENABLE_BACKTRACE)
+    set(NRN_USE_BACKWARD 1)
+    add_external_project(backward)
+else()
+    set(NRN_USE_BACKWARD 0)
+endif()
+# =============================================================================
 # Enable Interviews
 # =============================================================================
 if(NRN_ENABLE_INTERVIEWS)
@@ -262,6 +271,12 @@ endif()
 # =============================================================================
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
+  # start afresh with PythonLibsNew's find_library
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3;python2"
+  # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
+  # /usr/lib/x86_64-linux-gnu/libpython2.7.so
+  unset(PYTHON_LIBRARY CACHE)
+
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
   set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
   set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
@@ -291,6 +306,7 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
   endif()
@@ -519,7 +535,11 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
   message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
   message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
-  message(STATUS "Legacy FR     | ${NRN_ENABLE_LEGACY_FR}")
+  if(NRN_DYNAMIC_UNITS_USE_LEGACY)
+    message(STATUS "Default units | legacy units")
+  else()
+    message(STATUS "Default units | modern units (2019 nist constants)")
+  endif()
   message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
   if(NRN_ENABLE_MPI)
     message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
@@ -584,6 +604,9 @@ if(cmake_generator_tolower MATCHES "makefile")
   if(NRN_ENABLE_CORENEURON)
     message(STATUS "  PATH        | ${CORENEURON_DIR}")
     message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
+    if(NOT coreneuron_FOUND)
+      message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
+    endif()
   endif()
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")

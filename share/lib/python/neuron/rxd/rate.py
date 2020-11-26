@@ -63,7 +63,10 @@ class Rate(GeneralizedReaction):
         # be careful, this could keep states alive
         self._original_rate = rate
         
-        self._voltage_dependent = False if not hasattr(rate,'_voltage_dependent') else rate._voltage_dependent
+        try:
+            self._voltage_dependent = rate._voltage_dependent
+        except AttributeError:
+            self._voltage_dependent = False
 
         # initialize self if the rest of rxd is already initialized
         if initializer.is_initialized():

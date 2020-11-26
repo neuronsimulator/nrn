@@ -29,7 +29,10 @@ extern char* pnt_map;
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
     for (int i=0; cnbs[i].name; ++i) {
-        void* sym = dlsym(handle, cnbs[i].name);
+        void* sym = NULL;
+#if defined(HAVE_DLFCN_H)
+        sym = dlsym(handle, cnbs[i].name);
+#endif
         if (!sym) {
             fprintf(stderr, "Could not get symbol %s from CoreNEURON\n", cnbs[i].name);
             hoc_execerror("dlsym returned NULL", NULL);
@@ -64,12 +67,14 @@ void write_memb_mech_types_direct(std::ostream& s) {
 
 
 
-// just for secondorder and Random123_globalindex
+// just for secondorder and Random123_globalindex and legacy units flag
 int get_global_int_item(const char* name) {
     if (strcmp(name, "secondorder") == 0) {
         return secondorder;
     }else if(strcmp(name, "Random123_global_index") == 0) {
         return nrnran123_get_globalindex();
+    }else if (strcmp(name, "_nrnunit_use_legacy_") == 0) {
+        return _nrnunit_use_legacy_;
     }
     return 0;
 }

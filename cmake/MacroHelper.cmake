@@ -2,10 +2,12 @@
 # Helper functions used in the project
 # =============================================================================
 
+include(CheckIncludeFileCXX)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
 include(CheckSymbolExists)
 include(CheckCXXSymbolExists)
+include(CMakeParseArguments)
 
 set(CMAKE_REQUIRED_QUIET TRUE)
 
@@ -138,9 +140,16 @@ endmacro()
 
 # =============================================================================
 # Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist
+# Passing an optional CXX will call check_include_files_cxx instead.
 # =============================================================================
 macro(nrn_check_include_files filename variable)
-  check_include_files(${filename} ${variable})
+  set(options CXX)
+  cmake_parse_arguments(nrn_check_include_files "${options}" "" "" ${ARGN})
+  if(${nrn_check_include_files_CXX})
+    check_include_file_cxx(${filename} ${variable})
+  else()
+    check_include_files(${filename} ${variable})
+  endif()
   if(${variable})
     list(APPEND NRN_HEADERS_INCLUDE_LIST ${filename})
   endif()
@@ -246,6 +255,6 @@ macro(nocmodl_mod_to_c modfile_basename)
             ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
     COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
     COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
-    DEPENDS ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+    DEPENDS nocmodl ${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()

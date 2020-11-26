@@ -22,6 +22,7 @@ trigger:
 jobs:
 
 - job: 'ManyLinuxWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -34,6 +35,8 @@ jobs:
         python.version: '3.7'
       Python38:
         python.version: '3.8'
+      Python39:
+        python.version: '3.9'
   steps:
   - script: |
       docker run --rm \
@@ -43,6 +46,7 @@ jobs:
         -e NRN_NIGHTLY_UPLOAD \
         -e NRN_RELEASE_UPLOAD \
         -e NEURON_WHEEL_VERSION \
+        -e NRN_BUILD_FOR_UPLOAD=1 \
         'neuronsimulator/neuron_wheel' \
         packaging/python/build_wheels.bash linux $(python.version)
     displayName: 'Building ManyLinux Wheel'
@@ -57,6 +61,7 @@ jobs:
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'macOS-10.15'
   strategy:
@@ -73,6 +78,9 @@ jobs:
       Python38:
         python.version: '3.8'
         python.org.version: '3.8.2'
+      Python39:
+        python.version: '3.9'
+        python.org.version: '3.9.0'
   steps:
 
   - script: |
@@ -90,13 +98,49 @@ jobs:
       brew cask install xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
-    displayName: 'Install OSX System Depdendencies'
+      cmake --version
+    displayName: 'Install OSX System Dependencies'
 
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+      export NRN_BUILD_FOR_UPLOAD=1
       packaging/python/build_wheels.bash osx $(python.version)
     displayName: 'Build MacOS Wheel'
 
   - template: ci/azure-wheel-test-upload.yml
+
+
+# Jobs to build NEURON installer natively
+- job: 'WindowsInstaller'
+  timeoutInMinutes: 45
+  pool:
+    vmImage: windows-2019
+  variables:
+    MSYS2_ROOT: C:\msys64
+
+  steps:
+
+  - task: BatchScript@1
+    inputs:
+      filename: ci/win_download_deps.cmd
+    displayName: "Download Dependencies"
+    condition: succeeded()
+
+  - task: BatchScript@1
+    inputs:
+      filename: ci/win_install_deps.cmd
+    displayName: "Install Dependencies"
+    condition: succeeded()
+
+  # WSL is enabled by default in the image, with no installed linux distribution.
+  # WSL creates an unusable `bash.EXE` that can be resolved first from the environment.
+  # This is why we remove that file.
+  - script: |
+      rm.exe "C:/WINDOWS/system32/bash.EXE"
+      %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+    displayName: "Build and Create Installer"
+    condition: succeeded()
+
+  - template: ci/azure-win-installer-upload.yml

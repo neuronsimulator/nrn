@@ -101,6 +101,11 @@ else()
   set(DISCRETE_EVENT_OBSERVER 0)
 endif()
 
+# No longer a user option. Default modern units. Controlled at launch by
+# the environment variable NRNUNIT_USE_LEGACY, and dynamically after launch
+# by h.nrnunit_use_legacy(0or1). Left here solely to obtain a nrnunits.lib
+# file for modlunit. Nmodl uses the nrnunits.lib.in file.
+set(NRN_ENABLE_LEGACY_FR 0)
 if(NRN_ENABLE_LEGACY_FR)
   set(LegacyFR 1)
   set(LegacyY "")
@@ -142,6 +147,12 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(NRNPYTHON_DYNAMICLOAD 3)
 endif()
 
+if(NRN_DYNAMIC_UNITS_USE_LEGACY)
+  set(DYNAMIC_UNITS_USE_LEGACY_DEFAULT 1)
+else()
+  unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
+endif()
+
 # =============================================================================
 # Dependencies option
 # =============================================================================
@@ -153,6 +164,7 @@ set(SUNDIALS_USE_GENERIC_MATH 1)
 # =============================================================================
 nrn_check_include_files(alloca.h HAVE_ALLOCA_H)
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
+nrn_check_include_files(execinfo.h HAVE_EXECINFO_H)
 nrn_check_include_files(fcntl.h HAVE_FCNTL_H)
 nrn_check_include_files(fenv.h HAVE_FENV_H)
 nrn_check_include_files(float.h HAVE_FLOAT_H)
@@ -188,7 +200,12 @@ nrn_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
 # =============================================================================
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h"
                     STDC_HEADERS)
-check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
+check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
+
+# =============================================================================
+# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
+# =============================================================================
+check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
 
 # =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
@@ -280,7 +297,10 @@ nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
-nrn_configure_file(constants.py share/lib/python/neuron/rxd)
+# NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
+file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
+
+
 if(NRN_MACOS_BUILD)
   set(abs_top_builddir ${PROJECT_BINARY_DIR})
   nrn_configure_file(macdist.pkgproj src/mac)
@@ -298,7 +318,7 @@ if(MINGW)
   nrn_configure_file(mknrndll.mak src/mswin/lib)
 endif()
 # TODO temporary workaround for mingw
-file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
+file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
 # =============================================================================
 # If Interviews is not provided, configure local files

@@ -83,13 +83,13 @@ def test_nrntest_test_2():
     assert str(h.dend[1].name()) == "dend[1]"
 
     def e(stmt):
+        err = 0
         try:
-            exec(stmt)
+            exec(stmt, globals(), locals())
         except Exception:
-            assert (
-                str(sys.exc_info()[0]) + ': ' + str(sys.exc_info()[1])
-                == "<class 'TypeError'>: not assignable"
-            )
+            assert ('not assignable' in str(sys.exc_info()[1]))
+            err = 1
+        assert(err == 1)
 
     e('h.axon = 1')
     e('h.dend[1] = 1')
@@ -103,3 +103,13 @@ def test_nrntest_test_2():
     assert h.axon(0.5).hh.gnabar == 0.12
     assert h.axon(0.5) in h.axon
     assert h.axon(0.5) not in h.soma
+
+def test_newobject_err_recover():
+  err = 0
+  try:
+    nc = h.NetCon(5, 12) # raises error
+  except:
+    err = 1
+  assert(err == 1)
+  h.finitialize() # succeeds without seg fault
+

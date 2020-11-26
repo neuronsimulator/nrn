@@ -174,6 +174,16 @@ class CMakeAugmentedBuilder(build_ext):
                 [cmake, '--build', '.', '--target', 'install'] + build_args,
                 cwd=self.build_temp, env=env
             )
+            subprocess.check_call(
+                [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
+                cwd=self.build_temp, env=env
+            )
+            # mac: libnrnmech of neurondemo need to point to relative libnrniv
+            REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
+            subprocess.check_call(
+                [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
+                cwd=self.build_temp, env=env
+            )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
@@ -273,10 +283,20 @@ def setup_package():
             "share/lib/python/neuron/rxd/geometry3d",
             numpy.get_include()
         ]
+
+        # Cython files take a long time to compile with O2 so default O0
+        # But pay the price if uploading distribution
+        extra_compile_args=["-O0"]
+        if "NRN_BUILD_FOR_UPLOAD" in os.environ:
+          extra_compile_args=["-O2"]
+        print("RX3D extra_compile_args %s" % str(extra_compile_args))
+
         rxd_params = extension_common_params.copy()
         rxd_params['libraries'].append("rxdmath")
         rxd_params.update(dict(
-            extra_compile_args=["-O0"],  # cython files take too long to compile with O3
+            # Cython files take a long time to compile with O2 but this
+            # is a distribution...
+            extra_compile_args=extra_compile_args,
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
 

@@ -41,7 +41,8 @@ bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/di
 set_property(
   SOURCE ${NRN_NMODL_SRC_FILES}
   APPEND
-  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1)
+  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1
+    NRN_DYNAMIC_UNITS=1)
 
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
 
@@ -222,6 +223,17 @@ if(DEF_RL_GETC_FUNCTION)
     PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
 endif()
 
+if(NRN_USE_BACKWARD)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+  set_property(
+    SOURCE ${NRN_NRNIV_SRC_DIR}/backtrace_utils.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+endif()
+
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.h)
 
@@ -269,6 +281,13 @@ else()
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
+
+# =============================================================================
+# Link with backward-cpp if enabled
+# =============================================================================
+if(NRN_USE_BACKWARD)
+    add_backward(nrniv_lib)
+endif()
 
 # =============================================================================
 # Link with all libraries

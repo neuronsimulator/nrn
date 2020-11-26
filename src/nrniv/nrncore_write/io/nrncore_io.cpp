@@ -24,7 +24,7 @@ extern void (*nrnthread_v_transfer_)(NrnThread*);
 }
 
 int chkpnt;
-const char *bbcore_write_version = "1.2";
+const char *bbcore_write_version = "1.3"; // globals.dat has _nrnunit_use_legacy_
 
 std::string get_write_path(){
     std::string path("."); // default path
@@ -93,6 +93,7 @@ void write_globals(const char* fname) {
     fprintf(f, "0 0\n");
     fprintf(f, "secondorder %d\n", secondorder);
     fprintf(f, "Random123_globalindex %d\n", nrnran123_get_globalindex());
+    fprintf(f, "_nrnunit_use_legacy_ %d\n", _nrnunit_use_legacy_);
 
     fclose(f);
 }
