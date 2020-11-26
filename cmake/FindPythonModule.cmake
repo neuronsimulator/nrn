@@ -59,11 +59,15 @@ macro(find_python_module module)
       endif()
     endif()
 
-    find_package_handle_standard_args(
-      ${module} REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH VERSION_VAR
-      ${module_upper}_VERSION_STRING)
-    if(NOT ${module}_FIND_OPTIONAL AND NOT _${module_upper}_VERSION_MATCH)
-      message(FATAL_ERROR "Missing python module ${module}")
+    if(NOT ${module}_FIND_OPTIONAL)
+      if(NOT ${module_upper}_LOCATION)
+        message(FATAL_ERROR "Missing python module \"${module}\"")
+      elseif(NOT _${module_upper}_VERSION_MATCH)
+        message(
+          FATAL_ERROR
+            "Found module \"${module}\", but version mismatch. Asked for \"${${module}_FIND_VERSION}\" but found \"${${module_upper}_VERSION_STRING}\""
+        )
+      endif()
     endif()
     mark_as_advanced(${module_upper}_LOCATION)
   endif(NOT ${module_upper}_FOUND)
