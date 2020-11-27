@@ -550,20 +550,13 @@ void pop_newobj1_err() {
 }
 
 /** unref partially constructed objects controlled by current longjump handle **/
-void hoc_newobj1_err(void* jmp) { /* called from hoc_execerror */
+void hoc_newobj1_err() { /* called from hoc_execerror */
   if (newobj1_err_index_ > 0) {
     int i;
     /* Note: for the case of pure hoc, there may not be an oc_jump_target_
        in which case jmp will get set to the hoc.c controlling jmp_buf
     */
-    void* oji = (jmp == (void*)oc_jump_target_) ? nrn_get_oji() : nrn_get_hoc_jmp();
-#if 0 /* useful for debugging */
-    printf("newobj1_err    jmp=%p  current oji=%p\n", jmp, oji);
-    for (i = 0; i < newobj1_err_index_; ++i) {
-      newobj1_err_t* ne = newobj1_err_ + i;
-      printf("newobj1_err[%d] with oji=%p ob=%p %s\n", i, ne->oji, ne->ob, hoc_object_name(ne->ob));
-    }
-#endif
+    void* oji = oc_jump_target_ ? nrn_get_oji() : nrn_get_hoc_jmp();
     while (newobj1_err_index_ > 0) {
       newobj1_err_t* ne = newobj1_err_ + (newobj1_err_index_ - 1);
       if (ne->oji == oji) {
