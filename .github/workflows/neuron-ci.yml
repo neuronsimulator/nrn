@@ -4,6 +4,7 @@ on:
   push:
     branches: 
       - master
+      - live-debug*
   pull_request:
     branches:
       - master
@@ -212,6 +213,13 @@ jobs:
           USE_PYTHON2 : ${{ matrix.config.use_python2 }}
           INSTALL_DIR : ${{ runner.workspace }}/install
       
+      # This step will set up an SSH connection on tmate.io for live debugging.
+      # To trigger it, simply prefix your branch name with `live-debug`
+      #   i.e.: live-debug-hocfix
+      - name: live debug session on failure
+        if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
+        uses: mxschmitt/action-tmate@v3
+
       - name: Documentation 
         if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
         id: documentation
