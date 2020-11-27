@@ -30,10 +30,11 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
-option(NRN_ENABLE_BINARY_SPECIAL "Build binary special" ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
+option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
+       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
-       ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
+        ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
 option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of DiscreteEvent"
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
@@ -45,15 +46,11 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
-option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
-       ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
+option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units" ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
-option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files"
-       ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
-option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python"
-       ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON"
-       ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
+option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
+option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
+option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON" ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
@@ -114,21 +111,7 @@ set(NRN_RX3D_OPT_LEVEL
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
 # =============================================================================
-set(Python_ADDITIONAL_VERSIONS
-    3
-    3.9
-    3.8
-    3.7
-    3.6
-    3.5
-    3.4
-    3.3
-    3.2
-    3.1
-    3.0
-    2.8
-    2.7
-    2.6)
+set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7 2.6)
 
 # =============================================================================
 # Include cmake modules
@@ -188,18 +171,21 @@ endif()
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
   add_custom_target(
-    prepare_docs
-    COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+          prepare_docs
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+  )
 
   set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
   set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
 
   add_custom_target(
-    sphinx
-    COMMAND ${SPHINX_EXECUTABLE} -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating documentation with Sphinx")
+          sphinx
+          COMMAND ${SPHINX_EXECUTABLE} -b html
+          ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating documentation with Sphinx"
+  )
 endif()
 
 # =============================================================================
@@ -207,19 +193,21 @@ endif()
 # =============================================================================
 if(DOXYGEN_FOUND AND SPHINX_FOUND)
   add_custom_target(
-    docs
-    COMMAND make doxygen
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND make prepare_docs
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-    COMMAND make sphinx
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating full documentation")
+          docs
+          COMMAND make doxygen
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND make prepare_docs
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+          COMMAND make sphinx
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMENT "Generating full documentation"
+  )
 else()
   add_custom_target(
-    docs VERBATIM
-    COMMAND echo "Please install docs requirements (see docs/README.md)!"
-    COMMENT "Documentation generation not possible!")
+    docs
+    VERBATIM COMMAND echo "Please install docs requirements (see docs/README.md)!"
+    COMMENT "Documentation generation not possible!"
+  )
 endif()
 
 # =============================================================================
@@ -238,10 +226,10 @@ endif()
 # Enable backward
 # =============================================================================
 if(NRN_ENABLE_BACKTRACE)
-  set(NRN_USE_BACKWARD 1)
-  add_external_project(backward)
+    set(NRN_USE_BACKWARD 1)
+    add_external_project(backward)
 else()
-  set(NRN_USE_BACKWARD 0)
+    set(NRN_USE_BACKWARD 0)
 endif()
 # =============================================================================
 # Enable Interviews
@@ -283,8 +271,9 @@ endif()
 # =============================================================================
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
-  # start afresh with PythonLibsNew's find_library without this, -DPYTHON_EXECUTABLE=`which python3`
-  # -DNRN_PYTHON_DYNAMIC="python3;python2" would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
+  # start afresh with PythonLibsNew's find_library
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3;python2"
+  # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
   # /usr/lib/x86_64-linux-gnu/libpython2.7.so
   unset(PYTHON_LIBRARY CACHE)
 
@@ -317,13 +306,11 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
-    set(CORENRN_ENABLE_LEGACY_UNITS
-        ${NRN_DYNAMIC_UNITS_USE_LEGACY}
-        CACHE BOOL "" FORCE)
+    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
   endif()
-  get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  get_property (CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
@@ -331,10 +318,10 @@ endif()
 # Set library type
 # =============================================================================
 if(NRN_ENABLE_SHARED)
-  set(NRN_LIBRARY_TYPE "SHARED")
+    set(NRN_LIBRARY_TYPE "SHARED")
 else()
-  set(NRN_LIBRARY_TYPE "STATIC")
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(NRN_LIBRARY_TYPE "STATIC")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # =============================================================================
@@ -373,9 +360,10 @@ endif()
 # =============================================================================
 
 if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook Readline_LIBRARY may be a binary lib or (on the
-  # MAC) a tbd file that points to the library and mentions all its definitions. this part has to be
-  # prior to adding the nrniv subdirectory.
+  # MAC libedit.3.dylib does not have rl_event_hook
+  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
+  # points to the library and mentions all its definitions.
+  # this part has to be prior to adding the nrniv subdirectory.
   execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
     # define for src/oc/hoc.c
@@ -468,10 +456,9 @@ endif()
 # =============================================================================
 # Install targets
 # =============================================================================
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
-  DESTINATION ${NRN_INSTALL_SHARE_DIR}
-  PATTERN "python" EXCLUDE)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/lib
+        DESTINATION ${NRN_INSTALL_SHARE_DIR}
+        PATTERN "python" EXCLUDE)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/demo DESTINATION ${NRN_INSTALL_SHARE_DIR})
 install(FILES ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib
               ${PROJECT_BINARY_DIR}/share/nrn/lib/nrn.defaults
