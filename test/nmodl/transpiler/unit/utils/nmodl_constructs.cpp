@@ -567,6 +567,27 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
     },
 
     {
+        "constant_block_2",
+        {
+            "CONSTANT block with signed values",
+            R"(
+                CONSTANT {
+                    xx = +1
+                    yy2 = -1.1
+                    ee = 1e-06 (gg)
+                }
+            )",
+            R"(
+                CONSTANT {
+                    xx = 1
+                    yy2 = -1.1
+                    ee = 1e-06 (gg)
+                }
+            )"
+        }
+    },
+
+    {
         "plot_declare_1",
         {
             "PLOT declaration with single variables",

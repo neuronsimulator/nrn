@@ -706,6 +706,10 @@ number          :   NUMBER
                         $2->negate();
                         $$ = $2;
                     }
+                |   "+" NUMBER
+                    {
+                        $$ = $2;
+                    }
                 ;
 
 
