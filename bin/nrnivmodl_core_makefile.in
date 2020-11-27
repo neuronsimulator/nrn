@@ -174,14 +174,14 @@ enginemech_object:
 	$(CXX_COMPILE_CMD) -c -DADDITIONAL_MECHS $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp -o $(ENGINEMECH_OBJ)
 
 # build shared library of mechanisms
-coremech_lib_shared: $(ALL_OBJS) build_always
+coremech_lib_shared: $(ALL_OBJS) enginemech_object build_always
 	$(CXX_SHARED_LIB_CMD) $(ENGINEMECH_OBJ) -o ${COREMECH_LIB_PATH} $(ALL_OBJS) \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
 	  $(LDFLAGS) $(CORENRN_LIB_DIR)/libscopmath.a \
 	  ${SONAME_OPTION} $(CORENRNLIB_FLAGS) -Wl,-rpath,$(CORENRN_LIB_DIR);
 
 # build static library of mechanisms
-coremech_lib_static: $(ALL_OBJS) build_always
+coremech_lib_static: $(ALL_OBJS) enginemech_object build_always
 	mkdir -p $(MOD_OBJS_DIR)/scopmath; \
 	cd $(MOD_OBJS_DIR)/scopmath && ar -x $(CORENRN_LIB_DIR)/libscopmath.a && cd -;\
 	rm -f ${COREMECH_LIB_PATH}; \
