@@ -501,18 +501,72 @@ Object** hoc_temp_objvar(Symbol* symtemp, void* v){
 }
 
 /** If hoc_newob1 fails after creating a new object, that object needs to be
-  unreffed. Not going to work if constructors themselves create new objects
-  before the error. Or if the destructor doesn't work with a partially filled
-  object.
+  unreffed. To handle the case of constructors themselves creating new objects
+  before the error or intervening recovery of error by a callee recovering from
+  execerror, the incomplete new object is put on a stack along with the
+  current longjump target, and removed from the stack when the object
+  is complete. There could be a problem if the destructor doesn't work
+  with a partially constructed object. In case of a execerror before newobj1
+  completion, all partially constructed objects with a longjump handle equal
+  to the current longjump handle are unreffed.
 **/
 
-static Object* hoc_newobj1_err_;
+#define NEWOBJ1_ERR_SIZE 32 /* starts with this size, and doubles on overflow */
+typedef struct {
+  Object* ob;
+  void* oji;
+} newobj1_err_t;
+	
+extern void* nrn_get_oji();
+extern void* nrn_get_hoc_jmp();
+extern void (*oc_jump_target_)();
+static int newobj1_err_index_; /* stack index */
+static int newobj1_err_size_;
+static newobj1_err_t* newobj1_err_; /* stack of newobj1_err_t */
+
+/** save partially constructed object and controlling longjump handle **/
+static void push_newobj1_err(Object* ob) {
+  if (newobj1_err_index_ >= newobj1_err_size_) {
+    if (newobj1_err_size_ == 0) {
+      newobj1_err_size_ = NEWOBJ1_ERR_SIZE;
+      newobj1_err_ = (newobj1_err_t*)calloc(newobj1_err_size_, sizeof(newobj1_err_t));
+      assert(newobj1_err_);
+    }else{
+      newobj1_err_size_ *= 2;
+      newobj1_err_ = (newobj1_err_t*)realloc(newobj1_err_, newobj1_err_size_*sizeof(newobj1_err_t));
+      assert(newobj1_err_);
+    }
+  }
+
+  newobj1_err_t* ne = newobj1_err_ + newobj1_err_index_++;
+  ne->ob = ob;
+  ne->oji = oc_jump_target_ ? nrn_get_oji() : nrn_get_hoc_jmp();
+}
+
+/** pop the now fully constructed object **/
+void pop_newobj1_err() {
+  --newobj1_err_index_;
+  assert(newobj1_err_index_ >= 0);
+}
+
+/** unref partially constructed objects controlled by current longjump handle **/
 void hoc_newobj1_err() { /* called from hoc_execerror */
-	if (hoc_newobj1_err_) {
-		Object* ob = hoc_newobj1_err_;
-		hoc_newobj1_err_ = NULL;
-		hoc_obj_unref(ob);
-	}
+  if (newobj1_err_index_ > 0) {
+    int i;
+    /* Note: for the case of pure hoc, there may not be an oc_jump_target_
+       in which case jmp will get set to the hoc.c controlling jmp_buf
+    */
+    void* oji = oc_jump_target_ ? nrn_get_oji() : nrn_get_hoc_jmp();
+    while (newobj1_err_index_ > 0) {
+      newobj1_err_t* ne = newobj1_err_ + (newobj1_err_index_ - 1);
+      if (ne->oji == oji) {
+        hoc_obj_unref(ne->ob);
+        pop_newobj1_err();
+      }else{
+        break;
+      }
+    }
+  }
 }
 
 Object* hoc_newobj1(Symbol* sym, int narg) {
@@ -523,7 +577,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	
 	ob = hoc_new_object(sym, (void*)0);
 	ob->refcount = 1;
-	hoc_newobj1_err_ = ob; /* allow unref if execerror before return */
+	push_newobj1_err(ob); /* allow unref if execerror before return */
    if (sym->subtype & (CPLUSOBJECT | JAVAOBJECT)) {
 	call_constructor(ob, sym, narg);
    }else{
@@ -585,7 +639,7 @@ Object* hoc_newobj1(Symbol* sym, int narg) {
 	}
    }
 	hoc_template_notify(ob, 1);
-	hoc_newobj1_err_ = NULL;
+	pop_newobj1_err();
 	return ob;
 }
 
