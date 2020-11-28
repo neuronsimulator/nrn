@@ -235,11 +235,11 @@ jobs:
           touch .nojekyll;
           echo ::set-output name=status::done
           
-#       - name: Deploy 🚀
-#         uses: JamesIves/github-pages-deploy-action@3.7.1
-#         if: steps.documentation.outputs.status == 'done'
-#         with:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#           BRANCH: gh-pages # The branch the action should deploy to.
-#           FOLDER: ${{runner.workspace}}/nrn/build/docs # The folder the action should deploy.
-#           CLEAN: false # Automatically remove deleted files from the deploy branch
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: steps.documentation.outputs.status == 'done'
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: ${{runner.workspace}}/nrn/build/docs # The folder the action should deploy.
+          CLEAN: false # Automatically remove deleted files from the deploy branch
