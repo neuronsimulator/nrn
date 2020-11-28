@@ -231,6 +231,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
             ${PROJECT_BINARY_DIR}/share/nrn/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+    
+  file(COPY ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+        DESTINATION ${PROJECT_BINARY_DIR}/lib/python/neuron/)
 
   # =============================================================================
   # Build python module

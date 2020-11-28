@@ -153,8 +153,8 @@ class NeuronTestCase(unittest.TestCase):
         try:
             from neuron import doc
             print (doc.get_docstring('xpanel', ''))
-        except:
-            print("'doc.get_docstring('xpanel', '')' failed")
+        except Exception as e:
+            print("'doc.get_docstring('xpanel', '')' failed:", e)
             error = True
         self.assertFalse(error)
         return 0
