@@ -5,6 +5,9 @@ ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
 USER_PWD=`pwd`
 
+UsingCMake="no"
+@USING_CMAKE_TRUE@UsingCMake="yes"
+
 if test "x${NRNHOME}" = x ; then
 	prefix=@prefix@
 	exec_prefix=@exec_prefix@
@@ -73,13 +76,13 @@ fi
 pwd
 
 files=""
-incs=""
+@USING_CMAKE_FALSE@incs=""
 if test $# -gt 0 ; then
 	for i in "$@" ; do
 		if test -d "$i" ; then
 			set +e
 			files="$files $(unset LC_ALL; ls $i/*.mod)"
-			incs="$incs $(unset LC_ALL; ls $i/*.inc)"
+@USING_CMAKE_FALSE@	incs="$incs $(unset LC_ALL; ls $i/*.inc)"
 			set -e
 		else
 			files="$files $i"
@@ -91,14 +94,12 @@ else
 fi
 files=`echo "$files" | sed 's/^ *//'`
 
-mfiles=""
+bfiles=""
 for i in $files ; do
-	mfiles="$mfiles `basename $i`"
+	bfiles="$bfiles `basename -s .mod $i`"
 done
-mfiles=`echo "$mfiles" | sed 's/^ *//'`
 
 echo $files
-echo $mfiles
 
 files=`echo "$files" | sed 's/\.mod//g'`
 
@@ -108,24 +109,56 @@ fi
 
 cd $MODSUBDIR
 mdir=`pwd`
-for i in $files; do
-	rm -f "`basename $i`".mod
-	ln -s ../$i.mod .
-done
 
-if test "$incs" != "" ; then
-	for i in $incs ; do
-		rm -f "`basename $i`"
-		ln -s ../$i .
-	done
+if test "$UsingCMake" = "yes" ; then
+  # construct file to be included by makefile to specify mod to c rule when
+  # executed in $MODSUBDIR (child folder of launch location folder)
+  MODMAKE=makemod2c_inc
+  echo "" > $MODMAKE
+  for i in $files ; do
+    case "$i" in
+      /*) f=$i;; # absolute, fine as is
+      *)  f=../$i;; # relative
+    esac
+    b="`basename $f`"
+    d="`dirname $f`"
+    echo "\
+./$b.c: $f.mod
+	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
+	(cd $d; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $b.mod -o $mdir)
+
+./$b.o: ./$b.c
+	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
+	\$(COMPILE) -I$d @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@	
+" >> $MODMAKE
+  done
+  for i in $cfiles ; do
+    b="`basename -s .c $i`"
+    d="`dirname $i`"  
+    echo "\
+./$b.o: $i
+	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
+	(cd $d; \$(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $b.c -o $mdir/$b.o)
+" >> $MODMAKE
+  done
+else
+  for i in $files; do
+       rm -f "`basename $i`".mod
+       ln -s ../$i.mod .
+  done
+
+  if test "$incs" != "" ; then
+       for i in $incs ; do
+               rm -f "`basename $i`"
+               ln -s ../$i .
+       done
+  fi
+
+  for i in $cfiles; do
+       rm -f $i
+       ln -s ../$i .
+  done
 fi
-
-bfiles=`echo "$mfiles" | sed 's/\.mod//g'`
-
-for i in $cfiles; do
-	rm -f $i
-	ln -s ../$i .
-done
 
 COBJS=
 MODOBJS=
@@ -159,11 +192,11 @@ echo '    fprintf(stderr, "'$newline'");
 
 for i in $bfiles; do
 	echo '  _'$i'_reg();'
-	MODOBJS="$MODOBJS $i.o"
+@USING_CMAKE_TRUE@	MODOBJS="$MODOBJS ./$i.o"
+@USING_CMAKE_FALSE@	MODOBJS="$MODOBJS $i.o"
 done >> mod_func.c
 
 echo "}" >> mod_func.c
-
 
 if test -n "$cfiles" ; then
 	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`

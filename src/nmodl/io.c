@@ -2,6 +2,10 @@
 
 /* file.mod input routines */
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <sys/stat.h> 
+#include <errno.h>
 #include "modl.h"
 #include <ctype.h>
 #if MAC && TARGET_API_MAC_CARBON
@@ -463,3 +467,43 @@ static int  file_stack_empty() {
 	}
 	return (filestack->next == filestack);
 }
+
+/* adapted from : gist@jonathonreinhart/mkdir_p.c */
+int mkdir_p(const char *path)  
+{
+    const size_t len = strlen(path);
+    char mypath[PATH_MAX];
+    char *p;
+ 
+    errno = 0;
+
+    /* copy string so its mutable */
+    if (len > sizeof(mypath)-1) {
+        fprintf(stderr, "Output directory path too long\n");
+        return -1;
+    }
+             
+    strcpy(mypath, path);
+
+    /* iterate the string */
+    for (p = mypath + 1; *p; p++) { 
+        if (*p == '/') {  
+            /* temporarily truncate */
+            *p = '\0';
+    
+            if (mkdir(mypath, S_IRWXU) != 0) {
+                if (errno != EEXIST)
+                    return -1;   
+            }
+            *p = '/';
+        }
+    }
+
+    if (mkdir(mypath, S_IRWXU) != 0) {
+        if (errno != EEXIST)
+            return -1;
+    }
+
+    return 0;
+}
+
