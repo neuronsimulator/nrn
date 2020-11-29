@@ -43,7 +43,7 @@ pip3 install Jinja2 PyYAML pytest sympy
 Make sure to have latest flex/bison in $PATH :
 
 ```sh
-export PATH=/usr/local/opt/flex:/usr/local/opt/bison:/usr/local/bin/:$PATH
+export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:/usr/local/bin/:$PATH
 ```
 
 ### On Ubuntu
