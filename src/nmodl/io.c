@@ -503,7 +503,11 @@ int mkdir_p(const char *path)
         }
     }
 
+#if defined(MINGW)
+    if (_mkdir(mypath) != 0) {
+#else
     if (mkdir(mypath, S_IRWXU) != 0) {
+#endif
         if (errno != EEXIST)
             return -1;
     }
