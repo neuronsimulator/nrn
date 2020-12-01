@@ -193,7 +193,9 @@ added to each of the *features.h files, AND to examples/ut_features.cpp.
 */
 
 /* N.B.  most other compilers (icc, nvcc, open64, llvm) will also define __GNUC__, so order matters. */
-#if defined(__OPENCL_VERSION__) && __OPENCL_VERSION__ > 0
+#if defined(__METAL_MACOS__)
+#include "metalfeatures.h"
+#elif defined(__OPENCL_VERSION__) && __OPENCL_VERSION__ > 0
 #include "openclfeatures.h"
 #elif defined(__CUDACC__)
 #include "nvccfeatures.h"
@@ -201,20 +203,20 @@ added to each of the *features.h files, AND to examples/ut_features.cpp.
 #include "iccfeatures.h"
 #elif defined(__xlC__)
 #include "xlcfeatures.h"
+#elif defined(__PGI)
+#include "pgccfeatures.h"
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #include "sunprofeatures.h"
 #elif defined(__OPEN64__)
 #include "open64features.h"
-#elif defined(__clang__)
+#elif defined(__clang__) || defined(__bgclang__)
 #include "clangfeatures.h"
 #elif defined(_CRAYC)
 #include "crayfeatures.h"
-#elif defined(__GNUC__)
-#include "gccfeatures.h"
 #elif defined(__FCC_VERSION) || defined(__FUJITSU)
 #include "fujitsufeatures.h"
-#elif defined(__PGI)
-#include "pgccfeatures.h"
+#elif defined(__GNUC__)
+#include "gccfeatures.h"
 #elif defined(_MSC_FULL_VER)
 #include "msvcfeatures.h"
 #else
