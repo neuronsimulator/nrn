@@ -671,7 +671,16 @@ void (*oc_jump_target_)();	/* see ivoc/SRC/ocjump.cpp */
 
 int yystart;
 
+/* what to do about partially constructed objects at hoc_execerror */
 extern void hoc_newobj1_err();
+
+/** If one of the two jmp_buf is controlling the longjmp
+ *  hoc_newobj1_err needs handle to know how much to unwrap the newobj1 stack.
+**/
+void* nrn_get_hoc_jmp() {
+  void* jmp = hoc_oc_jmpbuf ? (void*)hoc_oc_begin : (void*)begin;
+  return jmp;
+}
 
 void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from run-time error */
 	hoc_in_yyparse = 0;

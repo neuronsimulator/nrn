@@ -115,6 +115,7 @@ int ivoc_list_count(Object *list) { return 0; }
 int hoc_readcheckpoint(char* f) { return 0; }
 
 void bbs_done(void){}
+void* nrn_get_oji(){return NULL;}
 
 Symbol* ivoc_alias_lookup(const char* name, Object* ob) {return (Symbol*)0;}
 void ivoc_free_alias(Object* ob){}

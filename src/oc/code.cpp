@@ -50,31 +50,31 @@ int tstkchk_actual(int i, int j) {
         for (k = 0, l = i; k < 2; k++, l = j) {
             switch (l) {
                 case NUMBER:
-                    s[k] = (char *) "(double)";
+				    s[k] = "(double)";
                     break;
                 case STRING:
-                    s[k] = (char *) "(char *)";
+				    s[k] = "(char *)";
                     break;
                 case OBJECTVAR:
-                    s[k] = (char *) "(Object **)";
+				    s[k] = "(Object **)";
                     break;
                 case USERINT:
-                    s[k] = (char *) "(int)";
+				    s[k] = "(int)";
                     break;
                 case SYMBOL:
-                    s[k] = (char *) "(Symbol)";
+				    s[k] = "(Symbol)";
                     break;
                 case VAR:
-                    s[k] = (char *) "(double *)";
+				    s[k] = "(double *)";
                     break;
                 case OBJECTTMP:    /* would use OBJECT if it existed */
-                    s[k] = (char *) "(Object *)";
+				    s[k] = "(Object *)";
                     break;
                 case STKOBJ_UNREF:/* hoc_stkobj_unref allready called */
-                    s[k] = (char *) "(Object * already unreffed on stack)";
+				    s[k] = "(Object * already unreffed on stack)";
                     break;
                 default:
-                    s[k] = (char *) "(Unknown)";
+				    s[k] = "(Unknown)";
                     break;
             }
         }
@@ -303,28 +303,29 @@ static void frame_objauto_recover_on_err(Frame *ff) { /* only on error */
     for (f = fp; f > ff; --f) {
         int i;
         Symbol *sp = f->sp;
+        if (sp->u.u_proc == NULL) { /* skip if the procedure is not defined */
+           continue;
+        }
         /* argn is the nargs argument on the stack. Stack items come in pairs
            so stack increments are always multiples of 2.
            Here, stkp is the last+1 localobj slot pair on the stack.
         */
         Datum *stkp = f->argn + 2 + sp->u.u_proc->nauto * 2;
-        if(sp->u.u_proc != 0) {
-            for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
-                Object *ob = stkp[-2 * i].obj;
-                hoc_obj_unref(ob);
-                /* Note that these AUTOOBJECT stack locations have an itemtype that
-                   are left over from the previous stack usage of that location.
-                   Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
-                   increment tobj_count so we need to guarantee that the subsequent
-                   stack_obtmp_recover_on_err does not inadvertently free it again
-                   by setting the itemtype to a non OBJECTTMP value.  I hope this is
-                   the only place where stack space was used in which no item type
-                   was specified.
-                   We are doing this here which happens rarely to avoid having to
-                   set them when the stack obj pointers are zeroed.
-                */
-                stkp[-2 * i + 1].i = 0;
-            }
+        for (i = sp->u.u_proc->nobjauto; i > 0; --i) {
+            Object *ob = stkp[-2 * i].obj;
+            hoc_obj_unref(ob);
+            /* Note that these AUTOOBJECT stack locations have an itemtype that
+               are left over from the previous stack usage of that location.
+               Regardless of that itemtype (e.g. OBJECTTMP), these did NOT
+               increment tobj_count so we need to guarantee that the subsequent
+               stack_obtmp_recover_on_err does not inadvertently free it again
+               by setting the itemtype to a non OBJECTTMP value.  I hope this is
+               the only place where stack space was used in which no item type
+               was specified.
+               We are doing this here which happens rarely to avoid having to
+               set them when the stack obj pointers are zeroed.
+            */
+            stkp[-2 * i + 1].i = 0;
         }
     }
 }
