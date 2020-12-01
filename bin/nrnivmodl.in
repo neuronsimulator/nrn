@@ -82,7 +82,9 @@ if test $# -gt 0 ; then
 		if test -d "$i" ; then
 			set +e
 			files="$files $(unset LC_ALL; ls $i/*.mod)"
-@USING_CMAKE_FALSE@	incs="$incs $(unset LC_ALL; ls $i/*.inc)"
+			if test "$UsingCMake" != "yes" ; then
+				incs="$incs $(unset LC_ALL; ls $i/*.inc)"
+			fi
 			set -e
 		else
 			files="$files $i"
@@ -94,9 +96,9 @@ else
 fi
 files=`echo "$files" | sed 's/^ *//'`
 
-bfiles=""
+base_names=""
 for i in $files ; do
-	bfiles="$bfiles `basename -s .mod $i`"
+	base_names="$base_names `basename -s .mod $i`"
 done
 
 echo $files
@@ -120,25 +122,25 @@ if test "$UsingCMake" = "yes" ; then
       /*) f=$i;; # absolute, fine as is
       *)  f=../$i;; # relative
     esac
-    b="`basename $f`"
-    d="`dirname $f`"
+    base_name="`basename $f`"
+    dir_name="`dirname $f`"
     echo "\
-./$b.c: $f.mod
+./$base_name.c: $f.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd $d; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $b.mod -o $mdir)
+	(cd $dir_name; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o $mdir)
 
-./$b.o: ./$b.c
+./$base_name.o: ./$base_name.c
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(COMPILE) -I$d @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@	
+	\$(COMPILE) -I$dir_name \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> $MODMAKE
   done
   for i in $cfiles ; do
-    b="`basename -s .c $i`"
-    d="`dirname $i`"  
+    base_name="`basename -s .c $i`"
+    dir_name="`dirname $i`"
     echo "\
-./$b.o: $i
+./$base_name.o: $i
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	(cd $d; \$(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $b.c -o $mdir/$b.o)
+	(cd $dir_name; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o $mdir/$base_name.o)
 " >> $MODMAKE
   done
 else
@@ -173,7 +175,7 @@ echo '#include <stdio.h>
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 ' > mod_func.c
-for i in $bfiles ; do
+for i in $base_names ; do
 	echo 'extern void _'$i'_reg(void);'
 done >> mod_func.c
 echo '
@@ -190,10 +192,10 @@ done >>mod_func.c
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.c
 
-for i in $bfiles; do
+for i in $base_names; do
 	echo '  _'$i'_reg();'
-@USING_CMAKE_TRUE@	MODOBJS="$MODOBJS ./$i.o"
-@USING_CMAKE_FALSE@	MODOBJS="$MODOBJS $i.o"
+	@USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
+	@USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
 done >> mod_func.c
 
 echo "}" >> mod_func.c
