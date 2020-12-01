@@ -11,7 +11,7 @@ void ReportHandler::create_report(double dt, double tstop, double delay) {
     }
     m_report_config.stop = std::min(m_report_config.stop, tstop);
 
-    m_report_config.mech_id = nrn_get_mechtype(m_report_config.mech_name);
+    m_report_config.mech_id = nrn_get_mechtype(m_report_config.mech_name.data());
     if (m_report_config.type == SynapseReport && m_report_config.mech_id == -1) {
         std::cerr << "[ERROR] mechanism to report: " << m_report_config.mech_name
                   << " is not mapped in this simulation, cannot report on it \n";
@@ -51,7 +51,7 @@ void ReportHandler::create_report(double dt, double tstop, double delay) {
         }
         if (!vars_to_report.empty()) {
             auto report_event =
-                std::make_unique<ReportEvent>(dt, t, vars_to_report, m_report_config.output_path);
+                std::make_unique<ReportEvent>(dt, t, vars_to_report, m_report_config.output_path.data());
             report_event->send(t, net_cvode_instance, &nt);
             m_report_events.push_back(std::move(report_event));
         }
@@ -263,7 +263,7 @@ VarsToReport ReportHandler::get_custom_vars_to_report(const NrnThread& nt,
             }
             if ((nodes_to_gids[ml->nodeindices[j]] == gid) && report_variable) {
                 double* var_value =
-                    get_var_location_from_var_name(report.mech_id, report.var_name, ml, j);
+                    get_var_location_from_var_name(report.mech_id, report.var_name.data(), ml, j);
                 const auto synapse_id = static_cast<int>(
                     *get_var_location_from_var_name(report.mech_id, SYNAPSE_ID_MOD_NAME, ml, j));
                 nrn_assert(synapse_id && var_value);

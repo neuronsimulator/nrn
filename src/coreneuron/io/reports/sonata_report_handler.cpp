@@ -38,9 +38,9 @@ void SonataReportHandler::register_custom_report(const NrnThread& nt,
 void SonataReportHandler::register_report(const NrnThread& nt,
                                           ReportConfiguration& config,
                                           const VarsToReport& vars_to_report) {
-    sonata_create_report(config.output_path, config.start, config.stop, config.report_dt,
-                         config.type_str);
-    sonata_set_report_max_buffer_size_hint(config.output_path, config.buffer_size);
+    sonata_create_report(config.output_path.data(), config.start, config.stop, config.report_dt,
+                         config.type_str.data());
+    sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
 
     for (const auto& kv : vars_to_report) {
         int gid = kv.first;
@@ -48,10 +48,10 @@ void SonataReportHandler::register_report(const NrnThread& nt,
         if (!vars.size())
             continue;
 
-        sonata_add_node(config.output_path, config.population_name, gid);
-        sonata_set_report_max_buffer_size_hint(config.output_path, config.buffer_size);
+        sonata_add_node(config.output_path.data(), config.population_name.data(), gid);
+        sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
         for (const auto& variable : vars) {
-            sonata_add_element(config.output_path, config.population_name, gid, variable.id, variable.var_value);
+            sonata_add_element(config.output_path.data(), config.population_name.data(), gid, variable.id, variable.var_value);
         }
     }
 }

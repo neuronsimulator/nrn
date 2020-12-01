@@ -59,30 +59,30 @@ enum ReportType { SomaReport, CompartmentReport, SynapseReport,
 enum SectionType { Axon, Dendrite, Apical };
 
 struct ReportConfiguration {
-    char name[REPORT_MAX_NAME_LEN];         // name of the report
-    char output_path[REPORT_MAX_FILEPATH_LEN];     // full path of the report
-    char target_name[REPORT_MAX_NAME_LEN];  // target of the report
-    char mech_name[REPORT_MAX_NAME_LEN];    // mechanism name
-    char var_name[REPORT_MAX_NAME_LEN];     // variable name
-    char unit[REPORT_MAX_NAME_LEN];         // unit of the report
-    char format[REPORT_MAX_NAME_LEN];       // format of the report (Bin, hdf5, SONATA)
-    char type_str[REPORT_MAX_NAME_LEN];     // type of report string
-    char population_name[REPORT_MAX_NAME_LEN];  // population name of the report
-    ReportType type;                        // type of the report
-    SectionType section_type;               // type of section report
-    bool section_all_compartments;          // flag for section report (all values)
-    int mech_id;                            // mechanism
-    double report_dt;                       // reporting timestep
-    double start;                           // start time of report
-    double stop;                            // stop time of report
-    int num_gids;                           // total number of gids
-    int buffer_size;                        // hint on buffer size used for this report
-    std::set<int> target;                   // list of gids for this report
+    std::string name;               // name of the report
+    std::string output_path;        // full path of the report
+    std::string target_name;        // target of the report
+    std::string mech_name;          // mechanism name
+    std::string var_name;           // variable name
+    std::string unit;               // unit of the report
+    std::string format;             // format of the report (Bin, hdf5, SONATA)
+    std::string type_str;           // type of report string
+    std::string population_name;    // population name of the report
+    ReportType type;                // type of the report
+    SectionType section_type;       // type of section report
+    bool section_all_compartments;  // flag for section report (all values)
+    int mech_id;                    // mechanism
+    double report_dt;               // reporting timestep
+    double start;                   // start time of report
+    double stop;                    // stop time of report
+    int num_gids;                   // total number of gids
+    int buffer_size;                // hint on buffer size used for this report
+    std::set<int> target;           // list of gids for this report
 };
 
 void setup_report_engine(double dt_report, double mindelay);
-std::vector<ReportConfiguration> create_report_configurations(const char* filename,
-                                                              const char* output_dir,
+std::vector<ReportConfiguration> create_report_configurations(const std::string& filename,
+                                                              const std::string& output_dir,
                                                               std::string& spikes_population_name);
 void finalize_report();
 void nrn_flush_reports(double t);

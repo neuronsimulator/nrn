@@ -407,14 +407,14 @@ static void trajectory_return() {
 
 std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config) {
     std::unique_ptr<ReportHandler> report_handler;
-    if (std::strcmp(config.format, "Bin") == 0) {
+    if (config.format == "Bin") {
         report_handler = std::make_unique<BinaryReportHandler>(config);
-    } else if (std::strcmp(config.format, "SONATA") == 0) {
+    } else if (config.format == "SONATA") {
         report_handler = std::make_unique<SonataReportHandler>(config);
     }
     else {
         if (nrnmpi_myid == 0) {
-            printf(" WARNING : Report name '%s' has unknown format: '%s'.\n", config.name, config.format);
+            printf(" WARNING : Report name '%s' has unknown format: '%s'.\n", config.name.data(), config.format.data());
         }
         return nullptr;
     }
@@ -477,8 +477,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 
     if (!corenrn_param.reportfilepath.empty()) {
-        configs = create_report_configurations(corenrn_param.reportfilepath.c_str(),
-                                               corenrn_param.outpath.c_str(),
+        configs = create_report_configurations(corenrn_param.reportfilepath,
+                                               corenrn_param.outpath,
                                                spikes_population_name);
         reports_needs_finalize = configs.size();
     }

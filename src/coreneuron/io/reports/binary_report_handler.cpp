@@ -74,15 +74,15 @@ void BinaryReportHandler::register_report(const NrnThread& nt,
         const CellMapping* m = mapinfo->get_cell_mapping(gid);
         extra[0] = vars.size();
         create_extra(*m, extra);
-        records_add_report(config.output_path, gid, gid, gid, config.start, config.stop,
-                           config.report_dt, sizemapping, config.type_str, extramapping,
-                           config.unit);
+        records_add_report(config.output_path.data(), gid, gid, gid, config.start, config.stop,
+                           config.report_dt, sizemapping, config.type_str.data(), extramapping,
+                           config.unit.data());
 
-        records_set_report_max_buffer_size_hint(config.output_path, config.buffer_size);
-        records_extra_mapping(config.output_path, gid, 5, extra.data());
+        records_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
+        records_extra_mapping(config.output_path.data(), gid, 5, extra.data());
         for (const auto& var : vars) {
             mapping[0] = var.id;
-            records_add_var_with_mapping(config.output_path, gid, var.var_value, sizemapping,
+            records_add_var_with_mapping(config.output_path.data(), gid, var.var_value, sizemapping,
                                          mapping.data());
         }
     }
