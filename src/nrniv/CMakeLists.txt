@@ -27,6 +27,14 @@ set_property(
 
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 
+# as modlunit and nocmodl are typically executed on front-end node,
+# in order to avoid runtime
+# issues from platform specific optimisations, build modlunit and nocmodl
+# with debug flags as performance is not a concern (for checking units or
+# translating mod to c)
+separate_arguments(NMODL_C_FLAGS UNIX_COMMAND "${CMAKE_C_FLAGS_DEBUG}")
+target_compile_options(modlunit PRIVATE ${NMODL_C_FLAGS})
+
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
@@ -45,6 +53,7 @@ set_property(
     NRN_DYNAMIC_UNITS=1)
 
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
+target_compile_options(nocmodl PRIVATE ${NMODL_C_FLAGS})
 
 # =============================================================================
 # Translate all MOD files to C and mark them generated
