@@ -16,6 +16,10 @@ def _config_exe(exe_name):
 
     package_name = "nmodl"
 
+    if package_name not in working_set.by_key:
+        print ("INFO : Using nmodl-nightly Package (Developer Version)")
+        package_name = 'nmodl-nightly'
+
     assert (
         package_name in working_set.by_key
     ), "NMODL package not found! Verify PYTHONPATH"
@@ -36,6 +40,9 @@ def _config_exe(exe_name):
 
     # add nmodl home to environment (i.e. necessary for nrnunits.lib)
     os.environ["NMODLHOME"] = NMODL_HOME
+
+    # set PYTHONPATH for embedded python to properly find the nmodl module
+    os.environ["PYTHONPATH"] = working_set.by_key[package_name].location + ':' + os.environ.get("PYTHONPATH", "")
 
     return os.path.join(NMODL_BIN, exe_name)
 

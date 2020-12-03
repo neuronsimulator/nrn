@@ -17,6 +17,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -64,7 +65,12 @@ struct NrnUnitsLib {
                 return path;
             }
         }
-        throw std::runtime_error("Could not found nrnunits.lib");
+        std::ostringstream err_msg;
+        err_msg << "Could not find nrnunits.lib in any of:\n";
+        for (const auto& path: NRNUNITSLIB_PATH) {
+            err_msg << path << "\n";
+        }
+        throw std::runtime_error(err_msg.str());
     }
 };
 
