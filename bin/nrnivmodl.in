@@ -9,28 +9,28 @@ UsingCMake="no"
 @USING_CMAKE_TRUE@UsingCMake="yes"
 
 if test "x${NRNHOME}" = x ; then
-	prefix=@prefix@
-	exec_prefix=@exec_prefix@
-	bindir=@bindir@
-	libdir=@libdir@
+  prefix=@prefix@
+  exec_prefix=@exec_prefix@
+  bindir=@bindir@
+  libdir=@libdir@
 else
-	prefix="$NRNHOME"
-	exec_prefix="${prefix}/${ARCH}"
-	@USING_CMAKE_FALSE@bindir="${prefix}/${ARCH}/bin"
-	@USING_CMAKE_FALSE@libdir="${prefix}/${ARCH}/lib"
-	@USING_CMAKE_TRUE@bindir="${prefix}/bin"
-	@USING_CMAKE_TRUE@libdir="${prefix}/lib"
+  prefix="$NRNHOME"
+  exec_prefix="${prefix}/${ARCH}"
+  @USING_CMAKE_FALSE@bindir="${prefix}/${ARCH}/bin"
+  @USING_CMAKE_FALSE@libdir="${prefix}/${ARCH}/lib"
+  @USING_CMAKE_TRUE@bindir="${prefix}/bin"
+  @USING_CMAKE_TRUE@libdir="${prefix}/lib"
 fi
 
 if test "${NRNHOME_EXEC}" != "" ; then
-	exec_prefix="${NRNHOME_EXEC}"
-	bindir="${exec_prefix}/bin"
-	libdir="${exec_prefix}/lib"
+  exec_prefix="${NRNHOME_EXEC}"
+  bindir="${exec_prefix}/bin"
+  libdir="${exec_prefix}/lib"
 fi
 
 # Besides NRNHOME, one may set NRNBIN to override the default location of user binaries
 if test "x$NRNBIN" = "x"; then
-	NRNBIN=$bindir
+  NRNBIN=$bindir
 fi
 
 export prefix
@@ -68,9 +68,9 @@ if [ "$1" = "-loadflags" ] ; then
 fi
 
 if [ ! -d $MODSUBDIR ] ; then
-	echo "Creating $MODSUBDIR directory for .o files."
-	echo
-	mkdir $MODSUBDIR
+  echo "Creating $MODSUBDIR directory for .o files."
+  echo
+  mkdir $MODSUBDIR
 fi
 
 pwd
@@ -78,27 +78,27 @@ pwd
 files=""
 @USING_CMAKE_FALSE@incs=""
 if test $# -gt 0 ; then
-	for i in "$@" ; do
-		if test -d "$i" ; then
-			set +e
-			files="$files $(unset LC_ALL; ls $i/*.mod)"
-			if test "$UsingCMake" != "yes" ; then
-				incs="$incs $(unset LC_ALL; ls $i/*.inc)"
-			fi
-			set -e
-		else
-			files="$files $i"
-		fi
-	done
+  for i in "$@" ; do
+    if test -d "$i" ; then
+      set +e
+      files="$files $(unset LC_ALL; ls $i/*.mod)"
+      if test "$UsingCMake" != "yes" ; then
+        incs="$incs $(unset LC_ALL; ls $i/*.inc)"
+      fi
+      set -e
+    else
+      files="$files $i"
+    fi
+  done
 else
-	# Unset LC_ALL for consistent mod order
-	files=$(unset LC_ALL; ls *.mod)
+  # Unset LC_ALL for consistent mod order
+  files=$(unset LC_ALL; ls *.mod)
 fi
 files=`echo "$files" | sed 's/^ *//'`
 
 base_names=""
 for i in $files ; do
-	base_names="$base_names `basename -s .mod $i`"
+  base_names="$base_names `basename -s .mod $i`"
 done
 
 echo $files
@@ -106,7 +106,7 @@ echo $files
 files=`echo "$files" | sed 's/\.mod//g'`
 
 if test "$files" = '*' ; then
-	files=""
+  files=""
 fi
 
 cd $MODSUBDIR
@@ -165,9 +165,9 @@ fi
 COBJS=
 MODOBJS=
 if [ `echo "\n"` ] ; then
-	newline="\n"
+  newline="\n"
 else
-	newline="\\\\n"
+  newline="\\\\n"
 fi
 
 echo '#include <stdio.h>
@@ -176,7 +176,7 @@ extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 ' > mod_func.c
 for i in $base_names ; do
-	echo 'extern void _'$i'_reg(void);'
+  echo 'extern void _'$i'_reg(void);'
 done >> mod_func.c
 echo '
 void modl_reg(){
@@ -186,22 +186,22 @@ void modl_reg(){
 
 for i in $files
 do
-	echo '    fprintf(stderr," '$i'.mod");'
+  echo '    fprintf(stderr," '$i'.mod");'
 done >>mod_func.c
 
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.c
 
 for i in $base_names; do
-	echo '  _'$i'_reg();'
-	@USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
-	@USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
+  echo '  _'$i'_reg();'
+  @USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
+  @USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
 done >> mod_func.c
 
 echo "}" >> mod_func.c
 
 if test -n "$cfiles" ; then
-	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
+  COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
 fi
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
