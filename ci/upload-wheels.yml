@@ -1,0 +1,24 @@
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNMODLPypiNightly
+    condition: and(succeeded(), eq(variables.buildWheel, true))
+  - script: |
+      python -m pip install twine
+      cat $(PYPIRC_PATH)
+      python -m twine upload --verbose --skip-existing -r NMODLPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    condition: and(succeeded(), eq(variables.buildWheel, true))
+    displayName: 'Upload nightly wheel to pypi.org'
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNMODLPypi
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.releaseWheelBuild, true))
+
+  - script: |
+      python -m pip install twine
+      python -m twine upload --verbose --skip-existing -r NMODLPypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.releaseWheelBuild, true))
+    displayName: 'Upload release wheel to pypi.org'

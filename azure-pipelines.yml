@@ -1,6 +1,24 @@
 #=============================================================================
 # Azure Pipeline NMODL settings
 #=============================================================================
+variables:
+- name: ReleaseWheelBuild
+  value: false
+- name: NightlyWheelBuild
+  value: false
+- name: buildWheel
+  value: $[or(in(variables['Build.Reason'], 'Schedule'),
+              and(in(variables['Build.Reason'], 'Manual'), eq(variables.NightlyWheelBuild, true)))]
+
+# Nightly build master for pypi upload
+schedules:
+- cron: "5 0 * * *"
+  branches:
+    include:
+    - master
+  always: true
+
+
 jobs:
 - job: 'ubuntu1604'
   pool:
@@ -14,7 +32,7 @@ jobs:
       sudo apt-add-repository -y ppa:deadsnakes/ppa
       sudo apt update
       sudo apt install -y g++-8 flex bison
-      sudo apt-get install -y python3.7 python3.7-dev
+      sudo apt-get install -y python3.7 python3.7-dev python3.7-venv
       python3.7 -m pip install -U pip setuptools
       python3.7 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3,<1.6'
       # we manually get version 3.10.2 to make sure that changes in the cmake
@@ -64,7 +82,7 @@ jobs:
       ./bin/nrnivmodl-core $(Build.Repository.LocalPath)/test/integration/mod
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
-    displayName: 'Build and Run Integration Tests'
+    displayName: 'Build CoreNEURON and Run Integration Tests'
   - script: |
       export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
       export CXX='g++-8'
@@ -82,23 +100,7 @@ jobs:
       ./bin/nrnivmodl-core $(Build.Repository.LocalPath)/test/integration/mod
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
-    displayName: 'Build and Run Integration Tests with ISPC compiler'
-  - script: |
-      export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
-      export CXX='g++-8'
-      sudo apt-get install -y python3.7-venv
-      python3.7 -m pip install -U scikit-build
-      python3.7 setup.py sdist bdist_wheel -j 6
-      rm -rf venv _skbuild
-      python3.7 -m venv venv
-      source ./venv/bin/activate
-      pip install --upgrade pip
-      pip install dist/*.whl
-      nmodl $(Build.Repository.LocalPath)/test/integration/mod/cabpump.mod sympy --analytic
-      rm cabpump.cpp
-    env:
-      CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
-    displayName: 'Build and test pywheels'
+    displayName: 'Build CoreNEURON and Run Integration Tests with ISPC compiler'
 - job: 'osx1014'
   pool:
     vmImage: 'macOS-10.14'
@@ -123,26 +125,95 @@ jobs:
       fi
       env CTEST_OUTPUT_ON_FAILURE=1 make test
     displayName: 'Build and Run Tests'
+- job: 'manylinux_wheels'
+  timeoutInMinutes: 30
+  pool:
+    vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
+      Python39:
+        python.version: '3.9'
+  steps:
+  - checkout: self
+    submodules: true
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
   - script: |
+      if [ "$(buildWheel)" == "true" ]; then
+        export TAG="-nightly"
+      else
+        export TAG=""
+      fi
+      echo "TAG=$TAG"
+      docker run --rm \
+        -w /root/nmodl \
+        -v $PWD:/root/nmodl \
+        -e NMODL_NIGHTLY_TAG=$TAG \
+        'bluebrain/nmodl:wheel' \
+        packaging/build_wheels.bash linux $(python.version)
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Building ManyLinux Wheel'
+  - script: |
+      sudo apt-add-repository -y ppa:deadsnakes/ppa
+      sudo apt update
+      sudo apt-get install -y python$(python.version) python$(python.version)-dev python$(python.version)-venv
+      packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Test ManyLinux Wheel with Python $(python.version)'
+  - template: ci/upload-wheels.yml
+- job: 'macos_wheels'
+  timeoutInMinutes: 30
+  pool:
+    vmImage: 'macOS-10.15'
+  strategy:
+    matrix:
+      Python36:
+        python.version: '3.6'
+        python.org.version: '3.6.8'
+      Python37:
+        python.version: '3.7'
+        python.org.version: '3.7.7'
+      Python38:
+        python.version: '3.8'
+        python.org.version: '3.8.2'
+      Python39:
+        python.version: '3.9'
+        python.org.version: '3.9.0'
+  steps:
+  - checkout: self
+    submodules: true
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+  - script: |
+      brew install flex bison cmake
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
-      python3 -m pip install -U pip setuptools scikit-build delocate
-      python3 setup.py sdist bdist_wheel -j 2
-      delocate-wheel -w wheelhouse -v dist/*.whl
-      rm -rf venv _skbuild
-    displayName: 'Build wheel'
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
-    displayName: 'Publish wheel as build artifact'
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Install Depdendencies'
   - script: |
-      python3 -m venv venv
-      source ./venv/bin/activate
-      pip install --upgrade pip
-      pip install wheelhouse/*.whl
-      # TODO : change this when we fix the issue with nmodl module
-      export PYTHONPATH=$(pwd)/venv/lib/python3.8/site-packages:$PYTHONPATH
-      cd $(Build.Repository.LocalPath)/test/integration/mod
-      nmodl cabpump.mod sympy --analytic
-      nmodl watch_test.mod sympy --analytic
-      rm cabpump.cpp
-    displayName: 'Test wheel'
+      installer=python-$(python.org.version)-macosx10.9.pkg
+      url=https://www.python.org/ftp/python/$(python.org.version)/$installer
+      curl $url -o $installer
+      sudo installer -pkg $installer -target /
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Install Python from python.org'
+  - script: |
+      export MACOSX_DEPLOYMENT_TARGET=10.9
+      export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
+      export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+      if [ "$(buildWheel)" == "true" ]; then
+        export NMODL_NIGHTLY_TAG="-nightly"
+      else
+        export NMODL_NIGHTLY_TAG=""
+      fi
+      packaging/build_wheels.bash osx $(python.version)
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Build macos Wheel'
+  - script: |
+      packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
+    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    displayName: 'Test macos Wheel with Python $(python.version)'
+  - template: ci/upload-wheels.yml
