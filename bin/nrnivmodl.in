@@ -167,16 +167,25 @@ if test "$UsingCMake" = "yes" ; then
 	\$(COMPILE) -I\"`unhide_spaces $dir_name`\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> $MODMAKE
   done
-  for i in $cfiles ; do
-    i_hide=`hide_spaces "$i"`
-    base_name="`basename -s .c $i`"
-    dir_name="`dirname $i`"
-    echo "\
-./$base_name.o: `escape_spaces "i_hide"`
+  if test "$cfiles" != "" ; then
+    ifs="$IFS"
+    IFS=';'
+    for i in $cfiles ; do
+      i_hide=`hide_spaces "$i"`
+      case "$i_hide" in
+        /*) f=$i_hide;; # absolute, fine as is
+        *)  f=../$i_hide;; # relative
+      esac
+      base_name="`basename -s .c $f`"
+      dir_name="`dirname $f`"
+      echo "\
+./$base_name.o: `escape_spaces "$f"`
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
 	(cd \"`unhide_spaces $dir_name`\"; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o \"$mdir/$base_name.o\")
 " >> $MODMAKE
-  done
+    done
+    IFS="$ifs"
+  fi
 else
   for i in $files; do
        rm -f "`basename $i`".mod
@@ -191,8 +200,8 @@ else
   fi
 
   for i in $cfiles; do
-       rm -f $i
-       ln -s ../$i .
+       rm -f "$i"
+       ln -s "../$i" .
   done
 fi
 
@@ -235,9 +244,22 @@ done >> mod_func.c
 echo "}" >> mod_func.c
 
 if test -n "$cfiles" ; then
-  COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
+  if test "$UsingCMake" = "yes" ; then
+    sp=""
+    COBJS=""
+    ifs="$IFS"
+    IFS=';'
+    for i in $cfiles ; do
+      base_name=`basename -s .c "$i"`
+      COBJS="${COBJS}${sp}./${base_name}.o"
+      sp=" "
+    done
+    IFS="$ifs"
+  else
+    COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
+  fi
 fi
-
+echo "COBJS='$COBJS'"
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 if [ "$LinkCoreNEURON" = true ] ; then
   :
