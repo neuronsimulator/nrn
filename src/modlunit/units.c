@@ -1016,17 +1016,13 @@ redef:
 
 #if NRN_DYNAMIC_UNITS
 static double modern_getflt() {
-	register int c, i, dp;
-	double d, e;
-	int f;
+	int c;
 	char str[100];
 	char* cp;
 	double d_modern;
 
 	assert(table == dynam[0].table);
 
-	d = 0.;
-	dp = 0;
 	cp = str;
 	do
 		c = get();
@@ -1035,53 +1031,26 @@ static double modern_getflt() {
 l1:
 	if(c >= '0' && c <= '9') {
 		*cp++ = c;
-		d = d*10. + c-'0';
-		if(dp)
-			dp++;
 		c = get();
 		goto l1;
 	}
 	if(c == '.') {
 		*cp++ = c;
-		dp++;
 		c = get();
 		goto l1;
 	}
-	if(dp)
-		dp--;
 	if(c == '+' || c == '-') {
 		*cp++ = 'e';
 		*cp++ = c;
-		f = 0;
-		if(c == '-')
-			f++;
-		i = 0;
 		c = get();
 		while(c >= '0' && c <= '9') {
 			*cp++ = c;
-			i = i*10 + c-'0';
 			c = get();
 		}
-		if(f)
-			i = -i;
-		dp -= i;
 	}
 	*cp = '\0';
 	d_modern = atof(str);
-	e = 1.;
-	i = dp;
-	if(i < 0)
-		i = -i;
-	while(i--)
-		e *= 10.;
-	if(dp < 0)
-		d *= e; else
-		d /= e;
-	if (d_modern != d) {
-printf("getflt d_modern = %.18g %a  d=%.18g %a\nstr=\"%s\"\n", d_modern, d_modern, d, d, str);
-	}
 	if(c == '|') {
-		d /= modern_getflt();
 		d_modern /= modern_getflt();
 		return d_modern;
 	}
