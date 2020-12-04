@@ -15,7 +15,7 @@ foreach(
   visitor.py
   __init__.py)
   list(APPEND NMODL_PYTHON_FILES_IN ${NMODL_PROJECT_SOURCE_DIR}/nmodl/${file})
-  list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/nmodl/${file})
+  list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/lib/nmodl/${file})
 endforeach()
 
 add_library(pyembed ${CMAKE_CURRENT_SOURCE_DIR}/pyembed.cpp)

@@ -93,8 +93,6 @@ add_custom_command(
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
          ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/diffeq/location.hh
-         ${PROJECT_BINARY_DIR}/src/parser/diffeq/position.hh
          ${PROJECT_BINARY_DIR}/src/parser/diffeq/stack.hh
   COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
@@ -108,8 +106,6 @@ add_custom_command(
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
          ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/c/location.hh
-         ${PROJECT_BINARY_DIR}/src/parser/c/position.hh
          ${PROJECT_BINARY_DIR}/src/parser/c/stack.hh
   COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11.yy
@@ -120,8 +116,6 @@ add_custom_command(
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
          ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/unit/location.hh
-         ${PROJECT_BINARY_DIR}/src/parser/unit/position.hh
          ${PROJECT_BINARY_DIR}/src/parser/unit/stack.hh
   COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
           ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit.yy
