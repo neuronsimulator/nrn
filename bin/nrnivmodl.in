@@ -67,12 +67,6 @@ if [ "$1" = "-loadflags" ] ; then
        shift
 fi
 
-if [ ! -d $MODSUBDIR ] ; then
-  echo "Creating $MODSUBDIR directory for .o files."
-  echo
-  mkdir $MODSUBDIR
-fi
-
 pwd
 
 # Mod file paths may contain spaces which make variable lists of those
@@ -98,6 +92,15 @@ escape_spaces() {
 files=""
 @USING_CMAKE_FALSE@incs=""
 if test $# -gt 0 ; then
+  if test "$UsingCMake" = "yes" ; then
+    echo ""
+    echo -n "Mod folder, file args:"
+    for i in "$@" ; do
+      echo -n " \"$i\""
+    done
+    echo ""
+    echo ""
+  fi
   for i in "$@" ; do
     i_hide=`hide_spaces "$i"`
     if test -d "$i" ; then
@@ -113,7 +116,12 @@ if test $# -gt 0 ; then
       set -e
     else
       if test "$UsingCMake" = "yes" ; then
-        files="$files $i_hide"
+        if test -e "$i" -o -e "$i.mod" ; then
+          files="$files $i_hide"
+        else
+          echo "\"$i\" is not a folder or mod file name or prefix"
+          exit 1
+        fi
       else
         files="$files $i"
       fi
@@ -131,10 +139,20 @@ for i in $files ; do
   base_names="$base_names `basename -s .mod $i`"
 done
 
+echo -n "Mod files:"
 for i in $files ; do
-  echo -n " \"`unhide_spaces $i`\""
+  base_name=`basename -s .mod "$i"`
+  dir_name=`dirname "$i"`
+  echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
 done
 echo ""
+echo ""
+
+if [ ! -d $MODSUBDIR ] ; then
+  echo "Creating $MODSUBDIR directory for .o files."
+  echo
+  mkdir $MODSUBDIR
+fi
 
 files=`echo "$files" | sed 's/\.mod//g'`
 
