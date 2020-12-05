@@ -92,15 +92,6 @@ escape_spaces() {
 files=""
 @USING_CMAKE_FALSE@incs=""
 if test $# -gt 0 ; then
-  if test "$UsingCMake" = "yes" ; then
-    echo ""
-    echo -n "Mod folder, file args:"
-    for i in "$@" ; do
-      echo -n " \"$i\""
-    done
-    echo ""
-    echo ""
-  fi
   for i in "$@" ; do
     i_hide=`hide_spaces "$i"`
     if test -d "$i" ; then
@@ -119,7 +110,15 @@ if test $# -gt 0 ; then
         if test -e "$i" -o -e "$i.mod" ; then
           files="$files $i_hide"
         else
-          echo "\"$i\" is not a folder or mod file name or prefix"
+          echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
+
+          echo ""
+          echo -n "  Mod file, folder args:"
+          for j in "$@" ; do
+            echo -n " \"$j\""
+          done
+          echo ""
+
           exit 1
         fi
       else
@@ -139,14 +138,16 @@ for i in $files ; do
   base_names="$base_names `basename -s .mod $i`"
 done
 
-echo -n "Mod files:"
-for i in $files ; do
-  base_name=`basename -s .mod "$i"`
-  dir_name=`dirname "$i"`
-  echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
-done
-echo ""
-echo ""
+if test "$UsingCMake" = "yes" ; then
+  echo -n "Mod files:"
+  for i in $files ; do
+    base_name=`basename -s .mod "$i"`
+    dir_name=`dirname "$i"`
+    echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
+  done
+  echo ""
+  echo ""
+fi
 
 if [ ! -d $MODSUBDIR ] ; then
   echo "Creating $MODSUBDIR directory for .o files."
