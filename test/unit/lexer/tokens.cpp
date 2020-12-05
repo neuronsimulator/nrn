@@ -69,7 +69,7 @@ bool check_token_type(const std::string& name, TokenType type) {
     // float constant
     else if (token_type == get_token_type(Token::REAL)) {
         auto value = sym.value.as<ast::Double>();
-        REQUIRE(value.get_value() != 0);
+        REQUIRE(value.to_double() != 0);
     }
     // const char*
     else if (token_type == get_token_type(Token::STRING)) {

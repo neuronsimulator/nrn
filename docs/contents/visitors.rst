@@ -119,8 +119,8 @@ If predefined visitors are limited, we can implement new visitor using :class:`n
     >>> modast.accept(d_visitor)
     0.05
     0.1
-    0.0001
-    10000.0
-    2.0
+    1e-4
+    10000
+    2
     1.0
 

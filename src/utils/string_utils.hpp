@@ -17,9 +17,12 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <functional>
 #include <sstream>
 #include <vector>
+
+#include <spdlog/spdlog.h>
 
 namespace nmodl {
 /// string utility functions
@@ -122,6 +125,24 @@ static inline std::string align_text(std::string text, int width, text_alignment
 static inline std::string tolower(std::string text) {
     std::transform(text.begin(), text.end(), text.begin(), ::tolower);
     return text;
+}
+
+/**
+ * Convert double value to string without trailing zeros
+ *
+ * When we use std::to_string with double value 1 then it gets
+ * printed as `1.000000`. This is not convenient for testing
+ * and testing/validation. To avoid this issue, we use to_string
+ * for integer values and stringstream for the rest.
+ */
+static inline std::string to_string(double value, const std::string& format_spec = "{:.16g}") {
+    // double containing integer value
+    if (std::ceil(value) == value) {
+        return std::to_string(static_cast<int>(value));
+    }
+
+    // actual float value
+    return fmt::format(format_spec, value);
 }
 
 /** @} */  // end of utils

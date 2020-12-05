@@ -64,8 +64,8 @@ SCENARIO("NeuronSolveVisitor visitor solves different ODE types") {
             }
 
             DERIVATIVE states {
-                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
-                h = h+(1-exp(dt*((((-1)))/hTau)))*(-(((hInf))/hTau)/((((-1)))/hTau)-h)
+                m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)
+                h = h+(1.0-exp(dt*((((-1.0)))/hTau)))*(-(((hInf))/hTau)/((((-1.0)))/hTau)-h)
                 m = m+h
             }
         )";

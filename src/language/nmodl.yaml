@@ -164,7 +164,7 @@
                             members:
                               - value:
                                   brief: "Value of float"
-                                  type: float
+                                  type: std::string
                             brief: "Represents a float variable"
                             description: |
                                     Single precision float value in the mod file can be represented by ast::Float.
@@ -178,7 +178,7 @@
                             members:
                               - value:
                                   brief: "Value of double"
-                                  type: double
+                                  type: std::string
                             brief: "Represents a double variable"
                             description: |
                                     %Double precision float value in the mod file is represented by ast::Double.

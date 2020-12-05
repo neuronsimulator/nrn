@@ -123,7 +123,16 @@ void CodegenIspcVisitor::visit_local_list_statement(ast::LocalListStatement& nod
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
 
-std::string CodegenIspcVisitor::double_to_string(double value) {
+/**
+ * \todo : In ISPC we have to explicitly append `d` to a floating point number
+ *         otherwise it is treated as float. A value stored in the AST can be in
+ *         scientific notation and hence we can't just append `d` to the string.
+ *         Hence, we have to print number with .16f and then append `d`. But note
+ *         that this will result into discrepancy between C++ backend and ISPC
+ *         backend when floating point number is not exactly represented with .16f.
+ */
+std::string CodegenIspcVisitor::double_to_string(const std::string& s_value) {
+    double value = std::stod(s_value);
     if (std::ceil(value) == value) {
         return "{:.1f}d"_format(value);
     }
@@ -144,7 +153,8 @@ std::string CodegenIspcVisitor::double_to_string(double value) {
 }
 
 
-std::string CodegenIspcVisitor::float_to_string(float value) {
+std::string CodegenIspcVisitor::float_to_string(const std::string& s_value) {
+    float value = std::stof(s_value);
     if (std::ceil(value) == value) {
         return "{:.1f}"_format(value);
     }
@@ -482,10 +492,8 @@ void CodegenIspcVisitor::print_nmodl_constants() {
         printer->add_line("/** constants used in nmodl */");
         for (auto& it: info.factor_definitions) {
             const std::string name = it->get_node_name() == "PI" ? "ISPC_PI" : it->get_node_name();
-            std::string format_string = "static const uniform double {} = {};";
-            printer->add_line(fmt::format(format_string.c_str(),
-                                          name,
-                                          double_to_string(it->get_value()->get_value())));
+            const std::string value = it->get_value()->get_value();
+            printer->add_line("static const uniform double {} = {};"_format(name, value));
         }
     }
 }

@@ -25,8 +25,8 @@ using Parser = parser::NmodlParser;
  * @param pos Position of value in the mod file
  * @return Symbol for double value
  */
-SymbolType double_symbol(double value, PositionType& pos) {
-    ModToken token(std::to_string(value), Token::REAL, pos);
+SymbolType double_symbol(const std::string& value, PositionType& pos) {
+    ModToken token(value, Token::REAL, pos);
     ast::Double float_value(value);
     float_value.set_token(token);
     return Parser::make_REAL(float_value, pos);

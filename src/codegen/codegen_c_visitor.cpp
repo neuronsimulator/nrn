@@ -75,8 +75,7 @@ void CodegenCVisitor::visit_float(Float& node) {
     if (!codegen) {
         return;
     }
-    auto value = node.eval();
-    printer->add_text(float_to_string(value));
+    printer->add_text(float_to_string(node.get_value()));
 }
 
 
@@ -84,8 +83,7 @@ void CodegenCVisitor::visit_double(Double& node) {
     if (!codegen) {
         return;
     }
-    auto value = node.eval();
-    printer->add_text(double_to_string(value));
+    printer->add_text(double_to_string(node.get_value()));
 }
 
 
@@ -438,25 +436,27 @@ int CodegenCVisitor::position_of_int_var(const std::string& name) const {
 
 
 /**
- * \details We can directly use to_string method but if user specify 7.0 then it gets
- * printed as 7 (as integer). To avoid this, we use below wrapper. But note
- * that there are still issues. For example, if 1.1 is not exactly represented
- * in floating point, then it gets printed as 1.0999999999999. May be better
- * to use std::to_string in else part?
+ * \details We can directly print value but if user specify value as integer then
+ * then it gets printed as an integer. To avoid this, we use below wrapper.
+ * If user has provided integer then it gets printed as 1.0 (similar to mod2c
+ * and neuron where ".0" is appended). Otherwise we print double variables as
+ * they are represented in the mod file by user.
  */
-std::string CodegenCVisitor::double_to_string(double value) {
+std::string CodegenCVisitor::double_to_string(const std::string& s_value) {
+    double value = std::stod(s_value);
     if (std::ceil(value) == value) {
         return "{:.1f}"_format(value);
     }
-    return "{:.16g}"_format(value);
+    return s_value;
 }
 
 
-std::string CodegenCVisitor::float_to_string(float value) {
+std::string CodegenCVisitor::float_to_string(const std::string& s_value) {
+    float value = std::stof(s_value);
     if (std::ceil(value) == value) {
-        return "{:.1f}f"_format(value);
+        return "{:.1f}"_format(value);
     }
-    return "{:.16g}f"_format(value);
+    return s_value;
 }
 
 
@@ -2002,14 +2002,8 @@ void CodegenCVisitor::print_nmodl_constants() {
         printer->add_newline(2);
         printer->add_line("/** constants used in nmodl */");
         for (const auto& it: info.factor_definitions) {
-#ifdef USE_LEGACY_UNITS
-            std::string format_string = "static const double {} = {:g};";
-#else
-            std::string format_string = "static const double {} = {:.18g};";
-#endif
-            printer->add_line(fmt::format(format_string.c_str(),
-                                          it->get_node_name(),
-                                          it->get_value()->get_value()));
+            printer->add_line("static const double {} = {};"_format(it->get_node_name(),
+                                                                    it->get_value()->get_value()));
         }
     }
 }

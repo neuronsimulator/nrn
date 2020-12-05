@@ -903,16 +903,16 @@ SCENARIO("Addition of CONDUCTANCE using SympyConductance visitor", "[visitor][so
                 LOCAL Eca_syn, mggate, i_AMPA, gmax_NMDA, i_NMDA, Pf_NMDA, gca_bar_abs_VDCC, gca_VDCC, nernst_in_0, g__0
                 CONDUCTANCE g__0
                 g__0 = (0.001*gmax_NMDA*mg*scale_mg*slope_mg*(A_NMDA-B_NMDA)*(E_NMDA-v)*exp(slope_mg*v)-0.001*gmax_NMDA*scale_mg*(A_NMDA-B_NMDA)*(mg+scale_mg*exp(slope_mg*v))*exp(slope_mg*v)+(g_AMPA+gca_VDCC)*pow(mg+scale_mg*exp(slope_mg*v), 2))/pow(mg+scale_mg*exp(slope_mg*v), 2)
-                g_AMPA = 0.001*gmax_AMPA*(B_AMPA-A_AMPA)
+                g_AMPA = 1e-3*gmax_AMPA*(B_AMPA-A_AMPA)
                 i_AMPA = g_AMPA*(v-E_AMPA)
                 gmax_NMDA = gmax_AMPA*NMDA_ratio
                 mggate = 1/(1+exp(slope_mg*-v)*(mg/scale_mg))
-                g_NMDA = 0.001*gmax_NMDA*mggate*(B_NMDA-A_NMDA)
+                g_NMDA = 1e-3*gmax_NMDA*mggate*(B_NMDA-A_NMDA)
                 i_NMDA = g_NMDA*(v-E_NMDA)
                 Pf_NMDA = (4*cao_CR)/(4*cao_CR+0.7246376811594204*120(mM))*0.6
-                ica_NMDA = Pf_NMDA*g_NMDA*(v-40)
+                ica_NMDA = Pf_NMDA*g_NMDA*(v-40.0)
                 gca_bar_abs_VDCC = gca_bar_VDCC*4(um2)*PI*(3(1/um3)/4*volume_CR*1/PI)^0.6666666666666666
-                gca_VDCC = 0.001*gca_bar_abs_VDCC*m_VDCC*m_VDCC*h_VDCC
+                gca_VDCC = 1e-3*gca_bar_abs_VDCC*m_VDCC*m_VDCC*h_VDCC
                 {
                     LOCAL ci_in_0, co_in_0, z_in_0
                     ci_in_0 = cai_CR
