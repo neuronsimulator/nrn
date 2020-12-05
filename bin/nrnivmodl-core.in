@@ -29,7 +29,7 @@ params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
 MAKE_OPTIONS="MECHLIB_SUFFIX MOD2CPP_BINARY MOD2CPP_RUNTIME_FLAGS DEST_DIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE"
 
 # parse CLI args
-while getopts "n:m:a:d:i:l:V:p:b:h" OPT; do
+while getopts "n:m:a:d:i:l:Vp:b:h" OPT; do
     case "$OPT" in
     n)
         # suffix for mechanism library
@@ -145,5 +145,4 @@ fi
 # run makefile
 echo "[INFO] Running: make -j$PARALLEL_BUILDS -f ${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile ${make_params[@]}"
 make -j$PARALLEL_BUILDS -f "${ROOT_DIR}/share/coreneuron/nrnivmodl_core_makefile" "${make_params[@]}"
-
 echo "[INFO] MOD files built successfully for CoreNEURON"
