@@ -2,6 +2,9 @@
 
 :: install all dependencies
 
+:: upgrade choco
+choco upgrade chocolatey
+
 :: install python
 start /wait msiexec /i python-2.7.msi /norestart /qn TARGETDIR="C:\Python27" ADDLOCAL=ALL || goto :error
 python-3.5.exe /passive Include_pip=1 Include_test=0 PrependPath=1 DefaultJustForMeTargetDir=C:\Python35 || goto :error
