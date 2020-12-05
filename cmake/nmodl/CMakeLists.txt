@@ -55,6 +55,38 @@ find_package(FLEX 2.6 REQUIRED)
 find_package(BISON 3.0 REQUIRED)
 
 # =============================================================================
+# Include cmake modules
+# =============================================================================
+list(APPEND CMAKE_MODULE_PATH ${NMODL_PROJECT_SOURCE_DIR}/cmake)
+include(Catch)
+include(ClangTidyHelper)
+include(CompilerHelper)
+include(FindPythonModule)
+include(FlexHelper)
+include(GitRevision)
+include(PythonLinkHelper)
+include(RpathHelper)
+include(ExternalProjectHelper)
+
+# =============================================================================
+# Initialize external libraries as submodule
+# =============================================================================
+set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/ext")
+add_external_project(fmt OFF)
+add_external_project(spdlog OFF)
+add_external_project(pybind11)
+add_external_project(cli11 OFF)
+add_external_project(eigen OFF)
+
+add_subdirectory(${THIRD_PARTY_DIRECTORY}/fmt EXCLUDE_FROM_ALL)
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+include_directories(
+  SYSTEM ${THIRD_PARTY_DIRECTORY} ${THIRD_PARTY_DIRECTORY}/catch/include
+  ${THIRD_PARTY_DIRECTORY}/fmt/include ${THIRD_PARTY_DIRECTORY}/spdlog/include
+  ${THIRD_PARTY_DIRECTORY}/cli11/include)
+
+# =============================================================================
 # HPC Coding Conventions
 # =============================================================================
 set(NMODL_ClangFormat_EXCLUDES_RE
@@ -66,7 +98,12 @@ set(NMODL_CMakeFormat_EXCLUDES_RE
 set(NMODL_ClangFormat_DEPENDENCIES
     pyastgen parser-gen
     CACHE STRING "list of CMake targets to build before formatting C++ code" FORCE)
+
+# initialize submodule of coding conventions under cmake
+set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/cmake")
+add_external_project(hpc-coding-conventions OFF)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
+include(FindClangFormat)
 
 # =============================================================================
 # Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)
@@ -84,20 +121,6 @@ add_custom_target(
   &&
   clean_ipynb
   "${CMAKE_SOURCE_DIR}/docs/notebooks/*.ipynb")
-
-# =============================================================================
-# Include cmake modules
-# =============================================================================
-list(APPEND CMAKE_MODULE_PATH ${NMODL_PROJECT_SOURCE_DIR}/cmake)
-include(Catch)
-include(ClangTidyHelper)
-include(CompilerHelper)
-include(FindClangFormat)
-include(FindPythonModule)
-include(FlexHelper)
-include(GitRevision)
-include(PythonLinkHelper)
-include(RpathHelper)
 
 # =============================================================================
 # Adjust install prefix for wheel
@@ -129,27 +152,6 @@ endif()
 
 include_directories(${NMODL_PROJECT_SOURCE_DIR} ${NMODL_PROJECT_SOURCE_DIR}/src
                     ${PROJECT_BINARY_DIR}/src)
-include_directories(
-  SYSTEM ${NMODL_PROJECT_SOURCE_DIR}/ext ${NMODL_PROJECT_SOURCE_DIR}/ext/fmt/include
-  ${NMODL_PROJECT_SOURCE_DIR}/ext/spdlog/include)
-
-# =============================================================================
-# Include pybind11
-# =============================================================================
-message(STATUS "INCLUDING PYBIND11")
-add_subdirectory(ext/pybind11)
-
-# =============================================================================
-# Include fmt library
-# =============================================================================
-message(STATUS "INCLUDING FMT")
-add_subdirectory(${NMODL_PROJECT_SOURCE_DIR}/ext/fmt EXCLUDE_FROM_ALL)
-set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-# =============================================================================
-# Include path from external libraries
-# =============================================================================
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/cli11/include)
 
 # generate file with version number from git and nrnunits.lib file path
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config/config.cpp.in
