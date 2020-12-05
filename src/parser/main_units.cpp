@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "config/config.h"
 #include "parser/unit_driver.hpp"

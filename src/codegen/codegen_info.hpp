@@ -58,7 +58,7 @@ struct Ion {
     Ion() = delete;
 
     Ion(std::string name)
-        : name(name) {}
+        : name(std::move(name)) {}
 
     /**
      * Check if variable name is a ionic current
@@ -67,7 +67,7 @@ struct Ion {
      * If it is read variable then also get NRNCURIN flag.
      * If it is write variables then also get NRNCUROUT flag.
      */
-    bool is_ionic_current(std::string text) const {
+    bool is_ionic_current(const std::string& text) const {
         return text == ("i" + name);
     }
 
@@ -76,7 +76,7 @@ struct Ion {
      *
      * This is equivalent of IONIN flag in mod2c.
      */
-    bool is_intra_cell_conc(std::string text) const {
+    bool is_intra_cell_conc(const std::string& text) const {
         return text == (name + "i");
     }
 
@@ -85,7 +85,7 @@ struct Ion {
      *
      * This is equivalent of IONOUT flag in mod2c.
      */
-    bool is_extra_cell_conc(std::string text) const {
+    bool is_extra_cell_conc(const std::string& text) const {
         return text == (name + "o");
     }
 
@@ -94,12 +94,12 @@ struct Ion {
      *
      * This is equivalent of IONEREV flag in mod2c.
      */
-    bool is_rev_potential(std::string text) const {
+    bool is_rev_potential(const std::string& text) const {
         return text == ("e" + name);
     }
 
     /// check if it is either internal or external concentration
-    bool is_ionic_conc(std::string text) const {
+    bool is_ionic_conc(const std::string& text) const {
         return is_intra_cell_conc(text) || is_extra_cell_conc(text);
     }
 };
@@ -241,34 +241,34 @@ struct CodegenInfo {
     int num_equations = 0;
 
     /// derivative block
-    ast::BreakpointBlock* breakpoint_node = nullptr;
+    const ast::BreakpointBlock* breakpoint_node = nullptr;
 
     /// nrn_state block
-    ast::NrnStateBlock* nrn_state_block = nullptr;
+    const ast::NrnStateBlock* nrn_state_block = nullptr;
 
     /// net receive block for point process
-    ast::NetReceiveBlock* net_receive_node = nullptr;
+    const ast::NetReceiveBlock* net_receive_node = nullptr;
 
     /// number of arguments to net_receive block
     int num_net_receive_parameters = 0;
 
     /// initial block within net receive block
-    ast::InitialBlock* net_receive_initial_node = nullptr;
+    const ast::InitialBlock* net_receive_initial_node = nullptr;
 
     /// initial block
-    ast::InitialBlock* initial_node = nullptr;
+    const ast::InitialBlock* initial_node = nullptr;
 
     /// all procedures defined in the mod file
-    std::vector<ast::ProcedureBlock*> procedures;
+    std::vector<const ast::ProcedureBlock*> procedures;
 
     /// derivimplicit callbacks need to be emited
-    std::vector<ast::DerivimplicitCallback*> derivimplicit_callbacks;
+    std::vector<const ast::DerivimplicitCallback*> derivimplicit_callbacks;
 
     /// all functions defined in the mod file
-    std::vector<ast::FunctionBlock*> functions;
+    std::vector<const ast::FunctionBlock*> functions;
 
     /// all factors defined in the mod file
-    std::vector<ast::FactorDef*> factor_definitions;
+    std::vector<const ast::FactorDef*> factor_definitions;
 
     /// ions used in the mod file
     std::vector<Ion> ions;
@@ -324,7 +324,7 @@ struct CodegenInfo {
     std::vector<SymbolType> table_assigned_variables;
 
     /// function or procedures with table statement
-    std::vector<ast::Block*> functions_with_table;
+    std::vector<const ast::Block*> functions_with_table;
 
     /// represent conductance statements used in mod file
     std::vector<Conductance> conductances;
@@ -342,7 +342,7 @@ struct CodegenInfo {
     std::vector<ast::Node*> top_verbatim_blocks;
 
     /// all watch statements
-    std::vector<ast::WatchStatement*> watch_statements;
+    std::vector<const ast::WatchStatement*> watch_statements;
 
     /// true if eigen newton solver is used
     bool eigen_newton_solver_exist = false;

@@ -5,10 +5,9 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <fstream>
 #include <sstream>
 
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "config/config.h"
 #include "lexer/c11_lexer.hpp"

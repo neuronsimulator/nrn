@@ -45,7 +45,7 @@ using nmodl::utils::UseNumbersInString;
 
 const std::regex regex_special_chars{R"([-[\]{}()*+?.,\^$|#\s])"};
 
-void CodegenCVisitor::visit_string(String& node) {
+void CodegenCVisitor::visit_string(const String& node) {
     if (!codegen) {
         return;
     }
@@ -57,12 +57,12 @@ void CodegenCVisitor::visit_string(String& node) {
 }
 
 
-void CodegenCVisitor::visit_integer(Integer& node) {
+void CodegenCVisitor::visit_integer(const Integer& node) {
     if (!codegen) {
         return;
     }
     const auto& macro = node.get_macro();
-    auto value = node.get_value();
+    const auto& value = node.get_value();
     if (macro) {
         macro->accept(*this);
     } else {
@@ -71,7 +71,7 @@ void CodegenCVisitor::visit_integer(Integer& node) {
 }
 
 
-void CodegenCVisitor::visit_float(Float& node) {
+void CodegenCVisitor::visit_float(const Float& node) {
     if (!codegen) {
         return;
     }
@@ -79,7 +79,7 @@ void CodegenCVisitor::visit_float(Float& node) {
 }
 
 
-void CodegenCVisitor::visit_double(Double& node) {
+void CodegenCVisitor::visit_double(const Double& node) {
     if (!codegen) {
         return;
     }
@@ -87,7 +87,7 @@ void CodegenCVisitor::visit_double(Double& node) {
 }
 
 
-void CodegenCVisitor::visit_boolean(Boolean& node) {
+void CodegenCVisitor::visit_boolean(const Boolean& node) {
     if (!codegen) {
         return;
     }
@@ -95,7 +95,7 @@ void CodegenCVisitor::visit_boolean(Boolean& node) {
 }
 
 
-void CodegenCVisitor::visit_name(Name& node) {
+void CodegenCVisitor::visit_name(const Name& node) {
     if (!codegen) {
         return;
     }
@@ -103,12 +103,12 @@ void CodegenCVisitor::visit_name(Name& node) {
 }
 
 
-void CodegenCVisitor::visit_unit(ast::Unit& node) {
+void CodegenCVisitor::visit_unit(const ast::Unit& node) {
     // do not print units
 }
 
 
-void CodegenCVisitor::visit_prime_name(PrimeName& node) {
+void CodegenCVisitor::visit_prime_name(const PrimeName& node) {
     throw std::runtime_error("PRIME encountered during code generation, ODEs not solved?");
 }
 
@@ -116,7 +116,7 @@ void CodegenCVisitor::visit_prime_name(PrimeName& node) {
 /**
  * \todo : Validate how @ is being handled in neuron implementation
  */
-void CodegenCVisitor::visit_var_name(VarName& node) {
+void CodegenCVisitor::visit_var_name(const VarName& node) {
     if (!codegen) {
         return;
     }
@@ -136,7 +136,7 @@ void CodegenCVisitor::visit_var_name(VarName& node) {
 }
 
 
-void CodegenCVisitor::visit_indexed_name(IndexedName& node) {
+void CodegenCVisitor::visit_indexed_name(const IndexedName& node) {
     if (!codegen) {
         return;
     }
@@ -147,7 +147,7 @@ void CodegenCVisitor::visit_indexed_name(IndexedName& node) {
 }
 
 
-void CodegenCVisitor::visit_local_list_statement(LocalListStatement& node) {
+void CodegenCVisitor::visit_local_list_statement(const LocalListStatement& node) {
     if (!codegen) {
         return;
     }
@@ -157,7 +157,7 @@ void CodegenCVisitor::visit_local_list_statement(LocalListStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_if_statement(IfStatement& node) {
+void CodegenCVisitor::visit_if_statement(const IfStatement& node) {
     if (!codegen) {
         return;
     }
@@ -173,7 +173,7 @@ void CodegenCVisitor::visit_if_statement(IfStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_else_if_statement(ElseIfStatement& node) {
+void CodegenCVisitor::visit_else_if_statement(const ElseIfStatement& node) {
     if (!codegen) {
         return;
     }
@@ -184,7 +184,7 @@ void CodegenCVisitor::visit_else_if_statement(ElseIfStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_else_statement(ElseStatement& node) {
+void CodegenCVisitor::visit_else_statement(const ElseStatement& node) {
     if (!codegen) {
         return;
     }
@@ -193,7 +193,7 @@ void CodegenCVisitor::visit_else_statement(ElseStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_while_statement(WhileStatement& node) {
+void CodegenCVisitor::visit_while_statement(const WhileStatement& node) {
     printer->add_text("while (");
     node.get_condition()->accept(*this);
     printer->add_text(") ");
@@ -201,7 +201,7 @@ void CodegenCVisitor::visit_while_statement(WhileStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_from_statement(ast::FromStatement& node) {
+void CodegenCVisitor::visit_from_statement(const ast::FromStatement& node) {
     if (!codegen) {
         return;
     }
@@ -225,7 +225,7 @@ void CodegenCVisitor::visit_from_statement(ast::FromStatement& node) {
 }
 
 
-void CodegenCVisitor::visit_paren_expression(ParenExpression& node) {
+void CodegenCVisitor::visit_paren_expression(const ParenExpression& node) {
     if (!codegen) {
         return;
     }
@@ -235,13 +235,13 @@ void CodegenCVisitor::visit_paren_expression(ParenExpression& node) {
 }
 
 
-void CodegenCVisitor::visit_binary_expression(BinaryExpression& node) {
+void CodegenCVisitor::visit_binary_expression(const BinaryExpression& node) {
     if (!codegen) {
         return;
     }
     auto op = node.get_op().eval();
-    auto lhs = node.get_lhs();
-    auto rhs = node.get_rhs();
+    const auto& lhs = node.get_lhs();
+    const auto& rhs = node.get_rhs();
     if (op == "^") {
         printer->add_text("pow(");
         lhs->accept(*this);
@@ -256,7 +256,7 @@ void CodegenCVisitor::visit_binary_expression(BinaryExpression& node) {
 }
 
 
-void CodegenCVisitor::visit_binary_operator(BinaryOperator& node) {
+void CodegenCVisitor::visit_binary_operator(const BinaryOperator& node) {
     if (!codegen) {
         return;
     }
@@ -264,7 +264,7 @@ void CodegenCVisitor::visit_binary_operator(BinaryOperator& node) {
 }
 
 
-void CodegenCVisitor::visit_unary_operator(UnaryOperator& node) {
+void CodegenCVisitor::visit_unary_operator(const UnaryOperator& node) {
     if (!codegen) {
         return;
     }
@@ -277,7 +277,7 @@ void CodegenCVisitor::visit_unary_operator(UnaryOperator& node) {
  * Sometime we want to analyse ast nodes even if code generation is
  * false. Hence we visit children even if code generation is false.
  */
-void CodegenCVisitor::visit_statement_block(StatementBlock& node) {
+void CodegenCVisitor::visit_statement_block(const StatementBlock& node) {
     if (!codegen) {
         node.visit_children(*this);
         return;
@@ -286,7 +286,7 @@ void CodegenCVisitor::visit_statement_block(StatementBlock& node) {
 }
 
 
-void CodegenCVisitor::visit_function_call(FunctionCall& node) {
+void CodegenCVisitor::visit_function_call(const FunctionCall& node) {
     if (!codegen) {
         return;
     }
@@ -294,7 +294,7 @@ void CodegenCVisitor::visit_function_call(FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::visit_verbatim(Verbatim& node) {
+void CodegenCVisitor::visit_verbatim(const Verbatim& node) {
     if (!codegen) {
         return;
     }
@@ -1279,13 +1279,13 @@ std::string CodegenCVisitor::k_const() {
 /****************************************************************************************/
 
 
-void CodegenCVisitor::visit_watch_statement(ast::WatchStatement& node) {
+void CodegenCVisitor::visit_watch_statement(const ast::WatchStatement& node) {
     printer->add_text("nrn_watch_activate(inst, id, pnodecount, {}, v, watch_remove)"_format(
         current_watch_statement++));
 }
 
 
-void CodegenCVisitor::print_statement_block(ast::StatementBlock& node,
+void CodegenCVisitor::print_statement_block(const ast::StatementBlock& node,
                                             bool open_brace,
                                             bool close_brace) {
     if (open_brace) {
@@ -1314,7 +1314,7 @@ void CodegenCVisitor::print_statement_block(ast::StatementBlock& node,
 }
 
 
-void CodegenCVisitor::print_function_call(FunctionCall& node) {
+void CodegenCVisitor::print_function_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     auto function_name = name;
     if (defined_method(name)) {
@@ -1424,7 +1424,7 @@ void CodegenCVisitor::print_function_prototypes() {
 }
 
 
-static TableStatement* get_table_statement(ast::Block& node) {
+static const TableStatement* get_table_statement(const ast::Block& node) {
     // TableStatementVisitor v;
 
     const auto& table_statements = collect_nodes(node, {AstNodeType::TABLE_STATEMENT});
@@ -1435,11 +1435,11 @@ static TableStatement* get_table_statement(ast::Block& node) {
                                                                  table_statements.size());
         throw std::runtime_error(message);
     }
-    return dynamic_cast<TableStatement*>(table_statements.front().get());
+    return dynamic_cast<const TableStatement*>(table_statements.front().get());
 }
 
 
-void CodegenCVisitor::print_table_check_function(Block& node) {
+void CodegenCVisitor::print_table_check_function(const Block& node) {
     auto statement = get_table_statement(node);
     auto table_variables = statement->get_table_vars();
     auto depend_variables = statement->get_depend_vars();
@@ -1521,7 +1521,7 @@ void CodegenCVisitor::print_table_check_function(Block& node) {
 }
 
 
-void CodegenCVisitor::print_table_replacement_function(ast::Block& node) {
+void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
     auto name = node.get_node_name();
     auto statement = get_table_statement(node);
     auto table_variables = statement->get_table_vars();
@@ -1607,7 +1607,7 @@ void CodegenCVisitor::print_check_table_thread_function() {
 }
 
 
-void CodegenCVisitor::print_function_or_procedure(ast::Block& node, const std::string& name) {
+void CodegenCVisitor::print_function_or_procedure(const ast::Block& node, const std::string& name) {
     printer->add_newline(2);
     print_function_declaration(node, name);
     printer->add_text(" ");
@@ -1627,7 +1627,7 @@ void CodegenCVisitor::print_function_or_procedure(ast::Block& node, const std::s
 }
 
 
-void CodegenCVisitor::print_function_procedure_helper(ast::Block& node) {
+void CodegenCVisitor::print_function_procedure_helper(const ast::Block& node) {
     codegen = true;
     auto name = node.get_node_name();
 
@@ -1644,12 +1644,12 @@ void CodegenCVisitor::print_function_procedure_helper(ast::Block& node) {
 }
 
 
-void CodegenCVisitor::print_procedure(ast::ProcedureBlock& node) {
+void CodegenCVisitor::print_procedure(const ast::ProcedureBlock& node) {
     print_function_procedure_helper(node);
 }
 
 
-void CodegenCVisitor::print_function(ast::FunctionBlock& node) {
+void CodegenCVisitor::print_function(const ast::FunctionBlock& node) {
     auto name = node.get_node_name();
 
     // name of return variable
@@ -1679,7 +1679,7 @@ std::string CodegenCVisitor::find_var_unique_name(const std::string& original_na
     return unique_name;
 }
 
-void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock& node) {
+void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) {
     // solution vector to store copy of state vars for Newton solver
     printer->add_newline();
 
@@ -1751,7 +1751,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBloc
     printer->add_line("newton_functor.finalize();");
 }
 
-void CodegenCVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock& node) {
+void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) {
     printer->add_newline();
 
     // Check if there is a variable defined in the mod file as X, J, Jm or F and if yes
@@ -3187,7 +3187,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
 }
 
 
-void CodegenCVisitor::print_initial_block(InitialBlock* node) {
+void CodegenCVisitor::print_initial_block(const InitialBlock* node) {
     if (info.artificial_cell) {
         printer->add_line("double v = 0.0;");
     } else {
@@ -3457,7 +3457,7 @@ void CodegenCVisitor::print_watch_check() {
 }
 
 
-void CodegenCVisitor::print_net_receive_common_code(Block& node, bool need_mech_inst) {
+void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need_mech_inst) {
     printer->add_line("int tid = pnt->_tid;");
     printer->add_line("int id = pnt->_i_instance;");
     printer->add_line("double v = 0;");
@@ -3495,7 +3495,7 @@ void CodegenCVisitor::print_net_receive_common_code(Block& node, bool need_mech_
 }
 
 
-void CodegenCVisitor::print_net_send_call(FunctionCall& node) {
+void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
     auto arguments = node.get_arguments();
     auto tqitem = get_variable_name("tqitem");
     std::string weight_index = "weight_index";
@@ -3527,7 +3527,7 @@ void CodegenCVisitor::print_net_send_call(FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::print_net_move_call(FunctionCall& node) {
+void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
     if (!printing_net_receive) {
         std::cout << "Error : net_move only allowed in NET_RECEIVE block" << std::endl;
         abort();
@@ -3555,8 +3555,8 @@ void CodegenCVisitor::print_net_move_call(FunctionCall& node) {
 }
 
 
-void CodegenCVisitor::print_net_event_call(FunctionCall& node) {
-    auto arguments = node.get_arguments();
+void CodegenCVisitor::print_net_event_call(const FunctionCall& node) {
+    const auto& arguments = node.get_arguments();
     if (info.artificial_cell) {
         printer->add_text("net_event(pnt, ");
         print_vector_elements(arguments, ", ");
@@ -3594,7 +3594,7 @@ void CodegenCVisitor::print_net_event_call(FunctionCall& node) {
  *
  * So, the `R` in AST needs to be renamed with `(*R)`.
  */
-static void rename_net_receive_arguments(ast::NetReceiveBlock& net_receive_node, ast::Node& node) {
+static void rename_net_receive_arguments(const ast::NetReceiveBlock& net_receive_node, const ast::Node& node) {
     auto parameters = net_receive_node.get_parameters();
     for (auto& parameter: parameters) {
         auto name = parameter->get_node_name();
@@ -3757,7 +3757,7 @@ void CodegenCVisitor::print_net_send_buffering() {
 }
 
 
-void CodegenCVisitor::visit_for_netcon(ast::ForNetcon& node) {
+void CodegenCVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     // For_netcon should take the same arguments as net_receive and apply the operations
     // in the block to the weights of the netcons. Since all the weights are on the same vector,
     // weights, we have a mask of operations that we apply iteratively, advancing the offset
@@ -3973,7 +3973,7 @@ void CodegenCVisitor::print_newtonspace_transfer_to_device() const {
 }
 
 
-void CodegenCVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& node) {
+void CodegenCVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) {
     if (!codegen) {
         return;
     }
@@ -3992,7 +3992,7 @@ void CodegenCVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& n
     printer->add_line(statement);
 }
 
-void CodegenCVisitor::visit_solution_expression(SolutionExpression& node) {
+void CodegenCVisitor::visit_solution_expression(const SolutionExpression& node) {
     auto block = node.get_node_to_solve().get();
     if (block->is_statement_block()) {
         auto statement_block = dynamic_cast<ast::StatementBlock*>(block);
@@ -4070,7 +4070,7 @@ void CodegenCVisitor::print_nrn_state() {
 /****************************************************************************************/
 
 
-void CodegenCVisitor::print_nrn_current(BreakpointBlock& node) {
+void CodegenCVisitor::print_nrn_current(const BreakpointBlock& node) {
     auto args = internal_method_parameters();
     const auto& block = node.get_statement_block();
     printer->add_newline(2);
@@ -4087,7 +4087,7 @@ void CodegenCVisitor::print_nrn_current(BreakpointBlock& node) {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_conductance_kernel(BreakpointBlock& node) {
+void CodegenCVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& node) {
     const auto& block = node.get_statement_block();
     print_statement_block(*block, false, false);
     if (!info.currents.empty()) {
@@ -4154,7 +4154,7 @@ void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
 }
 
 
-void CodegenCVisitor::print_nrn_cur_kernel(BreakpointBlock& node) {
+void CodegenCVisitor::print_nrn_cur_kernel(const BreakpointBlock& node) {
     printer->add_line("int node_id = node_index[id];");
     printer->add_line("double v = voltage[node_id];");
     if (ion_variable_struct_required()) {
@@ -4358,7 +4358,7 @@ void CodegenCVisitor::set_codegen_global_variables(std::vector<SymbolType>& glob
 }
 
 
-void CodegenCVisitor::setup(Program& node) {
+void CodegenCVisitor::setup(const Program& node) {
     program_symtab = node.get_symbol_table();
 
     CodegenHelperVisitor v;
@@ -4378,7 +4378,7 @@ void CodegenCVisitor::setup(Program& node) {
 }
 
 
-void CodegenCVisitor::visit_program(Program& node) {
+void CodegenCVisitor::visit_program(const Program& node) {
     setup(node);
     print_codegen_routines();
     print_wrapper_routines();

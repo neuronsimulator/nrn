@@ -26,13 +26,13 @@ Term::Term(const std::string& expr, const std::string& state)
 }
 
 
-void Term::print() {
+void Term::print() const {
     std::cout << "Term [expr, deriv, a, b] : ";
     std::cout << expr << ", " << deriv << ", " << a << ", " << b << std::endl;
 }
 
 
-void DiffEqContext::print() {
+void DiffEqContext::print() const {
     std::cout << "-----------------DiffEq Context----------------" << std::endl;
     std::cout << "deriv_invalid = " << deriv_invalid << std::endl;
     std::cout << "eqn_invalid   = " << eqn_invalid << std::endl;
@@ -44,7 +44,7 @@ void DiffEqContext::print() {
 }
 
 
-std::string DiffEqContext::cvode_deriv() {
+std::string DiffEqContext::cvode_deriv() const {
     std::string result;
     if (!deriv_invalid) {
         result = solution.deriv;
@@ -53,7 +53,7 @@ std::string DiffEqContext::cvode_deriv() {
 }
 
 
-std::string DiffEqContext::cvode_eqnrhs() {
+std::string DiffEqContext::cvode_eqnrhs() const {
     std::string result;
     if (!eqn_invalid) {
         result = solution.b;
@@ -67,7 +67,7 @@ std::string DiffEqContext::cvode_eqnrhs() {
  * expression but with replacing every state variable with (state+0.001). In order
  * to do this we scan original expression and build new by replacing only state variable.
  */
-std::string DiffEqContext::get_expr_for_nonlinear() {
+std::string DiffEqContext::get_expr_for_nonlinear() const {
     std::string expression;
 
     /// build lexer instance
@@ -96,7 +96,7 @@ std::string DiffEqContext::get_expr_for_nonlinear() {
 /**
  * Return solution for non-cnexp method and when equation is linear
  */
-std::string DiffEqContext::get_cvode_linear_diffeq() {
+std::string DiffEqContext::get_cvode_linear_diffeq() const {
     auto result = "D" + state + " = " + "D" + state + "/(1.0-dt*(" + solution.deriv + "))";
     return result;
 }
@@ -105,7 +105,7 @@ std::string DiffEqContext::get_cvode_linear_diffeq() {
 /**
  * Return solution for non-cnexp method and when equation is non-linear.
  */
-std::string DiffEqContext::get_cvode_nonlinear_diffeq() {
+std::string DiffEqContext::get_cvode_nonlinear_diffeq() const {
     std::string expr = get_expr_for_nonlinear();
     std::string sol = "D" + state + " = " + "D" + state + "/(1.0-dt*(";
     sol += "((" + expr + ")-(" + solution.expr + "))/0.001))";
@@ -116,7 +116,7 @@ std::string DiffEqContext::get_cvode_nonlinear_diffeq() {
 /**
  * Return solution for cnexp method
  */
-std::string DiffEqContext::get_cnexp_solution() {
+std::string DiffEqContext::get_cnexp_solution() const {
     auto a = cvode_deriv();
     auto b = cvode_eqnrhs();
     /**
@@ -139,7 +139,7 @@ std::string DiffEqContext::get_cnexp_solution() {
 /**
  * Return solution for euler method
  */
-std::string DiffEqContext::get_euler_solution() {
+std::string DiffEqContext::get_euler_solution() const {
     return state + " = " + state + "+dt*(" + rhs + ")";
 }
 
@@ -147,7 +147,7 @@ std::string DiffEqContext::get_euler_solution() {
 /**
  * Return solution for non-cnexp method
  */
-std::string DiffEqContext::get_non_cnexp_solution() {
+std::string DiffEqContext::get_non_cnexp_solution() const {
     std::string result;
     if (!deriv_invalid) {
         result = get_cvode_linear_diffeq();

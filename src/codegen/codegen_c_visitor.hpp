@@ -104,7 +104,7 @@ enum class MemberType {
  */
 struct IndexVariableInfo {
     /// symbol for the variable
-    std::shared_ptr<symtab::Symbol> symbol;
+    const std::shared_ptr<symtab::Symbol> symbol;
 
     /// if variable reside in vdata field of NrnThread
     /// typically true for bbcore pointer
@@ -121,11 +121,11 @@ struct IndexVariableInfo {
     /// if the variable is qualified as constant (this is property of IndexVariable)
     bool is_constant = false;
 
-    IndexVariableInfo(const std::shared_ptr<symtab::Symbol>& symbol,
+    IndexVariableInfo(std::shared_ptr<symtab::Symbol> symbol,
                       bool is_vdata = false,
                       bool is_index = false,
                       bool is_integer = false)
-        : symbol(symbol)
+        : symbol(std::move(symbol))
         , is_vdata(is_vdata)
         , is_index(is_index)
         , is_integer(is_integer) {}
@@ -185,7 +185,7 @@ using printer::CodePrinter;
  *    error checking. For example, see netstim.mod where we
  *    have removed return from verbatim block.
  */
-class CodegenCVisitor: public visitor::AstVisitor {
+class CodegenCVisitor: public visitor::ConstAstVisitor {
   protected:
     using SymbolType = std::shared_ptr<symtab::Symbol>;
 
@@ -723,7 +723,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param open_brace  Print an opening brace if \c false
      * \param close_brace Print a closing brace if \c true
      */
-    void print_statement_block(ast::StatementBlock& node,
+    void print_statement_block(const ast::StatementBlock& node,
                                bool open_brace = true,
                                bool close_brace = true);
 
@@ -1220,28 +1220,28 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print call to internal or external function
      * \param node The AST node representing a function call
      */
-    void print_function_call(ast::FunctionCall& node);
+    void print_function_call(const ast::FunctionCall& node);
 
 
     /**
      * Print call to \c net\_send
      * \param node The AST node representing the function call
      */
-    void print_net_send_call(ast::FunctionCall& node);
+    void print_net_send_call(const ast::FunctionCall& node);
 
 
     /**
      * Print call to net\_move
      * \param node The AST node representing the function call
      */
-    void print_net_move_call(ast::FunctionCall& node);
+    void print_net_move_call(const ast::FunctionCall& node);
 
 
     /**
      * Print call to net\_event
      * \param node The AST node representing the function call
      */
-    void print_net_event_call(ast::FunctionCall& node);
+    void print_net_event_call(const ast::FunctionCall& node);
 
 
     /**
@@ -1337,14 +1337,14 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param node the AST node representing the function or procedure in NMODL
      * \param name the name of the function or procedure
      */
-    void print_function_or_procedure(ast::Block& node, const std::string& name);
+    void print_function_or_procedure(const ast::Block& node, const std::string& name);
 
 
     /**
      * Common helper function to help printing function or procedure blocks
      * \param node the AST node representing the function or procedure in NMODL
      */
-    void print_function_procedure_helper(ast::Block& node);
+    void print_function_procedure_helper(const ast::Block& node);
 
     /**
      * Print thread related memory allocation and deallocation callbacks
@@ -1375,7 +1375,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      *
      * \param node The AST Node representing a NMODL initial block
      */
-    void print_initial_block(ast::InitialBlock* node);
+    void print_initial_block(const ast::InitialBlock* node);
 
 
     /**
@@ -1391,7 +1391,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param need_mech_inst \c true if a local \c inst variable needs to be defined in generated
      * code
      */
-    void print_net_receive_common_code(ast::Block& node, bool need_mech_inst = true);
+    void print_net_receive_common_code(const ast::Block& node, bool need_mech_inst = true);
 
 
     /**
@@ -1506,7 +1506,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print main body of nrn_cur function
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_cur_kernel(ast::BreakpointBlock& node);
+    void print_nrn_cur_kernel(const ast::BreakpointBlock& node);
 
 
     /**
@@ -1517,7 +1517,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      *
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_cur_conductance_kernel(ast::BreakpointBlock& node);
+    void print_nrn_cur_conductance_kernel(const ast::BreakpointBlock& node);
 
 
     /**
@@ -1535,7 +1535,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \note nrn_cur_kernel will have two calls to nrn_current if no conductance keywords specified
      * \param node the AST node representing the NMODL breakpoint block
      */
-    void print_nrn_current(ast::BreakpointBlock& node);
+    void print_nrn_current(const ast::BreakpointBlock& node);
 
 
     /**
@@ -1680,14 +1680,14 @@ class CodegenCVisitor: public visitor::AstVisitor {
     CodegenCVisitor(const std::string& mod_filename,
                     const std::string& output_dir,
                     LayoutType layout,
-                    const std::string& float_type,
+                    std::string float_type,
                     const bool optimize_ionvar_copies,
                     const std::string& extension = ".cpp")
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
         , mod_filename(mod_filename)
         , layout(layout)
-        , float_type(float_type)
+        , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
     /**
@@ -1802,28 +1802,28 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Print \c check\_function() for functions or procedure using table
      * \param node The AST node representing a function or procedure block
      */
-    void print_table_check_function(ast::Block& node);
+    void print_table_check_function(const ast::Block& node);
 
 
     /**
      * Print replacement function for function or procedure using table
      * \param node The AST node representing a function or procedure block
      */
-    void print_table_replacement_function(ast::Block& node);
+    void print_table_replacement_function(const ast::Block& node);
 
 
     /**
      * Print NMODL function in target backend code
      * \param node
      */
-    void print_function(ast::FunctionBlock& node);
+    void print_function(const ast::FunctionBlock& node);
 
 
     /**
      * Print NMODL procedure in target backend code
      * \param node
      */
-    virtual void print_procedure(ast::ProcedureBlock& node);
+    virtual void print_procedure(const ast::ProcedureBlock& node);
 
 
     /** Setup the target backend code generator
@@ -1831,7 +1831,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * Typically called from within \c visit\_program but may be called from
      * specialized targets to setup this Code generator as fallback.
      */
-    void setup(ast::Program& node);
+    void setup(const ast::Program& node);
 
 
     /**
@@ -1848,36 +1848,36 @@ class CodegenCVisitor: public visitor::AstVisitor {
      */
     std::string find_var_unique_name(const std::string& original_name) const;
 
-    void visit_binary_expression(ast::BinaryExpression& node) override;
-    void visit_binary_operator(ast::BinaryOperator& node) override;
-    void visit_boolean(ast::Boolean& node) override;
-    void visit_double(ast::Double& node) override;
-    void visit_else_if_statement(ast::ElseIfStatement& node) override;
-    void visit_else_statement(ast::ElseStatement& node) override;
-    void visit_float(ast::Float& node) override;
-    void visit_from_statement(ast::FromStatement& node) override;
-    void visit_function_call(ast::FunctionCall& node) override;
-    void visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock& node) override;
-    void visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock& node) override;
-    void visit_if_statement(ast::IfStatement& node) override;
-    void visit_indexed_name(ast::IndexedName& node) override;
-    void visit_integer(ast::Integer& node) override;
-    void visit_local_list_statement(ast::LocalListStatement& node) override;
-    void visit_name(ast::Name& node) override;
-    void visit_paren_expression(ast::ParenExpression& node) override;
-    void visit_prime_name(ast::PrimeName& node) override;
-    void visit_program(ast::Program& node) override;
-    void visit_statement_block(ast::StatementBlock& node) override;
-    void visit_string(ast::String& node) override;
-    void visit_solution_expression(ast::SolutionExpression& node) override;
-    void visit_unary_operator(ast::UnaryOperator& node) override;
-    void visit_unit(ast::Unit& node) override;
-    void visit_var_name(ast::VarName& node) override;
-    void visit_verbatim(ast::Verbatim& node) override;
-    void visit_watch_statement(ast::WatchStatement& node) override;
-    void visit_while_statement(ast::WhileStatement& node) override;
-    void visit_derivimplicit_callback(ast::DerivimplicitCallback& node) override;
-    void visit_for_netcon(ast::ForNetcon& node) override;
+    void visit_binary_expression(const ast::BinaryExpression& node) override;
+    void visit_binary_operator(const ast::BinaryOperator& node) override;
+    void visit_boolean(const ast::Boolean& node) override;
+    void visit_double(const ast::Double& node) override;
+    void visit_else_if_statement(const ast::ElseIfStatement& node) override;
+    void visit_else_statement(const ast::ElseStatement& node) override;
+    void visit_float(const ast::Float& node) override;
+    void visit_from_statement(const ast::FromStatement& node) override;
+    void visit_function_call(const ast::FunctionCall& node) override;
+    void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
+    void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
+    void visit_if_statement(const ast::IfStatement& node) override;
+    void visit_indexed_name(const ast::IndexedName& node) override;
+    void visit_integer(const ast::Integer& node) override;
+    void visit_local_list_statement(const ast::LocalListStatement& node) override;
+    void visit_name(const ast::Name& node) override;
+    void visit_paren_expression(const ast::ParenExpression& node) override;
+    void visit_prime_name(const ast::PrimeName& node) override;
+    void visit_program(const ast::Program& node) override;
+    void visit_statement_block(const ast::StatementBlock& node) override;
+    void visit_string(const ast::String& node) override;
+    void visit_solution_expression(const ast::SolutionExpression& node) override;
+    void visit_unary_operator(const ast::UnaryOperator& node) override;
+    void visit_unit(const ast::Unit& node) override;
+    void visit_var_name(const ast::VarName& node) override;
+    void visit_verbatim(const ast::Verbatim& node) override;
+    void visit_watch_statement(const ast::WatchStatement& node) override;
+    void visit_while_statement(const ast::WhileStatement& node) override;
+    void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;
+    void visit_for_netcon(const ast::ForNetcon& node) override;
 };
 
 

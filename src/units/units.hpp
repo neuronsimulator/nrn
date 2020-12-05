@@ -1,5 +1,3 @@
-#include <utility>
-
 /*************************************************************************
  * Copyright (C) 2018-2019 Blue Brain Project
  *
@@ -152,7 +150,7 @@ class Unit {
     double parse_double(std::string double_string);
 
     /// Getter for the vector of nominators of the Unit
-    std::vector<std::string> get_nominator_unit() const {
+    const std::vector<std::string>& get_nominator_unit() const noexcept {
         return nominator;
     }
 

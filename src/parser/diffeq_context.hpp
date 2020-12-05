@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 
 namespace nmodl {
 namespace parser {
@@ -38,26 +39,26 @@ struct Term {
     Term(const std::string& expr, const std::string& state);
 
     Term(std::string expr, std::string deriv, std::string a, std::string b)
-        : expr(expr)
-        , deriv(deriv)
-        , a(a)
-        , b(b) {}
+        : expr(std::move(expr))
+        , deriv(std::move(deriv))
+        , a(std::move(a))
+        , b(std::move(b)) {}
 
     /// helper routines used in parser
 
-    bool deriv_nonzero() {
+    bool deriv_nonzero() const {
         return deriv != "0.0";
     }
 
-    bool a_nonzero() {
+    bool a_nonzero() const {
         return a != "0.0";
     }
 
-    bool b_nonzero() {
+    bool b_nonzero() const {
         return b != "0.0";
     }
 
-    void print();
+    void print() const;
 };
 
 
@@ -80,25 +81,22 @@ class DiffEqContext {
     /// order of the diff equation
     int order = 0;
 
-    /// if equation is non-linear then expression to use during code generation
-    std::string expr_for_nonlinear;
-
     /// return solution for cnexp method
-    std::string get_cnexp_solution();
+    std::string get_cnexp_solution() const;
 
     /// return solution for euler method
-    std::string get_euler_solution();
+    std::string get_euler_solution() const;
 
     /// return solution for non-cnexp method
-    std::string get_non_cnexp_solution();
+    std::string get_non_cnexp_solution() const;
 
     /// for non-cnexp methods : return the solution based on if equation is linear or not
-    std::string get_cvode_linear_diffeq();
-    std::string get_cvode_nonlinear_diffeq();
+    std::string get_cvode_linear_diffeq() const;
+    std::string get_cvode_nonlinear_diffeq() const;
 
     /// \todo Methods inherited neuron implementation
-    std::string cvode_deriv();
-    std::string cvode_eqnrhs();
+    std::string cvode_deriv() const;
+    std::string cvode_eqnrhs() const;
 
   public:
     /// "final" solution of the equation
@@ -113,13 +111,13 @@ class DiffEqContext {
     DiffEqContext() = default;
 
     DiffEqContext(std::string state, int order, std::string rhs, std::string method)
-        : state(state)
+        : state(std::move(state))
         , order(order)
-        , rhs(rhs)
-        , method(method) {}
+        , rhs(std::move(rhs))
+        , method(std::move(method)) {}
 
     /// return the state variable
-    std::string state_variable() const {
+    const std::string& state_variable() const {
         return state;
     }
 
@@ -127,10 +125,10 @@ class DiffEqContext {
     std::string get_solution(bool& cnexp_possible);
 
     /// return expression with Dstate added
-    std::string get_expr_for_nonlinear();
+    std::string get_expr_for_nonlinear() const;
 
     /// print the context (for debugging)
-    void print();
+    void print() const;
 };
 
 }  // namespace diffeq
