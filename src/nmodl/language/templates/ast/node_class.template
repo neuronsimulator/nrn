@@ -336,13 +336,23 @@ class {{ node.class_name }} : public {{ node.base_class }} {
      * multiplied by `-1` for ast::Number node types.
      */
     void negate() override {
-      value = {{ node.negation }}value;
+      {% if node.is_float_node or  node.is_double_node %}
+        value = value.insert (0, 1, '{{ node.negation }}');
+      {% else %}
+        value = {{ node.negation }}value;
+      {% endif %}
     }
 
     /**
      * \brief Return value of the current ast node as double
      */
-    double to_double() override { return value; }
+    double to_double() override {
+      {% if node.is_float_node or  node.is_double_node %}
+        return std::stod(value);
+      {% else %}
+        return value;
+      {% endif %}
+    }
   {% endif %}
 
   {% if node.is_data_type_node %}

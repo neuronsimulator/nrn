@@ -741,7 +741,7 @@ double          :   REAL
                     }
                 |   integer
                     {
-                        $$ = new ast::Double(double($1->eval()));
+                        $$ = new ast::Double(std::to_string(($1->eval())));
                         delete($1);
                     }
                 ;

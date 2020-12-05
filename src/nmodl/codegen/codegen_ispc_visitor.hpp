@@ -61,11 +61,11 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
   protected:
     /// doubles are differently represented in ispc than in C
-    std::string double_to_string(double value) override;
+    std::string double_to_string(const std::string& value) override;
 
 
     /// floats are differently represented in ispc than in C
-    std::string float_to_string(float value) override;
+    std::string float_to_string(const std::string& value) override;
 
 
     /// name of the code generation backend

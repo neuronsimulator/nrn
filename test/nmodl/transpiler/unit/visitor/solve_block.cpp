@@ -62,11 +62,11 @@ TEST_CASE("Solve ODEs using legacy NeuronSolveVisitor", "[visitor][solver]") {
             }
 
             DERIVATIVE states {
-                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+                m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)
             }
 
             NRN_STATE SOLVE states METHOD cnexp{
-                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+                m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)
             }
 
         )";
@@ -100,18 +100,18 @@ TEST_CASE("Solve ODEs using legacy NeuronSolveVisitor", "[visitor][solver]") {
             }
 
             DERIVATIVE state1 {
-                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+                m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)
             }
 
             DERIVATIVE state2 {
-                h = h+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-h)
+                h = h+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-h)
             }
 
             NRN_STATE SOLVE state1 METHOD cnexp{
-                m = m+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-m)
+                m = m+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-m)
             }
             SOLVE state2 METHOD cnexp{
-                h = h+(1-exp(dt*((((-1)))/mTau)))*(-(((mInf))/mTau)/((((-1)))/mTau)-h)
+                h = h+(1.0-exp(dt*((((-1.0)))/mTau)))*(-(((mInf))/mTau)/((((-1.0)))/mTau)-h)
             }
 
         )";

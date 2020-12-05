@@ -27,9 +27,9 @@ static double get_value(const std::shared_ptr<ast::Expression>& node) {
     if (node->is_integer()) {
         return std::dynamic_pointer_cast<ast::Integer>(node)->eval();
     } else if (node->is_float()) {
-        return std::dynamic_pointer_cast<ast::Float>(node)->eval();
+        return std::dynamic_pointer_cast<ast::Float>(node)->to_double();
     } else if (node->is_double()) {
-        return std::dynamic_pointer_cast<ast::Double>(node)->eval();
+        return std::dynamic_pointer_cast<ast::Double>(node)->to_double();
     }
     throw std::runtime_error("Invalid type passed to is_number()");
 }
@@ -168,9 +168,9 @@ void ConstantFolderVisitor::visit_wrapped_expression(ast::WrappedExpression& nod
     if (lhs->is_integer() && rhs->is_integer()) {
         node.set_expression(std::make_shared<ast::Integer>(int(value), nullptr));
     } else if (lhs->is_double() || rhs->is_double()) {
-        node.set_expression(std::make_shared<ast::Double>(value));
+        node.set_expression(std::make_shared<ast::Double>(stringutils::to_string(value)));
     } else {
-        node.set_expression(std::make_shared<ast::Float>(value));
+        node.set_expression(std::make_shared<ast::Float>(stringutils::to_string(value)));
     }
 
     std::string nmodl_after = to_nmodl(node.get_expression());

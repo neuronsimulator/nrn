@@ -152,7 +152,7 @@ SCENARIO("Solving ODEs with STEADYSTATE solve method", "[visitor][steadystate]")
             DERIVATIVE states0 {
                 Z'[0] = Z[1]-Z[2]
                 Z'[1] = Z[0]+2*Z[2]
-                Z'[2] = Z[0]*Z[0]-3.1
+                Z'[2] = Z[0]*Z[0]-3.10
             })";
         std::string expected_text2 = R"(
             DERIVATIVE states1 {
@@ -165,7 +165,7 @@ SCENARIO("Solving ODEs with STEADYSTATE solve method", "[visitor][steadystate]")
                 dt = 1e-09
                 Z'[0] = Z[1]-Z[2]
                 Z'[1] = Z[0]+2*Z[2]
-                Z'[2] = Z[0]*Z[0]-3.1
+                Z'[2] = Z[0]*Z[0]-3.10
                 dt = dt_saved_value
             })";
         std::string expected_text4 = R"(

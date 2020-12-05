@@ -246,7 +246,7 @@ ELSE                    {
 {D}+"."{D}*({E})? |
 {D}*"."{D}+({E})? |
 {D}+{E}                 {
-                            return double_symbol(atof(yytext), loc);
+                            return double_symbol(yytext, loc);
                         }
 
 \"[^\"]*\"              {

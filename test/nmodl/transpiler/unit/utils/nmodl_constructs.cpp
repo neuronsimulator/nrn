@@ -411,7 +411,7 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
             )",
             R"(
                 PARAMETER {
-                    tau_r_AMPA = 10
+                    tau_r_AMPA = 10.0
                     tau_d_AMPA = 10.1 (mV)
                     tau_r_NMDA = 10 (mV) <1,2>
                     tau_d_NMDA = 10 (mV) <1.1,2.2>
@@ -954,12 +954,6 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                     CONSERVE C+o = 1
                     CONSERVE pump+pumpca = TotalPump*parea*(1e+10)
                 }
-            )",
-            R"(
-                KINETIC ihkin {
-                    CONSERVE C+o = 1
-                    CONSERVE pump+pumpca = TotalPump*parea*(10000000000)
-                }
             )"
         }
     },
@@ -973,14 +967,6 @@ std::map<std::string, NmodlTestCase> nmodl_valid_constructs{
                     COMPARTMENT voli {cai}
                     COMPARTMENT diam*diam*PI/4 {qk}
                     COMPARTMENT (1e+10)*area1 {pump pumpca}
-                    COMPARTMENT i, diam*diam*vol[i]*1(um) {ca CaBuffer Buffer}
-                }
-            )",
-            R"(
-                KINETIC ihkin {
-                    COMPARTMENT voli {cai}
-                    COMPARTMENT diam*diam*PI/4 {qk}
-                    COMPARTMENT (10000000000)*area1 {pump pumpca}
                     COMPARTMENT i, diam*diam*vol[i]*1(um) {ca CaBuffer Buffer}
                 }
             )"

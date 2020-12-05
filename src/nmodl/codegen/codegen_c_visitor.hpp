@@ -578,7 +578,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param value The number to convert
      * \return      Its string representation
      */
-    virtual std::string double_to_string(double value);
+    virtual std::string double_to_string(const std::string& value);
 
 
     /**
@@ -586,7 +586,7 @@ class CodegenCVisitor: public visitor::AstVisitor {
      * \param value The number to convert
      * \return      Its string representation
      */
-    virtual std::string float_to_string(float value);
+    virtual std::string float_to_string(const std::string& value);
 
 
     /**

@@ -27,7 +27,7 @@ using SymbolType = parser::NmodlParser::symbol_type;
 using Token = parser::NmodlParser::token;
 using TokenType = parser::NmodlParser::token_type;
 
-SymbolType double_symbol(double value, PositionType& pos);
+SymbolType double_symbol(const std::string& value, PositionType& pos);
 SymbolType integer_symbol(int value, PositionType& pos, const char* text = nullptr);
 SymbolType name_symbol(const std::string& text, PositionType& pos, TokenType type = Token::NAME);
 SymbolType prime_symbol(std::string text, PositionType& pos);

@@ -208,7 +208,7 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
             REQUIRE(result[0] == "m = mInf-(-m+mInf)*exp(-dt/mTau)");
-            REQUIRE(result[1] == "h = -h/(c2*dt*h-1)");
+            REQUIRE(result[1] == "h = -h/(c2*dt*h-1.0)");
         }
     }
     GIVEN("Derivative block including array of 2 state vars, solver method cnexp") {
@@ -228,7 +228,7 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 2);
             REQUIRE(result[0] == "X[0] = mInf-(mInf-X[0])*exp(-dt/mTau)");
-            REQUIRE(result[1] == "X[1] = -X[1]/(c2*dt*X[1]-1)");
+            REQUIRE(result[1] == "X[1] = -X[1]/(c2*dt*X[1]-1.0)");
         }
     }
     GIVEN("Derivative block including loop over array vars, solver method cnexp") {
@@ -299,11 +299,11 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 4);
             REQUIRE(result[0] == "z' = a/z+b/z/z");
-            REQUIRE(result[1] == "h = -h/(c2*dt*h-1)");
+            REQUIRE(result[1] == "h = -h/(c2*dt*h-1.0)");
             REQUIRE(result[2] == "x = a*dt+x");
             /// sympy 1.4 able to solve ode but not older versions
             bool last_result = (result[3] == "y' = c3*y*y*y" ||
-                                result[3] == "y = sqrt(-pow(y, 2)/(2*c3*dt*pow(y, 2)-1))");
+                                result[3] == "y = sqrt(-pow(y, 2)/(2.0*c3*dt*pow(y, 2)-1.0))");
             REQUIRE(last_result);
         }
     }
@@ -400,9 +400,9 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 old_x = x
                 old_y = y
                 old_z = z
-                x = (-a*dt*(dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)-old_z)+(b*dt*h+old_x)*(2*a*pow(dt, 3)-d*dt+1))/(2*a*pow(dt, 3)-d*dt+1)
-                y = (-2*a*pow(dt, 2)*(dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)-old_z)+(2*a*pow(dt, 3)-d*dt+1)*(c*dt+2*dt*(b*dt*h+old_x)+old_y))/(2*a*pow(dt, 3)-d*dt+1)
-                z = (-dt*(c*dt+2*dt*(b*dt*h+old_x)+old_y)+old_z)/(2*a*pow(dt, 3)-d*dt+1)
+                x = (-a*dt*(dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)-old_z)+(b*dt*h+old_x)*(2.0*a*pow(dt, 3)-d*dt+1.0))/(2.0*a*pow(dt, 3)-d*dt+1.0)
+                y = (-2.0*a*pow(dt, 2)*(dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)-old_z)+(2.0*a*pow(dt, 3)-d*dt+1.0)*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y))/(2.0*a*pow(dt, 3)-d*dt+1.0)
+                z = (-dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)+old_z)/(2.0*a*pow(dt, 3)-d*dt+1.0)
             })";
         std::string expected_cse_result = R"(
             DERIVATIVE states {
@@ -410,11 +410,11 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 old_x = x
                 old_y = y
                 old_z = z
-                tmp0 = 2*a
-                tmp1 = -d*dt+pow(dt, 3)*tmp0+1
-                tmp2 = 1/tmp1
+                tmp0 = 2.0*a
+                tmp1 = -d*dt+pow(dt, 3)*tmp0+1.0
+                tmp2 = 1.0/tmp1
                 tmp3 = b*dt*h+old_x
-                tmp4 = c*dt+2*dt*tmp3+old_y
+                tmp4 = c*dt+2.0*dt*tmp3+old_y
                 tmp5 = dt*tmp4-old_z
                 x = -tmp2*(a*dt*tmp5-tmp1*tmp3)
                 y = -tmp2*(pow(dt, 2)*tmp0*tmp5-tmp1*tmp4)
@@ -448,8 +448,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 LOCAL old_mc, old_m
                 old_mc = mc
                 old_m = m
-                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
-                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
+                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1.0)
+                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1.0)
             })";
         THEN("Construct & solve linear system") {
             CAPTURE(nmodl_text);
@@ -476,8 +476,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             DERIVATIVE scheme1 {
                 LOCAL old_mc
                 old_mc = mc
-                mc = (b*dt+old_mc)/(a*dt+b*dt+1)
-                m = (a*dt-old_mc+1)/(a*dt+b*dt+1)
+                mc = (b*dt+old_mc)/(a*dt+b*dt+1.0)
+                m = (a*dt-old_mc+1.0)/(a*dt+b*dt+1.0)
             })";
         THEN("Construct & solve linear system, replace ODE for m with rhs of CONSERVE statement") {
             CAPTURE(nmodl_text);
@@ -507,8 +507,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 LOCAL old_mc, old_m
                 old_mc = mc
                 old_m = m
-                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1)
-                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1)
+                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1.0)
+                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1.0)
             })";
         THEN("Construct & solve linear system, ignore invalid CONSERVE statement") {
             CAPTURE(nmodl_text);
@@ -553,34 +553,34 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     X[4] = p1
                     F[0] = -old_c1
                     F[1] = -old_o1
-                    F[2] = -1
+                    F[2] = -1.0
                     F[3] = -old_p0
-                    F[4] = -1
-                    J[0] = -alpha*dt-1
+                    F[4] = -1.0
+                    J[0] = -alpha*dt-1.0
                     J[5] = beta*dt
                     J[10] = 0
                     J[15] = 0
                     J[20] = 0
                     J[1] = alpha*dt
-                    J[6] = -beta*dt-dt*k3p-1
+                    J[6] = -beta*dt-dt*k3p-1.0
                     J[11] = dt*k4
                     J[16] = 0
                     J[21] = 0
-                    J[2] = -1
-                    J[7] = -1
-                    J[12] = -1
+                    J[2] = -1.0
+                    J[7] = -1.0
+                    J[12] = -1.0
                     J[17] = 0
                     J[22] = 0
                     J[3] = 0
                     J[8] = 0
                     J[13] = 0
-                    J[18] = -dt*k1ca-1
+                    J[18] = -dt*k1ca-1.0
                     J[23] = dt*k2
                     J[4] = 0
                     J[9] = 0
                     J[14] = 0
-                    J[19] = -1
-                    J[24] = -1
+                    J[19] = -1.0
+                    J[24] = -1.0
                 }{
                     c1 = X[0]
                     o1 = X[1]
@@ -619,7 +619,7 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             DERIVATIVE scheme1 {
                 LOCAL old_W_0
                 old_W_0 = W[0]
-                W[0] = (3*dt*A[1]+old_W_0)/(dt*A[0]-dt*B[0]+1)
+                W[0] = (3.0*dt*A[1]+old_W_0)/(dt*A[0]-dt*B[0]+1.0)
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
@@ -650,8 +650,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 LOCAL old_M_0, old_M_1
                 old_M_0 = M[0]
                 old_M_1 = M[1]
-                M[0] = (dt*old_M_0*B[1]+dt*old_M_1*B[0]+old_M_0)/(pow(dt, 2)*A[0]*B[1]-pow(dt, 2)*A[1]*B[0]+dt*A[0]+dt*B[1]+1)
-                M[1] = -(dt*old_M_0*A[1]+old_M_1*(dt*A[0]+1))/(pow(dt, 2)*A[1]*B[0]-(dt*A[0]+1)*(dt*B[1]+1))
+                M[0] = (dt*old_M_0*B[1]+dt*old_M_1*B[0]+old_M_0)/(pow(dt, 2)*A[0]*B[1]-pow(dt, 2)*A[1]*B[0]+dt*A[0]+dt*B[1]+1.0)
+                M[1] = -(dt*old_M_0*A[1]+old_M_1*(dt*A[0]+1.0))/(pow(dt, 2)*A[1]*B[0]-(dt*A[0]+1.0)*(dt*B[1]+1.0))
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
@@ -685,8 +685,8 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     X[0] = W[0]
                 }{
-                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3*dt*A[1]+old_W_0
-                    J[0] = -dt*A[0]+dt*B[0]-1
+                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3.0*dt*A[1]+old_W_0
+                    J[0] = -dt*A[0]+dt*B[0]-1.0
                 }{
                     W[0] = X[0]
                 }{
@@ -729,13 +729,13 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     X[1] = h
                     X[2] = n
                 }{
-                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]-3*X[1]*dt+old_m))/mtau
+                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]-3.0*X[1]*dt+old_m))/mtau
                     F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
                     F[2] = (-X[2]*dt+dt*ninf+ntau*(-X[2]+old_n))/ntau
                     J[0] = -(dt+mtau)/mtau
-                    J[3] = -3*dt
+                    J[3] = -3.0*dt
                     J[6] = 0
-                    J[1] = 2*X[0]*dt
+                    J[1] = 2.0*X[0]*dt
                     J[4] = -(dt+htau)/htau
                     J[7] = 0
                     J[2] = 0
@@ -791,7 +791,7 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
                     J[0] = -(dt+mtau)/mtau
                     J[2] = 0
-                    J[1] = 2*X[0]*dt
+                    J[1] = 2.0*X[0]*dt
                     J[3] = -(dt+htau)/htau
                 }{
                     m = X[0]
@@ -812,7 +812,7 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     F[0] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
                     F[1] = (-X[0]*dt+dt*minf+mtau*(-X[0]+X[1]*dt+old_m))/mtau
-                    J[0] = 2*X[0]*dt
+                    J[0] = 2.0*X[0]*dt
                     J[2] = -(dt+htau)/htau
                     J[1] = -(dt+mtau)/mtau
                     J[3] = dt
@@ -848,7 +848,7 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             })";
         std::string expected_text = R"(
             LINEAR lin {
-                x = 5
+                x = 5.0
             })";
         THEN("solve analytically") {
             auto result =
@@ -956,15 +956,15 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             })";
         std::string expected_text_sympy_13 = R"(
             LINEAR lin {
-                x = (4*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)+(1*b+4*c)*(5.343*a*c+1.43543))-(5.343*a*(1*b+4*c)-4*c*(5.343*a+b*(-1*a+0.842*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/((1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
-                y = (1*pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-1*pow(a, 2)*pow(b, 2)*(1*b+4*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/(c*(1*b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
-                z = pow(a, 2)*b*(c*(5.343*a+b*(-1*a+0.842*pow(b, 2)))*(4*c-1.3)-(1*b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                x = (4.0*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-1.0*a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)+(1.0*b+4.0*c)*(5.343*a*c+1.43543))-(5.343*a*(1.0*b+4.0*c)-4.0*c*(5.343*a+b*(-1.0*a+0.84199999999999997*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))/((1.0*b+4.0*c)*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
+                y = (1.0*pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-1.0*a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)-1.0*pow(a, 2)*pow(b, 2)*(1.0*b+4.0*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-1.0*a+0.84199999999999997*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))/(c*(1.0*b+4.0*c)*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
+                z = pow(a, 2)*b*(c*(5.343*a+b*(-1.0*a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)-(1.0*b+4.0*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
             })";
         std::string expected_text_sympy_14 = R"(
             LINEAR lin {
-                x = (4*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)+(b+4*c)*(5.343*a*c+1.43543))-(5.343*a*(b+4*c)-4*c*(5.343*a+b*(-a+0.842*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/((b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
-                y = (pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)-pow(a, 2)*pow(b, 2)*(b+4*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))/(c*(b+4*c)*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
-                z = pow(a, 2)*b*(c*(5.343*a+b*(-a+0.842*pow(b, 2)))*(4*c-1.3)-(b+4*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4*c-1.3)+0.1*b+0.4*c))
+                x = (4.0*pow(a, 2)*pow(b, 2)*(-c*(5.343*a+b*(-a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)+(b+4.0*c)*(5.343*a*c+1.43543))-(5.343*a*(b+4.0*c)-4.0*c*(5.343*a+b*(-a+0.84199999999999997*pow(b, 2))))*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))/((b+4.0*c)*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
+                y = (pow(a, 2)*pow(b, 2)*c*(5.343*a+b*(-a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)-pow(a, 2)*pow(b, 2)*(b+4.0*c)*(5.343*a*c+1.43543)-c*(5.343*a+b*(-a+0.84199999999999997*pow(b, 2)))*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))/(c*(b+4.0*c)*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
+                z = pow(a, 2)*b*(c*(5.343*a+b*(-a+0.84199999999999997*pow(b, 2)))*(4.0*c-1.3)-(b+4.0*c)*(5.343*a*c+1.43543))/(c*(pow(a, 2)*pow(b, 2)*(4.0*c-1.3)+0.10000000000000001*b+0.40000000000000002*c))
             })";
 
         THEN("solve analytically") {
@@ -988,9 +988,9 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
             })";
         std::string expected_text = R"(
             LINEAR lin {
-                s[0] = 1
-                s[1] = 3
-                s[2] = -2
+                s[0] = 1.0
+                s[1] = 3.0
+                s[2] = -2.0
             })";
         THEN("solve analytically") {
             auto result =
@@ -1020,24 +1020,24 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                     X[3] = z
                     F[0] = 0
                     F[1] = 5.343*a
-                    F[2] = a-0.842*pow(b, 2)
+                    F[2] = a-0.84199999999999997*pow(b, 2)
                     F[3] = -1.43543/c
-                    J[0] = -1
+                    J[0] = -1.0
                     J[4] = 0
-                    J[8] = -2
+                    J[8] = -2.0
                     J[12] = -0.3125
                     J[1] = 0
-                    J[5] = -1
-                    J[9] = -4*c
+                    J[5] = -1.0
+                    J[9] = -4.0*c
                     J[13] = 0
                     J[2] = 0
                     J[6] = -1/b
-                    J[10] = 1
-                    J[14] = -1
+                    J[10] = 1.0
+                    J[14] = -1.0
                     J[3] = 0
-                    J[7] = -1
+                    J[7] = -1.0
                     J[11] = -1.3
-                    J[15] = 0.1/(pow(a, 2)*b)
+                    J[15] = 0.10000000000000001/(pow(a, 2)*b)
                 }{
                     w = X[0]
                     x = X[1]
@@ -1099,7 +1099,7 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                     F[8] = 0
                     F[9] = 0
                     F[10] = 0
-                    F[11] = -1
+                    F[11] = -1.0
                     J[0] = f01+fi1
                     J[12] = -b01
                     J[24] = 0
@@ -1232,18 +1232,18 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                     J[118] = b14+bi5+f1n
                     J[130] = -b1n
                     J[142] = 0
-                    J[11] = -1
-                    J[23] = -1
-                    J[35] = -1
-                    J[47] = -1
-                    J[59] = -1
-                    J[71] = -1
-                    J[83] = -1
-                    J[95] = -1
-                    J[107] = -1
-                    J[119] = -1
-                    J[131] = -1
-                    J[143] = -1
+                    J[11] = -1.0
+                    J[23] = -1.0
+                    J[35] = -1.0
+                    J[47] = -1.0
+                    J[59] = -1.0
+                    J[71] = -1.0
+                    J[83] = -1.0
+                    J[95] = -1.0
+                    J[107] = -1.0
+                    J[119] = -1.0
+                    J[131] = -1.0
+                    J[143] = -1.0
                 }{
                     C1 = X[0]
                     C2 = X[1]
@@ -1288,8 +1288,8 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 }{
                     X[0] = x
                 }{
-                    F[0] = -X[0]+5
-                    J[0] = -1
+                    F[0] = -X[0]+5.0
+                    J[0] = -1.0
                 }{
                     x = X[0]
                 }{
@@ -1302,8 +1302,8 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 }{
                     X[0] = x
                 }{
-                    F[0] = 5-X[0]
-                    J[0] = -1
+                    F[0] = 5.0-X[0]
+                    J[0] = -1.0
                 }{
                     x = X[0]
                 }{
@@ -1338,18 +1338,18 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                     X[1] = s[1]
                     X[2] = s[2]
                 }{
-                    F[0] = -X[0]+1
-                    F[1] = -X[1]+3
+                    F[0] = -X[0]+1.0
+                    F[1] = -X[1]+3.0
                     F[2] = X[0]-X[1]-X[2]
-                    J[0] = -1
+                    J[0] = -1.0
                     J[3] = 0
                     J[6] = 0
                     J[1] = 0
-                    J[4] = -1
+                    J[4] = -1.0
                     J[7] = 0
-                    J[2] = 1
-                    J[5] = -1
-                    J[8] = -1
+                    J[2] = 1.0
+                    J[5] = -1.0
+                    J[8] = -1.0
                 }{
                     s[0] = X[0]
                     s[1] = X[1]
@@ -1366,18 +1366,18 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                     X[1] = s[1]
                     X[2] = s[2]
                 }{
-                    F[0] = 1-X[0]
-                    F[1] = 3-X[1]
+                    F[0] = 1.0-X[0]
+                    F[1] = 3.0-X[1]
                     F[2] = X[0]-X[1]-X[2]
-                    J[0] = -1
+                    J[0] = -1.0
                     J[3] = 0
                     J[6] = 0
                     J[1] = 0
-                    J[4] = -1
+                    J[4] = -1.0
                     J[7] = 0
-                    J[2] = 1
-                    J[5] = -1
-                    J[8] = -1
+                    J[2] = 1.0
+                    J[5] = -1.0
+                    J[8] = -1.0
                 }{
                     s[0] = X[0]
                     s[1] = X[1]
