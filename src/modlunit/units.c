@@ -1015,6 +1015,9 @@ redef:
 }
 
 #if NRN_DYNAMIC_UNITS
+/* Translate string to double using a2f for modern units
+   to allow consistency with BlueBrain/nmodl
+*/
 static double modern_getflt() {
 	int c;
 	char str[100];
