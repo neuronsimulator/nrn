@@ -97,7 +97,7 @@ install:
   # I will remove the sphinx downgrade. Change setup.py requirements when it
   # be the case, Katta
   - echo "------- Install Dependencies -------"
-  - pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest "sympy<1.6"
+  - pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest sympy
 
 #=============================================================================
 # Build, test and install

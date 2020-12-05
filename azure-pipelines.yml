@@ -126,7 +126,7 @@ jobs:
       env CTEST_OUTPUT_ON_FAILURE=1 make test
     displayName: 'Build and Run Tests'
 - job: 'manylinux_wheels'
-  timeoutInMinutes: 30
+  timeoutInMinutes: 45
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
@@ -167,7 +167,7 @@ jobs:
     displayName: 'Test ManyLinux Wheel with Python $(python.version)'
   - template: ci/upload-wheels.yml
 - job: 'macos_wheels'
-  timeoutInMinutes: 30
+  timeoutInMinutes: 45
   pool:
     vmImage: 'macOS-10.15'
   strategy:
