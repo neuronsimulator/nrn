@@ -45,7 +45,7 @@ const std::unordered_set<std::string> CodegenIspcVisitor::incompatible_var_names
 /*
  * Rename math functions for ISPC backend
  */
-void CodegenIspcVisitor::visit_function_call(ast::FunctionCall& node) {
+void CodegenIspcVisitor::visit_function_call(const ast::FunctionCall& node) {
     if (!codegen) {
         return;
     }
@@ -63,7 +63,7 @@ void CodegenIspcVisitor::visit_function_call(ast::FunctionCall& node) {
 /*
  * Rename special global variables
  */
-void CodegenIspcVisitor::visit_var_name(ast::VarName& node) {
+void CodegenIspcVisitor::visit_var_name(const ast::VarName& node) {
     if (!codegen) {
         return;
     }
@@ -74,7 +74,7 @@ void CodegenIspcVisitor::visit_var_name(ast::VarName& node) {
     CodegenCVisitor::visit_var_name(node);
 }
 
-void CodegenIspcVisitor::visit_local_list_statement(ast::LocalListStatement& node) {
+void CodegenIspcVisitor::visit_local_list_statement(const ast::LocalListStatement& node) {
     if (!codegen) {
         return;
     }
@@ -375,7 +375,7 @@ CodegenIspcVisitor::ParamVector CodegenIspcVisitor::get_global_function_parms(
 }
 
 
-void CodegenIspcVisitor::print_procedure(ast::ProcedureBlock& node) {
+void CodegenIspcVisitor::print_procedure(const ast::ProcedureBlock& node) {
     codegen = true;
     const auto& name = node.get_node_name();
     print_function_or_procedure(node, name);
@@ -655,7 +655,7 @@ bool CodegenIspcVisitor::check_incompatibilities() {
 void CodegenIspcVisitor::move_procs_to_wrapper() {
     auto nameset = std::set<std::string>();
 
-    auto populate_nameset = [&nameset](ast::Block* block) {
+    auto populate_nameset = [&nameset](const ast::Block* block) {
         if (block) {
             const auto& names = collect_nodes(*block, {ast::AstNodeType::NAME});
             for (const auto& name: names) {
@@ -671,7 +671,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
         return !collect_nodes(node, incompatible_node_types).empty();
     };
 
-    auto target_procedures = std::vector<ast::ProcedureBlock*>();
+    auto target_procedures = std::vector<const ast::ProcedureBlock*>();
     for (const auto& procedure: info.procedures) {
         const auto& name = procedure->get_name()->get_node_name();
         if (nameset.find(name) == nameset.end() || has_incompatible_nodes(*procedure)) {
@@ -681,7 +681,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
         }
     }
     info.procedures = target_procedures;
-    auto target_functions = std::vector<ast::FunctionBlock*>();
+    auto target_functions = std::vector<const ast::FunctionBlock*>();
     for (const auto& function: info.functions) {
         const auto& name = function->get_name()->get_node_name();
         if (nameset.find(name) == nameset.end() || has_incompatible_nodes(*function)) {
@@ -721,7 +721,7 @@ void CodegenIspcVisitor::print_block_wrappers_initial_equation_state() {
 }
 
 
-void CodegenIspcVisitor::visit_program(ast::Program& node) {
+void CodegenIspcVisitor::visit_program(const ast::Program& node) {
     setup(node);
 
     // we need setup to check incompatibilities

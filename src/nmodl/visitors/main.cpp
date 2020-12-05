@@ -5,9 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <sstream>
-
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "ast/program.hpp"
 #include "config/config.h"

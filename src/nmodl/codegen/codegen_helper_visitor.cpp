@@ -411,7 +411,7 @@ void CodegenHelperVisitor::find_table_variables() {
 }
 
 
-void CodegenHelperVisitor::visit_suffix(Suffix& node) {
+void CodegenHelperVisitor::visit_suffix(const Suffix& node) {
     const auto& type = node.get_type()->get_node_name();
     if (type == naming::POINT_PROCESS) {
         info.point_process = true;
@@ -424,12 +424,12 @@ void CodegenHelperVisitor::visit_suffix(Suffix& node) {
 }
 
 
-void CodegenHelperVisitor::visit_electrode_current(ElectrodeCurrent& node) {
+void CodegenHelperVisitor::visit_electrode_current(const ElectrodeCurrent& node) {
     info.electrode_current = true;
 }
 
 
-void CodegenHelperVisitor::visit_initial_block(InitialBlock& node) {
+void CodegenHelperVisitor::visit_initial_block(const InitialBlock& node) {
     if (under_net_receive_block) {
         info.net_receive_initial_node = &node;
     } else {
@@ -439,7 +439,7 @@ void CodegenHelperVisitor::visit_initial_block(InitialBlock& node) {
 }
 
 
-void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock& node) {
+void CodegenHelperVisitor::visit_net_receive_block(const NetReceiveBlock& node) {
     under_net_receive_block = true;
     info.net_receive_node = &node;
     info.num_net_receive_parameters = node.get_parameters().size();
@@ -448,18 +448,18 @@ void CodegenHelperVisitor::visit_net_receive_block(NetReceiveBlock& node) {
 }
 
 
-void CodegenHelperVisitor::visit_derivative_block(DerivativeBlock& node) {
+void CodegenHelperVisitor::visit_derivative_block(const DerivativeBlock& node) {
     under_derivative_block = true;
     node.visit_children(*this);
     under_derivative_block = false;
 }
 
-void CodegenHelperVisitor::visit_derivimplicit_callback(ast::DerivimplicitCallback& node) {
+void CodegenHelperVisitor::visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) {
     info.derivimplicit_callbacks.push_back(&node);
 }
 
 
-void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock& node) {
+void CodegenHelperVisitor::visit_breakpoint_block(const BreakpointBlock& node) {
     under_breakpoint_block = true;
     info.breakpoint_node = &node;
     node.visit_children(*this);
@@ -467,13 +467,13 @@ void CodegenHelperVisitor::visit_breakpoint_block(BreakpointBlock& node) {
 }
 
 
-void CodegenHelperVisitor::visit_nrn_state_block(ast::NrnStateBlock& node) {
+void CodegenHelperVisitor::visit_nrn_state_block(const ast::NrnStateBlock& node) {
     info.nrn_state_block = &node;
     node.visit_children(*this);
 }
 
 
-void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock& node) {
+void CodegenHelperVisitor::visit_procedure_block(const ast::ProcedureBlock& node) {
     info.procedures.push_back(&node);
     node.visit_children(*this);
     if (table_statement_used) {
@@ -483,7 +483,7 @@ void CodegenHelperVisitor::visit_procedure_block(ast::ProcedureBlock& node) {
 }
 
 
-void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock& node) {
+void CodegenHelperVisitor::visit_function_block(const ast::FunctionBlock& node) {
     info.functions.push_back(&node);
     node.visit_children(*this);
     if (table_statement_used) {
@@ -493,15 +493,17 @@ void CodegenHelperVisitor::visit_function_block(ast::FunctionBlock& node) {
 }
 
 
-void CodegenHelperVisitor::visit_eigen_newton_solver_block(ast::EigenNewtonSolverBlock& node) {
+void CodegenHelperVisitor::visit_eigen_newton_solver_block(
+    const ast::EigenNewtonSolverBlock& node) {
     info.eigen_newton_solver_exist = true;
 }
 
-void CodegenHelperVisitor::visit_eigen_linear_solver_block(ast::EigenLinearSolverBlock& node) {
+void CodegenHelperVisitor::visit_eigen_linear_solver_block(
+    const ast::EigenLinearSolverBlock& node) {
     info.eigen_linear_solver_exist = true;
 }
 
-void CodegenHelperVisitor::visit_function_call(FunctionCall& node) {
+void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
     auto name = node.get_node_name();
     if (name == naming::NET_SEND_METHOD) {
         info.net_send_used = true;
@@ -512,7 +514,7 @@ void CodegenHelperVisitor::visit_function_call(FunctionCall& node) {
 }
 
 
-void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint& node) {
+void CodegenHelperVisitor::visit_conductance_hint(const ConductanceHint& node) {
     const auto& ion = node.get_ion();
     const auto& variable = node.get_conductance();
     std::string ion_name;
@@ -538,7 +540,7 @@ void CodegenHelperVisitor::visit_conductance_hint(ConductanceHint& node) {
  * is because prime_variables_by_order should contain state variable name and
  * not the one replaced by solver pass.
  */
-void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock& node) {
+void CodegenHelperVisitor::visit_statement_block(const ast::StatementBlock& node) {
     const auto& statements = node.get_statements();
     for (auto& statement: statements) {
         statement->accept(*this);
@@ -562,12 +564,12 @@ void CodegenHelperVisitor::visit_statement_block(ast::StatementBlock& node) {
     }
 }
 
-void CodegenHelperVisitor::visit_factor_def(ast::FactorDef& node) {
+void CodegenHelperVisitor::visit_factor_def(const ast::FactorDef& node) {
     info.factor_definitions.push_back(&node);
 }
 
 
-void CodegenHelperVisitor::visit_binary_expression(BinaryExpression& node) {
+void CodegenHelperVisitor::visit_binary_expression(const BinaryExpression& node) {
     if (node.get_op().eval() == "=") {
         assign_lhs = node.get_lhs();
     }
@@ -576,34 +578,34 @@ void CodegenHelperVisitor::visit_binary_expression(BinaryExpression& node) {
 }
 
 
-void CodegenHelperVisitor::visit_bbcore_pointer(BbcorePointer& node) {
+void CodegenHelperVisitor::visit_bbcore_pointer(const BbcorePointer& node) {
     info.bbcore_pointer_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_watch(ast::Watch& node) {
+void CodegenHelperVisitor::visit_watch(const ast::Watch& node) {
     info.watch_count++;
 }
 
 
-void CodegenHelperVisitor::visit_watch_statement(ast::WatchStatement& node) {
+void CodegenHelperVisitor::visit_watch_statement(const ast::WatchStatement& node) {
     info.watch_statements.push_back(&node);
     node.visit_children(*this);
 }
 
 
-void CodegenHelperVisitor::visit_for_netcon(ast::ForNetcon& node) {
+void CodegenHelperVisitor::visit_for_netcon(const ast::ForNetcon& node) {
     info.for_netcon_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_table_statement(ast::TableStatement& node) {
+void CodegenHelperVisitor::visit_table_statement(const ast::TableStatement& node) {
     info.table_count++;
     table_statement_used = true;
 }
 
 
-void CodegenHelperVisitor::visit_program(ast::Program& node) {
+void CodegenHelperVisitor::visit_program(const ast::Program& node) {
     psymtab = node.get_symbol_table();
     auto blocks = node.get_blocks();
     for (auto& block: blocks) {
@@ -620,24 +622,24 @@ void CodegenHelperVisitor::visit_program(ast::Program& node) {
 }
 
 
-codegen::CodegenInfo CodegenHelperVisitor::analyze(ast::Program& node) {
+codegen::CodegenInfo CodegenHelperVisitor::analyze(const ast::Program& node) {
     node.accept(*this);
     return info;
 }
 
-void CodegenHelperVisitor::visit_linear_block(ast::LinearBlock& node) {
+void CodegenHelperVisitor::visit_linear_block(const ast::LinearBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_non_linear_block(ast::NonLinearBlock& node) {
+void CodegenHelperVisitor::visit_non_linear_block(const ast::NonLinearBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_discrete_block(ast::DiscreteBlock& node) {
+void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& node) {
     info.vectorize = false;
 }
 
-void CodegenHelperVisitor::visit_partial_block(ast::PartialBlock& node) {
+void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& node) {
     info.vectorize = false;
 }
 

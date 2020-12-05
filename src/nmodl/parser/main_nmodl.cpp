@@ -6,7 +6,7 @@
  *************************************************************************/
 
 
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "ast/program.hpp"
 #include "config/config.h"

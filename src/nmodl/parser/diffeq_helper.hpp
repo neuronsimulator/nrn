@@ -29,13 +29,16 @@ namespace diffeq {
 enum class MathOp { add = 1, sub, mul, div };
 
 template <MathOp Op>
-inline Term eval_derivative(Term& first, Term& second, bool& deriv_invalid, bool& eqn_invalid);
+inline Term eval_derivative(const Term& first,
+                            const Term& second,
+                            bool& deriv_invalid,
+                            bool& eqn_invalid);
 
 
 /// implement (f(x) + g(x))' = f'(x) + g'(x)
 template <>
-inline Term eval_derivative<MathOp::add>(Term& first,
-                                         Term& second,
+inline Term eval_derivative<MathOp::add>(const Term& first,
+                                         const Term& second,
                                          bool& deriv_invalid,
                                          bool& eqn_invalid) {
     Term solution;
@@ -71,8 +74,8 @@ inline Term eval_derivative<MathOp::add>(Term& first,
 
 /// implement (f(x) - g(x))' = f'(x) - g'(x)
 template <>
-inline Term eval_derivative<MathOp::sub>(Term& first,
-                                         Term& second,
+inline Term eval_derivative<MathOp::sub>(const Term& first,
+                                         const Term& second,
                                          bool& deriv_invalid,
                                          bool& eqn_invalid) {
     Term solution;
@@ -108,8 +111,8 @@ inline Term eval_derivative<MathOp::sub>(Term& first,
 
 /// implement (f(x) * g(x))' = f'(x)g(x) + f(x)g'(x)
 template <>
-inline Term eval_derivative<MathOp::mul>(Term& first,
-                                         Term& second,
+inline Term eval_derivative<MathOp::mul>(const Term& first,
+                                         const Term& second,
                                          bool& deriv_invalid,
                                          bool& eqn_invalid) {
     Term solution;
@@ -146,8 +149,8 @@ inline Term eval_derivative<MathOp::mul>(Term& first,
  * and this needs to be discussed with Michael.
  */
 template <>
-inline Term eval_derivative<MathOp::div>(Term& first,
-                                         Term& second,
+inline Term eval_derivative<MathOp::div>(const Term& first,
+                                         const Term& second,
                                          bool& deriv_invalid,
                                          bool& eqn_invalid) {
     Term solution;

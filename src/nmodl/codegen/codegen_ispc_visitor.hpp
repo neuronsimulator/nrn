@@ -56,8 +56,8 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     std::vector<bool> emit_fallback =
         std::vector<bool>(static_cast<size_t>(BlockType::BlockTypeEnd), false);
 
-    std::vector<ast::ProcedureBlock*> wrapper_procedures;
-    std::vector<ast::FunctionBlock*> wrapper_functions;
+    std::vector<const ast::ProcedureBlock*> wrapper_procedures;
+    std::vector<const ast::FunctionBlock*> wrapper_functions;
 
   protected:
     /// doubles are differently represented in ispc than in C
@@ -159,7 +159,7 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
 
     /// nmodl procedure definition
-    void print_procedure(ast::ProcedureBlock& node) override;
+    void print_procedure(const ast::ProcedureBlock& node) override;
 
 
     void print_backend_compute_routine_decl();
@@ -239,10 +239,10 @@ class CodegenIspcVisitor: public CodegenCVisitor {
         : CodegenCVisitor(mod_file, stream, layout, float_type, optimize_ionvar_copies)
         , fallback_codegen(mod_file, layout, float_type, optimize_ionvar_copies, wrapper_printer) {}
 
-    void visit_function_call(ast::FunctionCall& node) override;
-    void visit_var_name(ast::VarName& node) override;
-    void visit_program(ast::Program& node) override;
-    void visit_local_list_statement(ast::LocalListStatement& node) override;
+    void visit_function_call(const ast::FunctionCall& node) override;
+    void visit_var_name(const ast::VarName& node) override;
+    void visit_program(const ast::Program& node) override;
+    void visit_local_list_statement(const ast::LocalListStatement& node) override;
 };
 
 /** @} */  // end of codegen_backends

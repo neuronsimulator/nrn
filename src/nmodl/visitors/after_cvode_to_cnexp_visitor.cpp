@@ -12,7 +12,6 @@
 #include "ast/string.hpp"
 #include "codegen/codegen_naming.hpp"
 #include "utils/logger.hpp"
-#include "visitors/visitor_utils.hpp"
 
 namespace nmodl {
 namespace visitor {

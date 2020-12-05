@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "ast/program.hpp"
 #include "codegen/codegen_acc_visitor.hpp"

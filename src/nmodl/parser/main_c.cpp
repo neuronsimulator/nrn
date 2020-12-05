@@ -5,9 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <fstream>
-
-#include "CLI/CLI.hpp"
+#include <CLI/CLI.hpp>
 
 #include "config/config.h"
 #include "parser/c11_driver.hpp"
