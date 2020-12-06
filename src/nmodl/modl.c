@@ -277,6 +277,7 @@ fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", m
 	printf("Done\n");
 	SIOUXSettings.autocloseonquit = true;
 #endif
+	free(modprefix); /* allocated in openfiles below */
 	return 0;
 }
 
@@ -315,9 +316,9 @@ static void openfiles(char* given_filename, char* output_dir) {
       } else {
         Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
       }
-  }
-  else
+  } else {
     Sprintf(output_filename, "%s.c", modprefix);
+  }
 
   if ((fcout = fopen(output_filename, "w")) == (FILE *) 0) {
     diag("Can't create C file: ", output_filename);

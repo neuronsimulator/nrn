@@ -176,6 +176,7 @@ if test "$UsingCMake" = "yes" ; then
     esac
     base_name="`basename $f`"
     dir_name="`dirname $f`"
+    # Note: indentation for shell lines in make rules must be a tab
     echo "\
 ./$base_name.c: `escape_spaces "$f.mod"`
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
@@ -187,6 +188,13 @@ if test "$UsingCMake" = "yes" ; then
 " >> $MODMAKE
   done
   if test "$nrnivmodl_cfiles" != "" ; then
+    # I find it very difficult to construct shell variables which are
+    # space separated lists of items containing spaces. So, for a cmake build,
+    # the nrnivmodl_cfiles variable is required to be a ';' separated list
+    # of c files which may contain spaces.
+    # Save the Internal Field Separator and interpret variables as ';'
+    # separated list of items (which may contain spaces). Restore after
+    # processing nrnivmodl_cfiles.
     ifs="$IFS"
     IFS=';'
     for i in $nrnivmodl_cfiles ; do
