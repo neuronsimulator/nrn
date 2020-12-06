@@ -9,7 +9,7 @@ void install_units();
 void modl_units();
 void vectorize_if_else_stmt();
 void consistency();
-void c_out(const char* prefix);
+void c_out();
 void printlist();
 void c_out_vectorize();
 void vectorize_substitute();

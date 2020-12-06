@@ -33,6 +33,9 @@
  */
  
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
+
+#include <getopt.h>
+
 #if MAC
 #include <sioux.h>
 #endif
@@ -51,9 +54,9 @@ FILE	*fctlout,		/* filename.ctl */
 #endif
 
 
-char		*modprefix, prefix_[NRN_BUFSIZE];	/* the first argument */
+char* modprefix;
 
-char            finname[NRN_BUFSIZE];	/* filename.mod  or second argument */
+char* finname;
 
 #if LINT
 char           *clint;
@@ -65,6 +68,7 @@ int nmodl_text = 1;
 List* filetxtlist;
 
 extern int yyparse();
+extern int mkdir_p();
 
 #if NMODL && VECTORIZE
 extern int vectorize;
@@ -77,22 +81,62 @@ extern int usederivstatearray;
 static char pgm_name[] =	"nmodl";
 extern char *RCS_version;
 extern char *RCS_date;
-static void openfiles();
 
-int main(argc, argv)
-	int             argc;
-	char           *argv[]; {
-	/*
-	 * arg 1 is the prefix to the input file and output .c and .par
-	 * files 
-	 * We first look for a .mrg file and then a .mod file
-	 */
-#if NMODL
-	if (argc > 1 && strcmp(argv[1], "--version") == 0) {
-		printf("%s\n", nmodl_version_);
-		exit(0);
-	}
-#endif
+static struct option long_options[] = {
+  {"version", no_argument, 0, 'v'},
+  {"help", no_argument, 0, 'h'},
+  {"outdir", required_argument, 0, 'o'},
+  {0,0,0,0}
+};
+
+static void show_options(char** argv) {
+  fprintf(stderr, "Source to source compiler from NMODL to C\n");
+  fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
+  fprintf(stderr, "\t-h | --help                         print this message\n");
+  fprintf(stderr, "\t-v | --version                      print version number\n");
+}
+
+static void openfiles(char* given_filename, char* output_dir);
+
+int main(int argc, char** argv) {
+  int option        = -1;
+  int option_index  = 0;
+  char* output_dir = NULL;
+      
+  if (argc < 2) {
+    show_options(argv);
+    exit(1);
+  }   
+    
+  while ( (option = getopt_long (argc, argv, ":vho:", long_options, &option_index)) != -1) {
+    switch (option) {
+      case 'v':
+        printf("%s\n", nmodl_version_);
+        exit(0);
+ 
+      case 'o':
+        output_dir = strdup(optarg);   
+        break;
+  
+      case 'h':
+        show_options(argv);
+        exit(0);
+  
+      case ':':
+        fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
+        exit (-1);
+  
+      case '?':
+      default:
+        fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
+        exit (-1);
+    }
+  }
+  if ((argc - optind) > 1) {
+    fprintf(stderr, "%s: Warning several input files specified on command line but only one will be processed\n", argv[0]);
+  }
 
 	filetxtlist = newlist();
 
@@ -104,31 +148,13 @@ int main(argc, argv)
 #endif
 #endif	
 							
-	modprefix = prefix_;
 	init();			/* keywords into symbol table, initialize
 				 * lists, etc. */
-#if MAC
-	modl_units(); /* since we will be changing the cwd */
-	mac_cmdline(&argc, &argv);
-	{
-	char cs[NRN_BUFSIZE], *cp;
-	strncpy(cs, argv[1], NRN_BUFSIZE);
-	cp  = strrchr(cs, ':');
-	if (cp) {
-		*cp = '\0';
-		 if (chdir(cs) == 0) {
-			printf("current directory is \"%s\"\n", cs);
-			strcpy(argv[1], cp+1);
-		}
-	}
-	}		
 
-#endif
+  finname = argv[optind];
 
-	openfiles(argc, argv);	/* .mrg else .mod,  .var, .c */
+	openfiles(finname, output_dir);	/* .mrg else .mod,  .var, .c */
 #if NMODL || HMODL
-	Fprintf(stderr, "Translating %s into %s.c\n", finname,
-		modprefix);
 #else
 #if !SIMSYS
 	Fprintf(stderr, "Translating %s into %s.c and %s.var\n", finname,
@@ -251,36 +277,54 @@ fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", m
 	printf("Done\n");
 	SIOUXSettings.autocloseonquit = true;
 #endif
+	free(modprefix); /* allocated in openfiles below */
 	return 0;
 }
 
-static void openfiles(argc, argv)
-	int             argc;
-	char           *argv[];
-{
+static void openfiles(char* given_filename, char* output_dir) {
 	char            s[NRN_BUFSIZE];
-	char *cp;
 
-	if (argc > 1) {
-		sprintf(modprefix, "%s", argv[1]);
-		cp = strstr(modprefix, ".mod");
-		if (cp) {
-			*cp = '\0';
-		}
-	}
-	if (argc == 2) {
-		Sprintf(finname, "%s.mrg", modprefix);
-	} else if (argc == 3) {
-		Sprintf(finname, "%s", argv[2]);
-	} else {
-		diag("Usage:", "modl prefixto.mod [inputfile]");
-	}
-	if ((fin = fopen(finname, "r")) == (FILE *) 0) {
-		Sprintf(finname, "%s.mod", modprefix);
-		if ((fin = fopen(finname, "r")) == (FILE *) 0) {
-			diag("Can't open input file: ", finname);
-		}
-	}
+  char  output_filename [NRN_BUFSIZE];
+  char  input_filename  [NRN_BUFSIZE];
+  modprefix = strdup (given_filename);                      // we want to keep original string to open input file
+  // find last '.' after last '/' that delimit file name from extension
+  // we are not bothering to deal with filenames that begin with a . but do
+  // want to deal with paths like ../foo/hh
+  char* first_ext_char = strrchr(modprefix, '.');
+  if (strrchr(modprefix, '/') > first_ext_char) {
+    first_ext_char = NULL;
+  }
+
+  Sprintf(input_filename, "%s", given_filename);
+
+  if(first_ext_char) *first_ext_char = '\0';                // effectively cut the extension from prefix if it exist in given_filename
+  if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {   // first try to open given_filename
+    Sprintf(input_filename, "%s.mod", given_filename);      // if it dont work try to add ".mod" extension and retry
+    Sprintf(finname, "%s.mod", given_filename);             // finname is still a global variable, so we need to update it
+    if ((fin = fopen(input_filename, "r")) == (FILE *) 0) {
+      diag("Can't open input file: ", input_filename);
+    }
+  }
+  if (output_dir) {
+      if(mkdir_p(output_dir) != 0) {
+        fprintf(stderr, "Can't create output directory %s\n", output_dir);
+        exit(1);
+      } 
+      char* basename = strrchr(modprefix,'/');
+      if (basename) {
+        Sprintf(output_filename, "%s%s.c", output_dir, basename);
+      } else {
+        Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
+      }
+  } else {
+    Sprintf(output_filename, "%s.c", modprefix);
+  }
+
+  if ((fcout = fopen(output_filename, "w")) == (FILE *) 0) {
+    diag("Can't create C file: ", output_filename);
+  }
+  Fprintf(stderr, "Translating %s into %s\n", input_filename, output_filename);
+
 #if HMODL || NMODL
 #else
 	Sprintf(s, "%s.var", modprefix);
@@ -288,10 +332,6 @@ static void openfiles(argc, argv)
 		diag("Can't create variable file: ", s);
 	}
 #endif
-	Sprintf(s, "%s.c", modprefix);
-	if ((fcout = fopen(s, "w")) == (FILE *) 0) {
-		diag("Can't create C file: ", s);
-	}
 #if SIMSYS
 	Sprintf(s, "%s.ctl", modprefix);
 	if ((fctlout = fopen(s, "w")) == (FILE *) 0) {
@@ -303,3 +343,4 @@ static void openfiles(argc, argv)
 	}
 #endif
 }
+
