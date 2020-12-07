@@ -28,6 +28,9 @@ struct SecMapping {
     std::vector<double> segpositions_start;
     std::vector<double> segpositions_end;
 
+    /** list of radius of each segment */
+    std::vector<double> segradius;
+
     SecMapping(int n, std::string s) : nsec(n), name(s) {}
 
     size_t size() {

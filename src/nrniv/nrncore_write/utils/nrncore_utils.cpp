@@ -98,16 +98,19 @@ void nrnbbcore_register_mapping() {
     Vect* seg = vector_arg(4);
     Vect* pos_start = vector_arg(5);
     Vect* pos_end = vector_arg(6);
+    Vect* radius = vector_arg(7);
 
     double* sections  = vector_vec(sec);
     double* segments  = vector_vec(seg);
     double* segpos_start  = vector_vec(pos_start);
     double* segpos_end  = vector_vec(pos_end);
+    double* seg_radius  = vector_vec(radius);
 
     int nsec = vector_capacity(sec);
     int nseg = vector_capacity(seg);
     int npos_start = vector_capacity(pos_start);
     int npos_end = vector_capacity(pos_end);
+    int nradius = vector_capacity(radius);
 
     if( nsec != nseg ) {
         std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
@@ -126,6 +129,7 @@ void nrnbbcore_register_mapping() {
     smap->segments.assign(segments, segments+nseg);
     smap->segpositions_start.assign(segpos_start, segpos_start + npos_start);
     smap->segpositions_end.assign(segpos_end, segpos_end + npos_end);
+    smap->segradius.assign(seg_radius, seg_radius + nradius);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
