@@ -144,6 +144,13 @@ class MultiCompartmentReaction(GeneralizedReaction):
         else:
             raise RxDException('unrecognized direction; should never happen')
 
+        # check that the regions have sections
+        for reg in self._regions:
+            if reg._secs1d or reg._secs3d:
+                break
+        else:
+            return
+
         # check for 3D sections
         self._src3d = set()
         self._dst3d = set()
