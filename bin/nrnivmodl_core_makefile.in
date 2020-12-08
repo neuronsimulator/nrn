@@ -12,7 +12,7 @@ COMMA_OP =,
 MECHLIB_SUFFIX =
 MODS_PATH = .
 OUTPUT_DIR = @CMAKE_HOST_SYSTEM_PROCESSOR@
-DEST_DIR =
+DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
 # CoreNEURON installation directories
@@ -132,7 +132,7 @@ mod_ispc_objs = $(addprefix $(MOD_OBJS_DIR)/,$(addsuffix .obj,$(basename $(mod_i
 # We use $ORIGIN (@loader_path in OSX)
 ORIGIN_RPATH := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
 SONAME_OPTION := -Wl,$(if $(filter Darwin,$(OS_NAME)),-install_name${COMMA_OP}@rpath/,-soname${COMMA_OP})$(notdir ${COREMECH_LIB_PATH})
-LIB_RPATH = $(if $(DEST_DIR),$(DEST_DIR)/lib,$(ORIGIN_RPATH))
+LIB_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(ORIGIN_RPATH))
 
 # All objects used during build
 ALL_OBJS = $(MOD_FUNC_OBJ) $(DIMPLIC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
@@ -233,9 +233,9 @@ $(MOD_OBJS_DIR):
 
 # install binary and libraries
 install: $(SPECIAL_EXE) coremech_lib_target
-	install -d $(DEST_DIR)/bin $(DEST_DIR)/lib
-	install ${COREMECH_LIB_PATH} $(DEST_DIR)/lib
-	install $(SPECIAL_EXE) $(DEST_DIR)/bin
+	install -d $(DESTDIR)/bin $(DESTDIR)/lib
+	install ${COREMECH_LIB_PATH} $(DESTDIR)/lib
+	install $(SPECIAL_EXE) $(DESTDIR)/bin
 
 .PHONY: build_always
 
