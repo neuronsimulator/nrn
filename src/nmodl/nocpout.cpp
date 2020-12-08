@@ -117,7 +117,7 @@ extern Symbol *stepsym;
 extern char   *reprime();
 extern List	*symlist[];
 extern List* ldifuslist;
-extern char finname[];
+extern char* finname;
 extern int check_tables_threads(List*);
 List *syminorder;
 List *plotlist;

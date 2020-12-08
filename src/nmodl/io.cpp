@@ -2,6 +2,10 @@
 
 /* file.mod input routines */
 #include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <sys/stat.h> 
+#include <errno.h>
 #include "modl.h"
 #include <ctype.h>
 #if MAC && TARGET_API_MAC_CARBON
@@ -9,6 +13,9 @@
 #endif
 #undef METHOD
 #include "parse1.hpp"
+#if defined(_WIN32)
+#include <direct.h>
+#endif
 
 int isend(char*, char*);
 static void pop_file_stack();
@@ -452,3 +459,51 @@ static int  file_stack_empty() {
 	}
 	return (filestack->next == filestack);
 }
+
+/* adapted from : gist@jonathonreinhart/mkdir_p.c */
+int mkdir_p(const char *path)  
+{
+    const size_t len = strlen(path);
+    char mypath[PATH_MAX];
+    char *p;
+ 
+    errno = 0;
+
+    /* copy string so its mutable */
+    if (len > sizeof(mypath)-1) {
+        fprintf(stderr, "Output directory path too long\n");
+        return -1;
+    }
+             
+    strcpy(mypath, path);
+
+    /* iterate the string */
+    for (p = mypath + 1; *p; p++) { 
+        if (*p == '/') {  
+            /* temporarily truncate */
+            *p = '\0';
+    
+#if defined(_WIN32)
+            if (_mkdir(mypath) != 0) {
+#else
+            if (mkdir(mypath, S_IRWXU) != 0) {
+#endif
+                if (errno != EEXIST)
+                    return -1;   
+            }
+            *p = '/';
+        }
+    }
+
+#if defined(_WIN32)
+    if (_mkdir(mypath) != 0) {
+#else
+    if (mkdir(mypath, S_IRWXU) != 0) {
+#endif
+        if (errno != EEXIST)
+            return -1;
+    }
+
+    return 0;
+}
+

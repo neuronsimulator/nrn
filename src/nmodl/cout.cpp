@@ -246,8 +246,8 @@ extern char* cray_pragma();
 #define index strchr
 #endif
 
-static initstates();
-static funcdec();
+static void initstates();
+static void funcdec();
 
 void c_out()
 {

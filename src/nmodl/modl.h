@@ -257,8 +257,9 @@ extern Symbol
 					 * not already done. */
 #include "nmodlfunc.h"
 
-extern char     finname[],	/* the input file prefix */
-                buf[];		/* general purpose temporary buffer */
+extern char*    finname;	/* the input file prefix */
+extern char     buf[];		/* general purpose temporary buffer */
+extern char*    modprefix;
 
 extern List
 		*intoken,	/* Main list of input tokens */

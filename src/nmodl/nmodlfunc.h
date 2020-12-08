@@ -12,7 +12,6 @@ void install_units(char* s1, char* s2);
 void modl_units();
 void vectorize_if_else_stmt(int);
 void consistency();
-void c_out(const char* prefix);
 void printlist(List*);
 void c_out_vectorize(const char*);
 void vectorize_substitute(Item* q, char* str);

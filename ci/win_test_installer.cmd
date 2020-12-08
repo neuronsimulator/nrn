@@ -5,7 +5,7 @@ set "errorfound="
 
 :: install installer
 :: TODO : need to fix this as next command will not wait till installer finishes
-start /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
+start /b /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
 
 :: take a look
 dir C:\nrn_test

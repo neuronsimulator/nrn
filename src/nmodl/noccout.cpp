@@ -102,7 +102,7 @@ static void ext_vdef() {
 
 
 /* when vectorize = 0 */
-void c_out(const char* prefix)
+void c_out()
 {
 #if NMODL
 	Item *q;
@@ -115,7 +115,7 @@ void c_out(const char* prefix)
 	if (vectorize) {
 		vectorize_do_substitute();
 		kin_vect2();	/* heh, heh.. bet you can't guess what this is */
-		c_out_vectorize(prefix);
+		c_out_vectorize();
 		return;
 	}
 #endif
@@ -640,7 +640,7 @@ if (vectorize) {
 
 #if VECTORIZE
 /* when vectorize = 1 */
-void c_out_vectorize(const char* prefix)
+void c_out_vectorize()
 {
 	Item *q;
 	

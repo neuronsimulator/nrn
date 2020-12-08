@@ -999,12 +999,66 @@ redef:
 	goto l0;
 }
 
-double getflt()
+#if NRN_DYNAMIC_UNITS
+/* Translate string to double using a2f for modern units
+   to allow consistency with BlueBrain/nmodl
+*/
+double modern_getflt() {
+	int c;
+	char str[100];
+	char* cp;
+	double d_modern;
+
+	assert(table == dynam[0].table);
+
+	cp = str;
+	do
+		c = get();
+	while(c == ' ' || c == '\t');
+
+l1:
+	if(c >= '0' && c <= '9') {
+		*cp++ = c;
+		c = get();
+		goto l1;
+	}
+	if(c == '.') {
+		*cp++ = c;
+		c = get();
+		goto l1;
+	}
+	if(c == '+' || c == '-') {
+		*cp++ = 'e';
+		*cp++ = c;
+		c = get();
+		while(c >= '0' && c <= '9') {
+			*cp++ = c;
+			c = get();
+		}
+	}
+	*cp = '\0';
+	d_modern = atof(str);
+	if(c == '|') {
+		d_modern /= modern_getflt();
+		return d_modern;
+	}
+	peekc = c;
+	return(d_modern);
+}
+#endif /* NRN_DYNAMIC_UNITS */
+
+double
+getflt()
 {
 	register int c, i, dp;
 	double d, e;
 	int f;
 
+#if NRN_DYNAMIC_UNITS
+	if (table == dynam[0].table) {
+		return modern_getflt();
+	}
+#endif /* NRN_DYNAMIC_UNITS */
 	d = 0.;
 	dp = 0;
 	do
