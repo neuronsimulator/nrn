@@ -5,7 +5,6 @@
 # COBJFILES
 # UserLDFLAGS
 # UserINCFLAGS
-# LinkCoreNEURON
 # Rules to build MODOBJFILES from mod files and COBJFILES from $nrnivmodl_cfiles
 # are found in makemod2c_inc
 
@@ -63,7 +62,19 @@ mod_func_c = $(MODC_DIR)/mod_func.c
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
 mech_libname = nrnmech
-mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+
+# In case of static library we need to link NRNLIB_FLAGS twice to avoid undefined
+# symbols from circular dependencies. But for shared library we don't do it to avoid
+# pthread linking with wheels.
+ifeq (@NRN_ENABLE_SHARED@, ON)
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_shared
+    extra_lib_link =
+else
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_STATIC_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_static
+    extra_lib_link = $(NRNLIB_FLAGS)
+endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
 _ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
