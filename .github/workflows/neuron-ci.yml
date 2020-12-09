@@ -5,9 +5,11 @@ on:
     branches: 
       - master
       - live-debug*
+      - release/**
   pull_request:
     branches:
       - master
+      - release/**
 
 env:
   BUILD_TYPE: Release
