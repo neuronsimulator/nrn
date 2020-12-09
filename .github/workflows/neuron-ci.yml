@@ -5,9 +5,11 @@ on:
     branches: 
       - master
       - live-debug*
+      - release/**
   pull_request:
     branches:
       - master
+      - release/**
 
 env:
   BUILD_TYPE: Release
@@ -78,11 +80,7 @@ jobs:
      
       - uses: actions/checkout@v2
         
-      - name: Install Python3 documentation dependencies
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        working-directory: ${{runner.workspace}}/nrn
-        run: python3 -m pip install --upgrade -r docs/docs_requirements.txt
-        
+
       - name: Build and Test
         id: build-test
         shell: bash
@@ -222,24 +220,3 @@ jobs:
         if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
         uses: mxschmitt/action-tmate@v3
 
-      - name: Documentation 
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        id: documentation
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-          echo "------- Build Doxygen Documentation -------";
-          pushd build;
-          make docs;
-          echo "-------- Disable jekyll --------";
-          pushd docs;
-          touch .nojekyll;
-          echo ::set-output name=status::done
-          
-#       - name: Deploy 🚀
-#         uses: JamesIves/github-pages-deploy-action@3.7.1
-#         if: steps.documentation.outputs.status == 'done'
-#         with:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#           BRANCH: gh-pages # The branch the action should deploy to.
-#           FOLDER: ${{runner.workspace}}/nrn/build/docs # The folder the action should deploy.
-#           CLEAN: false # Automatically remove deleted files from the deploy branch
