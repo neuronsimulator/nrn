@@ -544,7 +544,7 @@ int CodegenCVisitor::float_variables_size() const {
     float_size += count_length(info.assigned_vars);
 
     /// all state variables for which we add Dstate variables
-    float_size += info.state_vars.size();
+    float_size += count_length(info.state_vars);
 
     /// for v_unused variable
     if (info.vectorize) {
@@ -758,11 +758,14 @@ void CodegenCVisitor::update_index_semantics() {
         info.semantics.emplace_back(index++, naming::POINT_PROCESS_SEMANTIC, 1);
     }
     for (const auto& ion: info.ions) {
-        for (auto& var: ion.reads) {
+        for (const auto& var: ion.reads) {
             info.semantics.emplace_back(index++, ion.name + "_ion", 1);
         }
-        for (auto& var: ion.writes) {
-            info.semantics.emplace_back(index++, ion.name + "_ion", 1);
+        for (const auto& var: ion.writes) {
+            /// add if variable is not present in the read list
+            if (std::find(ion.reads.begin(), ion.reads.end(), var) == ion.reads.end()) {
+                info.semantics.emplace_back(index++, ion.name + "_ion", 1);
+            }
             if (ion.is_ionic_current(var)) {
                 info.semantics.emplace_back(index++, ion.name + "_ion", 1);
             }
@@ -822,10 +825,13 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
     auto states = info.state_vars;
 
     // each state variable has corresponding Dstate variable
-    for (auto& variable: states) {
-        auto name = "D" + variable->get_name();
+    for (auto& state: states) {
+        auto name = "D" + state->get_name();
         auto symbol = make_symbol(name);
-        symbol->set_definition_order(variable->get_definition_order());
+        if (state->is_array()) {
+            symbol->set_as_array(state->get_length());
+        }
+        symbol->set_definition_order(state->get_definition_order());
         assigned.push_back(symbol);
     }
     std::sort(assigned.begin(), assigned.end(), comparator);
@@ -890,6 +896,10 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
             variables.back().is_constant = true;
             ion_vars[name] = variables.size() - 1;
         }
+
+        /// symbol for di_ion_dv var
+        std::shared_ptr<symtab::Symbol> ion_di_dv_var = nullptr;
+
         for (const auto& var: ion.writes) {
             const std::string name = "ion_" + var;
 
@@ -900,12 +910,18 @@ std::vector<IndexVariableInfo> CodegenCVisitor::get_int_variables() {
                 variables.emplace_back(make_symbol("ion_" + var));
             }
             if (ion.is_ionic_current(var)) {
-                variables.emplace_back(make_symbol("ion_di" + ion.name + "dv"));
+                ion_di_dv_var = make_symbol("ion_di" + ion.name + "dv");
             }
             if (ion.is_intra_cell_conc(var) || ion.is_extra_cell_conc(var)) {
                 need_style = true;
             }
         }
+
+        /// insert after read/write variables but before style ion variable
+        if (ion_di_dv_var != nullptr) {
+            variables.emplace_back(ion_di_dv_var);
+        }
+
         if (need_style) {
             variables.emplace_back(make_symbol("style_" + ion.name), false, true);
             variables.back().is_constant = true;
