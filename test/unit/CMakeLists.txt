@@ -53,6 +53,7 @@ add_executable(testsymtab symtab/symbol_table.cpp)
 add_executable(testnewton newton/newton.cpp ${SOLVER_SOURCE_FILES})
 add_executable(testunitlexer units/lexer.cpp)
 add_executable(testunitparser units/parser.cpp)
+add_executable(testcodegen codegen/codegen_helper.cpp)
 
 target_link_libraries(testmodtoken lexer util)
 target_link_libraries(testlexer lexer util)
@@ -67,6 +68,16 @@ target_link_libraries(
   ${NMODL_WRAPPER_LIBS})
 target_link_libraries(
   testvisitor
+  visitor
+  symtab
+  lexer
+  util
+  test_util
+  printer
+  ${NMODL_WRAPPER_LIBS})
+target_link_libraries(
+  testcodegen
+  codegen
   visitor
   symtab
   lexer
@@ -99,6 +110,7 @@ foreach(
   testlexer
   testparser
   testvisitor
+  testcodegen
   testprinter
   testsymtab
   testnewton

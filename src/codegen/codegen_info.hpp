@@ -284,11 +284,13 @@ struct CodegenInfo {
     /// reamining assigned variables
     std::vector<SymbolType> assigned_vars;
 
-    /// state variables
+    /// all state variables
     std::vector<SymbolType> state_vars;
 
-    /// ion variables which are also state variables
-    std::vector<SymbolType> ion_state_vars;
+    /// state variables excluding such useion read/write variables
+    /// that are not ionic currents. In neuron/mod2c these are stored
+    /// in the list "rangestate".
+    std::vector<SymbolType> range_state_vars;
 
     /// local variables in the global scope
     std::vector<SymbolType> top_local_variables;
@@ -364,6 +366,12 @@ struct CodegenInfo {
 
     /// if given variable is a current
     bool is_current(const std::string& name) const;
+
+    /// if given variable is a ionic current
+    bool is_ionic_current(const std::string& name) const;
+
+    /// if given variable is a ionic concentration
+    bool is_ionic_conc(const std::string& name) const;
 
     /// if watch statements are used
     bool is_watch_used() const noexcept {

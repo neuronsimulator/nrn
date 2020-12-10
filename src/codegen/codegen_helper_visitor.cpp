@@ -276,17 +276,87 @@ void CodegenHelperVisitor::find_non_range_variables() {
 /**
  * Find range variables i.e. ones that are belong to per instance allocation
  *
- * In order to be compatible with NEURON, we need to print range variables in
- * certain order. For example, range variables which are parameters comes first.
- * Also, there is difference between declaration order vs. definition order. For
- * example, POINTER variable in NEURON block is just declaration and doesn't
- * determine the order in which they will get printed. Below we query symbol table
- * and order all instance variables into certain order.
+ * In order to be compatible with NEURON, we need to print all variables in
+ * exact order as NEURON/MOD2C implementation. This is important because memory
+ * for all variables is allocated in single 1-D array with certain offset
+ * for each variable. The order of variables determine the offset and hence
+ * they must be in same order as NEURON.
+ *
+ * Here is how order is determined into NEURON/MOD2C implementation:
+ *
+ * First, following three lists are created
+ * - variables with parameter and range property (List 1)
+ * - variables with state and range property (List 2)
+ * - variables with assigned and range property (List 3)
+ *
+ * Once created, we remove some variables due to the following criteria:
+ * - In NEURON/MOD2C implementation, we remove variables with NRNPRANGEIN
+ *   or NRNPRANGEOUT type
+ * - So who has NRNPRANGEIN and NRNPRANGEOUT type? these are USEION read
+ *   or write variables that are not ionic currents.
+ * - This is the reason for mod files CaDynamics_E2.mod or cal_mig.mod, ica variable
+ *   is printed earlier in the list but other variables like cai, cao don't appear
+ *   in same order.
+ *
+ * Finally we create 4th list:
+ *  - variables with assigned property and not in the previous 3 lists
+ *
+ * We now print the variables in following order:
+ *
+ * - List 1 i.e. range + parameter variables are printed first
+ * - List 3 i.e. range + assigned variables are printed next
+ * - List 2 i.e. range + state variables are printed next
+ * - List 4 i.e. assigned and ion variables not present in the previous 3 lists
+ *
+ * NOTE:
+ * - State variables also have the property `assigned_definition` but these variables
+ *   are not from ASSIGNED block.
+ * - Variable can not be range as well as state, it's redeclaration error
+ * - Variable can be parameter as well as range. Without range, parameter
+ *   is considered as global variable i.e. one value for all instances.
+ * - If a variable is only defined as RANGE and not in assigned or parameter
+ *   or state block then it's not printed.
+ * - Note that a variable property is different than the variable type. For example,
+ *   if variable has range property, it doesn't mean the variable is declared as RANGE.
+ *   Other variables like STATE and ASSIGNED block variables also get range property
+ *   without being explicitly declared as RANGE in the mod file.
+ * - Also, there is difference between declaration order vs. definition order. For
+ *   example, POINTER variable in NEURON block is just declaration and doesn't
+ *   determine the order in which they will get printed. Below we query symbol table
+ *   and order all instance variables into certain order.
  */
 void CodegenHelperVisitor::find_range_variables() {
     /// comparator to decide the order based on definition
     auto comparator = [](const SymbolType& first, const SymbolType& second) -> bool {
         return first->get_definition_order() < second->get_definition_order();
+    };
+
+    /// from symbols vector `vars`, remove all ion variables which are not ionic currents
+    auto remove_non_ioncur_vars = [](SymbolVectorType& vars, const CodegenInfo& info) -> void {
+        vars.erase(std::remove_if(vars.begin(),
+                                  vars.end(),
+                                  [&](SymbolType& s) {
+                                      return info.is_ion_variable(s->get_name()) &&
+                                             !info.is_ionic_current(s->get_name());
+                                  }),
+                   vars.end());
+    };
+
+    /// if `secondary` vector contains any symbol that exist in the `primary` then remove it
+    auto remove_var_exist = [](SymbolVectorType& primary, SymbolVectorType& secondary) -> void {
+        secondary.erase(std::remove_if(secondary.begin(),
+                                       secondary.end(),
+                                       [&primary](const SymbolType& tosearch) {
+                                           return std::find_if(primary.begin(),
+                                                               primary.end(),
+                                                               // compare by symbol name
+                                                               [&tosearch](
+                                                                   const SymbolType& symbol) {
+                                                                   return tosearch->get_name() ==
+                                                                          symbol->get_name();
+                                                               }) != primary.end();
+                                       }),
+                        secondary.end());
     };
 
     /**
@@ -299,8 +369,10 @@ void CodegenHelperVisitor::find_range_variables() {
                    | NmodlType::pointer_var
                    | NmodlType::bbcore_pointer_var
                    | NmodlType::state_var;
+
     // clang-format on
     info.range_parameter_vars = psymtab->get_variables(with, without);
+    remove_non_ioncur_vars(info.range_parameter_vars, info);
     std::sort(info.range_parameter_vars.begin(), info.range_parameter_vars.end(), comparator);
 
     /**
@@ -314,92 +386,59 @@ void CodegenHelperVisitor::find_range_variables() {
               | NmodlType::bbcore_pointer_var
               | NmodlType::state_var
               | NmodlType::param_assign;
+
     // clang-format on
     info.range_assigned_vars = psymtab->get_variables(with, without);
+    remove_non_ioncur_vars(info.range_assigned_vars, info);
     std::sort(info.range_assigned_vars.begin(), info.range_assigned_vars.end(), comparator);
+
 
     /**
      * Third come state variables. All state variables are kind of range by default.
-     * Note that some mod files like CaDynamics_E2.mod use cai as state variable
-     * and those are not considered as range+state variables while printing instance
-     * variables. Such read/write ion variables are assigned variables and hence they
-     * will be printed at laster stage.
-     * \todo Need to validate with more models and mod2c details.
+     * Note that some mod files like CaDynamics_E2.mod use cai as state variable which
+     * appear in USEION read/write list. These variables are not considered in this
+     * variables because non ionic-current variables are removed and printed later.
      */
     // clang-format off
     with = NmodlType::state_var;
     without = NmodlType::global_var
               | NmodlType::pointer_var
-              | NmodlType::bbcore_pointer_var
-              | NmodlType::read_ion_var
-              | NmodlType::write_ion_var;
+              | NmodlType::bbcore_pointer_var;
+
     // clang-format on
     info.state_vars = psymtab->get_variables(with, without);
     std::sort(info.state_vars.begin(), info.state_vars.end(), comparator);
 
-    /**
-     * Remaining variables are:
-     *  - all assigned variables without range
-     *  - read ion variables which appear in parameter or assigned block
-     *  - state variables which are not range but with ion variable of read/write type
-     */
+    /// range_state_vars is copy of state variables but without non ionic current variables
+    info.range_state_vars = info.state_vars;
+    remove_non_ioncur_vars(info.range_state_vars, info);
 
-    /**
-     * first get assigned definition without read ion variables
-     */
+    /// Remaining variables are assigned and ion variables which are not in the previous 3 lists
+
     // clang-format off
-    with = NmodlType::assigned_definition;
+    with = NmodlType::assigned_definition
+           | NmodlType::read_ion_var
+           | NmodlType::write_ion_var;
     without = NmodlType::global_var
               | NmodlType::pointer_var
               | NmodlType::bbcore_pointer_var
-              | NmodlType::state_var
-              | NmodlType::range_var
-              | NmodlType::extern_neuron_variable
-              | NmodlType::read_ion_var;
-    // clang-format on
-    info.assigned_vars = psymtab->get_variables(with, without);
-
-    /**
-     * Now just use read-ion variables because every read-ion variable
-     * must be part of either assigned or parameter block. Otherwise code is not
-     * compiled anyway.
-     */
-    // clang-format off
-    with = NmodlType::read_ion_var;
-    without = NmodlType::global_var
-              | NmodlType::pointer_var
-              | NmodlType::bbcore_pointer_var
-              | NmodlType::state_var
-              | NmodlType::range_var
               | NmodlType::extern_neuron_variable;
     // clang-format on
-    auto variables = psymtab->get_variables(with, without);
-    info.assigned_vars.insert(info.assigned_vars.end(), variables.begin(), variables.end());
-
-    /*
-     * We want to have state variables which are read or write ion variables.
-     * This needs to be separated from other state variables because mod2c
-     * treat them separately for ordering.
-     */
-    // clang-format off
-    with = NmodlType::state_var;
-    without = NmodlType::global_var
-              | NmodlType::pointer_var
-              | NmodlType::bbcore_pointer_var
-              | NmodlType::range_var
-              | NmodlType::extern_neuron_variable;
-    // clang-format on
-    variables = psymtab->get_variables(with, without);
-    for (auto& variable: variables) {
-        // clang-format off
-        auto properties = NmodlType::read_ion_var
-                          | NmodlType::write_ion_var;
-        // clang-format on
-        if (variable->has_any_property(properties)) {
-            info.ion_state_vars.push_back(variable);
+    const auto& variables = psymtab->get_variables_with_properties(with, false);
+    for (const auto& variable: variables) {
+        if (!variable->has_any_property(without)) {
             info.assigned_vars.push_back(variable);
         }
     }
+
+    /// make sure that variables already present in previous lists
+    /// are removed to avoid any duplication
+    remove_var_exist(info.range_parameter_vars, info.assigned_vars);
+    remove_var_exist(info.range_assigned_vars, info.assigned_vars);
+    remove_var_exist(info.range_state_vars, info.assigned_vars);
+
+    /// sort variables with their definition order
+    std::sort(info.assigned_vars.begin(), info.assigned_vars.end(), comparator);
 }
 
 
@@ -615,14 +654,14 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
         }
     }
     node.visit_children(*this);
+    find_ion_variables();  // Keep this before find_*_range_variables()
     find_range_variables();
     find_non_range_variables();
-    find_ion_variables();
     find_table_variables();
 }
 
 
-codegen::CodegenInfo CodegenHelperVisitor::analyze(const ast::Program& node) {
+CodegenInfo CodegenHelperVisitor::analyze(const ast::Program& node) {
     node.accept(*this);
     return info;
 }

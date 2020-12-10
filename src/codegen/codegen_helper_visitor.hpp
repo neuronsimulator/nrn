@@ -46,6 +46,7 @@ namespace codegen {
  */
 class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     using SymbolType = std::shared_ptr<symtab::Symbol>;
+    using SymbolVectorType = std::vector<std::shared_ptr<symtab::Symbol>>;
 
     /// holds all codegen related information
     codegen::CodegenInfo info;

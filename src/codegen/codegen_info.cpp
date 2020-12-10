@@ -60,7 +60,7 @@ bool CodegenInfo::is_ion_variable(const std::string& name) const {
 }
 
 
-/// if a current
+/// if a current (ionic or non-specific)
 bool CodegenInfo::is_current(const std::string& name) const {
     for (auto& var: currents) {
         if (var == name) {
@@ -70,6 +70,26 @@ bool CodegenInfo::is_current(const std::string& name) const {
     return false;
 }
 
+/// true is a given variable name if a ionic current
+/// (i.e. currents excluding non-specific current)
+bool CodegenInfo::is_ionic_current(const std::string& name) const {
+    for (const auto& ion: ions) {
+        if (ion.is_ionic_current(name) == true) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// true if given variable name is a ionic concentration
+bool CodegenInfo::is_ionic_conc(const std::string& name) const {
+    for (const auto& ion: ions) {
+        if (ion.is_ionic_conc(name) == true) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool CodegenInfo::function_uses_table(std::string& name) const {
     for (auto& function: functions_with_table) {
