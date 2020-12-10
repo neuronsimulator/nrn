@@ -4,9 +4,11 @@ on:
   push:
     branches: 
       - master
+      - release/**
   pull_request:
     branches:
-      - master  
+      - master
+      - release/**
 
 env:
   MSYS2_ROOT: C:\msys64

@@ -38,15 +38,18 @@ class Rate(GeneralizedReaction):
             else:
                 if hasattr(species,'_extracellular'):
                      regions = [species._extracellular()._region]
+                elif hasattr(species,'region'):
+                     regions = [species._region()]
                 else:
-                    if not hasattr(species, '_extracellular_regions'):
-                        regions = species._regions if hasattr(species, '_regions') else [species._region()]
-                    elif not species._extracellular_regions:
-                        regions = species._regions if hasattr(species, '_regions') else [species._region()]
-                    else:
+                    regions = []
+                    if hasattr(species, '_extracellular_regions'):
+                        regions += species._extracellular_regions
+                    if hasattr(species,'_regions'):
+                        regions += species._regions
+                    if not regions:
                         regions = [None]
         else:
-            regions = [reg for reg in regions if not isinstance(reg, region.Extracellular)]
+            regions = [reg for reg in regions]
         self._regions = regions
         self._membrane_flux = membrane_flux
         if membrane_flux not in (True, False):
@@ -71,20 +74,26 @@ class Rate(GeneralizedReaction):
 
         
     def _do_init(self):
+        from . import  region, species
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
+            regions = []
             if self._regions and self._regions != [None]:
-                self._rate, self._involved_species = rxdmath._compile(rate, self._regions)
+                regions = self._regions 
             elif hasattr(self._species(),'_regions'):
-                self._rate, self._involved_species = rxdmath._compile(rate, self._species()._regions)
+                regions = self._species()._regions
             elif hasattr(self._species(),'_region'):
-                self._rate, self._involved_species = rxdmath._compile(rate, [self._species()._region()])
+                regions = [self._species()._region()]
+            regions = [r for r in regions if isinstance(r, region.Extracellular) or (r._secs1d or r._secs3d)]
+            if regions:
+                self._rate, self._involved_species = rxdmath._compile(rate, regions)
+            else:
+                self._rate, self._involved_species = {}, []
         else:
-            self._involved_species = [weakref.ref(species)]
+            self._involved_species = self._species
         self._update_indices()
 
         #Check to if it is an extracellular reaction
-        from . import  region, species
         #Was an ECS region was passed to to the constructor 
         ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
         #ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
@@ -102,12 +111,10 @@ class Rate(GeneralizedReaction):
 
         #Is the species passed to the constructor defined on the ECS
         if not ecs_region:
-            if isinstance(self._species(),species.SpeciesOnRegion):
-                sp = self._species()._species()
-            else:
+            if not isinstance(self._species(),species.SpeciesOnRegion):
                 sp = self._species()
-            if sp and sp._extracellular_instances:
-                self._ecs_regions = [key for key  in sp._extracellular_instances.keys()]
+                if sp and sp._extracellular_instances:
+                    self._ecs_regions = [key for key  in sp._extracellular_instances.keys()]
         
 
         if hasattr(self,'_ecs_regions'):
