@@ -540,12 +540,11 @@ int CodegenCVisitor::float_variables_size() const {
 
     int float_size = count_length(info.range_parameter_vars);
     float_size += count_length(info.range_assigned_vars);
-    float_size += count_length(info.state_vars);
+    float_size += count_length(info.range_state_vars);
     float_size += count_length(info.assigned_vars);
 
-    /// for state variables we add Dstate variables
+    /// all state variables for which we add Dstate variables
     float_size += info.state_vars.size();
-    float_size += info.ion_state_vars.size();
 
     /// for v_unused variable
     if (info.vectorize) {
@@ -821,7 +820,6 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
 
     auto assigned = info.assigned_vars;
     auto states = info.state_vars;
-    states.insert(states.end(), info.ion_state_vars.begin(), info.ion_state_vars.end());
 
     // each state variable has corresponding Dstate variable
     for (auto& variable: states) {
@@ -836,7 +834,7 @@ std::vector<SymbolType> CodegenCVisitor::get_float_variables() {
     variables.insert(variables.end(),
                      info.range_assigned_vars.begin(),
                      info.range_assigned_vars.end());
-    variables.insert(variables.end(), info.state_vars.begin(), info.state_vars.end());
+    variables.insert(variables.end(), info.range_state_vars.begin(), info.range_state_vars.end());
     variables.insert(variables.end(), assigned.begin(), assigned.end());
 
     if (info.vectorize) {
@@ -2535,7 +2533,7 @@ void CodegenCVisitor::print_mechanism_info() {
     printer->add_line("0,");
     variable_printer(info.range_assigned_vars);
     printer->add_line("0,");
-    variable_printer(info.state_vars);
+    variable_printer(info.range_state_vars);
     printer->add_line("0,");
     variable_printer(info.pointer_variables);
     printer->add_line("0");
@@ -3208,9 +3206,11 @@ void CodegenCVisitor::print_initial_block(const InitialBlock* node) {
     // initialize state variables (excluding ion state)
     for (auto& var: info.state_vars) {
         auto name = var->get_name();
-        auto lhs = get_variable_name(name);
-        auto rhs = get_variable_name(name + "0");
-        printer->add_line("{} = {};"_format(lhs, rhs));
+        if (!info.is_ionic_conc(name)) {
+            auto lhs = get_variable_name(name);
+            auto rhs = get_variable_name(name + "0");
+            printer->add_line("{} = {};"_format(lhs, rhs));
+        }
     }
 
     // initial block
