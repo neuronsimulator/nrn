@@ -5,7 +5,7 @@ if test "$1" = "" ; then
 	exit
 fi
 
-NRN_INSTALL="$1"
+NRN_INST="$1"
 CPU=x86_64
 
 #strip the dylibs
