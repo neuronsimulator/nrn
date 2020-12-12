@@ -56,7 +56,9 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
 
 // from partrans.cpp
 extern "C" {
-extern void get_partrans_setup_info(int, int&, int&, int&, int&, int*&, int*&, int*&);
+extern void get_partrans_setup_info(int, int&, int&,
+    int*&, int*&, int*&,
+    int*&, int*&, int*&);
 }
 
 extern "C" {

@@ -24,7 +24,7 @@ extern void (*nrnthread_v_transfer_)(NrnThread*);
 }
 
 int chkpnt;
-const char *bbcore_write_version = "1.3"; // globals.dat has _nrnunit_use_legacy_
+const char *bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable
 
 std::string get_write_path(){
     std::string path("."); // default path
