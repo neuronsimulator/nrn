@@ -361,6 +361,10 @@ AM_CONDITIONAL(NRNMECH_DLL_STYLE, test x${linux_nrnmech} = xyes)
 AM_CONDITIONAL(NRN_BINARY_SPECIAL, test x${linux_nrnmech} != xyes)
 AM_CONDITIONAL(MAC_DARWIN, test x${macdarwin} = xyes)
 AM_CONDITIONAL(USING_CMAKE, false)
+if test x$NRN_RX3D_OPT_LEVEL = x ; then
+  NRN_RX3D_OPT_LEVEL=2
+fi
+AC_SUBST(NRN_RX3D_OPT_LEVEL)
 
 if test x${addlibdl} = xyes ; then
 	LIBS="$LIBS -ldl"
