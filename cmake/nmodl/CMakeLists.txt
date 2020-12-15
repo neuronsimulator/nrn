@@ -5,7 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
-cmake_minimum_required(VERSION 3.3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(
   NMODL
   VERSION 0.2
