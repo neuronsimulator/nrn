@@ -47,7 +47,7 @@ jobs:
       mkdir $(pwd)/$CMAKE_PKG/ispc && tar -xvzf ispc.tar.gz -C $(pwd)/$CMAKE_PKG/ispc --strip 1;
     env:
       CMAKE_PKG: 'cmake-3.10.2-Linux-x86_64'
-    displayName: 'Install Depdendencies'
+    displayName: 'Install Dependencies'
   - script: |
       export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
       export CXX='g++-8'
@@ -113,7 +113,7 @@ jobs:
       brew install bison
       python3 -m pip install -U pip setuptools
       python3 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3,<1.6'
-    displayName: 'Install Depdendencies'
+    displayName: 'Install Dependencies'
   - script: |
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
       mkdir -p $(Build.Repository.LocalPath)/build
@@ -193,7 +193,7 @@ jobs:
       brew install flex bison cmake
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
     condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
-    displayName: 'Install Depdendencies'
+    displayName: 'Install Dependencies'
   - script: |
       installer=python-$(python.org.version)-macosx10.9.pkg
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
