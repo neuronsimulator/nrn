@@ -111,7 +111,9 @@ VarsToReport ReportHandler::get_soma_vars_to_report(const NrnThread& nt,
             const auto& section = cell_mapping->get_seclist_mapping("soma");
             /** 1st key is section-id and 1st value is segment of soma */
             int section_id = section->secmap.begin()->first;
-            int segment_id = section->secmap.begin()->second.front();
+            const auto& segment_ids = section->secmap.begin()->second;
+            nrn_assert(segment_ids.size() % 2);
+            const auto segment_id = segment_ids[segment_ids.size() / 2];
             double* variable = report_variable + segment_id;
             to_report.emplace_back(VarWithMapping(section_id, variable));
             vars_to_report[gid] = to_report;
