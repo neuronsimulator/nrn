@@ -125,6 +125,9 @@ int main(int argc, const char* argv[]) {
     /// is any incompatibility
     bool force_codegen(false);
 
+    /// true if we want to only check compatibility without generating code
+    bool only_check_compatibility(false);
+
     /// true if ion variable copies should be avoided
     bool optimize_ionvar_copies_codegen(false);
 
@@ -253,6 +256,9 @@ int main(int argc, const char* argv[]) {
     codegen_opt->add_flag("--force",
         force_codegen,
         "Force code generation even if there is any incompatibility");
+    codegen_opt->add_flag("--only-check-compatibility",
+                          only_check_compatibility,
+                          "Check compatibility and return without generating code");
     codegen_opt->add_flag("--opt-ionvar-copy",
         optimize_ionvar_copies_codegen,
         "Optimize copies of ion variables ({})"_format(optimize_ionvar_copies_codegen))->ignore_case();
@@ -359,6 +365,12 @@ int main(int argc, const char* argv[]) {
             logger->info("Running code compatibility checker");
             // run perfvisitor to update read/write counts
             PerfVisitor().visit_program(*ast);
+
+            // If we want to just check compatibility we return the result
+            if (only_check_compatibility) {
+                return CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast);
+            }
+
             // If there is an incompatible construct and code generation is not forced exit NMODL
             if (CodegenCompatibilityVisitor().find_unhandled_ast_nodes(*ast) && !force_codegen) {
                 return 1;
