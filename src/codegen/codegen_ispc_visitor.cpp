@@ -11,6 +11,7 @@
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "codegen/codegen_utils.hpp"
 #include "symtab/symbol_table.hpp"
 #include "utils/logger.hpp"
 #include "visitors/rename_visitor.hpp"
@@ -124,54 +125,26 @@ void CodegenIspcVisitor::visit_local_list_statement(const ast::LocalListStatemen
 /****************************************************************************************/
 
 /**
- * \todo : In ISPC we have to explicitly append `d` to a floating point number
- *         otherwise it is treated as float. A value stored in the AST can be in
- *         scientific notation and hence we can't just append `d` to the string.
- *         Hence, we have to print number with .16f and then append `d`. But note
- *         that this will result into discrepancy between C++ backend and ISPC
- *         backend when floating point number is not exactly represented with .16f.
+ * In ISPC we have to explicitly append `d` to a floating point number
+ * otherwise it is treated as float. A value stored in the AST can be in
+ * scientific notation and hence we can't just append `d` to the string.
+ * Hence, we have to transform the value into the ISPC compliant format by
+ * replacing `e` and `E` with `d` to keep the same representation of the
+ * number as in the cpp backend.
  */
-std::string CodegenIspcVisitor::double_to_string(const std::string& s_value) {
-    double value = std::stod(s_value);
-    if (std::ceil(value) == value) {
-        return "{:.1f}d"_format(value);
-    }
-    if ((value <= 1.0) && (value >= -1.0)) {
-        return "{:.16f}d"_format(value);
-    } else {
-        auto e = std::log10(std::abs(value));
-        if (e < 0.0) {
-            e = std::ceil(-e);
-            auto m = std::pow(10, e);
-            return "{:f}d-{:d}"_format(value * m, static_cast<int>(e));
-        } else {
-            e = std::floor(e);
-            auto m = std::pow(10, e);
-            return "{:f}d{:d}"_format(value / m, static_cast<int>(e));
-        }
-    }
+std::string CodegenIspcVisitor::format_double_string(const std::string& s_value) {
+    return utils::format_double_string<CodegenIspcVisitor>(s_value);
 }
 
 
-std::string CodegenIspcVisitor::float_to_string(const std::string& s_value) {
-    float value = std::stof(s_value);
-    if (std::ceil(value) == value) {
-        return "{:.1f}"_format(value);
-    }
-    if ((value <= 1.0f) && (value >= -1.0f)) {
-        return "{:.6f}"_format(value);
-    } else {
-        auto e = std::log10(std::abs(value));
-        if (e < 0.0f) {
-            e = std::ceil(-e);
-            auto m = std::pow(10, e);
-            return "{:f}e-{:d}"_format(value * m, static_cast<int>(e));
-        } else {
-            e = std::floor(e);
-            auto m = std::pow(10, e);
-            return "{:f}e{:d}"_format(value / m, static_cast<int>(e));
-        }
-    }
+/**
+ * For float variables we don't have to do the conversion with changing `e` and
+ * `E` with `f`, since the scientific notation numbers are already parsed as
+ * floats by ISPC. Instead we need to take care of only appending `f` to the
+ * end of floating point numbers, which is optional on ISPC.
+ */
+std::string CodegenIspcVisitor::format_float_string(const std::string& s_value) {
+    return utils::format_float_string<CodegenIspcVisitor>(s_value);
 }
 
 
@@ -492,7 +465,7 @@ void CodegenIspcVisitor::print_nmodl_constants() {
         printer->add_line("/** constants used in nmodl */");
         for (auto& it: info.factor_definitions) {
             const std::string name = it->get_node_name() == "PI" ? "ISPC_PI" : it->get_node_name();
-            const std::string value = it->get_value()->get_value();
+            const std::string value = format_double_string(it->get_value()->get_value());
             printer->add_line("static const uniform double {} = {};"_format(name, value));
         }
     }

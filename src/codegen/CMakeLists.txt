@@ -18,7 +18,9 @@ set(CODEGEN_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_utils.hpp)
 
 # =============================================================================
 # Codegen library and executable

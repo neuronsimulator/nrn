@@ -5,8 +5,6 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#define CATCH_CONFIG_MAIN
-
 #include <catch/catch.hpp>
 
 #include "ast/program.hpp"

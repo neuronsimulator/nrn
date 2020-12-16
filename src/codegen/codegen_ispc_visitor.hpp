@@ -60,12 +60,20 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     std::vector<const ast::FunctionBlock*> wrapper_functions;
 
   protected:
-    /// doubles are differently represented in ispc than in C
-    std::string double_to_string(const std::string& value) override;
+    /**
+     * Convert a given \c double value to its string representation
+     * \param value The number to convert given as string as it parsed by the modfile
+     * \return      Its string representation in ISPC compliant format
+     */
+    std::string format_double_string(const std::string& value) override;
 
 
-    /// floats are differently represented in ispc than in C
-    std::string float_to_string(const std::string& value) override;
+    /**
+     * Convert a given \c float value to its string representation
+     * \param value The number to convert given as string as it parsed by the modfile
+     * \return      Its string representation in ISPC compliant format
+     */
+    std::string format_float_string(const std::string& value) override;
 
 
     /// name of the code generation backend
@@ -151,12 +159,6 @@ class CodegenIspcVisitor: public CodegenCVisitor {
 
     void print_wrapper_headers_include();
 
-    void print_nmodl_constants() override;
-
-
-    /// all compute functions for every backend
-    void print_compute_functions() override;
-
 
     /// nmodl procedure definition
     void print_procedure(const ast::ProcedureBlock& node) override;
@@ -236,13 +238,24 @@ class CodegenIspcVisitor: public CodegenCVisitor {
                        LayoutType layout,
                        const std::string& float_type,
                        const bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file, stream, layout, float_type, optimize_ionvar_copies)
+        : CodegenCVisitor(mod_file,
+                          stream,
+                          layout,
+                          float_type,
+                          optimize_ionvar_copies,
+                          ".ispc",
+                          ".cpp")
         , fallback_codegen(mod_file, layout, float_type, optimize_ionvar_copies, wrapper_printer) {}
 
     void visit_function_call(const ast::FunctionCall& node) override;
     void visit_var_name(const ast::VarName& node) override;
     void visit_program(const ast::Program& node) override;
     void visit_local_list_statement(const ast::LocalListStatement& node) override;
+
+    /// all compute functions for every backend
+    void print_compute_functions() override;
+
+    void print_nmodl_constants() override;
 };
 
 /** @} */  // end of codegen_backends

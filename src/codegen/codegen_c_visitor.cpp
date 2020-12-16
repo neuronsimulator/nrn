@@ -15,6 +15,7 @@
 #include "ast/all.hpp"
 #include "codegen/codegen_helper_visitor.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "codegen/codegen_utils.hpp"
 #include "config/config.h"
 #include "lexer/token_mapping.hpp"
 #include "parser/c11_driver.hpp"
@@ -38,6 +39,7 @@ using symtab::syminfo::NmodlType;
 using SymbolType = std::shared_ptr<symtab::Symbol>;
 
 using nmodl::utils::UseNumbersInString;
+namespace codegen_utils = nmodl::codegen::utils;
 
 /****************************************************************************************/
 /*                            Overloaded visitor routines                               */
@@ -75,7 +77,7 @@ void CodegenCVisitor::visit_float(const Float& node) {
     if (!codegen) {
         return;
     }
-    printer->add_text(float_to_string(node.get_value()));
+    printer->add_text(format_float_string(node.get_value()));
 }
 
 
@@ -83,7 +85,7 @@ void CodegenCVisitor::visit_double(const Double& node) {
     if (!codegen) {
         return;
     }
-    printer->add_text(double_to_string(node.get_value()));
+    printer->add_text(format_double_string(node.get_value()));
 }
 
 
@@ -440,23 +442,16 @@ int CodegenCVisitor::position_of_int_var(const std::string& name) const {
  * then it gets printed as an integer. To avoid this, we use below wrapper.
  * If user has provided integer then it gets printed as 1.0 (similar to mod2c
  * and neuron where ".0" is appended). Otherwise we print double variables as
- * they are represented in the mod file by user.
+ * they are represented in the mod file by user. If the value is in scientific
+ * representation (1e+20, 1E-15) then keep it as it is.
  */
-std::string CodegenCVisitor::double_to_string(const std::string& s_value) {
-    double value = std::stod(s_value);
-    if (std::ceil(value) == value) {
-        return "{:.1f}"_format(value);
-    }
-    return s_value;
+std::string CodegenCVisitor::format_double_string(const std::string& s_value) {
+    return codegen_utils::format_double_string<CodegenCVisitor>(s_value);
 }
 
 
-std::string CodegenCVisitor::float_to_string(const std::string& s_value) {
-    float value = std::stof(s_value);
-    if (std::ceil(value) == value) {
-        return "{:.1f}"_format(value);
-    }
-    return s_value;
+std::string CodegenCVisitor::format_float_string(const std::string& s_value) {
+    return codegen_utils::format_float_string<CodegenCVisitor>(s_value);
 }
 
 
@@ -1006,7 +1001,7 @@ std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
                                     std::get<1>(*iter),
                                     std::get<2>(*iter),
                                     std::get<3>(*iter));
-        if (!utils::is_last(iter, params)) {
+        if (!nmodl::utils::is_last(iter, params)) {
             param += ", ";
         }
     }
@@ -1684,7 +1679,7 @@ void CodegenCVisitor::print_function(const ast::FunctionBlock& node) {
 
 
 std::string CodegenCVisitor::find_var_unique_name(const std::string& original_name) const {
-    auto& singleton_random_string_class = utils::SingletonRandomString<4>::instance();
+    auto& singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
     std::string unique_name = original_name;
     if (singleton_random_string_class.random_string_exists(original_name)) {
         unique_name = original_name;
