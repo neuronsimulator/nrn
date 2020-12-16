@@ -266,6 +266,7 @@ codegen
     --layout TEXT:{aos,soa}=soa           Memory layout for code generation
     --datatype TEXT:{float,double}=soa    Data type for floating point variables
     --force                               Force code generation even if there is any code incompatibility
+    --only-check-compatibility            Check compatibility and return without generating code
 ```
 
 ### Documentation
