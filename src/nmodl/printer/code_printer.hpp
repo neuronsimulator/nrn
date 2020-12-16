@@ -47,10 +47,10 @@ class CodePrinter {
 
   public:
     CodePrinter()
-        : result(new std::ostream(std::cout.rdbuf())) {}
+        : result(std::make_shared<std::ostream>(std::cout.rdbuf())) {}
 
     CodePrinter(std::ostream& stream)
-        : result(new std::ostream(stream.rdbuf())) {}
+        : result(std::make_shared<std::ostream>(stream.rdbuf())) {}
 
     CodePrinter(const std::string& filename);
 

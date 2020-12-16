@@ -575,18 +575,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     /**
      * Convert a given \c double value to its string representation
-     * \param value The number to convert
+     * \param value The number to convert given as string as it is parsed by the modfile
      * \return      Its string representation
      */
-    virtual std::string double_to_string(const std::string& value);
+    virtual std::string format_double_string(const std::string& value);
 
 
     /**
      * Convert a given \c float value to its string representation
-     * \param value The number to convert
+     * \param value The number to convert given as string as it is parsed by the modfile
      * \return      Its string representation
      */
-    virtual std::string float_to_string(const std::string& value);
+    virtual std::string format_float_string(const std::string& value);
 
 
     /**
@@ -1657,6 +1657,21 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
+    CodegenCVisitor(const std::string& mod_filename,
+                    std::ostream& stream,
+                    LayoutType layout,
+                    const std::string& float_type,
+                    const bool optimize_ionvar_copies,
+                    const std::string& extension,
+                    const std::string& wrapper_ext)
+        : target_printer(new CodePrinter(stream))
+        , wrapper_printer(new CodePrinter(stream))
+        , printer(target_printer)
+        , mod_filename(mod_filename)
+        , layout(layout)
+        , float_type(float_type)
+        , optimize_ionvar_copies(optimize_ionvar_copies) {}
+
 
   public:
     /**
@@ -1888,7 +1903,7 @@ void CodegenCVisitor::print_vector_elements(const std::vector<T>& elements,
     for (auto iter = elements.begin(); iter != elements.end(); iter++) {
         printer->add_text(prefix);
         (*iter)->accept(*this);
-        if (!separator.empty() && !utils::is_last(iter, elements)) {
+        if (!separator.empty() && !nmodl::utils::is_last(iter, elements)) {
             printer->add_text(separator);
         }
     }

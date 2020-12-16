@@ -212,7 +212,7 @@ To know more about code generation backends, [see here](https://bluebrain.github
 
 ```
 $ nmodl -H
-NMODL : Source-to-Source Code Generation Framework
+NMODL : Source-to-Source Code Generation Framework [version]
 Usage: /path/<>/nmodl [OPTIONS] file... [SUBCOMMAND]
 
 Positionals:
@@ -226,47 +226,54 @@ Options:
   --scratch TEXT=tmp                    Directory for intermediate code output
   --units TEXT=/path/<>/nrnunits.lib
                                         Directory of units lib file
+
 Subcommands:
 host
   HOST/CPU code backends
   Options:
-    --c                                   C/C++ backend
-    --omp                                 C/C++ backend with OpenMP
-    --ispc                                C/C++ backend with ISPC
+    --c                                   C/C++ backend (true)
+    --omp                                 C/C++ backend with OpenMP (false)
+    --ispc                                C/C++ backend with ISPC (false)
+
 acc
   Accelerator code backends
   Options:
-    --oacc                                C/C++ backend with OpenACC
-    --cuda                                C/C++ backend with CUDA
+    --oacc                                C/C++ backend with OpenACC (false)
+    --cuda                                C/C++ backend with CUDA (false)
+
 sympy
   SymPy based analysis and optimizations
   Options:
-    --analytic                            Solve ODEs using SymPy analytic integration
-    --pade                                Pade approximation in SymPy analytic integration
-    --cse                                 CSE (Common Subexpression Elimination) in SymPy analytic integration
-    --conductance                         Add CONDUCTANCE keyword in BREAKPOINT
+    --analytic                            Solve ODEs using SymPy analytic integration (false)
+    --pade                                Pade approximation in SymPy analytic integration (false)
+    --cse                                 CSE (Common Subexpression Elimination) in SymPy analytic integration (false)
+    --conductance                         Add CONDUCTANCE keyword in BREAKPOINT (false)
+
 passes
   Analyse/Optimization passes
   Options:
-    --inline                              Perform inlining at NMODL level
-    --unroll                              Perform loop unroll at NMODL level
-    --const-folding                       Perform constant folding at NMODL level
-    --localize                            Convert RANGE variables to LOCAL
-    --localize-verbatim                   Convert RANGE variables to LOCAL even if verbatim block exist
-    --local-rename                        Rename LOCAL variable if variable of same name exist in global scope
-    --verbatim-inline                     Inline even if verbatim block exist
-    --verbatim-rename                     Rename variables in verbatim block
-    --json-ast                            Write AST to JSON file
-    --nmodl-ast                           Write AST to NMODL file
-    --json-perf                           Write performance statistics to JSON file
-    --show-symtab                         Write symbol table to stdout
+    --inline                              Perform inlining at NMODL level (false)
+    --unroll                              Perform loop unroll at NMODL level (false)
+    --const-folding                       Perform constant folding at NMODL level (false)
+    --localize                            Convert RANGE variables to LOCAL (false)
+    --global-to-range                     Convert GLOBAL variables to RANGE (false)
+    --localize-verbatim                   Convert RANGE variables to LOCAL even if verbatim block exist (false)
+    --local-rename                        Rename LOCAL variable if variable of same name exist in global scope (false)
+    --verbatim-inline                     Inline even if verbatim block exist (false)
+    --verbatim-rename                     Rename variables in verbatim block (true)
+    --json-ast                            Write AST to JSON file (false)
+    --nmodl-ast                           Write AST to NMODL file (false)
+    --json-perf                           Write performance statistics to JSON file (false)
+    --show-symtab                         Write symbol table to stdout (false)
+
 codegen
   Code generation options
   Options:
     --layout TEXT:{aos,soa}=soa           Memory layout for code generation
     --datatype TEXT:{float,double}=soa    Data type for floating point variables
-    --force                               Force code generation even if there is any code incompatibility
+    --force                               Force code generation even if there is any incompatibility
     --only-check-compatibility            Check compatibility and return without generating code
+    --opt-ionvar-copy                     Optimize copies of ion variables (false)
 ```
 
 ### Documentation
