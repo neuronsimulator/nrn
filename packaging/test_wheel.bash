@@ -24,8 +24,8 @@ test_wheel () {
     # sample mod file for nrnivmodl check
     local TEST_DIR="test_dir" 
     mkdir -p $TEST_DIR
-    cp nmodl/ext/example/*.mod $TEST_DIR/
-    cp test/integration/mod/cabpump.mod test/integration/mod/var_init.inc $TEST_DIR/
+    cp ../nmodl/ext/example/*.mod $TEST_DIR/
+    cp ../test/integration/mod/cabpump.mod ../test/integration/mod/var_init.inc $TEST_DIR/
     cd $TEST_DIR
     for mod in *.mod
     do
@@ -38,6 +38,8 @@ test_wheel () {
 }
 
 echo "== Testing $python_wheel using $python_exe ($python_ver) =="
+
+mkdir testwheel && cd testwheel
 
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.
@@ -52,7 +54,8 @@ else
 fi
 
 # install nmodl
-$python_exe -m pip install $python_wheel
+$python_exe -m pip install -U pip
+$python_exe -m pip install ../$python_wheel
 $python_exe -m pip show nmodl || $python_exe -m pip show nmodl-nightly
 
 # run tests

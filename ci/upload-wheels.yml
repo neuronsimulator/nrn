@@ -16,7 +16,6 @@ steps:
     inputs:
       pythonUploadServiceConnection: AzureNMODLPypi
     condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.releaseWheelBuild, true))
-
   - script: |
       python -m pip install twine
       python -m twine upload --verbose --skip-existing -r NMODLPypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl

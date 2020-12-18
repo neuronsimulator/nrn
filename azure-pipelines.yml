@@ -2,13 +2,12 @@
 # Azure Pipeline NMODL settings
 #=============================================================================
 variables:
-- name: ReleaseWheelBuild
-  value: false
-- name: NightlyWheelBuild
-  value: false
+  # defined in UI
+  #- ReleaseWheelBuild: False
+  #- NightlyWheelBuild: False
 - name: buildWheel
   value: $[or(in(variables['Build.Reason'], 'Schedule'),
-              and(in(variables['Build.Reason'], 'Manual'), eq(variables.NightlyWheelBuild, true)))]
+              and(in(variables['Build.Reason'], 'Manual'), eq(variables.NightlyWheelBuild, True)))]
 
 # Nightly build master for pypi upload
 schedules:
@@ -16,7 +15,7 @@ schedules:
   branches:
     include:
     - master
-  always: true
+  always: True
 
 
 jobs:
@@ -26,7 +25,7 @@ jobs:
   displayName: 'Ubuntu (16.04), GCC 8.3'
   steps:
   - checkout: self
-    submodules: true
+    submodules: True
   - script: |
       sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       sudo apt-add-repository -y ppa:deadsnakes/ppa
@@ -107,7 +106,7 @@ jobs:
   displayName: 'MacOS (10.14), AppleClang 10.0'
   steps:
   - checkout: self
-    submodules: true
+    submodules: True
   - script: |
       brew install flex cmake python@3
       brew install bison
@@ -142,29 +141,33 @@ jobs:
         python.version: '3.9'
   steps:
   - checkout: self
-    submodules: true
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    submodules: True
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
   - script: |
-      if [ "$(buildWheel)" == "true" ]; then
+      if [ "$(buildWheel)" == "True" ]; then
         export TAG="-nightly"
       else
         export TAG=""
       fi
-      echo "TAG=$TAG"
       docker run --rm \
         -w /root/nmodl \
         -v $PWD:/root/nmodl \
         -e NMODL_NIGHTLY_TAG=$TAG \
         'bluebrain/nmodl:wheel' \
         packaging/build_wheels.bash linux $(python.version)
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Building ManyLinux Wheel'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    displayName: 'Publish wheel as build artifact'
   - script: |
       sudo apt-add-repository -y ppa:deadsnakes/ppa
       sudo apt update
       sudo apt-get install -y python$(python.version) python$(python.version)-dev python$(python.version)-venv
       packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Test ManyLinux Wheel with Python $(python.version)'
   - template: ci/upload-wheels.yml
 - job: 'macos_wheels'
@@ -187,34 +190,39 @@ jobs:
         python.org.version: '3.9.0'
   steps:
   - checkout: self
-    submodules: true
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    submodules: True
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
   - script: |
       brew install flex bison cmake
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Install Dependencies'
   - script: |
       installer=python-$(python.org.version)-macosx10.9.pkg
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
       curl $url -o $installer
       sudo installer -pkg $installer -target /
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Install Python from python.org'
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      if [ "$(buildWheel)" == "true" ]; then
+      if [ "$(buildWheel)" == "True" ]; then
         export NMODL_NIGHTLY_TAG="-nightly"
       else
         export NMODL_NIGHTLY_TAG=""
       fi
       packaging/build_wheels.bash osx $(python.version)
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Build macos Wheel'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    displayName: 'Publish wheel as build artifact'
   - script: |
       packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
-    condition: and(succeeded(), or(eq(variables.buildWheel, true), eq(variables['python.version'], '3.9')))
+    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
     displayName: 'Test macos Wheel with Python $(python.version)'
   - template: ci/upload-wheels.yml
