@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <cstdlib>
+#include <partrans.h>
 
 typedef void*(*CNB)(...);
 typedef struct core2nrn_callback_t {
@@ -52,13 +53,6 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
                                 int& ix, int& sz, double*& yvec, double*& tvec);
 
 int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset);
-}
-
-// from partrans.cpp
-extern "C" {
-extern void get_partrans_setup_info(int, int&, int&,
-    int*&, int*&, int*&,
-    int*&, int*&, int*&);
 }
 
 extern "C" {

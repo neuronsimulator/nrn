@@ -16,13 +16,10 @@
 
 #include <vector>
 #include <map> // Introduced for NonVSrcUpdateInfo
+#include "partrans.h" // sgid_t and SetupTransferInfo for CoreNEURON
 
-#ifndef NRNLONGSGID
-#define NRNLONGSGID 0
-#endif
 
 #if NRNLONGSGID
-#define sgid_t int64_t
 #if PARANEURON
 extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
@@ -37,7 +34,6 @@ extern "C" {
 }
 #endif //PARANEURON
 #else // not NRNLONGSGID
-#define sgid_t int
 #if PARANEURON
 extern "C" {
   extern void sgid_alltoallv(sgid_t* s, int* scnt, int* sdispl, sgid_t* r, int* rcnt, int* rdispl)
@@ -1071,72 +1067,39 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   Cleaned up the BBCoreGapInfo (and gap_ml).
 
   So a simple factoring of the verify and create portions suffices
-  for both files and direct. Note that direct calls back for each thread
-  in index order. So for, tid 0, verify and create will be accomplished,
-  and for tid nthread-1, cleanup of BBCoreGapInfo will take place (the
-  contents of each thread are passed back and cleaned up in coreneuron
-  after use there.
+  for both files and direct. Note that direct call gets a pointer to
+  SetupTransferInfo* gi.
+  To cleanup gi, CoreNEURON should callback with an ngroup of -1.
 */
 
-struct BBCoreGapInfo {
-  int nsrc, ntar;
+static SetupTransferInfo* gi; // array of size nthread (gi stands for  gapinfo)
 
-  int* src_sid;
-  int* src_type;
-  int* src_index;
+static void nrncore_transfer_info(int);
 
-  int* tar_sid;
-  int* tar_type;
-  int* tar_index;
-};
-
-static BBCoreGapInfo* gi; // array of size nthread
-
-static void nrnbbcore_gap_info();
-
-extern "C" {
-void get_partrans_setup_info(int tid, int& nsrc, int& ntar,
-  int*& src_sid, int*& src_type, int*& src_index,
-  int*& tar_sid, int*& tar_type, int*& tar_index);
-}
-
-void get_partrans_setup_info(int tid, int& nsrc, int& ntar,
-  int*& src_sid, int*& src_type, int*& src_index,
-  int*& tar_sid, int*& tar_type, int*& tar_index)
-{
-
-  if (tid == 0) { // first call
-    nrnbbcore_gap_info();
+void get_partrans_setup_info(int ngroup, int cn_nthread, size_t cn_sidt_sz, SetupTransferInfo** giref) {
+  if (ngroup == -1) {
+    if (gi) {
+      delete [] gi;
+      gi = nullptr;
+    }
+    return;
   }
+  assert(cn_sidt_sz == sizeof(sgid_t));
+  assert(ngroup == nrn_nthread);
+  nrncore_transfer_info(cn_nthread);
   assert(gi);
-
-  BBCoreGapInfo& g = gi[tid];
-  ntar = g.ntar;
-  nsrc = g.nsrc;
-
-  src_sid = g.src_sid;
-  src_type = g.src_type;
-  src_index = g.src_index;
-
-  tar_sid = g.tar_sid;
-  tar_type = g.tar_type;
-  tar_index = g.tar_index;
-
-  if (tid == nrn_nthread-1) {
-    delete [] gi;
-    gi = NULL;
-  }
+  *giref = gi;
 }
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
-  nrnbbcore_gap_info();
+  nrncore_transfer_info(nrn_nthread);
   if (gi == NULL) { return 0; }
 
   // print the files
   for (int tid = 0; tid < nrn_nthread; ++tid) {
-    BBCoreGapInfo& g = gi[tid];
+    SetupTransferInfo& g = gi[tid];
 
-    if (g.nsrc == 0 && g.ntar == 0) { // no file
+    if (g.src_sid.empty() && g.tar_sid.empty()) { // no file
       continue;
     }
 
@@ -1144,107 +1107,51 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
     FILE* f = fopen(fname, "wb");
     assert(f);
+    int ntar = int(g.tar_sid.size());
+    int nsrc = int(g.src_sid.size());
     fprintf(f, "%s\n", bbcore_write_version);
-    fprintf(f, "%d ntar\n", g.ntar);
-    fprintf(f, "%d nsrc\n", g.nsrc);
+    fprintf(f, "%d sizeof_sid_t\n", int(sizeof(sgid_t)));
+    fprintf(f, "%d ntar\n", ntar);
+    fprintf(f, "%d nsrc\n", nsrc);
 
     int chkpnt = 0;
 #define CHKPNT fprintf(f, "chkpnt %d\n", chkpnt++);
 
-    if (g.nsrc > 0) {
-        CHKPNT fwrite(g.src_sid, g.nsrc, sizeof(int), f);
-        CHKPNT fwrite(g.src_type, g.nsrc, sizeof(int), f);
-        CHKPNT fwrite(g.src_index, g.nsrc, sizeof(int), f);
+    if (!g.src_sid.empty()) {
+        CHKPNT fwrite(g.src_sid.data(), nsrc, sizeof(sgid_t), f);
+        CHKPNT fwrite(g.src_type.data(), nsrc, sizeof(int), f);
+        CHKPNT fwrite(g.src_index.data(), nsrc, sizeof(int), f);
     }
 
-    if (g.ntar > 0) {
-        CHKPNT fwrite(g.tar_sid, g.ntar, sizeof(int), f);
-        CHKPNT fwrite(g.tar_type, g.ntar, sizeof(int), f);
-        CHKPNT fwrite(g.tar_index, g.ntar, sizeof(int), f);
+    if (!g.tar_sid.empty()) {
+        CHKPNT fwrite(g.tar_sid.data(), ntar, sizeof(sgid_t), f);
+        CHKPNT fwrite(g.tar_type.data(), ntar, sizeof(int), f);
+        CHKPNT fwrite(g.tar_index.data(), ntar, sizeof(int), f);
     }
 
     fclose(f);
   }
 
   // cleanup
-  for (int tid=0; tid < nrn_nthread; ++tid) {
-    BBCoreGapInfo& g = gi[tid];
-    delete [] g.src_sid;
-    delete [] g.src_type;
-    delete [] g.src_index;
-    delete [] g.tar_sid;
-    delete [] g.tar_type;
-    delete [] g.tar_index;
-  }
   delete [] gi;
   gi = NULL;
   return 0;
 }
 
-static void nrnbbcore_gap_info() {
+static void nrncore_transfer_info(int cn_nthread) {
 
   assert(target_pntlist_ && target_pntlist_->count() == targets_->count());
 
   // space for the info
-  gi = new BBCoreGapInfo[nrn_nthread];
-
-  // Count targets and sources for each thread
-  // This is kind of done for transfer_thread_data_ but that has only a
-  // single cnt for both targets and sources and here we want to deal with
-  // the case of no targets or no sources.
-  // Zero the counts (and array pointers).
-  for (int tid = 0; tid < nrn_nthread; ++tid) {
-    gi[tid].ntar = 0;
-    gi[tid].nsrc = 0;
-    gi[tid].src_sid = NULL;
-    gi[tid].src_type = NULL;
-    gi[tid].src_index = NULL;
-    gi[tid].tar_sid = NULL;
-    gi[tid].tar_type = NULL;
-    gi[tid].tar_index = NULL;
+  if (gi) {
+    delete [] gi;
   }
-  // count targets
-  if (target_pntlist_) {
-    for (int i=0; i < target_pntlist_->count(); ++i) {
-      NrnThread* nt = (NrnThread*)target_pntlist_->item(i)->_vnt;
-      int tid = nt ? nt->id : 0;
-      gi[tid].ntar++;
-    }
-  }
-  // count sources
-  if (visources_) {
-    for (int i=0; i < visources_->count(); ++i) {
-      Node* nd = visources_->item(i);
-      int tid = nd->_nt ? nd->_nt->id : 0;
-      gi[tid].nsrc++;
-    }
-  }
-
-  // Allocate
-  for (int tid = 0; tid < nrn_nthread; ++tid) {
-    BBCoreGapInfo& g = gi[tid];
-    if (g.nsrc) {
-      g.src_sid = new int[g.nsrc];
-      g.src_type = new int[g.nsrc];
-      g.src_index = new int[g.nsrc];
-    }
-    if (g.ntar) {
-      g.tar_sid = new int[g.ntar];
-      g.tar_type = new int[g.ntar];
-      g.tar_index = new int[g.ntar];
-    }
-  }
-
-  // re-zero counts for filling the arrays
-  for (int tid=0; tid < nrn_nthread; ++tid) {
-    gi[tid].nsrc = 0;
-    gi[tid].ntar = 0;
-  }
+  gi = new SetupTransferInfo[cn_nthread];
 
   // info for targets, segregate into threads
   if (targets_) {
     for (int i=0; i < targets_->count(); ++i) {
-      int sid = sgid2targets_->item(i);
+      sgid_t sid = sgid2targets_->item(i);
       Point_process* pp = target_pntlist_->item(i);
       NrnThread* nt = (NrnThread*)pp->_vnt;
       int tid = nt ? nt->id : 0;
@@ -1252,18 +1159,17 @@ static void nrnbbcore_gap_info() {
       Memb_list& ml = memb_list[type];
       int ix = targets_->item(i) - ml.data[0];
 
-      BBCoreGapInfo& g = gi[tid];
-      g.tar_sid[g.ntar] = sid;
-      g.tar_type[g.ntar] = type;
-      g.tar_index[g.ntar] = ix;
-      g.ntar += 1;
+      SetupTransferInfo& g = gi[tid];
+      g.tar_sid.push_back(sid);
+      g.tar_type.push_back(type);
+      g.tar_index.push_back(ix);
     }
   }
 
   // info for sources, segregate into threads.
   if (visources_) {
     for (int i=0; i < sgids_->count(); ++i) {
-      int sid = sgids_->item(i);
+      sgid_t sid = sgids_->item(i);
       Node* nd = visources_->item(i);
       int tid = nd->_nt ? nd->_nt->id : 0;
       int type = -1; // default voltage
@@ -1278,11 +1184,10 @@ static void nrnbbcore_gap_info() {
         assert(ix >= 0 && ix < nrn_threads[tid].end);
       }
 
-      BBCoreGapInfo& g = gi[tid];
-      g.src_sid[g.nsrc] = sid;
-      g.src_type[g.nsrc];
-      g.src_index[g.nsrc] = ix;
-      g.nsrc += 1;
+      SetupTransferInfo& g = gi[tid];
+      g.src_sid.push_back(sid);
+      g.src_type.push_back(type);
+      g.src_index.push_back(ix);
     }
   }
 }
