@@ -290,9 +290,8 @@ echo "COBJS='$COBJS'"
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 UsingCoreNEURON="no"
-@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
+@USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
 if [ "$LinkCoreNEURON" = true ] ; then
-  :
   if [ "$UsingCMake" = "yes" ] ; then
     if [ "$UsingCoreNEURON" = "yes" ] ; then
       cd $USER_PWD
