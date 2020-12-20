@@ -63,8 +63,6 @@ add_library(visitor STATIC $<TARGET_OBJECTS:visitor_obj>)
 
 add_dependencies(visitor lexer util pywrapper)
 
-add_executable(nmodl_visitor main.cpp)
-
 # ~~~
 # pybind11::embed adds PYTHON_LIBRARIES to target_link_libraries. To avoid link to
 # libpython, we can use `pybind11::module` interface library from pybind11.
@@ -74,17 +72,24 @@ if(NOT LINK_AGAINST_PYTHON)
 else()
   target_link_libraries(visitor PRIVATE pybind11::embed)
 endif()
-target_link_libraries(
-  nmodl_visitor
-  printer
-  visitor
-  symtab
-  util
-  lexer
-  ${NMODL_WRAPPER_LIBS})
+
+if(NOT NMODL_AS_SUBPROJECT)
+  add_executable(nmodl_visitor main.cpp)
+
+  target_link_libraries(
+    nmodl_visitor
+    printer
+    visitor
+    symtab
+    util
+    lexer
+    ${NMODL_WRAPPER_LIBS})
+endif()
 
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl_visitor DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor CONFIGURATIONS
-                Debug)
+if(NOT NMODL_AS_SUBPROJECT)
+  install(TARGETS nmodl_visitor DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor CONFIGURATIONS
+                  Debug)
+endif()

@@ -17,6 +17,11 @@ schedules:
     - master
   always: True
 
+# Trigger build for certain branches only
+trigger:
+- master
+- llvm
+- releases/*
 
 jobs:
 - job: 'ubuntu1604'
@@ -25,7 +30,7 @@ jobs:
   displayName: 'Ubuntu (16.04), GCC 8.3'
   steps:
   - checkout: self
-    submodules: True
+    submodules: False
   - script: |
       sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       sudo apt-add-repository -y ppa:deadsnakes/ppa
