@@ -1156,7 +1156,7 @@ static void nrncore_transfer_info(int cn_nthread) {
       NrnThread* nt = (NrnThread*)pp->_vnt;
       int tid = nt ? nt->id : 0;
       int type = pp->prop->type;
-      Memb_list& ml = memb_list[type];
+      Memb_list& ml = *nt->_ml_list[type];
       int ix = targets_->item(i) - ml.data[0];
 
       SetupTransferInfo& g = gi[tid];
