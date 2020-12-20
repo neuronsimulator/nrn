@@ -176,21 +176,25 @@ add_library(lexer_obj OBJECT ${LEXER_SOURCE_FILES} ${BISON_GENERATED_SOURCE_FILE
 set_property(TARGET lexer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(lexer STATIC $<TARGET_OBJECTS:lexer_obj>)
-
-add_executable(nmodl_lexer main_nmodl.cpp)
-add_executable(c_lexer main_c.cpp)
-add_executable(units_lexer main_units.cpp)
-
 target_link_libraries(lexer fmt::fmt)
-target_link_libraries(nmodl_lexer lexer util)
-target_link_libraries(c_lexer lexer util)
-target_link_libraries(units_lexer lexer util)
+
+if(NOT NMODL_AS_SUBPROJECT)
+  add_executable(nmodl_lexer main_nmodl.cpp)
+  add_executable(c_lexer main_c.cpp)
+  add_executable(units_lexer main_units.cpp)
+
+  target_link_libraries(nmodl_lexer lexer util)
+  target_link_libraries(c_lexer lexer util)
+  target_link_libraries(units_lexer lexer util)
+endif()
 
 # =============================================================================
 # Install executable
 # =============================================================================
-install(TARGETS nmodl_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
-install(TARGETS c_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
-install(TARGETS units_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
+if(NOT NMODL_AS_SUBPROJECT)
+  install(TARGETS nmodl_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
+  install(TARGETS c_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
+  install(TARGETS units_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
+endif()
 
 add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES})

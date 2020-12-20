@@ -10,11 +10,9 @@ function(initialize_submodule path)
     message(
       FATAL_ERROR "git not found and ${path} sub-module not cloned (use git clone --recursive)")
   endif()
-  message(STATUS "Sub-module : missing ${path}: running git submodule update --init --recursive")
-  execute_process(
-    COMMAND
-      git submodule update --init --recursive -- ${path}
-    WORKING_DIRECTORY ${NMODL_PROJECT_SOURCE_DIR})
+  message(STATUS "Sub-module : missing ${path}: running git submodule update --init")
+  execute_process(COMMAND git submodule update --init -- ${path}
+                  WORKING_DIRECTORY ${NMODL_PROJECT_SOURCE_DIR})
 endfunction()
 
 # check for external project and initialize submodule if it is missing
