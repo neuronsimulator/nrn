@@ -17,12 +17,12 @@ find_package_handle_standard_args(CLI11 REQUIRED_VARS CLI11_PROJ)
 if(NOT CLI11_FOUND)
   find_package(Git 1.8.3 QUIET)
   if(NOT ${GIT_FOUND})
-    message(FATAL_ERROR "git not found, clone repository with --recursive")
+    message(FATAL_ERROR "git not found, download full repository or install git")
   endif()
-  message(STATUS "Sub-module CLI11 missing: running git submodule update --init --recursive")
+  message(STATUS "Sub-module CLI11 missing: running git submodule update --init")
   execute_process(
     COMMAND
-      ${GIT_EXECUTABLE} submodule update --init --recursive --
+      ${GIT_EXECUTABLE} submodule update --init --
       ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11
     WORKING_DIRECTORY ${CORENEURON_PROJECT_SOURCE_DIR})
 endif()

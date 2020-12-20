@@ -18,10 +18,10 @@ if(NOT NMODL_FOUND)
   if(NOT ${GIT_FOUND})
     message(FATAL_ERROR "git not found, clone repository with --recursive")
   endif()
-  message(STATUS "Sub-module nmodl missing : running git submodule update --init --recursive")
+  message(STATUS "Sub-module nmodl missing : running git submodule update --init")
   execute_process(
     COMMAND
-      ${GIT_EXECUTABLE} submodule update --init --recursive --
+      ${GIT_EXECUTABLE} submodule update --init --
       ${CORENEURON_PROJECT_SOURCE_DIR}/external/nmodl
     WORKING_DIRECTORY ${CORENEURON_PROJECT_SOURCE_DIR})
 else()
