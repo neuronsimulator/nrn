@@ -295,7 +295,7 @@ class ScalableBorder(RxDGeometry):
       ScalableBorder(diam_scale=0.5) could represent the border of Shell(lo=0, hi=0.5)
 
 
-    Args
+    Args:
         scale (float, optional) scale the area, default value is π.
             e.g. for a cylinder of length L and diameter d, ScalableBorder will give
             an area scale*d*L, by default the surface area.
@@ -305,10 +305,6 @@ class ScalableBorder(RxDGeometry):
 
     Note: Provide either a scale or diam_scale, not both.
 
-    Example use:
-    
-    - the boundary between radial shells
-    
     Sometimes useful for the boundary between FractionalVolume objects, but
     see also DistributedBoundary which scales with area.
     """
