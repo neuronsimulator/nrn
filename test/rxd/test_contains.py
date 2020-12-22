@@ -8,13 +8,19 @@ def test_in(neuron_instance):
     soma.nseg = 3
 
     cyt = rxd.Region(h.allsec(), name='cyt')
+    er = rxd.Region(h.allsec(), name='er')
+
     c = rxd.Species(cyt, name='c')
 
     for node in c.nodes(soma):
         assert(node in soma)
         assert(node not in dend)
+        assert(node in cyt)
+        assert(node not in er)
 
     for node in c.nodes(dend):
         assert(node in dend)
         assert(node not in soma)
+        assert(node in cyt)
+        assert(node not in er)
 

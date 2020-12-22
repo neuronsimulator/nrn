@@ -293,6 +293,15 @@ class Region(object):
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self.dx, self._name)
+    
+    def __contains__(self, item):
+        try:
+            if item.region == self:
+                return True
+            else:
+                return False
+        except:
+            raise NotImplementedError()
 
     def _short_repr(self):
         if self._name is not None:
