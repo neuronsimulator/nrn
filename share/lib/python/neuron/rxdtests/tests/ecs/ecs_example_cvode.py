@@ -30,7 +30,7 @@ cyt = rxd.Region(h.allsec(), name='cyt', nrn_region='i', geometry=rxd.Fractional
 
 org = rxd.Region(h.allsec(), name='org', geometry=rxd.FractionalVolume(0.1))
 
-cyt_org_membrane = rxd.Region(h.allsec(), name='mem', geometry = rxd.ScalableBorder(pi/2.0, on_cell_surface=False))
+cyt_org_membrane = rxd.Region(h.allsec(), name='mem', geometry = rxd.ScalableBorder(1.0/2.0, on_cell_surface=False))
 
 
 # the extracellular space

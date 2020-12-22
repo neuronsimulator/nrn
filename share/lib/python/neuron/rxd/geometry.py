@@ -49,13 +49,13 @@ def _volumes1d(sec):
 
     return vols
 
-def _make_surfacearea1d_function(scale):
+def _make_surfacearea1d_function(scale, diam_scale=1.0):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
         arc3d = [sec.arc3d(i)
                 for i in range(sec.n3d())]
-        diam3d = [sec.diam3d(i)
+        diam3d = [sec.diam3d(i) * diam_scale
                 for i in range(sec.n3d())]
         sas = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
@@ -77,13 +77,13 @@ def _make_surfacearea1d_function(scale):
         return sas
     return result
 
-def _make_perimeter_function(scale):
+def _make_perimeter_function(scale, diam_scale=1.0):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
             arc3d = [sec.arc3d(i)
                      for i in range(sec.n3d())]
-            diam3d = [sec.diam3d(i)
+            diam3d = [sec.diam3d(i) * diam_scale
                       for i in range(sec.n3d())]
             area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
             diams = numpy.interp(area_pos, arc3d, diam3d)
@@ -297,12 +297,12 @@ class ScalableBorder(RxDGeometry):
     see also DistributedBoundary which scales with area.
     """
     def __init__(self, scale, on_cell_surface=False):
-        self.volumes1d = _make_surfacearea1d_function(scale)
+        self.volumes1d = _make_surfacearea1d_function(numpy.pi, scale)
         self.surface_areas1d = _always_0 if not on_cell_surface else self.volumes1d
         self._scale = scale
         self.is_volume = _always_false
         self.is_area = _always_true
-        self.neighbor_areas1d = _make_perimeter_function(scale)
+        self.neighbor_areas1d = _make_perimeter_function(numpy.pi, scale)
         self._on_surface = on_cell_surface
     def __repr__(self):
         return 'ScalableBorder(%r, on_cell_surface=%r)' % (self._scale, self._on_surface)
