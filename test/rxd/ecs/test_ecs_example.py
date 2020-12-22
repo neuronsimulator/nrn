@@ -47,7 +47,7 @@ def ecs_example(neuron_instance):
         cyt_org_membrane = rxd.Region(
             h.allsec(),
             name='mem',
-            geometry=rxd.ScalableBorder(1.0 / 2.0, on_cell_surface=False),
+            geometry=rxd.ScalableBorder(pi / 2.0, on_cell_surface=False),
         )
     
         # the extracellular space

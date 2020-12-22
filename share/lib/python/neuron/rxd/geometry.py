@@ -287,8 +287,24 @@ class FixedPerimeter(RxDGeometry):
         return 'FixedPerimeter(%r, on_cell_surface=%r)' % (self._perim, self._on_surface)
 
 class ScalableBorder(RxDGeometry):
-    """a membrane that scales proportionally with the diameter
+    """a membrane that scales proportionally with the diameter.
+
+    Example use:
     
+    - the boundary between radial shells e.g.
+      ScalableBorder(diam_scale=0.5) could represent the border of Shell(lo=0, hi=0.5)
+
+
+    Args
+        scale (float, optional) scale the area, default value is π.
+            e.g. for a cylinder of length L and diameter d, ScalableBorder will give
+            an area scale*d*L, by default the surface area.
+        diam_scale (float, optional), scale the diameter, default value is 1.
+            e.g. for a cylinder of length L and diameter d, ScalableBorder will give
+            an area diam_scale*π*d*L, by default the surface area.
+
+    Note: Provide either a scale or diam_scale, not both.
+
     Example use:
     
     - the boundary between radial shells
@@ -296,13 +312,26 @@ class ScalableBorder(RxDGeometry):
     Sometimes useful for the boundary between FractionalVolume objects, but
     see also DistributedBoundary which scales with area.
     """
-    def __init__(self, scale, on_cell_surface=False):
-        self.volumes1d = _make_surfacearea1d_function(numpy.pi, scale)
+    def __init__(self, scale=None, diam_scale=None, on_cell_surface=False):
+        if scale is not None and diam_scale is not None:
+            raise RxDException("ScalableBorder either provide scale or diam_scale, not both")
+        elif diam_scale is not None:
+            self._scale = numpy.pi
+            self._diam_scale = diam_scale
+        elif scale is not None:
+            self._scale = scale
+            self._diam_scale = 1.0
+        else:
+            self._scale = numpy.pi
+            self._diam_scale = 1.0
+        
+        self.volumes1d = _make_surfacearea1d_function(self._scale, 
+                                                      self._diam_scale)
         self.surface_areas1d = _always_0 if not on_cell_surface else self.volumes1d
-        self._scale = scale
         self.is_volume = _always_false
         self.is_area = _always_true
-        self.neighbor_areas1d = _make_perimeter_function(numpy.pi, scale)
+        self.neighbor_areas1d = _make_perimeter_function(self._scale,
+                                                         self._diam_scale)
         self._on_surface = on_cell_surface
     def __repr__(self):
         return 'ScalableBorder(%r, on_cell_surface=%r)' % (self._scale, self._on_surface)
