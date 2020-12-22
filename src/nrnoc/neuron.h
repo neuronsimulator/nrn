@@ -56,7 +56,7 @@ extern void syn_reset(), fsyn(), fsyn_set(), fsyng(), fsyni(); /* sej_synapse.c 
 extern void con_reset(), fcon(), fcon_set(), fcong(), fconi(); /* sej_connect.c 	*/
 extern void top2(), dump(), dump_all();                        /* sej_dump.c         */
 
-extern void ptest(); 
+extern void ptest();
 
 /* non-initialized variables */
 double ic;
@@ -68,17 +68,4 @@ double init_seed, run_seed, cainit, kinit, nainit;
 double dump_flag, print_flag, graph_flag, gray_flag;
 double fig_flag, timer_flag, stim_flag, view_flag;
 
-#endif
-
-#if FISHER
-extern void rcsdiff_file(), rcs_version(), rcs_co_file();   	/* rcs.c */
-extern void rcs_ci_file(), rcs_view_file();               	/* rcs.c */
-extern void add_version_entry(), save_output_file();          	/* sys.c */
-extern void answer_yes(), file_exist(), dassign(), sassign();  	/* sys.c */
-extern void setup_id_info(), update_id_info();                	/* sys.c */
-
-/* non-initialized variables */
-#if !SEJNOWSKI
-double id_number;                                           	/* sys.c */
-#endif
 #endif
