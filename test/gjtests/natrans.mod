@@ -2,8 +2,12 @@
 : receive nai
 
 NEURON {
-    POINT_PROCESS natrans
-    RANGE napre
+    POINT_PROCESS NaTrans
+    RANGE napre, sgid
+}
+
+PARAMETER {
+    sgid = -1
 }
 
 ASSIGNED {

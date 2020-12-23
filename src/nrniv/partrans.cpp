@@ -1178,6 +1178,12 @@ static void nrncore_transfer_info(int cn_nthread) {
       if (it != non_vsrc_update_info_.end()) {
         type = it->second.first;
         ix = it->second.second;
+        // this entire context needs to be reworked. If the source is a
+        // point process, then if more than one in this nd, it is an error.
+        double* d = non_vsrc_update(nd, type, ix);
+        NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
+        Memb_list& ml = *nt->_ml_list[type];
+        ix = d - ml.data[0];
       }else{
         ix = nd->_v - nrn_threads[tid]._actual_v;
         assert(nd->extnode == NULL); // only if v
