@@ -13,9 +13,9 @@ ncell = 100
 nsrc = 50 # so that number of sgid pointing to _ref_nai
           # multiple sgid may point to same _ref_nai
 ntarget = 200 # so sgid on average sends to ntarget/nsrc targets.
-ncell=10
-nsrc=5
-ntarget=10
+#ncell=10
+#nsrc=5
+#ntarget=10
 
 h('''
 begintemplate Cell
@@ -48,7 +48,7 @@ def test_natrans():
     sgids.append(v[x])
     v.pop(x)
   del v
-  print(sgids)
+  #print(sgids)
   
   for sgid in sgids:
     if pc.gid_exists(sgid) == 3:
@@ -73,25 +73,26 @@ def test_natrans():
 
   pc.set_maxstep(10)
   pc.setup_transfer()
-  
+
   h.dt = .1
-  tstop= 1
   tstop=.1
   def run():
     h.finitialize(-65)
     for sgid in sgids:
       if pc.gid_exists(sgid) == 3:
         sec = pc.gid2cell(sgid).soma
-        print("finitialize src %d %g" % (sgid, sec(.5).nai))
-        sec(.5).nai = float(sgid)/100.
+        sec(.5).nai = float(sgid)/100. + .001
+        #print("%d finitialize src %d %g" % (rank, sgid, sec(.5).nai))
     tars = h.List("NaTrans")
     for tar in tars:
-      print("finitialize tar %d %g" % (tar.sgid, tar.napre))
+      #print("%d finitialize tar %d %g" % (rank, int(tar.sgid), tar.napre))
+      pass
     pc.psolve(tstop)
     for tar in tars:
-      x = tar.sgid/100. if tar.sgid >= 0 else 0
-      print("%g %g"%(tar.napre, x))
-      assert(tar.napre == x)
+      x = (tar.sgid/100. + .001) if tar.sgid >= 0.0 else 0.0
+      differ = ("differ") if abs(tar.napre - x) > 1e-10 else ""
+      #print("%d %s %g %g %g %s"%(rank, tar.hname(), tar.sgid, tar.napre, x, differ))
+      assert(differ == "")
 
   run()
 
@@ -106,3 +107,5 @@ def test_natrans():
 
 if __name__ == '__main__':
   model = test_natrans()
+  pc.barrier()
+  h.quit()

@@ -152,6 +152,7 @@ extern void nrnmpi_int_alltoallv(int*, int*, int*,  int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*,  double*, int*, int*);
 extern void nrnmpi_dbl_alltoallv_sparse(double*, int*, int*,  double*, int*, int*);
 #endif
+void nrn_partrans_update_ptrs();
 }
 
 struct TransferThreadData {
@@ -170,8 +171,6 @@ struct SourceViBuf {
 };
 static SourceViBuf* source_vi_buf_;
 static int n_source_vi_buf_;
-
-void nrn_partrans_update_ptrs();
 
 declareNrnHash(MapSgid2Int, sgid_t, int);
 implementNrnHash(MapSgid2Int, sgid_t, int);
