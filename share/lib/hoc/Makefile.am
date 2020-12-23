@@ -5,7 +5,7 @@ neuronhomehoc_DATA = attshape.hoc celbild.hoc electrod.hoc \
 	family.hoc funfit.hoc gatherv.hoc grapher.hoc impedanc.hoc \
 	impedanx.hoc impratio.hoc inserter.hoc kinbuild.hoc logax.hoc \
 	macload.hoc mulfit.hoc noload.hoc nrngui.hoc nrngui1.hoc \
-	pcchdir.hoc pointbsr.hoc pointgrp.hoc pointman.hoc rcs.hoc rcs.iv \
+	pcchdir.hoc pointbsr.hoc pointgrp.hoc pointman.hoc \
 	runfit.hoc shapebox.hoc showmech.hoc single.hoc single1.hoc \
 	singlech.hoc stdgui.hoc stdlib.hoc stdrun.hoc thresh.hoc vecwrap.hoc \
 	vplay.hoc wingroup.hoc mkcurve.hoc netbild.hoc lincir.hoc \
