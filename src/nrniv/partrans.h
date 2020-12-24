@@ -16,7 +16,7 @@ typedef int sgid_t;
 
 // For direct transfer
 // must be same as corresponding struct SetupTransferInfo in CoreNEURON
-// see partrans.cpp
+// see coreneuron/network/partrans.hpp
 struct SetupTransferInfo {
   std::vector<sgid_t> src_sid;
   std::vector<int> src_type;

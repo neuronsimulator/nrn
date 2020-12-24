@@ -1046,7 +1046,7 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
     double* in its NrnThread.data array.
 
   src_sid // nsrc of these
-  src_type // nsrc mechanism type containing source variable, 0 is voltage.
+  src_type // nsrc mechanism type containing source variable, -1 is voltage.
   src_index // range variable index relative to beginning of first instance.
 
   tar_sid  // ntar of these
@@ -1075,7 +1075,7 @@ static SetupTransferInfo* gi; // array of size nthread (gi stands for  gapinfo)
 
 static void nrncore_transfer_info(int);
 
-void get_partrans_setup_info(int ngroup, int cn_nthread, size_t cn_sidt_sz, SetupTransferInfo** giref) {
+void get_partrans_setup_info(int ngroup, int cn_nthread, size_t cn_sidt_sz, SetupTransferInfo** giptr) {
   if (ngroup == -1) {
     if (gi) {
       delete [] gi;
@@ -1087,7 +1087,7 @@ void get_partrans_setup_info(int ngroup, int cn_nthread, size_t cn_sidt_sz, Setu
   assert(ngroup == nrn_nthread);
   nrncore_transfer_info(cn_nthread);
   assert(gi);
-  *giref = gi;
+  *giptr = gi;
 }
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
@@ -1096,7 +1096,7 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
 
   // print the files
   for (int tid = 0; tid < nrn_nthread; ++tid) {
-    SetupTransferInfo& g = gi[tid];
+    auto& g = gi[tid];
 
     if (g.src_sid.empty() && g.tar_sid.empty()) { // no file
       continue;

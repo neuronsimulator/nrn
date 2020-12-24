@@ -4,10 +4,11 @@ rank = pc.id()
 nhost = pc.nhost()
 pc.nthread(4)
 
-# Want to excercise the internal indexing schemes. So need mpi and threads.
+# Want to exercise the internal indexing schemes. So need mpi and threads.
 # Random order of sgid calls to source_var. Random order and location
 # of sgid source . Random order and location of sgid target. An sgid source
 # has random number of targets.
+# Might be a good idea to add some voltage sources and ki sources.
 
 ncell = 100
 nsrc = 50 # so that number of sgid pointing to _ref_nai
@@ -27,18 +28,18 @@ proc init() {
       // Otherwise cannot pass interpreter setting onto coreneuron
       // unless use a mod file that WRITE nai in INITIAL via parameter
   }
-}  
+}
 endtemplate Cell
 ''')
 
 def test_natrans():
-  gids = [gid for gid in range(rank, ncell, nhost)]  
+  gids = [gid for gid in range(rank, ncell, nhost)]
   cells = []
   for gid in range(rank, ncell, nhost):
     pc.set_gid2node(gid, rank)
     cells.append(h.Cell())
     pc.cell(gid, h.NetCon(cells[-1].soma(.5)._ref_v, None, sec=cells[-1].soma))
- 
+
   r = h.Random()
   r.Random123(1,1,0)
 
@@ -51,7 +52,7 @@ def test_natrans():
     v.pop(x)
   del v
   #print(sgids)
-  
+
   for sgid in sgids:
     if pc.gid_exists(sgid) == 3:
       sec = pc.gid2cell(sgid).soma
