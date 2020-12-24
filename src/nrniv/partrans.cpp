@@ -1106,10 +1106,11 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
     sprintf(fname, "%s/%d_gap.dat", path, group_ids[tid]);
     FILE* f = fopen(fname, "wb");
     assert(f);
-    int ntar = int(g.tar_sid.size());
-    int nsrc = int(g.src_sid.size());
     fprintf(f, "%s\n", bbcore_write_version);
     fprintf(f, "%d sizeof_sid_t\n", int(sizeof(sgid_t)));
+
+    int ntar = int(g.tar_sid.size());
+    int nsrc = int(g.src_sid.size());
     fprintf(f, "%d ntar\n", ntar);
     fprintf(f, "%d nsrc\n", nsrc);
 
