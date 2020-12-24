@@ -11,11 +11,8 @@ pc.nthread(4)
 
 ncell = 100
 nsrc = 50 # so that number of sgid pointing to _ref_nai
-          # multiple sgid may point to same _ref_nai
+          # multiple sgid may NOT point to same _ref_nai
 ntarget = 200 # so sgid on average sends to ntarget/nsrc targets.
-#ncell=10
-#nsrc=5
-#ntarget=10
 
 h('''
 begintemplate Cell
@@ -24,7 +21,12 @@ create soma
 proc init() {
   soma.diam = 5
   soma.L = 5
-  soma {insert na_ion}
+  soma {
+    insert na_ion
+    ion_style("na_ion", 1,0,0,0,0) // finitialize leaves nai as is
+      // Otherwise cannot pass interpreter setting onto coreneuron
+      // unless use a mod file that WRITE nai in INITIAL via parameter
+  }
 }  
 endtemplate Cell
 ''')
@@ -85,8 +87,8 @@ def test_natrans():
         #print("%d finitialize src %d %g" % (rank, sgid, sec(.5).nai))
     tars = h.List("NaTrans")
     for tar in tars:
+      tar.napre = .0001 # correct values don't carryover from previous sim
       #print("%d finitialize tar %d %g" % (rank, int(tar.sgid), tar.napre))
-      pass
     pc.psolve(tstop)
     for tar in tars:
       x = (tar.sgid/100. + .001) if tar.sgid >= 0.0 else 0.0
