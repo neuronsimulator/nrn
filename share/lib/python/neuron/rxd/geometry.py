@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import warnings
 import numpy
 from neuron import h, nrn
@@ -297,12 +298,12 @@ class ScalableBorder(RxDGeometry):
 
 
     Args:
-        scale (float, optional) scale the area, default value is pi.
+        scale (float, optional) scale the area, default value is π.
             e.g. for a cylinder of length L and diameter d, ScalableBorder will
             give an area scale*d*L, by default the surface area.
         diam_scale (float, optional), scale the diameter, default value is 1.
             e.g. for a cylinder of length L and diameter d, ScalableBorder will
-            give an area diam_scale*pi*d*L, by default the surface area.
+            give an area diam_scale*π*d*L, by default the surface area.
 
     Note: Provide either a scale or diam_scale, not both.
 
