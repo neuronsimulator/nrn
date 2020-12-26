@@ -448,6 +448,16 @@ void nrn_setup(const char* filesdat,
     // Note that rank with 0 dataset/cellgroup works fine
     nrn_threads_create(userParams.ngroup <= 1 ? 2 : userParams.ngroup);
 
+    // from nrn_has_net_event create pnttype2presyn for use in phase2.
+    auto& memb_func = corenrn.get_memb_funcs();
+    auto& pnttype2presyn = corenrn.get_pnttype2presyn();
+    auto& nrn_has_net_event_ = corenrn.get_has_net_event();
+    pnttype2presyn.clear();
+    pnttype2presyn.resize(memb_func.size(), -1);
+    for (size_t i = 0; i < nrn_has_net_event_.size(); ++i) {
+        pnttype2presyn[nrn_has_net_event_[i]] = i;
+    }
+
     nrnthread_chkpnt = new NrnThreadChkpnt[nrn_nthread];
 
     if (nrn_nthread > 1) {

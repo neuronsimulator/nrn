@@ -1082,13 +1082,6 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     }
     auto& pnttype2presyn = corenrn.get_pnttype2presyn();
     auto& nrn_has_net_event_ = corenrn.get_has_net_event();
-    // from nrn_has_net_event create pnttype2presyn.
-    if (pnttype2presyn.empty()) {
-        pnttype2presyn.resize(memb_func.size(), -1);
-    }
-    for (size_t i = 0; i < nrn_has_net_event_.size(); ++i) {
-        pnttype2presyn[nrn_has_net_event_[i]] = i;
-    }
     // create the nt.pnt2presyn_ix array of arrays.
     nt.pnt2presyn_ix = (int**)ecalloc(nrn_has_net_event_.size(), sizeof(int*));
     for (size_t i = 0; i < nrn_has_net_event_.size(); ++i) {
