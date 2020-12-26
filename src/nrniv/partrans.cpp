@@ -1066,33 +1066,24 @@ extern size_t nrnbbcore_gap_write(const char* path, int* group_ids);
   Cleaned up the BBCoreGapInfo (and gap_ml).
 
   So a simple factoring of the verify and create portions suffices
-  for both files and direct. Note that direct call gets a pointer to
-  SetupTransferInfo* gi.
-  To cleanup gi, CoreNEURON should callback with an ngroup of -1.
+  for both files and direct memory transfer. Note that direct call
+  returns pointer to SetupTransferInfo array.
+  To cleanup, CoreNEURON should delete [] the return pointer.
 */
 
-static SetupTransferInfo* gi; // array of size nthread (gi stands for  gapinfo)
+static SetupTransferInfo* nrncore_transfer_info(int);
 
-static void nrncore_transfer_info(int);
-
-void get_partrans_setup_info(int ngroup, int cn_nthread, size_t cn_sidt_sz, SetupTransferInfo** giptr) {
-  if (ngroup == -1) {
-    if (gi) {
-      delete [] gi;
-      gi = nullptr;
-    }
-    return;
-  }
+SetupTransferInfo* nrn_get_partrans_setup_info(
+  int ngroup, int cn_nthread, size_t cn_sidt_sz)
+{
   assert(cn_sidt_sz == sizeof(sgid_t));
   assert(ngroup == nrn_nthread);
-  nrncore_transfer_info(cn_nthread);
-  assert(gi);
-  *giptr = gi;
+  return nrncore_transfer_info(cn_nthread);
 }
 
 size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
-  nrncore_transfer_info(nrn_nthread);
-  if (gi == NULL) { return 0; }
+  auto gi = nrncore_transfer_info(nrn_nthread); //gi stood for gapinfo
+  if (gi == nullptr) { return 0; }
 
   // print the files
   for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -1134,19 +1125,15 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
 
   // cleanup
   delete [] gi;
-  gi = NULL;
   return 0;
 }
 
-static void nrncore_transfer_info(int cn_nthread) {
+static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
 
   assert(target_pntlist_ && target_pntlist_->count() == targets_->count());
 
   // space for the info
-  if (gi) {
-    delete [] gi;
-  }
-  gi = new SetupTransferInfo[cn_nthread];
+  auto gi = new SetupTransferInfo[cn_nthread];
 
   // info for targets, segregate into threads
   if (targets_) {
@@ -1156,10 +1143,10 @@ static void nrncore_transfer_info(int cn_nthread) {
       NrnThread* nt = (NrnThread*)pp->_vnt;
       int tid = nt ? nt->id : 0;
       int type = pp->prop->type;
-      Memb_list& ml = *nt->_ml_list[type];
+      Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
       int ix = targets_->item(i) - ml.data[0];
 
-      SetupTransferInfo& g = gi[tid];
+      auto& g = gi[tid];
       g.tar_sid.push_back(sid);
       g.tar_type.push_back(type);
       g.tar_index.push_back(ix);
@@ -1175,7 +1162,7 @@ static void nrncore_transfer_info(int cn_nthread) {
       int type = -1; // default voltage
       int ix = 0; // fill below
       NonVSrcUpdateInfo::iterator it = non_vsrc_update_info_.find(sid);
-      if (it != non_vsrc_update_info_.end()) {
+      if (it != non_vsrc_update_info_.end()) { // not a voltage source
         type = it->second.first;
         ix = it->second.second;
         // this entire context needs to be reworked. If the source is a
@@ -1184,16 +1171,17 @@ static void nrncore_transfer_info(int cn_nthread) {
         NrnThread* nt = nd->_nt ? nd->_nt : nrn_threads;
         Memb_list& ml = *nt->_ml_list[type];
         ix = d - ml.data[0];
-      }else{
+      }else{ // is a voltage source
         ix = nd->_v - nrn_threads[tid]._actual_v;
         assert(nd->extnode == NULL); // only if v
         assert(ix >= 0 && ix < nrn_threads[tid].end);
       }
 
-      SetupTransferInfo& g = gi[tid];
+      auto& g = gi[tid];
       g.src_sid.push_back(sid);
       g.src_type.push_back(type);
       g.src_index.push_back(ix);
     }
   }
+  return gi;
 }

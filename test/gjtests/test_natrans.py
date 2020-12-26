@@ -51,7 +51,6 @@ def test_natrans():
     sgids.append(v[x])
     v.pop(x)
   del v
-  #print(sgids)
 
   for sgid in sgids:
     if pc.gid_exists(sgid) == 3:
@@ -85,26 +84,25 @@ def test_natrans():
       if pc.gid_exists(sgid) == 3:
         sec = pc.gid2cell(sgid).soma
         sec(.5).nai = float(sgid)/100. + .001
-        #print("%d finitialize src %d %g" % (rank, sgid, sec(.5).nai))
     tars = h.List("NaTrans")
     for tar in tars:
       tar.napre = .0001 # correct values don't carryover from previous sim
-      #print("%d finitialize tar %d %g" % (rank, int(tar.sgid), tar.napre))
     pc.psolve(tstop)
     for tar in tars:
       x = (tar.sgid/100. + .001) if tar.sgid >= 0.0 else 0.0
       differ = ("differ") if abs(tar.napre - x) > 1e-10 else ""
-      #print("%d %s %g %g %g %s"%(rank, tar.hname(), tar.sgid, tar.napre, x, differ))
+      if differ != "":
+        print("%d %s %g %g %g %s"%(rank, tar.hname(), tar.sgid, tar.napre, x, differ))
       assert(differ == "")
 
-  run()
+  run() # NEURON: Fails if tar.napre not what is expected
 
   from neuron import coreneuron
   coreneuron.available = True
   if coreneuron.available:
     coreneuron.enable = True
     coreneuron.cell_permute = 0
-    run()
+    run() # Fails if CoreNEURON does not copy expected tar.napre to NEURON
 
   return cells, gids, sgids, targets
 

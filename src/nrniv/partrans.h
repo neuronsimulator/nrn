@@ -28,7 +28,7 @@ struct SetupTransferInfo {
 };
                    
 extern "C" {
-extern void get_partrans_setup_info(int, int, size_t, SetupTransferInfo**);
+extern SetupTransferInfo* nrn_get_partrans_setup_info(int, int, size_t);
 }
 
 #endif // partrans_h

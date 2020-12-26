@@ -5,7 +5,8 @@
 #include <sstream>
 #include <vector>
 #include <cstdlib>
-#include <partrans.h>
+// includers need several pieces of info for nrn_get_partrans_setup_info
+#include "partrans.h"
 
 typedef void*(*CNB)(...);
 typedef struct core2nrn_callback_t {
@@ -72,7 +73,7 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
         {"nrn2core_get_global_dbl_item_", (CNB)get_global_dbl_item},
         {"nrn2core_get_global_int_item_", (CNB)get_global_int_item},
-        {"nrn2core_get_partrans_setup_info_", (CNB)get_partrans_setup_info},
+        {"nrn2core_get_partrans_setup_info_", (CNB)nrn_get_partrans_setup_info},
         {"nrn2core_get_dat1_", (CNB)nrnthread_dat1},
         {"nrn2core_get_dat2_1_", (CNB)nrnthread_dat2_1},
         {"nrn2core_get_dat2_2_", (CNB)nrnthread_dat2_2},
