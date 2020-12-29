@@ -301,6 +301,8 @@ class ScalableBorder(RxDGeometry):
         scale (float, optional) scale the area, default value is π.
             e.g. for a cylinder of length L and diameter d, ScalableBorder will
             give an area scale*d*L, by default the surface area.
+            For cylindrical sections only. Use "diam_scale" instead to correctly
+            handle cylindrical and non-cylindrical sections.
         diam_scale (float, optional), scale the diameter, default value is 1.
             e.g. for a cylinder of length L and diameter d, ScalableBorder will
             give an area diam_scale*π*d*L, by default the surface area.
