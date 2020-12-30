@@ -507,6 +507,14 @@ class Region(object):
             import neuron
             neuron.rxd.set_solve_type(secs, dimension=dimension)
         self._name = name
+        if dx is not None:
+            try:
+                dx = float(dx)
+            except:
+                dx = -1
+            if dx <= 0:
+                raise RxDException("dx must be a positive real number or None")
+            
         self.dx = dx
         _all_regions.append(weakref.ref(self))
 
