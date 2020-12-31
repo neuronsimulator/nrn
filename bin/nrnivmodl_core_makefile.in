@@ -39,6 +39,8 @@ LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
 CORENRNLIB_FLAGS = -L$(CORENRN_LIB_DIR) -lcoreneuron
 CORENRNLIB_FLAGS += $(if @reportinglib_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@reportinglib_LIB_DIR@),)
 CORENRNLIB_FLAGS += $(if @sonatareport_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@sonatareport_LIB_DIR@),)
+CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@caliper_LIB_DIR@),)
+CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@,-L@caliper_LIB_DIR@,)
 
 # Includes paths gathered by CMake
 INCLUDES = $(INCFLAGS) -I$(CORENRN_INC_DIR) -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms
