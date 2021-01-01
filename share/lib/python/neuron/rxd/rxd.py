@@ -680,30 +680,20 @@ def _setup_matrices():
                                     hybrid_index1d_grid_ids[index1d] = grid_id
                                     index1d_sec1d[index1d] = parent_sec
                                     hybrid_vols1d[index1d] = vols1d
-                                else:
-                                    for sec1d in r._secs1d:
-                                        parent_1d_seg = sec1d.trueparentseg()
-                                        parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
-                                        if parent_1d == sec:
-                                            # it is the parent of a 1d section
-                                            index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
-                                            hybrid_neighbors[index1d] += indices3d
-                                            hybrid_vols[index1d] += vols3d
-                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
-                                            hybrid_index1d_grid_ids[index1d] = grid_id
-                                            index1d_sec1d[index1d] = sec1d
-                                            hybrid_vols1d[index1d] = vols1d
+                                
+                                for sec1d in r._secs1d:
+                                    parent_1d_seg = sec1d.trueparentseg()
+                                    parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
+                                    if parent_1d == sec:
+                                        # it is the parent of a 1d section
+                                        index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_vols[index1d] += vols3d
+                                        hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
+                                        hybrid_index1d_grid_ids[index1d] = grid_id
+                                        index1d_sec1d[index1d] = sec1d
+                                        hybrid_vols1d[index1d] = vols1d
 
-                                            
-                                        elif parent_1d == parent_sec and parent_1d is not None:
-                                            # it connects to the parent of a 1d section
-                                            index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), sec1d, sec1d.orientation())
-                                            hybrid_neighbors[index1d] += indices3d
-                                            hybrid_vols[index1d] += vols3d
-                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
-                                            hybrid_index1d_grid_ids[index1d] = grid_id
-                                            index1d_sec1d[index1d] = sec1d
-                                            hybrid_vols1d[index1d] = vols1d
 
                                         
         if len(dxs) > 1:
