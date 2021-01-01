@@ -22,9 +22,12 @@ endif()
 # imported target to link line
 # ~~~
 list(REMOVE_ITEM CORENRN_LINK_LIBS "Threads::Threads")
-
 # replicate CMake magic to transform system libs to -l<libname>
 foreach(link_lib ${CORENRN_LINK_LIBS})
+  if(${link_lib} MATCHES "\-l.*")
+      string(APPEND CORENRN_LINK_DEFS " ${link_lib}")
+      continue()
+  endif()
   get_filename_component(path ${link_lib} DIRECTORY)
   if(NOT path)
     string(APPEND CORENRN_LINK_DEFS " -l${link_lib}")

@@ -169,6 +169,7 @@ add_custom_target(
   nrniv-core ALL
   COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b STATIC
           -m ${CORENRN_MOD2CPP_BINARY}
+          -p 1
           ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
   WORKING_DIRECTORY
     ${CMAKE_BINARY_DIR}/bin

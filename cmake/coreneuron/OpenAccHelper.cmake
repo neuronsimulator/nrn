@@ -34,7 +34,8 @@ if(CORENRN_ENABLE_GPU)
     set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
     set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
   else()
-    message(WARNING "Non-PGI compiler : make sure to add required compiler flags to enable OpenACC")
+    message(FATAL_ERROR "GPU support is available via OpenACC using PGI/NVIDIA compilers."
+                        " Use NVIDIA HPC SDK with -DCMAKE_C_COMPILER=nvc -DCMAKE_CXX_COMPILER=nvc++")
   endif()
 
   # set property for neuron to link with coreneuron libraries
@@ -49,7 +50,7 @@ if(CORENRN_ENABLE_GPU)
   if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
   endif()
-  find_package(CUDA 5.0 REQUIRED)
+  find_package(CUDA 9.0 REQUIRED)
   set(CUDA_SEPARABLE_COMPILATION ON)
   set(CUDA_PROPAGATE_HOST_FLAGS OFF)
   add_definitions(-DCUDA_PROFILING)

@@ -10,14 +10,14 @@ CoreNEURON is a compute engine for the [NEURON](https://www.neuron.yale.edu/neur
 CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations including gap junction coupling with the **fixed time step method**. In order to run a NEURON model with CoreNEURON:
 
 * MOD files should be THREADSAFE
-* MOD files must use the Random123 random number generator (instead of MCellRan4)
+* If random number generator is used then Random123 should be used instead of MCellRan4
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](http://bluebrain.github.io/CoreNeuron/index.html))
 
 ## Dependencies
 * [CMake 3.7+](https://cmake.org)
-* [MPI 2.0+](http://mpich.org) [Optional]
-* [PGI OpenACC Compiler >=19.0](https://www.pgroup.com/resources/accel.htm) [Optional, for GPU support]
-* [CUDA Toolkit >=6.0](https://developer.nvidia.com/cuda-toolkit-60) [Optional, for GPU support]
+* MPI Library [Optional, for MPI support]
+* [PGI OpenACC Compiler / NVIDIA HPC SDK](https://developer.nvidia.com/hpc-sdk) [Optional, for GPU support]
+* [CUDA Toolkit >=9.0](https://developer.nvidia.com/cuda-downloads) [Optional, for GPU support]
 
 In addition to this, you will need other [NEURON dependencies](https://github.com/neuronsimulator/nrn) such as Python, Flex, Bison etc.
 
@@ -64,7 +64,8 @@ Note that if you are building on Cray system with the GNU toolchain, you have to
    -DNRN_ENABLE_RX3D=OFF \
    -DCMAKE_INSTALL_PREFIX=$HOME/install
   ```
-If you would like to enable GPU support with OpenACC, make sure to use `-DCORENRN_ENABLE_GPU=ON` option and use the PGI compiler with CUDA.
+If you would like to enable GPU support with OpenACC, make sure to use `-DCORENRN_ENABLE_GPU=ON` option and use the PGI/NVIDIA HPC SDK compilers with CUDA.
+
 > NOTE : if the CMake command files, please make sure to delete temporary CMake cache files (`CMakeCache.txt`) before rerunning CMake.
 
 4. Build and Install :  once the configure step is done, you can build and install the project as:
@@ -161,6 +162,8 @@ nrn_spike_gids = nrn_spike_gids.to_python()
 # now run CoreNEURON
 from neuron import coreneuron
 coreneuron.enable = True
+# for GPU support
+# coreneuron.gpu = True
 coreneuron.verbose = 0
 h.stdinit()
 corenrn_all_spike_t = h.Vector()
@@ -213,6 +216,8 @@ If there are large functions / procedures in the MOD file that are not inlined b
 cmake .. -DCMAKE_CXX_FLAGS="-O2 -Minline=size:1000,levels:100,totalsize:40000,maxsize:4000" \
          -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install
 ```
+
+For other errors, please [open an issue](https://github.com/BlueBrain/CoreNeuron/issues).
 
 
 ## Developer Build

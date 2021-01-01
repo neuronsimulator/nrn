@@ -566,8 +566,6 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
 #ifdef _OPENACC
 
-    printf("\n --- Copying to Host! --- \n");
-
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
 
@@ -661,8 +659,6 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
 
 void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef _OPENACC
-
-    printf("\n --- Copying to Device! --- \n");
 
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
@@ -820,7 +816,6 @@ void update_matrix_to_gpu(NrnThread* _nt) {
         /* while discussion with Michael we found that RHS is also needed on
          * gpu because nrn_cap_jacob uses rhs which is being updated on GPU
          */
-        // printf("\n Copying voltage to GPU ... ");
         double* v = _nt->_actual_v;
         double* rhs = _nt->_actual_rhs;
         int ne = nrn_soa_padded_size(_nt->end, 0);
