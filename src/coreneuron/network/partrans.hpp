@@ -21,43 +21,79 @@ using sgid_t = int64_t;
 using sgid_t = int;
 #endif
 
-struct HalfGap_Info {
-    int layout = 0;
-    int type = 0;
-    int ix_vpre = 0; /* AoS index for vpre from beginning of a HalfGap instance */
-    int sz = 0;      /* size of a HalfGap instance */
-};
-extern HalfGap_Info* halfgap_info;
+/** The basic problem is to copy sources to targets.
+ *  It may be the case that a source gets copied to several targets.
+ *  Sources and targets are a set of indices in NrnThread.data.
+ *  A copy may be intrathread, interthread, interprocess.
+ *  Copies happen every time step so efficiency is desirable.
+ *  SetupTransferInfo gives us the source and target (sid, type, index) triples
+ *  for a thread and all the global threads define what gets copied where.
+ *  Need to process that info into TransferThreadData for each thread and
+ *  the interprocessor mpi buffers insrc_buf_ and outsrc_buf transfered with
+ *  MPI_Alltoallv, hopefully with a more or less optimal ordering.
+ *  The compute strategy is: 1) Each thread copies its NrnThread.data source
+ *  items to outsrc_buf_. 2) MPI_Allgatherv transfers outsrc_buf_ to insrc_buf_.
+ *  3) Each thread, copies insrc_buf_ values to Nrnthread.data target.
+ *
+ *  Optimal ordering is probably beyond our reach but a few considerations
+ *  may be useful. The typical use is for gap junctions where only voltage
+ *  transferred and all instances of the HalfGap Point_process receive a
+ *  voltage. Two situations are common. Voltage transfer is sparse and one
+ *  to one, i.e many compartments do not have gap junctions, and those that do
+ *  have only one. The other situation is that all compartments have gap
+ *  junctions (e.g. syncytium of single compartment cells in the heart) and
+ *  the voltage needs to be transferred to all neighboring cells (e.g. 6-18
+ *  cells can be neighbors to the central cell). So on the target side, it
+ *  might be good to copy to the target in target index order from the
+ *  input_buf_. And on the source side, it is certainly simple to scatter
+ *  to the outbut_buf_ in NrnThread.data order.  Note that one expects a wide
+ *  scatter to the outsrc_buf and also a wide scatter within the insrc_buf_.
+**/
 
-class TransferThreadData {
-  public:
-    TransferThreadData();
-    ~TransferThreadData();
-    Memb_list* halfgap_ml;
-    int nsrc;             // number of places in outsrc_buf_ voltages get copied to.
-    int ntar;             // insrc_indices size (halfgap_ml->nodecount);
-    int* insrc_indices;   // halfgap_ml->nodecount indices into insrc_buf_
-    int* v_indices;       // indices into NrnThread._actual_v (may have duplications).
-    int* outbuf_indices;  // indices into outsrc_buf_
-    double* v_gather;     // _actual_v[v_indices]
+/*
+* In partrans.cpp: nrnmpi_v_transfer
+*   Copy NrnThead.data to outsrc_buf_ for all threads via
+*     gpu: gather src_gather[i] = NrnThread._data[src_indices[i]];
+*     gpu to host src_gather
+*     cpu: outsrc_buf_[outsrc_indices[i]] = src_gather[gather2outsrc_indices[i]];
+*
+*   MPI_Allgatherv outsrc_buf_ to insrc_buf_
+*
+*   host to gpu insrc_buf_
+*
+* In partrans.cpp: nrnthread_v_transfer
+*   insrc_buf_ to NrnThread._data via
+*   NrnThread.data[tar_indices[i]] = insrc_buf_[insrc_indices[i]];
+*     where tar_indices depends on layout, type, etc.
+*/
+
+struct TransferThreadData {
+    std::vector<int> src_indices;   // indices into NrnThread._data
+    std::vector<double> src_gather; // copy of NrnThread._data[src_indices]
+    std::vector<int> gather2outsrc_indices; // ix of src_gather that send into outsrc_indices
+    std::vector<int> outsrc_indices;// ix of outsrc_buf that receive src_gather values
+
+    std::vector<int> insrc_indices; // insrc_buf_ indices copied to ...
+    std::vector<int> tar_indices;   // indices of NrnThread.data.
 };
 extern TransferThreadData* transfer_thread_data_; /* array for threads */
 
-struct SetupInfo {
-    int nsrc = 0;  // number of sources in this thread
-    int ntar = 0;  // equal to memb_list nodecount
-    int type = 0;
-    int ix_vpre = 0;
-    sgid_t* sid_src = nullptr;
-    int* v_indices = nullptr;      // increasing order
-    sgid_t* sid_target = nullptr;  // aleady in memb_list order
+// For direct transfer,
+// must be same as corresponding struct SetupTransferInfo in NEURON
+struct SetupTransferInfo {
+    std::vector<sgid_t> src_sid;
+    std::vector<int> src_type;
+    std::vector<int> src_index;
+    std::vector<sgid_t> tar_sid;
+    std::vector<int> tar_type;
+    std::vector<int> tar_index;
 };
-extern SetupInfo* setup_info_; /* array for threads exists only during setup*/
+extern SetupTransferInfo* setup_info_; /* array for threads exists only during setup*/
 
 extern void gap_mpi_setup(int ngroup);
-extern void gap_thread_setup(NrnThread& nt);
-extern void gap_indices_permute(NrnThread& nt);
+extern void gap_data_indices_setup(NrnThread* nt);
 extern void gap_update_indices();
+extern void gap_cleanup();
 
 extern double* insrc_buf_;   // Receive buffer for gap voltages
 extern double* outsrc_buf_;  // Send buffer for gap voltages

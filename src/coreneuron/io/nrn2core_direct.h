@@ -17,15 +17,6 @@ extern void (*nrn2core_mkmech_info_)(std::ostream&);
 extern void* (*nrn2core_get_global_dbl_item_)(void*, const char*& name, int& size, double*& val);
 extern int (*nrn2core_get_global_int_item_)(const char* name);
 
-extern void (*nrn2core_get_partrans_setup_info_)(int tid,
-                                                 int& ntar,
-                                                 int& nsrc,
-                                                 int& type,
-                                                 int& ix_vpre,
-                                                 int*& sid_target,
-                                                 int*& sid_src,
-                                                 int*& v_indices);
-
 extern int (*nrn2core_get_dat1_)(int tid,
                                  int& n_presyn,
                                  int& n_netcon,

@@ -40,7 +40,7 @@ int v_structure_change;
 int diam_changed;
 #define MAXERRCOUNT 5
 int hoc_errno_count;
-const char* bbcore_write_version = "1.3"; // globals.dat has _nrnunit_use_legacy_
+const char* bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable
 
 char* pnt_name(Point_process* pnt) {
     return corenrn.get_memb_func(pnt->_type).sym;

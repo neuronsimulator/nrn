@@ -63,17 +63,11 @@ int corenrn_embedded_nthread;
 
 void (*nrn2core_group_ids_)(int*);
 
-void (*nrn2core_get_partrans_setup_info_)(int tid,
-                                          int& ntar,
-                                          int& nsrc,
-                                          int& type,
-                                          int& ix_vpre,
-                                          int*& sid_target,
-                                          int*& sid_src,
-                                          int*& v_indices);
-
-
-
+extern "C" {
+coreneuron::nrn_partrans::SetupTransferInfo*
+    (*nrn2core_get_partrans_setup_info_)(int ngroup, int cn_nthread,
+                                         size_t cn_sidt_size);
+}
 
 void (*nrn2core_get_trajectory_requests_)(int tid,
                                           int& bsize,
@@ -489,22 +483,12 @@ void nrn_setup(const char* filesdat,
     for (int i = 0; i < nrn_nthread; ++i)
         nrnthreads_netcon_srcgid[i] = nullptr;
 
-    // gap junctions
-    if (nrn_have_gaps) {
-        nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
-        nrn_partrans::setup_info_ = new nrn_partrans::SetupInfo[userParams.ngroup];
-        if (!corenrn_embedded) {
-            coreneuron::phase_wrapper<coreneuron::gap>(userParams);
-        } else {
-            nrn_assert(sizeof(nrn_partrans::sgid_t) == sizeof(int));
-            for (int i = 0; i < userParams.ngroup; ++i) {
-                nrn_partrans::SetupInfo& si = nrn_partrans::setup_info_[i];
-                (*nrn2core_get_partrans_setup_info_)(i, si.ntar, si.nsrc, si.type, si.ix_vpre,
-                                                     si.sid_target, si.sid_src, si.v_indices);
-            }
-        }
-        nrn_partrans::gap_mpi_setup(userParams.ngroup);
-    }
+    // Gap junctions used to be done first in the sense of reading files
+    // and calling gap_mpi_setup. But during phase2, gap_thread_setup and
+    // gap_indices_permute were called after NrnThread.data was in its final
+    // layout and mechanism permutation was determined. This is no longer
+    // ideal as it necessitates keeping setup_info_ in existence to the end
+    // of phase2.  So gap junction setup is deferred to after phase2.
 
     nrnthreads_netcon_negsrcgid_tid.resize(nrn_nthread);
     if (!corenrn_embedded) {
@@ -527,6 +511,28 @@ void nrn_setup(const char* filesdat,
     // thread.
     /* nrn_multithread_job supports serial, pthread, and openmp. */
     coreneuron::phase_wrapper<coreneuron::phase::two>(userParams, corenrn_embedded);
+
+    // gap junctions
+    // Gaps are done after phase2, in order to use layout and permutation
+    // information via calls to stdindex2ptr.
+    if (nrn_have_gaps) {
+        nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
+        if (!corenrn_embedded) {
+            nrn_partrans::setup_info_ = new nrn_partrans::SetupTransferInfo[
+                nrn_nthread];
+            coreneuron::phase_wrapper<coreneuron::gap>(userParams);
+        } else {
+            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(
+                userParams.ngroup, nrn_nthread, sizeof(nrn_partrans::sgid_t));
+        }
+
+        nrn_multithread_job(nrn_partrans::gap_data_indices_setup);
+        nrn_partrans::gap_mpi_setup(userParams.ngroup);
+
+        // Whether allocated in NEURON or here, delete here.
+        delete [] nrn_partrans::setup_info_;
+        nrn_partrans::setup_info_ = nullptr;
+    }
 
     if (is_mapping_needed)
         coreneuron::phase_wrapper<coreneuron::phase::three>(userParams);
@@ -578,9 +584,9 @@ void setup_ThreadData(NrnThread& nt) {
 }
 
 void read_phasegap(NrnThread& nt, UserParams& userParams) {
-    nrn_partrans::SetupInfo& si = nrn_partrans::setup_info_[nt.id];
-    si.ntar = 0;
-    si.nsrc = 0;
+    auto& si = nrn_partrans::setup_info_[nt.id];
+    size_t ntar = 0;
+    size_t nsrc = 0;
 
     auto& F = userParams.file_reader[nt.id];
     if (F.fail()) {
@@ -590,25 +596,37 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
     int chkpntsave = F.checkpoint();
     F.checkpoint(0);
 
-    si.ntar = F.read_int();
-    si.nsrc = F.read_int();
-    si.type = F.read_int();
-    si.ix_vpre = F.read_int();
-    si.sid_target = F.read_array<int>(si.ntar);
-    si.sid_src = F.read_array<int>(si.nsrc);
-    si.v_indices = F.read_array<int>(si.nsrc);
+    int sidt_size = F.read_int();
+    assert(sidt_size == int(sizeof(nrn_partrans::sgid_t)));
+    ntar = size_t(F.read_int());
+    nsrc = size_t(F.read_int());
 
-    F.checkpoint(chkpntsave);
+    si.src_sid.resize(nsrc);
+    si.src_type.resize(nsrc);
+    si.src_index.resize(nsrc);
+    if (nsrc) {
+        F.read_array<nrn_partrans::sgid_t>(si.src_sid.data(), nsrc);
+        F.read_array<int>(si.src_type.data(), nsrc);
+        F.read_array<int>(si.src_index.data(), nsrc);
+    }
+
+    si.tar_sid.resize(ntar);
+    si.tar_type.resize(ntar);
+    si.tar_index.resize(ntar);
+    if (ntar) {
+        F.read_array<nrn_partrans::sgid_t>(si.tar_sid.data(), ntar);
+        F.read_array<int>(si.tar_type.data(), ntar);
+        F.read_array<int>(si.tar_index.data(), ntar);
+    }
 
 #if DEBUG
-  printf("%d read_phasegap tid=%d type=%d %s ix_vpre=%d nsrc=%d ntar=%d\n",
-    nrnmpi_myid, nt.id, si.type, corenrn.get_memb_func(si.type).sym, si.ix_vpre,
-    si.nsrc, si.ntar);
+  printf("%d read_phasegap tid=%d nsrc=%d ntar=%d\n",
+    nrnmpi_myid, nt.id, nsrc, ntar);
   for (int i=0; i < si.nsrc; ++i) {
-    printf("sid_src %d %d\n", si.sid_src[i], si.v_indices[i]);
+    printf("src %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
   }
-  for (int i=0; i <si. ntar; ++i) {
-    printf("sid_tar %d %d\n", si.sid_target[i], i);
+  for (int i=0; i <si.ntar; ++i) {
+    printf("tar %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
   }
 #endif
 }
@@ -855,6 +873,8 @@ void nrn_cleanup() {
     }
 
     destroy_interleave_info();
+
+    nrn_partrans::gap_cleanup();
 }
 
 void delete_trajectory_requests(NrnThread& nt) {

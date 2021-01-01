@@ -46,11 +46,11 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 extern corenrn_parameters corenrn_param;
 
-const int NUM_STATS = 12;
+const int NUM_STATS = 13;
 enum event_type { enq = 0, spike, ite };
 
 void report_cell_stats(void) {
-    long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, gstat_array[NUM_STATS];
+    long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, gstat_array[NUM_STATS];
 
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         stat_array[0] += (long)nrn_threads[ith].ncell;           // number of cells
@@ -60,8 +60,10 @@ void report_cell_stats(void) {
         stat_array[3] += (long)nrn_threads[ith].n_netcon;        // number of netcons, synapses
         stat_array[4] += (long)nrn_threads[ith].n_pntproc;       // number of point processes
         if (nrn_partrans::transfer_thread_data_) {
-            int ntar = nrn_partrans::transfer_thread_data_[ith].ntar;
-            stat_array[11] += (long)ntar;  // number of transfer (gap) targets
+            size_t n = nrn_partrans::transfer_thread_data_[ith].tar_indices.size();
+            stat_array[11] += (long)n;  // number of transfer targets
+            n = nrn_partrans::transfer_thread_data_[ith].src_indices.size();
+            stat_array[12] += (long)n;  // number of transfer sources
         }
     }
     stat_array[5] = (long)spikevec_gid.size();  // number of spikes
@@ -90,7 +92,8 @@ void report_cell_stats(void) {
         printf(" Number of input presyns: %ld\n", gstat_array[2]);
         printf(" Number of synapses: %ld\n", gstat_array[3]);
         printf(" Number of point processes: %ld\n", gstat_array[4]);
-        printf(" Number of transfer (gap) targets: %ld\n", gstat_array[11]);
+        printf(" Number of transfer sources: %ld\n", gstat_array[12]);
+        printf(" Number of transfer targets: %ld\n", gstat_array[11]);
         printf(" Number of spikes: %ld\n", gstat_array[5]);
         printf(" Number of spikes with non negative gid-s: %ld\n", gstat_array[6]);
     }

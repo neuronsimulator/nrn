@@ -3,7 +3,6 @@
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
-#include "coreneuron/network/partrans.hpp"
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/utils/vrecitem.h"
@@ -996,10 +995,6 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         }
     }
 
-    if (nrn_have_gaps) {
-        nrn_partrans::gap_thread_setup(nt);
-    }
-
     pdata_relocation(nt, memb_func);
 
     /* if desired, apply the node permutation. This involves permuting
@@ -1051,10 +1046,6 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
                 pp._i_instance = ml->_permute[pp._i_instance];
             }
         }
-    }
-
-    if (nrn_have_gaps && interleave_permute_type) {
-        nrn_partrans::gap_indices_permute(nt);
     }
 
     set_dependencies(nt, memb_func);

@@ -45,28 +45,40 @@ CoreNEURON is now integrated into the development version of the NEURON simulato
 
 	HPC systems often use a module system to select software. For example, you can load the compiler, cmake, and python dependencies using module as follows:
 
+  ```
+  module load intel intel-mpi python cmake
+  ```
 
-	```
-	module load intel intel-mpi python cmake
-	```
 Note that if you are building on Cray system with the GNU toolchain, you have to set following environment variable:
 
-	```bash
-	export CRAYPE_LINK_TYPE=dynamic
-	```
+  ```
+  export CRAYPE_LINK_TYPE=dynamic
+  ```
 
 3. Run CMake with the appropriate [options](https://github.com/neuronsimulator/nrn#build-using-cmake) and additionally enable CoreNEURON with `-DNRN_ENABLE_CORENEURON=ON` option:
 
-  ```bash
+  ```
   cmake .. \
    -DNRN_ENABLE_CORENEURON=ON \
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_RX3D=OFF \
    -DCMAKE_INSTALL_PREFIX=$HOME/install
   ```
-If you would like to enable GPU support with OpenACC, make sure to use `-DCORENRN_ENABLE_GPU=ON` option and use the PGI/NVIDIA HPC SDK compilers with CUDA.
 
-> NOTE : if the CMake command files, please make sure to delete temporary CMake cache files (`CMakeCache.txt`) before rerunning CMake.
+4. If you would like to enable GPU support with OpenACC, make sure to use `-DCORENRN_ENABLE_GPU=ON` option and use the PGI/NVIDIA HPC SDK compilers with CUDA. For example,
+
+  ```
+  cmake .. \
+   -DNRN_ENABLE_CORENEURON=ON \
+   -DCORENRN_ENABLE_GPU=ON
+   -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_RX3D=OFF \
+   -DCMAKE_INSTALL_PREFIX=$HOME/install
+   -DCMAKE_C_COMPILER=nvc \
+   -DCMAKE_CXX_COMPILER=nvc++
+  ```
+
+NOTE : If the CMake command fails, please make sure to delete temporary CMake cache files (`CMakeCache.txt`) before rerunning CMake.
 
 4. Build and Install :  once the configure step is done, you can build and install the project as:
 
@@ -89,7 +101,7 @@ As in a typical NEURON workflow, you can use `nrnivmodl` to translate MOD files:
 nrnivmodl mod_directory
 ```
 
-In order to enable CoreNEURON support, you must set the  `-coreneuron` flag:
+In order to enable CoreNEURON support, you must set the  `-coreneuron` flag. Make sure to necessary modules (compilers, CUDA, MPI etc) are loaded before using nrnivmodl:
 
 ```
 nrnivmodl -coreneuron mod_directory
@@ -109,7 +121,12 @@ With CoreNEURON, existing NEURON models can be run with minimal changes. For a g
 	from neuron import coreneuron
 	coreneuron.enable = True
 	```
-3. Use `psolve` to run simulation after initialization :
+3. If GPU support is enabled during build, enable GPU execution using :
+	```
+	coreneuron.gpu = True
+    ```
+
+4. Use `psolve` to run simulation after initialization :
 
 	```
 	h.stdinit()
@@ -162,8 +179,10 @@ nrn_spike_gids = nrn_spike_gids.to_python()
 # now run CoreNEURON
 from neuron import coreneuron
 coreneuron.enable = True
+
 # for GPU support
 # coreneuron.gpu = True
+
 coreneuron.verbose = 0
 h.stdinit()
 corenrn_all_spike_t = h.Vector()
@@ -210,11 +229,10 @@ By default, OpenMP threading is enabled. You can disable it with `-DCORENRN_ENAB
 
 #### GPU enabled build is failing with inlining related errors, what to do?
 
-If there are large functions / procedures in the MOD file that are not inlined by the compiler, you may need to pass additional C++ flags to PGI compiler. You can try:
+If there are large functions / procedures in the MOD file that are not inlined by the compiler, you may need to pass additional C++ flags to PGI compiler. You can try following CXX flags:
 
 ```
-cmake .. -DCMAKE_CXX_FLAGS="-O2 -Minline=size:1000,levels:100,totalsize:40000,maxsize:4000" \
-         -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install
+-DCMAKE_CXX_FLAGS="-O2 -Minline=size:1000,levels:100,totalsize:40000,maxsize:4000"
 ```
 
 For other errors, please [open an issue](https://github.com/BlueBrain/CoreNeuron/issues).
@@ -261,8 +279,8 @@ CoreNEURON has support for GPUs using the OpenACC programming model when enabled
 
 ```bash
 module purge all
-module load pgi/19.4 cuda/10 cmake intel-mpi # change pgi, cuda and mpi modules
-cmake .. -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install
+module load nvidia-hpc-sdk/20.11 cuda/11 cmake openmpi # change pgi, cuda and mpi modules
+cmake .. -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install -DCMAKE_C_COMPILER=nvc -DCMAKE_CXX_COMPILER=nvc++
 make -j && make install
 ```
 
@@ -278,7 +296,7 @@ You have to run GPU executable with the `--gpu` flag. Make sure to enable cell r
 mpirun -n 1 ./bin/nrniv-core --mpi --gpu --tstop 100 --datpath ../tests/integration/ring --cell-permute 2
 ```
 
-> Note: If your model is using Random123 random number generator, you cannot use the same executable for CPU and GPU runs. We suggest to build separate executables for CPU and GPU simulations. This will be fixed in future releases.
+Note: If your model is using Random123 random number generator, you cannot use the same executable for CPU and GPU runs. We suggest to install separate NEURON with CoreNEURON for CPU and GPU simulations. This will be fixed in future releases.
 
 
 ##### Running tests with SLURM
@@ -339,4 +357,4 @@ You can see current [contributors here](https://github.com/BlueBrain/CoreNeuron/
 
 ## Funding
 
-CoreNEURON is developed in a joint collaboration between the Blue Brain Project and Yale University. This work has been funded by the EPFL Blue Brain Project (funded by the Swiss ETH board), NIH grant number R01NS11613 (Yale University), the European Union Seventh Framework Program (FP7/20072013) under grant agreement n◦ 604102 (HBP) and the Eu- ropean Union’s Horizon 2020 Framework Programme for Research and Innovation under Grant Agreement n◦ 720270 (Human Brain Project SGA1) and Grant Agreement n◦ 785907 (Human Brain Project SGA2).
+CoreNEURON is developed in a joint collaboration between the Blue Brain Project and Yale University. This work has been funded by the EPFL Blue Brain Project (funded by the Swiss ETH board), NIH grant number R01NS11613 (Yale University), the European Union Seventh Framework Program (FP7/20072013) under grant agreement n◦ 604102 (HBP) and the European Union’s Horizon 2020 Framework Programme for Research and Innovation under Grant Agreement n◦ 720270 (Human Brain Project SGA1) and Grant Agreement n◦ 785907 (Human Brain Project SGA2).

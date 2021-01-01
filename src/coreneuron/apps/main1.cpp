@@ -577,6 +577,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
         Instrumentor::phase_end("simulation");
         Instrumentor::stop_profile();
 
+        // update cpu copy of NrnThread from GPU
+        update_nrnthreads_on_host(nrn_threads, nrn_nthread);
+
         // direct mode and full trajectory gathering on CoreNEURON, send back.
         if (corenrn_embedded) {
             trajectory_return();
