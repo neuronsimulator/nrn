@@ -2403,32 +2403,6 @@ void push_section(void) {
 }
 
 
-#if FISHER
-void assign_hoc_str(char* str, char* val, int global) 
-
-    /* Assign hoc string in global dataspace if global == 1,
-       else use current dataspace. */
-
-{
-    Symbol *sym;
-    char** pstr;
-    Objectdata* obdsave = hoc_objectdata; /* save current dataspace */
-
-    if (!global && hoc_thisobject) {
-    	sym = hoc_table_lookup(str, hoc_thisobject->template->symtable);
-    }else{
-	hoc_objectdata = hoc_top_level_data;
-	sym = hoc_lookup(str);
-    }
-    if (sym && sym->type == STRING) {
-	/* point to string */
-	pstr = OPSTR(sym);
-	hoc_assign_str(pstr, val);	
-    }
-    hoc_objectdata = obdsave;
-}
-#endif
-
 Section* nrn_section_exists(char* name, int indx, Object* cell) {
 	Section* sec = (Section*)0;
 	Symbol* sym = (Symbol*)0;
