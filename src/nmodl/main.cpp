@@ -65,7 +65,7 @@ int main(int argc, const char* argv[]) {
     std::vector<std::string> mod_files;
 
     /// true if debug logger statements should be shown
-    bool verbose(false);
+    std::string verbose("info");
 
     /// true if serial c code to be generated
     bool c_backend(true);
@@ -161,7 +161,9 @@ int main(int argc, const char* argv[]) {
     app.get_formatter()->column_width(40);
     app.set_help_all_flag("-H,--help-all", "Print this help message including all sub-commands");
 
-    app.add_flag("-v,--verbose", verbose, "Verbose logger output")->ignore_case();
+    app.add_option("--verbose", verbose, "Verbosity of logger output", true)
+        ->ignore_case()
+        ->check(CLI::IsMember({"trace", "debug", "info", "warning", "error", "critical", "off"}));
 
     app.add_option("file", mod_files, "One or more MOD files to process")
         ->ignore_case()
@@ -281,9 +283,7 @@ int main(int argc, const char* argv[]) {
             ->initialize_interpreter();
     }
 
-    if (verbose) {
-        logger->set_level(spdlog::level::debug);
-    }
+    logger->set_level(spdlog::level::from_str(verbose));
 
     /// write ast to nmodl
     const auto ast_to_nmodl = [nmodl_ast](ast::Program& ast, const std::string& filepath) {
