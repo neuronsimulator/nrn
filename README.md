@@ -221,7 +221,7 @@ Positionals:
 Options:
   -h,--help                             Print this help message and exit
   -H,--help-all                         Print this help message including all sub-commands
-  -v,--verbose                          Verbose logger output
+  --verbose=info                        Verbose logger output (trace, debug, info, warning, error, critical, off)
   -o,--output TEXT=.                    Directory for backend code output
   --scratch TEXT=tmp                    Directory for intermediate code output
   --units TEXT=/path/<>/nrnunits.lib
