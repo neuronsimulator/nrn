@@ -287,16 +287,31 @@ if test -n "$nrnivmodl_cfiles" ; then
   fi
 fi
 echo "COBJS='$COBJS'"
+
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
+UsingCoreNEURON="no"
+@USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
 if [ "$LinkCoreNEURON" = true ] ; then
-  :
-  @USING_CMAKE_FALSE@ printf "ERROR : CoreNEURON is not compatible with autotools, build with CMake build system!\n"
-  @USING_CMAKE_FALSE@ exit 1
-  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ printf "ERROR : CoreNEURON support is not enabled!\n"
-  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_FALSE@ exit 1
-  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $USER_PWD
-  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ $bindir/nrnivmodl-core $MODSUBDIR
-  @USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@ cd $MODSUBDIR
+  if [ "$UsingCMake" = "yes" ] ; then
+    if [ "$UsingCoreNEURON" = "yes" ] ; then
+      cd $USER_PWD
+      args=""
+      # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
+      for i in "$@"; do
+        j=`hide_spaces "$i"`
+        j=`escape_spaces "$j"`
+        args="$args $j"
+      done
+      $bindir/nrnivmodl-core $args
+      cd $MODSUBDIR
+    else
+      printf "ERROR : CoreNEURON support is not enabled!\n"
+      exit 1
+    fi
+  else
+    printf "ERROR : CoreNEURON is not compatible with autotools, build with CMake build system!\n"
+    exit 1
+  fi
 fi
 
 @NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&

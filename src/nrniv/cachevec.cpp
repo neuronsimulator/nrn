@@ -27,7 +27,6 @@ extern NetCvode* net_cvode_instance;
 }
 
 extern void nrn_linmod_update_ptrs(void*);
-extern void nrn_partrans_update_ptrs();
 
 static Symbol* grsym_;
 static Symbol* ptrsym_;
@@ -96,8 +95,6 @@ void nrniv_recalc_ptrs() {
 		void* pt = (void*)obj->u.this_pointer;
 		if (pt) {nrn_linmod_update_ptrs(pt);}
 	}
-	// update pointers used by parallel transfer
-	nrn_partrans_update_ptrs();
 }
 
 void nrn_recalc_ptrvector() {

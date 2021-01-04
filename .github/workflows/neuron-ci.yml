@@ -31,7 +31,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [ ubuntu-18.04, macOS-10.15 ]
+        os: [ macOS-10.15, ubuntu-18.04]
         config:
           - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON", documentation: ON }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }

@@ -36,6 +36,7 @@ extern int* nrn_prop_dparam_size_;
 extern int* nrn_dparam_ptr_start_;
 extern int* nrn_dparam_ptr_end_;
 extern void nrn_define_shape();
+extern void nrn_partrans_update_ptrs();
 
 #if 1 || PARANEURON
 void (*nrn_multisplit_setup_)();
@@ -2250,6 +2251,7 @@ void nrn_recalc_node_ptrs(void) {
 	nrn_node_ptr_change_cnt_++;
 	nrn_cache_prop_realloc();
 	nrn_recalc_ptrvector();
+	nrn_partrans_update_ptrs();
 }
 
 #endif /* CACHEVEC */

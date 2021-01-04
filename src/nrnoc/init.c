@@ -98,14 +98,6 @@ extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
 
-#if FISHER
-#include <stdlib.h>
-#include "fisher.h"
-double id_number;              /* for rcs control, set in setup_id_info() */
-char login_name[20];           /* store user's login for sys.c & rcs.c    */
-char *pipe_filter = "more";    /* allow for running NEURON in emacs       */
-#endif
-
 static HocParmLimits _hoc_parm_limits[] = {
 	"Ra", 1e-6, 1e9,
 	"L", 1e-4, 1e20,
@@ -330,16 +322,6 @@ void hoc_last_init(void)
 	
 #if KEEP_NSEG_PARM
 	{extern int keep_nseg_parm_; keep_nseg_parm_ = 1; }
-#endif
-#if FISHER
-	/* get login_name from 'LOGNAME' */
-	strcpy(login_name, getenv("LOGNAME"));
-	
-	if (getenv("CAT_PIPE")) {
-	    pipe_filter = "cat";   /* preferred for emacs environment */
-	} else {
-	    pipe_filter = "more";  /* preferred for xterm environment */
-	}
 #endif
 
 	section_list = hoc_l_newlist();
