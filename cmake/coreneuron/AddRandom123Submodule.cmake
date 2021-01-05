@@ -10,7 +10,8 @@ find_package(FindPkgConfig QUIET)
 find_path(
   Random123_PROJ
   NAMES LICENSE
-  PATHS "${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123")
+  PATHS "${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123"
+  NO_SYSTEM_ENVIRONMENT_PATH)
 
 find_package_handle_standard_args(Random123 REQUIRED_VARS Random123_PROJ)
 
