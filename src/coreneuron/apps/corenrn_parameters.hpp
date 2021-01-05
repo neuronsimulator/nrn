@@ -87,6 +87,8 @@ struct corenrn_parameters {
 
     bool show_version=false;       /// Print version and exit.
 
+    bool count_mechs=false;        /// Print mechanism counts after initialization
+
     verbose_level verbose{verbose_level::DEFAULT}; /// Verbosity-level
 
     double tstop=100;              /// Stop time of simulation in msec

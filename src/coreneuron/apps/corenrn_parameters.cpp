@@ -47,6 +47,7 @@ corenrn_parameters::corenrn_parameters(){
         ->check(CLI::Range(0., 1e9));
     app.add_flag("--show");
     app.add_set("--verbose", this->verbose, {verbose_level::NONE, verbose_level::ERROR, verbose_level::INFO, verbose_level::DEBUG}, "Verbose level: 0 = NONE, 1 = ERROR, 2 = INFO, 3 = DEBUG. Default is INFO");
+    app.add_flag("--count_mechs", this->count_mechs, "Print number of instances of each mechanism.");
 
     auto sub_gpu = app.add_option_group("GPU", "Commands relative to GPU.");
     sub_gpu -> add_option("-W, --nwarp", this->nwarp, "Number of warps to balance.", true)
