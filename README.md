@@ -6,14 +6,25 @@ See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code
 documentation, tutorials, announcements of courses and conferences,
 and a discussion forum.
 
-## Building NEURON
+## Installing Binary Distributions
 
-NEURON provided binary installers for Linux, Mac and Windows platform [here](https://neuron.yale.edu/ftp/neuron/versions/alpha/). If you want to build latest version from source, you can find instructions hereafter. Currently we are supporting two build systems:
+NEURON provided binary installers for Linux, Mac and Windows platforms. You can find latest installers for Mac and Windows platform [here](https://neuron.yale.edu/ftp/neuron/versions/alpha/). For linux and Mac platforms you can install Python 3 wheel as:
 
-- [CMake](#build-cmake) (recommended)
-- [Autotools](#build-autotools) (legacy, ___will be supported only until release 8.0 inclusively___)
+```
+pip3 install neuron
+```
 
-If you are using autotools, we highly recommend shifting to CMake as of now and report back any build issues you may have.
+## Installing from source
+
+If you want to build latest version from source, you can find instructions hereafter. Currently we are supporting two build systems:
+
+- [CMake](#build-cmake) (__recommended__)
+- [Autotools](#build-autotools) (legacy, minimum support)
+
+Note that starting from 8.0 release, we recommend users to use CMake as primary build system for NEURON installation. We would be grateful for any feedback or issues you encounter using CMake based build system. Please [report an issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help.
+
+If you are using autotools, we highly recommend switching to CMake.
+
 
 ### Build Dependencies
 
@@ -22,6 +33,7 @@ In order to build NEURON from source, following packages must be available:
 - Bison
 - Flex
 - C/C++ compiler suite
+- CMake 3.8 or Autotools
 
 Following packages are optional (see build options):
 
@@ -33,9 +45,7 @@ Following packages are optional (see build options):
 <a name="build-cmake"></a>
 ### Build using CMake
 
-NEURON can now also be built and installed using [CMake build system](https://cmake.org/). We would be grateful for any feedback or issues you encounter using CMake based build system. Please [report an issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help.
-
-One of the primary advantage of CMake based build system is integration with other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/), [NMODL](https://github.com/BlueBrain/nmodl/) etc. Such projects are now integrated into single CMake based build system and they can be installed together as shown below:
+Starting from 7.8.1 release, NEURON can be installed using [CMake build system](https://cmake.org/). One of the primary advantage of CMake based build system is cross platform support and integration with other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/), [NMODL](https://github.com/BlueBrain/nmodl/) etc. Such projects are now integrated into single CMake based build system and they can be installed together as shown below:
 
 
 1. Clone latest version:
@@ -52,33 +62,41 @@ One of the primary advantage of CMake based build system is integration with oth
   cd build
   ```
 
-3. Run cmake with the appropriate options (see below for list of common options). \
-A full list of options can be found in *nrn/CMakeLists.txt* . Defaults are shown in *nrn/cmake/BuildOptionDefaults.cmake*), \
+3. If you are building on Cray system with GNU toolchain, you have to set following environmental variable:
+
+```
+export CRAYPE_LINK_TYPE=dynamic
+```
+
+4. Run cmake with the appropriate options (see below for list of common options). \
+A full list of options can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. \
 e.g. a bare-bones install:
 
   ```
   cmake .. \
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
-   -DNRN_ENABLE_RX3D=OFF
+   -DNRN_ENABLE_RX3D=OFF \
+   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   ```
 
-Note that if you are building on Cray system with GNU toolchain, you have to set following environmental variable **before** calling above CMake comamnd:
-
-```
-export CRAYPE_LINK_TYPE=dynamic
-```
-
-4. Build the code:
+5. Build the code:
 
   ```
   make -j
   make install
   ```
 
+6. Set PATH and PYTHONPATH environmental variables to use installation:
+
+  ```
+  export PATH=/path/to/install/directory/bin:$PATH
+  export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+  ```
+
+
 Particularly useful CMake options are (use **ON** to enable and **OFF** to disable feature):
 
-* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
 * **-DNRN\_ENABLE\_INTERVIEWS=OFF** : Disable Interviews (native GUI support)
 * **-DNRN\_ENABLE\_PYTHON=OFF** : Disable Python support
 * **-DNRN\_ENABLE\_MPI=OFF** : Disable MPI support for parallelization
@@ -87,7 +105,10 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DNRN\_ENABLE\_TESTS=ON** : Enable unit tests
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
-* **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
+* **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation
+with CoreNEURON
+* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
+
 
 Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on the CMake options.
 
@@ -103,7 +124,7 @@ sh build.sh
 And then run standard `configure`, `make` and `make install` steps to install Interviews:
 
 ```bash
-./configure
+./configure --prefix=/path/to/install/directory
 make
 make install
 ```
@@ -117,10 +138,18 @@ sh build.sh
 and then run standard `configure`, `make` and `make install` steps:
 
 ```bash
-./configure
+./configure --prefix=/path/to/install/directory
 make
 make install
 ```
+
+You can set following environmental variables to use installation:
+
+```bash
+export PATH=/path/to/install/directory/<arch>/bin:$PATH              # replace <arch> with x86_64 or other platform directory
+export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
+```
+
 
 If you want to customize build, particularly useful configure options are:
 

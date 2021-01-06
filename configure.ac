@@ -707,7 +707,9 @@ AC_OUTPUT
 
 AC_MSG_WARN([
     !!!
-        Autotools build system will be supported only until release 8.0 inclusively, and will be removed right after.
-        We highly recommend shifting to CMake as of now, please have a look at README.md.
+        CMake is now primary build system for installing NEURON from source.
+        Autotools support will be deprecated in future releases. As you are
+        using Autotools, we highly recommend switching to CMake as of now.
+        Please see instructions in the README.md.
     !!!
 ])
