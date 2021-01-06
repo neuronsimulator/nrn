@@ -8,7 +8,7 @@ and a discussion forum.
 
 ## Installing Binary Distributions
 
-NEURON provided binary installers for Linux, Mac and Windows platforms. You can find latest installers for Mac and Windows platform [here](https://neuron.yale.edu/ftp/neuron/versions/alpha/). For linux and Mac platforms you can install Python 3 wheel as:
+NEURON provides binary installers for Linux, Mac and Windows platforms. You can find the latest installers for Mac and Windows [here](https://neuron.yale.edu/ftp/neuron/versions/alpha/). For Linux and Mac you can install the official Python 3 wheel with:
 
 ```
 pip3 install neuron
@@ -16,12 +16,12 @@ pip3 install neuron
 
 ## Installing from source
 
-If you want to build latest version from source, you can find instructions hereafter. Currently we are supporting two build systems:
+If you want to build the latest version from source, you can find instructions in the following. Currently we are supporting two build systems:
 
 - [CMake](#build-cmake) (__recommended__)
 - [Autotools](#build-autotools) (legacy, minimum support)
 
-Note that starting from 8.0 release, we recommend users to use CMake as primary build system for NEURON installation. We would be grateful for any feedback or issues you encounter using CMake based build system. Please [report an issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help.
+Note that starting with the 8.0 release, we recommend users to use CMake as the primary build system for NEURON. We would be grateful for any feedback or issues you encounter using the CMake-based build system. Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help.
 
 If you are using autotools, we highly recommend switching to CMake.
 
@@ -45,7 +45,7 @@ Following packages are optional (see build options):
 <a name="build-cmake"></a>
 ### Build using CMake
 
-Starting from 7.8.1 release, NEURON can be installed using [CMake build system](https://cmake.org/). One of the primary advantage of CMake based build system is cross platform support and integration with other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/), [NMODL](https://github.com/BlueBrain/nmodl/) etc. Such projects are now integrated into single CMake based build system and they can be installed together as shown below:
+Starting with the 7.8.1 release, NEURON can be installed using the [CMake build system](https://cmake.org/). One of the primary advantages of a CMake-based build system is cross platform support and integration with other projects like [Interviews](https://github.com/neuronsimulator/iv), [CoreNEURON](https://github.com/BlueBrain/CoreNeuron/), [NMODL](https://github.com/BlueBrain/nmodl/) etc. These projects are now integrated into single a CMake-based build system and they can be installed together as shown below:
 
 
 1. Clone latest version:
@@ -62,13 +62,13 @@ Starting from 7.8.1 release, NEURON can be installed using [CMake build system](
   cd build
   ```
 
-3. If you are building on Cray system with GNU toolchain, you have to set following environmental variable:
+3. If you are building on Cray systems with a GNU toolchain, you have to set following environmental variable:
 
 ```
 export CRAYPE_LINK_TYPE=dynamic
 ```
 
-4. Run cmake with the appropriate options (see below for list of common options). \
+4. Run `cmake` with the appropriate options (see below for a list of common options). \
 A full list of options can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. \
 e.g. a bare-bones install:
 
@@ -87,7 +87,7 @@ e.g. a bare-bones install:
   make install
   ```
 
-6. Set PATH and PYTHONPATH environmental variables to use installation:
+6. Set PATH and PYTHONPATH environmental variables to use the installation:
 
   ```
   export PATH=/path/to/install/directory/bin:$PATH
@@ -115,13 +115,13 @@ Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for mor
 <a name="build-autotools"></a>
 ### Build using Autotools
 
-If you would like to have GUI support, you first need to install Interviews package available from GitHub [here](http://github.com/neuronsimulator/iv) or tarball provided [here](http://neuron.yale.edu/ftp/neuron/versions/alpha/). In case of git repository, first you need to run `build.sh` script to create the automake, autoconf, libtool generated files:
+If you would like to have GUI support, you first need to install the Interviews package available from GitHub [here](http://github.com/neuronsimulator/iv) or the tarball provided [here](http://neuron.yale.edu/ftp/neuron/versions/alpha/). In case of the former, first you need to run `build.sh` script to create the automake, autoconf, and libtool generated files:
 
 ```bash
 sh build.sh
 ```
 
-And then run standard `configure`, `make` and `make install` steps to install Interviews:
+And then run the standard `configure`, `make` and `make install` steps to install Interviews:
 
 ```bash
 ./configure --prefix=/path/to/install/directory
@@ -129,13 +129,13 @@ make
 make install
 ```
 
-To build NEURON we have to use same steps as Interviews i.e. if source is obtained from the git repository, run `build.sh` script to create the automake, autoconf, libtool generated files:
+To build NEURON we have to use the same steps as Interviews, i.e., if the source is obtained from the git repository, run `build.sh` script to create the automake, autoconf, and libtool generated files:
 
 ```bash
 sh build.sh
 ```
 
-and then run standard `configure`, `make` and `make install` steps:
+and then run the standard `configure`, `make` and `make install` steps:
 
 ```bash
 ./configure --prefix=/path/to/install/directory
@@ -143,7 +143,7 @@ make
 make install
 ```
 
-You can set following environmental variables to use installation:
+You can set the following environmental variables to use the installation:
 
 ```bash
 export PATH=/path/to/install/directory/<arch>/bin:$PATH              # replace <arch> with x86_64 or other platform directory
@@ -151,7 +151,7 @@ export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
 ```
 
 
-If you want to customize build, particularly useful configure options are:
+If you want to customize the build, particularly useful configure options are:
 
 
 - `--prefix=/some/path` : Install in this location of your filesystem.
@@ -163,7 +163,7 @@ If you want to customize build, particularly useful configure options are:
 - `--disable-rx3d` : Do not compile the cython translated 3-d rxd features
 
 
-For more details see the [INSTALL.md](https://github.com/neuronsimulator/nrn/blob/master/INSTALL.md)
+For additional documentation see the [INSTALL file](INSTALL.md)
 file.
 
 For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
