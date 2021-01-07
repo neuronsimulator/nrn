@@ -118,10 +118,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if (NRN_ENABLE_MPI)
+    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
+    add_custom_target(test_subworld_mpiexec_name
+        COMMAND
+          ${MPIEXEC_NAME} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py
+    )
     add_test(
       NAME parallel_tests
       COMMAND
-        ${MPIEXEC} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
+       make test_subworld_mpiexec_name)
     list(APPEND TESTS parallel_tests)
   endif()
 
@@ -165,7 +170,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
         add_test(
-                NAME coreneuron_mpi_spikes_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
+                NAME coreneuron_mpi_spikes_py  COMMAND ${MPIEXEC} -np 2  ${PYTHON_EXECUTABLE}
                                               ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
                                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_mpi_spikes_py)
