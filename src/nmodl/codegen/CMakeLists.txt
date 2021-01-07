@@ -32,6 +32,8 @@ add_dependencies(codegen lexer util visitor)
 # copy to build directory to make usable from build directory
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc
                ${CMAKE_BINARY_DIR}/include/nmodl/fast_math.ispc COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fast_math.hpp
+               ${CMAKE_BINARY_DIR}/include/nmodl/fast_math.hpp COPYONLY)
 
 # =============================================================================
 # Install include files

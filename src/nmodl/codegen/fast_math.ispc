@@ -7,6 +7,7 @@
  * Note that the fast ISPC exponentials Based on VDT implementation of
  * D. Piparo et al. See https://github.com/dpiparo/vdt for additional
  * license information.
+ * exprelr and expm1 are based on https://arbor.readthedocs.io/en/latest/internals/simd_api.html#implementation-of-vector-transcendental-functions
  *************************************************************************/
 
 /**
@@ -22,7 +23,7 @@ static inline unsigned int64 dp2uint64(double x) {
     return *((varying unsigned int64*) (&x));
 }
 
-static inline float uint322sp(int32 x) {
+static inline float int322sp(int32 x) {
     return *((varying float*) (&x));
 }
 
@@ -63,7 +64,7 @@ static const uniform double QX2exp = 2.52448340349684104192d-3;
 static const uniform double QX3exp = 2.27265548208155028766d-1;
 static const uniform double QX4exp = 2.00000000000000000009d;
 
-static const uniform double LOG2E = 1.4426950408889634073599d;
+static const uniform double LOG2E = 1.4426950408889634073599d; // 1/ln(2)
 
 static const uniform float MAXLOGF = 88.72283905206835f;
 static const uniform float MINLOGF = -88.f;
@@ -78,13 +79,9 @@ static const uniform float PX4expf = 4.1665795894E-2f;
 static const uniform float PX5expf = 1.6666665459E-1f;
 static const uniform float PX6expf = 5.0000001201E-1f;
 
-static const uniform float LOG2EF = 1.44269504088896341f;
+static const uniform float LOG2EF = 1.44269504088896341f; // 1/ln(2)
 
-/// double precision exp function
-static inline double vexp(double initial_x) {
-    double x = initial_x;
-    double px = dpfloor(LOG2E * x + 0.5d);
-    const int32 n = px;
+static inline double egm1(double x, double px) {
 
     x -= px * 6.93145751953125d-1;
     x -= px * 1.42860682030941723212d-6;
@@ -106,8 +103,16 @@ static inline double vexp(double initial_x) {
     qx *= xx;
     qx += QX4exp;
 
-    x = px / (qx - px);
-    x = 1.0d + 2.0d * x;
+    return 2.0d*px / (qx - px);
+}
+
+/// double precision exp function
+static inline double vexp(double initial_x) {
+    double x = initial_x;
+    double px = dpfloor(LOG2E * x + 0.5d);
+    const int32 n = px;
+
+    x = 1.0d + egm1(x, px);
     x *= uint642dp((((unsigned int64) n) + 1023) << 52);
 
     if (initial_x > EXP_LIMIT)
@@ -118,17 +123,38 @@ static inline double vexp(double initial_x) {
     return x;
 }
 
-/// single prevision exp function
-static inline float vexp(float initial_x) {
-    float x = initial_x;
-    float z = spfloor(LOG2EF * x + 0.5f);
 
-    x -= z * C1F;
-    x -= z * C2F;
-    const int32 n = z;
-    const float x2 = x * x;
+/// double precision exp function
+static inline double vexpm1(double initial_x) {
+    double x = initial_x;
+    double px = dpfloor(LOG2E * x + 0.5d);
+    const int32 n = px;
 
-    z = x * PX1expf;
+    const unsigned int64 twopnm1 = (((unsigned int64) (n-1) ) + 1023) << 52;
+    x = 2*(uint642dp(twopnm1)*egm1(x, px) + uint642dp(twopnm1)) - 1.0d;
+
+    if (initial_x > EXP_LIMIT)
+        x = inf();
+    if (initial_x < -EXP_LIMIT)
+        x = -1.0d;
+
+    return x;
+}
+
+
+/// double precision exprelr function ()
+static inline double exprelr(double initial_x) {
+    if (1.0d+initial_x == 1.0d) {
+        return 1.0d;
+    }
+
+    return initial_x/vexpm1(initial_x);
+}
+
+
+static inline float egm1(float x) {
+
+    float z = x * PX1expf;
     z += PX2expf;
     z *= x;
     z += PX3expf;
@@ -138,10 +164,24 @@ static inline float vexp(float initial_x) {
     z += PX5expf;
     z *= x;
     z += PX6expf;
-    z *= x2;
-    z += x + 1.0f;
+    z *= x*x;
+    z += x;
 
-    z *= uint322sp((n + 0x7f) << 23);
+    return z;
+}
+
+/// single precision exp function
+static inline float vexp(float initial_x) {
+    float x = initial_x;
+    float z = spfloor(LOG2EF * x + 0.5f);
+
+    x -= z * C1F;
+    x -= z * C2F;
+    const int32 n = z;
+
+    z = 1.0f + egm1(x);
+
+    z *= int322sp((n + 0x7f) << 23);
 
     if (initial_x > MAXLOGF)
         z = f_inf();
@@ -150,3 +190,34 @@ static inline float vexp(float initial_x) {
 
     return z;
 }
+
+/// single precision exp function
+static inline float vexpm1(float initial_x) {
+    float x = initial_x;
+    float z = spfloor(LOG2EF * x + 0.5f);
+
+    x -= z * C1F;
+    x -= z * C2F;
+    const int32 n = z;
+
+    const int32 twopnm1 = ((n-1) + 0x7f) << 23;
+    x = 2*(int322sp(twopnm1)*egm1(x) + int322sp(twopnm1)) - 1.0f;
+
+    if (initial_x > MAXLOGF)
+        x = f_inf();
+    if (initial_x < MINLOGF)
+        x = -1.0f;
+
+    return x;
+}
+
+/// single precision exprelr function
+static inline float exprelr(float initial_x) {
+    if (1.0f+initial_x == 1.0f) {
+        return 1.0f;
+    }
+
+    return initial_x/vexpm1(initial_x);
+}
+
+
