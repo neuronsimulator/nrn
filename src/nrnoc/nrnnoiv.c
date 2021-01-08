@@ -58,6 +58,7 @@ void nrn_recalc_ptrvector(){}
 void nrn_extra_scatter_gather(int direction, int tid) {}
 void nrn_update_ion_pointer(int type, Datum* d, int i, int j) {}
 void nrn_update_ps2nt(){}
+void nrn_partrans_update_ptrs(){}
 
 int at_time(NrnThread* nt, double te) {
 	double x = te - 1e-11;
