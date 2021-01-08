@@ -163,7 +163,7 @@ jobs:
               fi;
               make install;
               export PATH=$INSTALL_DIR/bin:$PATH;
-              ctest -VV && make install;
+              ctest -VV;
           elif [ "$BUILD_MODE" == "setuptools" ]; then
             ./packaging/python/build_wheels.bash travis;
           elif [ "$BUILD_MODE" == "autotools" ]; then
