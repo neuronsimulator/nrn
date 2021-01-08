@@ -98,6 +98,11 @@ class NeuronTestCase(unittest.TestCase):
         sections[0](0.5).na_ion.ena = 40.0 # issue #651
         assert(sections[0](0.5).na_ion.ena == 40.0)
 
+    def testSectionArgOrder(self):
+        """ First optional arg for Section is name (but name="name" is recommended)"""
+        soma = h.Section('soma')
+        assert soma.name() == 'soma'
+
     def testSectionListIterator(self):
         """As of v8.0, iteration over a SectionList does not change the cas"""
         # See issue 509. SectionList iterator bug requires change to
