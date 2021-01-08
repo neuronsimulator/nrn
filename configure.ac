@@ -704,3 +704,12 @@ AC_CONFIG_FILES([
 fi
 
 AC_OUTPUT
+
+AC_MSG_WARN([
+    !!!
+        CMake is now the primary build system for installing NEURON from source.
+        Autotools support will be deprecated in future releases. As you are
+        using Autotools, we highly recommend switching to CMake as of now.
+        Please see the instructions in the README.md.
+    !!!
+])
