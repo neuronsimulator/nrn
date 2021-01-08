@@ -81,10 +81,12 @@ extern "C" {
  *
  *  >>> (2.**53).hex()
  *   '0x1.0000000000000p+53'
+ *  >>> (2.**53)
+ *   9007199254740992.0
  *
  * See https://stackoverflow.com/questions/1848700/biggest-integer-that-can-be-stored-in-a-double
  */
-static double dmaxint_ = 0x1.0000000000000p+53;
+static double dmaxint_ = 9007199254740992;
 
 // Definitions allow machine independent write and read
 // note that must include BYTEHEADER at head of routine
