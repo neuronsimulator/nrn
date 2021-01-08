@@ -118,16 +118,24 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if (NRN_ENABLE_MPI)
+    # Launching mpi executable with full path can mangle different python versions and libraries(see issue #894)
+    # Therefore we extract the executable name and create a dedicated target, because add_test($MPIEXEC_NAME) would re-append the full path. 
+    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
+    add_custom_target(test_subworld_mpiexec_name
+        COMMAND
+          ${MPIEXEC_NAME} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py
+    )
     add_test(
       NAME parallel_tests
       COMMAND
-        ${MPIEXEC} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
+       make test_subworld_mpiexec_name)
     list(APPEND TESTS parallel_tests)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
     file(COPY ${PROJECT_SOURCE_DIR}/test/coreneuron/mod DESTINATION ${PROJECT_BINARY_DIR}/test/)
     file(COPY ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
+    file(COPY ${PROJECT_SOURCE_DIR}/test/gjtests/natrans.mod DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
     add_custom_target(
       coreneuron_mod ALL
       COMMAND
@@ -153,9 +161,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(NAME coreneuron_test_units_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_units.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(NAME coreneuron_test_natrans_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/gjtests/test_natrans.py
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc
                       coreneuron_spikes_py coreneuron_fornetcon_py
-                      coreneuron_datareturn_py coreneuron_test_units_py)
+                      coreneuron_datareturn_py coreneuron_test_units_py
+                      coreneuron_test_natrans_py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
