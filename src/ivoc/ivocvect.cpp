@@ -68,7 +68,7 @@ extern "C" {
 #endif
 
 /**
- * As all parameters are passed to hoc as double, we need
+ * As all parameters are passed from hoc as double, we need
  * to calculate max integer that can fit into double variable.
  *
  * With IEEE 64-bit double has 52 bits of mantissa, so it's 2^53.
