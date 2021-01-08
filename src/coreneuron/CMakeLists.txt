@@ -56,11 +56,6 @@ set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/mechanism/mech/modfile
      DESTINATION ${CMAKE_BINARY_DIR}/share)
 
-# eion.cpp depends on CORENRN_USE_LEGACY_UNITS
-set(LegacyFR_FILES mechanism/eion.cpp apps/main1.cpp io/global_vars.cpp)
-set_source_files_properties(${LegacyFR_FILES} PROPERTIES COMPILE_FLAGS
-                              "-DCORENRN_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS}")
-
 # =============================================================================
 # coreneuron GPU library
 # =============================================================================
@@ -84,12 +79,6 @@ if(CORENRN_ENABLE_GPU)
 
   set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
                               "-DDISABLE_OPENACC")
-
-  # TODO : only older PGI versions?
-  if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/scopmath_core/sparse_thread.c
-                                PROPERTIES COMPILE_FLAGS "-ta=tesla:nollvm")
-  endif()
 
   # compile cuda files for multiple architecture
   cuda_add_library(

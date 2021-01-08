@@ -95,13 +95,6 @@ set(LIKWID_DIR
     ""
     CACHE PATH "Path to likwid performance analysis suite")
 
-set(CORENRN_FRONTEND_C_COMPILER
-    gcc
-    CACHE FILEPATH "C compiler for building mod2c [frontend]")
-set(CORENRN_FRONTEND_CXX_COMPILER
-    g++
-    CACHE FILEPATH "C++ compiler for building mod2c [frontend]")
-
 if(CORENEURON_AS_SUBPROJECT)
   set(CORENRN_ENABLE_UNIT_TESTS OFF)
 endif()
@@ -127,11 +120,6 @@ find_package(PythonInterp REQUIRED)
 find_package(Perl REQUIRED)
 
 # =============================================================================
-# ISPC should compile with --pic by default
-# =============================================================================
-set(CMAKE_ISPC_FLAGS "--pic ${CMAKE_ISPC_FLAGS}")
-
-# =============================================================================
 # Common build options
 # =============================================================================
 # build mod files for coreneuron
@@ -147,7 +135,6 @@ endif()
 # Build option specific compiler flags
 # =============================================================================
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI")
-  add_definitions(-DSWAP_ENDIAN_DISABLE_ASM)
   # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
   add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 endif()
@@ -168,7 +155,6 @@ endif()
 
 if(CORENRN_ENABLE_ISPC)
   enable_language(ISPC)
-  add_definitions("-DISPC_INTEROP=1")
   set(CORENRN_ENABLE_NMODL ON)
 endif()
 
@@ -283,7 +269,6 @@ if(CORENRN_ENABLE_NMODL)
   if(CORENRN_ENABLE_GPU)
     string(APPEND CORENRN_NMODL_FLAGS " acc --oacc")
   endif()
-  separate_arguments(NMODL_EXTRA_FLAGS_LIST UNIX_COMMAND "${CORENRN_NMODL_FLAGS}")
 else()
   include(AddMod2cSubmodule)
   set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
@@ -310,9 +295,16 @@ if(CORENRN_ENABLE_LIKWID_PROFILING)
 endif()
 
 # =============================================================================
+# Common CXX flags : ignore unknown pragma warnings
+# =============================================================================
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
+
+# =============================================================================
 # Add main directories
 # =============================================================================
 add_subdirectory(coreneuron)
+
+include(MakefileBuildOptions)
 add_subdirectory(extra)
 
 if(CORENRN_ENABLE_UNIT_TESTS)
@@ -324,14 +316,6 @@ endif()
 # =============================================================================
 install(FILES CMake/coreneuron-config.cmake DESTINATION share/cmake)
 install(EXPORT coreneuron DESTINATION share/cmake)
-
-# just for printing the compiler flags in the build status
-string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
-if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
-  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
-else()
-  set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
-endif()
 
 if(NOT CORENEURON_AS_SUBPROJECT)
   # =============================================================================
@@ -402,7 +386,7 @@ if(cmake_generator_tolower MATCHES "makefile")
 
   message(STATUS "C COMPILER          | ${CMAKE_C_COMPILER}")
   message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
-  message(STATUS "COMPILE FLAGS       | ${COMPILER_FLAGS} ${CMAKE_CXX_FLAGS}")
+  message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
   message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
   message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
   if(CORENRN_ENABLE_MPI)

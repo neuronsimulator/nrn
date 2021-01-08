@@ -40,12 +40,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 namespace coreneuron {
 int secondorder = 0;
 double t, dt, celsius;
-#if defined(PG_ACC_BUGS)
-// clang-format off
-    #pragma acc declare copyin(secondorder)
-    #pragma acc declare copyin(celsius)
-// clang-format on
-#endif
+// declare copyin required for correct initialization
+#pragma acc declare copyin(secondorder)
+#pragma acc declare copyin(celsius)
 int rev_dt;
 
 using Pfrv = void (*)();

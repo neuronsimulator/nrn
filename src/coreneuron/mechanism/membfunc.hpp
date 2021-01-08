@@ -86,6 +86,7 @@ struct BAMech {
 
 extern int nrn_ion_global_map_size;
 extern double** nrn_ion_global_map;
+extern const int ion_global_map_member_size;
 
 #define NRNPOINTER                                                            \
     4 /* added on to list of mechanism variables.These are                    \
@@ -93,6 +94,7 @@ pointers which connect variables  from other mechanisms via the _ppval array. \
 */
 
 #define _AMBIGUOUS 5
+
 
 extern int nrn_get_mechtype(const char*);
 extern const char* nrn_get_mechname(int);  // slow. use memb_func[i].sym if posible

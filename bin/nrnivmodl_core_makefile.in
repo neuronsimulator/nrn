@@ -15,6 +15,12 @@ OUTPUT_DIR = @CMAKE_HOST_SYSTEM_PROCESSOR@
 DESTDIR =
 TARGET_LIB_TYPE = $(BUILD_TYPE)
 
+# required for OSX to execute nrnivmodl-core
+OSX_SYSROOT=@CMAKE_OSX_SYSROOT@
+ifneq ($(OSX_SYSROOT),)
+  export SDKROOT := $(OSX_SYSROOT)
+endif
+
 # CoreNEURON installation directories
 CORENRN_BIN_DIR := $(ROOT)/bin
 CORENRN_LIB_DIR := $(ROOT)/lib
@@ -35,7 +41,7 @@ MOD_TO_CPP_DIR = $(OUTPUT_DIR)/corenrn/mod2c
 MOD_OBJS_DIR = $(OUTPUT_DIR)/corenrn/build
 
 # Linked libraries gathered by CMake
-LDFLAGS = $(LINKFLAGS) @CORENRN_LINK_DEFS@
+LDFLAGS = $(LINKFLAGS) @CORENRN_COMMON_LDFLAGS@
 CORENRNLIB_FLAGS = -L$(CORENRN_LIB_DIR) -lcoreneuron
 CORENRNLIB_FLAGS += $(if @reportinglib_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@reportinglib_LIB_DIR@),)
 CORENRNLIB_FLAGS += $(if @sonatareport_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@sonatareport_LIB_DIR@),)
@@ -49,8 +55,8 @@ INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLU
 
 # C++ compilation and link commands
 CXX = @CMAKE_CXX_COMPILER@
-CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX14_STANDARD_COMPILE_OPTION@ @PGI_INLINE_FLAGS@
-CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ @CORENRN_COMPILE_DEFS@ $(INCLUDES)
+CXXFLAGS = @CORENRN_CXX_FLAGS@
+CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ @CORENRN_COMMON_COMPILE_DEFS@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_SHARED_LIB_CMD = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
@@ -60,6 +66,16 @@ ISPC_COMPILE_CMD = $(ISPC) @CMAKE_ISPC_FLAGS@ -I$(CORENRN_INC_DIR)
 
 # env variables required for mod2c or nmodl
 MOD2CPP_ENV_VAR = PYTHONPATH=@CORENRN_NMODL_PYTHONPATH@:${CORENRN_LIB_DIR}/python MODLUNIT=$(CORENRN_SHARE_MOD2CPP_DIR)/nrnunits.lib
+
+# nmodl options
+ifeq (@CORENRN_ENABLE_NMODL@, ON)
+    ifeq (@CORENRN_ENABLE_GPU@, ON)
+        nmodl_arguments_c=@NMODL_ACC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+    else
+        nmodl_arguments_c=@NMODL_CPU_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+    endif
+    nmodl_arguments_ispc=@NMODL_ISPC_BACKEND_ARGS@ @NMODL_COMMON_ARGS@
+endif
 
 # name of the mechanism library with suffix if provided
 COREMECH_LIB_NAME = corenrnmech$(if $(MECHLIB_SUFFIX),_$(MECHLIB_SUFFIX),)
@@ -144,13 +160,17 @@ C_RESET := \033[0m
 C_GREEN := \033[32m
 
 # Default nmodl flags. Override if MOD2CPP_RUNTIME_FLAGS is not empty
-NMODL_FLAGS_ISPC = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),@nmodl_arguments_ispc@)
-MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),@nmodl_arguments_c@)
-ifeq (@CORENRN_ENABLE_ISPC@, ON)
-    $(info Default nmodl flags: @nmodl_arguments_ispc@)
-else
-    $(info Default nmodl flags: @nmodl_arguments_c@)
+ifeq (@CORENRN_ENABLE_NMODL@, ON)
+    MOD2CPP_FLAGS_ISPC = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_ispc))
+    MOD2CPP_FLAGS_C = $(if $(MOD2CPP_RUNTIME_FLAGS),$(MOD2CPP_RUNTIME_FLAGS),$(nmodl_arguments_c))
 endif
+
+ifeq (@CORENRN_ENABLE_ISPC@, ON)
+    $(info Default NMODL flags: @nmodl_arguments_ispc@)
+else
+    $(info Default NMODL flags: @nmodl_arguments_c@)
+endif
+
 ifneq ($(MOD2CPP_RUNTIME_FLAGS),)
     $(warning Runtime nmodl flags (they replace the default ones): $(MOD2CPP_RUNTIME_FLAGS))
 endif
@@ -198,7 +218,7 @@ $(MOD_OBJS_DIR)/%.obj: $(MOD_TO_CPP_DIR)/%.ispc | $(MOD_OBJS_DIR)
 
 # translate MOD files to ISPC using NMODL
 $(mod_ispc_files): $(MOD_TO_CPP_DIR)/%.ispc: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)
-	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(NMODL_FLAGS_ISPC)
+	$(MOD2CPP_ENV_VAR) $(MOD2CPP_BINARY_PATH) $< -o $(MOD_TO_CPP_DIR)/ $(MOD2CPP_FLAGS_ISPC)
 
 # translate MOD files to CPP using mod2c/NMODL
 $(mod_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MODS_PATH)/%.mod | $(MOD_TO_CPP_DIR)

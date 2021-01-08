@@ -1,11 +1,13 @@
 pipeline {
     agent {
-        label 'bb5 && !bb5-07'
+        node {
+            label 'bb5 && !bb5-07'
+        }
     }
     parameters {
         string(name: 'sha1', defaultValue: 'master',
                description: 'What branch of CoreNeuron to test.')
-        string(name: 'SPACK_BRANCH', defaultValue: 'develop',
+        string(name: 'SPACK_BRANCH', defaultValue: '',
                description: 'Which branch of spack to use.')
         string(name: 'NEURON_BRANCH', defaultValue: '',
                description: 'Which branch of neuron to use. For master branch (neuron@develop) leave this parameter blank.')
@@ -395,6 +397,7 @@ pipeline {
             }
         }
     }
+
     post {
         always {
             cleanWs()

@@ -100,7 +100,7 @@ else
 fi
 
 # temporary directory where mod files will be copied
-temp_mod_dir=@CMAKE_HOST_SYSTEM_PROCESSOR@/core/mods
+temp_mod_dir=@CMAKE_HOST_SYSTEM_PROCESSOR@/corenrn/mod2c
 mkdir -p $temp_mod_dir
 
 # copy mod files with include files. note that ${ROOT_DIR}/share
@@ -109,7 +109,7 @@ set +e
 for mod_dir in ${ROOT_DIR}/share/modfile $params_MODS_PATH;
 do
     # copy mod files and include files
-    files=`ls $mod_dir/*.mod $mod_dir/*.inc 2>/dev/null`
+    files=`ls $mod_dir/*.mod $mod_dir/*.inc $mod_dir/*.h* 2>/dev/null`
     for f in $files;
     do
         # copy mod files only if it's changed (to avoid rebuild)

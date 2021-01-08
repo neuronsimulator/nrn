@@ -969,8 +969,7 @@ void nrn_ion_global_map_copyto_device() {
             (double**)acc_copyin(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
         for (int j = 0; j < nrn_ion_global_map_size; j++) {
             if (nrn_ion_global_map[j]) {
-                /* @todo: fix this constant size 3 :( */
-                double* d_mechmap = (double*)acc_copyin(nrn_ion_global_map[j], 3 * sizeof(double));
+                double* d_mechmap = (double*)acc_copyin(nrn_ion_global_map[j], ion_global_map_member_size * sizeof(double));
                 acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
             }
         }

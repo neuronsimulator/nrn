@@ -33,7 +33,9 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #include "coreneuron/utils/memory.h"
 
 namespace coreneuron {
-#if PG_ACC_BUGS
+// OpenACC with PGI compiler has issue when union is used and hence use struct
+// \todo check if newer PGI versions has resolved this issue
+#if defined(_OPENACC)
 struct ThreadDatum {
     int i;
     double* pval;

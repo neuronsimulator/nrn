@@ -77,10 +77,8 @@ bool corenrn_units_use_legacy() {
 
 void (*nrn2core_part2_clean_)();
 
-#ifdef ISPC_INTEROP
 // cf. utils/ispc_globals.c
 extern double ispc_celsius;
-#endif
 
 /**
  * If "export OMP_NUM_THREADS=n" is not set then omp by default sets
@@ -213,9 +211,9 @@ void nrn_init_and_load_data(int argc,
 
     corenrn_param.celsius = celsius;
 
-#ifdef ISPC_INTEROP
+    // for ispc backend
     ispc_celsius = celsius;
-#endif
+
     // create net_cvode instance
     mk_netcvode();
 

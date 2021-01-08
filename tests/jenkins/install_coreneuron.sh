@@ -10,8 +10,9 @@ reportinglib_dir=$(spack location --install-dir --latest reportinglib%intel)
 CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ] || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
+    # PGI compiler issue in unstable :  BSD-204
+    module unload unstable && module load archive/2020-12
     module load pgi/19.10 cuda hpe-mpi cmake boost
-
     mkdir build_${CORENRN_TYPE}
 else
     module load boost intel hpe-mpi cmake
@@ -38,8 +39,8 @@ if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=OFF \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
-        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
-        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
         $WORKSPACE/
@@ -48,8 +49,8 @@ elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=ON \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
-        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
-        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
         $WORKSPACE/

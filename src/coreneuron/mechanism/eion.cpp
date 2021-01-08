@@ -48,21 +48,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #if defined(_OPENACC)
-#if defined(PG_ACC_BUGS)
 #define _PRAGMA_FOR_INIT_ACC_LOOP_ \
     _Pragma(                       \
-        "acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size][0:3]) if(nt->compute_gpu)")
+        "acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size][0:ion_global_map_member_size]) if(nt->compute_gpu)")
 #define _PRAGMA_FOR_CUR_ACC_LOOP_ \
     _Pragma(                      \
-        "acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size][0:3]) if(nt->compute_gpu) async(stream_id)")
-#else
-#define _PRAGMA_FOR_INIT_ACC_LOOP_ \
-    _Pragma(                       \
-        "acc parallel loop present(pd[0:_cntml_padded*5], ppd[0:1], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu)")
-#define _PRAGMA_FOR_CUR_ACC_LOOP_ \
-    _Pragma(                      \
-        "acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size]) if(nt->compute_gpu) async(stream_id)")
-#endif
+        "acc parallel loop present(pd[0:_cntml_padded*5], nrn_ion_global_map[0:nrn_ion_global_map_size][0:ion_global_map_member_size]) if(nt->compute_gpu) async(stream_id)")
 #define _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_ \
     _Pragma(                                \
         "acc parallel loop present(pd[0:_cntml_padded*5], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
@@ -73,6 +64,10 @@ THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 namespace coreneuron {
+
+// for each ion it refers to internal concentration, external concentration, and charge,
+const int ion_global_map_member_size = 3;
+
 
 #define nparm 5
 static const char* mechanism[] = {/*just a template*/
@@ -130,7 +125,7 @@ void ion_reg(const char* name, double valence) {
             }
             nrn_ion_global_map_size = mechtype + 1;
         }
-        nrn_ion_global_map[mechtype] = (double*)emalloc(3 * sizeof(double));
+        nrn_ion_global_map[mechtype] = (double*)emalloc(ion_global_map_member_size * sizeof(double));
 
         register_mech((const char**)mechanism, nrn_alloc_ion, nrn_cur_ion, (mod_f_t)0, (mod_f_t)0,
                       (mod_f_t)nrn_init_ion, -1, 1);
