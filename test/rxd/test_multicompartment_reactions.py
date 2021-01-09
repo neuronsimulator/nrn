@@ -11,7 +11,7 @@ def test_multicompartment_reactions(neuron_instance):
     reactions for a leak, SERCA pump and IP3 receptor.
     """
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     sec = h.Section()
     sec.L = 100
     sec.diam = 1
@@ -83,5 +83,6 @@ def test_multicompartment_reactions(neuron_instance):
 
     h.CVode().re_init()
     h.continuerun(1000)
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol

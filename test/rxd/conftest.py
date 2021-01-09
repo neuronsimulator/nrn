@@ -57,7 +57,7 @@ def neuron_instance(neuron_import):
         return collect_data(h, rxd, data, save_path)
 
     cvode.extra_scatter_gather(0, gather)
-    yield (h, rxd, data)
+    yield (h, rxd, data, save_path)
     for r in rxd.rxd._all_reactions[:]:
         if r():
             rxd.rxd._unregister_reaction(r)
