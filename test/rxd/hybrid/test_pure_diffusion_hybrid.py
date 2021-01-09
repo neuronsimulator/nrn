@@ -7,7 +7,7 @@ from testutils import compare_data, tol
 def ics_diffusion_hybrid(neuron_instance):
     """A model using intracellular diffusion in a 1D and 3D sections"""
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend1 = h.Section(name='dend1')
     dend1.diam = 2
     dend1.nseg = 11
@@ -44,29 +44,31 @@ def test_pure_diffusion_hybrid(ics_diffusion_hybrid):
     """Test ics_diffusion_hybrid with fixed step methods"""
 
     neuron_instance, model = ics_diffusion_hybrid
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend, r, ca = model
     h.dt *= 50
     h.finitialize(-65)
     loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
     h.continuerun(125)
     loss += (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
-    assert loss < tol
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        assert loss < tol
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_pure_diffusion_hybrid_cvode(ics_diffusion_hybrid):
     """Test ics_diffusion_hybrid with variable step methods"""
 
     neuron_instance, model = ics_diffusion_hybrid
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend, r, ca = model
     h.CVode().active(True)
     h.finitialize(-65)
     loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
     h.continuerun(125)
     loss += (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
-    assert loss < tol
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        assert loss < tol
+        max_err = compare_data(data)
+        assert max_err < tol
