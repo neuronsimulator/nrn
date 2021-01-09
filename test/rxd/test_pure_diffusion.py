@@ -4,7 +4,7 @@ from .testutils import compare_data, tol
 def test_pure_diffusion(neuron_instance):
     """Test 1D diffusion in a single section"""
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend = h.Section()
     dend.diam = 2
     dend.nseg = 101
@@ -21,14 +21,15 @@ def test_pure_diffusion(neuron_instance):
 
     for t in [25, 50, 75, 100, 125]:
         h.continuerun(t)
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_pure_diffusion_cvode(neuron_instance):
     """Test 1D diffusion in a single section with the variable step method."""
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     dend = h.Section()
     dend.diam = 2
     dend.nseg = 101
@@ -49,6 +50,6 @@ def test_pure_diffusion_cvode(neuron_instance):
 
     for t in [25, 50, 75, 100, 125]:
         h.continuerun(t)
-
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
