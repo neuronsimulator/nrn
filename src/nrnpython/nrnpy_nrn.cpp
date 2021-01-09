@@ -263,7 +263,7 @@ static void NPyVarOfMechIter_dealloc(NPyVarOfMechIter* self) {
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
   // printf("NPySecObj_init %p %p\n", self, self->sec_);
-  static const char* kwlist[] = {"cell", "name", NULL};
+  static const char* kwlist[] = {"name", "cell", NULL};
   if (self != NULL && !self->sec_) {
     if (self->name_) {
       delete[] self->name_;
@@ -274,8 +274,8 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
     PyObject* cell = 0;
     // avoid "warning: deprecated conversion from string constant to char*"
     // someday eliminate the (char**) when python changes their prototype
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", (char**)kwlist,
-                                     &self->cell_, &name)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sO", (char**)kwlist,
+                                     &name, &self->cell_)) {
       return -1;
     }
     // note that we are NOT referencing the cell

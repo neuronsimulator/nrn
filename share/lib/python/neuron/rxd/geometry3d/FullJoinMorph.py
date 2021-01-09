@@ -7,6 +7,7 @@ from .graphicsPrimitives import Sphere, Cone, Cylinder, SkewCone, Plane, Union, 
 from .GeneralizedVoxelization import voxelize
 from .simplevolume_helper import simplevolume
 from .surface_a import surface_area
+from ..options import ics_distance_threshold
 import warnings
 from neuron import h
 
@@ -35,7 +36,7 @@ def find_parent_seg(join, sdict, objects):
 
 def all_in(dist):
     for i in dist:
-        if i > 0:
+        if i > ics_distance_threshold:
             return False 
     return True
 

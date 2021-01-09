@@ -1,7 +1,7 @@
 def test_distance(neuron_instance):
     """Test 1D diffusion in a single section"""
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     
     soma = h.Section(name='soma')
     dend = h.Section(name='dend')

@@ -1,4 +1,5 @@
 from . import graphicsPrimitives as graphics
+from .. import options
 
 def find_voxel(x,y,z,g):
     """returns (i,j,k) of voxel containing point x,y,z"""
@@ -47,7 +48,7 @@ def verts_in(f,voxel,surf,g):
     for v in verts:
         dist = f.distance(v[0],v[1],v[2])
         distlist.append(dist)
-        if dist <= 0:
+        if dist <= options.ics_distance_threshold:
             ins+=1
     if 1 <= ins <= 7:
         surf[voxel] = distlist
@@ -184,7 +185,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
         (i0,j0,k0) = find_voxel(x0,y0,z0,grid)
         # find the contained endpoints and start the set with initial row and initial endpoints
         s = set()
-        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0,i0),grid)
+        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0-1,i0+1),grid)
     
     # the given starting voxel is not actually found
     possibly_missed = False

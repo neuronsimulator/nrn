@@ -65,7 +65,26 @@ extern double (*nrnpy_object_to_double_)(Object*);
 #define FRead(arg1,arg2,arg3,arg4) if (fread(arg1,arg2,arg3,arg4) != arg3) {}
 #endif
 
-static double dmaxint_;
+/**
+ * As all parameters are passed from hoc as double, we need
+ * to calculate max integer that can fit into double variable.
+ *
+ * With IEEE 64-bit double has 52 bits of mantissa, so it's 2^53.
+ * calculating it with approach `while (dbl + 1 != dbl) dbl++;`
+ * has issues with SSE and other 32 bits platform. So we are using
+ * direct value here.
+ *
+ * The maximum mantissa 0xFFFFFFFFFFFFF which is 52 bits all 1.
+ * In Python it's:
+ *
+ *  >>> (2.**53).hex()
+ *   '0x1.0000000000000p+53'
+ *  >>> (2.**53)
+ *   9007199254740992.0
+ *
+ * See https://stackoverflow.com/questions/1848700/biggest-integer-that-can-be-stored-in-a-double
+ */
+static double dmaxint_ = 9007199254740992;
 
 // Definitions allow machine independent write and read
 // note that must include BYTEHEADER at head of routine
@@ -3773,20 +3792,7 @@ static void steer_x(void* v) {
 }
 
 void Vector_reg() {
-	dmaxint_ = 1073741824.;
-	for(;;) {
-		if (dmaxint_*2. == double(int(dmaxint_*2.))) {
-			dmaxint_ *= 2.;
-		}else{
-			if (dmaxint_*2. - 1. == double(int(dmaxint_*2. - 1.))) {
-				dmaxint_ = 2.*dmaxint_ - 1.;
-			}
-			break;
-		}
-	}		
-	//printf("dmaxint=%30.20g   %d\n", dmaxint_, (long)dmaxint_);
-        class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members,
-        	v_retstr_members);
+	class2oc("Vector", v_cons, v_destruct, v_members, NULL, v_retobj_members, v_retstr_members);
 	svec_ = hoc_lookup("Vector");
 	// now make the x variable an actual double
 	Symbol* sv = hoc_lookup("Vector");

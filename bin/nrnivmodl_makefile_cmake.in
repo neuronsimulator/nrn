@@ -137,7 +137,7 @@ libnrnmech.la: $(mech_lib)
 
 # == INIT ==
 $(MODC_DIR):
-	mkdir -p $(MODC_DIR)
+	(cd .. ; mkdir -p $(MODC_DIR))
 #$(OBJS_DIR):
 #	mkdir -p $(OBJS_DIR)
 
