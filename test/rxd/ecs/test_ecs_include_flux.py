@@ -11,7 +11,7 @@ def ecs_include_flux(neuron_instance):
     pointer. All three are tested here for extracellular rxd.
     """
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     sec = h.Section(name='dend')
     # the extracellular space
     ecs = rxd.Extracellular(
@@ -37,21 +37,23 @@ def test_ecs_include_flux(ecs_include_flux):
     """Test ecs_include_flux with fixed step methods"""
 
     neuron_instance, model = ecs_include_flux
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     h.finitialize(1000)
     h.continuerun(10)
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_ecs_include_flux_cvode(ecs_include_flux):
     """Test ecs_include_flux with variable step methods"""
 
     neuron_instance, model = ecs_include_flux
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     h.CVode().active(True)
     h.finitialize(1000)
     h.continuerun(10)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
