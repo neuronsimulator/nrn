@@ -8,7 +8,7 @@ def test_include_flux(neuron_instance):
     pointer. All three are tested here for 1D intercellular rxd.
     """
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     sec = h.Section(name="sec")
     sec.L = 10
     sec.nseg = 11
@@ -34,5 +34,6 @@ def test_include_flux(neuron_instance):
         nd.include_flux(sec(0.3)._ref_ip3i)
     
     h.continuerun(10)
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
