@@ -102,8 +102,8 @@ set(LegacyFR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/apps/main1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
 
-set_property(SOURCE ${LegacyFR_FILES} APPEND PROPERTY COMPILE_OPTIONS
-                              "-DCORENRN_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS}")
+set_property(SOURCE ${LegacyFR_FILES} APPEND PROPERTY COMPILE_DEFINITIONS
+                              "CORENRN_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS}")
 
 # =============================================================================
 # run KINDERIV_PYTHON_SCRIPT to generate _kinderiv.h

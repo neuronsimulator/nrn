@@ -22,14 +22,7 @@ else
     mkdir build_${CORENRN_TYPE} build_intel_${CORENRN_TYPE}
 fi
 
-# default partition is interactive. during night use production
-hour=`date +%H`
-weekday=`date +%u`
-if [ "$hour" -ge "19" ] || [ "$hour" -lt "8" ] || [ $weekday -gt 5 ]; then
-  export SALLOC_PARTITION="prod";
-else
-  export SALLOC_PARTITION="interactive"
-fi
+export SALLOC_PARTITION="prod,pre_prod,interactive";
 
 cd $WORKSPACE/build_${CORENRN_TYPE}
 
@@ -39,8 +32,8 @@ if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=OFF \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
-        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
-        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
         $WORKSPACE/
@@ -49,8 +42,8 @@ elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
         -DCORENRN_ENABLE_GPU=ON \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=ON \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
-        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
-        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta,skl;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
+        -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
         $WORKSPACE/

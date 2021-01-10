@@ -9,10 +9,11 @@ set(CMAKE_ISPC_FLAGS "${CMAKE_ISPC_FLAGS} --pic")
 # NMODL CLI options : common and backend specific
 # =============================================================================
 # if user pass arguments then use those as common arguments
+# note that inlining is done by default
+set(NMODL_COMMON_ARGS "passes --inline")
+
 if ("${CORENRN_NMODL_FLAGS}" STREQUAL "")
-  set(NMODL_COMMON_ARGS "passes --inline")
-else()
-  set(NMODL_COMMON_ARGS ${CORENRN_NMODL_FLAGS})
+  set(NMODL_COMMON_ARGS "${NMODL_COMMON_ARGS} ${CORENRN_NMODL_FLAGS}")
 endif()
 
 set(NMODL_CPU_BACKEND_ARGS "host --c")
