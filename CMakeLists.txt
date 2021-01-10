@@ -116,6 +116,8 @@ set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7
 # =============================================================================
 # Include cmake modules
 # =============================================================================
+# sub-directorty containing project submodules
+set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/external")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 include(PlatformHelper)
 include(CompilerHelper)
