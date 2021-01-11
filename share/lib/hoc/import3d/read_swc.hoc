@@ -13,7 +13,7 @@ objref file, vectors, sec2point, point2sec, sections
 objref connect2prox
 strdef tstr, line, filetype
 double a[7]
-objref id2index_
+objref id2index_, nchild_soma
 
 // id and pid contain the raw id values (1st and 7th values on each line)
 // from the file. After the file is read id2index(id.x[i]) == i
@@ -184,7 +184,7 @@ printf("  %d: %s\n", iline.x[i], lines.o(iline.x[i]).s)
 	}
 }
 
-proc sectionify() {local i, si, pix  localobj nchild, nchild_soma
+proc sectionify() {local i, si, pix  localobj nchild
 	// create point2sec map and sections list
 	// point2sec gives immediate knowledge of the section a point is in
 	// sections list is for display purposes
@@ -209,6 +209,7 @@ proc sectionify() {local i, si, pix  localobj nchild, nchild_soma
 			}
 		}
 	}
+
 	// now can adjust nchild for contiguity
 	for i=0, id.size-2 {
 		// adjacent parent,child soma points, then parent not a branch
@@ -316,7 +317,7 @@ proc mksections() {local i, j, isec, first  localobj sec, psec, pts
 	mksection(isec, first, i)
 }
 
-proc mksection() { local i, isec, first, den_con_soma   localobj sec, psec
+proc mksection() { local i, isec, first, den_con_soma, handled   localobj sec, psec
   isec = $1  first=$2  i=$3
   if (isec == 0) {// Root. pid not first point in root section
     sec = new Import3d_Section(first, i-first)
@@ -339,8 +340,9 @@ proc mksection() { local i, isec, first, den_con_soma   localobj sec, psec
     //    parentx = 0 or 1 depending on whether first or last point
     //    and x,y,z of the parent point.
 
+    den_con_soma = psec.type == 1 && type.x[first] != 1
     if (psec == sections.o(0)) { // connect to root
-      den_con_soma = psec.type == 1 && type.x[first] != 1
+      handled = 1
       if (den_con_soma && psec.d.size == 1) { // parent is single point soma
         sec.parentx = 0.5
         if (i - first > 1) { // connect by wire
@@ -348,10 +350,20 @@ proc mksection() { local i, isec, first, den_con_soma   localobj sec, psec
         }
       } else if (pix2ix(first) == psec.id) { // connect to first point of root
         sec.parentx = 0.0
-      } else if (den_con_soma && i - first > 1 && pix2ix(first) < psec.id + psec.d.size - 1) {
-        // not last point of soma root so must be interior
+        if (type.x[first] != 1 && nchild_soma.x(pix2ix(first)) > 1) {
+          sec.first = 1
+        }
+      } else {
+        handled = 0
+      }
+    }
+    if (den_con_soma && handled == 0) {
+      if (i - first > 1 && pix2ix(first) < psec.id + psec.d.size - 1) {
+        // not last point of soma so must be interior
         // multipoint dendrite connect to interior of multipoint soma
         sec.parentx = 0.5
+        sec.first = 1
+      } else if (i - first > 1 && nchild_soma.x[pix2ix(first)] > 1) {
         sec.first = 1
       }
     }

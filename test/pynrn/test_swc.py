@@ -30,6 +30,27 @@ tst_data = ['''
 6  3 -16 -12 0 1 3
 7  3 -16 12 0 1 4
 ''','''
+# dendrites at ends and in interior of multisection soma
+#n,type,x,y,z,radius,parent
+1  1 0 0 0 5 -1
+2  1 10 0 0 3 1
+3  1 15 0 0 4 2
+4  1 20 0 0 2 3
+5  1 -8 -6 0 3 1
+6  1 -8 6 0 4 1
+7  1 -16 12 0 2 6
+8  3 30 0 0 1 4
+9  3 -16 -12 0 1 5
+10  3 -24 18 0 1 7
+11 3 0 5 0 1 1
+12 3 0 15 0 1 11
+13 3 10 3 0 1 2
+14 3 10 15 0 1 13
+15 3 15 4 0 1 3
+16 3 15 15 0 1 15
+17 3 -8 10 0 1 6
+18 3 -8 15 0 1 17
+''','''
 #two section soma with dendrites at ends and off point 1
 #n,type,x,y,z,radius,parent
 1 1 0 0 0 5 -1
@@ -97,11 +118,13 @@ def mkswc(swc_contents):
   h.topology()
   for sec in h.allsec():
     r = [h.ref(0) for _ in range(3)]
+    pseg = sec.parentseg()
+    px = ("parent %s(%g)"%(pseg.sec.name(),pseg.x)) if pseg != None else ""
     style = ""
     if sec.pt3dstyle():
       h.pt3dstyle(1, r[0], r[1], r[2], sec=sec)
       style = [i[0] for i in r]
-    print ("%s L=%g %s" % (str(sec), sec.L, str(style)))
+    print ("%s L=%g %s %s" % (str(sec), sec.L, str(style), px))
     for i in range(sec.n3d()):
       print(" %d   %g %g %g %g" % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)))
   return ig
