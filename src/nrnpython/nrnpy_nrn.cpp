@@ -29,7 +29,7 @@ extern int has_membrane(char*, Section*);
 typedef struct {
   PyObject_HEAD Section* sec_;
   char* name_;
-  PyObject* cell_;
+  PyObject* cell_weakref_;
 } NPySecObj;
 NPySecObj* newpysechelp(Section* sec);
 
@@ -137,17 +137,6 @@ static char* pysec_name(Section* sec) {
   if (sec->prop) {
     NPySecObj* ps = (NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid;
     buf[0] = '\0';
-#if 0 // full name in ps->name because of nrnpy_pysecname2sec_remove
-    if (ps->cell_) {
-      PyLockGIL lock;
-
-      PyObject* cell = PyObject_Str(ps->cell_);
-      Py2NRNString str(cell);
-      Py_DECREF(cell);
-      char* cp = str.c_str();
-      sprintf(buf, "%s.", cp);
-    }
-#endif
     char* cp = buf + strlen(buf);
     if (ps->name_) {
       sprintf(cp, "%s", ps->name_);
@@ -162,10 +151,16 @@ static char* pysec_name(Section* sec) {
 
 static Object* pysec_cell(Section* sec) {
   if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-    PyObject* cell =
-        ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
-    if (cell) {
-      return nrnpy_po2ho(cell);
+    PyObject* cell_weakref =
+        ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_weakref_;
+    if (cell_weakref) {
+      PyObject* cell = PyWeakref_GetObject(cell_weakref);
+      if (!cell) {
+        PyErr_Print();
+        hoc_execerror("Error getting cell for", secname(sec));
+      }else if (cell != Py_None) {
+        return nrnpy_po2ho(cell);
+      }
     }
   }
   return 0;
@@ -187,8 +182,19 @@ static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
 }
 
 static int pysec_cell_equals(Section* sec, Object* obj) {
-  PyObject* po = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_;
-  return nrnpy_ho_eq_po(obj, po);
+  if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+    PyObject* cell_weakref = ((NPySecObj*)sec->prop->dparam[PROP_PY_INDEX]._pvoid)->cell_weakref_;
+    if (cell_weakref) {
+      PyObject* cell = PyWeakref_GetObject(cell_weakref);
+      if (!cell) {
+        PyErr_Print();
+        hoc_execerror("Error getting cell for", secname(sec));
+      }
+      return nrnpy_ho_eq_po(obj, cell);
+    }
+    return nrnpy_ho_eq_po(obj, Py_None);
+  }
+  return 0;
 }
 
 static void NPySecObj_dealloc(NPySecObj* self) {
@@ -198,6 +204,7 @@ static void NPySecObj_dealloc(NPySecObj* self) {
       nrnpy_pysecname2sec_remove(self->sec_);
       delete[] self->name_;
     }
+    Py_XDECREF(self->cell_weakref_);
     if (self->sec_->prop) {
       self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid = 0;
     }
@@ -264,30 +271,38 @@ static void NPyVarOfMechIter_dealloc(NPyVarOfMechIter* self) {
 
 static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
   // printf("NPySecObj_init %p %p\n", self, self->sec_);
-  static const char* kwlist[] = {"cell", "name", NULL};
+  static const char* kwlist[] = {"name", "cell", NULL};
   if (self != NULL && !self->sec_) {
     if (self->name_) {
       delete[] self->name_;
     }
     self->name_ = 0;
-    self->cell_ = 0;
+    self->cell_weakref_ = 0;
     char* name = 0;
     PyObject* cell = 0;
     // avoid "warning: deprecated conversion from string constant to char*"
     // someday eliminate the (char**) when python changes their prototype
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Os", (char**)kwlist,
-                                     &self->cell_, &name)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sO", (char**)kwlist,
+                                     &name, &cell)) {
       return -1;
     }
-    // note that we are NOT referencing the cell
+    if (cell && cell != Py_None) {
+      self->cell_weakref_ = PyWeakref_NewRef(cell, NULL);
+      if (!self->cell_weakref_) {
+        return -1;
+      }
+    }else{
+      cell = 0;
+    }
     if (name) {
       size_t n = strlen(name) + 1; // include terminator
-#if 1
-      if (self->cell_) {
+
+      if (cell) {
         // include cellname in name so nrnpy_pysecname2sec_remove can determine
 
-        PyObject* cell = PyObject_Str(self->cell_);
+        cell = PyObject_Str(cell);
         if (cell == NULL) {
+          Py_XDECREF(self->cell_weakref_);
           return -1;
         }
         Py2NRNString str(cell);
@@ -296,9 +311,7 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
         n += strlen(cp) + 1; // include dot
         self->name_ = new char[n];
         sprintf(self->name_, "%s.%s", cp, name);
-      }else
-#endif
-      {
+      }else{
         self->name_ = new char[n];
         strcpy(self->name_, name);
       }
@@ -841,7 +854,7 @@ NPySecObj* newpysechelp(Section* sec) {
     pysec->sec_ = sec;
     section_ref(sec);
     pysec->name_ = 0;
-    pysec->cell_ = 0;
+    pysec->cell_weakref_ = 0;
   }
   return pysec;
 }
@@ -959,8 +972,8 @@ static PyObject* pysec_wholetree(NPySecObj* const self) {
 
 static PyObject* pysec2cell(NPySecObj* self) {
   PyObject* result;
-  if (self->cell_) {
-    result = self->cell_;
+  if (self->cell_weakref_) {
+    result = PyWeakref_GET_OBJECT(self->cell_weakref_);
     Py_INCREF(result);
   } else if (self->sec_->prop && self->sec_->prop->dparam[6].obj) {
     result = nrnpy_ho2po(self->sec_->prop->dparam[6].obj);
@@ -1461,7 +1474,7 @@ static Object* seg_from_sec_x(Section* sec, double x) {
     pysec = (NPySecObj*)psection_type->tp_alloc(psection_type, 0);
     pysec->sec_ = sec;
     pysec->name_ = 0;
-    pysec->cell_ = 0;
+    pysec->cell_weakref_ = 0;
     Py_INCREF(pysec);
     pseg->pysec_ = pysec;
   }
