@@ -567,6 +567,8 @@ def _matrix_to_rxd_sparse(m):
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
 
+    initializer._init_lock.acquire()
+
     # update _node_fluxes in C
     _include_flux()
 
@@ -855,6 +857,7 @@ def _setup_matrices():
     else:
         free_conc_ptrs()
 
+    initializer._init_lock.release()
     # we do this last because of performance issues with changing sparsity of csr matrices
     """
     if _diffusion_matrix is not None:
