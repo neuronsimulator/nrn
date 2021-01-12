@@ -63,9 +63,13 @@ You can find an example of the in-memory mode usage of **CoreNEURON** [here](htt
 ## HOC API
 To use the **CoreNEURON** in-memory mode using a HOC script you need to add the following before calling the *psolve* function to run the simulation:
 
+    if (!nrnpython("from neuron import coreneuron")) {
+        printf("Python not available\n")
+        return
+    }
+
     po = new PythonObject()
     po.coreneuron.enable = 1
-    po.coreneuron.nrncore_arg(tstop)
 
 > To run a simulation with CoreNEURON h.cvode.cache_efficient(1) must also be set
 
