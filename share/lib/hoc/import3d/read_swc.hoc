@@ -195,7 +195,8 @@ proc sectionify() {local i, si, pix  localobj nchild
 	// child adds 1
 	mark_branch(nchild)
 
-	// If soma is root, and contiguous, want to keep it that way.
+	// Would like to minimize soma array size.
+	// Keep as contiguous as possible.
 	// I.e. branched somas break apart same as dendrites.
 	// First need to count soma children for each soma point
 	nchild_soma = new Vector(id.size)
@@ -215,8 +216,6 @@ proc sectionify() {local i, si, pix  localobj nchild
 		// adjacent parent,child soma points, then parent not a branch
 		if (type.x[i] == 1 && type.x[i+1] == 1 && pix2ix(i+1) == i) {
 			nchild.x[i] = 1
-		}else{
-			break
 		}
 	}
 
