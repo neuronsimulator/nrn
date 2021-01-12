@@ -222,3 +222,39 @@ def test_vector_api():
     assert h.Vector(v.size()).filter(v, v.c().reverse()).to_python() == [308.0, -66.0, 376.0, 750.0]
     assert h.Vector(v.size()).fft(v, -1).to_python() == [17.5, 16.5, -12.5, -15.5]
     assert v.c().fft(-1).to_python() == h.Vector(v.size()).fft(v, -1).to_python()
+    
+        """
+    I/O
+    """
+    assert v.to_python() == [3.0, 2.0, 15.0, 16.0]
+    f = h.File()
+    f.wopen("temp.tmp")
+    v.vwrite(f)
+    f.close()
+    assert v.to_python() == [3.0, 2.0, 15.0, 16.0]
+
+    vr = h.Vector()
+    f.ropen("temp.tmp")
+    vr.vread(f)
+    assert vr.to_python() == v.to_python()
+    f.close()
+    f.unlink()
+
+    f.wopen("temp.tmp")
+    f.printf("%d %d %d %d\n", 3, 2, 15, 16)
+    f.close()
+    f.ropen("temp.tmp")
+
+    vr.resize(0)
+    vr.scanf(f)
+    assert vr.to_python() == v.to_python()
+    f.seek(0)
+    vr.resize(0)
+    vr.scanf(f, 1)
+    assert vr.to_python() == [3.0]
+    vr.resize(0)
+    f.seek(0)
+    vr.scantil(f, 15.0)
+    assert vr.to_python() == [3.0, 2.0]
+    f.close()
+    f.unlink()
