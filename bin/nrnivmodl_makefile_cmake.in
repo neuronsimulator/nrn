@@ -38,8 +38,8 @@ _cm =,
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 
-# CC and CXX are implicitly defined. We check against cc, which is never (hopefully) user defined
-ifeq ($(CC), cc)
+# CC/CXX are always defined. If the definition comes from default change it
+ifeq ($(origin CC), default)
     CC = @CMAKE_C_COMPILER@
     CXX = @CMAKE_CXX_COMPILER@
 endif
