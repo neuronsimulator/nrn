@@ -223,7 +223,7 @@ def test_vector_api():
     assert h.Vector(v.size()).fft(v, -1).to_python() == [17.5, 16.5, -12.5, -15.5]
     assert v.c().fft(-1).to_python() == h.Vector(v.size()).fft(v, -1).to_python()
     
-        """
+    """
     I/O
     """
     assert v.to_python() == [3.0, 2.0, 15.0, 16.0]
