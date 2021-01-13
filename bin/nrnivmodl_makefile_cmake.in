@@ -38,8 +38,11 @@ _cm =,
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 
-CC ?= @CMAKE_C_COMPILER@
-CXX ?= @CMAKE_CXX_COMPILER@
+# CC/CXX are always defined. If the definition comes from default change it
+ifeq ($(origin CC), default)
+    CC = @CMAKE_C_COMPILER@
+    CXX = @CMAKE_CXX_COMPILER@
+endif
 CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
 
