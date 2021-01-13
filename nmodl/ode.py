@@ -12,11 +12,15 @@ import sympy as sp
 # import known_functions through low-level mechanism because the ccode
 # module is overwritten in sympy and contents of that submodule cannot be
 # accessed through regular imports
-known_functions = import_module('sympy.printing.ccode').known_functions_C99
+major, minor = (int(v) for v in sp.__version__.split(".")[:2])
+if major >= 1 and minor >= 7:
+    known_functions = import_module('sympy.printing.c').known_functions_C99
+else:
+    known_functions = import_module('sympy.printing.ccode').known_functions_C99
 known_functions.pop('Abs')
 known_functions['abs'] = 'fabs'
 
-major, minor = (int(v) for v in sp.__version__.split(".")[:2])
+
 if not ((major >= 1) and (minor >= 2)):
     raise ImportError(f"Requires SympPy version >= 1.2, found {major}.{minor}")
 
