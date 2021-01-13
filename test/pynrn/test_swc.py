@@ -51,6 +51,59 @@ tst_data = ['''
 17 3 -8 10 0 1 6
 18 3 -8 15 0 1 17
 ''','''
+# branched soma, dendrites at ends and in interior of multisection soma
+#n,type,x,y,z,radius,parent
+1  1 0 0 0 5 -1
+2  1 10 0 0 3 1
+3  1 15 0 0 4 2
+4  1 20 0 0 2 3
+
+5  1 -8 -6 0 3 1
+
+6  1 -8 6 0 3 1
+7  1 -12 9 0 4 6
+8  1 -16 12 0 3 7
+
+9  1 -20 15 0 4 8
+10 1 -24 18 0 5 9
+11 1 -28 21 0 2 10
+
+12 1 -20 9 0 4 8
+13 1 -24 6 0 2 12
+
+14  3 30 -5 0 1 4
+
+15  3 -12 -12 0 1 5
+
+16  3 -36 24 0 1 11
+
+17  3 -28 0 0 1 13
+
+18 3 0 5 0 1 1
+19 3 0 15 0 1 18
+
+20 3 10 3 0 1 2
+21 3 7 15 0 1 20
+
+22 3 15 4 0 1 3
+23 3 18 15 0 1 22
+
+24 3 -6 10 0 1 6
+25 3 -6 15 0 1 24
+
+26 3 20 3 0 1 4
+27 3 20 13 0 1 26
+
+28 3 -11 19 0 1 7
+
+29 3 -17 15 0 1 8
+30 3 -18 25 0 1 29
+
+31 3 -20 19 0 1 9
+32 3 -20 29 0 1 31
+
+33 3 -30 31 0 1 11
+''','''
 #two section soma with dendrites at ends and off point 1
 #n,type,x,y,z,radius,parent
 1 1 0 0 0 5 -1
@@ -112,6 +165,10 @@ def mkswc(swc_contents):
   swc = h.Import3d_SWC_read()
   swc.input("temp.tmp")
   ig = h.Import3d_GUI(swc)
+  ig.box.unmap()
+  h.doNotify()
+  ig.box.map("Import3d", 650, 200, -1, -1)
+  h.doNotify()
   ig.instantiate(None)
 
   print (swc_contents)
@@ -143,10 +200,25 @@ def test_swc():
     ig = mkswc(dat)
     cleanup()
 
+
+shapebox=None
+def show_nrnshape():
+  global shapebox
+  h.load_file("shapebox.hoc")
+  if shapebox:
+    shapebox.unmap()
+    shapebox = None
+  shapebox = h.VBox()
+  shapebox.intercept(1)
+  h.makeMenuExplore()
+  shapebox.intercept(0)
+  shapebox.map("NEURON ShapeName", 100, 500, -1, -1)
+
 def show(tdat):
   global ig
   cleanup()
   ig = mkswc(tdat)
+  show_nrnshape()
   
 if __name__ == "__main__":
   ig = None
@@ -154,5 +226,5 @@ if __name__ == "__main__":
   for i, dat in enumerate(tst_data):
     s = str(i) + dat.split('\n')[1]
     h.xradiobutton(s, (show, dat))
-  h.xpanel()
+  h.xpanel(80, 200)
     

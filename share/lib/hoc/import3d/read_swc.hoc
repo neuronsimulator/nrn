@@ -316,7 +316,7 @@ proc mksections() {local i, j, isec, first  localobj sec, psec, pts
 	mksection(isec, first, i)
 }
 
-proc mksection() { local i, isec, first, den_con_soma, handled   localobj sec, psec
+proc mksection() { local i, isec, first, den_con_soma, con_soma, handled   localobj sec, psec
   isec = $1  first=$2  i=$3
   if (isec == 0) {// Root. pid not first point in root section
     sec = new Import3d_Section(first, i-first)
@@ -339,7 +339,9 @@ proc mksection() { local i, isec, first, den_con_soma, handled   localobj sec, p
     //    parentx = 0 or 1 depending on whether first or last point
     //    and x,y,z of the parent point.
 
-    den_con_soma = psec.type == 1 && type.x[first] != 1
+    den_con_soma = ((psec.type == 1) && (type.x[first] != 1))
+    con_soma = (psec.type == 1)
+    handled = 0
     if (psec == sections.o(0)) { // connect to root
       handled = 1
       if (den_con_soma && psec.d.size == 1) { // parent is single point soma
@@ -356,14 +358,20 @@ proc mksection() { local i, isec, first, den_con_soma, handled   localobj sec, p
         handled = 0
       }
     }
-    if (den_con_soma && handled == 0) {
-      if (i - first > 1 && pix2ix(first) < psec.id + psec.d.size - 1) {
-        // not last point of soma so must be interior
-        // multipoint dendrite connect to interior of multipoint soma
-        sec.parentx = 0.5
-        sec.first = 1
-      } else if (i - first > 1 && nchild_soma.x[pix2ix(first)] > 1) {
-        sec.first = 1
+    if (handled == 0) {
+      if (con_soma) {
+        offset = -2
+        if (psec.id == 0) { offset = -1 }
+        if (pix2ix(first) < psec.id + psec.d.size + offset) {
+          // not last point of soma so must be interior
+          // multipoint dendrite connect to interior of multipoint soma
+          sec.parentx = 0.5
+          if (den_con_soma && i - first > 1) {
+            sec.first = 1
+          } // otherwise single point means direct connection to interior.
+        } else if (i - first > 1 && nchild_soma.x[pix2ix(first)] > 1) {
+          sec.first = 1
+        }
       }
     }
     sec.append(0, pix2ix(first), 1, x, y, z, d)
