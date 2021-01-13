@@ -19,7 +19,7 @@ For example:
 ## Notes
 
 ### Performance
-**CoreNEURON** is by itself an optimized compute engine of **NEURON**, however to unlock better performance from the used CPUs it's suggested using either an **Intel Compiler** or the **NMODL ISPC Backend** which is described below. Those compilers are able to vectorize better the code than **GCC** achieving the best performance gains possible.
+**CoreNEURON** is by itself an optimized compute engine of **NEURON**, however to unlock better CPU performance it's recommended to use either an **Intel Compiler** or the **NMODL ISPC Backend** (described described below). Those compilers are able to vectorize the code better than **GCC**, achieving the best possible performance gains.
 
 ### GPU execution
 **CoreNEURON** supports also GPU execution based on an **OpenACC** backend. To be able to use it it's needed to install **NEURON** and **CoreNEURON** with a compiler that supports **OpenACC**. Currently the best supported compiler for the **OpenACC** backend is **PGI** and this is the recommended one for compilation.
@@ -56,7 +56,7 @@ To use **CoreNEURON** directly from **NEURON** using the in-memory mode add the 
     coreneuron.enable = True
     coreneuron.gpu = True # Only for GPU execution
 
-> To run a simulation with CoreNEURON h.cvode.cache_efficient(1) must also be set
+> NOTE: In order to run a simulation with CoreNEURON, h.cvode.cache_efficient(1) must also be set
 
 You can find an example of the in-memory mode usage of **CoreNEURON** [here](https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_direct.py)
 
@@ -71,7 +71,7 @@ To use the **CoreNEURON** in-memory mode using a HOC script you need to add the 
     po = new PythonObject()
     po.coreneuron.enable = 1
 
-> To run a simulation with CoreNEURON h.cvode.cache_efficient(1) must also be set
+> NOTE: In order to run a simulation with CoreNEURON, h.cvode.cache_efficient(1) must also be set
 
 You can find an example of the in-memory mode usage of **CoreNEURON** [here](https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_direct.hoc)
 
