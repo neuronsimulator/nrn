@@ -12,7 +12,7 @@ set(CMAKE_ISPC_FLAGS "${CMAKE_ISPC_FLAGS} --pic")
 # note that inlining is done by default
 set(NMODL_COMMON_ARGS "passes --inline")
 
-if ("${CORENRN_NMODL_FLAGS}" STREQUAL "")
+if (NOT "${CORENRN_NMODL_FLAGS}" STREQUAL "")
   set(NMODL_COMMON_ARGS "${NMODL_COMMON_ARGS} ${CORENRN_NMODL_FLAGS}")
 endif()
 

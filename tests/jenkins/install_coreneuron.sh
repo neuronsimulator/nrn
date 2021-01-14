@@ -11,8 +11,7 @@ CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ] || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
     # PGI compiler issue in unstable :  BSD-204
-    module unload unstable && module load archive/2020-12
-    module load pgi/19.10 cuda hpe-mpi cmake boost
+    module load nvhpc cuda hpe-mpi cmake boost
     mkdir build_${CORENRN_TYPE}
 else
     module load boost intel hpe-mpi cmake
@@ -36,6 +35,7 @@ if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
         -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
+        -DCMAKE_CXX_FLAGS="-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1" \
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
     cmake \
@@ -46,6 +46,7 @@ elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
         -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
+        -DCMAKE_CXX_FLAGS="-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1" \
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "AoS" ] || [ "${CORENRN_TYPE}" = "SoA" ]; then
     CORENRN_ENABLE_SOA=ON
