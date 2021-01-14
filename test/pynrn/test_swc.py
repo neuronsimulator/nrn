@@ -114,6 +114,18 @@ tst_data = ['''
 6 3 0 5 0 1 1
 7 3 0 10 0 1 6
 ''','''
+#three point uniform diameter soma with root in middle, treated as sphere
+#n,type,x,y,z,radius,parent
+1 1 0 0 0 5 -1
+2 1 5 0 0 5 1
+3 1 -5 0 0 5 1
+4 3 5 0 0 1 1
+5 3 10 0 0 1 4
+6 3 -5 0 0 1 1
+7 3 -10 0 0 1 6
+8 3 0 5 0 1 1
+9 3 0 10 0 1 8
+''','''
 # Multipoint soma but not geometrically realizable
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 10 -1
