@@ -92,7 +92,7 @@ jobs:
     displayName: 'Install Python from python.org'
 
   - script: |
-      brew cask install xquartz
+      brew install --cask xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
     displayName: 'Install OSX System Depdendencies'
