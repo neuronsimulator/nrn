@@ -55,10 +55,15 @@ jobs:
     steps:    
     - name: Checkout feature-rich code
       run: |
-        git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO $REL_TAG
-        mv ${REL_TAG} neuron
-        cd neuron
-        git log --oneline
+        git clone --depth=1 --shallow-submodules --recurse-submodules $GH_REPO -b $REL_TAG --single-branch
+        cd nrn
+        LOCAL_TAG=`git tag`
+        if [ $REL_TAG != $LOCAL_TAG ]; then
+          echo "Wrong tag downloaded!"
+          exit 1
+        else
+          git log --oneline
+        fi
         
     - name: Make nrnversion.h
       run: |   
