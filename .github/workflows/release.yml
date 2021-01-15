@@ -74,7 +74,7 @@ jobs:
     - name: Create full-src-package
       id: tar
       run: |   
-        tar -czvf ${REL_TAG}.tar.gz neuron
+        tar -czvf ${REL_TAG}.tar.gz nrn
         echo ::set-output name=asset_file::${REL_TAG}.tar.gz
         
     - name: Upload full-src-package to release
