@@ -39,7 +39,7 @@ Basic Programming
 .. toctree::
     :maxdepth: 1
     
-    `NEURON Python tutorial <https://neuronsimulator.github.io/nrn/tutorials/scripting-neuron-basics.html>`_
+    NEURON Python tutorial <https://neuronsimulator.github.io/nrn/tutorials/scripting-neuron-basics.html>
     programming/hoc.rst
     programming/mathematics.rst
     programming/strings.rst
