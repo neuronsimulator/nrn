@@ -68,7 +68,7 @@ jobs:
     - name: Make nrnversion.h
       run: |   
         mkdir build && cd build
-        cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../neuron
+        cmake -DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ../nrn
         make nrnversion_h VERBOSE=1 
     
     - name: Create full-src-package
