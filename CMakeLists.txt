@@ -193,7 +193,9 @@ endif()
 # =============================================================================
 # Build full docs
 # =============================================================================
-if(DOXYGEN_FOUND AND SPHINX_FOUND)
+find_program(JUPYTER_EXE jupyter QUIET)
+
+if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
   add_custom_target(
           docs
           COMMAND make doxygen
