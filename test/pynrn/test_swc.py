@@ -170,7 +170,6 @@ tst_data = ['''
 ''']
 
 def mkswc(swc_contents):
-  print ("\n\n\n")
   f = open("temp.tmp", "w")
   f.write(swc_contents)
   f.close()
@@ -185,6 +184,12 @@ def mkswc(swc_contents):
 
   print (swc_contents)
   h.topology()
+  print (secinfo())
+  print ("\n\n\n")
+  return ig
+
+def secinfo():
+  result = "\n"
   for sec in h.allsec():
     r = [h.ref(0) for _ in range(3)]
     pseg = sec.parentseg()
@@ -193,10 +198,10 @@ def mkswc(swc_contents):
     if sec.pt3dstyle():
       h.pt3dstyle(1, r[0], r[1], r[2], sec=sec)
       style = [i[0] for i in r]
-    print ("%s L=%g %s %s" % (str(sec), sec.L, str(style), px))
+    result += "%s L=%g %s %s\n" % (str(sec), sec.L, str(style), px)
     for i in range(sec.n3d()):
-      print(" %d   %g %g %g %g" % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i)))
-  return ig
+      result += " %d   %g %g %g %g\n" % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i))
+  return result
 
 def cleanup():
   global ig
@@ -205,13 +210,6 @@ def cleanup():
   if ig:
     ig.box.unmap()
     ig = None
-
-def test_swc():
-  global ig
-  for i, dat in enumerate(tst_data):
-    ig = mkswc(dat)
-    cleanup()
-
 
 shapebox=None
 def show_nrnshape():
@@ -240,3 +238,237 @@ if __name__ == "__main__":
     h.xradiobutton(s, (show, dat))
   h.xpanel(80, 200)
     
+tst_result=['''
+soma[0] L=20  
+ 0   -10 0 0 20
+ 1   0 0 0 20
+ 2   10 0 0 20
+dend[0] L=10 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   0 10 0 2
+ 1   0 20 0 2
+dend[1] L=10 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   0 -10 0 4
+ 1   0 -20 0 4
+dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   10 0 0 1
+ 1   10 5 0 2
+''','''
+soma[0] L=4  
+ 0   0 0 0 20
+ 1   2 0 0 20
+ 2   4 0 0 20
+dend[0] L=8 [2.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   2 10 0 2
+ 1   2 18 0 2
+''','''
+soma[0] L=10  
+ 0   0 0 0 10
+ 1   10 0 0 6
+soma[1] L=10  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 -6 0 6
+soma[2] L=10  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 6 0 6
+dend[0] L=10  parent soma[0](1)
+ 0   10 0 0 2
+ 1   20 0 0 2
+dend[1] L=10  parent soma[1](1)
+ 0   -8 -6 0 2
+ 1   -16 -12 0 2
+dend[2] L=10  parent soma[2](1)
+ 0   -8 6 0 2
+ 1   -16 12 0 2
+''','''
+soma[0] L=20  
+ 0   0 0 0 10
+ 1   10 0 0 6
+ 2   15 0 0 8
+ 3   20 0 0 4
+soma[1] L=10  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 -6 0 6
+soma[2] L=20  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 6 0 8
+ 2   -16 12 0 4
+dend[0] L=10  parent soma[0](1)
+ 0   20 0 0 2
+ 1   30 0 0 2
+dend[1] L=10  parent soma[1](1)
+ 0   -8 -6 0 2
+ 1   -16 -12 0 2
+dend[2] L=10  parent soma[2](1)
+ 0   -16 12 0 2
+ 1   -24 18 0 2
+dend[3] L=10 [0.0, 0.0, 0.0] parent soma[0](0)
+ 0   0 5 0 2
+ 1   0 15 0 2
+dend[4] L=12 [10.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   10 3 0 2
+ 1   10 15 0 2
+dend[5] L=11 [15.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   15 4 0 2
+ 1   15 15 0 2
+dend[6] L=5 [-8.0, 6.0, 0.0] parent soma[2](0.5)
+ 0   -8 10 0 2
+ 1   -8 15 0 2
+''','''
+soma[0] L=20  
+ 0   0 0 0 10
+ 1   10 0 0 6
+ 2   15 0 0 8
+ 3   20 0 0 4
+soma[1] L=10  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 -6 0 6
+soma[2] L=20  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -8 6 0 6
+ 2   -12 9 0 8
+ 3   -16 12 0 6
+soma[3] L=15  parent soma[2](1)
+ 0   -16 12 0 6
+ 1   -20 15 0 8
+ 2   -24 18 0 10
+ 3   -28 21 0 4
+soma[4] L=10  parent soma[2](1)
+ 0   -16 12 0 6
+ 1   -20 9 0 8
+ 2   -24 6 0 4
+dend[0] L=11.1803  parent soma[0](1)
+ 0   20 0 0 2
+ 1   30 -5 0 2
+dend[1] L=7.2111  parent soma[1](1)
+ 0   -8 -6 0 2
+ 1   -12 -12 0 2
+dend[2] L=8.544  parent soma[3](1)
+ 0   -28 21 0 2
+ 1   -36 24 0 2
+dend[3] L=7.2111  parent soma[4](1)
+ 0   -24 6 0 2
+ 1   -28 0 0 2
+dend[4] L=10 [0.0, 0.0, 0.0] parent soma[0](0)
+ 0   0 5 0 2
+ 1   0 15 0 2
+dend[5] L=12.3693 [10.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   10 3 0 2
+ 1   7 15 0 2
+dend[6] L=11.4018 [15.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   15 4 0 2
+ 1   18 15 0 2
+dend[7] L=5 [-8.0, 6.0, 0.0] parent soma[2](0.5)
+ 0   -6 10 0 2
+ 1   -6 15 0 2
+dend[8] L=13  parent soma[0](1)
+ 0   20 0 0 2
+ 1   20 3 0 2
+ 2   20 13 0 2
+dend[9] L=10.0499  parent soma[2](0.5)
+ 0   -12 9 0 2
+ 1   -11 19 0 2
+dend[10] L=10.0499 [-16.0, 12.0, 0.0] parent soma[2](1)
+ 0   -17 15 0 2
+ 1   -18 25 0 2
+dend[11] L=10 [-20.0, 15.0, 0.0] parent soma[3](0.5)
+ 0   -20 19 0 2
+ 1   -20 29 0 2
+dend[12] L=10.198  parent soma[3](1)
+ 0   -28 21 0 2
+ 1   -30 31 0 2
+''','''
+soma[0] L=5  
+ 0   0 0 0 10
+ 1   5 0 0 6
+soma[1] L=5  parent soma[0](0)
+ 0   0 0 0 10
+ 1   -5 0 0 6
+dend[0] L=5  parent soma[0](1)
+ 0   5 0 0 2
+ 1   10 0 0 2
+dend[1] L=5  parent soma[1](1)
+ 0   -5 0 0 2
+ 1   -10 0 0 2
+dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0)
+ 0   0 5 0 2
+ 1   0 10 0 2
+''','''
+soma[0] L=10  
+ 0   -5 0 0 10
+ 1   0 0 0 10
+ 2   5 0 0 10
+dend[0] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   5 0 0 2
+ 1   10 0 0 2
+dend[1] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   -5 0 0 2
+ 1   -10 0 0 2
+dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   0 5 0 2
+ 1   0 10 0 2
+''','''
+soma[0] L=4  
+ 0   0 0 0 20
+ 1   2 0 0 20
+ 2   4 0 0 20
+dend[0] L=8 [2.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   2 1 0 2
+ 1   2 9 0 2
+''','''
+soma[0] L=6  
+ 0   0 0 0 20
+ 1   3 0 0 20
+ 2   4 0 0 20
+ 3   6 0 0 20
+dend[0] L=8 [3.0, 0.0, 0.0] parent soma[0](0.5)
+ 0   2 1 0 2
+ 1   2 9 0 2
+''','''
+dend[0] L=10  
+ 0   0 0 0 2
+ 1   10 0 0 2
+dend[1] L=10  parent dend[0](1)
+ 0   10 0 0 2
+ 1   20 0 0 2
+dend[2] L=20  parent dend[0](1)
+ 0   10 0 0 2
+ 1   10 20 0 2
+''','''
+soma[0] L=10  
+ 0   -11 0 0 10
+ 1   -1 0 0 10
+dend[0] L=11  parent soma[0](1)
+ 0   -1 0 0 2
+ 1   0 0 0 2
+ 2   10 0 0 2
+dend[1] L=10  parent dend[0](1)
+ 0   10 0 0 2
+ 1   20 0 0 2
+dend[2] L=20  parent dend[0](1)
+ 0   10 0 0 2
+ 1   10 20 0 2
+''','''
+dend[0] L=10  
+ 0   0 0 0 2
+ 1   10 0 0 2
+dend[1] L=10  parent dend[0](1)
+ 0   10 0 0 2
+ 1   11 0 0 2
+ 2   20 0 0 2
+dend[2] L=20  parent dend[0](1)
+ 0   10 0 0 2
+ 1   10 1 0 2
+ 2   10 20 0 2
+''']
+
+def test_swc():
+  global ig
+  ig = None
+  cleanup()
+  for i, dat in enumerate(tst_data):
+    print ("test %d"%i)
+    ig = mkswc(dat)
+    assert(secinfo() == tst_result[i])
+    cleanup()
+
+
