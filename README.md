@@ -176,6 +176,8 @@ file.
 
 For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
 
-## Developer documentation
+## Documentation
 
-Please refer to [docs/README.md](docs/README.md)
+* See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
+* See [docs/README.md](docs/README.md) for developers documentation
+* See [github.io](http://neuronsimulator.github.io/nrn/) for latest, nightly snapshot
