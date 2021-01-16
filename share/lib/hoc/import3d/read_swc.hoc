@@ -220,7 +220,7 @@ proc sectionify() {local i, si, pix, nsoma_pts  localobj nchild
 
 	// Would like to minimize soma array size.
 	// Keep as contiguous as possible.
-	// I.e. branched somas break apart same as dendrites.
+	// But branched somas break apart same as dendrites.
 	// First need to count soma children for each soma point
 	nchild_soma = new Vector(id.size)
         nsoma_pts = 0
@@ -247,8 +247,13 @@ proc sectionify() {local i, si, pix, nsoma_pts  localobj nchild
 	// now can adjust nchild for contiguity
 	for i=0, id.size-2 {
 		// adjacent parent,child soma points, then parent not a branch
+		// unless there is more than one soma child for that parent.
 		if (type.x[i] == 1 && type.x[i+1] == 1 && pix2ix(i+1) == i) {
-			nchild.x[i] = 1
+			if (i != 0 && nchild_soma.x[i] > 1) {
+                                // more than one soma child so section branch
+			}else{
+				nchild.x[i] = 1 // not a section end
+			}
 		}
 	}
 
@@ -406,7 +411,9 @@ proc mksection() { local i, isec, first, den_con_soma, con_soma, handled   local
             sec.first = 1
           } // otherwise single point means direct connection to interior.
         } else if (i - first > 1 && nchild_soma.x[pix2ix(first)] > 1) {
-          sec.first = 1
+          if (type.x[first] != 1) { // Not soma, otherwise direct connection.
+            sec.first = 1
+          }
         }
       }
     }
