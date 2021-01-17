@@ -119,7 +119,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
   if (NRN_ENABLE_MPI)
     # Launching mpi executable with full path can mangle different python versions and libraries(see issue #894)
-    # Therefore we extract the executable name and create a dedicated target, because add_test($MPIEXEC_NAME) would re-append the full path. 
+    # Therefore we extract the executable name and create a dedicated target, because add_test($MPIEXEC_NAME) would re-append the full path.
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
     add_custom_target(test_subworld_mpiexec_name
         COMMAND
@@ -152,6 +152,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(NAME coreneuron_spikes_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(NAME coreneuron_spikes_file_mode_py COMMAND ${PYTHON_EXECUTABLE}
+                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
+                                            file_mode
+                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_test(NAME coreneuron_fornetcon_py COMMAND ${PYTHON_EXECUTABLE}
                                             ${PROJECT_SOURCE_DIR}/test/coreneuron/test_fornetcon.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
@@ -165,18 +169,23 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
                                             ${PROJECT_SOURCE_DIR}/test/gjtests/test_natrans.py
                                     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc
-                      coreneuron_spikes_py coreneuron_fornetcon_py
+                      coreneuron_spikes_py coreneuron_spikes_file_mode_py coreneuron_fornetcon_py
                       coreneuron_datareturn_py coreneuron_test_units_py
                       coreneuron_test_natrans_py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
         add_test(
-                NAME coreneuron_mpi_spikes_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
+                NAME coreneuron_spikes_mpi_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
                                               ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
                                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-        list(APPEND TESTS coreneuron_mpi_spikes_py)
+        list(APPEND TESTS coreneuron_spikes_mpi_py)
       endif()
+        add_test(
+                NAME coreneuron_spikes_mpi_file_mode_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
+                                              ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init file_mode
+                                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+        list(APPEND TESTS coreneuron_spikes_mpi_file_mode_py)
     endif()
   endif()
 endif()
