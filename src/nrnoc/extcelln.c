@@ -12,6 +12,8 @@ extern int nrn_use_daspk_;
 
 #if EXTRACELLULAR
 
+int nrn_nlayer_extracellular = EXTRACELLULAR;
+
 /* the N index is a keyword in the following. See init.c for implementation.*/
 static const char *mechanism[] = {
 	"0",
@@ -193,13 +195,46 @@ hoc_execerror("Extracellular mechanism only works with fixed step methods and da
 	}
 }
 
+void extnode_free_elements(Extnode* nde) {
+  if (nde->v) {
+    free(nde->v); /* along with _a and _b */
+    free(nde->_d); /* along with _rhs, _a_matelm, _b_matelm, _x12, and _x21 */
+    nde->v = NULL;
+    nde->_a = NULL;
+    nde->_b = NULL;
+    nde->_d = NULL;
+    nde->_rhs = NULL;
+    nde->_a_matelm = NULL;
+    nde->_b_matelm = NULL;
+    nde->_x12 = NULL;
+    nde->_x21 = NULL;
+  }
+}
+
+void extnode_alloc_elements(Extnode* nde) {
+  extnode_free_elements(nde);
+  if (nlayer > 0) {
+    nde->v = (double*)ecalloc(nlayer*3, sizeof(double));
+    nde->_a = nde->v + nlayer;
+    nde->_b = nde->_a + nlayer;
+
+    nde->_d = (double**)ecalloc(nlayer*6, sizeof(double*));
+    nde->_rhs = nde->_d + nlayer;
+    nde->_a_matelm = nde->_rhs + nlayer;
+    nde->_b_matelm = nde->_a_matelm + nlayer;
+    nde->_x12 = nde->_b_matelm + nlayer;
+    nde->_x21 = nde->_x12 + nlayer;
+  }
+}
+
 void extcell_node_create(Node* nd) {
 	int i, j;
 	Extnode *nde;
 	Prop* p;
 	/* may be a nnode increase so some may already be allocated */
 	if (!nd->extnode) {
-		nde = (Extnode *)emalloc(sizeof(Extnode));
+		nde = (Extnode *)ecalloc(1, sizeof(Extnode));
+		extnode_alloc_elements(nde);
 		nd->extnode = nde;
 		for (j=0; j < nlayer; ++j) {
 			nde->v[j] = 0.;

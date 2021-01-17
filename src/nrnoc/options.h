@@ -16,11 +16,7 @@ in one section is set but no others. But only the first time through treeset.
 
 #define I_MEMBRANE	1	/* compute i_cap and i_membrane on fadvance */
 
-#if _CRAY
-#define EXTRACELLULAR	0  /* this form of gaussian elimination is vectorized*/
-#else
-#define EXTRACELLULAR	2	/* number of extracellular layers */
-#endif
+#define EXTRACELLULAR	2	/* default number of extracellular layers */
 
 #define DIAMLIST	1	/* section contains diameter info */
 #define EXTRAEQN	0	/* ionic concentrations calculated via
