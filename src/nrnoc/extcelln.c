@@ -6,6 +6,7 @@
 #include	"section.h"
 #include	"nrniv_mf.h"
 #include	"hocassrt.h"
+#include	"parse.h"
 
 extern int cvode_active_;
 extern int nrn_use_daspk_;
@@ -15,6 +16,8 @@ extern int nrn_use_daspk_;
 int nrn_nlayer_extracellular = EXTRACELLULAR;
 
 /* the N index is a keyword in the following. See init.c for implementation.*/
+/* if nlayer is changed the symbol table arayinfo->sub[0] must be updated
+   for xraxial, xg, xc, and vext */
 static const char *mechanism[] = {
 	"0",
 	"extracellular",
@@ -147,18 +150,21 @@ i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
 #endif
 }
 
+static int nparm() {
+#if I_MEMBRANE
+  return 3*(nlayer) + 4;
+#else
+  return 3*(nlayer) + 1;
+#endif
+}
+
 static void extcell_alloc(Prop* p)
 {
 	double *pd;
 	int i;
 
-#if I_MEMBRANE
-#define nparm (3*(nlayer) + 4)
-#else
-#define	nparm (3*(nlayer) + 1)
-#endif
-	pd = nrn_prop_data_alloc(EXTRACELL, nparm, p);
-	p->param_size = nparm;
+	pd = nrn_prop_data_alloc(EXTRACELL, nparm(), p);
+	p->param_size = nparm();
 
 	for (i=0; i < nlayer; ++i) {
 		xraxial[i]= 1.e9;
@@ -211,7 +217,57 @@ void extnode_free_elements(Extnode* nde) {
   }
 }
 
-void extnode_alloc_elements(Extnode* nde) {
+static void check_if_extracellular_in_use() {
+  hoc_Item* qsec;
+  ITERATE(qsec, section_list) {
+    Section* sec = hocSEC(qsec);
+    if (sec->pnode[0]->extnode) {
+      hoc_execerror("Cannot change nlayer_extracellular when instances exist", NULL);
+    }
+  }
+}
+
+static void update_existing_extnode(int old_nlayer) {
+  /* there aren't any because of check_if_extracellular_in_use() */
+}
+
+static void update_extracellular_reg(int old_nlayer) {
+  /* update hoc_symlist for arayinfo->sub[0] and u.rng.index. */
+  int i, ix;
+  Symbol* ecell = hoc_table_lookup("extracellular", hoc_built_in_symlist);
+  assert(ecell);
+  assert(ecell->type == MECHANISM);
+  ix = 0;
+  for (i=0; i < ecell->s_varn; ++i) {
+    Symbol* s = ecell->u.ppsym[i];
+    if (s->type == RANGEVAR) {
+      Arrayinfo* a = s->arayinfo;
+      s->u.rng.index = ix;
+      if (a && a->nsub == 1) {
+        assert(a->sub[0] == old_nlayer);
+        a->sub[0] = nlayer;
+        ix += nlayer;
+      }else{
+        ix += 1;
+      }
+    }
+  }
+}
+
+void nlayer_extracellular() {
+  if (ifarg(1)) {
+    int old = nlayer;
+    nrn_nlayer_extracellular = (int)chkarg(1, 0., 1000.);
+    if (nlayer == old) { return; }
+
+    check_if_extracellular_in_use();
+    update_extracellular_reg(old);
+    update_existing_extnode(old);
+  }
+  hoc_retpushx((double)nlayer);
+}
+
+static void extnode_alloc_elements(Extnode* nde) {
   extnode_free_elements(nde);
   if (nlayer > 0) {
     nde->v = (double*)ecalloc(nlayer*3, sizeof(double));
