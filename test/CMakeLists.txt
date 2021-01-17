@@ -181,9 +181,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
                                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_spikes_mpi_py)
       endif()
+        # using -pyexe to workaround #894
         add_test(
                 NAME coreneuron_spikes_mpi_file_mode_py  COMMAND ${MPIEXEC} -np 2 ${CMAKE_HOST_SYSTEM_PROCESSOR}/special
-                                              -python ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init file_mode
+                                              -python -pyexe ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init file_mode
                                       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_spikes_mpi_file_mode_py)
     endif()
