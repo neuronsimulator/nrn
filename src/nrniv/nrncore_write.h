@@ -11,7 +11,7 @@ extern void nrncore_netpar_cellgroups_helper(CellGroup*);
 
 int nrncore_run(const char* arg);
 int nrncore_is_enabled();
-int nrncore_psolve(double tstop);
+int nrncore_psolve(double tstop, int file_mode);
 
 #if defined(__cplusplus)
 }
