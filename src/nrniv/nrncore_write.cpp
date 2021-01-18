@@ -126,6 +126,8 @@ extern size_t nrncore_netpar_bytes();
 extern short* nrn_is_artificial_;
 
 int (*nrnpy_nrncore_enable_value_p_)();
+int (*nrnpy_nrncore_file_mode_value_p_)();
+
 char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 CellGroup* cellgroups_;
@@ -140,21 +142,35 @@ bool corenrn_direct;
 static size_t part1();
 static void part2(const char*);
 
+/// dump neuron model to given directory path
+size_t write_corenrn_model(const std::string& path) {
 
-
-// accessible from ParallelContext.total_bytes()
-size_t nrnbbcore_write() {
+  // if writing to disk then in-memory mode is false
   corenrn_direct = false;
+
+  // make sure model is ready to transfer
   model_ready();
-  const std::string& path = get_write_path();
 
-  size_t rankbytes = part1(); // can arrange to be just before part2
+  // directory to write model
+  create_dir_path(path);
 
+  // calculate size of the model
+  size_t rankbytes = part1();
+
+  // mechanism and global variables
   write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
   write_globals(get_filename(path, "globals.dat").c_str());
 
+  // write main model data
   part2(path.c_str());
+
   return rankbytes;
+}
+
+// accessible from ParallelContext.total_bytes()
+size_t nrnbbcore_write() {
+  const std::string& path = get_write_path();
+  return write_corenrn_model(path);
 }
 
 static size_t part1() {
@@ -282,13 +298,29 @@ int nrncore_is_enabled() {
     return 0;
 }
 
+/** Return value of neuron.coreneuron.file_mode flag */
+int nrncore_is_file_mode() {
+    if (nrnpy_nrncore_file_mode_value_p_) {
+        int result = (*nrnpy_nrncore_file_mode_value_p_)();
+        return result;
+    }
+    return 0;
+}
+
 /** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
  *  Return 0 on success
-*/
-int nrncore_psolve(double tstop) {
+ */
+int nrncore_psolve(double tstop, int file_mode) {
   if (nrnpy_nrncore_arg_p_) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
     if (arg) {
+      // if file mode is requested then write model to a directory
+      // note that CORENRN_DATA_DIR name is also used in module
+      // file coreneuron.py
+      if (file_mode) {
+        const char* CORENRN_DATA_DIR = "corenrn_data";
+        write_corenrn_model(CORENRN_DATA_DIR);
+      }
       nrncore_run(arg);
       // data return nt._t so copy to t
       t = nrn_threads[0]._t;
@@ -306,6 +338,10 @@ int nrncore_run(const char *) {
 }
 
 int nrncore_is_enabled() {
+    return 0;
+}
+
+int nrncore_is_file_mode() {
     return 0;
 }
 

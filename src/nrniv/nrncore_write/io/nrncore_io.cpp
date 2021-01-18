@@ -26,20 +26,26 @@ extern void (*nrnthread_v_transfer_)(NrnThread*);
 int chkpnt;
 const char *bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable
 
+/// create directory with given path
+void create_dir_path(const std::string& path) {
+    // only one rank needs to create directory
+    if (nrnmpi_myid == 0) {
+        if (!isDirExist(path)) {
+            if (!makePath(path)) {
+                hoc_execerror(path.c_str(), "directory did not exist and makePath for it failed");
+            }
+        }
+    }
+    // rest of the ranks should wait before continue simulation
+#ifdef NRNMPI
+    nrnmpi_barrier();
+#endif
+}
+
 std::string get_write_path(){
     std::string path("."); // default path
     if (ifarg(1)) {
         path = hoc_gargstr(1);
-        if (nrnmpi_myid == 0) {
-            if (!isDirExist(path)) {
-                if (!makePath(path)) {
-                    hoc_execerror(path.c_str(), "directory did not exist and makePath for it failed");
-                }
-            }
-        }
-        #ifdef NRNMPI
-        nrnmpi_barrier();
-        #endif
     }
     return path;
 }
