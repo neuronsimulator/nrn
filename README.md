@@ -116,6 +116,10 @@ Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for mor
 
 NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations including gap junction coupling with the fixed time step method. You can find detailed instructions [here](docs/coreneuron/how-to/coreneuron.md) and [here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
+#### Building documentation
+
+See [docs/README.md](docs/README.md) to install dependencies and build documentation.
+
 <a name="build-autotools"></a>
 ### Build using Autotools
 
@@ -172,6 +176,8 @@ file.
 
 For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
 
-## Developer documentation
+## Documentation
 
-Please refer to [docs/README.md](docs/README.md)
+* See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
+* See [docs/README.md](docs/README.md) for developers documentation
+* See [github.io](http://neuronsimulator.github.io/nrn/) for latest, nightly snapshot
