@@ -10,6 +10,7 @@
 
 extern int cvode_active_;
 extern int nrn_use_daspk_;
+extern void nrn_delete_prop_pool(int type);
 
 #if EXTRACELLULAR
 
@@ -261,6 +262,7 @@ void nlayer_extracellular() {
     if (nlayer == old) { return; }
 
     check_if_extracellular_in_use();
+    nrn_delete_prop_pool(EXTRACELL);
     update_extracellular_reg(old);
     update_existing_extnode(old);
   }
