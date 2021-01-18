@@ -184,6 +184,9 @@ printf("  %d: %s\n", iline.x[i], lines.o(iline.x[i]).s)
 	}
 }
 
+// special neuromorpho.org policy for 3 point soma with uniform diameter,
+// middle point as root, length equal diameter, and no
+// connections to index points 1 and 2, is to treat as sphere.
 func check_soma3geom() {local i, nsoma_pts  localobj nchild
   nsoma_pts = $1
   nchild = $o2
@@ -239,9 +242,8 @@ proc sectionify() {local i, si, pix, nsoma_pts  localobj nchild
 		}
 	}
 
-	// special neuromorpho.org policy for 3 point soma with uniform diameter,
-	// middle point as root, length equal diameter, and no
-	// connections to index points 1 and 2, is to treat as sphere.
+	// special neuromorpho.org policy for 3 point soma
+	// with particular properties
 	check_soma3geom(nsoma_pts, nchild) // sets soma3geom
 
 	// now can adjust nchild for contiguity
