@@ -1,17 +1,17 @@
-[![Build Status](https://travis-ci.org/BlueBrain/CoreNeuron.svg?branch=master)](https://travis-ci.org/BlueBrain/CoreNeuron)
+[![Build Status](https://travis-ci.org/BlueBrain/CoreNeuron.svg?branch=master)](https://travis-ci.org/BlueBrain/CoreNeuron) ![CoreNEURON CI](https://github.com/BlueBrain/CoreNeuron/workflows/CoreNEURON%20CI/badge.svg)
 
 # CoreNEURON
-> Optimised simulator engine for [NEURON](https://www.neuron.yale.edu/neuron/)
+> Optimised simulator engine for [NEURON](https://github.com/neuronsimulator/nrn)
 
 CoreNEURON is a compute engine for the [NEURON](https://www.neuron.yale.edu/neuron/) simulator optimised for both memory usage and computational speed. Its goal is to simulate large cell networks with small memory footprint and optimal performance.
 
-## Features / Compatibility
+## NEURON Models Compatibility
 
 CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations including gap junction coupling with the **fixed time step method**. In order to run a NEURON model with CoreNEURON:
 
 * MOD files should be THREADSAFE
 * If random number generator is used then Random123 should be used instead of MCellRan4
-* POINTER variables need to be converted to BBCOREPOINTER ([details here](http://bluebrain.github.io/CoreNeuron/index.html))
+* POINTER variables need to be converted to BBCOREPOINTER ([details here](docs/userdoc/MemoryManagement/bbcorepointer.md))
 
 ## Dependencies
 * [CMake 3.7+](https://cmake.org)
@@ -41,7 +41,8 @@ CoreNEURON is now integrated into the development version of the NEURON simulato
 
 3. Load software dependencies
 
-	Currently CoreNEURON relies on compiler auto-vectorisation and hence we advise to use one of Intel, Cray, or PGI compilers to ensure vectorized code is generated. This constraint will be removed in the near future with the integration of the [NMODL](https://github.com/BlueBrain/nmodl) project.
+	Currently CoreNEURON relies on compiler auto-vectorisation and hence we advise to use one of Intel, Cray, or PGI compilers to ensure vectorized code is generated. These compilers are able to vectorize the code better than **GCC** or **Clang**, achieving the best possible performance gains. Note that Intel compiler can be installed by downloading [oneAPI HPC Toolkit](https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html). CoreNEURON supports GPU execution using **OpenACC** programming model.  Currently the best supported compiler for the **OpenACC** backend is **PGI** (available via [NVIDIA-HPC-SDK](https://developer.nvidia.com/hpc-sdk)) and this is the recommended one for compilation.
+
 
 	HPC systems often use a module system to select software. For example, you can load the compiler, cmake, and python dependencies using module as follows:
 
@@ -63,6 +64,8 @@ Note that if you are building on Cray system with the GNU toolchain, you have to
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_RX3D=OFF \
    -DCMAKE_INSTALL_PREFIX=$HOME/install
+   -DCMAKE_C_COMPILER=icc \
+   -DCMAKE_CXX_COMPILER=icpc
   ```
 
 4. If you would like to enable GPU support with OpenACC, make sure to use `-DCORENRN_ENABLE_GPU=ON` option and use the PGI/NVIDIA HPC SDK compilers with CUDA. For example,
@@ -227,20 +230,11 @@ cmake .. -DCMAKE_CXX_FLAGS="-O3 -g" \
 
 By default, OpenMP threading is enabled. You can disable it with `-DCORENRN_ENABLE_OPENMP=OFF`
 
-#### GPU enabled build is failing with inlining related errors, what to do?
-
-If there are large functions / procedures in the MOD file that are not inlined by the compiler, you may need to pass additional C++ flags to PGI compiler. You can try following CXX flags:
-
-```
--DCMAKE_CXX_FLAGS="-O2 -Minline=size:1000,levels:100,totalsize:40000,maxsize:4000"
-```
-
 For other errors, please [open an issue](https://github.com/BlueBrain/CoreNeuron/issues).
-
 
 ## Developer Build
 
-##### Building standalone CoreNEURON
+#### Building standalone CoreNEURON without NEURON
 
 If you want to build the standalone CoreNEURON version, first download the repository as:
 
@@ -263,7 +257,7 @@ If you don't have MPI, you can disable the MPI dependency using the CMake option
 make test
 ```
 
-##### Compiling MOD files
+#### Compiling MOD files
 
 In order to compile mod files, one can use **nrnivmodl-core** as:
 
@@ -273,7 +267,7 @@ In order to compile mod files, one can use **nrnivmodl-core** as:
 
 This will create a `special-core` executable under `<arch>` directory.
 
-##### Building with GPU support
+#### Building with GPU support
 
 CoreNEURON has support for GPUs using the OpenACC programming model when enabled with `-DCORENRN_ENABLE_GPU=ON`. Below are the steps to compile with PGI compiler:
 
@@ -282,12 +276,6 @@ module purge all
 module load nvidia-hpc-sdk/20.11 cuda/11 cmake openmpi # change pgi, cuda and mpi modules
 cmake .. -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install -DCMAKE_C_COMPILER=nvc -DCMAKE_CXX_COMPILER=nvc++
 make -j && make install
-```
-
-Note that the CUDA Toolkit version should be compatible with the PGI compiler installed on your system. Otherwise, you have to add extra C/C++ flags. For example, if we are using CUDA Toolkit 9.0 installation but PGI default target is CUDA 8.0 then we have to add :
-
-```bash
--DCMAKE_C_FLAGS:STRING="-O2 -ta=tesla:cuda9.0" -DCMAKE_CXX_FLAGS:STRING="-O2 -ta=tesla:cuda9.0"
 ```
 
 You have to run GPU executable with the `--gpu` flag. Make sure to enable cell re-ordering mechanism to improve GPU performance using `--cell_permute` option (permutation types : 2 or 1):
@@ -299,7 +287,7 @@ mpirun -n 1 ./bin/nrniv-core --mpi --gpu --tstop 100 --datpath ../tests/integrat
 Note: If your model is using Random123 random number generator, you cannot use the same executable for CPU and GPU runs. We suggest to install separate NEURON with CoreNEURON for CPU and GPU simulations. This will be fixed in future releases.
 
 
-##### Running tests with SLURM
+#### Running tests with SLURM
 
 If you have a different mpi launcher (than `mpirun`), you can specify it during cmake configuration as:
 
@@ -316,11 +304,11 @@ You can disable tests using with options:
 cmake .. -CORENRN_ENABLE_UNIT_TESTS=OFF
 ```
 
-##### CLI Options
+#### CLI Options
 
 To see all CLI options for CoreNEURON, see `./bin/nrniv-core -h`.
 
-##### Formatting CMake and C++ Code
+#### Formatting CMake and C++ Code
 
 In order to format code with `cmake-format` and `clang-format` tools, before creating a PR, enable below CMake options:
 
@@ -336,14 +324,14 @@ make cmake-format
 make clang-format
 ```
 
-### Citation
+## Citation
 
 If you would like to know more about CoreNEURON or would like to cite it, then use the following paper:
 
 * Pramod Kumbhar, Michael Hines, Jeremy Fouriaux, Aleksandr Ovcharenko, James King, Fabien Delalondre and Felix Schürmann. CoreNEURON : An Optimized Compute Engine for the NEURON Simulator ([doi.org/10.3389/fninf.2019.00063](https://doi.org/10.3389/fninf.2019.00063))
 
 
-### Support / Contribuition
+## Support / Contribuition
 
 If you see any issue, feel free to [raise a ticket](https://github.com/BlueBrain/CoreNeuron/issues/new). If you would like to improve this library, see [open issues](https://github.com/BlueBrain/CoreNeuron/issues).
 
@@ -352,7 +340,7 @@ You can see current [contributors here](https://github.com/BlueBrain/CoreNeuron/
 
 ## License
 * See LICENSE.txt
-* See [NEURON](https://www.neuron.yale.edu/neuron/)
+* See [NEURON](https://github.com/neuronsimulator/nrn)
 
 
 ## Funding
