@@ -45,7 +45,7 @@ jobs:
       
     steps:
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@latest
+        uses: jwlawson/actions-setup-cmake@v1.6
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
 
