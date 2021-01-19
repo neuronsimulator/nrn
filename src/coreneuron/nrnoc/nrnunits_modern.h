@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #ifndef nrnunits_modern_h
 #define nrnunits_modern_h
 

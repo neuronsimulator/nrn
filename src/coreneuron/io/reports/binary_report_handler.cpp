@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #include "binary_report_handler.hpp"
 #ifdef ENABLE_BIN_REPORTS
 #include "reportinglib/Records.h"

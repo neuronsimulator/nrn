@@ -1,4 +1,11 @@
 #!/usr/bin/python
+
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 # ----------------------------------------------------------------------------
 # read the translated mod files and construct _kinderiv.h
 # this is implemented to avoid function callbacks using

@@ -1,3 +1,9 @@
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 # For now use simple approach to get version information as git is
 # often avaialble on the machine where we are building from source
 

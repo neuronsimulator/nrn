@@ -1,3 +1,10 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
 
 /*
  * Coreneuron global variables are declared at least in the coreneuron namespace. In ispc it is,

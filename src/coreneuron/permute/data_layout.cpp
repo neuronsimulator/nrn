@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"

@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #include "report_event.hpp"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/utils/nrn_assert.h"

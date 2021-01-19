@@ -1,3 +1,9 @@
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 # enable @rpath in the install name for any shared library being built
 set(CMAKE_MACOSX_RPATH 1)
 

@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 // use LPT algorithm to balance cells so all warps have similar number
 // of compartments.
 // NB: Ideally we'd balance so that warps have similar ncycle. But we do not

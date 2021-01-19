@@ -1,4 +1,12 @@
 /*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
+/*
 To be included by a file that desires rendezvous rank exchange functionality.
 Need to define HAVEWANT_t, HAVEWANT_alltoallv, and HAVEWANT2Int
 */

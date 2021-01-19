@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/sim/multicore.hpp"

@@ -1,3 +1,11 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 /** When we use solve methods like euler, newton or kinetic schemes,
  *  the state/current updates function need to call solver methods
  *  defined in coreneuron. This is typically done via function pointers.

@@ -1,6 +1,15 @@
+/*
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+*/
+
 #include "coreneuron/mechanism/mech/cfile/scoplib.h"
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
 #include "coreneuron/sim/scopmath/errcodes.h"
+
 namespace coreneuron {
 #define s_(arg) _p[s[arg] * _STRIDE]
 

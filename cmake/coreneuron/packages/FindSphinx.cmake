@@ -1,3 +1,9 @@
+# =============================================================================
+# Copyright (C) 2016-2021 Blue Brain Project
+#
+# See top-level LICENSE file for details.
+# =============================================================================
+
 find_program(SPHINX_EXECUTABLE
         NAMES sphinx-build
         DOC "/path/to/sphinx-build")
