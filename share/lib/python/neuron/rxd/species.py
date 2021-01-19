@@ -1241,20 +1241,19 @@ class Species(_SpeciesMathable):
             raise RxDException("The represents=%s is not valid CURIE" % represents)
         else:
             self.represents = represents
-        initializer._init_lock.acquire()
-        _all_species.append(weakref.ref(self))
+        with initializer._init_lock:
+            _all_species.append(weakref.ref(self))
         
 
-        # declare an update to the structure of the model (the number of differential equations has changed)
-        nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
+            # declare an update to the structure of the model (the number of differential equations has changed)
+            nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
-        self._ion_register() 
+            self._ion_register() 
 
-        # initialize self if the rest of rxd is already initialized
-        if initializer.is_initialized():
-            self._do_init()
-            rxd._update_node_data(True, True)
-        initializer._init_lock.release()
+            # initialize self if the rest of rxd is already initialized
+            if initializer.is_initialized():
+                self._do_init()
+                rxd._update_node_data(True, True)
 
     
     def _do_init(self):
