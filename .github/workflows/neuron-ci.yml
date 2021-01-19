@@ -14,7 +14,7 @@ on:
 env:
   BUILD_TYPE: Release
   DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
-  DESIRED_CMAKE_VERSION: 3.8.2
+  DESIRED_CMAKE_VERSION: 3.8.x
 
 jobs:
   ci:
