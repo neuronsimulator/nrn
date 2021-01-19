@@ -22,20 +22,17 @@ namespace coreneuron {
 // If MATRIX_LAYOUT is 1 then a,b,d,rhs,v,area is not padded using NRN_SOA_PAD
 // When MATRIX_LAYOUT is 0 then mechanism pdata index values into _actual_v
 // and _actual_area data need to be updated.
-enum Layout {
-    SoA = 0,
-    AoS = 1
-};
+enum Layout { SoA = 0, AoS = 1 };
 
 #if !defined(LAYOUT)
-#define LAYOUT Layout::AoS
+#define LAYOUT        Layout::AoS
 #define MATRIX_LAYOUT Layout::AoS
 #else
 #define MATRIX_LAYOUT LAYOUT
 #endif
 
 /// return the new offset considering the byte aligment settings
-size_t nrn_soa_byte_align(size_t i); 
+size_t nrn_soa_byte_align(size_t i);
 
 /// This function return the index in a flat array of a matrix coordinate (icnt, isz).
 /// The matrix size is (cnt, sz)
@@ -50,4 +47,3 @@ int nrn_i_layout(int icnt, int cnt, int isz, int sz, int layout);
 
 int nrn_param_layout(int i, int mtype, Memb_list* ml);
 }  // namespace coreneuron
-

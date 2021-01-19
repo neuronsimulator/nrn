@@ -390,8 +390,8 @@ void nrn_multisend_receive(NrnThread* nt) {
         }
     }
 #endif
-//	w1 = nrn_wtime() - w1;
-//	w2 = nrn_wtime();
+    //	w1 = nrn_wtime() - w1;
+    //	w2 = nrn_wtime();
 
 #if ENQUEUE == 0
     multisend_receive_buffer[current_rbuf]->enqueue();

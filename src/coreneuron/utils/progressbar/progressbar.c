@@ -133,11 +133,11 @@ void progressbar_update(progressbar* bar, unsigned long value, double t) {
     bar->draw_time_interval = eta_s / (BAR_DRAW_COUNT_MAX - bar->drawn_count);
 
     if (bar->draw_time_interval < BAR_DRAW_INTERVAL_NOTTY) {
-        bar->draw_time_interval =
-            isatty(STDOUT_FILENO)
-                ? ((bar->draw_time_interval < BAR_DRAW_INTERVAL) ? BAR_DRAW_INTERVAL
-                                                                 : bar->draw_time_interval)
-                : BAR_DRAW_INTERVAL_NOTTY;
+        bar->draw_time_interval = isatty(STDOUT_FILENO)
+                                      ? ((bar->draw_time_interval < BAR_DRAW_INTERVAL)
+                                             ? BAR_DRAW_INTERVAL
+                                             : bar->draw_time_interval)
+                                      : BAR_DRAW_INTERVAL_NOTTY;
     }
 }
 
@@ -182,7 +182,7 @@ static int progressbar_label_width(int screen_width, int label_length, int bar_w
 static int progressbar_remaining_seconds(const progressbar* bar) {
     double offset = difftime(time(NULL), bar->start);
     if (bar->value > 0 && offset > 0) {
-        return (offset / (double)bar->value) * (bar->max - bar->value);
+        return (offset / (double) bar->value) * (bar->max - bar->value);
     } else {
         return 0;
     }
@@ -208,7 +208,7 @@ static void progressbar_draw(const progressbar* bar) {
     int bar_piece_count = bar_width - BAR_BORDER_WIDTH;
     int bar_piece_current = (progressbar_completed)
                                 ? bar_piece_count
-                                : bar_piece_count * ((double)bar->value / bar->max);
+                                : bar_piece_count * ((double) bar->value / bar->max);
 
     progressbar_time_components eta =
         (progressbar_completed)

@@ -69,9 +69,9 @@ static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
 #endif
 
 #if __TURBOC__ || VMS
-#define Free(arg) myfree((void*)arg)
+#define Free(arg) myfree((void*) arg)
 #else
-#define Free(arg) myfree((char*)arg)
+#define Free(arg) myfree((char*) arg)
 #endif
 #define nrn_malloc_lock()   /**/
 #define nrn_malloc_unlock() /**/
@@ -116,12 +116,12 @@ static SparseObj* create_sparseobj();
 #if defined(_OPENACC)
 #undef emalloc
 #undef ecalloc
-#define emalloc(arg) malloc(arg)
+#define emalloc(arg)        malloc(arg)
 #define ecalloc(arg1, arg2) malloc((arg1) * (arg2))
 #endif
 
 static Elm* nrn_pool_alloc(void* arg) {
-    return (Elm*)emalloc(sizeof(Elm));
+    return (Elm*) emalloc(sizeof(Elm));
 }
 
 /* sparse matrix dynamic allocation:
@@ -153,7 +153,7 @@ int sparse_thread(SparseObj* so,
                   SPFUN fun,
                   int linflag,
                   _threadargsproto_) {
-#define ix(arg) ((arg)*_STRIDE)
+#define ix(arg) ((arg) *_STRIDE)
 #define s_(arg) _p[ix(s[arg])]
 #define d_(arg) _p[ix(d[arg])]
 
@@ -194,10 +194,10 @@ int sparse_thread(SparseObj* so,
 int _cvode_sparse_thread(void** v, int n, int* x, SPFUN fun, _threadargsproto_)
 #define x_(arg) _p[x[arg] * _STRIDE]
 {
-    SparseObj* so = (SparseObj*)(*v);
+    SparseObj* so = (SparseObj*) (*v);
     if (!so) {
         so = create_sparseobj();
-        *v = (void*)so;
+        *v = (void*) so;
     }
     if (so->oldfun != fun) {
         so->oldfun = fun;
@@ -219,7 +219,7 @@ static int matsol(SparseObj* so, int _iml) {
     /* Upper triangularization */
     so->numop = 0;
     for (unsigned i = 1; i <= so->neqn; i++) {
-        Elm *pivot;
+        Elm* pivot;
         if (fabs((pivot = so->diag[i])->value[_iml]) <= ROUNDOFF) {
             return SINGULAR;
         }
@@ -277,15 +277,15 @@ static void initeqn(SparseObj* so, unsigned maxeqn) /* reallocate space for matr
     so->elmpool = nullptr;
     so->rowst = so->diag = nullptr;
     so->varord = nullptr;
-    so->rowst = (Elm**)myemalloc((maxeqn + 1) * sizeof(Elm*));
-    so->diag = (Elm**)myemalloc((maxeqn + 1) * sizeof(Elm*));
-    so->varord = (unsigned*)myemalloc((maxeqn + 1) * sizeof(unsigned));
-    so->rhs = (double*)myemalloc((maxeqn + 1) * so->_cntml_padded * sizeof(double));
-    so->ngetcall = (unsigned*)ecalloc(so->_cntml_padded, sizeof(unsigned));
+    so->rowst = (Elm**) myemalloc((maxeqn + 1) * sizeof(Elm*));
+    so->diag = (Elm**) myemalloc((maxeqn + 1) * sizeof(Elm*));
+    so->varord = (unsigned*) myemalloc((maxeqn + 1) * sizeof(unsigned));
+    so->rhs = (double*) myemalloc((maxeqn + 1) * so->_cntml_padded * sizeof(double));
+    so->ngetcall = (unsigned*) ecalloc(so->_cntml_padded, sizeof(unsigned));
     for (unsigned i = 1; i <= maxeqn; i++) {
         so->varord[i] = i;
-        so->diag[i] = (Elm*)nrn_pool_alloc(so->elmpool);
-        so->diag[i]->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
+        so->diag[i] = (Elm*) nrn_pool_alloc(so->elmpool);
+        so->diag[i]->value = (double*) ecalloc(so->_cntml_padded, sizeof(double));
         so->rowst[i] = so->diag[i];
         so->diag[i]->row = i;
         so->diag[i]->col = i;
@@ -338,8 +338,8 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new_elem)
         }
         /* insert below el */
         if (!new_elem) {
-            new_elem = (Elm*)nrn_pool_alloc(so->elmpool);
-            new_elem->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
+            new_elem = (Elm*) nrn_pool_alloc(so->elmpool);
+            new_elem->value = (double*) ecalloc(so->_cntml_padded, sizeof(double));
             increase_order(so, row);
         }
         new_elem->r_down = el->r_down;
@@ -380,8 +380,8 @@ static Elm* getelm(SparseObj* so, unsigned row, unsigned col, Elm* new_elem)
         }
         /* insert above el */
         if (!new_elem) {
-            new_elem = (Elm*)nrn_pool_alloc(so->elmpool);
-            new_elem->value = (double*)ecalloc(so->_cntml_padded, sizeof(double));
+            new_elem = (Elm*) nrn_pool_alloc(so->elmpool);
+            new_elem->value = (double*) ecalloc(so->_cntml_padded, sizeof(double));
             increase_order(so, row);
         }
         new_elem->r_up = el->r_up;
@@ -416,7 +416,7 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml) {
     if (!so->phase) {
         return so->coef_list[so->ngetcall[_iml]++];
     }
-    Elm* el = getelm(so, (unsigned)row, (unsigned)col, ELM0);
+    Elm* el = getelm(so, (unsigned) row, (unsigned) col, ELM0);
     if (so->phase == 1) {
         so->ngetcall[_iml]++;
     } else {
@@ -426,7 +426,7 @@ double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml) {
 }
 
 static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_) {
-    initeqn(so, (unsigned)n);
+    initeqn(so, (unsigned) n);
     so->phase = 1;
     so->ngetcall[0] = 0;
     spfun(fun, so, so->rhs);
@@ -434,7 +434,7 @@ static void create_coef_list(SparseObj* so, int n, SPFUN fun, _threadargsproto_)
         free(so->coef_list);
     }
     so->coef_list_size = so->ngetcall[0];
-    so->coef_list = (double**)myemalloc(so->ngetcall[0] * sizeof(double*));
+    so->coef_list = (double**) myemalloc(so->ngetcall[0] * sizeof(double*));
     spar_minorder(so);
     so->phase = 2;
     so->ngetcall[0] = 0;
@@ -463,7 +463,7 @@ static void init_minorder(SparseObj* so) {
         }
         Free(so->roworder);
     }
-    so->roworder = (Item**)myemalloc((so->neqn + 1) * sizeof(Item*));
+    so->roworder = (Item**) myemalloc((so->neqn + 1) * sizeof(Item*));
     so->nroworder = so->neqn;
     if (so->orderlist)
         freelist(so->orderlist);
@@ -550,13 +550,16 @@ static void get_next_pivot(SparseObj* so, unsigned i) {
     }
 
 #if DEBUG
-{int j; Item *_or;
-	printf("%d  ", i);
-	for (_or = so->orderlist->next, j=0; j<5 && _or != so->orderlist; j++, _or=_or->next) {
-		printf("(%d, %d)  ", _or->elm->row, _or->norder);
-	}
-	printf("\n");
-}
+    {
+        int j;
+        Item* _or;
+        printf("%d  ", i);
+        for (_or = so->orderlist->next, j = 0; j < 5 && _or != so->orderlist;
+             j++, _or = _or->next) {
+            printf("(%d, %d)  ", _or->elm->row, _or->norder);
+        }
+        printf("\n");
+    }
 #endif
     delete_item(order);
 }
@@ -578,7 +581,7 @@ following function calls.
 */
 
 static Item* newitem() {
-    Item* i = (Item*)myemalloc(sizeof(Item));
+    Item* i = (Item*) myemalloc(sizeof(Item));
     i->prev = ITEM0;
     i->next = ITEM0;
     i->norder = 0;
@@ -590,12 +593,12 @@ static List* newlist() {
     Item* i = newitem();
     i->prev = i;
     i->next = i;
-    return (List*)i;
+    return (List*) i;
 }
 
 static void freelist(List* list) /*free the list but not the elements*/
 {
-    Item *i2;
+    Item* i2;
     for (Item* i1 = list->next; i1 != list; i1 = i2) {
         i2 = i1->next;
         Free(i1);
@@ -633,10 +636,10 @@ static void* myemalloc(unsigned n) { /* check return from malloc */
     nrn_malloc_lock();
     void* p = malloc(n);
     nrn_malloc_unlock();
-    if (p == (void*)0) {
+    if (p == (void*) 0) {
         abort_run(LOWMEM);
     }
-    return (void*)p;
+    return (void*) p;
 }
 
 void myfree(void* ptr) {
@@ -735,7 +738,7 @@ static void re_link(SparseObj* so, unsigned i) {
 }
 
 static SparseObj* create_sparseobj() {
-    SparseObj* so = (SparseObj*)myemalloc(sizeof(SparseObj));
+    SparseObj* so = (SparseObj*) myemalloc(sizeof(SparseObj));
     nrn_malloc_lock();
     nrn_malloc_unlock();
     so->rowst = 0;

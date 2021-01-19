@@ -22,14 +22,15 @@ namespace coreneuron {
 struct VarWithMapping {
     int id;
     double* var_value;
-    VarWithMapping(int id_, double* v_) : id(id_), var_value(v_) {
-    }
+    VarWithMapping(int id_, double* v_)
+        : id(id_)
+        , var_value(v_) {}
 };
 
 // mapping the set of variables pointers to report to its gid
 using VarsToReport = std::unordered_map<int, std::vector<VarWithMapping>>;
 
-class ReportEvent : public DiscreteEvent {
+class ReportEvent: public DiscreteEvent {
   public:
     ReportEvent(double dt, double tstart, const VarsToReport& filtered_gids, const char* name);
 

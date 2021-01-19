@@ -32,7 +32,8 @@ static void nrn_rhs(NrnThread* _nt) {
     double* vec_v = &(VEC_V(0));
     int* parent_index = _nt->_v_parent_index;
 
-// clang-format off
+    // clang-format off
+
     #pragma acc parallel loop present(          \
         vec_rhs[0:i3], vec_d[0:i3])             \
         if (_nt->compute_gpu) async(_nt->stream_id)
@@ -64,7 +65,7 @@ static void nrn_rhs(NrnThread* _nt) {
             }
 #endif
         }
-    
+
     if (_nt->nrn_fast_imem) {
         /* _nrn_save_rhs has only the contribution of electrode current
            so here we transform so it only has membrane current contribution
@@ -75,11 +76,12 @@ static void nrn_rhs(NrnThread* _nt) {
         }
     }
 
-/* now the internal axial currents.
-The extracellular mechanism contribution is already done.
-        rhs += ai_j*(vi_j - vi)
-*/
-// clang-format off
+    /* now the internal axial currents.
+    The extracellular mechanism contribution is already done.
+            rhs += ai_j*(vi_j - vi)
+    */
+    // clang-format off
+
     #pragma acc parallel loop present(          \
         vec_rhs[0:i3], vec_d[0:i3],             \
         vec_a[0:i3], vec_b[0:i3],               \
@@ -119,7 +121,7 @@ static void nrn_lhs(NrnThread* _nt) {
             (*s)(_nt, tml->ml, tml->index);
 #ifdef DEBUG
             if (errno) {
-                hoc_warning("errno set during calculation of jacobian", (char*)0);
+                hoc_warning("errno set during calculation of jacobian", (char*) 0);
             }
 #endif
         }
@@ -147,8 +149,9 @@ static void nrn_lhs(NrnThread* _nt) {
         }
     }
 
-/* now add the axial currents */
-// clang-format off
+    /* now add the axial currents */
+    // clang-format off
+
     #pragma acc parallel loop present(          \
         vec_d[0:i3], vec_a[0:i3],               \
         vec_b[0:i3], parent_index[0:i3])        \

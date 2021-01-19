@@ -55,8 +55,7 @@ TNode::TNode(int ix) {
     children.reserve(2);
 }
 
-TNode::~TNode() {
-}
+TNode::~TNode() {}
 
 size_t TNode::mkhash() {  // call on all nodes in leaf to root order
     // concept from http://stackoverflow.com/questions/20511347/a-good-hash-function-for-a-vector
@@ -104,7 +103,7 @@ static char* stree(TNode* nd) {
     }
     s[0] = '(';
     s[1] = '\0';
-    for (const auto& child : nd->children) {  // need sorted by child hash
+    for (const auto& child: nd->children) {  // need sorted by child hash
         char* sr = stree(child);
         strcat(s, sr);
         free(sr);
@@ -124,7 +123,7 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
     size_t qcnt = 0;  // how many contiguous nodes have contiguous parents
 
     // first ncell nodes are by definition in contiguous order
-    for (const auto& n : nodevec) {
+    for (const auto& n: nodevec) {
         if (n->parent != nullptr) {
             break;
         }
@@ -165,14 +164,16 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
     // print result
     qcnt = 0;
 #if DEBUG
-  for (const auto& q: qual) {
-    qcnt += q.second;
-    printf("%6ld %6ld\n", q.first, q.second);
-  }
+    for (const auto& q: qual) {
+        qcnt += q.second;
+        printf("%6ld %6ld\n", q.first, q.second);
+    }
 #endif
 #if DEBUG
-  printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
-    qual.size(), qcnt, nodevec.size());
+    printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
+           qual.size(),
+           qcnt,
+           nodevec.size());
 #endif
 
     // how many race conditions. ie refer to same parent on different core
@@ -204,14 +205,14 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
         }
     }
 #if DEBUG
-  printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
-  printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
+    printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
+    printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
 #endif
 }
 
 size_t level_from_root(VecTNode& nodevec) {
     size_t maxlevel = 0;
-    for (auto& nd : nodevec) {
+    for (auto& nd: nodevec) {
         if (nd->parent) {
             nd->level = nd->parent->level + 1;
             if (maxlevel < nd->level) {
@@ -229,7 +230,7 @@ size_t level_from_leaf(VecTNode& nodevec) {
     for (size_t i = nodevec.size() - 1; true; --i) {
         TNode* nd = nodevec[i];
         size_t lmax = 0;
-        for (auto& child : nd->children) {
+        for (auto& child: nd->children) {
             if (lmax <= child->level) {
                 lmax = child->level + 1;
             }
@@ -279,8 +280,8 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
     size_t maxlevel = level_from_root(nodevec);
 
     // # in each level
-    std::vector<std::vector<size_t> > n_in_level(maxlevel + 1);
-    for (auto& n : n_in_level) {
+    std::vector<std::vector<size_t>> n_in_level(maxlevel + 1);
+    for (auto& n: n_in_level) {
         n.resize(ncell / groupsize);
     }
     for (const auto& n: nodevec) {
@@ -289,7 +290,7 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
     printf("n_in_level.size = %ld\n", n_in_level.size());
     for (size_t i = 0; i < n_in_level.size(); ++i) {
         printf("%5ld\n", i);
-        for (const auto& n : n_in_level[i]) {
+        for (const auto& n: n_in_level[i]) {
             printf(" %5ld", n);
         }
         printf("\n");
@@ -334,10 +335,10 @@ int* node_order(int ncell,
     check(nodevec);
 
 #if DEBUG
-  for (int i=0; i < ncell; ++i) {
-    TNode& nd = *nodevec[i];
-    printf("%d size=%ld hash=%ld ix=%d\n", i, nd.treesize, nd.hash, nd.nodeindex);
-  }
+    for (int i = 0; i < ncell; ++i) {
+        TNode& nd = *nodevec[i];
+        printf("%d size=%ld hash=%ld ix=%d\n", i, nd.treesize, nd.hash, nd.nodeindex);
+    }
 #endif
 
     if (0)
@@ -393,7 +394,9 @@ void check(VecTNode& nodevec) {
     for (size_t i = ncell; i < nnode; ++i) {
         TNode& nd = *nodevec[i];
         if (nd.parent->nodevec_index >= nd.nodevec_index) {
-            printf("error i=%ld nodevec_index=%ld parent=%ld\n", i, nd.nodevec_index,
+            printf("error i=%ld nodevec_index=%ld parent=%ld\n",
+                   i,
+                   nd.nodevec_index,
                    nd.parent->nodevec_index);
         }
         nrn_assert(nd.nodevec_index > nd.parent->nodevec_index);
@@ -407,9 +410,14 @@ void prtree(VecTNode& nodevec) {
     }
     for (size_t i = 0; i < nnode; ++i) {
         TNode& nd = *nodevec[i];
-        printf("%ld p=%d   c=%ld l=%ld o=%ld   ix=%d pix=%d\n", i,
-               nd.parent ? int(nd.parent->nodevec_index) : -1, nd.cellindex, nd.level,
-               nd.treenode_order, nd.nodeindex, nd.parent ? int(nd.parent->nodeindex) : -1);
+        printf("%ld p=%d   c=%ld l=%ld o=%ld   ix=%d pix=%d\n",
+               i,
+               nd.parent ? int(nd.parent->nodevec_index) : -1,
+               nd.cellindex,
+               nd.level,
+               nd.treenode_order,
+               nd.nodeindex,
+               nd.parent ? int(nd.parent->nodeindex) : -1);
     }
 }
 
@@ -471,10 +479,10 @@ void node_interleave_order(int ncell, VecTNode& nodevec) {
     std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
 
 #if DEBUG
-  for (size_t i=0; i < nodevec.size(); ++i) {
-    TNode& nd = *nodevec[i];
-    printf("%ld cell=%ld ix=%d\n",  i, nd.cellindex, nd.nodeindex);
-  }
+    for (size_t i = 0; i < nodevec.size(); ++i) {
+        TNode& nd = *nodevec[i];
+        printf("%ld cell=%ld ix=%d\n", i, nd.cellindex, nd.nodeindex);
+    }
 #endif
 }
 
@@ -491,9 +499,9 @@ static void admin1(int ncell,
     // cellsize is the number of nodes in the cell not counting root.
     // nstride is the maximum cell size (not counting root)
     // stride[i] is the number of cells with an ith node.
-    firstnode = (int*)ecalloc_align(ncell, sizeof(int));
-    lastnode = (int*)ecalloc_align(ncell, sizeof(int));
-    cellsize = (int*)ecalloc_align(ncell, sizeof(int));
+    firstnode = (int*) ecalloc_align(ncell, sizeof(int));
+    lastnode = (int*) ecalloc_align(ncell, sizeof(int));
+    cellsize = (int*) ecalloc_align(ncell, sizeof(int));
 
     nwarp = (ncell % warpsize == 0) ? (ncell / warpsize) : (ncell / warpsize + 1);
 
@@ -517,7 +525,7 @@ static void admin1(int ncell,
         }
     }
 
-    stride = (int*)ecalloc_align(nstride + 1, sizeof(int));
+    stride = (int*) ecalloc_align(nstride + 1, sizeof(int));
     for (int i = 0; i <= nstride; ++i) {
         stride[i] = 0;
     }
@@ -577,11 +585,11 @@ static void admin2(int ncell,
     // ncore is the number of warps * warpsize
     nwarp = nodevec[ncell - 1]->groupindex + 1;
 
-    ncycles = (int*)ecalloc_align(nwarp, sizeof(int));
-    stridedispl =
-        (int*)ecalloc_align(nwarp + 1, sizeof(int));          // running sum of ncycles (start at 0)
-    rootbegin = (int*)ecalloc_align(nwarp + 1, sizeof(int));  // index (+1) of first root in warp.
-    nodebegin = (int*)ecalloc_align(nwarp + 1, sizeof(int));  // index (+1) of first node in warp.
+    ncycles = (int*) ecalloc_align(nwarp, sizeof(int));
+    stridedispl = (int*) ecalloc_align(nwarp + 1,
+                                       sizeof(int));  // running sum of ncycles (start at 0)
+    rootbegin = (int*) ecalloc_align(nwarp + 1, sizeof(int));  // index (+1) of first root in warp.
+    nodebegin = (int*) ecalloc_align(nwarp + 1, sizeof(int));  // index (+1) of first node in warp.
 
     // rootbegin and nodebegin are the root index values + 1 of the last of
     // the sequence of constant groupindex
@@ -597,7 +605,7 @@ static void admin2(int ncell,
     // ncycles, stridedispl, and nstride
     nstride = 0;
     stridedispl[0] = 0;
-    for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
+    for (size_t iwarp = 0; iwarp < (size_t) nwarp; ++iwarp) {
         size_t j = size_t(nodebegin[iwarp + 1]);
         int nc = 0;
         size_t i = nodebegin[iwarp];
@@ -611,9 +619,9 @@ static void admin2(int ncell,
     }
 
     // strides
-    strides = (int*)ecalloc_align(nstride, sizeof(int));
+    strides = (int*) ecalloc_align(nstride, sizeof(int));
     nstride = 0;
-    for (size_t iwarp = 0; iwarp < (size_t)nwarp; ++iwarp) {
+    for (size_t iwarp = 0; iwarp < (size_t) nwarp; ++iwarp) {
         size_t j = size_t(nodebegin[iwarp + 1]);
         size_t i = nodebegin[iwarp];
         while (i < j) {
@@ -624,10 +632,10 @@ static void admin2(int ncell,
     }
 
 #if DEBUG
-printf("warp rootbegin nodebegin stridedispl\n");
-for (int i = 0; i <= nwarp; ++i){
-  printf("%4d %4d %4d %4d\n", i, rootbegin[i], nodebegin[i], stridedispl[i]);
-}
+    printf("warp rootbegin nodebegin stridedispl\n");
+    for (int i = 0; i <= nwarp; ++i) {
+        printf("%4d %4d %4d %4d\n", i, rootbegin[i], nodebegin[i], stridedispl[i]);
+    }
 #endif
 }
 }  // namespace coreneuron

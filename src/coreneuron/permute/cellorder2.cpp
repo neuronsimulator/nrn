@@ -28,8 +28,7 @@ using VVTN = vector<VTN>;    // group of levels
 using VVVTN = vector<VVTN>;  // groups
 
 // verify level in groups of nident identical nodes
-void chklevel(VTN& level, size_t nident = 8) {
-}
+void chklevel(VTN& level, size_t nident = 8) {}
 
 // first child before second child, etc
 // if same parent level, then parent order
@@ -203,21 +202,21 @@ static size_t need2move(TNode* nd) {
 
 #if DEBUG
 static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
-  size_t n = 0;
-  for (size_t i = 0; i < nodes.size(); i += warpsize) {
-    bool r = true;
-    for (size_t j=0; j < warpsize; ++j) {
-      if (nodes[i+j]->children.size() != 0) {
-        r = false;
-        break;
-      }
+    size_t n = 0;
+    for (size_t i = 0; i < nodes.size(); i += warpsize) {
+        bool r = true;
+        for (size_t j = 0; j < warpsize; ++j) {
+            if (nodes[i + j]->children.size() != 0) {
+                r = false;
+                break;
+            }
+        }
+        if (r) {
+            printf("warpsize group %ld starting at level %ld\n", i / warpsize, nodes[i]->level);
+            ++n;
+        }
     }
-    if (r) {
-      printf("warpsize group %ld starting at level %ld\n", i/warpsize, nodes[i]->level);
-      ++n;
-    }
-  }
-  printf("number of warpsize groups with only leaves = %ld\n", n);
+    printf("number of warpsize groups with only leaves = %ld\n", n);
 }
 #endif
 
@@ -231,7 +230,10 @@ static void pr_race_situation(VTN& nodes) {
             ++prace2;
         }
         if (is_parent_race(nd)) {
-            printf("level=%ld i=%ld d=%ld n=%ld", nd->level, nd->nodevec_index, dist2child(nd),
+            printf("level=%ld i=%ld d=%ld n=%ld",
+                   nd->level,
+                   nd->nodevec_index,
+                   dist2child(nd),
                    need2move(nd));
             for (size_t j = 0; j < nd->children.size(); ++j) {
                 TNode* cnd = nd->children[j];
@@ -295,8 +297,12 @@ static void eliminate_prace(TNode* nd, VTN& nodes) {
     size_t d = warpsize - dist2child(nd);
     bool b = eliminate_race(nd, d, nodes, nd);
     if (0 && !b) {
-        printf("could not eliminate prace for g=%ld  c=%ld l=%ld o=%ld   %ld\n", nd->groupindex,
-               nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+        printf("could not eliminate prace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+               nd->groupindex,
+               nd->cellindex,
+               nd->level,
+               nd->treenode_order,
+               nd->hash);
     }
 }
 
@@ -307,8 +313,12 @@ static void eliminate_crace(TNode* nd, VTN& nodes) {
     TNode* cnd = nd->children[0];
     bool b = eliminate_race(cnd, d, nodes, nd);
     if (0 && !b) {
-        printf("could not eliminate crace for g=%ld  c=%ld l=%ld o=%ld   %ld\n", nd->groupindex,
-               nd->cellindex, nd->level, nd->treenode_order, nd->hash);
+        printf("could not eliminate crace for g=%ld  c=%ld l=%ld o=%ld   %ld\n",
+               nd->groupindex,
+               nd->cellindex,
+               nd->level,
+               nd->treenode_order,
+               nd->hash);
     }
 }
 
@@ -359,8 +369,10 @@ static void question2(VVTN& levels) {
 
     if (0 && nodes.size() % warpsize != 0) {
         size_t nnode = nodes.size() - levels[0].size();
-        printf("warp of %ld cells has %ld nodes in last cycle %ld\n", levels[0].size(),
-               nnode % warpsize, nnode / warpsize + 1);
+        printf("warp of %ld cells has %ld nodes in last cycle %ld\n",
+               levels[0].size(),
+               nnode % warpsize,
+               nnode / warpsize + 1);
     }
 
     //  pr_race_situation(nodes);
@@ -410,13 +422,13 @@ static void analyze(VVTN& levels) {
 
 void prgroupsize(VVVTN& groups) {
 #if DEBUG
-  for (size_t i=0; i < groups[0].size(); ++i) {
-    printf("%5ld\n", i);
-    for (size_t j=0; j < groups.size(); ++j) {
-      printf(" %5ld", groups[j][i].size());   
+    for (size_t i = 0; i < groups[0].size(); ++i) {
+        printf("%5ld\n", i);
+        for (size_t j = 0; j < groups.size(); ++j) {
+            printf(" %5ld", groups[j][i].size());
+        }
+        printf("\n");
     }
-    printf("\n");
-  }
 #endif
 }
 

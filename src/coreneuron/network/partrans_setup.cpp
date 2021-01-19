@@ -34,9 +34,9 @@ class SidInfo {
 #define sgid_alltoallv nrnmpi_int_alltoallv
 #endif
 
-#define HAVEWANT_t sgid_t
+#define HAVEWANT_t         sgid_t
 #define HAVEWANT_alltoallv sgid_alltoallv
-#define HAVEWANT2Int std::map<sgid_t, int>
+#define HAVEWANT2Int       std::map<sgid_t, int>
 #include "coreneuron/network/have2want.h"
 
 namespace coreneuron {
@@ -97,8 +97,17 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     sgid_t* send_to_want;
     sgid_t* recv_from_have;
 
-    have_to_want(have, src2info_size, want, tar2info_size, send_to_want, outsrccnt_, outsrcdspl_,
-                 recv_from_have, insrccnt_, insrcdspl_, default_rendezvous);
+    have_to_want(have,
+                 src2info_size,
+                 want,
+                 tar2info_size,
+                 send_to_want,
+                 outsrccnt_,
+                 outsrcdspl_,
+                 recv_from_have,
+                 insrccnt_,
+                 insrcdspl_,
+                 default_rendezvous);
 
     int nhost = nrnmpi_numprocs;
 
@@ -115,11 +124,15 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     }
 
 #if DEBUG
-  printf("%d mpi outsrccnt_, outsrcdspl_, insrccnt, insrcdspl_\n", nrnmpi_myid);
-  for (int i = 0; i < nrnmpi_numprocs; ++i) {
-    printf("%d : %d %d %d %d\n", nrnmpi_myid, outsrccnt_[i], outsrcdspl_[i],
-      insrccnt_[i], insrcdspl_[i]);
-  }
+    printf("%d mpi outsrccnt_, outsrcdspl_, insrccnt, insrcdspl_\n", nrnmpi_myid);
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
+        printf("%d : %d %d %d %d\n",
+               nrnmpi_myid,
+               outsrccnt_[i],
+               outsrcdspl_[i],
+               insrccnt_[i],
+               insrcdspl_[i]);
+    }
 #endif
 
     // clean up a little
@@ -191,18 +204,27 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     }
 
 #if DEBUG
-  // things look ok so far?
-  for (int tid=0; tid < ngroup; ++tid) {
-    nrn_partrans::SetupTransferInfo& si = setup_info_[tid];
-    nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
-    for (size_t i=0; i < si.src_sid.size(); ++i) {
-      printf("%d %d src sid=%d v_index=%d %g\n", nrnmpi_myid, tid, si.src_sid[i], ttd.src_indices[i], nrn_threads[tid]._data[ttd.src_indices[i]]);
+    // things look ok so far?
+    for (int tid = 0; tid < ngroup; ++tid) {
+        nrn_partrans::SetupTransferInfo& si = setup_info_[tid];
+        nrn_partrans::TransferThreadData& ttd = transfer_thread_data_[tid];
+        for (size_t i = 0; i < si.src_sid.size(); ++i) {
+            printf("%d %d src sid=%d v_index=%d %g\n",
+                   nrnmpi_myid,
+                   tid,
+                   si.src_sid[i],
+                   ttd.src_indices[i],
+                   nrn_threads[tid]._data[ttd.src_indices[i]]);
+        }
+        for (size_t i = 0; i < ttd.tar_indices.size(); ++i) {
+            printf("%d %d src sid=i%z tar_index=%d %g\n",
+                   nrnmpi_myid,
+                   tid,
+                   i,
+                   ttd.tar_indices[i],
+                   nrn_threads[tid]._data[ttd.tar_indices[i]]);
+        }
     }
-    for (size_t i=0; i < ttd.tar_indices.size(); ++i) {
-      printf("%d %d src sid=i%z tar_index=%d %g\n", nrnmpi_myid, tid, i,
-        ttd.tar_indices[i], nrn_threads[tid]._data[ttd.tar_indices[i]]);
-    }
-  }
 #endif
 
     delete[] send_to_want;
@@ -213,7 +235,7 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
  *  For now, until conceptualization of the ordering is clear,
  *  just replace src setup_info_ indices values with stdindex2ptr determined
  *  index into NrnThread._data
-**/
+ **/
 void nrn_partrans::gap_data_indices_setup(NrnThread* n) {
     NrnThread& nt = *n;
     auto& ttd = transfer_thread_data_[nt.id];
@@ -248,15 +270,22 @@ void nrn_partrans::gap_data_indices_setup(NrnThread* n) {
 
 void nrn_partrans::gap_cleanup() {
     if (transfer_thread_data_) {
-        delete [] transfer_thread_data_; transfer_thread_data_ = nullptr;
+        delete[] transfer_thread_data_;
+        transfer_thread_data_ = nullptr;
     }
     if (insrc_buf_) {
-        delete [] insrc_buf_; insrc_buf_ = nullptr;
-        delete [] insrccnt_; insrccnt_ = nullptr;
-        delete [] insrcdspl_; insrcdspl_ = nullptr;   
-        delete [] outsrc_buf_; outsrc_buf_ = nullptr;  
-        delete [] outsrccnt_; outsrccnt_ = nullptr;
-        delete [] outsrcdspl_; outsrcdspl_ = nullptr;
+        delete[] insrc_buf_;
+        insrc_buf_ = nullptr;
+        delete[] insrccnt_;
+        insrccnt_ = nullptr;
+        delete[] insrcdspl_;
+        insrcdspl_ = nullptr;
+        delete[] outsrc_buf_;
+        outsrc_buf_ = nullptr;
+        delete[] outsrccnt_;
+        outsrccnt_ = nullptr;
+        delete[] outsrcdspl_;
+        outsrcdspl_ = nullptr;
     }
 }
 

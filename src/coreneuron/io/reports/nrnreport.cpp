@@ -83,4 +83,4 @@ void finalize_report() {
     sonata_flush(nrn_threads[0]._t);
 #endif
 }
-} // Namespace coreneuron
+}  // Namespace coreneuron

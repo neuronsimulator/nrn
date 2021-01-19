@@ -33,20 +33,20 @@ void report_cell_stats(void) {
     long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, gstat_array[NUM_STATS];
 
     for (int ith = 0; ith < nrn_nthread; ++ith) {
-        stat_array[0] += (long)nrn_threads[ith].ncell;           // number of cells
-        stat_array[10] += (long)nrn_threads[ith].end;            // number of compartments
-        stat_array[1] += (long)nrn_threads[ith].n_presyn;        // number of presyns
-        stat_array[2] += (long)nrn_threads[ith].n_input_presyn;  // number of input presyns
-        stat_array[3] += (long)nrn_threads[ith].n_netcon;        // number of netcons, synapses
-        stat_array[4] += (long)nrn_threads[ith].n_pntproc;       // number of point processes
+        stat_array[0] += (long) nrn_threads[ith].ncell;           // number of cells
+        stat_array[10] += (long) nrn_threads[ith].end;            // number of compartments
+        stat_array[1] += (long) nrn_threads[ith].n_presyn;        // number of presyns
+        stat_array[2] += (long) nrn_threads[ith].n_input_presyn;  // number of input presyns
+        stat_array[3] += (long) nrn_threads[ith].n_netcon;        // number of netcons, synapses
+        stat_array[4] += (long) nrn_threads[ith].n_pntproc;       // number of point processes
         if (nrn_partrans::transfer_thread_data_) {
             size_t n = nrn_partrans::transfer_thread_data_[ith].tar_indices.size();
-            stat_array[11] += (long)n;  // number of transfer targets
+            stat_array[11] += (long) n;  // number of transfer targets
             n = nrn_partrans::transfer_thread_data_[ith].src_indices.size();
-            stat_array[12] += (long)n;  // number of transfer sources
+            stat_array[12] += (long) n;  // number of transfer sources
         }
     }
-    stat_array[5] = (long)spikevec_gid.size();  // number of spikes
+    stat_array[5] = (long) spikevec_gid.size();  // number of spikes
 
     int spikevec_positive_gid_size = 0;
     for (std::size_t i = 0; i < spikevec_gid.size(); ++i) {
@@ -55,7 +55,7 @@ void report_cell_stats(void) {
         }
     }
 
-    stat_array[6] = (long)spikevec_positive_gid_size;  // number of non-negative gid spikes
+    stat_array[6] = (long) spikevec_positive_gid_size;  // number of non-negative gid spikes
 
 #if NRNMPI
     nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);

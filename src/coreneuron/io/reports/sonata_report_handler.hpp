@@ -15,10 +15,10 @@
 
 namespace coreneuron {
 
-class SonataReportHandler : public ReportHandler {
+class SonataReportHandler: public ReportHandler {
   public:
-    SonataReportHandler(ReportConfiguration& config) : ReportHandler(config) {
-    }
+    SonataReportHandler(ReportConfiguration& config)
+        : ReportHandler(config) {}
 
     void create_report(double dt, double tstop, double delay) override;
 #ifdef ENABLE_SONATA_REPORTS

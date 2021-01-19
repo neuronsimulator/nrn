@@ -39,7 +39,7 @@ void nrn_deliver_events(NrnThread* nt) {
     /*before executing on gpu, we have to update the NetReceiveBuffer_t on GPU */
     update_net_receive_buffer(nt);
 
-    for (auto& net_buf_receive : corenrn.get_net_buf_receive()) {
+    for (auto& net_buf_receive: corenrn.get_net_buf_receive()) {
         (*net_buf_receive.first)(nt);
     }
 }
@@ -63,6 +63,7 @@ void init_net_events() {
         int n_weight = nt->n_weight;
         if (n_weight) {
             // clang-format off
+
             #pragma acc update device(weights[0 : n_weight]) if (nt->compute_gpu)
             // clang-format on
         }
@@ -74,14 +75,14 @@ void nrn_play_init() {
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         NrnThread* nt = nrn_threads + ith;
         for (int i = 0; i < nt->n_vecplay; ++i) {
-            ((PlayRecord*)nt->_vecplay[i])->play_init();
+            ((PlayRecord*) nt->_vecplay[i])->play_init();
         }
     }
 }
 
 void fixed_play_continuous(NrnThread* nt) {
     for (int i = 0; i < nt->n_vecplay; ++i) {
-        ((PlayRecord*)nt->_vecplay[i])->continuous(nt->_t);
+        ((PlayRecord*) nt->_vecplay[i])->continuous(nt->_t);
     }
 }
 

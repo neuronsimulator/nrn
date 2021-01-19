@@ -46,9 +46,8 @@ int corenrn_embedded_nthread;
 void (*nrn2core_group_ids_)(int*);
 
 extern "C" {
-coreneuron::nrn_partrans::SetupTransferInfo*
-    (*nrn2core_get_partrans_setup_info_)(int ngroup, int cn_nthread,
-                                         size_t cn_sidt_size);
+coreneuron::nrn_partrans::SetupTransferInfo* (
+    *nrn2core_get_partrans_setup_info_)(int ngroup, int cn_nthread, size_t cn_sidt_size);
 }
 
 void (*nrn2core_get_trajectory_requests_)(int tid,
@@ -166,7 +165,7 @@ std::vector<int*> nrnthreads_netcon_srcgid;
 
 /// If a nrnthreads_netcon_srcgid is negative, need to determine the thread when
 /// in order to use the correct neg_gid2out[tid] map
-std::vector<std::vector<int> > nrnthreads_netcon_negsrcgid_tid;
+std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 /* read files.dat file and distribute cellgroups to all mpi ranks */
 void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
@@ -368,7 +367,7 @@ void determine_inputpresyn() {
             int gid = nrnthreads_netcon_srcgid[ith][i];
             int tid = ith;
             if (!negsrcgid_tid.empty() && gid < -1) {
-              tid = negsrcgid_tid[i_tid++];
+                tid = negsrcgid_tid[i_tid++];
             }
             PreSyn* ps;
             InputPreSyn* psi;
@@ -415,7 +414,7 @@ void nrn_setup(const char* filesdat,
                           gidgroups,
                           datpath,
                           strlen(restore_path) == 0 ? datpath : restore_path);
-   
+
 
     // temporary bug work around. If any process has multiple threads, no
     // process can have a single thread. So, for now, if one thread, make two.
@@ -477,7 +476,7 @@ void nrn_setup(const char* filesdat,
         coreneuron::phase_wrapper<coreneuron::phase::one>(userParams);
     } else {
         nrn_multithread_job([](NrnThread* n) {
-            Phase1 p1; 
+            Phase1 p1;
             p1.read_direct(n->id);
             NrnThread& nt = *n;
             p1.populate(nt, mut);
@@ -500,8 +499,7 @@ void nrn_setup(const char* filesdat,
     if (nrn_have_gaps) {
         nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
         if (!corenrn_embedded) {
-            nrn_partrans::setup_info_ = new nrn_partrans::SetupTransferInfo[
-                nrn_nthread];
+            nrn_partrans::setup_info_ = new nrn_partrans::SetupTransferInfo[nrn_nthread];
             coreneuron::phase_wrapper<coreneuron::gap>(userParams);
         } else {
             nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(
@@ -512,7 +510,7 @@ void nrn_setup(const char* filesdat,
         nrn_partrans::gap_mpi_setup(userParams.ngroup);
 
         // Whether allocated in NEURON or here, delete here.
-        delete [] nrn_partrans::setup_info_;
+        delete[] nrn_partrans::setup_info_;
         nrn_partrans::setup_info_ = nullptr;
     }
 
@@ -555,7 +553,7 @@ void setup_ThreadData(NrnThread& nt) {
         Memb_func& mf = corenrn.get_memb_func(tml->index);
         Memb_list* ml = tml->ml;
         if (mf.thread_size_) {
-            ml->_thread = (ThreadDatum*)ecalloc_align(mf.thread_size_, sizeof(ThreadDatum));
+            ml->_thread = (ThreadDatum*) ecalloc_align(mf.thread_size_, sizeof(ThreadDatum));
             if (mf.thread_mem_init_) {
                 {
                     const std::lock_guard<OMP_Mutex> lock(mut);
@@ -605,14 +603,13 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
     }
 
 #if DEBUG
-  printf("%d read_phasegap tid=%d nsrc=%d ntar=%d\n",
-    nrnmpi_myid, nt.id, nsrc, ntar);
-  for (int i=0; i < si.nsrc; ++i) {
-    printf("src %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
-  }
-  for (int i=0; i <si.ntar; ++i) {
-    printf("tar %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
-  }
+    printf("%d read_phasegap tid=%d nsrc=%d ntar=%d\n", nrnmpi_myid, nt.id, nsrc, ntar);
+    for (int i = 0; i < si.nsrc; ++i) {
+        printf("src %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
+    }
+    for (int i = 0; i < si.ntar; ++i) {
+        printf("tar %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
+    }
 #endif
 }
 
@@ -629,15 +626,15 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
-        return nt._data + (v0 + ix);                // relative to nt._data
-    } else if (mtype == i_membrane_) {              // membrane current from fast_imem calculation
-            int i_mem = nt.nrn_fast_imem->nrn_sav_rhs - nt._data;
-            int ix = index;  // relative to nrn_fast_imem->nrn_sav_rhs
-            nrn_assert((ix >= 0) && (ix < nt.end));
-            if (nt._permute) {
-                node_permute(&ix, 1, nt._permute);
-            }
-            return nt._data + (i_mem + ix);         // relative to nt._data
+        return nt._data + (v0 + ix);    // relative to nt._data
+    } else if (mtype == i_membrane_) {  // membrane current from fast_imem calculation
+        int i_mem = nt.nrn_fast_imem->nrn_sav_rhs - nt._data;
+        int ix = index;  // relative to nrn_fast_imem->nrn_sav_rhs
+        nrn_assert((ix >= 0) && (ix < nt.end));
+        if (nt._permute) {
+            node_permute(&ix, 1, nt._permute);
+        }
+        return nt._data + (i_mem + ix);                                 // relative to nt._data
     } else if (mtype > 0 && mtype < corenrn.get_memb_funcs().size()) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
@@ -835,7 +832,7 @@ void nrn_cleanup() {
 
         // mapping information is available only for non-empty NrnThread
         if (nt->mapping && nt->ncell) {
-            delete ((NrnThreadMappingInfo*)nt->mapping);
+            delete ((NrnThreadMappingInfo*) nt->mapping);
         }
 
         free_memory(nt->_ml_list);
@@ -883,7 +880,7 @@ void delete_trajectory_requests(NrnThread& nt) {
 void read_phase1(NrnThread& nt, UserParams& userParams) {
     Phase1 p1;
     p1.read_file(userParams.file_reader[nt.id]);
-    
+
     // Protect gid2in, gid2out and neg_gid2out
     p1.populate(nt, mut);
 }
@@ -934,10 +931,10 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
     }
 
     // make number #cells match with mapping size
-    nrn_assert((int)ntmapping->size() == nt.ncell);
+    nrn_assert((int) ntmapping->size() == nt.ncell);
 
     // set pointer in NrnThread
-    nt.mapping = (void*)ntmapping;
+    nt.mapping = (void*) ntmapping;
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {
@@ -949,9 +946,13 @@ static size_t memb_list_size(NrnThreadMembList* tml) {
     nbyte += corenrn.get_prop_dparam_size()[tml->index] * tml->ml->nodecount * sizeof(Datum);
 #ifdef DEBUG
     int i = tml->index;
-    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n", corenrn.get_memb_func(i).sym, i,
+    printf("%s %d psize=%d ppsize=%d cnt=%d nbyte=%ld\n",
+           corenrn.get_memb_func(i).sym,
+           i,
            corenrn.get_prop_param_size()[i],
-           corenrn.get_prop_dparam_size()[i], tml->ml->nodecount, nbyte);
+           corenrn.get_prop_dparam_size()[i],
+           tml->ml->nodecount,
+           nbyte);
 #endif
     return nbyte;
 }
@@ -961,8 +962,8 @@ size_t output_presyn_size(void) {
     if (gid2out.empty()) {
         return 0;
     }
-    size_t nbyte =
-        sizeof(gid2out) + sizeof(int) * gid2out.size() + sizeof(PreSyn*) * gid2out.size();
+    size_t nbyte = sizeof(gid2out) + sizeof(int) * gid2out.size() +
+                   sizeof(PreSyn*) * gid2out.size();
 #ifdef DEBUG
     printf(" gid2out table bytes=~%ld size=%d\n", nbyte, gid2out.size());
 #endif
@@ -973,8 +974,8 @@ size_t input_presyn_size(void) {
     if (gid2in.empty()) {
         return 0;
     }
-    size_t nbyte =
-        sizeof(gid2in) + sizeof(int) * gid2in.size() + sizeof(InputPreSyn*) * gid2in.size();
+    size_t nbyte = sizeof(gid2in) + sizeof(int) * gid2in.size() +
+                   sizeof(InputPreSyn*) * gid2in.size();
 #ifdef DEBUG
     printf(" gid2in table bytes=~%ld size=%d\n", nbyte, gid2in.size());
 #endif
@@ -1015,7 +1016,9 @@ size_t model_size(void) {
         printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
         printf("nbyte so far %ld\n", nb_nt);
         printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn * sz_ps);
-        printf("n_input_presyn = %d sz=%ld nbyte=%ld\n", nt.n_input_presyn, sz_psi,
+        printf("n_input_presyn = %d sz=%ld nbyte=%ld\n",
+               nt.n_input_presyn,
+               sz_psi,
                nt.n_input_presyn * sz_psi);
         printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc * sz_pp);
         printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon * sz_nc);
@@ -1039,8 +1042,10 @@ size_t model_size(void) {
     nbyte += input_presyn_size();
 
 #ifdef DEBUG
-    printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n", nrnran123_state_size(),
-           nrnran123_instance_count(), nrnran123_instance_count() * nrnran123_state_size());
+    printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n",
+           nrnran123_state_size(),
+           nrnran123_instance_count(),
+           nrnran123_instance_count() * nrnran123_state_size());
 #endif
 
     nbyte += nrnran123_instance_count() * nrnran123_state_size();

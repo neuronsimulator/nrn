@@ -60,7 +60,7 @@ static char RCSid[] = "newton.c,v 1.3 1999/01/04 12:46:48 hines Exp";
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
-#define ix(arg) ((arg)*_STRIDE)
+#define ix(arg) ((arg) *_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
 int nrn_newton_thread(NewtonSpace* ns,
@@ -102,7 +102,7 @@ int nrn_newton_thread(NewtonSpace* ns,
         }
 
         if (!done) {
-            nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*)0, _threadargs_);
+            nrn_scopmath_solve_thread(n, jacobian, value, perm, delta_x, (int*) 0, _threadargs_);
 
             /* Update solution vector and compute norms of delta_x and value */
 
@@ -190,7 +190,7 @@ void nrn_buildjacobian_thread(NewtonSpace* ns,
                               double* value,
                               double** jacobian,
                               _threadargsproto_) {
-#define x_(arg) _p[(arg)*_STRIDE]
+#define x_(arg) _p[(arg) *_STRIDE]
     double* high_value = ns->high_value;
     double* low_value = ns->low_value;
 
@@ -220,12 +220,12 @@ void nrn_buildjacobian_thread(NewtonSpace* ns,
 }
 
 NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
-    NewtonSpace* ns = (NewtonSpace*)emalloc(sizeof(NewtonSpace));
+    NewtonSpace* ns = (NewtonSpace*) emalloc(sizeof(NewtonSpace));
     ns->n = n;
     ns->n_instance = n_instance;
     ns->delta_x = makevector(n * n_instance * sizeof(double));
     ns->jacobian = makematrix(n, n * n_instance);
-    ns->perm = (int*)emalloc((unsigned)(n * n_instance * sizeof(int)));
+    ns->perm = (int*) emalloc((unsigned) (n * n_instance * sizeof(int)));
     ns->high_value = makevector(n * n_instance * sizeof(double));
     ns->low_value = makevector(n * n_instance * sizeof(double));
     ns->rowmax = makevector(n * n_instance * sizeof(double));
@@ -234,12 +234,12 @@ NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
 }
 
 void nrn_destroy_newtonspace(NewtonSpace* ns) {
-    free((char*)ns->perm);
+    free((char*) ns->perm);
     freevector(ns->delta_x);
     freematrix(ns->jacobian);
     freevector(ns->high_value);
     freevector(ns->low_value);
     freevector(ns->rowmax);
-    free((char*)ns);
+    free((char*) ns);
 }
 }  // namespace coreneuron

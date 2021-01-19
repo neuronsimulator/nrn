@@ -46,8 +46,13 @@ static void celldebug(const char* p, T& map) {
     f << std::endl;
 }
 
-static void
-alltoalldebug(const char* p, const std::vector<int>& s, const std::vector<int>& scnt, const std::vector<int>& sdispl, const std::vector<int>& r, const std::vector<int>& rcnt, const std::vector<int>& rdispl) {
+static void alltoalldebug(const char* p,
+                          const std::vector<int>& s,
+                          const std::vector<int>& scnt,
+                          const std::vector<int>& sdispl,
+                          const std::vector<int>& r,
+                          const std::vector<int>& rcnt,
+                          const std::vector<int>& rdispl) {
     std::string fname = std::string("debug.") + std::to_string(nrnmpi_myid);
     std::ofstream f(fname, std::ios::app);
     f << std::endl << p << std::endl;
@@ -70,10 +75,14 @@ alltoalldebug(const char* p, const std::vector<int>& s, const std::vector<int>& 
 }
 #else
 template <typename T>
-static void celldebug(const char*, T&) {
-}
-static void alltoalldebug(const char*, const std::vector<int>&, const std::vector<int>&, const std::vector<int>&, const std::vector<int>&, const std::vector<int>&, const std::vector<int>&) {
-}
+static void celldebug(const char*, T&) {}
+static void alltoalldebug(const char*,
+                          const std::vector<int>&,
+                          const std::vector<int>&,
+                          const std::vector<int>&,
+                          const std::vector<int>&,
+                          const std::vector<int>&,
+                          const std::vector<int>&) {}
 #endif
 
 #if DEBUG
@@ -83,7 +92,7 @@ void phase1debug(int* targets_phase1) {
     f << std::endl << "phase1debug " << nrnmpi_myid;
     for (auto& g: gid2out) {
         PreSyn* ps = g.second;
-        f << std::endl <<  " " << std::setw(2) << std::setfill('0') << ps->gid_ << ":";
+        f << std::endl << " " << std::setw(2) << std::setfill('0') << ps->gid_ << ":";
         int* ranks = targets_phase1 + ps->multisend_index_;
         int n = ranks[1];
         ranks += 2;
@@ -101,7 +110,7 @@ void phase2debug(int* targets_phase2) {
     for (auto& g: gid2in) {
         int gid = g.first;
         InputPreSyn* ps = g.second;
-        f << std::endl <<  " " << std::setw(2) << std::setfill('0') << gid << ":";
+        f << std::endl << " " << std::setw(2) << std::setfill('0') << gid << ":";
         int j = ps->multisend_phase2_index_;
         if (j >= 0) {
             int* ranks = targets_phase2 + j;
@@ -129,15 +138,18 @@ static std::pair<std::vector<int>, std::vector<int>> all2allv_helper(const std::
     std::vector<int> c(np, 1);
     std::vector<int> rdispl = newoffset(c);
     std::vector<int> rcnt(np, 0);
-    nrnmpi_int_alltoallv(scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
+    nrnmpi_int_alltoallv(
+        scnt.data(), c.data(), rdispl.data(), rcnt.data(), c.data(), rdispl.data());
     rdispl = newoffset(rcnt);
     return std::make_pair(std::move(rcnt), std::move(rdispl));
 }
 
 #define all2allv_perf 1
 // input: s, scnt, sdispl; output: r, rdispl
-static std::pair<std::vector<int>, std::vector<int>>
-all2allv_int(const std::vector<int>& s, const std::vector<int>& scnt, const std::vector<int>& sdispl, const char* dmes) {
+static std::pair<std::vector<int>, std::vector<int>> all2allv_int(const std::vector<int>& s,
+                                                                  const std::vector<int>& scnt,
+                                                                  const std::vector<int>& sdispl,
+                                                                  const char* dmes) {
 #if all2allv_perf
     double tm = nrn_wtime();
 #endif
@@ -147,7 +159,8 @@ all2allv_int(const std::vector<int>& s, const std::vector<int>& scnt, const std:
     std::vector<int> rdispl;
     std::tie(rcnt, rdispl) = all2allv_helper(scnt);
     std::vector<int> r(rdispl[np], 0);
-    nrnmpi_int_alltoallv(s.data(), scnt.data(), sdispl.data(), r.data(), rcnt.data(), rdispl.data());
+    nrnmpi_int_alltoallv(
+        s.data(), scnt.data(), sdispl.data(), r.data(), rcnt.data(), rdispl.data());
     alltoalldebug(dmes, s, scnt, sdispl, r, rcnt, rdispl);
 
 #if all2allv_perf
@@ -179,8 +192,10 @@ class TarList {
 using Int2TarList = std::map<int, TarList*>;
 
 TarList::TarList()
-  : size(0), list(nullptr), rank(-1), indices(nullptr)
-{}
+    : size(0)
+    , list(nullptr)
+    , rank(-1)
+    , indices(nullptr) {}
 
 TarList::~TarList() {
     delete[] list;

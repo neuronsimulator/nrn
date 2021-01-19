@@ -23,14 +23,14 @@ double* vector_vec(IvocVect* v) {
  * Retro-compatibility implementations
  */
 void* vector_new1(int n) {
-    return (void*)(new IvocVect(n));
+    return (void*) (new IvocVect(n));
 }
 
 int vector_capacity(void* v) {
-    return ((IvocVect*)v)->size();
+    return ((IvocVect*) v)->size();
 }
 double* vector_vec(void* v) {
-    return ((IvocVect*)v)->data();
+    return ((IvocVect*) v)->data();
 }
 
 }  // namespace coreneuron

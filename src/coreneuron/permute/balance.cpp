@@ -84,8 +84,11 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
     // i.e. pieces are cellsize
     double best_balance = 0.0;
     std::vector<size_t>* inwarp = lpt(nwarp, cellsize, &best_balance);
-    printf("best_balance=%g ncell=%ld ntype=%ld nwarp=%ld\n", best_balance, ncell,
-           typedispl.size() - 1, nwarp);
+    printf("best_balance=%g ncell=%ld ntype=%ld nwarp=%ld\n",
+           best_balance,
+           ncell,
+           typedispl.size() - 1,
+           nwarp);
 
     // order the roots for balance
     for (size_t i = 0; i < ncell; ++i) {

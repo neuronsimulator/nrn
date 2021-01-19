@@ -129,7 +129,10 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
     initialize_progress_bar(step_group_n);
 
     while (step_group_end < step_group_n) {
-        nrn_multithread_job(nrn_fixed_step_group_thread, step_group_n, step_group_begin, step_group_end);
+        nrn_multithread_job(nrn_fixed_step_group_thread,
+                            step_group_n,
+                            step_group_begin,
+                            step_group_end);
 #if NRNMPI
         nrn_spike_exchange(nrn_threads);
 #endif
@@ -148,7 +151,10 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
     finalize_progress_bar();
 }
 
-static void* nrn_fixed_step_group_thread(NrnThread* nth, int step_group_max, int step_group_begin, int& step_group_end) {
+static void* nrn_fixed_step_group_thread(NrnThread* nth,
+                                         int step_group_max,
+                                         int step_group_begin,
+                                         int& step_group_end) {
     nth->_stop_stepping = 0;
     for (int i = step_group_begin; i < step_group_max; ++i) {
         nrn_fixed_step_thread(nth);
@@ -176,7 +182,8 @@ void update(NrnThread* _nt) {
 
     /* do not need to worry about linmod or extracellular*/
     if (secondorder) {
-// clang-format off
+        // clang-format off
+
         #pragma acc parallel loop present(          \
             vec_v[0:i2], vec_rhs[0:i2])             \
             if (_nt->compute_gpu) async(stream_id)
@@ -185,7 +192,8 @@ void update(NrnThread* _nt) {
             vec_v[i] += 2. * vec_rhs[i];
         }
     } else {
-// clang-format off
+        // clang-format off
+
         #pragma acc parallel loop present(              \
                 vec_v[0:i2], vec_rhs[0:i2])             \
                 if (_nt->compute_gpu) async(stream_id)
@@ -201,7 +209,7 @@ void update(NrnThread* _nt) {
         assert(_nt->tml->index == CAP);
         nrn_cur_capacitance(_nt, _nt->tml->ml, _nt->tml->index);
     }
-    if (nrn_use_fast_imem) { 
+    if (nrn_use_fast_imem) {
         nrn_calc_fast_imem(_nt);
     }
 }
@@ -269,7 +277,7 @@ void nrncore2nrn_send_values(NrnThread* nth) {
         // \todo Check if user has requested voltages for this NrnThread object.
         //       Currently we are updating voltages if there is any trajectory
         //       requested by NEURON.
-        update_voltage_from_gpu(nth); 
+        update_voltage_from_gpu(nth);
 
         if (tr->varrays) {  // full trajectories into Vector data
             double** va = tr->varrays;
@@ -303,8 +311,9 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
     if (nth->ncell) {
 #if defined(_OPENACC)
         int stream_id = nth->stream_id;
-/*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
-// clang-format off
+        /*@todo: do we need to update nth->_t on GPU: Yes (Michael, but can launch kernel) */
+        // clang-format off
+
         #pragma acc update device(nth->_t) if (nth->compute_gpu) async(stream_id)
         #pragma acc wait(stream_id)
 // clang-format on
@@ -344,8 +353,9 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
     if (nth->ncell) {
 #if defined(_OPENACC)
         int stream_id = nth->stream_id;
-/*@todo: do we need to update nth->_t on GPU */
-// clang-format off
+        /*@todo: do we need to update nth->_t on GPU */
+        // clang-format off
+
         #pragma acc update device(nth->_t) if (nth->compute_gpu) async(stream_id)
         #pragma acc wait(stream_id)
 // clang-format on

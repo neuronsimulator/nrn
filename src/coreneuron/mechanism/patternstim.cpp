@@ -119,7 +119,7 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
     int gid;
 
     while (fscanf(f, "%lf %d\n", &stime, &gid) == 2) {
-        if ( stime >= t && stime <= tstop) {
+        if (stime >= t && stime <= tstop) {
             spikes.push_back(std::make_pair(stime, gid));
         }
     }
@@ -132,8 +132,8 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
     std::sort(spikes.begin(), spikes.end(), spike_comparator);
 
     // fill gid and time vectors
-    *tvec = (double*)emalloc(spikes.size() * sizeof(double));
-    *gidvec = (int*)emalloc(spikes.size() * sizeof(int));
+    *tvec = (double*) emalloc(spikes.size() * sizeof(double));
+    *gidvec = (int*) emalloc(spikes.size() * sizeof(int));
 
     for (size_t i = 0; i < spikes.size(); i++) {
         (*tvec)[i] = spikes[i].first;
@@ -145,7 +145,7 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
 
 // see nrn_setup.cpp:read_phase2 for how it creates NrnThreadMembList instances.
 static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
-    NrnThreadMembList* tml = (NrnThreadMembList*)emalloc(sizeof(NrnThreadMembList));
+    NrnThreadMembList* tml = (NrnThreadMembList*) emalloc(sizeof(NrnThreadMembList));
     tml->dependencies = nullptr;
     tml->ndependencies = 0;
     tml->index = type;
@@ -156,12 +156,12 @@ static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
     int psize = corenrn.get_prop_param_size()[type];
     int dsize = corenrn.get_prop_dparam_size()[type];
 
-    tml->ml = (Memb_list*)emalloc(sizeof(Memb_list));
+    tml->ml = (Memb_list*) emalloc(sizeof(Memb_list));
     tml->ml->nodecount = 1;
     tml->ml->_nodecount_padded = tml->ml->nodecount;
     tml->ml->nodeindices = nullptr;
-    tml->ml->data = (double*)ecalloc(tml->ml->nodecount * psize, sizeof(double));
-    tml->ml->pdata = (Datum*)ecalloc(tml->ml->nodecount * dsize, sizeof(Datum));
+    tml->ml->data = (double*) ecalloc(tml->ml->nodecount * psize, sizeof(double));
+    tml->ml->pdata = (Datum*) ecalloc(tml->ml->nodecount * dsize, sizeof(Datum));
     tml->ml->_thread = nullptr;
     tml->ml->_net_receive_buffer = nullptr;
     tml->ml->_net_send_buffer = nullptr;
@@ -238,7 +238,7 @@ Point_process* nrn_artcell_instantiate(const char* mechname) {
     for (int i = 0; i < dsize; ++i) {
         tml->ml->pdata[i] = nt->_nvdata + i;
     }
-    nt->_vdata[nt->_nvdata + 1] = (void*)pnt;
+    nt->_vdata[nt->_nvdata + 1] = (void*) pnt;
 
     return pnt;
 }

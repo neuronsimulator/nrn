@@ -23,12 +23,14 @@ ReportEvent::ReportEvent(double dt,
                          double tstart,
                          const VarsToReport& filtered_gids,
                          const char* name)
-    : dt(dt), tstart(tstart), report_path(name) {
+    : dt(dt)
+    , tstart(tstart)
+    , report_path(name) {
     VarsToReport::iterator it;
     nrn_assert(filtered_gids.size());
     step = tstart / dt;
     gids_to_report.reserve(filtered_gids.size());
-    for (const auto& gid : filtered_gids) {
+    for (const auto& gid: filtered_gids) {
         gids_to_report.push_back(gid.first);
     }
     std::sort(gids_to_report.begin(), gids_to_report.end());
@@ -44,7 +46,10 @@ void ReportEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
         records_nrec(step, gids_to_report.size(), gids_to_report.data(), report_path.data());
 #endif
 #ifdef ENABLE_SONATA_REPORTS
-        sonata_record_node_data(step, gids_to_report.size(), gids_to_report.data(), report_path.data());
+        sonata_record_node_data(step,
+                                gids_to_report.size(),
+                                gids_to_report.data(),
+                                report_path.data());
 #endif
         send(t + dt, nc, nt);
         step++;

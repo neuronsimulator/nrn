@@ -161,7 +161,12 @@ static void print_quality2(int iwarp, InterleaveInfo& ii, int* p) {
     ii.child_race[iwarp] = ncr;
     if (pc)
         printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access, %ld child races\n",
-               iwarp, nn, ncycle, nx, ncacheline, ncr);
+               iwarp,
+               nn,
+               ncycle,
+               nx,
+               ncacheline,
+               ncr);
 }
 
 static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
@@ -219,12 +224,16 @@ static void print_quality1(int iwarp, InterleaveInfo& ii, int ncell, int* p) {
     }
 
     ii.nnode[iwarp] = n;
-    ii.ncycle[iwarp] = (size_t)ncycle;
+    ii.ncycle[iwarp] = (size_t) ncycle;
     ii.idle[iwarp] = nx;
     ii.cache_access[iwarp] = ncacheline;
     ii.child_race[iwarp] = 0;
     if (pc)
-        printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n", iwarp, n, ncycle, nx,
+        printf("warp %d:  %ld nodes, %d cycles, %ld idle, %ld cache access\n",
+               iwarp,
+               n,
+               ncycle,
+               nx,
                ncacheline);
 }
 
@@ -263,15 +272,15 @@ static void warp_balance(int ith, InterleaveInfo& ii) {
     }
     double bal = load_balance(v);
 #ifdef DEBUG
-    printf("thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emin,
-           emax);
+    printf(
+        "thread %d nwarp=%ld  balance=%g  warp_efficiency %g to %g\n", ith, nwarp, bal, emin, emax);
     const char* cp[4] = {"nodes", "idle", "ca", "cr"};
     for (size_t i = 0; i < 4; ++i) {
         printf("  %s=%ld (%ld:%ld)", cp[i], smm[i][0], smm[i][1], smm[i][2]);
     }
     printf("\n");
 #else
-    (void)bal; // Remove warning about unused
+    (void) bal;  // Remove warning about unused
 #endif
 }
 
@@ -287,11 +296,11 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         }
     }
 
-    int nwarp = 0, nstride=0, *stride=nullptr, *firstnode=nullptr;
-    int *lastnode=nullptr, *cellsize=nullptr, *stridedispl=nullptr;
+    int nwarp = 0, nstride = 0, *stride = nullptr, *firstnode = nullptr;
+    int *lastnode = nullptr, *cellsize = nullptr, *stridedispl = nullptr;
 
-    int* order = node_order(ncell, nnode, parent, nwarp, nstride, stride, firstnode, lastnode,
-                            cellsize, stridedispl);
+    int* order = node_order(
+        ncell, nnode, parent, nwarp, nstride, stride, firstnode, lastnode, cellsize, stridedispl);
 
     if (interleave_info) {
         InterleaveInfo& ii = interleave_info[ith];
@@ -305,7 +314,10 @@ int* interleave_order(int ith, int ncell, int nnode, int* parent) {
         if (0 && ith == 0 && interleave_permute_type == 1) {
             printf("ith=%d nstride=%d ncell=%d nnode=%d\n", ith, nstride, ncell, nnode);
             for (int i = 0; i < ncell; ++i) {
-                printf("icell=%d cellsize=%d first=%d last=%d\n", i, cellsize[i], firstnode[i],
+                printf("icell=%d cellsize=%d first=%d last=%d\n",
+                       i,
+                       cellsize[i],
+                       firstnode[i],
                        lastnode[i]);
             }
             for (int i = 0; i < nstride; ++i) {
@@ -409,11 +421,11 @@ void mk_cell_indices() {
 }
 #endif  // INTERLEAVE_DEBUG
 
-#define GPU_V(i) nt->_actual_v[i]
-#define GPU_A(i) nt->_actual_a[i]
-#define GPU_B(i) nt->_actual_b[i]
-#define GPU_D(i) nt->_actual_d[i]
-#define GPU_RHS(i) nt->_actual_rhs[i]
+#define GPU_V(i)      nt->_actual_v[i]
+#define GPU_A(i)      nt->_actual_a[i]
+#define GPU_B(i)      nt->_actual_b[i]
+#define GPU_D(i)      nt->_actual_d[i]
+#define GPU_RHS(i)    nt->_actual_rhs[i]
 #define GPU_PARENT(i) nt->_v_parent_index[i]
 
 // How does the interleaved permutation with stride get used in
@@ -474,7 +486,8 @@ static void triang_interleaved2(NrnThread* nt, int icore, int ncycle, int* strid
     // execute until all tree depths are executed
     bool has_subtrees_to_compute = true;
 
-// clang-format off
+    // clang-format off
+
     #pragma acc loop seq
     for (; has_subtrees_to_compute; ) {  // ncycle loop
 #if !defined(_OPENACC)
@@ -521,7 +534,8 @@ static void bksub_interleaved2(NrnThread* nt,
 #if !defined(_OPENACC)
     for (int i = root; i < lastroot; i += 1) {
 #else
-// clang-format off
+    // clang-format off
+
     #pragma acc loop seq
     // clang-format on
     for (int i = root; i < lastroot; i += warpsize) {
@@ -581,7 +595,8 @@ void solve_interleaved2(int ith) {
 
     int ncore = nwarp * warpsize;
 #ifdef _OPENACC
-// clang-format off
+    // clang-format off
+
     #pragma acc parallel loop present(                  \
         nt[0:1], strides[0:nstride],                    \
         ncycles[0:nwarp], stridedispl[0:nwarp+1],       \
@@ -639,12 +654,13 @@ void solve_interleaved1(int ith) {
 #endif
 
 #ifdef ENABLE_CUDA_INTERFACE
-    NrnThread* d_nt = (NrnThread*)acc_deviceptr(nt);
-    InterleaveInfo* d_info = (InterleaveInfo*)acc_deviceptr(interleave_info + ith);
+    NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
+    InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info + ith);
     solve_interleaved_launcher(d_nt, d_info, ncell);
 #else
 #ifdef _OPENACC
-// clang-format off
+    // clang-format off
+
     #pragma acc parallel loop present(              \
         nt[0:1], stride[0:nstride],                 \
         firstnode[0:ncell], lastnode[0:ncell],      \

@@ -56,123 +56,125 @@ namespace coreneuron {
 
 **/
 
-static int* fornetcon_slot(const int mtype, const int instance,
-  const int fnslot, const NrnThread& nt)
-{
-  int layout = corenrn.get_mech_data_layout()[mtype];
-  int sz = corenrn.get_prop_dparam_size()[mtype];
-  Memb_list* ml = nt._ml_list[mtype];
-  int* fn = nullptr;
-  if (layout == 1) { /* AoS */
-    fn = ml->pdata + (instance*sz + fnslot);
-  }else if (layout == 0) { /* SoA */
-    int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
-    fn = ml->pdata + (fnslot*padded_cnt + instance);
-  }
-  return fn;
+static int* fornetcon_slot(const int mtype,
+                           const int instance,
+                           const int fnslot,
+                           const NrnThread& nt) {
+    int layout = corenrn.get_mech_data_layout()[mtype];
+    int sz = corenrn.get_prop_dparam_size()[mtype];
+    Memb_list* ml = nt._ml_list[mtype];
+    int* fn = nullptr;
+    if (layout == 1) { /* AoS */
+        fn = ml->pdata + (instance * sz + fnslot);
+    } else if (layout == 0) { /* SoA */
+        int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
+        fn = ml->pdata + (fnslot * padded_cnt + instance);
+    }
+    return fn;
 }
 
 void setup_fornetcon_info(NrnThread& nt) {
-
-  if (nrn_fornetcon_cnt_ == 0) { return; }
-
-  // Mechanism types in use that have FOR_NETCONS statements
-  // Nice to have the dparam fornetcon slot as well so use map
-  // instead of set
-  std::map<int, int> type_to_slot;
-  for (int i = 0; i < nrn_fornetcon_cnt_; ++i) {
-    int type = nrn_fornetcon_type_[i];
-    Memb_list* ml = nt._ml_list[type];
-    if (ml && ml->nodecount) {
-      type_to_slot[type] = nrn_fornetcon_index_[i];
+    if (nrn_fornetcon_cnt_ == 0) {
+        return;
     }
-  }
-  if (type_to_slot.empty()) {
-    return;
-  }
 
-  // How many NetCons (weight groups) are involved.
-  // Also count how many weight groups for each target instance.
-  // For the latter we can count in the dparam fornetcon slot.
-
-  // zero the dparam fornetcon slot for counting and count number of slots.
-  size_t n_perm_indices = 0;
-  for (const auto& kv: type_to_slot) {
-    int mtype = kv.first;
-    int fnslot = kv.second;
-    int nodecount = nt._ml_list[mtype]->nodecount;
-    for (int i=0; i < nodecount; ++i) {
-      int* fn = fornetcon_slot(mtype, i, fnslot, nt);
-      *fn = 0;
-      n_perm_indices += 1;
+    // Mechanism types in use that have FOR_NETCONS statements
+    // Nice to have the dparam fornetcon slot as well so use map
+    // instead of set
+    std::map<int, int> type_to_slot;
+    for (int i = 0; i < nrn_fornetcon_cnt_; ++i) {
+        int type = nrn_fornetcon_type_[i];
+        Memb_list* ml = nt._ml_list[type];
+        if (ml && ml->nodecount) {
+            type_to_slot[type] = nrn_fornetcon_index_[i];
+        }
     }
-  }
-
-  // Count how many weight groups for each slot and total number of weight groups
-  size_t n_weight_perm = 0;
-  for (int i = 0; i < nt.n_netcon; ++i) {
-    NetCon& nc = nt.netcons[i];
-    int mtype = nc.target_->_type;
-    auto search = type_to_slot.find(mtype);
-    if (search != type_to_slot.end()) {
-      int i_instance = nc.target_->_i_instance;
-      int* fn = fornetcon_slot(mtype, i_instance, search->second, nt);
-      *fn += 1;
-      n_weight_perm += 1;
+    if (type_to_slot.empty()) {
+        return;
     }
-  }
 
-  // Displacement vector has an extra element since the number for last item
-  // at n-1 is x[n] - x[n-1] and number for first is x[0] = 0.
-  nt._fornetcon_perm_indices.resize(n_perm_indices + 1);
-  nt._fornetcon_weight_perm.resize(n_weight_perm);
+    // How many NetCons (weight groups) are involved.
+    // Also count how many weight groups for each target instance.
+    // For the latter we can count in the dparam fornetcon slot.
 
-  // From dparam fornetcon slots, compute displacement vector, and
-  // set the dparam fornetcon slot to the index of the displacement vector
-  // to allow later filling the _fornetcon_weight_perm.
-  size_t i_perm_indices = 0;
-  nt._fornetcon_perm_indices[0] = 0;
-  for (const auto& kv: type_to_slot) {
-    int mtype = kv.first;
-    int fnslot = kv.second;
-    int nodecount = nt._ml_list[mtype]->nodecount;
-    for (int i=0; i < nodecount; ++i) {
-      int* fn = fornetcon_slot(mtype, i, fnslot, nt);
-      nt._fornetcon_perm_indices[i_perm_indices + 1] =
-        nt._fornetcon_perm_indices[i_perm_indices] + size_t(*fn);
-      *fn = int(nt._fornetcon_perm_indices[i_perm_indices]);
-      i_perm_indices += 1;
+    // zero the dparam fornetcon slot for counting and count number of slots.
+    size_t n_perm_indices = 0;
+    for (const auto& kv: type_to_slot) {
+        int mtype = kv.first;
+        int fnslot = kv.second;
+        int nodecount = nt._ml_list[mtype]->nodecount;
+        for (int i = 0; i < nodecount; ++i) {
+            int* fn = fornetcon_slot(mtype, i, fnslot, nt);
+            *fn = 0;
+            n_perm_indices += 1;
+        }
     }
-  }
 
-  // One more iteration over NetCon to fill in weight index for
-  // nt._fornetcon_weight_perm. To help with this we increment the
-  // dparam fornetcon slot on each use.
-  for (int i = 0; i < nt.n_netcon; ++i) {
-    NetCon& nc = nt.netcons[i];
-    int mtype = nc.target_->_type;
-    auto search = type_to_slot.find(mtype);
-    if (search != type_to_slot.end()) {
-      int i_instance = nc.target_->_i_instance;
-      int* fn = fornetcon_slot(mtype, i_instance, search->second, nt);
-      size_t nc_w_index = size_t(nc.u.weight_index_);
-      nt._fornetcon_weight_perm[size_t(*fn)] = nc_w_index;
-      *fn += 1; // next item conceptually adjacent
+    // Count how many weight groups for each slot and total number of weight groups
+    size_t n_weight_perm = 0;
+    for (int i = 0; i < nt.n_netcon; ++i) {
+        NetCon& nc = nt.netcons[i];
+        int mtype = nc.target_->_type;
+        auto search = type_to_slot.find(mtype);
+        if (search != type_to_slot.end()) {
+            int i_instance = nc.target_->_i_instance;
+            int* fn = fornetcon_slot(mtype, i_instance, search->second, nt);
+            *fn += 1;
+            n_weight_perm += 1;
+        }
     }
-  }
 
-  // Put back the proper values into the dparam fornetcon slot
-  i_perm_indices = 0;
-  for (const auto& kv: type_to_slot) {
-    int mtype = kv.first;
-    int fnslot = kv.second;
-    int nodecount = nt._ml_list[mtype]->nodecount;
-    for (int i=0; i < nodecount; ++i) {
-      int* fn = fornetcon_slot(mtype, i, fnslot, nt);
-      *fn = int(i_perm_indices);
-      i_perm_indices += 1;
+    // Displacement vector has an extra element since the number for last item
+    // at n-1 is x[n] - x[n-1] and number for first is x[0] = 0.
+    nt._fornetcon_perm_indices.resize(n_perm_indices + 1);
+    nt._fornetcon_weight_perm.resize(n_weight_perm);
+
+    // From dparam fornetcon slots, compute displacement vector, and
+    // set the dparam fornetcon slot to the index of the displacement vector
+    // to allow later filling the _fornetcon_weight_perm.
+    size_t i_perm_indices = 0;
+    nt._fornetcon_perm_indices[0] = 0;
+    for (const auto& kv: type_to_slot) {
+        int mtype = kv.first;
+        int fnslot = kv.second;
+        int nodecount = nt._ml_list[mtype]->nodecount;
+        for (int i = 0; i < nodecount; ++i) {
+            int* fn = fornetcon_slot(mtype, i, fnslot, nt);
+            nt._fornetcon_perm_indices[i_perm_indices + 1] =
+                nt._fornetcon_perm_indices[i_perm_indices] + size_t(*fn);
+            *fn = int(nt._fornetcon_perm_indices[i_perm_indices]);
+            i_perm_indices += 1;
+        }
     }
-  }
+
+    // One more iteration over NetCon to fill in weight index for
+    // nt._fornetcon_weight_perm. To help with this we increment the
+    // dparam fornetcon slot on each use.
+    for (int i = 0; i < nt.n_netcon; ++i) {
+        NetCon& nc = nt.netcons[i];
+        int mtype = nc.target_->_type;
+        auto search = type_to_slot.find(mtype);
+        if (search != type_to_slot.end()) {
+            int i_instance = nc.target_->_i_instance;
+            int* fn = fornetcon_slot(mtype, i_instance, search->second, nt);
+            size_t nc_w_index = size_t(nc.u.weight_index_);
+            nt._fornetcon_weight_perm[size_t(*fn)] = nc_w_index;
+            *fn += 1;  // next item conceptually adjacent
+        }
+    }
+
+    // Put back the proper values into the dparam fornetcon slot
+    i_perm_indices = 0;
+    for (const auto& kv: type_to_slot) {
+        int mtype = kv.first;
+        int fnslot = kv.second;
+        int nodecount = nt._ml_list[mtype]->nodecount;
+        for (int i = 0; i < nodecount; ++i) {
+            int* fn = fornetcon_slot(mtype, i, fnslot, nt);
+            *fn = int(i_perm_indices);
+            i_perm_indices += 1;
+        }
+    }
 }
 
 }  // namespace coreneuron

@@ -72,7 +72,7 @@ void BinQ::resize(int size) {
     qpt_ = 0;
 }
 void BinQ::enqueue(double td, TQItem* q) {
-    int idt = (int)((td - tt_) * rev_dt + 1.e-10);
+    int idt = (int) ((td - tt_) * rev_dt + 1.e-10);
     assert(idt >= 0);
     if (idt >= nbin_) {
         resize(idt + 1000);

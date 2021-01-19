@@ -51,10 +51,11 @@ void mk_mech(const char* datpath) {
         std::ifstream fs(fname);
 
         if (!fs.good()) {
-            fprintf(stderr, "Error: couldn't find bbcore_mech.dat file in the dataset directory \n");
-            fprintf(
-                stderr,
-                "       Make sure to pass full directory path of dataset using -d DIR or --datpath=DIR \n");
+            fprintf(stderr,
+                    "Error: couldn't find bbcore_mech.dat file in the dataset directory \n");
+            fprintf(stderr,
+                    "       Make sure to pass full directory path of dataset using -d DIR or "
+                    "--datpath=DIR \n");
         }
 
         nrn_assert(fs.good());
@@ -98,9 +99,9 @@ static void mk_mech(std::istream& s) {
         printf("%s %d %d %d %d %d %d\n", mname, type, pnttype, is_art, is_ion, dsize, pdsize);
 #endif
         std::string str(mname);
-        corenrn.get_memb_func(type).sym = (Symbol*)strdup(mname);
+        corenrn.get_memb_func(type).sym = (Symbol*) strdup(mname);
         mech2type[str] = type;
-        corenrn.get_pnt_map()[type] = (char)pnttype;
+        corenrn.get_pnt_map()[type] = (char) pnttype;
         corenrn.get_prop_param_size()[type] = dsize;
         corenrn.get_prop_dparam_size()[type] = pdsize;
         corenrn.get_is_artificial()[type] = is_art;

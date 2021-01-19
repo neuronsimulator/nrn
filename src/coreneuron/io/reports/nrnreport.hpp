@@ -18,7 +18,7 @@
 #include <vector>
 #include <set>
 
-#define REPORT_MAX_NAME_LEN 256
+#define REPORT_MAX_NAME_LEN     256
 #define REPORT_MAX_FILEPATH_LEN 4096
 
 namespace coreneuron {
@@ -30,8 +30,7 @@ namespace coreneuron {
 #define SYNAPSE_ID_MOD_NAME "synapseID"
 
 // enumerate that defines the type of target report requested
-enum ReportType { SomaReport, CompartmentReport, SynapseReport,
-                  IMembraneReport, SectionReport };
+enum ReportType { SomaReport, CompartmentReport, SynapseReport, IMembraneReport, SectionReport };
 
 // enumerate that defines the section type for a Section report
 enum SectionType { Axon, Dendrite, Apical };

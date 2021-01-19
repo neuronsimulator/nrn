@@ -94,7 +94,7 @@ void nrn_threads_free() {
 
 void nrn_mk_table_check() {
     if (table_check_) {
-        free((void*)table_check_);
+        free((void*) table_check_);
         table_check_ = nullptr;
     }
     auto& memb_func = corenrn.get_memb_funcs();
@@ -112,7 +112,7 @@ void nrn_mk_table_check() {
         }
     }
     if (table_check_cnt_) {
-        table_check_ = (ThreadDatum*)emalloc(table_check_cnt_ * sizeof(ThreadDatum));
+        table_check_ = (ThreadDatum*) emalloc(table_check_cnt_ * sizeof(ThreadDatum));
     }
     int i = 0;
     for (int id = 0; id < nrn_nthread; ++id) {
@@ -121,7 +121,7 @@ void nrn_mk_table_check() {
             int index = tml->index;
             if (memb_func[index].thread_table_check_ && ix[index] == id) {
                 table_check_[i++].i = id;
-                table_check_[i++]._pvoid = (void*)tml;
+                table_check_[i++]._pvoid = (void*) tml;
             }
         }
     }
@@ -132,8 +132,8 @@ void nrn_thread_table_check() {
         auto& nt = nrn_threads[table_check_[i].i];
         auto tml = static_cast<NrnThreadMembList*>(table_check_[i + 1]._pvoid);
         Memb_list* ml = tml->ml;
-        (*corenrn.get_memb_func(tml->index).thread_table_check_)(0, ml->_nodecount_padded, ml->data, ml->pdata,
-                                                     ml->_thread, &nt, tml->index);
+        (*corenrn.get_memb_func(tml->index).thread_table_check_)(
+            0, ml->_nodecount_padded, ml->data, ml->pdata, ml->_thread, &nt, tml->index);
     }
 }
 }  // namespace coreneuron

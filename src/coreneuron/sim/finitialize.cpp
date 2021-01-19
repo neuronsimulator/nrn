@@ -32,7 +32,8 @@ void nrn_finitialize(int setv, double v) {
     if (setv) {
         for (auto _nt = nrn_threads; _nt < nrn_threads + nrn_nthread; ++_nt) {
             double* vec_v = &(VEC_V(0));
-// clang-format off
+            // clang-format off
+
             #pragma acc parallel loop present(      \
                 _nt[0:1], vec_v[0:_nt->end])        \
                 if (_nt->compute_gpu)

@@ -144,6 +144,7 @@ template<typename F, typename... Args>
 void nrn_multithread_job(F&& job, Args&&... args) {
     int i;
 // clang-format off
+
     #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
                                            nrnmpi_myid) schedule(static, 1)
     for (i = 0; i < nrn_nthread; ++i) {

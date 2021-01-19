@@ -114,7 +114,6 @@ char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
     // return actual data to be freed
     return first;
 }
-
 }
 
 namespace coreneuron {
@@ -148,9 +147,9 @@ void nrn_init_and_load_data(int argc,
 
 #if _OPENACC
     if (!corenrn_param.gpu && corenrn_param.cell_interleave_permute == 2) {
-        fprintf(
-            stderr,
-            "compiled with _OPENACC does not allow the combination of --cell-permute=2 and missing --gpu\n");
+        fprintf(stderr,
+                "compiled with _OPENACC does not allow the combination of --cell-permute=2 and "
+                "missing --gpu\n");
         exit(1);
     }
 #endif
@@ -166,8 +165,7 @@ void nrn_init_and_load_data(int argc,
     std::string filesdat(corenrn_param.datpath + "/" + corenrn_param.filesdat);
 
     // read the global variable names and set their values from globals.dat
-    set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed>=0),
-                corenrn_param.seed);
+    set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed >= 0), corenrn_param.seed);
 
     // set global variables for start time, timestep and temperature
     std::string restore_path = corenrn_param.restorepath;
@@ -181,7 +179,7 @@ void nrn_init_and_load_data(int argc,
 
     corenrn_param.dt = dt;
 
-    rev_dt = (int)(1. / dt);
+    rev_dt = (int) (1. / dt);
 
     if (corenrn_param.celsius != -1000.) {  // command line arg highest precedence
         celsius = corenrn_param.celsius;
@@ -233,8 +231,12 @@ void nrn_init_and_load_data(int argc,
     use_phase2_ = (corenrn_param.ms_phases == 2) ? 1 : 0;
 
     // reading *.dat files and setting up the data structures, setting mindelay
-    nrn_setup(filesdat.c_str(), is_mapping_needed, run_setup_cleanup,
-              corenrn_param.datpath.c_str(), restore_path.c_str(), &corenrn_param.mindelay);
+    nrn_setup(filesdat.c_str(),
+              is_mapping_needed,
+              run_setup_cleanup,
+              corenrn_param.datpath.c_str(),
+              restore_path.c_str(),
+              &corenrn_param.mindelay);
 
     // Allgather spike compression and  bin queuing.
     nrn_use_bin_queue_ = corenrn_param.binqueue;
@@ -347,8 +349,8 @@ void get_nrn_trajectory_requests(int bsize) {
 
             // bsize is passed by reference, the return value will determine if
             // per step return or entire trajectory return.
-            (*nrn2core_get_trajectory_requests_)(tid, bsize, n_pr, vpr, n_trajec, types, indices,
-                                                 pvars, varrays);
+            (*nrn2core_get_trajectory_requests_)(
+                tid, bsize, n_pr, vpr, n_trajec, types, indices, pvars, varrays);
             delete_trajectory_requests(nt);
             if (n_trajec) {
                 TrajectoryRequests* tr = new TrajectoryRequests;
@@ -389,10 +391,11 @@ std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config
         report_handler = std::make_unique<BinaryReportHandler>(config);
     } else if (config.format == "SONATA") {
         report_handler = std::make_unique<SonataReportHandler>(config);
-    }
-    else {
+    } else {
         if (nrnmpi_myid == 0) {
-            printf(" WARNING : Report name '%s' has unknown format: '%s'.\n", config.name.data(), config.format.data());
+            printf(" WARNING : Report name '%s' has unknown format: '%s'.\n",
+                   config.name.data(),
+                   config.format.data());
         }
         return nullptr;
     }
@@ -441,7 +444,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     Instrumentor::phase_begin("main");
 
     std::vector<ReportConfiguration> configs;
-    std::vector<std::unique_ptr<ReportHandler> > report_handlers;
+    std::vector<std::unique_ptr<ReportHandler>> report_handlers;
     std::string spikes_population_name;
     bool reports_needs_finalize = false;
 
@@ -485,7 +488,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
     bool compute_gpu = corenrn_param.gpu;
     bool skip_mpi_finalize = corenrn_param.skip_mpi_finalize;
 
-// clang-format off
+    // clang-format off
+
     #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
     // clang-format on
     {
@@ -496,7 +500,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
         if (tstop < t && nrnmpi_myid == 0) {
             printf("Error: Stop time (%lf) < Start time (%lf), restoring from checkpoint? \n",
-                   tstop, t);
+                   tstop,
+                   t);
             abort();
         }
 
@@ -524,7 +529,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
         double min_report_dt = INT_MAX;
         for (size_t i = 0; i < configs.size(); i++) {
             std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i]);
-            if(report_handler) {
+            if (report_handler) {
                 report_handler->create_report(dt, tstop, delay);
                 report_handlers.push_back(std::move(report_handler));
             }
@@ -578,7 +583,6 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // copy weights back to NEURON NetCon
     if (nrn2core_all_weights_return_) {
-
         // first update weights from gpu
         update_weights_from_gpu(nrn_threads, nrn_nthread);
 
@@ -586,8 +590,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
         std::vector<double*> weights(nrn_nthread, NULL);
 
         // could be one thread more (empty) than in NEURON but does not matter
-        for (int i=0; i < nrn_nthread; ++i) {
-          weights[i] = nrn_threads[i].weights;
+        for (int i = 0; i < nrn_nthread; ++i) {
+            weights[i] = nrn_threads[i].weights;
         }
         (*nrn2core_all_weights_return_)(weights);
     }

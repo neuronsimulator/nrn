@@ -15,7 +15,7 @@
 namespace coreneuron {
 
 extern int nrn_nthread;
-extern NrnThread *nrn_threads;
+extern NrnThread* nrn_threads;
 bool nrn_use_fast_imem;
 
 void fast_imem_free() {
@@ -34,9 +34,9 @@ void nrn_fast_imem_alloc() {
         fast_imem_free();
         for (auto nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
             int n = nt->end;
-            nt->nrn_fast_imem = (NrnFastImem*)ecalloc(1, sizeof(NrnFastImem));
-            nt->nrn_fast_imem->nrn_sav_rhs = (double*)emalloc_align(n * sizeof(double));
-            nt->nrn_fast_imem->nrn_sav_d = (double*)emalloc_align(n * sizeof(double));
+            nt->nrn_fast_imem = (NrnFastImem*) ecalloc(1, sizeof(NrnFastImem));
+            nt->nrn_fast_imem->nrn_sav_rhs = (double*) emalloc_align(n * sizeof(double));
+            nt->nrn_fast_imem->nrn_sav_d = (double*) emalloc_align(n * sizeof(double));
         }
     }
 }
@@ -50,10 +50,9 @@ void nrn_calc_fast_imem(NrnThread* nt) {
 
     double* fast_imem_d = nt->nrn_fast_imem->nrn_sav_d;
     double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
-    for (int i = i1; i < i3 ; ++i) {
-        fast_imem_rhs[i] = (fast_imem_d[i]*vec_rhs[i] + fast_imem_rhs[i])*vec_area[i]*0.01;
+    for (int i = i1; i < i3; ++i) {
+        fast_imem_rhs[i] = (fast_imem_d[i] * vec_rhs[i] + fast_imem_rhs[i]) * vec_area[i] * 0.01;
     }
 }
 
-}
-
+}  // namespace coreneuron

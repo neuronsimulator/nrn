@@ -89,7 +89,7 @@ int abort_run(int code) {
         default:
             puts("Origin of error is unknown");
     }
-    hoc_execerror("scopmath library error", (char*)0);
+    hoc_execerror("scopmath library error", (char*) 0);
     return 0;
 }
 }  // namespace coreneuron
