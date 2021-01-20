@@ -46,7 +46,7 @@ def test_nlayer():
     for i in range(2):
      x = r[i].c().sub(res[0][i]).abs().sum()
      print (x)
-     assert(x < 0.006) # At 10ms. At 5ms would be 2e-5
+     assert(x < 0.01) # At 10ms. At 5ms would be 2e-5
   return res
 
 if __name__ == "__main__":
