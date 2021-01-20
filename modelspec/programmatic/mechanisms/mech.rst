@@ -1027,26 +1027,29 @@ Mechanisms
     Syntax:
         ``section.insert('extracellular')``
 
-        ``.vext[2] -- mV``
+        ``nlayer = h.nlayer_extracellular()``
+
+        ``nlayer = h.nlayer_extracellular(nlayer)``
+
+        ``.vext[nlayer] -- mV``
 
         ``.i_membrane -- mA/cm2``
 
-        ``.xraxial[2] -- MOhms/cm``
+        ``.xraxial[nlayer] -- MOhms/cm``
 
-        ``.xg[2]	-- mho/cm2``
+        ``.xg[nlayer]	-- mho/cm2``
 
-        ``.xc[2]	-- uF/cm2``
+        ``.xc[nlayer]	-- uF/cm2``
 
         ``.extracellular.e -- mV``
 
-
     Description:
-        Adds two layers of extracellular field to the section. Vext is 
+        By default, adds two layers of extracellular field to the section. Vext is 
         solved simultaneously with the v. When the extracellular mechanism 
         is present, v refers to the membrane potential and vext (i.e. vext[0]) 
         refers to 
         the extracellular potential just next to the membrane. Thus the 
-        internal potential is v+vext (but see BUGS). 
+        internal potential is v+vext (but see Warning below). 
          
         This mechanism is useful for simulating the stimulation with 
         extracellular electrodes, response in the presence of an extracellular 
@@ -1059,28 +1062,39 @@ Mechanisms
         i_membrane correctly does not include contributions from ELECTRODE_CURRENT 
         point processes. 
 
-        See i_membrane\_ at :meth:`CVode.use_fast_imem`.
+        See i_membrane\_ at :meth:`CVode.use_fast_imem`. i_membrane\_
+        has units of nA instead of mA/cm2 (i.e. total membrane current
+        out of the segment) and so is available at 0 and 1 locations of
+        sections. It does not require that extracellular be inserted and so
+        results in much faster simulations. It works during parallel simulations
+        with variable step methods.
          
         The figure illustrates the form the electrical equivalent circuit 
         when this mechanism is present. Note that previous documentation 
-        was incorrect in showing that e_extracellular was in series with 
+        was incorrect in showing that extracellular.e was in series with 
         the ``xg[nlayer-1],xc[nlayer-1]`` parallel combination. 
         In fact it has always been the case 
-        that e_extracellular was in series with xg[nlayer-1] and xc[nlayer-1] 
-        was in parallel 
-        with that series combination. 
+        that extracellular.e was in series with ``xg[nlayer-1]`` and ``xc[nlayer-1]``
+        was in parallel with that series combination. 
          
         .. note::
         
-            The only reason the standard 
-            distribution is built with nlayer=2 is so that when only a single 
-            layer is needed (the usual case), then e_extracellular is consistent 
-            with the previous documentation with the old default nlayer=1. 
-         
-        e_extracellular is connected in series with the conductance of 
-        the last extracellular layer. 
+            The only reason for default nlayer=2 is so that when only a single 
+            layer is needed (the usual case), then extracellular.e is consistent 
+            with the previous documentation with the old default nlayer=1.
+            If you are not using both xc[0] > 0 and extracellular.e != 0 then
+            nlayer=1 is sufficient and faster than nlayer=2.
+
+        The number of extracellular layers can be changed with the
+        h.nlayer_extracellular(nlayer) function. (Returns the current
+        number extracellular layers with or without the argument). The number
+        of layers can be changed only if there are no existing
+        extracellular mechanism instances in any section. Array limits
+        for xraxial, xc, xg, and vext are ``[0:nlayer]``. The minimum
+        value for nlayer is 1. Default values are xg[i] = 1e9, xc[i] = 0.0
+        xraxial[i] = 1e9, so all layers start out tightly connected to ground.
+
         With two layers the equivalent circuit looks like: 
-         
 
         .. code-block::
             none
@@ -1121,12 +1135,9 @@ Mechanisms
         It is best to start out believing that there are bugs in the method 
         and attempt to prove their existence. 
 
-        See `<nrn src dir>/src/nrnoc/extcell.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.c>`_
+        See `<nrn src dir>/src/nrnoc/extcelln.c <https://github.com/neuronsimulator/nrn/blob/master/src/nrnoc/extcell.c>`_
         and `<nrn src dir>/examples/nrnoc/extcab*.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/examples/nrniv/nrnoc>`_.
          
-        NEURON can be compiled with any number of extracellular layers. 
-        See below. 
-
     .. warning::
         xcaxial is also defined but is not implemented. If you need those 
         then add them with the :class:`LinearMechanism` . 
@@ -1144,7 +1155,7 @@ Mechanisms
         Now the above bug is fixed and 
         vext(0) and vext(1) are the voltages at the zero area nodes. 
          
-        From extcell.c the comment is: 
+        From extcelln.c the comment is: 
 
         .. code-block::
             none
@@ -1193,44 +1204,4 @@ Mechanisms
         the extracellular mechanism inserted. It is best to have every section 
         in a cell contain the extracellular mechanism if any one of them does 
         to avoid confusion with regard to (the in fact correct) boundary conditions. 
-         
-         
-         
-
-    Syntax:
-        ``nrn/src/nrnoc/options.h``
-
-        ``#define EXTRACELLULAR 2 /* number of extracellular layers */``
-
-        ``section.insert('extracellular')``
-
-        ``.vext[i] -- mV``
-
-        ``.i_membrane -- mA/cm2``
-
-        ``.xraxial[i] -- MOhms/cm``
-
-        ``.xg[i]	-- mho/cm2``
-
-        ``.xc[i]	-- uF/cm2``
-
-        ``.extracellular.e -- mV``
-
-
-
-    Description:
-        If other than 2 extracellular layers is desired, you may recompile the 
-        program by changing the :file:`nrn/src/nrnoc/options.h` line 
-        ``#define EXTRACELLULAR 2``
-        to the number of layers desired. Be sure to recompile both nrnoc and nrniv 
-        as well as any user defined .mod files that use the ELECTRODE_CURRENT statement. 
-         
-        Note that vext is a synonym in hoc for vext[0]. Since the default value for 
-        xg[i] = 1e9 all layers start out tightly connected to ground so 
-        previous single layer extracellular simulations should produce the same 
-        results if either xc or e_extracellular was 0. 
-         
-        extracellular.e is connected in series with the conductance of 
-        the last extracellular layer. 
-
 
