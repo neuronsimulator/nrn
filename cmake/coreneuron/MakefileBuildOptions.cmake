@@ -14,11 +14,13 @@ set(CMAKE_ISPC_FLAGS "${CMAKE_ISPC_FLAGS} --pic")
 # =============================================================================
 # NMODL CLI options : common and backend specific
 # =============================================================================
+# ~~~
 # if user pass arguments then use those as common arguments
 # note that inlining is done by default
+# ~~~
 set(NMODL_COMMON_ARGS "passes --inline")
 
-if (NOT "${CORENRN_NMODL_FLAGS}" STREQUAL "")
+if(NOT "${CORENRN_NMODL_FLAGS}" STREQUAL "")
   set(NMODL_COMMON_ARGS "${NMODL_COMMON_ARGS} ${CORENRN_NMODL_FLAGS}")
 endif()
 
@@ -31,10 +33,10 @@ set(NMODL_ACC_BACKEND_ARGS "host --c acc --oacc")
 # =============================================================================
 get_directory_property(COMPILE_DEFS COMPILE_DEFINITIONS)
 if(COMPILE_DEFS)
-    set(CORENRN_COMMON_COMPILE_DEFS "")
-    foreach(flag ${COMPILE_DEFS})
-        set(CORENRN_COMMON_COMPILE_DEFS "${CORENRN_COMMON_COMPILE_DEFS} -D${flag}")
-    endforeach()
+  set(CORENRN_COMMON_COMPILE_DEFS "")
+  foreach(flag ${COMPILE_DEFS})
+    set(CORENRN_COMMON_COMPILE_DEFS "${CORENRN_COMMON_COMPILE_DEFS} -D${flag}")
+  endforeach()
 endif()
 
 # =============================================================================
@@ -48,20 +50,20 @@ list(REMOVE_ITEM CORENRN_LINK_LIBS "Threads::Threads")
 
 # replicate CMake magic to transform system libs to -l<libname>
 foreach(link_lib ${CORENRN_LINK_LIBS})
-    if(${link_lib} MATCHES "\-l.*")
-        string(APPEND CORENRN_COMMON_LDFLAGS " ${link_lib}")
-        continue()
-    endif()
-    get_filename_component(path ${link_lib} DIRECTORY)
-    if(NOT path)
-        string(APPEND CORENRN_COMMON_LDFLAGS " -l${link_lib}")
-    elseif("${path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-        get_filename_component(libname ${link_lib} NAME_WE)
-        string(REGEX REPLACE "^lib" "" libname ${libname})
-        string(APPEND CORENRN_COMMON_LDFLAGS " -l${libname}")
-    else()
-        string(APPEND CORENRN_COMMON_LDFLAGS " ${link_lib}")
-    endif()
+  if(${link_lib} MATCHES "\-l.*")
+    string(APPEND CORENRN_COMMON_LDFLAGS " ${link_lib}")
+    continue()
+  endif()
+  get_filename_component(path ${link_lib} DIRECTORY)
+  if(NOT path)
+    string(APPEND CORENRN_COMMON_LDFLAGS " -l${link_lib}")
+  elseif("${path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
+    get_filename_component(libname ${link_lib} NAME_WE)
+    string(REGEX REPLACE "^lib" "" libname ${libname})
+    string(APPEND CORENRN_COMMON_LDFLAGS " -l${libname}")
+  else()
+    string(APPEND CORENRN_COMMON_LDFLAGS " ${link_lib}")
+  endif()
 endforeach()
 
 # =============================================================================

@@ -20,9 +20,8 @@ if(NOT MOD2C_FOUND)
   endif()
   message(STATUS "Sub-module mod2c missing : running git submodule update --init --recursive")
   execute_process(
-    COMMAND
-      ${GIT_EXECUTABLE} submodule update --init --recursive --
-      ${CORENEURON_PROJECT_SOURCE_DIR}/external/mod2c
+    COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive --
+            ${CORENEURON_PROJECT_SOURCE_DIR}/external/mod2c
     WORKING_DIRECTORY ${CORENEURON_PROJECT_SOURCE_DIR})
 else()
   message(STATUS "Using mod2c submodule from ${MOD2C_PROJ}")

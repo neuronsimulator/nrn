@@ -74,21 +74,19 @@ if(CORENRN_ENABLE_GPU)
       ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
 
-  set_source_files_properties(${DIMPLIC_CODE_FILE} ${NMODL_INBUILT_MOD_OUTPUTS} PROPERTIES
-                              COMPILE_FLAGS "")
+  set_source_files_properties(${DIMPLIC_CODE_FILE} ${NMODL_INBUILT_MOD_OUTPUTS}
+                              PROPERTIES COMPILE_FLAGS "")
 
   set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
-                              "-DDISABLE_OPENACC")
+                                                                   "-DDISABLE_OPENACC")
 
   # compile cuda files for multiple architecture
+  # ~~~
   cuda_add_library(
     "cudacoreneuron" ${CORENEURON_CUDA_FILES}
-    OPTIONS -arch=sm_60
-            -gencode=arch=compute_60,code=sm_60
-            -gencode=arch=compute_72,code=sm_72
-            -gencode=arch=compute_52,code=compute_52
-            -Xcompiler
-            -fPIC)
+    OPTIONS -arch=sm_60 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_72,code=sm_72
+            -gencode=arch=compute_52,code=compute_52 -Xcompiler -fPIC)
+  # ~~~
   set(link_cudacoreneuron cudacoreneuron)
 else()
   set(link_cudacoreneuron "")
@@ -98,12 +96,13 @@ endif()
 # eion.cpp depends on CORENRN_USE_LEGACY_UNITS
 # =============================================================================
 set(LegacyFR_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/mechanism/eion.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/apps/main1.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mechanism/eion.cpp ${CMAKE_CURRENT_SOURCE_DIR}/apps/main1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
 
-set_property(SOURCE ${LegacyFR_FILES} APPEND PROPERTY COMPILE_DEFINITIONS
-                              "CORENRN_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS}")
+set_property(
+  SOURCE ${LegacyFR_FILES}
+  APPEND
+  PROPERTY COMPILE_DEFINITIONS "CORENRN_USE_LEGACY_UNITS=${CORENRN_USE_LEGACY_UNITS}")
 
 # =============================================================================
 # run KINDERIV_PYTHON_SCRIPT to generate _kinderiv.h
@@ -123,7 +122,7 @@ add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
 # main coreneuron library
 add_library(
   coreneuron ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${CORENEURON_TEMPLATE_FILES}
-                    ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
+             ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
 
 # need to have _kinderiv.h for mod2c generated files
 add_dependencies(coreneuron kin_deriv_header)
@@ -148,22 +147,19 @@ target_include_directories(coreneuron SYSTEM
 
 set_target_properties(
   coreneuron scopmath ${link_cudacoreneuron}
-  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib LIBRARY_OUTPUT_DIRECTORY
-             ${CMAKE_BINARY_DIR}/lib POSITION_INDEPENDENT_CODE ON)
+  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+             LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+             POSITION_INDEPENDENT_CODE ON)
 
 # =============================================================================
 # create special-core with halfgap.mod for tests
 # =============================================================================
 add_custom_target(
   nrniv-core ALL
-  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b STATIC
-          -m ${CORENRN_MOD2CPP_BINARY}
-          -p 1
+  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b STATIC -m ${CORENRN_MOD2CPP_BINARY} -p 1
           ${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod
-  WORKING_DIRECTORY
-    ${CMAKE_BINARY_DIR}/bin
-    BYPRODUCTS
-    ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+  BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core
   COMMENT "Running nrnivmodl-core with halfgap.mod")
 add_dependencies(nrniv-core scopmath coreneuron ${NMODL_TARGET_TO_DEPEND})
 
@@ -217,7 +213,8 @@ install(
   EXPORT coreneuron
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
-  INCLUDES DESTINATION $<INSTALL_INTERFACE:include>)
+  INCLUDES
+  DESTINATION $<INSTALL_INTERFACE:include>)
 
 # scopemath into share for nrnivmodl-core
 install(

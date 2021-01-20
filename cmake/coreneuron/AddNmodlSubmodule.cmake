@@ -20,9 +20,8 @@ if(NOT NMODL_FOUND)
   endif()
   message(STATUS "Sub-module nmodl missing : running git submodule update --init")
   execute_process(
-    COMMAND
-      ${GIT_EXECUTABLE} submodule update --init --
-      ${CORENEURON_PROJECT_SOURCE_DIR}/external/nmodl
+    COMMAND ${GIT_EXECUTABLE} submodule update --init --
+            ${CORENEURON_PROJECT_SOURCE_DIR}/external/nmodl
     WORKING_DIRECTORY ${CORENEURON_PROJECT_SOURCE_DIR})
 else()
   message(STATUS "Using nmodl submodule from ${NMODL_PROJ}")

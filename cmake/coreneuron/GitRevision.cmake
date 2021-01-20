@@ -4,8 +4,10 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
-# For now use simple approach to get version information as git is
-# often avaialble on the machine where we are building from source
+# ~~~
+# For now use simple approach to get version information as git is often
+# avaialble on the machine where we are building from source
+# ~~~
 
 find_package(Git)
 

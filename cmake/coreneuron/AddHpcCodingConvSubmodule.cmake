@@ -8,7 +8,7 @@ include(FindPackageHandleStandardArgs)
 find_package(FindPkgConfig QUIET)
 
 find_path(
-    HpcCodingConv_PROJ
+  HpcCodingConv_PROJ
   NAMES setup.cfg
   PATHS "${CORENEURON_PROJECT_SOURCE_DIR}/CMake/hpc-coding-conventions/")
 
@@ -19,10 +19,10 @@ if(NOT HpcCodingConv_FOUND)
   if(NOT ${GIT_FOUND})
     message(FATAL_ERROR "git not found, clone repository with --recursive")
   endif()
-  message(STATUS "Sub-module CMake/hpc-coding-conventions missing: running git submodule update --init")
+  message(
+    STATUS "Sub-module CMake/hpc-coding-conventions missing: running git submodule update --init")
   execute_process(
-    COMMAND
-      ${GIT_EXECUTABLE} submodule update --init --
-      ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/hpc-coding-conventions
+    COMMAND ${GIT_EXECUTABLE} submodule update --init --
+            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/hpc-coding-conventions
     WORKING_DIRECTORY ${CORENEURON_PROJECT_SOURCE_DIR})
 endif()

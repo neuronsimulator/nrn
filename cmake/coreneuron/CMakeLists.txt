@@ -37,8 +37,7 @@ endif()
 # Include cmake modules path
 # =============================================================================
 list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
-            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/packages
-            ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/config)
+     ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/packages ${CORENEURON_PROJECT_SOURCE_DIR}/CMake/config)
 
 # =============================================================================
 # HPC Coding Conventions
@@ -233,8 +232,12 @@ else()
   set(CORENRN_USE_LEGACY_UNITS 0)
 endif()
 # Propagate Legacy Units flag to backends.
-set(MOD2C_ENABLE_LEGACY_UNITS ${CORENRN_ENABLE_LEGACY_UNITS} CACHE BOOL "" FORCE)
-set(NMODL_ENABLE_LEGACY_UNITS ${CORENRN_ENABLE_LEGACY_UNITS} CACHE BOOL "" FORCE)
+set(MOD2C_ENABLE_LEGACY_UNITS
+    ${CORENRN_ENABLE_LEGACY_UNITS}
+    CACHE BOOL "" FORCE)
+set(NMODL_ENABLE_LEGACY_UNITS
+    ${CORENRN_ENABLE_LEGACY_UNITS}
+    CACHE BOOL "" FORCE)
 
 if(MINGW)
   add_definitions("-DMINGW")
@@ -252,7 +255,9 @@ if(CORENRN_ENABLE_NMODL)
     set(ENV{PYTHONPATH} "${nmodl_PYTHONPATH}:$ENV{PYTHONPATH}")
     set(CORENRN_NMODL_PYTHONPATH $ENV{PYTHONPATH})
   else()
-    set(NMODL_ENABLE_PYTHON_BINDINGS OFF CACHE BOOL "Disable NMODL python bindings")
+    set(NMODL_ENABLE_PYTHON_BINDINGS
+        OFF
+        CACHE BOOL "Disable NMODL python bindings")
     include(AddNmodlSubmodule)
     set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/nmodl${CMAKE_EXECUTABLE_SUFFIX})
     set(CORENRN_MOD2CPP_INCLUDE ${CMAKE_BINARY_DIR}/include)
@@ -361,7 +366,8 @@ if(NOT CORENEURON_AS_SUBPROJECT)
       COMMENT "Generating full documentation")
   else()
     add_custom_target(
-      docs VERBATIM
+      docs
+      VERBATIM
       COMMAND echo "Please install docs requirements (see docs/README.md)!"
       COMMENT "Documentation generation not possible!")
   endif()
