@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(tqueue_move_nolock) {}
 BOOST_AUTO_TEST_CASE(tqueue_remove) {}
 
 BOOST_AUTO_TEST_CASE(threaddata_interthread_send) {
-    NetCvodeThreadData nt = NetCvodeThreadData();
+    NetCvodeThreadData nt{};
     const size_t num = 6;
     for (size_t i = 0; i < num; ++i)
         nt.interthread_send(static_cast<double>(i), NULL, NULL);

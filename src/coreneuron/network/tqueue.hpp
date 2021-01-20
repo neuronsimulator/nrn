@@ -69,15 +69,12 @@ extern void spdelete(SPBLK*, SPTREE*); /* delete node from tree */
 
 class TQItem {
   public:
-    TQItem();
-
-  public:
-    void* data_;
-    double t_;
-    TQItem* left_;
-    TQItem* right_;
-    TQItem* parent_;
-    int cnt_;  // reused: -1 means it is in the splay tree, >=0 gives bin
+    void* data_ = nullptr;
+    double t_ = 0;
+    TQItem* left_ = nullptr;
+    TQItem* right_ = nullptr;
+    TQItem* parent_ = nullptr;
+    int cnt_ = 0;  // reused: -1 means it is in the splay tree, >=0 gives bin
 };
 
 using TQPair = std::pair<double, TQItem*>;

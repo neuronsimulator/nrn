@@ -47,7 +47,7 @@ class NetCvodeThreadData {
     int unreffed_event_cnt_;
     TQueue<QTYPE>* tqe_;
     std::vector<InterThreadEvent> inter_thread_events_;
-    MUTDEC
+    OMP_Mutex mut;
 
     NetCvodeThreadData();
     virtual ~NetCvodeThreadData();

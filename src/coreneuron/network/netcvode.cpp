@@ -8,6 +8,8 @@
 
 #include <float.h>
 #include <map>
+#include <mutex>
+
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/netcon.hpp"
@@ -124,40 +126,28 @@ NetCvodeThreadData::NetCvodeThreadData() {
     tqe_ = new TQueue<QTYPE>();
     unreffed_event_cnt_ = 0;
     inter_thread_events_.reserve(1000);
-    MUTCONSTRUCT(1)
 }
 
 NetCvodeThreadData::~NetCvodeThreadData() {
-    inter_thread_events_.clear();
     delete tqe_;
-    MUTDESTRUCT
 }
 
 /// If the PreSyn is on a different thread than the target,
 /// we have to lock the buffer
-void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThread* nt) {
-    (void) nt;  // avoid unused warning
-    MUTLOCK
-
-    InterThreadEvent ite;
-    ite.de_ = db;
-    ite.t_ = td;
-    inter_thread_events_.push_back(ite);
-
-    MUTUNLOCK
+void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThread* /* nt */) {
+    std::lock_guard<OMP_Mutex> lock(mut);
+    inter_thread_events_.emplace_back(InterThreadEvent{db, td});
 }
 
 void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
-    MUTLOCK
-    for (size_t i = 0; i < inter_thread_events_.size(); ++i) {
-        InterThreadEvent ite = inter_thread_events_[i];
+    std::lock_guard<OMP_Mutex> lock(mut);
+    for (const auto& ite: inter_thread_events_) {
         nc->bin_event(ite.t_, ite.de_, nt);
     }
     inter_thread_events_.clear();
-    MUTUNLOCK
 }
 
-NetCvode::NetCvode(void) {
+NetCvode::NetCvode() {
     eps_ = 100. * DBL_EPSILON;
     print_event_ = 0;
     pcnt_ = 0;
@@ -182,8 +172,6 @@ void nrn_p_construct() {
 }
 
 void NetCvode::p_construct(int n) {
-    int i;
-
     if (pcnt_ != n) {
         if (p) {
             delete[] p;
@@ -198,7 +186,7 @@ void NetCvode::p_construct(int n) {
         pcnt_ = n;
     }
 
-    for (i = 0; i < n; ++i)
+    for (int i = 0; i < n; ++i)
         p[i].unreffed_event_cnt_ = 0;
 }
 
@@ -278,25 +266,26 @@ void NetCvode::init_events() {
 }
 
 bool NetCvode::deliver_event(double til, NrnThread* nt) {
-    TQItem* q;
-    if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
-        DiscreteEvent* de = (DiscreteEvent*) q->data_;
-        double tt = q->t_;
-        delete q;
-#if PRINT_EVENT
-        if (print_event_) {
-            de->pr("deliver", tt, this);
-        }
-#endif
-        de->deliver(tt, this, nt);
-
-        /// In case of a self event we need to delete the self event
-        if (de->type() == SelfEventType)
-            delete (SelfEvent*) de;
-
-        return true;
-    } else
+    TQItem* q = p[nt->id].tqe_->atomic_dq(til);
+    if (q == nullptr) {
         return false;
+    }
+
+    DiscreteEvent* de = (DiscreteEvent*) q->data_;
+    double tt = q->t_;
+    delete q;
+#if PRINT_EVENT
+    if (print_event_) {
+        de->pr("deliver", tt, this);
+    }
+#endif
+    de->deliver(tt, this, nt);
+
+    /// In case of a self event we need to delete the self event
+    if (de->type() == SelfEventType)
+        delete (SelfEvent*) de;
+
+    return true;
 }
 
 void net_move(void** v, Point_process* pnt, double tt) {
@@ -714,15 +703,14 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
 // events including binqueue events up to t+dt/2
 void NetCvode::deliver_net_events(NrnThread* nt) {  // for default method
     TQItem* q;
-    double tm, tsav;
 #if NRN_MULTISEND
     if (use_multisend_ && nt->id == 0) {
         nrn_multisend_advance();
     }
 #endif
     int tid = nt->id;
-    tsav = nt->_t;
-    tm = nt->_t + 0.5 * nt->_dt;
+    double tsav = nt->_t;
+    double tm = nt->_t + 0.5 * nt->_dt;
 tryagain:
     // one of the events on the main queue may be a NetParEvent
     // which due to dt round off error can result in an event
