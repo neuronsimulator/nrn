@@ -39,12 +39,12 @@ namespace coreneuron {
 #define STRCMP(a, b) (a - b)
 
 class TQItem;
-#define SPBLK TQItem
-#define leftlink left_
+#define SPBLK     TQItem
+#define leftlink  left_
 #define rightlink right_
-#define uplink parent_
-#define cnt cnt_
-#define key t_
+#define uplink    parent_
+#define cnt       cnt_
+#define key       t_
 
 struct SPTREE {
     SPBLK* root; /* root node */
@@ -53,11 +53,11 @@ struct SPTREE {
     int enqcmps; /* compares in spenq */
 };
 
-#define spinit sptq_spinit
-#define spenq sptq_spenq
-#define spdeq sptq_spdeq
-#define splay sptq_splay
-#define sphead sptq_sphead
+#define spinit   sptq_spinit
+#define spenq    sptq_spenq
+#define spdeq    sptq_spdeq
+#define splay    sptq_splay
+#define sphead   sptq_sphead
 #define spdelete sptq_spdelete
 
 extern void spinit(SPTREE*);           /* init tree */
@@ -113,11 +113,12 @@ class BinQ {
     TQItem* next(TQItem*);
     void remove(TQItem*);
     void resize(int);
+
   private:
     double tt_;  // time at beginning of qpt_ interval
     int nbin_, qpt_;
     TQItem** bins_;
-    std::vector<std::vector<TQItem*> > vec_bins;
+    std::vector<std::vector<TQItem*>> vec_bins;
 };
 
 enum container { spltree, pq_que };

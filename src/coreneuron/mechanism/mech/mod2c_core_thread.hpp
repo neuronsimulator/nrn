@@ -62,7 +62,7 @@ struct Elm {
     struct Elm* c_left;  /* Link to left element in same row */
     struct Elm* c_right; /*       in solution order (see getelm) */
 };
-#define ELM0 (Elm*)0
+#define ELM0 (Elm*) 0
 
 struct Item {
     Elm* elm;
@@ -70,11 +70,11 @@ struct Item {
     struct Item* next;
     struct Item* prev;
 };
-#define ITEM0 (Item*)0
+#define ITEM0 (Item*) 0
 
 using List = Item; /* list of mixed items */
 
-struct SparseObj {  /* all the state information */
+struct SparseObj {          /* all the state information */
     Elm** rowst;            /* link to first element in row (solution order)*/
     Elm** diag;             /* link to pivot element in row (solution order)*/
     void* elmpool;          /* no interthread cache line sharing for elements */

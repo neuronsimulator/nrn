@@ -17,11 +17,11 @@ namespace coreneuron {
 /// Mechanism type to be used from stdindex2ptr and nrn_dblpntr2nrncore (in Neuron)
 /// Values of the mechanism types should be negative numbers to avoid any conflict with
 /// mechanism types of Memb_list(>0) or time(0) passed from Neuron
-enum mech_type {voltage = -1, i_membrane_ = -2};
+enum mech_type { voltage = -1, i_membrane_ = -2 };
 
 extern bool cvode_active_;
 /// Vector of maps for negative presyns
-extern std::vector<std::map<int, PreSyn*> > neg_gid2out;
+extern std::vector<std::map<int, PreSyn*>> neg_gid2out;
 /// Maps for ouput and input presyns
 extern std::map<int, PreSyn*> gid2out;
 extern std::map<int, InputPreSyn*> gid2in;
@@ -32,7 +32,7 @@ extern std::vector<NetCon*> netcon_in_presyn_order_;
 extern std::vector<int*> nrnthreads_netcon_srcgid;
 /// Companion to nrnthreads_netcon_srcgid when src gid is negative to allow
 /// determination of the NrnThread of the source PreSyn.
-extern std::vector<std::vector<int> > nrnthreads_netcon_negsrcgid_tid;
+extern std::vector<std::vector<int>> nrnthreads_netcon_negsrcgid_tid;
 
 extern void mk_mech(const char* path);
 extern void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_value);

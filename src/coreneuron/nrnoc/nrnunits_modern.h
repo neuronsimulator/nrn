@@ -25,12 +25,15 @@
 
 
 #define _electron_charge_codata2018 1.602176634e-19 /* coulomb exact*/
-#define _avogadro_number_codata2018 6.02214076e+23 /* exact */
-#define _boltzmann_codata2018 1.380649e-23 /* joule/K exact */
-#define _faraday_codata2018 (_electron_charge_codata2018*_avogadro_number_codata2018) /* 96485.33212... coulomb/mol */
-#define _gasconstant_codata2018 (_boltzmann_codata2018*_avogadro_number_codata2018) /* 8.314462618... joule/mol-K */
+#define _avogadro_number_codata2018 6.02214076e+23  /* exact */
+#define _boltzmann_codata2018       1.380649e-23    /* joule/K exact */
+#define _faraday_codata2018 \
+    (_electron_charge_codata2018 * _avogadro_number_codata2018) /* 96485.33212... coulomb/mol */
+#define _gasconstant_codata2018 \
+    (_boltzmann_codata2018 * _avogadro_number_codata2018) /* 8.314462618... joule/mol-K */
 
 /* e/k in K/millivolt */
-#define _e_over_k_codata2018 (.001*_electron_charge_codata2018/_boltzmann_codata2018) /* 11.604518... K/mV */
+#define _e_over_k_codata2018 \
+    (.001 * _electron_charge_codata2018 / _boltzmann_codata2018) /* 11.604518... K/mV */
 
 #endif /* nrnunits_modern_h */

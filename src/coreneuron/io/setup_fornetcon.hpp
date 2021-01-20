@@ -20,4 +20,4 @@ namespace coreneuron {
 void setup_fornetcon_info(NrnThread& nt);
 
 }  // namespace coreneuron
-#endif //_H_SETUP_FORNETCON_
+#endif  //_H_SETUP_FORNETCON_

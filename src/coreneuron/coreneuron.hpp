@@ -21,10 +21,10 @@
 #include <vector>
 #include <array>
 
-#include "coreneuron/utils/randoms/nrnran123.h"      //Random Number Generator
+#include "coreneuron/utils/randoms/nrnran123.h"     //Random Number Generator
 #include "coreneuron/sim/scopmath/newton_struct.h"  //Newton Struct
-#include "coreneuron/membrane_definitions.h"                //static definitions
-#include "coreneuron/mechanism/mechanism.hpp"               //Memb_list and mechs info
+#include "coreneuron/membrane_definitions.h"        //static definitions
+#include "coreneuron/mechanism/mechanism.hpp"       //Memb_list and mechs info
 
 #include "coreneuron/utils/memory.h"  //Memory alignments and padding
 #include "coreneuron/nrnconf.h"
@@ -54,7 +54,6 @@ using DependencyTable = std::vector<std::vector<int>>;
  * this class.
  */
 class CoreNeuron {
-
     /**
      * map if mech is a point process
      * In the future only a field of Mechanism class
@@ -128,7 +127,6 @@ class CoreNeuron {
     std::vector<bbcore_write_t> nrn_bbcore_write;
 
   public:
-
     auto& get_memb_funcs() {
         return memb_funcs;
     }
@@ -212,7 +210,6 @@ class CoreNeuron {
     auto& get_bbcore_write() {
         return nrn_bbcore_write;
     }
-
 };
 
 extern CoreNeuron corenrn;

@@ -21,7 +21,7 @@ struct Memb_func;
 struct Memb_list;
 
 class Phase2 {
-    public:
+  public:
     void read_file(FileHandler& F, const NrnThread& nt);
     void read_direct(int thread_id, const NrnThread& nt);
     void populate(NrnThread& nt, const UserParams& userParams);
@@ -46,8 +46,7 @@ class Phase2 {
     struct PreSynType_: public EventTypeBase {
         int presyn_index;
     };
-    struct NetParEvent_: public EventTypeBase {
-    };
+    struct NetParEvent_: public EventTypeBase {};
     struct PlayRecordEventType_: public EventTypeBase {
         int play_record_type;
         int vecplay_index;
@@ -69,10 +68,16 @@ class Phase2 {
 
     std::vector<std::pair<int, std::shared_ptr<EventTypeBase>>> events;
 
-    private:
+  private:
     void check_mechanism();
     NrnThreadMembList* create_tml(int mech_id, Memb_func& memb_func, int& shadow_rhs_cnt);
-    void transform_int_data(int elem0, int nodecount, int* pdata, int i, int dparam_size, int layout, int n_node_);
+    void transform_int_data(int elem0,
+                            int nodecount,
+                            int* pdata,
+                            int i,
+                            int dparam_size,
+                            int layout,
+                            int n_node_);
     void set_net_send_buffer(Memb_list** ml_list, const std::vector<int>& pnt_offset);
     void restore_events(FileHandler& F);
     void fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>& memb_func);

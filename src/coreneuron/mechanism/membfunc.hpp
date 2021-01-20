@@ -13,12 +13,12 @@
 #include "coreneuron/mechanism/mechanism.hpp"
 namespace coreneuron {
 
-using Pfrpdat = Datum* (*)(void);
+using Pfrpdat = Datum* (*) (void);
 
 struct NrnThread;
 
 using mod_alloc_t = void (*)(double*, Datum*, int);
-using mod_f_t =  void (*)(NrnThread*, Memb_list*, int);
+using mod_f_t = void (*)(NrnThread*, Memb_list*, int);
 using pnt_receive_t = void (*)(Point_process*, int, double);
 
 /*
@@ -42,21 +42,21 @@ struct Memb_func {
     int* dparam_semantics; /* for nrncore writing. */
 };
 
-#define VINDEX -1
+#define VINDEX       -1
 #define CABLESECTION 1
-#define MORPHOLOGY 2
-#define CAP 3
-#define EXTRACELL 5
+#define MORPHOLOGY   2
+#define CAP          3
+#define EXTRACELL    5
 
 #define nrnocCONST 1
-#define DEP 2
-#define STATE 3 /*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
+#define DEP        2
+#define STATE      3 /*See init.c and cabvars.h for order of nrnocCONST, DEP, and STATE */
 
-#define BEFORE_INITIAL 0
-#define AFTER_INITIAL 1
+#define BEFORE_INITIAL    0
+#define AFTER_INITIAL     1
 #define BEFORE_BREAKPOINT 2
-#define AFTER_SOLVE 3
-#define BEFORE_STEP 4
+#define AFTER_SOLVE       3
+#define BEFORE_STEP       4
 #define BEFORE_AFTER_SIZE 5 /* 1 more than the previous */
 struct BAMech {
     mod_f_t f;

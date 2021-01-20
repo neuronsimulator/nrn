@@ -40,8 +40,8 @@ struct SecMapping {
 
     SecMapping() = default;
 
-    explicit SecMapping(std::string s) : name(std::move(s)) {
-    }
+    explicit SecMapping(std::string s)
+        : name(std::move(s)) {}
 
     /** @brief return total number of sections in section list */
     size_t num_sections() const noexcept {
@@ -50,8 +50,9 @@ struct SecMapping {
 
     /** @brief return number of segments in section list */
     size_t num_segments() const {
-        return std::accumulate(secmap.begin(), secmap.end(), 0,
-            [](int psum, const auto& item) { return psum + item.second.size(); });
+        return std::accumulate(secmap.begin(), secmap.end(), 0, [](int psum, const auto& item) {
+            return psum + item.second.size();
+        });
     }
 
     /** @brief add section to associated segment */
@@ -73,19 +74,27 @@ struct CellMapping {
     /** list of section lists (like soma, axon, apic) */
     std::vector<SecMapping*> secmapvec;
 
-    CellMapping(int g) : gid(g) {
-    }
+    CellMapping(int g)
+        : gid(g) {}
 
     /** @brief total number of sections in a cell */
     int num_sections() const {
-        return std::accumulate(secmapvec.begin(), secmapvec.end(), 0,
-            [](int psum, const auto& secmap) { return psum + secmap->num_sections(); });
+        return std::accumulate(secmapvec.begin(),
+                               secmapvec.end(),
+                               0,
+                               [](int psum, const auto& secmap) {
+                                   return psum + secmap->num_sections();
+                               });
     }
 
     /** @brief return number of segments in a cell */
     int num_segments() const {
-        return std::accumulate(secmapvec.begin(), secmapvec.end(), 0,
-                               [](int psum, const auto& secmap) { return psum + secmap->num_segments(); });
+        return std::accumulate(secmapvec.begin(),
+                               secmapvec.end(),
+                               0,
+                               [](int psum, const auto& secmap) {
+                                   return psum + secmap->num_segments();
+                               });
     }
 
     /** @brief number of section lists */
@@ -100,7 +109,7 @@ struct CellMapping {
 
     /** @brief return section list mapping with given name */
     SecMapping* get_seclist_mapping(const std::string& name) const {
-        for (auto& secmap : secmapvec) {
+        for (auto& secmap: secmapvec) {
             if (name == secmap->name) {
                 return secmap;
             }
@@ -161,7 +170,7 @@ struct NrnThreadMappingInfo {
      *	if exist otherwise return nullptr.
      */
     CellMapping* get_cell_mapping(int gid) const {
-        for (const auto& mapping  : mappingvec) {
+        for (const auto& mapping: mappingvec) {
             if (mapping->gid == gid) {
                 return mapping;
             }
@@ -174,6 +183,6 @@ struct NrnThreadMappingInfo {
         mappingvec.push_back(c);
     }
 };
-}
+}  // namespace coreneuron
 
 #endif  // NRN_SECTION_MAPPING

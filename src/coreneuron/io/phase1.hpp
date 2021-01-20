@@ -18,15 +18,15 @@ namespace coreneuron {
 struct NrnThread;
 
 class Phase1 {
-    public:
+  public:
     void read_file(FileHandler& F);
     void read_direct(int thread_id);
     void populate(NrnThread& nt, OMP_Mutex& mut);
 
-    private:
+  private:
     std::vector<int> output_gids;
     std::vector<int> netcon_srcgids;
-    std::vector<int> netcon_negsrcgid_tid; // entries only for negative srcgids
+    std::vector<int> netcon_negsrcgid_tid;  // entries only for negative srcgids
 };
 
 }  // namespace coreneuron

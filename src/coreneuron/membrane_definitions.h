@@ -9,16 +9,16 @@
 /* /local/src/master/nrn/src/nrnoc/membdef.h,v 1.2 1995/02/13 20:20:42 hines Exp */
 
 /* numerical parameters */
-#define DEF_nseg 1             /* default number of segments per section*/
-#define DEF_dt .025            /* ms */
+#define DEF_nseg   1           /* default number of segments per section*/
+#define DEF_dt     .025        /* ms */
 #define DEF_rev_dt 1. / DEF_dt /* 1/ms */
 #define DEF_secondorder                           \
     0 /* >0 means crank-nicolson. 2 means current \
       adjusted to t+dt/2 */
 
 /*global parameters */
-#define DEF_Ra 35.4 /* ohm-cm */ /*changed from 34.5 on 1/6/95*/
-#define DEF_celsius 6.3          /* deg-C */
+#define DEF_Ra      35.4 /* ohm-cm */ /*changed from 34.5 on 1/6/95*/
+#define DEF_celsius 6.3               /* deg-C */
 
 #define DEF_vrest -65. /* mV */
 
@@ -28,7 +28,7 @@
 
 /* Parameters that are used in mechanism _alloc() procedures */
 /* cable */
-#define DEF_L 100. /* microns */
+#define DEF_L          100. /* microns */
 #define DEF_rallbranch 1.
 
 /* morphology */

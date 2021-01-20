@@ -15,10 +15,10 @@ namespace coreneuron {
 class PlayRecord;
 
 #define VecPlayContinuousType 4
-#define PlayRecordEventType 21
+#define PlayRecordEventType   21
 
 // used by PlayRecord subclasses that utilize discrete events
-class PlayRecordEvent : public DiscreteEvent {
+class PlayRecordEvent: public DiscreteEvent {
   public:
     PlayRecordEvent();
     virtual ~PlayRecordEvent();
@@ -38,12 +38,10 @@ class PlayRecord {
   public:
     PlayRecord(double* pd, int ith);
     virtual ~PlayRecord();
-    virtual void play_init() {
-    }  // called near beginning of finitialize
+    virtual void play_init() {}  // called near beginning of finitialize
     virtual void continuous(double) {
     }  // play - every f(y, t) or res(y', y, t); record - advance_tn and initialize flag
-    virtual void deliver(double, NetCvode*) {
-    }  // at associated DiscreteEvent
+    virtual void deliver(double, NetCvode*) {}  // at associated DiscreteEvent
     virtual PlayRecordEvent* event() {
         return nullptr;
     }
@@ -56,7 +54,7 @@ class PlayRecord {
     int ith_;  // The thread index
 };
 
-class VecPlayContinuous : public PlayRecord {
+class VecPlayContinuous: public PlayRecord {
   public:
     VecPlayContinuous(double*, IvocVect&& yvec, IvocVect&& tvec, IvocVect* discon, int ith);
     virtual ~VecPlayContinuous();

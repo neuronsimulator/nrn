@@ -107,15 +107,15 @@ extern void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double
 /* Filled the Vector data arrays and send back the sizes at end of run */
 extern void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** vpr, double t);
 
-/* send all spikes vectors to NEURON */  
-extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::vector<int>& gidvec);
+/* send all spikes vectors to NEURON */
+extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec,
+                                                 std::vector<int>& gidvec);
 
 /* send all weights to NEURON */
 extern void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 
 /* get data array pointer from NEURON to copy into. */
-extern size_t (*nrn2core_type_return_)(int type, int tid, double*& data,
-                                       double**& mdata);
-} // extern "C"
+extern size_t (*nrn2core_type_return_)(int type, int tid, double*& data, double**& mdata);
+}  // extern "C"
 
 #endif /* nrn2core_direct_h */

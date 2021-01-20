@@ -13,6 +13,6 @@
 
 namespace coreneuron {
 
-    extern void nrn_spike_exchange_init(void);
-    extern void nrn_spike_exchange(NrnThread* nt);
-}
+extern void nrn_spike_exchange_init(void);
+extern void nrn_spike_exchange(NrnThread* nt);
+}  // namespace coreneuron

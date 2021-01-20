@@ -32,7 +32,9 @@ BOOST_AUTO_TEST_CASE(interleave_info_test) {
 
     // check if copy_array works
     BOOST_CHECK_NE(info1.firstnode, info1.lastnode);
-    BOOST_CHECK_EQUAL_COLLECTIONS(info1.firstnode, info1.firstnode + nwarp + 1, info1.lastnode,
+    BOOST_CHECK_EQUAL_COLLECTIONS(info1.firstnode,
+                                  info1.firstnode + nwarp + 1,
+                                  info1.lastnode,
                                   info1.lastnode + nwarp + 1);
 
     copy_array(info1.cellsize, data1 + 4, nwarp);
@@ -59,16 +61,24 @@ BOOST_AUTO_TEST_CASE(interleave_info_test) {
         BOOST_CHECK_EQUAL(info1.nwarp, infos[i]->nwarp);
         BOOST_CHECK_EQUAL(info1.nstride, infos[i]->nstride);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS(info1.stridedispl, info1.stridedispl + nwarp + 1,
-                                      infos[i]->stridedispl, infos[i]->stridedispl + nwarp + 1);
+        BOOST_CHECK_EQUAL_COLLECTIONS(info1.stridedispl,
+                                      info1.stridedispl + nwarp + 1,
+                                      infos[i]->stridedispl,
+                                      infos[i]->stridedispl + nwarp + 1);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS(info1.stride, info1.stride + nstride, infos[i]->stride,
+        BOOST_CHECK_EQUAL_COLLECTIONS(info1.stride,
+                                      info1.stride + nstride,
+                                      infos[i]->stride,
                                       infos[i]->stride + nstride);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS(info1.cellsize, info1.cellsize + nwarp, infos[i]->cellsize,
+        BOOST_CHECK_EQUAL_COLLECTIONS(info1.cellsize,
+                                      info1.cellsize + nwarp,
+                                      infos[i]->cellsize,
                                       infos[i]->cellsize + nwarp);
 
-        BOOST_CHECK_EQUAL_COLLECTIONS(info1.child_race, info1.child_race + nwarp,
-                                      infos[i]->child_race, infos[i]->child_race + nwarp);
+        BOOST_CHECK_EQUAL_COLLECTIONS(info1.child_race,
+                                      info1.child_race + nwarp,
+                                      infos[i]->child_race,
+                                      infos[i]->child_race + nwarp);
     }
 }

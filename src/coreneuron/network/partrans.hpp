@@ -56,33 +56,33 @@ using sgid_t = int;
  *  input_buf_. And on the source side, it is certainly simple to scatter
  *  to the outbut_buf_ in NrnThread.data order.  Note that one expects a wide
  *  scatter to the outsrc_buf and also a wide scatter within the insrc_buf_.
-**/
+ **/
 
 /*
-* In partrans.cpp: nrnmpi_v_transfer
-*   Copy NrnThead.data to outsrc_buf_ for all threads via
-*     gpu: gather src_gather[i] = NrnThread._data[src_indices[i]];
-*     gpu to host src_gather
-*     cpu: outsrc_buf_[outsrc_indices[i]] = src_gather[gather2outsrc_indices[i]];
-*
-*   MPI_Allgatherv outsrc_buf_ to insrc_buf_
-*
-*   host to gpu insrc_buf_
-*
-* In partrans.cpp: nrnthread_v_transfer
-*   insrc_buf_ to NrnThread._data via
-*   NrnThread.data[tar_indices[i]] = insrc_buf_[insrc_indices[i]];
-*     where tar_indices depends on layout, type, etc.
-*/
+ * In partrans.cpp: nrnmpi_v_transfer
+ *   Copy NrnThead.data to outsrc_buf_ for all threads via
+ *     gpu: gather src_gather[i] = NrnThread._data[src_indices[i]];
+ *     gpu to host src_gather
+ *     cpu: outsrc_buf_[outsrc_indices[i]] = src_gather[gather2outsrc_indices[i]];
+ *
+ *   MPI_Allgatherv outsrc_buf_ to insrc_buf_
+ *
+ *   host to gpu insrc_buf_
+ *
+ * In partrans.cpp: nrnthread_v_transfer
+ *   insrc_buf_ to NrnThread._data via
+ *   NrnThread.data[tar_indices[i]] = insrc_buf_[insrc_indices[i]];
+ *     where tar_indices depends on layout, type, etc.
+ */
 
 struct TransferThreadData {
-    std::vector<int> src_indices;   // indices into NrnThread._data
-    std::vector<double> src_gather; // copy of NrnThread._data[src_indices]
-    std::vector<int> gather2outsrc_indices; // ix of src_gather that send into outsrc_indices
-    std::vector<int> outsrc_indices;// ix of outsrc_buf that receive src_gather values
+    std::vector<int> src_indices;            // indices into NrnThread._data
+    std::vector<double> src_gather;          // copy of NrnThread._data[src_indices]
+    std::vector<int> gather2outsrc_indices;  // ix of src_gather that send into outsrc_indices
+    std::vector<int> outsrc_indices;         // ix of outsrc_buf that receive src_gather values
 
-    std::vector<int> insrc_indices; // insrc_buf_ indices copied to ...
-    std::vector<int> tar_indices;   // indices of NrnThread.data.
+    std::vector<int> insrc_indices;  // insrc_buf_ indices copied to ...
+    std::vector<int> tar_indices;    // indices of NrnThread.data.
 };
 extern TransferThreadData* transfer_thread_data_; /* array for threads */
 
@@ -106,5 +106,5 @@ extern void gap_cleanup();
 extern double* insrc_buf_;   // Receive buffer for gap voltages
 extern double* outsrc_buf_;  // Send buffer for gap voltages
 extern int *insrccnt_, *insrcdspl_, *outsrccnt_, *outsrcdspl_;
-}
+}  // namespace nrn_partrans
 }  // namespace coreneuron

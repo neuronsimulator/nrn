@@ -34,4 +34,4 @@ void nrn_fast_imem_alloc();
 void nrn_calc_fast_imem(NrnThread* _nt);
 
 }  // namespace coreneuron
-#endif //fast_imem_h
+#endif  // fast_imem_h

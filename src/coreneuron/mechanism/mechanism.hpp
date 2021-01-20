@@ -52,7 +52,7 @@ struct NetReceiveBuffer_t {
     int _pnt_offset;
 };
 
-struct NetSendBuffer_t : MemoryManaged {
+struct NetSendBuffer_t: MemoryManaged {
     int* _sendtype;  // net_send, net_event, net_move
     int* _vdata_index;
     int* _pnt_index;
@@ -63,18 +63,19 @@ struct NetSendBuffer_t : MemoryManaged {
     int _size;       /* capacity */
     int reallocated; /* if buffer resized/reallocated, needs to be copy to cpu */
 
-    NetSendBuffer_t(int size) : _size(size) {
+    NetSendBuffer_t(int size)
+        : _size(size) {
         _cnt = 0;
 
-        _sendtype = (int*)ecalloc_align(_size, sizeof(int));
-        _vdata_index = (int*)ecalloc_align(_size, sizeof(int));
-        _pnt_index = (int*)ecalloc_align(_size, sizeof(int));
-        _weight_index = (int*)ecalloc_align(_size, sizeof(int));
+        _sendtype = (int*) ecalloc_align(_size, sizeof(int));
+        _vdata_index = (int*) ecalloc_align(_size, sizeof(int));
+        _pnt_index = (int*) ecalloc_align(_size, sizeof(int));
+        _weight_index = (int*) ecalloc_align(_size, sizeof(int));
         // when == 1, NetReceiveBuffer_t is newly allocated (i.e. we need to free previous copy
         // and recopy new data
         reallocated = 1;
-        _nsb_t = (double*)ecalloc_align(_size, sizeof(double));
-        _nsb_flag = (double*)ecalloc_align(_size, sizeof(double));
+        _nsb_t = (double*) ecalloc_align(_size, sizeof(double));
+        _nsb_flag = (double*) ecalloc_align(_size, sizeof(double));
     }
 
     ~NetSendBuffer_t() {
@@ -102,16 +103,15 @@ struct NetSendBuffer_t : MemoryManaged {
 #endif
     }
 
-    private:
-        template <typename T>
-        void grow_buf(T** buf, int size, int new_size) {
-            T* new_buf = nullptr;
-            new_buf = (T*)ecalloc_align(new_size, sizeof(T));
-            memcpy(new_buf, *buf, size * sizeof(T));
-            free(*buf);
-            *buf = new_buf;
-        }
-
+  private:
+    template <typename T>
+    void grow_buf(T** buf, int size, int new_size) {
+        T* new_buf = nullptr;
+        new_buf = (T*) ecalloc_align(new_size, sizeof(T));
+        memcpy(new_buf, *buf, size * sizeof(T));
+        free(*buf);
+        *buf = new_buf;
+    }
 };
 
 struct Memb_list {

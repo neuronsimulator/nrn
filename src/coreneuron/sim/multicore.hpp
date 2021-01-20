@@ -63,7 +63,7 @@ struct PreSynHelper {
     int flag_;
 };
 
-struct NrnThread : public MemoryManaged {
+struct NrnThread: public MemoryManaged {
     double _t = 0;
     double _dt = -1e9;
     double cj = 0.0;
@@ -73,7 +73,8 @@ struct NrnThread : public MemoryManaged {
     Point_process* pntprocs = nullptr;  // synapses and artificial cells with and without gid
     PreSyn* presyns = nullptr;          // all the output PreSyn with and without gid
     PreSynHelper* presyns_helper = nullptr;
-    int** pnt2presyn_ix = nullptr;  // eliminates Point_process._presyn used only by net_event sender.
+    int** pnt2presyn_ix = nullptr;  // eliminates Point_process._presyn used only by net_event
+                                    // sender.
     NetCon* netcons = nullptr;
     double* weights = nullptr;  // size n_weight. NetCon.weight_ points into this array.
 
@@ -91,11 +92,11 @@ struct NrnThread : public MemoryManaged {
 
     size_t _ndata = 0;
     size_t _nvdata = 0;
-    size_t _nidata = 0;                            /* sizes */
-    double* _data = nullptr;                   /* all the other double* and Datum to doubles point into here*/
-    int* _idata = nullptr;                     /* all the Datum to ints index into here */
-    void** _vdata = nullptr;                   /* all the Datum to pointers index into here */
-    void** _vecplay = nullptr;                 /* array of instances of VecPlayContinuous */
+    size_t _nidata = 0;        /* sizes */
+    double* _data = nullptr;   /* all the other double* and Datum to doubles point into here*/
+    int* _idata = nullptr;     /* all the Datum to ints index into here */
+    void** _vdata = nullptr;   /* all the Datum to pointers index into here */
+    void** _vecplay = nullptr; /* array of instances of VecPlayContinuous */
 
     double* _actual_rhs = nullptr;
     double* _actual_d = nullptr;
@@ -104,10 +105,10 @@ struct NrnThread : public MemoryManaged {
     double* _actual_v = nullptr;
     double* _actual_area = nullptr;
     double* _actual_diam = nullptr; /* nullptr if no mechanism has dparam with diam semantics */
-    double* _shadow_rhs = nullptr;  /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
-                             compartment */
-    double* _shadow_d = nullptr;    /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in same
-                             compartment */
+    double* _shadow_rhs = nullptr;  /* Not pointer into _data. Avoid race for multiple POINT_PROCESS
+                             in same  compartment */
+    double* _shadow_d = nullptr; /* Not pointer into _data. Avoid race for multiple POINT_PROCESS in
+                          same compartment */
 
     /* Fast membrane current calculation struct */
     NrnFastImem* nrn_fast_imem = nullptr;
@@ -140,17 +141,17 @@ struct NrnThread : public MemoryManaged {
 extern void nrn_threads_create(int n);
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
-template<typename F, typename... Args>
+template <typename F, typename... Args>
 void nrn_multithread_job(F&& job, Args&&... args) {
     int i;
-// clang-format off
+    // clang-format off
 
     #pragma omp parallel for private(i) shared(nrn_threads, job, nrn_nthread, \
                                            nrnmpi_myid) schedule(static, 1)
     for (i = 0; i < nrn_nthread; ++i) {
         job(nrn_threads + i, std::forward<Args>(args)...);
     }
-// clang-format on
+    // clang-format on
 }
 
 extern void nrn_thread_table_check(void);

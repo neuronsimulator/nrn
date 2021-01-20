@@ -5,8 +5,9 @@
 # =============================================================================
 
 # commonly included directories
-include_directories(utils/randoms ${MPI_INCLUDE_PATH} ${PROJECT_BINARY_DIR}/coreneuron
-                    ${CMAKE_BINARY_DIR}/coreneuron ${CMAKE_BINARY_DIR}/include)
+include_directories(
+  utils/randoms ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron
+  ${CMAKE_BINARY_DIR}/coreneuron ${CMAKE_BINARY_DIR}/include)
 
 # put libraries (e.g. dll) in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

@@ -146,8 +146,15 @@ static void have_to_want(HAVEWANT_t* have,
     // 1) Send have and want to the rendezvous ranks.
     HAVEWANT_t *have_s_data, *have_r_data;
     int *have_s_cnt, *have_s_displ, *have_r_cnt, *have_r_displ;
-    rendezvous_rank_get(have, have_size, have_s_data, have_s_cnt, have_s_displ, have_r_data,
-                        have_r_cnt, have_r_displ, rendezvous_rank);
+    rendezvous_rank_get(have,
+                        have_size,
+                        have_s_data,
+                        have_s_cnt,
+                        have_s_displ,
+                        have_r_data,
+                        have_r_cnt,
+                        have_r_displ,
+                        rendezvous_rank);
     // assume it is an error if two ranks have the same key so create
     // hash table of key2rank. Will also need it for matching have and want
     HAVEWANT2Int havekey2rank = HAVEWANT2Int();
@@ -156,7 +163,7 @@ static void have_to_want(HAVEWANT_t* have,
             HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
             if (havekey2rank.find(key) != havekey2rank.end()) {
                 char buf[200];
-                sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
+                sprintf(buf, "key %lld owned by multiple ranks\n", (long long) key);
                 hoc_execerror(buf, 0);
             }
             havekey2rank[key] = r;
@@ -171,8 +178,15 @@ static void have_to_want(HAVEWANT_t* have,
 
     HAVEWANT_t *want_s_data, *want_r_data;
     int *want_s_cnt, *want_s_displ, *want_r_cnt, *want_r_displ;
-    rendezvous_rank_get(want, want_size, want_s_data, want_s_cnt, want_s_displ, want_r_data,
-                        want_r_cnt, want_r_displ, rendezvous_rank);
+    rendezvous_rank_get(want,
+                        want_size,
+                        want_s_data,
+                        want_s_cnt,
+                        want_s_displ,
+                        want_r_data,
+                        want_r_cnt,
+                        want_r_displ,
+                        rendezvous_rank);
 
     // 2) Rendezvous rank matches have and want.
     //    we already have made the havekey2rank map.
@@ -186,7 +200,7 @@ static void have_to_want(HAVEWANT_t* have,
             HAVEWANT_t key = want_r_data[ix];
             if (havekey2rank.find(key) == havekey2rank.end()) {
                 char buf[200];
-                sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
+                sprintf(buf, "key = %lld is wanted but does not exist\n", (long long) key);
                 hoc_execerror(buf, 0);
             }
             want_r_ownerranks[ix] = havekey2rank[key];
@@ -202,8 +216,12 @@ static void have_to_want(HAVEWANT_t* have,
     int* want_s_ownerranks = new int[want_s_displ[nhost]];
 #if NRNMPI
     if (nhost > 1) {
-        nrnmpi_int_alltoallv(want_r_ownerranks, want_r_cnt, want_r_displ, want_s_ownerranks,
-                             want_s_cnt, want_s_displ);
+        nrnmpi_int_alltoallv(want_r_ownerranks,
+                             want_r_cnt,
+                             want_r_displ,
+                             want_s_ownerranks,
+                             want_s_cnt,
+                             want_s_displ);
     } else
 #endif
     {
@@ -251,8 +269,8 @@ static void have_to_want(HAVEWANT_t* have,
     want_r_data = new HAVEWANT_t[want_r_displ[nhost]];
 #if NRNMPI
     if (nhost > 1) {
-        HAVEWANT_alltoallv(want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt,
-                           want_r_displ);
+        HAVEWANT_alltoallv(
+            want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt, want_r_displ);
     } else
 #endif
     {

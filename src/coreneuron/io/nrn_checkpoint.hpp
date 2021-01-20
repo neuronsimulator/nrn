@@ -17,9 +17,7 @@ class FileHandler;
 
 extern bool nrn_checkpoint_arg_exists;
 
-void write_checkpoint(NrnThread* nt,
-                      int nb_threads,
-                      const char* dir);
+void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir);
 
 void checkpoint_restore_tqueue(NrnThread&, const Phase2& p2);
 
@@ -88,7 +86,6 @@ struct NrnThreadChkpnt {
     int* mtype;
     int* vecplay_ix;
 #endif  // CHKPNTDEBUG
-
 };
 
 extern NrnThreadChkpnt* nrnthread_chkpnt;

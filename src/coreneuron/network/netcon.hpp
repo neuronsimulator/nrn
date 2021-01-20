@@ -24,12 +24,12 @@ struct Point_process;
 class NetCvode;
 
 #define DiscreteEventType 0
-#define TstopEventType 1
-#define NetConType 2
-#define SelfEventType 3
-#define PreSynType 4
-#define NetParEventType 7
-#define InputPreSynType 20
+#define TstopEventType    1
+#define NetConType        2
+#define SelfEventType     3
+#define PreSynType        4
+#define NetParEventType   7
+#define InputPreSynType   20
 
 class DiscreteEvent {
   public:
@@ -46,7 +46,7 @@ class DiscreteEvent {
     virtual void pr(const char*, double t, NetCvode*);
 };
 
-class NetCon : public DiscreteEvent {
+class NetCon: public DiscreteEvent {
   public:
     bool active_;
     double delay_;
@@ -69,7 +69,7 @@ class NetCon : public DiscreteEvent {
     virtual void pr(const char*, double t, NetCvode*) override;
 };
 
-class SelfEvent : public DiscreteEvent {
+class SelfEvent: public DiscreteEvent {
   public:
     double flag_;
     Point_process* target_;
@@ -89,7 +89,7 @@ class SelfEvent : public DiscreteEvent {
     void call_net_receive(NetCvode*);
 };
 
-class ConditionEvent : public DiscreteEvent {
+class ConditionEvent: public DiscreteEvent {
   public:
     // condition detection factored out of PreSyn for re-use
     ConditionEvent();
@@ -103,7 +103,7 @@ class ConditionEvent : public DiscreteEvent {
                 // bug(?))
 };
 
-class PreSyn : public ConditionEvent {
+class PreSyn: public ConditionEvent {
   public:
 #if NRNMPI
     unsigned char localgid_;  // compressed gid for spike transfer
@@ -131,7 +131,7 @@ class PreSyn : public ConditionEvent {
 #endif
 };
 
-class InputPreSyn : public DiscreteEvent {
+class InputPreSyn: public DiscreteEvent {
   public:
     int nc_index_;  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
     int nc_cnt_;    // how many netcon starting at nc_index_
@@ -148,7 +148,7 @@ class InputPreSyn : public DiscreteEvent {
 #endif
 };
 
-class NetParEvent : public DiscreteEvent {
+class NetParEvent: public DiscreteEvent {
   public:
     int ithread_;     // for pr()
     double wx_, ws_;  // exchange time and "spikes to Presyn" time

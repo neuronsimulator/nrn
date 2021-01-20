@@ -16,7 +16,6 @@
 using namespace coreneuron;
 
 BOOST_AUTO_TEST_CASE(cmdline_interface) {
-
     const char* argv[] = {
 
         "nrniv-core",
@@ -74,20 +73,21 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
         "0.1",
 
         "--dt_io",
-        "0.2"
-        };
+        "0.2"};
 
     int argc = 0;
 
-    for (; strcmp(argv[argc], "0.2"); argc++);
+    for (; strcmp(argv[argc], "0.2"); argc++)
+        ;
 
     argc++;
-    
+
     corenrn_parameters corenrn_param_test;
 
-    corenrn_param_test.parse(argc, const_cast<char**>(argv)); //discarding const as CLI11 interface is not const
-    
-    BOOST_CHECK(corenrn_param_test.seed == -1);            // testing default value
+    corenrn_param_test.parse(argc, const_cast<char**>(argv));  // discarding const as CLI11
+                                                               // interface is not const
+
+    BOOST_CHECK(corenrn_param_test.seed == -1);  // testing default value
 
     BOOST_CHECK(corenrn_param_test.spikebuf == 100);
 
@@ -132,7 +132,6 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     argc = 1;
 
     corenrn_param_test.dt = 18.1;
-    
-    BOOST_CHECK(corenrn_param_test.dt == 18.1);
 
+    BOOST_CHECK(corenrn_param_test.dt == 18.1);
 }

@@ -287,8 +287,9 @@ using InstrumentorImpl = detail::Instrumentor<
 
 namespace Instrumentor {
 struct phase {
-    const char * phase_name;
-    phase(const char* name) : phase_name(name) {
+    const char* phase_name;
+    phase(const char* name)
+        : phase_name(name) {
         detail::InstrumentorImpl::phase_begin(phase_name);
     }
     ~phase() {
@@ -319,6 +320,6 @@ inline static void init_profile() {
 inline static void finalize_profile() {
     detail::InstrumentorImpl::finalize_profile();
 }
-}
+}  // namespace Instrumentor
 
 }  // namespace coreneuron

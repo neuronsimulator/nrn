@@ -12,4 +12,4 @@ namespace coreneuron {
 
 extern int prcellstate(int gid, const char* suffix);
 
-} // namespace coreneuron
+}  // namespace coreneuron

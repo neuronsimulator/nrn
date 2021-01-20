@@ -74,7 +74,12 @@ extern void nrnmpi_int_gatherv(int* s, int scnt, int* r, int* rcnt, int* rdispl,
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_int_alltoall(int* s, int* r, int n);
-extern void nrnmpi_int_alltoallv(const int* s, const int* scnt, const int* sdispl, int* r, int* rcnt, int* rdispl);
+extern void nrnmpi_int_alltoallv(const int* s,
+                                 const int* scnt,
+                                 const int* sdispl,
+                                 int* r,
+                                 int* rcnt,
+                                 int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 extern void nrnmpi_dbl_alltoallv(double* s,
                                  int* scnt,

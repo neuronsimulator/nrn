@@ -48,8 +48,9 @@ class FileHandler {
     FileHandler& operator=(const FileHandler&);
 
   public:
-    FileHandler() : chkpnt(0), stored_chkpnt(0) {
-    }
+    FileHandler()
+        : chkpnt(0)
+        , stored_chkpnt(0) {}
 
     explicit FileHandler(const std::string& filename);
 
@@ -166,7 +167,7 @@ class FileHandler {
                 F.seekg(count * sizeof(T), std::ios_base::cur);
                 break;
             case read:
-                F.read((char*)p, count * sizeof(T));
+                F.read((char*) p, count * sizeof(T));
                 break;
         }
 
@@ -204,7 +205,7 @@ class FileHandler {
         nrn_assert(F.is_open());
         nrn_assert(current_mode & std::ios::out);
         write_checkpoint();
-        F.write((const char*)p, nb_elements * (sizeof(T)));
+        F.write((const char*) p, nb_elements * (sizeof(T)));
         nrn_assert(!F.fail());
     }
 
@@ -232,7 +233,7 @@ class FileHandler {
         }
         // AoS never use padding, SoA is translated above, so one write
         // operation is enought in both cases
-        F.write((const char*)temp_cpy, nb_elements * sizeof(T) * nb_lines);
+        F.write((const char*) temp_cpy, nb_elements * sizeof(T) * nb_lines);
         nrn_assert(!F.fail());
         delete[] temp_cpy;
     }

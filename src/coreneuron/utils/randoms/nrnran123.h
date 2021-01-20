@@ -33,7 +33,7 @@ http://www.deshawresearch.com/resources_random123.html
 
 #ifdef __bgclang__
 #define R123_USE_MULHILO64_MULHI_INTRIN 0
-#define R123_USE_GNU_UINT128 1
+#define R123_USE_GNU_UINT128            1
 #endif
 
 #include <Random123/philox.h>
@@ -48,22 +48,22 @@ http://www.deshawresearch.com/resources_random123.html
 #endif
 
 #if (defined(__CUDACC__) || defined(_OPENACC)) && !defined(DISABLE_OPENACC)
-#define nrnran123_newstream cu_nrnran123_newstream
-#define nrnran123_newstream3 cu_nrnran123_newstream3
-#define nrnran123_deletestream cu_nrnran123_deletestream
-#define nrnran123_uint2dbl cu_nrnran123_uint2dbl
-#define nrnran123_negexp cu_nrnran123_negexp
-#define nrnran123_dblpick cu_nrnran123_dblpick
-#define nrnran123_ipick cu_nrnran123_ipick
-#define nrnran123_getids cu_nrnran123_getids
-#define nrnran123_setseq cu_nrnran123_setseq
-#define nrnran123_getseq cu_nrnran123_getseq
+#define nrnran123_newstream       cu_nrnran123_newstream
+#define nrnran123_newstream3      cu_nrnran123_newstream3
+#define nrnran123_deletestream    cu_nrnran123_deletestream
+#define nrnran123_uint2dbl        cu_nrnran123_uint2dbl
+#define nrnran123_negexp          cu_nrnran123_negexp
+#define nrnran123_dblpick         cu_nrnran123_dblpick
+#define nrnran123_ipick           cu_nrnran123_ipick
+#define nrnran123_getids          cu_nrnran123_getids
+#define nrnran123_setseq          cu_nrnran123_setseq
+#define nrnran123_getseq          cu_nrnran123_getseq
 #define nrnran123_get_globalindex cu_nrnran123_get_globalindex
 #define nrnran123_set_globalindex cu_nrnran123_set_globalindex
-#define nrnran123_state_size cu_nrnran123_state_size
-#define nrnran123_instance_count cu_nrnran123_instance_count
-#define nrnran123_normal cu_nrnran123_normal
-#define nrnran123_getids3 cu_nrnran123_getids3
+#define nrnran123_state_size      cu_nrnran123_state_size
+#define nrnran123_instance_count  cu_nrnran123_instance_count
+#define nrnran123_normal          cu_nrnran123_normal
+#define nrnran123_getids3         cu_nrnran123_getids3
 #endif
 
 namespace coreneuron {
@@ -74,7 +74,9 @@ typedef struct nrnran123_State {
     char which_;
 } nrnran123_State;
 
-typedef struct nrnran123_array4x32 { uint32_t v[4]; } nrnran123_array4x32;
+typedef struct nrnran123_array4x32 {
+    uint32_t v[4];
+} nrnran123_array4x32;
 
 /* do this on launch to make nrnran123_newstream threadsafe */
 extern DEVICE void nrnran123_mutconstruct(void);

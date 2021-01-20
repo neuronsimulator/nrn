@@ -23,15 +23,16 @@ class fixed_vector {
 
     fixed_vector() = default;
 
-    fixed_vector(size_t n) : n_(n) {
+    fixed_vector(size_t n)
+        : n_(n) {
         data_ = new T[n_];
     }
 
     fixed_vector(const fixed_vector& vec) = delete;
     fixed_vector& operator=(const fixed_vector& vec) = delete;
     fixed_vector(fixed_vector&& vec)
-        : data_(nullptr), n_(vec.n_)
-    {
+        : data_(nullptr)
+        , n_(vec.n_) {
         std::swap(data_, vec.data_);
     }
     fixed_vector& operator=(fixed_vector&& vec) {

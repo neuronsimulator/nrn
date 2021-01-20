@@ -16,5 +16,4 @@ namespace coreneuron {
 extern void core2nrn_data_return();
 
 }  // namespace coreneuron
-#endif // _H_CORENRNDATARETURN_
-
+#endif  // _H_CORENRNDATARETURN_
