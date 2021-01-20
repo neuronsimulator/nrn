@@ -7,3 +7,4 @@ matplotlib
 bokeh
 ipython
 plotnine
+numpy

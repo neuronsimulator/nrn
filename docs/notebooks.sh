@@ -1,3 +1,4 @@
+#!/bin/sh
 set -e
 
 echo "Converting jupyter notebooks to html"
