@@ -219,9 +219,9 @@ def show_nrnshape():
     shapebox.unmap()
     shapebox = None
   shapebox = h.VBox()
-  shapebox.intercept(1)
+  shapebox.intercept(True)
   h.makeMenuExplore()
-  shapebox.intercept(0)
+  shapebox.intercept(False)
   shapebox.map("NEURON ShapeName", 100, 500, -1, -1)
 
 def show(tdat):

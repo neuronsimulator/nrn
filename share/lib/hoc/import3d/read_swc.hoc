@@ -394,7 +394,7 @@ proc mksection() { local i, isec, first, den_con_soma, con_soma, handled   local
         }
       } else if (pix2ix(first) == psec.id) { // connect to first point of root
         sec.parentx = 0.0
-        if (type.x[first] != 1 && nchild_soma.x(pix2ix(first)) > 1) {
+        if (type.x[first] != 1 && nchild_soma.x[pix2ix(first)] > 1) {
           sec.first = 1
         }
       } else {
