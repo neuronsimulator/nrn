@@ -258,7 +258,7 @@ static void update_extracellular_reg(int old_nlayer) {
 void nlayer_extracellular() {
   if (ifarg(1)) {
     int old = nlayer;
-    nrn_nlayer_extracellular = (int)chkarg(1, 0., 1000.);
+    nrn_nlayer_extracellular = (int)chkarg(1, 1., 1000.);
     if (nlayer == old) { return; }
 
     check_if_extracellular_in_use();
