@@ -284,10 +284,10 @@ VarsToReport ReportHandler::get_custom_vars_to_report(const NrnThread& nt,
             if ((nodes_to_gids[ml->nodeindices[j]] == gid) && report_variable) {
                 double* var_value =
                     get_var_location_from_var_name(report.mech_id, report.var_name.data(), ml, j);
-                const auto synapse_id = static_cast<int>(
-                    *get_var_location_from_var_name(report.mech_id, SYNAPSE_ID_MOD_NAME, ml, j));
+                double* synapse_id =
+                    get_var_location_from_var_name(report.mech_id, SYNAPSE_ID_MOD_NAME, ml, j);
                 nrn_assert(synapse_id && var_value);
-                to_report.emplace_back(synapse_id, var_value);
+                to_report.emplace_back(static_cast<int>(*synapse_id), var_value);
             }
         }
         if (!to_report.empty()) {
