@@ -34,6 +34,7 @@ src/nrnoc/expsyn.c
 src/nrnoc/feature.c
 src/nrnoc/hh.c
 src/nrnoc/hh.mod.orig
+src/nrnoc/hocusr.h
 src/nrnoc/intfire1.c
 src/nrnoc/intfire2.c
 src/nrnoc/intfire4.c
