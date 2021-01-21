@@ -10,6 +10,8 @@
 #include <ivstream.h>
 #include <math.h>
 #include <errno.h>
+#include <numeric>
+#include <functional>
 
 #include <OS/math.h>
 #include "fourier.h"
@@ -111,9 +113,6 @@ static double dmaxint_ = 9007199254740992;
 #include "random1.h"
 #include <Uniform.h>
 
-// definition of comparison functions
-#include <d_defs.h>
-
 #if HAVE_IV
 #include "utility.h"
 #endif
@@ -154,6 +153,8 @@ static int narg() {
 
 #define EPSILON 1e-9
 
+using doubleComparator = std::function<int(double, double)>;
+
 extern "C" {
 extern void install_vector_method(const char* name, Pfrd_vp);
 extern int vector_instance_px(void*, double**);
@@ -165,17 +166,17 @@ extern void notify_freed_val_array(double*, size_t);
 
 extern int hoc_return_type_code;
 
-IvocVect::IvocVect(Object* o) : ParentVect(){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(int l, Object* o) : ParentVect(l){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(int l, double fill_value, Object* o) : ParentVect(l, fill_value){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
-IvocVect::IvocVect(IvocVect& v, Object* o) : ParentVect(v) {obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(Object* o) {obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, Object* o) : vec_(l) {obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(int l, double fill_value, Object* o) : vec_(l, fill_value){obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
+IvocVect::IvocVect(IvocVect& v, Object* o) : vec_(v.vec_) {obj_ = o; label_ = NULL; MUTCONSTRUCT(0)}
 
 IvocVect::~IvocVect(){
 	MUTDESTRUCT
 	if (label_) {
 		delete [] label_;
 	}
-	notify_freed_val_array(vec(), capacity());
+	notify_freed_val_array(vec_.data(), vec_.capacity());
 }
 
 void IvocVect::label(const char* label) {
@@ -208,7 +209,7 @@ static void same_err(const char* s, Vect* x, Vect* y) {
 	}
 }
 
-/* the Vect->at(start, end) function was used in about a dozen places
+/* the Vect->elem(start, end) function was used in about a dozen places
 for the purpose of dealing with a subrange of elements. However that
 function clones the subrange and returns a new Vect. This caused a
 memory leak and was needlessly inefficient for those functions.
@@ -219,36 +220,6 @@ the original vector. The usage is restricted to only once at a time, i.e.
 can't use two subvecs at once and never do anything which affects the
 memory space.
 */
-
-static IvocVect* subvec_; // allocated when registered.
-IvocVect* IvocVect::subvec(int start, int end) {
-	subvec_->len = end - start + 1;
-	subvec_->s = s + start;
-	return subvec_;
-}
-
-void IvocVect::resize(int newlen) { // all that for this
-	long oldcap = capacity();
-	if (newlen > space) {
-		notify_freed_val_array(vec(), capacity());
-	}
-	ParentVect::resize(newlen);
-	for (;oldcap < newlen; ++oldcap) {
-		elem(oldcap) = 0.;
-	}
-}
-
-void IvocVect::resize_chunk(int newlen, int extra) {
-	if (newlen > space) {
-		long x = newlen + extra;
-		if (extra == 0) {
-			x = ListImpl_best_new_count(newlen, sizeof(double));
-		}
-//		printf("resize_chunk %d\n", x);
-		resize(x);
-	}
-	resize(newlen);		
-}
 
 #if HAVE_IV
 /*static*/ class GraphMarkItem : public GraphItem {
@@ -299,17 +270,15 @@ Vect* vector_new1(int n){return new Vect(n);}
 Vect* vector_new2(Vect* v){return new Vect(*v);}
 void vector_delete(Vect* v){delete v;}
 int vector_buffer_size(Vect* v){return v->buffer_size();}
-int vector_capacity(Vect* v){return v->capacity();}
+int vector_capacity(Vect* v){return v->size();}
 void vector_resize(Vect* v, int n){v->resize(n);}
 Object** vector_temp_objvar(Vect* v){return v->temp_objvar();}
-double* vector_vec(Vect* v){return v->vec();}
+double* vector_vec(Vect* v){return v->data();}
 Object** vector_pobj(Vect* v){return &v->obj_;}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
 void vector_append(Vect* v, double x){
-  long n = v->capacity();
-  v->resize_chunk(n+1);
-  v->elem(n) = x;
+  v->vec().push_back(x);
 }
 
 #ifdef WIN32
@@ -361,8 +330,8 @@ void install_vector_method(const char* name, double (*f)(void*)) {
 
 extern "C" int vector_instance_px(void* v, double** px) {
 	Vect* x = (Vect*)v;
-	*px = x->vec();
-	return x->capacity();
+	*px = x->data();
+	return x->size();
 }
 
 extern "C" Vect* vector_arg(int i) {
@@ -383,8 +352,8 @@ int is_vector_arg(int i) {
 
 int vector_arg_px(int i, double** px) {
 	Vect* x = vector_arg(i);
-	*px = x->vec();
-	return x->capacity();
+	*px = x->data();
+	return x->size();
 }
 
 extern void nrn_vecsim_add(void*, bool);
@@ -408,13 +377,13 @@ static double v_play_remove(void* v) {
 static double v_fwrite(void* v) {
 	Vect* vp = (Vect*)v;
 	void* s;
-	int x_max = vp->capacity()-1;
+	int x_max = vp->size()-1;
 	int start = 0;
 	int end = x_max;
 	hoc_return_type_code = 1; // integer
 	if (ifarg(2)) {
 	  start = int(chkarg(2,0,x_max));
-	  end = int(chkarg(3,0,x_max));
+	  end = int(chkarg(3,start,x_max));
 	}
 	s = (void*)(&vp->elem(start));
 	const char* x = (const char*)s;
@@ -433,7 +402,6 @@ static double v_fwrite(void* v) {
 
 static double v_fread(void* v) {
 	Vect* vp = (Vect*)v;
-	void* s = (void*)(vp->vec());
 
         Object* ob = *hoc_objgetarg(1);
 
@@ -441,7 +409,7 @@ static double v_fread(void* v) {
 	OcFile* f = (OcFile*)(ob->u.this_pointer);
 
 	if (ifarg(2)) vp->resize(int(chkarg(2,0,1e10)));
-	int n = vp->capacity();
+	int n = vp->size();
 
         int type = 4;
 	if (ifarg(3)) {
@@ -523,7 +491,7 @@ static double v_vwrite(void* v) {
 
 	 BinaryMode(f)
 	// first, write the size of the vector
-	int n = vp->capacity();
+	int n = vp->size();
         FWrite(&n,sizeof(int),1,fp);
 
 // next, write the type of elements
@@ -538,7 +506,7 @@ static double v_vwrite(void* v) {
         void *s;
         const char* x;
 
-        double min,r,sf,sub,intermed;
+        double min, max, r,sf,sub,intermed;
         switch (type) {
 
         case 5:     // integers as ints (no scaling)
@@ -554,7 +522,7 @@ static double v_vwrite(void* v) {
 
         case 4:     // doubles (no conversion unless BYTESWAP used and needed)
 	{
-           s = (void*)(&(vp->elem(0)));	
+           s = (void*)(&(vp->elem(0)));
 	   x = (const char*)s;
 	   FWrite(x,sizeof(double),n,fp);
            break;
@@ -574,8 +542,10 @@ static double v_vwrite(void* v) {
             
         case 2:     // short ints (scale to 16 bits with compression)
 	{
-           min = vp->min();
-           r = vp->max()- min;
+	       auto minmax = std::minmax_element(vp->begin(), vp->end());
+           min = *minmax.first;
+           max = *minmax.second;
+           r = max - min;
            if (r > 0) {
                 sf = TWO_BYTE_HIGH/r;
            } else {
@@ -600,8 +570,10 @@ static double v_vwrite(void* v) {
         case 1:      // char (scale to 8 bits with compression)
  	{
            sub = ONE_BYTE_HALF;
-           min = vp->min();
-           r = vp->max()- min;
+            auto minmax = std::minmax_element(vp->begin(), vp->end());
+            min = *minmax.first;
+            max = *minmax.second;
+            r = max - min;
            if (r > 0) {
                 sf = ONE_BYTE_HIGH/r;
            } else {
@@ -629,7 +601,7 @@ static double v_vwrite(void* v) {
 
 static double v_vread(void* v) {
 	Vect* vp = (Vect*)v;
-	void* s = (void*)(vp->vec());
+	void* s = (void*)(vp->data());
 
         Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "File");
@@ -659,7 +631,7 @@ static double v_vread(void* v) {
         BYTESWAP(n,int)
         BYTESWAP(type,int)
 	if (type < 1 || type > 5) { return 0.;}
-        if (vp->capacity() != n) vp->resize(n);
+        if (vp->size() != n) vp->resize(n);
 
 // read as appropriate type and convert to doubles
 
@@ -685,7 +657,7 @@ static double v_vread(void* v) {
         case 4:        // doubles
            FRead(&(vp->elem(0)),sizeof(double),n,fp);
   	   if (BYTESWAP_FLAG == 1) {
-	     for (i=0;i<n;++i) { BYTESWAP(vp->elem(i),double) }  
+	     for (i=0;i<n;++i) { BYTESWAP(vp->elem(i),double) }
 	   }
            break;
             
@@ -741,7 +713,7 @@ static double v_vread(void* v) {
 static double v_printf(void *v) {
         Vect* x = (Vect*)v;
 	
-	int top = x->capacity()-1;
+	int top = x->size()-1;
 	int start = 0;
 	int end = top;
 	int next_arg = 1;
@@ -826,8 +798,10 @@ static double v_scanf(void *v) {
 
 	        // read data
          	if (!f->eof()) {
-			x->resize_chunk(i+1);
-         		x->elem(i) = hoc_scan(f->file());
+         	    if(n >= 0)
+         	        x->elem(i) = hoc_scan(f->file());
+         	    else
+         	        x->push_back(hoc_scan(f->file()));
          	}
 
 		// skip unwanted columns after
@@ -838,7 +812,7 @@ static double v_scanf(void *v) {
 		i++;
         }
 	
-	if (x->capacity() != i) x->resize(i);
+	if (x->size() != i) x->resize(i);
 
 	return double(i);
 }
@@ -879,8 +853,7 @@ static double v_scantil(void *v) {
 		if (val == til) {
 			break;
 		}
-		x->resize_chunk(i+1);
-       		x->elem(i) = val;
+		x->push_back(val);
 
 		// skip unwanted columns after
 		for (j=c;j<nc;j++) {
@@ -916,8 +889,8 @@ static Object** v_plot(void* v) {
 #if HAVE_IV
 IFGUI
         int i;
-	double* y = vp->vec();
-	int n = vp->capacity();
+	double* y = vp->data();
+	auto n = vp->size();
 
         Object* ob1 = *hoc_objgetarg(1);
 	check_obj_type(ob1, "Graph");
@@ -941,7 +914,7 @@ IFGUI
 	   if (hoc_is_object_arg(2)) {
                  // passed a vector
              Vect* vp2 = vector_arg(2);
-	     n = Math::min(n, vp2->capacity());
+	     n = std::min(n, vp2->size());
 	     for (i=0; i < n; ++i) gv->add(vp2->elem(i), y + i);
            } else {
                  // passed xinterval
@@ -971,7 +944,7 @@ static Object** v_ploterr(void* v) {
         Vect* vp = (Vect*)v;
 #if HAVE_IV
 IFGUI
-	int n = vp->capacity();
+	int n = vp->size();
 
         Object* ob1 = *hoc_objgetarg(1);
 	check_obj_type(ob1, "Graph");
@@ -988,18 +961,18 @@ IFGUI
 	}
 
         Vect* vp2 = vector_arg(2);
-	if (vp2->capacity() < n) n = vp2->capacity();
+	if (vp2->size() < n) n = vp2->size();
 
         Vect* vp3 = vector_arg(3);
-	if (vp3->capacity() < n) n = vp3->capacity();
+	if (vp3->size() < n) n = vp3->size();
 
         for (int i=0; i < n; ++i) {
 	  g->begin_line();
 	       
 	  g->line(vp2->elem(i),vp->elem(i) - vp3->elem(i));
 	  g->line(vp2->elem(i),vp->elem(i) + vp3->elem(i));
-	  g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);      	     
-	  g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);      	     
+	  g->mark(vp2->elem(i), vp->elem(i) - vp3->elem(i), style, size, color, brush);
+	  g->mark(vp2->elem(i), vp->elem(i) + vp3->elem(i), style, size, color, brush);
 	}
 
         g->flush();
@@ -1014,7 +987,7 @@ static Object** v_line(void* v) {
 #if HAVE_IV
 IFGUI
         int i;
-	int n = vp->capacity();
+	auto n = vp->size();
 
         Object* ob1 = *hoc_objgetarg(1);
 	check_obj_type(ob1, "Graph");
@@ -1039,7 +1012,7 @@ IFGUI
 	   if (hoc_is_object_arg(2)) {
                  // passed a vector
              Vect* vp2 = vector_arg(2);
-	     n = Math::min(n, vp2->capacity());
+	     n = std::min(n, vp2->size());
 	     for (i=0; i < n; ++i) g->line(vp2->elem(i), vp->elem(i));
            } else {
                  // passed xinterval
@@ -1064,7 +1037,7 @@ static Object** v_mark(void* v) {
 #if HAVE_IV
 IFGUI
         int i;
-	int n = vp->capacity();
+	int n = vp->size();
 
         Object* ob1 = *hoc_objgetarg(1);
 	check_obj_type(ob1, "Graph");
@@ -1090,7 +1063,7 @@ IFGUI
              Vect* vp2 = vector_arg(2);
 	
 	     for (i=0; i < n; ++i) {
-    	       g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);       
+    	       g->mark(vp2->elem(i), vp->elem(i), style, size, color, brush);
 	     }
 
         } else {
@@ -1115,18 +1088,18 @@ static Object** v_histogram(void* v) {
 
 //	SampleHistogram h(low,high,width);
 	int i;
-//	for (i=0; i< x->capacity(); i++) h += x->elem(i);
+//	for (i=0; i< x->size(); i++) h += x->elem(i);
 
 //	int n = h.buckets();
 	// analogous to howManyBuckets in gnu/SamplHist.cpp
 	int n = int(floor((high - low)/width)) + 2;
 	Vect* y = new Vect(n);
-	y->fill(0.);
+	std::fill(y->begin(), y->end(), 0.);
 //	for (i=0; i< n; i++) y->elem(i) = h.inBucket(i);
 
-	for (i=0; i < x->capacity(); ++i) {
+	for (i=0; i < x->size(); ++i) {
 		int ind = int(floor((x->elem(i) - low)/width)) + 1;
-		if (ind >= 0 && ind < y->capacity()) {
+		if (ind >= 0 && ind < y->size()) {
 			y->elem(ind) += 1.0;
 		}
 	}
@@ -1145,13 +1118,13 @@ static Object** v_hist(void* v) {
 	double high = start+step*size;
 
 //	SampleHistogram h(start,high,step);
-//	for (int i=0; i< data->capacity(); i++) h += data->elem(i);
+//	for (int i=0; i< data->size(); i++) h += data->elem(i);
 
-	if (hv->capacity() != size) hv->resize(size);
-	hv->fill(0.);
-	for (int i=0; i< data->capacity(); i++) {
+	if (hv->size() != size) hv->resize(size);
+	std::fill(hv->begin(), hv->end(), 0.);
+	for (int i=0; i< data->size(); i++) {
 	  int ind = int(floor((data->elem(i)-start)/step));
-	  if (ind >=0 && ind < hv->capacity()) hv->elem(ind) += 1;
+	  if (ind >=0 && ind < hv->size()) hv->elem(ind) += 1;
 	}
 
 //	for (i=0; i< size; i++) hv->elem(i) = h.inBucket(i);
@@ -1173,9 +1146,9 @@ static Object** v_sumgauss(void* v) {
         if (ifarg(5)) {
 	   w = vector_arg(5);
         } else {
-           w = new Vect(x->capacity());
-           w->fill(1);
-	   d = true;
+           w = new Vect(x->size());
+           std::fill(w->begin(), w->end(), 1);
+	       d = true;
         }
 
 	int points = int((high-low)/step + .5);
@@ -1186,7 +1159,7 @@ static Object** v_sumgauss(void* v) {
 // 4/28/93 ZFM: corrected bug: replaced svar w/ var in line below
 	double scale = 1./hoc_Sqrt(2.*PI*var);
 	
-	for (int i=0;i<x->capacity();i++) {
+	for (int i=0;i<x->size();i++) {
 	  double xv = int((x->elem(i)-low)/step);
 	  for (int j=0; j<points;j++) {
 	    double arg = -(j-xv)*(j-xv)/(2.*svar);
@@ -1240,13 +1213,13 @@ static Object** v_smhist(void* v) {
 	
 	double high = start + n*step;
 	if (weight) {
-	  for (i=0;i<data->capacity();i++) {
+	  for (i=0;i<data->size();i++) {
 	    if (data->elem(i) >= start && data->elem(i) < high) {
 	      series[int((data->elem(i)-start)/step)] += w->elem(i);
 	    }
 	  }
 	} else {
-	  for (i=0;i<data->capacity();i++) {
+	  for (i=0;i<data->size();i++) {
 	    if (data->elem(i) >= start && data->elem(i) < high) {
 	      series[int((data->elem(i)-start)/step)] += 1.;
 	    }
@@ -1260,8 +1233,8 @@ static Object** v_smhist(void* v) {
 	nrn_convlv(series,n,gauss,g,1,ans);
 
 	// put the answer in the vector
-	if (v1->capacity() != size) v1->resize(size);
-	v1->fill(0.,0,size);
+	if (v1->size() != size) v1->resize(size);
+	std::fill(v1->begin(), v1->end(), 0.);
 	for (i=0;i<size;i++) if (ans[i] > EPSILON) v1->elem(i) = ans[i];
 
 	free(series);
@@ -1279,9 +1252,9 @@ static Object** v_ind(void* v) {
 
 	int yv;
 	int ztop = 0;
-	int top = x->capacity();
-	z->resize(y->capacity()); z->resize(0);
-	for (int i=0;i<y->capacity();i++) {
+	int top = x->size();
+	z->resize(y->size()); z->resize(0);
+	for (int i=0;i<y->size();i++) {
 	  yv = int(y->elem(i));
 	  if ((yv < top) && (yv >= 0)) {
 	    z->resize(++ztop);
@@ -1295,13 +1268,13 @@ static Object** v_ind(void* v) {
 static double v_size(void* v) {
 	Vect* x = (Vect*)v;
 	hoc_return_type_code = 1;
-	return double(x->capacity());
+	return double(x->size());
 }
 
 static double v_buffer_size(void* v) {
 	Vect* x = (Vect*)v;
 	if (ifarg(1)) {
-		int n = (int)chkarg(1, (double)x->capacity(), dmaxint_);
+		int n = (int)chkarg(1, (double)x->size(), dmaxint_);
 		x->buffer_size(n);
 	}
 	hoc_return_type_code = 1;
@@ -1309,20 +1282,11 @@ static double v_buffer_size(void* v) {
 }
 
 int IvocVect::buffer_size() {
-	return space;
+	return vec_.capacity();
 }
 
 void IvocVect::buffer_size(int n) {
-	double* y = new double[n];
-	if (len > n) {
-		len = n;
-	}
-	for (int i=0; i < len; ++i) {
-		y[i] = s[i];
-	}
-	space = n;
-	delete [] s;
-	s = y;
+     vec_.reserve(n);
 }
 
 static Object** v_resize(void* v) {
@@ -1339,33 +1303,29 @@ static Object** v_clear(void* v) {
 
 static double v_get(void* v) {
 	Vect* x = (Vect*)v;
-	return x->elem(int(chkarg(1,0,x->capacity()-1)));
+	return x->elem(int(chkarg(1,0,x->size()-1)));
 }
 
 static Object** v_set(void* v) {
 	Vect* x = (Vect*)v;
-	x->elem(int(chkarg(1,0,x->capacity()-1))) = *getarg(2);
+	x->elem(int(chkarg(1,0,x->size()-1))) = *getarg(2);
 	return x->temp_objvar();
 }
 
 
 static Object** v_append(void* v) {
         Vect* x = (Vect*)v;
-        int n,j,i=1;
+        int j,i=1;
         while (ifarg(i)) {
-	  if (hoc_argtype(i) == NUMBER) {
-	    x->resize_chunk(x->capacity()+1);
-	    x->elem(x->capacity()-1) = *getarg(i);
-	  } else if (hoc_is_object_arg(i)) {
-	    Vect* y = vector_arg(i);
-	    same_err("append", x, y);
-	    n = x->capacity();
-	    x->resize_chunk(n+y->capacity());
-	    for (j=0;j<y->capacity();j++) {
-	      x->elem(n+j) = y->elem(j);
-	    }
-	  }
-	  i++;
+          if (hoc_argtype(i) == NUMBER) {
+            x->push_back(*getarg(i));
+          } else if (hoc_is_object_arg(i)) {
+            Vect* y = vector_arg(i);
+            same_err("append", x, y);
+            x->buffer_size(x->size() + y->size());
+            x->vec().insert(x->end(), y->begin(), y->end());
+          }
+          i++;
         }
         return x->temp_objvar();
 }
@@ -1374,8 +1334,8 @@ static Object** v_insert(void* v) {
 	// insert all before indx (first arg)
         Vect* x = (Vect*)v;
         int n,j,m,i=2;
-	int indx = (int)chkarg(1, 0, x->capacity());
-	m = x->capacity() - indx;
+	int indx = (int)chkarg(1, 0, x->size());
+	m = x->size() - indx;
 	double* z;
 	if (m) {
 		z = new double[m];
@@ -1386,21 +1346,18 @@ static Object** v_insert(void* v) {
 	x->resize(indx);
         while (ifarg(i)) {
 	  if (hoc_argtype(i) == NUMBER) {
-	    x->resize_chunk(x->capacity()+1);
-	    x->elem(x->capacity()-1) = *getarg(i);
+	    x->push_back(*getarg(i));
 	  } else if (hoc_is_object_arg(i)) {
 	    Vect* y = vector_arg(i);
 	    same_err("insrt", x, y);
-	    n = x->capacity();
-	    x->resize_chunk(n+y->capacity());
-	    for (j=0;j<y->capacity();j++) {
-	      x->elem(n+j) = y->elem(j);
-	    }
+	    n = x->size();
+        x->buffer_size(n+y->size());
+	    x->vec().insert(x->end(), y->begin(), y->end());
 	  }
 	  i++;
         }
 	if (m) {
-		n = x->capacity();
+		n = x->size();
 		x->resize(n + m);
 		for (j=0; j < m; ++j) {
 			x->elem(n + j) = z[j];
@@ -1413,13 +1370,13 @@ static Object** v_insert(void* v) {
 static Object** v_remove(void* v) {
         Vect* x = (Vect*)v;
 	int i, j, n, start, end;
-	start = (int)chkarg(1, 0, x->capacity()-1);
+	start = (int)chkarg(1, 0, x->size()-1);
 	if (ifarg(2)) {
-		end = (int)chkarg(2, start, x->capacity()-1);
+		end = (int)chkarg(2, start, x->size()-1);
 	}else{
 		end = start;
 	}
-	n = x->capacity();
+	n = x->size();
 	for (i=start, j=end+1; j < n; ++i, ++j) {
 		x->elem(i) = x->elem(j);
 	}
@@ -1431,7 +1388,7 @@ static double v_contains(void* v) {
         Vect* x = (Vect*)v;
         double g = *getarg(1);
         hoc_return_type_code = 2;
-        for (int i=0;i<x->capacity();i++) {
+        for (int i=0;i<x->size();i++) {
            if (Math::equal(x->elem(i), g, hoc_epsilon)) return 1.;
         }
         return 0.;
@@ -1443,24 +1400,24 @@ static Object** v_copy(void* v) {
 
         Vect* x = vector_arg(1);
 
-	int top = x->capacity()-1;
+	int top = x->size()-1;
 	int srcstart = 0;
 	int srcend = top;
 	int srcinc = 1;
 
-        int deststart = 0;
+    int deststart = 0;
 	int destinc = 1;
 
 	if (ifarg(2) && hoc_is_object_arg(2)) {
 		Vect* srcind = vector_arg(2);
-		int ns = srcind->capacity();
-		int nx = x->capacity();
+		int ns = srcind->size();
+		int nx = x->size();
 		if (ifarg(3)) {
 			Vect* destind = vector_arg(3);
-			if (destind->capacity() < ns) {
-				ns = destind->capacity();
+			if (destind->size() < ns) {
+				ns = destind->size();
 			}
-			int ny = y->capacity();
+			int ny = y->size();
 			for (int i=0; i < ns; ++i) {
 				int ix = (int) (srcind->elem(i) + hoc_epsilon);
 				int iy = (int) (destind->elem(i) + hoc_epsilon);
@@ -1469,8 +1426,8 @@ static Object** v_copy(void* v) {
 				}
 			}
 		}else{
-			if (y->capacity() < nx) {
-				nx = y->capacity();
+			if (y->size() < nx) {
+				nx = y->size();
 			}
 			for (int i=0; i < ns; ++i) {
 				int ii = (int)(srcind->elem(i) + hoc_epsilon);
@@ -1506,9 +1463,9 @@ static Object** v_copy(void* v) {
         int size = (srcend-srcstart)/srcinc;
         size *= destinc;
         size += deststart+1;
-	if (y->capacity() < size) {
+	if (y->size() < size) {
             y->resize(size);
-        }else if (y->capacity() > size && !ifarg(2)) {
+        }else if (y->size() > size && !ifarg(2)) {
         	y->resize(size);
         }
 	int i, j;
@@ -1523,7 +1480,7 @@ static Object** v_copy(void* v) {
 static Object** v_at(void* v) {
         Vect* x = (Vect*)v;
 
-	int top = x->capacity()-1;
+	int top = x->size()-1;
 	int start = 0;
 	int end = top;
 	if (ifarg(1)) {
@@ -1556,7 +1513,7 @@ static Object** v_sortindex(void* v) {
 	// v.index(vsrc, vsrc.sortindex) sorts vsrc into v
 	int i, n;
         Vect* x = (Vect*)v;
-	n = x->capacity();
+	n = x->size();
 	Vect* y;
 	possible_destvec(1, y);
 	y->resize(n);
@@ -1580,8 +1537,8 @@ static Object** v_sortindex(void* v) {
 static Object** v_sortindex(void* v) {
 	// v.index(vsrc, vsrc.sortindex) sorts vsrc into v
 	int i, n;
-        Vect* x = (Vect*)v;
-	n = x->capacity();
+	Vect* x = (Vect*)v;
+	n = x->size();
 	Vect* y;
 	possible_destvec(1, y);
 	y->resize(n);
@@ -1615,8 +1572,8 @@ static Object** v_interpolate(void* v) {
 	Vect* ys;
 	int flag, is, id, nd, ns;
 	double thet;
-	ns = xs->capacity();
-	nd = xd->capacity();
+	ns = xs->size();
+	nd = xd->size();
 	if (ifarg(3)) {
 		ys = vector_arg(3);
 		flag = 0;
@@ -1655,13 +1612,13 @@ thet = (xd->elem(id) - xs->elem(is-1))/(xs->elem(is) - xs->elem(is-1));
 	return yd->temp_objvar();
 }
 
-static int possible_srcvec(ParentVect*& src, Vect* dest, int& flag) {
+static int possible_srcvec(Vect*& src, Vect* dest, int& flag) {
 	if (ifarg(1) && hoc_is_object_arg(1)) {
 	 	src = vector_arg(1);
 	 	flag = 0;
 	 	return 2;
 	}else{
-		src = new ParentVect(*dest);
+		src = new Vect(*dest);
 		flag = 1;
 		return 1;
 	}
@@ -1669,12 +1626,12 @@ static int possible_srcvec(ParentVect*& src, Vect* dest, int& flag) {
 
 static Object** v_where(void* v) {
         Vect* y = (Vect*)v;
-	ParentVect* x;
+	Vect* x;
 	int iarg, flag;
 	
 	iarg = possible_srcvec(x, y, flag);
 
-	int n = x->capacity();
+	int n = x->size();
 	int m = 0;
 	int i;
 
@@ -1687,75 +1644,67 @@ static Object** v_where(void* v) {
 	if (!strcmp(op,"==")) {
 	  for (i=0; i<n; i++) {
 	    if (Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+//	      y->resize_chunk(++m);
+//	      y->elem(m-1) = x->elem(i);
+          y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"!=")) {
 	  for (i=0; i<n; i++) {
 	    if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+        	y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,">")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) > value + hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+			y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"<")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) < value - hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,">=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) >= value - hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"<=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) <= value + hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"()")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"[]")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"[)")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else if (!strcmp(op,"(]")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = x->elem(i);
+	      y->push_back(x->elem(i));
 	    }
 	  }
 	} else {
@@ -1778,7 +1727,7 @@ static double v_indwhere(void* v) {
     value = *getarg(2);
     iarg = 3;
 
-  int n = x->capacity();
+  int n = x->size();
 
 
 	if (!strcmp(op,"==")) {
@@ -1855,7 +1804,7 @@ static double v_indwhere(void* v) {
 static Object** v_indvwhere(void* v) {
 
   Vect* y = (Vect*)v;
-  ParentVect* x;
+  Vect* x;
   int i, iarg, m=0, flag;
   char* op;
   double value,value2;
@@ -1865,81 +1814,71 @@ static Object** v_indvwhere(void* v) {
     value = *getarg(iarg++);
     y->resize(0);
 
-  int n = x->capacity();
+  int n = x->size();
 
 
 	if (!strcmp(op,"==")) {
 	  for (i=0; i<n; i++) {
 	    if (Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"!=")) {
 	  for (i=0; i<n; i++) {
 	    if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,">")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) > value + hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"<")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) < value - hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,">=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) >= value - hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"<=")) {
 	  for (i=0; i<n; i++) {
 	    if (x->elem(i) <= value + hoc_epsilon) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"()")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"[]")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"[)")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) >= value - hoc_epsilon) && (x->elem(i) < value2 - hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else if (!strcmp(op,"(]")) {     
 	  value2 = *getarg(iarg);
 	  for (i=0; i<n; i++) {
 	    if ((x->elem(i) > value + hoc_epsilon) && (x->elem(i) <= value2 + hoc_epsilon)) {
-	      y->resize_chunk(++m);
-	      y->elem(m-1) = i;
+	      y->push_back(i);
 	    }
 	  }
 	} else {
@@ -1955,14 +1894,14 @@ static Object** v_indvwhere(void* v) {
 static Object** v_fill(void* v) 
 {
   Vect* x = (Vect*)v;
-  int top = x->capacity()-1;
+  int top = x->size()-1;
   int start = 0;
   int end = top;
   if (ifarg(2)) {
     start = int(chkarg(2,0,top));
     end = int(chkarg(3,start,top));
   }
-  x->fill(*getarg(1),start,end-start+1);
+  std::fill(x->begin()+start,x->begin()+end+1, *getarg(1));
   return x->temp_objvar();
 }
 
@@ -1970,7 +1909,7 @@ static Object** v_indgen(void* v)
 {
   Vect* x = (Vect*)v;
 
-  int n = x->capacity();
+  int n = x->size();
 
   double start = 0.;
   double step = 1.;
@@ -1988,7 +1927,7 @@ static Object** v_indgen(void* v)
 	hoc_execerror("empty set", 0);
       }
       n = int(xn);
-      if (n != x->capacity()) x->resize(n);
+      if (n != x->size()) x->resize(n);
     } else if (ifarg(2)) {
     	start = *getarg(1);
     	step = chkarg(2,-dmaxint_,dmaxint_);
@@ -2008,7 +1947,7 @@ static Object** v_addrand(void* v)
         Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "Random");
 	Rand* r = (Rand*)(ob->u.this_pointer);
-	int top = x->capacity()-1;
+	int top = x->size()-1;
 	int start = 0;
 	int end = top;
 	if (ifarg(2)) {
@@ -2025,7 +1964,7 @@ static Object** v_setrand(void* v)
         Object* ob = *hoc_objgetarg(1);
 	check_obj_type(ob, "Random");
 	Rand* r = (Rand*)(ob->u.this_pointer);
-	int top = x->capacity()-1;
+	int top = x->size()-1;
 	int start = 0;
 	int end = top;
 	if (ifarg(2)) {
@@ -2044,7 +1983,7 @@ static Object** v_apply(void* v)
 {
   Vect* x = (Vect*)v;
   char* func = gargstr(1); 
-  int top = x->capacity()-1;
+  int top = x->size()-1;
   int start = 0;
   int end = top;
   Object* ob;
@@ -2072,7 +2011,7 @@ static double v_reduce(void* v)
 {
   Vect* x = (Vect*)v;
   double base = 0;
-  int top = x->capacity()-1;
+  int top = x->size()-1;
   int start = 0;
   int end = top;
   if (ifarg(3)) {
@@ -2096,156 +2035,158 @@ static double v_reduce(void* v)
 static double v_min(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return x->subvec(start, end)->min();
+    int end = int(chkarg(2,start,x_max));
+    return *std::min_element(x->begin()+start, x->begin()+end+1);
   } else {
-    return x->min();
+    return *std::min_element(x->begin(), x->end());
   }
 }
 
 static double v_min_ind(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return x->subvec(start, end)->min_index()+start;
+    int end = int(chkarg(2,start,x_max));
+    return std::min_element(x->begin()+start, x->begin()+end+1) - x->begin()+start;
   } else {
-    return x->min_index();
+     return std::min_element(x->begin(), x->end()) - x->begin();
   }
 }
 
 static double v_max(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return x->subvec(start, end)->max();
+    int end = int(chkarg(2,start,x_max));
+    return *std::max_element(x->begin()+start, x->begin()+end+1);
   } else {
-    return x->max();
+      return *std::max_element(x->begin(), x->end());
   }
 }
 
 static double v_max_ind(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return (x->subvec(start,end))->max_index()+start;
+    int end = int(chkarg(2,start,x_max));
+    return std::max_element(x->begin()+start,x->begin()+end+1) - x->begin()+start;
   } else {
-    return x->max_index();
+      return std::max_element(x->begin(),x->end()) - x->begin();
   }
 }
 
 static double v_sum(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return (x->subvec(start,end))->sum();
+    int end = int(chkarg(2,start,x_max));
+    return std::accumulate(x->begin()+start, x->begin()+end+1,0.);
   } else {
-    return x->sum();
+    return std::accumulate(x->begin(), x->end(),0.);
   }
 }
 
 static double v_sumsq(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
-    return (x->subvec(start,end))->sumsq();
+    int end = int(chkarg(2,start,x_max));
+    return std::inner_product( x->begin()+start, x->begin()+end+1, x->begin()+start, 0. );
   } else {
-    return x->sumsq();
+      return std::inner_product( x->begin(), x->end(), x->begin(), 0.);
   }
 }
 
 static double v_mean(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
+    int end = int(chkarg(2,start,x_max));
     if (end - start < 1) {
 	hoc_execerror("end - start", "must be > 0");
     }
-    return (x->subvec(start,end))->mean();
+      const double sum = std::accumulate(x->begin()+start, x->begin()+end+1, 0.0);
+      return sum / end-start+1;
   } else {
-    if (x->capacity() < 1) {
+    if (x->size() < 1) {
 	hoc_execerror("Vector", "must have size > 0");
     }
-    return x->mean();
+      const double sum = std::accumulate(x->begin(), x->end(), 0.0);
+      return sum / x->size();
   }
 }
 
 static double v_var(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
+    int end = int(chkarg(2,start,x_max));
     if (end - start < 1) {
 	hoc_execerror("end - start", "must be > 1");
     }
-    return (x->subvec(start,end))->var();
+    return var(x->begin()+start, x->begin()+end+1);
   } else {
-    if (x->capacity() < 2) {
+    if (x->size() < 2) {
 	hoc_execerror("Vector", "must have size > 1");
     }
-    return x->var();
+    return var(x->begin(), x->end());
   }
 }
 
 static double v_stdev(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
+    int end = int(chkarg(2,start,x_max));
     if (end - start < 1) {
 	hoc_execerror("end - start", "must be > 1");
     }
-    return (x->subvec(start,end))->stdDev();
+    return stdDev(x->begin()+start, x->begin()+end+1);
   } else {
-    if (x->capacity() < 2) {
+    if (x->size() < 2) {
 	hoc_execerror("Vector", "must have size > 1");
     }
-    return x->stdDev();
+    return stdDev(x->begin(), x->end());
   }
 }
 
 static double v_stderr(void* v)
 {
   Vect* x = (Vect*)v;
-  int x_max = x->capacity()-1;
+  int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
-    int end = int(chkarg(2,0,x_max));
+    int end = int(chkarg(2,start,x_max));
     if (end - start < 1) {
 	hoc_execerror("end - start", "must be > 1");
     }
-    return (x->subvec(start,end))->stdDev()/hoc_Sqrt(double(end-start+1));
+    return stdDev(x->begin()+start, x->begin()+end+1)/hoc_Sqrt(double(end-start+1));
   } else {
-    if (x->capacity() < 2) {
+    if (x->size() < 2) {
 	hoc_execerror("Vector", "must have size > 1");
     }
-    return x->stdDev()/hoc_Sqrt((double)x_max+1.);
+    return stdDev(x->begin(), x->end())/hoc_Sqrt((double)x_max+1.);
   }
 }
 
@@ -2260,12 +2201,12 @@ static double v_meansqerr(void* v1)
 		w = vector_arg(2);
 	}
     double err = 0.;
-    int size = x->capacity();
-    if (size > y->capacity() || !size) {
+    int size = x->size();
+    if (size > y->size() || !size) {
       hoc_execerror("Vector","Vector argument too small\n");
     } else {
 	if (w) {
-	    if (size > w->capacity()) {
+	    if (size > w->size()) {
 	       hoc_execerror("Vector","second Vector size too small\n");
 	    }
 	    for (int i=0;i<size;i++) {
@@ -2286,13 +2227,13 @@ static double v_dot(void* v1)
 {
   Vect* x = (Vect*)v1;
   Vect* y = vector_arg(1);
-  return (*x) * (*y);
+  return std::inner_product( x->begin(), x->end(), y->begin(), 0.);
 }
 
 static double v_mag(void* v1)
 {
   Vect* x = (Vect*)v1;
-  return hoc_Sqrt(x->sumsq());
+  return hoc_Sqrt(std::inner_product( x->begin(), x->end(), x->begin(), 0.));
 }
 
 static Object** v_from_double(void* v) {
@@ -2311,14 +2252,14 @@ static Object** v_add(void* v1)
 {
   Vect* x = (Vect*)v1;
   if (hoc_argtype(1) == NUMBER) {
-    (*x) += *getarg(1);
+    std::for_each(x->begin(), x->end(), [](double& d) { d += *getarg(1); } );
   } 
   if (hoc_is_object_arg(1)) {
     Vect* y = vector_arg(1);
-    if (x->capacity() != y->capacity()) {
+    if (x->size() != y->size()) {
       hoc_execerror("Vector","Vector argument to .add() wrong size\n");
     } else {
-      (*x) += (*y);
+        std::transform(x->begin(), x->end(), y->begin(), x->begin(), std::plus<double>());
     }
   }
   return x->temp_objvar();
@@ -2329,14 +2270,14 @@ static Object** v_sub(void* v1)
 {
   Vect* x = (Vect*)v1;
   if (hoc_argtype(1) == NUMBER) {
-    (*x) -= *getarg(1);
+      std::for_each(x->begin(), x->end(), [](double& d) { d -= *getarg(1); } );
   } 
   if (hoc_is_object_arg(1)) {
     Vect* y = vector_arg(1);
-    if (x->capacity() != y->capacity()) {
+    if (x->size() != y->size()) {
       hoc_execerror("Vector","Vector argument to .sub() wrong size\n");
     } else {
-    (*x) -= (*y); 
+        std::transform(x->begin(), x->end(), y->begin(), x->begin(), std::minus<double>());
     }
   }
   return x->temp_objvar();
@@ -2346,14 +2287,14 @@ static Object** v_mul(void* v1)
 {
   Vect* x = (Vect*)v1;
   if (hoc_argtype(1) == NUMBER) {
-    (*x) *= *getarg(1);
+      std::for_each(x->begin(), x->end(), [](double& d) { d *= *getarg(1); } );
   } 
   if (hoc_is_object_arg(1)) {
     Vect* y = vector_arg(1);
-    if (x->capacity() != y->capacity()) {
+    if (x->size() != y->size()) {
       hoc_execerror("Vector","Vector argument to .mult() wrong size\n");
     } else {
-      x->product(*y);
+        std::transform(x->begin(), x->end(), y->begin(), x->begin(), std::multiplies<double>());
     }
   }
   return x->temp_objvar();
@@ -2364,14 +2305,14 @@ static Object** v_div(void* v1)
 {
   Vect* x = (Vect*)v1;
   if (hoc_argtype(1) == NUMBER) {
-    (*x) /= *getarg(1);
+      std::for_each(x->begin(), x->end(), [](double& d) { d /= *getarg(1); } );
   } 
   if (hoc_is_object_arg(1)) {
     Vect* y = vector_arg(1);
-    if (x->capacity() != y->capacity()) {
+    if (x->size() != y->size()) {
       hoc_execerror("Vector","Vector argument to .div() wrong size\n");
     } else {
-      x->quotient(*y);
+        std::transform(x->begin(), x->end(), y->begin(), x->begin(), std::divides<double>());
     }
   }
   return x->temp_objvar();
@@ -2384,12 +2325,17 @@ static double v_scale(void* v1)
     double a = *getarg(1);
     double b = *getarg(2);
     double sf;
-    double r = x->max()-x->min();
+    auto minmax = std::minmax_element(x->begin(), x->end());
+    double min = *minmax.first;
+    double max = *minmax.second;
+    double r = max - min;
     if (r > 0) {
       sf = (b-a)/r;
-      (*x) -= x->min();
-      (*x) *= sf;
-      (*x) += a;
+      std::for_each(x->begin(), x->end(), [&](double& d) {
+          d -= min;
+          d *= sf;
+          d += a;
+      });
     } else {
       sf = 0.;
     }
@@ -2400,8 +2346,8 @@ static double v_eq(void* v1)
 {
   Vect* x = (Vect*)v1;
   Vect* y = vector_arg(1);
-  int i, n = x->capacity();
-  if (n != y->capacity()) {
+  int i, n = x->size();
+  if (n != y->size()) {
   	return false;
   }
   for (i=0; i < n; ++i) {
@@ -2487,7 +2433,7 @@ static double eval(double *p, int n, Vect *x, Vect *y, char *fcn)
     amp2 = p[2];
     tau2 = p[3];
   
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
       t = x->elem(i);
       dexp = amp1*hoc_Exp(-t/tau1) + amp2*hoc_Exp(-t/tau2);
       guess = dexp - y->elem(i);
@@ -2500,7 +2446,7 @@ static double eval(double *p, int n, Vect *x, Vect *y, char *fcn)
     amp2 = p[2];
     tau2 = p[3];
   
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
       t = x->elem(i);
       dexp = amp1*(1-hoc_Exp(-t/tau1)) + amp2*(1-hoc_Exp(-t/tau2));
       guess = dexp - y->elem(i);
@@ -2512,7 +2458,7 @@ static double eval(double *p, int n, Vect *x, Vect *y, char *fcn)
     tau1 = p[1];
 
       
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
       t = x->elem(i);
       dexp = amp1*hoc_Exp(-t/tau1);
       guess = dexp - y->elem(i);
@@ -2521,19 +2467,19 @@ static double eval(double *p, int n, Vect *x, Vect *y, char *fcn)
   } else if (!strcmp(fcn,"line")) {
     if (n < 2) hoc_execerror("Vector",".fit(\"line\") requires slope,intercept");
      
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
       guess = (p[0]*x->elem(i) + p[1]) - y->elem(i);
       sq_err += guess * guess;
     }
   } else if (!strcmp(fcn,"quad")) {
     if (n < 3) hoc_execerror("Vector",".fit(\"quad\") requires ax^2+bx+c");
      
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
       guess = (p[0]*x->elem(i)*x->elem(i) + p[1]*x->elem(i) + p[2]) - y->elem(i);
       sq_err += guess * guess;
     }
   } else {
-    for (i=0;i<x->capacity();i++) {
+    for (i=0;i<x->size();i++) {
     
 // first the independent variable
       hoc_pushx(x->elem(i));
@@ -2544,7 +2490,7 @@ static double eval(double *p, int n, Vect *x, Vect *y, char *fcn)
       sq_err += guess * guess;
     }
   }
-  return sq_err/x->capacity();
+  return sq_err/x->size();
 }
 
 
@@ -2726,7 +2672,7 @@ static double v_fit(void* v) {
        
 // get a vector to place the fitted function
     Vect* fitted = vector_arg(1);
-    if (fitted->capacity() != y->capacity()) fitted->resize(y->capacity());
+    if (fitted->size() != y->size()) fitted->resize(y->size());
 
 // get a function to fit
 	char *fcn;
@@ -2735,7 +2681,7 @@ static double v_fit(void* v) {
 // get the independent variable
 
     Vect* x = vector_arg(3);
-    if (x->capacity() != y->capacity()) {
+    if (x->size() != y->size()) {
       hoc_execerror("Vector","Indep argument to .fit() wrong size\n");
     }
 
@@ -2765,29 +2711,29 @@ static double v_fit(void* v) {
        }
 
        if (!strcmp(fcn,"exp2")) {
-	 for(i=0;i<x->capacity();i++) {
-	   fitted->elem(i) = p[0]*hoc_Exp(-(x->elem(i)/p[1])) + 
+	 for(i=0;i<x->size();i++) {
+	   fitted->elem(i) = p[0]*hoc_Exp(-(x->elem(i)/p[1])) +
     	                     p[2]*hoc_Exp(-(x->elem(i)/p[3]));
 	 }
        } else if (!strcmp(fcn,"charging")) {
-	 for(i=0;i<x->capacity();i++) {
+	 for(i=0;i<x->size();i++) {
 	   fitted->elem(i) = p[0]*(1-hoc_Exp(-(x->elem(i)/p[1]))) +
     	                     p[2]*(1-hoc_Exp(-(x->elem(i)/p[3])));
 	 }
        } else if (!strcmp(fcn,"exp1")) {
-	 for(i=0;i<x->capacity();i++) {
+	 for(i=0;i<x->size();i++) {
 	   fitted->elem(i) = p[0]*hoc_Exp(-(x->elem(i)/p[1]));
 	 }
        } else if (!strcmp(fcn,"line")) {
-	 for(i=0;i<x->capacity();i++) {
+	 for(i=0;i<x->size();i++) {
 	   fitted->elem(i) = p[0]*x->elem(i)+p[1];
 	 }
        } else if (!strcmp(fcn,"quad")) {
-	 for(i=0;i<x->capacity();i++) {
+	 for(i=0;i<x->size();i++) {
 	   fitted->elem(i) = p[0]*x->elem(i)*x->elem(i) + p[1]*x->elem(i) + p[2];
 	 }
        } else {
-	 for(i=0;i<x->capacity();i++) {
+	 for(i=0;i<x->size();i++) {
 	   hoc_pushx(x->elem(i));
 	   for (int j=0;j<n;j++) hoc_pushx(p[j]);
 	   fitted->elem(i) = hoc_call_func(hoc_lookup(fcn), n+1);
@@ -2818,8 +2764,8 @@ static Object** v_correl(void* v) {
   }
 
   // make both data sets equal integer power of 2
-  int v1n = v1->capacity();
-  int v2n = v2->capacity();
+  int v1n = v1->size();
+  int v2n = v2->size();
   int m = (v1n > v2n) ? v1n : v2n;
   int n = 1;
   while(n < m) n*=2;
@@ -2833,7 +2779,7 @@ static Object** v_correl(void* v) {
 
   nrn_correl(d1, d2, n, ans);
 
-  if (v3->capacity() != n) v3->resize(n);
+  if (v3->size() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
   free((char *)d1);
   free((char *)d2);
@@ -2859,8 +2805,8 @@ static Object** v_convlv(void* v) {
   if (ifarg(3)) isign = (int)(*getarg(3)); else isign = 1;
 
   // make both data sets equal integer power of 2
-  int v1n = v1->capacity();
-  int v2n = v2->capacity();
+  int v1n = v1->size();
+  int v2n = v2->size();
   int m = (v1n > v2n) ? v1n : v2n;
   int n = 1;
   while(n < m) n*=2;
@@ -2880,7 +2826,7 @@ static Object** v_convlv(void* v) {
  
   nrn_convlv(data,n,respns,v2n,isign,ans);
 
-  if (v3->capacity() != n) v3->resize(n);
+  if (v3->size() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
 
   free((char *)data);
@@ -2901,7 +2847,7 @@ static Object** v_spctrm(void* v) {
   // data set
   Vect* v1 = vector_arg(1);
 
-  int dc = v1->capacity();
+  int dc = v1->size();
   int mr;
   if (ifarg(2)) mr = (int)(*getarg(2)); else mr = dc/8;
 
@@ -2915,7 +2861,7 @@ static Object** v_spctrm(void* v) {
   double *data = (double *)calloc(n,(unsigned)sizeof(double));
   for (int i=0;i<dc;++i) data[i] = v1->elem(i);
 
-  if (ans->capacity() < m) ans->resize(m);
+  if (ans->size() < m) ans->resize(m);
   nrn_spctrm(data, &ans->elem(0), m, k);
 
   free((char *)data);
@@ -2940,8 +2886,8 @@ static Object** v_filter(void* v) {
   v2 = vector_arg(iarg);
 
   // make both data sets equal integer power of 2
-  int v1n = v1->capacity();
-  int v2n = v2->capacity();
+  int v1n = v1->size();
+  int v2n = v2->size();
   int m = (v1n > v2n) ? v1n : v2n;
   int n = 1;
   while(n < m) n*=2;
@@ -2959,7 +2905,7 @@ static Object** v_filter(void* v) {
   
   nrn_convlv(data,n,filter,v2n,1,ans);
 
-  if (v3->capacity() != n) v3->resize(n);
+  if (v3->size() != n) v3->resize(n);
   for (i=0;i<n;++i) v3->elem(i)=ans[i];
 
   free((char *)data);
@@ -2988,14 +2934,14 @@ static Object** v_fft(void* v) {
   if (ifarg(iarg)) inv = int(chkarg(iarg,-1,1));
 
   // make data set integer power of 2
-  int v1n = v1->capacity();
+  int v1n = v1->size();
   int n = 1;
   while(n < v1n) n*=2;
 
   double *data = (double *)calloc(n,(unsigned)sizeof(double));
   int i;
   for (i=0;i<v1n;++i) data[i] = v1->elem(i);
-  if (v3->capacity() != n) v3->resize(n);
+  if (v3->size() != n) v3->resize(n);
 
   if (inv == -1) {
     nrn_nrc2gsl(data, &v3->elem(0), n);
@@ -3020,9 +2966,9 @@ static Object** v_spikebin(void* v) {
   int bin = 1;
   if (ifarg(3)) bin = int(chkarg(3,0,1e6));
 
-  int n = v1->capacity()/bin;
-  if (ans->capacity() != n) ans->resize(n);
-  ans->fill(0);
+  int n = v1->size()/bin;
+  if (ans->size() != n) ans->resize(n);
+  std::fill(ans->begin(), ans->end(), 0.);
 
   int firing = 0;
   int k;
@@ -3049,7 +2995,7 @@ static Object** v_rotate(void* v)
   int wrap = 1;
   int rev = 0;
 
-  int n = a->capacity(); 
+  int n = a->size();
   int r = int(*getarg(1));
   if (ifarg(2)) wrap = 0;
  
@@ -3086,17 +3032,17 @@ static Object** v_rotate(void* v)
 static Object** v_deriv(void* v)
 {
   Vect* ans = (Vect*)v;
-  ParentVect* v1;
+  Vect* v1;
   int flag, iarg = 1;
 
   // data set
 	iarg = possible_srcvec(v1, ans, flag);
 
-  int n = v1->capacity();
+  int n = v1->size();
   if (n < 2) {
 hoc_execerror("Can't take derivative of Vector with less than two points", 0);
   }
-  if (ans->capacity() != n) ans->resize(n);
+  if (ans->size() != n) ans->resize(n);
 
   double dx = 1;
   if(ifarg(iarg)) dx = *getarg(iarg++);
@@ -3141,8 +3087,8 @@ static Object** v_integral(void* v)
   	v1 = ans;
   }
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   double dx = 1.;
   if(ifarg(iarg)) dx = *getarg(iarg++);
@@ -3156,7 +3102,7 @@ static Object** v_integral(void* v)
 
 static double v_trigavg(void* v)
 {
-  ParentVect* avg = (ParentVect*)((Vect*)v);
+  Vect* avg = (Vect*)v;
 
   // continuous data(t)
   Vect* data = vector_arg(1);
@@ -3164,15 +3110,15 @@ static double v_trigavg(void* v)
   // trigger times
   Vect* trig = vector_arg(2);
 
-  int n = data->capacity();
+  int n = data->size();
   int pre = int(chkarg(3,0,n-1));
   int post = int(chkarg(4,0,n-1));
   int m = pre+post;
-  if (avg->capacity() != m) avg->resize(m);
-  int l = trig->capacity();
+  if (avg->size() != m) avg->resize(m);
+  int l = trig->size();
   int trcount = 0;
 
-  (*avg) = 0.;
+  std::fill(avg->begin(), avg->end(), 0.);
   
   for (int i=0;i<l;i++) {
     int tr = int(trig->elem(i));
@@ -3185,7 +3131,7 @@ static double v_trigavg(void* v)
       }
     }
   } 
-  (*avg) /= trcount;
+  std::for_each(avg->begin(), avg->end(),[&](double& d) { d /= trcount; } );
   
   return trcount;
 }
@@ -3194,14 +3140,14 @@ static double v_trigavg(void* v)
 static Object** v_medfltr(void* v)
 {
   Vect* ans = (Vect*)v;
-  ParentVect* v1;
+  Vect* v1;
   int w0, w1, wlen, i, flag, iarg = 1;
 
   // data set
 	iarg = possible_srcvec(v1, ans, flag);
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   int points = 3;
   if (ifarg(iarg)) points = int(chkarg(iarg,1,n/2));
@@ -3212,12 +3158,12 @@ static Object** v_medfltr(void* v)
     w1 = (i < n-points) ? i+points : n-1;
     wlen = w1-w0;
     
-    ParentVect window = v1->at(w0,wlen);
-    window.sort(&cmpfcn);
+    std::vector<double> window (v1->begin() + w0, v1->begin() + wlen);
+    std::sort(window.begin(), window.end());
     res[i] = window[wlen/2];
   }
 
-  if (ans->capacity() != n) ans->resize(n);
+  if (ans->size() != n) ans->resize(n);
   for (i=0;i <n; i++) {
     ans->elem(i) = res[i];
   }
@@ -3232,15 +3178,16 @@ static double v_median(void* v)
 {
   Vect* ans = (Vect*)v;
 
-  int n = ans->capacity();
+  int n = ans->size();
   if (n == 0) {
 	hoc_execerror("Vector", "must have size > 0");
   }
 
   Vect* sorted = new Vect(*ans);
-  sorted->sort(&cmpfcn);
+  std::sort(sorted->begin(), sorted->end());
 
   int n2 = n/2;
+
   double median;
   if (2*n2 == n) {
 	median = (sorted->elem(n2-1) + sorted->elem(n2))/2.;
@@ -3255,14 +3202,14 @@ static double v_median(void* v)
 static Object** v_sort(void* v)
 {
   Vect* ans = (Vect*)v;
-  ans->sort(&cmpfcn);
+  std::sort(ans->begin(), ans->end());
   return ans->temp_objvar();
 }
 
 static Object** v_reverse(void* v)
 {
   Vect* ans = (Vect*)v;
-  ans->reverse();
+  std::reverse(ans->begin(), ans->end());
   return ans->temp_objvar();
 }
 
@@ -3271,7 +3218,7 @@ static Object** v_sin(void* v)
 {
   Vect* ans = (Vect*)v;
 
-  int n = ans->capacity();
+  int n = ans->size();
   double freq = *getarg(1);
   double phase = *getarg(2);
   double dx = 1;
@@ -3296,8 +3243,8 @@ static Object** v_log(void* v)
 	  v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = log(v1->elem(i));
@@ -3316,8 +3263,8 @@ static Object** v_log10(void* v)
 	  v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = log10(v1->elem(i));
@@ -3328,15 +3275,15 @@ static Object** v_log10(void* v)
 static Object** v_rebin(void* v)
 {
   Vect* ans = (Vect*)v;
-  ParentVect* v1;
+  Vect* v1;
   int flag, iarg = 1;
 
   // data set
 	iarg = possible_srcvec(v1, ans, flag);
 
   int f = int(*getarg(iarg));
-  int n = v1->capacity()/f;
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size()/f;
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = 0.;
@@ -3358,14 +3305,14 @@ static Object** v_resample(void* v)
   // data set
   Vect* v1 = vector_arg(1);
 
-  double f = chkarg(2,0,v1->capacity()/2);
-  int n = int(v1->capacity()*f);
+  double f = chkarg(2,0,v1->size()/2);
+  int n = int(v1->size()*f);
 
   Vect* temp = new Vect(n);
 
   for (int i=0; i<n; i++) temp->elem(i) = v1->elem(int(i/f));
-  if (ans->capacity() != n) ans->resize(n);
-  *((ParentVect*)ans) = *((ParentVect*)temp);
+  if (ans->size() != n) ans->resize(n);
+  *((Vect*)ans) = *((Vect*)temp);
 
   delete temp;
 
@@ -3381,7 +3328,7 @@ static Object** v_psth(void* v)
 
   double dt = chkarg(2,0,9e99);
   double trials = chkarg(3,0,9e99);
-  double size = chkarg(4,0,v1->capacity()/2); int n = int(v1->capacity());
+  double size = chkarg(4,0,v1->size()/2); int n = int(v1->size());
 
   Vect* temp = new Vect(n);
 
@@ -3396,8 +3343,8 @@ static Object** v_psth(void* v)
     temp->elem(i) = integral/trials*1000./((fj+bj+1)*dt);
   }
 
-  if (ans->capacity() != n) ans->resize(n);
-  *((ParentVect*)ans) = *((ParentVect*)temp);
+  if (ans->size() != n) ans->resize(n);
+  *((Vect*)ans) = *((Vect*)temp);
 
   delete temp;
 
@@ -3410,7 +3357,7 @@ static Object** v_inf(void* x)
 
   // data set
   Vect* stim = vector_arg(1);
-  int n = stim->capacity();
+  int n = stim->size();
 
   double dt = chkarg(2,1e-99,9e99);
   double gl = *getarg(3);
@@ -3421,7 +3368,7 @@ static Object** v_inf(void* x)
   double refp = 0;
   if (ifarg(8)) refp = *getarg(8);
 
-  if (V->capacity() != n) V->resize(n);
+  if (V->size() != n) V->resize(n);
 
   double i=0,v,ref=0;
   
@@ -3457,8 +3404,8 @@ static Object** v_pow(void* v)
   }
 
   double p = *getarg(iarg);
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   if (p == -1) {
     for (int i=0; i<n;i++) {
@@ -3503,8 +3450,8 @@ static Object** v_sqrt(void* v)
 		v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = hoc_Sqrt(v1->elem(i));
@@ -3523,8 +3470,8 @@ static Object** v_abs(void* v)
 	  v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = Math::abs(v1->elem(i));
@@ -3543,8 +3490,8 @@ static Object** v_floor(void* v)
 	  v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = floor(v1->elem(i));
@@ -3563,8 +3510,8 @@ static Object** v_tanh(void* v)
 	  v1 = ans;
 	}
 
-  int n = v1->capacity();
-  if (ans->capacity() != n) ans->resize(n);
+  int n = v1->size();
+  if (ans->size() != n) ans->resize(n);
 
   for (int i=0; i<n;i++) {
     ans->elem(i) = tanh(v1->elem(i));
@@ -3575,7 +3522,7 @@ static Object** v_tanh(void* v)
 static Object** v_index(void* v)
 {
   Vect* ans = (Vect*)v;
-  ParentVect* data;
+  Vect* data;
   Vect* index;
   bool del = false;
 
@@ -3587,13 +3534,13 @@ static Object** v_index(void* v)
   	index = vector_arg(1);
   }
   if (data == ans) {
-  	data = new ParentVect(*data);
+  	data = new Vect(*data);
   	del = true;
   }
 
-  int n = data->capacity();
-  int m = index->capacity();
-  if (ans->capacity() != m) ans->resize(m);
+  int n = data->size();
+  int m = index->size();
+  if (ans->size() != m) ans->resize(m);
 
   for (int i=0; i<m;i++) {
     int j = int(index->elem(i));
@@ -3633,7 +3580,7 @@ Object** v_as_numpy(void* v) {
 	Vect* vec = (Vect*)v;
 	// not a copy, shares the data! So do not change the size while
 	// the python numpy array is in use.
-	return (*nrnpy_vec_as_numpy_helper_)(vec->capacity(), vec->vec());
+	return (*nrnpy_vec_as_numpy_helper_)(vec->size(), vec->data());
 }
 
 
@@ -3772,13 +3719,13 @@ extern int hoc_araypt(Symbol*, int);
 
 int ivoc_vector_size(Object* o) {
 	Vect* vp = (Vect*)o->u.this_pointer;
-	return vp->capacity();
+	return vp->size();
 }
 
 double* ivoc_vector_ptr(Object* o, int index) {
 	check_obj_type(o, "Vector");
 	Vect* vp = (Vect*)o->u.this_pointer;
-	return vp->vec() + index;
+	return vp->data() + index;
 }
 
 static void steer_x(void* v) {
@@ -3786,9 +3733,9 @@ static void steer_x(void* v) {
 	int index;
 	Symbol* s = hoc_spop();
 	// if you don't want to test then you could get the index off the stack
-	s->arayinfo->sub[0] = vp->capacity();
+	s->arayinfo->sub[0] = vp->size();
 	index = hoc_araypt(s, SYMBOL);
-	hoc_pushpx(vp->vec() + index);
+	hoc_pushpx(vp->data() + index);
 }
 
 void Vector_reg() {
@@ -3804,7 +3751,6 @@ void Vector_reg() {
 	sx->arayinfo->nsub = 1;
 	sx->arayinfo->sub[0] = 1;
 	sv->u.ctemplate->steer = steer_x;
-	subvec_ = new Vect();
 #if defined(WIN32) && !defined(USEMATRIX)
 	load_ocmatrix();
 #endif
@@ -3890,12 +3836,12 @@ extern "C" int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubl
 
               int *mid = lo + ((hi - lo) >> 1);
 
-              if ((*cmp) (vec[*mid], vec[*lo]) < 0)
+              if ( cmp(vec[*mid], vec[*lo]) < 0)
                 SWAP (mid, lo);
-              if ((*cmp) (vec[*hi], vec[*mid]) < 0)
+              if ( cmp(vec[*hi], vec[*mid]) < 0)
               {
                 SWAP (mid, hi);
-                if ((*cmp) (vec[*mid], vec[*lo]) < 0)
+                if ( cmp(vec[*mid], vec[*lo]) < 0)
                   SWAP (mid, lo);
               }
               *pivot = *mid;
@@ -3909,10 +3855,10 @@ extern "C" int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubl
                that this algorithm runs much faster than others. */
             do 
               {
-                while ((*cmp) (vec[*left_ptr], vec[*pivot]) < 0)
+                while ( cmp(vec[*left_ptr], vec[*pivot]) < 0)
                   left_ptr += 1;
 
-                while ((*cmp) (vec[*pivot], vec[*right_ptr]) < 0)
+                while ( cmp(vec[*pivot], vec[*right_ptr]) < 0)
                   right_ptr -= 1;
 
                 if (left_ptr < right_ptr) 
@@ -3978,7 +3924,7 @@ extern "C" int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubl
        and the operation speeds up insertion sort's inner loop. */
 
     for (run_ptr = tmp_ptr + 1; run_ptr <= thresh; run_ptr += 1)
-      if ((*cmp) (vec[*run_ptr], vec[*tmp_ptr]) < 0)
+      if ( cmp(vec[*run_ptr], vec[*tmp_ptr]) < 0)
         tmp_ptr = run_ptr;
 
     if (tmp_ptr != base_ptr)
@@ -3990,7 +3936,7 @@ extern "C" int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubl
     for (run_ptr = base_ptr + 1; (tmp_ptr = run_ptr += 1) <= end_ptr; )
       {
 
-        while ((*cmp) (vec[*run_ptr], vec[*(tmp_ptr -= 1)]) < 0)
+        while ( cmp(vec[*run_ptr], vec[*(tmp_ptr -= 1)]) < 0)
           ;
 
         if ((tmp_ptr += 1) != run_ptr)
