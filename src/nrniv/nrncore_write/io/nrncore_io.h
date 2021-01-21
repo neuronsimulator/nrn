@@ -9,6 +9,7 @@ class NrnThread;
 union Datum;
 class NrnMappingInfo;
 
+void create_dir_path(const std::string& path);
 std::string get_write_path();
 std::string get_filename(const std::string &path, std::string file_name);
 

@@ -2937,17 +2937,25 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
-/** value of neuron.coreneuron.enable as 0, 1 (-1 if error)
- *  TODO: seems like this could be generalized so that
- *  additional cases would require less code.
-*/
+/// value of neuron.coreneuron.enable as 0, 1 (-1 if error)
 extern int (*nrnpy_nrncore_enable_value_p_)();
-static int nrncore_enable_value() {
+
+/// value of neuron.coreneuron.file_mode as 0, 1 (-1 if error)
+extern int (*nrnpy_nrncore_file_mode_value_p_)();
+
+/*
+ * Helper function to inspect value of int/boolean option
+ * under coreneuron module.
+ *
+ * \todo : seems like this could be generalized so that
+ *  additional cases would require less code.
+ */
+static int get_nrncore_opt_value(const char* option) {
   PyObject* modules = PyImport_GetModuleDict();
   if (modules) {
     PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
     if (module) {
-      PyObject* val = PyObject_GetAttrString(module, "enable");
+      PyObject* val = PyObject_GetAttrString(module, option);
       if (val) {
         long enable = PyLong_AsLong(val);
         Py_DECREF(val);
@@ -2962,6 +2970,16 @@ static int nrncore_enable_value() {
     return -1;
   }
   return 0;
+}
+
+/// return value of neuron.coreneuron.enable
+static int nrncore_enable_value() {
+    return get_nrncore_opt_value("enable");
+}
+
+/// return value of neuron.coreneuron.file_mode
+static int nrncore_file_mode_value() {
+    return get_nrncore_opt_value("file_mode");
 }
 
 /** Gets the python string returned by  neuron.coreneuron.nrncore_arg(tstop)
@@ -3011,6 +3029,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_decref = nrnpy_decref_;
   nrnpy_nrncore_arg_p_ = nrncore_arg;
   nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
+  nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
   nrnpy_object_to_double_ = object_to_double_;
   nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
   PyLockGIL lock;

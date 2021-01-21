@@ -183,26 +183,24 @@ typedef struct Node {
 
 #if EXTRACELLULAR
 /* pruned to only work with sparse13 */
-#define  nlayer (EXTRACELLULAR)	/* first (0) layer is extracellular next to membrane */
-/*
-changing nlayer here means you have to change the explicit numbers
-nlayer-1 in the mechanism structure in extcell.cpp
-*/
+extern int nrn_nlayer_extracellular;
+#define  nlayer (nrn_nlayer_extracellular) /* first (0) layer is extracellular next to membrane */
 typedef struct Extnode {
 	double	*param;	/* points to extracellular parameter vector */
 	/* v is membrane potential. so v internal = Node.v + Node.vext[0] */
 	/* However, the Node equation is for v internal. */
 	/* This is reconciled during update. */
 	
-	double	v[nlayer]; /* v external. */
-	double	_a[nlayer];
-	double	_b[nlayer];
-	double* _d[nlayer];
-	double* _rhs[nlayer]; /* d, rhs, a, and b are analogous to those in node */
-	double* _a_matelm[nlayer];
-	double* _b_matelm[nlayer];
-	double* _x12[nlayer]; /* effect of v[layer] on eqn layer-1 (or internal)*/
-	double* _x21[nlayer]; /* effect of v[layer-1 or internal] on eqn layer*/
+	/* Following all have allocated size of nlayer */
+	double	*v; /* v external. */
+	double	*_a;
+	double	*_b;
+	double* *_d;
+	double* *_rhs; /* d, rhs, a, and b are analogous to those in node */
+	double* *_a_matelm;
+	double* *_b_matelm;
+	double* *_x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
+	double* *_x21; /* effect of v[layer-1 or internal] on eqn layer*/
 } Extnode;
 #endif
 

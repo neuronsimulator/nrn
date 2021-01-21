@@ -75,7 +75,8 @@ extern "C" {
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
 	extern int nrncore_is_enabled();
-	extern int nrncore_psolve(double tstop);
+	extern int nrncore_is_file_mode();
+	extern int nrncore_psolve(double tstop, int file_mode);
 
 class OcBBS : public BBS , public Resource {
 public:
@@ -666,8 +667,9 @@ static double psolve(void* v) {
 	OcBBS* bbs = (OcBBS*)v;
 	double tstop = chkarg(1, t, 1e9);
 	int enabled = nrncore_is_enabled();
+	int file_mode = nrncore_is_file_mode();
 	if (enabled == 1) {
-		nrncore_psolve(tstop);
+		nrncore_psolve(tstop, file_mode);
 	}else if (enabled == 0) {
 		// Classic case
 		bbs->netpar_solve(tstop);

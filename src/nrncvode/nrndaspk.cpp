@@ -542,17 +542,18 @@ for (i=0; i < z.nvsize_; ++i) {
 			double* cd = ml->data[i];
 			Node* nd = ml->nodelist[i];
 			int j = nd->eqn_index_;
+#if EXTRACELLULAR
 #if I_MEMBRANE
 			// i_membrane = sav_rhs --- even for zero area nodes
 			cd[1+3*nlayer] = cd[3+3*nlayer];
-#endif
-#if EXTRACELLULAR == 1
+#endif /*I_MEMBRANE*/
+		    if (nlayer == 1) {
 			// only works for one layer
 			// otherwise loop over layer,
 			// xc is (pd + 2*(nlayer))[layer]
 			// and deal with yprime[i+layer]-yprime[i+layer+1]
 			delta[j] -= 1e-3 * cd[2] * yprime[j];
-#else
+		    }else{
 			int k, jj;
 			double x;
 			k = nlayer-1;
@@ -567,7 +568,8 @@ for (i=0; i < z.nvsize_; ++i) {
 				delta[jj+1] += x; // last one in iteration is nlayer-1
 			}
 			
-#endif
+		    }
+#endif /*EXTRACELLULAR*/
 		}
 	}
 
