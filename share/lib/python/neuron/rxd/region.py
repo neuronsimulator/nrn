@@ -180,6 +180,8 @@ class _c_region:
         for rid, r in enumerate(self._regions):
             for sid, s in enumerate(self._react_species + self._react_params):
                 indices = s()._indices1d(r())
+                if len(indices) > self.num_segments:
+                    indices = s()._indices1d(r(), self._overlap)
                 try:
                     if indices == []:
                         self.location_index[rid][sid][:] = -1
