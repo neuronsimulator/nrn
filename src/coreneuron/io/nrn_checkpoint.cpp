@@ -88,11 +88,11 @@ T* chkpnt_soa2aos(T* data, int cnt, int sz, int layout, int* permute) {
     // original file order depends on padding and permutation.
     // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
     T* d = new T[cnt * sz];
-    if (layout == 1) { /* AoS */
+    if (layout == Layout::AoS) {
         for (int i = 0; i < cnt * sz; ++i) {
             d[i] = data[i];
         }
-    } else if (layout == 0) { /* SoA */
+    } else if (layout == Layout::SoA) {
         int align_cnt = nrn_soa_padded_size(cnt, layout);
         for (int i = 0; i < cnt; ++i) {
             int ip = i;
@@ -328,7 +328,7 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
                             int p = d[ix] - (eml->data - nt._data);
                             int ei_instance, ei;
                             nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz, elayout);
-                            if (elayout == 0) {
+                            if (elayout == Layout::SoA) {
                                 if (eml->_permute) {
                                     if (!ml_pinv[etype]) {
                                         ml_pinv[etype] = inverse_permute(eml->_permute,

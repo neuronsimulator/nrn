@@ -13,6 +13,7 @@
 #include <cstring>
 
 #include "coreneuron/utils/nrn_assert.h"
+#include "coreneuron/nrniv/nrniv_decl.h"
 
 #if !defined(NRN_SOA_BYTE_ALIGN)
 // for layout 0, every range variable array must be aligned by at least 16 bytes (the size of the
@@ -109,7 +110,7 @@ namespace coreneuron {
 template <int chunk>
 inline int soa_padded_size(int cnt, int layout) {
     int imod = cnt % chunk;
-    if (layout == 1)
+    if (layout == Layout::AoS)
         return cnt;
     if (imod) {
         int idiv = cnt / chunk;

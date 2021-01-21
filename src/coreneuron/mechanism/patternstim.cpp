@@ -86,10 +86,10 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
     int _iml = pnt->_i_instance;
     double* _p = ml->data;
     Datum* _ppvar = ml->pdata;
-    if (layout == 1) {
+    if (layout == Layout::AoS) {
         _p += _iml * sz;
         _ppvar += _iml * psz;
-    } else if (layout == 0) {
+    } else if (layout == Layout::SoA) {
         ;
     } else {
         assert(0);

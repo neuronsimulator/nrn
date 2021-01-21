@@ -19,11 +19,6 @@ namespace coreneuron {
 #define NRN_SOA_PAD 8
 #endif
 
-// If MATRIX_LAYOUT is 1 then a,b,d,rhs,v,area is not padded using NRN_SOA_PAD
-// When MATRIX_LAYOUT is 0 then mechanism pdata index values into _actual_v
-// and _actual_area data need to be updated.
-enum Layout { SoA = 0, AoS = 1 };
-
 #if !defined(LAYOUT)
 #define LAYOUT        Layout::AoS
 #define MATRIX_LAYOUT Layout::AoS

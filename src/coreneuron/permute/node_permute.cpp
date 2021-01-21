@@ -93,7 +93,7 @@ void permute(T* data, int cnt, int sz, int layout, int* p) {
         return;
     }
 
-    if (layout == 0) {  // for SoA, n might be larger due to cnt padding
+    if (layout == Layout::SoA) {  // for SoA, n might be larger due to cnt padding
         n = nrn_soa_padded_size(cnt, layout) * sz;
     }
 
@@ -208,12 +208,12 @@ void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                 int ix = *pd - edata0;
                 // from ix determine i_ecnt and i_esz (need to permute i_ecnt)
                 int i_ecnt, i_esz, padded_ecnt;
-                if (elayout == 1) {  // AoS
+                if (elayout == Layout::AoS) {
                     padded_ecnt = ecnt;
                     i_ecnt = ix / esz;
                     i_esz = ix % esz;
                 } else {  // SoA
-                    assert(elayout == 0);
+                    assert(elayout == Layout::SoA);
                     padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
                     i_ecnt = ix % padded_ecnt;
                     i_esz = ix / padded_ecnt;
@@ -258,13 +258,13 @@ int nrn_index_permute(int ix, int type, Memb_list* ml) {
         return ix;
     }
     int layout = corenrn.get_mech_data_layout()[type];
-    if (layout == 1) {
+    if (layout == Layout::AoS) {
         int sz = corenrn.get_prop_param_size()[type];
         int i_cnt = ix / sz;
         int i_sz = ix % sz;
         return p[i_cnt] * sz + i_sz;
     } else {
-        assert(layout == 0);
+        assert(layout == Layout::SoA);
         int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
         int i_cnt = ix % padded_cnt;
         int i_sz = ix / padded_cnt;

@@ -64,9 +64,9 @@ static int* fornetcon_slot(const int mtype,
     int sz = corenrn.get_prop_dparam_size()[mtype];
     Memb_list* ml = nt._ml_list[mtype];
     int* fn = nullptr;
-    if (layout == 1) { /* AoS */
+    if (layout == Layout::AoS) {
         fn = ml->pdata + (instance * sz + fnslot);
-    } else if (layout == 0) { /* SoA */
+    } else if (layout == Layout::SoA) {
         int padded_cnt = nrn_soa_padded_size(ml->nodecount, layout);
         fn = ml->pdata + (fnslot * padded_cnt + instance);
     }

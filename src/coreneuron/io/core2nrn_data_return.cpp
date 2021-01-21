@@ -135,7 +135,7 @@ void core2nrn_data_return() {
             double* cndat = ml->data;
             int layout = corenrn.get_mech_data_layout()[mtype];
             int sz = corenrn.get_prop_param_size()[mtype];
-            if (layout == 0) { /* SoA */
+            if (layout == Layout::SoA) {
                 int stride = ml->_nodecount_padded;
                 if (permute) {
                     soa2aos_inverse_permute_copy(n, sz, stride, cndat, mdata, permute);

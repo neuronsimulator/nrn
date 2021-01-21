@@ -71,5 +71,10 @@ extern int nrn_soa_padded_size(int cnt, int layout);
 
 extern int interleave_permute_type;
 extern int cellorder_nwarp;
+
+// If MATRIX_LAYOUT is 1 then a,b,d,rhs,v,area is not padded using NRN_SOA_PAD
+// When MATRIX_LAYOUT is 0 then mechanism pdata index values into _actual_v
+// and _actual_area data need to be updated.
+enum Layout { SoA = 0, AoS = 1 };
 }  // namespace coreneuron
 #endif

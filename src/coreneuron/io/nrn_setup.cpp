@@ -654,10 +654,10 @@ double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
 
 // from i to (icnt, isz)
 void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout) {
-    if (layout == 1) {
+    if (layout == Layout::AoS) {
         icnt = i / sz;
         isz = i % sz;
-    } else if (layout == 0) {
+    } else if (layout == Layout::SoA) {
         int padded_cnt = nrn_soa_padded_size(cnt, layout);
         icnt = i % padded_cnt;
         isz = i / padded_cnt;
