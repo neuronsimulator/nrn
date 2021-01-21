@@ -219,7 +219,7 @@ static Object** m_mulv(void* v) {
 	check_capac(vector_capacity(vin), m->ncol());
 	vector_resize(vout, m->nrow());
 #else
-	check_capac(vin->capacity(), m->ncol());
+	check_capac(vin->size(), m->ncol());
 	vout->resize(m->nrow());
 #endif
 	m->mulv(vin, vout);
@@ -441,7 +441,7 @@ static Object** m_setrow(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->ncol());
 #else
-		check_domain(in->capacity(), m->ncol());
+		check_domain(in->size(), m->ncol());
 #endif
 		m->setrow(k, in);
 	}
@@ -458,7 +458,7 @@ static Object** m_setcol(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->nrow());
 #else
-		check_domain(in->capacity(), m->nrow());
+		check_domain(in->size(), m->nrow());
 #endif
 		m->setcol(k, in);
 	}
@@ -475,7 +475,7 @@ static Object** m_setdiag(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->nrow());
 #else
-		check_domain(in->capacity(), m->nrow());
+		check_domain(in->size(), m->nrow());
 #endif
 		m->setdiag(k, in);
 	}
@@ -558,7 +558,7 @@ static Object** m_solv(void* v) {
 #ifdef WIN32
 	check_capac(vector_capacity(vin), m->ncol());
 #else
-	check_capac(vin->capacity(), m->ncol());
+	check_capac(vin->size(), m->ncol());
 #endif
 	Vect* vout = NULL;
 	bool f = false;

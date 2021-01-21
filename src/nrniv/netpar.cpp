@@ -1315,7 +1315,7 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vect
 
             all_spiketvec->resize(spiketvec.size());
             all_spikegidvec->resize(spikegidvec.size());
-            for (int i = 0; i < all_spiketvec->capacity(); ++i) {
+            for (int i = 0; i < all_spiketvec->size(); ++i) {
                 all_spiketvec->elem(i) = spiketvec[i];
                 all_spikegidvec->elem(i) = spikegidvec[i];
             }

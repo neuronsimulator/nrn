@@ -2508,7 +2508,7 @@ TQItem* NetCvode::fifo_event(double td, DiscreteEvent* db) {
 	if (print_event_) { db->pr("send", td, this); }
 	if (vec_event_store_) {
 		Vect* x = vec_event_store_;
-		int n = x->capacity();
+		int n = x->size();
 		x->resize_chunk(n+2);
 		x->elem(n) = t;
 		x->elem(n+1) = td;
@@ -2531,10 +2531,8 @@ TQItem* NetCvode::bin_event(double td, DiscreteEvent* db, NrnThread* nt) {
 	if (vec_event_store_) {
 		assert(0);
 		Vect* x = vec_event_store_;
-		int n = x->capacity();
-		x->resize_chunk(n+2);
-		x->elem(n) = nt_t;
-		x->elem(n+1) = td;
+        x->push_back(nt_t);
+        x->push_back(td);
 	}
 #endif
 	return p[nt->id].tqe_->enqueue_bin(td, db);
@@ -2554,10 +2552,8 @@ TQItem* NetCvode::event(double td, DiscreteEvent* db, NrnThread* nt) {
 	if (print_event_) { db->pr("send", td, this); }
 	if (vec_event_store_) {
 		Vect* x = vec_event_store_;
-		int n = x->capacity();
-		x->resize_chunk(n+2);
-		x->elem(n) = nt_t;
-		x->elem(n+1) = td;
+        x->push_back(nt_t);
+        x->push_back(td);
 	}
 #endif
 	return p[nt->id].tqe_->insert(td, db);
@@ -2915,9 +2911,7 @@ static IvocVect* peqvec; //if not nil then the sorted times on the event queue.
 static void peq(const TQItem*, int);
 static void peq(const TQItem* q, int) {
 	if (peqvec) {
-		int n = peqvec->capacity();
-		peqvec->resize_chunk(n+1);
-		peqvec->elem(n) = q->t_;
+        peqvec->push_back(q->t_);
 	}else{
 		DiscreteEvent* d = (DiscreteEvent*)q->data_;
 		d->pr("", q->t_, net_cvode_instance);
@@ -2946,23 +2940,20 @@ static void event_info_callback(const TQItem* q, int) {
 	NetCon* nc;
 	PreSyn* ps;
 	SelfEvent* se;
-	int n = event_info_tvec_->capacity();
+	int n = event_info_tvec_->size();
 	switch(d->type()) {
 	case NetConType:
 		if (event_info_type_ == NetConType) {
 			nc = (NetCon*)d;
-			event_info_tvec_->resize_chunk(n+1);
-			event_info_tvec_->elem(n) = q->t_;
+            event_info_tvec_->push_back(q->t_);
 			event_info_list_->append(nc->obj_);
 		}
 		break;
 	case SelfEventType:
 		if (event_info_type_ == SelfEventType) {
 			se = (SelfEvent*)d;
-			event_info_tvec_->resize_chunk(n+1);
-			event_info_tvec_->elem(n) = q->t_;
-			event_info_flagvec_->resize_chunk(n+1);
-			event_info_flagvec_->elem(n) = se->flag_;
+            event_info_tvec_->push_back(q->t_);
+            event_info_flagvec_->push_back(se->flag_);
 			event_info_list_->append(se->target_->ob);
 		}
 		break;
@@ -2972,8 +2963,7 @@ static void event_info_callback(const TQItem* q, int) {
 			for (int i = ps->dil_.count()-1; i >= 0; --i) {
 				nc = ps->dil_.item(i);
 				double td = nc->delay_ - ps->delay_;
-				event_info_tvec_->resize_chunk(n+1);
-				event_info_tvec_->elem(n) = q->t_ + td;
+                event_info_tvec_->push_back(q->t_ + td);
 				event_info_list_->append(nc->obj_);
 				++n;
 			}
@@ -3032,7 +3022,7 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 		STATISTICS(netcon_send_inactive_);
 	}
 }
-	
+
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	assert(target_);
 if (PP2NT(target_) != nt) {
@@ -3049,7 +3039,7 @@ Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
 			SelfEvent* se = (SelfEvent*)ns->p[nt->id].selfqueue_->remove(q);
 //printf("%d NetCon::deliver %g , earlier selfevent at %g\n", nrnmpi_myid, tt, q->t_);
 			se->deliver(t1, ns, nt);
-		}	
+		}
 	}
 	if (cvode_active_ && cv) {
 		ns->local_retreat(tt, cv);
@@ -3158,7 +3148,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 	}
 #endif //USENCS || NRNMPI
 }
-	
+
 void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	if (qthresh_) {
 		// the thread is the one that owns the PreSyn
@@ -3276,7 +3266,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	se->target_ = SelfEvent::index2pp(pptype, ppindex);
 #endif
 	se->weight_ = nil;
-	if (ncindex >= 0) {	
+	if (ncindex >= 0) {
 #if 0
 		// extremely inefficient. There are a LOT of NetCon.
 		obj = hoc_name2obj("NetCon", ncindex);
@@ -3395,7 +3385,7 @@ hoc_warning("errno set during SelfEvent deliver to NET_RECEIVE", (char*)0);
 	--nctd.unreffed_event_cnt_;
 	nctd.sepool_->hpfree(this);
 }
-	
+
 void SelfEvent::pr(const char* s, double tt, NetCvode* ns) {
 	Printf("%s", s);
 	Printf(" SelfEvent target=%s %.15g flag=%g\n", hoc_object_name(target_->ob), tt, flag_);
@@ -3421,7 +3411,7 @@ void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
 	plr_->pr();
 }
 
-// For localstep makes sure all cvode instances are at this time and 
+// For localstep makes sure all cvode instances are at this time and
 // makes sure the continuous record records values at this time.
 TstopEvent::TstopEvent() {}
 TstopEvent::~TstopEvent() {}
@@ -3527,7 +3517,7 @@ void neosim2nrn_advance(void* e, void* v, double tout) {
 	neosim_entity_ = e;
 	NetCon* d = (NetCon*)v;
 	TQueue* tqe;
-		
+
 	// now can integrate to tout since it is guaranteed there will
 	// be no further real events to this cell before tout.
 	// but we must handle self events. The implementation is
@@ -3538,7 +3528,7 @@ void neosim2nrn_advance(void* e, void* v, double tout) {
 	// artificial cells will work.
 	t = cv->time();
 	while (tout > t) {
-		do { 
+		do {
 			cv->check_deliver();
 		}while (neosim_deliver_self_events(tqe, t));
 		cv->solve();
@@ -3565,7 +3555,7 @@ int NetCvode::pgvts(double tstop) {
 	}
 	return err;
 }
-	
+
 // parallel global variable time-step event handling
 // return is what cvode call to make and the value of tt to make it at
 // in response to the next global event. We try to do only one
@@ -3644,7 +3634,7 @@ DiscreteEvent* NetCvode::pgvts_least(double& tt, int& op, int& init) {
 			p[0].tqe_->remove(q);
 		}
 	}else if (op == 4) {//NetParEvent need to be done all together
-		p[0].tqe_->remove(q); 
+		p[0].tqe_->remove(q);
 	}else if (ts == tt && q && ops == op) { // safe to do this event as well
 		p[0].tqe_->remove(q);
 	}else{
@@ -3808,7 +3798,7 @@ void nrn2ncs_netcons() {
 		nc = (NetCon*)(list->object(i)->u.this_pointer);
 		ncs2nrn_input_->append(nc);
 	}
-	
+
 	o = *hoc_objgetarg(2);
 	check_obj_type(o, "List");
 	list = (OcList*)(o->u.this_pointer);
@@ -4060,7 +4050,7 @@ extern "C" void _nrn_free_fornetcon(void** v) {
 		delete fnc;
 		*v = nil;
 	}
-}	
+}
 
 void record_init_clear(const TQItem* q, int) {
 	DiscreteEvent* d = (DiscreteEvent*)q->data_;
@@ -4184,9 +4174,9 @@ double nrn_hoc2fun(void* v) {
 	Vect* s = vector_arg(2);
 	Vect* ds = vector_arg(3);
 	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
-	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (s->size() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
-	ds->resize(s->capacity());
+	ds->resize(s->size());
 	nrn_cvfun(tt, vector_vec(s), vector_vec(ds));
 	return 0.;
 }
@@ -4195,7 +4185,7 @@ double nrn_hoc2scatter_y(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	Vect* s = vector_arg(1);
 	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
-	if (s->capacity() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (s->size() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	d->gcv_->scatter_y(vector_vec(s), 0);
 	return 0.;
@@ -4208,7 +4198,7 @@ double nrn_hoc2gather_y(void* v) {
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	s->resize(d->gcv_->neq_);
 	d->gcv_->gather_y(vector_vec(s), 0);
-	return s->capacity();
+	return s->size();
 }
 
 void NetCvode::error_weights() {
@@ -4289,7 +4279,7 @@ const char* NetCvode::statename(int is, int style) {
 	if (!hdp_ || hdp_->style() != style) {
 		if (hdp_) {
 			delete hdp_;
-		}			
+		}
 		hdp_ = new HocDataPaths(2*n, style);
 		if (gcv_) {
 			for (it=0; it < nrn_nthread; ++it){
@@ -4819,7 +4809,7 @@ void NetCvode::ps_thread_link(PreSyn* ps) {
 }
 
 void NetCvode::update_ps2nt() {
-	int i;	
+	int i;
 	// first, opportunistically create p[]
 	p_construct(nrn_nthread);
 	// iterate over all threshold PreSyn and fill the NrnThread field
@@ -5057,19 +5047,14 @@ void PreSyn::record(IvocVect* vec, IvocVect* idvec, int rec_id) {
 }
 
 void PreSyn::record(double tt) {
-	int i;
 	if (tvec_) {
 		// need to lock the vector if shared by other PreSyn
 		// since we get here in the thread that manages the
 		// threshold detection (or net_event from NET_RECEIVE).
 		if (idvec_) {tvec_->lock();}
-		i = tvec_->capacity();
-		tvec_->resize_chunk(i+1);
-		tvec_->elem(i) = tt;
+        tvec_->push_back(tt);
 		if (idvec_) {
-			i = idvec_->capacity();
-			idvec_->resize_chunk(i+1);
-			idvec_->elem(i) = rec_id_;
+            idvec_->push_back(rec_id_);
 			tvec_->unlock();
 		}
 	}
@@ -5101,7 +5086,7 @@ void PreSyn::update(Observable* o) { // should be disconnect
 if (dil_.item(i)->obj_) {
 	printf("%s disconnect from ", hoc_object_name(dil_.item(i)->obj_));
 	printf("source %s\n", osrc_ ? hoc_object_name(osrc_) : secname(ssrc_));
-}	
+}
 #endif
 		dil_.item(i)->src_ = nil;
 	}
@@ -5118,7 +5103,7 @@ if (dil_.item(i)->obj_) {
 		idvec_ = nil;
 	}
 	net_cvode_instance->presyn_disconnect(this);
-	thvar_ = nil;	
+	thvar_ = nil;
 	osrc_ = nil;
 	delete this;
 }
@@ -5776,11 +5761,11 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
       if (pr->type() == TvecRecordType) {
         v = ((TvecRecord*)pr)->t_;
         assert(v->buffer_size() >= vecsz);
-        ((ParentVect*)v)->resize(vecsz); // do not zero
+        v->resize(vecsz); // do not zero
       }else if (pr->type() == YvecRecordType) {
         v = ((YvecRecord*)pr)->y_;
         assert(v->buffer_size() >= vecsz);
-        ((ParentVect*)v)->resize(vecsz); // do not zero
+        v->resize(vecsz); // do not zero
 #if HAVE_IV
       }else if (pr->type() == GLineRecordType) {
         GLineRecord* glr = (GLineRecord*)pr;
@@ -6008,9 +5993,7 @@ void TvecRecord::record_init() {
 }
 
 void TvecRecord::continuous(double tt) {
-	int j = t_->capacity();
-	t_->resize_chunk(j + 1);
-	t_->elem(j) = tt;
+    t_->push_back(tt);
 }
 
 YvecRecord::YvecRecord(double* pd, IvocVect* y, Object* ppobj) : PlayRecord(pd, ppobj) {
@@ -6038,9 +6021,7 @@ void YvecRecord::record_init() {
 }
 
 void YvecRecord::continuous(double tt) {
-	int j = y_->capacity();
-	y_->resize_chunk(j + 1);
-	y_->elem(j) = *pd_;
+    y_->push_back(*pd_);
 }
 
 VecRecordDiscrete::VecRecordDiscrete(double* pd, IvocVect* y, IvocVect* t, Object* ppobj) : PlayRecord(pd, ppobj) {
@@ -6065,7 +6046,7 @@ PlayRecordSave* VecRecordDiscrete::savestate_save() {
 }
 
 VecRecordDiscreteSave::VecRecordDiscreteSave(PlayRecord* prl) : PlayRecordSave(prl) {
-	cursize_ = ((VecRecordDiscrete*)pr_)->y_->capacity();
+	cursize_ = ((VecRecordDiscrete*)pr_)->y_->size();
 }
 VecRecordDiscreteSave::~VecRecordDiscreteSave() {
 }
@@ -6073,7 +6054,7 @@ void VecRecordDiscreteSave::savestate_restore() {
 	check();
 	VecRecordDiscrete* vrd = (VecRecordDiscrete*)pr_;
 	vrd->y_->resize(cursize_);
-	assert(cursize_ <= vrd->t_->capacity());
+	assert(cursize_ <= vrd->t_->size());
 }
 void VecRecordDiscreteSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", cursize_);
@@ -6095,7 +6076,7 @@ void VecRecordDiscrete::install(Cvode* cv) {
 
 void VecRecordDiscrete::record_init() {
 	y_->resize(0);
-	if (t_->capacity() > 0) {
+	if (t_->size() > 0) {
 		e_->send(t_->elem(0), net_cvode_instance, nrn_threads);
 	}
 }
@@ -6105,12 +6086,10 @@ void VecRecordDiscrete::frecord_init(TQItem* q) {
 }
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
-	int j = y_->capacity();
-	y_->resize_chunk(j + 1);
-	y_->elem(j) = *pd_;
-	assert(Math::equal(t_->elem(j), tt, 1e-8));
-	if (j+1 < t_->capacity()) {
-		e_->send(t_->elem(j+1), nc, nrn_threads);
+    y_->push_back(*pd_);
+	assert(Math::equal(y_->vec().back(), tt, 1e-8));
+	if (y_->size() < t_->size()) {
+		e_->send(t_->vec().back(), nc, nrn_threads);
 	}
 }
 
@@ -6160,12 +6139,10 @@ void VecRecordDt::frecord_init(TQItem* q) {
 }
 
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
-	int j = y_->capacity();
-	y_->resize_chunk(j + 1);
 	if (pd_ == &t) {
-		y_->elem(j) = tt;
+		y_->push_back(tt);
 	}else{
-		y_->elem(j) = *pd_;
+		y_->push_back(*pd_);
 	}
 	e_->send(tt + dt_, nc, nrn_threads);
 }
