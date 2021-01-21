@@ -21,6 +21,7 @@ extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
 void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
+void nrn_delete_prop_pool(int type);
 #if EXTRACELLULAR
 void nrn_extcell_update_param();
 #endif
@@ -250,6 +251,17 @@ static void mk_prop_pools(int n) {
 		datumpools_ = p2;
 		npools_ = n;
 	}
+}
+
+void nrn_delete_prop_pool(int type) {
+  assert(type < npools_);
+  if (dblpools_[type]) {
+    if (dblpools_[type]->nget() > 0) {
+      hoc_execerror(memb_func[type].sym->name, "prop pool in use");
+    }
+    delete dblpools_[type];
+    dblpools_[type] = NULL;
+  }
 }
 
 void nrn_mk_prop_pools(int n) {

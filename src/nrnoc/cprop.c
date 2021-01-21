@@ -12,6 +12,7 @@ greater cache efficiency
 
 void nrn_mk_prop_pools(int n) {}
 void nrn_cache_prop_realloc() {}
+void nrn_delete_prop_pool(int type) {}
 int nrn_is_valid_section_ptr(void* v) { return 0; }
 
 double* nrn_prop_data_alloc(int type, int count, Prop* p) {
@@ -38,4 +39,3 @@ Section* nrn_section_alloc() {
 void nrn_section_free(Section* s) {
 	free(s);
 }
-

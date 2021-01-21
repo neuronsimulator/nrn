@@ -39,6 +39,10 @@ extern void fit_praxis(), attr_praxis(), pval_praxis(), stop_praxis();
 extern void keep_nseg_parm();
 #endif
 
+#if EXTRACELLULAR
+extern void nlayer_extracellular();
+#endif
+
 extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
 
