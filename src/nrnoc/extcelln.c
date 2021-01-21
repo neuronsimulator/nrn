@@ -151,10 +151,13 @@ i_membrane = sav_g * (NODERHS(nd)) + sav_rhs;
 #endif
 }
 
-static int nparm() {
+static int nparm() { /* number of doubles for property data */
+  /* 3 are the nlayer size arrays xg, xc, xraxial */
 #if I_MEMBRANE
+  /* 4 is for e_extracellular, i_membrane, sav_g, and sav_rhs */
   return 3*(nlayer) + 4;
 #else
+  /* 1 is for e_extracellular */
   return 3*(nlayer) + 1;
 #endif
 }
@@ -229,7 +232,14 @@ static void check_if_extracellular_in_use() {
 }
 
 static void update_existing_extnode(int old_nlayer) {
-  /* there aren't any because of check_if_extracellular_in_use() */
+  /*
+    This is a placeholder for a later extension to allow change
+    of nlayer even if the extracellular mechanism has been instantiated
+    in some sections. It is deferred for later because it is not clear
+    that handling pointer updates to vext is straightforward.
+    Hence the check_if_extracellular_in_use() function, which will
+    be eliminated when this is filled in.
+  */
 }
 
 static void update_extracellular_reg(int old_nlayer) {
@@ -257,12 +267,14 @@ static void update_extracellular_reg(int old_nlayer) {
 
 void nlayer_extracellular() {
   if (ifarg(1)) {
+    /* Note in section.h: #define  nlayer (nrn_nlayer_extracellular) */
     int old = nlayer;
     nrn_nlayer_extracellular = (int)chkarg(1, 1., 1000.);
-    if (nlayer == old) { return; }
+    if (nrn_nlayer_extracellular == old) { return; }
 
     check_if_extracellular_in_use();
     nrn_delete_prop_pool(EXTRACELL);
+    /*global nlayer is the new value. Following needs to know the previous */
     update_extracellular_reg(old);
     update_existing_extnode(old);
   }
