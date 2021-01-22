@@ -167,6 +167,14 @@ tst_data = ['''
 4  3 20  0 0 1  3
 5  3 10  1 0 1  2
 6  3 10 20 0 1  5
+''','''
+# no soma 2 dendrites with root connection.
+#n,type,x,y,z,radius,parent
+1  3 0  0  0 3 -1
+2  3 2  0 0 1  1
+3  3 10  0 0 1  2
+4  3 -2  0 0 1  1
+5  3 -10  0 0 1  4
 ''']
 
 def mkswc(swc_contents):
@@ -459,6 +467,15 @@ dend[2] L=20  parent dend[0](1)
  0   10 0 0 2
  1   10 1 0 2
  2   10 20 0 2
+''','''
+dend[0] L=10  
+ 0   0 0 0 6
+ 1   2 0 0 2
+ 2   10 0 0 2
+dend[1] L=10  parent dend[0](0)
+ 0   0 0 0 6
+ 1   -2 0 0 2
+ 2   -10 0 0 2
 ''']
 
 def test_swc():
