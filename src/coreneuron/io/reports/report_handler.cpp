@@ -13,7 +13,7 @@
 namespace coreneuron {
 
 void ReportHandler::create_report(double dt, double tstop, double delay) {
-#if defined(ENABLE_BIN_REPORTSLIB) || defined(ENABLE_SONATA_REPORTS)
+#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
     if (m_report_config.start < t) {
         m_report_config.start = t;
     }
@@ -75,10 +75,10 @@ void ReportHandler::create_report(double dt, double tstop, double delay) {
         std::cerr << "[WARNING] : Reporting is disabled. Please recompile with either libsonata or "
                      "reportinglib. \n";
     }
-#endif  // defined(ENABLE_BIN_REPORTSLIB) || defined(ENABLE_SONATA_REPORTS)
+#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 }
 
-#if defined(ENABLE_BIN_REPORTSLIB) || defined(ENABLE_SONATA_REPORTS)
+#if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 void ReportHandler::register_soma_report(const NrnThread& nt,
                                          ReportConfiguration& config,
                                          const VarsToReport& vars_to_report) {
@@ -323,6 +323,6 @@ std::vector<int> ReportHandler::map_gids(const NrnThread& nt) const {
     }
     return nodes_gid;
 }
-#endif  // defined(ENABLE_BIN_REPORTSLIB) || defined(ENABLE_SONATA_REPORTS)
+#endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 
 }  // Namespace coreneuron

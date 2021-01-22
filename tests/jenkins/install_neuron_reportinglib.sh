@@ -22,8 +22,9 @@ set -e
 set -x
 source ${JENKINS_DIR:-.}/_env_setup.sh
 
-# Install reportinglib with spack to run reportinglib tests
+# Install reportinglib & libsonata with spack to run reporting tests
 spack install reportinglib%intel
+spack install libsonata-report%intel
 
 patch_neuron
 spack install neuron+debug@develop~legacy-unit

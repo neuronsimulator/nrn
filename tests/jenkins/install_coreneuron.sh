@@ -6,6 +6,7 @@ set -x
 source ${JENKINS_DIR:-.}/_env_setup.sh
 
 reportinglib_dir=$(spack location --install-dir --latest reportinglib%intel)
+libsonata_report_dir=$(spack location --install-dir --latest libsonata-report%intel)
 
 CORENRN_TYPE="$1"
 
@@ -61,8 +62,8 @@ elif [ "${CORENRN_TYPE}" = "AoS" ] || [ "${CORENRN_TYPE}" = "SoA" ]; then
       -DCMAKE_BUILD_TYPE=Debug  \
       -DCORENRN_ENABLE_SOA=$CORENRN_ENABLE_SOA \
       -DCORENRN_ENABLE_OPENMP=$ENABLE_OPENMP \
-      -DCORENRN_ENABLE_BIN_REPORTS=ON \
-      -DCMAKE_PREFIX_PATH=$reportinglib_dir \
+      -DCORENRN_ENABLE_REPORTING=ON \
+      -DCMAKE_PREFIX_PATH="$reportinglib_dir;$libsonata_report_dir" \
       -DTEST_MPI_EXEC_BIN="mpirun" \
       -DTEST_EXEC_PREFIX="mpirun;-n;2" \
       -DAUTO_TEST_WITH_SLURM=OFF \
