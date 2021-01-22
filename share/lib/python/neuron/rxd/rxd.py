@@ -1097,9 +1097,7 @@ def _compile_reactions():
                     else:
                         ecs_species_by_region[reg] = set(ecs_species_involved)
     #Create lists of indexes for intracellular reactions and rates
-    nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
-    location_index = []
     regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
     regions_inv_1d.sort(key=lambda r: r._id)
     all_regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
