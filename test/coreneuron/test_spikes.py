@@ -43,7 +43,10 @@ def test_spikes(use_mpi4py=False, use_nrnmpi_init=False, file_mode=False):
     # NEURON run
     nrn_spike_t = h.Vector()
     nrn_spike_gids = h.Vector()
-    pc.spike_record(-1, nrn_spike_t, nrn_spike_gids)
+
+    # rank 0 record spikes for all gid while others
+    # for specific gid. this is for better test coverage.
+    pc.spike_record(-1 if pc.id() == 0 else (pc.id()), nrn_spike_t, nrn_spike_gids)
 
     h.run()
 
