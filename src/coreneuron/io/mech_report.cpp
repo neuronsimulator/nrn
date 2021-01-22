@@ -40,7 +40,7 @@ void write_mech_report() {
                   local_mech_count.size(),
                   MPI_UNSIGNED_LONG_LONG,
                   MPI_SUM,
-                  MPI_COMM_WORLD);
+                  nrnmpi_comm);
 
 #else
     total_mech_count = local_mech_count;

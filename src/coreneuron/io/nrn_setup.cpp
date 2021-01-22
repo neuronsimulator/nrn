@@ -22,6 +22,8 @@
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/memory.h"
+#include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/nrnmpi_impl.h"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
@@ -33,6 +35,7 @@
 #include "coreneuron/io/phase2.hpp"
 #include "coreneuron/io/mech_report.h"
 #include "coreneuron/apps/corenrn_parameters.hpp"
+#include "coreneuron/io/nrn_setup.hpp"
 
 // callbacks into nrn/src/nrniv/nrnbbcore_write.cpp
 #include "coreneuron/sim/fast_imem.hpp"
@@ -148,8 +151,6 @@ namespace coreneuron {
 extern corenrn_parameters corenrn_param;
 
 static OMP_Mutex mut;
-
-static size_t model_size(void);
 
 /// Vector of maps for negative presyns
 std::vector<std::map<int, PreSyn*>> neg_gid2out;
@@ -537,15 +538,30 @@ void nrn_setup(const char* filesdat,
     /// which is only executed by StochKV.c.
     nrn_mk_table_check();  // was done in nrn_thread_memblist_setup in multicore.c
 
-    model_size();
-    delete[] userParams.gidgroups;
+    size_t model_size_bytes;
+
+    if (corenrn_param.model_stats) {
+        write_mech_report();
+        model_size_bytes = model_size(true);
+    } else {
+        model_size_bytes = model_size(false);
+    }
 
     if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf(" Setup Done   : %.2lf seconds \n", nrn_wtime() - time);
+
+        if (model_size_bytes < 1024) {
+            printf(" Model size   : %ld bytes\n", model_size_bytes);
+        } else if (model_size_bytes < 1024 * 1024) {
+            printf(" Model size   : %.2lf kB\n", model_size_bytes / 1024.);
+        } else if (model_size_bytes < 1024 * 1024 * 1024) {
+            printf(" Model size   : %.2lf MB\n", model_size_bytes / (1024. * 1024.));
+        } else {
+            printf(" Model size   : %.2lf GB\n", model_size_bytes / (1024. * 1024. * 1024.));
+        }
     }
-    if (corenrn_param.count_mechs) {
-        write_mech_report();
-    }
+
+    delete[] userParams.gidgroups;
 }
 
 void setup_ThreadData(NrnThread& nt) {
@@ -938,11 +954,8 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {
-    size_t sz_ntml = sizeof(NrnThreadMembList);
-    size_t sz_ml = sizeof(Memb_list);
-    size_t szi = sizeof(int);
-    size_t nbyte = sz_ntml + sz_ml;
-    nbyte += tml->ml->nodecount * szi;
+    size_t nbyte = sizeof(NrnThreadMembList) + sizeof(Memb_list);
+    nbyte += tml->ml->nodecount * sizeof(int);
     nbyte += corenrn.get_prop_dparam_size()[tml->index] * tml->ml->nodecount * sizeof(Datum);
 #ifdef DEBUG
     int i = tml->index;
@@ -982,17 +995,20 @@ size_t input_presyn_size(void) {
     return nbyte;
 }
 
-size_t model_size(void) {
+size_t model_size(bool detailed_report) {
     size_t nbyte = 0;
-    size_t szd = sizeof(double);
-    size_t szi = sizeof(int);
-    size_t szv = sizeof(void*);
-    size_t sz_th = sizeof(NrnThread);
-    size_t sz_ps = sizeof(PreSyn);
-    size_t sz_psi = sizeof(InputPreSyn);
-    size_t sz_nc = sizeof(NetCon);
-    size_t sz_pp = sizeof(Point_process);
+    size_t sz_nrnThread = sizeof(NrnThread);
+    size_t sz_presyn = sizeof(PreSyn);
+    size_t sz_input_presyn = sizeof(InputPreSyn);
+    size_t sz_netcon = sizeof(NetCon);
+    size_t sz_pntproc = sizeof(Point_process);
     size_t nccnt = 0;
+
+    std::vector<size_t> size_data(13, 0);
+    std::vector<size_t> global_size_data_min(13, 0);
+    std::vector<size_t> global_size_data_max(13, 0);
+    std::vector<size_t> global_size_data_sum(13, 0);
+    std::vector<float> global_size_data_avg(13, 0.0);
 
     for (int i = 0; i < nrn_nthread; ++i) {
         NrnThread& nt = nrn_threads[i];
@@ -1007,9 +1023,14 @@ size_t model_size(void) {
         }
 
         // basic thread size includes mechanism data and G*V=I matrix
-        nb_nt += sz_th;
-        nb_nt += nt._ndata * szd + nt._nidata * szi + nt._nvdata * szv;
-        nb_nt += nt.end * szi;  // _v_parent_index
+        nb_nt += sz_nrnThread;
+        nb_nt += nt._ndata * sizeof(double) + nt._nidata * sizeof(int) + nt._nvdata * sizeof(void*);
+        nb_nt += nt.end * sizeof(int);  // _v_parent_index
+
+        // network connectivity
+        nb_nt += nt.n_pntproc * sz_pntproc + nt.n_netcon * sz_netcon + nt.n_presyn * sz_presyn +
+                 nt.n_input_presyn * sz_input_presyn + nt.n_weight * sizeof(double);
+        nbyte += nb_nt;
 
 #ifdef DEBUG
         printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
@@ -1023,35 +1044,167 @@ size_t model_size(void) {
         printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc * sz_pp);
         printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon * sz_nc);
         printf("n_weight = %d\n", nt.n_weight);
-#endif
 
-        // spike handling
-        nb_nt += nt.n_pntproc * sz_pp + nt.n_netcon * sz_nc + nt.n_presyn * sz_ps +
-                 nt.n_input_presyn * sz_psi + nt.n_weight * szd;
-        nbyte += nb_nt;
-#ifdef DEBUG
         printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);
 #endif
+
+        if (detailed_report) {
+            size_data[0] += nt.ncell;
+            size_data[1] += nt.end;
+            size_data[2] += nmech;
+            size_data[3] += nt._ndata;
+            size_data[4] += nt._nidata;
+            size_data[5] += nt._nvdata;
+            size_data[6] += nt.n_presyn;
+            size_data[7] += nt.n_input_presyn;
+            size_data[8] += nt.n_pntproc;
+            size_data[9] += nt.n_netcon;
+            size_data[10] += nt.n_weight;
+            size_data[11] += nb_nt;
+        }
     }
 
-#ifdef DEBUG
-    printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt * sizeof(NetCon*));
-#endif
     nbyte += nccnt * sizeof(NetCon*);
     nbyte += output_presyn_size();
     nbyte += input_presyn_size();
 
+    nbyte += nrnran123_instance_count() * nrnran123_state_size();
+
 #ifdef DEBUG
+    printf("%d netcon pointers %ld  nbyte=%ld\n", nrnmpi_myid, nccnt, nccnt * sizeof(NetCon*));
     printf("nrnran123 size=%ld cnt=%ld nbyte=%ld\n",
            nrnran123_state_size(),
            nrnran123_instance_count(),
            nrnran123_instance_count() * nrnran123_state_size());
-#endif
-
-    nbyte += nrnran123_instance_count() * nrnran123_state_size();
-
-#ifdef DEBUG
     printf("%d total bytes %ld\n", nrnmpi_myid, nbyte);
+#endif
+    if (detailed_report) {
+        size_data[12] = nbyte;
+#if NRNMPI
+        MPI_Allreduce(&size_data[0],
+                      &global_size_data_min[0],
+                      13,
+                      MPI_UNSIGNED_LONG_LONG,
+                      MPI_MIN,
+                      nrnmpi_comm);
+        MPI_Allreduce(&size_data[0],
+                      &global_size_data_max[0],
+                      13,
+                      MPI_UNSIGNED_LONG_LONG,
+                      MPI_MAX,
+                      nrnmpi_comm);
+        MPI_Allreduce(&size_data[0],
+                      &global_size_data_sum[0],
+                      13,
+                      MPI_UNSIGNED_LONG_LONG,
+                      MPI_SUM,
+                      nrnmpi_comm);
+        for (int i = 0; i < 13; i++) {
+            global_size_data_avg[i] = global_size_data_sum[i] / float(nrnmpi_numprocs);
+        }
+#else
+        global_size_data_max = size_data;
+        global_size_data_min = size_data;
+        global_size_data_avg.assign(size_data.cbegin(), size_data.cend());
+#endif
+        // now print the collected data:
+        if (nrnmpi_myid == 0) {
+            printf("Memory size information for all NrnThreads per rank\n");
+            printf("------------------------------------------------------------------\n");
+            printf("%22s %12s %12s %12s\n", "field", "min", "max", "avg");
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_cell",
+                   global_size_data_min[0],
+                   global_size_data_max[0],
+                   global_size_data_avg[0]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_compartment",
+                   global_size_data_min[1],
+                   global_size_data_max[1],
+                   global_size_data_avg[1]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_mechanism",
+                   global_size_data_min[2],
+                   global_size_data_max[2],
+                   global_size_data_avg[2]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "_ndata",
+                   global_size_data_min[3],
+                   global_size_data_max[3],
+                   global_size_data_avg[3]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "_nidata",
+                   global_size_data_min[4],
+                   global_size_data_max[4],
+                   global_size_data_avg[4]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "_nvdata",
+                   global_size_data_min[5],
+                   global_size_data_max[5],
+                   global_size_data_avg[5]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_presyn",
+                   global_size_data_min[6],
+                   global_size_data_max[6],
+                   global_size_data_avg[6]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_presyn (bytes)",
+                   global_size_data_min[6] * sz_presyn,
+                   global_size_data_max[6] * sz_presyn,
+                   global_size_data_avg[6] * sz_presyn);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_input_presyn",
+                   global_size_data_min[7],
+                   global_size_data_max[7],
+                   global_size_data_avg[7]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_input_presyn (bytes)",
+                   global_size_data_min[7] * sz_input_presyn,
+                   global_size_data_max[7] * sz_input_presyn,
+                   global_size_data_avg[7] * sz_input_presyn);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_pntproc",
+                   global_size_data_min[8],
+                   global_size_data_max[8],
+                   global_size_data_avg[8]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_pntproc (bytes)",
+                   global_size_data_min[8] * sz_pntproc,
+                   global_size_data_max[8] * sz_pntproc,
+                   global_size_data_avg[8] * sz_pntproc);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_netcon",
+                   global_size_data_min[9],
+                   global_size_data_max[9],
+                   global_size_data_avg[9]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_netcon (bytes)",
+                   global_size_data_min[9] * sz_netcon,
+                   global_size_data_max[9] * sz_netcon,
+                   global_size_data_avg[9] * sz_netcon);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "n_weight",
+                   global_size_data_min[10],
+                   global_size_data_max[10],
+                   global_size_data_avg[10]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "NrnThread (bytes)",
+                   global_size_data_min[11],
+                   global_size_data_max[11],
+                   global_size_data_avg[11]);
+            printf("%22s %12ld %12ld %15.2f\n",
+                   "model size (bytes)",
+                   global_size_data_min[12],
+                   global_size_data_max[12],
+                   global_size_data_avg[12]);
+        }
+    }
+
+#if NRNMPI
+    size_t global_nbyte = 0;
+    MPI_Allreduce(&nbyte, &global_nbyte, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, nrnmpi_comm);
+    nbyte = global_nbyte;
+
 #endif
 
     return nbyte;

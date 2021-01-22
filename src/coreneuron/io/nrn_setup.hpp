@@ -32,7 +32,10 @@ extern void nrn_setup_cleanup();
 
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
 
+size_t model_size(bool detailed_report);
+
 namespace coreneuron {
+
 
 /// Reading phase number.
 enum phase { one = 1, two, three, gap };
