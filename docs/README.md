@@ -28,7 +28,14 @@ In order to build documentation locally, you need to pip install the [docs_requi
 pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
 
-Then in your CMake build folder:
+Also, make sure to have Doxygen installed on your system. With all dependencies installed, configure project with
+cmake as described in [README](../README.md). e.g. In your CMake build folder:
+
+```
+cmake .. -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_RX3D=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/install
+```
+
+Then build docs using command:
 ```
 make docs
 ```  

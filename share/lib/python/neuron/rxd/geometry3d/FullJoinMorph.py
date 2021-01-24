@@ -67,8 +67,8 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]]
 
     # TODO: include segment boundaries when checking cone lengths
-    # warning on minimum size of dx
-    check = min(min(diams)/math.sqrt(3), min(arcs)/math.sqrt(3))
+    # warning on minimum size of dx, only considering positive lengths
+    check = min(min(d for d in diams if d > 0)/math.sqrt(3), min(a for a in arcs if a > 0)/math.sqrt(3))
     if (dx > check):
         warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
     

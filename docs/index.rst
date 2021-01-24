@@ -8,6 +8,7 @@ Welcome to NEURON's documentation!
    :maxdepth: 1
    :caption: Building:
 
+   install/install
    cmake_doc/index
 
 .. toctree::
@@ -18,6 +19,7 @@ Welcome to NEURON's documentation!
    new_doc/index
    tutorials/index
    rxd-tutorials/index
+   coreneuron/index
 
 .. toctree::
    :maxdepth: 2

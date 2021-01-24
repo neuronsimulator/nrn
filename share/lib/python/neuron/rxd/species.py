@@ -1617,10 +1617,13 @@ class Species(_SpeciesMathable):
         else:
             return []
 
-    def _indices1d(self, r=None):
+    def _indices1d(self, r=None, secs=None):
         """return the indices of just the 1D nodes corresponding to this species in the given region"""
+        if secs is not None:
+            if r is not None:
+                return [idx for sec in self._secs for idx in sec.indices if sec in secs and sec._region == r]
+            return [idx for sec in self._secs for idx in sec.indices if sec in secs] 
         return self._region_indices.get(r, [])
-    
     def indices(self, r=None, secs=None):
         """return the indices corresponding to this species in the given region
         

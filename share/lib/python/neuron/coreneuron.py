@@ -2,6 +2,7 @@
 # Properties settable by user
 enable = False     # Use CoreNEURON when calling ParallelContext.psolve(tstop).
 gpu = False        # Activate GPU computation.
+file_mode = False  # Run via file transfer mode instead of in-memory transfer
 cell_permute = 1   # 0 no permutation; 1 optimize node adjacency
                    # 2 optimize parent node adjacency (only for gpu = True)
 warp_balance = 0   # Number of warps to balance. (0 no balance)
@@ -38,8 +39,12 @@ def nrncore_arg(tstop):
   if not enable:
     return arg
 
+  # note that this name is also used in C++ file nrncore_write.cpp
+  CORENRN_DATA_DIR = "corenrn_data"
+
   # args derived from user properties
   arg += ' --gpu' if gpu else ''
+  arg += ' --datpath %s' % CORENRN_DATA_DIR if file_mode else ''
   arg += ' --tstop %g' % tstop
   arg += (' --cell-permute %d' % cell_permute) if cell_permute > 0 else ''
   arg += (' --nwarp %d' % warp_balance) if warp_balance > 0 else ''

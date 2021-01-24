@@ -164,7 +164,7 @@ fi
 # on osx we need to install pip from source
 if [[ "$OSTYPE" == "darwin"* ]] && [[ "$python_ver" == "35" ]]; then
   echo "Updating pip for OSX with Python 3.5"
-  curl https://bootstrap.pypa.io/get-pip.py | python
+  curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
 fi
 
 # install neuron and neuron

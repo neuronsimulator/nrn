@@ -180,6 +180,8 @@ class _c_region:
         for rid, r in enumerate(self._regions):
             for sid, s in enumerate(self._react_species + self._react_params):
                 indices = s()._indices1d(r())
+                if len(indices) > self.num_segments:
+                    indices = s()._indices1d(r(), self._overlap)
                 try:
                     if indices == []:
                         self.location_index[rid][sid][:] = -1
@@ -293,6 +295,15 @@ class Region(object):
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self.dx, self._name)
+    
+    def __contains__(self, item):
+        try:
+            if item.region == self:
+                return True
+            else:
+                return False
+        except:
+            raise NotImplementedError()
 
     def _short_repr(self):
         if self._name is not None:
