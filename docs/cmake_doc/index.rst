@@ -1,10 +1,8 @@
 
-NEURON CMake Build
-==================
+CMake Build Options
+===================
 
-Quick Links
------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    options
