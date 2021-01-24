@@ -23,8 +23,7 @@ if python support is required. You can find detailed step-by-step instructions i
 
 #### Mac OS
 
-Since version 7.8.1 we are providing Python wheels and this is now the preferred way to install NEURON
-(unless you don't have Python environment). NEURON can be installed is using `pip` as:
+Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
 
 ```
 pip3 install neuron
@@ -52,8 +51,7 @@ binaries (`nrniv`, `neurondemo` etc.) should be available to start.
 
 #### Linux
 
-Like Mac OS, since 7.8.1 release, python wheel is the preferred way to install NEURON. You can use `pip`
-to install NEURON as:
+Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip` to install NEURON as:
 
 ```
 pip3 install neuron
