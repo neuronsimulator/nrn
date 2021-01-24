@@ -43,7 +43,7 @@ setup_venv() {
     # pep425tags are not available anymore from 0.35
     # temporary workaround until we get smtg stable
     if ! pip install -U pip setuptools "wheel<0.35"; then
-        curl https://bootstrap.pypa.io/get-pip.py | python
+        curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
         pip install -U setuptools "wheel<0.35"
     fi
 }

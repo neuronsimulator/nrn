@@ -1065,6 +1065,7 @@ double BBS::threshold() {
 void BBS::cell() {
 	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
+	alloc_space();
 	if (gid2in_->find(gid, ps)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
