@@ -393,7 +393,7 @@ def main(args=None):
             input = task.input.relative_to(codegen.this_dir)
             LOGGER.debug(f"  %-{padding}s -> %s", input, task.output)
     else:
-        LOGGER.info("Nothing do to")
+        LOGGER.info("Nothing to do")
 
 
 if __name__ == "__main__":
