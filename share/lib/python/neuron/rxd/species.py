@@ -1225,7 +1225,9 @@ class Species(_SpeciesMathable):
             else:
                 from .rxd import _domain_lookup
                 reglist = regions if hasattr(regions,'__len__') else [regions]
-                dims = [_domain_lookup(sec) for reg in reglist for sec in reg.secs]
+                dims = [_domain_lookup(sec) for reg in reglist 
+                            if not isinstance(reg, region.Extracellular)
+                            for sec in reg.secs]
                 if not all([dim == dims[0] for dim in dims]):
                     raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
                 else:
