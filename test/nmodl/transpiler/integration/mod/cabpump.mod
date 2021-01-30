@@ -4,8 +4,8 @@ NEURON {
         SUFFIX cadyn
         USEION ca READ cai,ica WRITE cai 
         RANGE ca 
-	GLOBAL depth,cainf,taur
-		RANGE var
+        GLOBAL depth,cainf,taur
+        RANGE var
      
 }
 

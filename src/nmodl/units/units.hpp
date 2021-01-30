@@ -39,7 +39,7 @@ namespace units {
  */
 
 /// Maximum number of dimensions of units (maximum number of base units)
-static const int MAX_DIMS = 10;
+static constexpr int MAX_DIMS = 10;
 
 /**
  * \class Unit
@@ -197,7 +197,7 @@ class Prefix {
     /// \{
 
     /// Default constructor for Prefix
-    Prefix() = default;
+    Prefix() = delete;
 
     /// Constructor that instantiates a Prefix with its name and factor
     Prefix(std::string name, const std::string& factor);

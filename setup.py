@@ -108,7 +108,7 @@ setup(
     version=__version__,
     author="Blue Brain Project",
     author_email="bbp-ou-hpc@groupes.epfl.ch",
-    description="NEURON Modelling Language Source-to-Source Compiler Framework",
+    description="NEURON Modeling Language Source-to-Source Compiler Framework",
     long_description="",
     packages=["nmodl"],
     scripts=["pywheel/shim/nmodl", "pywheel/shim/find_libpython.py"],
