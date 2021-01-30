@@ -27,8 +27,8 @@ Term::Term(const std::string& expr, const std::string& state)
 
 
 void Term::print() const {
-    std::cout << "Term [expr, deriv, a, b] : ";
-    std::cout << expr << ", " << deriv << ", " << a << ", " << b << std::endl;
+    std::cout << "Term [expr, deriv, a, b] : " << expr << ", " << deriv << ", " << a << ", " << b
+              << '\n';
 }
 
 

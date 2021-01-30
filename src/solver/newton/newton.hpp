@@ -32,8 +32,8 @@ namespace newton {
  * @{
  */
 
-constexpr int MAX_ITER = 1e3;
-constexpr double EPS = 1e-12;
+static constexpr int MAX_ITER = 1e3;
+static constexpr double EPS = 1e-12;
 
 /**
  * \brief Newton method with user-provided Jacobian
@@ -77,8 +77,8 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
     return -1;
 }
 
-constexpr double SQUARE_ROOT_ULP = 1e-7;
-constexpr double CUBIC_ROOT_ULP = 1e-5;
+static constexpr double SQUARE_ROOT_ULP = 1e-7;
+static constexpr double CUBIC_ROOT_ULP = 1e-5;
 
 /**
  * \brief Newton method without user-provided Jacobian

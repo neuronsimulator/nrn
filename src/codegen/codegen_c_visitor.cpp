@@ -45,7 +45,7 @@ namespace codegen_utils = nmodl::codegen::utils;
 /*                            Overloaded visitor routines                               */
 /****************************************************************************************/
 
-const std::regex regex_special_chars{R"([-[\]{}()*+?.,\^$|#\s])"};
+static const std::regex regex_special_chars{R"([-[\]{}()*+?.,\^$|#\s])"};
 
 void CodegenCVisitor::visit_string(const String& node) {
     if (!codegen) {
@@ -1917,7 +1917,7 @@ std::string CodegenCVisitor::process_verbatim_text(std::string text) {
         }
         auto name = process_verbatim_token(token);
 
-        if (token == ("_" + naming::TQITEM_VARIABLE)) {
+        if (token == (std::string("_") + naming::TQITEM_VARIABLE)) {
             name = "&" + name;
         }
         if (token == "_STRIDE") {
@@ -2296,13 +2296,13 @@ std::string CodegenCVisitor::get_variable_name(const std::string& name, bool use
     }
 
     if (varname == naming::NTHREAD_DT_VARIABLE) {
-        return "nt->_" + naming::NTHREAD_DT_VARIABLE;
+        return std::string("nt->_") + naming::NTHREAD_DT_VARIABLE;
     }
 
     // t in net_receive method is an argument to function and hence it should
     // ne used instead of nt->_t which is current time of thread
     if (varname == naming::NTHREAD_T_VARIABLE && !printing_net_receive) {
-        return "nt->_" + naming::NTHREAD_T_VARIABLE;
+        return std::string("nt->_") + naming::NTHREAD_T_VARIABLE;
     }
 
     // otherwise return original name
@@ -2653,8 +2653,8 @@ void CodegenCVisitor::print_mechanism_register() {
 
     // types for ion
     for (const auto& ion: info.ions) {
-        auto type = get_variable_name(ion.name + "_type");
-        auto name = add_escape_quote(ion.name + "_ion");
+        const auto& type = get_variable_name(ion.name + "_type");
+        const auto& name = add_escape_quote(ion.name + "_ion");
         printer->add_line(type + " = nrn_get_mechtype(" + name + ");");
     }
     printer->add_newline();

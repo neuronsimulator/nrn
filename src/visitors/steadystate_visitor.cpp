@@ -55,9 +55,10 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
 
         // create statements to alter value of dt within DERIVATIVE block
         // TODO: make sure dt_tmp_var_name variable name does not clash
-        std::string dt_tmp_var_name = codegen::naming::NTHREAD_DT_VARIABLE + "_saved_value";
+        std::string dt_tmp_var_name = std::string(codegen::naming::NTHREAD_DT_VARIABLE) +
+                                      "_saved_value";
         std::string dt_save = dt_tmp_var_name + " = " + codegen::naming::NTHREAD_DT_VARIABLE;
-        std::string dt_assign = codegen::naming::NTHREAD_DT_VARIABLE + " = ";
+        std::string dt_assign = std::string(codegen::naming::NTHREAD_DT_VARIABLE) + " = ";
         std::string dt_restore = dt_assign + dt_tmp_var_name;
         if (steadystate_method == codegen::naming::SPARSE_METHOD) {
             dt_assign += "{:.16g}"_format(STEADYSTATE_SPARSE_DT);
