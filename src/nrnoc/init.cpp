@@ -291,7 +291,7 @@ void hoc_last_init(void)
 	Symbol *s;
 
 	hoc_register_var(scdoub, (DoubVec*)0, (VoidFunc*)0);
-	nrn_threads_create(1,0); //TODO - 2nd param?
+	nrn_threads_create(1, 0); // single thread 
 
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) {
  	    extern char* nrn_version(int i);
