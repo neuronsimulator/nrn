@@ -9,8 +9,8 @@
 
 CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations including gap junction coupling with the **fixed time step method**. In order to run a NEURON model with CoreNEURON:
 
-* MOD files should be [THREADSAFE](https://neuron.yale.edu/neuron/docs/multithread-parallelization)
-* If random number generator is used then Random123 should be used instead of MCellRan4
+* MOD files shall be [THREADSAFE](https://neuron.yale.edu/neuron/docs/multithread-parallelization)
+* Random123 shall be used if a random generator is needed (instead of MCellRan4)
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
 ## Build Dependencies
