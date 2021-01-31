@@ -41,7 +41,7 @@ The functions take following arguments
 * `x_offset`: The offset in `x` at which the mechanism instance should write its real-valued
   `BBCOREPOINTER` data. In the first call this is an output argument that is expected to be updated
   by the per-instance size to be allocated.
-* `d_offset`: The offset in `x` at which the mechanism instance should write its integer-valued
+* `d_offset`: The offset in `d` at which the mechanism instance should write its integer-valued
   `BBCOREPOINTER` data. In the first call this is an output argument that is expected to be updated
   by the per-instance size to be allocated.
 * `_threadargsproto_`: a macro placeholder for NEURON/CoreNEURON data-structure parameters. They
