@@ -11,7 +11,7 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 
 * MOD files should be [THREADSAFE](https://neuron.yale.edu/neuron/docs/multithread-parallelization)
 * If random number generator is used then Random123 should be used instead of MCellRan4
-* POINTER variables need to be converted to BBCOREPOINTER ([details here](docs/userdoc/MemoryManagement/bbcorepointer.md))
+* POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
 ## Build Dependencies
 * Bison
