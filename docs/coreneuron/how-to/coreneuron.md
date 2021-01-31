@@ -1,6 +1,6 @@
 # Using CoreNEURON with NEURON
 
-[CoreNEURON](https://github.com/BlueBrain/CoreNeuron) is a compute engine for the NEURON simulator optimised for both memory usage and computational speed un modern CPU/GPU architetcures. The goals of the CoreNEURON are:
+[CoreNEURON](https://github.com/BlueBrain/CoreNeuron) is a compute engine for the NEURON simulator optimised for both memory usage and computational speed on modern CPU/GPU architetcures. The goals of CoreNEURON are:
 
 * Simulating large network models
 * Reduce memory usage
@@ -24,7 +24,7 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 
 #### Choosing Compiler
 
-CoreNEURON rely on compiler [auto-vectorisation](https://en.wikipedia.org/wiki/Automatic_vectorization) to achieve better performance on moder CPUs. With this release we recommended to use compilers like **Intel / PGI / Cray  Compiler**. These compilers are able to vectorize the code better than **GCC** or **Clang**, achieving the best possible performance gains. If you are using any cluster platform then Intel or Cray compiler should be available as a module. You can also install Intel compiler by downloading [oneAPI HPC Toolkit](https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html).  CoreNEURON supports also GPU execution based on an [OpenACC](https://en.wikipedia.org/wiki/OpenACC) backend. Currently, the best supported compiler for the OpenACC backend is PGI available as part of [NVIDIA-HPC-SDK](https://developer.nvidia.com/hpc-sdk). You need to use this compiler for NVIDIA GPUs. Note that AMD GPU support is not tested.
+CoreNEURON relies on compiler [auto-vectorisation](https://en.wikipedia.org/wiki/Automatic_vectorization) to achieve better performance on moder CPUs. With this release we recommend compilers like **Intel / PGI / Cray  Compiler**. These compilers are able to vectorize the code better than **GCC** or **Clang**, achieving the best possible performance gains. If you are using any cluster platform, then Intel or Cray compiler should be available as a module. You can also install the Intel compiler by downloading [oneAPI HPC Toolkit](https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html).  CoreNEURON supports also GPU execution based on an [OpenACC](https://en.wikipedia.org/wiki/OpenACC) backend. Currently, the best supported compiler for the OpenACC backend is PGI, available as part of [NVIDIA-HPC-SDK](https://developer.nvidia.com/hpc-sdk). You need to use this compiler for NVIDIA GPUs. Note that AMD GPU support is not tested.
 
 
 ## Installation
