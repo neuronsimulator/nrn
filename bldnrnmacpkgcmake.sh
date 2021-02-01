@@ -1,8 +1,8 @@
 #!/bin/bash
 set -ex
 # distribution built with
-# bash bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8
-# without args, default is the 4 pythons above.
+# bash bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8 python3.9
+# without args, default is the 5 pythons above.
 
 args="$*"
 if test "$args" = "" ; then
@@ -71,8 +71,12 @@ chk () {
 # http://s.sudre.free.fr/Software/Packages/about.html
 # For mac to do a productsign, need my developerID_installer.cer
 # and Neurondev.p12 file. To add to the keychain, double click each
-# of those files. By default, I added my cerificate to the login keychain.
-make macpkg # will construct below mentioned PACKAGE_FILE_NAME
+# of those files. By default, I added my certificates to the login keychain.
+make macpkg # will sign the binaries, construct below
+            # mentioned PACKAGE_FILE_NAME, and request notarization from
+            # Apple. At the end it will print a stapling request that you
+            # should run manually after receiving a "success" email from
+            # Apple.
 
 # test basic functionality
 for i in $args ; do
@@ -85,5 +89,7 @@ describe="`sh $NRN_SRC/nrnversion.sh describe`"
 PACKAGE_DOWNLOAD_NAME=${ALPHADIR}/nrn-${describe}-osx-${PYVS}.pkg
 PACKAGE_FILE_NAME=./src/mac/build/${NEURON_NVER}.pkg
 echo "scp $PACKAGE_FILE_NAME $PACKAGE_DOWNLOAD_NAME"
-scp $PACKAGE_FILE_NAME $PACKAGE_DOWNLOAD_NAME
+# Until we figure out how to automatically staple the notarization
+# the following must be done manually as well.
+# scp $PACKAGE_FILE_NAME $PACKAGE_DOWNLOAD_NAME
 
