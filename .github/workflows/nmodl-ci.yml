@@ -118,38 +118,3 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: ${{runner.workspace}}/nmodl/_skbuild/linux-x86_64-3.8/setuptools/sphinx # The folder the action should deploy.
           CLEAN: false # Automatically remove deleted files from the deploy branch
-  
-  coverage:
-    runs-on: ubuntu-18.04
-    name: "Coverage Test"
-    steps:
-      - name: Install packages
-        run: |
-          sudo apt-get install doxygen bison flex libfl-dev libboost-all-dev libopenmpi-dev openmpi-bin python3-dev python3-pip lcov
-        shell: bash
-      - name: Set up Python3
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-        env:
-          PYTHON_VERSION:  ${{ env.DEFAULT_PY_VERSION }}
-      - name: Install Python3 dependencies
-        run: |
-          pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest 'sympy>=1.3'
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      - name: Build and Test for Coverage
-        id: codecov
-        shell: bash
-        working-directory: ${{runner.workspace}}/nmodl
-        run:  |
-          mkdir build && cd build
-          cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_C_FLAGS="-coverage -O0" -DCMAKE_CXX_FLAGS="-coverage -O0";
-          make
-          (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
-          make test
-          (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
-          lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
-          genhtml coverage-combined.info --output-directory coverage --demangle-cpp --ignore-errors source
-          bash <(curl -s https://codecov.io/bash)
