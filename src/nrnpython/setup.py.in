@@ -68,15 +68,20 @@ else:
 ldefs = extern_defines.split('-D')
 
 # if using MPI then at least for linking need special paths and libraries
-mpicc_bin = get_escaped_path("@CC@")
-mpicxx_bin = get_escaped_path("@CXX@")
 import os
+c_compiler_path = get_escaped_path("@CC@")
+cxx_compiler_path = get_escaped_path("@CXX@")
+# With some Python versions (BB5 2020/12 archive 3.7.X at least) then setup.py
+# tries to compile C++ code with the C compiler. At least with PGI this fails.
+# With the 2021/01 BB5 configuration this is not needed.
+os.environ['CC'] = cxx_compiler_path if using_pgi else c_compiler_path
+os.environ["CXX"] = cxx_compiler_path
 if using_pgi:
-  os.environ["CC"]=mpicxx_bin
-else:
-  os.environ["CC"]=mpicc_bin
-
-os.environ["CXX"]=mpicxx_bin
+  # With the 2021/01 BB5 Python, which includes patches from Spack, this is
+  # needed to ensure the PGI/NVIDIA linker is used as well as the compiler.
+  # Otherwise GCC is used and it chokes on PGI/NVIDIA-specific compiler flags.
+  os.environ["LDSHARED"] = os.environ['CC'] + " -shared"
+  os.environ["LDCXXSHARED"] = os.environ["CXX"] + " -shared"
 
 # apparently we do not need the following
 #################################
