@@ -274,9 +274,6 @@ if(CORENRN_ENABLE_NMODL)
   set(CORENRN_NMODL_FLAGS
       ""
       CACHE STRING "Extra NMODL options such as passes")
-  if(CORENRN_ENABLE_GPU)
-    string(APPEND CORENRN_NMODL_FLAGS " acc --oacc")
-  endif()
 else()
   include(AddMod2cSubmodule)
   set(CORENRN_MOD2CPP_BINARY ${CMAKE_BINARY_DIR}/bin/mod2c_core${CMAKE_EXECUTABLE_SUFFIX})
