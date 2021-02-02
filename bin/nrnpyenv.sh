@@ -187,7 +187,7 @@ if test "$kernel_name" = "Darwin" ; then
     nrnpylib_provenance="sysconfig LIBDIR"
   fi
   if test "$nrn_pylib" = "" ; then
-    nrn_pylib=$($p -c '
+    nrn_pylib=$($python_path -c '
 try:
   from neuron import h
   shlib=h.libpython_path()
