@@ -203,6 +203,10 @@ jobs:
           if [ "$BUILD_MODE" == "autotools" ]; then
             $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
           fi;
+          # with cmake also run rxd tests manually
+          if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_RX3D=OFF"* && "$CMAKE_OPTION" == *"NRN_ENABLE_CORENEURON=OFF"* ]]; then
+            $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
+          fi;
 
           # with setuptools / pip, use wheel under virtual environment
           if [ "$BUILD_MODE" == "setuptools" ]; then
