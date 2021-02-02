@@ -360,5 +360,5 @@ static std::string str_replace(std::string str, const std::string& search_str, c
 
 void verbatim_adjust(char* q) {
     const std::string repl = str_replace(q, "u.template", "u.ctemplate");
-    Fprintf(fcout, "%s\n", repl.c_str());
+    Fprintf(fcout, "%s", repl.c_str());
 }
