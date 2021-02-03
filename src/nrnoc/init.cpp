@@ -25,7 +25,7 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 #ifdef WIN32
-#if defined(HAVE_DLFCN_H) && !defined(MINGW)
+#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
 #include <dlfcn.h>
 #else
 #define RTLD_NOW 0
