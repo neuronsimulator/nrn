@@ -4,10 +4,6 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-extern "C" {
-    #include <matrix2.h>
-}
-#include <pthread.h>
 #include <nrnwrap_Python.h>
 #include <unistd.h>
 

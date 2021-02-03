@@ -1,5 +1,6 @@
 #ifndef scoplib_ansi_h
 #define scoplib_ansi_h
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -131,4 +132,5 @@ double scop_erf(double);	/* (x) */
 #if defined(__cplusplus)
 }
 #endif
+
 #endif

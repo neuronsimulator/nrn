@@ -50,7 +50,9 @@
 #include "spconfig.h"
 
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
 
@@ -338,7 +340,7 @@ extern  int      spFileStats();
 extern  int      spFileVector();
 extern  int      spFillinCount();
 extern  int      spGetAdmittance();
-extern  spREAL  *spGetElement();
+extern  spREAL  *spGetElement(char*, int, int);
 extern  char    *spGetInitInfo();
 extern  int      spGetOnes();
 extern  int      spGetQuad();
@@ -363,5 +365,9 @@ extern  void     spSolveTransposed();
 extern  void     spStripFills();
 extern  void     spWhereSingular();
 #endif /* defined(__STDC__) */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* spOKAY */

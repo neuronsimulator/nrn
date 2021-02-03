@@ -36,7 +36,11 @@ NEURON 5.3 2002/06/04
  * 
 */
 
+
+
 extern int	do_equation;	/* switch for determining access to dep vars */
 extern int	*hoc_access;	/* links to next accessed variables */
 extern int  var_access;	/* variable number as pointer into access array */
 extern void eqn_name(void), eqn_init(void), eqn_lhs(void), eqn_rhs(void), dep_make(void);
+
+

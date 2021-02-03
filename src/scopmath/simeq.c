@@ -56,7 +56,7 @@ double *coef[], soln[];
 	/* Create and initialize permutation vector */
 	if (np < n) {
 		if (perm) {
-			free((char*)perm);
+			free(perm);
 		}
 		perm = (int *) malloc((unsigned) (n * sizeof(int)));
 		np = n;

@@ -97,7 +97,7 @@ static void* t_cons(Object*) {
         return new OcTimer(gargstr(1));
     }
 #else 
-	return (void*)0;
+	return nullptr;
 #endif /* HAVE_IV */
 }
 static void t_destruct(void* v) {

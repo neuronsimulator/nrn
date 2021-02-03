@@ -3,7 +3,7 @@ SUBDIRS = neuron nrnccmb
 ## The list of libraries that we make from this directory.
 lib_LTLIBRARIES = libnrnjava.la
 
-## These are all the .c files that need to be compiled to make libnrnjava.la.
+## These are all the .cpp files that need to be compiled to make libnrnjava.la.
 libnrnjava_la_SOURCES = njvm.cpp nrnjava.cpp nrnjni.cpp
 
 pkginclude_HEADERS = njvm.h

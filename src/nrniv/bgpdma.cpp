@@ -32,9 +32,10 @@ extern "C" {
 extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);
 
+} // extern "C"
 extern void (*nrntimeout_call)();
 
-}
+
 
 // The initial idea behind TWOPHASE is to avoid the large overhead of
 // initiating a send of the up to 10k list of target hosts when a cell fires.
@@ -416,11 +417,9 @@ void BGP_ReceiveBuffer::phase2send() {
 #define NSEND 10
 
 #if BGPDMA > 1
-extern "C" {
 extern void getMemSize(long long *mem);
 extern void getUsedMem(long long *mem);
 extern void getFreeMem(long long *mem);
-}
 #endif
 
 
@@ -612,12 +611,10 @@ double nrn_bgp_receive_time(int type) { // and others
 	return rt;
 }
 
-extern "C" {
 extern void nrnmpi_bgp_comm();
 extern void nrnmpi_bgp_multisend(NRNMPI_Spike*, int, int*);
 extern int nrnmpi_bgp_single_advance(NRNMPI_Spike*);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
-}
 
 static void bgp_dma_init() {
 	for (int i = 0; i < n_bgp_interval; ++i) {

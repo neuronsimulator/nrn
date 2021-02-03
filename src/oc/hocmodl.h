@@ -1,7 +1,7 @@
 extern void hoc_model(), hoc_initmodel(), hoc_terminal(), hoc_prconst();
 extern int *hoc_pindepindex;
 
-static VoidFunc function[] = {
+static VoidFunc functions[] = {
 "model", hoc_model,
 "initmodel", hoc_initmodel,
 "terminal", hoc_terminal,

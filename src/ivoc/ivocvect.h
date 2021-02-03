@@ -2,11 +2,10 @@
 #define ivoc_vector_h
 
 // definition of vector classes from the gnu c++ class library
-#include <d_avec.h>  
+#include <d_avec.h>
 #include <nrnmutdec.h>
 
 #define ParentVect doubleAVec
-#define Vect IvocVect
 
 struct Object;
 
@@ -42,8 +41,7 @@ public:
 	char* label_;
 	MUTDEC
 };
-
-
+#define Vect IvocVect
 extern "C" {
 extern Vect* vector_new(int, Object*); // use this if possible
 extern Vect* vector_new0();
@@ -51,16 +49,26 @@ extern Vect* vector_new1(int);
 extern Vect* vector_new2(Vect*);
 extern void vector_delete(Vect*);
 extern int vector_buffer_size(Vect*);
-extern int vector_capacity(Vect*);
-extern void vector_resize(Vect*, int);
 extern Object** vector_temp_objvar(Vect*);
-extern double* vector_vec(Vect*);
 extern Object** vector_pobj(Vect*);
-extern Vect* vector_arg(int);
+
 extern int is_vector_arg(int);
 extern char* vector_get_label(Vect*);
 extern void vector_set_label(Vect*, char*);
+} // extern "C"
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+extern Vect* vector_arg(int);
+extern double* vector_vec(Vect*);
+extern int vector_capacity(Vect*);
+extern void vector_resize(Vect*, int);
+
+#if defined(__cplusplus)
 }
+#endif
 
 #endif
 

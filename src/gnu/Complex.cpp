@@ -37,7 +37,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 // error handling
 
-extern "C" { extern void hoc_execerror(const char*, const char*); }
+extern "C" void hoc_execerror(const char*, const char*);
 
 void default_Complex_error_handler(const char* msg)
 {

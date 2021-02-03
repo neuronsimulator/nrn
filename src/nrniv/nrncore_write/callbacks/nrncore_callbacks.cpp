@@ -6,16 +6,28 @@
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
 #include "netcvode.h" // for nrnbbcore_vecplay_write
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
 #endif
+#endif
 
-extern "C" {
 extern bbcore_write_t* nrn_bbcore_write_;
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
@@ -24,7 +36,6 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
-};
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {

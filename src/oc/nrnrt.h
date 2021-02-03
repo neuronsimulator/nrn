@@ -3,9 +3,6 @@
 #include "nrnrtuse.h"
 
 #if NRN_REALTIME
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 void nrn_setscheduler();
 void nrn_maintask_init();
@@ -17,9 +14,6 @@ extern int nrn_realtime_;
 extern double nrn_rtstep_time_;
 extern int nrnrt_overrun_;
 
-#if defined(__cplusplus)
-}
-#endif /*c++*/
 #endif /* NRN_REALTIME */
 
 #if NRN_6229

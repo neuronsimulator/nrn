@@ -92,7 +92,7 @@ correctness has not been validated for cells without gids.
 #include <cstdlib>
 
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
 
@@ -105,14 +105,27 @@ correctness has not been validated for cells without gids.
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
+
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#endif
 #endif
 
 
 extern NetCvode* net_cvode_instance;
 
-extern "C" { // to end of file
 
 extern int* nrn_prop_dparam_size_;
 int* bbcore_dparam_size; // cvodeieq not present
@@ -350,5 +363,3 @@ int nrncore_psolve(double tstop) {
 }
 
 #endif //!HAVE_DLFCN_H
-
-} // end of extern "C"

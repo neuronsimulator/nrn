@@ -1,9 +1,6 @@
 #ifndef nrndae_c_h
 #define nrndae_c_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 extern void nrndae_alloc(void);
 extern int nrndae_extra_eqn_count(void);
@@ -19,8 +16,5 @@ extern int nrndae_list_is_empty(void);
 
 extern int nrn_use_daspk_;
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

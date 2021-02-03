@@ -23,9 +23,9 @@ endif
 endif
 
 libnrnpython@npy_pyver10@_la_SOURCES = nrnpython.cpp nrnpy_hoc.cpp nrnpy_nrn.cpp \
-	nrnpy_p2h.cpp grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp rxd_vol.cpp rxd_marching_cubes.c rxd_llgramarea.c $(EXTEND)
+	nrnpy_p2h.cpp grids.cpp rxd.cpp rxd_extracellular.cpp rxd_intracellular.cpp rxd_vol.cpp rxd_marching_cubes.cpp rxd_llgramarea.cpp $(EXTEND)
 
-librxdmath_la_SOURCES = rxdmath.c $(EXTEND)
+librxdmath_la_SOURCES = rxdmath.cpp $(EXTEND)
 
 noinst_HEADERS = nrnpython.h nrnwrap_Python.h nrnpy_reg.h \
 	nrnpy_hoc_2.h nrnpy_hoc_3.h \

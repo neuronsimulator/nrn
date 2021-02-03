@@ -10,7 +10,7 @@ C implementations of Java native methods
 
 #include "ivoc.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #include "neuron_Neuron.h"	// generated JNI Header file
@@ -36,6 +36,8 @@ extern Symbol* nrn_vec_sym;
 void* nrnjava_pwm_listen(const char*, Object*);
 void nrnjava_pwm_event(size_t, int, int, int, int, int);
 
+extern Symlist* hoc_top_level_symlist;
+
 extern "C" {
 
 /** Create a hoc class from a java one
@@ -45,7 +47,7 @@ Symbol* java2nrn_class(const char* classname, int classindex,
 	const char* methods);
 
 extern double* hoc_varpointer;
-extern Symlist* hoc_top_level_symlist;
+
 extern Objectdata* hoc_top_level_data;
 double hoc_integer(double);
 Object* hoc_new_object(Symbol*, void*);

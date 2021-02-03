@@ -84,8 +84,8 @@ NRNIVOBJS = "$(libobjdir)/nrnmain.o" "$(libobjdir)/ivocmain.o" "$(libobjdir)/nvk
 	"$(bindir)/nocmodl" $*
 	$(LTCOMPILE) -c -o $@ $*.c
 
-mod_func.lo: mod_func.c
-	$(LTCOMPILE) -c -o $@ $*.c
+mod_func.lo: mod_func.cpp
+	$(LTCOMPILE) -c -o $@ $*.cpp
 
 libnrnmech_la_OBJECTS = $(MODOBJFILES) mod_func.lo $(COBJFILES)
 libnrnmech_la_LIBADD = $(NRNOCLIBS) $(NRNIVLIBS)

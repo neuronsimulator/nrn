@@ -33,10 +33,10 @@ static inline double SQUARE(double a) { return a*a; }
 extern "C" {
 void hoc_execerror(const char*, const char*);
 extern void nrn_exit(int);
-}
+} // extern "C"
 
-#include "nrngsl_real_radix2.c"
-#include "nrngsl_hc_radix2.c"
+#include "nrngsl_real_radix2.cpp"
+#include "nrngsl_hc_radix2.cpp"
 
 void nrngsl_realft(double* data, unsigned long n, int direction) {
 	if (direction == 1) {

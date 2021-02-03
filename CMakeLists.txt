@@ -221,6 +221,10 @@ if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
   set(NRNMPI 1)
   set(PARANEURON 1)
+  # avoid linking to C++ bindings
+  add_definitions("-DMPI_NO_CPPBIND=1")
+  add_definitions("-DOMPI_SKIP_MPICXX=1")
+  add_definitions("-DMPICH_SKIP_MPICXX=1")
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
@@ -370,7 +374,7 @@ if(READLINE_FOUND)
   # this part has to be prior to adding the nrniv subdirectory.
   execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
-    # define for src/oc/hoc.c
+    # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
   find_package(Curses QUIET)

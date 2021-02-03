@@ -68,7 +68,7 @@ noinst_HEADERS = apwindow.h axis.h bndedval.h cbwidget.h checkpnt.h \
 	ocglyph.h ocinput.h ocjump.h oclist.h ocmatrix.h ocobserv.h \
 	ocpicker.h ocpointer.h random1.h rect.h rubband.h scenepic.h \
 	scenevie.h symchoos.h symdir.h utility.h ivocvect.h xmenu.h \
-	nrngsl.h nrngsl_hc_radix2.c nrngsl_real_radix2.c \
+	nrngsl.h nrngsl_hc_radix2.cpp nrngsl_real_radix2.cpp \
 	grglyph.h nrnmutdec.h ocnotify.h ocptrvector.h bimap.hpp \
 	nrnsymdiritem.h
 

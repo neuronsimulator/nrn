@@ -61,7 +61,7 @@ mod_objs   = $(MODOBJFILES)
 c_objs = $(COBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
-mod_func_c = $(MODC_DIR)/mod_func.c
+mod_func_cpp = $(MODC_DIR)/mod_func.cpp
 
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
@@ -115,7 +115,7 @@ mech_lib_static: mod_func.o $(mod_objs) $(c_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 
-mod_func.o: mod_func.c
+mod_func.o: mod_func.cpp
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
 	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 

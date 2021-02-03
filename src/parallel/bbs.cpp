@@ -20,10 +20,8 @@ static struct tms tmsbuf, tms_start_;
 static clock_t starttime;
 #endif
 
-extern "C" {
-	extern int nrn_global_argc;
-	extern char** nrn_global_argv;
-};
+extern int nrn_global_argc;
+extern char** nrn_global_argv;
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;
@@ -280,7 +278,7 @@ void BBS::pkpickle(const char* s, size_t n) {
 // value of this call is the id of the task that computed the return.
 #endif
 
-// BBSImpl::execute_helper() in ocbbs.c
+// BBSImpl::execute_helper() in ocbbs.cpp
 
 void BBSImpl::execute(int id) { // assumes a "_todo" message in receive buffer
 		++etaskcnt;

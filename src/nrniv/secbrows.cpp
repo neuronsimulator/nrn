@@ -16,12 +16,10 @@
 #endif
 
 #include "nrnoc2iv.h"
-extern "C" {
 #include "membfunc.h"
-	void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+void (*nrnpy_call_python_with_section)(Object*, Section*) = NULL;
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 //-----------------------------------------
 static double sb_select(void* v) {

@@ -4,12 +4,11 @@
 
 // things we DO NOT want
 
-extern "C" {
 #include "hocdec.h"
 
 extern void hoc_ret();
 extern void hoc_pushx(double);
-extern void nrn_shape_update();
+extern "C" void nrn_shape_update();
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
 extern double (*nrnpy_object_to_double_)(Object*);
@@ -173,6 +172,5 @@ void ivoc_style() {
 	}
     hoc_ret();
     hoc_pushx(0.);
-}
 }
 #endif

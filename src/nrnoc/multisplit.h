@@ -28,9 +28,6 @@ parent. One of the present parents may or may not be its classical parent.
 
 #endif /* end comment */
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 #if 1 || PARANEURON
 extern double* nrn_classicalNodeA(Node* n);
@@ -42,8 +39,5 @@ extern double* nrn_classicalNodeB(Node* n);
 #define ClassicalNODEB(n) NODEB(n)
 #endif
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif /* multisplit_h */

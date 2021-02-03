@@ -12,11 +12,7 @@ class PreSyn;
 class NetCon;
 class NrnThread;
 
-extern "C" {
-
-    extern int nrn_dblpntr2nrncore(double*, NrnThread&, int& type, int& etype);
-
-}
+extern "C" int nrn_dblpntr2nrncore(double*, NrnThread&, int& type, int& etype);
 
 typedef std::pair < int, Memb_list* > MlWithArtItem;
 typedef std::vector < MlWithArtItem > MlWithArt;

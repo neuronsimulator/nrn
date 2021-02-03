@@ -170,15 +170,13 @@ inline Complex  polar(double r, double t)
 #include "classreg.h"
 #include <ivstream.h>
 #include <stdio.h>
-extern "C" {
 #include "membfunc.h"
 extern void nrn_rhs(NrnThread*);
 extern void nrn_lhs(NrnThread*);
 extern int tree_changed;
-extern int v_structure_change;
+extern "C" int v_structure_change;
 extern void setup_topology();
 extern void recalc_diam();
-}
 
 typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 

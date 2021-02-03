@@ -426,7 +426,7 @@ static public int makeHocClass(String className, String hocName, String path) {
 	    // need to figure out which of the overloaded methods to use.
 	    if (overloaded != 0) {
 		// actual value of overload is overloaded-1 due to trick
-		// used in src/oc/hoc_oop.c for s_varn.
+		// used in src/oc/hoc_oop.cpp for s_varn.
 System.out.println("don't know which of " + (overloaded-1) + " overloaded methods to use");
 	    }
 	    MethodInfo mi = ci.getMethodInfo( methodID );

@@ -6,9 +6,7 @@
 #include <kschan.h>
 #include <netcon.h>
 
-extern "C" {
 #include <mcran4.h>
-}
 
 class KSSingleTrans;
 class KSSingleState;

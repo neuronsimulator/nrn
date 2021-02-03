@@ -76,7 +76,7 @@ NRNOCOBJS = $(libobjdir)/ocmain.o $(libobjdir)/nrnnoiv.o $(libobjdir)/ocnoiv.o
 	$(bindir)/nocmodl $*
 	$(COMPILE) -c $*.c
 
-mod_func.o: mod_func.c
+mod_func.o: mod_func.cpp
 	$(COMPILE) -c $<
 
 special: $(MODOBJFILES) mod_func.o

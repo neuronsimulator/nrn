@@ -6,5 +6,5 @@ EXTRA_DIST = cvodeobj.cpp cvodeobj.h cvodestb.cpp \
 	hocevent.cpp \
 	tqueue.h vrecitem.h nrndaspk.h nrndaspk.cpp netcon.h \
 	bbtqueue.h bbtqueue.cpp rbtqueue.h rbtqueue.cpp \
-	sptqueue.h sptqueue.cpp sptree.h spaux.c sptree.c spdaveb.c \
+	sptqueue.h sptqueue.cpp sptree.h spaux.cpp sptree.cpp spdaveb.cpp \
 	sptbinq.h sptbinq.cpp

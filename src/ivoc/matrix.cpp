@@ -5,18 +5,17 @@
 #include <math.h>
 #include "ocmatrix.h"
 #include "oc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #define EPS hoc_epsilon
 static Symbol* smat_;
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
-extern "C" {
-	extern double hoc_scan(FILE*);
-	extern FILE* hoc_obj_file_arg(int i);
-	extern Object** hoc_temp_objptr(Object*);
+extern double hoc_scan(FILE*);
+extern "C" FILE* hoc_obj_file_arg(int i);
+extern Object** hoc_temp_objptr(Object*);
 
 #if 0
 	extern void install_matrix_method(const char* name, double (*)(...));
@@ -28,7 +27,6 @@ extern "C" {
 	extern MAT* matrix_full(void*); // hoc_execerror if void* not right type
 	extern SPMAT* matrix_sparse(void*);
 #endif
-}
 
 static void check_domain(int i, int j) {
 	if (i > j || i < 0) {
@@ -738,9 +736,7 @@ static void steer_x(void* v) {
 
 
 #if WIN32 && !USEMATRIX
-extern "C" {
 void Matrix_reg();
-}
 #endif
 
 void Matrix_reg() {

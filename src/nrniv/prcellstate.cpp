@@ -5,12 +5,11 @@
 #include "netcon.h"
 #include "OS/table.h"
 #include "OS/list.h"
+#include "neuron.h"
 
 #define precision 15
 
-extern "C" {
 void nrn_prcellstate(int gid, const char* filesuffix);
-}
 
 declarePtrList(NetConList, NetCon) // NetCons in same order as Point_process
 implementPtrList(NetConList, NetCon) // and there may be several per pp.
@@ -19,10 +18,6 @@ implementTable(PV2I, void*, int)
 static PV2I* pnt2index; // for deciding if NetCon is to be printed
 static int pntindex; // running count of printed point processes.
 
-extern "C"
-{
-#include "neuron.h"
-}
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
   int header_printed = 0;
@@ -193,4 +188,5 @@ void nrn_prcellstate(int gid, const char* suffix) {
   }
   fclose(f);
 }
+
 
