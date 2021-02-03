@@ -1020,7 +1020,7 @@ void pt3dstyle(void) {
 			if (hoc_is_pdouble_arg(2)) {
 				Pt3d* p = sec->logical_connection;
 				if (p) {
-					double* px; // , *hoc_pgetarg();
+					double* px;
 					px = hoc_pgetarg(2); *px = p->x;
 					px = hoc_pgetarg(3); *px = p->y;
 					px = hoc_pgetarg(4); *px = p->z;

@@ -27,7 +27,6 @@ extern int unGetc(int);
 extern int unput(int);
 static int input();
 static int yyinput();
-//TODO - does this actually work?
 int newinput() {
     #ifdef __cplusplus
     return yyinput();

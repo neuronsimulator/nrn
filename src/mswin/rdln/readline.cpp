@@ -3289,7 +3289,7 @@ rl_insert (count, c)
   else
 	 {
 		/* Inserting a single character. */
-		string = alloca (2);
+		string = (char*)alloca (2);
 		string[1] = '\0';
 		string[0] = c;
 		rl_insert_text (string);

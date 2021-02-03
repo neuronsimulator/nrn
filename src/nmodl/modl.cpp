@@ -358,7 +358,9 @@ static std::string str_replace(std::string str, const std::string& search_str, c
     return str;
 }
 
+// Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
+    // template is a reserved CPP keyword
     const std::string repl = str_replace(q, "u.template", "u.ctemplate");
     Fprintf(fcout, "%s", repl.c_str());
 }

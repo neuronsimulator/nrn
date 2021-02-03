@@ -69,7 +69,7 @@ extern "C" uint32_t mcell_iran4(uint32_t *high){
 }
 
 /* Hoc interface */
-extern double chkarg(); // , *hoc_pgetarg();
+extern double chkarg();
 extern int use_mcell_ran4_;
 
 

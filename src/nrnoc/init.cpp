@@ -1019,6 +1019,3 @@ void nrnunit_use_legacy() {
   }
   hoc_retpushx((double)_nrnunit_use_legacy_);
 }
-//#if defined(__cplusplus)
-//}
-//#endif

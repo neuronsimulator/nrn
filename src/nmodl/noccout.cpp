@@ -921,7 +921,7 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	P("  if (!_first) return;\n");
 	printlist(initlist);
 	P("_first = 0;\n}\n");
-	//P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n"); // TODO - can this be removed?
+	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 void vectorize_substitute(Item* q, char* str)

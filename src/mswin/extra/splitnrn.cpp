@@ -8,7 +8,7 @@ void main(int argc, char** argv) {
 	long i, j, n, done;
 	FILE* fi, *fo;
 	char* buf;
-	buf = malloc(1024*16);
+	buf = (char*)malloc(1024*16);
 	if (argc != 2) {
 		printf("usage: splitnrn nrndisk2\n");
 		exit(1);
