@@ -177,7 +177,7 @@ ENDGUI
 	extern void hoc_pushx(double);
 	extern FILE* hoc_fin;
 	extern void ivoc_cleanup();
-	extern void nrn_shape_update();
+	extern "C" void nrn_shape_update();
 	extern int bbs_poll_;
 	extern void bbs_handle();
 

@@ -196,7 +196,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 #include "membfunc.h"
 extern int section_count;
-extern void nrn_shape_update();
+extern "C" void nrn_shape_update();
 extern Section* nrn_section_exists(char* name, int index, Object* cell);
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;

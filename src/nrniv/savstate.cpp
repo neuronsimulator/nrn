@@ -15,7 +15,7 @@ typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
 #include "membfunc.h"
 extern int section_count;
-extern void nrn_shape_update();
+extern "C" void nrn_shape_update();
 extern Section** secorder;
 extern ReceiveFunc* pnt_receive;
 extern NetCvode* net_cvode_instance;

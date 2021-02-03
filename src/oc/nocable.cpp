@@ -54,7 +54,7 @@ void hoc_secname(void) {
 	hoc_pushstr(&pdummystring);
 }
 void hoc_construct_point(Object *ob, int i) {}
-void nrn_shape_update(void) {}
+extern "C" void nrn_shape_update(void) {}
 char *nrn_version(int i) {static char* s = "not NEURON"; return s;}
 char *nrn_minor_version;
 char *nrn_branch_name;

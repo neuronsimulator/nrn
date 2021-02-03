@@ -900,7 +900,7 @@ void connection_coef(void)	/* setup a and b */
 #endif
 }
 
-void nrn_shape_update(void) {
+extern "C" void nrn_shape_update(void) {
 	static int updating;
 	if (section_list->next == section_list) {
 		return;
