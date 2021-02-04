@@ -35,15 +35,19 @@ cmake as described in [README](../README.md). e.g. In your CMake build folder:
 cmake .. -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_RX3D=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/install
 ```
 
+In order to execute the jupyter notebooks, make sure neuron python module can be imported.
+
 Then build docs using command:
 ```
 make docs
 ```  
-That will build everything in the `build/docs` folder and you can then open `index.html` locally.
+That will build everything in the `build/docs` folder and you can then open `index.html` locally. 
 
 When working locally on documentation, be aware of the following targets to speed up building process:
 
-* `doxygen` - build the API documentation only
-* `prepare_docs` - convert jupyter notebooks to html, see [.prepare_docs.sh](.prepare_docs.sh)
-* `sphinx` - build Sphinx documentation
+* `doxygen` 			- build the API documentation only
+* `notebooks` 			- execute & convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
+* `notebooks-noexec`	- simply convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
+* `sphinx` 				- build Sphinx documentation
 
+NOTE: `docs` target calls: `doxygen` `notebooks` `sphinx`. 

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # -- Project information -----------------------------------------------------
 
 project = 'NEURON'
-copyright = '2020, Duke, Yale and the Blue Brain Project'
+copyright = '2021, Duke, Yale and the Blue Brain Project'
 author = 'Michael Hines'
 
 
