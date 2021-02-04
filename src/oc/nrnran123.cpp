@@ -92,7 +92,7 @@ extern "C" double nrnran123_negexp(nrnran123_State* s) {
 }
 
 /* at cost of a cached  value we could compute two at a time. */
-double nrnran123_normal(nrnran123_State* s) {
+extern "C" double nrnran123_normal(nrnran123_State* s) {
 	double w, x, y;
 	double u1, u2;
 	do {

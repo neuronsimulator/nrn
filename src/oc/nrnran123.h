@@ -56,10 +56,11 @@ extern double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1
 /* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
 
 /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
+extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
+
 #if defined(__cplusplus)
 }
 #endif
-extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 
 /* more fundamental (stateless) (though the global index is still used) */
 extern nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
