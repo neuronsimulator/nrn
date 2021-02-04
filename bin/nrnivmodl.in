@@ -87,6 +87,9 @@ unhide_spaces() {
 escape_spaces() {
   echo "$1" | sed 's/+++/\\ /g'
 }
+remove_spaces() {
+  echo "$1" | sed 's/ //g'
+}
 
 # files is the complete list of mod files to process
 files=""
@@ -249,7 +252,7 @@ extern "C" {
 #endif
 ' > mod_func.cpp
 for i in $base_names ; do
-  echo 'extern void _'$i'_reg(void);'
+  echo 'extern void _'`remove_spaces "$i"`'_reg(void);'
 done >> mod_func.cpp
 echo '
 void modl_reg(){
@@ -266,7 +269,7 @@ echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.cpp
 
 for i in $base_names; do
-  echo '  _'$i'_reg();'
+  echo '  _'`remove_spaces "$i"`'_reg();'
   @USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
   @USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
 done >> mod_func.cpp
