@@ -1,7 +1,7 @@
 
 NEURON HOC documentation
 ========================
-(`Switch to Python documentation <../py_doc/index.html>`_)
+(`Switch to Python documentation <../python/index.html>`_)
 
 Quick Links
 -----------
