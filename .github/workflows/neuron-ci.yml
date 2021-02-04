@@ -243,6 +243,9 @@ jobs:
         id: documentation
         working-directory: ${{runner.workspace}}/nrn
         run: |
+          echo "------- Bring up NEURON -------";
+          export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
+          export PATH=$INSTALL_DIR/bin:$PATH;
           echo "------- Build Doxygen Documentation -------";
           pushd build;
           make docs;
@@ -250,6 +253,8 @@ jobs:
           pushd docs;
           touch .nojekyll;
           echo ::set-output name=status::done
+        env:
+          INSTALL_DIR : ${{ runner.workspace }}/install 
           
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
