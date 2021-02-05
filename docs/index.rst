@@ -15,8 +15,8 @@ Welcome to NEURON's documentation!
    :maxdepth: 2
    :caption: User documentation:
 
-   py_doc/index
-   new_doc/index
+   python/index
+   hoc/index
    tutorials/index
    rxd-tutorials/index
    coreneuron/index

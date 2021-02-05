@@ -7,6 +7,12 @@
 # ------------------------------------------------------------
 set -e
 
+if [ $# -ge 2 ]; then
+  EXECUTE=" --execute"
+else
+  EXECUTE=""
+fi
+
 # Create a clean index.rst
 title=$1
 echo "
@@ -18,7 +24,7 @@ $1
 " > index.rst
 
 for filename in *.ipynb; do
-    jupyter nbconvert --to html "${filename}"
+    jupyter nbconvert --to html ${EXECUTE} "${filename}"
     name="${filename%.*}"
 
     # Create stub rst

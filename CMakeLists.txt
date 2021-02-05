@@ -172,9 +172,19 @@ endif()
 # =============================================================================
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
+  # Target to execute && convert notebooks to html.
+  # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
-          prepare_docs
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+          notebooks
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+  )
+
+  # Executing notebooks can take a fair amount of time. Use this target
+  # if you want to skip the execution.
+  add_custom_target(
+          notebooks-noexec
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
@@ -200,7 +210,7 @@ if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
           docs
           COMMAND make doxygen
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make prepare_docs
+          COMMAND make notebooks
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMAND make sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -532,7 +542,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, prepare_docs, sphinx")
+  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, notebooks, sphinx")
   message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")
