@@ -40,7 +40,7 @@ jobs:
         run: python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
 
       - uses: actions/checkout@v2
-         with:
+        with:
            fetch-depth: 2
 
       - name: Build & Test
