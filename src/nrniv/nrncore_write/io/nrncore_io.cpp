@@ -59,7 +59,7 @@ void write_memb_mech_types(const char* fname) {
     if (nrnmpi_myid > 0) { return; } // only rank 0 writes this file
     std::ofstream fs(fname);
     if (!fs.good()) {
-        hoc_execerror("nrnbbcore_write write_mem_mech_types could not open for writing: %s\n", fname);
+        hoc_execerror("nrncore_write write_mem_mech_types could not open for writing: %s\n", fname);
     }
     write_memb_mech_types_direct(fs);
 }
@@ -75,7 +75,7 @@ void write_globals(const char* fname) {
 
     FILE* f = fopen(fname, "w");
     if (!f) {
-        hoc_execerror("nrnbbcore_write write_globals could not open for writing: %s\n", fname);
+        hoc_execerror("nrncore_write write_globals could not open for writing: %s\n", fname);
     }
 
     fprintf(f, "%s\n", bbcore_write_version);
@@ -110,7 +110,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
     FILE* f = fopen(fname, "wb");
     if (!f) {
-        hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
+        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
     }
     fprintf(f, "%s\n", bbcore_write_version);
 
@@ -127,7 +127,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
     f = fopen(fname, "w");
     if (!f) {
-        hoc_execerror("nrnbbcore_write write_nrnthread could not open for writing:", fname);
+        hoc_execerror("nrncore_write write_nrnthread could not open for writing:", fname);
     }
 
     fprintf(f, "%s\n", bbcore_write_version);
@@ -306,19 +306,26 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
 
 
 
+static void fgets_err(char* s, int size, FILE* f) {
+    if (fgets(s, size, f) == NULL) {
+	fclose(f);
+        hoc_execerror("Error reading line in files.dat", strerror(errno));
+    }
+}
+
 /** Write all dataset ids to files.dat.
  *
  * Format of the files.dat file is:
  *
  *     version string
  *     -1 (if model uses gap junction)
- *     n (number of datasets)
+ *     n (number of datasets) in format %10d
  *     id1
  *     id2
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs)
+void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
 {
     // ids of datasets that will be created
     std::vector<int> iSend;
@@ -390,25 +397,84 @@ void write_nrnthread_task(const char* path, CellGroup* cgs)
     /// Writing the file with task, correspondent number of threads and list of correspondent first gids
     if (nrnmpi_myid == 0)
     {
+        // If append is false, begin a new files.dat (overwrite old if exists).
+        // If append is true, append groupids to existing files.dat.
+        //   Note: The number of groupids (2nd or 3rd line) has to be
+        //   overwritten wih the total number so far. To avoid copying
+        //   old to new, we allocate 10 chars for that number.
+
         std::stringstream ss;
         ss << path << "/files.dat";
 
         std::string filename = ss.str();
 
-        FILE *fp = fopen(filename.c_str(), "w");
-        if (!fp) {
-            hoc_execerror("nrnbbcore_write write_nrnthread_task could not open for writing:", filename.c_str());
-        }
+        FILE *fp = NULL;
+        if (append == false) { // start a new file
+            fp = fopen(filename.c_str(), "w");
+            if (!fp) {
+                hoc_execerror("nrncore_write write_nrnthread_task could not open for writing:", filename.c_str());
+            }
+        } else { // modify groupid number and append to existing file
+            fp = fopen(filename.c_str(), "r+");
+            if (!fp) {
+                hoc_execerror("nrncore_write write_nrnthread_task could not open for modifying:",  filename.c_str());
+            }
+        } 
 
-        fprintf(fp, "%s\n", bbcore_write_version);
+        int maxlen = 20;
+        char line[maxlen]; // All lines are actually no larger than %10d.
+
+        if (append) {
+            // verify same version
+            fgets_err(line, maxlen, fp);
+            // unfortunately line has the newline
+            size_t n = strlen(bbcore_write_version);
+            if ((strlen(line) - 1 != n)
+                || strncmp(line, bbcore_write_version, n) != 0) {
+                fclose(fp);
+                hoc_execerror("nrncore_write bad existing files.dat version:", line);
+            }
+        } else {
+            fprintf(fp, "%s\n", bbcore_write_version);
+        }
 
         // notify coreneuron that this model involves gap junctions
         if (nrnthread_v_transfer_) {
-            fprintf(fp, "-1\n");
+            if (append) {
+                fgets_err(line, maxlen, fp);
+                if (strcmp(line, "-1\n") != 0) {
+                    fclose(fp);
+                    hoc_execerror("nrncore_write existing files.dat does not have a gap junction indicator\n", NULL);
+                }
+            } else {
+                fprintf(fp, "-1\n");
+            }
         }
 
         // total number of datasets
-        fprintf(fp, "%d\n", iSumThread);
+        if (append) {
+            // this is the one that needs the space to get a new value
+            long pos = ftell(fp);
+            fgets_err(line, maxlen, fp);
+            int oldval = 0;
+            int i = sscanf(line, "%d\n", &oldval);
+            if (i != 1) {
+                fclose(fp);
+                hoc_execerror("nrncore_write error reading number of groupids", NULL);
+            }
+            if (oldval == -1) {
+                fclose(fp);
+                hoc_execerror("nrncore-write existing files.dat has gap junction indicator where we expected a groupgid count.", NULL);
+            }
+            iSumThread += oldval;
+            fseek(fp, pos, SEEK_SET);
+        }
+        fprintf(fp, "%10d\n", iSumThread);
+
+        if (append) {
+            // Start writing the groupids starting at the end of the file.
+            fseek(fp, 0, SEEK_END);
+        }
 
         // write all dataset ids
         for (int i = 0; i < iRecvVec.size(); ++i)

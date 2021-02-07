@@ -70,7 +70,7 @@ extern "C" {
 	extern void nrn_thread_stat();
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
-	extern size_t nrnbbcore_write();
+	extern size_t nrncore_write();
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
@@ -977,8 +977,8 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
-static double nrnbbcorewrite(void*) {
-	return double(nrnbbcore_write());
+static double nrncorewrite(void*) {
+	return double(nrncore_write());
 }
 
 static double nrncorerun(void*) {
@@ -1079,7 +1079,8 @@ static Member_func members[] = {
 	"dt", thread_dt,
 	"t", nrn_thread_t,
 
-    "nrnbbcore_write", nrnbbcorewrite,
+    "nrnbbcore_write", nrncorewrite, // remove, deprecate, backward_compatible?
+    "nrncore_write", nrncorewrite,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
     "nrncore_run", nrncorerun,
 
