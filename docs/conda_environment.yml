@@ -1,0 +1,14 @@
+name: base
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - bison
+  - cmake
+  - xorg-libxcomposite
+  - ffmpeg
+  - cython
+  - pip
+  - pip:
+      - -r file:docs_requirements.txt
