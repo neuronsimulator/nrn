@@ -5507,8 +5507,8 @@ static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 {
   int err = 0; //success
   if (bsize > 0) {
-    if (v->buffer_size() < bsize) {
-      v->buffer_size(bsize);
+    if (v->size() < bsize) {
+      v->resize(bsize);
     }
     varrays[i_trajec] = vector_vec(v);
   }else{
@@ -5707,7 +5707,6 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
 
 void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, int n_trajec,  double* values) {
   if (tid < 0) {
-    net_cvode_instance->record_init();
     return;
   }
   if (tid < nrn_nthread) {
@@ -5749,7 +5748,6 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, 
 // pointers and the expression is then evaluated and plotted.
 void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double tt) {
   if (tid < 0) {
-    net_cvode_instance->record_init();
     return;
   }
   if (tid < nrn_nthread) {
