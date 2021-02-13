@@ -98,6 +98,8 @@ Depending on platform you can install these dependencies as follows:
 
 #### Mac OS
 
+This is for x86_64. For Apple M1 (arm64), see [here] (#Apple-M1-Build-Dependencies)
+
 The easiest way to install depndencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
@@ -117,6 +119,63 @@ If the desired python version is not installed, you can install it using
 [official distribution](https://www.python.org/downloads/mac-osx/). Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
+
+<a name="Apple-M1-Build-Dependencies"></a>
+##### Apple M1
+- Command line tools
+    ```bash
+    xcode-select --install
+    ```
+- If desire classical NEURON GUI<br>
+    From xquartz.org, click "Releases", click XQuartz-2.8.0_beta3 , and
+follow instructions. (after installing, logout and log back in)
+    If you desire single click button action for x11 when entering a window
+    ```bash
+    defaults write org.xquartz.X11 wm_ffm -bool true
+    ```
+   (For the new default to take effect, logout then log back in)
+- HomeBrew and Pip
+  ```bash
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
+  eval $(/opt/homebrew/bin/brew shellenv)
+
+  brew install cmake
+  brew install open-mpi
+
+  pip3 install --user --upgrade pip
+  export PATH="$HOME/Library/Python/3.8/bin":$PATH
+  pip3 install --user cython
+  ```
+- Install
+  ```
+  cd $HOME
+  mkdir neuron
+  cd neuron
+  git clone https://github.com/neuronsimulator/nrn nrn
+  cd nrn
+  mkdir build
+  cd build
+  cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON
+  #Note: without the dynamic python option, the build failed to find the library
+  #  for linking.
+
+  time make -j 6 install # 20s build.
+  ```
+- Environment
+  ```
+  export N=$HOME/neuron/nrn/build/install
+  export PATH=$N/bin:$PATH
+  export PYTHONPATH=$N/lib/python
+  ```
+- Does it work?
+  ```
+  python3 -c 'import neuron ; neuron.test()'
+  nrniv -python -c 'from neuron import h, gui'
+  mpiexec -n 4 nrniv -mpi -python $HOME/nrn/src/parallel/test0.py
+  neurondemo # Currently a bug that requires one hits 'return' in the terminal window if the GUI freezes after closing a window.
+  ```
+
 
 #### Linux
 
