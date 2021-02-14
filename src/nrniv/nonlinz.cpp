@@ -549,20 +549,8 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is i
 }
 
 void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an ode method
-	int i, nc;
 	Pvmi s = memb_func[im].ode_spec;
-	nc = ml->nodecount;
-	if (memb_func[im].hoc_mech) {
-		int j, count;
-		count = ml->nodecount;
-		for (j=0; j < count; ++j) {
-			Node* nd = ml->nodelist[j];
-//			(*s)(nd, ml->prop[j]);
-assert(0); //fixme
-		}
-	}else{
-		(*s)(nrn_threads, ml, im);
-	}
+	(*s)(nrn_threads, ml, im);
 }
 
 int NonLinImpRep::gapsolve() {

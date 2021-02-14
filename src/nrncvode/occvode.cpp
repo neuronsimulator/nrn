@@ -249,18 +249,16 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 		mf = memb_func + cml->index;
 		nrn_ode_count_t sc = mf->ode_count;
 		if (sc && ( (n = (*sc)(cml->index)) > 0)) {
+			// Note: if mf->hoc_mech then all cvode related
+			// callbacks are NULL (including ode_count)
+			// See src/nrniv/hocmech.cpp. That won't change but
+			// if it does, hocmech.cpp must follow all the
+			// nrn_ode_..._t prototypes to avoid segfault
+			// with Apple M1.
 			nrn_ode_map_t s = mf->ode_map;
-			if (mf->hoc_mech) {
-				for (j=0; j < ml->nodecount; ++j) {
-//(*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->prop[j], atv + ieq);
-assert(0); // fixme
-					ieq += n;
-				}
-			}else{
-				for (j=0; j < ml->nodecount; ++j) {
+			for (j=0; j < ml->nodecount; ++j) {
 (*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->data[j], ml->pdata[j], atv + ieq, cml->index);
-					ieq += n;
-				}
+				ieq += n;
 			}
 		}
 	}
@@ -424,17 +422,9 @@ void Cvode::daspk_init_eqn(){
 		if (sc && ( (n = (*sc)(cml->index)) > 0)) {
 			Memb_list* ml = cml->ml;
 			nrn_ode_map_t s = mf->ode_map;
-			if (mf->hoc_mech) {
-				for (j=0; j < ml->nodecount; ++j) {
-//(*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->prop[j], atv + ieq);
-assert(0); // fixme
-					ieq += n;
-				}
-			}else{
-				for (j=0; j < ml->nodecount; ++j) {
+			for (j=0; j < ml->nodecount; ++j) {
 (*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->data[j], ml->pdata[j], atv + ieq, cml->index);
-					ieq += n;
-				}
+				ieq += n;
 			}
 		}
 	}
@@ -631,17 +621,7 @@ void Cvode::solvemem(NrnThread* nt) {
 		if (mf->ode_matsol) {
 			Memb_list* ml = cml->ml;
 			Pvmi s = mf->ode_matsol;
-			if (mf->hoc_mech) {
-				int j, count;
-				count = ml->nodecount;
-				for (j = 0; j < count; ++j) {
-					Node* nd = ml->nodelist[j];
-//					(*s)(nd, ml->prop[j]);
-assert(0); // fixme
-				}
-			}else{
-				(*s)(nt, ml, cml->index);
-			}
+			(*s)(nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during ode jacobian solve", (char*)0);
@@ -890,17 +870,7 @@ void Cvode::do_ode(NrnThread* _nt){
 		if (mf->ode_spec) {
 			Pvmi s = mf->ode_spec;
 			Memb_list* ml = cml->ml;
-			if (mf->hoc_mech) {
-				int j, count;
-				count = ml->nodecount;
-				for (j = 0; j < count; ++j) {
-					Node* nd = ml->nodelist[j];
-//					(*s)(nd, ml->prop[j]);
-assert(0); //fixme
-				}
-			}else{
-				(*s)(_nt, ml, cml->index);
-			}
+			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during ode evaluation", (char*)0);
