@@ -21,7 +21,6 @@ if test "$2" = "" ; then
 	exit
 fi
 
-CPU=$1
 #ignore $1 and use
 CPU=`uname -m`
 NRN_INSTALL=$2
