@@ -170,6 +170,19 @@ else()
   # If all else fails, just set the name/version and let the linker figure out the path.
   if(NOT PYTHON_LIBRARY)
     set(PYTHON_LIBRARY python${PYTHON_LIBRARY_SUFFIX})
+    # Since this isn't very robust. One more try with find_libpython.py
+    execute_process(
+      COMMAND
+        "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/find_libpython.py"
+      RESULT_VARIABLE _PYTHON_SUCCESS
+      OUTPUT_VARIABLE _PYTHON_VALUES
+      ERROR_VARIABLE _PYTHON_ERROR_VALUE)
+    if (_PYTHON_SUCCESS MATCHES 0)
+      if (_PYTHON_VALUES)
+        set(PYTHON_LIBRARY "${_PYTHON_VALUES}")
+        message(STATUS "PYTHON_LIBRARY from find_libpython.py: \"${PYTHON_LIBRARY}\"")
+      endif()
+    endif()
   endif()
 endif()
 
