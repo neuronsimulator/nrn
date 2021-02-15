@@ -23,9 +23,8 @@ add_custom_command(
           ${PROJECT_BINARY_DIR}/share/nrn/lib)
 
 # Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
-set(TEST_ENV
-    NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
-    LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
+set(TEST_ENV NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
+             LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
 if(NRN_ENABLE_PYTHON)
   list(
     APPEND
@@ -96,8 +95,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   list(APPEND TESTS basic_tests)
   add_custom_target(
     pynrn_mod ALL
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
+    COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn
     DEPENDS ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod nocmodl)
   add_dependencies(pynrn_mod nrniv)
@@ -129,30 +127,33 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       endif()
     endif()
   endif()
-  if (NRN_ENABLE_MPI)
-    # Launching mpi executable with full path can mangle different python versions and libraries(see issue #894)
-    # Therefore we extract the executable name and create a dedicated target, because add_test($MPIEXEC_NAME) would re-append the full path.
+  if(NRN_ENABLE_MPI)
+    # Launching mpi executable with full path can mangle different python versions and libraries(see
+    # issue #894) Therefore we extract the executable name and create a dedicated target, because
+    # add_test($MPIEXEC_NAME) would re-append the full path.
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-    add_custom_target(test_subworld_mpiexec_name
-        COMMAND
-          ${MPIEXEC_NAME} -np 6 --oversubscribe ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py
-    )
-    add_test(
-      NAME parallel_tests
+    add_custom_target(
+      test_subworld_mpiexec_name
       COMMAND
-       make test_subworld_mpiexec_name)
+        ${MPIEXEC_NAME} -np 6 ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
+    add_test(NAME parallel_tests COMMAND make test_subworld_mpiexec_name)
     list(APPEND TESTS parallel_tests)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
     file(COPY ${PROJECT_SOURCE_DIR}/test/coreneuron/mod DESTINATION ${PROJECT_BINARY_DIR}/test/)
-    file(COPY ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
-    file(COPY ${PROJECT_SOURCE_DIR}/test/gjtests/natrans.mod DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
+    file(COPY ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod
+         DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
+    file(COPY ${PROJECT_SOURCE_DIR}/test/gjtests/natrans.mod
+         DESTINATION ${PROJECT_BINARY_DIR}/test/mod)
+    # Build test-specific MOD files
     add_custom_target(
       coreneuron_mod ALL
       COMMAND
-        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl -coreneuron .
-       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
+        -coreneuron .
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_dependencies(coreneuron_mod nrniv nrniv-core)
 
     add_test(
@@ -217,28 +218,31 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
         add_test(
-                NAME coreneuron_spikes_mpi_py  COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
-                                              ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
-                                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+          NAME coreneuron_spikes_mpi_py
+          COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
+                  ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_spikes_mpi_py)
       endif()
-        # using -pyexe to workaround #894
-        add_test(
-                NAME coreneuron_spikes_mpi_file_mode_py  COMMAND ${MPIEXEC} -np 2 ${CMAKE_HOST_SYSTEM_PROCESSOR}/special
-                                              -python -pyexe ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init file_mode
-                                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-        list(APPEND TESTS coreneuron_spikes_mpi_file_mode_py)
+      # using -pyexe to workaround #894
+      add_test(
+        NAME coreneuron_spikes_mpi_file_mode_py
+        COMMAND
+          ${MPIEXEC} -np 2 ${CMAKE_HOST_SYSTEM_PROCESSOR}/special -python -pyexe
+          ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init
+          file_mode
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+      list(APPEND TESTS coreneuron_spikes_mpi_file_mode_py)
     endif()
   endif()
 endif()
 
-#============================================
+# ============================================
 # Test modlunit
-#============================================
+# ============================================
 
-# Strategy. Create a bash script that runs modlunit on a list of mod file
-# expecting success and a list expecting failure. Then run the script
-# with a custom target.
+# Strategy. Create a bash script that runs modlunit on a list of mod file expecting success and a
+# list expecting failure. Then run the script with a custom target.
 
 file(
   WRITE ${PROJECT_BINARY_DIR}/run_modlunit.bash
@@ -259,23 +263,19 @@ done\n\
 exit 0\n\
 ")
 
-set(MODFILES_ACCEPT
-  ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod
-  ${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod
-  ${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod
-)
-set(MODFILES_REJECT
-  ${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod
-)
+set(MODFILES_ACCEPT ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod
+                    ${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod ${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod)
+set(MODFILES_REJECT ${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod)
 
 add_custom_target(
   modlunit_test ALL
   COMMAND
-    ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
+    ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash
+    \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   DEPENDS ${PROJECT_BINARY_DIR}/bin/modlunit)
 
-#list(APPEND TESTS modlunit_test)
+# list(APPEND TESTS modlunit_test)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
 
