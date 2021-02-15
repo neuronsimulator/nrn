@@ -385,7 +385,7 @@ NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 
 NRN_ENABLE_MEMACS:BOOL=OFF
 --------------------------
-  Enable use of memacs  
+  Enable use of memacs within nrniv and install as executable.
 
   Microemacs is a tiny emacs like editor I have been using since the mid-eighties. I might be the only one in the world who uses it now.
 

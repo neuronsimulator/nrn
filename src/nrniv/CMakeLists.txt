@@ -275,8 +275,19 @@ if(NRN_ENABLE_PYTHON)
 endif()
 
 # =============================================================================
-# All source directories to include
+# All libraries to link
 # =============================================================================
+
+if(NRN_WINDOWS_BUILD)
+  set(TERMCAP_OR_CURSES ${TERMCAP_LIBRARIES})
+else()
+  if(CURSES_FOUND)
+    set(TERMCAP_OR_CURSES ${CURSES_LIBRARIES})
+  elseif(TERMCAP_FOUND)
+    set(TERMCAP_OR_CURSES ${TERMCAP_LIBRARIES})
+  endif()
+endif()
+
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
 if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
@@ -287,11 +298,7 @@ else()
     target_link_libraries(nrniv_lib readline)
   endif()
 
-  if(CURSES_FOUND)
-    target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
-  elseif(TERMCAP_FOUND)
-    target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
-  endif()
+  target_link_libraries(nrniv_lib ${TERMCAP_OR_CURSES})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
@@ -386,6 +393,11 @@ if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
 
+if(NRN_ENABLE_MEMACS)
+  add_executable(memacs ${PROJECT_SOURCE_DIR}/src/memacs/main.c ${NRN_MEMACS_SRC_FILES})
+  target_link_libraries(memacs ${TERMCAP_OR_CURSES})
+endif()
+
 # =============================================================================
 # Install binary and library targets
 # =============================================================================
@@ -398,6 +410,9 @@ install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 if (LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
+endif()
+if (NRN_ENABLE_MEMACS)
+  install(TARGETS memacs DESTINATION bin)
 endif()
 
 # =============================================================================
