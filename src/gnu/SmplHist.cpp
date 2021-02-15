@@ -105,7 +105,7 @@ SampleHistogram::reset()
 {
     this->SampleStatistic::reset();
     if (howManyBuckets > 0) {
-	for (register int i = 0; i < howManyBuckets; i++) {
+	for (int i = 0; i < howManyBuckets; i++) {
 	    bucketCount[i] = 0;
 	}
     }

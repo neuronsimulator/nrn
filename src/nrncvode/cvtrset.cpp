@@ -126,7 +126,7 @@ hoc_warning("errno set during calculation of di/dv", (char*)0);
 
 /* triangularization of the matrix equations */
 void Cvode::triang(NrnThread* _nt) {
-	register Node *nd, *pnd;
+	Node *nd, *pnd;
 	double p;
 	int i;
 	CvodeThreadData& z = CTD(_nt->id);
@@ -142,7 +142,7 @@ void Cvode::triang(NrnThread* _nt) {
 
 /* back substitution to finish solving the matrix equations */
 void Cvode::bksub(NrnThread* _nt) {
-	register Node *nd, *cnd;
+	Node *nd, *cnd;
 	int i;
 	CvodeThreadData& z = CTD(_nt->id);
 

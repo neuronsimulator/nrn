@@ -810,7 +810,7 @@ rl_gather_tyi ()
       rl_stuff_char(getkey());
 #else
   int tty = fileno (in_stream);
-  register int tem, result = -1;
+  int tem, result = -1;
   long chars_avail;
   char input;
 
@@ -913,7 +913,7 @@ static void add_macro_char (), with_macro_input ();
    If the associated command is really a keymap, then read
    another key, and dispatch into that map. */
 rl_dispatch (key, map)
-     register int key;
+     int key;
      Keymap map;
 {
 
@@ -1529,8 +1529,8 @@ static int compare_strings ();
 /* Basic redisplay algorithm. */
 rl_redisplay ()
 {
-  register int in, out, c, linenum;
-  register char *line = invisible_line;
+  int in, out, c, linenum;
+  char *line = invisible_line;
   char *prompt_this_line;
   int c_pos = 0;
   int inv_botlin = 0;		/* Number of lines in newly drawn buffer. */
@@ -1614,7 +1614,7 @@ rl_redisplay ()
 #if defined (DISPLAY_TABS)
       else if (c == '\t')
 	{
-	  register int newout = (out | (int)7) + 1;
+	  int newout = (out | (int)7) + 1;
 	  while (out < newout)
 	    line[out++] = ' ';
 	}
@@ -1757,10 +1757,10 @@ new:	eddie> Oh, my little buggy says to me, as lurgid as
    Could be made even smarter, but this works well enough */
 static
 update_line (old, new, current_line)
-     register char *old, *new;
+     char *old, *new;
      int current_line;
 {
-  register char *ofd, *ols, *oe, *nfd, *nls, *ne;
+  char *ofd, *ols, *oe, *nfd, *nls, *ne;
   int lendiff, wsatend;
 
   /* Find first difference. */
@@ -1890,7 +1890,7 @@ rl_forced_update_display ()
 {
   if (visible_line)
     {
-      register char *temp = visible_line;
+      char *temp = visible_line;
 
       while (*temp) *temp++ = '\0';
     }
@@ -1912,7 +1912,7 @@ move_cursor_relative (new, data)
 	last_c_pos = new;
 	return;
 #else
-  register int i;
+  int i;
 
 #if GRX
 	if (egagrph) {
@@ -1974,7 +1974,7 @@ move_vert (to)
 #ifdef WIN32
 #else
   void output_character_function ();
-  register int delta, i;
+  int delta, i;
 
   if (last_v_pos == to) return;
 
@@ -2034,7 +2034,7 @@ rl_show_char (c)
 #if defined (DISPLAY_TABS)
 int
 rl_character_len (c, pos)
-     register int c, pos;
+     int c, pos;
 {
   if (c < ' ' || c > 126)
     {
@@ -2349,7 +2349,7 @@ insert_some_chars (string, count)
     }
   else
     {
-      register int i;
+      int i;
 
       /* If we have to turn on insert-mode, then do so. */
       if (term_im && *term_im)
@@ -2382,7 +2382,7 @@ backspace (count)
 #ifdef WIN32
 	winio_backspace(count);
 #else
-  register int i;
+  int i;
 
 #ifndef __GO32__
   if (term_backspace)
@@ -2439,7 +2439,7 @@ clear_to_eol (count)
   else
 #endif /* !__GO32__ */
     {
-      register int i;
+      int i;
 
       /* Do one more character space. */
       count++;
@@ -2852,7 +2852,7 @@ char *
 rl_copy (from, to)
      int from, to;
 {
-  register int length;
+  int length;
   char *copy;
 
   /* Fix it if the caller is confused. */
@@ -2898,7 +2898,7 @@ rl_insert_text (string)
 	  char *string;
 {
   extern int doing_an_undo;
-  register int i, l = strlen (string);
+  int i, l = strlen (string);
   if (rl_end + l >= rl_line_buffer_len)
     rl_extend_line_buffer (rl_end + l);
 
@@ -2930,7 +2930,7 @@ rl_delete_text (from, to)
      int from, to;
 {
   extern int doing_an_undo;
-  register char *text;
+  char *text;
 
   /* Fix it if the caller is confused. */
   if (from > to)
@@ -3220,7 +3220,7 @@ rl_arrow_keys (count, c)
 rl_insert (count, c)
      int count, c;
 {
-  register int i;
+  int i;
   char *string;
 #ifdef WIN32
 	char dummy[5];
@@ -3531,7 +3531,7 @@ rl_capitalize_word (count)
 rl_change_case (count, op)
      int count, op;
 {
-  register int start = rl_point, end;
+  int start = rl_point, end;
   int state = 0;
 
   rl_forward_word (count);
@@ -3948,7 +3948,7 @@ rl_complete_internal (what_to_do)
     ding ();
   else
     {
-      register int i;
+      int i;
 
     some_matches:
 
@@ -4806,7 +4806,7 @@ rl_search_history (direction, invoking_key)
   /* Where we get LINES from. */
   HIST_ENTRY **hlist = history_list ();
 
-  register int i = 0;
+  int i = 0;
   int orig_point = rl_point;
   int orig_line = where_history ();
   int last_found_line = orig_line;
@@ -4951,7 +4951,7 @@ rl_search_history (direction, invoking_key)
 		    }
 		  else
 		    {
-		      register int limit =
+		      int limit =
 			(strlen (sline) - search_string_index) + 1;
 
 		      while (index < limit)
@@ -5118,7 +5118,7 @@ rl_kill_text (from, to)
 	  slot = rl_kill_ring_length;
 	  if (slot == rl_max_kills)
 	    {
-	      register int i;
+	      int i;
 	      free (rl_kill_ring[0]);
 	      for (i = 0; i < slot; i++)
 		rl_kill_ring[i] = rl_kill_ring[i + 1];
@@ -5294,7 +5294,7 @@ rl_yank_pop ()
 rl_yank_nth_arg (count, ignore)
      int count;
 {
-  register HIST_ENTRY *entry = previous_history ();
+  HIST_ENTRY *entry = previous_history ();
   char *arg;
 
   if (entry)
@@ -5401,7 +5401,7 @@ completion_matches (text, entry_function)
      lowest common denominator.  That then becomes match_list[0]. */
   if (matches)
     {
-      register int i = 1;
+      int i = 1;
       int low = 100000;		/* Count of max-matched characters. */
 
       /* If only one match, just use that. */
@@ -5417,7 +5417,7 @@ completion_matches (text, entry_function)
 
 	  while (i < matches)
 	    {
-	      register int c1, c2, si;
+	      int c1, c2, si;
 
 	      if (completion_case_fold)
 		{
@@ -5702,7 +5702,7 @@ rl_generic_bind (type, keyseq, data, map)
 {
   char *keys;
   int keys_len;
-  register int i;
+  int i;
 
   /* If no keys to bind to, exit right away. */
   if (!keyseq || !*keyseq)
@@ -5754,7 +5754,7 @@ rl_translate_keyseq (seq, array, len)
      char *seq, *array;
      int *len;
 {
-  register int i, c, l = 0;
+  int i, c, l = 0;
 
   for (i = 0; c = seq[i]; i++)
     {
@@ -5817,7 +5817,7 @@ Function *
 rl_named_function (string)
      char *string;
 {
-  register int i;
+  int i;
 
   for (i = 0; funmap[i]; i++)
     if (stricmp (funmap[i]->name, string) == 0)
@@ -5847,7 +5847,7 @@ int
 rl_read_init_file (filename)
      char *filename;
 {
-  register int i;
+  int i;
   char *buffer, *openname, *line, *end;
   struct stat finfo;
   int file;
@@ -5922,7 +5922,7 @@ static int if_stack_size = 0;
 parser_if (args)
      char *args;
 {
-  register int i;
+  int i;
 
   /* Push parser state. */
   if (if_stack_depth + 1 >= if_stack_size)
@@ -5995,7 +5995,7 @@ parser_if (args)
 parser_else (args)
      char *args;
 {
-  register int i;
+  int i;
 
   if (!if_stack_depth)
     {
@@ -6043,7 +6043,7 @@ static int
 handle_parser_directive (statement)
      char *statement;
 {
-  register int i;
+  int i;
   char *directive, *args;
 
   /* Isolate the actual directive. */
@@ -6088,7 +6088,7 @@ rl_parse_and_bind (string)
 {
   extern char *possible_control_prefixes[], *possible_meta_prefixes[];
   char *funname, *kname;
-  register int c;
+  int c;
   int key, i;
 
   while (string && whitespace (*string))
@@ -6180,7 +6180,7 @@ rl_parse_and_bind (string)
   if (*string == '"')
     {
       char *seq = (char *)alloca (1 + strlen (string));
-      register int j, k = 0;
+      int j, k = 0;
 
       for (j = 1; string[j]; j++)
 	{
@@ -6338,7 +6338,7 @@ int
 glean_key_from_name (name)
      char *name;
 {
-  register int i;
+  int i;
 
   for (i = 0; name_key_alist[i].name; i++)
     if (stricmp (name, name_key_alist[i].name) == 0)
@@ -6364,7 +6364,7 @@ void
 rl_list_funmap_names (ignore)
      int ignore;
 {
-  register int i;
+  int i;
   char **funmap_names;
   extern char **rl_funmap_names ();
 
@@ -6386,7 +6386,7 @@ invoking_keyseqs_in_map (function, map)
      Function *function;
      Keymap map;
 {
-  register int key;
+  int key;
   char **result;
   int result_index, result_size;
 
@@ -6441,7 +6441,7 @@ invoking_keyseqs_in_map (function, map)
 
 	    if (seqs)
 	      {
-		register int i;
+		int i;
 
 		for (i = 0; seqs[i]; i++)
 		  {
@@ -6510,7 +6510,7 @@ void
 rl_function_dumper (print_readably)
      int print_readably;
 {
-  register int i;
+  int i;
   char **rl_funmap_names (), **names;
   char *name;
 
@@ -6532,7 +6532,7 @@ rl_function_dumper (print_readably)
 	    fprintf (rl_outstream, "# %s (not bound)\n", name);
 	  else
 	    {
-	      register int j;
+	      int j;
 
 	      for (j = 0; invokers[j]; j++)
 		{
@@ -6551,7 +6551,7 @@ rl_function_dumper (print_readably)
 		     name);
 	  else
 	    {
-	      register int j;
+	      int j;
 
 	      fprintf (rl_outstream, "%s can be found on ", name);
 
@@ -6600,10 +6600,10 @@ substring_member_of_array (string, array)
    match in s1.  The compare is case insensitive. */
 static char *
 strindex (s1, s2)
-	  register char *s1, *s2;
+	  char *s1, *s2;
 {
-  register int i, l = strlen (s2);
-  register int len = strlen (s1);
+  int i, l = strlen (s2);
+  int len = strlen (s1);
 
   for (i = 0; (len - i) >= l; i++)
     if (strnicmp (&s1[i], s2, l) == 0)
@@ -6742,7 +6742,7 @@ main ()
       if (strcmp (temp, "list") == 0)
 	{
 	  HIST_ENTRY **list = history_list ();
-	  register int i;
+	  int i;
 	  if (list)
 	    {
 	      for (i = 0; list[i]; i++)
@@ -6771,7 +6771,7 @@ static int
 stricmp (string1, string2)
      char *string1, *string2;
 {
-  register char ch1, ch2;
+  char ch1, ch2;
 
   while (*string1 && *string2)
     {
@@ -6788,7 +6788,7 @@ static int
 strnicmp (string1, string2, count)
      char *string1, *string2;
 {
-  register char ch1, ch2;
+  char ch1, ch2;
 
   while (count)
     {

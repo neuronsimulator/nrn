@@ -190,8 +190,8 @@ static char* neuronhome() {
 static char *ucp;
 char *Unit_str(unit* up)
 {
-    register struct unit *p;
-    register int f, i;
+    struct unit *p;
+    int f, i;
     static char buf[256];
 
     p = up;
@@ -755,9 +755,9 @@ int pu(int u, int i, int f)
 
 int convr(unit* up)
 {
-	register struct unit *p;
-	register int c;
-	register char *cp;
+	struct unit *p;
+	int c;
+	char *cp;
 	char name[20];
 	int den, err;
 
@@ -806,9 +806,9 @@ loop:
 
 int lookup(char* name, unit* up, int den, int c)
 {
-	register struct unit *p;
-	register struct table *q;
-	register int i;
+	struct unit *p;
+	struct table *q;
+	int i;
 	char *cp1, *cp2;
 	double e;
 
@@ -861,7 +861,7 @@ loop:
 
 static int equal(char* s1, char* s2)
 {
-	register char *c1, *c2;
+	char *c1, *c2;
 
 	c1 = s1;
 	c2 = s2;
@@ -873,8 +873,8 @@ static int equal(char* s1, char* s2)
 
 void units_cpp_init()
 {
-	register char *cp;
-	register struct table *tp, *lp;
+	char *cp;
+	struct table *tp, *lp;
 	int c, i, f, t;
 	char *np;
 
@@ -1050,7 +1050,7 @@ l1:
 double
 getflt()
 {
-	register int c, i, dp;
+	int c, i, dp;
 	double d, e;
 	int f;
 
@@ -1111,7 +1111,7 @@ l1:
 
 int get()
 {
-	register int c;
+	int c;
 
 	/*SUPPRESS 560*/
 	if((c=peekc) != 0) {
@@ -1132,9 +1132,9 @@ int get()
 
 struct table * hash_table(char* name)
 {
-	register struct table *tp;
-	register char *np;
-	register unsigned h;
+	struct table *tp;
+	char *np;
+	unsigned h;
 
 	h = 0;
 	np = name;
