@@ -85,8 +85,12 @@ list(APPEND TESTS connect_dend)
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  add_test(NAME basic_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append ${PROJECT_SOURCE_DIR}/test/pynrn
-           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn)
+  add_test(
+    NAME basic_tests
+    COMMAND
+      ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
+      --cov-report=xml --cov=neuron ${PROJECT_SOURCE_DIR}/test/pynrn
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn)
   list(APPEND TESTS basic_tests)
   add_custom_target(
     pynrn_mod ALL
@@ -104,7 +108,11 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   add_dependencies(rxdmod nrniv)
 
   if(NRN_ENABLE_RX3D)
-    add_test(NAME rxd_tests COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append ${PROJECT_SOURCE_DIR}/test/rxd)
+    add_test(
+      NAME rxd_tests
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest
+        --cov-report=xml --cov=neuron ${PROJECT_SOURCE_DIR}/test/rxd)
     list(APPEND TESTS rxd_tests)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
@@ -112,7 +120,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         add_test(
           NAME rxd_mpi_tests
           COMMAND
-            ${MPIEXEC} -np 1 ${PYTHON_EXECUTABLE} -m pytest  --cov-report=xml --cov=neuron --cov-append ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
+            ${MPIEXEC} -np 1 ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.rxd_mpi_tests
+            ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron
+            ${PROJECT_SOURCE_DIR}/test/rxd --mpi)
         list(APPEND TESTS rxd_mpi_tests)
       endif()
     endif()
@@ -143,35 +153,64 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_dependencies(coreneuron_mod nrniv nrniv-core)
 
-    add_test(NAME coreneuron_direct_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_direct_hoc COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.hoc
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_spikes_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_spikes_file_mode_py COMMAND ${PYTHON_EXECUTABLE}
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
-                                            file_mode
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_fornetcon_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_fornetcon.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_datareturn_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_datareturn.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_test_units_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_units.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    add_test(NAME coreneuron_test_natrans_py COMMAND ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron --cov-append
-                                            ${PROJECT_SOURCE_DIR}/test/gjtests/test_natrans.py
-                                    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
-    list(APPEND TESTS coreneuron_direct_py coreneuron_direct_hoc
-                      coreneuron_spikes_py coreneuron_spikes_file_mode_py coreneuron_fornetcon_py
-                      coreneuron_datareturn_py coreneuron_test_units_py
-                      coreneuron_test_natrans_py)
+    add_test(
+      NAME coreneuron_direct_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m
+        pytest --cov-report=xml --cov=neuron ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_direct_hoc
+      COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv ${PROJECT_SOURCE_DIR}/test/coreneuron/test_direct.hoc
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_spikes_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m
+        pytest --cov-report=xml --cov=neuron ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_spikes_file_mode_py
+      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py file_mode
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_fornetcon_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE}
+        -m pytest --cov-report=xml --cov=neuron
+        ${PROJECT_SOURCE_DIR}/test/coreneuron/test_fornetcon.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_datareturn_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_datareturn_py
+        ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron
+        ${PROJECT_SOURCE_DIR}/test/coreneuron/test_datareturn.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_test_units_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_test_units_py
+        ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron
+        ${PROJECT_SOURCE_DIR}/test/coreneuron/test_units.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    add_test(
+      NAME coreneuron_test_natrans_py
+      COMMAND
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_test_units_py
+        ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron
+        ${PROJECT_SOURCE_DIR}/test/gjtests/test_natrans.py
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
+    list(
+      APPEND TESTS
+             coreneuron_direct_py
+             coreneuron_direct_hoc
+             coreneuron_spikes_py
+             coreneuron_spikes_file_mode_py
+             coreneuron_fornetcon_py
+             coreneuron_datareturn_py
+             coreneuron_test_units_py
+             coreneuron_test_natrans_py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
