@@ -122,20 +122,26 @@ needs to be installed for development.
 
 <a name="Apple-M1-Build-Dependencies"></a>
 ##### Apple M1
-- Command line tools
+
+- Install command line tools as
+
     ```bash
     xcode-select --install
     ```
-- If desire classical NEURON GUI<br>
-    From xquartz.org, click "Releases", click XQuartz-2.8.0_beta3 , and
-follow instructions. (after installing, logout and log back in)
-    If you desire single click button action for x11 when entering a window
+
+- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0_beta3 , and follow instructions. After installing, logout and log back in.
+
+    If you desire single click button action for X11 when entering a window then execute below command:
+
     ```bash
     defaults write org.xquartz.X11 wm_ffm -bool true
     ```
-   (For the new default to take effect, logout then log back in)
-- HomeBrew and Pip
+   For the new default to take effect, logout then log back in.
+
+- Install dependencies with HomeBrew and pip as:
+
   ```bash
+  # install brew and initialize shell
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
   eval $(/opt/homebrew/bin/brew shellenv)
