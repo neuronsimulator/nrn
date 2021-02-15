@@ -88,7 +88,6 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
     set(CMAKE_${COMPILER_LANGUAGE}_VECTORIZE "")
     set(IGNORE_UNKNOWN_PRAGMA_FLAGS "-Wno-unknown-pragmas")
     set(CMAKE_${COMPILER_LANGUAGE}_GEN_NATIVE "-march=native")
-    set(CMAKE_${COMPILER_LANGUAGE}_IGNORE_WARNINGS "-Wno-deprecated-register -Wno-writable-strings")
     # rest of the world
   else()
     set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "-Wall")
