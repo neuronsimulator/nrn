@@ -1739,25 +1739,28 @@ extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
     while(1) {
     	int r;
-    	unsigned char c;
-	run_til_stdin();
-	if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
-		return (int)c;
-	}else{
-		/* this seems consistent with the internal readline and the
-		   current master version 8.0. That is, rl_getc in the
-		   internal readline gets the return value of read and only
-		   cares about r == 1, loops if errno == EINTR, and returns
-		   EOF otherwise. (Note: internal readline does not have
-		   rl_getc_function.). Version 8.0 rl_getc is complex but in
-		   terms of read, it returns c if r == 1, returns EOF if
-		   r == 0, loops if errno == EINTR, and generally returns EOF
-		   if some other error occurred.
-		 */
-		if (errno != EINTR) {
-			return EOF;
-		}
-	}
+        unsigned char c;
+        if (run_til_stdin() == 0) {
+            // nothing in stdin  (happens when windows are dismissed)
+            continue;
+        }
+        if ((r = read(0, &c, sizeof(c))) == sizeof(c)) {
+            return (int)c;
+        }else{
+            /* this seems consistent with the internal readline and the
+                current master version 8.0. That is, rl_getc in the
+                internal readline gets the return value of read and only
+                cares about r == 1, loops if errno == EINTR, and returns
+                EOF otherwise. (Note: internal readline does not have
+                rl_getc_function.). Version 8.0 rl_getc is complex but in
+                terms of read, it returns c if r == 1, returns EOF if
+                r == 0, loops if errno == EINTR, and generally returns EOF
+                if some other error occurred.
+            */
+            if (errno != EINTR) {
+                return EOF;
+            }
+        }
     }
 }
 

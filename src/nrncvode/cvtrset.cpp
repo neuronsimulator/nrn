@@ -7,7 +7,6 @@
 #include	"cvodeobj.h"
 #include	"nonvintblock.h"
 
-typedef int (*Pfridot)(...);
 extern "C" {
 
 #include	"membfunc.h"
@@ -66,7 +65,7 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	errno = 0;
 	for (cml = cmlist; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
-		Pfridot s = (Pfridot)mf->current;
+		Pvmi s = mf->current;
 		if (s) {
 			Memb_list* ml = cml->ml;
 			(*s)(_nt, ml, cml->index);
@@ -111,9 +110,9 @@ void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	for (cml = cmlist; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
 		Memb_list* ml = cml->ml;
-		Pfridot s = (Pfridot)mf->jacob;
+		Pvmi s = mf->jacob;
 		if (s) {
-			Pfridot s = (Pfridot)mf->jacob;
+			Pvmi s = mf->jacob;
 			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {

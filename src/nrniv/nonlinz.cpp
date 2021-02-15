@@ -10,8 +10,6 @@ extern "C" {
 #include "membfunc.h"
 }
 
-typedef int (*Pfridot)(...);
-
 extern "C" {
 extern int structure_change_cnt;
 extern void v_setup_vectors();
@@ -229,7 +227,7 @@ NonLinImpRep::NonLinImpRep() {
 	for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
 		Memb_list* ml = tml->ml;
 		i = tml->index;
-		Pfridot s = (Pfridot)memb_func[i].ode_count;
+		nrn_ode_count_t s = memb_func[i].ode_count;
 		if (s) {
 			cnt = (*s)(i);
 			n_ode_ += cnt * ml->nodecount;
@@ -289,11 +287,11 @@ void NonLinImpRep::delta(double deltafac){ // also defines pv_,pvdot_ map for od
 		Memb_list* ml = tml->ml;
 		i = tml->index;
 		nc = ml->nodecount;
-		Pfridot s = (Pfridot)memb_func[i].ode_count;
+		nrn_ode_count_t s = memb_func[i].ode_count;
 		if (s && (cnt = (*s)(i)) > 0) {
-			s = (Pfridot)memb_func[i].ode_map;
+			nrn_ode_map_t m = memb_func[i].ode_map;
 			for (j=0; j < nc; ++j) {
-(*s)(ieq, pv_ + ieq, pvdot_ + ieq, ml->data[j], ml->pdata[j], deltavec_ + ieq, i);
+(*m)(ieq, pv_ + ieq, pvdot_ + ieq, ml->data[j], ml->pdata[j], deltavec_ + ieq, i);
 				ieq += cnt;
 			}
 		}
@@ -378,7 +376,7 @@ void NonLinImpRep::dids() {
 	  i = tml->index;
 	  if (memb_func[i].ode_count && ml->nodecount) {
 		int nc = ml->nodecount;
-		Pfridot s = (Pfridot)memb_func[i].ode_count;
+		nrn_ode_count_t s = memb_func[i].ode_count;
 		int cnt = (*s)(i);
 	    if (memb_func[i].current) {
 		double* x1 = rv_; // use as temporary storage
@@ -425,7 +423,7 @@ void NonLinImpRep::dsdv() {
 	  i = tml->index;
 	  if (memb_func[i].ode_count && ml->nodecount) {
 		int nc = ml->nodecount;
-		Pfridot s = (Pfridot)memb_func[i].ode_count;
+		nrn_ode_count_t s = memb_func[i].ode_count;
 		int cnt = (*s)(i);
 	    if (memb_func[i].current) {
 		double* x1 = rv_; // use as temporary storage
@@ -485,7 +483,7 @@ void NonLinImpRep::dsds() {
 	  i = tml->index;
 	  if (memb_func[i].ode_count && ml->nodecount) {
 		int nc = ml->nodecount;
-		Pfridot s = (Pfridot)memb_func[i].ode_count;
+		nrn_ode_count_t s = memb_func[i].ode_count;
 		int cnt = (*s)(i);
 		double* x1 = rv_; // use as temporary storage
 		double* x2 = jv_;
@@ -538,7 +536,7 @@ void NonLinImpRep::dsds() {
 }
 
 void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is in fact a current method
-	Pfridot s = (Pfridot)memb_func[im].current;
+	Pvmi s = memb_func[im].current;
 	// fake a 1 element memb_list
 	Memb_list mfake;
 #if CACHEVEC != 0
@@ -554,19 +552,8 @@ void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is i
 }
 
 void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an ode method
-	int i, nc;
-	Pfridot s = (Pfridot)memb_func[im].ode_spec;
-	nc = ml->nodecount;
-	if (memb_func[im].hoc_mech) {
-		int j, count;
-		count = ml->nodecount;
-		for (j=0; j < count; ++j) {
-			Node* nd = ml->nodelist[j];
-			(*s)(nd, ml->prop[j]);
-		}
-	}else{
-		(*s)(nrn_threads, ml, im);
-	}
+	Pvmi s = memb_func[im].ode_spec;
+	(*s)(nrn_threads, ml, im);
 }
 
 int NonLinImpRep::gapsolve() {
