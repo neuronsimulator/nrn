@@ -32,6 +32,8 @@ if(NRN_ENABLE_PYTHON)
       TEST_ENV
       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
 endif()
+# Give the environment string a more descriptive name that can be used in NeuronTestHelper.cmake
+set(NRN_TEST_ENV "${TEST_ENV}")
 
 set(TESTS "")
 
@@ -64,7 +66,7 @@ list(APPEND TESTS ringtest)
 # Add small hoc test
 # =============================================================================
 set(HOCTEST_DIR ${PROJECT_SOURCE_DIR}/test/hoc_tests/connect_dend)
-if(NRN_ENABLE_CORENEURON)
+if(NRN_ENABLE_CORENEURON OR NRN_ENABLE_MOD_COMPATIBILITY)
   set(REF_FILE cell3soma.core.dat.ref)
 else()
   set(REF_FILE cell3soma.dat.ref)
@@ -276,3 +278,6 @@ add_custom_target(
 #list(APPEND TESTS modlunit_test)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
+
+# Add tests that are configured using external repositories
+add_subdirectory(external)
