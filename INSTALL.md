@@ -98,7 +98,7 @@ Depending on platform you can install these dependencies as follows:
 
 #### Mac OS
 
-This is for x86_64. For Apple M1 (arm64), see [here] (#Apple-M1-Build-Dependencies)
+This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
 
 The easiest way to install dependencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
