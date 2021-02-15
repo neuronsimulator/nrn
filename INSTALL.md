@@ -98,7 +98,9 @@ Depending on platform you can install these dependencies as follows:
 
 #### Mac OS
 
-The easiest way to install depndencies on Mac OS is to use [brew](https://brew.sh/) or
+This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
+
+The easiest way to install dependencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
 once [brew is installed](https://docs.brew.sh/Installation) you can do:
 
@@ -117,6 +119,40 @@ If the desired python version is not installed, you can install it using
 [official distribution](https://www.python.org/downloads/mac-osx/). Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
+
+<a name="Apple-M1-Build-Dependencies"></a>
+##### Apple M1
+
+- Install command line tools as
+
+    ```bash
+    xcode-select --install
+    ```
+
+- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0_beta3 , and follow instructions. After installing, logout and log back in.
+
+    If you desire single click button action for X11 when entering a window then execute below command:
+
+    ```bash
+    defaults write org.xquartz.X11 wm_ffm -bool true
+    ```
+   For the new default to take effect, logout then log back in.
+
+- Install dependencies with HomeBrew and pip as:
+
+  ```bash
+  # install brew and initialize shell
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
+  eval $(/opt/homebrew/bin/brew shellenv)
+
+  brew install cmake
+  brew install open-mpi
+
+  pip3 install --user --upgrade pip
+  export PATH="$HOME/Library/Python/3.8/bin":$PATH
+  pip3 install --user cython
+  ```
 
 #### Linux
 
