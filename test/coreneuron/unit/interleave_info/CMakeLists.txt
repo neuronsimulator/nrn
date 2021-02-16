@@ -3,10 +3,7 @@
 #
 # See top-level LICENSE file for details.
 # =============================================================================
-
-file(GLOB interleave_info_src "*.cpp")
-
-add_executable(interleave_info_bin ${interleave_info_src})
+add_executable(interleave_info_bin check_constructors.cpp)
 target_link_libraries(
   interleave_info_bin
   ${MPI_CXX_LIBRARIES}
@@ -17,5 +14,5 @@ target_link_libraries(
   ${sonatareport_LIBRARY})
 add_dependencies(interleave_info_bin nrniv-core)
 
-add_test(NAME interleave_info_constructor_test
-         COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/interleave_info_bin)
+add_test(NAME interleave_info_constructor_test COMMAND ${TEST_EXEC_PREFIX}
+                                                       $<TARGET_FILE:interleave_info_bin>)

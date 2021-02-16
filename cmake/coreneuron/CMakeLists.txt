@@ -43,6 +43,7 @@ list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
 # HPC Coding Conventions
 # =============================================================================
 set(CODING_CONV_PREFIX "CORENRN")
+set(CORENRN_3RDPARTY_DIR "external")
 set(CORENRN_ClangFormat_EXCLUDES_RE
     ".*/external/.*$$"
     CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
@@ -93,10 +94,6 @@ set(CORENRN_NMODL_DIR
 set(LIKWID_DIR
     ""
     CACHE PATH "Path to likwid performance analysis suite")
-
-if(CORENEURON_AS_SUBPROJECT)
-  set(CORENRN_ENABLE_UNIT_TESTS OFF)
-endif()
 
 # =============================================================================
 # Project version from git and project directories

@@ -3,10 +3,7 @@
 #
 # See top-level LICENSE file for details.
 # =============================================================================
-
-file(GLOB cmd_interface_test_src "*.cpp")
-
-add_executable(cmd_interface_test_bin ${cmd_interface_test_src})
+add_executable(cmd_interface_test_bin test_cmdline_interface.cpp)
 target_link_libraries(
   cmd_interface_test_bin
   ${MPI_CXX_LIBRARIES}
@@ -19,5 +16,4 @@ target_include_directories(cmd_interface_test_bin SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 add_dependencies(cmd_interface_test_bin nrniv-core)
 
-add_test(NAME cmd_interface_test COMMAND ${TEST_EXEC_PREFIX}
-                                         ${CMAKE_CURRENT_BINARY_DIR}/cmd_interface_test_bin)
+add_test(NAME cmd_interface_test COMMAND ${TEST_EXEC_PREFIX} $<TARGET_FILE:cmd_interface_test_bin>)
