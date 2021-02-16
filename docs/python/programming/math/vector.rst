@@ -9,7 +9,7 @@ Vector
 .. class:: Vector
 
          
-    This class was implemented by
+    This class was implemented by 
 
     .. code-block::
         none

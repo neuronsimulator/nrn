@@ -85,9 +85,12 @@ if __name__ == "__main__":
         with open(out_file, 'wb') as f:
             import pickle
             import zlib
-            compressed = zlib.compress(pickle.dumps(ParseRst.help_dictionary))
+
+            # TODO - protocol parameter shall be dropped along with Pyhton2 support
+            compressed = zlib.compress(pickle.dumps(ParseRst.help_dictionary, protocol=2))
             f.write(compressed)
     except Exception:
         import traceback
+
         print(traceback.format_exc())
         exit(1)
