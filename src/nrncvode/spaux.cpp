@@ -91,7 +91,7 @@
 SPBLK *
 sphead( SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
     
     /* splay version, good amortized bound */
     x = spdeq( &q->root );
@@ -131,7 +131,7 @@ sphead( SPTREE* q )
 void
 spdelete( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
     
     splay( n, q );
     x = spdeq( &q->root->rightlink );
@@ -169,8 +169,8 @@ spdelete( SPBLK* n, SPTREE* q )
 SPBLK *
 spnext( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * next;
-    register SPBLK * x;
+    SPBLK * next;
+    SPBLK * x;
     
     /* splay version */
     splay( n, q );
@@ -221,8 +221,8 @@ spnext( SPBLK* n, SPTREE* q )
 SPBLK *
 spprev( SPBLK* n, SPTREE* q )
 {
-    register SPBLK * prev;
-    register SPBLK * x;
+    SPBLK * prev;
+    SPBLK * x;
     
     /* splay version;
        note: deleting the last "if" undoes the amortized bound */

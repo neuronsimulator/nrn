@@ -14,8 +14,8 @@ double *rhs;			/* initially- right hand side
 
 int matsol(void)
 {
-	register struct elm *pivot;
-	register struct elm *el;
+	struct elm *pivot;
+	struct elm *el;
 	struct elm *hold;
 	int i, j;
 	double max;

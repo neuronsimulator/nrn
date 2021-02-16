@@ -390,7 +390,7 @@ extern int v_node_depth; /* so depth may be more than twice what you'd expect */
 /* triangularization of the matrix equations */
 void triang(NrnThread* _nt)
 {
-	register Node *nd, *pnd;
+	Node *nd, *pnd;
 	double p;
 	int i, i2, i3;
 	i2 = _nt->ncell;
@@ -418,7 +418,7 @@ void triang(NrnThread* _nt)
 /* back substitution to finish solving the matrix equations */
 void bksub(NrnThread* _nt)
 {
-	register Node *nd, *cnd;
+	Node *nd, *cnd;
 	int i, i1, i2, i3;
 	i1 = 0;
 	i2 = i1 + _nt->ncell;
