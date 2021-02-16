@@ -128,16 +128,27 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Launching mpi executable with full path can mangle different python versions and libraries(see
-    # issue #894) Therefore we extract the executable name and create a dedicated target, because
-    # add_test($MPIEXEC_NAME) would re-append the full path.
+    # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing
+    # the available version of OpenMPI does but those of HPE-MPI and MPICH do not).
+    set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
+    execute_process(
+      COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
+      RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
+      OUTPUT_QUIET ERROR_QUIET)
+    if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
+      message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
+      unset(MPIEXEC_OVERSUBSCRIBE)
+    endif()
+    # Launching mpi executable with full path can mangle different python versions and libraries
+    # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
+    # ${MPIEXEC_NAME} does not.
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-    add_custom_target(
-      test_subworld_mpiexec_name
+    add_test(
+      NAME parallel_tests
       COMMAND
-        ${MPIEXEC_NAME} -np 6 ${CMAKE_BINARY_DIR}/bin/nrniv -mpi -python
+        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
-    add_test(NAME parallel_tests COMMAND make test_subworld_mpiexec_name)
     list(APPEND TESTS parallel_tests)
   endif()
 
@@ -151,8 +162,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_custom_target(
       coreneuron_mod ALL
       COMMAND
-        ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
-        -coreneuron .
+        ${CMAKE_COMMAND} -E env ${TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl -coreneuron .
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
     add_dependencies(coreneuron_mod nrniv nrniv-core)
 
@@ -200,7 +210,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(
       NAME coreneuron_test_natrans_py
       COMMAND
-        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_test_units_py
+        ${CMAKE_COMMAND} -E env COVERAGE_FILE=.coverage.coreneuron_test_natrans_py
         ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml --cov=neuron
         ${PROJECT_SOURCE_DIR}/test/gjtests/test_natrans.py
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
@@ -219,16 +229,21 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       if(mpi4py_FOUND)
         add_test(
           NAME coreneuron_spikes_mpi_py
-          COMMAND ${MPIEXEC} -np 2 ${PYTHON_EXECUTABLE}
-                  ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
+          COMMAND
+            ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}
+            ${MPIEXEC_POSTFLAGS} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py mpi4py
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_spikes_mpi_py)
       endif()
-      # using -pyexe to workaround #894
+      # Using -pyexe was a first workaround for #894, but it seems that we also need to avoid using
+      # the full path to mpiexec (see other discussion in #894). Replacing ${MPIEXEC} with
+      # ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} achieves this.
+      get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
       add_test(
         NAME coreneuron_spikes_mpi_file_mode_py
         COMMAND
-          ${MPIEXEC} -np 2 ${CMAKE_HOST_SYSTEM_PROCESSOR}/special -python -pyexe
+          ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+          ${CMAKE_HOST_SYSTEM_PROCESSOR}/special ${MPIEXEC_POSTFLAGS} -python -pyexe
           ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/coreneuron/test_spikes.py nrnmpi_init
           file_mode
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
