@@ -6,7 +6,7 @@
 void subrow(struct elm *pivot, struct elm*rowsub) {
 	unsigned row;
 	double r;
-	register struct elm *el;
+	struct elm *el;
 
 	r = rowsub->value / pivot->value;
 	rhs[rowsub->row] -= rhs[pivot->row] * r;

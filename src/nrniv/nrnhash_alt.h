@@ -138,7 +138,7 @@ NrnHash::NrnHash(int n) { \
     first_ = new NrnHashEntry(NrnHash)*[size_]; \
     --size_; \
     last_ = &first_[size_]; \
-    for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
+    for (NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
 	*e = NULL; \
     } \
     nclash_ = nfind_ = 0; \
@@ -150,9 +150,9 @@ NrnHash::~NrnHash() { \
 } \
 \
 void NrnHash::remove_all() { \
-    for (register NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
+    for (NrnHashEntry(NrnHash)** e = first_; e <= last_; e++) { \
 	NrnHashEntry(NrnHash)* t = *e; \
-        for (register NrnHashEntry(NrnHash)* i = t; i; i = t) { \
+        for (NrnHashEntry(NrnHash)* i = t; i; i = t) { \
 	    t = i->chain_; \
 	    delete i; \
 	} \
@@ -165,7 +165,7 @@ inline NrnHashEntry(NrnHash)*& NrnHash::probe(Key i) { \
 } \
 \
 void NrnHash::insert(Key k, Value v) { \
-    register NrnHashEntry(NrnHash)* e; \
+    NrnHashEntry(NrnHash)* e; \
     for (e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    e->value_ = v; \
@@ -175,14 +175,14 @@ void NrnHash::insert(Key k, Value v) { \
     e = new NrnHashEntry(NrnHash); \
     e->key_ = k; \
     e->value_ = v; \
-    register NrnHashEntry(NrnHash)** a = &probe(k); \
+    NrnHashEntry(NrnHash)** a = &probe(k); \
     e->chain_ = *a; \
     *a = e; \
 } \
 \
 bool NrnHash::find(Key k, Value& v) { \
     ++nfind_; \
-    for (register NrnHashEntry(NrnHash)* e = probe(k); e != NULL; e = e->chain_) { \
+    for (NrnHashEntry(NrnHash)* e = probe(k); e != NULL; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    return true; \
@@ -194,7 +194,7 @@ bool NrnHash::find(Key k, Value& v) { \
 \
 bool NrnHash::find_and_remove(Value& v, Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
-    register NrnHashEntry(NrnHash)* e = *a; \
+    NrnHashEntry(NrnHash)* e = *a; \
     if (e != NULL) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
@@ -202,7 +202,7 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 	    delete e; \
 	    return true; \
 	} else { \
-	    register NrnHashEntry(NrnHash)* prev; \
+	    NrnHashEntry(NrnHash)* prev; \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
@@ -220,13 +220,13 @@ bool NrnHash::find_and_remove(Value& v, Key k) { \
 \
 void NrnHash::remove(Key k) { \
     NrnHashEntry(NrnHash)** a = &probe(k); \
-    register NrnHashEntry(NrnHash)* e = *a; \
+    NrnHashEntry(NrnHash)* e = *a; \
     if (e != NULL) { \
 	if (e->key_ == k) { \
 	    *a = e->chain_; \
 	    delete e; \
 	} else { \
-	    register NrnHashEntry(NrnHash)* prev; \
+	    NrnHashEntry(NrnHash)* prev; \
 	    do { \
 		prev = e; \
 		e = e->chain_; \

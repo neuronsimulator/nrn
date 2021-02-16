@@ -96,8 +96,8 @@ static int hoc_cclass(char* set, char c, int af);
 
 void hoc_regexp_compile(const char* pat) {
 	char *cp = (char*)pat;
-	register int c;
-	register char *ep;
+	int c;
+	char *ep;
 	char *lastep=0;
 #if (!CABLESECTION)
 	char bracket[NBRA], *bracketp;
@@ -301,7 +301,7 @@ void hoc_regexp_compile(const char* pat) {
 int
 hoc_regexp_search(const char* tar) { /*return true if target matches pattern*/
 	char *target = (char*)tar;
-	register char *p1, *p2, c;
+	char *p1, *p2, c;
 
 #if 1
 	if (target == (char *)0) {
@@ -354,7 +354,7 @@ hoc_regexp_search(const char* tar) { /*return true if target matches pattern*/
 
 static int advance(char* lp, char* ep)
 {
-	register char *curlp;
+	char *curlp;
 
 	for (;;) switch (*ep++) {
 
@@ -457,7 +457,7 @@ static int advance(char* lp, char* ep)
 
 static int hoc_cclass(char* set, char c, int af)
 {
-	register int n;
+	int n;
 
 	if (c == 0)
 		return(0);

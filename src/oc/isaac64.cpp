@@ -41,7 +41,7 @@ Modified for modularity by Tom Bartol and Rex Kerr
 
 void isaac64_generate(struct isaac64_state *rng)
 {
-  register ub8 a,b,x,y,*m,*m2,*r,*mend;
+  ub8 a,b,x,y,*m,*m2,*r,*mend;
 
   m=rng->mm; r=rng->randrsl;
   a = rng->aa; b = rng->bb + (++rng->cc);

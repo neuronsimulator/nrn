@@ -56,7 +56,7 @@ static char *xmalloc (), *xrealloc ();
 Keymap
 rl_make_bare_keymap ()
 {
-  register int i;
+  int i;
   Keymap keymap = (Keymap)xmalloc (128 * sizeof (KEYMAP_ENTRY));
 
   for (i = 0; i < 128; i++)
@@ -79,7 +79,7 @@ Keymap
 rl_copy_keymap (map)
      Keymap map;
 {
-  register int i;
+  int i;
   Keymap temp = rl_make_bare_keymap ();
 
   for (i = 0; i < 128; i++)
@@ -97,7 +97,7 @@ Keymap
 rl_make_keymap ()
 {
   extern rl_insert (), rl_rubout ();
-  register int i;
+  int i;
   Keymap newmap;
 
   newmap = rl_make_bare_keymap ();

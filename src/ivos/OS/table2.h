@@ -114,7 +114,7 @@ Table2::Table2(int n) { \
     first_ = new Table2Entry(Table2)*[size_]; \
     --size_; \
     last_ = &first_[size_]; \
-    for (register Table2Entry(Table2)** e = first_; e <= last_; e++) { \
+    for (Table2Entry(Table2)** e = first_; e <= last_; e++) { \
 	*e = nil; \
     } \
 } \
@@ -128,18 +128,18 @@ inline Table2Entry(Table2)*& Table2::probe(Key1 k1, Key2 k2) { \
 } \
 \
 void Table2::insert(Key1 k1, Key2 k2, Value v) { \
-    register Table2Entry(Table2)* e = new Table2Entry(Table2); \
+    Table2Entry(Table2)* e = new Table2Entry(Table2); \
     e->key1_ = k1; \
     e->key2_ = k2; \
     e->value_ = v; \
-    register Table2Entry(Table2)** a = &probe(k1, k2); \
+    Table2Entry(Table2)** a = &probe(k1, k2); \
     e->chain_ = *a; \
     *a = e; \
 } \
 \
 bool Table2::find(Value& v, Key1 k1, Key2 k2) { \
     for ( \
-	register Table2Entry(Table2)* e = probe(k1, k2); \
+	Table2Entry(Table2)* e = probe(k1, k2); \
 	e != nil; \
 	e = e->chain_ \
     ) { \
@@ -153,13 +153,13 @@ bool Table2::find(Value& v, Key1 k1, Key2 k2) { \
 \
 void Table2::remove(Key1 k1, Key2 k2) { \
     Table2Entry(Table2)** a = &probe(k1, k2); \
-    register Table2Entry(Table2)* e = *a; \
+    Table2Entry(Table2)* e = *a; \
     if (e != nil) { \
 	if (e->key1_ == k1 && e->key2_ == k2) { \
 	    *a = e->chain_; \
 	    delete e; \
 	} else { \
-	    register Table2Entry(Table2)* prev; \
+	    Table2Entry(Table2)* prev; \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
