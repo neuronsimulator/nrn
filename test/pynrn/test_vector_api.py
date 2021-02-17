@@ -70,12 +70,16 @@ def test_vector_api():
     assert v.var(2, 3) == 0.5
     assert v.min() == 1.0
     assert v.min(0, 2) == 2.0
+    assert h.Vector().min() == 0.0
     assert v.min_ind() == 3
     assert v.min_ind(0, 2) == 2
+    assert h.Vector().min_ind() == -1.0
     assert v.max() == 5.0
     assert v.max(0, 2) == 3.0
+    assert h.Vector().max() == 0.0
     assert v.max_ind() == 4
     assert v.max_ind(0, 2) == 0
+    assert h.Vector().max_ind() == -1.0
     assert v.dot(h.Vector((1, 2, 3, 4, 5))) == 44.0
     assert np.allclose(v.mag(), 6.928203230275509)
     assert v.c().reverse().meansqerr(v) == 3.2
