@@ -29,6 +29,9 @@ C:\Python37\python.exe -m pip install numpy==1.14.6 || goto :error
 C:\Python38\python.exe -m pip install numpy==1.17.5 || goto :error
 C:\Python27\python.exe -m pip install numpy || goto :error
 
+:: install pathlib
+C:\Python27\python.exe -m pip install pathlib || goto :error
+
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
 pwsh -command Expand-Archive EnVar_pugin.zip -DestinationPath "${env:ProgramFiles(x86)}\NSIS" || goto :error
