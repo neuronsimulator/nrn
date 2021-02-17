@@ -6085,7 +6085,7 @@ void VecRecordDiscrete::frecord_init(TQItem* q) {
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     y_->push_back(*pd_);
-	assert(Math::equal(y_->vec().back(), tt, 1e-8));
+	assert(Math::equal(t_->vec().back(), tt, 1e-8));
 	if (y_->size() < t_->size()) {
 		e_->send(t_->vec().back(), nc, nrn_threads);
 	}
