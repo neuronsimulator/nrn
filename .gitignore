@@ -37,3 +37,4 @@ src/nrnoc/syn.c
 src/nrnoc/vclmp.c
 src/oc/parse.c
 src/oc/parse.h
+share/lib/python/neuron/help_data.dat
