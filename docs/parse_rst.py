@@ -86,7 +86,7 @@ if __name__ == "__main__":
             import pickle
             import zlib
 
-            # TODO - protocol parameter shall be dropped along with Pyhton2 support
+            # TODO - protocol parameter shall be dropped along with Python2 support
             compressed = zlib.compress(pickle.dumps(ParseRst.help_dictionary, protocol=2))
             f.write(compressed)
     except Exception:
