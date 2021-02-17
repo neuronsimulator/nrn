@@ -127,10 +127,6 @@ IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 
-
-int cmpfcn(double a, double b) { return ((a) <= (b))? (((a) == (b))? 0 : -1) : 1; }
-
-
 // math functions with error checking defined in oc/SRC/math.cpp
 extern double hoc_Log(double x), hoc_Log10(double x), /*hoc_Exp(double x), */hoc_Sqrt(double x);
 extern double hoc_scan(FILE*);
@@ -153,7 +149,9 @@ static int narg() {
 
 #define EPSILON 1e-9
 
-using doubleComparator = std::function<int(double, double)>;
+
+int cmpfcn(double a, double b) { return ((a) <= (b))? (((a) == (b))? 0 : -1) : 1; }
+typedef int (*doubleComparator)(double, double);
 
 extern "C" {
 extern void install_vector_method(const char* name, Pfrd_vp);
