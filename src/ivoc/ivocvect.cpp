@@ -2035,6 +2035,9 @@ static double v_reduce(void* v)
 static double v_min(void* v)
 {
   Vect* x = (Vect*)v;
+  if (x->size() == 0) {
+      return 0.0;
+  }
   int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
@@ -2048,6 +2051,9 @@ static double v_min(void* v)
 static double v_min_ind(void* v)
 {
   Vect* x = (Vect*)v;
+  if (x->size() == 0) {
+      return -1.0;
+  }
   int x_max = x->size()-1;
   hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
@@ -2062,6 +2068,9 @@ static double v_min_ind(void* v)
 static double v_max(void* v)
 {
   Vect* x = (Vect*)v;
+  if(x->size() == 0) {
+      return 0.0;
+  }
   int x_max = x->size()-1;
   if (ifarg(1)) {
     int start = int(chkarg(1,0,x_max));
@@ -2075,6 +2084,9 @@ static double v_max(void* v)
 static double v_max_ind(void* v)
 {
   Vect* x = (Vect*)v;
+  if(x->size() == 0) {
+      return -1.0;
+  }
   int x_max = x->size()-1;
   hoc_return_type_code = 1; // integer
   if (ifarg(1)) {
