@@ -1495,8 +1495,6 @@ static Object** v_at(void* v) {
 	return y->temp_objvar();
 }
 
-#define USE_MLH_GSORT 0
-#if !USE_MLH_GSORT
 typedef struct {double x; int i;} SortIndex;
 
 static int sort_index_cmp(const void* a, const void* b) {
@@ -1531,27 +1529,6 @@ static Object** v_sortindex(void* v) {
 	delete [] si;
 	return y->temp_objvar();
 }
-#else
-static Object** v_sortindex(void* v) {
-	// v.index(vsrc, vsrc.sortindex) sorts vsrc into v
-	int i, n;
-	Vect* x = (Vect*)v;
-	n = x->size();
-	Vect* y;
-	possible_destvec(1, y);
-	y->resize(n);
-
-	int* si = new int[n];
-	for (i=0; i < n; ++i) {
-		si[i] = i;
-	}
-	nrn_mlh_gsort(vector_vec(x), si, n, cmpfcn);
-	for (i=0; i<n; i++) y->elem(i) = (double)si[i];
-
-	delete [] si;
-	return y->temp_objvar();
-}
-#endif // USE_MLH_GSORT
 
 static Object** v_c(void* v) {
 	return v_at(v);
