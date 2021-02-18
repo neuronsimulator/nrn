@@ -11,7 +11,11 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
     OUTPUT asciispikes::spk2.std # which output data to compare
     SCRIPT_PATTERNS "*.py" "*.hoc")
 
-  # Step 2 -- add configurations to the group (e.g. here NEURON without MPI)
+  # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is
+  # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences
+  # in the results from both NEURON and CoreNEURON. Consequently, if neither CoreNEURON nor
+  # NRN_ENABLE_MOD_COMPATIBILITY is enabled then NEURON does not match the reference file. To work
+  # around this only run the NEURON tests if CoreNEURON-compatible modfiles are used.
   nrn_add_test(
     GROUP external_ringtest
     NAME neuron
@@ -20,13 +24,9 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       special -python ringtest.py -tstop 100 OUTPUT asciispikes::spk1.std)
 
   if(NRN_ENABLE_MPI) # This could be translated into `REQUIRES mpi` if needed
-    # Temporary test: does this workaround #894?
+    # To work around CI failures that seem related to #894 we should run `mpiexec` not
+    # `/path/to/mpiexec`
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-    # When CoreNEURON is enabled then TABLE statements are disabled in hh.mod, which causes slight
-    # numerical differences in the results from both NEURON and CoreNEURON. Consequently, if neither
-    # CoreNEURON nor NRN_ENABLE_MOD_COMPATIBILITY is enabled then NEURON does not match the
-    # reference file. To work around this only run the NEURON tests if CoreNEURON-compatible
-    # modfiles are used.
     nrn_add_test(
       GROUP external_ringtest
       NAME neuron_mpi

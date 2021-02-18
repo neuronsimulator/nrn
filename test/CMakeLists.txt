@@ -95,15 +95,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   list(APPEND TESTS basic_tests)
   add_custom_target(
     pynrn_mod ALL
-    COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
+    COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/pynrn
     DEPENDS ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod nocmodl)
   add_dependencies(pynrn_mod nrniv)
 
   add_custom_target(
     rxdmod ALL
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ecs
+    COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ./ecs
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/rxd)
   add_dependencies(rxdmod nrniv)
 
