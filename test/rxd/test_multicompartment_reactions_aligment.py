@@ -29,12 +29,12 @@ def test_multicompartment_reactions_aligment(neuron_instance):
     shells = []
     border = []
     for i in range(N-1):
-        shells.append(rxd.Region([dend], name=f'shell{i}',
+        shells.append(rxd.Region([dend], name='shell%i' % i,
                       geometry=rxd.Shell(float(i)/N, (1.0+i)/N)))
-        border.append(rxd.Region([dend], name=f'border{i}',
+        border.append(rxd.Region([dend], name='border%i' % i,
                       geometry=rxd.FixedPerimeter(2.0*h.PI*(1.0+i))))
     
-    shells.append(rxd.Region([dend,spine], nrn_region='i', name=f'shell{N-1}',
+    shells.append(rxd.Region([dend,spine], nrn_region='i', name='shell%i' % (N-1),
                   geometry=rxd.MultipleGeometry(secs=[dend, spine],
                                                 geos=[rxd.Shell((N-1.0)/N,1),
                                                       rxd.inside])))
