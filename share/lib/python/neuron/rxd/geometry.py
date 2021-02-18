@@ -416,3 +416,74 @@ class Shell(RxDGeometry):
             vols[iseg] = volume
 
         return vols
+
+class MultipleGeometry(RxDGeometry):
+    """ support for different geometries on different sections of a region.
+    
+    Example use:
+    - for radial diffusion in a dendrite (dend) with longitudinal diffusion
+      from a spine (spine). The region for the outer shell of the dendrite
+      (0.8,1] should include the while spine [0,1];
+      MultipleGeometry(secs=[dend,spine], geos=[Shell(0.8,1), rxd.inside])
+
+    Args:   
+    sections (list, optional) a list or list-of-lists of sections where the
+        corresponding geometry should be used. If None the same geometry used
+        for all sections, otherwise the list must be the same length as the
+        geos list.
+        If None is in the list, then the corresponding geometry in geos is used
+        as a default value for any section not included in the lists.
+    geometries (list) a list of geometries that are used for the corresponding
+        list of sections in secs.
+
+    """
+    def __init__(self, secs=None, geos=None):
+        self._secs = {}
+        self._default = None
+        if not secs:
+            if isinstance(geos,list):
+                self._default = geos[0]
+            elif isinstance(geos,RxDGeometry):
+                self._default = geos
+            else:
+                raise("MultipleGeometry requires a list-of-lists of sections and their corresponding geometry")
+        else:
+            assert(len(secs) == len(geos))
+            for s, g in zip(secs,geos):
+                if not s:
+                    self._default = g
+                elif isinstance(s,list):
+                    self._secs[h.SectionList(s)] = g
+                else:
+                    self._secs[h.SectionList([s])] = g
+    def __repr__(self):
+        secs = [[s for s in sl] for sl in self._secs]
+        geos = [self._secs[sl] for sl in self._secs]
+        return 'MultipleGeometry(secs=%r, geos=%r)' % (secs, geos)
+
+    def _get_geo(self, sec):
+        if not isinstance(sec, nrn.Section):
+            sec = sec._sec
+        for sl in self._secs:
+            if sec in sl:
+                geo = self._secs[sl]
+                break
+        else:
+            if self._default:
+                geo = self._default
+            else:
+                raise RxDException('MultipleGeometry is not defined on section %r' % sec)
+        return geo
+
+    def volumes1d(self, sec):
+        return self._get_geo(sec).volumes1d(sec)
+    def surface_areas1d(self, sec):
+        return self._get_geo(sec).surface_areas1d(sec)
+    def neighbor_areas1d(self, sec):
+        return self._get_geo(sec).neighbor_areas1d(sec)
+    def is_volume(self):
+        return self._get_geo(sec).is_volume()
+    def is_area(self):
+        return self._get_geo(sec).is_area()
+    def __call__(self):
+        return self._get_geo(sec).__call__()
