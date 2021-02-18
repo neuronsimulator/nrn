@@ -10,6 +10,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
     MODFILE_DIRECTORY "mod"
     OUTPUT asciispikes::spk2.std # which output data to compare
     SCRIPT_PATTERNS "*.py" "*.hoc")
+
   # Step 2 -- add configurations to the group (e.g. here NEURON without MPI)
   nrn_add_test(
     GROUP external_ringtest
@@ -17,6 +18,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
     REQUIRES mod_compatibility
     COMMAND
       special -python ringtest.py -tstop 100 OUTPUT asciispikes::spk1.std)
+
   if(NRN_ENABLE_MPI) # This could be translated into `REQUIRES mpi` if needed
     # Temporary test: does this workaround #894?
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
@@ -32,6 +34,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100)
+
     nrn_add_test(
       GROUP external_ringtest
       NAME coreneuron_mpi
@@ -39,6 +42,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100 -coreneuron)
+
     nrn_add_test(
       GROUP external_ringtest
       NAME coreneuron_mpi_threads
@@ -47,6 +51,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100 -coreneuron -nt 2)
   endif()
+
   # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
   nrn_add_test_group_comparison(
     GROUP external_ringtest

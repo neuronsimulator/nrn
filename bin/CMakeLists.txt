@@ -35,7 +35,7 @@ include(CMakeListsNrnMech)
 # =============================================================================
 nrn_configure_file(nrngui bin)
 nrn_configure_file(neurondemo bin)
-nrn_configure_file(nrnivmodl bin)
+nrn_configure_dest_src(nrnivmodl bin/tmp nrnivmodl bin)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 
@@ -45,8 +45,8 @@ file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh DESTINATION ${PROJECT_BINARY_D
 # This can be done more elegantly in newer CMake versions; v3.19+ have file(CHMOD ...) and v3.20+
 # support setting permissions directly in configure_file(...).
 file(
-  COPY ${PROJECT_BINARY_DIR}/bin/nrnivmodl
-  DESTINATION ${PROJECT_BINARY_DIR}/bin/tmp
+  COPY ${PROJECT_BINARY_DIR}/bin/tmp/nrnivmodl
+  DESTINATION ${PROJECT_BINARY_DIR}/bin
   FILE_PERMISSIONS
     OWNER_READ
     OWNER_WRITE
@@ -55,7 +55,6 @@ file(
     GROUP_EXECUTE
     WORLD_READ
     WORLD_EXECUTE)
-file(RENAME ${PROJECT_BINARY_DIR}/bin/tmp/nrnivmodl ${PROJECT_BINARY_DIR}/bin/nrnivmodl)
 file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/bin/tmp)
 
 # =============================================================================

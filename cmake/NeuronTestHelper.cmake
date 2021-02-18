@@ -73,6 +73,7 @@ function(nrn_add_test_group)
   if(DEFINED NRN_ADD_TEST_GROUP_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_GROUP_UNPARSED_ARGUMENTS}")
   endif()
+
   # Store the default values for this test group in parent-scope variables based on the group name
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_NAME})
   set(${prefix}_DEFAULT_OUTPUT
@@ -87,12 +88,14 @@ function(nrn_add_test_group)
   set(${prefix}_DEFAULT_MODFILE_DIRECTORY
       "${NRN_ADD_TEST_GROUP_MODFILE_DIRECTORY}"
       PARENT_SCOPE)
+
   # Create a target that depends on all the test binaries to ensure they are actually built.
   # `nrn_add_test(...)` adds dependencies on this target.
   add_custom_target(${prefix} ALL)
 endfunction()
 
 function(nrn_add_test)
+  # Parse the function arguments
   set(oneValueArgs GROUP NAME SUBMODULE MODFILE_DIRECTORY)
   set(multiValueArgs COMMAND OUTPUT SCRIPT_PATTERNS REQUIRES CONFLICTS)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -103,11 +106,13 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_UNPARSED_ARGUMENTS)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_UNPARSED_ARGUMENTS}")
   endif()
+
   if(NOT DEFINED NRN_TEST_ENV)
     # To avoid duplication we take this value from the {nrn}/test/CMakeLists.txt file by assuming
     # this variable name.
     message(WARNING "nrn_add_test: NRN_TEST_ENV was not defined; building test files may not work")
   endif()
+
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
   if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
@@ -146,8 +151,10 @@ function(nrn_add_test)
       return()
     endif()
   endforeach()
+
   # Get the prefix under which we stored information about this test group
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP})
+
   # Get the submodule etc. variables that have global defaults but which can be overriden locally
   set(output_files "${${prefix}_DEFAULT_OUTPUT}")
   set(git_submodule "${${prefix}_DEFAULT_SUBMODULE}")
@@ -166,6 +173,7 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_MODFILE_DIRECTORY)
     set(modfile_directory "${NRN_ADD_TEST_MODFILE_DIRECTORY}")
   endif()
+
   # First, make sure the specified submodule is initialised.
   initialize_submodule(external/${git_submodule})
   # Construct the name of the source tree directory where the submodule has been checked out.
@@ -174,11 +182,14 @@ function(nrn_add_test)
   set(group_working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}")
   # Finally a working directory for this specific test within the group
   set(working_directory "${group_working_directory}/${NRN_ADD_TEST_NAME}")
+
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
   set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} nrnivmodl)
   if(requires_coreneuron)
+    # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
+    # reduce the number of times we call nrnivmodl.
     list(APPEND nrnivmodl_command -coreneuron)
   endif()
   list(APPEND nrnivmodl_command .)
@@ -217,6 +228,8 @@ function(nrn_add_test)
     set(output_binaries "${special}")
     set(nrnivmodl_dependencies nrniv_lib)
     if(requires_coreneuron)
+      # See above; if the condition is changed to NRN_ENABLE_CORENEURON there it should be changed
+      # here too.
       list(APPEND output_binaries "${special}-core")
       list(APPEND nrnivmodl_dependencies coreneuron)
     endif()
@@ -232,6 +245,7 @@ function(nrn_add_test)
     # Make the test-group-level target depend on this new target.
     add_dependencies(${prefix} ${binary_target_name})
   endif()
+
   # Set up the actual test. First, collect the script files that need to be copied into the test-
   # specific working directory and copy them there.
   file(MAKE_DIRECTORY "${working_directory}")
@@ -242,6 +256,7 @@ function(nrn_add_test)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${script_files} "${working_directory}"
       COMMENT "Copying scripts needed to run test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
   endforeach()
+
   # Construct the name of the test and store it in a parent-scope list to be used when setting up
   # the comparison job
   set(test_name "${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
@@ -250,8 +265,14 @@ function(nrn_add_test)
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
-  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODO:
-  # do we need to manipulate PYTHONPATH too to make `python options.py` invocations work?
+  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
+  #
+  # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
+  # * Using CORENEURONLIB here introduces some differences between the tests and the standard way
+  #   that users run nrnivmodl and special. Ideally we would reduce such differences, without
+  #   increasing build time too much (by running nrnivmodl multiple times) or compromising our
+  #   ability to execute the tests in parallel (which precludes blindly running everything in the
+  #   same directory).
   add_test(
     NAME "${test_name}"
     COMMAND
@@ -260,6 +281,7 @@ function(nrn_add_test)
       "CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech.so"
       ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${working_directory}")
+
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
   set(output_file_string "${NRN_ADD_TEST_NAME}")
@@ -272,8 +294,11 @@ function(nrn_add_test)
   # Add the outputs from this test to a parent-scope list that will be read by the
   # nrn_add_test_group_comparison function and used to set up a test job that compares the various
   # test results. The list has the format:
+  # ~~~
   # [testname1::test1type1::test1path1::test1type2::test1path2,
-  # testname2::test2type1::test2path1::test2type2::test2path2, ...]
+  #  testname2::test2type1::test2path1::test2type2::test2path2,
+  #  ...]
+  # ~~~
   set(test_outputs "${${prefix}_TEST_OUTPUTS}")
   list(APPEND test_outputs "${output_file_string}")
   set(${prefix}_TEST_OUTPUTS
@@ -282,6 +307,7 @@ function(nrn_add_test)
 endfunction()
 
 function(nrn_add_test_group_comparison)
+  # Parse function arguments
   set(oneValueArgs GROUP)
   set(multiValueArgs REFERENCE_OUTPUT)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP_COMPARISON "" "${oneValueArgs}" "${multiValueArgs}"
@@ -303,6 +329,7 @@ function(nrn_add_test_group_comparison)
       WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_GROUP_COMPARISON_UNPARSED_ARGUMENTS}"
     )
   endif()
+
   # Get the prefix under which we stored information about this test group
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_COMPARISON_GROUP})
   # Check if there are any tests to compare the results from. It might be that the REQUIRES and
@@ -317,17 +344,23 @@ function(nrn_add_test_group_comparison)
     )
     return()
   endif()
+
   # If REFERENCE_OUTPUT is passed it is a list of entries of the form
   # datatype::path_relative_to_nrn. Different test jobs are in principle allowed to come from
   # different repositories, so we don't insert the repository name automagically. Construct the
   # working directory for the comparison job.
   set(test_directory "${PROJECT_BINARY_DIR}/test")
-  # Get the list of reference files and copy them into the build directory Starting from
-  # type1::path1;type2::path2 assemble
-  # reference_file::type1::{test_directory}/path1::type2::{test_directory}/path2 i.e. making sure
-  # the expression passed to the comparison script refers to the copies of the reference files in
-  # the build directory, and that there is a title string (reference_file) for the comparison script
-  # to use in its reports.
+  # Get the list of reference files and copy them into the build directory. Starting from
+  # ~~~
+  #   type1::path1;type2::path2
+  # ~~~
+  # assemble
+  # ~~~
+  #   reference_file::type1::{test_directory}/path1::type2::{test_directory}/path2
+  # ~~~
+  # i.e. make sure the expression passed to the comparison script refers to the copies of the
+  # reference files in the build directory, and that there is a title string ("reference_file") for
+  # the comparison script to use in its reports.
   set(reference_file_string "reference_file")
   foreach(reference_expression ${NRN_ADD_TEST_GROUP_COMPARISON_REFERENCE_OUTPUT})
     # reference_expression is datatype::reference_path, extract `reference_path`
@@ -342,12 +375,14 @@ function(nrn_add_test_group_comparison)
               "${test_directory}/${reference_path}"
       COMMENT "Copying reference file for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
   endforeach()
+
   # Copy the comparison script
   add_custom_command(
     TARGET ${prefix} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" "${test_directory}"
     COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
+
   # Add a test job that compares the results of the previous test jobs
   add_test(
     NAME "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
@@ -355,7 +390,10 @@ function(nrn_add_test_group_comparison)
       ${CMAKE_COMMAND} -E env PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}
       "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS} ${reference_file_string}
     WORKING_DIRECTORY "${test_directory}/${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
-  # Make sure the comparison job declares that it depends on the previous jobs
+
+  # Make sure the comparison job declares that it depends on the previous jobs. The comparison job
+  # will always run, but the dependencies ensure that it will be sequenced correctly, i.e. it runs
+  # after the jobs it is comparing.
   set_tests_properties("${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
                        PROPERTIES DEPENDS "${${prefix}_TESTS}")
 endfunction()
