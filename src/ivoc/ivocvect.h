@@ -29,7 +29,7 @@ public:
 	void label(const char*);
 
     inline double& elem(int n) {
-        return vec_.data()[n];
+        return vec_.at(n);
     }
 
     inline std::vector<double>& vec() {
@@ -59,7 +59,7 @@ public:
     }
 
     inline double& operator[] (size_t index) {
-        return vec_[index];
+        return vec_.at(index);
     }
 
     inline auto begin() -> std::vector<double>::iterator {

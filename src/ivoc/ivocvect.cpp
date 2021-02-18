@@ -276,7 +276,7 @@ Object** vector_pobj(Vect* v){return &v->obj_;}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
 void vector_append(Vect* v, double x){
-  v->vec().push_back(x);
+  v->push_back(x);
 }
 
 #ifdef WIN32
