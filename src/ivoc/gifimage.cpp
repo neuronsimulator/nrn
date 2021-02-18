@@ -150,8 +150,8 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 {
   /* returns '1' if successful */
 
-  register byte  ch, ch1, *origptr;
-  register int   i, block;
+  byte  ch, ch1, *origptr;
+  int   i, block;
   int            aspect, gotimage;
   float normaspect;
 
@@ -484,7 +484,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 /********************************************/
 static int readImage(PICINFO* pinfo)
 {
-  register byte ch, ch1, *ptr1, *picptr;
+  byte ch, ch1, *ptr1, *picptr;
   int           i, npixels, maxpixels;
 
   npixels = maxpixels = 0;

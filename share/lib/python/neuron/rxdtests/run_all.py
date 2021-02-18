@@ -108,6 +108,7 @@ if __name__ == '__main__':
     import sys
     import shutil
     import subprocess
+    import platform
     
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
@@ -131,9 +132,8 @@ if __name__ == '__main__':
             # compile any mod files
             os.chdir(os.path.join('tests', dr))
             # remove old compiled files
-            #TODO: is x86_64 universal
             try:
-                shutil.rmtree('x86_64')
+                shutil.rmtree(platform.machine())
             except OSError:
                 pass
             os.system('nrnivmodl')

@@ -236,8 +236,8 @@ static void eqn_side(int lhs) {
 
 static void eqn_space(void) {	/* reallocate space for matrix */
 #if !OCSMALL
-	register int i;
-	register struct elm *el;
+	int i;
+	struct elm *el;
 
 	if (maxeqn > 0 && rowst == (Elm *)0)
 		diag("matrix coefficients cannot be released");
@@ -290,7 +290,7 @@ void solve(void)
 	/* Sum is a measure of the dependent variable accuracy
 	   and how well the equations are solved */
 
-	register int i;
+	int i;
 	double sum;
 	struct elm	*el;
 
