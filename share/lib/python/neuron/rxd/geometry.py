@@ -434,7 +434,8 @@ class MultipleGeometry(RxDGeometry):
         If None is in the list, then the corresponding geometry in geos is used
         as a default value for any section not included in the lists.
     geometries (list) a list of geometries that are used for the corresponding
-        list of sections in secs.
+        list of sections in secs. All geometries must be volumes or all
+        all geometries must be areas.
 
     """
     def __init__(self, secs=None, geos=None):
@@ -446,9 +447,17 @@ class MultipleGeometry(RxDGeometry):
             elif isinstance(geos,RxDGeometry):
                 self._default = geos
             else:
-                raise("MultipleGeometry requires a list-of-lists of sections and their corresponding geometry")
+                raise RxDException("MultipleGeometry requires a list-of-lists of sections and their corresponding geometry")
         else:
             assert(len(secs) == len(geos))
+            if all([g.is_area() for g in geos]):
+                self.is_area = _always_true
+                self.is_volume = _always_false
+            elif all([g.is_volume() for g in geos]):
+                self.is_area = _always_false
+                self.is_volume = _always_true
+            else:
+                raise RxDException("MultipleGeometry requires all geometries are areas or all geometries are volumes")
             for s, g in zip(secs,geos):
                 if not s:
                     self._default = g
@@ -481,9 +490,3 @@ class MultipleGeometry(RxDGeometry):
         return self._get_geo(sec).surface_areas1d(sec)
     def neighbor_areas1d(self, sec):
         return self._get_geo(sec).neighbor_areas1d(sec)
-    def is_volume(self):
-        return self._get_geo(sec).is_volume()
-    def is_area(self):
-        return self._get_geo(sec).is_area()
-    def __call__(self):
-        return self._get_geo(sec).__call__()
