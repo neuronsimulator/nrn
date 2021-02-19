@@ -11,9 +11,7 @@ Positional arguments are of the form testname::type1::path1[::type2::path2]...
 """
 import collections
 import itertools
-import subprocess
 import sys
-from pprint import pprint
 
 
 def parse_arguments(argv):

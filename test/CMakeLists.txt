@@ -234,9 +234,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/test/mod)
         list(APPEND TESTS coreneuron_spikes_mpi_py)
       endif()
-      # Using -pyexe was a first workaround for #894, but it seems that we also need to avoid using
-      # the full path to mpiexec (see other discussion in #894). Replacing ${MPIEXEC} with
-      # ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} achieves this.
+      # Using -pyexe was a first workaround for GitHub issue #894, but it seems that we also need to
+      # avoid using the full path to mpiexec (see other discussion in #894). Replacing ${MPIEXEC}
+      # with ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} achieves this.
       get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
       add_test(
         NAME coreneuron_spikes_mpi_file_mode_py
