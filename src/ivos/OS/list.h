@@ -233,7 +233,7 @@ void List::insert(long index, const T& item) { \
         long size = ListImpl_best_new_count(size_ + 1, sizeof(T), 2); \
         T* items = new T[size]; \
         if (items_ != 0) { \
-            register long i; \
+            long i; \
             for (i = 0; i < free_; ++i) { \
                 items[i] = items_[i]; \
             } \
@@ -248,11 +248,11 @@ void List::insert(long index, const T& item) { \
     } \
     if (index >= 0 && index <= count_) { \
 	if (index < free_) { \
-            for (register long i = free_ - index - 1; i >= 0; --i) { \
+            for (long i = free_ - index - 1; i >= 0; --i) { \
                 items_[index + size_ - count_ + i] = items_[index + i]; \
             } \
         } else if (index > free_) { \
-            for (register long i = 0; i < index - free_; ++i) { \
+            for (long i = 0; i < index - free_; ++i) { \
                 items_[free_ + i] = items_[free_ + size_ - count_ + i]; \
             } \
         } \
@@ -265,12 +265,12 @@ void List::insert(long index, const T& item) { \
 void List::remove(long index) { \
     if (index >= 0 && index <= count_) { \
         if (index < free_) { \
-            for (register long i = free_ - index - 2; i >= 0; --i) { \
+            for (long i = free_ - index - 2; i >= 0; --i) { \
                 items_[size_ - count_ + index + 1 + i] = \
 		    items_[index + 1 + i]; \
             } \
         } else if (index > free_) { \
-            for (register long i = 0; i < index - free_; ++i) { \
+            for (long i = 0; i < index - free_; ++i) { \
                 items_[free_ + i] = items_[free_ + size_ - count_ + i]; \
             } \
         } \

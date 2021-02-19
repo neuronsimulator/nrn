@@ -133,7 +133,9 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
 }
 
 #define all2allv_perf 1
-extern "C" {extern unsigned long long nrn_mallinfo(int);}
+extern "C" {
+    extern unsigned long long nrn_mallinfo(int);
+} // extern "C"
 //input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, const char* dmes) {
 #if all2allv_perf

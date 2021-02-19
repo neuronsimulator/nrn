@@ -5,7 +5,7 @@ lib_LTLIBRARIES = libnrniv.la
 bin_PROGRAMS = nrniv
 nsrc=$(top_srcdir)/src
 
-PARSRC = nvector_nrnparallel_ld.c
+PARSRC = nvector_nrnparallel_ld.cpp
 PARINC = nvector_nrnparallel_ld.h
 
 if BUILD_PARANEURON
@@ -70,7 +70,7 @@ cygexe =
 endif
 endif
 
-## These are all the .c files that need to be compiled to make libnrniv.la.
+## These are all the .cpp files that need to be compiled to make libnrniv.la.
 
 libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	datapath.cpp symdir.cpp spaceplt.cpp shapeplt.cpp ppshape.cpp \
@@ -82,9 +82,9 @@ libnrniv_la_SOURCES = nrnmenu.cpp shape.cpp classreg.cpp rotate3d.cpp \
 	bbsrcli.cpp bbsdirect.cpp bbslsrv2.cpp bbssrv.cpp \
 	linmod.cpp linmod1.cpp cachevec.cpp \
 	kschan.cpp kssingle.cpp nonlinz.cpp finithnd.cpp nrnste.cpp \
-	nrnrtime.cpp nvector_nrnthread.c nrnpy.cpp prcellstate.cpp \
-	nvector_nrnthread_ld.c nvector_nrnserial_ld.c \
-	$(PARSRC1) bgpmeminfo.c \
+	nrnrtime.cpp nvector_nrnthread.cpp nrnpy.cpp prcellstate.cpp \
+	nvector_nrnthread_ld.cpp nvector_nrnserial_ld.cpp \
+	$(PARSRC1) bgpmeminfo.cpp \
 	netpar.cpp partrans.cpp splitcell.cpp multisplit.cpp \
 	bbsavestate.cpp nrncore_write.cpp pysecname2sec.cpp \
 	nrndae.cpp matrixmap.cpp geometry3d.cpp \
@@ -163,7 +163,7 @@ noinst_HEADERS = ndatclas.h nrnclass.h nrnmenu.h nrnoc2iv.h ppshape.h \
 	kschan.h kssingle.h nonlinz.h nrnhash.h \
 	nvector_nrnthread_ld.h nvector_nrnserial_ld.h \
 	$(PARINC1) \
-	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.c \
+	bgpdma.cpp bgpdmasetup.cpp bgpmeminfo.cpp \
 	multisplitcontrol.h nvector_nrnthread.h \
 	bbsavestate.h nrncore_write.h nrnsection_mapping.h\
 	nrnmusic.cpp nrndae.h matrixmap.h \

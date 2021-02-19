@@ -37,17 +37,17 @@
 declareActionCallback(PrintableWindow);
 implementActionCallback(PrintableWindow);
 
-extern "C" { extern void single_event_run();}
+extern void single_event_run();
 
 extern void handle_old_focus();
 
 #ifdef WIN32
 #include <windows.h>
-extern "C" { extern int iv_mere_dismiss;}
+extern int iv_mere_dismiss;
 #endif
 
 #if MAC
-extern "C" { extern void ivoc_dismiss_defer();}
+extern void ivoc_dismiss_defer();
 #endif
 
 // just because avoiding virtual resource
@@ -234,14 +234,11 @@ const char* DismissableWindow::name() const {
 //printf("DismissableWindow::name %s\n", v.string());
 	return v.string();
 }
-
 #if defined(MINGW)
-extern "C" {
 static const char* s_;
 static void setwindowtext(void* v) {
   HWND hw = (HWND)v;
   SetWindowText(hw, s_);
-}
 }
 #endif
 
@@ -262,7 +259,7 @@ void DismissableWindow::name(const char* s) {
 #endif
 #if MAC
 	Str255 st;
-	strncpy((char*)&st[1], s, 254);
+	strncpy(&st[1], s, 254);
 	st[0] = strlen(s);
 	WindowPtr theWin = Window::rep()->macWindow();
 	if (theWin) {

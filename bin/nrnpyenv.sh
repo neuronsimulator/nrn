@@ -187,7 +187,7 @@ if test "$kernel_name" = "Darwin" ; then
     nrnpylib_provenance="sysconfig LIBDIR"
   fi
   if test "$nrn_pylib" = "" ; then
-    nrn_pylib=$($p -c '
+    nrn_pylib=$($python_path -c '
 try:
   from neuron import h
   shlib=h.libpython_path()
@@ -282,13 +282,25 @@ def nrnpylib_darwin_helper():
         nrnpylib_provenance = "lsof search for libpython..."
         return nrn_pylib
       if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
-        cnt += 1  
+        cnt += 1
         if cnt == 1: # skip 1st since it is the python executable
           continue
         if re.search(r'[Pp]ython', line.split('/')[-1]):
           print ("# nrn_pylib from lsof: %s" % line)
-          nrn_pylib = line.strip()
-          nrnpylib_provenance = 'lsof search for second occurrence of [Ll][Ii][Bb].*[Pp]ython'
+          candidate = line.strip()
+          # verify the file defines a PyRun_SimpleString
+          cmd = r'nm %s | grep PyRun_SimpleString' % candidate
+          try:
+            f = os.popen(cmd)
+            i=0
+            for line in f:
+              i += 1
+            if i == 0:
+              continue
+          except:
+            continue
+          nrn_pylib = candidate
+          nrnpylib_provenance = 'lsof search for occurrence of [Ll][Ii][Bb].*[Pp]ython defineing PyRun_SimpleString'
           return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])

@@ -3,9 +3,8 @@
 #include <vector>
 using std::vector;
 
-extern "C" {
-	#include "spmatrix.h"
-}
+#include "spmatrix.h"
+extern spREAL *spGetElement(char*, int ,int);
 
 MatrixMap::MatrixMap(Matrix& mat)
 	: m_(mat), plen_(0), ptree_(NULL),	pm_(NULL) {

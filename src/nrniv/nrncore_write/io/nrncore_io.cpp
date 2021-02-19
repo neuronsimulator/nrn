@@ -15,13 +15,11 @@
 #include <sstream>
 #include "nrnsection_mapping.h"
 
-extern "C" {
 extern short* nrn_is_artificial_;
 extern int* bbcore_dparam_size;
 extern bbcore_write_t* nrn_bbcore_write_;
 extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
-}
 
 int chkpnt;
 const char *bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable

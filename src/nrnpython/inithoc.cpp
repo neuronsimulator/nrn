@@ -16,7 +16,12 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-extern "C" {
+
+extern int nrn_is_python_extension;
+extern int nrn_nobanner_;
+extern int ivocmain(int, const char**, const char**);
+extern int nrn_main_launch;
+
 
 // int nrn_global_argc;
 extern char** nrn_global_argv;
@@ -44,10 +49,6 @@ extern int nrnpy_site_problem;
 #define HOCMOD(a, b) a
 #endif
 
-extern int nrn_is_python_extension;
-extern int nrn_nobanner_;
-extern int ivocmain(int, char**, char**);
-extern int nrn_main_launch;
 
 #ifdef NRNMPI
 
@@ -64,7 +65,7 @@ static int argc_nompi = 1;
 static pthread_t main_thread_;
 #endif
 
-static void nrnpython_finalize() {
+void nrnpython_finalize() {
 #if USE_PTHREAD
   pthread_t now = pthread_self();
   if (pthread_equal(main_thread_, now)) {
@@ -93,17 +94,17 @@ static char* env[] = {0};
 // It is conceivable that this strategy will work for linux and mac as well,
 // but for now setup.py names them differently anyway.
 #if PY_MAJOR_VERSION >= 3
-PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
 #else //!PY_MAJOR_VERSION >= 3
-void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #else // ! defined __MINGW32__
 
 #if PY_MAJOR_VERSION >= 3
-PyObject* PyInit_hoc() {
+extern "C" PyObject* PyInit_hoc() {
 #else //!PY_MAJOR_VERSION >= 3
-void inithoc() {
+extern "C" void inithoc() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #endif // ! defined __MINGW32__
@@ -256,7 +257,7 @@ void inithoc() {
   }
 
   nrn_main_launch = 2;
-  ivocmain(argc, argv, env);
+  ivocmain(argc, (const char**)argv, (const char**)env);
 //	nrnpy_augment_path();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem = 0;
@@ -269,6 +270,5 @@ void inithoc() {
 }
 
 #if !defined(CYGWIN)
-void modl_reg() {}
+extern "C" void modl_reg() {}
 #endif // !defined(CYGWIN)
-}

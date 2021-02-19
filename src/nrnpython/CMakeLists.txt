@@ -88,7 +88,7 @@ else()
 endif()
 
 # rxdmath libraries (always build)
-add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
+add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
@@ -152,7 +152,7 @@ endif()
 # Install package files that were created in build (e.g. .py.in)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
         DESTINATION ${NRN_LIBDIR}
-        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib)
+        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib PATTERN *.dat)
 
 
 # =============================================================================
@@ -225,9 +225,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
             ${PROJECT_BINARY_DIR}/share/nrn/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
-    
-  file(COPY ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-        DESTINATION ${PROJECT_BINARY_DIR}/lib/python/neuron/)
 
   # =============================================================================
   # Build python module
@@ -238,6 +235,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
       TARGET hoc_module POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
       COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")

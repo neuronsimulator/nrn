@@ -4,13 +4,11 @@
 
 #include "nrnmpi.h"
 
-extern "C" {
-void cvode_fadvance();
+extern "C" void cvode_fadvance();
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
-}
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #include <math.h>
 #include <stdlib.h>
@@ -49,7 +47,6 @@ static MUTDEC
 #include "ida/ida.h"
 #include "nonvintblock.h"
 
-extern "C" {
 extern double dt, t;
 #define nt_dt nrn_threads->_dt
 #define nt_t nrn_threads->_t
@@ -60,25 +57,26 @@ extern int nrn_modeltype();
 extern int nrn_use_selfqueue_;
 extern int use_cachevec;
 extern void nrn_cachevec(int);
-extern Point_process* ob2pntproc(Object*);
+extern "C" Point_process* ob2pntproc(Object*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
 extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern short* nrn_is_artificial_;
-extern int structure_change_cnt;
-extern int diam_change_cnt;
+extern "C" int structure_change_cnt;
+extern "C" int diam_change_cnt;
 #if USENCS
 extern void nrn2ncs_netcons();
 #endif //USENCS
 #if PARANEURON
+extern "C" {
 extern N_Vector N_VNew_Parallel(int comm, long int local_length,
 	long int global_length);
 extern N_Vector N_VNew_NrnParallelLD(int comm,
 	long int local_length, long int global_length);
+} // extern "C"
 #endif
-}
 
 extern bool nrn_use_fifo_queue_;
 #if BBTQ == 5
@@ -147,9 +145,7 @@ static double queue_mode(void* v) {
 	return 0.;
 }
 
-extern "C" {
 void nrn_extra_scatter_gather(int direction, int tid);
-}
 
 static double re_init(void* v) {
 	if (cvode_active_) {
@@ -175,10 +171,8 @@ static double nrn_atol(void* v) {
 	}
 	return d->atol();
 }
-extern "C" {
-	extern Symbol* hoc_get_last_pointer_symbol();
-	extern void hoc_symbol_tolerance(Symbol*, double);
-}
+extern Symbol* hoc_get_last_pointer_symbol();
+extern void hoc_symbol_tolerance(Symbol*, double);
 
 static double abstol(void* v) {
 	NetCvode* d = (NetCvode*)v;
@@ -524,10 +518,8 @@ static double nrn_diam_change_count(void* v) {
 	return double(diam_change_cnt);
 }
 
-extern "C" {
 int (*nrnpy_pysame)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
-}
 
 declarePtrList(ExtraScatterList, Object)
 implementPtrList(ExtraScatterList, Object)
@@ -1021,7 +1013,7 @@ void Cvode::minstep(double x) {
 			CVodeSetMinStep(mem_, x);
 		}else{
 			// CVodeSetMinStep requires x > 0 but
-			// HMIN_DEFAULT is ZERO in cvodes.c
+			// HMIN_DEFAULT is ZERO in cvodes.cpp
 			((CVodeMem)mem_)->cv_hmin = 0.;
 		}
 	}
@@ -1234,7 +1226,7 @@ int Cvode::interpolate(double tout) {
 //if (initialize_) {
 //printf("Cvode_%p::interpolate assert error when initialize_ is true.\n t_=%g tout=%g tout-t_ = %g\n", this, t_, tout, tout-t_);
 //}
-	assert(initialize_ == false); // or state discontinuity can be lost
+assert(initialize_ == false); // or state discontinuity can be lost
 //printf("interpolate t_=%g tout=%g delta t_-tout=%g\n", t_, tout, t_-tout);
 #if 1
 if (tout < t0_) {

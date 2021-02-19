@@ -172,9 +172,19 @@ endif()
 # =============================================================================
 find_package(Sphinx QUIET)
 if(SPHINX_FOUND)
+  # Target to execute && convert notebooks to html.
+  # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
-          prepare_docs
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/.prepare_docs.sh
+          notebooks
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+  )
+
+  # Executing notebooks can take a fair amount of time. Use this target
+  # if you want to skip the execution.
+  add_custom_target(
+          notebooks-noexec
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
@@ -200,7 +210,7 @@ if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
           docs
           COMMAND make doxygen
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make prepare_docs
+          COMMAND make notebooks
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMAND make sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -221,6 +231,10 @@ if(NRN_ENABLE_MPI)
   find_package(MPI REQUIRED)
   set(NRNMPI 1)
   set(PARANEURON 1)
+  # avoid linking to C++ bindings
+  add_definitions("-DMPI_NO_CPPBIND=1")
+  add_definitions("-DOMPI_SKIP_MPICXX=1")
+  add_definitions("-DMPICH_SKIP_MPICXX=1")
 else()
   set(NRNMPI 0)
   set(PARANEURON 0)
@@ -310,6 +324,8 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    # If NEURON tests are enabled then enable CoreNEURON tests too
+    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
@@ -370,7 +386,7 @@ if(READLINE_FOUND)
   # this part has to be prior to adding the nrniv subdirectory.
   execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
   if(NOT result EQUAL 0)
-    # define for src/oc/hoc.c
+    # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
   find_package(Curses QUIET)
@@ -439,6 +455,23 @@ add_custom_target(
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
 add_dependencies(nrniv_lib hh_update)
+
+# =============================================================================
+# Generate help_data.dat
+# =============================================================================
+if(NRN_ENABLE_PYTHON)
+  add_custom_target(
+      help_data_dat
+      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+              ${PROJECT_SOURCE_DIR}/docs/python
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMENT "Generating help_data.dat"
+      VERBATIM)
+  add_dependencies(nrniv_lib help_data_dat)
+endif()
 
 # =============================================================================
 # Add tests if enabled
@@ -528,7 +561,7 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "make install  | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "              | Change the install location of NEURON using:")
   message(STATUS "              |     cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, prepare_docs, sphinx")
+  message(STATUS "make docs     | Build full docs. Calls targets: doxygen, notebooks, sphinx")
   message(STATUS "make uninstall| Removes files installed by make install (todo)")
   message(STATUS "--------------+--------------------------------------------------------------")
   message(STATUS " Build option | Status")

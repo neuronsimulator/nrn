@@ -11,8 +11,6 @@
 #include "vrecitem.h"
 #include "membfunc.h"
 #include "nonvintblock.h"
-typedef int (*Pfridot)(...);
-extern "C" {
 extern void setup_topology(), v_setup_vectors();
 extern void nrn_mul_capacity(NrnThread*, Memb_list*);
 extern void nrn_div_capacity(NrnThread*, Memb_list*);
@@ -47,7 +45,6 @@ extern void nrn_multisplit_adjust_rhs(NrnThread*);
 #if PARANEURON
 extern void (*nrn_multisplit_solve_)();
 #endif
-};
 
 static Symbol* vsym; // for absolute tolerance
 #define SETUP 1
@@ -58,7 +55,7 @@ J=df/dy.
 
 The NEURON fixed step method sets up C*dv/dt = F(v)
 by first calculating F(v) and storing it on the right hand side of
-the matrix equation ( see src/nrnoc/treeset.c nrn_rhs() ).
+the matrix equation ( see src/nrnoc/treeset.cpp nrn_rhs() ).
 It then sets up the left hand side of the matrix equation using
 nrn_set_cj(1./dt); setup1_tree_matrix(); setup2_tree_matrix();
 to form
@@ -150,7 +147,7 @@ void Cvode::init_eqn(){
 	z.neq_v_ = z.nonvint_offset_ = zneq;
 	// now add the membrane mechanism ode's to the count
 	for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-		Pfridot s = (Pfridot)memb_func[cml->index].ode_count;
+		nrn_ode_count_t s = memb_func[cml->index].ode_count;
 		if (s) {
 			zneq += cml->ml->nodecount * (*s)(cml->index);
 		}
@@ -250,19 +247,18 @@ printf("%d Cvode::init_eqn id=%d neq_v_=%d #nonvint=%d #nonvint_extra=%d nvsize=
 		int n;
 		ml = cml->ml;
 		mf = memb_func + cml->index;
-		Pfridot sc = (Pfridot)mf->ode_count;
+		nrn_ode_count_t sc = mf->ode_count;
 		if (sc && ( (n = (*sc)(cml->index)) > 0)) {
-			Pfridot s = (Pfridot)mf->ode_map;
-			if (mf->hoc_mech) {
-				for (j=0; j < ml->nodecount; ++j) {
-(*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->prop[j], atv + ieq);
-					ieq += n;
-				}
-			}else{
-				for (j=0; j < ml->nodecount; ++j) {
+			// Note: if mf->hoc_mech then all cvode related
+			// callbacks are NULL (including ode_count)
+			// See src/nrniv/hocmech.cpp. That won't change but
+			// if it does, hocmech.cpp must follow all the
+			// nrn_ode_..._t prototypes to avoid segfault
+			// with Apple M1.
+			nrn_ode_map_t s = mf->ode_map;
+			for (j=0; j < ml->nodecount; ++j) {
 (*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->data[j], ml->pdata[j], atv + ieq, cml->index);
-					ieq += n;
-				}
+				ieq += n;
 			}
 		}
 	}
@@ -359,7 +355,7 @@ void Cvode::daspk_init_eqn(){
 	z.neq_v_ = z.nonvint_offset_ = zneq;
 	// now add the membrane mechanism ode's to the count
 	for (cml = z.cv_memb_list_; cml; cml = cml->next) {
-		Pfridot s = (Pfridot)memb_func[cml->index].ode_count;
+		nrn_ode_count_t s = memb_func[cml->index].ode_count;
 		if (s) {
 			zneq += cml->ml->nodecount * (*s)(cml->index);
 		}
@@ -422,20 +418,13 @@ void Cvode::daspk_init_eqn(){
 	for (cml = z.cv_memb_list_; cml; cml = cml->next) {
 		int n;
 		mf = memb_func + cml->index;
-		Pfridot sc = (Pfridot)mf->ode_count;
+		nrn_ode_count_t sc = mf->ode_count;
 		if (sc && ( (n = (*sc)(cml->index)) > 0)) {
 			Memb_list* ml = cml->ml;
-			Pfridot s = (Pfridot)mf->ode_map;
-			if (mf->hoc_mech) {
-				for (j=0; j < ml->nodecount; ++j) {
-(*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->prop[j], atv + ieq);
-					ieq += n;
-				}
-			}else{
-				for (j=0; j < ml->nodecount; ++j) {
+			nrn_ode_map_t s = mf->ode_map;
+			for (j=0; j < ml->nodecount; ++j) {
 (*s)(ieq, z.pv_ + ieq, z.pvdot_ + ieq, ml->data[j], ml->pdata[j], atv + ieq, cml->index);
-					ieq += n;
-				}
+				ieq += n;
 			}
 		}
 	}
@@ -451,9 +440,7 @@ double* Cvode::n_vector_data(N_Vector v, int tid) {
 	return N_VGetArrayPointer(v);
 }
 
-extern "C" {
 extern void nrn_extra_scatter_gather(int, int);
-}
 
 void Cvode::scatter_y(double* y, int tid){
 	int i;
@@ -466,7 +453,7 @@ void Cvode::scatter_y(double* y, int tid){
 	for (cml = z.cv_memb_list_; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
 		if (mf->ode_synonym) {
-			Pfridot s = (Pfridot)mf->ode_synonym;
+			nrn_ode_synonym_t s = mf->ode_synonym;
 			Memb_list* ml = cml->ml;
 			(*s)(ml->nodecount, ml->data, ml->pdata);
 		}
@@ -633,17 +620,8 @@ void Cvode::solvemem(NrnThread* nt) {
 		Memb_func* mf = memb_func + cml->index;
 		if (mf->ode_matsol) {
 			Memb_list* ml = cml->ml;
-			Pfridot s = (Pfridot)mf->ode_matsol;
-			if (mf->hoc_mech) {
-				int j, count;
-				count = ml->nodecount;
-				for (j = 0; j < count; ++j) {
-					Node* nd = ml->nodelist[j];
-					(*s)(nd, ml->prop[j]);
-				}
-			}else{
-				(*s)(nt, ml, cml->index);
-			}
+			Pvmi s = mf->ode_matsol;
+			(*s)(nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during ode jacobian solve", (char*)0);
@@ -690,7 +668,7 @@ void Cvode::fun_thread_transfer_part2(double* ydot, NrnThread* nt){
 	}
 #endif
 	before_after(z.before_breakpoint_, nt);
-	rhs(nt); // similar to nrn_rhs in treeset.c
+	rhs(nt); // similar to nrn_rhs in treeset.cpp
 #if PARANEURON
 	if (nrn_multisplit_solve_) { // non-zero area nodes need an adjustment
 		nrn_multisplit_adjust_rhs(nt);
@@ -749,7 +727,7 @@ void Cvode::fun_thread_ms_part4(double* ydot, NrnThread* nt) {
 	CvodeThreadData& z = ctd_[nt->id];
 	if (z.nvsize_ == 0) { return; }
 	before_after(z.before_breakpoint_, nt);
-	rhs(nt); // similar to nrn_rhs in treeset.c
+	rhs(nt); // similar to nrn_rhs in treeset.cpp
 	nrn_multisplit_adjust_rhs(nt);
 	do_ode(nt);
 	// divide by cm and compute capacity current
@@ -763,7 +741,7 @@ void Cvode::before_after(BAMechList* baml, NrnThread* nt) {
 	BAMechList* ba;
 	int i, j;
 	for (ba = baml; ba; ba = ba->next) {
-		Pfridot f = (Pfridot)ba->bam->f;
+		nrn_bamech_t f = ba->bam->f;
 		Memb_list* ml = ba->ml;
 		for (i=0; i < ml->nodecount; ++i) {
 	(*f)(ml->nodelist[i], ml->data[i], ml->pdata[i], ml->_thread, nt);
@@ -890,18 +868,9 @@ void Cvode::do_ode(NrnThread* _nt){
 	for (cml = z.cv_memb_list_; cml; cml = cml->next) { // probably can start at 6 or hh
 		mf = memb_func + cml->index;
 		if (mf->ode_spec) {
-			Pfridot s = (Pfridot)mf->ode_spec;
+			Pvmi s = mf->ode_spec;
 			Memb_list* ml = cml->ml;
-			if (mf->hoc_mech) {
-				int j, count;
-				count = ml->nodecount;
-				for (j = 0; j < count; ++j) {
-					Node* nd = ml->nodelist[j];
-					(*s)(nd, ml->prop[j]);
-				}
-			}else{
-				(*s)(_nt, ml, cml->index);
-			}
+			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
 hoc_warning("errno set during ode evaluation", (char*)0);
@@ -918,7 +887,7 @@ static void* nonode_thread(NrnThread* nt) {
 	return 0;
 }
 void Cvode::do_nonode(NrnThread* _nt) { // all the hacked integrators, etc, in SOLVE procedure
-//almost a verbatim copy of nonvint in fadvance.c
+//almost a verbatim copy of nonvint in fadvance.cpp
 	if (!_nt) {
 		if (nrn_nthread > 1) {
 			nonode_cv = this;
@@ -934,7 +903,7 @@ void Cvode::do_nonode(NrnThread* _nt) { // all the hacked integrators, etc, in S
 	 if (mf->state) {
 	  Memb_list* ml = cml->ml;
 	  if (!mf->ode_spec){
-		Pfridot s = (Pfridot)mf->state;
+		Pvmi s = mf->state;
 		(*s)(_nt, ml, cml->index);
 #if 0
 		if (errno) {
@@ -944,7 +913,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
 		}
 #endif
 	  }else if (mf->singchan_) {
-		Pfridot s = (Pfridot)mf->singchan_;
+		Pvmi s = mf->singchan_;
 		(*s)(_nt, ml, cml->index);
 	  }
 	 }

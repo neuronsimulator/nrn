@@ -102,7 +102,7 @@ int nxtchar = -1;	/* character held from type ahead    */
 struct  sgttyb  ostate;          /* saved tty state */
 struct  sgttyb  nstate;          /* values for editor mode */
 struct tchars	otchars;	/* Saved terminal special character set */
-struct tchars	ntchars = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+struct tchars	ntchars = { (char)0xff, (char)0xff, (char)0xff, (char)0xff, (char)0xff, (char)0xff };
 				/* A lot of nothing */
 #ifndef HAVE_STTY
 /* os x 4 and gcc 4.0.0 do define this */

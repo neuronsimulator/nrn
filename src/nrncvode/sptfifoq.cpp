@@ -302,7 +302,7 @@ TQItem* FifoQ::next(TQItem* q) {
 	return q->right_;
 }
 
-#include <spaux.c>
-#include <sptree.c>
-#include <spdaveb.c>
+#include <spaux.cpp>
+#include <sptree.cpp>
+#include <spdaveb.cpp>
 

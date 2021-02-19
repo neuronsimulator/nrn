@@ -4,7 +4,7 @@
 #include <ivstream.h>
 #include "epsprint.h"
 
-// ps_prolog copied from InterViews's printer.c
+// ps_prolog copied from InterViews's printer.cpp
 static const char* ps_prolog= "\
 save 20 dict begin\n\
 \n\

@@ -363,7 +363,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 //void free_Grid(Grid_node *grid);
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
-extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);

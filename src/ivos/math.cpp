@@ -36,7 +36,7 @@
 extern "C" {
     extern int abs(int);
     extern double fabs(double);
-}
+} // extern "C"
 #define myfabs ::fabs
 #endif
 

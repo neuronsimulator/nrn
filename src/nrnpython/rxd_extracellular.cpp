@@ -4,8 +4,6 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <matrix2.h>
-#include <pthread.h>
 #include <nrnwrap_Python.h>
 #include <cmath>
 
@@ -667,7 +665,7 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
-void scatter_concentrations(void) {
+extern "C" void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
 

@@ -4,7 +4,7 @@ void BBSImpl::subworld_worker_execute() {
 	// execute the same thing that execute_worker is executing. This
 	// is done for all the nrnmpi_myid_bbs == -1 workers associated with
 	// the specific nrnmpi_myid == 0 with nrnmpi_myid_bbs >= 0.
-	// All the nrnmpi/mpispike.c functions can be used since the
+	// All the nrnmpi/mpispike.cpp functions can be used since the
 	// proper communicators for a subworld are used by those functions.
 	// The broadcast functions are particularly useful and those are
 	// how execute_worker passes messages into here.

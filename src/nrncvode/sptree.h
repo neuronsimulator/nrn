@@ -75,7 +75,7 @@ typedef struct SPTREE
 #define spfprev sptq_spfprev
 #define spstats sptq_spstats
 
-/* sptree.c */
+/* sptree.cpp */
 extern void spinit(SPTREE*);		/* init tree */
 extern int spempty(SPTREE*);		/* is tree empty? */
 extern SPBLK * spenq(SPBLK*, SPTREE*);	/* insert item into the tree */
@@ -83,7 +83,7 @@ extern SPBLK * spdeq(SPBLK**);		/* return and remove lowest item in subtree */
 extern SPBLK * spenqprior(SPBLK*, SPTREE*);/* insert before items with same key */
 extern void splay(SPBLK*, SPTREE*);	/* reorganize tree */
 
-/* spaux.c */
+/* spaux.cpp */
 extern SPBLK * sphead(SPTREE*);		/* return first node in tree */
 extern void spdelete(SPBLK*, SPTREE*);	/* delete node from tree */
 extern SPBLK * spnext(SPBLK*, SPTREE*);	/* return next node in tree */
@@ -91,7 +91,7 @@ extern SPBLK * spprev(SPBLK*, SPTREE*);	/* return previous node in tree */
 extern SPBLK * spenqbefore(SPBLK*, SPBLK*, SPTREE*);	/* enqueue before existing node */
 extern SPBLK * spenqafter(SPBLK*, SPBLK*, SPTREE*);	/* enqueue after existing node */
 
-/* spdaveb.c */
+/* spdaveb.cpp */
 extern SPBLK * splookup(double, SPTREE*);	/* find key in a tree */
 /*extern SPBLK * spinstall(double, void*, SPTREE*);*/	/* enter an item, allocating or replacing */
 extern SPBLK * sptail(SPTREE*);	/* find end of a tree */

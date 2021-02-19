@@ -4,10 +4,6 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-extern "C" {
-    #include <matrix2.h>
-}
-#include <pthread.h>
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>

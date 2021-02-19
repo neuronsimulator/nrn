@@ -59,7 +59,7 @@ for line in text.splitlines():
 
 print('''
 /* Functions */
-static VoidFunc function[] = {
+static VoidFunc functions[] = {
 ''')
 
 for i in voidfun:

@@ -82,7 +82,7 @@ bool StandardPicker::pick(Canvas* c, Glyph* glyph, int depth, Hit& h) {
 	return false;
 }
 
-/* from /interviews/input.c */
+/* from /interviews/input.cpp */
 void StandardPicker::event(const Event& e) {
 	switch (e.type()) {
 	case Event::down:

@@ -10,9 +10,7 @@
 #include "bbsimpl.h"
 #include "hocdec.h" //Printf
 
-extern "C" {
-	void nrnbbs_context_wait();
-};
+void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;
 

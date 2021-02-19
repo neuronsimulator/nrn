@@ -192,7 +192,7 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
 	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
@@ -351,7 +351,7 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
+extern "C" int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
@@ -372,7 +372,7 @@ int ICS_insert_inhom(int grid_list_index, PyHocObject* my_states, long num_nodes
 }
 
 
-int set_diffusion(int grid_list_index, int grid_id, double* dc, int length)
+extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int length)
 {
 
     int id = 0;

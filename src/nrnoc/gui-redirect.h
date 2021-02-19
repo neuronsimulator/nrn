@@ -3,17 +3,11 @@
 
 #include "hocdec.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 extern Object* nrn_get_gui_redirect_obj();
 extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern double (*nrnpy_object_to_double_)(Object*);
 
-#if defined(__cplusplus)
-}
-#endif
 
 #define TRY_GUI_REDIRECT_OBJ(name, obj) {\
     Object** ngh_result;\

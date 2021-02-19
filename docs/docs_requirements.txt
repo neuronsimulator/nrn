@@ -3,3 +3,8 @@ sphinx_rtd_theme
 jupyter
 nbconvert
 recommonmark
+matplotlib
+bokeh
+ipython
+plotnine
+numpy

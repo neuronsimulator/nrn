@@ -8,14 +8,29 @@
 #include "hocdec.h"
 #include "nrnsection_mapping.h"
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
-#include "parse.h"
+#include "parse.hpp"
 #include <string>
 #include <unistd.h>
 #include <algorithm>
 #include <cerrno>
 
+
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+#define RTLD_NODELETE 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#endif
 #endif
 
 // RTLD_NODELETE is used with dlopen
@@ -23,8 +38,6 @@
 #ifndef RTLD_NODELETE
 #define RTLD_NODELETE 0
 #endif
-
-extern "C" {
 
 extern bool corenrn_direct;
 extern int diam_changed, v_structure_change, tree_changed;
@@ -132,7 +145,7 @@ bool file_exist(const std::string& path) {
 // Requires cache_efficient mode.
 // Input double* and NrnThread. Output type and index.
 // type == 0 means could not determine index.
-int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
+extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index) {
     assert(use_cachevec);
     int nnode = nt.end;
     type = 0;
@@ -272,4 +285,4 @@ void check_coreneuron_compatibility(void* handle) {
 }
 
 #endif //!HAVE_DLFCN_H
-}
+

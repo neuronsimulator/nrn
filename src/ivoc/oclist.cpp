@@ -25,21 +25,18 @@
 
 #include "gui-redirect.h"
 
-extern "C" {
-#include "parse.h"
+#include "parse.hpp"
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
-Object* ivoc_list_item(Object*, int);
-}
+extern "C" Object* ivoc_list_item(Object*, int);
 
 
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-};
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
+
 void handle_old_focus();
 
 #if HAVE_IV
@@ -419,7 +416,7 @@ int ivoc_list_count(Object* olist) {
 	OcList* list = (OcList*)olist->u.this_pointer;
 	return list->count();
 }
-Object* ivoc_list_item(Object* olist, int i) {
+extern "C" Object* ivoc_list_item(Object* olist, int i) {
 	chk_list(olist);
 	OcList* list = (OcList*)olist->u.this_pointer;
 	if (i >= 0 && i < list->count()) {
@@ -509,7 +506,6 @@ void OcList_reg() {
 	list_class_sym_ = hoc_lookup("List");
 }
 
-extern "C" {
 extern bool hoc_objectpath_impl(Object* ob, Object* oblook, char* path, int depth);
 extern void hoc_path_prepend(char*, const char*, const char*);
 int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
@@ -534,7 +530,6 @@ int ivoc_list_look(Object* ob, Object* oblook, char* path, int) {
 	}
 	return 0;
 }	
-}
 
 void OcList::create_browser(const char* name, const char* items, Object* pystract) {
 #if HAVE_IV
@@ -547,7 +542,7 @@ void OcList::create_browser(const char* name, const char* items, Object* pystrac
 	PrintableWindow* w = new StandardWindow(b_->standard_glyph());
 	b_->ocglyph(w);
 	if (name) {
-		w->name((char*)name);
+		w->name(name);
 	}
 	w->map();	
 #endif
@@ -564,7 +559,7 @@ void OcList::create_browser(const char* name, char** pstr, const char* action) {
 	PrintableWindow* w = new StandardWindow(b_->standard_glyph());
 	b_->ocglyph(w);
 	if (name) {
-		w->name((char*)name);
+		w->name(name);
 	}
 	w->map();	
 #endif

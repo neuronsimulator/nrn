@@ -5,13 +5,11 @@
 #include <stdio.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 
-extern "C" {
-	extern int stoprun;
-	extern double t;
-	extern void nrn_fixed_step();
-}
+extern int stoprun;
+extern double t;
+extern void nrn_fixed_step();
 
 class NrnRealTime {
 public:

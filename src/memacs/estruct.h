@@ -287,7 +287,7 @@ typedef struct  {
         int     (*t_getchar)();         /* Get character from keyboard. */
         int     (*t_putchar)();         /* Put character to display.    */
         int     (*t_flush)();           /* Flush output buffers.        */
-        int     (*t_move)();            /* Move the cursor, origin 0.   */
+        int     (*t_move)(int, int);    /* Move the cursor, origin 0.   */
         int     (*t_eeol)();            /* Erase to end of line.        */
         int     (*t_eeop)();            /* Erase to end of page.        */
         int     (*t_beep)();            /* Beep.                        */

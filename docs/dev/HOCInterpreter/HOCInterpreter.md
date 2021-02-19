@@ -62,7 +62,7 @@ This will call '**ivocmain\_session()**' with parameter **'start\_session'** set
 
 With respect to the HOC grammar we have:
 
-*   **'src/oc/parse.y' →** HOC language is defined thanks to **bison/yacc;** this file holds actual HOC grammar 
+*   **'src/oc/parse.ypp' →** HOC language is defined thanks to **bison/yacc;** this file holds actual HOC grammar 
     
     The grammar consists of token definitions, left-right precedence setup,  grammar rules (i.e. expressions like assignments) and actions; these actions represent code blocks triggered when rules have been recognised.
     
@@ -355,7 +355,7 @@ When a function (or even a procedure) is called we have:
 
 ![](images/58791210.png)
 
-How does this map to _**parse.y**_ grammar? Corresponding part is : 
+How does this map to _**parse.ypp**_ grammar? Corresponding part is : 
 
     
     expr:  

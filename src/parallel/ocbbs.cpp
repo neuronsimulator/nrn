@@ -8,7 +8,7 @@
 #include "bbs.h"
 #include "bbsimpl.h"
 #include "ivocvect.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
 #include <nrnmpi.h>
@@ -17,9 +17,8 @@
 #undef MD
 #define MD 2147483647.
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
-extern "C" {
 	extern int vector_arg_px(int, double**);
 	Symbol* hoc_which_template(Symbol*);
 	void bbs_done();
@@ -46,6 +45,7 @@ extern "C" {
 	double nrnmpi_splitcell_wait_;
 #endif
 #if NRNMPI
+extern "C" {
 	void nrnmpi_barrier();
 	double nrnmpi_dbl_allreduce(double, int);
 	void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
@@ -57,6 +57,7 @@ extern "C" {
 	void nrnmpi_char_broadcast(char*, int, int);
 	void nrnmpi_dbl_broadcast(double*, int, int);
 	extern void nrnmpi_subworld_size(int n);
+} // extern "C"
 #else
 	static void nrnmpi_int_broadcast(int*, int, int){}
 	static void nrnmpi_char_broadcast(char*, int, int){}
@@ -76,7 +77,6 @@ extern "C" {
 	extern int nrncore_is_enabled();
 	extern int nrncore_is_file_mode();
 	extern int nrncore_psolve(double tstop, int file_mode);
-}
 
 class OcBBS : public BBS , public Resource {
 public:

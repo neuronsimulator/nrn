@@ -16,6 +16,9 @@ import re
 #Now set in rxd.py
 #set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
+# Update the structure_change_cnt & diam_change_cnt if the shape has changed
+_nrn_shape_update = nrn_dll_sym('nrn_shape_update')
+
 fptr_prototype = ctypes.CFUNCTYPE(None)
 
 set_setup = nrn_dll_sym('set_setup')
@@ -423,7 +426,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         belonging to the Region cyt.
         """
         from . import rxd
-        h.doNotify()
+        _nrn_shape_update()
         if initializer.is_initialized():
             rxd._update_node_data()
         else:
@@ -1225,7 +1228,9 @@ class Species(_SpeciesMathable):
             else:
                 from .rxd import _domain_lookup
                 reglist = regions if hasattr(regions,'__len__') else [regions]
-                dims = [_domain_lookup(sec) for reg in reglist for sec in reg.secs]
+                dims = [_domain_lookup(sec) for reg in reglist 
+                            if not isinstance(reg, region.Extracellular)
+                            for sec in reg.secs]
                 if not all([dim == dims[0] for dim in dims]):
                     raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
                 else:
@@ -1818,7 +1823,7 @@ class Species(_SpeciesMathable):
         This can then be further restricted using the callable property of NodeList objects."""
 
         from . import rxd
-        h.doNotify()
+        _nrn_shape_update()
         if initializer.is_initialized():
             rxd._update_node_data()
         else:

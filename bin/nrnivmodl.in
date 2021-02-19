@@ -39,7 +39,7 @@ export libdir
 
 MAKEFILEDIR="${bindir}"
 
-if which xcrun; then
+if command -v xcrun; then
     @USING_CMAKE_TRUE@@NRN_OSX_BUILD_TRUE@export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
     @USING_CMAKE_TRUE@@NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
@@ -86,6 +86,9 @@ unhide_spaces() {
 }
 escape_spaces() {
   echo "$1" | sed 's/+++/\\ /g'
+}
+remove_spaces() {
+  echo "$1" | sed 's/ //g'
 }
 
 # files is the complete list of mod files to process
@@ -244,31 +247,39 @@ echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-' > mod_func.c
+#if defined(__cplusplus)
+extern "C" {
+#endif
+' > mod_func.cpp
 for i in $base_names ; do
-  echo 'extern void _'$i'_reg(void);'
-done >> mod_func.c
+  echo 'extern void _'`remove_spaces "$i"`'_reg(void);'
+done >> mod_func.cpp
 echo '
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, "Additional mechanisms from files'$newline'");
-' >> mod_func.c
+' >> mod_func.cpp
 
 for i in $files
 do
   echo '    fprintf(stderr," \"'`unhide_spaces "$i"`'.mod\"");'
-done >>mod_func.c
+done >>mod_func.cpp
 
 echo '    fprintf(stderr, "'$newline'");
-  }' >>mod_func.c
+  }' >>mod_func.cpp
 
 for i in $base_names; do
-  echo '  _'$i'_reg();'
+  echo '  _'`remove_spaces "$i"`'_reg();'
   @USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
   @USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
-done >> mod_func.c
+done >> mod_func.cpp
 
-echo "}" >> mod_func.c
+echo "}" >> mod_func.cpp
+
+echo '
+#if defined(__cplusplus)
+}
+#endif' >> mod_func.cpp
 
 if test -n "$nrnivmodl_cfiles" ; then
   if test "$UsingCMake" = "yes" ; then
