@@ -1192,6 +1192,9 @@ static Object** v_smhist(void* v) {
 
         if (ifarg(6)) {
 	   w = vector_arg(6);
+        if (w->size() != data->size()) {
+            hoc_execerror("Vector.smhist: weight Vector must be same size as source Vector.", 0);
+        }
 	   weight = 1;
 	 } else {
 	   weight = 0;
