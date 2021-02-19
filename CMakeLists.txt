@@ -320,6 +320,8 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    # If NEURON tests are enabled then enable CoreNEURON tests too
+    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
