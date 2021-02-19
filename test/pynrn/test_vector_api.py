@@ -35,6 +35,8 @@ def test_vector_api():
     assert v.to_python() == [1.0, 1.0, 1.0]
     del v
 
+    assert h.Vector().from_python((1, 2, 3)).to_python() == [1.0, 2.0, 3.0]
+
     v = h.Vector()
     v.append(3, 3)
     v.append(2)
@@ -88,6 +90,7 @@ def test_vector_api():
     assert np.allclose(v.mag(), 6.928203230275509)
     assert v.c().reverse().meansqerr(v) == 3.2
     assert v.c().reverse().meansqerr(v, h.Vector((1, 2, 5, 4, 3))) == 8.0
+    assert v.c().trigavg(h.Vector((1, 2, 3, 4, 5)), h.Vector((1, 2, 3, 4, 5)), 1, 2) == 2
 
     """
     Copying
@@ -163,6 +166,7 @@ def test_vector_api():
     assert v.histogram(1.0, 20.0, 10).to_python() == [0.0, 1.0, 2.0]
     assert h.Vector().hist(v, 1.0, 2.0, 10).to_python() == [1.0, 2.0]
     assert v.ind(h.Vector((1, 3))).to_python() == [11.0, 21.0]
+    assert h.Vector().spikebin(v.c(), 12.0).to_python() == [0.0, 0.0, 1.0, 0.0]
 
     """
     Vector metadata
@@ -218,6 +222,8 @@ def test_vector_api():
     vs = v.c()
     assert np.allclose(vs.scale(2, 5), 0.21428571428571427)
     assert np.allclose(vs.to_python(), [2.2142857142857144, 2.0, 4.785714285714286, 5.0])
+    assert np.allclose(v.c().sin(1, 1).to_python(), [0.8414709848078965, 0.844849172063764, 0.8481940061209319, 0.8515053549310787])
+    assert np.allclose(v.c().sin(1, 1, 2).to_python(), [0.8414709848078965, 0.8481940061209319, 0.8547830877678237, 0.8612371892561972])
 
     """
     Fourier
@@ -297,3 +303,35 @@ def test_vector_api():
     vc.printf() # code cov
     f.close()
     f.unlink()
+
+    """
+    Random 
+    """
+    vrand = h.Vector((1, 2, 3))
+    r = h.Random()
+    r.poisson(12)
+    assert vrand.cl().setrand(r).to_python() == [10.0, 16.0, 11.0]
+    assert vrand.cl().setrand(r, 1, 2).to_python() == [1.0, 9.0, 18.0]
+    assert vrand.cl().addrand(r).to_python() == [9.0, 9.0, 16.0]
+    assert vrand.cl().addrand(r, 0, 1).to_python() == [13.0, 16.0, 3.0]
+
+    """
+    Misc 
+    """
+    assert h.Vector().inf(h.Vector((3, 2, 4)), 2, 3, 4, 5, 6, 7).to_python() == [4.0, 5.2, 4.56]
+    assert h.Vector().resample(h.Vector((3, 2, 4, 6, 7)), 2).to_python() == [3.0, 3.0, 2.0, 2.0, 4.0, 4.0, 6.0, 6.0, 7.0, 7.0]
+    assert h.Vector().psth(h.Vector((3, 2, 4, 6, 7, 6, 7, 8)), 1, 2, 3).to_python() == [1500.0, 1500.0, 2000.0, 3000.0, 3500.0, 3000.0, 3500.0, 4000.0]
+
+    h("func fun () { return ($1 - 0.5) * 2 + ($2 - 0.5) * 2 }")
+    dvec = h.Vector(2)
+    fvec = h.Vector(2)
+    fvec.fill(1)
+    ivec = h.Vector(2)
+    ivec.indgen()
+    a = h.ref(2)
+    b = h.ref(1)
+    error = dvec.fit(fvec, "fun", ivec, a, b)
+    assert np.allclose([error], [1.0005759999999997])
+    assert np.allclose(fvec.to_python(), [-0.976, 1.024])
+    assert ivec.to_python() == [0.0, 1.0]
+    assert dvec.to_python() == [0.0, 0.0]
