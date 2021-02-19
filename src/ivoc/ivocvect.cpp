@@ -778,8 +778,11 @@ static double v_scanf(void *v) {
 	  n = int(*getarg(2));
 	} 
 
-        if (n >= 0) { 
+        if (n >= 0 ) {
         	x->resize(n);
+        }
+        else if(x->size()) { // gnuvec legacy handling
+            x->resize(0);
         }
 
 	// start at the right column
@@ -824,6 +827,10 @@ static double v_scantil(void *v) {
         Object* ob = *hoc_objgetarg(1);
     	check_obj_type(ob, "File");
         OcFile* f = (OcFile*)(ob->u.this_pointer);
+    // old gnuvec compatibility: clear vector if not empty()
+    if(x->size() > 0) {
+        x->resize(0);
+    }
 
     hoc_return_type_code = 1; // integer
 	til = *getarg(2);
