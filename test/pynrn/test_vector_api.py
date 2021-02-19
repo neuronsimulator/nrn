@@ -23,6 +23,8 @@ def test_vector_api():
 
     v = h.Vector(np.array([5, 1, 6], 'd'))
     assert v.to_python() == [5.0, 1.0, 6.0]
+    v.clear()
+    assert v.size() == 0
     del v
 
     v = h.Vector(3)
@@ -64,18 +66,24 @@ def test_vector_api():
     assert v.sum() == 14.0
     assert v.sum(1, 3) == 6.0
     assert np.allclose(v.sumgauss(-1, 1, .5, 1).to_python(), [0.05869048145253869, 0.14879136924715222, 0.30482687457572216, 0.5166555071584352])
+    assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1).to_python(), [0.9060003240550064, 0.9598574603424295, 0.5071918738793386])
+    assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1, h.Vector((1, 3, 2, 5, 4))).to_python(), [3.009095149765841, 2.1896697532507994, 1.8126697992388372])
     assert v.sumsq() == 48.0
     assert v.sumsq(2, 4) == 30.0
     assert v.var() == 2.2
     assert v.var(2, 3) == 0.5
     assert v.min() == 1.0
     assert v.min(0, 2) == 2.0
+    assert h.Vector().min() == 0.0
     assert v.min_ind() == 3
     assert v.min_ind(0, 2) == 2
+    assert h.Vector().min_ind() == -1.0
     assert v.max() == 5.0
     assert v.max(0, 2) == 3.0
+    assert h.Vector().max() == 0.0
     assert v.max_ind() == 4
     assert v.max_ind(0, 2) == 0
+    assert h.Vector().max_ind() == -1.0
     assert v.dot(h.Vector((1, 2, 3, 4, 5))) == 44.0
     assert np.allclose(v.mag(), 6.928203230275509)
     assert v.c().reverse().meansqerr(v) == 3.2
@@ -249,12 +257,43 @@ def test_vector_api():
     vr.scanf(f)
     assert vr.to_python() == v.to_python()
     f.seek(0)
+    vr2 = h.Vector(4)
+    vr2.scanf(f)
+    assert vr.to_python() == vr2.to_python()
+    f.seek(0)
     vr.resize(0)
     vr.scanf(f, 1)
     assert vr.to_python() == [3.0]
+    vr.scanf(f, 1)
+    assert vr.to_python() == [2.0]
     vr.resize(0)
     f.seek(0)
     vr.scantil(f, 15.0)
     assert vr.to_python() == [3.0, 2.0]
+    f.close()
+    f.unlink()
+
+    # Columns
+    f.wopen("col.tmp")
+    f.printf("%d %d %d %d\n", 3, 2, 15, 16)
+    f.printf("%d %d %d %d\n", 6, 9, 7,  21)
+    f.printf("%d %d %d %d\n", 1, 4, 5,  22)
+    f.printf("%d %d %d %d\n", 3, 8, 14, 23)
+    f.close()
+    f.ropen("col.tmp")
+    vc = h.Vector()
+    vc.scanf(f, 3, 2, 4)
+    assert vc.to_python() == [2.0, 9.0, 4.0]
+    vc.scanf(f, 3, 2, 4)
+    assert vc.to_python() == [8.0]
+    f.close()
+    f.ropen("col.tmp")
+    vc = h.Vector()
+    vc.scanf(f, 3, 4)
+    assert vc.to_python() == [15.0, 7.0, 5.0, 14.0]
+    f.seek(0)
+    vc.scantil(f, 5.0, 3, 4)
+    assert vc.to_python() == [15.0, 7.0]
+    vc.printf() # code cov
     f.close()
     f.unlink()
