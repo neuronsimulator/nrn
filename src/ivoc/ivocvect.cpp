@@ -3308,8 +3308,7 @@ static Object** v_resample(void* v)
   Vect* temp = new Vect(n);
 
   for (int i=0; i<n; i++) temp->elem(i) = v1->elem(int(i/f));
-  if (ans->size() != n) ans->resize(n);
-  *((Vect*)ans) = *((Vect*)temp);
+  ans->vec().swap(temp->vec());
 
   delete temp;
 
@@ -3340,8 +3339,7 @@ static Object** v_psth(void* v)
     temp->elem(i) = integral/trials*1000./((fj+bj+1)*dt);
   }
 
-  if (ans->size() != n) ans->resize(n);
-  *((Vect*)ans) = *((Vect*)temp);
+  ans->vec().swap(temp->vec());
 
   delete temp;
 
