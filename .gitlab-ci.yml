@@ -1,0 +1,35 @@
+cache: &global_cache
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+  - venv/
+  - build_gcc/
+
+setup virtualenv:
+  stage: .pre
+  tags: [bb5]
+  script:
+  - export
+  - ci/bb5-pr
+  only:
+  - external_pull_requests
+
+build gcc:
+  stage: build
+  tags: [bb5]
+  script: ci/bb5-pr
+  only:
+  - external_pull_requests
+
+test gcc: &common_test_gcc
+  stage: test
+  tags: [bb5]
+  script: ci/bb5-pr
+  resource_group: test
+  only:
+  - external_pull_requests
+  cache:
+    <<: *global_cache
+    policy: pull
+
+cmake format: *common_test_gcc
+clang format: *common_test_gcc
