@@ -158,6 +158,60 @@ def _sympify_eqs(eq_strings, state_vars, vars):
     ]
     return eqs, sympy_state_vars, sympy_vars
 
+def _interweave_eqs(F, J):
+    """Interweave F and J equations so that they are printed in code
+    rowwise from the equation J x = F. For example:
+
+    F = [F_0,
+         F_1,
+         F_2]
+
+    (Jmat is not the actual J in the argument, it is here to the sake of
+    clarity)
+    Jmat = [J_0, J_3, J_6
+            J_1, J_4, J_7
+            J_2, J_5, J_8]
+    (J is the actual input with the following ordering)
+    J = [J_0,
+         J_3,
+         J_6,
+         J_1,
+         J_4,
+         J_7,
+         J_2,
+         J_5,
+         J_8]
+
+    What we want is:
+    code = [F_0,
+            J_0,
+            J_3,
+            J_6,
+            F_1,
+            J_1,
+            J_4,
+            J_7,
+            F_2,
+            J_2,
+            J_5,
+            J_8]
+
+    Args:
+        F: F vector
+        J: J matrix represented as a vector (rowwise)
+
+    Returns:
+        code: F and J interweaved in one vector
+    """
+    code = []
+    n = len(F)
+    for i, expr in enumerate(F):
+        code.append(expr)
+        for j in range(i * n, (i+1) * n):
+            code.append(J[j])
+
+    return code
+
 
 def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=False, do_cse=False):
     """Solve linear system of equations, return solution as C code.
@@ -216,13 +270,17 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=F
         matJ, vecF = sp.linear_eq_to_matrix(eqs, state_vars)
 
         # construct vector F
+        vecFcode = []
         for i, expr in enumerate(vecF):
-            code.append(f"F[{i}] = {sp.ccode(expr.simplify().evalf())}")
+            vecFcode.append(f"F[{i}] = {sp.ccode(expr.simplify().evalf())}")
         # construct matrix J
+        vecJcode = []
         for i, expr in enumerate(matJ):
             # todo: fix indexing to be ascending order
             flat_index = matJ.rows * (i % matJ.rows) + (i // matJ.rows)
-            code.append(f"J[{flat_index}] = {sp.ccode(expr.simplify().evalf(), user_functions=custom_fcts)}")
+            vecJcode.append(f"J[{flat_index}] = {sp.ccode(expr.simplify().evalf(), user_functions=custom_fcts)}")
+        # interweave
+        code = _interweave_eqs(vecFcode, vecJcode)
 
     return code, new_local_vars
 
@@ -252,15 +310,18 @@ def solve_non_lin_system(eq_strings, vars, constants, function_calls):
 
     X_vec_map = {x: sp.symbols(f"X[{i}]") for i, x in enumerate(state_vars)}
 
-    code = []
+    vecFcode = []
     for i, eq in enumerate(eqs):
-        code.append(f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf())}")
+        vecFcode.append(f"F[{i}] = {sp.ccode(eq.simplify().subs(X_vec_map).evalf())}")
+    vecJcode = []
     for i, jac in enumerate(jacobian):
         # todo: fix indexing to be ascending order
         flat_index = jacobian.rows * (i % jacobian.rows) + (i // jacobian.rows)
-        code.append(
+        vecJcode.append(
             f"J[{flat_index}] = {sp.ccode(jac.simplify().subs(X_vec_map).evalf(), user_functions=custom_fcts)}"
         )
+    # interweave
+    code = _interweave_eqs(vecFcode, vecJcode)
 
     return code
 
