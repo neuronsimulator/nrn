@@ -125,6 +125,18 @@ std::shared_ptr<Statement> create_statement(const std::string& code_statement) {
     return statement;
 }
 
+std::vector<std::shared_ptr<Statement>> create_statements(
+    const std::vector<std::string>::const_iterator& code_statements_beg,
+    const std::vector<std::string>::const_iterator& code_statements_end) {
+    std::vector<std::shared_ptr<Statement>> statements;
+    statements.reserve(code_statements_end - code_statements_beg);
+    std::transform(code_statements_beg,
+                   code_statements_end,
+                   std::back_inserter(statements),
+                   [](const std::string& s) { return create_statement(s); });
+    return statements;
+}
+
 /**
  * Convert given code statement (in string format) to corresponding ast node
  *
@@ -213,6 +225,30 @@ std::string to_json(const ast::Ast& node, bool compact, bool expand, bool add_nm
     node.accept(v);
     v.flush();
     return stream.str();
+}
+
+std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
+    const std::shared_ptr<ast::Expression>& lhs,
+    const std::shared_ptr<ast::Expression>& rhs) {
+    std::string key;
+    std::unordered_set<std::string> out;
+
+    if (!lhs->is_var_name()) {
+        return {key, out};
+    }
+
+    key = to_nmodl(lhs);
+    key.erase(std::remove(key.begin(), key.end(), '\''),
+              key.end());  // we want to match derivatives and variables
+    visitor::AstLookupVisitor lookup_visitor;
+    lookup_visitor.lookup(*rhs, ast::AstNodeType::VAR_NAME);
+    auto rhs_nodes = lookup_visitor.get_nodes();
+    std::for_each(rhs_nodes.begin(),
+                  rhs_nodes.end(),
+                  [&out](const std::shared_ptr<ast::Ast>& node) { out.emplace(to_nmodl(node)); });
+
+
+    return {key, out};
 }
 
 }  // namespace nmodl
