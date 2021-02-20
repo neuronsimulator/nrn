@@ -14,6 +14,8 @@
 # was extremely helpful with respect to notarization (of which this signing
 # is a prerequisite).
 
+CPU=`uname -m`
+
 # "$1" The install folder
 inst="$1"
 # "$2" Path to folder containing nrncodesign.sh
@@ -31,30 +33,27 @@ libraries="
   libnrnpython2.dylib libnrnpython3.dylib librxdmath.dylib
 "
 
-pylibraries="
-  hoc.cpython-36m-darwin.so
-  hoc.cpython-39-darwin.so
-  hoc.cpython-37m-darwin.so
-  hoc.cpython-38-darwin.so
-  hoc.so
-  rxd/geometry3d/surfaces.cpython-39-darwin.so
-  rxd/geometry3d/ctng.cpython-39-darwin.so
-  rxd/geometry3d/ctng.so
-  rxd/geometry3d/ctng.cpython-37m-darwin.so
-  rxd/geometry3d/surfaces.cpython-36m-darwin.so
-  rxd/geometry3d/graphicsPrimitives.cpython-36m-darwin.so
-  rxd/geometry3d/surfaces.cpython-38-darwin.so
-  rxd/geometry3d/ctng.cpython-38-darwin.so
-  rxd/geometry3d/ctng.cpython-36m-darwin.so
-  rxd/geometry3d/graphicsPrimitives.cpython-39-darwin.so
-  rxd/geometry3d/surfaces.cpython-37m-darwin.so
-  rxd/geometry3d/surfaces.so
-  rxd/geometry3d/graphicsPrimitives.cpython-38-darwin.so
-  rxd/geometry3d/graphicsPrimitives.so
-  rxd/geometry3d/graphicsPrimitives.cpython-37m-darwin.so
-"
+pyversions='
+  .
+  .cpython-36m-darwin.
+  .cpython-39-darwin.
+  .cpython-37m-darwin.
+  .cpython-38-darwin.
+'
+pyversions='
+  .cpython-38-darwin.
+'
 
-demolibnrnmech="x86_64/libnrnmech.dylib x86_64/.libs/libnrnmech.so"
+set_pylibraries() {
+  pylibraries="
+    hoc${pyver}so
+    rxd/geometry3d/ctng${pyver}so
+    rxd/geometry3d/surfaces${pyver}so
+    rxd/geometry3d/graphicsPrimitives${pyver}so
+  "
+}
+
+demolibnrnmech="$CPU/libnrnmech.dylib $CPU/.libs/libnrnmech.so"
 
 #codesign a file, $1, prefixed by $inst
 sign() {
@@ -102,6 +101,9 @@ sign_several "bin" "$executables"
 
 sign_several "lib" "$libraries"
 
-sign_several "lib/python/neuron" "$pylibraries"
+for pyver in $pyversions ; do
+  set_pylibraries
+  sign_several "lib/python/neuron" "$pylibraries"
+done
 
 sign_several "share/nrn/demo/release" "$demolibnrnmech"
