@@ -68,6 +68,11 @@ class _c_region:
                 _c_region_lookup[rptr] = [self]
    
     def add_reaction(self, rptr, region):
+        # for multicompartment reaction -- check all regions are present
+        if rptr() and hasattr(rptr(),'_changing_species'):
+            for sptr in rptr()._changing_species:
+                if sptr() and hasattr(sptr(),'_region') and sptr()._region not in self._regions:
+                    return
         if rptr in self._react_regions:
             if region not in self._react_regions[rptr]:
                 self._react_regions[rptr].append(region)
