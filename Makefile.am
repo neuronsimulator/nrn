@@ -40,6 +40,13 @@ else
 	PARANEURON='no'
 endif
 
+# Generate help_data.dat since it's no longer committed in the repo.
+.PHONY: help_data_dat
+help_data_dat:
+	$(PYTHON_BLD) $(top_srcdir)/docs/parse_rst.py $(top_srcdir)/docs/python $(top_srcdir)/share/lib/python/neuron/help_data.dat
+
+-include help_data_dat
+
 if BUILD_CYGWIN
 #install from the build directories to the mswin destination
 #uses the classical positions of files

@@ -147,7 +147,7 @@ using_history ()
 int
 history_total_bytes ()
 {
-  register int i, result;
+  int i, result;
 
   result = 0;
 
@@ -167,7 +167,7 @@ add_history (string)
 
   if (history_stifled && (history_length == max_input_history))
     {
-      register int i;
+      int i;
 
       /* If the history is stifled, and history_length is zero,
 	 and it equals max_input_history, we don't save items. */
@@ -268,10 +268,10 @@ history_search_internal (string, direction, anchored)
      char *string;
      int direction, anchored;
 {
-  register int i = history_offset;
-  register int reverse = (direction < 0);
-  register char *line;
-  register int index;
+  int i = history_offset;
+  int reverse = (direction < 0);
+  char *line;
+  int index;
   int string_len = strlen (string);
 
   /* Take care of trivial cases first. */
@@ -327,7 +327,7 @@ history_search_internal (string, direction, anchored)
 	}
       else
 	{
-	  register int limit = index - string_len + 1;
+	  int limit = index - string_len + 1;
 	  index = 0;
 
 	  while (index < limit)
@@ -379,7 +379,7 @@ remove_history (which)
     return_value = (HIST_ENTRY *)NULL;
   else
     {
-      register int i;
+      int i;
       return_value = the_history[which];
 
       for (i = which; i < history_length; i++)
@@ -400,7 +400,7 @@ stifle_history (max)
     max = 0;
   if (history_length > max)
     {
-      register int i, j;
+      int i, j;
 
       /* This loses because we cannot free the data. */
       for (i = 0; i < (history_length - max); i++)
@@ -472,7 +472,7 @@ read_history_range (filename, from, to)
      char *filename;
      int from, to;
 {
-  register int line_start, line_end;
+  int line_start, line_end;
   char *input, *buffer = (char *)NULL;
   int file, current_line;
   struct stat finfo;
@@ -543,9 +543,9 @@ read_history_range (filename, from, to)
    If FNAME is NULL, then use ~/.history. */
 history_truncate_file (fname, lines)
      char *fname;
-     register int lines;
+     int lines;
 {
-  register int i;
+  int i;
   int file;
   char *buffer = (char *)NULL, *filename;
   struct stat finfo;
@@ -610,7 +610,7 @@ history_do_write (filename, nelements, overwrite)
      char *filename;
      int nelements, overwrite;
 {
-  register int i, j;
+  int i, j;
   char *output = history_filename (filename);
   int file, mode;
 
@@ -628,7 +628,7 @@ history_do_write (filename, nelements, overwrite)
   /* Build a buffer of all the lines to write, and write them in one syscall.
      Suggested by Peter Ho (peter@robosts.oxford.ac.uk). */
   {
-    register int j = 0;
+    int j = 0;
     int buffer_size = 0;
     char *buffer;
 
@@ -794,7 +794,7 @@ get_history_event (string, caller_index, delimiting_quote)
      int *caller_index;
      int delimiting_quote;
 {
-  register int i = *caller_index;
+  int i = *caller_index;
   int which, sign = 1;
   HIST_ENTRY *entry;
 
@@ -940,7 +940,7 @@ history_expand (string, output)
      char *string;
      char **output;
 {
-  register int j, l = strlen (string);
+  int j, l = strlen (string);
   int i, word_spec_error = 0;
   int cc, modified = 0;
   char *word_spec, *event;
@@ -1298,7 +1298,7 @@ get_history_word_specifier (spec, from, caller_index)
      char *spec, *from;
      int *caller_index;
 {
-  register int i = *caller_index;
+  int i = *caller_index;
   int first, last;
   int expecting_word_spec = 0;
   char *history_arg_extract ();
@@ -1413,7 +1413,7 @@ history_arg_extract (first, last, string)
      int first, last;
      char *string;
 {
-  register int i, len;
+  int i, len;
   char *result = (char *)NULL;
   int size = 0, offset = 0;
 
@@ -1477,7 +1477,7 @@ history_tokenize (string)
      char *string;
 {
   char **result = (char **)NULL;
-  register int i, start, result_index, size;
+  int i, start, result_index, size;
   int len;
 
   i = result_index = size = 0;
@@ -1679,8 +1679,8 @@ main ()
       if (strcmp (line, "read") == 0) read_history (0);
       if (strcmp (line, "list") == 0)
 	{
-	  register HIST_ENTRY **the_list = history_list ();
-	  register int i;
+	  HIST_ENTRY **the_list = history_list ();
+	  int i;
 
 	  if (the_list)
 	    for (i = 0; the_list[i]; i++)

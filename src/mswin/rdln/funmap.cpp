@@ -144,9 +144,7 @@ static FUNMAP default_funmap[] = {
  {(char *)NULL, (Function *)NULL }
 };
 
-rl_add_funmap_entry (name, function)
-     char *name;
-     Function *function;
+rl_add_funmap_entry (char* name, Function* function)
 {
   if (funmap_entry + 2 >= funmap_size)
     if (!funmap)
@@ -167,7 +165,7 @@ static int funmap_initialized = 0;
 /* Make the funmap contain all of the default entries. */
 rl_initialize_funmap ()
 {
-  register int i;
+  int i;
 
   if (funmap_initialized)
     return;
@@ -181,8 +179,7 @@ rl_initialize_funmap ()
 
 /* Stupid comparison routine for qsort () ing strings. */
 static int
-qsort_string_compare (s1, s2)
-     register char **s1, **s2;
+qsort_string_compare (char **s1, char** s2)
 {
   return (strcmp (*s1, *s2));
 }
@@ -240,8 +237,7 @@ char *possible_meta_prefixes[] = {
 static void memory_error_and_abort ();
 
 static char *
-xmalloc (bytes)
-     int bytes;
+xmalloc (int bytes)
 {
   char *temp = (char *)malloc (bytes);
 
@@ -251,9 +247,7 @@ xmalloc (bytes)
 }
 
 static char *
-xrealloc (pointer, bytes)
-     char *pointer;
-     int bytes;
+xrealloc (char* pointer, int bytes)
 {
   char *temp;
 

@@ -35,9 +35,9 @@
 SPBLK *
 splookup( double key, SPTREE* q )
 {
-    register SPBLK * n;
-    register int Sct;
-    register int c;
+    SPBLK * n;
+    int Sct;
+    int c;
 
     /* find node in the tree */
     n = q->root;
@@ -72,13 +72,13 @@ splookup( double key, SPTREE* q )
 SPBLK *
 spinstall( key, data, datb, q )
 
-register char * key;
-register char * data;
-register char * datb;
-register SPTREE *q;
+char * key;
+char * data;
+char * datb;
+SPTREE *q;
 
 {
-    register SPBLK *n;
+    SPBLK *n;
 
     if( NULL == ( n = splookup( key, q ) ) )
     {
@@ -113,7 +113,7 @@ register SPTREE *q;
 SPBLK *
 spfhead( SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     if( NULL != ( x = q->root ) )
 	while( x->leftlink != NULL )
@@ -135,7 +135,7 @@ spfhead( SPTREE* q )
 SPBLK *
 spftail( SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
 
     if( NULL != ( x = q->root ) )
@@ -157,7 +157,7 @@ spftail( SPTREE* q )
 void
 spscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
 {
-    register SPBLK * x;
+    SPBLK * x;
 
     for( x = n != NULL ? n : spfhead( q ); x != NULL ; x = spfnext( x ) )
         (*f)( x, 0);
@@ -175,7 +175,7 @@ spscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
 void
 sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
 {
-    register SPBLK *x;
+    SPBLK *x;
 
     for( x = n != NULL ? n : spftail( q ); x != NULL ; x = spfprev( x ) )
         (*f)( x, 0 );
@@ -193,8 +193,8 @@ sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE* q )
 SPBLK *
 spfnext( SPBLK* n )
 {
-    register SPBLK * next;
-    register SPBLK * x;
+    SPBLK * next;
+    SPBLK * x;
 
     /* a long version, avoids splaying for fast average,
      * poor amortized bound
@@ -245,8 +245,8 @@ spfnext( SPBLK* n )
 SPBLK *
 spfprev( SPBLK* n )
 {
-    register SPBLK * prev;
-    register SPBLK * x;
+    SPBLK * prev;
+    SPBLK * x;
 
     /* a long version,
      * avoids splaying for fast average, poor amortized bound

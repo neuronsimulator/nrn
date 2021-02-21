@@ -74,7 +74,7 @@ jobs:
 
       - name: Install Python2 dependencies
         if: ${{ matrix.config.use_python2 == 'ON' || matrix.config.python_dynamic == 'ON' }}
-        run: python2 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
+        run: python2 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py pathlib
 
       - name: Set up Python3
         uses: actions/setup-python@v2

@@ -2408,7 +2408,7 @@ int hoc_array_index(Symbol *sp, Objectdata *od) {  /* subs must be in reverse or
 int araypt(Symbol *sp, int type) {    /* return subscript - subs in reverse order on stack */
     int i, total, varn;
     int d;
-    register Arrayinfo *aray;
+    Arrayinfo *aray;
     if (type == OBJECTVAR) {
         aray = OPARINFO(sp);
     } else {
@@ -2438,7 +2438,7 @@ int araypt(Symbol *sp, int type) {    /* return subscript - subs in reverse orde
 int nrnpnt_araypt(Symbol* sp, int pi) {
     int i, total;
     int d;
-    register Arrayinfo *aray = sp->arayinfo;
+    Arrayinfo *aray = sp->arayinfo;
     /* the difference is that the first index is for a neuron point
        process vector, and the remaining incices are normal vector indices.
        the return value is the parameter index and the first

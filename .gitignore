@@ -51,3 +51,4 @@ src/nrnoc/syn.c
 src/nrnoc/vclmp.c
 src/oc/parse.cpp
 src/oc/parse.hpp
+share/lib/python/neuron/help_data.dat

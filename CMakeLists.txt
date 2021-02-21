@@ -324,6 +324,8 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    # If NEURON tests are enabled then enable CoreNEURON tests too
+    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
@@ -453,6 +455,23 @@ add_custom_target(
   COMMENT "Update hh.mod for CoreNEURON compatibility"
   VERBATIM)
 add_dependencies(nrniv_lib hh_update)
+
+# =============================================================================
+# Generate help_data.dat
+# =============================================================================
+if(NRN_ENABLE_PYTHON)
+  add_custom_target(
+      help_data_dat
+      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+              ${PROJECT_SOURCE_DIR}/docs/python
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMENT "Generating help_data.dat"
+      VERBATIM)
+  add_dependencies(nrniv_lib help_data_dat)
+endif()
 
 # =============================================================================
 # Add tests if enabled

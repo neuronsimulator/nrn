@@ -79,7 +79,7 @@ void HTList::RemoveAll() {
 	}
 }
 void HTList::Delete (void* p) {
-    register HTList* e;
+    HTList* e;
 
     e = Find(p);
     if (e != NULL) {
@@ -89,7 +89,7 @@ void HTList::Delete (void* p) {
 }
 
 HTList* HTList::Find (void* p) {
-    register HTList* e;
+    HTList* e;
 
     for (e = _next; e != this; e = e->_next) {
 	if (e->_object == p) {
