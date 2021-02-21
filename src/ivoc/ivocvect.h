@@ -2,14 +2,20 @@
 #define ivoc_vector_h
 
 // definition of vector classes from the gnu c++ class library
-#include <d_avec.h>
 #include <nrnmutdec.h>
+#include <vector>
+#include <numeric>
+#include <algorithm>
 
-#define ParentVect doubleAVec
+extern "C" {
+extern void notify_freed_val_array(double *, size_t);
+}
 
+#define Vect IvocVect
+using ParentVect = std::vector<double>;
 struct Object;
 
-class IvocVect : public ParentVect {
+class IvocVect {
 public:
 	IvocVect(Object* obj = NULL);
 	IvocVect(int, Object* obj = NULL);
@@ -17,16 +23,56 @@ public:
 	IvocVect(IvocVect&, Object* obj = NULL);
 	~IvocVect();
 
-	void resize(int);
-	void resize_chunk(int len, int realloc_extra = 0);
-	// volatile, only one at a time, don't do anything
-	// that changes the memory space.
-	IvocVect* subvec(int start, int end);
-
 	Object** temp_objvar();
 	int buffer_size();
 	void buffer_size(int);
 	void label(const char*);
+
+    inline double& elem(int n) {
+        return vec_.at(n);
+    }
+
+    inline std::vector<double>& vec() {
+        return vec_;
+    }
+
+    inline double* data() {
+        return vec_.data();
+    }
+
+    inline size_t size() const {
+        return vec_.size();
+    }
+
+    inline void resize(size_t n) {
+        if(n > vec_.size()) {
+            notify_freed_val_array(vec_.data(), vec_.size());
+        }
+        vec_.resize(n);
+    }
+
+    inline void resize(size_t n, double fill_value) {
+        if(n > vec_.size()) {
+            notify_freed_val_array(vec_.data(), vec_.size());
+        }
+        vec_.resize(n, fill_value);
+    }
+
+    inline double& operator[] (size_t index) {
+        return vec_.at(index);
+    }
+
+    inline auto begin() -> std::vector<double>::iterator {
+        return vec_.begin();
+    }
+
+    inline auto end() -> std::vector<double>::iterator {
+        return vec_.end();
+    }
+
+    inline void push_back(double v) {
+        vec_.push_back(v);
+    }
 
 #if USE_PTHREAD
 	void mutconstruct(int mkmut) {if (!mut_) MUTCONSTRUCT(mkmut)}
@@ -39,9 +85,30 @@ public:
 	//intended as friend static Object** temp_objvar(IvocVect*);
 	Object* obj_;	// so far only needed by record and play; not reffed
 	char* label_;
+	std::vector<double> vec_;   // std::vector holding data
 	MUTDEC
 };
-#define Vect IvocVect
+
+template< class InputIterator >
+double var(InputIterator begin, InputIterator end) {
+    const size_t size = end-begin;
+    const double sum = std::accumulate(begin, end, 0.0);
+    const double m =  sum / size;
+
+    double accum = 0.0;
+    std::for_each (begin, end, [&](const double d) {
+        accum += (d - m) * (d - m);
+    });
+
+    return accum / (size-1);
+
+}
+
+template< class InputIterator >
+double stdDev(InputIterator begin, InputIterator end) {
+    return sqrt(var(begin, end));
+}
+
 extern "C" {
 extern Vect* vector_new(int, Object*); // use this if possible
 extern Vect* vector_new0();

@@ -18,7 +18,7 @@ public:
 	void ptr_update_cmd(HocCommand*);
 	void ptr_update();	
 public:
-	int size_;
+	size_t size_;
 	double** pd_;
 	HocCommand* update_cmd_;
 	char* label_;

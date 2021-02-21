@@ -79,7 +79,7 @@ void BBSImpl::subworld_worker_execute() {
 			int n;
 			nrnmpi_int_broadcast(&n, 1, 0);
 			Vect* vec = new Vect(n);
-			nrnmpi_dbl_broadcast(vec->vec(), n, 0);
+			nrnmpi_dbl_broadcast(vec->data(), n, 0);
 			hoc_pushobj(vec->temp_objvar());
 		}else{ // PythonObject
 			int n;

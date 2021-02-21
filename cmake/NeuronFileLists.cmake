@@ -483,9 +483,7 @@ set(NRNGNU_FILES_LIST
     SmplStat.cpp
     Uniform.cpp
     Weibull.cpp
-    builtin.cpp
-    d_avec.cpp
-    d_vec.cpp)
+    builtin.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST

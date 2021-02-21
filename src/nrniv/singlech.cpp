@@ -275,7 +275,7 @@ double SingleChan::cond_transition() {
 
 void SingleChan::state_transitions(Vect* dt, Vect* state) {
 	int i;
-	int n = dt->capacity();
+	int n = dt->size();
 	state->resize(n);
 	for (i=0; i < n; ++i) {
 		state->elem(i) = current_;
@@ -285,7 +285,7 @@ void SingleChan::state_transitions(Vect* dt, Vect* state) {
 
 void SingleChan::cond_transitions(Vect* dt, Vect* cond) {
 	int i;
-	int n = dt->capacity();
+	int n = dt->size();
 	cond->resize(n);
 	for (i=0; i < n; ++i) {
 		cond->elem(i) = current_cond();

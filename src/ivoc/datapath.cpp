@@ -426,7 +426,7 @@ void HocDataPathImpl::search_vectors() {
 		cs = buf;
 		strlist_.append((char*)cs.string());
 		Vect* vec = (Vect*)obj->u.this_pointer;
-		int size = vec->capacity();
+		int size = vec->size();
 		double* pd = vector_vec(vec);
 		for (i=0; i < size; ++i) {
 			if (pd[i] == sentinal) {
