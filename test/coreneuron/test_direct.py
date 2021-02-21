@@ -40,6 +40,7 @@ def test_direct_memory_transfer():
     pc.psolve(h.tstop)
     tran = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
 
+    assert(v.eq(vstd))
     assert(tv.eq(tvstd))
     assert(v.cl().sub(vstd).abs().max() < 1e-10)
     assert(i_mem.cl().sub(i_memstd).abs().max() < 1e-10)

@@ -42,7 +42,7 @@ LinearModelAddition::~LinearModelAddition() {
 
 void LinearModelAddition::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {
 //printf("LinearModelAddition::alloc_ %p\n", this);
-	assert(b_.capacity() == size);
+	assert(b_.size() == size);
 	assert(g_->nrow() == size && g_->ncol() == size);
 //printf("g_->alloc start=%d, nnode=%d\n", start_, nnode_);
 	g_->alloc(start, nnode, nodes, elayer);

@@ -188,7 +188,7 @@ static double ptr_plot(void* v) {
 IFGUI
         int i;
 	double** y = opv->pd_;
-	int n = opv->size_;
+	auto n = opv->size_;
 	char* label = opv->label_;
 
         Object* ob1 = *hoc_objgetarg(1);
@@ -213,7 +213,7 @@ IFGUI
 	   if (hoc_is_object_arg(2)) {
                  // passed a vector
              Vect* vp2 = vector_arg(2);
-	     n = Math::min(n, vp2->capacity());
+	     n = std::min(n, vp2->size());
 	     for (i=0; i < n; ++i) gv->add(vp2->elem(i), y[i]);
            } else {
                  // passed xinterval

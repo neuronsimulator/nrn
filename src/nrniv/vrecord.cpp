@@ -56,7 +56,7 @@ void nrn_vecsim_add(void* v, bool record) {
 		// must be a VecPlayStep and nothing else
 			VecPlayStep* vps = (VecPlayStep*)net_cvode_instance->playrec_uses(v);
 		if (vps) {
-			int j = (int)chkarg(iarg+1, 0., yvec->capacity()-1);
+			int j = (int)chkarg(iarg+1, 0., yvec->size()-1);
 			if (vps->si_) {
 				vps->si_->play_one(yvec->elem(j));
 			}
@@ -179,7 +179,7 @@ void VecPlayStep::play_init() {
 		nt = cvode_->nth_;
 	}
 	if (t_) {
-		if (t_->capacity() > 0) {
+		if (t_->size() > 0) {
 			e_->send(t_->elem(0), net_cvode_instance, nt);
 		}
 	}else{
@@ -201,9 +201,9 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 	}else{
 		*pd_ = y_->elem(current_index_++);
 	}
-	if (current_index_ < y_->capacity()) {
+	if (current_index_ < y_->size()) {
 		if (t_) {
-			if (current_index_ < t_->capacity()) {
+			if (current_index_ < t_->size()) {
 				e_->send(t_->elem(current_index_), ns, nt);
 			}
 		}else{
@@ -278,12 +278,12 @@ void VecPlayContinuous::play_init() {
 	last_index_ = 0;
 	discon_index_ = 0;
 	if (discon_indices_) {
-		if (discon_indices_->capacity() > 0) {
+		if (discon_indices_->size() > 0) {
 			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
 //printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
 			e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
 		}else{
-			ubound_index_ = t_->capacity()-1;
+			ubound_index_ = t_->size()-1;
 		}
 	}else{
 		ubound_index_ = 0;
@@ -300,15 +300,15 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 	}
 	last_index_ = ubound_index_;
 	if (discon_indices_) {
-		if (discon_index_ < discon_indices_->capacity()) {
+		if (discon_index_ < discon_indices_->size()) {
 			ubound_index_ = (int)discon_indices_->elem(discon_index_++);
 //printf("after deliver:send %d %g\n", ubound_index_, t_->elem(ubound_index_));
 			e_->send(t_->elem(ubound_index_), ns, nt);
 		}else{
-			ubound_index_ = t_->capacity() - 1;
+			ubound_index_ = t_->size() - 1;
 		}
 	}else{
-		if (ubound_index_ < t_->capacity() - 1) {
+		if (ubound_index_ < t_->size() - 1) {
 			ubound_index_++;
 			e_->send(t_->elem(ubound_index_), ns, nt);
 		}
@@ -357,7 +357,7 @@ double VecPlayContinuous::interpolate(double tt) {
 }
 
 void VecPlayContinuous::search(double tt) {
-//	assert (tt > t_->elem(0) && tt < t_->elem(t_->capacity() - 1))
+//	assert (tt > t_->elem(0) && tt < t_->elem(t_->size() - 1))
 	while ( tt < t_->elem(last_index_)) {
 		--last_index_;
 	}
