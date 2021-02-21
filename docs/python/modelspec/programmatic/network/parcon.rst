@@ -3294,8 +3294,6 @@ Parallel Transfer
     Syntax:
         ``pc.nrncore_write([path[, append_files_dat]])``
 
-        ``pc.nrnbbcore_write([path[, gidgroup_vec]])`` deprecated
-
     Description:
         Writes files describing the existing model in such a way that those
         files can be read by CoreNEURON to simulate the model and produce
@@ -3343,9 +3341,10 @@ Parallel Transfer
         of separate launches. A user written "teardown" function should,
         in order, free all gids with :func:`gid_clear` , arrange for all
         NetCon to be freed, and arrange for all Sections to be destroyed.
-        These latter two are straightforware if the submodel is created as
-        a class. An example of sequential build, nrncore_write, teardown is
-        the test_submodel.py in http://github.com/neuronsimulator/ringtest.
+        These latter two are straightforward if the submodel is created as
+        an instance of a class. An example of sequential build, nrncore_write,
+        teardown is the test_submodel.py in
+        http://github.com/neuronsimulator/ringtest.
 
         This function requires cvode.cache_efficient(1) . Multisplit is not
         supported. The model cannot be more complicated than a spike or gap

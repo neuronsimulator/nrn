@@ -977,7 +977,17 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
-static double nrncorewrite(void*) {
+static double nrncorewrite_argvec(void*) {
+	if (ifarg(2) && !(hoc_is_object_arg(2) && is_vector_arg(2))) {
+		hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", NULL);
+	}
+	return double(nrncore_write());
+}
+
+static double nrncorewrite_argappend(void*) {
+	if (ifarg(2) && !hoc_is_double_arg(2)) {
+		hoc_execerror("nrncore_write: optional second arg is not a number (True or False append flag)", NULL);
+	}
 	return double(nrncore_write());
 }
 
@@ -1079,8 +1089,8 @@ static Member_func members[] = {
 	"dt", thread_dt,
 	"t", nrn_thread_t,
 
-    "nrnbbcore_write", nrncorewrite, // remove, deprecate, backward_compatible?
-    "nrncore_write", nrncorewrite,
+    "nrnbbcore_write", nrncorewrite_argvec,
+    "nrncore_write", nrncorewrite_argappend,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
     "nrncore_run", nrncorerun,
 
