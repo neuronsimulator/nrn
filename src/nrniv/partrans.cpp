@@ -285,7 +285,11 @@ void nrnmpi_source_var() {
 	alloclists();
 	is_setup_ = false;
 	double* psv = hoc_pgetarg(1); // but might not be a voltage
-	sgid_t sgid = (sgid_t)(*getarg(2));
+	double x = *getarg(2);
+	if (x < 0) {
+		hoc_execerr_ext("source_var sgid must be >= 0: arg 2 is %g\n", x);
+	}
+	sgid_t sgid = (sgid_t)x;
 	int i;
 	if (sgid2srcindex_->find(sgid, i)) {
 		char tmp[40];
@@ -345,7 +349,11 @@ void nrnmpi_target_var() {
 		pp = ob2pntproc(*hoc_objgetarg(iarg++));
 	}
 	double* ptv = hoc_pgetarg(iarg++);
-	sgid_t sgid = (sgid_t)(*getarg(iarg++));
+	double x = *getarg(iarg++);
+	if (x < 0) {
+		hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg-1, x);
+	}
+	sgid_t sgid = (sgid_t)x;
 	targets_->append(ptv);
 	target_pntlist_->append(pp);
 	target_parray_index_->append(compute_parray_index(pp, ptv));
