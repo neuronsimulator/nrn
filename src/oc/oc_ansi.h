@@ -42,6 +42,7 @@ extern void* hoc_Emalloc(size_t size);
 extern void hoc_malchk(void);
 
 extern void hoc_execerror(const char*, const char*);
+extern void hoc_execerr_ext(const char* fmt, ...);
 extern char* hoc_object_name(Object*);
 extern void hoc_retpushx(double);
 

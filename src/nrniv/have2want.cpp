@@ -78,8 +78,8 @@ static void rendezvous_rank_get(HAVEWANT_t* data, int size,
   sdispl = cnt2displ(scnt);
   rcnt = srccnt2destcnt(scnt);
   rdispl = cnt2displ(rcnt);
-  sdata = new HAVEWANT_t[sdispl[nhost]];
-  rdata = new HAVEWANT_t[rdispl[nhost]];
+  sdata = new HAVEWANT_t[sdispl[nhost] + 1]; // ensure not 0 size
+  rdata = new HAVEWANT_t[rdispl[nhost] + 1]; // ensure not 0 size
   // scatter data into sdata by recalculating scnt.
   for (int i=0; i < nhost; ++i) { scnt[i] = 0; }
   for (int i=0; i < size; ++i) {
@@ -117,15 +117,13 @@ static void have_to_want(
   delete [] have_s_data;
   // assume it is an error if two ranks have the same key so create
   // hash table of key2rank. Will also need it for matching have and want
-  HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost]);
+  HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost]+1); //ensure not empty.
   for (int r=0; r < nhost; ++r) {
     for (int i=0; i < have_r_cnt[r]; ++i) {
       HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
       int srcrank;
       if (havekey2rank.find(key, srcrank)) {
-	char buf[200];
-sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
-        hoc_execerror(buf, 0);
+hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple ranks\n", (long long)key);
       }
       havekey2rank[key] = r;
     }
@@ -154,9 +152,7 @@ sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
       HAVEWANT_t key = want_r_data[ix];
       int srcrank;
       if (!havekey2rank.find(key, srcrank)) {
-	char buf[200];
-sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
-        hoc_execerror(buf, 0);
+hoc_execerr_ext("internal error in have_to_want: key = %lld is wanted but does not exist\n", (long long)key);
       }
       want_r_ownerranks[ix] = srcrank;
     }

@@ -947,4 +947,22 @@ int Fprintf(FILE* stream, const char *fmt, ...) {
   return n;
 }
 
+void hoc_execerr_ext(const char* fmt, ...) {
+  size_t size;
+  va_list ap;
+
+  va_start(ap, fmt);
+  size = vsnprintf(NULL, 0, fmt, ap);
+  va_end(ap);
+  if (size >= 0) {
+    char s[size + 1];
+    va_start(ap, fmt);
+    size = vsnprintf(s, size, fmt, ap);
+    va_end(ap);
+    if (size >= 0) {
+      hoc_execerror(s, NULL);
+    }
+  }
+  hoc_execerror("hoc_execerr_ext failure with format:", fmt);
+}
 

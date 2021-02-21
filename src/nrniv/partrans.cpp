@@ -572,8 +572,7 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
 			ttd.sv[j] = insrc_buf_ + k;
 		}else{
-fprintf(stderr, "No source_var for target_var sid = %lld\n", (long long)sid);
-			assert(0);
+hoc_execerr_ext("No source_var for target_var sid = %lld\n", (long long)sid);
 		}
 	}
 	if (ndvi2pd) { delete ndvi2pd; }
@@ -727,7 +726,7 @@ void nrnmpi_setup_transfer() {
 	// <new comment>
 	// 1) List sources needed by this rank and sources that this rank owns.
 	// 2) Call the have_to_want function. Returns two sets of three
-	//    vectors. The first set of three vectors is a an sgid buffer,
+	//    vectors. The first set of three vectors is an sgid buffer,
 	//    along with counts and displacements. The sgids in the ith region
 	//    of the buffer are the sgids from this rank that are
 	//    wanted by the ith rank. For the second set, the sgids in the ith
