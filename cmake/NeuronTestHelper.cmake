@@ -250,11 +250,18 @@ function(nrn_add_test)
   # specific working directory and copy them there.
   file(MAKE_DIRECTORY "${working_directory}")
   foreach(script_pattern ${script_patterns})
-    file(GLOB script_files "${test_source_directory}/${script_pattern}")
-    add_custom_command(
-      TARGET ${prefix} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${script_files} "${working_directory}"
-      COMMENT "Copying scripts needed to run test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
+    # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
+    # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
+    file(
+      GLOB_RECURSE script_files
+      RELATIVE "${test_source_directory}"
+      "${test_source_directory}/${script_pattern}")
+    foreach(script_file ${script_files})
+      add_custom_command(
+        TARGET ${prefix} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${test_source_directory}/${script_file}"
+                "${working_directory}/${script_file}")
+    endforeach()
   endforeach()
 
   # Construct the name of the test and store it in a parent-scope list to be used when setting up
