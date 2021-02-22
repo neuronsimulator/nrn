@@ -342,7 +342,7 @@ static void unpack_help(int i, OcBBS* bbs) {
 			Vect* vec = vector_arg(i);
 			int n = bbs->upkint();
 			vec->resize(n);
-			bbs->upkvec(n, vec->vec());
+			bbs->upkvec(n, vec->data());
 		}else{
 hoc_execerror("pc.unpack can only unpack str, scalar, or Vector.",
 "use pc.upkpyobj to unpack a Python Object");
@@ -380,7 +380,7 @@ static Object** upkvec(void* v) {
 	}else{
 		vec = new Vect(n);
 	}
-	bbs->upkvec(n, vec->vec());
+	bbs->upkvec(n, vec->data());
 	return vec->temp_objvar();
 }
 
@@ -743,7 +743,7 @@ static double allreduce(void*) {
 	// type 1,2,3 sum, max, min
     if (hoc_is_object_arg(1)) {
 	Vect* vec = vector_arg(1);
-	int n = vec->capacity();
+	int n = vec->size();
 	if (n == 0) { return 0.0; }
 #if NRNMPI
 	if (nrnmpi_numprocs > 1) {
@@ -868,7 +868,7 @@ static double broadcast(void*) {
 	}else{
 		Vect* vec = vector_arg(1);
 		if (srcid == nrnmpi_myid) {
-			cnt = vec->capacity();
+			cnt = vec->size();
 		}
 		nrnmpi_int_broadcast(&cnt, 1, srcid);
 		if (srcid != nrnmpi_myid) {
@@ -883,7 +883,7 @@ static double broadcast(void*) {
 	if (hoc_is_str_arg(1)) {
 		cnt = strlen(gargstr(1));
 	}else{
-		cnt = vector_arg(1)->capacity();
+		cnt = vector_arg(1)->size();
 	}
     }
 	return double(cnt);
@@ -1244,9 +1244,9 @@ hoc_execerror("ParallelContext execution error", 0);
 				}
 				Vect* vec = new Vect(n);
 //printf("arg %d vector size=%d\n", narg, n);
-				upkvec(n, vec->vec());
+				upkvec(n, vec->data());
 				if (subworld) {
-					nrnmpi_dbl_broadcast(vec->vec(), n, 0);
+					nrnmpi_dbl_broadcast(vec->data(), n, 0);
 				}
 				hoc_pushobj(vec->temp_objvar());
 			}else{ //PythonObject

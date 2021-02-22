@@ -178,6 +178,7 @@ callback to bbss_early when needed.
 #include <nrnhash.h>
 #include <nrnmpiuse.h>
 #include <OS/list.h>
+#include <cmath>
 
 #include "tqueue.h"
 #include "netcon.h"
@@ -2353,10 +2354,10 @@ f->s(buf, 1);
 			int sz1 = -1; int sz2 = -1;
 			PreSyn* ps = nrn_gid2presyn(gid);
 			if (ps->tvec_) {
-				sz1 = ps->tvec_->capacity();
+				sz1 = ps->tvec_->size();
 			}
 			if (ps->idvec_) {
-				sz2 = ps->idvec_->capacity();
+				sz2 = ps->idvec_->size();
 			}
 #endif
 
@@ -2383,12 +2384,12 @@ f->s(buf, 1);
 
 			// restore spike record sizes.
 			if (ps->tvec_) {
-				int sz = ps->tvec_->capacity() - cnt/2;
+				int sz = ps->tvec_->size() - cnt/2;
 				assert(sz == sz1);
 				ps->tvec_->resize(sz);
 			}
 			if (ps->idvec_) {
-				int sz = ps->idvec_->capacity() - cnt/2;
+				int sz = ps->idvec_->size() - cnt/2;
 				assert(sz == sz2);
 				ps->idvec_->resize(sz);
 			}

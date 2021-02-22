@@ -1054,7 +1054,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       // return __array_interface__
       // printf("building array interface\n");
       Vect* v = (Vect*)self->ho_->u.this_pointer;
-      int size = v->capacity();
+      int size = v->size();
       double* x = vector_vec(v);
 
       return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}", "shape", size, "typestr",
@@ -2286,9 +2286,9 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         sprintf(buf, "item %d not a number", i);
         hoc_execerror(buf, 0);
       }
-      hv->resize_chunk(i + 1);
-      hv->elem(i++) = PyFloat_AsDouble(p);
+      hv->push_back(PyFloat_AsDouble(p));
       Py_DECREF(p);
+      ++i;
     }
     Py_DECREF(iterator);
   } else {
@@ -2473,7 +2473,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
 
 static Object** nrnpy_vec_to_python(void* v) {
   Vect* hv = (Vect*)v;
-  int size = hv->capacity();
+  int size = hv->size();
   double* x = vector_vec(hv);
   //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
   PyObject* po;
@@ -2633,9 +2633,9 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     return NULL;
   }
   PyTuple_SET_ITEM(state, 1, str);
-  PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->capacity()));
+  PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
   str = PyBytes_FromStringAndSize((const char*)vector_vec(vec),
-                                  vec->capacity() * sizeof(double));
+                                  vec->size() * sizeof(double));
   if (str == NULL) {
     Py_DECREF(ret);
     Py_DECREF(state);
