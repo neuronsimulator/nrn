@@ -194,7 +194,7 @@ function(nrn_add_test)
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
-  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} nrnivmodl)
+  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
   if(requires_coreneuron)
     # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
     # reduce the number of times we call nrnivmodl.
@@ -252,8 +252,7 @@ function(nrn_add_test)
     add_custom_command(
       OUTPUT ${output_binaries}
       DEPENDS ${nrnivmodl_dependencies} ${modfile_build_paths}
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_TEST_ENV} PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}
-              ${nrnivmodl_command}
+      COMMAND ${nrnivmodl_command}
       COMMENT "Building special[-core] for test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}"
       WORKING_DIRECTORY ${nrnivmodl_working_directory})
     # Add a target that depends on the binaries
@@ -265,6 +264,10 @@ function(nrn_add_test)
   # Set up the actual test. First, collect the script files that need to be copied into the test-
   # specific working directory and copy them there.
   file(MAKE_DIRECTORY "${working_directory}")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+            "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   foreach(script_pattern ${script_patterns})
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
@@ -298,12 +301,14 @@ function(nrn_add_test)
   #   same directory).
   add_test(
     NAME "${test_name}"
-    COMMAND
-      ${CMAKE_COMMAND} -E env ${NRN_TEST_ENV}
-      PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH}
-      "CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech.so"
-      ${NRN_ADD_TEST_COMMAND}
+    COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${working_directory}")
+  set_tests_properties(
+    "${test_name}"
+    PROPERTIES
+      ENVIRONMENT
+      "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech.so"
+  )
 
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
