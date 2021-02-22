@@ -7,10 +7,10 @@ if (NRN_MACOS_BUILD)
   install(CODE
     "execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/activate-apps-cmake.sh \"x86_64\" \"${CMAKE_INSTALL_PREFIX}\" \"${PROJECT_SOURCE_DIR}\" \"${CMAKE_INSTALL_PREFIX}/lib\")")
 
-  set(MACPKG_INSTALL_PATH "/Applications/NEURON-${PROJECT_VERSION}")
+  set(MACPKG_INSTALL_PATH "/Applications/NEURON")
   if (${CMAKE_INSTALL_PREFIX} STREQUAL ${MACPKG_INSTALL_PATH})
     # should only be invoked after a 'make install'. Creates signed pkg.
-    set(PKG_NAME "NEURON-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+    set(PKG_NAME "NEURON")
     set(PKG_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/${PKG_NAME}.pkg")
     add_custom_target(macpkg
       COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/clean-for-pkg-cmake.sh "${CMAKE_INSTALL_PREFIX}"

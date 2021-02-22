@@ -28,30 +28,17 @@ apps="idraw mknrndll modlunit mos2nrn neurondemo nrngui"
 
 executables="idraw modlunit nocmodl nrniv"
 
-libraries="
-  libivx11dynam.dylib libnrniv.dylib libnrnmpi_ompi.dylib
-  libnrnpython2.dylib libnrnpython3.dylib librxdmath.dylib
+#list of expanded dylib relative to lib
+libraries=`(cd $inst/lib ; ls *.dylib)`
+
+pylibraryglob="
+  *.so
+  rxd/geometry3d/*.so
 "
 
-pyversions='
-  .
-  .cpython-36m-darwin.
-  .cpython-39-darwin.
-  .cpython-37m-darwin.
-  .cpython-38-darwin.
-'
-pyversions='
-  .cpython-38-darwin.
-'
-
-set_pylibraries() {
-  pylibraries="
-    hoc${pyver}so
-    rxd/geometry3d/ctng${pyver}so
-    rxd/geometry3d/surfaces${pyver}so
-    rxd/geometry3d/graphicsPrimitives${pyver}so
-  "
-}
+# list of expanded pylibraryglob relative to neuron module
+pylibraries=`(cd $inst/lib/python/neuron ; for i in $pylibraryglob ; do ls $i ; done)`
+echo $pylibraries
 
 demolibnrnmech="$CPU/libnrnmech.dylib $CPU/.libs/libnrnmech.so"
 
@@ -101,9 +88,6 @@ sign_several "bin" "$executables"
 
 sign_several "lib" "$libraries"
 
-for pyver in $pyversions ; do
-  set_pylibraries
-  sign_several "lib/python/neuron" "$pylibraries"
-done
+sign_several "lib/python/neuron" "$pylibraries"
 
 sign_several "share/nrn/demo/release" "$demolibnrnmech"

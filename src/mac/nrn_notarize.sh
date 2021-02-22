@@ -21,7 +21,7 @@ xcrun altool --notarize-app \
 
 # you should get
 # 2021-01-31 17:43:58.537 altool[3021:3231297] CFURLRequestSetHTTPCookieStorageAcceptPolicy_block_invoke: no longer implemented and should not be called
-# No errors uploading '/Users/michaelhines/neuron/notarize/build/src/mac/build/NEURON-8.0.pkg'.
+# No errors uploading '/Users/michaelhines/neuron/notarize/build/src/mac/build/NEURON.pkg'.
 # RequestUUID = dc9dd4dd-a942-475a-ab59-4996f938d606
 
 # and eventually get an email in just a few minutes saying that
