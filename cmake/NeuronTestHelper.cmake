@@ -5,7 +5,7 @@
 #
 # 1. nrn_add_test_group(NAME name
 #                       SUBMODULE some/submodule
-#                       MODFILE_DIRECTORY mod_file_dir
+#                       MODFILE_PATTERNS mod/file/dir/*.mod other/file.mod
 #                       OUTPUT datatype::file.ext otherdatatype::otherfile.ext
 #                       SCRIPT_PATTERNS "*.py")
 #
@@ -13,38 +13,41 @@
 #    consists of different configurations of running logically the same
 #    simulation. The outputs of the different configurations will be compared.
 #
-#    SUBMODULE         - the name of the git submodule containing test data.
-#    MODFILE_DIRECTORY - a relative path inside the submodule that contains the
-#                        modfiles that must be compiled (using nrnivmodl) to
-#                        run the test.
-#    OUTPUT            - zero or more expressions of the form `datatype::path`
-#                        describing the output data produced by a test. The
-#                        data type must be supported by the comparison script
-#                        `compare_test_results.py`, and `path` is defined
-#                        relative to the working directory in which the test
-#                        command is run.
-#    SCRIPT_PATTERNS   - zero or more glob expressions, defined relative to the
-#                        submodule directory, matching scripts that must be
-#                        copied from the submodule to the working directory in
-#                        which the test is run.
+#    SUBMODULE        - the name of the git submodule containing test data.
+#    MODFILE_PATTERNS - a list of patterns that will be matched against the
+#                       submodule directory tree to find the modfiles that must
+#                       be compiled (using nrnivmodl) to run the test.
+#    OUTPUT           - zero or more expressions of the form `datatype::path`
+#                       describing the output data produced by a test. The
+#                       data type must be supported by the comparison script
+#                       `compare_test_results.py`, and `path` is defined
+#                       relative to the working directory in which the test
+#                       command is run.
+#    SCRIPT_PATTERNS  - zero or more glob expressions, defined relative to the
+#                       submodule directory, matching scripts that must be
+#                       copied from the submodule to the working directory in
+#                       which the test is run.
 #
-#    The SUBMODULE, MODFILE_DIRECTORY, OUTPUT and SCRIPT_PATTERNS arguments are
+#    The SUBMODULE, MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are
 #    default values that will be inherited tests that are added to this group
 #    using nrn_add_test. They can be overriden for specific tests by passing
 #    the same keyword arguments to nrn_add_test.
 #
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
+#                 COMMAND command [arg ...]
 #                 [REQUIRES feature1 ...]
 #                 [CONFLICTS feature1 ...]
 #                 [SUBMODULE some/submodule]
-#                 [MODFILE_DIRECTORY mod_file_dir]
+#                 [MODFILE_PATTERNS mod_file_pattern ...]
 #                 [OUTPUT datatype::file.ext otherdatatype::otherfile.ext ...]
 #                 [SCRIPT_PATTERNS "*.py" ...])
 #
 #    Create a new integration test inside the given group, which must have
-#    previously been created using nrn_add_test_group. The SUBMODULE,
-#    MODFILE_DIRECTORY, OUTPUT and SCRIPT_PATTERNS arguments are optional and
+#    previously been created using nrn_add_test_group. The COMMAND option is
+#    the test expression, which is run in an environment whose PATH includes
+#    the `special` binary built from the specified modfiles. The SUBMODULE,
+#    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
 #    can be used to override the defaults defined when nrn_add_test_group is
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
 #    if certain features are, or are not, available. Four features are
@@ -62,8 +65,8 @@
 function(nrn_add_test_group)
   # NAME is used as a key, everything else is a default that can be overriden in subsequent calls to
   # nrn_add_test
-  set(oneValueArgs NAME SUBMODULE MODFILE_DIRECTORY)
-  set(multiValueArgs OUTPUT SCRIPT_PATTERNS)
+  set(oneValueArgs NAME SUBMODULE)
+  set(multiValueArgs OUTPUT SCRIPT_PATTERNS MODFILE_PATTERNS)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
     message(
@@ -85,8 +88,8 @@ function(nrn_add_test_group)
   set(${prefix}_DEFAULT_SCRIPT_PATTERNS
       "${NRN_ADD_TEST_GROUP_SCRIPT_PATTERNS}"
       PARENT_SCOPE)
-  set(${prefix}_DEFAULT_MODFILE_DIRECTORY
-      "${NRN_ADD_TEST_GROUP_MODFILE_DIRECTORY}"
+  set(${prefix}_DEFAULT_MODFILE_PATTERNS
+      "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}"
       PARENT_SCOPE)
 
   # Create a target that depends on all the test binaries to ensure they are actually built.
@@ -96,8 +99,8 @@ endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME SUBMODULE MODFILE_DIRECTORY)
-  set(multiValueArgs COMMAND OUTPUT SCRIPT_PATTERNS REQUIRES CONFLICTS)
+  set(oneValueArgs GROUP NAME SUBMODULE)
+  set(multiValueArgs COMMAND OUTPUT SCRIPT_PATTERNS REQUIRES CONFLICTS MODFILE_PATTERNS)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -159,7 +162,7 @@ function(nrn_add_test)
   set(output_files "${${prefix}_DEFAULT_OUTPUT}")
   set(git_submodule "${${prefix}_DEFAULT_SUBMODULE}")
   set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
-  set(modfile_directory "${${prefix}_DEFAULT_MODFILE_DIRECTORY}")
+  set(modfile_patterns "${${prefix}_DEFAULT_MODFILE_PATTERNS}")
   # Override them locally if appropriate
   if(DEFINED NRN_ADD_TEST_OUTPUT)
     set(output_files "${NRN_ADD_TEST_OUTPUT}")
@@ -170,8 +173,8 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_SCRIPT_PATTERNS)
     set(script_patterns "${NRN_ADD_TEST_SCRIPT_PATTERNS}")
   endif()
-  if(DEFINED NRN_ADD_TEST_MODFILE_DIRECTORY)
-    set(modfile_directory "${NRN_ADD_TEST_MODFILE_DIRECTORY}")
+  if(DEFINED NRN_ADD_TEST_MODFILE_PATTERNS)
+    set(modfile_patterns "${NRN_ADD_TEST_MODFILE_PATTERNS}")
   endif()
 
   # First, make sure the specified submodule is initialised.
@@ -194,7 +197,15 @@ function(nrn_add_test)
   endif()
   list(APPEND nrnivmodl_command .)
   # Collect the list of modfiles that need to be compiled.
-  file(GLOB modfiles "${test_source_directory}/${modfile_directory}/*.mod")
+  set(modfiles)
+  foreach(modfile_pattern ${modfile_patterns})
+    file(GLOB pattern_modfiles "${test_source_directory}/${modfile_pattern}")
+    list(APPEND modfiles ${pattern_modfiles})
+  endforeach()
+  if("${modfiles}" STREQUAL "")
+    message(
+      WARNING "Didn't find any modfiles in ${test_source_directory} using ${modfile_patterns}")
+  endif()
   # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
   string(SHA256 nrnivmodl_command_hash "${nrnivmodl_command};${modfiles}")
   # Construct the name of a target that refers to the compiled special binaries

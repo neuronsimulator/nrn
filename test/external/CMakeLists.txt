@@ -7,7 +7,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
   nrn_add_test_group(
     NAME external_ringtest
     SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
-    MODFILE_DIRECTORY "mod"
+    MODFILE_PATTERNS "mod/*.mod"
     OUTPUT asciispikes::spk2.std # which output data to compare
     SCRIPT_PATTERNS "*.py" "*.hoc")
 
