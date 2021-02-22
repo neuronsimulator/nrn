@@ -424,6 +424,10 @@ if(NEURON_CMAKE_FORMAT)
   if(NOT EXISTS external/coding-conventions/cpp)
     initialize_submodule(external/coding-conventions)
   endif()
+  set(NEURON_CMakeFormat_EXCLUDES_RE
+      ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
+      ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
+      CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
   add_subdirectory(external/coding-conventions/cpp)
 endif()
 
