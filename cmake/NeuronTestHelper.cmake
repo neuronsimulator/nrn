@@ -177,10 +177,15 @@ function(nrn_add_test)
     set(modfile_patterns "${NRN_ADD_TEST_MODFILE_PATTERNS}")
   endif()
 
-  # First, make sure the specified submodule is initialised.
-  initialize_submodule(external/${git_submodule})
-  # Construct the name of the source tree directory where the submodule has been checked out.
-  set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${git_submodule}")
+  # First, make sure the specified submodule is initialised. If there is no submodule, everything is
+  # relative to the root nrn/ directory.
+  if(NOT ${git_submodule} STREQUAL "")
+    initialize_submodule(external/${git_submodule})
+    # Construct the name of the source tree directory where the submodule has been checked out.
+    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${git_submodule}")
+  else()
+    set(test_source_directory "${PROJECT_SOURCE_DIR}")
+  endif()
   # Construct the name of a working directory in the build tree for this group of tests
   set(group_working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}")
   # Finally a working directory for this specific test within the group
