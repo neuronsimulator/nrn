@@ -20,8 +20,8 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
     GROUP external_ringtest
     NAME neuron
     REQUIRES mod_compatibility
-    COMMAND
-      special -python ringtest.py -tstop 100 OUTPUT asciispikes::spk1.std)
+    COMMAND special -python ringtest.py -tstop 100
+    OUTPUT asciispikes::spk1.std)
 
   if(NRN_ENABLE_MPI) # This could be translated into `REQUIRES mpi` if needed
     # To work around CI failures that seem related to #894 we should run `mpiexec` not

@@ -18,6 +18,7 @@ additional_commands:
       SCRIPT_PATTERNS: '*'
       REQUIRES: '*'
       CONFLICTS: '*'
+      OUTPUT: '*'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:
