@@ -490,8 +490,12 @@ if(NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT PYTEST_FOUND)
     message(SEND_ERROR "pytest Python package is required.")
   endif()
-  add_subdirectory(test)
+  # Initialize the submodule *before* including the test/CMakeLists.txt that
+  # uses it. This ensures that the test infrastructure can find the names of
+  # the input data files and set up rules to copy them into the test working
+  # directories.
   initialize_submodule("test/rxd/testdata")
+  add_subdirectory(test)
 endif()
 
 # =============================================================================
