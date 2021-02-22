@@ -9,6 +9,19 @@ def copy(src, result, *args, dest=None):
     dest.copy(src, *args)
     assert dest.to_python() == result
 
+def vwrite_type(src, vtype):
+    f = h.File()
+    fname = "vwrite.{}.tmp".format(str(vtype))
+    f.wopen(fname)
+    src.c().vwrite(f, vtype)
+    f.close()
+    f.ropen(fname)
+    vr = h.Vector(vtype)
+    vr.vread(f)
+    f.close()
+    f.unlink()
+    assert src.to_python() == vr.to_python()
+
 
 def test_vector_api():
     """
@@ -68,6 +81,7 @@ def test_vector_api():
     assert v.sum() == 14.0
     assert v.sum(1, 3) == 6.0
     assert np.allclose(v.sumgauss(-1, 1, .5, 1).to_python(), [0.05869048145253869, 0.14879136924715222, 0.30482687457572216, 0.5166555071584352])
+    assert np.allclose(v.sumgauss(-1, 1, .5, 1, h.Vector((1, 3, 2, 5, 4))).to_python(), [0.2793538745964073, 0.6861357408871805, 1.3355688961479038, 2.0895389620919826])
     assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1).to_python(), [0.9060003240550064, 0.9598574603424295, 0.5071918738793386])
     assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1, h.Vector((1, 3, 2, 5, 4))).to_python(), [3.009095149765841, 2.1896697532507994, 1.8126697992388372])
     assert v.sumsq() == 48.0
@@ -110,6 +124,7 @@ def test_vector_api():
     copy(v, [0.0, 3.0, 2.0], h.Vector((1, 2)), dest=h.Vector(3, 0.))
     # vdest.copy(vsrc, vsrcindex, vdestindex)copy(v, [3.0, 3.0, 2.0, 1.0, 5.0])
     copy(v, [3.0, 2.0, 0.0],  h.Vector((1, 2)), h.Vector((0, 1)), dest=h.Vector(3, 0.))
+    copy(v, [3.0],  h.Vector((1, 2)), h.Vector((0, 1)), dest=h.Vector(1, 0.))
     assert v.c().to_python() == v.to_python()
     assert v.c(1).to_python() == [3.0, 2.0, 1.0, 5.0]
     assert v.c(1, 3).to_python() == [3.0, 2.0, 1.0]
@@ -159,10 +174,25 @@ def test_vector_api():
     assert v.where(">", 1.0).to_python() == [6.0, 11.0, 16.0, 21.0, 26.0]
     assert v.where("[)", 6.0, 26.0).to_python() == [6.0, 11.0, 16.0, 21.0]
     assert v.indwhere(">", 11.0) == 2
+    assert v.indwhere("<", 11.0) == 0
+    assert v.indwhere("!=", 11.0) == 0
+    assert v.indwhere(">=", 11.0) == 1
+    assert v.indwhere("<=", 11.0) == 0
     assert v.indwhere("[)", 11.1, 16.0) == -1
+    assert v.indwhere("[)", 11.0, 16.0) == 1
     assert v.indwhere("(]", 11.0, 16.0) == 2
+    assert v.indwhere("[]", 11.0, 16.0) == 1
+    assert v.indwhere("()", 16.0, 11.0) == -1
     assert h.Vector().indvwhere(v, "()", 11, 21).to_python() == [2.0]
     assert h.Vector().indvwhere(v, "[]", 1, 17).to_python() == [0.0, 1.0, 2.0]
+    assert h.Vector().indvwhere(v, "(]", 1, 16).to_python() == [0.0, 1.0, 2.0]
+    assert h.Vector().indvwhere(v, "[)", 1, 16).to_python() == [0.0, 1.0]
+    assert h.Vector().indvwhere(v, "!=", 11).to_python() == [0.0, 2.0, 3.0]
+    assert h.Vector().indvwhere(v, "<", 11).to_python() == [0.0]
+    assert h.Vector().indvwhere(v, "<=", 11).to_python() == [0.0, 1.0]
+    assert h.Vector().indvwhere(v, ">", 16).to_python() == [3.0]
+    assert h.Vector().indvwhere(v, ">=", 16).to_python() == [2.0, 3.0]
+
     assert v.histogram(1.0, 20.0, 10).to_python() == [0.0, 1.0, 2.0]
     assert h.Vector().hist(v, 1.0, 2.0, 10).to_python() == [1.0, 2.0]
     assert v.ind(h.Vector((1, 3))).to_python() == [11.0, 21.0]
@@ -175,6 +205,8 @@ def test_vector_api():
     v.label('v')
     assert v.label() == 'v'
     assert v.cl().label() == 'v'
+    v.label('v2')
+    assert v.label() == 'v2'
 
     """
     Transformations
@@ -188,6 +220,7 @@ def test_vector_api():
     assert h.Vector().deriv(v, 1, 1).to_python() == [-1.0, 13.0, 1.0]
     assert h.Vector().deriv(v, 1, 2).to_python() == [-1.0, 6.0, 7.0, 1.0]
     assert np.allclose(v.c().interpolate(v.c(), v.c().apply("sqrt")).to_python(), [10.384365150689874, 5.097168242109362, 16.0, 16.0])
+    assert np.allclose(v.c().interpolate(v.c(), v.c().apply("sqrt"), h.Vector((1, 2, 3, 4))).to_python(), [2.644951165437683, 2.2382437109314894, 4.0, 4.0])
     assert h.Vector().integral(v).to_python() == [3.0, 5.0, 20.0, 36.0]
     assert np.allclose(h.Vector().integral(v, 0.1).to_python(), [3.0, 3.2, 4.7, 6.300000000000001])
     assert v.c().medfltr().to_python() == [3.0, 3.0, 3.0, 3.0]
@@ -304,6 +337,14 @@ def test_vector_api():
     f.close()
     f.unlink()
 
+    # Vwrite types
+    vwrite_type(h.Vector([1, 2, 3, 4]), 1)
+    vwrite_type(h.Vector([4, 3, 2, 1]), 2)
+    vwrite_type(h.Vector([4, 5, 6, 7]), 3)
+    vwrite_type(h.Vector([7, 8, 9, 10]), 4)
+    vwrite_type(h.Vector([0, 1, 2, 33]), 5)
+
+
     """
     Random 
     """
@@ -335,3 +376,7 @@ def test_vector_api():
     assert np.allclose(fvec.to_python(), [-0.976, 1.024])
     assert ivec.to_python() == [0.0, 1.0]
     assert dvec.to_python() == [0.0, 0.0]
+
+
+
+test_vector_api()
