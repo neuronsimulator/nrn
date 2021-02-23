@@ -99,8 +99,15 @@ endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME SUBMODULE)
-  set(multiValueArgs COMMAND OUTPUT SCRIPT_PATTERNS REQUIRES CONFLICTS MODFILE_PATTERNS)
+  set(oneValueArgs GROUP NAME SUBMODULE PROCESSORS)
+  set(multiValueArgs
+      COMMAND
+      OUTPUT
+      SCRIPT_PATTERNS
+      REQUIRES
+      CONFLICTS
+      MODFILE_PATTERNS
+      PRECOMMAND)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -310,8 +317,20 @@ function(nrn_add_test)
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${working_directory}")
+  set(test_names ${test_name})
+  if(DEFINED NRN_ADD_TEST_PRECOMMAND)
+    add_test(
+      NAME ${test_name}::preparation
+      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
+      WORKING_DIRECTORY "${working_directory}")
+    list(APPEND test_names ${test_name}::preparation)
+    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
+  endif()
+  if(DEFINED NRN_ADD_TEST_PROCESSORS)
+    set(tests_properties ${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+  endif()
   set_tests_properties(
-    "${test_name}"
+    ${test_names}
     PROPERTIES
       ENVIRONMENT
       "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
@@ -422,15 +441,15 @@ function(nrn_add_test_group_comparison)
   set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")
   add_test(
     NAME ${comparison_name}
-    COMMAND "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS} ${reference_file_string}
+    COMMAND "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS}
+            ${reference_file_string}
     WORKING_DIRECTORY "${test_directory}/${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
 
   # Make sure the comparison job declares that it depends on the previous jobs. The comparison job
   # will always run, but the dependencies ensure that it will be sequenced correctly, i.e. it runs
   # after the jobs it is comparing.
-  set_tests_properties(${comparison_name}
-                       PROPERTIES DEPENDS "${${prefix}_TESTS}")
+  set_tests_properties(${comparison_name} PROPERTIES DEPENDS "${${prefix}_TESTS}")
   # Set up the environment for the test comparison job
-  set_tests_properties(${comparison_name}
-                       PROPERTIES ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")                    
+  set_tests_properties(${comparison_name} PROPERTIES ENVIRONMENT
+                                                     "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
 endfunction()
