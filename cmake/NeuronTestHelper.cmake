@@ -221,8 +221,8 @@ function(nrn_add_test)
   # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
   string(SHA256 nrnivmodl_command_hash "${nrnivmodl_command};${modfiles}")
   # Construct the name of a target that refers to the compiled special binaries
-  set(binary_target_name "${prefix}_${nrnivmodl_command_hash}")
-  set(nrnivmodl_working_directory "${group_working_directory}/${nrnivmodl_command_hash}")
+  set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
+  set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
   # Short-circuit in case we set up these rules already
   if(NOT TARGET ${binary_target_name})
     # Construct the names of the modfiles in the build tree, i.e. the filenames from ${modfiles}
