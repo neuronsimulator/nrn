@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from neuron import h, hoc, numpy_element_ref
+from neuron import h, hoc, numpy_element_ref as npyref
 
 
 def copy(src, result, *args, dest=None):
@@ -8,6 +8,19 @@ def copy(src, result, *args, dest=None):
         dest = h.Vector()
     dest.copy(src, *args)
     assert dest.to_python() == result
+
+def vwrite_type(src, vtype):
+    f = h.File()
+    fname = "vwrite.{}.tmp".format(str(vtype))
+    f.wopen(fname)
+    src.c().vwrite(f, vtype)
+    f.close()
+    f.ropen(fname)
+    vr = h.Vector(vtype)
+    vr.vread(f)
+    f.close()
+    f.unlink()
+    assert src.to_python() == vr.to_python()
 
 
 def test_vector_api():
@@ -23,6 +36,8 @@ def test_vector_api():
 
     v = h.Vector(np.array([5, 1, 6], 'd'))
     assert v.to_python() == [5.0, 1.0, 6.0]
+    v.clear()
+    assert v.size() == 0
     del v
 
     v = h.Vector(3)
@@ -32,6 +47,8 @@ def test_vector_api():
     v = h.Vector(3, 1)
     assert v.to_python() == [1.0, 1.0, 1.0]
     del v
+
+    assert h.Vector().from_python((1, 2, 3)).to_python() == [1.0, 2.0, 3.0]
 
     v = h.Vector()
     v.append(3, 3)
@@ -64,6 +81,9 @@ def test_vector_api():
     assert v.sum() == 14.0
     assert v.sum(1, 3) == 6.0
     assert np.allclose(v.sumgauss(-1, 1, .5, 1).to_python(), [0.05869048145253869, 0.14879136924715222, 0.30482687457572216, 0.5166555071584352])
+    assert np.allclose(v.sumgauss(-1, 1, .5, 1, h.Vector((1, 3, 2, 5, 4))).to_python(), [0.2793538745964073, 0.6861357408871805, 1.3355688961479038, 2.0895389620919826])
+    assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1).to_python(), [0.9060003240550064, 0.9598574603424295, 0.5071918738793386])
+    assert np.allclose(v.cl().smhist(v.cl(), 1, 3, 2, 1, h.Vector((1, 3, 2, 5, 4))).to_python(), [3.009095149765841, 2.1896697532507994, 1.8126697992388372])
     assert v.sumsq() == 48.0
     assert v.sumsq(2, 4) == 30.0
     assert v.var() == 2.2
@@ -80,6 +100,7 @@ def test_vector_api():
     assert np.allclose(v.mag(), 6.928203230275509)
     assert v.c().reverse().meansqerr(v) == 3.2
     assert v.c().reverse().meansqerr(v, h.Vector((1, 2, 5, 4, 3))) == 8.0
+    assert v.c().trigavg(h.Vector((1, 2, 3, 4, 5)), h.Vector((1, 2, 3, 4, 5)), 1, 2) == 2
 
     """
     Copying
@@ -99,6 +120,7 @@ def test_vector_api():
     copy(v, [0.0, 3.0, 2.0], h.Vector((1, 2)), dest=h.Vector(3, 0.))
     # vdest.copy(vsrc, vsrcindex, vdestindex)copy(v, [3.0, 3.0, 2.0, 1.0, 5.0])
     copy(v, [3.0, 2.0, 0.0],  h.Vector((1, 2)), h.Vector((0, 1)), dest=h.Vector(3, 0.))
+    copy(v, [3.0],  h.Vector((1, 2)), h.Vector((0, 1)), dest=h.Vector(1, 0.))
     assert v.c().to_python() == v.to_python()
     assert v.c(1).to_python() == [3.0, 2.0, 1.0, 5.0]
     assert v.c(1, 3).to_python() == [3.0, 2.0, 1.0]
@@ -130,7 +152,7 @@ def test_vector_api():
     h.px[2] = 2
     assert v.from_double(3, h._ref_px[0]).to_python() == [5.0, 0.0, 2.0]
     a = np.array([5, 1, 6], 'd')
-    assert v.from_double(3, numpy_element_ref(a, 0)).to_python() == [5.0, 1.0, 6.0]
+    assert v.from_double(3, npyref(a, 0)).to_python() == [5.0, 1.0, 6.0]
     v.indgen(1, 30, 5)
     assert v.to_python() == [1.0, 6.0, 11.0, 16.0, 21.0, 26.0]
     assert v.contains(6.0)
@@ -148,13 +170,30 @@ def test_vector_api():
     assert v.where(">", 1.0).to_python() == [6.0, 11.0, 16.0, 21.0, 26.0]
     assert v.where("[)", 6.0, 26.0).to_python() == [6.0, 11.0, 16.0, 21.0]
     assert v.indwhere(">", 11.0) == 2
+    assert v.indwhere("<", 11.0) == 0
+    assert v.indwhere("!=", 11.0) == 0
+    assert v.indwhere(">=", 11.0) == 1
+    assert v.indwhere("<=", 11.0) == 0
     assert v.indwhere("[)", 11.1, 16.0) == -1
+    assert v.indwhere("[)", 11.0, 16.0) == 1
     assert v.indwhere("(]", 11.0, 16.0) == 2
+    assert v.indwhere("[]", 11.0, 16.0) == 1
+    assert v.indwhere("()", 16.0, 11.0) == -1
     assert h.Vector().indvwhere(v, "()", 11, 21).to_python() == [2.0]
+    assert h.Vector().indvwhere(v, "==", 11).to_python() == [1.0]
     assert h.Vector().indvwhere(v, "[]", 1, 17).to_python() == [0.0, 1.0, 2.0]
+    assert h.Vector().indvwhere(v, "(]", 1, 16).to_python() == [0.0, 1.0, 2.0]
+    assert h.Vector().indvwhere(v, "[)", 1, 16).to_python() == [0.0, 1.0]
+    assert h.Vector().indvwhere(v, "!=", 11).to_python() == [0.0, 2.0, 3.0]
+    assert h.Vector().indvwhere(v, "<", 11).to_python() == [0.0]
+    assert h.Vector().indvwhere(v, "<=", 11).to_python() == [0.0, 1.0]
+    assert h.Vector().indvwhere(v, ">", 16).to_python() == [3.0]
+    assert h.Vector().indvwhere(v, ">=", 16).to_python() == [2.0, 3.0]
+
     assert v.histogram(1.0, 20.0, 10).to_python() == [0.0, 1.0, 2.0]
     assert h.Vector().hist(v, 1.0, 2.0, 10).to_python() == [1.0, 2.0]
     assert v.ind(h.Vector((1, 3))).to_python() == [11.0, 21.0]
+    assert h.Vector().spikebin(v.c(), 12.0).to_python() == [0.0, 0.0, 1.0, 0.0]
 
     """
     Vector metadata
@@ -163,6 +202,8 @@ def test_vector_api():
     v.label('v')
     assert v.label() == 'v'
     assert v.cl().label() == 'v'
+    v.label('v2')
+    assert v.label() == 'v2'
 
     """
     Transformations
@@ -171,11 +212,13 @@ def test_vector_api():
     assert np.allclose(v.c().apply("sin").to_python(), [0.1411200080598672, 0.9092974268256817, 0.6502878401571169, -0.2879033166650653])
     assert np.allclose(v.c().apply("sin", 1, 2).to_python(), [3.0, 0.9092974268256817, 0.6502878401571169, 16.0])
     h("func sq(){return $1*$1}")
+    assert np.allclose(v.c().apply("sq").to_python(), [9.0, 4.0, 225.0, 256.0])
     assert v.reduce("sq", 100) == 594.0
     assert h.Vector().deriv(v, 0.1).to_python() == [-10.0, 60.0, 70.0, 10.0]
     assert h.Vector().deriv(v, 1, 1).to_python() == [-1.0, 13.0, 1.0]
     assert h.Vector().deriv(v, 1, 2).to_python() == [-1.0, 6.0, 7.0, 1.0]
     assert np.allclose(v.c().interpolate(v.c(), v.c().apply("sqrt")).to_python(), [10.384365150689874, 5.097168242109362, 16.0, 16.0])
+    assert np.allclose(v.c().interpolate(v.c(), v.c().apply("sqrt"), h.Vector((1, 2, 3, 4))).to_python(), [2.644951165437683, 2.2382437109314894, 4.0, 4.0])
     assert h.Vector().integral(v).to_python() == [3.0, 5.0, 20.0, 36.0]
     assert np.allclose(h.Vector().integral(v, 0.1).to_python(), [3.0, 3.2, 4.7, 6.300000000000001])
     assert v.c().medfltr().to_python() == [3.0, 3.0, 3.0, 3.0]
@@ -188,6 +231,11 @@ def test_vector_api():
     assert h.Vector().rebin(v, 2).to_python() == [5.0, 31.0]
     assert v.c().rebin(2).to_python() == [5.0, 31.0]
     assert h.Vector().pow(v, 2).to_python() == [9.0, 4.0, 225.0, 256.0]
+    assert np.allclose(v.c().pow(v, 0).to_python(), [1.0, 1.0, 1.0, 1.0])
+    assert np.allclose(v.c().pow(v, 0.5).to_python(), [1.7320508075688772, 1.4142135623730951, 3.872983346207417, 4.0])
+    assert np.allclose(v.c().pow(v, -1).to_python(), [0.3333333333333333, 0.5, 0.06666666666666667, 0.0625])
+    assert np.allclose(v.c().pow(v, 1).to_python(), [3.0, 2.0, 15.0, 16.0])
+    assert np.allclose(v.c().pow(v, 3).to_python(), [27.0, 8.0, 3375.0, 4096.0])
     assert v.c().pow(2).to_python() == [9.0, 4.0, 225.0, 256.0]
     assert np.allclose(h.Vector().sqrt(v).to_python(), [1.7320508075688772, 1.4142135623730951, 3.872983346207417, 4.0])
     assert np.allclose(v.c().sqrt().to_python(), [1.7320508075688772, 1.4142135623730951, 3.872983346207417, 4.0])
@@ -210,6 +258,8 @@ def test_vector_api():
     vs = v.c()
     assert np.allclose(vs.scale(2, 5), 0.21428571428571427)
     assert np.allclose(vs.to_python(), [2.2142857142857144, 2.0, 4.785714285714286, 5.0])
+    assert np.allclose(v.c().sin(1, 1).to_python(), [0.8414709848078965, 0.844849172063764, 0.8481940061209319, 0.8515053549310787])
+    assert np.allclose(v.c().sin(1, 1, 2).to_python(), [0.8414709848078965, 0.8481940061209319, 0.8547830877678237, 0.8612371892561972])
 
     """
     Fourier
@@ -249,12 +299,96 @@ def test_vector_api():
     vr.scanf(f)
     assert vr.to_python() == v.to_python()
     f.seek(0)
+    vr2 = h.Vector(4)
+    vr2.scanf(f)
+    assert vr.to_python() == vr2.to_python()
+    f.seek(0)
     vr.resize(0)
     vr.scanf(f, 1)
     assert vr.to_python() == [3.0]
+    vr.scanf(f, 1)
+    assert vr.to_python() == [2.0]
     vr.resize(0)
     f.seek(0)
     vr.scantil(f, 15.0)
     assert vr.to_python() == [3.0, 2.0]
     f.close()
     f.unlink()
+
+    # Columns
+    f.wopen("col.tmp")
+    f.printf("%d %d %d %d\n", 3, 2, 15, 16)
+    f.printf("%d %d %d %d\n", 6, 9, 7,  21)
+    f.printf("%d %d %d %d\n", 1, 4, 5,  22)
+    f.printf("%d %d %d %d\n", 3, 8, 14, 23)
+    f.close()
+    f.ropen("col.tmp")
+    vc = h.Vector()
+    vc.scanf(f, 3, 2, 4)
+    assert vc.to_python() == [2.0, 9.0, 4.0]
+    vc.scanf(f, 3, 2, 4)
+    assert vc.to_python() == [8.0]
+    f.close()
+    f.ropen("col.tmp")
+    vc = h.Vector()
+    vc.scanf(f, 3, 4)
+    assert vc.to_python() == [15.0, 7.0, 5.0, 14.0]
+    f.seek(0)
+    vc.scantil(f, 5.0, 3, 4)
+    assert vc.to_python() == [15.0, 7.0]
+    vc.printf() # code cov
+    vc.printf("%8.4f ")
+    vc.printf("%8.4f ", 0, 1)
+    f.close()
+    f.unlink()
+
+    # Vwrite types
+    vwrite_type(h.Vector([1, 2, 3, 4]), 1)
+    vwrite_type(h.Vector([4, 3, 2, 1]), 2)
+    vwrite_type(h.Vector([4, 5, 6, 7]), 3)
+    vwrite_type(h.Vector([7, 8, 9, 10]), 4)
+    vwrite_type(h.Vector([0, 1, 2, 33]), 5)
+
+
+    """
+    Random 
+    """
+    vrand = h.Vector((1, 2, 3))
+    r = h.Random()
+    r.poisson(12)
+    assert vrand.cl().setrand(r).to_python() == [10.0, 16.0, 11.0]
+    assert vrand.cl().setrand(r, 1, 2).to_python() == [1.0, 9.0, 18.0]
+    assert vrand.cl().addrand(r).to_python() == [9.0, 9.0, 16.0]
+    assert vrand.cl().addrand(r, 0, 1).to_python() == [13.0, 16.0, 3.0]
+
+    """
+    Misc 
+    """
+    assert h.Vector().inf(h.Vector((3, 2, 4)), 2, 3, 4, 5, 6, 7).to_python() == [4.0, 5.2, 4.56]
+    assert h.Vector().resample(h.Vector((3, 2, 4, 6, 7)), 2).to_python() == [3.0, 3.0, 2.0, 2.0, 4.0, 4.0, 6.0, 6.0, 7.0, 7.0]
+    assert h.Vector().psth(h.Vector((3, 2, 4, 6, 7, 6, 7, 8)), 1, 2, 3).to_python() == [1500.0, 1500.0, 2000.0, 3000.0, 3500.0, 3000.0, 3500.0, 4000.0]
+
+    h("func fun () { return ($1 - 0.5) * 2 + ($2 - 0.5) * 2 }")
+    dvec = h.Vector(2)
+    fvec = h.Vector(2)
+    fvec.fill(1)
+    ivec = h.Vector(2)
+    ivec.indgen()
+    a = h.ref(2)
+    b = h.ref(1)
+    error = dvec.fit(fvec, "fun", ivec, a, b)
+    assert np.allclose([error], [1.0005759999999997])
+    assert np.allclose(fvec.to_python(), [-0.976, 1.024])
+    assert ivec.to_python() == [0.0, 1.0]
+    assert dvec.to_python() == [0.0, 0.0]
+    aftau = np.array([5, 1, 6, 8], 'd')
+    error = dvec.fit(fvec, "exp2", ivec, npyref(aftau, 0), npyref(aftau, 1), npyref(aftau, 2), npyref(aftau, 3))
+    assert np.allclose([error], [8.442756842706686])
+    error = dvec.fit(fvec, "exp1", ivec, npyref(aftau, 0), npyref(aftau, 1), npyref(aftau, 2), npyref(aftau, 3))
+    assert np.allclose([error], [2.5653639385348724e-06])
+    error = dvec.fit(fvec, "charging", ivec, npyref(aftau, 0), npyref(aftau, 1), npyref(aftau, 2), npyref(aftau, 3))
+    assert np.allclose([error], [7.288763182752445e-08])
+    error = dvec.fit(fvec, "quad", ivec, npyref(aftau, 0), npyref(aftau, 1), npyref(aftau, 2))
+    assert np.allclose([error], [0.0010239221022848835])
+    error = dvec.fit(fvec, "line", ivec, npyref(aftau, 0), npyref(aftau, 1))
+    assert np.allclose([error], [6.593786238758728e-06])
