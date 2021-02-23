@@ -168,7 +168,7 @@ size_t write_corenrn_model(const std::string& path) {
 }
 
 // accessible from ParallelContext.total_bytes()
-size_t nrnbbcore_write() {
+size_t nrncore_write() {
   const std::string& path = get_write_path();
   return write_corenrn_model(path);
 }
@@ -225,9 +225,10 @@ static void part2(const char* path) {
   }
 
   // filename data might have to be collected at hoc level since
-  // pc.nrnbbcore_write might be called
+  // pc.nrncore_write might be called
   // many times per rank since model may be built as series of submodels.
-  if (ifarg(2)) {
+  if (ifarg(2) && hoc_is_object_arg(2) && is_vector_arg(2)) {
+    // Legacy style. Interpreter collects groupgids and writes files.dat
     Vect* cgidvec = vector_arg(2);
     vector_resize(cgidvec, nrn_nthread);
     double* px = vector_vec(cgidvec);
@@ -235,7 +236,15 @@ static void part2(const char* path) {
       px[i] = double(cgs[i].group_id);
     }
   }else{
-    write_nrnthread_task(path, cgs);
+    bool append = false;
+    if (ifarg(2)) {
+      if (hoc_is_double_arg(2)) {
+        append = (*getarg(2) != 0);
+      }else{
+        hoc_execerror("Second arg must be Vector or double.", NULL);
+      }
+    }
+    write_nrnthread_task(path, cgs, append);
   }
 
   part2_clean();
