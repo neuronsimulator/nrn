@@ -419,16 +419,18 @@ function(nrn_add_test_group_comparison)
     COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
 
   # Add a test job that compares the results of the previous test jobs
+  set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")
   add_test(
-    NAME "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
-    COMMAND
-      ${CMAKE_COMMAND} -E env PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}
-      "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS} ${reference_file_string}
+    NAME ${comparison_name}
+    COMMAND "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS} ${reference_file_string}
     WORKING_DIRECTORY "${test_directory}/${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
 
   # Make sure the comparison job declares that it depends on the previous jobs. The comparison job
   # will always run, but the dependencies ensure that it will be sequenced correctly, i.e. it runs
   # after the jobs it is comparing.
-  set_tests_properties("${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
+  set_tests_properties(${comparison_name}
                        PROPERTIES DEPENDS "${${prefix}_TESTS}")
+  # Set up the environment for the test comparison job
+  set_tests_properties(${comparison_name}
+                       PROPERTIES ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")                    
 endfunction()
