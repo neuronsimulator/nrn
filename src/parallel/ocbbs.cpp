@@ -70,7 +70,7 @@ extern "C" {
 	extern void nrn_thread_stat();
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
-	extern size_t nrnbbcore_write();
+	extern size_t nrncore_write();
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
@@ -977,8 +977,18 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
-static double nrnbbcorewrite(void*) {
-	return double(nrnbbcore_write());
+static double nrncorewrite_argvec(void*) {
+	if (ifarg(2) && !(hoc_is_object_arg(2) && is_vector_arg(2))) {
+		hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", NULL);
+	}
+	return double(nrncore_write());
+}
+
+static double nrncorewrite_argappend(void*) {
+	if (ifarg(2) && !hoc_is_double_arg(2)) {
+		hoc_execerror("nrncore_write: optional second arg is not a number (True or False append flag)", NULL);
+	}
+	return double(nrncore_write());
 }
 
 static double nrncorerun(void*) {
@@ -1079,7 +1089,8 @@ static Member_func members[] = {
 	"dt", thread_dt,
 	"t", nrn_thread_t,
 
-    "nrnbbcore_write", nrnbbcorewrite,
+    "nrnbbcore_write", nrncorewrite_argvec,
+    "nrncore_write", nrncorewrite_argappend,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
     "nrncore_run", nrncorerun,
 
