@@ -14,8 +14,8 @@ build_dir=$(mktemp -d $(pwd)/build_XXXX)
 cd $build_dir
 
 # build special and special-core
-nrnivmodl-core ../tests/jenkins/mod
 nrnivmodl ../tests/jenkins/mod
+nrnivmodl-core ../tests/jenkins/mod
 ls -la x86_64
 
 # Unload intel module to avoid issue whith mpirun

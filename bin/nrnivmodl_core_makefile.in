@@ -187,9 +187,9 @@ $(SPECIAL_EXE): coremech_lib_target
 	  -Wl,-rpath,'$(LIB_RPATH)' -Wl,-rpath,$(CORENRN_LIB_DIR)
 
 coremech_lib_target: $(corenrnmech_lib_target)
-	rm -rf $(OUTPUT_DIR)/.libs; \
+	rm -rf $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX); \
 	mkdir -p $(OUTPUT_DIR)/.libs; \
-	ln -s ${COREMECH_LIB_PATH} $(OUTPUT_DIR)/.libs/libcorenrnmech$(LIB_SUFFIX)
+	ln -s ../lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX) $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX)
 
 $(ENGINEMECH_OBJ): | $(MOD_OBJS_DIR)
 	$(CXX_COMPILE_CMD) -c -DADDITIONAL_MECHS $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp -o $(ENGINEMECH_OBJ)
