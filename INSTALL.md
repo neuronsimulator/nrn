@@ -163,8 +163,9 @@ install dependencies. For example, on Ubuntu:
 sudo apt-get update
 sudo apt-get install -y bison cmake flex git \
      libncurses-dev libopenmpi-dev libx11-dev \
-     libxcomposite-dev openmpi-bin python3-numpy \
-     python3-dev python3-scipy cython3
+     libxcomposite-dev openmpi-bin python3-dev
+# for python dependencies
+pip install scipy numpy cython
 # for autotools based installation only
 sudo apt-get install -y automake libtool make
 ```
