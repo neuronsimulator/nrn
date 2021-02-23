@@ -29,6 +29,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       GROUP external_ringtest
       NAME neuron_mpi
       REQUIRES mod_compatibility
+      PROCESSORS 2
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100)
@@ -37,6 +38,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       GROUP external_ringtest
       NAME coreneuron_mpi
       REQUIRES coreneuron
+      PROCESSORS 2
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100 -coreneuron)
@@ -45,6 +47,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
       GROUP external_ringtest
       NAME coreneuron_mpi_threads
       REQUIRES coreneuron
+      PROCESSORS 2
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
         -mpi -python ringtest.py -tstop 100 -coreneuron -nt 2)

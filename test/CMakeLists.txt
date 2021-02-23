@@ -218,6 +218,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           GROUP coreneuron_modtests
           NAME spikes_mpi_py
           REQUIRES coreneuron
+          PROCESSORS 2
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}
             ${MPIEXEC_POSTFLAGS} test/coreneuron/test_spikes.py mpi4py)
@@ -226,6 +227,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         GROUP coreneuron_modtests
         NAME spikes_mpi_file_mode_py
         REQUIRES coreneuron
+        PROCESSORS 2
         COMMAND
           ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
           ${MPIEXEC_POSTFLAGS} -python -pyexe ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py
