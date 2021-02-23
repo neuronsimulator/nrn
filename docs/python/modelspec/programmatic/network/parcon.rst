@@ -3289,10 +3289,10 @@ Parallel Transfer
 
 ----
 
-..  method:: ParallelContext.nrnbbcore_write
+..  method:: ParallelContext.nrncore_write
 
     Syntax:
-        ``pc.nrnbbcore_write([path[, gidgroup_vec]])``
+        ``pc.nrncore_write([path[, append_files_dat]])``
 
     Description:
         Writes files describing the existing model in such a way that those
@@ -3320,19 +3320,31 @@ Parallel Transfer
         <gidgroup>_2.dat contains all the data needed to actually construct
         the cells and synapses and specify connection weights and delays.
 
-        If the second argument does not exist, 
-        rank 0 writes a "files.dat" file with a first value that
-        specifies the total number of gidgroups and one gidgroup value per
+        If the second argument does not exist or has a value of False (or 0),
+        rank 0 writes a "files.dat" file with version string, a -1
+        indicator if there are gap junctions, and a integer value that
+        specifies the total number of gidgroups followed by one gidgroup value per
         line for all threads of all ranks.
 
         If the model is too large to exist in NEURON (models typcially use
         an order of magnitude less memory in CoreNEURON) the model can
         be constructed in NEURON as a series of submodels.
-        When one piece is constructed
-        on each rank, this function can be called with a second argument which
-        must be a Vector. In this case, rank 0 will NOT write a files.dat
-        and instead the pc.nthread() gidgroup values for the rank will be
-        returned in the Vector. 
+        When one submodel is constructed
+        on each rank, this function can be called with a second argument
+        with a value of True (or nonzero) which signals that the existing
+        files.dat file should have its n_gidgroups line updated
+        and the pc.nthread() gidgroup values for each rank should be
+        appended to the files.dat file. Note that one can either create
+        submodels sequentially within a single launch, though that requires
+        a "teardown" function to destroy the model in preparation for building
+        the next submodel, or sequentially create the submodels as a series
+        of separate launches. A user written "teardown" function should,
+        in order, free all gids with :func:`gid_clear` , arrange for all
+        NetCon to be freed, and arrange for all Sections to be destroyed.
+        These latter two are straightforward if the submodel is created as
+        an instance of a class. An example of sequential build, nrncore_write,
+        teardown is the test_submodel.py in
+        http://github.com/neuronsimulator/ringtest.
 
         This function requires cvode.cache_efficient(1) . Multisplit is not
         supported. The model cannot be more complicated than a spike or gap
