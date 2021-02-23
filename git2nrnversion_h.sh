@@ -7,7 +7,8 @@ fi
 
 cd $a
 
-if git log > /dev/null && test -d .git ; then
+# Do the fast directory check before the slow git command
+if [ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1; then
         describe="`git describe --tags`"
         branch="`git rev-parse --abbrev-ref HEAD`" # branch name
         modified="`git status -s -uno --porcelain | sed -n '1s/.*/+/p'`" # + if modified
