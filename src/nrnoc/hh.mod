@@ -8,7 +8,8 @@ COMMENT
  Membrane voltage is in absolute mV and has been reversed in polarity
   from the original HH convention and shifted to reflect a resting potential
   of -65 mV.
- Remember to set celsius=6.3 (or whatever) in your HOC file.
+ Remember to set a squid-appropriate temperature
+ (e.g. in HOC: "celsius=6.3" or in Python: "h.celsius=6.3").
  See squid.hoc for an example of a simulation using this model.
  SW Jaslove  6 March, 1992
 ENDCOMMENT
