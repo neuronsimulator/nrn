@@ -26,9 +26,12 @@ set(test_gf_neuron_requirements mod_compatibility)
 set(test_patstim_neuron_requirements mod_compatibility)
 set(test_vecplay_neuron_requirements mod_compatibility)
 
-# GPU_ARG="-c gpu=1"
 get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 
+if(${CORENRN_ENABLE_GPU})
+  set(gpu_args_online -c arg_coreneuron_gpu=1)
+  set(gpu_args_offline --gpu)
+endif()
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
 foreach(test ${spike_comparison_tests})
   if(DEFINED mpi_ranks_${test})
@@ -63,7 +66,7 @@ foreach(test ${spike_comparison_tests})
       COMMAND
         OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
         ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
-        arg_tstop=100 -c arg_coreneuron=1 test${test}.hoc)
+        arg_tstop=100 -c arg_coreneuron=1 ${gpu_args_online} test${test}.hoc)
   endif()
 
   set(extra_args)
@@ -94,7 +97,7 @@ foreach(test ${spike_comparison_tests})
     COMMAND
       OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
       ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-      --mpi -e 100 ${extra_args}
+      --mpi -e 100 ${extra_args} ${gpu_args_offline}
     OUTPUT asciispikes::out.dat)
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
