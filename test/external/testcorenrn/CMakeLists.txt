@@ -40,6 +40,7 @@ foreach(test ${spike_comparison_tests})
   nrn_add_test(
     GROUP testcorenrn_${test}
     NAME neuron
+    REQUIRES mpi
     PROCESSORS ${num_ranks}
     COMMAND
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
@@ -50,7 +51,7 @@ foreach(test ${spike_comparison_tests})
     nrn_add_test(
       GROUP testcorenrn_${test}
       NAME coreneuron_online
-      REQUIRES coreneuron
+      REQUIRES coreneuron mpi python
       PROCESSORS ${num_ranks}
       COMMAND
         OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
@@ -67,7 +68,7 @@ foreach(test ${spike_comparison_tests})
   nrn_add_test(
     GROUP testcorenrn_${test}
     NAME coreneuron_offline
-    REQUIRES coreneuron
+    REQUIRES coreneuron mpi
     PROCESSORS ${num_ranks}
     PRECOMMAND OMP_NUM_THREADS=1
                HOC_LIBRARY_PATH=.
@@ -107,7 +108,7 @@ foreach(test ${direct_tests})
   nrn_add_test(
     GROUP testcorenrn_${test}
     NAME direct
-    REQUIRES coreneuron
+    REQUIRES coreneuron mpi python
     PROCESSORS ${num_ranks}
     COMMAND
       HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_PREFLAGS}
