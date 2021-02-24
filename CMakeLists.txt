@@ -424,6 +424,10 @@ if(NEURON_CMAKE_FORMAT)
   if(NOT EXISTS external/coding-conventions/cpp)
     initialize_submodule(external/coding-conventions)
   endif()
+  set(NEURON_CMakeFormat_EXCLUDES_RE
+      ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
+      ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
+      CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
   add_subdirectory(external/coding-conventions/cpp)
 endif()
 
@@ -486,8 +490,12 @@ if(NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT PYTEST_FOUND)
     message(SEND_ERROR "pytest Python package is required.")
   endif()
-  add_subdirectory(test)
+  # Initialize the submodule *before* including the test/CMakeLists.txt that
+  # uses it. This ensures that the test infrastructure can find the names of
+  # the input data files and set up rules to copy them into the test working
+  # directories.
   initialize_submodule("test/rxd/testdata")
+  add_subdirectory(test)
 endif()
 
 # =============================================================================

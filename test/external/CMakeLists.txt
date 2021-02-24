@@ -7,7 +7,7 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
   nrn_add_test_group(
     NAME external_ringtest
     SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
-    MODFILE_DIRECTORY "mod"
+    MODFILE_PATTERNS "mod/*.mod"
     OUTPUT asciispikes::spk2.std # which output data to compare
     SCRIPT_PATTERNS "*.py" "*.hoc")
 
@@ -20,8 +20,8 @@ if(NRN_ENABLE_PYTHON) # This could be translated into `REQUIRES python` if neede
     GROUP external_ringtest
     NAME neuron
     REQUIRES mod_compatibility
-    COMMAND
-      special -python ringtest.py -tstop 100 OUTPUT asciispikes::spk1.std)
+    COMMAND special -python ringtest.py -tstop 100
+    OUTPUT asciispikes::spk1.std)
 
   if(NRN_ENABLE_MPI) # This could be translated into `REQUIRES mpi` if needed
     # To work around CI failures that seem related to #894 we should run `mpiexec` not
