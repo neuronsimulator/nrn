@@ -123,7 +123,7 @@ static void have_to_want(
       HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
       int srcrank;
       if (havekey2rank.find(key, srcrank)) {
-hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple ranks\n", (long long)key);
+        hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple ranks\n", (long long)key);
       }
       havekey2rank[key] = r;
     }
@@ -152,7 +152,7 @@ hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple rank
       HAVEWANT_t key = want_r_data[ix];
       int srcrank;
       if (!havekey2rank.find(key, srcrank)) {
-hoc_execerr_ext("internal error in have_to_want: key = %lld is wanted but does not exist\n", (long long)key);
+        hoc_execerr_ext("internal error in have_to_want: key = %lld is wanted but does not exist\n", (long long)key);
       }
       want_r_ownerranks[ix] = srcrank;
     }
