@@ -20,6 +20,12 @@ set(mpi_ranks_vecplay 2)
 set(mpi_ranks_vecevent 4)
 set(mpi_ranks_netstimdirect 2)
 
+# Flag which tests include `insert hh` and may, therefore, be sensitive to differences between
+# NEURON and CoreNEURON when neither CoreNEURON nor modfile compatibility is enabled
+set(test_gf_neuron_requirements mod_compatibility)
+set(test_patstim_neuron_requirements mod_compatibility)
+set(test_vecplay_neuron_requirements mod_compatibility)
+
 # GPU_ARG="-c gpu=1"
 get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 
@@ -40,7 +46,7 @@ foreach(test ${spike_comparison_tests})
   nrn_add_test(
     GROUP testcorenrn_${test}
     NAME neuron
-    REQUIRES mpi
+    REQUIRES mpi ${test_${test}_neuron_requirements}
     PROCESSORS ${num_ranks}
     COMMAND
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
