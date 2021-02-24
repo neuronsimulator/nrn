@@ -189,6 +189,10 @@ the USEION statement of any model using this ion\n",
 #define FARADAY     _faraday_codata2018
 #define gasconstant _gasconstant_codata2018
 #endif
+
+// extern variables require acc declare
+#pragma acc declare create(celsius)
+
 #define ktf (1000. * gasconstant * (celsius + 273.15) / FARADAY)
 
 double nrn_nernst(double ci, double co, double z, double celsius) {

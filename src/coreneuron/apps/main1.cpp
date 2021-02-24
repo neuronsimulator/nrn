@@ -490,7 +490,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     // clang-format off
 
-    #pragma acc data copyin(celsius, secondorder) if (compute_gpu)
+    #pragma acc update device(celsius, secondorder) if (compute_gpu)
     // clang-format on
     {
         double v = corenrn_param.voltage;
