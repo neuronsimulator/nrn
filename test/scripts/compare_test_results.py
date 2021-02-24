@@ -10,6 +10,7 @@ Positional arguments are of the form testname::type1::path1[::type2::path2]...
   compare_test_results.py test1::asciispikes::path1 test2::asciispikes::path2
 """
 import collections
+import difflib
 import itertools
 import sys
 
@@ -63,6 +64,17 @@ def check_compatibility(data_type, test_data):
         result = (data1 == data2)  # TODO fuzzier comparison?
         print(' '.join(
             [name1, 'matches' if result else 'DOES NOT match', name2]))
+        if not result:
+            # Try and print a helpful diff, this is a bit inelegant but it uses standard library...
+            def as_strings(data):
+                return [str(x) for x in data]
+
+            for line in difflib.unified_diff(as_strings(data1),
+                                             as_strings(data2),
+                                             fromfile=name1,
+                                             tofile=name2,
+                                             lineterm=''):
+                print(line)
         results.append(result)
     return all(results)
 
