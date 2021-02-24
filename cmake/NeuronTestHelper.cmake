@@ -50,8 +50,8 @@
 #    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
 #    can be used to override the defaults defined when nrn_add_test_group is
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
-#    if certain features are, or are not, available. Six features are currently
-#    supported: coreneuron, gpu, mod_compatibility, mpi, nmodl and python.
+#    if certain features are, or are not, available. Seven features are currently
+#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
 #                                  REFERENCE_OUTPUT datatype::file.ext [...])
@@ -124,6 +124,7 @@ function(nrn_add_test)
   endif()
 
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
+  set(feature_cpu_enabled ON)
   set(feature_mpi_enabled ${NRN_ENABLE_MPI})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})

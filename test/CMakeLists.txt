@@ -155,6 +155,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
+    # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
+    # be dynamically loaded by Python. This is why all the tests that rely on that dynamic loading
+    # declare `CONFLICTS gpu`.
     nrn_add_test_group(
       NAME coreneuron_modtests
       SCRIPT_PATTERNS test/coreneuron/*.py
@@ -163,6 +166,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME direct_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_direct.py)
@@ -176,6 +180,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME spikes_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_spikes.py)
@@ -183,11 +188,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_fornetcon.py)
@@ -195,6 +202,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME datareturn_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_datareturn.py)
@@ -202,6 +210,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME test_units_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_units.py)
@@ -209,6 +218,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME test_natrans_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE} -m pytest
@@ -224,6 +234,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           GROUP coreneuron_modtests
           NAME spikes_mpi_py
           REQUIRES coreneuron
+          CONFLICTS gpu
           PROCESSORS 2
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}

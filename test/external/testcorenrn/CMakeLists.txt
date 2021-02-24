@@ -26,6 +26,16 @@ set(test_gf_neuron_requirements mod_compatibility)
 set(test_patstim_neuron_requirements mod_compatibility)
 set(test_vecplay_neuron_requirements mod_compatibility)
 
+# Flag which tests make use of Random123 and cannot, therefore, be run on the CPU in a GPU-enabled
+# build (see https://github.com/BlueBrain/CoreNeuron/issues/345).
+set(test_gf_coreneuron_cpu_conflicts gpu) # CoreNEURON-on-CPU test conflicts with GPU being enabled
+                                          # in the build
+
+# Flag some combinations of test + processor + platform that are currently buggy.
+set(test_patstim_coreneuron_gpu_conflicts cpu) # cpu is always enabled, so this disables patstim-on-
+                                               # GPU
+set(test_vecplay_coreneuron_gpu_conflicts cpu)
+
 get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 
 if(${CORENRN_ENABLE_GPU})
@@ -55,50 +65,55 @@ foreach(test ${spike_comparison_tests})
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
       ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
       arg_tstop=100 test${test}.hoc)
-  # Set up a test that runs the simulation using CoreNEURON's online mode
-  if(NOT "${test}" STREQUAL "patstim")
-    # Exclude the patstim test from running via CoreNEURON online mode
+  # Set up tests that run the simulation using CoreNEURON. In principle we run all combinations of
+  # [online, offline]*[CPU, GPU], but some of these may be disabled.
+  foreach(processor gpu cpu)
+    # Set up a test that runs the simulation using CoreNEURON's online mode
+    if(NOT "${test}" STREQUAL "patstim")
+      # Exclude the patstim test from running via CoreNEURON online mode
+      nrn_add_test(
+        GROUP testcorenrn_${test}
+        NAME coreneuron_${processor}_online
+        REQUIRES coreneuron mpi python ${processor}
+        CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
+        PROCESSORS ${num_ranks}
+        COMMAND
+          OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
+          ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
+          arg_tstop=100 -c arg_coreneuron=1 ${${processor}_args_online} test${test}.hoc)
+    endif()
+    set(extra_args)
+    if("${test}" STREQUAL "patstim")
+      list(APPEND extra_args --pattern patstim.spk)
+    endif()
+    # Set up a test that runs the simulation using CoreNEURON's offline mode. First we must run
+    # NEURON and tell it to dump the model without simulating it.
     nrn_add_test(
       GROUP testcorenrn_${test}
-      NAME coreneuron_online
-      REQUIRES coreneuron mpi python
+      NAME coreneuron_${processor}_offline
+      REQUIRES coreneuron mpi ${processor}
+      CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
       PROCESSORS ${num_ranks}
+      PRECOMMAND OMP_NUM_THREADS=1
+                 HOC_LIBRARY_PATH=.
+                 ${MPIEXEC_NAME}
+                 ${MPIEXEC_NUMPROC_FLAG}
+                 ${num_ranks}
+                 ${MPIEXEC_OVERSUBSCRIBE}
+                 ${MPIEXEC_PREFLAGS}
+                 special
+                 -mpi
+                 -c
+                 arg_tstop=100
+                 -c
+                 arg_dump_coreneuron_model=1
+                 test${test}.hoc
       COMMAND
-        OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
-        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
-        arg_tstop=100 -c arg_coreneuron=1 ${gpu_args_online} test${test}.hoc)
-  endif()
-
-  set(extra_args)
-  if("${test}" STREQUAL "patstim")
-    list(APPEND extra_args --pattern patstim.spk)
-  endif()
-  # Set up a test that runs the simulation using CoreNEURON's offline mode. First we must run NEURON
-  # and tell it to dump the model without simulating it.
-  nrn_add_test(
-    GROUP testcorenrn_${test}
-    NAME coreneuron_offline
-    REQUIRES coreneuron mpi
-    PROCESSORS ${num_ranks}
-    PRECOMMAND OMP_NUM_THREADS=1
-               HOC_LIBRARY_PATH=.
-               ${MPIEXEC_NAME}
-               ${MPIEXEC_NUMPROC_FLAG}
-               ${num_ranks}
-               ${MPIEXEC_OVERSUBSCRIBE}
-               ${MPIEXEC_PREFLAGS}
-               special
-               -mpi
-               -c
-               arg_tstop=100
-               -c
-               arg_dump_coreneuron_model=1
-               test${test}.hoc
-    COMMAND
-      OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
-      ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-      --mpi -e 100 ${extra_args} ${gpu_args_offline}
-    OUTPUT asciispikes::out.dat)
+        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
+        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
+        --mpi -e 100 ${extra_args} ${${processor}_args_offline}
+      OUTPUT asciispikes::out.dat)
+  endforeach()
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)
