@@ -947,6 +947,7 @@ int Fprintf(FILE* stream, const char *fmt, ...) {
   return n;
 }
 
+/** printf style specification of hoc_execerror message. **/
 void hoc_execerr_ext(const char* fmt, ...) {
   size_t size;
   va_list ap;
