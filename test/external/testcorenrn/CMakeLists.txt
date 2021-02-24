@@ -20,7 +20,7 @@ set(mpi_ranks_vecplay 2)
 set(mpi_ranks_vecevent 4)
 set(mpi_ranks_netstimdirect 2)
 
-# EXTRA_ARGS="" GPU_ARG="-c gpu=1" if(NRN_ENABLE_MPI)
+# GPU_ARG="-c gpu=1"
 get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
@@ -44,7 +44,8 @@ foreach(test ${spike_comparison_tests})
     PROCESSORS ${num_ranks}
     COMMAND
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
-      ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 test${test}.hoc)
+      ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
+      arg_tstop=100 test${test}.hoc)
   # Set up a test that runs the simulation using CoreNEURON's online mode
   if(NOT "${test}" STREQUAL "patstim")
     # Exclude the patstim test from running via CoreNEURON online mode
@@ -55,8 +56,8 @@ foreach(test ${spike_comparison_tests})
       PROCESSORS ${num_ranks}
       COMMAND
         OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
-        ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_coreneuron=1
-        test${test}.hoc)
+        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
+        arg_tstop=100 -c arg_coreneuron=1 test${test}.hoc)
   endif()
 
   set(extra_args)
@@ -75,6 +76,7 @@ foreach(test ${spike_comparison_tests})
                ${MPIEXEC_NAME}
                ${MPIEXEC_NUMPROC_FLAG}
                ${num_ranks}
+               ${MPIEXEC_OVERSUBSCRIBE}
                ${MPIEXEC_PREFLAGS}
                special
                -mpi
@@ -84,8 +86,9 @@ foreach(test ${spike_comparison_tests})
                arg_dump_coreneuron_model=1
                test${test}.hoc
     COMMAND
-      OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_PREFLAGS}
-      special-core ${MPIEXEC_POSTFLAGS} -d coredat --mpi -e 100 ${extra_args}
+      OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
+      ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
+      --mpi -e 100 ${extra_args}
     OUTPUT asciispikes::out.dat)
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
@@ -111,8 +114,9 @@ foreach(test ${direct_tests})
     REQUIRES coreneuron mpi python
     PROCESSORS ${num_ranks}
     COMMAND
-      HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_PREFLAGS}
-      special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 test${test}.hoc)
+      HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
+      ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
+      arg_tstop=100 test${test}.hoc)
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
     REFERENCE_OUTPUT asciispikes::external/tests/testcorenrn/reference/out_${test}.spk)

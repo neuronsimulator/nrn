@@ -83,6 +83,23 @@ add_test(
 list(APPEND TESTS connect_dend)
 
 # =============================================================================
+# Check if --oversubscribe is a valid option for mpiexec
+# =============================================================================
+if(NRN_ENABLE_MPI)
+  # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing the
+  # available version of OpenMPI does but those of HPE-MPI and MPICH do not).
+  set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
+  execute_process(
+    COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
+    RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
+    message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
+    unset(MPIEXEC_OVERSUBSCRIBE)
+  endif()
+endif()
+
+# =============================================================================
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
@@ -124,17 +141,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing
-    # the available version of OpenMPI does but those of HPE-MPI and MPICH do not).
-    set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
-    execute_process(
-      COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
-      RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
-      OUTPUT_QUIET ERROR_QUIET)
-    if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
-      message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
-      unset(MPIEXEC_OVERSUBSCRIBE)
-    endif()
     # Launching mpi executable with full path can mangle different python versions and libraries
     # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
     # ${MPIEXEC_NAME} does not.

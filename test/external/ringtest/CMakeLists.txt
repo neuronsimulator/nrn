@@ -29,8 +29,8 @@ nrn_add_test(
   REQUIRES mod_compatibility mpi python
   PROCESSORS 2
   COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi
-    -python ringtest.py -tstop 100)
+    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
+    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100)
 
 nrn_add_test(
   GROUP external_ringtest
@@ -38,8 +38,8 @@ nrn_add_test(
   REQUIRES coreneuron mpi python
   PROCESSORS 2
   COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi
-    -python ringtest.py -tstop 100 -coreneuron)
+    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
+    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron)
 
 nrn_add_test(
   GROUP external_ringtest
@@ -47,8 +47,8 @@ nrn_add_test(
   REQUIRES coreneuron mpi python
   PROCESSORS 2
   COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi
-    -python ringtest.py -tstop 100 -coreneuron -nt 2)
+    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
+    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron -nt 2)
 
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(
