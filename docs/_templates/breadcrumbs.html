@@ -1,11 +1,13 @@
 {% extends "!breadcrumbs.html" %}
-
 {% block breadcrumbs_aside %}
 <li class="wy-breadcrumbs-aside">
+    {% set pth = pathto('.') %}
     {% if 'hoc/' in pagename %}
-        <a href="/nrn/{{ pagename | replace("hoc/", "python/") }}.html" > {{ _('Switch to Python') }}</a>
+        {% set switch = '../' + pagename | replace("hoc/", "python/") + '.html' %}
+        <a href="{{ pth }}/{{ switch }}" > {{ _('Switch to Python') }}</a>
     {% elif 'python/' in pagename %}
-        <a href="/nrn/{{ pagename | replace("python/", "hoc/") }}.html" > {{ _('Switch to HOC') }}</a>
+        {% set switch = '../' + pagename | replace("python/", "hoc/") + '.html' %}
+        <a href="{{ pth }}/{{ switch }}" >  {{ _('Switch to HOC') }}</a>
     {% endif %}
 </li>
 {{ super() }}
