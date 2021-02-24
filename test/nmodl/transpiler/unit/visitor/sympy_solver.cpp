@@ -567,7 +567,7 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
 
             REQUIRE(result.size() == 1);
-            REQUIRE(result[0].find("F[") == std::string::npos);
+            REQUIRE(result[0].find("F_") != std::string::npos);
         }
     }
 
