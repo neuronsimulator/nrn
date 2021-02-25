@@ -50,8 +50,8 @@
 #    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
 #    can be used to override the defaults defined when nrn_add_test_group is
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
-#    if certain features are, or are not, available. Four features are
-#    currently supported: coreneuron, gpu, nmodl and mod_compatibility.
+#    if certain features are, or are not, available. Seven features are currently
+#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
 #                                  REFERENCE_OUTPUT datatype::file.ext [...])
@@ -99,8 +99,15 @@ endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME SUBMODULE)
-  set(multiValueArgs COMMAND OUTPUT SCRIPT_PATTERNS REQUIRES CONFLICTS MODFILE_PATTERNS)
+  set(oneValueArgs GROUP NAME SUBMODULE PROCESSORS)
+  set(multiValueArgs
+      COMMAND
+      OUTPUT
+      SCRIPT_PATTERNS
+      REQUIRES
+      CONFLICTS
+      MODFILE_PATTERNS
+      PRECOMMAND)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -117,6 +124,9 @@ function(nrn_add_test)
   endif()
 
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
+  set(feature_cpu_enabled ON)
+  set(feature_mpi_enabled ${NRN_ENABLE_MPI})
+  set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
   if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
     set(feature_mod_compatibility_enabled ON)
@@ -214,8 +224,8 @@ function(nrn_add_test)
   # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
   string(SHA256 nrnivmodl_command_hash "${nrnivmodl_command};${modfiles}")
   # Construct the name of a target that refers to the compiled special binaries
-  set(binary_target_name "${prefix}_${nrnivmodl_command_hash}")
-  set(nrnivmodl_working_directory "${group_working_directory}/${nrnivmodl_command_hash}")
+  set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
+  set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
   # Short-circuit in case we set up these rules already
   if(NOT TARGET ${binary_target_name})
     # Construct the names of the modfiles in the build tree, i.e. the filenames from ${modfiles}
@@ -310,8 +320,20 @@ function(nrn_add_test)
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${working_directory}")
+  set(test_names ${test_name})
+  if(DEFINED NRN_ADD_TEST_PRECOMMAND)
+    add_test(
+      NAME ${test_name}::preparation
+      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
+      WORKING_DIRECTORY "${working_directory}")
+    list(APPEND test_names ${test_name}::preparation)
+    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
+  endif()
+  if(DEFINED NRN_ADD_TEST_PROCESSORS)
+    set(tests_properties ${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+  endif()
   set_tests_properties(
-    "${test_name}"
+    ${test_names}
     PROPERTIES
       ENVIRONMENT
       "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
@@ -419,16 +441,18 @@ function(nrn_add_test_group_comparison)
     COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
 
   # Add a test job that compares the results of the previous test jobs
+  set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")
   add_test(
-    NAME "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
-    COMMAND
-      ${CMAKE_COMMAND} -E env PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}
-      "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS} ${reference_file_string}
+    NAME ${comparison_name}
+    COMMAND "${test_directory}/compare_test_results.py" ${${prefix}_TEST_OUTPUTS}
+            ${reference_file_string}
     WORKING_DIRECTORY "${test_directory}/${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
 
   # Make sure the comparison job declares that it depends on the previous jobs. The comparison job
   # will always run, but the dependencies ensure that it will be sequenced correctly, i.e. it runs
   # after the jobs it is comparing.
-  set_tests_properties("${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results"
-                       PROPERTIES DEPENDS "${${prefix}_TESTS}")
+  set_tests_properties(${comparison_name} PROPERTIES DEPENDS "${${prefix}_TESTS}")
+  # Set up the environment for the test comparison job
+  set_tests_properties(${comparison_name} PROPERTIES ENVIRONMENT
+                                                     "PATH=${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
 endfunction()
