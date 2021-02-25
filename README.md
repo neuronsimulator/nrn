@@ -27,7 +27,7 @@ happy to help.
 
 **If you are using autotools, we highly recommend switching to CMake.**
 
-For detailed installation instructions see [INSTALL file](INSTALL.md) file.
+For detailed installation instructions see [docs/install/install instructions.md](docs/install/install_instructions.md) file.
 
 ## Documentation
 
