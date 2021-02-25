@@ -6,14 +6,7 @@ set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRU
 # build nmodl python module under lib/nmodl
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl)
 
-foreach(
-  file
-  ast.py
-  dsl.py
-  ode.py
-  symtab.py
-  visitor.py
-  __init__.py)
+foreach(file ast.py dsl.py ode.py symtab.py visitor.py __init__.py)
   list(APPEND NMODL_PYTHON_FILES_IN ${NMODL_PROJECT_SOURCE_DIR}/nmodl/${file})
   list(APPEND NMODL_PYTHON_FILES_OUT ${PROJECT_BINARY_DIR}/lib/nmodl/${file})
 endforeach()
