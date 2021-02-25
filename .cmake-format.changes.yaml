@@ -14,11 +14,13 @@ additional_commands:
       NAME: 1
       SUBMODULE: '?'
       MODFILE_PATTERNS: '*'
+      PRECOMMAND: '+'
       COMMAND: '+'
       SCRIPT_PATTERNS: '*'
       REQUIRES: '*'
       CONFLICTS: '*'
       OUTPUT: '*'
+      PROCESSORS: '?'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

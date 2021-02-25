@@ -83,6 +83,23 @@ add_test(
 list(APPEND TESTS connect_dend)
 
 # =============================================================================
+# Check if --oversubscribe is a valid option for mpiexec
+# =============================================================================
+if(NRN_ENABLE_MPI)
+  # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing the
+  # available version of OpenMPI does but those of HPE-MPI and MPICH do not).
+  set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
+  execute_process(
+    COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
+    RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
+    OUTPUT_QUIET ERROR_QUIET)
+  if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
+    message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
+    unset(MPIEXEC_OVERSUBSCRIBE)
+  endif()
+endif()
+
+# =============================================================================
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
@@ -124,17 +141,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Detect if the MPI implementation supports the --oversubscribe option (at the time of writing
-    # the available version of OpenMPI does but those of HPE-MPI and MPICH do not).
-    set(MPIEXEC_OVERSUBSCRIBE --oversubscribe)
-    execute_process(
-      COMMAND ${MPIEXEC} ${MPIEXEC_OVERSUBSCRIBE} --version
-      RESULT_VARIABLE MPIEXEC_OVERSUBSCRIBE_TEST
-      OUTPUT_QUIET ERROR_QUIET)
-    if(NOT MPIEXEC_OVERSUBSCRIBE_TEST EQUAL 0)
-      message(STATUS "mpiexec does not support ${MPIEXEC_OVERSUBSCRIBE}")
-      unset(MPIEXEC_OVERSUBSCRIBE)
-    endif()
     # Launching mpi executable with full path can mangle different python versions and libraries
     # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
     # ${MPIEXEC_NAME} does not.
@@ -149,6 +155,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
 
   if(NRN_ENABLE_CORENEURON)
+    # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
+    # be dynamically loaded by Python. This is why all the tests that rely on that dynamic loading
+    # declare `CONFLICTS gpu`.
     nrn_add_test_group(
       NAME coreneuron_modtests
       SCRIPT_PATTERNS test/coreneuron/*.py
@@ -157,6 +166,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME direct_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_direct.py)
@@ -170,6 +180,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME spikes_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_spikes.py)
@@ -177,11 +188,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_fornetcon.py)
@@ -189,6 +202,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME datareturn_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_datareturn.py)
@@ -196,6 +210,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME test_units_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_units.py)
@@ -203,6 +218,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP coreneuron_modtests
       NAME test_natrans_py
       REQUIRES coreneuron
+      CONFLICTS gpu
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
       COMMAND
         COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE} -m pytest
@@ -218,6 +234,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           GROUP coreneuron_modtests
           NAME spikes_mpi_py
           REQUIRES coreneuron
+          CONFLICTS gpu
+          PROCESSORS 2
           COMMAND
             ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}
             ${MPIEXEC_POSTFLAGS} test/coreneuron/test_spikes.py mpi4py)
@@ -226,6 +244,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         GROUP coreneuron_modtests
         NAME spikes_mpi_file_mode_py
         REQUIRES coreneuron
+        PROCESSORS 2
         COMMAND
           ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
           ${MPIEXEC_POSTFLAGS} -python -pyexe ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py
