@@ -23,4 +23,4 @@ endif()
 
 add_dependencies(lfp_test_bin nrniv-core)
 
-add_test(NAME lfp_test COMMAND ${TEST_EXEC_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/lfp_test_bin)
+add_test(NAME lfp_test COMMAND ${TEST_EXEC_PREFIX} $<TARGET_FILE:lfp_test_bin>)
