@@ -192,9 +192,18 @@ endif()
 # Install executable
 # =============================================================================
 if(NOT NMODL_AS_SUBPROJECT)
-  install(TARGETS nmodl_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
-  install(TARGETS c_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
-  install(TARGETS units_lexer DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer CONFIGURATIONS Debug)
+  install(
+    TARGETS nmodl_lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
+    CONFIGURATIONS Debug)
+  install(
+    TARGETS c_lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
+    CONFIGURATIONS Debug)
+  install(
+    TARGETS units_lexer
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/lexer
+    CONFIGURATIONS Debug)
 endif()
 
 add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES})

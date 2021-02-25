@@ -92,6 +92,8 @@ endif()
 # Install executable
 # =============================================================================
 if(NOT NMODL_AS_SUBPROJECT)
-  install(TARGETS nmodl_visitor DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor CONFIGURATIONS
-                  Debug)
+  install(
+    TARGETS nmodl_visitor
+    DESTINATION ${NMODL_INSTALL_DIR_SUFFIX}bin/visitor
+    CONFIGURATIONS Debug)
 endif()

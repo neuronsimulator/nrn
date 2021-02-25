@@ -2,7 +2,7 @@ cache: &global_cache
   key: ${CI_COMMIT_REF_SLUG}
   paths:
   - venv/
-  - build_gcc/
+  - build_intel/
 
 setup virtualenv:
   stage: .pre
@@ -13,23 +13,26 @@ setup virtualenv:
   only:
   - external_pull_requests
 
-build gcc:
+build intel:
   stage: build
   tags: [bb5]
   script: ci/bb5-pr
+  resource_group: build
   only:
   - external_pull_requests
 
-test gcc: &common_test_gcc
+test intel: &test_config
   stage: test
   tags: [bb5]
   script: ci/bb5-pr
   resource_group: test
+  dependencies:
+  - build intel
   only:
   - external_pull_requests
   cache:
     <<: *global_cache
     policy: pull
 
-cmake format: *common_test_gcc
-clang format: *common_test_gcc
+cmake format: *test_config
+clang format: *test_config
