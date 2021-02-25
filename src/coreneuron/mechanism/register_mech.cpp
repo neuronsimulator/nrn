@@ -19,10 +19,11 @@
 
 namespace coreneuron {
 int secondorder = 0;
-double t, dt, celsius;
+double t, dt, celsius, pi;
 // declare copyin required for correct initialization
 #pragma acc declare copyin(secondorder)
 #pragma acc declare copyin(celsius)
+#pragma acc declare copyin(pi)
 int rev_dt;
 
 using Pfrv = void (*)();

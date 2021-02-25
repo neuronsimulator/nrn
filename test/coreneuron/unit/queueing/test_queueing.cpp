@@ -9,9 +9,8 @@
 #define BOOST_TEST_MODULE QueueingTest
 #define TYPE              T::cont
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_case_template.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include <cstdlib>
 #include <vector>

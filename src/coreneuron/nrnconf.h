@@ -32,6 +32,7 @@ using Symbol = char;
 #define VECTORIZE   1
 
 extern double celsius;
+extern double pi;
 
 extern double t, dt;
 extern int rev_dt;

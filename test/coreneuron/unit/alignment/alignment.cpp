@@ -13,9 +13,8 @@
 #include <cstring>
 #include <stdint.h>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_case_template.hpp>
 #include <boost/mpl/list.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include "coreneuron/utils/memory.h"
 
