@@ -1,9 +1,3 @@
-Introduction
-============
-
-Developer builds for creating Binary distributions, tests,
-documentation, code coverage. Each aspect generally has extra dependencies and
-special instructions.
 
 Code Coverage
 -------------
@@ -28,7 +22,7 @@ But you will generally want ```-DNRN_ENABLE_TESTS=ON``` to see what
 effect your new tests have on coverage.
 ```
 COVERAGE_FLAGS="--coverage -O0 -fno-inline -g"
-ccmake .. -DCMAKE_INSTALL_PREFIX=install -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DNRN_ENABLE_TESTS=ON
+cmake .. -DCMAKE_INSTALL_PREFIX=install -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" -DNRN_ENABLE_TESTS=ON
 make -j install
 ```
 
