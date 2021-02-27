@@ -23,6 +23,7 @@ virtualenv
 src/modlunit/lex.cpp
 src/modlunit/parse1.cpp
 src/modlunit/parse1.hpp
+src/nmodl/diffeq.hpp
 src/nmodl/diffeq.cpp
 src/nmodl/diffeq.h
 src/nmodl/lex.cpp
