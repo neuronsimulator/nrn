@@ -40,9 +40,9 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
 ```
 
 A universal build is possible with ```-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"```
-but the installations for openmpi and python on the your machine must also be universal.
+but the installations for openmpi and python on your machine must also be universal.
 I.e. configure with ```-DNRN_ENABLE_MPI_DYNAMIC=OFF -DNRN_PYTHON_DYNAMIC=/usr/bin/python3```.
-As we have been unable to find or build a universal openmpi, and the
+As we have been unable to find or build a universal openmpi, and
 only the Big Sur default Python 3.8 installaion is universal, we are
 currently building separate installers for arm64 and x86_64.
 
