@@ -4,7 +4,7 @@ additional_commands:
     kwargs:
       NAME: 1
       SUBMODULE: '?'
-      MODFILE_DIRECTORY: '?'
+      MODFILE_PATTERNS: '*'
       SCRIPT_PATTERNS: '*'
       OUTPUT: '*'
   nrn_add_test:
@@ -13,11 +13,14 @@ additional_commands:
       GROUP: 1
       NAME: 1
       SUBMODULE: '?'
-      MODFILE_DIRECTORY: '?'
+      MODFILE_PATTERNS: '*'
+      PRECOMMAND: '+'
       COMMAND: '+'
       SCRIPT_PATTERNS: '*'
       REQUIRES: '*'
       CONFLICTS: '*'
+      OUTPUT: '*'
+      PROCESSORS: '?'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

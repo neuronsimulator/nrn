@@ -34,9 +34,6 @@ static MUTDEC
 // about illegal overloading in math.h
 // and math.h alone just moves the problem
 // to these
-#if MAC
-#include "d_avec.h"
-#endif
 //#include "shared/sundialstypes.h"
 //#include "shared/nvector_serial.h"
 #include "cvodes/cvodes.h"

@@ -160,7 +160,7 @@ void LinearMechanism::create()
 		Vect* x = vector_arg(i+1);
 		Section* sec;
 		nnode_ = 0;
-		nodes_ = new Node*[x->capacity()];
+		nodes_ = new Node*[x->size()];
 		for (sec = sl->begin(); sec; sec = sl->next()) {
 			nodes_[nnode_] = node_exact(sec, x->elem(nnode_));
 			nrn_notify_when_double_freed(&NODEV(nodes_[nnode_]), this);

@@ -70,7 +70,7 @@ extern "C" {
 	extern void nrn_thread_stat();
 	extern int nrn_allow_busywait(int);
 	extern int nrn_how_many_processors();
-	extern size_t nrnbbcore_write();
+	extern size_t nrncore_write();
 	extern size_t nrnbbcore_register_mapping();
 	extern int nrncore_run(const char*);
 	extern bool nrn_trajectory_request_per_time_step_;
@@ -342,7 +342,7 @@ static void unpack_help(int i, OcBBS* bbs) {
 			Vect* vec = vector_arg(i);
 			int n = bbs->upkint();
 			vec->resize(n);
-			bbs->upkvec(n, vec->vec());
+			bbs->upkvec(n, vec->data());
 		}else{
 hoc_execerror("pc.unpack can only unpack str, scalar, or Vector.",
 "use pc.upkpyobj to unpack a Python Object");
@@ -380,7 +380,7 @@ static Object** upkvec(void* v) {
 	}else{
 		vec = new Vect(n);
 	}
-	bbs->upkvec(n, vec->vec());
+	bbs->upkvec(n, vec->data());
 	return vec->temp_objvar();
 }
 
@@ -743,7 +743,7 @@ static double allreduce(void*) {
 	// type 1,2,3 sum, max, min
     if (hoc_is_object_arg(1)) {
 	Vect* vec = vector_arg(1);
-	int n = vec->capacity();
+	int n = vec->size();
 	if (n == 0) { return 0.0; }
 #if NRNMPI
 	if (nrnmpi_numprocs > 1) {
@@ -868,7 +868,7 @@ static double broadcast(void*) {
 	}else{
 		Vect* vec = vector_arg(1);
 		if (srcid == nrnmpi_myid) {
-			cnt = vec->capacity();
+			cnt = vec->size();
 		}
 		nrnmpi_int_broadcast(&cnt, 1, srcid);
 		if (srcid != nrnmpi_myid) {
@@ -883,7 +883,7 @@ static double broadcast(void*) {
 	if (hoc_is_str_arg(1)) {
 		cnt = strlen(gargstr(1));
 	}else{
-		cnt = vector_arg(1)->capacity();
+		cnt = vector_arg(1)->size();
 	}
     }
 	return double(cnt);
@@ -977,8 +977,18 @@ static double thread_dt(void*) {
 	return nrn_threads[i]._dt;
 }
 
-static double nrnbbcorewrite(void*) {
-	return double(nrnbbcore_write());
+static double nrncorewrite_argvec(void*) {
+	if (ifarg(2) && !(hoc_is_object_arg(2) && is_vector_arg(2))) {
+		hoc_execerror("nrnbbcore_write: optional second arg is not a Vector", NULL);
+	}
+	return double(nrncore_write());
+}
+
+static double nrncorewrite_argappend(void*) {
+	if (ifarg(2) && !hoc_is_double_arg(2)) {
+		hoc_execerror("nrncore_write: optional second arg is not a number (True or False append flag)", NULL);
+	}
+	return double(nrncore_write());
 }
 
 static double nrncorerun(void*) {
@@ -1079,7 +1089,8 @@ static Member_func members[] = {
 	"dt", thread_dt,
 	"t", nrn_thread_t,
 
-    "nrnbbcore_write", nrnbbcorewrite,
+    "nrnbbcore_write", nrncorewrite_argvec,
+    "nrncore_write", nrncorewrite_argappend,
     "nrnbbcore_register_mapping", nrnbbcore_register_mapping,
     "nrncore_run", nrncorerun,
 
@@ -1244,9 +1255,9 @@ hoc_execerror("ParallelContext execution error", 0);
 				}
 				Vect* vec = new Vect(n);
 //printf("arg %d vector size=%d\n", narg, n);
-				upkvec(n, vec->vec());
+				upkvec(n, vec->data());
 				if (subworld) {
-					nrnmpi_dbl_broadcast(vec->vec(), n, 0);
+					nrnmpi_dbl_broadcast(vec->data(), n, 0);
 				}
 				hoc_pushobj(vec->temp_objvar());
 			}else{ //PythonObject

@@ -10,6 +10,7 @@ Welcome to NEURON's documentation!
 
    install/install
    cmake_doc/index
+   install/developer
 
 .. toctree::
    :maxdepth: 2
