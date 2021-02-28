@@ -96,6 +96,7 @@ The following packages are optional (see build options):
 
 Depending on platform you can install these dependencies as follows:
 
+<a name="Mac-OS-Depend"></a>
 #### Mac OS
 
 This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
