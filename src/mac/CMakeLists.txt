@@ -7,14 +7,18 @@ if (NRN_MACOS_BUILD)
   install(CODE
     "execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/activate-apps-cmake.sh \"x86_64\" \"${CMAKE_INSTALL_PREFIX}\" \"${PROJECT_SOURCE_DIR}\" \"${CMAKE_INSTALL_PREFIX}/lib\")")
 
-  set(MACPKG_INSTALL_PATH "/Applications/NEURON-${PROJECT_VERSION}")
+  set(MACPKG_INSTALL_PATH "/Applications/NEURON")
   if (${CMAKE_INSTALL_PREFIX} STREQUAL ${MACPKG_INSTALL_PATH})
     # should only be invoked after a 'make install'. Creates signed pkg.
+    set(PKG_NAME "NEURON")
+    set(PKG_PATH "${CMAKE_CURRENT_BINARY_DIR}/build/${PKG_NAME}.pkg")
     add_custom_target(macpkg
       COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/clean-for-pkg-cmake.sh "${CMAKE_INSTALL_PREFIX}"
       COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/nrn_x11_opt2usr.sh "${CMAKE_INSTALL_PREFIX}" "x86_64"
+      COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/nrn_codesign.sh "${CMAKE_INSTALL_PREFIX}" "${CMAKE_CURRENT_SOURCE_DIR}"
       COMMAND /usr/local/bin/packagesbuild ${CMAKE_CURRENT_BINARY_DIR}/macdist.pkgproj
-      COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/nrnproductsign.sh ${CMAKE_CURRENT_BINARY_DIR}/build/NEURON-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.pkg
+      COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/nrn_productsign.sh "${PKG_PATH}"
+      COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/nrn_notarize.sh "${PKG_PATH}" "${PKG_NAME}"
       DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/macdist.pkgproj
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   else()

@@ -19,7 +19,7 @@ export CPU
 NSRC="$3"
 export NSRC
 NVER="`sh $srcdir/nrnversion.sh`"
-NDIR="NEURON-$NVER"
+NDIR="NEURON"
 export NDIR
 N="$prefix"
 IV=`echo "$prefix"|sed 's/nrn$/iv/'`
