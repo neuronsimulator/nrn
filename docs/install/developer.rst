@@ -10,3 +10,4 @@ dependencies and special instructions.
    :maxdepth: 2
 
    code_coverage.md
+   mac_pkg.md

@@ -2,7 +2,7 @@
 #executed by package installer
 echo "" > /tmp/temp.tmp
 
-idir=/Applications/NEURON-@UNQUOTED_PACKAGE_VERSION@
+idir=/Applications/NEURON
 #autotools has nrn
 if test -d $idir/nrn ; then
   idir=${idir}/nrn
@@ -135,7 +135,7 @@ Modify PYTHONPATH in $HOME/'$b' to allow a launch of Python to import neuron.
 fi
 
 if true ; then # notice that Command Line Tools and XQuartz also need to be installed.
-osascript -e 'tell app "Installer" to display dialog "NEURON @UNQUOTED_PACKAGE_VERSION@ was successfully installed, but ...
+osascript -e 'tell app "Installer" to display dialog "NEURON was successfully installed, but ...
 Mod files cannot be linked into NEURON unless
 Command Line Tools is installed,
 and NEURON cannot use its classic X11 GUI unless XQuartz is installed.
