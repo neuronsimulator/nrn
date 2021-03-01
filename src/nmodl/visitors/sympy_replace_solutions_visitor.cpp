@@ -38,16 +38,23 @@ SympyReplaceSolutionsVisitor::SympyReplaceSolutionsVisitor(
     const std::vector<std::string>& solutions,
     const std::unordered_set<ast::Statement*>& to_be_removed,
     const ReplacePolicy policy,
-    const size_t n_next_equations)
+    const size_t n_next_equations,
+    const std::string& tmp_unique_prefix)
     : pre_solve_statements(pre_solve_statements.begin(), pre_solve_statements.end(), 2)
     , to_be_removed(&to_be_removed)
     , policy(policy)
     , n_next_equations(n_next_equations)
     , replaced_statements_range(-1, -1) {
+    // if tmp_unique_prefix we do not expect tmp_statements
     const auto ss_tmp_delimeter =
-        std::find_if(solutions.begin(), solutions.end(), [](const std::string& statement) {
-            return statement.substr(0, 3) != "tmp";
-        });
+        tmp_unique_prefix.empty()
+            ? solutions.begin()
+            : std::find_if(solutions.begin(),
+                           solutions.end(),
+                           [&tmp_unique_prefix](const std::string& statement) {
+                               return statement.substr(0, tmp_unique_prefix.size()) !=
+                                      tmp_unique_prefix;
+                           });
     tmp_statements = StatementDispenser(solutions.begin(), ss_tmp_delimeter, -1);
     solution_statements = StatementDispenser(ss_tmp_delimeter, solutions.end(), -1);
 

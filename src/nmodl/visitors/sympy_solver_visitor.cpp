@@ -196,7 +196,8 @@ void SympySolverVisitor::construct_eigen_solver_block(
         solutions_filtered,
         expression_statements,
         visitor::SympyReplaceSolutionsVisitor::ReplacePolicy::GREEDY,
-        state_vars.size() + 1);
+        state_vars.size() + 1,
+        "");
     solution_replacer.visit_statement_block(*block_with_expression_statements);
 
     // split in the various blocks for eigen
@@ -304,6 +305,9 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
     solver->vars = vars;
     solver->small_system = small_system;
     solver->elimination = elimination;
+    // this is necessary after we destroy the solver
+    const auto tmp_unique_prefix = suffix_random_string(vars, "tmp");
+    solver->tmp_unique_prefix = tmp_unique_prefix;
     solver->function_calls = function_calls;
     (*solver)();
     // returns a vector of solutions, i.e. new statements to add to block:
@@ -312,6 +316,7 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
     auto new_local_vars = solver->new_local_vars;
     // may also return a python exception message:
     auto exception_message = solver->exception_message;
+    // destroy solver
     pywrap::EmbeddedPythonLoader::get_instance().api()->destroy_sls_executor(solver);
     if (!exception_message.empty()) {
         logger->warn("SympySolverVisitor :: solve_lin_system python exception: " +
@@ -338,7 +343,8 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
             solutions,
             expression_statements,
             visitor::SympyReplaceSolutionsVisitor::ReplacePolicy::VALUE,
-            1);
+            1,
+            tmp_unique_prefix);
         solution_replacer.visit_statement_block(*block_with_expression_statements);
     } else {
         // otherwise it returns a linear matrix system to solve
@@ -533,8 +539,9 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
             } else {
                 // no CONSERVE equation, construct Euler equation
                 auto dxdt = stringutils::trim(split_eq[1]);
-                auto old_x = "old_" + x + x_array_index_i;  // TODO: do this properly,
-                // check name is unique
+
+
+                const auto old_x = suffix_random_string(vars, "old_" + x + x_array_index_i);
                 // declare old_x
                 logger->debug("SympySolverVisitor :: -> declaring new local variable: {}", old_x);
                 add_local_variable(*block_with_expression_statements, old_x);

@@ -32,6 +32,8 @@ struct SolveLinearSystemExecutor: public PythonExecutor {
     std::set<std::string> vars;
     bool small_system;
     bool elimination;
+    // This is used only if elimination is true. It gives the root for the tmp variables
+    std::string tmp_unique_prefix;
     std::set<std::string> function_calls;
     // output
     // returns a vector of solutions, i.e. new statements to add to block:
@@ -40,7 +42,6 @@ struct SolveLinearSystemExecutor: public PythonExecutor {
     std::vector<std::string> new_local_vars;
     // may also return a python exception message:
     std::string exception_message;
-
     // executor function
     virtual void operator()() override;
 };

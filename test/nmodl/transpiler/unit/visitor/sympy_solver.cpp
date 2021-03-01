@@ -65,6 +65,22 @@ std::vector<std::string> run_sympy_solver_visitor(
     return results;
 }
 
+// check if in a list of vars (like LOCAL) there are duplicates
+bool is_unique_vars(std::string result) {
+    result.erase(std::remove(result.begin(), result.end(), ','), result.end());
+    std::stringstream ss(result);
+    std::string token;
+
+    std::unordered_set<std::string> old_vars;
+
+    while (getline(ss, token, ' ')) {
+        if (!old_vars.insert(token).second) {
+            return false;
+        }
+    }
+    return true;
+}
+
 
 /**
  * \brief Compare nmodl blocks that contain systems of equations (i.e. derivative, linear, etc.)
@@ -88,6 +104,8 @@ std::vector<std::string> run_sympy_solver_visitor(
  * - reduce back-substitution of the temporary variables
  *
  * \p require_fail requires that the equations are different. Used only for unit-test this function
+ *
+ * \warning do not use this method when there are tmp variables not in the form: tmp_<number>
  */
 void compare_blocks(const std::string& result,
                     const std::string& expected,
@@ -130,25 +148,25 @@ void compare_blocks(const std::string& result,
                             for line in s.split('\n'):
                                 line_split = line.lstrip().split('=')
 
-                                if len(line_split) == 2 and line_split[0].startswith('tmp'):
+                                if len(line_split) == 2 and line_split[0].startswith('tmp_'):
                                     # back-substitution of tmp variables in tmp variables
                                     tmp_var = line_split[0].strip()
                                     if tmp_var in d:
                                         continue
 
-                                    max_tmp = max(max_tmp, int(tmp_var[3:]))
+                                    max_tmp = max(max_tmp, int(tmp_var[4:]))
                                     for k, v in d.items():
                                         line_split[1] = line_split[1].replace(k, f'({v})')
                                     d[tmp_var] = line_split[1]
                                 elif 'LOCAL' in line:
-                                    sout += line.split('tmp0')[0] + '\n'
+                                    sout += line.split('tmp_0')[0] + '\n'
                                 else:
                                     sout += line + '\n'
 
                             # Back-substitution of the tmps
-                            # so that we do not replace tmp11 with (tmp1)1
+                            # so that we do not replace tmp_11 with (tmp_1)1
                             for j in range(max_tmp, -1, -1):
-                                k = f'tmp{j}'
+                                k = f'tmp_{j}'
                                 sout = sout.replace(k, f'({d[k]})')
 
                             return sout
@@ -248,9 +266,9 @@ SCENARIO("Check compare_blocks in sympy unit tests", "[visitor][sympy]") {
         })";
         std::string expected = R"(
         DERIVATIVE {
-        tmp0 = a + c
-        tmp1 = tmp0 - a
-        A[0] = b+2*b + tmp1
+        tmp_0 = a + c
+        tmp_1 = tmp_0 - a
+        A[0] = b+2*b + tmp_1
         y = pow(a, 2)*a + 2*b-b
         })";
         THEN("Blocks are equal") {
@@ -275,9 +293,9 @@ SCENARIO("Check compare_blocks in sympy unit tests", "[visitor][sympy]") {
     GIVEN("Different systems of equations") {
         std::string result = R"(
         DERIVATIVE {
-        tmp0 = a - c
-        tmp1 = tmp0 - a
-        x = 3*b + tmp1
+        tmp_0 = a - c
+        tmp_1 = tmp_0 - a
+        x = 3*b + tmp_1
         y = 2*a + b
         })";
         std::string expected = R"(
@@ -287,6 +305,49 @@ SCENARIO("Check compare_blocks in sympy unit tests", "[visitor][sympy]") {
         })";
         THEN("Blocks are different") {
             compare_blocks(result, expected, true);
+        }
+    }
+}
+
+SCENARIO("Check local vars name-clash prevention", "[visitor][sympy]") {
+    GIVEN("LOCAL tmp") {
+        std::string nmodl_text = R"(
+        STATE {
+            x y
+        }
+        BREAKPOINT  {
+            SOLVE states METHOD sparse
+        }
+        DERIVATIVE states {
+            LOCAL tmp, b
+            x' = tmp + b
+            y' = tmp + b
+        })";
+        THEN("There are no duplicate vars in LOCAL") {
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, true, true, AstNodeType::LOCAL_LIST_STATEMENT);
+            REQUIRE(!result.empty());
+            REQUIRE(is_unique_vars(result[0]));
+        }
+    }
+    GIVEN("LOCAL tmp_0") {
+        std::string nmodl_text = R"(
+        STATE {
+            x y
+        }
+        BREAKPOINT  {
+            SOLVE states METHOD sparse
+        }
+        DERIVATIVE states {
+            LOCAL tmp_0, b
+            x' = tmp_0 + b
+            y' = tmp_0 + b
+        })";
+        THEN("There are no duplicate vars in LOCAL") {
+            auto result =
+                run_sympy_solver_visitor(nmodl_text, true, true, AstNodeType::LOCAL_LIST_STATEMENT);
+            REQUIRE(!result.empty());
+            REQUIRE(is_unique_vars(result[0]));
         }
     }
 }
@@ -796,21 +857,21 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result_cse = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_x, old_y, tmp0, tmp1, tmp2, tmp3
+                LOCAL a, b, old_x, old_y, tmp_0, tmp_1, tmp_2, tmp_3
                 old_x = x
                 old_y = y
-                tmp0 = a*dt
-                tmp1 = pow(dt, 2)
-                tmp2 = a*tmp1
-                tmp3 = 1.0/(tmp0+tmp2-1.0)
-                x = -tmp3*(b*dt-b*tmp2-old_x*tmp0+old_x+old_y*tmp0)
+                tmp_0 = a*dt
+                tmp_1 = pow(dt, 2)
+                tmp_2 = a*tmp_1
+                tmp_3 = 1.0/(tmp_0+tmp_2-1.0)
+                x = -tmp_3*(b*dt-b*tmp_2-old_x*tmp_0+old_x+old_y*tmp_0)
                 IF (b == 1) {
                     a = a+1
                 }
-                tmp0 = a*dt
-                tmp2 = a*tmp1
-                tmp3 = 1.0/(tmp0+tmp2-1.0)
-                y = -tmp3*(b*tmp1+dt*old_x+old_y)
+                tmp_0 = a*dt
+                tmp_2 = a*tmp_1
+                tmp_3 = 1.0/(tmp_0+tmp_2-1.0)
+                y = -tmp_3*(b*tmp_1+dt*old_x+old_y)
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -851,19 +912,19 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_cse_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, c, d, h, old_x, old_y, old_z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5
+                LOCAL a, b, c, d, h, old_x, old_y, old_z, tmp_0, tmp_1, tmp_2, tmp_3, tmp_4, tmp_5
                 old_x = x
                 old_y = y
                 old_z = z
-                tmp0 = 2.0*a
-                tmp1 = -d*dt+pow(dt, 3)*tmp0+1.0
-                tmp2 = 1.0/tmp1
-                tmp3 = b*dt*h+old_x
-                tmp4 = c*dt+2.0*dt*tmp3+old_y
-                tmp5 = dt*tmp4-old_z
-                x = -tmp2*(a*dt*tmp5-tmp1*tmp3)
-                y = -tmp2*(pow(dt, 2)*tmp0*tmp5-tmp1*tmp4)
-                z = -tmp2*tmp5
+                tmp_0 = 2.0*a
+                tmp_1 = -d*dt+pow(dt, 3)*tmp_0+1.0
+                tmp_2 = 1.0/tmp_1
+                tmp_3 = b*dt*h+old_x
+                tmp_4 = c*dt+2.0*dt*tmp_3+old_y
+                tmp_5 = dt*tmp_4-old_z
+                x = -tmp_2*(a*dt*tmp_5-tmp_1*tmp_3)
+                y = -tmp_2*(pow(dt, 2)*tmp_0*tmp_5-tmp_1*tmp_4)
+                z = -tmp_2*tmp_5
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {

@@ -27,7 +27,8 @@ void SolveLinearSystemExecutor::operator()() {
                                  "vars"_a = vars,
                                  "small_system"_a = small_system,
                                  "do_cse"_a = elimination,
-                                 "function_calls"_a = function_calls);
+                                 "function_calls"_a = function_calls,
+                                 "tmp_unique_prefix"_a = tmp_unique_prefix);
     py::exec(R"(
                 from nmodl.ode import solve_lin_system
                 exception_message = ""
@@ -36,6 +37,7 @@ void SolveLinearSystemExecutor::operator()() {
                                                                  state_vars,
                                                                  vars,
                                                                  function_calls,
+                                                                 tmp_unique_prefix,
                                                                  small_system,
                                                                  do_cse)
                 except Exception as e:

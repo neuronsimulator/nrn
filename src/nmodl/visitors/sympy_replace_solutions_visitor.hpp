@@ -224,7 +224,8 @@ class SympyReplaceSolutionsVisitor: public AstVisitor {
                                  const std::vector<std::string>& solutions,
                                  const std::unordered_set<ast::Statement*>& to_be_removed,
                                  const ReplacePolicy policy,
-                                 size_t n_next_equations);
+                                 size_t n_next_equations,
+                                 const std::string& tmp_unique_prefix);
 
     /// idx (in the new statementVector) of the first statement that was added. -1 if nothing was
     /// added
