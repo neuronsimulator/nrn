@@ -238,29 +238,15 @@ jobs:
         if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
         uses: mxschmitt/action-tmate@v3
 
-      - name: Documentation 
+      - name: Build documentation
         if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        id: documentation
-        working-directory: ${{runner.workspace}}/nrn
+        working-directory: ${{runner.workspace}}/nrn/build
         run: |
           echo "------- Bring up NEURON -------";
           export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
           export PATH=$INSTALL_DIR/bin:$PATH;
           echo "------- Build Doxygen Documentation -------";
-          pushd build;
           make docs;
-          echo "-------- Disable jekyll --------";
-          pushd docs;
-          touch .nojekyll;
-          echo ::set-output name=status::done
         env:
           INSTALL_DIR : ${{ runner.workspace }}/install 
           
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
-        if: steps.documentation.outputs.status == 'done' && startsWith(github.ref, 'refs/heads/master')
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: ${{runner.workspace}}/nrn/build/docs # The folder the action should deploy.
-          CLEAN: false # Automatically remove deleted files from the deploy branch

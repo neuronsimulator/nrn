@@ -11,5 +11,5 @@ mkdir  $BUILD_DIR
 cd $BUILD_DIR
 
 cmake -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF ..
-make notebooks
 make doxygen
+make notebooks

@@ -71,6 +71,9 @@ master_doc = 'index'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Extra html content that is generated. i.e. doxygen
+html_extra_path = ['_generated']
+
 html_css_files = [
     'custom.css',
 ]
@@ -94,13 +97,3 @@ if os.environ.get("READTHEDOCS"):
 
     # Execute & convert notebooks + doxygen
     subprocess.run("sh build_rtd.sh", check=True, shell=True)
-
-    # Add extra path to pickup doxygen output
-    html_extra_path = ['../build_rtd/docs']
-
-    # Remove `docs` from sys.path since RTD adds it automatically.
-    # Otherwise `docs/hoc` will clash with `hoc` when importing neuron
-    try:
-        sys.path.remove(os.path.abspath('.'))
-    except:
-        pass

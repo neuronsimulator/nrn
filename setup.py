@@ -86,11 +86,13 @@ class CMakeAugmentedBuilder(build_ext):
         ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
         ("cmake-defs=", None, "Additional CMake definitions, comma split")
     ]
+    boolean_options = build_ext.boolean_options +['docs']
 
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.cmake_prefix = None
         self.cmake_defs = None
+        self.docs = False
 
     def run(self, *args, **kw):
         """Execute the extension builder.
@@ -184,6 +186,15 @@ class CMakeAugmentedBuilder(build_ext):
                 [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
                 cwd=self.build_temp, env=env
             )
+            if self.docs:
+                subprocess.check_call(
+                    ['make', 'notebooks'],
+                    cwd=self.build_temp, env=env
+                )
+                subprocess.check_call(
+                    ['make', 'doxygen'],
+                    cwd=self.build_temp, env=env
+                )
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
@@ -213,7 +224,7 @@ class Docs(Command):
 
     def run(self):
         # The extensions must be created inplace to inspect docs
-        self.reinitialize_command('build_ext', inplace=1)
+        self.reinitialize_command('build_ext', inplace=1, docs=True)
         self.run_command('build_ext')
         self.run_command('build_sphinx')
         if self.upload:

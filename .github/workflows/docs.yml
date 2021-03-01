@@ -1,0 +1,75 @@
+name: NEURON Documentation
+
+on:
+  push:
+    branches:
+      - master
+      - live-debug*
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
+
+jobs:
+  documentation:
+    runs-on: ubuntu-18.04
+
+    name: Documentation
+
+    timeout-minutes: 45
+
+    steps:
+
+      - name: Install apt packages
+        run: |
+          sudo apt-get install build-essential autoconf automake libtool autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install ffmpeg doxygen
+        shell: bash
+
+      - name: Set up Python3
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install Python3 dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
+
+      - uses: actions/checkout@v2
+
+      - name: Install Python3 documentation dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: python3 -m pip install --upgrade -r docs/docs_requirements.txt
+
+      - name: Documentation
+        id: documentation
+        shell: bash
+        working-directory: ${{runner.workspace}}/nrn
+        run:  |
+          echo "-------- install NEURON --------";
+          python3 setup.py install
+          echo "-------- build docs     --------";
+          python3 setup.py docs
+          echo "-------- Disable jekyll --------";
+          pushd docs/_build;
+          touch .nojekyll;
+          echo "-------- OK to deploy!  --------";
+          echo ::set-output name=status::done
+
+      # This step will set up an SSH connection on tmate.io for live debugging.
+      # To trigger it, simply prefix your branch name with `live-debug`
+      #   i.e.: live-debug-hocfix
+      - name: live debug session on failure
+        if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
+        uses: mxschmitt/action-tmate@v3
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: steps.documentation.outputs.status == 'done' && github.ref == 'refs/heads/master'
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
+          CLEAN: false # Automatically remove deleted files from the deploy branch
