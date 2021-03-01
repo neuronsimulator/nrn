@@ -31,39 +31,6 @@ def _get_custom_functions(fcts):
             custom_functions[f] = f
     return custom_functions
 
-def _make_unique_prefix(vars, default_prefix="tmp"):
-    """Generate a unique prefix
-
-    Generates a prefix that doesn't match the first part
-    of any string in vars.
-
-    Starting point is the supplied default_prefix, if
-    this doesn't match the first part of any string in vars
-    it is returned.
-
-    Otherwise, underscores are appended until it doesn't match,
-    then this string is returned.
-
-    Args:
-        vars: list of strings that the prefix should not match
-        default_prefix: desired prefix
-
-    Returns:
-        the prefix as a string
-    """
-    prefix = default_prefix
-    while True:
-        for v in vars:
-            # if v is long enough to match prefix
-            # and first part of it matches prefix
-            if (len(v) >= len(prefix)) and (v[: len(prefix)] == prefix):
-                # append undescore to prefix, try again
-                prefix += "_"
-                break
-        else:
-            # for loop ended without finding possible clash
-            return prefix
-
 
 def _var_to_sympy(var_str):
     """Return sympy variable from string representing variable
@@ -213,7 +180,7 @@ def _interweave_eqs(F, J):
     return code
 
 
-def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=False, do_cse=False):
+def solve_lin_system(eq_strings, vars, constants, function_calls, tmp_unique_prefix, small_system=False, do_cse=False):
     """Solve linear system of equations, return solution as C code.
 
     If system is small (small_system=True, typically N<=3):
@@ -230,6 +197,8 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=F
         vars: list of variables to solve for, e.g. ["x", "y"]
         constants: set of any other symbolic expressions used, e.g. {"a", "b"}
         function_calls: set of function calls used in the ODE
+        tmp_unique_prefix: is a unique prefix on which new variables can be easily created
+                       by appending strings. It is usually of the form "tmp"
         small_system: if True, solve analytically by gaussian elimination
                       otherwise return matrix system to be solved
         do_cse: if True, do Common Subexpression Elimination
@@ -250,8 +219,7 @@ def solve_lin_system(eq_strings, vars, constants, function_calls, small_system=F
         solution_vector = sp.linsolve(eqs, state_vars).args[0]
         if do_cse:
             # generate prefix for new local vars that avoids clashes
-            prefix = _make_unique_prefix(vars)
-            my_symbols = sp.utilities.iterables.numbered_symbols(prefix=prefix)
+            my_symbols = sp.utilities.iterables.numbered_symbols(prefix=tmp_unique_prefix + '_')
             sub_exprs, simplified_solution_vector = sp.cse(
                 solution_vector,
                 symbols=my_symbols,

@@ -33,19 +33,17 @@ std::string suffix_random_string(const std::set<std::string>& vars,
     std::string new_string = original_string;
     std::string random_string;
     auto& singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
-    // Check if there is a variable defined in the mod file as original_string and if yes
+    // Check if there is a variable defined in the mod file as original_string or that
+    // has original_string as prefix and, if yes,
     // try to use a different string in the form "original_string"_"random_string"
-    while (vars.find(new_string) != vars.end()) {
+
+    const auto it = vars.lower_bound(new_string);
+    while ((it != vars.end()) && new_string == it->substr(0, new_string.size())) {
         random_string = singleton_random_string_class.reset_random_string(original_string, use_num);
         new_string = original_string;
         new_string += "_" + random_string;
     }
     return new_string;
-}
-
-std::string suffix_random_string(const std::set<std::string>& vars,
-                                 const std::string& original_string) {
-    return suffix_random_string(vars, original_string, UseNumbersInString::WithNumbers);
 }
 
 std::string get_new_name(const std::string& name,

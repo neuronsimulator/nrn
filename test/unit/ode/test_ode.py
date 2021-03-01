@@ -5,7 +5,7 @@
 # Lesser General Public License. See top-level LICENSE file for details.
 # ***********************************************************************
 
-from nmodl.ode import _make_unique_prefix, differentiate2c, integrate2c
+from nmodl.ode import differentiate2c, integrate2c
 
 import sympy as sp
 
@@ -38,19 +38,6 @@ def _equivalent(
         if difference != 0:
             return False
     return True
-
-
-def test_make_unique_prefix():
-
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "z") == "z"
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "a") == "a_"
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "az") == "az"
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "cc") == "cc_"
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "ccc") == "ccc_"
-    assert _make_unique_prefix(["a", "b", "ccc", "tmp"], "tmp") == "tmp_"
-    assert _make_unique_prefix(["a", "b", "tmp_", "tmp"], "tmp") == "tmp__"
-    assert _make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmp") == "tmp_"
-    assert _make_unique_prefix(["a", "tmp2", "ccc", "x"], "tmpvar") == "tmpvar"
 
 
 def test_differentiate2c():
