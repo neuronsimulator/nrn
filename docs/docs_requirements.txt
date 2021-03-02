@@ -8,3 +8,4 @@ bokeh
 ipython
 plotnine
 numpy
+plotly
