@@ -1362,7 +1362,7 @@ Channels
 
 The SOLVE PROCEDURE form was often used to implement 
 the exponential integration method for HH like states and was 
-very efficient in the context of the Crank-Nicholson like 
+very efficient in the context of the Crank-Nicolson like
 staggered time step approach historically used by NEURON. 
 Furthermore the exponential integration often used tables 
 of rates which were calculated under the assumption of 
