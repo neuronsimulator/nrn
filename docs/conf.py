@@ -14,7 +14,9 @@ import os
 import sys
 import subprocess
 
-sys.path.insert(0, os.path.abspath('.'))
+# Translators
+sys.path.insert(0, os.path.abspath('./translators'))
+import html2
 
 # -- Project information -----------------------------------------------------
 
@@ -41,13 +43,8 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-import sphinx.writers.html
-import sphinx.ext.mathjax
-import html2
-
-
 def setup(app):
-    """Setup conntects events to the sitemap builder"""
+    """Setup connect events to the sitemap builder"""
     app.set_translator('html', html2.HTMLTranslator)
 
 
