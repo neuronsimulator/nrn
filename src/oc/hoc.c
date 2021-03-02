@@ -195,7 +195,7 @@ static jmp_buf hoc_oc_begin;
 int	intset;		/* safer interrupt handling */
 int	indef;
 const char	*infile;	/* input file name */
-extern int hoc_xopen_file_size_;
+extern size_t hoc_xopen_file_size_;
 extern char* hoc_xopen_file_;
 const char	**gargv;	/* global argument list */
 int	gargc;

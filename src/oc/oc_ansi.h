@@ -77,6 +77,7 @@ extern char** hoc_strpop(void);
 extern int hoc_ipop(void);
 extern void hoc_nopop(void);
 extern void hoc_execerror(const char*, const char*);
+extern void hoc_execerr_ext(const char* fmt, ...);
 extern void hoc_execerror_mes(const char*, const char*, int);
 extern void hoc_warning(const char*, const char*);
 extern double* hoc_val_pointer(const char*);

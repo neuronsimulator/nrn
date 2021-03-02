@@ -75,7 +75,6 @@ void hoc_stdout(void) {
 		}
 		fclose(f1);
 	}else if (prev > -1) {
-		int i;
 		if (dup2(prev, 1) < 0) {
 			hoc_execerror("Unable to restore stdout", (char*)0);
 		}
@@ -217,7 +216,7 @@ const char* expand_env_var(const char* s) {
 	return hs->buf + begin;
 }
 
-int hoc_xopen_file_size_;
+size_t hoc_xopen_file_size_;
 char* hoc_xopen_file_;
 
 char* hoc_current_xopen(void) {
@@ -724,7 +723,6 @@ static int hoc_Load_file(int always, const char* name) {
 #endif
 #if !MAC
 		if (!f) { /* try HOC_LIBRARY_PATH */
-			int i;
 			char* hlp;
 			hlp = getenv("HOC_LIBRARY_PATH");
 			while(hlp && *hlp) {
@@ -939,4 +937,27 @@ int Fprintf(FILE* stream, const char *fmt, ...) {
   return n;
 }
 
+/** printf style specification of hoc_execerror message. (512 char limit) **/
+void hoc_execerr_ext(const char* fmt, ...) {
+  int size; // vsnprintf returns -1 on error.
+  va_list ap;
+
+  // determine the message size
+  va_start(ap, fmt);
+  size = vsnprintf(NULL, 0, fmt, ap);
+  va_end(ap);
+
+  if (size >= 0) {
+    constexpr size_t maxsize = 512;
+    char s[maxsize + 1];
+    va_start(ap, fmt);
+    size = vsnprintf(s, maxsize, fmt, ap);
+    va_end(ap);
+    if (size >= 0) {
+      s[maxsize] = '\0'; // truncate if too long
+      hoc_execerror(s, NULL);
+    }
+  }
+  hoc_execerror("hoc_execerr_ext failure with format:", fmt);
+}
 
