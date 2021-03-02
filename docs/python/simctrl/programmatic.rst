@@ -51,7 +51,7 @@ Functions
         Integrate all section equations over the interval :data:`h.dt` . 
         The value of :data:`t` is incremented by dt. 
         The default method is first order implicit but may be changed to 
-        Crank-Nicholson by changing :data:`h.secondorder` = 2. 
+        Crank-Nicolson by changing :data:`h.secondorder` = 2.
          
         fadvance integrates the equation over the dt step by 
         calling all the BREAKPOINT blocks of models at t+dt/2 twice with 
