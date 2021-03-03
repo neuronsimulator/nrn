@@ -97,3 +97,10 @@ if os.environ.get("READTHEDOCS"):
 
     # Add extra path to pickup doxygen output
     html_extra_path = ['../build_rtd/docs']
+
+    # Remove `docs` from sys.path since RTD adds it automatically.
+    # Otherwise `docs/hoc` will clash with `hoc` when importing neuron
+    try:
+        sys.path.remove(os.path.abspath('.'))
+    except:
+        pass
