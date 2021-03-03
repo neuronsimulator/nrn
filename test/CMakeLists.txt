@@ -25,6 +25,10 @@ add_custom_command(
 # Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
 set(TEST_ENV NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
              LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
+if(NOT coreneuron_FOUND)
+  # CoreNEURON is being built internally
+  list(APPEND TEST_ENV "CNRNHOME=${PROJECT_BINARY_DIR}")
+endif()
 if(NRN_ENABLE_PYTHON)
   list(
     APPEND

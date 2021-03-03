@@ -258,13 +258,14 @@ function(nrn_add_test)
       # here too.
       list(APPEND output_binaries "${special}-core")
       list(APPEND nrnivmodl_dependencies coreneuron)
-      if(NOT DEFINED CORENEURON_BUILTIN_MODFILES)
+      if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
         message(
           WARNING
-            "nrn_add_test couldn't find the names of the builtin CoreNEURON modfiles that nrnivmodl-core implicitly depends on"
+            "nrn_add_test couldn't find the names of the builtin CoreNEURON modfiles that nrnivmodl-core implicitly depends on *and* CoreNEURON is being built internally"
         )
       endif()
       list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
+      message(STATUS nrnivmodl_dependencies ${nrnivmodl_dependencies})
     endif()
     add_custom_command(
       OUTPUT ${output_binaries}

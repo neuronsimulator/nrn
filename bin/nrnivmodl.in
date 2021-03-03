@@ -22,6 +22,13 @@ else
   @USING_CMAKE_TRUE@libdir="${prefix}/lib"
 fi
 
+if [ -z ${CNRNHOME+x} ]; then
+  # CNRNHOME wasn't set, use the install prefix
+  cnrn_prefix=@cnrn_prefix@
+else
+  cnrn_prefix="${CNRNHOME}"
+fi
+
 if test "${NRNHOME_EXEC}" != "" ; then
   exec_prefix="${NRNHOME_EXEC}"
   bindir="${exec_prefix}/bin"
@@ -313,7 +320,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
         j=`escape_spaces "$j"`
         args="$args $j"
       done
-      $bindir/nrnivmodl-core $args
+      "${cnrn_prefix}/bin/nrnivmodl-core" $args
       cd $MODSUBDIR
     else
       printf "ERROR : CoreNEURON support is not enabled!\n"
