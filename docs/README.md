@@ -48,7 +48,7 @@ Then build docs using command:
 ```
 make docs
 ```  
-That will build everything in the `build/docs` folder and you can then open `index.html` locally. 
+That will build everything in the `nrn/docs/_build` folder and you can then open `index.html` locally. 
 
 When working locally on documentation, be aware of the following targets to speed up building process:
 

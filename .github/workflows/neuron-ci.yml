@@ -33,7 +33,7 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON", documentation: ON }
+          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
           - { matrix_eval : "CC=gcc CXX=g++",       build_mode: "autotools",  config_options: "--without-x --without-paranrn --with-nrnpython=$PYTHON2 PYTHON_BLD=$PYTHON2", use_python2 : ON }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "autotools",  config_options: "--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON" }
@@ -61,12 +61,6 @@ jobs:
           sudo apt-get install build-essential autoconf automake libtool autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
         shell: bash
 
-      - name: Install documentation apt packages
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        run: |
-          sudo apt-get install ffmpeg doxygen
-        shell: bash
-
       - name: Set up Python2
         uses: actions/setup-python@v2
         with:
@@ -85,12 +79,7 @@ jobs:
         run: python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
      
       - uses: actions/checkout@v2
-        
-      - name: Install Python3 documentation dependencies
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        working-directory: ${{runner.workspace}}/nrn
-        run: python3 -m pip install --upgrade -r docs/docs_requirements.txt
-        
+
       - name: Build and Test
         id: build-test
         shell: bash
@@ -237,16 +226,3 @@ jobs:
       - name: live debug session on failure
         if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
         uses: mxschmitt/action-tmate@v3
-
-      - name: Build documentation
-        if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.config.documentation == 'ON' }}
-        working-directory: ${{runner.workspace}}/nrn/build
-        run: |
-          echo "------- Bring up NEURON -------";
-          export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
-          export PATH=$INSTALL_DIR/bin:$PATH;
-          echo "------- Build Doxygen Documentation -------";
-          make docs;
-        env:
-          INSTALL_DIR : ${{ runner.workspace }}/install 
-          

@@ -17,7 +17,7 @@ jobs:
 
     name: Documentation
 
-    timeout-minutes: 45
+    timeout-minutes: 20
 
     steps:
 
@@ -48,15 +48,18 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}/nrn
         run:  |
-          echo "-------- install NEURON --------";
-          python3 setup.py install
-          echo "-------- build docs     --------";
-          python3 setup.py docs
-          echo "-------- Disable jekyll --------";
+          echo "-------- NEURON wheel --------";
+          python3 setup.py build_ext bdist_wheel;
+          neuron_wheel=dist/NEURON*.whl;
+          echo "-------- install wheel --------"
+          python3 -m pip install $neuron_wheel;
+          echo "-------- now build docs--------";
+          python3 setup.py docs;
+          echo "-------- disable jekyll--------";
           pushd docs/_build;
           touch .nojekyll;
-          echo "-------- OK to deploy!  --------";
-          echo ::set-output name=status::done
+          echo "-------- OK to deploy! --------";
+          echo ::set-output name=status::done;
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To trigger it, simply prefix your branch name with `live-debug`

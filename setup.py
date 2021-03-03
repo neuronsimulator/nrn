@@ -107,6 +107,9 @@ class CMakeAugmentedBuilder(build_ext):
 
                 self._run_cmake(ext)  # Build cmake project
 
+                if self.docs:
+                    return
+
                 # Collect project files to be installed
                 # These go directly into final package, regardless of setuptools filters
                 log.info("\n==> Collecting CMAKE files")
@@ -145,7 +148,6 @@ class CMakeAugmentedBuilder(build_ext):
         readline_flag = 'ON' if sys.platform[:6] == "darwin" else 'OFF'
 
         log.info("Building lib to: %s", self.outdir)
-
         cmake_args = [
             # Generic options only. project options shall be passed as ext param
             '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
@@ -153,7 +155,9 @@ class CMakeAugmentedBuilder(build_ext):
             '-DCMAKE_BUILD_TYPE=' + cfg,
             '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
         ] + ext.cmake_flags
-
+        # RTD neds quick config
+        if self.docs and os.environ.get("READTHEDOCS"):
+            cmake_args = ['-DNRN_ENABLE_MPI=OFF', '-DNRN_ENABLE_INTERVIEWS=OFF']
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
         if self.cmake_defs:
@@ -168,33 +172,43 @@ class CMakeAugmentedBuilder(build_ext):
             os.makedirs(self.build_temp)
 
         try:
+            # Configure project
             subprocess.Popen("echo $CXX", shell=True, stdout=subprocess.PIPE)
             log.info("[CMAKE] cmd: %s", " ".join([cmake, ext.sourcedir] + cmake_args))
             subprocess.check_call([cmake, ext.sourcedir] + cmake_args,
                                   cwd=self.build_temp, env=env)
-            subprocess.check_call(
-                [cmake, '--build', '.', '--target', 'install'] + build_args,
-                cwd=self.build_temp, env=env
-            )
-            subprocess.check_call(
-                [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
-                cwd=self.build_temp, env=env
-            )
-            # mac: libnrnmech of neurondemo need to point to relative libnrniv
-            REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
-            subprocess.check_call(
-                [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
-                cwd=self.build_temp, env=env
-            )
             if self.docs:
+                # RTD will call sphinx for us. We just need notebooks and doxygen
+                if os.environ.get("READTHEDOCS"):
+                    subprocess.check_call(
+                        ['make', 'notebooks'],
+                        cwd=self.build_temp, env=env
+                    )
+                    subprocess.check_call(
+                        ['make', 'doxygen'],
+                        cwd=self.build_temp, env=env
+                    )
+                else:
+                    subprocess.check_call(
+                        ['make', 'docs'],
+                        cwd=self.build_temp, env=env
+                    )
+            else:
                 subprocess.check_call(
-                    ['make', 'notebooks'],
+                    [cmake, '--build', '.', '--target', 'install'] + build_args,
                     cwd=self.build_temp, env=env
                 )
                 subprocess.check_call(
-                    ['make', 'doxygen'],
+                    [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
                     cwd=self.build_temp, env=env
                 )
+                # mac: libnrnmech of neurondemo need to point to relative libnrniv
+                REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
+                subprocess.check_call(
+                    [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
+                    cwd=self.build_temp, env=env
+                )
+
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
             raise
@@ -226,7 +240,6 @@ class Docs(Command):
         # The extensions must be created inplace to inspect docs
         self.reinitialize_command('build_ext', inplace=1, docs=True)
         self.run_command('build_ext')
-        self.run_command('build_sphinx')
         if self.upload:
             self._upload()
 
