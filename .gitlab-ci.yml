@@ -1,38 +1,33 @@
-cache: &global_cache
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-  - venv/
-  - build_intel/
+.common:
+  tags: [bb5]
+  script: ci/bb5-pr
+  only:
+    - external_pull_requests
+  variables:
+    # Just run everything in the same, persistent, directory.
+    bb5_build_dir: pipeline
 
 setup virtualenv:
+  extends: .common
   stage: .pre
-  tags: [bb5]
-  script:
-  - export
-  - ci/bb5-pr
-  only:
-  - external_pull_requests
+  before_script:
+    - export
 
 build intel:
+  extends: .common
   stage: build
-  tags: [bb5]
-  script: ci/bb5-pr
   resource_group: build
-  only:
-  - external_pull_requests
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none
 
 test intel: &test_config
+  extends: .common
   stage: test
-  tags: [bb5]
-  script: ci/bb5-pr
   resource_group: test
-  dependencies:
-  - build intel
-  only:
-  - external_pull_requests
-  cache:
-    <<: *global_cache
-    policy: pull
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none
 
 cmake format: *test_config
 clang format: *test_config
