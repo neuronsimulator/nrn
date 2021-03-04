@@ -8,7 +8,11 @@
 #   separated list of files in NRN_COVERAGE_FILES (relative to
 #   PROJECT_SOURCE_DIR) with code coverage enabled.
 #   NRN_COVERAGE_FILES="" (default) means all files.
-#   Two targets will be created: cover_begin and cover_html.
+#
+#   NRN_COVERAGE_FILES speeds the workflow tremendously, when iteratively
+#   working on a single or a few files.
+#
+#   Two targets are created: cover_begin and cover_html.
 #
 #   cover_begin erases all the *.gcda coverage files and
 #   creates a baseline report (coverage-base.info)
@@ -28,7 +32,15 @@ if(NRN_ENABLE_COVERAGE)
   endif()
   set(NRN_COVERAGE_FLAGS "--coverage -O0 -fno-inline -g")
   if (NRN_COVERAGE_FILES)
-
+    set(NRN_COVERAGE_LIB "gcov")
+    # ~~~
+    # cannot figure out how to set specific file flags here. So they are
+    # are set in src/nrniv/CMakeLists.txt
+    # Surprisingly to me, this works for src/nrnpython files even though
+    # they are compiled and linked in src/nrnpython/CMakeLists.txt.
+    # I.e. successful with
+    # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+    # ~~~
   else()
     set(CMAKE_C_FLAGS="${NRN_COVERAGE_FLAGS}")
     set(CMAKE_CXX_FLAGS="${NRN_COVERAGE_FLAGS}")
@@ -51,6 +63,7 @@ if(NRN_ENABLE_COVERAGE)
     COMMAND ${LCOV} "--capture" "--no-external" "--directory" "${PROJECT_SOURCE_DIR}" "--directory" ${PROJECT_BINARY_DIR} "--output-file" "coverage-run.info"
     COMMAND "${LCOV}" "--add-tracefile" "coverage-base.info" "--add-tracefile" "coverage-run.info" "--output-file" "coverage-combined.info"
     COMMAND genhtml "coverage-combined.info" "--output-directory" html
+    COMMAND echo "View in browser at file://${PROJECT_BINARY_DIR}/html/index.html"
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
 endif()
