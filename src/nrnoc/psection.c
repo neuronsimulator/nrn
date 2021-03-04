@@ -5,6 +5,7 @@
 #include "parse.h"
 #include "membfunc.h"
 
+extern void verify_structure(void);
 static void pnode(Prop*);
 
 void psection(void)
@@ -12,6 +13,7 @@ void psection(void)
 	Section *sec;
 	Prop *p, *p1;
 	
+	verify_structure();
 	sec = chk_access();
 	p = sec->prop;
 	Printf("%s {", secname(sec));
