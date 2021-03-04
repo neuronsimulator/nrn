@@ -610,6 +610,12 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 int is_art = corenrn.get_is_artificial()[type];
                 int layout = corenrn.get_mech_data_layout()[type];
 
+                // PatternStim is a special mechanim of type artificial cell
+                // and it's not copied on GPU. So we shouldn't update it from GPU.
+                if (type == nrn_get_mechtype("PatternStim")) {
+                    continue;
+                }
+
                 int pcnt = nrn_soa_padded_size(n, layout) * szp;
 
                 acc_update_self(ml->data, pcnt * sizeof(double));
