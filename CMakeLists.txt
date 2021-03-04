@@ -189,13 +189,13 @@ if(SPHINX_FOUND)
   )
 
   set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
-  set(SPHINX_BUILD ${PROJECT_BINARY_DIR}/docs/)
+  set(SPHINX_BUILD ${PROJECT_SOURCE_DIR}/docs/_build)
 
   add_custom_target(
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
 endif()

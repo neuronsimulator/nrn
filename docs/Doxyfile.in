@@ -58,7 +58,7 @@ PROJECT_LOGO           = @PROJECT_SOURCE_DIR@/docs/logo.png
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/docs
+OUTPUT_DIRECTORY       = @PROJECT_SOURCE_DIR@/docs/_generated
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -980,8 +980,8 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-INPUT += ../README.md
-USE_MDFILE_AS_MAINPAGE = ../README.md
+INPUT +=  @PROJECT_SOURCE_DIR@/README.md
+USE_MDFILE_AS_MAINPAGE =  @PROJECT_SOURCE_DIR@/README.md
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
