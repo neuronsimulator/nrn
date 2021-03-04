@@ -80,6 +80,10 @@ mark_as_advanced(NRN_ENABLE_REL_RPATH)
 #                 libnrnmpi_xxx.so interface for each. When nrniv is launched with the -mpi argument,
 #                 the first mpi found will determine which interface is dynamically loaded."
 # Rx3D Cython generated files compiler optimization level. 0 is default.
+# Specific coverage files:
+#   - OFF       : Disable code coverage.
+#   - ON        : Collect code coverage for files (default all).
+#   - <string>  : semicolon (;) separated list of files to collect coverage.
 # ~~~
 option(NRN_ENABLE_MODULE_INSTALL "Enable installation of NEURON Python module"
        ${NRN_ENABLE_MODULE_INSTALL_DEFAULT})
@@ -108,6 +112,13 @@ set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
+option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html" OFF)
+set(NRN_COVERAGE_FILES
+    ""
+    CACHE
+      STRING
+      "semicolon (;) separated list of files to collect code coverage")
+
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
 # =============================================================================
@@ -125,6 +136,7 @@ include(MacroHelper)
 include(RpathHelper)
 include(ExternalProjectHelper)
 include(FindPythonModule)
+include(Coverage)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
@@ -651,6 +663,12 @@ if(cmake_generator_tolower MATCHES "makefile")
     message(STATUS "  LINK FLAGS  | ${CORENEURON_LIB_LINK_FLAGS}")
     if(NOT coreneuron_FOUND)
       message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
+    endif()
+  endif()
+  if(NRN_ENABLE_COVERAGE)
+    message(STATUS "Coverage      | Enabled")
+    if (NRN_COVERAGE_FILES)
+    message(STATUS "  Files       | ${NRN_COVERAGE_FILES}")
     endif()
   endif()
   message(STATUS "--------------+--------------------------------------------------------------")
