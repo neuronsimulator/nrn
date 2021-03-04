@@ -5,6 +5,7 @@
 #include "parse.hpp"
 #include "membfunc.h"
 
+extern void verify_structure(void);
 
 static void pnode(Prop*);
 
