@@ -9,7 +9,10 @@ on:
     branches:
       - master
       - release/**
-
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - 'docs/**'
 env:
   MSYS2_ROOT: C:\msys64
 
