@@ -14,7 +14,9 @@ import os
 import sys
 import subprocess
 
-sys.path.insert(0, os.path.abspath('.'))
+# Translators
+sys.path.insert(0, os.path.abspath('./translators'))
+import html2
 
 # -- Project information -----------------------------------------------------
 
@@ -41,13 +43,8 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-import sphinx.writers.html
-import sphinx.ext.mathjax
-import html2
-
-
 def setup(app):
-    """Setup conntects events to the sitemap builder"""
+    """Setup connect events to the sitemap builder"""
     app.set_translator('html', html2.HTMLTranslator)
 
 
@@ -74,6 +71,9 @@ master_doc = 'index'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Extra html content that is generated. i.e. doxygen
+html_extra_path = ['_generated']
+
 html_css_files = [
     'custom.css',
 ]
@@ -96,7 +96,11 @@ if os.environ.get("READTHEDOCS"):
         check=True)
 
     # Execute & convert notebooks + doxygen
-    subprocess.run("sh build_rtd.sh", check=True, shell=True)
+    subprocess.run("cd .. && python setup.py docs", check=True, shell=True)
 
-    # Add extra path to pickup doxygen output
-    html_extra_path = ['../build_rtd/docs']
+    # Remove `docs` from sys.path since RTD adds it automatically.
+    # Otherwise `docs/hoc` will clash with `hoc` when importing neuron
+    try:
+        sys.path.remove(os.path.abspath('.'))
+    except:
+        pass
