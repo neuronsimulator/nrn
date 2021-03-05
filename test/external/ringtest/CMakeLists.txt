@@ -20,9 +20,6 @@ nrn_add_test(
   COMMAND special -python ringtest.py -tstop 100
   OUTPUT asciispikes::spk1.std)
 
-# To work around CI failures that seem related to #894 we should run `mpiexec` not
-# `/path/to/mpiexec`
-get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 nrn_add_test(
   GROUP external_ringtest
   NAME neuron_mpi
