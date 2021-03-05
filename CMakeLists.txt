@@ -112,7 +112,7 @@ set(NRN_RX3D_OPT_LEVEL
     "${NRN_RX3D_OPT_LEVEL_DEFAULT}"
     CACHE STRING "Optimization level for Cython generated files (non-zero may compile slowly)")
 
-option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html" OFF)
+option(NRN_ENABLE_COVERAGE "EnableCode Coverage (make cover_begin, make cover_html)" OFF)
 set(NRN_COVERAGE_FILES
     ""
     CACHE
