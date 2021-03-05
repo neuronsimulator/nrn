@@ -10,6 +10,10 @@ on:
     branches:
       - master
       - release/**
+    paths-ignore:
+      - '**.md'
+      - '**.rst'
+      - 'docs/**'
 
 jobs:
   coverage:
