@@ -2,7 +2,7 @@
 # Add tests based on external repositories
 #
 
-# FindMPI has broke backward compatibility with v3.19
+# FindMPI broke backward compatibility with v3.19
 if(${CMAKE_VERSION} VERSION_LESS "3.10")
   get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
 else()
