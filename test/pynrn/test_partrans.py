@@ -48,15 +48,26 @@ def expect_error(callable, args, sec=None):
     print("expect_error: no err for %s%s" % (str(callable), str(args)))
   assert(err)
 
+# HGap POINT_PROCESS via ChannelBUilder.
+#  Cannot use with extracellular.
+ks = h.KSChan(1)
+ks.name("HGap")
+ks.iv_type(0)
+ks.gmax(0)
+ks.erev(0)
+
 # Cell with enough nonsense stuff to exercise transfer possibilities.
 class Cell():
   def __init__(self):
     self.soma = h.Section(name="soma", cell=self)
+    self.soma.diam = 10.
+    self.soma.L = 10.
     self.soma.insert("na_ion")    # can use nai as transfer source
     # can use POINT_PROCESS range variable as targets
     self.ic = h.IClamp(self.soma(.5))
     self.vc = h.SEClamp(self.soma(.5))
     self.vc.rs = 1e9 # no voltage clamp current
+    self.hgap = [None for _ in range(2)] # filled by mkgaps
 
 def run():
   pc.setup_transfer()
@@ -80,29 +91,45 @@ def mkmodel(ncell):
   global model
   if model:
     teardown()
-  gids = list(range(rank, ncell, nhost))
-  cells = [Cell() for _ in gids]
-  nclist = []
-  for i, gid in enumerate(gids):
+  cells = {}
+  for gid in range(rank, ncell, nhost):
+    cells[gid] = Cell()
     pc.set_gid2node(gid, rank)
-    pc.cell(gid, h.NetCon(cells[i].soma(.5)._ref_v, None, sec=cells[i].soma))
-  model = (gids, cells, ncell)
+    pc.cell(gid, h.NetCon(cells[gid].soma(.5)._ref_v, None, sec=cells[gid].soma))
+  model = (cells, ncell)
 
 
-def transfer1():
+def mkgaps(gids):
+  ''' For list of gids, full gap, right to left '''
+  gidset = set()
+  for gid in gids:
+    g = [gid, (gid + 1)%model[1]]
+    sids = [i + 1000 for i in g]
+    for i, j in enumerate([1,0]):
+      if pc.gid_exists(g[i]):
+        cell = model[0][g[i]]
+        if g[i] not in gidset: # source var sid cannot be used twice
+          pc.source_var(cell.soma(.5)._ref_v, sids[i], sec=cell.soma)
+          gidset.add(g[i])
+        assert(cell.hgap[j] == None)
+        cell.hgap[j] = h.HGap(cell.soma(.5))
+        pc.target_var(cell.hgap[j], cell.hgap[j]._ref_e, sids[j])
+        cell.hgap[j].gmax = 0.0001
+
+def transfer1(amp1=True):
   """
   round robin transfer v to ic.amp and vc.amp1, nai to vc.amp2
   """
-  ncell = model[2]
-  for i, gid in enumerate(model[0]):
-    cell = model[1][i]
+  ncell = model[1]
+  for gid, cell in model[0].items():
     s = cell.soma
     srcsid = gid
     tarsid = (gid+1)%ncell
     pc.source_var(s(.5)._ref_v, srcsid, sec=s)
     pc.source_var(s(.5)._ref_nai, srcsid+ncell, sec=s)
     pc.target_var(cell.ic, cell.ic._ref_amp, tarsid)
-    pc.target_var(cell.vc, cell.vc._ref_amp1, tarsid)
+    if amp1:
+      pc.target_var(cell.vc, cell.vc._ref_amp1, tarsid)
     pc.target_var(cell.vc, cell.vc._ref_amp2, tarsid+ncell)
 
 def init_values():
@@ -110,9 +137,8 @@ def init_values():
   Initialize sources to their sid values and targets to 0
   This allows substantive test that source values make it to targets.
   """
-  for i, gid in enumerate(model[0]):
-    ncell = model[2]
-    c = model[1][i]
+  ncell = model[1]
+  for gid, c in model[0].items():
     c.soma(.5).v = gid
     c.soma(.5).nai = gid+ncell
     c.ic.amp = 0
@@ -124,8 +150,7 @@ def check_values():
   Verify that target values are equal to source values.
   """
   values = {}
-  for i, gid in enumerate(model[0]):
-    c = model[1][i]
+  for gid, c in model[0].items():
     vi = c.soma(.5).v
     if (h.ismembrane("extracellular", sec = c.soma)):
       vi += c.soma(.5).vext[0]
@@ -135,8 +160,6 @@ def check_values():
     values = {}
     for v in x:
       values.update(v)
-#    for gid in range(len(values)):
-#      print(gid, values[gid])
     ncell = len(values)
     for gid in values:
       v1 = values[gid]
@@ -153,7 +176,7 @@ def test_partrans():
 
   # invalid source or target sid.
   if 0 in model[0]:
-    cell = model[1][0]
+    cell = model[0][0]
     s = cell.soma
     expect_error(pc.source_var, (s(.5)._ref_v, -1), sec=s)
     expect_error(pc.target_var, (cell.ic, cell.ic._ref_amp, -1))
@@ -180,11 +203,34 @@ def test_partrans():
   run()
   check_values()
 
+  # nrnmpi_int_alltoallv_sparse
+  h.nrn_sparse_partrans = 1
+  mkmodel(5)
+  transfer1()
+  init_values()
+  run()
+  check_values()
+  h.nrn_sparse_partrans = 0
+
   # impedance error (number of gap junction not equal to number of pc.transfer_var)
   imp = h.Impedance()
-  if rank == 0:
-    imp.loc(model[1][0].soma(.5))
+  if 0 in model[0]:
+    imp.loc(model[0][0].soma(.5))
   expect_error(imp.compute, (1, 1))
+  del imp
+
+  # impedance
+  ncell = 5
+  mkmodel(ncell)
+  mkgaps(list(range(ncell-1)))
+  pc.setup_transfer()
+  imp = h.Impedance()
+  h.finitialize(-65)
+  if 0 in model[0]:
+    imp.loc(model[0][0].soma(.5))
+  niter=imp.compute(10, 1, 100)
+  if rank == 0:
+    print("impedance iterations=%d"%niter)
   del imp
 
   #CoreNEURON gap file generation
@@ -211,7 +257,7 @@ def test_partrans():
   pc.nthread(1)
 
   # extracellular means use v = vm+vext[0]
-  for cell in model[1]:
+  for cell in model[0].values():
     cell.soma.insert("extracellular")
   init_values()
   run()
