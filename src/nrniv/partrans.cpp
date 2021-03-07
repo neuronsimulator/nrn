@@ -306,14 +306,6 @@ static double* tar_ptr(Point_process* pp, int index) {
 	return pp->prop->param + index;
 }
 
-static void check_pointers() {
-//printf("check_pointers\n");
-	for (int i = 0; i < targets_.size(); ++i) {
-		double* pd = tar_ptr(target_pntlist_[i], target_parray_index_[i]);
-		assert(targets_[i] == pd);
-	}
-}
-
 static void target_ptr_update() {
 //printf("target_ptr_update\n");
 	if (targets_.size()) {
