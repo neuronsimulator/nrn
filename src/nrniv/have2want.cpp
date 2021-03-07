@@ -1,11 +1,15 @@
 /*
 To be included by a file that desires rendezvous rank exchange functionality.
 Need to define HAVEWANT_t, HAVEWANT_alltoallv, and HAVEWANT2Int
+The latter is a map or unordered_map.
+E.g. std::unordered_map<size_t, int>
 */
 
 #ifdef have2want_cpp
 #error "This implementation can only be included once"
-/* The static function names could involve a macro name. */
+// The static function names used to involve a macro name (NrnHash) but now,
+// with the use of std::..., it may be the case this could be included
+// multiple times or even transformed into a template.
 #endif
 
 #define have2want_cpp
@@ -121,8 +125,7 @@ static void have_to_want(
   for (int r=0; r < nhost; ++r) {
     for (int i=0; i < have_r_cnt[r]; ++i) {
       HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
-      int srcrank;
-      if (havekey2rank.find(key, srcrank)) {
+      if (havekey2rank.find(key) != havekey2rank.end()) {
         hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple ranks\n", (long long)key);
       }
       havekey2rank[key] = r;
@@ -150,11 +153,11 @@ static void have_to_want(
     for (int i=0; i < want_r_cnt[r]; ++i) {
       int ix = want_r_displ[r] + i;
       HAVEWANT_t key = want_r_data[ix];
-      int srcrank;
-      if (!havekey2rank.find(key, srcrank)) {
+      auto search = havekey2rank.find(key);
+      if (search == havekey2rank.end()) {
         hoc_execerr_ext("internal error in have_to_want: key = %lld is wanted but does not exist\n", (long long)key);
       }
-      want_r_ownerranks[ix] = srcrank;
+      want_r_ownerranks[ix] = search->second;
     }
   }
   delete [] want_r_data;
