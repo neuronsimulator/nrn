@@ -342,10 +342,9 @@ void nrnmpi_target_var() {
 void nrn_partrans_update_ptrs() {
 	// These pointer changes require that the targets be range variables
 	// of a point process and the sources be range variables
-	int i, n;
-	n = visources_.size();
+
 	// update the poutsrc that have no extracellular
-	for (i=0; i < outsrc_buf_size_; ++i) {
+	for (int i=0; i < outsrc_buf_size_; ++i) {
 	    int isrc = poutsrc_indices_[i];
 	    Node* nd = visources_[isrc];
 	    NonVSrcUpdateInfo::iterator it;
@@ -418,7 +417,7 @@ static MapNode2PDbl* mk_svibuf() {
 		source_vi_buf_[tid].cnt = 0;
 	}
 	// count
-	for (int i=0; i < visources_.size(); ++i) {
+	for (size_t i=0; i < visources_.size(); ++i) {
 		Node* nd = visources_[i];
 		it = non_vsrc_update_info_.find(sgids_[i]);
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
@@ -436,7 +435,7 @@ static MapNode2PDbl* mk_svibuf() {
 		svib.cnt = 0; // recount on fill
 	}
 	// fill
-	for (int i=0; i < visources_.size(); ++i) {
+	for (size_t i=0; i < visources_.size(); ++i) {
 		Node* nd = visources_[i];
 		it = non_vsrc_update_info_.find(sgids_[i]);
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
@@ -476,7 +475,7 @@ static MapNode2PDbl* mk_svibuf() {
 }
 
 static void mk_ttd() {
-	int i, j, k, tid, n;
+	int i, j, tid, n;
 	MapNode2PDbl* ndvi2pd = mk_svibuf();
 	rm_ttd();
 	if (targets_.size() == 0) {
@@ -741,7 +740,7 @@ void nrnmpi_setup_transfer() {
 	sid2insrc_.clear();
 	sid2insrc_.reserve(szalloc);//for single counting
 	sgid_t* needsrc = new sgid_t[szalloc]; // more than we need
-	for (int i = 0; i < sgid2targets_.size(); ++i) {
+	for (size_t i = 0; i < sgid2targets_.size(); ++i) {
 		sgid_t sid = sgid2targets_[i];
 		auto search = sid2insrc_.find(sid);
 		if (search == sid2insrc_.end()) {
@@ -754,7 +753,7 @@ void nrnmpi_setup_transfer() {
 	// This already exists as a vector in the SgidList sgids_ but
 	// that is private so go ahead and copy.
 	sgid_t* ownsrc = new sgid_t[sgids_.size() + 1]; // not 0 length if count is 0
-	for (int i=0; i < sgids_.size(); ++i) {
+	for (size_t i=0; i < sgids_.size(); ++i) {
 		ownsrc[i] = sgids_[i];
 	}
 	
@@ -877,7 +876,7 @@ void pargap_jacobi_setup(int mode) {
     imped_change_cnt = structure_change_cnt;
   }
   if (imped_current_type_count_ == 0 && targets_.size() > 0) {
-    for (int i=0; i < targets_.size(); ++i) {
+    for (size_t i=0; i < targets_.size(); ++i) {
       Point_process* pp = target_pntlist_[i];
       if (!pp) {
         hoc_execerror("For impedance, pc.target_var requires that its first arg be a reference to the POINT_PROCESS", 0);
@@ -911,13 +910,13 @@ void pargap_jacobi_setup(int mode) {
       }
     }
     // are all the instances in use
-    int ninst = 0;
+    size_t ninst = 0;
     for (int k=0; k < imped_current_type_count_; ++k) {
       ninst += imped_current_ml_[k]->nodecount;
     }
     if (ninst != targets_.size()) {
       char buf[100];
-      sprintf(buf, "that is %d != %ld", ninst, targets_.size());
+      sprintf(buf, "that is %zd != %zd", ninst, targets_.size());
       hoc_execerror("number of gap junctions not equal to number of pc.transfer_var", buf);
     }
   }
@@ -929,14 +928,14 @@ void pargap_jacobi_setup(int mode) {
   if (mode == 0) { // setup
     if (visources_.size()) {vgap1 = new double[visources_.size()];}
     if (ttd && ttd->cnt) {vgap2 = new double[ttd->cnt];}
-    for (int i=0; i < visources_.size(); ++i) {
+    for (size_t i=0; i < visources_.size(); ++i) {
       vgap1[i] = NODEV(visources_[i]);
     }
     if (ttd) for (int i=0; i < ttd->cnt; ++i) {
       vgap2[i] = *(ttd->tv[i]);
     }
   }else{ // tear down
-    for (int i=0; i < visources_.size(); ++i) {
+    for (size_t i=0; i < visources_.size(); ++i) {
       NODEV(visources_[i]) = vgap1[i];
     }
     if (ttd) for (int i=0; i < ttd->cnt; ++i) {
@@ -956,7 +955,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
   NrnThread* _nt = nrn_threads;
 
   // transfer gap node voltages to gap vpre
-  for (int i=0; i < visources_.size(); ++i) {
+  for (size_t i=0; i < visources_.size(); ++i) {
     Node* nd = visources_[i];
     NODEV(nd) = x[nd->v_node_index];
   }  
@@ -964,7 +963,7 @@ void pargap_jacobi_rhs(double* b, double* x) {
   thread_transfer(_nt);
 
   // set gap node voltages to 0 so we can use nrn_cur to set rhs
-  for (int i=0; i < visources_.size(); ++i) {
+  for (size_t i=0; i < visources_.size(); ++i) {
     Node* nd = visources_[i];
     NODEV(nd) = 0.0;
   }
@@ -1091,7 +1090,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
 
   // info for targets, segregate into threads
   if (targets_.size()) {
-    for (int i=0; i < targets_.size(); ++i) {
+    for (size_t i=0; i < targets_.size(); ++i) {
       sgid_t sid = sgid2targets_[i];
       Point_process* pp = target_pntlist_[i];
       NrnThread* nt = (NrnThread*)pp->_vnt;
@@ -1109,7 +1108,7 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
 
   // info for sources, segregate into threads.
   if (visources_.size()) {
-    for (int i=0; i < sgids_.size(); ++i) {
+    for (size_t i=0; i < sgids_.size(); ++i) {
       sgid_t sid = sgids_[i];
       Node* nd = visources_[i];
       int tid = nd->_nt ? nd->_nt->id : 0;

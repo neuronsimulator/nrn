@@ -69,7 +69,6 @@ static void rendezvous_rank_get(HAVEWANT_t* data, int size,
   int (*rendezvous_rank)(HAVEWANT_t)
 ){
   int nhost = nrnmpi_numprocs;
-  int rank = nrnmpi_myid;
 
   // count what gets sent
   scnt = new int[nhost];
@@ -106,7 +105,6 @@ static void have_to_want(
   // 4) Ranks that want tell owner ranks where to send.
 
   int nhost = nrnmpi_numprocs;
-  int rank = nrnmpi_myid;
 
   // 1) Send have and want to the rendezvous ranks.
   HAVEWANT_t *have_s_data, *have_r_data;
