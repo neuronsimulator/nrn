@@ -243,8 +243,7 @@ static double* non_vsrc_update(Node* nd, int type, int ix) {
       return p->param + ix;
     }
   }
-  hoc_execerr_ext("partrans update: could not find parameter index %d of %s", ix, memb_func[type].sym->name);
-  return NULL;
+  hoc_execerr_ext("partrans update: could not find parameter index %d of %s", ix, memb_func[type].sym->name); return NULL; // avoid coverage false negative as hoc_execerror does not return.
 }
 
 // Find the Node associated with the voltage.
@@ -267,8 +266,7 @@ static Node* pv2node(sgid_t ssid, double* pv) {
 		}
 	}
 	
-	hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
-	return NULL;
+	hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec)); return NULL; //avoid coverage false negative.
 }
 
 void nrnmpi_source_var() {
@@ -293,10 +291,8 @@ static int compute_parray_index(Point_process* pp, double* ptv) {
 	if (!pp) {
 		return -1;
 	}
-	long i =  ptv - pp->prop->param;
-	if (i < 0 || i >= pp->prop->param_size) {
-		i = -1;
-	}
+	size_t i =  ptv - pp->prop->param;
+	assert(i >= 0 && i < size_t(pp->prop->param_size));
 	return int(i);
 }
 static double* tar_ptr(Point_process* pp, int index) {

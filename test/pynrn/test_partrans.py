@@ -277,6 +277,26 @@ def test_partrans():
   expect_error(imp.compute, (1, 1))
   del imp
 
+  # For impedance, pc.target_var requires that its first arg be a reference to the POINT_PROCESS"
+  mkmodel(2)
+  if pc.gid_exists(0):
+    cell = pc.gid2cell(0)
+    pc.source_var(cell.soma(.5)._ref_v, 1000, sec=cell.soma)
+    cell.hgap[1] = h.HGap(cell.soma(.5))
+    pc.target_var(cell.hgap[1]._ref_e, 1001)
+  if pc.gid_exists(1):
+    cell = pc.gid2cell(1)
+    pc.source_var(cell.soma(.5)._ref_v, 1001, sec=cell.soma)
+    cell.hgap[0] = h.HGap(cell.soma(.5))
+    pc.target_var(cell.hgap[0]._ref_e, 1000)
+  pc.setup_transfer()
+  imp = h.Impedance()
+  h.finitialize(-65)
+  if pc.gid_exists(0):
+    imp.loc(pc.gid2cell(0).soma(.5))
+  expect_error(imp.compute, (10, 1, 100))
+  del imp, cell
+
   # impedance
   ncell = 5
   mkmodel(ncell)
@@ -289,6 +309,11 @@ def test_partrans():
   niter=imp.compute(10, 1, 100)
   if rank == 0:
     print("impedance iterations=%d"%niter)
+  # tickle execution of target_ptr_update for one more line of coverage.
+  if 0 in model[0]:
+    model[0][0].hgap[1].loc(model[0][0].soma(0))
+    model[0][0].hgap[1].loc(model[0][0].soma(.5))
+  niter=imp.compute(10, 1, 100)
   del imp
 
   #CoreNEURON gap file generation
@@ -304,6 +329,20 @@ def test_partrans():
   pc.setup_transfer()
   h.finitialize(-65)
   pc.nrncore_write("tmp")
+
+  # CoreNEURON: one thread empty of gaps
+  mkmodel(1)
+  transfer1()
+  s = h.Section("dend")
+  pc.set_gid2node(rank+10, rank)
+  pc.cell(rank+10, h.NetCon(s(.5)._ref_v, None, sec=s))
+  pc.nthread(2)
+  pc.setup_transfer()
+  h.finitialize(-65)
+  pc.nrncore_write("tmp")
+  pc.nthread(1)
+  teardown()
+  del s
 
   # threads
   mkmodel(ncell)
