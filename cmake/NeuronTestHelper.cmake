@@ -331,7 +331,7 @@ function(nrn_add_test)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
-    set(tests_properties ${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
   set_tests_properties(
     ${test_names}
