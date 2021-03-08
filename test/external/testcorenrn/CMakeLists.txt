@@ -31,8 +31,6 @@ set(test_vecplay_neuron_requirements mod_compatibility)
 set(test_gf_coreneuron_cpu_conflicts gpu) # CoreNEURON-on-CPU test conflicts with GPU being enabled
                                           # in the build
 
-get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-
 if(${CORENRN_ENABLE_GPU})
   set(gpu_args_online -c arg_coreneuron_gpu=1)
   set(gpu_args_offline --gpu)
