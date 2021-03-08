@@ -347,8 +347,7 @@ void nrn_partrans_update_ptrs() {
 	for (int i=0; i < outsrc_buf_size_; ++i) {
 	    int isrc = poutsrc_indices_[i];
 	    Node* nd = visources_[isrc];
-	    NonVSrcUpdateInfo::iterator it;
-	    it = non_vsrc_update_info_.find(sgids_[isrc]);
+	   auto it = non_vsrc_update_info_.find(sgids_[isrc]);
 	    if (it != non_vsrc_update_info_.end()) {
 		poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
 	    }else if (!nd->extnode) {
