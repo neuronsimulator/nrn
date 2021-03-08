@@ -397,7 +397,7 @@ static void rm_svibuf() {
 
 static MapNode2PDbl* mk_svibuf() {
 	rm_svibuf();
-	if (visources_.size() == 0) { return NULL; }
+	if (visources_.empty()) { return NULL; }
 	// any use of extracellular?
 	int has_ecell = 0;
 	for (int tid = 0; tid < nrn_nthread; ++tid) {
