@@ -205,10 +205,12 @@ function(nrn_add_test)
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
   set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
+  set(hash_components nrnivmodl)
   if(requires_coreneuron)
     # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
     # reduce the number of times we call nrnivmodl.
     list(APPEND nrnivmodl_command -coreneuron)
+    list(APPEND hash_components -coreneuron)
   endif()
   list(APPEND nrnivmodl_command .)
   # Collect the list of modfiles that need to be compiled.
@@ -221,8 +223,15 @@ function(nrn_add_test)
     message(
       WARNING "Didn't find any modfiles in ${test_source_directory} using ${modfile_patterns}")
   endif()
+  list(SORT modfiles)
+  foreach(modfile ${modfiles})
+    # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part below this common prefix to the hash
+    string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
+    string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
+    list(APPEND hash_components "${relative_modfile}")
+  endforeach()
   # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
-  string(SHA256 nrnivmodl_command_hash "${nrnivmodl_command};${modfiles}")
+  string(SHA256 nrnivmodl_command_hash "${hash_components}")
   # Construct the name of a target that refers to the compiled special binaries
   set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
   set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
