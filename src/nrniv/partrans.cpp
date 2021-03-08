@@ -615,7 +615,7 @@ void thread_transfer(NrnThread* _nt) {
 	if (!is_setup_) {
 		hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
 	}
-	if (targets_.size() == 0) {
+	if (targets_.empty()) {
 		return;
 	}
 
