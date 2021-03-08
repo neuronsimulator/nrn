@@ -477,7 +477,7 @@ static void mk_ttd() {
 	int i, j, tid, n;
 	MapNode2PDbl* ndvi2pd = mk_svibuf();
 	rm_ttd();
-	if (targets_.size() == 0) {
+	if (targets_.empty()) {
 		if (ndvi2pd) { delete ndvi2pd; }
 		// some MPI transfer code paths require that all ranks
 		// have a nrn_thread_v_transfer.
