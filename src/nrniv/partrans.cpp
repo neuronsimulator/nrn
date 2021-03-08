@@ -243,9 +243,7 @@ static double* non_vsrc_update(Node* nd, int type, int ix) {
       return p->param + ix;
     }
   }
-  char buf[100];
-  sprintf(buf, "%d of %s", ix, memb_func[type].sym->name);
-  hoc_execerror("partrans update: could not find parameter index", buf);
+  hoc_execerr_ext("partrans update: could not find parameter index %d of %s", ix, memb_func[type].sym->name);
   return NULL;
 }
 
@@ -269,7 +267,7 @@ static Node* pv2node(sgid_t ssid, double* pv) {
 		}
 	}
 	
-	hoc_execerror("Pointer to v is not in the currently accessed section", 0);
+	hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec));
 	return NULL;
 }
 
@@ -282,9 +280,7 @@ void nrnmpi_source_var() {
 	}
 	sgid_t sgid = (sgid_t)x;
 	if (sgid2srcindex_.find(sgid) != sgid2srcindex_.end()) {
-		char tmp[40];
-		sprintf(tmp, "%lld", (long long)sgid);
-		hoc_execerror("source var gid already in use:", tmp);
+		hoc_execerr_ext("source var sgid %lld already in use.", (long long)sgid);
 	}
 	sgid2srcindex_[sgid] = visources_.size();
 	visources_.push_back(pv2node(sgid, psv));
@@ -320,16 +316,21 @@ static void target_ptr_update() {
 }
 
 void nrnmpi_target_var() {
-	Point_process* pp = 0;
+	Point_process* pp = NULL;
+	Object* ob = NULL;
 	int iarg = 1;
 	is_setup_ = false;
 	if (hoc_is_object_arg(iarg)) {
-		pp = ob2pntproc(*hoc_objgetarg(iarg++));
+		ob = *hoc_objgetarg(iarg++);
+		pp = ob2pntproc(ob);
 	}
 	double* ptv = hoc_pgetarg(iarg++);
 	double x = *getarg(iarg++);
 	if (x < 0) {
 		hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg-1, x);
+	}
+	if (pp && (ptv < pp->prop->param || ptv >= (pp->prop->param + pp->prop->param_size))) {
+		hoc_execerr_ext("Target ref not in %s", hoc_object_name(ob));
 	}
 	sgid_t sgid = (sgid_t)x;
 	targets_.push_back(ptv);
@@ -347,7 +348,7 @@ void nrn_partrans_update_ptrs() {
 	for (int i=0; i < outsrc_buf_size_; ++i) {
 	    int isrc = poutsrc_indices_[i];
 	    Node* nd = visources_[isrc];
-	   auto it = non_vsrc_update_info_.find(sgids_[isrc]);
+	    auto it = non_vsrc_update_info_.find(sgids_[isrc]);
 	    if (it != non_vsrc_update_info_.end()) {
 		poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
 	    }else if (!nd->extnode) {
@@ -496,9 +497,11 @@ static void mk_ttd() {
 	Point_process* pp = target_pntlist_[i];
 	int sgid = sgid2targets_[i];
 	if (!pp) {
-fprintf(stderr, "Do not know the POINT_PROCESS target for source id %lld\n", (long long)sgid);
-hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
-"Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
+		hoc_execerr_ext("Do not know the POINT_PROCESS target for source id %lld\n"
+		"For multiple threads, the target pointer must reference a range variable\n"
+		"of a POINT_PROCESS. Note that even for a single thread, it is\n"
+		"fastest to supply a reference to the POINT_PROCESS as the first arg."
+		, (long long)sgid);
 	}
     }
 	transfer_thread_data_ = new TransferThreadData[nrn_nthread];
@@ -914,9 +917,7 @@ void pargap_jacobi_setup(int mode) {
       ninst += imped_current_ml_[k]->nodecount;
     }
     if (ninst != targets_.size()) {
-      char buf[100];
-      sprintf(buf, "that is %zd != %zd", ninst, targets_.size());
-      hoc_execerror("number of gap junctions not equal to number of pc.transfer_var", buf);
+      hoc_execerr_ext("number of gap junctions, %zd, not equal to number of pc.transfer_var, %zd", ninst, targets_.size());
     }
   }
  }

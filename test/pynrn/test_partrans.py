@@ -195,6 +195,46 @@ def test_partrans():
     pc.source_var(cell.soma(.5)._ref_v, 1, sec=cell.soma)
   run()
 
+  # No point process for target
+  if pc.gid_exists(1):
+    cell = pc.gid2cell(1)
+    pc.target_var(cell.vc._ref_amp3, 1)
+  run() # ok
+  pc.nthread(2)
+  expect_error(run, ()) # Do not know the POINT_PROCESS target
+  pc.nthread(1)
+
+  # Wrong sec for source ref and wrong point process for target ref.
+  mkmodel(1)
+  if pc.gid_exists(0):
+    cell = pc.gid2cell(0)
+    sec = h.Section(name="dend")
+    expect_error(pc.source_var, (cell.soma(.5)._ref_v, 1), sec=sec)
+    expect_error(pc.source_var, (cell.soma(.5)._ref_nai, 2), sec=sec)
+    del sec
+    expect_error(pc.target_var,(cell.ic, cell.vc._ref_amp3, 1))
+    # source sid already in use
+    expect_error(pc.source_var, (cell.soma(.5)._ref_nai, 1), sec=cell.soma)
+
+  # partrans update: could not find parameter index
+
+  # pv2node checks the parent
+  mkmodel(1)
+  s1 = h.Section(name="dend")
+  s2 = h.Section(name="soma")
+  ic = h.IClamp(s1(.5))
+  pc.source_var(s1(0)._ref_v, rank, sec=s1)
+  pc.target_var(ic, ic._ref_amp, rank)
+  run()
+  assert(s1(0).v == ic.amp)
+  # but this changes the source node and things get screwed up
+  s1.connect(s2(.5))
+  run()
+  print(s1(0).v, ic.amp)
+  #assert(s1(0).v == ic.amp)
+  teardown()
+  del ic, s1, s2
+
   # round robin transfer v to ic.amp and vc.amp1, nai to vc.amp2
   ncell = 5
   mkmodel(ncell)
