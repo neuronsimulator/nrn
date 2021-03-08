@@ -272,6 +272,7 @@ static Node* pv2node(sgid_t ssid, double* pv) {
 }
 
 void nrnmpi_source_var() {
+	nrnthread_v_transfer_ = thread_transfer; // otherwise can't check is_setup_
 	is_setup_ = false;
 	double* psv = hoc_pgetarg(1); // but might not be a voltage
 	double x = *getarg(2);
@@ -319,6 +320,7 @@ void nrnmpi_target_var() {
 	Point_process* pp = NULL;
 	Object* ob = NULL;
 	int iarg = 1;
+	nrnthread_v_transfer_ = thread_transfer; // otherwise can't check is_setup_
 	is_setup_ = false;
 	if (hoc_is_object_arg(iarg)) {
 		ob = *hoc_objgetarg(iarg++);

@@ -227,13 +227,31 @@ def test_partrans():
   pc.target_var(ic, ic._ref_amp, rank)
   run()
   assert(s1(0).v == ic.amp)
-  # but this changes the source node and things get screwed up
+  '''
+  # but following changes the source node and things get screwed up
+  # because of continuing to use a freed Node*. The solution is
+  # beyond the scope of this pull request and would involve replacing
+  # description in terms of Node* with (Section*, arc_position)
   s1.connect(s2(.5))
   run()
   print(s1(0).v, ic.amp)
-  #assert(s1(0).v == ic.amp)
+  assert(s1(0).v == ic.amp)
+  '''
+  # non_vsrc_update property disappears from Node*
+  s1.insert("pas") # not allowed to uninsert ions :(
+  pc.source_var(s1(.5)._ref_e_pas, rank+10, sec=s1)
+  pc.target_var(ic, ic._ref_delay, rank+10)
+  run()
+  assert(s1(.5).e_pas == ic.delay)
+  s1.uninsert("pas")
+  expect_error(run, ())
   teardown()
   del ic, s1, s2
+
+  # missing setup_transfer
+  mkmodel(4)
+  transfer1()
+  expect_error(h.finitialize, (-65,))
 
   # round robin transfer v to ic.amp and vc.amp1, nai to vc.amp2
   ncell = 5
