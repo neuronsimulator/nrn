@@ -41,12 +41,20 @@ if(NRN_ENABLE_COVERAGE)
     # I.e. successful with
     # -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
     # ~~~
+    if (NRN_ADDED_COVERAGE_FLAGS)
+      message(FATAL_ERROR "NRN_ENABLE_COVERAGE=ON and there are NRN_COVERAGE_FILES, but full coverage of all files is in effect from a previous setting. Please empty the build folder and start over.")
+    endif()
   else()
-    set(CMAKE_C_FLAGS="${NRN_COVERAGE_FLAGS}")
-    set(CMAKE_CXX_FLAGS="${NRN_COVERAGE_FLAGS}")
+    # cannot be turned off without starting from scratch.
+    set(NRN_ADDED_COVERAGE_FLAGS "${NRN_COVERAGE_FLAGS}" CACHE INTERNAL "Remind that this is always in effect from now on" FORCE)
+    add_compile_options(${NRN_COVERAGE_FLAGS})
   endif()
 else()
   unset(NRN_COVERAGE_FLAGS)
+  unset(NRN_COVERAGE_FILES CACHE)
+  if (NRN_ADDED_COVERAGE_FLAGS)
+    message(FATAL_ERROR "NRN_ENABLE_COVERAGE=OFF but full coverage of all files is in effect from a previous setting. Please empty the build folder and start over.")
+  endif()
 endif()
 
 if(NRN_ENABLE_COVERAGE)
