@@ -157,8 +157,12 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
     list(APPEND TESTS parallel_tests)
   endif()
+  # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude workaround.
+  if(CORENRN_ENABLE_REPORTING)
+    set(nrniv_mpi_arg -mpi)
+    set(nrnpython_mpi_env NEURON_INIT_MPI=1)
+  endif()
 
-  if(NRN_ENABLE_CORENEURON)
     # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
     # be dynamically loaded by Python. This is why all the tests that rely on that dynamic loading
     # declare `CONFLICTS gpu`.
@@ -172,35 +176,35 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       REQUIRES coreneuron
       CONFLICTS gpu
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m pytest
+        ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_direct.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_hoc
       REQUIRES coreneuron
       SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
-      COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv test/coreneuron/test_direct.hoc)
+      COMMAND ${nrnpython_mpi_env} ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg} test/coreneuron/test_direct.hoc)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_py
       REQUIRES coreneuron
       CONFLICTS gpu
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m pytest
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_spikes.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_file_mode_py
       REQUIRES coreneuron
       CONFLICTS gpu
-      COMMAND ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
+      COMMAND ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME fornetcon_py
       REQUIRES coreneuron
       CONFLICTS gpu
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m pytest
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_fornetcon.py)
     nrn_add_test(
       GROUP coreneuron_modtests
@@ -208,7 +212,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       REQUIRES coreneuron
       CONFLICTS gpu
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m pytest
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_datareturn.py)
     nrn_add_test(
       GROUP coreneuron_modtests
@@ -216,7 +220,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       REQUIRES coreneuron
       CONFLICTS gpu
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m pytest
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/coreneuron/test_units.py)
     nrn_add_test(
       GROUP coreneuron_modtests
@@ -225,7 +229,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       CONFLICTS gpu
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
       COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE} -m pytest
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE} -m pytest
         --cov-report=xml --cov=neuron test/gjtests/test_natrans.py)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
@@ -254,7 +258,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           ${MPIEXEC_POSTFLAGS} -python -pyexe ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py
           nrnmpi_init file_mode)
     endif()
-  endif()
 endif()
 
 # ============================================
