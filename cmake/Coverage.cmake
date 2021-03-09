@@ -30,9 +30,9 @@ if(NRN_ENABLE_COVERAGE)
   if (LCOV-NOTFOUND)
     message(ERROR "lcov is not installed.")
   endif()
-  set(NRN_COVERAGE_FLAGS "--coverage -O0 -fno-inline -g")
+  set(NRN_COVERAGE_FLAGS --coverage -O0 -fno-inline -g)
+  set(NRN_COVERAGE_LIB "gcov")
   if (NRN_COVERAGE_FILES)
-    set(NRN_COVERAGE_LIB "gcov")
     # ~~~
     # cannot figure out how to set specific file flags here. So they are
     # are set in src/nrniv/CMakeLists.txt
@@ -48,6 +48,7 @@ if(NRN_ENABLE_COVERAGE)
     # cannot be turned off without starting from scratch.
     set(NRN_ADDED_COVERAGE_FLAGS "${NRN_COVERAGE_FLAGS}" CACHE INTERNAL "Remind that this is always in effect from now on" FORCE)
     add_compile_options(${NRN_COVERAGE_FLAGS})
+    link_libraries(${NRN_COVERAGE_LIB})
   endif()
 else()
   unset(NRN_COVERAGE_FLAGS)
