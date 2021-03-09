@@ -304,6 +304,10 @@ static void target_ptr_update() {
 	if (targets_.size()) {
 		int n = targets_.size();
 		for (int i=0; i < n; ++i) {
+			Point_process* pp = target_pntlist_[i];
+			if (!pp) {
+				hoc_execerr_ext("Do not know the POINT_PROCESS target for source id %zd (Hint: insert target instance of the target ref as the first argument.", size_t(sgid2targets_[i]));
+			}
 			double* pd = tar_ptr(target_pntlist_[i], target_parray_index_[i]);
 			targets_[i] = pd;
 		}

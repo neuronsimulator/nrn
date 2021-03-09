@@ -344,6 +344,18 @@ def test_partrans():
   teardown()
   del s
 
+  # There are single thread circumstances where target POINT_PROCESS is needed
+  s = h.Section("dend")
+  pc.set_gid2node(rank, rank)
+  pc.cell(rank, h.NetCon(s(.5)._ref_v, None, sec=s))
+  pc.source_var(s(.5)._ref_v, rank, sec=s)
+  ic=h.IClamp(s(.5))
+  pc.target_var(ic._ref_amp, rank)
+  pc.setup_transfer()
+  expect_error(h.finitialize, (-65,))
+  teardown()
+  del ic, s
+
   # threads
   mkmodel(ncell)
   transfer1()
