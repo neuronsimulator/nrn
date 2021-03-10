@@ -322,6 +322,8 @@ if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
   if(coreneuron_FOUND)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
+    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
+    set(cnrn_prefix "${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
     # If NEURON tests are enabled then enable CoreNEURON tests too
@@ -329,6 +331,8 @@ if(NRN_ENABLE_CORENEURON)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
+    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
+    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
   endif()
   get_property (CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   set(NRN_ENABLE_BINARY_SPECIAL ON)
@@ -516,13 +520,6 @@ nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-# for external coreneuron, nrnivmodl-core should be install
-if(coreneuron_FOUND)
-  install(PROGRAMS ${CORENEURON_DIR}/bin/nrnivmodl-core DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-  install(FILES ${CORENEURON_DIR}/bin/nrnivmodl_core_makefile
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-endif()
 
 # =============================================================================
 # Copy bash executable for windows

@@ -18,18 +18,21 @@ endif()
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
 add_custom_command(
-  TARGET testneuron POST_BUILD
+  TARGET testneuron
+  POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
           ${PROJECT_BINARY_DIR}/share/nrn/lib)
 
 # Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
 set(TEST_ENV NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
              LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
+if(NOT coreneuron_FOUND)
+  # CoreNEURON is being built internally
+  list(APPEND TEST_ENV "CNRNHOME=${PROJECT_BINARY_DIR}")
+endif()
 if(NRN_ENABLE_PYTHON)
-  list(
-    APPEND
-      TEST_ENV
-      PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
+  list(APPEND TEST_ENV
+       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
 endif()
 # Give the environment string a more descriptive name that can be used in NeuronTestHelper.cmake
 set(NRN_TEST_ENV "${TEST_ENV}")
@@ -109,9 +112,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND
-      COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-      --cov=neuron ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
+            --cov=neuron ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
 
@@ -120,12 +122,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
       SCRIPT_PATTERNS test/rxd/*.py test/rxd/testdata/*.dat)
-    nrn_add_test(
-      GROUP rxdmod_tests
-      NAME rxd_tests
-      COMMAND
-        COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-        --cov=neuron ./test/rxd)
+    if(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+      # This test includes a comparison with a binary blob; Intel builds typically have too-large
+      # numerical differences with the stored values.
+      nrn_add_test(
+        GROUP rxdmod_tests
+        NAME rxd_tests
+        COMMAND COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
+                --cov=neuron ./test/rxd)
+    endif()
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -153,103 +158,104 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
     list(APPEND TESTS parallel_tests)
   endif()
+  # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
+  # workaround.
+  if(CORENRN_ENABLE_REPORTING)
+    set(nrniv_mpi_arg -mpi)
+    set(nrnpython_mpi_env NEURON_INIT_MPI=1)
+  endif()
 
-  if(NRN_ENABLE_CORENEURON)
-    # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
-    # be dynamically loaded by Python. This is why all the tests that rely on that dynamic loading
-    # declare `CONFLICTS gpu`.
-    nrn_add_test_group(
-      NAME coreneuron_modtests
-      SCRIPT_PATTERNS test/coreneuron/*.py
-      MODFILE_PATTERNS test/coreneuron/mod/*.mod test/pynrn/unitstest.mod test/gjtests/natrans.mod)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME direct_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/coreneuron/test_direct.py)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME direct_hoc
-      REQUIRES coreneuron
-      SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
-      COMMAND ${CMAKE_BINARY_DIR}/bin/nrniv test/coreneuron/test_direct.hoc)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME spikes_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/coreneuron/test_spikes.py)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME spikes_file_mode_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME fornetcon_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/coreneuron/test_fornetcon.py)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME datareturn_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/coreneuron/test_datareturn.py)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME test_units_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/coreneuron/test_units.py)
-    nrn_add_test(
-      GROUP coreneuron_modtests
-      NAME test_natrans_py
-      REQUIRES coreneuron
-      CONFLICTS gpu
-      SCRIPT_PATTERNS test/gjtests/test_natrans.py
-      COMMAND
-        COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE} -m pytest
-        --cov-report=xml --cov=neuron test/gjtests/test_natrans.py)
-    if(NRN_ENABLE_MPI)
-      find_python_module(mpi4py)
-      # Using -pyexe was a first workaround for GitHub issue #894, but it seems that we also need to
-      # avoid using the full path to mpiexec (see other discussion in #894). Replacing ${MPIEXEC}
-      # with ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} achieves this.
-      get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-      if(mpi4py_FOUND)
-        nrn_add_test(
-          GROUP coreneuron_modtests
-          NAME spikes_mpi_py
-          REQUIRES coreneuron
-          CONFLICTS gpu
-          PROCESSORS 2
-          COMMAND
-            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}
-            ${MPIEXEC_POSTFLAGS} test/coreneuron/test_spikes.py mpi4py)
-      endif()
+  # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
+  # be dynamically loaded by Python. This is why all the tests that rely on that dynamic loading
+  # declare `CONFLICTS gpu`.
+  nrn_add_test_group(
+    NAME coreneuron_modtests
+    SCRIPT_PATTERNS test/coreneuron/*.py
+    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/pynrn/unitstest.mod test/gjtests/natrans.mod)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME direct_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_direct_py ${PYTHON_EXECUTABLE}
+            -m pytest --cov-report=xml --cov=neuron test/coreneuron/test_direct.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME direct_hoc
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_direct.hoc
+    COMMAND ${nrnpython_mpi_env} ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg}
+            test/coreneuron/test_direct.hoc)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME spikes_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_spikes_py ${PYTHON_EXECUTABLE}
+            -m pytest --cov-report=xml --cov=neuron test/coreneuron/test_spikes.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME spikes_file_mode_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py file_mode)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME fornetcon_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${PYTHON_EXECUTABLE} -m
+      pytest --cov-report=xml --cov=neuron test/coreneuron/test_fornetcon.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME datareturn_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${PYTHON_EXECUTABLE} -m
+      pytest --cov-report=xml --cov=neuron test/coreneuron/test_datareturn.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME test_units_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    COMMAND
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_test_units_py ${PYTHON_EXECUTABLE} -m
+      pytest --cov-report=xml --cov=neuron test/coreneuron/test_units.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME test_natrans_py
+    REQUIRES coreneuron
+    CONFLICTS gpu
+    SCRIPT_PATTERNS test/gjtests/test_natrans.py
+    COMMAND
+      ${nrnpython_mpi_env} COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${PYTHON_EXECUTABLE}
+      -m pytest --cov-report=xml --cov=neuron test/gjtests/test_natrans.py)
+  if(NRN_ENABLE_MPI)
+    find_python_module(mpi4py)
+    # Using -pyexe was a first workaround for GitHub issue #894, but it seems that we also need to
+    # avoid using the full path to mpiexec (see other discussion in #894). Replacing ${MPIEXEC} with
+    # ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} achieves this.
+    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
+    if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
-        NAME spikes_mpi_file_mode_py
+        NAME spikes_mpi_py
         REQUIRES coreneuron
+        CONFLICTS gpu
         PROCESSORS 2
-        COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
-          ${MPIEXEC_POSTFLAGS} -python -pyexe ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py
-          nrnmpi_init file_mode)
+        COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE}
+                ${MPIEXEC_POSTFLAGS} test/coreneuron/test_spikes.py mpi4py)
     endif()
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME spikes_mpi_file_mode_py
+      REQUIRES coreneuron
+      PROCESSORS 2
+      COMMAND
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
+        -python -pyexe ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py nrnmpi_init file_mode)
   endif()
 endif()
 
@@ -285,9 +291,8 @@ set(MODFILES_REJECT ${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod)
 
 add_custom_target(
   modlunit_test ALL
-  COMMAND
-    ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash
-    \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
+  COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash
+          \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   DEPENDS ${PROJECT_BINARY_DIR}/bin/modlunit)
 

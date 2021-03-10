@@ -205,10 +205,12 @@ function(nrn_add_test)
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
   set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
+  set(hash_components nrnivmodl)
   if(requires_coreneuron)
     # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
     # reduce the number of times we call nrnivmodl.
     list(APPEND nrnivmodl_command -coreneuron)
+    list(APPEND hash_components -coreneuron)
   endif()
   list(APPEND nrnivmodl_command .)
   # Collect the list of modfiles that need to be compiled.
@@ -221,8 +223,16 @@ function(nrn_add_test)
     message(
       WARNING "Didn't find any modfiles in ${test_source_directory} using ${modfile_patterns}")
   endif()
+  list(SORT modfiles)
+  foreach(modfile ${modfiles})
+    # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part
+    # below this common prefix to the hash
+    string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
+    string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
+    list(APPEND hash_components "${relative_modfile}")
+  endforeach()
   # Get a hash of the nrnivmodl arguments and use that to make a unique working directory
-  string(SHA256 nrnivmodl_command_hash "${nrnivmodl_command};${modfiles}")
+  string(SHA256 nrnivmodl_command_hash "${hash_components}")
   # Construct the name of a target that refers to the compiled special binaries
   set(binary_target_name "NRN_TEST_nrnivmodl_${nrnivmodl_command_hash}")
   set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
@@ -258,13 +268,14 @@ function(nrn_add_test)
       # here too.
       list(APPEND output_binaries "${special}-core")
       list(APPEND nrnivmodl_dependencies coreneuron)
-      if(NOT DEFINED CORENEURON_BUILTIN_MODFILES)
+      if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
         message(
           WARNING
-            "nrn_add_test couldn't find the names of the builtin CoreNEURON modfiles that nrnivmodl-core implicitly depends on"
+            "nrn_add_test couldn't find the names of the builtin CoreNEURON modfiles that nrnivmodl-core implicitly depends on *and* CoreNEURON is being built internally"
         )
       endif()
       list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
+      message(STATUS nrnivmodl_dependencies ${nrnivmodl_dependencies})
     endif()
     add_custom_command(
       OUTPUT ${output_binaries}
@@ -282,9 +293,10 @@ function(nrn_add_test)
   # specific working directory and copy them there.
   file(MAKE_DIRECTORY "${working_directory}")
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-            "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    COMMAND
+      ${CMAKE_COMMAND} -E create_symlink
+      "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+      "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   foreach(script_pattern ${script_patterns})
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
@@ -294,7 +306,8 @@ function(nrn_add_test)
       "${test_source_directory}/${script_pattern}")
     foreach(script_file ${script_files})
       add_custom_command(
-        TARGET ${prefix} POST_BUILD
+        TARGET ${prefix}
+        POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${test_source_directory}/${script_file}"
                 "${working_directory}/${script_file}")
     endforeach()
@@ -330,7 +343,7 @@ function(nrn_add_test)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
-    set(tests_properties ${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
+    set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
   set_tests_properties(
     ${test_names}
@@ -427,7 +440,8 @@ function(nrn_add_test_group_comparison)
                          reference_file_string_addition "${reference_expression}")
     set(reference_file_string "${reference_file_string}::${reference_file_string_addition}")
     add_custom_command(
-      TARGET ${prefix} POST_BUILD
+      TARGET ${prefix}
+      POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/${reference_path}"
               "${test_directory}/${reference_path}"
       COMMENT "Copying reference file for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
@@ -435,7 +449,8 @@ function(nrn_add_test_group_comparison)
 
   # Copy the comparison script
   add_custom_command(
-    TARGET ${prefix} POST_BUILD
+    TARGET ${prefix}
+    POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" "${test_directory}"
     COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
