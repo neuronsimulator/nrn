@@ -225,7 +225,8 @@ function(nrn_add_test)
   endif()
   list(SORT modfiles)
   foreach(modfile ${modfiles})
-    # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part below this common prefix to the hash
+    # ${modfile} is an absolute path starting with ${PROJECT_SOURCE_DIR}, let's only add the part
+    # below this common prefix to the hash
     string(LENGTH "${PROJECT_SOURCE_DIR}/" prefix_length)
     string(SUBSTRING "${modfile}" ${prefix_length} -1 relative_modfile)
     list(APPEND hash_components "${relative_modfile}")
@@ -292,9 +293,10 @@ function(nrn_add_test)
   # specific working directory and copy them there.
   file(MAKE_DIRECTORY "${working_directory}")
   execute_process(
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
-            "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    COMMAND
+      ${CMAKE_COMMAND} -E create_symlink
+      "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}"
+      "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}")
   foreach(script_pattern ${script_patterns})
     # We want to preserve directory structures, so if you pass SCRIPT_PATTERNS path/to/*.py then you
     # end up with {build_directory}/path/to/test_working_directory/path/to/script.py
@@ -304,7 +306,8 @@ function(nrn_add_test)
       "${test_source_directory}/${script_pattern}")
     foreach(script_file ${script_files})
       add_custom_command(
-        TARGET ${prefix} POST_BUILD
+        TARGET ${prefix}
+        POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${test_source_directory}/${script_file}"
                 "${working_directory}/${script_file}")
     endforeach()
@@ -437,7 +440,8 @@ function(nrn_add_test_group_comparison)
                          reference_file_string_addition "${reference_expression}")
     set(reference_file_string "${reference_file_string}::${reference_file_string_addition}")
     add_custom_command(
-      TARGET ${prefix} POST_BUILD
+      TARGET ${prefix}
+      POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/${reference_path}"
               "${test_directory}/${reference_path}"
       COMMENT "Copying reference file for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
@@ -445,7 +449,8 @@ function(nrn_add_test_group_comparison)
 
   # Copy the comparison script
   add_custom_command(
-    TARGET ${prefix} POST_BUILD
+    TARGET ${prefix}
+    POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" "${test_directory}"
     COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
