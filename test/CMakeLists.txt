@@ -124,12 +124,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
       SCRIPT_PATTERNS test/rxd/*.py test/rxd/testdata/*.dat)
-    nrn_add_test(
-      GROUP rxdmod_tests
-      NAME rxd_tests
-      COMMAND
-        COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-        --cov=neuron ./test/rxd)
+    if(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+      # This test includes a comparison with a binary blob; Intel builds typically have too-large numerical differences with the stored values.
+      nrn_add_test(
+        GROUP rxdmod_tests
+        NAME rxd_tests
+        COMMAND
+          COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
+          --cov=neuron ./test/rxd)
+    endif()
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
