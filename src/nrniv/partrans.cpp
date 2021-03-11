@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <InterViews/resource.h>
-#include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <nrniv_mf.h>
 #include <nrnmpi.h>
-#include <nrnhash.h>
 #include <mymath.h>
 #if defined(HAVE_STDINT_H)
 #include <stdint.h>
@@ -16,6 +14,7 @@
 
 #include <vector>
 #include <map> // Introduced for NonVSrcUpdateInfo
+#include <unordered_map> // Replaces NrnHash for MapSgid2Int and MapNode2PDbl
 #include "partrans.h" // sgid_t and SetupTransferInfo for CoreNEURON
 
 
@@ -172,42 +171,36 @@ struct SourceViBuf {
 static SourceViBuf* source_vi_buf_;
 static int n_source_vi_buf_;
 
-declareNrnHash(MapSgid2Int, sgid_t, int);
-implementNrnHash(MapSgid2Int, sgid_t, int);
-declareNrnHash(MapNode2PDbl, Node*, double*);
-implementNrnHash(MapNode2PDbl, Node*, double*);
-declarePtrList(DblPList, double)
-implementPtrList(DblPList, double)
-declarePtrList(NodePList, Node)
-implementPtrList(NodePList, Node)
+typedef std::unordered_map<sgid_t, int> MapSgid2Int;
+typedef std::unordered_map<Node*, double*> MapNode2PDbl;
+typedef std::vector<double*> DblPList;
+typedef std::vector<Node*> NodePList;
 #define PPList partrans_PPList
-declarePtrList(PPList, Point_process)
-implementPtrList(PPList, Point_process)
-declareList(IntList, int)
-implementList(IntList, int)
-declareList(SgidList, sgid_t)
-implementList(SgidList, sgid_t)
+typedef std::vector<Point_process*> PPList;
+typedef std::vector<int> IntList;
+typedef std::vector<sgid_t> SgidList;
+
 static double* insrc_buf_; // Receives the interprocessor data destined for other threads.
 static double* outsrc_buf_;
 static double** poutsrc_; // prior to mpi copy src value to proper place in outsrc_buf_
 static int* poutsrc_indices_; // for recalc pointers
 static int insrc_buf_size_, *insrccnt_, *insrcdspl_;
 static int outsrc_buf_size_, *outsrccnt_, *outsrcdspl_;
-static MapSgid2Int* sid2insrc_; // received interprocessor sid data is
+static MapSgid2Int sid2insrc_; // received interprocessor sid data is
 // associated with which insrc_buf index. Created by nrnmpi_setup_transfer
 // and used by mk_ttd
 		
 // ordered by calls to nrnmpi_target_var()
-static DblPList* targets_; // list of target double*
-static SgidList* sgid2targets_; // list of target sgid
-static PPList* target_pntlist_;  // list of target Point_process
-static IntList* target_parray_index_; // to recompute targets_ for cache_efficint
+static DblPList targets_; // list of target double*
+static SgidList sgid2targets_; // list of target sgid
+static PPList target_pntlist_;  // list of target Point_process
+static IntList target_parray_index_; // to recompute targets_ for cache_efficint
 
 // ordered by calls to nrnmpi_source_var()
 typedef std::vector<double*> DblPVec;
-static NodePList* visources_; // list of source Node*, (multiples possible)
-static SgidList* sgids_; // source gids
-static MapSgid2Int* sgid2srcindex_; // sgid2srcindex[sgids[i]] == i
+static NodePList visources_; // list of source Node*, (multiples possible)
+static SgidList sgids_; // source gids
+static MapSgid2Int sgid2srcindex_; // sgid2srcindex[sgids[i]] == i
 
 typedef std::map<sgid_t, std::pair<int, int> > NonVSrcUpdateInfo;
 static NonVSrcUpdateInfo non_vsrc_update_info_; // source ssid -> (type,parray_index)
@@ -220,7 +213,6 @@ static int target_ptr_need_update_cnt_ = 0;
 static int vptr_change_cnt_ = 0;
 
 static bool is_setup_;
-static void alloclists();
 
 // deleted when setup_transfer called
 // defined persistently when pargap_jacobi_setup(0) called.
@@ -256,10 +248,7 @@ static double* non_vsrc_update(Node* nd, int type, int ix) {
       return p->param + ix;
     }
   }
-  char buf[100];
-  sprintf(buf, "%d of %s", ix, memb_func[type].sym->name);
-  hoc_execerror("partrans update: could not find parameter index", buf);
-  return NULL;
+  hoc_execerr_ext("partrans update: could not find parameter index %d of %s", ix, memb_func[type].sym->name); return NULL; // avoid coverage false negative as hoc_execerror does not return.
 }
 
 // Find the Node associated with the voltage.
@@ -282,12 +271,11 @@ static Node* pv2node(sgid_t ssid, double* pv) {
 		}
 	}
 	
-	hoc_execerror("Pointer to v is not in the currently accessed section", 0);
-	return NULL;
+	hoc_execerr_ext("Pointer to src is not in the currently accessed section %s", secname(sec)); return NULL; //avoid coverage false negative.
 }
 
 void nrnmpi_source_var() {
-	alloclists();
+	nrnthread_v_transfer_ = thread_transfer; // otherwise can't check is_setup_
 	is_setup_ = false;
 	double* psv = hoc_pgetarg(1); // but might not be a voltage
 	double x = *getarg(2);
@@ -295,15 +283,12 @@ void nrnmpi_source_var() {
 		hoc_execerr_ext("source_var sgid must be >= 0: arg 2 is %g\n", x);
 	}
 	sgid_t sgid = (sgid_t)x;
-	int i;
-	if (sgid2srcindex_->find(sgid, i)) {
-		char tmp[40];
-		sprintf(tmp, "%lld", (long long)sgid);
-		hoc_execerror("source var gid already in use:", tmp);
+	if (sgid2srcindex_.find(sgid) != sgid2srcindex_.end()) {
+		hoc_execerr_ext("source var sgid %lld already in use.", (long long)sgid);
 	}
-	(*sgid2srcindex_)[sgid] = visources_->count();
-	visources_->append(pv2node(sgid, psv));
-	sgids_->append(sgid);
+	sgid2srcindex_[sgid] = visources_.size();
+	visources_.push_back(pv2node(sgid, psv));
+	sgids_.push_back(sgid);
 	//printf("nrnmpi_source_var %p source_val=%g sgid=%ld\n", psv, *psv, (long)sgid);
 }
 
@@ -311,82 +296,74 @@ static int compute_parray_index(Point_process* pp, double* ptv) {
 	if (!pp) {
 		return -1;
 	}
-	long i =  ptv - pp->prop->param;
-	if (i < 0 || i >= pp->prop->param_size) {
-		i = -1;
-	}
+	size_t i =  ptv - pp->prop->param;
+	assert(i >= 0 && i < size_t(pp->prop->param_size));
 	return int(i);
 }
 static double* tar_ptr(Point_process* pp, int index) {
 	return pp->prop->param + index;
 }
 
-static void check_pointers() {
-//printf("check_pointers\n");
-	for (int i = 0; i < targets_->count(); ++i) {
-		double* pd = tar_ptr(target_pntlist_->item(i), target_parray_index_->item(i));
-		assert(targets_->item(i) == pd);
-	}
-}
-
 static void target_ptr_update() {
 //printf("target_ptr_update\n");
-	if (targets_) {
-		int n = targets_->count();
-		DblPList* newtar = new DblPList(n);
+	if (targets_.size()) {
+		int n = targets_.size();
 		for (int i=0; i < n; ++i) {
-			double* pd = tar_ptr(target_pntlist_->item(i), target_parray_index_->item(i));
-			newtar->append(pd);
+			Point_process* pp = target_pntlist_[i];
+			if (!pp) {
+				hoc_execerr_ext("Do not know the POINT_PROCESS target for source id %zd (Hint: insert target instance of the target ref as the first argument.", size_t(sgid2targets_[i]));
+			}
+			double* pd = tar_ptr(target_pntlist_[i], target_parray_index_[i]);
+			targets_[i] = pd;
 		}
-		delete targets_;
-		targets_ = newtar;
 	}
 	mk_ttd();
 	target_ptr_update_cnt_ = target_ptr_need_update_cnt_;
 }
 
 void nrnmpi_target_var() {
-	Point_process* pp = 0;
-	alloclists();
+	Point_process* pp = NULL;
+	Object* ob = NULL;
 	int iarg = 1;
+	nrnthread_v_transfer_ = thread_transfer; // otherwise can't check is_setup_
 	is_setup_ = false;
 	if (hoc_is_object_arg(iarg)) {
-		pp = ob2pntproc(*hoc_objgetarg(iarg++));
+		ob = *hoc_objgetarg(iarg++);
+		pp = ob2pntproc(ob);
 	}
 	double* ptv = hoc_pgetarg(iarg++);
 	double x = *getarg(iarg++);
 	if (x < 0) {
 		hoc_execerr_ext("target_var sgid must be >= 0: arg %d is %g\n", iarg-1, x);
 	}
+	if (pp && (ptv < pp->prop->param || ptv >= (pp->prop->param + pp->prop->param_size))) {
+		hoc_execerr_ext("Target ref not in %s", hoc_object_name(ob));
+	}
 	sgid_t sgid = (sgid_t)x;
-	targets_->append(ptv);
-	target_pntlist_->append(pp);
-	target_parray_index_->append(compute_parray_index(pp, ptv));
-	sgid2targets_->append(sgid);
+	targets_.push_back(ptv);
+	target_pntlist_.push_back(pp);
+	target_parray_index_.push_back(compute_parray_index(pp, ptv));
+	sgid2targets_.push_back(sgid);
 	//printf("nrnmpi_target_var %p target_val=%g sgid=%ld\n", ptv, *ptv, (long)sgid);
 }
 
 void nrn_partrans_update_ptrs() {
 	// These pointer changes require that the targets be range variables
 	// of a point process and the sources be range variables
-	int i, n;
-	if (visources_) {
-		n = visources_->count();
-		// update the poutsrc that have no extracellular
-		for (i=0; i < outsrc_buf_size_; ++i) {
-		    int isrc = poutsrc_indices_[i];
-		    Node* nd = visources_->item(long(isrc));
-		    NonVSrcUpdateInfo::iterator it;
-		    it = non_vsrc_update_info_.find(sgids_->item(isrc));
-		    if (it != non_vsrc_update_info_.end()) {
-			poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
-		    }else if (!nd->extnode) {
-			poutsrc_[i] = &(NODEV(nd));
-		    }else{
-			// pointers into SourceViBuf updated when
-			// latter is (re-)created
-		    }
-		}
+
+	// update the poutsrc that have no extracellular
+	for (int i=0; i < outsrc_buf_size_; ++i) {
+	    int isrc = poutsrc_indices_[i];
+	    Node* nd = visources_[isrc];
+	    auto it = non_vsrc_update_info_.find(sgids_[isrc]);
+	    if (it != non_vsrc_update_info_.end()) {
+		poutsrc_[i] = non_vsrc_update(nd, it->second.first, it->second.second);
+	    }else if (!nd->extnode) {
+		poutsrc_[i] = &(NODEV(nd));
+	    }else{
+		// pointers into SourceViBuf updated when
+		// latter is (re-)created
+	    }
 	}
 	vptr_change_cnt_ = nrn_node_ptr_change_cnt_;
 	// the target vgap pointers also need updating but they will not
@@ -428,7 +405,7 @@ static void rm_svibuf() {
 
 static MapNode2PDbl* mk_svibuf() {
 	rm_svibuf();
-	if (!visources_ || visources_->count() == 0) { return NULL; }
+	if (visources_.empty()) { return NULL; }
 	// any use of extracellular?
 	int has_ecell = 0;
 	for (int tid = 0; tid < nrn_nthread; ++tid) {
@@ -447,9 +424,9 @@ static MapNode2PDbl* mk_svibuf() {
 		source_vi_buf_[tid].cnt = 0;
 	}
 	// count
-	for (int i=0; i < visources_->count(); ++i) {
-		Node* nd = visources_->item(i);
-		it = non_vsrc_update_info_.find(sgids_->item(i));
+	for (size_t i=0; i < visources_.size(); ++i) {
+		Node* nd = visources_[i];
+		it = non_vsrc_update_info_.find(sgids_[i]);
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			assert(nd->_nt >= nrn_threads && nd->_nt < (nrn_threads + nrn_nthread));
 			++source_vi_buf_[nd->_nt->id].cnt;
@@ -465,9 +442,9 @@ static MapNode2PDbl* mk_svibuf() {
 		svib.cnt = 0; // recount on fill
 	}
 	// fill
-	for (int i=0; i < visources_->count(); ++i) {
-		Node* nd = visources_->item(i);
-		it = non_vsrc_update_info_.find(sgids_->item(i));
+	for (size_t i=0; i < visources_.size(); ++i) {
+		Node* nd = visources_[i];
+		it = non_vsrc_update_info_.find(sgids_[i]);
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
 			int tid = nd->_nt->id;			
 			SourceViBuf& svib = source_vi_buf_[tid];
@@ -492,12 +469,12 @@ static MapNode2PDbl* mk_svibuf() {
 	}
 	for (int i=0; i < outsrc_buf_size_; ++i) {
 		int isrc = poutsrc_indices_[i];
-		Node* nd = visources_->item(isrc);
-		double* pd = NULL;
-		it = non_vsrc_update_info_.find(sgids_->item(isrc));
+		Node* nd = visources_[isrc];
+		it = non_vsrc_update_info_.find(sgids_[isrc]);
 		if (nd->extnode	&& it == non_vsrc_update_info_.end()) {
-			nrn_assert(ndvi2pd->find(nd, pd));
-			poutsrc_[i] = pd;
+			auto search = ndvi2pd->find(nd);
+			nrn_assert(ndvi2pd->find(nd) != ndvi2pd->end());
+			poutsrc_[i] = search->second;
 		}
 	}
 	nrnthread_vi_compute_ = thread_vi_compute;
@@ -505,10 +482,10 @@ static MapNode2PDbl* mk_svibuf() {
 }
 
 static void mk_ttd() {
-	int i, j, k, tid, n;
+	int i, j, tid, n;
 	MapNode2PDbl* ndvi2pd = mk_svibuf();
 	rm_ttd();
-	if (!targets_ || targets_->count() == 0) {
+	if (targets_.empty()) {
 		if (ndvi2pd) { delete ndvi2pd; }
 		// some MPI transfer code paths require that all ranks
 		// have a nrn_thread_v_transfer.
@@ -522,14 +499,16 @@ static void mk_ttd() {
 		}
 		return;
 	}
-	n = targets_->count();
+	n = targets_.size();
     if (nrn_nthread > 1) for (i=0; i < n; ++i) {
-	Point_process* pp = target_pntlist_->item(i);
-	int sgid = sgid2targets_->item(i);
+	Point_process* pp = target_pntlist_[i];
+	int sgid = sgid2targets_[i];
 	if (!pp) {
-fprintf(stderr, "Do not know the POINT_PROCESS target for source id %lld\n", (long long)sgid);
-hoc_execerror("For multiple threads, the target pointer must reference a range variable of a POINT_PROCESS.",
-"Note that it is fastest to supply a reference to the POINT_PROCESS as the first arg.");
+		hoc_execerr_ext("Do not know the POINT_PROCESS target for source id %lld\n"
+		"For multiple threads, the target pointer must reference a range variable\n"
+		"of a POINT_PROCESS. Note that even for a single thread, it is\n"
+		"fastest to supply a reference to the POINT_PROCESS as the first arg."
+		, (long long)sgid);
 	}
     }
 	transfer_thread_data_ = new TransferThreadData[nrn_nthread];
@@ -539,11 +518,11 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 	n_transfer_thread_data_ = nrn_nthread;
 	// how many targets in each thread
     if (nrn_nthread == 1) {
-	transfer_thread_data_[0].cnt = target_pntlist_->count();
+	transfer_thread_data_[0].cnt = target_pntlist_.size();
     }else{
 	for (i=0; i < n; ++i) {
-		assert(target_pntlist_->item(i));
-		tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+		assert(target_pntlist_[i]);
+		tid = ((NrnThread*)target_pntlist_[i]->_vnt)->id;
 		++transfer_thread_data_[tid].cnt;
 	}
     }
@@ -561,30 +540,38 @@ hoc_execerror("For multiple threads, the target pointer must reference a range v
 		if (nrn_nthread == 1) {
 			tid = 0;
 		}else{
-			tid = ((NrnThread*)target_pntlist_->item(i)->_vnt)->id;
+			tid = ((NrnThread*)target_pntlist_[i]->_vnt)->id;
 		}
 		TransferThreadData& ttd = transfer_thread_data_[tid];
 		j = ttd.cnt++;
-		ttd.tv[j] = targets_->item(i);
+		ttd.tv[j] = targets_[i];
 		// perhaps inter- or intra-thread, perhaps interprocessor
 		// if inter- or intra-thread, perhaps SourceViBuf
-		sgid_t sid = sgid2targets_->item(i);
-		if (sgid2srcindex_->find(sid, k)) {
-			Node* nd = visources_->item(k);
-			NonVSrcUpdateInfo::iterator it;
-			it = non_vsrc_update_info_.find(sid);
+		sgid_t sid = sgid2targets_[i];
+		// cannot figure out how to get iterator and test within if
+		bool err = true;
+		auto search = sgid2srcindex_.find(sid);
+		if (search != sgid2srcindex_.end()) {
+			err = false;
+			Node* nd = visources_[search->second];
+			auto it = non_vsrc_update_info_.find(sid);
 			if (it != non_vsrc_update_info_.end()) {
 				ttd.sv[j] = non_vsrc_update(nd, it->second.first, it->second.second);
 			}else if (nd->extnode) {
-				double* pd;
-				nrn_assert(ndvi2pd->find(nd, pd));
-				ttd.sv[j] = pd;
+				auto search = ndvi2pd->find(nd);
+				nrn_assert(search != ndvi2pd->end());
+				ttd.sv[j] = search->second;
 			}else{
 				ttd.sv[j] = &(NODEV(nd));
 			}
-		}else if (sid2insrc_ && sid2insrc_->find(sid, k)) {
-			ttd.sv[j] = insrc_buf_ + k;
 		}else{
+			auto search = sid2insrc_.find(sid);
+			if (search != sid2insrc_.end()) {
+				err = false;
+				ttd.sv[j] = insrc_buf_ + search->second;
+			}
+		}
+		if (err == true) {
 			hoc_execerr_ext("No source_var for target_var sid = %lld\n", (long long)sid);
 		}
 	}
@@ -638,7 +625,7 @@ void thread_transfer(NrnThread* _nt) {
 	if (!is_setup_) {
 		hoc_execerror("ParallelContext.setup_transfer()", "needs to be called.");
 	}
-	if (!targets_ || targets_->count() == 0) {
+	if (targets_.empty()) {
 		return;
 	}
 
@@ -700,18 +687,17 @@ void nrnmpi_setup_transfer() {
 //	char ctmp[100];
 //	sprintf(ctmp, "vartrans%d", nrnmpi_myid);
 //	xxxfile = fopen(ctmp, "w");
-	alloclists();
 	is_setup_ = true;
 //	printf("nrnmpi_setup_transfer\n");
 	delete_imped_info();
 	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
 	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
-	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
+	sid2insrc_.clear();
 	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
 	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
 #if PARANEURON
 	// if there are no targets anywhere, we do not need to do anything
-	max_targets_ = nrnmpi_int_allmax(targets_->count());
+	max_targets_ = nrnmpi_int_allmax(targets_.size());
 	if (max_targets_ == 0) {
 		return;
 	}
@@ -754,38 +740,30 @@ void nrnmpi_setup_transfer() {
 	// At the end of this section, needsrc is an array of needsrc_cnt
 	// sids needed by this machine. The 'seen' table values are unused
 	// but the keys are all the (unique) sgid needed by this process.
+	// At the end seen is in fact what we want for sid2insrc_.
 	int needsrc_cnt = 0;
-	MapSgid2Int* seen = new MapSgid2Int(targets_->count());//for single counting
-	int szalloc = targets_->count();
+	int szalloc = targets_.size();
 	szalloc = szalloc ? szalloc : 1;
+
+	// At the moment sid2insrc_ is serving as 'seen'
+	sid2insrc_.clear();
+	sid2insrc_.reserve(szalloc);//for single counting
 	sgid_t* needsrc = new sgid_t[szalloc]; // more than we need
-	for (int i = 0; i < sgid2targets_->count(); ++i) {
-		sgid_t sid = sgid2targets_->item(i);
-		// only need it if not a source on this machine
-		int srcindex;
-// Note that although old comment possibly mention that we do not transfer
-// intraprocessor sids, it is actually a good idea to do so in order to
-// produce a reasonable error message about using the same sid for multiple
-// source variables. Hence the following statement is commented out.
-//		if (!sgid2srcindex_->find(sid, srcindex)) {
-			if (!seen->find(sid, srcindex)) {
-				(*seen)[sid] = srcindex;
-				needsrc[needsrc_cnt++] = sid;
-			}
-//		}
+	for (size_t i = 0; i < sgid2targets_.size(); ++i) {
+		sgid_t sid = sgid2targets_[i];
+		auto search = sid2insrc_.find(sid);
+		if (search == sid2insrc_.end()) {
+			sid2insrc_[sid] = 0; // at the moment, value does not matter
+			needsrc[needsrc_cnt++] = sid;
+		}
 	}
-#if 0
-	for (int i=0; i < needsrc_cnt; ++i) {
-		printf("%d step 1 need %d\n", nrnmpi_myid, needsrc[i]);
-	}
-#endif
 
 	// 1 continued) Create an array of sources this rank owns.
-	// This already exists as a vector in the SgidList* sgids_ but
+	// This already exists as a vector in the SgidList sgids_ but
 	// that is private so go ahead and copy.
-	sgid_t* ownsrc = new sgid_t[sgids_->count() + 1]; // not 0 length if count is 0
-	for (int i=0; i < sgids_->count(); ++i) {
-		ownsrc[i] = sgids_->item(i);
+	sgid_t* ownsrc = new sgid_t[sgids_.size() + 1]; // not 0 length if count is 0
+	for (size_t i=0; i < sgids_.size(); ++i) {
+		ownsrc[i] = sgids_[i];
 	}
 	
 	// 2) Call the have_to_want function.
@@ -794,7 +772,7 @@ void nrnmpi_setup_transfer() {
 	sgid_t* recv_from_have;
 	int *recv_from_have_cnt, *recv_from_have_displ;
 
-	have_to_want(ownsrc, sgids_->count(), needsrc, needsrc_cnt,
+	have_to_want(ownsrc, sgids_.size(), needsrc, needsrc_cnt,
 		send_to_want, send_to_want_cnt, send_to_want_displ,
 		recv_from_have, recv_from_have_cnt, recv_from_have_displ,
 		default_rendezvous);
@@ -804,19 +782,16 @@ void nrnmpi_setup_transfer() {
 #if 0 // done in passing in step 3 below
 	for (int i=0; i < n; ++i) {
 		sgid_t sgid = send_to_want[i];
-		int x;
-		nrn_assert(sgid2srcindex_->find(sgid, x));
+		nrn_assert(sgid2srcindex_.find(sgid) != sgid2srcindex_.end());
 	}
 #endif
 	// sanity check. all the sgids we receive, we actually need.
-	// also set the seen value to the proper recv_from_have index.
-	// i.e it is the sid2insrc_ in step 4.
+	// also set the sid2insrc_ value to the proper recv_from_have index.
 	n = recv_from_have_displ[nhost];
 	for (int i=0; i < n; ++i) {
 		sgid_t sgid = recv_from_have[i];
-		int x;
-		nrn_assert(seen->find(sgid, x));
-		(*seen)[sgid] = i;
+		nrn_assert(sid2insrc_.find(sgid) != sid2insrc_.end());
+		sid2insrc_[sgid] = i;
 	}
 
 	// clean up a little
@@ -837,9 +812,9 @@ void nrnmpi_setup_transfer() {
 	poutsrc_indices_ = new int[szalloc];
 	for (int i=0; i < outsrc_buf_size_; ++i) {
 		sgid_t sid = send_to_want[i];
-		int srcindex;
-		nrn_assert(sgid2srcindex_->find(sid, srcindex));
-		Node* nd = visources_->item(long(srcindex));
+		auto search = sgid2srcindex_.find(sid);
+		nrn_assert(search != sgid2srcindex_.end());
+		Node* nd = visources_[search->second];
 		NonVSrcUpdateInfo::iterator it;
 		it = non_vsrc_update_info_.find(sid);
 		if (it != non_vsrc_update_info_.end()) {
@@ -849,23 +824,19 @@ void nrnmpi_setup_transfer() {
 		}else{
 			// the v+vext case can only be done after mk_svib()
 		}
-		poutsrc_indices_[i] = srcindex;
+		poutsrc_indices_[i] = search->second;
 		outsrc_buf_[i] = double(sid); // see step 5
 	}
 	delete [] send_to_want;
 
 	// 4) The second triple is creates the insrc_buf_.
-	// From the recv_from_have and seen table, construct the insrc...
+	// From the recv_from_have and sid2insrc_ table, construct the insrc...
 	insrccnt_ = recv_from_have_cnt;
 	insrcdspl_ = recv_from_have_displ;
 	insrc_buf_size_ = insrcdspl_[nrnmpi_numprocs];
 	szalloc = insrc_buf_size_ ? insrc_buf_size_ : 1;
 	insrc_buf_ = new double[szalloc];
-
-	// map sid to insrc_buf_ indices.
-	// mk_ttd can then construct the right pointer to the source.
-	sid2insrc_ = seen; // since seen was constructed and then modified
-		// way above this. Might be better to reconstruct here.
+	// from sid2insrc_, mk_ttd can construct the right pointer to the source.
 
 	nrnmpi_v_transfer_ = mpi_transfer;
     }	
@@ -876,39 +847,25 @@ void nrnmpi_setup_transfer() {
 	}
 }
 
-void alloclists() {
-	if (!targets_) {
-		targets_ = new DblPList(100);
-		target_pntlist_ = new PPList(100);
-		target_parray_index_ = new IntList(100);
-		sgid2targets_ = new SgidList(100);
-		visources_ = new NodePList(100);
-		sgids_ = new SgidList(100);
-		sgid2srcindex_ = new MapSgid2Int(256);
-	}
-}
-
 void nrn_partrans_clear() {
-	if (!targets_) { return; }
-	nrnthread_v_transfer_ = 0;
-	nrnthread_vi_compute_ = 0;
-	nrnmpi_v_transfer_ = 0;
-	delete sgid2srcindex_;
-	delete sgids_;
-	delete visources_;
-	delete sgid2targets_;
-	delete targets_;
-	delete target_pntlist_;
-	delete target_parray_index_;
-	targets_ = 0;
+	nrnthread_v_transfer_ = NULL;
+	nrnthread_vi_compute_ = NULL;
+	nrnmpi_v_transfer_ = NULL;
+	sgid2srcindex_.clear();
+	sgids_.resize(0);
+	visources_.resize(0);
+	sgid2targets_.resize(0);
+	target_pntlist_.resize(0);
+	target_parray_index_.resize(0);
+	targets_.resize(0);
 	max_targets_ = 0;
 	rm_svibuf();
 	rm_ttd();
-	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = 0; }
-	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = 0; }
-	if (sid2insrc_) { delete sid2insrc_; sid2insrc_ = 0; }
-	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = 0; }
-	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = 0; }
+	if (insrc_buf_) { delete [] insrc_buf_; insrc_buf_ = NULL; }
+	if (outsrc_buf_) { delete [] outsrc_buf_; outsrc_buf_ = NULL; }
+	sid2insrc_.clear();
+	if (poutsrc_) { delete [] poutsrc_ ; poutsrc_ = NULL; }
+	if (poutsrc_indices_) { delete [] poutsrc_indices_ ; poutsrc_indices_ = NULL; }
 	non_vsrc_update_info_.clear();
 	nrn_mk_transfer_thread_data_ = 0;
 }
@@ -927,9 +884,9 @@ void pargap_jacobi_setup(int mode) {
     delete_imped_info();
     imped_change_cnt = structure_change_cnt;
   }
-  if (imped_current_type_count_ == 0 && targets_ && targets_->count() > 0) {
-    for (int i=0; i < targets_->count(); ++i) {
-      Point_process* pp = target_pntlist_->item(i);
+  if (imped_current_type_count_ == 0 && targets_.size() > 0) {
+    for (size_t i=0; i < targets_.size(); ++i) {
+      Point_process* pp = target_pntlist_[i];
       if (!pp) {
         hoc_execerror("For impedance, pc.target_var requires that its first arg be a reference to the POINT_PROCESS", 0);
       }
@@ -962,14 +919,12 @@ void pargap_jacobi_setup(int mode) {
       }
     }
     // are all the instances in use
-    int ninst = 0;
+    size_t ninst = 0;
     for (int k=0; k < imped_current_type_count_; ++k) {
       ninst += imped_current_ml_[k]->nodecount;
     }
-    if (ninst != targets_->count()) {
-      char buf[100];
-      sprintf(buf, "that is %d != %ld", ninst, targets_->count());
-      hoc_execerror("number of gap junctions not equal to number of pc.transfer_var", buf);
+    if (ninst != targets_.size()) {
+      hoc_execerr_ext("number of gap junctions, %zd, not equal to number of pc.transfer_var, %zd", ninst, targets_.size());
     }
   }
  }
@@ -978,17 +933,17 @@ void pargap_jacobi_setup(int mode) {
   }
   TransferThreadData* ttd = transfer_thread_data_;
   if (mode == 0) { // setup
-    if (visources_->count()) {vgap1 = new double[visources_->count()];}
+    if (visources_.size()) {vgap1 = new double[visources_.size()];}
     if (ttd && ttd->cnt) {vgap2 = new double[ttd->cnt];}
-    for (int i=0; i < visources_->count(); ++i) {
-      vgap1[i] = NODEV(visources_->item(i));
+    for (size_t i=0; i < visources_.size(); ++i) {
+      vgap1[i] = NODEV(visources_[i]);
     }
     if (ttd) for (int i=0; i < ttd->cnt; ++i) {
       vgap2[i] = *(ttd->tv[i]);
     }
   }else{ // tear down
-    for (int i=0; i < visources_->count(); ++i) {
-      NODEV(visources_->item(i)) = vgap1[i];
+    for (size_t i=0; i < visources_.size(); ++i) {
+      NODEV(visources_[i]) = vgap1[i];
     }
     if (ttd) for (int i=0; i < ttd->cnt; ++i) {
       *(ttd->tv[i]) = vgap2[i];
@@ -1007,16 +962,16 @@ void pargap_jacobi_rhs(double* b, double* x) {
   NrnThread* _nt = nrn_threads;
 
   // transfer gap node voltages to gap vpre
-  for (int i=0; i < visources_->count(); ++i) {
-    Node* nd = visources_->item(i);
+  for (size_t i=0; i < visources_.size(); ++i) {
+    Node* nd = visources_[i];
     NODEV(nd) = x[nd->v_node_index];
   }  
   mpi_transfer();
   thread_transfer(_nt);
 
   // set gap node voltages to 0 so we can use nrn_cur to set rhs
-  for (int i=0; i < visources_->count(); ++i) {
-    Node* nd = visources_->item(i);
+  for (size_t i=0; i < visources_.size(); ++i) {
+    Node* nd = visources_[i];
     NODEV(nd) = 0.0;
   }
   // Initialize rhs to 0.
@@ -1137,21 +1092,21 @@ size_t nrnbbcore_gap_write(const char* path, int* group_ids) {
 
 static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
 
-  assert(target_pntlist_ && target_pntlist_->count() == targets_->count());
+  assert(target_pntlist_.size() == targets_.size());
 
   // space for the info
   auto gi = new SetupTransferInfo[cn_nthread];
 
   // info for targets, segregate into threads
-  if (targets_) {
-    for (int i=0; i < targets_->count(); ++i) {
-      sgid_t sid = sgid2targets_->item(i);
-      Point_process* pp = target_pntlist_->item(i);
+  if (targets_.size()) {
+    for (size_t i=0; i < targets_.size(); ++i) {
+      sgid_t sid = sgid2targets_[i];
+      Point_process* pp = target_pntlist_[i];
       NrnThread* nt = (NrnThread*)pp->_vnt;
       int tid = nt ? nt->id : 0;
       int type = pp->prop->type;
       Memb_list& ml = *(nrn_threads[tid]._ml_list[type]);
-      int ix = targets_->item(i) - ml.data[0];
+      int ix = targets_[i] - ml.data[0];
 
       auto& g = gi[tid];
       g.tar_sid.push_back(sid);
@@ -1161,10 +1116,10 @@ static SetupTransferInfo* nrncore_transfer_info(int cn_nthread) {
   }
 
   // info for sources, segregate into threads.
-  if (visources_) {
-    for (int i=0; i < sgids_->count(); ++i) {
-      sgid_t sid = sgids_->item(i);
-      Node* nd = visources_->item(i);
+  if (visources_.size()) {
+    for (size_t i=0; i < sgids_.size(); ++i) {
+      sgid_t sid = sgids_[i];
+      Node* nd = visources_[i];
       int tid = nd->_nt ? nd->_nt->id : 0;
       int type = -1; // default voltage
       int ix = 0; // fill below

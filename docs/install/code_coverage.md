@@ -17,6 +17,12 @@ Clone the nrn repository and get ready to build.
     cd build
 ```
 
+Note: A simplified workflow is supported via the cmake option
+[-DNRN_ENABLE_COVERAGE=ON](../cmake_doc/options.html#nrn-enable-coverage-bool-off)
+that removes the need to be concerned with COVERAGE_FLAGS and explicit
+use of lcov and genhtml by providing the make targets ``make cover_begin``
+and ``make cover_html``. See [Simplified Workflow](#simplified-workflow) below.
+
 In addition to the COVERAGE_FLAGS use whatever cmake options you desire.
 But you will generally want ```-DNRN_ENABLE_TESTS=ON``` to see what
 effect your new tests have on coverage.
@@ -71,3 +77,22 @@ genhtml coverage-combined.info --output-directory html
 ```
 
 And view the report by loading ```./html/index.html``` into your browser.
+
+Simplified Workflow
+-------------------
+
+```
+cmake .. -DCMAKE_INSTALL_PREFIX=install \
+  -DPYTHON_EXECUTABLE=`which python3` \
+  -DNRN_ENABLE_TESTS=ON \
+  -DNRN_ENABLE_COVERAGE=ON \
+  -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+
+make -j 6 install
+
+make cover_begin
+
+make test
+
+make cover_html
+```

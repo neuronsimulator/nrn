@@ -347,6 +347,38 @@ NRN_ENABLE_TESTS:BOOL=OFF
     python3 -m pytest
     python3 -m pytest test_currents.py
 
+NRN_ENABLE_COVERAGE:BOOL=OFF
+---------------------------
+  Enable code coverage
+
+  Requires ``lcov`` (e.g. ``sudo apt install lcov``).
+
+  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  workflow.
+    -- ``make cover_begin`` erases all previous coverage data
+    (``*.gcda`` files), and creates a baseline report. (Note all files and
+    folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
+
+    -- ``make cover_html`` creates a coverage report for the sum of all the
+    software runs since the last ``cover_begin`` and prints a file url
+    that you can paste into your browser to review the coverage.
+
+  When using an iterative workflow to examine test coverage of a single
+  or a few files, the above targets run much faster when this option is
+  combined with `NRN_COVERAGE_FILES:STRING=`_
+
+  Code coverage without the use of this option is explained in
+  `Developer Builds: Code Coverage <../install/code_coverage.html>`_
+
+NRN_COVERAGE_FILES:STRING=
+-------------------------------------------------------------
+  Coverage limited to semicolon (;) separated list of file paths
+  relative to ``PROJECT_SOURCE_DIR``.
+
+  ```
+  -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+  ```
+
 NEURON_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
   Enable CMake code formatting  
