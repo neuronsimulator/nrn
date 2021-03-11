@@ -266,6 +266,14 @@ if(NRN_ENABLE_MPI_DYNAMIC)
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 
+if (NRN_COVERAGE_FILES)
+  foreach(f ${NRN_COVERAGE_FILES})
+    set_property(SOURCE ${PROJECT_SOURCE_DIR}/${f}
+      APPEND
+      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
+  endforeach()
+endif() 
+
 # =============================================================================
 # All source directories to include
 # =============================================================================
@@ -370,6 +378,12 @@ if(IV_ENABLE_X11_DYNAMIC)
   endif()
 else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
+endif()
+
+if (NRN_COVERAGE_FILES)
+  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
+  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
+  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
 endif()
 
 # =============================================================================

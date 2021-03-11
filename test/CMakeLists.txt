@@ -156,7 +156,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
-    list(APPEND TESTS parallel_tests)
+    add_test(
+      NAME parallel_partrans
+      COMMAND
+        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
+    list(APPEND TESTS parallel_tests parallel_partrans)
   endif()
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
