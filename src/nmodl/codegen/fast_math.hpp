@@ -10,7 +10,8 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cmath>
+#include <cstdint>
 
 /**
  * \file
@@ -33,18 +34,6 @@ static inline unsigned int sp2uint32(float x) {
     return *((uint32_t*) (&x));
 }
 
-static inline double dpfloor(const double x) {
-    int32_t ret = x;
-    ret -= (sp2uint32(x) >> 31);
-    return ret;
-}
-
-static inline float spfloor(const float x) {
-    int32_t ret = x;
-    ret -= (sp2uint32(x) >> 31);
-    return ret;
-}
-
 static inline float f_inf() {
     uint32_t v = 0x7F800000;
     return *((float*) (&v));
@@ -56,55 +45,60 @@ static inline double inf() {
 }
 
 
-static const double EXP_LIMIT = 708.0;
+static constexpr double EXP_LIMIT = 708.0;
 
-static const double C1 = 6.93145751953125E-1;
-static const double C2 = 1.42860682030941723212E-6;
+static constexpr double C1 = 6.93145751953125E-1;
+static constexpr double C2 = 1.42860682030941723212E-6;
 
-static const double PX1exp = 1.26177193074810590878E-4;
-static const double PX2exp = 3.02994407707441961300E-2;
-static const double PX3exp = 9.99999999999999999910E-1;
-static const double QX1exp = 3.00198505138664455042E-6;
-static const double QX2exp = 2.52448340349684104192E-3;
-static const double QX3exp = 2.27265548208155028766E-1;
-static const double QX4exp = 2.00000000000000000009;
+static constexpr double PX1exp = 1.26177193074810590878E-4;
+static constexpr double PX2exp = 3.02994407707441961300E-2;
+static constexpr double PX3exp = 9.99999999999999999910E-1;
+static constexpr double QX1exp = 3.00198505138664455042E-6;
+static constexpr double QX2exp = 2.52448340349684104192E-3;
+static constexpr double QX3exp = 2.27265548208155028766E-1;
+static constexpr double QX4exp = 2.00000000000000000009;
 
-static const double LOG2E = 1.4426950408889634073599;  // 1/ln(2)
+static constexpr double LOG2E = 1.4426950408889634073599;  // 1/ln(2)
 
-static const float MAXLOGF = 88.72283905206835f;
-static const float MINLOGF = -88.f;
+static constexpr float MAXLOGF = 88.72283905206835f;
+static constexpr float MINLOGF = -88.f;
 
-static const float C1F = 0.693359375f;
-static const float C2F = -2.12194440e-4f;
+static constexpr float C1F = 0.693359375f;
+static constexpr float C2F = -2.12194440e-4f;
 
-static const float PX1expf = 1.9875691500E-4f;
-static const float PX2expf = 1.3981999507E-3f;
-static const float PX3expf = 8.3334519073E-3f;
-static const float PX4expf = 4.1665795894E-2f;
-static const float PX5expf = 1.6666665459E-1f;
-static const float PX6expf = 5.0000001201E-1f;
+static constexpr float PX1expf = 1.9875691500E-4f;
+static constexpr float PX2expf = 1.3981999507E-3f;
+static constexpr float PX3expf = 8.3334519073E-3f;
+static constexpr float PX4expf = 4.1665795894E-2f;
+static constexpr float PX5expf = 1.6666665459E-1f;
+static constexpr float PX6expf = 5.0000001201E-1f;
 
-static const float LOG2EF = 1.44269504088896341f;  // 1/ln(2)
+static constexpr float LOG2EF = 1.44269504088896341f;  // 1/ln(2)
 
-static inline double egm1(double x, double px) {
-    x -= px * C1;
-    x -= px * C2;
+static inline double egm1(double x, double n) {
+    // this cannot be reordered for the double-double trick to work
+    // i.e., it cannot be re-written as g = x - n * (C1+C2)
+    // the loss of accuracy comes from the different magnitudes of ln(2) and n
+    // max(|n|) ~ 2^9
+    // ln(2) ~ 2^-1
+    volatile double g = x - n * C1;
+    g -= n * C2;
 
-    const double xx = x * x;
+    const double gg = g * g;
 
-    px = PX1exp;
-    px *= xx;
+    double px = PX1exp;
+    px *= gg;
     px += PX2exp;
-    px *= xx;
+    px *= gg;
     px += PX3exp;
-    px *= x;
+    px *= g;
 
     double qx = QX1exp;
-    qx *= xx;
+    qx *= gg;
     qx += QX2exp;
-    qx *= xx;
+    qx *= gg;
     qx += QX3exp;
-    qx *= xx;
+    qx *= gg;
     qx += QX4exp;
 
     return 2.0 * px / (qx - px);
@@ -113,7 +107,7 @@ static inline double egm1(double x, double px) {
 /// double precision exp function
 static inline double vexp(double initial_x) {
     double x = initial_x;
-    double px = dpfloor(LOG2E * x + 0.5);
+    double px = std::floor(LOG2E * x + 0.5);
     const int32_t n = px;
 
     x = 1.0 + egm1(x, px);
@@ -130,7 +124,7 @@ static inline double vexp(double initial_x) {
 /// double precision exp(x) - 1 function, used for small x.
 static inline double vexpm1(double initial_x) {
     double x = initial_x;
-    double px = dpfloor(LOG2E * x + 0.5);
+    double px = std::floor(LOG2E * x + 0.5);
     const int32_t n = px;
 
     const uint64_t twopnm1 = (((uint64_t)(n - 1)) + 1023) << 52;
@@ -172,51 +166,52 @@ static inline float egm1(float x) {
 }
 
 /// single precision exp function
-static inline float vexp(float initial_x) {
-    float x = initial_x;
-    float z = spfloor(LOG2EF * x + 0.5f);
+static inline float vexp(float x) {
+    float z = std::floor(LOG2EF * x + 0.5f);
 
-    x -= z * C1F;
-    x -= z * C2F;
+    // this cannot be reordered for the double-double trick to work
+    float volatile g = x - z * C1F;
+    g -= z * C2F;
     const int32_t n = z;
 
-    z = 1.0f + egm1(x);
+    z = 1.0f + egm1(g);
 
     z *= int322sp((n + 0x7f) << 23);
 
-    if (initial_x > MAXLOGF)
+    if (x > MAXLOGF)
         z = f_inf();
-    if (initial_x < MINLOGF)
+    if (x < MINLOGF)
         z = 0.f;
 
     return z;
 }
 
 /// single precision exp function
-static inline float vexpm1(float initial_x) {
-    float x = initial_x;
-    float z = spfloor(LOG2EF * x + 0.5f);
+static inline float vexpm1(float x) {
+    float z = std::floor(LOG2EF * x + 0.5f);
 
-    x -= z * C1F;
-    x -= z * C2F;
+    // this cannot be reordered for the double-double trick to work
+    volatile float g = x - z * C1F;
+    g -= z * C2F;
+
     const int32_t n = z;
 
     const int32_t twopnm1 = ((n - 1) + 0x7f) << 23;
-    x = 2 * (int322sp(twopnm1) * egm1(x) + int322sp(twopnm1)) - 1;
+    float ret = 2 * (int322sp(twopnm1) * egm1(g) + int322sp(twopnm1)) - 1;
 
-    if (initial_x > MAXLOGF)
-        x = f_inf();
-    if (initial_x < MINLOGF)
-        x = -1.0f;
+    if (x > MAXLOGF)
+        ret = f_inf();
+    if (x < MINLOGF)
+        ret = -1.0f;
 
-    return x;
+    return ret;
 }
 
 /// single precision exprelr function
-static inline float exprelr(float initial_x) {
-    if (1.0 + initial_x == 1.0) {
+static inline float exprelr(float x) {
+    if (1.0 + x == 1.0) {
         return 1.0;
     }
 
-    return initial_x / vexpm1(initial_x);
+    return x / vexpm1(x);
 }
