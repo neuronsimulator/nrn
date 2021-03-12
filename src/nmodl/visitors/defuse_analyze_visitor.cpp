@@ -219,12 +219,23 @@ void DefUseAnalyzeVisitor::visit_statement_block(const ast::StatementBlock& node
  *  and hence not necessary to keep track of assignment operator using stack.
  */
 void DefUseAnalyzeVisitor::visit_binary_expression(const ast::BinaryExpression& node) {
+    // only the outermost binary expression is important
+    const bool is_outer_binary_expression = !current_binary_expression;
+    if (is_outer_binary_expression) {
+        current_binary_expression = std::static_pointer_cast<const ast::BinaryExpression>(
+            node.get_shared_ptr());
+    }
+
     node.get_rhs()->visit_children(*this);
     if (node.get_op().get_value() == ast::BOP_ASSIGN) {
         visiting_lhs = true;
     }
     node.get_lhs()->visit_children(*this);
     visiting_lhs = false;
+
+    if (is_outer_binary_expression) {
+        current_binary_expression = nullptr;
+    }
 }
 
 void DefUseAnalyzeVisitor::visit_if_statement(const ast::IfStatement& node) {
@@ -232,7 +243,7 @@ void DefUseAnalyzeVisitor::visit_if_statement(const ast::IfStatement& node) {
     auto previous_chain = current_chain;
 
     /// starting new if block
-    previous_chain->push_back(DUInstance(DUState::CONDITIONAL_BLOCK));
+    previous_chain->push_back(DUInstance(DUState::CONDITIONAL_BLOCK, current_binary_expression));
     current_chain = &(previous_chain->back().children);
 
     /// visiting if sub-block
@@ -267,9 +278,10 @@ void DefUseAnalyzeVisitor::visit_if_statement(const ast::IfStatement& node) {
  */
 void DefUseAnalyzeVisitor::visit_verbatim(const ast::Verbatim& node) {
     if (!ignore_verbatim) {
-        current_chain->push_back(DUInstance(DUState::U));
+        current_chain->push_back(DUInstance(DUState::U, current_binary_expression));
     }
 }
+
 
 /// unsupported statements : we aren't sure how to handle this "yet" and
 /// hence variables used in any of the below statements are handled separately
@@ -358,18 +370,18 @@ void DefUseAnalyzeVisitor::update_defuse_chain(const std::string& name) {
     const auto is_local = symbol->has_any_property(properties);
 
     if (unsupported_node) {
-        current_chain->push_back(DUInstance(DUState::U));
+        current_chain->push_back(DUInstance(DUState::U, current_binary_expression));
     } else if (visiting_lhs) {
         if (is_local) {
-            current_chain->push_back(DUInstance(DUState::LD));
+            current_chain->push_back(DUInstance(DUState::LD, current_binary_expression));
         } else {
-            current_chain->push_back(DUInstance(DUState::D));
+            current_chain->push_back(DUInstance(DUState::D, current_binary_expression));
         }
     } else {
         if (is_local) {
-            current_chain->push_back(DUInstance(DUState::LU));
+            current_chain->push_back(DUInstance(DUState::LU, current_binary_expression));
         } else {
-            current_chain->push_back(DUInstance(DUState::U));
+            current_chain->push_back(DUInstance(DUState::U, current_binary_expression));
         }
     }
 }
@@ -396,7 +408,7 @@ void DefUseAnalyzeVisitor::visit_with_new_chain(const ast::Node& node, DUState s
 }
 
 void DefUseAnalyzeVisitor::start_new_chain(DUState state) {
-    current_chain->push_back(DUInstance(state));
+    current_chain->push_back(DUInstance(state, current_binary_expression));
     current_chain = &current_chain->back().children;
 }
 
