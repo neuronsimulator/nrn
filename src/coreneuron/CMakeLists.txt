@@ -58,23 +58,23 @@ set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 file(GLOB builtin_modfiles
      "${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/mechanism/mech/modfile/*.mod")
 # get the corresponding list of paths to the modfiles in the build directory
-set(builtin_modfile_in_build_dir)
+set(builtin_modfiles_in_build_dir)
 foreach(builtin_modfile ${builtin_modfiles})
   get_filename_component(builtin_modfile_name "${builtin_modfile}" NAME)
-  list(APPEND builtin_modfile_in_build_dir
+  list(APPEND builtin_modfiles_in_build_dir
        "${CMAKE_BINARY_DIR}/share/modfile/${builtin_modfile_name}")
 endforeach()
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/share/modfile")
 # set up a build rule that ensures the modfiles in the build directory are updated if their
 # counterparts in the source directory are touched
 add_custom_command(
-  OUTPUT ${builtin_modfile_in_build_dir}
+  OUTPUT ${builtin_modfiles_in_build_dir}
   DEPENDS ${builtin_modfiles}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${builtin_modfiles}
           "${CMAKE_BINARY_DIR}/share/modfile")
-add_custom_target(copy-builtin-modfiles ALL DEPENDS ${builtin_modfile_in_build_dir})
+add_custom_target(copy-builtin-modfiles ALL DEPENDS ${builtin_modfiles_in_build_dir})
 set(CORENEURON_BUILTIN_MODFILES
-    "${builtin_modfile_in_build_dir}"
+    "${builtin_modfiles_in_build_dir}"
     CACHE STRING "List of builtin modfiles that nrnivmodl-core implicitly depends on" FORCE)
 
 # =============================================================================
