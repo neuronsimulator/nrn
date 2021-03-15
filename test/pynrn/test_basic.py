@@ -113,3 +113,19 @@ def test_newobject_err_recover():
   assert(err == 1)
   h.finitialize() # succeeds without seg fault
 
+def test_push_section():
+  h('''create hCable1, hCable2''')
+  h.push_section("hCable1")
+  assert(h.secname() == "hCable1")
+  h.pop_section()
+  h.push_section("hCable2")
+  assert(h.secname() == "hCable2")
+  h.pop_section()
+
+  sections = [h.Section(name="pCable%d"%i) for i in range(2)]
+  for sec in sections:
+    name_in_hoc = '_pysec.' + sec.name()
+    h.push_section(name_in_hoc)
+    assert(h.secname() == name_in_hoc)
+    h.pop_section()
+
