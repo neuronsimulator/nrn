@@ -2,7 +2,7 @@
 
 # NEURON
 NEURON is a simulator for models of neurons and networks of neuron. See [http://neuron.yale.edu](http://neuron.yale.edu) for installers, source code, documentation, tutorials, announcements of
-courses and conferences, and a discussion forum.
+courses and conferences, and a discussion forum. ssss
 
 ## Installing NEURON
 
