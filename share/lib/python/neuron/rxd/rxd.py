@@ -533,7 +533,15 @@ def _update_node_data(force=False, newspecies=False):
             nsegs_changed = 0
             for sr in _species_get_all_species():
                 s = sr()
-                if s is not None: nsegs_changed += s._update_node_data()
+                if s is not None: 
+                    nsegs_changed += s._update_node_data()
+                
+                    # re-register ions for extracellular species in case new
+                    # sections have been added within the ecs region
+                    if hasattr(s,'_extracellular_instances'):
+                        for ecs in s._extracellular_instances.values():
+                            ecs._ion_register()
+            
             if nsegs_changed or newspecies:
                 section1d._purge_cptrs()
                 for sr in _species_get_all_species():
