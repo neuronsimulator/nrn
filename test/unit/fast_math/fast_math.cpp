@@ -11,6 +11,8 @@
 
 #include <catch/catch.hpp>
 
+namespace nmodl {
+namespace fast_math {
 
 template <class T, class = typename std::enable_if<std::is_floating_point<T>::value>::type>
 bool check_over_span(T f_ref(T),
@@ -57,6 +59,10 @@ SCENARIO("Check fast_math") {
     constexpr float low_limit_f = -87.0f;
     constexpr float high_limit_f = 88.0f;
     constexpr size_t npoints = 2000;
+    constexpr double min_double = std::numeric_limits<double>::min();
+    constexpr double max_double = std::numeric_limits<double>::max();
+    constexpr double min_float = std::numeric_limits<float>::min();
+    constexpr double max_float = std::numeric_limits<float>::max();
 
     GIVEN("vexp (double)") {
         auto test = check_over_span(std::exp, vexp, low_limit, high_limit, npoints);
@@ -100,4 +106,21 @@ SCENARIO("Check fast_math") {
             REQUIRE(test);
         }
     }
+    GIVEN("log10 (double)") {
+        auto test = check_over_span(std::log10, log10, min_double, max_double, npoints);
+
+        THEN("error inside threshold") {
+            REQUIRE(test);
+        }
+    }
+    GIVEN("log10 (float)") {
+        auto test = check_over_span(std::log10, log10, min_float, max_float, npoints);
+
+        THEN("error inside threshold") {
+            REQUIRE(test);
+        }
+    }
 }
+
+}  // namespace fast_math
+}  // namespace nmodl
