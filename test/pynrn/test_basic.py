@@ -1,4 +1,5 @@
 import sys
+from neuron.expect_hocerr import expect_hocerr
 
 import numpy as np
 
@@ -113,3 +114,27 @@ def test_newobject_err_recover():
   assert(err == 1)
   h.finitialize() # succeeds without seg fault
 
+def test_push_section():
+  h('''create hCable1, hCable2''')
+  h.push_section("hCable1")
+  assert(h.secname() == "hCable1")
+  h.pop_section()
+  h.push_section("hCable2")
+  assert(h.secname() == "hCable2")
+  h.pop_section()
+  h.delete_section(sec=h.hCable1)
+  h.delete_section(sec=h.hCable2)
+
+  sections = [h.Section(name="pCable%d"%i) for i in range(2)]
+  sections.append(h.Section()) # Anonymous in the past
+  for sec in sections:
+    name_in_hoc = h.secname(sec=sec)
+    h.push_section(name_in_hoc)
+    assert(h.secname() == name_in_hoc)
+    h.pop_section()
+  s = sections[-1]
+  h.delete_section(sec=s) # but not yet freed (though the name is now "")
+  # not [no longer] a section pointer
+  expect_hocerr(h.push_section, (int(s.hoc_internal_name().replace("__nrnsec_", ""), 0),))
+  # not a sectionname
+  expect_hocerr(h.push_section, ("not_a_sectionname",))

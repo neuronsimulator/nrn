@@ -2379,7 +2379,7 @@ void push_section(void) {
 		sec = (Section*)0;
 		s = gargstr(1);
 		ForAllSections(sec1) /* I can't imagine a more inefficient way */
-			if (strcmp(s, secname(sec1)) == 0) {
+			if (strcmp(s, nrn_sec2pysecname(sec1)) == 0) {
 				sec = sec1;
 				break;
 			}
