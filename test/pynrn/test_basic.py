@@ -121,6 +121,8 @@ def test_push_section():
   h.push_section("hCable2")
   assert(h.secname() == "hCable2")
   h.pop_section()
+  h.delete_section(sec=h.hCable1)
+  h.delete_section(sec=h.hCable2)
 
   sections = [h.Section(name="pCable%d"%i) for i in range(2)]
   for sec in sections:
