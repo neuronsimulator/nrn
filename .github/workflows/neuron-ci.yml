@@ -10,10 +10,11 @@ on:
     branches:
       - master
       - release/**
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
 
 env:
   BUILD_TYPE: Release

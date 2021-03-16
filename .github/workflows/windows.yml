@@ -9,10 +9,11 @@ on:
     branches:
       - master
       - release/**
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
 env:
   MSYS2_ROOT: C:\msys64
 

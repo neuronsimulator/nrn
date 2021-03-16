@@ -13,10 +13,11 @@ schedules:
 # Auto cancel old PR builds
 pr:
   autoCancel: true
-  paths:
-    exclude:
-      - docs
-      - README.md
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#  paths:
+#    exclude:
+#      - docs
+#      - README.md
 
 # Trigger build for certain branches only
 trigger:
