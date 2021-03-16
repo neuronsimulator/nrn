@@ -12,6 +12,3 @@ def test_region_sections(neuron_instance):
 
     for sec in h.allsec():
         assert(False)
-
-    
-    
