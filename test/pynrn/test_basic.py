@@ -138,3 +138,7 @@ def test_push_section():
   expect_hocerr(h.push_section, (int(s.hoc_internal_name().replace("__nrnsec_", ""), 0),))
   # not a sectionname
   expect_hocerr(h.push_section, ("not_a_sectionname",))
+
+def test_nonvint_block_handler():
+  # making sure we can import
+  from neuron import nonvint_block_handler
