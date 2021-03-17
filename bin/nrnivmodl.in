@@ -145,13 +145,13 @@ files=`echo "$files" | sed 's/^ *//'`
 
 base_names=""
 for i in $files ; do
-  base_names="$base_names `basename -s .mod $i`"
+  base_names="$base_names `basename $i .mod`"
 done
 
 if test "$UsingCMake" = "yes" ; then
   echo -n "Mod files:"
   for i in $files ; do
-    base_name=`basename -s .mod "$i"`
+    base_name=`basename "$i" .mod`
     dir_name=`dirname "$i"`
     echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
   done
@@ -213,7 +213,7 @@ if test "$UsingCMake" = "yes" ; then
         /*) f=$i_hide;; # absolute, fine as is
         *)  f=../$i_hide;; # relative
       esac
-      base_name="`basename -s .c $f`"
+      base_name="`basename $f .c`"
       dir_name="`dirname $f`"
       echo "\
 ./$base_name.o: `escape_spaces "$f"`
@@ -295,7 +295,7 @@ if test -n "$nrnivmodl_cfiles" ; then
     ifs="$IFS"
     IFS=';'
     for i in $nrnivmodl_cfiles ; do
-      base_name=`basename -s .c "$i"`
+      base_name=`basename "$i" .c`
       COBJS="${COBJS}${sp}./${base_name}.o"
       sp=" "
     done
