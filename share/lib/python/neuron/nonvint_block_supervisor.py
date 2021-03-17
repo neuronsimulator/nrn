@@ -5,7 +5,10 @@ import numpy
 from neuron import h
 import traceback
 # reducing the indirection improves performance
-_numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
+try:
+  _numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
+except:
+  pass
 _ctypes_addressof = ctypes.addressof
 _numpy_array = numpy.array
 _numpy_frombuffer = numpy.frombuffer
