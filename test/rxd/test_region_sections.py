@@ -8,7 +8,7 @@ def test_region_sections(neuron_instance):
     cyt = rxd.Region(soma.wholetree(), name='cyt')
     ca = rxd.Species(cyt, name='ca', charge=2)
     h.finitialize(-65)
-    soma = ca = None
+    soma = None
 
     for sec in h.allsec():
         assert(False)
