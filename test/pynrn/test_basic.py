@@ -139,6 +139,6 @@ def test_push_section():
   # not a sectionname
   expect_hocerr(h.push_section, ("not_a_sectionname",))
 
-def test_nonvint_block_handler():
+def test_nonvint_block_supervisor():
   # making sure we can import
-  from neuron import nonvint_block_handler
+  from neuron import nonvint_block_supervisor
