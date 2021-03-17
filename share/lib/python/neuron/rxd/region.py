@@ -626,7 +626,16 @@ class Region(object):
     @secs.setter
     def secs(self, value):
         if hasattr(self, '_allow_setting'):
-            self._secs = value
+            if hasattr(value, '__len__'):
+                secs = value
+            else:
+                secs = [value]
+
+            from nrn import Section
+            for sec in secs:
+                if not isinstance(sec,Section):
+                    raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
+            self._secs = h.SectionList(secs)
         else:
             raise RxDException('Cannot set secs now; model already instantiated')
     def volume(self, index):

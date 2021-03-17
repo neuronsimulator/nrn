@@ -158,7 +158,7 @@ class Section1D(rxdsection.RxDSection):
     @property
     def _sec(self):
         sl = list(self._secref)
-        return None if sl == [] else sl[0]
+        return None if not sl else sl[0]
 
     def __req__(self, other):
         if isinstance(other, nrn.Section):
@@ -208,8 +208,7 @@ class Section1D(rxdsection.RxDSection):
         # remove ref to this section -- at exit weakref.ref might be none 
         if self._sec:
             if self._sec in _rxd_sec_lookup:
-                sec_list = _rxd_sec_lookup[self._sec]
-                sec_list = list(filter(lambda x: not x == self, sec_list))
+                sec_list = [s for s in _rxd_sec_lookup[self._sec] if s != self]
                 if sec_list == []:
                     del _rxd_sec_lookup[self._sec]
                 else:
