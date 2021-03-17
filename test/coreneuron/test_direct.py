@@ -41,7 +41,7 @@ def test_direct_memory_transfer():
     tran = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
 
     assert(tv.eq(tvstd))
-    assert(v.cl().sub(vstd).abs().max() < 1e-10)
+    assert(v.cl().sub(vstd).abs().max() < 1e-10) # usually v == vstd, some compilers might give slightly different results
     assert(i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
     assert(h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10)
 
