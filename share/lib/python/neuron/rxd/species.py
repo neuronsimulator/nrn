@@ -1448,13 +1448,16 @@ class Species(_SpeciesMathable):
     def _ion_register(self):
         charge = self._charge
         if self._name is not None:
-            ion_type = h.ion_register(self._name, charge)
-            if ion_type == -1:
-                raise RxDException('Unable to register species: %s' % self._name)
+            ion_type = None
             # insert the species if not already present
             regions = self._regions if hasattr(self._regions, '__len__') else [self._regions]
             for r in regions:
                 if r.nrn_region in ('i', 'o'):
+                    if ion_type is None:
+                        ion_type = h.ion_register(self._name, charge)
+                        if ion_type == -1:
+                            raise RxDException('Unable to register species: %s' % self._name)
+
                     for s in r.secs:
                         try:
                             ion_forms = [self._name + 'i', self._name + 'o', 'i' + self._name, 'e' + self._name]
