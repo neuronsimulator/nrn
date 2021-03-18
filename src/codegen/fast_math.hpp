@@ -78,8 +78,8 @@ static constexpr float PX6expf = 5.0000001201E-1f;
 
 static constexpr float LOG2EF = 1.44269504088896341f;  // 1/ln(2)
 
-static constexpr double LOG10E = 2.302585092994046;  // log(10)
-static constexpr float LOG10F = 2.302585f;           // log(10)
+static constexpr double LOG10E = 0.4342944819032518;  // 1/log(10)
+static constexpr float LOG10F = 0.4342945f;           // 1/log(10)
 
 static inline double egm1(double x, double n) {
     // this cannot be reordered for the double-double trick to work
@@ -224,12 +224,12 @@ static inline float exprelr(float x) {
 
 /// double precision log10 function
 static inline double log10(double f) {
-    return std::log(f) / LOG10E;
+    return std::log(f) * LOG10E;
 }
 
 /// single precision log10 function
 static inline float log10(float f) {
-    return std::log(f) / LOG10F;
+    return std::log(f) * LOG10F;
 }
 
 }  // namespace fast_math
