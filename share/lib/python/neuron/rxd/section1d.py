@@ -185,7 +185,8 @@ class Section1D(rxdsection.RxDSection):
     def _update_node_data(self):
         nseg_changed = False
         if self._sec is None:
-            self._delete()            
+            self._delete()
+            return True
         if self._nseg != self._sec.nseg:
             num_roots = self._species()._num_roots
             offset = node._allocate(self._sec.nseg + num_roots + 1)
