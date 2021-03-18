@@ -1525,6 +1525,8 @@ class Species(_SpeciesMathable):
         nsegs_changed = 0
         for sec in self._secs:
             nsegs_changed += sec._update_node_data()
+        # remove deleted sections
+        self._secs = [sec for sec in self._secs if sec and sec._nseg > 0]
         return nsegs_changed
 
     def concentrations(self):
