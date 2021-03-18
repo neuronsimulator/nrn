@@ -29,7 +29,12 @@ def _sort_secs(secs):
     #for sec in secs:
     #    if sec.orientation():
     #        raise RxDException('still need to deal with backwards sections')
-    return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+    secs = [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+    # return an empty list rather than an empty SectionList because
+    # bool([]) == False
+    # bool(h.SectionList([])) == True
+    # secs are checked in some reactions to determine active regions
+    return [] if secs == [] else h.SectionList(secs)
 
 
 class _c_region:
@@ -41,7 +46,7 @@ class _c_region:
     def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
-        self._overlap = h.SectionList(self._regions[0]()._secs1d)
+        self._overlap = self._regions[0]()._secs1d
         self.num_regions = len(self._regions)
         self.num_species = 0
         self.num_params = 0
@@ -510,15 +515,16 @@ class Region(object):
         """
         self._allow_setting = True
         if hasattr(secs,'__len__'):
-            self.secs = secs
+            self._secs = secs
         else:
-            self.secs = [secs]
+            self._secs = [secs]
         if secs == [] or secs == None:
             warnings.warn("Warning: No sections. Region 'secs' should be a list of NEURON sections.")
         from nrn import Section
-        for sec in self.secs:
+        for sec in self._secs:
             if not isinstance(sec,Section):
                 raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
+        self._secs = h.SectionList(self._secs)
         self.nrn_region = nrn_region
         self.geometry = geometry
         
@@ -620,7 +626,16 @@ class Region(object):
     @secs.setter
     def secs(self, value):
         if hasattr(self, '_allow_setting'):
-            self._secs = value
+            if hasattr(value, '__len__'):
+                secs = value
+            else:
+                secs = [value]
+
+            from nrn import Section
+            for sec in secs:
+                if not isinstance(sec,Section):
+                    raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
+            self._secs = h.SectionList(secs)
         else:
             raise RxDException('Cannot set secs now; model already instantiated')
     def volume(self, index):
