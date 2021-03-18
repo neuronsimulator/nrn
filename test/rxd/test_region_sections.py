@@ -18,14 +18,11 @@ def test_section_removal(neuron_instance):
 
     h, rxd, data, save_path = neuron_instance
     soma = h.Section(name='soma')
-    soma.L = 10
     cyt = rxd.Region(soma.wholetree(), name='cyt')
     ca = rxd.Species(cyt, name='ca', charge=2)
     h.finitialize(-65)
     
     soma = h.Section(name='soma')
-    soma.L = 5
     h.finitialize(-65)
 
-    L = sum([sec._sec.L for sec in ca._secs])
-    assert(L == 0)
+    assert(not ca.nodes)

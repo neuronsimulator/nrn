@@ -291,6 +291,10 @@ class Section1D(rxdsection.RxDSection):
             self._concentration_ptrs = []
 
     def _setup_diffusion_matrix(self, mat):
+        if not self._sec:
+            if self._nseg > 0:
+                self._delete()
+            return
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
