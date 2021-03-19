@@ -770,6 +770,8 @@ class _IntracellularSpecies(_SpeciesMathable):
             # TODO: replace this with a pointer vec for speed
             #       not a huge priority since import happens rarely if at all
             i = 0
+            if not hasattr(self,"_seg_order"):
+                self._register_cptrs()
             seg_order = self._seg_order
             conc_ptr = self._concentration_ptrs
             if self._region._nrn_region is not None:
