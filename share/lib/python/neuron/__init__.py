@@ -101,6 +101,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import warnings
 
 embedded = True if 'hoc' in sys.modules else False
 
@@ -385,11 +386,14 @@ def psection(section):
     Use section.psection() instead to get a data structure that
     contains the same information and more.
 
+    This function is deprecated and will be removed in a future
+    release.
+
     See:
 
     https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
-
     """
+    warnings.warn("neuron.psection() is deprecated; use sec.psection() instead", DeprecationWarning)
     h.psection(sec=section)
 
 def init():
@@ -402,7 +406,10 @@ def init():
 
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
-    
+
+    This function is deprecated and will be removed in a future
+    release.
+
     By default, the units used by h.finitialize are in mV, but you can be explicit using
     NEURON's unit's library, e.g.
     
@@ -414,6 +421,8 @@ def init():
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
     """
+    warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning)
+    
     h.finitialize()
 
 def run(tstop):
@@ -425,6 +434,9 @@ def run(tstop):
     `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
     
     ** This function exists for historical purposes. Use in new code is not recommended. **
+    
+    This function is deprecated and will be removed in a future
+    release.    
     
     For running a simulation, consider doing the following instead:
     
@@ -447,6 +459,8 @@ def run(tstop):
     for your model.
 
     """
+    warnings.warn("neuron.run(tstop) is deprecated; use h.init() and h.continuerun(tstop) instead", DeprecationWarning)
+    
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
