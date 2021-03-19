@@ -393,7 +393,7 @@ def psection(section):
 
     https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
     """
-    warnings.warn("neuron.psection() is deprecated; use sec.psection() instead", DeprecationWarning)
+    warnings.warn("neuron.psection() is deprecated; use print(sec.psection()) instead", DeprecationWarning)
     h.psection(sec=section)
 
 def init():
