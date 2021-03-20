@@ -770,6 +770,8 @@ class _IntracellularSpecies(_SpeciesMathable):
             # TODO: replace this with a pointer vec for speed
             #       not a huge priority since import happens rarely if at all
             i = 0
+            if not hasattr(self,"_seg_order"):
+                self._register_cptrs()
             seg_order = self._seg_order
             conc_ptr = self._concentration_ptrs
             if self._region._nrn_region is not None:
@@ -1448,13 +1450,16 @@ class Species(_SpeciesMathable):
     def _ion_register(self):
         charge = self._charge
         if self._name is not None:
-            ion_type = h.ion_register(self._name, charge)
-            if ion_type == -1:
-                raise RxDException('Unable to register species: %s' % self._name)
+            ion_type = None
             # insert the species if not already present
             regions = self._regions if hasattr(self._regions, '__len__') else [self._regions]
             for r in regions:
                 if r.nrn_region in ('i', 'o'):
+                    if ion_type is None:
+                        ion_type = h.ion_register(self._name, charge)
+                        if ion_type == -1:
+                            raise RxDException('Unable to register species: %s' % self._name)
+
                     for s in r.secs:
                         try:
                             ion_forms = [self._name + 'i', self._name + 'o', 'i' + self._name, 'e' + self._name]
@@ -1525,6 +1530,8 @@ class Species(_SpeciesMathable):
         nsegs_changed = 0
         for sec in self._secs:
             nsegs_changed += sec._update_node_data()
+        # remove deleted sections
+        self._secs = [sec for sec in self._secs if sec and sec._nseg > 0]
         return nsegs_changed
 
     def concentrations(self):
