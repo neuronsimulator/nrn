@@ -72,7 +72,7 @@ def nonlocal_hclass(hoc_type, module_name, name=None):
     if name is None:
         name = hoc_type.hname()[:-2]
     setattr(module, name, local_hclass)
-    local_hclass.__module__ = module.__name__
+    local_hclass.__module__ = module_name
     local_hclass.__name__ = name
     local_hclass.__qualname__ = name
     return local_hclass
