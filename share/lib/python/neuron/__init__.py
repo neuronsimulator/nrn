@@ -455,12 +455,12 @@ def init():
 
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
-
+    
     By default, the units used by h.finitialize are in mV, but you can be explicit using
     NEURON's unit's library, e.g.
-
+    
     .. code-block:: python
-
+    
         from neuron.units import mV
         h.finitialize(-65 * mV)
 
@@ -476,28 +476,28 @@ def run(tstop):
     function run(tstop)
 
     Run the simulation (advance the solver) until tstop [ms]
-
+    
     `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
-
+    
     ** This function exists for historical purposes. Use in new code is not recommended. **
-
+    
     For running a simulation, consider doing the following instead:
-
+    
     Begin your code with
-
+    
     .. code-block:: python
-
+    
         from neuron import h
         from neuron.units import ms, mV
         h.load_file('stdrun.hoc')
-
+    
     Then when it is time to initialize and run the simulation:
-
+    
     .. code-block:: python
-
+    
         h.finitialize(-65 * mV)
         h.continuerun(100 * ms)
-
+    
     where the initial membrane potential and the simulation run time are adjusted as appropriate
     for your model.
 
@@ -804,7 +804,7 @@ class _RangeVarPlot(_WrapperPlot):
     fig.show()
 
     pyplot.show()
-
+    
     # plotnine/ggplot
     p9.ggplot() + r.plot(p9)
 
@@ -1068,10 +1068,10 @@ class _PlotShapePlot(_WrapperPlot):
       if secs is None:
         secs = list(h.allsec())
 
-
+      
       if variable is None:
         kwargs.setdefault('color', 'black')
-
+        
         data = []
         for sec in secs:
           xs = [sec.x3d(i) for i in range(sec.n3d())]
@@ -1400,7 +1400,7 @@ def _nrnpy_rvp_pyobj_callback(f):
   f_type = str(type(f))
   if f_type not in ("<class 'neuron.rxd.species.SpeciesOnRegion'>", "<class 'neuron.rxd.species.Species'>"):
     return f
-
+  
   # if we're here, f is an rxd variable, and we return a function that looks
   # up the weighted average concentration given an x and h.cas()
   # this is not particularly efficient so it is probably better to use this for
@@ -1440,3 +1440,4 @@ def clear_gui_callback():
     nrnpy_set_gui_callback(None)
   except:
     pass
+
