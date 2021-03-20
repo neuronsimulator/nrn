@@ -14,7 +14,8 @@ x86_64
 __pycache__
 venv
 virtualenv
-*.o 
+.python-version
+*.o
 *.lo
 
 # These files are generated at build time
