@@ -70,13 +70,15 @@ from source.
 Currently, we are supporting two build systems:
 
 - [CMake](#build-cmake) (__recommended__)
-- [Autotools](#build-autotools) (legacy, minimum support)
+- [Autotools](#build-autotools) (legacy, minimum support - __will be DROPPED in the next release__)
 
-Starting with the 8.0 release, we recommend users to use CMake as the primary build system for NEURON.
+Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
 We would be grateful for any feedback or issues you encounter using the CMake-based build system.
-Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help. In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
+Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
+happy to help.
+In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
 
-**If you are using autotools, we highly recommend switching to CMake.**
+**If you are using autotools, we strongly recommend switching to CMake as of now.**
 
 ### Install Build Dependencies
 
