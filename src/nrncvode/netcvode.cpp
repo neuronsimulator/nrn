@@ -116,7 +116,7 @@ extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern "C" void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays);
 extern "C" void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
-extern "C" void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+extern "C" void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
@@ -5498,19 +5498,29 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 
 // nrnthread_get_trajectory_requests helper for buffered trajectories
 // also for per time step return (no Vector and varrays is NULL)
-// if bsize > 0 then vectors need to be at least that size
+// if bsize > 0 then CoreNEURON will write that number of values to the vectors.
+// If CoreNEURON has a start time > 0, (current value of t),
+// the amount to augment the vector depends
+// on the vector's current size in the current NEURON context and the
+// varray[i_trajec] double* will be determined by that current size.
 // However determination of whether to do per time step return or buffering
 // can be specified on the NEURON side.
-static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
+static int trajec_buffered(NrnThread& nt,
+    int bsize, IvocVect* v,
+    double* pd,
     int i_pr, PlayRecord* pr, void** vpr,
     int i_trajec, int* types, int* indices, double** pvars, double** varrays)
 {
   int err = 0; //success
   if (bsize > 0) {
-    if (v->size() < bsize) {
-      v->resize(bsize);
+    int cur_size = v->size();
+    if (v->buffer_size() < bsize + cur_size) {
+      v->buffer_size(bsize + cur_size);
+printf("trajec_buffered bsize=%d cur_size=%d newsize=%d\n", bsize, cur_size, v->size());
     }
-    varrays[i_trajec] = vector_vec(v);
+    // nrnthread_trajectory_values will resize to correct size.
+    v->resize(bsize + cur_size);
+    varrays[i_trajec] = vector_vec(v) + cur_size; // begin filling here
   }else{
     pvars[i_trajec] = pd;
   }
@@ -5533,7 +5543,9 @@ static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 // bsize > 0: Greatest performance, fill the entire trajectory arrays on
 // the CoreNEURON side and transferring at the end of a CoreNEURON run.
 // Here, we ensure the arrays have at least bsize size (i.e. at least tstop/dt)
-// and CoreNEURON will start filling from the beginning of the arrays.
+// beyond their current size and CoreNEURON will start filling from the
+// current fill time, h.t, location of the arrays. I.e. starting at CoreNEURON's
+// start time. (Multiple calls to psolve append to these arrays.)
 // n_pr refers the the number of PlayRecord instances in the vpr array.
 // n_trajec refers to the number of trajectories to be recorded on the
 // CoreNEURON side and is the size of the types, indices, and varrays.
@@ -5746,7 +5758,7 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, 
 // more range variables that individually were resolved into pointers. In
 // this case in glr->plot, the relevant Vector elements are copied into those
 // pointers and the expression is then evaluated and plotted.
-void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double tt) {
+void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double tt) {
   if (tid < 0) {
     return;
   }
@@ -5758,12 +5770,11 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
       IvocVect* v = NULL;
       if (pr->type() == TvecRecordType) {
         v = ((TvecRecord*)pr)->t_;
-        assert(v->buffer_size() >= vecsz);
-        v->resize(vecsz); // do not zero
+        // reserved bsize but only used vecsz. (need non-zeroing resize).
+        v->resize(v->size() - (bsize - vecsz)); // do not zero
       }else if (pr->type() == YvecRecordType) {
         v = ((YvecRecord*)pr)->y_;
-        assert(v->buffer_size() >= vecsz);
-        v->resize(vecsz); // do not zero
+        v->resize(v->size() - (bsize - vecsz)); // do not zero
 #if HAVE_IV
       }else if (pr->type() == GLineRecordType) {
         GLineRecord* glr = (GLineRecord*)pr;

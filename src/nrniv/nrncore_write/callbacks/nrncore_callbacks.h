@@ -59,7 +59,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
 extern "C" {
 void nrnthread_get_trajectory_requests(int tid, int& bsize, int& ntrajec, void**& vpr, int*& types, int*& indices, double**& pvars, double**& varrays);
 void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
-void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 }
 
 extern "C" {
