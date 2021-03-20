@@ -38,7 +38,6 @@ def hclass(hoc_type):
     :type hoc_type: :class:`hoc.HocObject`
     :deprecated: Inherit from :class:`~neuron.HocBaseObject` instead.
     """
-
     if hoc_type == h.Section:
         return nrn.Section
     try:
@@ -96,10 +95,14 @@ class HocBaseObject(hoc.HocObject):
 
     def __init_subclass__(cls, hoc_type=None, **kwargs):
         assert_not_hoc_composite(cls)
-        if hoc_type is None or not isinstance(hoc_type, hoc.HocObject):
-            raise TypeError("Child classes of HocBaseObject must specify a valid `hoc_type`.")
+        if hoc_type is not None:
+            if not isinstance(hoc_type, hoc.HocObject):
+                raise TypeError(f"Class's `hoc_type` {hoc_type} is not a valid HOC type.")
+            else:
+                cls._hoc_type = hoc_type
+        elif not hasattr(cls, "_hoc_type"):
+            raise TypeError("Class keyword argument `hoc_type` is required for HocBaseObjects.")
         super().__init_subclass__(**kwargs)
-        cls._hoc_type = hoc_type
 
     def __new__(cls, *args, **kwds):
         # To construct HOC objects within NEURON from the Python interface, we use the
