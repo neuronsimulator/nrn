@@ -245,7 +245,7 @@ else:
   if sys.version_info[0] == 3 and sys.version_info[1] < 6:
     from neuron.hclass35 import hclass
   else:
-    from neuron.hclass import HocBaseObject, hclass, nonlocal_hclass
+    from neuron.hclass3 import HocBaseObject, hclass, nonlocal_hclass
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
