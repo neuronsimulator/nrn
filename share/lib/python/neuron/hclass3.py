@@ -5,6 +5,8 @@
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
+__all__ = ["hclass", "nonlocal_hclass", "HocBaseObject"]
+
 from . import h, hoc
 import nrn
 import sys
@@ -112,6 +114,3 @@ class HocBaseObject(hoc.HocObject):
         if 'sec' in kwds:
             kwds2['sec'] = kwds['sec']
         return hoc.HocObject.__new__(cls, *args, **kwds2)
-
-
-__all__ = ["hclass", "nonlocal_hclass", "HocBaseObject"]
