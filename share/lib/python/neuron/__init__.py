@@ -233,10 +233,16 @@ def test_rxd(exitOnError=True):
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
+import sys, types
+
 if sys.version_info[0] == 2:
   from neuron.hclass2 import hclass
+  # Add hclass3, the py3 variant of hclass2 to the module cache so that hclass3.py
+  # is never read by the Python 2 interpreter and can contain Python 3 only syntax.
+  sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
 else:
-  from neuron.hclass3 import hclass
+  from neuron.hclass3 import hclass, nonlocal_hclass
+  sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []

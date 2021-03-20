@@ -4,12 +4,12 @@
 # h.anyclass methods may be overridden. If so the base method can be called
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
-      
+
 from neuron import h, hoc
 import nrn
 
 #avoid syntax error if compiled by python 3
-exec('''
+
 class MetaHocObject(type):
   """Provides Exception for Inheritance of multiple HocObject"""
   def __new__(cls, name, bases, attrs):
@@ -22,7 +22,7 @@ class MetaHocObject(type):
       raise TypeError('Multiple Inheritance of HocObject in %s' % name
         + ' through %s not allowed' % ','.join(m))
       #note that join(b.__name__ for b in m) is not valid for Python 2.3
-  
+
     return type.__new__(cls, name, bases, attrs)
 
 def hclass(c):
@@ -38,4 +38,3 @@ def hclass(c):
             return hoc.HocObject.__new__(cls, *args, **kwds2)
     setattr(hc, 'htype', c)
     return hc
-''')
