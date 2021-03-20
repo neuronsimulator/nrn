@@ -100,6 +100,14 @@ class HocBaseObject(hoc.HocObject):
         cls._hoc_type = hoc_type
 
     def __new__(cls, *args, **kwds):
+        # To construct HOC objects within NEURON from the Python interface, we use the
+        # C-extension module `hoc`. `hoc.HocObject.__new__` both creates an internal
+        # representation of the object in NEURON, and hands us back a Python object that
+        # is linked to that internal representation. The `__new__` functions takes the
+        # arguments that HOC objects of that type would take, and uses the `hocbase`
+        # keyword argument to determine which type of HOC object to create. The `sec`
+        # keyword argument can be passed along in case the construction of a HOC object
+        # requires section stack access.
         kwds2 = {'hocbase': cls._hoc_type}
         if 'sec' in kwds:
             kwds2['sec'] = kwds['sec']
