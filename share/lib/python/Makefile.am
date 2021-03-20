@@ -11,7 +11,6 @@ neuron/units.py \
 neuron/gui.py \
 neuron/hclass2.py \
 neuron/hclass3.py \
-neuron/hclass35.py \
 neuron/__init__.py \
 neuron/psection.py \
 neuron/sections.py \
@@ -86,3 +85,4 @@ EXTRA_DIST = $(nobase_neuronhomepython_DATA)
 #	if test $(NRNPYTHON_PYMAJOR) -gt 2 ; then \
 #		$(PY2TO3) -w $(DESTDIR)$(neuronhomepythondir) ; \
 #	fi
+
