@@ -242,7 +242,7 @@ if sys.version_info[0] == 2:
   from neuron.hclass2 import hclass
 else:
   sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
-  from neuron.hclass3 import hclass
+  from neuron.hclass3 import HocBaseObject, hclass, nonlocal_hclass
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
