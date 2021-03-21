@@ -19,11 +19,11 @@ def test_nodes_update(ics_example):
     """Test nseg changes node for a 3D species"""
 
     (h, rxd, data, save_path), (soma, r, c) = ics_example
-    assert(len(set([nd.segment for nd in c.nodes])) == 5)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 5)
     soma.nseg = 3
-    assert(len(set([nd.segment for nd in c.nodes])) == 3)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 3)
     soma.nseg = 2
-    assert(len(set([nd.segment for nd in c.nodes])) == 2)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 2)
 
 
 def test_nodes_update_initialized(ics_example):
@@ -31,9 +31,9 @@ def test_nodes_update_initialized(ics_example):
 
     (h, rxd, data, save_path), (soma, r, c) = ics_example
     h.finitialize(-65)
-    assert(len(set([nd.segment for nd in c.nodes])) == 5)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 5)
     soma.nseg = 3
-    assert(len(set([nd.segment for nd in c.nodes])) == 3)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 3)
     soma.nseg = 2
-    assert(len(set([nd.segment for nd in c.nodes])) == 2)
+    assert(len({str(nd.segment) for nd in c.nodes}) == 2)
 
