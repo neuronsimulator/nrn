@@ -166,7 +166,7 @@ return and raises an error if the type is wrong. These work by doing a ``strcmp`
 For example, to see if ``obj`` is an instance of ``Vector`` and the ``Symbol*`` is not already
 known, use ``is_obj_type(obj, "Vector")``.
 
-These convenience functions are defined in ``sec/oc/hoc_oop.cpp``.
+These convenience functions are defined in ``src/oc/hoc_oop.cpp``.
 
 Miscellaneous tips
 ==================
