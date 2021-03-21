@@ -146,7 +146,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
         # check that the regions have sections
         for reg in self._regions:
-            if reg._secs1d or reg._secs3d:
+            if list(reg._secs1d) or list(reg._secs3d):
                 break
         else:
             return
@@ -154,25 +154,25 @@ class MultiCompartmentReaction(GeneralizedReaction):
         # check for 3D sections
         self._src3d = set()
         self._dst3d = set()
-        self._mem3d = set(self._regions[0]._secs3d)
+        self._mem3d = set(list(self._regions[0]._secs3d))
         sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
         dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
         for reg in sources:
-            if reg._secs3d: self._src3d.update(reg._secs3d)
+            if list(reg._secs3d): self._src3d.update(reg._secs3d)
         for reg in dests:
-            if reg._secs3d: self._dst3d.update(reg._secs3d)
+            if list(reg._secs3d): self._dst3d.update(reg._secs3d)
         #if self._src3d.intersection(self._dst3d).intersection(self._mem3d):
         #    #Find all interacting voxels for each grid. Also build up the 2D array of index maps
         #    raise RxDException('Multicompartment reactions in 3D are not yet supported.')
 
         # check there are common 1D section between source and destination
-        mem1d = set(self._regions[0]._secs1d)
+        mem1d = set(list(self._regions[0]._secs1d))
         src1d = set()
         dst1d = set()
         for reg in sources:
-            if reg._secs1d: src1d.update(reg._secs1d)
+            if list(reg._secs1d): src1d.update(reg._secs1d)
         for reg in dests:
-            if reg._secs1d: dst1d.update(reg._secs1d)
+            if list(reg._secs1d): dst1d.update(reg._secs1d)
         if sources:
             mem1d = mem1d.intersection(src1d)
         if dests:
@@ -229,7 +229,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
 
         # flux occurs on sections which have both source, destination and membrane 
-        active_secs = self._regions[0]._secs1d
+        active_secs = list(self._regions[0]._secs1d)
         for sp in sources + dests:
             if sp() and sp()._region():
                 active_secs = [sec for sec in active_secs if sec in sp()._region()._secs1d]

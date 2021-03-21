@@ -374,12 +374,12 @@ class Region(object):
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
+        self._secs3d = h.SectionList(self._secs3d)
         
-        if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
-            raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
+        if list(self._secs3d):
+            if not(hasattr(self._geometry, 'volumes3d')):
+                raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
         
-
-        if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
@@ -396,35 +396,93 @@ class Region(object):
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
             self._xs, self._ys, self._zs = zip(*self._points)
+            maps = {seg:i for i,seg in enumerate([seg for sec in self._secs3d for seg in sec])}
             segs = []
 
             for i, p in enumerate(self._points):
                 if p in surface_voxels:
                     vx = surface_voxels[p]
-                    self._vol[i], self._sa[i], seg = vx[0], vx[1], vx[2]
+                    self._vol[i], self._sa[i], idx = vx[0], vx[1], maps[vx[2]]
+                    segs.append(idx)
 
-                    segs.append(seg)
+                    surface_nodes_by_seg.setdefault(idx, [])
+                    surface_nodes_by_seg[idx].append(i)
 
-                    surface_nodes_by_seg.setdefault(seg, [])
-                    surface_nodes_by_seg[seg].append(i)
-
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
                     self._sa[i] = surface_voxels[p][1]
 
                 else:
                     vx = internal_voxels[p]
-                    self._vol[i], seg = vx[0], vx[1]
-                    segs.append(seg)
+                    self._vol[i], idx = vx[0], maps[vx[1]]
+                    segs.append(idx)
 
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
 
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg 
-            
-            self._segs = list(segs)
-        self._dx = self.dx
+            self._secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in self._secs3d}
+            self._segsidx = segs
+            self._dx = self.dx
+
+    def _segs3d(self, index=None):
+        segs = [seg for sec in self._secs3d for seg in sec]
+        if index:
+            return [seg for i,seg in enumerate(segs) if i in index]
+        return segs
+
+    def _reinit_segs3d(self):
+        """ Assume only nseg has changed, keep the same voxels but change the segment
+            mapping.
+        """
+
+        segs = []
+        nodes_by_seg = {}
+        surface_nodes_by_seg = {}
+        if list(self._secs3d):
+            maps = {seg:i for i,seg in enumerate([seg for sec in self._secs3d for seg in sec])}
+            pts = {}
+            nsegs = {} 
+            for i, sec in enumerate(self._secs3d):
+                rng = range(sec.n3d())
+                pts[sec] = [numpy.array([sec.x3d(i) for i in rng]),
+                            numpy.array([sec.y3d(i) for i in rng]),
+                            numpy.array([sec.z3d(i) for i in rng])]
+                nsegs[sec] = [int(sec.nseg*sec.arc3d(i)/sec.L - 0.5) for i in rng]
+ 
+            def in_seg(i,j,k):
+                loc = []
+                index = []
+                x = self._mesh_grid['xlo'] + i * self._mesh_grid['dx']
+                y = self._mesh_grid['ylo'] + j * self._mesh_grid['dy']
+                z = self._mesh_grid['zlo'] + k * self._mesh_grid['dz']
+                for sec, (xs,ys,zs) in pts.items():
+                    dist = (xs-x)**2 + (ys-y)**2 + (zs-z)**2 
+                    
+                    loc.append(dist.min())
+                    index.append(len(dist) - dist[::-1].argmin() - 1)
+                secidx = numpy.argmin(loc)
+                sec = list(pts.keys())[secidx]
+                segx = (nsegs[sec][index[secidx]] + 0.5)/sec.nseg
+                return sec(segx)
+
+            surface_nodes_idx = self._surface_nodes_by_seg.values()
+            for i, (i,j,k) in enumerate(self._points):
+                idx = maps[in_seg(i,j,k)]
+                nodes_by_seg.setdefault(idx, [])
+                nodes_by_seg[idx].append(i)
+                segs.append(idx)
+                if i in surface_nodes_idx:
+                    surface_nodes_by_seg.setdefault(idx, [])
+                    surface_nodes_by_seg[idx].append(i)
+
+        self._surface_nodes_by_seg = surface_nodes_by_seg
+        self._nodes_by_seg = nodes_by_seg 
+        self._secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in self._secs3d}
+        self._segsidx = segs
+
+
     
     def _indices_from_sec_x(self, sec, position):
         # TODO: the assert is here because the diameter is not computed correctly

@@ -124,7 +124,7 @@ class GeneralizedReaction(object):
             if not sp(): return False
             regs = sp()._regions if isinstance(sp(),species.Species) else [sp()._region()]
             for r in regs:
-                if r and (r._secs1d or r._secs3d):
+                if r and (list(r._secs1d) or list(r._secs3d)):
                     break
             else:
                 return False
@@ -154,7 +154,7 @@ class GeneralizedReaction(object):
             
             if hasattr(self,'_active_regions'):
                 for reg in self._active_regions:
-                    if not hasattr(reg,"_secs1d") or (reg._secs1d or reg._secs3d):
+                    if not hasattr(reg,"_secs1d") or (list(reg._secs1d) or list(reg._secs3d)):
                         break
                 else:
                     if not sources_ecs or not dests_ecs:
