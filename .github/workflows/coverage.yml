@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - live-debug*
       - release/**
   pull_request:
     branches:
@@ -82,8 +81,7 @@ jobs:
           MATRIX_EVAL: "CC=gcc CXX=g++"
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply prefix your branch name with `live-debug`
-      #   i.e.: live-debug-hocfix
+      # To trigger it, simply add 'live-debug-coverage' to your last pushed commit message.
       - name: live debug session on failure
-        if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
+        if: failure() && contains(github.event.head_commit.message, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3
