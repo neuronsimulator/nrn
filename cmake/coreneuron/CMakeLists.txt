@@ -316,6 +316,7 @@ endif()
 # =============================================================================
 # Install cmake modules
 # =============================================================================
+get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
 configure_file(CMake/coreneuron-config.cmake.in CMake/coreneuron-config.cmake @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CMake/coreneuron-config.cmake" DESTINATION share/cmake)
 install(EXPORT coreneuron DESTINATION share/cmake)
