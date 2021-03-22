@@ -707,6 +707,13 @@ AC_OUTPUT
 
 AC_MSG_WARN([
     !!!
+        Please note that Python2 support will be DROPPED soon.
+        We strongly advise migrating to Python3 as of now, if you haven't already.
+    !!!
+])
+
+AC_MSG_WARN([
+    !!!
         CMake is now the primary build system for installing NEURON from source.
         Autotools support will be DROPPED in the next release. As you are
         using Autotools, we strongly recommend switching to CMake as of now.
