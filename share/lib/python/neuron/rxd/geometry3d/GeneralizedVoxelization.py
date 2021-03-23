@@ -2,14 +2,15 @@ from . import graphicsPrimitives as graphics
 from .. import options
 
 def find_voxel(x,y,z,g):
-    """returns (i,j,k) of voxel containing point x,y,z"""
+    """returns (i,j,k) of voxel containing point x,y,z if the point is within 
+       the grid, otherwise return the corresponding grid boundary.
+    """
     # g is grid boundaries
-    if x >= g['xlo'] and y >= g['ylo'] and z >= g['zlo'] and x <= g['xhi'] and y <= g['yhi'] and z <= g['zhi']:
-        i,j,k = int((x-g['xlo'])//g['dx']),int((y-g['ylo'])//g['dy']),int((z-g['zlo'])//g['dz'])
-        return (i,j,k)
-    else:
-        raise Exception("Coordinates must be within grid")
-        
+    i = max(0,int((x-g['xlo'])//g['dx'])) if x <= g['xhi'] else int(g['xhi']//g['dx'])
+    j = max(0,int((y-g['ylo'])//g['dy'])) if y <= g['yhi'] else int(g['yhi']//g['dy'])
+    k = max(0,int((z-g['zlo'])//g['dz'])) if z <= g['zhi'] else int(g['zhi']//g['dz'])
+    return (i,j,k)
+
 def get_verts(voxel,g):
     """return list (len=8) of point coordinates (x,y,z) that are vertices of the voxel (i,j,k)"""
     (i,j,k) = voxel
