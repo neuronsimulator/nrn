@@ -35,8 +35,8 @@ void nrn_fast_imem_alloc() {
         for (auto nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt) {
             int n = nt->end;
             nt->nrn_fast_imem = (NrnFastImem*) ecalloc(1, sizeof(NrnFastImem));
-            nt->nrn_fast_imem->nrn_sav_rhs = (double*) emalloc_align(n * sizeof(double));
-            nt->nrn_fast_imem->nrn_sav_d = (double*) emalloc_align(n * sizeof(double));
+            nt->nrn_fast_imem->nrn_sav_rhs = (double*) ecalloc_align(n, sizeof(double));
+            nt->nrn_fast_imem->nrn_sav_d = (double*) ecalloc_align(n, sizeof(double));
         }
     }
 }
