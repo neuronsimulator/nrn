@@ -122,9 +122,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
       SCRIPT_PATTERNS test/rxd/*.py test/rxd/testdata/*.dat)
-    if(NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-      # This test includes a comparison with a binary blob; Intel builds typically have too-large
-      # numerical differences with the stored values.
+    # This test includes a comparison with a binary blob; Intel and PGI/NVHPC
+    # builds typically have too-large numerical differences with the stored values.
+    set(compiler_blacklist "Intel" "PGI" "NVHPC")
+    if(NOT ${CMAKE_CXX_COMPILER_ID} IN_LIST compiler_blacklist)
       nrn_add_test(
         GROUP rxdmod_tests
         NAME rxd_tests
