@@ -393,7 +393,7 @@ def psection(section):
 
     https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
     """
-    warnings.warn("neuron.psection() is deprecated; use print(sec.psection()) instead", DeprecationWarning)
+    warnings.warn("neuron.psection() is deprecated; use print(sec.psection()) instead", DeprecationWarning, stacklevel=2)
     h.psection(sec=section)
 
 def init():
@@ -421,7 +421,7 @@ def init():
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
     """
-    warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning)
+    warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning, stacklevel=2)
     
     h.finitialize()
 
@@ -459,7 +459,7 @@ def run(tstop):
     for your model.
 
     """
-    warnings.warn("neuron.run(tstop) is deprecated; use h.init() and h.continuerun(tstop) instead", DeprecationWarning)
+    warnings.warn("neuron.run(tstop) is deprecated; use h.init() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
     
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
