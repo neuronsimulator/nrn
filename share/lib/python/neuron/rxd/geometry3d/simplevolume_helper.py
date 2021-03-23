@@ -52,7 +52,7 @@ def add_res(flist, voxel, verts_in, res, g):
             for y in range(res//2):
                 for z in range(res//2):
                     v = (startpt[0] + x*(dx/res), startpt[1] + y*(dy/res), startpt[2] + z*(dz/res))
-                    if  min([f.distance(v[0],v[1],v[2]) for f in flist]) <= options.ics_distance_threshold:
+                    if  any(f.distance(v[0],v[1],v[2]) <= options.ics_distance_threshold for f in flist):
                         count += 1
     
     if count > 0:
@@ -73,7 +73,7 @@ def Put(flist, voxel, v0, verts_in, res, g):
         for j in range(res):
             for k in range(res):
                 v = startpt[0] + i*Sx, startpt[1] + j*Sy, startpt[2] + k*Sz
-                if min([f.distance(v[0],v[1],v[2]) for f in flist]) <= options.ics_distance_threshold:
+                if any(f.distance(v[0],v[1],v[2]) <= options.ics_distance_threshold for f in flist):
                     count += 1
     if count > 0:
         return Sx * Sy * Sz * count
