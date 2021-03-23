@@ -81,26 +81,12 @@ def Put(flist, voxel, v0, verts_in, res, g):
 
 def simplevolume(flist,distances,voxel,g):
     """return the number of vertices of this voxel that are contained within the surface"""
-
     res = options.ics_partial_volume_resolution
-    verts = (voxel,g)
+    verts = get_verts(voxel,g)
     verts_in = []
     for i in range(8):
         if distances[i] <= options.ics_distance_threshold:
             verts_in.append(i)
     Vol = Put(flist, voxel, verts[0], verts_in, res, g)
     return Vol
-
-
-
-
-
-
-
-
-
-
-
-
-
 
