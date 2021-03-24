@@ -1363,7 +1363,6 @@ CvodeThreadData::CvodeThreadData() {
 	v_parent_ = nil;
 	psl_th_ = nil;
 	watch_list_ = nil;
-	ste_list_ = nil;
 	pv_ = nil;
 	pvdot_ = nil;
 	nvoffset_ = 0;

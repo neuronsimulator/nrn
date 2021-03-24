@@ -6,7 +6,8 @@ def run(tstop):
   h.tstop = tstop
   h.run()
   
-def on_finit(ste):
+def on_finit(ste, result):
+  result.clear()
   ste.state(0)
 
 def act(i, m, thresh, result):
@@ -49,25 +50,51 @@ def test_ste():
   ste = h.StateTransitionEvent(1)
   ste.transition(0, 0, var, thresh1, (act, (1, m1, thresh1, result)))
   ste.transition(0, 0, var, thresh2, (act, (2, m1, thresh2, result))) 
-  fih = h.FInitializeHandler((on_finit, ste))
+  fih = h.FInitializeHandler((on_finit, (ste, result)))
 
   run(5)
   print("final v=%g" % m1['s'](.5).v)
   chk_result(2, result, m1)
 
   h.cvode_active(1)
-  result.clear() # transitions need original list object
   run(20)
   chk_result(2, result, m1)
 
   h.cvode_active(1)
   h.cvode.condition_order(2)
-  result.clear()
   run(5)
   chk_result(2, result, m1)
 
   h.cvode.condition_order(1)
   h.cvode_active(0)
+
+  # ste associated with point process
+  del fih, ste
+  ste = h.StateTransitionEvent(2, m1["ic"])
+  fih = h.FInitializeHandler((on_finit, (ste, result)))
+  run(5)
+
+  # transition with hoc callback
+  h('''proc foo() { printf("foo called at t=%g\\n", t) }''')
+  thresh3 = h.ref(-30)
+  ste.transition(0, 0, var, thresh3, "foo()") 
+  run(5)
+
+  # transition with hoc callback in hoc object
+  h('''
+begintemplate FooSTEtest
+objref this
+proc foo() { printf("foo in %s called at t=%g\\n", this, t) }
+endtemplate FooSTEtest
+''')
+  thresh4 = h.ref(-20)
+  obj = h.FooSTEtest()
+  ste.transition(0, 0, var, thresh4, "foo()", obj)
+  run(5)
+
+  del ste, fih
+  assert(h.List("StateTransitionEvent").count() == 0)
+  assert(h.List("FInitializeHandler").count() == 0)
 
 if __name__ == "__main__":
   test_ste()

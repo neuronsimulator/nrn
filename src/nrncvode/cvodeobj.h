@@ -61,7 +61,6 @@ public:
 	Node** v_parent_;
 	PreSynList* psl_th_; // with a threshold
 	HTList* watch_list_;
-	STEList* ste_list_;
 	double** pv_;
 	double** pvdot_;
 	int nvoffset_; // beginning of this threads states
