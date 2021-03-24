@@ -552,29 +552,25 @@ Vector
     Example of playing into an Iclamp for varying current:
 
         .. code-block::
-                 python
+                  python
         
-                 from neuron import h
-                 import pylab as plt, numpy as np
-                 plt.ion()
-                 h.load_file('stdrun.hoc')
-                 sec = h.Section(name='sec')
-                 sec.insert('pas')
-                 inp = np.zeros(500)
-                 inp[50:250] = 1
-                 pvec, dvec, irec, vrec, trec, arec = [h.Vector() for x in range(6)]
-                 pvec.from_python(inp)
-                 stim = h.IClamp(sec(0.5))
-                 pvec.play(stim, stim._ref_amp, 1)
-                 stim.dur = 1e9
-                 vrec.record(sec(0.5)._ref_v)
-                 irec.record(stim._ref_i)
-                 arec.record(stim._ref_amp)
-                 h.v_init, h.tstop= -70, 500
-                 h.run()
-                 tvec=np.linspace(0,h.tstop,len(vrec),h.dt)
-                 plt.plot(tvec, vrec)
-
+                  from neuron import h
+                  import pylab as plt, numpy as np
+                  h.load_file('stdrun.hoc')
+                  sec = h.Section(name='sec')
+                  sec.insert(h.pas)
+                  inp = np.zeros(500)
+                  inp[50:250] = 1
+                  pvec = h.Vector().from_python(inp)
+                  stim = h.IClamp(sec(0.5))
+                  stim.dur = 1e9
+                  pvec.play(stim, stim._ref_amp, True)
+                  rvecs = [trec, vrec, irec, arec] = [h.Vector() for x in range(4)]
+                  for v, rec in zip(rvecs, [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp]): v.record(rec)
+                  h.v_init, h.tstop= -70, 500
+                  h.run()
+                  plt.plot(trec, vrec)
+                  plt.show()
             
     Example of playing into a segment's ina:
 
