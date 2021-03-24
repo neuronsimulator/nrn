@@ -43,6 +43,9 @@ if(NOT CYTHON_EXECUTABLE STREQUAL "CYTHON_EXECUTABLE-NOTFOUND")
   if(RESULT EQUAL 0)
     string(REGEX REPLACE ".* ([0-9]+\\.[0-9]+(\\.[0-9]+)?).*" "\\1" CYTHON_VERSION
                          "${CYTHON_VAR_OUTPUT}")
+  else()
+    message(STATUS "Cython found: ${CYTHON_EXECUTABLE}")
+    message(FATAL "Cython error [${RESULT}]: ${CYTHON_VAR_OUTPUT}.")
   endif()
 endif()
 
