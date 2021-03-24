@@ -45,7 +45,7 @@ if(NOT CYTHON_EXECUTABLE STREQUAL "CYTHON_EXECUTABLE-NOTFOUND")
                          "${CYTHON_VAR_OUTPUT}")
   else()
     message(STATUS "Cython found: ${CYTHON_EXECUTABLE}")
-    message(FATAL "Cython error [${RESULT}]: ${CYTHON_VAR_OUTPUT}.")
+    message(FATAL_ERROR "Cython error [${RESULT}]: ${CYTHON_VAR_OUTPUT}.")
   endif()
 endif()
 
