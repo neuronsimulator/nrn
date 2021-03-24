@@ -549,6 +549,33 @@ Vector
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`
     
+    Example of playing into an Iclamp for varying current:
+
+        .. code-block::
+            python
+        
+        from neuron import h
+        import pylab as plt, numpy as np
+        plt.ion()
+        h.load_file('stdrun.hoc')
+        sec = h.Section(name='sec')
+        sec.insert('pas')
+        inp = np.zeros(500)
+        inp[50:250] = 1
+        pvec, dvec, irec, vrec, trec, arec = [h.Vector() for x in range(6)]
+        pvec.from_python(inp)
+        stim = h.IClamp(sec(0.5))
+        pvec.play(stim, stim._ref_amp, 1)
+        stim.dur = 1e9
+        vrec.record(sec(0.5)._ref_v)
+        irec.record(stim._ref_i)
+        arec.record(stim._ref_amp)
+        h.v_init, h.tstop= -70, 500
+        h.run()
+        tvec=np.linspace(0,h.tstop,len(vrec),h.dt)
+        plt.plot(tvec, vrec)
+   
+            
     Example of playing into a segment's ina:
 
         .. code-block::
