@@ -565,7 +565,8 @@ Vector
                   stim = h.IClamp(sec(0.5))
                   stim.dur = 1e9
                   pvec.play(stim, stim._ref_amp, True)
-                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'], [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
+                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
+                                                              [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
                   h.v_init, h.tstop= -70, 500
                   h.run()
                   plt.plot(rd['t'], rd['v'])
