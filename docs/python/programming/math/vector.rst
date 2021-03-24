@@ -565,12 +565,12 @@ Vector
                   stim = h.IClamp(sec(0.5))
                   stim.dur = 1e9
                   pvec.play(stim, stim._ref_amp, True)
-                  rvecs = [trec, vrec, irec, arec] = [h.Vector() for x in range(4)]
-                  for v, rec in zip(rvecs, [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp]): v.record(rec)
+                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'], [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
                   h.v_init, h.tstop= -70, 500
                   h.run()
-                  plt.plot(trec, vrec)
+                  plt.plot(rd['t'], rd['v'])
                   plt.show()
+
             
     Example of playing into a segment's ina:
 
