@@ -49,7 +49,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""
     
-    morphology = constructive_neuronal_geometry(source, dx, soma_step, relevant_pts=relevant_pts)
+    morphology = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
 
     # grid setup
@@ -85,9 +85,8 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
-        for item in soma_objects:
-            seg = segment_dict[item]
-            if seg in final_seg_dict.keys():
+        for item, seg in soma_objects.items():
+            if seg in final_seg_dict:
                 final_seg_dict[seg].append(item)
             else:
                 final_seg_dict[seg] = [item]
