@@ -360,8 +360,43 @@ def new_hoc_class(name,doc=None):
 # Python equivalents to Hoc functions
 # ------------------------------------------------------------------------------
 
-xopen = h.xopen
-quit = h.quit
+def xopen(*args, **kwargs):
+    """
+    Syntax:
+        ``neuron.xopen("hocfile")``
+
+
+        ``neuron.xopen("hocfile", "RCSrevision")``
+
+
+    Description:
+        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way 
+        to define user functions and procedures. 
+        An optional second argument is the RCS revision number in the form of a 
+        string. The RCS file with that revision number is checked out into a 
+        temporary file and executed. The temporary file is then removed.  A file 
+        of the same primary name is unaffected. 
+    
+    This function is deprecated and will be removed in a future release.
+    Use ``h.xopen`` instead.
+    """
+    warnings.warn("neuron.xopen is deprecated; use h.xopen instead", DeprecationWarning, stacklevel=2)
+    return h.xopen(*args, **kwargs)
+
+
+def quit(*args, **kwargs):
+    """
+    Exits the program. Can be used as the action of a button. If edit buffers 
+    are open you will be asked if you wish to save them before the final exit.
+
+    This function is deprecated and will be removed in a future release.
+    Use ``h.quit()`` or ``sys.exit()`` instead. (Note: sys.exit will not prompt
+    for saving edit buffers.)
+    """
+    warnings.warn("neuron.quit() is deprecated; use h.quit() or sys.exit() instead", DeprecationWarning, stacklevel=2)
+    return h.quit(*args, **kwargs)
+  
+
 
 def hoc_execute(hoc_commands, comment=None):
     assert isinstance(hoc_commands,list)
