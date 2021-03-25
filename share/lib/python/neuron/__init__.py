@@ -33,7 +33,7 @@ Important names and sub-packages
 
 For help on these useful functions, see their docstrings:
 
-  neuron.init, run, psection, load_mechanisms
+  load_mechanisms
 
 
 neuron.h
@@ -494,7 +494,7 @@ def run(tstop):
     for your model.
 
     """
-    warnings.warn("neuron.run(tstop) is deprecated; use h.init() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
+    warnings.warn("neuron.run(tstop) is deprecated; use h.stdinit() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
     
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
