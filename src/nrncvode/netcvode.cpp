@@ -338,7 +338,6 @@ void PlayRecordEvent::savestate_write(FILE* f) {
 }
 
 DiscreteEvent* PlayRecordEvent::savestate_read(FILE* f) {
-	DiscreteEvent* de = nil;
 	char buf[100];
 	int type, plr_index;
 	nrn_assert(fgets(buf, 100, f));
@@ -1434,10 +1433,9 @@ void NetCvode::del_cv_memb_list() {
 	}
 }
 void NetCvode::del_cv_memb_list(Cvode* cvode) {
-	int i, j;
 	if (!cvode) { return; }
 	Cvode& cv = *cvode;
-	for (j=0; j < cv.nctd_; ++j) {
+	for (int j=0; j < cv.nctd_; ++j) {
 		CvodeThreadData& z = cv.ctd_[j];
 		if (z.psl_th_) {
 			z.psl_th_->remove_all();
@@ -1496,7 +1494,7 @@ void CvodeThreadData::delete_memb_list(CvMembList* cmlist) {
 }
 
 void NetCvode::distribute_dinfo(int* cellnum, int tid) {
-	int i, j;
+	int j;
 //printf("distribute_dinfo %d\n", pst_cnt_);
     if (psl_) {
 	hoc_Item* q;
@@ -1795,8 +1793,6 @@ bool NetCvode::init_global() {
 			int j;
 			for (j = 0; j < ml->nodecount; ++j) {
 				int icell = cellnum[ml->nodelist[j]->v_node_index];
-				Cvode& cv = d.lcv_[icell];
-				CvodeThreadData& z = cv.ctd_[0];
 				if (cvml[icell]->index != i) {
 					cvml[icell] = cvml[icell]->next;
 					assert (cvml[icell] && cvml[icell]->index);
@@ -2794,7 +2790,6 @@ void NetCvode::clear_events() {
 void NetCvode::init_events() {
 	hoc_Item* q;
 	int i, j;
-	double fifodelay;
 #if BBTQ == 5
 	for (i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
@@ -2816,6 +2811,7 @@ void NetCvode::init_events() {
 			// but
 			// if we desire nrn_use_fifo_queue_ then use it
 			// even if just one
+			double fifodelay;
 			if (nrn_use_fifo_queue_) {
 				if (dil.count()) {
 					ps->use_min_delay_ = 1;
@@ -3253,9 +3249,8 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	SelfEvent* se = new SelfEvent();
 	char buf[300];
 	char ppname[200];
-	int ppindex, ncindex, moff, pptype, iml;
+	int ppindex, ncindex, moff, pptype;
 	double flag;
-	Object* obj;
 	nrn_assert(fgets(buf, 300, f));
 	nrn_assert(sscanf(buf, "%s %d %d %d %d %lf\n", ppname, &ppindex, &pptype, &ncindex, &moff, &flag) == 6);
 #if 0
@@ -3266,14 +3261,7 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 #endif
 	se->weight_ = nil;
 	if (ncindex >= 0) {
-#if 0
-		// extremely inefficient. There are a LOT of NetCon.
-		obj = hoc_name2obj("NetCon", ncindex);
-		assert(obj);
-		NetCon* nc = (NetCon*)obj->u.this_pointer;
-#else
 		NetCon* nc = NetConSave::index2netcon(ncindex);
-#endif
 		se->weight_ = nc->weight_;
 	}
 	se->flag_ = flag;
@@ -3564,7 +3552,7 @@ int NetCvode::pgvts(double tstop) {
 // deliver an event, it cannot interpolate, etc.
 // Assume events are sparse and handle them one at a time.
 int NetCvode::pgvts_event(double& tt) {
-	int rank, op, err, init;
+	int op, err, init;
 	DiscreteEvent* de;
 	assert(gcv_);
 	de = pgvts_least(tt, op, init);
@@ -3899,7 +3887,7 @@ void NetCvode::solver_prepare() {
 }
 
 void NetCvode::re_init(double t) {
-	int i, j, k, l;
+	int i, j;
 	if (nrn_modeltype() == 0) {
 		if (gcv_) {
 			gcv_->t_ = t;  gcv_->tn_ = t;
@@ -4173,7 +4161,7 @@ double nrn_hoc2fun(void* v) {
 	Vect* s = vector_arg(2);
 	Vect* ds = vector_arg(3);
 	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
-	if (s->size() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (s->size() != size_t(d->gcv_->neq_)) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	ds->resize(s->size());
 	nrn_cvfun(tt, vector_vec(s), vector_vec(ds));
@@ -4184,7 +4172,7 @@ double nrn_hoc2scatter_y(void* v) {
 	NetCvode* d = (NetCvode*)v;
 	Vect* s = vector_arg(1);
 	if (!d->gcv_){hoc_execerror("not global variable time step", 0);}
-	if (s->size() != d->gcv_->neq_) { hoc_execerror("size of state vector != number of state equations", 0); }
+	if (s->size() != size_t(d->gcv_->neq_)) { hoc_execerror("size of state vector != number of state equations", 0); }
 	if (nrn_nthread > 1) {hoc_execerror("only one thread allowed", 0);}
 	d->gcv_->scatter_y(vector_vec(s), 0);
 	return 0.;
@@ -4469,7 +4457,6 @@ NetCon* NetCvode::install_deliver(double* dsrc, Section* ssrc, Object* osrc,
     ) {
 	PreSyn* ps = nil;
 	double* psrc = nil;
-	int i;
 	if (ssrc) { consist_sec_pd("NetCon", ssrc, dsrc); }
 	if (!pst_) {
 		pst_ = new PreSynTable(1000);
@@ -5379,7 +5366,6 @@ NrnThread* STECondition::thread() {
 }
 
 void WatchCondition::pgvts_deliver(double tt, NetCvode* ns) {
-	NrnThread* nt;
 	assert(0);
 	if (qthresh_) {
 		qthresh_ = nil;
@@ -5396,7 +5382,6 @@ hoc_warning("errno set during WatchCondition deliver to NET_RECEIVE", (char*)0);
 }
 
 void STECondition::pgvts_deliver(double tt, NetCvode* ns) {
-	NrnThread* nt;
 	assert(0);
 	if (qthresh_) {
 		qthresh_ = nil;
@@ -5506,7 +5491,7 @@ static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 {
   int err = 0; //success
   if (bsize > 0) {
-    if (v->size() < bsize) {
+    if (v->size() < size_t(bsize)) {
       v->resize(bsize);
     }
     varrays[i_trajec] = vector_vec(v);
@@ -5714,7 +5699,6 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, 
 #endif // HAVE_IV
     nrn_threads[tid]._t = tt;
     if (tid == 0) { t = tt; }
-    int i_trajec = 0;
     int flush = 0;
     for (int i=0; i < n_pr; ++i) {
       PlayRecord* pr = (PlayRecord*)vpr[i];
@@ -5808,7 +5792,7 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 	TQItem* q;
-	double tm, tt, tsav;
+	double tm, tsav;
 #if BGPDMA
 	if (use_bgpdma_) { nrnbgp_messager_advance(); }
 #endif
@@ -6051,7 +6035,7 @@ void VecRecordDiscreteSave::savestate_restore() {
 	check();
 	VecRecordDiscrete* vrd = (VecRecordDiscrete*)pr_;
 	vrd->y_->resize(cursize_);
-	assert(cursize_ <= vrd->t_->size());
+	assert(size_t(cursize_) <= vrd->t_->size());
 }
 void VecRecordDiscreteSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", cursize_);
@@ -6167,7 +6151,6 @@ void NetCvode::vecrecord_add() {
 }
 
 void NetCvode::vec_remove() {
-	IvocVect* iv = vector_arg(1);
 	PlayRecord* pr;
 	while((pr = playrec_uses(vector_arg(1))) != nil) {
 		delete pr;
@@ -6176,7 +6159,6 @@ void NetCvode::vec_remove() {
 
 void NetCvode::playrec_setup() {
 	long i, j, iprl, prlc;
-	double* px;
 	prlc = prl_->count();
 	fixed_record_->remove_all();
 	fixed_play_->remove_all();
@@ -6315,10 +6297,9 @@ Use section ... (&var(x)...) intead of ...(&section.var(x)...)\n");
 }
 
 double NetCvode::state_magnitudes() {
-	int i, j;
 	if (hoc_is_double_arg(1)) {
 		int on = (int)chkarg(1, 0, 2);
-		int i;
+		int i, j;
 		if (on == 2) {
 			maxstate_analyse();
 		}else{
@@ -6347,7 +6328,6 @@ double NetCvode::state_magnitudes() {
 			return 0.;
 		}
 		double* vp;
-		double* ms;
 		n = 0;
 		if (gcv_) {
 			n += gcv_->neq_;
@@ -6410,7 +6390,7 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, MaxStateItem* msi, CvodeThr
 }
 
 void NetCvode::maxstate_analyse() {
-	int i, it, j, n;
+	int i, it, j;
 	MaxStateItem* msi;
 	Symbol* sym;
 	if (!mst_) {
