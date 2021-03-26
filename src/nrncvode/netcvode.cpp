@@ -178,10 +178,10 @@ int nrn_netcon_info(NetCon* nc, double **pw, Point_process **target,
 }
 
 int nrn_presyn_count(PreSyn* ps) {
-	return ps->dil_.count();
+	return ps->dil_.size();
 }
 void* nrn_presyn_netcon(PreSyn* ps, int i) {
-	return ps->dil_.item(i);
+	return ps->dil_[i];
 }
 
 #if USENEOSIM
@@ -420,8 +420,6 @@ printf("%s ", hoc_object_name(d->target_->ob));
 printf(" weight index=%d\n", l);
 #endif
 
-implementPtrList(NetConPList, NetCon)
-
 class MaxStateItem {
 public:
 	Symbol* sym_;
@@ -578,10 +576,9 @@ static Object** nc_prelist(void* v) {
 	OcList* o;
 	Object** po = newoclist(1, o);
 	if (d->src_) {
-		NetConPList& dil = d->src_->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			if (dil.item(i)->obj_) {
-				o->append(dil.item(i)->obj_);
+		for (auto nc: d->src_->dil_) {
+			if (nc->obj_) {
+				o->append(nc->obj_);
 			}
 		}
 	}
@@ -595,11 +592,9 @@ static Object** nc_synlist(void* v) {
 	hoc_Item* q;
 	if (net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
-		NetConPList& dil = ps->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			NetCon* d1 = dil.item(i);
-			if (d1->obj_ && d1->target_ == d->target_) {
-				o->append(d1->obj_);
+		for (auto nc: ps->dil_) {
+			if (nc->obj_ && nc->target_ == d->target_) {
+				o->append(nc->obj_);
 			}
 		}
 	}
@@ -617,12 +612,10 @@ static Object** nc_postcelllist(void* v) {
 	}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
-		NetConPList& dil = ps->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			NetCon* d1 = dil.item(i);
-			if (d1->obj_ && d1->target_
-				&& nrn_sec2cell_equals(d1->target_->sec, cell)) {
-				o->append(d1->obj_);
+		for (auto nc: ps->dil_) {
+			if (nc->obj_ && nc->target_
+				&& nrn_sec2cell_equals(nc->target_->sec, cell)) {
+				o->append(nc->obj_);
 			}
 		}
 	}
@@ -638,12 +631,10 @@ static Object** nc_precelllist(void* v) {
 	if (d->src_ && d->src_->ssrc_) { cell = nrn_sec2cell(d->src_->ssrc_);}
 	if (cell && net_cvode_instance->psl_) ITERATE(q, net_cvode_instance->psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
-		NetConPList& dil = ps->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			NetCon* d1 = dil.item(i);
-			if (d1->obj_ && d1->src_ && ps->ssrc_
+		for (auto nc: ps->dil_) {
+			if (nc->obj_ && nc->src_ && ps->ssrc_
 				&& nrn_sec2cell_equals(ps->ssrc_, cell)) {
-				o->append(d1->obj_);
+				o->append(nc->obj_);
 			}
 		}
 	}
@@ -1044,9 +1035,7 @@ Object** NetCvode::netconlist() {
 			}
 		}
 		if (b == true) {
-			NetConPList& dil = ps->dil_;
-			for (int i=0; i < dil.count(); ++i) {
-				NetCon* d = dil.item(i);
+			for (auto d: ps->dil_) {
 				Object* postcell = nil;
 				Object* target = nil;
 				if (d->target_) {
@@ -1096,7 +1085,7 @@ Object** NetCvode::netconlist() {
 	}
 	if (spre) delete spre;
 	if (spost) delete spost;
-	if (star) delete star;				
+	if (star) delete star;
 	return po;
 }
 
@@ -1260,11 +1249,12 @@ NetCvode::~NetCvode() {
 		hoc_Item* q;
 		ITERATE(q, psl_) {
 			PreSyn* ps = (PreSyn*)VOIDITM(q);
-			for (int i = ps->dil_.count() - 1; i >= 0; --i) {
-				NetCon* d = ps->dil_.item(i);
+			if (ps->dil_.size() > 0) { for (size_t i = ps->dil_.size() - 1; i >= 0; --i) {
+				NetCon* d = ps->dil_[i];
 				d->src_ = nil;
 				delete d;
-			}
+				if (i == 0) { break; }
+			}}
 			delete ps;
 		}
 		hoc_l_freelist(&psl_);
@@ -2813,23 +2803,22 @@ void NetCvode::init_events() {
 			// even if just one
 			double fifodelay;
 			if (nrn_use_fifo_queue_) {
-				if (dil.count()) {
+				if (dil.size()) {
 					ps->use_min_delay_ = 1;
-					ps->delay_ = dil.item(0)->delay_;
+					ps->delay_ = dil[0]->delay_;
 					fifodelay = ps->delay_;
 				}
 			}else
 #endif // BBTQ
 			{
-				if (dil.count() > 2) {
+				if (dil.size() > 2) {
 					ps->use_min_delay_ = 1;
-					ps->delay_ = dil.item(0)->delay_;
+					ps->delay_ = dil[0]->delay_;
 				}
 			}
 #endif // USE_MIN_DELAY
 
-			for (i=dil.count()-1; i >= 0; --i) {
-				NetCon* d = dil.item(i);
+			for (auto d: dil) {
 				if (ps->use_min_delay_ && ps->delay_ != d->delay_) {
 					ps->use_min_delay_ = false;
 				}
@@ -2884,9 +2873,7 @@ hoc_warning("Use of the event fifo queue is turned off due to more than one valu
 
 double PreSyn::mindelay() {
 	double md = 1e9;
-	int i;
-	for (i=dil_.count()-1; i >= 0; --i) {
-		NetCon* d = dil_.item(i);
+	for (auto d: dil_) {
 		if (md > d->delay_) {
 			md = d->delay_;
 		}
@@ -2955,8 +2942,8 @@ static void event_info_callback(const TQItem* q, int) {
 	case PreSynType:
 		if (event_info_type_ == NetConType) {
 			ps = (PreSyn*)d;
-			for (int i = ps->dil_.count()-1; i >= 0; --i) {
-				nc = ps->dil_.item(i);
+			if (ps->dil_.size() > 0) for (int i = ps->dil_.size()-1; i >= 0; --i) {
+				nc = ps->dil_[i];
 				double td = nc->delay_ - ps->delay_;
                 event_info_tvec_->push_back(q->t_ + td);
 				event_info_list_->append(nc->obj_);
@@ -3101,8 +3088,7 @@ void PreSyn::send(double tt, NetCvode* ns, NrnThread* nt) {
 #endif
 	}else{
 		STATISTICS(presyn_send_direct_);
-		for (int i = dil_.count()-1; i >= 0; --i) {
-			NetCon* d = dil_.item(i);
+		for (auto d: dil_) {
 			if (d->active_ && d->target_) {
 				NrnThread* n = PP2NT(d->target_);
 #if BBTQ == 5
@@ -3155,10 +3141,8 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 		return;
 	}
 	// the thread is the one that owns the targets
-	int i, n = dil_.count();
 	STATISTICS(presyn_deliver_netcon_);
-	for (i=0; i < n; ++i) {
-		NetCon* d = dil_.item(i);
+	for (auto d: dil_) {
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			if (dtt == 0.) {
@@ -3179,9 +3163,7 @@ hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 // have already been delivered while others need to be delivered in
 // the future. Not implemented fof qthresh_ case. No statistics.
 void PreSyn::fanout(double td, NetCvode* ns, NrnThread* nt) {
-	int i, n = dil_.count();
-	for (i=0; i < n; ++i) {
-		NetCon* d = dil_.item(i);
+	for (auto d: dil_) {
 		if (d->active_ && d->target_ && PP2NT(d->target_) == nt) {
 			double dtt = d->delay_ - delay_;
 			ns->bin_event(td + dtt, d, nt);
@@ -3201,17 +3183,11 @@ void PreSyn::pgvts_deliver(double tt, NetCvode* ns) {
 		send(tt, ns, nt);
 		return;
 	}
-	int i, n = dil_.count();
 	STATISTICS(presyn_deliver_netcon_);
-	for (i=0; i < n; ++i) {
-		NetCon* d = dil_.item(i);
+	for (auto d: dil_) {
 		if (d->active_ && d->target_) {
 			double dtt = d->delay_ - delay_;
-			if (0 && dtt == 0.) {
-				STATISTICS(presyn_deliver_direct_);
-				STATISTICS(deliver_cnt_);
-				d->deliver(tt, ns, nt);
-			}else if (dtt < 0.) {
+			if (dtt < 0.) {
 hoc_execerror("internal error: Source delay is > NetCon delay", 0);
 			}else{
 				STATISTICS(presyn_deliver_ncsend_);
@@ -3966,9 +3942,7 @@ void NetCvode::fornetcon_prepare() {
 	hoc_Item* q;
 	if (psl_) ITERATE(q, psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
-		NetConPList& dil = ps->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			NetCon* d1 = dil.item(i);
+		for (auto d1: ps->dil_) {
 			Point_process* pnt = d1->target_;
 			if (pnt && t2i[pnt->prop->type] > -1) {
 ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._pvoid;
@@ -4007,9 +3981,7 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 	// fill in argslist and count again
 	if (psl_) ITERATE(q, psl_) {
 		PreSyn* ps = (PreSyn*)VOIDITM(q);
-		NetConPList& dil = ps->dil_;
-		for (int i=0; i < dil.count(); ++i) {
-			NetCon* d1 = dil.item(i);
+		for (auto d1: ps->dil_) {
 			Point_process* pnt = d1->target_;
 			if (pnt && t2i[pnt->prop->type] > -1) {
 ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._pvoid;
@@ -4596,7 +4568,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
 	src_ = src;
 	delay_ = 1.0;
 	if (src_) {
-		src_->dil_.append((NetCon*)this);
+		src_->dil_.push_back((NetCon*)this);
 		src_->use_min_delay_ = 0;
 	}
 	if (target == nil) {
@@ -4641,15 +4613,14 @@ NetCon::~NetCon() {
 
 void NetCon::rmsrc() {
 	if (src_) {
-		for (int i=0; i < src_->dil_.count(); ++i) {
-			if (src_->dil_.item(i) == this) {
-				src_->dil_.remove(i);
-				if (src_->dil_.count() == 0 && src_->tvec_ == nil
-				    && src_->idvec_ == nil) {
-#if 1 || NRNMPI
-	if (src_->output_index_ == -1)
-#endif
-					delete src_;
+		for (size_t i=0; i < src_->dil_.size(); ++i) {
+			if (src_->dil_[i] == this) {
+				src_->dil_.erase(src_->dil_.begin() + i);
+				if (src_->dil_.size() == 0 && src_->tvec_ == NULL
+				    && src_->idvec_ == NULL) {
+					if (src_->output_index_ == -1) {
+						delete src_;
+					}
 				}
 				break;
 			}
@@ -4662,7 +4633,7 @@ void NetCon::replace_src(PreSyn* p) {
 	rmsrc();
 	src_ = p;
 	if (src_) {
-		src_->dil_.append((NetCon*)this);
+		src_->dil_.push_back((NetCon*)this);
 		src_->use_min_delay_ = 0;
 	}
 }
@@ -4904,8 +4875,8 @@ PreSyn::~PreSyn() {
 			}
 		}
 	}
-	for (int i=0; i < dil_.count(); ++i) {
-		dil_.item(i)->src_ = nil;
+	for (auto nc: dil_) {
+		nc->src_ = nil;
 	}
 	net_cvode_instance->presyn_disconnect(this);
 }
@@ -5060,21 +5031,21 @@ void PreSyn::disconnect(Observable* o) {
 	if (idvec_ && idvec_->obj_ == ((ObjObservable*)o)->object()) {
 		idvec_ = nil;
 	}
-	if (dil_.count() == 0 && tvec_ == nil && idvec_ == nil && output_index_ == -1) {
+	if (dil_.size() == 0 && tvec_ == nil && idvec_ == nil && output_index_ == -1) {
 		delete this;
 	}
 }
 
 void PreSyn::update(Observable* o) { // should be disconnect
 //printf("PreSyn::update\n");
-	for (int i = 0; i < dil_.count(); ++i) {
+	for (auto nc: dil_) {
 #if 0 // osrc_ below is invalid
-if (dil_.item(i)->obj_) {
-	printf("%s disconnect from ", hoc_object_name(dil_.item(i)->obj_));
+if (nc->obj_) {
+	printf("%s disconnect from ", hoc_object_name(nc->obj_));
 	printf("source %s\n", osrc_ ? hoc_object_name(osrc_) : secname(ssrc_));
 }
 #endif
-		dil_.item(i)->src_ = nil;
+		nc->src_ = nil;
 	}
 	if (tvec_) {
 #if DISCRETE_EVENT_OBSERVER

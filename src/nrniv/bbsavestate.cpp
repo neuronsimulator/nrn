@@ -1181,7 +1181,7 @@ static void tqcallback(const TQItem* tq, int i) {
 		}else if (type == PreSynType) {
 			ps = (PreSyn*)tq->data_;
 			ts = tq->t_ - ps->delay_;
-			cntinc = ps->dil_.count();
+			cntinc = ps->dil_.size();
 		}else{
 			return;
 		}
@@ -1321,7 +1321,7 @@ void BBSaveState::mk_pp2de() {
 			continue;
 		}
 		//has a gid or else only one connection
-		assert(nc->src_->gid_ >= 0 || nc->src_->dil_.count() == 1);
+		assert(nc->src_->gid_ >= 0 || nc->src_->dil_.size() == 1);
 		Point_process* pp = nc->target_;
 		DEList* dl = new DEList;
 		dl->de = nc;

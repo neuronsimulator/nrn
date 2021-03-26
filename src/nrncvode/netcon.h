@@ -7,10 +7,10 @@
 #endif
 
 #include <InterViews/observe.h>
-#include <OS/list.h>
 #include "htlist.h"
 #include "nrnneosm.h"
 #include "nrnmpi.h"
+#include <vector>
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -157,7 +157,7 @@ private:
 	static SelfEventPPTable* sepp_;
 };
 
-declarePtrList(NetConPList, NetCon)
+typedef std::vector<NetCon*> NetConPList;
 
 class ConditionEvent : public DiscreteEvent {
 public:

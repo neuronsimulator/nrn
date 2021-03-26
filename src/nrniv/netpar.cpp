@@ -999,7 +999,7 @@ void nrnmpi_gid_clear(int arg) {
 #endif
 			ps->gid_ = -1;
 			ps->output_index_ = -1;
-			if (ps->dil_.count() == 0) {
+			if (ps->dil_.size() == 0) {
 				delete ps;
 			}
 		    }
@@ -1015,7 +1015,7 @@ void nrnmpi_gid_clear(int arg) {
 #endif
 		ps->gid_ = -1;
 		ps->output_index_ = -1;
-		if (ps->dil_.count() == 0) {
+		if (ps->dil_.size() == 0) {
 			delete ps;
 		}
 	    }
@@ -1583,12 +1583,11 @@ size_t npnt = 0;
   NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
     if (ps) {
       nout += 1;
-      int n = ps->dil_.count();
+      int n = ps->dil_.size();
       nnet += n;
-      for (int i=0; i < n; ++i) {
-        nweight += weightcnt(ps->dil_.item(i));
-NetCon* nc = ps->dil_.item(i);
-if (nc->target_) { npnt += 1; }
+      for (auto nc: ps->dil_) {
+        nweight += weightcnt(nc);
+        if (nc->target_) { npnt += 1; }
       }
     }
   }}}
@@ -1596,12 +1595,11 @@ if (nc->target_) { npnt += 1; }
   NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
     if (ps) {
       nin += 1;
-      int n = ps->dil_.count();
+      int n = ps->dil_.size();
       nnet += n;
-      for (int i=0; i < n; ++i) {
-        nweight += weightcnt(ps->dil_.item(i));
-NetCon* nc = ps->dil_.item(i);
-if (nc->target_) { npnt += 1; }
+      for (auto nc: ps->dil_) {
+        nweight += weightcnt(nc);
+        if (nc->target_) { npnt += 1; }
       }
     }
   }}}
