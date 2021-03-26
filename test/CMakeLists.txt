@@ -121,7 +121,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
-      SCRIPT_PATTERNS test/rxd/*.py test/rxd/testdata/*.dat)
+      SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/*.dat)
     # This test includes a comparison with a binary blob; Intel and PGI/NVHPC
     # builds typically have too-large numerical differences with the stored values.
     set(compiler_blacklist "Intel" "PGI" "NVHPC")
