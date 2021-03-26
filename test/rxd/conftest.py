@@ -38,6 +38,7 @@ def neuron_instance(neuron_import):
     h, rxd, save_path = neuron_import
     data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')
+    h.load_file("import3d.hoc")                      
 
     h.nrnunit_use_legacy(True) 
     
