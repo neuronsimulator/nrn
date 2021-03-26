@@ -1,6 +1,12 @@
+stages:
+  - .pre
+  - build
+  - linters
+  - test
+
 .common:
   tags: [bb5]
-  script: ci/bb5-pr
+  script: ci/bb5-pr.sh
   only:
     - external_pull_requests
   variables:
@@ -21,7 +27,8 @@ build intel:
     # We cloned in .pre
     GIT_STRATEGY: none
 
-test intel: &test_config
+test intel:
+  needs: ["build intel"]
   extends: .common
   stage: test
   resource_group: test
@@ -29,5 +36,36 @@ test intel: &test_config
     # We cloned in .pre
     GIT_STRATEGY: none
 
-cmake format: *test_config
-clang format: *test_config
+build pgi:
+  extends: .common
+  stage: build
+  resource_group: build
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none
+    bb5_constraint: volta
+
+test pgi:
+  needs: ["build pgi"]
+  extends: .common
+  stage: test
+  resource_group: test
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none
+
+cmake format:
+  extends: .common
+  stage: linters
+  resource_group: linters
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none
+
+clang format:
+  extends: .common
+  stage: linters
+  resource_group: linters
+  variables:
+    # We cloned in .pre
+    GIT_STRATEGY: none

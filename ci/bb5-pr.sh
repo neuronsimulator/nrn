@@ -78,12 +78,20 @@ function bb5_pr_build_intel() {
     build_with intel
 }
 
+function bb5_pr_build_pgi() {
+    build_with pgi
+}
+
 function bb5_pr_test_gcc() {
     test_with gcc
 }
 
 function bb5_pr_test_intel() {
     test_with intel
+}
+
+function bb5_pr_test_pgi() {
+    test_with pgi
 }
 
 function bb5_pr_build_llvm() {
