@@ -9,7 +9,7 @@ from .simplevolume_helper import simplevolume
 from .surface_a import surface_area
 from ..options import ics_distance_threshold
 import warnings
-from neuron import h
+from neuron import h, _sec_db
 
 def find_parent_seg(join, sdict, objects):
     
@@ -49,29 +49,41 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""
     
-    morphology = constructive_neuronal_geometry(source, dx, soma_step, relevant_pts=relevant_pts)
+    morphology = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
 
     # grid setup
     xs, ys, zs, diams, arcs = [],[],[],[],[]
+    soma_idx = None
     for i, sec in enumerate(source):
         if relevant_pts:
             rng = relevant_pts[i]
         else:
             rng = range(sec.n3d())
-        
+        if 'soma[0]' in sec.hname() and 'soma' in _sec_db:
+            soma_idx = i
+        else:
+            xs += [sec.x3d(i) for i in rng]
+            ys += [sec.y3d(i) for i in rng]
+            zs += [sec.z3d(i) for i in rng]
+            diams += [sec.diam3d(i) for i in rng]
+            arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]]
+
+    # TODO: include segment boundaries when checking cone lengths
+    # warning on minimum size of dx, only considering positive lengths
+    if diams:
+        check = min(min(d for d in diams if d > 0)/math.sqrt(3), min(a for a in arcs if a > 0)/math.sqrt(3))
+        if (dx > check):
+            warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
+
+    if soma_idx is not None:
+        sec = source[soma_idx]
+        rng = relevant_pts[soma_idx] if relevant_pts else range(sec.n3d())
         xs += [sec.x3d(i) for i in rng]
         ys += [sec.y3d(i) for i in rng]
         zs += [sec.z3d(i) for i in rng]
         diams += [sec.diam3d(i) for i in rng]
-        arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]]
-
-    # TODO: include segment boundaries when checking cone lengths
-    # warning on minimum size of dx, only considering positive lengths
-    check = min(min(d for d in diams if d > 0)/math.sqrt(3), min(a for a in arcs if a > 0)/math.sqrt(3))
-    if (dx > check):
-        warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
-    
+  
     dy = dz = dx   # ever going to change this?
 
     margin = max(diams) + 2*dx
@@ -85,9 +97,8 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
-        for item in soma_objects:
-            seg = segment_dict[item]
-            if seg in final_seg_dict.keys():
+        for item, seg in soma_objects.items():
+            if seg in final_seg_dict:
                 final_seg_dict[seg].append(item)
             else:
                 final_seg_dict[seg] = [item]
