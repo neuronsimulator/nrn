@@ -33,7 +33,7 @@ Important names and sub-packages
 
 For help on these useful functions, see their docstrings:
 
-  neuron.init, run, psection, load_mechanisms
+  load_mechanisms
 
 
 neuron.h
@@ -101,6 +101,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import warnings
 
 embedded = True if 'hoc' in sys.modules else False
 
@@ -373,8 +374,43 @@ def new_hoc_class(name,doc=None):
 # Python equivalents to Hoc functions
 # ------------------------------------------------------------------------------
 
-xopen = h.xopen
-quit = h.quit
+def xopen(*args, **kwargs):
+    """
+    Syntax:
+        ``neuron.xopen("hocfile")``
+
+
+        ``neuron.xopen("hocfile", "RCSrevision")``
+
+
+    Description:
+        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way 
+        to define user functions and procedures. 
+        An optional second argument is the RCS revision number in the form of a 
+        string. The RCS file with that revision number is checked out into a 
+        temporary file and executed. The temporary file is then removed.  A file 
+        of the same primary name is unaffected. 
+    
+    This function is deprecated and will be removed in a future release.
+    Use ``h.xopen`` instead.
+    """
+    warnings.warn("neuron.xopen is deprecated; use h.xopen instead", DeprecationWarning, stacklevel=2)
+    return h.xopen(*args, **kwargs)
+
+
+def quit(*args, **kwargs):
+    """
+    Exits the program. Can be used as the action of a button. If edit buffers 
+    are open you will be asked if you wish to save them before the final exit.
+
+    This function is deprecated and will be removed in a future release.
+    Use ``h.quit()`` or ``sys.exit()`` instead. (Note: sys.exit will not prompt
+    for saving edit buffers.)
+    """
+    warnings.warn("neuron.quit() is deprecated; use h.quit() or sys.exit() instead", DeprecationWarning, stacklevel=2)
+    return h.quit(*args, **kwargs)
+  
+
 
 def hoc_execute(hoc_commands, comment=None):
     assert isinstance(hoc_commands,list)
@@ -399,11 +435,14 @@ def psection(section):
     Use section.psection() instead to get a data structure that
     contains the same information and more.
 
+    This function is deprecated and will be removed in a future
+    release.
+
     See:
 
     https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
-
     """
+    warnings.warn("neuron.psection() is deprecated; use print(sec.psection()) instead", DeprecationWarning, stacklevel=2)
     h.psection(sec=section)
 
 def init():
@@ -428,6 +467,8 @@ def init():
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
     """
+    warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning, stacklevel=2)
+    
     h.finitialize()
 
 def run(tstop):
@@ -461,6 +502,8 @@ def run(tstop):
     for your model.
 
     """
+    warnings.warn("neuron.run(tstop) is deprecated; use h.stdinit() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
+    
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?

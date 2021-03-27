@@ -24,6 +24,7 @@ To see if an Object* obj is wrapping a PyObject, check if
         obj->ctemplate->sym == nrnpy_pyobj_sym_
 
 The variable ``nrnpy_pyobj_sym_`` here is a ``Symbol*`` and it is shared and available at least within ``nrnpython``.
+(See object types below for more about detecting the type of an ``Object*``.)
 
 
 To check if a PyObject is wrapping a NEURON object
@@ -137,6 +138,35 @@ integer, or bool. In HOC, these all return doubles.
 ``retobj_methods`` is a null-terminated array of ``Member_ret_obj_func`` of methods that return objects.
 (The actual functions implementing them take a ``void*`` and return an ``Object**``.)
 
+Object types
+------------
+
+The type of every NEURON ``Object* obj`` is determined by it's ``ctemplate->sym``. This is a ``Symbol*``.
+The pointers can be directly compared to see if two objects are of the same type. In particular,
+a ``Symbol`` has a ``char*`` field ``name``. That is, to print the name of the type
+that ``obj`` is an instance of, one can use:
+
+    .. code-block:: c
+    
+        printf("The type of obj is: %s\n", obj->ctemplate->sym->name);
+
+The ``hoc_lookup`` function takes a NEURON class name and returns the associated ``Symbol*``.
+For example:
+
+    .. code-block:: c
+    
+        Symbol* vector_sym = hoc_lookup("Vector");
+
+NEURON provides internal convenience functions ``is_obj_type(Object* obj, const char* type_name)``
+and ``check_obj_type(Object* obj, const char* type_name)`` that check to see if ``obj`` is of the
+type specified by ``type_name``. The former returns a 1 (true) or 0 (false); the latter has no
+return and raises an error if the type is wrong. These work by doing a ``strcmp``. If the
+``Symbol*`` is known, it is more efficient to directly compare the ``Symbol*``.
+
+For example, to see if ``obj`` is an instance of ``Vector`` and the ``Symbol*`` is not already
+known, use ``is_obj_type(obj, "Vector")``.
+
+These convenience functions are defined in ``src/oc/hoc_oop.cpp``.
 
 Miscellaneous tips
 ==================
