@@ -22,6 +22,9 @@ def assert_not_hoc_composite(cls):
         cname = cls.__name__
         raise TypeError(f"Composition of {bases} HocObjects not allowed in {cname}")
 
+def _overrides(cls, base, method_name):
+    return getattr(cls, method_name) is not getattr(base, method_name)
+
 
 def hclass(hoc_type):
     """
@@ -107,6 +110,18 @@ class HocBaseObject(hoc.HocObject):
         elif not hasattr(cls, "_hoc_type"):
             raise TypeError(
                 "Class keyword argument `hoc_type` is required for HocBaseObjects."
+            )
+        hobj = hoc.HocObject
+        hbase = HocBaseObject
+        if _overrides(cls, hobj, "__init__") and not _overrides(cls, hbase, "__new__"):
+            # Subclasses that override `__init__` must also implement `__new__` to deal
+            # with the arguments that have to be passed into `HocObject.__new__`.
+            # See https://github.com/neuronsimulator/nrn/issues/1129
+            raise TypeError(
+                f"`{cls.__qualname__}` implements `__init__` but misses `__new__`. "
+                + "Class must implement `__new__`"
+                + " and call `super().__new__` with the arguments required by HOC"
+                + f" to construct the underlying h.{cls._hoc_type.hname()} HOC object."
             )
         super().__init_subclass__(**kwargs)
 
