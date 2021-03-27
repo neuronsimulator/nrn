@@ -6,12 +6,13 @@
 //#include "shared/nvector_serial.h"
 #include "shared/nvector.h"
 #include "membfunc.h"
+#include "netcon.h"
 
 class NetCvode;
 class Daspk;
 class TQItem;
 class TQueue;
-class PreSynList;
+typedef std::vector<PreSyn*> PreSynList;
 struct BAMech;
 struct NrnThread;
 class PlayRecList;

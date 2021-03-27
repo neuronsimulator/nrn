@@ -434,8 +434,6 @@ struct InterThreadEvent {
 
 declareTable(MaxStateTable, void*, MaxStateItem*)
 implementTable(MaxStateTable, void*, MaxStateItem*)
-declarePtrList(PreSynList, PreSyn)
-implementPtrList(PreSynList, PreSyn)
 declarePtrList(HTListList, HTList)
 implementPtrList(HTListList, HTList)
 typedef std::vector<WatchCondition*> WatchList;
@@ -1427,7 +1425,7 @@ void NetCvode::del_cv_memb_list(Cvode* cvode) {
 	for (int j=0; j < cv.nctd_; ++j) {
 		CvodeThreadData& z = cv.ctd_[j];
 		if (z.psl_th_) {
-			z.psl_th_->remove_all();
+			z.psl_th_->clear();
 			delete z.psl_th_;
 			z.psl_th_ = nil;
 		}
@@ -1506,9 +1504,10 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 			cvsrc = gcv_;
 			z = cvsrc->ctd_ + nt->id;
 			if (!z->psl_th_) {
-				z->psl_th_ = new PreSynList(pst_cnt_);
+				z->psl_th_ = new PreSynList();
+				z->psl_th_->reserve(pst_cnt_);
 			}
-			z->psl_th_->append(ps);
+			z->psl_th_->push_back(ps);
 		}else{
 			
 			if (ps->osrc_) {
@@ -1526,9 +1525,9 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 			z = cvsrc->ctd_;
 			if (nt == cvsrc->nth_) {
 				if (!z->psl_th_) {
-					z->psl_th_ = new PreSynList(1);
+					z->psl_th_ = new PreSynList();
 				}
-				z->psl_th_->append(ps);
+				z->psl_th_->push_back(ps);
 			}
 		    }
 		}
@@ -4507,9 +4506,9 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
 	if (gcv_) {
 		for (int it = 0; it < gcv_->nctd_; ++it) {
 			PreSynList* psl = gcv_->ctd_[it].psl_th_;
-			if (psl) for (int j = 0; j < psl->count(); ++j) {
-				if (psl->item(j) == ps) {
-					psl->remove(j);
+			if (psl) for (size_t j = 0; j < psl->size(); ++j) {
+				if ((*psl)[j] == ps) {
+					psl->erase(psl->begin() + j);
 					return;
 				}
 			}
@@ -4518,9 +4517,9 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
 		int i, j;
 		lvardtloop(i, j) {
 			PreSynList* psl = p[i].lcv_[j].ctd_[0].psl_th_;
-			if (psl) for (int j = 0; j < psl->count(); ++j) {
-				if (psl->item(j) == ps) {
-					psl->remove(j);
+			if (psl) for (size_t j = 0; j < psl->size(); ++j) {
+				if ((*psl)[j] == ps) {
+					psl->erase(psl->begin() + j);
 					return;
 				}
 			}
@@ -5385,10 +5384,11 @@ void Cvode::evaluate_conditions(NrnThread* nt) {
 		nt = nrn_threads;
 	}
 	CvodeThreadData& z = CTD(nt->id);
-	int i;
 	if (z.psl_th_) {
-		for (i = z.psl_th_->count()-1; i >= 0; --i) {
-			z.psl_th_->item(i)->condition( this);
+		// originally was a reverse iteration, but I thing that was
+		// just to avoid continually calling count() on the List.
+		for (auto ps: *(z.psl_th_)) {
+			ps->condition( this);
 		}
 	}
 	if (z.watch_list_) {
@@ -5412,10 +5412,11 @@ void Cvode::check_deliver(NrnThread* nt) {
 		nt = nrn_threads;
 	}
 	CvodeThreadData& z = CTD(nt->id);
-	int i;
 	if (z.psl_th_) {
-		for (i = z.psl_th_->count()-1; i >= 0; --i) {
-			z.psl_th_->item(i)->check(nt, nt->_t);
+		// originally was a reverse iteration, but I thing that was
+		// just to avoid continually calling count() on the List.
+		for (auto ps: *(z.psl_th_)) {
+			ps->check(nt, nt->_t);
 		}
 	}
 	if (z.watch_list_) {
