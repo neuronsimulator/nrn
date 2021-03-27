@@ -434,8 +434,6 @@ struct InterThreadEvent {
 
 declareTable(MaxStateTable, void*, MaxStateItem*)
 implementTable(MaxStateTable, void*, MaxStateItem*)
-declarePtrList(HTListList, HTList)
-implementPtrList(HTListList, HTList)
 typedef std::vector<WatchCondition*> WatchList;
 declareTable(PreSynTable, double*, PreSyn*)
 implementTable(PreSynTable, double*, PreSyn*)
@@ -1378,7 +1376,7 @@ CvodeThreadData::~CvodeThreadData() {
 
 void NetCvode::delete_list() {
 	int i, j;
-	wl_list_->remove_all();
+	wl_list_->clear();
 	if (gcv_) {
 		delete_list(gcv_);
 		delete gcv_;
@@ -5215,7 +5213,7 @@ void WatchCondition::activate(double flag) {
 	HTList*& wl = cv->ctd_[id].watch_list_;
 	if (!wl) {
 		wl = new HTList(nil);
-		net_cvode_instance->wl_list_->append(wl);
+		net_cvode_instance->wl_list_->push_back(wl);
 	}
 	Remove();
 	wl->Append(this);
@@ -5731,8 +5729,6 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
 // factored this out from deliver_net_events so we can
 // stay in the cache
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
-	int i;
-
 	hoc_Item* pth = p[nt->id].psl_thr_;
 
 	if (pth) { /* only look at ones with a threshold */
@@ -5747,8 +5743,7 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		    }
 		}
 	}
-	for (i=0; i < wl_list_->count(); ++i) {
-		HTList* wl = wl_list_->item(i);
+	for (auto wl: *wl_list_) {
 		for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
 		    WatchCondition* wc = (WatchCondition*)item;
 		    NrnThread* nt1 = wc->pnt_ ? PP2NT(wc->pnt_) : nrn_threads;

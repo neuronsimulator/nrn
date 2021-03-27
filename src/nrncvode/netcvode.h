@@ -5,6 +5,7 @@
 
 #include "mymath.h"
 #include "tqueue.h"
+#include <vector>
 
 struct NrnThread;
 class PreSyn;
@@ -22,7 +23,7 @@ class IvocVect;
 class BAMechList;
 class MaxStateTable;
 class HTList;
-class HTListList;
+typedef std::vector<HTList*> HTListList;
 class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
