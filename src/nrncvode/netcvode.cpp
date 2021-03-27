@@ -438,8 +438,7 @@ declarePtrList(PreSynList, PreSyn)
 implementPtrList(PreSynList, PreSyn)
 declarePtrList(HTListList, HTList)
 implementPtrList(HTListList, HTList)
-declarePtrList(WatchList, WatchCondition)
-implementPtrList(WatchList, WatchCondition)
+typedef std::vector<WatchCondition*> WatchList;
 declareTable(PreSynTable, double*, PreSyn*)
 implementTable(PreSynTable, double*, PreSyn*)
 declarePool(SelfEventPool, SelfEvent)
@@ -2443,19 +2442,17 @@ extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i
 	}
 	WatchList* wl = (WatchList*)d->_pvoid;
 	if (r == 0) {
-		int j;
-		for (j=0; j < wl->count(); ++j) {
-			WatchCondition* wc1 = wl->item(j);
+		for (auto wc1: *wl) {
 			wc1->Remove();
 			if (wc1->qthresh_) { // is it on the queue?
 				net_cvode_instance->remove_event(wc1->qthresh_, PP2NT(pnt)->id);
 				wc1->qthresh_ = nil;
 			}
 		}
-		wl->remove_all();
+		wl->clear();
 	}
 	WatchCondition* wc = (WatchCondition*)d[i]._pvoid;
-	wl->append(wc);
+	wl->push_back(wc);
 	wc->activate(flag);
 }
 
