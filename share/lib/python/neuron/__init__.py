@@ -238,10 +238,10 @@ import sys, types
 # Load the `hclass` factory for the correct Python version 2/3 and prevent the
 # incorrect module source code from being opened by creating an empty module.
 if sys.version_info[0] == 2:
-  sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
+  hclass3 = sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
   from neuron.hclass2 import hclass
 else:
-  sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
+  hclass2 = sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
   if sys.version_info[0] == 3 and sys.version_info[1] < 6:
     from neuron.hclass35 import hclass
   else:
