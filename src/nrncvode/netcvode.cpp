@@ -440,8 +440,6 @@ implementTable(PreSynTable, double*, PreSyn*)
 declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
 typedef std::vector<TQItem*> TQList;
-declarePtrList(HocEventList, HocEvent)
-implementPtrList(HocEventList, HocEvent)
 
 // allows marshalling of all items in the event queue that need to be
 // removed to avoid duplicates due to frecord_init after finitialize
@@ -2611,9 +2609,9 @@ void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit,
 void NetCvode::allthread_handle() {
 	nrn_allthread_handle = nil;
 	t = nt_t;
-	while (allthread_hocevents_->count()) {
-		HocEvent* he = allthread_hocevents_->item(0);
-		allthread_hocevents_->remove(0);
+	while (!allthread_hocevents_->empty()) {
+		HocEvent* he = (*allthread_hocevents_)[0];
+		allthread_hocevents_->erase(allthread_hocevents_->begin());
 		he->allthread_handle();
 	}
 }
@@ -2638,7 +2636,7 @@ void NetCvode::allthread_handle(double tt, HocEvent* he, NrnThread* nt) {
 	}
 	if (nt->id == 0) {
 		nrn_allthread_handle = allthread_handle_callback;
-		allthread_hocevents_->append(he);
+		allthread_hocevents_->push_back(he);
 		nt->_t = tt;
 	}
 	if (cvode_active_ && gcv_ && nrnmpi_numprocs > 1) {
@@ -2731,7 +2729,7 @@ void NetCvode::clear_events() {
 	// already have gone out of existence so the tqe_ may contain many
 	// invalid item data pointers
 	HocEvent::reclaim();
-	allthread_hocevents_->remove_all();
+	allthread_hocevents_->clear();
 	nrn_allthread_handle = nil;
 #if USENEOSIM
 	if (p_nrn2neosim_send) for (i=0; i < nlist_; ++i) {

@@ -28,7 +28,7 @@ class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
 class HocEvent;
-class HocEventList;
+typedef std::vector<HocEvent*> HocEventList;
 struct BAMech;
 struct Section;
 struct InterThreadEvent;
