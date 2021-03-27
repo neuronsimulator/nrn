@@ -439,8 +439,7 @@ declareTable(PreSynTable, double*, PreSyn*)
 implementTable(PreSynTable, double*, PreSyn*)
 declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
-declarePtrList(TQList, TQItem)
-implementPtrList(TQList, TQItem)
+typedef std::vector<TQItem*> TQList;
 declarePtrList(HocEventList, HocEvent)
 implementPtrList(HocEventList, HocEvent)
 
@@ -4015,13 +4014,12 @@ void NetCvode::record_init() {
 	if (cnt) {
 		// there may be some events on the queue descended from
 		// finitialize that need to be removed
-		record_init_items_->remove_all();
+		record_init_items_->clear();
 		p[0].tqe_->forall_callback(record_init_clear);
-		int j, jcnt = record_init_items_->count();
-		for (j=0; j < jcnt; ++j) {
-			p[0].tqe_->remove(record_init_items_->item(j));
+		for (auto tq: *record_init_items_) {
+			p[0].tqe_->remove(tq);
 		}
-		record_init_items_->remove_all();
+		record_init_items_->clear();
 	}
 	for (i=0; i < cnt; ++i) {
 		prl_->item(i)->record_init();
@@ -6027,7 +6025,7 @@ void VecRecordDiscrete::record_init() {
 }
 
 void VecRecordDiscrete::frecord_init(TQItem* q) {
-	record_init_items_->append(q);
+	record_init_items_->push_back(q);
 }
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
@@ -6080,7 +6078,7 @@ void VecRecordDt::record_init() {
 }
 
 void VecRecordDt::frecord_init(TQItem* q) {
-	record_init_items_->append(q);
+	record_init_items_->push_back(q);
 }
 
 void VecRecordDt::deliver(double tt, NetCvode* nc) {
