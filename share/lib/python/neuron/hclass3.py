@@ -16,11 +16,15 @@ def assert_not_hoc_composite(cls):
     """
     Asserts that a class is not directly composed of multiple HOC types.
     """
-    hoc_bases = [b for b in cls.__bases__ if issubclass(b, hoc.HocObject)]
+    hoc_bases = set(
+        b._hoc_type
+        for b in cls.__bases__
+        if issubclass(b, HocBaseObject) and b is not HocBaseObject
+    )
     if len(hoc_bases) > 1:
-        bases = ", ".join(b.__name__)
-        cname = cls.__name__
-        raise TypeError(f"Composition of {bases} HocObjects not allowed in {cname}")
+        bases = ", ".join(b.__name__ for b in cls.__bases__)
+        raise TypeError(f"Composition of {bases} HocObjects with different HOC types.")
+
 
 def _overrides(cls, base, method_name):
     return getattr(cls, method_name) is not getattr(base, method_name)
@@ -99,18 +103,17 @@ class HocBaseObject(hoc.HocObject):
     """
 
     def __init_subclass__(cls, hoc_type=None, **kwargs):
-        assert_not_hoc_composite(cls)
         if hoc_type is not None:
             if not isinstance(hoc_type, hoc.HocObject):
                 raise TypeError(
                     f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
                 )
-            else:
-                cls._hoc_type = hoc_type
+            cls._hoc_type = hoc_type
         elif not hasattr(cls, "_hoc_type"):
             raise TypeError(
                 "Class keyword argument `hoc_type` is required for HocBaseObjects."
             )
+        assert_not_hoc_composite(cls)
         hobj = hoc.HocObject
         hbase = HocBaseObject
         if _overrides(cls, hobj, "__init__") and not _overrides(cls, hbase, "__new__"):
