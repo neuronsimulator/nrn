@@ -1,4 +1,4 @@
-#Python 3 only
+# Python 3 only
 # ------------------------------------------------------------------------------
 # class factory for subclassing h.anyclass
 # h.anyclass methods may be overridden. If so the base method can be called
@@ -11,6 +11,7 @@ from . import h, hoc
 import nrn
 import sys
 
+
 def assert_not_hoc_composite(cls):
     """
     Asserts that a class is not directly composed of multiple HOC types.
@@ -20,6 +21,7 @@ def assert_not_hoc_composite(cls):
         bases = ", ".join(b.__name__)
         cname = cls.__name__
         raise TypeError(f"Composition of {bases} HocObjects not allowed in {cname}")
+
 
 def hclass(hoc_type):
     """
@@ -45,6 +47,7 @@ def hclass(hoc_type):
     except TypeError:
         raise TypeError("Argument is not a valid HOC type.") from None
     return hc
+
 
 def nonlocal_hclass(hoc_type, module_name, name=None):
     """
@@ -96,11 +99,15 @@ class HocBaseObject(hoc.HocObject):
         assert_not_hoc_composite(cls)
         if hoc_type is not None:
             if not isinstance(hoc_type, hoc.HocObject):
-                raise TypeError(f"Class's `hoc_type` {hoc_type} is not a valid HOC type.")
+                raise TypeError(
+                    f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
+                )
             else:
                 cls._hoc_type = hoc_type
         elif not hasattr(cls, "_hoc_type"):
-            raise TypeError("Class keyword argument `hoc_type` is required for HocBaseObjects.")
+            raise TypeError(
+                "Class keyword argument `hoc_type` is required for HocBaseObjects."
+            )
         super().__init_subclass__(**kwargs)
 
     def __new__(cls, *args, **kwds):
@@ -112,7 +119,7 @@ class HocBaseObject(hoc.HocObject):
         # keyword argument to determine which type of HOC object to create. The `sec`
         # keyword argument can be passed along in case the construction of a HOC object
         # requires section stack access.
-        kwds2 = {'hocbase': cls._hoc_type}
-        if 'sec' in kwds:
-            kwds2['sec'] = kwds['sec']
+        kwds2 = {"hocbase": cls._hoc_type}
+        if "sec" in kwds:
+            kwds2["sec"] = kwds["sec"]
         return hoc.HocObject.__new__(cls, *args, **kwds2)
