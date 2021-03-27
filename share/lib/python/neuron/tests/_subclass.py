@@ -15,6 +15,9 @@ endtemplate A
 ''')
 
 class A1(hclass(h.A)) :
+  def __new__(cls, arg):
+    return super().__new__(cls, arg)
+  
   def __init__(self, arg) : # note, arg used by h.A
     #self.bp = hoc.HocObject.baseattr(self, 'p')
     self.bp = self.baseattr('p')
