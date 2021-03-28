@@ -433,8 +433,6 @@ struct InterThreadEvent {
 };
 
 typedef std::vector<WatchCondition*> WatchList;
-declareTable(PreSynTable, double*, PreSyn*)
-implementTable(PreSynTable, double*, PreSyn*)
 declarePool(SelfEventPool, SelfEvent)
 implementPool(SelfEventPool, SelfEvent)
 typedef std::vector<TQItem*> TQList;
@@ -4439,11 +4437,14 @@ NetCon* NetCvode::install_deliver(double* dsrc, Section* ssrc, Object* osrc,
 		psrc = dsrc;
 	}
 	if (psrc) {
-		if (!pst_->find(ps, psrc)) {
+		auto psti = pst_->find(psrc);
+		if (psti == pst_->end()) {
 			ps = new PreSyn(psrc, osrc, ssrc);
 			ps->hi_ = hoc_l_insertvoid(psl_, ps);
-			pst_->insert(psrc, ps);
+			(*pst_)[psrc] = ps;
 			++pst_cnt_;
+		}else{
+			ps = psti->second;
 		}
 		if (threshold != -1e9) { ps->threshold_ = threshold; }
 	}else if (osrc){
@@ -4492,7 +4493,7 @@ void NetCvode::presyn_disconnect(PreSyn* ps) {
 	}
 	if (ps->thvar_) {
 		--pst_cnt_;
-		pst_->remove(ps->thvar_);
+		pst_->erase(ps->thvar_);
 		ps->thvar_ = nil;
 	}
 	if (gcv_) {
@@ -6409,8 +6410,8 @@ void NetCvode::recalc_ptrs() {
 		if (ps->thvar_) {
 			double* pd = nrn_recalc_ptr(ps->thvar_);
 			if (pd != ps->thvar_) {
-				pst_->remove(ps->thvar_);
-				pst_->insert(pd, ps);
+				pst_->erase(ps->thvar_);
+				(*pst_)[pd] = ps;
 				ps->update_ptr(pd);
 			}
 		}

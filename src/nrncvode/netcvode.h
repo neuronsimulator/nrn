@@ -11,7 +11,7 @@
 struct NrnThread;
 class PreSyn;
 class HocDataPaths;
-class PreSynTable;
+typedef std::unordered_map<double*, PreSyn*> PreSynTable;
 class NetCon;
 class DiscreteEvent;
 class TQItemPool;
