@@ -8,9 +8,9 @@
 #include <errno.h>
 #include <time.h>
 #include <InterViews/resource.h>
-#include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>
+#include <unordered_map>
 #include <nrnhash.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
@@ -432,8 +432,6 @@ struct InterThreadEvent {
 	double t_;
 };
 
-declareTable(MaxStateTable, void*, MaxStateItem*)
-implementTable(MaxStateTable, void*, MaxStateItem*)
 typedef std::vector<WatchCondition*> WatchList;
 declareTable(PreSynTable, double*, PreSyn*)
 implementTable(PreSynTable, double*, PreSyn*)
@@ -6327,7 +6325,7 @@ double NetCvode::state_magnitudes() {
 		return 0.;
 	}
 }
-void NetCvode::maxstate_analyze_1(int it, Cvode& cv, MaxStateItem* msi, CvodeThreadData& z) {
+void NetCvode::maxstate_analyze_1(int it, Cvode& cv, CvodeThreadData& z) {
 	int j, n;
 	Symbol* sym;
 	double* ms;
@@ -6337,12 +6335,16 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, MaxStateItem* msi, CvodeThr
 		ma = cv.n_vector_data(cv.maxacor_, it);
 		for (j=0; j < n; ++j) {
 			sym = hdp_->retrieve_sym(z.pv_[j]);
-			if (!mst_->find(msi, (void*)sym)) {
+			auto msti = mst_->find((void*)sym);
+			MaxStateItem* msi;
+			if (msti == mst_->end()) {
 				msi = new MaxStateItem();
 				msi->sym_ = sym;
 				msi->max_ = -1e9;
 				msi->amax_ = -1e9;
-				mst_->insert((void*)sym, msi);
+				(*mst_)[(void*)sym] = msi;
+			}else{
+				msi = msti->second;
 			}
 			if (msi->max_ < ms[j]) { msi->max_ = ms[j];}
 			if (msi->amax_ < ma[j]) { msi->amax_ = ma[j];}
@@ -6351,7 +6353,6 @@ void NetCvode::maxstate_analyze_1(int it, Cvode& cv, MaxStateItem* msi, CvodeThr
 
 void NetCvode::maxstate_analyse() {
 	int i, it, j;
-	MaxStateItem* msi;
 	Symbol* sym;
 	if (!mst_) {
 		int n = 0;
@@ -6360,30 +6361,32 @@ void NetCvode::maxstate_analyse() {
 		}
 		mst_ = new MaxStateTable(3*n);
 	}
-	{for (TableIterator(MaxStateTable) ti(*mst_); ti.more(); ti.next()) {
-		msi = ti.cur_value();
+	for (auto ti: *mst_) {
+		MaxStateItem* msi = ti.second;
 		msi->max_ = -1e9;
 		msi->amax_ = -1e9;
-	}}
+	}
 	if (empty_) { return; }
 	statename(0,2);
 	if (gcv_) {
 		for (it=0; it < nrn_nthread; ++it) {
-			maxstate_analyze_1(it, *gcv_, msi, gcv_->ctd_[it]);
+			maxstate_analyze_1(it, *gcv_, gcv_->ctd_[it]);
 		}
 	}else{
 		lvardtloop(i, j) {
 			Cvode& cv = p[i].lcv_[j];
-			maxstate_analyze_1(i, cv, msi, cv.ctd_[0]);
+			maxstate_analyze_1(i, cv, cv.ctd_[0]);
 		}
 	}
 }
 
 double NetCvode::maxstate_analyse(Symbol* sym, double* pamax) {
-	MaxStateItem* msi;
-	if (mst_ && mst_->find(msi, (void*)sym)) {
-		*pamax = msi->amax_;
-		return msi->max_;
+	if (mst_) {
+		auto msti = mst_->find((void*)sym);
+		if (msti != mst_->end()) {
+			*pamax = msti->second->amax_;
+			return msti->second->max_;
+		}
 	}
 	*pamax = -1e9;
 	return -1e9;

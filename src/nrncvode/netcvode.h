@@ -6,6 +6,7 @@
 #include "mymath.h"
 #include "tqueue.h"
 #include <vector>
+#include <unordered_map>
 
 struct NrnThread;
 class PreSyn;
@@ -21,11 +22,11 @@ class PlayRecord;
 class PlayRecList;
 class IvocVect;
 class BAMechList;
-class MaxStateTable;
 class HTList;
 typedef std::vector<HTList*> HTListList;
 class NetCvode;
 class MaxStateItem;
+typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
 class CvodeThreadData;
 class HocEvent;
 typedef std::vector<HocEvent*> HocEventList;
@@ -177,7 +178,7 @@ public:
 	void fill_local_ba_cnt(int, int*, NetCvodeThreadData&);
 	BAMechList* cvbml(int, BAMech*, Cvode*);
 	void maxstate_analyse();
-	void maxstate_analyze_1(int, Cvode&, MaxStateItem*, CvodeThreadData&);
+	void maxstate_analyze_1(int, Cvode&, CvodeThreadData&);
 	void fornetcon_prepare();
 	int fornetcon_change_cnt_;
 	double maxstate_analyse(Symbol*, double*);
