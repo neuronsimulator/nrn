@@ -11,6 +11,7 @@
 #include "nrnneosm.h"
 #include "nrnmpi.h"
 #include <vector>
+#include <unordered_map>
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -28,9 +29,6 @@ class NetCvode;
 class HocEventPool;
 class HocCommand;
 class SelfEventPPTable;
-class NetConSaveWeightTable;
-class NetConSaveIndexTable;
-class PreSynSaveIndexTable;
 class STETransition;
 class IvocVect;
 class BGP_DMASend;
@@ -109,6 +107,10 @@ public:
 	static unsigned long netcon_send_inactive_;
 	static unsigned long netcon_deliver_;
 };
+
+typedef std::unordered_map<void*, NetCon*> NetConSaveWeightTable;
+typedef std::unordered_map<long, NetCon*> NetConSaveIndexTable;
+
 class NetConSave : public DiscreteEvent {
 public:
 	NetConSave(NetCon*);
@@ -287,6 +289,9 @@ public:
 	static unsigned long presyn_deliver_direct_;
 	static unsigned long presyn_deliver_ncsend_;
 };
+
+typedef std::unordered_map<long, PreSyn*> PreSynSaveIndexTable;
+
 class PreSynSave : public DiscreteEvent {
 public:
 	PreSynSave(PreSyn*);

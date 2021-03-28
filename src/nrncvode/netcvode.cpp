@@ -4665,12 +4665,7 @@ void NetConSave::savestate_write(FILE* f) {
 	fprintf(f, "%d\n", netcon_->obj_->index);
 }
 
-declareTable(NetConSaveWeightTable, void*, NetCon*)
-implementTable(NetConSaveWeightTable, void*, NetCon*)
 NetConSaveWeightTable* NetConSave::wtable_;
-
-declareTable(NetConSaveIndexTable, long, NetCon*)
-implementTable(NetConSaveIndexTable, long, NetCon*)
 NetConSaveIndexTable* NetConSave::idxtable_;
 
 void NetConSave::invalid() {
@@ -4694,11 +4689,13 @@ NetCon* NetConSave::weight2netcon(double* pd) {
 			Object* obj = OBJ(q);
 			nc = (NetCon*)obj->u.this_pointer;
 			if (nc->weight_) {
-				wtable_->insert(nc->weight_, nc);
+				(*wtable_)[nc->weight_] = nc;
 			}
 		}
 	}
-	if (wtable_->find(nc, pd)) {
+	auto wti = wtable_->find(pd);
+	if (wti != wtable_->end()) {
+		nc = wti->second;
 		assert(nc->weight_ == pd);
 		return nc;
 	}else{
@@ -4716,11 +4713,13 @@ NetCon* NetConSave::index2netcon(long id) {
 			Object* obj = OBJ(q);
 			nc = (NetCon*)obj->u.this_pointer;
 			if (nc->weight_) {
-				idxtable_->insert(obj->index, nc);
+				(*idxtable_)[obj->index] = nc;
 			}
 		}
 	}
-	if (idxtable_->find(nc, id)) {
+	auto idxti = idxtable_->find(id);
+	if (idxti != idxtable_->end()) {
+		nc = idxti->second;
 		assert(nc->obj_->index == id);
 		return nc;
 	}else{
@@ -4902,8 +4901,6 @@ void PreSynSave::savestate_write(FILE* f) {
 	fprintf(f, "%ld %d\n", presyn_->hi_index_, presyn_->nt_?presyn_->nt_->id:0);
 }
 
-declareTable(PreSynSaveIndexTable, long, PreSyn*)
-implementTable(PreSynSaveIndexTable, long, PreSyn*)
 PreSynSaveIndexTable* PreSynSave::idxtable_;
 
 void PreSynSave::invalid() {
@@ -4927,11 +4924,13 @@ PreSyn* PreSynSave::hindx2presyn(long id) {
 		ITERATE (q, net_cvode_instance->psl_) {
 			ps = (PreSyn*)VOIDITM(q);
 			assert(ps->hi_index_ == cnt);
-			idxtable_->insert(ps->hi_index_, ps);
+			(*idxtable_)[ps->hi_index_] = ps;
 			++cnt;
 		}
 	}
-	if (idxtable_->find(ps, id)) {
+	auto idxti = idxtable_->find(id);
+	if (idxti != idxtable_->end()) {
+		ps = idxti->second;
 		assert(ps->hi_index_ == id);
 		return ps;
 	}else{
