@@ -239,12 +239,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${modtests_launch_py}
             test/coreneuron/test_fornetcon.py)
-  # See https://github.com/BlueBrain/CoreNeuron/issues/513, this doesn't work on GPU.
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME datareturn_py
     REQUIRES coreneuron
-    CONFLICTS gpu
     SCRIPT_PATTERNS test/coreneuron/test_datareturn.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${modtests_launch_py}
             test/coreneuron/test_datareturn.py)
