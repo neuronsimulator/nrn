@@ -39,8 +39,9 @@ def surface_area(itemlist, vox, grid):
 
 def sub_surface_area(v0, v1, v2, v3, v4, v5, v6, v7, x0, x1, y0, y1, z0, z1):
 
+    def allornone(lst): return all(lst) or not any(lst)
     # if all corners are inside -- return 0
-    if all([x <= options.ics_distance_threshold for x in [v0, v1, v2, v3, v4, v5, v6, v7]]):
+    if allornone([x <= options.ics_distance_threshold for x in [v0, v1, v2, v3, v4, v5, v6, v7]]):
         return 0
 
     results = numpy.array([0.] * 48)
