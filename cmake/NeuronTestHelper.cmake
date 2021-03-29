@@ -275,7 +275,6 @@ function(nrn_add_test)
         )
       endif()
       list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
-      message(STATUS nrnivmodl_dependencies ${nrnivmodl_dependencies})
     endif()
     add_custom_command(
       OUTPUT ${output_binaries}
