@@ -13,7 +13,7 @@ def test_node_selection(neuron_instance):
 
     nodes = c.nodes
 
-    assert(nodes((5,0,0.26))[0].x3d == 5.125)
-    assert(nodes((5,0,0.26))[0].y3d == 0.125)
-    assert(nodes((5,0,0.26))[0].z3d == 0.375)
+    assert(nodes((5.2, 0.1, 0.3))[0].x3d == 5.125)
+    assert(nodes((5.2, 0.1, 0.3))[0].y3d == 0.125)
+    assert(nodes((5.2, 0.1, 0.3))[0].z3d == 0.375)
     assert(len(nodes((5, 0, 0))) == 1)
