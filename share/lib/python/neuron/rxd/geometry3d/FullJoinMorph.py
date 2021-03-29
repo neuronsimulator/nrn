@@ -178,7 +178,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             # no need to delete from surface voxels, it is never added to final surface voxels
         else:
             V = simplevolume(itemlist, distances, vox, grid)
-            A = surface_area(distances[0], distances[1], distances[2], distances[3], distances[4], distances[5], distances[6], distances[7], 0,dx,0,dy,0,dz)
+            A = surface_area(itemlist, vox, grid)
             final_surface_voxels[vox] = [V, A, seg]
             
     def has_vox(*vox):
