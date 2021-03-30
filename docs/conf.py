@@ -104,3 +104,11 @@ if os.environ.get("READTHEDOCS"):
         sys.path.remove(os.path.abspath('.'))
     except:
         pass
+
+    # Workaround for plotly.
+    # RTD calls `conda install sphinx_rtd_theme` after `conda create` and SUPERSEDES installed one
+    # Here we get it back from conda-forge.
+    subprocess.run(
+        'conda install --yes --quiet --name latest --no-channel-priority -c conda-forge sphinx_rtd_theme',
+        shell=True,
+        check=True)
