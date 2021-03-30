@@ -723,7 +723,7 @@ bool CodegenCVisitor::ion_variable_struct_required() const {
 /**
  * \details This can be override in the backend. For example, parameters can be constant
  * except in INITIAL block where they are set to 0. As initial block is/can be
- * executed on c/cpu backend, gpu/cuda backend can mark the parameter as constnat.
+ * executed on c/cpu backend, gpu/cuda backend can mark the parameter as constant.
  */
 bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
     auto symbol = program_symtab->lookup_in_scope(name);
@@ -2009,7 +2009,7 @@ std::string CodegenCVisitor::process_shadow_update_statement(ShadowUseStatement&
 void CodegenCVisitor::print_nmodl_constants() {
     if (!info.factor_definitions.empty()) {
         printer->add_newline(2);
-        printer->add_line("/** constants used in nmodl */");
+        printer->add_line("/** constants used in nmodl from UNITS */");
         for (const auto& it: info.factor_definitions) {
 #ifdef USE_LEGACY_UNITS
             const std::string format_string = "static const double {} = {:g};";
