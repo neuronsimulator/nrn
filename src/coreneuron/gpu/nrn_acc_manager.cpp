@@ -31,8 +31,11 @@
 namespace coreneuron {
 extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(const IvocVect& iv, IvocVect& div);
+void delete_ivoc_vect_from_device(IvocVect&);
 void nrn_ion_global_map_copyto_device();
+void nrn_ion_global_map_delete_from_device();
 void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
+void nrn_VecPlay_delete_from_device(NrnThread* nt);
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
@@ -415,6 +418,18 @@ void copy_ivoc_vect_to_device(const IvocVect& from, IvocVect& to) {
 #endif
 }
 
+void delete_ivoc_vect_from_device(IvocVect& vec) {
+#ifdef _OPENACC
+    auto const n = vec.size();
+    if (n) {
+        acc_delete(vec.data(), sizeof(double) * n);
+    }
+    acc_delete(&vec, sizeof(IvocVect));
+#else
+    (void) vec;
+#endif
+}
+
 void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
     NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
     if (!nrb) {
@@ -610,19 +625,17 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 int is_art = corenrn.get_is_artificial()[type];
                 int layout = corenrn.get_mech_data_layout()[type];
 
-                // PatternStim is a special mechanim of type artificial cell
-                // and it's not copied on GPU. So we shouldn't update it from GPU.
-                if (type == nrn_get_mechtype("PatternStim")) {
+                // Artificial mechanisms such as PatternStim and IntervalFire
+                // are not copied onto the GPU. They should not, therefore, be
+                // updated from the GPU.
+                if (is_art) {
                     continue;
                 }
 
                 int pcnt = nrn_soa_padded_size(n, layout) * szp;
 
                 acc_update_self(ml->data, pcnt * sizeof(double));
-
-                if (!is_art) {
-                    acc_update_self(ml->nodeindices, n * sizeof(int));
-                }
+                acc_update_self(ml->nodeindices, n * sizeof(int));
 
                 if (szdp) {
                     int pcnt = nrn_soa_padded_size(n, layout) * szdp;
@@ -854,17 +867,153 @@ void update_matrix_to_gpu(NrnThread* _nt) {
 #endif
 }
 
-void finalize_data_on_device() {
-    /*@todo: when we have used random123 on gpu and we do this finalize,
-    I am seeing cuCtxDestroy returned CUDA_ERROR_INVALID_CONTEXT error.
-    THis might be due to the fact that the cuda apis (e.g. free is not
-    called yet for Ramdom123 data / streams etc. So handle this better!
-    */
-    return;
+/** Cleanup device memory that is being tracked by the OpenACC runtime.
+ *
+ *  This function painstakingly calls `acc_delete` in reverse order on all
+ *  pointers that were passed to `acc_copyin` in `setup_nrnthreads_on_device`.
+ *  This cleanup ensures that if the GPU is initialised multiple times from the
+ *  same process then the OpenACC runtime will not be polluted with old
+ *  pointers, which can cause errors. In particular if we do:
+ *  @code
+ *    {
+ *      // ... some_ptr is dynamically allocated ...
+ *      acc_copyin(some_ptr, some_size);
+ *      // ... do some work ...
+ *      // acc_delete(some_ptr);
+ *      free(some_ptr);
+ *    }
+ *    {
+ *      // ... same_ptr_again is dynamically allocated at the same address ...
+ *      acc_copyin(same_ptr_again, some_other_size); // ERROR
+ *    }
+ *  @endcode
+ *  the application will/may abort with an error such as:
+ *    FATAL ERROR: variable in data clause is partially present on the device.
+ *  The pattern above is typical of calling CoreNEURON on GPU multiple times in
+ *  the same process.
+ */
+void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
+#ifdef _OPENACC
+    for (int i = 0; i < nthreads; i++) {
+        NrnThread* nt = threads + i;
+
+        if (nt->_permute) {
+            if (interleave_permute_type == 1) {
+                InterleaveInfo* info = interleave_info + i;
+                acc_delete(info->cellsize, sizeof(int) * nt->ncell);
+                acc_delete(info->lastnode, sizeof(int) * nt->ncell);
+                acc_delete(info->firstnode, sizeof(int) * nt->ncell);
+                acc_delete(info->stride, sizeof(int) * (info->nstride + 1));
+                acc_delete(info, sizeof(InterleaveInfo));
+            } else if (interleave_permute_type == 2) {
+                InterleaveInfo* info = interleave_info + i;
+                acc_delete(info->cellsize, sizeof(int) * info->nwarp);
+                acc_delete(info->stridedispl, sizeof(int) * (info->nwarp + 1));
+                acc_delete(info->lastnode, sizeof(int) * (info->nwarp + 1));
+                acc_delete(info->firstnode, sizeof(int) * (info->nwarp + 1));
+                acc_delete(info->stride, sizeof(int) * info->nstride);
+                acc_delete(info, sizeof(InterleaveInfo));
+            }
+        }
+
+        if (nt->n_vecplay) {
+            nrn_VecPlay_delete_from_device(nt);
+            acc_delete(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
+        }
+
+        // Cleanup send_receive buffer.
+        if (nt->_net_send_buffer_size) {
+            acc_delete(nt->_net_send_buffer, sizeof(int) * nt->_net_send_buffer_size);
+        }
+
+        if (nt->n_presyn) {
+            acc_delete(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+            acc_delete(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
+        }
+
+        // Cleanup data that's setup in bbcore_read.
+        if (nt->_nvdata) {
+            acc_delete(nt->_vdata, sizeof(void*) * nt->_nvdata);
+        }
+
+        // Cleanup weight vector used in NET_RECEIVE
+        if (nt->n_weight) {
+            acc_delete(nt->weights, sizeof(double) * nt->n_weight);
+        }
+
+        // Cleanup point processes
+        if (nt->n_pntproc) {
+            acc_delete(nt->pntprocs, nt->n_pntproc * sizeof(Point_process));
+        }
+
+        if (nt->shadow_rhs_cnt) {
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+            acc_delete(nt->_shadow_d, pcnt * sizeof(double));
+            acc_delete(nt->_shadow_rhs, pcnt * sizeof(double));
+        }
+
+        for (auto tml = nt->tml; tml; tml = tml->next) {
+            // Cleanup the net send buffer if it exists
+            {
+                NetSendBuffer_t* nsb{tml->ml->_net_send_buffer};
+                if (nsb) {
+                    acc_delete(nsb->_nsb_flag, sizeof(double) * nsb->_size);
+                    acc_delete(nsb->_nsb_t, sizeof(double) * nsb->_size);
+                    acc_delete(nsb->_weight_index, sizeof(int) * nsb->_size);
+                    acc_delete(nsb->_pnt_index, sizeof(int) * nsb->_size);
+                    acc_delete(nsb->_vdata_index, sizeof(int) * nsb->_size);
+                    acc_delete(nsb->_sendtype, sizeof(int) * nsb->_size);
+                    acc_delete(nsb, sizeof(NetSendBuffer_t));
+                }
+            }
+            // Cleanup the net receive buffer if it exists.
+            {
+                NetReceiveBuffer_t* nrb{tml->ml->_net_receive_buffer};
+                if (nrb) {
+                    acc_delete(nrb->_nrb_index, sizeof(int) * (nrb->_size + 1));
+                    acc_delete(nrb->_displ, sizeof(int) * (nrb->_size + 1));
+                    acc_delete(nrb->_nrb_flag, sizeof(double) * nrb->_size);
+                    acc_delete(nrb->_nrb_t, sizeof(double) * nrb->_size);
+                    acc_delete(nrb->_weight_index, sizeof(int) * nrb->_size);
+                    acc_delete(nrb->_pnt_index, sizeof(int) * nrb->_size);
+                    acc_delete(nrb, sizeof(NetReceiveBuffer_t));
+                }
+            }
+            int type = tml->index;
+            int n = tml->ml->nodecount;
+            int szdp = corenrn.get_prop_dparam_size()[type];
+            int is_art = corenrn.get_is_artificial()[type];
+            int layout = corenrn.get_mech_data_layout()[type];
+            int ts = corenrn.get_memb_funcs()[type].thread_size_;
+            if (ts) {
+                acc_delete(tml->ml->_thread, ts * sizeof(ThreadDatum));
+            }
+            if (szdp) {
+                int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                acc_delete(tml->ml->pdata, sizeof(int) * pcnt);
+            }
+            if (!is_art) {
+                acc_delete(tml->ml->nodeindices, sizeof(int) * n);
+            }
+            acc_delete(tml->ml, sizeof(Memb_list));
+            acc_delete(tml, sizeof(NrnThreadMembList));
+        }
+        acc_delete(nt->_ml_list, corenrn.get_memb_funcs().size() * sizeof(Memb_list*));
+        acc_delete(nt->_v_parent_index, nt->end * sizeof(int));
+        acc_delete(nt->_data, nt->_ndata * sizeof(double));
+    }
+    acc_delete(threads, sizeof(NrnThread) * nthreads);
+    nrn_ion_global_map_delete_from_device();
+
+    acc_shutdown(acc_device_nvidia);
+#endif
 }
+
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
 #ifdef _OPENACC
+    // FIXME this check needs to be tweaked if we ever want to run with a mix
+    //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
         return;
     }
@@ -903,8 +1052,29 @@ void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
 #endif
 }
 
+void nrn_newtonspace_delete_from_device(NewtonSpace* ns) {
+#ifdef _OPENACC
+    // FIXME this check needs to be tweaked if we ever want to run with a mix
+    //       of CPU and GPU threads.
+    if (nrn_threads[0].compute_gpu == 0) {
+        return;
+    }
+    int n = ns->n * ns->n_instance;
+    acc_delete(ns->jacobian[0], ns->n * n * sizeof(double));
+    acc_delete(ns->jacobian, ns->n * sizeof(double*));
+    acc_delete(ns->perm, n * sizeof(int));
+    acc_delete(ns->rowmax, n * sizeof(double));
+    acc_delete(ns->low_value, n * sizeof(double));
+    acc_delete(ns->high_value, n * sizeof(double));
+    acc_delete(ns->delta_x, n * sizeof(double));
+    acc_delete(ns, sizeof(NewtonSpace));
+#endif
+}
+
 void nrn_sparseobj_copyto_device(SparseObj* so) {
 #ifdef _OPENACC
+    // FIXME this check needs to be tweaked if we ever want to run with a mix
+    //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
         return;
     }
@@ -984,6 +1154,29 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
 #endif
 }
 
+void nrn_sparseobj_delete_from_device(SparseObj* so) {
+#ifdef _OPENACC
+    // FIXME this check needs to be tweaked if we ever want to run with a mix
+    //       of CPU and GPU threads.
+    if (nrn_threads[0].compute_gpu == 0) {
+        return;
+    }
+    unsigned n1 = so->neqn + 1;
+    for (unsigned irow = 1; irow < n1; ++irow) {
+        for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
+            acc_delete(elm->value, so->_cntml_padded * sizeof(double));
+            acc_delete(elm, sizeof(Elm));
+        }
+    }
+    acc_delete(so->coef_list, so->coef_list_size * sizeof(double*));
+    acc_delete(so->rhs, n1 * so->_cntml_padded * sizeof(double));
+    acc_delete(so->ngetcall, so->_cntml_padded * sizeof(unsigned));
+    acc_delete(so->diag, n1 * sizeof(Elm*));
+    acc_delete(so->rowst, n1 * sizeof(Elm*));
+    acc_delete(so, sizeof(SparseObj));
+#endif
+}
+
 #ifdef _OPENACC
 
 void nrn_ion_global_map_copyto_device() {
@@ -998,6 +1191,17 @@ void nrn_ion_global_map_copyto_device() {
                 acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
             }
         }
+    }
+}
+
+void nrn_ion_global_map_delete_from_device() {
+    for (int j = 0; j < nrn_ion_global_map_size; j++) {
+        if (nrn_ion_global_map[j]) {
+            acc_delete(nrn_ion_global_map[j], ion_global_map_member_size * sizeof(double));
+        }
+    }
+    if (nrn_ion_global_map_size) {
+        acc_delete(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
     }
 }
 
@@ -1057,5 +1261,19 @@ void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay) {
         acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
     }
 }
+
+void nrn_VecPlay_delete_from_device(NrnThread* nt) {
+    for (int i = 0; i < nt->n_vecplay; i++) {
+        auto* vecplay_instance = reinterpret_cast<VecPlayContinuous*>(nt->_vecplay[i]);
+        acc_delete(vecplay_instance->e_, sizeof(PlayRecordEvent));
+        if (vecplay_instance->discon_indices_) {
+            delete_ivoc_vect_from_device(*(vecplay_instance->discon_indices_));
+        }
+        delete_ivoc_vect_from_device(vecplay_instance->t_);
+        delete_ivoc_vect_from_device(vecplay_instance->y_);
+        acc_delete(vecplay_instance, sizeof(VecPlayContinuous));
+    }
+}
+
 #endif
 }  // namespace coreneuron

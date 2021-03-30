@@ -763,6 +763,7 @@ void _nrn_destroy_sparseobj_thread(SparseObj* so) {
     if (!so) {
         return;
     }
+    nrn_sparseobj_delete_from_device(so);
     if (so->rowst)
         Free(so->rowst);
     if (so->diag)

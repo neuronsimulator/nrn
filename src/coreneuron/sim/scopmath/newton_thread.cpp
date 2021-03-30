@@ -234,6 +234,7 @@ NewtonSpace* nrn_cons_newtonspace(int n, int n_instance) {
 }
 
 void nrn_destroy_newtonspace(NewtonSpace* ns) {
+    nrn_newtonspace_delete_from_device(ns);
     free((char*) ns->perm);
     freevector(ns->delta_x);
     freematrix(ns->jacobian);
