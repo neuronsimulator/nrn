@@ -47,12 +47,10 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FENV_H
-#if defined(linux)
+#if HAVE_FEENABLEEXCEPT
 #define NRN_FLOAT_EXCEPTION 1
 #else
 #define NRN_FLOAT_EXCEPTION 0
-#endif
 #endif
 
 #if NRN_FLOAT_EXCEPTION
@@ -60,7 +58,6 @@ extern int stdin_event_ready();
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
 int matherr1(void) {
-#if defined(FE_NOMASK_ENV) /* should be updated to be more generic */
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -73,17 +70,20 @@ int matherr1(void) {
 		fprintf(stderr, "Floating exception: Overflow\n");
 		break;
 	}
-#endif /*FE_NOMASK_ENV*/
 }
 #endif
 
+int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
+
 void nrn_feenableexcept() {
   int result = -1;
-#if NRN_FLOAT_EXCEPTION && defined(FE_NOMASK_ENV)
+  nrn_feenableexcept_ = 0;
+#if NRN_FLOAT_EXCEPTION
   if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
     result = feenableexcept(0);
   }else{
     result = feenableexcept(FEEXCEPT);
+    nrn_feenableexcept_ = result ? 0 : 1;
   }
 #endif
   hoc_ret();
@@ -823,7 +823,7 @@ RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 #if DOS
 _fpreset();
 #endif
-#if 1 && NRN_FLOAT_EXCEPTION
+#if NRN_FLOAT_EXCEPTION
 	matherr1();
 #endif
 	Fprintf(stderr, "Floating point exception\n");
@@ -832,7 +832,7 @@ _fpreset();
 		abort();
 	}
 	signal(SIGFPE, fpecatch);
-	execerror("Aborting.", (char *) 0);
+	execerror("Floating point exception.", (char *) 0);
 }
 
 #if HAVE_SIGSEGV
