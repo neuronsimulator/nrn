@@ -76,7 +76,7 @@ int matherr1(void) {
 int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
 
 void nrn_feenableexcept() {
-  int result = -1;
+  int result = -2; // feenableexcept does not exist.
   nrn_feenableexcept_ = 0;
 #if NRN_FLOAT_EXCEPTION
   if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {

@@ -26,7 +26,8 @@ Error Handling
         and, to force a coredump on abort(), use the bash command 'ulimit -c unlimited'.
 
         Return is the previous value of the floating-point mask. (or -1
-        on failure, or functionality not supported).
+        on failure to set the floating-point flags; or -2 if feenableexcept  
+        does not exist).
 
         Without an arg, SIGFPE is turned on.
     Note:
