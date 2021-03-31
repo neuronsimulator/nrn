@@ -83,7 +83,7 @@ void nrn_feenableexcept() {
     result = feenableexcept(0);
   }else{
     result = feenableexcept(FEEXCEPT);
-    nrn_feenableexcept_ = result ? 0 : 1;
+    nrn_feenableexcept_ = (result == -1) ? 0 : 1;
   }
 #endif
   hoc_ret();
