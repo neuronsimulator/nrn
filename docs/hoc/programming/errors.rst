@@ -25,6 +25,10 @@ Error Handling
         is most easily done when running under gdb. For a parallel model, one can combine with coredump_on_error
         and, to force a coredump on abort(), use the bash command 'ulimit -c unlimited'.
 
+    Note:
+        The normal trap for exp(x) for x > 700 in mod files becomes
+        a floating exception when x is out of range.
+
 ----
 
 .. function:: show_errmess_always
