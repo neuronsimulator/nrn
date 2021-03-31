@@ -80,7 +80,7 @@ void nrn_feenableexcept() {
   nrn_feenableexcept_ = 0;
 #if NRN_FLOAT_EXCEPTION
   if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-    result = feenableexcept(0);
+    result = fedisableexcept(FEEXCEPT);
   }else{
     result = feenableexcept(FEEXCEPT);
     nrn_feenableexcept_ = (result == -1) ? 0 : 1;
