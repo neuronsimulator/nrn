@@ -244,6 +244,7 @@ nrn_check_symbol_exists("stty" "" HAVE_STTY)
 nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
+nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
 # not necessary to check as it should be always there
 set(HAVE_SSTREAM /**/)
 
