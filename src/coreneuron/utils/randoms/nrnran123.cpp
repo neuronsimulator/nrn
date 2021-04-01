@@ -72,12 +72,12 @@ void nrnran123_deletestream(nrnran123_State* s) {
     free(s);
 }
 
-void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, unsigned char* which) {
+void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
     *seq = s->c.v[0];
     *which = s->which_;
 }
 
-void nrnran123_setseq(nrnran123_State* s, uint32_t seq, unsigned char which) {
+void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     if (which > 3) {
         s->which_ = 0;
     } else {
@@ -100,7 +100,7 @@ void nrnran123_getids3(nrnran123_State* s, uint32_t* id1, uint32_t* id2, uint32_
 
 uint32_t nrnran123_ipick(nrnran123_State* s) {
     uint32_t rval;
-    unsigned char which = s->which_;
+    char which = s->which_;
     assert(which < 4);
     rval = s->r.v[which++];
     if (which > 3) {

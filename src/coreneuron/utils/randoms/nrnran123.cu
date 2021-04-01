@@ -48,12 +48,12 @@ __global__ void nrnran123_cuda_deletestream(nrnran123_State* s) {
     atomicSub(&instance_count_, 1);
 }
 
-__device__ void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, unsigned char* which) {
+__device__ void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
     *seq = s->c.v[0];
     *which = s->which_;
 }
 
-__device__ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, unsigned char which) {
+__device__ void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char which) {
     if (which > 3) {
         s->which_ = 0;
     } else {
@@ -76,7 +76,7 @@ __device__ void nrnran123_getids3(nrnran123_State* s, uint32_t* id1, uint32_t* i
 
 __device__ uint32_t nrnran123_ipick(nrnran123_State* s) {
     uint32_t rval;
-    unsigned char which = s->which_;
+    char which = s->which_;
     rval = s->r.v[which++];
     if (which > 3) {
         which = 0;

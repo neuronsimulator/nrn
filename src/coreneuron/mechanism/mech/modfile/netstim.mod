@@ -216,7 +216,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 		assert(0);
 	}
 	if (d) {
-        unsigned char which;
+        char which;
 		uint32_t* di = ((uint32_t*)d) + *offset;
 #if !NRNBBCORE
 		if (_ran_compat == 1) {
