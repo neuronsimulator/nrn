@@ -1,3 +1,5 @@
+#include <vector>
+#include <unordered_map>
 #include "nrncore_callbacks.h"
 #include "nrnconf.h"
 #include "nrnmpi.h"
@@ -9,6 +11,7 @@
 #include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
 #include "netcvode.h" // for nrnbbcore_vecplay_write
+extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
 #ifdef MINGW
@@ -597,4 +600,135 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
     }
 
     return 0;
+}
+
+NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
+  if (tid >= nrn_nthread) { return NULL; }
+
+  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
+
+  // see comments below about same object multiple times on queue
+  // and single sweep fill
+  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
+  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
+  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
+
+  NrnThread& nt = nrn_threads[tid];
+  TQueue* tq = net_cvode_instance_event_queue(&nt);
+  TQItem* tqi;
+  auto& cg = cellgroups_[tid];
+  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
+    // removes all items from NEURON queue to reappear in CoreNEURON queue
+    DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
+    int type = de->type();
+    double tdeliver = tqi->t_;
+    core_te->type.push_back(type);
+    core_te->td.push_back(tdeliver);
+
+    switch (type) {
+      case DiscreteEventType: { // 0
+      } break;
+      case TstopEventType: { // 1
+      } break;
+      case NetConType: { // 2
+        NetCon* nc = (NetCon*)de;
+        // To find the i for cg.netcons[i] == nc
+        // and since there are generally very many fewer nc on the queue
+        // than netcons. Begin a nc2i map that we can fill in for i
+        // later in one sweep through the cg.netcons.
+        // Here is where it goes.
+        size_t iloc = core_te->intdata.size();
+        core_te->intdata.push_back(-1);
+        // But must take into account the rare situation where the same
+        // NetCon is on the queue more than once. Hence the std::vector
+        netcon2intdata[nc].push_back(iloc);
+      } break;
+      case SelfEventType: { //3
+        SelfEvent* se = (SelfEvent*)de;
+        Point_process* pnt = se->target_;
+        int type = pnt->prop->type;
+        double* wt = se->weight_;
+
+        core_te->intdata.push_back(type);
+        core_te->dbldata.push_back(se->flag_);
+
+        // All SelfEvent have a target. A SelfEvent only has a weight if
+        // it was issued in response to a NetCon event to the target
+        // NET_RECEIVE block. Determination of Point_process* target_ on the
+        // CoreNEURON side uses mechanism type and instance index from here
+        // on the NEURON side. And the latter can be determined now from pnt.
+        // On the other hand, if there is a non-null weight pointer, its index
+        // can only be determined by sweeping over all NetCon.
+        
+        double* data = pnt->prop->param;
+        Memb_list* ml = nt._ml_list[type];
+        int index = (data - ml->data[0])/nrn_prop_param_size_[type];
+        core_te->intdata.push_back(index);
+
+        size_t iloc_wt = core_te->intdata.size();
+        if (wt) { // don't bother with NULL weights
+          weight2intdata[wt].push_back(iloc_wt);
+        }
+        core_te->intdata.push_back(-1); // If NULL weight this is the indicator
+
+        core_te->intdata.push_back(-1); // movable fix me.
+
+      } break;
+      case PreSynType: { // 4
+        PreSyn* nc = (PreSyn*)de;
+        // similar to NetCon but more data
+        size_t iloc = core_te->intdata.size();
+        core_te->intdata.push_back(-1);
+        presyn2intdata[nc].push_back(iloc);
+      } break;
+      case HocEventType: { // 5
+      } break;
+      case PlayRecordEventType: { // 6
+      } break;
+      case NetParEventType: { // 7
+      } break;
+      default: {
+      } break;
+    }            
+  }
+
+  // fill in the integers for the pointer translation
+
+  // NEURON NetCon* to CoreNEURON index into nt.netcons
+  for (int i = 0; i < cg.n_netcon; ++i) {
+    NetCon* nc = cg.netcons[i];
+    auto iter = netcon2intdata.find(nc);
+    if (iter != netcon2intdata.end()) {
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+    }
+  }
+
+  // NEURON PreSyn* to CoreNEURON index into nt.presyns
+  for (int i = 0; i < cg.n_presyn; ++i) {
+    PreSyn* ps = cg.output_ps[i];
+    auto iter = presyn2intdata.find(ps);
+    if (iter != presyn2intdata.end()) {
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+    }
+  }
+
+  // NEURON SelfEvent weight* into CoreNEURON index into nt.netcons
+  //    On the CoreNEURON side we find the NetCon and then the
+  //    nc.u.weight_index_
+  for (int i = 0; i < cg.n_netcon; ++i) {
+    NetCon* nc = cg.netcons[i];
+    double* wt = nc->weight_;
+    auto iter = weight2intdata.find(wt);
+    if (iter != weight2intdata.end()) {
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+    }
+  }
+
+  return core_te;
 }

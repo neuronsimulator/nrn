@@ -68,6 +68,18 @@ void nrnthreads_all_weights_return(std::vector<double*>& weights);
 size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata);
 }
 
+// For direct transfer of event queue information
+// Must be the same as corresponding struct NrnCoreTransferEvents in CoreNEURON
+struct NrnCoreTransferEvents {
+  std::vector<int> type; // DiscreteEvent type
+  std::vector<double> td; // delivery time
+  std::vector<int> intdata; // ints specific to the DiscreteEvent type
+  std::vector<double> dbldata; // doubles specific to the type.
+};
+extern "C" {
+extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
+}
+
 static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
         {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
@@ -92,6 +104,8 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_all_spike_vectors_return_", (CNB)nrnthread_all_spike_vectors_return},
         {"nrn2core_all_weights_return_", (CNB)nrnthreads_all_weights_return},
         {"nrn2core_type_return_", (CNB)nrnthreads_type_return},
+
+        {"nrn2core_transfer_tqueue_", (CNB)nrn2core_transfer_tqueue},
         {NULL, NULL}
 };
 
