@@ -6,8 +6,8 @@
 #include <map>
 #include <cstddef>
 #include <cassert>
+#include "section.h"
 
-struct Memb_list;
 class PreSyn;
 class NetCon;
 class NrnThread;
@@ -86,6 +86,16 @@ private:
 
     static inline int nrn_has_net_event(int type) {
         return has_net_event_[type];
+    }
+
+public:
+    static inline int nrncore_pntindex_for_queue(double* d, int tid, int type) {
+        Memb_list* ml = nrn_threads[tid]._ml_list[type];
+        if (ml) {
+            assert(d >= ml->data[0] && d < (ml->data[0] + (ml->nodecount*nrn_prop_param_size_[type])));
+            return (d - ml->data[0])/nrn_prop_param_size_[type];
+        }
+        return nrncore_art2index(d);
     }
 
 };

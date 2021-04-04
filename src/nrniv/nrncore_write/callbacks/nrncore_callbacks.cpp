@@ -662,7 +662,9 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         
         double* data = pnt->prop->param;
         Memb_list* ml = nt._ml_list[type];
-        int index = (data - ml->data[0])/nrn_prop_param_size_[type];
+        // Introduced the public static method below because ARTIFICIAL_CELL are
+        // are not located in NrnThread and are not cache efficient.
+        int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
         core_te->intdata.push_back(index);
 
         size_t iloc_wt = core_te->intdata.size();
@@ -671,7 +673,9 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         }
         core_te->intdata.push_back(-1); // If NULL weight this is the indicator
 
-        core_te->intdata.push_back(-1); // movable fix me.
+        TQItem** movable = (TQItem**)se->movable_;
+        // Only one SelfEvent on the queue for a given point process can be movable
+        core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
 
       } break;
       case PreSynType: { // 4
