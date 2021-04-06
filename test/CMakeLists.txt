@@ -137,7 +137,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
-        get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
@@ -149,10 +148,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Launching mpi executable with full path can mangle different python versions and libraries
-    # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
-    # ${MPIEXEC_NAME} does not.
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
     add_test(
       NAME parallel_tests
       COMMAND
@@ -264,7 +259,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/gjtests/test_natrans.py)
   if(NRN_ENABLE_MPI)
     find_python_module(mpi4py)
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
     if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
