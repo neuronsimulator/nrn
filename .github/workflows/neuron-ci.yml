@@ -151,7 +151,16 @@ jobs:
               echo "CC="$CC
               echo "CXX="$CXX
               cmake $CMAKE_OPTION  -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
-              cmake --build . -- -j 2
+              # Autodetection does not seem to work well, compiler processes were getting killed.
+              # These core counts are taken from
+              # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+              if [ "$RUNNER_OS" == "macOS" ]; then
+                BUILD_PARALLEL_LEVEL=3
+              else
+                BUILD_PARALLEL_LEVEL=2
+              fi
+              # The --parallel option to CMake was only added in v3.12
+              cmake --build . -- -j ${BUILD_PARALLEL_LEVEL}
               if [ "$RUNNER_OS" == "macOS" ]; then
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi;
