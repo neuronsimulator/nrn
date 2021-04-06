@@ -41,7 +41,7 @@ cdef tuple closest_pt(pt, list pts, z2):
     return tuple(closest)
 
 cdef tuple extreme_pts(list pts):
-    if len(pts) < 2: raise Exception('extreme points computation failed')
+    if len(pts) < 2: raise RxDException('extreme points computation failed')
     cdef double max_dist, d
     cdef tuple pt1, pt2, best_p1, best_p2
     max_dist = -1
@@ -160,16 +160,125 @@ cdef list join_outside(double x0, double y0, double z0, double r0, double x1, do
             Plane(x1, y1, z1, axis[0], axis[1], axis[2]),
             Plane(x1, y1, z1, -naxis[0], -naxis[1], -naxis[2])])])
     else:
-        raise Exception('unexpected corner_counts?')
+        raise RxDException('unexpected corner_counts?')
 
     return result
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+def soma_objects(x, y, z, sec, double x0, double y0, double z0, int n_soma_step):
+    cdef double diam1, diam2, somax, somay, somaz
+    cdef list objects = []
+    cdef list f_pts
+    cdef dict seg_dict = {}
+    
+    somax, somay, somaz = x0, y0, z0
+
+    xshifted = [xx - x0 for xx in x]
+    yshifted = [yy - y0 for yy in y]
+    # this is a hack to pretend everything is on the same z level
+    zshifted = [0] * len(x)
+
+    # locate the major and minor axis, adapted from import3d_gui.hoc
+    m = h.Matrix(3, 3)
+    for i, p in enumerate([xshifted, yshifted, zshifted]):
+        for j, q in enumerate([xshifted, yshifted, zshifted]):
+            if j < i: continue
+            v = numpy.dot(p, q)
+            m.setval(i, j, v)
+            m.setval(j, i, v)
+    # CTNG:majoraxis
+    tobj = m.symmeig(m)
+    # major axis is the one with largest eigenvalue
+    major = m.getcol(tobj.max_ind())
+    # minor is normal and in xy plane
+    minor = m.getcol(3 - tobj.min_ind() - tobj.max_ind())
+    #minor.x[2] = 0
+    minor.div(minor.mag())
+
+    x1 = x0; y1 = y0
+    x2 = x1 + major.x[0]; y2 = y1 + major.x[1]
+
+    xs_loop = x + [x[0]]
+    ys_loop = y + [y[0]]
+
+    # locate the extrema of the major axis CTNG:somaextrema
+    # this is defined by the furthest points on it that lie on the minor axis
+    pts = []
+    pts_sources = {}
+    for x3, y3 in zip(x, y):
+        x4, y4 = x3 + minor.x[0], y3 + minor.x[1]
+        pt = seg_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4, False)
+        if pt is not None:
+            pts.append(pt)
+            if pt not in pts_sources:
+                pts_sources[pt] = []
+            pts_sources[pt].append((x3, y3))
+
+    major_p1, major_p2 = extreme_pts(pts)
+
+    extreme1 = pts_sources[major_p1]
+    extreme2 = pts_sources[major_p2]
+
+    major_p1, major_p2 = numpy.array(major_p1), numpy.array(major_p2)
+    del pts_sources
+
+    if len(extreme1) != 1 or len(extreme2) != 1:
+        raise RxDException('multiple most extreme points')
+    extreme1 = extreme1[0]
+    extreme2 = extreme2[0]
+    major_length = linalg.norm(major_p1 - major_p2)
+    delta_x, delta_y = major_p2 - major_p1
+    delta_x /= n_soma_step
+    delta_y /= n_soma_step
+
+    f_pts = [extreme1]
+    f_diams = [0]
+
+    # CTNG:slicesoma
+    for i in xrange(1, n_soma_step):
+        x0, y0 = major_p1[0] + i * delta_x, major_p1[1] + i * delta_y
+        # slice in dir of minor axis
+        x1, y1 = x0 + minor.x[0], y0 + minor.x[1]
+        pts = []
+        for i in xrange(len(x)):
+            pt = seg_line_intersection(xs_loop[i], ys_loop[i], xs_loop[i + 1], ys_loop[i + 1], x0, y0, x1, y1, True)
+            if pt is not None: pts.append(pt)
+        p1, p2 = extreme_pts(pts)
+        p1, p2 = numpy.array(p1), numpy.array(p2)
+        cx, cy = (p1 + p2) / 2.
+        f_pts.append((cx, cy))
+        f_diams.append(linalg.norm(p1 - p2))
+
+    f_pts.append(extreme2)
+    f_diams.append(0)
+
+    segment_locs = [];        # location along soma for assigning segments
+    path_length = 0;
+    margin = 1/(sec.nseg*2)   # half a segment, normalized length
+    for i in xrange(len(f_pts) - 1):
+        pt1x, pt1y = f_pts[i]
+        pt2x, pt2y = f_pts[i + 1]
+        diam1 = f_diams[i]
+        diam2 = f_diams[i + 1]
+        thickness = numpy.sqrt((pt2x-pt1x)**2 + (pt2y-pt1y)**2)
+        segment_locs.append(path_length+(thickness/2))
+        path_length += thickness
+
+        objects.append(SkewCone(pt1x, pt1y, z0, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, z0, diam2 * 0.5, pt2x, pt2y, z0))
+    for j, s in enumerate(objects):
+        loc = segment_locs[j]/path_length       # normalized along length
+        for seg in sec:
+            if numpy.abs(seg.x - loc) <= margin:
+                seg_dict[s] = seg
+                break;
+    return seg_dict, f_pts
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform=False, relevant_pts=None):
     cdef list objects = []
-    cdef list soma_objects = []
     cdef dict cone_segment_dict = {}
+    cdef dict soma_segment_dict = {}
     cdef list join_groups = []
     cdef dict obj_pts_dict = {}         # for returning corner points of join objects
     cdef list obj_sections = []
@@ -184,6 +293,9 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     cdef int no_parent_count = 0
 
     source_is_import3d = False
+    branches = []
+    f_pts = []
+    parent_sec_name = []
     num_contours = None
     # TODO: come up with a better way of checking type
     if hasattr(source, 'sections'):
@@ -192,7 +304,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         # probably an Import3D type
         num_contours = sum(sec.iscontour_ for sec in cell.sections)
         if num_contours > 1:
-            raise Exception('more than one contour is not currently supported')
+            raise RxDException('more than one contour is not currently supported')
         if num_contours <= 1:
             # CTNG:soma
             branches = []
@@ -200,114 +312,15 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             soma_sec = None
             for sec in cell.sections:
                 if sec.iscontour_:
-                    soma_sec = sec.hname()
+                    soma_sec = sec
                     x, y, z = [sec.raw.getrow(i).to_python() for i in xrange(3)]
 
                     # compute the center of the contour based on uniformly spaced points around the perimeter
                     center_vec = sec.contourcenter(sec.raw.getrow(0), sec.raw.getrow(1), sec.raw.getrow(2))
                     x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]
-                    somax, somay, somaz = x0, y0, z0
-
-                    xshifted = [xx - x0 for xx in x]
-                    yshifted = [yy - y0 for yy in y]
-                    # this is a hack to pretend everything is on the same z level
-                    zshifted = [0] * len(x)
-
-                    # locate the major and minor axis, adapted from import3d_gui.hoc
-                    m = h.Matrix(3, 3)
-                    for i, p in enumerate([xshifted, yshifted, zshifted]):
-                        for j, q in enumerate([xshifted, yshifted, zshifted]):
-                            if j < i: continue
-                            v = numpy.dot(p, q)
-                            m.setval(i, j, v)
-                            m.setval(j, i, v)
-                    # CTNG:majoraxis
-                    tobj = m.symmeig(m)
-                    # major axis is the one with largest eigenvalue
-                    major = m.getcol(tobj.max_ind())
-                    # minor is normal and in xy plane
-                    minor = m.getcol(3 - tobj.min_ind() - tobj.max_ind())
-                    #minor.x[2] = 0
-                    minor.div(minor.mag())
-
-                    x1 = x0; y1 = y0
-                    x2 = x1 + major.x[0]; y2 = y1 + major.x[1]
-
-                    xs_loop = x + [x[0]]
-                    ys_loop = y + [y[0]]
-
-                    # locate the extrema of the major axis CTNG:somaextrema
-                    # this is defined by the furthest points on it that lie on the minor axis
-                    pts = []
-                    pts_sources = {}
-                    for x3, y3 in zip(x, y):
-                        x4, y4 = x3 + minor.x[0], y3 + minor.x[1]
-                        pt = seg_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4, False)
-                        if pt is not None:
-                            pts.append(pt)
-                            if pt not in pts_sources:
-                                pts_sources[pt] = []
-                            pts_sources[pt].append((x3, y3))
-
-                    major_p1, major_p2 = extreme_pts(pts)
-
-                    extreme1 = pts_sources[major_p1]
-                    extreme2 = pts_sources[major_p2]
-
-                    major_p1, major_p2 = numpy.array(major_p1), numpy.array(major_p2)
-                    del pts_sources
-
-                    if len(extreme1) != 1 or len(extreme2) != 1:
-                        raise Exception('multiple most extreme points')
-                    extreme1 = extreme1[0]
-                    extreme2 = extreme2[0]
-                    major_length = linalg.norm(major_p1 - major_p2)
-                    delta_x, delta_y = major_p2 - major_p1
-                    delta_x /= n_soma_step
-                    delta_y /= n_soma_step
-
-                    f_pts = [extreme1]
-                    f_diams = [0]
-
-                    # CTNG:slicesoma
-                    for i in xrange(1, n_soma_step):
-                        x0, y0 = major_p1[0] + i * delta_x, major_p1[1] + i * delta_y
-                        # slice in dir of minor axis
-                        x1, y1 = x0 + minor.x[0], y0 + minor.x[1]
-                        pts = []
-                        for i in xrange(len(x)):
-                            pt = seg_line_intersection(xs_loop[i], ys_loop[i], xs_loop[i + 1], ys_loop[i + 1], x0, y0, x1, y1, True)
-                            if pt is not None: pts.append(pt)
-                        p1, p2 = extreme_pts(pts)
-                        p1, p2 = numpy.array(p1), numpy.array(p2)
-                        cx, cy = (p1 + p2) / 2.
-                        f_pts.append((cx, cy))
-                        f_diams.append(linalg.norm(p1 - p2))
-
-                    f_pts.append(extreme2)
-                    f_diams.append(0)
-
-                    segment_locs = [];            # location along soma for assigning segments
-                    path_length = 0;
-                    margin = 1/(sec.nseg()*2)   # half a segment, normalized length
-                    for i in xrange(len(f_pts) - 1):
-                        pt1x, pt1y = f_pts[i]
-                        pt2x, pt2y = f_pts[i + 1]
-                        diam1 = f_diams[i]
-                        diam2 = f_diams[i + 1]
-                        thickness = numpy.sqrt((pt2x-pt1x)**2 + (pt2y-pt1y)**2)
-                        segment_locs.append(path_length+(thickness/2))
-                        path_length += thickness
-
-                        objects.append(SkewCone(pt1x, pt1y, z0, diam1 * 0.5, pt1x + delta_x, pt1y + delta_y, z0, diam2 * 0.5, pt2x, pt2y, z0))
-                        with cython.wraparound(True):
-                            soma_objects.append(objects[-1])
-                    for j, s in enumerate(soma_objects):
-                        loc = segment_locs[j]/path_length       # normalized along length
-                        for seg in sec:
-                            if numpy.abs(seg.x - loc) <= margin:
-                                cone_segment_dict[s] = seg      # for now in same seg dict; change this
-                                break;
+                    new_objects, f_pts = soma_objects(x, y, z, sec, x0, y0, z0, n_soma_step)
+                    somaz = z0
+                    soma_segment_dict.update(new_objects)
                 else:
                     if sec.parentsec is not None:
                         parent_sec_name.append(sec.parentsec.hname())
@@ -321,10 +334,28 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         soma_sec = None
         branches = []
         for sec in source:
-            branches.append(sec)
-        # this is ignored in this case, but needs to be same length
-        # so this way no extra memory except the pointer
-        parent_sec_name = branches
+            # TODO: make this more general (support for 3D contour outline)
+            if  'soma[0]' in sec.hname() and 'soma' in neuron._sec_db:
+                is_stack, x, y, z, x0, y0, z0 = neuron._sec_db['soma']
+                if not is_stack:
+                    # yes, this should be sec while the other should be sec.hname()
+                    # the difference is because of how we're keeping track of the parent
+                    soma_sec = sec
+                    x = x.to_python(); y = y.to_python(); z = z.to_python()
+                    new_objects, f_pts = soma_objects(x, y, z, soma_sec, x0, y0, z0, n_soma_step)
+                    somaz = z0
+                    soma_segment_dict.update(new_objects)
+                else:
+                    import warnings
+                    warnings.warn('soma stack ignored; using centroid instead')
+                    branches.append(sec)
+                    parent_sec_name.append(None)
+            else:
+                branches.append(sec)
+                if sec.trueparentseg():
+                    parent_sec_name.append(sec.trueparentseg().sec)
+                else:
+                    parent_sec_name.append(None)
 
 
     #####################################################################
@@ -339,57 +370,58 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         all_cones = []
         pts_cones_db = {}
         diam_db = {}
-
+        
         for (k, branch), psec in zip(enumerate(branches), parent_sec_name):
-            #################### modified from geometry.py ##################
-            # make sure cones split across electrical segments
-            if relevant_pts:
-                rng = relevant_pts[k]
-            else:
-                rng = range(branch.n3d())
-
-            arc3d = ([branch.arc3d(i) for i in rng])
-            diam3d = ([branch.diam3d(i) for i in rng])
-            x3d = ([branch.x3d(i) for i in rng])
-            y3d = ([branch.y3d(i) for i in rng])
-            z3d = ([branch.z3d(i) for i in rng])
-
-            x = numpy.array([])
-            y = numpy.array([])
-            z = numpy.array([])
-            d = numpy.array([])
-
-            dx = branch.L / branch.nseg
-            for iseg, seg in enumerate(branch):
-                # get a list of all pts in the segment, including end points
-                lo = iseg * dx
-                hi = (iseg + 1) * dx
-
-                pts = [lo] + [arc for arc in arc3d if lo < arc < hi] + [hi]
-
-                diams = numpy.interp(pts, arc3d, diam3d)
-                xcoords = numpy.interp(pts, arc3d, x3d)
-                ycoords = numpy.interp(pts, arc3d, y3d)
-                zcoords = numpy.interp(pts, arc3d, z3d)
-
-                end = len(pts)-1
-                if iseg == branch.nseg-1:
-                    end = len(pts)
-
-                x = numpy.append(x, xcoords[0:end])
-                y = numpy.append(y, ycoords[0:end])
-                z = numpy.append(z, zcoords[0:end])
-                d = numpy.append(d, diams[0:end])
-
-                for i in range(len(pts)-1):
-                    #find the cone and assign it to that segment
-                    conecoords = (xcoords[i],ycoords[i],zcoords[i],xcoords[i+1],ycoords[i+1],zcoords[i+1])
-                    cone_segment_dict[conecoords] = seg
-            ##########################################################
-
-            """if source_is_import3d:
+            if source_is_import3d:
                 x, y, z = [numpy.array(branch.raw.getrow(i).to_python()) for i in range(3)]
-                d = branch.d.to_python() """
+                d = branch.d.to_python()
+            else:
+                #################### modified from geometry.py ##################
+                # make sure cones split across electrical segments
+                if relevant_pts:
+                    rng = relevant_pts[k]
+                else:
+                    rng = range(branch.n3d())
+
+                arc3d = ([branch.arc3d(i) for i in rng])
+                diam3d = ([branch.diam3d(i) for i in rng])
+                x3d = ([branch.x3d(i) for i in rng])
+                y3d = ([branch.y3d(i) for i in rng])
+                z3d = ([branch.z3d(i) for i in rng])
+
+                x = numpy.array([])
+                y = numpy.array([])
+                z = numpy.array([])
+                d = numpy.array([])
+
+                dx = branch.L / branch.nseg
+                for iseg, seg in enumerate(branch):
+                    # get a list of all pts in the segment, including end points
+                    lo = iseg * dx
+                    hi = (iseg + 1) * dx
+
+                    pts = [lo] + [arc for arc in arc3d if lo < arc < hi] + [hi]
+
+                    diams = numpy.interp(pts, arc3d, diam3d)
+                    xcoords = numpy.interp(pts, arc3d, x3d)
+                    ycoords = numpy.interp(pts, arc3d, y3d)
+                    zcoords = numpy.interp(pts, arc3d, z3d)
+
+                    end = len(pts)-1
+                    if iseg == branch.nseg-1:
+                        end = len(pts)
+
+                    x = numpy.append(x, xcoords[0:end])
+                    y = numpy.append(y, ycoords[0:end])
+                    z = numpy.append(z, zcoords[0:end])
+                    d = numpy.append(d, diams[0:end])
+
+                    for i in range(len(pts)-1):
+                        #find the cone and assign it to that segment
+                        conecoords = (xcoords[i],ycoords[i],zcoords[i],xcoords[i+1],ycoords[i+1],zcoords[i+1])
+                        cone_segment_dict[conecoords] = seg
+                ##########################################################
+
 
             # make sure that all the ones that connect to the soma do in fact connect
             # do this by connecting to local center axis
@@ -662,7 +694,15 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         clip = cone_clip_db[cone]
         if clip:
             cone.set_clip([Union(clip)])
-
+        if (cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1) not in cone_segment_dict:
+            dist = None
+            for sc,s in soma_segment_dict.items():
+                d = min(sc.distance(cone._x0, cone._y0, cone._z0),
+                        sc.distance(cone._x1, cone._y1, cone._z1))
+                if dist and dist < d:
+                    dist = d
+                    seg = s
+            cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = seg
 
     #####################################################################
     #
@@ -672,4 +712,4 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
 
     #objects += all_cones
 
-    return [objects, all_cones, cone_segment_dict, join_groups, obj_pts_dict, soma_objects]
+    return [objects, all_cones, cone_segment_dict, join_groups, obj_pts_dict, soma_segment_dict]
