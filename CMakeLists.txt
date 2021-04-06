@@ -248,7 +248,10 @@ if(NRN_ENABLE_MPI)
   add_definitions("-DOMPI_SKIP_MPICXX=1")
   add_definitions("-DMPICH_SKIP_MPICXX=1")
 
-  # FindMPI broke backward compatibility with v3.19
+  # Launching mpi executable with full path can mangle different python versions and libraries
+  # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
+  # ${MPIEXEC_NAME} does not.
+  # Also, FindMPI broke backward compatibility with v3.19
   if(${CMAKE_VERSION} VERSION_LESS "3.10")
     get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
   else()

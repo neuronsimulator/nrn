@@ -146,9 +146,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Launching mpi executable with full path can mangle different python versions and libraries
-    # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
-    # ${MPIEXEC_NAME} does not.
     add_test(
       NAME parallel_tests
       COMMAND
