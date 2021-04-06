@@ -1,3 +1,4 @@
+import math
 from . import graphicsPrimitives as graphics
 from .. import options
 
@@ -6,9 +7,9 @@ def find_voxel(x,y,z,g):
        the grid, otherwise return the corresponding grid boundary.
     """
     # g is grid boundaries
-    i = max(0,int((x-g['xlo'])//g['dx'])) if x <= g['xhi'] else int(g['xhi']//g['dx'])
-    j = max(0,int((y-g['ylo'])//g['dy'])) if y <= g['yhi'] else int(g['yhi']//g['dy'])
-    k = max(0,int((z-g['zlo'])//g['dz'])) if z <= g['zhi'] else int(g['zhi']//g['dz'])
+    i = max(0,int((x-g['xlo'])//g['dx'])) 
+    j = max(0,int((y-g['ylo'])//g['dy']))
+    k = max(0,int((z-g['zlo'])//g['dz']))
     return (i,j,k)
 
 def get_verts(voxel,g):
@@ -46,8 +47,13 @@ def verts_in(f,voxel,surf,g):
     verts = get_verts(voxel,g)
     ins=0
     distlist = []
-    for v in verts:
-        dist = f.distance(v[0],v[1],v[2])
+    for (x,y,z) in verts:
+        if (g['xlo'] <= x <= g['xhi'] and
+            g['ylo'] <= y <= g['yhi'] and
+            g['zlo'] <= z <= g['zhi']):
+                dist = f.distance(x, y, z)
+        else:
+                dist = math.inf
         distlist.append(dist)
         if dist <= options.ics_distance_threshold:
             ins+=1
