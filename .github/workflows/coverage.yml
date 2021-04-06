@@ -69,7 +69,10 @@ jobs:
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
-          cmake --build .
+          # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
+          # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # By default we get a modern version of CMake that understands --parallel.
+          cmake --build . --parallel 2
           (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
           export PATH=`pwd`/bin:$PATH;
           ctest -VV;
