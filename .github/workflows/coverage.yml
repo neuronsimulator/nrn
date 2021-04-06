@@ -69,7 +69,7 @@ jobs:
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
-          cmake --build . -- -j;
+          cmake --build .
           (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
           export PATH=`pwd`/bin:$PATH;
           ctest -VV;
