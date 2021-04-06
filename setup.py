@@ -127,9 +127,9 @@ setup(
         "nbconvert<6.0",  # prevents issues with nbsphinx
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
-        "sphinx-rtd-theme",
         "sphinx>=2.0",
         "sphinx<3.0",  # prevents issue with m2r where m2r uses an old API no more supported with sphinx>=3.0
+        "sphinx-rtd-theme",
     ]
     + install_requirements,
     install_requires=install_requirements,
