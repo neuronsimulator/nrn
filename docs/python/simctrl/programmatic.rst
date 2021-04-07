@@ -163,7 +163,7 @@ Functions
 
             from neuron import h
 
-            soma = h.Section()
+            soma = h.Section(name="soma")
             soma.insert('hh')
             print("default el_hh = %g" % soma.el_hh)
 
@@ -438,8 +438,8 @@ FInitializeHandler
             # specify an example model 
             from neuron import h, gui
 
-            a = h.Section()
-            b = h.Section()
+            a = h.Section(name="a")
+            b = h.Section(name="b")
 
             for sec in h.allsec():
                 sec.insert('hh')

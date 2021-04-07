@@ -460,8 +460,9 @@ PlotShape
             python
 
 			from neuron import h, gui
+			import time
 
-			soma = h.Section()  
+			soma = h.Section(name="soma")  
 
 			sl = h.SectionList() 
  
@@ -495,9 +496,9 @@ PlotShape
 					s.fastflush() # faster by up to a factor of 4 
 					h.doNotify() 
 
-			h.startsw()
+			start = time.perf_counter()
 			p()
-			print(h.stopsw())
+			print(time.perf_counter() - start)
 
 
          
