@@ -71,7 +71,7 @@ HOC-based Mechanisms
             from neuron import h, gui
             import math
 
-            soma = h.Section()
+            soma = h.Section(name="soma")
             soma.L = soma.diam = math.sqrt(100 / math.pi)
             soma.insert('hh')
 

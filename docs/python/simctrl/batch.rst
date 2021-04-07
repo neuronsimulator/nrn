@@ -47,7 +47,7 @@ Running and Saving Batch Jobs
             from neuron import h
 
             # define a geometry
-            soma = h.Section()
+            soma = h.Section(name="soma")
             soma.L = 10
             soma.diam = 10
 
@@ -55,7 +55,7 @@ Running and Saving Batch Jobs
             soma.insert('hh')
 
             # add a stimulus
-            iclamp = h.IClamp(0.5, sec=soma)
+            iclamp = h.IClamp(soma(0.5))
             iclamp.dur = 0.2
             iclamp.delay = 0.3
             iclamp.amp = 0.5
@@ -65,7 +65,7 @@ Running and Saving Batch Jobs
             h.batch_save(h._ref_t, soma(0.5)._ref_v)
 
             # initialize, run, and save
-            h.finitialize()
+            h.finitialize(-65)
             h.batch_run(2, 0.1, 'hhsim.dat', 'My HH sim')
 
         The output (the time series of an action potential) is stored in the :file:`hhsim.dat`:

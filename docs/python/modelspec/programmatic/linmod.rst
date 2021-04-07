@@ -88,21 +88,20 @@ LinearMechanism
             from neuron import h
 
             tstop = 5
-
-            soma = h.Section()
+            
+            soma = h.Section(name="soma")
             soma.insert('hh')
-
+            
             # ideal voltage clamp. 
             c = h.Matrix(2, 2, 2) # sparse - no elements used 
             g = h.Matrix(2, 2) 
-            y = h.Vector(2)       # y[1] is injected current 
-            b = h.Vector(2) 
+            y = h.Vector([0, 0])       # y[1] is injected current 
+            b = h.Vector([0, 10])      # b[1] is voltage clamp level 
             g.setval(0, 1, -1)
             g.setval(1, 0, 1)
-            b[1] = 10           # voltage clamp level 
              
             model = h.LinearMechanism(c, g, y, b, 0.5, sec=soma) 
-
+            
             h.finitialize(-65)
             while h.t < tstop:
                 print('t=%-8g v=%-8g y[1]=%-8g' % (h.t, soma(0.5).v, y[1]))
@@ -160,7 +159,7 @@ LinearMechanism
 
             nlm = h.LinearMechanism(callback, cmat, gmat, y, y0, b)
 
-            dummy = h.Section()
+            dummy = h.Section(name="dummy")
             trajec = h.Vector()
             tvec = h.Vector()
             trajec.record(y._ref_x[0])
