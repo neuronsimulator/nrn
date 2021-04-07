@@ -98,17 +98,15 @@ class CodegenAccVisitor: public CodegenCVisitor {
   public:
     CodegenAccVisitor(const std::string& mod_file,
                       const std::string& output_dir,
-                      LayoutType layout,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file, output_dir, layout, float_type, optimize_ionvar_copies) {}
+        : CodegenCVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies) {}
 
     CodegenAccVisitor(const std::string& mod_file,
                       std::ostream& stream,
-                      LayoutType layout,
                       const std::string& float_type,
                       bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file, stream, layout, float_type, optimize_ionvar_copies) {}
+        : CodegenCVisitor(mod_file, stream, float_type, optimize_ionvar_copies) {}
 };
 
 /** @} */  // end of codegen_backends

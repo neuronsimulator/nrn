@@ -152,9 +152,6 @@ int main(int argc, const char* argv[]) {
     /// true if symbol table should be printed
     bool show_symtab(false);
 
-    /// memory layout for code generation
-    std::string layout("soa");
-
     /// floating point data type
     std::string data_type("double");
 
@@ -247,12 +244,8 @@ int main(int argc, const char* argv[]) {
         "Write symbol table to stdout ({})"_format(show_symtab))->ignore_case();
 
     auto codegen_opt = app.add_subcommand("codegen", "Code generation options")->ignore_case();
-    codegen_opt->add_option("--layout",
-        layout,
-        "Memory layout for code generation",
-        true)->ignore_case()->check(CLI::IsMember({"aos", "soa"}));
     codegen_opt->add_option("--datatype",
-        layout,
+        data_type,
         "Data type for floating point variables",
         true)->ignore_case()->check(CLI::IsMember({"float", "double"}));
     codegen_opt->add_flag("--force",
@@ -507,41 +500,48 @@ int main(int argc, const char* argv[]) {
         }
 
         {
-            auto mem_layout = layout == "aos" ? codegen::LayoutType::aos : codegen::LayoutType::soa;
-
-
             if (ispc_backend) {
                 logger->info("Running ISPC backend code generator");
-                CodegenIspcVisitor visitor(
-                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
+                CodegenIspcVisitor visitor(modfile,
+                                           output_dir,
+                                           data_type,
+                                           optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
-                CodegenAccVisitor visitor(
-                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
+                CodegenAccVisitor visitor(modfile,
+                                          output_dir,
+                                          data_type,
+                                          optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (omp_backend) {
                 logger->info("Running OpenMP backend code generator");
-                CodegenOmpVisitor visitor(
-                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
+                CodegenOmpVisitor visitor(modfile,
+                                          output_dir,
+                                          data_type,
+                                          optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             else if (c_backend) {
                 logger->info("Running C backend code generator");
-                CodegenCVisitor visitor(
-                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
+                CodegenCVisitor visitor(modfile,
+                                        output_dir,
+                                        data_type,
+                                        optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
 
             if (cuda_backend) {
                 logger->info("Running CUDA backend code generator");
-                CodegenCudaVisitor visitor(
-                    modfile, output_dir, mem_layout, data_type, optimize_ionvar_copies_codegen);
+                CodegenCudaVisitor visitor(modfile,
+                                           output_dir,
+                                           data_type,
+                                           optimize_ionvar_copies_codegen);
                 visitor.visit_program(*ast);
             }
         }

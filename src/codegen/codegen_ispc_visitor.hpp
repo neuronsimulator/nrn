@@ -220,32 +220,18 @@ class CodegenIspcVisitor: public CodegenCVisitor {
   public:
     CodegenIspcVisitor(const std::string& mod_file,
                        const std::string& output_dir,
-                       LayoutType layout,
                        const std::string& float_type,
                        const bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file,
-                          output_dir,
-                          layout,
-                          float_type,
-                          optimize_ionvar_copies,
-                          ".ispc",
-                          ".cpp")
-        , fallback_codegen(mod_file, layout, float_type, optimize_ionvar_copies, wrapper_printer) {}
+        : CodegenCVisitor(mod_file, output_dir, float_type, optimize_ionvar_copies, ".ispc", ".cpp")
+        , fallback_codegen(mod_file, float_type, optimize_ionvar_copies, wrapper_printer) {}
 
 
     CodegenIspcVisitor(const std::string& mod_file,
                        std::ostream& stream,
-                       LayoutType layout,
                        const std::string& float_type,
                        const bool optimize_ionvar_copies)
-        : CodegenCVisitor(mod_file,
-                          stream,
-                          layout,
-                          float_type,
-                          optimize_ionvar_copies,
-                          ".ispc",
-                          ".cpp")
-        , fallback_codegen(mod_file, layout, float_type, optimize_ionvar_copies, wrapper_printer) {}
+        : CodegenCVisitor(mod_file, stream, float_type, optimize_ionvar_copies, ".ispc", ".cpp")
+        , fallback_codegen(mod_file, float_type, optimize_ionvar_copies, wrapper_printer) {}
 
     void visit_function_call(const ast::FunctionCall& node) override;
     void visit_var_name(const ast::VarName& node) override;
