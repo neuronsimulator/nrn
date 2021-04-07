@@ -69,8 +69,8 @@ class IspcCodegenTestHelper {
 
         /// initialize CodegenIspcVisitor
         std::ostream oss(&strbuf);
-        codegen_ispc_visitor = std::make_shared<CodegenIspcVisitor>(
-            "unit_test", oss, codegen::LayoutType::soa, "double", false);
+        codegen_ispc_visitor =
+            std::make_shared<CodegenIspcVisitor>("unit_test", oss, "double", false);
         codegen_ispc_visitor->setup(*ast);
     }
 

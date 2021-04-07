@@ -133,20 +133,6 @@ struct IndexVariableInfo {
 
 
 /**
- * \enum LayoutType
- * \brief Represents memory layout to use for code generation
- *
- */
-enum class LayoutType {
-    /// array of structure
-    aos,
-
-    /// structure of array
-    soa
-};
-
-
-/**
  * \class ShadowUseStatement
  * \brief Represents ion write statement during code generation
  *
@@ -269,11 +255,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Data type of floating point variables
      */
     std::string float_type = codegen::naming::DEFAULT_FLOAT_TYPE;
-
-    /**
-     * Memory layout for code generation
-     */
-    LayoutType layout;
 
     /**
      * All ast information for code generation
@@ -1122,13 +1103,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print the getter method for memory layout
-     *
-     */
-    void print_memory_layout_getter();
-
-
-    /**
      * Print the getter method for index position of first pointer variable
      *
      */
@@ -1312,12 +1286,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print backend specific channel instance iteration block end
      */
     virtual void print_channel_iteration_block_end();
-
-
-    /**
-     * Print common code post channel instance iteration
-     */
-    void print_post_channel_iteration_common_code();
 
 
     /**
@@ -1644,7 +1612,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
     CodegenCVisitor(const std::string& mod_filename,
                     const std::string& output_dir,
-                    LayoutType layout,
                     const std::string& float_type,
                     const bool optimize_ionvar_copies,
                     const std::string& extension,
@@ -1653,13 +1620,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
         , wrapper_printer(new CodePrinter(output_dir + "/" + mod_filename + wrapper_ext))
         , printer(target_printer)
         , mod_filename(mod_filename)
-        , layout(layout)
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
     CodegenCVisitor(const std::string& mod_filename,
                     std::ostream& stream,
-                    LayoutType layout,
                     const std::string& float_type,
                     const bool optimize_ionvar_copies,
                     const std::string& extension,
@@ -1668,7 +1633,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
         , wrapper_printer(new CodePrinter(stream))
         , printer(target_printer)
         , mod_filename(mod_filename)
-        , layout(layout)
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
@@ -1687,21 +1651,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param mod_filename The name of the model for which code should be generated.
      *                     It is used for constructing an output filename.
      * \param output_dir   The directory where target C file should be generated.
-     * \param layout       The memory layout to be used for data structure generation.
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      * \param extension    The file extension to use. This defaults to \c .cpp .
      */
     CodegenCVisitor(const std::string& mod_filename,
                     const std::string& output_dir,
-                    LayoutType layout,
                     std::string float_type,
                     const bool optimize_ionvar_copies,
                     const std::string& extension = ".cpp")
         : target_printer(new CodePrinter(output_dir + "/" + mod_filename + extension))
         , printer(target_printer)
         , mod_filename(mod_filename)
-        , layout(layout)
         , float_type(std::move(float_type))
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
@@ -1718,19 +1679,16 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param mod_filename The name of the model for which code should be generated.
      *                     It is used for constructing an output filename.
      * \param stream       The output stream onto which to write the generated code
-     * \param layout       The memory layout to be used for data structure generation.
      * \param float_type   The float type to use in the generated code. The string will be used
      *                     as-is in the target code. This defaults to \c double.
      */
     CodegenCVisitor(const std::string& mod_filename,
                     std::ostream& stream,
-                    LayoutType layout,
                     const std::string& float_type,
                     const bool optimize_ionvar_copies)
         : target_printer(new CodePrinter(stream))
         , printer(target_printer)
         , mod_filename(mod_filename)
-        , layout(layout)
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
@@ -1747,21 +1705,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *
      * \param mod_filename   The name of the model for which code should be generated.
      *                       It is used for constructing an output filename.
-     * \param layout         The memory layout to be used for data structure generation.
      * \param float_type     The float type to use in the generated code. The string will be used
      *                       as-is in the target code. This defaults to \c double.
      * \param target_printer A printer defined outside this visitor to be used for the code
      *                       generation
      */
     CodegenCVisitor(std::string mod_filename,
-                    LayoutType layout,
                     std::string float_type,
                     const bool optimize_ionvar_copies,
                     std::shared_ptr<CodePrinter>& target_printer)
         : target_printer(target_printer)
         , printer(target_printer)
         , mod_filename(mod_filename)
-        , layout(layout)
         , float_type(float_type)
         , optimize_ionvar_copies(optimize_ionvar_copies) {}
 
