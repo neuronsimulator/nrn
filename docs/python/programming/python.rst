@@ -640,11 +640,9 @@ Description:
         .. code-block::
             python
 
-            import neuron 
-            h = neuron.h 
+            from neuron import h
             sec = h.Section() 
-            print(sec)         # prints <nrn.Section object at 0x2a96982108> 
-            print(sec.name())  # prints PySec_2a96982108 
+            print(sec)         # prints __nrnsec_0x7fa44eb70000
             sec.nseg = 3       # section has 3 segments (compartments) 
             sec.insert("hh")   # all compartments have the hh mechanism 
             sec.L = 20         # Length of the entire section is 20 um. 
