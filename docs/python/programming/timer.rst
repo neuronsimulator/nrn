@@ -33,7 +33,7 @@ Timer
             from neuron import h
 
             def foo():
-                print 'Hello'
+                print('Hello')
 
             timer = h.Timer(foo)
             timer.seconds(1)
