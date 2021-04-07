@@ -108,9 +108,9 @@ class DUInstance {
      * We also want the outermost binary expression. Thus, we do not keep track
      * of the interior ones. For example:
      *
-     * \f tau = tau + 1 \f
+     * \f$ tau = tau + 1 \f$
      *
-     * we want to return the full statement, not only \f tau + 1 \f
+     * we want to return the full statement, not only \f$ tau + 1 \f$
      */
     std::shared_ptr<const ast::BinaryExpression> binary_expression;
 };

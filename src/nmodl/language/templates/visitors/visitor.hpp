@@ -65,7 +65,7 @@ class ConstVisitor {
     {% endfor %}
 };
 
+/** \} */  // end of visitor_classes
+
 }  // namespace visitor
 }  // namespace nmodl
-
-/** \} */  // end of visitor_classes

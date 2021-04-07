@@ -121,6 +121,7 @@ setup(
     zip_safe=False,
     setup_requires=[
         "jinja2>=2.9.3",
+        "jupyter-client==6.1.12",
         "jupyter",
         "m2r",
         "mistune<2",  # prevents a version conflict with nbconvert

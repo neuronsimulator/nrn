@@ -21,7 +21,7 @@ using namespace fmt::literals;
  * \details SympyReplaceSolutionsVisitor tells us that a new equation appear and, depending where
  * it is located, it can determine if it is part of the main system of equations or is something
  * else. Every time we are out of the system and we print a new equation that is in the system
- * we update the counter. \ref in_system follows, with lag, \ref is_in_system and every time
+ * we update the counter. \ref in_system follows, with lag, \param is_in_system and every time
  * they are false and true respectively we detect a switch.
  *
  * \param is_in_system is a bool provided from outside that tells us if a new equation is indeed
