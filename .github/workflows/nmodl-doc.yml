@@ -1,0 +1,80 @@
+name: NMODL Documentation
+
+on:
+  push:
+    branches: 
+      - master
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
+
+env:
+  BUILD_TYPE: Release
+  DEFAULT_PY_VERSION: 3.8
+  DESIRED_CMAKE_VERSION: 3.8.0
+
+jobs:
+  ci:
+    runs-on: ubuntu-18.04
+
+    name: documentation
+
+    env:
+      INSTALL_DIR: install
+
+    strategy:
+      fail-fast: true
+
+    steps:
+
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.4
+        with:
+          cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
+          
+      - name: Install apt packages
+        run: |
+          sudo apt-get install flex bison dvipng doxygen libfl-dev pandoc python3-dev python3-pip texlive-latex-recommended texlive-latex-extra
+        shell: bash
+
+      - name: Set up Python3
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        env:
+          PYTHON_VERSION:  ${{ env.DEFAULT_PY_VERSION }}
+       
+      - name: Install Python3 dependencies
+        run: |
+          pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest 'sympy>=1.3'
+          
+      - uses: actions/checkout@v2
+        
+      # This step will set up an SSH connection on tmate.io for live debugging.
+      # To trigger it, simply add 'live-debug-docs' to your last pushed commit message.
+      - name: live debug session on failure
+        if: failure() && contains(github.event.head_commit.message, 'live-debug-docs')
+        uses: mxschmitt/action-tmate@v3
+
+      - name: Documentation 
+        id: documentation
+        working-directory: ${{runner.workspace}}/nmodl
+        run: |
+          echo "------- Build Documentation -------";
+          python3 setup.py build_ext --inplace docs -j 2 -G "Unix Makefiles";
+          cd _skbuild/linux-x86_64-3.8/setuptools/sphinx;
+          rm -rf doctest doctrees && touch .nojekyll;
+          echo "<meta http-equiv=\"refresh\" content=\"0; url=./html/index.html\" />" > index.html;
+          echo ::set-output name=status::done
+          
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: steps.documentation.outputs.status == 'done' && startsWith(github.ref, 'refs/heads/master')
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: ${{runner.workspace}}/nmodl/_skbuild/linux-x86_64-3.8/setuptools/sphinx # The folder the action should deploy.
+          CLEAN: false # Automatically remove deleted files from the deploy branch
+
