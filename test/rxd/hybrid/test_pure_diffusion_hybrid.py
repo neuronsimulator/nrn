@@ -10,7 +10,7 @@ def ics_diffusion_hybrid(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     dend1 = h.Section(name='dend1')
     dend1.diam = 2
-    dend1.nseg = 11
+    dend1.nseg = 1
     dend1.L = 10
 
     dend2 = h.Section(name='dend2')
@@ -20,7 +20,7 @@ def ics_diffusion_hybrid(neuron_instance):
 
     dend3 = h.Section(name='dend3')
     dend3.diam = 2
-    dend3.nseg = 11
+    dend3.nseg = 1
     dend3.L = 10
 
     dend2.connect(dend1)

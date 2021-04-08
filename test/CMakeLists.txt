@@ -122,35 +122,32 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
       SCRIPT_PATTERNS test/rxd/*.py test/rxd/3d/*.asc test/rxd/testdata/*.dat)
-    # This test includes a comparison with a binary blob; Intel and PGI/NVHPC builds typically have
-    # too-large numerical differences with the stored values.
-    set(compiler_blacklist "Intel" "PGI" "NVHPC")
-    if(NOT ${CMAKE_CXX_COMPILER_ID} IN_LIST compiler_blacklist)
-      nrn_add_test(
-        GROUP rxdmod_tests
-        NAME rxd_tests
-        COMMAND COVERAGE_FILE=.coverage.rxd_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-                --cov=neuron ./test/rxd)
+    # These tests include comparisons against saved data, which appears to have been generated using
+    # GCC. Other compilers produce larger differences.
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+      set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-8)
+    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
+      set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
+    nrn_add_test(
+      GROUP rxdmod_tests
+      NAME rxd_tests
+      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
+              pytest --cov-report=xml --cov=neuron ./test/rxd)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
-        get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
         nrn_add_test(
           GROUP rxdmod_tests
           NAME rxd_mpi_tests
           COMMAND
-            COVERAGE_FILE=.coverage.rxd_mpi_tests ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1
-            ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} -m pytest
-            --cov-report=xml --cov=neuron ./test/rxd --mpi)
+            COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
+            ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
+            -m pytest --cov-report=xml --cov=neuron ./test/rxd --mpi)
       endif()
     endif()
   endif()
   if(NRN_ENABLE_MPI)
-    # Launching mpi executable with full path can mangle different python versions and libraries
-    # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
-    # ${MPIEXEC_NAME} does not.
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
     add_test(
       NAME parallel_tests
       COMMAND
@@ -239,12 +236,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${modtests_launch_py}
             test/coreneuron/test_fornetcon.py)
-  # See https://github.com/BlueBrain/CoreNeuron/issues/513, this doesn't work on GPU.
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME datareturn_py
     REQUIRES coreneuron
-    CONFLICTS gpu
     SCRIPT_PATTERNS test/coreneuron/test_datareturn.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_datareturn_py ${modtests_launch_py}
             test/coreneuron/test_datareturn.py)
@@ -264,7 +259,6 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/gjtests/test_natrans.py)
   if(NRN_ENABLE_MPI)
     find_python_module(mpi4py)
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
     if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
