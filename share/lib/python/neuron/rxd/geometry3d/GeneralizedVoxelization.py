@@ -1,4 +1,3 @@
-import math
 from . import graphicsPrimitives as graphics
 from .. import options
 
@@ -53,7 +52,7 @@ def verts_in(f,voxel,surf,g):
             g['zlo'] <= z <= g['zhi']):
                 dist = f.distance(x, y, z)
         else:
-                dist = math.inf
+                dist = float('inf')
         distlist.append(dist)
         if dist <= options.ics_distance_threshold:
             ins+=1
