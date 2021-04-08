@@ -337,14 +337,12 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             if sec.hoc_internal_name() in neuron._sec_db:
                 is_stack, x, y, z, x0, y0, z0, pts3d = neuron._sec_db[sec.hoc_internal_name()]
                 if not is_stack:
-                    # yes, this should be sec while the other should be sec.hname()
-                    # the difference is because of how we're keeping track of the parent
                     shift = []
                     for i, (orig_x, orig_y, orig_z) in zip([0, sec.n3d()-1], pts3d):
                         shift.append((sec.x3d(i) - orig_x,
                                       sec.y3d(i) - orig_y,
                                       sec.z3d(i) - orig_z))
-                    if sum([abs(s0 -s1) for s0,s1 in zip(shift[0], shift[1])]) > dx/10.0:
+                    if sum([abs(s0 - s1) for s0,s1 in zip(*shift)]) > dx/10.0:
                         raise RxDException("soma rotation unsupported for voxelized somas") 
                     sx, sy, sz = shift[0]
                     x = (x + sx).to_python()

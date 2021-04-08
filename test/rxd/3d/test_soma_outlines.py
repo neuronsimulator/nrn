@@ -1,5 +1,4 @@
 import os
-import numpy
 import pytest
 from testutils import compare_data, tol
 

@@ -67,7 +67,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                     if old != [] else [min(lst), max(lst)])
 
         xs, ys, zs, diams, soma_idx = [], [], [], [], []
-        arcs = math.inf
+        arcs = float('inf')
         for i, sec in enumerate(source):
             if relevant_pts:
                 rng = relevant_pts[i]
