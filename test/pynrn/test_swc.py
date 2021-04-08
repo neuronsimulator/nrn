@@ -175,6 +175,10 @@ tst_data = ['''
 3  3 10  0 0 1  2
 4  3 -2  0 0 1  1
 5  3 -10  0 0 1  4
+''','''
+# two point soma (ie: single section), no dendrites
+1 1 -11 0 0 5.0 -1
+2 1  -1 0 0 5.0 1
 ''']
 
 def mkswc(swc_contents):
@@ -476,6 +480,10 @@ dend[1] L=10  parent dend[0](0)
  0   0 0 0 6
  1   -2 0 0 2
  2   -10 0 0 2
+''','''
+soma[0] L=10  
+ 0   -11 0 0 10
+ 1   -1 0 0 10
 ''']
 
 def test_swc():
