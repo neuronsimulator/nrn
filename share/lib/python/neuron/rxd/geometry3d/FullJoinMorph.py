@@ -14,30 +14,26 @@ from neuron import h, _sec_db
 
 def find_parent_seg(join, sdict, objects):
     
-    pseg = None
     if not join:
         return None
     elif join[0] not in objects:
-        pt = (join[0]._x0, join[0]._y0, join[0]._z0, join[0]._x1, join[0]._y1, join[0]._z1)
-        if pt in sdict:
-            pseg = sdict[pt]
-            # better be all in same cell; so just set root once
-            h.distance(0, h.SectionRef(sec=pseg.sec).root(0))
-            closest = h.distance(pseg)
+        pseg = sdict[(join[0]._x0, join[0]._y0, join[0]._z0, join[0]._x1, join[0]._y1, join[0]._z1)]
+        # better be all in same cell; so just set root once
+        h.distance(0, h.SectionRef(sec=pseg.sec).root(0))
+        closest = h.distance(pseg)
 
     # any other possible instance?
 
     for item in join:
         if item not in objects:
-            pt = (item._x0, item._y0, item._z0, item._x1, item._y1, item._z1)
-            if pt in sdict:
-                s = sdict[pt]
-                d = h.distance(s)
-                if d < closest:
-                    pseg = s
-                    closest = d
+            s = sdict[(item._x0, item._y0, item._z0, item._x1, item._y1, item._z1)]
+            d = h.distance(s)
+            if d < closest:
+                pseg = s
+                closest = d
 
     return pseg
+
  
 
 def all_in(dist):
@@ -130,13 +126,13 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     # assign join objects
     for jg in join_groups:
         seg = find_parent_seg(jg, segment_dict, join_objects)
-        if seg:
-            for item in jg:
-                if (not(isinstance(item, Cone) or isinstance(item, Cylinder))) or (item in join_objects):
-                    if seg in final_seg_dict.keys():
-                        final_seg_dict[seg].append(item)
-                    else: 
-                        final_seg_dict[seg] = [item]
+        for item in jg:
+            #if isinstance(item, Sphere): continue # TODO: don't do this... just a test
+            if (not(isinstance(item, Cone) or isinstance(item, Cylinder))) or (item in join_objects):
+                if seg in final_seg_dict.keys():
+                    final_seg_dict[seg].append(item)
+                else: 
+                    final_seg_dict[seg] = [item]
 
 
     # complete final segment dictionary
