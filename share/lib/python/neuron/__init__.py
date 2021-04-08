@@ -657,12 +657,16 @@ def _modelview_mechanism_docstrings(dmech, tree):
 # TODO: put this someplace else
 #       can't be in rxd because that would break things if no scipy
 _sec_db = {}
-def _declare_contour(secobj, secname):
+def _declare_contour(secobj, obj, name):
+    array, i = _parse_import3d_name(name)
+    sec = getattr(obj, array)[i]
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
     x0, y0, z0 = [center_vec.x[i] for i in range(3)]
+    # store a couple of points to check if the section has been moved
+    pts = [(sec.x3d(i),sec.y3d(i),sec.z3d(i)) for i in [0, sec.n3d()-1]] 
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
-    _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
+    _sec_db[sec.hoc_internal_name()] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0, pts)
 
 def _create_all_list(obj):
     # used by import3d
