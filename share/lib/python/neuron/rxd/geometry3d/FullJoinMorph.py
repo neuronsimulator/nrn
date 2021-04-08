@@ -62,7 +62,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     # grid setup
     if mesh_grid:
         grid = mesh_grid
-        if(grid['dx'] != dx or grid['dy'] != dx or grid['dz'] != dz):
+        if(grid['dx'] != dx or grid['dy'] != dx or grid['dz'] != dx):
             raise RxDException("Error: Inconsistent vocalization. Mesh grid voxels (%g, %g, %g) differs from requested dx (%g, %g %g),", (grid['dx'], grid['dy'], grid['dz'],dx,dx,dx))
     else:
 

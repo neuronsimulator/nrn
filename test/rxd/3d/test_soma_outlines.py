@@ -15,8 +15,6 @@ def cell_model(neuron_instance):
         Args:
             shift (triplet, optional) displacement in  x, y, z of the cell,
                 default (0,0,0).
-            rotate (float, optional) rotate the cell about the z-axis by 
-                'rotate' radians, default 0.
         """
         def __init__(self, shift=(0,0,0), rotate=0):
             self.cell = h.Import3d_Neurolucida3()
@@ -31,16 +29,8 @@ def cell_model(neuron_instance):
                 pts = [(sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i))
                         for i in range(sec.n3d())]
                 sec.pt3dclear()
-                if rotate != 0:
-                    m = numpy.array([[numpy.cos(rotate), -numpy.sin(rotate), 0],
-                                     [numpy.sin(rotate), numpy.cos(rotate), 0],
-                                     [0, 0, 1]])
-                    for (a, b, c, diam) in pts:
-                        x, y, z = m @ numpy.array((a,b,c))
-                        sec.pt3dadd(x + sx, y + sy, z + sz, diam)
-                else:
-                    for (x, y, z, diam) in pts:
-                        sec.pt3dadd(x + sx, y + sy, z + sz, diam)
+                for (x, y, z, diam) in pts:
+                    sec.pt3dadd(x + sx, y + sy, z + sz, diam)
 
     yield (h, rxd, data, save_path, Cell)
 
@@ -93,17 +83,3 @@ def test_multiple_soma(cell_model):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
-
-
-def test_rotate_soma(cell_model):
-    """Create a Neurolucida model and rotate it, which should cause an exception."""
-
-    h, rxd, data, save_path, Cell = cell_model
-    c = Cell(rotate=numpy.pi/2)
-    rxd.set_solve_type(c.all, dimension=3)
-    cyt = rxd.Region(c.all, name='cyt', nrn_region='i', dx=1.0)
-    ca = rxd.Species(cyt, initial=lambda node: 1 if node in c.soma[0] else 0, d=0.5, charge=2)
-    
-    # RxDException during voxilization causes a runtime error 
-    with pytest.raises(RuntimeError):
-        h.finitialize(-65)
