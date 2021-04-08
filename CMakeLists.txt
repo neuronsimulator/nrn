@@ -194,17 +194,7 @@ endif()
 # =============================================================================
 include(${PROJECT_SOURCE_DIR}/src/language/code_generator.cmake)
 
-add_subdirectory(src/codegen)
-add_subdirectory(src/language)
-add_subdirectory(src/lexer)
-add_subdirectory(src/nmodl)
-add_subdirectory(src/parser)
-add_subdirectory(src/printer)
-add_subdirectory(src/symtab)
-add_subdirectory(src/utils)
-add_subdirectory(src/visitors)
-add_subdirectory(src/pybind)
-add_subdirectory(src/solver)
+add_subdirectory(src)
 
 # =============================================================================
 # Prepare units database file from nrnunits.lib.in

@@ -1,3 +1,14 @@
+add_subdirectory(codegen)
+add_subdirectory(language)
+add_subdirectory(lexer)
+add_subdirectory(parser)
+add_subdirectory(printer)
+add_subdirectory(symtab)
+add_subdirectory(utils)
+add_subdirectory(visitors)
+add_subdirectory(pybind)
+add_subdirectory(solver)
+
 # =============================================================================
 # NMODL sources
 # =============================================================================
