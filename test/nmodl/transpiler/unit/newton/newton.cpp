@@ -11,7 +11,7 @@
 
 #include <catch/catch.hpp>
 
-#include "nmodl/nmodl.hpp"
+#include "nmodl.hpp"
 
 using namespace nmodl;
 
