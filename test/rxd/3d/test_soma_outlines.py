@@ -15,7 +15,7 @@ def cell_model(neuron_instance):
             shift (triplet, optional) displacement in  x, y, z of the cell,
                 default (0,0,0).
         """
-        def __init__(self, shift=(0,0,0), rotate=0):
+        def __init__(self, shift=(0,0,0)):
             self.cell = h.Import3d_Neurolucida3()
             path = os.path.dirname(os.path.abspath(__file__))
             self.cell.input(os.path.join(path,"simple.asc"))

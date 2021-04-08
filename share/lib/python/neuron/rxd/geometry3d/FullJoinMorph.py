@@ -1,5 +1,4 @@
 import numpy
-import time
 import math
 
 from .ctng import constructive_neuronal_geometry
@@ -46,7 +45,6 @@ def sort_spheres_last(item):
     return 1 if isinstance(item, Sphere) else 0
 
 def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-    start = time.time()
 
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""

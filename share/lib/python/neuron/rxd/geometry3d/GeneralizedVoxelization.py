@@ -1,4 +1,3 @@
-import math
 from . import graphicsPrimitives as graphics
 from .. import options
 
