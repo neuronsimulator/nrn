@@ -53,28 +53,51 @@ set(KINDERIV_HEADER_FILE "${CMAKE_CURRENT_BINARY_DIR}/_kinderiv.h")
 
 set(NMODL_UNITS_FILE "${CMAKE_BINARY_DIR}/share/mod2c/nrnunits.lib")
 
-# copy inbuilt mod files {source}/coreneuron/mechanism/mech/modfile/*.mod to
-# {build_dir}/share/modfile/
+# =============================================================================
+# Copy files that are required by nrnivmodl-core to the build tree at build time.
+# =============================================================================
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${MODFUNC_PERL_SCRIPT}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+  NO_TARGET)
+cpp_cc_build_time_copy(
+  INPUT "${KINDERIV_PYTHON_SCRIPT}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/kinderiv.py"
+  NO_TARGET)
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${DIMPLIC_CODE_FILE}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/dimplic.cpp"
+  NO_TARGET)
+cpp_cc_build_time_copy(
+  INPUT "${CMAKE_CURRENT_SOURCE_DIR}/${ENGINEMECH_CODE_FILE}"
+  OUTPUT "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp"
+  NO_TARGET)
+set(nrnivmodl_core_dependencies
+    "${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/kinderiv.py"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/dimplic.cpp"
+    "${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp")
+# Set up build rules that copy builtin mod files from
+# {source}/coreneuron/mechanism/mech/modfile/*.mod to {build_dir}/share/modfile/
 file(GLOB builtin_modfiles
      "${CORENEURON_PROJECT_SOURCE_DIR}/coreneuron/mechanism/mech/modfile/*.mod")
-# get the corresponding list of paths to the modfiles in the build directory
-set(builtin_modfiles_in_build_dir)
 foreach(builtin_modfile ${builtin_modfiles})
+  # Construct the path in the build directory.
   get_filename_component(builtin_modfile_name "${builtin_modfile}" NAME)
-  list(APPEND builtin_modfiles_in_build_dir
-       "${CMAKE_BINARY_DIR}/share/modfile/${builtin_modfile_name}")
+  set(modfile_build_path "${CMAKE_BINARY_DIR}/share/modfile/${builtin_modfile_name}")
+  # Create a build rule to copy the modfile there.
+  cpp_cc_build_time_copy(
+    INPUT "${builtin_modfile}"
+    OUTPUT "${modfile_build_path}"
+    NO_TARGET)
+  list(APPEND nrnivmodl_core_dependencies "${modfile_build_path}")
 endforeach()
-file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/share/modfile")
-# set up a build rule that ensures the modfiles in the build directory are updated if their
-# counterparts in the source directory are touched
-add_custom_command(
-  OUTPUT ${builtin_modfiles_in_build_dir}
-  DEPENDS ${builtin_modfiles}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${builtin_modfiles}
-          "${CMAKE_BINARY_DIR}/share/modfile")
-add_custom_target(copy-builtin-modfiles ALL DEPENDS ${builtin_modfiles_in_build_dir})
+add_custom_target(coreneuron-copy-nrnivmodl-core-dependencies ALL
+                  DEPENDS ${nrnivmodl_core_dependencies})
+# Store the build-tree modfile paths in a cache variable; these are an implicit dependency of
+# nrnivmodl-core.
 set(CORENEURON_BUILTIN_MODFILES
-    "${builtin_modfiles_in_build_dir}"
+    "${nrnivmodl_core_dependencies}"
     CACHE STRING "List of builtin modfiles that nrnivmodl-core implicitly depends on" FORCE)
 
 # =============================================================================
@@ -200,15 +223,6 @@ endif()
 set(CORENRN_LINK_LIBS
     "${CORENRN_LINK_LIBS}"
     PARENT_SCOPE)
-
-# =============================================================================
-# Copy files for nrnivmodl-core workflow during build time
-# =============================================================================
-
-configure_file(${MODFUNC_PERL_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/mod_func.c.pl COPYONLY)
-configure_file(${KINDERIV_PYTHON_SCRIPT} ${CMAKE_BINARY_DIR}/share/coreneuron/kinderiv.py COPYONLY)
-configure_file(${DIMPLIC_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/dimplic.cpp COPYONLY)
-configure_file(${ENGINEMECH_CODE_FILE} ${CMAKE_BINARY_DIR}/share/coreneuron/enginemech.cpp COPYONLY)
 
 # Make headers avail to build tree
 configure_file(engine.h.in ${CMAKE_BINARY_DIR}/include/coreneuron/engine.h @ONLY)

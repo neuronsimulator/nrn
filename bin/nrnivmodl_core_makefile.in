@@ -191,7 +191,7 @@ coremech_lib_target: $(corenrnmech_lib_target)
 	mkdir -p $(OUTPUT_DIR)/.libs; \
 	ln -s ../lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX) $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX)
 
-$(ENGINEMECH_OBJ): | $(MOD_OBJS_DIR)
+$(ENGINEMECH_OBJ): $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp | $(MOD_OBJS_DIR)
 	$(CXX_COMPILE_CMD) -c -DADDITIONAL_MECHS $(CORENRN_SHARE_CORENRN_DIR)/enginemech.cpp -o $(ENGINEMECH_OBJ)
 
 # build shared library of mechanisms

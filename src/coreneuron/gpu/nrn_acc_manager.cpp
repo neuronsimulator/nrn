@@ -60,9 +60,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
         if (nt->n_vecplay) {
             /* copy VecPlayContinuous instances */
-
-            printf("\n Warning: VectorPlay used but NOT implemented on GPU! ");
-
             /** just empty containers */
             void** d_vecplay = (void**) acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
             // note: we are using unified memory for NrnThread. Once VecPlay is copied to gpu,
@@ -337,9 +334,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
         if (nt->n_vecplay) {
             /* copy VecPlayContinuous instances */
-
-            printf("\n Warning: VectorPlay used but NOT implemented on GPU! ");
-
             /** just empty containers */
             void** d_vecplay = (void**) acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
             acc_memcpy_to_device(&(d_nt->_vecplay), &d_vecplay, sizeof(void**));
