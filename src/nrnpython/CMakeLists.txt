@@ -218,13 +218,20 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
 
   add_custom_command(
-    TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${NRN_BUILD_SHARE_DIR}/lib
+    TARGET hoc_module
+    PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
             ${PROJECT_BINARY_DIR}/share/nrn/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+  # Don't do exactly the same copy twice in a row. Presumably it's sometimes important to do both...
+  if(NOT "${NRN_BUILD_SHARE_DIR}/lib" STREQUAL "${PROJECT_BINARY_DIR}/share/nrn/lib")
+    add_custom_command(
+      TARGET hoc_module
+      PRE_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+              ${NRN_BUILD_SHARE_DIR}/lib)
+  endif()
 
   # =============================================================================
   # Build python module

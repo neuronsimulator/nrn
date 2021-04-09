@@ -447,12 +447,20 @@ if(MINGW)
 endif()
 
 # =============================================================================
+# Add coding-conventions submodule so we can use helper functions defined there
+# =============================================================================
+set(CODING_CONV_PREFIX "NRN")
+set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
+set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
+if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
+  initialize_submodule(external/coding-conventions)
+endif()
+include("${CODING_CONV_CMAKE}/3rdparty.cmake")
+
+# =============================================================================
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
 if(NEURON_CMAKE_FORMAT)
-  if(NOT EXISTS external/coding-conventions/cpp)
-    initialize_submodule(external/coding-conventions)
-  endif()
   set(NEURON_CMakeFormat_EXCLUDES_RE
       ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
       ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
@@ -519,11 +527,13 @@ if(NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT PYTEST_FOUND)
     message(SEND_ERROR "pytest Python package is required.")
   endif()
-  # Initialize the submodule *before* including the test/CMakeLists.txt that
-  # uses it. This ensures that the test infrastructure can find the names of
-  # the input data files and set up rules to copy them into the test working
-  # directories.
-  initialize_submodule("test/rxd/testdata")
+  # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
+  # that the test infrastructure can find the names of the input data files and set up rules to copy
+  # them into the test working directories.
+  set(backup "${${CODING_CONV_PREFIX}_3RDPARTY_DIR}")
+  set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "test")
+  cpp_cc_git_submodule(rxd/testdata)
+  set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
 endif()
 
