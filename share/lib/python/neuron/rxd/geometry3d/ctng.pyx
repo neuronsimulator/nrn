@@ -713,7 +713,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     for sec,cones in potential_soma_cones.items():
         for cone in cones:
             if (cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1) not in cone_segment_dict:
-                cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = branch.trueparentseg()
+                cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = sec.trueparentseg()
 
     #####################################################################
     #
