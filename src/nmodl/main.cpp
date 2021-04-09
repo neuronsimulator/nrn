@@ -468,7 +468,11 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(*ast, filepath("sympy_conductance"));
         }
 
-        if (sympy_analytic) {
+        if (sympy_analytic || sparse_solver_exists(*ast)) {
+            if (!sympy_analytic) {
+                logger->info(
+                    "Automatically enable sympy_analytic because it exists solver of type sparse");
+            }
             logger->info("Running sympy solve visitor");
             SympySolverVisitor(sympy_pade, sympy_cse).visit_program(*ast);
             SymtabVisitor(update_symtab).visit_program(*ast);

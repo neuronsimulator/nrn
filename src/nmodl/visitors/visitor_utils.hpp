@@ -97,6 +97,8 @@ std::vector<std::shared_ptr<ast::Ast>> collect_nodes(
     ast::Ast& node,
     const std::vector<ast::AstNodeType>& types = {});
 
+bool sparse_solver_exists(const ast::Ast& node);
+
 /// Given AST node, return the NMODL string representation
 std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types = {});
 

@@ -206,6 +206,17 @@ std::vector<std::shared_ptr<ast::Ast>> collect_nodes(ast::Ast& node,
     return visitor.lookup(node, types);
 }
 
+bool sparse_solver_exists(const ast::Ast& node) {
+    const auto solve_blocks = collect_nodes(node, {ast::AstNodeType::SOLVE_BLOCK});
+    for (const auto& solve_block: solve_blocks) {
+        const auto& method = dynamic_cast<const ast::SolveBlock*>(solve_block.get())->get_method();
+        if (method && method->get_node_name() == "sparse") {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string to_nmodl(const ast::Ast& node, const std::set<ast::AstNodeType>& exclude_types) {
     std::stringstream stream;
     visitor::NmodlPrintVisitor v(stream, exclude_types);
