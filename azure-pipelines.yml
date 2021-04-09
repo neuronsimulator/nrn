@@ -5,9 +5,8 @@ variables:
   # defined in UI
   #- ReleaseWheelBuild: False
   #- NightlyWheelBuild: False
-- name: buildWheel
-  value: $[or(in(variables['Build.Reason'], 'Schedule'),
-              and(in(variables['Build.Reason'], 'Manual'), eq(variables.NightlyWheelBuild, True)))]
+  buildWheel: ${{ or(in(variables['Build.Reason'], 'Schedule'),
+              and(in(variables['Build.Reason'], 'Manual'), eq(variables.NightlyWheelBuild, True))) }}
 
 # Nightly build master for pypi upload
 schedules:
@@ -40,7 +39,7 @@ jobs:
       python3.7 -m pip install -U pip setuptools
       python3.7 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest 'sympy>=1.3,<1.6'
       # we manually get version 3.10.2 to make sure that changes in the cmake
-      # files do not require unsupported versions of cmake in our package. 
+      # files do not require unsupported versions of cmake in our package.
       wget "https://github.com/Kitware/CMake/releases/download/v3.10.2/$CMAKE_PKG.tar.gz" && tar xzpvf $CMAKE_PKG.tar.gz
       # install ISPC compiler for integration testing
       ispc_version="v1.12.0";
@@ -136,18 +135,22 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-      Python38:
-        python.version: '3.8'
-      Python39:
-        python.version: '3.9'
+      ${{ if eq(variables.buildWheel, True) }}:
+        Python36:
+          python.version: '3.6'
+        Python37:
+          python.version: '3.7'
+        Python38:
+          python.version: '3.8'
+        Python39:
+          python.version: '3.9'
+      ${{ if eq(variables.buildWheel, False) }}:
+        Python39:
+          python.version: '3.9'
   steps:
   - checkout: self
     submodules: True
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
   - script: |
       if [ "$(buildWheel)" == "True" ]; then
         export TAG="-nightly"
@@ -160,19 +163,19 @@ jobs:
         -e NMODL_NIGHTLY_TAG=$TAG \
         'bluebrain/nmodl:wheel' \
         packaging/build_wheels.bash linux $(python.version)
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Building ManyLinux Wheel'
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Publish wheel as build artifact'
   - script: |
       sudo apt-add-repository -y ppa:deadsnakes/ppa
       sudo apt update
       sudo apt-get install -y python$(python.version) python$(python.version)-dev python$(python.version)-venv
       packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Test ManyLinux Wheel with Python $(python.version)'
   - template: ci/upload-wheels.yml
 - job: 'macos_wheels'
@@ -181,33 +184,38 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
-        python.org.version: '3.6.8'
-      Python37:
-        python.version: '3.7'
-        python.org.version: '3.7.7'
-      Python38:
-        python.version: '3.8'
-        python.org.version: '3.8.2'
-      Python39:
-        python.version: '3.9'
-        python.org.version: '3.9.0'
+      ${{ if eq(variables.buildWheel, True) }}:
+        Python36:
+          python.version: '3.6'
+          python.org.version: '3.6.8'
+        Python37:
+          python.version: '3.7'
+          python.org.version: '3.7.7'
+        Python38:
+          python.version: '3.8'
+          python.org.version: '3.8.2'
+        Python39:
+          python.version: '3.9'
+          python.org.version: '3.9.0'
+      ${{ if eq(variables.buildWheel, False) }}:
+        Python39:
+          python.version: '3.9'
+          python.org.version: '3.9.0'
   steps:
   - checkout: self
     submodules: True
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
   - script: |
       brew install flex bison cmake
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Install Dependencies'
   - script: |
       installer=python-$(python.org.version)-macosx10.9.pkg
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
       curl $url -o $installer
       sudo installer -pkg $installer -target /
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Install Python from python.org'
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
@@ -219,15 +227,15 @@ jobs:
         export NMODL_NIGHTLY_TAG=""
       fi
       packaging/build_wheels.bash osx $(python.version)
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Build macos Wheel'
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: '$(Build.SourcesDirectory)/wheelhouse'
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Publish wheel as build artifact'
   - script: |
       packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
-    condition: and(succeeded(), or(eq(variables.buildWheel, True), eq(variables['python.version'], '3.9')))
+    condition: succeeded()
     displayName: 'Test macos Wheel with Python $(python.version)'
   - template: ci/upload-wheels.yml
