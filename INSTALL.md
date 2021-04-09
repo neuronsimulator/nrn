@@ -54,7 +54,7 @@ export PATH=/opt/homebrew/opt/flex/bin:/opt/homebrew/opt/bison/bin:$PATH
 
 ### On Ubuntu
 
-On Ubuntu (>=16.04) flex/bison versions are recent enough and are installed along with the system toolchain:
+On Ubuntu (>=18.04) flex/bison versions are recent enough and are installed along with the system toolchain:
 
 ```sh
 apt-get install flex bison gcc python3 python3-pip
