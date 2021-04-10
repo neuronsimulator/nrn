@@ -2470,6 +2470,12 @@ extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i
 		wl->remove_all();
 	}
 	WatchCondition* wc = (WatchCondition*)d[i]._pvoid;
+	//wc->watch_index_ = i; // Simplifies transfer to CoreNEURON
+	// To avoid searching for the beginning of _watch_array after
+	// transfer to CoreNEURON, compute the offset with respect to dparam.
+	// That, of course, assumes NEURON and CoreNEURON have same
+	// pdata arrangement.
+	wc->watch_index_ = i + (d - pnt->prop->dparam);
 	wl->append(wc);
 	wc->activate(flag);
 }
@@ -5224,6 +5230,7 @@ WatchCondition::WatchCondition(Point_process* pnt, double(*c)(Point_process*))
 {
 	pnt_ = pnt;
 	c_ = c;
+	watch_index_ = 0; // For transfer, will be a small positive integer.
 }
 
 WatchCondition::~WatchCondition() {
@@ -5516,7 +5523,6 @@ static int trajec_buffered(NrnThread& nt,
     int cur_size = v->size();
     if (v->buffer_size() < bsize + cur_size) {
       v->buffer_size(bsize + cur_size);
-printf("trajec_buffered bsize=%d cur_size=%d newsize=%d\n", bsize, cur_size, v->size());
     }
     // nrnthread_trajectory_values will resize to correct size.
     v->resize(bsize + cur_size);
@@ -5816,6 +5822,22 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		    }
 		}
 	}
+}
+
+/** In nrncore_callbacks.cpp **/
+extern void nrn2core_transfer_WatchCondition(WatchCondition* wc,
+  void(*cb)(int, int, int, int, int));
+extern "C" {
+void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
+}
+void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int)) {
+  for (int i = 0; i < net_cvode_instance->wl_list_->count(); ++i) {
+    HTList* wl = net_cvode_instance->wl_list_->item(i);
+    for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+      WatchCondition* wc = (WatchCondition*)item;
+      nrn2core_transfer_WatchCondition(wc, cb);
+    }
+  }
 }
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method

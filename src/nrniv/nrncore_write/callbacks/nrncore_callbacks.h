@@ -80,6 +80,11 @@ extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
 }
 
+// per item direct transfer of WatchCondition
+extern "C" {
+void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
+}
+
 static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
         {"nrn2core_mkmech_info_", (CNB)write_memb_mech_types_direct},
@@ -106,7 +111,8 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_type_return_", (CNB)nrnthreads_type_return},
 
         {"nrn2core_transfer_tqueue_", (CNB)nrn2core_transfer_tqueue},
-        {NULL, NULL}
+        {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
+       {NULL, NULL}
 };
 
 

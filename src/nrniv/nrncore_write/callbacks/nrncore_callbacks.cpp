@@ -602,6 +602,49 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
     return 0;
 }
 
+/** getting one item at a time from nrn2core_transfer_WATCH **/
+void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, int, int, int)) {
+  Point_process* pnt = wc->pnt_;
+  assert(pnt);
+  int tid = ((NrnThread*)(pnt->_vnt))->id;
+  int pnttype = pnt->prop->type;
+  double nrflag = wc->nrflag_; // don't care about this
+  int watch_index = wc->watch_index_;
+  int triggered = wc->flag_ ? 1 : 0;
+  int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
+
+  (*cb)(tid, pnttype, pntindex, watch_index, triggered);
+
+  // This transfers CvodeThreadData activated WatchCondition
+  // information. All WatchCondition stuff is implemented in netcvode.cpp.
+  // cvodeobj.h: HTList* CvodeThreadData.watch_list_
+  // netcon.h: WatchCondition
+  // On the NEURON side, WatchCondition is activated within a
+  // NET_RECEIVE block with the NMODL WATCH statement translated into a
+  // call to _nrn_watch_activate implmented as a function in netcvode.cpp.
+  // Note that on the CoreNEURON side, all the WATCH functionality is
+  // implemented within the mod file translation, and the info from this side
+  // is used to assign a value in the location specified by the
+  // _watch_array(flag) macro.
+  // The return from psolve must transfer back the correct conditions
+  // so that NEURON can continue with a classical psolve, or, if CoreNEURON
+  // continues, receive the correct transfer of conditions back from NEURON
+  // again.
+  // Note: the reason CoreNEURON does not already have the correct watch
+  // condition from phase2 setup is because, on the NEURON side,
+  // _nrn_watch_activate fills in the _watch_array[0] with a pointer to
+  // WatchList and _watch_array[i] with a pointer to WatchCondition.
+  // Activation consists of removing all conditions from a HTList (HeadTailList)
+  // and _watch_array[0] (only on the first _nrn_watch_activate call from a
+  // NET_RECEIVE delivery event). And appending to _watch_array[0] and
+  // Append to the HTList which is the CvodeThreadData.watch_list_;
+  // But on the CoreNEURON side, _watch_array[0] is unused and _watch_array[i]
+  // is a two bit integer. Bit 2 on means the WATCH is activated Bit 1
+  // is used to determine the transition from false to true for doing a
+  // net_send (immediate deliver).
+
+}
+
 NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   if (tid >= nrn_nthread) { return NULL; }
 

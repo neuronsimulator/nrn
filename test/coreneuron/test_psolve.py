@@ -16,14 +16,16 @@ def model():
     ic.delay = 0.1
     ic.dur = 0.1
     ic.amp = 0.5
-    return (s, ic)
+    syn = h.ExpSyn(s(.5))
+    nc = h.NetCon(None, syn)
+    return {'s':s, 'ic':ic, 'syn':syn, 'nc':nc}
 
 def test_psolve():
     # sequence of psolve with only beginning initialization
     m = model()
     vvec = h.Vector()
     h.tstop = 5
-    vvec.record(m[0](.5)._ref_v, sec=m[0])
+    vvec.record(m['s'](.5)._ref_v, sec=m['s'])
 
     h.run()
     vvec_std = vvec.c() # standard result
@@ -31,6 +33,7 @@ def test_psolve():
     def run(tstop):
       pc.set_maxstep(10)
       h.finitialize(-65)
+      m['nc'].event(3.5)
       h.continuerun(1)
       while h.t < tstop:
         pc.psolve(h.t + 1)
