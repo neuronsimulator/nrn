@@ -109,10 +109,10 @@ def test_import_into_HOC_template(neuron_instance):
             import.instantiate(this)
         }
         endtemplate HocTemplateTest"""
-        % os.path.join(os.path.abspath(__file__), "simple.asc")
+        % os.path.join(os.path.dirname(os.path.abspath(__file__)), "simple.asc")
     )
     cell = h.HocTemplateTest()
-    assert(len(cell.all) == 2)
+    assert len(cell.all) == 2
 
 
 def test_toplevel_import(neuron_instance):
@@ -123,6 +123,6 @@ def test_toplevel_import(neuron_instance):
     cell.input(os.path.join(path, "simple.asc"))
     i3d = h.Import3d_GUI(cell, False)
     i3d.instantiate(None)
-    assert(len(list(h.allsec())) == 2)
+    assert len(list(h.allsec())) == 2
     for sec in h.allsec():
         h.delete_section(sec=sec)
