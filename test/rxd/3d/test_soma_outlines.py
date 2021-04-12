@@ -121,7 +121,7 @@ def test_import_into_HOC_template(neuron_instance):
         % os.path.join(os.path.dirname(os.path.abspath(__file__)), "simple.asc")
     )
     cell = h.HocTemplateTest()
-    assert len(cell.all) == 2
+    assert len(list(cell.all)) == 2
 
 
 def test_toplevel_import(neuron_instance):
