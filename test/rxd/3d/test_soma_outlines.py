@@ -122,6 +122,9 @@ def test_import_into_HOC_template(neuron_instance):
     )
     cell = h.HocTemplateTest()
     assert len(list(cell.all)) == 2
+    # the next two lines are a work-around for issue #1164
+    cell = None
+    sl = h.SectionList()
 
 
 def test_toplevel_import(neuron_instance):
