@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - live-debug*
       - release/**
   pull_request:
     branches:
@@ -70,7 +69,10 @@ jobs:
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
-          cmake --build . -- -j;
+          # The Linux runners apparently have 2 cores, but jobs were being killed when we did not specify this explicitly.
+          # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+          # By default we get a modern version of CMake that understands --parallel.
+          cmake --build . --parallel 2
           (cd ..;  lcov --capture  --initial --directory . --no-external --output-file build/coverage-base.info)
           export PATH=`pwd`/bin:$PATH;
           ctest -VV;
@@ -82,8 +84,7 @@ jobs:
           MATRIX_EVAL: "CC=gcc CXX=g++"
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply prefix your branch name with `live-debug`
-      #   i.e.: live-debug-hocfix
+      # To trigger it, simply add 'live-debug-coverage' to your last pushed commit message.
       - name: live debug session on failure
-        if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
+        if: failure() && contains(github.event.head_commit.message, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3

@@ -405,6 +405,8 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     PyObject* args = PyTuple_GetItem(po, 1);
     if (!PyTuple_Check(args)) {
       args = PyTuple_Pack(1, args);
+    }else{
+      Py_INCREF(args);
     }
     // PyObject_Print(PyTuple_GetItem(po, 0), stdout, 0);
     // printf("\n");
@@ -412,8 +414,11 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     // printf("\n");
     // printf("threadstate %p\n", PyThreadState_GET());
     r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
+    Py_DECREF(args);
   } else {
-    r = nrnpy_pyCallObject(po, PyTuple_New(0));
+    PyObject* args = PyTuple_New(0);
+    r = nrnpy_pyCallObject(po, args);
+    Py_DECREF(args);
   }
   if (r == NULL) {
     PyErr_Print();

@@ -1414,8 +1414,8 @@ class Species(_SpeciesMathable):
         if hasattr(self, '_id'):
             remove_species_atolscale(self._id)
         
-        name = self.name if self.name else self._id
-        if name in _defined_species:
+        name = self.name if self.name else (self._id if hasattr(self,'_id') else None)
+        if name is not None and name in _defined_species:
             for r in self.regions:
                 if r in _defined_species[name]:
                     del _defined_species[name][r]

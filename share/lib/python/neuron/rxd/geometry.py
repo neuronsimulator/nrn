@@ -82,13 +82,13 @@ def _make_perimeter_function(scale, diam_scale=1.0):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-            arc3d = [sec.arc3d(i)
-                     for i in range(sec.n3d())]
-            diam3d = [sec.diam3d(i) * diam_scale
-                      for i in range(sec.n3d())]
-            area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
-            diams = numpy.interp(area_pos, arc3d, diam3d)
-            return scale * diams  
+        arc3d = [sec.arc3d(i)
+                 for i in range(sec.n3d())]
+        diam3d = [sec.diam3d(i) * diam_scale
+                  for i in range(sec.n3d())]
+        area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
+        diams = numpy.interp(area_pos, arc3d, diam3d)
+        return scale * diams  
     return result
         
 _surface_areas1d = _make_surfacearea1d_function(numpy.pi)

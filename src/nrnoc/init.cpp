@@ -21,7 +21,7 @@ static char nmodl_version_[] =
         "7.7.0";
 
 static char banner[] =
-        "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2019\n\
+        "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
 #ifdef WIN32
