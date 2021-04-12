@@ -1331,14 +1331,13 @@ def _compile_reactions():
                                     operator = '='
                                     ics_grid_ids.append(s3d._grid_id)
                                     #Find mult for this grid
-                                    for sec in reg._secs3d:
-                                        sas = reg._vol
-                                        s3d_reg = s3d._region
-                                        for seg in sec:
-                                            for index in reg._nodes_by_seg[seg]:
-                                                #Change this to be by volume
-                                                #membrane area / compartment volume / molecules_per_mM_um3
-                                                mults[s3d._grid_id].append(sas[index] / (s3d._region._vol[index]) / molecules_per_mM_um3)
+                                    sas = reg._vol
+                                    s3d_reg = s3d._region
+                                    for segidx,seg in enumerate(s3d_reg._segs3d()):
+                                        #Change this to be by volume
+                                        #membrane area / compartment volume / molecules_per_mM_um3
+                                        mults[s3d._grid_id] += [sas[index] / (s3d_reg._vol[index]) / molecules_per_mM_um3 for index in s3d_reg._nodes_by_seg[segidx]]
+
                                 pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s3d._grid_id][0]
                                 fxn_string += "\n\trhs[%d] %s -mc3d_mults[%d] * rate;" % (pid, operator, pid)
                         for sptr in r._dests:
@@ -1351,13 +1350,11 @@ def _compile_reactions():
                                     operator = '='
                                     ics_grid_ids.append(s3d._grid_id)
                                     #Find mult for this grid
-                                    for sec in reg._secs3d:
-                                        sas = reg._vol
-                                        s3d_reg = s3d._region                                      
-                                        for seg in sec:
-                                            for index in reg._nodes_by_seg[seg]:
-                                                #Change this to be by volume
-                                                mults[s3d._grid_id].append(sas[index] / (s3d._region._vol[index]) / molecules_per_mM_um3)
+                                    sas = reg._vol
+                                    s3d_reg = s3d._region
+                                    for segidx,seg in enumerate(s3d_reg._segs3d()):
+                                        #Change this to be by volume
+                                        mults[s3d._grid_id] += [sas[index] / (s3d_reg._vol[index]) / molecules_per_mM_um3 for index in s3d_reg._nodes_by_seg[segidx]]
                                 pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s3d._grid_id][0]
                                 fxn_string += "\n\trhs[%d] %s mc3d_mults[%d] * rate;" % (pid, operator, pid)                        
                                 

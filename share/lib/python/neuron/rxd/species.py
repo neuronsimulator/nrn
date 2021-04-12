@@ -674,7 +674,7 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _import_concentration(self):
         self._isalive()
         ion = '_ref_' + self._name + self._region._nrn_region
-        for seg, nodes in zip(r._secs3d(self._region._nodes_by_seg.keys()), self._region._nodes_by_seg.values()):
+        for seg, nodes in zip(r._segs3d(self._region._nodes_by_seg.keys()), self._region._nodes_by_seg.values()):
             segptr = getattr(seg, ion)
             value = segptr[0]
             for node in nodes:
@@ -761,24 +761,23 @@ class _IntracellularSpecies(_SpeciesMathable):
             if nrn_region is not None:
                 ion = '_ref_' + self._species + nrn_region
                 self._seg_order = list(self._region._nodes_by_seg.keys())
-                for seg in r._segs3d(self._seg_order):
+                for seg in self._region._segs3d(self._seg_order):
                     self._concentration_ptrs.append(getattr(seg, ion))
 
     def _import_concentration(self, init=True):
         self._isalive()
         nodes = self._nodes
+        if not hasattr(self,'_seg_order'):
+            self._register_cptrs()
         if nodes:
             # TODO: replace this with a pointer vec for speed
             #       not a huge priority since import happens rarely if at all
-            i = 0
-            seg_order = r._secs3d(self._seg_order)
             conc_ptr = self._concentration_ptrs
             if self._region._nrn_region is not None:
-                seg, ptr = seg_order[i], conc_ptr[i]
-                i += 1
-                value = ptr[0]
-                for node in self._region._nodes_by_seg[seg]:
-                    nodes[node].concentration = value
+                for segidx, ptr in zip(self._seg_order, conc_ptr):
+                    value = ptr[0]
+                    for node in self._region._nodes_by_seg[segidx]:
+                        nodes[node].concentration = value
 
     def _transfer_to_legacy(self):
         self._isalive()
@@ -895,11 +894,10 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _mc3d_indices_start(self, r):
         self._isalive()
         indices = []
-        for sec in r._secs3d:
-            for seg in sec:
-                first_index = r._nodes_by_seg[seg][0]
-                point = r._points[first_index]
-                indices.append(self._index_from_point(point))
+        for node_idx in r._nodes_by_seg.values():
+            first_index = node_idx[0]
+            point = r._points[first_index]
+            indices.append(self._index_from_point(point))
         return min(indices)
 
 
@@ -1538,9 +1536,14 @@ class Species(_SpeciesMathable):
         for r in self._intracellular_instances:
             if r._secs3d_names:
                 secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in r._secs3d}
-                if secs3d_names != r._secs3d_names:
-                    #TODO: redo voxelization and interpolate
-                    raise RxDException("Error: changing the 3D sections or their nseg after initialization is not yet supported.") 
+                if secs3d_names:
+                    if secs3d_names != r._secs3d_names:
+                        #TODO: redo voxelization and interpolate
+                        raise RxDException("Error: changing the 3D sections or their nseg after initialization is not yet supported.") 
+                else:
+                    # If there are no 3D sections we can continue without
+                    # re-voxelization.
+                    self._intracellular_nodes[r] = []
 
         return nsegs_changed
 
@@ -1572,7 +1575,7 @@ class Species(_SpeciesMathable):
                 nrn_region = r._nrn_region
                 if nrn_region is not None:
                     ion = '_ref_' + self.name + nrn_region
-                    current_region_segs = list(r._nodes_by_seg.keys())
+                    current_region_segs = list(r._segsidx)
                     self._seg_order += current_region_segs
                     for seg in r._segs3d(current_region_segs):
                         self._concentration_ptrs.append(getattr(seg, ion))    
