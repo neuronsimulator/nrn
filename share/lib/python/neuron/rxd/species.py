@@ -1539,16 +1539,8 @@ class Species(_SpeciesMathable):
             if r._secs3d_names:
                 secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in r._secs3d}
                 if secs3d_names != r._secs3d_names:
-                    # redo voxel to segment mapping
-                    r._reinit_segs3d()
-                    
-                    # replace the Nodes3D
-                    selfref = weakref.ref(self)
-                    self._intracellular_nodes[r] = []
-                    xs, ys, zs, segsidx = r._xs, r._ys, r._zs, r._segsidx
-                    segs = [seg for sec in r._secs3d for seg in sec]
-                    self._intracellular_nodes[r] += [node.Node3D(i, x, y, z, r, self._d, segs[idx], selfref) for i, x, y, z, idx in zip(range(len(xs)), xs, ys, zs, segsidx)]
-            
+                    #TODO: redo voxelization and interpolate
+                    raise RxDException("Error: changing the 3D sections or their nseg after initialization is not yet supported.") 
 
         return nsegs_changed
 

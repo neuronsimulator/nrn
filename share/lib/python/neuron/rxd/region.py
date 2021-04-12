@@ -431,58 +431,6 @@ class Region(object):
         if index:
             return [seg for i,seg in enumerate(segs) if i in index]
         return segs
-
-    def _reinit_segs3d(self):
-        """ Assume only nseg has changed, keep the same voxels but change the segment
-            mapping.
-        """
-
-        segs = []
-        nodes_by_seg = {}
-        surface_nodes_by_seg = {}
-        if list(self._secs3d):
-            maps = {seg:i for i,seg in enumerate([seg for sec in self._secs3d for seg in sec])}
-            pts = {}
-            nsegs = {} 
-            for i, sec in enumerate(self._secs3d):
-                rng = range(sec.n3d())
-                pts[sec] = [numpy.array([sec.x3d(i) for i in rng]),
-                            numpy.array([sec.y3d(i) for i in rng]),
-                            numpy.array([sec.z3d(i) for i in rng])]
-                nsegs[sec] = [int(sec.nseg*sec.arc3d(i)/sec.L - 0.5) for i in rng]
- 
-            def in_seg(i,j,k):
-                loc = []
-                index = []
-                x = self._mesh_grid['xlo'] + i * self._mesh_grid['dx']
-                y = self._mesh_grid['ylo'] + j * self._mesh_grid['dy']
-                z = self._mesh_grid['zlo'] + k * self._mesh_grid['dz']
-                for sec, (xs,ys,zs) in pts.items():
-                    dist = (xs-x)**2 + (ys-y)**2 + (zs-z)**2 
-                    
-                    loc.append(dist.min())
-                    index.append(len(dist) - dist[::-1].argmin() - 1)
-                secidx = numpy.argmin(loc)
-                sec = list(pts.keys())[secidx]
-                segx = (nsegs[sec][index[secidx]] + 0.5)/sec.nseg
-                return sec(segx)
-
-            surface_nodes_idx = self._surface_nodes_by_seg.values()
-            for i, (i,j,k) in enumerate(self._points):
-                idx = maps[in_seg(i,j,k)]
-                nodes_by_seg.setdefault(idx, [])
-                nodes_by_seg[idx].append(i)
-                segs.append(idx)
-                if i in surface_nodes_idx:
-                    surface_nodes_by_seg.setdefault(idx, [])
-                    surface_nodes_by_seg[idx].append(i)
-
-        self._surface_nodes_by_seg = surface_nodes_by_seg
-        self._nodes_by_seg = nodes_by_seg 
-        self._secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in self._secs3d}
-        self._segsidx = segs
-
-
     
     def _indices_from_sec_x(self, sec, position):
         # TODO: the assert is here because the diameter is not computed correctly
