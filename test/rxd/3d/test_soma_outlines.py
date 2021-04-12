@@ -97,9 +97,9 @@ def test_multiple_soma(cell_model):
         assert max_err < tol
 
 
-def test_import_into_HOC_template(cell_model):
+def test_import_into_HOC_template(neuron_instance):
     """test that we can import at the top level without error"""
-    h, rxd, data, save_path, Cell = cell_model
+    h, rxd, data, save_path = neuron_instance
     h(
         """begintemplate HocTemplateTest
     proc init() {localobj nl
@@ -112,13 +112,17 @@ def test_import_into_HOC_template(cell_model):
         % os.path.join(os.path.abspath(__file__), "simple.asc")
     )
     cell = h.HocTemplateTest()
+    assert(len(cell.all) == 2)
 
 
-def test_toplevel_import(cell_model):
+def test_toplevel_import(neuron_instance):
     """test that we can import at the top level without error"""
-    h, rxd, data, save_path, Cell = cell_model
+    h, rxd, data, save_path = neuron_instance
     cell = h.Import3d_Neurolucida3()
     path = os.path.dirname(os.path.abspath(__file__))
     cell.input(os.path.join(path, "simple.asc"))
     i3d = h.Import3d_GUI(cell, False)
     i3d.instantiate(None)
+    assert(len(list(h.allsec())) == 2)
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
