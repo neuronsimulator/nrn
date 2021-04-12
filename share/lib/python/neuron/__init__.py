@@ -659,7 +659,10 @@ def _modelview_mechanism_docstrings(dmech, tree):
 _sec_db = {}
 def _declare_contour(secobj, obj, name):
     array, i = _parse_import3d_name(name)
-    sec = getattr(obj, array)[i]
+    if obj is None:
+      sec = getattr(h, array)[i]
+    else:
+      sec = getattr(obj, array)[i]
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
     x0, y0, z0 = [center_vec.x[i] for i in range(3)]
