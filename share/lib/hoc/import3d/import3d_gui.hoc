@@ -1196,6 +1196,7 @@ proc mksubset() {
 	}
 	sprint(tstr1, "forsec \"%s\" %s.append\n", $s3, tstr1)
 	commands.append(new String(tstr1))	
+	execute(tstr1, $o1)
 }
 
 proc contour2centroid() {local i, j, imax, imin, ok  localobj mean, pts, d, max, min, tobj, rad, rad2, side2, pt, major, m, minor
