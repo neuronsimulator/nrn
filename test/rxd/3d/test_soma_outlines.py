@@ -102,6 +102,7 @@ def test_import_into_HOC_template(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     h(
         """begintemplate HocTemplateTest
+        objref this
         proc init() {localobj nl, import
             nl = new Import3d_Neurolucida3()
             nl.input("%s")
