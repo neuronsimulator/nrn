@@ -100,6 +100,7 @@ jobs:
     displayName: 'Install Python from python.org'
 
   - script: |
+      brew update
       brew install --cask xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
