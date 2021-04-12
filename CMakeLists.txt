@@ -493,17 +493,20 @@ add_dependencies(nrniv_lib hh_update)
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
-  add_custom_target(
-      help_data_dat
-      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
-              ${PROJECT_SOURCE_DIR}/docs/python
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMENT "Generating help_data.dat"
-      VERBATIM)
-  add_dependencies(nrniv_lib help_data_dat)
+  find_python_module(pathlib)
+  if(PATHLIB_FOUND) # TODO - Drop pathlib logic @ Python2 removal (pathlib is part of core in Python3)
+    add_custom_target(
+        help_data_dat
+        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+                ${PROJECT_SOURCE_DIR}/docs/python
+                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+                ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+        COMMENT "Generating help_data.dat"
+        VERBATIM)
+    add_dependencies(nrniv_lib help_data_dat)
+  endif()
 endif()
 
 # =============================================================================
@@ -694,4 +697,7 @@ endif()
 message(STATUS "")
 if(PY2_WARNING)
   message(WARNING "Python2 support will be dropped soon! We strongly advise migrating to Python3 as of now.")
+  if(NOT PATHLIB_FOUND)
+    message(WARNING "'pathlib' Python2 package is required for in-python neuron documentation. Please install it.")
+  endif()
 endif()
