@@ -82,3 +82,29 @@ def test_multiple_soma(cell_model):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_import_into_HOC_template(cell_model):
+    """test that we can import at the top level without error"""
+    h, rxd, data, save_path, Cell = cell_model
+    h('''begintemplate HocTemplateTest
+    proc init() {localobj nl
+        nl = new Import3d_Neurolucida3()
+        nl.input("%s")
+        import = new Import3d_GUI(nl, 0)
+        import.instantiate(this)
+    }
+    endtemplate HocTemplateTest''' % os.path.join(os.path.abspath(__file__), "simple.asc"))
+    cell = h.HocTemplateTest()
+
+
+
+def test_toplevel_import(cell_model):
+    """test that we can import at the top level without error"""
+    h, rxd, data, save_path, Cell = cell_model
+    cell = h.Import3d_Neurolucida3()
+    path = os.path.dirname(os.path.abspath(__file__))
+    cell.input(os.path.join(path, "simple.asc"))
+    i3d = h.Import3d_GUI(cell, False)
+    i3d.instantiate()
+
