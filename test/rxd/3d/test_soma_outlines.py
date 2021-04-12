@@ -102,13 +102,13 @@ def test_import_into_HOC_template(neuron_instance):
     h, rxd, data, save_path = neuron_instance
     h(
         """begintemplate HocTemplateTest
-    proc init() {localobj nl
-        nl = new Import3d_Neurolucida3()
-        nl.input("%s")
-        import = new Import3d_GUI(nl, 0)
-        import.instantiate(this)
-    }
-    endtemplate HocTemplateTest"""
+        proc init() {localobj nl
+            nl = new Import3d_Neurolucida3()
+            nl.input("%s")
+            import = new Import3d_GUI(nl, 0)
+            import.instantiate(this)
+        }
+        endtemplate HocTemplateTest"""
         % os.path.join(os.path.abspath(__file__), "simple.asc")
     )
     cell = h.HocTemplateTest()
