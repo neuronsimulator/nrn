@@ -101,14 +101,22 @@ def test_import_into_HOC_template(neuron_instance):
     """test that we can import at the top level without error"""
     h, rxd, data, save_path = neuron_instance
     h(
-        """begintemplate HocTemplateTest
-        objref this
+        """
+        begintemplate HocTemplateTest
+        objref this, somatic, all, axonal, basal
         proc init() {localobj nl, import
+            all = new SectionList()
+            somatic = new SectionList()
+            axonal = new SectionList()
+            basal = new SectionList()
+
             nl = new Import3d_Neurolucida3()
             nl.input("%s")
             import = new Import3d_GUI(nl, 0)
             import.instantiate(this)
         }
+
+        create soma[1], dend[1]
         endtemplate HocTemplateTest"""
         % os.path.join(os.path.dirname(os.path.abspath(__file__)), "simple.asc")
     )
