@@ -199,14 +199,7 @@ build system, and they can be installed together as shown below:
   cd build
   ```
 
-3. If you are building on Cray systems with a GNU toolchain, you have to set the following environmental variable:
-
-  ```
-  export CRAYPE_LINK_TYPE=dynamic
-
-  ```
-
-4. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
+3. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
 can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. e.g. a bare-bones installation:
 
 
@@ -218,14 +211,14 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   ```
 
-5. Build the code:
+4. Build the code:
 
   ```
   make -j
   make install
   ```
 
-6. Set PATH and PYTHONPATH environmental variables to use the installation:
+5. Set PATH and PYTHONPATH environmental variables to use the installation:
 
   ```
   export PATH=/path/to/install/directory/bin:$PATH

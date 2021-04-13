@@ -57,10 +57,6 @@ CoreNEURON is a submodule of the NEURON git repository. If you are a NEURON user
    module load cuda nvidia-hpc-sdk
    ```
    Make sure to change module names based on your system.
-   Also, if you are building on a Cray system with the GNU toolchain, you have to set the following environment variable:
-   ```
-   export CRAYPE_LINK_TYPE=dynamic
-   ```
 
 4. Run CMake with the appropriate [options](https://github.com/neuronsimulator/nrn#build-using-cmake) and additionally enable CoreNEURON with `-DNRN_ENABLE_CORENEURON=ON`:
 
