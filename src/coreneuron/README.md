@@ -23,7 +23,7 @@ In addition to this, you will need other [NEURON dependencies](https://github.co
 
 ## Installation
 
-CoreNEURON is now integrated into the development version of the NEURON simulator. If you are a NEURON user, the preferred way to install CoreNEURON is to enable extra build options during NEURON installation as follows:
+**CoreNEURON** is now **integrated into** the **development version** of the **NEURON** simulator. If you are a NEURON user, **the preferred way** to **install CoreNEURON** is to **enable extra build options** during **NEURON installation** as follows:
 
 1. Clone the latest version of NEURON:
 
@@ -56,7 +56,7 @@ Note that if you are building on Cray system with the GNU toolchain, you have to
   export CRAYPE_LINK_TYPE=dynamic
   ```
 
-3. Run CMake with the appropriate [options](https://github.com/neuronsimulator/nrn#build-using-cmake) and additionally enable CoreNEURON with `-DNRN_ENABLE_CORENEURON=ON` option:
+3. Run CMake with the appropriate [options](https://github.com/neuronsimulator/nrn/blob/master/docs/install/install_instructions.md#install-neuron-using-cmake) and additionally enable CoreNEURON with `-DNRN_ENABLE_CORENEURON=ON` option:
 
   ```
   cmake .. \
@@ -86,8 +86,9 @@ NOTE : If the CMake command fails, please make sure to delete temporary CMake ca
 4. Build and Install :  once the configure step is done, you can build and install the project as:
 
 	```bash
-	make -j install
+	cmake --build . --parallel 8 --target install
 	```
+  Feel free to define the number of parallel jobs building by setting a number for the `--parallel` option.
 
 ## Building Model
 
@@ -127,7 +128,7 @@ With CoreNEURON, existing NEURON models can be run with minimal changes. For a g
 3. If GPU support is enabled during build, enable GPU execution using :
 	```
 	coreneuron.gpu = True
-    ```
+  ```
 
 4. Use `psolve` to run simulation after initialization :
 
@@ -234,6 +235,32 @@ For other errors, please [open an issue](https://github.com/BlueBrain/CoreNeuron
 
 ## Developer Build
 
+#### Running Unit and Integration Tests
+
+As **CoreNEURON** is mostly used as a compute library of **NEURON** it needs to be incorporated with **NEURON** to test most of its functionality. Consequently its tests are included in the NEURON repository. To enable and run all the tests of **CoreNEURON** you need to add the `-DNRN_ENABLE_TESTS=ON` CMake flag in **NEURON**.
+Those tests include:
+* Unit tests of NEURON
+* Unit tests of CoreNEURON
+* Integration tests comparing NEURON, CoreNEURON and reference files
+* [ringtest](https://github.com/neuronsimulator/ringtest) tests with NEURON and CoreNEURON
+* [testcorenrn](https://github.com/neuronsimulator/testcorenrn) tests with NEURON and CoreNEURON
+Some of those tests are going to be also run with various backends in case that those are enabled (for example with GPUs).
+To build NEURON with CoreNEURON and run the tests you need to:
+
+```bash
+cd nrn/build
+cmake .. \
+  -DNRN_ENABLE_CORENEURON=ON \
+  -DNRN_ENABLE_INTERVIEWS=OFF \
+  -DNRN_ENABLE_RX3D=OFF \
+  -DCMAKE_INSTALL_PREFIX=$HOME/install
+  -DCMAKE_C_COMPILER=icc \
+  -DCMAKE_CXX_COMPILER=icpc \
+  -DNRN_ENABLE_TESTS=ON
+cmake --build . --parallel 8
+ctest # use --parallel for speed, -R to run specific tests
+```
+
 #### Building standalone CoreNEURON without NEURON
 
 If you want to build the standalone CoreNEURON version, first download the repository as:
@@ -248,14 +275,10 @@ Once the appropriate modules for compiler, MPI, CMake are loaded, you can build 
 ```bash
 mkdir CoreNeuron/build && cd CoreNeuron/build
 cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
-make -j && make install
+cmake --build . --parallel 8 --target install
 ```
 
-If you don't have MPI, you can disable the MPI dependency using the CMake option `-DCORENRN_ENABLE_MPI=OFF`. Once build is successful, you can run tests using:
-
-```
-make test
-```
+If you don't have MPI, you can disable the MPI dependency using the CMake option `-DCORENRN_ENABLE_MPI=OFF`.
 
 #### Compiling MOD files
 
@@ -275,7 +298,7 @@ CoreNEURON has support for GPUs using the OpenACC programming model when enabled
 module purge all
 module load nvidia-hpc-sdk/20.11 cuda/11 cmake openmpi # change pgi, cuda and mpi modules
 cmake .. -DCORENRN_ENABLE_GPU=ON -DCMAKE_INSTALL_PREFIX=$HOME/install -DCMAKE_C_COMPILER=nvc -DCMAKE_CXX_COMPILER=nvc++
-make -j && make install
+cmake --build . --parallel 8 --target install
 ```
 
 You have to run GPU executable with the `--gpu` flag. Make sure to enable cell re-ordering mechanism to improve GPU performance using `--cell_permute` option (permutation types : 2 or 1):
@@ -314,14 +337,14 @@ In order to format code with `cmake-format` and `clang-format` tools, before cre
 
 ```
 cmake .. -DCORENRN_CLANG_FORMAT=ON -DCORENRN_CMAKE_FORMAT=ON
-make -j install
+cmake --build . --parallel 8 --target install
 ```
 
 and now you can use `cmake-format` or `clang-format` targets:
 
 ```
-make cmake-format
-make clang-format
+cmake --build . --target cmake-format
+cmake --build . --target clang-format
 ```
 
 ## Citation
