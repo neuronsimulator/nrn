@@ -33,7 +33,7 @@ add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 # translating mod to c)
 # Do not do this for MINGW to avoid undefined reference to `__stack_chk_fail'
 if (NOT MINGW)
-  separate_arguments(NMODL_C_FLAGS UNIX_COMMAND "${CMAKE_C_FLAGS_DEBUG}")
+  #separate_arguments(NMODL_C_FLAGS UNIX_COMMAND "${CMAKE_C_FLAGS_DEBUG}")
   target_compile_options(modlunit PRIVATE ${NMODL_C_FLAGS})
 endif()
 
