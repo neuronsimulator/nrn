@@ -515,12 +515,17 @@ class Node3D(Node):
         self._neighbors = None
         # TODO: store region as a weakref! (weakref.proxy?)
         self._r = r
-        self._seg = seg
+        self._sec = h.SectionList([seg.sec])
+        self._x = seg.x
         self._speciesref = speciesref
         self._data_type = data_type
 
         _point_indices.setdefault(self._r, {})
         _point_indices[self._r][(self._i,self._j,self._k)] = self._index
+
+    @property
+    def _seg(self):
+        return list(self._sec)[0](self._x) if list(self._sec) else None
 
     def _find_neighbors(self):
         self._pos_x_neighbor = _point_indices[self._r].get((self._i + 1, self._j, self. _k))
@@ -613,7 +618,7 @@ class Node3D(Node):
     @property
     def x(self):
         # TODO: can we make this more accurate?
-        return self._seg.x
+        return self._x
     
     @property
     def segment(self):
@@ -624,11 +629,9 @@ class Node3D(Node):
     
     @property
     def sec(self):
-        if self._seg is None:
-            return None
-        return self._seg.sec
-    
-    @property
+        return list(self._sec)[0] if any(self._sec) else None
+
+    @property 
     def volume(self):
         return self._r._vol[self._index]
 
