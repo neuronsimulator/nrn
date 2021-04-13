@@ -15,18 +15,16 @@ if os.name != "posix":
     raise Exception("Python NEURON distributions are currently only available "
                     "for Mac and Linux systems (POSIX)")
 
-
 # Main source of the version. Dont rename, used by Cmake
 try:
-    v = subprocess.run(['git', 'describe', '--tags'],
-                       stdout=subprocess.PIPE).stdout.strip().decode()
+    v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
     __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
         __version__ = os.environ['NEURON_WHEEL_VERSION']
 
 except Exception as e:
-    raise RuntimeError("Could not get version from Git repo") from e
+    raise RuntimeError("Could not get version from Git repo : " + str(e))
 
 
 # RX3D must be checked for very early as it changes imports

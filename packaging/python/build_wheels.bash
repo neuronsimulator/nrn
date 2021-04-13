@@ -30,14 +30,21 @@ setup_venv() {
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
     local venv_dir="nrn_build_venv$py_ver"
 
-    if [ "$py_ver" -lt 35 ]; then
+    if [ "$py_ver" -lt 35 ] &&  ["$py_ver" -ge 30 ]; then
         echo "[SKIP] Python $py_ver no longer supported"
         skip=1
         return 0
     fi
 
     echo " - Creating $venv_dir: $py_bin -m venv $venv_dir"
-    "$py_bin" -m venv "$venv_dir"
+
+    if [ "$py_ver" -lt 35 ]; then
+        $(dirname $py_bin)/pip install virtualenv
+        $(dirname $py_bin)/virtualenv "$venv_dir"
+    else
+        "$py_bin" -m venv "$venv_dir"
+    fi
+
     . "$venv_dir/bin/activate"
 
     # pep425tags are not available anymore from 0.35
@@ -71,7 +78,9 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
+
+    #auditwheel needs to be installed with python3
+    /opt/python/cp38-cp38/bin/pip3  install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -88,7 +97,7 @@ build_wheel_linux() {
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Repairing..."
-        auditwheel repair dist/*.whl
+        /opt/python/cp38-cp38/bin/auditwheel repair dist/*.whl
     fi
 
     deactivate
