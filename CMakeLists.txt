@@ -568,6 +568,15 @@ if(MINGW)
 endif()
 
 # =============================================================================
+# Installation steps for backward compatibility
+# =============================================================================
+if(NOT NRN_WINDOWS_BUILD)
+  # create arch folder under prefix with symlink to bin and lib
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
+endif()
+
+# =============================================================================
 # Print build status
 # =============================================================================
 
