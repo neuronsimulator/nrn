@@ -41,10 +41,10 @@ for last; do true; done
 
 # if the last argument begins with --NEURON_HOME=
 if [[ $last == "--NEURON_HOME="* ]] ; then
-last=${last#"--NEURON_HOME="}
-export PATH=/cygdrive/${last//:/}/mingw/usr/bin:/cygdrive/${last//:/}/mingw/mingw64/bin:$PATH
-# remove the last argument
-set -- "${@:1:$(($#-1))}"
+  last=${last#"--NEURON_HOME="}
+  export PATH=/cygdrive/${last//:/}/mingw/usr/bin:/cygdrive/${last//:/}/mingw/mingw64/bin:$PATH
+  # remove the last argument
+  set -- "${@:1:$(($#-1))}"
 fi
 
 if test "$PYTHONHOME" != "" ; then
@@ -231,6 +231,14 @@ upathsep = ":"
 
 nrnpylib_provenance = "not found"
 nrnpyhome_provenance = "not found"
+
+
+if not sys.platform.startswith("darwin") \
+    and not sys.platform.startswith("linux") \
+    and not sys.platform.startswith("win"):
+  print("# Warning: Unsupported platform")
+  quit()
+
 
 def upath(path):
   #return linux path
@@ -462,35 +470,25 @@ def nrnpylib_linux():
           return i
   return nrn_pylib
 
-nrn_pylib = None
-if 'darwin' in sys.platform:
-  nrn_pylib = nrnpylib_darwin()
-elif 'win' in sys.platform:
-  nrn_pylib = nrnpylib_mswin()
-elif 'linux' in sys.platform:
-  nrn_pylib = nrnpylib_linux()
 
-# NRN_PYTHONHOME
-# there is a question about whether to use sys.prefix for PYTHONHOME
-# or whether to derive from site.__file__.
-# to help answer, ask how many sys.path items begin with sys.prefix and
-# how many begin with site.__file__ - 3
-sp = upath(sys.prefix)
-p = [upath(i) for i in sys.path]
-print ("# items in sys.path = " + str(len(p)))
-print ("# beginning with sys.prefix = " + str(len([i for i in p if sp in i])))
-s = usep.join(upath(site.__file__).split(usep)[:-3])
-if s == sp:
-  print ("# site-3 same as sys.prefix")
-else:
-  print ("# beginning with site-3 = " + str(len([i for i in p if s in i])))
-foo = [i for i in p if sp not in i]
-foo = [i for i in foo if s not in i]
-print ("# in neither location " + str(foo))
-print ("# sys.prefix = " + sp)
-print ("# site-3 = " + s)
+def find_pythonhome():
+  if "NRN_PYTHONHOME" in os.environ:
+    print("#NRN_PYTHONHOME already in environment")
+    return
 
-if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
+  # there is a question about whether to use sys.prefix for PYTHONHOME
+  # or whether to derive from site.__file__.
+  # to help answer, ask how many sys.path items begin with sys.prefix and
+  # how many begin with site.__file__ - 3
+  # In practice we always use sys.prefix
+  sp = upath(sys.prefix)
+  p = [upath(i) for i in sys.path]
+  # print ("# items in sys.path: " + str(len(p)))
+  # print ("# beginning with sys.prefix = " + str(len([i for i in p if sp in i])))
+  s = usep.join(upath(site.__file__).split(usep)[:-3])
+  print ("# sys.prefix = " + sp)
+  print ("# site-3 = " + s)
+
   # What, if anything, did python prepend to PATH
   path=""
   oldpath = upath(os.getenv("originalPATH"))
@@ -500,7 +498,6 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     path = newpath[:i]
 
   pythonhome = upath(sp)
-  print ("#pythonhome=" + pythonhome)
   pythonpath = upath(os.getenv("PYTHONPATH"))
 
   ldpath = ""
@@ -531,6 +528,8 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   except:
     pass
 
+  print ("# if launch nrniv, then likely need:")
+
   dq = "\""
   if pythonpath:
     print ("\n# if launch python, then need:")
@@ -540,15 +539,27 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     print ("\n#PYTHON prepended the following to PATH")
     print ("export PATH=" + dq + path + "$PATH" + dq)
 
-  print("\n#NRN_PYLIB provenance: " + str(nrnpylib_provenance))
-  print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
     print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
-  if nrn_pylib != None:
-    print ('export NRN_PYLIB="%s"' % nrn_pylib)
+
+
+# Main
+
+nrn_pylib = None
+if 'darwin' in sys.platform:
+  nrn_pylib = nrnpylib_darwin()
+elif 'win' in sys.platform:
+  nrn_pylib = nrnpylib_mswin()
+elif 'linux' in sys.platform:
+  nrn_pylib = nrnpylib_linux()
+print("#NRN_PYLIB provenance: " + str(nrnpylib_provenance))
+if nrn_pylib != None:
+  print ('export NRN_PYLIB="%s"' % nrn_pylib)
+
+find_pythonhome()
 
 quit()
 
