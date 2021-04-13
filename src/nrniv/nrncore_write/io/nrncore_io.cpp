@@ -285,14 +285,14 @@ double* contiguous_art_data(double** data, int nitem, int szitem) {
 
 
 void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
-    // count the instances for this thread
+    // Get the indices in NetCvode.fixed_play_ for this thread
     // error if not a VecPlayContinuous with no discon vector
-    int n;
-    nrnthread_dat2_vecplay(nt.id, n);
-    fprintf(f, "%d VecPlay instances\n", n);
-    PlayRecList* fp = net_cvode_instance->fixed_play_;
-    for (int i=0; i < fp->count(); ++i) {
+    std::vector<int> indices;
+    nrnthread_dat2_vecplay(nt.id, indices);
+    fprintf(f, "%d VecPlay instances\n", int(indices.size()));
+    for (auto i: indices) {
         int vptype, mtype, ix, sz; double *yvec, *tvec;
+        // the 'if' is not necessary as item i is certainly in this thread 
         if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec)) {
             fprintf(f, "%d\n", vptype);
             fprintf(f, "%d\n", mtype);
