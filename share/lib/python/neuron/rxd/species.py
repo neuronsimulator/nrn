@@ -455,7 +455,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         if instruction == 'do_3d':
             ics_instance = self._species()._intracellular_instances[reg]
             return ics_instance._semi_compile(reg, instruction)
-        elif list(reg._secs1d):
+        elif any(reg._secs1d):
             return 'species[%d][%d]' % (self._id, self._region()._id)
         else:
             raise RxDException('There are no 1D sections defined on {}'.format(reg))

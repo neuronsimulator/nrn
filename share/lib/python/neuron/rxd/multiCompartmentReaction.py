@@ -146,7 +146,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
         # check that the regions have sections
         for reg in self._regions:
-            if list(reg._secs1d) or list(reg._secs3d):
+            if any(reg._secs1d) or any(reg._secs3d):
                 break
         else:
             return
@@ -154,7 +154,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         # check for 3D sections
         self._src3d = set()
         self._dst3d = set()
-        self._mem3d = set(list(self._regions[0]._secs3d))
+        self._mem3d = set(self._regions[0]._secs3d)
         sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
         dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
         for reg in sources:
@@ -166,7 +166,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         #    raise RxDException('Multicompartment reactions in 3D are not yet supported.')
 
         # check there are common 1D section between source and destination
-        mem1d = set(list(self._regions[0]._secs1d))
+        mem1d = set(self._regions[0]._secs1d)
         src1d = set()
         dst1d = set()
         for reg in sources:
