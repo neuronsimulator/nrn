@@ -948,7 +948,7 @@ void hoc_execerr_ext(const char* fmt, ...) {
   va_end(ap);
 
   if (size >= 0) {
-    constexpr size_t maxsize = 512;
+    const size_t maxsize = 512;
     char s[maxsize + 1];
     va_start(ap, fmt);
     size = vsnprintf(s, maxsize, fmt, ap);
