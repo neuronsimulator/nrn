@@ -62,7 +62,7 @@ int (*nrn2core_get_dat2_corepointer_mech_)(int tid,
                                            int*& iarray,
                                            double*& darray);
 
-int (*nrn2core_get_dat2_vecplay_)(int tid, int& n);
+int (*nrn2core_get_dat2_vecplay_)(int tid, std::vector<int>& indices);
 
 int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
                                        int i,
@@ -373,10 +373,13 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         delete[] dArray_;
     }
 
-    int n_vec_play_continuous;
-    (*nrn2core_get_dat2_vecplay_)(thread_id, n_vec_play_continuous);
+    // Get from NEURON, the VecPlayContinuous indices in
+    // NetCvode::fixed_play_ for this thread.
+    std::vector<int> indices_vec_play_continuous;
+    (*nrn2core_get_dat2_vecplay_)(thread_id, indices_vec_play_continuous);
 
-    for (size_t i = 0; i < n_vec_play_continuous; ++i) {
+    // i is an index into NEURON's NetCvode::fixed_play_ for this thread.
+    for (auto i: indices_vec_play_continuous) {
         VecPlayContinuous_ item;
         // yvec_ and tvec_ are not deleted as that space is within
         // NEURON Vector

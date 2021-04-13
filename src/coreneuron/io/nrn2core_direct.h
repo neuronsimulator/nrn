@@ -77,7 +77,7 @@ extern int (*nrn2core_get_dat2_corepointer_mech_)(int tid,
                                                   int*& iarray,
                                                   double*& darray);
 
-extern int (*nrn2core_get_dat2_vecplay_)(int tid, int& n);
+extern int (*nrn2core_get_dat2_vecplay_)(int tid, std::vector<int>& indices);
 
 extern int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
                                               int i,
