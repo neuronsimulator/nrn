@@ -46,6 +46,10 @@ class ReportHandler {
                                             double* report_variable,
                                             SectionType section_type,
                                             bool all_compartments) const;
+    VarsToReport get_summation_vars_to_report(const NrnThread& nt,
+                                              const std::set<int>& target,
+                                              ReportConfiguration& report,
+                                              const std::vector<int>& nodes_to_gids) const;
     VarsToReport get_custom_vars_to_report(const NrnThread& nt,
                                            ReportConfiguration& report,
                                            const std::vector<int>& nodes_to_gids) const;

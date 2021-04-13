@@ -23,30 +23,33 @@
 
 namespace coreneuron {
 
-/*
- * Defines the type of target, as per the following syntax:
- *   0=Compartment, 1=Cell/Soma, Section { 2=Axon, 3=Dendrite, 4=Apical }
- * The "Comp" variations are compartment-based (all segments, not middle only)
- */
-enum class TargetType {
-    Compartment = 0,
-    Soma = 1,
-    Axon = 2,
-    Dendrite = 3,
-    Apical = 4,
-    AxonComp = 5,
-    DendriteComp = 6,
-    ApicalComp = 7,
-};
 
 /*
- * Split filter string ("mech.var_name") into mech_id and var_name
+ * Split filter comma separated strings ("mech.var_name") into mech_name and var_name
  */
 void parse_filter_string(const std::string& filter, ReportConfiguration& config) {
-    std::istringstream iss(filter);
-    std::string token;
-    std::getline(iss, config.mech_name, '.');
-    std::getline(iss, config.var_name, '.');
+    std::vector<std::string> mechanisms;
+    std::stringstream ss(filter);
+    std::string mechanism;
+    // Multiple report variables are separated by `,`
+    while (getline(ss, mechanism, ',')) {
+        mechanisms.push_back(mechanism);
+
+        // Split mechanism name and corresponding reporting variable
+        std::string mech_name;
+        std::string var_name;
+        std::istringstream iss(mechanism);
+        std::getline(iss, mech_name, '.');
+        std::getline(iss, var_name, '.');
+        if (var_name.empty()) {
+            var_name = "i";
+        }
+        config.mech_names.emplace_back(mech_name);
+        config.var_names.emplace_back(var_name);
+        if (mech_name == "i_membrane") {
+            nrn_use_fast_imem = true;
+        }
+    }
 }
 
 std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
@@ -54,21 +57,20 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                                                               std::string& spikes_population_name) {
     std::vector<ReportConfiguration> reports;
     std::string report_on;
-    int target_type;
+    int target;
     std::ifstream report_conf(conf_file);
 
     int num_reports = 0;
     report_conf >> num_reports;
     for (int i = 0; i < num_reports; i++) {
         ReportConfiguration report;
-        // mechansim id registered in coreneuron
-        report.mech_id = -1;
         report.buffer_size = 4;  // default size to 4 Mb
 
         report_conf >> report.name >> report.target_name >> report.type_str >> report_on >>
-            report.unit >> report.format >> target_type >> report.report_dt >> report.start >>
+            report.unit >> report.format >> target >> report.report_dt >> report.start >>
             report.stop >> report.num_gids >> report.buffer_size >> report.population_name;
 
+        report.target_type = static_cast<TargetType>(target);
         std::transform(report.type_str.begin(),
                        report.type_str.end(),
                        report.type_str.begin(),
@@ -79,7 +81,7 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                 nrn_use_fast_imem = true;
                 report.type = IMembraneReport;
             } else {
-                switch (static_cast<TargetType>(target_type)) {
+                switch (report.target_type) {
                     case TargetType::Soma:
                         report.type = SomaReport;
                         break;
@@ -123,11 +125,13 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
             }
         } else if (report.type_str == "synapse") {
             report.type = SynapseReport;
+        } else if (report.type_str == "summation") {
+            report.type = SummationReport;
         } else {
             std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
             nrn_abort(1);
         }
-        if (report.type == SynapseReport) {
+        if (report.type == SynapseReport || report.type == SummationReport) {
             parse_filter_string(report_on, report);
         }
         if (report.num_gids) {

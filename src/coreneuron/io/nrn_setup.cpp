@@ -36,6 +36,7 @@
 #include "coreneuron/io/mech_report.h"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
+#include "coreneuron/io/reports/nrnreport.hpp"
 
 // callbacks into nrn/src/nrniv/nrnbbcore_write.cpp
 #include "coreneuron/sim/fast_imem.hpp"
@@ -951,6 +952,7 @@ void read_phase3(NrnThread& nt, UserParams& userParams) {
 
     // set pointer in NrnThread
     nt.mapping = (void*) ntmapping;
+    nt.summation_report_handler_ = std::make_unique<SummationReportMapping>();
 }
 
 static size_t memb_list_size(NrnThreadMembList* tml) {
