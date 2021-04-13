@@ -158,9 +158,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
         sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
         dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
         for reg in sources:
-            if list(reg._secs3d): self._src3d.update(reg._secs3d)
+            if any(reg._secs3d): self._src3d.update(reg._secs3d)
         for reg in dests:
-            if list(reg._secs3d): self._dst3d.update(reg._secs3d)
+            if any(reg._secs3d): self._dst3d.update(reg._secs3d)
         #if self._src3d.intersection(self._dst3d).intersection(self._mem3d):
         #    #Find all interacting voxels for each grid. Also build up the 2D array of index maps
         #    raise RxDException('Multicompartment reactions in 3D are not yet supported.')
@@ -170,9 +170,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
         src1d = set()
         dst1d = set()
         for reg in sources:
-            if list(reg._secs1d): src1d.update(reg._secs1d)
+            if any(reg._secs1d): src1d.update(reg._secs1d)
         for reg in dests:
-            if list(reg._secs1d): dst1d.update(reg._secs1d)
+            if any(reg._secs1d): dst1d.update(reg._secs1d)
         if sources:
             mem1d = mem1d.intersection(src1d)
         if dests:

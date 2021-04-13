@@ -1367,7 +1367,7 @@ class Species(_SpeciesMathable):
         if self._regions:
             for r in self._regions:
                 self._intracellular_nodes[r] = []
-                if list(r._secs3d):
+                if any(r._secs3d):
                     xs, ys, zs, segsidx = r._xs, r._ys, r._zs, r._segsidx
                     segs = [seg for sec in r._secs3d for seg in sec]
                     self._intracellular_nodes[r] += [node.Node3D(i, x, y, z, r, self._d, segs[idx], selfref) for i, x, y, z, idx in zip(range(len(xs)), xs, ys, zs, segsidx)]
@@ -1376,7 +1376,7 @@ class Species(_SpeciesMathable):
                     self_has_3d = True
                     _has_3d = True
         is_diffusable = False if isinstance(self, Parameter) or isinstance(self, State) else True        
-        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if list(r._secs3d)}
+        self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if any(r._secs3d)}
 
     def _do_init4(self):
         extracellular_nodes = []
@@ -1999,7 +1999,7 @@ class ParameterOnRegion(SpeciesOnRegion):
         if instruction == 'do_3d':
             ics_instance = self._species()._intracellular_instances[reg]
             return ics_instance._semi_compile(reg, instruction)
-        elif list(reg._secs1d):
+        elif any(reg._secs1d):
             return 'params[%d][%d]' % (self._id, self._region()._id)
         else:    
             raise RxDException('Instruction for ParameterOnRegion semi_compile was neither 1d or 3d')

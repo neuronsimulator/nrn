@@ -1106,9 +1106,9 @@ def _compile_reactions():
                         ecs_species_by_region[reg] = set(ecs_species_involved)
     #Create lists of indexes for intracellular reactions and rates
     # a table for location,species -> state index
-    regions_inv_1d = [reg for reg in regions_inv if list(reg._secs1d)]
+    regions_inv_1d = [reg for reg in regions_inv if any(reg._secs1d)]
     regions_inv_1d.sort(key=lambda r: r._id)
-    all_regions_inv_3d = [reg for reg in regions_inv if list(reg._secs3d)]
+    all_regions_inv_3d = [reg for reg in regions_inv if any(reg._secs3d)]
     #remove extra regions from multicompartment reactions. We only want the membrane
     regions_inv_3d = set()
     for reg in all_regions_inv_3d:

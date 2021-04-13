@@ -629,7 +629,7 @@ class Node3D(Node):
     
     @property
     def sec(self):
-        return list(self._sec)[0] if list(self._sec) else None
+        return list(self._sec)[0] if any(self._sec) else None
 
     @property 
     def volume(self):

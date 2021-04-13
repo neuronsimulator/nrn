@@ -376,7 +376,7 @@ class Region(object):
         self._secs1d = _sort_secs(self._secs1d)
         self._secs3d = h.SectionList(self._secs3d)
         
-        if list(self._secs3d):
+        if any(self._secs3d):
             if not(hasattr(self._geometry, 'volumes3d')):
                 raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
         
