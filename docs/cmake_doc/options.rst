@@ -460,3 +460,12 @@ NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
 
 Forces use of the readline code distributed with NEURON even if there is a system supplied readline.
 
+NRN_ENABLE_BACKTRACE:BOOL=OFF
+-------------------------------------
+  Generate a backtrace on floating, segfault, and bus exceptions.
+
+  Avoids the need to use gdb to view the backtrace.
+
+  Does not work with python.
+
+  Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.

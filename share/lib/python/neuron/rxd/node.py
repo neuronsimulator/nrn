@@ -561,7 +561,9 @@ class Node3D(Node):
 
         If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
         If a Region object is provided, returns True if the Node lies in the Region; else False.
-        If a number between 0 and 1 is provided, returns True if the normalized position lies within the Node; else False.
+        If a tuple is provided of length 3, return True if the Node contains the (x, y, z) point; else False.
+
+        Does not currently support numbers between 0 and 1.
         """
         if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
             return self._in_sec(condition)
@@ -569,12 +571,23 @@ class Node3D(Node):
             return self.region == condition
         elif isinstance(condition, nrn.Segment):
             return self.segment == condition
+        elif isinstance(condition, tuple) and len(condition) == 3:
+            x, y, z = condition
+            mesh = self._r._mesh_grid
+            return (
+                int((x - mesh["xlo"]) / mesh['dx']) == self._i and
+                int((y - mesh["ylo"]) / mesh['dy']) == self._j and
+                int((z - mesh["zlo"]) / mesh['dz']) == self._k 
+            )
         position_type = False
+        did_error = False
         try:
             if 0 <= condition <= 1:
                 position_type = True
         except:
-            raise RxDException('unrecognized node condition: %r' % condition)    
+            did_error = True
+        if did_error:
+            raise RxDException('unrecognized node condition: %r' % condition)
         if position_type:
             # TODO: the trouble here is that you can't do this super-directly based on x
             #       the way to do this is to find the minimum and maximum x values contained in the grid
@@ -585,17 +598,17 @@ class Node3D(Node):
     def x3d(self):
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
-        return mesh['xlo'] + self._i * mesh['dx']
+        return mesh['xlo'] + (self._i + 0.5) * mesh['dx']
     @property
     def y3d(self):
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
-        return mesh['ylo'] + self._j * mesh['dy']
+        return mesh['ylo'] + (self._j + 0.5) * mesh['dy']
     @property
     def z3d(self):
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
-        return mesh['zlo'] + self._k * mesh['dz']
+        return mesh['zlo'] + (self._k + 0.5) * mesh['dz']
     
     @property
     def x(self):

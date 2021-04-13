@@ -3,6 +3,8 @@
 
 import sys
 nrn_srcdir = "@NRN_SRCDIR@"
+@USING_PGI_COMPILER_TRUE@using_pgi=True
+@USING_PGI_COMPILER_FALSE@using_pgi=False
 @BUILD_MINGW_TRUE@mingw = 1
 @BUILD_MINGW_FALSE@mingw = 0
 instdir = "@prefix@"
@@ -11,6 +13,8 @@ if nrn_srcdir[0] == '/' or (len(nrn_srcdir) > 2 and nrn_srcdir[1] == ':'):
 else: # not an absolute path
     # TODO: is this right?
     nrn_srcdir = '../../../../../../' + nrn_srcdir
+
+pgi_compiler_flags = "-noswitcherror"
 
 from distutils.core import setup
 from distutils.extension import Extension
@@ -55,6 +59,7 @@ else:
         define_macros=[('MS_WIN64', None)]
 
     extra_compile_args = ['-O'+olevel] if olevel != "" else []
+    if using_pgi: extra_compile_args.append(pgi_compiler_flags)
 
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
 

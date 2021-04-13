@@ -19,7 +19,8 @@ def ics_pure_diffusion_anisotropic(neuron_instance):
         r = rxd.Region(h.allsec(),dx=0.75)
         ca = rxd.Species(r, d=diff_constant,
                          initial=lambda nd: 
-                            exp(-(nd.x3d**2 + nd.y3d**2 + nd.z3d**2)))
+                            exp(-((nd.x3d-0.375)**2 + (nd.y3d-0.375)**2 + 
+                                  (nd.z3d-0.375)**2)))
         return (dend, r, ca)
     
     yield (neuron_instance, make_test)

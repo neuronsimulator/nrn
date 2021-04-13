@@ -1594,12 +1594,18 @@ set_initialize(do_initialize_fptr)
 
 def _windows_remove_dlls():
     global _windows_dll_files, _windows_dll
+    if _windows_dll != []:
+        if hasattr(ctypes,"WinDLL"):
+            kernel32 = ctypes.WinDLL('kernel32')
+            kernel32.FreeLibrary.argtypes = [ctypes.wintypes.HMODULE]
+        else:
+            kernel32 = ctypes.windll.kernel32
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle
             del dll
-            ctypes.windll.kernel32.FreeLibrary(handle)
+            kernel32.FreeLibrary(handle)
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []

@@ -41,12 +41,12 @@ SectionRef
 
             from neuron import h
 
-            s = h.Section()
-            s2 = h.Section()
+            s = h.Section(name="s")
+            s2 = h.Section(name="s2")
             sref = h.SectionRef(sec=s2)
 
-            print (sref.sec==s)  # False
-            print (sref.sec==s2) # True
+            print(sref.sec==s)  # False
+            print(sref.sec==s2) # True
 
 
 
@@ -113,7 +113,7 @@ SectionRef
         .. code::
             
             for child in sref.child:
-                print(child.hname())
+                print(child)
 
         Note that the children are the current children of sref.sec, not necessarily 
         the same as when the SectionRef was created since sections may be 
@@ -148,9 +148,14 @@ SectionRef
 
 
     Description:
-        Returns 1.0 if sref.sec has a parent and 0.0 if sref.sec is a root section. 
+        Returns ``True`` if sref.sec has a parent and ``False`` if sref.sec is a root section. 
         Invoking sref.parent when sref.sec is a root section will print an 
-        error message and halt execution. 
+        error message and halt execution.
+
+    Note:
+
+        If ``sec`` is a Section, then ``sec.parentseg()`` is either the segment the section is
+        attached to or ``None`` if ``sec`` does not have a parent.
 
 
 ----
@@ -165,7 +170,7 @@ SectionRef
 
 
     Description:
-        returns 1.0 if the sref.sec parent node is not the root node and 0.0 otherwise. 
+        returns ``True`` if the sref.sec parent node is not the root node and ``False`` otherwise. 
         Invoking sref.trueparent when it is the root node will print an 
         error message and halt execution. 
 

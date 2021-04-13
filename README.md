@@ -17,14 +17,14 @@ pip3 install neuron
 If you want to build the latest version from source, currently we are supporting two build systems:
 
 - CMake (__recommended__)
-- Autotools (legacy, minimum support)
+- Autotools (legacy, minimum support - __will be DROPPED in the next release__)
 
-Note that starting with the 8.0 release, we recommend users to use CMake as the primary build system
-for NEURON. We would be grateful for any feedback or issues you encounter using the CMake-based build
-system. Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
+Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
+We would be grateful for any feedback or issues you encounter using the CMake-based build system.
+Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
 happy to help.
 
-**If you are using autotools, we highly recommend switching to CMake.**
+**If you are using autotools, we strongly recommend switching to CMake as of now.**
 
 For detailed installation instructions see [docs/install/install_instructions.md](docs/install/install_instructions.md) file.
 
