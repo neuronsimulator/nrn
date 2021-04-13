@@ -9,7 +9,16 @@ import itertools
 from . import options
 from .rxdException import RxDException
 from . import initializer
-import collections
+
+# Fix for deprecation above python 3.3
+# DeprecationWarning: Using or importing the ABCs from 'collections' instead
+# of from 'collections.abc' is deprecated since Python 3.3, and in 3.9 it will stop working
+# https://stackoverflow.com/questions/53978542/how-to-use-collections-abc-from-both-python-3-8-and-python-2-7
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
+
 import ctypes
 import re
 
@@ -1494,7 +1503,7 @@ class Species(_SpeciesMathable):
                 indices[(xs[i], ys[i], zs[i])] = i + offset
             dx = self._regions[0]._dx
             naf = self._regions[0]._geometry.neighbor_area_fraction
-            if not isinstance(naf, collections.Callable):
+            if not isinstance(naf, Callable):
                 areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
                 for nodeobj in self._nodes:
                     i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
@@ -1766,7 +1775,7 @@ class Species(_SpeciesMathable):
             for r in self._intracellular_instances.keys():
                 self._intracellular_instances[r]._finitialize()
         if self.initial is not None:
-            if isinstance(self.initial, collections.Callable):
+            if isinstance(self.initial, Callable):
                 for node in self.nodes:
                     node.concentration = self.initial(node)
             else:
