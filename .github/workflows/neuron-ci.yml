@@ -56,6 +56,7 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
+          brew update
           brew install coreutils doxygen mpich xz autoconf automake libtool && brew unlink mpich && brew install openmpi && brew install --cask xquartz
         shell: bash
 
