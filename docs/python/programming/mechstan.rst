@@ -73,7 +73,7 @@ MechanismStandard (Parameter Control)
 
             from neuron import h, gui
 
-            soma = h.Section()
+            soma = h.Section(name="soma")
             def pname(msname):
                 s = h.ref('')
                 for i in range(-1, 4):

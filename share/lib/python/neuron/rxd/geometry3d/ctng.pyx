@@ -283,6 +283,8 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
     cdef dict obj_pts_dict = {}         # for returning corner points of join objects
     cdef list obj_sections = []
     cdef list cone_sections = []
+    cdef dict soma_secs = {}
+    cdef dict potential_soma_cones = {}
     cdef int i, j, k
     cdef double x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, x4, y4, r0, r1, r2
     cdef double delta_x, delta_y, major_length, diam1, diam2
@@ -309,17 +311,15 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             # CTNG:soma
             branches = []
             parent_sec_name = []
-            soma_sec = None
             for sec in cell.sections:
                 if sec.iscontour_:
-                    soma_sec = sec
                     x, y, z = [sec.raw.getrow(i).to_python() for i in xrange(3)]
 
                     # compute the center of the contour based on uniformly spaced points around the perimeter
                     center_vec = sec.contourcenter(sec.raw.getrow(0), sec.raw.getrow(1), sec.raw.getrow(2))
                     x0, y0, z0 = [center_vec.x[i] for i in xrange(3)]
                     new_objects, f_pts = soma_objects(x, y, z, sec, x0, y0, z0, n_soma_step)
-                    somaz = z0
+                    soma_secs[sec] = (f_pts, z0)
                     soma_segment_dict.update(new_objects)
                 else:
                     if sec.parentsec is not None:
@@ -331,19 +331,25 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
 
     else:
         h.define_shape()
-        soma_sec = None
         branches = []
         for sec in source:
             # TODO: make this more general (support for 3D contour outline)
-            if  'soma[0]' in sec.hname() and 'soma' in neuron._sec_db:
-                is_stack, x, y, z, x0, y0, z0 = neuron._sec_db['soma']
+            if sec.hoc_internal_name() in neuron._sec_db:
+                is_stack, x, y, z, x0, y0, z0, pts3d = neuron._sec_db[sec.hoc_internal_name()]
                 if not is_stack:
-                    # yes, this should be sec while the other should be sec.hname()
-                    # the difference is because of how we're keeping track of the parent
-                    soma_sec = sec
-                    x = x.to_python(); y = y.to_python(); z = z.to_python()
-                    new_objects, f_pts = soma_objects(x, y, z, soma_sec, x0, y0, z0, n_soma_step)
-                    somaz = z0
+                    shift = []
+                    for i, (orig_x, orig_y, orig_z) in zip([0, sec.n3d()-1], pts3d):
+                        shift.append((sec.x3d(i) - orig_x,
+                                      sec.y3d(i) - orig_y,
+                                      sec.z3d(i) - orig_z))
+                    if sum([abs(s0 - s1) for s0,s1 in zip(*shift)]) > dx/10.0:
+                        raise RxDException("soma rotation unsupported for voxelized somas") 
+                    sx, sy, sz = shift[0]
+                    x = (x + sx).to_python()
+                    y = (y + sy).to_python()
+                    z = (z + sz).to_python()
+                    new_objects, f_pts = soma_objects(x, y, z, sec, x0 + sx, y0 + sy, z0 + sz, n_soma_step)
+                    soma_secs[sec] = (f_pts, z0 + sz)
                     soma_segment_dict.update(new_objects)
                 else:
                     import warnings
@@ -427,15 +433,18 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
             # do this by connecting to local center axis
             # CTNG:connectdends
 
-            if psec == soma_sec and soma_sec is not None:
+            if psec in soma_secs:
+                f_pts, somaz = soma_secs[psec]
                 pt = (x[1], y[1], z[1])
                 cp = closest_pt(pt, f_pts, somaz)
                 # NEURON includes the wire point at the center; we want to connect
                 # to the closest place on the soma's axis instead with full diameter
                 # x, y, z, d = [cp[0]] + [X for X in x[1 :]], [cp[1]] + [Y for Y in y[1:]], [somaz] + [Z for Z in z[1:]], [d[1]] + [D for D in d[1 :]]
                 x[0], y[0] = cp
-                z[0] = somaz
+                z[0] = somaz 
                 d[0] = d[1]
+                if branch not in potential_soma_cones:
+                    potential_soma_cones[branch] = []
 
                 '''# cap this with a sphere for smooth joins
                 sphere_cap = Sphere(x[0], y[0], z[0], d[0] * 0.5)
@@ -469,6 +478,12 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                     with cython.wraparound(True):
                         register(pts_cones_db, (x0, y0, z0), all_cones[-1])
                         register(pts_cones_db, (x1, y1, z1), all_cones[-1])
+                        # if the cone is added to connect the dendrite to the soma
+                        # and it does not have corresponding segment
+                        # keep track of them here and assign them to a soma
+                        # segment later.
+                        if branch in potential_soma_cones:
+                            potential_soma_cones[branch].append(all_cones[-1])
                     register(diam_db, (x0, y0, z0), d0)
                     register(diam_db, (x1, y1, z1), d1)
 
@@ -694,15 +709,11 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         clip = cone_clip_db[cone]
         if clip:
             cone.set_clip([Union(clip)])
-        if (cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1) not in cone_segment_dict:
-            dist = None
-            for sc,s in soma_segment_dict.items():
-                d = min(sc.distance(cone._x0, cone._y0, cone._z0),
-                        sc.distance(cone._x1, cone._y1, cone._z1))
-                if dist and dist < d:
-                    dist = d
-                    seg = s
-            cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = seg
+
+    for sec,cones in potential_soma_cones.items():
+        for cone in cones:
+            if (cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1) not in cone_segment_dict:
+                cone_segment_dict[(cone._x0, cone._y0, cone._z0, cone._x1, cone._y1, cone._z1)] = sec.trueparentseg()
 
     #####################################################################
     #

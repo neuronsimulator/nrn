@@ -5,7 +5,7 @@ import os
 import numpy
 
 
-tol = 1e-10
+tol = float(os.environ.get('NRN_RXD_TEST_TOLERANCE', '1e-10'))
 dt_eps = 1e-20
 
 def get_data_file_name(frame):
@@ -21,7 +21,7 @@ def get_data_file_name(frame):
 def get_correct_data_for_test():
     """returns a path to the file with the correct data for a test."""
 
-    data_filename = get_data_file_name(frame=3) 
+    data_filename = get_data_file_name(frame=3)
     basepath = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(basepath, 'testdata','test', data_filename)
 

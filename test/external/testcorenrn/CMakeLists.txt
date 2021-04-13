@@ -95,6 +95,7 @@ foreach(test ${spike_comparison_tests})
                  ${MPIEXEC_OVERSUBSCRIBE}
                  ${MPIEXEC_PREFLAGS}
                  special
+                 ${MPIEXEC_POSTFLAGS}
                  -mpi
                  -c
                  arg_tstop=100

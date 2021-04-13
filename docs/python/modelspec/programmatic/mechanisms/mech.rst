@@ -690,7 +690,7 @@ General
 
       #Run
       pc.set_maxstep(10.)
-      h.finitialize()
+      h.finitialize(-65)
       pc.psolve(7)
       
       for i, tsp in enumerate(out[0]):

@@ -1,7 +1,7 @@
 System Calls
 ------------
 
-.. seealso:: `For most of these system calls, check Python's os.system module <https://docs.python.org/2/library/os.html>`_
+.. seealso:: `For most of these system calls, check Python's os module <https://docs.python.org/3/library/os.html>`_
 
 Path Manipulation
 ~~~~~~~~~~~~~~~~~
@@ -59,7 +59,7 @@ Path Manipulation
 Machine Identification
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. seealso:: `Python's "platform" module provides access to this information and more <https://docs.python.org/2/library/platform.html>`_
+.. seealso:: `Python's "platform" module provides access to this information and more <https://docs.python.org/3/library/platform.html>`_
 
 .. function:: machine_name
 
@@ -288,7 +288,7 @@ Timing
     
     .. note::
 
-        A pure Python alternative would be to use the time module's time function.
+        A pure Python alternative would be to use the time module's perf_counter function.
 
 
 
