@@ -207,7 +207,7 @@ except:
     if test "$nrn_pylib" = "" ; then
       nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
-    unset DYLD_PRINT_LIBRARIES  
+    unset DYLD_PRINT_LIBRARIES
     if test "$nrn_pylib" != "" ; then
       nrnpylib_provenance=DYLD_PRINT_LIBRARIES
     fi
@@ -361,7 +361,7 @@ def nrnpylib_darwin():
     nrnpylib_provenance = os.getenv("nrnpylib_provenance")
     return nrn_pylib
   return nrnpylib_darwin_helper()
-          
+
 def nrnpylib_mswin():
   global nrnpylib_provenance
   import os, sys, re
@@ -392,7 +392,7 @@ def nrnpylib_linux():
         return nrn_pylib
   except:
     pass
-  
+
   #in case it was dynamically loaded by python
   try:
     from neuron import h
@@ -470,32 +470,24 @@ elif 'win' in sys.platform:
 elif 'linux' in sys.platform:
   nrn_pylib = nrnpylib_linux()
 
-#Use sys.base_prefix for PYTHONHOME if available, otherwise sys.prefix
-try:
-  sp = upath(sys.base_prefix)
-  spname='sys.base_prefix'
-  base=True
-except:
-  sp = upath(sys.prefix)
-  spname='sys.prefix'
-  base=False
-
-#there is a question about whether to use sys.prefix for PYTHONHOME
-#or whether to derive from site.__file__.
-#to help answer, ask how many sys.path items begin with sys.prefix and
-#how many begin with site.__file__ - 3
+# NRN_PYTHONHOME
+# there is a question about whether to use sys.prefix for PYTHONHOME
+# or whether to derive from site.__file__.
+# to help answer, ask how many sys.path items begin with sys.prefix and
+# how many begin with site.__file__ - 3
+sp = upath(sys.prefix)
 p = [upath(i) for i in sys.path]
 print ("# items in sys.path = " + str(len(p)))
 print ("# beginning with sys.prefix = " + str(len([i for i in p if sp in i])))
 s = usep.join(upath(site.__file__).split(usep)[:-3])
 if s == sp:
-  print ("# site-3 same as " + spname)
+  print ("# site-3 same as sys.prefix")
 else:
   print ("# beginning with site-3 = " + str(len([i for i in p if s in i])))
 foo = [i for i in p if sp not in i]
 foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))
-print ("# " + spname + " = " + sp)
+print ("# sys.prefix = " + sp)
 print ("# site-3 = " + s)
 
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
@@ -521,7 +513,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   sitedir = usep.join(upath(site.__file__).split(usep)[:-1])
 
   # if sitedir is not a subfolder of pythonhome, add to pythonpath
-  if not pythonhome in sitedir:                                   
+  if not pythonhome in sitedir:
     if not sitedir in pythonpath:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + sitedir
 
@@ -536,7 +528,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     f = usep.join(upath(_ctypes.__file__).split(usep)[:-1])
     if f.find(pythonhome) == -1:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + f
-  except:   
+  except:
     pass
 
   dq = "\""
@@ -552,7 +544,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
-    print ("export PYTHONHOME=" + dq + pythonhome + dq)
+    print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if nrn_pylib != None:

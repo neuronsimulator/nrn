@@ -11,6 +11,13 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup
 
+
+class Components:
+    RX3D = True
+    IV = True
+    MPI = True
+
+
 if os.name != "posix":
     raise Exception("Python NEURON distributions are currently only available "
                     "for Mac and Linux systems (POSIX)")
@@ -29,11 +36,10 @@ except Exception as e:
 
 # RX3D must be checked for very early as it changes imports
 if '--disable-rx3d' in sys.argv:
-    RX3D = False
+    Components.RX3D = False
     sys.argv.remove('--disable-rx3d')
     from setuptools.command.build_ext import build_ext
 else:
-    RX3D = True
     try:
         from Cython.Distutils import Extension as CyExtension
         from Cython.Distutils import build_ext
@@ -41,6 +47,14 @@ else:
     except ImportError:
         log.error("ERROR: RX3D wheel requires Cython and numpy. Please install beforehand")
         sys.exit(1)
+
+if '--disable-iv' in sys.argv:
+    Components.IV = False
+    sys.argv.remove('--disable-iv')
+
+if '--disable-mpi' in sys.argv:
+    Components.MPI = False
+    sys.argv.remove('--disable-mpi')
 
 
 class CMakeAugmentedExtension(Extension):
@@ -251,7 +265,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share']
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ['numpy', 'Cython'] if RX3D else []
+    maybe_rxd_reqs = ['numpy', 'Cython'] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
 
@@ -262,7 +276,7 @@ def setup_package():
         'neuron.rxd',
         'neuron.crxd',
         'neuron.gui2'
-    ] + ["neuron.rxd.geometry3d"] if RX3D else []
+    ] + ["neuron.rxd.geometry3d"] if Components.RX3D else []
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
@@ -277,11 +291,11 @@ def setup_package():
         cmake_collect_dirs=NRN_COLLECT_DIRS,
         cmake_flags=[
             '-DNRN_ENABLE_CORENEURON=OFF',
-            '-DNRN_ENABLE_INTERVIEWS=ON',
-            '-DIV_ENABLE_X11_DYNAMIC=ON',
+            '-DNRN_ENABLE_INTERVIEWS=' + ("ON" if Components.IV else "OFF"),
+            '-DIV_ENABLE_X11_DYNAMIC=' + ("ON" if Components.IV else "OFF"),
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
-            '-DNRN_ENABLE_MPI=ON',
-            '-DNRN_ENABLE_MPI_DYNAMIC=ON',
+            '-DNRN_ENABLE_MPI='         + ("ON" if Components.MPI else "OFF"),
+            '-DNRN_ENABLE_MPI_DYNAMIC=' + ("ON" if Components.MPI else "OFF"),
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_ENABLE_REL_RPATH=ON',
@@ -300,7 +314,7 @@ def setup_package():
         **extension_common_params
     )]
 
-    if RX3D:
+    if Components.RX3D:
         include_dirs = [
             "share/lib/python/neuron/rxd/geometry3d",
             numpy.get_include()
@@ -347,7 +361,7 @@ def setup_package():
             )
         ]
 
-    log.info("RX3D is %s", "ENABLED" if RX3D else "DISABLED")
+    log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name = 'NEURON'
