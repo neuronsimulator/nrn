@@ -153,11 +153,22 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 	 */
 	sprintf(pmes, "Try loading libmpi\n");
 	handle = load_mpi("libmpi.so", pmes+strlen(pmes));
+
+    // like osx, check if user has provided library via MPI_LIB_NRN_PATH
+    if(!handle) {
+        const char* mpi_lib_path = getenv("MPI_LIB_NRN_PATH");
+        if (mpi_lib_path) {
+            handle = load_mpi(mpi_lib_path, pmes+strlen(pmes));
+            if (!handle) {
+                sprintf(pmes, "Can not load libmpi.so and %s", mpi_lib_path);
+            }
+        }
+    }
+
 	if (!handle) {
 	    sprintf(pmes, "Try loading libmpi and libmpich\n");
 	    handle = load_mpi("libmpich.so", pmes+strlen(pmes));
 	}
-
 #if defined(NRNCMAKE)
 	if (handle) {
 		/* with CMAKE the problem of Python launch on LINUX not resolving
@@ -187,7 +198,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 		free(lname);
 	}else{
 		ismes = 1;
-sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH.\n");
+sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH or MPI_LIB_NRN_PATH.\n");
 	}
 #else /* autotools */
 	if (handle){
