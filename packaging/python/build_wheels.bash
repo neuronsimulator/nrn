@@ -30,14 +30,21 @@ setup_venv() {
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
     local venv_dir="nrn_build_venv$py_ver"
 
-    if [ "$py_ver" -lt 35 ]; then
+    if [ "$py_ver" -lt 35 ] &&  ["$py_ver" -ge 30 ]; then
         echo "[SKIP] Python $py_ver no longer supported"
         skip=1
         return 0
     fi
 
     echo " - Creating $venv_dir: $py_bin -m venv $venv_dir"
-    "$py_bin" -m venv "$venv_dir"
+
+    if [ "$py_ver" -lt 35 ]; then
+        $(dirname $py_bin)/pip install virtualenv
+        $(dirname $py_bin)/virtualenv "$venv_dir"
+    else
+        "$py_bin" -m venv "$venv_dir"
+    fi
+
     . "$venv_dir/bin/activate"
 
     if ! pip install -U pip setuptools wheel; then
@@ -86,7 +93,7 @@ build_wheel_linux() {
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Repairing..."
-        auditwheel repair dist/*.whl
+        /opt/python/cp38-cp38/bin/auditwheel repair dist/*.whl
     fi
 
     deactivate
