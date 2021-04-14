@@ -93,7 +93,7 @@ void nrnpython() {
 		(*p_nrnpython_real)();
 		return;
 	}
-#endif
+#endif	
 	hoc_retpushx(0.);
 }
 
@@ -125,10 +125,6 @@ neuron_home);
 static void set_nrnpylib() {
   nrnpy_pylib = getenv("NRN_PYLIB");
   nrnpy_pyhome = getenv("NRN_PYTHONHOME");
-  if (!nrnpy_pyhome) {
-    // Fallback to PYTHONHOME as the Python where supposedly Neuron is installed
-    nrnpy_pyhome = getenv("PYTHONHOME");
-  }
   if (nrnpy_pylib && nrnpy_pyhome) { return; }
   // copy allows free of the copy if needed
   if (nrnpy_pylib) { nrnpy_pylib = strdup(nrnpy_pylib); }
@@ -172,12 +168,12 @@ static void set_nrnpylib() {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
         if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
-          cp += strlen("export NRN_PYTHONHOME=") + 1;
+          cp += 23;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pyhome) { free(nrnpy_pyhome); }
           nrnpy_pyhome = strdup(cp);
         }else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
-          cp += strlen("export NRN_PYLIB=") + 1;
+          cp += 18;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pylib) { free(nrnpy_pylib); }
           nrnpy_pylib = strdup(cp);
@@ -308,7 +304,7 @@ static void* ver_dlo(int flag) {
 		char name[100];
 #ifdef MINGW
 		sprintf(name, "python%c%c.dll", ver[i][0], ver[i][2]);
-#else
+#else	
 #if DARWIN
 		sprintf(name, "libpython%s.dylib", ver[i]);
 #else

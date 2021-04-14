@@ -6,19 +6,20 @@ Please create a softlink with the binary name to be called.
 import os
 import sys
 from pkg_resources import working_set
-from distutils import ccompiler, sysconfig
+from distutils.ccompiler import new_compiler
+from distutils.sysconfig import customize_compiler, get_config_var
 
 
 def _set_default_compiler():
     """Set (dont overwrite) CC/CXX so that apps dont use the build-time ones"""
-    cc = ccompiler.new_compiler()
-    sysconfig.customize_compiler(cc)
+    ccompiler = new_compiler()
+    customize_compiler(ccompiler)
     # xcrun wrapper must bring all args
-    if cc.compiler[0] == 'xcrun':
-        cc.compiler[0] = sysconfig.get_config_var("CC")
-        cc.compiler_cxx[0] = sysconfig.get_config_var("CXX")
-    os.environ.setdefault("CC", cc.compiler[0])
-    os.environ.setdefault("CXX", cc.compiler_cxx[0])
+    if ccompiler.compiler[0] == 'xcrun':
+        ccompiler.compiler[0] = get_config_var("CC")
+        ccompiler.compiler_cxx[0] = get_config_var("CXX")
+    os.environ.setdefault("CC", ccompiler.compiler[0])
+    os.environ.setdefault("CXX", ccompiler.compiler_cxx[0])
 
 
 def _config_exe(exe_name):
@@ -34,7 +35,6 @@ def _config_exe(exe_name):
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["NRNBIN"] = os.path.dirname(__file__)
-    os.environ["NRN_PYTHONHOME"] = sys.prefix
     _set_default_compiler()
     return os.path.join(NRN_PREFIX, 'bin', exe_name)
 
