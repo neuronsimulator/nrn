@@ -432,6 +432,9 @@ NRN_ENABLE_SHARED:BOOL=ON
 
     nrniv -python
 
+  Note that the top-level ``CMakeLists.txt`` file includes some custom configuration for Cray platforms.
+  This may need to be adapted if you specify ``NRN_ENABLE_SHARED=OFF``.
+
 NRN_ENABLE_THREADS:BOOL=ON
 --------------------------
   Allow use of Pthreads  

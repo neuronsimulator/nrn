@@ -48,7 +48,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""
-    
+    source = list(source)
     morphology = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
     

@@ -1,4 +1,23 @@
 cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+# Note that this needs to happen **before** the call to project(...). This is
+# because CMake reads the CRAYPE_LINK_TYPE environment variable inside the call
+# to project(...) and sets various flags and properties based on its value.
+# Because we are so early in the CMake processing, we have to figure out for
+# ourselves whether or not we are running on a Cray system by looking for Cray
+# environment variables directly.
+if(DEFINED ENV{CRAYPE_VERSION})
+  # Older versions of the Cray software prefer static linking by default, which
+  # doesn't work with NEURON with some compilers (GCC and Intel at the time of
+  # writing). Note that this variable will not be set in the compiler and
+  # linker runtime environments, so we are relying on CMake baking in the
+  # correct compiler flags based on the value we set here. In more recent
+  # versions of the Cray software the default has changed; CMake knows about
+  # this in v3.15.3 and newer, but to support older CMake versions we still
+  # need to set this explicitly.
+  # See: https://github.com/neuronsimulator/nrn/issues/1153
+  set(ENV{CRAYPE_LINK_TYPE} dynamic)
+  message(STATUS "Cray system detected...setting CRAYPE_LINK_TYPE=dynamic")
+endif()
 project(NEURON C CXX)
 
 # =============================================================================
@@ -447,12 +466,20 @@ if(MINGW)
 endif()
 
 # =============================================================================
+# Add coding-conventions submodule so we can use helper functions defined there
+# =============================================================================
+set(CODING_CONV_PREFIX "NRN")
+set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
+set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
+if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
+  initialize_submodule(external/coding-conventions)
+endif()
+include("${CODING_CONV_CMAKE}/3rdparty.cmake")
+
+# =============================================================================
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
 if(NEURON_CMAKE_FORMAT)
-  if(NOT EXISTS external/coding-conventions/cpp)
-    initialize_submodule(external/coding-conventions)
-  endif()
   set(NEURON_CMakeFormat_EXCLUDES_RE
       ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
       ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
@@ -493,17 +520,20 @@ add_dependencies(nrniv_lib hh_update)
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
-  add_custom_target(
-      help_data_dat
-      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
-              ${PROJECT_SOURCE_DIR}/docs/python
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMENT "Generating help_data.dat"
-      VERBATIM)
-  add_dependencies(nrniv_lib help_data_dat)
+  find_python_module(pathlib)
+  if(PATHLIB_FOUND) # TODO - Drop pathlib logic @ Python2 removal (pathlib is part of core in Python3)
+    add_custom_target(
+        help_data_dat
+        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+                ${PROJECT_SOURCE_DIR}/docs/python
+                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+                ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+        COMMENT "Generating help_data.dat"
+        VERBATIM)
+    add_dependencies(nrniv_lib help_data_dat)
+  endif()
 endif()
 
 # =============================================================================
@@ -519,11 +549,13 @@ if(NRN_ENABLE_TESTS)
   if(NRN_ENABLE_PYTHON AND NOT PYTEST_FOUND)
     message(SEND_ERROR "pytest Python package is required.")
   endif()
-  # Initialize the submodule *before* including the test/CMakeLists.txt that
-  # uses it. This ensures that the test infrastructure can find the names of
-  # the input data files and set up rules to copy them into the test working
-  # directories.
-  initialize_submodule("test/rxd/testdata")
+  # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
+  # that the test infrastructure can find the names of the input data files and set up rules to copy
+  # them into the test working directories.
+  set(backup "${${CODING_CONV_PREFIX}_3RDPARTY_DIR}")
+  set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "test")
+  cpp_cc_git_submodule(rxd/testdata)
+  set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "${backup}")
   add_subdirectory(test)
 endif()
 
@@ -565,6 +597,15 @@ if(MINGW)
     message(WARNING "Can not find bash.exe, trying to use ${BASH_EXE}")
   endif()
   install(PROGRAMS ${BASH_EXE} DESTINATION ${CMAKE_INSTALL_PREFIX}/mingw/usr/bin)
+endif()
+
+# =============================================================================
+# Installation steps for backward compatibility
+# =============================================================================
+if(NOT NRN_WINDOWS_BUILD)
+  # create arch folder under prefix with symlink to bin and lib
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/bin ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/bin)
+  nrn_install_dir_symlink(${CMAKE_INSTALL_PREFIX}/lib ${CMAKE_INSTALL_PREFIX}/${CMAKE_HOST_SYSTEM_PROCESSOR}/lib)
 endif()
 
 # =============================================================================
@@ -694,4 +735,7 @@ endif()
 message(STATUS "")
 if(PY2_WARNING)
   message(WARNING "Python2 support will be dropped soon! We strongly advise migrating to Python3 as of now.")
+  if(NOT PATHLIB_FOUND)
+    message(WARNING "'pathlib' Python2 package is required for in-python neuron documentation. Please install it.")
+  endif()
 endif()

@@ -374,12 +374,12 @@ class Region(object):
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
+        self._secs3d = h.SectionList(self._secs3d)
         
-        if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
-            raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
+        if any(self._secs3d):
+            if not(hasattr(self._geometry, 'volumes3d')):
+                raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
         
-
-        if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
@@ -396,35 +396,41 @@ class Region(object):
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
             self._xs, self._ys, self._zs = zip(*self._points)
+            maps = {seg:i for i,seg in enumerate([seg for sec in self._secs3d for seg in sec])}
             segs = []
 
             for i, p in enumerate(self._points):
                 if p in surface_voxels:
                     vx = surface_voxels[p]
-                    self._vol[i], self._sa[i], seg = vx[0], vx[1], vx[2]
+                    self._vol[i], self._sa[i], idx = vx[0], vx[1], maps[vx[2]]
+                    segs.append(idx)
 
-                    segs.append(seg)
+                    surface_nodes_by_seg.setdefault(idx, [])
+                    surface_nodes_by_seg[idx].append(i)
 
-                    surface_nodes_by_seg.setdefault(seg, [])
-                    surface_nodes_by_seg[seg].append(i)
-
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
                     self._sa[i] = surface_voxels[p][1]
 
                 else:
                     vx = internal_voxels[p]
-                    self._vol[i], seg = vx[0], vx[1]
-                    segs.append(seg)
+                    self._vol[i], idx = vx[0], maps[vx[1]]
+                    segs.append(idx)
 
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
 
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg 
-            
-            self._segs = list(segs)
-        self._dx = self.dx
+            self._secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in self._secs3d}
+            self._segsidx = segs
+            self._dx = self.dx
+
+    def _segs3d(self, index=None):
+        segs = [seg for sec in self._secs3d for seg in sec]
+        if index:
+            return [seg for i,seg in enumerate(segs) if i in index]
+        return segs
     
     def _indices_from_sec_x(self, sec, position):
         # TODO: the assert is here because the diameter is not computed correctly
