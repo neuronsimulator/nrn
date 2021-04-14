@@ -24,6 +24,8 @@ nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_
 
 set_nonvint_block = nrn_dll_sym('set_nonvint_block')
 set_nonvint_block.argtypes = [nonvint_block_prototype]
+unset_nonvint_block = nrn_dll_sym('unset_nonvint_block')
+unset_nonvint_block.argtypes = [nonvint_block_prototype]
 
 # Some info not available from the HocObject
 v_structure_change = nrn_dll_sym('v_structure_change', ctypes.c_int)
@@ -72,11 +74,18 @@ ode_count_method_index = 5
 def register(c):
   unregister(c)
   call.append(c)
+  activate_callback(True)
 
 def unregister(c):
   v_structure_change.value = 1
   if c in call:
     call.remove(c)
+  if len(call) == 0:
+    activate_callback(False)
+
+def clear():
+  while len(call):
+    unregister(call[0])
 
 def ode_count_all(offset):
   global nonvint_block_offset
@@ -114,10 +123,10 @@ def numpy_from_pointer(cpointer, size):
 
 
 def nonvint_block(method, size, pd1, pd2, tid):
-  # print('nonvint_block called with method = %d l=%d' % (method,size))
-  assert(tid == 0)
-  rval = 0
+  #print('nonvint_block called with method = %d l=%d tid=%d' % (method,size,tid))
   try:
+    assert(tid == 0)
+    rval = 0
     if method == ode_count_method_index:
         rval = ode_count_all(size) # count of the extra states-equations managed by us
     else:
@@ -155,7 +164,12 @@ def nonvint_block(method, size, pd1, pd2, tid):
   return rval
 
 _callback = nonvint_block_prototype(nonvint_block)
-set_nonvint_block(_callback)
+
+def activate_callback(activate):
+  if (activate):
+    set_nonvint_block(_callback)
+  else:
+    unset_nonvint_block(_callback)
 
 if __name__ == '__main__':
   exec(test) # see above string

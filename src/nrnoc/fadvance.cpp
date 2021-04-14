@@ -1071,6 +1071,31 @@ extern "C" int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int si
     return 0;
 }
 
+extern "C" int unset_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double *pd1, double *pd2, int tid)) {
+
+    /* remove new_nrn_nonvint_block functions from the list */
+    /* If first in list */
+    if (nonvint_block_list && nonvint_block_list->func == new_nrn_nonvint_block) {
+        List_nonvint_block* node = nonvint_block_list;
+        nonvint_block_list = node->next;
+        free(node);
+    }else{
+        /* Otherwise iterate til next in list */
+        for (List_nonvint_block* node = nonvint_block_list; node != NULL; node = node->next) {
+            List_nonvint_block* n = node->next;
+            if (n && n->func == new_nrn_nonvint_block) {
+                node->next = n->next;
+                free(node);
+                break;
+            }
+        }
+    }
+    if (nonvint_block_list == NULL) {
+        nrn_nonvint_block = NULL;
+    }
+    return 0;
+}
+
 int nrn_nonvint_block_helper(int method, int size, double *pd1, double *pd2, int tid) {
     int rval = (*nrn_nonvint_block)(method, size, pd1, pd2, tid);
     if (rval == -1) {
