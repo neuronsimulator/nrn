@@ -214,9 +214,9 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
 4. Build the code:
 
   ```
-  make -j
-  make install
+  cmake --build . --parallel 8 --target install
   ```
+  Feel free to set the number of parallel jobs according to your system using the `--parallel` option.
 
 5. Set PATH and PYTHONPATH environmental variables to use the installation:
 
@@ -248,6 +248,31 @@ performance on modern CPU and GPU architectures. CoreNEURON is designed as a lib
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
 step method. You can find detailed instructions [here](docs/coreneuron/how-to/coreneuron.md) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
+
+#### Run integrated tests
+
+**NEURON** includes also some unit and integration tests. To enable you need to set the `CMake` flag **-DNRN\_ENABLE\_TESTS=ON**.
+The tests lie in the `test` directory and cover various aspects of **NEURON**:
+* **CoreNEURON** integration (if enabled in build step)
+* Functionality and result regression test for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
+* HOC interpreter tests
+* Python interpreter tests
+* Parallel Context tests
+* Rx3d tests
+* Unit tests
+* GapJunction tests
+
+To run the tests it's needed to:
+  ```bash
+  cd nrn/build
+  cmake .. \
+   -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_MPI=OFF \
+   -DNRN_ENABLE_RX3D=OFF \
+   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+  cmake --build . --parallel 8
+  ctest # use --parallel for speed, -R to run specific tests
+  ```
 
 <a name="build-autotools"></a>
 ### Install NEURON using Autotools
