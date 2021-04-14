@@ -277,7 +277,17 @@ cd ${CMAKE_CURRENT_BINARY_DIR}\n\
 $1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
 ")
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    install(
-      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})")
+    # install(CODE ...) only takes a single CMake code expression, so we can't easily roll our own
+    # check on the return code. Modern CMake versions support the COMMAND_ERROR_IS_FATAL option,
+    # which will cause the installation to abort if the shell script returns an error code.
+    if(${CMAKE_VERSION} VERSION_LESS "3.19")
+      install(
+        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})"
+      )
+    else()
+      install(
+        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe} COMMAND_ERROR_IS_FATAL LAST)"
+      )
+    endif()
   endforeach(pyexe)
 endif()
