@@ -59,6 +59,7 @@ pip_numpy_install() {
     # numpy is special as we want the minimum wheel version
     numpy_ver="numpy"
     case "$py_ver" in
+      27) numpy_ver="numpy==1.10.4" ;;
       35) numpy_ver="numpy==1.10.4" ;;
       36) numpy_ver="numpy==1.12.1" ;;
       37) numpy_ver="numpy==1.14.6" ;;
@@ -153,7 +154,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python[23]; do
         build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
     done
     ;;
