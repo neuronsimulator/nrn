@@ -28,7 +28,8 @@ py_ver=""
 setup_venv() {
     local py_bin="$1"
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
-    local venv_dir="nrn_build_venv$py_ver"
+    suffix=$("$py_bin" -c "print(str(hash(\"$py_bin\"))[0:8])")
+    local venv_dir="nrn_build_venv${py_ver}_${suffix}"
 
     if [ "$py_ver" -lt 35 ] &&  ["$py_ver" -ge 30 ]; then
         echo "[SKIP] Python $py_ver no longer supported"
@@ -76,7 +77,8 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install auditwheel
+    #auditwheel needs to be installed with python3
+    PATH=/opt/python/cp38-cp38/bin/:$PATH pip3 install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -93,7 +95,7 @@ build_wheel_linux() {
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Repairing..."
-        /opt/python/cp38-cp38/bin/auditwheel repair dist/*.whl
+        PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel repair dist/*.whl
     fi
 
     deactivate
@@ -128,7 +130,7 @@ build_wheel_osx() {
 platform=$1
 
 # python version for which wheel to be built; 3* (default) means all python 3 versions
-python_wheel_version=3*
+python_wheel_version=
 if [ ! -z "$2" ]; then
   python_wheel_version=$2
 fi
