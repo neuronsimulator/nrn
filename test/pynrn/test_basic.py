@@ -142,3 +142,14 @@ def test_push_section():
 def test_nonvint_block_supervisor():
   # making sure we can import
   from neuron import nonvint_block_supervisor
+  # and can still use threads (no registered callbacks)
+  pc = h.ParallelContext()
+  pc.nthread(2)
+  h.finitialize()
+  # but if there is a callback it will fail with threads
+  nonvint_block_supervisor.register([None for _ in range(11)])
+  expect_hocerr(h.finitialize, (-65,))
+  # but can be cleared
+  nonvint_block_supervisor.clear()
+  h.finitialize()
+  pc.nthread(1)  
