@@ -138,6 +138,12 @@ set(NRN_COVERAGE_FILES
       STRING
       "semicolon (;) separated list of files to collect code coverage")
 
+set(NRN_NMODL_CXX_FLAGS
+    ""
+    CACHE
+      STRING
+      "semicolon (;) separated list of flags to be added to host tools (nocmodl, modlunit")
+
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
 # =============================================================================

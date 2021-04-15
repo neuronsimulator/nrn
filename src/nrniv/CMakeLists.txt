@@ -37,6 +37,10 @@ if (NOT MINGW)
   target_compile_options(modlunit PRIVATE ${NMODL_C_FLAGS})
 endif()
 
+if (NRN_NMODL_CXX_FLAGS)
+  target_compile_options(modlunit PRIVATE ${NRN_NMODL_CXX_FLAGS})
+endif()
+
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
@@ -57,6 +61,10 @@ set_property(
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
 if (NOT MINGW)
   target_compile_options(nocmodl PRIVATE ${NMODL_C_FLAGS})
+endif()
+
+if (NRN_NMODL_CXX_FLAGS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()
 
 # =============================================================================
