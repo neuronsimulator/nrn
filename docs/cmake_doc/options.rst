@@ -307,6 +307,17 @@ CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
   C plus plus compiler  
 
+NRN_NMODL_CXX_FLAGS:STRING=""
+-----------------------------
+  If options are given for flavoured compilation on specific cpu (as KNL node),
+  they should be avoided for tools runned locally during build phase.
+  This is the option for that.
+
+  Example with intel compiler for using AVX512 instructions:
+  .. code-block::
+
+    -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DNRN_NMODL_CXX_FLAGS="-XHost"
+
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
   Path to a file.  

@@ -345,6 +345,11 @@ For more installation information see: [https://neuron.yale.edu/neuron/download/
 This is often an issue due to missing ncurses library linking. In this case, we recommend trying
 `-DNRN_ENABLE_INTERNAL_READLINE=ON` CMake option.
 
+* **I am getting errors during compilation "Please verify that both the operating system and the processor support XXX instructions**
+
+The code have been compiled with option for performances using `CMAKE_CXX_FLAGS` you should disable them
+for host code providing the opposite options with `NRN_NMODL_CXX_FLAGS`.
+
 * **I installed NEURON via pip but while using MPI I get "could not dynamically load libmpi.so or libmpich.so".**
 
 NEURON will try to find MPI library in the standard library paths (e.g. /usr/lib). But on some systems MPI
