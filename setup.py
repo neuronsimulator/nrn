@@ -24,7 +24,7 @@ if os.name != "posix":
 
 # Main source of the version. Dont rename, used by Cmake
 try:
-    # github actions somehow fails with python3
+    # github actions somehow fails with check_output and python3
     if sys.version_info[0] < 3:
         v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
     else:

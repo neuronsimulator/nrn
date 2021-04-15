@@ -168,12 +168,12 @@ static void set_nrnpylib() {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
         if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
-          cp += 23;
+          cp += strlen("export NRN_PYTHONHOME=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pyhome) { free(nrnpy_pyhome); }
           nrnpy_pyhome = strdup(cp);
         }else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
-          cp += 18;
+          cp += strlen("export NRN_PYLIB=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pylib) { free(nrnpy_pylib); }
           nrnpy_pylib = strdup(cp);
