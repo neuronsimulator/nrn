@@ -52,6 +52,10 @@ setup_venv() {
         curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
         pip install -U setuptools wheel
     fi
+
+    if [ "$py_ver" -lt 30 ]; then
+        pip install pathlib
+    fi
 }
 
 
