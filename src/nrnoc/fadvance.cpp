@@ -12,7 +12,7 @@
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
-
+#include <vector>
 
 /*
  after an fadvance from t-dt to t, v is defined at t
@@ -1022,24 +1022,18 @@ void nrn_ba(NrnThread *nt, int bat) {
     }
 }
 
-typedef struct List_nonvint_block {
-    int (*func)(int method, int size, double *pd1, double *pd2, int tid);
-
-    struct List_nonvint_block *next;
-} List_nonvint_block;
-
-/* a global list to store the nrn_nonvint_block functions */
-List_nonvint_block *nonvint_block_list = NULL;
+typedef int (*NonVintBlockItem)(int method, int size, double *pd1, double *pd2, int tid);
+/* list to store the nrn_nonvint_block functions */
+static std::vector<NonVintBlockItem> nonvint_block_list;
 
 int nrn_nonvint_block_exe(int method, int size, double *pd1, double *pd2, int tid) {
     /* execute all functions in nonvint_block_list and return the sum of the
      * return values
      */
     int rval, sum = 0;
-    List_nonvint_block *node;
 
-    for (node = nonvint_block_list; node != NULL; node = node->next) {
-        rval = (*(node->func))(method, size, pd1, pd2, tid);
+    for (auto& func: nonvint_block_list) {
+        rval = (*func)(method, size, pd1, pd2, tid);
         if (rval == -1) {
             hoc_execerror("nrn_nonvint_block error", 0);
         } else {
@@ -1053,25 +1047,35 @@ int nrn_nonvint_block_exe(int method, int size, double *pd1, double *pd2, int ti
     return sum;
 }
 
-extern "C" int set_nonvint_block(int (*new_nrn_nonvint_block)(int method, int size, double *pd1, double *pd2, int tid)) {
+extern "C" int set_nonvint_block(NonVintBlockItem func) {
 
     /* store new_nrn_nonvint_block functions in a list */
-    List_nonvint_block *node = (List_nonvint_block *) malloc(sizeof(List_nonvint_block));
-    node->func = new_nrn_nonvint_block;
-    node->next = NULL;
+    nonvint_block_list.push_back(func);
 
-    if (nonvint_block_list == NULL) {
-        nonvint_block_list = node;
-    } else {
-        nonvint_block_list->next = node;
-    }
     /* could this be set directly in nrn_nonvint_block_helper? */
     nrn_nonvint_block = &nrn_nonvint_block_exe;
 
     return 0;
 }
 
+extern "C" int unset_nonvint_block(NonVintBlockItem func) {
+    // remove new_nrn_nonvint_block functions from the list
+    // in c++-20 one could say std::erase(nonvint_block_list, func);
+    auto n = nonvint_block_list.size();
+    for (size_t i = 0; i < n; ++i) {
+        if (func == nonvint_block_list[i]) {
+            nonvint_block_list.erase(nonvint_block_list.begin() + i);
+            break;
+        }
+    }
+    if (nonvint_block_list.empty()) {
+        nrn_nonvint_block = NULL;
+    }
+    return 0;
+}
+
 int nrn_nonvint_block_helper(int method, int size, double *pd1, double *pd2, int tid) {
+    assert(nrn_nonvint_block);
     int rval = (*nrn_nonvint_block)(method, size, pd1, pd2, tid);
     if (rval == -1) {
         hoc_execerror("nrn_nonvint_block error", 0);
