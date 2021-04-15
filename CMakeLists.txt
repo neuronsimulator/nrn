@@ -143,6 +143,7 @@ set(NRN_NMODL_CXX_FLAGS
     CACHE
       STRING
       "semicolon (;) separated list of flags to be added to host tools (nocmodl, modlunit")
+separate_arguments(NRN_NMODL_CXX_FLAGS NATIVE_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
