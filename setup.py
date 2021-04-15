@@ -24,7 +24,13 @@ if os.name != "posix":
 
 # Main source of the version. Dont rename, used by Cmake
 try:
-    v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
+    # github actions somehow fails with python3
+    if sys.version_info[0] < 3:
+        v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
+    else:
+        v = subprocess.run(['git', 'describe', '--tags'],
+                           stdout=subprocess.PIPE).stdout.strip().decode()
+
     __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
