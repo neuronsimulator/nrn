@@ -217,8 +217,11 @@ class _SpeciesMathable(object):
                 ics.d = value
         if initializer.is_initialized() and hasattr(self,'_region_indices'):
             _volumes, _surface_area, _diffs = node._get_data()
-            _diffs[self._indices1d()] = value
-            rxd._setup_matrices()
+            if _diffs.size > 0:
+                if hasattr(value, '__len__'):
+                    raise RxDException("Intracellular 1D can only have one diffusion coefficient. To set 3D intracellular or extracellular diffusion, access the species on the regions; `species[region].d = (Dx, Dy, Dz)`")
+                _diffs[self._indices1d()] = value
+                rxd._setup_matrices()
 
 class SpeciesOnExtracellular(_SpeciesMathable):
     def __init__(self, species, extracellular):
@@ -1173,9 +1176,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         if self._d != value:
             self._d = value
             if hasattr(value,'__len__'):
-                set_diffusion(0, self._grid_id, value[0], value[1], value[2])
+                set_diffusion(0, self._grid_id, numpy.array(value, dtype=float), 1)
             else:
-                set_diffusion(0, self._grid_id, value, value, value)
+                set_diffusion(0, self._grid_id, numpy.repeat(float(value), 3), 1)
 
 
 # TODO: make sure that we can make this work where things diffuse across the

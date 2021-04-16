@@ -420,9 +420,9 @@ void ECS_Grid_node::set_diffusion(double* dc, int)
 {
     if(get_lambda == &get_lambda_scalar)
     {
-        dc_x = dc[0]/SQ(lambda[0]);
-        dc_y = dc[1]/SQ(lambda[0]);
-        dc_z = dc[2]/SQ(lambda[0]);
+        dc_x = dc[0]/lambda[0];
+        dc_y = dc[1]/lambda[0];
+        dc_z = dc[2]/lambda[0];
     }
     else
     {
