@@ -309,14 +309,18 @@ CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 
 NRN_NMODL_CXX_FLAGS:STRING=""
 -----------------------------
-  If options are given for flavoured compilation on specific cpu (as KNL node),
-  they should be avoided for tools runned locally during build phase.
-  This is the option for that.
+  Compiler flag to build tools like nocmodl, modlunit.
 
-  Example with intel compiler for using AVX512 instructions:
+  In cluster environment with different architecture of login node
+  and compute node, we need to compile tools like nocmodl and modlunit
+  with different compiler options to run them on login/build nodes. This
+  option appends provided flags to CMAKE_CXX_FLAGS.
+
+  For example, with intel compiler compiling NEURON for KNL but building
+  on a Skylake node:
   .. code-block::
 
-    -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DNRN_NMODL_CXX_FLAGS="-XHost"
+    -DCMAKE_BUILD_TYPE=Custom -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DNRN_NMODL_CXX_FLAGS="-XHost"
 
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
