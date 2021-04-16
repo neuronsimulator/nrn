@@ -307,6 +307,21 @@ CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
   C plus plus compiler  
 
+NRN_NMODL_CXX_FLAGS:STRING=""
+-----------------------------
+  Compiler flag to build tools like nocmodl, modlunit.
+
+  In cluster environment with different architecture of login node
+  and compute node, we need to compile tools like nocmodl and modlunit
+  with different compiler options to run them on login/build nodes. This
+  option appends provided flags to CMAKE_CXX_FLAGS.
+
+  For example, with intel compiler compiling NEURON for KNL but building
+  on a Skylake node:
+  .. code-block::
+
+    -DCMAKE_BUILD_TYPE=Custom -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DNRN_NMODL_CXX_FLAGS="-XHost"
+
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
   Path to a file.  
