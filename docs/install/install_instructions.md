@@ -384,3 +384,31 @@ Make sure to LD_LIBRARY_PATH or DYLD_LIBRARY_PATH environmental variables. For e
 export LD_LIBRARY_PATH=/install/path/lib:$LD_LIBRARY_PATH. # on linux
 export DYLD_LIBRARY_PATH=/install/path/lib:$DYLD_LIBRARY_PATH. # on Mac OS
 ```
+
+* **NEURON is not able to find correct Python or NEURON Python library. What can I do?**
+
+NEURON tries to find correct Python based on user's environment. If you are using NEURON via python interpreter then,
+as mentioned previously, setting `PYTHONPATH` would be sufficient. For `nrniv` or `special` binaries, you can also use
+`-pyexe` option to specify which Python should be used by NEURON:
+
+```bash
+nrniv -pyexe /python/install/path/python-3.8.3/bin/python3
+```
+
+If you have enabled dynamic python support using `NRN_ENABLE_PYTHON_DYNAMIC` CMake option or installed NEURON via pip
+and see error like below:
+
+```bash
+Could not load either libnrnpython3 or libnrnpython2
+```
+
+then NEURON is not able to find appropriate Python and corresponding Python library. You can verify which Python is
+being used by running following command:
+
+```bash
+$ nrnpyenv.sh
+...
+export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
+export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
+```
+If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
