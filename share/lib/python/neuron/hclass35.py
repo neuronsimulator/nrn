@@ -1,4 +1,4 @@
-# Python2 only
+# Python 3.0 to 3.5 only
 # ------------------------------------------------------------------------------
 # class factory for subclassing h.anyclass
 # h.anyclass methods may be overridden. If so the base method can be called
@@ -15,6 +15,7 @@ class MetaHocObject(type):
     """
 
     def __new__(cls, name, bases, attrs):
+        # print cls, name, bases
         m = []
         for b in bases:
             if issubclass(b, hoc.HocObject):
@@ -24,6 +25,7 @@ class MetaHocObject(type):
                 "Multiple Inheritance of HocObject in %s" % name
                 + " through %s not allowed" % ",".join(m)
             )
+            # note that join(b.__name__ for b in m) is not valid for Python 2.3
 
         return type.__new__(cls, name, bases, attrs)
 
@@ -42,7 +44,8 @@ def hclass(c):
     if c == h.Section:
         return nrn.Section
 
-    class hc(hoc.HocObject):
+    class hc(hoc.HocObject, metaclass=MetaHocObject):
+        # class hc(hoc.HocObject):
         def __new__(cls, *args, **kwds):
             kwds2 = {"hocbase": cls.htype}
             if "sec" in kwds:

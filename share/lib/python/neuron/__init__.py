@@ -234,10 +234,24 @@ def test_rxd(exitOnError=True):
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
+import sys, types
+
+# Flag for the Python objects interface
+_pyobj_enabled = False
+# Load the `hclass` factory for the correct Python version 2/3 and prevent the
+# incorrect module source code from being opened by creating an empty module.
 if sys.version_info[0] == 2:
+  hclass3 = sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
   from neuron.hclass2 import hclass
 else:
-  from neuron.hclass3 import hclass
+  hclass2 = sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
+  if sys.version_info[0] == 3 and sys.version_info[1] < 6:
+    import neuron.hclass35
+    hclass = neuron.hclass35.hclass
+    hclass3 = neuron.hclass35
+  else:
+    from neuron.hclass3 import HocBaseObject, hclass
+    _pyobj_enabled = True
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
@@ -370,13 +384,13 @@ def xopen(*args, **kwargs):
 
 
     Description:
-        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way 
-        to define user functions and procedures. 
-        An optional second argument is the RCS revision number in the form of a 
-        string. The RCS file with that revision number is checked out into a 
-        temporary file and executed. The temporary file is then removed.  A file 
-        of the same primary name is unaffected. 
-    
+        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way
+        to define user functions and procedures.
+        An optional second argument is the RCS revision number in the form of a
+        string. The RCS file with that revision number is checked out into a
+        temporary file and executed. The temporary file is then removed.  A file
+        of the same primary name is unaffected.
+
     This function is deprecated and will be removed in a future release.
     Use ``h.xopen`` instead.
     """
@@ -386,7 +400,7 @@ def xopen(*args, **kwargs):
 
 def quit(*args, **kwargs):
     """
-    Exits the program. Can be used as the action of a button. If edit buffers 
+    Exits the program. Can be used as the action of a button. If edit buffers
     are open you will be asked if you wish to save them before the final exit.
 
     This function is deprecated and will be removed in a future release.
@@ -395,7 +409,7 @@ def quit(*args, **kwargs):
     """
     warnings.warn("neuron.quit() is deprecated; use h.quit() or sys.exit() instead", DeprecationWarning, stacklevel=2)
     return h.quit(*args, **kwargs)
-  
+
 
 
 def hoc_execute(hoc_commands, comment=None):
@@ -447,9 +461,9 @@ def init():
 
     By default, the units used by h.finitialize are in mV, but you can be explicit using
     NEURON's unit's library, e.g.
-    
+
     .. code-block:: python
-    
+
         from neuron.units import mV
         h.finitialize(-65 * mV)
 
@@ -457,7 +471,7 @@ def init():
 
     """
     warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning, stacklevel=2)
-    
+
     h.finitialize()
 
 def run(tstop):
@@ -465,37 +479,37 @@ def run(tstop):
     function run(tstop)
 
     Run the simulation (advance the solver) until tstop [ms]
-    
+
     `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
-    
+
     ** This function exists for historical purposes. Use in new code is not recommended. **
-    
+
     This function is deprecated and will be removed in a future
-    release.    
-    
+    release.
+
     For running a simulation, consider doing the following instead:
-    
+
     Begin your code with
-    
+
     .. code-block:: python
-    
+
         from neuron import h
         from neuron.units import ms, mV
         h.load_file('stdrun.hoc')
-    
+
     Then when it is time to initialize and run the simulation:
-    
+
     .. code-block:: python
-    
+
         h.finitialize(-65 * mV)
         h.continuerun(100 * ms)
-    
+
     where the initial membrane potential and the simulation run time are adjusted as appropriate
     for your model.
 
     """
     warnings.warn("neuron.run(tstop) is deprecated; use h.stdinit() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
-    
+
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
@@ -667,7 +681,7 @@ def _declare_contour(secobj, obj, name):
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
     x0, y0, z0 = [center_vec.x[i] for i in range(3)]
     # store a couple of points to check if the section has been moved
-    pts = [(sec.x3d(i),sec.y3d(i),sec.z3d(i)) for i in [0, sec.n3d()-1]] 
+    pts = [(sec.x3d(i),sec.y3d(i),sec.z3d(i)) for i in [0, sec.n3d()-1]]
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
     _sec_db[sec.hoc_internal_name()] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0, pts)
 
@@ -796,7 +810,7 @@ class _RangeVarPlot(_WrapperPlot):
     fig.show()
 
     pyplot.show()
-    
+
     # plotnine/ggplot
     p9.ggplot() + r.plot(p9)
 
@@ -1060,10 +1074,10 @@ class _PlotShapePlot(_WrapperPlot):
       if secs is None:
         secs = list(h.allsec())
 
-      
+
       if variable is None:
         kwargs.setdefault('color', 'black')
-        
+
         data = []
         for sec in secs:
           xs = [sec.x3d(i) for i in range(sec.n3d())]
@@ -1392,7 +1406,7 @@ def _nrnpy_rvp_pyobj_callback(f):
   f_type = str(type(f))
   if f_type not in ("<class 'neuron.rxd.species.SpeciesOnRegion'>", "<class 'neuron.rxd.species.Species'>"):
     return f
-  
+
   # if we're here, f is an rxd variable, and we return a function that looks
   # up the weighted average concentration given an x and h.cas()
   # this is not particularly efficient so it is probably better to use this for
@@ -1432,4 +1446,3 @@ def clear_gui_callback():
     nrnpy_set_gui_callback(None)
   except:
     pass
-
