@@ -455,7 +455,10 @@ def init():
 
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
-    
+
+    This function is deprecated and will be removed in a future
+    release.
+
     By default, the units used by h.finitialize are in mV, but you can be explicit using
     NEURON's unit's library, e.g.
     
@@ -480,6 +483,9 @@ def run(tstop):
     `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
     
     ** This function exists for historical purposes. Use in new code is not recommended. **
+
+    This function is deprecated and will be removed in a future
+    release.
     
     For running a simulation, consider doing the following instead:
     
