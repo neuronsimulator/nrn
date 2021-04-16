@@ -34,7 +34,6 @@ def _config_exe(exe_name):
     NRN_PREFIX = os.path.join(working_set.by_key[package_name].location, 'neuron', '.data')
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, 'share/nrn')
     os.environ["NRNHOME"] = NRN_PREFIX
-    os.environ["NRN_PYTHONHOME"] = sys.prefix
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["NRNBIN"] = os.path.dirname(__file__)
     _set_default_compiler()
