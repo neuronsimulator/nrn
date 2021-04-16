@@ -282,7 +282,7 @@ def setup_package():
         'neuron.rxd',
         'neuron.crxd',
         'neuron.gui2'
-    ] + ["neuron.rxd.geometry3d"] if Components.RX3D else []
+    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
