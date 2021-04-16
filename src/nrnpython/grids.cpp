@@ -32,21 +32,21 @@ extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
 
 static double get_alpha_scalar(double* alpha, int)
 {
-	return alpha[0];
+    return alpha[0];
 }
 static double get_alpha_array(double* alpha, int idx)
 {
-	return alpha[idx];
+    return alpha[idx];
 }
 
 
 static double get_lambda_scalar(double*, int)
 {
-	return 1.; /*already rescale the diffusion coefficients*/
+    return 1.; /*already rescale the diffusion coefficients*/
 }
 static double get_lambda_array(double* lambda, int idx)
 {
-	return lambda[idx];
+    return lambda[idx];
 }
 
 // Make a new Grid_node given required Grid_node parameters
@@ -54,7 +54,7 @@ ECS_Grid_node::ECS_Grid_node() {};
 ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-	PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
+    PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
     int k;
     states = my_states->u.px_;
     
@@ -83,41 +83,42 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
     num_currents = 0;
 
     next = NULL;
-	VARIABLE_ECS_VOLUME = FALSE;
+    VARIABLE_ECS_VOLUME = FALSE;
 
-	/*Check to see if variable tortuosity/volume fraction is used*/
-	if(PyFloat_Check(my_lambda))
-	{
-		/*apply the tortuosity*/
-		dc_x = my_dc_x/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-    	dc_y = my_dc_y/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-	    dc_z = my_dc_z/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-		
-		lambda = (double*)malloc(sizeof(double));
-		lambda[0] = SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-		get_lambda = &get_lambda_scalar;
-	}
-	else
-	{
-		lambda = my_lambda->u.px_;
-		VARIABLE_ECS_VOLUME = TORTUOSITY;
-		get_lambda = &get_lambda_array;
-	}
-	
-	if(PyFloat_Check(my_alpha))
-	{
-		alpha = (double*)malloc(sizeof(double));
-		alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
-		get_alpha = &get_alpha_scalar;
+    /*Check to see if variable tortuosity/volume fraction is used*/
+    if(PyFloat_Check(my_lambda))
+    {
+        /*note lambda is the tortuosity squared*/
+        lambda = (double*)malloc(sizeof(double));
+        lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
+        get_lambda = &get_lambda_scalar;
+        
+        /*apply the tortuosity*/
+        dc_x = my_dc_x/lambda[0];
+        dc_y = my_dc_y/lambda[0];
+        dc_z = my_dc_z/lambda[0];
+    }
+    else
+    {
+        lambda = my_lambda->u.px_;
+        VARIABLE_ECS_VOLUME = TORTUOSITY;
+        get_lambda = &get_lambda_array;
+    }
+    
+    if(PyFloat_Check(my_alpha))
+    {
+        alpha = (double*)malloc(sizeof(double));
+        alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+        get_alpha = &get_alpha_scalar;
 
-	}
-	else
-	{
-		alpha = my_alpha->u.px_;
-		VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
-		get_alpha = &get_alpha_array;	
+    }
+    else
+    {
+        alpha = my_alpha->u.px_;
+        VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
+        get_alpha = &get_alpha_array;    
 
-	}
+    }
 #if NRNMPI
     if(nrnmpi_use)
     {
@@ -195,11 +196,11 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
 extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
+    PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
     double atolscale) {
     ECS_Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-			my_alpha, my_lambda, bc, bc_value, atolscale);
+            my_alpha, my_lambda, bc, bc_value, atolscale);
 
     return new_Grid->insert(grid_list_index);
 }
@@ -420,9 +421,10 @@ void ECS_Grid_node::set_diffusion(double* dc, int)
 {
     if(get_lambda == &get_lambda_scalar)
     {
-        dc_x = dc[0]/SQ(lambda[0]);
-        dc_y = dc[1]/SQ(lambda[0]);
-        dc_z = dc[2]/SQ(lambda[0]);
+        /* note lambda[0] is the tortuosity squared*/
+        dc_x = dc[0]/lambda[0];
+        dc_y = dc[1]/lambda[0];
+        dc_z = dc[2]/lambda[0];
     }
     else
     {
@@ -645,7 +647,7 @@ int Grid_node::insert(int grid_list_index){
         *head = this;
     }
     else {
-		i++;	/*count the head as the first grid*/
+        i++;    /*count the head as the first grid*/
         Grid_node *end = *head;
         while(end->next != NULL) {
             i++;

@@ -737,9 +737,10 @@ class NodeExtracellular(Node):
     def d(self, value):
         """Sets the diffusion rate within the compartment."""
         from . import rxd
+        warnings.warn("Changing the diffusion coefficient for an extracellular node changes diffusion coefficients for the whole extracellular grid.") 
         # TODO: Replace zero with Parallel_grids id (here an in insert call)
         if hasattr(value,'__len__'):
-            set_diffusion(0, self._grid_id, numpy.array(value, dtype=float),1)
+            set_diffusion(0, self._grid_id, numpy.array(value, dtype=float), 1)
         else:
             set_diffusion(0, self._grid_id, numpy.repeat(float(value), 3), 1)
 
