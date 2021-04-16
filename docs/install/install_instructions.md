@@ -412,3 +412,26 @@ export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
 export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
 ```
 If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
+
+* **How to build NEURON in cluster environment where build node architecture is different than compute node?**
+
+In cluster environment, sometime we have different architecture of login/build nodes than compute nodes (similar to
+cross-compile environment). NEURON has tools like `nocmodl`, `modlunit` which are executed on login/build
+nodes. If these tools are compiled with compute node architecture then we might see error like:
+
+```bash
+[ 10%] Generating ../../../src/nrnoc/syn.c
+Please verify that both the operating system and the processor support Intel(R) AVX512ER and AVX512PF instructions.
+```
+or even `segmentation fault` when MOD files are translated to C files.
+
+To avoid this, we have to build nocmodl, modlunit with login/build node architecture. NEURON by default set `-O0` compile flag for these tools to avoid compiler generating architecture specific instructions. But if this is not sufficient, you can set `NRN_NMODL_CXX_FLAGS` CMake option specifying which compiler flags should be used. For example:
+
+```bash
+cmake .. [other options] \
+    -DCMAKE_CXX_FLAGS="-O3 -xMIC-AVX512" \
+    -DCMAKE_BUILD_TYPE=Custom \
+    -DNRN_NMODL_CXX_FLAGS="-xHost"
+```
+
+In the above example, we used custom build type with Intel compiler's `-xMIC-AVX512` flag for KNL architecture but used `-xHost` flag so that `nocmodl` and `modlunit` are compiled compatible with host architecture (i.e. node where NEURON is being built).
