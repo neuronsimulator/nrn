@@ -88,6 +88,10 @@ while true ; do
     if $WHICH "$1" >& /dev/null ; then
       PYTHON="$1"
     fi
+  # If NRN_PYTHONHOME is set, e.g. for wheel, then
+  # use python binary under NRN_PYTHONHOME
+  elif test "$NRN_PYTHONHOME" != ""; then
+    PYTHON=$NRN_PYTHONHOME/bin/python[23]
   elif $WHICH python3 >& /dev/null ; then
     PYTHON=python3
   elif $WHICH python >& /dev/null ; then
