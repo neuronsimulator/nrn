@@ -345,7 +345,8 @@ def setup_package():
             extra_compile_args=extra_compile_args,
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
-        print("RX3D compile flags %s" % str(rxd_params))
+
+        log.info("RX3D compile flags %s" % str(rxd_params))
 
         extensions += [
             CyExtension(

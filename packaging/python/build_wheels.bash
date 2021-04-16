@@ -31,12 +31,6 @@ setup_venv() {
     suffix=$("$py_bin" -c "print(str(hash(\"$py_bin\"))[0:8])")
     local venv_dir="nrn_build_venv${py_ver}_${suffix}"
 
-    if [ "$py_ver" -lt 35 ] &&  ["$py_ver" -ge 30 ]; then
-        echo "[SKIP] Python $py_ver no longer supported"
-        skip=1
-        return 0
-    fi
-
     echo " - Creating $venv_dir: $py_bin -m venv $venv_dir"
 
     if [ "$py_ver" -lt 35 ]; then
@@ -53,6 +47,7 @@ setup_venv() {
         pip install -U setuptools wheel
     fi
 
+    # help_data.dat for docs require pathlib which is not part of python2
     if [ "$py_ver" -lt 30 ]; then
         pip install pathlib
     fi
