@@ -30,7 +30,7 @@ def _overrides(cls, base, method_name):
     return getattr(cls, method_name) is not getattr(base, method_name)
 
 
-def hclass(hoc_type):
+def hclass(hoc_type, module_name=None, name=None):
     """
     Class factory for subclassing HOC types.
 
@@ -40,33 +40,14 @@ def hclass(hoc_type):
 
         import neuron
 
-        class MyVector(neuron.hclass(neuron.h.Vector)):
+        myClassTemplate = neuron.hclass(
+            neuron.h.Vector,
+            module_name=__name__,
+            name="MyVector",
+        )
+
+        class MyVector(myClassTemplate):
             pass
-
-    :param hoc_type: HOC types/classes such as ``h.List``, ``h.NetCon``, ``h.Vector``, ...
-    :type hoc_type: :class:`hoc.HocObject`
-    :deprecated: Inherit from :class:`~neuron.HocBaseObject` instead.
-    """
-    if hoc_type == h.Section:
-        return nrn.Section
-    try:
-        hc = type("hc", (HocBaseObject,), {}, hoc_type=hoc_type)
-    except TypeError:
-        raise TypeError("Argument is not a valid HOC type.") from None
-    return hc
-
-
-def nonlocal_hclass(hoc_type, module_name, name=None):
-    """
-    Analogous to :func:`~neuron.hclass` but adds the class's module information.
-
-    Example:
-
-    .. code-block:: python
-
-        import neuron
-
-        MyVector = nonlocal_hclass(neuron.h.Vector, __name__, name="MyVector")
 
     :param hoc_type: HOC types/classes such as ``h.List``, ``h.NetCon``, ``h.Vector``, ...
     :type hoc_type: :class:`hoc.HocObject`
@@ -75,16 +56,22 @@ def nonlocal_hclass(hoc_type, module_name, name=None):
     :type module_name: str
     :param name: Name of the module level variable that the class will be stored in. When
         omitted the name of the HOC type is used.
+    :deprecated: Inherit from :class:`~neuron.HocBaseObject` instead.
     """
-
-    module = sys.modules[module_name]
-    local_hclass = hclass(hoc_type)
+    if hoc_type == h.Section:
+        return nrn.Section
+    if module_name is None:
+        module_name = __name__
     if name is None:
         name = hoc_type.hname()[:-2]
-    local_hclass.__module__ = module_name
-    local_hclass.__name__ = name
-    local_hclass.__qualname__ = name
-    return local_hclass
+    try:
+        hc = type(name, (HocBaseObject,), {}, hoc_type=hoc_type)
+    except TypeError:
+        raise TypeError("Argument is not a valid HOC type.") from None
+    hc.__module__ = module_name
+    hc.__name__ = name
+    hc.__qualname__ = name
+    return hc
 
 
 class HocBaseObject(hoc.HocObject):
