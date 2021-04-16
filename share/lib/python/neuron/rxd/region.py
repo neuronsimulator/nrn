@@ -266,7 +266,7 @@ class Extracellular:
                 
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
-            self._tortuosity = tortuosity
+            self._tortuosity = tortuosity**2
             self.tortuosity = tortuosity
         elif callable(tortuosity):
             self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
