@@ -69,7 +69,7 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install git+https://github.com/ferdonline/auditwheel@fix/rpath_append
+    pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
