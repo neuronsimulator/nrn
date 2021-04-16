@@ -960,10 +960,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
             self._alpha = region._alpha._ref_x[0]
        
         self.tortuosity = region.tortuosity 
-        if(numpy.isscalar(region.tortuosity)):
-            self._tortuosity = region._tortuosity
+        if(numpy.isscalar(region._ecs_tortuosity)):
+            self._tortuosity = region._ecs_tortuosity
         else:
-            self._tortuosity = region._tortuosity._ref_x[0]
+            self._tortuosity = region._ecs_tortuosity._ref_x[0]
 
         if boundary_conditions is None:
             bc_type = 0

@@ -266,23 +266,23 @@ class Extracellular:
                 
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
-            self._tortuosity = tortuosity**2
-            self.tortuosity = tortuosity
+            self._ecs_tortuosity = tortuosity**2
+            self._tortuosity = tortuosity
         elif callable(tortuosity):
-            self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
+            self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
             for i in range(self._nx):
                 for j in range(self._ny):
                     for k in range(self._nz):
                         self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+            self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):
                  raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
             else:
-                self.tortuosity = tortuosity
-                self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+                self._tortuosity = tortuosity
+                self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
     
     def __repr__(self):
         return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
@@ -295,6 +295,15 @@ class Extracellular:
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
+
+    @property
+    def tortuosity(self):
+        return self._tortuosity 
+    
+    @tortuosity.setter
+    def tortuosity(self, value):
+        raise RxDException("Changing the tortuosity is not yet supported.")
+    
                 
 class Region(object):
     """Declare a conceptual region of the neuron.
