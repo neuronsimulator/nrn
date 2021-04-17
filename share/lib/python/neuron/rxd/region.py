@@ -29,7 +29,12 @@ def _sort_secs(secs):
     #for sec in secs:
     #    if sec.orientation():
     #        raise RxDException('still need to deal with backwards sections')
-    return [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+    secs = [secs_names[sec.hoc_internal_name()] for sec in all_sorted if sec.hoc_internal_name() in secs_names]
+    # return an empty list rather than an empty SectionList because
+    # bool([]) == False
+    # bool(h.SectionList([])) == True
+    # secs are checked in some reactions to determine active regions
+    return [] if secs == [] else h.SectionList(secs)
 
 
 class _c_region:
@@ -41,7 +46,7 @@ class _c_region:
     def __init__(self, regions):
         global _c_region_lookup
         self._regions = [weakref.ref(r) for r in regions]
-        self._overlap = h.SectionList(self._regions[0]()._secs1d)
+        self._overlap = self._regions[0]()._secs1d
         self.num_regions = len(self._regions)
         self.num_species = 0
         self.num_params = 0
@@ -261,23 +266,23 @@ class Extracellular:
                 
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
+            self._ecs_tortuosity = tortuosity**2
             self._tortuosity = tortuosity
-            self.tortuosity = tortuosity
         elif callable(tortuosity):
-            self.tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
+            self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
             for i in range(self._nx):
                 for j in range(self._ny):
                     for k in range(self._nz):
                         self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+            self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):
                  raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
             else:
-                self.tortuosity = tortuosity
-                self._tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+                self._tortuosity = tortuosity
+                self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
     
     def __repr__(self):
         return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
@@ -290,6 +295,15 @@ class Extracellular:
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
+
+    @property
+    def tortuosity(self):
+        return self._tortuosity 
+    
+    @tortuosity.setter
+    def tortuosity(self, value):
+        raise RxDException("Changing the tortuosity is not yet supported.")
+    
                 
 class Region(object):
     """Declare a conceptual region of the neuron.
@@ -369,12 +383,12 @@ class Region(object):
         # TODO: I used to not sort secs in 3D if hasattr(self._secs, 'sections'); figure out why
         self._secs = _sort_secs(self._secs)
         self._secs1d = _sort_secs(self._secs1d)
+        self._secs3d = h.SectionList(self._secs3d)
         
-        if self._secs3d and not(hasattr(self._geometry, 'volumes3d')):
-            raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
+        if any(self._secs3d):
+            if not(hasattr(self._geometry, 'volumes3d')):
+                raise RxDException('selected geometry (%r) does not support 3d mode (no "volumes3d" attr)' % self._geometry)
         
-
-        if self._secs3d:
             if nrn_region == 'o':
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
@@ -391,35 +405,41 @@ class Region(object):
             surface_nodes_by_seg = {}
             # creates tuples of x, y, and z coordinates where a point is (xs[i], ys[i], zs[i])
             self._xs, self._ys, self._zs = zip(*self._points)
+            maps = {seg:i for i,seg in enumerate([seg for sec in self._secs3d for seg in sec])}
             segs = []
 
             for i, p in enumerate(self._points):
                 if p in surface_voxels:
                     vx = surface_voxels[p]
-                    self._vol[i], self._sa[i], seg = vx[0], vx[1], vx[2]
+                    self._vol[i], self._sa[i], idx = vx[0], vx[1], maps[vx[2]]
+                    segs.append(idx)
 
-                    segs.append(seg)
+                    surface_nodes_by_seg.setdefault(idx, [])
+                    surface_nodes_by_seg[idx].append(i)
 
-                    surface_nodes_by_seg.setdefault(seg, [])
-                    surface_nodes_by_seg[seg].append(i)
-
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
                     self._sa[i] = surface_voxels[p][1]
 
                 else:
                     vx = internal_voxels[p]
-                    self._vol[i], seg = vx[0], vx[1]
-                    segs.append(seg)
+                    self._vol[i], idx = vx[0], maps[vx[1]]
+                    segs.append(idx)
 
-                    nodes_by_seg.setdefault(seg, [])
-                    nodes_by_seg[seg].append(i)
+                    nodes_by_seg.setdefault(idx, [])
+                    nodes_by_seg[idx].append(i)
 
             self._surface_nodes_by_seg = surface_nodes_by_seg
             self._nodes_by_seg = nodes_by_seg 
-            
-            self._segs = list(segs)
-        self._dx = self.dx
+            self._secs3d_names = {sec.hoc_internal_name():sec.nseg for sec in self._secs3d}
+            self._segsidx = segs
+            self._dx = self.dx
+
+    def _segs3d(self, index=None):
+        segs = [seg for sec in self._secs3d for seg in sec]
+        if index:
+            return [seg for i,seg in enumerate(segs) if i in index]
+        return segs
     
     def _indices_from_sec_x(self, sec, position):
         # TODO: the assert is here because the diameter is not computed correctly
@@ -510,15 +530,16 @@ class Region(object):
         """
         self._allow_setting = True
         if hasattr(secs,'__len__'):
-            self.secs = secs
+            self._secs = secs
         else:
-            self.secs = [secs]
+            self._secs = [secs]
         if secs == [] or secs == None:
             warnings.warn("Warning: No sections. Region 'secs' should be a list of NEURON sections.")
         from nrn import Section
-        for sec in self.secs:
+        for sec in self._secs:
             if not isinstance(sec,Section):
                 raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
+        self._secs = h.SectionList(self._secs)
         self.nrn_region = nrn_region
         self.geometry = geometry
         
@@ -620,7 +641,16 @@ class Region(object):
     @secs.setter
     def secs(self, value):
         if hasattr(self, '_allow_setting'):
-            self._secs = value
+            if hasattr(value, '__len__'):
+                secs = value
+            else:
+                secs = [value]
+
+            from nrn import Section
+            for sec in secs:
+                if not isinstance(sec,Section):
+                    raise RxDException("Error: Region 'secs' must be a list of NEURON sections, %r is not a valid NEURON section." % sec)
+            self._secs = h.SectionList(secs)
         else:
             raise RxDException('Cannot set secs now; model already instantiated')
     def volume(self, index):

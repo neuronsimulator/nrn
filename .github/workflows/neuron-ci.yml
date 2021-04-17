@@ -4,7 +4,6 @@ on:
   push:
     branches: 
       - master
-      - live-debug*
       - release/**
   pull_request:
     branches:
@@ -152,7 +151,16 @@ jobs:
               echo "CC="$CC
               echo "CXX="$CXX
               cmake $CMAKE_OPTION  -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR ..;
-              cmake --build . -- -j;
+              # Autodetection does not seem to work well, compiler processes were getting killed.
+              # These core counts are taken from
+              # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+              if [ "$RUNNER_OS" == "macOS" ]; then
+                BUILD_PARALLEL_LEVEL=3
+              else
+                BUILD_PARALLEL_LEVEL=2
+              fi
+              # The --parallel option to CMake was only added in v3.12
+              cmake --build . -- -j ${BUILD_PARALLEL_LEVEL}
               if [ "$RUNNER_OS" == "macOS" ]; then
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi;
@@ -226,8 +234,10 @@ jobs:
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply prefix your branch name with `live-debug`
-      #   i.e.: live-debug-hocfix
+      # To trigger it, simply add 'live-debug-ci' to your last pushed commit message.
+      #
+      # IF SEVERAL JOBS ARE FAILING, USE A FORK OR AT LEAST UPDATE THE MATRIX TO RUN ONLY ONE FAILING JOB AT A TIME,
+      #    SO THAT THE MAIN CI DOESN'T GET SLOWED DOWN OR BLOCKED !
       - name: live debug session on failure
-        if: failure() && startsWith(github.ref, 'refs/heads/live-debug')
+        if: failure() && contains(github.event.head_commit.message, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3

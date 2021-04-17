@@ -53,6 +53,7 @@ proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd
 
     po = new PythonObject()
     po.coreneuron.enable = 1
+    nrnpython("import os; coreneuron.gpu=bool(os.environ.get('CORENRN_ENABLE_GPU', ''))")
     printf("nrncore_arg: |%s|\n", po.coreneuron.nrncore_arg(tstop))
 
     pc = new ParallelContext()
@@ -61,9 +62,20 @@ proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd
     pc.psolve(tstop)
 
     // compare results
-    print (tv.eq(tvstd))
-    print (vvec.cl().sub(vstd).abs().max() < 1e-10)
-    print (i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
+    result1 = tv.eq(tvstd)
+    result2 = vvec.cl().sub(vstd).abs().max() < 1e-10
+    // This check is disabled on GPU because fast imem is not implemented on
+    // GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
+    result3 = po.coreneuron.gpu || i_mem.cl().sub(i_memstd).abs().max() < 1e-10
+    result  = result1 && result2 && result3
+    print(result1)
+    print(result2)
+    print(result3)
+    print(result)
+    // make the test (nrniv) return an error code if the comparison failed
+    if (!result) {
+        nrnpython("import sys; sys.exit(1)")
+    }
 }
 
 test_direct_memory_transfer()

@@ -6,13 +6,9 @@
 // Transition conditions are checked only if the source state is the
 // current state.
 
-#include <OS/list.h>
-
 class HocCommand;
 class StateTransitionEvent;
 class STECondition;
-
-declarePtrList(STEList, StateTransitionEvent)
 
 class STETransition {
 public:

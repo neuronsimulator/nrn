@@ -603,8 +603,8 @@ static void fast_imem_alloc() {
 				free(fi->_nrn_sav_d);
 			}
 			if (n > 0) {
-				CACHELINE_ALLOC(fi->_nrn_sav_rhs, double, n);
-				CACHELINE_ALLOC(fi->_nrn_sav_d, double, n);
+				CACHELINE_CALLOC(fi->_nrn_sav_rhs, double, n);
+				CACHELINE_CALLOC(fi->_nrn_sav_d, double, n);
 			}
 			fast_imem_size_[i] = n;
 		}

@@ -24,8 +24,10 @@ def ecs_diffusion(neuron_instance):
 
 def test_ecs_diffusion_2d(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(11, 11, 1, 0.2, 1.6)
+    ecs, k = make_model(11, 11, 1, 0.2, 1.6, 0)
     h, rxd, data, save_path = neuron_instance
+    h.finitialize(1000)
+    k.d = 1
     h.finitialize(1000)
     h.continuerun(10)
     if not save_path:
@@ -34,9 +36,11 @@ def test_ecs_diffusion_2d(ecs_diffusion):
 
 def test_ecs_diffusion_2d_cvode(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(11, 11, 1, 0.2, 1.6)
+    ecs, k = make_model(11, 11, 1, 0.2, 1.6, 0)
     h, rxd, data, save_path = neuron_instance
     h.CVode().active(True)
+    h.finitialize(1000)
+    k.d = 1
     h.finitialize(1000)
     h.continuerun(10)
     if not save_path:
@@ -45,8 +49,10 @@ def test_ecs_diffusion_2d_cvode(ecs_diffusion):
 
 def test_ecs_diffusion_1d(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(1, 11, 1, 0.2, 1.6)
+    ecs, k = make_model(1, 11, 1, 0.2, 1.6, 0)
     h, rxd, data, save_path = neuron_instance
+    h.finitialize(1000)
+    k.nodes[0].d = 1.0
     h.finitialize(1000)
     h.continuerun(10)
     if not save_path:
@@ -55,9 +61,11 @@ def test_ecs_diffusion_1d(ecs_diffusion):
 
 def test_ecs_diffusion_1d_cvode(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(1, 11, 1, 0.2, 1.6)
+    ecs, k = make_model(1, 11, 1, 0.2, 1.6, 0)
     h, rxd, data, save_path = neuron_instance
     h.CVode().active(True)
+    h.finitialize(1000)
+    k[ecs].d = (1,1,1)
     h.finitialize(1000)
     h.continuerun(10)
     if not save_path:
@@ -66,30 +74,29 @@ def test_ecs_diffusion_1d_cvode(ecs_diffusion):
 
 def test_ecs_diffusion_0d(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(1, 1, 1, 0.2, 1.6)
+    ecs, k = make_model(1, 1, 1, 0.2, 1.6, 0)
     h, rxd, data, save_path = neuron_instance
     h.finitialize(1000)
     h.continuerun(10)
-    ecs, k = model
     if not save_path:
         assert k[ecs].states3d[0] == 1.0  
 
 def test_ecs_diffusion_0d_cvode(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
     h, rxd, data, save_path = neuron_instance
-    model = make_model(1, 1, 1, 0.2, 1.6)
+    ecs, k = make_model(1, 1, 1, 0.2, 1.6, 0)
     h.CVode().active(True)
     h.finitialize(1000)
     h.continuerun(10)
-    ecs, k = model
     if not save_path:
         assert k[ecs].states3d[0] == 1.0
 
 def test_ecs_diffusion_2d_tort(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(11, 11, 1, 0.2, lambda x,y,z: 1.6)
+    ecs, k = make_model(11, 11, 1, 0.2, lambda x,y,z: 1.6, 0)
     h, rxd, data, save_path = neuron_instance
     h.finitialize(1000)
+    k[ecs].d = (1,1,1)
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)
@@ -97,10 +104,11 @@ def test_ecs_diffusion_2d_tort(ecs_diffusion):
 
 def test_ecs_diffusion_2d_cvode_tort(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(11, 11, 1, 0.2, lambda x,y,z: 1.6)
+    ecs, k = make_model(11, 11, 1, 0.2, lambda x,y,z: 1.6, 0)
     h, rxd, data, save_path = neuron_instance
     h.CVode().active(True)
     h.finitialize(1000)
+    k.nodes[0].d = (1,1,1)
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)
@@ -108,7 +116,7 @@ def test_ecs_diffusion_2d_cvode_tort(ecs_diffusion):
 
 def test_ecs_diffusion_1d_tort(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(1, 11, 1, 0.2, lambda x,y,z: 1.6)
+    ecs, k = make_model(1, 11, 1, 0.2, lambda x,y,z: 1.6)
     h, rxd, data, save_path = neuron_instance
     h.finitialize(1000)
     h.continuerun(10)
@@ -129,22 +137,20 @@ def test_ecs_diffusion_1d_cvode_tort(ecs_diffusion):
 
 def test_ecs_diffusion_0d_tort(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
-    model = make_model(1, 1, 1, 0.2, lambda x,y,z: 1.6)
+    ecs, k = make_model(1, 1, 1, 0.2, lambda x,y,z: 1.6)
     h, rxd, data, save_path = neuron_instance
     h.finitialize(1000)
     h.continuerun(10)
-    ecs, k = model
     if not save_path:
         assert k[ecs].states3d[0] == 1.0  
 
 def test_ecs_diffusion_0d_cvode_tort(ecs_diffusion):
     neuron_instance, make_model = ecs_diffusion
     h, rxd, data, save_path = neuron_instance
-    model = make_model(1, 1, 1, 0.2, lambda x,y,z: 1.6)
+    ecs, k = make_model(1, 1, 1, 0.2, lambda x,y,z: 1.6)
     h.CVode().active(True)
     h.finitialize(1000)
     h.continuerun(10)
-    ecs, k = model
     if not save_path:
         assert k[ecs].states3d[0] == 1.0
 
@@ -233,6 +239,4 @@ def test_ecs_diffusion_cvode_anisotropic(ecs_diffusion):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
-
-
 

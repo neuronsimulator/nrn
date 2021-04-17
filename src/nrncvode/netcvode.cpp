@@ -1363,7 +1363,6 @@ CvodeThreadData::CvodeThreadData() {
 	v_parent_ = nil;
 	psl_th_ = nil;
 	watch_list_ = nil;
-	ste_list_ = nil;
 	pv_ = nil;
 	pvdot_ = nil;
 	nvoffset_ = 0;
@@ -5253,7 +5252,7 @@ void WatchCondition::activate(double flag) {
 	Cvode* cv = NULL;
 	int id = 0;
 	qthresh_ = nil;
-	flag_ = (value() >= 0.) ? true: false;
+	flag_ = (value() >= -hoc_epsilon) ? true: false;
 	valthresh_ = 0.;
 	nrflag_ = flag;
 	if (!pnt_) { // possible for StateTransitionEvent

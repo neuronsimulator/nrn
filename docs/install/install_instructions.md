@@ -70,13 +70,15 @@ from source.
 Currently, we are supporting two build systems:
 
 - [CMake](#build-cmake) (__recommended__)
-- [Autotools](#build-autotools) (legacy, minimum support)
+- [Autotools](#build-autotools) (legacy, minimum support - __will be DROPPED in the next release__)
 
-Starting with the 8.0 release, we recommend users to use CMake as the primary build system for NEURON.
+Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
 We would be grateful for any feedback or issues you encounter using the CMake-based build system.
-Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be happy to help. In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
+Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
+happy to help.
+In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
 
-**If you are using autotools, we highly recommend switching to CMake.**
+**If you are using autotools, we strongly recommend switching to CMake as of now.**
 
 ### Install Build Dependencies
 
@@ -197,14 +199,7 @@ build system, and they can be installed together as shown below:
   cd build
   ```
 
-3. If you are building on Cray systems with a GNU toolchain, you have to set the following environmental variable:
-
-  ```
-  export CRAYPE_LINK_TYPE=dynamic
-
-  ```
-
-4. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
+3. Run `cmake` with the appropriate options (see below for a list of common options). A full list of options
 can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildOptionDefaults.cmake`. e.g. a bare-bones installation:
 
 
@@ -216,14 +211,14 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   ```
 
-5. Build the code:
+4. Build the code:
 
   ```
-  make -j
-  make install
+  cmake --build . --parallel 8 --target install
   ```
+  Feel free to set the number of parallel jobs according to your system using the `--parallel` option.
 
-6. Set PATH and PYTHONPATH environmental variables to use the installation:
+5. Set PATH and PYTHONPATH environmental variables to use the installation:
 
   ```
   export PATH=/path/to/install/directory/bin:$PATH
@@ -253,6 +248,31 @@ performance on modern CPU and GPU architectures. CoreNEURON is designed as a lib
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
 step method. You can find detailed instructions [here](docs/coreneuron/how-to/coreneuron.md) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
+
+#### Run integrated tests
+
+**NEURON** includes also some unit and integration tests. To enable you need to set the `CMake` flag **-DNRN\_ENABLE\_TESTS=ON**.
+The tests lie in the `test` directory and cover various aspects of **NEURON**:
+* **CoreNEURON** integration (if enabled in build step)
+* Functionality and result regression test for [ringtest](https://github.com/neuronsimulator/ringtest) and [testcorenrn](https://github.com/neuronsimulator/testcorenrn)
+* HOC interpreter tests
+* Python interpreter tests
+* Parallel Context tests
+* Rx3d tests
+* Unit tests
+* GapJunction tests
+
+To run the tests it's needed to:
+  ```bash
+  cd nrn/build
+  cmake .. \
+   -DNRN_ENABLE_INTERVIEWS=OFF \
+   -DNRN_ENABLE_MPI=OFF \
+   -DNRN_ENABLE_RX3D=OFF \
+   -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
+  cmake --build . --parallel 8
+  ctest # use --parallel for speed, -R to run specific tests
+  ```
 
 <a name="build-autotools"></a>
 ### Install NEURON using Autotools
@@ -364,3 +384,26 @@ Make sure to LD_LIBRARY_PATH or DYLD_LIBRARY_PATH environmental variables. For e
 export LD_LIBRARY_PATH=/install/path/lib:$LD_LIBRARY_PATH. # on linux
 export DYLD_LIBRARY_PATH=/install/path/lib:$DYLD_LIBRARY_PATH. # on Mac OS
 ```
+
+* **How to build NEURON in cluster environment where build node architecture is different than compute node?**
+
+In cluster environment, sometime we have different architecture of login/build nodes than compute nodes (similar to
+cross-compile environment). NEURON has tools like `nocmodl`, `modlunit` which are executed on login/build
+nodes. If these tools are compiled with compute node architecture then we might see error like:
+
+```bash
+[ 10%] Generating ../../../src/nrnoc/syn.c
+Please verify that both the operating system and the processor support Intel(R) AVX512ER and AVX512PF instructions.
+```
+or even `segmentation fault` when MOD files are translated to C files.
+
+To avoid this, we have to build nocmodl, modlunit with login/build node architecture. NEURON by default set `-O0` compile flag for these tools to avoid compiler generating architecture specific instructions. But if this is not sufficient, you can set `NRN_NMODL_CXX_FLAGS` CMake option specifying which compiler flags should be used. For example:
+
+```bash
+cmake .. [other options] \
+    -DCMAKE_CXX_FLAGS="-O3 -xMIC-AVX512" \
+    -DCMAKE_BUILD_TYPE=Custom \
+    -DNRN_NMODL_CXX_FLAGS="-xHost"
+```
+
+In the above example, we used custom build type with Intel compiler's `-xMIC-AVX512` flag for KNL architecture but used `-xHost` flag so that `nocmodl` and `modlunit` are compiled compatible with host architecture (i.e. node where NEURON is being built).

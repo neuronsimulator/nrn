@@ -62,6 +62,8 @@
 #    the comparison job with the magic name "reference_file". Paths are
 #    specified relative to the root of the NEURON repository.
 # ~~~
+# Load the cpp_cc_build_time_copy helper function.
+include("${CODING_CONV_CMAKE}/build-time-copy.cmake")
 function(nrn_add_test_group)
   # NAME is used as a key, everything else is a default that can be overriden in subsequent calls to
   # nrn_add_test
@@ -91,10 +93,6 @@ function(nrn_add_test_group)
   set(${prefix}_DEFAULT_MODFILE_PATTERNS
       "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}"
       PARENT_SCOPE)
-
-  # Create a target that depends on all the test binaries to ensure they are actually built.
-  # `nrn_add_test(...)` adds dependencies on this target.
-  add_custom_target(${prefix} ALL)
 endfunction()
 
 function(nrn_add_test)
@@ -190,7 +188,7 @@ function(nrn_add_test)
   # First, make sure the specified submodule is initialised. If there is no submodule, everything is
   # relative to the root nrn/ directory.
   if(NOT ${git_submodule} STREQUAL "")
-    initialize_submodule(external/${git_submodule})
+    cpp_cc_git_submodule(${git_submodule} QUIET)
     # Construct the name of the source tree directory where the submodule has been checked out.
     set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${git_submodule}")
   else()
@@ -238,21 +236,20 @@ function(nrn_add_test)
   set(nrnivmodl_working_directory "${PROJECT_BINARY_DIR}/test/nrnivmodl/${nrnivmodl_command_hash}")
   # Short-circuit in case we set up these rules already
   if(NOT TARGET ${binary_target_name})
-    # Construct the names of the modfiles in the build tree, i.e. the filenames from ${modfiles}
-    # with the path ${nrnivmodl_working_directory} in front
+    # Copy modfiles from source -> build tree.
     foreach(modfile ${modfiles})
+      # Construct the build tree path of the modfile.
       get_filename_component(modfile_name "${modfile}" NAME)
-      list(APPEND modfile_build_paths "${nrnivmodl_working_directory}/${modfile_name}")
+      set(modfile_build_path "${nrnivmodl_working_directory}/${modfile_name}")
+      # Add a build rule that copies this modfile from the source tree to the build tree.
+      cpp_cc_build_time_copy(
+        INPUT "${modfile}"
+        OUTPUT "${modfile_build_path}"
+        NO_TARGET)
+      # Store a list of the modfile paths in the build tree so we can declare nrnivmodl's dependency
+      # on these.
+      list(APPEND modfile_build_paths "${modfile_build_path}")
     endforeach()
-    # Add a custom command that copies the modfiles into the build tree, the nrnivmodl command can
-    # then depend on its input modfiles. copy_if_different would create the directory if we had >1
-    # modfile, but in case there is only one then we should create the directory manually.
-    file(MAKE_DIRECTORY "${nrnivmodl_working_directory}")
-    add_custom_command(
-      OUTPUT ${modfile_build_paths}
-      DEPENDS ${modfiles}
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${modfiles} "${nrnivmodl_working_directory}"
-      COMMENT "Copying modfiles needed for test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
     # Construct the names of the important output files
     set(special "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special")
     # Add the custom command to generate the binaries. Get nrnivmodl from the build directory. At
@@ -275,7 +272,6 @@ function(nrn_add_test)
         )
       endif()
       list(APPEND nrnivmodl_dependencies ${CORENEURON_BUILTIN_MODFILES})
-      message(STATUS nrnivmodl_dependencies ${nrnivmodl_dependencies})
     endif()
     add_custom_command(
       OUTPUT ${output_binaries}
@@ -283,10 +279,8 @@ function(nrn_add_test)
       COMMAND ${nrnivmodl_command}
       COMMENT "Building special[-core] for test ${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}"
       WORKING_DIRECTORY ${nrnivmodl_working_directory})
-    # Add a target that depends on the binaries
-    add_custom_target(${binary_target_name} DEPENDS ${output_binaries})
-    # Make the test-group-level target depend on this new target.
-    add_dependencies(${prefix} ${binary_target_name})
+    # Add a target that depends on the binaries that will always be built.
+    add_custom_target(${binary_target_name} ALL DEPENDS ${output_binaries})
   endif()
 
   # Set up the actual test. First, collect the script files that need to be copied into the test-
@@ -305,17 +299,22 @@ function(nrn_add_test)
       RELATIVE "${test_source_directory}"
       "${test_source_directory}/${script_pattern}")
     foreach(script_file ${script_files})
-      add_custom_command(
-        TARGET ${prefix}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${test_source_directory}/${script_file}"
-                "${working_directory}/${script_file}")
+      # We use NO_TARGET because otherwise we would in some cases generate a lot of
+      # build-time-copy-{hash} top-level targets, which the Makefile build system struggles with.
+      # Instead we make a single top-level target that depends on all scripts copied for this test.
+      cpp_cc_build_time_copy(
+        INPUT "${test_source_directory}/${script_file}"
+        OUTPUT "${working_directory}/${script_file}"
+        NO_TARGET)
+      list(APPEND all_copied_script_files "${working_directory}/${script_file}")
     endforeach()
   endforeach()
 
   # Construct the name of the test and store it in a parent-scope list to be used when setting up
   # the comparison job
   set(test_name "${NRN_ADD_TEST_GROUP}::${NRN_ADD_TEST_NAME}")
+  add_custom_target(copy-scripts-${NRN_ADD_TEST_GROUP}-${NRN_ADD_TEST_NAME} ALL
+                    DEPENDS ${all_copied_script_files})
   set(group_members "${${prefix}_TESTS}")
   list(APPEND group_members "${test_name}")
   set(${prefix}_TESTS
@@ -439,21 +438,13 @@ function(nrn_add_test_group_comparison)
     string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${test_directory}/\\2"
                          reference_file_string_addition "${reference_expression}")
     set(reference_file_string "${reference_file_string}::${reference_file_string_addition}")
-    add_custom_command(
-      TARGET ${prefix}
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PROJECT_SOURCE_DIR}/${reference_path}"
-              "${test_directory}/${reference_path}"
-      COMMENT "Copying reference file for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
+    cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/${reference_path}"
+                           OUTPUT "${test_directory}/${reference_path}")
   endforeach()
 
   # Copy the comparison script
-  add_custom_command(
-    TARGET ${prefix}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py" "${test_directory}"
-    COMMENT "Copying test comparison script for test group ${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}")
+  cpp_cc_build_time_copy(INPUT "${PROJECT_SOURCE_DIR}/test/scripts/compare_test_results.py"
+                         OUTPUT "${test_directory}/compare_test_results.py")
 
   # Add a test job that compares the results of the previous test jobs
   set(comparison_name "${NRN_ADD_TEST_GROUP_COMPARISON_GROUP}::compare_results")
