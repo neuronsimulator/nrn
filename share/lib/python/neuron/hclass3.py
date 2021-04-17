@@ -5,7 +5,7 @@
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
-__all__ = ["hclass", "nonlocal_hclass", "HocBaseObject"]
+__all__ = ["hclass", "HocBaseObject"]
 
 from . import h, hoc
 import nrn
