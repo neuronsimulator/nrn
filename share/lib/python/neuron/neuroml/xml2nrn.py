@@ -3,7 +3,7 @@
 # for the latest version of this file.
 #
 
-# 1 for verbose debug mode 
+# 1 for verbose debug mode
 debug = 0
 
 class Point:
@@ -18,10 +18,10 @@ class Point:
     self.y_ = y
     self.z_ = z
     self.d_ = diam
-    
+
   def __str__(self):
     return "Point: "+ str(self.id_)+ ", ("+str(self.x_)+ ", "+str(self.y_)+ ", "+str(self.z_)+ " | "+str(self.d_)+ ") , par: "+str(self.pid_)+", cable id: "+str(self.cid_)
-    
+
 class Cable:
   def __init__(self, id, pid, ipnt):
     self.first_ = ipnt
@@ -41,7 +41,7 @@ class CableGroup:
     self.name_ = name
     self.cable_indices_ = []
     self.mechs_ = []
-    
+
   def __str__(self):
     info = "CableGroup: "+ self.name_
     for ci in self.cable_indices_:
@@ -53,7 +53,7 @@ class BioParm:
     self.name_ = name
     self.value_ = value
     self.group_index_ = -1
-    
+
   def __str__(self):
     return "BioParm: "+ self.name_+ ", val: "+str(self.value_)+", grp id: "+str(self.group_index_)
 
@@ -61,7 +61,7 @@ class BioMech:
   def __init__(self, name):
     self.name_ = name
     self.parms_ = []
-    
+
   def __str__(self):
     info = "BioMech: "+ self.name_
     for p in self.parms_:

@@ -9,16 +9,16 @@ endif
 ctng.cpp: ctng.pyx
 	$(CYTHON) -2 $(geosrc)/ctng.pyx -o ctng.cpp
 
-surfaces.cpp: surfaces.pyx 
+surfaces.cpp: surfaces.pyx
 	$(CYTHON) -2 $(geosrc)/surfaces.pyx -o surfaces.cpp
 
 
 graphicsPrimitives.cpp: graphicsPrimitives.pyx
 	$(CYTHON) -2 $(geosrc)/graphicsPrimitives.pyx -o graphicsPrimitives.cpp
 
-pkginclude_HEADERS = 
+pkginclude_HEADERS =
 EXTRA_DIST = ctng.cpp ctng.pyx surfaces.cpp surfaces.pyx \
-	graphicsPrimitives.cpp graphicsPrimitives.pyx 
+	graphicsPrimitives.cpp graphicsPrimitives.pyx
 
 if BUILD_RX3D
 if BUILD_MINGW
@@ -28,7 +28,7 @@ mingwargs = @rxd_mingw_args@
 force: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 else
 mingwargs =
-install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp 
+install-exec-am: ctng.cpp surfaces.cpp graphicsPrimitives.cpp
 endif
 	if test ! -f graphicsPrimitives.cpp ; then \
 		cp $(geosrc)/graphicsPrimitives.cpp  . ; \

@@ -29,6 +29,3 @@ INITIAL {
 BREAKPOINT {
   ica = gca*(v-myeca)
 }
-
-
-

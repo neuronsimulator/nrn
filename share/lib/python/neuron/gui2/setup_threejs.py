@@ -49040,7 +49040,7 @@ function ThreeContainer(container_name) {
     this.height = $('#' + container_name).height();
     this.container = document.getElementById(container_name);
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, .01, 10000); //OrthographicCamera(this.width / -2, this.width / 2, this.height / -2, this.height / 2, 1, 1000) // 
+    this.camera = new THREE.PerspectiveCamera(60, this.width / this.height, .01, 10000); //OrthographicCamera(this.width / -2, this.width / 2, this.height / -2, this.height / 2, 1, 1000) //
     this.camera.position.set(0, 0, 500);
 
     this.renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});

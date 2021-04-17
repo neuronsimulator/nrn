@@ -11,5 +11,3 @@ soma.nseg = 7
 assert(len(c[r].nodes) == 7)
 h.tstop = 100
 h.run()
-
-

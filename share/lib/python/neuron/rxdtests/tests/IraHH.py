@@ -25,18 +25,18 @@ dir(neuron.units)
 
 
 #parameters
-h.celsius = 6.3 
+h.celsius = 6.3
 e = 1.60217662e-19
 scale = 1e-14/e
-gnabar =30e-3 *scale     # molecules/um2 ms mV 
+gnabar =30e-3 *scale     # molecules/um2 ms mV
 gnabar_l = 0.0247 *scale
 gkbar = 25e-3 *scale
 gkbar_l = 0.05e-3 *scale
 gclbar_l = 0.1e-3 *scale
 gl = 0.0003 *scale
-ukcc2 = 0.3 * mM/sec 
-unkcc1 = 0.1 * mM/sec 
-p_max = 0.8 * mM/sec 
+ukcc2 = 0.3 * mM/sec
+unkcc1 = 0.1 * mM/sec
+p_max = 0.8 * mM/sec
 alpha = 5.3
 epsilon = 0.17 * sec*(10**-1)
 g_gliamax = 5.0 * mM/sec
@@ -82,12 +82,12 @@ glia.pt3dadd(15,0,0,30)
 glia.nseg = 11
 
 vi = 2.0 * pi * (soma.diam/2.0)**2 * soma.L
-vo = 100.0*vi/beta_o 
+vo = 100.0*vi/beta_o
 
-surface_area = 2 * pi * soma.diam/2.0 * soma.L 
-volume = 2.0 * pi * (soma.diam/2)**2 * soma.L 
-glia_surface_area = 2.0 * pi * glia.diam/2.0 * glia.L 
-glia_volume = 2.0 * pi * (glia.diam/2.0)**2 * glia.L 
+surface_area = 2 * pi * soma.diam/2.0 * soma.L
+volume = 2.0 * pi * (soma.diam/2)**2 * soma.L
+glia_surface_area = 2.0 * pi * glia.diam/2.0 * glia.L
+glia_volume = 2.0 * pi * (glia.diam/2.0)**2 * glia.L
 volume_scale = avo*volume/surface_area * 10**-18
 glia_volume_scale = avo*glia_volume/glia_surface_area * 10**-18
 
@@ -104,7 +104,7 @@ glia_volume_scale = avo*glia_volume/glia_surface_area * 10**-18
 
 
 def concentration(i, o):
-    return lambda nd: i if isinstance(nd, rxd.node.Node1D) else o 
+    return lambda nd: i if isinstance(nd, rxd.node.Node1D) else o
 
 
 # In[7]:
@@ -129,7 +129,7 @@ cl = rxd.Species([cyt, mem, ecs], name='cl', d=1, charge=-1, initial=concentrati
 glial_na = rxd.Parameter([gcyt, gmem], name='na', charge=1, value=18)#Na in book is 55 for astrocyte
 glial_k = rxd.Parameter([gcyt, gmem], name='k', charge=1, value=80)
 dump = rxd.Parameter([cyt, mem, gcyt, gmem], name='dump')
-ki, ko, nai, nao, cli, clo, gnai, gki = k[cyt], k[ecs], na[cyt], na[ecs], cl[cyt], cl[ecs], glial_na[gcyt], glial_k[gcyt] 
+ki, ko, nai, nao, cli, clo, gnai, gki = k[cyt], k[ecs], na[cyt], na[ecs], cl[cyt], cl[ecs], glial_na[gcyt], glial_k[gcyt]
                                                                                #i = in cytosol (cyt) o = in extracellular (ecs)
 #extracellular oxygen concentration
 o2ecs = rxd.Species([ecs], name='o2ecs', initial=oa_bath)
@@ -137,9 +137,9 @@ o2ecs = rxd.Species([ecs], name='o2ecs', initial=oa_bath)
 #STATES-------------------------------------------------------------------------------------------------------------------------
 
 #gating variables (m, h, n)
-mgate = rxd.State([cyt, mem], name='mgate', initial=0.00787013592322398) 
-hgate = rxd.State([cyt, mem], name='hgate', initial=0.9981099795551048) 
-ngate = rxd.State([cyt, mem], name='ngate', initial=0.02284760152971809) 
+mgate = rxd.State([cyt, mem], name='mgate', initial=0.00787013592322398)
+hgate = rxd.State([cyt, mem], name='hgate', initial=0.9981099795551048)
+ngate = rxd.State([cyt, mem], name='ngate', initial=0.02284760152971809)
 
 #ALL EQUATIONS------------------------------------------------------------------------------------------------------------------
 
@@ -173,7 +173,7 @@ h_gate = rxd.Rate(hgate, (alpha_h * (1.0 - hgate)) - (beta_h * hgate))
 n_gate = rxd.Rate(ngate, (alpha_n * (1.0 - ngate)) - (beta_n * ngate))
 
 #d[O2]o/dt
-o2_ecs = rxd.Rate(o2ecs, (epsilon * (oa_bath - o2ecs))) 
+o2_ecs = rxd.Rate(o2ecs, (epsilon * (oa_bath - o2ecs)))
 
 #CURRENTS/LEAKS ----------------------------------------------------------------------------------------------------------------
 
@@ -199,14 +199,14 @@ na_leak = rxd.MultiCompartmentReaction(nai, nao, gnabar_l*(v - ena), mass_action
 k_leak = rxd.MultiCompartmentReaction(ki, ko, gkbar_l*(v - ek), mass_action=False, membrane=mem, membrane_flux=True)
 
 #Na+/K+ pump current in neuron (2K+ in, 3Na+ out)
-pump_current = rxd.MultiCompartmentReaction(ki, ko, -2.0*pump*volume_scale, mass_action=False, membrane=mem, membrane_flux=True) 
-pump_current_other_half = rxd.MultiCompartmentReaction(nai, nao, 3.0*pump*volume_scale, mass_action=False, membrane=mem, membrane_flux=True) 
+pump_current = rxd.MultiCompartmentReaction(ki, ko, -2.0*pump*volume_scale, mass_action=False, membrane=mem, membrane_flux=True)
+pump_current_other_half = rxd.MultiCompartmentReaction(nai, nao, 3.0*pump*volume_scale, mass_action=False, membrane=mem, membrane_flux=True)
 oxygen = rxd.MultiCompartmentReaction(o2ecs[ecs], dump[cyt], pump *volume_scale, mass_action=False, membrane=mem)
 goxygen = rxd.MultiCompartmentReaction(o2ecs[ecs], dump[gcyt], gliapump *glia_volume_scale, mass_action=False, membrane=gmem)
- 
+
 #Na+/K+ pump current in glia (2K+ in, 3Na+ out)
-gliapump_current = rxd.MultiCompartmentReaction(2*gki, 2*ko, -gliapump *glia_volume_scale, mass_action=False, membrane=gmem, membrane_flux=True) 
-gliapump_current_other_half = rxd.MultiCompartmentReaction(3*gnai, 3*nao, gliapump *glia_volume_scale, mass_action=False, membrane=gmem, membrane_flux=True) 
+gliapump_current = rxd.MultiCompartmentReaction(2*gki, 2*ko, -gliapump *glia_volume_scale, mass_action=False, membrane=gmem, membrane_flux=True)
+gliapump_current_other_half = rxd.MultiCompartmentReaction(3*gnai, 3*nao, gliapump *glia_volume_scale, mass_action=False, membrane=gmem, membrane_flux=True)
 
 
 # In[8]:
@@ -234,4 +234,3 @@ h.finitialize(-70)
 #h.continuerun(100)
 #h.dt = 1
 h.continuerun(100)
-

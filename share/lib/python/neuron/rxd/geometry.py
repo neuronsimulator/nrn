@@ -23,7 +23,7 @@ class RxDGeometry:
     def __call__(self):
         """calling returns self to allow for rxd.inside or rxd.inside()"""
         return self
-        
+
 
 def _volumes1d(sec):
     if not isinstance(sec, nrn.Section):
@@ -37,9 +37,9 @@ def _volumes1d(sec):
         lo = iseg * dx
         hi = (iseg + 1) * dx
         pts = [lo] + [x for x in arc3d if lo < x < hi] + [hi]
-        
+
         diams = numpy.interp(pts, arc3d, diam3d)
-        
+
         # sum the volume of the constituent frusta
         volume = 0
         for i in range(len(pts) - 1):
@@ -65,9 +65,9 @@ def _make_surfacearea1d_function(scale, diam_scale=1.0):
             lo = iseg * dx
             hi = (iseg + 1) * dx
             pts = [lo] + [x for x in arc3d if lo < x < hi] + [hi]
-            
+
             diams = numpy.interp(pts, arc3d, diam3d)
-            
+
             # sum the surface areas of the constituent frusta
             sa = 0
             for i in range(len(pts) - 1):
@@ -88,12 +88,12 @@ def _make_perimeter_function(scale, diam_scale=1.0):
                   for i in range(sec.n3d())]
         area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
         diams = numpy.interp(area_pos, arc3d, diam3d)
-        return scale * diams  
+        return scale * diams
     return result
-        
+
 _surface_areas1d = _make_surfacearea1d_function(numpy.pi)
 _perimeter1d = _make_perimeter_function(numpy.pi)
-    
+
 def _neighbor_areas1d(sec):
     if not isinstance(sec, nrn.Section):
         sec = sec._sec
@@ -155,21 +155,21 @@ _lo_hi_shell = Enum()
 
 class DistributedBoundary(RxDGeometry):
     """Boundary that scales with area.
-    
+
     DistributedBoundary(area_per_vol, perim_per_area=0)
-    
+
     area_per_vol is the area of the boundary as a function of the volume
-    containing it. e.g.    
-    
+    containing it. e.g.
+
     g = DistributedBoundary(2) defines a geometry with 2 um^2 of area per
     every um^3 of volume.
-    
+
     perim_per_area is the perimeter (in um) per 1 um^2 cross section of the
     volume. For use in reaction-diffusion problems, it may be safely omitted
     if and only if no species in the corresponding region diffuses.
-    
+
     This is often useful for separating FractionalVolume objects.
-    
+
     It is assumed that the area is always strictly on the interior.
     """
     def __init__(self, area_per_vol, perim_per_area=0):
@@ -181,16 +181,16 @@ class DistributedBoundary(RxDGeometry):
         self.volumes1d = scale_by_constant(area_per_vol, _volumes1d)
         self.is_volume = _always_false
         self.is_area = _always_true
-    
+
     @property
     def neighbor_area_fraction(self):
         # TODO: validate that this gives consistent results between 1D and 3D
         return self._perim_per_area
-        
+
     def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
         #mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx)
         #volumes._values *= self._area_per_vol # volume on 2D boundaries is actually the area; the amount of space for holding things
-        #surface_areas._values *= 0 
+        #surface_areas._values *= 0
         #return mesh, surface_areas, volumes, triangles
         internal_voxels, surface_voxels, mesh_grid = geometry3d.voxelize2(source, dx=dx)
         area_per_vol = self._area_per_vol
@@ -199,7 +199,7 @@ class DistributedBoundary(RxDGeometry):
         for key in surface_voxels:
             surface_voxels[key][0] *= area_per_vol
         return internal_voxels, surface_voxels, mesh_grid
-    
+
     def __repr__(self):
         if self._perim_per_area == 0:
             return 'DistributedBoundary(%g)' % (self._area_per_vol)
@@ -229,7 +229,7 @@ class FractionalVolume(RxDGeometry):
         self._neighbor_areas_fraction = neighbor_areas_fraction
         # TODO: does the else case ever make sense?
         self.neighbor_area_fraction = volume_fraction if neighbor_areas_fraction is None else neighbor_areas_fraction
-        
+
     def volumes3d(self, source, dx=0.25, xlo=None, xhi=None, ylo=None, yhi=None, zlo=None, zhi=None, n_soma_step=100):
         #mesh, surface_areas, volumes, triangles = geometry3d.voxelize2(source, dx=dx)
         #surface_areas._values *= self._surface_fraction
@@ -242,7 +242,7 @@ class FractionalVolume(RxDGeometry):
         for key in surface_voxels:
             surface_voxels[key][0] *= volume_fraction
         return internal_voxels, surface_voxels, mesh_grid
-    
+
     def __repr__(self):
         return 'FractionalVolume(volume_fraction=%r, surface_fraction=%r, neighbor_areas_fraction=%r)' % (self._volume_fraction, self._surface_fraction, self._neighbor_areas_fraction)
 
@@ -256,7 +256,7 @@ class ConstantVolume(RxDGeometry):
         self.is_volume = _always_true
         self.is_area = _always_false
         self.neighbor_areas1d = constant_everywhere_plus_one_1d(neighbor_area)
-    
+
 
 
 
@@ -269,10 +269,10 @@ class FixedCrossSection(RxDGeometry):
         self.neighbor_areas1d = constant_everywhere_plus_one_1d(cross_area)
         self._cross_area = cross_area
         self._surface_area = surface_area
-        
+
     def __repr__(self):
         return 'FixedCrossSection(%r, surface_area=%r)' % (self._cross_area, self._surface_area)
-    
+
 class FixedPerimeter(RxDGeometry):
     def __init__(self, perimeter, on_cell_surface=False):
         self.volumes1d = constant_function_per_length(perimeter)
@@ -291,7 +291,7 @@ class ScalableBorder(RxDGeometry):
     """a membrane that scales proportionally with the diameter.
 
     Example use:
-    
+
     - the boundary between radial shells e.g.
       ScalableBorder(diam_scale=0.5) could represent the border of
       Shell(lo=0, hi=0.5)
@@ -324,8 +324,8 @@ class ScalableBorder(RxDGeometry):
         else:
             self._scale = numpy.pi
             self._diam_scale = 1.0
-        
-        self.volumes1d = _make_surfacearea1d_function(self._scale, 
+
+        self.volumes1d = _make_surfacearea1d_function(self._scale,
                                                       self._diam_scale)
         self.surface_areas1d = _always_0 if not on_cell_surface else self.volumes1d
         self.is_volume = _always_false
@@ -336,7 +336,7 @@ class ScalableBorder(RxDGeometry):
     def __repr__(self):
         return 'ScalableBorder(%r, on_cell_surface=%r)' % (self._scale, self._on_surface)
 
-# TODO: remove this, use FixedPerimeter instead?        
+# TODO: remove this, use FixedPerimeter instead?
 class ConstantArea(RxDGeometry):
     def __init__(self, area=1, perim=1, on_cell_surface=False):
         # TODO: fix this
@@ -355,14 +355,14 @@ class Shell(RxDGeometry):
     def __init__(self, lo=None, hi=None):
         if lo is None or hi is None:
             raise RxDException('only Shells with a lo and hi are supported for now')
-        
+
         if lo > hi: lo, hi = hi, lo
         if lo == hi:
             raise RxDException('Shell objects must have thickness')
         self._type = _lo_hi_shell
         self._lo = lo
         self._hi = hi
-        
+
         if lo == 1 or hi == 1:
             self.surface_areas1d = _surface_areas1d
         elif lo < 1 < hi:
@@ -370,10 +370,10 @@ class Shell(RxDGeometry):
         else:
             # TODO: is this what we want; e.g. what if lo < 1 < hi?
             self.surface_areas1d = _always_0
-    
+
     def __repr__(self):
         return 'Shell(lo=%r, hi=%r)' % (self._lo, self._hi)
-    
+
     def neighbor_areas1d(self, sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -385,10 +385,10 @@ class Shell(RxDGeometry):
         diams = numpy.interp(area_pos, arc3d, diam3d)
         if self._type == _lo_hi_shell:
             return numpy.pi * .25 * ((diams * self._hi) ** 2 - (diams * self._lo) ** 2)
-    
+
     def is_volume(self): return True
     def is_area(self): return False
-    
+
     def volumes1d(self, sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
@@ -403,9 +403,9 @@ class Shell(RxDGeometry):
             lo = iseg * dx
             hi = (iseg + 1) * dx
             pts = [lo] + [x for x in arc3d if lo < x < hi] + [hi]
-            
+
             diams = numpy.interp(pts, arc3d, diam3d)
-            
+
             # sum the volume of the constituent frusta, hollowing out by the inside
             volume = 0
             for i in range(len(pts) - 1):
@@ -419,14 +419,14 @@ class Shell(RxDGeometry):
 
 class MultipleGeometry(RxDGeometry):
     """ support for different geometries on different sections of a region.
-    
+
     Example use:
     - for radial diffusion in a dendrite (dend) with longitudinal diffusion
       from a spine (spine). The region for the outer shell of the dendrite
       (0.8,1] should include the while spine [0,1];
       MultipleGeometry(secs=[dend,spine], geos=[Shell(0.8,1), rxd.inside])
 
-    Args:   
+    Args:
     sections (list, optional) a list or list-of-lists of sections where the
         corresponding geometry should be used. If None the same geometry used
         for all sections, otherwise the list must be the same length as the

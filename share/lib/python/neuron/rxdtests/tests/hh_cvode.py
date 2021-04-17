@@ -6,10 +6,10 @@ from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 h.CVode().active(True)
 # parameters
-h.celsius = 6.3 
+h.celsius = 6.3
 e = 1.60217662e-19
 scale = 1e-14/e
-gnabar = 0.12*scale     # molecules/um2 ms mV 
+gnabar = 0.12*scale     # molecules/um2 ms mV
 gkbar = 0.036*scale
 gl = 0.0003*scale
 el = -54.3
@@ -64,7 +64,7 @@ ecs = rxd.Extracellular(-100, -100, -100, 100, 100, 100, dx=100)
 # Who?
 def init(ics,ecs):
     return lambda nd: ecs if isinstance(nd,rxd.node.NodeExtracellular) else ics
-    
+
 # ions
 k = rxd.Species([cyt, mem, ecs], name='k', d=1e3, charge=1,
                 initial=init(54.4, 2.5), ecs_boundary_conditions=2.5)
@@ -136,7 +136,7 @@ nvecB = h.Vector().record(somaB(0.5).hh._ref_n)
 hvecB = h.Vector().record(somaB(0.5).hh._ref_h)
 tvec = h.Vector().record(h._ref_t)
 
-# run 
+# run
 h.dt=0.025
 h.finitialize(-70)
 #for i in range(1000):
@@ -175,7 +175,3 @@ pyplot.plot(tvec, kvecA.as_numpy()-kvecB, '-b', label='k')
 pyplot.plot(tvec, navecA.as_numpy()-navecB, '-r', label='na')
 pyplot.legend()
 fig.set_dpi(200)
-
-
-
-

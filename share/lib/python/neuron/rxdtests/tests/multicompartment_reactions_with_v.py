@@ -32,7 +32,7 @@ rescale_v = 1000/-65.0
 #any resemblance to experimental values is purely coincidental.
 fc = 0.7
 fe = 0.3
-caCYT_init=0.1 
+caCYT_init=0.1
 
 
 cyt = rxd.Region(h.allsec(), name='cyt', nrn_region='i', geometry=rxd.FractionalVolume(fc,surface_fraction=1))

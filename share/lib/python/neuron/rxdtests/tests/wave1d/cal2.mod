@@ -4,7 +4,7 @@ TITLE L-calcium channel
 : accumulation in hippocampal pyramidal neurons based on fluorescence imaging measurements. J. Neurophysiol. 71:1O65-1077 1994.
 : conduction density estimate of 50-200 pS/mu2; 0.0025 S/cm2 (5-20 channels of 10 each)
 : M. Migliore, E. Cook, D.B. Jaffe, D.A. Turner and D. Johnston, Computer simulations of morphologically reconstructed CA3
-: hippocampal neurons, J. Neurophysiol. 73, 1157-1168 (1995). 
+: hippocampal neurons, J. Neurophysiol. 73, 1157-1168 (1995).
 : adapted from http://senselab.med.yale.edu/modeldb/ShowModel.asp?model=3263&file=\ca3_db\cal2.mod
 : this version from https://senselab.med.yale.edu/ModelDB/ShowModel.asp?model=148094&file=\kv72-R213QW-mutations\cal2.mod
 : Miceli F, Soldovieri MV, Ambrosino P, Barrese V, Migliore M, Cilio MR, Taglialatela M (2013) Genotype-phenotype
@@ -32,7 +32,7 @@ PARAMETER {
   a0m =0.1
   zetam = 2
   vhalfm = 4
-  gmm=0.1	
+  gmm=0.1
   ggk
 }
 
@@ -104,14 +104,14 @@ FUNCTION bet(v(mV)) (1/ms) {
 }
 
 FUNCTION alpmt(v(mV)) {
-  alpmt = exp(0.0378*zetam*(v-vhalfm)) 
+  alpmt = exp(0.0378*zetam*(v-vhalfm))
 }
 
 FUNCTION betmt(v(mV)) {
-  betmt = exp(0.0378*zetam*gmm*(v-vhalfm)) 
+  betmt = exp(0.0378*zetam*gmm*(v-vhalfm))
 }
 
-DERIVATIVE state {  
+DERIVATIVE state {
   rate(v)
   m' = (minf - m)/tau
 }

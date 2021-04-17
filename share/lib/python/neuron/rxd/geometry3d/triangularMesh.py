@@ -18,7 +18,7 @@ class TriangularMesh:
     """
     A triangular mesh, typically of a surface.
     """
-    
+
     def __init__(self, data):
         """
         Parameters
@@ -27,22 +27,22 @@ class TriangularMesh:
             The raw data, listed in the form `(x0, y0, z0, x1, y1, z1, x2, y2, z2)` repeated.
         """
         self.data = data
-    
+
     @property
     def x(self):
         """The x coordinates of the vertices."""
         return self.data[0 :: 3]
-    
+
     @property
     def y(self):
         """The y coordinates of the vertices."""
         return self.data[1 :: 3]
-    
+
     @property
     def z(self):
         """The z coordinates of the vertices."""
         return self.data[2 :: 3]
-    
+
     @property
     def faces(self):
         """A list of the triangles, described as lists of the indices of three points."""
@@ -55,15 +55,15 @@ class TriangularMesh:
 
     def has_unmatched_edge(self, precision=3):
         """Checks for edges that belong to only one triangle. True if they exist; else False.
-        
+
         Parameters
         ----------
         precision : int, optional
             Number of digits after the decimal point to round to when comparing points.
         """
-        
+
         scale_factor = 10 ** precision
-        
+
         data = self.data
         pt_neighbor_map = {}
         for i in range(0, len(self.data), 9):
@@ -102,12 +102,11 @@ class TriangularMesh:
 
         if edge_count: return True
         #print 'total exposed edges: ', edge_count
-        
+
         #bad_x = [pt[0] for pt in bad_pts]
         #bad_y = [pt[1] for pt in bad_pts]
         #bad_z = [pt[2] for pt in bad_pts]
-        
-        #mlab.points3d(bad_x, bad_y, bad_z, scale_factor=0.05, color=(0,0,1))
-        
-        return False
 
+        #mlab.points3d(bad_x, bad_y, bad_z, scale_factor=0.05, color=(0,0,1))
+
+        return False

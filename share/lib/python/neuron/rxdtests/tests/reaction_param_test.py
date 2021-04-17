@@ -9,7 +9,7 @@ axon_terminal = h.Section(name="axon_terminal")
 #synaptic_cleft = rxd.Region([axon_terminal], nrn_region='o')
 axon_terminal_region = rxd.Region([axon_terminal], nrn_region='i')
 
-ca_intra = rxd.Species(axon_terminal_region, name="ca", 
+ca_intra = rxd.Species(axon_terminal_region, name="ca",
                  charge=2, d=0, initial=5e-4, atolscale=1e-6)
 F = rxd.Species(axon_terminal_region, name="F", initial=0.001)
 FA = rxd.Species(axon_terminal_region, name="FA", initial=0)

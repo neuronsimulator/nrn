@@ -69,7 +69,7 @@ class middle_man:
 		elif type(compartment) != str or len(compartment) < 1: return 2
 
 		temp_species = species(name,compartment,initial_amount)
-		id_name = name+ '_' + compartment 
+		id_name = name+ '_' + compartment
 		self.species[id_name] = temp_species
 
 	#add compartment to structure
@@ -94,7 +94,7 @@ class middle_man:
 	def add_unit_def(self,name):
 		temp_unitdef = unit_definition(name)
 		self.unit_defs[name] = temp_unitdef
-		
+
 	#add a unit to an already defined unit
 	def add_unit(self,unit_def,kind,exponent,scale):
 		self.unit_defs[unit_def].units.append([kind,exponent,scale])
@@ -185,18 +185,18 @@ class middle_man:
 def sbml(segment,filename=None,model_name = None,pretty=True):
 	rxd.initializer._do_init()
 	section = segment.sec
-	if model_name != None: output = middle_man(model_name) 
+	if model_name != None: output = middle_man(model_name)
 	else: output = middle_man(section.name())
 	regions = section.psection()['regions']
 	species = section.psection()['species']
 
-	for i in regions: 
+	for i in regions:
 		node = None
 		for j in species:
 			if i in j.regions or j.regions == [None]:
 				node = j.nodes(segment)[0]
 		output.add_compartment(i.name,size=node.volume)
-	
+
 	for i in species:
 		if isinstance(i,rxd.Parameter):
 			node = i.nodes(segment)[0]
@@ -213,13 +213,13 @@ def sbml(segment,filename=None,model_name = None,pretty=True):
 			output.add_species(name=i.name,compartment=j.name,initial_amount=tempInitial)
 
 
-	for i in rxd.rxd._all_reactions: 
+	for i in rxd.rxd._all_reactions:
 		if isinstance(i,rxd.MultiCompartmentReaction): RxDException("Cannot export MultiCompartmentReactions")
 
 
 	#MIGHT BE A PROBLEM WHEN MULTI COMPARTMENT REACTIONS
 	reactions = [r() for r in rxd.rxd._all_reactions if (any([((reg in r()._active_regions) or (reg is None)) for reg in r()._regions])) and isinstance(r(),rxd.Reaction)]
-	
+
 	rates = [r() for r in rxd.rxd._all_reactions if (any([((reg in r()._active_regions) or (reg is None)) for reg in r()._regions])) and isinstance(r(),rxd.Rate)]
 
 	num = 0

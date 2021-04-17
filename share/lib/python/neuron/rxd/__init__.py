@@ -35,7 +35,5 @@ def _model_view(tree):
         # TODO: do the species disappear if they go out of scope? or does this overcount?
         rxd_species = h.TreeViewItem(rxd_head, '%d Species/State/Parameter' % len(species_dict))
         species_children = [h.TreeViewItem(rxd_species, str(name)) for name in species_dict]
-        rxd_reactions = h.TreeViewItem(rxd_head, '%d Reaction/Rate/MultiCompartmentReaction' % len([r for r in rxd._all_reactions if r() is not None]))        
+        rxd_reactions = h.TreeViewItem(rxd_head, '%d Reaction/Rate/MultiCompartmentReaction' % len([r for r in rxd._all_reactions if r() is not None]))
         tree.append(rxd_head)
-
-

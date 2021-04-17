@@ -85,4 +85,3 @@ else:
                                  include_dirs=include_dirs)],
     )
     #    package_dir = {'': instdir + '/share/lib/python/neuron/rxd/geometry3d'}
-

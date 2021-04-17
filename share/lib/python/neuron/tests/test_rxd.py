@@ -34,7 +34,7 @@ def scalar_bistable():
     cmpV.sub(result)
     cmpV.abs()
     if cmpV.sum() < 1e-6:
-        sys.exit(0) 
+        sys.exit(0)
     sys.exit(-1)
 
 def trivial_ecs(scale):
@@ -67,8 +67,8 @@ def trivial_ecs(scale):
 
     # define the extracellular species
     k_rxd = rxd.Species(extracellular, name='k', d=2.62, charge=1,
-                        atolscale=scale, initial=lambda nd: 1.0 if 
-                        abs(nd.x3d) <= L/2. and abs(nd.y3d) <= L/2. and 
+                        atolscale=scale, initial=lambda nd: 1.0 if
+                        abs(nd.x3d) <= L/2. and abs(nd.y3d) <= L/2. and
                         abs(nd.z3d) <= L/2. else 0.0)
 
     # record the concentration at (0,0,0)
@@ -76,14 +76,14 @@ def trivial_ecs(scale):
     ecs_vec.record(k_rxd[extracellular].node_by_location(0, 0, 0)._ref_value)
     h.finitialize()
     h.continuerun(tstop) #run the simulation
-    
-    # compare with previous solution 
+
+    # compare with previous solution
     ecs_vec.sub(h.Vector(trivial_ecs_data[scale]))
     ecs_vec.abs()
     if ecs_vec.sum() > 1e-9:
         return -1
     return 0
-    
+
 
 class RxDTestCase(unittest.TestCase):
     """Tests of rxd"""
@@ -93,34 +93,34 @@ class RxDTestCase(unittest.TestCase):
         p.start()
         p.join()
         assert(p.exitcode == 0)
-        return 0 
+        return 0
 
     def test_ecs_diffusion_fixed_step(self):
         p = Process(target=trivial_ecs, args=(False,))
         p.start()
         p.join()
         assert(p.exitcode == 0)
-        return 0  
+        return 0
 
     def test_ecs_diffusion_variable_step_coarse(self):
         p = Process(target=trivial_ecs, args=(1e-2,))
         p.start()
         p.join()
         assert(p.exitcode == 0)
-        return 0 
+        return 0
 
     def test_ecs_diffusion_variable_step_fine(self):
         p = Process(target=trivial_ecs, args=(1e-5,))
         p.start()
         p.join()
         assert(p.exitcode == 0)
-        return 0 
+        return 0
 
 
 def suite():
     suite = unittest.makeSuite(RxDTestCase,'test')
     return suite
-    
+
 def test():
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())

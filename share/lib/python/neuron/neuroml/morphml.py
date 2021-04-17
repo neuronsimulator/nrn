@@ -1,7 +1,7 @@
 from .xml2nrn import *
 
 def cable(self, node):
-    self.lastcabid_ =-1 
+    self.lastcabid_ =-1
     if self.in_cablegroup_:
       self.cablegroups_[-1].cable_indices_.append(self.cableid2index_[int(node.get('id'))])
     else:
@@ -23,7 +23,7 @@ def cablegroup(self, node):
 
 def cables(self, node):
   pass
-      
+
 def distal(self, node):
     pt = Point(self.id, self.pid, self.cid, self.locator.getLineNumber())
     self.ptid2pt_[self.id] = pt
@@ -53,7 +53,7 @@ def proximal(self, node):
     if debug:
         print("Proximal: "+ str(pt))
         print("Cable ", self.cable_.id_, " has ", self.cable_.pcnt_, " points")
-  
+
 def segment(self, node):
     self.id = int(node.get('id'))
     self.cid = int(node.get('cable'))
@@ -64,10 +64,10 @@ def segment(self, node):
       parent_cable_id = self.ptid2pt_[self.pid].cid_
     else:
       self.pid = -1
-            
+
     if debug:
         print("\nsegment id=", self.id , "  cable=", self.cid, " parent id=", self.pid, " parent_cable_id=", parent_cable_id)
-                
+
     if self.cable_ == None :
       self.cable_ = Cable(self.cid, self.pid, len(self.points_))
       self.cableid2index_[self.cid] = len(self.cables_)
@@ -82,12 +82,12 @@ def segment(self, node):
 def segments(self, node):
     self.in_cablegroup_ = False
     self.points_ = []
-    self.cables_ = []   
+    self.cables_ = []
     self.cable_ = None
     self.id = -1
     self.cid = -1
     self.pid = -1
-    self.nprox = 0 
+    self.nprox = 0
     self.cableid2index_ = {}
     self.ptid2pt_ = {}
     self.cablegroups_ = []
@@ -99,12 +99,11 @@ def segments_end(self, node):
         ic=0
         ip=0
         for cab in self.cables_ :
-            ic += 1 
+            ic += 1
             for i in range(cab.first_, cab.first_ + cab.pcnt_):
                 pt = self.points_[i]
                 print(ip, pt.id_, pt.pid_, pt.x_, pt.y_, pt.z_, pt.d_)
                 ip += 1
         print("ncable=", ic, "  npoint=", ip, "   nprox=", self.nprox,"\n")
-        
-    return
 
+    return

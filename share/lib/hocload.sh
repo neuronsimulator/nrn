@@ -44,5 +44,3 @@ if [ -z "$file" ] ; then
 fi
 echo $file
 exit 0
-
-

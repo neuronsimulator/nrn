@@ -18,10 +18,10 @@ def _donothing(): pass
 class _SectionLookup:
     class Lookup:
         def __init__(self):
-            self.rxd_sec_list = {} 
+            self.rxd_sec_list = {}
             self.nrn_sec_list = h.SectionList()
     _instance = None
-    
+
     def __init__(self):
         if _SectionLookup._instance is None:
            _SectionLookup._instance = _SectionLookup.Lookup()
@@ -35,7 +35,7 @@ class _SectionLookup:
     def __setitem__(self, key, value):
         _SectionLookup._instance.nrn_sec_list.append(key)
         _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()] = value
-    
+
     def __delitem__(self, key):
         _SectionLookup._instance.nrn_sec_list.remove(key)
         if key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list:
@@ -106,7 +106,7 @@ def _purge_cptrs():
 def _transfer_to_legacy():
     global  _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     global _last_c_ptr_length
-    
+
     size = len(_all_cptrs)
     if _last_c_ptr_length != size:
         if size:
@@ -129,8 +129,8 @@ def replace(rmsec, offset, nseg):
     node._replace(rmsec._offset, rmsec._nseg, offset, nseg)
 
     # correct the offsets for all section1ds
-    old_offset = rmsec._offset 
-    dur = rmsec._nseg + 1 
+    old_offset = rmsec._offset
+    dur = rmsec._nseg + 1
     rmsec._offset = offset
     rmsec._nseg = nseg
 
@@ -173,7 +173,7 @@ class Section1D(rxdsection.RxDSection):
         if isinstance(other, nrn.Section):
             return self._sec == other
         return id(self) == id(other)
-    
+
     def __ne__(self, other):
         # necessary for Python 2 but not for Python 3
         return not (self == other)
@@ -205,8 +205,8 @@ class Section1D(rxdsection.RxDSection):
     def _delete(self):
         # memory in node global variables is handled by the species
         _rxd_sec_lookup = _SectionLookup()
-        
-        # remove ref to this section -- at exit weakref.ref might be none 
+
+        # remove ref to this section -- at exit weakref.ref might be none
         if self._sec:
             if self._sec in _rxd_sec_lookup:
                 sec_list = [s for s in _rxd_sec_lookup[self._sec] if s != self]
@@ -244,7 +244,7 @@ class Section1D(rxdsection.RxDSection):
     def indices(self):
         return list(range(self._offset, self._offset + self.nseg))
 
-        
+
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
         if self.nrn_region is not None and self.species.name is not None and self.species.charge != 0:
@@ -270,13 +270,13 @@ class Section1D(rxdsection.RxDSection):
     def nodes(self):
         dx = self.L / self.nseg
         return nodelist.NodeList([node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in range(self.nseg)])
-            
+
     def _transfer_to_legacy(self):
         states = node._get_states()
         if self._concentration_ptrs is not None:
             for i, ptr in zip(list(range(self._offset, self._offset + self.nseg)), self._concentration_ptrs):
                 ptr[0] = states[i]
-        
+
     def _register_cptrs(self):
         global _all_cptrs, _all_cindices
         if self.nrn_region is not None and self.species.name is not None:
@@ -390,8 +390,3 @@ class Section1D(rxdsection.RxDSection):
             self._parent = (parent_section, int(parent_sec.nseg * parent_seg.x))
         #print 'parent:', self._parent
         return root_id
-
-
-
-
-

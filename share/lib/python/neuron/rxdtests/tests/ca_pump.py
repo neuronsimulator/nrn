@@ -23,7 +23,7 @@ e = 1.60217662e-19
 scale = 1e-14 / e
 
 # rate constant is in terms of molecules/um2 ms
-ca_pump = rxd.MultiCompartmentReaction(ca[cyt], cao[ecs], ca[cyt] * scale, 
+ca_pump = rxd.MultiCompartmentReaction(ca[cyt], cao[ecs], ca[cyt] * scale,
                                        custom_dynamics=True,
                                        membrane_flux=True,
                                        membrane=mem)

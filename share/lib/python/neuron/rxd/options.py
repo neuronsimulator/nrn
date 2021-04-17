@@ -16,7 +16,7 @@ ics_distance_threshold = -1e-12
 ics_partial_volume_resolution = 2
 
 # resolution (relative to dx) of sampling points use to determine surface
-# areas of surface voxels. 
+# areas of surface voxels.
 ics_partial_surface_resolution = 1
 
 # the number of electrophysiology fixed steps per rxd step

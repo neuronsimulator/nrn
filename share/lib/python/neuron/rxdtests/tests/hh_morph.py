@@ -6,10 +6,10 @@ from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 # parameters
-h.celsius = 6.3 
+h.celsius = 6.3
 e = 1.60217662e-19
 scale = 1e-14/e
-gnabar = 0.12*scale     # molecules/um2 ms mV 
+gnabar = 0.12*scale     # molecules/um2 ms mV
 gkbar = 0.036*scale
 gl = 0.0003*scale
 el = -54.3
@@ -44,7 +44,7 @@ class Cell:
         h.define_shape()
         xlo = ylo = zlo = xhi = yhi = zhi = None
         for sec in self.all:
-            sec.nseg=1 
+            sec.nseg=1
             n3d = sec.n3d()
             xs = [sec.x3d(i) + ox for i in range(n3d)]
             ys = [sec.y3d(i) + oy for i in range(n3d)]
@@ -92,7 +92,7 @@ ecs = rxd.Extracellular(xl, yl, zl, xh, yh, zh, dx=50)
 
 def init(ics,ecs):
     return lambda nd: ecs if isinstance(nd,rxd.node.NodeExtracellular) else ics
-    
+
 # ions
 k = rxd.Species([cyt, mem, ecs], name='k', d=1, charge=1,
                 initial=init(54.4, 2.5))
@@ -164,7 +164,7 @@ nvecB = h.Vector().record(mycellB.soma[0](0.5).hh._ref_n)
 hvecB = h.Vector().record(mycellB.soma[0](0.5).hh._ref_h)
 tvec = h.Vector().record(h._ref_t)
 
-# run 
+# run
 h.dt=0.01
 h.finitialize(-70)
 #for i in range(1000):
@@ -213,5 +213,3 @@ pyplot.plot(tvec, kvecA.as_numpy()-kvecB, '-b', label='k')
 pyplot.plot(tvec, navecA.as_numpy()-navecB, '-r', label='na')
 pyplot.legend()
 fig.set_dpi(200)
-
-

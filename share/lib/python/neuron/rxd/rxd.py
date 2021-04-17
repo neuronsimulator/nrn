@@ -1,4 +1,4 @@
-from neuron import h, nrn, nrn_dll_sym 
+from neuron import h, nrn, nrn_dll_sym
 from . import species, node, section1d, region, generalizedReaction, constants
 from .nodelist import NodeList
 from .node import _point_indices
@@ -8,7 +8,7 @@ import ctypes
 import atexit
 from . import options
 from .rxdException import RxDException
-from . import initializer 
+from . import initializer
 import collections
 import os
 from distutils import sysconfig
@@ -75,7 +75,7 @@ free_conc_ptrs = nrn_dll_sym('free_conc_ptrs')
 free_curr_ptrs = nrn_dll_sym('free_curr_ptrs')
 clear_rates = nrn_dll_sym('clear_rates')
 register_rate = nrn_dll_sym('register_rate')
-register_rate.argtypes = [ 
+register_rate.argtypes = [
         ctypes.c_int,                                                               #num species
         ctypes.c_int,                                                               #num parameters
         ctypes.c_int,                                                               #num regions
@@ -101,7 +101,7 @@ setup_currents.argtypes = [
     _int_ptr,       #maps for membrane fluxes
     _int_ptr        #maps for ecs fluxes
 ]
-    
+
 
 ics_register_reaction = nrn_dll_sym('ics_register_reaction')
 ics_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,
@@ -118,7 +118,7 @@ ecs_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,
 
 
 set_hybrid_data = nrn_dll_sym('set_hybrid_data')
-set_hybrid_data.argtypes = [    
+set_hybrid_data.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
@@ -220,7 +220,7 @@ def byeworld():
     #    # if it already didn't exist, that's fine
         pass
     _windows_remove_dlls()
-    
+
 atexit.register(byeworld)
 
 _cvode_object = h.CVode()
@@ -262,7 +262,7 @@ def _domain_lookup(sec, dim=None):
 
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
-    
+
     domain -- a section or Python iterable of sections"""
 
     global _dimensions_default, _dimensions
@@ -272,11 +272,11 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
         setting_default = True
     elif isinstance(domain, nrn.Section):
         domain = [domain]
-    
-    # NOTE: These attributes are set on a per-nrn.Section basis; they cannot 
+
+    # NOTE: These attributes are set on a per-nrn.Section basis; they cannot
     #       assume Section1D objects exist because they might be specified before
     #       those objects are created
-    
+
     # domain is now always an iterable (or invalid)
     if method is not None:
         raise RxDException('using set_solve_type to specify method is not yet implemented')
@@ -291,7 +291,7 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
         raise RxDException('using set_solve_type to specify dx is not yet implemented')
     if nsubseg is not None:
         raise RxDException('using set_solve_type to specify nsubseg is not yet implemented')
-    
+
 
 def _unregister_reaction(r):
     global _all_reactions
@@ -306,36 +306,36 @@ def _register_reaction(r):
         _all_reactions.append(_weakref_ref(r))
         _external_solver_initialized = False
 
-    
+
 def _after_advance():
     global last_diam_change_cnt
     last_diam_change_cnt = _diam_change_count.value
-    
+
 def re_init():
     """reinitializes all rxd concentrations to match HOC values, updates matrices"""
     global _external_solver_initialized
     h.define_shape()
-    
+
     if not species._has_3d:
         # TODO: if we do have 3D, make sure that we do the necessary parts of this
-    
+
         # update current pointers
         section1d._purge_cptrs()
         for sr in _species_get_all_species():
             s = sr()
             if s is not None:
                 s._register_cptrs()
-        
+
         # update matrix equations
         _setup_matrices()
     for sr in _species_get_all_species():
         s = sr()
         if s is not None: s.re_init()
-    # TODO: is this safe?        
+    # TODO: is this safe?
     _cvode_object.re_init()
 
     _external_solver_initialized = False
-    
+
 def _setup_memb_currents():
     initializer._do_init()
     # setup membrane fluxes from our stuff
@@ -415,16 +415,16 @@ def _setup_memb_currents():
             _list_to_pyobject_array(memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
-        
+
 
 
 def _setup():
-    from . import initializer 
+    from . import initializer
     if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
     global _external_solver_initialized, last_diam_change_cnt, last_structure_change_cnt
     _external_solver_initialized = False
-    
+
 
     # Using C-code for reactions
     options.use_reaction_contribution_to_jacobian = False
@@ -439,11 +439,11 @@ def _find_librxdmath():
     if not os.path.exists(base_path):
         base_path = os.path.join(h.neuronhome(), "..", "..")
     base_path = os.path.join(base_path, "lib", "librxdmath")
-    success = False 
+    success = False
     for extension in ['', '.dll', '.so', '.dylib']:
         dll = base_path  + extension
         try:
-            success = os.path.exists(dll) 
+            success = os.path.exists(dll)
         except:
             pass
         if success: break
@@ -454,7 +454,7 @@ def _find_librxdmath():
         if not success:
             raise RxDException('unable to connect to the librxdmath library')
     return dll
-    
+
 def _c_compile(formula):
     filename = 'rxddll' + str(uuid.uuid1())
     with open(filename + '.c', 'w') as f:
@@ -488,7 +488,7 @@ def _c_compile(formula):
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     dll = ctypes.cdll['%s.so' % os.path.abspath(filename)]
     reaction = dll.reaction
-    reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
+    reaction.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
     reaction.restype = ctypes.c_double
     os.remove(filename + '.c')
     if sys.platform.lower().startswith("win"):
@@ -519,12 +519,12 @@ def _setup_units(force=False):
             _compile_reactions()
             if _cvode_object.active():
                 _cvode_object.re_init()
-        
+
 
 def _update_node_data(force=False, newspecies=False):
     global last_diam_change_cnt, last_structure_change_cnt
     if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
-        
+
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
@@ -533,15 +533,15 @@ def _update_node_data(force=False, newspecies=False):
             nsegs_changed = 0
             for sr in _species_get_all_species():
                 s = sr()
-                if s is not None: 
+                if s is not None:
                     nsegs_changed += s._update_node_data()
-                
+
                     # re-register ions for extracellular species in case new
                     # sections have been added within the ecs region
                     if hasattr(s,'_extracellular_instances'):
                         for ecs in s._extracellular_instances.values():
                             ecs._ion_register()
-            
+
             if nsegs_changed or newspecies:
                 section1d._purge_cptrs()
                 for sr in _species_get_all_species():
@@ -557,7 +557,7 @@ def _update_node_data(force=False, newspecies=False):
 
             #end#if
 
-            #_curr_scales = _numpy_array(_curr_scales)        
+            #_curr_scales = _numpy_array(_curr_scales)
 
 
 def _matrix_to_rxd_sparse(m):
@@ -578,50 +578,50 @@ def _setup_matrices():
 
         # update _node_fluxes in C
         _include_flux()
-    
+
         # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
-    
+
         n = len(_node_get_states())
-        
-        #TODO: Replace with ADI version 
+
+        #TODO: Replace with ADI version
         """
         if species._has_3d:
             _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
-    
+
             for sr in list(_species_get_all_species().values()):
                 s = sr()
                 if s is not None: s._setup_matrices3d(_euler_matrix)
-    
+
             _diffusion_matrix = -_euler_matrix
-    
+
             _euler_matrix = _euler_matrix.tocsr()
             _update_node_data(True)
-    
+
             # NOTE: if we also have 1D, this will be replaced with the correct values below
             _zero_volume_indices = []
             _nonzero_volume_indices = list(range(len(_node_get_states())))
-            
+
         """
         volumes = node._get_data()[0]
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
             # TODO: initialization is slow. track down why
-            
+
             _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
                     s._assign_parents()
-            
-    
+
+
             # remove old linearmodeladdition
             _linmodadd_cur = None
             n = species._1d_submatrix_n()
-            if n:        
+            if n:
                 # create sparse matrix for C in cy'+gy=b
                 c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
                 # most entries are 1 except those corresponding to the 0 and 1 ends
-                            
+
                 # create the matrix G
                 #if not species._has_3d:
                 #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
@@ -646,13 +646,13 @@ def _setup_matrices():
                 #for i in range(n):
                 #    if not _diffusion_matrix[i, i]:
                 #        _linmodadd_c[i, i] = 1
-    
-                
-                #_cvode_object.re_init()    
-    
+
+
+                #_cvode_object.re_init()
+
                 #if species._has_3d:
                 #    _euler_matrix = -_diffusion_matrix
-    
+
         #Hybrid logic
         if species._has_1d and species._has_3d:
             hybrid_neighbors = collections.defaultdict(lambda: [])
@@ -689,10 +689,10 @@ def _setup_matrices():
                                         hybrid_index1d_grid_ids[index1d] = grid_id
                                         index1d_sec1d[index1d] = parent_sec
                                         hybrid_vols1d[index1d] = vols1d
-                                    
+
                                     for sec1d in r._secs1d:
                                         parent_1d_seg = sec1d.trueparentseg()
-                                        parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
+                                        parent_1d = None if not parent_1d_seg else parent_1d_seg.sec
                                         if parent_1d == sec:
                                             # it is the parent of a 1d section
                                             index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, parent_1d_seg.x , sec1d, sec1d.orientation())
@@ -702,9 +702,9 @@ def _setup_matrices():
                                             hybrid_index1d_grid_ids[index1d] = grid_id
                                             index1d_sec1d[index1d] = sec1d
                                             hybrid_vols1d[index1d] = vols1d
-    
-    
-                                            
+
+
+
             if len(dxs) > 1:
                 raise RxDException('currently require a unique value for dx')
             dx = dxs.pop()
@@ -715,11 +715,11 @@ def _setup_matrices():
             hybrid_indices1d = []
             hybrid_indices3d = []
             num_3d_indices_per_1d_seg = []
-            
+
             num_1d_indices_per_grid = []
             num_3d_indices_per_grid = []
-    
-    
+
+
             grid_id_indices1d = collections.defaultdict(lambda: [])
             for index1d in hybrid_neighbors:
                 grid_id = hybrid_index1d_grid_ids[index1d]
@@ -745,7 +745,7 @@ def _setup_matrices():
                     seg_length1d = sec1d.L/sec1d.nseg
                     if neighbors3d:
                         hybrid_indices1d.append(index1d)
-                        cnt_neighbors_3d = len(neighbors3d) 
+                        cnt_neighbors_3d = len(neighbors3d)
                         num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
                         grid_3d_indices_cnt += cnt_neighbors_3d
                         area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
@@ -758,29 +758,29 @@ def _setup_matrices():
                             rates.append(rate)
                             volumes3d.append(vol)
                             hybrid_indices3d.append(i)
-                        
-    
+
+
                 num_3d_indices_per_grid.append(grid_3d_indices_cnt)
-    
+
             num_1d_indices_per_grid = numpy.asarray(num_1d_indices_per_grid, dtype=numpy.int64)
             num_3d_indices_per_grid = numpy.asarray(num_3d_indices_per_grid, dtype=numpy.int64)
-    
-    
+
+
             hybrid_indices1d = numpy.asarray(hybrid_indices1d, dtype=numpy.int64)
             num_3d_indices_per_1d_seg = numpy.asarray(num_3d_indices_per_1d_seg, dtype=numpy.int64)
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
-    
+
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
             rates = numpy.asarray(rates, dtype=numpy.float_)
             volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
             volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
             dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
             set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d, dxs)
-    
-    
-    
-    
-    
+
+
+
+
+
         #TODO: Replace this this to handle 1d/3d hybrid models
         """
         if species._has_1d and species._has_3d:
@@ -855,15 +855,15 @@ def _setup_matrices():
                              c_diagonal)
         else:
             rxd_set_no_diffusion()
-       
-    
+
+
         if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
-            rxd_setup_conc_ptrs(len(section1d._all_cindices), 
-                 _list_to_cint_array(section1d._all_cindices), 
+            rxd_setup_conc_ptrs(len(section1d._all_cindices),
+                 _list_to_cint_array(section1d._all_cindices),
                  _list_to_pyobject_array(section1d._all_cptrs))
         else:
             free_conc_ptrs()
-    
+
     # we do this last because of performance issues with changing sparsity of csr matrices
     """
     if _diffusion_matrix is not None:
@@ -891,9 +891,9 @@ def _setup_matrices():
             _mat_for_zero_volume_nodes = matrix
             # TODO: _mat_for_zero_volume_nodes is used for CVode.
             #       Figure out if/how it has to be changed for hybrid 1D/3D sims (probably just augment with identity? or change how its used to avoid multiplying by I)
-    
+
     """
-    
+
     """
     if pt1 in indices:
         ileft = indices[pt1]
@@ -907,16 +907,16 @@ def _setup_matrices():
         right = dright * arear / (vol * dx)
         euler_matrix[index, iright] += right
         euler_matrix[index, index] -= right
-"""                
-                
+"""
+
 
 
 def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
-    #Recalculate the volumes 
+    #Recalculate the volumes
     xlo, xhi = region._mesh_grid['xlo'], region._mesh_grid['xhi']
     ylo, yhi = region._mesh_grid['ylo'], region._mesh_grid['yhi']
     zlo, zhi = region._mesh_grid['zlo'], region._mesh_grid['zhi']
-    from . import geometry3d 
+    from . import geometry3d
 
     p3d = int((sec3d.n3d()-1)*x3d)
     p1d = int((sec1d.n3d()-1)*x1d)
@@ -947,7 +947,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
         # TODO: make this whole thing more efficient
         # the parent node is the nonzero index on the first row before the diagonal
         #first_row = min([node._index for node in species.nodes(region)(sec1d)])
-        index_1d, vol1d = min([(node._index, node.volume) for node in 
+        index_1d, vol1d = min([(node._index, node.volume) for node in
                                 species.nodes(region)(sec1d)],
                               key=lambda x: x[0])
         """for j in range(first_row):
@@ -959,7 +959,7 @@ def _get_node_indices(species, region, sec3d, x3d, sec1d, x1d):
     elif x1d == 1 - sec1d.orientation():
         # the ending zero-volume node is the one after the last node
         # TODO: make this more efficient
-        index_1d, vol1d = max([(node._index, node.volume) for node in 
+        index_1d, vol1d = max([(node._index, node.volume) for node in
                                 species.nodes(region)(sec1d)],
                                key=lambda x: x[0])
         index_1d + 1
@@ -971,12 +971,12 @@ def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
     #supporting indexes
     #_windows_remove_dlls()
-    
+
     regions_inv = dict() #regions -> reactions that occur there
     species_by_region = dict()
     all_species_involed = set()
     location_count = 0
-    
+
     ecs_regions_inv = dict()
     ecs_species_by_region = dict()
     ecs_all_species_involed = set()
@@ -994,12 +994,12 @@ def _compile_reactions():
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
     region._c_region_lookup = dict()
-    
+
     #create a c_region instance for each of the unique sets of regions
     c_region_list = []
     for sets in matched_regions:
         c_region_list.append(_c_region(sets))
-    
+
     for rptr in _all_reactions:
         r = rptr()
         if not r:
@@ -1016,7 +1016,7 @@ def _compile_reactions():
         if hasattr(r,'_involved_species') and r._involved_species:
             sptrs = sptrs.union(set(r._involved_species))
         if hasattr(r,'_involved_species_ecs') and r._involved_species_ecs:
-            sptrs = sptrs.union(set(r._involved_species_ecs)) 
+            sptrs = sptrs.union(set(r._involved_species_ecs))
         #Find all the regions involved
         if isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
             if not hasattr(r._mult, 'flatten'):
@@ -1137,18 +1137,18 @@ def _compile_reactions():
 
     def localize_index(creg, rate):
         rate_str = re.sub(r'species\[(\d+)\]\[(\d+)\]',
-            lambda m: "species[%i][%i]" % 
+            lambda m: "species[%i][%i]" %
                 (creg._species_ids.get(int(m.groups()[0])),
                  creg._region_ids.get(int(m.groups()[1]))), rate)
-        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]', 
-            lambda m: "params[%i][%i]" % 
+        rate_str = re.sub(r'params\[(\d+)\]\[(\d+)\]',
+            lambda m: "params[%i][%i]" %
                 (creg._params_ids.get(int(m.groups()[0])),
                  creg._region_ids.get(int(m.groups()[1]))), rate_str)
         rate_str = re.sub(r'species_3d\[(\d+)\]',
-            lambda m: "species_3d[%i]" % 
+            lambda m: "species_3d[%i]" %
                 creg._ecs_species_ids.get(int(m.groups()[0])), rate_str)
         rate_str = re.sub(r'params_3d\[(\d+)\]',
-            lambda m: "params_3d[%i]" % 
+            lambda m: "params_3d[%i]" %
                 creg._ecs_params_ids.get(int(m.groups()[0])), rate_str)
         return rate_str
 
@@ -1164,7 +1164,7 @@ def _compile_reactions():
             species_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             flux_ids_used = numpy.zeros((creg.num_species,creg.num_regions),bool)
             ecs_species_ids_used = numpy.zeros((creg.num_ecs_species),bool)
-            fxn_string = _c_headers 
+            fxn_string = _c_headers
             fxn_string += 'void reaction(double** species, double** params, double** rhs, double* mult, double* species_3d, double* params_3d, double* rhs_3d, double** flux, double v)\n{'
             # declare the "rate" variable if any reactions (non-rates)
             for rprt in creg._react_regions:
@@ -1208,7 +1208,7 @@ def _compile_reactions():
                                 operator = '+=' if ecs_species_ids_used[species_id] else '='
                                 fxn_string += "\n\trhs_3d[%d] %s mult[%d] * rate;" % (species_id, operator, mc_mult_count)
                                 ecs_species_ids_used[species_id] = True
-                        elif not isinstance(s, species.Parameter) and not isinstance(s, species.ParameterOnRegion): 
+                        elif not isinstance(s, species.Parameter) and not isinstance(s, species.ParameterOnRegion):
                             species_id = creg._species_ids[s._id]
                             region_id = creg._region_ids[s._region()._id]
                             operator = '+=' if species_ids_used[species_id][region_id] else '='
@@ -1273,7 +1273,7 @@ def _compile_reactions():
                 elif isinstance(r, multiCompartmentReaction.MultiCompartmentReaction):
                     if reg in r._rate:
                         for spec_involved in r._involved_species + r._sources + r._dests:
-                            all_ics_gids.add(spec_involved()._species()._intracellular_instances[spec_involved()._region()]._grid_id)                        
+                            all_ics_gids.add(spec_involved()._species()._intracellular_instances[spec_involved()._region()]._grid_id)
 
             for s in species_by_region[reg]:
                 spe = s._species() if isinstance(s,species.SpeciesOnRegion) else s
@@ -1311,7 +1311,7 @@ def _compile_reactions():
                     elif isinstance(s, species.SpeciesOnRegion):
                         s = s._species()._intracellular_instances[s._region()]
                     if s._grid_id in ics_grid_ids:
-                        operator = '+=' 
+                        operator = '+='
                     else:
                         operator = '='
                         ics_grid_ids.append(s._grid_id)
@@ -1356,8 +1356,8 @@ def _compile_reactions():
                                         #Change this to be by volume
                                         mults[s3d._grid_id] += [sas[index] / (s3d_reg._vol[index]) / molecules_per_mM_um3 for index in s3d_reg._nodes_by_seg[segidx]]
                                 pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s3d._grid_id][0]
-                                fxn_string += "\n\trhs[%d] %s mc3d_mults[%d] * rate;" % (pid, operator, pid)                        
-                                
+                                fxn_string += "\n\trhs[%d] %s mc3d_mults[%d] * rate;" % (pid, operator, pid)
+
                 else:
                     idx=0
                     fxn_string += "\n\trate = %s;" %  rate_str
@@ -1375,7 +1375,7 @@ def _compile_reactions():
                             else:
                                 continue
                         if s._grid_id in ics_grid_ids:
-                            operator = '+=' 
+                            operator = '+='
                         else:
                             operator = '='
                             ics_grid_ids.append(s._grid_id)
@@ -1387,7 +1387,7 @@ def _compile_reactions():
                 if ele == []:
                     mults[i] = numpy.ones(len(reg._xs))
             mults = list(itertools.chain.from_iterable(mults))
-            ics_register_reaction(0, len(all_ics_gids), len(ics_param_gids), _list_to_cint_array(all_ics_gids + ics_param_gids), numpy.asarray(mc3d_indices_start), mc3d_region_size, numpy.asarray(mults), _c_compile(fxn_string))               
+            ics_register_reaction(0, len(all_ics_gids), len(ics_param_gids), _list_to_cint_array(all_ics_gids + ics_param_gids), numpy.asarray(mc3d_indices_start), mc3d_region_size, numpy.asarray(mults), _c_compile(fxn_string))
     #Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
         for reg in ecs_regions_inv:
@@ -1427,7 +1427,7 @@ def _compile_reactions():
                     elif isinstance(s, species.SpeciesOnExtracellular):
                         s = s._extracellular()
                     if s._grid_id in grid_ids:
-                        operator = '+=' 
+                        operator = '+='
                     else:
                         operator = '='
                         grid_ids.append(s._grid_id)
@@ -1447,7 +1447,7 @@ def _compile_reactions():
                         elif isinstance(s, species.SpeciesOnExtracellular):
                             s = s._extracellular()
                         if s._grid_id in grid_ids:
-                            operator = '+=' 
+                            operator = '+='
                         else:
                             operator = '='
                             grid_ids.append(s._grid_id)
@@ -1468,10 +1468,10 @@ def _init():
 
     # if the shape has changed update the nodes
     _update_node_data()
-    
+
     if species._has_1d:
         section1d._purge_cptrs()
-    
+
     for sr in _species_get_all_species():
         s = sr()
         if s is not None:
@@ -1496,7 +1496,7 @@ def _include_flux(force=False):
         source1D = []
         scale1D = []
         grids = dict()
-        for idx, t, src, sc, rptr in zip(_node_fluxes['index'], 
+        for idx, t, src, sc, rptr in zip(_node_fluxes['index'],
                                      _node_fluxes['type'],
                                      _node_fluxes['source'],
                                      _node_fluxes['scale'],
@@ -1517,7 +1517,7 @@ def _include_flux(force=False):
         index3D = []
         source3D = []
         scale3D = []
-        for gid in grids3D: 
+        for gid in grids3D:
             counts3D.append(len(grids[gid]['index']))
             index3D.extend(grids[gid]['index'])
             source3D.extend(grids[gid]['source'])
@@ -1525,7 +1525,7 @@ def _include_flux(force=False):
         rxd_include_node_flux1D(len(index1D), _list_to_clong_array(index1D),
                                 _list_to_cdouble_array(scale1D),
                                 _list_to_pyobject_array(source1D))
-         
+
         rxd_include_node_flux3D(len(grids3D), _list_to_cint_array(counts3D),
                                 _list_to_cint_array(grids3D),
                                 _list_to_clong_array(index3D),
@@ -1550,13 +1550,13 @@ do_setup_matrices_fptr = None
 do_setup_units_fptr = None
 def _do_nbs_register():
     global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr, do_setup_units_fptr
-    
+
     if not _has_nbs_registered:
         #from neuron import nonvint_block_supervisor as _nbs
 
         _has_nbs_registered = True
         #_nbs.register(_callbacks)  not used
-    
+
         #
         # register the initialization handler and the ion register handler
         #
@@ -1581,7 +1581,7 @@ def _do_nbs_register():
         # register scatter/gather mechanisms
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
-        
+
 
 # register the Python callbacks
 do_setup_fptr = fptr_prototype(_setup)
@@ -1606,8 +1606,8 @@ def _windows_remove_dlls():
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []
-        
-        
+
+
 def nthread(n=None):
     if(n):
         _set_num_threads(n)

@@ -47,8 +47,8 @@ ICS_insert = nrn_dll_sym('ICS_insert')
 ICS_insert_inhom = nrn_dll_sym('ICS_insert_inhom')
 
 ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
-    ctypes.c_int, 
-    ctypes.py_object, 
+    ctypes.c_int,
+    ctypes.py_object,
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=int),
     numpy.ctypeslib.ndpointer(dtype=int),
@@ -58,7 +58,7 @@ ICS_insert_inhom.argtypes = ICS_insert.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=int),
     ctypes.c_long,
     numpy.ctypeslib.ndpointer(dtype=float),
-    ctypes.c_double, 
+    ctypes.c_double,
     ctypes.c_bool,
     ctypes.c_double,
     numpy.ctypeslib.ndpointer(dtype=float)]
@@ -152,7 +152,7 @@ class _SpeciesMathable(object):
         return _Arithmeticed(other) - self
     def __abs__(self):
         return abs(_Arithmeticed(self))
-    
+
     def _evaluate(self, location):
         return _Arithmeticed(self)._evaluate(location)
 
@@ -161,7 +161,7 @@ class _SpeciesMathable(object):
         self2 = rxdmath._ensure_arithmeticed(self)
         rxdmath._validate_reaction_terms(self2, other)
         return rxdmath._Reaction(self2, other, '<>')
-    
+
     def __gt__(self, other):
         other = rxdmath._ensure_arithmeticed(other)
         self2 = rxdmath._ensure_arithmeticed(self)
@@ -197,14 +197,14 @@ class _SpeciesMathable(object):
             else:
                 raise RxDException("Species %r is not defined on region %r." % (self, reg))
         raise RxDException("_semi_compile received inconsistent state")
-    
+
     def _involved_species(self, the_dict):
         the_dict[self._semi_compile] = weakref.ref(self)
 
     @property
     def d(self):
         return self._d
-    
+
     @d.setter
     def d(self, value):
         from . import rxd
@@ -229,25 +229,25 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         self._species = weakref.ref(species)
         self._extracellular = weakref.ref(extracellular)
         self._id = _species_count
-    
+
     def __repr__(self):
         return '%r[%r]' % (self._species(), self._extracellular()._region)
-        
+
     def _short_repr(self):
         return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
 
     def __str__(self):
         return '%s[%s]' % (self._species()._short_repr(), self._extracellular()._region._short_repr())
-    
+
     @property
     def concentration(self):
         """An iterable of the current concentrations."""
         return self.nodes.concentration
-    
+
     @concentration.setter
     def concentration(self, value):
         """Sets all Node objects in the restriction to the specified concentration value.
-        
+
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
 
@@ -277,9 +277,9 @@ class SpeciesOnExtracellular(_SpeciesMathable):
 
     def node_by_location(self, x, y, z):
         e = self._extracellular()._region
-        if (e._xlo <= x <= e._xhi and 
+        if (e._xlo <= x <= e._xhi and
             e._ylo <= y <= e._yhi and
-            e._zlo <= z <= e._zhi):  
+            e._zlo <= z <= e._zhi):
             i = int((x - e._xlo) / e._dx[0])
             j = int((y - e._ylo) / e._dx[1])
             k = int((z - e._zlo) / e._dx[2])
@@ -300,7 +300,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
             k = int((loc[2] - e._zlo) / e._dx[2])
             alphas.append(e.alpha[i,j,k])
         return numpy.array(alphas)
-    
+
     def node_by_ijk(self,i,j,k):
         index = 0
         s = self._extracellular()
@@ -331,7 +331,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         initializer._do_init()
         return nodelist.NodeList([nd for nd in self._species()._extracellular_nodes if nd.region == self._extracellular()._region])
 
-                
+
     def _semi_compile(self, reg, instruction):
         #This will always be an ecs_instance
         #reg = self._extracellular()._region
@@ -342,7 +342,7 @@ class SpeciesOnExtracellular(_SpeciesMathable):
     @property
     def d(self):
         return self._extracellular()._d
-    
+
     @d.setter
     def d(self, value):
         self._extracellular().d = value
@@ -356,23 +356,23 @@ class SpeciesOnRegion(_SpeciesMathable):
         """The restriction of a Species to a Region."""
         self._species = weakref.ref(species)
         self._region = weakref.ref(region)
-        
+
     def __eq__(self, other):
         """test for equality.
-        
+
         Two SpeciesOnRegion objects are equal if they refer to the same species
         on the same region and both the species and the region still exist.
         """
         return (self._species() == other._species()) and (self._region() == other._region()) and (self._species() is not None) and (self._region() is not None)
-    
+
     def __hash__(self):
         # TODO: replace this to reduce collision risk; how much of a problme is that?
         return 1000 * (hash(self._species()) % 1000) + (hash(self._region()) % 1000)
-    
-    
+
+
     def __repr__(self):
         return '%r[%r]' % (self._species(), self._region())
-        
+
     def _short_repr(self):
         return '%s[%s]' % (self._species()._short_repr(), self._region()._short_repr())
     def __str__(self):
@@ -385,7 +385,7 @@ class SpeciesOnRegion(_SpeciesMathable):
 
         If r is a different Region, then returns the empty list.
         If secs is a set return all indices on the regions for those sections.
-        """    
+        """
         #if r is not None and r != self._region():
         #    raise RxDException('attempt to access indices on the wrong region')
         # TODO: add a mechanism to catch if not right region (but beware of reactions crossing regions)
@@ -394,21 +394,21 @@ class SpeciesOnRegion(_SpeciesMathable):
         else:
             return self._species().indices(self._region(), secs)
 
-    
+
 
     def __getitem__(self, r):
         """Return a reference to those members of this species lying on the specific region @varregion.
         The resulting object is a SpeciesOnRegion.
         This is useful for defining reaction schemes for MultiCompartmentReaction.
-        
+
         This is provided to allow use of SpeciesOnRegion where Species would normally go.
-        
+
         If the regions match, self is returned; otherwise an empty SpeciesOnRegion.
         """
         if r == self._region():
             return self
         raise RxDException('no such region')
- 
+
     @property
     def states(self):
         """A vector of all the states corresponding to this species"""
@@ -420,7 +420,7 @@ class SpeciesOnRegion(_SpeciesMathable):
         """A vector of all the 3D states corresponding to this species"""
         #TODO This should be restricted to the Region
         return self._species()._intracellular_instances[self._region()].states
-    
+
     @property
     def nodes(self):
         """A NodeList of the Node objects containing concentration data for the given Species and Region.
@@ -449,16 +449,16 @@ class SpeciesOnRegion(_SpeciesMathable):
         except:
             pass
         return nodelist.NodeList(itertools.chain.from_iterable(my_nodes))
-    
+
     @property
     def concentration(self):
         """An iterable of the current concentrations."""
         return self.nodes.concentration
-    
+
     @concentration.setter
     def concentration(self, value):
         """Sets all Node objects in the restriction to the specified concentration value.
-        
+
         This is equivalent to s.nodes.concentration = value"""
         self.nodes.concentration = value
     def _semi_compile(self, reg, instruction):
@@ -483,7 +483,7 @@ class SpeciesOnRegion(_SpeciesMathable):
             return sp._intracellular_instances[r]
         else:
             raise RxDException("There are no 3D species defined on {}".format(r))
-        
+
 
     @property
     def _id(self):
@@ -525,11 +525,11 @@ def _xyz(seg):
 class _IntracellularSpecies(_SpeciesMathable):
     def __init__(self, region=None, d=0, name=None, charge=0, initial=0, nodes=0, is_diffusable=True, atolscale=1.0):
         """
-            region = Intracellular object 
+            region = Intracellular object
             name = string of the name of the NEURON species (e.g. ca)
             d = diffusion constant
             charge = charge of the molecule (used for converting currents to concentration changes)
-            initial = initial concentration  
+            initial = initial concentration
             NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
             TODO: remove this limitation
         """
@@ -566,16 +566,16 @@ class _IntracellularSpecies(_SpeciesMathable):
 
         if hasattr(self,'_dgrid'):
             self._grid_id = ICS_insert_inhom(0, self._states._ref_x[0], len(self.states), self.neighbors,
-                                             self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
+                                             self._x_line_defs, len(self._x_line_defs), self._y_line_defs,
                                              len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                              self._dgrid, self._dx, is_diffusable, self._atolscale, self._alphas)
         else:
             self._grid_id = ICS_insert(0, self._states._ref_x[0], len(self.states), self.neighbors,
-                                       self._x_line_defs, len(self._x_line_defs), self._y_line_defs, 
+                                       self._x_line_defs, len(self._x_line_defs), self._y_line_defs,
                                        len(self._y_line_defs), self._z_line_defs, len(self._z_line_defs),
                                        self._d, self._dx, is_diffusable, self._atolscale, self._alphas)
 
-  
+
         self._update_pointers()
         _defined_species_by_gid.append(self)
 
@@ -587,7 +587,7 @@ class _IntracellularSpecies(_SpeciesMathable):
     def _delete(self):
         global _intracellular_diffusion_objects, _defined_species_by_gid
         if self in _defined_species_by_gid: _defined_species_by_gid.remove(self)
-        if _intracellular_diffusion_objects: 
+        if _intracellular_diffusion_objects:
             if self in _intracellular_diffusion_objects:
                 del _intracellular_diffusion_objects[self]
                 # remove the grid id
@@ -598,7 +598,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
-                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'], 
+                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'],
                                                  node._node_fluxes['type'],
                                                  node._node_fluxes['source'],
                                                  node._node_fluxes['scale'],
@@ -613,7 +613,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                         newflux['source'].append(src)
                         newflux['scale'].append(sc)
                         newflux['region'].append(region)
-                node._has_node_fluxes = newflux != node._node_fluxes 
+                node._has_node_fluxes = newflux != node._node_fluxes
                 node._node_fluxes = newflux
 
                 # if this is the only intracellular species using
@@ -626,12 +626,12 @@ class _IntracellularSpecies(_SpeciesMathable):
                         del node._point_indices[self._region]
 
                 nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
- 
+
     #Line Definitions for each direction
     def line_defs(self, nodes, direction, nodes_length):
         self._isalive()
         line_defs = []
-        
+
         indices = set(range(0, nodes_length))
 
         pos_neg_from_dir = {'x': (0, 1), 'y': (2, 3), 'z': (4, 5)}
@@ -654,7 +654,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         line_defs.sort(key=lambda x: x[1], reverse=True)
         line_defs = numpy.asarray(line_defs, dtype=int)
         line_defs = line_defs.reshape(2*len(line_defs))
-        return line_defs       
+        return line_defs
 
     def ordered_nodes(self, p_line_defs, direction, neighbors):
         self._isalive()
@@ -668,16 +668,16 @@ class _IntracellularSpecies(_SpeciesMathable):
             for j in range(1,line_length):
                 current_node = neighbors[current_node * 3 + offset]
                 ordered_nodes.append(current_node)
-        return numpy.asarray(ordered_nodes) 
-        
+        return numpy.asarray(ordered_nodes)
+
     def create_neighbors_array(self, nodes, nodes_length):
         self._isalive()
         my_array = numpy.zeros((nodes_length, 3), dtype=int)
-        for n in nodes:    
+        for n in nodes:
             for i, ele in enumerate(n.neighbors[::2]):
                 my_array[n._index, i] = ele if ele is not None else -1
         return my_array
-    
+
     def create_alphas(self):
         self._isalive()
         alphas = [vol/self._dx**3 for vol in self._region._vol]
@@ -713,13 +713,13 @@ class _IntracellularSpecies(_SpeciesMathable):
         grid_list_start = 0
         if self._nodes and self._name:
             nrn_region = self._region._nrn_region
-            if nrn_region:         
+            if nrn_region:
                 ion_conc = '_ref_' + self._name + nrn_region
                 segs = self._region._segs3d()
                 self._concentration_neuron_pointers = [getattr(segs[segidx], ion_conc) for segidx in self._seg_to_surface_nodes.keys()]
                 self._surface_nodes_per_seg = [nodes for nodes in self._seg_to_surface_nodes.values()]
                 self._surface_nodes_per_seg_start_indices = [len(nodes) for nodes in self._surface_nodes_per_seg]
-                
+
                 #cast to numpy arrays to avoid calling PyList_GET_ITEM on every element
                 self._surface_nodes_per_seg = list(itertools.chain.from_iterable(self._surface_nodes_per_seg))
                 self._surface_nodes_per_seg = numpy.asarray(self._surface_nodes_per_seg, dtype=numpy.int64)
@@ -729,15 +729,15 @@ class _IntracellularSpecies(_SpeciesMathable):
                 _ics_set_grid_concentrations(grid_list_start, self._grid_id, self._surface_nodes_per_seg, self._surface_nodes_per_seg_start_indices, self._concentration_neuron_pointers)
 
                 if self._name is not None and self._charge != 0:
-                    nrn_region_sign = {'i' : -1, 'o' : 1} 
+                    nrn_region_sign = {'i' : -1, 'o' : 1}
                     sign = nrn_region_sign[nrn_region]
-                    ion_curr = '_ref_' + nrn_region + self._name 
+                    ion_curr = '_ref_' + nrn_region + self._name
                     tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
                     my_dx = self._dx
                     # TODO: this better
                     if not isinstance(my_dx, tuple):
                         my_dx = (my_dx, my_dx, my_dx)
-                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))              
+                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))
                     self._current_neuron_pointers = [getattr(seg, ion_curr) for seg in self._region._segs3d(self._seg_to_surface_nodes.keys())]
                     #These are in the same order as self._surface_nodes_per_seg so self._surface_nodes_per_seg_start_indices will work for this list as well
                     geom_area = [sum(self._region.geometry.surface_areas1d(sec)) for sec in self._region._secs3d]
@@ -845,9 +845,9 @@ class _IntracellularSpecies(_SpeciesMathable):
                     # x,y,z and direction
                     for dr in range(3):
                         dgrid[i,:] = [d(nd.x3d, nd.y3d, nd.z3d, dr) for nd in self._nodes]
-                
+
                 elif sig == 3:
-                    # x,y,z - isotropic 
+                    # x,y,z - isotropic
                     dg = [d(nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
                     dgrid[0,:] = [d(nd.x3d, nd.y3d, nd.z3d) for nd in self._nodes]
                     dgrid[1,:] = dgrid[0,:]
@@ -881,13 +881,13 @@ class _IntracellularSpecies(_SpeciesMathable):
         if hasattr(self,'_dgrid'):
             return self._dgrid
         return self._d
-    
+
     @d.setter
     def d(self, value):
         self._isalive()
         dc, dgrid = self._parse_diffusion(value)
         if dc is not None:
-            if hasattr(self, '_dgrid'):  
+            if hasattr(self, '_dgrid'):
                 delattr(self, '_dgrid')
             self._d = dc
             set_diffusion(0, self._grid_id, dc, 1)
@@ -901,7 +901,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         for i, n in enumerate(self._nodes):
             if point == (n._i, n._j, n._k):
                 return i
-    
+
     #TODO Can I do this better?
     def _mc3d_indices_start(self, r):
         self._isalive()
@@ -925,10 +925,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
             alpha = volume fraction - either a single value for the whole region, a Vector giving a value for each voxel  or a anonymous function with argument of rxd.ExtracellularNode
             tortuosity = increase in path length due to obstacles, effective diffusion coefficient d/tortuosity^2. - either a single value for the whole region or a Vector giving a value for each voxel, or a anonymous function with argument of rxd.ExtracellularNode
             atolscale = scale factor for absolute tolerance in variable step integrations
-            boundary_conditions = None by default corresponding to Neumann (zero flux) boundaries or a concentration for Dirichlet boundaries  
+            boundary_conditions = None by default corresponding to Neumann (zero flux) boundaries or a concentration for Dirichlet boundaries
             NOTE: For now, only define this AFTER the morphology is instantiated. In the future, this requirement can be relaxed.
             TODO: remove this limitation
-            
+
 
         """
         _extracellular_diffusion_objects[self] = None
@@ -958,8 +958,8 @@ class _ExtracellularSpecies(_SpeciesMathable):
         else:
             self.alpha = region.alpha
             self._alpha = region._alpha._ref_x[0]
-       
-        self.tortuosity = region.tortuosity 
+
+        self.tortuosity = region.tortuosity
         if(numpy.isscalar(region._ecs_tortuosity)):
             self._tortuosity = region._ecs_tortuosity
         else:
@@ -971,14 +971,14 @@ class _ExtracellularSpecies(_SpeciesMathable):
         else:
             bc_type = 1
             bc_value = boundary_conditions
-        
+
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
         if not hasattr(self._d,'__len__'):
             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
         elif len(self._d) == 3:
              self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
         else:
-            raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))  
+            raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))
 
         self._name = name
 
@@ -998,7 +998,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def _delete(self):
         global _extracellular_diffusion_objects, _defined_species_by_gid
         # TODO: remove this object from the list of grids, possibly by reinserting all the others
-        # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist     
+        # NOTE: be careful about doing the right thing at program's end; some globals may no longer exist
         if self in _defined_species_by_gid: _defined_species_by_gid.remove(self)
         if _extracellular_diffusion_objects:
             if self in _extracellular_diffusion_objects:
@@ -1011,7 +1011,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 # remove any node.include_flux for the extracellular species.
                 from . import node
                 newflux = {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
-                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'], 
+                for idx, t, src, sc, rptr in zip(node._node_fluxes['index'],
                                                  node._node_fluxes['type'],
                                                  node._node_fluxes['source'],
                                                  node._node_fluxes['scale'],
@@ -1026,10 +1026,10 @@ class _ExtracellularSpecies(_SpeciesMathable):
                         newflux['source'].append(src)
                         newflux['scale'].append(sc)
                         newflux['region'].append(region)
-                node._has_node_fluxes = newflux != node._node_fluxes 
+                node._has_node_fluxes = newflux != node._node_fluxes
                 node._node_fluxes = newflux
                 nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
-        
+
     def _finitialize(self):
         self._isalive()
         # Updated - now it will initialize using NodeExtracellular
@@ -1043,7 +1043,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                 self.states[idx, :, :] = self._boundary_conditions
                 self.states[:, idx, :] = self._boundary_conditions
                 self.states[:, :, idx] = self._boundary_conditions
-        # necessary if section where created after the _ExtracellularSpecies 
+        # necessary if section where created after the _ExtracellularSpecies
         self._update_pointers()
 
 
@@ -1110,7 +1110,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
         """
 
         self._isalive()
-        result = {} 
+        result = {}
         for sec in h.allsec():
             result[sec] = [self.index_from_xyz(*_xyz(seg)) for seg in sec]
         return result
@@ -1148,7 +1148,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                         scale_factors.append(float(scale_factor * surface_area))
             #TODO: MultiCompartment reactions ?
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
-    
+
     def _semi_compile(self, reg, instruction):
 
         self._isalive()
@@ -1169,7 +1169,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 
         self._isalive()
         return self._d
-    
+
     @d.setter
     def d(self, value):
         self._isalive()
@@ -1190,7 +1190,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
 class Species(_SpeciesMathable):
     def __init__(self, regions=None, d=0, name=None, charge=0, initial=None, atolscale=1, ecs_boundary_conditions=None, represents=None):
         """s = rxd.Species(regions, d = 0, name = None, charge = 0, initial = None, atolscale=1)
-    
+
         Declare a species.
 
         Parameters:
@@ -1220,7 +1220,7 @@ class Species(_SpeciesMathable):
 
         import neuron
         import ctypes
-        
+
         from . import rxd, region
         # if there is a species, then rxd is being used, so we should register
         # this function may be safely called many times
@@ -1239,15 +1239,15 @@ class Species(_SpeciesMathable):
             else:
                 from .rxd import _domain_lookup
                 reglist = regions if hasattr(regions,'__len__') else [regions]
-                dims = [_domain_lookup(sec) for reg in reglist 
+                dims = [_domain_lookup(sec) for reg in reglist
                             if not isinstance(reg, region.Extracellular)
                             for sec in reg.secs]
                 if not all([dim == dims[0] for dim in dims]):
-                    raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections') 
+                    raise RxDException('Hybrid 1D/3D diffusion does not currently support anisotropy or inhomogeneous grids. For separate 1D and 3D diffusion please create separate regions and species for 3D and 1D sections')
                 else:
                     self._d = d
         else:
-            self._d = d 
+            self._d = d
         self.name = name
         self.charge = charge
         self.initial = initial
@@ -1259,19 +1259,19 @@ class Species(_SpeciesMathable):
             self.represents = represents
         with initializer._init_lock:
             _all_species.append(weakref.ref(self))
-        
+
 
             # declare an update to the structure of the model (the number of differential equations has changed)
             nrn_dll_sym('structure_change_cnt', ctypes.c_int).value += 1
 
-            self._ion_register() 
+            self._ion_register()
 
             # initialize self if the rest of rxd is already initialized
             if initializer.is_initialized():
                 self._do_init()
                 rxd._update_node_data(True, True)
 
-    
+
     def _do_init(self):
         self._do_init1()
         self._do_init2()
@@ -1279,7 +1279,7 @@ class Species(_SpeciesMathable):
         self._do_init4()
         self._do_init5()
         self._do_init6()
-        
+
     def _do_init1(self):
         from . import rxd
         # TODO: if a list of sections is passed in, make that one region
@@ -1294,7 +1294,7 @@ class Species(_SpeciesMathable):
 
         # invalidate any old initialization of external solvers
         rxd._external_solver_initialized = False
-        
+
         # TODO: check about the 0<x<1 problem alluded to in the documentation
         h.define_shape()
         name = self.name
@@ -1316,9 +1316,9 @@ class Species(_SpeciesMathable):
                 spsecs_o = set(spsecs_o)
                 for r in  _defined_species[name]:
                     if hasattr(r,'_secs') and r.nrn_region:
-                        if (r.nrn_region == 'i' and 
+                        if (r.nrn_region == 'i' and
                             any(spsecs_i.intersection(r._secs))
-                            or (r.nrn_region == 'o' and 
+                            or (r.nrn_region == 'o' and
                                 any(spsecs_o.intersection(r._secs)))):
                             raise RxDException('Species "%s" previously defined on a region %r that overlaps with regions: %r' % (name, r, self._regions))
         else:
@@ -1343,11 +1343,11 @@ class Species(_SpeciesMathable):
         self._extracellular_regions = [r for r in regions if isinstance(r, region.Extracellular)]
         if not all(isinstance(r, region.Region) for r in self._regions):
             raise RxDException('regions list must consist of Region and Extracellular objects only')
-              
+
         # at this point self._name is None if unnamed or a string == name if
         # named
-        self._ion_register()                     
-        
+        self._ion_register()
+
         # TODO: remove this line when certain no longer need it (commented out 2013-04-17)
         # self._real_secs = region._sort_secs(sum([r.secs for r in regions], []))
     def _do_init2(self):
@@ -1368,7 +1368,7 @@ class Species(_SpeciesMathable):
     def _do_init3(self):
         global _has_3d
         # 3D sections
-       
+
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
         self._3doffset = 0
         self._3doffset_by_region = {}
@@ -1387,7 +1387,7 @@ class Species(_SpeciesMathable):
                         # this is done so that multiple species can use the same region without recomputing it
                     self_has_3d = True
                     _has_3d = True
-        is_diffusable = False if isinstance(self, Parameter) or isinstance(self, State) else True        
+        is_diffusable = False if isinstance(self, Parameter) or isinstance(self, State) else True
         self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if any(r._secs3d)}
 
     def _do_init4(self):
@@ -1423,7 +1423,7 @@ class Species(_SpeciesMathable):
         self.deleted = True
         if hasattr(self, '_id'):
             remove_species_atolscale(self._id)
-        
+
         name = self.name if self.name else (self._id if hasattr(self,'_id') else None)
         if name is not None and name in _defined_species:
             for r in self.regions:
@@ -1449,7 +1449,7 @@ class Species(_SpeciesMathable):
             for sec in self._secs[:]:
                 sec._delete()
             self._secs = []
-            
+
 
         # set the remaining species offsets
         if initializer.is_initialized():
@@ -1457,7 +1457,7 @@ class Species(_SpeciesMathable):
                 s = sr()
                 if s is not None:
                     s._update_region_indices(True)
-        
+
     def _ion_register(self):
         charge = self._charge
         if self._name is not None:
@@ -1505,7 +1505,7 @@ class Species(_SpeciesMathable):
             dx = self._regions[0]._dx
             naf = self._regions[0]._geometry.neighbor_area_fraction
             if not isinstance(naf, Callable):
-                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf 
+                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf
                 for nodeobj in self._nodes:
                     i, j, k, index, vol = nodeobj._i, nodeobj._j, nodeobj._k, nodeobj._index, nodeobj.volume
                     _setup_matrices_process_neighbors((i, j, k - 1), (i, j, k + 1), indices, euler_matrix, index, diffs, vol, areazl, areazr, dx)
@@ -1551,7 +1551,7 @@ class Species(_SpeciesMathable):
                 if secs3d_names:
                     if secs3d_names != r._secs3d_names:
                         #TODO: redo voxelization and interpolate
-                        raise RxDException("Error: changing the 3D sections or their nseg after initialization is not yet supported.") 
+                        raise RxDException("Error: changing the 3D sections or their nseg after initialization is not yet supported.")
                 else:
                     # If there are no 3D sections we can continue without
                     # re-voxelization.
@@ -1571,7 +1571,7 @@ class Species(_SpeciesMathable):
         for node in self.nodes:
             data[node._i, node._j, node._k] = node.concentration
         return data
-        
+
 
     def _register_cptrs(self):
         # 1D stuff
@@ -1590,12 +1590,12 @@ class Species(_SpeciesMathable):
                     current_region_segs = list(r._segsidx)
                     self._seg_order += current_region_segs
                     for seg in r._segs3d(current_region_segs):
-                        self._concentration_ptrs.append(getattr(seg, ion))    
+                        self._concentration_ptrs.append(getattr(seg, ion))
 
     @property
     def charge(self):
         """Get or set the charge of the Species.
-        
+
         .. note:: Setting is new in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
         """
         return self._charge
@@ -1610,7 +1610,7 @@ class Species(_SpeciesMathable):
     @property
     def regions(self):
         """Get or set the regions where the Species is present
-        
+
         .. note:: New in NEURON 7.4+. Setting is allowed only before the reaction-diffusion model is instantiated.
 
         .. note:: support for getting the regions is new in NEURON 7.5.
@@ -1629,7 +1629,7 @@ class Species(_SpeciesMathable):
         else:
             raise RxDException('Cannot set regions now; model already instantiated')
 
-        
+
     def _update_region_indices(self, update_offsets=False):
         # TODO: should this include 3D nodes? currently 1D only. (What faces the user?)
         # update offset in case nseg has changed
@@ -1643,7 +1643,7 @@ class Species(_SpeciesMathable):
                 self._region_indices[s._region] += s.indices
         # a list of all indices
         self._region_indices[None] = list(itertools.chain.from_iterable(list(self._region_indices.values())))
-    
+
     def _indices3d(self, r=None):
         """return the indices of just the 3D nodes corresponding to this species in the given region"""
         #TODO: Remove this
@@ -1659,11 +1659,11 @@ class Species(_SpeciesMathable):
         if secs is not None:
             if r is not None:
                 return [idx for sec in self._secs for idx in sec.indices if sec in secs and sec._region == r]
-            return [idx for sec in self._secs for idx in sec.indices if sec in secs] 
+            return [idx for sec in self._secs for idx in sec.indices if sec in secs]
         return self._region_indices.get(r, [])
     def indices(self, r=None, secs=None):
         """return the indices corresponding to this species in the given region
-        
+
         if r is None, then returns all species indices
         If r is a list of regions return indices for only those sections that are on all the regions.
         If secs is a set return all indices on the regions for those sections. """
@@ -1679,7 +1679,7 @@ class Species(_SpeciesMathable):
             else:
                 regions = r
             return list(itertools.chain.from_iterable([s.indices for s in self._secs if s._sec in secs and s.region in regions]))
-                
+
             """for reg in regions:
                 ind = self.indices(reg)
                 offset = 0
@@ -1699,16 +1699,16 @@ class Species(_SpeciesMathable):
 
     def defined_on_region(self, r):
         return r in self._regions or r in self._extracellular_regions
-        
+
     def _setup_diffusion_matrix(self, g):
         for s in self._secs:
             s._setup_diffusion_matrix(g)
-    
+
     def _setup_c_matrix(self, c):
         # TODO: this will need to be changed for three dimensions, or stochastic
         for s in self._secs:
             c[s._offset:s._offset + s.nseg] = 1.0
-    
+
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
         if self.name:
@@ -1750,7 +1750,7 @@ class Species(_SpeciesMathable):
                         scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
                         ptrs.append(getattr(seg, ion_curr))
 
-    
+
     def _has_region_section(self, region, sec):
         return any((s._region == region and s._sec == sec) for s in self._secs)
 
@@ -1780,8 +1780,8 @@ class Species(_SpeciesMathable):
             if self._secs != []:
                 self._secs[0]._num_roots = self._num_roots
             self._has_adjusted_offsets = True
-    
-    
+
+
     def _finitialize(self, skip_transfer=False):
         if self._extracellular_instances:
             for r in self._extracellular_instances.keys():
@@ -1797,17 +1797,17 @@ class Species(_SpeciesMathable):
                 for node in self.nodes:
                     node.concentration = self.initial
             if not skip_transfer:
-                self._transfer_to_legacy() 
+                self._transfer_to_legacy()
         else:
             self._import_concentration()
-    
+
     def _transfer_to_legacy(self):
         """Transfer concentrations to the standard NEURON grid"""
         if self._name is None: return
-        
+
         # 1D part
         for sec in self._secs: sec._transfer_to_legacy()
-        
+
         # 3D part
         nodes = self._nodes
         if nodes:
@@ -1817,18 +1817,18 @@ class Species(_SpeciesMathable):
                     raise RxDException('only "i" nrn_region supported for 3D simulations')
                     # TODO: remove this requirement
                     #       the issue here is that the code below would need to keep track of which nodes are in which nrn_region
-                    #       that's not that big of a deal, but when this was coded, there were other things preventing this from working                    
+                    #       that's not that big of a deal, but when this was coded, there were other things preventing this from working
                 for seg, ptr in zip(self._seg_order, self._concentration_ptrs):
                     all_nodes_in_seg = list(itertools.chain.from_iterable(r._surface_nodes_by_seg[seg] for r in non_none_regions))
                     if all_nodes_in_seg:
                         # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
                         # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                         ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
-    
+
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
         if self._name is None: return
-        
+
         # start with the 1D stuff
         for sec in self._secs: sec._import_concentration(init)
 
@@ -1847,11 +1847,11 @@ class Species(_SpeciesMathable):
                     value = ptr[0]
                     for node in r._nodes_by_seg[segidx]:
                         nodes[node].concentration = value
-    
+
     @property
     def nodes(self):
         """A NodeList of all the nodes corresponding to the species.
-        
+
         This can then be further restricted using the callable property of NodeList objects."""
 
         from . import rxd
@@ -1868,7 +1868,7 @@ class Species(_SpeciesMathable):
                     self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         self._all_intracellular_nodes = [nd for nd in self._all_intracellular_nodes[:] if nd.sec]
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes)
 
 
     @property
@@ -1876,11 +1876,11 @@ class Species(_SpeciesMathable):
         """Get or set the name of the Species.
 
         This is used only for syncing with the non-reaction-diffusion parts of NEURON.
-        
+
         .. note:: Setting only supported in NEURON 7.4+, and then only before the reaction-diffusion model is instantiated.
         """
         return self._name
-    
+
     @name.setter
     def name(self, value):
         if hasattr(self, '_allow_setting'):
@@ -1892,18 +1892,18 @@ class Species(_SpeciesMathable):
     def __repr__(self):
         represents = ', represents=%s' % self.represents if self.represents else ''
         return 'Species(regions=%r, d=%r, name=%r, charge=%r, initial=%r%s)' % (self._regions, self._d, self._name, self._charge, self.initial, represents)
-    
+
     def _short_repr(self):
         if self._name is not None:
             return str(self._name)
         else:
             return self.__repr__()
-    
+
     def __str__(self):
         if self._name is None:
             return self.__repr__()
         return str(self._name)
-    
+
 def xyz_by_index(indices):
     """Return the 3D location of the nodes at the given indices"""
     if hasattr(indices,'count'):
@@ -1917,18 +1917,18 @@ def xyz_by_index(indices):
 class Parameter(Species):
     """
     s = rxd.Parameter(regions, name=None, charge=0, value=None, represents=None)
-        
+
     Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
-    
+
     Parameters:
     regions -- a Region or list of Region objects containing the species
-    
+
     name -- the name of the parameter; used for syncing with HOC (optional; default is none)
-    
+
     charge -- the charge of the Parameter (optional; default is 0)
-    
+
     value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
-    
+
     represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
 
     Note:
@@ -1971,11 +1971,11 @@ class Parameter(Species):
     @property
     def value(self):
         return self.initial
-    
+
     @value.setter
     def value(self, v):
         self.initial = v
-    
+
     @property
     def d(self):
         return 0
@@ -2013,12 +2013,12 @@ class ParameterOnRegion(SpeciesOnRegion):
             return ics_instance._semi_compile(reg, instruction)
         elif any(reg._secs1d):
             return 'params[%d][%d]' % (self._id, self._region()._id)
-        else:    
+        else:
             raise RxDException('Instruction for ParameterOnRegion semi_compile was neither 1d or 3d')
 
 
 class ParameterOnExtracellular(SpeciesOnExtracellular):
-    pass 
+    pass
 
 class State(Species):
     def __repr__(self):

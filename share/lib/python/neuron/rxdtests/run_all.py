@@ -4,7 +4,7 @@ def test(files, correct_data):
     import filecmp
     import subprocess
     import re, array, numpy
-    
+
     tol = 1e-10
     dt_eps = 1e-20
     for dr in ['wave1d', 'ecs', '3d', 'hybrid']:
@@ -27,10 +27,10 @@ def test(files, correct_data):
             os.remove(output_file)
         except OSError:
             pass
-        
+
 #        os.system('python do_test.py %s %s' % (os.path.join('tests', f), output_file))
 
-        
+
         try:
             outp = subprocess.check_output([sys.executable, 'do_test.py', os.path.join('tests', f), output_file] )
             sobj = re.search( r'<BAS_RL (\d*) BAS_RL>', outp.decode('utf-8'), re.M)
@@ -52,8 +52,8 @@ def test(files, correct_data):
                 c=c+1
             t2 = numpy.delete(t2, range( c))
             tst_dat = numpy.delete(tst_dat, range(c),0)
-            # get rid of repeating t in correct data (otherwise interpolation fails)    
-            c = 0;            
+            # get rid of repeating t in correct data (otherwise interpolation fails)
+            c = 0;
             while (c<len(t1)-1):
                 c1=c+1
                 while(c1<len(t1) and abs(t1[c]-t1[c1])<dt_eps):
@@ -70,10 +70,10 @@ def test(files, correct_data):
                 t2_0 = t2_0 + 1
             #interpolate and compare
             corr_vals = numpy.array(
-                [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:, i].T) 
+                [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:, i].T)
                 for i in range(1, rlen)])
             max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))
-            
+
             if(max_err<tol): success = True
 
             if success:
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     import shutil
     import subprocess
     import platform
-    
+
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     rxd_data = os.path.join(os.pardir, os.pardir, os.pardir, os.pardir,
                                 os.pardir, 'test','rxd','testdata')
     # get the rxd test data
-    subprocess.call(["git", "submodule", "update", "--init", 
+    subprocess.call(["git", "submodule", "update", "--init",
                      "--recursive", rxd_data])
     correct_data = os.path.abspath(os.path.join(rxd_data, 'rxdtests'))
 

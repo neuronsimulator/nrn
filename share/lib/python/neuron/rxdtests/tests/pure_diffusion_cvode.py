@@ -39,4 +39,3 @@ for t in [25, 50, 75, 100, 125]:
 
 pyplot.tight_layout()
 pyplot.savefig('{0}.png'.format(name))
-

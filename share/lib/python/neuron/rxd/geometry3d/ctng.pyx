@@ -171,7 +171,7 @@ def soma_objects(x, y, z, sec, double x0, double y0, double z0, int n_soma_step)
     cdef list objects = []
     cdef list f_pts
     cdef dict seg_dict = {}
-    
+
     somax, somay, somaz = x0, y0, z0
 
     xshifted = [xx - x0 for xx in x]
@@ -343,7 +343,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                                       sec.y3d(i) - orig_y,
                                       sec.z3d(i) - orig_z))
                     if sum([abs(s0 - s1) for s0,s1 in zip(*shift)]) > dx/10.0:
-                        raise RxDException("soma rotation unsupported for voxelized somas") 
+                        raise RxDException("soma rotation unsupported for voxelized somas")
                     sx, sy, sz = shift[0]
                     x = (x + sx).to_python()
                     y = (y + sy).to_python()
@@ -376,7 +376,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
         all_cones = []
         pts_cones_db = {}
         diam_db = {}
-        
+
         for (k, branch), psec in zip(enumerate(branches), parent_sec_name):
             if source_is_import3d:
                 x, y, z = [numpy.array(branch.raw.getrow(i).to_python()) for i in range(3)]
@@ -441,7 +441,7 @@ def constructive_neuronal_geometry(source, int n_soma_step, double dx, nouniform
                 # to the closest place on the soma's axis instead with full diameter
                 # x, y, z, d = [cp[0]] + [X for X in x[1 :]], [cp[1]] + [Y for Y in y[1:]], [somaz] + [Z for Z in z[1:]], [d[1]] + [D for D in d[1 :]]
                 x[0], y[0] = cp
-                z[0] = somaz 
+                z[0] = somaz
                 d[0] = d[1]
                 if branch not in potential_soma_cones:
                     potential_soma_cones[branch] = []

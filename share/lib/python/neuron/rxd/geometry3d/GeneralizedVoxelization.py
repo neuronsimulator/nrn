@@ -2,11 +2,11 @@ from . import graphicsPrimitives as graphics
 from .. import options
 
 def find_voxel(x,y,z,g):
-    """returns (i,j,k) of voxel containing point x,y,z if the point is within 
+    """returns (i,j,k) of voxel containing point x,y,z if the point is within
        the grid, otherwise return the corresponding grid boundary.
     """
     # g is grid boundaries
-    i = max(0,int((x-g['xlo'])//g['dx'])) 
+    i = max(0,int((x-g['xlo'])//g['dx']))
     j = max(0,int((y-g['ylo'])//g['dy']))
     k = max(0,int((z-g['zlo'])//g['dz']))
     return (i,j,k)
@@ -16,7 +16,7 @@ def get_verts(voxel,g):
     (i,j,k) = voxel
     dx,dy,dz = g['dx'],g['dy'],g['dz']
     v1_0,v1_1,v1_2 = g['xlo'] + i*dx, g['ylo'] + j*dy, g['zlo'] + k*dz
-    vertices = [(v1_0,v1_1,v1_2), 
+    vertices = [(v1_0,v1_1,v1_2),
                 (v1_0+dx,v1_1,v1_2),
                 (v1_0+dx,v1_1+dy,v1_2),
                 (v1_0,v1_1+dy,v1_2),
@@ -24,7 +24,7 @@ def get_verts(voxel,g):
                 (v1_0+dx,v1_1,v1_2+dz),
                 (v1_0+dx,v1_1+dy,v1_2+dz),
                 (v1_0,v1_1+dy,v1_2+dz)]
-    return vertices 
+    return vertices
 
 def get_surr_rows(row,endpoints,g):
     """return list (len=4) of the rows surrounding the current one on all sides
@@ -81,9 +81,9 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
     else:
         going_in = False
     while (0 <= Ri and (g['xlo']+(Ri)*g['dx']) < g['xhi']) and not stop:
-        verts = verts_in(f,(Ri,row[0],row[1]),surf,g) 
+        verts = verts_in(f,(Ri,row[0],row[1]),surf,g)
         if verts == 0:
-            if not going_in:  
+            if not going_in:
                 stop=True
                 continue
             else:
@@ -96,13 +96,13 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
             Rend = Ri
             Ri += 1
             continue
-        else: 
+        else:
             Rend = Ri
             if going_in:
                 check_surf_R = (True, Ri)
                 break
             Ri += 1
-    
+
     # the -x or left endpoint
     stop=False
     Li = guesses[0]
@@ -115,7 +115,7 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
     else:
         going_in = False
     while (0 <= Li and (g['xlo']+(Li)*g['dx']) < g['xhi']) and not stop:
-        verts = verts_in(f,(Li,row[0],row[1]),surf,g) 
+        verts = verts_in(f,(Li,row[0],row[1]),surf,g)
         if verts == 0:
             if not going_in:
                 stop=True
@@ -128,23 +128,23 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
             Lend = Li
             Li -= 1
             continue
-        else: 
+        else:
             Lend = Li
             if going_in:
                 check_surf_L = (True, Li)
                 break
             Li -= 1
-            
+
     # check for extra surface voxels missed
     if check_surf_R[0]:
         r = check_surf_R[1]
         while r != Lend:
-            verts = verts_in(f,(r,row[0],row[1]),surf,g) 
+            verts = verts_in(f,(r,row[0],row[1]),surf,g)
             if verts == 8:
                 break
             else:
                 r -= 1
-                
+
     if check_surf_L[0]:
         l = check_surf_L[1]
         while l != Rend:
@@ -158,7 +158,7 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
     if include_ga:
         surf.add((Lend,row[0],row[1]))
         surf.add((Rend,row[0],row[1]))
-        
+
     return (Lend,Rend)
 
 def voxelize(grid, Object, corners=None, include_ga=False):
@@ -192,15 +192,15 @@ def voxelize(grid, Object, corners=None, include_ga=False):
         # find the contained endpoints and start the set with initial row and initial endpoints
         s = set()
         ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0-1,i0+1),grid)
-    
+
     # the given starting voxel is not actually found
     possibly_missed = False
     if not ends[0]:
         possibly_missed = True
         ends = (i0, i0)
-    
+
     #------
-    
+
     for i in range(ends[0],ends[1]+1):
         yes_voxels.add((i,j0,k0))
     # add that initial row to checked and the set (otherwise inital voxel missed)
@@ -218,7 +218,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
                         yes_voxels.add((i,row[0],row[1]))
                     s.add((row,(Lend,Rend)))
                 checked.add(row)
-    
+
     missed = False
     if possibly_missed and (len(yes_voxels) == 1):          # no voxels were found, return empty set
         missed = (i0, j0, k0)

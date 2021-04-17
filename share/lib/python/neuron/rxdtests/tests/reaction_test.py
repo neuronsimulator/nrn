@@ -24,4 +24,3 @@ C = rxd.Species(r, name='C', initial=0.207614)
 
 h.finitialize(-65)
 h.continuerun(72)
-

@@ -12,7 +12,7 @@ import warnings
 from neuron import h, _sec_db
 
 def find_parent_seg(join, sdict, objects):
-    
+
     if not join:
         return None
     elif join[0] not in objects:
@@ -33,12 +33,12 @@ def find_parent_seg(join, sdict, objects):
 
     return pseg
 
- 
+
 
 def all_in(dist):
     for i in dist:
         if i > ics_distance_threshold:
-            return False 
+            return False
     return True
 
 def sort_spheres_last(item):
@@ -51,7 +51,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
     source = list(source)
     morphology = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
-    
+
 
     # grid setup
     if mesh_grid:
@@ -80,15 +80,15 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                 diams = minmax([sec.diam3d(i) for i in rng if sec.diam3d(i) > 0],
                                diams)
                 arcs = min([sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]
-                                if sec.arc3d(i + 1) > sec.arc3d(i)] + [arcs]) 
-    
+                                if sec.arc3d(i + 1) > sec.arc3d(i)] + [arcs])
+
         # TODO: include segment boundaries when checking cone lengths
         # warning on minimum size of dx, only considering positive lengths
         if diams:
             check = min(diams[0]/math.sqrt(3), arcs/math.sqrt(3))
             if (dx > check):
                 warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
-    
+
         for idx in soma_idx:
             sec = source[idx]
             rng = relevant_pts[idx] if relevant_pts else range(sec.n3d())
@@ -97,11 +97,11 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             zs = minmax([sec.z3d(i) for i in rng], zs)
             diams = minmax([sec.diam3d(i) for i in rng if sec.diam3d(i) > 0],
                             diams)
-      
+
         dy = dz = dx   # ever going to change this?
-    
+
         margin = diams[1] + 2*dx
-        grid = {'xlo': xs[0] - margin, 
+        grid = {'xlo': xs[0] - margin,
                 'xhi': xs[1] + margin,
                 'ylo': ys[0] - margin,
                 'yhi': ys[1] + margin,
@@ -120,7 +120,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
                 final_seg_dict[seg].append(item)
             else:
                 final_seg_dict[seg] = [item]
-    
+
     # assign join objects
     for jg in join_groups:
         seg = find_parent_seg(jg, segment_dict, join_objects)
@@ -129,7 +129,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             if (not(isinstance(item, Cone) or isinstance(item, Cylinder))) or (item in join_objects):
                 if seg in final_seg_dict.keys():
                     final_seg_dict[seg].append(item)
-                else: 
+                else:
                     final_seg_dict[seg] = [item]
 
 
@@ -163,15 +163,15 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
 
                 # must take only the internal voxels for that item (set diff)
                 yesvox = yesvox - set(surface.keys())
-                for i in yesvox:  
+                for i in yesvox:
                     if i in final_intern_voxels.keys():
                         if h.distance(distance_root, seg) < h.distance(distance_root, final_intern_voxels[i][1]) and not isinstance(item, Sphere):
                             final_intern_voxels[i][1] = seg
-                    else:                 
+                    else:
                         final_intern_voxels[i] = [dx**3, seg]
 
                 for i in surface.keys():
-                    if i in total_surface_voxels.keys():				
+                    if i in total_surface_voxels.keys():
                         total_surface_voxels[i][0].append(item)
                         # update the distances list to the minimum at each vertex
                         total_surface_voxels[i][1] = [min(total_surface_voxels[i][1][j], surface[i][j]) for j in range(8)]
@@ -198,10 +198,10 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             V = simplevolume(itemlist, distances, vox, grid)
             A = surface_area(itemlist, vox, grid)
             final_surface_voxels[vox] = [V, A, seg]
-            
+
     def has_vox(*vox):
         return vox in final_surface_voxels or vox in final_intern_voxels
-    
+
     # if an internal voxel doesn't have a neighbor... then it's not internal
     # TODO: this should never happen, and seems to only happen when there
     #       is surface that passes exactly through the boundary
@@ -225,36 +225,13 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         if area:
             final_surface_voxels[vox] = [vol, area, seg]
             actually_surface_voxels.append(vox)
-    
+
     for vox in actually_surface_voxels:
         del final_intern_voxels[vox]
- 
+
     # make sure to keep track of poss_missed for each cone; total should be 0
     """if missed > 0:
         print("{} objects have inaccurate voxelization, probably due to resolution errors.".format(missed))
         print("Missed voxels total: ", len(missed_voxels))
     """
     return final_intern_voxels, final_surface_voxels, grid
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

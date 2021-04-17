@@ -23,7 +23,7 @@ def mechanism_end(self, node):
       cg.mechs_.append(BioMech(m.name_))
     cg.mechs_[-1].parms_.append(p)
 
-def parameter(self, node): 
+def parameter(self, node):
     value = float(node.get('value'))
     name = node.get("name")
     if name != None:
@@ -34,7 +34,7 @@ def parameter(self, node):
       # NEURON ModelView converts g_pas to gmax.
       # following does only that one
       name = name.encode('ascii') + '_' + self.biomechs_[-1].name_
-      if name == 'gmax_pas':  
+      if name == 'gmax_pas':
         name = 'g_pas'
       self.biomechs_[-1].parms_.append(BioParm(name, value))
     else:
@@ -44,7 +44,6 @@ def parameter(self, node):
 
 def spec_axial_resistance(self, node):
     self.biomechs_.append(BioMech('Ra'))
-      
+
 def spec_capacitance(self, node):
     self.biomechs_.append(BioMech('cm'))
-

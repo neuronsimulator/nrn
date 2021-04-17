@@ -26,4 +26,3 @@ h.continuerun(10)
 print("float", x[ecs].node_by_location(-20,0,0).concentration)
 print("callb", x[ecs].node_by_location(0,0,0).concentration)
 print("refer", x[ecs].node_by_location(20,0,0).concentration)
-

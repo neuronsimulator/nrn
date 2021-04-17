@@ -12,22 +12,22 @@ _itertools_chain = itertools.chain
 
 class Rate(GeneralizedReaction):
     """Declare a contribution to the rate of change of a species or other state variable.
-    
+
     Example:
-    
+
         constant_production = rxd.Rate(protein, k)
-        
+
     If this was the only contribution to protein dynamics and there was no
     diffusion, the above would be equivalent to:
-    
+
         dprotein/dt = k
-        
+
     If there are multiple rxd.Rate objects (or an rxd.Reaction, etc) acting on
     the same species, then their effects are summed.
     """
     def __init__(self, species, rate, regions=None, membrane_flux=False):
         """create a rate of change for a species on a given region or set of regions
-        
+
         if regions is None, then does it on all regions"""
         self._species = weakref.ref(species)
         self._original_rate = rate
@@ -59,10 +59,10 @@ class Rate(GeneralizedReaction):
             raise RxDException('if membrane_flux then must specify the (unique) membrane regions')
         self._trans_membrane = False
         rxd._register_reaction(self)
-        
+
         # be careful, this could keep states alive
         self._original_rate = rate
-        
+
         try:
             self._voltage_dependent = rate._voltage_dependent
         except AttributeError:
@@ -72,14 +72,14 @@ class Rate(GeneralizedReaction):
         if initializer.is_initialized():
             self._do_init()
 
-        
+
     def _do_init(self):
         from . import  region, species
         rate = self._original_rate
         if not isinstance(rate, RangeVar):
             regions = []
             if self._regions and self._regions != [None]:
-                regions = self._regions 
+                regions = self._regions
             elif hasattr(self._species(),'_regions'):
                 regions = self._species()._regions
             elif hasattr(self._species(),'_region'):
@@ -94,10 +94,10 @@ class Rate(GeneralizedReaction):
         self._update_indices()
 
         #Check to if it is an extracellular reaction
-        #Was an ECS region was passed to to the constructor 
+        #Was an ECS region was passed to to the constructor
         ecs_region = [r for r in self._regions if isinstance(r, region.Extracellular)]
         #ecs_region = ecs_region[0] if len(ecs_region) > 0 else None
-        #commented above out line because we need to pass all ecs_regions in. 
+        #commented above out line because we need to pass all ecs_regions in.
         #TODO review this code below...I am very tired. Also did this in reaction.py
         ecs_region = ecs_region if len(ecs_region) > 0 else None
         if ecs_region:
@@ -115,7 +115,7 @@ class Rate(GeneralizedReaction):
                 sp = self._species()
                 if sp and sp._extracellular_instances:
                     self._ecs_regions = [key for key  in sp._extracellular_instances.keys()]
-        
+
 
         if hasattr(self,'_ecs_regions'):
             self._rate_ecs, self._involved_species_ecs = rxdmath._compile(rate, self._ecs_regions)
@@ -124,7 +124,7 @@ class Rate(GeneralizedReaction):
                     raise RxDException('Error Rate %r: an extracellular rate can not depend on a SpeciesOnRegion' % self._original_rate)
 
 
-    
+
     def __repr__(self):
         short_rate = self._original_rate._short_repr() if hasattr(self._original_rate,'_short_repr') else self._original_rate
         if len(self._regions) != 1 or self._regions[0] is not None:
@@ -132,15 +132,15 @@ class Rate(GeneralizedReaction):
             return 'Rate(%s, %s, regions=%s, membrane_flux=%r)' % (self._species()._short_repr(), short_rate, regions_short, self._membrane_flux)
         else:
             return 'Rate(%s, %s, membrane_flux=%r)' % (self._species()._short_repr(), short_rate, self._membrane_flux)
-    
+
     def _rate_from_rangevar(self, *args):
         return self._original_rate._rangevar_vec()
-    
+
     def _update_indices(self):
         # this is called anytime the geometry changes as well as at init
         # TODO: is the above statement true?
-       
-        #Default values 
+
+        #Default values
         self._indices_dict = {}
         self._indices = []
         self._jac_rows = []
@@ -158,10 +158,10 @@ class Rate(GeneralizedReaction):
                 for sptr in self._involved_species:
                     self._indices_dict[sptr()] = []
             return
-        
+
 
         active_secs = None
-        
+
         # locate the regions containing all species (including the one that changes)
         active_regions = list(set.intersection(*[set(sptr()._regions + sptr()._extracellular_regions if isinstance(sptr(),species.Species) else [sptr()._region() if isinstance(sptr(),species.SpeciesOnRegion) else sptr()._extracellular()]) for sptr in list(self._involved_species) + [self._species]]))
         sp_regions = self._species()._regions + self._species()._extracellular_regions if isinstance(self._species(),species.Species) else [self._species()._region() if isinstance(self._species(),species.SpeciesOnRegion) else self._species()._extracellular()]
@@ -191,7 +191,7 @@ class Rate(GeneralizedReaction):
                 indices = [list(s.indices(secs={sec})) for sec in active_1d_secs]
                 if not all(rcount == sec.nseg or rcount == 0 for rcount, sec in zip([len(ind) for ind in indices],active_1d_secs)):
                     raise RxDException("Error in rate %r, the species do not share a common region" % self)
-                #remove sections where species is absent 
+                #remove sections where species is absent
                 active_1d_secs = {sec for sec, ind in zip(active_1d_secs,indices) if len(ind) == sec.nseg}
             #Repeated with the trimmed active_1d_secs and store the indices
             if active_1d_secs:
@@ -215,10 +215,10 @@ class Rate(GeneralizedReaction):
             for sptr in self._involved_species:
                 s = sptr()
                 self._indices_dict[s] = s.indices(active_regions, active_secs)
-            
+
             self._indices = [self._species().indices(active_regions, active_secs)]
-        self._active_regions = active_regions  
-        
+        self._active_regions = active_regions
+
         if isinstance(self._original_rate, RangeVar):
             nodes = []
             for sptr in self._involved_species:
@@ -241,7 +241,7 @@ class Rate(GeneralizedReaction):
         self._memb_scales = 1
 
 
-    
+
     def _get_memb_flux(self, states):
         if self._membrane_flux:
             #raise RxDException('membrane flux due to rxd.Rate objects not yet supported')
@@ -250,4 +250,3 @@ class Rate(GeneralizedReaction):
             return self._memb_scales * rates
         else:
             return []
-

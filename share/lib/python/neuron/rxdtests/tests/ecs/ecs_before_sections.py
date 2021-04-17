@@ -7,13 +7,13 @@ import numpy
 h.load_file('stdrun.hoc')
 
 # set the number of rxd threads
-rxd.nthread(2)      
+rxd.nthread(2)
 
 # set the seed
 numpy.random.seed(63245)
 
 # enable extracellular rxd (only necessary for NEURON prior to 7.7)
-rxd.options.enable.extracellular = True 
+rxd.options.enable.extracellular = True
 
 # Model parameters
 e = 1.60217662e-19
@@ -29,12 +29,12 @@ sighp = -6
 nap_minf = 1. / (1. + exp(-(v - thmp) / sigmp))
 nap_hinf = 1. / (1. + exp(-(v - thhp) / sighp))
 
-# Fast Na current parameters 
+# Fast Na current parameters
 gna = 3e-3*scale
 thm = -34
 sigm = 5
 
-# K current parameters 
+# K current parameters
 gk = 5e-3*scale
 thn = -55.
 sgn = 14.
@@ -47,24 +47,24 @@ minf = 1. / (1. + exp(-(v - thm) / sigm))
 ninf = 1. / (1. + exp(-(v - thn) / sgn))
 taun = taun0 + taun1 / (1 + exp(-(v - thnt) / sn))
 
-# K-leak parameters 
+# K-leak parameters
 gl = 0.1e-3*scale
 el = -70
 
-# leak parameters 
+# leak parameters
 pas_gl = 0.3
 pas_el = -70
 
 # Simulation parameters
 Lx, Ly, Lz = 500, 500, 100         # size of the extracellular space mu m^3
-Ncell = 2                          # number of neurons 
+Ncell = 2                          # number of neurons
 somaR = 40
 
 # Extracellular rxd
 # Where? -- define the extracellular space
 ecs = rxd.Extracellular(-Lx/2.0, -Ly/2.0,
                         -Lz/2.0, Lx/2.0, Ly/2.0, Lz/2.0, dx=10,
-                        volume_fraction=0.2, tortuosity=1.6) 
+                        volume_fraction=0.2, tortuosity=1.6)
 
 # Who? -- define the species
 k = rxd.Species(ecs, name='k', d=2.62, charge=1, initial=lambda nd: 40 if nd.x3d**2 + nd.y3d**2 + nd.z3d**2 < 50**2 else 3.5)
@@ -85,21 +85,21 @@ class Neuron:
         self.z = z
 
         self.soma = h.Section(name='soma', cell=self)
-        # add 3D points to locate the neuron in the ECS  
+        # add 3D points to locate the neuron in the ECS
         self.soma.pt3dadd(x, y, z + somaR, 2.0*somaR)
         self.soma.pt3dadd(x, y, z - somaR, 2.0*somaR)
-        
+
         #Where? -- define the intracellular space and membrane
         self.cyt = rxd.Region(self.soma, name='cyt', nrn_region='i')
         self.mem = rxd.Region(self.soma, name='mem', geometry = rxd.membrane())
         cell = [self.cyt, self.mem]
-        
+
         #Who? -- the relevant ions and gates
         self.k = rxd.Species(cell, name='k', d=2.62, charge=1, initial=125)
         self.na = rxd.Species(cell, name='na', d=1.78, charge=1, initial=10)
         self.n = rxd.State(cell, name='n', initial = 0.25512)
         self.ki, self.nai = self.k[self.cyt], self.na[self.cyt]
-        
+
         #What? -- gating variables and ion currents
         self.n_gate = rxd.Rate(self.n, phin * (ninf - self.n) / taun)
 
@@ -108,7 +108,7 @@ class Neuron:
         ek = 1e3*h.R*(h.celsius + 273.15)*log(ko/self.ki)/h.FARADAY
 
         # Persistent Na current
-        self.nap_current = rxd.MultiCompartmentReaction(self.nai, nao, 
+        self.nap_current = rxd.MultiCompartmentReaction(self.nai, nao,
                                gnap * nap_minf * nap_hinf * (v - ena),
                                mass_action=False, membrane=self.mem,
                                membrane_flux=True)
@@ -119,12 +119,12 @@ class Neuron:
                                membrane_flux=True)
         # K current
         self.k_current = rxd.MultiCompartmentReaction(self.ki, ko,
-                               gk * self.n**4 * (v - ek), 
+                               gk * self.n**4 * (v - ek),
                                mass_action=False, membrane=self.mem,
                                membrane_flux=True)
         # K leak
         self.k_leak = rxd.MultiCompartmentReaction(self.ki, ko,
-                               gl * (v - ek), 
+                               gl * (v - ek),
                                mass_action=False, membrane=self.mem,
                                membrane_flux=True)
         # passive leak

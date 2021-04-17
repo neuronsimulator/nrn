@@ -12,4 +12,3 @@ def tag(self, node):
 
 def value(self, node):
   pass
-

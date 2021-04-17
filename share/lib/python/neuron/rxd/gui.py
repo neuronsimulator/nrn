@@ -102,7 +102,7 @@ def _instantiate():
         _instantiate_regions(regions)
         _instantiate_species(species)
         _instantiate_reactions(all_reactions)
-    
+
 
 def get_sectionlists():
     found_sectionlists = {}
@@ -135,10 +135,10 @@ def get_sectionlists():
                     found_sectionlists[name] = 0
                     result_mapping[item] = int(name[12:].split(']')[0])
                     results.append(item)
-                    
+
     # sort these
     results = sorted(results, key=lambda s: s.lower())
-    
+
     # end with the anonymous lists (this probably includes things from cellbuilder)
 
     # handle any sectionlists without good hoc names
@@ -167,8 +167,8 @@ class _PartialSelector:
             return None
         return self.names[i]
     def select_action(self, action):
-        self.ell.select_action(action)                
-                    
+        self.ell.select_action(action)
+
 
 # this is a way of faking the Singleton pattern
 def ReactionEditor():
@@ -224,15 +224,15 @@ class FractionalVolumeOptions:
 class GeoSelector:
     text = {1: 'Inside', 2: 'Membrane', 3: 'Fractional Volume', 4: 'Shell',
             5: 'Constant 2D Area/Length', 6: 'Constant 3D Vol/Length'}
-    
+
     def select_by_name(self, name):
         click_map = {'Inside': self.click_inside, 'Membrane': self.click_membrane,
                      'Fractional Volume': self.click_fractional,
                      'Shell': self.click_shell,
-                     'Constant 2D Area/Length': self.click_constarea, 
+                     'Constant 2D Area/Length': self.click_constarea,
                      'Constant 3D Vol/Length': self.click_constvol}
         click_map.get(name, self.clear_checkboxes)()
-    
+
     def clear_checkboxes(self):
         self.inside_checkbox = 0
         self.membrane_checkbox = 0.
@@ -255,19 +255,19 @@ class GeoSelector:
         h.xcheckbox('Constant 2D Area/Length', (self, 'constantarea_checkbox'), self.click_constarea)
         h.xcheckbox('Constant 3D Vol/Length', (self, 'constantvol_checkbox'), self.click_constvol)
         h.xpanel()
-    
+
     def click_inside(self):
         self.clear_checkboxes()
         self.inside_checkbox = 1
         self.option = 1
         self.callback()
-    
+
     def click_membrane(self):
         self.clear_checkboxes()
         self.membrane_checkbox = 1
         self.option = 2
         self.callback()
-    
+
     def click_fractional(self):
         self.clear_checkboxes()
         self.fractional_checkbox = 1
@@ -291,16 +291,16 @@ class GeoSelector:
         self.constantvol_checkbox = 1
         self.option = 6
         self.callback()
-        
+
 
 class InsideOptions:
     def __init__(self):
         h.xpanel('')
         h.xlabel('No options.')
         h.xpanel()
-    
+
     info = 'The interior of the selected portions of the cell.'
-    
+
     def get_options(self): return {}
     def set_options(self, opt): pass
     is_boundary = False
@@ -312,7 +312,7 @@ class MembraneOptions:
         h.xpanel('')
         h.xlabel('No options.')
         h.xpanel()
-    
+
     info = 'The membrane of the selected portions of the cell.'
 
     def get_options(self): return {}
@@ -320,7 +320,7 @@ class MembraneOptions:
     is_boundary = True
     def is_valid(self):
         return True
-    
+
 class ShellOptions:
     def __init__(self):
         self.set_options({})
@@ -338,7 +338,7 @@ class ShellOptions:
     is_boundary = False
     def is_valid(self):
         return True
-    
+
 
 class ConstAreaOptions:
     def __init__(self):
@@ -360,7 +360,7 @@ class ConstAreaOptions:
     is_boundary = True
     def is_valid(self):
         return True
-    
+
 
 class ConstVolOptions:
     # rxd.FixedCrossSection
@@ -382,8 +382,8 @@ class ConstVolOptions:
 
     def is_valid(self):
         return True
-    
-        
+
+
 class RegionPane:
     def __init__(self):
         self.hbox1 = h.HBox(3)
@@ -424,7 +424,7 @@ class RegionPane:
             # texteditor persists even if not saved
             spacer = h.TextEditor('', 1, 30)
             spacer.readonly(1)
-            spacer.map()        
+            spacer.map()
             h.xpanel('')
             h.xbutton('Information', self.info)
             h.xpanel()
@@ -448,14 +448,14 @@ class RegionPane:
         self.region_list.select_action(self.update)
         self.region_list.select('(NEW)')
         self.update()
-    
+
     def info(self):
         h.xpanel('Information on %s' % self.geoselector.text[self.geoselector.option])
         option_panel = self.option_panels[self.geoselector.option - 1]
         for line in option_panel.info.split('\n'):
             h.xlabel(line)
         h.xpanel()
-    
+
     def geo_switched(self):
         # called whenever the geometry has been switched
         geo_type_id = self.geoselector.option - 1
@@ -463,7 +463,7 @@ class RegionPane:
         region_name = self.region_list.selected()
         region_info = regions.get(region_name, default_region)
         self.option_panels[geo_type_id].set_options(region_info)
-        
+
     def update(self):
         # update the names
         self.region_list.select_action('')
@@ -484,7 +484,7 @@ class RegionPane:
         region_info = regions.get(region_name, default_region)
         self.nrnregion_selector.select(region_info.get('nrn_region', None))
         self.geoselector.select_by_name(region_info.get('geometry', 'Inside'))
-        
+
 
     def save(self):
         region_name = self.name_editor.text()
@@ -508,7 +508,7 @@ class RegionPane:
         if region_name in regions:
             del regions[region_name]
             _the_rxd_builder.update()
-        
+
 
 class InstantiatePane:
     def __init__(self):
@@ -521,24 +521,24 @@ class InstantiatePane:
         h.xpanel()
         self.spacer = h.TextEditor('', 1, 30)
         self.spacer.readonly(1)
-        self.spacer.map()        
+        self.spacer.map()
         h.xpanel('', 1)
         h.xlabel('When you are ready, click:   ')
         h.xbutton('Instantiate', _instantiate)
         h.xpanel()
         self.vbox.intercept(0)
         self.vbox.map()
-            
+
 class _RxDBuilder:
     def __init__(self):
         global rxd_builder_tab
-        
+
         self.vbox = h.VBox(3)
         self.vbox.intercept(1)
-        
+
         if rxd_builder_tab not in [1, 2, 3, 4, 5]:
             rxd_builder_tab = 1
-        
+
         h.xpanel('', 1)
         h.xradiobutton('Regions    ', self.regions, 1 if rxd_builder_tab == 1 else 0)
         h.xradiobutton('Species    ', self.species, 1 if rxd_builder_tab == 2 else 0)
@@ -546,29 +546,29 @@ class _RxDBuilder:
         h.xradiobutton('Morphology    ', self.morphology, 1 if rxd_builder_tab == 4 else 0)
         h.xradiobutton('Instantiate', self.instantiate, 1 if rxd_builder_tab == 5 else 0)
         h.xpanel()
-        
+
         self.deck = h.Deck()
         self.deck.intercept(1)
-        self.regionpane = RegionPane()        
+        self.regionpane = RegionPane()
         self.speciespane = SpeciesPane()
         self.reactionpane = ReactionPane()
         self.morphologypane = MorphologyPane()
-        self.instantiatepane = InstantiatePane()    
+        self.instantiatepane = InstantiatePane()
         self._the_reaction_editor = _ReactionEditor()
         self.deck.intercept(0)
         self.deck.map()
-        
+
         self.deck.flip_to(rxd_builder_tab - 1)
-        
+
         self.vbox.save(self.save)
-        
+
         self.vbox.intercept(0)
         self.vbox.full_request(1)
-    
+
     @property
     def is_mapped(self):
         return self.vbox.ismapped()
-    
+
     def map(self, name=None, left=None, top=None, width=None, height=None):
         if self.is_mapped: return
         if name is None:
@@ -578,7 +578,7 @@ class _RxDBuilder:
                 self.vbox.map('RxD Builder', rxd_builder_left, rxd_builder_top, rxd_builder_width, rxd_builder_height)
         else:
             self.vbox.map(name, left, top, width, height)
-        
+
     def save(self):
         self.vbox.save('nrnpython("import neuron.rxd.gui")')
         self.vbox.save('nrnpython("neuron.rxd.gui.regions = %r")' % regions)
@@ -588,26 +588,26 @@ class _RxDBuilder:
         self.vbox.save('nrnpython("neuron.rxd.gui.has_instantiated = %r")' % has_instantiated)
         self.vbox.save('nrnpython("from neuron import h")')
         self.vbox.save('nrnpython("h.ocbox_ = neuron.rxd.gui.RxDBuilder(visible=False)")')
-                       
+
         if has_instantiated:
             self.vbox.save('nrnpython("h.ocbox_.instantiate()")')
-    
+
     def regions(self):
         global rxd_builder_tab
         rxd_builder_tab = 1
         self.deck.flip_to(0)
-    
+
     def species(self):
         global rxd_builder_tab
         rxd_builder_tab = 2
         self.deck.flip_to(1)
         self.vbox.full_request(1)
-    
+
     def reactions(self):
         global rxd_builder_tab
         rxd_builder_tab = 3
-        self.deck.flip_to(2) 
-    
+        self.deck.flip_to(2)
+
     def morphology(self):
         global rxd_builder_tab
         rxd_builder_tab = 4
@@ -619,7 +619,7 @@ class _RxDBuilder:
         rxd_builder_tab = 5
         self.deck.flip_to(4)
         #self.instantiatepane.update()
-    
+
     def update(self):
         self.morphologypane.update()
         self.regionpane.update()
@@ -632,7 +632,7 @@ class NrnRegionSelector:
     def __init__(self):
         h.xpanel('NrnRegionSelector', 1)
         h.xlabel('Electrophysiology region: ')
-        self.opt1, self.opt2, self.opt3 = 0, 0, 1        
+        self.opt1, self.opt2, self.opt3 = 0, 0, 1
         h.xcheckbox('(I)nside  ', (self, 'opt1'), self._click_inside)
         h.xcheckbox('(O)utside  ', (self, 'opt2'), self._click_outside)
         h.xcheckbox('Neither', (self, 'opt3'), self._click_neither)
@@ -655,7 +655,7 @@ class NrnRegionSelector:
             self._click_outside()
         else:
             self._click_neither()
-            
+
 
 class SectionListSelector(_PartialSelector):
     def __init__(self):
@@ -697,7 +697,7 @@ class SpeciesSelectorWithRegions(_PartialSelector):
         for name in self.names: self._append(name)
     def _append(self, name):
         self.ell.append(h.String(name))
-            
+
 
 class MembraneSelector(_PartialSelector):
     def __init__(self):
@@ -714,7 +714,7 @@ class MembraneSelector(_PartialSelector):
         self.select(selected)
     def _append(self, name):
         self.ell.append(h.String(name))
-        
+
 
 class RegionList(_PartialSelector):
     def __init__(self, title, names=[]):
@@ -744,32 +744,32 @@ class RegionList(_PartialSelector):
         self.ell.remove_all()
         for name in names: self.append(name)
 
-        
+
 class _MorphologyPane:
     def __init__(self):
         self.vbox = h.VBox(3)
         self.vbox.intercept(1)
-        
+
         h.xpanel('')
         h.xlabel('Select the morphology corresponding to each region')
         h.xpanel()
-        
+
         self.hbox = h.HBox(3)
         self.hbox.intercept(1)
-        
+
         self.region_list = RegionList(None)
-        
+
         self.sectionlist_selector = SectionListSelector()
         self.sectionlist_selector.select_action(self.change_morphology_association)
-        
+
         self.shape_plot = h.Shape()
         self.shape_plot.show(1)
-        
+
         self.hbox.intercept(0)
         self.hbox.map()
-        
+
         self.vbox.intercept(0)
-            
+
     def map(self):
         self.vbox.map('Morphology Pane')
 
@@ -785,7 +785,7 @@ class _MorphologyPane:
         else:
             self.shape_plot.color_all(1)
             self.shape_plot.color_list(h.SectionList[self.sectionlist_selector.mapping[morph_name]], 2)
-        
+
     def update(self):
         # update the names
         self.region_list.select_action('')
@@ -811,14 +811,14 @@ class _MorphologyPane:
         else:
             self.sectionlist_selector.select('No Sections')
 
-    
-    
+
+
 class RegionSelector():
     def __init__(self, name):
         self.name = name
         selected = species[name]['regions']
         self._setup_left_right(selected)
-        self.region_selector = h.HBox(3)    
+        self.region_selector = h.HBox(3)
         self.region_selector.intercept(1)
         self.left_list = RegionList('Nonselected Regions')
         self.arrow_col = h.VBox(3)
@@ -837,18 +837,18 @@ class RegionSelector():
         self.region_selector.intercept(0)
         self.region_selector.map()
         self._update_lists()
-    
+
     def _update_lists(self):
         self.left_list.set_list(self.left_list_items)
         self.right_list.set_list(self.right_list_items)
-    
+
     def _update_regions(self):
         species[self.name]['regions'] = self.right_list.names
 
     def _setup_left_right(self, right):
         left = list(regions.keys())
         right = list(right)
-        
+
         # only keep those things that belong to the full region names
         # but don't put anything kept on the left
         for item in right:
@@ -856,24 +856,24 @@ class RegionSelector():
                 right.remove(item)
             else:
                 left.remove(item)
-        
+
         self.left_list_items = left
         self.right_list_items = right
-        
+
     def _do_left_arrow(self):
         name = self.right_list.selected()
         if name is None: return
         self.right_list.remove(name)
         self.left_list.append(name)
         self._update_regions()
-        
+
     def _do_right_arrow(self):
         name = self.left_list.selected()
         if name is None: return
         self.left_list.remove(name)
         self.right_list.append(name)
         self._update_regions()
-        
+
     def selected(self):
         return list(self.right_list.names)
 
@@ -908,7 +908,7 @@ class SpeciesPanel:
     def regions(self):
         return dict([(name, loc.regions()) for name, loc in zip(list(self.species_locs.keys()), list(self.species_locs.values()))])
 
-        
+
 class _SpeciesEditor:
     def __init__(self):
         self.hbox = h.HBox(3)
@@ -927,7 +927,7 @@ class _SpeciesEditor:
         self.vbox.map()
         self.vbox = h.VBox(3)
         self.vbox.intercept(1)
-        
+
         h.xpanel('')
         h.xlabel('Name')
         h.xpanel()
@@ -935,23 +935,23 @@ class _SpeciesEditor:
         self.vbox.adjuster(15)
         self.name_editor = h.TextEditor('', 1, 30)
         self.name_editor.map()
-        
+
         self._set_values('', 0, 0)
-        
+
         h.xpanel('')
         h.xvalue('Charge', (self, 'charge'))
         h.xvalue('Diff Const', (self, 'd'))
         h.xpanel()
-        
+
         h.xpanel('', 1)
         h.xbutton('Revert', self._revert)
         h.xbutton('Save', self._save)
         h.xpanel()
-        
+
         self.vbox.intercept(0)
         self.vbox.map()
         self.hbox.intercept(0)
-        
+
         self.ell.select_action(self._new_or_display, 1)
 
     def _new_or_display(self):
@@ -959,12 +959,12 @@ class _SpeciesEditor:
             self._set_values('', 0, 0)
         else:
             self._revert()
-            
+
     def _set_values(self, name, charge, diff):
         self.charge = charge
         self.d = diff
         self.name_editor.text(name)
-        
+
 
     def _revert(self):
         name = self.selected()
@@ -973,7 +973,7 @@ class _SpeciesEditor:
             self._set_values(name, data['charge'], data['d'])
         else:
             h.continue_dialog('Nothing to revert to')
-        
+
     def _save(self):
         name = self.name_editor.text()
         if not name:
@@ -986,7 +986,7 @@ class _SpeciesEditor:
             species[name] = {'charge': self.charge, 'd': self.d, 'regions': regions}
             self._set_list()
             self._select(name)
-            
+
     def _delete(self):
         name = self.selected()
         if name is not None:
@@ -995,7 +995,7 @@ class _SpeciesEditor:
         else:
             h.continue_dialog('Nothing to delete')
         self._new_or_display()
-        
+
     def _set_list(self, do_update=True):
         self.ell.remove_all()
         self.append('(NEW)')
@@ -1008,24 +1008,24 @@ class _SpeciesEditor:
                 species_pane_update()
             except NameError:
                 pass
-            
+
     def append(self, name):
         self.ell.append(h.String(name))
-    
+
     def _select(self, name):
         self.ell.select(1 + self._names.index(name))
-    
+
     def selected(self):
         item = int(self.ell.selected())
         if item == -1 or item == 0:
             return None
         return self._names[item - 1]
-        
-    
+
+
     @property
     def is_mapped(self):
         return self.hbox.ismapped()
-    
+
     def map(self):
         self.hbox.map('Species Editor')
 
@@ -1061,14 +1061,14 @@ class _SpeciesPane:
         self.speciespanel = SpeciesPanel()
         self.deck.intercept(0)
         self.deck.flip_to(0)
-    
+
     def update(self):
         self._update_panel()
 
     @property
     def is_mapped(self):
         return self.vbox.ismapped()
-    
+
     def map(self):
         self.vbox.map('Species Pane')
 
@@ -1106,7 +1106,7 @@ class SpeciesMultiSelector:
             for s in list(species.keys()):
                 for r in species[s]['regions']:
                     self.names.append('%s[%s]' % (s, r))
-                
+
         self.names.sort()
         for name in self.names:
             self.ell.append(h.String(name))
@@ -1121,7 +1121,7 @@ class SpeciesMultiSelector:
         h.xpanel()
         self.vbox.intercept(0)
         self.vbox.map('Species MultiSelector')
-    
+
     def _accept(self):
         i = int(self.ell.selected())
         mult = self.data[0]
@@ -1130,7 +1130,7 @@ class SpeciesMultiSelector:
             return
         self.selector.add(self.names[i], mult)
         self.vbox.unmap()
-        
+
     def _cancel(self):
         self.vbox.unmap()
 
@@ -1152,7 +1152,7 @@ class LRHSSelector(_PartialSelector):
         h.xpanel()
         self.vbox.intercept(0)
         self.vbox.map('L/RHS Selector')
-    
+
     def add(self, name, mult):
         self.species.append(name)
         if mult == int(mult):
@@ -1160,21 +1160,21 @@ class LRHSSelector(_PartialSelector):
         self.mults.append(mult)
         self.names.append('%g * %s' % (mult, name))
         self._update_list()
-    
+
     def _add(self):
         SpeciesMultiSelector(self, allow_with_region=self.allow_with_region, allow_without_region=self.allow_without_region)
-    
-    
+
+
     def _update_list(self):
         self.ell.remove_all()
         for name in self.names: self._append(name)
-    
+
     def _append(self, name):
         self.ell.append(h.String(name))
-    
+
     def _remove(self):
         self.remove(self.selected())
-    
+
     def remove(self, name):
         try:
             i = self.names.index(name)
@@ -1185,7 +1185,7 @@ class LRHSSelector(_PartialSelector):
         del self.species[i]
         del self.mults[i]
         self._update_list()
-    
+
     def update(self, data):
         self.species = []
         self.mults = []
@@ -1195,11 +1195,11 @@ class LRHSSelector(_PartialSelector):
                 self.add(name, mult)
         else:
             self.ell.remove_all()
-    
+
     def selection(self):
         return [(name, mult) for name, mult in zip(self.names, self.mults)]
-        
-            
+
+
 class SpecificRateEditor:
     def __init__(self):
         self.vbox = h.VBox(3)
@@ -1213,12 +1213,12 @@ class SpecificRateEditor:
         self.kf_editor.map()
         self.vbox.intercept(0)
         self.vbox.map()
-    
+
     def update(self, data):
         self.kf_editor.text(data['kf'])
         self.selector.update()
         self.selector.select(data.get('species', ''))
-    
+
     def get_options(self):
         return {'type': 'rate', 'kf': self.kf_editor.text(), 'species': self.selector.selected()}
 
@@ -1242,12 +1242,12 @@ class SpecificReactionEditor:
         self.rhs_selector = LRHSSelector()
         self.hbox.intercept(0)
         self.hbox.map('Specific Reaction Editor')
-        
+
         h.xpanel('')
         h.xlabel('kf:')
         h.xpanel()
         self.vbox.adjuster(15)
-        
+
         self.kf_editor = h.TextEditor('0', 1, 30)
         self.kf_editor.map()
 
@@ -1255,18 +1255,18 @@ class SpecificReactionEditor:
         h.xlabel('kb:')
         h.xpanel()
         self.vbox.adjuster(15)
-        
+
         self.kb_editor = h.TextEditor('0', 1, 30)
         self.kb_editor.map()
-        
+
         self.is_massaction = True
         h.xpanel('')
         h.xcheckbox('Mass Action', (self, 'is_massaction'))
         h.xpanel()
-        
+
         self.vbox.intercept(0)
         self.vbox.map()
-    
+
     def update(self, data):
         self.is_massaction = data.get('massaction', False)
         self.kf_editor.text(data['kf'])
@@ -1276,7 +1276,7 @@ class SpecificReactionEditor:
 
     def get_options(self):
         return {'type': 'reaction', 'kf': self.kf_editor.text(), 'kb': self.kb_editor.text(), 'lhs': self.lhs_selector.selection(), 'rhs': self.rhs_selector.selection()}
-    
+
 
 class SpecificMultiCompartmentReactionEditor:
     def __init__(self):
@@ -1294,28 +1294,28 @@ class SpecificMultiCompartmentReactionEditor:
         self.rhs_selector = LRHSSelector()
         self.hbox.intercept(0)
         self.hbox.map('Specific Reaction Editor')
-        
+
         h.xpanel('')
         h.xlabel('kf:')
         h.xpanel()
-        
+
         self.vbox.adjuster(15)
         self.kf_editor = h.TextEditor('0', 1, 30)
         self.kf_editor.map()
-        
+
         h.xpanel('')
         h.xlabel('kb:')
         h.xpanel()
-        
+
         self.vbox.adjuster(15)
         self.kb_editor = h.TextEditor('0', 1, 30)
         self.kb_editor.map()
-        
+
         h.xpanel('')
         h.xlabel('Select the Boundary:')
         h.xpanel()
         self.membrane_selector = MembraneSelector()
-        
+
         self.is_massaction = True
         self.membrane_current = False
         self.scale_with_area = True
@@ -1324,15 +1324,15 @@ class SpecificMultiCompartmentReactionEditor:
         h.xcheckbox('Induces Membrane Current', (self, 'membrane_current'))
         h.xcheckbox('Scales With Membrane Area', (self, 'scale_with_area'))
         h.xpanel()
-        
+
         self.vbox.intercept(0)
         self.vbox.map()
 
 
     def get_options(self):
         return {'type': 'multicompartmentreaction', 'kf': self.kf_editor.text(), 'kb': self.kb_editor.text(), 'lhs': self.lhs_selector.selection(), 'rhs': self.rhs_selector.selection(), 'membrane': self.membrane_selector.selected()}
-    
-        
+
+
     def update(self, data):
         self.membrane_selector.update()
         self.is_massaction = data.get('massaction', False)
@@ -1374,7 +1374,7 @@ class ReactionPanelRight:
         self.current_editor = self.reaction_editor
         h.xpanel('', 1)
         h.xbutton('Revert', self._revert)
-        h.xbutton('Save', self._save)        
+        h.xbutton('Save', self._save)
         h.xpanel()
         self.vbox.intercept(0)
         self.vbox.map()
@@ -1396,7 +1396,7 @@ class ReactionPanelRight:
         _the_rxd_builder._the_reaction_editor._update_view()
     def _select_rate(self):
         self.opt1, self.opt2, self.opt3 = 1, 0, 0
-        self.deck.flip_to(0)    
+        self.deck.flip_to(0)
         self.rate_editor.update(self.data)
         self.current_editor = self.rate_editor
     def _select_reaction(self):
@@ -1422,7 +1422,7 @@ class ReactionPanelRight:
             self._select_multicompartmentreaction()
     def update2(self):
         self.multicompartmentreaction.update()
-            
+
 
 class _ReactionPane(object):
     def __init__(self):
@@ -1441,7 +1441,7 @@ class _ReactionPane(object):
         self.deck.flip_to(0)
         self.vbox.intercept(0)
         self._update_panel()
-    
+
     def _update_panel(self):
         self.deck.remove_last()
         self.deck.intercept(1)
@@ -1457,15 +1457,15 @@ class _ReactionPane(object):
         h.xpanel()
         self.deck.intercept(0)
         self.deck.flip_to(0)
-    
+
     def _update_active_reactions(self):
         for i, name in enumerate(self.reaction_names):
             all_reactions[name]['active'] = True if getattr(self, 'include_list%d' % i) else False
-        
+
     @property
     def is_mapped(self):
         return self.vbox.ismapped()
-    
+
     def map(self):
         self.vbox.map('Reaction Pane')
 
@@ -1496,11 +1496,11 @@ class _ReactionEditor:
         self.hbox.intercept(0)
         self.ell.select_action(self._update_view)
         self.hbox.full_request(1)
-        
+
     def update(self):
         self._set_list()
         self._update_view()
-    
+
     def _update_view(self):
         name = self.selected()
         if name is None:
@@ -1511,14 +1511,14 @@ class _ReactionEditor:
 
     def _select(self, name):
         self.ell.select(1 + self._names.index(name))
-        
+
     def selected(self):
         item = int(self.ell.selected())
         if item == -1 or item == 0:
             return None
         return self._names[item - 1]
-    
-    
+
+
     def _delete(self):
         try:
             del all_reactions[self.selected()]
@@ -1529,7 +1529,7 @@ class _ReactionEditor:
     @property
     def is_mapped(self):
         return self.hbox.ismapped()
-    
+
     def map(self):
         self.hbox.map('Reaction Editor')
 

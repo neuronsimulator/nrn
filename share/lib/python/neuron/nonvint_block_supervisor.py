@@ -144,7 +144,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
                 pd2_array = _empty_array
         else:
             pd2_array = None
-        
+
         if method in _no_args:
             args = ()
         elif method in _pd1_arg:
@@ -187,4 +187,3 @@ if __name__ == '__main__':
   h.finitialize(0)
   print("cvode fadvance")
   h.fadvance()
-

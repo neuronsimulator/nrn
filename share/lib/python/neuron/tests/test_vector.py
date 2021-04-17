@@ -23,7 +23,7 @@ class Bench(object):
             t += t2-t1
 
         print ('Executed "%s".  Elapsed = %f s' % (cmd,t/repeat))
-        
+
 
 class VectorTestCase(unittest.TestCase):
     """Tests of the hoc.Vector"""
@@ -50,13 +50,13 @@ class VectorTestCase(unittest.TestCase):
       except:
         pass
 
-    
+
     def testPerformance(self):
       """Test performance of Vector<->list,array"""
 
       try:
         import numpy
-        
+
         bench = Bench(globals(),locals())
         print ("\n")
         bench('l = range(1000000)')
@@ -89,9 +89,9 @@ class VectorTestCase(unittest.TestCase):
         #b = numpy.random.normal(size=10000)
         v = h.Vector(a)
         a1 = array(v)
-        assert alltrue(a==a1), 'numpy array "a" not equal to array(Vector(a))' 
+        assert alltrue(a==a1), 'numpy array "a" not equal to array(Vector(a))'
         v = h.Vector(a[::-1])
-        assert alltrue(array(v)[::-1] == a), 'Vector(a) malfuctions when a is a sliced array' 
+        assert alltrue(array(v)[::-1] == a), 'Vector(a) malfuctions when a is a sliced array'
 
         # inplace operations
 
@@ -110,7 +110,3 @@ if __name__ == "__main__":
     # unittest.main()
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite())
-
-
-
-

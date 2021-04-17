@@ -18,4 +18,3 @@ SUBDIRS = auditscripts hoc python
 else
 SUBDIRS = auditscripts hoc
 endif
-

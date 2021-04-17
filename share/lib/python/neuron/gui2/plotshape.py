@@ -48,14 +48,14 @@ def _do_reset_geometry():
     geo = []
     for sec in secs:
         geo += _segment_3d_pts(sec)
-    javascript_embedder(("set_neuron_section_data(%s);" % json.dumps(geo))) 
+    javascript_embedder(("set_neuron_section_data(%s);" % json.dumps(geo)))
     for sp in _shape_plot_list:
         sp = sp()
         if sp is not None:
             sp._reload_morphology()  # could probably get rid of this, but slower response
             sp._force_redraw = True
     del secs
-        
+
 def _ensure_setup():
     """deferred import (and webgl) loader"""
     global _has_setup, widgets
@@ -223,14 +223,14 @@ class PlotShape(GUIWidget):
         self._force_redraw = False
         self._update_colors = 5
         self._ready = True
-    
+
     def camera_position(self, x, y, z):
         """set the camera position"""
         javascript_embedder('sp%s.tc.camera.position.set(%g, %g, %g)' % (self._uuid, x, y, z))
 
     def _reload_morphology(self):
         javascript_embedder(('sp%s.update()' % self._uuid))
-    
+
     def scale(self, low, high):
         """Sets blue (low) and red (high) values for the color scale."""
         javascript_embedder('sp%s.vmin = %g; sp%s.vmax = %g;' % (self._uuid, low, self._uuid, high))
@@ -293,4 +293,3 @@ class PlotShape(GUIWidget):
     def set_constant_diameter(self, diam):
         """sets the diameter used for mode == 1 (i.e. constant diameter/centroid view)"""
         javascript_embedder(('sp%s.set_default_diameter(%g)' % (self._uuid, diam)))
-

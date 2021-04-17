@@ -86,4 +86,3 @@ EXTRA_DIST = $(nobase_neuronhomepython_DATA)
 #	if test $(NRNPYTHON_PYMAJOR) -gt 2 ; then \
 #		$(PY2TO3) -w $(DESTDIR)$(neuronhomepythondir) ; \
 #	fi
-

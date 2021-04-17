@@ -140,9 +140,9 @@ Object `h.objref` not found.
 
 """
 
-   
-    
-    
+
+
+
 
 default_class_doc_template = """
 No docstring available for class '%s'
@@ -169,7 +169,7 @@ https://www.neuron.yale.edu/neuron/static/py_doc/index.html
 ==================================================
 
 %s
-    
+
 """
 
 
@@ -185,14 +185,14 @@ def _get_class_from_help_dict(name):
     for m in methods:
         if name + '.' + m in _help_dict:
             result += '\n\n\n%s.%s:\n\n%s' % (name, m, _help_dict[name + '.' + m])
-    return result 
+    return result
 
 
 _help_dict = None
 
 def get_docstring(objtype, symbol):
     """ Get the docstring for object-type and symbol.
- 
+
     Ex:
     get_docstring('Vector','sqrt')
 
@@ -205,11 +205,11 @@ def get_docstring(objtype, symbol):
         import os
         import zlib
         import pickle
-        
+
         f = open(os.path.join(os.path.split(neuron.__file__)[0], 'help_data.dat'), 'rb')
         _help_dict = pickle.loads(zlib.decompress(f.read()))
-        f.close() 
-        
+        f.close()
+
     if (objtype,symbol)==('',''):
 
         return doc_h
@@ -236,8 +236,3 @@ def get_docstring(objtype, symbol):
     else:
 
         return default_member_doc_template % (objtype,symbol, get_docstring(objtype,"") )
-
-
-
-
-

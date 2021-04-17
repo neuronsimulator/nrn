@@ -23,7 +23,7 @@ def expect_hocerr(callable, args, sec=None):
   try:
     if sec:
       callable(*args, sec=sec)
-    else:  
+    else:
       callable(*args)
   except:
     err=1
@@ -36,5 +36,3 @@ def expect_hocerr(callable, args, sec=None):
   if err == 0:
     print("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
   assert(err)
-
-

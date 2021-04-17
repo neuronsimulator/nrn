@@ -17,11 +17,11 @@ def _ref_list_with_mult(obj):
 class MultiCompartmentReaction(GeneralizedReaction):
     def __init__(self, *args, **kwargs):
         """Specify a reaction spanning multiple regions to be added to the system.
-        
+
         Use this for, for example, pumps and channels, or interactions between
         species living in a volume (e.g. the cytosol) and species on a
         membrane (e.g. the plasma membrane).
-        
+
         For each species/state/parameter, you must specify what region you are
         referring to, as it could be present in multiple regions. You must
         also specify a `membrane` or a `border` (these are treated as synonyms)
@@ -30,18 +30,18 @@ class MultiCompartmentReaction(GeneralizedReaction):
         border area, as would be expected if one of the species involved is a
         pump that is binding to a species in the volume. If this is not the
         desired behavior, pass the keyword argument `scale_by_area=False`.
-        
+
         Pass in `membrane_flux=True` if the reaction produces a current across
-        the plasma membrane that should affect the membrane potential.        
-        
+        the plasma membrane that should affect the membrane potential.
+
         Unlike Reaction objects, the base units for the rates are in terms of
         molecules per square micron per ms.
-        
+
         .. seealso::
-        
+
             :class:`neuron.rxd.Reaction`
         """
-        
+
         # parse the arguments shared with rxd.Reaction
         scheme, rate_f, rate_b, regions, custom_dynamics, mass_action = (
             get_scheme_rate1_rate2_regions_custom_dynamics_mass_action(args, kwargs)
@@ -57,7 +57,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         if border is not None:
             membrane = border
 
-        
+
         # TODO: verify schemes use weakrefs
         self._scheme = scheme
         self._scale_by_area = scale_by_area
@@ -79,7 +79,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         elif custom_dynamics is None and mass_action is None:
             custom_dynamics = False
         elif custom_dynamics is None and mass_action is not None:
-            custom_dynamics = not mass_action        
+            custom_dynamics = not mass_action
         self._custom_dynamics = custom_dynamics
         self._trans_membrane = True
         if membrane_flux not in (True, False):
@@ -103,7 +103,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
             self._do_init()
             self._update_indices()
 
-        
+
     def _do_init(self):
         self._update_rates()
 
@@ -183,8 +183,8 @@ class MultiCompartmentReaction(GeneralizedReaction):
 
 
         self._changing_species = list(set(self._sources + self._dests))
-        
-        
+
+
         mem = self._regions[0]
         regs = [mem]
         #for sptr in self._changing_species:
@@ -214,21 +214,21 @@ class MultiCompartmentReaction(GeneralizedReaction):
             raise RxDException('no backward reaction in reaction scheme')
         self._original_rate_b = value
         self._update_rates()
-        
-    
+
+
     def __repr__(self):
         short_f = self._original_rate_f._short_repr() if hasattr(self._original_rate_f,'_short_repr') else self._original_rate_f
         short_b = self._original_rate_b._short_repr() if hasattr(self._original_rate_b,'_short_repr') else self._original_rate_b
 
         return 'MultiCompartmentReaction(%r, %s, rate_b=%s, membrane=%s, custom_dynamics=%r, membrane_flux=%r, scale_by_area=%r)' % (self._scheme, short_f, short_b, self._regions[0]._short_repr(), self._custom_dynamics, self._membrane_flux, self._scale_by_area)
-    
-    
+
+
     def _do_memb_scales(self, cur_map):
         from . import species
         sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
         dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
 
-        # flux occurs on sections which have both source, destination and membrane 
+        # flux occurs on sections which have both source, destination and membrane
         active_secs = list(self._regions[0]._secs1d)
         for sp in sources + dests:
             if sp() and sp()._region():
@@ -247,15 +247,15 @@ class MultiCompartmentReaction(GeneralizedReaction):
         neuron_areas = numpy.array(neuron_areas)
         # area_ratios is usually a vector of 1s
         area_ratios = areas / neuron_areas
-        
+
         # still needs to be multiplied by the valence of each molecule
         self._memb_scales = -area_ratios * h.FARADAY / (10000 * molecules_per_mM_um3())
-        
+
         # since self._memb_scales is only used to compute currents as seen by the rest of NEURON,
-        # we only use NEURON's areas 
+        # we only use NEURON's areas
         #self._memb_scales = volume * molecules_per_mM_um3 / areas
-        
-        
+
+
         if not self._membrane_flux:
             return
         # TODO: don't assume/require always inside/outside on one side...
@@ -269,7 +269,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         # dereference the species to get the true species if it's actually a SpeciesOnRegion
         sources = [s()._species() for s in self._sources]
         dests = [d()._species() for d in self._dests]
-        
+
         # TODO: make so don't need multiplicity (just do in one pass)
         smap = {'i':1, None:0, 'o':-1}
         self._cur_charges = tuple([smap[r] * s.charge for s,r in zip(sources, source_regions) if s.name is not None]
@@ -313,5 +313,3 @@ class MultiCompartmentReaction(GeneralizedReaction):
                 self._cur_ptrs.append(tuple(local_ptrs))
                 self._cur_mapped.append(tuple(local_mapped))
                 self._cur_mapped_ecs.append(local_mapped_ecs)
-
-        

@@ -6,7 +6,7 @@ March 2013 - June 2014
 
 from neuron import h, crxd as rxd
 from matplotlib import pyplot
-import numpy 
+import numpy
 import __main__
 
 name = __main__.__file__

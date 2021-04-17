@@ -11,7 +11,7 @@ class RangeVar:
     def __init__(self, name):
         self._name = name
         self._ptr_vector = None
-        
+
     def _init_ptr_vectors(self, nodes):
         # TODO: make sure this gets changed everytime there is a structurechange event
         #       or everytime the nodes change
@@ -33,7 +33,7 @@ class RangeVar:
         for i, ptr in enumerate(ptrs):
             pv_pset(i, ptr)
         self._pv = pv
-        
+
     def _rangevar_vec(self):
         pv = self._pv
         result = _numpy_zeros(pv.size())
@@ -41,5 +41,3 @@ class RangeVar:
         pv.gather(vec)
         vec.to_python(result)
         return result
-
-                

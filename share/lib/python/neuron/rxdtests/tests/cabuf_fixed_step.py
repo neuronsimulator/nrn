@@ -2,16 +2,16 @@ from neuron import h, crxd as rxd, gui
 from matplotlib import pyplot
 
 # reaction rates
-kf = 0.02 
-kb = 0.01 
+kf = 0.02
+kb = 0.01
 # initial concentrations
-ca0 = 1 
+ca0 = 1
 b0 = 0.5
-cab0 = .001 
+cab0 = .001
 # diffusion coefficients
 Dca = 1
-Db = 0 
-Dcab = 0 
+Db = 0
+Dcab = 0
 
 # create sections
 soma = h.Section(name="soma")
@@ -34,7 +34,7 @@ buffering = rxd.Reaction(Ca[r] + Buf[r], CaBuf[r], kf, kb)
 
 
 #
-# set initial concentrations to ca0, b0, cab0 in soma, 
+# set initial concentrations to ca0, b0, cab0 in soma,
 # and to 0.001 in dend
 #
 Ca.initial = lambda node: (ca0 if node.sec == soma else 0.001)
@@ -73,4 +73,3 @@ pyplot.xlabel('Time (ms)')
 pyplot.ylabel('Concentration (mM)')
 pyplot.tight_layout()
 pyplot.show()
-

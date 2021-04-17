@@ -100,7 +100,7 @@ def _get_ptrs(plot_what):
             # no such species found
             for sec in h.allsec():
                 ptrs += [None] * sec.nseg
-    
+
     elif plot_what['type'] is None:
         # no such species found
         for sec in h.allsec():

@@ -38,7 +38,7 @@ def _get_states():
 
 def _allocate(num):
     """allocate storage for num more nodes, return the starting index
-    
+
     Note: no guarantee is made of preserving previous _ref
     """
     global _volumes, _surface_area, _diffs, _states
@@ -62,7 +62,7 @@ def _remove(start, stop):
     _states = numpy.delete(_states, dels)
 
     # remove _node_flux
-    newflux =  {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []} 
+    newflux =  {'index': [], 'type': [], 'source': [], 'scale': [], 'region': []}
     for (i,idx) in enumerate(_node_fluxes['index']):
         if idx not in dels:
             for key in _node_fluxes:
@@ -76,7 +76,7 @@ def _remove(start, stop):
         if idx in dels:
             for lst in _node_fluxes.values():
                del lst[i]
-    
+
 
 
 def _replace(old_offset, old_nseg, new_offset, new_nseg):
@@ -87,7 +87,7 @@ def _replace(old_offset, old_nseg, new_offset, new_nseg):
     # remove entries that have to be recalculated
     start = old_offset
     stop = start + old_nseg + 1
-    
+
     dels = list(range(start, stop))
     _volumes = numpy.delete(_volumes, dels)
     _surface_area = numpy.delete(_surface_area, dels)
@@ -128,16 +128,16 @@ class Node(object):
         elif isinstance(condition, region.Extracellular):
             return self.region == condition
         raise RxDException('selector %r not supported for this node type' % condition)
-        
+
     @property
     def _ref_concentration(self):
         """Returns a HOC reference to the Node's concentration
-        
+
         (The node must store concentration data. Use _ref_molecules for nodes
         storing molecule counts.)
         """
         # this points to rxd array only, will not change legacy concentration
-        if self._data_type == _concentration_node:        
+        if self._data_type == _concentration_node:
             return self._ref_value
         else:
             raise RxDException('_ref_concentration only available for concentration nodes')
@@ -145,16 +145,16 @@ class Node(object):
     @property
     def _ref_molecules(self):
         """Returns a HOC reference to the Node's concentration
-        
+
         (The node must store concentration data. Use _ref_molecules for nodes
         storing molecule counts.)
         """
         # this points to rxd array only, will not change legacy concentration
-        if self._data_type == _molecule_node:        
+        if self._data_type == _molecule_node:
             return self._ref_value
         else:
             raise RxDException('_ref_molecules only available for molecule count nodes')
-    
+
     @property
     def d(self):
         """Gets the diffusion rate within the compartment."""
@@ -166,7 +166,7 @@ class Node(object):
         # TODO: make invalidation work so don't need to redo the setup each time
         #rxd._invalidate_matrices()
         _diffs[self._index] = value
-        rxd._setup_matrices()    
+        rxd._setup_matrices()
 
     @property
     def concentration(self):
@@ -178,7 +178,7 @@ class Node(object):
         else:
             # TODO: make this return a concentration instead of an error
             raise RxDException('concentration property not yet supported for non-concentration nodes')
-    
+
     @concentration.setter
     def concentration(self, value):
         """Sets the concentration at the Node"""
@@ -200,7 +200,7 @@ class Node(object):
         else:
             # TODO: make this return a molecule count instead of an error
             raise RxDException('molecules property not yet supported for non-concentration nodes')
-    
+
     @molecules.setter
     def molecules(self, value):
         """Sets the molecule count at the Node"""
@@ -211,18 +211,18 @@ class Node(object):
         else:
             # TODO: make this set a molecule count instead of raise an error
             raise RxDException('molecules property not yet supported for non-concentration nodes')
-        
 
-        
+
+
     @property
     def value(self):
         """Gets the value associated with this Node."""
         return _states[self._index]
-    
+
     @value.setter
     def value(self, v):
         """Sets the value associated with this Node.
-        
+
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
@@ -232,27 +232,27 @@ class Node(object):
     def _ref_value(self):
         """Returns a HOC reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
-    
+
     def include_flux(self, *args, **kwargs):
         """Include a flux contribution to a specific node.
-        
+
         The flux can be described as a HOC reference, a point process and a
         property, a Python function, or something that evaluates to a constant
         Python float.
-        
+
         Supported units:
             molecule/ms
             mol/ms
             mmol/ms == millimol/ms == mol/s
-        
-        Examples:        
+
+        Examples:
             node.include_flux(mglur, 'ip3flux')           # default units: molecule/ms
             node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
             node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
             node.include_flux(lambda: mglur.ip3flux)
             node.include_flux(lambda: math.sin(h.t))
             node.include_flux(47)
-        
+
         Warning:
             Flux denotes a change in *mass* not a change in concentration.
             For example, a metabotropic synapse produces a certain amount of
@@ -288,7 +288,7 @@ class Node(object):
             scale = 1e-15
         else:
             raise RxDException('unknown unit: %r' % units)
-        
+
         if len(args) == 1 and isinstance(args[0], hoc.HocObject):
             source = args[0]
             flux_type = 1
@@ -300,14 +300,14 @@ class Node(object):
         elif len(args) == 1 and isinstance(args[0], collections.Callable):
             flux_type = 2
             source = args[0]
-            warnings.warn("Adding a python callback may slow down execution. Consider using a Rate and Parameter.") 
+            warnings.warn("Adding a python callback may slow down execution. Consider using a Rate and Parameter.")
         elif len(args) == 2:
             flux_type = 1
             try:
                 source = getattr(args[0], '_ref_' + args[1])
             except:
                 raise RxDException('Invalid two parameter form')
-            
+
             # TODO: figure out a units checking solution that works
             # source_units = h.units(source)
             # if source_units and source_units != units:
@@ -339,7 +339,7 @@ class Node(object):
         _structure_change_count.value += 1
         _has_node_fluxes = True
 
-    
+
     @value.getter
     def _state_index(self):
         return self._index
@@ -350,7 +350,7 @@ class Node1D(Node):
     def __init__(self, sec, i, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
-        
+
         Constructs a Node object. These encapsulate multiple properties of a given
         reaction-diffusion compartment -- volume, surface area, concentration, etc... --
         but this association is provided only as a convenience to the user; all the data
@@ -384,7 +384,7 @@ class Node1D(Node):
         self._loc3d = (numpy.interp(loc1d, normalized_arc3d, x3d),
                        numpy.interp(loc1d, normalized_arc3d, y3d),
                        numpy.interp(loc1d, normalized_arc3d, z3d))
-        
+
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
@@ -408,10 +408,10 @@ class Node1D(Node):
                 # self_index should be unique (no repeats due to roundoff error) because the inside should always be 0.5 over an integer
                 self_index = int(self._location * self._sec.nseg)
                 return check_index == self_index
-                
+
         except:
             raise RxDException('unrecognized node condition: %r' % condition)
-            
+
     @property
     def x3d(self):
         """x coordinate"""
@@ -425,7 +425,7 @@ class Node1D(Node):
         if self._loc3d is None:
             self._update_loc3d()
         return self._loc3d[1]
-    
+
     @property
     def z3d(self):
         """z coordinate"""
@@ -436,44 +436,44 @@ class Node1D(Node):
     @property
     def volume(self):
         """The volume of the compartment in cubic microns.
-        
+
         Read only."""
         from . import rxd
         rxd._update_node_data()
         return _volumes[self._index]
-    
+
     @property
     def segment(self):
         return self._sec._sec(self.x)
-    
+
     @property
     def surface_area(self):
         """The surface area of the compartment in square microns.
-        
+
         This is the area (if any) of the compartment that lies on the plasma membrane
         and therefore is the area used to determine the contribution of currents (e.g. ina) from
         mod files or kschan to the compartment's concentration.
-        
+
         Read only.
         """
         from . import rxd
         rxd._update_node_data()
         return _surface_area[self._index]
-    
-        
+
+
     @property
     def x(self):
         """The normalized position of the center of the compartment.
-        
+
         Read only."""
         # TODO: will probably want to change this to be more generic for higher dimensions
         return self._location
-    
+
     @property
     def region(self):
         """The region containing the compartment."""
         return self._sec._region
-    
+
     @property
     def sec(self):
         """The Section containing the compartment."""
@@ -482,11 +482,11 @@ class Node1D(Node):
     def _in_sec(self, sec):
         return sec == self.sec or sec == self._sec
 
-    
+
     @property
     def species(self):
         """The Species whose concentration is recorded at this Node."""
-        return self._sec._species()    
+        return self._sec._species()
 
 
 class Node3D(Node):
@@ -494,7 +494,7 @@ class Node3D(Node):
         """
             Parameters
             ----------
-            
+
             index : int
                 the offset into the global rxd data
             i : int
@@ -545,22 +545,22 @@ class Node3D(Node):
 
     @property
     def _grid_id(self):
-        return self._speciesref()._intracellular_instances[self._r]._grid_id 
-    
+        return self._speciesref()._intracellular_instances[self._r]._grid_id
+
     @property
     def surface_area(self):
         """The surface area of the compartment in square microns.
-        
+
         This is the area (if any) of the compartment that lies on the plasma membrane
         and therefore is the area used to determine the contribution of currents (e.g. ina) from
         mod files or kschan to the compartment's concentration.
-        
+
         Read only.
         """
         # TODO: should I have the commented out line?
         #rxd._update_node_data()
         return self._r._sa[self._index]
-        
+
     def satisfies(self, condition):
         """Tests if a Node satisfies a given condition.
 
@@ -582,7 +582,7 @@ class Node3D(Node):
             return (
                 int((x - mesh["xlo"]) / mesh['dx']) == self._i and
                 int((y - mesh["ylo"]) / mesh['dy']) == self._j and
-                int((z - mesh["zlo"]) / mesh['dz']) == self._k 
+                int((z - mesh["zlo"]) / mesh['dz']) == self._k
             )
         position_type = False
         did_error = False
@@ -614,24 +614,24 @@ class Node3D(Node):
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
         return mesh['zlo'] + (self._k + 0.5) * mesh['dz']
-    
+
     @property
     def x(self):
         # TODO: can we make this more accurate?
         return self._x
-    
+
     @property
     def segment(self):
         return self._seg
-    
+
     def _in_sec(self, sec):
         return sec == self.sec
-    
+
     @property
     def sec(self):
         return list(self._sec)[0] if any(self._sec) else None
 
-    @property 
+    @property
     def volume(self):
         return self._r._vol[self._index]
 
@@ -652,7 +652,7 @@ class Node3D(Node):
         if hasattr(sp,'_dgrid'):
             return sp._dgrid[self._index]
         return sp._d
-        
+
     @d.setter
     def d(self, v):
         sp = self._speciesref()._intracellular_instances[self._r]
@@ -663,16 +663,16 @@ class Node3D(Node):
         sp._dgrid[:,self._index] = v
 
 
-    
+
     @property
     def value(self):
         """Gets the value associated with this Node."""
         return self._speciesref()._intracellular_instances[self._r].states[self._index]
-        
+
     @value.setter
     def value(self, v):
         """Sets the value associated with this Node.
-        
+
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
@@ -682,14 +682,14 @@ class Node3D(Node):
     def _ref_value(self):
         """Returns a HOC reference to the Node's value"""
         return self._speciesref()._intracellular_instances[self._r]._states._ref_x[self._index]
-        
+
 
 class NodeExtracellular(Node):
     def __init__(self, index, i, j, k, speciesref, regionref):
         """
             Parameters
             ----------
-            
+
             index : int
                 the offset into the global rxd data
             i : int
@@ -708,7 +708,7 @@ class NodeExtracellular(Node):
         self._regionref = regionref
         # TODO: support _molecule_node data type
         self._data_type = _concentration_node
-    
+
     @property
     def x3d(self):
         return self._regionref()._xlo + (self._i+0.5)*self._regionref()._dx[0]
@@ -722,12 +722,12 @@ class NodeExtracellular(Node):
     @property
     def region(self):
         """The extracellular space containing the node."""
-        return self._regionref() 
+        return self._regionref()
 
     @property
     def _r(self):
         """The extracellular space containing the node."""
-        return self._regionref() 
+        return self._regionref()
 
     @property
     def d(self):
@@ -737,7 +737,7 @@ class NodeExtracellular(Node):
     def d(self, value):
         """Sets the diffusion rate within the compartment."""
         from . import rxd
-        warnings.warn("Changing the diffusion coefficient for an extracellular node changes diffusion coefficients for the whole extracellular grid.") 
+        warnings.warn("Changing the diffusion coefficient for an extracellular node changes diffusion coefficients for the whole extracellular grid.")
         # TODO: Replace zero with Parallel_grids id (here an in insert call)
         if hasattr(value,'__len__'):
             set_diffusion(0, self._grid_id, numpy.array(value, dtype=float), 1)
@@ -747,12 +747,12 @@ class NodeExtracellular(Node):
     @property
     def value(self):
         """Gets the value associated with this Node."""
-        return self._speciesref().__getitem__(self._r).states3d[self._i,self._j,self._k] 
-        
+        return self._speciesref().__getitem__(self._r).states3d[self._i,self._j,self._k]
+
     @value.setter
     def value(self, v):
         """Sets the value associated with this Node.
-        
+
         For Species nodes belonging to a deterministic simulation, this is a concentration.
         For Species nodes belonging to a stochastic simulation, this is the molecule count.
         """
@@ -763,12 +763,12 @@ class NodeExtracellular(Node):
     def _ref_value(self):
         """Returns a HOC reference to the Node's value"""
         return self._speciesref().__getitem__(self._regionref())._extracellular()._states._ref_x[self._index]
-        
+
     @value.getter
     def _state_index(self):
         return self._index
 
-    @property 
+    @property
     def volume(self):
         ecs = self._regionref()
         if numpy.isscalar(ecs.alpha):
@@ -779,6 +779,3 @@ class NodeExtracellular(Node):
     @property
     def _grid_id(self):
         return self._speciesref()._extracellular_instances[self._r]._grid_id
-
-
-

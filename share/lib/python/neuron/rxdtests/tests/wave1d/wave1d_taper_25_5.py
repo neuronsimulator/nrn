@@ -13,8 +13,6 @@ npar = len(sys.argv)
 rxd.options.subseg_interpolation = 0
 rxd.options.subseg_averaging = 0
 
-
-
 sec = h.Section()
 L  = 100
 #sec.diam = 1
@@ -24,7 +22,7 @@ sec.nseg = 25
 sec.Ra = 150
 Rm =  25370
 dend= sec
-for myseg in dend: myseg.v = -64  
+for myseg in dend: myseg.v = -64
 for myseg in dend: myseg.cm = 1.41
 dend.insert('pas')
 for myseg in dend: myseg.pas.g = 1.0/Rm
@@ -107,7 +105,7 @@ serca = rxd.MultiCompartmentReaction(ca[cyt]>ca[er], gserca/((kserca / (1000. * 
 leak = rxd.MultiCompartmentReaction(ca[er]!=ca[cyt], gleak, gleak, membrane=cyt_er_membrane)
 
 minf = ip3[cyt] * 1000. * ca[cyt] / (ip3[cyt] + kip3) / (1000. * ca[cyt] + kact)
-k = gip3r * (minf * h_gate) ** 3 
+k = gip3r * (minf * h_gate) ** 3
 ip3r = rxd.MultiCompartmentReaction(ca[er]!=ca[cyt], k, k, membrane=cyt_er_membrane)
 ip3rg = rxd.Rate(h_gate, (1. / (1 + 1000. * ca[cyt] / (0.3)) - h_gate) / ip3rtau)
 
@@ -141,7 +139,7 @@ s.variable('cai')
 s.scale(0, 2e-3)
 
 
-tstop=3000 
+tstop=3000
 recdt = 100
 datacol=0
 

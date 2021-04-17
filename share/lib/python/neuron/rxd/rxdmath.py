@@ -11,7 +11,7 @@ def _vectorized(f, objs):
         return numpy.array([f(obj) for obj in objs])
     else:
         return f(objs)
-    
+
 
 def _vectorized2(f, objs1, objs2):
     if hasattr(objs1, '__len__'):
@@ -50,7 +50,7 @@ def analyze_reaction(r):
         print(('   lhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._lhs._items.keys()), list(r._lhs._items.values())))))
         print(('   rhs: ', ', '.join('%s[%d]' % (sp, c) for sp, c in zip(list(r._rhs._items.keys()), list(r._rhs._items.values())))))
         print(('   dir: ', r._dir))
-        
+
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 #_compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
@@ -64,7 +64,7 @@ def _compile(arith, region):
     for reg in region:
         #Check to see if region has both 1D and 3D
         if hasattr(reg,'_secs1d') and reg._secs1d and hasattr(reg,'_secs3d') and reg._secs3d:
-            for instruction in ['do_1d', 'do_3d']:        
+            for instruction in ['do_1d', 'do_3d']:
                 #TODO figure out what we are catching with attribute error
                 try:
                     #If it is a hybrid model, we need to do semi compile for both the 1D and the 3D
@@ -101,7 +101,7 @@ def _compile(arith, region):
                 arith._involved_species(species_dict)
             except AttributeError:
                 species_dict = {}
-                s = str(arith)           
+                s = str(arith)
 
     #C-version
     #Get the index rather than the key
@@ -141,7 +141,7 @@ class _Function:
             return '%s(%s)' % (self._fname, self._obj._short_repr())
         except:
             return self.__repr__()
-    
+
     def _semi_compile(self, region, instruction):
         return '%s(%s)' % (self._fname, self._obj._semi_compile(region, instruction))
     def _involved_species(self, the_dict):
@@ -150,7 +150,7 @@ class _Function:
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
             from . import species
-            item = self._obj 
+            item = self._obj
             if isinstance(item,species.Species):
                 ecs_species = item[extracellular]._extracellular()
                 items = ecs_species
@@ -178,7 +178,7 @@ class _Function2:
             return '%s(%s, %s)' % (self._fname, self._obj1._short_repr(), self._obj2._short_repr())
         except:
             return self.__repr__()
- 
+
     def _semi_compile(self, region, instruction):
         return '%s(%s, %s)' % (self._fname, self._obj1._semi_compile(region, instruction), self._obj2._semi_compile(region, instruction))
     def _involved_species(self, the_dict):
@@ -187,14 +187,14 @@ class _Function2:
 
     def _ensure_extracellular(self, extracellular = None):
         if extracellular:
-            from . import species 
+            from . import species
             for item in [self._obj1, self._obj2]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
                     items = ecs_species
                 elif hasattr(item,'_ensure_extracellular'):
                     item._ensure_extracellular(extracellular=extracellular)
-    
+
     @property
     def _voltage_dependent(self):
         for item in [self._obj1, self._obj2]:
@@ -207,7 +207,7 @@ class _Function2:
 
 
 
-    
+
 # wrappers for the functions in module math from python 2.7
 def acos(obj):
     return _Arithmeticed(_Function(obj, 'numpy.arccos', 'acos'), valid_reaction_term=False)
@@ -306,7 +306,7 @@ class _Product:
     def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
         p = _Product(self._a, self._b)
         if extracellular:
-            from . import species 
+            from . import species
             #for item in [self._a, self._b]:
                 #if isinstance(item,species.Species):
                 #    ecs_species = item[extracellular]._extracellular()
@@ -318,7 +318,7 @@ class _Product:
                 p._a = self._a._ensure_extracellular(extracellular=extracellular)
             if hasattr(self._b, '_ensure_extracellular'):
                 p._b = self._b._ensure_extracellular(extracellular=extracellular)
-            
+
         """if intracellular3d:
             from . import species
             for item in [self._a, self._b]:
@@ -364,7 +364,7 @@ class _Quotient:
     def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
         q = _Quotient(self._a, self._b)
         if extracellular:
-            from . import species 
+            from . import species
             """for item in [self._a, self._b]:
                 if isinstance(item,species.Species):
                     ecs_species = item[extracellular]._extracellular()
@@ -435,7 +435,7 @@ class _Arithmeticed:
             self._original_items = {item : 1}
         self._valid_reaction_term = valid_reaction_term
         self._compiled_form = None
-    
+
     def _evaluate(self, location):
         if self._compiled_form is None:
             self._compiled_form = _compile(self)
@@ -454,7 +454,7 @@ class _Arithmeticed:
     def _ensure_extracellular(self, extracellular = None, intracellular3d=None):
         new_arith = _Arithmeticed({})
         if extracellular and hasattr(self,'_items'):
-            from . import species 
+            from . import species
             for item, count in zip(list(self._items.keys()), list(self._items.values())):
                 if count:
                     if isinstance(item,species.Species):
@@ -505,7 +505,7 @@ class _Arithmeticed:
         if not result:
             result = '0'
         return result
-                    
+
     def __repr__(self):
         from . import species
         items = []
@@ -568,7 +568,7 @@ class _Arithmeticed:
             result = '0'
         return result
 
-    def _involved_species(self, the_dict):        
+    def _involved_species(self, the_dict):
         for item, count in zip(list(self._items.keys()), list(self._items.values())):
             if count:
                 try:
@@ -576,7 +576,7 @@ class _Arithmeticed:
                 except AttributeError:
                     pass
 
-            
+
     def _do_mul(self, other):
         if isinstance(other, int):
             items = dict(self._items)
@@ -589,10 +589,10 @@ class _Arithmeticed:
 
     def __mul__(self, other):
         return self._do_mul(other)
-    
+
     def __rmul__(self, other):
         return self._do_mul(other)
-    
+
     def __abs__(self):
         return _Arithmeticed(_Function(self, 'numpy.abs', 'abs'), valid_reaction_term=False)
 
@@ -600,12 +600,12 @@ class _Arithmeticed:
         return self
 
     def __neg__(self):
-        return _Arithmeticed(_Function(self, 'rxdmath._neg', '-'), valid_reaction_term=False)    
+        return _Arithmeticed(_Function(self, 'rxdmath._neg', '-'), valid_reaction_term=False)
 
     def __div__(self, other):
         other = _ensure_arithmeticed(other)
         return _Arithmeticed(_Quotient(self, other), False)
-    
+
     def __rdiv__(self, other):
         other = _ensure_arithmeticed(other)
         return other / self
@@ -620,12 +620,12 @@ class _Arithmeticed:
 
     def __pow__(self, other):
         return pow(self, other)
-        
+
     def __ne__(self, other):
         other = _ensure_arithmeticed(other)
         _validate_reaction_terms(self, other)
         return _Reaction(self, other, '<>')
-    
+
     def __gt__(self, other):
         other = _ensure_arithmeticed(other)
         _validate_reaction_terms(self, other)
@@ -635,8 +635,8 @@ class _Arithmeticed:
         other = _ensure_arithmeticed(other)
         _validate_reaction_terms(self, other)
         return _Reaction(self, other, '<')
-            
-    
+
+
     def __add__(self, other):
         other = _ensure_arithmeticed(other)
         new_items = dict(self._items)
@@ -646,11 +646,11 @@ class _Arithmeticed:
             else:
                 new_items[oitem] += other._items[oitem]
         return _Arithmeticed(new_items, self._valid_reaction_term and other._valid_reaction_term)
-    
+
     def __radd__(self, other):
         return self + other
 
-    
+
     def __sub__(self, other):
         other = _ensure_arithmeticed(other)
         new_items = dict(self._items)
@@ -660,7 +660,7 @@ class _Arithmeticed:
             else:
                 new_items[oitem] -= other._items[oitem]
         return _Arithmeticed(new_items, False)
-    
+
 
     def __rsub__(self, other):
         other = _ensure_arithmeticed(other)
@@ -681,4 +681,3 @@ class Vm(_Arithmeticed, object):
         super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
 
 v = Vm()
-

@@ -8,7 +8,7 @@ def get_verts(voxel,g):
     (i,j,k) = voxel
     dx,dy,dz = g['dx'],g['dy'],g['dz']
     v1_0,v1_1,v1_2 = g['xlo'] + i*dx, g['ylo'] + j*dy, g['zlo'] + k*dz
-    vertices = [(v1_0,v1_1,v1_2), 
+    vertices = [(v1_0,v1_1,v1_2),
                 (v1_0+dx,v1_1,v1_2),
                 (v1_0+dx,v1_1+dy,v1_2),
                 (v1_0,v1_1+dy,v1_2),
@@ -25,7 +25,7 @@ def get_subverts(voxel,g,step):
     dx,dy,dz = g['dx'],g['dy'],g['dz']
     DX, DY, DZ = step
     v1_0,v1_1,v1_2 = g['xlo'] + i*dx, g['ylo'] + j*dy, g['zlo'] + k*dz
-    vertices = [(v1_0,v1_1,v1_2), 
+    vertices = [(v1_0,v1_1,v1_2),
                 (v1_0+DX,v1_1,v1_2),
                 (v1_0+DX,v1_1+DY,v1_2),
                 (v1_0,v1_1+DY,v1_2),
@@ -33,16 +33,16 @@ def get_subverts(voxel,g,step):
                 (v1_0+DX,v1_1,v1_2+DZ),
                 (v1_0+DX,v1_1+DY,v1_2+DZ),
                 (v1_0,v1_1+DY,v1_2+DZ)]
-    return vertices 
+    return vertices
 
 def add_res(flist, voxel, verts_in, res, g):
     dx, dy, dz = g['dx'],g['dy'],g['dz']
-    Sx, Sy, Sz = dx/res, dy/res, dz/res      
+    Sx, Sy, Sz = dx/res, dy/res, dz/res
     bit = Sx * Sy * Sz
-    
+
     step = [dx/2, dy/2, dz/2]
     subverts = get_subverts(voxel, g, step)               # the 'voxel positions' for the new subvoxels
-    
+
     count = 0
     #select only the subvoxels of the vertices that are in
     for i in verts_in:
@@ -54,11 +54,11 @@ def add_res(flist, voxel, verts_in, res, g):
                     v = (startpt[0] + x*(dx/res), startpt[1] + y*(dy/res), startpt[2] + z*(dz/res))
                     if  any(f.distance(v[0],v[1],v[2]) <= options.ics_distance_threshold for f in flist):
                         count += 1
-    
+
     if count > 0:
-        return count * bit 
+        return count * bit
     return bit / 8
- 
+
 
 def Put(flist, voxel, v0, verts_in, res, g):
     """ add voxel key with partial volume value to dict of surface voxels"""
@@ -66,7 +66,7 @@ def Put(flist, voxel, v0, verts_in, res, g):
     # res is resolution of sampling points (only works for even values of res!)
     dx, dy, dz = g['dx'], g['dy'], g['dz']
     Sx, Sy, Sz = dx/res, dy/res, dz/res
-    
+
     count = 0
     startpt = v0[0] + Sx/2.0, v0[1] + Sy/2.0, v0[2] + Sz/2.0
     for i in range(res):
@@ -89,4 +89,3 @@ def simplevolume(flist,distances,voxel,g):
             verts_in.append(i)
     Vol = Put(flist, voxel, verts[0], verts_in, res, g)
     return Vol
-

@@ -1,10 +1,10 @@
 from neuron import h, rxd
-h.load_file("stdrun.hoc")    
+h.load_file("stdrun.hoc")
 
 sec = h.Section(name="sec")
-sec.L = 10 
+sec.L = 10
 sec.nseg = 11
-sec.diam = 5 
+sec.diam = 5
 rxd.set_solve_type(dimension=3)
 
 cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
@@ -33,11 +33,4 @@ print(con)
 
 con1D = [0.0, 0.0009302760807252256, 0.0, 1000.0, 0.0, 0.0009302760807252256, 0.0, 0.0, 0.0, 0.000930276080725227, 0.0]
 
-diff = numpy.array(con) - numpy.array(con1D) 
-
-
-
-
-
-
-
+diff = numpy.array(con) - numpy.array(con1D)

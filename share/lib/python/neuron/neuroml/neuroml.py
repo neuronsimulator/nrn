@@ -23,10 +23,10 @@ def cell_end(self, node):
         for i in range(len(self.cables_)):
             c = self.cables_[i]
             print("Cable ",i,": ", c.id_, c.parent_cable_id_, c.name_, c.px_, c.pcnt_)
-    
+
         for bm in self.biomechs_:
-            print(bm)  
-    
+            print(bm)
+
         for cg in self.cablegroups_:
             print(cg)
 
@@ -35,7 +35,6 @@ def cell_end(self, node):
 
 def cells(self, node):
   pass
-  
+
 def neuroml(self, node):
   pass
-
