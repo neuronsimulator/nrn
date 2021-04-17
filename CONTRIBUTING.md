@@ -10,7 +10,7 @@
 
 ## Navigation<a name="nav"></a>
 
-There are several separate repositories that make up the NEURON project and you may contribute to any of these. A single *code board* manages the full set. 
+There are several separate repositories that make up the NEURON project and you may contribute to any of these. A single *code board* manages the full set.
 This *Contributing* document is relevant not only for this repository but also for these other repositories.
 
 Five major repositories are directly included at this github:
@@ -51,7 +51,7 @@ Consider what kind of change you have in mind:
 * For a **Major Feature**, first open an issue and make clear whether you are request the feature from the community or offering to provide the feature yourself.
 The *code board* will consider whether this is needed or whether some existing feature does approximately the same thing.
 If you would like to yourself *implement* the new feature, please submit an issue with the label **proposal** for your work first.
-This will also allow us to better coordinate effort and prevent duplication of work. We will also then be able to help you as you develop the feature so 
+This will also allow us to better coordinate effort and prevent duplication of work. We will also then be able to help you as you develop the feature so
 that it is can be readily integrated.
 
 * **Small Features** can be submitted directly.
@@ -65,8 +65,9 @@ compilation and running.
      ```shell
      git checkout -b my-fix-branch master
      ```
+* For Python code contributions follow the Python Contribution guidelines.
 * When creating your fix or addition, consider what **new tests** may be needed for *continuous integration (CI)*, and what **new documentation** or documentation change is needed.
-* The full test-suite will run once you submit a pull-request. If you have concerns about the code, or if you've already failed the test-suite, you can 
+* The full test-suite will run once you submit a pull-request. If you have concerns about the code, or if you've already failed the test-suite, you can
 run the test-suite locally on your machine.
 * Pull (fetch and merge) from *upstream* so that your current version contains all changes that have been made since you originally cloned or last pulled.
     ```shell
@@ -140,6 +141,24 @@ Or,
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
 
+## Python Contributions
+
+The Python source code is located under `lib/share/python/neuron`. Python unit tests are
+located under `test/pynrn` and use the [pytest](https://docs.pytest.org/) framework.
+
+### Code conventions
+
+Please follow [PEP8](https://www.python.org/dev/peps/pep-0008/) conventions in all
+submitted code and apply [black](https://black.readthedocs.io/en/stable/) formatting, a
+stricter superset of PEP8.
+
+You can install and apply black formatting as follows:
+
+    pip install black
+    black /path/to/file.py
+
+Please limit formatting to the code you contribute and not the entire `file.py`.
+
 ## Reporting a bug<a name="bug"></a>
 
 Have you tested on the current alpha version of NEURON? If not, please clone, compile, install and run with current version (this one).
@@ -147,9 +166,9 @@ Have you tested on the current alpha version of NEURON? If not, please clone, co
 Please let us know what operating system you were using when you found the bug. If you have access to another operating system, it is helpful if you can find out if the bug
 shows up there as well. Please indicate which operating system(s) the bug has been found in.
 
-In order to address a bug quickly, we need to reproduce and confirm it. 
-Usually bugs will arise in the context of a simulation which will in many cases be extremely large. 
-Please provide a *simple, short* example (zipped with any associated mod files and a README). 
+In order to address a bug quickly, we need to reproduce and confirm it.
+Usually bugs will arise in the context of a simulation which will in many cases be extremely large.
+Please provide a *simple, short* example (zipped with any associated mod files and a README).
 The simplifying process may require considerable work to isolate the bug arising somewhere in the midst of a large simulation.
 Sometimes, this process alone is enough to identify the bug as a function limitation or documentation insufficiency, rather than a code bug per se.
 
@@ -157,4 +176,3 @@ Sometimes, this process alone is enough to identify the bug as a function limita
 
 Pull requests are reviewed by the development team.
 If you don't receive any feedback after a couple weeks, please follow up with a new comment.
-
