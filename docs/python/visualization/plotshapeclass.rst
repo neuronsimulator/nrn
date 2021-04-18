@@ -19,7 +19,7 @@ PlotShape
     
     Syntax:
 
-        ``ps.plot(matplotlib_object)``
+        ``ps.plot(graphics_object)``
 
     Description:
         In NEURON 7.7+, PlotShape.plot works both with and without Interviews support.
@@ -27,7 +27,8 @@ PlotShape
         Clicking on a segment displays the value and the segment id.
 	
 	Extra arguments and keyword arguments are passed to the underlying graphics library
-	(currently only matplotlib ``Figure`` objects and ``pyplot`` are supported).
+	(currently only matplotlib ``Figure`` objects, ``pyplot``, and ``plotly`` are
+	supported, with plotly support added in 7.8).
 
     .. note::
     
@@ -54,6 +55,7 @@ PlotShape
         
         .. note::
             In Jupyter, you can use %matplotlib notebook to get interactive PlotShape
+	    or use plotly instead.
     
     Example:
         You can also pass in a SectionList argument to only plot specific sections
