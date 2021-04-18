@@ -287,13 +287,14 @@ void VecPlayContinuous::play_init() {
 		}
 	}else{
 		ubound_index_ = 0;
+printf("play_init %d %g\n", ubound_index_, t_->elem(ubound_index_));
 		e_->send(t_->elem(ubound_index_), net_cvode_instance, nt);
 	}
 }
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 	NrnThread* nt = nrn_threads + ith_;
-//printf("deliver %g\n", tt);
+printf("deliver %g\n", tt);
 	if (cvode_) {
 		cvode_->set_init_flag();
 		if (cvode_->nth_) { nt = cvode_->nth_; }
@@ -310,6 +311,7 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 	}else{
 		if (ubound_index_ < t_->size() - 1) {
 			ubound_index_++;
+printf("deliver send %d %g etype=%d\n", ubound_index_, t_->elem(ubound_index_), e_->type());
 			e_->send(t_->elem(ubound_index_), ns, nt);
 		}
 	}

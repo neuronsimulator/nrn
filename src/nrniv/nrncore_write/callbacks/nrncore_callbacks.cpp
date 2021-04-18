@@ -565,7 +565,8 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
 }
 
 int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
-                                       int& ix, int& sz, double*& yvec, double*& tvec) {
+                                       int& ix, int& sz, double*& yvec, double*& tvec,
+                                       int& last_index, int& discon_index, int& ubound_index) {
 
     if (tid >= nrn_nthread) { return 0; }
     NrnThread& nt = nrn_threads[tid];
@@ -593,6 +594,10 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
                     }
                 }
                 assert(found);
+                // following 3 used for direct-mode.
+                last_index = vp->last_index_;
+                discon_index = vp->discon_index_;
+                ubound_index = vp->ubound_index_;
                 return 1;
             }
         }
@@ -730,6 +735,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       case HocEventType: { // 5
       } break;
       case PlayRecordEventType: { // 6
+printf("PlayRecordEvent %g\n", tdeliver);
       } break;
       case NetParEventType: { // 7
       } break;

@@ -51,7 +51,8 @@ int nrnthread_dat2_corepointer_mech(int tid, int type,
                                     int& icnt, int& dcnt, int*& iarray, double*& darray);
 int nrnthread_dat2_vecplay(int tid, std::vector<int>& n);
 int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
-                                int& ix, int& sz, double*& yvec, double*& tvec);
+                                int& ix, int& sz, double*& yvec, double*& tvec,
+                                int& last_index, int& discon_index, int& ubound_index);
 
 int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset);
 }
@@ -112,6 +113,7 @@ static core2nrn_callback_t cnbs[]  = {
 
         {"nrn2core_transfer_tqueue_", (CNB)nrn2core_transfer_tqueue},
         {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
+
        {NULL, NULL}
 };
 
