@@ -28,21 +28,28 @@ py_ver=""
 setup_venv() {
     local py_bin="$1"
     py_ver=$("$py_bin" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
-    local venv_dir="nrn_build_venv$py_ver"
-
-    if [ "$py_ver" -lt 35 ]; then
-        echo "[SKIP] Python $py_ver no longer supported"
-        skip=1
-        return 0
-    fi
+    suffix=$("$py_bin" -c "print(str(hash(\"$py_bin\"))[0:8])")
+    local venv_dir="nrn_build_venv${py_ver}_${suffix}"
 
     echo " - Creating $venv_dir: $py_bin -m venv $venv_dir"
-    "$py_bin" -m venv "$venv_dir"
+
+    if [ "$py_ver" -lt 35 ]; then
+        $(dirname $py_bin)/pip install virtualenv
+        $(dirname $py_bin)/virtualenv "$venv_dir"
+    else
+        "$py_bin" -m venv "$venv_dir"
+    fi
+
     . "$venv_dir/bin/activate"
 
     if ! pip install -U pip setuptools wheel; then
         curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
         pip install -U setuptools wheel
+    fi
+
+    # help_data.dat for docs require pathlib which is not part of python2
+    if [ "$py_ver" -lt 30 ]; then
+        pip install pathlib
     fi
 }
 
@@ -51,6 +58,7 @@ pip_numpy_install() {
     # numpy is special as we want the minimum wheel version
     numpy_ver="numpy"
     case "$py_ver" in
+      27) numpy_ver="numpy==1.10.4" ;;
       35) numpy_ver="numpy==1.10.4" ;;
       36) numpy_ver="numpy==1.12.1" ;;
       37) numpy_ver="numpy==1.14.6" ;;
@@ -69,7 +77,8 @@ build_wheel_linux() {
     (( $skip )) && return 0
 
     echo " - Installing build requirements"
-    pip install auditwheel
+    #auditwheel needs to be installed with python3
+    PATH=/opt/python/cp38-cp38/bin/:$PATH pip3 install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -86,7 +95,7 @@ build_wheel_linux() {
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Repairing..."
-        auditwheel repair dist/*.whl
+        PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel repair dist/*.whl
     fi
 
     deactivate
@@ -121,7 +130,7 @@ build_wheel_osx() {
 platform=$1
 
 # python version for which wheel to be built; 3* (default) means all python 3 versions
-python_wheel_version=3*
+python_wheel_version=
 if [ ! -z "$2" ]; then
   python_wheel_version=$2
 fi
@@ -144,7 +153,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python[23]; do
         build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
     done
     ;;

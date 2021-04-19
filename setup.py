@@ -1,5 +1,4 @@
 import os
-import shutil
 import re
 import shutil
 import subprocess
@@ -11,31 +10,41 @@ from distutils.version import LooseVersion
 from setuptools import Command, Extension
 from setuptools import setup
 
+
+class Components:
+    RX3D = True
+    IV = True
+    MPI = True
+
+
 if os.name != "posix":
     raise Exception("Python NEURON distributions are currently only available "
                     "for Mac and Linux systems (POSIX)")
 
-
 # Main source of the version. Dont rename, used by Cmake
 try:
-    v = subprocess.run(['git', 'describe', '--tags'],
-                       stdout=subprocess.PIPE).stdout.strip().decode()
+    # github actions somehow fails with check_output and python3
+    if sys.version_info[0] < 3:
+        v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
+    else:
+        v = subprocess.run(['git', 'describe', '--tags'],
+                           stdout=subprocess.PIPE).stdout.strip().decode()
+
     __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
         __version__ = os.environ['NEURON_WHEEL_VERSION']
 
 except Exception as e:
-    raise RuntimeError("Could not get version from Git repo") from e
+    raise RuntimeError("Could not get version from Git repo : " + str(e))
 
 
 # RX3D must be checked for very early as it changes imports
 if '--disable-rx3d' in sys.argv:
-    RX3D = False
+    Components.RX3D = False
     sys.argv.remove('--disable-rx3d')
     from setuptools.command.build_ext import build_ext
 else:
-    RX3D = True
     try:
         from Cython.Distutils import Extension as CyExtension
         from Cython.Distutils import build_ext
@@ -43,6 +52,14 @@ else:
     except ImportError:
         log.error("ERROR: RX3D wheel requires Cython and numpy. Please install beforehand")
         sys.exit(1)
+
+if '--disable-iv' in sys.argv:
+    Components.IV = False
+    sys.argv.remove('--disable-iv')
+
+if '--disable-mpi' in sys.argv:
+    Components.MPI = False
+    sys.argv.remove('--disable-mpi')
 
 
 class CMakeAugmentedExtension(Extension):
@@ -86,7 +103,7 @@ class CMakeAugmentedBuilder(build_ext):
         ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
         ("cmake-defs=", None, "Additional CMake definitions, comma split")
     ]
-    boolean_options = build_ext.boolean_options +['docs']
+    boolean_options = build_ext.boolean_options + ['docs']
 
     def initialize_options(self):
         build_ext.initialize_options(self)
@@ -129,8 +146,7 @@ class CMakeAugmentedBuilder(build_ext):
                     dst_dir = os.path.join(package_data_d, d)
                     if not os.path.isdir(dst_dir):
                         shutil.copytree(src_dir, dst_dir)
-
-                log.info("==> Done building CMake project. Now building python extension\n")
+                log.info("==> Done building CMake project\n.")
 
                 # Make the temp include paths in the building the extension
                 ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
@@ -139,6 +155,7 @@ class CMakeAugmentedBuilder(build_ext):
                 ext.cmake_done = True
 
         # Now build the extensions normally
+        log.info("==> Building Python extensions")
         build_ext.run(self, *args, **kw)
 
     def _run_cmake(self, ext):
@@ -199,13 +216,19 @@ class CMakeAugmentedBuilder(build_ext):
                     cwd=self.build_temp, env=env
                 )
                 subprocess.check_call(
-                    [ext.cmake_install_prefix+'/bin/neurondemo', '-nopython', '-nogui', '-c', 'quit()'],
+                    [
+                        ext.cmake_install_prefix + '/bin/neurondemo',
+                        '-nopython', '-nogui', '-c', 'quit()'
+                    ],
                     cwd=self.build_temp, env=env
                 )
                 # mac: libnrnmech of neurondemo need to point to relative libnrniv
                 REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
                 subprocess.check_call(
-                    [ext.sourcedir+'/packaging/python/fix_demo_libnrnmech.sh', ext.cmake_install_prefix, REL_RPATH],
+                    [
+                        ext.sourcedir + '/packaging/python/fix_demo_libnrnmech.sh',
+                        ext.cmake_install_prefix, REL_RPATH
+                    ],
                     cwd=self.build_temp, env=env
                 )
 
@@ -253,7 +276,7 @@ def setup_package():
     NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share']
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ['numpy', 'Cython'] if RX3D else []
+    maybe_rxd_reqs = ['numpy', 'Cython'] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
 
@@ -264,11 +287,12 @@ def setup_package():
         'neuron.rxd',
         'neuron.crxd',
         'neuron.gui2'
-    ] + ["neuron.rxd.geometry3d"] if RX3D else []
+    ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
 
-    extension_common_params = defaultdict(list,
+    extension_common_params = defaultdict(
+        list,
         library_dirs=["build/cmake_install/lib"],
         libraries=["nrniv", "nrnpython{}".format(sys.version_info[0])],
     )
@@ -279,11 +303,11 @@ def setup_package():
         cmake_collect_dirs=NRN_COLLECT_DIRS,
         cmake_flags=[
             '-DNRN_ENABLE_CORENEURON=OFF',
-            '-DNRN_ENABLE_INTERVIEWS=ON',
-            '-DIV_ENABLE_X11_DYNAMIC=ON',
+            '-DNRN_ENABLE_INTERVIEWS=' + ("ON" if Components.IV else "OFF"),
+            '-DIV_ENABLE_X11_DYNAMIC=' + ("ON" if Components.IV else "OFF"),
             '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
-            '-DNRN_ENABLE_MPI=ON',
-            '-DNRN_ENABLE_MPI_DYNAMIC=ON',
+            '-DNRN_ENABLE_MPI='         + ("ON" if Components.MPI else "OFF"),
+            '-DNRN_ENABLE_MPI_DYNAMIC=' + ("ON" if Components.MPI else "OFF"),
             '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
             '-DNRN_ENABLE_MODULE_INSTALL=OFF',
             '-DNRN_ENABLE_REL_RPATH=ON',
@@ -302,7 +326,7 @@ def setup_package():
         **extension_common_params
     )]
 
-    if RX3D:
+    if Components.RX3D:
         include_dirs = [
             "share/lib/python/neuron/rxd/geometry3d",
             numpy.get_include()
@@ -310,11 +334,9 @@ def setup_package():
 
         # Cython files take a long time to compile with O2 so default O0
         # But pay the price if uploading distribution
-        extra_compile_args=["-O0"]
-        if "NRN_BUILD_FOR_UPLOAD" in os.environ:
-          extra_compile_args=["-O2"]
-        print("RX3D extra_compile_args %s" % str(extra_compile_args))
-
+        extra_compile_args = [
+            "-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"
+        ]
         rxd_params = extension_common_params.copy()
         rxd_params['libraries'].append("rxdmath")
         rxd_params.update(dict(
@@ -324,22 +346,23 @@ def setup_package():
             extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
         ))
 
+        log.info("RX3D compile flags %s" % str(rxd_params))
+
         extensions += [
             CyExtension(
-                "neuron.rxd.geometry3d.graphicsPrimitives", [
-                    "share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"
-                ],
+                "neuron.rxd.geometry3d.graphicsPrimitives",
+                ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
                 **rxd_params
             ),
             CyExtension(
-                "neuron.rxd.geometry3d.ctng", [
-                    "share/lib/python/neuron/rxd/geometry3d/ctng.pyx"
-                ],
+                "neuron.rxd.geometry3d.ctng",
+                ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
                 include_dirs=include_dirs,
                 **rxd_params
             ),
             CyExtension(
-                "neuron.rxd.geometry3d.surfaces", [
+                "neuron.rxd.geometry3d.surfaces",
+                [
                     "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
                     "src/nrnpython/rxd_marching_cubes.c",
                     "src/nrnpython/rxd_llgramarea.c"
@@ -349,14 +372,11 @@ def setup_package():
             )
         ]
 
-    log.info("RX3D is %s", "ENABLED" if RX3D else "DISABLED")
+    log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
-    # For CI, we want to build separate wheel with "-nightly" suffix
     package_name = 'NEURON'
-    if "NEURON_NIGHTLY_TAG" in os.environ:
-        package_name += os.environ['NEURON_NIGHTLY_TAG']
-    else:
-        package_name += "-nightly"
+    # For CI, we want to build separate wheel with "-nightly" suffix
+    package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
     setup(
         name=package_name,
@@ -380,13 +400,12 @@ def setup_package():
 
 def mac_osx_setenv():
     """Set MacOS environment to build high-compat wheels"""
-    # Because we need "wheel" before calling setup() we shall bring it ourselves
     try:
-        import wheel
+        # Also ensure wheel package is avail
+        from wheel.macosx_libfile import extract_macosx_min_system_version
     except ImportError:
         from setuptools.dist import Distribution
         Distribution().fetch_build_eggs(["wheel"])
-    from wheel.macosx_libfile import extract_macosx_min_system_version
 
     sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
                                        ).decode().strip()
@@ -396,12 +415,11 @@ def mac_osx_setenv():
     # Match Python OSX framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
     if py_osx_framework is None:
-        py_osx_framework=[10, 9]
+        py_osx_framework = [10, 9]
     if py_osx_framework[1] > 9:
-        log.warn("[ WARNING ] You are building a wheel with a Python built "
-              "for a recent MACOS version (from brew?). Your wheel won't be portable.\n"
-              "          Consider using an official Python build from python.org")
-
+        log.warn("[ WARNING ] You are building a wheel with a Python built"
+                 " for a recent MACOS version (from brew?). Your wheel won't be portable."
+                 " Consider using an official Python build from python.org")
     macos_target = "%d.%d" % tuple(py_osx_framework[:2])
     log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = macos_target
