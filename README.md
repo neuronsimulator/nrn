@@ -33,3 +33,7 @@ For detailed installation instructions see [docs/install/install_instructions.md
 * See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
 * See [docs/README.md](docs/README.md) for developers documentation
 * See [http://neuronsimulator.github.io/nrn/](http://neuronsimulator.github.io/nrn/) for latest, nightly snapshot
+
+## Contributing to NEURON development
+
+Refer to [NEURON contribution guidelines](CONTRIBUTING.md)
