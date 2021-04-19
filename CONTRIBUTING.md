@@ -144,7 +144,7 @@ See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation fo
 ## Python Contributions
 
 The Python source code is located under `lib/share/python/neuron`. Python unit tests are
-located under `test/pynrn` and use the [pytest](https://docs.pytest.org/) framework.
+located under `test/pynrn` and use the [pytest](https://docs.pytest.org/) framework, along with [pytest-cov](https://pytest-cov.readthedocs.io/) for code coverage. Code coverage report can be found on [codecov.io under share/lib](https://codecov.io/gh/neuronsimulator/nrn/tree/master/share/lib)
 
 ### Code conventions
 
