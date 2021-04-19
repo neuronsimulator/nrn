@@ -37,7 +37,7 @@ def _config_exe(exe_name):
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["NRNBIN"] = os.path.dirname(__file__)
     
-    # nrniv -python on macos does not end up with vevn site-packages in sys.path (embedded python aspects?)
+    # nrniv -python on macos with Python2 does not end up with vevn site-packages in sys.path (embedded python aspects?)
     # so we are manually adding it, also making sure to respect the existing $PYTHONPATH 
     if sys.version < '3' and sys.platform == 'darwin':
         import site
