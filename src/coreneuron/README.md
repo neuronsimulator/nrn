@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/BlueBrain/CoreNeuron.svg?branch=master)](https://travis-ci.org/BlueBrain/CoreNeuron) ![CoreNEURON CI](https://github.com/BlueBrain/CoreNeuron/workflows/CoreNEURON%20CI/badge.svg) [![codecov](https://codecov.io/gh/BlueBrain/CoreNeuron/branch/master/graph/badge.svg?token=mguTdBx93p)](https://codecov.io/gh/BlueBrain/CoreNeuron)
+![CoreNEURON CI](https://github.com/BlueBrain/CoreNeuron/workflows/CoreNEURON%20CI/badge.svg) [![codecov](https://codecov.io/gh/BlueBrain/CoreNeuron/branch/master/graph/badge.svg?token=mguTdBx93p)](https://codecov.io/gh/BlueBrain/CoreNeuron)
 
 # CoreNEURON
 > Optimised simulator engine for [NEURON](https://github.com/neuronsimulator/nrn)
