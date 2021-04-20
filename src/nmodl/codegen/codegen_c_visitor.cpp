@@ -3523,17 +3523,18 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
     // artificial cells don't use spike buffering
     // clang-format off
     if (info.artificial_cell) {
-        printer->add_text("artcell_net_move(&{}, {}, {}, nt->_t+"_format(tqitem, weight_index, pnt));
+        printer->add_text("artcell_net_move(&{}, {}, nt->_t+"_format(tqitem, pnt));
+        print_vector_elements(arguments, ", ");
+        printer->add_text(")");
     } else {
         auto point_process = get_variable_name("point_process");
         std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
         printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, {}+"_format(tqitem, weight_index, point_process, t));
+        print_vector_elements(arguments, ", ");
+        printer->add_text(", 0.0");
+        printer->add_text(")");
     }
-    // clang-format off
-    print_vector_elements(arguments, ", ");
-    printer->add_text(", 0.0");
-    printer->add_text(")");
 }
 
 
