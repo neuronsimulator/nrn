@@ -63,6 +63,40 @@ SCENARIO("Inlining of external procedure calls", "[visitor][inline]") {
     }
 }
 
+SCENARIO("Inlining of function call as argument in external function", "[visitor][inline]") {
+    GIVEN("An external function calling a function") {
+        std::string input_nmodl = R"(
+            FUNCTION rates_1() {
+                rates_1 = 1
+            }
+
+            FUNCTION rates_2() {
+                net_send(rates_1(), 0)
+            }
+        )";
+
+        std::string output_nmodl = R"(
+            FUNCTION rates_1() {
+                rates_1 = 1
+            }
+
+            FUNCTION rates_2() {
+                LOCAL rates_1_in_0
+                {
+                    rates_1_in_0 = 1
+                }
+                net_send(rates_1_in_0, 0)
+            }
+        )";
+        THEN("External function doesn't get inlined") {
+            std::string input = reindent_text(input_nmodl);
+            auto expected_result = reindent_text(output_nmodl);
+            auto result = run_inline_visitor(input);
+            REQUIRE(result == expected_result);
+        }
+    }
+}
+
 SCENARIO("Inlining of simple, one level procedure call", "[visitor][inline]") {
     GIVEN("A procedure calling another procedure") {
         std::string input_nmodl = R"(
