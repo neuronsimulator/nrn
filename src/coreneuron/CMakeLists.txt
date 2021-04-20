@@ -168,8 +168,8 @@ add_library(
   coreneuron ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${CORENEURON_TEMPLATE_FILES}
              ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
 
-# need to have _kinderiv.h for mod2c generated files
-add_dependencies(coreneuron kin_deriv_header)
+# need to have _kinderiv.h for mod2c generated files and nrnivmodl-core and nmodl building
+add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 
 # scopmath is created separately for nrnivmodl-core workflow
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
