@@ -2196,7 +2196,7 @@ std::string CodegenCVisitor::int_variable_name(const IndexVariableInfo& symbol,
         return "inst->{}[indexes[{}*pnodecount + id]]"_format(name, position);
     }
     auto data = symbol.is_vdata ? "_vdata" : "_data";
-    return "nt->{}[indexes[{}]]"_format(data, position);
+    return "nt->{}[indexes[{}*pnodecount + id]]"_format(data, position);
     // clang-format on
 }
 
