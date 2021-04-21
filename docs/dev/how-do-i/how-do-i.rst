@@ -168,6 +168,19 @@ known, use ``is_obj_type(obj, "Vector")``.
 
 These convenience functions are defined in ``src/oc/hoc_oop.cpp``.
 
+HocCommand objects
+==================
+
+The ``HocCommand`` class, defined in ``src/ivoc/objcmd.cpp``, provides a consistent interface
+for calling Python or HOC code. The constructor accepts a ``const char*`` for HOC, or a
+``const char*`` and an ``Object*`` also for HOC (in this case the HOC string is executed in
+the context of the object), or an ``Object*`` that wraps a Python callable.
+
+Each ``HocCommand`` object has a ``pyobject()`` method that returns the underlying Python
+object if any, else NULL. This can be used to distinguish between HOC and Python calls.
+
+The ``execute()`` method runs the underlying HOC or Python code.
+
 Miscellaneous tips
 ==================
 
