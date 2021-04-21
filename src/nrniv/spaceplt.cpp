@@ -772,7 +772,7 @@ void RangeExpr::fill() {
 		if (cmd_->pyobject()) {
 			hoc_pushx(hoc_ac_);
 			int err = 0; // no messages
-			cmd_->func_call(1, &err); // return err==0 means success
+			val_[i] = cmd_->func_call(1, &err); // return err==0 means success
 			exist_[i] = err ? false : true;
 			if (err) { val_[i] = 0.0; }
 			nrn_popsec();
