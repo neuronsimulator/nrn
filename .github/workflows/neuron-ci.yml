@@ -31,7 +31,7 @@ jobs:
     env:
       INSTALL_DIR: install
       SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
-      TRAVIS: true
+      SKIP_WHEELHOUSE_REPAIR: true
 
     strategy:
       matrix:
@@ -93,14 +93,14 @@ jobs:
           # OS related
           if [ "$RUNNER_OS" == "Linux" ]; then
             eval $MATRIX_EVAL;
-            export TRAVIS_OS_NAME="linux"
+            export CI_OS_NAME="linux"
             export SHELL="/bin/bash"
           else
             export CXX=${CXX:-g++};
             export CC=${CC:-gcc};
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            export TRAVIS_OS_NAME="osx"
+            export CI_OS_NAME="osx"
             # TODO - this is a workaround that was implemented for Azure being reported as getting stuck.
             # However it does not get stuck: neuron module not found and script goes to interpreter, seeming stuck.
             # This needs to be addressed and SKIP_EMBEDED_PYTHON_TEST logic removed everywhere.
@@ -173,7 +173,7 @@ jobs:
               export PATH=$INSTALL_DIR/bin:$PATH;
               ctest -VV;
           elif [ "$BUILD_MODE" == "setuptools" ]; then
-            ./packaging/python/build_wheels.bash travis;
+            ./packaging/python/build_wheels.bash CI;
           elif [ "$BUILD_MODE" == "autotools" ]; then
             export CONFIG_OPTIONS="${{ matrix.config.config_options }}"
 
@@ -184,7 +184,7 @@ jobs:
             fi
 
             export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
-            ./.travis_build.sh $INSTALL_DIR;
+            ./.autotools_ci_build.sh $INSTALL_DIR;
           fi
 
           # basic tests for autoconf
