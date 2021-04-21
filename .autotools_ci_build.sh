@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke test for NEURON builds travis_build.sh relative/path/to/build if the
+# Smoke test for NEURON builds autotools_ci_build.sh relative/path/to/build if the
 # environment variable CONFIG_OPTIONS is set, that is used for the ./configure
 # script, otherwise a default is used
 
