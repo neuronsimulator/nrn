@@ -90,8 +90,9 @@ build_wheel_linux() {
         python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
-    if [ "$TRAVIS" = true ] ; then
-        echo " - Skipping repair on Travis..."
+    # For CI runs we skip wheelhouse repairs
+    if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
+        echo " - Skipping wheelhouse repair ..."
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Repairing..."
@@ -158,8 +159,8 @@ case "$1" in
     done
     ;;
 
-  travis)
-    if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+  CI)
+    if [ "$CI_OS_NAME" == "osx" ]; then
         MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
         build_wheel_osx $(which python3) "$bare" "$MPI_INCLUDE_HEADERS"
     else
