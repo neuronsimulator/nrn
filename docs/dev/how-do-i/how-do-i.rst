@@ -179,7 +179,18 @@ the context of the object), or an ``Object*`` that wraps a Python callable.
 Each ``HocCommand`` object has a ``pyobject()`` method that returns the underlying Python
 object if any, else NULL. This can be used to distinguish between HOC and Python calls.
 
-The ``execute()`` method runs the underlying HOC or Python code.
+The ``execute()`` method runs the underlying HOC or Python code. No value is returned in
+this case.
+
+The ``func_call(int narg, int* perr)`` method returns a double from invoking the HOC or Python. 
+The value pointed to by ``perr`` is set to 1 if the ``HocCommand`` is to run Python but running
+Python failed. Otherwise ``perr`` is unchanged. In particular, note that if ``perr`` originally
+points to a 1, then it will still point to a 1 even upon success. The number of arguments is
+indicated with ``narg``. The arguments themselves must have already been pushed onto NEURON's
+stack, e.g. with ``pushx`` for doubles, ``hoc_push_object`` for ``Object*``, ``hoc_push_str``
+for ``char**``, or ``hoc_pushpx`` for pointers to doubles (stack manipulation functions are
+defined in ``src/oc/code.cpp``.
+
 
 Miscellaneous tips
 ==================
