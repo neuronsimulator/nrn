@@ -189,7 +189,7 @@ points to a 1, then it will still point to a 1 even upon success. The number of 
 indicated with ``narg``. The arguments themselves must have already been pushed onto NEURON's
 stack, e.g. with ``pushx`` for doubles, ``hoc_push_object`` for ``Object*``, ``hoc_push_str``
 for ``char**``, or ``hoc_pushpx`` for pointers to doubles (stack manipulation functions are
-defined in ``src/oc/code.cpp``.
+defined in ``src/oc/code.cpp``).
 
 
 Miscellaneous tips
