@@ -1416,9 +1416,16 @@ def _nrnpy_rvp_pyobj_callback(f):
   def result(x):
     sp = fref()
     if sp:
-        nodes = sp.nodes(h.cas()(x))
-        total_volume = sum(node.volume for node in nodes)
-        return sum(node.concentration * node.volume for node in nodes) / total_volume
+        try:
+            # h.cas() will fail if there are no sections
+            nodes = sp.nodes(h.cas()(x))
+        except:
+            return None
+        if nodes:
+            total_volume = sum(node.volume for node in nodes)
+            return sum(node.concentration * node.volume for node in nodes) / total_volume
+        else:
+            return None
     return None
 
   return result
