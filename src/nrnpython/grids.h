@@ -10,6 +10,7 @@ and Flux_pair structs and their respective functions
 
 #include <nrnwrap_Python.h>
 
+#define PYHOC_REF_TO_NUMBER 4
 #define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 #define SAFE_FREE(ptr){if((ptr)!=NULL) free(ptr);}
 #define IDX(x,y,z)  ((z) + (y) * g->size_z + (x) * g->size_z * g->size_y)
