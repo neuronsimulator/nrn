@@ -102,6 +102,7 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 import sys
 import os
 import warnings
+import weakref
 
 embedded = True if 'hoc' in sys.modules else False
 
@@ -1411,10 +1412,14 @@ def _nrnpy_rvp_pyobj_callback(f):
   # up the weighted average concentration given an x and h.cas()
   # this is not particularly efficient so it is probably better to use this for
   # fixed timepoints rather than displays that update mid-simulation
+  fref = weakref.ref(f)
   def result(x):
-    nodes = f.nodes(h.cas()(x))
-    total_volume = sum(node.volume for node in nodes)
-    return sum(node.concentration * node.volume for node in nodes) / total_volume
+    sp = fref()
+    if sp:
+        nodes = sp.nodes(h.cas()(x))
+        total_volume = sum(node.volume for node in nodes)
+        return sum(node.concentration * node.volume for node in nodes) / total_volume
+    return None
 
   return result
 
