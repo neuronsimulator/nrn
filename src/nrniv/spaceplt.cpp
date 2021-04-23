@@ -327,11 +327,7 @@ void RangeVarPlot_reg() {
 	class2oc("RangeVarPlot", s_cons, s_destruct, s_members, NULL, rvp_retobj_members, NULL);
 }
 
-#if HAVE_IV
 RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : GraphVector(var ? var : "pyobj") {
-#else
-RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : NoIVGraphVector(var) {
-#endif
 	color_ = 1;
 	begin_section_ = 0;
 	end_section_ = 0;
