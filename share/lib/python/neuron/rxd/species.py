@@ -26,7 +26,7 @@ import re
 #set_nonvint_block = neuron.nrn_dll_sym('set_nonvint_block')
 
 # Update the structure_change_cnt & diam_change_cnt if the shape has changed
-_nrn_shape_update = nrn_dll_sym('nrn_shape_update')
+_nrn_shape_update = nrn_dll_sym('nrn_shape_update_always')
 
 fptr_prototype = ctypes.CFUNCTYPE(None)
 

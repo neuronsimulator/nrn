@@ -889,11 +889,8 @@ void connection_coef(void)	/* setup a and b */
 #endif
 }
 
-void nrn_shape_update(void) {
+void nrn_shape_update_always(void) {
 	static int updating;
-	if (section_list->next == section_list) {
-		return;
-	}
     if (!updating || updating != diam_change_cnt) {
 	updating = diam_change_cnt;
 	if (tree_changed) {
@@ -906,6 +903,12 @@ void nrn_shape_update(void) {
 		recalc_diam();
 	}
 	updating = 0;
+    }
+}
+
+void nrn_shape_update(void) {
+    if (section_list->next != section_list) {
+        nrn_shape_update_always();
     }
 }
 
