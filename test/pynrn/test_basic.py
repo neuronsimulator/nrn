@@ -153,3 +153,40 @@ def test_nonvint_block_supervisor():
   nonvint_block_supervisor.clear()
   h.finitialize()
   pc.nthread(1)  
+
+
+# Before this test was introduced, HOC Object deletion was deferred
+# when a Python HocObject was destoyed.
+# Now deferred deletion is avoided for this case.
+h("""
+begintemplate Cell
+    objref all
+    create soma[1], dend[1]
+    proc init() {
+        all = new SectionList()
+        soma {all.append()}
+        dend {all.append()}
+    }
+endtemplate Cell
+""")
+
+def test_HocObject_no_deferred_unref():
+  #previous tests should really destroy the model they created
+  for sec in h.allsec():
+    h.delete_section(sec=sec)
+
+  sl = h.SectionList()
+  cell = h.Cell()
+  assert(len(list(cell.all)) == 2)
+
+  del cell
+
+  # When deferred deletion was in effect, following for loop  would segfault
+  # because actual deletion of the HOC Cell object would not occur til the next
+  # h.functioncall(). I.e. the first call to sl.append below would destroy
+  # the HOC Cell which would destroy the two Sections and invalidate the
+  # iterator causing a segfault.
+  for sec in h.allsec():
+    print(sec)
+    sl.append(sec=sec)
+  assert(len([s for s in sl]) == 0)

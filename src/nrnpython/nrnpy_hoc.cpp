@@ -208,6 +208,11 @@ static void hocobj_dealloc(PyHocObject* self) {
     // nothing deleted
   }
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
+
+  // Deferred deletion of HOC Objects is unnecessary when a HocObject is
+  // destroyed. And we would like to have prompt deletion if this HocObject
+  // wrapped a HOC Object whose refcount was 1.
+  hoc_unref_defer();
 }
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args,
