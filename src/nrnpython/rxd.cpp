@@ -341,7 +341,7 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
             {
                 src = (PyHocObject*)source[i];
                 /*TODO: check it is a reference */
-                if(src->type_ == PYHOC_REF_TO_NUMBER)
+                if(src->type_ == PyHoc::HocRefNum)
                 {
                     states[j] +=  dt * (src->u.x_) / scale[i];
                 }
