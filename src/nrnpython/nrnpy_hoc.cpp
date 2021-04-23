@@ -144,43 +144,6 @@ extern Object* hoc_thisobject;
 #define HocContextRestore /**/
 #endif
 
-/*
-Because python types have so many methods, attempt to do all set and get
-using a PyHocObject which has different amounts filled in as the information
-is gathered with a view toward ultimately making a call to hoc_object_component.
-That requires that array indices or function arguments are on the stack.
-The major variant is that we may be at the top level. The function arg
-case is easy since they all come as a tuple in the call method. The
-array indices come sequentially with a series of calls to the
-sequence method. A nice side effect of intermediate objects is the extra
-efficiency of reuse that avoids symbol lookup. Sadly, the scalar case does
-not give this since the value is set/get instead of  returning the
-intermediate.
-*/
-
-namespace PyHoc {
-enum ObjectType {
-  HocTopLevelInterpreter = 0,
-  HocObject = 1,
-  HocFunction = 2,  // function or TEMPLATE
-  HocArray = 3,
-  HocRefNum = 4,
-  HocRefStr = 5,
-  HocRefObj = 6,
-  HocForallSectionIterator = 7,
-  HocSectionListIterator = 8,
-  HocScalarPtr = 9,
-  HocArrayIncomplete =
-      10,  // incomplete pointer to a hoc array (similar to HocArray)
-  HocRefPStr = 11,
-};
-enum IteratorState {
-  Begin,
-  NextNotLast,
-  Last
-};
-}  // namespace PyHoc
-
 typedef struct {
   PyObject_HEAD Object* ho_;
   union {
