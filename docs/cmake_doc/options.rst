@@ -337,7 +337,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
   ``make`` can run the tests with ``make test``.
   May also need to ``pip install pytest``.
   ``make test`` is quite terse. To get the same verbose output that is
-  seen with the travis-ci tests, use ``ctest -VV`` (executed in the
+  seen with the CI tests, use ``ctest -VV`` (executed in the
   build folder). One can also run individual test files
   with ``python3 -m pytest <testfile.py>`` or all the test files in that
   folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
