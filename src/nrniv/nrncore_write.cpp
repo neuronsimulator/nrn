@@ -354,7 +354,7 @@ int nrncore_is_file_mode() {
     return 0;
 }
 
-int nrncore_psolve(double tstop) {
+int nrncore_psolve(double tstop, int file_mode) {
     return 0;
 }
 

@@ -2544,11 +2544,6 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
     PyObject* py_obj = nrnpy_ho2po(obj);
     PyObject* result = PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj, NULL);
     Py_DECREF(py_obj);
-    if (py_obj != result) {
-      // for now, this only happens when using rangevarplot with rxd
-      // prevents keeping section references that should not exist
-      hoc_obj_unref(obj);
-    }
     Object* obj_result = nrnpy_po2ho(result);
     Py_DECREF(result);  // the previous line incremented the reference count
     return obj_result;

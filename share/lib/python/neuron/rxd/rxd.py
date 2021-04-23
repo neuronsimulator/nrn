@@ -1594,7 +1594,7 @@ def _windows_remove_dlls():
     if _windows_dll != []:
         if hasattr(ctypes,"WinDLL"):
             kernel32 = ctypes.WinDLL('kernel32')
-            kernel32.FreeLibrary.argtypes = [ctypes.wintypes.HMODULE]
+            kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
         else:
             kernel32 = ctypes.windll.kernel32
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
