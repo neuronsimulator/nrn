@@ -29,7 +29,8 @@ Since version 7.8.1 we are providing Python wheels and NEURON can be installed u
 pip3 install neuron
 ```
 
-With pip only Python3 wheels are provided via [pypi.org](https://pypi.org/project/NEURON/).
+Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
+wheels are provided for the 8.0 release only.
 
 Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
 releases from below URLs:
@@ -57,8 +58,8 @@ Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip
 pip3 install neuron
 ```
 
-Note that only Python3 wheels are provided. Note that for recent releases we are not providing .rpm or
-.deb installers.
+Note that Python2 wheels are provided only for the 8.0 release. Also, we are not providing .rpm or .deb
+installers for recent releases.
 
 ## Installing Source Distributions
 
