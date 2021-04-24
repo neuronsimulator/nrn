@@ -232,8 +232,7 @@ proc helpmenu() {
 	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/phpBB/')\")")
 	    xbutton("NEURON Models on ModelDB", "nrnpython(\"webbrowser.open('http://senselab.med.yale.edu/ModelDB/ModelList.cshtml?id=1882')\")")
     }
-    tstr = nrnversion(1)
-    sprint(tstr, "continue_dialog(\"This is %s on %s.\")", tstr, nrnversion(8))
+    sprint(tstr, "continue_dialog(\"This is %s on %s.\")", nrnversion(1), nrnversion(8))
     xbutton("About", tstr)
     xmenu()
 }
