@@ -394,16 +394,16 @@ void hoc_show_winio(void) {
 int nrn_main_launch;
 
 void hoc_nrnversion(void) {
-	extern char* nrn_version();
-	static char* p;
+	extern char* nrn_version(int);
+	char** p = hoc_temp_charptr();
 	int i;
 	i = 1;
 	if (ifarg(1)) {
 		i = (int)chkarg(1, 0., 20.);
 	}
 	hoc_ret();
-	p = nrn_version(i);
-	hoc_pushstr(&p);
+	*p = nrn_version(i);
+	hoc_pushstr(p);
 }
 
 void hoc_Execerror(void) {
