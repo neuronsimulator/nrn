@@ -19,7 +19,7 @@ Following discussions within the recently formed Neuron Core Developers group, t
 
 With the intent of simplifying the language in this document, bringing the readers to a common understanding and disambiguating terms that might not have a clear definition, we start with a set of definitions (to hold in the scope of Neuron).
 
-- **CI [Continuous Integration]**: The practice of adding (continuously) changes to a software repository, typically on the main development line. To avoid the frequent changes from introducing hard-to-track bugs, before the change is accepted, a test-suite should run. Such &quot;test-before-merge&quot; practice is so common for CI that the term became associated with technologies for test automation (e.g: Jenkins and Travis).
+- **CI [Continuous Integration]**: The practice of adding (continuously) changes to a software repository, typically on the main development line. To avoid the frequent changes from introducing hard-to-track bugs, before the change is accepted, a test-suite should run. Such &quot;test-before-merge&quot; practice is so common for CI that the term became associated with technologies for test automation (e.g: Jenkins and GitHub Actions).
 - **Issue Tracker** - A system to report defects or requests for software changes.
 - **SCM, VCS** [Source Code Management, or Version Control System] - A kind of software that tracks all the changes to applications source code and associated metadata e.g.: time and author of the change. Git, and previously SVN, are very popular open source SCMs.
 - **Semantic Versioning** - A versioning scheme in which a version identifier, e.g. &quot;1.2.0a&quot;, provides insights about the application compatibility, functionality and stability.

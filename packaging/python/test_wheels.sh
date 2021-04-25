@@ -97,7 +97,7 @@ run_parallel_test() {
       brew link mpich
 
       # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      if [[ "$CI_OS_NAME" == "osx" ]]; then
           run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
       fi
 
@@ -105,8 +105,8 @@ run_parallel_test() {
       brew link openmpi
       run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
-    # Travis Linux or Azure Linux
-    elif [[ "$TRAVIS_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
+    # CI Linux or Azure Linux
+    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
       sudo update-alternatives --set mpi /usr/include/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
       sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
@@ -154,7 +154,12 @@ echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 if [[ "$use_venv" != "false" ]]; then
   echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
-  $python_exe -m venv $venv_name
+  if [[ "$python_ver" == "27" ]]; then
+    $python_exe -m pip install virtualenv
+    $python_exe -m virtualenv $venv_name
+  else
+    $python_exe -m venv $venv_name
+  fi
   . $venv_name/bin/activate
   python_exe=`which python`
 else

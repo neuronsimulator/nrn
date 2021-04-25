@@ -29,7 +29,8 @@ Since version 7.8.1 we are providing Python wheels and NEURON can be installed u
 pip3 install neuron
 ```
 
-With pip only Python3 wheels are provided via [pypi.org](https://pypi.org/project/NEURON/).
+Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
+wheels are provided for the 8.0 release only.
 
 Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
 releases from below URLs:
@@ -57,8 +58,8 @@ Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip
 pip3 install neuron
 ```
 
-Note that only Python3 wheels are provided. Note that for recent releases we are not providing .rpm or
-.deb installers.
+Note that Python2 wheels are provided only for the 8.0 release. Also, we are not providing .rpm or .deb
+installers for recent releases.
 
 ## Installing Source Distributions
 
@@ -385,6 +386,34 @@ export LD_LIBRARY_PATH=/install/path/lib:$LD_LIBRARY_PATH. # on linux
 export DYLD_LIBRARY_PATH=/install/path/lib:$DYLD_LIBRARY_PATH. # on Mac OS
 ```
 
+* **NEURON is not able to find correct Python or NEURON Python library. What can I do?**
+
+NEURON tries to find correct Python based on user's environment. If you are using NEURON via python interpreter then,
+as mentioned previously, setting `PYTHONPATH` would be sufficient. For `nrniv` or `special` binaries, you can also use
+`-pyexe` option to specify which Python should be used by NEURON:
+
+```bash
+nrniv -pyexe /python/install/path/python-3.8.3/bin/python3
+```
+
+If you have enabled dynamic python support using `NRN_ENABLE_PYTHON_DYNAMIC` CMake option or installed NEURON via pip
+and see error like below:
+
+```bash
+Could not load either libnrnpython3 or libnrnpython2
+```
+
+then NEURON is not able to find appropriate Python and corresponding Python library. You can verify which Python is
+being used by running following command:
+
+```bash
+$ nrnpyenv.sh
+...
+export NRN_PYTHONHOME="/python/install/path/python-3.8.3/"
+export NRN_PYLIB="/python/install/path/python-3.8.3/lib/libpython3.8.so.1.0"
+```
+If `NRN_PYTHONHOME` and `NRN_PYLIB` are inappropriate then you can set them explicitly or use `-pyexe` option mentioned above.
+
 * **How to build NEURON in cluster environment where build node architecture is different than compute node?**
 
 In cluster environment, sometime we have different architecture of login/build nodes than compute nodes (similar to
@@ -407,3 +436,33 @@ cmake .. [other options] \
 ```
 
 In the above example, we used custom build type with Intel compiler's `-xMIC-AVX512` flag for KNL architecture but used `-xHost` flag so that `nocmodl` and `modlunit` are compiled compatible with host architecture (i.e. node where NEURON is being built).
+
+
+* **I'm getting "unrecognized command-line option" build errors on macos as python extensions are
+  being built.**
+
+  Certain combinations of Python environment and C/C++ compiler on macos may lead to build errors of
+  this kind:
+
+```
+running build_ext
+building 'neuron.rxd.geometry3d.graphicsPrimitives' extension
+creating build
+creating build/temp.macosx-10.15-x86_64-2.7
+/usr/local/bin/gcc-10 -fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -iwithsysroot /usr/local/libressl/include -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE -arch x86_64 -pipe -I/Users/user/nrn/share/lib/python/neuron/rxd/geometry3d -I. -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -c graphicsPrimitives.cpp -o build/temp.macosx-10.15-x86_64-2.7/graphicsPrimitives.o -O0
+gcc-10: error: /usr/local/libressl/include: No such file or directory
+gcc-10: error: unrecognized command-line option '-Wshorten-64-to-32'
+gcc-10: error: unrecognized command-line option '-iwithsysroot'; did you mean '-isysroot'?
+error: command '/usr/local/bin/gcc-10' failed with exit status 1
+```
+
+  The reason for this type of failure is that Python will provide build command-arguments for
+  extension building based on its own build. If the compiler used to build NEURON expects different
+  commands (eg. gcc vs. clang) then above error will be encountered.
+
+  A workaround for this issue is to set the `CFLAGS` environment variable providing build arguments
+  compatible with your compiler. Here is an example for gcc/clang:
+
+```
+export CFLAGS="-fno-strict-aliasing -fno-common -dynamic -g -Os -pipe -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes"
+```
