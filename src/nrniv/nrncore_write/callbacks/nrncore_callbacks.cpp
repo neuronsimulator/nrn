@@ -522,11 +522,33 @@ void part2_clean() {
 
     CellGroup::clean_art(cellgroups_);
 
+    if (corenrn_direct) {
+        CellGroup::defer_clean_netcons(cellgroups_);
+    }
+
     delete [] cellgroups_;
     cellgroups_ = NULL;
 }
 
+std::vector<NetCon**> CellGroup::deferred_netcons;
 
+void CellGroup::defer_clean_netcons(CellGroup* cgs) {
+    clean_deferred_netcons();
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        CellGroup& cg = cgs[tid];
+        deferred_netcons.push_back(cg.netcons);
+        cg.netcons = nullptr;
+    }
+}
+
+void CellGroup::clean_deferred_netcons() {
+    for (auto ncs: deferred_netcons) {
+        if (ncs) {
+            delete [] ncs;
+        }
+    }
+    deferred_netcons.clear();
+}
 
 // Vector.play information.
 // Must play into a data element in this thread
@@ -783,4 +805,16 @@ printf("PlayRecordEvent %g\n", tdeliver);
   }
 
   return core_te;
+}
+
+/** @brief Called from CoreNEURON core2nrn_tqueue_item.
+ */
+void core2nrn_NetCon_event(int tid, double td, size_t nc_index) {
+  assert(tid < nrn_nthread);
+  NrnThread& nt = nrn_threads[tid];
+  printf("core2nrn_NetCon_event tid=%d t=%g td=%g nc_index=%zd\n", tid, nt._t, td, nc_index);
+  // cellgroups_ has been deleted but deletion of cg.netcons was deferred
+  // (and will be deleted on return from nrncore_run).
+  NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
+  nc->send(td, net_cvode_instance, &nt);
 }

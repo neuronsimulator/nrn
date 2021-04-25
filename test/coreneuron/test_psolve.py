@@ -15,9 +15,10 @@ def model():
     ic = h.IClamp(s(.5))
     ic.delay = 0.1
     ic.dur = 0.1
-    ic.amp = 0.5
+    ic.amp = 0.5*0
     syn = h.ExpSyn(s(.5))
     nc = h.NetCon(None, syn)
+    nc.weight[0] = .001
     return {'s':s, 'ic':ic, 'syn':syn, 'nc':nc}
 
 def test_psolve():
@@ -27,26 +28,26 @@ def test_psolve():
     h.tstop = 5
     vvec.record(m['s'](.5)._ref_v, sec=m['s'])
 
-    h.run()
-    vvec_std = vvec.c() # standard result
-
     def run(tstop):
       pc.set_maxstep(10)
       h.finitialize(-65)
       m['nc'].event(3.5)
-      h.continuerun(1)
+      m['nc'].event(2.6)
+      h.continuerun(1) # Classic NEURON so psolve starts at t>0
       while h.t < tstop:
         pc.psolve(h.t + 1)
     
     run(h.tstop)
-    assert(vvec_std.eq(vvec))
-    assert(vvec_std.size() == vvec.size())
+    vvec_std = vvec.c() # standard result
 
     from neuron import coreneuron
     coreneuron.enable = True
     coreneuron.verbose = 0
     h.CVode().cache_efficient(True)
     run(h.tstop)
+    if vvec_std.eq(vvec) == 0:
+      for i, x in enumerate(vvec_std):
+        print ("%.3f %g %g %g" %(i*h.dt, x, vvec[i], x - vvec[i]))
     assert(vvec_std.eq(vvec))
     assert(vvec_std.size() == vvec.size())
     coreneuron.enable = False

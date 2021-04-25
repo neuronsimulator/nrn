@@ -73,6 +73,9 @@ public:
     }
 
     static Deferred_Type2ArtData deferred_type2artdata_;
+    static std::vector<NetCon**> deferred_netcons;
+    static void defer_clean_netcons(CellGroup*);
+    static void clean_deferred_netcons();    
 
 private:
     static PVoid2Int artdata2index_;
