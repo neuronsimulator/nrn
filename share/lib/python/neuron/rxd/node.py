@@ -392,12 +392,11 @@ class Node1D(Node):
         If a Region object is provided, returns True if the Node lies in the Region; else False.
         If a number between 0 and 1 is provided, returns True if the normalized position lies within the Node; else False.
         """
-        if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
-            return self._in_sec(condition)
-        elif isinstance(condition, region.Region):
-            return self.region == condition
-        elif isinstance(condition, nrn.Segment):
-            return self.segment == condition
+        try:
+            # test Node conditions
+            return super(Node1D, self).satisfies(condition)
+        except:
+            pass  # ignore the error and try Node1D specific conditions
         try:
             if 0 <= condition <= 1:
                 dx = 1. / self._sec.nseg
@@ -408,10 +407,11 @@ class Node1D(Node):
                 # self_index should be unique (no repeats due to roundoff error) because the inside should always be 0.5 over an integer
                 self_index = int(self._location * self._sec.nseg)
                 return check_index == self_index
-                
+
         except:
-            raise RxDException('unrecognized node condition: %r' % condition)
-            
+            pass
+        raise RxDException("unrecognized node condition: %r" % condition)
+
     @property
     def x3d(self):
         """x coordinate"""
@@ -570,13 +570,13 @@ class Node3D(Node):
 
         Does not currently support numbers between 0 and 1.
         """
-        if isinstance(condition, nrn.Section) or isinstance(condition, rxdsection.RxDSection):
-            return self._in_sec(condition)
-        elif isinstance(condition, region.Region):
-            return self.region == condition
-        elif isinstance(condition, nrn.Segment):
-            return self.segment == condition
-        elif isinstance(condition, tuple) and len(condition) == 3:
+        try:
+            # test the Node conditions
+            return super(Node3D, self).satisfies(condition)
+        except:
+            pass  # ignore the error and try Node3D specific conditions
+
+        if isinstance(condition, tuple) and len(condition) == 3:
             x, y, z = condition
             mesh = self._r._mesh_grid
             return (
@@ -584,21 +584,18 @@ class Node3D(Node):
                 int((y - mesh["ylo"]) / mesh['dy']) == self._j and
                 int((z - mesh["zlo"]) / mesh['dz']) == self._k 
             )
-        position_type = False
-        did_error = False
+        # check for a position condition so as to provide a more useful error
         try:
             if 0 <= condition <= 1:
-                position_type = True
+                # TODO: the trouble here is that you can't do this super-directly based on x
+                #       the way to do this is to find the minimum and maximum x values contained in the grid
+                #       the extra difficulty with that is to handle boundary cases correctly
+                #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
+                raise RxDException("selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this")
         except:
-            did_error = True
-        if did_error:
-            raise RxDException('unrecognized node condition: %r' % condition)
-        if position_type:
-            # TODO: the trouble here is that you can't do this super-directly based on x
-            #       the way to do this is to find the minimum and maximum x values contained in the grid
-            #       the extra difficulty with that is to handle boundary cases correctly
-            #       (to test, consider a section 1 node wide by 15 discretized pieces long, access at 1./15, 2./15, etc...)
-            raise RxDException('selecting nodes by normalized position not yet supported for 3D nodes; see comments in source about how to fix this')
+            pass
+        raise RxDException("unrecognized node condition: %r" % condition)
+
     @property
     def x3d(self):
         # TODO: need to modify this to work with 1d
@@ -780,5 +777,25 @@ class NodeExtracellular(Node):
     def _grid_id(self):
         return self._speciesref()._extracellular_instances[self._r]._grid_id
 
+    def satisfies(self, condition):
+        """Tests if a Node satisfies a given condition.
 
+        If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
+        If a Region object is provided, returns True if the Node lies in the Region; else False.
+        If a tuple is provided of length 3, return True if the Node contains the (x, y, z) point; else False.
+        """
+        try:
+            # test the Node conditions
+            return super(NodeExtracellular, self).satisfies(condition)
+        except:
+            pass  # ignore the error and try NodeExtracellular specific conditions
 
+        if isinstance(condition, tuple) and len(condition) == 3:
+            x, y, z = condition
+            r = self._regionref()
+            return (
+                int((x - r._xlo) / r._dx[0]) == self._i
+                and int((y - r._ylo) / r._dx[1]) == self._j
+                and int((z - r._zlo) / r._dx[2]) == self._k
+            )
+        raise RxDException("unrecognized node condition: %r" % condition)
