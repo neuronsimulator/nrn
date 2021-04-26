@@ -29,11 +29,7 @@ char* hoc_forward2back(char* s);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
-#if defined(NRNCMAKE)
-// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
-#undef NRNHOSTCPU
 #define NRNHOSTCPU "."
-#endif
 
 #ifdef MINGW
 #define RTLD_NOW 0
@@ -148,13 +144,8 @@ static void set_nrnpylib() {
     free(bnrnhome);
     #else
     char* line = new char[linesz+1];
-#if defined(NRNCMAKE)
     sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
      neuron_home,
-#else
-    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
-     neuron_home, NRNHOSTCPU,
-#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
@@ -348,17 +339,9 @@ static void* load_nrnpython_helper(const char* npylib) {
 	sprintf(name, "%s.dll", npylib);
 #else // !MINGW
 #if DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #else // !DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #endif // DARWIN
 #endif // MINGW
 	void* handle = dlopen(name, RTLD_NOW);

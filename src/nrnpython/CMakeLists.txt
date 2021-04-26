@@ -201,18 +201,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS ${binary_dir_filename})
 
-  # ~~~
-  # For DYNAMIC python, inithoc module name convention is different for
-  # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
-  # to know whether they are compiled via the cmake or autotools build system.
-  # (note: see also for inithoc.cpp via setup.py)
-  # ~~~
-  set_property(
-    SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
-           ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
-    APPEND
-    PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
-
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
