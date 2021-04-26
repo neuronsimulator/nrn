@@ -102,7 +102,6 @@ char* nrnmpi_load(int is_python) {
             }
         }
     }
-#if defined(NRNCMAKE)
 	if (handle) {
 		/* loaded but is it openmpi or mpich */
 		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
@@ -122,26 +121,12 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
                            "On Mac OS, full path to a MPI library can be provided via "
                            "environmental variable MPI_LIB_NRN_PATH\n");
 	}
-#else /* autotools has only a libnrnmpi that is likely only for openmpi */
-	if (handle) {
-		if (!load_nrnmpi("@loader_path/libnrnmpi.dylib", pmes+strlen(pmes))) {
-			return pmes;
-		}
-	}else{
-		ismes = 1;
-sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, need a LD_LIBRARY_PATH.\n");
-	}
-#endif /* not defined (NRNCMAKE) */
 #else /*not DARWIN*/
 #if defined(MINGW)
 	sprintf(pmes, "Try loading msmpi\n");
 	handle = load_mpi("msmpi.dll", pmes+strlen(pmes));
 	if (handle) {
-#if defined(NRNCMAKE)
 		if (!load_nrnmpi("libnrnmpi_msmpi.dll", pmes+strlen(pmes))){
-#else
-		if (!load_nrnmpi("libnrnmpi.dll", pmes+strlen(pmes))){
-#endif
 			return pmes;
 		}
 	}else{
@@ -173,7 +158,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 	    sprintf(pmes, "Try loading libmpi and libmpich\n");
 	    handle = load_mpi("libmpich.so", pmes+strlen(pmes));
 	}
-#if defined(NRNCMAKE)
+
 	if (handle) {
 		/* with CMAKE the problem of Python launch on LINUX not resolving
 		   variables from already loaded shared libraries has returned.
@@ -204,33 +189,6 @@ sprintf(pmes+strlen(pmes), "Is openmpi installed? If not in default location, ne
 		ismes = 1;
 sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH or MPI_LIB_NRN_PATH.\n");
 	}
-#else /* autotools */
-	if (handle){
-		if (!load_nrnmpi(NRN_LIBDIR"/libnrnmpi.so", pmes+strlen(pmes))){
-			return pmes;
-		}
-	}else{
-		sprintf(pmes+strlen(pmes), "Try loading mpich2\n");
-		handle = load_mpi("libmpl.so", pmes+strlen(pmes));
-		handle = load_mpi("libmpich.so", pmes+strlen(pmes));
-#if 0
-/* Not needed because the issue of Python launch on LINUX not resolving
-   variables from already loaded shared libraries (due to loading them with
-   RTLD_LOCAL) was solved at the src/nrnmpi/Makefile.am level via a change
-   to libnrnmpi_la_LIBADD
-*/
-if (!dlopen("liboc.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
-	fprintf(stderr, "Did not promote liboc.so to RTLD_GLOBAL: %s\n", dlerror());
-}
-if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
-	fprintf(stderr, "Did not promote libnrniv.so to RTLD_GLOBAL: %s\n", dlerror());
-}
-#endif
-		if(!load_nrnmpi("libnrnmpi.so", pmes+strlen(pmes))){
-			return pmes;
-		}
-	}
-#endif /* not NRNCMAKE */
 #endif /*not MINGW*/
 #endif /* not DARWIN */
 	if (!handle) {

@@ -2,7 +2,7 @@
 
 set -ex
 
-# Copies (autotools and cmake) minimal compiler toolchain
+# Copies minimal compiler toolchain
 # to allow nrnivmodl (mknrndll) to build nrnmech.dll .
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn

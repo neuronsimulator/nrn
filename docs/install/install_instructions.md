@@ -68,19 +68,6 @@ If you are running NEURON in cluster/HPC environment where you would like to hav
 from source. Note that to use CoreNEURON with optimised CPU/GPU support, you have to install NEURON
 from source.
 
-Currently, we are supporting two build systems:
-
-- [CMake](#build-cmake) (__recommended__)
-- [Autotools](#build-autotools) (legacy, minimum support - __will be DROPPED in the next release__)
-
-Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
-We would be grateful for any feedback or issues you encounter using the CMake-based build system.
-Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
-happy to help.
-In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
-
-**If you are using autotools, we strongly recommend switching to CMake as of now.**
-
 ### Install Build Dependencies
 
 In order to build NEURON from source, the following packages must be available:
@@ -88,7 +75,7 @@ In order to build NEURON from source, the following packages must be available:
 - Bison
 - Flex
 - C/C++ compiler suite
-- CMake 3.8 or Autotools
+- CMake 3.8.2
 
 The following packages are optional (see build options):
 
@@ -170,8 +157,6 @@ sudo apt-get install -y bison cmake flex git \
      libxcomposite-dev openmpi-bin python3-dev
 # for python dependencies
 pip install scipy numpy cython
-# for autotools based installation only
-sudo apt-get install -y automake libtool make
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
@@ -274,70 +259,6 @@ To run the tests it's needed to:
   cmake --build . --parallel 8
   ctest # use --parallel for speed, -R to run specific tests
   ```
-
-<a name="build-autotools"></a>
-### Install NEURON using Autotools
-
-If you would like to have GUI support, you first need to install the Interviews package available from GitHub
-[here](http://github.com/neuronsimulator/iv) or the tarball provided [here](http://neuron.yale.edu/ftp/neuron/versions/alpha/).
-In case of the former, first you need to run `build.sh` script to create the automake, autoconf, and libtool generated files:
-
-```bash
-sh build.sh
-```
-
-And then run the standard `configure`, `make` and `make install` steps to install Interviews:
-
-```bash
-./configure --prefix=/path/to/install/directory
-make
-make install
-```
-
-To build NEURON we have to use the same steps as Interviews, i.e., if the source is obtained from the git repository,
-run `build.sh` script to create the automake, autoconf, and libtool generated files:
-
-```bash
-sh build.sh
-```
-
-and then run the standard `configure`, `make` and `make install` steps:
-
-```bash
-./configure --prefix=/path/to/install/directory
-make
-make install
-```
-
-You can set the following environmental variables to use the installation:
-
-```bash
-export PATH=/path/to/install/directory/<arch>/bin:$PATH # replace <arch> with x86_64 or other platform directory
-export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
-```
-
-If you want to customize the build, particularly useful configure options are:
-
-- `--prefix=/some/path` : Install in this location of your filesystem.
-- `--without-x` : If the InterViews graphics library is not installed, disable GUI.
-- `--with-iv=<prefix>/../iv` : If InterViews was not installed in <prefix>/../iv
-- `--with-paranrn` : Parallel models on cluster computers using MPI
-- `--with-nrnpython` : Use Python as an alternative interpreter (as well as the native HOC interpreter).
-- `--with-nmodl-only` : Build nmodl only (in case of cross compiling)
-- `--disable-rx3d` : Do not compile the cython translated 3-d rxd features
-
-For additional options, see `./configure --help`.
-
-Some systems require unusual options for compilation or linking that the `configure` script does not know about.
-You can give `configure` initial values for variables by setting them in the environment. Using a Bourne-compatible
-shell, you can do that on the command line like this:
-
-```bash
-CFLAGS="-O2" CXXFLAGS="-O2" CC=gcc CXX=g++ ./configure <other options>
-```
-
-For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
-
 
 ### FAQs
 
