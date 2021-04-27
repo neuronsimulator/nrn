@@ -394,6 +394,10 @@ def setup_package():
         install_requires=['numpy>=1.9.3'],
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
+        extras_require=dict(
+            nmodl=['nmodl'],
+            full=['nmodl'],
+        ),
         dependency_links=[]
     )
 
@@ -402,10 +406,11 @@ def mac_osx_setenv():
     """Set MacOS environment to build high-compat wheels"""
     try:
         # Also ensure wheel package is avail
-        from wheel.macosx_libfile import extract_macosx_min_system_version
+        import wheel
     except ImportError:
         from setuptools.dist import Distribution
         Distribution().fetch_build_eggs(["wheel"])
+    from wheel.macosx_libfile import extract_macosx_min_system_version
 
     sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
                                        ).decode().strip()
