@@ -10,14 +10,14 @@ steps:
       python -m pip install twine
       cat $(PYPIRC_PATH)
       python -m twine upload --verbose --skip-existing -r NMODLPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), eq(variables.buildWheel, true))
+    condition: and(succeeded(), eq(variables.buildWheel, true), ne(variables['UploadWheel'], false))
     displayName: 'Upload nightly wheel to pypi.org'
   - task: TwineAuthenticate@1
     inputs:
       pythonUploadServiceConnection: AzureNMODLPypi
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.releaseWheelBuild, true))
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.ReleaseWheelBuild, true))
   - script: |
       python -m pip install twine
       python -m twine upload --verbose --skip-existing -r NMODLPypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.releaseWheelBuild, true))
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables.ReleaseWheelBuild, true), ne(variables['UploadWheel'], false))
     displayName: 'Upload release wheel to pypi.org'

@@ -30,6 +30,9 @@ try:
         .decode()
     )
     __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
+    # allow to override version during development/testing
+    if "NMODL_WHEEL_VERSION" in os.environ:
+        __version__ = os.environ['NMODL_WHEEL_VERSION']
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo") from e
 

@@ -4,7 +4,7 @@
 variables:
   # defined in UI
   #- ReleaseWheelBuild: False
-  #- NightlyWheelBuild: False
+  #- UploadWheel: False
   buildWheel: ${{ or(in(variables['Build.Reason'], 'Schedule'), in(variables['Build.Reason'], 'Manual')) }}
 
 # Nightly build master for pypi upload
@@ -192,7 +192,7 @@ jobs:
     submodules: True
     condition: succeeded()
   - script: |
-      if [ "$(buildWheel)" == "True" ]; then
+      if [[ "$(RELEASEWHEELBUILD)" != "True" ]]; then
         export TAG="-nightly"
       else
         export TAG=""
@@ -261,7 +261,7 @@ jobs:
       export MACOSX_DEPLOYMENT_TARGET=10.9
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-      if [ "$(buildWheel)" == "True" ]; then
+      if [[ "$(RELEASEWHEELBUILD)" != "True" ]]; then
         export NMODL_NIGHTLY_TAG="-nightly"
       else
         export NMODL_NIGHTLY_TAG=""
