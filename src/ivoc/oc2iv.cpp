@@ -5,13 +5,11 @@
 #include "oc2iv.h"
 #include "ocpointer.h"
 
-extern "C" {
-#include "parse.h"
+#include "parse.hpp"
 extern Symlist* hoc_top_level_symlist;
 extern Objectdata *hoc_top_level_data;
 extern Object* hoc_thisobject;
 extern Symlist* hoc_symlist;
-}
 
 char* Oc2IV::object_str(const char* name, Object* ob) {
 	if (ob && ob->ctemplate->constructor) {
@@ -69,7 +67,7 @@ void ParseTopLevel::save() {
 	}
 }
 
-extern "C" { extern int hoc_in_template; }
+extern int hoc_in_template;
 
 void ParseTopLevel::restore() {
 	if (restored_ == false) {

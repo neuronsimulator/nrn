@@ -10,10 +10,8 @@
 #include "oc2iv.h"
 #include "ivocvect.h"
 
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 Object** DataVec::new_vect(GLabel* gl) const {
 	int i, cnt;

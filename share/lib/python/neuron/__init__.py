@@ -33,7 +33,7 @@ Important names and sub-packages
 
 For help on these useful functions, see their docstrings:
 
-  neuron.init, run, psection, load_mechanisms
+  load_mechanisms
 
 
 neuron.h
@@ -101,6 +101,8 @@ $Id: __init__.py,v 1.1 2008/05/26 11:39:44 hines Exp hines $
 
 import sys
 import os
+import warnings
+import weakref
 
 embedded = True if 'hoc' in sys.modules else False
 
@@ -143,24 +145,46 @@ version = h.nrnversion(5)
 __version__ = version
 _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
-  import platform
-  import os
-  p = h.nrnversion(6)
-  if "--prefix=" in p:
-    p = p[p.find('--prefix=') + 9:]
-    p = p[:p.find("'")]
+  # first try is to derive from neuron.__file__
+  origin = None # path to neuron/__init__.py
+  if sys.version_info[0] == 2:
+    # python 2 seems to have hoc.__file__ already filled in so never get here.
+    try:
+      import imp
+      mspec = imp.find_module("neuron")
+      origin = mspec[1]
+    except:
+      pass
   else:
-    p = "/usr/local/nrn"
-  if sys.version_info >= (3, 0):
+    from importlib import util
+    mspec = util.find_spec("neuron")
+    if mspec:
+      origin = mspec.origin
+  if origin is not None:
     import sysconfig
-    phoc = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
+    setattr(hoc, "__file__", hoc_path)
   else:
-    phoc = p + "/lib/python/neuron/hoc.so"
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-  if not os.path.isfile(phoc):
-    phoc = p + "/%s/lib/libnrnpython.so" % platform.machine()
-  setattr(hoc, "__file__", phoc)
+    # if the above is robust, maybe all this can be removed.
+    # next try is to derive from nrnversion(6) (only works for autotools build)
+    import platform
+    import os
+    p = h.nrnversion(6)
+    if "--prefix=" in p:
+      p = p[p.find('--prefix=') + 9:]
+      p = p[:p.find("'")]
+    else:
+      p = "/usr/local/nrn"
+    if sys.version_info >= (3, 0):
+      import sysconfig
+      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
+    else:
+      hoc_path = p + "/lib/python/neuron/hoc.so"
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
+    if not os.path.isfile(hoc_path):
+      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
+    setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__
 # As a workaround to importing doc at neuron import time
@@ -211,10 +235,24 @@ def test_rxd(exitOnError=True):
 # using the idiom self.basemethod = self.baseattr('methodname')
 # ------------------------------------------------------------------------------
 
+import sys, types
+
+# Flag for the Python objects interface
+_pyobj_enabled = False
+# Load the `hclass` factory for the correct Python version 2/3 and prevent the
+# incorrect module source code from being opened by creating an empty module.
 if sys.version_info[0] == 2:
+  hclass3 = sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
   from neuron.hclass2 import hclass
 else:
-  from neuron.hclass3 import hclass
+  hclass2 = sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
+  if sys.version_info[0] == 3 and sys.version_info[1] < 6:
+    import neuron.hclass35
+    hclass = neuron.hclass35.hclass
+    hclass3 = neuron.hclass35
+  else:
+    from neuron.hclass3 import HocBaseObject, hclass
+    _pyobj_enabled = True
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
@@ -337,8 +375,43 @@ def new_hoc_class(name,doc=None):
 # Python equivalents to Hoc functions
 # ------------------------------------------------------------------------------
 
-xopen = h.xopen
-quit = h.quit
+def xopen(*args, **kwargs):
+    """
+    Syntax:
+        ``neuron.xopen("hocfile")``
+
+
+        ``neuron.xopen("hocfile", "RCSrevision")``
+
+
+    Description:
+        ``h.xopen()`` executes the commands in ``hocfile``.  This is a convenient way
+        to define user functions and procedures.
+        An optional second argument is the RCS revision number in the form of a
+        string. The RCS file with that revision number is checked out into a
+        temporary file and executed. The temporary file is then removed.  A file
+        of the same primary name is unaffected.
+
+    This function is deprecated and will be removed in a future release.
+    Use ``h.xopen`` instead.
+    """
+    warnings.warn("neuron.xopen is deprecated; use h.xopen instead", DeprecationWarning, stacklevel=2)
+    return h.xopen(*args, **kwargs)
+
+
+def quit(*args, **kwargs):
+    """
+    Exits the program. Can be used as the action of a button. If edit buffers
+    are open you will be asked if you wish to save them before the final exit.
+
+    This function is deprecated and will be removed in a future release.
+    Use ``h.quit()`` or ``sys.exit()`` instead. (Note: sys.exit will not prompt
+    for saving edit buffers.)
+    """
+    warnings.warn("neuron.quit() is deprecated; use h.quit() or sys.exit() instead", DeprecationWarning, stacklevel=2)
+    return h.quit(*args, **kwargs)
+
+
 
 def hoc_execute(hoc_commands, comment=None):
     assert isinstance(hoc_commands,list)
@@ -363,11 +436,14 @@ def psection(section):
     Use section.psection() instead to get a data structure that
     contains the same information and more.
 
+    This function is deprecated and will be removed in a future
+    release.
+
     See:
 
     https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/topology.html?#psection
-
     """
+    warnings.warn("neuron.psection() is deprecated; use print(sec.psection()) instead", DeprecationWarning, stacklevel=2)
     h.psection(sec=section)
 
 def init():
@@ -380,18 +456,23 @@ def init():
 
     Use h.finitialize() instead, which allows you to specify the membrane potential
     to initialize to; via e.g. h.finitialize(-65)
-    
+
+    This function is deprecated and will be removed in a future
+    release.
+
     By default, the units used by h.finitialize are in mV, but you can be explicit using
     NEURON's unit's library, e.g.
-    
+
     .. code-block:: python
-    
+
         from neuron.units import mV
         h.finitialize(-65 * mV)
 
     https://www.neuron.yale.edu/neuron/static/py_doc/simctrl/programmatic.html?#finitialize
 
     """
+    warnings.warn("neuron.init() is deprecated; use h.init() instead", DeprecationWarning, stacklevel=2)
+
     h.finitialize()
 
 def run(tstop):
@@ -399,32 +480,37 @@ def run(tstop):
     function run(tstop)
 
     Run the simulation (advance the solver) until tstop [ms]
-    
+
     `h.run()` and `h.continuerun(tstop)` are more powerful solutions defined in the `stdrun.hoc` library.
-    
+
     ** This function exists for historical purposes. Use in new code is not recommended. **
-    
+
+    This function is deprecated and will be removed in a future
+    release.
+
     For running a simulation, consider doing the following instead:
-    
+
     Begin your code with
-    
+
     .. code-block:: python
-    
+
         from neuron import h
         from neuron.units import ms, mV
         h.load_file('stdrun.hoc')
-    
+
     Then when it is time to initialize and run the simulation:
-    
+
     .. code-block:: python
-    
+
         h.finitialize(-65 * mV)
         h.continuerun(100 * ms)
-    
+
     where the initial membrane potential and the simulation run time are adjusted as appropriate
     for your model.
 
     """
+    warnings.warn("neuron.run(tstop) is deprecated; use h.stdinit() and h.continuerun(tstop) instead", DeprecationWarning, stacklevel=2)
+
     h('tstop = %g' % tstop)
     h('while (t < tstop) { fadvance() }')
     # what about pc.psolve(tstop)?
@@ -586,12 +672,19 @@ def _modelview_mechanism_docstrings(dmech, tree):
 # TODO: put this someplace else
 #       can't be in rxd because that would break things if no scipy
 _sec_db = {}
-def _declare_contour(secobj, secname):
+def _declare_contour(secobj, obj, name):
+    array, i = _parse_import3d_name(name)
+    if obj is None:
+      sec = getattr(h, array)[i]
+    else:
+      sec = getattr(obj, array)[i]
     j = secobj.first
     center_vec = secobj.contourcenter(secobj.raw.getrow(0), secobj.raw.getrow(1), secobj.raw.getrow(2))
     x0, y0, z0 = [center_vec.x[i] for i in range(3)]
+    # store a couple of points to check if the section has been moved
+    pts = [(sec.x3d(i),sec.y3d(i),sec.z3d(i)) for i in [0, sec.n3d()-1]]
     # (is_stack, x, y, z, xcenter, ycenter, zcenter)
-    _sec_db[secname] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0)
+    _sec_db[sec.hoc_internal_name()] = (True if secobj.contour_list else False, secobj.raw.getrow(0).c(j), secobj.raw.getrow(1).c(j), secobj.raw.getrow(2).c(j), x0, y0, z0, pts)
 
 def _create_all_list(obj):
     # used by import3d
@@ -672,13 +765,17 @@ class _RangeVarPlot(_WrapperPlot):
   Additional arguments and keyword arguments are passed to the graph's
   plotting method.
 
-  Example, showing plotting to NEURON graphics, bokeh, and matplotlib:
+  Example, showing plotting to NEURON graphics, bokeh, matplotlib,
+  plotnine/ggplot, and plotly:
 
   .. code::
 
     from matplotlib import pyplot
     from neuron import h, gui
     import bokeh.plotting as b
+    import plotly
+    import plotly.graph_objects as go
+    import plotnine as p9
     import math
 
     dend = h.Section(name='dend')
@@ -705,7 +802,22 @@ class _RangeVarPlot(_WrapperPlot):
     r.plot(bg, line_width=10)
     b.show(bg)
 
-    pyplot.show()"""
+    # plotly
+    r.plot(plotly).show()
+
+    # also plotly
+    fig = go.Figure()
+    r.plot(fig)
+    fig.show()
+
+    pyplot.show()
+
+    # plotnine/ggplot
+    p9.ggplot() + r.plot(p9)
+
+    # alternative plotnine/ggplot
+    r.plot(p9.ggplot())
+    """
 
   def __call__(self, graph, *args, **kwargs):
       yvec = h.Vector()
@@ -713,13 +825,36 @@ class _RangeVarPlot(_WrapperPlot):
       self._data.to_vector(yvec, xvec)
       if isinstance(graph, hoc.HocObject):
         return yvec.line(graph, xvec, *args)
+      str_type_graph = str(type(graph))
+      if str_type_graph == "<class 'plotly.graph_objs._figure.Figure'>":
+        # plotly figure
+        import plotly.graph_objects as go
+        kwargs.setdefault('mode', 'lines')
+        return graph.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_type_graph == "<class 'plotnine.ggplot.ggplot'>":
+        # ggplot object
+        import plotnine as p9
+        import pandas as pd
+        return graph + p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
+      str_graph = str(graph)
+      if str_graph.startswith("<module 'plotly' from "):
+        # plotly module
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        kwargs.setdefault('mode', 'lines')
+        return fig.add_trace(go.Scatter(x=xvec, y=yvec, *args, **kwargs))
+      if str_graph.startswith("<module 'plotnine' from "):
+        # plotnine module (contains ggplot)
+        import plotnine as p9
+        import pandas as pd
+        return p9.geom_line(*args, data=pd.DataFrame({'x': xvec, 'y': yvec}), mapping=p9.aes(x='x', y='y'), **kwargs)
       if hasattr(graph, 'plot'):
         # works with e.g. pyplot or a matplotlib axis
         return graph.plot(xvec, yvec, *args, **kwargs)
       if hasattr(graph, 'line'):
         # works with e.g. bokeh
         return graph.line(xvec, yvec, *args, **kwargs)
-      if str(type(graph)) == "<class 'matplotlib.figure.Figure'>":
+      if str_type_graph == "<class 'matplotlib.figure.Figure'>":
         raise Exception('plot to a matplotlib axis not a matplotlib figure')
       raise Exception('Unable to plot to graphs of type {}'.format(type(graph)))
 
@@ -810,9 +945,12 @@ class _PlotShapePlot(_WrapperPlot):
                       if variable is not None:
                         val = _get_variable_seg(seg, variable)
                         vals.append(val)
-                        lines[line] = '%s at %s' % (val, seg)
+                        if val is not None:
+                          lines[line] = '%s at %s' % (val, seg)
+                        else:
+                          lines[line] = str(seg)
                       else:
-                        lines[line] = ''
+                        lines[line] = str(seg)
                       lines_list.append(line)
               if variable is not None:
                   val_range = val_max - val_min
@@ -826,15 +964,23 @@ class _PlotShapePlot(_WrapperPlot):
       return Axis3DWithNEURON(fig)
 
     def _get_variable_seg(seg, variable):
-      try:
-        if '.' in variable:
-            mech, var = variable.split('.')
-            val = getattr(getattr(seg, mech), var)
-        else:
-            val = getattr(seg, variable)
-      except AttributeError:
-        # leave default color if no variable found
-        val = None
+      if isinstance(variable, str):
+        try:
+          if '.' in variable:
+              mech, var = variable.split('.')
+              val = getattr(getattr(seg, mech), var)
+          else:
+              val = getattr(seg, variable)
+        except AttributeError:
+          # leave default color if no variable found
+          val = None
+      else:
+        try:
+          vals = variable.nodes(seg).concentration
+          val = sum(vals) / len(vals)
+        except:
+          val = None
+
       return val
 
     def _get_3d_pt(segment):
@@ -856,7 +1002,9 @@ class _PlotShapePlot(_WrapperPlot):
       import ctypes
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       kwargs.setdefault('picker', 2)
       result = _get_pyplot_axis3d(fig)
       _lines = result._do_plot(lo, hi, secs, variable, *args, **kwargs)
@@ -921,14 +1069,17 @@ class _PlotShapePlot(_WrapperPlot):
 
       get_plotshape_data = nrn_dll_sym('get_plotshape_data')
       get_plotshape_data.restype = ctypes.py_object
-      variable, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      variable, varobj, lo, hi, secs = get_plotshape_data(ctypes.py_object(self._data))
+      if varobj is not None:
+        variable = varobj
       if secs is None:
         secs = list(h.allsec())
 
-      
+
       if variable is None:
         kwargs.setdefault('color', 'black')
-        
+
+        data = []
         for sec in secs:
           xs = [sec.x3d(i) for i in range(sec.n3d())]
           ys = [sec.y3d(i) for i in range(sec.n3d())]
@@ -966,6 +1117,9 @@ class _PlotShapePlot(_WrapperPlot):
           all_seg_pts = _segment_3d_pts(sec)
           for seg, (xs, ys, zs, _, _) in zip(sec, all_seg_pts):
             val = _get_variable_seg(seg, variable)
+            hover_template = str(seg)
+            if val is not None:
+              hover_template += '<br>' + ('%.3f' % val)
             col = _get_color(variable, val, cmap, lo, hi, val_range)
             if show_diam:
               diam = seg.diam
@@ -977,7 +1131,7 @@ class _PlotShapePlot(_WrapperPlot):
                 y=ys,
                 z=zs,
                 name='',
-                hovertemplate=str(seg) + '<br>' + ('%.3f' % val),
+                hovertemplate=hover_template,
                 mode="lines",
                 line=go.scatter3d.Line(
                     color=col,
@@ -1095,7 +1249,7 @@ class DensityMechanism:
         except:
           # older versions of the NMODL library didn't support .ontology_id
           pass
-        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': ontology_id}
+        result[name] = {'read': read, 'write': write, 'charge': valence, 'ontology_id': nmodl.to_nmodl(ontology_id)}
       self.__ions = result
     # return a copy
     return dict(self.__ions)
@@ -1119,6 +1273,7 @@ try:
     return _RangeVarPlot(rvp)
 
   def _plotshape_plot(ps):
+    h.define_shape()
     return _PlotShapePlot(ps)
 
   _mech_classes = {}
@@ -1247,11 +1402,46 @@ def nrnpy_vec_math(op, flag, arg1, arg2=None):
 
   return NotImplemented
 
+def _nrnpy_rvp_pyobj_callback(f):
+  # unless f is an rxd variable, we return it directly
+  f_type = str(type(f))
+  if f_type not in ("<class 'neuron.rxd.species.SpeciesOnRegion'>", "<class 'neuron.rxd.species.Species'>"):
+    return f
+
+  # if we're here, f is an rxd variable, and we return a function that looks
+  # up the weighted average concentration given an x and h.cas()
+  # this is not particularly efficient so it is probably better to use this for
+  # fixed timepoints rather than displays that update mid-simulation
+  fref = weakref.ref(f)
+  def result(x):
+    sp = fref()
+    if sp:
+        try:
+            # h.cas() will fail if there are no sections
+            nodes = sp.nodes(h.cas()(x))
+        except:
+            return None
+        if nodes:
+            total_volume = sum(node.volume for node in nodes)
+            return sum(node.concentration * node.volume for node in nodes) / total_volume
+        else:
+            return None
+    return None
+
+  return result
+
+
 try:
   nrnpy_vec_math_register = nrn_dll_sym('nrnpy_vec_math_register')
   nrnpy_vec_math_register(ctypes.py_object(nrnpy_vec_math))
 except:
   print("Failed to setup nrnpy_vec_math")
+
+try:
+  _nrnpy_rvp_pyobj_callback_register = nrn_dll_sym('nrnpy_rvp_pyobj_callback_register')
+  _nrnpy_rvp_pyobj_callback_register(ctypes.py_object(_nrnpy_rvp_pyobj_callback))
+except:
+  print("Failed to setup _nrnpy_rvp_pyobj_callback")
 
 try:
   from neuron.psection import psection
@@ -1268,4 +1458,3 @@ def clear_gui_callback():
     nrnpy_set_gui_callback(None)
   except:
     pass
-

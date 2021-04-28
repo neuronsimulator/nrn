@@ -14,22 +14,19 @@
 #include "nrnmenu.h"
 #include "classreg.h"
 #include "gui-redirect.h"
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
-extern "C" int hoc_return_type_code;
-extern "C" {
+extern int hoc_return_type_code;
 // from nrnoc
 #include "membfunc.h"
-#include "parse.h"
+#include "parse.hpp"
 extern Symlist *hoc_built_in_symlist;
 extern Symbol **pointsym;
 extern double* point_process_pointer(Point_process*, Symbol*, int);
-extern Point_process* ob2pntproc(Object*);
+extern "C" Point_process* ob2pntproc(Object*);
 extern ReceiveFunc* pnt_receive;
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
@@ -49,7 +46,6 @@ void nrnpointmenu();
 Object* (*nrnpy_callable_with_args)(Object*, int narg);
 int (*nrnpy_ob_is_seg)(Object*);
 
-}
 
 #if HAVE_IV
 static void pnodemenu(Prop* p1, double, int type, const char* path, MechSelector* = NULL);
@@ -89,7 +85,7 @@ ENDGUI
 }
 
 #ifdef ultrix
-extern "C" { char *strstr(const char *, const char *); }
+char *strstr(const char *, const char *);
 #endif
 
 static bool has_globals(const char* name) {
@@ -1248,10 +1244,8 @@ const char* MechanismType::selected(){
 int MechanismType::internal_type() {
 	return mti_->type_[selected_item()];
 }
-extern "C" {
 extern void mech_insert1(Section*, int);
 extern void mech_uninsert1(Section*, Symbol*);
-}
 void MechanismType::insert(Section* sec){
 	if (!mti_->is_point_) {
 		mech_insert1(sec, memb_func[mti_->type_[selected_item()]].sym->subtype);
@@ -1263,7 +1257,7 @@ void MechanismType::remove(Section* sec){
 	}
 }
 
-extern "C" {extern Object* nrn_new_pointprocess(Symbol*);}
+extern Object* nrn_new_pointprocess(Symbol*);
 
 void MechanismType::point_process(Object** o){
 	Symbol* sym = memb_func[mti_->type_[selected_item()]].sym;

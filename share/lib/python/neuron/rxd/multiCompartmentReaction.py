@@ -1,12 +1,11 @@
 import weakref
 from . import rxdmath, rxd, node, species, region, initializer
 import numpy
-from .generalizedReaction import GeneralizedReaction, molecules_per_mM_um3, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
+from .generalizedReaction import GeneralizedReaction, get_scheme_rate1_rate2_regions_custom_dynamics_mass_action
+from .constants import molecules_per_mM_um3
 from neuron import h
 import itertools
 from .rxdException import RxDException
-
-FARADAY = h.FARADAY
 
 def _ref_list_with_mult(obj):
     result = []
@@ -64,7 +63,17 @@ class MultiCompartmentReaction(GeneralizedReaction):
         self._scale_by_area = scale_by_area
         self._original_rate_f = rate_f
         self._original_rate_b = rate_b
-        self._voltage_dependent = any([ar._voltage_dependent for ar in [scheme, rate_f, rate_b] if hasattr(ar,'_voltage_dependent')])
+
+        for ar in [scheme, rate_f, rate_b]:
+            try:
+                if ar._voltage_dependent:
+                    self._voltage_dependent = True
+                    break
+            except AttributeError:
+                pass
+        else:
+            self._voltage_dependent = False
+
         if custom_dynamics is not None and mass_action is not None:
             raise RxDException('Cannot specify both custom_dynamics and mass_action.')
         elif custom_dynamics is None and mass_action is None:
@@ -135,6 +144,13 @@ class MultiCompartmentReaction(GeneralizedReaction):
         else:
             raise RxDException('unrecognized direction; should never happen')
 
+        # check that the regions have sections
+        for reg in self._regions:
+            if any(reg._secs1d) or any(reg._secs3d):
+                break
+        else:
+            return
+
         # check for 3D sections
         self._src3d = set()
         self._dst3d = set()
@@ -142,9 +158,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
         sources = [s()._region() for s in self._sources if not isinstance(s(),species.SpeciesOnExtracellular)]
         dests = [s()._region() for s in self._dests if not isinstance(s(),species.SpeciesOnExtracellular)]
         for reg in sources:
-            if reg._secs3d: self._src3d.update(reg._secs3d)
+            if any(reg._secs3d): self._src3d.update(reg._secs3d)
         for reg in dests:
-            if reg._secs3d: self._dst3d.update(reg._secs3d)
+            if any(reg._secs3d): self._dst3d.update(reg._secs3d)
         #if self._src3d.intersection(self._dst3d).intersection(self._mem3d):
         #    #Find all interacting voxels for each grid. Also build up the 2D array of index maps
         #    raise RxDException('Multicompartment reactions in 3D are not yet supported.')
@@ -154,9 +170,9 @@ class MultiCompartmentReaction(GeneralizedReaction):
         src1d = set()
         dst1d = set()
         for reg in sources:
-            if reg._secs1d: src1d.update(reg._secs1d)
+            if any(reg._secs1d): src1d.update(reg._secs1d)
         for reg in dests:
-            if reg._secs1d: dst1d.update(reg._secs1d)
+            if any(reg._secs1d): dst1d.update(reg._secs1d)
         if sources:
             mem1d = mem1d.intersection(src1d)
         if dests:
@@ -213,7 +229,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
 
         # flux occurs on sections which have both source, destination and membrane 
-        active_secs = self._regions[0]._secs1d
+        active_secs = list(self._regions[0]._secs1d)
         for sp in sources + dests:
             if sp() and sp()._region():
                 active_secs = [sec for sec in active_secs if sec in sp()._region()._secs1d]
@@ -233,7 +249,7 @@ class MultiCompartmentReaction(GeneralizedReaction):
         area_ratios = areas / neuron_areas
         
         # still needs to be multiplied by the valence of each molecule
-        self._memb_scales = -area_ratios * FARADAY / (10000 * molecules_per_mM_um3)
+        self._memb_scales = -area_ratios * h.FARADAY / (10000 * molecules_per_mM_um3())
         
         # since self._memb_scales is only used to compute currents as seen by the rest of NEURON,
         # we only use NEURON's areas 

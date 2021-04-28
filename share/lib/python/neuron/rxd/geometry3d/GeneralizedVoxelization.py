@@ -1,14 +1,16 @@
 from . import graphicsPrimitives as graphics
+from .. import options
 
 def find_voxel(x,y,z,g):
-    """returns (i,j,k) of voxel containing point x,y,z"""
+    """returns (i,j,k) of voxel containing point x,y,z if the point is within 
+       the grid, otherwise return the corresponding grid boundary.
+    """
     # g is grid boundaries
-    if x >= g['xlo'] and y >= g['ylo'] and z >= g['zlo'] and x <= g['xhi'] and y <= g['yhi'] and z <= g['zhi']:
-        i,j,k = int((x-g['xlo'])//g['dx']),int((y-g['ylo'])//g['dy']),int((z-g['zlo'])//g['dz'])
-        return (i,j,k)
-    else:
-        raise Exception("Coordinates must be within grid")
-        
+    i = max(0,int((x-g['xlo'])//g['dx'])) 
+    j = max(0,int((y-g['ylo'])//g['dy']))
+    k = max(0,int((z-g['zlo'])//g['dz']))
+    return (i,j,k)
+
 def get_verts(voxel,g):
     """return list (len=8) of point coordinates (x,y,z) that are vertices of the voxel (i,j,k)"""
     (i,j,k) = voxel
@@ -44,10 +46,15 @@ def verts_in(f,voxel,surf,g):
     verts = get_verts(voxel,g)
     ins=0
     distlist = []
-    for v in verts:
-        dist = f.distance(v[0],v[1],v[2])
+    for (x,y,z) in verts:
+        if (g['xlo'] <= x <= g['xhi'] and
+            g['ylo'] <= y <= g['yhi'] and
+            g['zlo'] <= z <= g['zhi']):
+                dist = f.distance(x, y, z)
+        else:
+                dist = float('inf')
         distlist.append(dist)
-        if dist <= 0:
+        if dist <= options.ics_distance_threshold:
             ins+=1
     if 1 <= ins <= 7:
         surf[voxel] = distlist
@@ -184,7 +191,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
         (i0,j0,k0) = find_voxel(x0,y0,z0,grid)
         # find the contained endpoints and start the set with initial row and initial endpoints
         s = set()
-        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0,i0),grid)
+        ends = find_endpoints(Object,surface,include_ga,(j0,k0),(i0-1,i0+1),grid)
     
     # the given starting voxel is not actually found
     possibly_missed = False

@@ -15,10 +15,10 @@
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
-flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.l ${NRN_MODLUNIT_SRC_DIR}/lex.c)
+flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.lpp ${NRN_MODLUNIT_SRC_DIR}/lex.cpp)
 
-bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.y ${NRN_MODLUNIT_SRC_DIR}/parse1.c
-             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.h)
+bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.ypp ${NRN_MODLUNIT_SRC_DIR}/parse1.cpp
+             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.hpp)
 
 set_property(
   SOURCE ${NRN_MODLUNIT_SRC_FILES}
@@ -27,23 +27,32 @@ set_property(
 
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
 
+if (NRN_NMODL_CXX_FLAGS)
+  target_compile_options(modlunit PRIVATE ${NRN_NMODL_CXX_FLAGS})
+endif()
+
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
-flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.l ${NRN_NMODL_SRC_DIR}/lex.c)
+flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.lpp ${NRN_NMODL_SRC_DIR}/lex.cpp)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.y ${NRN_NMODL_SRC_DIR}/parse1.c DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/parse1.h)
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.ypp ${NRN_NMODL_SRC_DIR}/parse1.cpp DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/parse1.hpp)
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.y ${NRN_NMODL_SRC_DIR}/diffeq.c DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/diffeq.h)
+bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.ypp ${NRN_NMODL_SRC_DIR}/diffeq.cpp DEFINES_FILE
+             ${NRN_NMODL_SRC_DIR}/diffeq.hpp)
 
 set_property(
   SOURCE ${NRN_NMODL_SRC_FILES}
   APPEND
-  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1)
+  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1
+    NRN_DYNAMIC_UNITS=1)
 
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
+
+if (NRN_NMODL_CXX_FLAGS)
+  target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
+endif()
 
 # =============================================================================
 # Translate all MOD files to C and mark them generated
@@ -58,8 +67,8 @@ set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
 # =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
-bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.y ${NRN_OC_SRC_DIR}/parse.c DEFINES_FILE
-             ${NRN_OC_SRC_DIR}/parse.h)
+bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.ypp ${NRN_OC_SRC_DIR}/parse.cpp DEFINES_FILE
+             ${NRN_OC_SRC_DIR}/parse.hpp)
 
 # =============================================================================
 # Source code lists
@@ -82,7 +91,7 @@ if(NRN_ENABLE_MPI)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c)
+  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp)
 else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
@@ -139,13 +148,14 @@ set(NRN_INCLUDE_DIRS
 # is different from the contents of nrnversion.h
 # ~~~
 add_custom_target(
-  nrnversion_h ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
+  nrnversion_h
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} $ENV{SHELL} ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
   COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
 add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
 
-# avoid error with nvector_serial.c for #include <../../../nrnconf.h>
+# avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
@@ -179,12 +189,14 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
 set_property(
-  SOURCE ${NRN_NRNOC_SRC_DIR}/code.c ${NRN_NRNOC_SRC_DIR}/hoc_init.c ${NRN_NRNOC_SRC_DIR}/hoc_oop.c
+  SOURCE ${NRN_NRNOC_SRC_DIR}/code.cpp ${NRN_NRNOC_SRC_DIR}/hoc_init.cpp ${NRN_NRNOC_SRC_DIR}/hoc_oop.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
 
 set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c
+  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
+         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
+         ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
@@ -215,28 +227,47 @@ set_property(
 
 if(DEF_RL_GETC_FUNCTION)
   set_property(
-    SOURCE ${NRN_OC_SRC_DIR}/hoc.c
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS ${DEF_RL_GETC_FUNCTION})
 endif()
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.c PROPERTIES OBJECT_DEPENDS
-                            ${NRN_OC_SRC_DIR}/parse.h)
+if(NRN_USE_BACKWARD)
+  set_property(
+    SOURCE ${NRN_OC_SRC_DIR}/hoc.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+  set_property(
+    SOURCE ${NRN_NRNIV_SRC_DIR}/backtrace_utils.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
+endif()
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.c PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
+                            ${NRN_OC_SRC_DIR}/parse.hpp)
+
+set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)
 
-set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.c PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.c PROPERTIES
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.c PROPERTIES OBJECT_DEPENDS
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp PROPERTIES OBJECT_DEPENDS
                               ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.c PROPERTIES
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
+
+if (NRN_COVERAGE_FILES)
+  foreach(f ${NRN_COVERAGE_FILES})
+    set_property(SOURCE ${PROJECT_SOURCE_DIR}/${f}
+      APPEND
+      PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
+  endforeach()
+endif() 
 
 # =============================================================================
 # All source directories to include
@@ -249,13 +280,31 @@ endif()
 # =============================================================================
 # All source directories to include
 # =============================================================================
-add_library(nrniv_lib SHARED ${NRN_NRNIV_LIB_SRC_FILES})
-if(READLINE_FOUND)
+add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
-  target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} readline)
+  if(READLINE_FOUND)
+    target_link_libraries(nrniv_lib ${Readline_LIBRARY})
+  else()
+    target_link_libraries(nrniv_lib readline)
+  endif()
+
+  if(CURSES_FOUND)
+    target_link_libraries(nrniv_lib ${CURSES_LIBRARIES})
+  elseif(TERMCAP_FOUND)
+    target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
+  endif()
 endif()
+
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
+
+# =============================================================================
+# Link with backward-cpp if enabled
+# =============================================================================
+if(NRN_USE_BACKWARD)
+    add_backward(nrniv_lib)
+endif()
 
 # =============================================================================
 # Link with all libraries
@@ -303,7 +352,7 @@ if(IV_ENABLE_X11_DYNAMIC)
   # ~~~
   set_property(
     SOURCE ${PROJECT_SOURCE_DIR}/src/ivoc/ivocmain.cpp ${PROJECT_SOURCE_DIR}/src/pwman/xdep.cpp
-           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.c
+           ${PROJECT_SOURCE_DIR}/src/ivoc/xdep.cpp ${PROJECT_SOURCE_DIR}/src/oc/x.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS IVX11_DYNAM)
   if((NOT IV_ENABLE_SHARED) AND IV_LIB_DIR)
@@ -326,11 +375,17 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
+if (NRN_COVERAGE_FILES)
+  target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
+  target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
+  target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
+endif()
+
 # =============================================================================
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
@@ -339,7 +394,6 @@ endif()
 if(NOT NRN_MACOS_BUILD AND READLINE_FOUND)
   target_link_libraries(nrniv ${Readline_LIBRARY})
 endif()
-
 
 # =============================================================================
 # Install binary and library targets

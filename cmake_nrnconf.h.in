@@ -35,6 +35,9 @@
 /* Define to 1 if you have the `bzero' function. */
 #undef HAVE_BZERO
 
+/* Define to 1 if you have the <cxxabi.h> header file. */
+#undef HAVE_CXXABI_H
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -45,6 +48,9 @@
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
 
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
@@ -53,6 +59,9 @@
 
 /* Define to 1 if you have the `fesetround' function. */
 #undef HAVE_FESETROUND
+
+/* Define to 1 if you have the `feenableexcept' function. */
+#undef HAVE_FEENABLEEXCEPT
 
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
@@ -262,6 +271,9 @@
 
 /* if 1 then dlopen nrnmech instead of special */
 #undef NRNMECH_DLL_STYLE
+
+/* if 1 then dynamic units default is legacy units */
+#undef DYNAMIC_UNITS_USE_LEGACY_DEFAULT
 
 /* if nrnoc can use X11 */
 #undef NRNOC_X11

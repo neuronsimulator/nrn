@@ -12,10 +12,52 @@ _c_ptr_vector = None
 _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
-_rxd_sec_lookup = dict()
-_keep_alive = []
 
 def _donothing(): pass
+
+class _SectionLookup:
+    class Lookup:
+        def __init__(self):
+            self.rxd_sec_list = {} 
+            self.nrn_sec_list = h.SectionList()
+    _instance = None
+    
+    def __init__(self):
+        if _SectionLookup._instance is None:
+           _SectionLookup._instance = _SectionLookup.Lookup()
+
+    def __getitem__(self, key):
+        if (key in _SectionLookup._instance.nrn_sec_list and
+            key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list):
+            return _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
+        return []
+
+    def __setitem__(self, key, value):
+        _SectionLookup._instance.nrn_sec_list.append(key)
+        _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()] = value
+    
+    def __delitem__(self, key):
+        _SectionLookup._instance.nrn_sec_list.remove(key)
+        if key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list:
+            del _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
+
+    def __iter__(self):
+        return iter(_SectionLookup._instance.nrn_sec_list)
+
+    def values(self):
+        return _SectionLookup._instance.rxd_sec_list.values()
+
+    def items(self):
+        res = {}
+        for sec in _SectionLookup._instance.nrn_sec_list:
+            res[sec] = _SectionLookup._instance.rxd_sec_list[sec.hoc_internal_name()]
+        return res.items()
+
+    def remove(self, rxdsec):
+        for key,val in _SectionLookup._instance.rxd_sec_list.items():
+            if val == rxdsec:
+                del _SectionLookup._instance.rxd_sec_list[key]
+
 
 
 def add_values(mat, i, js, vals):
@@ -31,24 +73,27 @@ def add_values(mat, i, js, vals):
 
 def _parent(sec):
     """Return the parent of seg or None if sec is a root"""
-    seg = sec.trueparentseg()
-    if seg:
-        return seg
-    else:
-        seg = sec.parentseg()
-    if seg:
-        par = seg.sec
-        parseg = par.parentseg()
-        if parseg and seg.x == par.orientation:
-            # connection point belongs to temp's ancestor
-            return _parent(seg.sec)
-        else:
+    if sec:
+        seg = sec.trueparentseg()
+        if seg:
             return seg
-    else:
-        return None
+        else:
+            seg = sec.parentseg()
+        if seg:
+            par = seg.sec
+            parseg = par.parentseg()
+            if parseg and seg.x == par.orientation:
+                # connection point belongs to temp's ancestor
+                return _parent(seg.sec)
+            else:
+                return seg
+        else:
+            return None
+    return None
 
 def _purge_cptrs():
     """purges all cptr information"""
+
     global _all_cptrs, _all_cindices, _c_ptr_vector, _last_c_ptr_length
     global _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     _all_cptrs = []
@@ -89,7 +134,7 @@ def replace(rmsec, offset, nseg):
     rmsec._offset = offset
     rmsec._nseg = nseg
 
-    for secs in _rxd_sec_lookup.values():
+    for secs in _SectionLookup().values():
         for sec in secs:
             if sec and sec._offset > old_offset:
                 sec._offset -= dur
@@ -99,17 +144,21 @@ class Section1D(rxdsection.RxDSection):
     def __init__(self, species, sec, diff, r):
         self._species = weakref.ref(species)
         self._diff = diff
-        self._sec = sec
+        self._secref = h.SectionList([sec])
         self._concentration_ptrs = None
         self._offset = node._allocate(sec.nseg + 1)
         self._nseg = sec.nseg
         self._region = r
         # NOTE: you must do _init_diffusion_rates after assigning parents
-        global _rxd_sec_lookup
-        if sec in _rxd_sec_lookup:
-            _rxd_sec_lookup[sec].append(self)
+        self._rxd_sec_lookup = _SectionLookup()
+        if sec in self._rxd_sec_lookup:
+            self._rxd_sec_lookup[sec].append(self)
         else:
-            _rxd_sec_lookup[sec] = [self]
+            self._rxd_sec_lookup[sec] = [self]
+    @property
+    def _sec(self):
+        sl = list(self._secref)
+        return None if not sl else sl[0]
 
     def __req__(self, other):
         if isinstance(other, nrn.Section):
@@ -134,12 +183,15 @@ class Section1D(rxdsection.RxDSection):
         node._diffs[self._offset : self._offset + self.nseg] = self._diff
 
     def _update_node_data(self):
-        nseg_changed = 0
+        nseg_changed = False
+        if self._sec is None:
+            self._delete()
+            return True
         if self._nseg != self._sec.nseg:
             num_roots = self._species()._num_roots
             offset = node._allocate(self._sec.nseg + num_roots + 1)
             replace(self, offset, self._sec.nseg)
-            nseg_changed = 1
+            nseg_changed = True
         volumes, surface_area, diffs = node._get_data()
         geo = self._region._geometry
         volumes[self._offset : self._offset + self._nseg] = geo.volumes1d(self)
@@ -152,35 +204,37 @@ class Section1D(rxdsection.RxDSection):
 
     def _delete(self):
         # memory in node global variables is handled by the species
-        global _rxd_sec_lookup
+        _rxd_sec_lookup = _SectionLookup()
         
         # remove ref to this section -- at exit weakref.ref might be none 
-        if self._sec in _rxd_sec_lookup:
-            sec_list = _rxd_sec_lookup[self._sec]
-            sec_list = list(filter(lambda x: not x == self, sec_list))
-            if sec_list == []:
-                del _rxd_sec_lookup[self._sec]
-            else:
-                _rxd_sec_lookup[self._sec] = sec_list
+        if self._sec:
+            if self._sec in _rxd_sec_lookup:
+                sec_list = [s for s in _rxd_sec_lookup[self._sec] if s != self]
+                if sec_list == []:
+                    del _rxd_sec_lookup[self._sec]
+                else:
+                    _rxd_sec_lookup[self._sec] = sec_list
+        else:
+            _rxd_sec_lookup.remove(self)
 
-            # check if memory has already been free'd
-            if self._nseg < 0:
-                return
+        # check if memory has already been free'd
+        if self._nseg < 0:
+             return
 
-            # node data is removed here in case references to sec remains
-            if hasattr(self, "_num_roots"):
-                self._nseg += self._num_roots
-                self._offset -= self._num_roots
-            node._remove(self._offset, self._offset + self._nseg + 1)
+        # node data is removed here in case references to sec remains
+        if hasattr(self, "_num_roots"):
+            self._nseg += self._num_roots
+            self._offset -= self._num_roots
+        node._remove(self._offset, self._offset + self._nseg + 1)
 
-            # shift offset to account for deleted sec
-            for secs in _rxd_sec_lookup.values():
-                for s in secs:
-                    if s._offset > self._offset:
-                        s._offset -= self._nseg + 1
+        # shift offset to account for deleted sec
+        for secs in _rxd_sec_lookup.values():
+            for s in secs:
+                if s._offset > self._offset:
+                    s._offset -= self._nseg + 1
 
-            # mark memory as free'd
-            self._nseg = -1
+        # mark memory as free'd
+        self._nseg = -1
 
     def __del__(self):
         self._delete()
@@ -205,7 +259,7 @@ class Section1D(rxdsection.RxDSection):
                 sign = 1
             else:
                 raise RxDException('bad nrn_region for setting up currents (should never get here)')
-            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * rxd.FARADAY * volumes[self.indices]))
+            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * h.FARADAY * volumes[self.indices]))
             for i in range(self.nseg):
                 seg = self._sec((i + 0.5) / self.nseg)
                 cur_map[self.species.name + self.nrn_region][seg] = len(ptrs)
@@ -237,6 +291,10 @@ class Section1D(rxdsection.RxDSection):
             self._concentration_ptrs = []
 
     def _setup_diffusion_matrix(self, mat):
+        if not self._sec:
+            if self._nseg > 0:
+                self._delete()
+            return
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg

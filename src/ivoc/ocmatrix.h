@@ -73,9 +73,7 @@ private:
 	int type_;
 };
 
-extern "C" {
-	extern Matrix* matrix_arg(int);
-}
+extern Matrix* matrix_arg(int);
 
 class OcFullMatrix : public OcMatrix {	// type 1
 public:

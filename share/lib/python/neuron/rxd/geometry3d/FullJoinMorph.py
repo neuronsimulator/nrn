@@ -1,5 +1,4 @@
 import numpy
-import time
 import math
 
 from .ctng import constructive_neuronal_geometry
@@ -7,8 +6,10 @@ from .graphicsPrimitives import Sphere, Cone, Cylinder, SkewCone, Plane, Union, 
 from .GeneralizedVoxelization import voxelize
 from .simplevolume_helper import simplevolume
 from .surface_a import surface_area
+from ..options import ics_distance_threshold
+from ..rxdException import RxDException
 import warnings
-from neuron import h
+from neuron import h, _sec_db
 
 def find_parent_seg(join, sdict, objects):
     
@@ -31,11 +32,12 @@ def find_parent_seg(join, sdict, objects):
                 closest = d
 
     return pseg
+
  
 
 def all_in(dist):
     for i in dist:
-        if i > 0:
+        if i > ics_distance_threshold:
             return False 
     return True
 
@@ -43,50 +45,78 @@ def sort_spheres_last(item):
     return 1 if isinstance(item, Sphere) else 0
 
 def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
-    start = time.time()
 
     """Input: object source; arguments to pass to ctng
        Output: all voxels with SA and volume associated, categorized by segment"""
-    
-    morphology = constructive_neuronal_geometry(source, dx, soma_step, relevant_pts=relevant_pts)
+    source = list(source)
+    morphology = constructive_neuronal_geometry(source, soma_step, dx, relevant_pts=relevant_pts)
     join_objects, cones, segment_dict, join_groups, object_pts, soma_objects = morphology
+    
 
     # grid setup
-    xs, ys, zs, diams, arcs = [],[],[],[],[]
-    for i, sec in enumerate(source):
-        if relevant_pts:
-            rng = relevant_pts[i]
-        else:
-            rng = range(sec.n3d())
-        
-        xs += [sec.x3d(i) for i in rng]
-        ys += [sec.y3d(i) for i in rng]
-        zs += [sec.z3d(i) for i in rng]
-        diams += [sec.diam3d(i) for i in rng]
-        arcs += [sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]]
-
-    # TODO: include segment boundaries when checking cone lengths
-    # warning on minimum size of dx
-    check = min(min(diams)/math.sqrt(3), min(arcs)/math.sqrt(3))
-    if (dx > check):
-        warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
-    
-    dy = dz = dx   # ever going to change this?
-
-    margin = max(diams) + 2*dx
     if mesh_grid:
         grid = mesh_grid
+        if(grid['dx'] != dx or grid['dy'] != dx or grid['dz'] != dx):
+            raise RxDException("Error: Inconsistent vocalization. Mesh grid voxels (%g, %g, %g) differs from requested dx (%g, %g %g),", (grid['dx'], grid['dy'], grid['dz'],dx,dx,dx))
     else:
-        grid = {'xlo':min(xs)-margin, 'xhi':max(xs)+margin, 'ylo':min(ys)-margin, 'yhi':max(ys)+margin, 'zlo':min(zs)-margin, 'zhi':max(zs)+margin, 'dx':dx, 'dy':dy, 'dz':dz}
 
+        def minmax(lst,old):
+            return ([min(min(lst), old[0]), max(max(lst), old[1])]
+                    if old != [] else [min(lst), max(lst)])
+
+        xs, ys, zs, diams, soma_idx = [], [], [], [], []
+        arcs = float('inf')
+        for i, sec in enumerate(source):
+            if relevant_pts:
+                rng = relevant_pts[i]
+            else:
+                rng = range(sec.n3d())
+            if sec.hoc_internal_name() in _sec_db:
+                soma_idx.append(i)
+            else:
+                xs = minmax([sec.x3d(i) for i in rng], xs)
+                ys = minmax([sec.y3d(i) for i in rng], ys)
+                zs = minmax([sec.z3d(i) for i in rng], zs)
+                diams = minmax([sec.diam3d(i) for i in rng if sec.diam3d(i) > 0],
+                               diams)
+                arcs = min([sec.arc3d(i + 1) - sec.arc3d(i) for i in rng[:-1]
+                                if sec.arc3d(i + 1) > sec.arc3d(i)] + [arcs]) 
+    
+        # TODO: include segment boundaries when checking cone lengths
+        # warning on minimum size of dx, only considering positive lengths
+        if diams:
+            check = min(diams[0]/math.sqrt(3), arcs/math.sqrt(3))
+            if (dx > check):
+                warnings.warn("Resolution may be too low. To guarantee accurate voxelization, use a dx <= {}.".format(check))
+    
+        for idx in soma_idx:
+            sec = source[idx]
+            rng = relevant_pts[idx] if relevant_pts else range(sec.n3d())
+            xs = minmax([sec.x3d(i) for i in rng], xs)
+            ys = minmax([sec.y3d(i) for i in rng], ys)
+            zs = minmax([sec.z3d(i) for i in rng], zs)
+            diams = minmax([sec.diam3d(i) for i in rng if sec.diam3d(i) > 0],
+                            diams)
+      
+        dy = dz = dx   # ever going to change this?
+    
+        margin = diams[1] + 2*dx
+        grid = {'xlo': xs[0] - margin, 
+                'xhi': xs[1] + margin,
+                'ylo': ys[0] - margin,
+                'yhi': ys[1] + margin,
+                'zlo': zs[0] - margin,
+                'zhi': zs[1] + margin,
+                'dx': dx,
+                'dy': dy,
+                'dz': dz}
     ##########################################################
     final_seg_dict = {}
 
     # soma: modified when ctng properly assigns soma obj to segments
     if soma_objects:
-        for item in soma_objects:
-            seg = segment_dict[item]
-            if seg in final_seg_dict.keys():
+        for item, seg in soma_objects.items():
+            if seg in final_seg_dict:
                 final_seg_dict[seg].append(item)
             else:
                 final_seg_dict[seg] = [item]
@@ -166,7 +196,7 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
             # no need to delete from surface voxels, it is never added to final surface voxels
         else:
             V = simplevolume(itemlist, distances, vox, grid)
-            A = surface_area(distances[0], distances[1], distances[2], distances[3], distances[4], distances[5], distances[6], distances[7], 0,dx,0,dy,0,dz)
+            A = surface_area(itemlist, vox, grid)
             final_surface_voxels[vox] = [V, A, seg]
             
     def has_vox(*vox):

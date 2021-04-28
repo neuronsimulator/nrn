@@ -95,6 +95,32 @@ class NeuronTestCase(unittest.TestCase):
         # (set by -DNRN_ENABLE_CORENEURON=ON)
         d2 = '44366906aa94a50644bc734eb23afcc25d1206c0431c4e7908698eeb2597c385'
         assert d == d1 or d == d2
+        sections[0](0.5).na_ion.ena = 40.0 # issue #651
+        assert(sections[0](0.5).na_ion.ena == 40.0)
+
+    def testSectionArgOrder(self):
+        """ First optional arg for Section is name (but name="name" is recommended)"""
+        soma = h.Section('soma')
+        assert soma.name() == 'soma'
+
+    def testSectionCell(self):
+        """ Section.cell() internally referenced as weakref."""
+        err = -1
+        try:
+            soma = h.Section(cell="foo", name="soma")
+            err = 1
+        except:
+            err = 0
+        assert err == 0
+        class Cell():
+            def __str__(self):
+                return "hello"
+        c = Cell()
+        soma = h.Section(cell=c, name="soma")
+        assert soma.name() == "hello.soma"
+        assert soma.cell() == c
+        del c
+        assert soma.cell() == None
 
     def testSectionListIterator(self):
         """As of v8.0, iteration over a SectionList does not change the cas"""
@@ -127,27 +153,22 @@ class NeuronTestCase(unittest.TestCase):
 
     @classmethod
     def RxDexistence(cls):
-        """test import rxd and geometry3d if scipy"""
+        """test import rxd and geometry3d"""
         error = 0
         try:
-            import scipy
-        except:
-            print ("scipy not available")
+            from neuron import rxd
+            from neuron.rxd import geometry
+            print("has_geometry3d is " + str(geometry.has_geometry3d))
+        except Exception as e:
+            print("'from neuron import rxd' failed", e)
+            error = 1
         else:
-            try:
-                from neuron import rxd
-                from neuron.rxd import geometry
-                print("has_geometry3d is " + str(geometry.has_geometry3d))
-            except:
-                print("'from neuron import rxd' failed")
-                error = 1
-            else:
-               try:
-                   a = basicRxD3D()
-                   print("    basicRxD3D() ran with no exception")
-               except:
-                   print("'basicRxD3D()' failed")
-                   error = 1
+           try:
+               a = basicRxD3D()
+               print("    basicRxD3D() ran with no exception")
+           except Exception as e:
+               print("'basicRxD3D()' failed", e)
+               error = 1
         assert(error == 0)
         return 0
 
@@ -156,8 +177,8 @@ class NeuronTestCase(unittest.TestCase):
         try:
             from neuron import doc
             print (doc.get_docstring('xpanel', ''))
-        except:
-            print("'doc.get_docstring('xpanel', '')' failed")
+        except Exception as e:
+            print("'doc.get_docstring('xpanel', '')' failed:", e)
             error = True
         self.assertFalse(error)
         return 0
@@ -171,6 +192,57 @@ class NeuronTestCase(unittest.TestCase):
         assert(p.exitcode == 0)
         return 0
 
+    def test_newobj_err(self):
+        '''Test deletion of incompletely constructed objects'''
+        print() # Error message not on above line
+        h.load_file("stdlib.hoc") # need hoc String
+        h('''
+begintemplate Foo
+endtemplate Foo
+
+begintemplate NewObj
+objref this, ob, foo1, foo2
+proc init() {localobj s
+  foo1 = new Foo() // Constructed before error, even partial constructions fill this field.
+  if ($1 == 0) {
+    execerror("generate an error") // All NewObj instances undergoing construction
+  } else if ($1 == $2) {
+    // This and all NewObj instances prior to this will construct successfully.
+    // All after this will be partially constructed.
+    // The execerror should cause only the partially constructed NewObj to
+    // be destroyed.
+    s = new String()
+    sprint(s.s, "ob = new NewObj(%d, %d)", $1-1, $2)
+    execute1(s.s, this)
+  } else {
+    ob = new NewObj($1-1, $2)
+  }
+  foo2 = new Foo() // Only instances prior to execute1 reach here.
+}
+endtemplate NewObj
+''')
+        # arg[0] recursion depth
+        # arg[0] - arg[1] + 1 should be successfully constructed
+        # arg[1] should be partially constructed and destroyed.
+        args = (4, 2)
+        a = h.NewObj(*args)
+        b = h.List("NewObj")
+        c = h.List("Foo")
+        print("#NewObj and #Foo in existence", b.count(), c.count())
+        z = args[0] - args[1] + 1
+        assert(b.count() == z)
+        assert(c.count() == 2*z)
+
+        del a
+        del b
+        del c
+        b = h.List("NewObj")
+        c = h.List("Foo")
+        print("after del a #NewObj and #Foo in existence", b.count(), c.count())
+        assert(b.count() == 0)
+        assert(c.count() == 0)
+
+        return 1
 
 def basicRxD3D():
     from neuron import h, rxd

@@ -1,11 +1,9 @@
-def test(files):
+def test(files, correct_data):
     import os
     import sys
     import filecmp
     import subprocess
     import re, array, numpy
-    from scipy import interpolate
-    
     
     tol = 1e-10
     dt_eps = 1e-20
@@ -18,6 +16,7 @@ def test(files):
     passed_list = []
     failed_list = []
     incomplete_list = []
+
     for f in files:
         base_name = f[: -3]
         print('%s: ' % base_name)
@@ -37,7 +36,7 @@ def test(files):
             sobj = re.search( r'<BAS_RL (\d*) BAS_RL>', outp.decode('utf-8'), re.M)
             rlen =  int(sobj.group(1))
             success = False
-            corr_dat = numpy.fromfile(os.path.join('correct_data', base_name + '.dat')).reshape(-1, rlen)
+            corr_dat = numpy.fromfile(os.path.join(correct_data, base_name + '.dat')).reshape(-1, rlen)
             tst_dat = numpy.fromfile(output_file).reshape(-1, rlen)
             t1 = corr_dat[:,0]
             t2 = tst_dat[:,0]
@@ -70,10 +69,10 @@ def test(files):
             while t2[t2_0]<t1[0]:
                 t2_0 = t2_0 + 1
             #interpolate and compare
-            corr_int = interpolate.interp1d(t1, corr_dat[:,1:].T)
-            corr_vals = corr_int(t2[t2_0:t2_n])
+            corr_vals = numpy.array(
+                [numpy.interp(t2[t2_0:t2_n], t1, corr_dat[:, i].T) 
+                for i in range(1, rlen)])
             max_err = numpy.amax(abs(corr_vals.T - tst_dat[t2_0:t2_n, 1:]))
-#            max_err = numpy.amax(abs(corr1 - tst1))
             
             if(max_err<tol): success = True
 
@@ -84,8 +83,8 @@ def test(files):
                 print('failed')
 
                 failed_list.append(base_name)
-        except:
-            print('incomplete')
+        except Exception as e:
+            print('incomplete',e)
             incomplete_list.append(base_name)
 
     print('')
@@ -108,11 +107,20 @@ if __name__ == '__main__':
     import os
     import sys
     import shutil
+    import subprocess
+    import platform
     
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
-    
+
+    rxd_data = os.path.join(os.pardir, os.pardir, os.pardir, os.pardir,
+                                os.pardir, 'test','rxd','testdata')
+    # get the rxd test data
+    subprocess.call(["git", "submodule", "update", "--init", 
+                     "--recursive", rxd_data])
+    correct_data = os.path.abspath(os.path.join(rxd_data, 'rxdtests'))
+
     files = [f for f in os.listdir('tests') if f[-3:].lower() == '.py']
     #dirs = [name for name in os.listdir('tests') if os.path.isdir(os.path.join('tests', name))]
     dirs = [os.path.join(*d.split(os.path.sep)[1:]) for d in [wlk[0] for wlk in os.walk('tests')][1:]]
@@ -124,13 +132,12 @@ if __name__ == '__main__':
             # compile any mod files
             os.chdir(os.path.join('tests', dr))
             # remove old compiled files
-            #TODO: is x86_64 universal
             try:
-                shutil.rmtree('x86_64')
+                shutil.rmtree(platform.machine())
             except OSError:
                 pass
             os.system('nrnivmodl')
             os.chdir(dname)
             with open(fname) as f:
                 files += [os.path.join(dr, s) for s in f.read().splitlines()]
-    sys.exit(test(files))
+    sys.exit(test(files, correct_data))

@@ -39,6 +39,10 @@ Date		Author		Modification
 
 #define	MATRIXH	
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include	"machine.h"
 #include        "err.h"
 #include 	"meminfo.h"
@@ -435,22 +439,22 @@ extern	VEC	*sv_mlt(double,VEC *,VEC *),	/* out <- s.x */
 		*pxinv_vec(PERM *,VEC *,VEC *),	  /* out <- P^{-1}.x */
 		*v_mltadd(VEC *,VEC *,double,VEC *),   /* out <- x + s.y */
 #ifdef PROTOTYPES_IN_STRUCT
-		*v_map(double (*f)(double),VEC *,VEC *),  
+		*v_map(double (*f)(double),VEC *,VEC *),
                                                  /* out[i] <- f(x[i]) */
 		*_v_map(double (*f)(void *,double),void *,VEC *,VEC *),
 #else
 		*v_map(double (*f)(),VEC *,VEC *), /* out[i] <- f(x[i]) */
 		*_v_map(double (*f)(),void *,VEC *,VEC *),
 #endif
-		*v_lincomb(int,VEC **,Real *,VEC *),   
+		*v_lincomb(int,VEC **,Real *,VEC *),
                                                  /* out <- sum_i s[i].x[i] */
                 *v_linlist(VEC *out,VEC *v1,double a1,...);
                                               /* out <- s1.x1 + s2.x2 + ... */
 
 /* returns min_j x[j] (== x[i]) */
-extern	double	v_min(VEC *, int *), 
-     /* returns max_j x[j] (== x[i]) */		
-        v_max(VEC *, int *), 
+extern	double	v_min(VEC *, int *),
+     /* returns max_j x[j] (== x[i]) */
+        v_max(VEC *, int *),
         /* returns sum_i x[i] */
         v_sum(VEC *);
 
@@ -458,11 +462,11 @@ extern	double	v_min(VEC *, int *),
 extern	VEC	*v_star(VEC *, VEC *, VEC *),
                  /* out[i] <- x[i] / y[i] */
 		*v_slash(VEC *, VEC *, VEC *),
-               /* sorts x, and sets order so that sorted x[i] = x[order[i]] */ 
+               /* sorts x, and sets order so that sorted x[i] = x[order[i]] */
 		*v_sort(VEC *, PERM *);
 
 /* returns inner product starting at component i0 */
-extern	double	_in_prod(VEC *x,VEC *y,u_int i0), 
+extern	double	_in_prod(VEC *x,VEC *y,u_int i0),
                 /* returns sum_{i=0}^{len-1} x[i].y[i] */
                 __ip__(Real *,Real *,int);
 
@@ -489,7 +493,7 @@ extern	double	_v_norm1(), _v_norm2(), _v_norm_inf(),
 
 #else
                /* returns sum_i |x[i]/scale[i]| */
-extern	double	_v_norm1(VEC *x,VEC *scale),   
+extern	double	_v_norm1(VEC *x,VEC *scale),
                /* returns (scaled) Euclidean norm */
                 _v_norm2(VEC *x,VEC *scale),
                /* returns max_i |x[i]/scale[i]| */
@@ -529,8 +533,8 @@ extern	MAT	*sm_mlt(double s,MAT *A,MAT *out), 	/* out <- s.A */
 		*m_sub(MAT *A,MAT *B,MAT *out),	/* out <- A - B */
 		*sub_mat(MAT *A,u_int,u_int,u_int,u_int,MAT *out),
 		*m_transp(MAT *A,MAT *out),		/* out <- A^T */
-                /* out <- A + s.B */ 
-		*ms_mltadd(MAT *A,MAT *B,double s,MAT *out);   
+                /* out <- A + s.B */
+		*ms_mltadd(MAT *A,MAT *B,double s,MAT *out);
 
 
 extern  BAND    *bd_transp(BAND *in, BAND *out);   /* out <- A^T */
@@ -555,7 +559,7 @@ extern	VEC	*get_row(MAT *,u_int,VEC *),
 
 /* MACROS */
 /* row i of A <- vec */
-#define	set_row(mat,row,vec)	_set_row(mat,row,vec,0) 
+#define	set_row(mat,row,vec)	_set_row(mat,row,vec,0)
 /* col j of A <- vec */
 #define	set_col(mat,col,vec)	_set_col(mat,col,vec,0)
 
@@ -678,6 +682,9 @@ int m_free_vars();
 
 #endif
 
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
 

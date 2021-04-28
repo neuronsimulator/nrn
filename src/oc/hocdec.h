@@ -4,9 +4,6 @@
 #define	INCLUDEHOCH	1
 #define OOP 1
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 #include    <stdio.h>
 #include	"nrnapi.h"
@@ -103,6 +100,7 @@ typedef char	*Upoint;
 #define		SYMBOL		7	/* for stack type */
 #define		OBJECTTMP	8	/* temporary object on stack */
 #define		STKOBJ_UNREF	9	/* already unreffed temporary object on stack */
+#define		DYNAMICUNITS	10	/* {modern, legacy} units pair */
 #define		CPLUSOBJECT	16	/* c++ registered class */
 #define		JAVAOBJECT	32	/* c++ registered class */
 /* above two are bits, next must start at 64 */
@@ -119,11 +117,15 @@ typedef struct Symbol {	/* symbol table entry */
 	char	*name;
 	short	type;
 	short	subtype;	/* Flag for user integers */
-#if defined(__cplusplus)
+/**
+ * Note: `public` is a reserved keyword. Keeping following __cplusplus comments a bit longer
+ * for future reference,  with upcoming work for NMODL + eventual mod files to support cpp.
+ */
+//#if defined(__cplusplus)
 	short	cpublic;		/* flag set public variable */
-#else
-	short	public;		/* flag set public variable */
-#endif
+//#else
+//	short	public;		/* flag set public variable */
+//#endif
 	short	defined_on_the_fly;/* moved here because otherwize gcc and borland do not align the same way */
 	union {
 		int	oboff;	/* offset into object data pointer space */
@@ -138,18 +140,18 @@ typedef struct Symbol {	/* symbol table entry */
 		int	*pvalint;	/* User defined integers */
 		float	*pvalfloat;	/* User defined floats */
 		int	u_auto;		/* stack offset # for AUTO variable */
-		double	(*ptr)();	/* if BLTIN */
+		double	(*ptr)(double);	/* if BLTIN */ //TODO: double as parameter?
 		Proc	*u_proc;
 		struct {
 			short type;	/* Membrane type to find Prop */
 			int index;	/* prop->param[index] */
 		}rng;
 		HocStruct Symbol **ppsym;	/* Pointer to symbol pointer array */
-#if defined(__cplusplus)
+//#if defined(__cplusplus)
 		HocStruct cTemplate *ctemplate;
-#else
-		HocStruct Template *template;
-#endif
+//#else
+//		HocStruct cTemplate *template;
+//#endif
 		HocStruct Symbol* sym;	/* for external */
 	} u;
 	unsigned   s_varn;	/* dependent variable number - 0 means indep */
@@ -181,15 +183,15 @@ typedef union Datum {	/* interpreter stack type */
 	char	**pstr;
 	HocStruct hoc_Item* itm;
 	hoc_List* lst;
-	void* _pvoid;	/* not used on stack, see nrnoc/point.c */
+	void* _pvoid;	/* not used on stack, see nrnoc/point.cpp */
 } Datum;
 
 #if OOP
-#if defined(__cplusplus)
+//#if defined(__cplusplus)
 typedef struct cTemplate {
-#else
-typedef struct Template {
-#endif
+//#else
+//typedef struct Template {
+//#endif
 	Symbol *sym;
 	Symlist *symtable;
 	int dataspace_size;
@@ -205,11 +207,11 @@ typedef struct Template {
 	void (*destructor)(void*);
 	void (*steer)(void*);	/* normally nil */
 	int (*checkpoint)(void**);
-#if defined(__cplusplus)
+//#if defined(__cplusplus)
 } cTemplate;
-#else
-} Template;
-#endif
+//#else
+//}
+//#endif
 
 typedef union Objectdata{
 	double *pval;	/* pointer to array of doubles, usually just 1 */
@@ -231,7 +233,7 @@ typedef struct Object {
 #if defined(__cplusplus)
 	cTemplate *ctemplate;
 #else
-	Template *template;
+	cTemplate *template;
 #endif
 	void* aliases;	/* more convenient names for e.g. Vector or List elements dynamically created by this object*/
 	HocStruct hoc_Item* itm_me;/* this object in the template list */
@@ -275,9 +277,18 @@ typedef struct {		/* units for symbol values */
 
 #include "oc_ansi.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 extern void* emalloc(size_t n);
 extern void* ecalloc(size_t n, size_t size);
 extern void* erealloc(void* ptr, size_t n);
+
+#if defined(__cplusplus)
+}
+#endif
+
 
 extern	Inst *hoc_progp, *hoc_progbase, *hoc_prog, *hoc_prog_parse_recover;
 extern Inst *hoc_pc;
@@ -355,8 +366,5 @@ int node_num;
 int mytid;
 #endif
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

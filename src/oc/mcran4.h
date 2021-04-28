@@ -6,12 +6,20 @@
 #include <stdint.h>
 #endif
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 extern void mcell_ran4_init(uint32_t);
 extern double mcell_ran4(uint32_t *idx1, double *x, unsigned int n, double range);
 extern double mcell_ran4a(uint32_t* idx1);
 extern uint32_t mcell_iran4(uint32_t* idx1);
 extern double nrnRan4dbl(uint32_t* idx1, uint32_t idx2);
 extern uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
 

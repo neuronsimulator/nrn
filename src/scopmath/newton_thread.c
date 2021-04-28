@@ -256,5 +256,5 @@ void nrn_destroy_newtonspace(NewtonSpace* ns) {
     freevector(ns->high_value);
     freevector(ns->low_value);
     freevector(ns->rowmax);
-    free ((char*) ns);
+    free ( ns);
 }

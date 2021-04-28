@@ -13,14 +13,11 @@ a linked list of Grid_nodes
 extern int NUM_THREADS;
 double *dt_ptr;
 double *t_ptr;
-double *h_dt_ptr;
-double *h_t_ptr;
 Grid_node *Parallel_grids[100] = {NULL};
 
 /* globals used by ECS do_currents */
 extern TaskQueue* AllTasks;
 /*Current from multicompartment reations*/
-extern unsigned char _membrane_flux;
 extern int _memb_curr_total;
 extern int* _rxd_induced_currents_grid;
 extern int* _rxd_induced_currents_ecs_idx;
@@ -33,155 +30,183 @@ extern "C" void make_time_ptr(PyHocObject* my_dt_ptr, PyHocObject* my_t_ptr) {
     t_ptr = my_t_ptr -> u.px_;
 }
 
+static double get_alpha_scalar(double* alpha, int)
+{
+    return alpha[0];
+}
+static double get_alpha_array(double* alpha, int idx)
+{
+    return alpha[idx];
+}
+
+
+static double get_lambda_scalar(double*, int)
+{
+    return 1.; /*already rescale the diffusion coefficients*/
+}
+static double get_lambda_array(double* lambda, int idx)
+{
+    return lambda[idx];
+}
+
 // Make a new Grid_node given required Grid_node parameters
-ECS_Grid_node *ECS_make_Grid(PyHocObject* my_states, int my_num_states_x, 
+ECS_Grid_node::ECS_Grid_node() {};
+ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-	PyHocObject* my_lambda, int bc, double bc_value, double atolscale) {
+    PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
     int k;
-    ECS_Grid_node *new_Grid = new ECS_Grid_node();
-    assert(new_Grid);
-
-    new_Grid->states = my_states->u.px_;
+    states = my_states->u.px_;
     
     /*TODO: When there are multiple grids share the largest intermediate arrays to save memory*/
     /*intermediate states for DG-ADI*/
-    new_Grid->states_x = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
-    new_Grid->states_y = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
-    new_Grid->states_cur = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_x = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_y = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
+    states_cur = (double*)malloc(sizeof(double)*my_num_states_x*my_num_states_y*my_num_states_z);
 
-    new_Grid->size_x = my_num_states_x;
-    new_Grid->size_y = my_num_states_y;
-    new_Grid->size_z = my_num_states_z;
+    size_x = my_num_states_x;
+    size_y = my_num_states_y;
+    size_z = my_num_states_z;
     
-    new_Grid->diffusable = true;
-    new_Grid->dc_x = my_dc_x;
-    new_Grid->dc_y = my_dc_y;
-    new_Grid->dc_z = my_dc_z;
+    diffusable = true;
+    dc_x = my_dc_x;
+    dc_y = my_dc_y;
+    dc_z = my_dc_z;
 
-    new_Grid->dx = my_dx;
-    new_Grid->dy = my_dy;
-    new_Grid->dz = my_dz;
+    dx = my_dx;
+    dy = my_dy;
+    dz = my_dz;
 
-    new_Grid->concentration_list = NULL;
-    new_Grid->num_concentrations = 0;
-    new_Grid->current_list = NULL;
-    new_Grid->num_currents = 0;
+    concentration_list = NULL;
+    num_concentrations = 0;
+    current_list = NULL;
+    num_currents = 0;
 
-    new_Grid->next = NULL;
-	new_Grid->VARIABLE_ECS_VOLUME = FALSE;
+    next = NULL;
+    VARIABLE_ECS_VOLUME = FALSE;
 
-	/*Check to see if variable tortuosity/volume fraction is used*/
-	if(PyFloat_Check(my_lambda))
-	{
-		/*apply the tortuosity*/
-		new_Grid->dc_x = my_dc_x/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-    	new_Grid->dc_y = my_dc_y/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-	    new_Grid->dc_z = my_dc_z/SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-		
-		new_Grid->lambda = (double*)malloc(sizeof(double));
-		new_Grid->lambda[0] = SQ(PyFloat_AsDouble((PyObject*)my_lambda));
-		new_Grid->get_lambda = &get_lambda_scalar;
-	}
-	else
-	{
-		new_Grid->lambda = my_lambda->u.px_;
-		new_Grid->VARIABLE_ECS_VOLUME = TORTUOSITY;
-		new_Grid->get_lambda = &get_lambda_array;
-	}
-	
-	if(PyFloat_Check(my_alpha))
-	{
-		new_Grid->alpha = (double*)malloc(sizeof(double));
-		new_Grid->alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
-		new_Grid->get_alpha = &get_alpha_scalar;
+    /*Check to see if variable tortuosity/volume fraction is used*/
+    if(PyFloat_Check(my_lambda))
+    {
+        /*note lambda is the tortuosity squared*/
+        lambda = (double*)malloc(sizeof(double));
+        lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
+        get_lambda = &get_lambda_scalar;
+        
+        /*apply the tortuosity*/
+        dc_x = my_dc_x/lambda[0];
+        dc_y = my_dc_y/lambda[0];
+        dc_z = my_dc_z/lambda[0];
+    }
+    else
+    {
+        lambda = my_lambda->u.px_;
+        VARIABLE_ECS_VOLUME = TORTUOSITY;
+        get_lambda = &get_lambda_array;
+    }
+    
+    if(PyFloat_Check(my_alpha))
+    {
+        alpha = (double*)malloc(sizeof(double));
+        alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+        get_alpha = &get_alpha_scalar;
 
-	}
-	else
-	{
-		new_Grid->alpha = my_alpha->u.px_;
-		new_Grid->VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
-		new_Grid->get_alpha = &get_alpha_array;	
+    }
+    else
+    {
+        alpha = my_alpha->u.px_;
+        VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
+        get_alpha = &get_alpha_array;    
 
-	}
+    }
 #if NRNMPI
     if(nrnmpi_use)
     {
-        new_Grid->proc_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
-        new_Grid->proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_currents = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_flux_offsets = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_fluxes = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_reactions = (int*)calloc(nrnmpi_numprocs,sizeof(int));
+        proc_num_reaction_states = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
+        proc_induced_current_count = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
+        proc_induced_current_offset = (int*)calloc(nrnmpi_numprocs,sizeof(int*));
     }
 #endif
-    new_Grid->num_all_currents = 0;
-    new_Grid->current_dest = NULL;
-    new_Grid->all_currents = NULL;
-    
+    all_reaction_indices = NULL;
+    reaction_indices = NULL;
+    all_reaction_states = NULL;
+    react_offsets = (int*)calloc(1, sizeof(int));
+    multicompartment_inititalized = TRUE;
+    total_reaction_states = 0;
+    react_offset_count = 1;
+    num_all_currents = 0;
+    current_dest = NULL;
+    all_currents = NULL;
+    induced_currents_scale = NULL;
+    induced_currents_index = NULL;
+    induced_currents = NULL;
+    local_induced_currents = NULL;
+    induced_current_count = 0; 
 
-    new_Grid->bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
-    new_Grid->bc->type=bc;
-    new_Grid->bc->value=bc_value;
+    bc = (BoundaryConditions*)malloc(sizeof(BoundaryConditions));
+    bc->type=bc_type;
+    bc->value=bc_value;
 
-    new_Grid->ecs_tasks = NULL;
-    new_Grid->ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
+    ecs_tasks = NULL;
+    ecs_tasks = (ECSAdiGridData*)malloc(NUM_THREADS*sizeof(ECSAdiGridData));
     for(k=0; k<NUM_THREADS; k++)
     {
-        new_Grid->ecs_tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
-        new_Grid->ecs_tasks[k].g = new_Grid;
+        ecs_tasks[k].scratchpad = (double*)malloc(sizeof(double) * MAX(my_num_states_x,MAX(my_num_states_y,my_num_states_z)));
+        ecs_tasks[k].g = this;
     }
 
 
-    new_Grid->ecs_adi_dir_x = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_x->states_in = new_Grid->states;
-    new_Grid->ecs_adi_dir_x->states_out = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_x->line_size = my_num_states_x;
+    ecs_adi_dir_x = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_x->states_in = states;
+    ecs_adi_dir_x->states_out = states_x;
+    ecs_adi_dir_x->line_size = my_num_states_x;
 
 
-    new_Grid->ecs_adi_dir_y = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_y->states_in = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_y->states_out = new_Grid->states_y;
-    new_Grid->ecs_adi_dir_y->line_size = my_num_states_y;
+    ecs_adi_dir_y = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_y->states_in = states_x;
+    ecs_adi_dir_y->states_out = states_y;
+    ecs_adi_dir_y->line_size = my_num_states_y;
 
 
 
-    new_Grid->ecs_adi_dir_z = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
-    new_Grid->ecs_adi_dir_z->states_in = new_Grid->states_y;
-    new_Grid->ecs_adi_dir_z->states_out = new_Grid->states_x;
-    new_Grid->ecs_adi_dir_z->line_size = my_num_states_z;
+    ecs_adi_dir_z = (ECSAdiDirection*)malloc(sizeof(ECSAdiDirection));
+    ecs_adi_dir_z->states_in = states_y;
+    ecs_adi_dir_z->states_out = states_x;
+    ecs_adi_dir_z->line_size = my_num_states_z;
 
-    new_Grid->atolscale = atolscale;
+    this->atolscale = atolscale;
 
-    new_Grid->node_flux_count = 0;
-    new_Grid->node_flux_idx = NULL;
-    new_Grid->node_flux_scale = NULL;
-    new_Grid->node_flux_src = NULL;
-    new_Grid->volume_setup();
-
-
-    return new_Grid;
+    node_flux_count = 0;
+    node_flux_idx = NULL;
+    node_flux_scale = NULL;
+    node_flux_src = NULL;
+    hybrid = false;
+    volume_setup();
 }
 
 
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x, 
+extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
+    PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
     double atolscale) {
-    int i = 0;
-
-    Grid_node *new_Grid = ECS_make_Grid(my_states, my_num_states_x, my_num_states_y, 
+    ECS_Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-			my_alpha, my_lambda, bc, bc_value, atolscale);
+            my_alpha, my_lambda, bc, bc_value, atolscale);
 
     return new_Grid->insert(grid_list_index);
 }
 
 ICS_Grid_node::ICS_Grid_node() {};
 ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neighbors, 
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dc, double* dcgrid, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
@@ -224,11 +249,10 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
             proc_flux_offsets = (int*)malloc(nrnmpi_numprocs*sizeof(int));
         }
     #endif
-
     num_all_currents = 0;
     current_dest = NULL;
     all_currents = NULL;
-    
+
     _ics_alphas = ics_alphas;
     VARIABLE_ECS_VOLUME=ICS_ALPHA; 
 
@@ -328,31 +352,28 @@ ICS_Grid_node::ICS_Grid_node(PyHocObject* my_states, long num_nodes, long* neigh
 // Insert a Grid_node "new_Grid" into the list located at grid_list_index in Parallel_grids
 /* returns the grid number
    TODO: change this to returning the pointer */
-int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
+extern "C" int ICS_insert(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
-            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors,
+            x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, dcs, NULL, dx, is_diffusable, atolscale, ics_alphas);
 
     return new_Grid->insert(grid_list_index);
 }
 
 int ICS_insert_inhom(int grid_list_index, PyHocObject* my_states, long num_nodes, long* neighbors,
-                long* ordered_x_nodes, long* ordered_y_nodes, long* ordered_z_nodes,
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,
                 long z_lines_length, double* dcs, double dx, bool is_diffusable, double atolscale, double* ics_alphas) {
 
-    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, ordered_x_nodes,
-            ordered_y_nodes, ordered_z_nodes, x_line_defs, x_lines_length, y_line_defs,
+    ICS_Grid_node* new_Grid = new ICS_Grid_node(my_states, num_nodes, neighbors, x_line_defs, x_lines_length, y_line_defs,
             y_lines_length, z_line_defs, z_lines_length, NULL, dcs, dx, is_diffusable, atolscale, ics_alphas);
     return new_Grid->insert(grid_list_index);
 }
 
 
-int set_diffusion(int grid_list_index, int grid_id, double* dc, int length)
+extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int length)
 {
 
     int id = 0;
@@ -396,13 +417,14 @@ void ICS_Grid_node::set_diffusion(double* dc, int length)
 
 
 /*Set the diffusion coefficients*/
-void ECS_Grid_node::set_diffusion(double* dc, int length)
+void ECS_Grid_node::set_diffusion(double* dc, int)
 {
     if(get_lambda == &get_lambda_scalar)
     {
-        dc_x = dc[0]/SQ(lambda[0]);
-        dc_y = dc[1]/SQ(lambda[0]);
-        dc_z = dc[2]/SQ(lambda[0]);
+        /* note lambda[0] is the tortuosity squared*/
+        dc_x = dc[0]/lambda[0];
+        dc_y = dc[1]/lambda[0];
+        dc_z = dc[2]/lambda[0];
     }
     else
     {
@@ -416,12 +438,8 @@ void ECS_Grid_node::set_diffusion(double* dc, int length)
 extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers) {
     Grid_node* g;
     ssize_t i;
-    ssize_t j;
-    ssize_t num_nodes;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers);  //number of segments. 
                                                         
-    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index
-
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
@@ -441,11 +459,10 @@ extern "C" void ics_set_grid_concentrations(int grid_list_index, int index_in_li
 
 }
 
-extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, int64_t* nodes_per_seg, int64_t* nodes_per_seg_start_indices, PyObject* neuron_pointers, double* scale_factors, int total_nodes){
+extern "C" void ics_set_grid_currents(int grid_list_index, int index_in_list, PyObject* neuron_pointers, double* scale_factors) {
     Grid_node*g;
-    ssize_t i, j, num_nodes;
+    ssize_t i;
     ssize_t n = (ssize_t)PyList_Size(neuron_pointers); 
-    int total_surface_nodes = nodes_per_seg_start_indices[n];   //nodes_per_seg_lengths has length n + 1 since it has a 0 as the first start index 
     /* Find the Grid Object */
     g = Parallel_grids[grid_list_index];
     for (i = 0; i < index_in_list; i++) {
@@ -621,39 +638,16 @@ void empty_list(int list_index) {
     }
 }
 
-static double get_alpha_scalar(double* alpha, int idx)
-{
-	return alpha[0];
-}
-static double get_alpha_array(double* alpha, int idx)
-{
-	return alpha[idx];
-}
-
-
-static double get_lambda_scalar(double* lambda, int idx)
-{
-	return 1.; /*already rescale the diffusion coefficients*/
-}
-static double get_lambda_array(double* lambda, int idx)
-{
-	return lambda[idx];
-}
-
 int Grid_node::insert(int grid_list_index){
 
     int i = 0;
-    Grid_node* grid;
     Grid_node **head = &(Parallel_grids[grid_list_index]);
-    Grid_node *save;
 
     if(!(*head)) {
         *head = this;
-        save = *head;
     }
     else {
-		i++;	/*count the head as the first grid*/
-        save = *head;
+        i++;    /*count the head as the first grid*/
         Grid_node *end = *head;
         while(end->next != NULL) {
             i++;
@@ -724,7 +718,6 @@ static void* gather_currents(void* dataptr)
 void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
 {
     ssize_t m, n, i;
-    Current_Triple* c;
     /*Currents to broadcast via MPI*/
     /*TODO: Handle multiple grids with one pass*/
     /*Maybe TODO: Should check #currents << #voxels and not the other way round*/
@@ -762,6 +755,7 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
     if(nrnmpi_use)
     {
         nrnmpi_dbl_allgatherv_inplace(all_currents, proc_num_currents, proc_offsets);
+        nrnmpi_dbl_allgatherv_inplace(induced_currents, proc_induced_current_count, proc_induced_current_offset);
         for(i = 0; i < n; i++)
             output[current_dest[i]] += dt * all_currents[i];
     }
@@ -772,22 +766,44 @@ void ECS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
             output[current_list[i].destination] += dt * all_currents[i];
         }
     }
+    
 #else
     for(i = 0; i < n; i++)
         output[current_list[i].destination] +=  dt * all_currents[i];
 #endif
+
     /*Remove the contribution from membrane currents*/
-    if(_membrane_flux)
+    for(i = 0; i < induced_current_count; i++)
+        output[induced_currents_index[i]] -= dt * (induced_currents[i] * induced_currents_scale[i]);
+    MEM_ZERO(induced_currents, induced_current_count*sizeof(double));
+}
+
+double* ECS_Grid_node::set_rxd_currents(int current_count, int* current_indices, PyHocObject** ptrs)
+{
+    int i, j;
+    double volume_fraction;
+
+    free(induced_currents_scale);
+    free(induced_currents_index);
+    induced_currents_scale = (double*)calloc(current_count, sizeof(double));
+    multicompartment_inititalized = FALSE;
+    induced_current_count = current_count;
+    induced_currents_index = current_indices;
+    for(i = 0; i < current_count; i++)
     {
-        for(i = 0; i < _memb_curr_total; i++)
+        for(j = 0; j < num_all_currents; j++)
         {
-            if(_rxd_induced_currents_grid[i] == grid_id)
+            if(ptrs[i]->u.px_ == current_list[j].source)
             {
-                if(_rxd_induced_currents_ecs_idx[i] != SPECIES_ABSENT)
-                    output[_rxd_induced_currents_ecs_idx[i]] -= dt * (_rxd_induced_currents_ecs[i] * _rxd_induced_currents_scale[i]);
+                volume_fraction = (VARIABLE_ECS_VOLUME == VOLUME_FRACTION ? 
+                                   alpha[current_list[j].destination] : alpha[0]);
+                induced_currents_scale[i] = current_list[j].scale_factor/volume_fraction;
+                assert(current_list[j].destination == current_indices[i]);
+                break;
             }
         }
     }
+    return induced_currents_scale;
 }
 
 void ECS_Grid_node::apply_node_flux3D(double dt, double* ydot)
@@ -893,12 +909,201 @@ void ECS_Grid_node::hybrid_connections()
 {
 }
 
-void ECS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_3d, double* const ydot_3d, const double* cvode_states_1d, double *const  ydot_1d)
+void ECS_Grid_node::variable_step_hybrid_connections(const double* , double* const, const double*, double *const)
 {
 }
 
+int ECS_Grid_node::add_multicompartment_reaction(int nstates, int* indices, int step)
+{
+    //Set the current reaction offsets and increment the local offset count
+    //This is stored as an array/pointer so it can be updated if the grid is
+    //on multiple MPI nodes.
+    int i = 0, j = 0;
+    int offset = react_offsets[react_offset_count-1];
+    //Increase the size of the reaction indices to accomidate the maximum
+    //number of potential new indicies
+    reaction_indices = (int*)realloc(reaction_indices,(offset+nstates)*sizeof(int));
+    //TODO: Aggregate the common indicies on the local node, so the state
+    // changes can be added together before they are broadcast.
+    for(i = 0, j = 0; i < nstates; i++, j+=step)
+    {
+        if(indices[j] != SPECIES_ABSENT)
+            reaction_indices[offset++] = indices[j];
+    }
+    //Resize to remove ununused indices
+    if(offset < react_offsets[react_offset_count-1] + nstates)
+        reaction_indices = (int*)realloc((void*)reaction_indices, offset*sizeof(int));
+
+    //Store the new offset and return the start offset to the Reaction
+    react_offsets = (int*)realloc((void*)react_offsets,(++react_offset_count)*sizeof(int));
+    react_offsets[react_offset_count-1] = offset;
+    multicompartment_inititalized = FALSE;
+    return react_offset_count-2;
+}
+
+void ECS_Grid_node::clear_multicompartment_reaction()
+{
+    free(all_reaction_states);
+    free(react_offsets);
+    if(multicompartment_inititalized)
+        free(all_reaction_indices);
+    else
+        free(reaction_indices);
+    all_reaction_indices = NULL;
+    all_reaction_states = NULL;
+    reaction_indices = NULL;
+    react_offsets = (int*)calloc(1, sizeof(int));
+    react_offset_count = 1;
+    multicompartment_inititalized = induced_current_count == 0;
+    total_reaction_states = 0;
+}
+
+
+void ECS_Grid_node::initialize_multicompartment_reaction()
+{
+#if NRNMPI 
+    int i, j; 
+    int total_react = 0;
+    int start_state;
+    int* proc_num_init;
+    int* all_indices;
+    double* all_scales;
+    //Copy the reaction indices across all nodes and update the local
+    //react_offsets used by Reaction to access the indicies.
+    if(nrnmpi_use)
+    {
+        proc_num_init = (int*)calloc(nrnmpi_numprocs, sizeof(int));
+        proc_num_init[nrnmpi_myid] = (int)multicompartment_inititalized;
+        nrnmpi_int_allgather_inplace(proc_num_init, 1);
+        for(i = 0; i < nrnmpi_numprocs; i++)
+            if(!proc_num_init[i]) break;
+        
+        if(i != nrnmpi_numprocs)
+        {
+            //number of offsets (Reaction) stored in each process
+            proc_num_reactions = (int*)calloc(nrnmpi_numprocs, sizeof(int));
+            proc_num_reactions[nrnmpi_myid] = react_offset_count;
+
+            //number of states/indices stored in each process
+            proc_num_reaction_states =  (int*)calloc(nrnmpi_numprocs, sizeof(int));
+            proc_num_reaction_states[nrnmpi_myid] = react_offsets[react_offset_count-1];
+            nrnmpi_int_allgather_inplace(proc_num_reactions, 1);
+            nrnmpi_int_allgather_inplace(proc_num_reaction_states, 1);
+            
+            for(i = 0; i < nrnmpi_numprocs; i++)
+            {   
+                if(i == nrnmpi_myid)
+                    start_state = total_reaction_states;
+                proc_num_reactions[i] = total_reaction_states;
+                total_react += proc_num_reactions[i];
+                total_reaction_states += proc_num_reaction_states[i];
+            }
+
+            //Move the offsets for each reaction so they reference the
+            //corresponding indices in the all_reaction_indices array
+            for(j = 0; j < react_offset_count; j++)
+                react_offsets[j] += start_state;
+        
+            all_reaction_indices = (int*)malloc(total_reaction_states*sizeof(int));
+            all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+
+            memcpy(&all_reaction_indices[start_state], reaction_indices,
+                   proc_num_reaction_states[nrnmpi_myid]*sizeof(int));
+            nrnmpi_int_allgatherv_inplace(all_reaction_indices,
+                                          proc_num_reaction_states,
+                                          proc_num_reactions);
+            free(reaction_indices);
+            reaction_indices = NULL;
+            multicompartment_inititalized = TRUE;
+        
+            //Handle currents induced by multicompartment reactions.
+            proc_induced_current_count[nrnmpi_myid] = induced_current_count;
+            nrnmpi_int_allgather_inplace(proc_induced_current_count, 1);
+            proc_induced_current_offset[0] = 0; 
+            for(i = 1; i < nrnmpi_numprocs; i++)
+                proc_induced_current_offset[i] =  proc_induced_current_offset[i-1] + proc_induced_current_count[i-1];
+            induced_current_count = proc_induced_current_offset[nrnmpi_numprocs-1] + proc_induced_current_count[nrnmpi_numprocs-1];
+       
+            all_scales = (double*)malloc(induced_current_count*sizeof(double));
+            all_indices = (int*)malloc(induced_current_count*sizeof(double));
+            memcpy(&all_scales[proc_induced_current_offset[nrnmpi_myid]], 
+                   induced_currents_scale,
+                   sizeof(double)*proc_induced_current_count[nrnmpi_myid]);
+
+            memcpy(&all_indices[proc_induced_current_offset[nrnmpi_myid]], 
+                   induced_currents_index,
+                   sizeof(int)*proc_induced_current_count[nrnmpi_myid]);
+
+            nrnmpi_dbl_allgatherv_inplace(all_scales,
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
+
+            nrnmpi_int_allgatherv_inplace(all_indices,
+                                          proc_induced_current_count,
+                                          proc_induced_current_offset);
+            free(induced_currents_scale);
+            free(induced_currents_index);
+            free(induced_currents);
+            induced_currents_scale = all_scales;
+            induced_currents_index = all_indices;
+            induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+            local_induced_currents = &induced_currents[proc_induced_current_offset[nrnmpi_myid]];
+        }
+    }
+    else
+    {
+        if(!multicompartment_inititalized)
+        {
+            total_reaction_states = react_offsets[react_offset_count-1];
+            all_reaction_indices = reaction_indices;
+            all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+            multicompartment_inititalized = TRUE;
+            induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+            local_induced_currents = induced_currents;
+        }
+
+    }
+#else
+    if(!multicompartment_inititalized)
+    {
+        total_reaction_states = react_offsets[react_offset_count-1];
+        all_reaction_indices = reaction_indices;
+        all_reaction_states = (double*)calloc(total_reaction_states,sizeof(double));
+        multicompartment_inititalized = TRUE;
+        induced_currents = (double*)malloc(induced_current_count*sizeof(double));
+        local_induced_currents = induced_currents;
+    }
+#endif
+
+}
+
+void ECS_Grid_node::do_multicompartment_reactions(double* result)
+{
+    int i;
+#if NRNMPI 
+    if(nrnmpi_use)
+    {
+        //Copy the states between all of the nodes
+        nrnmpi_dbl_allgatherv_inplace(all_reaction_states,
+                                      proc_num_reaction_states,
+                                      proc_num_reactions);
+    }
+#endif
+    if(result == NULL) //fixed step
+    {
+        for(i = 0; i < total_reaction_states; i++)
+            states[all_reaction_indices[i]] += all_reaction_states[i];
+    }
+    else //variable step
+    {
+        for(i = 0; i < total_reaction_states; i++)
+            result[all_reaction_indices[i]] += all_reaction_states[i];
+    }
+    MEM_ZERO(all_reaction_states,total_reaction_states*sizeof(int));
+}
+
 //TODO: Implement this
-void ECS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
+void ECS_Grid_node::variable_step_ode_solve( double*, double)
 {
 }
 
@@ -919,6 +1124,8 @@ ECS_Grid_node::~ECS_Grid_node(){
         free(proc_num_currents);
         free(proc_flux_offsets);
         free(proc_num_fluxes);
+        free(proc_num_reaction_states);
+        free(proc_num_reactions);
     }
 #endif
     free(all_currents);
@@ -941,7 +1148,6 @@ ECS_Grid_node::~ECS_Grid_node(){
         }
     }
     free(ecs_tasks);
-    free(this);
 }
 
 /*****************************************************************************
@@ -1308,7 +1514,7 @@ void ICS_Grid_node::apply_node_flux3D(double dt, double* ydot)
     apply_node_flux(node_flux_count, node_flux_idx, node_flux_scale, node_flux_src, dt, dest);
 }
 
-void ICS_Grid_node::do_grid_currents(double* output, double dt, int grid_id)
+void ICS_Grid_node::do_grid_currents(double* output, double dt, int)
 {
     MEM_ZERO(states_cur,sizeof(double)*_num_nodes);
     if(ics_current_seg_ptrs != NULL){
@@ -1378,11 +1584,11 @@ void ICS_Grid_node::variable_step_diffusion(const double* states, double* ydot)
     }*/
 }
 
-void ICS_Grid_node::variable_step_ode_solve(const double* states, double* RHS, double dt)
+void ICS_Grid_node::variable_step_ode_solve(double* RHS, double dt)
 {
     if (diffusable)
     {
-        ics_ode_solve_helper(this, dt, states, RHS);
+        ics_ode_solve_helper(this, dt, RHS);
     }
 }
 
@@ -1399,12 +1605,10 @@ void ICS_Grid_node::variable_step_hybrid_connections(const double* cvode_states_
 void ICS_Grid_node::scatter_grid_concentrations()
 {
     ssize_t i, j, n;
-    double* my_states;
     double total_seg_concentration;  
     double average_seg_concentration;
     int seg_start_index, seg_stop_index;
 
-    my_states = states;
     n = ics_num_segs;
 
     for (i = 0; i < n; i++) {
@@ -1436,10 +1640,8 @@ ICS_Grid_node::~ICS_Grid_node(){
         free(proc_offsets);
         free(proc_num_currents);
         free(proc_num_fluxes);
-        free(proc_flux_offsets);
     }
 #endif
-    free(all_currents);
     free(ics_adi_dir_x->ordered_start_stop_indices);
     free(ics_adi_dir_x->line_start_stop_indices);
     free(ics_adi_dir_x->ordered_nodes);

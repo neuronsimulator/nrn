@@ -92,7 +92,7 @@ NRNIVOBJS = $(libobjdir)/nrnmain.o $(libobjdir)/ivocmain.o $(libobjdir)/nvkludge
 	$(bindir)/nocmodl $*
 	$(COMPILE) -c $*.c
 
-mod_func.o: mod_func.c
+mod_func.o: mod_func.cpp
 	$(COMPILE) -c $<
 
 special: $(MODOBJFILES) $(COBJFILES) mod_func.o

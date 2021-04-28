@@ -10,12 +10,15 @@
 [submodule "external/coding-conventions"]
 	path = external/coding-conventions
 	url = https://github.com/BlueBrain/hpc-coding-conventions.git
-[submodule "docs/python"]
-	path = docs/python
-	url = https://github.com/neuronsimulator/progref-py.git
-[submodule "docs/hoc"]
-	path = docs/hoc
-	url = https://github.com/neuronsimulator/progref-hoc.git
-[submodule "docs/tutorials"]
-	path = docs/tutorials
-	url = https://github.com/neuronsimulator/pythontutorial.git
+[submodule "test/rxd/testdata"]
+	path = test/rxd/testdata
+	url = https://github.com/neuronsimulator/rxdtestdata
+[submodule "external/backward"]
+	path = external/backward
+	url = https://github.com/bombela/backward-cpp.git
+[submodule "external/tests/ringtest"]
+	path = external/tests/ringtest
+	url = https://github.com/neuronsimulator/ringtest
+[submodule "external/tests/testcorenrn"]
+	path = external/tests/testcorenrn
+	url = https://github.com/neuronsimulator/testcorenrn.git

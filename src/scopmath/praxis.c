@@ -86,7 +86,7 @@ static doublereal* d_, *d_hoc;
 
 static int praxstep = 0; /* if n returns after n iterations of main loop */
 
-double praxis_pval(i) int i; {
+double praxis_pval(int i) {
 	if (d_hoc) {
 		if (i >= q_hoc->size || i < 0) {
 			hoc_execerror("arg out of range", (char*)0);
@@ -97,7 +97,7 @@ double praxis_pval(i) int i; {
 	}
 	return 0.;
 }
-double* praxis_paxis(i) int i; {
+double* praxis_paxis(int i) {
 	if (q_hoc) {
 		if (i >= q_hoc->size || i < 0) {
 			hoc_execerror("arg out of range", (char*)0);

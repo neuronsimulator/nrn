@@ -7,7 +7,7 @@
 #include "classreg.h"
 #include "kschan.h"
 #include "kssingle.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrniv_mf.h"
 
 #define NSingleIndex 0
@@ -21,10 +21,9 @@ implementPtrList(KSChanList, KSChan)
 
 static KSChanList* channels;
 
-extern "C" {
 extern char* hoc_symbol_units(Symbol*, const char*);
 extern void nrn_mk_table_check();
-}
+extern spREAL *spGetElement(char*, int ,int);
 
 static Symbol* ksstate_sym;
 static Symbol* ksgate_sym;
@@ -993,7 +992,7 @@ void KSChan::setname(const char* s) {
 			if (cp) {
 				int nbase = cp - sp->name;
 				int n = nbase + strlen(suffix) + 2;
-				char* s1 = (char*)hoc_Emalloc(n); hoc_malchk();
+				char* s1 = static_cast<char *>(hoc_Emalloc(n)); hoc_malchk();
 				strncpy(s1, sp->name, nbase);
 				sprintf(s1 + nbase, "_%s", suffix);
 //printf("KSChan::setname change %s to %s\n", sp->name, s1);
@@ -1870,7 +1869,7 @@ void KSChan::setstructure(Vect* vec) {
 	int i, j, ii, idx, ns;
 //printf("setstructure called for KSChan %p %s\n", this, name_.string());
 #if 0
-for (i=0; i < vec->capacity(); ++i) {
+for (i=0; i < vec->size(); ++i) {
 	printf("%d %g\n", i, vec->elem(i));
 }
 #endif
@@ -2729,7 +2728,7 @@ void KSTransition::ab(double v, double& a, double& b) {
 }
 
 void KSTransition::ab(Vect* v, Vect* a, Vect* b) {
-	int i, n = v->capacity();
+	int i, n = v->size();
 	a->resize(n);
 	b->resize(n);
 	if (f0->type() == 5 && f1->type() == 6) {
@@ -2767,7 +2766,7 @@ void KSTransition::inftau(double v, double& a, double& b) {
 }
 
 void KSTransition::inftau(Vect* v, Vect* a, Vect* b) {
-	int i, n = v->capacity();
+	int i, n = v->size();
 	a->resize(n);
 	b->resize(n);
 	if (f0->type() == 5 && f1->type() == 6) {
@@ -2965,8 +2964,8 @@ KSChanTable::KSChanTable(Vect* vec, double vmin, double vmax) {
 	vmin_ = vmin;
 	vmax_ = vmax;
 	assert(vmax > vmin);
-	assert(vec->capacity() > 1);
-	dvinv_ = (vec->capacity() - 1)/(vmax - vmin);
+	assert(vec->size() > 1);
+	dvinv_ = (vec->size() - 1)/(vmax - vmin);
 }
 
 double KSChanTable::f(double v) {
@@ -2974,7 +2973,7 @@ double KSChanTable::f(double v) {
 	if (v <= vmin_) {
 		x = c(0);
 	}else if (v >= vmax_) {
-		x = c(gp_->capacity() - 1);
+		x = c(gp_->size() - 1);
 	}else{
 		x = (v - vmin_)*dvinv_;
 		int i = (int)x;

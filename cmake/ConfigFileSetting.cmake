@@ -47,6 +47,14 @@ set(libdir \${exec_prefix}/lib)
 set(USING_CMAKE_FALSE "#")
 set(USING_CMAKE_TRUE "")
 
+if(NRN_ENABLE_CORENEURON)
+  set(CORENEURON_ENABLED_TRUE "")
+  set(CORENEURON_ENABLED_FALSE "#")
+else()
+  set(CORENEURON_ENABLED_TRUE "#")
+  set(CORENEURON_ENABLED_FALSE "")
+endif()
+
 # ~~~
 # A variable that doesn't start out as #undef but as #define needs an
 # explicit @...@ replacement in the .h.in files.
@@ -68,12 +76,14 @@ endforeach()
 set(nrndef_unix "//")
 set(nrndef_mac "//")
 set(nrndef_mswin "//")
+set(NRN_OSX_BUILD_TRUE "#")
 
 if(NRN_LINUX_BUILD)
   set(nrndef_unix "")
 elseif(NRN_MACOS_BUILD)
   set(nrndef_mac "")
   set(DARWIN 1)
+  set(NRN_OSX_BUILD_TRUE "")
 elseif(NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
 endif()
@@ -91,6 +101,11 @@ else()
   set(DISCRETE_EVENT_OBSERVER 0)
 endif()
 
+# No longer a user option. Default modern units. Controlled at launch by
+# the environment variable NRNUNIT_USE_LEGACY, and dynamically after launch
+# by h.nrnunit_use_legacy(0or1). Left here solely to obtain a nrnunits.lib
+# file for modlunit. Nmodl uses the nrnunits.lib.in file.
+set(NRN_ENABLE_LEGACY_FR 0)
 if(NRN_ENABLE_LEGACY_FR)
   set(LegacyFR 1)
   set(LegacyY "")
@@ -132,6 +147,12 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
   set(NRNPYTHON_DYNAMICLOAD 3)
 endif()
 
+if(NRN_DYNAMIC_UNITS_USE_LEGACY)
+  set(DYNAMIC_UNITS_USE_LEGACY_DEFAULT 1)
+else()
+  unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
+endif()
+
 # =============================================================================
 # Dependencies option
 # =============================================================================
@@ -143,6 +164,7 @@ set(SUNDIALS_USE_GENERIC_MATH 1)
 # =============================================================================
 nrn_check_include_files(alloca.h HAVE_ALLOCA_H)
 nrn_check_include_files(dlfcn.h HAVE_DLFCN_H)
+nrn_check_include_files(execinfo.h HAVE_EXECINFO_H)
 nrn_check_include_files(fcntl.h HAVE_FCNTL_H)
 nrn_check_include_files(fenv.h HAVE_FENV_H)
 nrn_check_include_files(float.h HAVE_FLOAT_H)
@@ -178,7 +200,12 @@ nrn_check_include_files(sys/timeb.h HAVE_SYS_TIMEB_H)
 # =============================================================================
 check_include_files("dlfcn.h;stdint.h;stddef.h;inttypes.h;stdlib.h;strings.h;string.h;float.h"
                     STDC_HEADERS)
-check_include_files("_G_config.h" HAVE__G_CONFIG_H LANGUAGE CXX)
+check_include_file_cxx("_G_config.h" HAVE__G_CONFIG_H)
+
+# =============================================================================
+# Check if this C++ compiler offers cxxabi.h (any that uses glibc should)
+# =============================================================================
+check_include_file_cxx("cxxabi.h" HAVE_CXXABI_H)
 
 # =============================================================================
 # Check symbol using check_cxx_symbol_exists but use ${NRN_HEADERS_INCLUDE_LIST}
@@ -217,6 +244,7 @@ nrn_check_symbol_exists("stty" "" HAVE_STTY)
 nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
+nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
 # not necessary to check as it should be always there
 set(HAVE_SSTREAM /**/)
 
@@ -270,7 +298,10 @@ nrn_configure_file(mos2nrn.h src/uxnrnbbs)
 nrn_configure_file(njconf.h src/nrnjava)
 nrn_configure_dest_src(nrnunits.lib share/nrn/lib nrnunits.lib share/lib)
 nrn_configure_dest_src(nrn.defaults share/nrn/lib nrn.defaults share/lib)
-nrn_configure_file(constants.py share/lib/python/neuron/rxd)
+# NRN_DYNAMIC_UNITS requires nrnunits.lib.in be in same places as nrnunits.lib
+file(COPY ${PROJECT_SOURCE_DIR}/share/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/share/nrn/lib)
+
+
 if(NRN_MACOS_BUILD)
   set(abs_top_builddir ${PROJECT_BINARY_DIR})
   nrn_configure_file(macdist.pkgproj src/mac)
@@ -288,7 +319,7 @@ if(MINGW)
   nrn_configure_file(mknrndll.mak src/mswin/lib)
 endif()
 # TODO temporary workaround for mingw
-file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib DESTINATION ${PROJECT_BINARY_DIR}/lib)
+file(COPY ${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib.in DESTINATION ${PROJECT_BINARY_DIR}/lib)
 
 # =============================================================================
 # If Interviews is not provided, configure local files

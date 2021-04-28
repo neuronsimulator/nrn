@@ -10,11 +10,6 @@ _weakref_ref = weakref.ref
 _itertools_chain = itertools.chain
 _numpy_array = numpy.array
 
-# converting from mM um^3 to molecules
-# = 6.02214129e23 * 1000. / 1.e18 / 1000
-# = avogadro * (L / m^3) * (m^3 / um^3) * (mM / M)
-molecules_per_mM_um3 = constants.NA / 1e18
-
 def ref_list_with_mult(obj):
     result = []
     for i, p in zip(list(obj.keys()), list(obj.values())):
@@ -124,16 +119,28 @@ class GeneralizedReaction(object):
         self._mult_extended = self._mult
         active_secs = None
 
-        sources = [r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]
-        dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
+        # filter regions with no sections
+        def spfilter(sp):
+            if not sp(): return False
+            regs = sp()._regions if isinstance(sp(),species.Species) else [sp()._region()]
+            for r in regs:
+                if r and (any(r._secs1d) or any(r._secs3d)):
+                    break
+            else:
+                return False
+            return True
+
+        sources = list(filter(spfilter,[r for r in self._sources if not isinstance(r(),species.SpeciesOnExtracellular)]))
+        dests = list(filter(spfilter,[r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]))
         sources_ecs = [r for r in self._sources if isinstance(r(),species.SpeciesOnExtracellular)]
         dests_ecs = [r for r in self._dests if isinstance(r(),species.SpeciesOnExtracellular)]
 
         sp_regions = None
         if self._trans_membrane and (sources or dests):   #assume sources share common regions and destinations share common regions
-            sp_regions = list({sptr()._region for sptr in sources}.union({sptr()._region() for sptr in dests}))
+            sp_regions = list({sptr()._region() for sptr in sources}.union({sptr()._region() for sptr in dests}))
         elif sources and dests:
             sp_regions = list(set.intersection(*[set(sptr()._regions) if isinstance(sptr(),species.Species) else {sptr()._region()} for sptr in sources + dests]))
+        
         #The reactants do not share a common region
         if not sp_regions:
             active_regions = [s()._extracellular()._region for s in sources_ecs + dests_ecs if s()]
@@ -144,6 +151,15 @@ class GeneralizedReaction(object):
             # reaction should only take place on those extracellular regions
             elif active_regions:
                 self._active_regions = active_regions
+            
+            if hasattr(self,'_active_regions'):
+                for reg in self._active_regions:
+                    if not hasattr(reg,"_secs1d") or (any(reg._secs1d) or any(reg._secs3d)):
+                        break
+                else:
+                    if not sources_ecs or not dests_ecs:
+                        return
+             
             # if neither were specified don't set the '_has_regions' attribute
             # so the reaction takes place everywhere the species is defined
             for sptr in self._involved_species:
@@ -207,7 +223,7 @@ class GeneralizedReaction(object):
             dests = [r for r in self._dests if not isinstance(r(),species.SpeciesOnExtracellular)]
 
             # flux occurs on sections which have both source, destination and membrane
-            active_secs_list = self._regions[0]._secs1d
+            active_secs_list = list(self._regions[0]._secs1d)
             for sp in sources + dests:
                 if sp() and sp()._region():
                     active_secs_list = [sec for sec in active_secs_list if sec in sp()._region()._secs1d]
@@ -228,6 +244,8 @@ class GeneralizedReaction(object):
         #self._mult = [list(-1. / volumes[sources_indices]) + list(1. / volumes[dests_indices])]
         if self._trans_membrane and active_regions:
             # note that this assumes (as is currently enforced) that if trans-membrane then only one region
+
+            molecules_per_mM_um3 = constants.molecules_per_mM_um3()
 
             # TODO: verify the areas and volumes are in the same order!
             areas = _numpy_array(list(_itertools_chain.from_iterable([list(self._regions[0]._geometry.volumes1d(sec)) for sec in active_secs_list])))

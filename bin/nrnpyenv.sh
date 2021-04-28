@@ -58,7 +58,7 @@ function trypy {
   a=`ls "$1" |grep "$2"`
   if test "$a" != "" ; then
     b=`cygpath -U "$1/$a/$3"`
-    c=`nrnbinstr "$4" "$b"`
+    c=`nrnbinstr "$4" "$b" 2> /dev/null`
     if test "$c" != "" ; then
       c=`cygpath -U "$c"`
       c=`dirname "$c"`
@@ -75,20 +75,76 @@ function trypy {
   fi
 }
 
-PYTHON=""
-if test "$1" != "" ; then
-  if $WHICH "$1" >& /dev/null ; then
-    PYTHON="$1"
+# On some windows systems python is an empty executable which, when
+# launched in a Command Prompt, directs the user to the Microsoft Store.
+# With bash, it returns a 128 exit status. So we loop until we
+# find a working python (or no python). Each time a python is non-working
+# we remove that path from the PATH. If not Windows, break out after first
+# attempt at finding a Python.
+while true ; do
+  PYTHON=""
+  # Priority is the argument -pyexe, NRN_PYTHONEXE, python3 and then python
+
+  # check -pyexe option
+  if test "$1" != "" ; then
+    if $WHICH "$1" >& /dev/null ; then
+      PYTHON="$1"
+    fi
+  # If NRN_PYTHONEXE is set (e.g. from wheel wrapper) then use it
+  elif test "$NRN_PYTHONEXE" != ""; then
+    PYTHON=$NRN_PYTHONEXE
+  elif $WHICH python3 >& /dev/null ; then
+    PYTHON=python3
+  elif $WHICH python >& /dev/null ; then
+    PYTHON=python
   fi
-elif $WHICH python3 >& /dev/null ; then
-  PYTHON=python3
-elif $WHICH python >& /dev/null ; then
-  PYTHON=python
-else
+
+  # do not do the following craziness if not Windows.
+  if test "$OS" != "Windows_NT" ; then
+    break
+  fi
+
+  if test "$PYTHON" == "" ; then
+    break
+  else
+    if $PYTHON -c 'quit()' >& /dev/null ; then #working
+      break
+    else # remove from PATH
+      oldpath="$PATH"
+      a="`$WHICH $PYTHON`"
+      b="`dirname \"$a\"`"
+      PATH="`echo \"$PATH\" | sed \"s,:$b:,:,\"`" #remove b from path if internal
+      PATH="`echo \"$PATH\" | sed \"s,^$b:,,\"`" #remove b from path if begin
+      PATH="`echo \"$PATH\" | sed \"s,:$b\$,\",`" #remove b from path if end
+      export PATH
+      if test "$oldpath" = "$PATH" ; then
+        echo "\"$b\", that contained a failing Python, did not get removed from PATH=\"$PATH\"" 1>&2
+        exit 1
+      fi
+    fi
+  fi
+done
+
+if test "$PYTHON" = "" ; then
   # Often people install Anaconda on Windows without adding it to PATH
   if test "$OS" = "Windows_NT" -a "$APPDATA" != "" ; then
     smenu="$APPDATA/Microsoft/Windows/Start Menu/Programs"
-    trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" "Anaconda3 (64-bit)" "Anaconda Prompt (anaconda3).lnk" activate.bat
+      # Anaconda3 2020 may need more PATH for numpy to work.
+      if test "$PYTHON" != "" ; then
+        if ! $PYTHON -c 'import numpy' >& /dev/null ; then
+          # first item added in trypy
+          a="`echo $PATH | sed 's/:.*//'`"
+          export PATH="$PATH:$a/Library/mingw-w64/bin:$a/Library/usr/bin:$a/Library/bin:$a/Scripts:$a/bin:$a/condabin"
+          # Actually get this PATH when scripts do a -- eval "`nrnpyenv.sh`"
+          echo "export PATH=\"$PATH\""
+        fi
+      fi
+    fi
+    if test "$PYTHON" = "" ; then
+      trypy "$smenu" Anaconda3 "Anaconda Prompt.lnk" activate.bat
+    fi
     if test "$PYTHON" = "" ; then
       trypy "$smenu" Anaconda2 "Anaconda Prompt.lnk" activate.bat
     fi
@@ -103,10 +159,11 @@ else
       fi
     fi
   fi
-  if test "$PYTHON" = "" ; then
-    echo "Cannot find executable python3 or python" 1>&2
-    exit 1;
-  fi
+fi
+
+if test "$PYTHON" = "" ; then
+  echo "Cannot find executable python3 or python" 1>&2
+  exit 1;
 fi
 
 echo "# PYTHON=`$WHICH $PYTHON`"
@@ -135,7 +192,7 @@ if test "$kernel_name" = "Darwin" ; then
     nrnpylib_provenance="sysconfig LIBDIR"
   fi
   if test "$nrn_pylib" = "" ; then
-    nrn_pylib=$($p -c '
+    nrn_pylib=$($python_path -c '
 try:
   from neuron import h
   shlib=h.libpython_path()
@@ -155,7 +212,7 @@ except:
     if test "$nrn_pylib" = "" ; then
       nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
-    unset DYLD_PRINT_LIBRARIES  
+    unset DYLD_PRINT_LIBRARIES
     if test "$nrn_pylib" != "" ; then
       nrnpylib_provenance=DYLD_PRINT_LIBRARIES
     fi
@@ -230,13 +287,25 @@ def nrnpylib_darwin_helper():
         nrnpylib_provenance = "lsof search for libpython..."
         return nrn_pylib
       if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
-        cnt += 1  
+        cnt += 1
         if cnt == 1: # skip 1st since it is the python executable
           continue
         if re.search(r'[Pp]ython', line.split('/')[-1]):
           print ("# nrn_pylib from lsof: %s" % line)
-          nrn_pylib = line.strip()
-          nrnpylib_provenance = 'lsof search for second occurrence of [Ll][Ii][Bb].*[Pp]ython'
+          candidate = line.strip()
+          # verify the file defines a PyRun_SimpleString
+          cmd = r'nm %s | grep PyRun_SimpleString' % candidate
+          try:
+            f = os.popen(cmd)
+            i=0
+            for line in f:
+              i += 1
+            if i == 0:
+              continue
+          except:
+            continue
+          nrn_pylib = candidate
+          nrnpylib_provenance = 'lsof search for occurrence of [Ll][Ii][Bb].*[Pp]ython defineing PyRun_SimpleString'
           return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
@@ -297,7 +366,7 @@ def nrnpylib_darwin():
     nrnpylib_provenance = os.getenv("nrnpylib_provenance")
     return nrn_pylib
   return nrnpylib_darwin_helper()
-          
+
 def nrnpylib_mswin():
   global nrnpylib_provenance
   import os, sys, re
@@ -320,14 +389,15 @@ def nrnpylib_linux():
   libdir=sysconfig.get_config_var("LIBDIR")
   try:
     from os.path import isfile, join
+    ver = "%d.%d"%(sys.version_info[0], sys.version_info[1])
     for f in os.listdir(libdir):
-      if 'libpython' in f and '.so' in f:
+      if 'libpython' in f and '.so' in f and ver in f:
         nrn_pylib = join(libdir, f)
         nrnpylib_provenance='sysconfig LIBDIR'
         return nrn_pylib
   except:
     pass
-  
+
   #in case it was dynamically loaded by python
   try:
     from neuron import h
@@ -432,7 +502,7 @@ foo = [i for i in foo if s not in i]
 print ("# in neither location " + str(foo))
 print ("# " + spname + " = " + sp)
 print ("# site-3 = " + s)
-	
+
 if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   # What, if anything, did python prepend to PATH
   path=""
@@ -456,7 +526,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   sitedir = usep.join(upath(site.__file__).split(usep)[:-1])
 
   # if sitedir is not a subfolder of pythonhome, add to pythonpath
-  if not pythonhome in sitedir:                                   
+  if not pythonhome in sitedir:
     if not sitedir in pythonpath:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + sitedir
 
@@ -471,7 +541,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     f = usep.join(upath(_ctypes.__file__).split(usep)[:-1])
     if f.find(pythonhome) == -1:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + f
-  except:   
+  except:
     pass
 
   dq = "\""
@@ -487,7 +557,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
-    print ("export PYTHONHOME=" + dq + pythonhome + dq)
+    print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib == None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
   if nrn_pylib != None:

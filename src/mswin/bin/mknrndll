@@ -1,6 +1,7 @@
 #!sh
 set -e
 
+# remove old dll
 rm -f nrnmech.dll
 
 cp_if_newer() {

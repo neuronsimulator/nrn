@@ -45,7 +45,7 @@ so as not to confuse it with the version available from LANL.
 #ifndef __pgccfeatures_dot_hpp
 #define __pgccfeatures_dot_hpp
 
-#if !defined(__x86_64__) && !defined(__i386__)
+#if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc64__)
 #  error "This code has only been tested on x86 platforms."
 #include <including_a_nonexistent_file_will_stop_some_compilers_from_continuing_with_a_hopeless_task>
 { /* maybe an unbalanced brace will terminate the compilation */

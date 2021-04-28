@@ -27,11 +27,9 @@
 #include "oc2iv.h"
 #include "ivoc.h"
 
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-	extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
 
 bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
 	if (x != 400. || y != 400.) {
@@ -286,7 +284,6 @@ FieldDialog* FieldDialog::field_dialog_instance(const char* str, Style* style,
 void FieldDialog::accept(FieldEditor*) { dismiss(true); }
 void FieldDialog::cancel(FieldEditor*) { dismiss(false); }
 
-extern "C" {
 
 void hoc_boolean_dialog() {
 	bool b = false;
@@ -329,8 +326,6 @@ IFGUI
 ENDGUI
 	hoc_ret();
 	hoc_pushx(double(b));
-}
-
 }
 
 

@@ -20,7 +20,7 @@
 
 extern "C" {
 extern const char* expand_env_var(const char*);
-}
+} // extern "C"
 
 bool OcIdraw::closed_ = false;
 bool OcIdraw::curved_ = false;

@@ -10,7 +10,7 @@ C implementations of Java native methods
 
 #include "ivoc.h"
 #include "nrnoc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #include "neuron_Neuron.h"	// generated JNI Header file
@@ -36,6 +36,8 @@ extern Symbol* nrn_vec_sym;
 void* nrnjava_pwm_listen(const char*, Object*);
 void nrnjava_pwm_event(size_t, int, int, int, int, int);
 
+extern Symlist* hoc_top_level_symlist;
+
 extern "C" {
 
 /** Create a hoc class from a java one
@@ -45,7 +47,7 @@ Symbol* java2nrn_class(const char* classname, int classindex,
 	const char* methods);
 
 extern double* hoc_varpointer;
-extern Symlist* hoc_top_level_symlist;
+
 extern Objectdata* hoc_top_level_data;
 double hoc_integer(double);
 Object* hoc_new_object(Symbol*, void*);
@@ -267,7 +269,7 @@ JNIEXPORT jint JNICALL Java_neuron_Neuron_vectorSize
   (JNIEnv *, jclass, jlong jc){
 	Object* ho = (Object*)jc;
 	Vect* vec = (Vect*)ho->u.this_pointer;
-	return vec->capacity();
+	return vec->size();
 }
 
 static void outOfBounds(JNIEnv* env) {
@@ -278,8 +280,8 @@ JNIEXPORT void JNICALL Java_neuron_Neuron_vectorSet
   (JNIEnv *env, jclass, jlong jc, jint i, jdouble x) {
 	Object* ho = (Object*)jc;
 	Vect* vec = (Vect*)ho->u.this_pointer;
-	if (i < 0 || i >= vec->capacity()) {
-		printf("Neuron.vectorSet i=%d size=%d\n", i, vec->capacity());
+	if (i < 0 || i >= vec->size()) {
+		printf("Neuron.vectorSet i=%d size=%d\n", i, vec->size());
 		outOfBounds(env);
 	}
 	vec->elem(i) = x;
@@ -289,8 +291,8 @@ JNIEXPORT jdouble JNICALL Java_neuron_Neuron_vectorGet
   (JNIEnv *env, jclass, jlong jc, jint i){
 	Object* ho = (Object*)jc;
 	Vect* vec = (Vect*)ho->u.this_pointer;
-	if (i < 0 || i >= vec->capacity()) {
-		printf("Neuron.vectorGet i=%d size=%d\n", i, vec->capacity());
+	if (i < 0 || i >= vec->size()) {
+		printf("Neuron.vectorGet i=%d size=%d\n", i, vec->size());
 		outOfBounds(env);
 	}
 	return vec->elem(i);
@@ -308,7 +310,7 @@ JNIEXPORT jdoubleArray JNICALL Java_neuron_Neuron_vectorFromHoc
   (JNIEnv *env, jclass, jlong jc) {
 	Object* ho = (Object*)jc;
 	Vect* vec = (Vect*)ho->u.this_pointer;
-	jint size = vec->capacity();
+	jint size = vec->size();
 	jdoubleArray ja = env->NewDoubleArray(size);
 	env->SetDoubleArrayRegion(ja, 0, size, &vec->elem(0));
 	return ja;

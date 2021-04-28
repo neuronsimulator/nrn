@@ -26,6 +26,8 @@ implementNrnHash(Gid2PreSyn, int, PreSyn*)
 #include <netcon.h>
 #include <cvodeobj.h>
 #include <netcvode.h>
+#include <vector>
+#include "ivocvect.h"
 
 #define BGP_INTERVAL 2
 #if BGP_INTERVAL == 2
@@ -35,22 +37,25 @@ static int n_bgp_interval;
 static Symbol* netcon_sym_;
 static Gid2PreSyn* gid2out_;
 static Gid2PreSyn* gid2in_;
+static IvocVect* all_spiketvec = NULL;
+static IvocVect* all_spikegidvec = NULL;
 static double t_exchange_;
 static double dt1_; // 1/dt
 static void alloc_space();
 
-extern "C" {
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
 extern int cvode_active_;
-extern Point_process* ob2pntproc(Object*);
+extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern int vector_capacity(IvocVect*); //ivocvect.h conflicts with STL
 extern double* vector_vec(IvocVect*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
+extern "C" {
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
+} // extern "C"
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
@@ -64,6 +69,15 @@ extern Object* nrn_gid2obj(int);
 extern PreSyn* nrn_gid2presyn(int);
 extern int nrn_gid_exists(int);
 extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
+
+/**
+ * @brief NEURON callback used from CORENEURON to transfer all spike vectors after simulation
+ *
+ * @param spiketvec - vector of spikes
+ * @param spikegidvec - vector of gids
+ * @return 1 if CORENEURON shall drop writing `out.dat`; 0 otherwise
+ */
+extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
 // BGPDMA can be 0,1,2,3,6,7
 // (BGPDMA & 1) > 0 means multisend ISend allowed
@@ -81,7 +95,6 @@ double nrn_bgp_receive_time(int) { return 0.; }
 extern void nrnmpi_split_clear();
 #endif
 extern void nrnmpi_multisplit_clear();
-}
 
 static double set_mindelay(double maxdelay);
 
@@ -89,7 +102,6 @@ static double set_mindelay(double maxdelay);
 
 #include "../nrnmpi/mpispike.h"
 
-extern "C" {
 void nrn_timeout(int);
 void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
@@ -97,7 +109,6 @@ extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 bool nrn_use_compress_; // global due to bbsavestate
 #define use_compress_ nrn_use_compress_
-}
 
 #ifdef USENCS
 extern int ncs_bgp_sending_info( int ** );
@@ -883,7 +894,7 @@ static void mk_localgid_rep() {
 // ensures that all the target cells, regardless of what rank they are on
 // will get the spike delivered and nobody gets it twice.
 
-void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	assert(gid2in_);
 	PreSyn* ps;
 	if (fake_out < 2 && gid2in_->find(gid, ps)) {
@@ -1054,6 +1065,7 @@ double BBS::threshold() {
 void BBS::cell() {
 	int gid = int(chkarg(1, 0., MD));
 	PreSyn* ps;
+	alloc_space();
 	if (gid2in_->find(gid, ps)) {
 		char buf[100];
 		sprintf(buf, "gid=%d is in the input list. Must register prior to connecting", gid);
@@ -1095,20 +1107,23 @@ void BBS::outputcell(int gid) {
 void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 	PreSyn* ps;
     if (gid >= 0) {
-	nrn_assert(gid2out_->find(gid, ps));
-	assert(ps);
-	ps->record(spikevec, gidvec, gid);
-    }else{ // record all output spikes
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		if (ps->output_index_ >= 0) {
-			ps->record(spikevec, gidvec, ps->output_index_);
-		}
-	}}}
+        all_spiketvec = NULL, all_spikegidvec = NULL; // invalidate global spike vectors
+        nrn_assert(gid2out_->find(gid, ps));
+        assert(ps);
+        ps->record(spikevec, gidvec, gid);
+    }else{ // record all output spikes.
+        all_spiketvec = spikevec, all_spikegidvec = gidvec; // track global spike vectors (optimisation)
+        NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+            if (ps->output_index_ >= 0) {
+                ps->record(all_spiketvec, all_spikegidvec, ps->output_index_);
+            }
+        }}}
     }
 }
 
 void BBS::spike_record(IvocVect* gids, IvocVect* spikevec, IvocVect* gidvec) {
 	int sz = vector_capacity(gids);
+    all_spiketvec = NULL, all_spikegidvec = NULL; // invalidate global spike vectors
 	double* pd = vector_vec(gids);
 	for (int i = 0; i < sz; ++i) {
 		PreSyn* ps;
@@ -1217,6 +1232,19 @@ int nrn_set_timeout(int timeout) {
 }
 
 void BBS::netpar_solve(double tstop) {
+	// temporary check to be eventually replaced by verify_structure()
+	extern int tree_changed, v_structure_change, diam_changed;
+    if (tree_changed) {
+        setup_topology();
+    }
+    if (v_structure_change) {
+        v_setup_vectors();
+    }
+	if (diam_changed) {
+	     recalc_diam();
+	}
+	// if cvode_active, and anything at all has changed, should call re_init
+
 #if NRNMPI
 	double mt, md;
 	tstopunset;
@@ -1274,6 +1302,35 @@ void BBS::netpar_solve(double tstop) {
 #endif
 	tstopunset;
 }
+
+int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec){
+    assert(spiketvec.size() == spikegidvec.size());
+    if( spiketvec.size() ) {
+        /* Optimisation:
+         *  if all_spiketvec and all_spikegidvec are set (pc.spike_record with gid=-1 was called)
+         *  and they are still reference counted (obj_->refcount), then copy over incoming vectors.
+         */
+        if (all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
+            all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
+
+            all_spiketvec->resize(spiketvec.size());
+            all_spikegidvec->resize(spikegidvec.size());
+            for (int i = 0; i < all_spiketvec->size(); ++i) {
+                all_spiketvec->elem(i) = spiketvec[i];
+                all_spikegidvec->elem(i) = spikegidvec[i];
+            }
+        }else{ // different underlying vectors for PreSyns
+            for (int i = 0; i < spikegidvec.size(); ++i ) {
+                PreSyn* ps;
+                if (gid2out_->find(spikegidvec[i], ps)) {
+                    ps->record(spiketvec[i]);
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 
 static double set_mindelay(double maxdelay) {
 	double mindelay = maxdelay;
@@ -1505,8 +1562,7 @@ void nrn_gidout_iter(PFIO callback) {
 	}}}
 }
 
-#include "nrnbbcore_write.h"
-extern "C" {
+#include "nrncore_write.h"
 extern int* nrn_prop_param_size_;
 extern int* pnt_receive_size;
 extern short* nrn_is_artificial_;
@@ -1590,5 +1646,4 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
   delete [] gidcnt;
 }
 
-} // extern "C" of nrnbbcore_write
 

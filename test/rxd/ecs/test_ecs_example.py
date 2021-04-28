@@ -15,21 +15,21 @@ def ecs_example(neuron_instance):
     where it diffuses to cell 2 and enters via the same NMODL mechanism.
     """
 
-    h, rxd, data = neuron_instance
+    h, rxd, data, save_path = neuron_instance
     def make_model(alpha, lambd):
         # create cell1 where `x` will be created and leak out
         cell1 = h.Section(name='cell1')
         cell1.pt3dclear()
-        cell1.pt3dadd(-20, 0, 0, 10)
-        cell1.pt3dadd(-10, 0, 0, 10)
+        cell1.pt3dadd(-2, 0, 0, 1)
+        cell1.pt3dadd(-1, 0, 0, 1)
         cell1.nseg = 11
         cell1.insert('pump')
     
         # create cell2 where `x` will be pumped in and accumulate
         cell2 = h.Section(name='cell2')
         cell2.pt3dclear()
-        cell2.pt3dadd(10, 0, 0, 10)
-        cell2.pt3dadd(20, 0, 0, 10)
+        cell2.pt3dadd(1, 0, 0, 1)
+        cell2.pt3dadd(2, 0, 0, 1)
         cell2.nseg = 11
         cell2.insert('pump')
     
@@ -52,7 +52,7 @@ def ecs_example(neuron_instance):
     
         # the extracellular space
         ecs = rxd.Extracellular(
-            -55, -55, -55, 55, 55, 55, dx=10, volume_fraction=alpha, tortuosity=lambd
+            -55, -55, -55, 55, 55, 55, dx=33, volume_fraction=alpha, tortuosity=lambd
         )
     
         # Who?
@@ -98,19 +98,20 @@ def ecs_example(neuron_instance):
 def test_ecs_example(ecs_example):
     """Test ecs_example with fixed step methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(0.2, 1.6)
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_ecs_example_cvode(ecs_example):
     """Test ecs_example with variable step methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(0.2, 1.6)
     h.CVode().active(True)
     h.CVode().atol(1e-5)
@@ -118,26 +119,28 @@ def test_ecs_example_cvode(ecs_example):
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 def test_ecs_example_alpha(ecs_example):
     """Test ecs_example with fixed step and inhomogeneous volume fraction methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(lambda x,y,z: 0.2, 1.6)
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_ecs_example_cvode_alpha(ecs_example):
     """Test ecs_example with variable step and inhomogeneous volume fraction
        methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(lambda x,y,z: 0.2, 1.6)
     h.CVode().active(True)
     h.CVode().atol(1e-5)
@@ -145,25 +148,27 @@ def test_ecs_example_cvode_alpha(ecs_example):
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 def test_ecs_example_tort(ecs_example):
     """Test ecs_example with fixed step and inhomogeneous tortuosity methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(lambda x,y,z: 0.2, 1.6)
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
 
 
 def test_ecs_example_cvode_tort(ecs_example):
     """Test ecs_example with variable step and inhomogeneous tortuosity methods"""
 
-    (h, rxd, data), make_model = ecs_example
+    (h, rxd, data, save_path), make_model = ecs_example
     model = make_model(lambda x,y,z: 0.2, 1.6)
     h.CVode().active(True)
     h.CVode().atol(1e-5)
@@ -171,5 +176,20 @@ def test_ecs_example_cvode_tort(ecs_example):
     h.finitialize(-65)
     h.continuerun(1000)
 
-    max_err = compare_data(data)
-    assert max_err < tol
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_nodelists(ecs_example):
+    """Test accessing species nodes with both Node1D and NodeExtracellular"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6)
+    ecs, x = model[5], model[6]
+    # test accessing NodeExtracellular from species with both 1D and ECS
+    assert len(x.nodes(ecs)) == 64
+    assert all([nd.region == ecs for nd in x.nodes(ecs)])
+    # test accessing specific node by location
+    nd = x[ecs].nodes((-38, 27, 27))[0]
+    assert (nd.x3d, nd.y3d, nd.z3d) == (-38.5, 27.5, 27.5)

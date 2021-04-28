@@ -1,3 +1,4 @@
+import os
 import pytest
 import sys
 
@@ -13,6 +14,9 @@ def test_direct_memory_transfer():
     ic.dur = 0.1
     ic.amp = 0.3
 
+    #for testing external mod file
+    h.soma.insert("Sample")
+
     h.cvode.use_fast_imem(1)
     h.cvode.cache_efficient(1)
 
@@ -26,11 +30,25 @@ def test_direct_memory_transfer():
     vstd = v.cl()
     tvstd = tv.cl()
     i_memstd = i_mem.cl()
+    # Save current (after run) value to compare with transfer back from coreneuron
+    tran_std = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
+
+    from neuron import coreneuron
+    coreneuron.enable = True
+    coreneuron.gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
 
     pc = h.ParallelContext()
     h.stdinit()
-    pc.nrncore_run("-e %g"%h.tstop, 0)
+    pc.psolve(h.tstop)
+    tran = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
 
     assert(tv.eq(tvstd))
-    assert(v.cl().sub(vstd).abs().max() < 1e-10)
-    assert(i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
+    assert(v.cl().sub(vstd).abs().max() < 1e-10) # usually v == vstd, some compilers might give slightly different results
+    # This check is disabled on GPU because fast imem is not implemented on
+    # GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
+    assert(coreneuron.gpu or i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
+    assert(h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10)
+
+if __name__ == "__main__":
+    test_direct_memory_transfer()
+    h.quit()

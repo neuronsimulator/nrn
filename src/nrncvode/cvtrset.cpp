@@ -1,4 +1,4 @@
-#include <../../nrnconf.h>
+#include    "nrnconf.h"
 #include	<stdio.h>
 #include	<errno.h>
 #include	<math.h>
@@ -7,15 +7,11 @@
 #include	"cvodeobj.h"
 #include	"nonvintblock.h"
 
-typedef int (*Pfridot)(...);
-extern "C" {
-
 #include	"membfunc.h"
 #include	"neuron.h"
 
 extern int	diam_changed;
 extern int	tree_changed;
-}
 
 void Cvode::rhs(NrnThread* _nt) {
 	int i;
@@ -66,7 +62,7 @@ void Cvode::rhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	errno = 0;
 	for (cml = cmlist; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
-		Pfridot s = (Pfridot)mf->current;
+		Pvmi s = mf->current;
 		if (s) {
 			Memb_list* ml = cml->ml;
 			(*s)(_nt, ml, cml->index);
@@ -111,9 +107,9 @@ void Cvode::lhs_memb(CvMembList* cmlist, NrnThread* _nt) {
 	for (cml = cmlist; cml; cml = cml->next) {
 		Memb_func* mf = memb_func + cml->index;
 		Memb_list* ml = cml->ml;
-		Pfridot s = (Pfridot)mf->jacob;
+		Pvmi s = mf->jacob;
 		if (s) {
-			Pfridot s = (Pfridot)mf->jacob;
+			Pvmi s = mf->jacob;
 			(*s)(_nt, ml, cml->index);
 			if (errno) {
 				if (nrn_errno_check(cml->index)) {
@@ -128,7 +124,7 @@ hoc_warning("errno set during calculation of di/dv", (char*)0);
 
 /* triangularization of the matrix equations */
 void Cvode::triang(NrnThread* _nt) {
-	register Node *nd, *pnd;
+	Node *nd, *pnd;
 	double p;
 	int i;
 	CvodeThreadData& z = CTD(_nt->id);
@@ -144,7 +140,7 @@ void Cvode::triang(NrnThread* _nt) {
 
 /* back substitution to finish solving the matrix equations */
 void Cvode::bksub(NrnThread* _nt) {
-	register Node *nd, *cnd;
+	Node *nd, *cnd;
 	int i;
 	CvodeThreadData& z = CTD(_nt->id);
 

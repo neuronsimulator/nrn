@@ -5,8 +5,8 @@ if test "$1" = "" ; then
 	exit
 fi
 
-NRN_INSTALL="$1"
-CPU=x86_64
+NRN_INST="$1"
+CPU=`uname -m`
 
 #strip the dylibs
 cd ${NRN_INST}/lib
@@ -63,7 +63,7 @@ install_name_tool $f "$ff"
 
 #this one needs to be done from nrnivmodl, same as all the libnrnmech.so
 if false ; then
-ff="$NRN_INST/share/nrn/demo/release/x86_64/libnrnmech*.dylib"
+ff="$NRN_INST/share/nrn/demo/release/$CPU/libnrnmech*.dylib"
 f=`otool -L $ff | sed -n "s,.*$NRN_INST/lib/\(.*dylib\).*,\
 -change $NRN_INST/lib/\1 @executable_path/../lib/\1,p"`
 install_name_tool $f $ff

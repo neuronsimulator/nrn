@@ -88,7 +88,7 @@ else()
 endif()
 
 # rxdmath libraries (always build)
-add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.c)
+add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
 
 # =============================================================================
@@ -152,7 +152,7 @@ endif()
 # Install package files that were created in build (e.g. .py.in)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
         DESTINATION ${NRN_LIBDIR}
-        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib)
+        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib PATTERN *.dat)
 
 
 # =============================================================================
@@ -209,6 +209,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # ~~~
   set_property(
     SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
+           ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
     APPEND
     PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
@@ -217,19 +218,20 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # =============================================================================
 
   add_custom_command(
-    TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${PROJECT_BINARY_DIR}/share/lib/python/neuron/rxd/constants.py
-            ${NRN_BUILD_SHARE_DIR}/lib/python/neuron/rxd/constants.py)
-
-  add_custom_command(
-    TARGET hoc_module PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-            ${NRN_BUILD_SHARE_DIR}/lib
+    TARGET hoc_module
+    PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
             ${PROJECT_BINARY_DIR}/share/nrn/lib
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo
             ${PROJECT_BINARY_DIR}/share/nrn/demo)
+  # Don't do exactly the same copy twice in a row. Presumably it's sometimes important to do both...
+  if(NOT "${NRN_BUILD_SHARE_DIR}/lib" STREQUAL "${PROJECT_BINARY_DIR}/share/nrn/lib")
+    add_custom_command(
+      TARGET hoc_module
+      PRE_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+              ${NRN_BUILD_SHARE_DIR}/lib)
+  endif()
 
   # =============================================================================
   # Build python module
@@ -240,9 +242,21 @@ if(NRN_ENABLE_MODULE_INSTALL)
       TARGET hoc_module POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
+#      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+#              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
       COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
+    if(PATHLIB_FOUND) #TODO - remove this and uncomment above @ Python2 removal
+      add_custom_command(
+        TARGET hoc_module POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Copying over generated help_data.dat")
+    endif()
   endforeach(pyexe)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
@@ -263,7 +277,17 @@ cd ${CMAKE_CURRENT_BINARY_DIR}\n\
 $1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
 ")
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
-    install(
-      CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})")
+    # install(CODE ...) only takes a single CMake code expression, so we can't easily roll our own
+    # check on the return code. Modern CMake versions support the COMMAND_ERROR_IS_FATAL option,
+    # which will cause the installation to abort if the shell script returns an error code.
+    if(${CMAKE_VERSION} VERSION_LESS "3.19")
+      install(
+        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe})"
+      )
+    else()
+      install(
+        CODE "execute_process(COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh ${pyexe} COMMAND_ERROR_IS_FATAL LAST)"
+      )
+    endif()
   endforeach(pyexe)
 endif()

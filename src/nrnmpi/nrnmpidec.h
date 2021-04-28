@@ -16,7 +16,7 @@ typedef long double longdbl;
 extern "C" {
 #endif
 
-/* from bbsmpipack.c */
+/* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
 	char* buf;
 	int size;
@@ -54,7 +54,7 @@ extern void nrnmpi_bbssend(int dest, int tag, bbsmpibuf* r);
 extern int nrnmpi_bbsrecv(int source, bbsmpibuf* r);
 extern int nrnmpi_bbssendrecv(int dest, int tag, bbsmpibuf* s, bbsmpibuf* r);
 
-/* from nrnmpi.c */
+/* from nrnmpi.cpp */
 extern void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 extern int nrnmpi_wrap_mpi_init(int* flag);
 extern double nrnmpi_wtime();
@@ -62,7 +62,8 @@ extern void nrnmpi_terminate();
 extern void nrnmpi_abort(int errcode);
 extern void nrnmpi_subworld_size(int n);
 
-/* from mpispike.c */
+
+/* from mpispike.cpp */
 extern void nrnmpi_spike_initialize();
 extern int nrnmpi_spike_exchange();
 extern int nrnmpi_spike_exchange_compressed();
@@ -75,16 +76,20 @@ extern void nrnmpi_int_scatter(int* s, int* r, int cnt, int root);
 extern void nrnmpi_char_scatterv(char* s, int* scnt, int* sdispl, char* r, int rcnt, int root);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgather_inplace(int* srcdest, int n);
+extern void nrnmpi_int_allgatherv_inplace(int* srcdest, int* n, int* dspl);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_char_allgatherv(char* s, char* r, int* n, int* dspl);
 extern void nrnmpi_int_alltoall(int* s, int* r, int n);
 extern void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
+extern void nrnmpi_int_alltoallv_sparse(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl);
 extern void nrnmpi_long_allgatherv(int64_t* s, int64_t* r, int* n, int* dspl);
 extern void nrnmpi_long_allgatherv_inplace(long* srcdest, int* n, int* dspl);
 extern void nrnmpi_long_alltoallv(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
+extern void nrnmpi_long_alltoallv_sparse(int64_t* s, int* scnt, int* sdispl, int64_t* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv_inplace(double* srcdest, int* n, int* dspl);
 extern void nrnmpi_dbl_alltoallv(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
+extern void nrnmpi_dbl_alltoallv_sparse(double* s, int* scnt, int* sdispl, double* r, int* rcnt, int* rdispl);
 extern void nrnmpi_char_alltoallv(char* s, int* scnt, int* sdispl, char* r, int* rcnt, int* rdispl);
 extern void nrnmpi_dbl_broadcast(double* buf, int cnt, int root);
 extern void nrnmpi_int_broadcast(int* buf, int cnt, int root);
@@ -100,9 +105,11 @@ extern void nrnmpi_postrecv_doubles(double* pd, int cnt, int src, int tag, void*
 extern void nrnmpi_wait(void** request);
 extern void nrnmpi_barrier();
 extern double nrnmpi_dbl_allreduce(double x, int type);
+
 extern void nrnmpi_dbl_allreduce_vec(double* src, double* dest, int cnt, int type);
 extern void nrnmpi_longdbl_allreduce_vec(longdbl* src, longdbl* dest, int cnt, int type);
 extern void nrnmpi_long_allreduce_vec(long* src, long* dest, int cnt, int type);
+
 extern void nrnmpi_dbl_allgather(double* s, double* r, int n);
 #if BGPDMA
 extern void nrnmpi_bgp_comm();
@@ -111,8 +118,10 @@ extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
 #endif
 
+
 #if defined(__cplusplus)
 }
 #endif
+
 #endif
 #endif

@@ -4,15 +4,12 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-#include <matrix2.h>
-#include <pthread.h>
 #include <nrnwrap_Python.h>
 #include <cmath>
 
 #define loc(x,y,z)((z) + (y) *  grid->size_z + (x) *  grid->size_z *  grid->size_y)
 
 static void ecs_refresh_reactions(int);
-static int dg_adi(Grid_node*);
 /*
     Globals
 */
@@ -27,15 +24,6 @@ extern double* t_ptr;
 extern double* states;
 
 Reaction* ecs_reactions = NULL;
-
-/*Current from multicompartment reations*/
-extern unsigned char _membrane_flux;
-extern int _memb_curr_total;
-extern int* _rxd_induced_currents_grid;
-extern int* _rxd_induced_currents_ecs_idx;
-extern double* _rxd_induced_currents_ecs;
-extern double* _rxd_induced_currents_scale;
-
 
 int states_cvode_offset;
 
@@ -76,6 +64,9 @@ void set_num_threads_3D(const int n)
 void clear_rates_ecs(void)
 {
 	Reaction *r, *tmp;
+    Grid_node * grid;
+    ECS_Grid_node * g;
+
 	for (r = ecs_reactions; r != NULL; r = tmp)
 	{
 		SAFE_FREE(r->species_states);
@@ -90,6 +81,11 @@ void clear_rates_ecs(void)
 	ecs_reactions = NULL;
 	
 	ecs_refresh_reactions(NUM_THREADS);
+    for (Grid_node* grid = Parallel_grids[0]; grid != NULL; grid = grid -> next)
+    {
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if (g) g->clear_multicompartment_reaction();
+    }
 }
 
 /*Create a reaction
@@ -157,7 +153,7 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params,
 
 	r->num_species_involved = num_species;
     r->num_params_involved = num_params;
-	r->species_states = (double**)malloc(sizeof(Grid_node*)*(num_species + num_params));
+    r->species_states = (double**)malloc(sizeof(Grid_node*)*(num_species + num_params));
 	assert(r->species_states);
 
 	for(i = 0; i < num_species + num_params; i++)
@@ -232,7 +228,8 @@ void ecs_register_subregion_reaction_ecs(int list_idx, int num_species,
  */
 ReactGridData* create_threaded_reactions(const int n)
 {
-	int i, k, load;
+	unsigned int i;
+    int load, k;
     int react_count = 0;
 	Reaction* react;
 
@@ -290,7 +287,7 @@ void* ecs_do_reactions(void* dataptr)
 {
 	ReactGridData task = *(ReactGridData*)dataptr;
 	unsigned char started = FALSE, stop = FALSE;
-	int i, j, k, n, start_idx, stop_idx, offset_idx;
+	unsigned int i, j, k, n, start_idx, stop_idx, offset_idx;
     double temp, ge_value, val_to_set;
 	double dt = *dt_ptr;
 	Reaction* react;
@@ -410,7 +407,7 @@ void* ecs_do_reactions(void* dataptr)
                                 }
                             }
 
-                            for (j = 0; j < react->num_species_involved - 1; j ++)
+                            for (j = 0; j < react->num_species_involved - 1; j++)
                             {
                                 for (k = j + 1; k < react->num_species_involved; k++)
                                 {
@@ -424,7 +421,7 @@ void* ecs_do_reactions(void* dataptr)
                                 }
                             }
 
-                            for (j = react->num_species_involved - 1; j >= 0; j--)
+                            for (j = react->num_species_involved - 1; j + 1 > 0; j--)
                             {
                                 v_set_val(x, j, v_get_val(b, j));
                                 for (k = j + 1; k < react->num_species_involved; k++)
@@ -573,7 +570,7 @@ void* ecs_do_reactions(void* dataptr)
                                 }
                             }
 
-                            for (j = react->num_species_involved - 1; j >= 0; j--)
+                            for (j = react->num_species_involved - 1; j + 1 > 0; j--)
                             {
                                 v_set_val(x, j, v_get_val(b, j));
                                 for (k = j + 1; k < react->num_species_involved; k++)
@@ -637,6 +634,7 @@ static void run_threaded_reactions(ReactGridData* tasks)
 
 void _fadvance_fixed_step_3D(void) {
     Grid_node* grid;
+    ECS_Grid_node* g;
     double dt = (*dt_ptr);
 
     /*Currents to broadcast via MPI*/
@@ -649,6 +647,8 @@ void _fadvance_fixed_step_3D(void) {
 
     for (id = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, id++) {
         MEM_ZERO(grid->states_cur,sizeof(double)*grid->size_x*grid->size_y*grid->size_z);
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->do_multicompartment_reactions(NULL);
         grid->do_grid_currents(grid->states_cur, dt, id);
         grid->apply_node_flux3D(dt, NULL);
         
@@ -665,7 +665,7 @@ void _fadvance_fixed_step_3D(void) {
     scatter_concentrations();
 }
 
-void scatter_concentrations(void) {
+extern "C" void scatter_concentrations(void) {
     /* transfer concentrations to classic NEURON */
     Grid_node* grid;
 
@@ -709,6 +709,8 @@ void ecs_atolscale(double* y)
 
 void _ecs_ode_reinit(double* y) {
     Grid_node* grid;
+    ECS_Grid_node* g;
+
     ssize_t i;
     int grid_size;
     double* grid_states;
@@ -721,21 +723,22 @@ void _ecs_ode_reinit(double* y) {
             y[i] = grid_states[i];
         }
         y += grid_size;
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->initialize_multicompartment_reaction();
     }
 }
 
 
-void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, const int _cvode_offset) {
+void _rhs_variable_step_ecs( const double* states, double* ydot) {
 	Grid_node *grid;
+    ECS_Grid_node* g;
     ssize_t i;
     int grid_size;
 	double dt = *dt_ptr;
     double* grid_states;
-    double const * const orig_states = states + states_cvode_offset;
-    double const * const orig_1d_states = states + _cvode_offset;
-    const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
     double* const orig_ydot = ydot + states_cvode_offset;
-    double* const orig_1d_ydot = ydot + _cvode_offset;
+    double const * const orig_states = states + states_cvode_offset;
+    const unsigned char calculate_rhs = ydot == NULL ? 0 : 1;
     states = orig_states;
     ydot = orig_ydot;
     /* prepare for advance by syncing data with local copy */
@@ -779,6 +782,8 @@ void _rhs_variable_step_ecs(const double t, const double* states, double* ydot, 
     /* process currents */
     for (i = 0, grid = Parallel_grids[0]; grid != NULL; grid = grid -> next, i++)
     {
+        g = dynamic_cast<ECS_Grid_node*>(grid);
+        if(g) g->do_multicompartment_reactions(ydot);
         grid->do_grid_currents(ydot, 1.0, i);
 
         /*Add node fluxes to the result*/
@@ -812,8 +817,6 @@ void _rhs_variable_step_helper(Grid_node* g, double const * const states, double
 	/*indices*/
 	int index, prev_i, prev_j, prev_k, next_i ,next_j, next_k;
 	double div_x, div_y, div_z;
-    unsigned char bc_x, bc_y, bc_z;
-    double bc;
 
 	/* Euler advance x, y, z (all points) */
     stop_i = num_states_x - 1;
@@ -860,7 +863,7 @@ void _rhs_variable_step_helper(Grid_node* g, double const * const states, double
         }
     }
     else {
-        for (i = 0, index = 0, next_i = num_states_y*num_states_z; 
+        for (i = 0, index = 0, prev_i = 0, next_i = num_states_y*num_states_z; 
              i < num_states_x; i++) {
             for(j = 0, prev_j = index - num_states_z, next_j = index + num_states_z; j < num_states_y; j++) {
                 
@@ -955,7 +958,7 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
 {
 	Grid_node *grid;
     ssize_t i;
-    int grid_size;
+    int grid_size = 0;
     double* grid_states;
     double const * const orig_states = states + states_cvode_offset;
     const unsigned char calculate_rhs = RHS == NULL ? 0 : 1;
@@ -989,7 +992,7 @@ void ics_ode_solve(double dt,  double* RHS, const double* states)
     }
     /* do the diffusion rates */
     for (grid = Parallel_grids[0]; grid != NULL; grid = grid -> next) {
-        grid->variable_step_ode_solve(states, RHS, dt);
+        grid->variable_step_ode_solve(RHS, dt);
         RHS += grid_size;
         states += grid_size;        
     }
@@ -1146,26 +1149,26 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
     if(g->bc->type == NEUMANN)
     {
         /*zero flux boundary condition*/
-        RHS[0] = g->states[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)]
-                + dt*((g->dc_y/SQ(g->dy))*(g->states[IDX(0,yp,z)] 
-                    - 2.*g->states[IDX(0,y,z)]      
-                    + g->states[IDX(0,ym,z)])/div_y
-                + (g->dc_z/SQ(g->dz))*(g->states[IDX(0,y,zp)] 
-                    - 2.*g->states[IDX(0,y,z)] 
-                    + g->states[IDX(0,y,zm)])/div_z);
+        RHS[0] = state[IDX(0,y,z)] + g->states_cur[IDX(0,y,z)]
+                + dt*((g->dc_y/SQ(g->dy))*(state[IDX(0,yp,z)] 
+                    - 2.*state[IDX(0,y,z)]      
+                    + state[IDX(0,ym,z)])/div_y
+                + (g->dc_z/SQ(g->dz))*(state[IDX(0,y,zp)] 
+                    - 2.*state[IDX(0,y,z)] 
+                    + state[IDX(0,y,zm)])/div_z);
         if(g->size_x > 1)
         {
-            RHS[0] += dt*(g->dc_x/SQ(g->dx))*(g->states[IDX(1,y,z)] - g->states[IDX(0,y,z)]);
+            RHS[0] += dt*(g->dc_x/SQ(g->dx))*(state[IDX(1,y,z)] - state[IDX(0,y,z)]);
             x = g->size_x-1;
-            RHS[x] = g->states[IDX(x,y,z)] + g->states_cur[IDX(x,y,z)]
+            RHS[x] = state[IDX(x,y,z)] + g->states_cur[IDX(x,y,z)]
                     + dt*(
-                       (g->dc_x/SQ(g->dx))*(g->states[IDX(x-1,y,z)] - g->states[IDX(x,y,z)])
-                     + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] 
-                        - 2.*g->states[IDX(x,y,z)]      
-                        + g->states[IDX(x,ym,z)])/div_y
-                     + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] 
-                        - 2.*g->states[IDX(x,y,z)] 
-                        + g->states[IDX(x,y,zm)])/div_z);
+                       (g->dc_x/SQ(g->dx))*(state[IDX(x-1,y,z)] - state[IDX(x,y,z)])
+                     + (g->dc_y/SQ(g->dy))*(state[IDX(x,yp,z)] 
+                        - 2.*state[IDX(x,y,z)]      
+                        + state[IDX(x,ym,z)])/div_y
+                     + (g->dc_z/SQ(g->dz))*(state[IDX(x,y,zp)] 
+                        - 2.*state[IDX(x,y,z)] 
+                        + state[IDX(x,y,zm)])/div_z);
         }
     }
     else
@@ -1176,14 +1179,14 @@ static void ecs_dg_adi_x(ECS_Grid_node* g, const double dt, const int y, const i
     for(x=1; x<g->size_x-1; x++)
     {
 #ifndef __PGI
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,y,z)]), 0, 1);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,yp,z)]), 0, 0);
-        __builtin_prefetch(&(g->states[IDX(x+PREFETCH,ym,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,y,z)]), 0, 1);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,yp,z)]), 0, 0);
+        __builtin_prefetch(&(state[IDX(x+PREFETCH,ym,z)]), 0, 0);
 #endif		
-        RHS[x] =  g->states[IDX(x,y,z)] 
-               + dt*((g->dc_x/SQ(g->dx))*(g->states[IDX(x+1,y,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x-1,y,z)])/2.
-                   + (g->dc_y/SQ(g->dy))*(g->states[IDX(x,yp,z)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,ym,z)])/div_y
-                   + (g->dc_z/SQ(g->dz))*(g->states[IDX(x,y,zp)] - 2.*g->states[IDX(x,y,z)] + g->states[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
+        RHS[x] =  state[IDX(x,y,z)] 
+               + dt*((g->dc_x/SQ(g->dx))*(state[IDX(x+1,y,z)] - 2.*state[IDX(x,y,z)] + state[IDX(x-1,y,z)])/2.
+                   + (g->dc_y/SQ(g->dy))*(state[IDX(x,yp,z)] - 2.*state[IDX(x,y,z)] + state[IDX(x,ym,z)])/div_y
+                   + (g->dc_z/SQ(g->dz))*(state[IDX(x,y,zp)] - 2.*state[IDX(x,y,z)] + state[IDX(x,y,zm)])/div_z) + g->states_cur[IDX(x,y,z)];
 
     }
     if(g->size_x > 1)

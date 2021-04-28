@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 #ifdef WIN32
 #include <errno.h>
@@ -39,10 +39,8 @@ extern "C" int hoc_return_type_code;
 #endif
 
 #include "gui-redirect.h"
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
 
 static Symbol* file_class_sym_;
@@ -52,12 +50,10 @@ int ivoc_unlink(const char* s) {
 	return unlink(s);
 }
 
-extern "C" {
 #include "hocstr.h"
-	FILE* hoc_obj_file_arg(int i);
-}
+extern "C" FILE* hoc_obj_file_arg(int i);
 
-FILE* hoc_obj_file_arg(int i) {
+extern "C" FILE* hoc_obj_file_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	check_obj_type(ob, "File");
 	OcFile* f = (OcFile*)(ob->u.this_pointer);

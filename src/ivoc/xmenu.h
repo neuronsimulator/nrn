@@ -314,7 +314,7 @@ public:
 	void def_change(float, float);
 	Button* checkbox() { return checkbox_; }
 private:
-	Button* checkbox_;	// not your normal checkbox. see xmenu.c
+	Button* checkbox_;	// not your normal checkbox. see xmenu.cpp
 	double deflt_;
 	double most_recent_;
 	HocValStepper* vs_;

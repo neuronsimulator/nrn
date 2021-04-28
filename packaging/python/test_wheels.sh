@@ -69,8 +69,11 @@ run_serial_test () {
     # Test 5: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 6: run basic tests via special : azure pipelines get stuck with their
-    # own python from hosted cache (most likely security settings or bash behaviour).
+    # Test 6: run basic test to use compiled mod file
+    $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
+
+    # Test 7: run basic tests via special : azure pipelines get stuck with their
+    # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -78,24 +81,32 @@ run_serial_test () {
       python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
-    # Test 7: run demo
+    # Test 8: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+
+    # Test 9: modlunit available (and can find nrnunits.lib)
+    modlunit tmp_mod/cacum.mod
 }
 
 run_parallel_test() {
     # this is for MacOS system
     if [[ "$OSTYPE" == "darwin"* ]]; then
       # assume both MPIs are installed via brew.
+
       brew unlink openmpi
       brew link mpich
-      run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
+
+      # TODO : latest mpich has issuee on Azure OSX
+      if [[ "$CI_OS_NAME" == "osx" ]]; then
+          run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
+      fi
 
       brew unlink mpich
       brew link openmpi
       run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
-    # Travis Linux or Azure Linux
-    elif [[ "$TRAVIS_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
+    # CI Linux or Azure Linux
+    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
       sudo update-alternatives --set mpi /usr/include/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
       sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
@@ -123,7 +134,7 @@ run_parallel_test() {
 test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
-    cp share/examples/nrniv/nmodl/gap.mod tmp_mod/
+    cp share/examples/nrniv/nmodl/cacum.mod tmp_mod/
 
     echo "Using `which $python_exe` : `$python_exe --version`"
     echo "=========== SERIAL TESTS ==========="
@@ -143,7 +154,12 @@ echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 if [[ "$use_venv" != "false" ]]; then
   echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
-  $python_exe -m venv $venv_name
+  if [[ "$python_ver" == "27" ]]; then
+    $python_exe -m pip install virtualenv
+    $python_exe -m virtualenv $venv_name
+  else
+    $python_exe -m venv $venv_name
+  fi
   . $venv_name/bin/activate
   python_exe=`which python`
 else
@@ -153,7 +169,7 @@ fi
 # on osx we need to install pip from source
 if [[ "$OSTYPE" == "darwin"* ]] && [[ "$python_ver" == "35" ]]; then
   echo "Updating pip for OSX with Python 3.5"
-  curl https://bootstrap.pypa.io/get-pip.py | python
+  curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
 fi
 
 # install neuron and neuron

@@ -49,17 +49,16 @@
 #ifndef _NVECTOR_PARALLEL_H
 #define _NVECTOR_PARALLEL_H
 
-#ifdef __cplusplus  /* wrapper to enable C++ usage */
-extern "C" {
-#endif
-
-#include <nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 #define MPI_DOUBLE double
 #define MPI_LONG long
 #define MPI_Comm int
 #else
 #include <mpi.h>
+#endif
+
+#if defined(__cplusplus)
+extern "C" {
 #endif
 
 #include "nvector.h"
@@ -332,8 +331,8 @@ booleantype N_VInvTest_Parallel(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_Parallel(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_Parallel(N_Vector num, N_Vector denom);
 
-#ifdef __cplusplus
-}
+#if defined(__cplusplus)
+} // extern "C"
 #endif
 
 #endif

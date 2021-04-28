@@ -1,0 +1,63 @@
+name: Windows Installer
+
+on:
+  push:
+    branches: 
+      - master
+      - release/**
+  pull_request:
+    branches:
+      - master
+      - release/**
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
+env:
+  MSYS2_ROOT: C:\msys64
+
+jobs:
+  WindowsInstaller:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Download Dependencies
+      run: |
+        .\nrn\ci\win_download_deps.cmd
+      shell: powershell
+      working-directory: ${{runner.workspace}}
+       
+    - name: Install Dependencies
+      run: .\nrn\ci\win_install_deps.cmd
+      shell: powershell
+      working-directory: ${{runner.workspace}}
+      
+    - name: Build and Create Installer
+      run: |
+        rm.exe C:\WINDOWS\system32\bash.EXE
+        %MSYS2_ROOT%\usr\bin\bash -lc "$BUILD_SOURCESDIRECTORY/ci/win_build_cmake.sh"
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
+      env:
+        BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    # This step will set up an SSH connection on tmate.io for live debugging.
+    # To trigger it, simply add 'live-debug-win' to your last pushed commit message.
+    - name: live debug session on failure
+      if: failure() && contains(github.event.head_commit.message, 'live-debug-win')
+      uses: mxschmitt/action-tmate@v3
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: nrn-nightly-AMD64.exe
+        path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
+
+    - name: Test Installer
+      run: .\ci\win_test_installer.cmd
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn

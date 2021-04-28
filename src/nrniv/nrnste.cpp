@@ -9,7 +9,7 @@
 #include <nrnste.h>
 #include <netcon.h>
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
 static double ste_transition(void* v) {
 	StateTransitionEvent* ste = (StateTransitionEvent*)v;
@@ -132,6 +132,7 @@ STETransition* STEState::add_transition() {
 			transitions_[i].hc_ = st[i].hc_;  st[i].hc_ = NULL;
 			transitions_[i].ste_ = st[i].ste_;  st[i].ste_ = NULL;
 			transitions_[i].stec_ = st[i].stec_;  st[i].stec_ = NULL;
+			transitions_[i].stec_->stet_ = transitions_ + i;
 			transitions_[i].var1_ = st[i].var1_;
 			transitions_[i].var2_ = st[i].var2_;
 			transitions_[i].dest_ = st[i].dest_;

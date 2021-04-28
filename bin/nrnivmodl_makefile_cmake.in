@@ -1,10 +1,20 @@
 # Modified to replace the autoconf processed file nrnmech_makefile.in
 
+# Arguments:
+# MODOBJFILES
+# COBJFILES
+# UserLDFLAGS
+# UserINCFLAGS
+# LinkCoreNEURON
+# Rules to build MODOBJFILES from mod files and COBJFILES from $nrnivmodl_cfiles
+# are found in makemod2c_inc
+
 # Mechanisms version are by default 0.0, but should be overriden
 MECH_NAME =
 MECH_VERSION = 0.0
 MODS_PATH = .
-OUTPUT = @CMAKE_HOST_SYSTEM_PROCESSOR@
+# in the @CMAKE_HOST_SYSTEM_PROCESSOR@ folder
+OUTPUT = .
 DESTDIR =
 UserINCFLAGS =
 UserLDFLAGS =
@@ -25,34 +35,55 @@ OS_NAME := $(shell uname)
 _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
-INCLUDES = -I. -I.. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
+INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 
-CC ?= @CMAKE_C_COMPILER@
-CXX ?= @CMAKE_CXX_COMPILER@
+# CC/CXX are always defined. If the definition comes from default change it
+ifeq ($(origin CC), default)
+    CC = @CMAKE_C_COMPILER@
+    CXX = @CMAKE_CXX_COMPILER@
+endif
 CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
 
-COMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS@ $(INCLUDES)
-CXXCOMPILE = $(CXX) $(CXXFLAGS) @NRN_COMPILE_DEFS@ $(INCLUDES)
+COMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS@
+CXXCOMPILE = $(CXX) $(CXXFLAGS) @NRN_COMPILE_DEFS@
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
 
+NOCMODL = $(bindir)/nocmodl
+NRNUNITS = $(datadir_lib)/nrnunits.lib
+
 # File path config (internal)
-MODC_DIR = $(OUTPUT)
-OBJS_DIR = $(OUTPUT)
-mod_files = $(sort $(notdir $(wildcard $(MODS_PATH)/*.mod)))
-mod_names = $(mod_files:.mod=)
-modc_files = $(addprefix $(MODC_DIR)/,$(addsuffix .c,$(mod_names)))
-mod_objs   = $(addprefix $(OBJS_DIR)/,$(addsuffix .o,$(mod_names)))
+MODC_DIR = .
+OBJS_DIR = .
+mod_objs   = $(MODOBJFILES)
+c_objs = $(COBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
-mod_func_c = $(MODC_DIR)/mod_func.c
+mod_func_cpp = $(MODC_DIR)/mod_func.cpp
 
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
 mech_libname = nrnmech
-mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+
+# In case of static library we need to link NRNLIB_FLAGS twice to avoid undefined
+# symbols from circular dependencies. But for shared library we don't do it to avoid
+# pthread linking with wheels.
+ifeq (@NRN_ENABLE_SHARED@, ON)
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_SHARED_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_shared
+    extra_lib_link =
+else
+    mech_lib = $(OUTPUT)/lib$(mech_libname)@CMAKE_STATIC_LIBRARY_SUFFIX@
+    mech_lib_type = mech_lib_static
+    extra_lib_link = $(NRNLIB_FLAGS)
+endif
+
+# add coreneuron flags
+ifeq ($(LinkCoreNEURON), true)
+    EXTRA_LDFLAGS = @CORENEURON_LIB_LINK_FLAGS@
+endif
 
 # If no DESTDIR (we are probably just building) we use $ORIGIN (@loader_path in OSX)
 _ORIGIN := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
@@ -69,30 +100,32 @@ C_GREEN := \033[32m
 # RPATH is set for DESTDIR_RPATH and coreneuron lib
 special: $(mech_lib)
 	@printf " => $(C_GREEN)LINKING$(C_RESET) executable $(special) LDFLAGS are: $(LDFLAGS)\n"
-	(cd .. ;  $(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
-	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS))
+	$(CXX_LINK_EXE) -I $(incdir) -I $(incdir)/nrncvode -DAUTO_DLOPEN_NRNMECH=0 $(datadir)/nrnmain.cpp -o $(special) \
+	  -L $(OBJS_DIR) -l$(mech_libname) $(NRNLIB_FLAGS) -l$(mech_libname) $(extra_lib_link) -Wl,-rpath,'$(DESTDIR_RPATH)' -Wl,-rpath,$(libdir) $(LDFLAGS) $(EXTRA_LDFLAGS)
 
-$(mech_lib): mod_func.o $(mod_objs) build_always
-	@printf " => $(C_GREEN)LINKING$(C_RESET) library $(mech_lib) Mod files: $(mod_files)\n"
-	(cd .. ; $(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
-	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS))
-	(cd .. ; rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; ln -s ../../$(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so)
+$(mech_lib): $(mech_lib_type)
 
-mod_func.o: mod_func.c
+mech_lib_shared: mod_func.o $(mod_objs) $(c_objs) build_always
+	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib)\n"
+	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
+	  $(mod_func_o) $(mod_objs) $(c_objs) $(NRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
+	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
+
+mech_lib_static: mod_func.o $(mod_objs) $(c_objs) build_always
+	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
+	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
+
+mod_func.o: mod_func.cpp
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
-	$(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
+	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 # Generic build c->o. Need PIC for shared lib
 $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
-	(cd .. ; $(COMPILE) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@)
+	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 
-# Build c files with nocmodl
-$(MODC_DIR)/%.c: $(MODS_PATH)/%.mod | $(MODC_DIR)
-	@printf " -> $(C_GREEN)NMODL$(C_RESET) $<\n"
-	MODLUNIT=$(datadir_lib)/nrnunits.lib \
-	  $(bindir)/nocmodl $<
+include makemod2c_inc
 
 # If .mod doesnt exist attempt from previously built opt mods in shared/
 $(MODC_DIR)/%.cpp: $(datadir_lib)/%.cpp | $(MODC_DIR)
@@ -107,7 +140,7 @@ libnrnmech.la: $(mech_lib)
 
 # == INIT ==
 $(MODC_DIR):
-	mkdir -p $(MODC_DIR)
+	(cd .. ; mkdir -p $(MODC_DIR))
 #$(OBJS_DIR):
 #	mkdir -p $(OBJS_DIR)
 

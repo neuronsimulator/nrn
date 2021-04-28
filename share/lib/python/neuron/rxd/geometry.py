@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import warnings
 import numpy
 from neuron import h, nrn
@@ -49,13 +50,13 @@ def _volumes1d(sec):
 
     return vols
 
-def _make_surfacearea1d_function(scale):
+def _make_surfacearea1d_function(scale, diam_scale=1.0):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
         arc3d = [sec.arc3d(i)
                 for i in range(sec.n3d())]
-        diam3d = [sec.diam3d(i)
+        diam3d = [sec.diam3d(i) * diam_scale
                 for i in range(sec.n3d())]
         sas = numpy.zeros(sec.nseg)
         dx = sec.L / sec.nseg
@@ -77,17 +78,17 @@ def _make_surfacearea1d_function(scale):
         return sas
     return result
 
-def _make_perimeter_function(scale):
+def _make_perimeter_function(scale, diam_scale=1.0):
     def result(sec):
         if not isinstance(sec, nrn.Section):
             sec = sec._sec
-            arc3d = [sec.arc3d(i)
-                     for i in range(sec.n3d())]
-            diam3d = [sec.diam3d(i)
-                      for i in range(sec.n3d())]
-            area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
-            diams = numpy.interp(area_pos, arc3d, diam3d)
-            return scale * diams  
+        arc3d = [sec.arc3d(i)
+                 for i in range(sec.n3d())]
+        diam3d = [sec.diam3d(i) * diam_scale
+                  for i in range(sec.n3d())]
+        area_pos = numpy.linspace(0, sec.L, sec.nseg + 1)
+        diams = numpy.interp(area_pos, arc3d, diam3d)
+        return scale * diams  
     return result
         
 _surface_areas1d = _make_surfacearea1d_function(numpy.pi)
@@ -287,22 +288,50 @@ class FixedPerimeter(RxDGeometry):
         return 'FixedPerimeter(%r, on_cell_surface=%r)' % (self._perim, self._on_surface)
 
 class ScalableBorder(RxDGeometry):
-    """a membrane that scales proportionally with the diameter
-    
+    """a membrane that scales proportionally with the diameter.
+
     Example use:
     
-    - the boundary between radial shells
-    
+    - the boundary between radial shells e.g.
+      ScalableBorder(diam_scale=0.5) could represent the border of
+      Shell(lo=0, hi=0.5)
+
+
+    Args:
+        scale (float, optional) scale the area, default value is π.
+            e.g. for a cylinder of length L and diameter d, ScalableBorder will
+            give an area scale*d*L, by default the surface area.
+            For cylindrical sections only. Use "diam_scale" instead to correctly
+            handle cylindrical and non-cylindrical sections.
+        diam_scale (float, optional), scale the diameter, default value is 1.
+            e.g. for a cylinder of length L and diameter d, ScalableBorder will
+            give an area diam_scale*π*d*L, by default the surface area.
+
+    Note: Provide either a scale or diam_scale, not both.
+
     Sometimes useful for the boundary between FractionalVolume objects, but
     see also DistributedBoundary which scales with area.
     """
-    def __init__(self, scale, on_cell_surface=False):
-        self.volumes1d = _make_surfacearea1d_function(scale)
+    def __init__(self, scale=None, diam_scale=None, on_cell_surface=False):
+        if scale is not None and diam_scale is not None:
+            raise RxDException("ScalableBorder either provide scale or diam_scale, not both")
+        elif diam_scale is not None:
+            self._scale = numpy.pi
+            self._diam_scale = diam_scale
+        elif scale is not None:
+            self._scale = scale
+            self._diam_scale = 1.0
+        else:
+            self._scale = numpy.pi
+            self._diam_scale = 1.0
+        
+        self.volumes1d = _make_surfacearea1d_function(self._scale, 
+                                                      self._diam_scale)
         self.surface_areas1d = _always_0 if not on_cell_surface else self.volumes1d
-        self._scale = scale
         self.is_volume = _always_false
         self.is_area = _always_true
-        self.neighbor_areas1d = _make_perimeter_function(scale)
+        self.neighbor_areas1d = _make_perimeter_function(self._scale,
+                                                         self._diam_scale)
         self._on_surface = on_cell_surface
     def __repr__(self):
         return 'ScalableBorder(%r, on_cell_surface=%r)' % (self._scale, self._on_surface)
@@ -387,3 +416,77 @@ class Shell(RxDGeometry):
             vols[iseg] = volume
 
         return vols
+
+class MultipleGeometry(RxDGeometry):
+    """ support for different geometries on different sections of a region.
+    
+    Example use:
+    - for radial diffusion in a dendrite (dend) with longitudinal diffusion
+      from a spine (spine). The region for the outer shell of the dendrite
+      (0.8,1] should include the while spine [0,1];
+      MultipleGeometry(secs=[dend,spine], geos=[Shell(0.8,1), rxd.inside])
+
+    Args:   
+    sections (list, optional) a list or list-of-lists of sections where the
+        corresponding geometry should be used. If None the same geometry used
+        for all sections, otherwise the list must be the same length as the
+        geos list.
+        If None is in the list, then the corresponding geometry in geos is used
+        as a default value for any section not included in the lists.
+    geometries (list) a list of geometries that are used for the corresponding
+        list of sections in secs. All geometries must be volumes or all
+        all geometries must be areas.
+
+    """
+    def __init__(self, secs=None, geos=None):
+        self._secs = {}
+        self._default = None
+        if not secs:
+            if isinstance(geos,list):
+                self._default = geos[0]
+            elif isinstance(geos,RxDGeometry):
+                self._default = geos
+            else:
+                raise RxDException("MultipleGeometry requires a list-of-lists of sections and their corresponding geometry")
+        else:
+            assert(len(secs) == len(geos))
+            if all([g.is_area() for g in geos]):
+                self.is_area = _always_true
+                self.is_volume = _always_false
+            elif all([g.is_volume() for g in geos]):
+                self.is_area = _always_false
+                self.is_volume = _always_true
+            else:
+                raise RxDException("MultipleGeometry requires all geometries are areas or all geometries are volumes")
+            for s, g in zip(secs,geos):
+                if not s:
+                    self._default = g
+                elif isinstance(s,list):
+                    self._secs[h.SectionList(s)] = g
+                else:
+                    self._secs[h.SectionList([s])] = g
+    def __repr__(self):
+        secs = [[s for s in sl] for sl in self._secs]
+        geos = [self._secs[sl] for sl in self._secs]
+        return 'MultipleGeometry(secs=%r, geos=%r)' % (secs, geos)
+
+    def _get_geo(self, sec):
+        if not isinstance(sec, nrn.Section):
+            sec = sec._sec
+        for sl in self._secs:
+            if sec in sl:
+                geo = self._secs[sl]
+                break
+        else:
+            if self._default:
+                geo = self._default
+            else:
+                raise RxDException('MultipleGeometry is not defined on section %r' % sec)
+        return geo
+
+    def volumes1d(self, sec):
+        return self._get_geo(sec).volumes1d(sec)
+    def surface_areas1d(self, sec):
+        return self._get_geo(sec).surface_areas1d(sec)
+    def neighbor_areas1d(self, sec):
+        return self._get_geo(sec).neighbor_areas1d(sec)

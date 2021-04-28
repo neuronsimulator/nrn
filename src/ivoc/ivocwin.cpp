@@ -36,10 +36,8 @@
 // the link step needs liboc after libivoc but liboc refers to some
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here
-extern "C" {
 int ivoc_list_look(Object*, Object*, char*, int);
 void hoc_class_registration();
-}
 static void dummy() {
 	ivoc_list_look(NULL, NULL, NULL, 0);
 	hoc_class_registration();
@@ -69,10 +67,8 @@ void mswin_delete_object(void* v) {
 
 //---------------------------------------------------------
 
-extern "C" {
 void ivoc_win32_cleanup() {
 	Oc::cleanup();
-}
 }
 
 void Oc::cleanup() {
@@ -205,7 +201,6 @@ void IOHandler::childStatus(pid_t, int){}
 #ifdef MINGW
 
 #include <nrnmutdec.h>
-extern "C" {
 static int bind_tid_;
 void nrniv_bind_thread(void);
 extern int (*iv_bind_enqueue_)(void(*)(void*), void* w);
@@ -264,13 +259,12 @@ void nrniv_bind_call() {
 	pthread_mutex_unlock(mut_);
 }
 
-} // end of extern "C"
 
 #endif // MINGW
 
 #endif //HAVE_IV
 
-extern "C" void nrniv_bind_thread() {
+void nrniv_bind_thread() {
 #if HAVE_IV
 IFGUI
         bind_tid_ = int(*hoc_getarg(1));
@@ -287,7 +281,7 @@ ENDGUI
         hoc_ret();
 }
 
-extern "C" int stdin_event_ready() {
+int stdin_event_ready() {
 #if HAVE_IV
 IFGUI
   static DWORD main_threadid = -1;

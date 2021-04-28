@@ -1,6 +1,7 @@
 AC_DEFUN([AC_NRN_WITH_MPI],[
 
 MPICCnrnmpi=$CC
+MPICXXnrnmpi=$CXX
 
 AC_ARG_WITH(mpi,
 AC_HELP_STRING([--with-mpi],[Also compile the parallel code in src/sundials/shared])
@@ -26,8 +27,13 @@ dnl AC_SUBST(LIBTOOL)
 		    if test "$nrnmpi_dynamic" = "no" ; then
 			CC=$MPICC
 			CXX=$MPICXX
+			dnl above line loses the earlier -std=c++11 flag
+                        dnl so re-evaluate CXX and copy to MPICXX
+			AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+			MPICXX="$CXX"
 		    fi
 			MPICCnrnmpi=$MPICC
+			MPICXXnrnmpi=$MPICXX
 			LIBTOOLTAG='--tag=CC'
 			dnl AC_SUBST(CC)
 			dnl AC_SUBST(CXX)
@@ -185,6 +191,7 @@ AC_SUBST(METISOBJADD)
 AC_SUBST(METISLIBADD)
 AC_SUBST(METISLIB)
 AC_SUBST(MPICCnrnmpi)
+AC_SUBST(MPICXXnrnmpi)
 
 ])dnl end of AC_NRN_WITH_METIS
 

@@ -4,10 +4,6 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-extern "C" {
-    #include <matrix2.h>
-}
-#include <pthread.h>
 #include <nrnwrap_Python.h>
 #include <unistd.h>
 
@@ -76,48 +72,6 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
     } 
 }
 
-/* solve_dd_clhs_tridiag uses Thomas Algorithm to solves a 
- * diagonally dominant tridiagonal matrix (Ax=b), where the
- * triple (lower, diagonal and upper) are repeated to form A. 
- * N        -   length of the matrix
- * l_diag   -   lower diagonal 
- * diag     -   diagonal
- * u_diag   -   upper diagonal
- * b        -   pointer to the RHS  (length N)
- * lbc_diag -   the lower boundary diagonal (the first diagonal element)
- * lbc_u_diag - the lower boundary upper diagonal (the first upper 
- *              diagonal element)
- * ubc_l_diag - the upper boundary lower diagonal (the last lower
- *              diagonal element)
- * ubc_diag -   the upper boundary diagonal (the last diagonal element)
- * The solution (x) is stored in b.
- * c          - scratchpad array, N - 1 doubles long
- */
-static int solve_dd_clhs_tridiag(const int N, const double l_diag, const double diag, 
-    const double u_diag, const double lbc_diag, const double lbc_u_diag,
-    const double ubc_l_diag, const double ubc_diag, double* const b, double* const c) 
-{
-    int i;
-    
-    
-    c[0] = lbc_u_diag/lbc_diag;
-    b[0] = b[0]/lbc_diag;
-
-    for(i=1;i<N-1;i++)
-    {
-        c[i] = u_diag/(diag-l_diag*c[i-1]);
-        b[i] = (b[i]-l_diag*b[i-1])/(diag-l_diag*c[i-1]);
-    }
-    b[N-1] = (b[N-1]-ubc_l_diag*b[N-2])/(ubc_diag-ubc_l_diag*c[N-2]);
-
-    /*back substitution*/
-    for(i=N-2;i>=0;i--)
-    {
-        b[i]=b[i]-c[i]*b[i+1];  
-    }
-    return 0;
-}
-
 /* solve Ax=b where A is a diagonally dominant tridiagonal matrix
  * N	-	length of the matrix
  * l_diag	-	pointer to the lower diagonal (length N-1)
@@ -163,7 +117,6 @@ void ics_find_deltas(long start, long stop, long node_start, double* delta, long
     double prev_alpha;
     double current_alpha;
     double next_alpha;
-    double dt = *dt_ptr;
     for(int i = start; i < stop - 1; i += 2)
     {   
         long line_start = ordered_nodes[ordered_index]; 
@@ -215,7 +168,6 @@ void ics_find_deltas(long start, long stop, long node_start, double* delta, long
     double prev_alpha;
     double current_alpha;
     double next_alpha;
-    double dt = *dt_ptr;
     for(int i = start; i < stop - 1; i += 2)
     {   
         long line_start = ordered_nodes[ordered_index]; 
@@ -264,7 +216,6 @@ static void* do_ics_deltas(void* dataptr){
     int line_stop = data->line_stop;
     int node_start = data->ordered_start;
     double* states = g->states;
-    double dt = *dt_ptr;
     double* deltas = ics_adi_dir->deltas;
     long* line_defs = ics_adi_dir->ordered_line_defs;
     long* ordered_nodes = ics_adi_dir->ordered_nodes;
@@ -299,7 +250,7 @@ void run_threaded_deltas(ICS_Grid_node* g, ICSAdiDirection* ics_adi_dir){
 }
 
 //Inhomogeneous diffusion coefficient 
-void ics_dg_adi_x_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_x_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta_x = g->ics_adi_dir_x->deltas;
     double* delta_y = g->ics_adi_dir_y->deltas;
     double* delta_z = g->ics_adi_dir_z->deltas;
@@ -320,7 +271,6 @@ void ics_dg_adi_x_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
 
     long current_index;
     long ordered_index = node_start;
-    long N = 0;
     for(int i = line_start; i < line_stop - 1; i += 2)
     {
         long N = x_lines[i+1];
@@ -372,7 +322,7 @@ void ics_dg_adi_x_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
     }
 }
 
-void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta = g->ics_adi_dir_y->deltas;
     long* lines = g->ics_adi_dir_y->ordered_line_defs;
     double* alphas = g->_ics_alphas;
@@ -387,7 +337,6 @@ void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
     long current_index;
     long* ordered_y_nodes = g->ics_adi_dir_y->ordered_nodes;
     long ordered_index = node_start;
-    long N = 0;
 
     for(int i = line_start; i < line_stop - 1; i += 2)
     {
@@ -436,7 +385,7 @@ void ics_dg_adi_y_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
     }
 
 }
-void ics_dg_adi_z_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_z_inhom(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta = g->ics_adi_dir_z->deltas;
     long* lines = g->ics_adi_dir_z->ordered_line_defs;
     long* ordered_z_nodes = g->ics_adi_dir_z->ordered_nodes;
@@ -451,7 +400,6 @@ void ics_dg_adi_z_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
     
     long current_index;
     long ordered_index = node_start;
-    long N = 0;
     for(int i = line_start; i< line_stop - 1; i+=2)
     {
         long N = lines[i+1];
@@ -499,7 +447,7 @@ void ics_dg_adi_z_inhom(ICS_Grid_node* g, int line_start, int line_stop, int nod
 }
 
 //Homogeneous diffusion coefficient 
-void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta_x = g->ics_adi_dir_x->deltas;
     double* delta_y = g->ics_adi_dir_y->deltas;
     double* delta_z = g->ics_adi_dir_z->deltas;
@@ -520,7 +468,6 @@ void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_star
 
     long current_index;
     long ordered_index = node_start;
-    long N = 0;
     for(int i = line_start; i < line_stop - 1; i += 2)
     {
         long N = x_lines[i+1];
@@ -568,7 +515,7 @@ void ics_dg_adi_x(ICS_Grid_node* g, int line_start, int line_stop, int node_star
     }
 }
 
-void ics_dg_adi_y(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_y(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta = g->ics_adi_dir_y->deltas;
     long* lines = g->ics_adi_dir_y->ordered_line_defs;
     double* alphas = g->_ics_alphas;
@@ -583,7 +530,6 @@ void ics_dg_adi_y(ICS_Grid_node* g, int line_start, int line_stop, int node_star
     long current_index;
     long* ordered_y_nodes = g->ics_adi_dir_y->ordered_nodes;
     long ordered_index = node_start;
-    long N = 0;
 
     for(int i = line_start; i < line_stop - 1; i += 2)
     {
@@ -632,7 +578,7 @@ void ics_dg_adi_y(ICS_Grid_node* g, int line_start, int line_stop, int node_star
     }
 
 }
-void ics_dg_adi_z(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double r, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
+void ics_dg_adi_z(ICS_Grid_node* g, int line_start, int line_stop, int node_start, double, double* states, double* RHS, double* scratchpad, double* u_diag, double* diag, double* l_diag){
     double* delta = g->ics_adi_dir_z->deltas;
     long* lines = g->ics_adi_dir_z->ordered_line_defs;
     long* ordered_z_nodes = g->ics_adi_dir_z->ordered_nodes;
@@ -647,7 +593,6 @@ void ics_dg_adi_z(ICS_Grid_node* g, int line_start, int line_stop, int node_star
     
     long current_index;
     long ordered_index = node_start;
-    long N = 0;
     for(int i = line_start; i< line_stop - 1; i+=2)
     {
         long N = lines[i+1];
@@ -807,7 +752,7 @@ static void variable_step_delta(long start, long stop, long node_start,
     double prev_alpha;
     double current_alpha;
     double next_alpha;
-    double prev_dc, current_dc, next_dc;
+    double current_dc, next_dc;
     for(int i = start; i < stop - 1; i += 2)
     {   
         long line_start = ordered_nodes[ordered_index]; 
@@ -837,7 +782,6 @@ static void variable_step_delta(long start, long stop, long node_start,
                 prev_alpha = current_alpha;
                 current_alpha = next_alpha;
                 next_alpha = alphas[next_index];
-                prev_dc = current_dc;
                 current_dc = next_dc;
                 next_dc = dcs[next_index];
                 ydot[current_index] += (r / current_alpha) * ( current_dc * flux(prev_alpha, current_alpha, prev_state, current_state) + 
@@ -1329,7 +1273,7 @@ static void variable_step_z(ICS_Grid_node* g, int line_start, int line_stop, int
     }
 }
 
-void ics_ode_solve_helper(ICS_Grid_node* g, double dt, const double* CVode_states, double* CVodeRHS)
+void ics_ode_solve_helper(ICS_Grid_node* g, double dt, double* CVodeRHS)
 {
     int num_states = g->_num_nodes;
 

@@ -23,20 +23,24 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
   # skip static readline library as it will be linked to nrniv (e.g. with wheel)
-  if ("${link_lib}" MATCHES "libreadline.a")
+  # also stub libraries from OSX can be skipped
+  if ("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
     continue()
   endif()
 
   get_filename_component(dir_path ${link_lib} DIRECTORY)
   if(NOT dir_path)
     string(APPEND NRN_LINK_DEFS " -l${link_lib}")
+  # avoid library paths from special directory /nrnwheel which
+  # used to build wheels under docker container
+  elseif("${dir_path}" MATCHES "^/nrnwheel")
+    continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
-    get_filename_component(libname ${link_lib} NAME_WE)
-    string(REGEX REPLACE "^lib" "" libname ${libname})
-    string(APPEND NRN_LINK_DEFS " -l${libname}")
-    if(NRN_ENABLE_BINARY_SPECIAL)
-      string(APPEND NRN_LINK_DEFS " -Wl,-rpath,${dir_path}")
-    endif()
+    # NAME_WLE not avaialble with CMake version < 3.14
+    get_filename_component(libname ${link_lib} NAME)
+    string(REGEX REPLACE "\\.[^.]*$" "" libname_wle ${libname})
+    string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
+    string(APPEND NRN_LINK_DEFS " -l${libname_wle}")
   else()
     string(APPEND NRN_LINK_DEFS " ${link_lib}")
     if(NRN_ENABLE_BINARY_SPECIAL)

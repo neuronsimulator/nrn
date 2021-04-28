@@ -12,9 +12,7 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 
-extern "C" {
 extern void nrnmpi_int_broadcast(int*, int, int);
-}
 
 #if defined(HAVE_STL)
 #if defined(HAVE_SSTREAM) // the standard ...
@@ -77,6 +75,7 @@ void BBSDirect::context() {
 		nrnmpi_copy(recvbuf_, sendbuf_);
 		nrnmpi_upkbegin(recvbuf_);
 		nrnmpi_upkint(recvbuf_);
+		nrnmpi_upkint(recvbuf_); // slot reserved for tag
 		execute_helper(&n, -1, false);
 		nrnmpi_unref(recvbuf_);
 		recvbuf_ = rsav;

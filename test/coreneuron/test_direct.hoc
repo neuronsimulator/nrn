@@ -1,0 +1,81 @@
+// Launch:
+// nrnivmodl mod
+// nrnivmodl-core mod
+// nrniv tst_direct.hoc
+//   success if prints 3 lines of 1 at the end
+
+{load_file("stdrun.hoc")}
+
+create soma
+
+proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd, vstd, i_memstd
+    soma {
+        L=5.6419
+        diam=5.6419
+        insert hh
+        ic = new IClamp(.5)
+    }
+    ic.del = .5
+    ic.dur = 0.1
+    ic.amp = 0.3
+
+    // for testing external mod file
+    soma { insert Sample }
+
+    cvode.use_fast_imem(1)
+    cvode.cache_efficient(1)
+
+    // record results of a run
+    vvec = new Vector()
+    soma {vvec.record(&v(.5))}
+    i_mem = new Vector()
+    soma {i_mem.record(&i_membrane_(.5))}
+    tv = new Vector()
+    soma {tv.record(&t)}
+
+    // normal NEURON run
+    run()
+
+    // store results for later comparison
+    vstd = vvec.cl()
+    tvstd = tv.cl()
+    i_memstd = i_mem.cl()
+
+    // resize so no chance of comparing equal if psolve does nothing
+    vvec.resize(0)
+    tv.resize(0)
+    i_mem.resize(0)
+
+    if (!nrnpython("from neuron import coreneuron")) {
+        printf("Python not available\n")
+        return
+    }
+
+    po = new PythonObject()
+    po.coreneuron.enable = 1
+    nrnpython("import os; coreneuron.gpu=bool(os.environ.get('CORENRN_ENABLE_GPU', ''))")
+    printf("nrncore_arg: |%s|\n", po.coreneuron.nrncore_arg(tstop))
+
+    pc = new ParallelContext()
+    pc.set_maxstep(10)
+    stdinit()
+    pc.psolve(tstop)
+
+    // compare results
+    result1 = tv.eq(tvstd)
+    result2 = vvec.cl().sub(vstd).abs().max() < 1e-10
+    // This check is disabled on GPU because fast imem is not implemented on
+    // GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
+    result3 = po.coreneuron.gpu || i_mem.cl().sub(i_memstd).abs().max() < 1e-10
+    result  = result1 && result2 && result3
+    print(result1)
+    print(result2)
+    print(result3)
+    print(result)
+    // make the test (nrniv) return an error code if the comparison failed
+    if (!result) {
+        nrnpython("import sys; sys.exit(1)")
+    }
+}
+
+test_direct_memory_transfer()

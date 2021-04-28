@@ -70,7 +70,7 @@
 #ifdef HAVE_SYS_MMAN_H
 extern "C" {
 #include <sys/mman.h>
-}
+} // extern "C"
 #endif
 
 #ifdef WIN16
@@ -86,7 +86,7 @@ extern "C" {
 // These are the POSIX definitions.  Hopefully they won't conflict.
     extern int _close(int);
     extern int _read(int, void*, unsigned int);
-}
+} // extern "C"
 #endif
 
 #if !defined(__GNUC__) || !defined (WIN32) && !defined (MAC)
@@ -100,7 +100,7 @@ extern "C" {
 // These are the POSIX definitions.  Hopefully they won't conflict.
     extern int close(int);
     extern int read(int, void*, unsigned int);
-}
+} // extern "C"
 #endif
 //#if defined(SGI)
 //#endif
@@ -221,10 +221,10 @@ InputFile* InputFile::open(const String& name) {
 #ifndef MAC
 
 #if defined(WIN32) && !defined(__MWERKS__) && !defined(CYGWIN)
-	 int fd = _open((char*)s->string(), O_RDONLY);
+	 int fd = _open(s->string(), O_RDONLY);
 #else
     /* cast to workaround DEC C++ prototype bug */
-    int fd = ::open((char*)s->string(), O_RDONLY);
+    int fd = ::open(s->string(), O_RDONLY);
 #endif
     if (fd < 0) {
 	delete s;
@@ -253,7 +253,7 @@ int InputFile::read(const char*& start) {
 	len = (int)(i->limit_);
     }
 #if HAVE_SYS_MMAN_H // #if defined(SGI) || defined(__alpha)
-    i->map_ = (char*)mmap(0, len, PROT_READ, MAP_PRIVATE, i->fd_, i->pos_);
+    i->map_ = mmap(0, len, PROT_READ, MAP_PRIVATE, i->fd_, i->pos_);
     if ((long)(i->map_) == -1) {
 	return -1;
     }
@@ -297,9 +297,9 @@ int StdInput::read(const char*& start) {
     }
 
 #ifdef WIN32
-    int nbytes = _read(i->fd_, (char*)i->buf_, i->limit_);
+    int nbytes = _read(i->fd_, i->buf_, i->limit_);
 #else
-    int nbytes = ::read(i->fd_, (char*)i->buf_, i->limit_);
+    int nbytes = ::read(i->fd_, i->buf_, i->limit_);
 #endif /* WIN32 */
 
     if (nbytes > 0) {

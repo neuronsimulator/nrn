@@ -1,4 +1,5 @@
 import sys
+from neuron.expect_hocerr import expect_hocerr
 
 import numpy as np
 
@@ -83,13 +84,13 @@ def test_nrntest_test_2():
     assert str(h.dend[1].name()) == "dend[1]"
 
     def e(stmt):
+        err = 0
         try:
-            exec(stmt)
+            exec(stmt, globals(), locals())
         except Exception:
-            assert (
-                str(sys.exc_info()[0]) + ': ' + str(sys.exc_info()[1])
-                == "<class 'TypeError'>: not assignable"
-            )
+            assert ('not assignable' in str(sys.exc_info()[1]))
+            err = 1
+        assert(err == 1)
 
     e('h.axon = 1')
     e('h.dend[1] = 1')
@@ -103,3 +104,89 @@ def test_nrntest_test_2():
     assert h.axon(0.5).hh.gnabar == 0.12
     assert h.axon(0.5) in h.axon
     assert h.axon(0.5) not in h.soma
+
+def test_newobject_err_recover():
+  err = 0
+  try:
+    nc = h.NetCon(5, 12) # raises error
+  except:
+    err = 1
+  assert(err == 1)
+  h.finitialize() # succeeds without seg fault
+
+def test_push_section():
+  h('''create hCable1, hCable2''')
+  h.push_section("hCable1")
+  assert(h.secname() == "hCable1")
+  h.pop_section()
+  h.push_section("hCable2")
+  assert(h.secname() == "hCable2")
+  h.pop_section()
+  h.delete_section(sec=h.hCable1)
+  h.delete_section(sec=h.hCable2)
+
+  sections = [h.Section(name="pCable%d"%i) for i in range(2)]
+  sections.append(h.Section()) # Anonymous in the past
+  for sec in sections:
+    name_in_hoc = h.secname(sec=sec)
+    h.push_section(name_in_hoc)
+    assert(h.secname() == name_in_hoc)
+    h.pop_section()
+  s = sections[-1]
+  h.delete_section(sec=s) # but not yet freed (though the name is now "")
+  # not [no longer] a section pointer
+  expect_hocerr(h.push_section, (int(s.hoc_internal_name().replace("__nrnsec_", ""), 0),))
+  # not a sectionname
+  expect_hocerr(h.push_section, ("not_a_sectionname",))
+
+def test_nonvint_block_supervisor():
+  # making sure we can import
+  from neuron import nonvint_block_supervisor
+  # and can still use threads (no registered callbacks)
+  pc = h.ParallelContext()
+  pc.nthread(2)
+  h.finitialize()
+  # but if there is a callback it will fail with threads
+  nonvint_block_supervisor.register([None for _ in range(11)])
+  expect_hocerr(h.finitialize, (-65,))
+  # but can be cleared
+  nonvint_block_supervisor.clear()
+  h.finitialize()
+  pc.nthread(1)  
+
+
+# Before this test was introduced, HOC Object deletion was deferred
+# when a Python HocObject was destoyed.
+# Now deferred deletion is avoided for this case.
+h("""
+begintemplate Cell
+    objref all
+    create soma[1], dend[1]
+    proc init() {
+        all = new SectionList()
+        soma {all.append()}
+        dend {all.append()}
+    }
+endtemplate Cell
+""")
+
+def test_HocObject_no_deferred_unref():
+  #previous tests should really destroy the model they created
+  for sec in h.allsec():
+    h.delete_section(sec=sec)
+
+  sl = h.SectionList()
+  cell = h.Cell()
+  assert(len(list(cell.all)) == 2)
+
+  del cell
+
+  # When deferred deletion was in effect, following for loop  would segfault
+  # because actual deletion of the HOC Cell object would not occur til the next
+  # h.functioncall(). I.e. the first call to sl.append below would destroy
+  # the HOC Cell which would destroy the two Sections and invalidate the
+  # iterator causing a segfault.
+  for sec in h.allsec():
+    print(sec)
+    sl.append(sec=sec)
+  assert(len([s for s in sl]) == 0)

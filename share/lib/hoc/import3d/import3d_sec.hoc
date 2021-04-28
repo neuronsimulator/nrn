@@ -9,6 +9,7 @@ begintemplate Import3d_Section
 // if this is a contour it may also contain a list of contours that
 // define a 3-d object
 public raw, xyz, d, id, append, g, mkglyph, rotate, type, centroid_color
+public wire_color
 public iscontour_, pid, parentsec, parentx, volatile, nameindex, first, fid
 public contour_list, pl_centroid, pl_diam, pl_diam_mk_stk_triang_vec
 public stk_triang_vec, stk_triang_area, is_subsidiary
@@ -28,6 +29,7 @@ proc init() {
 	iscontour_ = 0
 	type = 0
 	centroid_color = 2
+	wire_color = 4
 	id = $1
 	raw = new Matrix(3, $2)
 	xyz = new Matrix(3, $2)
@@ -62,6 +64,13 @@ proc insrt() {local i, nr, nc
 
 proc pl_centroid() {local i, n
 	xyz.getrow(1).line($o1, xyz.getrow(0), centroid_color, 1)
+	if (first == 1) {// A wire, rewrite first line segment as green
+		if (xyz.ncol() > 1) {
+			$o1.beginline(wire_color, 1)
+			$o1.line(xyz.x[0][0], xyz.x[1][0])
+			$o1.line(xyz.x[0][1], xyz.x[1][1])
+		}
+	}
 	if (iscontour_) {
 		n = xyz.ncol - 1
 		$o1.beginline(centroid_color, 1)

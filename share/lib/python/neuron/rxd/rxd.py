@@ -19,7 +19,6 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 from warnings import warn
-molecules_per_mM_um3 = constants.NA / 1e18
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -64,7 +63,7 @@ _fih_transfer_ecs = h.FInitializeHandler(1, scatter_concentrations)
 rxd_set_no_diffusion = nrn_dll_sym('rxd_set_no_diffusion')
 
 setup_solver = nrn_dll_sym('setup_solver')
-setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int, ctypes.py_object, ctypes.py_object]
+setup_solver.argtypes = [ndpointer(ctypes.c_double), ctypes.c_int,  numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'), ctypes.c_int]
 
 #states = None
 _set_num_threads = nrn_dll_sym('set_num_threads')
@@ -104,11 +103,6 @@ setup_currents.argtypes = [
 ]
     
 
-set_reaction_indices = nrn_dll_sym('set_reaction_indices')
-set_reaction_indices.argtypes = [ctypes.c_int, _int_ptr, _int_ptr, _int_ptr, 
-    _int_ptr,_int_ptr,_double_ptr, ctypes.c_int, _int_ptr, _int_ptr, _int_ptr,
-    _int_ptr]
-
 ics_register_reaction = nrn_dll_sym('ics_register_reaction')
 ics_register_reaction.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int,
                                   _int_ptr,
@@ -147,8 +141,6 @@ set_euler_matrix.argtypes = [
     _long_ptr,
     _long_ptr,
     _double_ptr,
-    numpy.ctypeslib.ndpointer(numpy.int_, flags='contiguous'),
-    ctypes.c_int,
     numpy.ctypeslib.ndpointer(numpy.double, flags='contiguous'),
 ]
 rxd_setup_curr_ptrs = nrn_dll_sym('rxd_setup_curr_ptrs')
@@ -231,31 +223,22 @@ def byeworld():
     
 atexit.register(byeworld)
 
-# Faraday's constant (store to reduce number of lookups)
-FARADAY = h.FARADAY
-
 _cvode_object = h.CVode()
 
 last_diam_change_cnt = None
 last_structure_change_cnt = None
+last_nrn_legacy_units = h.nrnunit_use_legacy()
 
-_linmodadd_c = None
-_diffusion_matrix = None
-_curr_scales = None
-_curr_ptrs = None
-_curr_indices = None
 
 _all_reactions = []
-
-_zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
-_nonzero_volume_indices = []
 
 nrn_tree_solve = nrn_dll_sym('nrn_tree_solve')
 nrn_tree_solve.restype = None
 
 _dptr = _double_ptr
 
-_dimensions = collections.defaultdict(lambda: 1)
+_dimensions = {1: h.SectionList(), 3: h.SectionList()}
+_dimensions_default = 1
 _default_dx = 0.25
 _default_method = 'deterministic'
 
@@ -264,13 +247,25 @@ _diffusion_d = None
 _diffusion_a = None
 _diffusion_b = None
 _diffusion_p = None
-_cur_node_indices = [] 
 _diffusion_a_ptr, _diffusion_b_ptr, _diffusion_p_ptr = None, None, None
+
+def _domain_lookup(sec, dim=None):
+    for d, sl in _dimensions.items():
+        if sec in sl:
+            if dim is not None and d != dim:
+                sl.remove(sec)
+                return _domain_lookup(sec, dim)
+            return d
+    dimension = dim if dim else _dimensions_default
+    _dimensions[dimension].append(sec)
+    return dimension
 
 def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None):
     """Specify the numerical discretization and solver options.
     
     domain -- a section or Python iterable of sections"""
+
+    global _dimensions_default, _dimensions
     setting_default = False
     if domain is None:
         domain = h.allsec()
@@ -288,11 +283,10 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
     if dimension is not None:
         if dimension not in (1, 3):
             raise RxDException('invalid option to set_solve_type: dimension must be 1 or 3')
-        factory = lambda: dimension
         if setting_default:
-            _dimensions.default_factory = factory
+            _dimensions_default = dimension
         for sec in domain:
-            _dimensions[sec] = dimension 
+            _domain_lookup(sec, dimension)
     if dx is not None:
         raise RxDException('using set_solve_type to specify dx is not yet implemented')
     if nsubseg is not None:
@@ -302,17 +296,15 @@ def set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=No
 def _unregister_reaction(r):
     global _all_reactions
     react = r() if isinstance(r, weakref.ref) else r
-    initializer._init_lock.acquire()
-    _all_reactions = list(filter(lambda x: x() is not None and x() != react, _all_reactions))
-    initializer._init_lock.release()
+    with initializer._init_lock:
+        _all_reactions = list(filter(lambda x: x() is not None and x() != react, _all_reactions))
 
 def _register_reaction(r):
     # TODO: should we search to make sure that (a weakref to) r hasn't already been added?
     global _all_reactions, _external_solver_initialized
-    initializer._init_lock.acquire()
-    _all_reactions.append(_weakref_ref(r))
-    _external_solver_initialized = False
-    initializer._init_lock.release()
+    with initializer._init_lock:
+        _all_reactions.append(_weakref_ref(r))
+        _external_solver_initialized = False
 
     
 def _after_advance():
@@ -344,112 +336,101 @@ def re_init():
 
     _external_solver_initialized = False
     
-def _invalidate_matrices():
-    # TODO: make a separate variable for this?
-    global _diffusion_matrix, _external_solver_initialized, last_structure_change_cnt
-    _diffusion_matrix = None
-    last_structure_change_cnt = None
-    _external_solver_initialized = False
-
-_rxd_offset = None
-
-def _ode_count(offset):
-    global _rxd_offset, last_structure_change_cnt, _structure_change_count
-    initializer._do_init()
-    _rxd_offset = offset - len(_nonzero_volume_indices)
-    if _diffusion_matrix is None or last_structure_change_cnt != _structure_change_count.value: _setup_matrices()
-    last_structure_change_cnt = _structure_change_count.value
-    return len(_nonzero_volume_indices)
-
-
-_rxd_induced_currents = None
-_memb_cur_ptrs= []
 def _setup_memb_currents():
-    global _memb_cur_ptrs
     initializer._do_init()
     # setup membrane fluxes from our stuff
     # TODO: cache the memb_cur_ptrs, memb_cur_charges, memb_net_charges, memb_cur_mapped
     #       because won't change very often
     # need this; think it's because of initialization of mod files
-    if _curr_indices is None: return
+    # setup for induced membrane currents
+    cur_node_indices = []
+    cur_map = {}
+    curr_indices = []
+    curr_scales = []
+    curr_ptrs = []
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None: s._setup_currents(curr_indices, curr_scales, curr_ptrs, cur_map)
+        num = len(curr_ptrs)
+        if num:
+            curr_ptr_vector = _h_ptrvector(num)
+            curr_ptr_vector.ptr_update_callback(_donothing)
+            for i, ptr in enumerate(curr_ptrs):
+                curr_ptr_vector.pset(i, ptr)
+                curr_ptr_storage_nrn = _h_vector(num)
+        else:
+            curr_ptr_vector = None
+            curr_ptr_storage_nrn = None
+    for rptr in _all_reactions:
+        r = rptr()
+        if r is not None:
+                r._update_indices()
+                r._setup_membrane_fluxes(cur_node_indices, cur_map)
+    if not curr_indices:
+        free_curr_ptrs()
+        return
+    rxd_setup_curr_ptrs(len(curr_indices),
+                        _list_to_cint_array(curr_indices),
+                        numpy.concatenate(curr_scales),
+                         _list_to_pyobject_array(curr_ptrs))
+
     SPECIES_ABSENT = -1
     # TODO: change so that this is only called when there are in fact currents
     rxd_memb_scales = []
-    _memb_cur_ptrs = []
+    memb_cur_ptrs = []
     memb_cur_mapped = []
     memb_cur_mapped_ecs = []
+    memb_cur_ptrs= []
     for rptr in _all_reactions:
         r = rptr()
         if r and r._membrane_flux:
+            r._do_memb_scales(cur_map)
             scales = r._memb_scales
             rxd_memb_scales.extend(scales)
-            _memb_cur_ptrs += r._cur_ptrs
+            memb_cur_ptrs += r._cur_ptrs
             memb_cur_mapped += r._cur_mapped
             memb_cur_mapped_ecs += r._cur_mapped_ecs
     ecs_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped_ecs)))]
     ics_map = [SPECIES_ABSENT if i is None else i for i in list(itertools.chain.from_iterable(itertools.chain.from_iterable(memb_cur_mapped)))]
-    if _memb_cur_ptrs:
+    if memb_cur_ptrs:
         cur_counts = [len(x) for x in memb_cur_mapped]  #TODO: is len(x) the same for all x?
         num_fluxes = numpy.array(cur_counts).sum()
-        num_currents = len(_memb_cur_ptrs)
-        _memb_cur_ptrs = list(itertools.chain.from_iterable(_memb_cur_ptrs))
-        """
-        print("num_currents",num_currents)
+        num_currents = len(memb_cur_ptrs)
+        memb_cur_ptrs = list(itertools.chain.from_iterable(memb_cur_ptrs))
+        """print("num_currents",num_currents)
         print("num_fluxes",num_fluxes)
-        print("num_nodes",_curr_indices)
+        print("num_nodes",curr_indices)
         print("num_species",cur_counts)
-        print("cur_idxs",_curr_indices)
-        print("node_idxs",_cur_node_indices)
+        print("cur_idxs",curr_indices)
+        print("node_idxs",cur_node_indices)
         print("scales",rxd_memb_scales)
-        print("ptrs",_memb_cur_ptrs)
+        print("ptrs",memb_cur_ptrs)
         print("mapped",ics_map,min(abs(numpy.array(ics_map))),max(ics_map))
-        print("mapped_ecs",ecs_map,max(ecs_map))
-        """
+        print("mapped_ecs",ecs_map,max(ecs_map))"""
         setup_currents(num_currents,
             num_fluxes,
             _list_to_cint_array(cur_counts),
-            _list_to_cint_array(_cur_node_indices),
+            _list_to_cint_array(cur_node_indices),
             _list_to_cdouble_array(rxd_memb_scales),
-            _list_to_pyobject_array(_memb_cur_ptrs),
+            _list_to_pyobject_array(memb_cur_ptrs),
             _list_to_cint_array(ics_map),
             _list_to_cint_array(ecs_map))
         
-def _currents(rhs):
-    return
-    if rxd_memb_flux:
-        # TODO: remove the asserts when this is verified to work
-        assert(len(rxd_memb_flux) == len(_cur_node_indices))
-        assert(len(rxd_memb_flux) == len(memb_cur_ptrs))
-        assert(len(rxd_memb_flux) == len(memb_cur_charges))
-        assert(len(rxd_memb_flux) == len(memb_net_charges))
-        for flux, cur_ptrs, cur_charges, net_charge, i, cur_maps in zip(rxd_memb_flux, memb_cur_ptrs, memb_cur_charges, memb_net_charges, _cur_node_indices, memb_cur_mapped):
-            rhs[i] -= net_charge * flux
-            #import sys
-            #sys.exit()
-            # TODO: remove this assert when more thoroughly tested
-            assert(len(cur_ptrs) == len(cur_maps))
-            for ptr, charge, cur_map_i in zip(cur_ptrs, cur_charges, cur_maps):
-                # this has the opposite sign of the above because positive
-                # currents lower the membrane potential
-                cur = charge * flux
-                ptr[0] += cur
-                for c in cur_map_i:
-                    _rxd_induced_currents[c] += cur
-                #for sign, c in zip([-1, 1], cur_maps):
-                #    if c is not None:
-                #        _rxd_induced_currents[c] += sign * cur
 
-_last_dt = None
 
 def _setup():
+    from . import initializer 
     if not initializer.is_initialized(): initializer._do_init()
     # TODO: this is when I should resetup matrices (structure changed event)
-    global _last_dt, _external_solver_initialized
-    _last_dt = None
+    global _external_solver_initialized, last_diam_change_cnt, last_structure_change_cnt
     _external_solver_initialized = False
     
+
     # Using C-code for reactions
     options.use_reaction_contribution_to_jacobian = False
+    with initializer._init_lock:
+        _update_node_data()
+
 
 def _find_librxdmath():
     import glob
@@ -519,20 +500,7 @@ def _c_compile(formula):
     return reaction
 
 
-def _conductance(d):
-    pass
-    
-def _ode_jacobian(dt, t, ypred, fpred):
-    #print '_ode_jacobian: dt = %g, last_dt = %r' % (dt, _last_dt)
-    lo = _rxd_offset
-    hi = lo + len(_nonzero_volume_indices)    
-    _reaction_matrix_setup(dt, ypred[lo : hi])
 
-_curr_ptr_vector = None
-_curr_ptr_storage = None
-_curr_ptr_storage_nrn = None
-pinverse = None
-_cur_map = None
 _h_ptrvector = h.PtrVector
 _h_vector = h.Vector
 
@@ -541,11 +509,22 @@ _diam_change_count = nrn_dll_sym('diam_change_cnt', _ctypes_c_int)
 
 def _donothing(): pass
 
+def _setup_units(force=False):
+    global last_nrn_legacy_units
+    if initializer.is_initialized():
+        if(force or last_nrn_legacy_units != h.nrnunit_use_legacy()):
+            last_nrn_legacy_units = h.nrnunit_use_legacy()
+            clear_rates()
+            _setup_memb_currents()
+            _compile_reactions()
+            if _cvode_object.active():
+                _cvode_object.re_init()
+        
+
 def _update_node_data(force=False, newspecies=False):
-    global last_diam_change_cnt, last_structure_change_cnt, _curr_indices, _cur_node_indices, _curr_scales, _curr_ptrs, _cur_map
-    global _curr_ptr_vector, _curr_ptr_storage, _curr_ptr_storage_nrn
+    global last_diam_change_cnt, last_structure_change_cnt
     if last_diam_change_cnt != _diam_change_count.value or _structure_change_count.value != last_structure_change_cnt or force:
-        _cur_map = {}
+        
         last_diam_change_cnt = _diam_change_count.value
         last_structure_change_cnt = _structure_change_count.value
         #if not species._has_3d:
@@ -554,7 +533,15 @@ def _update_node_data(force=False, newspecies=False):
             nsegs_changed = 0
             for sr in _species_get_all_species():
                 s = sr()
-                if s is not None: nsegs_changed += s._update_node_data()
+                if s is not None: 
+                    nsegs_changed += s._update_node_data()
+                
+                    # re-register ions for extracellular species in case new
+                    # sections have been added within the ecs region
+                    if hasattr(s,'_extracellular_instances'):
+                        for ecs in s._extracellular_instances.values():
+                            ecs._ion_register()
+            
             if nsegs_changed or newspecies:
                 section1d._purge_cptrs()
                 for sr in _species_get_all_species():
@@ -562,41 +549,13 @@ def _update_node_data(force=False, newspecies=False):
                     if s is not None:
                         s._update_region_indices(True)
                         s._register_cptrs()
-                if species._has_1d and species._1d_submatrix_n():
-                    volumes = node._get_data()[0]
-                    _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-                setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
+                #if species._has_1d and species._1d_submatrix_n():
+                _setup_matrices()
                 # TODO: separate compiling reactions -- so the indices can be updated without recompiling
                 _include_flux(True)
-                for rptr in _all_reactions:
-                    r = rptr()
-                    if r is not None:
-                       r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
-                _setup_memb_currents()
-                _compile_reactions()
+                _setup_units(force=True)
 
             #end#if
-            for rptr in _all_reactions:
-                r = rptr()
-                if r is not None: r._update_indices()
-            _curr_indices = []
-            _curr_scales = []
-            _curr_ptrs = []
-            for sr in _species_get_all_species():
-                s = sr()
-                if s is not None: s._setup_currents(_curr_indices, _curr_scales, _curr_ptrs, _cur_map)
-        
-            num = len(_curr_ptrs)
-            if num:
-                _curr_ptr_vector = _h_ptrvector(num)
-                _curr_ptr_vector.ptr_update_callback(_donothing)
-                for i, ptr in enumerate(_curr_ptrs):
-                    _curr_ptr_vector.pset(i, ptr)
-            
-                _curr_ptr_storage_nrn = _h_vector(num)
-                _curr_ptr_storage = _curr_ptr_storage_nrn.as_numpy()
-            else:
-                _curr_ptr_vector = None
 
             #_curr_scales = _numpy_array(_curr_scales)        
 
@@ -612,142 +571,125 @@ def _matrix_to_rxd_sparse(m):
     return n, len(nonzero_i), numpy.ascontiguousarray(nonzero_i, dtype=numpy.int_), numpy.ascontiguousarray(nonzero_j, dtype=numpy.int_), nonzero_values
 
 
-_euler_matrix = None
 # TODO: make sure this does the right thing when the diffusion constant changes between two neighboring nodes
 def _setup_matrices():
-    global _curr_ptrs
-    global _cur_node_indices
-    global _zero_volume_indices
-    global _diffusion_matrix
 
-    # update _node_fluxes in C
-    _include_flux()
+    with initializer._init_lock:
 
-    # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
-
-    # if the shape has changed update the nodes
-    _update_node_data()
-
-    n = len(_node_get_states())
+        # update _node_fluxes in C
+        _include_flux()
     
-    #TODO: Replace with ADI version 
-    """
-    if species._has_3d:
-        _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
-
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None: s._setup_matrices3d(_euler_matrix)
-
-        _diffusion_matrix = -_euler_matrix
-
-        _euler_matrix = _euler_matrix.tocsr()
-        _update_node_data(True)
-
-        # NOTE: if we also have 1D, this will be replaced with the correct values below
-        _zero_volume_indices = []
-        _nonzero_volume_indices = list(range(len(_node_get_states())))
+        # TODO: this sometimes seems to get called twice. Figure out why and fix, if possible.
+    
+        n = len(_node_get_states())
         
-    """
-    if species._has_1d:
-        # TODO: initialization is slow. track down why
-        
-        _last_dt = None
-        for sr in _species_get_all_species():
-            s = sr()
-            if s is not None:
-                s._assign_parents()
-        
-        _update_node_data(True)
-
+        #TODO: Replace with ADI version 
+        """
+        if species._has_3d:
+            _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
+    
+            for sr in list(_species_get_all_species().values()):
+                s = sr()
+                if s is not None: s._setup_matrices3d(_euler_matrix)
+    
+            _diffusion_matrix = -_euler_matrix
+    
+            _euler_matrix = _euler_matrix.tocsr()
+            _update_node_data(True)
+    
+            # NOTE: if we also have 1D, this will be replaced with the correct values below
+            _zero_volume_indices = []
+            _nonzero_volume_indices = list(range(len(_node_get_states())))
+            
+        """
         volumes = node._get_data()[0]
-        _zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
-        _nonzero_volume_indices = volumes.nonzero()[0]
-
-        # remove old linearmodeladdition
-        _linmodadd_cur = None
-        n = species._1d_submatrix_n()
-        if n:        
-            # create sparse matrix for C in cy'+gy=b
-            c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
-            # most entries are 1 except those corresponding to the 0 and 1 ends
-                        
-            # create the matrix G
-            #if not species._has_3d:
-            #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
-            from collections import OrderedDict
-            _diffusion_matrix = [OrderedDict() for idx in range(n)]
+        zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+        if species._has_1d:
+            # TODO: initialization is slow. track down why
+            
+            _last_dt = None
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
-                    s._setup_diffusion_matrix(_diffusion_matrix)
-                    s._setup_c_matrix(c_diagonal)
-                    #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
-            euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
-            for i in range(n):
-                mat_i = _diffusion_matrix[i]
-                euler_matrix_i.extend(itertools.repeat(i,len(mat_i)))
-                euler_matrix_j.extend(mat_i.keys())
-                euler_matrix_nonzero.extend(mat_i.values())
-            euler_matrix_nnonzero = len(euler_matrix_nonzero)
-            assert(len(euler_matrix_i) == len(euler_matrix_j) == len(euler_matrix_nonzero))
-            # modify C for cases where no diffusive coupling of 0, 1 ends
-            # TODO: is there a better way to handle no diffusion?
-            #for i in range(n):
-            #    if not _diffusion_matrix[i, i]:
-            #        _linmodadd_c[i, i] = 1
-
+                    s._assign_parents()
             
-            # setup for induced membrane currents
-            _cur_node_indices = []
-
-            for rptr in _all_reactions:
-                r = rptr()
-                if r is not None:
-                    r._setup_membrane_fluxes(_cur_node_indices, _cur_map)
-                    
-            #_cvode_object.re_init()    
-
-            #if species._has_3d:
-            #    _euler_matrix = -_diffusion_matrix
-
-    #Hybrid logic
-    if species._has_1d and species._has_3d:
-        hybrid_neighbors = collections.defaultdict(lambda: [])
-        hybrid_vols = collections.defaultdict(lambda: [])
-        hybrid_diams = {}
-        grid_id_dc = {}
-        hybrid_index1d_grid_ids = {}
-        grid_id_species = {}
-        index1d_sec1d = {}
-        hybrid_vols1d = {}
-        dxs = set()
-        for sr in _species_get_all_species():
-            s = sr()
-            if s is not None:
-                if s._intracellular_instances and s._secs:
-                    # have both 1D and 3D, so find the neighbors
-                    # for each of the 3D sections, find the parent sections
-                    for r in s._regions:
-                        if r in s._intracellular_instances:
-                            grid_id = s._intracellular_instances[r]._grid_id
-                            grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
-                            grid_id_dc[grid_id] = s.d
-                            dxs.add(r._dx)
-                            for sec in r._secs3d:
-                                parent_seg = sec.trueparentseg()
-                                parent_sec = None if not parent_seg else parent_seg.sec
-                                # are any of these a match with a 1d section?
-                                if s._has_region_section(r, parent_sec):
-                                    #this section has a 1d section that is a parent
-                                    index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), parent_sec, h.parent_connection(sec=sec))
-                                    hybrid_neighbors[index1d] += indices3d
-                                    hybrid_vols[index1d] += vols3d
-                                    hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
-                                    hybrid_index1d_grid_ids[index1d] = grid_id
-                                    index1d_sec1d[index1d] = parent_sec
-                                    hybrid_vols1d[index1d] = vols1d
-                                else:
+    
+            # remove old linearmodeladdition
+            _linmodadd_cur = None
+            n = species._1d_submatrix_n()
+            if n:        
+                # create sparse matrix for C in cy'+gy=b
+                c_diagonal = numpy.zeros(n,dtype=ctypes.c_double)
+                # most entries are 1 except those corresponding to the 0 and 1 ends
+                            
+                # create the matrix G
+                #if not species._has_3d:
+                #    # if we have both, then put the 1D stuff into the matrix that already exists for 3D
+                from collections import OrderedDict
+                diffusion_matrix = [OrderedDict() for idx in range(n)]
+                for sr in _species_get_all_species():
+                    s = sr()
+                    if s is not None:
+                        s._setup_diffusion_matrix(diffusion_matrix)
+                        s._setup_c_matrix(c_diagonal)
+                        #print '_diffusion_matrix.shape = %r, n = %r, species._has_3d = %r' % (_diffusion_matrix.shape, n, species._has_3d)
+                euler_matrix_i, euler_matrix_j, euler_matrix_nonzero = [], [], []
+                for i in range(n):
+                    mat_i = diffusion_matrix[i]
+                    euler_matrix_i.extend(itertools.repeat(i,len(mat_i)))
+                    euler_matrix_j.extend(mat_i.keys())
+                    euler_matrix_nonzero.extend(mat_i.values())
+                euler_matrix_nnonzero = len(euler_matrix_nonzero)
+                assert(len(euler_matrix_i) == len(euler_matrix_j) == len(euler_matrix_nonzero))
+                # modify C for cases where no diffusive coupling of 0, 1 ends
+                # TODO: is there a better way to handle no diffusion?
+                #for i in range(n):
+                #    if not _diffusion_matrix[i, i]:
+                #        _linmodadd_c[i, i] = 1
+    
+                
+                #_cvode_object.re_init()    
+    
+                #if species._has_3d:
+                #    _euler_matrix = -_diffusion_matrix
+    
+        #Hybrid logic
+        if species._has_1d and species._has_3d:
+            hybrid_neighbors = collections.defaultdict(lambda: [])
+            hybrid_vols = collections.defaultdict(lambda: [])
+            hybrid_diams = {}
+            grid_id_dc = {}
+            hybrid_index1d_grid_ids = {}
+            grid_id_species = {}
+            index1d_sec1d = {}
+            hybrid_vols1d = {}
+            dxs = set()
+            for sr in _species_get_all_species():
+                s = sr()
+                if s is not None:
+                    if s._intracellular_instances and s._secs:
+                        # have both 1D and 3D, so find the neighbors
+                        # for each of the 3D sections, find the parent sections
+                        for r in s._regions:
+                            if r in s._intracellular_instances:
+                                grid_id = s._intracellular_instances[r]._grid_id
+                                grid_id_species.setdefault(grid_id, s._intracellular_instances[r])
+                                grid_id_dc[grid_id] = s.d
+                                dxs.add(r._dx)
+                                for sec in r._secs3d:
+                                    parent_seg = sec.trueparentseg()
+                                    parent_sec = None if not parent_seg else parent_seg.sec
+                                    # are any of these a match with a 1d section?
+                                    if s._has_region_section(r, parent_sec):
+                                        #this section has a 1d section that is a parent
+                                        index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), parent_sec, h.parent_connection(sec=sec))
+                                        hybrid_neighbors[index1d] += indices3d
+                                        hybrid_vols[index1d] += vols3d
+                                        hybrid_diams[index1d] = parent_sec(h.parent_connection(sec=sec)).diam
+                                        hybrid_index1d_grid_ids[index1d] = grid_id
+                                        index1d_sec1d[index1d] = parent_sec
+                                        hybrid_vols1d[index1d] = vols1d
+                                    
                                     for sec1d in r._secs1d:
                                         parent_1d_seg = sec1d.trueparentseg()
                                         parent_1d = None if not parent_1d_seg else parent_1d_seg.sec 
@@ -760,183 +702,168 @@ def _setup_matrices():
                                             hybrid_index1d_grid_ids[index1d] = grid_id
                                             index1d_sec1d[index1d] = sec1d
                                             hybrid_vols1d[index1d] = vols1d
-
-                                            
-                                        elif parent_1d == parent_sec and parent_1d is not None:
-                                            # it connects to the parent of a 1d section
-                                            index1d, indices3d, vols1d, vols3d = _get_node_indices(s, r, sec, sec.orientation(), sec1d, sec1d.orientation())
-                                            hybrid_neighbors[index1d] += indices3d
-                                            hybrid_vols[index1d] += vols3d
-                                            hybrid_diams[index1d] = sec1d(h.section_orientation(sec=sec1d)).diam
-                                            hybrid_index1d_grid_ids[index1d] = grid_id
-                                            index1d_sec1d[index1d] = sec1d
-                                            hybrid_vols1d[index1d] = vols1d
-
-                                        
-        if len(dxs) > 1:
-            raise RxDException('currently require a unique value for dx')
-        dx = dxs.pop()
-        rates = []
-        volumes3d = []
-        volumes1d = []
-        grids_dx = []
-        hybrid_indices1d = []
-        hybrid_indices3d = []
-        num_3d_indices_per_1d_seg = []
-        
-        num_1d_indices_per_grid = []
-        num_3d_indices_per_grid = []
-
-
-        grid_id_indices1d = collections.defaultdict(lambda: [])
-        for index1d in hybrid_neighbors:
-            grid_id = hybrid_index1d_grid_ids[index1d]
-            grid_id_indices1d[grid_id].append(index1d)
-        hybrid_grid_ids = sorted(grid_id_indices1d.keys())
-        for grid_id in hybrid_grid_ids:
-            sp = grid_id_species[grid_id]
-            # TODO: use 3D anisotropic diffusion coefficients
-            dc = grid_id_dc[grid_id]
-            grids_dx.append(sp._dx**3)
-            num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
-            grid_3d_indices_cnt = 0
-            for index1d in grid_id_indices1d[grid_id]:
-                neighbors3d = []
-                vols3d = []
-                for neigh, vol in zip(hybrid_neighbors[index1d], hybrid_vols[index1d]):
-                    if neigh not in neighbors3d:
-                        neighbors3d.append(neigh)
-                        vols3d.append(vol)
-                if len(neighbors3d) < 1:
-                    raise RxDException('No 3D neighbors detected for 1D segment. Try perturbing dx')
-                sec1d = index1d_sec1d[index1d]
-                seg_length1d = sec1d.L/sec1d.nseg
-                if neighbors3d:
-                    hybrid_indices1d.append(index1d)
-                    cnt_neighbors_3d = len(neighbors3d) 
-                    num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
-                    grid_3d_indices_cnt += cnt_neighbors_3d
-                    area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
-                    areaT = sum([v**(2.0/3.0) for v in vols3d])
-                    volumes1d.append(hybrid_vols1d[index1d])
-                    for i, vol in zip(neighbors3d, vols3d):
-                        sp._region._vol[i] = vol
-                        ratio = vol**(2.0/3.0) / areaT
-                        rate = ratio * dc * area / (vol * (dx + seg_length1d) / 2)
-                        rates.append(rate)
-                        volumes3d.append(vol)
-                        hybrid_indices3d.append(i)
-                    
-
-            num_3d_indices_per_grid.append(grid_3d_indices_cnt)
-
-        num_1d_indices_per_grid = numpy.asarray(num_1d_indices_per_grid, dtype=numpy.int64)
-        num_3d_indices_per_grid = numpy.asarray(num_3d_indices_per_grid, dtype=numpy.int64)
-
-
-        hybrid_indices1d = numpy.asarray(hybrid_indices1d, dtype=numpy.int64)
-        num_3d_indices_per_1d_seg = numpy.asarray(num_3d_indices_per_1d_seg, dtype=numpy.int64)
-        hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
-
-        hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
-        rates = numpy.asarray(rates, dtype=numpy.float_)
-        volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
-        volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-        dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
-        set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d, dxs)
-
-
-
-
-
-    #TODO: Replace this this to handle 1d/3d hybrid models
-    """
-    if species._has_1d and species._has_3d:
-        # TODO: add connections to matrix; for now: find them
-        hybrid_neighbors = collections.defaultdict(lambda: [])
-        hybrid_diams = {}
-        dxs = set()
-        for sr in list(_species_get_all_species().values()):
-            s = sr()
-            if s is not None:
-                if s._nodes and s._secs:
-                    # have both 1D and 3D, so find the neighbors
-                    # for each of the 3D sections, find the parent sections
-                    for r in s._regions:
-                        dxs.add(r._dx)
-                        for sec in r._secs3d:
-                            parent_seg = sec.trueparentseg()
-                            parent_sec = None if not parent_seg else parent_seg.sec
-                            # are any of these a match with a 1d section?
-                            if s._has_region_section(r, parent_sec):
-                                # this section has a 1d section that is a parent
-                                index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
-                                hybrid_neighbors[index1d] += indices3d
-                                hybrid_diams[index1d] = parent_seg.diam
-                            else:
-                                for sec1d in r._secs1d:
-                                    parent_1d_seg = sec1d.trueparentseg()
-                                    parent_1d = None if not parent_seg else parent_seg.sec
-                                    if parent_1d == sec:
-                                        # it is the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
-                                        hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = parent_1d_seg.diam
-                                        break
-                                    elif parent_1d == parent_sec:
-                                        # it connects to the parent of a 1d section
-                                        index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
-                                        hybrid_neighbors[index1d] += indices3d
-                                        hybrid_diams[index1d] = parent_1d_seg.diam
-                                        break
-        if len(dxs) > 1:
-            raise RxDException('currently require a unique value for dx')
-        dx = dxs.pop()
-        diffs = node._diffs
-        n = len(_node_get_states())
-        # TODO: validate that we're doing the right thing at boundaries
-        for index1d in list(hybrid_neighbors.keys()):
-            neighbors3d = set(hybrid_neighbors[index1d])
-            # NOTE: splitting the connection area equally across all the connecting nodes
-            area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
-            for i in neighbors3d:
-                d = diffs[i]
-                vol = node._volumes[i]
-                rate = d * area / (vol * dx / 2.)
-                # make the connections on the 3d side
-                _euler_matrix[i, i] -= rate
-                _euler_matrix[i, index1d] += rate
-                # make the connections on the 1d side (scale by vol because conserving mass not volume)
-                _euler_matrix[index1d, index1d] -= rate * vol
-                _euler_matrix[index1d, i] += rate * vol
-            #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
-            #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
-    """
-    #CRxD
-    if species._has_1d and n and euler_matrix_nnonzero > 0:
-        _update_node_data()
-        section1d._transfer_to_legacy()
-        set_euler_matrix(n, euler_matrix_nnonzero,
-                         _list_to_clong_array(euler_matrix_i),
-                         _list_to_clong_array(euler_matrix_j),
-                         _list_to_cdouble_array(euler_matrix_nonzero),
-                         _zero_volume_indices,
-                         len(_zero_volume_indices),
-                         c_diagonal)
-    else:
-        rxd_set_no_diffusion()
-        setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     
-    if _curr_indices is not None and len(_curr_indices) > 0:
-        #_curr_ptrs = _curr_ptrs if isinstance(_curr_ptrs, ctypes.py_object) else _list_to_pyobject_array(_curr_ptrs)
-        rxd_setup_curr_ptrs(len(_curr_indices), _list_to_cint_array(_curr_indices),
-            numpy.concatenate(_curr_scales), _list_to_pyobject_array(_curr_ptrs))
-
-    if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
-        rxd_setup_conc_ptrs(len(section1d._all_cindices), 
-             _list_to_cint_array(section1d._all_cindices), 
-             _list_to_pyobject_array(section1d._all_cptrs))
-
+    
+                                            
+            if len(dxs) > 1:
+                raise RxDException('currently require a unique value for dx')
+            dx = dxs.pop()
+            rates = []
+            volumes3d = []
+            volumes1d = []
+            grids_dx = []
+            hybrid_indices1d = []
+            hybrid_indices3d = []
+            num_3d_indices_per_1d_seg = []
+            
+            num_1d_indices_per_grid = []
+            num_3d_indices_per_grid = []
+    
+    
+            grid_id_indices1d = collections.defaultdict(lambda: [])
+            for index1d in hybrid_neighbors:
+                grid_id = hybrid_index1d_grid_ids[index1d]
+                grid_id_indices1d[grid_id].append(index1d)
+            hybrid_grid_ids = sorted(grid_id_indices1d.keys())
+            for grid_id in hybrid_grid_ids:
+                sp = grid_id_species[grid_id]
+                # TODO: use 3D anisotropic diffusion coefficients
+                dc = grid_id_dc[grid_id]
+                grids_dx.append(sp._dx**3)
+                num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
+                grid_3d_indices_cnt = 0
+                for index1d in grid_id_indices1d[grid_id]:
+                    neighbors3d = []
+                    vols3d = []
+                    for neigh, vol in zip(hybrid_neighbors[index1d], hybrid_vols[index1d]):
+                        if neigh not in neighbors3d:
+                            neighbors3d.append(neigh)
+                            vols3d.append(vol)
+                    if len(neighbors3d) < 1:
+                        raise RxDException('No 3D neighbors detected for 1D segment. Try perturbing dx')
+                    sec1d = index1d_sec1d[index1d]
+                    seg_length1d = sec1d.L/sec1d.nseg
+                    if neighbors3d:
+                        hybrid_indices1d.append(index1d)
+                        cnt_neighbors_3d = len(neighbors3d) 
+                        num_3d_indices_per_1d_seg.append(cnt_neighbors_3d)
+                        grid_3d_indices_cnt += cnt_neighbors_3d
+                        area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2)
+                        areaT = sum([v**(2.0/3.0) for v in vols3d])
+                        volumes1d.append(hybrid_vols1d[index1d])
+                        for i, vol in zip(neighbors3d, vols3d):
+                            sp._region._vol[i] = vol
+                            ratio = vol**(2.0/3.0) / areaT
+                            rate = ratio * dc * area / (vol * (dx + seg_length1d) / 2)
+                            rates.append(rate)
+                            volumes3d.append(vol)
+                            hybrid_indices3d.append(i)
+                        
+    
+                num_3d_indices_per_grid.append(grid_3d_indices_cnt)
+    
+            num_1d_indices_per_grid = numpy.asarray(num_1d_indices_per_grid, dtype=numpy.int64)
+            num_3d_indices_per_grid = numpy.asarray(num_3d_indices_per_grid, dtype=numpy.int64)
+    
+    
+            hybrid_indices1d = numpy.asarray(hybrid_indices1d, dtype=numpy.int64)
+            num_3d_indices_per_1d_seg = numpy.asarray(num_3d_indices_per_1d_seg, dtype=numpy.int64)
+            hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
+    
+            hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
+            rates = numpy.asarray(rates, dtype=numpy.float_)
+            volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
+            volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
+            dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
+            set_hybrid_data(num_1d_indices_per_grid, num_3d_indices_per_grid, hybrid_indices1d, hybrid_indices3d, num_3d_indices_per_1d_seg, hybrid_grid_ids, rates, volumes1d, volumes3d, dxs)
+    
+    
+    
+    
+    
+        #TODO: Replace this this to handle 1d/3d hybrid models
+        """
+        if species._has_1d and species._has_3d:
+            # TODO: add connections to matrix; for now: find them
+            hybrid_neighbors = collections.defaultdict(lambda: [])
+            hybrid_diams = {}
+            dxs = set()
+            for sr in list(_species_get_all_species().values()):
+                s = sr()
+                if s is not None:
+                    if s._nodes and s._secs:
+                        # have both 1D and 3D, so find the neighbors
+                        # for each of the 3D sections, find the parent sections
+                        for r in s._regions:
+                            dxs.add(r._dx)
+                            for sec in r._secs3d:
+                                parent_seg = sec.trueparentseg()
+                                parent_sec = None if not parent_seg else parent_seg.sec
+                                # are any of these a match with a 1d section?
+                                if s._has_region_section(r, parent_sec):
+                                    # this section has a 1d section that is a parent
+                                    index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), parent_sec, h.parent_connection(sec=sec))
+                                    hybrid_neighbors[index1d] += indices3d
+                                    hybrid_diams[index1d] = parent_seg.diam
+                                else:
+                                    for sec1d in r._secs1d:
+                                        parent_1d_seg = sec1d.trueparentseg()
+                                        parent_1d = None if not parent_seg else parent_seg.sec
+                                        if parent_1d == sec:
+                                            # it is the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, h.parent_connection(sec=sec1d), sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = parent_1d_seg.diam
+                                            break
+                                        elif parent_1d == parent_sec:
+                                            # it connects to the parent of a 1d section
+                                            index1d, indices3d = _get_node_indices(s, r, sec, h.section_orientation(sec=sec), sec1d, sec1d.orientation())
+                                            hybrid_neighbors[index1d] += indices3d
+                                            hybrid_diams[index1d] = parent_1d_seg.diam
+                                            break
+            if len(dxs) > 1:
+                raise RxDException('currently require a unique value for dx')
+            dx = dxs.pop()
+            diffs = node._diffs
+            n = len(_node_get_states())
+            # TODO: validate that we're doing the right thing at boundaries
+            for index1d in list(hybrid_neighbors.keys()):
+                neighbors3d = set(hybrid_neighbors[index1d])
+                # NOTE: splitting the connection area equally across all the connecting nodes
+                area = (numpy.pi * 0.25 * hybrid_diams[index1d] ** 2) / len(neighbors3d)
+                for i in neighbors3d:
+                    d = diffs[i]
+                    vol = node._volumes[i]
+                    rate = d * area / (vol * dx / 2.)
+                    # make the connections on the 3d side
+                    _euler_matrix[i, i] -= rate
+                    _euler_matrix[i, index1d] += rate
+                    # make the connections on the 1d side (scale by vol because conserving mass not volume)
+                    _euler_matrix[index1d, index1d] -= rate * vol
+                    _euler_matrix[index1d, i] += rate * vol
+                #print 'index1d row sum:', sum(_euler_matrix[index1d, j] for j in xrange(n))
+                #print 'index1d col sum:', sum(_euler_matrix[j, index1d] for j in xrange(n))
+        """
+        #CRxD
+        setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices))
+        if species._has_1d and n and euler_matrix_nnonzero > 0:
+            section1d._transfer_to_legacy()
+            set_euler_matrix(n, euler_matrix_nnonzero,
+                             _list_to_clong_array(euler_matrix_i),
+                             _list_to_clong_array(euler_matrix_j),
+                             _list_to_cdouble_array(euler_matrix_nonzero),
+                             c_diagonal)
+        else:
+            rxd_set_no_diffusion()
+       
+    
+        if section1d._all_cindices is not None and len(section1d._all_cindices) > 0:
+            rxd_setup_conc_ptrs(len(section1d._all_cindices), 
+                 _list_to_cint_array(section1d._all_cindices), 
+                 _list_to_pyobject_array(section1d._all_cptrs))
+        else:
+            free_conc_ptrs()
+    
     # we do this last because of performance issues with changing sparsity of csr matrices
     """
     if _diffusion_matrix is not None:
@@ -1044,7 +971,6 @@ def _compile_reactions():
     #clear all previous reactions (intracellular & extracellular) and the
     #supporting indexes
     #_windows_remove_dlls()
-    clear_rates()
     
     regions_inv = dict() #regions -> reactions that occur there
     species_by_region = dict()
@@ -1060,9 +986,10 @@ def _compile_reactions():
     #Find sets of sections that contain the same regions
     from .region import _c_region
     matched_regions = [] # the different combinations of regions that arise in different sections
-    for nrnsec in section1d._rxd_sec_lookup:
+    rxd_sec_lookup = section1d._SectionLookup()
+    for nrnsec in rxd_sec_lookup:
         set_of_regions = set() # a set of the regions that occur in a given section
-        for sec in section1d._rxd_sec_lookup[nrnsec]:
+        for sec in rxd_sec_lookup[nrnsec]:
             if sec: set_of_regions.add(sec._region)
         if set_of_regions not in matched_regions:
             matched_regions.append(set_of_regions)
@@ -1178,12 +1105,10 @@ def _compile_reactions():
                     else:
                         ecs_species_by_region[reg] = set(ecs_species_involved)
     #Create lists of indexes for intracellular reactions and rates
-    nseg_by_region = []     # a list of the number of segments for each region
     # a table for location,species -> state index
-    location_index = []
-    regions_inv_1d = [reg for reg in regions_inv if reg._secs1d]
+    regions_inv_1d = [reg for reg in regions_inv if any(reg._secs1d)]
     regions_inv_1d.sort(key=lambda r: r._id)
-    all_regions_inv_3d = [reg for reg in regions_inv if reg._secs3d]
+    all_regions_inv_3d = [reg for reg in regions_inv if any(reg._secs3d)]
     #remove extra regions from multicompartment reactions. We only want the membrane
     regions_inv_3d = set()
     for reg in all_regions_inv_3d:
@@ -1206,7 +1131,6 @@ def _compile_reactions():
                         c_region.add_ecs_species(ecs_species_by_region[reg])
 
     # now setup the reactions
-    setup_solver(_node_get_states(), len(_node_get_states()), _zero_volume_indices, len(_zero_volume_indices), h._ref_t, h._ref_dt)
     #if there are no reactions
     if location_count == 0 and len(ecs_regions_inv) == 0:
         return None
@@ -1324,6 +1248,7 @@ def _compile_reactions():
                           _c_compile(fxn_string))
 
     #Setup intracellular 3D reactions
+    molecules_per_mM_um3 = constants.molecules_per_mM_um3()
     if regions_inv_3d:
         for reg in regions_inv_3d:
             ics_grid_ids = []
@@ -1406,14 +1331,13 @@ def _compile_reactions():
                                     operator = '='
                                     ics_grid_ids.append(s3d._grid_id)
                                     #Find mult for this grid
-                                    for sec in reg._secs3d:
-                                        sas = reg._vol
-                                        s3d_reg = s3d._region
-                                        for seg in sec:
-                                            for index in reg._nodes_by_seg[seg]:
-                                                #Change this to be by volume
-                                                #membrane area / compartment volume / molecules_per_mM_um3
-                                                mults[s3d._grid_id].append(sas[index] / (s3d._region._vol[index]) / molecules_per_mM_um3)
+                                    sas = reg._vol
+                                    s3d_reg = s3d._region
+                                    for segidx,seg in enumerate(s3d_reg._segs3d()):
+                                        #Change this to be by volume
+                                        #membrane area / compartment volume / molecules_per_mM_um3
+                                        mults[s3d._grid_id] += [sas[index] / (s3d_reg._vol[index]) / molecules_per_mM_um3 for index in s3d_reg._nodes_by_seg[segidx]]
+
                                 pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s3d._grid_id][0]
                                 fxn_string += "\n\trhs[%d] %s -mc3d_mults[%d] * rate;" % (pid, operator, pid)
                         for sptr in r._dests:
@@ -1426,13 +1350,11 @@ def _compile_reactions():
                                     operator = '='
                                     ics_grid_ids.append(s3d._grid_id)
                                     #Find mult for this grid
-                                    for sec in reg._secs3d:
-                                        sas = reg._vol
-                                        s3d_reg = s3d._region                                      
-                                        for seg in sec:
-                                            for index in reg._nodes_by_seg[seg]:
-                                                #Change this to be by volume
-                                                mults[s3d._grid_id].append(sas[index] / (s3d._region._vol[index]) / molecules_per_mM_um3)
+                                    sas = reg._vol
+                                    s3d_reg = s3d._region
+                                    for segidx,seg in enumerate(s3d_reg._segs3d()):
+                                        #Change this to be by volume
+                                        mults[s3d._grid_id] += [sas[index] / (s3d_reg._vol[index]) / molecules_per_mM_um3 for index in s3d_reg._nodes_by_seg[segidx]]
                                 pid = [pid for pid,gid in enumerate(all_ics_gids) if gid == s3d._grid_id][0]
                                 fxn_string += "\n\trhs[%d] %s mc3d_mults[%d] * rate;" % (pid, operator, pid)                        
                                 
@@ -1557,8 +1479,14 @@ def _init():
             s._register_cptrs()
             s._finitialize()
     _setup_matrices()
-    _compile_reactions()
+    #if species._has_1d and species._1d_submatrix_n():
+    #volumes = node._get_data()[0]
+    #zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
+    #setup_solver(_node_get_states(), len(_node_get_states()), zero_volume_indices, len(zero_volume_indices), h._ref_t, h._ref_dt)
+    clear_rates()
     _setup_memb_currents()
+    _compile_reactions()
+
 
 def _include_flux(force=False):
     from .node import _node_fluxes
@@ -1619,8 +1547,9 @@ def _init_concentration():
 _has_nbs_registered = False
 _nbs = None
 do_setup_matrices_fptr = None
+do_setup_units_fptr = None
 def _do_nbs_register():
-    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr
+    global _has_nbs_registered, _nbs, _fih, _fih2, _fih3, do_setup_matrices_fptr, do_setup_units_fptr
     
     if not _has_nbs_registered:
         #from neuron import nonvint_block_supervisor as _nbs
@@ -1639,6 +1568,12 @@ def _do_nbs_register():
         do_setup_matrices_fptr = fptr_prototype(_setup_matrices)
         set_setup_matrices(do_setup_matrices_fptr)
 
+
+        set_setup_units = nrn_dll_sym('set_setup_units')
+        set_setup_units.argtypes = [fptr_prototype]
+        do_setup_units_fptr = fptr_prototype(_setup_units)
+        set_setup_units(do_setup_units_fptr)
+
         _fih2 = h.FInitializeHandler(3, initializer._do_ion_register)
 
 
@@ -1656,12 +1591,18 @@ set_initialize(do_initialize_fptr)
 
 def _windows_remove_dlls():
     global _windows_dll_files, _windows_dll
+    if _windows_dll != []:
+        if hasattr(ctypes,"WinDLL"):
+            kernel32 = ctypes.WinDLL('kernel32')
+            kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
+        else:
+            kernel32 = ctypes.windll.kernel32
     for (dll_ptr,filepath) in zip(_windows_dll,_windows_dll_files):
         dll = dll_ptr()
         if dll:
             handle = dll._handle
             del dll
-            ctypes.windll.kernel32.FreeLibrary(handle)
+            kernel32.FreeLibrary(handle)
         os.remove(filepath)
     _windows_dll_files = []
     _windows_dll = []

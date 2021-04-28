@@ -8,10 +8,9 @@
 #include "bbssrv2mpi.h"
 #include "bbssrv.h"
 #include "bbsimpl.h"
+#include "hocdec.h" //Printf
 
-extern "C" {
-	void nrnbbs_context_wait();
-};
+void nrnbbs_context_wait();
 
 BBSDirectServer* BBSDirectServer::server_;
 
@@ -282,8 +281,15 @@ void  BBSDirectServer::context(bbsmpibuf* send) {
 #if debug
 printf("numprocs_bbs=%d\n", nrnmpi_numprocs_bbs);
 #endif
+	// Previous context may complete after allowing more activity
+	for (j=0; j < 1000; ++j) {
+		if (remaining_context_cnt_ == 0) {
+			break;
+		}
+		handle();
+	}
 	if (remaining_context_cnt_ > 0) {
-		printf("some workers did not receive previous context\n");
+		Printf("some workers did not receive previous context\n");
 		send_context_->erase(send_context_->begin(), send_context_->end());
 		nrnmpi_unref(context_buf_);
 		context_buf_ = nil;
