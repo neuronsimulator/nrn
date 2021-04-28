@@ -13,6 +13,7 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <limits>
 
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
