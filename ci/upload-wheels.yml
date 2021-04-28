@@ -10,7 +10,7 @@ steps:
       python -m pip install twine
       cat $(PYPIRC_PATH)
       python -m twine upload --verbose --skip-existing -r NMODLPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), eq(variables.buildWheel, true), ne(variables['UploadWheel'], false))
+    condition: and(succeeded(), eq(variables.buildWheel, true), ne(variables['UploadWheel'], false), ne(variables.ReleaseWheelBuild, true))
     displayName: 'Upload nightly wheel to pypi.org'
   - task: TwineAuthenticate@1
     inputs:
