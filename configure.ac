@@ -712,6 +712,9 @@ AC_MSG_WARN([
         * Python 2  : Please note that Python2 support will be DROPPED soon.
                       We strongly advise migrating to Python3 as of now,
                       if you haven't already.
+        * Python 3.5: Having reached end of support in 2020, Python 3.5 support
+                      will also be dropped soon. Should you be switching from
+                      Python2 please consider a higher version than 3.5.
         * Autotools : CMake is now the primary build system for installing NEURON
                       from source. Autotools support will be DROPPED in the next
                       release. As you are using Autotools, we strongly recommend
