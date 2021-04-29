@@ -72,3 +72,24 @@ def test_pure_diffusion_hybrid_cvode(ics_diffusion_hybrid):
         assert loss < tol
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_pure_diffusion_hybrid_small_grid(ics_diffusion_hybrid):
+    """Test ics_diffusion_hybrid with fixed step methods where 1D sections are
+       outside the 3D grid
+    """
+
+    neuron_instance, model = ics_diffusion_hybrid
+    h, rxd, data, save_path = neuron_instance
+    dend, r, ca = model
+    dend[1].diam = 0.75
+
+    h.dt *= 50
+    h.finitialize(-65)
+    loss = -(numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
+    h.continuerun(125)
+    loss += (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
+    if not save_path:
+        assert loss < tol
+        max_err = compare_data(data)
+        assert max_err < tol
