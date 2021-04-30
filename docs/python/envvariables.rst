@@ -7,11 +7,11 @@ With a bash shell, these are set by, e.g. (on ubuntu)
 
     extern NEURONHOME=/where/neuron/was/installed/share/nrn
 
-NEURON_MODEL_OPTIONS
+NEURON_MODULE_OPTIONS
 --------------------
   The option arguments allowed when nrniv is launched can be passed to
   the neuron module (``import neuron``) when python is launched by using
-  the ``NEURON_MODEL_OPTIONS`` environment variable.
+  the ``NEURON_MODULE_OPTIONS`` environment variable.
   See the output of ``nrniv -h`` for a list of these options. The relevant
   options are:
 
