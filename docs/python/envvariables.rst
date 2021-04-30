@@ -44,8 +44,25 @@ NEURON_MODEL_OPTIONS
      """)
      i = 900
      assert(h.add_recurse(i) == i*(i+1)/2)
-     assert(h.nrnversion(7) == "NEURON -nogui -NFRAME 1000 -NSTACK 10000")
+     assert("-nogui -NFRAME 1000 -NSTACK 10000" in h.nrnversion(7))
      '
+
+  As the environment variable is only used on the first import of NEURON,
+  one can set it from within python by using
+  ``os.environ[NEURON_MODULE_OPTIONS] = "..."`` as in
+
+  .. code-block:: python
+
+    import sys
+    assert('neuron' not in sys.modules)
+
+    import os
+    nrn_options = "-nogui -NSTACK 3000 -NFRAME 525"
+    os.environ["NEURON_MODULE_OPTIONS"] = nrn_options
+    from neuron import h
+    assert(nrn_options in h.nrnversion(7))
+
+
 
 NRNUNIT_USE_LEGACY
 ------------------
