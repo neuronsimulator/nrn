@@ -29,7 +29,7 @@ _Release Date_ : 30-04-2021
 For the complete list of bug fixes, see the list on the [GitHub here](https://github.com/neuronsimulator/nrn/issues/1211#issuecomment-826919173).
 
 ## Improvements /  Other Changes
--  Allow for two point (single section) SWC somas 
+- Allow for two point (single section) SWC somas 
 - GitHub Actions and Azure as primary CI systems. Travis CI removed.
 - GitHub [Releases](https://github.com/neuronsimulator/nrn/releases) provides full source tarballs, binary installers and python wheels.
 - Improved testing and CI infrastructure including GPUs
@@ -41,6 +41,7 @@ For the complete list of bug fixes, see the list on the [GitHub here](https://gi
 - New releases via Spack and Easybuild package managers 
 - Fix deadlock when compiling NEURON with AVX-512
 - Add backward-cpp for better backtraces
+- NEURON_MODULE_OPTIONS environment variable to pass in nrniv options before `neuron import` 
 
 ## Upgrade Steps
 
