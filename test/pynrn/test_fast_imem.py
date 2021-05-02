@@ -129,9 +129,10 @@ def test_allseg_unique_iter():
       #print ("%s(%g)" % (sec.name(), seg.x))
       unique_segs.append(seg)
 
-  nseg = sum([sec.nseg for sec in h.allsec()])
-  nsec = sum([1 for _ in h.allsec()])
-  assert(len(unique_segs) == nsec + 1 + nseg)
+  nseg = sum(sec.nseg for sec in h.allsec())
+  nsec = sum(1 for _ in h.allsec())
+  ncell = 1
+  assert(len(unique_segs) == nseg + nsec + ncell)
   # nothing left out and nothing done twice
   for sec in h.allsec():
     sec.v = 100.
