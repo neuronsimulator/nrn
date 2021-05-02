@@ -645,6 +645,30 @@ void nrn_calc_fast_imem(NrnThread* _nt) {
     }
 }
 
+void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
+  // At end of treeset.cpp nrn_rhs(), called near end of nrn_finitialize,
+  // _nrn_sav_rhs is ionic_current and RHS is axial + ionic + stim currents
+  // So difference, scaled by area, is i_membrane_ in nA.
+  // (Note: capacitance does not appear on rhs.)
+  // Warning: Have not thought deeply about extracellular or LinearMechanism.
+  //          But there is a good chance things are ok. But needs testing.
+  // I don't believe this is used by Cvode or IDA.
+	int i;
+	int i1 = 0;
+	int i3 = _nt->end;
+	double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    if (use_cachevec) {
+	for (i = i1; i < i3 ; ++i) {
+		prhs[i] = (VEC_RHS(i) + prhs[i])*VEC_AREA(i)*0.01;
+	}
+    }else{
+	for (i = i1; i < i3 ; ++i) {
+		Node* nd = _nt->_v_node[i];
+		prhs[i] = (NODERHS(nd) + prhs[i])*NODEAREA(nd)*0.01;
+	}
+    }
+}
+
 void fcurrent(void)
 {
 	int i;
@@ -935,7 +959,7 @@ void nrn_finitialize(int setv, double v) {
         for (i = 0; i < nrn_nthread; ++i) {
             setup_tree_matrix(nrn_threads + i);
             if (nrn_use_fast_imem) {
-                nrn_calc_fast_imem(nrn_threads + i);
+                nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
             }
         }
         state_discon_allowed_ = 1;
