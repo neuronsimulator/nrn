@@ -22,7 +22,6 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get update && sudo apt-get upgrade
           sudo apt-get install build-essential autoconf automake libtool autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
           sudo apt-get install ffmpeg doxygen
         shell: bash
