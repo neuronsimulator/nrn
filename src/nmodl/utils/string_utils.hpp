@@ -137,8 +137,10 @@ static inline std::string tolower(std::string text) {
  */
 static inline std::string to_string(double value, const std::string& format_spec = "{:.16g}") {
     // double containing integer value
-    if (std::ceil(value) == value) {
-        return std::to_string(static_cast<int>(value));
+    if (std::ceil(value) == value &&
+        value < static_cast<double>(std::numeric_limits<long long>::max()) &&
+        value > static_cast<double>(std::numeric_limits<long long>::min())) {
+        return std::to_string(static_cast<long long>(value));
     }
 
     // actual float value
