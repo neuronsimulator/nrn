@@ -83,5 +83,5 @@ goto :EOF
 
 :: something has failed, teminate with error code
 :error
-echo ERROR : exiting with error code %errorlevel% ..
-exit /b %errorlevel%
+echo ERROR : exiting with error code 1 ..
+exit 1
