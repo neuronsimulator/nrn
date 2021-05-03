@@ -1,3 +1,7 @@
+include:
+  - project: hpc/gitlab-pipelines
+    file: github-project-pipelines.gitlab-ci.yml
+
 stages:
   - .pre
   - build
@@ -7,8 +11,6 @@ stages:
 .common:
   tags: [bb5]
   script: ci/bb5-pr.sh
-  only:
-    - external_pull_requests
   variables:
     # Just run everything in the same, persistent, directory.
     bb5_build_dir: pipeline
@@ -18,11 +20,34 @@ setup virtualenv:
   stage: .pre
   before_script:
     - export
+  variables:
+    # This might pull in more than needed, but it should be enough to allow the
+    # two build jobs to run in parallel safely. Otherwise they will race each
+    # other to lazily update the submodules during the CMake phase, which can
+    # cause errors.
+    GIT_SUBMODULE_STRATEGY: recursive
+
+trigger cvf:
+  stage: .pre
+  variables:
+    # Tell the CVF pipeline to use the current ref of NMODL, this works because
+    # the CVF CI uses the `gitlab-pipelines` helper components.
+    SPACK_PACKAGE_REF_nmodl: "commit='${CI_COMMIT_SHA}'"
+  rules:
+    # Don't run on PRs targeting the LLVM development branch
+    - if: '$CI_EXTERNAL_PULL_REQUEST_TARGET_BRANCH_NAME == "llvm"'
+      when: never
+    # Otherwise always run this
+    - when: always
+  trigger:
+    project: hpc/cvf
+    # Make the NMODL CI status depend on the CVF CI status
+    strategy: depend
 
 build intel:
+  needs: ["setup virtualenv"]
   extends: .common
   stage: build
-  resource_group: build
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
@@ -31,15 +56,14 @@ test intel:
   needs: ["build intel"]
   extends: .common
   stage: test
-  resource_group: test
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
 
 build pgi:
+  needs: ["setup virtualenv"]
   extends: .common
   stage: build
-  resource_group: build
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
@@ -49,7 +73,6 @@ test pgi:
   needs: ["build pgi"]
   extends: .common
   stage: test
-  resource_group: test
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
@@ -57,7 +80,7 @@ test pgi:
 cmake format:
   extends: .common
   stage: linters
-  resource_group: linters
+  needs: ["build intel"]
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
@@ -65,7 +88,7 @@ cmake format:
 clang format:
   extends: .common
   stage: linters
-  resource_group: linters
+  needs: ["build intel"]
   variables:
     # We cloned in .pre
     GIT_STRATEGY: none
