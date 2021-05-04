@@ -29,8 +29,6 @@ char* hoc_forward2back(char* s);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
-#define NRNHOSTCPU "."
-
 #ifdef MINGW
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
