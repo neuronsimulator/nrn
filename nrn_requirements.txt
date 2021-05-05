@@ -1,0 +1,11 @@
+wheel
+setuptools
+scikit-build
+matplotlib
+bokeh
+ipython
+cython
+pytest
+pytest-cov
+mpi4py
+numpy
