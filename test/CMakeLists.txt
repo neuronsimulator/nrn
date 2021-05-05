@@ -110,6 +110,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   if(PYTEST_COV_FOUND)
     set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
   else()
+    unset(PYTEST_COVERAGE_ARGS)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(NAME pynrn_tests)
@@ -193,7 +194,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         -pyexe
         ${PYTHON_EXECUTABLE})
   else()
-    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS}-s)
+    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     # This tries to use pytest and mpi4py in parallel, which might be fragile.
