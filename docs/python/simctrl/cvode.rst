@@ -1258,8 +1258,10 @@ CVode
         that extracellular be inserted (and so is much faster), and works
         during parallel simulations with variable step methods. (ie. does not
         require IDA which is currently not available in parallel).
-        i_membrane\_ exists as a range variable only when this function has
-        been called with an argument of 1.
+        i_membrane\_ exists as a range variable only when ``use_fast_imem`` has
+        been called with an argument of 1. Conversely, i_membrane\_ is
+        not computed when ``use_fast_imem`` is not called or with an
+        argument of 0.
 
         i_membrane\_ include capacity current and all transmembrane
         ionic currents but not stimulus currents. POINT_PROCESS synaptic
@@ -1294,6 +1296,13 @@ CVode
                 print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
                 assert(abs(total_imem - total_iclamp_cur) < 1e-12)
 
+
+        In the above fragment ``sec.parentseg()`` is needed to count
+        the root and use of ``sec.trueparentseg()`` would count all sections
+        that connect to the root section at 0 because all those sections have
+        a trueparentseg of None.
+        Also, although an extremely rare edge case, ``sec.orientation()``
+        is needed to match which segment is closest to root.
 
 ----
 

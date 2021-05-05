@@ -646,10 +646,12 @@ void nrn_calc_fast_imem(NrnThread* _nt) {
 }
 
 void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
-  // At end of treeset.cpp nrn_rhs(), called near end of nrn_finitialize,
-  // _nrn_sav_rhs is ionic_current and RHS is axial + ionic + stim currents
-  // So difference, scaled by area, is i_membrane_ in nA.
-  // (Note: capacitance does not appear on rhs.)
+  // nrn_rhs() is called near end of nrn_finitialize() via setup_tree_matrix()
+  // and nrn_rhs() sets up _nrn_sav_rhs as -total ionic_current (without
+  // ELECTRODE_CURRENT contributions) and RHS as axial + ionic + stim currents
+  // So sum, scaled by area, is i_membrane_ in nA.
+  // (Note: capacitance does not appear on rhs because delta_v is the
+  // variable in the current balance equations set up by setup_tree_matrix.)
   // Warning: Have not thought deeply about extracellular or LinearMechanism.
   //          But there is a good chance things are ok. But needs testing.
   // I don't believe this is used by Cvode or IDA.
