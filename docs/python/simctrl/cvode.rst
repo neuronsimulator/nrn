@@ -1286,7 +1286,7 @@ CVode
                 total_imem = 0.0
                 for sec in h.allsec():
                     for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
-                        if seg.x == sec.orientation() and sec.parentseg() != None:
+                        if seg.x == sec.orientation() and sec.parentseg() is not None:
                             continue # skip segment shared with parent
                         total_imem += seg.i_membrane_
 

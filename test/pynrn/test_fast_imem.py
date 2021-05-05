@@ -58,7 +58,7 @@ def total_imem():
   imem = 0.0
   for sec in h.allsec():
     for seg in sec.allseg():
-      if seg.x == 0.0 and sec.parentseg() != None:
+      if seg.x == 0.0 and sec.parentseg() is not None:
         assert(seg.i_membrane_ == sec.parentseg().i_membrane_)
         continue # don't count twice
       imem += seg.i_membrane_
@@ -86,7 +86,7 @@ def total_syn_g(syns):
 '''
     for sec in h.allsec():
      for seg in sec.allseg():
-       if seg.x == sec.orientation() and sec.parentseg() != None:
+       if seg.x == sec.orientation() and sec.parentseg() is not None:
          continue
        # rest of the "for seg..." body
 '''
@@ -124,7 +124,7 @@ def test_allseg_unique_iter():
   unique_segs = []
   for sec in h.allsec():
     for seg in sec.allseg():
-      if seg.x == sec.orientation() and sec.parentseg() != None:
+      if seg.x == sec.orientation() and sec.parentseg() is not None:
         continue
       #print ("%s(%g)" % (sec.name(), seg.x))
       unique_segs.append(seg)
@@ -148,7 +148,7 @@ def print_imem():
   print("t=%g" % h.t)
   for sec in h.allsec():
     for seg in sec.allseg():
-      if seg.x == 0.0 and sec.parentseg() != None:
+      if seg.x == 0.0 and sec.parentseg() is not None:
         continue # don't count twice
       print("%s(%g).i_membrane_ = %g" % (sec.name(), seg.x, seg.i_membrane_))
 
