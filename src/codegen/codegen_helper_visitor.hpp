@@ -92,6 +92,7 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
     void visit_statement_block(const ast::StatementBlock& node) override;
     void visit_initial_block(const ast::InitialBlock& node) override;
+    void visit_destructor_block(const ast::DestructorBlock& node) override;
     void visit_breakpoint_block(const ast::BreakpointBlock& node) override;
     void visit_derivative_block(const ast::DerivativeBlock& node) override;
     void visit_derivimplicit_callback(const ast::DerivimplicitCallback& node) override;

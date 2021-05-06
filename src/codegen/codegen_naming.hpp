@@ -125,6 +125,9 @@ static constexpr char FOR_NETCON_SEMANTIC[] = "fornetcon";
 /// nrn_init method in generated code
 static constexpr char NRN_INIT_METHOD[] = "nrn_init";
 
+/// nrn_destructor method in generated code
+static constexpr char NRN_DESTRUCTOR_METHOD[] = "nrn_destructor";
+
 /// nrn_alloc method in generated code
 static constexpr char NRN_ALLOC_METHOD[] = "nrn_alloc";
 
