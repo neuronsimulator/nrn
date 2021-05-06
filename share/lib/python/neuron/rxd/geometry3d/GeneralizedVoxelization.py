@@ -213,7 +213,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
             (row,guesses) = r
             if (row not in checked):
                 (Lend,Rend) = find_endpoints(Object,surface,include_ga,row,guesses,grid)
-                if Lend != None:
+                if Lend is not None:
                     for i in range(Lend,Rend+1):
                         yes_voxels.add((i,row[0],row[1]))
                     s.add((row,(Lend,Rend)))
