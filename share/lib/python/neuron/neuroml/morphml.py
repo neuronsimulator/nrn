@@ -68,7 +68,7 @@ def segment(self, node):
     if debug:
         print("\nsegment id=", self.id , "  cable=", self.cid, " parent id=", self.pid, " parent_cable_id=", parent_cable_id)
                 
-    if self.cable_ == None :
+    if self.cable_ is None :
       self.cable_ = Cable(self.cid, self.pid, len(self.points_))
       self.cableid2index_[self.cid] = len(self.cables_)
       self.cables_.append(self.cable_)
