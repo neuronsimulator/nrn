@@ -8,7 +8,7 @@ def cable(self, node):
       cab = self.cables_[self.cableid2index_[int(node.get('id'))]]
       self.lastcabid_ = int(node.get('id'))
       val = node.get('fractAlongParent')
-      if val != None:
+      if val is not None:
         cab.px_ = float(val)
       else:
         cab.px_ = 1.
@@ -59,7 +59,7 @@ def segment(self, node):
     self.cid = int(node.get('cable'))
     parent_cable_id = -1
     p = node.get('parent')
-    if p != None :
+    if p is not None :
       self.pid = int(p)
       parent_cable_id = self.ptid2pt_[self.pid].cid_
     else:
