@@ -370,4 +370,4 @@ You can see current [contributors here](https://github.com/BlueBrain/CoreNeuron/
 
 CoreNEURON is developed in a joint collaboration between the Blue Brain Project and Yale University. This work has been funded by the EPFL Blue Brain Project (funded by the Swiss ETH board), NIH grant number R01NS11613 (Yale University), the European Union Seventh Framework Program (FP7/20072013) under grant agreement n◦ 604102 (HBP) and the European Union’s Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreement n◦ 720270 (Human Brain Project SGA1), n◦ 785907 (Human Brain Project SGA2) and n◦ 945539 (Human Brain Project SGA3).
 
-Copyright (c) Blue Brain Project/EPFL 2016 - 2021
+Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
