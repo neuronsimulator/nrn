@@ -213,7 +213,7 @@ def secinfo():
   for sec in h.allsec():
     r = [h.ref(0) for _ in range(3)]
     pseg = sec.parentseg()
-    px = ("parent %s(%g)"%(pseg.sec.name(),pseg.x)) if pseg != None else ""
+    px = ("parent %s(%g)"%(pseg.sec.name(),pseg.x)) if pseg is not None else ""
     style = ""
     if sec.pt3dstyle():
       h.pt3dstyle(1, r[0], r[1], r[2], sec=sec)
