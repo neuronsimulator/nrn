@@ -72,7 +72,7 @@ kecs = rxd.Parameter([ecs], name='k', value=2.5, charge=1, represents='CHEBI:291
 
 na = rxd.Species([cyt, mem], name='na', d=1, charge=1, initial=10.0, represents='CHEBI:29101')
 
-naecs = rxd.Parameter([ecs], name='na', value=140, charge=1, represents='CHEBI:29101')
+naecs = rxd.Parameter([ecs], name='na_ecs', value=140, charge=1, represents='CHEBI:29101')
 
 x = rxd.Species([cyt, mem, ecs], name='x', charge=1, initial=1e9)
 
