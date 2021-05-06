@@ -814,19 +814,6 @@ static void _currents(double* rhs)
         return;
     get_all_reaction_rates(states, NULL, NULL);
 
-    for (g = Parallel_grids[0]; g != NULL; g = g -> next)
-    {
-        grid = dynamic_cast<ECS_Grid_node*>(g);
-        if(grid)
-        {
-            grid->induced_idx = 0;
-            //TODO: Find a better place to initialize multicompartment reactions
-            //This method if often called before all multicompartment reactions
-            //have been added but after nonvint initialization.
-            grid->initialize_multicompartment_reaction();
-        }
-    }
-
     for(i = 0, k = 0; i < _memb_count; i++)
     {
         idx = _cur_node_indices[i];
@@ -1068,6 +1055,16 @@ extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
     {
         react -> next = _reactions;
         _reactions = react;
+    }
+
+    for (g = Parallel_grids[0]; g != NULL; g = g -> next)
+    {
+        grid = dynamic_cast<ECS_Grid_node*>(g);
+        if(grid)
+        {
+            grid->induced_idx = 0;
+            grid->initialize_multicompartment_reaction();
+        }
     }
 }
 

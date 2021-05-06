@@ -91,6 +91,10 @@ _ics_set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object,
 _delete_by_id = nrn_dll_sym('delete_by_id')
 _delete_by_id.argtypes = [ctypes.c_int]
 
+#function to change extracellular tortuosity
+_set_tortuosity = nrn_dll_sym('set_tortuosity')
+_set_tortuosity.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
+
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -107,6 +111,13 @@ _species_count = 0
 
 _has_1d = False
 _has_3d = False
+
+def _update_tortuosity(region):
+    """Update tortuosity for all species on region"""
+    for s,r in _extracellular_diffusion_objects.items():
+        if (r == region and hasattr(s,'_id') and 
+            not hasattr(s,'_deleted') and not s._isstate):
+            _set_tortuosity(s._id, region._tortuosity_vector)
 
 def _1d_submatrix_n():
     if not _has_1d:
@@ -483,8 +494,6 @@ class SpeciesOnRegion(_SpeciesMathable):
             return sp._intracellular_instances[r]
         else:
             raise RxDException("There are no 3D species defined on {}".format(r))
-        
-
     @property
     def _id(self):
         return self._species()._id
@@ -915,7 +924,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
 
 class _ExtracellularSpecies(_SpeciesMathable):
-    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
+    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None, isstate=False):
         """
             region = Extracellular object (TODO? or list of objects)
             name = string of the name of the NEURON species (e.g. ca)
@@ -952,18 +961,22 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
         self._boundary_conditions = boundary_conditions
+        self._isstate = isstate
 
         if(numpy.isscalar(region.alpha)):
             self.alpha = self._alpha = region.alpha
         else:
             self.alpha = region.alpha
             self._alpha = region._alpha._ref_x[0]
-       
-        self.tortuosity = region.tortuosity 
-        if(numpy.isscalar(region._ecs_tortuosity)):
-            self._tortuosity = region._ecs_tortuosity
-        else:
-            self._tortuosity = region._ecs_tortuosity._ref_x[0]
+        if isstate:
+            self.tortuosity = 1.0
+            self._tortuosity = 1.0
+        else: 
+            self.tortuosity = region.tortuosity
+            if(numpy.isscalar(region._tortuosity_vector)):
+                self._tortuosity = region._tortuosity_vector
+            else:
+                self._tortuosity = region._tortuosity_vector._ref_x[0]
 
         if boundary_conditions is None:
             bc_type = 0
@@ -1392,7 +1405,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         extracellular_nodes = []
-        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
+        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions, isstate=isinstance(self,State)) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
         index = 0
         for r in self._extracellular_regions:

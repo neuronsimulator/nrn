@@ -389,6 +389,73 @@ extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int l
     return 0;
 }
 
+extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_lambda)
+{
+
+    int id = 0;
+    Grid_node* node = Parallel_grids[grid_list_index];
+    while(id < grid_id)
+    {
+        node = node->next;
+        id++;
+        if(node == NULL)
+            return -1;
+    }
+    static_cast<ECS_Grid_node*>(node)->set_tortuosity(my_lambda);
+    return 0;
+}
+
+
+void ECS_Grid_node::set_tortuosity(PyHocObject* my_lambda)
+{
+    
+    /*Check to see if variable tortuosity/volume fraction is used*/
+    /*note lambda is the tortuosity squared*/
+    if(PyFloat_Check(my_lambda))
+    {
+        if(get_lambda == &get_lambda_scalar)
+        {
+            double new_lambda = PyFloat_AsDouble((PyObject*)my_lambda);
+            get_lambda = &get_lambda_scalar;
+            dc_x *= lambda[0]/new_lambda;
+            dc_y *= lambda[0]/new_lambda;
+            dc_z *= lambda[0]/new_lambda;
+            lambda[0] = new_lambda;
+        }
+        else
+        {
+            lambda = (double*)malloc(sizeof(double));
+            lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
+            /* don't free the old lambda -- let python do it */
+            dc_x /= lambda[0];
+            dc_y /= lambda[0];
+            dc_z /= lambda[0];
+            get_lambda = &get_lambda_scalar;
+            VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == TORTUOSITY)?FALSE:VARIABLE_ECS_VOLUME;
+        }
+    }
+    else
+    {
+        if(get_lambda == &get_lambda_scalar)
+        {
+            /* rescale to remove old lambda*/
+            dc_x *= lambda[0];
+            dc_y *= lambda[0];
+            dc_z *= lambda[0];
+            free(lambda);
+            lambda = my_lambda->u.px_;
+            VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == FALSE)?TORTUOSITY:VARIABLE_ECS_VOLUME;
+            get_lambda = &get_lambda_array;
+        }
+        else
+        {
+            //This should not happen
+            //if lambda was already a vector just change the vector values
+            lambda = my_lambda->u.px_;
+        }
+    }
+
+}
 /*Set the diffusion coefficients*/
 void ICS_Grid_node::set_diffusion(double* dc, int length)
 {

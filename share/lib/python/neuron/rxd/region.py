@@ -254,7 +254,6 @@ class Extracellular:
                         alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
                 self.alpha = alpha
                 self._alpha = h.Vector(alpha.flatten())
-                         
         else:
             alpha = numpy.array(volume_fraction)
             if(alpha.shape != (self._nx, self._ny, self._nz)):
@@ -263,7 +262,6 @@ class Extracellular:
             else:
                 self._alpha = h.Vector(alpha)
                 self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
-                
         if(numpy.isscalar(tortuosity)):
             tortuosity = float(tortuosity)
             self._ecs_tortuosity = tortuosity**2
@@ -273,16 +271,23 @@ class Extracellular:
             for i in range(self._nx):
                 for j in range(self._ny):
                     for k in range(self._nz):
-                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+                        self._tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+            self._ecs_tortuosity = h.Vector(self._tortuosity.flatten()).pow(2)
+        elif isinstance(tortuosity, dict):
+            from .species import State
+            params = tortuosity.copy()
+            params['regions'] = [self]
+            self._tortuosity = State(**params)
+            self._ecs_tortuosity = None
+            warnings.warn("when using an rxd.State the values should be the tortuosity-squared to avoid additional calculations every time-step")
         else:
             tortuosity = numpy.array(tortuosity)
             if(tortuosity.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+                 raise RxDException('tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz))
     
             else:
                 self._tortuosity = tortuosity
-                self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
+                self._ecs_tortuosity = h.Vector(self._tortuosity.flatten()).pow(2)
     
     def __repr__(self):
         return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
@@ -297,14 +302,74 @@ class Extracellular:
         return numpy.prod(self._dx) * self.alpha[index]
 
     @property
+    def _tortuosity_vector(self):
+        if self._ecs_tortuosity is None:
+            self._ecs_tortuosity = self.tortuosity._extracellular_instances[self]._states
+        return self._ecs_tortuosity
+
+
+    @property
     def tortuosity(self):
-        return self._tortuosity 
+        return self._tortuosity
     
     @tortuosity.setter
     def tortuosity(self, value):
-        raise RxDException("Changing the tortuosity is not yet supported.")
+        """Set the value of the tortuosity for all species define on this
+           Extracellular region.
+
+        Args:
+            value (float, array or callable) the new tortuosity, it can be a
+                scalar for homogeneous diffusion, or a array the size of the
+                extracellular space or a function that take (x,y,z) as an
+                argument and will be evaluated on every extracellular voxel.
+        """
+
+        from .species import _update_tortuosity
+        if numpy.isscalar(value):
+            self._tortuosity = value
+            self._ecs_tortuosity = value
+        elif callable(value):
+            if(numpy.isscalar(self._tortuosity)):
+                self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
+                self._ecs_tortuosity = h.Vector()
+            else:
+                self._ecs_tortuosity.clear()
+
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        self._tortuosity[i,j,k] = value(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+            self._ecs_tortuosity.from_python(self._tortuosity.flatten()).pow(2)
+        elif (hasattr(value, '_extracellular_instances') or
+              hasattr(self,'_extracellular')):
+            # Check Species or SpeciesOnExtracellular is defined on this region
+            if ((hasattr(value, '_extracellular_instances') and
+                self not in value._extracellular_instances) or
+                ((hasattr(value, '_extracellular') and
+                  value._extracellular() and
+                  value._extracellular() != self))):
+                raise RxDException("tortuosity can be set to a State or Parameter, but it must be defined on this Extracellular region %r" % self)
+            else:
+                self._tortuosity = value
+                self._ecs_tortuosity = None
+                warnings.warn("when using an rxd.State the values should be the tortuosity-squared to avoid additional calculations every time-step")
+        else:
+            tortuosity = numpy.array(value)
+            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
     
-                
+            else:
+                if(numpy.isscalar(self._tortuosity)):
+                    self._ecs_tortuosity = h.Vector(tortuosity.flatten()).pow(2)
+                else:
+                    self._ecs_tortuosity.clear()
+                    self._ecs_tortuosity.from_python(tortuosity.flatten()).pow(2)
+                self._tortuosity = tortuosity
+
+        # update tortuosity for any species defined on this ECS
+        _update_tortuosity(self)
+
+
 class Region(object):
     """Declare a conceptual region of the neuron.
     
