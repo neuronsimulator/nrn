@@ -729,6 +729,11 @@ void nrn_cleanup() {
         for (NrnThreadMembList* tml = nt->tml; tml; tml = next_tml) {
             Memb_list* ml = tml->ml;
 
+            mod_f_t s = corenrn.get_memb_func(tml->index).destructor;
+            if (s) {
+                (*s)(nt, ml, tml->index);
+            }
+
             ml->data = nullptr;  // this was pointing into memory owned by nt
             free_memory(ml->pdata);
             ml->pdata = nullptr;
