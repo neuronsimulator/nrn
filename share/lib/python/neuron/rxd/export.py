@@ -185,7 +185,7 @@ class middle_man:
 def sbml(segment,filename=None,model_name = None,pretty=True):
 	rxd.initializer._do_init()
 	section = segment.sec
-	if model_name != None: output = middle_man(model_name) 
+	if model_name is not None: output = middle_man(model_name) 
 	else: output = middle_man(section.name())
 	regions = section.psection()['regions']
 	species = section.psection()['species']
