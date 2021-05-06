@@ -75,7 +75,7 @@ class middle_man:
 	#add compartment to structure
 	def add_compartment(self,name,size):
 		if type(name) != str or len(name) < 1: return 1
-		if size == None: size = 0.1
+		if size is None: size = 0.1
 		temp_compartment = compartment(name,size)
 		id_name = name + str(self.num_compartments)
 		self.compartments[id_name] = temp_compartment
@@ -201,14 +201,14 @@ def sbml(segment,filename=None,model_name = None,pretty=True):
 		if isinstance(i,rxd.Parameter):
 			node = i.nodes(segment)[0]
 			tempInitial = i.initial
-			if i.initial == None: tempInitial = 0.0
+			if i.initial is None: tempInitial = 0.0
 			elif not isinstance(tempInitial,float) and not isinstance(tempInitial,int): tempInitial = i.initial(node)
 			output.add_parameter(i.name,i.initial)
 			continue
 		for j in i.regions:
 			node = i.nodes(segment)[0]
 			tempInitial = i.initial
-			if i.initial == None: tempInitial = 0.0
+			if i.initial is None: tempInitial = 0.0
 			elif not isinstance(tempInitial,float) and not isinstance(tempInitial,int): tempInitial = i.initial(node)
 			output.add_species(name=i.name,compartment=j.name,initial_amount=tempInitial)
 
