@@ -9,7 +9,7 @@ def group(self, node):
 def mechanism(self, node):
     name = str(node.get("name"))
     pc = node.get('passiveConductance')
-    if pc != None:
+    if pc is not None:
       if pc == 'true' or pc == '1':
         print("Substituting passive conductance", name , " in file for inbuilt mechanism pas as attribute passiveConductance = true ")
         name = 'pas'
@@ -26,7 +26,7 @@ def mechanism_end(self, node):
 def parameter(self, node): 
     value = float(node.get('value'))
     name = node.get("name")
-    if name != None:
+    if name is not None:
       # convert from physiological to NEURON units
       if self.is_physiological_units_:
         if name == 'gmax':
