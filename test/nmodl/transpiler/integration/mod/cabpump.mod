@@ -18,6 +18,12 @@ UNITS {
         FARADAY    = (faraday) (coul)
 }
 
+DESTRUCTOR {
+VERBATIM
+// Nothing only to verify that it is well handled
+ENDVERBATIM
+}
+
 PARAMETER {
        depth	= .1	(um)		
         taur =  200 (ms)	: rate of calcium removal for stress conditions

@@ -258,6 +258,9 @@ struct CodegenInfo {
     /// initial block
     const ast::InitialBlock* initial_node = nullptr;
 
+    /// destructor block only for point process
+    const ast::DestructorBlock* destructor_node = nullptr;
+
     /// all procedures defined in the mod file
     std::vector<const ast::ProcedureBlock*> procedures;
 

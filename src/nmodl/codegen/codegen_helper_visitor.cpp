@@ -478,6 +478,12 @@ void CodegenHelperVisitor::visit_initial_block(const InitialBlock& node) {
 }
 
 
+void CodegenHelperVisitor::visit_destructor_block(const DestructorBlock& node) {
+    info.destructor_node = &node;
+    node.visit_children(*this);
+}
+
+
 void CodegenHelperVisitor::visit_net_receive_block(const NetReceiveBlock& node) {
     under_net_receive_block = true;
     info.net_receive_node = &node;

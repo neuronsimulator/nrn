@@ -1251,6 +1251,9 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
     }
+    if (type == BlockType::Destructor) {
+        return method_name(naming::NRN_DESTRUCTOR_METHOD);
+    }
     if (type == BlockType::State) {
         return method_name(naming::NRN_STATE_METHOD);
     }
@@ -2621,7 +2624,10 @@ void CodegenCVisitor::print_mechanism_register() {
     auto args = register_mechanism_arguments();
     auto nobjects = num_thread_objects();
     if (info.point_process) {
-        printer->add_line("point_register_mech({}, NULL, NULL, {});"_format(args, nobjects));
+        printer->add_line("point_register_mech({}, NULL, {}, {});"_format(
+            args,
+            info.destructor_node ? method_name(naming::NRN_DESTRUCTOR_METHOD) : "NULL",
+            nobjects));
     } else {
         printer->add_line("register_mech({}, {});"_format(args, nobjects));
     }
@@ -3305,9 +3311,20 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
 }
 
 
+void CodegenCVisitor::print_nrn_destructor() {
+    printer->add_newline(2);
+    print_global_function_common_code(BlockType::Destructor);
+    if (info.destructor_node != nullptr) {
+        const auto& block = info.destructor_node->get_statement_block();
+        print_statement_block(*block.get(), false, false);
+    }
+    printer->end_block(1);
+}
+
+
 void CodegenCVisitor::print_nrn_alloc() {
     printer->add_newline(2);
-    auto method = method_name("nrn_alloc");
+    auto method = method_name(naming::NRN_ALLOC_METHOD);
     printer->start_block("static void {}(double* data, Datum* indexes, int type) "_format(method));
     printer->add_line("// do nothing");
     printer->end_block(1);
@@ -4318,6 +4335,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_global_variable_setup();
     print_instance_variable_setup();
     print_nrn_alloc();
+    print_nrn_destructor();
     print_compute_functions();
     print_check_table_thread_function();
     print_mechanism_register();
