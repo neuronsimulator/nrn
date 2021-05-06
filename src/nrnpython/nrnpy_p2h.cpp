@@ -374,29 +374,6 @@ void nrnpy_decref_defer(PyObject* po) {
   }
 }
 
-#if (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION == 3)
-// copied from /Modules/_ctypes/_ctypes.c
-static PyObject* PyTuple_Pack(int n, ...) {
-  int i;
-  PyObject* o;
-  PyObject* result;
-  PyObject** items;
-  va_list vargs;
-
-  va_start(vargs, n);
-  result = PyTuple_New(n);
-  if (result == NULL) return NULL;
-  items = ((PyTupleObject*)result)->ob_item;
-  for (i = 0; i < n; i++) {
-    o = va_arg(vargs, PyObject*);
-    Py_INCREF(o);
-    items[i] = o;
-  }
-  va_end(vargs);
-  return result;
-}
-#endif
-
 static PyObject* hoccommand_exec_help1(PyObject* po) {
   PyObject* r;
   // PyObject_Print(po, stdout, 0);
@@ -631,12 +608,7 @@ static PyObject* dumps;
 static void setpickle() {
     PyObject* pickle;
     if (!dumps) {
-        #if PY_MAJOR_VERSION >= 3
-            pickle = PyImport_ImportModule("pickle");
-        #else
-            pickle = PyImport_ImportModule("cPickle");
-        #endif
-
+        pickle = PyImport_ImportModule("pickle");
         if (pickle) {
             Py_INCREF(pickle);
             dumps = PyObject_GetAttrString(pickle, "dumps");
@@ -658,14 +630,9 @@ static char* pickle(PyObject* p, size_t* size) {
   PyObject* r = nrnpy_pyCallObject(dumps, arg);
   Py_XDECREF(arg);
   assert(r);
-#if PY_MAJOR_VERSION >= 3
   assert(PyBytes_Check(r));
   *size = PyBytes_Size(r);
   char* buf1 = PyBytes_AsString(r);
-#else
-  char* buf1 = PyString_AsString(r);
-  *size = PyString_Size(r) + 1;
-#endif
   char* buf = new char[*size];
   for (int i = 0; i < *size; ++i) {
     buf[i] = buf1[i];
@@ -686,11 +653,7 @@ static char* po2pickle(Object* ho, size_t* size) {
 }
 
 static PyObject* unpickle(char* s, size_t size) {
-#if PY_MAJOR_VERSION >= 3
   PyObject* ps = PyBytes_FromStringAndSize(s, size);
-#else
-  PyObject* ps = PyString_FromString(s);
-#endif
   PyObject* arg = PyTuple_Pack(1, ps);
   PyObject* po = nrnpy_pyCallObject(loads, arg);
   assert(po);
@@ -749,11 +712,7 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
   PyObject* callable;
 
   setpickle();
-#if PY_MAJOR_VERSION >= 3
   PyObject* ps = PyBytes_FromStringAndSize(fname, size);
-#else
-  PyObject* ps = PyString_FromString(fname);
-#endif
   args = PyTuple_Pack(1, ps);
   callable = nrnpy_pyCallObject(loads, args);
   assert(callable);

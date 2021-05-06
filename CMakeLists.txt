@@ -338,9 +338,9 @@ endif()
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library
-  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3;python2"
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
   # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython2.7.so
+  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
   unset(PYTHON_LIBRARY CACHE)
 
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
@@ -527,20 +527,17 @@ add_dependencies(nrniv_lib hh_update)
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
-  find_python_module(pathlib)
-  if(PATHLIB_FOUND) # TODO - Drop pathlib logic @ Python2 removal (pathlib is part of core in Python3)
-    add_custom_target(
-        help_data_dat
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
-                ${PROJECT_SOURCE_DIR}/docs/python
-                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-                ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-        COMMENT "Generating help_data.dat"
-        VERBATIM)
-    add_dependencies(nrniv_lib help_data_dat)
-  endif()
+  add_custom_target(
+      help_data_dat
+      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+              ${PROJECT_SOURCE_DIR}/docs/python
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMENT "Generating help_data.dat"
+      VERBATIM)
+  add_dependencies(nrniv_lib help_data_dat)
 endif()
 
 # =============================================================================
@@ -688,10 +685,8 @@ if(NRN_ENABLE_PYTHON)
   message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
   message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  if(PYTHON_VERSION_MAJOR EQUAL 2)
-    set(PY2_WARNING TRUE)
-  elseif(PYTHON_VERSION_MINOR EQUAL 5)
-    set(PY35_WARNING TRUE)
+  if(PYTHON_VERSION_MAJOR LESS 3)
+    message(SEND_ERROR "Python 3 required. Please upgrade.")
   endif()
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
@@ -699,10 +694,8 @@ if(NRN_ENABLE_PYTHON)
     foreach(val RANGE ${num_pythons})
       list(GET NRN_PYTHON_EXE_LIST ${val} exe)
       list(GET NRN_PYTHON_VER_LIST ${val} version)
-      if(version EQUAL 2)
-        set(PY2_WARNING TRUE)
-      elseif(PYTHON_VERSION_MINOR EQUAL 5)
-        set(PY35_WARNING TRUE)
+      if(PYTHON_VERSION_MAJOR LESS 3)
+        message(SEND_ERROR "Python 3 required. Please upgrade.")
       endif()
       list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)
       list(GET NRN_PYTHON_LIB_LIST ${val} lib)
@@ -753,12 +746,3 @@ message(STATUS "--------------+-------------------------------------------------
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "")
-if(PY2_WARNING)
-  message(WARNING "Python2 support will be dropped soon! We strongly advise migrating to Python3 (>=3.6) as of now.")
-  if(NOT PATHLIB_FOUND)
-    message(WARNING "'pathlib' Python2 package is required for in-python neuron documentation. Please install it.")
-  endif()
-endif()
-if(PY35_WARNING)
-  message(WARNING "Python3.5 support will be dropped soon! We strongly advise migrating to a higher version as of now.")
-endif()

@@ -2822,11 +2822,7 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 }
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
-#if (PY_MAJOR_VERSION >= 3)
-#include "nrnpy_hoc_3.h"
-#else
-#include "nrnpy_hoc_2.h"
-#endif
+#include "nrnpy_hoc.h"
 
 // Figure out the endian-ness of the system, and return
 // 0 (error), '<' (little endian) or '>' (big endian)
@@ -2992,7 +2988,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 
   char endian_character = 0;
 
-#if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
 #if defined(__MINGW32__)
@@ -3003,20 +2998,9 @@ myPyMODINIT_FUNC nrnpy_hoc() {
     return m;
   }
   m = PyModule_Create(&hocmodule);
-#else // PY_MAJOR_VERSION
-#if defined(__MINGW32__)
-  m = Py_InitModule3(HOCMOD, HocMethods, "HOC interaction with Python");
-#else
-  m = Py_InitModule3("hoc", HocMethods, "HOC interaction with Python");
-#endif // __MINGW32__
-#endif // PY_MAJOR_VERSION
   assert(m);
   Symbol* s = NULL;
-#if PY_MAJOR_VERSION >= 3
   hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
-#else
-  hocobject_type = &nrnpy_HocObjectType;
-#endif
   if (PyType_Ready(hocobject_type) < 0) goto fail;
   Py_INCREF(hocobject_type);
   // printf("AddObject HocObject\n");
@@ -3062,15 +3046,10 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 
   // Setup bytesize in typestr
   snprintf(array_interface_typestr + 2, 3, "%ld", sizeof(double));
-#if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
 //  Py_DECREF(m);
   return m;
 fail:
   return NULL;
-#else
-fail:
-  return;
-#endif
 }
