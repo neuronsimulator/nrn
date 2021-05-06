@@ -560,7 +560,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
   if ldpath and nrn_pylib is None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
-  if nrn_pylib != None:
+  if nrn_pylib is not None:
     print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
 quit()
