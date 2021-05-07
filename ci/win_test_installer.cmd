@@ -49,7 +49,7 @@ echo fprint("hello\n") >> .\temp.hoc
 echo wopen() >> .\temp.hoc
 echo quit() >> .\temp.hoc
 start .\temp.hoc
-ping -n 10 127.0.0.1
+ping -n 15 127.0.0.1
 cat temp.txt
 findstr /i "^hello$" temp.txt || set "errorfound=y"
 
