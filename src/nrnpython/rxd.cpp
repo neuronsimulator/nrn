@@ -722,6 +722,10 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
     induced_currents_grid_id = (int*)malloc(sizeof(int)*_memb_curr_total);
+    // initialize memory here to allow currents from an intracellular species
+    // with no corresponding nrn_region='o' or Extracellular species 
+    memset(induced_currents_ecs_idx, SPECIES_ABSENT,
+           sizeof(int)*_memb_curr_total);
 
     for(i = 0, k = 0; i < num_currents; i++)
     {

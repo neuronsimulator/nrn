@@ -1329,6 +1329,7 @@ def nrnpy_pr(stdoe, s):
     sys.stdout.write(s.decode())
   else:
     sys.stderr.write(s.decode())
+    sys.stderr.flush()
   return 0
 
 if not embedded:
