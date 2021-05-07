@@ -10,9 +10,12 @@ def saveSS():
     global svst
     svst = h.SaveState()
     svst.save()
+    save_rxd_extra() # only for below model with one segment.
 
 def restoreSS():
     svst.restore()
+    restore_rxd_extra() # only for below model with one segment.
+    h.fcurrent() # failed hope was that this would properly initialize the currents.
 
 # parameters
 h.celsius = 6.3 
@@ -46,7 +49,7 @@ somaA = h.Section('somaA')
 somaA.pt3dclear()
 somaA.pt3dadd(-90,0,0,30)
 somaA.pt3dadd(-60,0,0,30)
-somaA.nseg = 11
+somaA.nseg = 1 #11
 
 # Where?
 # intracellular
@@ -111,6 +114,27 @@ stimA.delay = 50
 stimA.amp = 1
 stimA.dur = 50
 
+def save_rxd_extra():
+  # only for one segment
+  global sav_rxd_extra_
+  sav_rxd_extra_ = []
+  sav_rxd_extra_.append(mgate[cyt].nodes(somaA(0.5)).value)
+  sav_rxd_extra_.append(ngate[cyt].nodes(somaA(0.5)).value)
+  sav_rxd_extra_.append(hgate[cyt].nodes(somaA(0.5)).value)
+  sav_rxd_extra_.append(mgate[mem].nodes(somaA(0.5)).value)
+  sav_rxd_extra_.append(ngate[mem].nodes(somaA(0.5)).value)
+  sav_rxd_extra_.append(hgate[mem].nodes(somaA(0.5)).value)
+
+def restore_rxd_extra():
+  mgate[cyt].nodes(somaA(0.5)).value = sav_rxd_extra_[0]
+  ngate[cyt].nodes(somaA(0.5)).value = sav_rxd_extra_[1]
+  hgate[cyt].nodes(somaA(0.5)).value = sav_rxd_extra_[2]
+  mgate[mem].nodes(somaA(0.5)).value = sav_rxd_extra_[3]
+  ngate[mem].nodes(somaA(0.5)).value = sav_rxd_extra_[4]
+  hgate[mem].nodes(somaA(0.5)).value = sav_rxd_extra_[5]
+  k[cyt].nodes.value = somaA(0.5).ki
+  na[cyt].nodes.value = somaA(0.5).nai
+
 def teardown():
   # I don't know how much of this really has to go away not to interfere
   # with other tests. Perhaps just stimA and somaA.
@@ -169,13 +193,14 @@ def test_savestate_rxd():
   # not corrupt the run.)
   h.finitialize(-70)
   h.continuerun(t1)
-  print(curval())
+  sav_val = curval()
+  print(sav_val)
   saveSS()
   print(curval())
   h.continuerun(t2)
   for i, vec in enumerate(vecs):
     if not vec.eq(vecs_std[i]):
-      print("vecs[%d] != vecs_std[%d]" % (i, i))
+      print("vecs[%d] error %g" % (i, vecs[i].c().sub(vecs_std[i]).abs().sum()))
   for i, vec in enumerate(vecs):
     assert (vec.eq(vecs_std[i]))
 
@@ -193,6 +218,7 @@ def test_savestate_rxd():
   # Finally, savestate restore at t1, continue to t2, and
   # compare vecs to vecs_std_save
   h.finitialize(-70)
+  print(curval())
   restoreSS()
   print(curval())
   for vec in vecs:
@@ -200,13 +226,14 @@ def test_savestate_rxd():
   h.continuerun(t2)
   for i, vec in enumerate(vecs):
     if not vec.eq(vecs_std_save[i]):
-      print("vecs[%d] != vecs_std_save[%d]" % (i, i))
+      print("vecs[%d] error %g" % (i, vecs[i].c().sub(vecs_std_save[i]).abs().sum()))
   for i, vec in enumerate(vecs):
-    #assert(vec.eq(vecs_std_save[i]))
+    assert(vec.eq(vecs_std_save[i]))
     pass
 
   teardown()
   h.topology()
+  return vecs, vecs_std_save
 
 if __name__ == "__main__":
-  test_savestate_rxd()
+  vecs, vecs_std_save = test_savestate_rxd()
