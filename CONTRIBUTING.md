@@ -59,7 +59,7 @@ that it is can be readily integrated.
 ## How to do this<a name="how"></a>
 When you're ready to contribute to the code base, please consider the following guidelines:
 
-* Make a [fork](https://guides.github.com/activities/forking/) of this repository. From there you will download your own version of the repository to your machine for
+* Make a [fork](https://guides.github.com/activities/forking/) of this repository. From there you will clone your own version of the repository to your machine for
 compilation and running.
 * Make your changes in your version of the repo in a new git branch:
      ```shell

@@ -107,13 +107,17 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   include(NeuronTestHelper)
+  if(PYTEST_COV_FOUND)
+    set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
+  else()
+    unset(PYTEST_COVERAGE_ARGS)
+  endif()
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(NAME pynrn_tests)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-            --cov=neuron ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_COVERAGE_ARGS} ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
 
@@ -133,7 +137,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP rxdmod_tests
       NAME rxd_tests
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
-              pytest --cov-report=xml --cov=neuron ./test/rxd)
+              pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -143,7 +147,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           COMMAND
             COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            -m pytest --cov-report=xml --cov=neuron ./test/rxd --mpi)
+            -m pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -190,7 +194,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         -pyexe
         ${PYTHON_EXECUTABLE})
   else()
-    set(py_args -m pytest --cov-report=xml --cov=neuron -s)
+    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     # This tries to use pytest and mpi4py in parallel, which might be fragile.

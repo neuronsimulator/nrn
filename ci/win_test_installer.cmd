@@ -26,6 +26,7 @@ C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" 
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+C:\Python39\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 
 :: install numpy dependency
 python -m pip install numpy
@@ -48,7 +49,7 @@ echo fprint("hello\n") >> .\temp.hoc
 echo wopen() >> .\temp.hoc
 echo quit() >> .\temp.hoc
 start .\temp.hoc
-ping -n 10 127.0.0.1
+ping -n 15 127.0.0.1
 cat temp.txt
 findstr /i "^hello$" temp.txt || set "errorfound=y"
 
@@ -82,5 +83,5 @@ goto :EOF
 
 :: something has failed, teminate with error code
 :error
-echo ERROR : exiting with error code %errorlevel% ..
-exit /b %errorlevel%
+echo ERROR : exiting with error code 1 ..
+exit 1

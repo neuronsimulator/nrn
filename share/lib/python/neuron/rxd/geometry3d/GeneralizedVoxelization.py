@@ -134,21 +134,21 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
                 check_surf_L = (True, Li)
                 break
             Li -= 1
-            
+
     # check for extra surface voxels missed
-    if check_surf_R[0]:
+    if check_surf_R[0] and Lend is not None:
         r = check_surf_R[1]
-        while r != Lend:
-            verts = verts_in(f,(r,row[0],row[1]),surf,g) 
+        while r > Lend:
+            verts = verts_in(f, (r, row[0], row[1]), surf, g)
             if verts == 8:
                 break
             else:
                 r -= 1
-                
-    if check_surf_L[0]:
+
+    if check_surf_L[0] and Rend is not None:
         l = check_surf_L[1]
-        while l != Rend:
-            verts = verts_in(f,(l,row[0],row[1]),surf,g)
+        while l < Rend:
+            verts = verts_in(f, (l, row[0], row[1]), surf, g)
             if verts == 8:
                 break
             else:
@@ -156,10 +156,10 @@ def find_endpoints(f,surf,include_ga,row,guesses,g):
 
     # if keeping non-surface but grid-adjacent voxels:
     if include_ga:
-        surf.add((Lend,row[0],row[1]))
-        surf.add((Rend,row[0],row[1]))
-        
-    return (Lend,Rend)
+        surf.add((Lend, row[0], row[1]))
+        surf.add((Rend, row[0], row[1]))
+
+    return (Lend, Rend)
 
 def voxelize(grid, Object, corners=None, include_ga=False):
     """return a list of all voxels (i,j,k) that contain part of the object
@@ -213,7 +213,7 @@ def voxelize(grid, Object, corners=None, include_ga=False):
             (row,guesses) = r
             if (row not in checked):
                 (Lend,Rend) = find_endpoints(Object,surface,include_ga,row,guesses,grid)
-                if Lend != None:
+                if Lend is not None:
                     for i in range(Lend,Rend+1):
                         yes_voxels.add((i,row[0],row[1]))
                     s.add((row,(Lend,Rend)))

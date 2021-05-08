@@ -111,7 +111,7 @@ def mkgaps(gids):
         if g[i] not in gidset: # source var sid cannot be used twice
           pc.source_var(cell.soma(.5)._ref_v, sids[i], sec=cell.soma)
           gidset.add(g[i])
-        assert(cell.hgap[j] == None)
+        assert(cell.hgap[j] is None)
         cell.hgap[j] = h.HGap(cell.soma(.5))
         pc.target_var(cell.hgap[j], cell.hgap[j]._ref_e, sids[j])
         cell.hgap[j].gmax = 0.0001
