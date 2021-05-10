@@ -130,7 +130,7 @@ except:
   pass
 
 try:
-  import hoc
+  from . import hoc
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
