@@ -72,7 +72,16 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
 // For direct transfer of event queue information from CoreNEURON
 extern "C" {
 void core2nrn_NetCon_event(int tid, double td, size_t nc_index);
-}
+
+void core2nrn_SelfEvent_event(int tid, double td,
+    int tar_type, int tar_index,
+    double flag, size_t nc_index, int is_movable);
+
+void core2nrn_SelfEvent_event_noweight(int tid, double td,
+    int tar_type, int tar_index,
+    double flag, int is_movable);
+
+} // end of extern "C"
 
 // For direct transfer of event queue information to CoreNEURON
 // Must be the same as corresponding struct NrnCoreTransferEvents in CoreNEURON
@@ -120,6 +129,8 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
 
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},
+        {"core2nrn_SelfEvent_event_", (CNB)core2nrn_SelfEvent_event},
+        {"core2nrn_SelfEvent_event_noweight_", (CNB)core2nrn_SelfEvent_event_noweight},
        {NULL, NULL}
 };
 

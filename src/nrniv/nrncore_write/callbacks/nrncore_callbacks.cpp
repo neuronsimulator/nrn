@@ -5,6 +5,7 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "nrniv_mf.h"
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
@@ -815,6 +816,84 @@ void core2nrn_NetCon_event(int tid, double td, size_t nc_index) {
   printf("core2nrn_NetCon_event tid=%d t=%g td=%g nc_index=%zd\n", tid, nt._t, td, nc_index);
   // cellgroups_ has been deleted but deletion of cg.netcons was deferred
   // (and will be deleted on return from nrncore_run).
+  // This is tragic for memory usage. There are more NetCon's than anything.
+  // Would be better to save the memory at a cost of single iteration over
+  // NetCon.
   NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
   nc->send(td, net_cvode_instance, &nt);
 }
+
+// for faster determination of the movable index given the type
+static std::map<int, int> type2movable;
+static void setup_type2semantics() {
+  if (type2movable.empty()) {
+    for (int type = 0; type < n_memb_func; ++type) {
+      int* ds = memb_func[type].dparam_semantics;
+      if (ds) {
+        for (int psz=0; psz < bbcore_dparam_size[type]; ++psz) {
+          if (ds[psz] == -4) { // netsend semantics
+            type2movable[type] = psz;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+static void core2nrn_SelfEvent_helper(int tid, double td,
+  int tar_type, int tar_index,
+  double flag,  double* weight, int is_movable)
+{
+  if (type2movable.empty()) {
+    setup_type2semantics();
+  }
+  Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
+  Point_process* pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  // Needs to be tested when permuted on CoreNEURON side.
+  assert(tar_type == pnt->prop->type);
+  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
+
+  int movable_index = type2movable[tar_type];
+  void** movable_arg = &(pnt->prop->dparam[movable_index]._pvoid);
+  TQItem* old_movable_arg = (TQItem*)(*movable_arg);
+
+  nrn_net_send(&(pnt->prop->dparam[movable_index]._pvoid), weight, pnt, td, flag);
+  if (!is_movable) {
+    *movable_arg = (void*)old_movable_arg;
+  }
+}
+
+void core2nrn_SelfEvent_event(int tid, double td,
+  int tar_type, int tar_index,
+  double flag,  size_t nc_index, int is_movable)
+{
+  assert(tid < nrn_nthread);
+  printf("core2nrn_SelfEvent_event tid=%d td=%g tar_type=%d tar_index=%d flag=%g, nc_index=%zd, is_movable=%d\n",
+    tid, td, tar_type, tar_index, flag, nc_index, is_movable);
+  NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
+
+#if 1
+  // verify nc->target_ consistent with tar_type, tar_index.
+  Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
+  Point_process* pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  printf("nc->target_=%p pnt=%p\n", nc->target_, pnt);
+  //assert(nc->target_ == pnt);
+#endif
+
+  double* weight = nc->weight_;
+  core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+}
+
+void core2nrn_SelfEvent_event_noweight(int tid, double td,
+  int tar_type, int tar_index,
+  double flag, int is_movable)
+{
+  assert(tid < nrn_nthread);
+  printf("core2nrn_SelfEvent_event tid=%d td=%g tar_type=%d tar_index=%d flag=%g, is_movable=%d\n",
+    tid, td, tar_type, tar_index, flag, is_movable);
+  double* weight = NULL;
+  core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+
+}
+
