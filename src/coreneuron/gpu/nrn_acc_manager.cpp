@@ -998,8 +998,6 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
     }
     acc_delete(threads, sizeof(NrnThread) * nthreads);
     nrn_ion_global_map_delete_from_device();
-
-    acc_shutdown(acc_device_nvidia);
 #endif
 }
 
