@@ -23,7 +23,7 @@ if(CORENRN_ENABLE_GPU)
   endif()
 
   # various flags for PGI compiler with GPU build
-  if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI")
+  if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_C_COMPILER_ID} STREQUAL "NVHPC")
 
     # workaround for old PGI version
     set(PGI_ACC_FLAGS "-acc")
