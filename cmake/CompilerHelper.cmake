@@ -9,9 +9,14 @@ else()
   set(UNDEFINED_SYMBOLS_IGNORE_FLAG "--unresolved-symbols=ignore-all")
 endif()
 
-if(CMAKE_C_COMPILER_ID MATCHES "PGI")
+if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
   set(USING_PGI_COMPILER_TRUE "")
   set(USING_PGI_COMPILER_FALSE "#")
+  # See https://gitlab.kitware.com/cmake/cmake/-/issues/22168, upper limit of
+  # 3.20.3 is based on the current assigned milestone there.
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20" AND ${CMAKE_VERSION} VERSION_LESS "3.20.3")
+    string(APPEND CMAKE_DEPFILE_FLAGS_CXX "-MD<DEP_FILE>")
+  endif()
 else()
   set(USING_PGI_COMPILER_TRUE "#")
   set(USING_PGI_COMPILER_FALSE "")
