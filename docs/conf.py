@@ -97,10 +97,3 @@ if os.environ.get("READTHEDOCS"):
 
     # Execute & convert notebooks + doxygen
     subprocess.run("cd .. && python setup.py docs", check=True, shell=True)
-
-    # Remove `docs` from sys.path since RTD adds it automatically.
-    # Otherwise `docs/hoc` will clash with `hoc` when importing neuron
-    try:
-        sys.path.remove(os.path.abspath('.'))
-    except:
-        pass
