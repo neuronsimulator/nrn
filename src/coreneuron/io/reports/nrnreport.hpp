@@ -18,6 +18,7 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <cstdint>
 
 #define REPORT_MAX_NAME_LEN     256
 #define REPORT_MAX_FILEPATH_LEN 4096
@@ -92,6 +93,7 @@ struct ReportConfiguration {
     double stop;                          // stop time of report
     int num_gids;                         // total number of gids
     int buffer_size;                      // hint on buffer size used for this report
+    uint64_t population_offset;           // offset of the node ids in the population
     std::set<int> target;                 // list of gids for this report
 };
 

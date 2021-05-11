@@ -59,7 +59,10 @@ void SonataReportHandler::register_report(const NrnThread& nt,
         if (!vars.size())
             continue;
 
-        sonata_add_node(config.output_path.data(), config.population_name.data(), gid);
+        sonata_add_node(config.output_path.data(),
+                        config.population_name.data(),
+                        config.population_offset,
+                        gid);
         sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
         for (const auto& variable: vars) {
             sonata_add_element(config.output_path.data(),

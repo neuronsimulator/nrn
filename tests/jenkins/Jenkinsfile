@@ -1,3 +1,20 @@
+def setAlternateBranches() {
+    def alt_branches=""
+    if (ghprbPullLongDescription != "") {
+        if (ghprbPullLongDescription.contains('CI_BRANCHES:')) {
+            ci_branches = ghprbPullLongDescription.split('CI_BRANCHES:')
+            branches = ci_branches[1].split(',')
+            for (branch in branches) {
+                if (branch.contains("_BRANCH=")) {
+                    // Merge them. We later can do a single export
+                    alt_branches+=branch + " "
+                }
+            }
+        }
+    }
+    return alt_branches
+}
+
 pipeline {
     agent {
         node {
@@ -22,7 +39,13 @@ pipeline {
 
         stage('install Spack'){
             steps {
-                sh 'source $WORKSPACE/tests/jenkins/spack_setup.sh'
+                script{
+                    alt_branches=setAlternateBranches()
+                    sh("""export ${alt_branches};
+                          source $WORKSPACE/tests/jenkins/spack_setup.sh
+                       """
+                    )
+                }
             }
         }
 
