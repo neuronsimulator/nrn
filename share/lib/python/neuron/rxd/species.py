@@ -1253,6 +1253,7 @@ class Species(_SpeciesMathable):
         self.initial = initial
         self._atolscale = atolscale
         self._ecs_boundary_conditions = ecs_boundary_conditions
+        self._species_on_region = weakref.WeakKeyDictionary()
         if represents and not _ontology_id.match(represents):
             raise RxDException("The represents=%s is not valid CURIE" % represents)
         else:
@@ -1529,12 +1530,16 @@ class Species(_SpeciesMathable):
         The resulting object is a SpeciesOnRegion.
         This is useful for defining reaction schemes for MultiCompartmentReaction."""
         if isinstance(r, region.Region) and r in self._regions:
-            return SpeciesOnRegion(self, r)
+            if r not in self._species_on_region:
+                 self._species_on_region[r] = SpeciesOnRegion(self, r)
+            return self._species_on_region[r]
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
                 initializer._do_init()
             if r in self._extracellular_instances:
-                return SpeciesOnExtracellular(self, self._extracellular_instances[r])
+                if r not in self._species_on_region:
+                    self._species_on_region[r] = SpeciesOnExtracellular(self, self._extracellular_instances[r])
+                return self._species_on_region[r]
         raise RxDException('no such region')
 
     def _update_node_data(self):
@@ -1991,12 +1996,16 @@ class Parameter(Species):
         The resulting object is a ParameterOnRegion or ParameterOnExtracellular.
         This is useful for defining reaction schemes for MultiCompartmentReaction."""
         if isinstance(r, region.Region) and r in self._regions:
-            return ParameterOnRegion(self, r)
+            if r not in self._species_on_region:
+                self._species_on_region[r] = ParameterOnRegion(self, r)
+            return self._species_on_region[r]
         elif isinstance(r, region.Extracellular):
             if not hasattr(self,'_extracellular_instances'):
                 initializer._do_init()
             if r in self._extracellular_instances:
-                return ParameterOnExtracellular(self, self._extracellular_instances[r])
+                if r not in self._species_on_region:
+                    self._species_on_region[r] = ParameterOnExtracellular(self, self._extracellular_instances[r])
+                return self._species_on_region[r]
         raise RxDException('no such region')
 
 class ParameterOnRegion(SpeciesOnRegion):
