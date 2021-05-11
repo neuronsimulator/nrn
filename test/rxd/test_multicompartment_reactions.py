@@ -68,7 +68,7 @@ def test_multicompartment_reactions(neuron_instance):
     leak = rxd.MultiCompartmentReaction(
         ca[er], ca[cyt], gleak, gleak, membrane=cyt_er_membrane
     )
-
+    # test the SpeciesOnRegion remains in scope
     ip3rg = rxd.Rate(ip3r_gate_state[cyt_er_membrane], 
                      (1.0 / (1 + 1000.0 * ca[cyt] / (0.3)) - 
                      ip3r_gate_state[cyt_er_membrane]) / ip3rtau)
