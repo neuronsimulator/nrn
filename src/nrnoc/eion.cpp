@@ -75,6 +75,9 @@ void ion_register(void) {
     if (s && s->type == MECHANISM && memb_func[s->subtype].alloc == ion_alloc) {
         hoc_symlist = sav;
         free(buf);
+        if (*getarg(2) != global_charge(s->subtype)) {
+            hoc_execerr_ext("%s already defined with charge %g, cannot redefine with charge %g", s->name, global_charge(s->subtype), *getarg(2));
+        }
         hoc_retpushx((double) s->subtype);
         return;
     }
