@@ -1,6 +1,8 @@
 Introduction
 ============
 The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
+The previous autotools (./configure) build system has been removed after
+8.0 release.
 
 .. code-block:: shell
 

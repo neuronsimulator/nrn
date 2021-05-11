@@ -178,7 +178,7 @@ jobs:
           elif [ "$BUILD_MODE" == "setuptools" ]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
-          
+
           # basic test for cmake when python is not disabled
           if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_PYTHON=OFF"* ]]; then
             $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
