@@ -15,7 +15,7 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
         methods_by_class = {}
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="(py )?method">', tag):
-                method_id = self.body[i + 1].split('"')[1].split('.')
+                method_id = self.body[i + 1].split('id=')[1].split('"')[1].split('.')
                 method_name = method_id[-1]
                 method_class = '.'.join(method_id[: -1])
                 if method_class not in methods_by_class:
@@ -24,17 +24,17 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
         class_names = set(methods_by_class.keys())
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="(py )?class">', tag):
-                class_names.add(self.body[i + 1].split('"')[1])
+                class_names.add(self.body[i + 1].split('id=')[1].split('"')[1])
         functions = []
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="(py )?function">', tag):
                 try:
-                    functions.append(self.body[i + 1].split('"')[1])
+                    functions.append(self.body[i + 1].split('id=')[1].split('"')[1])
                 except:
                     functions.append(self.body[i + 3])
         for i, tag in enumerate(self.body):
             if re.match(r'<dl class="(py )?data">', tag):
-                data_id = self.body[i + 1].split('"')[1].split('.')
+                data_id = self.body[i + 1].split('id=')[1].split('"')[1].split('.')
                 data_name = data_id[-1]
                 data_class = '.'.join(data_id[: -1])
                 if data_class:
