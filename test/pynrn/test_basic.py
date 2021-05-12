@@ -25,6 +25,8 @@ def test_simple_sim():
     h.soma.diam = 5.6419
     expect_hocerr(h.ion_register, ("na", 2))
     assert(h.ion_charge("na_ion") == 1.0)
+    expect_hocerr(h.ion_register, ("ca", 3))
+    assert(h.ion_charge("ca_ion") == 2.0)
     h.soma.insert("hh")
     ic = h.IClamp(h.soma(0.5))
     ic.delay = 0.5
