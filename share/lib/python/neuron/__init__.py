@@ -135,7 +135,7 @@ except:
   try:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
-  except: # mingw autotools name strategy
+  except: # mingw name strategy (x-ref: #define HOCMOD "hoc")
     exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
@@ -163,27 +163,6 @@ if not hasattr(hoc, "__file__"):
   if origin is not None:
     import sysconfig
     hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
-    setattr(hoc, "__file__", hoc_path)
-  else:
-    # if the above is robust, maybe all this can be removed.
-    # next try is to derive from nrnversion(6) (only works for autotools build)
-    import platform
-    import os
-    p = h.nrnversion(6)
-    if "--prefix=" in p:
-      p = p[p.find('--prefix=') + 9:]
-      p = p[:p.find("'")]
-    else:
-      p = "/usr/local/nrn"
-    if sys.version_info >= (3, 0):
-      import sysconfig
-      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
-    else:
-      hoc_path = p + "/lib/python/neuron/hoc.so"
-    if not os.path.isfile(hoc_path):
-      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-    if not os.path.isfile(hoc_path):
-      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
     setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__

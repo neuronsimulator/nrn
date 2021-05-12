@@ -58,17 +58,6 @@ void nrnpy_augment_path() {
 #if defined(__linux__) || defined(DARWIN)
     // If /where/installed/lib/python/neuron exists, then append to sys.path
     std::string lib = std::string(path_prefix_to_libnrniv());
-#if !defined(NRNCMAKE)
-    // For an autotools build on an x86_64, it ends with x86_64/lib/
-    const char* lastpart = NRNHOSTCPU "/lib/";
-    if (lib.length() > strlen(lastpart)) {
-      size_t pos = lib.length() - strlen(lastpart);
-      pos = lib.find(lastpart, pos);
-      if (pos != std::string::npos) {
-        lib.replace(pos, std::string::npos, "lib/");
-      }
-    }
-#endif //!NRNCMAKE
 #else // not defined(__linux__) || defined(DARWIN)
     std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
 #endif //not defined(__linux__) || defined(DARWIN)

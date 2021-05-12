@@ -1,6 +1,5 @@
 # ~~~
-# This allows h.nrnversion(6) to print only the configuration differences
-# analogously to what happens with an autotools build.
+# This allows h.nrnversion(6) to print only the configuration differences.
 # The <optionname>_DEFAULT values should only be changed in this file
 # and not on the command line.
 # ~~~
