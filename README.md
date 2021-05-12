@@ -14,19 +14,8 @@ Linux and Mac you can install the official Python 3 wheel with:
 pip3 install neuron
 ```
 
-If you want to build the latest version from source, currently we are supporting two build systems:
-
-- CMake (__recommended__)
-- Autotools (legacy, minimum support - __will be DROPPED in the next release__)
-
-Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
-We would be grateful for any feedback or issues you encounter using the CMake-based build system.
-Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
-happy to help.
-
-**If you are using autotools, we strongly recommend switching to CMake as of now.**
-
-For detailed installation instructions see [docs/install/install_instructions.md](docs/install/install_instructions.md) file.
+If you want to build the latest version from source, we support **CMake** as build system. **Autotools** build system has been removed after 8.0 release.
+See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 
 ## Documentation
 

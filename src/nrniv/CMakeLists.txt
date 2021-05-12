@@ -2,16 +2,6 @@
 # Build nrniv binary and corresponding library
 # =============================================================================
 
-# ~~~
-# The old build (autoconf) built executables in oc, nrnoc, ivoc, nrniv as
-# well as libraries there and in a dozen or so other places. For cmake we
-# are experimenting with a single libnrniv.so that combines many of files
-# in those folders, both for simplicity, and to avoid issues of dependency
-# among the old libraries.
-# Also the oc, nrnoc, and ivoc executables are pretty well useless these
-# days. Other groups can, and should be, factored out.
-# ~~~
-
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -192,13 +182,6 @@ set_property(
   SOURCE ${NRN_NRNOC_SRC_DIR}/code.cpp ${NRN_NRNOC_SRC_DIR}/hoc_init.cpp ${NRN_NRNOC_SRC_DIR}/hoc_oop.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
-
-set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
 set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp

@@ -7,7 +7,7 @@ steps:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '2.7'
+      versionSpec: '3.6'
     displayName: "Use System Python"
 
 # Note: silently installing neuron doesn't work, when we print out the contents of the installation folder not all files

@@ -1,9 +1,8 @@
 Introduction
 ============
 The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
-The previous autotools (./configure) build system is still supported for
-the time being but any features that use submodules would need to build
-those separately.
+The previous autotools (./configure) build system has been removed after
+8.0 release.
 
 .. code-block:: shell
 
@@ -20,8 +19,7 @@ This is often very much faster than a single process make. One can add a number
 after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
 to use. This can be useful if there is the possibility of running out of memory.
 
-Sadly, there is no equivalent in cmake to the autotool's ``./configure --help``
-to list all the options. The closest is
+You can list CMake options with
 ``cmake .. -LH``
 which runs ``cmake ..`` as above and lists the cache variables along with help
 strings which are not marked as INTERNAL or ADVANCED. Alternatively,
