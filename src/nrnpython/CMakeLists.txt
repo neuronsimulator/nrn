@@ -81,12 +81,6 @@ else()
   set(BUILD_MINGW_FALSE "")
 endif()
 
-if(NRN_ENABLE_MEMACS)
-  set(BUILD_MEMACS_TRUE "")
-else()
-  set(BUILD_MEMACS_TRUE "#")
-endif()
-
 # rxdmath libraries (always build)
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})

@@ -385,7 +385,5 @@ void BinQ::remove(TQItem* q) {
 	}
 }
 
-#include <spaux.cpp>
 #include <sptree.cpp>
-#include <spdaveb.cpp>
 
