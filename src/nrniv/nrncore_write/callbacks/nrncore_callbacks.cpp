@@ -813,7 +813,6 @@ printf("PlayRecordEvent %g\n", tdeliver);
 void core2nrn_NetCon_event(int tid, double td, size_t nc_index) {
   assert(tid < nrn_nthread);
   NrnThread& nt = nrn_threads[tid];
-  printf("core2nrn_NetCon_event tid=%d t=%g td=%g nc_index=%zd\n", tid, nt._t, td, nc_index);
   // cellgroups_ has been deleted but deletion of cg.netcons was deferred
   // (and will be deleted on return from nrncore_run).
   // This is tragic for memory usage. There are more NetCon's than anything.
@@ -869,16 +868,13 @@ void core2nrn_SelfEvent_event(int tid, double td,
   double flag,  size_t nc_index, int is_movable)
 {
   assert(tid < nrn_nthread);
-  printf("core2nrn_SelfEvent_event tid=%d td=%g tar_type=%d tar_index=%d flag=%g, nc_index=%zd, is_movable=%d\n",
-    tid, td, tar_type, tar_index, flag, nc_index, is_movable);
   NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
 
 #if 1
   // verify nc->target_ consistent with tar_type, tar_index.
   Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
   Point_process* pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
-  printf("nc->target_=%p pnt=%p\n", nc->target_, pnt);
-  //assert(nc->target_ == pnt);
+  assert(nc->target_ == pnt);
 #endif
 
   double* weight = nc->weight_;
@@ -890,8 +886,6 @@ void core2nrn_SelfEvent_event_noweight(int tid, double td,
   double flag, int is_movable)
 {
   assert(tid < nrn_nthread);
-  printf("core2nrn_SelfEvent_event tid=%d td=%g tar_type=%d tar_index=%d flag=%g, is_movable=%d\n",
-    tid, td, tar_type, tar_index, flag, is_movable);
   double* weight = NULL;
   core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
 
