@@ -15,7 +15,7 @@ extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
 
 PVoid2Int CellGroup::artdata2index_;
-Deferred_Type2ArtData CellGroup::deferred_type2artdata_;
+Deferred_Type2ArtMl CellGroup::deferred_type2artml_;
 int* CellGroup::has_net_event_;
 
 CellGroup::CellGroup() {
@@ -564,7 +564,7 @@ void CellGroup::clean_art(CellGroup* cgs) {
     // data for artificial cells, so that the artificial cell ml->data
     // can be used when nrnthreads_type_return is called.
     if (corenrn_direct && nrn_nthread > 0) {
-        deferred_type2artdata_.resize(nrn_nthread);
+        deferred_type2artml_.resize(nrn_nthread);
     }
     for (int ith=0; ith < nrn_nthread; ++ith) {
         MlWithArt& mla = cgs[ith].mlwithart;
@@ -572,13 +572,13 @@ void CellGroup::clean_art(CellGroup* cgs) {
             int type = mla[i].first;
             Memb_list* ml = mla[i].second;
             if (nrn_is_artificial_[type]) {
-                if (!deferred_type2artdata_.empty()) {
-                    deferred_type2artdata_[ith][type] = {ml->nodecount, ml->data};
+                if (!deferred_type2artml_.empty()) {
+                    deferred_type2artml_[ith][type] = ml;
                 }else{
                     delete [] ml->data;
+                    delete [] ml->pdata;
+                    delete ml;
                 }
-                delete [] ml->pdata;
-                delete ml;
             }
         }
     }

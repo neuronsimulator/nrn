@@ -198,9 +198,9 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
                 // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
                 // has already been deleted.  So we defer deletion of the necessary
                 // cellgroups_ portion (deleting it on return from nrncore_run).
-                auto& p = CellGroup::deferred_type2artdata_[tid][type];
-                n = size_t(p.first);
-                mdata = p.second;
+                auto& ml = CellGroup::deferred_type2artml_[tid][type];
+                n = size_t(ml->nodecount);
+                mdata = ml->data;
             }
         }
     }
@@ -672,8 +672,27 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, in
 
 }
 
+// for faster determination of the movable index given the type
+static std::map<int, int> type2movable;
+static void setup_type2semantics() {
+  if (type2movable.empty()) {
+    for (int type = 0; type < n_memb_func; ++type) {
+      int* ds = memb_func[type].dparam_semantics;
+      if (ds) {
+        for (int psz=0; psz < bbcore_dparam_size[type]; ++psz) {
+          if (ds[psz] == -4) { // netsend semantics
+            type2movable[type] = psz;
+          }
+        }
+      }
+    }
+  }
+}
+
 NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   if (tid >= nrn_nthread) { return NULL; }
+
+  setup_type2semantics();
 
   NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
 
@@ -717,6 +736,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         SelfEvent* se = (SelfEvent*)de;
         Point_process* pnt = se->target_;
         int type = pnt->prop->type;
+        int movable_index = type2movable[type];
         double* wt = se->weight_;
 
         core_te->intdata.push_back(type);
@@ -744,8 +764,12 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         core_te->intdata.push_back(-1); // If NULL weight this is the indicator
 
         TQItem** movable = (TQItem**)se->movable_;
+        TQItem** pnt_movable = (TQItem**)(&pnt->prop->dparam[movable_index]);
         // Only one SelfEvent on the queue for a given point process can be movable
         core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
+        if (movable && *movable == tqi) {
+          assert(pnt_movable && *pnt_movable == tqi);
+        }
 
       } break;
       case PreSynType: { // 4
@@ -822,24 +846,6 @@ void core2nrn_NetCon_event(int tid, double td, size_t nc_index) {
   nc->send(td, net_cvode_instance, &nt);
 }
 
-// for faster determination of the movable index given the type
-static std::map<int, int> type2movable;
-static void setup_type2semantics() {
-  if (type2movable.empty()) {
-    for (int type = 0; type < n_memb_func; ++type) {
-      int* ds = memb_func[type].dparam_semantics;
-      if (ds) {
-        for (int psz=0; psz < bbcore_dparam_size[type]; ++psz) {
-          if (ds[psz] == -4) { // netsend semantics
-            type2movable[type] = psz;
-          }
-        }
-      }
-    }
-  }
-}
-
-
 static void core2nrn_SelfEvent_helper(int tid, double td,
   int tar_type, int tar_index,
   double flag,  double* weight, int is_movable)
@@ -848,10 +854,21 @@ static void core2nrn_SelfEvent_helper(int tid, double td,
     setup_type2semantics();
   }
   Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
-  Point_process* pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  Point_process* pnt;
+  if (ml) {
+    pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  } else {
+    // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
+    // And the old deferred_type2artdata_ only gave us data, not pdata.
+    // So this is where I decided to replace the more
+    // expensive deferred_type2artml_.
+    ml = CellGroup::deferred_type2artml_[tid][tar_type];
+    pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  }
+
   // Needs to be tested when permuted on CoreNEURON side.
   assert(tar_type == pnt->prop->type);
-  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
+//  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
 
   int movable_index = type2movable[tar_type];
   void** movable_arg = &(pnt->prop->dparam[movable_index]._pvoid);
