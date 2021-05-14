@@ -248,6 +248,9 @@ if(NRN_ENABLE_MODULE_INSTALL)
   endforeach(pyexe)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
+  if(NRN_ENABLE_RX3D)
+    add_dependencies(hoc_module rxd_cython_generated)
+  endif()
 
   #~~~
   # neuron module (possibly with multiple extension versions) was built
