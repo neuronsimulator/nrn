@@ -67,21 +67,45 @@ def test_spikes(use_mpi4py=mpi4py_option, use_nrnmpi_init=nrnmpi_init_option,
     coreneuron.gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
     coreneuron.file_mode = file_mode
     coreneuron.verbose = 0
-    h.stdinit()
     corenrn_all_spike_t = h.Vector()
     corenrn_all_spike_gids = h.Vector()
 
     pc.spike_record(-1, corenrn_all_spike_t, corenrn_all_spike_gids)
-    pc.psolve(h.tstop)
 
-    corenrn_all_spike_t = corenrn_all_spike_t.to_python()
-    corenrn_all_spike_gids = corenrn_all_spike_gids.to_python()
+    pc.set_maxstep(10)
+    def run(mode):
+        h.stdinit()
+        if mode == 0:
+            pc.psolve(h.tstop)
+        elif mode == 1:
+            while h.t < h.tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < h.tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
-    # check spikes match
-    assert(len(nrn_spike_t))  # check we've actually got spikes
-    assert(len(nrn_spike_t) == len(nrn_spike_gids))  # matching no. of gids
-    assert(nrn_spike_t == corenrn_all_spike_t)
-    assert(nrn_spike_gids == corenrn_all_spike_gids)
+        corenrn_all_spike_t_py = corenrn_all_spike_t.to_python()
+        corenrn_all_spike_gids_py = corenrn_all_spike_gids.to_python()
+
+        # check spikes match
+        assert(len(nrn_spike_t))  # check we've actually got spikes
+        assert(len(nrn_spike_t) == len(nrn_spike_gids))  # matching no. of gids
+        if nrn_spike_t != corenrn_all_spike_t_py:
+          print(mode)
+          print(nrn_spike_t)
+          print(nrn_spike_gids)
+          print(corenrn_all_spike_t_py)
+          print(corenrn_all_spike_gids_py)
+          print([corenrn_all_spike_t[i] - nrn_spike_t[i] for i in range(len(nrn_spike_t))])
+        assert(nrn_spike_t == corenrn_all_spike_t_py)
+        assert(nrn_spike_gids == corenrn_all_spike_gids_py)
+    if file_mode is False:
+        for mode in [0,1,2]:
+            run(mode)
+    else:
+        run(0)
+    
     h.quit()
 
 

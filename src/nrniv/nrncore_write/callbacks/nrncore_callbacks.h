@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <set>
 #include <cstdlib>
 // includers need several pieces of info for nrn_get_partrans_setup_info
 #include "partrans.h"
@@ -81,6 +82,8 @@ void core2nrn_SelfEvent_event_noweight(int tid, double td,
     int tar_type, int tar_index,
     double flag, int is_movable);
 
+//Set of the voltage indices in which PreSyn.flag_ == true
+void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true);
 } // end of extern "C"
 
 // For direct transfer of event queue information to CoreNEURON
@@ -93,12 +96,13 @@ struct NrnCoreTransferEvents {
 };
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
-}
 
 // per item direct transfer of WatchCondition
-extern "C" {
 void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
-}
+
+// Add the voltage indices in which PreSyn.flag_ == true to the set.
+void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
+} // end of extern "C"
 
 static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_group_ids_", (CNB)nrnthread_group_ids},
@@ -127,11 +131,13 @@ static core2nrn_callback_t cnbs[]  = {
 
         {"nrn2core_transfer_tqueue_", (CNB)nrn2core_transfer_tqueue},
         {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
+        {"nrn2core_transfer_PreSyn_flag_", (CNB)nrn2core_PreSyn_flag},
 
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},
         {"core2nrn_SelfEvent_event_", (CNB)core2nrn_SelfEvent_event},
         {"core2nrn_SelfEvent_event_noweight_", (CNB)core2nrn_SelfEvent_event_noweight},
-       {NULL, NULL}
+        {"core2nrn_PreSyn_flag_", (CNB)core2nrn_PreSyn_flag},
+        {NULL, NULL}
 };
 
 

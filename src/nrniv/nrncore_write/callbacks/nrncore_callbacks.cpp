@@ -11,7 +11,7 @@
 #include "nrncore_write/io/nrncore_io.h"
 #include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
-#include "netcvode.h" // for nrnbbcore_vecplay_write
+#include "netcvode.h" // for nrnbbcore_vecplay_write and PreSyn.flag_
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
@@ -905,6 +905,64 @@ void core2nrn_SelfEvent_event_noweight(int tid, double td,
   assert(tid < nrn_nthread);
   double* weight = NULL;
   core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
-
 }
 
+//Set of the voltage indices in which PreSyn.flag_ == true
+void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
+  if (tid >= nrn_nthread) {
+    return;
+  }
+  NetCvodeThreadData& nctd = net_cvode_instance->p[tid];
+  hoc_Item* pth = nctd.psl_thr_;
+  if (pth) {
+    hoc_Item* q;
+    // turn off all the PreSyn.flag_ as they might have been turned off
+    // during the psolve on the coreneuron side.
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      ps->flag_ = false;
+    }
+    if (presyns_flag_true.empty()) {
+      return;
+    }
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      assert(ps->nt_ == (nrn_threads + tid));
+      if (ps->thvar_) {
+        int type = 0;
+        int index_v = -1;
+        nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+        assert(type == voltage);
+        if(presyns_flag_true.erase(index_v)) {
+          ps->flag_ = true;
+          if (presyns_flag_true.empty()) {
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Add the voltage indices in which PreSyn.flag_ == true to the set.
+void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
+  if (tid >= nrn_nthread) {
+    return;
+  }
+  NetCvodeThreadData& nctd = net_cvode_instance->p[tid];
+  hoc_Item* pth = nctd.psl_thr_;
+  if (pth) {
+    hoc_Item* q;
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      assert(ps->nt_ == (nrn_threads + tid));
+      if (ps->flag_ == true && ps->thvar_) {
+        int type = 0;
+        int index_v = -1;
+        nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+        assert(type == voltage);
+        presyns_flag_true.insert(index_v);
+      }
+    }
+  }
+}
