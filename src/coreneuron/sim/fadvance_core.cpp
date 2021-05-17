@@ -30,6 +30,45 @@ extern corenrn_parameters corenrn_param;
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*, int, int, int&);
 
+
+namespace {
+
+class ProgressBar final {
+    progressbar* pbar;
+    int current_step = 0;
+    bool show;
+    constexpr static int progressbar_update_steps = 5;
+
+  public:
+    ProgressBar(int nsteps)
+        : show(nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
+        if (show) {
+            printf("\n");
+            pbar = progressbar_new("psolve", nsteps);
+        }
+    }
+
+    void update(int step, double time) {
+        current_step = step;
+        if (show && (current_step % progressbar_update_steps) == 0) {
+            progressbar_update(pbar, current_step, time);
+        }
+    }
+
+    void step(double time) {
+        update(current_step + 1, time);
+    }
+
+    ~ProgressBar() {
+        if (show) {
+            progressbar_finish(pbar);
+        }
+    }
+};
+
+}  // unnamed namespace
+
+
 void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
     if (adt != nrn_threads[0]._dt) {
         for (int i = 0; i < nrn_nthread; ++i) {
@@ -73,31 +112,10 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
 integration interval before joining
 */
 /// --> Coreneuron
-static progressbar* progress;
 
-void initialize_progress_bar(int nstep) {
-    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
-        printf("\n");
-        progress = progressbar_new(" psolve", nstep);
-    }
-}
-
-void update_progress_bar(int step, double time) {
-    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
-        progressbar_update(progress, step, time);
-    }
-}
-
-void finalize_progress_bar() {
-    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
-        progressbar_finish(progress);
-    }
-}
 
 void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop) {
-    const int progressbar_update_interval = 5;
-    static int current_steps = 0;
-    initialize_progress_bar(total_sim_steps);
+    ProgressBar progress_bar(total_sim_steps);
 #if NRNMPI
     double updated_tstop = tstop - dt;
     nrn_assert(nrn_threads->_t <= tstop);
@@ -111,13 +129,10 @@ void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop) {
         if (stoprun) {
             break;
         }
-        current_steps++;
-        if (!(current_steps % progressbar_update_interval)) {
-            update_progress_bar(current_steps, nrn_threads[0]._t);
-        }
+        progress_bar.step(nrn_threads[0]._t);
     }
-    finalize_progress_bar();
 }
+
 
 void nrn_fixed_step_group_minimal(int total_sim_steps) {
     static int current_steps = 0;
@@ -126,7 +141,8 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
     int step_group_n = total_sim_steps;
     int step_group_begin = 0;
     int step_group_end = 0;
-    initialize_progress_bar(step_group_n);
+
+    ProgressBar progress_bar(step_group_n);
 
     while (step_group_end < step_group_n) {
         nrn_multithread_job(nrn_fixed_step_group_thread,
@@ -143,12 +159,10 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
         if (stoprun) {
             break;
         }
-        current_steps++;
         step_group_begin = step_group_end;
-        update_progress_bar(step_group_end, nrn_threads[0]._t);
+        progress_bar.update(step_group_end, nrn_threads[0]._t);
     }
     t = nrn_threads[0]._t;
-    finalize_progress_bar();
 }
 
 static void* nrn_fixed_step_group_thread(NrnThread* nth,
