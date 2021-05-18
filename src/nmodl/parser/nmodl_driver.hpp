@@ -16,6 +16,8 @@
 #include <unordered_map>
 
 #include "ast/ast.hpp"
+#include "lexer/nmodl_lexer.hpp"
+#include "parser/nmodl_driver.hpp"
 #include "utils/file_library.hpp"
 
 
@@ -136,6 +138,14 @@ class NmodlDriver {
      * \throw std::runtime_error
      */
     void parse_error(const location& location, const std::string& message);
+
+    /**
+     * Emit a parsing error. Takes additionally a Lexer instance to print code context
+     * \throw std::runtime_error
+     */
+    void parse_error(const NmodlLexer& scanner,
+                     const location& location,
+                     const std::string& message);
 
     /**
      * Ensure \a file argument given to the INCLUDE directive is valid:

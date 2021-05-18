@@ -80,6 +80,8 @@ class NmodlLexer: public NmodlFlexLexer {
      */
     int lexical_context = 0;
 
+    std::string cur_line;
+
   public:
     /// location of the parsed token
     location loc;
@@ -143,6 +145,9 @@ class NmodlLexer: public NmodlFlexLexer {
 
     /// Return last scanned unit as ast::String
     ast::String* get_unit();
+
+    /// Return current line as string
+    std::string get_curr_line() const;
 
     /// Enable debug output (via yyout) if compiled into the scanner.
     void set_debug(bool b);
