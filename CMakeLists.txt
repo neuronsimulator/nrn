@@ -173,7 +173,6 @@ include(ReleaseDebugAutoFlags)
 # =============================================================================
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
-find_package(Threads QUIET)
 
 if(NOT NRN_ENABLE_INTERNAL_READLINE)
   find_package(Readline)
