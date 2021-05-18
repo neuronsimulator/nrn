@@ -222,7 +222,6 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
-* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
 
 Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
 the CMake options.
