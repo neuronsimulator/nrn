@@ -181,7 +181,6 @@ target_link_libraries(
   ${link_cudacoreneuron}
   ${CUDA_LIBRARIES}
   ${CALIPER_LIB}
-  ${CALIPER_MPI_LIB}
   ${likwid_LIBRARIES}
   ${MPI_C_LIBRARIES})
 target_include_directories(coreneuron SYSTEM
