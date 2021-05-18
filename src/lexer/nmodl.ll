@@ -399,6 +399,7 @@ ELSE                    {
                             /** First we read entire line and print to stdout. This is useful
                               * for using lexer program. */
                             std::string str(yytext);
+                            cur_line = str;
                             stringutils::trim(str);
 
                             if (driver.is_verbose()) {
@@ -573,4 +574,8 @@ nmodl::ast::String* nmodl::parser::NmodlLexer::get_unit() {
     auto result = last_unit;
     last_unit = nullptr;
     return result;
+}
+
+std::string nmodl::parser::NmodlLexer::get_curr_line() const {
+    return cur_line;
 }

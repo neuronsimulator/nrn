@@ -2629,5 +2629,5 @@ std::string parse_with_verbatim_parser(std::string str) {
  */
 
 void NmodlParser::error(const location &loc , const std::string &msg) {
-    driver.parse_error(loc, msg);
+    driver.parse_error(scanner, loc, msg);
 }

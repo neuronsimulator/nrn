@@ -135,7 +135,18 @@ int NmodlDriver::get_defined_var_value(const std::string& name) const {
 
 void NmodlDriver::parse_error(const location& location, const std::string& message) {
     std::ostringstream oss;
-    oss << "NMODL Parser Error : " << message << " [Location : " << location << ']';
+    oss << "NMODL Parser Error : " << message << " [Location : " << location << "]";
+    throw std::runtime_error(oss.str());
+}
+
+void NmodlDriver::parse_error(const NmodlLexer& scanner,
+                              const location& location,
+                              const std::string& message) {
+    std::ostringstream oss;
+    oss << "NMODL Parser Error : " << message << " [Location : " << location << "]";
+    oss << scanner.get_curr_line() << '\n';
+    oss << std::string(location.begin.column - 1, '-');
+    oss << "^\n";
     throw std::runtime_error(oss.str());
 }
 
