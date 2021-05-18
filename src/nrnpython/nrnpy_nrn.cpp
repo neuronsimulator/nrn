@@ -2295,7 +2295,7 @@ static void rangevars_add(Symbol* sym) {
   PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
 }
 
-myPyMODINIT_FUNC nrnpy_nrn(void) {
+PyObject* nrnpy_nrn(void) {
   int i;
   PyObject* m;
 

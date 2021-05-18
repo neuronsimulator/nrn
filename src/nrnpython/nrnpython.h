@@ -23,8 +23,6 @@
 #endif
 #include <nrnwrap_Python.h>
 
-#define myPyMODINIT_FUNC PyObject *
-
 #endif /*USE_PYTHON*/
 
 #define PyString_FromString PyUnicode_FromString

@@ -66,7 +66,7 @@ extern void hoc_unref_defer();
 extern void sec_access_push();
 extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
-myPyMODINIT_FUNC nrnpy_nrn();
+PyObject* nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
 extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
@@ -2968,7 +2968,7 @@ static char* nrncore_arg(double tstop) {
   return NULL;
 }
 
-myPyMODINIT_FUNC nrnpy_hoc() {
+PyObject* nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
