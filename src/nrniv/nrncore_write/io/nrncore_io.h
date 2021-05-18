@@ -9,6 +9,7 @@ class NrnThread;
 union Datum;
 class NrnMappingInfo;
 
+void create_dir_path(const std::string& path);
 std::string get_write_path();
 std::string get_filename(const std::string &path, std::string file_name);
 
@@ -19,7 +20,6 @@ inline T *begin_ptr(std::vector <T> &v) {
 }
 
 
-extern "C" {
 
 // to avoid incompatible dataset between neuron and coreneuron
 // add version string to the dataset files
@@ -38,11 +38,10 @@ typedef void (*bbcore_write_t)(double *, int *, int *, int *, double *, Datum *,
 
 void write_contiguous_art_data(double **data, int nitem, int szitem, FILE *f);
 double *contiguous_art_data(double **data, int nitem, int szitem);
-void write_nrnthread_task(const char *, CellGroup *cgs);
+void write_nrnthread_task(const char *, CellGroup *cgs, bool append);
 void nrnbbcore_vecplay_write(FILE *f, NrnThread &nt);
 
 void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo);
 
-}
 
 #endif //NRN_NRNCORE_IO_H

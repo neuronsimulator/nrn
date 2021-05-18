@@ -8,7 +8,6 @@
 #include <InterViews/image.h>
 #include "oc2iv.h"
 
-extern "C" {
 
 #define byte unsigned char
 #define True 1
@@ -30,7 +29,6 @@ PICINFO* pinfo_;
 
 static int LoadGIF(const char* fname, PICINFO*);
 
-} // extern "C"
 
 Image* gif_image(const char* filename) {
 	Image* image;
@@ -43,12 +41,11 @@ Image* gif_image(const char* filename) {
 	return image;
 }
 
-extern "C" {
 
 /*
- * xvgif.c  -  GIF loading code for 'xv'.  Based strongly on...
+ * xvgif.cpp  -  GIF loading code for 'xv'.  Based strongly on...
  *
- * gif2ras.c - Converts from a Compuserve GIF (tm) image to a Sun Raster image.
+ * gif2ras.cpp - Converts from a Compuserve GIF (tm) image to a Sun Raster image.
  *
  * Copyright (c) 1988, 1989 by Patrick J. Naughton
  *
@@ -153,8 +150,8 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 {
   /* returns '1' if successful */
 
-  register byte  ch, ch1, *origptr;
-  register int   i, block;
+  byte  ch, ch1, *origptr;
+  int   i, block;
   int            aspect, gotimage;
   float normaspect;
 
@@ -487,7 +484,7 @@ static int LoadGIF(const char* fname, PICINFO* pinfo)
 /********************************************/
 static int readImage(PICINFO* pinfo)
 {
-  register byte ch, ch1, *ptr1, *picptr;
+  byte ch, ch1, *ptr1, *picptr;
   int           i, npixels, maxpixels;
 
   npixels = maxpixels = 0;
@@ -808,6 +805,5 @@ static void gifWarning(const char* st)
 }
 
 
-} //  extern "C"
 
 #endif

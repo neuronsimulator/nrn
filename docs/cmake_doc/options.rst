@@ -1,9 +1,8 @@
 Introduction
 ============
 The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
-The previous autotools (./configure) build system is still supported for
-the time being but any features that use submodules would need to build
-those separately.
+The previous autotools (./configure) build system has been removed after
+8.0 release.
 
 .. code-block:: shell
 
@@ -20,8 +19,7 @@ This is often very much faster than a single process make. One can add a number
 after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
 to use. This can be useful if there is the possibility of running out of memory.
 
-Sadly, there is no equivalent in cmake to the autotool's ``./configure --help``
-to list all the options. The closest is
+You can list CMake options with
 ``cmake .. -LH``
 which runs ``cmake ..`` as above and lists the cache variables along with help
 strings which are not marked as INTERNAL or ADVANCED. Alternatively,
@@ -307,6 +305,21 @@ CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
   C plus plus compiler  
 
+NRN_NMODL_CXX_FLAGS:STRING=""
+-----------------------------
+  Compiler flag to build tools like nocmodl, modlunit.
+
+  In cluster environment with different architecture of login node
+  and compute node, we need to compile tools like nocmodl and modlunit
+  with different compiler options to run them on login/build nodes. This
+  option appends provided flags to CMAKE_CXX_FLAGS.
+
+  For example, with intel compiler compiling NEURON for KNL but building
+  on a Skylake node:
+  .. code-block::
+
+    -DCMAKE_BUILD_TYPE=Custom -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DNRN_NMODL_CXX_FLAGS="-XHost"
+
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
   Path to a file.  
@@ -322,7 +335,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
   ``make`` can run the tests with ``make test``.
   May also need to ``pip install pytest``.
   ``make test`` is quite terse. To get the same verbose output that is
-  seen with the travis-ci tests, use ``ctest -VV`` (executed in the
+  seen with the CI tests, use ``ctest -VV`` (executed in the
   build folder). One can also run individual test files
   with ``python3 -m pytest <testfile.py>`` or all the test files in that
   folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
@@ -346,6 +359,38 @@ NRN_ENABLE_TESTS:BOOL=OFF
     cd ../test/pynrn
     python3 -m pytest
     python3 -m pytest test_currents.py
+
+NRN_ENABLE_COVERAGE:BOOL=OFF
+---------------------------
+  Enable code coverage
+
+  Requires ``lcov`` (e.g. ``sudo apt install lcov``).
+
+  Provides two make targets to simplify the repeated "run tests, examine coverage"
+  workflow.
+    -- ``make cover_begin`` erases all previous coverage data
+    (``*.gcda`` files), and creates a baseline report. (Note all files and
+    folders are created in the ``CMAKE_BINARY_DIR`` where you ran cmake.)
+
+    -- ``make cover_html`` creates a coverage report for the sum of all the
+    software runs since the last ``cover_begin`` and prints a file url
+    that you can paste into your browser to review the coverage.
+
+  When using an iterative workflow to examine test coverage of a single
+  or a few files, the above targets run much faster when this option is
+  combined with `NRN_COVERAGE_FILES:STRING=`_
+
+  Code coverage without the use of this option is explained in
+  `Developer Builds: Code Coverage <../install/code_coverage.html>`_
+
+NRN_COVERAGE_FILES:STRING=
+-------------------------------------------------------------
+  Coverage limited to semicolon (;) separated list of file paths
+  relative to ``PROJECT_SOURCE_DIR``.
+
+  ```
+  -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
+  ```
 
 NEURON_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
@@ -400,6 +445,9 @@ NRN_ENABLE_SHARED:BOOL=ON
 
     nrniv -python
 
+  Note that the top-level ``CMakeLists.txt`` file includes some custom configuration for Cray platforms.
+  This may need to be adapted if you specify ``NRN_ENABLE_SHARED=OFF``.
+
 NRN_ENABLE_THREADS:BOOL=ON
 --------------------------
   Allow use of Pthreads  
@@ -428,3 +476,12 @@ NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
 
 Forces use of the readline code distributed with NEURON even if there is a system supplied readline.
 
+NRN_ENABLE_BACKTRACE:BOOL=OFF
+-------------------------------------
+  Generate a backtrace on floating, segfault, and bus exceptions.
+
+  Avoids the need to use gdb to view the backtrace.
+
+  Does not work with python.
+
+  Note: floating exceptions are turned on with :func:`nrn_feenableexcept`.

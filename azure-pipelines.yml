@@ -13,6 +13,11 @@ schedules:
 # Auto cancel old PR builds
 pr:
   autoCancel: true
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#  paths:
+#    exclude:
+#      - docs
+#      - README.md
 
 # Trigger build for certain branches only
 trigger:
@@ -27,6 +32,8 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
+      Python27:
+        python.version: '2.7'
       Python35:
         python.version: '3.5'
       Python36:
@@ -66,6 +73,9 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
+      Python27:
+        python.version: '2.7'
+        python.org.version: '2.7.18'
       Python35:
         python.version: '3.5'
         python.org.version: '3.5.4'
@@ -95,7 +105,7 @@ jobs:
     displayName: 'Install Python from python.org'
 
   - script: |
-      brew cask install xquartz
+      brew install --cask xquartz
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
       cmake --version

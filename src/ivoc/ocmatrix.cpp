@@ -16,8 +16,10 @@ extern "C" {
 #include "matrix2.h"
 #include "sparse.h"
 #include "sparse2.h"
+extern MAT *m_get(int,int);
+} // extern "C"
+
 int nrn_matrix_dim(void*, int );
-}
 
 #include "ocmatrix.h"
 using std::vector;
@@ -33,8 +35,8 @@ static void Vect2VEC(Vect* v1, VEC& v2) {
 	v2.dim = vector_capacity(v1);
 	v2.max_dim = vector_buffer_size(v1);
 #else
-	v2.ve = v1->vec();
-	v2.dim = v1->capacity();
+	v2.ve = v1->data();
+	v2.dim = v1->size();
 	v2.max_dim = v1->buffer_size();
 #endif
 }

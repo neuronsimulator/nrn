@@ -19,12 +19,11 @@
 #include "graph.h"
 #endif
 #include "gui-redirect.h"
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-}
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
+
 static double dummy;
 
 static Symbol* pv_class_sym_;
@@ -189,7 +188,7 @@ static double ptr_plot(void* v) {
 IFGUI
         int i;
 	double** y = opv->pd_;
-	int n = opv->size_;
+	auto n = opv->size_;
 	char* label = opv->label_;
 
         Object* ob1 = *hoc_objgetarg(1);
@@ -214,7 +213,7 @@ IFGUI
 	   if (hoc_is_object_arg(2)) {
                  // passed a vector
              Vect* vp2 = vector_arg(2);
-	     n = Math::min(n, vp2->capacity());
+	     n = std::min(n, vp2->size());
 	     for (i=0; i < n; ++i) gv->add(vp2->elem(i), y[i]);
            } else {
                  // passed xinterval

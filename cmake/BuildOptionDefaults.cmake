@@ -1,6 +1,5 @@
 # ~~~
-# This allows h.nrnversion(6) to print only the configuration differences
-# analogously to what happens with an autotools build.
+# This allows h.nrnversion(6) to print only the configuration differences.
 # The <optionname>_DEFAULT values should only be changed in this file
 # and not on the command line.
 # ~~~
@@ -23,6 +22,7 @@ set(NRN_ENABLE_MPI_DYNAMIC_DEFAULT OFF)
 set(NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT OFF)
 set(NRN_ENABLE_REL_RPATH_DEFAULT OFF)
 set(NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT OFF)
+set(NRN_NMODL_CXX_FLAGS_DEFAULT "-O0")
 
 # on cray cross compiling environment, use internal readline
 if(IS_DIRECTORY "/opt/cray")

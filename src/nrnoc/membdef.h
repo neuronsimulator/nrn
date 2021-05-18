@@ -29,7 +29,7 @@
 #define SELF_CON_FLAG   (int)2     /* Allow for self connections (fcon) */
 #define CON_TYPE_FLAG   (int)3     /* Stimulus type (fcon) */
 
-/* used by parameter dump when dump_flag == 1. (see pdump.c) */
+/* used by parameter dump when dump_flag == 1. (see pdump.cpp) */
 #define LINE_LEN        78         /* line length */
 #define IFSEC_INDENT    4          /* how far to indent ifsec */
 #define MECH_INDENT     22         /* how far from begin of line to indent mechs */

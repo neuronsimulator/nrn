@@ -31,15 +31,15 @@ macro(nrn_check_dir_exists HEADER VARIABLE)
   if(${HAVE_HEADER})
     # if header is found, create a code from template
     string(REPLACE "@dir_header@" ${HEADER} CONFTEST_DIR "${CONFTEST_DIR_TPL}")
-    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_DIR})
+    file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_DIR})
     # try to compile
-    try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+    try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
     if(${RESULT_VAR})
       set(${VARIABLE} 1)
     else()
       set(${VARIABLE} 0)
     endif()
-    file(REMOVE "conftest.c")
+    file(REMOVE "conftest.cpp")
   endif()
 endmacro()
 
@@ -59,13 +59,13 @@ macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
     }")
   string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
   string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_TYPE})
+  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_TYPE})
 
-  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(NOT ${RESULT_VAR})
     set(${VARIABLE} ${DEFAULT_TYPE})
   endif()
-  file(REMOVE "conftest.c")
+  file(REMOVE "conftest.cpp")
 endmacro()
 
 # =============================================================================
@@ -81,23 +81,23 @@ macro(nrn_check_signal_return_type VARIABLE)
     int main () {
       return *(signal (0, 0)) (0) == 1;
     }")
-  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c ${CONFTEST_RETSIGTYPE})
-  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.c)
+  file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
+  try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(RESULT_VAR)
     set(${VARIABLE} int)
   else()
     set(${VARIABLE} void)
   endif()
-  file(REMOVE "conftest.c")
+  file(REMOVE "conftest.cpp")
 endmacro()
 
 # =============================================================================
 # Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
 # =============================================================================
 # ~~~
-# Just as autoconf transforms file.in into file, this 4 arg macro transforms
-# PROJECT_SOURCE_DIR/sdir/sfile.in into PROJECT_BINARY_DIR/bdir/bfile . The
-# shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
+# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
+# PROJECT_BINARY_DIR/bdir/bfile .
+# THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
 # PROJECT_BINARY_DIR/dir/file
 # This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
 # so that the normal cmake configure_file command works to make a proper
@@ -105,8 +105,6 @@ endmacro()
 # if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
 # .o files that depend on unchanged bfile. The sdir arg is the path relative to
 # PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
-# Lastly, in case there is an autotools version of bfile left over
-# from a previous autotools build, PROJECT_SRC_DIR/sdir/bfile is removed.
 # Note that everytime cmake is run, the bfile is compared to a newly created
 # _cmake_tmp_bfile consistent with the current cmake args.
 # Note that the sfile arg does NOT contain the .in suffix.
@@ -131,7 +129,6 @@ macro(nrn_configure_dest_src bfile bdir sfile sdir)
     DIRECTORY
     APPEND
     PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
-  file(REMOVE "${PROJECT_SOURCE_DIR}/${sdir}/${bfile}")
 endmacro()
 
 macro(nrn_configure_file file dir)
@@ -258,3 +255,14 @@ macro(nocmodl_mod_to_c modfile_basename)
     DEPENDS nocmodl ${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
+
+# =============================================================================
+# Create symbolic links
+# =============================================================================
+macro(nrn_install_dir_symlink source_dir symlink_dir)
+    # make sure to have directory path exist upto parent dir
+    get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
+    # create symbolic link
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
+endmacro(nrn_install_dir_symlink)

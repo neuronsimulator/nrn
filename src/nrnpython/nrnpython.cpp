@@ -11,10 +11,9 @@
 #include <string>
 #include <ocfile.h> // bool isDirExist(const std::string& path);
 
-extern "C" {
 #include <hocstr.h>
-void nrnpython_real();
-void nrnpython_start(int);
+extern "C" void nrnpython_real();
+extern "C" void nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
@@ -35,7 +34,6 @@ static char* nrnpython_getline(FILE*, FILE*, char*);
 #else
 static char* nrnpython_getline(char*);
 #endif
-extern void rl_stuff_char(int);
 extern int nrn_global_argc;
 extern char** nrn_global_argv;
 void nrnpy_augment_path();
@@ -46,7 +44,10 @@ extern char** nrn_global_argv;
 #if NRNPYTHON_DYNAMICLOAD
 int nrnpy_site_problem;
 #endif
-}
+
+extern "C" {
+extern void rl_stuff_char(int);
+} // extern "C"
 
 void nrnpy_augment_path() {
   static int augmented = 0;
@@ -57,17 +58,6 @@ void nrnpy_augment_path() {
 #if defined(__linux__) || defined(DARWIN)
     // If /where/installed/lib/python/neuron exists, then append to sys.path
     std::string lib = std::string(path_prefix_to_libnrniv());
-#if !defined(NRNCMAKE)
-    // For an autotools build on an x86_64, it ends with x86_64/lib/
-    const char* lastpart = NRNHOSTCPU "/lib/";
-    if (lib.length() > strlen(lastpart)) {
-      size_t pos = lib.length() - strlen(lastpart);
-      pos = lib.find(lastpart, pos);
-      if (pos != std::string::npos) {
-        lib.replace(pos, std::string::npos, "lib/");
-      }
-    }
-#endif //!NRNCMAKE
 #else // not defined(__linux__) || defined(DARWIN)
     std::string lib = std::string(neuronhome_forward()) + std::string("/lib/");
 #endif //not defined(__linux__) || defined(DARWIN)
@@ -196,7 +186,7 @@ static wchar_t* mywstrdup(char* s) {
 }
 #endif
 
-void nrnpython_start(int b) {
+extern "C" void nrnpython_start(int b) {
 #if USE_PYTHON
   static int started = 0;
   //printf("nrnpython_start %d started=%d\n", b, started);
@@ -285,7 +275,7 @@ void nrnpython_start(int b) {
 #endif
 }
 
-void nrnpython_real() {
+extern "C" void nrnpython_real() {
   int retval = 0;
 #if USE_PYTHON
   HocTopContextSet
@@ -314,9 +304,9 @@ static char* nrnpython_getline(char* prompt) {
     size_t n = strlen(hoc_cbufstr->buf) + 1;
     hoc_ctp = hoc_cbufstr->buf + n - 1;
 #if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
-    char* p = (char*)PyMem_RawMalloc(n);
+    char* p = static_cast<char*>(PyMem_RawMalloc(n));
 #else
-    char* p = (char*)PyMem_MALLOC(n);
+    char* p = static_cast<char*>(PyMem_MALLOC(n));
 #endif
     if (p == 0) {
       return 0;
@@ -325,9 +315,9 @@ static char* nrnpython_getline(char* prompt) {
     return p;
   } else if (r == EOF) {
 #if (PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 4)
-    char* p = (char*)PyMem_RawMalloc(2);
+    char* p = static_cast<char*>(PyMem_RawMalloc(2));
 #else
-    char* p = (char*)PyMem_MALLOC(2);
+    char* p = static_cast<char*>(PyMem_MALLOC(2));
 #endif
     if (p == 0) {
       return 0;

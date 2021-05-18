@@ -1,6 +1,10 @@
 # Test of data return covering most of the functionality.
-
+import os
 import pytest
+import sys
+import traceback
+
+enable_gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
 
 from neuron import h
 pc = h.ParallelContext()
@@ -59,7 +63,9 @@ class Cell():
 class Network():
   def __init__(self):
     self.cells = [Cell(i) for i in range(5)]
-    cvode.use_fast_imem(1)
+    # This is not supported on GPU, see:
+    # https://github.com/BlueBrain/CoreNeuron/issues/197
+    cvode.use_fast_imem(not enable_gpu)
     # a few intrinsically firing ARTIFICIAL_CELLS with and without gids
     self.acells = [h.IntervalFire() for _ in range(8)]
     r = h.Random()
@@ -93,7 +99,9 @@ class Network():
     for sec in h.allsec():
       for seg in sec:
         d.append(seg.v)
-        d.append(seg.i_membrane_)
+        # Not supported on GPU, see:
+        # https://github.com/BlueBrain/CoreNeuron/issues/197
+        if not enable_gpu: d.append(seg.i_membrane_)
         for mech in seg:
           for var in mech:
             d.append(var[0])
@@ -152,6 +160,7 @@ def test_datareturn():
   print("CoreNEURON run")
   h.CVode().cache_efficient(1)
   coreneuron.enable = True
+  coreneuron.gpu = enable_gpu
 
   coreneuron.cell_permute = 0
   run(tstop)
@@ -172,8 +181,6 @@ def test_datareturn():
 
   coreneuron.enable = False
 
-  print("max diff unpermuted = %g"% max_unpermuted )
-  print("max diff permuted = %g"% max_permuted)
   print("max diff permuted with %d threads = %g"% (pc.nthread(), max_permuted_thread))
 
   assert(max_unpermuted < 1e-10)
@@ -190,5 +197,11 @@ def test_datareturn():
 
 if __name__ == "__main__":
   show = False
-  model = test_datareturn()
-
+  try:
+    model = test_datareturn()
+  except:
+    traceback.print_exc()
+    # Make the CTest test fail
+    sys.exit(42)
+  # The test doesn't exit without this.
+  if enable_gpu: sys.exit(0)

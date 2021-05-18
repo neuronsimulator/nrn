@@ -8,8 +8,7 @@
 #include <hoccontext.h>
 #include "nrnpy_utils.h"
 
-extern "C" {
-#include "parse.h"
+#include "parse.hpp"
 extern void hoc_nopop();
 extern void hoc_pop_defer();
 extern Object* hoc_new_object(Symbol*, void*);
@@ -52,7 +51,7 @@ typedef struct {
 } NPySecObj;
 extern NPySecObj* newpysechelp(Section* sec);
 extern void (*nrnpy_call_python_with_section)(Object*, Section*);
-void nrnpython_reg_real();
+extern "C" void nrnpython_reg_real();
 PyObject* nrnpy_ho2po(Object*);
 void nrnpy_decref_defer(PyObject*);
 PyObject* nrnpy_pyCallObject(PyObject*, PyObject*);
@@ -81,7 +80,6 @@ static hoc_List* dlist;
 extern int nrnpy_site_problem;
 extern int* nrnpy_site_problem_p;
 #endif
-}
 
 class Py2Nrn {
  public:
@@ -112,7 +110,7 @@ static void call_python_with_section(Object* pyact, Section* sec) {
 }
 
 
-void nrnpython_reg_real() {
+extern "C" void nrnpython_reg_real() {
   //printf("nrnpython_reg_real()\n");
   class2oc("PythonObject", p_cons, p_destruct, p_members, NULL, NULL, NULL);
   Symbol* s = hoc_lookup("PythonObject");
@@ -407,6 +405,8 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     PyObject* args = PyTuple_GetItem(po, 1);
     if (!PyTuple_Check(args)) {
       args = PyTuple_Pack(1, args);
+    }else{
+      Py_INCREF(args);
     }
     // PyObject_Print(PyTuple_GetItem(po, 0), stdout, 0);
     // printf("\n");
@@ -414,8 +414,11 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     // printf("\n");
     // printf("threadstate %p\n", PyThreadState_GET());
     r = nrnpy_pyCallObject(PyTuple_GetItem(po, 0), args);
+    Py_DECREF(args);
   } else {
-    r = nrnpy_pyCallObject(po, PyTuple_New(0));
+    PyObject* args = PyTuple_New(0);
+    r = nrnpy_pyCallObject(po, args);
+    Py_DECREF(args);
   }
   if (r == NULL) {
     PyErr_Print();

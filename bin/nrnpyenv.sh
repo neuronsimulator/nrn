@@ -83,11 +83,16 @@ function trypy {
 # attempt at finding a Python.
 while true ; do
   PYTHON=""
-  # Priority is the argument, python3, python
+  # Priority is the argument -pyexe, NRN_PYTHONEXE, python3 and then python
+
+  # check -pyexe option
   if test "$1" != "" ; then
     if $WHICH "$1" >& /dev/null ; then
       PYTHON="$1"
     fi
+  # If NRN_PYTHONEXE is set (e.g. from wheel wrapper) then use it
+  elif test "$NRN_PYTHONEXE" != ""; then
+    PYTHON=$NRN_PYTHONEXE
   elif $WHICH python3 >& /dev/null ; then
     PYTHON=python3
   elif $WHICH python >& /dev/null ; then
@@ -187,7 +192,7 @@ if test "$kernel_name" = "Darwin" ; then
     nrnpylib_provenance="sysconfig LIBDIR"
   fi
   if test "$nrn_pylib" = "" ; then
-    nrn_pylib=$($p -c '
+    nrn_pylib=$($python_path -c '
 try:
   from neuron import h
   shlib=h.libpython_path()
@@ -207,7 +212,7 @@ except:
     if test "$nrn_pylib" = "" ; then
       nrn_pylib=`$PYTHON -c 'quit()' 2>&1 | sed -n 's/^dyld: loaded: //p' | sed -n 2p`
     fi
-    unset DYLD_PRINT_LIBRARIES  
+    unset DYLD_PRINT_LIBRARIES
     if test "$nrn_pylib" != "" ; then
       nrnpylib_provenance=DYLD_PRINT_LIBRARIES
     fi
@@ -234,7 +239,7 @@ nrnpyhome_provenance = "not found"
 
 def upath(path):
   #return linux path
-  if path == None:
+  if path is None:
     return ""
   import posixpath, sys
   plist = path.split(os.pathsep)
@@ -282,13 +287,25 @@ def nrnpylib_darwin_helper():
         nrnpylib_provenance = "lsof search for libpython..."
         return nrn_pylib
       if re.search(r'[Ll][Ii][Bb].*[Pp]ython', line):
-        cnt += 1  
+        cnt += 1
         if cnt == 1: # skip 1st since it is the python executable
           continue
         if re.search(r'[Pp]ython', line.split('/')[-1]):
           print ("# nrn_pylib from lsof: %s" % line)
-          nrn_pylib = line.strip()
-          nrnpylib_provenance = 'lsof search for second occurrence of [Ll][Ii][Bb].*[Pp]ython'
+          candidate = line.strip()
+          # verify the file defines a PyRun_SimpleString
+          cmd = r'nm %s | grep PyRun_SimpleString' % candidate
+          try:
+            f = os.popen(cmd)
+            i=0
+            for line in f:
+              i += 1
+            if i == 0:
+              continue
+          except:
+            continue
+          nrn_pylib = candidate
+          nrnpylib_provenance = 'lsof search for occurrence of [Ll][Ii][Bb].*[Pp]ython defineing PyRun_SimpleString'
           return nrn_pylib
   else: # figure it out from the os path
     p = os.path.sep.join(os.__file__.split(os.path.sep)[:-1])
@@ -349,7 +366,7 @@ def nrnpylib_darwin():
     nrnpylib_provenance = os.getenv("nrnpylib_provenance")
     return nrn_pylib
   return nrnpylib_darwin_helper()
-          
+
 def nrnpylib_mswin():
   global nrnpylib_provenance
   import os, sys, re
@@ -380,7 +397,7 @@ def nrnpylib_linux():
         return nrn_pylib
   except:
     pass
-  
+
   #in case it was dynamically loaded by python
   try:
     from neuron import h
@@ -509,7 +526,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   sitedir = usep.join(upath(site.__file__).split(usep)[:-1])
 
   # if sitedir is not a subfolder of pythonhome, add to pythonpath
-  if not pythonhome in sitedir:                                   
+  if not pythonhome in sitedir:
     if not sitedir in pythonpath:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + sitedir
 
@@ -524,7 +541,7 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
     f = usep.join(upath(_ctypes.__file__).split(usep)[:-1])
     if f.find(pythonhome) == -1:
       pythonpath = (pythonpath + upathsep if pythonpath else "") + f
-  except:   
+  except:
     pass
 
   dq = "\""
@@ -540,10 +557,10 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   print ("\n# if launch nrniv, then likely need:")
   if pythonhome:
     pythonhome=u2d(pythonhome)
-    print ("export PYTHONHOME=" + dq + pythonhome + dq)
-  if ldpath and nrn_pylib == None:
+    print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
+  if ldpath and nrn_pylib is None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
-  if nrn_pylib != None:
+  if nrn_pylib is not None:
     print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
 quit()

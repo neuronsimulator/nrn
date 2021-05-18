@@ -81,6 +81,9 @@ static char *xmalloc (), *xrealloc ();
 #define member(c, s) ((c) ? index ((s), (c)) : 0)
 #endif
 
+extern close();
+extern write();
+extern read();
 /* **************************************************************** */
 /*								    */
 /*			History Functions			    */
@@ -789,8 +792,8 @@ get_history_event (string, caller_index, delimiting_quote)
 	which = (history_length + history_base) - which;
 
     get_which:
-      if (entry = history_get (which))
-	return (entry->line);
+      if ((entry = history_get (which)))
+	    return (entry->line);
 
       return ((char *)NULL);
     }

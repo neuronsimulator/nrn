@@ -1,11 +1,15 @@
 /*
 To be included by a file that desires rendezvous rank exchange functionality.
 Need to define HAVEWANT_t, HAVEWANT_alltoallv, and HAVEWANT2Int
+The latter is a map or unordered_map.
+E.g. std::unordered_map<size_t, int>
 */
 
 #ifdef have2want_cpp
 #error "This implementation can only be included once"
-/* The static function names could involve a macro name. */
+// The static function names used to involve a macro name (NrnHash) but now,
+// with the use of std::..., it may be the case this could be included
+// multiple times or even transformed into a template.
 #endif
 
 #define have2want_cpp
@@ -65,7 +69,6 @@ static void rendezvous_rank_get(HAVEWANT_t* data, int size,
   int (*rendezvous_rank)(HAVEWANT_t)
 ){
   int nhost = nrnmpi_numprocs;
-  int rank = nrnmpi_myid;
 
   // count what gets sent
   scnt = new int[nhost];
@@ -78,8 +81,8 @@ static void rendezvous_rank_get(HAVEWANT_t* data, int size,
   sdispl = cnt2displ(scnt);
   rcnt = srccnt2destcnt(scnt);
   rdispl = cnt2displ(rcnt);
-  sdata = new HAVEWANT_t[sdispl[nhost]];
-  rdata = new HAVEWANT_t[rdispl[nhost]];
+  sdata = new HAVEWANT_t[sdispl[nhost] + 1]; // ensure not 0 size
+  rdata = new HAVEWANT_t[rdispl[nhost] + 1]; // ensure not 0 size
   // scatter data into sdata by recalculating scnt.
   for (int i=0; i < nhost; ++i) { scnt[i] = 0; }
   for (int i=0; i < size; ++i) {
@@ -102,7 +105,6 @@ static void have_to_want(
   // 4) Ranks that want tell owner ranks where to send.
 
   int nhost = nrnmpi_numprocs;
-  int rank = nrnmpi_myid;
 
   // 1) Send have and want to the rendezvous ranks.
   HAVEWANT_t *have_s_data, *have_r_data;
@@ -117,15 +119,12 @@ static void have_to_want(
   delete [] have_s_data;
   // assume it is an error if two ranks have the same key so create
   // hash table of key2rank. Will also need it for matching have and want
-  HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost]);
+  HAVEWANT2Int havekey2rank = HAVEWANT2Int(have_r_displ[nhost]+1); //ensure not empty.
   for (int r=0; r < nhost; ++r) {
     for (int i=0; i < have_r_cnt[r]; ++i) {
       HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
-      int srcrank;
-      if (havekey2rank.find(key, srcrank)) {
-	char buf[200];
-sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
-        hoc_execerror(buf, 0);
+      if (havekey2rank.find(key) != havekey2rank.end()) {
+        hoc_execerr_ext("internal error in have_to_want: key %lld owned by multiple ranks\n", (long long)key);
       }
       havekey2rank[key] = r;
     }
@@ -152,13 +151,11 @@ sprintf(buf, "key %lld owned by multiple ranks\n", (long long)key);
     for (int i=0; i < want_r_cnt[r]; ++i) {
       int ix = want_r_displ[r] + i;
       HAVEWANT_t key = want_r_data[ix];
-      int srcrank;
-      if (!havekey2rank.find(key, srcrank)) {
-	char buf[200];
-sprintf(buf, "key = %lld is wanted but does not exist\n", (long long)key);
-        hoc_execerror(buf, 0);
+      auto search = havekey2rank.find(key);
+      if (search == havekey2rank.end()) {
+        hoc_execerr_ext("internal error in have_to_want: key = %lld is wanted but does not exist\n", (long long)key);
       }
-      want_r_ownerranks[ix] = srcrank;
+      want_r_ownerranks[ix] = search->second;
     }
   }
   delete [] want_r_data;

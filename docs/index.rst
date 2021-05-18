@@ -8,16 +8,19 @@ Welcome to NEURON's documentation!
    :maxdepth: 1
    :caption: Building:
 
+   install/install
    cmake_doc/index
+   install/developer
 
 .. toctree::
    :maxdepth: 2
    :caption: User documentation:
 
-   py_doc/index
-   new_doc/index
+   python/index
+   hoc/index
    tutorials/index
    rxd-tutorials/index
+   coreneuron/index
 
 .. toctree::
    :maxdepth: 2
@@ -26,7 +29,13 @@ Welcome to NEURON's documentation!
    scm/index
    dev/index
    doxygen
-   
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Changelog
+
+   changelog.md
+
 Indices and tables
 ==================
 

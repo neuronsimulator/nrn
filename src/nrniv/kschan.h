@@ -7,14 +7,10 @@
 #include "ivocvect.h"
 #include "nrnunits_modern.h"
 
-extern "C" {
 #include "spmatrix.h"
-}
 
-extern "C" {
-	//extern double dt;
-	extern double celsius;
-}
+//extern double dt;
+extern double celsius;
 
 class KSState;
 class KSChan;

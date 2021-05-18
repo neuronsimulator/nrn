@@ -24,9 +24,6 @@
    d and rhs is calculated from the property list.
 */
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 #include "nrnredef.h"
 #include "options.h"
@@ -100,7 +97,7 @@ typedef struct Info3Val {	/* storage to help build matrix efficiently */
 #endif
 
 /* if any double is added after area then think about changing
-the notify_free_val parameter in node_free in solve.c
+the notify_free_val parameter in node_free in solve.cpp
 */
 
 #define NODED(n) (*((n)->_d))
@@ -135,12 +132,12 @@ extern int cvode_active_;
 typedef struct Node {
 #if CACHEVEC == 0
 	double	_v;			/* membrane potential */
-	double _area;			/* area in um^2 but see treesetup.c */
+	double _area;			/* area in um^2 but see treesetup.cpp */
 	double	_a;			/* effect of node in parent equation */
 	double	_b;			/* effect of parent in node equation */
 #else /* CACHEVEC */
 	double	*_v;			/* membrane potential */
-	double _area;			/* area in um^2 but see treesetup.c */
+	double _area;			/* area in um^2 but see treesetup.cpp */
 	double _rinv;			/* conductance uS from node to parent */
 	double _v_temp;			/* vile necessity til actual_v allocated */
 #endif /* CACHEVEC */
@@ -186,26 +183,24 @@ typedef struct Node {
 
 #if EXTRACELLULAR
 /* pruned to only work with sparse13 */
-#define  nlayer (EXTRACELLULAR)	/* first (0) layer is extracellular next to membrane */
-/*
-changing nlayer here means you have to change the explicit numbers
-nlayer-1 in the mechanism structure in extcell.c
-*/
+extern int nrn_nlayer_extracellular;
+#define  nlayer (nrn_nlayer_extracellular) /* first (0) layer is extracellular next to membrane */
 typedef struct Extnode {
 	double	*param;	/* points to extracellular parameter vector */
 	/* v is membrane potential. so v internal = Node.v + Node.vext[0] */
 	/* However, the Node equation is for v internal. */
 	/* This is reconciled during update. */
 	
-	double	v[nlayer]; /* v external. */
-	double	_a[nlayer];
-	double	_b[nlayer];
-	double* _d[nlayer];
-	double* _rhs[nlayer]; /* d, rhs, a, and b are analogous to those in node */
-	double* _a_matelm[nlayer];
-	double* _b_matelm[nlayer];
-	double* _x12[nlayer]; /* effect of v[layer] on eqn layer-1 (or internal)*/
-	double* _x21[nlayer]; /* effect of v[layer-1 or internal] on eqn layer*/
+	/* Following all have allocated size of nlayer */
+	double	*v; /* v external. */
+	double	*_a;
+	double	*_b;
+	double* *_d;
+	double* *_rhs; /* d, rhs, a, and b are analogous to those in node */
+	double* *_a_matelm;
+	double* *_b_matelm;
+	double* *_x12; /* effect of v[layer] on eqn layer-1 (or internal)*/
+	double* *_x21; /* effect of v[layer-1 or internal] on eqn layer*/
 } Extnode;
 #endif
 
@@ -229,10 +224,21 @@ typedef struct Prop {
 	Object* ob;	/* nil if normal property, otherwise the object containing the data*/
 } Prop;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 extern double* nrn_prop_data_alloc(int type, int count, Prop* p);
 extern Datum* nrn_prop_datum_alloc(int type, int count, Prop* p);
 extern void nrn_prop_data_free(int type, double* pd);
 extern void nrn_prop_datum_free(int type, Datum* ppd);
+extern Section* chk_access();
+extern double nrn_ghk(double, double, double, double);
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 /* a point process is computed just like regular mechanisms. Ie it appears
 in the property list whose type specifies which allocation, current, and
@@ -299,11 +305,9 @@ typedef struct Eqnblock {
 extern int nrn_global_ncell; /* note that for multiple threads all the rootnodes are no longer contiguous */
 extern hoc_List* section_list;	/* Where the Sections live */
 
-extern Section* chk_access();
 extern Section	*sec_alloc();		/* Allocates a single section */
 extern void	node_alloc(Section*, short);		/* Allocates node vectors in a section*/
 extern double section_length(Section*), nrn_diameter(Node*);
-extern double nrn_ghk(double, double, double, double);
 extern Node* nrn_parent_node(Node*);
 extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);
@@ -327,9 +331,6 @@ extern int stoprun;
 /* of any hoc call for integration and before returning to hoc */
 
 
-#if defined(__cplusplus)
-}
-#endif
 
 #include "nrn_ansi.h"
 

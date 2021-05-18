@@ -7,8 +7,9 @@
 #if defined(__MINGW32__)
 #define _hypot hypot
 #endif
-#include <Python.h>
+#include "nrnpy_utils.h"
 #include <stdlib.h>
+#include <ctype.h>
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
 // when compiled with different Python.h, force correct value
@@ -16,7 +17,12 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-extern "C" {
+
+extern int nrn_is_python_extension;
+extern int nrn_nobanner_;
+extern int ivocmain(int, const char**, const char**);
+extern int nrn_main_launch;
+
 
 // int nrn_global_argc;
 extern char** nrn_global_argv;
@@ -37,34 +43,173 @@ extern char* nrnmpi_load(int is_python);
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
 #endif
-#if !defined(NRNCMAKE) && NRNPYTHON_DYNAMICLOAD && !__MINGW32__
-#define HOCMOD(a, b) HOCMOD_(a, b)
-#define HOCMOD_(a, b) a ## b
-#else
 #define HOCMOD(a, b) a
-#endif
 
-extern int nrn_is_python_extension;
-extern int nrn_nobanner_;
-extern int ivocmain(int, char**, char**);
-extern int nrn_main_launch;
-
-#ifdef NRNMPI
-
-static const char* argv_mpi[] = {"NEURON", "-mpi", "-dll", 0};
-static int argc_mpi = 2;
-
-#endif
-
-static const char* argv_nompi[] = {"NEURON", "-dll", 0};
-static int argc_nompi = 1;
 
 #if USE_PTHREAD
 #include <pthread.h>
 static pthread_t main_thread_;
 #endif
 
-static void nrnpython_finalize() {
+/**
+ * Manage argc,argv for calling ivocmain
+ * add_arg(...) will only add if name is not already in the arg list
+ * returns 1 if added, 0 if not
+*/
+static size_t arg_size;
+static int argc;
+static char** argv;
+static int add_arg(const char* name, const char* value) {
+  if (size_t(argc + 2) >= arg_size) {
+    arg_size += 10;
+    argv = (char**)realloc(argv, arg_size*sizeof(char*));
+  }
+  // Don't add if already in argv
+  for (int i=1; i < argc; ++i) {
+    if (strcmp(name, argv[i]) == 0) {
+      return 0;
+    }
+  }
+  argv[argc++] = strdup(name);
+  if (value) {
+    argv[argc++] = strdup(value);
+  }
+  return 1;
+}
+
+/**
+ * Return 1 if string, 0 otherwise.
+*/
+static int is_string(PyObject* po) {
+  if (PyUnicode_Check(po) || PyBytes_Check(po)) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * Add all name:value from __main__.neuron_options dict if exists
+ * to the argc,argv for calling ivocmain
+ * Note: if value is None then only name is added to argv.
+ * The special "-print-options" name is not added to argv but
+ * causes a return value of 1. Otherwise the return value is 0.
+*/
+static int add_neuron_options() {
+  PyObject* modules = PyImport_GetModuleDict();
+  PyObject* module = PyDict_GetItemString(modules, "__main__");
+  int rval = 0;
+  if (!module) {
+    PyErr_Clear();
+    PySys_WriteStdout("No __main__  module\n");
+    return rval;
+  }
+  PyObject* neuron_options = PyObject_GetAttrString(module, "neuron_options");
+  if (!neuron_options) {
+    PyErr_Clear();
+    return rval;
+  }
+  if (!PyDict_Check(neuron_options)) {
+    PySys_WriteStdout("__main__.neuron_options is not a dict\n");
+    return rval;
+  }
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  while(PyDict_Next(neuron_options, &pos, &key, &value)) {
+    if (!is_string(key) || (!is_string(value) && value != Py_None)) {
+     PySys_WriteStdout("A neuron_options key:value is not a string:string or string:None\n");
+     continue;
+    }
+    Py2NRNString skey(key);
+    Py2NRNString sval(value);
+    if (strcmp(skey.c_str(), "-print-options") == 0) {
+      rval = 1;
+      continue;
+    }
+    add_arg(skey.c_str(), sval.c_str());
+  }
+  return rval;
+}
+
+/**
+ * Space separated options. Must handle escaped space, '...' and "...".
+ * Return 1 if contains a -print-options (not added to options)
+*/
+
+static int add_space_separated_options(const char* str) {
+  int rval = 0;
+  if (!str) { return rval; }
+  char* s = strdup(str);
+  //int state = 0; // 1 means in "...", 2 means in '...'
+  for (char* cp = s; *cp; cp++) {
+    while (isspace(*cp)) { // skip spaces
+      ++cp;
+      if (*cp == '\0') {
+        free(s);
+        return rval;
+      }
+    }
+    // start processing a token
+    char* cpbegin = cp;
+    char* cp1 = cpbegin; // in token pointer, escapes cause to lag behind
+    while (!isspace(*cp) && *cp != '\0') { // to next space delimiter
+      *cp1++ = *cp++;
+      if (cp1[-1] == '\\' && (isspace(*cp) || *cp == '"' || *cp == '\'')) {
+        // escaped space, ", or '
+        cp1[-1] = *cp++;
+      }else if (cp1[-1] == '"') { // consume to next (unescaped) "
+        cp1--; // backup over the "
+        while (*cp != '"' && *cp != '\0') {
+          *cp1++ = *cp++;
+          if (cp1[-1] == '\\' && *cp == '"') { // escaped " inside "..."
+            cp1[-1] = *cp++;
+          }
+        }
+        if (*cp == '"') {
+          cp++; // skip over the closing "
+        }
+      }else if (cp1[-1] == '\'') { // consume to next (unescaped) '
+        cp1--; // backup over the '
+        while (*cp != '\'' && *cp != '\0') {
+          *cp1++ = *cp++;
+          if (cp1[-1] == '\\' && *cp == '\'') { // escaped ' inside '...'
+            cp1[-1] = *cp++;
+          }
+        }
+        if (*cp == '\'') {
+          cp++; // skip over the closing '
+        }
+      }
+    }
+    if (*cp == '\0') { // at end of s. 'for' will return after it increments.
+      --cp;
+    }
+    if (cp1 > cpbegin) {
+      *cp1 = '\0';
+    }
+    if (strcmp(cpbegin, "-print-options") == 0) {
+      rval = 1;
+    }else{
+      add_arg(cpbegin, NULL);
+    }
+  }
+  free(s);
+  return rval;
+}
+
+/**
+ * Return 1 if the option exists in argv[]
+*/
+static int have_opt(const char* arg) {
+  if (!arg) { return 0; }
+  for (int i=0; i < argc; ++i) {
+    if (strcmp(arg, argv[i]) == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void nrnpython_finalize() {
 #if USE_PTHREAD
   pthread_t now = pthread_self();
   if (pthread_equal(main_thread_, now)) {
@@ -93,25 +238,23 @@ static char* env[] = {0};
 // It is conceivable that this strategy will work for linux and mac as well,
 // but for now setup.py names them differently anyway.
 #if PY_MAJOR_VERSION >= 3
-PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
 #else //!PY_MAJOR_VERSION >= 3
-void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
+extern "C" void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #else // ! defined __MINGW32__
 
 #if PY_MAJOR_VERSION >= 3
-PyObject* PyInit_hoc() {
+extern "C" PyObject* PyInit_hoc() {
 #else //!PY_MAJOR_VERSION >= 3
-void inithoc() {
+extern "C" void inithoc() {
 #endif //!PY_MAJOR_VERSION >= 3
 
 #endif // ! defined __MINGW32__
 
   char buf[200];
 
-  int argc = argc_nompi;
-  char** argv = (char**)argv_nompi;
 #if USE_PTHREAD
   main_thread_ = pthread_self();
 #endif
@@ -124,6 +267,11 @@ void inithoc() {
     return;
 #endif //!PY_MAJOR_VERSION >= 3
   }
+
+  add_arg("NEURON", NULL);
+  int print_options = add_neuron_options();
+  print_options += add_space_separated_options(getenv("NEURON_MODULE_OPTIONS"));
+
 #ifdef NRNMPI
 
   int flag = 0;                 // true if MPI_Initialized is called
@@ -136,11 +284,12 @@ void inithoc() {
   nrnmpi_stubs();
   /**
    * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
+   * and there is no '-mpi' arg.
    * We call nrnmpi_load to load MPI library which returns:
    *  - nil if loading is successfull
    *  - error message in case of loading error
    */
-  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0) {
+  if(env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {
     libnrnmpi_is_loaded = 0;
   }
   if (libnrnmpi_is_loaded) {
@@ -152,12 +301,14 @@ void inithoc() {
     }
     if (pmes && libnrnmpi_is_loaded) {
       printf(
-        "NEURON_INIT_MPI nonzero in env but NEURON cannot initialize MPI "
+        "NEURON_INIT_MPI nonzero in env (or -mpi arg) but NEURON cannot initialize MPI "
         "because:\n%s\n",
         pmes);
       exit(1);
     }
   }
+#else
+  have_opt(NULL); // avoid 'defined but not used' warning
 #endif
 
   /**
@@ -170,12 +321,10 @@ void inithoc() {
     nrnmpi_wrap_mpi_init(&flag);
     if (flag) {
       mpi_mes = 1;
-      argc = argc_mpi;
-      argv = (char**)argv_mpi;
+      add_arg("-mpi", NULL);
     } else if(env_mpi != NULL && strcmp(env_mpi, "1") == 0) {
       mpi_mes = 2;
-      argc = argc_mpi;
-      argv = (char**)argv_mpi;
+      add_arg("-mpi", NULL);
     }else{
       mpi_mes = 3;
     }
@@ -197,9 +346,7 @@ void inithoc() {
   FILE* f;
   if ((f = fopen(buf, "r")) != 0) {
     fclose(f);
-    argc += 2;
-    argv[argc - 1] = new char[strlen(buf) + 1];
-    strcpy(argv[argc - 1], buf);
+    add_arg("-dll", buf);
   }
 #endif // !defined(__CYGWIN__)
   nrn_is_python_extension = 1;
@@ -239,24 +386,28 @@ void inithoc() {
     const int nframe_env_value = strtol(env_nframe, &endptr, 10);
     if (*endptr == '\0') {
       if(nframe_env_value > 0) {
-        argc += 3;
-        argv[argc - 2] = new char[strlen("-NFRAME") + 1];
-        strcpy(argv[argc - 2], "-NFRAME");
-        argv[argc - 1] = new char[strlen(env_nframe) + 1];
-        strcpy(argv[argc - 1], env_nframe);
+        add_arg("-NFRAME", env_nframe);
       }else{
-         printf(
+         PySys_WriteStdout(
           "NEURON_NFRAME env value must be positive\n");
       }
     }else{
-      printf(
+      PySys_WriteStdout(
           "NEURON_NFRAME env value is invalid!\n");
     }
 
   }
 
+  if (print_options) {
+    PySys_WriteStdout("ivocmain options:");
+    for (int i=1; i < argc; ++i ) {
+      PySys_WriteStdout(" '%s'", argv[i]);
+    }
+    PySys_WriteStdout("\n");
+  }
+
   nrn_main_launch = 2;
-  ivocmain(argc, argv, env);
+  ivocmain(argc, (const char**)argv, (const char**)env);
 //	nrnpy_augment_path();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem = 0;
@@ -269,6 +420,5 @@ void inithoc() {
 }
 
 #if !defined(CYGWIN)
-void modl_reg() {}
+extern "C" void modl_reg() {}
 #endif // !defined(CYGWIN)
-}

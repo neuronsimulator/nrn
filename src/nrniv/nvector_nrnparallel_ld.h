@@ -8,8 +8,8 @@
 Macros changed with
 sed 's/NV_\([A-Za-z_]*\)_P/NV_\1_P_LD/g' nvector_nrnparallel_ld.h >temp
 mv temp nvector_nrnparallel_ld.h
-sed 's/NV_\([A-Za-z_]*\)_P/NV_\1_P_LD/g' nvector_nrnparallel_ld.c >temp
-mv temp nvector_nrnparallel_ld.c
+sed 's/NV_\([A-Za-z_]*\)_P/NV_\1_P_LD/g' nvector_nrnparallel_ld.cpp >temp
+mv temp nvector_nrnparallel_ld.cpp
 */
 
 /*
@@ -63,9 +63,6 @@ mv temp nvector_nrnparallel_ld.c
 #ifndef _NVECTOR_NRNPARALLEL_LD_H
 #define _NVECTOR_NRNPARALLEL_LD_H
 
-#ifdef __cplusplus  /* wrapper to enable C++ usage */
-extern "C" {
-#endif
 
 #include <nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
@@ -222,7 +219,7 @@ typedef struct _N_VectorContent_NrnParallelLD *N_VectorContent_NrnParallelLD;
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VNew_NrnParallelLD(MPI_Comm comm, 
+extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
                          long int local_length,
                          long int global_length);
 
@@ -346,8 +343,5 @@ booleantype N_VInvTest_NrnParallelLD(N_Vector x, N_Vector z);
 booleantype N_VConstrMask_NrnParallelLD(N_Vector c, N_Vector x, N_Vector m);
 realtype N_VMinQuotient_NrnParallelLD(N_Vector num, N_Vector denom);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

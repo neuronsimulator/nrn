@@ -119,7 +119,7 @@
 @nrndef_unix@*jvmdll: libjvm.so
 @nrndef_mac@*jvmdll: libjvm.dylib
 
-// The default stack size is 1000 and the frame (recursion depth) size is 100 unless explicitly set nonzero below
+// The default stack size is 1000 and the frame (recursion depth) size is 512 unless explicitly set nonzero below
 // One may also use the -NSTACK stacksize   -NFRAME framesize options at launch.
 *NSTACK: 0
 *NFRAME: 0

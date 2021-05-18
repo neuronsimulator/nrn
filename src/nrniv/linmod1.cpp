@@ -9,9 +9,7 @@
 #include "linmod.h"
 #include "nrnoc2iv.h"
 
-extern "C" {
-extern double* nrn_recalc_ptr(double*);
-}
+extern "C" double* nrn_recalc_ptr(double*);
 //hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is
 // cmat*y' + gmat*y = b and where the first nnode rows specify
@@ -162,7 +160,7 @@ void LinearMechanism::create()
 		Vect* x = vector_arg(i+1);
 		Section* sec;
 		nnode_ = 0;
-		nodes_ = new Node*[x->capacity()];
+		nodes_ = new Node*[x->size()];
 		for (sec = sl->begin(); sec; sec = sl->next()) {
 			nodes_[nnode_] = node_exact(sec, x->elem(nnode_));
 			nrn_notify_when_double_freed(&NODEV(nodes_[nnode_]), this);

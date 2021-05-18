@@ -31,7 +31,7 @@ private:
 
 extern "C" {
 	void hoc_template_notify(Object*, int message);
-}
+} // extern "C"
 
 class ClassObservable : public Observable {
 public:

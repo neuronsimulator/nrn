@@ -44,9 +44,6 @@ set(libdir \${exec_prefix}/lib)
 # Comment or empty character to enable/disable cmake specific settings
 # =============================================================================
 # adding `#` makes a comment in the python whereas empty enable code
-set(USING_CMAKE_FALSE "#")
-set(USING_CMAKE_TRUE "")
-
 if(NRN_ENABLE_CORENEURON)
   set(CORENEURON_ENABLED_TRUE "")
   set(CORENEURON_ENABLED_FALSE "#")
@@ -58,14 +55,13 @@ endif()
 # ~~~
 # A variable that doesn't start out as #undef but as #define needs an
 # explicit @...@ replacement in the .h.in files.
-# For NRN_CONFIG_ARGS we use the autotools compatible name, ac_configure_args.
 # The value is set to description followed by a string of space
 # separated 'option=value' where value differs from the default value.
 # ~~~
-set(ac_configure_args "cmake option default differences:")
+set(neuron_config_args "cmake option default differences:")
 foreach(_name ${NRN_OPTION_NAME_LIST})
   if(NOT ("${${_name}}" STREQUAL "${${_name}_DEFAULT}"))
-    string(APPEND ac_configure_args " '${_name}=${${_name}}'")
+    string(APPEND neuron_config_args " '${_name}=${${_name}}'")
   endif()
 endforeach()
 
@@ -121,7 +117,6 @@ else()
 endif()
 
 # Switch between binary special and script-based special
-# Works with CMAKE and autotools
 if(NRN_ENABLE_BINARY_SPECIAL)
   set(NRN_BINARY_SPECIAL_TRUE "")
   set(NRN_BINARY_SPECIAL_FALSE "#")
@@ -244,6 +239,7 @@ nrn_check_symbol_exists("stty" "" HAVE_STTY)
 nrn_check_symbol_exists("vprintf" "" HAVE_VPRINTF)
 nrn_check_cxx_symbol_exists("getpw" "sys/types.h;pwd.h" HAVE_GETPW)
 nrn_check_cxx_symbol_exists("fesetround" "" HAVE_FESETROUND)
+nrn_check_cxx_symbol_exists("feenableexcept" "" HAVE_FEENABLEEXCEPT)
 # not necessary to check as it should be always there
 set(HAVE_SSTREAM /**/)
 
@@ -327,5 +323,4 @@ if(NOT NRN_ENABLE_INTERVIEWS)
   nrn_configure_dest_src(config.h . cmake_nrnconf.h .)
 else()
   file(REMOVE "${PROJECT_BINARY_DIR}/config.h")
-  file(REMOVE "${PROJECT_SOURCE_DIR}/config.h") # in case left over by autotools
 endif()

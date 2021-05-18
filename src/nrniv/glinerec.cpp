@@ -8,12 +8,10 @@
 // point processes.
 // Note: cvode.simgraph_remove() deletes all the GLineRecord instances.
 
-extern "C" {
 #include "hocparse.h"
 #include "code.h"
 #undef begin
 #undef add
-}
 
 #include <OS/list.h>
 #include "nrnoc2iv.h"
@@ -26,9 +24,7 @@ extern "C" {
 #include "glinerec.h"
 #include "ocjump.h"
 
-extern "C" {
 extern NetCvode* net_cvode_instance;
-};
 
 class GLineRecordList;
 
@@ -132,7 +128,7 @@ void GLineRecord::fill_pd() {
   // Execute the expr Inst by Inst but when rangepoint or
   // rangevareval are seen, execute a series of stack machine instructions
   // that give us the pointer to the range variable (see the implementation
-  // in nrn/src/nrnoc/cabcode.c) but leaving the stack as though the
+  // in nrn/src/nrnoc/cabcode.cpp) but leaving the stack as though the
   // original instruction was executed.
   assert(gl_->expr_);
   ObjectContext objc(gl_->obj_);

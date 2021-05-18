@@ -1,9 +1,6 @@
 #ifndef nonvintblock_h
 #define nonvintblock_h
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
 
 /*
 Interface for adding blocks of equations setup and solved in python
@@ -21,7 +18,7 @@ The other uses can merely return 0.
 */
 
 #if defined(nrnoc_fadvance_c)
-/* define only in fadvance.c */
+/* define only in fadvance.cpp */
 #define nonvintblock_extern /**/
 #else
 /* declare everywhere else */
@@ -35,22 +32,22 @@ nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1
 #define nonvint_block(method, size, pd1, pd2, tid) \
   nrn_nonvint_block ? nrn_nonvint_block_helper(method, size, pd1, pd2, tid) : 0
 
-/* called near end of nrnoc/treeset.c:v_setup_vectors after structure_change_cnt is incremented. */
+/* called near end of nrnoc/treeset.cpp:v_setup_vectors after structure_change_cnt is incremented. */
 #define nrn_nonvint_block_setup() nonvint_block(0, 0, 0, 0, 0)
 
-/* called in nrnoc/fadvance.c:nrn_finitialize before mod file INITIAL blocks */
+/* called in nrnoc/fadvance.cpp:nrn_finitialize before mod file INITIAL blocks */
 #define nrn_nonvint_block_init(tid) nonvint_block(1, 0, 0, 0, tid)
 
-/* called at end of nrnoc/treeset.c:rhs and nrncvode/cvtrset.cpp:rhs */
+/* called at end of nrnoc/treeset.cpp:rhs and nrncvode/cvtrset.cpp:rhs */
 #define nrn_nonvint_block_current(size, rhs, tid) nonvint_block(2, size, rhs, 0, tid)
   /*if any ionic membrane currents are generated, they subtract from
     NrnThread._actual_rhs*/
 
-/* called at end of nrnoc/treeset.c:lhs and nrncvode/cvtrset.cpp:lhs */
+/* called at end of nrnoc/treeset.cpp:lhs and nrncvode/cvtrset.cpp:lhs */
 #define nrn_nonvint_block_conductance(size, d, tid) nonvint_block(3, size, d, 0, tid)
   /*if any ionic membrane currents are generated, di/dv adds to _actual_d */
 
-/* called at end of nrnoc/fadvance.c:nonvint */
+/* called at end of nrnoc/fadvance.cpp:nonvint */
 #define nrn_nonvint_block_fixed_step_solve(tid) nonvint_block(4, 0, 0, 0, tid)
 
 /* returns the number of extra equations solved by cvode or ida */
@@ -74,8 +71,5 @@ nonvintblock_extern int (*nrn_nonvint_block)(int method, int length, double* pd1
 /* multiply the existing values in y (cvode.atol()) with appropriate scale factors */
 #define nrn_nonvint_block_ode_abstol(size, y, tid) nonvint_block(10, size, y, 0, tid)
 
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

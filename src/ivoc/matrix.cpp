@@ -5,18 +5,17 @@
 #include <math.h>
 #include "ocmatrix.h"
 #include "oc2iv.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "ivocvect.h"
 
 #define EPS hoc_epsilon
 static Symbol* smat_;
 
-extern "C" int hoc_return_type_code;
+extern int hoc_return_type_code;
 
-extern "C" {
-	extern double hoc_scan(FILE*);
-	extern FILE* hoc_obj_file_arg(int i);
-	extern Object** hoc_temp_objptr(Object*);
+extern double hoc_scan(FILE*);
+extern "C" FILE* hoc_obj_file_arg(int i);
+extern Object** hoc_temp_objptr(Object*);
 
 #if 0
 	extern void install_matrix_method(const char* name, double (*)(...));
@@ -28,7 +27,6 @@ extern "C" {
 	extern MAT* matrix_full(void*); // hoc_execerror if void* not right type
 	extern SPMAT* matrix_sparse(void*);
 #endif
-}
 
 static void check_domain(int i, int j) {
 	if (i > j || i < 0) {
@@ -221,7 +219,7 @@ static Object** m_mulv(void* v) {
 	check_capac(vector_capacity(vin), m->ncol());
 	vector_resize(vout, m->nrow());
 #else
-	check_capac(vin->capacity(), m->ncol());
+	check_capac(vin->size(), m->ncol());
 	vout->resize(m->nrow());
 #endif
 	m->mulv(vin, vout);
@@ -443,7 +441,7 @@ static Object** m_setrow(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->ncol());
 #else
-		check_domain(in->capacity(), m->ncol());
+		check_domain(in->size(), m->ncol());
 #endif
 		m->setrow(k, in);
 	}
@@ -460,7 +458,7 @@ static Object** m_setcol(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->nrow());
 #else
-		check_domain(in->capacity(), m->nrow());
+		check_domain(in->size(), m->nrow());
 #endif
 		m->setcol(k, in);
 	}
@@ -477,7 +475,7 @@ static Object** m_setdiag(void* v) {
 #ifdef WIN32
 		check_domain(vector_capacity(in), m->nrow());
 #else
-		check_domain(in->capacity(), m->nrow());
+		check_domain(in->size(), m->nrow());
 #endif
 		m->setdiag(k, in);
 	}
@@ -560,7 +558,7 @@ static Object** m_solv(void* v) {
 #ifdef WIN32
 	check_capac(vector_capacity(vin), m->ncol());
 #else
-	check_capac(vin->capacity(), m->ncol());
+	check_capac(vin->size(), m->ncol());
 #endif
 	Vect* vout = NULL;
 	bool f = false;
@@ -738,9 +736,7 @@ static void steer_x(void* v) {
 
 
 #if WIN32 && !USEMATRIX
-extern "C" {
 void Matrix_reg();
-}
 #endif
 
 void Matrix_reg() {

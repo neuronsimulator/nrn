@@ -19,15 +19,8 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-#if !defined(NRNCMAKE) && defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
-// want to end up with a string like "hoc36"
-#define HOCMOD_1(s) HOCMOD_2(s)
-#define HOCMOD_2(s) #s
-#define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
-#else
 // TODO: didn't enable dynamic load and end up with error if below is not a string
 #define HOCMOD "hoc"
-#endif
 
 extern PyTypeObject* psection_type;
 
@@ -38,9 +31,8 @@ typedef struct {
   PyObject* cell_;
 } NPySecObj;
 
-extern "C" {
 
-#include "parse.h"
+#include "parse.hpp"
 extern void (*nrnpy_sectionlist_helper_)(void*, Object*);
 extern Object** (*nrnpy_gui_helper_)(const char*, Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
@@ -48,7 +40,7 @@ extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
 extern void* (*nrnpy_get_pyobj)(Object* obj);
 extern void (*nrnpy_decref)(void* pyobj);
-void lvappendsec_and_ref(void* sl, Section* sec);
+extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
 extern void hoc_pushs(Symbol*);
 extern double* hoc_evalpointer();
@@ -91,19 +83,20 @@ extern IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 extern Object** (*nrnpy_vec_to_python_p_)(void*);
 extern Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
 extern Object* (*nrnpy_rvp_rxd_to_callable)(Object*);
-int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
-int nrnpy_set_gui_callback(PyObject*);
+extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*));  // called by ctypes.
+extern "C" int nrnpy_set_gui_callback(PyObject*);
 extern double** nrnpy_setpointer_helper(PyObject*, PyObject*);
 extern Symbol* ivoc_alias_lookup(const char* name, Object* ob);
-extern int nrn_netcon_weight(void*, double**);
+class NetCon;
+extern int nrn_netcon_weight(NetCon*, double**);
 extern int nrn_matrix_dim(void*, int);
 extern NPySecObj* newpysechelp(Section* sec);
 
 extern PyObject* pmech_types;  // Python map for name to Mechanism
 extern PyObject* rangevars_;   // Python map for name to Symbol
 
-extern "C" int hoc_max_builtin_class_id;
-extern "C" int hoc_return_type_code;
+extern int hoc_max_builtin_class_id;
+extern int hoc_return_type_code;
 
 static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
@@ -131,9 +124,7 @@ static const char* hocobj_docstring =
     "class neuron.hoc.HocObject - Hoc Object wrapper";
 
 #if 1
-}
 #include <hoccontext.h>
-extern "C" {
 #else
 extern Object* hoc_thisobject;
 #define HocTopContextSet \
@@ -143,43 +134,6 @@ extern Object* hoc_thisobject;
   assert(hoc_thisobject == 0);
 #define HocContextRestore /**/
 #endif
-
-/*
-Because python types have so many methods, attempt to do all set and get
-using a PyHocObject which has different amounts filled in as the information
-is gathered with a view toward ultimately making a call to hoc_object_component.
-That requires that array indices or function arguments are on the stack.
-The major variant is that we may be at the top level. The function arg
-case is easy since they all come as a tuple in the call method. The
-array indices come sequentially with a series of calls to the
-sequence method. A nice side effect of intermediate objects is the extra
-efficiency of reuse that avoids symbol lookup. Sadly, the scalar case does
-not give this since the value is set/get instead of  returning the
-intermediate.
-*/
-
-namespace PyHoc {
-enum ObjectType {
-  HocTopLevelInterpreter = 0,
-  HocObject = 1,
-  HocFunction = 2,  // function or TEMPLATE
-  HocArray = 3,
-  HocRefNum = 4,
-  HocRefStr = 5,
-  HocRefObj = 6,
-  HocForallSectionIterator = 7,
-  HocSectionListIterator = 8,
-  HocScalarPtr = 9,
-  HocArrayIncomplete =
-      10,  // incomplete pointer to a hoc array (similar to HocArray)
-  HocRefPStr = 11,
-};
-enum IteratorState {
-  Begin,
-  NextNotLast,
-  Last
-};
-}  // namespace PyHoc
 
 typedef struct {
   PyObject_HEAD Object* ho_;
@@ -247,6 +201,11 @@ static void hocobj_dealloc(PyHocObject* self) {
     // nothing deleted
   }
   ((PyObject*)self)->ob_type->tp_free((PyObject*)self);
+
+  // Deferred deletion of HOC Objects is unnecessary when a HocObject is
+  // destroyed. And we would like to have prompt deletion if this HocObject
+  // wrapped a HOC Object whose refcount was 1.
+  hoc_unref_defer();
 }
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args,
@@ -745,7 +704,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
 		for (int i = 0; i < n; ++i) {
 			PyObject* key = PyList_GetItem(keys, i);
 			PyObject* value = PyDict_GetItem(kwrds, key);
-			printf("%s %s\n", PyString_AsString(key), PyString_AsString(PyObject_Str(value)));
+			printf("%s %s\n", PyUnicode_AsUTF8(key), PyUnicode_AsUTF8(PyObject_Str(value)));
 		}
 #endif
     section = PyDict_GetItemString(kwrds, "sec");
@@ -779,7 +738,7 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
       result = (PyObject*)oj->fpycall(fcall, (void*)self, (void*)args);
       delete oj;
       if (result == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "hoc error");
+        PyErr_SetString(PyExc_RuntimeError, "hocobj_call error");
       }
     } else {
       result = (PyObject*)fcall((void*)self, (void*)args);
@@ -889,7 +848,7 @@ static void eval_component(PyHocObject* po, int ix) {
   --po->nindex_;
 }
 
-PyObject* nrn_hocobj_ptr(double* pd) {
+extern "C" PyObject* nrn_hocobj_ptr(double* pd) {
   PyObject* result = hocobj_new(hocobject_type, 0, 0);
   PyHocObject* po = (PyHocObject*)result;
   po->type_ = PyHoc::HocScalarPtr;
@@ -1058,7 +1017,7 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
       // return __array_interface__
       // printf("building array interface\n");
       Vect* v = (Vect*)self->ho_->u.this_pointer;
-      int size = v->capacity();
+      int size = v->size();
       double* x = vector_vec(v);
 
       return Py_BuildValue("{s:(i),s:s,s:i,s:(N,O)}", "shape", size, "typestr",
@@ -1519,7 +1478,7 @@ static int araylen(Arrayinfo* a, PyHocObject* po) {
     n = vector_capacity((IvocVect*)po->ho_->u.this_pointer);
   } else if (po->sym_ == sym_netcon_weight) {
     double* w;
-    n = nrn_netcon_weight(po->ho_->u.this_pointer, &w);
+    n = nrn_netcon_weight(static_cast<NetCon*>(po->ho_->u.this_pointer), &w);
   } else if (po->sym_ == nrn_child_sym) {
     n = nrn_secref_nchild((Section*)po->ho_->u.this_pointer);
   } else if (po->sym_ == sym_mat_x) {
@@ -2027,7 +1986,7 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
 }
 
 static PyObject* cpp2refstr(char** cpp) {
-  // If cpp is from a hoc_temp_charptr (see src/oc/code.c) then create a
+  // If cpp is from a hoc_temp_charptr (see src/oc/code.cpp) then create a
   // HocRefStr and copy *cpp. Otherwise, assume it is from a hoc strdef
   // or a HocRefStr which is persistent over the life time of this returned
   // PyObject so that it is safe to create a HocRefPStr such that
@@ -2268,7 +2227,7 @@ static char* double_array_interface(PyObject* po, long& stride) {
     }
     Py_DECREF(ai);
   }
-  return (char*)data;
+  return static_cast<char*>(data);
 }
 
 static IvocVect* nrnpy_vec_from_python(void* v) {
@@ -2296,9 +2255,9 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
         sprintf(buf, "item %d not a number", i);
         hoc_execerror(buf, 0);
       }
-      hv->resize_chunk(i + 1);
-      hv->elem(i++) = PyFloat_AsDouble(p);
+      hv->push_back(PyFloat_AsDouble(p));
       Py_DECREF(p);
+      ++i;
     }
     Py_DECREF(iterator);
   } else {
@@ -2330,12 +2289,12 @@ static IvocVect* nrnpy_vec_from_python(void* v) {
 }
 
 static PyObject* (*vec_as_numpy)(int, double*);
-int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
+extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   vec_as_numpy = p;
   return 0;
 }
 
-int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0) {
+extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0) {
   rvp_plot = rvp_plot0;
   plotshape_plot = plotshape_plot0;
   get_mech_object_ = get_mech_object_0;
@@ -2343,7 +2302,7 @@ int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0,
 }
 
 static PyObject* gui_callback=NULL;
-int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
+extern "C" int nrnpy_set_gui_callback(PyObject* new_gui_callback) {
   gui_callback = new_gui_callback;
   return 0;
 }
@@ -2483,7 +2442,7 @@ static Object** vec_as_numpy_helper(int size, double* data) {
 
 static Object** nrnpy_vec_to_python(void* v) {
   Vect* hv = (Vect*)v;
-  int size = hv->capacity();
+  int size = hv->size();
   double* x = vector_vec(hv);
   //	printf("%s.to_array\n", hoc_object_name(hv->obj_));
   PyObject* po;
@@ -2552,11 +2511,6 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
     PyObject* py_obj = nrnpy_ho2po(obj);
     PyObject* result = PyObject_CallFunctionObjArgs(nrnpy_rvp_pyobj_callback, py_obj, NULL);
     Py_DECREF(py_obj);
-    if (py_obj != result) {
-      // for now, this only happens when using rangevarplot with rxd
-      // prevents keeping section references that should not exist
-      hoc_obj_unref(obj);
-    }
     Object* obj_result = nrnpy_po2ho(result);
     Py_DECREF(result);  // the previous line incremented the reference count
     return obj_result;
@@ -2566,7 +2520,7 @@ static Object* rvp_rxd_to_callable_(Object* obj) {
 }
 
 
-PyObject* get_plotshape_data(PyObject* sp) {
+extern "C" PyObject* get_plotshape_data(PyObject* sp) {
   PyHocObject* pho = (PyHocObject*) sp;
   ShapePlotInterface* spi;
   if (!is_obj_type(pho->ho_, "PlotShape")) {
@@ -2643,9 +2597,9 @@ static PyObject* hocpickle_reduce(PyObject* self, PyObject* args) {
     return NULL;
   }
   PyTuple_SET_ITEM(state, 1, str);
-  PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->capacity()));
+  PyTuple_SET_ITEM(state, 2, PyInt_FromLong(vec->size()));
   str = PyBytes_FromStringAndSize((const char*)vector_vec(vec),
-                                  vec->capacity() * sizeof(double));
+                                  vec->size() * sizeof(double));
   if (str == NULL) {
     Py_DECREF(ret);
     Py_DECREF(state);
@@ -2798,12 +2752,12 @@ static void add2topdict(PyObject* dict) {
 
 static PyObject* nrnpy_vec_math = NULL;
 
-int nrnpy_vec_math_register(PyObject* callback) {
+extern "C" int nrnpy_vec_math_register(PyObject* callback) {
   nrnpy_vec_math = callback;
   return 0;
 }
 
-int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
+extern "C" int nrnpy_rvp_pyobj_callback_register(PyObject* callback) {
   nrnpy_rvp_pyobj_callback = callback;
   return 0;
 }
@@ -2947,17 +2901,25 @@ static void sectionlist_helper_(void* sl, Object* args) {
   }
 }
 
-/** value of neuron.coreneuron.enable as 0, 1 (-1 if error)
- *  TODO: seems like this could be generalized so that
- *  additional cases would require less code.
-*/
+/// value of neuron.coreneuron.enable as 0, 1 (-1 if error)
 extern int (*nrnpy_nrncore_enable_value_p_)();
-static int nrncore_enable_value() {
+
+/// value of neuron.coreneuron.file_mode as 0, 1 (-1 if error)
+extern int (*nrnpy_nrncore_file_mode_value_p_)();
+
+/*
+ * Helper function to inspect value of int/boolean option
+ * under coreneuron module.
+ *
+ * \todo : seems like this could be generalized so that
+ *  additional cases would require less code.
+ */
+static int get_nrncore_opt_value(const char* option) {
   PyObject* modules = PyImport_GetModuleDict();
   if (modules) {
     PyObject* module = PyDict_GetItemString(modules, "neuron.coreneuron");
     if (module) {
-      PyObject* val = PyObject_GetAttrString(module, "enable");
+      PyObject* val = PyObject_GetAttrString(module, option);
       if (val) {
         long enable = PyLong_AsLong(val);
         Py_DECREF(val);
@@ -2972,6 +2934,16 @@ static int nrncore_enable_value() {
     return -1;
   }
   return 0;
+}
+
+/// return value of neuron.coreneuron.enable
+static int nrncore_enable_value() {
+    return get_nrncore_opt_value("enable");
+}
+
+/// return value of neuron.coreneuron.file_mode
+static int nrncore_file_mode_value() {
+    return get_nrncore_opt_value("file_mode");
 }
 
 /** Gets the python string returned by  neuron.coreneuron.nrncore_arg(tstop)
@@ -3025,6 +2997,7 @@ myPyMODINIT_FUNC nrnpy_hoc() {
   nrnpy_decref = nrnpy_decref_;
   nrnpy_nrncore_arg_p_ = nrncore_arg;
   nrnpy_nrncore_enable_value_p_ = nrncore_enable_value;
+  nrnpy_nrncore_file_mode_value_p_ = nrncore_file_mode_value;
   nrnpy_object_to_double_ = object_to_double_;
   nrnpy_rvp_rxd_to_callable = rvp_rxd_to_callable_;
   PyLockGIL lock;
@@ -3113,4 +3086,3 @@ fail:
   return;
 #endif
 }
-}  // end of extern c

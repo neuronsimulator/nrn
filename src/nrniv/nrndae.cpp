@@ -3,22 +3,20 @@
 #include "nrndae.h"
 #include "nrnoc2iv.h"
 
-extern "C" {
-	extern void nrndae_alloc();
-	extern int nrndae_extra_eqn_count();
-	extern void nrndae_init();
-	extern void nrndae_rhs(); // relative to c*dy/dt = -g*y + b
-	extern void nrndae_lhs();
-	extern void nrndae_dkmap(double**, double**);
-	extern void nrndae_dkres(double*, double*, double*);
-	extern void nrndae_dkpsol(double);
-	extern void nrndae_update();
-	extern void nrn_matrix_node_free();
-	extern int cvode_active_;
-	extern int nrn_use_daspk_;
-	extern int secondorder;
-	extern int nrndae_list_is_empty();
-}
+extern void nrndae_alloc();
+extern int nrndae_extra_eqn_count();
+extern void nrndae_init();
+extern void nrndae_rhs(); // relative to c*dy/dt = -g*y + b
+extern void nrndae_lhs();
+extern void nrndae_dkmap(double**, double**);
+extern void nrndae_dkres(double*, double*, double*);
+extern void nrndae_dkpsol(double);
+extern void nrndae_update();
+extern void nrn_matrix_node_free();
+extern int cvode_active_;
+extern int nrn_use_daspk_;
+extern int secondorder;
+extern int nrndae_list_is_empty();
 
 static NrnDAEPtrList nrndae_list;
 
@@ -104,9 +102,9 @@ inline void NrnDAE::alloc_(int size, int start, int nnode, Node** nodes, int* el
 
 void NrnDAE::alloc(int start_index) {
 //printf("NrnDAE::alloc %lx\n", (long)this);
-	size_ = y_.capacity();
+	size_ = y_.size();
 	if (y0_) {
-		assert(y0_ -> capacity() == size_);
+		assert(y0_ -> size() == size_);
 	}
 	assert(c_->nrow() == size_ && c_->ncol() == size_);
 	cyp_.resize(size_);
@@ -141,7 +139,7 @@ NrnDAE::NrnDAE(Matrix* cmat, Vect* const yvec, Vect* const y0, int nnode,
     if (cmat) {
         assumed_identity_ = NULL;
     } else {
-        const int size = y_.capacity();
+        const int size = y_.size();
         assumed_identity_ = new OcSparseMatrix(size, size);
 		//assumed_identity_->setdiag(0, 1);
         for (int i = 0; i < size; i++) (*assumed_identity_)(i, i) = 1;
@@ -200,7 +198,7 @@ void NrnDAE::dkmap(double** pv, double** pvdot) {
 	NrnThread* _nt = nrn_threads;
 	for (int i = nnode_; i < size_; ++i) {
 //printf("bmap_[%d] = %d\n", i, bmap_[i]);
-		pv[bmap_[i] - 1] = y_.vec() + i;
+		pv[bmap_[i] - 1] = y_.data() + i;
 		pvdot[bmap_[i] - 1] = _nt->_actual_rhs + bmap_[i];
 	}
 }
@@ -218,7 +216,7 @@ void NrnDAE::update() {
 
 void NrnDAE::init() {
 //printf("NrnDAE::init %lx\n", (long)this);
-//printf("init size_=%d %d %d %d\n", size_, y_->capacity(), y0_->capacity(), b_->capacity());
+//printf("init size_=%d %d %d %d\n", size_, y_->size(), y0_->size(), b_->size());
 	Vect& y0 = *y0_;
 	
 	v2y();

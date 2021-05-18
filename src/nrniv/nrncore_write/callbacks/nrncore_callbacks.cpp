@@ -6,16 +6,28 @@
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
 #include "netcvode.h" // for nrnbbcore_vecplay_write
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
 #endif
+#endif
 
-extern "C" {
 extern bbcore_write_t* nrn_bbcore_write_;
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
@@ -24,7 +36,6 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
-};
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
@@ -524,13 +535,12 @@ void part2_clean() {
 // at present. Assertion errors are generated if not type 0 of if we
 // cannot determine the index into the NrnThread._data .
 
-int nrnthread_dat2_vecplay(int tid, int& n) {
+int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
     if (tid >= nrn_nthread) { return 0; }
     NrnThread& nt = nrn_threads[tid];
 
-    // count the instances for this thread
+    // add the index of each instance in fixed_play_ for thread tid.
     // error if not a VecPlayContinuous with no discon vector
-    n = 0;
     PlayRecList* fp = net_cvode_instance->fixed_play_;
     for (int i=0; i < fp->count(); ++i){
         if (fp->item(i)->type() == VecPlayContinuousType) {
@@ -538,7 +548,7 @@ int nrnthread_dat2_vecplay(int tid, int& n) {
             if (vp->discon_indices_ == NULL) {
                 if (vp->ith_ == nt.id) {
                     assert(vp->y_ && vp->t_);
-                    ++n;
+                    indices.push_back(i);
                 }
             }else{
                 assert(0);

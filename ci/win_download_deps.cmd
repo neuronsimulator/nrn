@@ -7,6 +7,7 @@ pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.5.exe htt
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.6.exe https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.7.exe https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.8.exe https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe || goto :error
+pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-3.9.exe https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe || goto :error
 pwsh -command Invoke-WebRequest -MaximumRetryCount 4 -OutFile python-2.7.msi https://www.python.org/ftp/python/2.7.17/python-2.7.17.amd64.msi || goto :error
 
 :: mpi

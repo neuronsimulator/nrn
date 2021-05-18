@@ -7,12 +7,13 @@ fi
 
 cd $a
 
-if git log > /dev/null && test -d .git ; then
+# Do the fast directory check before the slow git command
+if [ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1; then
         describe="`git describe --tags`"
         branch="`git rev-parse --abbrev-ref HEAD`" # branch name
         modified="`git status -s -uno --porcelain | sed -n '1s/.*/+/p'`" # + if modified
-        gcs=`git log --format="%h" -n 1` #short commit hash
-        d="`git log --format="%ad" -n 1 --date=short`" # date
+        gcs=`git -c log.showSignature=false log --format="%h" -n 1` #short commit hash
+        d="`git -c log.showSignature=false log --format="%cd" -n 1 --date=short`" # date
         echo "#define GIT_DATE \"$d\""
         echo "#define GIT_BRANCH \"$branch\""
         echo "#define GIT_CHANGESET \"${gcs}${modified}\""

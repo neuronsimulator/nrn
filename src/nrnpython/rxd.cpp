@@ -4,10 +4,6 @@
 #include <string.h>
 #include "grids.h"
 #include "rxd.h"
-extern "C" {
-    #include <matrix2.h>
-}
-#include <pthread.h>
 #include <../nrnoc/section.h>
 #include <../nrnoc/nrn_ansi.h>
 #include <../nrnoc/multicore.h>
@@ -345,7 +341,14 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
             {
                 src = (PyHocObject*)source[i];
                 /*TODO: check it is a reference */
-                states[j] +=  dt * *(src->u.px_) / scale[i];
+                if(src->type_ == PyHoc::HocRefNum)
+                {
+                    states[j] +=  dt * (src->u.x_) / scale[i];
+                }
+                else
+                {
+                    states[j] +=  dt * *(src->u.px_) / scale[i];
+                }
             }
             else
             {
@@ -719,6 +722,10 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
     induced_currents_grid_id = (int*)malloc(sizeof(int)*_memb_curr_total);
+    // initialize memory here to allow currents from an intracellular species
+    // with no corresponding nrn_region='o' or Extracellular species 
+    memset(induced_currents_ecs_idx, SPECIES_ABSENT,
+           sizeof(int)*_memb_curr_total);
 
     for(i = 0, k = 0; i < num_currents; i++)
     {

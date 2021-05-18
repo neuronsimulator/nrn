@@ -24,12 +24,12 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_RX3D_OPT_LEVEL=2 \
 	-DPYTHON_EXECUTABLE=/c/Python35/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
-	-DNRN_PYTHON_DYNAMIC='c:/Python35/python.exe;c:/Python36/python.exe;c:/Python37/python.exe;c:/Python38/python.exe;c:/Python27/python.exe'  \
+	-DNRN_PYTHON_DYNAMIC='c:/Python35/python.exe;c:/Python36/python.exe;c:/Python37/python.exe;c:/Python38/python.exe;c:/Python39/python.exe;c:/Python27/python.exe'  \
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \
 	-DMPI_CXX_LIB_NAMES:STRING=msmpi \
 	-DMPI_C_LIB_NAMES:STRING=msmpi \
 	-DMPI_msmpi_LIBRARY:FILEPATH=c:/msmpi/lib/x64/msmpi.lib
-make -j
+make -j 2
 ctest -VV
 make install
 make setup_exe

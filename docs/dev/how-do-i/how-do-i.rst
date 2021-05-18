@@ -24,6 +24,7 @@ To see if an Object* obj is wrapping a PyObject, check if
         obj->ctemplate->sym == nrnpy_pyobj_sym_
 
 The variable ``nrnpy_pyobj_sym_`` here is a ``Symbol*`` and it is shared and available at least within ``nrnpython``.
+(See object types below for more about detecting the type of an ``Object*``.)
 
 
 To check if a PyObject is wrapping a NEURON object
@@ -136,6 +137,59 @@ integer, or bool. In HOC, these all return doubles.
 
 ``retobj_methods`` is a null-terminated array of ``Member_ret_obj_func`` of methods that return objects.
 (The actual functions implementing them take a ``void*`` and return an ``Object**``.)
+
+Object types
+------------
+
+The type of every NEURON ``Object* obj`` is determined by it's ``ctemplate->sym``. This is a ``Symbol*``.
+The pointers can be directly compared to see if two objects are of the same type. In particular,
+a ``Symbol`` has a ``char*`` field ``name``. That is, to print the name of the type
+that ``obj`` is an instance of, one can use:
+
+    .. code-block:: c
+    
+        printf("The type of obj is: %s\n", obj->ctemplate->sym->name);
+
+The ``hoc_lookup`` function takes a NEURON class name and returns the associated ``Symbol*``.
+For example:
+
+    .. code-block:: c
+    
+        Symbol* vector_sym = hoc_lookup("Vector");
+
+NEURON provides internal convenience functions ``is_obj_type(Object* obj, const char* type_name)``
+and ``check_obj_type(Object* obj, const char* type_name)`` that check to see if ``obj`` is of the
+type specified by ``type_name``. The former returns a 1 (true) or 0 (false); the latter has no
+return and raises an error if the type is wrong. These work by doing a ``strcmp``. If the
+``Symbol*`` is known, it is more efficient to directly compare the ``Symbol*``.
+
+For example, to see if ``obj`` is an instance of ``Vector`` and the ``Symbol*`` is not already
+known, use ``is_obj_type(obj, "Vector")``.
+
+These convenience functions are defined in ``src/oc/hoc_oop.cpp``.
+
+HocCommand objects
+==================
+
+The ``HocCommand`` class, defined in ``src/ivoc/objcmd.cpp``, provides a consistent interface
+for calling Python or HOC code. The constructor accepts a ``const char*`` for HOC, or a
+``const char*`` and an ``Object*`` also for HOC (in this case the HOC string is executed in
+the context of the object), or an ``Object*`` that wraps a Python callable.
+
+Each ``HocCommand`` object has a ``pyobject()`` method that returns the underlying Python
+object if any, else NULL. This can be used to distinguish between HOC and Python calls.
+
+The ``execute()`` method runs the underlying HOC or Python code. No value is returned in
+this case.
+
+The ``func_call(int narg, int* perr)`` method returns a double from invoking the HOC or Python. 
+The value pointed to by ``perr`` is set to 1 if the ``HocCommand`` is to run Python but running
+Python failed. Otherwise ``perr`` is unchanged. In particular, note that if ``perr`` originally
+points to a 1, then it will still point to a 1 even upon success. The number of arguments is
+indicated with ``narg``. The arguments themselves must have already been pushed onto NEURON's
+stack, e.g. with ``pushx`` for doubles, ``hoc_push_object`` for ``Object*``, ``hoc_push_str``
+for ``char**``, or ``hoc_pushpx`` for pointers to doubles (stack manipulation functions are
+defined in ``src/oc/code.cpp``).
 
 
 Miscellaneous tips

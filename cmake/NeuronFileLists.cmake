@@ -12,6 +12,7 @@ set(HEADER_FILES_TO_INSTALL
     hocgetsym.h
     hoclist.h
     hocparse.h
+    isoc99.h
     ivstream.h
     md1redef.h
     md2redef.h
@@ -51,79 +52,79 @@ set(NRN_HEADERS_INCLUDE_LIST)
 # =============================================================================
 # Lists of random number related files
 # =============================================================================
-set(RAN_FILE_LIST isaac64.c mcran4.c nrnisaac.c nrnran123.c)
+set(RAN_FILE_LIST isaac64.cpp mcran4.cpp nrnisaac.cpp nrnran123.cpp)
 
 # =============================================================================
 # Files in oc directory
 # =============================================================================
 set(OC_FILE_LIST
     ${RAN_FILE_LIST}
-    audit.c
-    axis.c
-    bksub.c
-    code2.c
-    cygwinprt.c
-    debug.c
-    fileio.c
-    fmenu.c
-    ftime.c
-    functabl.c
-    getelm.c
-    getsym.c
-    hoc.c
-    hocedit.c
-    isoc99.c
-    lineq.c
-    list.c
-    math.c
-    nonlin.c
-    nrnfilewrap.c
-    ocerf.c
-    parallel.c
-    parse.c
-    plot.c
-    plt.c
-    prmat.c
-    regexp.c
-    scoprand.c
-    settext.c
-    subrows.c
-    symbol.c
-    version.c
-    x.c
-    xred.c)
+    audit.cpp
+    axis.cpp
+    bksub.cpp
+    code2.cpp
+    cygwinprt.cpp
+    debug.cpp
+    fileio.cpp
+    fmenu.cpp
+    ftime.cpp
+    functabl.cpp
+    getelm.cpp
+    getsym.cpp
+    hoc.cpp
+    hocedit.cpp
+    isoc99.cpp
+    lineq.cpp
+    list.cpp
+    math.cpp
+    nonlin.cpp
+    nrnfilewrap.cpp
+    ocerf.cpp
+    parallel.cpp
+    parse.cpp
+    plot.cpp
+    plt.cpp
+    prmat.cpp
+    regexp.cpp
+    scoprand.cpp
+    settext.cpp
+    subrows.cpp
+    symbol.cpp
+    version.cpp
+    x.cpp
+    xred.cpp)
 
 # =============================================================================
 # Files in nrnoc directory
 # =============================================================================
 set(NRNOC_FILE_LIST
-    cabcode.c
-    capac.c
-    clamp.c
-    code.c
-    eion.c
-    extcelln.c
-    fadvance.c
-    fstim.c
-    hocprax.c
-    hocusr.c
-    hoc_init.c
-    hoc_oop.c
-    init.c
-    ldifus.c
-    method3.c
-    nrnnemo.c
-    nrntimeout.c
-    nrnversion.c
+    cabcode.cpp
+    capac.cpp
+    clamp.cpp
+    code.cpp
+    eion.cpp
+    extcelln.cpp
+    fadvance.cpp
+    fstim.cpp
+    hocprax.cpp
+    hocusr.cpp
+    hoc_init.cpp
+    hoc_oop.cpp
+    init.cpp
+    ldifus.cpp
+    method3.cpp
+    nrnnemo.cpp
+    nrntimeout.cpp
+    nrnversion.cpp
     nrnversion.h
-    passive0.c
-    point.c
-    psection.c
-    seclist.c
-    secref.c
-    solve.c
-    synapse.c
-    treeset.c)
+    passive0.cpp
+    point.cpp
+    psection.cpp
+    seclist.cpp
+    secref.cpp
+    solve.cpp
+    synapse.cpp
+    treeset.cpp)
 
 # =============================================================================
 # Files in ivoc directory
@@ -195,7 +196,7 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    bgpmeminfo.c
+    bgpmeminfo.cpp
     cachevec.cpp
     classreg.cpp
     cvodeobj.cpp
@@ -230,9 +231,9 @@ set(NRNIV_FILE_LIST
     nrnpy.cpp
     nrnrtime.cpp
     nrnste.cpp
-    nvector_nrnserial_ld.c
-    nvector_nrnthread.c
-    nvector_nrnthread_ld.c
+    nvector_nrnserial_ld.cpp
+    nvector_nrnthread.cpp
+    nvector_nrnthread_ld.cpp
     ocbbs.cpp
     occvode.cpp
     ocjump.cpp
@@ -460,7 +461,7 @@ set(MEMACS_FILES_LIST
     window.c
     word.c)
 
-set(NRNMPI_FILES_LIST nrnmpi.c bbsmpipack.c mpispike.c nrnrt.c)
+set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
 
 set(NRNGNU_FILES_LIST
     ACG.cpp
@@ -482,9 +483,7 @@ set(NRNGNU_FILES_LIST
     SmplStat.cpp
     Uniform.cpp
     Weibull.cpp
-    builtin.cpp
-    d_avec.cpp
-    d_vec.cpp)
+    builtin.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -497,8 +496,8 @@ set(NRNPYTHON_FILES_LIST
     rxd_extracellular.cpp
     rxd_intracellular.cpp
     rxd_vol.cpp
-    rxd_marching_cubes.c
-    rxd_llgramarea.c)
+    rxd_marching_cubes.cpp
+    rxd_llgramarea.cpp)
 
 # built-in mod files
 set(MODFILE_BASE_NAMES
@@ -521,45 +520,45 @@ set(MODFILE_BASE_NAMES
     svclmp)
 
 set(MODLUNIT_FILES_LIST
-    parse1.c
-    lex.c
-    consist.c
-    declare.c
-    init.c
-    io.c
-    kinunit.c
-    list.c
-    model.c
-    nrnunit.c
-    passn.c
-    symbol.c
-    units.c
-    units1.c
-    version.c)
+    parse1.cpp
+    lex.cpp
+    consist.cpp
+    declare.cpp
+    init.cpp
+    io.cpp
+    kinunit.cpp
+    list.cpp
+    model.cpp
+    nrnunit.cpp
+    passn.cpp
+    symbol.cpp
+    units.cpp
+    units1.cpp
+    version.cpp)
 
 set(NMODL_FILES_LIST
-    parse1.c
-    diffeq.c
-    lex.c
-    consist.c
-    deriv.c
-    discrete.c
-    init.c
-    io.c
-    kinetic.c
-    list.c
-    modl.c
-    nocpout.c
-    noccout.c
-    parsact.c
-    netrec_discon.c
-    partial.c
-    sens.c
-    simultan.c
-    solve.c
-    symbol.c
-    units.c
-    version.c)
+    parse1.cpp
+    diffeq.cpp
+    lex.cpp
+    consist.cpp
+    deriv.cpp
+    discrete.cpp
+    init.cpp
+    io.cpp
+    kinetic.cpp
+    list.cpp
+    modl.cpp
+    nocpout.cpp
+    noccout.cpp
+    parsact.cpp
+    netrec_discon.cpp
+    partial.cpp
+    sens.cpp
+    simultan.cpp
+    solve.cpp
+    symbol.cpp
+    units.cpp
+    version.cpp)
 
 set(IVOS_FILES_LIST
     file.cpp
@@ -593,7 +592,7 @@ nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST}
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
-                     nvector_nrnparallel_ld.c)
+                     nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
@@ -608,7 +607,7 @@ nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
 nrn_create_file_list(NRN_MODFILE_BASE_NAMES ${PROJECT_SOURCE_DIR}/src/nrnoc ${MODFILE_BASE_NAMES})
 nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/ivoc/ nrnmain.cpp)
-nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.c modlreg.c)
+nrn_create_file_list(NRN_BIN_SRC_FILES ${PROJECT_SOURCE_DIR}/src/oc/ ockludge.cpp modlreg.cpp)
 nrn_create_file_list(NRN_MODLUNIT_SRC_FILES ${NRN_MODLUNIT_SRC_DIR} ${MODLUNIT_FILES_LIST})
 nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST})
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi

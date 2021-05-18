@@ -5,14 +5,13 @@
 #include "nrnoc2iv.h"
 #include "nrniv_mf.h"
 
-extern "C" {
-#include "parse.h"
+#include "parse.hpp"
 extern int point_reg_helper(Symbol*);
 extern Object* hoc_newobj1(Symbol*, int);
 extern Symlist* hoc_symlist;
 extern void hoc_unlink_symbol(Symbol*, Symlist*);
 extern void hoc_link_symbol(Symbol*, Symlist*);
-extern void hoc_free_list(Symlist**);
+extern "C" void hoc_free_list(Symlist**);
 extern Datum* hoc_look_inside_stack(int, int);
 extern void nrn_loc_point_process(int, Point_process*, Section*, Node*);
 extern char* pnt_map;
@@ -24,7 +23,6 @@ extern void make_mechanism();
 extern void make_pointprocess();
 extern void hoc_construct_point(Object*, int);
 extern Object* hoc_new_opoint(int);
-}
 
 static Object* last_created_pp_ob_;
 static bool skip_;
@@ -77,7 +75,7 @@ void hoc_construct_point(Object* ob, int narg) {
 	}
 }
 
-Point_process* ob2pntproc_0(Object* ob) {
+extern "C" Point_process* ob2pntproc_0(Object* ob) {
 	Point_process* pp;
 	if (ob->ctemplate->steer) {
 		pp = (Point_process*)ob->u.this_pointer;
@@ -87,7 +85,7 @@ Point_process* ob2pntproc_0(Object* ob) {
 	return pp;
 }
 
-Point_process* ob2pntproc(Object* ob) {
+extern "C" Point_process* ob2pntproc(Object* ob) {
 	Point_process* pp = ob2pntproc_0(ob);
 	if (!pp || !pp->prop) {
 		 hoc_execerror(hoc_object_name(ob),"point process not located in a section");
@@ -301,7 +299,7 @@ hoc_execerror("Can't make a template into a PointProcess when instances already 
 	// That is the one with the u.ppsym.
 	// The only reason it needs to be in slist is to find the
 	// mechanims type. And it needs to be LAST in that list.
-	// The only reason for the u.ppsym is for ndatclas.c and we
+	// The only reason for the u.ppsym is for ndatclas.cpp and we
 	// need to fill those symbols with oboff.
 	sp = hoc_table_lookup(classsym->name, slist);
 	hoc_unlink_symbol(sp, slist);

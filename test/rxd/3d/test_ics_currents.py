@@ -29,22 +29,15 @@ def ics_example(neuron_instance):
         nrn_region='i',
         dx=1.0)
 
-    # Who?
-    x = rxd.Species([cyt], name='x', d=1.0, charge=1, initial=0)
-    Xcyt = x[cyt]
-    model = (
-        cell1,
-        cyt,
-        x,
-        Xcyt
-    )
+    model = (cell1, cyt)
     yield (neuron_instance, model)
 
 
 def test_ics_currents(ics_example):
     """Test ics_example with fixed step methods"""
 
-    (h, rxd, data, save_path), model = ics_example
+    (h, rxd, data, save_path), (cell1, cyt) = ics_example
+    x = rxd.Species([cyt], name='x', d=1.0, charge=1, initial=0)
     h.finitialize(-65)
     h.continuerun(100)
 
@@ -56,8 +49,8 @@ def test_ics_currents(ics_example):
 def test_ics_currents_cvode(ics_example):
     """Test ics_example with variable step methods"""
 
-    (h, rxd, data, save_path), model = ics_example
-
+    (h, rxd, data, save_path), (cell1, cyt) = ics_example
+    x = rxd.Species([cyt], name='x', d=1.0, charge=1, initial=0)
     h.CVode().active(True)
 
     h.finitialize(-65)
@@ -66,3 +59,17 @@ def test_ics_currents_cvode(ics_example):
     if not save_path: 
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_ics_currents_initial(ics_example):
+    """Test ics_example with initial values from NEURON"""
+
+    (h, rxd, data, save_path), (cell1, cyt) = ics_example
+    x = rxd.Species([cyt], name='x', d=1.0, charge=1)
+    h.finitialize(-65)
+    h.continuerun(100)
+
+    if not save_path: 
+        max_err = compare_data(data)
+        assert max_err < tol
+

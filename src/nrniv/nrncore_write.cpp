@@ -92,7 +92,7 @@ correctness has not been validated for cells without gids.
 #include <cstdlib>
 
 #include "section.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
 
@@ -105,14 +105,27 @@ correctness has not been validated for cells without gids.
 #include "nrncore_write/callbacks/nrncore_callbacks.h"
 #include <map>
 
+
+#ifdef MINGW
+#define RTLD_NOW 0
+#define RTLD_GLOBAL 0
+#define RTLD_NOLOAD 0
+extern "C" {
+extern void* dlopen_noerr(const char* name, int mode);
+#define dlopen dlopen_noerr
+extern void* dlsym(void* handle, const char* name);
+extern int dlclose(void* handle);
+extern char* dlerror();
+}
+#else
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#endif
 #endif
 
 
 extern NetCvode* net_cvode_instance;
 
-extern "C" { // to end of file
 
 extern int* nrn_prop_dparam_size_;
 int* bbcore_dparam_size; // cvodeieq not present
@@ -126,6 +139,8 @@ extern size_t nrncore_netpar_bytes();
 extern short* nrn_is_artificial_;
 
 int (*nrnpy_nrncore_enable_value_p_)();
+int (*nrnpy_nrncore_file_mode_value_p_)();
+
 char* (*nrnpy_nrncore_arg_p_)(double tstop);
 
 CellGroup* cellgroups_;
@@ -140,21 +155,35 @@ bool corenrn_direct;
 static size_t part1();
 static void part2(const char*);
 
+/// dump neuron model to given directory path
+size_t write_corenrn_model(const std::string& path) {
 
-
-// accessible from ParallelContext.total_bytes()
-size_t nrnbbcore_write() {
+  // if writing to disk then in-memory mode is false
   corenrn_direct = false;
+
+  // make sure model is ready to transfer
   model_ready();
-  const std::string& path = get_write_path();
 
-  size_t rankbytes = part1(); // can arrange to be just before part2
+  // directory to write model
+  create_dir_path(path);
 
+  // calculate size of the model
+  size_t rankbytes = part1();
+
+  // mechanism and global variables
   write_memb_mech_types(get_filename(path, "bbcore_mech.dat").c_str());
   write_globals(get_filename(path, "globals.dat").c_str());
 
+  // write main model data
   part2(path.c_str());
+
   return rankbytes;
+}
+
+// accessible from ParallelContext.total_bytes()
+size_t nrncore_write() {
+  const std::string& path = get_write_path();
+  return write_corenrn_model(path);
 }
 
 static size_t part1() {
@@ -209,9 +238,10 @@ static void part2(const char* path) {
   }
 
   // filename data might have to be collected at hoc level since
-  // pc.nrnbbcore_write might be called
+  // pc.nrncore_write might be called
   // many times per rank since model may be built as series of submodels.
-  if (ifarg(2)) {
+  if (ifarg(2) && hoc_is_object_arg(2) && is_vector_arg(2)) {
+    // Legacy style. Interpreter collects groupgids and writes files.dat
     Vect* cgidvec = vector_arg(2);
     vector_resize(cgidvec, nrn_nthread);
     double* px = vector_vec(cgidvec);
@@ -219,7 +249,15 @@ static void part2(const char* path) {
       px[i] = double(cgs[i].group_id);
     }
   }else{
-    write_nrnthread_task(path, cgs);
+    bool append = false;
+    if (ifarg(2)) {
+      if (hoc_is_double_arg(2)) {
+        append = (*getarg(2) != 0);
+      }else{
+        hoc_execerror("Second arg must be Vector or double.", NULL);
+      }
+    }
+    write_nrnthread_task(path, cgs, append);
   }
 
   part2_clean();
@@ -282,13 +320,29 @@ int nrncore_is_enabled() {
     return 0;
 }
 
+/** Return value of neuron.coreneuron.file_mode flag */
+int nrncore_is_file_mode() {
+    if (nrnpy_nrncore_file_mode_value_p_) {
+        int result = (*nrnpy_nrncore_file_mode_value_p_)();
+        return result;
+    }
+    return 0;
+}
+
 /** Run coreneuron with arg string from neuron.coreneuron.nrncore_arg(tstop)
  *  Return 0 on success
-*/
-int nrncore_psolve(double tstop) {
+ */
+int nrncore_psolve(double tstop, int file_mode) {
   if (nrnpy_nrncore_arg_p_) {
     char* arg = (*nrnpy_nrncore_arg_p_)(tstop);
     if (arg) {
+      // if file mode is requested then write model to a directory
+      // note that CORENRN_DATA_DIR name is also used in module
+      // file coreneuron.py
+      if (file_mode) {
+        const char* CORENRN_DATA_DIR = "corenrn_data";
+        write_corenrn_model(CORENRN_DATA_DIR);
+      }
       nrncore_run(arg);
       // data return nt._t so copy to t
       t = nrn_threads[0]._t;
@@ -309,10 +363,12 @@ int nrncore_is_enabled() {
     return 0;
 }
 
-int nrncore_psolve(double tstop) {
+int nrncore_is_file_mode() {
+    return 0;
+}
+
+int nrncore_psolve(double tstop, int file_mode) {
     return 0;
 }
 
 #endif //!HAVE_DLFCN_H
-
-} // end of extern "C"

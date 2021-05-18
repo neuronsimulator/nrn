@@ -1,5 +1,9 @@
 name: Windows Installer
 
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
+
 on:
   push:
     branches: 
@@ -9,7 +13,11 @@ on:
     branches:
       - master
       - release/**
-
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
 env:
   MSYS2_ROOT: C:\msys64
 
@@ -20,7 +28,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
+      with:
+        fetch-depth: 0
+        
+    - name: Set up Python3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+
     - name: Download Dependencies
       run: |
         .\nrn\ci\win_download_deps.cmd
@@ -40,6 +55,12 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
       env:
         BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
+
+    # This step will set up an SSH connection on tmate.io for live debugging.
+    # To trigger it, simply add 'live-debug-win' to your last pushed commit message.
+    - name: live debug session on failure
+      if: failure() && contains(github.event.head_commit.message, 'live-debug-win')
+      uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v2

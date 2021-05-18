@@ -13,7 +13,6 @@
 #include "nonvintblock.h"
 #include "nrnmpi.h"
 
-extern "C" {
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
@@ -23,19 +22,12 @@ extern void (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
-char* hoc_back2forward(char* s);
+extern "C" char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
-}
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
-
-#if defined(NRNCMAKE)
-// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
-#undef NRNHOSTCPU
-#define NRNHOSTCPU "."
-#endif
 
 #ifdef MINGW
 #define RTLD_NOW 0
@@ -53,9 +45,7 @@ extern char* dlerror();
 #include <dlfcn.h>
 #endif
 
-extern "C" {
 extern char* neuron_home;
-}
 
 #if NRNPYTHON_DYNAMICLOAD >= 20 && NRNPYTHON_DYNAMICLOAD < 30
 
@@ -84,11 +74,9 @@ static void* python_already_loaded();
 static void* load_python();
 static void load_nrnpython(int, const char*);
 #else //!defined(NRNPYTHON_DYNAMICLOAD)
-extern "C" {
-extern void nrnpython_start(int);
-extern void nrnpython_reg_real();
-extern void nrnpython_real();
-}
+extern "C" void nrnpython_start(int);
+extern "C" void nrnpython_reg_real();
+extern "C" void nrnpython_real();
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
 
 char* nrnpy_pyhome;
@@ -130,7 +118,7 @@ neuron_home);
 
 static void set_nrnpylib() {
   nrnpy_pylib = getenv("NRN_PYLIB");
-  nrnpy_pyhome = getenv("PYTHONHOME");
+  nrnpy_pyhome = getenv("NRN_PYTHONHOME");
   if (nrnpy_pylib && nrnpy_pyhome) { return; }
   // copy allows free of the copy if needed
   if (nrnpy_pylib) { nrnpy_pylib = strdup(nrnpy_pylib); }
@@ -154,13 +142,8 @@ static void set_nrnpylib() {
     free(bnrnhome);
     #else
     char* line = new char[linesz+1];
-#if defined(NRNCMAKE)
     sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
      neuron_home,
-#else
-    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
-     neuron_home, NRNHOSTCPU,
-#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
@@ -173,13 +156,13 @@ static void set_nrnpylib() {
       while(fgets(line, linesz, p)) {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
-        if (!nrnpy_pyhome && (cp = strstr(line, "export PYTHONHOME="))) {
-          cp += 19;
+        if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
+          cp += strlen("export NRN_PYTHONHOME=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pyhome) { free(nrnpy_pyhome); }
           nrnpy_pyhome = strdup(cp);
         }else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
-          cp += 18;
+          cp += strlen("export NRN_PYLIB=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pylib) { free(nrnpy_pylib); }
           nrnpy_pylib = strdup(cp);
@@ -354,17 +337,9 @@ static void* load_nrnpython_helper(const char* npylib) {
 	sprintf(name, "%s.dll", npylib);
 #else // !MINGW
 #if DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #else // !DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #endif // DARWIN
 #endif // MINGW
 	void* handle = dlopen(name, RTLD_NOW);

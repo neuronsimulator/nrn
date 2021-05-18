@@ -16,24 +16,17 @@ greater cache efficiency
 #include <arraypool.h>
 #include <structpool.h>
 
-extern "C" {
 extern void nrn_mk_prop_pools(int);
 extern void nrn_cache_prop_realloc();
 extern int nrn_is_ion(int);
-void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
+extern "C" void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip);
+void nrn_delete_prop_pool(int type);
 #if EXTRACELLULAR
-void nrn_extcell_update_param();
+extern void nrn_extcell_update_param();
 #endif
 extern void nrn_recalc_ptrs(double*(*)(double*));
 static double* recalc_ptr(double*);
 
-void* nrn_pool_create(long count, int itemsize);
-void nrn_pool_delete(void* pool);
-void* nrn_pool_alloc(void* pool);
-void nrn_pool_free(void* pool, void* item);
-void nrn_pool_freeall(void* pool);
-
-}
 
 declareArrayPool(CharArrayPool, char)
 implementArrayPool(CharArrayPool, char)
@@ -252,6 +245,17 @@ static void mk_prop_pools(int n) {
 	}
 }
 
+void nrn_delete_prop_pool(int type) {
+  assert(type < npools_);
+  if (dblpools_[type]) {
+    if (dblpools_[type]->nget() > 0) {
+      hoc_execerror(memb_func[type].sym->name, "prop pool in use");
+    }
+    delete dblpools_[type];
+    dblpools_[type] = NULL;
+  }
+}
+
 void nrn_mk_prop_pools(int n) {
 #if NRN_MECH_REORDER
 	if (force == 0) { read_temp1(); }
@@ -259,7 +263,7 @@ void nrn_mk_prop_pools(int n) {
 	mk_prop_pools(n);
 }
 
-double* nrn_prop_data_alloc(int type, int count, Prop* p) {
+extern "C" double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	if (!dblpools_[type]) {
 		dblpools_[type] = new DoubleArrayPool(APSIZE, count);
 	}
@@ -270,7 +274,7 @@ double* nrn_prop_data_alloc(int type, int count, Prop* p) {
 	return pd;
 }
 
-Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
+extern "C" Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
 	int i;
 	Datum* ppd;
 	if (!datumpools_[type]) {
@@ -284,14 +288,14 @@ Datum* nrn_prop_datum_alloc(int type, int count, Prop* p) {
 	return ppd;
 }
 
-void nrn_prop_data_free(int type, double* pd) {
+extern "C" void nrn_prop_data_free(int type, double* pd) {
 //if (type > 1) printf("nrn_prop_data_free %d %s %p\n", type, memb_func[type].sym->name, pd);
 	if (pd) {
 		dblpools_[type]->hpfree(pd);
 	}
 }
 
-void nrn_prop_datum_free(int type, Datum* ppd) {
+extern "C" void nrn_prop_datum_free(int type, Datum* ppd) {
 //if (type > 1) printf("nrn_prop_datum_free %d %s %p\n", type, memb_func[type].sym->name, ppd);
 	if (ppd) {
 		datumpools_[type]->hpfree(ppd);
@@ -554,7 +558,7 @@ static int in_place_data_realloc() {
 	return status;
 }
 
-void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
+extern "C" void nrn_update_ion_pointer(Symbol* sion, Datum* dp, int id, int ip) {
 	int iontype = sion->subtype;
 	DoubleArrayPool* np = dblpools_[iontype];
 	DoubleArrayPool* op = oldpools_[iontype];
@@ -650,23 +654,23 @@ nrn_assert(fprintf(f, "%d %d %ld\n", p->type, ml->nodecount++, p->_alloc_seq) > 
 
 // for avoiding interthread cache line sharing
 // each thread needs its own pool instance
-void* nrn_pool_create(long count, int itemsize) {
+extern "C" void* nrn_pool_create(long count, int itemsize) {
 	CharArrayPool* p = new CharArrayPool(count, itemsize);
 	return (void*)p;
 }
-void nrn_pool_delete(void* pool) {
+extern "C" void nrn_pool_delete(void* pool) {
 	CharArrayPool* p = (CharArrayPool*)pool;
 	delete p;
 }
-void* nrn_pool_alloc(void* pool) {
+extern "C" void* nrn_pool_alloc(void* pool) {
 	CharArrayPool* p = (CharArrayPool*)pool;
 	return (void*)p->alloc();
 }
-void nrn_pool_free(void* pool, void* item) {
+extern "C" void nrn_pool_free(void* pool, void* item) {
 	CharArrayPool* p = (CharArrayPool*)pool;
-	p->hpfree((char*)item);
+	p->hpfree(static_cast<char*>(item));
 }
-void nrn_pool_freeall(void* pool) {
+extern "C" void nrn_pool_freeall(void* pool) {
 	CharArrayPool* p = (CharArrayPool*)pool;
 	p->free_all();
 }

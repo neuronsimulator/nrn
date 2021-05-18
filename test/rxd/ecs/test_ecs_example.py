@@ -179,3 +179,17 @@ def test_ecs_example_cvode_tort(ecs_example):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_ecs_nodelists(ecs_example):
+    """Test accessing species nodes with both Node1D and NodeExtracellular"""
+
+    (h, rxd, data, save_path), make_model = ecs_example
+    model = make_model(0.2, 1.6)
+    ecs, x = model[5], model[6]
+    # test accessing NodeExtracellular from species with both 1D and ECS
+    assert len(x.nodes(ecs)) == 64
+    assert all([nd.region == ecs for nd in x.nodes(ecs)])
+    # test accessing specific node by location
+    nd = x[ecs].nodes((-38, 27, 27))[0]
+    assert (nd.x3d, nd.y3d, nd.z3d) == (-38.5, 27.5, 27.5)

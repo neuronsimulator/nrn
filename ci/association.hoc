@@ -1,0 +1,9 @@
+objref f
+f = new File()
+f.ropen("temp.txt")
+f.close()
+f.unlink()
+f.wopen("temp.txt")
+f.printf("%s\n","hello")
+f.close()
+quit()

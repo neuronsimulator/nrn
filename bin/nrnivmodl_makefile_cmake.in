@@ -1,4 +1,3 @@
-# Modified to replace the autoconf processed file nrnmech_makefile.in
 
 # Arguments:
 # MODOBJFILES
@@ -38,8 +37,11 @@ _cm =,
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
 INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 
-CC ?= @CMAKE_C_COMPILER@
-CXX ?= @CMAKE_CXX_COMPILER@
+# CC/CXX are always defined. If the definition comes from default change it
+ifeq ($(origin CC), default)
+    CC = @CMAKE_C_COMPILER@
+    CXX = @CMAKE_CXX_COMPILER@
+endif
 CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
 CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
 
@@ -58,7 +60,7 @@ mod_objs   = $(MODOBJFILES)
 c_objs = $(COBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
-mod_func_c = $(MODC_DIR)/mod_func.c
+mod_func_cpp = $(MODC_DIR)/mod_func.cpp
 
 special  = $(OUTPUT)/special
 LIB_SUFFIX_ = $(if $(MECH_NAME),_$(MECH_NAME),)
@@ -112,7 +114,7 @@ mech_lib_static: mod_func.o $(mod_objs) $(c_objs) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 
-mod_func.o: mod_func.c
+mod_func.o: mod_func.cpp
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
 	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 

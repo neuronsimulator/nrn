@@ -3,9 +3,7 @@
 
 #include <InterViews/resource.h>
 
-extern "C" {
-	void bbs_handle();
-}
+void bbs_handle();
 
 class BBSDirectServer {
 public:

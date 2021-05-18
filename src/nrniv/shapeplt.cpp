@@ -26,7 +26,7 @@
 #include "rubband.h"
 #include "symchoos.h"
 #include "symdir.h"
-#include "parse.h"
+#include "parse.hpp"
 #include "utility.h"
 #include "objcmd.h"
 #include "idraw.h"
@@ -38,17 +38,13 @@
 #define ShapePlot_		"ShapePlot PlotShape"
 #define MoveText_		"MoveText PlotShape"
 
-extern "C" {
-	extern Symlist* hoc_built_in_symlist;
-}	
+extern Symlist* hoc_built_in_symlist;
 #endif // HAVE_IV
 
-extern "C" {
-	extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
-	extern double (*nrnpy_object_to_double_)(Object*);
-	void* (*nrnpy_get_pyobj)(Object* obj) = 0;
-	void (*nrnpy_decref)(void* pyobj) = 0;
-}	
+extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
+extern double (*nrnpy_object_to_double_)(Object*);
+void* (*nrnpy_get_pyobj)(Object* obj) = 0;
+void (*nrnpy_decref)(void* pyobj) = 0;
 
 // PlotShape class registration for oc
 static double sh_flush(void* v) {
@@ -653,7 +649,7 @@ void ShapePlot::draw(Canvas* c, const Allocation& a) const {
 //will work on all x11 implementations. However, for WIN32, both cause
 //problems and thus the implementation of Canvas16::clip was changed to
 // not do an intersection and the "damage_all" below along with a change
-// to the window.c paint function in which the damage area is reread before
+// to the window.cpp paint function in which the damage area is reread before
 // the bit block transfer solves the problem.
 // At any rate this is fast only for the first view since the fast_draw's
 // only work once.

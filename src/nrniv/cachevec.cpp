@@ -13,18 +13,16 @@
 #include <ocnotify.h>
 #include <mymath.h>
 #include <nrnoc2iv.h>
-#include <parse.h>
+#include <parse.hpp>
 #include <cvodeobj.h>
 #include <netcvode.h>
 #include <hoclist.h>
 #include <ocpointer.h>
 #include <ocptrvector.h>
 
-extern "C" {
 void nrniv_recalc_ptrs();
-extern double* nrn_recalc_ptr(double*);
+extern "C" double* nrn_recalc_ptr(double*);
 extern NetCvode* net_cvode_instance;
-}
 
 extern void nrn_linmod_update_ptrs(void*);
 

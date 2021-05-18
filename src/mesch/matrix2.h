@@ -32,6 +32,10 @@
 #ifndef MATRIX2H
 #define MATRIX2H
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "matrix.h"
 
 /* Unless otherwise specified, factorisation routines overwrite the
@@ -92,14 +96,14 @@ extern	MAT	*BKPfactor(MAT *A,PERM *pivot,PERM *blocks),
                  /* Cholesky factorisation of A
                         (symmetric, positive definite) */
 		*CHfactor(MAT *A),
-                /* LU factorisation of A (with partial pivoting) */ 
+                /* LU factorisation of A (with partial pivoting) */
                 *LUfactor(MAT *A,PERM *pivot),
                 /* QR factorisation of A; need dim(diag) >= # rows of A */
 		*QRfactor(MAT *A,VEC *diag),
                 /* QR factorisation of A with column pivoting */
 		*QRCPfactor(MAT *A,VEC *diag,PERM *pivot),
                 /* L.D.L^T factorisation of A */
-		*LDLfactor(MAT *A), 
+		*LDLfactor(MAT *A),
                 /* Hessenberg factorisation of A -- for schur() */
                 *Hfactor(MAT *A,VEC *diag1,VEC *diag2),
                 /* modified Cholesky factorisation of A;
@@ -225,5 +229,8 @@ void ifft(VEC *,VEC *);
 
 #endif
 
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
