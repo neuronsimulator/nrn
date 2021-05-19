@@ -14,9 +14,9 @@ or recent releases from below URLs:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-Windows installers have name in the format of `nrn-<version-id>-mingw-py-27-36-37-38-39-setup.exe`.
-The `py-27-36-37-38-39` string in the installer name indicates that the given installer is compatible
-with Python versions 2.7, 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
+Windows installers have name in the format of `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
+The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
+with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in [this presentation]
 (https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -30,7 +30,7 @@ pip3 install neuron
 ```
 
 Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
-wheels are provided for the 8.0 release only.
+wheels are provided for the 8.0.x release series exclusively.
 
 Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
 releases from below URLs:
@@ -38,9 +38,9 @@ releases from below URLs:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-Mac OS installers have name in the format of `nrn-<version-id>-osx-27-36-37-38-39.pkg`. Like windows
-installer, `py-27-36-37-38-39` string in the installer name indicates that the given installer is
-compatible with Python versions 2.7, 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
+Mac OS installers have name in the format of `nrn-<version-id>-osx-36-37-38-39.pkg`. Like windows
+installer, `py-36-37-38-39` string in the installer name indicates that the given installer is
+compatible with Python versions 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -58,7 +58,7 @@ Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip
 pip3 install neuron
 ```
 
-Note that Python2 wheels are provided only for the 8.0 release. Also, we are not providing .rpm or .deb
+Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
 
 ## Installing Source Distributions
@@ -79,7 +79,7 @@ In order to build NEURON from source, the following packages must be available:
 
 The following packages are optional (see build options):
 
-- Python >=2.7, or Python >=3.5 (for Python interface)
+- Python >=3.5 (for Python interface)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
@@ -321,7 +321,7 @@ If you have enabled dynamic python support using `NRN_ENABLE_PYTHON_DYNAMIC` CMa
 and see error like below:
 
 ```bash
-Could not load either libnrnpython3 or libnrnpython2
+Could not load libnrnpython3
 ```
 
 then NEURON is not able to find appropriate Python and corresponding Python library. You can verify which Python is

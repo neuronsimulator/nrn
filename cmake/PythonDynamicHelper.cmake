@@ -4,9 +4,8 @@
 # ~~~
 # NEURON can be built with python modules that can be usable from multiple
 # versions of Python. Here we check if NRN_ENABLE_PYTHON_DYNAMIC is valid
-# and determine an include directory for version 2 and/or 3 to build
-# libnrnpython<major>.so. Depending on the pythons used, either or both of
-# NRNPYTHON_INCLUDE3 or NRNPYTHON_INCLUDE2 will be defined.
+# and determine an include directory for version 3 to build
+# libnrnpython<major>.so. For now only NRNPYTHON_INCLUDE3 will be defined.
 #
 # The above is good for mac and linux. Sadly, for MINGW, a distinct
 # NRNPYTHON_INCLUDE<major><minor> is needed for each python in the
@@ -119,6 +118,5 @@ endmacro()
 
 if(NOT LINK_AGAINST_PYTHON)
   # make sure provided python have Python.h header
-  check_python_include(NRNPYTHON_INCLUDE2 2)
   check_python_include(NRNPYTHON_INCLUDE3 3)
 endif()

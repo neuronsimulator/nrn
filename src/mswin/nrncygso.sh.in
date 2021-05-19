@@ -121,15 +121,6 @@ if test "$CFLAGS" != "-mno-cygwin" ; then
 
     if test $nrnpy = 'yes' ; then
   
-      echo 'make nrnpython27.dll'
-      $CXX -shared ../nrnpython/${ltlibs}/*.o -L. -lnrniv -o nrnpython27.dll \
-        @NRNPYTHON_PYLIBLINK@ \
-        -L${IVLIBDIR} -lIVhines \
-        -lreadline \
-        -Wl,--enable-auto-image-base \
-        ${LDFLAGS} \
-       -Xlinker --out-implib -Xlinker libnrnpython27.dll.a
-
       echo 'make hocmodule.dll'
       $CXX -shared \
         ../nrnpython/${ltlibs}/inithoc.o \
@@ -227,24 +218,6 @@ if test "$NPYONLY" = "no" ; then
       ../ivoc/nrnmain.o \
       -L. -lnrniv \
       ${LDFLAGS}
-
-    #without msvcr90.dll and a manifest, cannot 'import numpy' from enthought.
-    # also 2.7 problem with matplotlib.pyplot
-    #To allow this,  create an alternative executable.
-    manifest=Microsoft.VC90.CRT.manifest
-    if test -f /e/Python27/$manifest ; then
-      cp /e/Python27/$manifest .
-      echo '#include "winuser.h"
-1 RT_MANIFEST '$manifest'
-' > msvcr.rc
-      windres --input msvcr.rc --output msvcr.o
-
-      $CXX -g -O2 -o nrniv_crt90.exe \
-        ../ivoc/nrnmain.o msvcr.o\
-        -L. -lnrniv \
-        ${LDFLAGS}
-
-    fi # enthought manifest
 
 fi # NPYONLY no
 

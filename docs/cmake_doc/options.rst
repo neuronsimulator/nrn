@@ -209,7 +209,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python2.7;python3.6;python3.7;python3.8"
+    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 

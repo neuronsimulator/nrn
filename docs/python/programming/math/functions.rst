@@ -241,7 +241,7 @@ Diagnostics:
 
         .. note::
 
-            In Python 2.7 and Python 3.2+, use ``math.erf`` instead.
+            In Python 3.2+, use ``math.erf`` instead.
 
 
 ----
@@ -253,4 +253,4 @@ Diagnostics:
 
         .. note::
 
-            In Python 2.7 and Python 3.2+, use ``math.erfc`` instead.
+            In Python 3.2+, use ``math.erfc`` instead.
