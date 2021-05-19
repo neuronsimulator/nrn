@@ -264,7 +264,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
-if (USE_PTHREAD)
+if (${USE_PTHREAD} EQUAL 1)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
 if(NRN_WINDOWS_BUILD)
@@ -372,7 +372,7 @@ endif()
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
-if (USE_PHTREAD)
+if (${USE_PTHREAD} EQUAL 1)
   target_link_libraries(nrniv Threads::Threads)
 endif()
 if(NOT MINGW)
