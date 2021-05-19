@@ -123,7 +123,7 @@ class _c_region:
             return numpy.ndarray(0, ctypes.c_int)
         else:
             return self.ecs_location_index.flatten()
-    
+
     def get_state_index(self):
         if not self._initialized:
             self._initalize()
@@ -225,7 +225,8 @@ class Extracellular:
 
     Assumes tortuosity=1.
     """
-    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1, tortuosity=1):
+    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1,
+                 tortuosity=None, permeability=None):
         from . import options
         if not options.enable.extracellular:
             raise RxDException('Extracellular diffusion support is disabled. Override with rxd.options.enable.extracellular = True.')
@@ -262,33 +263,18 @@ class Extracellular:
             else:
                 self._alpha = h.Vector(alpha)
                 self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
-        if(numpy.isscalar(tortuosity)):
-            tortuosity = float(tortuosity)
-            self._ecs_tortuosity = tortuosity**2
-            self._tortuosity = tortuosity
-        elif callable(tortuosity):
-            self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
-            for i in range(self._nx):
-                for j in range(self._ny):
-                    for k in range(self._nz):
-                        self._tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._ecs_tortuosity = h.Vector(self._tortuosity.flatten()).pow(2)
-        elif isinstance(tortuosity, dict):
-            from .species import State
-            params = tortuosity.copy()
-            params['regions'] = [self]
-            self._tortuosity = State(**params)
-            self._ecs_tortuosity = None
-            warnings.warn("when using an rxd.State the values should be the tortuosity-squared to avoid additional calculations every time-step")
+        if tortuosity is not None and permeability is not None:
+            raise RxDException("Specify either permeability or tortuosity, not both; permeability=1/tortuosity**2")
+        elif tortuosity is None and permeability is None:
+            tortuosity=1.0
+        
+        if permeability is None:
+            self._tortuosity, self._ecs_permeability = self._parse_tortuosity(tortuosity)
         else:
-            tortuosity = numpy.array(tortuosity)
-            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz))
-    
-            else:
-                self._tortuosity = tortuosity
-                self._ecs_tortuosity = h.Vector(self._tortuosity.flatten()).pow(2)
-    
+            self._permeability, self._ecs_permeability = self._parse_tortuosity(permeability, True)
+     
+
+ 
     def __repr__(self):
         return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
 
@@ -302,16 +288,76 @@ class Extracellular:
         return numpy.prod(self._dx) * self.alpha[index]
 
     @property
-    def _tortuosity_vector(self):
-        if self._ecs_tortuosity is None:
-            self._ecs_tortuosity = self.tortuosity._extracellular_instances[self]._states
-        return self._ecs_tortuosity
+    def _permeability_vector(self):
+        if self._ecs_permeability is None:
+            self._ecs_permeability = self.permeability._extracellular_instances[self]._states
+        return self._ecs_permeability
+
+    def _parse_tortuosity(self, value, is_permeability=False):
+        if numpy.isscalar(value):
+            parsed_value = value
+            ecs_permeability = value if is_permeability else value**(-2)
+        elif callable(value):
+            ecs_permeability = h.Vector()
+            parsed_value = numpy.ndarray((self._nx, self._ny, self._nz))
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        parsed_value[i,j,k] = value(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+            if is_permeability:
+                ecs_permeability = h.Vector(parsed_value.flatten())
+            else:
+                ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
+        elif (hasattr(value, '_extracellular_instances') or
+              hasattr(self,'_extracellular')):
+            # Check Species or SpeciesOnExtracellular is defined on this region
+            if ((hasattr(value, '_extracellular_instances') and
+                self not in value._extracellular_instances) or
+                ((hasattr(value, '_extracellular') and
+                  value._extracellular() and
+                  value._extracellular() != self))):
+                raise RxDException("permeability can be set to a State or Parameter, but it must be defined on this Extracellular region %r" % self)
+            else:
+                if is_permeability:
+                    parsed_value = value
+                    ecs_permeability = None
+                else:
+                    raise RxDException("Only permeability can be set to a State or Parameter. The tortuosity must be a; scalar, function (of x,y,z locations), or array the size of the extracellular space")
+        elif isinstance(value, dict):
+            if is_permeability:
+                from .species import State
+                params = value.copy()
+                params['regions'] = [self]
+                parsed_value = State(**params)
+                ecs_permeability = None
+            else:
+                raise RxDException("Only permeability can be set to a State or Parameter. The tortuosity must be a; scalar, function (of x,y,z locations), or array the size of the extracellular space")
+
+        else:
+            parsed_value = numpy.array(value)
+            if(parsed_value.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('permeability or tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+
+            else:
+                if is_permeability:
+                    ecs_permeability = h.Vector(parsed_value.flatten())
+                else:
+                    ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
+        return parsed_value, ecs_permeability
 
 
     @property
     def tortuosity(self):
-        return self._tortuosity
-    
+        if hasattr(self, '_tortuosity'):
+            return self._tortuosity
+        return (1.0/self._permeability)**0.5
+
+    @property
+    def permeability(self):
+        if hasattr(self, '_tortuosity'):
+            return 1.0/self._tortuosity**2
+        return self._permeability
+
     @tortuosity.setter
     def tortuosity(self, value):
         """Set the value of the tortuosity for all species define on this
@@ -325,61 +371,46 @@ class Extracellular:
         """
 
         from .species import _update_tortuosity
-        if numpy.isscalar(value):
-            self._tortuosity = value
-            self._ecs_tortuosity = value
-        elif callable(value):
-            if(numpy.isscalar(self._tortuosity)):
-                self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
-                self._ecs_tortuosity = h.Vector()
-            else:
-                self._ecs_tortuosity.clear()
 
-            for i in range(self._nx):
-                for j in range(self._ny):
-                    for k in range(self._nz):
-                        self._tortuosity[i,j,k] = value(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._ecs_tortuosity.from_python(self._tortuosity.flatten()).pow(2)
-        elif (hasattr(value, '_extracellular_instances') or
-              hasattr(self,'_extracellular')):
-            # Check Species or SpeciesOnExtracellular is defined on this region
-            if ((hasattr(value, '_extracellular_instances') and
-                self not in value._extracellular_instances) or
-                ((hasattr(value, '_extracellular') and
-                  value._extracellular() and
-                  value._extracellular() != self))):
-                raise RxDException("tortuosity can be set to a State or Parameter, but it must be defined on this Extracellular region %r" % self)
-            else:
-                self._tortuosity = value
-                self._ecs_tortuosity = None
-                warnings.warn("when using an rxd.State the values should be the tortuosity-squared to avoid additional calculations every time-step")
-        else:
-            tortuosity = numpy.array(value)
-            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
-    
-            else:
-                if(numpy.isscalar(self._tortuosity)):
-                    self._ecs_tortuosity = h.Vector(tortuosity.flatten()).pow(2)
-                else:
-                    self._ecs_tortuosity.clear()
-                    self._ecs_tortuosity.from_python(tortuosity.flatten()).pow(2)
-                self._tortuosity = tortuosity
+        self._tortuosity, self._ecs_permeability = self._parse_tortuosity(value)
+        if hasattr(self, '_permeability'): delattr(self, '_permeability')
+
+        # update tortuosity for any species defined on this ECS
+        _update_tortuosity(self)
+
+    @permeability.setter
+    def permeability(self, value):
+        """Set the value of the permeability for all species define on this
+           Extracellular region.
+
+        Args:
+            value (float, array or callable) the new tortuosity, it can be a
+                scalar for homogeneous diffusion, or a array the size of the
+                extracellular space or a function that take (x,y,z) as an
+                argument and will be evaluated on every extracellular voxel, or
+                an rxd State or Parameter defined on the extracellular region.
+        """
+
+        from .species import _update_tortuosity
+
+        self._permeability, self._ecs_permeability = self._parse_tortuosity(value, True)
+        if hasattr(self, '_tortuosity'): delattr(self, '_tortuosity')
 
         # update tortuosity for any species defined on this ECS
         _update_tortuosity(self)
 
 
+
 class Region(object):
     """Declare a conceptual region of the neuron.
-    
+
     Examples: Cytosol, ER
     """
     def __repr__(self):
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self.dx, self._name)
-    
+
     def __contains__(self, item):
         try:
             if item.region == self:

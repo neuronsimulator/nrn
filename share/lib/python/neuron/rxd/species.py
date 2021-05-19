@@ -117,7 +117,7 @@ def _update_tortuosity(region):
     for s,r in _extracellular_diffusion_objects.items():
         if (r == region and hasattr(s,'_id') and 
             not hasattr(s,'_deleted') and not s._isstate):
-            _set_tortuosity(s._id, region._tortuosity_vector)
+            _set_tortuosity(s._id, region._permeability_vector)
 
 def _1d_submatrix_n():
     if not _has_1d:
@@ -970,13 +970,13 @@ class _ExtracellularSpecies(_SpeciesMathable):
             self._alpha = region._alpha._ref_x[0]
         if isstate:
             self.tortuosity = 1.0
-            self._tortuosity = 1.0
+            self._permability = 1.0
         else: 
             self.tortuosity = region.tortuosity
-            if(numpy.isscalar(region._tortuosity_vector)):
-                self._tortuosity = region._tortuosity_vector
+            if(numpy.isscalar(region._permeability_vector)):
+                self._permability = region._permeability_vector
             else:
-                self._tortuosity = region._tortuosity_vector._ref_x[0]
+                self._permability = region._permeability_vector._ref_x[0]
 
         if boundary_conditions is None:
             bc_type = 0
@@ -987,9 +987,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
         if not hasattr(self._d,'__len__'):
-            self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+            self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._permability, bc_type, bc_value, atolscale)
         elif len(self._d) == 3:
-             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._permability, bc_type, bc_value, atolscale)
         else:
             raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))  
 

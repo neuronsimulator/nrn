@@ -40,13 +40,13 @@ static double get_alpha_array(double* alpha, int idx)
 }
 
 
-static double get_lambda_scalar(double*, int)
+static double get_permeability_scalar(double*, int)
 {
     return 1.; /*already rescale the diffusion coefficients*/
 }
-static double get_lambda_array(double* lambda, int idx)
+static double get_permeability_array(double* permeability, int idx)
 {
-    return lambda[idx];
+    return permeability[idx];
 }
 
 // Make a new Grid_node given required Grid_node parameters
@@ -54,7 +54,7 @@ ECS_Grid_node::ECS_Grid_node() {};
 ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-    PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
+    PyHocObject* my_permeability, int bc_type, double bc_value, double atolscale) {
     int k;
     states = my_states->u.px_;
     
@@ -86,23 +86,23 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
     VARIABLE_ECS_VOLUME = FALSE;
 
     /*Check to see if variable tortuosity/volume fraction is used*/
-    if(PyFloat_Check(my_lambda))
+    if(PyFloat_Check(my_permeability))
     {
-        /*note lambda is the tortuosity squared*/
-        lambda = (double*)malloc(sizeof(double));
-        lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
-        get_lambda = &get_lambda_scalar;
+        /*note permeability is the tortuosity squared*/
+        permeability = (double*)malloc(sizeof(double));
+        permeability[0] = PyFloat_AsDouble((PyObject*)my_permeability);
+        get_permeability = &get_permeability_scalar;
         
         /*apply the tortuosity*/
-        dc_x = my_dc_x/lambda[0];
-        dc_y = my_dc_y/lambda[0];
-        dc_z = my_dc_z/lambda[0];
+        dc_x = my_dc_x*permeability[0];
+        dc_y = my_dc_y*permeability[0];
+        dc_z = my_dc_z*permeability[0];
     }
     else
     {
-        lambda = my_lambda->u.px_;
+        permeability = my_permeability->u.px_;
         VARIABLE_ECS_VOLUME = TORTUOSITY;
-        get_lambda = &get_lambda_array;
+        get_permeability = &get_permeability_array;
     }
     
     if(PyFloat_Check(my_alpha))
@@ -196,11 +196,11 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
 extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-    PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
+    PyHocObject* my_alpha, PyHocObject* my_permeability, int bc, double bc_value,
     double atolscale) {
     ECS_Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-            my_alpha, my_lambda, bc, bc_value, atolscale);
+            my_alpha, my_permeability, bc, bc_value, atolscale);
 
     return new_Grid->insert(grid_list_index);
 }
@@ -389,7 +389,7 @@ extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int l
     return 0;
 }
 
-extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_lambda)
+extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability)
 {
 
     int id = 0;
@@ -401,57 +401,57 @@ extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_
         if(node == NULL)
             return -1;
     }
-    static_cast<ECS_Grid_node*>(node)->set_tortuosity(my_lambda);
+    static_cast<ECS_Grid_node*>(node)->set_tortuosity(my_permeability);
     return 0;
 }
 
 
-void ECS_Grid_node::set_tortuosity(PyHocObject* my_lambda)
+void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability)
 {
     
     /*Check to see if variable tortuosity/volume fraction is used*/
-    /*note lambda is the tortuosity squared*/
-    if(PyFloat_Check(my_lambda))
+    /*note permeability is the 1/tortuosity^2*/
+    if(PyFloat_Check(my_permeability))
     {
-        if(get_lambda == &get_lambda_scalar)
+        if(get_permeability == &get_permeability_scalar)
         {
-            double new_lambda = PyFloat_AsDouble((PyObject*)my_lambda);
-            get_lambda = &get_lambda_scalar;
-            dc_x *= lambda[0]/new_lambda;
-            dc_y *= lambda[0]/new_lambda;
-            dc_z *= lambda[0]/new_lambda;
-            lambda[0] = new_lambda;
+            double new_permeability = PyFloat_AsDouble((PyObject*)my_permeability);
+            get_permeability = &get_permeability_scalar;
+            dc_x *= new_permeability/permeability[0];
+            dc_y *= new_permeability/permeability[0];
+            dc_z *= new_permeability/permeability[0];
+            permeability[0] = new_permeability;
         }
         else
         {
-            lambda = (double*)malloc(sizeof(double));
-            lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
-            /* don't free the old lambda -- let python do it */
-            dc_x /= lambda[0];
-            dc_y /= lambda[0];
-            dc_z /= lambda[0];
-            get_lambda = &get_lambda_scalar;
+            permeability = (double*)malloc(sizeof(double));
+            permeability[0] = PyFloat_AsDouble((PyObject*)my_permeability);
+            /* don't free the old permeability -- let python do it */
+            dc_x *= permeability[0];
+            dc_y *= permeability[0];
+            dc_z *= permeability[0];
+            get_permeability = &get_permeability_scalar;
             VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == TORTUOSITY)?FALSE:VARIABLE_ECS_VOLUME;
         }
     }
     else
     {
-        if(get_lambda == &get_lambda_scalar)
+        if(get_permeability == &get_permeability_scalar)
         {
-            /* rescale to remove old lambda*/
-            dc_x *= lambda[0];
-            dc_y *= lambda[0];
-            dc_z *= lambda[0];
-            free(lambda);
-            lambda = my_lambda->u.px_;
+            /* rescale to remove old permeability*/
+            dc_x /= permeability[0];
+            dc_y /= permeability[0];
+            dc_z /= permeability[0];
+            free(permeability);
+            permeability = my_permeability->u.px_;
             VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == FALSE)?TORTUOSITY:VARIABLE_ECS_VOLUME;
-            get_lambda = &get_lambda_array;
+            get_permeability = &get_permeability_array;
         }
         else
         {
             //This should not happen
-            //if lambda was already a vector just change the vector values
-            lambda = my_lambda->u.px_;
+            //if permeability was already a vector just change the vector values
+            permeability = my_permeability->u.px_;
         }
     }
 
@@ -486,12 +486,12 @@ void ICS_Grid_node::set_diffusion(double* dc, int length)
 /*Set the diffusion coefficients*/
 void ECS_Grid_node::set_diffusion(double* dc, int)
 {
-    if(get_lambda == &get_lambda_scalar)
+    if(get_permeability == &get_permeability_scalar)
     {
-        /* note lambda[0] is the tortuosity squared*/
-        dc_x = dc[0]/lambda[0];
-        dc_y = dc[1]/lambda[0];
-        dc_z = dc[2]/lambda[0];
+        /* note permeability[0] is the tortuosity squared*/
+        dc_x = dc[0]*permeability[0];
+        dc_y = dc[1]*permeability[0];
+        dc_z = dc[2]*permeability[0];
     }
     else
     {
