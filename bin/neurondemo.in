@@ -24,7 +24,7 @@ fi
 export NRNDEMO
 
 if [ ! -f "${NRNDEMO}neuron" ] ; then
-	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
+	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; touch neuron)
 fi
 
-"${NRNDEMO}neuron" "${NRNDEMO}demo.hoc" "$@" -
+${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
