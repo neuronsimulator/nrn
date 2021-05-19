@@ -54,7 +54,9 @@ extern int stdin_event_ready();
 #endif
 
 #if NRN_FLOAT_EXCEPTION
+#if !defined(__USE_GNU)
 #define __USE_GNU
+#endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
 int matherr1(void) {
@@ -1925,6 +1927,11 @@ ENDGUI
 			hoc_check_intupt(0);
 #endif
 			n = strlen(line);
+			for (int i=0; i < n; ++i) {
+				if (!isascii(line[i])) {
+hoc_execerr_ext("Non-ASCII character value 0x%hhx at input position %d\n", (unsigned)line[i], i);
+				}
+			}
 			if (n >= hoc_cbufstr->size - 3) {
 				hocstr_resize(hoc_cbufstr, n+100);
 				ctp = cbuf = hoc_cbufstr->buf;
