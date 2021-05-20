@@ -70,7 +70,6 @@ class Phase2 {
 
   private:
     void check_mechanism();
-    NrnThreadMembList* create_tml(int mech_id, Memb_func& memb_func, int& shadow_rhs_cnt);
     void transform_int_data(int elem0,
                             int nodecount,
                             int* pdata,

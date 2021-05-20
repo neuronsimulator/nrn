@@ -61,6 +61,39 @@ static int table_check_cnt_;
 static ThreadDatum* table_check_;
 
 
+NrnThreadMembList* create_tml(int mech_id,
+                              Memb_func& memb_func,
+                              int& shadow_rhs_cnt,
+                              const std::vector<int>& mech_types,
+                              const std::vector<int>& nodecounts) {
+    auto tml = (NrnThreadMembList*) emalloc_align(sizeof(NrnThreadMembList));
+    tml->next = nullptr;
+    tml->index = mech_types[mech_id];
+
+    tml->ml = (Memb_list*) ecalloc_align(1, sizeof(Memb_list));
+    tml->ml->_net_receive_buffer = nullptr;
+    tml->ml->_net_send_buffer = nullptr;
+    tml->ml->_permute = nullptr;
+    if (memb_func.alloc == nullptr) {
+        hoc_execerror(memb_func.sym, "mechanism does not exist");
+    }
+    tml->ml->nodecount = nodecounts[mech_id];
+    if (!memb_func.sym) {
+        printf("%s (type %d) is not available\n", nrn_get_mechname(tml->index), tml->index);
+        exit(1);
+    }
+    tml->ml->_nodecount_padded = nrn_soa_padded_size(tml->ml->nodecount,
+                                                     corenrn.get_mech_data_layout()[tml->index]);
+    if (memb_func.is_point && corenrn.get_is_artificial()[tml->index] == 0) {
+        // Avoid race for multiple PointProcess instances in same compartment.
+        if (tml->ml->nodecount > shadow_rhs_cnt) {
+            shadow_rhs_cnt = tml->ml->nodecount;
+        }
+    }
+
+    return tml;
+}
+
 void nrn_threads_create(int n) {
     if (nrn_nthread != n) {
         /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread),
