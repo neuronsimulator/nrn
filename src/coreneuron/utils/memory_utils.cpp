@@ -58,7 +58,12 @@ double nrn_mallinfo(void) {
         mbs = (data_size * sysconf(_SC_PAGESIZE)) / (1024.0 * 1024.0);
     } else {
 #if defined HAVE_MALLOC_H
+// The mallinfo2() function was added in glibc 2.33
+#if defined(__GLIBC__) && (__GLIBC__ >= 2 && __GLIBC_MINOR__ >= 33)
+        struct mallinfo2 m = mallinfo2();
+#else
         struct mallinfo m = mallinfo();
+#endif
         mbs = (m.hblkhd + m.uordblks) / (1024.0 * 1024.0);
 #endif
     }
