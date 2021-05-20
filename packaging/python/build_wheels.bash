@@ -85,6 +85,8 @@ build_wheel_linux() {
         echo " - Skipping wheelhouse repair ..."
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
+        echo " - Auditwheel show"
+        PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel show dist/*.whl
         echo " - Repairing..."
         PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel repair dist/*.whl
     fi
@@ -110,6 +112,9 @@ build_wheel_osx() {
     else
         python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
+
+    echo " - Calling delocate-listdeps"
+    delocate-listdeps dist/*.whl
 
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
