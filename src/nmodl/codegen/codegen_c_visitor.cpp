@@ -3230,7 +3230,11 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
 
     print_global_method_annotation();
     printer->start_block("void {}({})"_format(method, args));
-    print_kernel_data_present_annotation_block_begin();
+    if (type != BlockType::Destructor) {
+        // We do not (currently) support DESTRUCTOR (and, eventually,
+        // CONSTRUCTOR) blocks running anything on the GPU.
+        print_kernel_data_present_annotation_block_begin();
+    }
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
     printer->add_line(
