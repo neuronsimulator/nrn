@@ -20,12 +20,14 @@ def expect_hocerr(callable, args, sec=None):
   old_stderr = sys.stderr
   sys.stderr = my_stderr = StringIO()
   err = 0
+  pyerrmes = False
   try:
     if sec:
       callable(*args, sec=sec)
     else:  
       callable(*args)
   except:
+    pyerrmes = sys.exc_info()
     err=1
   errmes =  my_stderr.getvalue()
   sys.stderr = old_stderr
@@ -33,6 +35,8 @@ def expect_hocerr(callable, args, sec=None):
     errmes = errmes.splitlines()[0]
     errmes = errmes[(errmes.find(':')+2):]
     print("expect_hocerr: %s" % errmes)
+  elif pyerrmes:
+    print(str(pyerrmes[0]) + ':' + str(pyerrmes[1]))
   if err == 0:
     print("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
   assert(err)

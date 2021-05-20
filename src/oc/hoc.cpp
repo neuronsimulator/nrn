@@ -1788,6 +1788,9 @@ CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
 static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans) {
 	int c, i;
 	int nl1, nl2;
+        if (!f) {
+		hoc_execerr_ext("No file (or stdin) for input");
+	}
 	if (nltrans) { nl1 = 26; nl2 = 4;}else{nl1 = nl2 = EOF;}
 	for(i=0;; ++ i) {
 		c = nrn_fw_getc(f);
