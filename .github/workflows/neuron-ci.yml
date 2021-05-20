@@ -44,7 +44,7 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
+          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
           - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }

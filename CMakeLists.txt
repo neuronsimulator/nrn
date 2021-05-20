@@ -49,8 +49,6 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
-option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
-       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
         ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
@@ -385,7 +383,6 @@ if(NRN_ENABLE_CORENEURON)
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   endif()
-  set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
 # =============================================================================
@@ -655,7 +652,6 @@ message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
 message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
-message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
   message(STATUS "Default units | legacy units")
 else()
