@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 # distribution built with
-# bash bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8 python3.9
+# bash bldnrnmacpkgcmake.sh python3.6 python3.7 python3.8 python3.9
 # without args, default is the 5 pythons above.
 
 CPU=`uname -m`
@@ -9,7 +9,7 @@ CPU=`uname -m`
 args="$*"
 if test "$args" = "" ; then
   if test "$CPU" = "x86_64" ; then
-    args="python2.7 python3.6 python3.7 python3.8 python3.9"
+    args="python3.6 python3.7 python3.8 python3.9"
   else # arm64
     args="python3 python3.9"
   fi

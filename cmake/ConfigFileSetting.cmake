@@ -116,15 +116,6 @@ else()
   set(LegacyNPy "")
 endif()
 
-# Switch between binary special and script-based special
-if(NRN_ENABLE_BINARY_SPECIAL)
-  set(NRN_BINARY_SPECIAL_TRUE "")
-  set(NRN_BINARY_SPECIAL_FALSE "#")
-else()
-  set(NRN_BINARY_SPECIAL_TRUE "#")
-  set(NRN_BINARY_SPECIAL_FALSE "")
-endif()
-
 if(NRN_ENABLE_MECH_DLL_STYLE)
   set(NRNMECH_DLL_STYLE 1)
 else()
@@ -146,6 +137,12 @@ if(NRN_DYNAMIC_UNITS_USE_LEGACY)
   set(DYNAMIC_UNITS_USE_LEGACY_DEFAULT 1)
 else()
   unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
+endif()
+
+if(NRN_ENABLE_MEMACS)
+  unset(WITHOUT_MEMACS)
+else()
+  set(WITHOUT_MEMACS 1)
 endif()
 
 # =============================================================================

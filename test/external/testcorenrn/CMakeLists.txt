@@ -3,14 +3,20 @@ include(NeuronTestHelper)
 set(direct_tests netstimdirect)
 set(spike_comparison_tests
     bbcore
-    conc
-    deriv
     gf
-    kin
     patstim
     vecplay
     watch
     vecevent)
+
+set(modfiles mod/Gfluct3.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
+if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
+  # These .mod files cannot be compiled with NMODL + OpenACC/GPU because of
+  # https://github.com/BlueBrain/nmodl/issues/311
+  list(APPEND modfiles mod/hhderiv.mod mod/hhkin.mod)
+  # These tests depend on the modfiles on the line above.
+  list(APPEND spike_comparison_tests conc deriv kin)
+endif()
 
 # Set the number of MPI ranks to use for each test. Assume 1 if not explicitly specified.
 set(mpi_ranks_gf 2)
@@ -45,7 +51,7 @@ foreach(test ${spike_comparison_tests})
   nrn_add_test_group(
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
-    MODFILE_PATTERNS mod/*.mod
+    MODFILE_PATTERNS ${modfiles}
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   # Set up a test that runs the simulation using NEURON.
@@ -75,9 +81,15 @@ foreach(test ${spike_comparison_tests})
           ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
           arg_tstop=100 -c arg_coreneuron=1 ${${processor}_args_online} test${test}.hoc)
     endif()
+    # This is a workaround to reduce the number of MPI ranks in the GPU version of the patstim test
+    # and, we hope, avoid https://github.com/BlueBrain/CoreNeuron/issues/563
+    set(local_mpi_ranks ${num_ranks})
     set(extra_args)
     if("${test}" STREQUAL "patstim")
       list(APPEND extra_args --pattern patstim.spk)
+      if("${processor}" STREQUAL "gpu")
+        set(local_mpi_ranks 1)
+      endif()
     endif()
     # Set up a test that runs the simulation using CoreNEURON's offline mode. First we must run
     # NEURON and tell it to dump the model without simulating it.
@@ -86,12 +98,12 @@ foreach(test ${spike_comparison_tests})
       NAME coreneuron_${processor}_offline
       REQUIRES coreneuron mpi ${processor}
       CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
-      PROCESSORS ${num_ranks}
+      PROCESSORS ${local_mpi_ranks}
       PRECOMMAND OMP_NUM_THREADS=1
                  HOC_LIBRARY_PATH=.
                  ${MPIEXEC_NAME}
                  ${MPIEXEC_NUMPROC_FLAG}
-                 ${num_ranks}
+                 ${local_mpi_ranks}
                  ${MPIEXEC_OVERSUBSCRIBE}
                  ${MPIEXEC_PREFLAGS}
                  special
@@ -103,7 +115,7 @@ foreach(test ${spike_comparison_tests})
                  arg_dump_coreneuron_model=1
                  test${test}.hoc
       COMMAND
-        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
+        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
         ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
         --mpi -e 100 ${extra_args} ${${processor}_args_offline}
       OUTPUT asciispikes::out.dat)
@@ -123,7 +135,7 @@ foreach(test ${direct_tests})
   nrn_add_test_group(
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
-    MODFILE_PATTERNS mod/*.mod
+    MODFILE_PATTERNS ${modfiles}
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   nrn_add_test(

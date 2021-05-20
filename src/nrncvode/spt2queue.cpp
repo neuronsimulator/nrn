@@ -19,7 +19,7 @@ of struct _spblk, we are really using TQItem
 #define uplink parent_
 #define cnt cnt_
 #define key t_
-#include <sptree.h>
+#include "sptree.h"
 
 #if 0
 #define sp1enq(i) { i->cnt_ = 0; spenq(i, sptree_); }
@@ -255,7 +255,5 @@ double TQueue::q2least_t() {
 	return 1e50; // must be larger than any possible t
 }
 
-#include <spaux.cpp>
 #include <sptree.cpp>
-#include <spdaveb.cpp>
 
