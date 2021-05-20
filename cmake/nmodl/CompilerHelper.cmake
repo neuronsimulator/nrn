@@ -6,7 +6,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
   endif()
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "PGI")
+if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
   set(NMODL_PGI_COMPILER TRUE)
 
   # CMake adds standard complaint PGI flag "-A" which breaks compilation of of spdlog and fmt
