@@ -49,8 +49,6 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
-option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
-       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
         ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
@@ -173,7 +171,6 @@ include(ReleaseDebugAutoFlags)
 # =============================================================================
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
-find_package(Threads QUIET)
 
 if(NOT NRN_ENABLE_INTERNAL_READLINE)
   find_package(Readline)
@@ -338,9 +335,9 @@ endif()
 find_package(PythonInterp REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library
-  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3;python2"
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
   # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython2.7.so
+  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
   unset(PYTHON_LIBRARY CACHE)
 
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
@@ -386,7 +383,6 @@ if(NRN_ENABLE_CORENEURON)
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   endif()
-  set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
 # =============================================================================
@@ -527,20 +523,17 @@ add_dependencies(nrniv_lib hh_update)
 # Generate help_data.dat
 # =============================================================================
 if(NRN_ENABLE_PYTHON)
-  find_python_module(pathlib)
-  if(PATHLIB_FOUND) # TODO - Drop pathlib logic @ Python2 removal (pathlib is part of core in Python3)
-    add_custom_target(
-        help_data_dat
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
-                ${PROJECT_SOURCE_DIR}/docs/python
-                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-                ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
-        COMMENT "Generating help_data.dat"
-        VERBATIM)
-    add_dependencies(nrniv_lib help_data_dat)
-  endif()
+  add_custom_target(
+      help_data_dat
+      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+              ${PROJECT_SOURCE_DIR}/docs/python
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMENT "Generating help_data.dat"
+      VERBATIM)
+  add_dependencies(nrniv_lib help_data_dat)
 endif()
 
 # =============================================================================
@@ -553,8 +546,13 @@ if(NRN_ENABLE_TESTS)
   include(CTest)
   include(Catch)
   find_python_module(pytest)
-  if(NRN_ENABLE_PYTHON AND NOT PYTEST_FOUND)
-    message(SEND_ERROR "pytest Python package is required.")
+  find_python_module(pytest_cov)
+  if(NRN_ENABLE_PYTHON)
+    if(NOT PYTEST_FOUND)
+      message(SEND_ERROR "pytest Python package is required.")
+    elseif(NOT PYTEST_COV_FOUND)
+      message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
+    endif()
   endif()
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
@@ -654,7 +652,6 @@ message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
 message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
-message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
   message(STATUS "Default units | legacy units")
 else()
@@ -683,8 +680,8 @@ if(NRN_ENABLE_PYTHON)
   message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
   message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  if(PYTHON_VERSION_MAJOR EQUAL 2)
-    set(PY2_WARNING TRUE)
+  if(PYTHON_VERSION_MAJOR LESS 3)
+    message(SEND_ERROR "Python 3 required. Please upgrade.")
   endif()
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
@@ -692,8 +689,8 @@ if(NRN_ENABLE_PYTHON)
     foreach(val RANGE ${num_pythons})
       list(GET NRN_PYTHON_EXE_LIST ${val} exe)
       list(GET NRN_PYTHON_VER_LIST ${val} version)
-      if(version EQUAL 2)
-        set(PY2_WARNING TRUE)
+      if(PYTHON_VERSION_MAJOR LESS 3)
+        message(SEND_ERROR "Python 3 required. Please upgrade.")
       endif()
       list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)
       list(GET NRN_PYTHON_LIB_LIST ${val} lib)
@@ -744,9 +741,3 @@ message(STATUS "--------------+-------------------------------------------------
 message(STATUS " See documentation : https://www.neuron.yale.edu/neuron/")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "")
-if(PY2_WARNING)
-  message(WARNING "Python2 support will be dropped soon! We strongly advise migrating to Python3 as of now.")
-  if(NOT PATHLIB_FOUND)
-    message(WARNING "'pathlib' Python2 package is required for in-python neuron documentation. Please install it.")
-  endif()
-endif()

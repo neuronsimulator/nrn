@@ -27,15 +27,11 @@ extern void nrn_extcell_update_param();
 extern void nrn_recalc_ptrs(double*(*)(double*));
 static double* recalc_ptr(double*);
 
-
-declareArrayPool(CharArrayPool, char)
-implementArrayPool(CharArrayPool, char)
+using CharArrayPool = ArrayPool<char>;
 
 #define APSIZE 1000
-declareArrayPool(DoubleArrayPool, double)
-implementArrayPool(DoubleArrayPool, double)
-declareArrayPool(DatumArrayPool, Datum)
-implementArrayPool(DatumArrayPool, Datum)
+using DoubleArrayPool = ArrayPool<double>;
+using DatumArrayPool = ArrayPool<Datum>;
 
 static int force;
 static int npools_;
@@ -302,8 +298,8 @@ extern "C" void nrn_prop_datum_free(int type, Datum* ppd) {
 	}
 }
 
-declareStructPool(SectionPool, Section)
-implementStructPool(SectionPool, Section)
+using SectionPool = Pool<Section>;
+
 static SectionPool* secpool_;
 
 Section* nrn_section_alloc() {

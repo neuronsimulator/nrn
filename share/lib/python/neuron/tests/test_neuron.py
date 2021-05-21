@@ -120,7 +120,7 @@ class NeuronTestCase(unittest.TestCase):
         assert soma.name() == "hello.soma"
         assert soma.cell() == c
         del c
-        assert soma.cell() == None
+        assert soma.cell() is None
 
     def testSectionListIterator(self):
         """As of v8.0, iteration over a SectionList does not change the cas"""

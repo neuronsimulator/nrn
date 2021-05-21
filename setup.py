@@ -24,11 +24,8 @@ if os.name != "posix":
 # Main source of the version. Dont rename, used by Cmake
 try:
     # github actions somehow fails with check_output and python3
-    if sys.version_info[0] < 3:
-        v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
-    else:
-        v = subprocess.run(['git', 'describe', '--tags'],
-                           stdout=subprocess.PIPE).stdout.strip().decode()
+    v = subprocess.run(['git', 'describe', '--tags'],
+                        stdout=subprocess.PIPE).stdout.strip().decode()
 
     __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
     # allow to override version during development/testing
@@ -402,11 +399,12 @@ def mac_osx_setenv():
     """Set MacOS environment to build high-compat wheels"""
     try:
         # Also ensure wheel package is avail
-        from wheel.macosx_libfile import extract_macosx_min_system_version
+        import wheel
     except ImportError:
         from setuptools.dist import Distribution
         Distribution().fetch_build_eggs(["wheel"])
-
+    from wheel.macosx_libfile import extract_macosx_min_system_version
+    
     sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
                                        ).decode().strip()
     log.info("Setting SDKROOT=%s", sdk_root)

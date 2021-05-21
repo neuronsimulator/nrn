@@ -31,7 +31,7 @@ set(CMAKE_INSTALL_DATADIR share/nrn)
 include(CMakeListsNrnMech)
 
 # =============================================================================
-# nrnmech_makefile.in is bound up with autoconf, used based on coreneuron Configure templates
+# nrnmech_makefile (based on coreneuron Configure templates)
 # =============================================================================
 nrn_configure_file(nrngui bin)
 nrn_configure_file(neurondemo bin)

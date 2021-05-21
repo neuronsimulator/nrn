@@ -234,7 +234,5 @@ TQItem* TQueue::find(double t) {
 	return(q);
 }
 
-#include <spaux.cpp>
 #include <sptree.cpp>
-#include <spdaveb.cpp>
 

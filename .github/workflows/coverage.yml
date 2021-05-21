@@ -1,5 +1,9 @@
 name: NEURON Code Coverage
 
+concurrency:
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -14,6 +18,10 @@ on:
       - '**.rst'
       - 'docs/**'
 
+env:
+  PY_MIN_VERSION: 3.6
+  PY_MAX_VERSION: 3.9
+
 jobs:
   coverage:
     runs-on: ubuntu-18.04
@@ -26,25 +34,27 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen autoconf automake libtool lcov autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
         shell: bash
 
-      - name: Set up Python2
+      - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v2
         with:
-          python-version: '2.x'
+          python-version: ${{ env.PY_MIN_VERSION }}
 
-      - name: Set up Python3
+      - name: Set up Python@${{ env.PY_MAX_VERSION }}
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-
-      - name: Install Python3 dependencies
-        run: python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
+          python-version: ${{ env.PY_MAX_VERSION }}
 
       - uses: actions/checkout@v2
         with:
-           fetch-depth: 2
+          fetch-depth: 2
+
+      - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Build & Test
         id: build-test
@@ -58,14 +68,14 @@ jobs:
           export CXX=g++
 
           # Python setup
-          export PYTHON2=$(which python2);
-          export PYTHON3=$(which python3);
+          export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
+          export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
 
           mkdir build && cd build;
 
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3} -DNRN_ENABLE_CORENEURON=ON";
+          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MEMACS=ON";
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
@@ -82,6 +92,8 @@ jobs:
           bash <(curl -s https://codecov.io/bash)
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
+          PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
+          PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To trigger it, simply add 'live-debug-coverage' to your last pushed commit message.

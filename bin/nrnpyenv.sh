@@ -239,7 +239,7 @@ nrnpyhome_provenance = "not found"
 
 def upath(path):
   #return linux path
-  if path == None:
+  if path is None:
     return ""
   import posixpath, sys
   plist = path.split(os.pathsep)
@@ -558,9 +558,9 @@ if "darwin" in sys.platform or "linux" in sys.platform or "win" in sys.platform:
   if pythonhome:
     pythonhome=u2d(pythonhome)
     print ("export NRN_PYTHONHOME=" + dq + pythonhome + dq)
-  if ldpath and nrn_pylib == None:
+  if ldpath and nrn_pylib is None:
     print ("export LD_LIBRARY_PATH=" + dq + ldpath + upathsep + "$LD_LIBRARY_PATH" + dq)
-  if nrn_pylib != None:
+  if nrn_pylib is not None:
     print ('export NRN_PYLIB="%s"' % nrn_pylib)
 
 quit()

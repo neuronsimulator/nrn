@@ -81,12 +81,6 @@ else()
   set(BUILD_MINGW_FALSE "")
 endif()
 
-if(NRN_ENABLE_MEMACS)
-  set(BUILD_MEMACS_TRUE "")
-else()
-  set(BUILD_MEMACS_TRUE "#")
-endif()
-
 # rxdmath libraries (always build)
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
@@ -129,15 +123,6 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
       install(TARGETS nrnpython${pyver} DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
     endforeach()
   else()
-    # build python2 library and install it
-    if(NRNPYTHON_INCLUDE2)
-      add_library(nrnpython2 SHARED ${NRN_NRNPYTHON_SRC_FILES})
-      target_include_directories(nrnpython2 BEFORE PUBLIC ${NRNPYTHON_INCLUDE2} ${INCLUDE_DIRS})
-      add_dependencies(nrnpython2 nrniv_lib)
-      list(APPEND nrnpython_lib_list nrnpython2)
-      install(TARGETS nrnpython2 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-    endif()
-
     # build python3 library and install it
     if(NRNPYTHON_INCLUDE3)
       add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
@@ -201,18 +186,6 @@ if(NRN_ENABLE_MODULE_INSTALL)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS ${binary_dir_filename})
 
-  # ~~~
-  # For DYNAMIC python, inithoc module name convention is different for
-  # autotools version and cmake. So nrnpy_hoc.cpp and inithoc.cpp need
-  # to know whether they are compiled via the cmake or autotools build system.
-  # (note: see also for inithoc.cpp via setup.py)
-  # ~~~
-  set_property(
-    SOURCE ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpy_hoc.cpp
-           ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
-    APPEND
-    PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
-
   # =============================================================================
   # Copy necessary files to build directory
   # =============================================================================
@@ -242,24 +215,18 @@ if(NRN_ENABLE_MODULE_INSTALL)
       TARGET hoc_module POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-#      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-#              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
       COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
-    if(PATHLIB_FOUND) #TODO - remove this and uncomment above @ Python2 removal
-      add_custom_command(
-        TARGET hoc_module POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Copying over generated help_data.dat")
-    endif()
   endforeach(pyexe)
 
   add_dependencies(hoc_module nrniv_lib ${nrnpython_lib_list})
+  if(NRN_ENABLE_RX3D)
+    add_dependencies(hoc_module rxd_cython_generated)
+  endif()
 
   #~~~
   # neuron module (possibly with multiple extension versions) was built

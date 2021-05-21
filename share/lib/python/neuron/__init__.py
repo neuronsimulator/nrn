@@ -130,12 +130,12 @@ except:
   pass
 
 try:
-  import hoc
+  from . import hoc
 except:
   try:
     #Python3.1 extending needs to look into the module explicitly
     import neuron.hoc
-  except: # mingw autotools name strategy
+  except: # mingw name strategy (x-ref: #define HOCMOD "hoc")
     exec("import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1]))
 
 import nrn
@@ -147,43 +147,13 @@ _original_hoc_file = None
 if not hasattr(hoc, "__file__"):
   # first try is to derive from neuron.__file__
   origin = None # path to neuron/__init__.py
-  if sys.version_info[0] == 2:
-    # python 2 seems to have hoc.__file__ already filled in so never get here.
-    try:
-      import imp
-      mspec = imp.find_module("neuron")
-      origin = mspec[1]
-    except:
-      pass
-  else:
-    from importlib import util
-    mspec = util.find_spec("neuron")
-    if mspec:
-      origin = mspec.origin
+  from importlib import util
+  mspec = util.find_spec("neuron")
+  if mspec:
+    origin = mspec.origin
   if origin is not None:
     import sysconfig
     hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var('SO')
-    setattr(hoc, "__file__", hoc_path)
-  else:
-    # if the above is robust, maybe all this can be removed.
-    # next try is to derive from nrnversion(6) (only works for autotools build)
-    import platform
-    import os
-    p = h.nrnversion(6)
-    if "--prefix=" in p:
-      p = p[p.find('--prefix=') + 9:]
-      p = p[:p.find("'")]
-    else:
-      p = "/usr/local/nrn"
-    if sys.version_info >= (3, 0):
-      import sysconfig
-      hoc_path = p + "/lib/python/neuron/hoc%s" % sysconfig.get_config_var('SO')
-    else:
-      hoc_path = p + "/lib/python/neuron/hoc.so"
-    if not os.path.isfile(hoc_path):
-      hoc_path = p + "/%s/lib/libnrnpython%d.so" % (platform.machine(), sys.version_info[0])
-    if not os.path.isfile(hoc_path):
-      hoc_path = p + "/%s/lib/libnrnpython.so" % platform.machine()
     setattr(hoc, "__file__", hoc_path)
 else:
   _original_hoc_file = hoc.__file__
@@ -239,20 +209,15 @@ import sys, types
 
 # Flag for the Python objects interface
 _pyobj_enabled = False
-# Load the `hclass` factory for the correct Python version 2/3 and prevent the
+# Load the `hclass` factory for the correct Python3 version  and prevent the
 # incorrect module source code from being opened by creating an empty module.
-if sys.version_info[0] == 2:
-  hclass3 = sys.modules["neuron.hclass3"] = types.ModuleType("neuron.hclass3")
-  from neuron.hclass2 import hclass
+if sys.version_info[0] == 3 and sys.version_info[1] < 6:
+  import neuron.hclass35
+  hclass = neuron.hclass35.hclass
+  hclass3 = neuron.hclass35
 else:
-  hclass2 = sys.modules["neuron.hclass2"] = types.ModuleType("neuron.hclass2")
-  if sys.version_info[0] == 3 and sys.version_info[1] < 6:
-    import neuron.hclass35
-    hclass = neuron.hclass35.hclass
-    hclass3 = neuron.hclass35
-  else:
-    from neuron.hclass3 import HocBaseObject, hclass
-    _pyobj_enabled = True
+  from neuron.hclass3 import HocBaseObject, hclass
+  _pyobj_enabled = True
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
@@ -721,17 +686,12 @@ def _pt3dadd_in_obj(obj, name, x, y, z, d):
 
 
 def numpy_from_pointer(cpointer, size):
-    if sys.version_info.major < 3:
-        return numpy.frombuffer(numpy.core.multiarray.int_asbuffer(
-            ctypes.addressof(cpointer.contents),
-            size * numpy.dtype(float).itemsize))
-    else:
-        buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-        buf_from_mem.restype = ctypes.py_object
-        buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-        cbuffer = buf_from_mem(
-            cpointer, size * numpy.dtype(float).itemsize, 0x200)
-        return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
+    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+    buf_from_mem.restype = ctypes.py_object
+    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+    cbuffer = buf_from_mem(
+        cpointer, size * numpy.dtype(float).itemsize, 0x200)
+    return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
 
 
 try:
@@ -1350,6 +1310,7 @@ def nrnpy_pr(stdoe, s):
     sys.stdout.write(s.decode())
   else:
     sys.stderr.write(s.decode())
+    sys.stderr.flush()
   return 0
 
 if not embedded:

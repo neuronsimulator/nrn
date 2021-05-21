@@ -133,8 +133,7 @@ struct Phase2Buffer {
 
 #include <structpool.h>
 
-declareStructPool(SpkPool, NRNMPI_Spike)
-implementStructPool(SpkPool, NRNMPI_Spike)
+using SpkPool = StructPool<NRNMPI_Spike>;
 
 #define BGP_RECEIVEBUFFER_SIZE 10000
 class BGP_ReceiveBuffer {

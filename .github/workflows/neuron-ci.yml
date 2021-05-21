@@ -1,5 +1,9 @@
 name: NEURON CI
 
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
+
 on:
   push:
     branches: 
@@ -19,6 +23,9 @@ env:
   BUILD_TYPE: Release
   DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
   DESIRED_CMAKE_VERSION: 3.8.2
+  DEFAULT_PY_VERSION: 3.9
+  PY_MIN_VERSION: 3.6
+  PY_MAX_VERSION: 3.9
 
 jobs:
   ci:
@@ -37,10 +44,8 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
+          - { matrix_eval : "CC=gcc CXX=g++" ,      build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
-          - { matrix_eval : "CC=gcc CXX=g++",       build_mode: "autotools",  config_options: "--without-x --without-paranrn --with-nrnpython=$PYTHON2 PYTHON_BLD=$PYTHON2", use_python2 : ON }
-          - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "autotools",  config_options: "--without-x --with-paranrn=dynamic --with-nrnpython=$PYTHON" }
           - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
@@ -56,33 +61,39 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install coreutils doxygen mpich xz autoconf automake libtool && brew unlink mpich && brew install openmpi && brew install --cask xquartz
+          brew install coreutils doxygen mpich xz && brew unlink mpich && brew install openmpi && brew install --cask xquartz
         shell: bash
 
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install build-essential autoconf automake libtool autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
         shell: bash
 
-      - name: Set up Python2
-        uses: actions/setup-python@v2
-        with:
-          python-version: '2.x'
-
-      - name: Install Python2 dependencies
-        if: ${{ matrix.config.use_python2 == 'ON' || matrix.config.python_dynamic == 'ON' }}
-        run: python2 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py pathlib
-
-      - name: Set up Python3
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-
-      - name: Install Python3 dependencies
-        run: python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
-
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python@${{ env.PY_MIN_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PY_MIN_VERSION }}
+
+      - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
+        if: ${{ matrix.config.python_dynamic == 'ON' }}
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+
+      - name: Set up Python@${{ env.PY_MAX_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PY_MAX_VERSION }}
+
+      - name: Install Python@${{ env.PY_MAX_VERSION }} dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Build and Test
         id: build-test
@@ -107,27 +118,25 @@ jobs:
             export SKIP_EMBEDED_PYTHON_TEST="true"
           fi
 
-          # Some logging
-          echo $LANG
-          echo $LC_ALL
-          $CXX -v
-          python3 -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
-          cmake --version
-
           # Python setup
           export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
-          export PYTHON2=$(which python2);
-          export PYTHON3=$(which python3);
-          export PYTHON=$PYTHON3
-          if [ "$USE_PYTHON2" == "ON" ]; then
-            export PYTHON=$(which python2);
-          fi;
+          # Python setup
+          export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
+          export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
+          export PYTHON=$PYTHON_MAX
           if [ "$RUNNER_OS" == "macOS" ]; then
             # Python is not installed as a framework, so we need to writ 'backend: TkAgg' to `matplotlibrc`.
             # Since we are in a virtual environment, we cannot use `$HOME/matplotlibrc`
             # The following solution is generic and relies on `matplotlib.__file__` to know where to append backend setup.
             $PYTHON -c "import os,matplotlib; f =open(os.path.join(os.path.dirname(matplotlib.__file__), 'mpl-data/matplotlibrc'),'a'); f.write('backend: TkAgg');f.close();"
           fi;
+
+          # Some logging
+          echo $LANG
+          echo $LC_ALL
+          $CXX -v
+          python3 -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
+          cmake --version
 
           # different builds with CMake
           if [ "$BUILD_MODE" == "cmake" ]; then
@@ -142,7 +151,7 @@ jobs:
               fi;
               export CMAKE_OPTION="${{ matrix.config.cmake_option }}"
               if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
-                export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON2};${PYTHON3} -DNRN_ENABLE_CORENEURON=ON";
+                export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON";
               else
                 export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
               fi;
@@ -166,30 +175,14 @@ jobs:
               fi;
               if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
                 echo "--RUNNING BASIC TESTS FROM BUILD DIR--";
-                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON2 -c "from neuron import h; import neuron; neuron.test()";
-                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON3 -c "from neuron import h; import neuron; neuron.test()";
+                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON_MIN -c "from neuron import h; import neuron; neuron.test()";
+                NEURONHOME=`pwd`/share/nrn  PYTHONPATH=`pwd`/lib/python PATH=`pwd`/bin LD_LIBRARY_PATH=`pwd`/lib DYLD_LIBRARY_PATH=`pwd`/lib $PYTHON_MAX -c "from neuron import h; import neuron; neuron.test()";
               fi;
               make install;
               export PATH=$INSTALL_DIR/bin:$PATH;
               ctest -VV;
           elif [ "$BUILD_MODE" == "setuptools" ]; then
             ./packaging/python/build_wheels.bash CI;
-          elif [ "$BUILD_MODE" == "autotools" ]; then
-            export CONFIG_OPTIONS="${{ matrix.config.config_options }}"
-
-            # OS X without readline
-            if [ "$RUNNER_OS" == "macOS" ]; then
-              brew link openmpi
-              export CONFIG_OPTIONS="$CONFIG_OPTIONS --with-readline=no";
-            fi
-
-            export PATH=$INSTALL_DIR/x86_64/bin:$PATH;
-            ./.autotools_ci_build.sh $INSTALL_DIR;
-          fi
-
-          # basic tests for autoconf
-          if [ "$BUILD_MODE" == "autotools" ]; then
-            $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
           fi;
 
           # basic test for cmake when python is not disabled
@@ -197,21 +190,17 @@ jobs:
             $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
           fi;
 
-          # test neurondemo with cmake and autoconf
+          # test neurondemo with cmake
           if [ "$BUILD_MODE" != "setuptools" ]; then
             neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
           fi;
 
-          # with cmake dynamic check python2 and python3 together
+          # with cmake dynamic check python_min and python_max together
           if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            $PYTHON3 -c 'import neuron; neuron.test()' && $PYTHON2 -c 'import neuron; neuron.test()';
+            $PYTHON_MAX -c 'import neuron; neuron.test()' && $PYTHON_MIN -c 'import neuron; neuron.test()';
           fi;
 
-          # with autotools run rxd tests manually
-          if [ "$BUILD_MODE" == "autotools" ]; then
-            $PYTHON share/lib/python/neuron/rxdtests/run_all.py;
-          fi;
-          # with cmake also run rxd tests manually
+          # run rxd tests manually
           if [[ "$BUILD_MODE" == "cmake" && "$CMAKE_OPTION" != *"NRN_ENABLE_RX3D=OFF"* && "$CMAKE_OPTION" == *"NRN_ENABLE_CORENEURON=OFF"* ]]; then
             $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
           fi;
@@ -229,7 +218,8 @@ jobs:
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
           NRN_ENABLE_PYTHON_DYNAMIC : ${{ matrix.config.python_dynamic }}
-          USE_PYTHON2 : ${{ matrix.config.use_python2 }}
+          PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
+          PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
           INSTALL_DIR : ${{ runner.workspace }}/install
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
 

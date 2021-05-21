@@ -95,9 +95,9 @@ endmacro()
 # Transform PROJECT_SOURCE_DIR/sdir/sfile.in to PROJECT_BINARY_DIR/bdir/bfile
 # =============================================================================
 # ~~~
-# Just as autoconf transforms file.in into file, this 4 arg macro transforms
-# PROJECT_SOURCE_DIR/sdir/sfile.in into PROJECT_BINARY_DIR/bdir/bfile . The
-# shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
+# This 4 arg macro transformsPROJECT_SOURCE_DIR/sdir/sfile.in into
+# PROJECT_BINARY_DIR/bdir/bfile .
+# THE shorter two arg form transforms PROJECT_SOURCE_DIR/dir/file.in into
 # PROJECT_BINARY_DIR/dir/file
 # This first copies with some replacement the sfile.in to _cmake_tmp_bfile.in
 # so that the normal cmake configure_file command works to make a proper
@@ -105,8 +105,6 @@ endmacro()
 # if different, copies _cmake_tmp_bfile to bfile. This prevents recompilation of
 # .o files that depend on unchanged bfile. The sdir arg is the path relative to
 # PROJECT_SOURCE_DIR, the bdir arg is the path relative to PROJECT_BINARY_DIR.
-# Lastly, in case there is an autotools version of bfile left over
-# from a previous autotools build, PROJECT_SRC_DIR/sdir/bfile is removed.
 # Note that everytime cmake is run, the bfile is compared to a newly created
 # _cmake_tmp_bfile consistent with the current cmake args.
 # Note that the sfile arg does NOT contain the .in suffix.
@@ -131,7 +129,6 @@ macro(nrn_configure_dest_src bfile bdir sfile sdir)
     DIRECTORY
     APPEND
     PROPERTY CMAKE_CONFIGURE_DEPENDS ${infile})
-  file(REMOVE "${PROJECT_SOURCE_DIR}/${sdir}/${bfile}")
 endmacro()
 
 macro(nrn_configure_file file dir)

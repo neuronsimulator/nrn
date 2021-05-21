@@ -1,5 +1,9 @@
 name: NEURON Documentation
 
+concurrency:
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -9,6 +13,9 @@ on:
     branches:
       - master
       - release/**
+
+env:
+  DEFAULT_PY_VERSION: 3.8
 
 jobs:
   documentation:
@@ -22,26 +29,26 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get update && sudo apt-get upgrade
-          sudo apt-get install build-essential autoconf automake libtool autotools-dev libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf python-pip python-tk python-numpy python3-numpy python3-pip g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
           sudo apt-get install ffmpeg doxygen
         shell: bash
 
-      - name: Set up Python3
+      - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
         uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
-
-      - name: Install Python3 dependencies
-        working-directory: ${{runner.workspace}}/nrn
-        run: |
-          python3 -m pip install --upgrade pip wheel setuptools scikit-build pytest matplotlib bokeh ipython cython pytest pytest-cov mpi4py
+          python-version: ${{ env.DEFAULT_PY_VERSION }}
 
       - uses: actions/checkout@v2
 
-      - name: Install Python3 documentation dependencies
+      - name: Install Python dependencies
         working-directory: ${{runner.workspace}}/nrn
-        run: python3 -m pip install --upgrade -r docs/docs_requirements.txt
+        run: |
+          python -m pip install --upgrade pip -r nrn_requirements.txt
+
+      - name: Install Python documentation dependencies
+        working-directory: ${{runner.workspace}}/nrn
+        run: |
+          python -m pip install --upgrade -r docs/docs_requirements.txt
 
       - name: Documentation
         id: documentation
@@ -49,12 +56,12 @@ jobs:
         working-directory: ${{runner.workspace}}/nrn
         run:  |
           echo "-------- NEURON wheel --------";
-          python3 setup.py build_ext bdist_wheel;
+          python setup.py build_ext bdist_wheel;
           neuron_wheel=dist/NEURON*.whl;
           echo "-------- install wheel --------"
-          python3 -m pip install $neuron_wheel;
+          python -m pip install $neuron_wheel;
           echo "-------- now build docs--------";
-          python3 setup.py docs;
+          python setup.py docs;
           echo "-------- disable jekyll--------";
           pushd docs/_build;
           touch .nojekyll;

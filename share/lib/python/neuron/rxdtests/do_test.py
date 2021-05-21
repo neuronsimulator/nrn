@@ -6,10 +6,7 @@ June 23, 2014
 """
 
 def exec_test(the_file, global_var, local_var):
-    if sys.version_info.major < 3:
-        execfile(the_file, global_var, local_var)
-    else:
-        exec(compile(open(the_file).read(), the_file, 'exec'), global_var, local_var)
+    exec(compile(open(the_file).read(), the_file, 'exec'), global_var, local_var)
 
 def do_test(test_to_run, results_location, num_record=10):
     import os

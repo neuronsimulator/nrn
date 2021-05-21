@@ -76,7 +76,7 @@ regexp.cpp,v
 #define INTRANGE 14
 #endif
 #define	NBRA	5
-#define	ESIZE	128
+#define	ESIZE	256
 #define eof	'\0'
 static char	expbuf[ESIZE+4];
 static char	*pattern = "";

@@ -568,6 +568,8 @@ class Region(object):
 
         else:
             raise RxDException('should never get here')
+        if nx == 0 and ny == 0 and nz == 0:
+            raise RxDException("The 3D/1D join on section %r cannot be calculated from identical 3d points %g, %g, %g" % (sec,x,y,z))
         #dn = (nx**2 + ny**2 + nz**2)**0.5
         #nx, ny, nz = nx/dn, ny/dn, nz/dn
         # x, y, z = x * x1 + (1 - x) * x0, x * y1 + (1 - x) * y0, x * z1 + (1 - x) * z1
@@ -629,7 +631,7 @@ class Region(object):
             self._secs = secs
         else:
             self._secs = [secs]
-        if secs == [] or secs == None:
+        if secs == [] or secs is None:
             warnings.warn("Warning: No sections. Region 'secs' should be a list of NEURON sections.")
         from nrn import Section
         for sec in self._secs:

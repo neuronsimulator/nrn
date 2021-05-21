@@ -2,6 +2,6 @@
 #define nrnconfigargs_h
 
 /* define to the args passed to configure */
-#define NRN_CONFIG_ARGS "@ac_configure_args@"
+#define NRN_CONFIG_ARGS "@neuron_config_args@"
 
 #endif

@@ -9,7 +9,10 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
-target_link_libraries(testneuron Catch2::Catch2 nrniv_lib ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
+if (${USE_PTHREAD} EQUAL 1)
+  target_link_libraries(testneuron Threads::Threads)
+endif()
 if(NOT MINGW)
   target_link_libraries(testneuron ${CMAKE_DL_LIBS})
 endif()
@@ -107,13 +110,17 @@ endif()
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   include(NeuronTestHelper)
+  if(PYTEST_COV_FOUND)
+    set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
+  else()
+    unset(PYTEST_COVERAGE_ARGS)
+  endif()
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(NAME pynrn_tests)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest --cov-report=xml
-            --cov=neuron ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_COVERAGE_ARGS} ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
 
@@ -133,7 +140,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP rxdmod_tests
       NAME rxd_tests
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
-              pytest --cov-report=xml --cov=neuron ./test/rxd)
+              pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
       find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -143,7 +150,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           COMMAND
             COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            -m pytest --cov-report=xml --cov=neuron ./test/rxd --mpi)
+            -m pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -190,7 +197,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         -pyexe
         ${PYTHON_EXECUTABLE})
   else()
-    set(py_args -m pytest --cov-report=xml --cov=neuron -s)
+    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     # This tries to use pytest and mpi4py in parallel, which might be fragile.
