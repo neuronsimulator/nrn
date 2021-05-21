@@ -144,6 +144,7 @@ int register_mech(const char** m,
     memb_func[type].alloc = alloc;
     memb_func[type].state = stat;
     memb_func[type].initialize = initialize;
+    memb_func[type].constructor = nullptr;
     memb_func[type].destructor = nullptr;
 #if VECTORIZE
     memb_func[type].vectorized = vectorized ? 1 : 0;
@@ -313,6 +314,10 @@ int nrn_mech_depend(int type, int* dependencies) {
     return idep;
 }
 
+void register_constructor(mod_f_t c) {
+    corenrn.get_memb_funcs().back().constructor = c;
+}
+
 void register_destructor(mod_f_t d) {
     corenrn.get_memb_funcs().back().destructor = d;
 }
@@ -338,12 +343,13 @@ int point_register_mech(const char** m,
                         mod_f_t stat,
                         mod_f_t initialize,
                         int nrnpointerindex,
-                        void* (*constructor)(),
+                        mod_f_t constructor,
                         mod_f_t destructor,
                         int vectorized) {
     (void) constructor;
     const Symbol* s = m[1];
     register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
+    register_constructor(constructor);
     register_destructor(destructor);
     return point_reg_helper(s);
 }

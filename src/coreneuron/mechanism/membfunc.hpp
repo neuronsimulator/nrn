@@ -30,6 +30,7 @@ struct Memb_func {
     mod_f_t jacob;
     mod_f_t state;
     mod_f_t initialize;
+    mod_f_t constructor;
     mod_f_t destructor; /* only for point processes */
     Symbol* sym;
     int vectorized;
@@ -93,9 +94,10 @@ extern int point_register_mech(const char**,
                                mod_f_t stat,
                                mod_f_t initialize,
                                int nrnpointerindex,
-                               void* (*constructor)(),
+                               mod_f_t constructor,
                                mod_f_t destructor,
                                int vectorized);
+extern void register_constructor(mod_f_t constructor);
 using NetBufReceive_t = void (*)(NrnThread*);
 extern void hoc_register_net_receive_buffering(NetBufReceive_t, int);
 

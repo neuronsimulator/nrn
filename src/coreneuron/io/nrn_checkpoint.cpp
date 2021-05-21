@@ -818,7 +818,6 @@ static bool checkpoint_restored_ = false;
 //   int: TO BE DEFINED
 //   ... depends of the type
 void checkpoint_restore_tqueue(NrnThread& nt, const Phase2& p2) {
-    int type;
     checkpoint_restored_ = true;
 
     for (int i = 0; i < nt.n_vecplay; ++i) {
