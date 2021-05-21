@@ -1,5 +1,5 @@
 from neuron import h
-from neuron.expect_hocerr import expect_hocerr, quiet, set_quiet, printerr
+from neuron.expect_hocerr import expect_hocerr, quiet, set_quiet, printerr, expect_err
 import sys
 
 uni = 'ab\xe0'
@@ -8,9 +8,16 @@ def checking(s):
   if not quiet:
     print("CHECKING: " + s)
 
+class Foo: # for testing section name errors when full cell.section name has unicode chars.
+  def __init__(self, name):
+    self.name = name
+  def __str__(self):
+    return self.name
+
 def test_py2nrnstring():
   print (uni)
 
+  '''
   # I don't think h.getstr() can be made to work from python
   # so can't test unicode on stdin read by hoc.
   h('strdef s')
@@ -22,6 +29,7 @@ def test_py2nrnstring():
 
   checking('h(uni)')
   h(uni)
+  '''
 
   checking('h.printf("%s", uni)')
   expect_hocerr(h.printf, ("%s", uni))
@@ -29,25 +37,11 @@ def test_py2nrnstring():
   checking('hasattr(h, uni)')
   expect_hocerr(hasattr, (h, uni))
 
-  checking('h.à = 1')
-  err = 0
-  try:
-    h.à = 1
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('h.à = 1', globals(), locals())
 
-  checking('a = h.à')
-  err = 0
-  try:
-    a = h.à
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('a = h.à', globals(), locals())
 
-  checking('a = h.ref("à")')
+  expect_err('a = h.ref("à")', globals(), locals())
   err = 0
   try:
     a = h.ref("à")
@@ -64,74 +58,26 @@ def test_py2nrnstring():
 
   '''
   # No error for these (unless cell is involved)!
-  checking('h.Section(name=uni)')
-  err = 0
-  try:
-    h.Section(name=uni)
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('h.Section(name=uni)', globals(), locals())
 
-  checking('h.Section(uni)')
-  expect_hocerr(h.Section, (uni,))
+  expect_err('h.Section(uni)', globals(), locals())
   '''
+  
+  expect_err('h.Section(name="apical", cell=Foo(uni))', globals(), locals())
 
-  checking('a = soma.à')
   soma = h.Section()
-  err = 0
-  try:
-    a = soma.à
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('a = soma.à', globals(), locals())
 
-  checking('soma.à = 1')
-  err = 0
-  try:
-    soma.à = 1
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('soma.à = 1', globals(), locals())
 
-  checking('a = soma(.5).à')
-  err = 0
-  try:
-    a = soma(.5).à
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('a = soma(.5).à', globals(), locals())
 
-  checking('soma(.5).à = 1')
-  err = 0
-  try:
-    soma(.5).à = 1
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('soma(.5).à = 1', globals(), locals())
 
-  checking('a = soma(.5).hh.à')
   soma.insert("hh")
-  err = 0
-  try:
-    a = soma(.5).hh.à
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('a = soma(.5).hh.à', globals(), locals())
 
-  checking('soma(.5).hh.à = 1')
-  err = 0
-  try:
-    soma(.5).hh.à = 1
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
+  expect_err('soma(.5).hh.à = 1', globals(), locals())
 
 if __name__ == '__main__':
   set_quiet(False)

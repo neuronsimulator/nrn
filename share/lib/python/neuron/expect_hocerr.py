@@ -8,11 +8,17 @@ quiet = True
 
 def set_quiet(b):
   global quiet
+  old = quiet
   quiet = b
+  return old
 
 def printerr(e):
   if not quiet:
     print(e)
+
+def checking(s):
+  if not quiet:
+    print("CHECKING: " + s)
 
 def expect_hocerr(callable, args, sec=None):
   """
@@ -50,4 +56,17 @@ def expect_hocerr(callable, args, sec=None):
     sys.stderr = original_stderr
   assert err
 
-
+def expect_err(stmt, globals, locals):
+  """
+  expect_err('stmt', globals(), locals())
+  stmt is expected to raise an error
+  """
+  err = 0
+  checking(stmt)
+  try:
+    exec(stmt, globals, locals)
+    printerr("expect_err: no err for-- " + stmt)
+  except Exception as e:
+    err = 1
+    printerr(e)
+  assert err
