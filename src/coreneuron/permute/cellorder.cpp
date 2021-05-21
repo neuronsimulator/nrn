@@ -575,6 +575,13 @@ int temp1[1024] = {0};
 int temp2[1024] = {0};
 int temp3[1024] = {0};
 
+/**
+ * \brief Solve Hines matrices/cells with compartment-based granularity.
+ *
+ * The node ordering/permuation guarantees cell interleaving (as much coalesced memory access as
+ * possible) and balanced warps (through the use of lpt algorithm to define the groups/warps). Every
+ * warp deals with a group of cells, therefore multiple compartments (finer level of parallelism).
+ */
 void solve_interleaved2(int ith) {
     static int foo = 1;
     NrnThread* nt = nrn_threads + ith;
@@ -637,6 +644,13 @@ void solve_interleaved2(int ith) {
     }
 }
 
+/**
+ * \brief Solve Hines matrices/cells with cell-based granularity.
+ *
+ * The node ordering guarantees cell interleaving (as much coalesced memory access as possible),
+ * but parallelism granularity is limited to a per cell basis. Therefore every execution stream
+ * is mapped to a cell/tree.
+ */
 void solve_interleaved1(int ith) {
     NrnThread* nt = nrn_threads + ith;
     int ncell = nt->ncell;

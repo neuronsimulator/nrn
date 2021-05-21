@@ -14,8 +14,6 @@
 // it is a justifiable speculation to presume that there will be very
 // few holes in warp filling. I.e., ncycle = ncompart/warpsize
 
-// competing objectives are to keep identical cells together and also
-// balance warps.
 #include <algorithm>
 
 #include "coreneuron/nrnconf.h"

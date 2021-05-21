@@ -44,12 +44,12 @@ static bool sortlevel_cmp(TNode* a, TNode* b) {
     size_t pblevel = b->parent ? 1 + b->parent->level : 0;
     if (palevel < pblevel) {          // only used when starting leaf to root order
         result = true;                // earlier level first
-    } else if (palevel == pblevel) {  // alwayse true when starting root to leaf
+    } else if (palevel == pblevel) {  // always true when starting root to leaf
         if (palevel == 0) {           // a and b are roots
             if (a->nodevec_index < b->nodevec_index) {
                 result = true;
             }
-        } else {  // parent order (already sorted with proper treenode_order
+        } else {  // parent order (already sorted with proper treenode_order)
             if (a->treenode_order < b->treenode_order) {  // children order
                 result = true;
             } else if (a->treenode_order == b->treenode_order) {
@@ -324,10 +324,11 @@ static void eliminate_crace(TNode* nd, VTN& nodes) {
 
 static void question2(VVTN& levels) {
     size_t nnode = 0;
+    // number of compartments in the group
     for (size_t i = 0; i < levels.size(); ++i) {
         nnode += levels[i].size();
     }
-    VTN nodes(nnode);
+    VTN nodes(nnode);  // store the sorted nodes from analyze function
     nnode = 0;
     for (size_t i = 0; i < levels.size(); ++i) {
         for (size_t j = 0; j < levels[i].size(); ++j) {
@@ -339,6 +340,9 @@ static void question2(VVTN& levels) {
     }
 
     //  how_many_warpsize_groups_have_only_leaves(nodes);
+
+    // Here we need to make sure that the dependent nodes
+    // belong to separate warps
 
     // work backward and check the distance from parent to children.
     // if parent in different group then there is no vitiating race.
@@ -356,11 +360,11 @@ static void question2(VVTN& levels) {
     //   races are generated at greater indices since otherwise a portion of
     //   each group is placed into the next group. This would not be an issue
     //   if, in fact, the stronger requirement of every parent having
-    //   pi + 32 <= ci is demanded instead of merely being in different warpsize.
-    //   One nice thing about adding warpsize nodes is that it does not disturb
-    //   any existing contiguous groups except the moved group which gets divided
-    //   between parent warpsize and child, where the nodes past the parent
-    //   get same relative indices in the next warpsize
+    //   pi (parent index) + 32 <= ci (child index) is demanded instead of merely being in different
+    //   warpsize. One nice thing about adding warpsize nodes is that it does not disturb any
+    //   existing contiguous groups except the moved group which gets divided between parent
+    //   warpsize and child, where the nodes past the parent get same relative indices in the next
+    //   warpsize
 
     //  let's see how well we can do by opportunistically moving leaves to
     //  separate parents from children by warpsize (ie is_parent_prace2 is false)
@@ -378,6 +382,7 @@ static void question2(VVTN& levels) {
     //  pr_race_situation(nodes);
 
     // eliminate parent and children races using leaves
+    // traverse all the children (no roots)
     for (size_t i = nodes.size() - 1; i >= levels[0].size(); --i) {
         TNode* nd = nodes[i];
         if (is_child_race2(nd)) {
@@ -395,6 +400,8 @@ static void question2(VVTN& levels) {
     }
 }
 
+// analyze each group of cells
+// the cells are grouped based on warp balance (lpt) algorithm
 static void analyze(VVTN& levels) {
     // sort each level with respect to parent level order
     // earliest parent level first.
@@ -403,7 +410,7 @@ static void analyze(VVTN& levels) {
     // children etc.. After sorting a level, the order will be correct for
     // that level, ranging from [0:level.size]
     for (size_t i = 0; i < levels.size(); ++i) {
-        chklevel(levels[i]);
+        chklevel(levels[i]);  // does nothing
         for (size_t j = 0; j < levels[i].size(); ++j) {
             TNode* nd = levels[i][j];
             for (size_t k = 0; k < nd->children.size(); ++k) {
@@ -414,7 +421,7 @@ static void analyze(VVTN& levels) {
 
     for (size_t i = 0; i < levels.size(); ++i) {
         sortlevel(levels[i]);
-        chklevel(levels[i]);
+        chklevel(levels[i]);  // does nothing
     }
 
     set_treenode_order(levels);
@@ -454,24 +461,29 @@ static void set_nodeindex(VecTNode& nodevec) {
 void group_order2(VecTNode& nodevec, size_t groupsize, size_t ncell) {
     size_t maxlevel = level_from_root(nodevec);
 
-    // if not nullptr use this to define groups (and reset TNode.groupindex)
+    // reset TNode.groupindex
     size_t nwarp = warp_balance(ncell, nodevec);
 
     // work on a cellgroup as a vector of levels. ie only possible race is
     // two children in same warpsize
 
+    // every warp deals with a group of cells
+    // the cell dispatching to the available groups is done through the warp_balance function (lpt
+    // algo)
     VVVTN groups(nwarp ? nwarp : (ncell / groupsize + ((ncell % groupsize) ? 1 : 0)));
 
     for (size_t i = 0; i < groups.size(); ++i) {
         groups[i].resize(maxlevel + 1);
     }
 
+    // group the cells according to their groupindex and according to their level (see
+    // level_from_root)
     for (size_t i = 0; i < nodevec.size(); ++i) {
         TNode* nd = nodevec[i];
         groups[nd->groupindex][nd->level].push_back(nd);
     }
 
-    prgroupsize(groups);
+    prgroupsize(groups);  // debugging
 
     // deal with each group
     for (size_t i = 0; i < groups.size(); ++i) {

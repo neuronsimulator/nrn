@@ -24,6 +24,9 @@
 namespace coreneuron {
 static size_t groupsize = 32;
 
+/**
+ * \brief Function to order trees by size, hash and nodeindex
+ */
 static bool tnode_earlier(TNode* a, TNode* b) {
     bool result = false;
     if (a->treesize < b->treesize) {  // treesize dominates
@@ -246,6 +249,9 @@ size_t level_from_leaf(VecTNode& nodevec) {
     return maxlevel;
 }
 
+/**
+ * \brief Set the cellindex to distinguish the different cells.
+ */
 static void set_cellindex(int ncell, VecTNode& nodevec) {
     for (int i = 0; i < ncell; ++i) {
         nodevec[i]->cellindex = i;
@@ -259,6 +265,12 @@ static void set_cellindex(int ncell, VecTNode& nodevec) {
     }
 }
 
+/**
+ * \brief Initialization of the groupindex (groups)
+ *
+ * The cells are groupped at a later stage based on a load balancing algorithm.
+ * This is just an initialization function.
+ */
 static void set_groupindex(VecTNode& nodevec) {
     for (size_t i = 0; i < nodevec.size(); ++i) {
         TNode* nd = nodevec[i];
@@ -298,13 +310,6 @@ static void ident_statistic(VecTNode& nodevec, size_t ncell) {
 }
 #undef MSS
 
-// for cells with same size, keep identical trees together
-
-// parent is (unpermuted)  nnode length vector of parent node indices.
-// return a permutation (of length nnode) which orders cells of same
-// size so that identical trees are grouped together.
-// Note: cellorder[ncell:nnode] are the identify permutation.
-
 int* node_order(int ncell,
                 int nnode,
                 int* parent,
@@ -319,6 +324,7 @@ int* node_order(int ncell,
 
     // nodevec[0:ncell] in increasing size, with identical trees together,
     // and otherwise nodeindex order
+    // nodevec.size = nnode
     tree_analysis(parent, nnode, ncell, nodevec);
     check(nodevec);
 
@@ -421,9 +427,14 @@ void prtree(VecTNode& nodevec) {
     }
 }
 
+/**
+ * \brief Perform tree preparation for interleaving strategies
+ *
+ * \param parent vector of parent indices
+ * \param nnode number of compartments in the cells
+ * \param ncell number of cells
+ */
 void tree_analysis(int* parent, int nnode, int ncell, VecTNode& nodevec) {
-    //  VecTNode nodevec;
-
     // create empty TNodes (knowing only their index)
     nodevec.reserve(nnode);
     for (int i = 0; i < nnode; ++i) {
@@ -442,6 +453,7 @@ void tree_analysis(int* parent, int nnode, int ncell, VecTNode& nodevec) {
         nodevec[i]->mkhash();
     }
 
+    // sort it by tree size (from smaller to larger)
     std::sort(nodevec.begin(), nodevec.begin() + ncell, tnode_earlier);
 }
 
@@ -457,9 +469,15 @@ static bool interleave_comp(TNode* a, TNode* b) {
     return result;
 }
 
-// sort so nodevec[ncell:nnode] cell instances are interleaved. Keep the
-// secondary ordering with respect to treenode_order so each cell is still a tree.
-
+/**
+ * \brief Naive interleaving strategy (interleave_permute_type == 1)
+ *
+ * Sort so nodevec[ncell:nnode] cell instances are interleaved. Keep the
+ * secondary ordering with respect to treenode_order so each cell is still a tree.
+ *
+ * \param ncell number of cells (trees)
+ * \param nodevec vector that contains compartments (nodes of the trees)
+ */
 void node_interleave_order(int ncell, VecTNode& nodevec) {
     int* order = new int[ncell];
     for (int i = 0; i < ncell; ++i) {
@@ -476,6 +494,7 @@ void node_interleave_order(int ncell, VecTNode& nodevec) {
     delete[] order;
 
     //  std::sort(nodevec.begin() + ncell, nodevec.end(), contig_comp);
+    // Traversal of nodevec: From root to leaves (this is why we compute the tree node order)
     std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
 
 #if DEBUG
@@ -494,11 +513,6 @@ static void admin1(int ncell,
                    int*& firstnode,
                    int*& lastnode,
                    int*& cellsize) {
-    // firstnode[i] is the index of the first nonroot node of the cell
-    // lastnode[i] is the index of the last node of the cell
-    // cellsize is the number of nodes in the cell not counting root.
-    // nstride is the maximum cell size (not counting root)
-    // stride[i] is the number of cells with an ith node.
     firstnode = (int*) ecalloc_align(ncell, sizeof(int));
     lastnode = (int*) ecalloc_align(ncell, sizeof(int));
     cellsize = (int*) ecalloc_align(ncell, sizeof(int));
@@ -598,6 +612,7 @@ static void admin2(int ncell,
         rootbegin[nodevec[i]->groupindex + 1] = i + 1;
     }
     nodebegin[0] = ncell;
+    // We start from the leaves and go backwards towards the root
     for (size_t i = size_t(ncell); i < nodevec.size(); ++i) {
         nodebegin[nodevec[i]->groupindex + 1] = i + 1;
     }
@@ -611,7 +626,8 @@ static void admin2(int ncell,
         size_t i = nodebegin[iwarp];
         while (i < j) {
             i += stride_length(i, j, nodevec);
-            ++nc;
+            ++nc;  // ncycles refers to how many times a warp should cycle this level before going
+                   // to a higher one
         }
         ncycles[iwarp] = nc;
         stridedispl[iwarp + 1] = stridedispl[iwarp] + nc;

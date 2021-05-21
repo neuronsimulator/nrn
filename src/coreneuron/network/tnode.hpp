@@ -37,10 +37,28 @@ class TNode {
 size_t level_from_leaf(VecTNode&);
 size_t level_from_root(VecTNode&);
 
+/**
+ * \brief Implementation of the advanced interleaving strategy (interleave_permute_type == 2)
+ *
+ * The main steps are the following:
+ * 1. warp_balance function creates balanced groups of cells.
+ * 2. The compartments/tree nodes populate the groups vector (VVVTN) based on their groudindex and
+ * their level (see level_from_root).
+ * 3. The analyze() & question2() functions (operating per group) make sure that each cell is still
+ * a tree (treenode_order) and that the dependent nodes belong to separate warps.
+ */
 void group_order2(VecTNode&, size_t groupsize, size_t ncell);
 size_t dist2child(TNode* nd);
 
-// see balance.cpp
+/**
+ * \brief Use of the LPT (Least Processing Time) algorithm to create balanced groups of cells.
+ *
+ * Competing objectives are to keep identical cells together and also balance warps.
+ *
+ * \param ncell number of cells
+ * \param nodevec vector of compartments from all cells
+ * \return number of warps
+ */
 size_t warp_balance(size_t ncell, VecTNode& nodevec);
 
 #define warpsize 32
