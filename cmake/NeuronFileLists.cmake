@@ -61,7 +61,7 @@ set(OC_FILE_LIST
     ${RAN_FILE_LIST}
     audit.cpp
     axis.cpp
-    bksub.cpp
+    code.cpp
     code2.cpp
     cygwinprt.cpp
     debug.cpp
@@ -69,12 +69,13 @@ set(OC_FILE_LIST
     fmenu.cpp
     ftime.cpp
     functabl.cpp
-    getelm.cpp
     getsym.cpp
     hoc.cpp
     hocedit.cpp
+    hocusr.cpp
+    hoc_init.cpp
+    hoc_oop.cpp
     isoc99.cpp
-    lineq.cpp
     list.cpp
     math.cpp
     nonlin.cpp
@@ -84,11 +85,9 @@ set(OC_FILE_LIST
     parse.cpp
     plot.cpp
     plt.cpp
-    prmat.cpp
     regexp.cpp
     scoprand.cpp
     settext.cpp
-    subrows.cpp
     symbol.cpp
     version.cpp
     x.cpp
@@ -101,15 +100,11 @@ set(NRNOC_FILE_LIST
     cabcode.cpp
     capac.cpp
     clamp.cpp
-    code.cpp
     eion.cpp
     extcelln.cpp
     fadvance.cpp
     fstim.cpp
     hocprax.cpp
-    hocusr.cpp
-    hoc_init.cpp
-    hoc_oop.cpp
     init.cpp
     ldifus.cpp
     method3.cpp
@@ -199,9 +194,6 @@ set(NRNIV_FILE_LIST
     bgpmeminfo.cpp
     cachevec.cpp
     classreg.cpp
-    cvodeobj.cpp
-    cvodestb.cpp
-    cvtrset.cpp
     cxprop.cpp
     datapath.cpp
     finithnd.cpp
@@ -216,7 +208,6 @@ set(NRNIV_FILE_LIST
     matrixmap.cpp
     multisplit.cpp
     ndatclas.cpp
-    netcvode.cpp
     netpar.cpp
     nonlinz.cpp
     nrncore_write.cpp
@@ -226,7 +217,6 @@ set(NRNIV_FILE_LIST
     nrncore_write/io/nrncore_io.cpp
     nrncore_write/utils/nrncore_utils.cpp
     nrndae.cpp
-    nrndaspk.cpp
     nrnmenu.cpp
     nrnpy.cpp
     nrnrtime.cpp
@@ -235,7 +225,6 @@ set(NRNIV_FILE_LIST
     nvector_nrnthread.cpp
     nvector_nrnthread_ld.cpp
     ocbbs.cpp
-    occvode.cpp
     ocjump.cpp
     partrans.cpp
     ppshape.cpp
@@ -250,8 +239,19 @@ set(NRNIV_FILE_LIST
     spaceplt.cpp
     splitcell.cpp
     symdir.cpp
-    tqueue.cpp
     vrecord.cpp)
+
+# =============================================================================
+# Files in nrncvode directory
+# =============================================================================
+set(NRNCVODE_FILE_LIST
+    cvodeobj.cpp
+    cvodestb.cpp
+    cvtrset.cpp
+    netcvode.cpp
+    nrndaspk.cpp
+    occvode.cpp
+    tqueue.cpp)
 
 # =============================================================================
 # Files in sundials directory
@@ -361,6 +361,14 @@ set(MESCH_FILES_LIST
     zschur.c
     zsolve.c
     zvecop.c)
+
+
+set(SPARSE_FILES_LIST
+    bksub.cpp
+    getelm.cpp
+    lineq.cpp
+    prmat.cpp
+    subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
@@ -579,6 +587,7 @@ set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.i
 set(NRN_OC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/oc)
 set(NRN_NRNOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrnoc)
 set(NRN_IVOC_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivoc)
+set(NRN_NRNCVODE_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrncvode)
 set(NRN_NRNIV_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nrniv)
 set(NRN_MODLUNIT_SRC_DIR ${PROJECT_SOURCE_DIR}/src/modlunit)
 set(NRN_NMODL_SRC_DIR ${PROJECT_SOURCE_DIR}/src/nmodl)
@@ -590,18 +599,23 @@ set(NRN_IVOS_SRC_DIR ${PROJECT_SOURCE_DIR}/src/ivos)
 nrn_create_file_list(NRN_OC_SRC_FILES ${NRN_OC_SRC_DIR} ${OC_FILE_LIST})
 nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST})
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
+nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
+                     ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-nrn_create_file_list(NRN_MEMACS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/memacs ${MEMACS_FILES_LIST})
+if(NRN_ENABLE_MEMACS)
+  nrn_create_file_list(NRN_MEMACS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/memacs ${MEMACS_FILES_LIST})
+endif()
 nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})
@@ -613,7 +627,7 @@ nrn_create_file_list(NRN_NMODL_SRC_FILES ${NRN_NMODL_SRC_DIR} ${NMODL_FILES_LIST
 nrn_create_file_list(NRNMPI_DYNAMIC_INCLUDE_FILE ${PROJECT_SOURCE_DIR}/src/nrnmpi
                      ${MPI_DYNAMIC_INCLUDE})
 nrn_create_file_list(NRN_IVOS_SRC_FILES ${NRN_IVOS_SRC_DIR} ${IVOS_FILES_LIST})
-list(APPEND NRN_NRNOC_SRC_FILES ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
+list(APPEND NRN_OC_SRC_FILES ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
 # =============================================================================
 # Create mswin install lists needed for setup_exe target

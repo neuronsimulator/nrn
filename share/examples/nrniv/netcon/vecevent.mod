@@ -66,10 +66,12 @@ NET_RECEIVE (w) {
 
 DESTRUCTOR {
 VERBATIM
+#if !NRNBBCORE
 	void* vv = (void*)(_p_ptr);  
         if (vv) {
 		hoc_obj_unref(*vector_pobj(vv));
 	}
+#endif
 ENDVERBATIM
 }
 

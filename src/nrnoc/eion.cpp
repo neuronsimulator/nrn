@@ -75,6 +75,9 @@ void ion_register(void) {
     if (s && s->type == MECHANISM && memb_func[s->subtype].alloc == ion_alloc) {
         hoc_symlist = sav;
         free(buf);
+        if (*getarg(2) != global_charge(s->subtype)) {
+            hoc_execerr_ext("%s already defined with charge %g, cannot redefine with charge %g", s->name, global_charge(s->subtype), *getarg(2));
+        }
         hoc_retpushx((double) s->subtype);
         return;
     }
@@ -95,8 +98,16 @@ void ion_register(void) {
         hoc_retpushx(-1.);
         return;
     }
+    double charge = *getarg(2);
     hoc_symlist = hoc_built_in_symlist;
-    ion_reg(name, *getarg(2));
+    if (strcmp(name, "ca") == 0 && charge != 2.0) {
+      // In the very rare edge case that ca is not yet defined
+      // define with charge 2.0
+      ion_reg(name, 2.0);
+      // and emit a recoverable error as above to avoid an exit in ion_reg
+      hoc_execerr_ext("ca_ion already defined with charge 2, cannot redefine with charge %g\n", charge);
+    }
+    ion_reg(name, charge);
     hoc_symlist = sav;
     sprintf(buf, "%s_ion", name);
     s = hoc_lookup(buf);

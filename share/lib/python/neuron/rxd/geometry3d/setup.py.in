@@ -55,8 +55,6 @@ else:
     os.environ["CXX"]=mpicxx_bin
 
     define_macros=[]
-    if mingw and sys.version_info[0] == 2:
-        define_macros=[('MS_WIN64', None)]
 
     extra_compile_args = ['-O'+olevel] if olevel != "" else []
     if using_pgi: extra_compile_args.append(pgi_compiler_flags)

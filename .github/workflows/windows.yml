@@ -1,5 +1,9 @@
 name: Windows Installer
 
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
+
 on:
   push:
     branches: 
@@ -26,7 +30,12 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    
+        
+    - name: Set up Python3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
     - name: Download Dependencies
       run: |
         .\nrn\ci\win_download_deps.cmd

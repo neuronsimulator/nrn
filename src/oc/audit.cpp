@@ -153,9 +153,9 @@ void hoc_audit_from_final_exit(void) {
 #endif
 }
 
+#ifndef WITHOUT_EMACS
 void hoc_audit_from_emacs(const char *bufname, const char *filname)
 {
-#if !OCSMALL
 	char fname[200];
 	char s[256];
 	FILE* f;
@@ -295,8 +295,8 @@ fprintf(stderr, "Warning: xopen_from_audit files have different names %s %s\n", 
 #endif
 }
 
+#ifndef WITHOUT_EMACS
 void hoc_emacs_from_audit(void) {
-#if !OCSMALL
 	int i;
 	char buf[200];
 	/* check synchronization */
@@ -304,6 +304,5 @@ void hoc_emacs_from_audit(void) {
 	i = strncmp(buf, "em", 2);
 	assert(i == 0);
 	xopen_audit();
-#endif
 }
-
+#endif

@@ -1,11 +1,9 @@
 # ~~~
-# This allows h.nrnversion(6) to print only the configuration differences
-# analogously to what happens with an autotools build.
+# This allows h.nrnversion(6) to print only the configuration differences.
 # The <optionname>_DEFAULT values should only be changed in this file
 # and not on the command line.
 # ~~~
 set(NRN_ENABLE_SHARED_DEFAULT ON)
-set(NRN_ENABLE_BINARY_SPECIAL_DEFAULT OFF)
 set(NRN_ENABLE_INTERVIEWS_DEFAULT ON)
 set(NRN_ENABLE_MECH_DLL_STYLE_DEFAULT ON)
 set(NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT ON)
@@ -46,7 +44,6 @@ set(IV_LIB_DEFAULT "")
 
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
-    NRN_ENABLE_BINARY_SPECIAL
     NRN_ENABLE_INTERVIEWS
     NRN_ENABLE_MECH_DLL_STYLE
     NRN_ENABLE_DISCRETE_EVENT_OBSERVER

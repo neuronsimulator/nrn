@@ -64,17 +64,7 @@ hocedit.c,v
 #include <hocparse.h>
 #include <setjmp.h>
 
-
-#if MAC
-#define OCSMALL 1
-#endif
-
-#if defined(WITHOUT_MEMACS)
-#undef OCSMALL
-#define OCSMALL 1
-#endif
-
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
 
 #include "estruct.h"
 extern "C" {
@@ -100,11 +90,11 @@ static short cnt;
 
 static char *argv[] = { "embedded", nullptr};
 
-#endif /* !OCSMALL */
+#endif /* !WITHOUT_MEMACS */
 
 void hoc_edit(void)
 {
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
 #if	DOS || defined(__GO32__) /*must erase screen if in graphics mode*/
     extern int egagrph;
 	if (egagrph) {
@@ -131,7 +121,7 @@ void hoc_edit(void)
 
 void hoc_edit_quit(void)
 {
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
     char s[2];
     if (called) {
         argv[0] = s;
@@ -142,8 +132,9 @@ void hoc_edit_quit(void)
 #endif
 }
 
+#ifndef WITHOUT_MEMACS
 extern "C" int emacs_exit(int status) {
-#if !OCSMALL
+
     if (status) {
         Fprintf(stderr, "emacs--status = %d\n", status);
         hoc_pipeflag = 0;
@@ -161,17 +152,17 @@ extern "C" int emacs_exit(int status) {
         cnt = 0;
     }
     longjmp(emacs_begin, 1);
-#endif
     return 0;
 }
+#endif
 
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
 static LINE *lastlp;
 #endif
 
 void hoc_pipeflush(void)
 {
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
     if (hoc_pipeflag == 1) {
         extern int hoc_ictp;
         if (ired("\nReenter emacs", 1, 0, 1)) {
@@ -192,7 +183,7 @@ void hoc_pipeflush(void)
 }
 
 size_t hoc_pipegets_need(void) {
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
     if (hoc_pipeflag == 1) {
         if (lp == lhead) {
             return 0;
@@ -211,7 +202,7 @@ char* hoc_pipegets(char* cbuf, int nc) {
     char *cp = cbuf;
 
     nc--;
-#if !OCSMALL
+#ifndef WITHOUT_MEMACS
     if (hoc_pipeflag == 1) {
         if (lp == lhead) {
             cnt = 0;
