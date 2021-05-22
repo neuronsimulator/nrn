@@ -57,6 +57,36 @@ class Py2NRNString {
     Py_XDECREF(pvalue);
     Py_XDECREF(ptraceback);
   }
+  inline char* get_pyerr() {
+    PyObject* ptype = NULL;
+    PyObject* pvalue = NULL;
+    PyObject* ptraceback = NULL;
+    PyObject* pstr = NULL;
+    if (err()) {
+      PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+      if (pvalue) {
+        PyObject* pstr = PyObject_Str(pvalue);
+        if (pstr) {
+          const char* err_msg = PyUnicode_AsUTF8(pstr);
+          if (err_msg) {
+            str_ = strdup(err_msg);
+          } else {
+            str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
+          }
+        } else {
+          str_ = strdup("get_pyerr failed at PyObject_Str");
+        }
+      } else {
+        str_ = strdup("get_pyerr failed at PyErr_Fetch");
+      }
+    }
+    PyErr_Clear(); // in case could not turn pvalue into c_str.
+    Py_XDECREF(pstr);
+    Py_XDECREF(ptype);
+    Py_XDECREF(pvalue);
+    Py_XDECREF(ptraceback);
+    return str_;
+  }
  private:
   Py2NRNString();
   Py2NRNString(const Py2NRNString&);

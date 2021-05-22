@@ -351,7 +351,14 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
       char** ts = hoc_temp_charptr();
       Py2NRNString str(po, /* disable_release */ true);
       if (str.err()) {
-        hoc_execerror("python string cannot be represented as c_str", NULL);
+        // Since Python error has been set, need to clear, or hoc_execerror
+        // printing with nrnpy_pr will generate a
+        // Exception ignored on calling ctypes callback function.
+        // So get the message, clear, and make the message
+        // part of the execerror.
+        *ts = str.get_pyerr();
+        s2free.push_back(*ts);
+        hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s", *ts);
       }
       *ts = str.c_str();
       s2free.push_back(*ts);
@@ -393,7 +400,9 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
 static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
   std::vector<char*>::iterator it = s2free.begin();
   for (; it != s2free.end(); ++it) {
-    free(*it);
+    if (*it) {
+      free(*it);
+    }
   }
 }
 
