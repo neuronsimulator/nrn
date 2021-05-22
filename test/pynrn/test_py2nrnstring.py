@@ -17,7 +17,6 @@ class Foo: # for testing section name errors when full cell.section name has uni
 def test_py2nrnstring():
   print (uni)
 
-  '''
   # I don't think h.getstr() can be made to work from python
   # so can't test unicode on stdin read by hoc.
   h('strdef s')
@@ -27,9 +26,15 @@ def test_py2nrnstring():
   'goodbye'
   assert h.s == 'hello'
 
-  checking('h(uni)')
-  h(uni)
-  '''
+  checking("h(uni + ' = 1')")
+  assert h(uni + ' = 1') == 0
+  
+  # Allowed! The s format for PyArg_ParseTuple specifies that
+  # Unicode objects are converted to C strings using 'utf-8' encoding.
+  # If this conversion fails, a UnicodeError is raised.
+  checking('''h('s = "%s"'%uni)''')
+  assert h('s = "%s"'%uni) == 1
+  assert h.s == uni
 
   checking('h.printf("%s", uni)')
   expect_hocerr(h.printf, ("%s", uni))
@@ -51,17 +56,19 @@ def test_py2nrnstring():
   assert err == 1
 
   ns = h.NetStim()
-  #nonsense but it does test the error unicode error message
+  #nonsense but it does test the unicode error message
   checking('h.setpointer(ns._ref_start, "à", ns)')
   expect_hocerr(h.setpointer, (ns._ref_start, "à", ns))
   del ns
 
-  '''
-  # No error for these (unless cell is involved)!
-  expect_err('h.Section(name=uni)', globals(), locals())
 
-  expect_err('h.Section(uni)', globals(), locals())
-  '''
+  # No error for these two (unless cell is involved)!
+  checking('s = h.Section(name=uni)')
+  s = h.Section(name=uni)
+  assert s.name() == uni
+  checking('s = h.Section(uni)')
+  s = h.Section(uni)
+  assert s.name() == uni
   
   expect_err('h.Section(name="apical", cell=Foo(uni))', globals(), locals())
 
