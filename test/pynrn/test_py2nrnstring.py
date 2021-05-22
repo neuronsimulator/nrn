@@ -1,6 +1,7 @@
 from neuron import h
-from neuron.expect_hocerr import expect_hocerr, quiet, set_quiet, printerr, expect_err
+from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 import sys
+quiet = True
 
 uni = 'ab\xe0'
 
@@ -47,13 +48,6 @@ def test_py2nrnstring():
   expect_err('a = h.à', globals(), locals())
 
   expect_err('a = h.ref("à")', globals(), locals())
-  err = 0
-  try:
-    a = h.ref("à")
-  except Exception as e:
-    printerr(e)
-    err = 1
-  assert err == 1
 
   ns = h.NetStim()
   #nonsense but it does test the unicode error message
