@@ -1,5 +1,6 @@
 import sys
 from io import StringIO
+import inspect
 from neuron import h
 pc = h.ParallelContext()
 nhost = pc.nhost()
@@ -56,15 +57,17 @@ def expect_hocerr(callable, args, sec=None):
     sys.stderr = original_stderr
   assert err
 
-def expect_err(stmt, globals, locals):
+def expect_err(stmt):
   """
-  expect_err('stmt', globals(), locals())
+  expect_err('stmt')
   stmt is expected to raise an error
   """
+  here = inspect.currentframe()
+  caller = here.f_back
   err = 0
   checking(stmt)
   try:
-    exec(stmt, globals, locals)
+    exec(stmt, caller.f_globals, caller.f_locals)
     printerr("expect_err: no err for-- " + stmt)
   except Exception as e:
     err = 1

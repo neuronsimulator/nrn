@@ -43,11 +43,11 @@ def test_py2nrnstring():
   checking('hasattr(h, uni)')
   expect_hocerr(hasattr, (h, uni))
 
-  expect_err('h.à = 1', globals(), locals())
+  expect_err('h.à = 1')
 
-  expect_err('a = h.à', globals(), locals())
+  expect_err('a = h.à')
 
-  expect_err('a = h.ref("à")', globals(), locals())
+  expect_err('a = h.ref("à")')
 
   ns = h.NetStim()
   #nonsense but it does test the unicode error message
@@ -64,21 +64,21 @@ def test_py2nrnstring():
   s = h.Section(uni)
   assert s.name() == uni
   
-  expect_err('h.Section(name="apical", cell=Foo(uni))', globals(), locals())
+  expect_err('h.Section(name="apical", cell=Foo(uni))')
 
   soma = h.Section()
-  expect_err('a = soma.à', globals(), locals())
+  expect_err('a = soma.à')
 
-  expect_err('soma.à = 1', globals(), locals())
+  expect_err('soma.à = 1')
 
-  expect_err('a = soma(.5).à', globals(), locals())
+  expect_err('a = soma(.5).à')
 
-  expect_err('soma(.5).à = 1', globals(), locals())
+  expect_err('soma(.5).à = 1')
 
   soma.insert("hh")
-  expect_err('a = soma(.5).hh.à', globals(), locals())
+  expect_err('a = soma(.5).hh.à')
 
-  expect_err('soma(.5).hh.à = 1', globals(), locals())
+  expect_err('soma(.5).hh.à = 1')
 
 if __name__ == '__main__':
   set_quiet(False)
