@@ -150,10 +150,17 @@ int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
+// also for read
 typedef int (*bbcore_write_t)(void*, int, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
+bbcore_write_t* nrn_bbcore_read_;
+
 extern "C" void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
 	nrn_bbcore_write_[type] = f;
+}
+
+extern "C" void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
+	nrn_bbcore_read_[type] = f;
 }
 
 const char** nrn_nmodl_text_;
@@ -320,6 +327,7 @@ void hoc_last_init(void)
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 	nrn_mk_prop_pools(memb_func_size_);
 	nrn_bbcore_write_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
+	nrn_bbcore_read_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
 	nrn_nmodl_text_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
 	nrn_nmodl_filename_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
 	
@@ -455,6 +463,7 @@ void nrn_register_mech_common(
 		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
 		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
 		nrn_bbcore_write_ = (bbcore_write_t*)erealloc(nrn_bbcore_write_, memb_func_size_*sizeof(bbcore_write_t));
+		nrn_bbcore_read_ = (bbcore_write_t*)erealloc(nrn_bbcore_read_, memb_func_size_*sizeof(bbcore_write_t));
 		nrn_nmodl_text_ = (const char**)erealloc(nrn_nmodl_text_, memb_func_size_*sizeof(const char*));
 		nrn_nmodl_filename_ = (const char**)erealloc(nrn_nmodl_filename_, memb_func_size_*sizeof(const char*));
 		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
@@ -469,6 +478,7 @@ void nrn_register_mech_common(
 			nrn_artcell_qindex_[j] = 0;
 			memb_order_[j] = 0;
 			nrn_bbcore_write_[j] = (bbcore_write_t)0;
+			nrn_bbcore_read_[j] = (bbcore_write_t)0;
 			nrn_nmodl_text_[j] = (const char*)0;
 			nrn_nmodl_filename_[j] = (const char*) 0;
 		}

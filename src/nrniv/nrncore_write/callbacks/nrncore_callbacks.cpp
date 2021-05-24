@@ -33,6 +33,7 @@ extern char* dlerror();
 #endif
 
 extern bbcore_write_t* nrn_bbcore_write_;
+extern bbcore_write_t* nrn_bbcore_read_;
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
@@ -471,6 +472,32 @@ int nrnthread_dat2_corepointer_mech(int tid, int type,
     return 1;
 }
 
+
+// primarily to return nrnran123 sequence info when psolve on the coreneuron
+// side is finished so can either do another coreneuron psolve or
+// continue on neuron side.
+int core2nrn_corepointer_mech(int tid, int type,
+                                           int icnt, int dcnt, int* iArray, double* dArray) {
+
+    if (tid >= nrn_nthread) { return 0; }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    // ARTIFICIAL_CELL are not in nt.
+    if (!ml) {
+        ml = memb_list + type;
+        assert(ml);
+    }
+
+    int ik = 0;
+    int dk = 0;
+    // data values
+    for (int i = 0; i < ml->nodecount; ++i) {
+        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+    }
+    assert(dk == dcnt);
+    assert(ik == icnt);
+    return 1;
+}
 
 int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset) {
     int isart = nrn_is_artificial_[di.type];

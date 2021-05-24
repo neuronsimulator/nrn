@@ -68,6 +68,8 @@ extern "C" {
 int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 void nrnthreads_all_weights_return(std::vector<double*>& weights);
 size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata);
+int core2nrn_corepointer_mech(int tid, int type,
+                                    int icnt, int dcnt, int* iarray, double* darray);
 }
 
 // For direct transfer of event queue information from CoreNEURON
@@ -133,6 +135,7 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
         {"nrn2core_transfer_PreSyn_flag_", (CNB)nrn2core_PreSyn_flag},
 
+        {"core2nrn_corepointer_mech_", (CNB)core2nrn_corepointer_mech},
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},
         {"core2nrn_SelfEvent_event_", (CNB)core2nrn_SelfEvent_event},
         {"core2nrn_SelfEvent_event_noweight_", (CNB)core2nrn_SelfEvent_event_noweight},
