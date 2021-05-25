@@ -626,8 +626,8 @@ static void admin2(int ncell,
         size_t i = nodebegin[iwarp];
         while (i < j) {
             i += stride_length(i, j, nodevec);
-            ++nc;  // ncycles refers to how many times a warp should cycle this level before going
-                   // to a higher one
+            ++nc;  // how many times the warp should loop in order to finish with all the tree
+                   // depths (for all the trees of the warp/group)
         }
         ncycles[iwarp] = nc;
         stridedispl[iwarp + 1] = stridedispl[iwarp] + nc;
