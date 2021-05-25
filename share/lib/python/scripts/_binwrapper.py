@@ -53,12 +53,14 @@ if __name__ == '__main__':
         # point executable to `special.nrn`
         exe = os.path.join(sys.argv[0]+'.nrn')
 
-    subprocess.call([exe, *sys.argv[1:]])
-
     # wrap around special for nrnivmodl, since special is now a full-on binary
     #   special >> special.nrn
     #   nrniv > special
     if exe.endswith('nrnivmodl'):
+        # use subprocess since execv returns
+        subprocess.check_call([exe, *sys.argv[1:]])
         print('Wrapping special binary')
         shutil.move(os.path.join(platform.machine(), 'special'), os.path.join(platform.machine(), 'special.nrn'))
         shutil.copy(shutil.which('nrniv'), os.path.join(platform.machine(), 'special'))
+    else:    
+        os.execv(exe, sys.argv)
