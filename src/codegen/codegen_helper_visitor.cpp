@@ -478,6 +478,12 @@ void CodegenHelperVisitor::visit_initial_block(const InitialBlock& node) {
 }
 
 
+void CodegenHelperVisitor::visit_constructor_block(const ConstructorBlock& node) {
+    info.constructor_node = &node;
+    node.visit_children(*this);
+}
+
+
 void CodegenHelperVisitor::visit_destructor_block(const DestructorBlock& node) {
     info.destructor_node = &node;
     node.visit_children(*this);

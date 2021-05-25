@@ -258,6 +258,9 @@ struct CodegenInfo {
     /// initial block
     const ast::InitialBlock* initial_node = nullptr;
 
+    /// constructor block
+    const ast::ConstructorBlock* constructor_node = nullptr;
+
     /// destructor block only for point process
     const ast::DestructorBlock* destructor_node = nullptr;
 

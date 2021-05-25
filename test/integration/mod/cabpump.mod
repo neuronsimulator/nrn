@@ -18,6 +18,12 @@ UNITS {
         FARADAY    = (faraday) (coul)
 }
 
+CONSTRUCTOR {
+VERBATIM
+// Nothing only to verify that it is well handled
+ENDVERBATIM
+}
+
 DESTRUCTOR {
 VERBATIM
 // Nothing only to verify that it is well handled
