@@ -43,9 +43,9 @@ class FileHandler {
      */
     void read_checkpoint_assert();
 
-    // private copy constructor, assignment: FileHandler is not copyable.
-    FileHandler(const FileHandler&);
-    FileHandler& operator=(const FileHandler&);
+    // FileHandler is not copyable.
+    FileHandler(const FileHandler&) = delete;
+    FileHandler& operator=(const FileHandler&) = delete;
 
   public:
     FileHandler()

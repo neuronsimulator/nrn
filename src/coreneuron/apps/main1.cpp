@@ -41,6 +41,7 @@
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/network/multisend.hpp"
+#include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/io/file_utils.hpp"
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/core2nrn_data_return.hpp"
@@ -121,8 +122,9 @@ void call_prcellstate_for_prcellgid(int prcellgid, int compute_gpu, int is_init)
 
 void nrn_init_and_load_data(int argc,
                             char* argv[],
-                            bool is_mapping_needed = false,
-                            bool run_setup_cleanup = true) {
+                            CheckPoints& checkPoints,
+                            bool is_mapping_needed,
+                            bool run_setup_cleanup) {
 #if defined(NRN_FEEXCEPT)
     nrn_feenableexcept();
 #endif
@@ -168,8 +170,7 @@ void nrn_init_and_load_data(int argc,
     set_globals(corenrn_param.datpath.c_str(), (corenrn_param.seed >= 0), corenrn_param.seed);
 
     // set global variables for start time, timestep and temperature
-    std::string restore_path = corenrn_param.restorepath;
-    t = restore_time(restore_path.c_str());
+    t = checkPoints.restore_time();
 
     if (corenrn_param.dt != -1000.) {  // command line arg highest precedence
         dt = corenrn_param.dt;
@@ -233,9 +234,10 @@ void nrn_init_and_load_data(int argc,
     // reading *.dat files and setting up the data structures, setting mindelay
     nrn_setup(filesdat.c_str(),
               is_mapping_needed,
+              checkPoints,
               run_setup_cleanup,
               corenrn_param.datpath.c_str(),
-              restore_path.c_str(),
+              checkPoints.get_restore_path().c_str(),
               &corenrn_param.mindelay);
 
     // Allgather spike compression and  bin queuing.
@@ -330,7 +332,7 @@ void handle_forward_skip(double forwardskip, int prcellgid) {
 }
 
 std::string cnrn_version() {
-    return coreneuron::version::to_string();
+    return version::to_string();
 }
 
 // bsize = 0 then per step transfer
@@ -464,17 +466,12 @@ extern "C" int run_solve_core(int argc, char** argv) {
         reports_needs_finalize = configs.size();
     }
 
+    CheckPoints checkPoints{corenrn_param.checkpointpath, corenrn_param.restorepath};
+
     // initializationa and loading functions moved to separate
     {
         Instrumentor::phase p("load-model");
-        nrn_init_and_load_data(argc, argv, !configs.empty());
-    }
-
-    nrn_checkpoint_arg_exists = !corenrn_param.checkpointpath.empty();
-    if (nrn_checkpoint_arg_exists) {
-        if (nrnmpi_myid == 0) {
-            mkdir_p(corenrn_param.checkpointpath.c_str());
-        }
+        nrn_init_and_load_data(argc, argv, checkPoints, !configs.empty());
     }
 
     std::string output_dir = corenrn_param.outpath;
@@ -517,7 +514,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
         // TODO : if some ranks are empty then restore will go in deadlock
         // phase (as some ranks won't have restored anything and hence return
         // false in checkpoint_initialize
-        if (!checkpoint_initialize()) {
+        if (!checkPoints.initialize()) {
             nrn_finitialize(v != 1000., v);
         }
 
@@ -600,7 +597,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     {
         Instrumentor::phase p("checkpoint");
-        write_checkpoint(nrn_threads, nrn_nthread, corenrn_param.checkpointpath.c_str());
+        checkPoints.write_checkpoint(nrn_threads, nrn_nthread);
     }
 
     // must be done after checkpoint (to avoid deleting events)

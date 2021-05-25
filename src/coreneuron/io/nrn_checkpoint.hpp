@@ -15,24 +15,51 @@ namespace coreneuron {
 class NrnThread;
 class FileHandler;
 
-extern bool nrn_checkpoint_arg_exists;
+class CheckPoints {
+  public:
+    CheckPoints(const std::string& save, const std::string& restore);
+    std::string get_save_path() const {
+        return save_;
+    }
+    std::string get_restore_path() const {
+        return restore_;
+    }
+    bool should_save() const {
+        return !save_.empty();
+    }
+    bool should_restore() const {
+        return !restore_.empty();
+    }
+    double restore_time() const;
+    void write_checkpoint(NrnThread* nt, int nb_threads) const;
+    /* return true if special checkpoint initialization carried out and
+       one should not do finitialize
+     */
+    bool initialize();
+    void restore_tqueue(NrnThread&, const Phase2& p2);
 
-void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir);
+  private:
+    const std::string save_;
+    const std::string restore_;
+    bool restored;
+    int patstim_index;
+    double patstim_te;
 
-void checkpoint_restore_tqueue(NrnThread&, const Phase2& p2);
+    void write_time() const;
+    void write_phase2(NrnThread& nt) const;
+
+    template <typename T>
+    void data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute) const;
+    template <typename T>
+    T* soa2aos(T* data, int cnt, int sz, int layout, int* permute) const;
+    void write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const;
+    void write_tqueue(NrnThread& nt, FileHandler& fh) const;
+    void restore_tqitem(int type, std::shared_ptr<Phase2::EventTypeBase> event, NrnThread& nt);
+};
+
 
 int* inverse_permute(int* p, int n);
 void nrn_inverse_i_layout(int i, int& icnt, int cnt, int& isz, int sz, int layout);
-
-/* return true if special checkpoint initialization carried out and
-   one should not do finitialize
-*/
-bool checkpoint_initialize();
-
-/** return time to start simulation : if restore_dir provided
- *  then tries to read time.dat file otherwise returns 0
- */
-double restore_time(const char* restore_path);
 
 extern int patstimtype;
 

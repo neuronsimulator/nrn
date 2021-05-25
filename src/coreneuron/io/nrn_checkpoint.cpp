@@ -25,120 +25,46 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
-bool nrn_checkpoint_arg_exists;
 bool _nrn_skip_initmodel;
 }  // namespace coreneuron
-#define UseFileHandlerWrap 0
-
-#if UseFileHandlerWrap
-
-#include <iomanip>
-namespace coreneuron {
-/// wrapper class for FileHandler used for debugging checkpointing
-class FileHandlerWrap {
-  public:
-    FileHandler F;
-    std::fstream G;
-    FileHandlerWrap(){};
-
-    void open(const std::string& filename, std::ios::openmode mode = std::ios::in) {
-        F.open(filename, mode);
-        std::ostringstream fname;
-        fname << filename << ".txt";
-        G.open(fname.str(), mode);
-    }
-
-    void close() {
-        F.close();
-        G.close();
-    }
-
-    void checkpoint(int c) {
-        F.checkpoint(c);
-    }
-
-    template <typename T>
-    void write_array(T* p, size_t nb_elements) {
-        // G first before chkpnt is incremented
-        G << "chkpnt " << F.checkpoint() << "\n";
-        for (size_t i = 0; i < nb_elements; ++i) {
-            G << std::setprecision(8) << p[i] << "\n";
-        }
-        F.write_array(p, nb_elements);  // chkpnt incremented
-    }
-
-    template <typename T>
-    FileHandlerWrap& operator<<(const T& scalar) {
-        F << scalar;
-        G << scalar;
-        return *this;
-    }
-};
-}  // namespace coreneuron
-#else
-
-#define FileHandlerWrap FileHandler
-
-#endif  // UseFileHandlerWrap
 
 namespace coreneuron {
-template <typename T>
-T* chkpnt_soa2aos(T* data, int cnt, int sz, int layout, int* permute) {
-    // inverse of F -> data. Just a copy if layout=1. If SoA,
-    // original file order depends on padding and permutation.
-    // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
-    T* d = new T[cnt * sz];
-    if (layout == Layout::AoS) {
-        for (int i = 0; i < cnt * sz; ++i) {
-            d[i] = data[i];
-        }
-    } else if (layout == Layout::SoA) {
-        int align_cnt = nrn_soa_padded_size(cnt, layout);
-        for (int i = 0; i < cnt; ++i) {
-            int ip = i;
-            if (permute) {
-                ip = permute[i];
-            }
-            for (int j = 0; j < sz; ++j) {
-                d[i * sz + j] = data[ip + j * align_cnt];
-            }
+
+// Those functions comes from mod file directly
+extern int checkpoint_save_patternstim(_threadargsproto_);
+extern void checkpoint_restore_patternstim(int, double, _threadargsproto_);
+
+CheckPoints::CheckPoints(const std::string& save, const std::string& restore)
+    : save_(save)
+    , restore_(restore)
+    , restored(false) {
+    if (!save.empty()) {
+        if (nrnmpi_myid == 0) {
+            mkdir_p(save.c_str());
         }
     }
-    return d;
 }
 
-template <typename T>
-void chkpnt_data_write(FileHandlerWrap& F, T* data, int cnt, int sz, int layout, int* permute) {
-    T* d = chkpnt_soa2aos(data, cnt, sz, layout, permute);
-    F.write_array<T>(d, cnt * sz);
-    delete[] d;
+/// todo : need to broadcast this rather than all reading a double
+double CheckPoints::restore_time() const {
+    if (!should_restore()) {
+        return 0.;
+    }
+
+    double rtime = 0.;
+    FileHandler f;
+    std::string filename = restore_ + "/time.dat";
+    f.open(filename, std::ios::in);
+    f.read_array(&rtime, 1);
+    f.close();
+    return rtime;
 }
 
-NrnThreadChkpnt* nrnthread_chkpnt;
-
-int patstimtype;
-
-#ifndef LAYOUT
-#define LAYOUT 1
-#endif
-
-// output directory to for checkpoint
-static const char* output_dir;
-
-static void write_phase2(NrnThread& nt, FileHandlerWrap& file_handle);
-static void write_tqueue(NrnThread& nt, FileHandlerWrap& file_handle);
-static void write_time(const char* dir);
-
-void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir) {
-    // empty directory means the option is not enabled
-    if (!strlen(dir)) {
+void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
+    if (!should_save()) {
         return;
     }
 
-    output_dir = dir;
-    if (nrnmpi_myid == 0) {
-        mkdir_p(output_dir);
-    }
 #if NRNMPI
     nrnmpi_barrier();
 #endif
@@ -147,28 +73,27 @@ void write_checkpoint(NrnThread* nt, int nb_threads, const char* dir) {
      * if openmp threading needed:
      *  #pragma omp parallel for private(i) shared(nt, nb_threads) schedule(runtime)
      */
-    FileHandlerWrap f;
     for (int i = 0; i < nb_threads; i++) {
         if (nt[i].ncell || nt[i].tml) {
-            write_phase2(nt[i], f);
+            write_phase2(nt[i]);
         }
     }
 
     if (nrnmpi_myid == 0) {
-        write_time(output_dir);
+        write_time();
     }
 #if NRNMPI
     nrnmpi_barrier();
 #endif
 }
 
-static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
-    std::ostringstream filename;
+void CheckPoints::write_phase2(NrnThread& nt) const {
+    FileHandler fh;
 
     NrnThreadChkpnt& ntc = nrnthread_chkpnt[nt.id];
-    filename << output_dir << "/" << ntc.file_id << "_2.dat";
+    auto filename = get_save_path() + "/" + std::to_string(ntc.file_id) + "_2.dat";
 
-    fh.open(filename.str(), std::ios::out);
+    fh.open(filename, std::ios::out);
     fh.checkpoint(2);
 
     int n_outputgid = 0;  // calculate PreSyn with gid >= 0
@@ -243,8 +168,8 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
         }
     }
 
-    chkpnt_data_write(fh, nt._actual_a, nt.end, 1, 0, nt._permute);
-    chkpnt_data_write(fh, nt._actual_b, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_a, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_b, nt.end, 1, 0, nt._permute);
 
 #if CHKPNTDEBUG
     for (int i = 0; i < nt.end; ++i) {
@@ -252,11 +177,11 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     }
 #endif
 
-    chkpnt_data_write(fh, nt._actual_area, nt.end, 1, 0, nt._permute);
-    chkpnt_data_write(fh, nt._actual_v, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_area, nt.end, 1, 0, nt._permute);
+    data_write(fh, nt._actual_v, nt.end, 1, 0, nt._permute);
 
     if (nt._actual_diam) {
-        chkpnt_data_write(fh, nt._actual_diam, nt.end, 1, 0, nt._permute);
+        data_write(fh, nt._actual_diam, nt.end, 1, 0, nt._permute);
     }
 
     auto& memb_func = corenrn.get_memb_funcs();
@@ -294,11 +219,11 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
             delete[] nd_ix;
         }
 
-        chkpnt_data_write(fh, ml->data, cnt, sz, layout, ml->_permute);
+        data_write(fh, ml->data, cnt, sz, layout, ml->_permute);
 
         sz = nrn_prop_dparam_size_[type];
         if (sz) {
-            int* d = chkpnt_soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
+            int* d = soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
             // need to update some values according to Datum semantics.
             if (!nrn_is_artificial_[type])
                 for (int i_instance = 0; i_instance < cnt; ++i_instance) {
@@ -585,30 +510,118 @@ static void write_phase2(NrnThread& nt, FileHandlerWrap& fh) {
     fh.close();
 }
 
-static void write_time(const char* output_dir) {
-    std::ostringstream filename;
+void CheckPoints::write_time() const {
     FileHandler f;
-    filename << output_dir << "/time.dat";
-    f.open(filename.str(), std::ios::out);
+    auto filename = get_save_path() + "/time.dat";
+    f.open(filename, std::ios::out);
     f.write_array(&t, 1);
     f.close();
 }
 
-/// todo : need to broadcast this rather than all reading a double
-double restore_time(const char* restore_dir) {
-    double rtime = 0;
-    if (strlen(restore_dir)) {
-        std::ostringstream filename;
-        FileHandler f;
-        filename << restore_dir << "/time.dat";
-        f.open(filename.str(), std::ios::in);
-        f.read_array(&rtime, 1);
-        f.close();
+// A call to finitialize must be avoided after restoring the checkpoint
+// as that would change all states to a voltage clamp initialization.
+// Nevertheless t and some spike exchange and other computer state needs to
+// be initialized.
+// Also it is occasionally the case that nrn_init allocates data so we
+// need to call it but avoid the internal call to initmodel.
+// Consult finitialize.c to help decide what should be here
+bool CheckPoints::initialize() {
+    dt2thread(-1.);
+    nrn_thread_table_check();
+    nrn_spike_exchange_init();
+
+    // in case some nrn_init allocate data we need to do that but do not
+    // want to call initmodel.
+    _nrn_skip_initmodel = true;
+    for (int i = 0; i < nrn_nthread; ++i) {  // should be parallel
+        NrnThread& nt = nrn_threads[i];
+        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+            Memb_list* ml = tml->ml;
+            mod_f_t s = corenrn.get_memb_func(tml->index).initialize;
+            if (s) {
+                (*s)(&nt, ml, tml->index);
+            }
+        }
     }
-    return rtime;
+    _nrn_skip_initmodel = false;
+
+    // if PatternStim exists, needs initialization
+    for (NrnThreadMembList* tml = nrn_threads[0].tml; tml; tml = tml->next) {
+        if (tml->index == patstimtype && patstim_index >= 0 && patstim_te > 0.0) {
+            Memb_list* ml = tml->ml;
+            checkpoint_restore_patternstim(patstim_index,
+                                           patstim_te,
+                                           /* below correct only for AoS */
+                                           0,
+                                           ml->nodecount,
+                                           ml->data,
+                                           ml->pdata,
+                                           ml->_thread,
+                                           nrn_threads,
+                                           0.0);
+            break;
+        }
+    }
+
+    // Check that bbcore_write is defined if we want to use checkpoint
+    for (NrnThreadMembList* tml = nrn_threads[0].tml; tml; tml = tml->next) {
+        auto type = tml->index;
+        if (corenrn.get_bbcore_read()[type] && !corenrn.get_bbcore_write()[type]) {
+            auto memb_func = corenrn.get_memb_func(type);
+            fprintf(stderr,
+                    "Checkpoint is requested involving BBCOREPOINTER but there is no bbcore_write"
+                    " function for %s\n",
+                    memb_func.sym);
+            assert(corenrn.get_bbcore_write()[type]);
+        }
+    }
+
+
+    return restored;
 }
 
-static void write_tqueue(TQItem* q, NrnThread& nt, FileHandlerWrap& fh) {
+template <typename T>
+T* CheckPoints::soa2aos(T* data, int cnt, int sz, int layout, int* permute) const {
+    // inverse of F -> data. Just a copy if layout=1. If SoA,
+    // original file order depends on padding and permutation.
+    // Good for a, b, area, v, diam, Memb_list.data, or anywhere values do not change.
+    T* d = new T[cnt * sz];
+    if (layout == Layout::AoS) {
+        for (int i = 0; i < cnt * sz; ++i) {
+            d[i] = data[i];
+        }
+    } else if (layout == Layout::SoA) {
+        int align_cnt = nrn_soa_padded_size(cnt, layout);
+        for (int i = 0; i < cnt; ++i) {
+            int ip = i;
+            if (permute) {
+                ip = permute[i];
+            }
+            for (int j = 0; j < sz; ++j) {
+                d[i * sz + j] = data[ip + j * align_cnt];
+            }
+        }
+    }
+    return d;
+}
+
+template <typename T>
+void CheckPoints::data_write(FileHandler& F, T* data, int cnt, int sz, int layout, int* permute)
+    const {
+    T* d = soa2aos(data, cnt, sz, layout, permute);
+    F.write_array<T>(d, cnt * sz);
+    delete[] d;
+}
+
+NrnThreadChkpnt* nrnthread_chkpnt;
+
+int patstimtype;
+
+#ifndef LAYOUT
+#define LAYOUT 1
+#endif
+
+void CheckPoints::write_tqueue(TQItem* q, NrnThread& nt, FileHandler& fh) const {
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
 
     // printf("  p %.20g %d\n", q->t_, d->type());
@@ -679,12 +692,9 @@ static void write_tqueue(TQItem* q, NrnThread& nt, FileHandlerWrap& fh) {
     }
 }
 
-static int patstim_index;
-static double patstim_te;
-
-static void checkpoint_restore_tqitem(int type,
-                                      std::shared_ptr<Phase2::EventTypeBase> event,
-                                      NrnThread& nt) {
+void CheckPoints::restore_tqitem(int type,
+                                 std::shared_ptr<Phase2::EventTypeBase> event,
+                                 NrnThread& nt) {
     // printf("restore tqitem type=%d time=%.20g\n", type, time);
 
     switch (type) {
@@ -739,10 +749,7 @@ static void checkpoint_restore_tqitem(int type,
     }
 }
 
-extern int checkpoint_save_patternstim(_threadargsproto_);
-extern void checkpoint_restore_patternstim(int, double, _threadargsproto_);
-
-static void write_tqueue(NrnThread& nt, FileHandlerWrap& fh) {
+void CheckPoints::write_tqueue(NrnThread& nt, FileHandler& fh) const {
     // VecPlayContinuous
     fh << nt.n_vecplay << " VecPlayContinuous state\n";
     for (int i = 0; i < nt.n_vecplay; ++i) {
@@ -795,8 +802,6 @@ static void write_tqueue(NrnThread& nt, FileHandlerWrap& fh) {
     fh << 0 << "\n";
 }
 
-static bool checkpoint_restored_ = false;
-
 // Read a tqueue/checkpoint
 // int :: should be equal to the previous n_vecplay
 // n_vecplay:
@@ -817,8 +822,8 @@ static bool checkpoint_restored_ = false;
 // null terminated:
 //   int: TO BE DEFINED
 //   ... depends of the type
-void checkpoint_restore_tqueue(NrnThread& nt, const Phase2& p2) {
-    checkpoint_restored_ = true;
+void CheckPoints::restore_tqueue(NrnThread& nt, const Phase2& p2) {
+    restored = true;
 
     for (int i = 0; i < nt.n_vecplay; ++i) {
         VecPlayContinuous* vpc = (VecPlayContinuous*) nt._vecplay[i];
@@ -839,55 +844,8 @@ void checkpoint_restore_tqueue(NrnThread& nt, const Phase2& p2) {
     }
 
     for (const auto& event: p2.events) {
-        checkpoint_restore_tqitem(event.first, event.second, nt);
+        restore_tqitem(event.first, event.second, nt);
     }
 }
 
-// A call to finitialize must be avoided after restoring the checkpoint
-// as that would change all states to a voltage clamp initialization.
-// Nevertheless t and some spike exchange and other computer state needs to
-// be initialized.
-// Also it is occasionally the case that nrn_init allocates data so we
-// need to call it but avoid the internal call to initmodel.
-// Consult finitialize.c to help decide what should be here
-bool checkpoint_initialize() {
-    dt2thread(-1.);
-    nrn_thread_table_check();
-    nrn_spike_exchange_init();
-
-    // in case some nrn_init allocate data we need to do that but do not
-    // want to call initmodel.
-    _nrn_skip_initmodel = true;
-    for (int i = 0; i < nrn_nthread; ++i) {  // should be parallel
-        NrnThread& nt = nrn_threads[i];
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            Memb_list* ml = tml->ml;
-            mod_f_t s = corenrn.get_memb_func(tml->index).initialize;
-            if (s) {
-                (*s)(&nt, ml, tml->index);
-            }
-        }
-    }
-    _nrn_skip_initmodel = false;
-
-    // if PatternStim exists, needs initialization
-    for (NrnThreadMembList* tml = nrn_threads[0].tml; tml; tml = tml->next) {
-        if (tml->index == patstimtype && patstim_index >= 0 && patstim_te > 0.0) {
-            Memb_list* ml = tml->ml;
-            checkpoint_restore_patternstim(patstim_index,
-                                           patstim_te,
-                                           /* below correct only for AoS */
-                                           0,
-                                           ml->nodecount,
-                                           ml->data,
-                                           ml->pdata,
-                                           ml->_thread,
-                                           nrn_threads,
-                                           0.0);
-            break;
-        }
-    }
-
-    return checkpoint_restored_;
-}
 }  // namespace coreneuron

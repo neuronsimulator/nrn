@@ -403,6 +403,7 @@ void nrn_setup_cleanup() {
 
 void nrn_setup(const char* filesdat,
                bool is_mapping_needed,
+               CheckPoints& checkPoints,
                bool run_setup_cleanup,
                const char* datpath,
                const char* restore_path,
@@ -415,7 +416,8 @@ void nrn_setup(const char* filesdat,
     UserParams userParams(ngroup,
                           gidgroups,
                           datpath,
-                          strlen(restore_path) == 0 ? datpath : restore_path);
+                          strlen(restore_path) == 0 ? datpath : restore_path,
+                          checkPoints);
 
 
     // temporary bug work around. If any process has multiple threads, no

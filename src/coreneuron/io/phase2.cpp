@@ -737,13 +737,6 @@ void Phase2::get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& m
             continue;
         }
         type = tmls[i].type;  // This is not an error, but it has to be fixed I think
-        if (!corenrn.get_bbcore_write()[type] && nrn_checkpoint_arg_exists) {
-            fprintf(stderr,
-                    "Checkpoint is requested involving BBCOREPOINTER but there is no bbcore_write "
-                    "function for %s\n",
-                    memb_func[type].sym);
-            assert(corenrn.get_bbcore_write()[type]);
-        }
 #if CHKPNTDEBUG
         ntc.bcptype[i] = type;
         ntc.bcpicnt[i] = icnt;
@@ -1190,7 +1183,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     set_vec_play(nt);
 
     if (!events.empty()) {
-        checkpoint_restore_tqueue(nt, *this);
+        userParams.checkPoints.restore_tqueue(nt, *this);
     }
 
     set_net_send_buffer(nt._ml_list, pnt_offset);

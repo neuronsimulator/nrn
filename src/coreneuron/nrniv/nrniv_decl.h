@@ -38,12 +38,6 @@ extern void mk_mech(const char* path);
 extern void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_value);
 extern void mk_netcvode(void);
 extern void nrn_p_construct(void);
-extern void nrn_setup(const char* filesdat,
-                      bool is_mapping_needed,
-                      bool run_setup_cleanup = true,
-                      const char* datapath = "",
-                      const char* restore_path = "",
-                      double* mindelay = nullptr);
 extern double* stdindex2ptr(int mtype, int index, NrnThread&);
 extern void delete_trajectory_requests(NrnThread&);
 extern void nrn_cleanup();

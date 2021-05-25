@@ -28,8 +28,7 @@ namespace coreneuron {
 #ifdef ADDITIONAL_MECHS
 extern void modl_reg();
 #else
-void modl_reg() {
-}
+void modl_reg() {}
 #endif
 
 /// variables defined in coreneuron library

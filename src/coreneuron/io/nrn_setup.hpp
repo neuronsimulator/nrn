@@ -15,6 +15,7 @@
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/user_params.hpp"
 #include "coreneuron/io/mem_layout_util.hpp"
+#include "coreneuron/io/nrn_checkpoint.hpp"
 
 namespace coreneuron {
 void read_phase1(NrnThread& nt, UserParams& userParams);
@@ -23,9 +24,18 @@ void read_phase3(NrnThread& nt, UserParams& userParams);
 void read_phasegap(NrnThread& nt, UserParams& userParams);
 static void setup_ThreadData(NrnThread& nt);
 
+void nrn_setup(const char* filesdat,
+               bool is_mapping_needed,
+               CheckPoints& checkPoints,
+               bool run_setup_cleanup = true,
+               const char* datapath = "",
+               const char* restore_path = "",
+               double* mindelay = nullptr);
+
 // Functions to load and clean data;
 extern void nrn_init_and_load_data(int argc,
                                    char** argv,
+                                   CheckPoints& checkPoints,
                                    bool is_mapping_needed = false,
                                    bool run_setup_cleanup = true);
 extern void nrn_setup_cleanup();
