@@ -4,6 +4,9 @@ A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import os
+import platform
+import shutil
+import subprocess
 import sys
 from pkg_resources import working_set
 from distutils.ccompiler import new_compiler
@@ -43,4 +46,19 @@ def _config_exe(exe_name):
 
 if __name__ == '__main__':
     exe = _config_exe(os.path.basename(sys.argv[0]))
-    os.execv(exe, sys.argv)
+
+    # special is a now a full-on binary. therefore, we've wrapped around special
+    # in order to still be able to configure NEURON environment variables (run above)
+    if exe.endswith('special'):
+        # point executable to `special.nrn`
+        exe = os.path.join(sys.argv[0]+'.nrn')
+
+    subprocess.call([exe, *sys.argv[1:]])
+
+    # wrap around special for nrnivmodl, since special is now a full-on binary
+    #   special >> special.nrn
+    #   nrniv > special
+    if exe.endswith('nrnivmodl'):
+        print('Wrapping special binary')
+        shutil.move(os.path.join(platform.machine(), 'special'), os.path.join(platform.machine(), 'special.nrn'))
+        shutil.copy(shutil.which('nrniv'), os.path.join(platform.machine(), 'special'))
