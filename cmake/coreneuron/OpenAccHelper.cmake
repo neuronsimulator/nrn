@@ -24,9 +24,23 @@ if(CORENRN_ENABLE_GPU)
 
   # various flags for PGI compiler with GPU build
   if(${CMAKE_C_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_C_COMPILER_ID} STREQUAL "NVHPC")
-
-    # workaround for old PGI version
-    set(PGI_ACC_FLAGS "-acc")
+    # find_cuda produce verbose messages : use new behavior to use _ROOT variables
+    if(POLICY CMP0074)
+      cmake_policy(SET CMP0074 NEW)
+    endif()
+    find_package(CUDA 9.0 REQUIRED)
+    set(CUDA_SEPARABLE_COMPILATION ON)
+    set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+    set(CUDA_PROFILING_DEF -DCUDA_PROFILING)
+    set(PGI_ACC_FLAGS "-acc -gpu=cuda${CUDA_VERSION}")
+    # ${CORENRN_GPU_CUDA_COMPUTE_CAPABILITY} is {60, 70[, ...]} then generate
+    # -gpu=cudaX.Y,cc60,cc70[,...]. It is important that the architectures used to compile OpenACC
+    # C++ code are compatible with those used to compile the CUDA code that is linked in, otherwise
+    # there will be unhelpful linker errors. This also goes for the CUDA version itself, which may
+    # not be correctly detected if the build system does not itself have a GPU.
+    foreach(compute_capability ${CORENRN_GPU_CUDA_COMPUTE_CAPABILITY})
+      string(APPEND PGI_ACC_FLAGS ",cc${compute_capability}")
+    endforeach()
     # disable very verbose diagnosis messages and obvious warnings for mod2c
     set(PGI_DIAG_FLAGS "--diag_suppress 161,177,550")
     # inlining of large functions for OpenACC
@@ -41,15 +55,6 @@ if(CORENRN_ENABLE_GPU)
       FATAL_ERROR "GPU support is available via OpenACC using PGI/NVIDIA compilers."
                   " Use NVIDIA HPC SDK with -DCMAKE_C_COMPILER=nvc -DCMAKE_CXX_COMPILER=nvc++")
   endif()
-
-  # find_cuda produce verbose messages : use new behavior to use _ROOT variables
-  if(POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
-  endif()
-  find_package(CUDA 9.0 REQUIRED)
-  set(CUDA_SEPARABLE_COMPILATION ON)
-  set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-  set(CUDA_PROFILING_DEF -DCUDA_PROFILING)
 
   set(CORENRN_ACC_GPU_DEFS "${UNIFIED_MEMORY_DEF} ${CUDA_PROFILING_DEF}")
   set(CORENRN_ACC_GPU_FLAGS "${PGI_ACC_FLAGS} ${PGI_DIAG_FLAGS} ${PGI_INLINE_FLAGS}")

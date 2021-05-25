@@ -124,13 +124,19 @@ if(CORENRN_ENABLE_GPU)
   set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
                                                                    "-DDISABLE_OPENACC")
 
-  # compile cuda files for multiple architecture
-  # ~~~
-  cuda_add_library(
-    "cudacoreneuron" ${CORENEURON_CUDA_FILES}
-    OPTIONS -arch=sm_60 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_72,code=sm_72
-            -gencode=arch=compute_52,code=compute_52 -Xcompiler -fPIC)
-  # ~~~
+  # if ${CORENRN_GPU_CUDA_COMPUTE_CAPABILITY} is {60[, ...]} then generate
+  # --generate-code=arch=compute_60,code=sm_60 --generate-code=arch=compute_60,code=compute_60, this
+  # is modelled after
+  # https://github.com/spack/spack/blob/a586fa6dd342ec39f2044f9dc035dd61b58f197d/lib/spack/spack/build_systems/cuda.py#L41-L47
+  # and the links therein.
+  foreach(compute_capability ${CORENRN_GPU_CUDA_COMPUTE_CAPABILITY})
+    list(APPEND cuda_arch_flags
+         "--generate-code=arch=compute_${compute_capability},code=sm_${compute_capability}")
+    list(APPEND cuda_arch_flags
+         "--generate-code=arch=compute_${compute_capability},code=compute_${compute_capability}")
+  endforeach()
+  cuda_add_library("cudacoreneuron" ${CORENEURON_CUDA_FILES} OPTIONS ${cuda_arch_flags} -Xcompiler
+                                                                     -fPIC)
   set(link_cudacoreneuron cudacoreneuron)
 else()
   set(link_cudacoreneuron "")
