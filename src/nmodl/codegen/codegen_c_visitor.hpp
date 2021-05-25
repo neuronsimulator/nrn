@@ -57,6 +57,9 @@ enum BlockType {
     /// initial block
     Initial,
 
+    /// constructor block
+    Constructor,
+
     /// destructor block
     Destructor,
 
@@ -1521,6 +1524,13 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *
      */
     virtual void print_nrn_cur_matrix_shadow_reduction();
+
+
+    /**
+     * Print nrn_constructor function definition
+     *
+     */
+    void print_nrn_constructor();
 
 
     /**

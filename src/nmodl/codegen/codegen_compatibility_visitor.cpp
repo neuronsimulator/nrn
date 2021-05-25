@@ -34,8 +34,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
           &CodegenCompatibilityVisitor::return_error_with_name<PartialBlock>},
          {AstNodeType::FUNCTION_TABLE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<FunctionTableBlock>},
-         {AstNodeType::CONSTRUCTOR_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<ConstructorBlock>},
          {AstNodeType::SOLVE_BLOCK,
           &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
          {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},

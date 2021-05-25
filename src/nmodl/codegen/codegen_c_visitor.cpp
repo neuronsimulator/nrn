@@ -1251,6 +1251,9 @@ std::string CodegenCVisitor::compute_method_name(BlockType type) const {
     if (type == BlockType::Initial) {
         return method_name(naming::NRN_INIT_METHOD);
     }
+    if (type == BlockType::Constructor) {
+        return method_name(naming::NRN_CONSTRUCTOR_METHOD);
+    }
     if (type == BlockType::Destructor) {
         return method_name(naming::NRN_DESTRUCTOR_METHOD);
     }
@@ -2624,12 +2627,17 @@ void CodegenCVisitor::print_mechanism_register() {
     auto args = register_mechanism_arguments();
     auto nobjects = num_thread_objects();
     if (info.point_process) {
-        printer->add_line("point_register_mech({}, NULL, {}, {});"_format(
+        printer->add_line("point_register_mech({}, {}, {}, {});"_format(
             args,
+            info.constructor_node ? method_name(naming::NRN_CONSTRUCTOR_METHOD) : "NULL",
             info.destructor_node ? method_name(naming::NRN_DESTRUCTOR_METHOD) : "NULL",
             nobjects));
     } else {
         printer->add_line("register_mech({}, {});"_format(args, nobjects));
+        if (info.constructor_node) {
+            printer->add_line(
+                "register_constructor({});"_format(method_name(naming::NRN_CONSTRUCTOR_METHOD)));
+        }
     }
 
     // types for ion
@@ -3230,9 +3238,9 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
 
     print_global_method_annotation();
     printer->start_block("void {}({})"_format(method, args));
-    if (type != BlockType::Destructor) {
-        // We do not (currently) support DESTRUCTOR (and, eventually,
-        // CONSTRUCTOR) blocks running anything on the GPU.
+    if (type != BlockType::Destructor || type != BlockType::Constructor) {
+        // We do not (currently) support DESTRUCTOR and CONSTRUCTOR blocks
+        // running anything on the GPU.
         print_kernel_data_present_annotation_block_begin();
     }
     printer->add_line("int nodecount = ml->nodecount;");
@@ -3312,6 +3320,17 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         printer->end_block(1);
     }
     codegen = false;
+}
+
+
+void CodegenCVisitor::print_nrn_constructor() {
+    printer->add_newline(2);
+    print_global_function_common_code(BlockType::Constructor);
+    if (info.constructor_node != nullptr) {
+        const auto& block = info.constructor_node->get_statement_block();
+        print_statement_block(*block.get(), false, false);
+    }
+    printer->end_block(1);
 }
 
 
@@ -4339,6 +4358,7 @@ void CodegenCVisitor::print_codegen_routines() {
     print_global_variable_setup();
     print_instance_variable_setup();
     print_nrn_alloc();
+    print_nrn_constructor();
     print_nrn_destructor();
     print_compute_functions();
     print_check_table_thread_function();
