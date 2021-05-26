@@ -84,6 +84,8 @@ CoreNEURON is a submodule of the NEURON git repository. If you are a NEURON user
 		-DCMAKE_C_COMPILER=nvc \
 		-DCMAKE_CXX_COMPILER=nvc++
 	```
+  By default the GPU code will be compiled for NVIDIA devices with compute capability 6.0 or 7.0.
+  This can be steered by passing, for example, `-DCORENRN_GPU_CUDA_COMPUTE_CAPABILITY:STRING=50;60;70` to CMake.
 
 	You can change C/C++ optimization flags using `-DCMAKE_CXX_FLAGS` and `-DCMAKE_C_FLAGS` options to the CMake command. You have to add the following CMake options:
 
