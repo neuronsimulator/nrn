@@ -47,7 +47,6 @@ def _wrap_executable(output_name):
     """Create a wrapper for an executable in same dir. Requires renaming the original file.
     Executables are typically found under arch_name
     """
-    print("Wrapping special binary...")
     release_dir = os.path.join(os.environ["NEURONHOME"], "demo/release")
     arch_name = next(os.walk(release_dir))[1][0]  # first dir
     file_path = os.path.join(arch_name, output_name)
