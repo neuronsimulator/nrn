@@ -4,7 +4,6 @@ A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import os
-import platform
 import shutil
 import subprocess
 import sys
@@ -30,7 +29,7 @@ def _config_exe(exe_name):
 
     package_name = 'neuron'
     if package_name not in working_set.by_key:
-        print ("INFO : Using neuron-nightly Package (Developer Version)")
+        print("INFO : Using neuron-nightly Package (Developer Version)")
         package_name = 'neuron-nightly'
 
     assert package_name in working_set.by_key, "NEURON package not found! Verify PYTHONPATH"
@@ -44,23 +43,28 @@ def _config_exe(exe_name):
     return os.path.join(NRN_PREFIX, 'bin', exe_name)
 
 
+def _wrap_executable(output_name):
+    """Create a wrapper for an executable in same dir. Requires renaming the original file.
+    Executables are typically found under arch_name
+    """
+    print("Wrapping special binary...")
+    release_dir = os.path.join(os.environ["NEURONHOME"], "demo/release")
+    arch_name = next(os.walk(release_dir))[1][0]  # first dir
+    file_path = os.path.join(arch_name, output_name)
+    shutil.move(file_path, file_path + ".nrn")
+    shutil.copy(__file__, file_path)
+
+
 if __name__ == '__main__':
     exe = _config_exe(os.path.basename(sys.argv[0]))
 
-    # special is a now a full-on binary. therefore, we've wrapped around special
-    # in order to still be able to configure NEURON environment variables (run above)
-    if exe.endswith('special'):
-        # point executable to `special.nrn`
-        exe = os.path.join(sys.argv[0]+'.nrn')
-
-    # wrap around special for nrnivmodl, since special is now a full-on binary
-    #   special >> special.nrn
-    #   nrniv > special
-    if exe.endswith('nrnivmodl'):
-        # use subprocess since execv returns
+    if exe.endswith("nrnivmodl"):
+        # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
         subprocess.check_call([exe, *sys.argv[1:]])
-        print('Wrapping special binary')
-        shutil.move(os.path.join(platform.machine(), 'special'), os.path.join(platform.machine(), 'special.nrn'))
-        shutil.copy(shutil.which('nrniv'), os.path.join(platform.machine(), 'special'))
-    else:    
-        os.execv(exe, sys.argv)
+        _wrap_executable("special")
+        sys.exit(0)
+
+    if exe.endswith("special"):
+        exe = os.path.join(sys.argv[0] + '.nrn')  # original special is renamed special.nrn
+
+    os.execv(exe, sys.argv)
