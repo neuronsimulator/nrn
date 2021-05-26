@@ -1,8 +1,25 @@
 import sys
 from io import StringIO
+import inspect
 from neuron import h
 pc = h.ParallelContext()
 nhost = pc.nhost()
+
+quiet = True
+
+def set_quiet(b):
+  global quiet
+  old = quiet
+  quiet = b
+  return old
+
+def printerr(e):
+  if not quiet:
+    print(e)
+
+def checking(s):
+  if not quiet:
+    print("CHECKING: " + s)
 
 def expect_hocerr(callable, args, sec=None):
   """
@@ -17,24 +34,42 @@ def expect_hocerr(callable, args, sec=None):
   if nhost > 1:
     return
 
-  old_stderr = sys.stderr
+  original_stderr = sys.stderr
   sys.stderr = my_stderr = StringIO()
   err = 0
+  pyerrmes = False
   try:
     if sec:
       callable(*args, sec=sec)
     else:  
       callable(*args)
-  except:
+      printerr("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
+  except Exception as e:
     err=1
-  errmes =  my_stderr.getvalue()
-  sys.stderr = old_stderr
-  if errmes:
-    errmes = errmes.splitlines()[0]
-    errmes = errmes[(errmes.find(':')+2):]
-    print("expect_hocerr: %s" % errmes)
-  if err == 0:
-    print("expect_hocerr: no err for %s%s" % (str(callable), str(args)))
-  assert(err)
+    errmes = my_stderr.getvalue()
+    if errmes:
+      errmes = errmes.splitlines()[0]
+      errmes = errmes[(errmes.find(':')+2):]
+      printerr("expect_hocerr: %s" % errmes)
+    elif e:
+      printerr(e)
+  finally:
+    sys.stderr = original_stderr
+  assert err
 
-
+def expect_err(stmt):
+  """
+  expect_err('stmt')
+  stmt is expected to raise an error
+  """
+  here = inspect.currentframe()
+  caller = here.f_back
+  err = 0
+  checking(stmt)
+  try:
+    exec(stmt, caller.f_globals, caller.f_locals)
+    printerr("expect_err: no err for-- " + stmt)
+  except Exception as e:
+    err = 1
+    printerr(e)
+  assert err
