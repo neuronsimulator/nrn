@@ -13,7 +13,6 @@ of struct _spblk, we are really using TQItem
 #include <string.h>
 #include <stdarg.h>
 
-#define SPBLK TQItem
 #define leftlink left_
 #define rightlink right_
 #define uplink parent_
@@ -71,7 +70,7 @@ TQueue::TQueue() {
 }
 
 TQueue::~TQueue() {
-	SPBLK* q;
+    TQItem* q;
 	while((q = spdeq(&sptree_->root)) != nil) {
 		deleteitem(q);
 	}
@@ -301,6 +300,3 @@ TQItem* FifoQ::first() {
 TQItem* FifoQ::next(TQItem* q) {
 	return q->right_;
 }
-
-#include <sptree.cpp>
-
