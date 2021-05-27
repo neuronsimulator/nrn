@@ -313,26 +313,25 @@ def _after_advance():
     
 def re_init():
     """reinitializes all rxd concentrations to match HOC values, updates matrices"""
+
     global _external_solver_initialized
     h.define_shape()
-    
-    if not species._has_3d:
-        # TODO: if we do have 3D, make sure that we do the necessary parts of this
-    
-        # update current pointers
-        section1d._purge_cptrs()
-        for sr in _species_get_all_species():
-            s = sr()
-            if s is not None:
-                s._register_cptrs()
-        
-        # update matrix equations
-        _setup_matrices()
+
+    section1d._purge_cptrs()
+    for sr in _species_get_all_species():
+        s = sr()
+        if s is not None:
+            s._register_cptrs()
+
     for sr in _species_get_all_species():
         s = sr()
         if s is not None: s.re_init()
-    # TODO: is this safe?        
-    _cvode_object.re_init()
+
+    # update matrix equations
+    _setup_matrices()
+
+    if _cvode_object.active(): 
+        _cvode_object.re_init()
 
     _external_solver_initialized = False
     
@@ -667,7 +666,7 @@ def _setup_matrices():
             for sr in _species_get_all_species():
                 s = sr()
                 if s is not None:
-                    if s._intracellular_instances and s._secs:
+                    if s._intracellular_instances:
                         # have both 1D and 3D, so find the neighbors
                         # for each of the 3D sections, find the parent sections
                         for r in s._regions:
@@ -704,7 +703,6 @@ def _setup_matrices():
                                             hybrid_vols1d[index1d] = vols1d
     
     
-                                            
             if len(dxs) > 1:
                 raise RxDException('currently require a unique value for dx')
             dx = dxs.pop()
