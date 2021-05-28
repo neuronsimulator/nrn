@@ -43,9 +43,6 @@ if(CORENRN_ENABLE_GPU)
     endforeach()
     # disable very verbose diagnosis messages and obvious warnings for mod2c
     set(PGI_DIAG_FLAGS "--diag_suppress 161,177,550")
-    # inlining of large functions for OpenACC
-    set(PGI_INLINE_FLAGS "-Minline=size:200,levels:10")
-
     # avoid PGI adding standard compliant "-A" flags
     set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
     set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
@@ -57,7 +54,7 @@ if(CORENRN_ENABLE_GPU)
   endif()
 
   set(CORENRN_ACC_GPU_DEFS "${UNIFIED_MEMORY_DEF} ${CUDA_PROFILING_DEF}")
-  set(CORENRN_ACC_GPU_FLAGS "${PGI_ACC_FLAGS} ${PGI_DIAG_FLAGS} ${PGI_INLINE_FLAGS}")
+  set(CORENRN_ACC_GPU_FLAGS "${PGI_ACC_FLAGS} ${PGI_DIAG_FLAGS}")
 
   add_definitions(${CORENRN_ACC_GPU_DEFS})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CORENRN_ACC_GPU_FLAGS}")
