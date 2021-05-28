@@ -10,6 +10,7 @@ def pytest_addoption(parser):
     parser.addoption("--mpi", action="store_true", default=False, help="use MPI")
     parser.addoption("--save", action="store", default=None, help="save the test data")
 
+
 @pytest.fixture(scope="session")
 def neuron_import(request):
     """Provides an instance of neuron h and rxd for tests"""
@@ -17,7 +18,7 @@ def neuron_import(request):
     # to use NEURON with MPI, mpi4py must be imported first.
     if request.config.getoption("--mpi"):
         from mpi4py import MPI  # noqa: F401
-    
+
     save_path = request.config.getoption("--save")
 
     # we may not be not running in the test path so we have to load the mechanisms
@@ -25,7 +26,9 @@ def neuron_import(request):
 
     neuron.load_mechanisms(osp.abspath(osp.dirname(__file__)))
     from neuron import h, rxd
+
     return h, rxd, save_path
+
 
 @pytest.fixture
 def neuron_instance(neuron_import):
@@ -36,18 +39,19 @@ def neuron_instance(neuron_import):
     """
 
     h, rxd, save_path = neuron_import
-    data = {'record_count': 0, 'data': []}
-    h.load_file('stdrun.hoc')
-    h.load_file("import3d.hoc")                      
+    data = {"record_count": 0, "data": []}
+    h.load_file("stdrun.hoc")
+    h.load_file("import3d.hoc")
 
-    h.nrnunit_use_legacy(True) 
-    
-    # pytest fixtures at the function scope that require neuron_instance will go    # out of scope after neuron_instance. So species, sections, etc. will go 
-    # out of scope after neuron_instance is torn down. 
+    h.nrnunit_use_legacy(True)
+
+    # pytest fixtures at the function scope that require neuron_instance will go    # out of scope after neuron_instance. So species, sections, etc. will go
+    # out of scope after neuron_instance is torn down.
     # Here we assert that no section left alive. If the assertion fails it is
     # due to a problem with the previous test, not the test which failed.
     gc.collect()
-    for sec in h.allsec(): assert(False)
+    for sec in h.allsec():
+        assert False
     cvode = h.CVode()
     cvode.active(False)
     cvode.atol(1e-3)
@@ -80,4 +84,3 @@ def neuron_instance(neuron_import):
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
     rxd.set_solve_type(dimension=1)
     cvode.extra_scatter_gather_remove(gather)
-    
