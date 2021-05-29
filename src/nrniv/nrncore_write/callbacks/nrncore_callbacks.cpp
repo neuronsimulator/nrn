@@ -666,7 +666,6 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, in
   int watch_index = wc->watch_index_;
   int triggered = wc->flag_ ? 1 : 0;
   int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
-
   (*cb)(tid, pnttype, pntindex, watch_index, triggered);
 
   // This transfers CvodeThreadData activated WatchCondition
@@ -992,4 +991,42 @@ void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
       }
     }
   }
+}
+
+// For each watch index, activate the WatchCondition
+void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchInfo& wi) {
+    if (tid >= nrn_nthread) {
+        return;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    for (size_t i = 0; i < wi.size(); ++i) {
+        auto& active_watch_indices = wi[i];
+        Datum* pd = ml->pdata[i];
+        int r = 0; // first activate removes formerly active from pd.
+        for (auto watch_index: active_watch_indices){
+            WatchCondition* wc = (WatchCondition*)pd[watch_index]._pvoid;
+            if (!wc) { // if any do not exist in this instance, create them all
+                       // with proper callback and flag.
+                (*(nrn_watch_allocate_[type]))(pd);
+                wc = (WatchCondition*)pd[watch_index]._pvoid;
+            }
+            _nrn_watch_activate(pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_,
+                r++, wc->nrflag_);
+            wc->flag_ = false; // this is a mystery
+            // Note that with the testcorenrn WATCH statement test with
+            // mode 2, the conceptual flag about being above threshold is
+            // not set. (And we added an assert statement for that referencing
+            // the above code line.) However, on this nrn side, it is
+            // sometimes the case (in WatchCondition::activate(nrflag)) that
+            // a call to value() indicates above threshold. Without the above
+            // code statement, there will not be a (immediate) transition event
+            // til the value() becomes negative again and then goes possitive.
+            // Apparently, on the coreneuron side, the last threshold check
+            // was performed prior to the last voltage (and hopefully any
+            // STATE update) as the end of psolve on the coreneuron side.
+            // So, in that case, on the nrn side, though value() > 0, the
+            // WATCH event needs to be triggere on the next threshold check.
+        }
+    }
 }

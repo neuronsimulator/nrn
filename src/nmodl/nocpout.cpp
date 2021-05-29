@@ -186,6 +186,7 @@ int net_receive_;
 int net_send_seen_;
 int net_event_seen_;
 int watch_seen_; /* number of WATCH statements + 1*/
+extern List* watch_alloc;
 static Item* net_send_delivered_; /* location for if flag is 1 then clear the
 				tqitem_ to allow  an error message for net_move */
 #endif
@@ -713,6 +714,10 @@ diag("No statics allowed for thread safe models:", s->name);
 		sprintf(buf, "\n#define _watch_array _ppvar + %d", watch_index);
 		Lappendstr(defs_list, buf);
 		Lappendstr(defs_list, "\n");
+		Lappendstr(defs_list, "static void _watch_alloc(Datum*);\n");
+		Lappendstr(defs_list, "extern void hoc_reg_watch_allocate(int, void(*)(Datum*));");
+		Lappendstr(watch_alloc, "}\n\n");
+		movelist(watch_alloc->next, watch_alloc->prev, procfunc);
 	}
 	if (for_netcons_) {
 		sprintf(buf, "\n#define _fnc_index %d\n", ppvar_cnt);
@@ -1111,6 +1116,9 @@ extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 	}
 	sprintf(buf, " hoc_register_prop_size(_mechtype, %d, %d);\n", parraycount, ppvar_cnt);
 	Lappendstr(defs_list, buf);
+        if (watch_seen_) {
+		Lappendstr(defs_list, " hoc_reg_watch_allocate(_mechtype, _watch_alloc);\n");
+	}
 	if (ppvar_semantics_) ITERATE(q, ppvar_semantics_) {
 		sprintf(buf, " hoc_register_dparam_semantics(_mechtype, %d, \"%s\");\n",
 		  (int)q->itemtype, q->element.str);

@@ -2448,12 +2448,12 @@ extern "C" void net_event(Point_process* pnt, double time) {
 }
 
 extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, int r, double flag) {
-//	printf("_nrn_cond_activate %s flag=%g first return = %g\n", hoc_object_name(pnt->ob), flag, c(pnt));
-	if (!d->_pvoid) {
-		d->_pvoid = (void*)new WatchList();
-	}
-	if (!d[i]._pvoid) {
-		d[i]._pvoid = (void*)new WatchCondition(pnt, c);
+	if (!d[i]._pvoid || !d[0]._pvoid) {
+		// When c is NULL, i.e. called from CoreNEURON,
+		// we never get here because we made sure
+		// _nrn_watch_allocated for this has been called earlier from
+		// within the translated mod file.
+		_nrn_watch_allocate(d, c, i, pnt, flag); // d[0]._pvoid and d[i]._pvoid exist
 	}
 	WatchList* wl = (WatchList*)d->_pvoid;
 	if (r == 0) {
@@ -2469,16 +2469,101 @@ extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i
 		wl->remove_all();
 	}
 	WatchCondition* wc = (WatchCondition*)d[i]._pvoid;
-	//wc->watch_index_ = i; // Simplifies transfer to CoreNEURON
-	// To avoid searching for the beginning of _watch_array after
-	// transfer to CoreNEURON, compute the offset with respect to dparam.
-	// That, of course, assumes NEURON and CoreNEURON have same
-	// pdata arrangement.
-	wc->watch_index_ = i + (d - pnt->prop->dparam);
 	wl->append(wc);
-	wc->activate(flag);
+	wc->activate(flag); // nr_flag_ (NetReceive flag) not flag_ for above threshold.
 }
 
+/*
+An example of a call to _nrn_watch_activate from within the NET_RECEIVE
+block of a translated mod file is
+_nrn_watch_activate(_watch_array, _watch1_cond, 1, _pnt, _watch_rm++, 2.0);
+
+_watch_array begins at _ppvar+first_index_of_watch_information and the number
+  of indices is 1 more than the number of watch statements. Each of those
+  (starting at index 1) is a pointer to a WatchCondition.
+  The 0th is a pointer to a HTList (HeadTailList) of the active WatchConditions.
+  Third arg is index of the WatchCondition to be activated.
+  The _watch_rm when 0 means, empty the HTList before adding the
+  WatchCondition to the HTList, when > 0, just add (It is possible for  
+  several WatchCondition to be active at the same time. That is useful when
+  the conceptual condition is for a variable to be within a specific range
+  or when multiple variables need to be watched at the same time.
+  The last arg is the flag value used by the NET_RECEIVE block to activate
+  a new set of WATCH statements. Note that that particular flag does not
+  have to result in the activation of a new set. In that case, the old set 
+  stays active.
+
+Note. At time of writing this note,
+  _watch_array[1:] are only created the first time that 'i' WatchCondition
+  is activated. And at that time the 2nd callback arg is stored in the
+  WatchCondition. So, at the moment, return from CoreNEURON cannot count on
+  all WatchConditions being in existence. Given that the 2nd callback arg
+  is only known to the translated mod file, the most straightforward solution
+  is for nocmodl to generate
+  an "initialization" function that calls all possible _nrn_watch_activate.
+  That could be done at the Point_process* pnt creation time (or after
+  transfer of WATCH info to CoreNEURON (using structure_change_cnt_).)
+  It could even be done as necessary when CoreNEURON sends back activated
+  WatchCondition info when the WatchCondition* slot on the NEURON side
+  is NULL. Then the "initialization" function could call a stripped down
+  version of _nrn_watch_activate for only its NULL slots.
+
+Here are some more notes about WatchCondition, HTList, HTListList, and
+  WatchList.
+  The (WatchList*)d->_pvoid is used only in _nrn_watch_activate to
+  iterate over its previously activated list in order to remove all those from
+  its HTList.
+  WatchCondition is a subclass of ConditionEvent and HTList
+  Because of the latter, we can say
+  WatchCondition.Remove() and HTList.append(WatchCondition)
+  The former can be called any number of times. When it is called it becomes
+  a singleton WatchCondition (only in itself as an HTList).
+  The latter can be called any number of times. Whereever the
+  WatchCondition is located before calling HTList.append ---
+  singleton, in another list, or already in this list --- it will end up
+  as the htlist.Last()
+
+*/
+
+/** Introduced so corenrn->nrn can request the mod file to make sure
+ *  all WatchCondition are allocated. When that is the case then
+ *  corenrn can call _nrn_watch_activate with all args filled out
+ *  because the allocated WatchCondition has double (*c_)(Point_process)
+ *  and flag_ filled in.
+**/
+extern "C" void _nrn_watch_allocate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, double flag) {
+  if (!d->_pvoid) {
+    d->_pvoid = (void*)new WatchList();
+  }
+  if (!d[i]._pvoid) {
+    WatchCondition* wc = new WatchCondition(pnt, c);
+    wc->c_ = c;
+    wc->nrflag_ = flag;
+    d[i]._pvoid = (void*)wc;
+    // Simplify transfer to CoreNEURON
+    // To avoid searching for the beginning of _watch_array after
+    // transfer to CoreNEURON, compute the offset with respect to
+    // dparam.  That, of course, assumes NEURON and CoreNEURON
+    // have same pdata arrangement.
+    wc->watch_index_ = i + (d - pnt->prop->dparam);
+  }
+}
+
+/** Watch info corenrn->nrn transfer requires all activated
+ *  WatchCondition be deactivated prior to mirroring the activation
+ *  that exists on the corenrn side.
+**/
+extern "C" void nrn_watch_clear() {
+  for (int i = 0; i < net_cvode_instance->wl_list_->count(); ++i) {
+    HTList* wl = net_cvode_instance->wl_list_->item(i);
+    wl->RemoveAll();
+  }
+  // not necessary to empty the WatchList in the Point_process dparam array
+  // as that will happen when _nrn_watch_activate is called with an r
+  // arg of 0.
+}
+
+/** Called by Point_process destructor in translated mod file **/
 extern "C" void _nrn_free_watch(Datum* d, int offset, int n) {
 	int i;
 	int nn = offset + n;

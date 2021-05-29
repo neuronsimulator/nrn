@@ -93,6 +93,9 @@ extern void nrn_net_send(void**, double*, Point_process*, double, double);
 extern void nrn_net_event(Point_process*, double);
 extern void nrn_net_move(void**, Point_process*, double);
 
+typedef void(*NrnWatchAllocateFunc_t)(Datum*);
+extern NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+
 #if defined(__cplusplus)
 }
 #endif

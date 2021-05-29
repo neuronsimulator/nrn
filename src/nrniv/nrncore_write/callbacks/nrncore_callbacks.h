@@ -96,11 +96,18 @@ struct NrnCoreTransferEvents {
   std::vector<int> intdata; // ints specific to the DiscreteEvent type
   std::vector<double> dbldata; // doubles specific to the type.
 };
+
+// For direct transfer of CoreNEURON WATCH activation back to NEURON
+typedef std::vector<std::vector<int> > Core2NrnWatchInfo;
+
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);
 
 // per item direct transfer of WatchCondition
 void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
+
+void nrn_watch_clear();
+void core2nrn_watch_activate(int tid, int type, int wbegin, Core2NrnWatchInfo&);
 
 // Add the voltage indices in which PreSyn.flag_ == true to the set.
 void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
@@ -134,6 +141,8 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_transfer_tqueue_", (CNB)nrn2core_transfer_tqueue},
         {"nrn2core_transfer_watch_", (CNB)nrn2core_transfer_WATCH},
         {"nrn2core_transfer_PreSyn_flag_", (CNB)nrn2core_PreSyn_flag},
+        {"core2nrn_watch_clear_", (CNB)nrn_watch_clear},
+        {"core2nrn_watch_activate_", (CNB)core2nrn_watch_activate},
 
         {"core2nrn_corepointer_mech_", (CNB)core2nrn_corepointer_mech},
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},
