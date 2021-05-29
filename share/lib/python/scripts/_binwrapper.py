@@ -4,6 +4,8 @@ A generic wrapper to access nrn binaries from a python installation
 Please create a softlink with the binary name to be called.
 """
 import os
+import shutil
+import subprocess
 import sys
 from pkg_resources import working_set
 from distutils.ccompiler import new_compiler
@@ -27,7 +29,7 @@ def _config_exe(exe_name):
 
     package_name = 'neuron'
     if package_name not in working_set.by_key:
-        print ("INFO : Using neuron-nightly Package (Developer Version)")
+        print("INFO : Using neuron-nightly Package (Developer Version)")
         package_name = 'neuron-nightly'
 
     assert package_name in working_set.by_key, "NEURON package not found! Verify PYTHONPATH"
@@ -41,6 +43,27 @@ def _config_exe(exe_name):
     return os.path.join(NRN_PREFIX, 'bin', exe_name)
 
 
+def _wrap_executable(output_name):
+    """Create a wrapper for an executable in same dir. Requires renaming the original file.
+    Executables are typically found under arch_name
+    """
+    release_dir = os.path.join(os.environ["NEURONHOME"], "demo/release")
+    arch_name = next(os.walk(release_dir))[1][0]  # first dir
+    file_path = os.path.join(arch_name, output_name)
+    shutil.move(file_path, file_path + ".nrn")
+    shutil.copy(__file__, file_path)
+
+
 if __name__ == '__main__':
     exe = _config_exe(os.path.basename(sys.argv[0]))
+
+    if exe.endswith("nrnivmodl"):
+        # To create a wrapper for special (so it also gets ENV vars) we intercept nrnivmodl
+        subprocess.check_call([exe, *sys.argv[1:]])
+        _wrap_executable("special")
+        sys.exit(0)
+
+    if exe.endswith("special"):
+        exe = os.path.join(sys.argv[0] + '.nrn')  # original special is renamed special.nrn
+
     os.execv(exe, sys.argv)
