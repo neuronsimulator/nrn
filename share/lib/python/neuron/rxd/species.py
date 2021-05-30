@@ -1422,7 +1422,6 @@ class Species(_SpeciesMathable):
         self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if any(r._secs3d)}
 
     def _do_init4(self):
-        print("_do_init4", self)
         extracellular_nodes = []
         self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions, species=self) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
