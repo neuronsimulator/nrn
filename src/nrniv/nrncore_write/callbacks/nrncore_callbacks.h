@@ -109,6 +109,10 @@ void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
 void nrn_watch_clear();
 void core2nrn_watch_activate(int tid, int type, int wbegin, Core2NrnWatchInfo&);
 
+// per VecPlayContinous direct transfer of instance indices.
+void core2nrn_vecplay(int tid, int i_nrn, int last_index, int discon_index, int ubound_index);
+void core2nrn_vecplay_events();
+
 // Add the voltage indices in which PreSyn.flag_ == true to the set.
 void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
 } // end of extern "C"
@@ -143,6 +147,8 @@ static core2nrn_callback_t cnbs[]  = {
         {"nrn2core_transfer_PreSyn_flag_", (CNB)nrn2core_PreSyn_flag},
         {"core2nrn_watch_clear_", (CNB)nrn_watch_clear},
         {"core2nrn_watch_activate_", (CNB)core2nrn_watch_activate},
+        {"core2nrn_vecplay_", (CNB)core2nrn_vecplay},
+        {"core2nrn_vecplay_events_", (CNB)core2nrn_vecplay_events},
 
         {"core2nrn_corepointer_mech_", (CNB)core2nrn_corepointer_mech},
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},

@@ -656,6 +656,29 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
     return 0;
 }
 
+/** getting one item at a time from CoreNEURON **/
+void core2nrn_vecplay(int tid, int i, int last_index, int discon_index, int ubound_index) {
+  if (tid >= nrn_nthread) { return; }
+  PlayRecList* fp = net_cvode_instance->fixed_play_;
+  assert(fp->item(i)->type() == VecPlayContinuousType);
+  VecPlayContinuous* vp = (VecPlayContinuous*)fp->item(i);
+  vp->last_index_ = last_index;
+  vp->discon_index_ = discon_index;
+  vp->ubound_index_ = ubound_index;
+}
+
+/** start the vecplay events **/
+void core2nrn_vecplay_events() {
+    PlayRecList* fp = net_cvode_instance->fixed_play_;
+    for (int i=0; i < fp->count(); ++i){
+        if (fp->item(i)->type() == VecPlayContinuousType) {
+            VecPlayContinuous* vp = (VecPlayContinuous*)fp->item(i);
+            NrnThread* nt = nrn_threads + vp->ith_;
+            vp->e_->send(vp->t_->elem(vp->ubound_index_), net_cvode_instance, nt);
+        }
+    }
+}
+
 /** getting one item at a time from nrn2core_transfer_WATCH **/
 void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, int, int, int)) {
   Point_process* pnt = wc->pnt_;
