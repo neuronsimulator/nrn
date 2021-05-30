@@ -114,10 +114,20 @@ _has_3d = False
 
 def _update_tortuosity(region):
     """Update tortuosity for all species on region"""
+
     for s,r in _extracellular_diffusion_objects.items():
         if (r == region and hasattr(s,'_id') and 
-            not hasattr(s,'_deleted') and not s._isstate):
+            not hasattr(s,'_deleted') and not s._diffusion_characteristic):
             _set_tortuosity(s._id, region._permeability_vector)
+
+def _update_volume_fraction(region):
+    """Update volume fractions for all species on region"""
+
+    for s,r in _extracellular_diffusion_objects.items():
+        if (r == region and hasattr(s,'_id') and 
+            not hasattr(s,'_deleted') and not s._diffusion_characteristic):
+            _set_volume_fraction(s._id, region._volume_faction_vector)
+
 
 def _1d_submatrix_n():
     if not _has_1d:
@@ -924,7 +934,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
 
 class _ExtracellularSpecies(_SpeciesMathable):
-    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None, isstate=False):
+    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None, species=None):
         """
             region = Extracellular object (TODO? or list of objects)
             name = string of the name of the NEURON species (e.g. ca)
@@ -961,14 +971,21 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
         self._boundary_conditions = boundary_conditions
-        self._isstate = isstate
-
-        if(numpy.isscalar(region.alpha)):
-            self.alpha = self._alpha = region.alpha
+        self._diffusion_characteristic = ((isinstance(region.alpha, Species) and 
+                                           region._alpha == species) or 
+                                          (hasattr(region, "_permeability") and 
+                                           isinstance(region._permeability, Species) and 
+                                           region._permeability == species))
+        if self._diffusion_characteristic:
+            self.alpha = 1.0
+            self._alpha = 1.0
+        elif numpy.isscalar(region._volume_fraction_vector):
+            self.alpha = self._alpha = region._volume_fraction_vector
         else:
             self.alpha = region.alpha
-            self._alpha = region._alpha._ref_x[0]
-        if isstate:
+            self._alpha = region._volume_fraction_vector._ref_x[0]
+
+        if self._diffusion_characteristic:
             self.tortuosity = 1.0
             self._permability = 1.0
         else: 
@@ -1405,8 +1422,9 @@ class Species(_SpeciesMathable):
         self._intracellular_instances = {r:_IntracellularSpecies(r, d=self._d, charge=self.charge, initial=self.initial, nodes=self._intracellular_nodes[r], name=self._name, is_diffusable=is_diffusable, atolscale=self._atolscale) for r in self._regions if any(r._secs3d)}
 
     def _do_init4(self):
+        print("_do_init4", self)
         extracellular_nodes = []
-        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions, isstate=isinstance(self,State)) for r in self._extracellular_regions}
+        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions, species=self) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
         index = 0
         for r in self._extracellular_regions:

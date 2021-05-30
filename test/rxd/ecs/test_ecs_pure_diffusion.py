@@ -276,3 +276,15 @@ def test_ecs_diffusion_3d_inhom_tort_cvode(ecs_diffusion):
     if not save_path:
         max_err = compare_data(data)
         assert max_err < tol
+
+
+def test_ecs_diffusion_3d_alpha_state(ecs_diffusion):
+    neuron_instance, make_model = ecs_diffusion
+    ecs, k = make_model(11, 11, 11, {'name':'alpha', 'initial':1}, 1.6)
+    h, rxd, data, save_path = neuron_instance
+    h.finitialize(1000)
+    ecs.alpha.nodes.value = 0.2
+    h.continuerun(10)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol

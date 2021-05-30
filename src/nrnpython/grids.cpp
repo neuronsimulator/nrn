@@ -68,10 +68,10 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
     size_y = my_num_states_y;
     size_z = my_num_states_z;
     
-    diffusable = true;
     dc_x = my_dc_x;
     dc_y = my_dc_y;
     dc_z = my_dc_z;
+    diffusable = (dc_x > 0) || (dc_y > 0) || (dc_z >0);
 
     dx = my_dx;
     dy = my_dy;
@@ -117,7 +117,6 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
         alpha = my_alpha->u.px_;
         VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
         get_alpha = &get_alpha_array;    
-
     }
 #if NRNMPI
     if(nrnmpi_use)
@@ -449,13 +448,56 @@ void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability)
         }
         else
         {
-            //This should not happen
-            //if permeability was already a vector just change the vector values
             permeability = my_permeability->u.px_;
         }
     }
 
 }
+
+extern "C" int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha)
+{
+
+    int id = 0;
+    Grid_node* node = Parallel_grids[grid_list_index];
+    while(id < grid_id)
+    {
+        node = node->next;
+        id++;
+        if(node == NULL)
+            return -1;
+    }
+    static_cast<ECS_Grid_node*>(node)->set_volume_fraction(my_alpha);
+    return 0;
+}
+
+void ECS_Grid_node::set_volume_fraction(PyHocObject* my_alpha)
+{
+    
+    if(PyFloat_Check(my_alpha))
+    {
+        if(get_alpha == &get_alpha_scalar)
+        {
+            alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+        }
+        else
+        {
+            alpha = (double*)malloc(sizeof(double));
+            alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+            get_alpha == &get_alpha_scalar;
+            VARIABLE_ECS_VOLUME = (get_permeability == &get_permeability_scalar) ? TORTUOSITY : FALSE;
+        }
+    }
+    else
+    {
+        if(get_alpha == &get_alpha_scalar)
+            free(alpha);
+        alpha = my_alpha->u.px_;
+        VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
+        get_alpha = &get_alpha_array;
+    }
+}
+
+
 /*Set the diffusion coefficients*/
 void ICS_Grid_node::set_diffusion(double* dc, int length)
 {
@@ -499,6 +541,7 @@ void ECS_Grid_node::set_diffusion(double* dc, int)
         dc_y = dc[1];
         dc_z = dc[2];
     }
+    diffusable = (dc_x > 0) || (dc_y > 0) || (dc_z >0);
 }
 
 
@@ -924,23 +967,31 @@ void ECS_Grid_node::volume_setup()
 
 int ECS_Grid_node::dg_adi()
 {
-    //double* tmp;
-    /* first step: advance the x direction */
-    ecs_run_threaded_dg_adi(size_y, size_z, this, ecs_adi_dir_x, size_x);
+    unsigned long i;
+    if(diffusable)
+    {
+        /* first step: advance the x direction */
+        ecs_run_threaded_dg_adi(size_y, size_z, this, ecs_adi_dir_x, size_x);
 
-    /* second step: advance the y direction */
-    ecs_run_threaded_dg_adi(size_x, size_z, this, ecs_adi_dir_y, size_y);
+        /* second step: advance the y direction */
+        ecs_run_threaded_dg_adi(size_x, size_z, this, ecs_adi_dir_y, size_y);
 
-    /* third step: advance the z direction */
-    ecs_run_threaded_dg_adi(size_x, size_y, this, ecs_adi_dir_z, size_z);
+        /* third step: advance the z direction */
+        ecs_run_threaded_dg_adi(size_x, size_y, this, ecs_adi_dir_z, size_z);
 
-    /* transfer data */
-    /*TODO: Avoid copy by switching pointers and updating Python copy
-    tmp = g->states;
-    g->states = g->adi_dir_z->states_out;
-    g->adi_dir_z->states_out = tmp;
-    */
-    memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+        /* transfer data */
+        /*TODO: Avoid copy by switching pointers and updating Python copy
+        tmp = g->states;
+        g->states = g->adi_dir_z->states_out;
+        g->adi_dir_z->states_out = tmp;
+        */
+        memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+    }
+    else
+    {
+        for(i=0; i < size_x * size_y * size_z; i++)
+            states[i] += states_cur[i];
+    }
     //TODO: Should this return 0?
     return 0;
 }
@@ -1620,12 +1671,15 @@ void ICS_Grid_node::volume_setup()
 
 int ICS_Grid_node::dg_adi()
 {
-    run_threaded_deltas(this, ics_adi_dir_x);
-    run_threaded_deltas(this, ics_adi_dir_y);
-    run_threaded_deltas(this, ics_adi_dir_z);
-    run_threaded_ics_dg_adi(ics_adi_dir_x);
-    run_threaded_ics_dg_adi(ics_adi_dir_y);
-    run_threaded_ics_dg_adi(ics_adi_dir_z);
+    if (diffusable)
+    {
+        run_threaded_deltas(this, ics_adi_dir_x);
+        run_threaded_deltas(this, ics_adi_dir_y);
+        run_threaded_deltas(this, ics_adi_dir_z);
+        run_threaded_ics_dg_adi(ics_adi_dir_x);
+        run_threaded_ics_dg_adi(ics_adi_dir_y);
+        run_threaded_ics_dg_adi(ics_adi_dir_z);
+    }
     return 0;
 }
 

@@ -227,6 +227,7 @@ class ECS_Grid_node : public Grid_node{
         void hybrid_connections();
         void set_diffusion(double*, int);
         void set_tortuosity(PyHocObject*);
+        void set_volume_fraction(PyHocObject*);
         void do_multicompartment_reactions(double*);
         void initialize_multicompartment_reaction();
         void clear_multicompartment_reaction();
