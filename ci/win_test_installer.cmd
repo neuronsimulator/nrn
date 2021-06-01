@@ -21,7 +21,6 @@ echo %PYTHONPATH%
 echo %NEURONHOME%
 
 :: test all pythons
-C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
