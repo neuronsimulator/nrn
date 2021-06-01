@@ -3238,7 +3238,7 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type) {
 
     print_global_method_annotation();
     printer->start_block("void {}({})"_format(method, args));
-    if (type != BlockType::Destructor || type != BlockType::Constructor) {
+    if (type != BlockType::Destructor && type != BlockType::Constructor) {
         // We do not (currently) support DESTRUCTOR and CONSTRUCTOR blocks
         // running anything on the GPU.
         print_kernel_data_present_annotation_block_begin();
