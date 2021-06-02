@@ -48,7 +48,8 @@ void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType ty
     }
     present_clause << ')';
     printer->add_line(
-        "#pragma acc parallel loop {} async(nt->stream_id)"_format(present_clause.str()));
+        "#pragma acc parallel loop {} async(nt->stream_id) if(nt->compute_gpu)"_format(
+            present_clause.str()));
 }
 
 
@@ -143,7 +144,8 @@ void CodegenAccVisitor::print_net_send_buffering_grow() {
 void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
     if (!info.artificial_cell) {
         auto global_variable = "{}_global"_format(info.mod_suffix);
-        printer->add_line("#pragma acc data present(nt, ml, {})"_format(global_variable));
+        printer->add_line(
+            "#pragma acc data present(nt, ml, {}) if(nt->compute_gpu)"_format(global_variable));
         printer->add_line("{");
         printer->increase_indent();
     }
@@ -219,7 +221,9 @@ std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& va
     if (info.artificial_cell) {
         return variable;
     }
-    return "({}) acc_deviceptr({})"_format(type, variable);
+    return "reinterpret_cast<{}>( nt->compute_gpu ? acc_deviceptr({}) : {} )"_format(type,
+                                                                                     variable,
+                                                                                     variable);
 }
 
 
