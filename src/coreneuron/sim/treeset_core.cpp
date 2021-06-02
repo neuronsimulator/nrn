@@ -44,9 +44,14 @@ static void nrn_rhs(NrnThread* _nt) {
     }
 
     if (_nt->nrn_fast_imem) {
+        double* fast_imem_d = _nt->nrn_fast_imem->nrn_sav_d;
+        double* fast_imem_rhs = _nt->nrn_fast_imem->nrn_sav_rhs;
+#pragma acc parallel loop present(fast_imem_d [i1:i3],                         \
+                                  fast_imem_rhs [i1:i3]) if (_nt->compute_gpu) \
+    async(_nt->stream_id)
         for (int i = i1; i < i3; ++i) {
-            _nt->nrn_fast_imem->nrn_sav_rhs[i] = 0.;
-            _nt->nrn_fast_imem->nrn_sav_d[i] = 0.;
+            fast_imem_d[i] = 0.;
+            fast_imem_rhs[i] = 0.;
         }
     }
 
@@ -71,6 +76,7 @@ static void nrn_rhs(NrnThread* _nt) {
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_rhs;
+#pragma acc parallel loop present(p, vec_rhs) if (_nt->compute_gpu) async(_nt->stream_id)
         for (int i = i1; i < i3; ++i) {
             p[i] -= vec_rhs[i];
         }
@@ -144,6 +150,7 @@ static void nrn_lhs(NrnThread* _nt) {
            so here we transform so it only has membrane current contribution
         */
         double* p = _nt->nrn_fast_imem->nrn_sav_d;
+#pragma acc parallel loop present(p, vec_d) if (_nt->compute_gpu) async(_nt->stream_id)
         for (int i = i1; i < i3; ++i) {
             p[i] += vec_d[i];
         }

@@ -166,11 +166,13 @@ int nrnmpi_initialized() {
 int nrnmpi_local_rank() {
     int local_rank = 0;
 #if NRNMPI
-    MPI_Comm local_comm;
-    MPI_Comm_split_type(
-        MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, nrnmpi_myid_world, MPI_INFO_NULL, &local_comm);
-    MPI_Comm_rank(local_comm, &local_rank);
-    MPI_Comm_free(&local_comm);
+    if (nrnmpi_initialized()) {
+        MPI_Comm local_comm;
+        MPI_Comm_split_type(
+            MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, nrnmpi_myid_world, MPI_INFO_NULL, &local_comm);
+        MPI_Comm_rank(local_comm, &local_rank);
+        MPI_Comm_free(&local_comm);
+    }
 #endif
     return local_rank;
 }
@@ -184,11 +186,13 @@ int nrnmpi_local_rank() {
 int nrnmpi_local_size() {
     int local_size = 1;
 #if NRNMPI
-    MPI_Comm local_comm;
-    MPI_Comm_split_type(
-        MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, nrnmpi_myid_world, MPI_INFO_NULL, &local_comm);
-    MPI_Comm_size(local_comm, &local_size);
-    MPI_Comm_free(&local_comm);
+    if (nrnmpi_initialized()) {
+        MPI_Comm local_comm;
+        MPI_Comm_split_type(
+            MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, nrnmpi_myid_world, MPI_INFO_NULL, &local_comm);
+        MPI_Comm_size(local_comm, &local_size);
+        MPI_Comm_free(&local_comm);
+    }
 #endif
     return local_size;
 }

@@ -155,13 +155,14 @@ static NrnThreadMembList* alloc_nrn_thread_memb(int type) {
     // NrnThread arrays but there should not be many of these instances.
     int psize = corenrn.get_prop_param_size()[type];
     int dsize = corenrn.get_prop_dparam_size()[type];
-
+    int layout = corenrn.get_mech_data_layout()[type];
     tml->ml = (Memb_list*) emalloc(sizeof(Memb_list));
     tml->ml->nodecount = 1;
     tml->ml->_nodecount_padded = tml->ml->nodecount;
     tml->ml->nodeindices = nullptr;
     tml->ml->data = (double*) ecalloc(tml->ml->nodecount * psize, sizeof(double));
-    tml->ml->pdata = (Datum*) ecalloc(tml->ml->nodecount * dsize, sizeof(Datum));
+    tml->ml->pdata = (Datum*) ecalloc(nrn_soa_padded_size(tml->ml->nodecount, layout) * dsize,
+                                      sizeof(Datum));
     tml->ml->_thread = nullptr;
     tml->ml->_net_receive_buffer = nullptr;
     tml->ml->_net_send_buffer = nullptr;
