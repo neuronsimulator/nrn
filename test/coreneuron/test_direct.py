@@ -44,9 +44,7 @@ def test_direct_memory_transfer():
 
     assert(tv.eq(tvstd))
     assert(v.cl().sub(vstd).abs().max() < 1e-10) # usually v == vstd, some compilers might give slightly different results
-    # This check is disabled on GPU because fast imem is not implemented on
-    # GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
-    assert(coreneuron.gpu or i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
+    assert(i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
     assert(h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10)
 
 if __name__ == "__main__":

@@ -63,9 +63,7 @@ class Cell():
 class Network():
   def __init__(self):
     self.cells = [Cell(i) for i in range(5)]
-    # This is not supported on GPU, see:
-    # https://github.com/BlueBrain/CoreNeuron/issues/197
-    cvode.use_fast_imem(not enable_gpu)
+    cvode.use_fast_imem(True)
     # a few intrinsically firing ARTIFICIAL_CELLS with and without gids
     self.acells = [h.IntervalFire() for _ in range(8)]
     r = h.Random()
@@ -99,9 +97,7 @@ class Network():
     for sec in h.allsec():
       for seg in sec:
         d.append(seg.v)
-        # Not supported on GPU, see:
-        # https://github.com/BlueBrain/CoreNeuron/issues/197
-        if not enable_gpu: d.append(seg.i_membrane_)
+        d.append(seg.i_membrane_)
         for mech in seg:
           for var in mech:
             d.append(var[0])
