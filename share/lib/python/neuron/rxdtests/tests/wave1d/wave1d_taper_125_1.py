@@ -67,7 +67,8 @@ def set_plotshape_colormap(plotshape, cmap='jet'):
 s = h.PlotShape()
 
 s.exec_menu('Shape Plot')
-set_plotshape_colormap(s)
+if __name__ == "__main__":
+    set_plotshape_colormap(s)
 
 # show the diameters
 s.show(0)

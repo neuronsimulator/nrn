@@ -1,5 +1,4 @@
 from neuron import h, rxd
-from matplotlib import pyplot
 from math import pi
 h.load_file('stdrun.hoc')
 

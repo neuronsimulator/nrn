@@ -64,8 +64,7 @@ echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
 
 :: text rxd
-python share\lib\python\neuron\rxdtests\run_all.py
-
+python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 echo "All tests finished!"
 

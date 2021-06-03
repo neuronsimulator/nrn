@@ -1,9 +1,7 @@
 #Example copied from the RxD tutorial
 #http://www.neuron.yale.edu/neuron/static/docs/rxd/index.html
 from neuron import rxd, h, gui
-from matplotlib import pyplot
 import numpy
-pyplot.ion()
 sec = h.Section()
 sec.L=100
 sec.diam=1
@@ -79,8 +77,10 @@ for node in ip3.nodes:
 h.CVode().re_init()
 h.continuerun(1000)
 
-pyplot.plot(times,cacyt_trace,label="ca[cyt]")
-pyplot.plot(times,caer_trace,label="ca[er]")
-pyplot.plot(times,ip3_trace,label="ip3")
-pyplot.legend()
-pyplot.show()
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    pyplot.plot(times,cacyt_trace,label="ca[cyt]")
+    pyplot.plot(times,caer_trace,label="ca[er]")
+    pyplot.plot(times,ip3_trace,label="ip3")
+    pyplot.legend()
+    pyplot.show()
