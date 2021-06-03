@@ -1,6 +1,8 @@
 include:
   - project: hpc/gitlab-pipelines
     file: github-project-pipelines.gitlab-ci.yml
+  - project: hpc/gitlab-upload-logs
+    file: enable-upload.yml
 
 stages:
   - .pre
