@@ -3,14 +3,20 @@ include(NeuronTestHelper)
 set(direct_tests netstimdirect)
 set(spike_comparison_tests
     bbcore
-    conc
-    deriv
     gf
-    kin
     patstim
     vecplay
     watch
     vecevent)
+
+set(modfiles mod/Gfluct3.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
+if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
+  # These .mod files cannot be compiled with NMODL + OpenACC/GPU because of
+  # https://github.com/BlueBrain/nmodl/issues/311
+  list(APPEND modfiles mod/hhderiv.mod mod/hhkin.mod)
+  # These tests depend on the modfiles on the line above.
+  list(APPEND spike_comparison_tests conc deriv kin)
+endif()
 
 # Set the number of MPI ranks to use for each test. Assume 1 if not explicitly specified.
 set(mpi_ranks_gf 2)
@@ -45,7 +51,7 @@ foreach(test ${spike_comparison_tests})
   nrn_add_test_group(
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
-    MODFILE_PATTERNS mod/*.mod
+    MODFILE_PATTERNS ${modfiles}
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   # Set up a test that runs the simulation using NEURON.
@@ -129,7 +135,7 @@ foreach(test ${direct_tests})
   nrn_add_test_group(
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
-    MODFILE_PATTERNS mod/*.mod
+    MODFILE_PATTERNS ${modfiles}
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   nrn_add_test(
