@@ -149,7 +149,5 @@ s.scale(0, 2e-3)
 tstop=3000 
 recdt = 100
 datacol=0
-
-
-h.continuerun(tstop)
 del s
+h.continuerun(tstop)
