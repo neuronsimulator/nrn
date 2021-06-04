@@ -450,7 +450,13 @@ void CellGroup::mk_cgs_netcon_info(CellGroup* cgs) {
 // a list of voltage nodes but just to the count of instances.
 void CellGroup::mk_tml_with_art(CellGroup* cgs) {
     // copy NrnThread tml list and append ARTIFICIAL cell types
-    // but do not include PatternStim
+    // but do not include PatternStim if file mode.
+    //    For direct mode PatternStim is not treated specially except that
+    //    the Info struct is shared.
+    //    For file mode transfer PatternStim has always been treated
+    //    specially by CoreNEURON as it is not conceptually a part of
+    //    the model but is invoked via an argument when launching
+    //    CoreNEURON from the shell.
     // Now using cgs[tid].mlwithart instead of
     // tml_with_art = new NrnThreadMembList*[nrn_nthread];
     // to allow fast retrieval of type and Memb_list* given index into the vector.
@@ -466,8 +472,10 @@ void CellGroup::mk_tml_with_art(CellGroup* cgs) {
 
     for (int i = 0; i < n_memb_func; ++i) {
         if (nrn_is_artificial_[i] && memb_list[i].nodecount) {
-            // skip PatternStim
-            if (strcmp(memb_func[i].sym->name, "PatternStim") == 0) { continue; }
+            // skip PatternStim if file mode transfer.
+            if (!corenrn_direct && strcmp(memb_func[i].sym->name, "PatternStim") == 0) {
+                continue;
+            }
             if (strcmp(memb_func[i].sym->name, "HDF5Reader") == 0) { continue; }
             Memb_list* ml = memb_list + i;
             // how many artificial in each thread

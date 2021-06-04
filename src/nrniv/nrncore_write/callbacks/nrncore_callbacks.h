@@ -115,6 +115,10 @@ void core2nrn_vecplay_events();
 
 // Add the voltage indices in which PreSyn.flag_ == true to the set.
 void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true);
+
+// Direct transfer with respect to PatternStim
+void nrn2core_patternstim(void** info);
+
 } // end of extern "C"
 
 static core2nrn_callback_t cnbs[]  = {
@@ -155,6 +159,9 @@ static core2nrn_callback_t cnbs[]  = {
         {"core2nrn_SelfEvent_event_", (CNB)core2nrn_SelfEvent_event},
         {"core2nrn_SelfEvent_event_noweight_", (CNB)core2nrn_SelfEvent_event_noweight},
         {"core2nrn_PreSyn_flag_", (CNB)core2nrn_PreSyn_flag},
+
+        {"nrn2core_patternstim_", (CNB)nrn2core_patternstim},
+
         {NULL, NULL}
 };
 

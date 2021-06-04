@@ -801,7 +801,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         
         double* data = pnt->prop->param;
         Memb_list* ml = nt._ml_list[type];
-        // Introduced the public static method below because ARTIFICIAL_CELL are
+        // Introduced the public static method below because ARTIFICIAL_CELL
         // are not located in NrnThread and are not cache efficient.
         int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
         core_te->intdata.push_back(index);
@@ -831,7 +831,6 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       case HocEventType: { // 5
       } break;
       case PlayRecordEventType: { // 6
-printf("PlayRecordEvent %g\n", tdeliver);
       } break;
       case NetParEventType: { // 7
       } break;
@@ -1052,4 +1051,25 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
             // WATCH event needs to be triggere on the next threshold check.
         }
     }
+}
+
+// nrn<->corenrn PatternStim
+
+extern "C" { void* nrn_patternstim_info_ref(Datum*); }
+static int patternstim_type;
+
+// Info from NEURON PatternStim at beginning of psolve.
+void nrn2core_patternstim(void** info) {
+  if (!patternstim_type) {
+    for (int i = 3; i < n_memb_func; ++i) {
+      if (strcmp(memb_func[i].sym->name, "PatternStim") == 0) {
+        patternstim_type = i;
+        break;
+      }
+    }
+  }
+
+  Memb_list& ml = memb_list[patternstim_type];
+  assert(ml.nodecount == 1);
+  *info = nrn_patternstim_info_ref(ml.pdata[0]);
 }
