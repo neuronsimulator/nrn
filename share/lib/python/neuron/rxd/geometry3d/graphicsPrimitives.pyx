@@ -25,7 +25,7 @@ cdef extern from "math.h":
 #cdef double min(double a, double b):
 #    return a if a < b else b
 
-cdef class Complement:
+cpdef class Complement:
     def __init__(self, obj):
         self.obj = obj
     def __repr__(self):
@@ -38,7 +38,7 @@ cdef class Complement:
         def __get__(self): return [self.obj]
 
 
-cdef class Union:
+cpdef class Union:
     cdef list objects
     def __init__(self, list objects):
         self.objects = objects
@@ -60,7 +60,7 @@ cdef class Union:
         def __get__(self): return sum([obj.primitives for obj in self.objects], [])
 
 
-cdef class Intersection:
+cpdef class Intersection:
     cdef list objects
     def __init__(self, list objects):
         self.objects = objects
@@ -83,7 +83,7 @@ cdef class Intersection:
 
 
 
-cdef class Plane:
+cpdef class Plane:
     cdef double d, mul, nx, ny, nz, px, py, pz
     def __init__(self, double px, double py, double pz, double nx, double ny, double nz):
         """(px, py, pz) -- a point; (nx, ny, nz) -- the normal vector"""
@@ -105,7 +105,7 @@ cdef class Plane:
         return [(bisect.bisect_left(xs, self.px), bisect.bisect_left(ys, self.py), bisect.bisect_left(zs, self.pz))]
 
 
-cdef class Sphere:
+cpdef class Sphere:
     cdef double _x, _y, _z, _r
     cdef _xlo, _xhi, _ylo, _yhi, _zlo, _zhi
     cdef list clips
@@ -165,7 +165,7 @@ cdef class Sphere:
 
 
 
-cdef class Cylinder:
+cpdef class Cylinder:
     cdef double cx, cy, cz, r, rr, axisx, axisy, axisz, x0, y0, z0, x1, y1, z1, h
     cdef double length, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi
     cdef list neighbors, clips, neighbor_regions
@@ -311,7 +311,7 @@ cdef class Cylinder:
 
 
 
-cdef class SphereCone:
+cpdef class SphereCone:
     cdef double x0, y0, z0, r0, x1, y1, z1, r1, rra, rrb, axisx, axisy, axisz, conelength, side1, side2
     cdef double length, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi, ha, hb, hra, hrb
     cdef list clips
@@ -416,7 +416,7 @@ cdef class SphereCone:
 
 
 
-cdef class Cone:
+cpdef class Cone:
     cdef double x0, y0, z0, r0, x1, y1, z1, r1, rra, rrb, axisx, axisy, axisz, conelength, side1, side2
     cdef double length, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi, cx, cy, cz, h
     cdef list neighbors, clips, neighbor_regions
@@ -601,7 +601,7 @@ cdef class Cone:
         return lo <= self._zhi and hi >= self._zlo
 
 
-cdef class SkewCone:
+cpdef class SkewCone:
     cdef double x0, y0, z0, r0, x1, y1, z1, r1, rra, rrb, axisx, axisy, axisz, conelength, side1, side2
     cdef double length, _xlo, _xhi, _ylo, _yhi, _zlo, _zhi, sx, sy, sz, planed
     property _x0:
