@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 import numpy
 import __main__
 name = __main__.__file__

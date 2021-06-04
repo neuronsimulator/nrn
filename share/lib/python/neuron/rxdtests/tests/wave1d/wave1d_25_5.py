@@ -144,4 +144,4 @@ recdt = 100
 datacol=0
 tstop=1500
 h.continuerun(tstop)
-
+del s

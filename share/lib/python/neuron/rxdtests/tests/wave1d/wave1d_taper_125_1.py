@@ -146,3 +146,4 @@ tstop=3000
 recdt = 100
 datacol=0
 h.continuerun(tstop)
+del s
