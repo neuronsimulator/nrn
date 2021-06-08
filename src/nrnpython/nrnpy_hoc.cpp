@@ -19,15 +19,8 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-#if !defined(NRNCMAKE) && defined(__MINGW32__) && NRNPYTHON_DYNAMICLOAD > 0
-// want to end up with a string like "hoc36"
-#define HOCMOD_1(s) HOCMOD_2(s)
-#define HOCMOD_2(s) #s
-#define HOCMOD "hoc" HOCMOD_1(NRNPYTHON_DYNAMICLOAD)
-#else
 // TODO: didn't enable dynamic load and end up with error if below is not a string
 #define HOCMOD "hoc"
-#endif
 
 extern PyTypeObject* psection_type;
 
@@ -73,7 +66,7 @@ extern void hoc_unref_defer();
 extern void sec_access_push();
 extern PyObject* nrnpy_pushsec(PyObject*);
 extern bool hoc_valid_stmt(const char*, Object*);
-myPyMODINIT_FUNC nrnpy_nrn();
+PyObject* nrnpy_nrn();
 extern PyObject* nrnpy_cas(PyObject*, PyObject*);
 extern PyObject* nrnpy_forall(PyObject*, PyObject*);
 extern PyObject* nrnpy_newsecobj(PyObject*, PyObject*, PyObject*);
@@ -357,6 +350,16 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     } else if (is_python_string(po)) {
       char** ts = hoc_temp_charptr();
       Py2NRNString str(po, /* disable_release */ true);
+      if (str.err()) {
+        // Since Python error has been set, need to clear, or hoc_execerror
+        // printing with nrnpy_pr will generate a
+        // Exception ignored on calling ctypes callback function.
+        // So get the message, clear, and make the message
+        // part of the execerror.
+        *ts = str.get_pyerr();
+        s2free.push_back(*ts);
+        hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s", *ts);
+      }
       *ts = str.c_str();
       s2free.push_back(*ts);
       hoc_pushstr(ts);
@@ -397,7 +400,9 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
 static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
   std::vector<char*>::iterator it = s2free.begin();
   for (; it != s2free.end(); ++it) {
-    free(*it);
+    if (*it) {
+      free(*it);
+    }
   }
 }
 
@@ -939,10 +944,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   Py2NRNString name(pyname);
   char* n = name.c_str();
   if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     return NULL;
   }
-  // printf("hocobj_getattr %s\n", n);
 
   Symbol* sym = getsym(n, self->ho_, 0);
   if (!sym) {
@@ -1311,7 +1315,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
   Py2NRNString name(pyname);
   char* n = name.c_str();
   if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     return -1;
   }
   // printf("hocobj_setattro %s\n", n);
@@ -1972,6 +1976,11 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
       result->type_ = PyHoc::HocRefStr;
       result->u.s_ = 0;
       Py2NRNString str(pa);
+      if (str.err()) {
+        str.set_pyerr(PyExc_TypeError, "string arg must have only ascii characters");
+        Py_XDECREF(result);
+        return NULL;
+      }
       char* cpa = str.c_str();
       hoc_assign_str(&result->u.s_, cpa);
     } else {
@@ -2021,8 +2030,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       }
       Py2NRNString str(name);
       char* n = str.c_str();
-      if (!n) {
-        goto done;
+      if (str.err()) {
+        str.set_pyerr(PyExc_TypeError, "POINTER name can contain only ascii characters");
+        return NULL;
       }
       Symbol* sym = getsym(n, hpp->ho_, 0);
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
@@ -2829,11 +2839,7 @@ static PyObject* py_hocobj_div(PyObject* obj1, PyObject* obj2) {
 }
 static PyMemberDef hocobj_members[] = {{NULL, 0, 0, 0, NULL}};
 
-#if (PY_MAJOR_VERSION >= 3)
-#include "nrnpy_hoc_3.h"
-#else
-#include "nrnpy_hoc_2.h"
-#endif
+#include "nrnpy_hoc.h"
 
 // Figure out the endian-ness of the system, and return
 // 0 (error), '<' (little endian) or '>' (big endian)
@@ -2965,6 +2971,10 @@ static char* nrncore_arg(double tstop) {
           if (arg) {
             Py2NRNString str(arg);
             Py_DECREF(arg);
+            if (str.err()) {
+              str.set_pyerr(PyExc_TypeError, "neuron.coreneuron.nrncore_arg() must return an ascii string");
+              return NULL;
+            }
             if (strlen(str.c_str()) > 0) {
               return strdup(str.c_str());
             }
@@ -2979,7 +2989,7 @@ static char* nrncore_arg(double tstop) {
   return NULL;
 }
 
-myPyMODINIT_FUNC nrnpy_hoc() {
+PyObject* nrnpy_hoc() {
   PyObject* m;
   nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
   nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
@@ -2999,7 +3009,6 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 
   char endian_character = 0;
 
-#if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
 #if defined(__MINGW32__)
@@ -3010,20 +3019,9 @@ myPyMODINIT_FUNC nrnpy_hoc() {
     return m;
   }
   m = PyModule_Create(&hocmodule);
-#else // PY_MAJOR_VERSION
-#if defined(__MINGW32__)
-  m = Py_InitModule3(HOCMOD, HocMethods, "HOC interaction with Python");
-#else
-  m = Py_InitModule3("hoc", HocMethods, "HOC interaction with Python");
-#endif // __MINGW32__
-#endif // PY_MAJOR_VERSION
   assert(m);
   Symbol* s = NULL;
-#if PY_MAJOR_VERSION >= 3
   hocobject_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_HocObjectType_spec);
-#else
-  hocobject_type = &nrnpy_HocObjectType;
-#endif
   if (PyType_Ready(hocobject_type) < 0) goto fail;
   Py_INCREF(hocobject_type);
   // printf("AddObject HocObject\n");
@@ -3069,15 +3067,10 @@ myPyMODINIT_FUNC nrnpy_hoc() {
 
   // Setup bytesize in typestr
   snprintf(array_interface_typestr + 2, 3, "%ld", sizeof(double));
-#if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "hoc", m);
   assert(err == 0);
 //  Py_DECREF(m);
   return m;
 fail:
   return NULL;
-#else
-fail:
-  return;
-#endif
 }

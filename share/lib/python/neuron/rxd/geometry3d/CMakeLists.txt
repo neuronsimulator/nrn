@@ -6,8 +6,8 @@
 #
 # Because of problems building modules with MINGW containing Cython
 # generated files, the cpp files are consumed to make modules from here,
-# just as with the autotools strategy, so that these modules can be
-# built with the msvc toolchain. Maybe someday the src/nrnpython/setup.py
+# so that these modules can be built with the msvc toolchain.
+# Maybe someday the src/nrnpython/setup.py
 # can build all the extension modules for windows.
 #
 # Following set in src/nrnpython/CMakeLists.txt should be made global.
@@ -34,10 +34,8 @@ if(NRN_ENABLE_RX3D
    AND NRN_ENABLE_MODULE_INSTALL
    AND NRN_ENABLE_PYTHON)
   # ~~~
-  # After many failures, now following the autotools Makefile.am details.
-  # ie. for MINGW, python3 uses msvc and python2 uses mingw32
-  # The latter needs changes to the cpp files and to rerun gcc build of
-  # the dll. The following shell script carries out the craziness when
+  # For MINGW, python3 uses msvc
+  # The following shell script carries out the craziness when
   # ${pyexe} setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}
   # may not be enough
   # ~~~
@@ -76,13 +74,6 @@ if test x$mingw = x1 ; then\n\
   if test x$pyver = x3 ; then # python3.x builds with msvc\n\
     . ${PROJECT_SOURCE_DIR}/mingw_files/vcenv.sh\n\
     $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\
-  else # python2.7 builds with gcc\n\
-    $pyexe setup.py build_ext -c mingw32 -D MS_WIN64 --build-lib=${NRN_PYTHON_BUILD_LIB} > temp27\n\
-    # the gcc commands containing -shared need to be rerun with \\ as / and get rid of -lmsvcr90\n\
-    if grep '\\-shared.*\\-lmsvcr90' temp27 ; then\n\
-      grep '\\-shared' temp27 | sed 's,\\\\,/,g' | sed 's,\\-lmsvcr90,,' > temp27x\n\
-      sh temp27x\n\
-    fi\n\
   fi\n\
 else #mac/linux does not need anything special\n\
   $pyexe setup.py build_ext --build-lib=${NRN_PYTHON_BUILD_LIB}\n\

@@ -29,7 +29,16 @@ foreach(link_lib ${NRN_LINK_LIBS})
   endif()
 
   get_filename_component(dir_path ${link_lib} DIRECTORY)
-  if(NOT dir_path)
+  if(TARGET ${link_lib})
+    message(NOTICE "Using Target in compiling and linking, you should take care of it if
+                    it fail miserabily (CODE: 1234567890)")
+    get_property(link_flag TARGET ${link_lib} PROPERTY INTERFACE_LINK_LIBRARIES)
+    string(APPEND NRN_LINK_DEFS ${link_flag})
+    # Not use it yet because it can be generator expressions
+    # get_property(compile_flag TARGET ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS)
+    # string(APPEND NRN_COMPILE_DEFS ${compile_flag})
+    continue()
+  elseif(NOT dir_path)
     string(APPEND NRN_LINK_DEFS " -l${link_lib}")
   # avoid library paths from special directory /nrnwheel which
   # used to build wheels under docker container
@@ -42,10 +51,7 @@ foreach(link_lib ${NRN_LINK_LIBS})
     string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
     string(APPEND NRN_LINK_DEFS " -l${libname_wle}")
   else()
-    string(APPEND NRN_LINK_DEFS " ${link_lib}")
-    if(NRN_ENABLE_BINARY_SPECIAL)
-      string(APPEND NRN_LINK_DEFS " -Wl,-rpath,${dir_path}")
-    endif()
+    string(APPEND NRN_LINK_DEFS " ${link_lib} -Wl,-rpath,${dir_path}")
   endif()
 endforeach()
 

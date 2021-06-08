@@ -306,6 +306,10 @@ static int NPySecObj_init(NPySecObj* self, PyObject* args, PyObject* kwds) {
         }
         Py2NRNString str(cell);
         Py_DECREF(cell);
+        if (str.err()) {
+          str.set_pyerr(PyExc_TypeError, "cell name contains non ascii character");
+          return -1;
+        }
         char* cp = str.c_str();
         n += strlen(cp) + 1; // include dot
         self->name_ = new char[n];
@@ -1532,8 +1536,8 @@ static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
-  if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+  if (name.err()) {
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return NULL;
   }
@@ -1589,8 +1593,8 @@ static int section_setattro(NPySecObj* self, PyObject* pyname,
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
-  if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+  if (name.err()) {
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return -1;
   }
@@ -1715,8 +1719,8 @@ static PyObject* segment_getattro(NPySegObj* self, PyObject* pyname) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
-  if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+  if (name.err()) {
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return NULL;
   }
@@ -1850,8 +1854,8 @@ static int segment_setattro(NPySegObj* self, PyObject* pyname,
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
-  if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+  if (name.err()) {
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return -1;
   }
@@ -1937,7 +1941,7 @@ static PyObject* mech_getattro(NPyMechObj* self, PyObject* pyname) {
   Py2NRNString name(pyname);
   char* n = name.c_str();
   if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return NULL;
   }
@@ -1998,8 +2002,8 @@ static int mech_setattro(NPyMechObj* self, PyObject* pyname, PyObject* value) {
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
   char* n = name.c_str();
-  if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+  if (name.err()) {
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     Py_DECREF(pyname);
     return -1;
   }
@@ -2281,11 +2285,7 @@ static PyMethodDef nrnpy_methods[] = {
      "Specify the nrn.Section.psection callback."},
     {NULL}};
 
-#if PY_MAJOR_VERSION >= 3
-#include "nrnpy_nrn_3.h"
-#else
-#include "nrnpy_nrn_2.h"
-#endif
+#include "nrnpy_nrn.h"
 
 static PyObject* nrnmodule_;
 
@@ -2299,33 +2299,22 @@ static void rangevars_add(Symbol* sym) {
   PyDict_SetItemString(rangevars_, sym->name, (PyObject*)r);
 }
 
-myPyMODINIT_FUNC nrnpy_nrn(void) {
+PyObject* nrnpy_nrn(void) {
   int i;
   PyObject* m;
 
-#if PY_MAJOR_VERSION >= 3
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
   if ((m = PyDict_GetItemString(modules, "nrn")) != NULL && PyModule_Check(m)) {
     return m;
   }
-#endif
-#if PY_MAJOR_VERSION >= 3
   psection_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_SectionType_spec);
-#else
-  psection_type = &nrnpy_SectionType;
-#endif
   psection_type->tp_new = PyType_GenericNew;
   if (PyType_Ready(psection_type) < 0) goto fail;
   Py_INCREF(psection_type);
 
-#if PY_MAJOR_VERSION >= 3
   pallseg_of_sec_iter_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_AllSegOfSecIterType_spec);
   pseg_of_sec_iter_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_SegOfSecIterType_spec);
-#else
-  pallseg_of_sec_iter_type = &nrnpy_AllSegOfSecIterType;
-  pseg_of_sec_iter_type = &nrnpy_SegOfSecIterType;
-#endif
   pallseg_of_sec_iter_type->tp_new = PyType_GenericNew;
   pseg_of_sec_iter_type->tp_new = PyType_GenericNew;
   if (PyType_Ready(pallseg_of_sec_iter_type) < 0) goto fail;
@@ -2333,11 +2322,7 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   Py_INCREF(pallseg_of_sec_iter_type);
   Py_INCREF(pseg_of_sec_iter_type);
 
-#if PY_MAJOR_VERSION >= 3
   psegment_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_SegmentType_spec);
-#else
-  psegment_type = &nrnpy_SegmentType;
-#endif
   psegment_type->tp_new = PyType_GenericNew;
   if (PyType_Ready(psegment_type) < 0) goto fail;
   if (PyType_Ready(pallseg_of_sec_iter_type) < 0) goto fail;
@@ -2346,46 +2331,27 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   Py_INCREF(pallseg_of_sec_iter_type);
   Py_INCREF(pseg_of_sec_iter_type);
 
-#if PY_MAJOR_VERSION >= 3
   range_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_RangeType_spec);
-#else
-  range_type = &nrnpy_RangeType;
-#endif
   range_type->tp_new = PyType_GenericNew;
   if (PyType_Ready(range_type) < 0) goto fail;
   Py_INCREF(range_type);
 
-#if PY_MAJOR_VERSION >= 3
   m = PyModule_Create(
       &nrnsectionmodule);  // like nrn but namespace will not include mechanims.
-#else
-  m = Py_InitModule3("_neuron_section", nrnpy_methods,
-                     "NEURON interaction with Python");
-#endif
   PyModule_AddObject(m, "Section", (PyObject*)psection_type);
   PyModule_AddObject(m, "Segment", (PyObject*)psegment_type);
 
-#if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "_neuron_section", m);
   assert(err == 0);
   Py_DECREF(m);
   m = PyModule_Create(&nrnmodule);  //
-#else
-  m = Py_InitModule3("nrn", nrnpy_methods, "NEURON interaction with Python");
-#endif
   nrnmodule_ = m;
   PyModule_AddObject(m, "Section", (PyObject*)psection_type);
   PyModule_AddObject(m, "Segment", (PyObject*)psegment_type);
 
-#if PY_MAJOR_VERSION >= 3
   pmech_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_MechanismType_spec);
   pmech_of_seg_iter_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_MechOfSegIterType_spec);
   pvar_of_mech_iter_generic_type = (PyTypeObject*)PyType_FromSpec(&nrnpy_VarOfMechIterType_spec);
-#else
-  pmech_generic_type = &nrnpy_MechanismType;
-  pmech_of_seg_iter_generic_type = &nrnpy_MechOfSegIterType;
-  pvar_of_mech_iter_generic_type = &nrnpy_VarOfMechIterType;
-#endif
   pmech_generic_type->tp_new = PyType_GenericNew;
   pmech_of_seg_iter_generic_type->tp_new = PyType_GenericNew;
   pvar_of_mech_iter_generic_type->tp_new = PyType_GenericNew;
@@ -2409,17 +2375,12 @@ myPyMODINIT_FUNC nrnpy_nrn(void) {
   nrnpy_pysec_cell_p_ = pysec_cell;
   nrnpy_pysec_cell_equals_p_ = pysec_cell_equals;
 
-#if PY_MAJOR_VERSION >= 3
   err = PyDict_SetItemString(modules, "nrn", m);
   assert(err == 0);
   Py_DECREF(m);
   return m;
 fail:
   return NULL;
-#else
-fail:
-  return;
-#endif
 }
 
 void remake_pmech_types() {

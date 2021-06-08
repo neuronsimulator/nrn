@@ -14,7 +14,7 @@
 #include <assert.h>
 
 #define COLLECT_TQueue_STATISTICS 1
-struct SPTREE;
+template<typename T> struct SPTREE;
 class TQItemPool;
 
 class TQItem {
@@ -96,7 +96,7 @@ public:
 private:
 	double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
 	void move_least_nolock(double tnew);
-	SPTREE* sptree_;
+	SPTREE<TQItem>* sptree_;
 	BinQ* binq_;
 	TQItem* least_;
 	TQItemPool* tpool_;

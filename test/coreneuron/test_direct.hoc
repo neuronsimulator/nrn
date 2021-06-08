@@ -64,9 +64,7 @@ proc test_direct_memory_transfer() { localobj po, pc, ic, tv, vvec, i_mem, tvstd
     // compare results
     result1 = tv.eq(tvstd)
     result2 = vvec.cl().sub(vstd).abs().max() < 1e-10
-    // This check is disabled on GPU because fast imem is not implemented on
-    // GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
-    result3 = po.coreneuron.gpu || i_mem.cl().sub(i_memstd).abs().max() < 1e-10
+    result3 = i_mem.cl().sub(i_memstd).abs().max() < 1e-10
     result  = result1 && result2 && result3
     print(result1)
     print(result2)

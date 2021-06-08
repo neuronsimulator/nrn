@@ -5,8 +5,6 @@ from distutils.sysconfig import get_python_version
 import sys
 import os
 
-@USING_CMAKE_TRUE@using_cmake=True
-@USING_CMAKE_FALSE@using_cmake=False
 @USING_PGI_COMPILER_TRUE@using_pgi=True
 @USING_PGI_COMPILER_FALSE@using_pgi=False
 @BUILD_MINGW_TRUE@mingw = 1
@@ -16,7 +14,7 @@ import os
 # When running with mingw-cmake, the path of the form C:/msys64/xyz
 # needs to be transformed to C:\msys64/xyz.
 def get_escaped_path(path):
-  if using_cmake and mingw:
+  if mingw:
     return path.replace(":/", ":\\")
   else:
     return path
@@ -26,7 +24,7 @@ extern_defines = "@NRNPYTHON_DEFINES@"
 nrnpython_exec = get_escaped_path("@NRNPYTHON_EXEC@")
 nrnpython_pyver = "@NRNPYTHON_PYVER@"
 nrnpython_pyver10 = "nrnpython"
-@USING_CMAKE_TRUE@use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
+use_libnrnpython_majorminor = @USE_LIBNRNPYTHON_MAJORMINOR@
 nrn_srcdir = get_escaped_path("@NRN_SRCDIR@")
 build_rx3d = @BUILD_RX3D@
 ivlibdir = get_escaped_path("@IV_LIBDIR@")
@@ -37,18 +35,16 @@ destdir = os.getenv("DESTDIR")
 if not destdir:
   destdir = ""
 
-# autoconf install module in install prefix for cmake we install
-# into build directory and then copy to install prefix
-@USING_CMAKE_FALSE@instdir = destdir + get_escaped_path("@prefix@")
-@USING_CMAKE_TRUE@instdir = destdir + get_escaped_path("@CMAKE_BINARY_DIR@")
+# install into build directory and then copy to install prefix
+instdir = destdir + get_escaped_path("@CMAKE_BINARY_DIR@")
 
 if nrn_srcdir[0] != '/' :
-  if using_cmake and mingw:
+  if mingw:
     nrn_srcdir = nrn_srcdir
   else:
     nrn_srcdir = '../../' + nrn_srcdir
 
-if using_cmake and "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
+if "@BUILD_NRNPYTHON_DYNAMIC_TRUE@" == "":
   # can do all the setup.py without re-configure.
   nrnpython_pyver = get_python_version()
   nrnpython_exec = sys.executable
@@ -119,8 +115,6 @@ include_dirs_common = []
 #@MAC_DARWIN_TRUE@include_dirs_common.append("@CMAKE_OSX_SYSROOT@/usr/include")
 
 defines = []
-if using_cmake:
-    defines.append(("NRNCMAKE", "1"))
 
 libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
   ivlibdir
@@ -133,7 +127,7 @@ extra_rpath_flags = [rpath_prefix_flag+lib_path for lib_path in libdirs]
 # as neuron module will be built during make, add build/lib
 # directory for linking. Note that build/lib shouldn't be
 # added to rpath to avoid issues with dlopen.
-@USING_CMAKE_TRUE@libdirs.append(destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"))
+libdirs.append(destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"))
 
 @MAC_DARWIN_FALSE@readline="readline@READLINE_SOSUFFIX@"
 @MAC_DARWIN_TRUE@readline="readline@READLINE_SOSUFFIX@"
@@ -141,14 +135,13 @@ extra_rpath_flags = [rpath_prefix_flag+lib_path for lib_path in libdirs]
 pgi_compiler_flags = "-noswitcherror"
 
 extra_link_args = []
-if using_cmake:
-  libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
-    "nrniv"
-  ]
-  if "@IVHINES@" != "":
+libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
+"nrniv"
+]
+if "@IVHINES@" != "":
     libs.append("@IVHINES@")
-  extra_link_args.append("-Wl,-rpath,@loader_path/../../")
-  extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
+extra_link_args.append("-Wl,-rpath,@loader_path/../../")
+extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
 extra_compile_args = []
 
@@ -165,17 +158,9 @@ hoc_module = Extension(
     @setup_extra_link_args@ = extra_rpath_flags,
     #extra_objects = [],
     extra_compile_args = extra_compile_args,
-    libraries = libs if using_cmake else [
-        "nrnpython@npy_pyver10@",
-        "nrnoc", "oc", "nrniv", "ivoc",
-        @BUILD_MEMACS_TRUE@"memacs", readline,
-        "meschach", "neuron_gnu",
-        @BUILD_NRNMPI_DYNAMIC_FALSE@"nrnmpi",
-        "scopmath", "sparse13", "sundials",
-        "@IVHINES@",
-      ],
-      include_dirs = include_dirs+include_dirs_common,
-      define_macros=defines
+    libraries = libs ,
+    include_dirs = include_dirs+include_dirs_common,
+    define_macros=defines
     )
 
 # specify that the data_files paths are relative to same place as python files
@@ -196,7 +181,7 @@ ext_modules = [hoc_module]
 # may be done with the msvc toolchain. Note, although the extensions are not
 # built here, the python files are copied because of the call to setup here.
 
-if not using_cmake and build_rx3d:
+if build_rx3d:
   try:
     import numpy
     # TODO: do we need to use os.path.join?
@@ -205,8 +190,7 @@ if not using_cmake and build_rx3d:
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
     include_dirs += include_dirs_common
     extra_compile_args=["-O0"] # minimize compile time
-    if using_cmake:
-      extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"]
+    extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"]
     if using_pgi:
       extra_compile_args.append(pgi_compiler_flags)
     define_macros = []

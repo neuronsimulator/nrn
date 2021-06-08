@@ -15,7 +15,6 @@ of struct _spblk, we are really using TQItem
 #include <stdarg.h>
 #include <section.h>
 
-#define SPBLK TQItem
 #define leftlink left_
 #define rightlink right_
 #define uplink parent_
@@ -61,7 +60,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
 	MUTCONSTRUCT(mkmut)
 	tpool_ = tp;
 	nshift_ = 0;
-	sptree_ = new SPTREE;
+	sptree_ = new SPTREE<TQItem>;
 	spinit(sptree_);
 	binq_ = new BinQ;
 	least_ = 0;
@@ -73,7 +72,7 @@ TQueue::TQueue(TQItemPool* tp, int mkmut) {
 }
 
 TQueue::~TQueue() {
-	SPBLK* q, *q2;
+    TQItem* q, *q2;
 	while((q = spdeq(&sptree_->root)) != nil) {
 		deleteitem(q);
 	}
@@ -97,7 +96,7 @@ void TQueue::print() {
 		prnt(least_, 0);
 	}
 #endif
-	spscan(prnt, nil, sptree_);
+    spscan(prnt, static_cast<TQItem*>(nil), sptree_);
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		prnt(q, 0);
 	}
@@ -111,7 +110,7 @@ void TQueue::forall_callback(void(*f)(const TQItem*, int)) {
 		f(least_, 0);
 	}
 #endif
-	spscan(f, nil, sptree_);
+	spscan(f, static_cast<TQItem*>(nil), sptree_);
 	for (TQItem* q = binq_->first(); q; q = binq_->next(q)) {
 		f(q, 0);
 	}
@@ -384,8 +383,3 @@ void BinQ::remove(TQItem* q) {
 		}
 	}
 }
-
-#include <spaux.cpp>
-#include <sptree.cpp>
-#include <spdaveb.cpp>
-

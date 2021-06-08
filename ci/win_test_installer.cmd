@@ -21,7 +21,6 @@ echo %PYTHONPATH%
 echo %NEURONHOME%
 
 :: test all pythons
-C:\Python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -43,13 +42,8 @@ mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || set "errorfound=y"
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || set "errorfound=y"
 
 :: test of association with hoc files
-del temp.txt
-echo wopen("temp.txt") > .\temp.hoc
-echo fprint("hello\n") >> .\temp.hoc
-echo wopen() >> .\temp.hoc
-echo quit() >> .\temp.hoc
-start .\temp.hoc
-ping -n 10 127.0.0.1
+start %cd%\ci\association.hoc
+ping -n 15 127.0.0.1
 cat temp.txt
 findstr /i "^hello$" temp.txt || set "errorfound=y"
 

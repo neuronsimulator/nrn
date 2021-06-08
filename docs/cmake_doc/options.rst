@@ -1,9 +1,8 @@
 Introduction
 ============
 The NEURON build system now uses cmake as of version 7.8 circa Nov 2019.
-The previous autotools (./configure) build system is still supported for
-the time being but any features that use submodules would need to build
-those separately.
+The previous autotools (./configure) build system has been removed after
+8.0 release.
 
 .. code-block:: shell
 
@@ -20,8 +19,7 @@ This is often very much faster than a single process make. One can add a number
 after the ``-j`` (e.g. ``make -j 6``) to specify the maximum number of processes
 to use. This can be useful if there is the possibility of running out of memory.
 
-Sadly, there is no equivalent in cmake to the autotool's ``./configure --help``
-to list all the options. The closest is
+You can list CMake options with
 ``cmake .. -LH``
 which runs ``cmake ..`` as above and lists the cache variables along with help
 strings which are not marked as INTERNAL or ADVANCED. Alternatively,
@@ -211,7 +209,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python2.7;python3.6;python3.7;python3.8"
+    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -457,20 +455,6 @@ NRN_ENABLE_THREADS:BOOL=ON
 NRN_USE_REL_RPATH=OFF
 ---------------------
   Turned on when creating python wheels.  
-
-NRN_ENABLE_BINARY_SPECIAL:BOOL=OFF
-----------------------------------
-  Build binary special  
-
-  nrnivmodl by default creates shell script called 'special' which runs nrniv and specifies the argument
-  ``-dll /path/to/libnrnmech.so`` or whatever the name is of the shared library created by nrnivmodl.
-  This option forces nrnivmodl to create a binary version of special that can be run, for example, with gdb or valgrind.
-
-  It is not often needed as nrniv has a ``-dll <path/to/libnrnmech.so>`` option.
-  Also by default, if the current working directory on launch has a folder named
-  ``x86_64`` (or whatever the CPU happens to be), the nrnmech library in that
-  folder will be automatically loaded.
-
 
 NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
 -------------------------------------

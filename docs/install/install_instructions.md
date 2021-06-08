@@ -14,9 +14,9 @@ or recent releases from below URLs:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-Windows installers have name in the format of `nrn-<version-id>-mingw-py-27-36-37-38-39-setup.exe`.
-The `py-27-36-37-38-39` string in the installer name indicates that the given installer is compatible
-with Python versions 2.7, 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
+Windows installers have name in the format of `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
+The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
+with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
 if python support is required. You can find detailed step-by-step instructions in [this presentation]
 (https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
@@ -30,7 +30,7 @@ pip3 install neuron
 ```
 
 Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
-wheels are provided for the 8.0 release only.
+wheels are provided for the 8.0.x release series exclusively.
 
 Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
 releases from below URLs:
@@ -38,9 +38,9 @@ releases from below URLs:
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-Mac OS installers have name in the format of `nrn-<version-id>-osx-27-36-37-38-39.pkg`. Like windows
-installer, `py-27-36-37-38-39` string in the installer name indicates that the given installer is
-compatible with Python versions 2.7, 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
+Mac OS installers have name in the format of `nrn-<version-id>-osx-36-37-38-39.pkg`. Like windows
+installer, `py-36-37-38-39` string in the installer name indicates that the given installer is
+compatible with Python versions 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
@@ -58,7 +58,7 @@ Like Mac OS, since 7.8.1 release python wheels are provided and you can use `pip
 pip3 install neuron
 ```
 
-Note that Python2 wheels are provided only for the 8.0 release. Also, we are not providing .rpm or .deb
+Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
 
 ## Installing Source Distributions
@@ -68,19 +68,6 @@ If you are running NEURON in cluster/HPC environment where you would like to hav
 from source. Note that to use CoreNEURON with optimised CPU/GPU support, you have to install NEURON
 from source.
 
-Currently, we are supporting two build systems:
-
-- [CMake](#build-cmake) (__recommended__)
-- [Autotools](#build-autotools) (legacy, minimum support - __will be DROPPED in the next release__)
-
-Note that starting with the 8.0 release, CMake is used as the primary build system for NEURON.
-We would be grateful for any feedback or issues you encounter using the CMake-based build system.
-Please [report any issue here](https://github.com/neuronsimulator/nrn/issues) and we will be
-happy to help.
-In addition to the instructions below, you can find up to date build scripts for different platforms in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
-
-**If you are using autotools, we strongly recommend switching to CMake as of now.**
-
 ### Install Build Dependencies
 
 In order to build NEURON from source, the following packages must be available:
@@ -88,11 +75,11 @@ In order to build NEURON from source, the following packages must be available:
 - Bison
 - Flex
 - C/C++ compiler suite
-- CMake 3.8 or Autotools
+- CMake 3.8.2
 
 The following packages are optional (see build options):
 
-- Python >=2.7, or Python >=3.5 (for Python interface)
+- Python >=3.5 (for Python interface)
 - Cython (for RXD)
 - MPI (for parallel)
 - X11 (Linux) or XQuartz (MacOS) (for GUI)
@@ -170,8 +157,6 @@ sudo apt-get install -y bison cmake flex git \
      libxcomposite-dev openmpi-bin python3-dev
 # for python dependencies
 pip install scipy numpy cython
-# for autotools based installation only
-sudo apt-get install -y automake libtool make
 ```
 
 We recommend using platform specific instructions provided in [nrn-build-ci](https://github.com/neuronsimulator/nrn-build-ci#scheduled-ci-builds-for-neuron) repository.
@@ -237,7 +222,6 @@ Particularly useful CMake options are (use **ON** to enable and **OFF** to disab
 * **-DPYTHON\_EXECUTABLE=/python/binary/path** : Use provided Python binary to build Python interface
 * **-DCMAKE_INSTALL_PREFIX=/install/dir/path** : Location for installing
 * **-DCORENRN\_ENABLE\_NMODL=ON** : Use [NMODL](https://github.com/BlueBrain/nmodl/) instead of [MOD2C](https://github.com/BlueBrain/mod2c/) for code generation with CoreNEURON
-* **-DNRN\_ENABLE\_BINARY_SPECIAL=ON** : Build special as a binary instead of shell script
 
 Please refer to [docs/cmake_doc/options.rst](docs/cmake_doc/options.rst) for more information on
 the CMake options.
@@ -274,70 +258,6 @@ To run the tests it's needed to:
   cmake --build . --parallel 8
   ctest # use --parallel for speed, -R to run specific tests
   ```
-
-<a name="build-autotools"></a>
-### Install NEURON using Autotools
-
-If you would like to have GUI support, you first need to install the Interviews package available from GitHub
-[here](http://github.com/neuronsimulator/iv) or the tarball provided [here](http://neuron.yale.edu/ftp/neuron/versions/alpha/).
-In case of the former, first you need to run `build.sh` script to create the automake, autoconf, and libtool generated files:
-
-```bash
-sh build.sh
-```
-
-And then run the standard `configure`, `make` and `make install` steps to install Interviews:
-
-```bash
-./configure --prefix=/path/to/install/directory
-make
-make install
-```
-
-To build NEURON we have to use the same steps as Interviews, i.e., if the source is obtained from the git repository,
-run `build.sh` script to create the automake, autoconf, and libtool generated files:
-
-```bash
-sh build.sh
-```
-
-and then run the standard `configure`, `make` and `make install` steps:
-
-```bash
-./configure --prefix=/path/to/install/directory
-make
-make install
-```
-
-You can set the following environmental variables to use the installation:
-
-```bash
-export PATH=/path/to/install/directory/<arch>/bin:$PATH # replace <arch> with x86_64 or other platform directory
-export PYTHONPATH=/path/to/install/directory/lib/python:$PYTHONPATH
-```
-
-If you want to customize the build, particularly useful configure options are:
-
-- `--prefix=/some/path` : Install in this location of your filesystem.
-- `--without-x` : If the InterViews graphics library is not installed, disable GUI.
-- `--with-iv=<prefix>/../iv` : If InterViews was not installed in <prefix>/../iv
-- `--with-paranrn` : Parallel models on cluster computers using MPI
-- `--with-nrnpython` : Use Python as an alternative interpreter (as well as the native HOC interpreter).
-- `--with-nmodl-only` : Build nmodl only (in case of cross compiling)
-- `--disable-rx3d` : Do not compile the cython translated 3-d rxd features
-
-For additional options, see `./configure --help`.
-
-Some systems require unusual options for compilation or linking that the `configure` script does not know about.
-You can give `configure` initial values for variables by setting them in the environment. Using a Bourne-compatible
-shell, you can do that on the command line like this:
-
-```bash
-CFLAGS="-O2" CXXFLAGS="-O2" CC=gcc CXX=g++ ./configure <other options>
-```
-
-For more installation information see: [https://neuron.yale.edu/neuron/download/getdevel](https://neuron.yale.edu/neuron/download/getdevel).
-
 
 ### FAQs
 
@@ -400,7 +320,7 @@ If you have enabled dynamic python support using `NRN_ENABLE_PYTHON_DYNAMIC` CMa
 and see error like below:
 
 ```bash
-Could not load either libnrnpython3 or libnrnpython2
+Could not load libnrnpython3
 ```
 
 then NEURON is not able to find appropriate Python and corresponding Python library. You can verify which Python is

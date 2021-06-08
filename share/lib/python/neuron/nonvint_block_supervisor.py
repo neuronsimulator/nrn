@@ -111,15 +111,11 @@ _float_size = numpy.dtype(float).itemsize
 
 
 def numpy_from_pointer(cpointer, size):
-    if sys.version_info.major < 3:
-        return _numpy_frombuffer(_numpy_core_multiarray_int_asbuffer(
-            _ctypes_addressof(cpointer.contents), size * _float_size))
-    else:
-        buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-        buf_from_mem.restype = ctypes.py_object
-        buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-        cbuffer = buf_from_mem(cpointer, size * _float_size, 0x200)
-        return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
+    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+    buf_from_mem.restype = ctypes.py_object
+    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+    cbuffer = buf_from_mem(cpointer, size * _float_size, 0x200)
+    return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
 
 
 def nonvint_block(method, size, pd1, pd2, tid):

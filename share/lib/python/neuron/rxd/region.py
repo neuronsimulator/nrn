@@ -535,7 +535,7 @@ class Region(object):
             self._secs = secs
         else:
             self._secs = [secs]
-        if secs == [] or secs == None:
+        if secs == [] or secs is None:
             warnings.warn("Warning: No sections. Region 'secs' should be a list of NEURON sections.")
         from nrn import Section
         for sec in self._secs:

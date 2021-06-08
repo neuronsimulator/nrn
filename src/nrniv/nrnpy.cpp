@@ -29,12 +29,6 @@ char* hoc_forward2back(char* s);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
-#if defined(NRNCMAKE)
-// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
-#undef NRNHOSTCPU
-#define NRNHOSTCPU "."
-#endif
-
 #ifdef MINGW
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
@@ -53,15 +47,7 @@ extern char* dlerror();
 
 extern char* neuron_home;
 
-#if NRNPYTHON_DYNAMICLOAD >= 20 && NRNPYTHON_DYNAMICLOAD < 30
-
-#ifdef MINGW
-static const char* ver[] = {"2.7", 0};
-#else
-static const char* ver[] = {"2.7", "2.6", "2.5", 0};
-#endif // !MINGW
-
-#elif NRNPYTHON_DYNAMICLOAD >= 30
+#if NRNPYTHON_DYNAMICLOAD >= 30
 
 #ifdef MINGW
 static const char* ver[] = {"3.5", 0};
@@ -69,11 +55,11 @@ static const char* ver[] = {"3.5", 0};
 static const char* ver[] = {"3.6", "3.5", "3.4", 0};
 #endif // !MINGW
 
-#else //NRNPYTHON_DYNAMICLOAD < 20
+#else
 
 static const char* ver[] = {0};
 
-#endif //NRNPYTHON_DYNAMICLOAD < 20
+#endif
 
 static int iver; // which python is loaded?
 static void* python_already_loaded();
@@ -148,13 +134,8 @@ static void set_nrnpylib() {
     free(bnrnhome);
     #else
     char* line = new char[linesz+1];
-#if defined(NRNCMAKE)
     sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
      neuron_home,
-#else
-    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
-     neuron_home, NRNHOSTCPU,
-#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
@@ -348,17 +329,9 @@ static void* load_nrnpython_helper(const char* npylib) {
 	sprintf(name, "%s.dll", npylib);
 #else // !MINGW
 #if DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #else // !DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #endif // DARWIN
 #endif // MINGW
 	void* handle = dlopen(name, RTLD_NOW);
@@ -420,12 +393,9 @@ static void load_nrnpython(int pyver10, const char* pylib) {
 #else
     handle = load_nrnpython_helper("libnrnpython3");
     if (!handle) {
-        handle = load_nrnpython_helper("libnrnpython2");
-        if (!handle) {
-            printf("Could not load either libnrnpython3 or libnrnpython2\n");
-            printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-            return;
-        }
+        printf("Could not load libnrnpython3\n");
+        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+        return;
     }
 #endif
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");

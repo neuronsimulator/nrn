@@ -54,7 +54,7 @@ MKDLL("_class2oc", class2oc)
 MKDLL("_check_obj_type", check_obj_type)
 MKDLL("_create_point_process", create_point_process)
 MKDLL("_destroy_point_process", destroy_point_process)
-#if !defined(WITHOUT_MEMACS)
+#ifndef WITHOUT_MEMACS
 MKDLL("_emacs_exit", emacs_exit)
 #endif
 MKDLL("_get_loc_point_process", get_loc_point_process)
@@ -203,7 +203,7 @@ MKDLLif("__nrn_netcon_args", _nrn_netcon_args)
 MKDLLif("_nrn_value_mark", nrn_value_mark)
 MKDLLif("_nrn_vartype", nrn_vartype)
 
-#if !defined(WITHOUT_MEMACS)
+#ifndef WITHOUT_MEMACS
 MKDLLvp("_emacs_curbp", emacs_curbp)
 MKDLLvp("_emacs_curwp", emacs_curwp)
 MKDLLvp("_emacs_term", emacs_term)

@@ -2,16 +2,6 @@
 # Build nrniv binary and corresponding library
 # =============================================================================
 
-# ~~~
-# The old build (autoconf) built executables in oc, nrnoc, ivoc, nrniv as
-# well as libraries there and in a dozen or so other places. For cmake we
-# are experimenting with a single libnrniv.so that combines many of files
-# in those folders, both for simplicity, and to avoid issues of dependency
-# among the old libraries.
-# Also the oc, nrnoc, and ivoc executables are pretty well useless these
-# days. Other groups can, and should be, factored out.
-# ~~~
-
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -73,7 +63,8 @@ bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.ypp ${NRN_OC_SRC_DIR}/parse.cpp DE
 # =============================================================================
 # Source code lists
 # =============================================================================
-set(NRN_BASE_SRC_FILES ${NRN_IVOC_SRC_FILES} ${NRN_NRNIV_SRC_FILES} ${NRN_NRNOC_SRC_FILES}
+set(NRN_BASE_SRC_FILES ${NRN_IVOC_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
+                       ${NRN_NRNIV_SRC_FILES} ${NRN_NRNOC_SRC_FILES}
                        ${NRN_OC_SRC_FILES})
 
 set(NRN_NRNIV_LIB_SRC_FILES
@@ -83,6 +74,7 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_MODFILE_C}
     ${NRN_NRNGNU_SRC_FILES}
     ${NRN_SCOPMATH_SRC_FILES}
+    ${NRN_SPARSE_SRC_FILES}
     ${NRN_SPARSE13_SRC_FILES}
     ${NRN_SUNDIALS_SRC_FILES})
 
@@ -111,6 +103,7 @@ endif()
 # =============================================================================
 set(NRN_INCLUDE_DIRS
     ${NRN_IVOC_SRC_DIR}
+    ${NRN_NRNCVODE_SRC_DIR}
     ${NRN_NRNIV_SRC_DIR}
     ${NRN_NRNOC_SRC_DIR}
     ${NRN_OC_SRC_DIR}
@@ -160,14 +153,14 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 
 # generate hocusr.h
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
+  OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   COMMAND
     ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
     > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
   COMMAND ${PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
-          ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h
+          ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
 
 # header for dynamic mpi
@@ -184,21 +177,14 @@ endif()
 # Various macro definitions for compiling different files
 # =============================================================================
 set_property(
-  SOURCE ${NRN_OC_SRC_FILES}
+  SOURCE ${NRN_OC_SRC_FILES} ${NRN_SPARSE_SRC_FILES}
   APPEND
   PROPERTY COMPILE_DEFINITIONS OOP=1 HOC=1 INTERVIEWS=1)
 
 set_property(
-  SOURCE ${NRN_NRNOC_SRC_DIR}/code.cpp ${NRN_NRNOC_SRC_DIR}/hoc_init.cpp ${NRN_NRNOC_SRC_DIR}/hoc_oop.cpp
+  SOURCE ${NRN_OC_SRC_DIR}/code.cpp ${NRN_OC_SRC_DIR}/hoc_init.cpp ${NRN_OC_SRC_DIR}/hoc_oop.cpp
   APPEND
   PROPERTY COMPILE_DEFINITIONS CABLE=1)
-
-set_property(
-  SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
-         ${PROJECT_SOURCE_DIR}/src/nrnpython/nrnpython.cpp
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS NRNCMAKE)
 
 set_property(
   SOURCE ${PROJECT_SOURCE_DIR}/src/nrniv/nrnpy.cpp
@@ -211,7 +197,7 @@ set_property(
   PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USEGNU=1 USEBBS=1)
 
 set_property(
-  SOURCE ${NRN_NRNIV_SRC_FILES}
+  SOURCE ${NRN_NRNIV_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
   APPEND
   PROPERTY COMPILE_DEFINITIONS USEMATRIX=1 USECVODE=1 CABLE=1 USEBBS=1 OOP=1)
 
@@ -243,14 +229,14 @@ if(NRN_USE_BACKWARD)
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
 endif()
 
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
+set_source_files_properties(${NRN_OC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
                             ${NRN_OC_SRC_DIR}/parse.hpp)
 
 set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)
 
 set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
-                            ${PROJECT_BINARY_DIR}/src/nrnoc/hocusr.h)
+                            ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
 if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
@@ -281,6 +267,9 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+if (${USE_PTHREAD} EQUAL 1)
+  target_link_libraries(nrniv_lib Threads::Threads)
+endif()
 if(NRN_WINDOWS_BUILD)
   target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES} ${Readline_LIBRARY})
 else()
@@ -385,7 +374,10 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
-target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
+if (${USE_PTHREAD} EQUAL 1)
+  target_link_libraries(nrniv Threads::Threads)
+endif()
 if(NOT MINGW)
   target_link_libraries(nrniv ${CMAKE_DL_LIBS})
 endif()
