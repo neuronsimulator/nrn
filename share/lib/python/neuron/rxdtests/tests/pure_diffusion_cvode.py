@@ -6,7 +6,6 @@ March 2013 - June 2014
 
 from neuron import h, crxd as rxd
 
-from matplotlib import pyplot
 import numpy
 import __main__
 
@@ -33,10 +32,16 @@ h.CVode().atol(1e-6)
 
 h.finitialize()
 
-for t in [25, 50, 75, 100, 125]:
-    h.continuerun(t)
-    pyplot.plot([seg.x for seg in dend], ca.states)
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
+        pyplot.plot([seg.x for seg in dend], ca.states)
 
-pyplot.tight_layout()
-pyplot.savefig('{0}.png'.format(name))
+    pyplot.tight_layout()
+    pyplot.savefig('{0}.png'.format(name))
+else:
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
+
 

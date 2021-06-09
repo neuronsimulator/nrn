@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 import numpy
 import __main__
 name = __main__.__file__
@@ -29,11 +28,15 @@ ca = rxd.Species(r, d=diff_constant,initial=lambda node:
                                                  1 if (0.8 < node.x and node.segment in dend1) or (node.x < 0.2 and node.segment in dend2) else 0)
 bistable_reaction = rxd.Rate(ca, -ca * (1 - ca) * (0.01 - ca))
 h.finitialize()
-
-for t in [25, 50, 75, 100, 125]:
-    h.continuerun(t)
-    pyplot.plot([nd.x for nd in ca.nodes if nd.segment in dend1] + [1 + nd.x for nd in ca.nodes if nd.segment in dend2], [nd.concentration for nd in ca.nodes if nd.segment in dend1] + [nd.concentration for nd in ca.nodes if nd.segment in dend2],'.')
-
-
-pyplot.tight_layout()
-pyplot.savefig('{0}.png'.format(name))
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
+        pyplot.plot([nd.x for nd in ca.nodes if nd.segment in dend1] + [1 + nd.x for nd in ca.nodes if nd.segment in dend2], [nd.concentration for nd in ca.nodes if nd.segment in dend1] + [nd.concentration for nd in ca.nodes if nd.segment in dend2],'.')
+    pyplot.tight_layout()
+    pyplot.savefig('{0}.png'.format(name))
+    pyplot.show()
+else:
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
+    

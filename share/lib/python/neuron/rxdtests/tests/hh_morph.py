@@ -2,7 +2,6 @@ from neuron import h, crxd as rxd, gui
 from neuron.crxd import v
 from neuron.crxd.rxdmath import exp, log, vtrap
 from math import pi
-from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 # parameters
@@ -173,45 +172,46 @@ h.finitialize(-70)
 
 h.continuerun(100)
 
-# plot the results
-pyplot.ion()
-fig = pyplot.figure()
-pyplot.plot(tvec, vvecA, label="rxd")
-pyplot.plot(tvec, vvecB, label="mod")
-pyplot.legend()
-fig.set_dpi(200)
 
-fig = pyplot.figure()
-pyplot.plot(tvec, hvecA, '-b', label='h')
-pyplot.plot(tvec, mvecA, '-r', label='m')
-pyplot.plot(tvec, nvecA, '-g', label='n')
-pyplot.plot(tvec, hvecB, ':b')
-pyplot.plot(tvec, mvecB, ':r')
-pyplot.plot(tvec, nvecB, ':g')
-pyplot.legend()
-fig.set_dpi(200)
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    # plot the results
+    pyplot.ion()
+    fig = pyplot.figure()
+    pyplot.plot(tvec, vvecA, label="rxd")
+    pyplot.plot(tvec, vvecB, label="mod")
+    pyplot.legend()
+    fig.set_dpi(200)
+    
+    fig = pyplot.figure()
+    pyplot.plot(tvec, hvecA, '-b', label='h')
+    pyplot.plot(tvec, mvecA, '-r', label='m')
+    pyplot.plot(tvec, nvecA, '-g', label='n')
+    pyplot.plot(tvec, hvecB, ':b')
+    pyplot.plot(tvec, mvecB, ':r')
+    pyplot.plot(tvec, nvecB, ':g')
+    pyplot.legend()
+    fig.set_dpi(200)
 
-fig = pyplot.figure()
-pyplot.plot(tvec, kvecA, '-b', label='k')
-pyplot.plot(tvec, navecA, '-r', label='na')
-pyplot.plot(tvec, kvecB, ':b')
-pyplot.plot(tvec, navecB, ':r')
-pyplot.legend()
-fig.set_dpi(200)
-
-
-fig = pyplot.figure()
-pyplot.plot(tvec, kvecA.as_numpy(), '-b', label='k')
-pyplot.plot(tvec, navecA.as_numpy(), '-r', label='na')
-pyplot.plot(tvec, kvecB, ':b')
-pyplot.plot(tvec, navecB, ':r')
-pyplot.legend()
-fig.set_dpi(200)
-
-fig = pyplot.figure()
-pyplot.plot(tvec, kvecA.as_numpy()-kvecB, '-b', label='k')
-pyplot.plot(tvec, navecA.as_numpy()-navecB, '-r', label='na')
-pyplot.legend()
-fig.set_dpi(200)
+    fig = pyplot.figure()
+    pyplot.plot(tvec, kvecA, '-b', label='k')
+    pyplot.plot(tvec, navecA, '-r', label='na')
+    pyplot.plot(tvec, kvecB, ':b')
+    pyplot.plot(tvec, navecB, ':r')
+    pyplot.legend()
+    fig.set_dpi(200)
 
 
+    fig = pyplot.figure()
+    pyplot.plot(tvec, kvecA.as_numpy(), '-b', label='k')
+    pyplot.plot(tvec, navecA.as_numpy(), '-r', label='na')
+    pyplot.plot(tvec, kvecB, ':b')
+    pyplot.plot(tvec, navecB, ':r')
+    pyplot.legend()
+    fig.set_dpi(200)
+
+    fig = pyplot.figure()
+    pyplot.plot(tvec, kvecA.as_numpy()-kvecB, '-b', label='k')
+    pyplot.plot(tvec, navecA.as_numpy()-navecB, '-r', label='na')
+    pyplot.legend()
+    fig.set_dpi(200)
