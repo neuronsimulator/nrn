@@ -1,7 +1,6 @@
 from neuron import h, rxd
 from neuron.rxd import v
 from neuron.rxd.rxdmath import exp, log
-from matplotlib import pyplot
 import numpy
 
 h.load_file('stdrun.hoc')
@@ -153,9 +152,12 @@ h.dt = 1   # use a large time step as we are not focusing on spiking behaviour
            # but on slower diffusion
 
 h.continuerun(100)
-pyplot.imshow(k[ecs].states3d.mean(2),extent=k[ecs].extent('xy'))
-for sec in h.allsec():
-    pyplot.plot([sec.x3d(i) for i in range(sec.n3d())],
-                [sec.y3d(i) for i in range(sec.n3d())],'o')
 
-pyplot.colorbar()
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    pyplot.imshow(k[ecs].states3d.mean(2),extent=k[ecs].extent('xy'))
+    for sec in h.allsec():
+        pyplot.plot([sec.x3d(i) for i in range(sec.n3d())],
+                    [sec.y3d(i) for i in range(sec.n3d())],'o')
+
+    pyplot.colorbar()

@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 import numpy
 import __main__
 name = __main__.__file__
@@ -44,8 +43,3 @@ for i in range(6,8):
 rxd.nthread(1)
 for i in range(8,11):
     h.fadvance()
-
-
-pyplot.tight_layout()
-pyplot.savefig('{0}.png'.format(name))
-pyplot.show()

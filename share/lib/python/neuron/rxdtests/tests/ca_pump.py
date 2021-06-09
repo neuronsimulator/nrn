@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from neuron import h, rxd
 from neuron.units import mV, ms
 h.load_file('stdrun.hoc')
@@ -36,13 +35,16 @@ v = h.Vector().record(soma(0.5)._ref_v)
 h.finitialize(-65 * mV)
 h.continuerun(100 * ms)
 
-plt.subplot(2, 1, 1)
-plt.plot(t, ca_vec * 1000, label='inside')
-plt.plot(t, ca_vec2 * 1000, label='outside')
-plt.ylabel('[Ca] (uM)')
-plt.legend()
-plt.subplot(2, 1, 2)
-plt.plot(t, v)
-plt.ylabel('v (mV)')
-plt.xlabel('t (ms)')
-plt.show()
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    plt.subplot(2, 1, 1)
+    plt.plot(t, ca_vec * 1000, label='inside')
+    plt.plot(t, ca_vec2 * 1000, label='outside')
+    plt.ylabel('[Ca] (uM)')
+    plt.legend()
+    plt.subplot(2, 1, 2)
+    plt.plot(t, v)
+    plt.ylabel('v (mV)')
+    plt.xlabel('t (ms)')
+    plt.show()
