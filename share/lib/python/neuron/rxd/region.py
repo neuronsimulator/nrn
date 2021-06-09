@@ -123,7 +123,7 @@ class _c_region:
             return numpy.ndarray(0, ctypes.c_int)
         else:
             return self.ecs_location_index.flatten()
-    
+
     def get_state_index(self):
         if not self._initialized:
             self._initalize()
@@ -225,7 +225,8 @@ class Extracellular:
 
     Assumes tortuosity=1.
     """
-    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1, tortuosity=1):
+    def __init__(self, xlo, ylo, zlo, xhi, yhi, zhi, dx, volume_fraction=1,
+                 tortuosity=None, permeability=None):
         from . import options
         if not options.enable.extracellular:
             raise RxDException('Extracellular diffusion support is disabled. Override with rxd.options.enable.extracellular = True.')
@@ -242,48 +243,20 @@ class Extracellular:
         self._nz = int(math.ceil(float(zhi - zlo) / self._dx[2]))
         self._xhi, self._yhi, self._zhi = xlo + float(self._dx[0]) * self._nx, ylo + float(self._dx[1]) * self._ny, zlo + float(self._dx[2]) * self._nz
 
-        if(numpy.isscalar(volume_fraction)):
-            alpha = float(volume_fraction)
-            self._alpha = alpha
-            self.alpha = alpha
-        elif callable(volume_fraction):
-            alpha = numpy.ndarray((self._nx, self._ny, self._nz))
-            for i in range(self._nx):
-                for j in range(self._ny):
-                    for k in range(self._nz):
-                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-                self.alpha = alpha
-                self._alpha = h.Vector(alpha.flatten())
-                         
+        self._alpha, self._ecs_alpha = self._parse_volume_fraction(volume_fraction)
+
+        if tortuosity is not None and permeability is not None:
+            raise RxDException("Specify either permeability or tortuosity, not both; permeability=1/tortuosity**2")
+        elif tortuosity is None and permeability is None:
+            tortuosity=1.0
+        
+        if permeability is None:
+            self._tortuosity, self._ecs_permeability = self._parse_tortuosity(tortuosity)
         else:
-            alpha = numpy.array(volume_fraction)
-            if(alpha.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('free volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+            self._permeability, self._ecs_permeability = self._parse_tortuosity(permeability, True)
+     
+
  
-            else:
-                self._alpha = h.Vector(alpha)
-                self.alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
-                
-        if(numpy.isscalar(tortuosity)):
-            tortuosity = float(tortuosity)
-            self._ecs_tortuosity = tortuosity**2
-            self._tortuosity = tortuosity
-        elif callable(tortuosity):
-            self._tortuosity = numpy.ndarray((self._nx,self._ny,self._nz))
-            for i in range(self._nx):
-                for j in range(self._ny):
-                    for k in range(self._nz):
-                        self.tortuosity[i,j,k] = tortuosity(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
-            self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
-        else:
-            tortuosity = numpy.array(tortuosity)
-            if(tortuosity.shape != (self._nx, self._ny, self._nz)):
-                 raise RxDException('tortuosity must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
-    
-            else:
-                self._tortuosity = tortuosity
-                self._ecs_tortuosity = h.Vector(self.tortuosity.flatten()).pow(2)
-    
     def __repr__(self):
         return 'Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)' % (self._xlo, self._ylo, self._zlo, self._xhi, self._yhi, self._zhi, self.tortuosity, self.alpha)
 
@@ -296,25 +269,204 @@ class Extracellular:
             return numpy.prod(self._dx) * self.alpha
         return numpy.prod(self._dx) * self.alpha[index]
 
+
+    @property
+    def _volume_fraction_vector(self):
+        if self._ecs_alpha is None:
+            self._ecs_alpha = self.alpha._extracellular_instances[self]._states
+        return self._ecs_alpha
+
+    @property
+    def _permeability_vector(self):
+        if self._ecs_permeability is None:
+            self._ecs_permeability = self.permeability._extracellular_instances[self]._states
+        return self._ecs_permeability
+
+    def _parse_tortuosity(self, value, is_permeability=False):
+        if numpy.isscalar(value):
+            parsed_value = value
+            ecs_permeability = value if is_permeability else value**(-2)
+        elif callable(value):
+            ecs_permeability = h.Vector()
+            parsed_value = numpy.ndarray((self._nx, self._ny, self._nz))
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        parsed_value[i,j,k] = value(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+            if is_permeability:
+                ecs_permeability = h.Vector(parsed_value.flatten())
+            else:
+                ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
+        elif (hasattr(value, '_extracellular_instances') or
+              hasattr(self,'_extracellular')):
+            # Check Species or SpeciesOnExtracellular is defined on this region
+            if ((hasattr(value, '_extracellular_instances') and
+                self not in value._extracellular_instances) or
+                ((hasattr(value, '_extracellular') and
+                  value._extracellular() and
+                  value._extracellular() != self))):
+                raise RxDException("permeability can be set to a State or Parameter, but it must be defined on this Extracellular region %r" % self)
+            else:
+                if is_permeability:
+                    parsed_value = value
+                    ecs_permeability = None
+                else:
+                    raise RxDException("Only permeability can be set to a State or Parameter. The tortuosity must be a; scalar, function (of x,y,z locations), or array the size of the extracellular space")
+        elif isinstance(value, dict):
+            if is_permeability:
+                from .species import State
+                params = value.copy()
+                params['regions'] = [self]
+                parsed_value = State(**params)
+                ecs_permeability = None
+            else:
+                raise RxDException("Only permeability can be set to a State or Parameter. The tortuosity must be a; scalar, function (of x,y,z locations), or array the size of the extracellular space")
+
+        else:
+            parsed_value = numpy.array(value)
+            if(parsed_value.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('permeability or tortuosity must be a scalar, a function of the (x,y,z) location or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+
+            else:
+                if is_permeability:
+                    ecs_permeability = h.Vector(parsed_value.flatten())
+                else:
+                    ecs_permeability = h.Vector(parsed_value.flatten()).pow(-2)
+        return parsed_value, ecs_permeability
+
+    def _parse_volume_fraction(self, volume_fraction):
+
+        if(numpy.isscalar(volume_fraction)):
+            alpha = float(volume_fraction)
+            alpha = alpha
+            ecs_alpha = alpha
+        elif isinstance(volume_fraction, dict):
+            from .species import State
+            params = volume_fraction.copy()
+            params['regions'] = [self]
+            alpha = State(**params)
+            ecs_alpha = None
+            warnings.warn('Dynamic changes to the volume fraction does not change the concentrations of species already in the region.')
+        elif (hasattr(volume_fraction, '_extracellular_instances') or
+              hasattr(self,'_extracellular')):
+            # Check Species or SpeciesOnExtracellular is defined on this region
+            if ((hasattr(volume_fraction, '_extracellular_instances') and
+                self not in volume_fraction._extracellular_instances) or
+                ((hasattr(volume_fraction, '_extracellular') and
+                  volume_fraction._extracellular() and
+                  volume_fraction._extracellular() != self))):
+                raise RxDException("volume fraction can be set to a State or Parameter, but it must be defined on this Extracellular region %r" % self)
+            else:
+                alpha = volume_fraction
+                ecs_alpha = None
+                warnings.warn('Dynamic changes to the volume fraction does not change the concentrations of species already in the region.')
+
+        elif callable(volume_fraction):
+            alpha = numpy.ndarray((self._nx, self._ny, self._nz))
+            for i in range(self._nx):
+                for j in range(self._ny):
+                    for k in range(self._nz):
+                        alpha[i,j,k] = volume_fraction(self._xlo + i*self._dx[0], self._ylo + j*self._dx[1], self._zlo + k*self._dx[2])
+                alpha = alpha
+                ecs_alpha = h.Vector(alpha.flatten())
+        else:
+            alpha = numpy.array(volume_fraction)
+            if(alpha.shape != (self._nx, self._ny, self._nz)):
+                 raise RxDException('free volume fraction alpha must be a scalar or an array the same size as the grid: {0}x{1}x{2}'.format(self._nx, self._ny, self._nz ))
+ 
+            else:
+                alpha = h.Vector(alpha)
+                ecs_alpha = self._alpha.as_numpy().reshape(self._nx, self._ny, self._nz)
+        return alpha, ecs_alpha
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        """Set the value of the volume fraction for all species define on
+           this Extracellular region. Changing the volume fraction will not
+           change the concentrations already there, it will alter the
+           magnitude of concentration changes due to currents.
+
+        Args:
+            value (float, array, callable or State) the new volume fraction, it
+                can be a scalar for homogeneous porosity, a array the size of
+                the extracellular space, a function that take (x,y,z) as an
+                argument and will be evaluated on every extracellular voxel, or
+                a State defined on the same extracellular region.
+        """
+
+        from .species import _update_volume_fraction
+        self._alpha, self._ecs_alpha = self._parse_volume_fraction(value)
+        _update_volume_fraction(self)
+    
     @property
     def tortuosity(self):
-        return self._tortuosity 
-    
+        if hasattr(self, '_tortuosity'):
+            return self._tortuosity
+        return (1.0/self._permeability)**0.5
+
+    @property
+    def permeability(self):
+        if hasattr(self, '_tortuosity'):
+            return 1.0/self._tortuosity**2
+        return self._permeability
+
     @tortuosity.setter
     def tortuosity(self, value):
-        raise RxDException("Changing the tortuosity is not yet supported.")
-    
-                
+        """Set the value of the tortuosity for all species define on this
+           Extracellular region.
+
+        Args:
+            value (float, array or callable) the new tortuosity, it can be a
+                scalar for homogeneous diffusion, or a array the size of the
+                extracellular space or a function that take (x,y,z) as an
+                argument and will be evaluated on every extracellular voxel.
+        """
+
+        from .species import _update_tortuosity
+
+        self._tortuosity, self._ecs_permeability = self._parse_tortuosity(value)
+        if hasattr(self, '_permeability'): delattr(self, '_permeability')
+
+        # update tortuosity for any species defined on this ECS
+        _update_tortuosity(self)
+
+    @permeability.setter
+    def permeability(self, value):
+        """Set the value of the permeability for all species define on this
+           Extracellular region.
+
+        Args:
+            value (float, array or callable) the new tortuosity, it can be a
+                scalar for homogeneous diffusion, or a array the size of the
+                extracellular space or a function that take (x,y,z) as an
+                argument and will be evaluated on every extracellular voxel, or
+                an rxd State or Parameter defined on the extracellular region.
+        """
+
+        from .species import _update_tortuosity
+
+        self._permeability, self._ecs_permeability = self._parse_tortuosity(value, True)
+        if hasattr(self, '_tortuosity'): delattr(self, '_tortuosity')
+
+        # update tortuosity for any species defined on this ECS
+        _update_tortuosity(self)
+
+
+
 class Region(object):
     """Declare a conceptual region of the neuron.
-    
+
     Examples: Cytosol, ER
     """
     def __repr__(self):
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
         return 'Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)' % (self.nrn_region, self._geometry, self.dx, self._name)
-    
+
     def __contains__(self, item):
         try:
             if item.region == self:

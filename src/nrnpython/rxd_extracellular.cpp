@@ -659,9 +659,8 @@ void _fadvance_fixed_step_3D(void) {
         {
             grid->hybrid_connections();
         }
-        if(grid->diffusable){
-            grid->dg_adi(); 
-        }
+        grid->dg_adi(); 
+        
     }
     /* transfer concentrations */
     scatter_concentrations();

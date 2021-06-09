@@ -5,13 +5,14 @@ from testutils import compare_data, tol
 @pytest.fixture
 def ecs_diffusion(neuron_instance):
     h, rxd, data, save_path = neuron_instance
-    def make_model(nx, ny, nz, alpha, lambd, d=1.0):
+    def make_model(nx, ny, nz, alpha, lambd, d=1.0, perm=None):
         dx = 10
         # the extracellular space
         ecs = rxd.Extracellular(
             -dx*nx/2.0, -dx*ny/2.0, -dx*nz/2.0, 
             dx*nx/2.0, dx*ny/2.0, dx*nz/2.0, dx=dx,
-            volume_fraction=alpha, tortuosity=lambd
+            volume_fraction=alpha, tortuosity=lambd,
+            permeability=perm
         )
 
         # Who?
@@ -240,3 +241,50 @@ def test_ecs_diffusion_cvode_anisotropic(ecs_diffusion):
         max_err = compare_data(data)
         assert max_err < tol
 
+def test_ecs_diffusion_3d_tort_state(ecs_diffusion):
+    neuron_instance, make_model = ecs_diffusion
+    ecs, k = make_model(11, 11, 11, 0.2, None,
+                        perm={'name':'permeability', 'initial':0})
+    h, rxd, data, save_path = neuron_instance
+    for nd in ecs.permeability.nodes:
+        nd.value = 100/(10 + (nd.x3d + nd.y3d + nd.z3d)**2)
+    h.finitialize(1000)
+    h.continuerun(10)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+def test_ecs_diffusion_3d_inhom_tort(ecs_diffusion):
+    neuron_instance, make_model = ecs_diffusion
+    ecs, k = make_model(11, 11, 11, 0.2, None,
+                        perm=lambda x,y,z: 100/(10 + (x + y + z)**2))
+    h, rxd, data, save_path = neuron_instance
+    h.finitialize(1000)
+    h.continuerun(10)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+def test_ecs_diffusion_3d_inhom_tort_cvode(ecs_diffusion):
+    neuron_instance, make_model = ecs_diffusion
+    ecs, k = make_model(11, 11, 11, 0.2, None,
+                        perm=lambda x,y,z: 100/(10 + (x + y + z)**2))
+    h, rxd, data, save_path = neuron_instance
+    h.CVode().active(True)
+    h.finitialize(1000)
+    h.continuerun(10)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol
+
+
+def test_ecs_diffusion_3d_alpha_state(ecs_diffusion):
+    neuron_instance, make_model = ecs_diffusion
+    ecs, k = make_model(11, 11, 11, {'name':'alpha', 'initial':1}, 1.6)
+    h, rxd, data, save_path = neuron_instance
+    h.finitialize(1000)
+    ecs.alpha.nodes.value = 0.2
+    h.continuerun(10)
+    if not save_path:
+        max_err = compare_data(data)
+        assert max_err < tol

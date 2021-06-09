@@ -91,6 +91,10 @@ _ics_set_grid_currents.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object,
 _delete_by_id = nrn_dll_sym('delete_by_id')
 _delete_by_id.argtypes = [ctypes.c_int]
 
+#function to change extracellular tortuosity
+_set_tortuosity = nrn_dll_sym('set_tortuosity')
+_set_tortuosity.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.py_object]
+
 
 # The difference here is that defined species only exists after rxd initialization
 _all_species = []
@@ -107,6 +111,23 @@ _species_count = 0
 
 _has_1d = False
 _has_3d = False
+
+def _update_tortuosity(region):
+    """Update tortuosity for all species on region"""
+
+    for s,r in _extracellular_diffusion_objects.items():
+        if (r == region and hasattr(s,'_id') and 
+            not hasattr(s,'_deleted') and not s._diffusion_characteristic):
+            _set_tortuosity(s._id, region._permeability_vector)
+
+def _update_volume_fraction(region):
+    """Update volume fractions for all species on region"""
+
+    for s,r in _extracellular_diffusion_objects.items():
+        if (r == region and hasattr(s,'_id') and 
+            not hasattr(s,'_deleted') and not s._diffusion_characteristic):
+            _set_volume_fraction(s._id, region._volume_faction_vector)
+
 
 def _1d_submatrix_n():
     if not _has_1d:
@@ -483,8 +504,6 @@ class SpeciesOnRegion(_SpeciesMathable):
             return sp._intracellular_instances[r]
         else:
             raise RxDException("There are no 3D species defined on {}".format(r))
-        
-
     @property
     def _id(self):
         return self._species()._id
@@ -915,7 +934,7 @@ class _IntracellularSpecies(_SpeciesMathable):
 
 
 class _ExtracellularSpecies(_SpeciesMathable):
-    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None):
+    def __init__(self, region, d=0, name=None, charge=0, initial=0, atolscale=1.0, boundary_conditions=None, species=None):
         """
             region = Extracellular object (TODO? or list of objects)
             name = string of the name of the NEURON species (e.g. ca)
@@ -952,18 +971,29 @@ class _ExtracellularSpecies(_SpeciesMathable):
         self.states = self._states.as_numpy().reshape(self._nx, self._ny, self._nz)
         self._initial = initial
         self._boundary_conditions = boundary_conditions
-
-        if(numpy.isscalar(region.alpha)):
-            self.alpha = self._alpha = region.alpha
+        self._diffusion_characteristic = ((isinstance(region.alpha, Species) and 
+                                           region._alpha == species) or 
+                                          (hasattr(region, "_permeability") and 
+                                           isinstance(region._permeability, Species) and 
+                                           region._permeability == species))
+        if self._diffusion_characteristic:
+            self.alpha = 1.0
+            self._alpha = 1.0
+        elif numpy.isscalar(region._volume_fraction_vector):
+            self.alpha = self._alpha = region._volume_fraction_vector
         else:
             self.alpha = region.alpha
-            self._alpha = region._alpha._ref_x[0]
-       
-        self.tortuosity = region.tortuosity 
-        if(numpy.isscalar(region._ecs_tortuosity)):
-            self._tortuosity = region._ecs_tortuosity
-        else:
-            self._tortuosity = region._ecs_tortuosity._ref_x[0]
+            self._alpha = region._volume_fraction_vector._ref_x[0]
+
+        if self._diffusion_characteristic:
+            self.tortuosity = 1.0
+            self._permability = 1.0
+        else: 
+            self.tortuosity = region.tortuosity
+            if(numpy.isscalar(region._permeability_vector)):
+                self._permability = region._permeability_vector
+            else:
+                self._permability = region._permeability_vector._ref_x[0]
 
         if boundary_conditions is None:
             bc_type = 0
@@ -974,9 +1004,9 @@ class _ExtracellularSpecies(_SpeciesMathable):
         
         # TODO: if allowing different diffusion rates in different directions, verify that they go to the right ones
         if not hasattr(self._d,'__len__'):
-            self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+            self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d, self._d, self._d, self._dx[0], self._dx[1], self._dx[2], self._alpha, self._permability, bc_type, bc_value, atolscale)
         elif len(self._d) == 3:
-             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._tortuosity, bc_type, bc_value, atolscale)
+             self._grid_id = ECS_insert(0, self._states._ref_x[0], self._nx, self._ny, self._nz, self._d[0], self._d[1], self._d[2], self._dx[0], self._dx[1], self._dx[2], self._alpha, self._permability, bc_type, bc_value, atolscale)
         else:
             raise RxDException("Diffusion coefficient %s for %s is invalid. A single value D or a tuple of 3 values (Dx,Dy,Dz) is required for the diffusion coefficient." % (repr(d), name))  
 
@@ -1407,7 +1437,7 @@ class Species(_SpeciesMathable):
 
     def _do_init4(self):
         extracellular_nodes = []
-        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions) for r in self._extracellular_regions}
+        self._extracellular_instances = {r : _ExtracellularSpecies(r, d=self._d, name=self.name, charge=self.charge, initial=self.initial, atolscale=self._atolscale, boundary_conditions=self._ecs_boundary_conditions, species=self) for r in self._extracellular_regions}
         sp_ref = weakref.ref(self)
         index = 0
         for r in self._extracellular_regions:
