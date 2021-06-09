@@ -50,6 +50,7 @@ void SonataReportHandler::register_report(const NrnThread& nt,
                          config.start,
                          config.stop,
                          config.report_dt,
+                         config.unit.data(),
                          config.type_str.data());
     sonata_set_report_max_buffer_size_hint(config.output_path.data(), config.buffer_size);
 
