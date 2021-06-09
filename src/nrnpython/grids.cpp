@@ -40,13 +40,13 @@ static double get_alpha_array(double* alpha, int idx)
 }
 
 
-static double get_lambda_scalar(double*, int)
+static double get_permeability_scalar(double*, int)
 {
     return 1.; /*already rescale the diffusion coefficients*/
 }
-static double get_lambda_array(double* lambda, int idx)
+static double get_permeability_array(double* permeability, int idx)
 {
-    return lambda[idx];
+    return permeability[idx];
 }
 
 // Make a new Grid_node given required Grid_node parameters
@@ -54,7 +54,7 @@ ECS_Grid_node::ECS_Grid_node() {};
 ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x, 
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, PyHocObject* my_alpha,
-    PyHocObject* my_lambda, int bc_type, double bc_value, double atolscale) {
+    PyHocObject* my_permeability, int bc_type, double bc_value, double atolscale) {
     int k;
     states = my_states->u.px_;
     
@@ -68,10 +68,10 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
     size_y = my_num_states_y;
     size_z = my_num_states_z;
     
-    diffusable = true;
     dc_x = my_dc_x;
     dc_y = my_dc_y;
     dc_z = my_dc_z;
+    diffusable = (dc_x > 0) || (dc_y > 0) || (dc_z >0);
 
     dx = my_dx;
     dy = my_dy;
@@ -86,23 +86,23 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
     VARIABLE_ECS_VOLUME = FALSE;
 
     /*Check to see if variable tortuosity/volume fraction is used*/
-    if(PyFloat_Check(my_lambda))
+    if(PyFloat_Check(my_permeability))
     {
-        /*note lambda is the tortuosity squared*/
-        lambda = (double*)malloc(sizeof(double));
-        lambda[0] = PyFloat_AsDouble((PyObject*)my_lambda);
-        get_lambda = &get_lambda_scalar;
+        /*note permeability is the tortuosity squared*/
+        permeability = (double*)malloc(sizeof(double));
+        permeability[0] = PyFloat_AsDouble((PyObject*)my_permeability);
+        get_permeability = &get_permeability_scalar;
         
         /*apply the tortuosity*/
-        dc_x = my_dc_x/lambda[0];
-        dc_y = my_dc_y/lambda[0];
-        dc_z = my_dc_z/lambda[0];
+        dc_x = my_dc_x*permeability[0];
+        dc_y = my_dc_y*permeability[0];
+        dc_z = my_dc_z*permeability[0];
     }
     else
     {
-        lambda = my_lambda->u.px_;
+        permeability = my_permeability->u.px_;
         VARIABLE_ECS_VOLUME = TORTUOSITY;
-        get_lambda = &get_lambda_array;
+        get_permeability = &get_permeability_array;
     }
     
     if(PyFloat_Check(my_alpha))
@@ -117,7 +117,6 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
         alpha = my_alpha->u.px_;
         VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
         get_alpha = &get_alpha_array;    
-
     }
 #if NRNMPI
     if(nrnmpi_use)
@@ -196,11 +195,11 @@ ECS_Grid_node::ECS_Grid_node(PyHocObject* my_states, int my_num_states_x,
 extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-    PyHocObject* my_alpha, PyHocObject* my_lambda, int bc, double bc_value,
+    PyHocObject* my_alpha, PyHocObject* my_permeability, int bc, double bc_value,
     double atolscale) {
     ECS_Grid_node *new_Grid = new ECS_Grid_node(my_states, my_num_states_x, my_num_states_y, 
             my_num_states_z, my_dc_x, my_dc_y, my_dc_z, my_dx, my_dy, my_dz, 
-            my_alpha, my_lambda, bc, bc_value, atolscale);
+            my_alpha, my_permeability, bc, bc_value, atolscale);
 
     return new_Grid->insert(grid_list_index);
 }
@@ -389,6 +388,116 @@ extern "C" int set_diffusion(int grid_list_index, int grid_id, double* dc, int l
     return 0;
 }
 
+extern "C" int set_tortuosity(int grid_list_index, int grid_id, PyHocObject* my_permeability)
+{
+
+    int id = 0;
+    Grid_node* node = Parallel_grids[grid_list_index];
+    while(id < grid_id)
+    {
+        node = node->next;
+        id++;
+        if(node == NULL)
+            return -1;
+    }
+    static_cast<ECS_Grid_node*>(node)->set_tortuosity(my_permeability);
+    return 0;
+}
+
+
+void ECS_Grid_node::set_tortuosity(PyHocObject* my_permeability)
+{
+    
+    /*Check to see if variable tortuosity/volume fraction is used*/
+    /*note permeability is the 1/tortuosity^2*/
+    if(PyFloat_Check(my_permeability))
+    {
+        if(get_permeability == &get_permeability_scalar)
+        {
+            double new_permeability = PyFloat_AsDouble((PyObject*)my_permeability);
+            get_permeability = &get_permeability_scalar;
+            dc_x *= new_permeability/permeability[0];
+            dc_y *= new_permeability/permeability[0];
+            dc_z *= new_permeability/permeability[0];
+            permeability[0] = new_permeability;
+        }
+        else
+        {
+            permeability = (double*)malloc(sizeof(double));
+            permeability[0] = PyFloat_AsDouble((PyObject*)my_permeability);
+            /* don't free the old permeability -- let python do it */
+            dc_x *= permeability[0];
+            dc_y *= permeability[0];
+            dc_z *= permeability[0];
+            get_permeability = &get_permeability_scalar;
+            VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == TORTUOSITY)?FALSE:VARIABLE_ECS_VOLUME;
+        }
+    }
+    else
+    {
+        if(get_permeability == &get_permeability_scalar)
+        {
+            /* rescale to remove old permeability*/
+            dc_x /= permeability[0];
+            dc_y /= permeability[0];
+            dc_z /= permeability[0];
+            free(permeability);
+            permeability = my_permeability->u.px_;
+            VARIABLE_ECS_VOLUME = (VARIABLE_ECS_VOLUME == FALSE)?TORTUOSITY:VARIABLE_ECS_VOLUME;
+            get_permeability = &get_permeability_array;
+        }
+        else
+        {
+            permeability = my_permeability->u.px_;
+        }
+    }
+
+}
+
+extern "C" int set_volume_fraction(int grid_list_index, int grid_id, PyHocObject* my_alpha)
+{
+
+    int id = 0;
+    Grid_node* node = Parallel_grids[grid_list_index];
+    while(id < grid_id)
+    {
+        node = node->next;
+        id++;
+        if(node == NULL)
+            return -1;
+    }
+    static_cast<ECS_Grid_node*>(node)->set_volume_fraction(my_alpha);
+    return 0;
+}
+
+void ECS_Grid_node::set_volume_fraction(PyHocObject* my_alpha)
+{
+    
+    if(PyFloat_Check(my_alpha))
+    {
+        if(get_alpha == &get_alpha_scalar)
+        {
+            alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+        }
+        else
+        {
+            alpha = (double*)malloc(sizeof(double));
+            alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
+            get_alpha == &get_alpha_scalar;
+            VARIABLE_ECS_VOLUME = (get_permeability == &get_permeability_scalar) ? TORTUOSITY : FALSE;
+        }
+    }
+    else
+    {
+        if(get_alpha == &get_alpha_scalar)
+            free(alpha);
+        alpha = my_alpha->u.px_;
+        VARIABLE_ECS_VOLUME = VOLUME_FRACTION;
+        get_alpha = &get_alpha_array;
+    }
+}
+
+
 /*Set the diffusion coefficients*/
 void ICS_Grid_node::set_diffusion(double* dc, int length)
 {
@@ -419,12 +528,12 @@ void ICS_Grid_node::set_diffusion(double* dc, int length)
 /*Set the diffusion coefficients*/
 void ECS_Grid_node::set_diffusion(double* dc, int)
 {
-    if(get_lambda == &get_lambda_scalar)
+    if(get_permeability == &get_permeability_scalar)
     {
-        /* note lambda[0] is the tortuosity squared*/
-        dc_x = dc[0]/lambda[0];
-        dc_y = dc[1]/lambda[0];
-        dc_z = dc[2]/lambda[0];
+        /* note permeability[0] is the tortuosity squared*/
+        dc_x = dc[0]*permeability[0];
+        dc_y = dc[1]*permeability[0];
+        dc_z = dc[2]*permeability[0];
     }
     else
     {
@@ -432,6 +541,7 @@ void ECS_Grid_node::set_diffusion(double* dc, int)
         dc_y = dc[1];
         dc_z = dc[2];
     }
+    diffusable = (dc_x > 0) || (dc_y > 0) || (dc_z >0);
 }
 
 
@@ -857,23 +967,31 @@ void ECS_Grid_node::volume_setup()
 
 int ECS_Grid_node::dg_adi()
 {
-    //double* tmp;
-    /* first step: advance the x direction */
-    ecs_run_threaded_dg_adi(size_y, size_z, this, ecs_adi_dir_x, size_x);
+    unsigned long i;
+    if(diffusable)
+    {
+        /* first step: advance the x direction */
+        ecs_run_threaded_dg_adi(size_y, size_z, this, ecs_adi_dir_x, size_x);
 
-    /* second step: advance the y direction */
-    ecs_run_threaded_dg_adi(size_x, size_z, this, ecs_adi_dir_y, size_y);
+        /* second step: advance the y direction */
+        ecs_run_threaded_dg_adi(size_x, size_z, this, ecs_adi_dir_y, size_y);
 
-    /* third step: advance the z direction */
-    ecs_run_threaded_dg_adi(size_x, size_y, this, ecs_adi_dir_z, size_z);
+        /* third step: advance the z direction */
+        ecs_run_threaded_dg_adi(size_x, size_y, this, ecs_adi_dir_z, size_z);
 
-    /* transfer data */
-    /*TODO: Avoid copy by switching pointers and updating Python copy
-    tmp = g->states;
-    g->states = g->adi_dir_z->states_out;
-    g->adi_dir_z->states_out = tmp;
-    */
-    memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+        /* transfer data */
+        /*TODO: Avoid copy by switching pointers and updating Python copy
+        tmp = g->states;
+        g->states = g->adi_dir_z->states_out;
+        g->adi_dir_z->states_out = tmp;
+        */
+        memcpy(states, ecs_adi_dir_z->states_out, sizeof(double)*size_x*size_y*size_z);
+    }
+    else
+    {
+        for(i=0; i < size_x * size_y * size_z; i++)
+            states[i] += states_cur[i];
+    }
     //TODO: Should this return 0?
     return 0;
 }
@@ -1553,12 +1671,15 @@ void ICS_Grid_node::volume_setup()
 
 int ICS_Grid_node::dg_adi()
 {
-    run_threaded_deltas(this, ics_adi_dir_x);
-    run_threaded_deltas(this, ics_adi_dir_y);
-    run_threaded_deltas(this, ics_adi_dir_z);
-    run_threaded_ics_dg_adi(ics_adi_dir_x);
-    run_threaded_ics_dg_adi(ics_adi_dir_y);
-    run_threaded_ics_dg_adi(ics_adi_dir_z);
+    if (diffusable)
+    {
+        run_threaded_deltas(this, ics_adi_dir_x);
+        run_threaded_deltas(this, ics_adi_dir_y);
+        run_threaded_deltas(this, ics_adi_dir_z);
+        run_threaded_ics_dg_adi(ics_adi_dir_x);
+        run_threaded_ics_dg_adi(ics_adi_dir_y);
+        run_threaded_ics_dg_adi(ics_adi_dir_z);
+    }
     return 0;
 }
 
