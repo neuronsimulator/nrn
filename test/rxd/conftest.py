@@ -28,15 +28,10 @@ def neuron_import(request):
     return h, rxd, save_path
 
 @pytest.fixture
-def neuron_instance(neuron_import):
-    """Sets/Resets the rxd test environment.
-
-    Provides 'data', a dictionary used to store voltages and rxd node
-    values for comparisons with the 'correct_data'.
-    """
+def neuron_nosave_instance(neuron_import):
+    """Sets/Resets the rxd test environment."""
 
     h, rxd, save_path = neuron_import
-    data = {'record_count': 0, 'data': []}
     h.load_file('stdrun.hoc')
     h.load_file("import3d.hoc")                      
 
@@ -54,11 +49,7 @@ def neuron_instance(neuron_import):
     h.dt = 0.025
     h.stoprun = False
 
-    def gather():
-        return collect_data(h, rxd, data, save_path)
-
-    cvode.extra_scatter_gather(0, gather)
-    yield (h, rxd, data, save_path)
+    yield (h, rxd, save_path)
     for r in rxd.rxd._all_reactions[:]:
         if r():
             rxd.rxd._unregister_reaction(r)
@@ -79,5 +70,22 @@ def neuron_instance(neuron_import):
     rxd.species._has_3d = False
     rxd.rxd._zero_volume_indices = numpy.ndarray(0, dtype=numpy.int_)
     rxd.set_solve_type(dimension=1)
+
+@pytest.fixture
+def neuron_instance(neuron_nosave_instance):
+    """ Sets/Resets the rxd test environment.
+        Provides 'data', a dictionary used to store voltages and rxd node
+        values for comparisons with the 'correct_data'.
+    """
+
+    h, rxd, save_path = neuron_nosave_instance
+    data = {'record_count': 0, 'data': []}
+    def gather():
+        return collect_data(h, rxd, data, save_path)
+    cvode = h.CVode()
+    cvode.extra_scatter_gather(0, gather)
+
+    yield (h, rxd, data, save_path)
+
     cvode.extra_scatter_gather_remove(gather)
-    
+
