@@ -1148,6 +1148,21 @@ class _ExtracellularSpecies(_SpeciesMathable):
                         scale_factors.append(float(scale_factor * surface_area))
             #TODO: MultiCompartment reactions ?
             _set_grid_currents(grid_list, self._grid_id, grid_indices, neuron_pointers, scale_factors)
+
+    def _import_concentration(self):
+        """ set node values to those of the corresponding NEURON segments """
+
+        self._isalive()
+        if self._species is None:
+            return
+        grid_list = 0
+        grid_indices = []
+        neuron_pointers = []
+        stateo = self._species + 'o'
+        for sec, indices in self._seg_indices.items():
+            for seg, i in zip(sec, indices):
+                if i is not None:
+                    self._states[i] = getattr(seg, stateo)
     
     def _semi_compile(self, reg, instruction):
 
@@ -1373,7 +1388,6 @@ class Species(_SpeciesMathable):
         # NOTE: if no 3D nodes, then _3doffset is not meaningful
         self._3doffset = 0
         self._3doffset_by_region = {}
-        self._nodes = []
         selfref = weakref.ref(self)
         self_has_3d = False
         self._intracellular_nodes = {}
@@ -1585,17 +1599,8 @@ class Species(_SpeciesMathable):
         idx = self._indices1d()
         species_atolscale(self._id, self._atolscale, len(idx), (ctypes.c_int * len(idx))(*idx))
         # 3D stuff
-        self._concentration_ptrs = []
-        self._seg_order = []
-        if self._nodes and self.name is not None:
-            for r in self._regions:
-                nrn_region = r._nrn_region
-                if nrn_region is not None:
-                    ion = '_ref_' + self.name + nrn_region
-                    current_region_segs = list(r._segsidx)
-                    self._seg_order += current_region_segs
-                    for seg in r._segs3d(current_region_segs):
-                        self._concentration_ptrs.append(getattr(seg, ion))    
+        for ics in self._intracellular_instances.values():
+            ics._register_cptrs()
 
     @property
     def charge(self):
@@ -1722,39 +1727,6 @@ class Species(_SpeciesMathable):
         # 1D part
         for s in self._secs:
             s._setup_currents(indices, scales, ptrs, cur_map)
-        # 3D part
-        if self._nodes:
-            # TODO: this is very similar to the 1d code; merge
-            if self.name is not None and self.charge != 0:
-                ion_curr = '_ref_i%s' % self.name
-                volumes, surface_area, diffs = node._get_data()
-                # NOTE: this implicitly assumes that o and i border the membrane
-                local_indices = self._indices3d()
-                offset = self._offset
-                charge = self.charge
-                namei = self._name + 'i'
-                nameo = self._name + 'o'
-                tenthousand_over_charge_faraday = 10000. / (charge * h.FARADAY)
-                for i, nodeobj in enumerate(self._nodes):
-                    if surface_area[i]:
-                        r = nodeobj.region
-                        nrn_region = r.nrn_region
-                        if nrn_region == 'i':
-                            sign = -1
-                            seg = nodeobj.segment
-                            cur_map[namei][seg] = len(indices)
-                        elif nrn_region == 'o':
-                            sign = 1
-                            seg = nodeobj.segment
-                            cur_map[nameo][seg] = len(indices)
-                        else:
-                            continue
-                        indices.append(local_indices[i])
-                        if volumes[i + offset] == 0:
-                            print(('0 volume at position %d; surface area there: %g' % (i + offset, surface_area[i + offset])))
-                        scales.append(sign * tenthousand_over_charge_faraday * surface_area[i + offset] / volumes[i + offset])
-                        ptrs.append(getattr(seg, ion_curr))
-
     
     def _has_region_section(self, region, sec):
         return any((s._region == region and s._sec == sec) for s in self._secs)
@@ -1802,7 +1774,7 @@ class Species(_SpeciesMathable):
                 for node in self.nodes:
                     node.concentration = self.initial
             if not skip_transfer:
-                self._transfer_to_legacy() 
+                self._transfer_to_legacy()
         else:
             self._import_concentration()
     
@@ -1812,8 +1784,12 @@ class Species(_SpeciesMathable):
         
         # 1D part
         for sec in self._secs: sec._transfer_to_legacy()
-        
-        # 3D part
+
+        # now the 3D stuff
+        for ics in self._intracellular_instances.values():
+            ics._transfer_to_legacy()
+
+        """
         nodes = self._nodes
         if nodes:
             non_none_regions = [r for r in self._regions if r._nrn_region is not None]
@@ -1829,7 +1805,7 @@ class Species(_SpeciesMathable):
                         # TODO: if everything is 3D, then this should always have something, but for sections that aren't in 3D, won't have anything here
                         # TODO: vectorize this, don't recompute denominator unless a structure change event happened
                         ptr[0] = sum(nodes[node].concentration * nodes[node].volume for node in all_nodes_in_seg) / sum(nodes[node].volume for node in all_nodes_in_seg)
-    
+        """    
     def _import_concentration(self, init=True):
         """Read concentrations from the standard NEURON grid"""
         if self._name is None: return
@@ -1838,20 +1814,12 @@ class Species(_SpeciesMathable):
         for sec in self._secs: sec._import_concentration(init)
 
         # now the 3D stuff
-        nodes = self._nodes
-        if nodes:
-            # TODO: replace this with a pointer vec for speed
-            #       not a huge priority since import happens rarely if at all
-            i = 0
-            seg_order = self._seg_order
-            conc_ptr = self._concentration_ptrs
-            for r in self._regions:
-                if r._nrn_region is not None:
-                    segidx, ptr = seg_order[i], conc_ptr[i]
-                    i += 1
-                    value = ptr[0]
-                    for node in r._nodes_by_seg[segidx]:
-                        nodes[node].concentration = value
+        for ics in self._intracellular_instances.values():
+            ics._import_concentration()
+
+        # now the ECS
+        for ecs in self._extracellular_instances.values():
+            ecs._import_concentration()
     
     @property
     def nodes(self):
@@ -1873,7 +1841,7 @@ class Species(_SpeciesMathable):
                     self._all_intracellular_nodes += self._intracellular_nodes[r]
         # The first part here is for the 1D -- which doesn't keep live node objects -- the second part is for 3D
         self._all_intracellular_nodes = [nd for nd in self._all_intracellular_nodes[:] if nd.sec]
-        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._nodes + self._all_intracellular_nodes + self._extracellular_nodes) 
+        return nodelist.NodeList(list(itertools.chain.from_iterable([s.nodes for s in self._secs])) + self._all_intracellular_nodes + self._extracellular_nodes) 
 
 
     @property
@@ -1916,7 +1884,7 @@ def xyz_by_index(indices):
     else:
         index = [indices]
     #TODO: make sure to include Node3D
-    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species() for s in sp()._secs for nd in s.nodes + sp()._nodes if sp() if nd._index in index]
+    return [[nd.x3d, nd.y3d, nd.z3d] for sp in _get_all_species() for s in sp()._secs for nd in s.nodes if sp() if nd._index in index]
 
 
 class Parameter(Species):
