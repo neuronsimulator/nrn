@@ -350,6 +350,16 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
     } else if (is_python_string(po)) {
       char** ts = hoc_temp_charptr();
       Py2NRNString str(po, /* disable_release */ true);
+      if (str.err()) {
+        // Since Python error has been set, need to clear, or hoc_execerror
+        // printing with nrnpy_pr will generate a
+        // Exception ignored on calling ctypes callback function.
+        // So get the message, clear, and make the message
+        // part of the execerror.
+        *ts = str.get_pyerr();
+        s2free.push_back(*ts);
+        hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s", *ts);
+      }
       *ts = str.c_str();
       s2free.push_back(*ts);
       hoc_pushstr(ts);
@@ -390,7 +400,9 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
 static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
   std::vector<char*>::iterator it = s2free.begin();
   for (; it != s2free.end(); ++it) {
-    free(*it);
+    if (*it) {
+      free(*it);
+    }
   }
 }
 
@@ -932,10 +944,9 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
   Py2NRNString name(pyname);
   char* n = name.c_str();
   if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     return NULL;
   }
-  // printf("hocobj_getattr %s\n", n);
 
   Symbol* sym = getsym(n, self->ho_, 0);
   if (!sym) {
@@ -1304,7 +1315,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
   Py2NRNString name(pyname);
   char* n = name.c_str();
   if (!n) {
-    PyErr_SetString(PyExc_TypeError, "attribute name must be a string");
+    name.set_pyerr(PyExc_TypeError, "attribute name must be a string");
     return -1;
   }
   // printf("hocobj_setattro %s\n", n);
@@ -1965,6 +1976,11 @@ static PyObject* mkref(PyObject* self, PyObject* args) {
       result->type_ = PyHoc::HocRefStr;
       result->u.s_ = 0;
       Py2NRNString str(pa);
+      if (str.err()) {
+        str.set_pyerr(PyExc_TypeError, "string arg must have only ascii characters");
+        Py_XDECREF(result);
+        return NULL;
+      }
       char* cpa = str.c_str();
       hoc_assign_str(&result->u.s_, cpa);
     } else {
@@ -2014,8 +2030,9 @@ static PyObject* setpointer(PyObject* self, PyObject* args) {
       }
       Py2NRNString str(name);
       char* n = str.c_str();
-      if (!n) {
-        goto done;
+      if (str.err()) {
+        str.set_pyerr(PyExc_TypeError, "POINTER name can contain only ascii characters");
+        return NULL;
       }
       Symbol* sym = getsym(n, hpp->ho_, 0);
       if (!sym || sym->type != RANGEVAR || sym->subtype != NRNPOINTER) {
@@ -2954,6 +2971,10 @@ static char* nrncore_arg(double tstop) {
           if (arg) {
             Py2NRNString str(arg);
             Py_DECREF(arg);
+            if (str.err()) {
+              str.set_pyerr(PyExc_TypeError, "neuron.coreneuron.nrncore_arg() must return an ascii string");
+              return NULL;
+            }
             if (strlen(str.c_str()) > 0) {
               return strdup(str.c_str());
             }

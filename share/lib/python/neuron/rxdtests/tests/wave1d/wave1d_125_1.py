@@ -59,21 +59,24 @@ times.record(h._ref_t)
 h.finitialize()
 print("baba")
 
-def set_plotshape_colormap(plotshape, cmap='jet'):
-    import matplotlib.cm
-    s = matplotlib.cm.ScalarMappable(cmap=cmap)
-    cmap = s.get_cmap()
-    s.set_clim(0, cmap.N)
-    rs, gs, bs = itertools.islice(zip(*s.to_rgba(list(range(cmap.N)))),0,3)
-    plotshape.colormap(cmap.N)
-    for i, r, g, b in zip(range(cmap.N), rs, gs, bs):
-        plotshape.colormap(i, r * 255, g * 255, b * 255)
-    # call s.scale(lo, hi) to replot the legend
+
 
 s = h.PlotShape()
 
 s.exec_menu('Shape Plot')
-set_plotshape_colormap(s)
+if __name__ == "__main__":
+    def set_plotshape_colormap(plotshape, cmap='jet'):
+        import matplotlib.cm
+        s = matplotlib.cm.ScalarMappable(cmap=cmap)
+        cmap = s.get_cmap()
+        s.set_clim(0, cmap.N)
+        rs, gs, bs = itertools.islice(zip(*s.to_rgba(list(range(cmap.N)))),0,3)
+        plotshape.colormap(cmap.N)
+        for i, r, g, b in zip(range(cmap.N), rs, gs, bs):
+            plotshape.colormap(i, r * 255, g * 255, b * 255)
+        # call s.scale(lo, hi) to replot the legend
+    
+    set_plotshape_colormap(s)
 
 # show the diameters
 s.show(0)
@@ -151,4 +154,5 @@ recdt = 100
 datacol=0
 
 tstop=1500
+del s
 h.continuerun(tstop)
