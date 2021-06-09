@@ -1,7 +1,6 @@
 from neuron import h, rxd
 import time
 h.load_file('stdrun.hoc')
-from matplotlib import pyplot as plt
 
 mM = 1
 msec = 1
@@ -132,11 +131,13 @@ mp = mpvec.as_numpy() / nM
 cn = cnvec.as_numpy() / nM
 t_in_hours = t.as_numpy() / hour
 
-plt.figure(figsize=(8, 6))
-plt.plot(t_in_hours, mp, label='MP')
-plt.plot(t_in_hours, cn, label='CN')
-plt.plot(t_in_hours, pt, label='PT')
-plt.legend()
-plt.xlabel('t (hours)')
-plt.ylabel('concentration (nM)')
-plt.show()
+if __name__ == "__main__":
+    from matplotlib import pyplot as plt
+    plt.figure(figsize=(8, 6))
+    plt.plot(t_in_hours, mp, label='MP')
+    plt.plot(t_in_hours, cn, label='CN')
+    plt.plot(t_in_hours, pt, label='PT')
+    plt.legend()
+    plt.xlabel('t (hours)')
+    plt.ylabel('concentration (nM)')
+    plt.show()

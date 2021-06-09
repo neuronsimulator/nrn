@@ -5,7 +5,6 @@
 
 
 from neuron import h, rxd
-from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 
@@ -44,6 +43,8 @@ t_vec = h.Vector().record(h._ref_t)
 h.finitialize(-70)
 h.continuerun(100)
 
-pyplot.plot(t_vec,VA_conc)
-pyplot.plot(t_vec,T_conc)
-pyplot.show()
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    pyplot.plot(t_vec,VA_conc)
+    pyplot.plot(t_vec,T_conc)
+    pyplot.show()

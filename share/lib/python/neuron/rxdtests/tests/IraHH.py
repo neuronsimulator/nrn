@@ -10,8 +10,6 @@ from neuron.units import sec, mM, ms
 from neuron.crxd import v
 from neuron.crxd.rxdmath import exp, log
 from math import pi
-from matplotlib import pyplot as plt
-from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 

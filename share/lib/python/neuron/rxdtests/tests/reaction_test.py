@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 cell = h.Section(name='cell')
