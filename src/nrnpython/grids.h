@@ -92,7 +92,7 @@ typedef struct Reaction {
 	double** species_states;
 	unsigned char* subregion;
 	unsigned int region_size;
-    int* mc3d_indices_offsets;
+    uint64_t* mc3d_indices_offsets;
     double** mc3d_mults;
 } Reaction;
 
