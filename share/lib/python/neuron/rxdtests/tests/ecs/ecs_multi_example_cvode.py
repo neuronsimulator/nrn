@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 from math import pi
 import time
 h.load_file('stdrun.hoc')
@@ -79,34 +78,34 @@ cell2V.record(cell2(0.5)._ref_v)
 # run and plot the results
 h.finitialize(-65)
 h.continuerun(1000)
-"""
-fig = pyplot.figure()
-pyplot.subplot(2, 2, 1)
-pyplot.plot(t_vec,cell1_X, label='cyt')
-pyplot.plot(t_vec,cell1_Xorg, label='org')
-pyplot.legend()
-pyplot.xlabel('t (ms)')
-pyplot.ylabel('cell 1 x (mM)')
-
-pyplot.subplot(2, 2, 2)
-pyplot.plot(t_vec,cell2_X, label='cyt')
-pyplot.plot(t_vec,cell2_Xorg, label='org')
-pyplot.xlabel('t (ms)')
-pyplot.ylabel('cell 2 x (mM)')
-
-pyplot.subplot(2, 2, 3)
-pyplot.plot(t_vec,cell1V, label='cell1')
-pyplot.xlabel('t (ms)')
-pyplot.ylabel('cell 1 V$_m$ (mV)')
-
-pyplot.subplot(2, 2, 4)
-pyplot.plot(t_vec,cell2V, label='cell2')
-pyplot.xlabel('t (ms)')
-pyplot.ylabel('cell 2 V$_m$ (mV)')
-
-
-#pyplot.subplot(3, 1, 2)
-#pyplot.imshow(x[ecs].states3d.mean(2).T, extent=x[ecs].extent('xy'), origin="lower", aspect='equal')
-fig.tight_layout()
-pyplot.show()
-"""
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    fig = pyplot.figure()
+    pyplot.subplot(2, 2, 1)
+    pyplot.plot(t_vec,cell1_X, label='cyt')
+    pyplot.plot(t_vec,cell1_Xorg, label='org')
+    pyplot.legend()
+    pyplot.xlabel('t (ms)')
+    pyplot.ylabel('cell 1 x (mM)')
+    
+    pyplot.subplot(2, 2, 2)
+    pyplot.plot(t_vec,cell2_X, label='cyt')
+    pyplot.plot(t_vec,cell2_Xorg, label='org')
+    pyplot.xlabel('t (ms)')
+    pyplot.ylabel('cell 2 x (mM)')
+    
+    pyplot.subplot(2, 2, 3)
+    pyplot.plot(t_vec,cell1V, label='cell1')
+    pyplot.xlabel('t (ms)')
+    pyplot.ylabel('cell 1 V$_m$ (mV)')
+    
+    pyplot.subplot(2, 2, 4)
+    pyplot.plot(t_vec,cell2V, label='cell2')
+    pyplot.xlabel('t (ms)')
+    pyplot.ylabel('cell 2 V$_m$ (mV)')
+    
+    
+    #pyplot.subplot(3, 1, 2)
+    #pyplot.imshow(x[ecs].states3d.mean(2).T, extent=x[ecs].extent('xy'), origin="lower", aspect='equal')
+    fig.tight_layout()
+    pyplot.show()

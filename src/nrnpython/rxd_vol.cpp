@@ -7,17 +7,17 @@
 #include <nrnwrap_Python.h>
 
 /*Tortuous diffusion coefficients*/
-#define DcX(x,y,z) (g->dc_x/LAMBDA(x,y,z))
-#define DcY(x,y,z) (g->dc_y/LAMBDA(x,y,z))
-#define DcZ(x,y,z) (g->dc_z/LAMBDA(x,y,z))
+#define DcX(x,y,z) (g->dc_x*PERM(x,y,z))
+#define DcY(x,y,z) (g->dc_y*PERM(x,y,z))
+#define DcZ(x,y,z) (g->dc_z*PERM(x,y,z))
 
 /*Flux in the x,y,z directions*/
 //TODO: Refactor to avoid calculating indices
-#define Fxx(x1,x2) (ALPHA(x1,y,z)*ALPHA(x2,y,z)*g->dc_x*(g->states[IDX(x1,y,z)] - g->states[IDX(x2,y,z)])/((ALPHA(x1,y,z)+ALPHA(x2,y,z))*LAMBDA(x1,y,z)))
-#define Fxy(y1,y1d,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1d,z)))
-#define Fxz(z1,z1d,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1d)))
-#define Fyy(y1,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*g->dc_y*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))*LAMBDA(x,y1,z)))
-#define Fzz(z1,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*g->dc_z*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))*LAMBDA(x,y,z1)))
+#define Fxx(x1,x2) (ALPHA(x1,y,z)*ALPHA(x2,y,z)*DcX(x1,y,z)*(g->states[IDX(x1,y,z)] - g->states[IDX(x2,y,z)])/((ALPHA(x1,y,z)+ALPHA(x2,y,z))))
+#define Fxy(y1,y1d,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*DcY(x,y1d,z)*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))))
+#define Fxz(z1,z1d,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*DcZ(x,y,z1d)*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))))
+#define Fyy(y1,y2) (ALPHA(x,y1,z)*ALPHA(x,y2,z)*DcY(x,y1,z)*(g->states[IDX(x,y1,z)] - g->states[IDX(x,y2,z)])/((ALPHA(x,y1,z)+ALPHA(x,y2,z))))
+#define Fzz(z1,z2) (ALPHA(x,y,z1)*ALPHA(x,y,z2)*DcZ(x,y,z1)*(g->states[IDX(x,y,z1)] - g->states[IDX(x,y,z2)])/((ALPHA(x,y,z1)+ALPHA(x,y,z2))))
 
 /*Flux for used by variable step inhomogeneous volume fraction*/
 #define FLUX(pidx,idx) (VOLFRAC(pidx)*VOLFRAC(idx)*(states[pidx] - states[idx]))/(0.5*(VOLFRAC(pidx)+VOLFRAC(idx)))
@@ -909,22 +909,22 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
 				    /*x-direction*/
                     if(stop_i > 0)
                     {
-                        ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(xpd,j,k) + 
-				    	    FLUX(prev_i,index)/LAMBDA(xmd,j,k))/(VOLFRAC(index)*div_x);
+                        ydot[index] += rate_x * (FLUX(next_i,index)*PERM(xpd,j,k) + 
+				    	    FLUX(prev_i,index)*PERM(xmd,j,k))/(VOLFRAC(index)*div_x);
                     }
 
 				    /*y-direction*/
                     if(stop_j > 0)
                     {
-				        ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,ypd,k) +
-                            FLUX(prev_j,index)/LAMBDA(i,ymd,k))/(VOLFRAC(index)*div_y);
+				        ydot[index] += rate_y * (FLUX(next_j,index)*PERM(i,ypd,k) +
+                            FLUX(prev_j,index)*PERM(i,ymd,k))/(VOLFRAC(index)*div_y);
                     }
 
 				    /*z-direction*/
                     if(stop_k > 0)
                     {
-				        ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,zpd) + 
-				    	    FLUX(prev_k,index)/LAMBDA(i,j,zmd))/(VOLFRAC(index)*div_z);
+				        ydot[index] += rate_z * (FLUX(next_k,index)*PERM(i,j,zpd) + 
+				    	    FLUX(prev_k,index)*PERM(i,j,zmd))/(VOLFRAC(index)*div_z);
                     }
 
                     next_k = (k==stop_k-1)?index:index+2;
@@ -954,16 +954,16 @@ void _rhs_variable_step_helper_vol(Grid_node* g, double const * const states, do
                     else
                     {
 				        /*x-direction*/
-                        ydot[index] += rate_x * (FLUX(next_i,index)/LAMBDA(i+1,j,k) + 
-				    	    FLUX(prev_i,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+                        ydot[index] += rate_x * (FLUX(next_i,index)*PERM(i+1,j,k) + 
+				    	    FLUX(prev_i,index)*PERM(i,j,k))/(VOLFRAC(index));
 
 				        /*y-direction*/
-				        ydot[index] += rate_y * (FLUX(next_j,index)/LAMBDA(i,j+1,k) +
-                        FLUX(prev_j,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+				        ydot[index] += rate_y * (FLUX(next_j,index)*PERM(i,j+1,k) +
+                        FLUX(prev_j,index)*PERM(i,j,k))/(VOLFRAC(index));
 
 				        /*z-direction*/
-				        ydot[index] += rate_z * (FLUX(next_k,index)/LAMBDA(i,j,k+1) + 
-				    	    FLUX(prev_k,index)/LAMBDA(i,j,k))/(VOLFRAC(index));
+				        ydot[index] += rate_z * (FLUX(next_k,index)*PERM(i,j,k+1) + 
+				    	    FLUX(prev_k,index)*PERM(i,j,k))/(VOLFRAC(index));
                     }
                 }
                 prev_j = index - num_states_z;

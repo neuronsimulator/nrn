@@ -1,5 +1,4 @@
 from neuron import h, rxd
-from matplotlib import pyplot
 h.load_file('stdrun.hoc')
 
 from neuron.units import mM, ms
@@ -25,6 +24,9 @@ Fvec = h.Vector().record(F.nodes._ref_concentration)
 FAvec = h.Vector().record(FA.nodes._ref_concentration)
 h.finitialize(-65)
 h.continuerun(10)
-pyplot.plot(tvec,Fvec)
-pyplot.plot(tvec,FAvec)
-pyplot.show()
+
+if __name__ == "__main__":
+    from matplotlib import pyplot
+    pyplot.plot(tvec,Fvec)
+    pyplot.plot(tvec,FAvec)
+    pyplot.show()

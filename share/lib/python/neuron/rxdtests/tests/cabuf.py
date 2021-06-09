@@ -1,5 +1,4 @@
 from neuron import h, crxd as rxd, gui
-from matplotlib import pyplot
 
 # reaction rates
 kf = 0.02 
@@ -64,16 +63,18 @@ h.CVode().atol(1e-12)
 h.tstop = 1000
 h.run()
 
-#
-# plot
-#
-labels = ["Ca","Buf","CaBuf"]
-for i, trace in enumerate([species_0_trace, species_1_trace, species_2_trace]):
-    pyplot.plot(times.as_numpy() , trace.as_numpy(), label=labels[i])
-pyplot.legend()
-pyplot.title('Ca+Buf->CaBuf')
-pyplot.xlabel('Time (ms)')
-pyplot.ylabel('Concentration (mM)')
-pyplot.tight_layout()
-pyplot.show()
+if __name__ == '__main__':
+    from matplotlib import pyplot
+    #
+    # plot
+    #
+    labels = ["Ca","Buf","CaBuf"]
+    for i, trace in enumerate([species_0_trace, species_1_trace, species_2_trace]):
+        pyplot.plot(times.as_numpy() , trace.as_numpy(), label=labels[i])
+    pyplot.legend()
+    pyplot.title('Ca+Buf->CaBuf')
+    pyplot.xlabel('Time (ms)')
+    pyplot.ylabel('Concentration (mM)')
+    pyplot.tight_layout()
+    pyplot.show()
 

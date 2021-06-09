@@ -97,7 +97,8 @@ void clear_rates_ecs(void)
  */
 Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params,
                               int* species_ids, ECSReactionRate f,
-                              unsigned char* subregion, int* mc3d_start_indices,
+                              unsigned char* subregion,
+                              uint64_t* mc3d_start_indices,
                               int mc3d_region_size, double* mc3d_mults)
 {
 	Grid_node *grid;
@@ -120,8 +121,8 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params,
             {
                 r->subregion = NULL;
                 r->region_size = mc3d_region_size;
-                r->mc3d_indices_offsets = (int*)malloc(sizeof(int*)*(num_species+num_params));
-                memcpy(r->mc3d_indices_offsets, mc3d_start_indices, sizeof(double)*(num_species+num_params));
+                r->mc3d_indices_offsets = (uint64_t*)malloc(sizeof(uint64_t)*(num_species+num_params));
+                memcpy(r->mc3d_indices_offsets, mc3d_start_indices, sizeof(uint64_t)*(num_species+num_params));
                 r->mc3d_mults = (double**)malloc(sizeof(double*)*(num_species + num_params));
                 int mult_idx = 0;
                 for(int row = 0; row < num_species + num_params; row++)
@@ -176,8 +177,9 @@ Reaction* ecs_create_reaction(int list_idx, int num_species, int num_params,
  * grid_id - the grid id within the linked list - this corresponds to species
  * ECSReactionRate - the reaction function
  */
-extern "C" void ics_register_reaction(int list_idx, int num_species, int num_params,
-                                      int* species_id, int* mc3d_start_indices,
+extern "C" void ics_register_reaction(int list_idx, int num_species,
+                                      int num_params, int* species_id,
+                                      uint64_t* mc3d_start_indices,
                                       int mc3d_region_size, double* mc3d_mults,
                                       ECSReactionRate f)
 {
@@ -657,9 +659,8 @@ void _fadvance_fixed_step_3D(void) {
         {
             grid->hybrid_connections();
         }
-        if(grid->diffusable){
-            grid->dg_adi(); 
-        }
+        grid->dg_adi(); 
+        
     }
     /* transfer concentrations */
     scatter_concentrations();
