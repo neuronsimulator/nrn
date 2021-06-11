@@ -206,18 +206,7 @@ def test_rxd(exitOnError=True):
 # ------------------------------------------------------------------------------
 
 import sys, types
-
-# Flag for the Python objects interface
-_pyobj_enabled = False
-# Load the `hclass` factory for the correct Python3 version  and prevent the
-# incorrect module source code from being opened by creating an empty module.
-if sys.version_info[0] == 3 and sys.version_info[1] < 6:
-  import neuron.hclass35
-  hclass = neuron.hclass35.hclass
-  hclass3 = neuron.hclass35
-else:
-  from neuron.hclass3 import HocBaseObject, hclass
-  _pyobj_enabled = True
+from neuron.hclass3 import HocBaseObject, hclass
 
 # global list of paths already loaded by load_mechanisms
 nrn_dll_loaded = []
