@@ -75,6 +75,9 @@ naecs = rxd.Parameter([ecs], name='na_ecs', value=140, charge=1, represents='CHE
 
 x = rxd.Species([cyt, mem, ecs], name='x', charge=1, initial=1e9)
 
+# a parameter without a charge to test initialization 
+dump = rxd.Parameter([cyt, ecs], name='dump')
+
 ki, ko, nai, nao, xi, xo = k[cyt], kecs[ecs], na[cyt], naecs[ecs], x[cyt], x[ecs]
 
 # gates

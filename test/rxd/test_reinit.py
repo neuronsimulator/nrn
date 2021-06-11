@@ -12,8 +12,10 @@ def simple_model(neuron_instance):
     cyt = rxd.Region(dend, name='cyt', nrn_region='i')
     k = rxd.Species([cyt], name='k', d=1, charge=1,
                     initial=140)
+    paramA = rxd.Parameter([cyt], name='paramA', initial=1)
+    paramB = rxd.Parameter([cyt], initial=0)
     decay = rxd.Rate(k, -0.1*k)
-    model = (dend, cyt, k, decay)
+    model = (dend, cyt, k, paramA, paramB, decay)
     yield (neuron_instance, model)
 
 def test_reinit(simple_model):
@@ -21,7 +23,7 @@ def test_reinit(simple_model):
 
     neuron_instance, model = simple_model
     h, rxd, data, save_path = neuron_instance
-    dend, cyt, k, decay = model
+    dend, cyt, k, paramA, paramB, decay = model
     h.finitialize(-65)
     dend(0.5).ki = 0
     rxd.re_init()
@@ -32,7 +34,7 @@ def test_reinit_cvode(simple_model):
 
     neuron_instance, model = simple_model
     h, rxd, data, save_path = neuron_instance
-    dend, cyt, k, decay = model
+    dend, cyt, k, paramA, paramB, decay = model
     h.finitialize(-65)
     h.CVode().active(True)
     dend(0.5).ki = 0
@@ -44,7 +46,7 @@ def test_reinit_3d(simple_model):
 
     neuron_instance, model = simple_model
     h, rxd, data, save_path = neuron_instance
-    dend, cyt, k, decay = model
+    dend, cyt, k, paramA, paramB, decay = model
     rxd.set_solve_type(dimension=3)
     # check changing the units after initialization
     h.finitialize(-65)
@@ -60,7 +62,7 @@ def test_reinit_3d_cvode(simple_model):
 
     neuron_instance, model = simple_model
     h, rxd, data, save_path = neuron_instance
-    dend, cyt, k, decay = model
+    dend, cyt, k, paramA, paramB, decay = model
     rxd.set_solve_type(dimension=3)
     h.CVode().active(True)
     # check changing the units after initialization
