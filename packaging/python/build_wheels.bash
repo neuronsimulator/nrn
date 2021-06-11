@@ -85,7 +85,7 @@ build_wheel_linux() {
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
         echo " - Auditwheel show"
-        PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel show dist/*.whl
+        auditwheel show dist/*.whl
         echo " - Repairing..."
         auditwheel repair dist/*.whl
     fi
