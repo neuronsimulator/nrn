@@ -1148,7 +1148,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
     def _update_pointers(self):
         # TODO: call this anytime the _grid_id changes and anytime the structure_change_count change
         self._isalive()
-        if self._species is None or self._charge == 0:
+        if self._species is None:
             return
         self._seg_indices = self._locate_segments()
         from .geometry import _surface_areas1d
@@ -1163,7 +1163,7 @@ class _ExtracellularSpecies(_SpeciesMathable):
                     grid_indices.append(i)
                     neuron_pointers.append(getattr(seg, stateo))
         _set_grid_concentrations(grid_list, self._grid_id, grid_indices, neuron_pointers)
-        if isinstance(_defined_species[self._species][self._region](), Parameter):
+        if self._charge == 0 or isinstance(_defined_species[self._species][self._region](), Parameter):
             _set_grid_currents(grid_list, self._grid_id, [], [], [])
         else:
             tenthousand_over_charge_faraday = 10000. / (self._charge * h.FARADAY)
