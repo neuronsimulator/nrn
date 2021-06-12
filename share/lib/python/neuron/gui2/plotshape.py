@@ -11,12 +11,13 @@ _update_thread = None
 _gui_widgets = []
 _shape_plot_list = []
 _active_container = None
-_structure_change_count = neuron.nrn_dll_sym('structure_change_cnt', ctypes.c_int)
-_diam_change_count = neuron.nrn_dll_sym('diam_change_cnt', ctypes.c_int)
+_structure_change_count = neuron.nrn_dll_sym("structure_change_cnt", ctypes.c_int)
+_diam_change_count = neuron.nrn_dll_sym("diam_change_cnt", ctypes.c_int)
 _last_diam_change_count = _diam_change_count.value
 _last_structure_change_count = _structure_change_count.value
 update_interval = 0.1  # seconds
 _has_setup = False
+
 
 def _ensure_update_thread():
     global _update_thread
@@ -25,12 +26,18 @@ def _ensure_update_thread():
         _update_thread.daemon = True
         _update_thread.start()
 
+
 def _do_updates():
     global _last_diam_change_count, _last_structure_change_count
     while True:
         old_diam_changed = h.diam_changed
         h.define_shape()
-        if old_diam_changed or h.diam_changed or _diam_change_count.value != _last_diam_change_count or _structure_change_count.value != _last_structure_change_count:
+        if (
+            old_diam_changed
+            or h.diam_changed
+            or _diam_change_count.value != _last_diam_change_count
+            or _structure_change_count.value != _last_structure_change_count
+        ):
             h.diam_changed = 0
             _last_diam_change_count = _diam_change_count.value
             _last_structure_change_count = _structure_change_count.value
@@ -48,14 +55,15 @@ def _do_reset_geometry():
     geo = []
     for sec in secs:
         geo += _segment_3d_pts(sec)
-    javascript_embedder(("set_neuron_section_data(%s);" % json.dumps(geo))) 
+    javascript_embedder(("set_neuron_section_data(%s);" % json.dumps(geo)))
     for sp in _shape_plot_list:
         sp = sp()
         if sp is not None:
             sp._reload_morphology()  # could probably get rid of this, but slower response
             sp._force_redraw = True
     del secs
-        
+
+
 def _ensure_setup():
     """deferred import (and webgl) loader"""
     global _has_setup, widgets
@@ -72,7 +80,8 @@ def _ensure_setup():
         from .utilities import _segment_3d_pts
         from .rangevar import rangevars_present, _get_ptrs
 
-        setup_threejs(after="""
+        setup_threejs(
+            after="""
 <script>
 var neuron_section_data = undefined;
 
@@ -178,7 +187,8 @@ ShapePlot.prototype.update_colors = function(data) {
     }
 }
 </script>
-""")
+"""
+        )
 
 
 class GUIWidget:
@@ -189,25 +199,34 @@ class GUIWidget:
         if parent is None:
             parent = _active_container
         if parent is None:
-            #parent = widgets.VBox([])
-            #display(parent)
+            # parent = widgets.VBox([])
+            # display(parent)
             self._index = 0
         self._parent = parent
         _ensure_update_thread()
         _gui_widgets.append(weakref.ref(self))
 
+
 class PlotShape(GUIWidget):
     def __init__(self):
         from .config import options
-        if options['backend'] != 'jupyter':
-            raise Exception('gui2.PlotShape currently only works with "jupyter" backend')
+
+        if options["backend"] != "jupyter":
+            raise Exception(
+                'gui2.PlotShape currently only works with "jupyter" backend'
+            )
         GUIWidget.__init__(self)
-        self._uuid = str(uuid.uuid4()).replace('-', '')
+        self._uuid = str(uuid.uuid4()).replace("-", "")
         self._graph_div = widgets.Output()
         with self._graph_div:
-            display(HTML('<div id="%s" style="width:400px; height:400px; border: 1px solid black"></div>' % self._uuid))
+            display(
+                HTML(
+                    '<div id="%s" style="width:400px; height:400px; border: 1px solid black"></div>'
+                    % self._uuid
+                )
+            )
 
-        self._rangevars_control = widgets.Select(options=['No coloration'], index=0)
+        self._rangevars_control = widgets.Select(options=["No coloration"], index=0)
         parent = widgets.HBox([self._graph_div, self._rangevars_control])
         display(parent)
 
@@ -216,33 +235,46 @@ class PlotShape(GUIWidget):
         self._ptrs = []
         self._old_selection = None
 
-        display(HTML('<script>sp%s = new ShapePlot("%s");</script>' % (self._uuid, self._uuid)))
+        display(
+            HTML(
+                '<script>sp%s = new ShapePlot("%s");</script>'
+                % (self._uuid, self._uuid)
+            )
+        )
         _shape_plot_list.append(weakref.ref(self))
         self._min = -100
         self._max = 100
         self._force_redraw = False
         self._update_colors = 5
         self._ready = True
-    
+
     def camera_position(self, x, y, z):
         """set the camera position"""
-        javascript_embedder('sp%s.tc.camera.position.set(%g, %g, %g)' % (self._uuid, x, y, z))
+        javascript_embedder(
+            "sp%s.tc.camera.position.set(%g, %g, %g)" % (self._uuid, x, y, z)
+        )
 
     def _reload_morphology(self):
-        javascript_embedder(('sp%s.update()' % self._uuid))
-    
+        javascript_embedder(("sp%s.update()" % self._uuid))
+
     def scale(self, low, high):
         """Sets blue (low) and red (high) values for the color scale."""
-        javascript_embedder('sp%s.vmin = %g; sp%s.vmax = %g;' % (self._uuid, low, self._uuid, high))
-        javascript_embedder('sp%s.update_colors(%s)' % (self._uuid, json.dumps(self._val)))
+        javascript_embedder(
+            "sp%s.vmin = %g; sp%s.vmax = %g;" % (self._uuid, low, self._uuid, high)
+        )
+        javascript_embedder(
+            "sp%s.update_colors(%s)" % (self._uuid, json.dumps(self._val))
+        )
 
     def _do_rangevar_update(self):
         rangevars = rangevars_present(list(h.allsec()))
-        if len(rangevars) != len(self._rangevars) or any(r1 != r2 for r1, r2 in zip(rangevars, self._rangevars)):
+        if len(rangevars) != len(self._rangevars) or any(
+            r1 != r2 for r1, r2 in zip(rangevars, self._rangevars)
+        ):
             self._rangevars = rangevars
-            self._rangevars_control.options = [r['name'] for r in rangevars]
+            self._rangevars_control.options = [r["name"] for r in rangevars]
             for i, rv in enumerate(rangevars):
-                if rv['name'] == self._old_selection:
+                if rv["name"] == self._old_selection:
                     self._rangevars_control.index = i
                     break
             self._force_redraw = True
@@ -251,19 +283,33 @@ class PlotShape(GUIWidget):
         if not self._ready:
             return
         self._do_rangevar_update()
-        if self._rangevars_control.options[self._rangevars_control.index] != self._old_selection or self._force_redraw:
-            self._old_selection = self._rangevars_control.options[self._rangevars_control.index]
+        if (
+            self._rangevars_control.options[self._rangevars_control.index]
+            != self._old_selection
+            or self._force_redraw
+        ):
+            self._old_selection = self._rangevars_control.options[
+                self._rangevars_control.index
+            ]
             self._ptrs = _get_ptrs(self._rangevars[self._rangevars_control.index])
         data = [ptr[0] if ptr is not None else None for ptr in self._ptrs]
-        if self._val is None or len(self._val) != len(data) or any(myval != oldval for myval, oldval in zip(data, self._val)):
+        if (
+            self._val is None
+            or len(self._val) != len(data)
+            or any(myval != oldval for myval, oldval in zip(data, self._val))
+        ):
             if self._val is not None or any(data) is not None:
                 self._update_colors += 1
             self._val = data
-        self._old_selection = self._rangevars_control.options[self._rangevars_control.index]
+        self._old_selection = self._rangevars_control.options[
+            self._rangevars_control.index
+        ]
         if self._force_redraw:
             self._reload_morphology()
         if self._update_colors or self._force_redraw:
-            javascript_embedder(('sp%s.update_colors(%s)' % (self._uuid, json.dumps(self._val))))
+            javascript_embedder(
+                ("sp%s.update_colors(%s)" % (self._uuid, json.dumps(self._val)))
+            )
             self._update_colors = min(20, max(0, self._update_colors - 1))
         self._force_redraw = False
 
@@ -271,13 +317,13 @@ class PlotShape(GUIWidget):
         """Sets the range variable (v, ca[cyt], hh.m, etc...) to be used for the shape plot."""
         self._do_rangevar_update()
         for i, rv in enumerate(self._rangevars):
-            if rv['name'] == what:
+            if rv["name"] == what:
                 self._rangevars_control.index = i
                 self._force_redraw = True
                 self._update_colors += 5
                 break
         else:
-            raise Exception('No such variable ' + str(what))
+            raise Exception("No such variable " + str(what))
 
     def show(self, m):
         """Sets the view mode m.
@@ -286,11 +332,12 @@ class PlotShape(GUIWidget):
         If m == 1, then displays centroid.
         """
         if m not in (0, 1):
-            raise Exception('view mode must be 0 or 1')
-        javascript_embedder(('sp%s.mode=%g; sp%s.update()' % (self._uuid, m, self._uuid)))
+            raise Exception("view mode must be 0 or 1")
+        javascript_embedder(
+            ("sp%s.mode=%g; sp%s.update()" % (self._uuid, m, self._uuid))
+        )
         h.diam_changed = 1
 
     def set_constant_diameter(self, diam):
         """sets the diameter used for mode == 1 (i.e. constant diameter/centroid view)"""
-        javascript_embedder(('sp%s.set_default_diameter(%g)' % (self._uuid, diam)))
-
+        javascript_embedder(("sp%s.set_default_diameter(%g)" % (self._uuid, diam)))

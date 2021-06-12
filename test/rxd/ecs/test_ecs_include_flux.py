@@ -12,14 +12,14 @@ def ecs_include_flux(neuron_instance):
     """
 
     h, rxd, data, save_path = neuron_instance
-    sec = h.Section(name='dend')
+    sec = h.Section(name="dend")
     # the extracellular space
     ecs = rxd.Extracellular(
         -55, -55, -55, 55, 55, 55, dx=33, volume_fraction=0.2, tortuosity=1.6
     )
 
     # Who?
-    x = rxd.Species([ecs], name='x', d=0.0, charge=1, initial=0)
+    x = rxd.Species([ecs], name="x", d=0.0, charge=1, initial=0)
 
     def callbackfun():
         return 1000

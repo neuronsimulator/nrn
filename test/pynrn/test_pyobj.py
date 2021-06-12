@@ -173,4 +173,3 @@ def test_pyobj_pickle():
     p = pickle.loads(pickle.dumps(PickleTest(10, 100, 1, 0)))
     assert p.__class__ is PickleTest
     assert p.start == 10
-

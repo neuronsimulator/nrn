@@ -1,6 +1,6 @@
 import json
 
-everything = r'''
+everything = r"""
 // threejs.org/license
 /*
 The MIT License
@@ -49109,15 +49109,17 @@ function neuron_javascript_embedder(js) {
         console.log(err.message);
     }
 }
-'''
-
+"""
 
 
 def setup_threejs(after="", before=""):
     """setup THREE.js"""
     from IPython.display import display, HTML, Javascript
-    display(HTML(before + '<script>' + everything + '</script>' + after))
+
+    display(HTML(before + "<script>" + everything + "</script>" + after))
+
 
 def javascript_embedder(js):
     from IPython.display import display, HTML, Javascript
-    display(Javascript('neuron_javascript_embedder(%s)' % json.dumps(js)))
+
+    display(Javascript("neuron_javascript_embedder(%s)" % json.dumps(js)))
