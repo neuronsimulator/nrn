@@ -4,11 +4,12 @@ import neuron
 import numpy
 from neuron import h
 import traceback
+
 # reducing the indirection improves performance
 try:
-  _numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
+    _numpy_core_multiarray_int_asbuffer = numpy.core.multiarray.int_asbuffer
 except:
-  pass
+    pass
 _ctypes_addressof = ctypes.addressof
 _numpy_array = numpy.array
 _numpy_frombuffer = numpy.frombuffer
@@ -20,15 +21,22 @@ _numpy_frombuffer = numpy.frombuffer
 nrn_dll_sym = neuron.nrn_dll_sym
 
 # declare prototype
-nonvint_block_prototype = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
+nonvint_block_prototype = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_int,
+)
 
-set_nonvint_block = nrn_dll_sym('set_nonvint_block')
+set_nonvint_block = nrn_dll_sym("set_nonvint_block")
 set_nonvint_block.argtypes = [nonvint_block_prototype]
-unset_nonvint_block = nrn_dll_sym('unset_nonvint_block')
+unset_nonvint_block = nrn_dll_sym("unset_nonvint_block")
 unset_nonvint_block.argtypes = [nonvint_block_prototype]
 
 # Some info not available from the HocObject
-v_structure_change = nrn_dll_sym('v_structure_change', ctypes.c_int)
+v_structure_change = nrn_dll_sym("v_structure_change", ctypes.c_int)
 
 # items in call are each a list of 10 callables
 #    [setup, initialize, # method 0, 1
@@ -37,7 +45,7 @@ v_structure_change = nrn_dll_sym('v_structure_change', ctypes.c_int)
 call = []
 
 # e.g.
-test = '''
+test = """
 def setup(): #0
   print("setup")
 def initialize(): #1
@@ -67,35 +75,40 @@ call.append([
     ode_count, ode_reinit, ode_fun, ode_solve, ode_jacobian, # method 5-9
     ode_abs_tolerance
   ])
-'''
+"""
 
 ode_count_method_index = 5
 
+
 def register(c):
-  unregister(c)
-  call.append(c)
-  activate_callback(True)
+    unregister(c)
+    call.append(c)
+    activate_callback(True)
+
 
 def unregister(c):
-  v_structure_change.value = 1
-  if c in call:
-    call.remove(c)
-  if len(call) == 0:
-    activate_callback(False)
+    v_structure_change.value = 1
+    if c in call:
+        call.remove(c)
+    if len(call) == 0:
+        activate_callback(False)
+
 
 def clear():
-  while len(call):
-    unregister(call[0])
+    while len(call):
+        unregister(call[0])
+
 
 def ode_count_all(offset):
-  global nonvint_block_offset
-  nonvint_block_offset = offset
-  cnt = 0
-  for c in call:
-    if c[ode_count_method_index]:
-      cnt += c[ode_count_method_index](nonvint_block_offset + cnt)
-  #print("ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset))
-  return cnt
+    global nonvint_block_offset
+    nonvint_block_offset = offset
+    cnt = 0
+    for c in call:
+        if c[ode_count_method_index]:
+            cnt += c[ode_count_method_index](nonvint_block_offset + cnt)
+    # print("ode_count_all %d, offset=%d\n"%(cnt, nonvint_block_offset))
+    return cnt
+
 
 pc = h.ParallelContext()
 _pc_dt = pc.dt
@@ -115,72 +128,76 @@ def numpy_from_pointer(cpointer, size):
     buf_from_mem.restype = ctypes.py_object
     buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
     cbuffer = buf_from_mem(cpointer, size * _float_size, 0x200)
-    return numpy.ndarray((size,), numpy.float, cbuffer, order='C')
+    return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
 
 
 def nonvint_block(method, size, pd1, pd2, tid):
-  #print('nonvint_block called with method = %d l=%d tid=%d' % (method,size,tid))
-  try:
-    assert(tid == 0)
-    rval = 0
-    if method == ode_count_method_index:
-        rval = ode_count_all(size) # count of the extra states-equations managed by us
-    else:
-        if pd1:
-            if size:
-                pd1_array = numpy_from_pointer(pd1, size)
-            else:
-                pd1_array = _empty_array
+    # print('nonvint_block called with method = %d l=%d tid=%d' % (method,size,tid))
+    try:
+        assert tid == 0
+        rval = 0
+        if method == ode_count_method_index:
+            rval = ode_count_all(
+                size
+            )  # count of the extra states-equations managed by us
         else:
-            pd1_array = None
-        if pd2:
-            if size:
-                pd2_array = numpy_from_pointer(pd2, size)
+            if pd1:
+                if size:
+                    pd1_array = numpy_from_pointer(pd1, size)
+                else:
+                    pd1_array = _empty_array
             else:
-                pd2_array = _empty_array
-        else:
-            pd2_array = None
-        
-        if method in _no_args:
-            args = ()
-        elif method in _pd1_arg:
-            args = (pd1_array,)
-        elif method == 4:
-            args = (_pc_dt(tid),)
-        elif method == 7:
-            args = (_pc_t(tid), pd1_array, pd2_array)
-        elif method in (8, 9):
-            args = (_pc_dt(tid), _pc_t(tid), pd1_array, pd2_array)
-        for c in call:
-            if c[method] is not None:
-                c[method](*args)
-  except:
-    traceback.print_exc()
-    rval = -1
-  return rval
+                pd1_array = None
+            if pd2:
+                if size:
+                    pd2_array = numpy_from_pointer(pd2, size)
+                else:
+                    pd2_array = _empty_array
+            else:
+                pd2_array = None
+
+            if method in _no_args:
+                args = ()
+            elif method in _pd1_arg:
+                args = (pd1_array,)
+            elif method == 4:
+                args = (_pc_dt(tid),)
+            elif method == 7:
+                args = (_pc_t(tid), pd1_array, pd2_array)
+            elif method in (8, 9):
+                args = (_pc_dt(tid), _pc_t(tid), pd1_array, pd2_array)
+            for c in call:
+                if c[method] is not None:
+                    c[method](*args)
+    except:
+        traceback.print_exc()
+        rval = -1
+    return rval
+
 
 _callback = nonvint_block_prototype(nonvint_block)
 
+
 def activate_callback(activate):
-  if (activate):
-    set_nonvint_block(_callback)
-  else:
-    unset_nonvint_block(_callback)
+    if activate:
+        set_nonvint_block(_callback)
+    else:
+        unset_nonvint_block(_callback)
 
-if __name__ == '__main__':
-  exec(test) # see above string
 
-  s = h.Section()
-  print("fixed step finitialize")
-  h.finitialize(0)
-  print("fixed step fadvance")
-  h.fadvance()
+if __name__ == "__main__":
+    exec(test)  # see above string
 
-  h.load_file('stdgui.hoc')
-  print("cvode active")
-  h.cvode_active(1)
-  print("cvode step finitialize")
-  h.finitialize(0)
-  print("cvode fadvance")
-  h.fadvance()
+    s = h.Section()
+    print("fixed step finitialize")
+    h.finitialize(0)
+    print("fixed step fadvance")
+    h.fadvance()
 
+    h.load_file("stdgui.hoc")
+    print("cvode active")
+    h.cvode_active(1)
+    print("cvode step finitialize")
+    h.finitialize(0)
+    print("cvode fadvance")
+    h.fadvance()

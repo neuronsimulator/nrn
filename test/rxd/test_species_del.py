@@ -1,6 +1,6 @@
 def test_species_del(neuron_instance):
-    """ Test deleting an uninitialized species does not raise any error or
-         exceptions.
+    """Test deleting an uninitialized species does not raise any error or
+    exceptions.
     """
 
     h, rxd, data, save_path = neuron_instance
@@ -10,4 +10,4 @@ def test_species_del(neuron_instance):
     try:
         c.__del__()
     except:
-        assert(False)
+        assert False

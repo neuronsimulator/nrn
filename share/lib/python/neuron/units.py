@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-''' unit definitions '''
+""" unit definitions """
 
 # NEURON's default units
 mM = 1
@@ -31,7 +31,7 @@ V = 1e3 * mV
 
 # variants using mu instead of u (available in Python3 only)
 # have to do it this way to avoid a SyntaxError in Python2
-globals()['μV'] = 1e-3 * mV
-globals()['μM'] = 1e-3 * mM
-globals()['μs'] = 1e-3 * ms
-globals()['μm'] = 1 * um
+globals()["μV"] = 1e-3 * mV
+globals()["μM"] = 1e-3 * mM
+globals()["μs"] = 1e-3 * ms
+globals()["μm"] = 1 * um
