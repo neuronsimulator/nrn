@@ -1,5 +1,5 @@
 import sys
-from neuron.expect_hocerr import expect_hocerr
+from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 
 import numpy as np
 
@@ -204,7 +204,51 @@ def test_HocObject_no_deferred_unref():
         sl.append(sec=sec)
     assert len([s for s in sl]) == 0
 
+def test_deleted_sec():
+  for sec in h.allsec():
+    h.delete_section(sec=sec)
+  s = h.Section()
+  s.insert("hh")
+  seg = s(.5)
+  mech = seg.hh
+  rvlist = [rv for rv in mech]
+  vref = seg._ref_v
+  gnabarref = mech._ref_gnabar
+  h.delete_section(sec=s)
+  assert str(s) == '<deleted section>'
+  assert str(seg) == "<segment of deleted section>"
+  assert str(mech) == "<mechanism of deleted section>"
+  expect_err("print(s.L)")
+  expect_err("s.L = 100.")
+  expect_err("s.nseg")
+  expect_err("s.nseg = 5")
+  expect_err("print(s.v)")
+  expect_err("print(s.orientation())")
+  expect_err("s.insert('pas')")
+  expect_err("s.insert(h.pas)")
+  expect_err("s(.5)")
+  expect_err("s(.5).v")
+  expect_err("seg.v")
+  expect_err("s(.5).v = -65.")
+  expect_err("seg.v = -65.")
+  expect_err("seg.gnabar_hh")
+  expect_err("mech.gnabar")
+  expect_err("seg.gnabar_hh = .1")
+  expect_err("mech.gnabar = .1")
+  expect_err("rvlist[0][0]")
+  expect_err("rvlist[0][0] = .1")
+  expect_err("for sg in s: pass")
+  expect_err("for m in seg: pass")
+  expect_err("for r in mech: pass")
+
+  assert(s == s)
+  expect_err("dir(s)")
+  expect_err("help(s)")
+
+  return s, seg, mech, rvlist, vref, gnabarref
 
 if __name__ == "__main__":
+    set_quiet(False)
     test_soma()
     test_simple_sim()
+    result = test_deleted_sec()
