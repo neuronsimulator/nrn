@@ -141,9 +141,9 @@ def test_push_section():
     s = sections[-1]
     h.delete_section(sec=s)  # but not yet freed (though the name is now "")
     # not [no longer] a section pointer
-    expect_hocerr(
-        h.push_section, (int(s.hoc_internal_name().replace("__nrnsec_", ""), 0),)
-    )
+    expect_err('s.hoc_internal_name()') # this is what is generating the error in the next statement.
+    expect_err('h.push_section(int(s.hoc_internal_name().replace("__nrnsec_", ""), 0))')
+
     # not a sectionname
     expect_hocerr(h.push_section, ("not_a_sectionname",))
 
