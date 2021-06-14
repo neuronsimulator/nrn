@@ -134,13 +134,7 @@ except:
 try:
     from . import hoc
 except:
-    try:
-        # Python3.1 extending needs to look into the module explicitly
-        import neuron.hoc
-    except:  # mingw name strategy (x-ref: #define HOCMOD "hoc")
-        exec(
-            "import neuron.hoc%d%d as hoc" % (sys.version_info[0], sys.version_info[1])
-        )
+    import neuron.hoc
 
 import nrn
 import _neuron_section
