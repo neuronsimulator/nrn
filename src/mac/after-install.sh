@@ -18,7 +18,7 @@ export CPU
 
 NSRC="$3"
 export NSRC
-NVER="`sh $srcdir/nrnversion.sh`"
+NVER="`sh $srcdir/nrnversion.sh`" # NVER not used here, just call nrnversion.sh to generate version info
 NDIR="NEURON"
 export NDIR
 N="$prefix"
