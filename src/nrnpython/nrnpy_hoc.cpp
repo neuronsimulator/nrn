@@ -19,9 +19,6 @@
 #define NRNPYTHON_DYNAMICLOAD PY_MAJOR_VERSION
 #endif
 
-// TODO: didn't enable dynamic load and end up with error if below is not a string
-#define HOCMOD "hoc"
-
 extern PyTypeObject* psection_type;
 
 // copied from nrnpy_nrn
@@ -3011,11 +3008,7 @@ PyObject* nrnpy_hoc() {
 
   int err = 0;
   PyObject* modules = PyImport_GetModuleDict();
-#if defined(__MINGW32__)
-  if ((m = PyDict_GetItemString(modules, HOCMOD)) != NULL && PyModule_Check(m)) {
-#else
   if ((m = PyDict_GetItemString(modules, "hoc")) != NULL && PyModule_Check(m)) {
-#endif // __MINGW32__
     return m;
   }
   m = PyModule_Create(&hocmodule);
