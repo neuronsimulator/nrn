@@ -38,31 +38,35 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
+    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
     pc = h.ParallelContext()
+
     def run(mode):
-      h.stdinit()
-      if mode == 0:
-        pc.psolve(h.tstop)
-      elif mode == 1:
-        while (h.t < h.tstop):
-          pc.psolve(h.t + 1.0)
-      else:
-        while (h.t < h.tstop):
-          h.continuerun(h.t + 0.5)
-          pc.psolve(h.t + 0.5)
-      tran = [h.t, h.soma(.5).v, h.soma(.5).hh.m]
+        h.stdinit()
+        if mode == 0:
+            pc.psolve(h.tstop)
+        elif mode == 1:
+            while h.t < h.tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < h.tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
+        tran = [h.t, h.soma(0.5).v, h.soma(0.5).hh.m]
 
-      assert(tv.eq(tvstd))
-      assert(v.cl().sub(vstd).abs().max() < 1e-10) # usually v == vstd, some compilers might give slightly different results
-      # This check is disabled on GPU because fast imem is not implemented on
-      # GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
-      assert(coreneuron.gpu or i_mem.cl().sub(i_memstd).abs().max() < 1e-10)
-      assert(h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10)
+        assert tv.eq(tvstd)
+        assert (
+            v.cl().sub(vstd).abs().max() < 1e-10
+        )  # usually v == vstd, some compilers might give slightly different results
+        # This check is disabled on GPU because fast imem is not implemented on
+        # GPU: https://github.com/BlueBrain/CoreNeuron/issues/197
+        assert coreneuron.gpu or i_mem.cl().sub(i_memstd).abs().max() < 1e-10
+        assert h.Vector(tran_std).sub(h.Vector(tran)).abs().max() < 1e-10
 
-    for mode in [0,1,2]:
-      run(mode)
+    for mode in [0, 1, 2]:
+        run(mode)
+
 
 if __name__ == "__main__":
     test_direct_memory_transfer()

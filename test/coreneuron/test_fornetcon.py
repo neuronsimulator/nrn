@@ -5,6 +5,7 @@ import os
 import pytest
 
 from neuron import h
+
 h.load_file("stdrun.hoc")
 
 pc = h.ParallelContext()
@@ -25,78 +26,81 @@ class Cell:
 
 
 def test_fornetcon():
-  from neuron import coreneuron
-  coreneuron.enable = False
+    from neuron import coreneuron
 
-  ncell = 10
-  gids = range(pc.id(), ncell, pc.nhost()) # round robin
+    coreneuron.enable = False
 
-  cells = [Cell(gid) for gid in gids]
-  nclist = []
+    ncell = 10
+    gids = range(pc.id(), ncell, pc.nhost())  # round robin
 
-  # src first to more easily randomize NetCon creation order
-  # so that NetCon to target not all adjacent
-  for srcgid in range(ncell):
-    for tarcell in cells:
-      if int(tarcell.r.discunif(0,1)) == 1:
-        nclist.append(pc.gid_connect(srcgid, tarcell.syn))
-        nclist[-1].delay = tarcell.r.discunif(10, 50)*h.dt
-        nclist[-1].weight[0] = srcgid*10000 + tarcell.gid
+    cells = [Cell(gid) for gid in gids]
+    nclist = []
 
-  spiketime = h.Vector()
-  spikegid = h.Vector()
-  pc.spike_record(-1, spiketime, spikegid)
+    # src first to more easily randomize NetCon creation order
+    # so that NetCon to target not all adjacent
+    for srcgid in range(ncell):
+        for tarcell in cells:
+            if int(tarcell.r.discunif(0, 1)) == 1:
+                nclist.append(pc.gid_connect(srcgid, tarcell.syn))
+                nclist[-1].delay = tarcell.r.discunif(10, 50) * h.dt
+                nclist[-1].weight[0] = srcgid * 10000 + tarcell.gid
 
-  tstop = 8
+    spiketime = h.Vector()
+    spikegid = h.Vector()
+    pc.spike_record(-1, spiketime, spikegid)
 
-  def run(tstop, mode):
-    pc.set_maxstep(10)
-    h.finitialize(-65)
-    if mode == 0:
-      pc.psolve(tstop)
-    elif mode == 1:
-      while h.t < tstop:
-        pc.psolve(h.t + 1.0)
-    else:
-      while h.t < tstop:
-        h.continuerun(h.t + 0.5)
-        pc.psolve(h.t + 0.5)
+    tstop = 8
 
-  run(tstop, 0) # NEURON run
+    def run(tstop, mode):
+        pc.set_maxstep(10)
+        h.finitialize(-65)
+        if mode == 0:
+            pc.psolve(tstop)
+        elif mode == 1:
+            while h.t < tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
-  spiketime_std = spiketime.c()
-  spikegid_std = spikegid.c()
-  def get_weights():
-    weight = []
-    for nc in nclist:
-      w = nc.weight
-      weight.append((w[0], w[1], w[2], w[3], w[4]))
-    return weight
+    run(tstop, 0)  # NEURON run
 
-  weight_std = get_weights()
+    spiketime_std = spiketime.c()
+    spikegid_std = spikegid.c()
 
-  print("CoreNEURON run")
-  h.CVode().cache_efficient(1)
-  coreneuron.enable = True
-  coreneuron.gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
+    def get_weights():
+        weight = []
+        for nc in nclist:
+            w = nc.weight
+            weight.append((w[0], w[1], w[2], w[3], w[4]))
+        return weight
 
-  def runassert(mode):
-    spiketime.resize(0)
-    spikegid.resize(0)
+    weight_std = get_weights()
 
-    run(tstop, mode)
-    assert (len(spiketime) > 0)
-    assert (spiketime_std.eq(spiketime) == 1.0)
-    assert (spikegid_std.eq(spikegid) == 1.0)
-    assert (len(weight_std) > 0)
-    assert (weight_std == get_weights())
+    print("CoreNEURON run")
+    h.CVode().cache_efficient(1)
+    coreneuron.enable = True
+    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
-  for mode in [0,1,2]:
-    runassert(mode)
+    def runassert(mode):
+        spiketime.resize(0)
+        spikegid.resize(0)
 
-  coreneuron.enable = False
-  # teardown
-  pc.gid_clear()
+        run(tstop, mode)
+        assert len(spiketime) > 0
+        assert spiketime_std.eq(spiketime) == 1.0
+        assert spikegid_std.eq(spikegid) == 1.0
+        assert len(weight_std) > 0
+        assert weight_std == get_weights()
+
+    for mode in [0, 1, 2]:
+        runassert(mode)
+
+    coreneuron.enable = False
+    # teardown
+    pc.gid_clear()
+
 
 if __name__ == "__main__":
     test_fornetcon()

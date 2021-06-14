@@ -2,29 +2,31 @@
 enable = False  # Use CoreNEURON when calling ParallelContext.psolve(tstop).
 gpu = False  # Activate GPU computation.
 file_mode = False  # Run via file transfer mode instead of in-memory transfer
-cell_permute = 1   # 0 no permutation; 1 optimize node adjacency
-                   # 2 optimize parent node adjacency (only for gpu = True)
-warp_balance = 0   # Number of warps to balance. (0 no balance)
-verbose = 2        # 0 quiet, 1 Error, 2 Info, 3 Debug
-prcellstate = -1   # Output prcellstate information for the gid at t=0
-                   # and at tstop. -1 means no output
+cell_permute = 1  # 0 no permutation; 1 optimize node adjacency
+# 2 optimize parent node adjacency (only for gpu = True)
+warp_balance = 0  # Number of warps to balance. (0 no balance)
+verbose = 2  # 0 quiet, 1 Error, 2 Info, 3 Debug
+prcellstate = -1  # Output prcellstate information for the gid at t=0
+# and at tstop. -1 means no output
+
 
 def property_check(tstop):
-  '''
-  Check type and value in range for the user properties.
-  '''
-  global enable, gpu, cell_permute, warp_balance, verbose, prcellstate
-  tstop = float(tstop) # error if can't be a float
-  enable = bool(int(enable))
-  gpu = bool(gpu)
-  cell_permute = int(cell_permute)
-  assert(cell_permute in range(3))
-  assert(cell_permute in (range(3) if gpu else range(2)))
-  warp_balance = int(warp_balance)
-  assert(warp_balance >= 0)
-  verbose = int(verbose)
-  verbose = 0 if verbose < 0 else 3 if verbose > 3 else verbose
-  prcellstate = int(prcellstate)
+    """
+    Check type and value in range for the user properties.
+    """
+    global enable, gpu, cell_permute, warp_balance, verbose, prcellstate
+    tstop = float(tstop)  # error if can't be a float
+    enable = bool(int(enable))
+    gpu = bool(gpu)
+    cell_permute = int(cell_permute)
+    assert cell_permute in range(3)
+    assert cell_permute in (range(3) if gpu else range(2))
+    warp_balance = int(warp_balance)
+    assert warp_balance >= 0
+    verbose = int(verbose)
+    verbose = 0 if verbose < 0 else 3 if verbose > 3 else verbose
+    prcellstate = int(prcellstate)
+
 
 def nrncore_arg(tstop):
     """
@@ -43,14 +45,14 @@ def nrncore_arg(tstop):
     # note that this name is also used in C++ file nrncore_write.cpp
     CORENRN_DATA_DIR = "corenrn_data"
 
-  # args derived from user properties
-  arg += ' --gpu' if gpu else ''
-  arg += ' --datpath %s' % CORENRN_DATA_DIR if file_mode else ''
-  arg += ' --tstop %g' % tstop
-  arg += (' --cell-permute %d' % cell_permute) if cell_permute > 0 else ''
-  arg += (' --nwarp %d' % warp_balance) if warp_balance > 0 else ''
-  arg += (' --prcellgid %d' % prcellstate) if prcellstate >= 0 else ''
-  arg += (' --verbose %d' % verbose) if verbose >= 0 and verbose < 4 else ''
+    # args derived from user properties
+    arg += " --gpu" if gpu else ""
+    arg += " --datpath %s" % CORENRN_DATA_DIR if file_mode else ""
+    arg += " --tstop %g" % tstop
+    arg += (" --cell-permute %d" % cell_permute) if cell_permute > 0 else ""
+    arg += (" --nwarp %d" % warp_balance) if warp_balance > 0 else ""
+    arg += (" --prcellgid %d" % prcellstate) if prcellstate >= 0 else ""
+    arg += (" --verbose %d" % verbose) if verbose >= 0 and verbose < 4 else ""
 
     # args derived from current NEURON settings.
     pc = h.ParallelContext()

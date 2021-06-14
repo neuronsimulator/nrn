@@ -81,6 +81,7 @@ def test_spikes(
     pc.spike_record(-1, corenrn_all_spike_t, corenrn_all_spike_gids)
 
     pc.set_maxstep(10)
+
     def run(mode):
         h.stdinit()
         if mode == 0:
@@ -97,23 +98,29 @@ def test_spikes(
         corenrn_all_spike_gids_py = corenrn_all_spike_gids.to_python()
 
         # check spikes match
-        assert(len(nrn_spike_t))  # check we've actually got spikes
-        assert(len(nrn_spike_t) == len(nrn_spike_gids))  # matching no. of gids
+        assert len(nrn_spike_t)  # check we've actually got spikes
+        assert len(nrn_spike_t) == len(nrn_spike_gids)  # matching no. of gids
         if nrn_spike_t != corenrn_all_spike_t_py:
-          print(mode)
-          print(nrn_spike_t)
-          print(nrn_spike_gids)
-          print(corenrn_all_spike_t_py)
-          print(corenrn_all_spike_gids_py)
-          print([corenrn_all_spike_t[i] - nrn_spike_t[i] for i in range(len(nrn_spike_t))])
-        assert(nrn_spike_t == corenrn_all_spike_t_py)
-        assert(nrn_spike_gids == corenrn_all_spike_gids_py)
+            print(mode)
+            print(nrn_spike_t)
+            print(nrn_spike_gids)
+            print(corenrn_all_spike_t_py)
+            print(corenrn_all_spike_gids_py)
+            print(
+                [
+                    corenrn_all_spike_t[i] - nrn_spike_t[i]
+                    for i in range(len(nrn_spike_t))
+                ]
+            )
+        assert nrn_spike_t == corenrn_all_spike_t_py
+        assert nrn_spike_gids == corenrn_all_spike_gids_py
+
     if file_mode is False:
-        for mode in [0,1,2]:
+        for mode in [0, 1, 2]:
             run(mode)
     else:
         run(0)
-    
+
     h.quit()
 
 
