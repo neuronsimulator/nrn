@@ -1,7 +1,7 @@
 from neuron import h, crxd as rxd, gui
 from neuron.crxd import initializer
 
-h.CVode().active(1)                
+h.CVode().active(1)
 
 rxdsec = [h.Section(), h.Section()]
 cyt = rxd.Region(rxdsec)

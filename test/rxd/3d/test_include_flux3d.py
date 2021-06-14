@@ -13,13 +13,15 @@ def ics_include_flux(neuron_instance):
 
     h, rxd, data, save_path = neuron_instance
     sec = h.Section(name="sec")
-    sec.L = 1 
-    sec.nseg = 11 
-    sec.diam = 2 
+    sec.L = 1
+    sec.nseg = 11
+    sec.diam = 2
     rxd.set_solve_type(dimension=3)
 
     cyt = rxd.Region(h.allsec(), name="cyt", nrn_region="i")
-    ip3 = rxd.Species(cyt, name="ip3", initial=lambda nd: 1000 if nd.segment == sec(0.3) else 0 )
+    ip3 = rxd.Species(
+        cyt, name="ip3", initial=lambda nd: 1000 if nd.segment == sec(0.3) else 0
+    )
 
     def callbackfun():
         return 1000
@@ -34,7 +36,7 @@ def ics_include_flux(neuron_instance):
         nd.include_flux(sec(0.3)._ref_ip3i)
 
     model = (sec, cyt, ip3, callbackfun)
-    yield(neuron_instance, model)
+    yield (neuron_instance, model)
 
 
 def test_include_flux3d(ics_include_flux):

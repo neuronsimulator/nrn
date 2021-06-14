@@ -23,7 +23,6 @@ env:
   BUILD_TYPE: Release
   DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
   DESIRED_CMAKE_VERSION: 3.8.2
-  DEFAULT_PY_VERSION: 3.9
   PY_MIN_VERSION: 3.6
   PY_MAX_VERSION: 3.9
 

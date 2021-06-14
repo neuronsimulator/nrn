@@ -15,14 +15,14 @@ import sys
 import subprocess
 
 # Translators
-sys.path.insert(0, os.path.abspath('./translators'))
+sys.path.insert(0, os.path.abspath("./translators"))
 import html2
 
 # -- Project information -----------------------------------------------------
 
-project = 'NEURON'
-copyright = '2021, Duke, Yale and the Blue Brain Project'
-author = 'Michael Hines'
+project = "NEURON"
+copyright = "2021, Duke, Yale and the Blue Brain Project"
+author = "Michael Hines"
 
 # -- General configuration ---------------------------------------------------
 
@@ -30,52 +30,53 @@ author = 'Michael Hines'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.autosectionlabel',
-    'recommonmark',
-    'sphinx.ext.mathjax'
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.autosectionlabel",
+    "recommonmark",
+    "sphinx.ext.mathjax",
 ]
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.txt': 'markdown',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".txt": "markdown",
+    ".md": "markdown",
 }
+
 
 def setup(app):
     """Setup connect events to the sitemap builder"""
-    app.set_translator('html', html2.HTMLTranslator)
+    app.set_translator("html", html2.HTMLTranslator)
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'python/venv']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "python/venv"]
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Sphinx expects the master doc to be contents
-master_doc = 'index'
+master_doc = "index"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Extra html content that is generated. i.e. doxygen
-html_extra_path = ['_generated']
+html_extra_path = ["_generated"]
 
 html_css_files = [
-    'custom.css',
+    "custom.css",
 ]
 
 nbsphinx_allow_errors = True
@@ -90,10 +91,14 @@ if os.environ.get("READTHEDOCS"):
     # Install neuron accordingly (nightly for master, otherwise incoming version)
     # Note that neuron wheel must be published a priori.
     subprocess.run(
-        'pip install neuron{}'.format('=={}'.format(rtd_ver.base_version) if isinstance(rtd_ver, PKGVER.Version)
-                                      else '-nightly'),
+        "pip install neuron{}".format(
+            "=={}".format(rtd_ver.base_version)
+            if isinstance(rtd_ver, PKGVER.Version)
+            else "-nightly"
+        ),
         shell=True,
-        check=True)
+        check=True,
+    )
 
     # Execute & convert notebooks + doxygen
     subprocess.run("cd .. && python setup.py docs", check=True, shell=True)

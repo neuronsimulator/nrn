@@ -8,19 +8,21 @@ from neuron import h
 h.load_file("stdrun.hoc")
 
 pc = h.ParallelContext()
-h.dt = 1.0/32
+h.dt = 1.0 / 32
 
-class Cell():
-  def __init__(self, gid):
-    self.soma = h.Section(name="soma", cell=self)
-    self.gid = gid
-    pc.set_gid2node(gid, pc.id())
-    self.r = h.Random()
-    self.r.Random123(gid, 0, 0)
-    self.syn = h.ForNetConTest(self.soma(.5))
-    pc.cell(gid, h.NetCon(self.syn, None))
-    # random start times for the internal events
-    self.syn.tbegin = self.r.discunif(0,100)*h.dt
+
+class Cell:
+    def __init__(self, gid):
+        self.soma = h.Section(name="soma", cell=self)
+        self.gid = gid
+        pc.set_gid2node(gid, pc.id())
+        self.r = h.Random()
+        self.r.Random123(gid, 0, 0)
+        self.syn = h.ForNetConTest(self.soma(0.5))
+        pc.cell(gid, h.NetCon(self.syn, None))
+        # random start times for the internal events
+        self.syn.tbegin = self.r.discunif(0, 100) * h.dt
+
 
 def test_fornetcon():
   from neuron import coreneuron
@@ -97,4 +99,4 @@ def test_fornetcon():
   pc.gid_clear()
 
 if __name__ == "__main__":
-  test_fornetcon()
+    test_fornetcon()

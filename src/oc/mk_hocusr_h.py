@@ -2,37 +2,42 @@ import sys
 import re
 
 voidfun = []
-intvar = [[],[]] #scalarint vectorint
-fltvar = [[],[]] #scalarfloat, vectorfloat
-dblvar = [[],[],[],[]] # scalar, vectordouble, arraydouble, threedim
+intvar = [[], []]  # scalarint vectorint
+fltvar = [[], []]  # scalarfloat, vectorfloat
+dblvar = [[], [], [], []]  # scalar, vectordouble, arraydouble, threedim
+
 
 def processfun(a, names):
-  # each name has trailing '()'
-  for i in names:
-    a.append(i.strip('()'))
+    # each name has trailing '()'
+    for i in names:
+        a.append(i.strip("()"))
+
 
 def processvar(a, names):
-  # each name may have 0-3 trailing [%d]
-  for i in names:
-    sp = i.split('[')
-    b = []
-    for j in sp:
-      b.append(j.strip(']'))
-    a[len(b)-1].append(b)
+    # each name may have 0-3 trailing [%d]
+    for i in names:
+        sp = i.split("[")
+        b = []
+        for j in sp:
+            b.append(j.strip("]"))
+        a[len(b) - 1].append(b)
+
 
 def remove_multiline_comments(string):
     # remove all occurance comments (/*COMMENT */) from string
-    string = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,string)
+    string = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", string)
     return string
 
+
 types = {}
-types['void'] = (voidfun, processfun)
-types['int'] = (intvar, processvar)
-types['float'] = (fltvar, processvar)
-types['double'] = (dblvar, processvar)
+types["void"] = (voidfun, processfun)
+types["int"] = (intvar, processvar)
+types["float"] = (fltvar, processvar)
+types["double"] = (dblvar, processvar)
+
 
 def process(type, names):
-  types[type][1](types[type][0], names)
+    types[type][1](types[type][0], names)
 
 
 # read preprocessor output file into buffer
@@ -49,34 +54,39 @@ text = remove_multiline_comments(text)
 
 skip = 1
 for line in text.splitlines():
-  if "spatial_method" in line or "neuron2nemo" in line or "node_data" in line:
-    skip = 0
-  names = line.replace(',',' ').replace(';',' ').split()
-  if not skip and len(names) > 2:
-    print(line) # entire filtered neuron.h file without pgcc added lines.
-    process(names[1], names[2:])
+    if "spatial_method" in line or "neuron2nemo" in line or "node_data" in line:
+        skip = 0
+    names = line.replace(",", " ").replace(";", " ").split()
+    if not skip and len(names) > 2:
+        print(line)  # entire filtered neuron.h file without pgcc added lines.
+        process(names[1], names[2:])
 
 
-print('''
+print(
+    """
 /* Functions */
 static VoidFunc functions[] = {
-''')
+"""
+)
 
 for i in voidfun:
-  if i:
-    print('"%s", %s,'%(i,i))
-print('''0, 0
+    if i:
+        print('"%s", %s,' % (i, i))
+print(
+    """0, 0
 };
 
 static struct {  /* Integer Scalars */
   const char *name;
   int  *pint;
 } scint[] = {
-''')
+"""
+)
 
 for i in intvar[0]:
-  print('"%s", &%s,'%(i[0],i[0]))
-print('''0, 0
+    print('"%s", &%s,' % (i[0], i[0]))
+print(
+    """0, 0
 };
 
 static struct {  /* Vector integers */
@@ -84,22 +94,26 @@ static struct {  /* Vector integers */
   int  *pint;
   int  index1;
 } vint[] = {
-''')
+"""
+)
 
 for i in intvar[1]:
-  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
-print('''0,0
+    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+print(
+    """0,0
 };
 
 static struct {  /* Float Scalars */
   const char *name;
   float  *pfloat;
 } scfloat[] = {
-''')
+"""
+)
 
 for i in fltvar[0]:
-  print('"%s", &%s,'%(i[0],i[0]))
-print('''0, 0
+    print('"%s", &%s,' % (i[0], i[0]))
+print(
+    """0, 0
 };
 
 static struct {  /* Vector float */
@@ -107,29 +121,35 @@ static struct {  /* Vector float */
   float *pfloat;
   int index1;
 } vfloat[] = {
-''')
+"""
+)
 
 for i in fltvar[1]:
-  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
-print('''0,0,0
+    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+print(
+    """0,0,0
 };
 
 /* Double Scalars */
 DoubScal scdoub[] = {
-''')
+"""
+)
 
 for i in dblvar[0]:
-  print('"%s", &%s,'%(i[0],i[0]))
-print('''0,0
+    print('"%s", &%s,' % (i[0], i[0]))
+print(
+    """0,0
 };
 
 /* Vectors */
 DoubVec vdoub[] = {
-''')
+"""
+)
 
 for i in dblvar[1]:
-  print('"%s", %s, %s,'%(i[0],i[0],i[1]))
-print('''0, 0, 0
+    print('"%s", %s, %s,' % (i[0], i[0], i[1]))
+print(
+    """0, 0, 0
 };
 
 static struct {  /* Arrays */
@@ -138,11 +158,13 @@ static struct {  /* Arrays */
   int index1;
   int index2;
 } ardoub[] = {
-''')
+"""
+)
 
 for i in dblvar[2]:
-  print('"%s", %s, %s, %s,'%(i[0], i[0], i[1], i[2]))
-print('''0, 0, 0, 0
+    print('"%s", %s, %s, %s,' % (i[0], i[0], i[1], i[2]))
+print(
+    """0, 0, 0, 0
 };
 
 static struct {  /* triple dimensioned arrays */
@@ -152,10 +174,13 @@ static struct {  /* triple dimensioned arrays */
   int index2;
   int index3;
 } thredim[] = {
-''')
+"""
+)
 
 for i in dblvar[3]:
-  print('"%s", %s, %s, %s, %s,'%(i[0], i[0], i[1], i[2], i[3]))
-print('''0, 0, 0, 0, 0
+    print('"%s", %s, %s, %s, %s,' % (i[0], i[0], i[1], i[2], i[3]))
+print(
+    """0, 0, 0, 0, 0
 };
-''')
+"""
+)

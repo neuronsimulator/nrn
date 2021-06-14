@@ -4,127 +4,135 @@ import pytest
 import sys
 import traceback
 
-enable_gpu = bool(os.environ.get('CORENRN_ENABLE_GPU', ''))
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
+
 pc = h.ParallelContext()
-h.dt = 1.0/32
+h.dt = 1.0 / 32
 cvode = h.CVode()
 
-class Cell():
-  def __init__(self, gid):
-    nsec = 5
-    self.gid = gid
-    r = h.Random()
-    self.r = r
-    r.Random123(gid, 0, 0)
-    self.secs = [h.Section(name="s%d"%i, cell = self) for i in range(nsec)]
-    s0 = self.secs[0]
 
-    # random connect to exercise permute
-    for i, s in enumerate(self.secs[1:]):
-      s.connect(self.secs[int(r.discunif(0, i))])
-    
-    # hh and pas everywhere with random gkbar_hh and g_pas for intrinsic firing.
-    # everywhere but s0. 
-    s = self.secs[0]
-    s.L = 10
-    s.diam = 10
-    s.insert("hh")
-    for s in self.secs[1:]:
-      s.nseg = 4
-      s.L = 50
-      s.diam = 1
-      s.insert("pas")
-      s.e_pas = -65
-      s.g_pas = r.uniform(.0001, .0002)
-      s.insert("hh")
-      s.gkbar_hh = r.uniform(.01, .02)
+class Cell:
+    def __init__(self, gid):
+        nsec = 5
+        self.gid = gid
+        r = h.Random()
+        self.r = r
+        r.Random123(gid, 0, 0)
+        self.secs = [h.Section(name="s%d" % i, cell=self) for i in range(nsec)]
+        s0 = self.secs[0]
 
-    pc.set_gid2node(gid, pc.id())
-    pc.cell(gid, h.NetCon(s0(.5)._ref_v, None, sec=s0))
+        # random connect to exercise permute
+        for i, s in enumerate(self.secs[1:]):
+            s.connect(self.secs[int(r.discunif(0, i))])
 
-    # add a few random Netstim -> NetCon -> Exp2Syn connections to verify
-    # correct data return for ARTIFICIAL_CELL and POINT_PROCESS
-    nsyn = 3
-    self.stims = [h.NetStim() for _ in range(nsyn)]
-    self.syns = [h.Exp2Syn(self.secs[int(r.discunif(0,nsec-1))](.5)) for _ in range(nsyn)]
-    self.ncs = [h.NetCon(self.stims[i], self.syns[i]) for i in range(nsyn)]
-    for stim in self.stims:
-      stim.start = int(r.uniform(0, 1)/h.dt)*h.dt
-      stim.interval =  int(r.uniform(1, 2)/h.dt)*h.dt
-    for nc in self.ncs:
-      nc.weight[0] = r.uniform(0.0, .001)
-      nc.delay = int(r.discunif(5, 20))*h.dt
+        # hh and pas everywhere with random gkbar_hh and g_pas for intrinsic firing.
+        # everywhere but s0.
+        s = self.secs[0]
+        s.L = 10
+        s.diam = 10
+        s.insert("hh")
+        for s in self.secs[1:]:
+            s.nseg = 4
+            s.L = 50
+            s.diam = 1
+            s.insert("pas")
+            s.e_pas = -65
+            s.g_pas = r.uniform(0.0001, 0.0002)
+            s.insert("hh")
+            s.gkbar_hh = r.uniform(0.01, 0.02)
 
-  def __str__(self):
-    return "Cell%d"%self.gid
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(s0(0.5)._ref_v, None, sec=s0))
 
-class Network():
-  def __init__(self):
-    self.cells = [Cell(i) for i in range(5)]
-    cvode.use_fast_imem(True)
-    # a few intrinsically firing ARTIFICIAL_CELLS with and without gids
-    self.acells = [h.IntervalFire() for _ in range(8)]
-    r = h.Random()
-    r.Random123(6, 0, 0)
-    for a in self.acells:
-      a.tau = r.uniform(2, 5)
-      a.invl = r.uniform(2, 4)
-    for i, a in enumerate(self.acells[5:]):
-      pc.set_gid2node(i+5, pc.id())
-      pc.cell(i+5, h.NetCon(a, None))
+        # add a few random Netstim -> NetCon -> Exp2Syn connections to verify
+        # correct data return for ARTIFICIAL_CELL and POINT_PROCESS
+        nsyn = 3
+        self.stims = [h.NetStim() for _ in range(nsyn)]
+        self.syns = [
+            h.Exp2Syn(self.secs[int(r.discunif(0, nsec - 1))](0.5)) for _ in range(nsyn)
+        ]
+        self.ncs = [h.NetCon(self.stims[i], self.syns[i]) for i in range(nsyn)]
+        for stim in self.stims:
+            stim.start = int(r.uniform(0, 1) / h.dt) * h.dt
+            stim.interval = int(r.uniform(1, 2) / h.dt) * h.dt
+        for nc in self.ncs:
+            nc.weight[0] = r.uniform(0.0, 0.001)
+            nc.delay = int(r.discunif(5, 20)) * h.dt
 
-  def add_data(self, mname, d):
-    instances = h.List(mname)
-    if instances.count() == 0:
-      return
-    names = []
-    inst = instances.o(0)
-    for name in dir(inst):
-      if '__' not in name:
-        try:
-          if type(getattr(inst, name)) == float:
-            names.append(name)
-        except:
-          pass
-    for inst in instances:
-      for name in names:
-        d.append(getattr(inst, name))
+    def __str__(self):
+        return "Cell%d" % self.gid
 
-  def data(self):
-    d = [h.t]
-    for sec in h.allsec():
-      for seg in sec:
-        d.append(seg.v)
-        d.append(seg.i_membrane_)
-        for mech in seg:
-          for var in mech:
-            d.append(var[0])
 
-    # all NetStim, ExpSyn, ...
-    for mname in ["NetStim", "Exp2Syn", "IntervalFire"]:
-      self.add_data(mname, d)
+class Network:
+    def __init__(self):
+        self.cells = [Cell(i) for i in range(5)]
+        cvode.use_fast_imem(True)
+        # a few intrinsically firing ARTIFICIAL_CELLS with and without gids
+        self.acells = [h.IntervalFire() for _ in range(8)]
+        r = h.Random()
+        r.Random123(6, 0, 0)
+        for a in self.acells:
+            a.tau = r.uniform(2, 5)
+            a.invl = r.uniform(2, 4)
+        for i, a in enumerate(self.acells[5:]):
+            pc.set_gid2node(i + 5, pc.id())
+            pc.cell(i + 5, h.NetCon(a, None))
 
-    return d
+    def add_data(self, mname, d):
+        instances = h.List(mname)
+        if instances.count() == 0:
+            return
+        names = []
+        inst = instances.o(0)
+        for name in dir(inst):
+            if "__" not in name:
+                try:
+                    if type(getattr(inst, name)) == float:
+                        names.append(name)
+                except:
+                    pass
+        for inst in instances:
+            for name in names:
+                d.append(getattr(inst, name))
+
+    def data(self):
+        d = [h.t]
+        for sec in h.allsec():
+            for seg in sec:
+                d.append(seg.v)
+                d.append(seg.i_membrane_)
+                for mech in seg:
+                    for var in mech:
+                        d.append(var[0])
+
+        # all NetStim, ExpSyn, ...
+        for mname in ["NetStim", "Exp2Syn", "IntervalFire"]:
+            self.add_data(mname, d)
+
+        return d
+
 
 show = False
 
-def mkgraphs(model):
-  h.newPlotV()
-  gcell = h.graphList[0].o(h.graphList[0].count()-1)
-  gcell.erase_all()
-  for cell in model.cells:
-    for sec in cell.secs:
-      gcell.addvar(" ", sec(.5)._ref_v)
 
-  h.newPlotV()
-  gacell = h.graphList[0].o(h.graphList[0].count()-1)
-  gacell.erase_all()
-  gacell.size(0, h.tstop, 0, h.tstop)
-  for acell in model.acells:
-      gacell.addvar(" ", acell._ref_t0)
-  model.gui = (gcell, gacell)
+def mkgraphs(model):
+    h.newPlotV()
+    gcell = h.graphList[0].o(h.graphList[0].count() - 1)
+    gcell.erase_all()
+    for cell in model.cells:
+        for sec in cell.secs:
+            gcell.addvar(" ", sec(0.5)._ref_v)
+
+    h.newPlotV()
+    gacell = h.graphList[0].o(h.graphList[0].count() - 1)
+    gacell.erase_all()
+    gacell.size(0, h.tstop, 0, h.tstop)
+    for acell in model.acells:
+        gacell.addvar(" ", acell._ref_t0)
+    model.gui = (gcell, gacell)
+
 
 def test_datareturn():
   from neuron import coreneuron
@@ -182,6 +190,7 @@ def test_datareturn():
 
     pc.nthread(2)
     run(tstop, mode)
+    
     tst = model.data()
     max_permuted_thread = h.Vector(std).sub(h.Vector(tst)).abs().max()
 
@@ -203,12 +212,13 @@ def test_datareturn():
   return model
 
 if __name__ == "__main__":
-  show = False
-  try:
-    model = test_datareturn()
-  except:
-    traceback.print_exc()
-    # Make the CTest test fail
-    sys.exit(42)
-  # The test doesn't exit without this.
-  if enable_gpu: sys.exit(0)
+    show = False
+    try:
+        model = test_datareturn()
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    if enable_gpu:
+        sys.exit(0)
