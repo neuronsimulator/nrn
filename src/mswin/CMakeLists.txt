@@ -17,7 +17,7 @@
 #    -DNRN_PYTHON_DYNAMIC="e:/python36/python;e:/python37/python;e:/python38/python" \
 #    -DNRN_ENABLE_MPI_DYNAMIC=ON \
 #    -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
-#    -DNRN_ENABLE_CORENEURON=Off
+#    -DNRN_ENABLE_CORENEURON=OFF
 #  make -j install
 #  make setup_exe
 # ~~~

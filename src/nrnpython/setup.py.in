@@ -182,6 +182,14 @@ ext_modules = [hoc_module]
 # built here, the python files are copied because of the call to setup here.
 
 if build_rx3d:
+  extra_link_args = []
+
+  if sys.platform == "win32":
+    import distutils.cygwinccompiler
+    distutils.cygwinccompiler.get_msvcr = lambda: []
+    # Make sure that pthreads is linked statically, otherwise we run into problems
+    # on computers where it is not installed.
+    extra_link_args = ["-Wl,-Bstatic", "-lpthread"]
   try:
     import numpy
     # TODO: do we need to use os.path.join?
@@ -201,17 +209,20 @@ if build_rx3d:
                    Extension("neuron.rxd.geometry3d.graphicsPrimitives",
                              sources=[build_path + "graphicsPrimitives.cpp"],
                              extra_compile_args = extra_compile_args,
+                             extra_link_args = extra_link_args,
                              define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.ctng",
                              sources=[build_path + "ctng.cpp"],
                              extra_compile_args = extra_compile_args,
+                             extra_link_args = extra_link_args,
                              define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.surfaces",
                              sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.cpp", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.cpp"],
                              define_macros = define_macros,
                              extra_compile_args = extra_compile_args,
+                             extra_link_args = extra_link_args,
                              include_dirs=include_dirs)]
   except:
     pass
