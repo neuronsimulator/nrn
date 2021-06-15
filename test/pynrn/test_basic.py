@@ -210,14 +210,27 @@ def test_deleted_sec():
   s = h.Section()
   s.insert("hh")
   seg = s(.5)
+  ic = h.IClamp(seg)
   mech = seg.hh
   rvlist = [rv for rv in mech]
   vref = seg._ref_v
   gnabarref = mech._ref_gnabar
+  sec_methods_ok = set([s.cell, s.name, s.hname, s.same,
+    s.hoc_internal_name
+  ])
+  sec_methods_chk = set([getattr(s, n) for n in dir(s) if '__' not in n and type(getattr(s, n)) == type(s.x3d) and getattr(s, n) not in sec_methods_ok])
   h.delete_section(sec=s)
+
+  for m in sec_methods_chk:
+    # Most would fail because of no args, but expect a check
+    # for valid section first.
+    print('m =', m)
+    expect_err("m()")
+
   assert str(s) == '<deleted section>'
   assert str(seg) == "<segment of deleted section>"
   assert str(mech) == "<mechanism of deleted section>"
+  expect_err("h.sin(0.0, sec=s)")
   expect_err("print(s.L)")
   expect_err("s.L = 100.")
   expect_err("s.nseg")
@@ -229,6 +242,7 @@ def test_deleted_sec():
   expect_err("s(.5)")
   expect_err("s(.5).v")
   expect_err("seg.v")
+  expect_err("seg._ref_v")
   expect_err("s(.5).v = -65.")
   expect_err("seg.v = -65.")
   expect_err("seg.gnabar_hh")
@@ -243,7 +257,27 @@ def test_deleted_sec():
 
   assert(s == s)
   expect_err("dir(s)")
+  expect_err("dir(seg)")
+  expect_err("dir(mech)")
+  assert type(dir(rvlist[0])) == list
   expect_err("help(s)")
+  expect_err("help(seg)")
+  expect_err("help(mech)")
+  help(rvlist[0]) # not an error since it does not access s
+
+  dend = h.Section()
+  expect_err("dend.connect(s)")
+  expect_err("dend.connect(seg)")
+
+  # Note vref and gnabarref if used may cause segfault or other indeterminate result
+
+  assert ic.get_segment() == None
+  assert ic.has_loc() == 0.0
+  expect_err("ic.get_loc()")
+  expect_err("ic.amp")
+  expect_err("ic.amp = .001")
+  ic.loc(dend(.5))
+  assert ic.get_segment() == dend(.5)
 
   return s, seg, mech, rvlist, vref, gnabarref
 

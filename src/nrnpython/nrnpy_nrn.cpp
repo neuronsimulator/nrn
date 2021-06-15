@@ -132,6 +132,10 @@ extern int (*nrnpy_pysec_cell_equals_p_)(Section*, Object*);
 static int pysec_cell_equals(Section*, Object*);
 static void remake_pmech_types();
 
+void nrnpy_sec_referr() {
+  PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
+}
+
 static char* pysec_name(Section* sec) {
   static char buf[512];
   if (sec->prop) {
@@ -163,7 +167,7 @@ static Object* pysec_cell(Section* sec) {
       }
     }
   }
-  return 0;
+  return NULL;
 }
 
 static int NPySecObj_contains(PyObject* sec, PyObject* obj) {
@@ -553,11 +557,13 @@ static PyObject* NPySecObj_name(NPySecObj* self) {
 }
 
 static PyObject* NPySecObj_n3d(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   return PyInt_FromLong(self->sec_->npt3d);
 }
 
 static PyObject* NPySecObj_pt3dremove(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int i0, n;
   if (!PyArg_ParseTuple(args, "i", &i0)) {
     return NULL;
@@ -573,6 +579,7 @@ static PyObject* NPySecObj_pt3dremove(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_pt3dclear(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int req = 0;
   Py_ssize_t narg = PyTuple_GET_SIZE(args);
   if (narg) {
@@ -590,6 +597,7 @@ static PyObject* NPySecObj_pt3dclear(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int i;
   double x, y, z, diam;
   Py_ssize_t narg = PyTuple_GET_SIZE(args);
@@ -621,6 +629,7 @@ static PyObject* NPySecObj_pt3dchange(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int i;
   double x, y, z, d;
   if (!PyArg_ParseTuple(args, "idddd", &i, &x, &y, &z, &d)) {
@@ -634,9 +643,9 @@ static PyObject* NPySecObj_pt3dinsert(NPySecObj* self, PyObject* args) {
   Py_RETURN_NONE;
 }
 
-
 static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   double x, y, z, d;
   // TODO: add support for iterables
   if (!PyArg_ParseTuple(args, "dddd", &x, &y, &z, &d)) {
@@ -648,6 +657,7 @@ static PyObject* NPySecObj_pt3dadd(NPySecObj* self, PyObject* args) {
 
 static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int style;
   double x, y, z;
   Py_ssize_t narg = PyTuple_GET_SIZE(args);
@@ -685,6 +695,7 @@ static PyObject* NPySecObj_pt3dstyle(NPySecObj* self, PyObject* args) {
 static PyObject* NPySecObj_x3d(
     NPySecObj* self, PyObject* args) {  // returns x value at index of 3d list
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -700,6 +711,7 @@ static PyObject* NPySecObj_x3d(
 static PyObject* NPySecObj_y3d(
     NPySecObj* self, PyObject* args) {  // returns y value at index of 3d list
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -715,6 +727,7 @@ static PyObject* NPySecObj_y3d(
 static PyObject* NPySecObj_z3d(
     NPySecObj* self, PyObject* args) {  // returns z value at index of 3d list
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -731,6 +744,7 @@ static PyObject* NPySecObj_arc3d(
     NPySecObj* self,
     PyObject* args) {  // returns arc position value at index of 3d list
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -747,6 +761,7 @@ static PyObject* NPySecObj_diam3d(
     NPySecObj* self,
     PyObject* args) {  // returns diam value at index of 3d list
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -763,6 +778,7 @@ static PyObject* NPySecObj_spine3d(
     NPySecObj* self,
     PyObject* args) {  // returns True/False depending on if spine present
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   int n, i;
   if (!PyArg_ParseTuple(args, "i", &i)) {
     return NULL;
@@ -827,6 +843,7 @@ static PyObject* nrnpy_set_psection(PyObject* self, PyObject* args) {
 }
 
 static PyObject* NPySecObj_psection(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   if (nrnpy_psection) {
     PyObject* arglist = Py_BuildValue("(O)", self);
     PyObject* result = PyObject_CallObject(nrnpy_psection, arglist);
@@ -838,6 +855,7 @@ static PyObject* NPySecObj_psection(NPySecObj* self) {
 }
 
 static PyObject* is_pysec(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   if (self->sec_->prop && self->sec_->prop->dparam[PROP_PY_INDEX]._pvoid) {
       Py_RETURN_TRUE;
   }
@@ -874,6 +892,7 @@ static PyObject* newpyseghelp(Section* sec, double x) {
 }
 
 static PyObject* pysec_parentseg(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   Section* psec = self->sec_->parentsec;
   if (psec == NULL || psec->prop == NULL) {
     Py_INCREF(Py_None);
@@ -885,6 +904,7 @@ static PyObject* pysec_parentseg(NPySecObj* self) {
 
 static PyObject* pysec_trueparentseg(NPySecObj* self) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   Section* psec = NULL;
   for (psec = sec->parentsec; psec; psec = psec->parentsec) {
     if (psec == NULL || psec->prop == NULL) {
@@ -907,6 +927,7 @@ static PyObject* pysec_trueparentseg(NPySecObj* self) {
 }
 
 static PyObject* pysec_orientation(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   double x = nrn_section_orientation(self->sec_);
   return Py_BuildValue("d", x);
 }
@@ -934,6 +955,7 @@ static PyObject* pysec_children1(PyObject* const sl, Section * const sec) {
 
 static PyObject* pysec_children(NPySecObj* const self) {
   Section* const sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   PyObject* const result = PyList_New(0);
   if (!result) {
     return NULL;
@@ -965,6 +987,7 @@ static PyObject* pysec_subtree(NPySecObj* const self) {
 
 static PyObject* pysec_wholetree(NPySecObj* const self) {
   Section* sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   Section* s;
   PyObject* result = PyList_New(0);
   if (!result) {
@@ -1121,6 +1144,8 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
                     "first arg not a nrn.Section or nrn.Segment");
     return NULL;
   }
+  CHECK_SEC_INVALID(parent->sec_);
+
   // printf("NPySecObj_connect %s %g %g\n", parent, parentx, childend);
   if (parentx > 1. || parentx < 0.) {
     PyErr_SetString(PyExc_ValueError, "out of range 0 <= parentx <= 1.");
@@ -1226,16 +1251,14 @@ PyObject* nrnpy_pushsec(PyObject* sec) {
 }
 
 static PyObject* NPySecObj_push(NPySecObj* self, PyObject* args) {
+  CHECK_SEC_INVALID(self->sec_);
   nrn_pushsec(self->sec_);
   Py_INCREF(self);
   return (PyObject*)self;
 }
 
 static PyObject* seg_of_section_iter(NPySecObj* self) { // iterates over segments
-  if (!self->sec_->prop) {
-    PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
-    return NULL;
-  }
+  CHECK_SEC_INVALID(self->sec_);
   //printf("section_iter\n");
   NPySegOfSecIter* segiter;
   segiter = PyObject_New(NPySegOfSecIter, pseg_of_sec_iter_type);
@@ -1250,6 +1273,7 @@ static PyObject* seg_of_section_iter(NPySecObj* self) { // iterates over segment
 }
 
 static PyObject* allseg(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
   // printf("allseg\n");
   NPyAllSegOfSecIter* ai = PyObject_New(NPyAllSegOfSecIter, pallseg_of_sec_iter_type);
   ai->pysec_ = self;
@@ -1543,10 +1567,7 @@ static NPyRangeVar* rvnew(Symbol* sym, NPySecObj* sec, double x) {
 
 static PyObject* section_getattro(NPySecObj* self, PyObject* pyname) {
   Section* sec = self->sec_;
-  if (!sec->prop) {
-    PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
-    return NULL;
-  }
+  CHECK_SEC_INVALID(sec);
   PyObject* rv;
   Py_INCREF(pyname);
   Py2NRNString name(pyname);
@@ -2114,10 +2135,7 @@ double** nrnpy_setpointer_helper(PyObject* pyname, PyObject* mech) {
 }
 
 static PyObject* NPySecObj_call(NPySecObj* self, PyObject* args) {
-  if (!self->sec_->prop) {
-    PyErr_SetString(PyExc_ReferenceError, "can't access a deleted section");
-    return NULL;
-  }
+  CHECK_SEC_INVALID(self->sec_);
   double x = 0.5;
   PyArg_ParseTuple(args, "|d", &x);
   PyObject* segargs = Py_BuildValue("(O,d)", self, x);

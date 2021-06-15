@@ -721,8 +721,15 @@ static PyObject* hocobj_call(PyHocObject* self, PyObject* args,
       return NULL;
     }
     if (section) {
-      section = nrnpy_pushsec(section);
-      if (!section) {
+      if (PyObject_TypeCheck(section, psection_type)) {
+        Section* sec = ((NPySecObj*)section)->sec_;
+        if (!sec->prop) {
+          nrnpy_sec_referr();
+          curargs_ = prevargs_;
+          return NULL;
+        }
+        nrn_pushsec(sec);
+      } else {
         PyErr_SetString(PyExc_TypeError, "sec is not a Section");
         curargs_ = prevargs_;
         return NULL;
