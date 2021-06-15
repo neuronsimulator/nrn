@@ -30,7 +30,6 @@ export CPU
 export NRN_SRC
 NSRC=$NRN_SRC
 export NSRC #needed by nrnversion.sh
-NRN_VERSION="`sh $NRN_SRC/nrnversion.sh`"
 
 # Equivalent to install from the Makefile.am
 S="modlunit.sh mknrndll.sh nrngui.sh neurondemo.sh mos2nrn.sh"

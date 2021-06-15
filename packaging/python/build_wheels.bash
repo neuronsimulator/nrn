@@ -148,7 +148,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python[23]; do
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
     done
     ;;

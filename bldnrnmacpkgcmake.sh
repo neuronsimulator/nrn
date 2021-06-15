@@ -26,7 +26,6 @@ fi
 NRN_BLD=$NRN_SRC/build
 NSRC=$NRN_SRC
 export NSRC
-NRN_VERSION="`sh $NRN_SRC/nrnversion.sh 3`"
 
 NRN_INSTALL=/Applications/NEURON
 export PATH=$NRN_INSTALL/bin:$PATH
