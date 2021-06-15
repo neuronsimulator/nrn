@@ -978,6 +978,7 @@ static PyObject* pysec_subtree1(PyObject* const sl, Section* const sec)
 
 static PyObject* pysec_subtree(NPySecObj* const self) {
   Section* const sec = self->sec_;
+  CHECK_SEC_INVALID(sec);
   PyObject* const result = PyList_New(0);
   if (!result) {
     return NULL;
@@ -1064,6 +1065,7 @@ static PyObject* pysec_same(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPyMechObj_name(NPyMechObj* self) {
+  CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
   PyObject* result = NULL;
   if (self->prop_) {
     result = PyString_FromString(memb_func[self->prop_->type].sym->name);
@@ -1072,6 +1074,7 @@ static PyObject* NPyMechObj_name(NPyMechObj* self) {
 }
 
 static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
+  CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
   if (self->prop_ && nrn_is_ion(self->prop_->type)) {
       Py_RETURN_TRUE;
   }
@@ -1079,6 +1082,7 @@ static PyObject* NPyMechObj_is_ion(NPyMechObj* self) {
 }
 
 static PyObject* NPyMechObj_segment(NPyMechObj* self) {
+  CHECK_SEC_INVALID(self->pyseg_->pysec_->sec_);
   PyObject* result = NULL;
   if (self->pyseg_) {
     result = (PyObject*)(self->pyseg_);
@@ -1106,11 +1110,15 @@ static PyObject* NPyRangeVar_name(NPyRangeVar* self) {
     } else {
       result = PyString_FromString(self->sym_->name);
     }
+  }else{
+    CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
+    PyErr_SetString(PyExc_ReferenceError, "no Symbol");
   }
   return result;
 }
 
 static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
+  CHECK_SEC_INVALID(self->pymech_->pyseg_->pysec_->sec_);
   PyObject* result = NULL;
   if (self->pymech_) {
     result = (PyObject*)self->pymech_;
@@ -1120,6 +1128,7 @@ static PyObject* NPyRangeVar_mech(NPyRangeVar* self) {
 }
 
 static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
+  CHECK_SEC_INVALID(self->sec_);
   PyObject* p;
   NPySecObj* parent;
   double parentx, childend;
@@ -1165,6 +1174,7 @@ static PyObject* NPySecObj_connect(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
+  CHECK_SEC_INVALID(self->sec_);
   char* tname;
   PyObject *tpyobj, *tpyobj2;
   if (!PyArg_ParseTuple(args, "s", &tname)) {
@@ -1208,6 +1218,7 @@ static PyObject* NPySecObj_insert(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPySecObj_uninsert(NPySecObj* self, PyObject* args) {
+  CHECK_SEC_INVALID(self->sec_);
   char* tname;
   if (!PyArg_ParseTuple(args, "s", &tname)) {
     return NULL;
@@ -1232,6 +1243,7 @@ static PyObject* NPySecObj_uninsert(NPySecObj* self, PyObject* args) {
 }
 
 static PyObject* NPySecObj_has_membrane(NPySecObj* self, PyObject* args) {
+  CHECK_SEC_INVALID(self->sec_);
   char* mechanism_name;
   PyObject* result;
   if (!PyArg_ParseTuple(args, "s", &mechanism_name)) {
@@ -1333,7 +1345,9 @@ static PyObject* seg_of_sec_next(NPySegOfSecIter* self) {
 }
 
 static PyObject* seg_point_processes(NPySegObj* self) {
-  Node* nd = node_exact(self->pysec_->sec_, self->x_);
+  Section* sec = self->pysec_->sec_;
+  CHECK_SEC_INVALID(sec);
+  Node* nd = node_exact(sec, self->x_);
   PyObject* result = PyList_New(0);
   for (Prop* p = nd->prop; p; p = p->next) {
     if (memb_func[p->type].is_point) {
@@ -1348,13 +1362,16 @@ static PyObject* seg_point_processes(NPySegObj* self) {
 }
 
 static PyObject* node_index1(NPySegObj* self) {
-  Node* nd = node_exact(self->pysec_->sec_, self->x_);
+  Section* sec = self->pysec_->sec_;
+  CHECK_SEC_INVALID(sec);
+  Node* nd = node_exact(sec, self->x_);
   PyObject* result = Py_BuildValue("i", nd->v_node_index);
   return result;
 }
 
 static PyObject* seg_area(NPySegObj* self) {
   Section* sec = self->pysec_->sec_;
+  CHECK_SEC_INVALID(sec);
   if (sec->recalc_area_) {
     nrn_area_ri(sec);
   }
@@ -1402,6 +1419,7 @@ static int arg_bisect_arc3d(Section* sec, int npt3d, double x) {
 
 static PyObject* seg_volume(NPySegObj* self) {
   Section* sec = self->pysec_->sec_;
+  CHECK_SEC_INVALID(sec);
   int i;
   if (sec->recalc_area_) {
     nrn_area_ri(sec);
@@ -1455,6 +1473,7 @@ static PyObject* seg_volume(NPySegObj* self) {
 
 static PyObject* seg_ri(NPySegObj* self) {
   Section* sec = self->pysec_->sec_;
+  CHECK_SEC_INVALID(sec);
   if (sec->recalc_area_) {
     nrn_area_ri(sec);
   }

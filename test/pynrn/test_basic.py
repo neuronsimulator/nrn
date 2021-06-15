@@ -219,13 +219,19 @@ def test_deleted_sec():
     s.hoc_internal_name
   ])
   sec_methods_chk = set([getattr(s, n) for n in dir(s) if '__' not in n and type(getattr(s, n)) == type(s.x3d) and getattr(s, n) not in sec_methods_ok])
+  seg_methods_chk = set([getattr(seg, n) for n in dir(seg) if '__' not in n and type(getattr(seg, n)) == type(seg.area)])
+  mech_methods_chk = set([getattr(mech, n) for n in dir(mech) if '__' not in n and type(getattr(mech, n)) == type(mech.segment)])
+  rv_methods_chk = set([getattr(rvlist[0], n) for n in dir(rvlist[0]) if '__' not in n and type(getattr(rvlist[0], n)) == type(rvlist[0].name)])
+  rv_methods_chk.remove(rvlist[0].name)
   h.delete_section(sec=s)
 
-  for m in sec_methods_chk:
-    # Most would fail because of no args, but expect a check
-    # for valid section first.
-    print('m =', m)
-    expect_err("m()")
+  for methods in [sec_methods_chk, seg_methods_chk, mech_methods_chk, rv_methods_chk]:
+    for m in methods:
+      # Most would fail because of no args, but expect a check
+      # for valid section first.
+      words = str(m).split()
+      print('m is ' + words[4] + '.' + words[2])
+      expect_err("m()")
 
   assert str(s) == '<deleted section>'
   assert str(seg) == "<segment of deleted section>"
@@ -279,7 +285,7 @@ def test_deleted_sec():
   ic.loc(dend(.5))
   assert ic.get_segment() == dend(.5)
 
-  return s, seg, mech, rvlist, vref, gnabarref
+  return s, seg, mech, rvlist, vref, gnabarref, dend
 
 if __name__ == "__main__":
     set_quiet(False)
