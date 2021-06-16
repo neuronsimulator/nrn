@@ -285,6 +285,12 @@ def test_deleted_sec():
   ic.loc(dend(.5))
   assert ic.get_segment() == dend(.5)
 
+  imp = h.Impedance()
+  expect_err("imp.loc(seg)")
+  expect_err("h.distance(0, seg)")
+  expect_hocerr(imp.loc, (seg,))
+  expect_hocerr(h.distance, (0, seg))
+
   return s, seg, mech, rvlist, vref, gnabarref, dend
 
 if __name__ == "__main__":

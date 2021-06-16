@@ -487,6 +487,9 @@ static void o2loc(Object* o, Section** psec, double* px) {
   }
   NPySegObj* pyseg = (NPySegObj*)po;
   *psec = pyseg->pysec_->sec_;
+  if (!(*psec)->prop) {
+    hoc_execerr_ext("nrn.Segment associated with deleted internal Section");
+  }
   *px = pyseg->x_;
 }
 
@@ -530,6 +533,9 @@ static void o2loc2(Object* o, Section** psec, double* px) {
   *px = pyseg->x_;
   if (free_po) {
       Py_DECREF(po);
+  }
+  if (!(*psec)->prop) {
+    hoc_execerr_ext("nrn.Segment associated with deleted internal Section");
   }
 }
 

@@ -360,7 +360,15 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
       *ts = str.c_str();
       s2free.push_back(*ts);
       hoc_pushstr(ts);
-    } else if (PyObject_IsInstance(po, (PyObject*)hocobject_type)) {
+    } else if (PyObject_TypeCheck(po, hocobject_type)) {
+      // The PyObject_TypeCheck above used to be PyObject_IsInstance. The
+      // problem with the latter is that it calls the __class__ method of
+      // the object which can raise an error for nrn.Section, nrn.Segment,
+      // etc. if the internal Section is invalid (Section.prop == NULL).
+      // That, in consequence, will generate an
+      // Exception ignored on calling ctypes callback function: <function nrnpy_pr
+      // thus obscuring the actual error, such as
+      // nrn.Segment associated with deleted internal Section.
       PyHocObject* pho = (PyHocObject*)po;
       PyHoc::ObjectType tp = pho->type_;
       if (tp == PyHoc::HocObject) {
