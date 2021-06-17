@@ -13,7 +13,6 @@ elif test -d $NSRC/.git ; then
 fi
 
 GIT=GIT
-ver=`sed -n '/^AC_INIT/s/^.*nrn\],\[\(.*\)\].*/\1/p' < $NSRC/configure.ac`
 
 global=`echo "$VERHFILE" | sed -n '/GIT_CHANGESET/s/.*"\(.*\)".*/\1/p'`
 
@@ -36,8 +35,6 @@ if test "$nano" != "" ; then
 fi
 
 case $1 in
-	2) echo $ver.$type-$commit ;;
-	3) echo ${ver} ;;
 	"type") echo $type ;;
 	"commit") echo ${type}-${commit} ;;
 	"describe") echo $describe ;;
@@ -47,6 +44,6 @@ case $1 in
 	"micro") echo $micro ;;
 	"nano") echo $nano ;;
 	"microdotnano") echo $microdotnano ;;
-	*) echo $ver ;;
+	*) echo $describe ;;
 esac
 
