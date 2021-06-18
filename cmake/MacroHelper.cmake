@@ -16,16 +16,13 @@ set(CMAKE_REQUIRED_QUIET TRUE)
 # =============================================================================
 macro(nrn_check_dir_exists HEADER VARIABLE)
   # code template to check existence of DIR
-  set(CONFTEST_DIR_TPL
-      "
-    #include <sys/types.h>
-    #include <@dir_header@>
-
-    int main () {
-      if ((DIR *) 0)
-        return 0\;
-      return 0\;
-    }")
+  string(CONCAT CONFTEST_DIR_TPL "#include <sys/types.h>\n"
+                                 "#include <@dir_header@>\n"
+                                 "int main () {\n"
+                                 "  if ((DIR *) 0)\n"
+                                 "    return 0\;\n"
+                                 "  return 0\;\n"
+                                 "}\n")
   # first get header file
   check_include_files(${HEADER} HAVE_HEADER)
   if(${HAVE_HEADER})
@@ -48,15 +45,12 @@ endmacro()
 # =============================================================================
 macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
   # code template to check existence of specific type
-  set(CONFTEST_TYPE_TPL
-      "
-    #include <@header@>
-
-    int main () {
-      if (sizeof (@type@))
-        return 0\;
-      return 0\;
-    }")
+  string(CONCAT CONFTEST_TYPE_TPL "#include <@header@>\n"
+                                  "int main () {\n"
+                                  "  if (sizeof (@type@))\n"
+                                  "    return 0\;\n"
+                                  "  return 0\;\n"
+                                  "}\n")
   string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
   string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_TYPE})
@@ -73,14 +67,11 @@ endmacro()
 # =============================================================================
 macro(nrn_check_signal_return_type VARIABLE)
   # code template to check signal support
-  set(CONFTEST_RETSIGTYPE
-      "
-    #include <sys/types.h>
-    #include <signal.h>
-
-    int main () {
-      return *(signal (0, 0)) (0) == 1;
-    }")
+  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n"
+                                    "#include <signal.h>\n"
+                                    "int main () {\n"
+                                    "  return *(signal (0, 0)) (0) == 1\;\n"
+                                    "}\n")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
   try_compile(RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(RESULT_VAR)
