@@ -3,7 +3,7 @@ import numpy
 import pytest
 import gc
 
-from .testutils import collect_data
+from rxd_testutils import collect_data
 
 
 def pytest_addoption(parser):

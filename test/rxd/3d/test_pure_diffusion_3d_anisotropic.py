@@ -1,7 +1,7 @@
 import pytest
 import numpy
 from math import exp
-from testutils import compare_data, tol
+from rxd_testutils import compare_data, tol
 
 
 @pytest.fixture

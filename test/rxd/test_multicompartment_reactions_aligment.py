@@ -1,4 +1,4 @@
-from testutils import compare_data, tol
+from rxd_testutils import compare_data, tol
 
 
 def test_multicompartment_reactions_aligment(neuron_instance):
