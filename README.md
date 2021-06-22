@@ -1,5 +1,5 @@
 ## The NMODL Framework
-[![Build Status](https://travis-ci.org/BlueBrain/nmodl.svg?branch=master)](https://travis-ci.org/BlueBrain/nmodl) [![Build Status](https://dev.azure.com/pramodskumbhar/nmodl/_apis/build/status/BlueBrain.nmodl?branchName=master)](https://dev.azure.com/pramodskumbhar/nmodl/_build/latest?definitionId=2&branchName=master) [![codecov](https://codecov.io/gh/BlueBrain/nmodl/branch/master/graph/badge.svg?token=A3NU9VbNcB)](https://codecov.io/gh/BlueBrain/nmodl)
+[![Build Status](https://travis-ci.org/BlueBrain/nmodl.svg?branch=master)](https://travis-ci.org/BlueBrain/nmodl) [![Build Status](https://dev.azure.com/pramodskumbhar/nmodl/_apis/build/status/BlueBrain.nmodl?branchName=master)](https://dev.azure.com/pramodskumbhar/nmodl/_build/latest?definitionId=2&branchName=master) [![codecov](https://codecov.io/gh/BlueBrain/nmodl/branch/master/graph/badge.svg?token=A3NU9VbNcB)](https://codecov.io/gh/BlueBrain/nmodl) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/4467/badge)](https://bestpractices.coreinfrastructure.org/projects/4467)
 
 The NMODL Framework is a code generation engine for **N**EURON **MOD**eling **L**anguage ([NMODL](https://www.neuron.yale.edu/neuron/static/py_doc/modelspec/programmatic/mechanisms/nmodl.html)). It is designed with modern compiler and code generation techniques to:
 
