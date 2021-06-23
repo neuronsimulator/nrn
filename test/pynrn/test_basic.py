@@ -262,9 +262,11 @@ def test_deleted_sec():
   expect_err("for r in mech: pass")
 
   assert(s == s)
-  expect_err("dir(s)")
-  expect_err("dir(seg)")
-  expect_err("dir(mech)")
+  # See https://github.com/neuronsimulator/nrn/issues/1343
+  if sys.version_info >= (3, 8):
+    expect_err("dir(s)")
+    expect_err("dir(seg)")
+    expect_err("dir(mech)")
   assert type(dir(rvlist[0])) == list
   expect_err("help(s)")
   expect_err("help(seg)")
