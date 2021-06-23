@@ -35,6 +35,25 @@ extern void vector_resize(IvocVect*, int);
 } // extern "C"
 extern void (*nrntimeout_call)();
 
+
+
+// The initial idea behind use_phase2_ is to avoid the large overhead of
+// initiating a send of the up to 10k list of target hosts when a cell fires.
+// I.e. when there are a small number of cells on a processor, this causes
+// load balance problems.
+// Load balance shuld be better if the send is distributed to a much smaller
+// set of targets, which, when they receive the spike, pass it on to a neighbor
+// set.
+// We expect that TWOPHASE will work best in combination with ENQUEUE=2
+// which has the greatest amount of overlap between computation
+// and communication.
+// Note: the old implementation assumed that input PreSyn did not need
+// a BGP_DMASend pointer so used the PreSyn.bgp.srchost_ element to
+// help figure out the target_hosts_ list for the output PreSyn.bgp.dma_send_.
+// Since bgp.srchost_ is used only for setup, it can be overwritten at phase2
+// setup time with a bgp.dma_send_ so as to pass on the spike to the
+// phase2 list of target hosts.
+
 // set to 1 if you have problems with Record_Replay when some cells send
 // spikes to fewer than 4 hosts.
 #define WORK_AROUND_RECORD_BUG 0
