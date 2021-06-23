@@ -35,33 +35,9 @@ extern void vector_resize(IvocVect*, int);
 } // extern "C"
 extern void (*nrntimeout_call)();
 
-
-
-// The initial idea behind TWOPHASE is to avoid the large overhead of
-// initiating a send of the up to 10k list of target hosts when a cell fires.
-// I.e. when there are a small number of cells on a processor, this causes
-// load balance problems.
-// Load balance shuld be better if the send is distributed to a much smaller
-// set of targets, which, when they receive the spike, pass it on to a neighbor
-// set. A non-exclusive alternative to this is the use of RECORD_REPLAY
-// which give a very fast initiation but we have not been able to get that
-// to complete in the sense of all the targets receiving their spikes before
-// the conservation step.
-// We expect that TWOPHASE will work best in combination with ENQUEUE=2
-// which has the greatest amount of overlap between computation
-// and communication.
-// Note: the old implementation assumed that input PreSyn did not need
-// a BGP_DMASend pointer so used the PreSyn.bgp.srchost_ element to
-// help figure out the target_hosts_ list for the output PreSyn.bgp.dma_send_.
-// Since bgp.srchost_ is used only for setup, it can be overwritten at phase2
-// setup time with a bgp.dma_send_ so as to pass on the spike to the
-// phase2 list of target hosts.
-
 // set to 1 if you have problems with Record_Replay when some cells send
 // spikes to fewer than 4 hosts.
 #define WORK_AROUND_RECORD_BUG 0
-
-#define TWOPHASE 1 // 0 no longer allowed since 672:544c61a730ec
 
 #if BGPDMA & 2
 #include <dcmf_multisend.h>
@@ -122,14 +98,12 @@ static unsigned long enq2_find_time_;
 static unsigned long enq2_enqueue_time_; // includes enq_find_time_
 #endif
 
-#if TWOPHASE
 #define PHASE2BUFFER_SIZE 2048 // power of 2
 #define PHASE2BUFFER_MASK (PHASE2BUFFER_SIZE - 1)
 struct Phase2Buffer {
 	PreSyn* ps;
 	double spiketime;
 };
-#endif
 
 #include <structpool.h>
 
@@ -157,22 +131,16 @@ public:
 	void enqueue1();
 	void enqueue2();
 	PreSyn** psbuf_;
-#if TWOPHASE
 	void phase2send();
 	int phase2_head_;
 	int phase2_tail_;
 	int phase2_nsend_cell_, phase2_nsend_;
 	Phase2Buffer* phase2_buffer_;
-#endif
 };
 
-#if TWOPHASE
 static int use_phase2_;
 static void setup_phase2();
 #define NTARGET_HOSTS_PHASE1 ntarget_hosts_phase1_
-#else
-#define NTARGET_HOSTS_PHASE1 ntarget_hosts_
-#endif
 
 class BGP_DMASend {
 public:
@@ -187,15 +155,12 @@ public:
 	// is never in the gid2in_ table.
 	int send2self_; // if 1 then send spikes to this host also
 #endif
-#if TWOPHASE
 	int ntarget_hosts_phase1_;
-#endif
 #if HAVE_DCMF_RECORD_REPLAY
 	unsigned persist_id_;
 #endif
 };
 
-#if TWOPHASE
 class BGP_DMASend_Phase2 {
 public:
 	BGP_DMASend_Phase2();
@@ -210,7 +175,6 @@ public:
 	unsigned persist_id_;
 #endif
 };
-#endif
 
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
 static int current_rbuf, next_rbuf;
@@ -229,10 +193,8 @@ BGP_ReceiveBuffer::BGP_ReceiveBuffer() {
 #if ENQUEUE == 1
 	psbuf_ = new PreSyn*[size_];
 #endif
-#if TWOPHASE
 	phase2_buffer_ = new Phase2Buffer[PHASE2BUFFER_SIZE];
 	phase2_head_ = phase2_tail_ = 0;
-#endif
 }
 BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	assert(busy_ == 0);
@@ -242,9 +204,7 @@ BGP_ReceiveBuffer::~BGP_ReceiveBuffer() {
 	delete [] buffer_;
 	delete pool_;
 	if (psbuf_) delete [] psbuf_;
-#if TWOPHASE
 	delete [] phase2_buffer_;
-#endif
 }
 void BGP_ReceiveBuffer::init(int index) {
 	index_ = index;
@@ -254,10 +214,8 @@ void BGP_ReceiveBuffer::init(int index) {
 		pool_->hpfree(buffer_[i]);
 	}
 	count_ = 0;
-#if TWOPHASE
 	phase2_head_ = phase2_tail_ = 0;
 	phase2_nsend_cell_ = phase2_nsend_ = 0;
-#endif	
 }
 void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %p.incoming %g %g %d\n", nrnmpi_myid, this, t, spk->spiketime, spk->gid);
@@ -323,7 +281,6 @@ void BGP_ReceiveBuffer::enqueue() {
 		nrn_assert(gid2in_->find(spk->gid, ps));
 #endif
 
-#if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
 			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
@@ -334,7 +291,6 @@ void BGP_ReceiveBuffer::enqueue() {
 			pb.spiketime = spk->spiketime;
 			
 		}
-#endif
 #if ENQUEUE == 2
 		enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
 #endif
@@ -352,9 +308,7 @@ void BGP_ReceiveBuffer::enqueue() {
 	nsend_cell_ = 0;
 #endif
 	busy_ = 0;
-#if TWOPHASE
 	phase2send();
-#endif
 }
 
 void BGP_ReceiveBuffer::enqueue1() {
@@ -366,7 +320,6 @@ void BGP_ReceiveBuffer::enqueue1() {
 		PreSyn* ps;
 		nrn_assert(gid2in_->find(spk->gid, ps));
 		psbuf_[i] = ps;
-#if TWOPHASE
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
 			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
@@ -377,12 +330,9 @@ void BGP_ReceiveBuffer::enqueue1() {
 			pb.spiketime = spk->spiketime;
 			
 		}
-#endif
 	}
 	busy_ = 0;
-#if TWOPHASE
 	phase2send();
-#endif
 }
 
 void BGP_ReceiveBuffer::enqueue2() {
@@ -402,7 +352,6 @@ void BGP_ReceiveBuffer::enqueue2() {
 	busy_ = 0;
 }
 
-#if TWOPHASE
 void BGP_ReceiveBuffer::phase2send() {
 	while (phase2_head_ != phase2_tail_) {
 		Phase2Buffer& pb = phase2_buffer_[phase2_tail_++];
@@ -410,7 +359,6 @@ void BGP_ReceiveBuffer::phase2send() {
 		pb.ps->bgp.dma_send_phase2_->send_phase2(pb.ps->gid_, pb.spiketime, this);
 	}
 }
-#endif
 
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
@@ -575,9 +523,7 @@ double nrn_bgp_receive_time(int type) { // and others
 	    {
 		int meth = use_dcmf_record_replay ? 3 : use_bgpdma_;
 		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
-#if TWOPHASE
 			+ 8*use_phase2_
-#endif
 			+ 16*(ALTHASH == 1 ? 1 : 0)
 			+ 32*ENQUEUE;
 		rt = double(p);
@@ -680,9 +626,7 @@ BGP_DMASend::BGP_DMASend() {
 #if 0
 	send2self_ = 0;
 #endif
-#if TWOPHASE
 	ntarget_hosts_phase1_ = 0;
-#endif
 }
 
 BGP_DMASend::~BGP_DMASend() {
@@ -691,7 +635,6 @@ BGP_DMASend::~BGP_DMASend() {
 	}
 }
 
-#if TWOPHASE
 BGP_DMASend_Phase2::BGP_DMASend_Phase2() {
 	ntarget_hosts_phase2_ = 0;
 	target_hosts_phase2_ = 0;
@@ -702,7 +645,6 @@ BGP_DMASend_Phase2::~BGP_DMASend_Phase2() {
 		delete [] target_hosts_phase2_;
 	}
 }
-#endif
 
 static	int isend;
 
@@ -805,8 +747,6 @@ void BGP_DMASend::send(int gid, double t) {
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
-#if TWOPHASE
-
 void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 	unsigned long long tb = DCMFTIMEBASE;
   if (ntarget_hosts_phase2_) {
@@ -872,7 +812,6 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
   }
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
-#endif // TWOPHASE
 
 
 static void determine_source_hosts();
@@ -945,12 +884,10 @@ void bgp_dma_receive(NrnThread* nt) {
 	tbuf_[itbuf_++] = (unsigned long)s;
 	tbuf_[itbuf_++] = (unsigned long)r;
 	tbuf_[itbuf_++] = (unsigned long)dmasend_time_;
-#if TWOPHASE
 	if (use_phase2_) {
 		tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_;
 		tbuf_[itbuf_++] = (unsigned long)bgp_receive_buffer[current_rbuf]->phase2_nsend_;
 	}
-#endif
 #endif
 #if (BGPMDA & 2) && MAXNCONS
 	if (ncons > MAXNCONS) { ncons = MAXNCONS; }
@@ -967,10 +904,8 @@ void bgp_dma_receive(NrnThread* nt) {
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 	s = r =  bgp_receive_buffer[current_rbuf]->nsend_cell_ = 0;
-#if TWOPHASE
 	bgp_receive_buffer[current_rbuf]->phase2_nsend_cell_ = 0;
 	bgp_receive_buffer[current_rbuf]->phase2_nsend_ = 0;
-#endif
 	enq2_find_time_ = 0;
 	enq2_enqueue_time_ = 0;
 #if TBUFSIZE
@@ -1010,12 +945,10 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 			delete ps->bgp.dma_send_;
 			ps->bgp.dma_send_ = 0;
 		}
-#if TWOPHASE
 		if (ps->output_index_ < 0) {
 			delete ps->bgp.dma_send_phase2_;
 			ps->bgp.dma_send_phase2_ = 0;
 		}
-#endif
 	}
 }
 
@@ -1032,11 +965,9 @@ static void bgpdma_cleanup() {
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
-#if TWOPHASE
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
-#endif
 }
 
 static void bgptimeout() {
@@ -1152,20 +1083,16 @@ void bgp_dma_setup() {
 		mconfig->max_persist_ids = 0;
 		mconfig->max_msgs = 0;
 		n_mymulticast_ = NSEND;
-#if TWOPHASE
 		if (use_phase2_) {
 			n_mymulticast_ *= 100;
 		}
-#endif
 	}
 #else
 	mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
 	n_mymulticast_ = NSEND;
-#if TWOPHASE
 		if (use_phase2_) {
 			n_mymulticast_ *= 100;
 		}
-#endif
 #endif
 	if (nrnmpi_myid == 0) {
 		printf("n_mymulticast_ = %d\n", n_mymulticast_);
