@@ -3,10 +3,8 @@ include(NeuronTestHelper)
 set(direct_tests netstimdirect)
 set(spike_comparison_tests
     bbcore
-    gf
     patstim
     vecplay
-    watch
     vecevent)
 
 set(modfiles mod/Gfluct3.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
@@ -16,6 +14,8 @@ if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
   list(APPEND modfiles mod/hhderiv.mod mod/hhkin.mod)
   # These tests depend on the modfiles on the line above.
   list(APPEND spike_comparison_tests conc deriv kin)
+
+  list(APPEND spike_comparison_tests gf watch)
 endif()
 
 # Set the number of MPI ranks to use for each test. Assume 1 if not explicitly specified.
