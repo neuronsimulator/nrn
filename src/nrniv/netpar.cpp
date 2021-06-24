@@ -1463,7 +1463,6 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
 	if (nrnmpi_myid == 0) {Printf("use_phase2_ = %d\n", use_phase2_);}
-#endif
 	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
 	if (use_bgpdma_ == 2) { assert(BGPDMA & 2); }
 	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
