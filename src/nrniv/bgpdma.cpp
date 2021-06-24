@@ -75,11 +75,7 @@ static int xtra_cons_hist_[MAXNCONS+1];
 #define USE_RDTSCL 0
 
 // only use if careful not to overrun the buffer during a simulation
-#if 0 && (BGPDMA > 1 || USE_RDTSCL)
-#define TBUFSIZE (1<<15)
-#else
 #define TBUFSIZE 0
-#endif
 
 #if TBUFSIZE
 static unsigned long tbuf_[TBUFSIZE];
@@ -368,12 +364,6 @@ void BGP_ReceiveBuffer::phase2send() {
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
 
-#if BGPDMA > 1
-extern void getMemSize(long long *mem);
-extern void getUsedMem(long long *mem);
-extern void getFreeMem(long long *mem);
-#endif
-
 static int max_ntarget_host;
 // For one phase sending, max_multisend_targets is max_ntarget_host.
 // For two phase sending, it is the maximum of all the
@@ -443,24 +433,6 @@ double nrn_bgp_receive_time(int type) { // and others
 		rt = double(p);
 	    }
 		break;
-#if BGPDMA > 1
-	case 9: // getMemSize
-	  { long long mem; getMemSize(&mem);
-		rt = double(mem);
-		break;
-	  }
-	case 10: // getUsedMem
-	  { long long mem; getUsedMem(&mem);
-		rt = double(mem);
-		break;
-	  }
-	case 11: // getFreeMem
-	  { long long mem; getFreeMem(&mem);
-		rt = double(mem);
-		break;
-	  }
-#endif
-
 	case 12: // greatest length multisend
 	  {
 		rt = double(max_multisend_targets);

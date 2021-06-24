@@ -191,7 +191,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    bgpmeminfo.cpp
     cachevec.cpp
     classreg.cpp
     cxprop.cpp
