@@ -75,7 +75,7 @@ static int xtra_cons_hist_[MAXNCONS+1];
 #define USE_RDTSCL 0
 
 // only use if careful not to overrun the buffer during a simulation
-#if 0 && (BGPDMA > 1 || USE_RDTSCL)
+#if 0 && USE_RDTSCL
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
