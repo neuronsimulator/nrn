@@ -5,12 +5,16 @@ from ballandstick import BallAndStick
 h.nrnmpi_init()
 pc = h.ParallelContext()
 
+
 class Ring:
     """A network of *N* ball-and-stick cells where cell n makes an
     excitatory synapse onto cell n + 1 and the last, Nth cell in the
     network projects to the first cell.
     """
-    def __init__(self, N=5, stim_w=0.04, stim_t=9, stim_delay=1, syn_w=0.01, syn_delay=5, r=50):
+
+    def __init__(
+        self, N=5, stim_w=0.04, stim_t=9, stim_delay=1, syn_w=0.01, syn_delay=5, r=50
+    ):
         """
         :param N: Number of cells.
         :param stim_w: Weight of the stimulus
@@ -19,7 +23,7 @@ class Ring:
         :param syn_w: Synaptic weight
         :param syn_delay: Delay of the synapse
         :param r: radius of the network
-        """ 
+        """
         self._N = N
         self.set_gids()                   ### assign gids to processors
         self._syn_w = syn_w
@@ -31,10 +35,12 @@ class Ring:
             self._netstim = h.NetStim()
             self._netstim.number = 1
             self._netstim.start = stim_t
-            self._nc = h.NetCon(self._netstim, pc.gid2cell(0).syn)   ### grab cell with gid==0 wherever it exists
+            self._nc = h.NetCon(
+                self._netstim, pc.gid2cell(0).syn
+            )  ### grab cell with gid==0 wherever it exists
             self._nc.delay = stim_delay
             self._nc.weight[0] = stim_w
-    
+
     def set_gids(self):
         """Set the gidlist on this host."""
         #### Round-robin counting.
@@ -42,12 +48,14 @@ class Ring:
         self.gidlist = list(range(pc.id(), self._N, pc.nhost()))
         for gid in self.gidlist:
             pc.set_gid2node(gid, pc.id())
-    
+
     def _create_cells(self, r):
         self.cells = []
-        for i in self.gidlist:    ### only create the cells that exist on this host
+        for i in self.gidlist:  ### only create the cells that exist on this host
             theta = i * 2 * h.PI / self._N
-            self.cells.append(BallAndStick(i, h.cos(theta) * r, h.sin(theta) * r, 0, theta))
+            self.cells.append(
+                BallAndStick(i, h.cos(theta) * r, h.sin(theta) * r, 0, theta)
+            )
         ### associate the cell with this host and gid
         for cell in self.cells:
             pc.cell(cell._gid, cell._spike_detector)
@@ -59,4 +67,4 @@ class Ring:
             nc = pc.gid_connect(source_gid, target.syn)
             nc.weight[0] = self._syn_w
             nc.delay = self._syn_delay
-            target._ncs.append(nc)        
+            target._ncs.append(nc)

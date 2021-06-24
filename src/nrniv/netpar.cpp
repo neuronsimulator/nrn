@@ -1461,7 +1461,6 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if BGPDMA
 	use_bgpdma_ = (xchng_meth & 3);
 	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
-#if TWOPHASE
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
 	if (nrnmpi_myid == 0) {Printf("use_phase2_ = %d\n", use_phase2_);}
 #endif

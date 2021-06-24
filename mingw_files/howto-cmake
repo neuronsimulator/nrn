@@ -44,7 +44,7 @@ export CYTHON=cython
 cd $SRC
 mkdir -p build
 export NSRC=$SRC
-ver="`sh nrnversion.sh 3`" # eg. 7.8
+ver="`sh nrnversion.sh describe`" # git describe output
 n1=nrn"${ver}"setup-AMD64.exe # name of setup.exe
 #full distribution name
 n2=nrn-"`git describe --dirty=+`".w64-mingw-${PYVS}-setup.exe

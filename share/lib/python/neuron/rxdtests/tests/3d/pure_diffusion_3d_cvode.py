@@ -5,15 +5,14 @@ March 2013 - June 2014
 """
 
 from neuron import h, crxd as rxd
-from matplotlib import pyplot
 import numpy
 import __main__
 
 name = __main__.__file__
-if name[-3 :] == '.py':
-    name = name[: -3]
+if name[-3:] == ".py":
+    name = name[:-3]
 
-h.load_file('stdrun.hoc')
+h.load_file("stdrun.hoc")
 h.cvode_active(True)
 dend = h.Section()
 dend.diam = 2
@@ -22,21 +21,36 @@ dend.L = 100
 rxd.set_solve_type(dimension=3)
 diff_constant = 1
 
-r = rxd.Region(h.allsec(),dx=0.5)
-ca = rxd.Species(r, d=diff_constant, initial=lambda node:
-                                                 1 if 0.4 < node.x < 0.6 else 0)
+r = rxd.Region(h.allsec(), dx=0.5)
+ca = rxd.Species(
+    r, d=diff_constant, initial=lambda node: 1 if 0.4 < node.x < 0.6 else 0
+)
 
 h.finitialize()
-initial_amount = (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
+initial_amount = (
+    numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)
+).sum()
 
-for t in [25, 50, 75, 100, 125]:
-    h.continuerun(t)
-    pyplot.plot([nd.x for nd in ca.nodes], ca.nodes.concentration)
 
-final_amount = (numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)).sum()
+if __name__ == "__main__":
+    from matplotlib import pyplot
 
-print("initial {}\tfinal {}\tdiff {}".format(initial_amount, final_amount, initial_amount - final_amount))
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
+        pyplot.plot([nd.x for nd in ca.nodes], ca.nodes.concentration)
+    pyplot.tight_layout()
+    pyplot.savefig("{0}.png".format(name))
+    pyplot.show()
+else:
+    for t in [25, 50, 75, 100, 125]:
+        h.continuerun(t)
 
-pyplot.tight_layout()
-pyplot.savefig('{0}.png'.format(name))
-pyplot.show()
+final_amount = (
+    numpy.array(ca.nodes.concentration) * numpy.array(ca.nodes.volume)
+).sum()
+
+print(
+    "initial {}\tfinal {}\tdiff {}".format(
+        initial_amount, final_amount, initial_amount - final_amount
+    )
+)

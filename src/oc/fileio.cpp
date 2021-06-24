@@ -921,6 +921,15 @@ static int vnrnpy_pr_stdoe(FILE* stream, const char *fmt, va_list ap) {
         return 0;
     }
 
+    // if any non-ascii translate to '?' or nrnpy_pr will raise an exception.
+    if (stream == stderr) {
+        for (int i = 0; p[i] != '\0'; ++i) {
+            if (!isascii((unsigned char)p[i])) {
+                p[i] = '?';
+            }
+        }
+    }
+
     (*nrnpy_pr_stdoe_callback)((stream == stderr) ? 2 : 1, p);
 
     free(p);

@@ -9,7 +9,7 @@ set -xe
 #  - cmake (>=3.5)
 #  - flex
 #  - bison
-#  - python >= 3.5
+#  - python >= 3.6
 #  - cython
 #  - MPI
 #  - X11
@@ -49,7 +49,6 @@ pip_numpy_install() {
     # numpy is special as we want the minimum wheel version
     numpy_ver="numpy"
     case "$py_ver" in
-      35) numpy_ver="numpy==1.10.4" ;;
       36) numpy_ver="numpy==1.12.1" ;;
       37) numpy_ver="numpy==1.14.6" ;;
       38) numpy_ver="numpy==1.17.5" ;;
@@ -68,7 +67,7 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     #auditwheel needs to be installed with python3
-    PATH=/opt/python/cp38-cp38/bin/:$PATH pip3 install auditwheel
+    pip install auditwheel
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -85,8 +84,10 @@ build_wheel_linux() {
         echo " - Skipping wheelhouse repair ..."
         mkdir wheelhouse && cp dist/*.whl wheelhouse/
     else
+        echo " - Auditwheel show"
+        auditwheel show dist/*.whl
         echo " - Repairing..."
-        PATH=/opt/python/cp38-cp38/bin/:$PATH auditwheel repair dist/*.whl
+        auditwheel repair dist/*.whl
     fi
 
     deactivate
@@ -110,6 +111,9 @@ build_wheel_osx() {
     else
         python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
+
+    echo " - Calling delocate-listdeps"
+    delocate-listdeps dist/*.whl
 
     echo " - Repairing..."
     delocate-wheel -w wheelhouse -v dist/*.whl  # we started clean, there's a single wheel
@@ -144,7 +148,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python[23]; do
+    for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
     done
     ;;

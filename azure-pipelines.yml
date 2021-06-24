@@ -32,8 +32,6 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
-      Python35:
-        python.version: '3.5'
       Python36:
         python.version: '3.6'
       Python37:
@@ -71,9 +69,6 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      Python35:
-        python.version: '3.5'
-        python.org.version: '3.5.4'
       Python36:
         python.version: '3.6'
         python.org.version: '3.6.8'
@@ -89,11 +84,7 @@ jobs:
   steps:
 
   - script: |
-      if [ "$(python.org.version)" == "3.5.4" ]; then
-        installer=python-$(python.org.version)-macosx10.6.pkg
-      else
-        installer=python-$(python.org.version)-macosx10.9.pkg
-      fi
+      installer=python-$(python.org.version)-macosx10.9.pkg
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
       curl $url -o $installer
       sudo installer -pkg $installer -target /

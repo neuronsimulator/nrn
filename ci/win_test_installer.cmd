@@ -21,7 +21,6 @@ echo %PYTHONPATH%
 echo %NEURONHOME%
 
 :: test all pythons
-C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -62,6 +61,9 @@ copy /A share\examples\nrniv\nmodl\cacum.mod .
 call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
+
+:: text rxd
+python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 echo "All tests finished!"
 

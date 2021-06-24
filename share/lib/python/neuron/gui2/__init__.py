@@ -7,8 +7,9 @@ def set_backend(backend):
     Currently supported options:
         jupyter -- to plot within a Jupyter notebook
     """
-    if backend != 'jupyter':
-        raise Exception('Unsupported backend')
+    if backend != "jupyter":
+        raise Exception("Unsupported backend")
     else:
         from .config import options
-        options['backend'] = backend
+
+        options["backend"] = backend

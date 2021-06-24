@@ -49,8 +49,6 @@ include(BuildOptionDefaults)
 # =============================================================================
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
-option(NRN_ENABLE_BINARY_SPECIAL "Build binary special"
-       ${NRN_ENABLE_BINARY_SPECIAL_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
 option(NRN_ENABLE_MECH_DLL_STYLE "Dynamically load nrnmech shared library"
         ${NRN_ENABLE_MECH_DLL_STYLE_DEFAULT})
@@ -334,7 +332,7 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 3.6 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library
   # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
@@ -385,7 +383,6 @@ if(NRN_ENABLE_CORENEURON)
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   endif()
-  set(NRN_ENABLE_BINARY_SPECIAL ON)
 endif()
 
 # =============================================================================
@@ -655,7 +652,6 @@ message(STATUS "CXX COMPILER  | ${CMAKE_CXX_COMPILER}")
 message(STATUS "BUILD_TYPE    | ${CMAKE_BUILD_TYPE} (allowed: ${allowableBuildTypes})")
 message(STATUS "COMPILE FLAGS | ${COMPILER_FLAGS}")
 message(STATUS "Shared        | ${NRN_ENABLE_SHARED}")
-message(STATUS "Binary special| ${NRN_ENABLE_BINARY_SPECIAL}")
 if(NRN_DYNAMIC_UNITS_USE_LEGACY)
   message(STATUS "Default units | legacy units")
 else()
@@ -684,16 +680,13 @@ if(NRN_ENABLE_PYTHON)
   message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
   message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
-  if(PYTHON_VERSION_MAJOR LESS 3)
-    message(SEND_ERROR "Python 3 required. Please upgrade.")
-  endif()
   if(NRN_ENABLE_PYTHON_DYNAMIC)
     list(LENGTH NRN_PYTHON_EXE_LIST _num_pythons)
     math(EXPR num_pythons "${_num_pythons} - 1")
     foreach(val RANGE ${num_pythons})
       list(GET NRN_PYTHON_EXE_LIST ${val} exe)
       list(GET NRN_PYTHON_VER_LIST ${val} version)
-      if(PYTHON_VERSION_MAJOR LESS 3)
+      if(${version} LESS 3)
         message(SEND_ERROR "Python 3 required. Please upgrade.")
       endif()
       list(GET NRN_PYTHON_INCLUDE_LIST ${val} include)

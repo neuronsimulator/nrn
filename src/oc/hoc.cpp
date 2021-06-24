@@ -54,7 +54,9 @@ extern int stdin_event_ready();
 #endif
 
 #if NRN_FLOAT_EXCEPTION
+#if !defined(__USE_GNU)
 #define __USE_GNU
+#endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
 int matherr1(void) {
@@ -1786,6 +1788,9 @@ CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
 static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans) {
 	int c, i;
 	int nl1, nl2;
+        if (!f) {
+		hoc_execerr_ext("No file (or stdin) for input");
+	}
 	if (nltrans) { nl1 = 26; nl2 = 4;}else{nl1 = nl2 = EOF;}
 	for(i=0;; ++ i) {
 		c = nrn_fw_getc(f);
@@ -1925,6 +1930,11 @@ ENDGUI
 			hoc_check_intupt(0);
 #endif
 			n = strlen(line);
+			for (int i=0; i < n; ++i) {
+				if (!isascii(line[i])) {
+hoc_execerr_ext("Non-ASCII character value 0x%hhx at input position %d\n", (unsigned)line[i], i);
+				}
+			}
 			if (n >= hoc_cbufstr->size - 3) {
 				hocstr_resize(hoc_cbufstr, n+100);
 				ctp = cbuf = hoc_cbufstr->buf;

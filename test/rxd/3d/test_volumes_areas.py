@@ -1,5 +1,5 @@
 def test_volumes_areas(neuron_instance):
-    """Mode to test the 3D vocalization areas and volumes"""   
+    """Mode to test the 3D vocalization areas and volumes"""
     h, rxd, data, save_path = neuron_instance
     dend = h.Section(name="dend")
     dend.L = 2
@@ -24,14 +24,7 @@ def test_volumes_areas(neuron_instance):
     internal_vol = sum([nd.volume for nd in nodes_internal])
     vol = sum([nd.volume for nd in ca.nodes])
 
-
-    assert(abs(correct_surface_area - surface_area)/correct_surface_area < 0.01)
-    assert(abs(correct_surface_vol - surface_vol)/correct_surface_vol < 0.01)
-    assert(abs(correct_internal_vol - internal_vol)/correct_internal_vol < 0.01)
-    assert(abs(correct_vol - vol)/correct_vol < 0.01)
-
-
-
-
-
- 
+    assert abs(correct_surface_area - surface_area) / correct_surface_area < 0.01
+    assert abs(correct_surface_vol - surface_vol) / correct_surface_vol < 0.01
+    assert abs(correct_internal_vol - internal_vol) / correct_internal_vol < 0.01
+    assert abs(correct_vol - vol) / correct_vol < 0.01
