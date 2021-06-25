@@ -79,7 +79,7 @@ extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
  */
 extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
-// BGPDMA can be 0,1,2,3,6,7
+// BGPDMA can be 0 or 1
 // (BGPDMA & 1) > 0 means multisend ISend allowed
 #if !defined(BGPDMA)
 #define BGPDMA 0
