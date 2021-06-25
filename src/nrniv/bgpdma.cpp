@@ -422,14 +422,14 @@ double nrn_bgp_receive_time(int type) { // and others
 		break;
 #endif
 	case 8: // exchange method properties
-		// bit 0-1: 0 allgather, 1 multisend as MPI_ISend,
-		// 2 multisend DCMF, 3 multisend DCMF with record replay
+		// bit 0: 0 allgather, 1 multisend (MPI_ISend)
+		// bit 1: unused, legacy
 		// bit 2: n_bgp_interval, 0 means one interval, 1 means 2
 		// bit 3: number of phases, 0 means 1 phase, 1 means 2
 		// bit 4: 1 means althash used
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
-		int meth = use_bgpdma_;
+		int meth = use_bgpdma_ ? 1 : 0;
 		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*use_phase2_
 			+ 16*(ALTHASH == 1 ? 1 : 0)
@@ -494,7 +494,7 @@ static int bgp_advance() {
 #if BGPDMA
 void nrnbgp_messager_advance() {
 #if BGPDMA & 1
-	if (use_bgpdma_ == 1) { bgp_advance(); }
+	if (use_bgpdma_) { bgp_advance(); }
 #endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
@@ -558,8 +558,8 @@ void BGP_DMASend::send(int gid, double t) {
 #endif
 	nsend_ += 1;
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
-	nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
+    if (use_bgpdma_) {
+	    nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
     }
 #endif
   }
@@ -589,7 +589,7 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 	rb->phase2_nsend_cell_ += 1;
 	rb->phase2_nsend_ += ntarget_hosts_phase2_;
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
+    if (use_bgpdma_) {
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
     }
 #endif
@@ -619,7 +619,7 @@ void bgp_dma_receive(NrnThread* nt) {
 #endif
 	w1 = nrnmpi_wtime();
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
+    if (use_bgpdma_) {
 	nrnbgp_messager_advance();
 	TBUF
 #if ENQUEUE == 2
@@ -768,7 +768,7 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 
 void bgp_dma_setup() {
 	bgpdma_cleanup();
-	if (use_bgpdma_ == 0) { return; }
+	if (!use_bgpdma_) { return; }
 	//not sure this is useful for debugging when stuck in a collective.
 	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();

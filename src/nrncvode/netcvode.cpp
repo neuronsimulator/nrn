@@ -240,7 +240,7 @@ extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 
 #if BGPDMA
 extern void bgp_dma_send(PreSyn*, double t);
-extern int use_bgpdma_;
+extern bool use_bgpdma_;
 extern void nrnbgp_messager_advance();
 #endif
 
