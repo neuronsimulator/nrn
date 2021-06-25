@@ -491,16 +491,12 @@ static int bgp_advance() {
 	return i;
 }
 
-#if BGPDMA
 void nrnbgp_messager_advance() {
-#if BGPDMA & 1
 	if (use_bgpdma_) { bgp_advance(); }
-#endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 #endif
 }
-#endif
 
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
@@ -557,11 +553,9 @@ void BGP_DMASend::send(int gid, double t) {
 	bgp_receive_buffer[0]->nsend_cell_ += 1;
 #endif
 	nsend_ += 1;
-#if BGPDMA & 1
     if (use_bgpdma_) {
 	    nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
     }
-#endif
   }
 #if 0
 	// I am given to understand that multisend cannot send to itself
@@ -588,11 +582,9 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 #endif
 	rb->phase2_nsend_cell_ += 1;
 	rb->phase2_nsend_ += ntarget_hosts_phase2_;
-#if BGPDMA & 1
     if (use_bgpdma_) {
-	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
+        nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
     }
-#endif
   }
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
@@ -618,7 +610,6 @@ void bgp_dma_receive(NrnThread* nt) {
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
-#if BGPDMA & 1
     if (use_bgpdma_) {
 	nrnbgp_messager_advance();
 	TBUF
@@ -637,7 +628,6 @@ void bgp_dma_receive(NrnThread* nt) {
 	}
 	TBUF
     }
-#endif
 	w1 = nrnmpi_wtime() - w1;
 	w2 = nrnmpi_wtime();
 #if TBUFSIZE
