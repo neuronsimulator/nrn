@@ -1377,6 +1377,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         if (nrn_inpython_ == 2) {  // error in component
           nrn_inpython_ = 0;
           PyErr_SetString(PyExc_TypeError, "No value");
+          Py_DECREF(po);
           return -1;
         }
         Py_DECREF(po);
@@ -1385,10 +1386,12 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         char e[200];
         sprintf(e, "'%s' requires subscript for assignment", n);
         PyErr_SetString(PyExc_TypeError, e);
+        Py_DECREF(po);
         return -1;
       }
     } else {
       PyErr_SetString(PyExc_TypeError, "not assignable");
+      Py_DECREF(po);
       return -1;
     }
   }

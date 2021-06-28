@@ -186,6 +186,7 @@ def test_fastimem():
   cvode.active(1)
   run(1.0, ics, 1e-12)
   cvode.use_fast_imem(0)
+  cvode.active(0)
 
 if __name__ == "__main__":
   test_allseg_unique_iter()
