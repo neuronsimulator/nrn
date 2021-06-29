@@ -1050,12 +1050,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print the structure that wraps all range and int variables required for the NMODL
-     */
-    void print_mechanism_range_var_structure();
-
-
-    /**
      * Print structure of ion variables used for local copies
      */
     void print_ion_var_structure();
@@ -1085,13 +1079,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print the function that initialize range variable with different data type
      */
     void print_setup_range_variable();
-
-
-    /**
-     * Print the function that initialize instance structure
-     *
-     */
-    void print_instance_variable_setup();
 
 
     /**
@@ -1837,6 +1824,16 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * @return std::string Unique name produced as [original_name]_[random_string]
      */
     std::string find_var_unique_name(const std::string& original_name) const;
+
+    /**
+     * Print the structure that wraps all range and int variables required for the NMODL
+     */
+    void print_mechanism_range_var_structure();
+
+    /**
+     * Print the function that initialize instance structure
+     */
+    void print_instance_variable_setup();
 
     void visit_binary_expression(const ast::BinaryExpression& node) override;
     void visit_binary_operator(const ast::BinaryOperator& node) override;
