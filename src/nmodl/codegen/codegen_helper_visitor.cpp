@@ -12,6 +12,7 @@
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "visitors/visitor_utils.hpp"
 
 
 namespace nmodl {
@@ -62,13 +63,25 @@ void CodegenHelperVisitor::sort_with_mod2c_symbol_order(std::vector<SymbolType>&
 /**
  * Find all ions used in mod file
  */
-void CodegenHelperVisitor::find_ion_variables() {
-    /// name of the ions used
-    auto ion_vars = psymtab->get_variables_with_properties(NmodlType::useion);
-    /// read variables from all ions
-    auto read_ion_vars = psymtab->get_variables_with_properties(NmodlType::read_ion_var);
-    /// write variables from all ions
-    auto write_ion_vars = psymtab->get_variables_with_properties(NmodlType::write_ion_var);
+void CodegenHelperVisitor::find_ion_variables(const ast::Program& node) {
+    // collect all use ion statements
+    const auto& ion_nodes = collect_nodes(node, {AstNodeType::USEION});
+
+    // ion names, read ion variables and write ion variables
+    std::vector<std::string> ion_vars;
+    std::vector<std::string> read_ion_vars;
+    std::vector<std::string> write_ion_vars;
+
+    for (const auto& ion_node: ion_nodes) {
+        const auto& ion = std::dynamic_pointer_cast<const ast::Useion>(ion_node);
+        ion_vars.push_back(ion->get_node_name());
+        for (const auto& var: ion->get_readlist()) {
+            read_ion_vars.push_back(var->get_node_name());
+        }
+        for (const auto& var: ion->get_writelist()) {
+            write_ion_vars.push_back(var->get_node_name());
+        }
+    }
 
     /**
      * Check if given variable belongs to given ion.
@@ -81,20 +94,17 @@ void CodegenHelperVisitor::find_ion_variables() {
     };
 
     /// iterate over all ion types and construct the Ion objects
-    for (auto& ion_var: ion_vars) {
-        auto ion_name = ion_var->get_name();
+    for (auto& ion_name: ion_vars) {
         Ion ion(ion_name);
         for (auto& read_var: read_ion_vars) {
-            auto var = read_var->get_name();
-            if (ion_variable(var, ion_name)) {
-                ion.reads.push_back(var);
+            if (ion_variable(read_var, ion_name)) {
+                ion.reads.push_back(read_var);
             }
         }
         for (auto& write_var: write_ion_vars) {
-            auto varname = write_var->get_name();
-            if (ion_variable(varname, ion_name)) {
-                ion.writes.push_back(varname);
-                if (ion.is_intra_cell_conc(varname) || ion.is_extra_cell_conc(varname)) {
+            if (ion_variable(write_var, ion_name)) {
+                ion.writes.push_back(write_var);
+                if (ion.is_intra_cell_conc(write_var) || ion.is_extra_cell_conc(write_var)) {
                     ion.need_style = true;
                     info.write_concentration = true;
                 }
@@ -666,7 +676,7 @@ void CodegenHelperVisitor::visit_program(const ast::Program& node) {
         }
     }
     node.visit_children(*this);
-    find_ion_variables();  // Keep this before find_*_range_variables()
+    find_ion_variables(node);  // Keep this before find_*_range_variables()
     find_range_variables();
     find_non_range_variables();
     find_table_variables();

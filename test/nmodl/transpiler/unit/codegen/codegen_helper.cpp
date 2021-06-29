@@ -19,9 +19,9 @@ using namespace codegen;
 using nmodl::parser::NmodlDriver;
 
 //=============================================================================
-// Helper for codege related visitor
+// Helper for codegen related visitor
 //=============================================================================
-std::string run_inline_visitor(const std::string& text) {
+std::string run_codegen_helper_visitor(const std::string& text) {
     NmodlDriver driver;
     const auto& ast = driver.parse_string(text);
 
@@ -88,7 +88,7 @@ SCENARIO("unusual / failing mod files", "[codegen][var_order]") {
 
         THEN("ionic current variable declared as RANGE appears first") {
             std::string expected = "gcalbar;ica;gcal;minf;tau;ggk;m;cai;cao;";
-            auto result = run_inline_visitor(nmodl_text);
+            auto result = run_codegen_helper_visitor(nmodl_text);
             REQUIRE(result == expected);
         }
     }
@@ -121,7 +121,7 @@ SCENARIO("unusual / failing mod files", "[codegen][var_order]") {
 
         THEN("ion state variable is ordered after parameter and assigned ionic current") {
             std::string expected = "gamma;decay;depth;minCai;ica;cai;";
-            auto result = run_inline_visitor(nmodl_text);
+            auto result = run_codegen_helper_visitor(nmodl_text);
             REQUIRE(result == expected);
         }
     }
@@ -163,7 +163,7 @@ SCENARIO("unusual / failing mod files", "[codegen][var_order]") {
 
         THEN("ion variables are ordered correctly") {
             std::string expected = "ca;cai;ica;drive_channel;";
-            auto result = run_inline_visitor(nmodl_text);
+            auto result = run_codegen_helper_visitor(nmodl_text);
             REQUIRE(result == expected);
         }
     }
