@@ -23,8 +23,16 @@ if(GIT_FOUND)
   string(REGEX REPLACE "\"" "" GIT_REVISION_DATE "${GIT_REVISION_DATE}")
   set(GIT_REVISION "${GIT_REVISION_SHA1} ${GIT_REVISION_DATE}")
 
+  # get the last version tag from git
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --abbrev=0 --tags
+    WORKING_DIRECTORY ${NMODL_PROJECT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_LAST_TAG
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 else()
 
   set(GIT_REVISION "unknown")
+  set(GIT_LAST_TAG "unknown")
 
 endif()
