@@ -6,10 +6,8 @@
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(
-  NMODL
-  VERSION 0.2
-  LANGUAGES CXX)
+
+project(NMODL LANGUAGES CXX)
 
 # =============================================================================
 # CMake common project settings
@@ -67,6 +65,14 @@ include(GitRevision)
 include(PythonLinkHelper)
 include(RpathHelper)
 include(ExternalProjectHelper)
+
+# =============================================================================
+# Set the project version now using git
+# =============================================================================
+project(
+  NMODL
+  VERSION ${GIT_LAST_TAG}
+  LANGUAGES CXX)
 
 # =============================================================================
 # Initialize external libraries as submodule
