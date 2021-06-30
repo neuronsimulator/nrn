@@ -1,6 +1,5 @@
 #!/bin/sh
 if test "$1" = "" ; then
-	NVER=`$HOME/neuron/nrn/nrnversion.sh`
 	NDIR=NEURON
 else
 	NDIR="$1"

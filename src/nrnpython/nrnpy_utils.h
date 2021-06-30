@@ -126,4 +126,7 @@ private:
   bool locked_; /* check if double unlocking */
 };
 
+extern void nrnpy_sec_referr();
+#define CHECK_SEC_INVALID(sec) {if (!sec->prop) { nrnpy_sec_referr(); return NULL;}}
+
 #endif /* end of include guard: nrnpy_utils_h */

@@ -166,13 +166,11 @@ public:
 	int size;
 	int* list;
 	int rank;
-#if TWOPHASE
 	int* indices; // indices of list for groups of phase2 targets.
 	// If indices is not null, then size is one less than
 	// the size of the indices list where indices[size] = the size of
 	// the list. Indices[0] is 0 and list[indices[i]] is the rank
 	// to send the ith group of phase2 targets.
-#endif
 };
 
 declareNrnHash(Int2TarList, int, TarList*)
@@ -183,15 +181,11 @@ TarList::TarList() {
 	size = 0;
 	list = 0;
 	rank = -1;
-#if TWOPHASE
 	indices = 0;
-#endif
 }
 TarList::~TarList() {
 	del(list);
-#if TWOPHASE
 	del(indices);
-#endif
 }
 
 void TarList::alloc() {
@@ -199,8 +193,6 @@ void TarList::alloc() {
 		list = new int[size];
 	}
 }
-
-#if TWOPHASE
 
 #include <nrnisaac.h>
 static void* ranstate;
@@ -255,7 +247,6 @@ static void phase2organize(TarList* tl) {
 		}
 	}
 }
-#endif //TWOPHASE
 
 /*
 Setting up target lists uses a lot of temporary memory. It is conceiveable
@@ -285,13 +276,11 @@ static void setup_presyn_dma_lists() {
 		}
 	}}}
 
-#if TWOPHASE
 	// Need to use the bgp union slot for dma_send_phase2_.
 	// Only will be non-NULL if the input is a phase 2 sender.
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		ps->bgp.srchost_ = 0;
 	}}}
-#endif
 
 	int* r;
 	int sz = setup_target_lists(&r);
@@ -487,7 +476,6 @@ static int setup_target_lists(int** r_return) {
 	sdispl = newoffset(scnt, nhost);
 	all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "gidout");
 	
-#if TWOPHASE
 	// fill in the tl->rank for phase 1 target lists
 	// r is an array of source spiking gids
 	// tl is list associating input gids with list of target ranks.
@@ -615,9 +603,4 @@ static int setup_target_lists(int** r_return) {
 	del(rdispl);
 	*r_return = r;
 	return sz;
-
-#else // NOT TWOPHASE --- obsolete
-	// see 672:544c61a730ec
-#error "TWOPHASE required"
-#endif // obsolete
 }
