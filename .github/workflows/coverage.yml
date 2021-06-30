@@ -56,4 +56,21 @@ jobs:
           lcov --remove coverage-full.info --output-file coverage.info "*/ext/*"
           lcov --list coverage.info
       - name: Upload Coverage
-        run: bash <(curl -s https://codecov.io/bash) -f build/coverage.info
+        run: |
+          # Download codecov script and perform shasum checks
+          curl -fLso codecov https://codecov.io/bash;
+          VERSION=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2);
+          for i in 1 256 512
+          do
+            unset LCL_CHECSUM;
+            LCL_CHECSUM=$(shasum -a $i codecov);
+            unset CHECSUM;
+            CHECSUM=$(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${VERSION}/SHA${i}SUM" | grep "codecov")
+            if test "$LCL_CHECSUM" != "$CHECSUM" ; then
+              echo "Codecov CHECSUM failed!";
+              echo "Local: ${LCL_CHECSUM}";
+              echo "Online: ${CHECSUM}";
+              exit 1;
+            fi;
+          done
+          bash ./codecov -f build/coverage.info
