@@ -34,7 +34,7 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
         shell: bash
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
@@ -88,8 +88,25 @@ jobs:
           ctest -VV;
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
+          
+          # Download codecov script and perform shasum checks
+          curl -fLso codecov https://codecov.io/bash;
+          VERSION=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2);
+          for i in 1 256 512
+          do
+            unset LCL_CHECSUM;
+            LCL_CHECSUM=$(shasum -a $i codecov);
+            unset CHECSUM;
+            CHECSUM=$(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${VERSION}/SHA${i}SUM" | grep "codecov")
+            if test "$LCL_CHECSUM" != "$CHECSUM" ; then
+              echo "Codecov CHECSUM failed!";
+              echo "Local: ${LCL_CHECSUM}";
+              echo "Online: ${CHECSUM}";
+              exit 1;
+            fi;
+          done
           # Prefer auto-discovery for now. Specify reports once all python testing is unified under single report (-f option).
-          bash <(curl -s https://codecov.io/bash)
+          bash ./codecov
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
