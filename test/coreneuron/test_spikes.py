@@ -94,13 +94,15 @@ def test_spikes(
     assert nrn_spike_t == corenrn_all_spike_t
     assert nrn_spike_gids == corenrn_all_spike_gids
 
+    return h
+
 
 if __name__ == "__main__":
     try:
-        test_spikes()
+        h = test_spikes()
     except:
         traceback.print_exc()
         # Make the CTest test fail
         sys.exit(42)
     # The test doesn't exit without this.
-    sys.exit(0)
+    h.quit()
