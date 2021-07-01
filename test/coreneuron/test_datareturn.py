@@ -214,4 +214,4 @@ if __name__ == "__main__":
         sys.exit(42)
     # The test doesn't exit without this.
     if enable_gpu:
-        sys.exit(0)
+        h.quit()

@@ -1,4 +1,8 @@
 import os
+import traceback
+
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+
 from neuron import h
 
 pc = h.ParallelContext()
@@ -18,7 +22,7 @@ def test_units():
 
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = enable_gpu
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)
@@ -28,8 +32,15 @@ def test_units():
         1e-13 if coreneuron.gpu else 0
     )  # GPU has tiny numerical differences
     assert ghk_std == pp.ghk
-    h.quit()
 
 
 if __name__ == "__main__":
-    test_units()
+    try:
+        model = test_units()
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    if enable_gpu:
+        h.quit()
