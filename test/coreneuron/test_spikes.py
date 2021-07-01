@@ -1,7 +1,10 @@
 import os
 import pytest
+import sys
+import traceback
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 mpi4py_option = bool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", ""))
 file_mode_option = bool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", ""))
 nrnmpi_init_option = bool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", ""))
@@ -72,7 +75,7 @@ def test_spikes(
     from neuron import coreneuron
 
     coreneuron.enable = True
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = enable_gpu
     coreneuron.file_mode = file_mode
     coreneuron.verbose = 0
     h.stdinit()
@@ -90,8 +93,16 @@ def test_spikes(
     assert len(nrn_spike_t) == len(nrn_spike_gids)  # matching no. of gids
     assert nrn_spike_t == corenrn_all_spike_t
     assert nrn_spike_gids == corenrn_all_spike_gids
-    h.quit()
+
+    return h
 
 
 if __name__ == "__main__":
-    test_spikes()
+    try:
+        h = test_spikes()
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    h.quit()
