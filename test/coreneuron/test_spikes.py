@@ -124,12 +124,6 @@ def test_spikes(
     else:
         run(0)
 
-    # check spikes match
-    assert len(nrn_spike_t)  # check we've actually got spikes
-    assert len(nrn_spike_t) == len(nrn_spike_gids)  # matching no. of gids
-    assert nrn_spike_t == corenrn_all_spike_t
-    assert nrn_spike_gids == corenrn_all_spike_gids
-
     return h
 
 

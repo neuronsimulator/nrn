@@ -85,13 +85,6 @@ def test_fornetcon():
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.gpu = enable_gpu
-    run(tstop)
-    coreneuron.enable = False
-    assert len(spiketime) > 0
-    assert spiketime_std.eq(spiketime) == 1.0
-    assert spikegid_std.eq(spikegid) == 1.0
-    assert len(weight_std) > 0
-    assert weight_std == get_weights()
 
     def runassert(mode):
         spiketime.resize(0)
