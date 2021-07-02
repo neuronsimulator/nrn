@@ -200,9 +200,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
-    # This tries to use pytest and mpi4py in parallel, which might be fragile.
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE} ${py_args})
+                               ${PYTHON_EXECUTABLE})
   endif()
   nrn_add_test_group(
     NAME coreneuron_modtests
