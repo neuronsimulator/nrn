@@ -115,14 +115,14 @@ class Ring:
         self._syn_delay = syn_delay
         self._create_cells(r)
         self._connect_cells()
-        ### have one netstim on each rank
-        if pc.gid_exists(pc.id()):
+        ### stimulate gid 0
+        if pc.gid_exists(0):
             self._netstim = h.NetStim()
             self._netstim.number = 1
             self._netstim.start = stim_t
             self._nc = h.NetCon(
                 self._netstim, pc.gid2cell(pc.id()).syn
-            )  ### grab cell with gid==pc.id() wherever it exists
+            )  ### grab cell with gid==0 wherever it exists
             self._nc.delay = stim_delay
             self._nc.weight[0] = stim_w
 
@@ -156,16 +156,15 @@ class Ring:
 
 def prun(tstop, restore=False):
     pc.set_maxstep(10 * ms)
+    h.finitialize(-65 * mV)
 
     if restore:
-        assert np.allclose(h.t, tstop / 2)
         ns = h.SaveState()
         sf = h.File("state%d.bin" % pc.id())
         ns.fread(sf)
-        ns.restore(1)
+        ns.restore(0) # event queue restored
         sf.close()
     else:
-        assert np.allclose(h.t, 0)
         pc.psolve(tstop / 2)
         ss = h.SaveState()
         ss.save()
@@ -191,39 +190,44 @@ def get_all_spikes(ring):
 
 
 def compare_dicts(dict1, dict2):
-    keylist = dict1.keys()
-    array_1 = np.array([dict1[key] for key in keylist])
-    array_2 = np.array([dict2[key] for key in keylist])
+    # assume dict is {gid:[spiketimes]}
 
+    # In case iteration order not same in dict1 and dict2, use dict1 key
+    # order to access dict
+    keylist = dict1.keys()
+
+    # verify same set of keys
+    assert set(keylist) == set(dict2.keys())
+
+    # verify same count of spikes for each key
+    assert [len(dict1[k]) for k in keylist] == [len(dict2[k]) for k in keylist]
+
+    # Put spike times in array so can compare with a tolerance.
+    array_1 = np.array([val for k in keylist for val in dict1[k]])
+    array_2 = np.array([val for k in keylist for val in dict2[k]])
     assert np.allclose(array_1, array_2)
 
 
 def test_bas():
+
+    stdspikes = {
+        0: [10.925000000099914, 143.3000000001066],
+        1: [37.40000000009994, 169.7750000000825],
+        2: [63.87500000010596, 196.25000000005844],
+        3: [90.35000000011198],
+        4: [116.825000000118]}
+
+    stdspikes_after_100 = {}
+    for gid in stdspikes:
+        stdspikes_after_100[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 100.]
+
     ring = Ring()
 
-    h.finitialize(-65 * mV)
-    prun(50 * ms)
-    compare_dicts(
-        get_all_spikes(ring),
-        {
-            0: [10.925000000099914],
-            2: [37.40000000009994],
-            4: [],
-            1: [10.925000000099914, 37.42500000009995],
-            3: [],
-        },
-    )
-    prun(100 * ms, True)
-    compare_dicts(
-        get_all_spikes(ring),
-        {
-            0: [10.925000000099914],
-            2: [37.40000000009994, 63.90000000010597],
-            4: [],
-            1: [10.925000000099914, 37.42500000009995],
-            3: [63.87500000010596],
-        },
-    )
+    prun(200 * ms) # at tstop/2 does a SaveState.save
+    compare_dicts(get_all_spikes(ring), stdspikes)
+
+    prun(200 * ms, True) # SaveState restore to start at t = tstop/2
+    compare_dicts(get_all_spikes(ring), stdspikes_after_100)
 
 
 if __name__ == "__main__":
