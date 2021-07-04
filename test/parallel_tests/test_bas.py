@@ -2,8 +2,17 @@ from neuron import h
 from neuron.units import ms, mV
 
 import numpy as np
+import subprocess
 
 pc = h.ParallelContext()
+
+
+# start fresh with respect to SaveState and BBSaveState
+if pc.id() == 0: 
+    subprocess.run('rm -f state*.bin', shell=True)
+    subprocess.run('rm -r -f bbss_out', shell=True)
+    subprocess.run('rm -r -f in', shell=True)
+pc.barrier()
 
 
 class Cell:
@@ -154,24 +163,58 @@ class Ring:
             target._ncs.append(nc)
 
 
+out2in_sh=r'''
+#!/bin/bash
+out=bbss_out
+rm -f in/*
+mkdir in
+cat $out/tmp > in/tmp
+for f in $out/tmp.*.* ; do
+  i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
+  if test ! -f in/tmp.$i ; then
+    cnt=`ls $out/tmp.$i.* | wc -l`
+    echo $cnt > in/tmp.$i
+    cat $out/tmp.$i.* >> in/tmp.$i
+  fi
+done
+'''
+
+def cp_out_to_in():
+  if pc.id() == 0:
+    f = open("out2in.sh", "w")
+    f.write(out2in_sh)
+    f.close()
+    subprocess.run("sh out2in.sh", shell=True)
+  pc.barrier()
+
 def prun(tstop, restore=False):
     pc.set_maxstep(10 * ms)
     h.finitialize(-65 * mV)
 
-    if restore:
+    if restore == "SaveState":
         ns = h.SaveState()
         sf = h.File("state%d.bin" % pc.id())
         ns.fread(sf)
         ns.restore(0) # event queue restored
         sf.close()
+    elif restore == "BBSaveState":
+        cp_out_to_in() # prepare for restore.
+        bbss = h.BBSaveState()
+        bbss.restore_test()
     else:
         pc.psolve(tstop / 2)
+
+        # SaveState save
         ss = h.SaveState()
         ss.save()
-
         sf = h.File("state%d.bin" % pc.id())
         ss.fwrite(sf)
         sf.close()
+
+        # BBSaveState Save
+        bbss = h.BBSaveState()
+        bbss.save_test()
+
     pc.psolve(tstop)
 
 
@@ -223,10 +266,13 @@ def test_bas():
 
     ring = Ring()
 
-    prun(200 * ms) # at tstop/2 does a SaveState.save
+    prun(200 * ms) # at tstop/2 does a SaveState.save and BBSaveState.save
     compare_dicts(get_all_spikes(ring), stdspikes)
 
-    prun(200 * ms, True) # SaveState restore to start at t = tstop/2
+    prun(200 * ms, "SaveState") # SaveState restore to start at t = tstop/2
+    compare_dicts(get_all_spikes(ring), stdspikes_after_100)
+
+    prun(200 * ms, "BBSaveState") # BBSaveState restore to start at t = tstop/2
     compare_dicts(get_all_spikes(ring), stdspikes_after_100)
 
 

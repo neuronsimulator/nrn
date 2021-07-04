@@ -438,7 +438,9 @@ public:
 };
 BBSS_TxtFileIn::BBSS_TxtFileIn(const char* fname) {
 	f = fopen(fname, "r");
-	assert(f);
+	if (!f) {
+		hoc_execerr_ext("Could not open %s", fname);
+	}
 }
 BBSS_TxtFileIn::~BBSS_TxtFileIn() {
 	fclose(f);
@@ -1582,6 +1584,23 @@ int BBSaveState::cellsize(Object* c){
 	return cnt;
 }
 
+// what is the section list for sections associated with a PythonObject.
+static hoc_Item* pycell_seclist;
+static hoc_Item* seclist_for_pycell(Object* c) {
+  // Searching through seclist for each cell has unacceptable quadratic
+  // performance. This is just to see if PythonObject cell issues can be
+  // isolated to just this work around.
+  hoc_l_freelist(&pycell_seclist);
+  pycell_seclist = hoc_l_newlist();
+  hoc_Item* qsec;
+  ForAllSections(sec)
+    if (nrn_sec2cell_equals(sec, c)) {
+      hoc_l_insertsec(pycell_seclist, sec);
+    }
+  }
+  return pycell_seclist;
+}
+
 // Here is the major place where there is a symmetry break between writing
 // and reading. That is because of the possibility of splitting where
 // not only the pieces are distributed differently between saving and restoring
@@ -1602,18 +1621,31 @@ void BBSaveState::cell(Object* c) {
 		// from forall_section in cabcode.cpp
 		// count, and iterate from first to last
 		hoc_Item* qsec, *first, *last;
-		qsec = c->secelm_;
 		int cnt = 0;
 		Section* sec;
-		for (first = qsec; first->itemtype &&
-		  hocSEC(first)->prop->dparam[6].obj == c; first = first->prev) {
+		qsec = c->secelm_;
+		if (!qsec) {
+		    // secelm_ is NULL if c is a PythonObject. Need to get
+		    // the list of sections associated with c in some other way.
+		    last = seclist_for_pycell(c);
+		    first = last->next;
+		    for (hoc_Item* q = first; q != last; q = q->next) {
+		        sec = hocSEC(q);
+		        if (sec->prop) {
+		            ++cnt;
+		        }
+		    }
+		}else{
+		    for (first = qsec; first->itemtype &&
+		      hocSEC(first)->prop->dparam[6].obj == c; first = first->prev) {
 			sec = hocSEC(first);
 			if (sec->prop) {
 				++cnt;
 			}
+		    }
+		    first = first->next;
+		    last = qsec->next;
 		}
-		first = first->next;
-		last = qsec->next;
 		f->i(cnt);
 		for (qsec = first; qsec != last; qsec = qsec->next) {
 			Section* sec = hocSEC(qsec);
@@ -1657,7 +1689,11 @@ void BBSaveState::cell(Object* c) {
 void BBSaveState::section_exist_info(Section* sec) {
 	char buf[256];
 	Symbol* sym = sec->prop->dparam[0].sym;
-	sprintf(buf, "%s", sym->name);
+	if (sym) {
+		sprintf(buf, "%s", sym->name);
+	}else{
+		sprintf(buf, "%s", secname(sec));
+	}
 	f->s(buf);
 	int indx = sec->prop->dparam[5].i;
 	f->i(indx);
