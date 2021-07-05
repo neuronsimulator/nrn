@@ -8,10 +8,10 @@ pc = h.ParallelContext()
 
 
 # start fresh with respect to SaveState and BBSaveState
-if pc.id() == 0: 
-    subprocess.run('rm -f state*.bin', shell=True)
-    subprocess.run('rm -r -f bbss_out', shell=True)
-    subprocess.run('rm -r -f in', shell=True)
+if pc.id() == 0:
+    subprocess.run("rm -f state*.bin", shell=True)
+    subprocess.run("rm -r -f bbss_out", shell=True)
+    subprocess.run("rm -r -f in", shell=True)
 pc.barrier()
 
 
@@ -163,7 +163,7 @@ class Ring:
             target._ncs.append(nc)
 
 
-out2in_sh=r'''
+out2in_sh = r"""
 #!/bin/bash
 out=bbss_out
 rm -f in/*
@@ -177,15 +177,20 @@ for f in $out/tmp.*.* ; do
     cat $out/tmp.$i.* >> in/tmp.$i
   fi
 done
-'''
+"""
+
 
 def cp_out_to_in():
-  if pc.id() == 0:
-    f = open("out2in.sh", "w")
-    f.write(out2in_sh)
-    f.close()
-    subprocess.run("sh out2in.sh", shell=True)
-  pc.barrier()
+    if pc.id() == 0:
+        import tempfile
+
+        with tempfile.NamedTemporaryFile("w") as scriptfile:
+            scriptfile.write(out2in_sh)
+            scriptfile.flush()
+            subprocess.check_call(["/bin/bash", scriptfile.name])
+
+    pc.barrier()
+
 
 def prun(tstop, restore=False):
     pc.set_maxstep(10 * ms)
@@ -195,10 +200,10 @@ def prun(tstop, restore=False):
         ns = h.SaveState()
         sf = h.File("state%d.bin" % pc.id())
         ns.fread(sf)
-        ns.restore(0) # event queue restored
+        ns.restore(0)  # event queue restored
         sf.close()
     elif restore == "BBSaveState":
-        cp_out_to_in() # prepare for restore.
+        cp_out_to_in()  # prepare for restore.
         bbss = h.BBSaveState()
         bbss.restore_test()
     else:
@@ -258,21 +263,22 @@ def test_bas():
         1: [37.40000000009994, 169.7750000000825],
         2: [63.87500000010596, 196.25000000005844],
         3: [90.35000000011198],
-        4: [116.825000000118]}
+        4: [116.825000000118],
+    }
 
     stdspikes_after_100 = {}
     for gid in stdspikes:
-        stdspikes_after_100[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 100.]
+        stdspikes_after_100[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 100.0]
 
     ring = Ring()
 
-    prun(200 * ms) # at tstop/2 does a SaveState.save and BBSaveState.save
+    prun(200 * ms)  # at tstop/2 does a SaveState.save and BBSaveState.save
     compare_dicts(get_all_spikes(ring), stdspikes)
 
-    prun(200 * ms, "SaveState") # SaveState restore to start at t = tstop/2
+    prun(200 * ms, "SaveState")  # SaveState restore to start at t = tstop/2
     compare_dicts(get_all_spikes(ring), stdspikes_after_100)
 
-    prun(200 * ms, "BBSaveState") # BBSaveState restore to start at t = tstop/2
+    prun(200 * ms, "BBSaveState")  # BBSaveState restore to start at t = tstop/2
     compare_dicts(get_all_spikes(ring), stdspikes_after_100)
 
 
