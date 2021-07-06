@@ -154,12 +154,7 @@ echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 if [[ "$use_venv" != "false" ]]; then
   echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
-  if [[ "$python_ver" == "27" ]]; then
-    $python_exe -m pip install virtualenv
-    $python_exe -m virtualenv $venv_name
-  else
-    $python_exe -m venv $venv_name
-  fi
+  $python_exe -m venv $venv_name
   . $venv_name/bin/activate
   python_exe=`which python`
 else
