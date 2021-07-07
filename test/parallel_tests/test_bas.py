@@ -1,6 +1,9 @@
 from neuron import h
 from neuron.units import ms, mV
 
+h("objref po")
+h.po = {}
+
 import numpy as np
 import subprocess
 
@@ -8,11 +11,14 @@ pc = h.ParallelContext()
 
 
 # start fresh with respect to SaveState and BBSaveState
-if pc.id() == 0:
-    subprocess.run("rm -f state*.bin", shell=True)
-    subprocess.run("rm -r -f bbss_out", shell=True)
-    subprocess.run("rm -r -f in", shell=True)
-pc.barrier()
+def rmfiles():
+    if pc.id() == 0:
+        subprocess.run("rm -f state*.bin", shell=True)
+        subprocess.run("rm -r -f bbss_out", shell=True)
+        subprocess.run("rm -r -f in", shell=True)
+    pc.barrier()
+
+rmfiles()
 
 
 class Cell:
@@ -217,8 +223,14 @@ def prun(tstop, restore=False):
         sf.close()
 
         # BBSaveState Save
-        bbss = h.BBSaveState()
-        bbss.save_test()
+        for i in range(1):
+            bbss = h.BBSaveState()
+            bbss.save_test()
+            bbss = None
+        z = h.List("PythonObject")
+        for i, y in enumerate(z):
+            print(i, y)
+        h.allobjects()
 
     pc.psolve(tstop)
 

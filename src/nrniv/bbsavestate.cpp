@@ -179,6 +179,7 @@ callback to bbss_early when needed.
 #include <nrnmpiuse.h>
 #include <OS/list.h>
 #include <cmath>
+#include <unordered_map>
 
 #include "tqueue.h"
 #include "netcon.h"
@@ -592,6 +593,8 @@ static double restore_gid(void* v) {
 	printf("restore_gid not implemented\n");
 	return 0.;
 }
+
+static void pycell_seclists_clear();
 
 static double save_test(void* v) {
 	int* gids, *sizes;
@@ -1390,6 +1393,7 @@ void BBSaveState::del_pp2de() {
 }
 
 BBSaveState::BBSaveState(){
+	pycell_seclists_clear();
 	if (!ssi) {
 		ssi_def();
 	}
@@ -1398,6 +1402,7 @@ BBSaveState::~BBSaveState(){
 	if (pp2de) {
 		del_pp2de();
 	}
+	pycell_seclists_clear();
 }
 void BBSaveState::apply(BBSS_IO* io) {
 	f = io;
@@ -1439,6 +1444,9 @@ static void base2spgid_item(int spgid, Object* obj) {
 	int sp;
 	if (spgid == base || !base2spgid->find(base, sp)) {
 		(*base2spgid)[base] = spgid;
+	}
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
 	}
 }
 
@@ -1489,6 +1497,9 @@ int BBSaveState::counts(int** gids, int** cnts) {
 		c->ni = c->nd = c->ns = c->nl = 0;
 		Object* obj = nrn_gid2obj(spgid);
 		gidobj(spgid, obj);
+		if (obj && !obj->secelm_) {
+			hoc_obj_unref(obj);
+		}
 		(*cnts)[gidcnt] = c->bytecnt();
 		++gidcnt;
 	}}}		
@@ -1521,6 +1532,9 @@ void BBSaveState::gid2buffer(int gid, char* buffer, int size) {
 	f = new BBSS_BufferOut(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 	delete f;
 	f = 0;
 }
@@ -1531,12 +1545,18 @@ void BBSaveState::buffer2gid(int gid, char* buffer, int size) {
 	f = new BBSS_BufferIn(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 	delete f;
 	f = 0;
 }
 
 static void cb_gidobj(int gid, Object* obj) {
 	bbss->gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 }
 
 void BBSaveState::gids() {
@@ -1551,6 +1571,9 @@ void BBSaveState::gidobj(int basegid) {
 	nrn_assert(base2spgid->find(basegid, spgid));
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 }
 
 void BBSaveState::gidobj(int gid, Object* obj) {
@@ -1585,20 +1608,60 @@ int BBSaveState::cellsize(Object* c){
 }
 
 // what is the section list for sections associated with a PythonObject.
-static hoc_Item* pycell_seclist;
-static hoc_Item* seclist_for_pycell(Object* c) {
-  // Searching through seclist for each cell has unacceptable quadratic
-  // performance. This is just to see if PythonObject cell issues can be
-  // isolated to just this work around.
-  hoc_l_freelist(&pycell_seclist);
-  pycell_seclist = hoc_l_newlist();
+
+// Searching through the global section_list for each cell to create
+// a seclist for that cell has unacceptable quadratic
+// performance. So search once and create map from PythonCell to hoc_List
+// on first request for a seclist
+static std::unordered_map<void*, hoc_Item*> pycell_seclists;
+
+// clean up after a save
+static void pycell_seclists_clear() {
+  for (auto& i: pycell_seclists) {
+    hoc_Item* sl = i.second;
+    hoc_l_freelist(&sl);
+  }
+  pycell_seclists.clear();
+}
+
+static void pycell_seclists_fill() {
+  pycell_seclists_clear();
   hoc_Item* qsec;
-  ForAllSections(sec)
-    if (nrn_sec2cell_equals(sec, c)) {
-      hoc_l_insertsec(pycell_seclist, sec);
+  ForAllSections(sec) // macro has the {
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) { // PythonSection
+      // Assume we can associate with a Python Cell
+      // Sadly, cannot use nrn_sec2cell Object* as the key because it
+      // is not unique and the map needs definite PyObject* keys.
+      Object* ho = nrn_sec2cell(sec);
+      if (ho) {
+        void* pycell = nrn_opaque_obj2pyobj(ho);
+        hoc_obj_unref(ho);
+        if (pycell) {
+          hoc_Item* sl;
+          auto search = pycell_seclists.find(pycell);
+          if (search != pycell_seclists.end()) {
+            sl = search->second;
+          }else{
+            sl = hoc_l_newlist();
+            pycell_seclists[pycell] = sl;
+          }
+          hoc_l_insertsec(sl, sec);
+          continue;
+        }
+      }
+      hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
     }
   }
-  return pycell_seclist;
+}
+
+static hoc_Item* seclist_for_pycell(Object* c) {
+  if (pycell_seclists.empty()) {
+    pycell_seclists_fill();
+  }
+  void* pycell = nrn_opaque_obj2pyobj(c);
+  auto search = pycell_seclists.find(pycell);
+  assert(search != pycell_seclists.end());
+  return search->second;
 }
 
 // Here is the major place where there is a symmetry break between writing
