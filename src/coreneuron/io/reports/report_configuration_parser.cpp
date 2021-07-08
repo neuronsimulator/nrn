@@ -53,6 +53,55 @@ void parse_filter_string(const std::string& filter, ReportConfiguration& config)
     }
 }
 
+void register_target_type(ReportConfiguration& report, ReportType report_type) {
+    report.type = report_type;
+    switch (report.target_type) {
+        case TargetType::Compartment:
+            report.section_type = All;
+            report.section_all_compartments = true;
+            break;
+        case TargetType::Cell:
+            report.section_type = Cell;
+            report.section_all_compartments = false;
+            break;
+        case TargetType::SectionSoma:
+            report.section_type = Soma;
+            report.section_all_compartments = false;
+            break;
+        case TargetType::SectionSomaAll:
+            report.section_type = Soma;
+            report.section_all_compartments = true;
+            break;
+        case TargetType::SectionAxon:
+            report.section_type = Axon;
+            report.section_all_compartments = false;
+            break;
+        case TargetType::SectionAxonAll:
+            report.section_type = Axon;
+            report.section_all_compartments = true;
+            break;
+        case TargetType::SectionDendrite:
+            report.section_type = Dendrite;
+            report.section_all_compartments = false;
+            break;
+        case TargetType::SectionDendriteAll:
+            report.section_type = Dendrite;
+            report.section_all_compartments = true;
+            break;
+        case TargetType::SectionApical:
+            report.section_type = Apical;
+            report.section_all_compartments = false;
+            break;
+        case TargetType::SectionApicalAll:
+            report.section_type = Apical;
+            report.section_all_compartments = true;
+            break;
+        default:
+            std::cerr << "Report error: unsupported target type" << std::endl;
+            nrn_abort(1);
+    }
+}
+
 std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
                                                               const std::string& output_dir,
                                                               std::string& spikes_population_name) {
@@ -78,61 +127,22 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
                        report.type_str.begin(),
                        [](unsigned char c) { return std::tolower(c); });
         report.output_path = output_dir + "/" + report.name;
+        ReportType report_type;
         if (report.type_str == "compartment") {
+            report_type = SectionReport;
             if (report_on == "i_membrane") {
                 nrn_use_fast_imem = true;
-                report.type = IMembraneReport;
-            } else {
-                switch (report.target_type) {
-                    case TargetType::Soma:
-                        report.type = SomaReport;
-                        break;
-                    case TargetType::Compartment:
-                        report.type = CompartmentReport;
-                        break;
-                    case TargetType::Axon:
-                        report.type = SectionReport;
-                        report.section_type = Axon;
-                        report.section_all_compartments = false;
-                        break;
-                    case TargetType::AxonComp:
-                        report.type = SectionReport;
-                        report.section_type = Axon;
-                        report.section_all_compartments = true;
-                        break;
-                    case TargetType::Dendrite:
-                        report.type = SectionReport;
-                        report.section_type = Dendrite;
-                        report.section_all_compartments = false;
-                        break;
-                    case TargetType::DendriteComp:
-                        report.type = SectionReport;
-                        report.section_type = Dendrite;
-                        report.section_all_compartments = true;
-                        break;
-                    case TargetType::Apical:
-                        report.type = SectionReport;
-                        report.section_type = Apical;
-                        report.section_all_compartments = false;
-                        break;
-                    case TargetType::ApicalComp:
-                        report.type = SectionReport;
-                        report.section_type = Apical;
-                        report.section_all_compartments = true;
-                        break;
-                    default:
-                        std::cerr << "Report error: unsupported target type" << std::endl;
-                        nrn_abort(1);
-                }
+                report_type = IMembraneReport;
             }
         } else if (report.type_str == "synapse") {
-            report.type = SynapseReport;
+            report_type = SynapseReport;
         } else if (report.type_str == "summation") {
-            report.type = SummationReport;
+            report_type = SummationReport;
         } else {
             std::cerr << "Report error: unsupported type " << report.type_str << std::endl;
             nrn_abort(1);
         }
+        register_target_type(report, report_type);
         if (report.type == SynapseReport || report.type == SummationReport) {
             parse_filter_string(report_on, report);
         }

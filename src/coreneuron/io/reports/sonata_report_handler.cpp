@@ -25,15 +25,10 @@ void SonataReportHandler::create_report(double dt, double tstop, double delay) {
 }
 
 #ifdef ENABLE_SONATA_REPORTS
-void SonataReportHandler::register_soma_report(const NrnThread& nt,
-                                               ReportConfiguration& config,
-                                               const VarsToReport& vars_to_report) {
-    register_report(nt, config, vars_to_report);
-}
-
-void SonataReportHandler::register_compartment_report(const NrnThread& nt,
-                                                      ReportConfiguration& config,
-                                                      const VarsToReport& vars_to_report) {
+void SonataReportHandler::register_section_report(const NrnThread& nt,
+                                                  ReportConfiguration& config,
+                                                  const VarsToReport& vars_to_report,
+                                                  bool is_soma_target) {
     register_report(nt, config, vars_to_report);
 }
 

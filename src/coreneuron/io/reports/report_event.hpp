@@ -51,6 +51,7 @@ class ReportEvent: public DiscreteEvent {
     int reporting_period;
     std::vector<int> gids_to_report;
     double tstart;
+    VarsToReport vars_to_report;
 };
 #endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
 

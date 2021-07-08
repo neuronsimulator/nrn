@@ -28,8 +28,8 @@ ReportEvent::ReportEvent(double dt,
     : dt(dt)
     , tstart(tstart)
     , report_path(name)
-    , report_dt(report_dt) {
-    VarsToReport::iterator it;
+    , report_dt(report_dt)
+    , vars_to_report(filtered_gids) {
     nrn_assert(filtered_gids.size());
     step = tstart / dt;
     reporting_period = static_cast<int>(report_dt / dt);
@@ -42,7 +42,7 @@ ReportEvent::ReportEvent(double dt,
 
 void ReportEvent::summation_alu(NrnThread* nt) {
     // Sum currents only on reporting steps
-    if (static_cast<int>(step) % reporting_period == 0) {
+    if (step > 0 && (static_cast<int>(step) % reporting_period) == 0) {
         auto& summation_report = nt->summation_report_handler_->summation_reports_[report_path];
         // Add currents of all variables in each segment
         double sum = 0.0;
@@ -55,6 +55,19 @@ void ReportEvent::summation_alu(NrnThread* nt) {
             }
             summation_report.summation_[segment_id] = sum;
             sum = 0.0;
+        }
+        // Add all currents in the soma
+        // Only when type summation and soma target
+        if (!summation_report.gid_segments_.empty()) {
+            double sum_soma = 0.0;
+            for (const auto& kv: summation_report.gid_segments_) {
+                int gid = kv.first;
+                for (const auto& segment_id: kv.second) {
+                    sum_soma += summation_report.summation_[segment_id];
+                }
+                *(vars_to_report[gid].front().var_value) = sum_soma;
+                sum_soma = 0.0;
+            }
         }
     }
 }

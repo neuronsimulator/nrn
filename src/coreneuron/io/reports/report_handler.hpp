@@ -25,22 +25,13 @@ class ReportHandler {
 
     virtual void create_report(double dt, double tstop, double delay);
 #if defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
-    virtual void register_soma_report(const NrnThread& nt,
-                                      ReportConfiguration& config,
-                                      const VarsToReport& vars_to_report);
-    virtual void register_compartment_report(const NrnThread& nt,
-                                             ReportConfiguration& config,
-                                             const VarsToReport& vars_to_report);
+    virtual void register_section_report(const NrnThread& nt,
+                                         ReportConfiguration& config,
+                                         const VarsToReport& vars_to_report,
+                                         bool is_soma_target);
     virtual void register_custom_report(const NrnThread& nt,
                                         ReportConfiguration& config,
                                         const VarsToReport& vars_to_report);
-
-    VarsToReport get_soma_vars_to_report(const NrnThread& nt,
-                                         const std::set<int>& target,
-                                         double* report_variable) const;
-    VarsToReport get_compartment_vars_to_report(const NrnThread& nt,
-                                                const std::set<int>& target,
-                                                double* report_variable) const;
     VarsToReport get_section_vars_to_report(const NrnThread& nt,
                                             const std::set<int>& target,
                                             double* report_variable,
@@ -50,9 +41,9 @@ class ReportHandler {
                                               const std::set<int>& target,
                                               ReportConfiguration& report,
                                               const std::vector<int>& nodes_to_gids) const;
-    VarsToReport get_custom_vars_to_report(const NrnThread& nt,
-                                           ReportConfiguration& report,
-                                           const std::vector<int>& nodes_to_gids) const;
+    VarsToReport get_synapse_vars_to_report(const NrnThread& nt,
+                                            ReportConfiguration& report,
+                                            const std::vector<int>& nodes_to_gids) const;
     std::vector<int> map_gids(const NrnThread& nt) const;
 #endif  // defined(ENABLE_BIN_REPORTS) || defined(ENABLE_SONATA_REPORTS)
   protected:

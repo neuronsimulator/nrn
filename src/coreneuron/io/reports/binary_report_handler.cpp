@@ -43,17 +43,11 @@ static void create_custom_extra(const CellMapping& mapping, std::array<int, 5>& 
     extra[0] = std::accumulate(extra.begin() + 1, extra.end(), 0);
 }
 
-void BinaryReportHandler::register_soma_report(const NrnThread& nt,
-                                               ReportConfiguration& config,
-                                               const VarsToReport& vars_to_report) {
-    create_extra_func create_extra = create_soma_extra;
-    register_report(nt, config, vars_to_report, create_extra);
-}
-
-void BinaryReportHandler::register_compartment_report(const NrnThread& nt,
-                                                      ReportConfiguration& config,
-                                                      const VarsToReport& vars_to_report) {
-    create_extra_func create_extra = create_compartment_extra;
+void BinaryReportHandler::register_section_report(const NrnThread& nt,
+                                                  ReportConfiguration& config,
+                                                  const VarsToReport& vars_to_report,
+                                                  bool is_soma_target) {
+    create_extra_func create_extra = is_soma_target ? create_soma_extra : create_compartment_extra;
     register_report(nt, config, vars_to_report, create_extra);
 }
 

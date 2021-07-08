@@ -25,12 +25,10 @@ class BinaryReportHandler: public ReportHandler {
 
     void create_report(double dt, double tstop, double delay) override;
 #ifdef ENABLE_BIN_REPORTS
-    void register_soma_report(const NrnThread& nt,
-                              ReportConfiguration& config,
-                              const VarsToReport& vars_to_report) override;
-    void register_compartment_report(const NrnThread& nt,
-                                     ReportConfiguration& config,
-                                     const VarsToReport& vars_to_report) override;
+    void register_section_report(const NrnThread& nt,
+                                 ReportConfiguration& config,
+                                 const VarsToReport& vars_to_report,
+                                 bool is_soma_target) override;
     void register_custom_report(const NrnThread& nt,
                                 ReportConfiguration& config,
                                 const VarsToReport& vars_to_report) override;
