@@ -13,7 +13,11 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * Random123 shall be used if a random generator is needed (instead of MCellRan4)
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
-> :warning: It is not possible for a single build of CoreNEURON to support usage of Random123 in both CPU and GPU code ([CoreNEURON#345](https://github.com/BlueBrain/CoreNeuron/issues/345)). This means that, if your model makes use of Random123, you can only execute it on CPU by disabling GPU support.
+> ⚠️⚠️
+> 
+> It is not possible for a single build of CoreNEURON to support usage of Random123 in both CPU and GPU code ([CoreNEURON#345](https://github.com/BlueBrain/CoreNeuron/issues/345)). This means that, if your model makes use of Random123, you can only execute it on CPU by disabling GPU support.
+> 
+> ⚠️⚠️
 
 ## Build Dependencies
 * Bison
@@ -26,12 +30,20 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 
 #### Choosing Compiler
 
-CoreNEURON relies on compiler [auto-vectorisation](https://en.wikipedia.org/wiki/Automatic_vectorization) to achieve better performance on moder CPUs. With this release we recommend compilers like **Intel / PGI / Cray  Compiler**. These compilers are able to vectorise the code better than **GCC** or **Clang**, achieving the best possible performance gains. If you are using any cluster platform, then Intel or Cray compiler should be available as a module. You can also install the Intel compiler by downloading [oneAPI HPC Toolkit](https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html).  CoreNEURON supports also GPU execution based on an [OpenACC](https://en.wikipedia.org/wiki/OpenACC) backend. Currently, the best supported compiler for the OpenACC backend is PGI, available as part of [NVIDIA-HPC-SDK](https://developer.nvidia.com/hpc-sdk). You need to use this compiler for NVIDIA GPUs. Note that AMD GPU support is not tested.
-
+CoreNEURON relies on compiler [auto-vectorisation](https://en.wikipedia.org/wiki/Automatic_vectorization) to achieve better performance on moder CPUs.
+With this release we recommend compilers like **Intel / PGI / Cray  Compiler**.
+These compilers are able to vectorise the code better than **GCC** or **Clang**, achieving the best possible performance gains.
+If you are using any cluster platform, then Intel or Cray compiler should be available as a module.
+You can also install the Intel compiler by downloading [oneAPI HPC Toolkit](https://software.intel.com/content/www/us/en/develop/tools/oneapi/hpc-toolkit.html).  
+CoreNEURON supports also GPU execution based on an [OpenACC](https://en.wikipedia.org/wiki/OpenACC) backend.
+Currently, the best supported compiler for the OpenACC backend is PGI, available as part of [NVIDIA-HPC-SDK](https://developer.nvidia.com/hpc-sdk).
+You need to use this compiler for NVIDIA GPUs.
+Note that AMD GPU support is not tested.
 
 ## Installation
 
-CoreNEURON is a submodule of the NEURON git repository. If you are a NEURON user, the preferred way to install CoreNEURON is to enable extra build options during NEURON installation as follows:
+CoreNEURON is a submodule of the NEURON git repository.
+If you are a NEURON user, the preferred way to install CoreNEURON is to enable extra build options during NEURON installation as follows:
 
 1. Clone the latest version of NEURON:
    ```
@@ -54,9 +66,16 @@ CoreNEURON is a submodule of the NEURON git repository. If you are a NEURON user
    ```
    If you want to enable GPU support then you have to load PGI/NVIDIA-HPC-SDK and CUDA modules:
    ```
-   module load cuda nvidia-hpc-sdk
+   module load nvidia-hpc-sdk cuda
    ```
    Make sure to change module names based on your system.
+   > ⚠️⚠️
+   > 
+   > The NVIDIA HPC SDK also bundles CUDA, at least in recent versions. You should make sure that the version of CUDA in your environment is compatible with the CUDA driver on your system, otherwise you may encounter errors like
+   > ```
+   > nvlink fatal: Input file '[snip]' newer than toolkit (112 vs 110) (target: sm_60)
+   > ```
+   > ⚠️⚠️
 
 4. Run CMake with the appropriate [options](https://github.com/neuronsimulator/nrn#build-using-cmake) and additionally enable CoreNEURON with `-DNRN_ENABLE_CORENEURON=ON`:
 
@@ -84,17 +103,16 @@ CoreNEURON is a submodule of the NEURON git repository. If you are a NEURON user
 		-DCMAKE_C_COMPILER=nvc \
 		-DCMAKE_CXX_COMPILER=nvc++
 	```
-  By default the GPU code will be compiled for NVIDIA devices with compute capability 6.0 or 7.0.
-  This can be steered by passing, for example, `-DCORENRN_GPU_CUDA_COMPUTE_CAPABILITY:STRING=50;60;70` to CMake.
+  	By default the GPU code will be compiled for NVIDIA devices with compute capability 6.0 or 7.0.
+	This can be steered by passing, for example, `-DCORENRN_GPU_CUDA_COMPUTE_CAPABILITY:STRING=50;60;70` to CMake.
 
-	You can change C/C++ optimization flags using `-DCMAKE_CXX_FLAGS` and `-DCMAKE_C_FLAGS` options to the CMake command. You have to add the following CMake options:
-
+	You can change C/C++ optimization flags using `-DCMAKE_CXX_FLAGS` and `-DCMAKE_C_FLAGS` options to the CMake command.
+	You have to add the following CMake options:
 	```bash
 		-DCMAKE_CXX_FLAGS="-O3 -g" \
 	  	-DCMAKE_C_FLAGS="-O3 -g" \
 	  	-DCMAKE_BUILD_TYPE=CUSTOM \
 	```
-
 	NOTE : If the CMake command fails, please make sure to delete temporary CMake cache files (`CMakeCache.txt` or build directory) before re-running CMake.
 
 
@@ -161,8 +179,12 @@ With CoreNEURON, existing NEURON models can be run with minimal changes.For a gi
    ```python
    coreneuron.gpu = True
    ```
-   > :warning: **In this case you must launch your script using the `special` binary!**
+   > ⚠️⚠️
+   > 
+   > **In this case you must launch your script using the `special` binary!**
    > This is explained in more detail below.
+   > 
+   > ⚠️⚠️
 
 4. Use `psolve` to run simulation after initialization :
 
