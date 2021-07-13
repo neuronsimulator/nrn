@@ -3,6 +3,9 @@
 # in random order.
 import os
 import pytest
+import traceback
+
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -74,7 +77,7 @@ def test_fornetcon():
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = enable_gpu
     run(tstop)
     coreneuron.enable = False
     assert len(spiketime) > 0
@@ -88,4 +91,14 @@ def test_fornetcon():
 
 
 if __name__ == "__main__":
-    test_fornetcon()
+    try:
+        test_fornetcon()
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # This test is not actually executed on GPU, but it has this logic anyway
+    # for consistency with the other .py tests in this folder when
+    # https://github.com/BlueBrain/CoreNeuron/issues/512 is resolved.
+    if enable_gpu:
+        h.quit()
