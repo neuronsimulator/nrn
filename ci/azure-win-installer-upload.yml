@@ -17,6 +17,8 @@ steps:
   - task: BatchScript@1
     inputs:
       filename: ci/win_test_installer.cmd
+    env:  
+      SKIP_ASSOCIATION_TEST: true # This test sometimes fails, moreover on Azure. It's run in GHA WindowsInstaller CI
     displayName: "Test Installer"
     condition: succeeded()
 
