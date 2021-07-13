@@ -29,7 +29,7 @@ find_path(
 
 find_library(
   Readline_LIBRARY
-  NAMES readline
+  NAMES libreadline.a readline
   HINTS ${Readline_ROOT_DIR}/lib)
 
 if(Readline_INCLUDE_DIR
