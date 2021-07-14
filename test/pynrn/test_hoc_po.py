@@ -249,24 +249,25 @@ def test_3():
         4.0: [17.900000000099517, 36.02500000009963, 54.32500000010379, 72.70000000010796, 91.12500000011215]
     }
 
-    stdspikes_after_50 = {}
-    for gid in stdspikes:
-        stdspikes_after_50[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 50.0]
-
     ring = Ring(3,2)
     assert hl.count() == npo
 
     prun(100 * ms)
+    if "usetable_hh" not in dir(h): # coreneuron has different hh.mod
+      stdspikes = get_all_spikes(ring)
     compare_dicts(get_all_spikes(ring), stdspikes)
 
     prun(100 * ms, mode="save")  # at tstop/2 does a BBSaveState.save
     assert hl.count() == npo
     compare_dicts(get_all_spikes(ring), stdspikes)
 
+    stdspikes_after_50 = {}
+    for gid in stdspikes:
+        stdspikes_after_50[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 50.0]
+
     prun(100 * ms, mode="restore")  # BBSaveState restore to start at t = tstop/2
-    print(get_all_spikes(ring))
     assert hl.count() == npo
-    #compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+    compare_dicts(get_all_spikes(ring), stdspikes_after_50)
  
     pc.gid_clear()
 
