@@ -119,7 +119,7 @@ struct Phase2Buffer {
 
 #include <structpool.h>
 
-using SpkPool = StructPool<NRNMPI_Spike>;
+using SpkPool = Pool<NRNMPI_Spike>;
 
 #define BGP_RECEIVEBUFFER_SIZE 10000
 class BGP_ReceiveBuffer {
@@ -429,8 +429,8 @@ double nrn_bgp_receive_time(int type) { // and others
 		// bit 4: 1 means althash used
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
-		int meth = use_bgpdma_ ? 1 : 0;
-		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
+		int method = use_bgpdma_ ? 1 : 0;
+		int p = method + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*use_phase2_
 			+ 16*(ALTHASH == 1 ? 1 : 0)
 			+ 32*ENQUEUE;
