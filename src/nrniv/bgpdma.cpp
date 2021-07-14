@@ -33,7 +33,6 @@ extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);
 
 } // extern "C"
-extern void (*nrntimeout_call)();
 
 
 
@@ -491,16 +490,12 @@ static int bgp_advance() {
 	return i;
 }
 
-#if BGPDMA
 void nrnbgp_messager_advance() {
-#if BGPDMA & 1
 	if (use_bgpdma_) { bgp_advance(); }
-#endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 #endif
 }
-#endif
 
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
@@ -557,11 +552,9 @@ void BGP_DMASend::send(int gid, double t) {
 	bgp_receive_buffer[0]->nsend_cell_ += 1;
 #endif
 	nsend_ += 1;
-#if BGPDMA & 1
     if (use_bgpdma_) {
 	    nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
     }
-#endif
   }
 #if 0
 	// I am given to understand that multisend cannot send to itself
@@ -588,11 +581,9 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 #endif
 	rb->phase2_nsend_cell_ += 1;
 	rb->phase2_nsend_ += ntarget_hosts_phase2_;
-#if BGPDMA & 1
     if (use_bgpdma_) {
-	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
+        nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
     }
-#endif
   }
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
@@ -618,7 +609,6 @@ void bgp_dma_receive(NrnThread* nt) {
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
-#if BGPDMA & 1
     if (use_bgpdma_) {
 	nrnbgp_messager_advance();
 	TBUF
@@ -637,7 +627,6 @@ void bgp_dma_receive(NrnThread* nt) {
 	}
 	TBUF
     }
-#endif
 	w1 = nrnmpi_wtime() - w1;
 	w2 = nrnmpi_wtime();
 #if TBUFSIZE
@@ -715,7 +704,6 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 static void bgpdma_cleanup() {
-	nrntimeout_call = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
@@ -723,43 +711,6 @@ static void bgpdma_cleanup() {
 		bgpdma_cleanup_presyn(ps);
 	}}}
 }
-
-static void bgptimeout() {
-	printf("%d timeout %d %d %d\n", nrnmpi_myid, current_rbuf,
-		bgp_receive_buffer[current_rbuf]->nsend_,
-		bgp_receive_buffer[current_rbuf]->nrecv_
-	);
-}
-
-#if WORK_AROUND_RECORD_BUG
-static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
-	// work around for bug in RecordReplay
-	if (bs->ntarget_hosts_ > 3) { return; }
-	int nold = bs->ntarget_hosts_;
-	int* old = bs->target_hosts_;
-	bs->target_hosts_ = new int[4];
-	for (int i=0; i < nold; ++i) {
-		bs->target_hosts_[i] = old[i];
-	}
-	delete [] old;
-	int h = (nrnmpi_myid + 4)%nrnmpi_numprocs;
-	while (bs->ntarget_hosts_ < 4) {
-		int b = 0;
-		for (int i=0; i < bs->ntarget_hosts_; ++i) {
-			if (h == bs->target_hosts_[i]) {
-				h = (h + 4)%nrnmpi_numprocs;
-				b = 1;
-				break;
-			}
-		}
-		if (b == 0) {
-			bs->target_hosts_[bs->ntarget_hosts_++] = h;
-			h = (h + 1)%nrnmpi_numprocs;
-		}
-	}
-	bs->ntarget_hosts_phase1_ = bs->ntarget_hosts_;
-}
-#endif
 
 #define FASTSETUP 1
 #if FASTSETUP
@@ -769,8 +720,6 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (!use_bgpdma_) { return; }
-	//not sure this is useful for debugging when stuck in a collective.
-	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");

@@ -640,8 +640,6 @@ void nrnmpi_dbl_allgather(double* s, double* r, int n) {
 	MPI_Allgather(s, n,  MPI_DOUBLE, r, n, MPI_DOUBLE, nrnmpi_comm);
 }
 
-#if BGPDMA
-
 static MPI_Comm bgp_comm;
 
 void nrnmpi_bgp_comm() {
@@ -677,7 +675,5 @@ int nrnmpi_bgp_conserve(int nsend, int nrecv) {
 	MPI_Allreduce(tcnts, tcnts+1, 1, MPI_INT, MPI_SUM, bgp_comm);
 	return tcnts[1];
 }
-
-#endif /*BGPDMA*/
 
 #endif /*NRNMPI*/

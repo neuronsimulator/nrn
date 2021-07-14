@@ -272,14 +272,12 @@ public:
 #if NRN_MUSIC
 	void* music_port_;
 #endif
-#if BGPDMA
 	union { // A PreSyn cannot be both a source spike generator
 		// and a receiver of off-host spikes.
 		BGP_DMASend* dma_send_;
 		BGP_DMASend_Phase2* dma_send_phase2_;
 		int srchost_;
 	} bgp;
-#endif
 
 	static unsigned long presyn_send_mindelay_;
 	static unsigned long presyn_send_direct_;
