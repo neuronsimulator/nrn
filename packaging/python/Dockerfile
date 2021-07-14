@@ -14,12 +14,9 @@ RUN yum -y install \
     autoconf \
     automake \
     openssh-server \
-    libtool \
-    cmake3
+    libtool
 
 WORKDIR /root
-
-RUN ln -sf /usr/bin/cmake3 /usr/bin/cmake
 
 RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
     && tar -xvzf ncurses-6.2.tar.gz \
@@ -55,6 +52,7 @@ RUN cd /nrnwheel/readline/lib \
 ENV PATH /nrnwheel/openmpi/bin:$PATH
 
 RUN yum -y install libX11-devel.x86_64 libXcomposite-devel.x86_64 vim-enhanced.x86_64
+RUN yum -y remove ncurses-devel
 
 # Copy Dockerfile for reference
 COPY Dockerfile .
