@@ -33,7 +33,6 @@ extern IvocVect* vector_arg(int);
 extern void vector_resize(IvocVect*, int);
 
 } // extern "C"
-extern void (*nrntimeout_call)();
 
 
 
@@ -705,20 +704,12 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 static void bgpdma_cleanup() {
-	nrntimeout_call = 0;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
-}
-
-static void bgptimeout() {
-	printf("%d timeout %d %d %d\n", nrnmpi_myid, current_rbuf,
-		bgp_receive_buffer[current_rbuf]->nsend_,
-		bgp_receive_buffer[current_rbuf]->nrecv_
-	);
 }
 
 #if WORK_AROUND_RECORD_BUG
@@ -759,8 +750,6 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (!use_bgpdma_) { return; }
-	//not sure this is useful for debugging when stuck in a collective.
-	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
