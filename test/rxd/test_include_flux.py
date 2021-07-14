@@ -1,4 +1,4 @@
-from .testutils import compare_data, tol
+from rxd_testutils import compare_data, tol
 
 
 def test_include_flux(neuron_instance):

@@ -300,6 +300,7 @@ def setup_package():
     maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
     maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
+    tests_require = ["flake8", "pytest"]
 
     py_packages = [
         "neuron",
@@ -414,8 +415,9 @@ def setup_package():
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=["numpy>=1.9.3"],
-        tests_require=["flake8", "pytest"],
+        tests_require=tests_require,
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
+        extras_require={"dev": tests_require},
         dependency_links=[],
     )
 
