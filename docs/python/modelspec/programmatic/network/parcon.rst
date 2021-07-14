@@ -2535,6 +2535,13 @@ Description:
         is exactly what will end up happening except the solve will be broken into 
         steps determined by the result of :meth:`ParallelContext.set_maxstep`. 
 
+    Note:
+        If CoreNEURON is active, psolve will be executed in CoreNEURON.
+        Calls to psolve with CoreNEURON active and inactive can be
+        interleaved and calls to finitialize can be interspersed. The result
+        should be exactly the same as if all execution was done in NEURON
+        (except for round-off error differences due to high performance
+        optimizations).
          
 
 ----

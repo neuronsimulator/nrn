@@ -91,7 +91,8 @@ extern "C" double nrnran123_negexp(nrnran123_State* s) {
 	return -log(nrnran123_dblpick(s));
 }
 
-/* at cost of a cached  value we could compute two at a time. */
+/* At cost of a cached  value we could compute two at a time. */
+/* But that would make it difficult to transfer to coreneuron for t > 0 */
 extern "C" double nrnran123_normal(nrnran123_State* s) {
 	double w, x, y;
 	double u1, u2;
