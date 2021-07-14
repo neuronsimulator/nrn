@@ -54,11 +54,20 @@ First, we have to create nmodl parser object using :class:`nmodl.NmodlDriver` an
     >>> modast = driver.parse_string(channel)
 
 The :func:`nmodl.NmodlDriver.parse_string` method will throw an exception with parsing error if the input is invalid.
-Otherwise it return :class:`nmodl.ast.AST` object.
+Otherwise it returns :class:`nmodl.ast.AST` object.
 
-If we simply print AST object, we can see JSON representation:
+If we simply print the AST object, we can see the NMODL code:
 
-    >>> print ('%.100s' % modast)  # only first 100 characters
+    >>> print ('%.103s' % modast)  # only first 103 characters
+    NEURON {
+        SUFFIX CaDynamics
+        USEION ca READ ica WRITE cai
+        RANGE decay, gamma, minCai, depth
+    }
+
+If we would like to see the AST tree, we can simply print the python representation `repr` of the AST object:
+
+    >>> print ('%.100s' % repr(modast))  # only first 100 characters
     {"Program":[{"NeuronBlock":[{"StatementBlock":[{"Suffix":[{"Name":[{"String":[{"name":"SUFFIX"}]}]},
 
 

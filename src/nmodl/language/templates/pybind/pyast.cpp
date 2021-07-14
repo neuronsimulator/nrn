@@ -15,6 +15,7 @@
 #include <pybind11/stl.h>
 
 #include "visitors/json_visitor.hpp"
+#include "visitors/nmodl_visitor.hpp"
 
 
 /**
@@ -166,6 +167,7 @@ static const char* eval_method = R"(
 namespace py = pybind11;
 using namespace nmodl::ast;
 using nmodl::visitor::JSONVisitor;
+using nmodl::visitor::NmodlPrintVisitor;
 using namespace pybind11::literals;
 
 
@@ -240,6 +242,15 @@ void init_ast_module(py::module& m) {
             std::stringstream ss;
             JSONVisitor v(ss);
             v.compact_json(true);
+            n.accept(v);
+            v.flush();
+            return ss.str();
+        });
+
+    {{var(node)}}
+        .def("__str__", []({{node.class_name}} & n) {
+            std::stringstream ss;
+            NmodlPrintVisitor v(ss);
             n.accept(v);
             return ss.str();
         });
