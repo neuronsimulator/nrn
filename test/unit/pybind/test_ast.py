@@ -12,7 +12,7 @@ import pytest
 class TestAst(object):
     def test_empty_program(self):
         pnode = ast.Program()
-        assert str(pnode) == '{"Program":[]}'
+        assert str(pnode) == ''
 
     def test_ast_construction(self):
         string = ast.String("tau")
@@ -26,3 +26,13 @@ class TestAst(object):
         block = ast.StatementBlock(statements)
         neuron_block = ast.NeuronBlock(block)
         assert nmodl.to_nmodl(neuron_block) == 'NEURON {\n}'
+
+    def test_ast_node_repr(self):
+        string = ast.String("tau")
+        name = ast.Name(string)
+        assert repr(name) == nmodl.to_json(name, compact=True)
+
+    def test_ast_node_str(self):
+        string = ast.String("tau")
+        name = ast.Name(string)
+        assert str(name) == nmodl.to_nmodl(name)
