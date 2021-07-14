@@ -712,36 +712,6 @@ static void bgpdma_cleanup() {
 	}}}
 }
 
-#if WORK_AROUND_RECORD_BUG
-static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
-	// work around for bug in RecordReplay
-	if (bs->ntarget_hosts_ > 3) { return; }
-	int nold = bs->ntarget_hosts_;
-	int* old = bs->target_hosts_;
-	bs->target_hosts_ = new int[4];
-	for (int i=0; i < nold; ++i) {
-		bs->target_hosts_[i] = old[i];
-	}
-	delete [] old;
-	int h = (nrnmpi_myid + 4)%nrnmpi_numprocs;
-	while (bs->ntarget_hosts_ < 4) {
-		int b = 0;
-		for (int i=0; i < bs->ntarget_hosts_; ++i) {
-			if (h == bs->target_hosts_[i]) {
-				h = (h + 4)%nrnmpi_numprocs;
-				b = 1;
-				break;
-			}
-		}
-		if (b == 0) {
-			bs->target_hosts_[bs->ntarget_hosts_++] = h;
-			h = (h + 1)%nrnmpi_numprocs;
-		}
-	}
-	bs->ntarget_hosts_phase1_ = bs->ntarget_hosts_;
-}
-#endif
-
 #define FASTSETUP 1
 #if FASTSETUP
 #include "bgpdmasetup.cpp"
