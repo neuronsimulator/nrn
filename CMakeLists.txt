@@ -171,6 +171,13 @@ include(ReleaseDebugAutoFlags)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
+# If NEURON_WHEEL_BUILD is set, look for static libraries first.
+# NEURON_WHEEL_BUILD is set for wheel building.
+if( $ENV{NEURON_WHEEL_BUILD} )
+  set( ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  list(INSERT CMAKE_FIND_LIBRARY_SUFFIXES 0 .a)
+endif()
+
 find_package(Readline REQUIRED)
 if(READLINE_FOUND)
   # MAC libedit.3.dylib does not have rl_event_hook
@@ -182,17 +189,12 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  # When we build the wheel we specify the CMAKE_PREFIX.
-  # In that case look for static libraries first.
-  if( CMAKE_PREFIX_PATH )
-    set( ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-    list(INSERT CMAKE_FIND_LIBRARY_SUFFIXES 0 .a)
-  endif()
   find_package(Curses QUIET)
-  if (ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
-    set (CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES} )
-  endif()
   find_package(Termcap QUIET)
+endif()
+
+if (ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
+  set (CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES} )
 endif()
 
 if(NRN_ENABLE_RX3D)
