@@ -58,13 +58,6 @@ extern void (*nrntimeout_call)();
 // spikes to fewer than 4 hosts.
 #define WORK_AROUND_RECORD_BUG 0
 
-#if BGPDMA & 2
-#include <dcmf_multisend.h>
-#include <dcmf.h>
-#define DCMFTICK DCMF_Tick();
-#define DCMFTIMEBASE DCMF_Timebase()
-#endif
-
 #if !defined(DCMFTICK)
 #define DCMFTICK 0
 #define DCMFTIMEBASE 0
@@ -82,7 +75,7 @@ static int xtra_cons_hist_[MAXNCONS+1];
 #define USE_RDTSCL 0
 
 // only use if careful not to overrun the buffer during a simulation
-#if 0 && (BGPDMA > 1 || USE_RDTSCL)
+#if 0 && USE_RDTSCL
 #define TBUFSIZE (1<<15)
 #else
 #define TBUFSIZE 0
@@ -126,7 +119,7 @@ struct Phase2Buffer {
 
 #include <structpool.h>
 
-using SpkPool = StructPool<NRNMPI_Spike>;
+using SpkPool = Pool<NRNMPI_Spike>;
 
 #define BGP_RECEIVEBUFFER_SIZE 10000
 class BGP_ReceiveBuffer {
@@ -175,9 +168,6 @@ public:
 	int send2self_; // if 1 then send spikes to this host also
 #endif
 	int ntarget_hosts_phase1_;
-#if HAVE_DCMF_RECORD_REPLAY
-	unsigned persist_id_;
-#endif
 };
 
 class BGP_DMASend_Phase2 {
@@ -189,10 +179,6 @@ public:
 	void send_phase2(int gid, double t, BGP_ReceiveBuffer*);
 	int ntarget_hosts_phase2_;
 	int* target_hosts_phase2_;
-
-#if HAVE_DCMF_RECORD_REPLAY
-	unsigned persist_id_;
-#endif
 };
 
 static BGP_ReceiveBuffer* bgp_receive_buffer[BGP_INTERVAL];
@@ -382,103 +368,6 @@ void BGP_ReceiveBuffer::phase2send() {
 // number of DCMF_Multicast_t to cycle through when not using recordreplay
 #define NSEND 10
 
-#if BGPDMA > 1
-extern void getMemSize(long long *mem);
-extern void getUsedMem(long long *mem);
-extern void getFreeMem(long long *mem);
-#endif
-
-
-#if BGPDMA & 2
-
-#define PIPEWIDTH 16
-
-static DCMF_Opcode_t* hints_;
-//static DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
-//static DCMF_Multicast_Configuration_t mconfig;
-struct MyProtocolWrapper {
-	DCMF_Protocol_t protocol __attribute__((__aligned__(16)));
-} __attribute__((__aligned__(16)));
-static MyProtocolWrapper* mpw;
-static DCMF_Multicast_Configuration_t* mconfig;
-
-struct MyMulticastInfo {
-	DCMF_Request_t request __attribute__((__aligned__(16)));
-        DCQuad msginfo __attribute__((__aligned__(16)));
-	DCMF_Multicast_t msend;
-	DCMF_Callback_t cb_done;
-	bool req_in_use;
-	bool record; // when recordreplay, first time Multicast, thereafter  Restart
-}__attribute__((__aligned__(16)));
-// NSEND of them for cycling, or, if recordreplay, max_persist_ids of them
-static int n_mymulticast_; // NSEND or max_persist_ids
-static struct MyMulticastInfo* mci_;
-
-// maybe we will use this when a rank sends to itself.
-static void spk_ready (int gid, double spiketime) {
-	assert(0);
-//printf("%d spk_ready %d %g\n", nrnmpi_myid, gid, spiketime);
-	// to avoid a race condition (since we may be in the middle of
-	// retrieving an item from the event queue) store the incoming
-	// events in a receive buffer
-	int i = 0;
-#if BGP_INTERVAL == 2
-	if (gid < 0) {
-		gid = ~gid;
-		i = 1;
-	}
-#endif
-	bgp_receive_buffer[i]->incoming(gid, spiketime);
-	++nrecv_;
-}
-
-// async callback for receiver's side of multisend  
-static DCMF_Request_t * msend_recv(const DCQuad  * msginfo,
-			    unsigned          nquads,
-			    unsigned          senderID,
-			    const unsigned    sndlen,
-			    unsigned          connid,
-			    void            * arg,
-			    unsigned        * rcvlen,
-			    char           ** rcvbuf,
-			    unsigned        * pipewidth,
-			    DCMF_Callback_t * cb_done)
-{
-  unsigned long long tb = DCMF_Timebase();
-  *rcvlen = 0;
-  *rcvbuf = 0;
-  * pipewidth       = PIPEWIDTH;
-  cb_done->clientdata = 0;
-  cb_done->function = 0;
-
-  double t = *((double*)&msginfo->w0);
-  int gid = *((int*)&msginfo->w2);
-//  printf("%d msend_recv %d %g\n", nrnmpi_myid, spk->gid, spk->spiketime);
-	int i = 0;
-#if BGP_INTERVAL == 2
-	if (gid < 0) {
-		gid = ~gid;
-		i = 1;
-	}
-#endif
-	bgp_receive_buffer[i]->incoming(gid, t);
-	++nrecv_;
-  bgp_receive_buffer[i]->timebase_ += DCMF_Timebase() - tb;
-  return NULL;
-}
-
-// Multisend_multicast callback
-#if DCMF_VERSION_MAJOR >= 2
-static void  multicast_done(void* arg, DCMF_Error_t *) {
-#else
-static void  multicast_done(void* arg) {
-#endif
-	bool* a = (bool*)arg;
-	*a = false;
-}
-
-#endif //BGPDMA & 2
-
 static int max_ntarget_host;
 // For one phase sending, max_multisend_targets is max_ntarget_host.
 // For two phase sending, it is the maximum of all the
@@ -533,39 +422,21 @@ double nrn_bgp_receive_time(int type) { // and others
 		break;
 #endif
 	case 8: // exchange method properties
-		// bit 0-1: 0 allgather, 1 multisend as MPI_ISend,
-		// 2 multisend DCMF, 3 multisend DCMF with record replay
+		// bit 0: 0 allgather, 1 multisend (MPI_ISend)
+		// bit 1: unused, legacy
 		// bit 2: n_bgp_interval, 0 means one interval, 1 means 2
 		// bit 3: number of phases, 0 means 1 phase, 1 means 2
 		// bit 4: 1 means althash used
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
-		int meth = use_dcmf_record_replay ? 3 : use_bgpdma_;
-		int p = meth + 4*(n_bgp_interval == 2 ? 1 : 0)
+		int method = use_bgpdma_ ? 1 : 0;
+		int p = method + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*use_phase2_
 			+ 16*(ALTHASH == 1 ? 1 : 0)
 			+ 32*ENQUEUE;
 		rt = double(p);
 	    }
 		break;
-#if BGPDMA > 1
-	case 9: // getMemSize
-	  { long long mem; getMemSize(&mem);
-		rt = double(mem);
-		break;
-	  }
-	case 10: // getUsedMem
-	  { long long mem; getUsedMem(&mem);
-		rt = double(mem);
-		break;
-	  }
-	case 11: // getFreeMem
-	  { long long mem; getFreeMem(&mem);
-		rt = double(mem);
-		break;
-	  }
-#endif
-
 	case 12: // greatest length multisend
 	  {
 		rt = double(max_multisend_targets);
@@ -588,11 +459,6 @@ static void bgp_dma_init() {
 	next_rbuf = n_bgp_interval - 1;
 #if TBUFSIZE
 	itbuf_ = 0;
-#endif
-#if BGPDMA & 2
-	if (use_bgpdma_ == 2) for (int i=0; i < n_mymulticast_; ++i) {
-		mci_[i].req_in_use = false;
-	}
 #endif
 	dmasend_time_ = 0;
 #if ENQUEUE == 2
@@ -627,11 +493,8 @@ static int bgp_advance() {
 
 #if BGPDMA
 void nrnbgp_messager_advance() {
-#if BGPDMA & 2
-	if (use_bgpdma_ > 1) { DCMF_Messager_advance(); }
-#endif
 #if BGPDMA & 1
-	if (use_bgpdma_ == 1) { bgp_advance(); }
+	if (use_bgpdma_) { bgp_advance(); }
 #endif
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
@@ -694,62 +557,9 @@ void BGP_DMASend::send(int gid, double t) {
 	bgp_receive_buffer[0]->nsend_cell_ += 1;
 #endif
 	nsend_ += 1;
-#if BGPDMA & 2
-    if (use_bgpdma_ == 2) {
-
-	MyMulticastInfo* mci;
-#if HAVE_DCMF_RECORD_REPLAY
-	if (use_dcmf_record_replay) {
-		mci = mci_ + persist_id_;
-	}else{
-#else
-	{
-#endif
-		mci = mci_ + isend;
-	}
-
-	int acnt = 0;
-	while (mci->req_in_use) {
-		++acnt;
-		nrnbgp_messager_advance();
-	}
-//	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
-	mci->req_in_use = true;
-//printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
-	*((double*)&(mci->msginfo.w0)) = spk_.spiketime;
-	*((int*)&(mci->msginfo.w2)) = spk_.gid;
-	mci->msend.nranks = (unsigned int)NTARGET_HOSTS_PHASE1;
-	mci->msend.ranks = (unsigned int*) target_hosts_;
-
-//printf("%d DCMF_Multicast %d %g %d\n", nrnmpi_myid, msend.connection_id, t, gid);
-#if HAVE_DCMF_RECORD_REPLAY
-	if (use_dcmf_record_replay) {
-		if (mci->record) {
-#if 0
-			mymulticast(&mci->msend);
-#else
-			DCMF_Multicast(&mci->msend);
-#endif
-			mci->record = false;
-		}else{
-#if 0
-			myrestart(&mci->request);
-#else
-			DCMF_Restart(&mci->request);
-#endif
-		}
-	}else{
-#else
-	{
-#endif
-		DCMF_Multicast(&mci->msend);
-		isend = (++isend)%n_mymulticast_;
-	}
-    }
-#endif // BGPDMA & 2
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
-	nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
+    if (use_bgpdma_) {
+	    nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
     }
 #endif
   }
@@ -778,53 +588,8 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 #endif
 	rb->phase2_nsend_cell_ += 1;
 	rb->phase2_nsend_ += ntarget_hosts_phase2_;
-#if BGPDMA & 2
-    if (use_bgpdma_ == 2) {
-
-	MyMulticastInfo* mci;
-#if HAVE_DCMF_RECORD_REPLAY
-	if (use_dcmf_record_replay) {
-		mci = mci_ + persist_id_;
-	}else{
-#else
-	{
-#endif
-		mci = mci_ + isend;
-	}
-
-	int acnt = 0;
-	while (mci->req_in_use) {
-		++acnt;
-		nrnbgp_messager_advance();
-	}
-//	if (acnt > 10) { printf("%d multicast %d not done\n", nrnmpi_myid, msend.connection_id);}
-	mci->req_in_use = true;
-//printf("%d multisend %d %g\n", nrnmpi_myid, gid, t);
-	*((double*)&(mci->msginfo.w0)) = spk_.spiketime;
-	*((int*)&(mci->msginfo.w2)) = spk_.gid;
-	mci->msend.nranks = (unsigned int)ntarget_hosts_phase2_;
-	mci->msend.ranks = (unsigned int*) target_hosts_phase2_;
-
-//printf("%d DCMF_Multicast %d %g %d\n", nrnmpi_myid, msend.connection_id, t, gid);
-#if HAVE_DCMF_RECORD_REPLAY
-	if (use_dcmf_record_replay) {
-		if (mci->record) {
-			DCMF_Multicast(&mci->msend);
-			mci->record = false;
-		}else{
-			DCMF_Restart(&mci->request);
-		}
-	}else{
-#else
-	{
-#endif
-		DCMF_Multicast(&mci->msend);
-		isend = (++isend)%n_mymulticast_;
-	}
-    }
-#endif // BGPDMA & 2
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
+    if (use_bgpdma_) {
 	nrnmpi_bgp_multisend(&spk_, ntarget_hosts_phase2_, target_hosts_phase2_);
     }
 #endif
@@ -853,30 +618,8 @@ void bgp_dma_receive(NrnThread* nt) {
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
-#if BGPDMA & 2
-    if (use_bgpdma_ == 2) {
-	nrnbgp_messager_advance();
-	TBUF
-#if ENQUEUE == 2
-	// want the overlap with computation, not conserve
-	tfind = enq2_find_time_;
-	tsend = enq2_enqueue_time_ - enq2_find_time_;
-#endif
-	// demonstrates that most of the time here is due to load imbalance
-#if TBUFSIZE
-	nrnmpi_barrier();
-#endif
-	TBUF
-	while (nrnmpi_bgp_conserve(s, r) != 0) {
-		nrnbgp_messager_advance();
-		++ncons;
-	}
-	TBUF
-	n_xtra_cons_check_ += ncons;
-    }
-#endif
 #if BGPDMA & 1
-    if (use_bgpdma_ == 1) {
+    if (use_bgpdma_) {
 	nrnbgp_messager_advance();
 	TBUF
 #if ENQUEUE == 2
@@ -973,14 +716,6 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 
 static void bgpdma_cleanup() {
 	nrntimeout_call = 0;
-#if BGPDMA & 2
-	if (hints_) {
-		delete [] hints_;
-		hints_ = 0;
-		delete [] mconfig->connectionlist;
-		delete [] mci_;
-	}
-#endif
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
@@ -1033,7 +768,7 @@ static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
 
 void bgp_dma_setup() {
 	bgpdma_cleanup();
-	if (use_bgpdma_ == 0) { return; }
+	if (!use_bgpdma_) { return; }
 	//not sure this is useful for debugging when stuck in a collective.
 	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();
@@ -1066,86 +801,6 @@ void bgp_dma_setup() {
 	if (n_bgp_interval == 2 && !bgp_receive_buffer[1]) {
 		bgp_receive_buffer[1] = new BGP_ReceiveBuffer();
 	}
-#endif
-#if BGPDMA & 2
-  if (use_bgpdma_ == 2) {
-	// going to leak these since no way to unregister
-	mpw = new MyProtocolWrapper;
-	mconfig = new DCMF_Multicast_Configuration_t;
-	// one would think that everyone can use the same hints and so they
-	// can be allocated according to the maximum ntarget_hosts_.
-	hints_ = new DCMF_Opcode_t[nrnmpi_numprocs];
-	for (int i = 0; i < nrnmpi_numprocs; ++i) {
-		hints_[i] = DCMF_PT_TO_PT_SEND;
-	}
-	// I am also guessing everyone can use the same mconfig.
-#if HAVE_DCMF_RECORD_REPLAY
-	unsigned max_persist_ids = 0;
-	if (use_dcmf_record_replay) {
-		PreSyn* ps;
-		NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-			if (ps->output_index_ >= 0 && ps->bgp.dma_send_->ntarget_hosts_ > 0) {
-				ps->bgp.dma_send_->persist_id_ = max_persist_ids++;
-#if WORK_AROUND_RECORD_BUG
-				ensure_ntarget_gt_3(ps->bgp.dma_send_);
-#endif
-			}
-		}}}
-	}
-	if (max_persist_ids > 0) { // may want to check for too many as well
-		mconfig->protocol = DCMF_MEMFIFO_MCAST_RECORD_REPLAY_PROTOCOL;
-		mconfig->max_persist_ids = max_persist_ids;
-		mconfig->max_msgs = max_multisend_targets;
-		n_mymulticast_ = max_persist_ids;
-	}else{
-		mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
-		mconfig->max_persist_ids = 0;
-		mconfig->max_msgs = 0;
-		n_mymulticast_ = NSEND;
-		if (use_phase2_) {
-			n_mymulticast_ *= 100;
-		}
-	}
-#else
-	mconfig->protocol = DCMF_MEMFIFO_DMA_MSEND_PROTOCOL;
-	n_mymulticast_ = NSEND;
-		if (use_phase2_) {
-			n_mymulticast_ *= 100;
-		}
-#endif
-	if (nrnmpi_myid == 0) {
-		printf("n_mymulticast_ = %d\n", n_mymulticast_);
-	}	
-	mci_ = new MyMulticastInfo[n_mymulticast_];
-	mconfig->cb_recv = msend_recv;
-	mconfig->nconnections = n_mymulticast_; //max_multisend_targets;
-	mconfig->connectionlist = new void*[n_mymulticast_];
-	mconfig->clientdata = NULL;
-	nrn_assert(DCMF_Multicast_register (&mpw->protocol, mconfig) == DCMF_SUCCESS);
-
-	for (int i = 0; i < n_mymulticast_; ++i) {
-		MyMulticastInfo* mci = mci_+ i;
-		mci->record = true;
-		mci->req_in_use = false;
-		mci->cb_done.clientdata = (void*)&mci->req_in_use;
-		mci->cb_done.function = multicast_done;
-		mci->msend.registration = &mpw->protocol;
-		mci->msend.request = &mci->request;
-		mci->msend.cb_done = mci->cb_done;
-		mci->msend.consistency = DCMF_MATCH_CONSISTENCY; //DCMF_RELAXED_CONSISTENCY; 
-		mci->msend.connection_id = i;
-		mci->msend.bytes = 0;
-		mci->msend.src = NULL;
-		mci->msend.opcodes = hints_;
-		mci->msend.msginfo = &mci->msginfo;
-		mci->msend.count = 1;
-		mci->msend.op = DCMF_UNDEFINED_OP;
-		mci->msend.dt = DCMF_UNDEFINED_DT;
-#if HAVE_DCMF_RECORD_REPLAY
-		mci->msend.persist_id = i;
-#endif
-	}
-  }
 #endif
 }
 
