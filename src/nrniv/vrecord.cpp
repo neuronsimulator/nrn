@@ -293,7 +293,6 @@ void VecPlayContinuous::play_init() {
 
 void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 	NrnThread* nt = nrn_threads + ith_;
-//printf("deliver %g\n", tt);
 	if (cvode_) {
 		cvode_->set_init_flag();
 		if (cvode_->nth_) { nt = cvode_->nth_; }

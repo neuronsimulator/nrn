@@ -24,7 +24,8 @@ extern Prop* nrn_mechanism(int type, Node*);
 
 // mod stuff
 extern void _nrn_free_watch(Datum *, int, int);
-extern void _nrn_watch_activate(Datum *, double(*)(Point_process *), int, Point_process *, int, double);
+extern void _nrn_watch_activate(Datum *, double(*)(Point_process*), int, Point_process*, int, double);
+extern void _nrn_watch_allocate(Datum *, double(*)(Point_process*), int, Point_process*, double nrflag);
 extern void hoc_reg_ba(int, nrn_bamech_t, int);
 extern int nrn_pointing(double *);
 

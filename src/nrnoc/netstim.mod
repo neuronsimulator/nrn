@@ -244,10 +244,27 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 }
 
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
-	assert(!_p_donotuse);
+	/*assert(!_p_donotuse);*/
+        /* Generally, CoreNEURON, in the context of psolve, begins with
+           an empty model so this call takes place in the context of a freshly
+           created instance. Hence the assert above. However, this function
+           is also now called from NEURON at the end of coreneuron psolve
+           in order to transfer back the nrnran123 sequence state, so that
+           we can continue with a subsequent psolve within NEURON or
+           properly transfer back to CoreNEURON if we continue the psolve
+           there. So now, extra logic is needed for this call to work in
+           a NEURON context. Note: although we assume _ran_compat == 2,
+           we could deal with _ran_compat == 1 with a couple extra line.
+        */
 	if (noise) {
 		uint32_t* di = ((uint32_t*)d) + *offset;
 		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+#if !NRNBBCORE
+		assert(_ran_compat == 2);
+		if (*pv) {
+			nrnran123_deletestream(*pv);
+		}		
+#endif
 		*pv = nrnran123_newstream3(di[0], di[1], di[2]);
 		nrnran123_setseq(*pv, di[3], (char)di[4]);
 	}else{

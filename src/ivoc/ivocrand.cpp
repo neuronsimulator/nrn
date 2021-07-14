@@ -65,6 +65,8 @@ Rand* nrn_random_arg(int);
 long nrn_get_random_sequence(Rand* r);
 void nrn_set_random_sequence(Rand* r, long seq);
 int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
+int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
 } // extern "C"
 
 #include <mcran4.h>
@@ -363,6 +365,18 @@ hoc_execerror("Random.seq() can only be used if the random generator was MCellRa
 		mcr->ihigh_ = (long)(*getarg(1));
 	}
 	return (double)mcr->ihigh_;
+}
+
+int nrn_random123_setseq(Rand* r, uint32_t seq, char which) {
+	if (r->type_ != 4) { return 0; }
+	nrnran123_setseq(((NrnRandom123*)r->gen)->s_, seq, which);
+	return 1;
+}
+
+int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which) {
+	if (r->type_ != 4) { return 0; }
+	nrnran123_getseq(((NrnRandom123*)r->gen)->s_, seq, which);
+	return 1;
 }
 
 static double r_Isaac64(void* r) {

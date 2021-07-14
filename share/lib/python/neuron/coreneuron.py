@@ -5,7 +5,7 @@ file_mode = False  # Run via file transfer mode instead of in-memory transfer
 cell_permute = 1  # 0 no permutation; 1 optimize node adjacency
 # 2 optimize parent node adjacency (only for gpu = True)
 warp_balance = 0  # Number of warps to balance. (0 no balance)
-verbose = 0  # 0 quiet
+verbose = 2  # 0 quiet, 1 Error, 2 Info, 3 Debug
 prcellstate = -1  # Output prcellstate information for the gid at t=0
 # and at tstop. -1 means no output
 
@@ -24,6 +24,7 @@ def property_check(tstop):
     warp_balance = int(warp_balance)
     assert warp_balance >= 0
     verbose = int(verbose)
+    verbose = 0 if verbose < 0 else 3 if verbose > 3 else verbose
     prcellstate = int(prcellstate)
 
 
@@ -51,7 +52,7 @@ def nrncore_arg(tstop):
     arg += (" --cell-permute %d" % cell_permute) if cell_permute > 0 else ""
     arg += (" --nwarp %d" % warp_balance) if warp_balance > 0 else ""
     arg += (" --prcellgid %d" % prcellstate) if prcellstate >= 0 else ""
-    arg += (" --verbose %d" % verbose) if verbose > 0 else ""
+    arg += (" --verbose %d" % verbose) if verbose >= 0 and verbose < 4 else ""
 
     # args derived from current NEURON settings.
     pc = h.ParallelContext()
