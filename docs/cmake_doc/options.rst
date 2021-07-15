@@ -456,12 +456,6 @@ NRN_USE_REL_RPATH=OFF
 ---------------------
   Turned on when creating python wheels.  
 
-NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
--------------------------------------
-  Use internal Readline library shipped with NEURON  
-
-Forces use of the readline code distributed with NEURON even if there is a system supplied readline.
-
 NRN_ENABLE_BACKTRACE:BOOL=OFF
 -------------------------------------
   Generate a backtrace on floating, segfault, and bus exceptions.

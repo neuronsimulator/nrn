@@ -76,7 +76,11 @@ build_wheel_linux() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+        CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+        if [ "$USE_STATIC_READLINE" == "1" ]; then
+          CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+        fi
+        python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" bdist_wheel
     fi
 
     # For CI runs we skip wheelhouse repairs
@@ -109,7 +113,11 @@ build_wheel_osx() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+        CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+        if [ "$USE_STATIC_READLINE" == "1" ]; then
+          CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+        fi
+        python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" bdist_wheel
     fi
 
     echo " - Calling delocate-listdeps"
@@ -140,6 +148,7 @@ case "$1" in
   linux)
     # include here /nrnwheel/mpt/include if have MPT headers
     MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    USE_STATIC_READLINE=1
     python_wheel_version=${python_wheel_version//[-._]/}
     for py_bin in /opt/python/cp${python_wheel_version}*/bin/python; do
         build_wheel_linux "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
@@ -148,6 +157,7 @@ case "$1" in
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
+    USE_STATIC_READLINE=1
     for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
     done

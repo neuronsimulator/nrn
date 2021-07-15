@@ -67,7 +67,7 @@ option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic uni
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON" ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
+option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
@@ -172,8 +172,31 @@ include(ReleaseDebugAutoFlags)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
-if(NOT NRN_ENABLE_INTERNAL_READLINE)
-  find_package(Readline)
+# When shipping the wheels we want to link readline libs statically.
+if(NRN_WHEEL_STATIC_READLINE)
+  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure we get them.
+  set( ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set( CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+endif()
+
+find_package(Readline REQUIRED)
+if(READLINE_FOUND)
+  # MAC libedit.3.dylib does not have rl_event_hook
+  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
+  # points to the library and mentions all its definitions.
+  # this part has to be prior to adding the nrniv subdirectory.
+  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    # define for src/oc/hoc.cpp
+    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+  endif()
+  find_package(Curses QUIET)
+  find_package(Termcap QUIET)
+endif()
+
+# Reset original CMake library suffixes
+if (ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
+  set (CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES} )
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -429,26 +452,6 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
-
-if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook
-  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
-  # points to the library and mentions all its definitions.
-  # this part has to be prior to adding the nrniv subdirectory.
-  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
-  if(NOT result EQUAL 0)
-    # define for src/oc/hoc.cpp
-    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
-  endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
-else()
-  find_package(Curses REQUIRED QUIET)
-  add_subdirectory(src/readline)
-  set(INTERNAL_READLINE readline)
-  unset(Readline_LIBRARY CACHE)
-endif()
-
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 

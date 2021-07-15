@@ -869,7 +869,6 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @PROJECT_SOURCE_DIR@/src/readline
 EXCLUDE               += @PROJECT_SOURCE_DIR@/src/scopmath
 EXCLUDE               += @PROJECT_SOURCE_DIR@/src/sundials
 

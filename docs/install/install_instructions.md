@@ -263,8 +263,9 @@ To run the tests it's needed to:
 
 * **I am getting link errors "undefined reference to 'tgoto, tgetent, tputs'".**
 
-This is often an issue due to missing ncurses library linking. In this case, we recommend trying
-`-DNRN_ENABLE_INTERNAL_READLINE=ON` CMake option.
+This is often an issue due to missing ncurses library linking. In this case, we recommend passing your ncurses installation via CMake.
+For example on Mac OS with a homebrew installation:
+`-DCMAKE_PREFIX_PATH="/usr/local/opt/ncurses"` CMake option.
 
 * **I installed NEURON via pip but while using MPI I get "could not dynamically load libmpi.so or libmpich.so".**
 

@@ -23,12 +23,6 @@ set(NRN_ENABLE_REL_RPATH_DEFAULT OFF)
 set(NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT OFF)
 set(NRN_NMODL_CXX_FLAGS_DEFAULT "-O0")
 
-# on cray cross compiling environment, use internal readline
-if(IS_DIRECTORY "/opt/cray")
-  set(NRN_ENABLE_INTERNAL_READLINE_DEFAULT ON)
-else()
-  set(NRN_ENABLE_INTERNAL_READLINE_DEFAULT OFF)
-endif()
 # Some distributions may set the prefix. To avoid errors, unset it
 set(NRN_MODULE_INSTALL_OPTIONS_DEFAULT "--prefix= --home=${CMAKE_INSTALL_PREFIX}")
 set(NRN_PYTHON_DYNAMIC_DEFAULT "")
@@ -41,6 +35,9 @@ set(CMAKE_INSTALL_PREFIX_DEFAULT "/usr/local")
 set(CMAKE_C_COMPILER_DEFAULT "gcc")
 set(PYTHON_EXECUTABLE_DEFAULT "")
 set(IV_LIB_DEFAULT "")
+
+# For wheel deployment
+set(NRN_WHEEL_STATIC_READLINE_DEFAULT OFF)
 
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
