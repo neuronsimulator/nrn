@@ -109,7 +109,7 @@ build_wheel_osx() {
     if [ "$2" == "--bare" ]; then
         python setup.py bdist_wheel
     else
-        python setup.py build_ext --cmake-prefix="/usr/local/opt/ncurses;/usr/local/opt/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+        python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
     echo " - Calling delocate-listdeps"
