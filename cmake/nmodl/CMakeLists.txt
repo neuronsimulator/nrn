@@ -180,6 +180,7 @@ set(MEMORYCHECK_COMMAND_OPTIONS
 if(NOT NMODL_AS_SUBPROJECT)
   include(CTest)
   add_subdirectory(test/unit)
+  add_subdirectory(test/integration)
 endif()
 
 # =============================================================================
