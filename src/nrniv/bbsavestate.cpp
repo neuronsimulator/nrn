@@ -1693,7 +1693,7 @@ static void pycell_name2sec_maps_fill() {
           char* lastdot = rindex(name.c_str(), '.');
           assert(lastdot);
           assert(strlen(lastdot + 1) > 0);
-          std:string basename = lastdot + 1;
+          std::string basename = lastdot + 1;
           if (sn2s.find(basename) != sn2s.end()) {
             hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
                 name.c_str());
