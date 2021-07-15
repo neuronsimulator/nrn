@@ -1848,7 +1848,7 @@ void BBSaveState::section_exist_info(Section* sec) {
 		assert(sec->prop->dparam[PROP_PY_INDEX]._pvoid);
 		// The basename is everything after the last dot
 		sprintf(buf, "%s", secname(sec));
-		char* lastdot = rindex(buf, '.');
+		char* lastdot = strrchr(buf, '.');
 		assert(lastdot);
 		char* b = lastdot + 1;
 		assert(strlen(b) > 0); // name does not end in '.'.
