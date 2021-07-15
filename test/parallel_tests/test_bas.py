@@ -18,6 +18,7 @@ def rmfiles():
         subprocess.run("rm -r -f in", shell=True)
     pc.barrier()
 
+
 rmfiles()
 
 
