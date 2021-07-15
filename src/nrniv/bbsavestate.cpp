@@ -179,6 +179,9 @@ callback to bbss_early when needed.
 #include <nrnmpiuse.h>
 #include <OS/list.h>
 #include <cmath>
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
 
 #include "tqueue.h"
 #include "netcon.h"
@@ -438,7 +441,9 @@ public:
 };
 BBSS_TxtFileIn::BBSS_TxtFileIn(const char* fname) {
 	f = fopen(fname, "r");
-	assert(f);
+	if (!f) {
+		hoc_execerr_ext("Could not open %s", fname);
+	}
 }
 BBSS_TxtFileIn::~BBSS_TxtFileIn() {
 	fclose(f);
@@ -590,6 +595,8 @@ static double restore_gid(void* v) {
 	printf("restore_gid not implemented\n");
 	return 0.;
 }
+
+static void pycell_seclists_clear();
 
 static double save_test(void* v) {
 	int* gids, *sizes;
@@ -1388,6 +1395,7 @@ void BBSaveState::del_pp2de() {
 }
 
 BBSaveState::BBSaveState(){
+	pycell_seclists_clear();
 	if (!ssi) {
 		ssi_def();
 	}
@@ -1396,6 +1404,7 @@ BBSaveState::~BBSaveState(){
 	if (pp2de) {
 		del_pp2de();
 	}
+	pycell_seclists_clear();
 }
 void BBSaveState::apply(BBSS_IO* io) {
 	f = io;
@@ -1437,6 +1446,9 @@ static void base2spgid_item(int spgid, Object* obj) {
 	int sp;
 	if (spgid == base || !base2spgid->find(base, sp)) {
 		(*base2spgid)[base] = spgid;
+	}
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
 	}
 }
 
@@ -1487,6 +1499,9 @@ int BBSaveState::counts(int** gids, int** cnts) {
 		c->ni = c->nd = c->ns = c->nl = 0;
 		Object* obj = nrn_gid2obj(spgid);
 		gidobj(spgid, obj);
+		if (obj && !obj->secelm_) {
+			hoc_obj_unref(obj);
+		}
 		(*cnts)[gidcnt] = c->bytecnt();
 		++gidcnt;
 	}}}		
@@ -1519,6 +1534,9 @@ void BBSaveState::gid2buffer(int gid, char* buffer, int size) {
 	f = new BBSS_BufferOut(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 	delete f;
 	f = 0;
 }
@@ -1529,12 +1547,18 @@ void BBSaveState::buffer2gid(int gid, char* buffer, int size) {
 	f = new BBSS_BufferIn(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 	delete f;
 	f = 0;
 }
 
 static void cb_gidobj(int gid, Object* obj) {
 	bbss->gidobj(gid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 }
 
 void BBSaveState::gids() {
@@ -1549,6 +1573,9 @@ void BBSaveState::gidobj(int basegid) {
 	nrn_assert(base2spgid->find(basegid, spgid));
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
+	if (obj && !obj->secelm_) {
+		hoc_obj_unref(obj);
+	}
 }
 
 void BBSaveState::gidobj(int gid, Object* obj) {
@@ -1582,6 +1609,114 @@ int BBSaveState::cellsize(Object* c){
 	return cnt;
 }
 
+// what is the section list for sections associated with a PythonObject.
+
+// Searching through the global section_list for each cell to create
+// a seclist for that cell has unacceptable quadratic
+// performance. So search once and create map from PythonCell to hoc_List
+// on first request for a seclist
+static std::unordered_map<void*, hoc_Item*> pycell_seclists;
+
+// clean up after a save
+static void pycell_seclists_clear() {
+  for (auto& i: pycell_seclists) {
+    hoc_Item* sl = i.second;
+    hoc_l_freelist(&sl);
+  }
+  pycell_seclists.clear();
+}
+
+static void pycell_seclists_fill() {
+  pycell_seclists_clear();
+  hoc_Item* qsec;
+  ForAllSections(sec) // macro has the {
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) { // PythonSection
+      // Assume we can associate with a Python Cell
+      // Sadly, cannot use nrn_sec2cell Object* as the key because it
+      // is not unique and the map needs definite PyObject* keys.
+      Object* ho = nrn_sec2cell(sec);
+      if (ho) {
+        void* pycell = nrn_opaque_obj2pyobj(ho);
+        hoc_obj_unref(ho);
+        if (pycell) {
+          hoc_Item* sl;
+          auto search = pycell_seclists.find(pycell);
+          if (search != pycell_seclists.end()) {
+            sl = search->second;
+          }else{
+            sl = hoc_l_newlist();
+            pycell_seclists[pycell] = sl;
+          }
+          hoc_l_insertsec(sl, sec);
+          continue;
+        }
+      }
+      hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
+    }
+  }
+}
+
+static hoc_Item* seclist_for_pycell(Object* c) {
+  if (pycell_seclists.empty()) {
+    pycell_seclists_fill();
+  }
+  void* pycell = nrn_opaque_obj2pyobj(c);
+  auto search = pycell_seclists.find(pycell);
+  assert(search != pycell_seclists.end());
+  return search->second;
+}
+
+typedef std::unordered_map< std::string, Section*> SecName2Sec;
+static std::unordered_map< void*, SecName2Sec> pycell_name2sec_maps;
+
+// clean up after a restore
+static void pycell_name2sec_maps_clear() {
+  pycell_name2sec_maps.clear();
+}
+
+static void pycell_name2sec_maps_fill() {
+  pycell_name2sec_maps_clear();
+  hoc_Item* qsec;
+  ForAllSections(sec) // macro has the {
+    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) { // PythonSection
+      // Assume we can associate with a Python Cell
+      // Sadly, cannot use nrn_sec2cell Object* as the key because it
+      // is not unique and the map needs definite PyObject* keys.
+      Object* ho = nrn_sec2cell(sec);
+      if (ho) {
+        void* pycell = nrn_opaque_obj2pyobj(ho);
+        hoc_obj_unref(ho);
+        if (pycell) {
+          SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
+          std::string name = secname(sec);
+          // basename is after the cell name component that ends in '.'.
+          size_t last_dot  = name.rfind(".");
+          assert(last_dot != std::string::npos);
+          assert(name.size() > (last_dot + 1));
+          std::string basename = name.substr(last_dot + 1);
+          if (sn2s.find(basename) != sn2s.end()) {
+            hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
+                name.c_str());
+          }
+          sn2s[basename] = sec;
+          continue;
+        }
+      }
+      hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
+    }
+  }
+}
+
+static SecName2Sec& pycell_name2sec_map(Object* c) {
+  if (pycell_name2sec_maps.empty()) {
+    pycell_name2sec_maps_fill();
+  }
+  void* pycell = nrn_opaque_obj2pyobj(c);
+  auto search = pycell_name2sec_maps.find(pycell);
+  assert(search != pycell_name2sec_maps.end());
+  return search->second;
+}
+
 // Here is the major place where there is a symmetry break between writing
 // and reading. That is because of the possibility of splitting where
 // not only the pieces are distributed differently between saving and restoring
@@ -1589,76 +1724,136 @@ int BBSaveState::cellsize(Object* c){
 // are different. It is only the union of pieces that describes a complete cell.
 // Symmetry exists again at the section level
 // For writing the cell is defined as the existing set of pieces in the hoc
-// cell Object. Here is cell we write enough prefix info about the Section
+// cell Object. Here in cell we write enough prefix info about the Section
 // to be able to determine if it exists before reading with section(sec);
 
 void BBSaveState::cell(Object* c) {
-	if (debug) { sprintf(dbuf, "Enter cell(%s)", hoc_object_name(c)); PDEBUG; }
-	char buf[256];
-	sprintf(buf, "%s", hoc_object_name(c));
-	f->s(buf);
-	if (!is_point_process(c)) { // must be cell object
-	    if (f->type() != BBSS_IO::IN) { // writing, counting
-		// from forall_section in cabcode.cpp
-		// count, and iterate from first to last
-		hoc_Item* qsec, *first, *last;
-		qsec = c->secelm_;
-		int cnt = 0;
-		Section* sec;
-		for (first = qsec; first->itemtype &&
-		  hocSEC(first)->prop->dparam[6].obj == c; first = first->prev) {
-			sec = hocSEC(first);
-			if (sec->prop) {
-				++cnt;
-			}
-		}
-		first = first->next;
-		last = qsec->next;
-		f->i(cnt);
-		for (qsec = first; qsec != last; qsec = qsec->next) {
-			Section* sec = hocSEC(qsec);
-			if (sec->prop) {
-				// the section exists
-				sprintf(buf, "begin section");
-				f->s(buf);
-				section_exist_info(sec);
-				section(sec);
-				sprintf(buf, "end section");
-				f->s(buf);
-			}
-		}
-	    }else{ // reading
-		Section* sec;
-		int i, cnt, indx, size;
-		f->i(cnt);
-		for (i=0; i < cnt; ++i) {
-			sprintf(buf, "begin section");
-			f->s(buf, 1);
-			f->s(buf); // the section name
-			f->i(indx); // section array index
-			f->i(size);
-			sec = nrn_section_exists(buf, indx, c);
-			if (sec) {
-				section(sec);
-			}else{ // skip size bytes
-				f->skip(size);
-			}
-			sprintf(buf, "end section");
-			f->s(buf, 1);
-		}
-	    }
-	}else{ // ARTIFICIAL_CELL
-		Point_process* pnt = ob2pntproc(c);
-		mech(pnt->prop);
-	}
-	if (debug) { sprintf(dbuf, "Leave cell(%s)", hoc_object_name(c)); PDEBUG; }
+    if (debug) { sprintf(dbuf, "Enter cell(%s)", hoc_object_name(c)); PDEBUG; }
+    char buf[256];
+    sprintf(buf, "%s", hoc_object_name(c));
+    f->s(buf);
+    if (!is_point_process(c)) { // must be cell object
+        if (f->type() != BBSS_IO::IN) { // writing, counting
+            // from forall_section in cabcode.cpp
+            // count, and iterate from first to last
+            hoc_Item* qsec, *first, *last;
+            int cnt = 0;
+            Section* sec;
+            qsec = c->secelm_;
+            if (qsec) { // Write HOC Cell
+                for (first = qsec; first->itemtype &&
+                  hocSEC(first)->prop->dparam[6].obj == c; first = first->prev) {
+                    sec = hocSEC(first);
+                    if (sec->prop) {
+                        ++cnt;
+                    }
+                }
+                first = first->next;
+                last = qsec->next;
+                f->i(cnt);
+                for (qsec = first; qsec != last; qsec = qsec->next) {
+                    Section* sec = hocSEC(qsec);
+                    if (sec->prop) {
+                        // the section exists
+                        sprintf(buf, "begin section");
+                        f->s(buf);
+                        section_exist_info(sec);
+                        section(sec);
+                        sprintf(buf, "end section");
+                        f->s(buf);
+                    }
+                }
+            } else { // Write Python Cell
+                // secelm_ is NULL if c is a PythonObject. Need to get
+                // the list of sections associated with c in some other way.
+                SecName2Sec& n2s = pycell_name2sec_map(c);
+                int i = (int)(n2s.size());
+                f->i(i);
+                for (auto& iter: n2s) {
+                    const std::string& name = iter.first;
+                    Section* sec = iter.second;
+                    assert(sec->prop); // all exist because n2s derived from global section_list.
+                    sprintf(buf, "begin section");
+                    f->s(buf);
+                    strcpy(buf, name.c_str());
+                    f->s(buf);
+                    int indx = sec->prop->dparam[5].i;
+                    f->i(indx);
+                    int size = sectionsize(sec);
+                    f->i(size, 1);
+                    section(sec);
+                    sprintf(buf, "end section");
+                    f->s(buf);
+                }
+            }
+        }else{ // reading
+            Section* sec;
+            int i, cnt, indx, size;
+
+            // Don't know a better idiom for following.
+            SecName2Sec* n2s = NULL;
+            if (!c->secelm_) {
+                n2s = &pycell_name2sec_map(c);
+            }
+            // Assert that all section name are unique for a Python Cell
+            std::unordered_set<std::string> snames;
+
+            f->i(cnt);
+            for (i=0; i < cnt; ++i) {
+                sprintf(buf, "begin section");
+                f->s(buf, 1);
+                f->s(buf); // the section name
+                f->i(indx); // section array index
+                f->i(size);
+                if (c->secelm_) { // HOC cell
+                    sec = nrn_section_exists(buf, indx, c);
+                } else {
+                    sec = NULL;
+                    if (snames.find(buf) != snames.end()) {
+                        hoc_execerr_ext("More than one section with name %s in cell %s", buf, hoc_object_name(c));
+                    }
+                    snames.emplace(buf);
+                    auto search = (*n2s).find(buf);
+                    if (search != (*n2s).end()) {
+                        sec = search->second;
+                    }
+                }
+                if (sec) {
+                    section(sec);
+                }else{ // skip size bytes
+                    f->skip(size);
+                }
+                sprintf(buf, "end section");
+                f->s(buf, 1);
+            }
+        }
+    }else{ // ARTIFICIAL_CELL
+        Point_process* pnt = ob2pntproc(c);
+        mech(pnt->prop);
+    }
+    if (debug) { sprintf(dbuf, "Leave cell(%s)", hoc_object_name(c)); PDEBUG; }
 }
 
 void BBSaveState::section_exist_info(Section* sec) {
 	char buf[256];
 	Symbol* sym = sec->prop->dparam[0].sym;
-	sprintf(buf, "%s", sym->name);
-	f->s(buf);
+	if (sym) {
+		sprintf(buf, "%s", sym->name);
+		f->s(buf);
+	}else{
+		// Must be a python section. Want only the base name after
+		// the cell name component. At restore time, can verify that
+		// all names are unique to the cell. (Latter is needed in case
+		// different multisplit applied to a cell.)
+		assert(sec->prop->dparam[PROP_PY_INDEX]._pvoid);
+		// The basename is everything after the last dot
+		sprintf(buf, "%s", secname(sec));
+		char* lastdot = strrchr(buf, '.');
+		assert(lastdot);
+		char* b = lastdot + 1;
+		assert(strlen(b) > 0); // name does not end in '.'.
+		f->s(b);
+	}
 	int indx = sec->prop->dparam[5].i;
 	f->i(indx);
 	int size = sectionsize(sec);
@@ -1667,7 +1862,6 @@ void BBSaveState::section_exist_info(Section* sec) {
 
 void BBSaveState::section(Section* sec) {
 	if (debug) { sprintf(dbuf, "Enter section(%s)", sec->prop->dparam[0].sym->name); PDEBUG; }
-	// section_exist_info(sec);
 	seccontents(sec);
 	if (debug) { sprintf(dbuf, "Leave section(%s)", sec->prop->dparam[0].sym->name); PDEBUG; }
 }
