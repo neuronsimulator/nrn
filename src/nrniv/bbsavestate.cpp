@@ -1690,10 +1690,10 @@ static void pycell_name2sec_maps_fill() {
           SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
           std::string name = secname(sec);
           // basename is after the cell name component that ends in '.'.
-          char* lastdot = rindex(name.c_str(), '.');
-          assert(lastdot);
-          assert(strlen(lastdot + 1) > 0);
-          std::string basename = lastdot + 1;
+          size_t last_dot  = name.rfind(".");
+          assert(last_dot != std::string::npos);
+          assert(name.size() > (last_dot + 1));
+          std::string basename = name.substr(last_dot + 1);
           if (sn2s.find(basename) != sn2s.end()) {
             hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
                 name.c_str());
