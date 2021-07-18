@@ -36,8 +36,7 @@ if(NRN_ENABLE_COVERAGE)
 
   if (NRN_MACOS_BUILD)
     unset(NRN_COVERAGE_LIB)
-    set(CMAKE_CXX_FLAGS "-fprofile-arcs")
-    set(CMAKE_C_FLAGS "-fprofile-arcs")
+    add_link_options(-fprofile-arcs)
   endif()
 
   if (NRN_COVERAGE_FILES)
