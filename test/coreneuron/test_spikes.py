@@ -135,4 +135,5 @@ if __name__ == "__main__":
         # Make the CTest test fail
         sys.exit(42)
     # The test doesn't exit without this.
-    h.quit()
+    if enable_gpu:
+        h.quit()

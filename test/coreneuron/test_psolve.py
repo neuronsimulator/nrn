@@ -1,5 +1,9 @@
+import os
 import pytest
 import sys
+import traceback
+
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -47,6 +51,7 @@ def test_psolve():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
+    coreneuron.gpu = enable_gpu
     h.CVode().cache_efficient(True)
     run(h.tstop)
     if vvec_std.eq(vvec) == 0:
@@ -58,4 +63,12 @@ def test_psolve():
 
 
 if __name__ == "__main__":
-    test_psolve()
+    try:
+        test_psolve()
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    if enable_gpu:
+        h.quit()
