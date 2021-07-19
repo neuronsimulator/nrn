@@ -596,7 +596,7 @@ static double restore_gid(void* v) {
 	return 0.;
 }
 
-static void pycell_seclists_clear();
+static void pycell_name2sec_maps_clear();
 
 static double save_test(void* v) {
 	int* gids, *sizes;
@@ -1395,7 +1395,7 @@ void BBSaveState::del_pp2de() {
 }
 
 BBSaveState::BBSaveState(){
-	pycell_seclists_clear();
+	pycell_name2sec_maps_clear();
 	if (!ssi) {
 		ssi_def();
 	}
@@ -1404,7 +1404,7 @@ BBSaveState::~BBSaveState(){
 	if (pp2de) {
 		del_pp2de();
 	}
-	pycell_seclists_clear();
+	pycell_name2sec_maps_clear();
 }
 void BBSaveState::apply(BBSS_IO* io) {
 	f = io;
@@ -1613,58 +1613,10 @@ int BBSaveState::cellsize(Object* c){
 
 // Searching through the global section_list for each cell to create
 // a seclist for that cell has unacceptable quadratic
-// performance. So search once and create map from PythonCell to hoc_List
-// on first request for a seclist
-static std::unordered_map<void*, hoc_Item*> pycell_seclists;
-
-// clean up after a save
-static void pycell_seclists_clear() {
-  for (auto& i: pycell_seclists) {
-    hoc_Item* sl = i.second;
-    hoc_l_freelist(&sl);
-  }
-  pycell_seclists.clear();
-}
-
-static void pycell_seclists_fill() {
-  pycell_seclists_clear();
-  hoc_Item* qsec;
-  ForAllSections(sec) // macro has the {
-    if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) { // PythonSection
-      // Assume we can associate with a Python Cell
-      // Sadly, cannot use nrn_sec2cell Object* as the key because it
-      // is not unique and the map needs definite PyObject* keys.
-      Object* ho = nrn_sec2cell(sec);
-      if (ho) {
-        void* pycell = nrn_opaque_obj2pyobj(ho);
-        hoc_obj_unref(ho);
-        if (pycell) {
-          hoc_Item* sl;
-          auto search = pycell_seclists.find(pycell);
-          if (search != pycell_seclists.end()) {
-            sl = search->second;
-          }else{
-            sl = hoc_l_newlist();
-            pycell_seclists[pycell] = sl;
-          }
-          hoc_l_insertsec(sl, sec);
-          continue;
-        }
-      }
-      hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
-    }
-  }
-}
-
-static hoc_Item* seclist_for_pycell(Object* c) {
-  if (pycell_seclists.empty()) {
-    pycell_seclists_fill();
-  }
-  void* pycell = nrn_opaque_obj2pyobj(c);
-  auto search = pycell_seclists.find(pycell);
-  assert(search != pycell_seclists.end());
-  return search->second;
-}
+// performance. So search once and create map from PythonCell to SecName2Sec map.
+// on first request. The SecName2Sec map associates the base section name'
+// to the Section* wrapped by a Python Section. Using a SecName2Sec map
+// rather than a seclist allows similar use for save and restore.
 
 typedef std::unordered_map< std::string, Section*> SecName2Sec;
 static std::unordered_map< void*, SecName2Sec> pycell_name2sec_maps;
