@@ -10,7 +10,7 @@ set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
-if (${USE_PTHREAD} EQUAL 1)
+if(${USE_PTHREAD} EQUAL 1)
   target_link_libraries(testneuron Threads::Threads)
 endif()
 if(NOT MINGW)
@@ -120,7 +120,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_COVERAGE_ARGS} ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
+            ${PYTEST_COVERAGE_ARGS} ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
 
@@ -187,6 +188,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_launch_hoc CORENRN_ENABLE_GPU=true special -mpi)
     set(modtests_launch_py ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
+        CORENRN_ENABLE_GPU=true
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
         2
@@ -292,10 +294,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME spikes_mpi_file_mode_py
       REQUIRES coreneuron
       PROCESSORS 2
-      COMMAND
-        NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${MPIEXEC_NAME}
-        ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -python -pyexe
-        ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py)
+      COMMAND NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${modtests_launch_py_mpi}
+              test/coreneuron/test_spikes.py)
   endif()
 endif()
 
