@@ -979,6 +979,7 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         if (nt->nrn_fast_imem) {
             acc_delete(nt->nrn_fast_imem->nrn_sav_d, nt->end * sizeof(double));
             acc_delete(nt->nrn_fast_imem->nrn_sav_rhs, nt->end * sizeof(double));
+            acc_delete(nt->nrn_fast_imem, sizeof(NrnFastImem));
         }
 
         if (nt->shadow_rhs_cnt) {
