@@ -153,7 +153,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         NrnThreadMembList* d_last_tml;
 
         bool first_tml = true;
-        size_t offset = 6 * ne;
 
         for (auto tml = nt->tml; tml; tml = tml->next) {
             /*copy tml to device*/
@@ -186,13 +185,10 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             int is_art = corenrn.get_is_artificial()[type];
             int layout = corenrn.get_mech_data_layout()[type];
 
-            offset = nrn_soa_padded_size(offset, layout);
-
-            dptr = d__data + offset;
-
+            // get device pointer for corresponding mechanism data
+            dptr = (double*) acc_deviceptr(tml->ml->data);
             acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
 
-            offset += nrn_soa_padded_size(n, layout) * szp;
 
             if (!is_art) {
                 int* d_nodeindices = (int*) acc_copyin(tml->ml->nodeindices, sizeof(int) * n);
