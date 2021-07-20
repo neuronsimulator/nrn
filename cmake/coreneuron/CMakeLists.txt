@@ -24,6 +24,13 @@ set(CMAKE_BUILD_TYPE
     RelWithDebInfo
     CACHE STRING "Empty or one of Debug, Release, RelWithDebInfo")
 
+if(NOT "cxx_std_14" IN_LIST CMAKE_CXX_COMPILE_FEATURES OR NOT "cxx_digit_separators" IN_LIST
+                                                          CMAKE_CXX_COMPILE_FEATURES)
+  message(
+    FATAL_ERROR
+      "This compiler does not fully support C++14, choose an higher version or an other compiler.")
+endif()
+
 # =============================================================================
 # Settings to enable project as submodule
 # =============================================================================
