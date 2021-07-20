@@ -11,6 +11,9 @@
 #include "htlist.h"
 #include "nrnneosm.h"
 #include "nrnmpi.h"
+#include <unordered_map>
+#include <memory>
+#include <vector>
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -27,7 +30,6 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
-class SelfEventPPTable;
 class NetConSaveWeightTable;
 class NetConSaveIndexTable;
 class PreSynSaveIndexTable;
@@ -35,6 +37,8 @@ class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
+class Point_process;
+using SelfEventPPTable = std::unordered_map< long, Point_process*> ;
 
 #define DiscreteEventType 0
 #define TstopEventType 1
@@ -154,10 +158,10 @@ public:
 private:
 	void call_net_receive(NetCvode*);
 	static Point_process* index2pp(int type, int oindex);
-	static SelfEventPPTable* sepp_;
+	static std::unique_ptr<SelfEventPPTable> sepp_;
 };
 
-declarePtrList(NetConPList, NetCon)
+using NetConPList = std::vector<NetCon*>;
 
 class ConditionEvent : public DiscreteEvent {
 public:
