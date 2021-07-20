@@ -175,7 +175,7 @@ callback to bbss_early when needed.
 #include "classreg.h"
 #include "ndatclas.h"
 #include "bbsavestate.h"
-#include <nrnhash.h>
+#include <unordered_map>
 #include <nrnmpiuse.h>
 #include <OS/list.h>
 #include <cmath>
@@ -667,8 +667,7 @@ static double save_test_bin(void* v) {//only for whole cells
 	return 0.;
 }
 
-declareNrnHash(PointProcessMap, Point_process*, int)
-implementNrnHash(PointProcessMap, Point_process*, int)
+typedef std::unordered_map< Point_process*, int> PointProcessMap;
 static PointProcessMap* pp_ignore_map;
 
 static double ppignore(void* v) {
@@ -686,10 +685,9 @@ static double ppignore(void* v) {
 }
 
 static int ignored(Prop* p) {
-	int i;
 	Point_process* pp = (Point_process*)p->dparam[1]._pvoid;
 	if (pp_ignore_map) {
-		if (pp_ignore_map->find(pp, i)) {
+		if (pp_ignore_map->count(pp) > 0) {
 			return 1;
 		}
 	}
@@ -1035,14 +1033,12 @@ static void ssi_def() {
 // But that may not hold in general so extend to List of NetCon using DEList.
 // and assume the list is same order on save/restore.
 typedef struct DEList { DiscreteEvent* de; struct DEList* next; } DEList;
-declareNrnHash(PP2DE, Point_process*, DEList*)
-implementNrnHash(PP2DE, Point_process*, DEList*)
+typedef std::unordered_map< Point_process*, DEList*> PP2DE;
 static PP2DE* pp2de;
 // NetCon.events
 declareList(DblList, double)
 implementList(DblList, double)
-declareNrnHash(NetCon2DblList, NetCon*, DblList*)
-implementNrnHash(NetCon2DblList, NetCon*, DblList*)
+typedef std::unordered_map< NetCon*, DblList*> NetCon2DblList;
 static NetCon2DblList* nc2dblist;
 
 class SEWrap : public DiscreteEvent {
@@ -1082,12 +1078,10 @@ declarePtrList(SEWrapList, SEWrap)
 implementPtrList(SEWrapList, SEWrap)
 static SEWrapList* sewrap_list;
 
-declareNrnHash(Int2Int, int, int)
-implementNrnHash(Int2Int, int, int)
+typedef std::unordered_map< int, int> Int2Int;
 static Int2Int* base2spgid; // base gids are the host independent key for a cell which was multisplit
 
-declareNrnHash(Int2DblList, int, DblList*)
-implementNrnHash(Int2DblList, int, DblList*)
+typedef std::unordered_map< int, DblList*> Int2DblList;
 static Int2DblList* src2send; // gid to presyn send time map
 static int src2send_cnt;
 // the DblList was needed in place of just a double because there might
@@ -1147,7 +1141,9 @@ static void tqcallback(const TQItem* tq, int i) {
 			Point_process* pp = ((SelfEvent*)tq->data_)->target_;
 			DEList *dl=0, *dl1=0;
 			SEWrap* sew = 0;
-			if(pp2de->find(pp, dl1)) {
+			const auto& dl1iter = pp2de->find(pp);
+			if(dl1iter != pp2de->end()) {
+			    dl1 = dl1iter->second;
 				sew = new SEWrap(tq, dl1);
 			}else{
 				dl1 = 0;
@@ -1194,7 +1190,9 @@ static void tqcallback(const TQItem* tq, int i) {
 			if (ps->gid_ >= 0) { // better not be from NetCon.event
 				srcid = ps->gid_;
 				DblList* dl;
-				if (src2send->find(srcid, dl)) {
+				const auto& dliter = src2send->find(srcid);
+				if (dliter != src2send->end()) {
+				    dl = dliter->second;
 					// If delay is long and spiking
 					// is fast there may be 
 					// another source spike when
@@ -1249,20 +1247,26 @@ static void tqcallback(const TQItem* tq, int i) {
 					// from this stimulus.
 					assert(nc);
 					DblList* db = 0;
-					if (!nc2dblist->find(nc, db)) {
+					const auto& dbiter = nc2dblist->find(nc);
+					if (dbiter == nc2dblist->end()) {
 						db = new DblList(10);
 						(*nc2dblist)[nc] = db;
-					}
+					} else {
+				        db = dbiter->second;
+                    }
 					db->append(tq->t_);
 				}else{ // assume from NetCon.event
 					// ps should be unused_presyn
 //printf("From NetCon.event\n");
 					assert(nc);
 					DblList* db = 0;
-					if (!nc2dblist->find(nc, db)) {
+					const auto& dbiter = nc2dblist->find(nc);
+					if (dbiter == nc2dblist->end()) {
 						db = new DblList(10);
 						(*nc2dblist)[nc] = db;
-					}
+					} else {
+					    db = dbiter->second;
+                    }
 					db->append(tq->t_);
 				}
 			}			
@@ -1332,8 +1336,10 @@ void BBSaveState::mk_pp2de() {
 		dl->de = nc;
 		dl->next = 0;
 		DEList* dl1;
+		const auto& delistiter = pp2de->find(pp);
 		// NetCons first then SelfEvents
-		if (pp2de->find(pp, dl1)) {
+		if (delistiter != pp2de->end()) {
+		    dl1 = delistiter->second;
 			while(dl1->next) { dl1 = dl1->next; }
 			dl1->next = dl;
 		}else{
@@ -1348,15 +1354,15 @@ void BBSaveState::mk_pp2de() {
 static Int2DblList* presyn_queue;
 
 static void del_presyn_info() {
-	NrnHashIterate(Int2DblList, presyn_queue, DblList*, dl) {
-		delete dl;
-	}}}
+    for (const auto& dl : *presyn_queue) {
+		delete dl.second;
+	}
 	delete presyn_queue;
 	presyn_queue = 0;
 	if (nc2dblist) {
-		NrnHashIterate(NetCon2DblList, nc2dblist, DblList*, dl) {
-			delete dl;
-		}}}
+	    for(const auto& dl : *nc2dblist) {
+			delete dl.second;
+		}
 		delete nc2dblist;
 		nc2dblist = 0;
 	}
@@ -1365,7 +1371,8 @@ static void del_presyn_info() {
 void BBSaveState::del_pp2de() {
 	DEList* dl, *dl1;
 	if (!pp2de) { return; }
-	NrnHashIterate(PP2DE, pp2de, DEList*, dl) {
+	for(const auto& dlpair : *pp2de) {
+	    auto dl = dlpair.second;
 		for (; dl; dl = dl1) {
 			dl1 = dl->next;
 			// need to delete SEWrap items but dl->de that
@@ -1374,7 +1381,7 @@ void BBSaveState::del_pp2de() {
 			// deleted below.
 			delete dl;
 		}
-	}}}
+	}
 	delete pp2de;
 	pp2de = 0;
 	if (sewrap_list) {
@@ -1434,8 +1441,7 @@ void BBSaveState::finish() {
 
 static void base2spgid_item(int spgid, Object* obj) {
 	int base = spgid % 10000000;
-	int sp;
-	if (spgid == base || !base2spgid->find(base, sp)) {
+	if (spgid == base || !base2spgid->count(base)) {
 		(*base2spgid)[base] = spgid;
 	}
 }
@@ -1462,10 +1468,7 @@ int BBSaveState::counts(int** gids, int** cnts) {
 	bbss = this;
 	init();
 	// how many
-	int gidcnt = 0;
-	NrnHashIterateKeyValue(Int2Int, base2spgid, int, base, int, spgid) {
-		++gidcnt;
-	}}}		
+	int gidcnt = base2spgid->size();
 	if (gidcnt) {
         // using malloc instead of new as we might need to
         // deallocate from c code (of mod files)
@@ -1482,14 +1485,16 @@ int BBSaveState::counts(int** gids, int** cnts) {
         }
 	}
 	gidcnt = 0;
-	NrnHashIterateKeyValue(Int2Int, base2spgid, int, base, int, spgid) {
+	for (const auto& pair : *base2spgid) {
+	    auto base = pair.first;
+	    auto spgid = pair.second;
 		(*gids)[gidcnt] = base;
 		c->ni = c->nd = c->ns = c->nl = 0;
 		Object* obj = nrn_gid2obj(spgid);
 		gidobj(spgid, obj);
 		(*cnts)[gidcnt] = c->bytecnt();
 		++gidcnt;
-	}}}		
+	}
 	delete f;
 	return gidcnt;
 }
@@ -1546,7 +1551,9 @@ void BBSaveState::gids() {
 void BBSaveState::gidobj(int basegid) {
 	int spgid;
 	Object* obj;
-	nrn_assert(base2spgid->find(basegid, spgid));
+	const auto& spgiditer = base2spgid->find(basegid);
+	nrn_assert(spgiditer!= base2spgid->end());
+	spgid = spgiditer->second;
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
 }
@@ -1841,7 +1848,11 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
 	int type = pp->prop->type;
 	// associated NetCon, and queue SelfEvent
 	DEList* dl, *dl1;
-	if (!pp2de->find(pp, dl)) {dl = 0;}
+	const auto& dliter = pp2de->find(pp);
+	if (dliter == pp2de->end()) {dl = 0;}
+	else {
+	    dl = dliter->second;
+    }
 	int cnt = 0;
 	// dl has the NetCons first then the SelfEvents
 	// NetCon
@@ -1857,13 +1868,17 @@ f->s(buf, 1);
 		if (f->type() != BBSS_IO::IN) { // writing, counting
 			DblList* db = 0;
 			int j = 0;
-			if (nc2dblist && nc2dblist->find(nc, db)) {
-				j = db->count();
-				f->i(j);
-				for (int i = 0; i < j; ++i) {
-					double x = db->item(i);
-					f->d(1, x);
-				}
+			if (nc2dblist) {
+                const auto& dbiter = nc2dblist->find(nc);
+                if (dbiter != nc2dblist->end()) {
+                    db = dbiter->second;
+                    j = db->count();
+                    f->i(j);
+                    for (int i = 0; i < j; ++i) {
+                        double x = db->item(i);
+                        f->d(1, x);
+                    }
+                }
 			}else{
 				f->i(j);
 			}		
@@ -2039,9 +2054,9 @@ static void scatteritems() {
 		int ndsrctotal = 0;
 		gidsrc = new int[src2send_cnt];
 		ndsrc = new int[src2send_cnt];
-		NrnHashIterateKeyValue(Int2DblList, src2send, int, gid, DblList*, dl) {
-			ndsrctotal += dl->count();
-		}}}		
+		for (const auto& pair : *src2send) {
+			ndsrctotal += pair.second->count();
+		}
 		tssrc = new double[ndsrctotal];
 	}
 	int* off = new int[nrnmpi_numprocs+1]; // offsets for gidsrc and ndsrc
@@ -2052,11 +2067,11 @@ static void scatteritems() {
 		cnts[i] = 0; dcnts[i] = 0;
 	}
 	// counts to send to each destination rank
-	NrnHashIterateKeyValue(Int2DblList, src2send, int, gid, DblList*, dl) {
+	for (const auto& pair : *src2send) {
 		int host = gid%nrnmpi_numprocs;
 		++cnts[host];
-		dcnts[host] += dl->count();
-	}}}
+		dcnts[host] += pair.second->count();
+	}
 	// offsets
 	off[0] = 0; doff[0] = 0;
 	for (i=0; i < nrnmpi_numprocs; ++i) {
@@ -2065,17 +2080,18 @@ static void scatteritems() {
 	}
 	// what to send to each destination. Note dcnts and ndsrc are NOT the same.
 	for (i=0; i < nrnmpi_numprocs; ++i) { cnts[i] = 0; dcnts[i] = 0; }
-	NrnHashIterateKeyValue(Int2DblList, src2send, int, gid, DblList*, dl) {
+	for(const auto& pair : *src2send) {
+	    const auto dl = pair.second;
 		host = gid%nrnmpi_numprocs;
 		gidsrc[off[host] + cnts[host]] = gid;
 		ndsrc[off[host] + cnts[host]++] = dl->count();
 		for (i=0; i < dl->count(); ++i) {
 			tssrc[doff[host] + dcnts[host]++] = dl->item(i);
 		}
-	}}}
-	NrnHashIterateKeyValue(Int2DblList, src2send, int, gid, DblList*, dl) {
-		delete dl;
-	}}}
+	}
+	for (const auto& pair : *src2send) {
+		delete pair.second;
+	}
 	delete src2send;
 
 	if (nrnmpi_numprocs > 1) {
@@ -2177,7 +2193,9 @@ static void construct_presyn_queue() {
 		for (i=0; i < cnt; ++i) {
 			int gid = giddest[i];
 			tscnt = tsdest_cnts[i];
-			if (m->find(gid, dl)) {
+			const auto& dliter = m->find(gid);
+			if (dliter != m->end()) {
+			    dl = dliter->second;
 				// in the days when there could only be one
 				// initiation time for a gid.
 				//assert( fabs(tt - ts) < 1e-12 );
@@ -2242,7 +2260,8 @@ static void construct_presyn_queue() {
 		}
 		mcnt = 0;
 		mdcnt = 0;
-		NrnHashIterateKeyValue(Int2DblList, m, int, gid, DblList*, dl) {
+		for (const auto& pair : *m) {
+		    auto dl = pair.second;
 			gidsrc[mcnt] = gid;
 			tssrc_cnt[mcnt] = dl->count();
 			for (int i=0; i < dl->count(); ++i) {
@@ -2250,7 +2269,7 @@ static void construct_presyn_queue() {
 			}
 			++mcnt;
 			delete dl;
-		}}}
+		}
 		delete m;
 		presyn_queue = m = new Int2DblList(127);
 		spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, m);
@@ -2325,7 +2344,9 @@ f->s(buf, 1);
 	// is on the queue.
 	if (f->type() != BBSS_IO::IN) { //save or count
 		DblList* dl;
-		if (presyn_queue->find(gid, dl)) {
+		const auto& dliter = presyn_queue->find(gid);
+		if (dliter != presyn_queue->end()) {
+		    dl = dliter->second;
 			f->i(gid);
 			i = dl->count(); // ts and undelivered netcon counts
 			f->i(i);
@@ -2414,9 +2435,13 @@ f->s(buf, 1);
 #if QUEUECHECK
 static void bbss_queuecheck() {
 	construct_presyn_queue();
-	NrnHashIterateKeyValue(Int2DblList, queuecheck_gid2unc, int, gid, DblList*, dl) {
+	for (const auto& pair : *queuecheck_gid2unc) {
+	    auto gid = pair.first;
+	    auto dl = pair.second;
 		DblList* dl2;
-		if (presyn_queue->find(gid, dl2)) {
+		const auto& dl2iter = presyn_queue->find(gid);
+		if (dl2iter != presyn_queue->end()) {
+		    dl = dl2iter->second;
 			if (dl->count() == dl2->count()) {
 				for (int i=0; i < dl->count(); i += 2) {
 if ((fabs(dl->item(i) - dl2->item(i)) > 1e-12) || dl->item(i+1) != dl2->item(i+1)) {
@@ -2435,17 +2460,21 @@ printf("error: gid=%d expect spikes but none on queue\n", gid);
 			}
 			printf("\n");
 		}
-	}}}	
-	NrnHashIterateKeyValue(Int2DblList, presyn_queue, int, gid, DblList*, dl2) {
+	}
+	for (const auto& pair : *presyn_queue) {
+	    auto gid = pair.first;
+        auto dl2 = pair.second;
 		DblList* dl;
-		if (!presyn_queue->find(gid, dl)) {
+		const auto& dliter = presyn_queue->find(gid);
+		if (dliter == presyn_queue->end()) {
+		    dl = dliter->second;
 printf("error: gid=%d expect no spikes but some on queue\n", gid);
 			for (int i=0; i < dl2->count()-1; i += 2) {
 				printf("   %g %d", dl->item(i), int(dl->item(i+1)));
 			}
 			printf("\n");
 		}
-	}}}	
+	}
 #if 0
 	printf("undelivered netcons\n");
 	NrnHashIterateKeyValue(Int2DblList, queuecheck_gid2unc, int, gid, DblList*, dl) {
@@ -2467,9 +2496,9 @@ printf("error: gid=%d expect no spikes but some on queue\n", gid);
 	}}}
 #endif
 	//cleanup
-	NrnHashIterateKeyValue(Int2DblList, queuecheck_gid2unc, int, gid, DblList*, dl) {
-		delete dl;
-	}}}
+	for (const auto& pair : *queuecheck_gid2unc) {
+		delete pair.second;
+	}
 	delete queuecheck_gid2unc;
 	queuecheck_gid2unc = 0;
 	del_presyn_info();

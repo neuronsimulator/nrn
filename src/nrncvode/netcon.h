@@ -11,6 +11,7 @@
 #include "htlist.h"
 #include "nrnneosm.h"
 #include "nrnmpi.h"
+#include <unordered_map>
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -27,7 +28,6 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
-class SelfEventPPTable;
 class NetConSaveWeightTable;
 class NetConSaveIndexTable;
 class PreSynSaveIndexTable;
@@ -35,6 +35,8 @@ class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
+class Point_process;
+typedef std::unordered_map< long, Point_process*> SelfEventPPTable;
 
 #define DiscreteEventType 0
 #define TstopEventType 1

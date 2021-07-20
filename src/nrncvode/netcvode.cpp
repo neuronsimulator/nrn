@@ -11,7 +11,7 @@
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>
-#include <nrnhash.h>
+#include <unordered_map>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -3286,13 +3286,10 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 
 
 // put following here to avoid conflict with gnu vector
-declareNrnHash(SelfEventPPTable, long, Point_process*)
-implementNrnHash(SelfEventPPTable, long, Point_process*)
 SelfEventPPTable* SelfEvent::sepp_;
 
 Point_process* SelfEvent::index2pp(int type, int oindex) {
 	// code the type and object index together
-	Point_process* pp;
 	if (!sepp_) {
 		int i;
 		sepp_ = new SelfEventPPTable(211);
@@ -3302,13 +3299,12 @@ Point_process* SelfEvent::index2pp(int type, int oindex) {
 			hoc_Item* q;
 			ITERATE (q, hl) {
 				Object* o = OBJ(q);
-				pp = ob2pntproc(o);
-				(*sepp_)[i + n_memb_func * o->index] = pp;
+				(*sepp_)[i + n_memb_func * o->index] = ob2pntproc(o);
 			}
 		}
 	}
-	nrn_assert(sepp_->find(type + n_memb_func*oindex, pp));
-	return pp;
+	nrn_assert(sepp_->count(type + n_memb_func*oindex));
+	return (*sepp_)[type + n_memb_func*oindex];
 }
 
 void SelfEvent::savestate_free() {

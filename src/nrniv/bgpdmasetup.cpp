@@ -173,8 +173,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-declareNrnHash(Int2TarList, int, TarList*)
-implementNrnHash(Int2TarList, int, TarList*)
+typedef std::unordered_map< int, TarList*> Int2TarList;
 static Int2TarList* gid2tarlist;
 
 TarList::TarList() {
