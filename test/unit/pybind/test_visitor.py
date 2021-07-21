@@ -82,3 +82,32 @@ def test_custom_visitor(ch_ast):
     assert len(myvisitor.states) is 2
     assert myvisitor.states[0] == "m"
     assert myvisitor.states[1] == "h"
+
+
+def test_modify_ast():
+    one_var = """NEURON {
+    SUFFIX test
+    RANGE x
+}
+    """
+    class ModifyVisitor(visitor.AstVisitor):
+        def __init__(self, old_name, new_name):
+            visitor.AstVisitor.__init__(self)
+            self.old_name = old_name
+            self.new_name = new_name
+
+        def visit_range_var(self, node):
+            if nmodl.to_nmodl(node.name) == self.old_name:
+                node.name.value = ast.String(self.new_name)
+            node.visit_children(self)
+
+    driver = nmodl.NmodlDriver()
+    modast = driver.parse_string(one_var)
+    mod_visitor = ModifyVisitor("x", "y")
+    mod_visitor.visit_program(modast)
+    one_var_after = """NEURON {
+    SUFFIX test
+    RANGE y
+}
+"""
+    assert str(modast) == one_var_after
