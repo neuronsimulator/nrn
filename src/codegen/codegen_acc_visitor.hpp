@@ -88,6 +88,12 @@ class CodegenAccVisitor: public CodegenCVisitor {
     /// transfer newtonspace structure to device
     void print_newtonspace_transfer_to_device() const override;
 
+    // update instance variable object pointer on the gpu device
+    void print_instance_variable_transfer_to_device() const override;
+
+    // update derivimplicit advance flag on the gpu device
+    void print_deriv_advance_flag_transfer_to_device() const override;
+
     std::string get_variable_device_pointer(const std::string& variable,
                                             const std::string& type) const override;
 

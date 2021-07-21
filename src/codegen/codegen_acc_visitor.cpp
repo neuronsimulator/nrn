@@ -231,7 +231,7 @@ void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
     int list_num = info.derivimplicit_list_num;
     printer->add_line("if (nt->compute_gpu) {");
     printer->add_line("    auto device_vec = static_cast<double*>(acc_copyin(vec, vec_size));");
-    printer->add_line("    auto device_ns = static_cast<NewtonSpace*>(acc_deviceptr(ns));");
+    printer->add_line("    auto device_ns = static_cast<NewtonSpace*>(acc_deviceptr(*ns));");
     printer->add_line("    auto device_thread = static_cast<ThreadDatum*>(acc_deviceptr(thread));");
     printer->add_line(
         "    acc_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns, sizeof(void*));"_format(
@@ -242,6 +242,18 @@ void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
     printer->add_line("}");
 }
 
+
+void CodegenAccVisitor::print_instance_variable_transfer_to_device() const {
+    printer->add_line("if (nt->compute_gpu) {");
+    printer->add_line("    auto dml = (Memb_list*) acc_deviceptr(ml);");
+    printer->add_line("    acc_memcpy_to_device(&(dml->instance), &inst, sizeof(void*));");
+    printer->add_line("}");
+}
+
+
+void CodegenAccVisitor::print_deriv_advance_flag_transfer_to_device() const {
+    printer->add_line("#pragma acc update device (deriv_advance_flag) if (nt->compute_gpu)");
+}
 
 }  // namespace codegen
 }  // namespace nmodl

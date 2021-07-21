@@ -1082,6 +1082,17 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Print the code to copy instance variable to device
+     */
+    virtual void print_instance_variable_transfer_to_device() const;
+
+    /**
+     * Print the code to copy derivative advance flag to device
+     */
+    virtual void print_deriv_advance_flag_transfer_to_device() const;
+
+
+    /**
      * Print byte arrays that register scalar and vector variables for hoc interface
      *
      */
