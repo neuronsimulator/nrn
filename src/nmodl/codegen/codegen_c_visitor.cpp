@@ -1030,6 +1030,13 @@ void CodegenCVisitor::print_channel_iteration_tiling_block_end() {
     // backend specific, do nothing
 }
 
+void CodegenCVisitor::print_instance_variable_transfer_to_device() const {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_deriv_advance_flag_transfer_to_device() const {
+    // backend specific, do nothing
+}
 
 /**
  * \details Each kernel such as \c nrn\_init, \c nrn\_state and \c nrn\_cur could be offloaded
@@ -3169,6 +3176,7 @@ void CodegenCVisitor::print_instance_variable_setup() {
     }
 
     printer->add_line("ml->instance = (void*) inst;");
+    print_instance_variable_transfer_to_device();
     printer->end_block(3);
 
     printer->add_line("/** cleanup mechanism instance variables */");
@@ -3281,7 +3289,9 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         int nequation = info.num_equations;
         int list_num = info.derivimplicit_list_num;
         // clang-format off
-        printer->add_line("*deriv{}_advance(thread) = 0;"_format(list_num));
+        printer->add_line("int& deriv_advance_flag = *deriv{}_advance(thread);"_format(list_num));
+        printer->add_line("deriv_advance_flag = 0;");
+        print_deriv_advance_flag_transfer_to_device();
         printer->add_line("auto ns = newtonspace{}(thread);"_format(list_num));
         printer->add_line("auto& th = thread[dith{}()];"_format(list_num));
 
@@ -3313,7 +3323,8 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     printer->end_block(1);
 
     if (info.derivimplicit_used()) {
-        printer->add_line("*deriv{}_advance(thread) = 1;"_format(info.derivimplicit_list_num));
+        printer->add_line("deriv_advance_flag = 1;");
+        print_deriv_advance_flag_transfer_to_device();
     }
     print_kernel_data_present_annotation_block_end();
     if (skip_init_check) {
