@@ -33,11 +33,6 @@ set(test_gf_neuron_requirements mod_compatibility)
 set(test_patstim_neuron_requirements mod_compatibility)
 set(test_vecplay_neuron_requirements mod_compatibility)
 
-# Flag which tests make use of Random123 and cannot, therefore, be run on the CPU in a GPU-enabled
-# build (see https://github.com/BlueBrain/CoreNeuron/issues/345).
-set(test_gf_coreneuron_cpu_conflicts gpu) # CoreNEURON-on-CPU test conflicts with GPU being enabled
-                                          # in the build
-
 if(${CORENRN_ENABLE_GPU})
   set(gpu_args_online -c arg_coreneuron_gpu=1)
   set(gpu_args_offline --gpu)
@@ -75,7 +70,6 @@ foreach(test ${spike_comparison_tests})
         GROUP testcorenrn_${test}
         NAME coreneuron_${processor}_online
         REQUIRES coreneuron mpi python ${processor}
-        CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
         PROCESSORS ${num_ranks}
         COMMAND
           OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
@@ -98,7 +92,6 @@ foreach(test ${spike_comparison_tests})
       GROUP testcorenrn_${test}
       NAME coreneuron_${processor}_offline
       REQUIRES coreneuron mpi ${processor}
-      CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
       PROCESSORS ${local_mpi_ranks}
       PRECOMMAND OMP_NUM_THREADS=1
                  HOC_LIBRARY_PATH=.
