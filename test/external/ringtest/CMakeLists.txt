@@ -25,28 +25,55 @@ nrn_add_test(
   NAME neuron_mpi
   REQUIRES mod_compatibility mpi python
   PROCESSORS 2
-  COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
-    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100)
+  COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+          special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100)
 
-nrn_add_test(
-  GROUP external_ringtest
-  NAME coreneuron_mpi
-  REQUIRES coreneuron mpi python
-  PROCESSORS 2
-  COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
-    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron)
-
-nrn_add_test(
-  GROUP external_ringtest
-  NAME coreneuron_mpi_threads
-  REQUIRES coreneuron mpi python
-  PROCESSORS 2
-  COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special
-    ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron -nt 2)
-
+foreach(processor cpu gpu)
+  if("${processor}" STREQUAL "gpu")
+    set(gpu_arg -gpu)
+    set(special_gpu_arg --gpu)
+  else()
+    set(gpu_arg)
+    set(special_gpu_arg)
+  endif()
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi
+    REQUIRES coreneuron mpi python ${processor}
+    PROCESSORS 2
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron ${gpu_arg})
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi_offline
+    REQUIRES coreneuron mpi python ${processor}
+    PROCESSORS 2
+    PRECOMMAND ${MPIEXEC_NAME}
+               ${MPIEXEC_NUMPROC_FLAG}
+               2
+               ${MPIEXEC_OVERSUBSCRIBE}
+               ${MPIEXEC_PREFLAGS}
+               special
+               ${MPIEXEC_POSTFLAGS}
+               -mpi
+               -python
+               ringtest.py
+               -tstop
+               0
+               -coreneuron
+               -dumpmodel
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            special-core ${MPIEXEC_POSTFLAGS} --mpi -d coredat/ -e 100 ${special_gpu_arg}
+    OUTPUT asciispikes::out.dat)
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi_threads
+    REQUIRES coreneuron mpi python ${processor}
+    PROCESSORS 2
+    COMMAND
+      ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+      special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py -tstop 100 -coreneuron -nt 2 ${gpu_arg})
+endforeach()
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(
   GROUP external_ringtest
