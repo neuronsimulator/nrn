@@ -177,7 +177,6 @@ callback to bbss_early when needed.
 #include "bbsavestate.h"
 #include <unordered_map>
 #include <nrnmpiuse.h>
-#include <OS/list.h>
 #include <cmath>
 #include <unordered_set>
 #include <string>
@@ -1040,8 +1039,7 @@ typedef struct DEList { DiscreteEvent* de; struct DEList* next; } DEList;
 typedef std::unordered_map< Point_process*, DEList*> PP2DE;
 static PP2DE* pp2de;
 // NetCon.events
-declareList(DblList, double)
-implementList(DblList, double)
+typedef std::vector<double> DblList;
 typedef std::unordered_map< NetCon*, DblList*> NetCon2DblList;
 static NetCon2DblList* nc2dblist;
 
@@ -1214,25 +1212,25 @@ static void tqcallback(const TQItem* tq, int i) {
 					// Add another initiation time if needed
 					double m = 1e9; // > .1 add
 					int im = -1; // otherwise assert < 1e-12
-					for (i = 0; i < dl->count(); i+=2) {
-						double x = fabs(dl->item(i) - ts);
+					for (i = 0; i < dl->size(); i+=2) {
+						double x = fabs((*dl)[i] - ts);
 						if (x < m) {
 							m = x;
 							im = i;
 						}
 					}
 					if (m > 0.1) {
-						dl->append(ts);
-						dl->append(cntinc);
+						dl->push_back(ts);
+						dl->push_back(cntinc);
 					}else if (m > 1e-12) {
 						assert(0);
 					}else{
-						dl->item_ref(im+1) += cntinc;
+						(*dl)[im+1] += cntinc;
 					}
 				}else{
-					dl = new DblList(2);
-					dl->append(ts);
-					dl->append(cntinc);
+					dl = new DblList();
+					dl->push_back(ts);
+					dl->push_back(cntinc);
 					(*src2send)[srcid] = dl;
 					++src2send_cnt; // distinct PreSyn
 				}
@@ -1252,12 +1250,12 @@ static void tqcallback(const TQItem* tq, int i) {
 					DblList* db = 0;
 					const auto& dbiter = nc2dblist->find(nc);
 					if (dbiter == nc2dblist->end()) {
-						db = new DblList(10);
+						db = new DblList();
 						(*nc2dblist)[nc] = db;
 					} else {
 				        db = dbiter->second;
                     }
-					db->append(tq->t_);
+					db->push_back(tq->t_);
 				}else{ // assume from NetCon.event
 					// ps should be unused_presyn
 //printf("From NetCon.event\n");
@@ -1265,12 +1263,12 @@ static void tqcallback(const TQItem* tq, int i) {
 					DblList* db = 0;
 					const auto& dbiter = nc2dblist->find(nc);
 					if (dbiter == nc2dblist->end()) {
-						db = new DblList(10);
+						db = new DblList();
 						(*nc2dblist)[nc] = db;
 					} else {
 					    db = dbiter->second;
                     }
-					db->append(tq->t_);
+					db->push_back(tq->t_);
 				}
 			}			
 		}
@@ -2016,10 +2014,10 @@ f->s(buf, 1);
                 const auto& dbiter = nc2dblist->find(nc);
                 if (dbiter != nc2dblist->end()) {
                     db = dbiter->second;
-                    j = db->count();
+                    j = db->size();
                     f->i(j);
                     for (int i = 0; i < j; ++i) {
-                        double x = db->item(i);
+                        double x = (*db)[i];
                         f->d(1, x);
                     }
                 }else{
@@ -2201,7 +2199,7 @@ static void scatteritems() {
 		gidsrc = new int[src2send_cnt];
 		ndsrc = new int[src2send_cnt];
 		for (const auto& pair : *src2send) {
-			ndsrctotal += pair.second->count();
+			ndsrctotal += pair.second->size();
 		}
 		tssrc = new double[ndsrctotal];
 	}
@@ -2217,7 +2215,7 @@ static void scatteritems() {
 		int gid = pair.first;
 		int host = gid%nrnmpi_numprocs;
 		++cnts[host];
-		dcnts[host] += pair.second->count();
+		dcnts[host] += pair.second->size();
 	}
 	// offsets
 	off[0] = 0; doff[0] = 0;
@@ -2232,9 +2230,9 @@ static void scatteritems() {
 		int gid = pair.first;
 		host = gid%nrnmpi_numprocs;
 		gidsrc[off[host] + cnts[host]] = gid;
-		ndsrc[off[host] + cnts[host]++] = dl->count();
-		for (i=0; i < dl->count(); ++i) {
-			tssrc[doff[host] + dcnts[host]++] = dl->item(i);
+		ndsrc[off[host] + cnts[host]++] = int(dl->size());
+		for (size_t i=0; i < dl->size(); ++i) {
+			tssrc[doff[host] + dcnts[host]++] = (*dl)[i];
 		}
 	}
 	for (const auto& pair : *src2send) {
@@ -2304,10 +2302,11 @@ static void spikes_on_correct_host(int cnt, int* g, int* dcnts, int tscnt, doubl
 	int tsoff = 0;
 	for (i = 0; i < rsize; ++i) {
 		if (nrn_gid_exists(rg[i])) {
-			DblList* dl = new DblList(rtscnts[i]);
+			DblList* dl = new DblList();
+			dl->reserve(rtscnts[i]);
 			(*m)[rg[i]] = dl;
 			for (int j=0; j < rtscnts[i]; ++j) {
-				dl->append(rts[tsoff + j]);			
+				dl->push_back(rts[tsoff + j]);			
 			}
 		}
 		tsoff += rtscnts[i];
@@ -2348,7 +2347,7 @@ static void construct_presyn_queue() {
 				// initiation time for a gid.
 				//assert( fabs(tt - ts) < 1e-12 );
 			}else{
-				dl = new DblList(2);
+				dl = new DblList();
 				(*m)[gid] = dl;
 				++mcnt;
 			}
@@ -2362,11 +2361,11 @@ static void construct_presyn_queue() {
 				// can't hurt to test the ones just added
 				// no thought given to efficiency
 				// Actually, need to test to accumulate
-				for (int j=0; j < dl->count(); j += 2) {
-					double t2 = dl->item(j);
-					double dt = fabs(dl->item(j) - t1);
+				for (int j=0; j < dl->size(); j += 2) {
+					double t2 = (*dl)[j];
+					double dt = fabs((*dl)[j] - t1);
 					if (dt < 1e-12) {
-						dl->item_ref(j+1) += inccnt;
+						(*dl)[j+1] += inccnt;
 						add = 0;
 						break;
 					}else if (dt < .1) {
@@ -2374,8 +2373,8 @@ static void construct_presyn_queue() {
 					}
 				}
 				if (add) {
-					dl->append(t1);
-					dl->append(inccnt);
+					dl->push_back(t1);
+					dl->push_back(inccnt);
 					mdcnt += 2;
 				}
 			}
@@ -2411,9 +2410,9 @@ static void construct_presyn_queue() {
 		for (const auto& pair : *m) {
 		    auto dl = pair.second;
 			gidsrc[mcnt] = pair.first;
-			tssrc_cnt[mcnt] = dl->count();
-			for (int i=0; i < dl->count(); ++i) {
-				tssrc[mdcnt++] = dl->item(i);
+			tssrc_cnt[mcnt] = dl->size();
+			for (int i=0; i < dl->size(); ++i) {
+				tssrc[mdcnt++] = (*dl)[i];
 			}
 			++mcnt;
 			delete dl;
@@ -2496,12 +2495,12 @@ f->s(buf, 1);
 		if (dliter != presyn_queue->end()) {
 		    dl = dliter->second;
 			f->i(gid);
-			i = dl->count(); // ts and undelivered netcon counts
+			i = dl->size(); // ts and undelivered netcon counts
 			f->i(i);
-			for (i=0; i < dl->count(); i += 2) {
-				ts = dl->item(i);
+			for (i=0; i < dl->size(); i += 2) {
+				ts = (*dl)[i];
 				f->d(1, ts);
-				int unc =  dl->item(i+1);
+				int unc =  (*dl)[i+1];
 				f->i(unc);
 			}
 		}else{
@@ -2540,7 +2539,7 @@ f->s(buf, 1);
 			if (!queuecheck_gid2unc) {
 				queuecheck_gid2unc = new Int2DblList(1000);
 			}
-			DblList* dl = new DblList(cnt);
+			DblList* dl = new DblList();
 			(*queuecheck_gid2unc)[i] = dl;
 #endif
 			for (int j=0; j< cnt; j += 2) {
@@ -2551,8 +2550,8 @@ f->s(buf, 1);
 				f->i(unc); // expected undelivered NetCon count
 				nrn_fake_fire(gid, ts, 2); // only owned by this
 #if QUEUECHECK
-				dl->append(ts);
-				dl->append(unc);
+				dl->push_back(ts);
+				dl->push_back(unc);
 #endif
 			}
 
@@ -2590,21 +2589,21 @@ static void bbss_queuecheck() {
 		const auto& dl2iter = presyn_queue->find(gid);
 		if (dl2iter != presyn_queue->end()) {
 		    dl2 = dl2iter->second;
-			if (dl->count() == dl2->count()) {
-				for (int i=0; i < dl->count(); i += 2) {
-if ((fabs(dl->item(i) - dl2->item(i)) > 1e-12) || dl->item(i+1) != dl2->item(i+1)) {
+			if (dl->size() == dl2->size()) {
+				for (int i=0; i < dl->size(); i += 2) {
+if ((fabs((*dl)[i] - (*dl2)[i]) > 1e-12) || (*dl)[i+1] != (*dl2)[i+1]) {
 printf("error: gid=%d expect t=%g %d but queue contains t=%g %d  tdiff=%g\n",
-gid, dl->item(i), int(dl->item(i+1)), dl2->item(i), int(dl2->item(i+1)), dl->item(i) - dl2->item(i));
+gid, (*dl)[i], int((*dl)[i+1]), (*dl2)[i], int((*dl2)[i+1]), (*dl)[i] - (*dl2)[i]);
 }
 				}
 			}else{
 printf("error: gid=%d distinct delivery times, expect %ld, actual %ld\n",
-gid, dl->count()/2, dl2->count()/2);
+gid, dl->size()/2, dl2->size()/2);
 			}
 		}else{
 printf("error: gid=%d expect spikes but none on queue\n", gid);
-			for (int i=0; i < dl->count()-1; i += 2) {
-				printf("   %g %d", dl->item(i), int(dl->item(i+1)));
+			for (int i=0; i < dl->size()-1; i += 2) {
+				printf("   %g %d", (*dl)[i], int((*dl)[i+1]));
 			}
 			printf("\n");
 		}
@@ -2617,8 +2616,8 @@ printf("error: gid=%d expect spikes but none on queue\n", gid);
 		if (dliter == presyn_queue->end()) {
 		    dl = dliter->second;
 printf("error: gid=%d expect no spikes but some on queue\n", gid);
-			for (int i=0; i < dl2->count()-1; i += 2) {
-				printf("   %g %d", dl->item(i), int(dl->item(i+1)));
+			for (int i=0; i < int(dl2->size())-1; i += 2) {
+				printf("   %g %d", (*dl)[i], int((*dl)[i+1]));
 			}
 			printf("\n");
 		}
