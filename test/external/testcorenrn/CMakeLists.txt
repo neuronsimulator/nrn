@@ -1,13 +1,13 @@
 # Set up the tests from the testcorenrn external repository
 include(NeuronTestHelper)
 set(direct_tests netstimdirect)
-set(spike_comparison_tests bbcore patstim vecplay vecevent)
+set(spike_comparison_tests bbcore deriv patstim vecplay vecevent)
 
-set(modfiles mod/Gfluct3.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
+set(modfiles mod/Gfluct3.mod mod/hhderiv.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
 if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
   # These .mod files cannot be compiled with NMODL + OpenACC/GPU because of
   # https://github.com/BlueBrain/nmodl/issues/311
-  list(APPEND modfiles mod/hhderiv.mod mod/hhkin.mod)
+  list(APPEND modfiles mod/hhkin.mod)
   # These tests depend on the modfiles on the line above.
   list(APPEND spike_comparison_tests conc deriv kin)
   # https://github.com/BlueBrain/nmodl/issues/675
