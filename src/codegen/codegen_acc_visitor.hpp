@@ -94,6 +94,18 @@ class CodegenAccVisitor: public CodegenCVisitor {
     // update derivimplicit advance flag on the gpu device
     void print_deriv_advance_flag_transfer_to_device() const override;
 
+    // update NetSendBuffer_t count from device to host
+    void print_net_send_buf_count_update_to_host() const override;
+
+    // update NetSendBuffer_t count from host to device
+    virtual void print_net_send_buf_count_update_to_device() const override;
+
+    // synchronise/wait on stream specific to NrnThread
+    virtual void print_device_stream_wait() const override;
+
+    // print atomic capture pragma
+    void print_device_atomic_capture_annotation() const override;
+
     std::string get_variable_device_pointer(const std::string& variable,
                                             const std::string& type) const override;
 
