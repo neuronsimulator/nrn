@@ -1,7 +1,14 @@
 # Set up the tests from the testcorenrn external repository
 include(NeuronTestHelper)
 set(direct_tests netstimdirect)
-set(spike_comparison_tests bbcore deriv patstim vecplay vecevent)
+set(spike_comparison_tests
+    bbcore
+    deriv
+    gf
+    patstim
+    vecplay
+    vecevent
+    watch)
 
 set(modfiles mod/Gfluct3.mod mod/hhderiv.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
 if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
@@ -9,11 +16,7 @@ if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
   # https://github.com/BlueBrain/nmodl/issues/311
   list(APPEND modfiles mod/hhkin.mod)
   # These tests depend on the modfiles on the line above.
-  list(APPEND spike_comparison_tests conc kin) #TODO: put back `deriv` test
-  # https://github.com/BlueBrain/nmodl/issues/675
-  list(APPEND spike_comparison_tests gf)
-  # https://github.com/BlueBrain/nmodl/issues/678
-  list(APPEND spike_comparison_tests watch)
+  list(APPEND spike_comparison_tests conc kin)
 endif()
 
 # Set the number of MPI ranks to use for each test. Assume 1 if not explicitly specified.
@@ -29,11 +32,6 @@ set(mpi_ranks_netstimdirect 2)
 set(test_gf_neuron_requirements mod_compatibility)
 set(test_patstim_neuron_requirements mod_compatibility)
 set(test_vecplay_neuron_requirements mod_compatibility)
-
-# Flag which tests make use of Random123 and cannot, therefore, be run on the CPU in a GPU-enabled
-# build (see https://github.com/BlueBrain/CoreNeuron/issues/345).
-set(test_gf_coreneuron_cpu_conflicts gpu) # CoreNEURON-on-CPU test conflicts with GPU being enabled
-                                          # in the build
 
 if(${CORENRN_ENABLE_GPU})
   set(gpu_args_online -c arg_coreneuron_gpu=1)
@@ -111,7 +109,6 @@ foreach(test ${spike_comparison_tests})
       GROUP testcorenrn_${test}
       NAME coreneuron_${processor}_offline
       REQUIRES coreneuron mpi ${processor}
-      CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
       PROCESSORS ${local_mpi_ranks}
       PRECOMMAND OMP_NUM_THREADS=1
                  HOC_LIBRARY_PATH=.
