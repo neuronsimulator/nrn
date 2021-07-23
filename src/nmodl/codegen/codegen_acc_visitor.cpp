@@ -255,5 +255,26 @@ void CodegenAccVisitor::print_deriv_advance_flag_transfer_to_device() const {
     printer->add_line("#pragma acc update device (deriv_advance_flag) if (nt->compute_gpu)");
 }
 
+
+void CodegenAccVisitor::print_device_atomic_capture_annotation() const {
+    printer->add_line("#pragma acc atomic capture");
+}
+
+
+void CodegenAccVisitor::print_device_stream_wait() const {
+    printer->add_line("#pragma acc wait(nt->stream_id)");
+}
+
+
+void CodegenAccVisitor::print_net_send_buf_count_update_to_host() const {
+    print_device_stream_wait();
+    printer->add_line("#pragma acc update self(nsb->_cnt) if(nt->compute_gpu)");
+}
+
+
+void CodegenAccVisitor::print_net_send_buf_count_update_to_device() const {
+    printer->add_line("#pragma acc update device(nsb->_cnt) if (nt->compute_gpu)");
+}
+
 }  // namespace codegen
 }  // namespace nmodl

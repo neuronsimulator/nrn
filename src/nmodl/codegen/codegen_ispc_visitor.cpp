@@ -611,7 +611,8 @@ bool CodegenIspcVisitor::check_incompatibilities() {
     if (info.initial_node) {
         emit_fallback[BlockType::Initial] =
             emit_fallback[BlockType::Initial] || has_incompatible_nodes(*info.initial_node) ||
-            visitor::calls_function(*info.initial_node, "net_send") || info.require_wrote_conc;
+            visitor::calls_function(*info.initial_node, "net_send") || info.require_wrote_conc ||
+            info.net_send_used || info.net_event_used;
     } else {
         emit_fallback[BlockType::Initial] = emit_fallback[BlockType::Initial] ||
                                             info.net_receive_initial_node ||

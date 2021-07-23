@@ -1038,6 +1038,22 @@ void CodegenCVisitor::print_deriv_advance_flag_transfer_to_device() const {
     // backend specific, do nothing
 }
 
+void CodegenCVisitor::print_device_atomic_capture_annotation() const {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_net_send_buf_count_update_to_host() const {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_net_send_buf_count_update_to_device() const {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_device_stream_wait() const {
+    // backend specific, do nothing
+}
+
 /**
  * \details Each kernel such as \c nrn\_init, \c nrn\_state and \c nrn\_cur could be offloaded
  * to accelerator. In this case, at very top level, we print pragma
@@ -3305,6 +3321,9 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         // clang-format on
     }
 
+    // update global variable as those might be updated via python/hoc API
+    print_global_variable_device_update_annotation();
+
     if (skip_init_check) {
         printer->start_block("if (_nrn_skip_initmodel == 0)");
     }
@@ -3326,6 +3345,11 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         printer->add_line("deriv_advance_flag = 1;");
         print_deriv_advance_flag_transfer_to_device();
     }
+
+    if (info.net_send_used && !info.artificial_cell) {
+        print_send_event_move();
+    }
+
     print_kernel_data_present_annotation_block_end();
     if (skip_init_check) {
         printer->end_block(1);
@@ -3433,13 +3457,16 @@ void CodegenCVisitor::print_watch_check() {
         printer->add_line("double v = voltage[node_id];");
     }
 
+    // flat to make sure only one WATCH statement can be triggered at a time
+    printer->add_line("bool watch_untriggered = true;");
+
     for (int i = 0; i < info.watch_statements.size(); i++) {
         auto statement = info.watch_statements[i];
         auto watch = statement->get_statements().front();
         auto varname = get_variable_name("watch{}"_format(i + 1));
 
         // start block 1
-        printer->start_block("if ({}&2)"_format(varname));
+        printer->start_block("if ({}&2 && watch_untriggered)"_format(varname));
 
         // start block 2
         printer->add_indent();
@@ -3452,6 +3479,8 @@ void CodegenCVisitor::print_watch_check() {
         // start block 3
         printer->start_block("if (({}&1) == 0)"_format(varname));
 
+        printer->add_line("watch_untriggered = false;");
+
         auto tqitem = get_variable_name("tqitem");
         auto point_process = get_variable_name("point_process");
         printer->add_indent();
@@ -3462,20 +3491,17 @@ void CodegenCVisitor::print_watch_check() {
         watch->get_value()->accept(*this);
         printer->add_text(");");
         printer->add_newline();
+        printer->end_block(1);
 
         printer->add_line("{} = 3;"_format(varname));
-        printer->end_block(1);
         // end block 3
 
         // start block 3
-        printer->start_block("else"_format());
+        printer->decrease_indent();
+        printer->start_block("} else");
         printer->add_line("{} = 2;"_format(varname));
         printer->end_block(1);
         // end block 3
-
-        printer->decrease_indent();
-        printer->add_line("}");
-        // end block 2
 
         printer->end_block(1);
         // end block 1
@@ -3534,10 +3560,9 @@ void CodegenCVisitor::print_net_send_call(const FunctionCall& node) {
     std::string weight_index = "weight_index";
     std::string pnt = "pnt";
 
-    // for non-net-receieve functions there is no weight index argument
-    // and artificial cell is in vdata which is void**
+    // for non-net_receieve functions i.e. initial block, the weight_index argument is 0.
     if (!printing_net_receive) {
-        weight_index = "-1";
+        weight_index = "0";
         auto var = get_variable_name("point_process");
         if (info.artificial_cell) {
             pnt = "(Point_process*)" + var;
@@ -3670,7 +3695,8 @@ void CodegenCVisitor::print_net_init() {
 void CodegenCVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
-    /// \todo Update net send buffer on host
+    print_net_send_buf_count_update_to_host();
+    printer->add_line("update_net_send_buffer_on_host(nt, nsb);");
     printer->add_line("for (int i=0; i < nsb->_cnt; i++) {");
     printer->add_line("    int type = nsb->_sendtype[i];");
     printer->add_line("    int tid = nt->id;");
@@ -3684,7 +3710,7 @@ void CodegenCVisitor::print_send_event_move() {
     // clang-format on
     printer->add_line("}");
     printer->add_line("nsb->_cnt = 0;");
-    /// \todo Update net send buffer count on device
+    print_net_send_buf_count_update_to_device();
 }
 
 
@@ -3747,14 +3773,15 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
     printer->end_block(1);
     print_net_receive_loop_end();
 
+    print_device_stream_wait();
+    printer->add_line("nrb->_displ_cnt = 0;");
+    printer->add_line("nrb->_cnt = 0;");
+
     if (info.net_send_used || info.net_event_used) {
         print_send_event_move();
     }
 
     printer->add_newline();
-    printer->add_line("nrb->_displ_cnt = 0;");
-    printer->add_line("nrb->_cnt = 0;");
-
     print_kernel_data_present_annotation_block_end();
     printer->end_block(1);
 }
@@ -3774,9 +3801,10 @@ void CodegenCVisitor::print_net_send_buffering() {
         "NetSendBuffer_t* nsb, int type, int vdata_index, "
         "int weight_index, int point_index, double t, double flag";
     printer->start_block("static inline void net_send_buffering({}) "_format(args));
-    printer->add_line("int i = nsb->_cnt;");
-    printer->add_line("nsb->_cnt++;");
-    printer->add_line("if(nsb->_cnt >= nsb->_size) {");
+    printer->add_line("int i = 0;");
+    print_device_atomic_capture_annotation();
+    printer->add_line("i = nsb->_cnt++;");
+    printer->add_line("if(i >= nsb->_size) {");
     printer->increase_indent();
     print_net_send_buffering_grow();
     printer->decrease_indent();
