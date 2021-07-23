@@ -138,8 +138,18 @@ if(CORENRN_ENABLE_GPU)
   cuda_add_library("cudacoreneuron" ${CORENEURON_CUDA_FILES} OPTIONS ${cuda_arch_flags} -Xcompiler
                                                                      -fPIC)
   set(link_cudacoreneuron cudacoreneuron)
+  # nrnran123.cpp is a symlink to nrnran123.cu, in GPU builds we compile this as CUDA code (so we
+  # want to remove the .cpp here), while in non-GPU builds we compile it as plain C++ (so we want to
+  # remove the .cu below). Unfortunately CMake <v3.20 does not pass explicit -x <lang> options based
+  # on the LANGUAGE property (https://cmake.org/cmake/help/latest/policy/CMP0119.html), so using a
+  # single .cu file and setting LANGUAGE=CXX in non-GPU builds does not work.
+  list(REMOVE_ITEM CORENEURON_CODE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp")
+  list(REMOVE_ITEM CORENEURON_UTILS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp")
 else()
   set(link_cudacoreneuron "")
+  # See above regarding CMake policy CMP0119.
+  list(REMOVE_ITEM CORENEURON_CODE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cu")
+  list(REMOVE_ITEM CORENEURON_UTILS_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cu")
 endif()
 
 # =============================================================================

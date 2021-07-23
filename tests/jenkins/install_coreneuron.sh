@@ -12,7 +12,8 @@ CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ] || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
     # PGI compiler issue in unstable :  BSD-204
-    module load nvhpc cuda/11.0.2 hpe-mpi cmake boost
+    # load gcc so CUDA uses deployed gcc ~v9 not systen ~v4
+    module load gcc nvhpc cuda/11.0.2 hpe-mpi cmake boost
     mkdir build_${CORENRN_TYPE}
 else
     module load boost intel hpe-mpi cmake
