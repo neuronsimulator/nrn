@@ -1078,8 +1078,7 @@ SEWrap::SEWrap(const TQItem* tq, DEList* dl) {
 }
 SEWrap::~SEWrap() {}
 
-declarePtrList(SEWrapList, SEWrap)
-implementPtrList(SEWrapList, SEWrap)
+typedef std::vector<SEWrap*> SEWrapList;
 static SEWrapList* sewrap_list;
 
 typedef std::unordered_map< int, int> Int2Int;
@@ -1159,7 +1158,7 @@ static void tqcallback(const TQItem* tq, int i) {
 				sew = 0;
 			}
 			if (sew) {
-				sewrap_list->append(sew);
+				sewrap_list->push_back(sew);
 				DEList* dl = new DEList;
 				dl->next = 0;
 				dl->de = sew;
@@ -1321,7 +1320,7 @@ void BBSaveState::mk_pp2de() {
 	assert(!pp2de); // one only or make it a field.
 	int n = nct->count;
 	pp2de = new PP2DE(n+1);
-	sewrap_list = new SEWrapList(1000);
+	sewrap_list = new SEWrapList();
 	ITERATE(q, nct->olist) {
 		NetCon* nc = (NetCon*)OBJ(q)->u.this_pointer;
 		// ignore NetCon with no PreSyn.
@@ -1391,8 +1390,8 @@ void BBSaveState::del_pp2de() {
 	delete pp2de;
 	pp2de = 0;
 	if (sewrap_list) {
-		for (int i=0; i < sewrap_list->count(); ++i) {
-			delete sewrap_list->item(i);
+		for (SEWrap* sewrap: *sewrap_list) {
+			delete sewrap;
 		}
 		delete sewrap_list;
 		sewrap_list = NULL;
