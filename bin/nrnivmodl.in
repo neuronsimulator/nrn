@@ -287,37 +287,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-@NRN_BINARY_SPECIAL_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
-@NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"
-
-@NRN_BINARY_SPECIAL_FALSE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
-@NRN_BINARY_SPECIAL_FALSE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
-@NRN_BINARY_SPECIAL_FALSE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
-@NRN_BINARY_SPECIAL_FALSE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" mech_lib_shared VERBOSE=1
-@NRN_BINARY_SPECIAL_FALSE@  echo '#!/bin/sh
-@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNHOME}" = "x" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNHOME='"\"${prefix}\""'
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "${NEURONHOME}" = "" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NEURONHOME=${NRNHOME}/share/nrn
-@NRN_BINARY_SPECIAL_FALSE@    export NEURONHOME
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNBIN}" = "x" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNBIN='"\"${NRNBIN}\""'
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "@enable_carbon@" = "yes" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv.app/Contents/MacOS/nrniv"
-@NRN_BINARY_SPECIAL_FALSE@else
-@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv"
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" > special &&
-@NRN_BINARY_SPECIAL_FALSE@  chmod 755 special &&
-@NRN_BINARY_SPECIAL_FALSE@  echo "Successfully created $MODSUBDIR/special"
-
-@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_TRUE@if false ; then
-@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_FALSE@if false ; then
-@NRN_BINARY_SPECIAL_TRUE@if false ; then
-  false #for empty if block
-fi
+make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+echo "Successfully created $MODSUBDIR/special"

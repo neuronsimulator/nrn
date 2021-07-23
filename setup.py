@@ -18,31 +18,33 @@ class Components:
 
 
 if os.name != "posix":
-    raise Exception("Python NEURON distributions are currently only available "
-                    "for Mac and Linux systems (POSIX)")
+    raise Exception(
+        "Python NEURON distributions are currently only available "
+        "for Mac and Linux systems (POSIX)"
+    )
 
 # Main source of the version. Dont rename, used by Cmake
 try:
     # github actions somehow fails with check_output and python3
-    if sys.version_info[0] < 3:
-        v = subprocess.check_output(['git', 'describe', '--tags']).strip().decode()
-    else:
-        v = subprocess.run(['git', 'describe', '--tags'],
-                           stdout=subprocess.PIPE).stdout.strip().decode()
+    v = (
+        subprocess.run(["git", "describe", "--tags"], stdout=subprocess.PIPE)
+        .stdout.strip()
+        .decode()
+    )
 
-    __version__ = v[:v.rfind("-")].replace('-', '.') if "-" in v else v
+    __version__ = v[: v.rfind("-")].replace("-", ".") if "-" in v else v
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
-        __version__ = os.environ['NEURON_WHEEL_VERSION']
+        __version__ = os.environ["NEURON_WHEEL_VERSION"]
 
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo : " + str(e))
 
 
 # RX3D must be checked for very early as it changes imports
-if '--disable-rx3d' in sys.argv:
+if "--disable-rx3d" in sys.argv:
     Components.RX3D = False
-    sys.argv.remove('--disable-rx3d')
+    sys.argv.remove("--disable-rx3d")
     from setuptools.command.build_ext import build_ext
 else:
     try:
@@ -50,16 +52,18 @@ else:
         from Cython.Distutils import build_ext
         import numpy
     except ImportError:
-        log.error("ERROR: RX3D wheel requires Cython and numpy. Please install beforehand")
+        log.error(
+            "ERROR: RX3D wheel requires Cython and numpy. Please install beforehand"
+        )
         sys.exit(1)
 
-if '--disable-iv' in sys.argv:
+if "--disable-iv" in sys.argv:
     Components.IV = False
-    sys.argv.remove('--disable-iv')
+    sys.argv.remove("--disable-iv")
 
-if '--disable-mpi' in sys.argv:
+if "--disable-mpi" in sys.argv:
     Components.MPI = False
-    sys.argv.remove('--disable-mpi')
+    sys.argv.remove("--disable-mpi")
 
 
 class CMakeAugmentedExtension(Extension):
@@ -67,14 +71,17 @@ class CMakeAugmentedExtension(Extension):
     Definition of an extension that depends on a project to be built using CMake
     Notice by default the cmake project is installed to build/cmake_install
     """
-    def __init__(self,
-                 name,
-                 sources,
-                 cmake_proj_dir="",
-                 cmake_flags=None,
-                 cmake_collect_dirs=None,
-                 cmake_install_python_files='lib/python',
-                 **kw):
+
+    def __init__(
+        self,
+        name,
+        sources,
+        cmake_proj_dir="",
+        cmake_flags=None,
+        cmake_collect_dirs=None,
+        cmake_install_python_files="lib/python",
+        **kw
+    ):
         """Creates a CMakeAugmentedExtension.
 
         Args:
@@ -97,13 +104,13 @@ class CMakeAugmentedExtension(Extension):
 
 
 class CMakeAugmentedBuilder(build_ext):
-    """Builder which understands CMakeAugmentedExtension
-    """
+    """Builder which understands CMakeAugmentedExtension"""
+
     user_options = build_ext.user_options + [
         ("cmake-prefix=", None, "value for CMAKE_PREFIX_PATH"),
-        ("cmake-defs=", None, "Additional CMake definitions, comma split")
+        ("cmake-defs=", None, "Additional CMake definitions, comma split"),
     ]
-    boolean_options = build_ext.boolean_options + ['docs']
+    boolean_options = build_ext.boolean_options + ["docs"]
 
     def initialize_options(self):
         build_ext.initialize_options(self)
@@ -130,12 +137,15 @@ class CMakeAugmentedBuilder(build_ext):
                 # Collect project files to be installed
                 # These go directly into final package, regardless of setuptools filters
                 log.info("\n==> Collecting CMAKE files")
-                rel_package = ext.name.split('.')[:-1]
-                package_data_d = os.path.join(self.build_lib, *(rel_package + ['.data']))
+                rel_package = ext.name.split(".")[:-1]
+                package_data_d = os.path.join(
+                    self.build_lib, *(rel_package + [".data"])
+                )
 
                 # Python files created/configured by CMake
-                src_py_dir = os.path.join(ext.cmake_install_prefix,
-                                          ext.cmake_install_python_files)
+                src_py_dir = os.path.join(
+                    ext.cmake_install_prefix, ext.cmake_install_python_files
+                )
                 if os.path.isdir(src_py_dir):
                     copy_tree(src_py_dir, self.build_lib)  # accepts existing dst dir
                     shutil.rmtree(src_py_dir)  # avoid being collected to data dir
@@ -149,9 +159,11 @@ class CMakeAugmentedBuilder(build_ext):
                 log.info("==> Done building CMake project\n.")
 
                 # Make the temp include paths in the building the extension
-                ext.include_dirs += [os.path.join(self.build_temp, inc_dir)
-                                     for inc_dir in ext.include_dirs
-                                     if not os.path.isabs(inc_dir)]
+                ext.include_dirs += [
+                    os.path.join(self.build_temp, inc_dir)
+                    for inc_dir in ext.include_dirs
+                    if not os.path.isabs(inc_dir)
+                ]
                 ext.cmake_done = True
 
         # Now build the extensions normally
@@ -160,31 +172,32 @@ class CMakeAugmentedBuilder(build_ext):
 
     def _run_cmake(self, ext):
         cmake = self._find_cmake()
-        cfg = 'Debug' if self.debug else 'Release'
+        cfg = "Debug" if self.debug else "Release"
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
-        readline_flag = 'ON' if sys.platform[:6] == "darwin" else 'OFF'
+        readline_flag = "ON" if sys.platform[:6] == "darwin" else "OFF"
 
         log.info("Building lib to: %s", self.outdir)
         cmake_args = [
             # Generic options only. project options shall be passed as ext param
-            '-DCMAKE_INSTALL_PREFIX=' + self.outdir,
-            '-DPYTHON_EXECUTABLE=' + sys.executable,
-            '-DCMAKE_BUILD_TYPE=' + cfg,
-            '-DNRN_ENABLE_INTERNAL_READLINE=' + readline_flag,
+            "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
+            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            "-DCMAKE_BUILD_TYPE=" + cfg,
+            "-DNRN_ENABLE_INTERNAL_READLINE=" + readline_flag,
         ] + ext.cmake_flags
         # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
-            cmake_args = ['-DNRN_ENABLE_MPI=OFF', '-DNRN_ENABLE_INTERVIEWS=OFF']
+            cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
         if self.cmake_defs:
             cmake_args += ["-D" + opt for opt in self.cmake_defs.split(",")]
 
-        build_args = ['--config', cfg, '--', '-j4']  # , 'VERBOSE=1']
+        build_args = ["--config", cfg, "--", "-j4"]  # , 'VERBOSE=1']
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = "{} -DVERSION_INFO='{}'".format(env.get('CXXFLAGS', ''),
-                                                          self.distribution.get_version())
+        env["CXXFLAGS"] = "{} -DVERSION_INFO='{}'".format(
+            env.get("CXXFLAGS", ""), self.distribution.get_version()
+        )
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
 
@@ -192,44 +205,51 @@ class CMakeAugmentedBuilder(build_ext):
             # Configure project
             subprocess.Popen("echo $CXX", shell=True, stdout=subprocess.PIPE)
             log.info("[CMAKE] cmd: %s", " ".join([cmake, ext.sourcedir] + cmake_args))
-            subprocess.check_call([cmake, ext.sourcedir] + cmake_args,
-                                  cwd=self.build_temp, env=env)
+            subprocess.check_call(
+                [cmake, ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
+            )
             if self.docs:
                 # RTD will call sphinx for us. We just need notebooks and doxygen
                 if os.environ.get("READTHEDOCS"):
                     subprocess.check_call(
-                        ['make', 'notebooks'],
-                        cwd=self.build_temp, env=env
+                        ["make", "notebooks"], cwd=self.build_temp, env=env
                     )
                     subprocess.check_call(
-                        ['make', 'doxygen'],
-                        cwd=self.build_temp, env=env
+                        ["make", "doxygen"], cwd=self.build_temp, env=env
                     )
                 else:
                     subprocess.check_call(
-                        ['make', 'docs'],
-                        cwd=self.build_temp, env=env
+                        ["make", "docs"], cwd=self.build_temp, env=env
                     )
             else:
                 subprocess.check_call(
-                    [cmake, '--build', '.', '--target', 'install'] + build_args,
-                    cwd=self.build_temp, env=env
+                    [cmake, "--build", ".", "--target", "install"] + build_args,
+                    cwd=self.build_temp,
+                    env=env,
                 )
                 subprocess.check_call(
                     [
-                        ext.cmake_install_prefix + '/bin/neurondemo',
-                        '-nopython', '-nogui', '-c', 'quit()'
+                        ext.cmake_install_prefix + "/bin/neurondemo",
+                        "-nopython",
+                        "-nogui",
+                        "-c",
+                        "quit()",
                     ],
-                    cwd=self.build_temp, env=env
+                    cwd=self.build_temp,
+                    env=env,
                 )
                 # mac: libnrnmech of neurondemo need to point to relative libnrniv
-                REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
+                REL_RPATH = (
+                    "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
+                )
                 subprocess.check_call(
                     [
-                        ext.sourcedir + '/packaging/python/fix_demo_libnrnmech.sh',
-                        ext.cmake_install_prefix, REL_RPATH
+                        ext.sourcedir + "/packaging/python/fix_demo_libnrnmech.sh",
+                        ext.cmake_install_prefix,
+                        REL_RPATH,
                     ],
-                    cwd=self.build_temp, env=env
+                    cwd=self.build_temp,
+                    env=env,
                 )
 
         except subprocess.CalledProcessError as exc:
@@ -238,12 +258,13 @@ class CMakeAugmentedBuilder(build_ext):
 
     @staticmethod
     def _find_cmake():
-        for candidate in ['cmake', 'cmake3']:
+        for candidate in ["cmake", "cmake3"]:
             try:
-                out = subprocess.check_output([candidate, '--version'])
+                out = subprocess.check_output([candidate, "--version"])
                 cmake_version = LooseVersion(
-                    re.search(r'version\s*([\d.]+)', out.decode()).group(1))
-                if cmake_version >= '3.5.0':
+                    re.search(r"version\s*([\d.]+)", out.decode()).group(1)
+                )
+                if cmake_version >= "3.5.0":
                     return candidate
             except OSError:
                 pass
@@ -261,8 +282,8 @@ class Docs(Command):
 
     def run(self):
         # The extensions must be created inplace to inspect docs
-        self.reinitialize_command('build_ext', inplace=1, docs=True)
-        self.run_command('build_ext')
+        self.reinitialize_command("build_ext", inplace=1, docs=True)
+        self.run_command("build_ext")
         if self.upload:
             self._upload()
 
@@ -271,22 +292,22 @@ class Docs(Command):
 
 
 def setup_package():
-    NRN_PY_ROOT = 'share/lib/python'
-    NRN_PY_SCRIPTS = os.path.join(NRN_PY_ROOT, 'scripts')
-    NRN_COLLECT_DIRS = ['bin', 'lib', 'include', 'share']
+    NRN_PY_ROOT = "share/lib/python"
+    NRN_PY_SCRIPTS = os.path.join(NRN_PY_ROOT, "scripts")
+    NRN_COLLECT_DIRS = ["bin", "lib", "include", "share"]
 
     docs_require = []  # sphinx, themes, etc
-    maybe_rxd_reqs = ['numpy', 'Cython'] if Components.RX3D else []
+    maybe_rxd_reqs = ["numpy", "Cython"] if Components.RX3D else []
     maybe_docs = docs_require if "docs" in sys.argv else []
-    maybe_test_runner = ['pytest-runner'] if "test" in sys.argv else []
+    maybe_test_runner = ["pytest-runner"] if "test" in sys.argv else []
 
     py_packages = [
-        'neuron',
-        'neuron.neuroml',
-        'neuron.tests',
-        'neuron.rxd',
-        'neuron.crxd',
-        'neuron.gui2'
+        "neuron",
+        "neuron.neuroml",
+        "neuron.tests",
+        "neuron.rxd",
+        "neuron.crxd",
+        "neuron.gui2",
     ] + (["neuron.rxd.geometry3d"] if Components.RX3D else [])
 
     REL_RPATH = "@loader_path" if sys.platform[:6] == "darwin" else "$ORIGIN"
@@ -297,54 +318,55 @@ def setup_package():
         libraries=["nrniv", "nrnpython{}".format(sys.version_info[0])],
     )
 
-    extensions = [CMakeAugmentedExtension(
-        "neuron.hoc",
-        ["src/nrnpython/inithoc.cpp"],
-        cmake_collect_dirs=NRN_COLLECT_DIRS,
-        cmake_flags=[
-            '-DNRN_ENABLE_CORENEURON=OFF',
-            '-DNRN_ENABLE_INTERVIEWS=' + ("ON" if Components.IV else "OFF"),
-            '-DIV_ENABLE_X11_DYNAMIC=' + ("ON" if Components.IV else "OFF"),
-            '-DNRN_ENABLE_RX3D=OFF',  # Never build within CMake
-            '-DNRN_ENABLE_MPI='         + ("ON" if Components.MPI else "OFF"),
-            '-DNRN_ENABLE_MPI_DYNAMIC=' + ("ON" if Components.MPI else "OFF"),
-            '-DNRN_ENABLE_PYTHON_DYNAMIC=ON',
-            '-DNRN_ENABLE_MODULE_INSTALL=OFF',
-            '-DNRN_ENABLE_REL_RPATH=ON',
-            '-DLINK_AGAINST_PYTHON=OFF',
-        ],
-        include_dirs=[
-            "src",
-            "src/oc",
-            "src/nrnpython",
-            "src/nrnmpi",
-        ],
-        extra_link_args=[
-            # use relative rpath to .data/lib
-            "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
-        ],
-        **extension_common_params
-    )]
+    extensions = [
+        CMakeAugmentedExtension(
+            "neuron.hoc",
+            ["src/nrnpython/inithoc.cpp"],
+            cmake_collect_dirs=NRN_COLLECT_DIRS,
+            cmake_flags=[
+                "-DNRN_ENABLE_CORENEURON=OFF",
+                "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
+                "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
+                "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
+                "-DNRN_ENABLE_MPI=" + ("ON" if Components.MPI else "OFF"),
+                "-DNRN_ENABLE_MPI_DYNAMIC=" + ("ON" if Components.MPI else "OFF"),
+                "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
+                "-DNRN_ENABLE_MODULE_INSTALL=OFF",
+                "-DNRN_ENABLE_REL_RPATH=ON",
+                "-DLINK_AGAINST_PYTHON=OFF",
+            ],
+            include_dirs=[
+                "src",
+                "src/oc",
+                "src/nrnpython",
+                "src/nrnmpi",
+            ],
+            extra_link_args=[
+                # use relative rpath to .data/lib
+                "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
+            ],
+            **extension_common_params
+        )
+    ]
 
     if Components.RX3D:
-        include_dirs = [
-            "share/lib/python/neuron/rxd/geometry3d",
-            numpy.get_include()
-        ]
+        include_dirs = ["share/lib/python/neuron/rxd/geometry3d", numpy.get_include()]
 
         # Cython files take a long time to compile with O2 so default O0
         # But pay the price if uploading distribution
-        extra_compile_args = [
-            "-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"
-        ]
+        extra_compile_args = ["-O2" if "NRN_BUILD_FOR_UPLOAD" in os.environ else "-O0"]
         rxd_params = extension_common_params.copy()
-        rxd_params['libraries'].append("rxdmath")
-        rxd_params.update(dict(
-            # Cython files take a long time to compile with O2 but this
-            # is a distribution...
-            extra_compile_args=extra_compile_args,
-            extra_link_args=["-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")]
-        ))
+        rxd_params["libraries"].append("rxdmath")
+        rxd_params.update(
+            dict(
+                # Cython files take a long time to compile with O2 but this
+                # is a distribution...
+                extra_compile_args=extra_compile_args,
+                extra_link_args=[
+                    "-Wl,-rpath,{}".format(REL_RPATH + "/../../.data/lib/")
+                ],
+            )
+        )
 
         log.info("RX3D compile flags %s" % str(rxd_params))
 
@@ -365,36 +387,36 @@ def setup_package():
                 [
                     "share/lib/python/neuron/rxd/geometry3d/surfaces.pyx",
                     "src/nrnpython/rxd_marching_cubes.cpp",
-                    "src/nrnpython/rxd_llgramarea.cpp"
+                    "src/nrnpython/rxd_llgramarea.cpp",
                 ],
                 include_dirs=include_dirs,
                 **rxd_params
-            )
+            ),
         ]
 
     log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
-    package_name = 'NEURON'
+    package_name = "NEURON"
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
     setup(
         name=package_name,
         version=__version__,
-        package_dir={'': NRN_PY_ROOT},
+        package_dir={"": NRN_PY_ROOT},
         packages=py_packages,
-        package_data={'neuron': ['*.dat']},
+        package_data={"neuron": ["*.dat"]},
         ext_modules=extensions,
         scripts=[
             os.path.join(NRN_PY_SCRIPTS, f)
             for f in os.listdir(NRN_PY_SCRIPTS)
-            if f[0] != '_'
+            if f[0] != "_"
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=['numpy>=1.9.3'],
+        install_requires=["numpy>=1.9.3"],
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
-        dependency_links=[]
+        dependency_links=[],
     )
 
 
@@ -405,25 +427,31 @@ def mac_osx_setenv():
         import wheel
     except ImportError:
         from setuptools.dist import Distribution
+
         Distribution().fetch_build_eggs(["wheel"])
     from wheel.macosx_libfile import extract_macosx_min_system_version
-    
-    sdk_root = subprocess.check_output(['xcrun', '--sdk', 'macosx', '--show-sdk-path']
-                                       ).decode().strip()
+
+    sdk_root = (
+        subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
+        .decode()
+        .strip()
+    )
     log.info("Setting SDKROOT=%s", sdk_root)
-    os.environ['SDKROOT'] = sdk_root
+    os.environ["SDKROOT"] = sdk_root
 
     # Match Python OSX framework
     py_osx_framework = extract_macosx_min_system_version(sys.executable)
     if py_osx_framework is None:
         py_osx_framework = [10, 9]
     if py_osx_framework[1] > 9:
-        log.warn("[ WARNING ] You are building a wheel with a Python built"
-                 " for a recent MACOS version (from brew?). Your wheel won't be portable."
-                 " Consider using an official Python build from python.org")
+        log.warn(
+            "[ WARNING ] You are building a wheel with a Python built"
+            " for a recent MACOS version (from brew?). Your wheel won't be portable."
+            " Consider using an official Python build from python.org"
+        )
     macos_target = "%d.%d" % tuple(py_osx_framework[:2])
     log.info("Setting MACOSX_DEPLOYMENT_TARGET=%s", macos_target)
-    os.environ['MACOSX_DEPLOYMENT_TARGET'] = macos_target
+    os.environ["MACOSX_DEPLOYMENT_TARGET"] = macos_target
 
 
 if __name__ == "__main__":

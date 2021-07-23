@@ -9,7 +9,10 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
-target_link_libraries(testneuron Catch2::Catch2 nrniv_lib ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
+if (${USE_PTHREAD} EQUAL 1)
+  target_link_libraries(testneuron Threads::Threads)
+endif()
 if(NOT MINGW)
   target_link_libraries(testneuron ${CMAKE_DL_LIBS})
 endif()
@@ -197,9 +200,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
-    # This tries to use pytest and mpi4py in parallel, which might be fragile.
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE} ${py_args})
+                               ${PYTHON_EXECUTABLE})
   endif()
   nrn_add_test_group(
     NAME coreneuron_modtests

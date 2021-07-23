@@ -13,7 +13,7 @@ import unittest
 
 
 def suite():
-    
+
     suite = unittest.TestSuite()
     suite.addTest(test_vector.suite())
     suite.addTest(test_neuron.suite())

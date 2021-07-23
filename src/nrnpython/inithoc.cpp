@@ -29,12 +29,7 @@ extern char** nrn_global_argv;
 
 extern void nrnpy_augment_path();
 extern void (*p_nrnpython_finalize)();
-
-#if PY_MAJOR_VERSION >= 3
 extern PyObject* nrnpy_hoc();
-#else
-extern void nrnpy_hoc();
-#endif
 
 #if NRNMPI_DYNAMICLOAD
 extern void nrnmpi_stubs();
@@ -43,8 +38,6 @@ extern char* nrnmpi_load(int is_python);
 #if NRNPYTHON_DYNAMICLOAD
 extern int nrnpy_site_problem;
 #endif
-#define HOCMOD(a, b) a
-
 
 #if USE_PTHREAD
 #include <pthread.h>
@@ -225,33 +218,7 @@ void nrnpython_finalize() {
 
 static char* env[] = {0};
 
-#if defined(__MINGW32__)
-
-// The problem is that the hoc.dll name is the same for python2 and 3.
-// The work around is to name them hoc27.dll and hoc36.dll when manually
-// created by nrncygso.sh and use if version clauses in the neuron
-// module to import the correct one as hoc.  Generalizable in the
-// future to 27, 34, 35, 36 with try except clauses.
-// It seems that since these dlls refer to python3x.dll explicitly,
-// it is not possible for different minor versions of python3x to share
-// hoc module dlls.
-// It is conceivable that this strategy will work for linux and mac as well,
-// but for now setup.py names them differently anyway.
-#if PY_MAJOR_VERSION >= 3
-extern "C" PyObject* HOCMOD(PyInit_hoc, NRNPYTHON_DYNAMICLOAD)() {
-#else //!PY_MAJOR_VERSION >= 3
-extern "C" void HOCMOD(inithoc, NRNPYTHON_DYNAMICLOAD)() {
-#endif //!PY_MAJOR_VERSION >= 3
-
-#else // ! defined __MINGW32__
-
-#if PY_MAJOR_VERSION >= 3
 extern "C" PyObject* PyInit_hoc() {
-#else //!PY_MAJOR_VERSION >= 3
-extern "C" void inithoc() {
-#endif //!PY_MAJOR_VERSION >= 3
-
-#endif // ! defined __MINGW32__
 
   char buf[200];
 
@@ -260,12 +227,7 @@ extern "C" void inithoc() {
 #endif
 
   if (nrn_global_argv) {  // ivocmain was already called so already loaded
-#if PY_MAJOR_VERSION >= 3
     return nrnpy_hoc();
-#else //!PY_MAJOR_VERSION >= 3
-    nrnpy_hoc();
-    return;
-#endif //!PY_MAJOR_VERSION >= 3
   }
 
   add_arg("NEURON", NULL);
@@ -412,11 +374,7 @@ extern "C" void inithoc() {
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem = 0;
 #endif // NRNPYTHON_DYNAMICLOAD
-#if PY_MAJOR_VERSION >= 3
   return nrnpy_hoc();
-#else // ! PY_MAJOR_VERSION >= 3
-  nrnpy_hoc();
-#endif // ! PY_MAJOR_VERSION >= 3
 }
 
 #if !defined(CYGWIN)

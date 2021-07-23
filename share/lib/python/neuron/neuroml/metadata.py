@@ -1,15 +1,18 @@
 def notes(self, node):
-  pass
+    pass
+
 
 def properties(self, node):
- pass
+    pass
+
 
 def property(self, node):
-  pass
+    pass
+
 
 def tag(self, node):
-  pass
+    pass
+
 
 def value(self, node):
-  pass
-
+    pass

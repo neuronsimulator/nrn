@@ -10,14 +10,13 @@ and Flux_pair structs and their respective functions
 
 #include <nrnwrap_Python.h>
 
-#define DIE(msg) exit(fprintf(stderr, "%s\n", msg))
 #define SAFE_FREE(ptr){if((ptr)!=NULL) free(ptr);}
 #define IDX(x,y,z)  ((z) + (y) * g->size_z + (x) * g->size_z * g->size_y)
 #define INDEX(x,y,z)  ((z) + (y) * grid->size_z + (x) * grid->size_z * grid->size_y)
 #define ALPHA(x,y,z) (g->get_alpha(g->alpha,IDX(x,y,z)))
 #define VOLFRAC(idx) (g->get_alpha(g->alpha,idx))
-#define TORT(idx) (g->get_lambda(g->lambda,idx))
-#define LAMBDA(x,y,z) (g->get_lambda(g->lambda,IDX(x,y,z)))
+#define TORT(idx) (g->get_permeability(g->permeability,idx))
+#define PERM(x,y,z) (g->get_permeability(g->permeability,IDX(x,y,z)))
 #define SQ(x)       ((x)*(x))
 #define CU(x)       ((x)*(x)*(x))
 #define TRUE 				1
@@ -92,7 +91,7 @@ typedef struct Reaction {
 	double** species_states;
 	unsigned char* subregion;
 	unsigned int region_size;
-    int* mc3d_indices_offsets;
+    uint64_t* mc3d_indices_offsets;
     double** mc3d_mults;
 } Reaction;
 
@@ -147,12 +146,13 @@ class Grid_node {
                                             methods should be used*/
     /*diffusion characteristics are arrays of a single value or
     * the number of voxels (size_x*size_y*size_z)*/
-    double *lambda;		/* tortuosities squared D_eff=D_free/lambda */
+    double *permeability;		/* 1/tortuosities^2 squared 
+                                   D_eff = D_free*permeability */
     double *alpha;		/* volume fractions */
     /*Function that will be assigned when the grid is created to either return
     * the single value or the value at a given index*/ 
     double (*get_alpha)(double*,int);
-    double (*get_lambda)(double*,int);
+    double (*get_permeability)(double*,int);
     double atolscale;
 
     int64_t* ics_surface_nodes_per_seg;
@@ -226,6 +226,8 @@ class ECS_Grid_node : public Grid_node{
         void scatter_grid_concentrations();
         void hybrid_connections();
         void set_diffusion(double*, int);
+        void set_tortuosity(PyHocObject*);
+        void set_volume_fraction(PyHocObject*);
         void do_multicompartment_reactions(double*);
         void initialize_multicompartment_reaction();
         void clear_multicompartment_reaction();
@@ -366,7 +368,7 @@ void make_dt_ptr(PyHocObject* my_dt_ptr);
 extern "C" int ECS_insert(int grid_list_index, PyHocObject* my_states, int my_num_states_x,
     int my_num_states_y, int my_num_states_z, double my_dc_x, double my_dc_y,
     double my_dc_z, double my_dx, double my_dy, double my_dz, 
-	PyHocObject* my_alpha, PyHocObject* my_lambda, int, double, double);
+	PyHocObject* my_alpha, PyHocObject* my_permeability, int, double, double);
 
 Grid_node *ICS_make_Grid(PyHocObject* my_states, long num_nodes, long* neighbors, 
                 long* x_line_defs, long x_lines_length, long* y_line_defs, long y_lines_length, long* z_line_defs,

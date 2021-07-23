@@ -1,7 +1,9 @@
 from neuron import h, gui
+
 h.load_file("import3d.hoc")
 
-tst_data = ['''
+tst_data = [
+    """
 # One-point soma
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 10 -1
@@ -11,7 +13,8 @@ tst_data = ['''
 5  3 0 -20 0 2 4
 6  3 10 0 0 .5 1
 7  3 10 5 0 1 6
-''','''
+""",
+    """
 # Multi-point soma
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 10 -1
@@ -19,7 +22,8 @@ tst_data = ['''
 3  1 4 0 0 10  2
 4  3 2 10 0   1  2
 5  3 2 18 0  1  4
-''','''
+""",
+    """
 # dendrites at ends of multisection soma
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 5 -1
@@ -29,7 +33,8 @@ tst_data = ['''
 5  3 20 0 0 1 2
 6  3 -16 -12 0 1 3
 7  3 -16 12 0 1 4
-''','''
+""",
+    """
 # dendrites at ends and in interior of multisection soma
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 5 -1
@@ -50,7 +55,8 @@ tst_data = ['''
 16 3 15 15 0 1 15
 17 3 -8 10 0 1 6
 18 3 -8 15 0 1 17
-''','''
+""",
+    """
 # branched soma, dendrites at ends and in interior of multisection soma
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 5 -1
@@ -103,7 +109,8 @@ tst_data = ['''
 32 3 -20 29 0 1 31
 
 33 3 -30 31 0 1 11
-''','''
+""",
+    """
 #two section soma with dendrites at ends and off point 1
 #n,type,x,y,z,radius,parent
 1 1 0 0 0 5 -1
@@ -113,7 +120,8 @@ tst_data = ['''
 5 3 -10 0 0 1 3
 6 3 0 5 0 1 1
 7 3 0 10 0 1 6
-''','''
+""",
+    """
 #three point uniform diameter soma with root in middle, treated as sphere
 #n,type,x,y,z,radius,parent
 1 1 0 0 0 5 -1
@@ -125,7 +133,8 @@ tst_data = ['''
 7 3 -10 0 0 1 6
 8 3 0 5 0 1 1
 9 3 0 10 0 1 8
-''','''
+""",
+    """
 # Multipoint soma but not geometrically realizable
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 10 -1
@@ -133,7 +142,8 @@ tst_data = ['''
 3  1 4 0 0 10  2
 4  3 2 1 0  1  2
 5  3 2 9 0  1  4
-''','''
+""",
+    """
 # 4pt soma with dendrite off pt 2
 #n,type,x,y,z,radius,parent
 1  1 0 0 0 10 -1
@@ -142,14 +152,16 @@ tst_data = ['''
 4  1 6 0 0 10  3
 5  3 2 1 0  1  2
 6  3 2 9 0  1  5
-''','''
+""",
+    """
 # no soma 3 dendrites in a Y-shaped morphology, with lengths 10, 10, and 20
 #n,type,x,y,z,radius,parent
 1  3 0  0  0 1 -1
 2  3 10  0 0 1  1
 3  3 20  0 0 1  2
 4  3 10 20 0 1  2
-''','''
+""",
+    """
 # previous but with soma
 #n,type,x,y,z,radius,parent
 1  1 -11  0 0 5 -1
@@ -158,7 +170,8 @@ tst_data = ['''
 4  3 10  0  0 1  3
 5  3 20  0  0 1  4
 6  3 10 20  0 1  4
-''','''
+""",
+    """
 # 3 dendrites in a Y-shaped morphology, with lengths 10, 10, and 20
 #n,type,x,y,z,radius,parent (no soma)
 1  3 0  0  0 1 -1
@@ -167,7 +180,8 @@ tst_data = ['''
 4  3 20  0 0 1  3
 5  3 10  1 0 1  2
 6  3 10 20 0 1  5
-''','''
+""",
+    """
 # no soma 2 dendrites with root connection.
 #n,type,x,y,z,radius,parent
 1  3 0  0  0 3 -1
@@ -175,90 +189,109 @@ tst_data = ['''
 3  3 10  0 0 1  2
 4  3 -2  0 0 1  1
 5  3 -10  0 0 1  4
-''','''
+""",
+    """
 # two point soma (ie: single section), no dendrites
 1 1 -11 0 0 5.0 -1
 2 1  -1 0 0 5.0 1
-''','''
+""",
+    """
 # 1st test from https://github.com/neuronsimulator/nrn/issues/119
 1 1 0.0 0.0 0.0 0.5 -1 
-''','''
+""",
+    """
 # 2nd test from https://github.com/neuronsimulator/nrn/issues/119
 1 1 0.0 0.0 0.0 0.5 -1
 2 1 0.0 -0.5 0.0 0.5 1
 3 1 0.0 0.5 0.0 0.5 1
-''']
+""",
+]
+
 
 def mkswc(swc_contents):
-  f = open("temp.tmp", "w")
-  f.write(swc_contents)
-  f.close()
-  swc = h.Import3d_SWC_read()
-  swc.input("temp.tmp")
-  ig = h.Import3d_GUI(swc)
-  ig.box.unmap()
-  h.doNotify()
-  ig.box.map("Import3d", 650, 200, -1, -1)
-  h.doNotify()
-  ig.instantiate(None)
+    f = open("temp.tmp", "w")
+    f.write(swc_contents)
+    f.close()
+    swc = h.Import3d_SWC_read()
+    swc.input("temp.tmp")
+    ig = h.Import3d_GUI(swc)
+    ig.box.unmap()
+    h.doNotify()
+    ig.box.map("Import3d", 650, 200, -1, -1)
+    h.doNotify()
+    ig.instantiate(None)
 
-  print (swc_contents)
-  h.topology()
-  print (secinfo())
-  print ("\n\n\n")
-  return ig
+    print(swc_contents)
+    h.topology()
+    print(secinfo())
+    print("\n\n\n")
+    return ig
+
 
 def secinfo():
-  result = "\n"
-  for sec in h.allsec():
-    r = [h.ref(0) for _ in range(3)]
-    pseg = sec.parentseg()
-    px = ("parent %s(%g)"%(pseg.sec.name(),pseg.x)) if pseg is not None else ""
-    style = ""
-    if sec.pt3dstyle():
-      h.pt3dstyle(1, r[0], r[1], r[2], sec=sec)
-      style = [i[0] for i in r]
-    result += "%s L=%g %s %s\n" % (str(sec), sec.L, str(style), px)
-    for i in range(sec.n3d()):
-      result += " %d   %g %g %g %g\n" % (i, sec.x3d(i), sec.y3d(i), sec.z3d(i), sec.diam3d(i))
-  return result
+    result = "\n"
+    for sec in h.allsec():
+        r = [h.ref(0) for _ in range(3)]
+        pseg = sec.parentseg()
+        px = ("parent %s(%g)" % (pseg.sec.name(), pseg.x)) if pseg is not None else ""
+        style = ""
+        if sec.pt3dstyle():
+            h.pt3dstyle(1, r[0], r[1], r[2], sec=sec)
+            style = [i[0] for i in r]
+        result += "%s L=%g %s %s\n" % (str(sec), sec.L, str(style), px)
+        for i in range(sec.n3d()):
+            result += " %d   %g %g %g %g\n" % (
+                i,
+                sec.x3d(i),
+                sec.y3d(i),
+                sec.z3d(i),
+                sec.diam3d(i),
+            )
+    return result
+
 
 def cleanup():
-  global ig
-  for sec in h.allsec():
-    h.delete_section(sec=sec)
-  if ig:
-    ig.box.unmap()
-    ig = None
+    global ig
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
+    if ig:
+        ig.box.unmap()
+        ig = None
 
-shapebox=None
+
+shapebox = None
+
+
 def show_nrnshape():
-  global shapebox
-  h.load_file("shapebox.hoc")
-  if shapebox:
-    shapebox.unmap()
-    shapebox = None
-  shapebox = h.VBox()
-  shapebox.intercept(True)
-  h.makeMenuExplore()
-  shapebox.intercept(False)
-  shapebox.map("NEURON ShapeName", 100, 500, -1, -1)
+    global shapebox
+    h.load_file("shapebox.hoc")
+    if shapebox:
+        shapebox.unmap()
+        shapebox = None
+    shapebox = h.VBox()
+    shapebox.intercept(True)
+    h.makeMenuExplore()
+    shapebox.intercept(False)
+    shapebox.map("NEURON ShapeName", 100, 500, -1, -1)
+
 
 def show(tdat):
-  global ig
-  cleanup()
-  ig = mkswc(tdat)
-  show_nrnshape()
-  
+    global ig
+    cleanup()
+    ig = mkswc(tdat)
+    show_nrnshape()
+
+
 if __name__ == "__main__":
-  ig = None
-  h.xpanel("Choose an swc example")
-  for i, dat in enumerate(tst_data):
-    s = str(i) + dat.split('\n')[1]
-    h.xradiobutton(s, (show, dat))
-  h.xpanel(80, 200)
-    
-tst_result=['''
+    ig = None
+    h.xpanel("Choose an swc example")
+    for i, dat in enumerate(tst_data):
+        s = str(i) + dat.split("\n")[1]
+        h.xradiobutton(s, (show, dat))
+    h.xpanel(80, 200)
+
+tst_result = [
+    """
 soma[0] L=20  
  0   -10 0 0 20
  1   0 0 0 20
@@ -272,7 +305,8 @@ dend[1] L=10 [0.0, 0.0, 0.0] parent soma[0](0.5)
 dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
  0   10 0 0 1
  1   10 5 0 2
-''','''
+""",
+    """
 soma[0] L=4  
  0   0 0 0 20
  1   2 0 0 20
@@ -280,7 +314,8 @@ soma[0] L=4
 dend[0] L=8 [2.0, 0.0, 0.0] parent soma[0](0.5)
  0   2 10 0 2
  1   2 18 0 2
-''','''
+""",
+    """
 soma[0] L=10  
  0   0 0 0 10
  1   10 0 0 6
@@ -299,7 +334,8 @@ dend[1] L=10  parent soma[1](1)
 dend[2] L=10  parent soma[2](1)
  0   -8 6 0 2
  1   -16 12 0 2
-''','''
+""",
+    """
 soma[0] L=20  
  0   0 0 0 10
  1   10 0 0 6
@@ -333,7 +369,8 @@ dend[5] L=11 [15.0, 0.0, 0.0] parent soma[0](0.5)
 dend[6] L=5 [-8.0, 6.0, 0.0] parent soma[2](0.5)
  0   -8 10 0 2
  1   -8 15 0 2
-''','''
+""",
+    """
 soma[0] L=20  
  0   0 0 0 10
  1   10 0 0 6
@@ -396,7 +433,8 @@ dend[11] L=10 [-20.0, 15.0, 0.0] parent soma[3](0.5)
 dend[12] L=10.198  parent soma[3](1)
  0   -28 21 0 2
  1   -30 31 0 2
-''','''
+""",
+    """
 soma[0] L=5  
  0   0 0 0 10
  1   5 0 0 6
@@ -412,7 +450,8 @@ dend[1] L=5  parent soma[1](1)
 dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0)
  0   0 5 0 2
  1   0 10 0 2
-''','''
+""",
+    """
 soma[0] L=10  
  0   -5 0 0 10
  1   0 0 0 10
@@ -426,7 +465,8 @@ dend[1] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
 dend[2] L=5 [0.0, 0.0, 0.0] parent soma[0](0.5)
  0   0 5 0 2
  1   0 10 0 2
-''','''
+""",
+    """
 soma[0] L=4  
  0   0 0 0 20
  1   2 0 0 20
@@ -434,7 +474,8 @@ soma[0] L=4
 dend[0] L=8 [2.0, 0.0, 0.0] parent soma[0](0.5)
  0   2 1 0 2
  1   2 9 0 2
-''','''
+""",
+    """
 soma[0] L=6  
  0   0 0 0 20
  1   3 0 0 20
@@ -443,7 +484,8 @@ soma[0] L=6
 dend[0] L=8 [3.0, 0.0, 0.0] parent soma[0](0.5)
  0   2 1 0 2
  1   2 9 0 2
-''','''
+""",
+    """
 dend[0] L=10  
  0   0 0 0 2
  1   10 0 0 2
@@ -453,7 +495,8 @@ dend[1] L=10  parent dend[0](1)
 dend[2] L=20  parent dend[0](1)
  0   10 0 0 2
  1   10 20 0 2
-''','''
+""",
+    """
 soma[0] L=10  
  0   -11 0 0 10
  1   -1 0 0 10
@@ -467,7 +510,8 @@ dend[1] L=10  parent dend[0](1)
 dend[2] L=20  parent dend[0](1)
  0   10 0 0 2
  1   10 20 0 2
-''','''
+""",
+    """
 dend[0] L=10  
  0   0 0 0 2
  1   10 0 0 2
@@ -479,7 +523,8 @@ dend[2] L=20  parent dend[0](1)
  0   10 0 0 2
  1   10 1 0 2
  2   10 20 0 2
-''','''
+""",
+    """
 dend[0] L=10  
  0   0 0 0 6
  1   2 0 0 2
@@ -488,30 +533,33 @@ dend[1] L=10  parent dend[0](0)
  0   0 0 0 6
  1   -2 0 0 2
  2   -10 0 0 2
-''','''
+""",
+    """
 soma[0] L=10  
  0   -11 0 0 10
  1   -1 0 0 10
-''','''
+""",
+    """
 soma[0] L=1  
  0   -0.5 0 0 1
  1   0 0 0 1
  2   0.5 0 0 1
-''','''
+""",
+    """
 soma[0] L=1  
  0   -0.5 0 0 1
  1   0 0 0 1
  2   0.5 0 0 1
-''']
+""",
+]
+
 
 def test_swc():
-  global ig
-  ig = None
-  cleanup()
-  for i, dat in enumerate(tst_data):
-    print ("test %d"%i)
-    ig = mkswc(dat)
-    assert(secinfo() == tst_result[i])
+    global ig
+    ig = None
     cleanup()
-
-
+    for i, dat in enumerate(tst_data):
+        print("test %d" % i)
+        ig = mkswc(dat)
+        assert secinfo() == tst_result[i]
+        cleanup()

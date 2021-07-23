@@ -209,7 +209,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python2.7;python3.6;python3.7;python3.8"
+    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -455,20 +455,6 @@ NRN_ENABLE_THREADS:BOOL=ON
 NRN_USE_REL_RPATH=OFF
 ---------------------
   Turned on when creating python wheels.  
-
-NRN_ENABLE_BINARY_SPECIAL:BOOL=OFF
-----------------------------------
-  Build binary special  
-
-  nrnivmodl by default creates shell script called 'special' which runs nrniv and specifies the argument
-  ``-dll /path/to/libnrnmech.so`` or whatever the name is of the shared library created by nrnivmodl.
-  This option forces nrnivmodl to create a binary version of special that can be run, for example, with gdb or valgrind.
-
-  It is not often needed as nrniv has a ``-dll <path/to/libnrnmech.so>`` option.
-  Also by default, if the current working directory on launch has a folder named
-  ``x86_64`` (or whatever the CPU happens to be), the nrnmech library in that
-  folder will be automatically loaded.
-
 
 NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
 -------------------------------------

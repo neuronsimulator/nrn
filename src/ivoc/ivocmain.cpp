@@ -824,17 +824,6 @@ ENDGUI
 	}
 
 	if (nrn_is_python_extension) { return 0; }
-#if defined(CYGWIN) && defined(HAVE_SETENV)
-	if (!isdir("/usr/lib/python2.5")) {
-		char* buf = new char[strlen(neuron_home) + 20];
-		sprintf(buf, "%s/lib/%s", neuron_home, "python2.5");
-		if (isdir(buf)) {
-			setenv("PYTHONHOME", neuron_home, 0);
-		}
-		delete [] buf;
-
-	}
-#endif
 	//printf("p_nrnpython_start = %p\n", p_nrnpython_start);
 	if (p_nrnpython_start) { (*p_nrnpython_start)(1); }
 	if (use_python_interpreter && !p_nrnpython_start) {

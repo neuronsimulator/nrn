@@ -40,14 +40,14 @@ def test_multicompartment_reactions(neuron_instance):
 
     cyt = rxd.Region(
         h.allsec(),
-        name='cyt',
-        nrn_region='i',
+        name="cyt",
+        nrn_region="i",
         geometry=rxd.FractionalVolume(fc, surface_fraction=1),
     )
 
-    er = rxd.Region(h.allsec(), name='er', geometry=rxd.FractionalVolume(fe / 2.0))
+    er = rxd.Region(h.allsec(), name="er", geometry=rxd.FractionalVolume(fe / 2.0))
     cyt_er_membrane = rxd.Region(
-        h.allsec(), name='mem', geometry=rxd.ScalableBorder(1, on_cell_surface=False)
+        h.allsec(), name="mem", geometry=rxd.ScalableBorder(1, on_cell_surface=False)
     )
     ca = rxd.Species([cyt, er], d=caDiff, name="ca", charge=2, initial=caCYT_init)
 
@@ -69,9 +69,11 @@ def test_multicompartment_reactions(neuron_instance):
         ca[er], ca[cyt], gleak, gleak, membrane=cyt_er_membrane
     )
     # test the SpeciesOnRegion remains in scope
-    ip3rg = rxd.Rate(ip3r_gate_state[cyt_er_membrane], 
-                     (1.0 / (1 + 1000.0 * ca[cyt] / (0.3)) - 
-                     ip3r_gate_state[cyt_er_membrane]) / ip3rtau)
+    ip3rg = rxd.Rate(
+        ip3r_gate_state[cyt_er_membrane],
+        (1.0 / (1 + 1000.0 * ca[cyt] / (0.3)) - ip3r_gate_state[cyt_er_membrane])
+        / ip3rtau,
+    )
 
     h.finitialize(-65)
 

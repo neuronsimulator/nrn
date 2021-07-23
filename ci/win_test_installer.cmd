@@ -21,8 +21,6 @@ echo %PYTHONPATH%
 echo %NEURONHOME%
 
 :: test all pythons
-C:\Python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
-C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -43,10 +41,15 @@ mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || set "errorfound=y"
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || set "errorfound=y"
 
 :: test of association with hoc files
-start %cd%\ci\association.hoc
-ping -n 15 127.0.0.1
-cat temp.txt
-findstr /i "^hello$" temp.txt || set "errorfound=y"
+:: disable if SKIP_ASSOCIATION_TEST is set
+IF "%SKIP_ASSOCIATION_TEST%"=="" (
+  start %cd%\ci\association.hoc
+  ping -n 20 127.0.0.1
+  cat temp.txt
+  findstr /i "^hello$" temp.txt || set "errorfound=y"
+) else (
+  echo "SKIP_ASSOCIATION_TEST is set, skipping HOC association test"
+)
 
 :: setup for mknrndll/nrnivmodl
 set N=C:\nrn_test
@@ -63,6 +66,9 @@ copy /A share\examples\nrniv\nmodl\cacum.mod .
 call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
+
+:: text rxd
+python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 echo "All tests finished!"
 
