@@ -449,7 +449,8 @@ BBSS_TxtFileIn::~BBSS_TxtFileIn() {
 }
 void BBSS_TxtFileIn::i(int& j, int chk) {
 	int k;
-	nrn_assert(fscanf(f, "%d\n", &k) == 1);
+	int rval = fscanf(f, "%d\n", &k);
+	assert(rval == 1);
 	if (chk) {
 		assert (j == k);
 	}
@@ -1360,11 +1361,13 @@ void BBSaveState::mk_pp2de() {
 static Int2DblList* presyn_queue;
 
 static void del_presyn_info() {
-    for (const auto& dl : *presyn_queue) {
-		delete dl.second;
+	if (presyn_queue) {
+		for (const auto& dl : *presyn_queue) {
+			delete dl.second;
+		}
+		delete presyn_queue;
+		presyn_queue = 0;
 	}
-	delete presyn_queue;
-	presyn_queue = 0;
 	if (nc2dblist) {
 	    for(const auto& dl : *nc2dblist) {
 			delete dl.second;
@@ -2023,7 +2026,9 @@ f->s(buf, 1);
                         double x = db->item(i);
                         f->d(1, x);
                     }
-                }
+                }else{
+		    f->i(j);
+		}
 			}else{
 				f->i(j);
 			}		
@@ -2213,6 +2218,7 @@ static void scatteritems() {
 	}
 	// counts to send to each destination rank
 	for (const auto& pair : *src2send) {
+		int gid = pair.first;
 		int host = gid%nrnmpi_numprocs;
 		++cnts[host];
 		dcnts[host] += pair.second->count();
@@ -2227,6 +2233,7 @@ static void scatteritems() {
 	for (i=0; i < nrnmpi_numprocs; ++i) { cnts[i] = 0; dcnts[i] = 0; }
 	for(const auto& pair : *src2send) {
 	    const auto dl = pair.second;
+		int gid = pair.first;
 		host = gid%nrnmpi_numprocs;
 		gidsrc[off[host] + cnts[host]] = gid;
 		ndsrc[off[host] + cnts[host]++] = dl->count();
@@ -2407,7 +2414,7 @@ static void construct_presyn_queue() {
 		mdcnt = 0;
 		for (const auto& pair : *m) {
 		    auto dl = pair.second;
-			gidsrc[mcnt] = gid;
+			gidsrc[mcnt] = pair.first;
 			tssrc_cnt[mcnt] = dl->count();
 			for (int i=0; i < dl->count(); ++i) {
 				tssrc[mdcnt++] = dl->item(i);
@@ -2580,13 +2587,13 @@ f->s(buf, 1);
 #if QUEUECHECK
 static void bbss_queuecheck() {
 	construct_presyn_queue();
-	for (const auto& pair : *queuecheck_gid2unc) {
+	if (queuecheck_gid2unc) for (const auto& pair : *queuecheck_gid2unc) {
 	    auto gid = pair.first;
 	    auto dl = pair.second;
 		DblList* dl2;
 		const auto& dl2iter = presyn_queue->find(gid);
 		if (dl2iter != presyn_queue->end()) {
-		    dl = dl2iter->second;
+		    dl2 = dl2iter->second;
 			if (dl->count() == dl2->count()) {
 				for (int i=0; i < dl->count(); i += 2) {
 if ((fabs(dl->item(i) - dl2->item(i)) > 1e-12) || dl->item(i+1) != dl2->item(i+1)) {
@@ -2620,32 +2627,15 @@ printf("error: gid=%d expect no spikes but some on queue\n", gid);
 			printf("\n");
 		}
 	}
-#if 0
-	printf("undelivered netcons\n");
-	NrnHashIterateKeyValue(Int2DblList, queuecheck_gid2unc, int, gid, DblList*, dl) {
-		printf("%d", gid);
-		for (int i=0; i < dl->count()-1; i += 2) {
-			printf("   %g %d", dl->item(i), int(dl->item(i+1)));
-		}
-		printf("\n");
-	}}}	
-#endif
-#if 0
-	printf("presyn_queue\n");
-	NrnHashIterateKeyValue(Int2DblList, presyn_queue, int, gid, DblList*, dl) {
-		printf("%d", gid);
-		for (int i=0; i < dl->count()-1; i += 2) {
-			printf("   %g %d", dl->item(i), int(dl->item(i+1)));
-		}
-		printf("\n");
-	}}}
-#endif
+
 	//cleanup
-	for (const auto& pair : *queuecheck_gid2unc) {
-		delete pair.second;
+	if (queuecheck_gid2unc) {
+		for (const auto& pair : *queuecheck_gid2unc) {
+			delete pair.second;
+		}
+		delete queuecheck_gid2unc;
+		queuecheck_gid2unc = 0;
 	}
-	delete queuecheck_gid2unc;
-	queuecheck_gid2unc = 0;
 	del_presyn_info();
 }
 #endif /*QUEUECHECK*/
