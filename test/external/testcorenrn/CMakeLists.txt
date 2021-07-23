@@ -9,7 +9,7 @@ if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
   # https://github.com/BlueBrain/nmodl/issues/311
   list(APPEND modfiles mod/hhkin.mod)
   # These tests depend on the modfiles on the line above.
-  list(APPEND spike_comparison_tests conc deriv kin)
+  list(APPEND spike_comparison_tests conc kin) #TODO: put back `deriv` test
   # https://github.com/BlueBrain/nmodl/issues/675
   list(APPEND spike_comparison_tests gf)
   # https://github.com/BlueBrain/nmodl/issues/678
