@@ -282,8 +282,7 @@ static bool use_gidcompress_;
 
 static int callback_mode;
 static void tqcallback(const TQItem* tq, int i);
-declarePtrList(TQItemList, TQItem)
-implementPtrList(TQItemList, TQItem)
+typedef std::vector<TQItem*> TQItemList;
 static TQItemList* tq_presyn_fanout;
 static TQItemList* tq_removal_list;
 
@@ -768,11 +767,10 @@ static void bbss_remove_delivered() {
 	// that have already been delivered the PreSyn items that have
 	// NetCon delivery times < t need to get fanned out to NetCon items
 	// on the queue before checking the times.
-	tq_presyn_fanout = new TQItemList(100);
+	tq_presyn_fanout = new TQItemList();
 	callback_mode = 2;
 	tq->forall_callback(tqcallback);
-	for (int i = tq_presyn_fanout->count()-1; i >= 0; --i) {
-		TQItem* qi = tq_presyn_fanout->item(i);
+	for (TQItem* qi: *tq_presyn_fanout) {
 		double td = qi->t_;
 		PreSyn* ps = (PreSyn*)qi->data_;
 		tq->remove(qi);
@@ -781,11 +779,10 @@ static void bbss_remove_delivered() {
 	delete tq_presyn_fanout;
 
 	// now everything on the queue which is subject to removal is a NetCon
-	tq_removal_list = new TQItemList(100);
+	tq_removal_list = new TQItemList();
 	callback_mode = 3;
 	tq->forall_callback(tqcallback);
-	for (int i = tq_removal_list->count()-1; i >= 0; --i) {
-		TQItem* qi = tq_removal_list->item(i);
+	for (TQItem* qi: *tq_removal_list) {
 		int type = ((DiscreteEvent*)qi->data_)->type();
 if (type != NetConType) {
 printf("%d type=%d\n", nrnmpi_myid, type);
@@ -1292,7 +1289,7 @@ static void tqcallback(const TQItem* tq, int i) {
 PreSyn* ps = (PreSyn*)tq->data_;
 printf("PreSyn %d deliver %g\n", ps->gid_, tq->t_);
 			if (tq->t_ < t) {
-				tq_presyn_fanout->append((TQItem*)tq);
+				tq_presyn_fanout->push_back((TQItem*)tq);
 			}
 		}
 	    }
@@ -1313,7 +1310,7 @@ printf("%d Have not decided whether to remove this event\n", nrnmpi_myid);
 		}
 		if (td < tt) {
 //((DiscreteEvent*)tq->data_)->pr("tq_removal_list", td, net_cvode_instance);
-			tq_removal_list->append((TQItem*)tq);
+			tq_removal_list->push_back((TQItem*)tq);
 		}
 	    }
 		break;
