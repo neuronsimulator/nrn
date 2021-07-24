@@ -549,18 +549,42 @@ static void destruct(void* v) {
 }
 
 static double save(void* v) {
+	usebin_ = 0;
         BBSaveState* ss = (BBSaveState*)v;
 	BBSS_IO* io = new BBSS_TxtFileOut(gargstr(1));
+	io->d(1, nrn_threads->_t); // save time
         ss->apply(io);
 	delete io;
         return 1.;
 }
 
+static void bbss_restore_begin() {
+	clear_event_queue();
+
+	// turn off compression. Will turn back on in bbss_restore_done.
+#if NRNMPI
+	use_spikecompress_ = nrn_use_compress_;
+	use_gidcompress_ = nrn_use_localgid_;
+	nrn_use_compress_ = false;
+	nrn_use_localgid_ = false;
+#endif
+
+	if (nrn_use_bin_queue_) {
+		nrn_binq_enqueue_error_handler = bbss_early;
+	}
+}
+
 static double restore(void* v) {
+	usebin_ = 0;
         BBSaveState* ss = (BBSaveState*)v;
 	BBSS_IO* io = new BBSS_TxtFileIn(gargstr(1));
+	io->d(1, t);
+	nrn_threads->_t = t; // single thread assumption here
+
+	bbss_restore_begin();
         ss->apply(io);
 	delete io;
+	bbss_restore_done(0);
         return 1.;
 }
 
@@ -844,19 +868,7 @@ static double restore_test(void* v) {
 	t = nrn_threads->_t;
 	delete io;
 	
- 	clear_event_queue();
-	// turn off compression. Will turn back on in bbs_restore_done.
-#if NRNMPI
-	use_spikecompress_ = nrn_use_compress_;
-	use_gidcompress_ = nrn_use_localgid_;
-	nrn_use_compress_ = false;
-	nrn_use_localgid_ = false;
-#endif
-
-	if (nrn_use_bin_queue_) {
-		nrn_binq_enqueue_error_handler = bbss_early;
-	}
-
+	bbss_restore_begin();
 	int len = ss->counts(&gids, &sizes);
 	for (int i = 0; i < len; ++i) {
 		char fn[200];
@@ -885,7 +897,7 @@ static double restore_test_bin(void* v) { //assumes whole cells
 	char* buf;
 	char fname[100];
 	FILE* f;
-	clear_event_queue();
+	bbss_restore_begin();
 	ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
 
 	sprintf(fname, "binbufin/global.size");

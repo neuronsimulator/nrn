@@ -164,10 +164,17 @@ def test_2():
 # BBSaveState for mixed (hoc and python cells) Ring.
 
 # some helpers copied from ../parallel_tests/test_bas.py
+def subprocess_run(cmd):
+  subprocess.run(cmd, shell=True).check_returncode()
+
 def rmfiles():
     if pc.id() == 0:
-        subprocess.run("rm -r -f bbss_out", shell=True)
-        subprocess.run("rm -r -f in", shell=True)
+        subprocess_run("rm -r -f bbss_out")
+        subprocess_run("rm -r -f in")
+        subprocess_run("rm -r -f binbufout")
+        subprocess_run("rm -r -f binbufin")
+        subprocess_run("mkdir binbufout")
+        subprocess_run("rm -f allcell-bbss.dat")
     pc.barrier()
 
 
@@ -202,17 +209,30 @@ def prun(tstop, mode=None):
     pc.set_maxstep(10 * ms)
     h.finitialize(-65 * mV)
 
-    if mode == "save":  # integrate to tstop/2 and save
-        rmfiles()
+    if mode == "save_test":  # integrate to tstop/2 and save
         pc.psolve(tstop / 2)
-
-        # BBSaveState Save
         bbss = h.BBSaveState()
-        bbss.save_test()
-    elif mode == "restore":
+        bbss.save_test() # creates separate file in bbss_out for each piece
+    elif mode == "save_test_bin":
+        pc.psolve(tstop / 2)
+        bbss = h.BBSaveState()
+        bbss.save_test_bin() # like save_test but binary wholecell in binbufout
+    elif mode == "save":
+        pc.psolve(tstop / 2)
+        bbss = h.BBSaveState()
+        bbss.save("allcell-bbss.dat") # single file for everything (nhost==1!)
+    elif mode == "restore_test":
         cp_out_to_in()  # prepare for restore.
         bbss = h.BBSaveState()
         bbss.restore_test()
+    elif mode == "restore_test_bin":
+        subprocess_run("mkdir binbufin")
+        subprocess_run("cp binbufout/* binbufin")
+        bbss = h.BBSaveState()
+        bbss.restore_test_bin()
+    elif mode == "restore": 
+        bbss = h.BBSaveState()
+        bbss.restore("allcell-bbss.dat")
 
     pc.psolve(tstop)  # integrate the rest of the way
 
@@ -254,6 +274,7 @@ def compare_dicts(dict1, dict2):
 
 
 def test_3():
+    rmfiles()
     hl = hlist()
     npo = hl.count()
 
@@ -304,18 +325,30 @@ def test_3():
     if "usetable_hh" not in dir(h):  # coreneuron has different hh.mod
         stdspikes = get_all_spikes(ring)
     compare_dicts(get_all_spikes(ring), stdspikes)
-
-    prun(100 * ms, mode="save")  # at tstop/2 does a BBSaveState.save
-    assert hl.count() == npo
-    compare_dicts(get_all_spikes(ring), stdspikes)
-
     stdspikes_after_50 = {}
     for gid in stdspikes:
         stdspikes_after_50[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= 50.0]
 
-    prun(100 * ms, mode="restore")  # BBSaveState restore to start at t = tstop/2
+    prun(100 * ms, mode="save_test")  # at tstop/2 does a BBSaveState.save
+    assert hl.count() == npo
+    compare_dicts(get_all_spikes(ring), stdspikes)
+
+    prun(100 * ms, mode="restore_test")  # BBSaveState restore to start at t = tstop/2
     assert hl.count() == npo
     compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+
+    # while we are at it check the BBSaveState binary file mode.
+    prun(100 * ms, mode="save_test_bin")
+    compare_dicts(get_all_spikes(ring), stdspikes)
+    prun(100 * ms, mode="restore_test_bin")
+    compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+
+    # while we are at it check the BBSaveState save/restore single file mode.
+    prun(100 * ms, mode="save")
+    compare_dicts(get_all_spikes(ring), stdspikes)
+    prun(100 * ms, mode="restore")
+    compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+    assert hl.count() == npo
 
     pc.gid_clear()
 
