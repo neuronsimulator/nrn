@@ -233,6 +233,7 @@ def prun(tstop, mode=None):
     elif mode == "restore": 
         bbss = h.BBSaveState()
         bbss.restore("allcell-bbss.dat")
+        bbss.vector_play_init() # just for coverage as there are none.
 
     pc.psolve(tstop)  # integrate the rest of the way
 
@@ -348,6 +349,20 @@ def test_3():
     compare_dicts(get_all_spikes(ring), stdspikes)
     prun(100 * ms, mode="restore")
     compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+    assert hl.count() == npo
+
+    # save_request works but not very useful as save_gid and restore_gid
+    # not implemented.
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    gids = h.Vector()
+    sizes = h.Vector()
+    bbss = h.BBSaveState()
+    ngid = bbss.save_request(gids, sizes)
+    assert ngid == len(ring.cells)
+    # prints "not implemented"
+    bbss.save_gid()
+    bbss.restore_gid()
     assert hl.count() == npo
 
     pc.gid_clear()

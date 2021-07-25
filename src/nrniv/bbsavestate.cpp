@@ -864,8 +864,8 @@ static double restore_test(void* v) {
 	BBSaveState* ss = (BBSaveState*)v;
 	// restore global time
 	BBSS_IO* io = new BBSS_TxtFileIn("in/tmp");
-	io->d(1, nrn_threads->_t);
-	t = nrn_threads->_t;
+	io->d(1, t);
+	nrn_threads->_t = t;
 	delete io;
 	
 	bbss_restore_begin();
@@ -957,9 +957,10 @@ static Member_func members[] = {
         "restore", restore,
 	"save_test", save_test,
 	"restore_test", restore_test,
+	// binary test
 	"save_test_bin", save_test_bin,
 	"restore_test_bin", restore_test_bin,
-	// binary test
+	// binary save/restore interface to interpreter
 	"save_request", save_request,
 	"save_gid", save_gid,
 	"restore_gid", restore_gid,
