@@ -294,8 +294,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME spikes_mpi_file_mode_py
       REQUIRES coreneuron
       PROCESSORS 2
-      COMMAND NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${modtests_launch_py_mpi}
-              test/coreneuron/test_spikes.py)
+      COMMAND
+        NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${MPIEXEC_NAME}
+        ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -python -pyexe
+        ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py)
   endif()
 endif()
 
