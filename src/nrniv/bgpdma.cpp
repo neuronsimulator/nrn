@@ -720,6 +720,8 @@ static void bgpdma_cleanup() {
 void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (!use_bgpdma_) { return; }
+	//not sure this is useful for debugging when stuck in a collective.
+	//nrntimeout_call = bgptimeout;
 	double wt = nrnmpi_wtime();
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
