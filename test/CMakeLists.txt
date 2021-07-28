@@ -289,15 +289,34 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         PROCESSORS 2
         COMMAND NRN_TEST_SPIKES_MPI4PY=1 ${modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
     endif()
+    # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
+    # discussion. Launching this test via `python` (not `special`) does not work on Linux with
+    # OpenMPI 2.x and without dynamic MPI enabled in NEURON, which corresponds to the GitHub Actions
+    # environment. GPU builds are already launched using `special`.
+    if(NOT NRN_ENABLE_MPI_DYNAMIC
+       AND NOT CORENEURON_ENABLE_GPU
+       AND NRN_HAVE_OPENMPI2_OR_LESS)
+      set(launch_spikes_mpi_file_mode_py
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          2
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -python
+          -pyexe
+          ${PYTHON_EXECUTABLE})
+      message(STATUS "Hitting workaround")
+    else()
+      set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
+    endif()
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_mpi_file_mode_py
       REQUIRES coreneuron
       PROCESSORS 2
-      COMMAND
-        NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${MPIEXEC_NAME}
-        ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -python -pyexe
-        ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py)
+      COMMAND NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
+              ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
   endif()
 endif()
 
