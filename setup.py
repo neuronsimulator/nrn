@@ -12,9 +12,10 @@ from setuptools import setup
 
 
 class Components:
-    RX3D = True
-    IV = True
-    MPI = True
+    RX3D = False
+    IV = False
+    MPI = False
+    GPU = True
 
 
 if os.name != "posix":
@@ -44,12 +45,20 @@ except Exception as e:
     raise RuntimeError("Could not get version from Git repo : " + str(e))
 
 
-# RX3D must be checked for very early as it changes imports
+# setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
     Components.RX3D = False
     sys.argv.remove("--disable-rx3d")
-    from setuptools.command.build_ext import build_ext
-else:
+
+if "--disable-iv" in sys.argv:
+    Components.IV = False
+    sys.argv.remove("--disable-iv")
+
+if "--disable-mpi" in sys.argv:
+    Components.MPI = False
+    sys.argv.remove("--disable-mpi")
+
+if Components.RX3D:
     try:
         from Cython.Distutils import Extension as CyExtension
         from Cython.Distutils import build_ext
@@ -59,14 +68,8 @@ else:
             "ERROR: RX3D wheel requires Cython and numpy. Please install beforehand"
         )
         sys.exit(1)
-
-if "--disable-iv" in sys.argv:
-    Components.IV = False
-    sys.argv.remove("--disable-iv")
-
-if "--disable-mpi" in sys.argv:
-    Components.MPI = False
-    sys.argv.remove("--disable-mpi")
+else:
+    from setuptools.command.build_ext import build_ext
 
 
 class CMakeAugmentedExtension(Extension):
@@ -184,6 +187,8 @@ class CMakeAugmentedBuilder(build_ext):
             "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
+            "-DNO_CPP_WARNINGS=ON",
+            "-DNRN_ENABLE_INTERNAL_READLINE=" + readline_flag,
         ] + ext.cmake_flags
         # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
@@ -325,7 +330,7 @@ def setup_package():
             ["src/nrnpython/inithoc.cpp"],
             cmake_collect_dirs=NRN_COLLECT_DIRS,
             cmake_flags=[
-                "-DNRN_ENABLE_CORENEURON=OFF",
+                "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.GPU else "OFF"),
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
@@ -335,7 +340,15 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
-            ],
+                "-DCXX_NO_WARN=ON",
+            ] + ([
+                "-DCORENRN_ENABLE_GPU=ON",
+                "-DCORENRN_ENABLE_MPI=OFF",
+                "-DCMAKE_C_COMPILER=nvc",
+                "-DCMAKE_CXX_COMPILER=nvc++",
+                #"-DCMAKE_C_FLAGS=-static-nvidia",
+                #"-DCMAKE_CXX_FLAGS=-static-nvidia"
+            ] if Components.GPU else []),
             include_dirs=[
                 "src",
                 "src/oc",

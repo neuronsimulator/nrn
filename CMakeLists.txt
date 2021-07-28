@@ -170,6 +170,10 @@ include(cmake/Coverage.cmake)
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 include(ReleaseDebugAutoFlags)
 
+if(DEFINED CXX_NO_WARN)
+  add_definitions(-w)
+endif()
+
 # =============================================================================
 # Find required packages
 # =============================================================================
