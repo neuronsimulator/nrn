@@ -1462,7 +1462,8 @@ static void base2spgid_item(int spgid, Object* obj) {
 	if (spgid == base || !base2spgid->count(base)) {
 		(*base2spgid)[base] = spgid;
 	}
-	if (obj && !obj->secelm_) {
+	if (obj && !obj->secelm_ && !is_point_process(obj)) {
+		// must be Python Cell
 		hoc_obj_unref(obj);
 	}
 }
@@ -1513,7 +1514,7 @@ int BBSaveState::counts(int** gids, int** cnts) {
 		c->ni = c->nd = c->ns = c->nl = 0;
 		Object* obj = nrn_gid2obj(spgid);
 		gidobj(spgid, obj);
-		if (obj && !obj->secelm_) {
+		if (obj && !obj->secelm_ && !is_point_process(obj)) {
 			hoc_obj_unref(obj);
 		}
 		(*cnts)[gidcnt] = c->bytecnt();
@@ -1548,7 +1549,7 @@ void BBSaveState::gid2buffer(int gid, char* buffer, int size) {
 	f = new BBSS_BufferOut(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
-	if (obj && !obj->secelm_) {
+	if (obj && !obj->secelm_ && !is_point_process(obj)) {
 		hoc_obj_unref(obj);
 	}
 	delete f;
@@ -1561,7 +1562,7 @@ void BBSaveState::buffer2gid(int gid, char* buffer, int size) {
 	f = new BBSS_BufferIn(buffer, size);
 	Object* obj = nrn_gid2obj(gid);	
 	gidobj(gid, obj);
-	if (obj && !obj->secelm_) {
+	if (obj && !obj->secelm_ && !is_point_process(obj)) {
 		hoc_obj_unref(obj);
 	}
 	delete f;
@@ -1570,7 +1571,7 @@ void BBSaveState::buffer2gid(int gid, char* buffer, int size) {
 
 static void cb_gidobj(int gid, Object* obj) {
 	bbss->gidobj(gid, obj);
-	if (obj && !obj->secelm_) {
+	if (obj && !obj->secelm_ && !is_point_process(obj)) {
 		hoc_obj_unref(obj);
 	}
 }
@@ -1589,7 +1590,7 @@ void BBSaveState::gidobj(int basegid) {
 	spgid = spgiditer->second;
 	obj = nrn_gid2obj(spgid);
 	gidobj(spgid, obj);
-	if (obj && !obj->secelm_) {
+	if (obj && !obj->secelm_ && !is_point_process(obj)) {
 		hoc_obj_unref(obj);
 	}
 }
@@ -1966,6 +1967,7 @@ void BBSaveState::mech(Prop* p) {
 			double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
 		}
 		int sz = int(xdir);
+	    if (sz > 0) {
 		xval = new double[sz];
 
 		hoc_pushpx(&xdir);
@@ -1990,6 +1992,7 @@ void BBSaveState::mech(Prop* p) {
 			f->d(sz, xval);
 		}
 		delete [] xval;
+	    }
 	}
 	if (debug) { sprintf(dbuf, "Leave mech(prop type %d)", p->type); PDEBUG; }
 }
@@ -2004,10 +2007,11 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
 	// associated NetCon, and queue SelfEvent
 	DEList* dl, *dl1;
 	const auto& dliter = pp2de->find(pp);
-	if (dliter == pp2de->end()) {dl = 0;}
-	else {
-	    dl = dliter->second;
-    }
+	if (dliter == pp2de->end()) {
+		dl = 0;
+	} else {
+		dl = dliter->second;
+	}
 	int cnt = 0;
 	// dl has the NetCons first then the SelfEvents
 	// NetCon
@@ -2024,18 +2028,18 @@ f->s(buf, 1);
 			DblList* db = 0;
 			int j = 0;
 			if (nc2dblist) {
-                const auto& dbiter = nc2dblist->find(nc);
-                if (dbiter != nc2dblist->end()) {
-                    db = dbiter->second;
-                    j = db->size();
-                    f->i(j);
-                    for (int i = 0; i < j; ++i) {
-                        double x = (*db)[i];
-                        f->d(1, x);
-                    }
-                }else{
-		    f->i(j);
-		}
+		                const auto& dbiter = nc2dblist->find(nc);
+				if (dbiter != nc2dblist->end()) {
+					db = dbiter->second;
+					j = db->size();
+					f->i(j);
+					for (int i = 0; i < j; ++i) {
+						double x = (*db)[i];
+						f->d(1, x);
+					}
+				}else{
+					f->i(j);
+				}
 			}else{
 				f->i(j);
 			}		
@@ -2066,12 +2070,15 @@ f->s(buf, 1);
 			}
 		}
 	}
+	// Count SelfEvents. At this point, for restore, there are no
+	// SelfEvents (so cnt is 0) because the queue has been cleared.
 	for (cnt = 0, dl1 = dl; dl1 && dl1->de->type() == SelfEventType; dl1 = dl1->next) {
 		++cnt;
 	}
 	f->i(cnt);
-	// SelfEvent existence depends on state and for reading the queue
-	// is empty. So count and save is different from  restore
+	// SelfEvent existence depends on state. For reading the queue
+	// is empty. So count and save is different from restore.
+
 	if (f->type() != BBSS_IO::IN) {
 		for (; dl && dl->de->type() == SelfEventType; dl = dl->next) {
 			SEWrap* sew = (SEWrap*)dl->de;
@@ -2087,6 +2094,8 @@ f->s(buf);
 			f->i(moff);
 		}		
 	}else{ // restore
+		// For restore it is necessary to create the proper SelfEvents.
+		// since the queue has been cleared.
 		for (int i=0; i < cnt; ++i) {
 			int ncindex, moff;
 			double flag, tt, *w;
@@ -2095,21 +2104,33 @@ f->s(buf);
 			f->d(1, tt);
 			f->i(ncindex);
 			f->i(moff);
-			void** movable = 0;
+			void** movable = NULL;
+			TQItem* tqi;
+			// new SelfEvent item mostly filled in.
+			// But starting out with NULL weight vector and
+			// flag=1 so that tqi->data is the new SelfEvent
+			net_send((void**)&tqi, NULL, pp, tt, 1.0);
+			assert(tqi && tqi->data_ && ((DiscreteEvent*)tqi->data_)->type() == SelfEventType);
+			SelfEvent* se = (SelfEvent*)tqi->data_;
+			se->flag_ = flag;
 			if(moff >= 0) {
 				movable = &(pp->prop->dparam[moff]._pvoid);
+				if (flag == 1) {
+					*movable = tqi;
+				}
+				se->movable_ = movable;
 			}
 			if (ncindex == -1) {
-				w = 0;
+				w = NULL;
 			}else{
 				int j;
-				for (j=0, dl1 = dl; j < ncindex; ++j, dl1 = dl1->next) {
+				for (j=0, dl1 = dliter->second; j < ncindex; ++j, dl1 = dl1->next) {
 					;
 				}
 				assert(dl1 && dl1->de->type() == NetConType);
 				w = ((NetCon*)dl1->de)->weight_;
 			}
-			net_send(movable, w, pp, tt, flag);
+			se->weight_ = w;
 		}
 	}
 	if (debug) { sprintf(dbuf, "Leave netrecv_pp(pp prop type %d)", pp->prop->type); PDEBUG; }

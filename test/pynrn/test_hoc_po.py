@@ -367,9 +367,68 @@ def test_3():
 
     pc.gid_clear()
 
+def test_4(): # for some extra coverage of BBSaveState
+    # NetStim ring
+    ncell = 2
+    gids = range(pc.id(), ncell, pc.nhost())
+    cells = {}
+    for gid in gids:
+        cells[gid] = h.NetStim()
+        cell = cells[gid]
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(cell, None))
+        cell.interval = 1
+        cell.number = 3 # >1 has no effect but helps with coverage
+        cell.start = 1 if gid == 0 else -1 # gid 0 initiates spike
+        cell.noise = 0.1
+        cell.noiseFromRandom123(gid, 0, 0)
+    netcons = [pc.gid_connect((gid+ncell-1)%ncell, cells[gid]) for gid in gids]
+    for netcon in netcons:
+      netcon.weight[0] = 1
+
+    spiketimes = h.Vector()
+    spikegids = h.Vector()
+    pc.spike_record(-1, spiketimes, spikegids)
+
+    def run(tstop, mode=None):
+        pc.set_maxstep(10)
+        h.finitialize()
+        if mode == "save_test":
+            pc.psolve(tstop/2)
+            h.BBSaveState().save_test()
+        elif mode == "restore_test":
+            cp_out_to_in()
+            h.BBSaveState().restore_test()
+        pc.psolve(tstop)
+
+    tstop = 20
+    run(tstop)
+    spiketimes_std = spiketimes.c()
+    spikegids_std = spikegids.c()
+    def cmpspikes(tbegin, tvec, gidvec):
+        i = tvec.indwhere(">=", tbegin)
+        j = spiketimes_std.indwhere(">=", tbegin)
+        print("i=", i, j)
+        tvec.c(i).printf()
+        gidvec.c(i).printf()
+        spiketimes_std.c(j).printf()
+        spikegids_std.c(j).printf()
+        assert tvec.c(i).eq(spiketimes_std.c(j))
+        assert gidvec.c(i).eq(spikegids_std.c(j))
+
+    run(20, mode="save_test")
+    cmpspikes(0.0, spiketimes, spikegids)
+    
+    run(20, mode ="restore_test")
+    cmpspikes(tstop/2., spiketimes, spikegids)
+    for i, t in enumerate(spiketimes):
+        print(t, spikegids[i])
+
+    pc.gid_clear()
 
 if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
+    test_4()
     h.allobjects()

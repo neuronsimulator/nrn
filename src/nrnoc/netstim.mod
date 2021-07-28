@@ -296,6 +296,32 @@ NET_RECEIVE (w) {
 	}
 }
 
+FUNCTION bbsavestate() {
+  bbsavestate = 0
+  : limited to noiseFromRandom123
+VERBATIM
+  if (_ran_compat == 2) {
+    nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+    char which;
+    uint32_t seq;
+    double *xdir, *xval;
+    xdir = hoc_pgetarg(1);
+    if (*xdir == -1.) { *xdir = 2; return 0.0; }
+    xval = hoc_pgetarg(2);
+    if (*xdir == 0.) {
+      nrnran123_getseq(*pv, &seq, &which);
+      xval[0] = (double)seq;
+      xval[1] = (double)which;
+    }
+    if (*xdir == 1) {
+      nrnran123_setseq(*pv, (uint32_t)xval[0], (char)xval[1]);
+      printf("%d %d\n", xval[0]==20.0, xval[1] == 21.0);
+    }
+  } // else do nothing
+ENDVERBATIM
+}
+
+
 COMMENT
 Presynaptic spike generator
 ---------------------------
