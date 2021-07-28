@@ -263,7 +263,7 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 #endif // NRNMPI
 
 #if BGPDMA
-extern int use_bgpdma_;
+extern bool use_bgpdma_;
 #endif
 
 extern "C" Point_process* ob2pntproc(Object*);

@@ -238,6 +238,14 @@ set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJEC
 set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
+# NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
+# https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
+if(("${CMAKE_C_COMPILER_ID}" STREQUAL "PGI" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "NVHPC")
+   AND "${CMAKE_C_COMPILER_VERSION}" VERSION_GREATER_EQUAL 21.7)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
+                                                                                 -Mnovect)
+endif()
+
 if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
