@@ -186,7 +186,7 @@ void nrn_outputevent(unsigned char localgid, double firetime);
 static Gid2PreSyn** localmaps_;
 
 #define NRNSTAT 1
-static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
+static int nsend_  = 0, nsendmax_ = 0, nrecv_ = 0, nrecv_useful_ = 0;
 #if NRNSTAT
 static IvocVect* max_histogram_;
 #endif 
