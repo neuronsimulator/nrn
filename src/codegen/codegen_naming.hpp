@@ -66,7 +66,7 @@ static constexpr char POINT_PROCESS_VARIABLE[] = "point_process";
 static constexpr char TQITEM_VARIABLE[] = "tqitem";
 
 /// range variable for conductance
-static constexpr char CONDUCTANCE_VARIABLE[] = "_g";
+static constexpr char CONDUCTANCE_VARIABLE[] = "g";
 
 /// global variable to indicate if table is used
 static constexpr char USE_TABLE_VARIABLE[] = "usetable";

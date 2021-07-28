@@ -1037,6 +1037,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
+     * Print declaration of macro NRN_PRCELLSTATE for debugging
+     */
+    void print_prcellstate_macros() const;
+
+    /**
      * Print backend code for byte array that has mechanism information (to be registered
      * with coreneuron)
      */
@@ -1623,6 +1628,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      *
      */
     void print_data_structures();
+
+
+    /**
+     * Set v_unused (voltage) for NRN_PRCELLSTATE feature
+     */
+    void print_v_unused() const;
+
+
+    /**
+     * Set g_unused (conductance) for NRN_PRCELLSTATE feature
+     */
+    void print_g_unused() const;
 
 
     /**
