@@ -161,7 +161,12 @@ else
   echo " == Using global install == "
 fi
 
-# install neuron and neuron
+# python 3.6 needs updated pip
+if [[ "$python_ver" == "36" ]]; then
+  $python_exe -m pip install --upgrade pip
+fi
+
+# install numpy and neuron
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
