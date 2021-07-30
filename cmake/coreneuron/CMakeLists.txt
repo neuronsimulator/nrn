@@ -94,6 +94,7 @@ option(CORENRN_ENABLE_UNIT_TESTS "Enable unit tests execution" ON)
 option(CORENRN_ENABLE_GPU "Enable GPU support using OpenACC" OFF)
 option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
 option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
+option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
 set(CORENRN_GPU_CUDA_COMPUTE_CAPABILITY
     "60" "70"
@@ -249,6 +250,11 @@ set(NMODL_ENABLE_LEGACY_UNITS
     ${CORENRN_ENABLE_LEGACY_UNITS}
     CACHE BOOL "" FORCE)
 
+if(CORENRN_ENABLE_PRCELLSTATE)
+  set(CORENRN_NRN_PRCELLSTATE 1)
+else()
+  set(CORENRN_NRN_PRCELLSTATE 0)
+endif()
 if(MINGW)
   add_definitions("-DMINGW")
 endif()

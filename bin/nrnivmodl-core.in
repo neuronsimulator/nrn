@@ -25,12 +25,13 @@ ROOT_DIR=$(@PERL_EXECUTABLE@ -e "use Cwd 'abs_path'; print abs_path('$PARENT_DIR
 PARALLEL_BUILDS=4
 params_MODS_PATH="."
 params_BUILD_TYPE="@COMPILE_LIBRARY_TYPE@"
+params_NRN_PRCELLSTATE="@CORENRN_NRN_PRCELLSTATE@"
 
 # prefix for common options : make sure to rename these if options are changed.
-MAKE_OPTIONS="MECHLIB_SUFFIX MOD2CPP_BINARY MOD2CPP_RUNTIME_FLAGS DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE"
+MAKE_OPTIONS="MECHLIB_SUFFIX MOD2CPP_BINARY MOD2CPP_RUNTIME_FLAGS DESTDIR INCFLAGS LINKFLAGS MODS_PATH VERBOSE BUILD_TYPE NRN_PRCELLSTATE"
 
 # parse CLI args
-while getopts "n:m:a:d:i:l:Vp:b:h" OPT; do
+while getopts "n:m:a:d:i:l:Vp:r:b:h" OPT; do
     case "$OPT" in
     n)
         # suffix for mechanism library
@@ -59,6 +60,9 @@ while getopts "n:m:a:d:i:l:Vp:b:h" OPT; do
     b)
         # make with verbose
         params_BUILD_TYPE="$OPTARG";;
+    r)
+        # enable NRN_PRCELLSTATE mechanism
+        params_NRN_PRCELLSTATE="$OPTARG";;
     h)
         echo "$APP_NAME [options, ...] [mods_path]"
         echo "Options:"
@@ -68,6 +72,7 @@ while getopts "n:m:a:d:i:l:Vp:b:h" OPT; do
         echo "  -i <incl_flags>           Definitions passed to the compiler, typically '-I dir..'"
         echo "  -l <link_flags>           Definitions passed to the linker, typically '-Lx -lylib..'"
         echo "  -d <dest_dir>             Install to dest_dir. Default: Off."
+        echo "  -r <0|1>                  Enable NRN_PRCELLSTATE mechanism. Default: @CORENRN_NRN_PRCELLSTATE@."
         echo "  -V                        Verbose: show commands executed by make"
         echo "  -p <n_procs>              Number of parallel builds (Default: $PARALLEL_BUILDS)"
         echo "  -b <STATIC|SHARED>        libcorenrnmech library type"
