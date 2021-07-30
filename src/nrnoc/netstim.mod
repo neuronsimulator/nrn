@@ -302,6 +302,7 @@ FUNCTION bbsavestate() {
 VERBATIM
   if (_ran_compat == 2) {
     nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+    if (!*pv) { return 0.0; }
     char which;
     uint32_t seq;
     double *xdir, *xval;
@@ -315,7 +316,6 @@ VERBATIM
     }
     if (*xdir == 1) {
       nrnran123_setseq(*pv, (uint32_t)xval[0], (char)xval[1]);
-      printf("%d %d\n", xval[0]==20.0, xval[1] == 21.0);
     }
   } // else do nothing
 ENDVERBATIM

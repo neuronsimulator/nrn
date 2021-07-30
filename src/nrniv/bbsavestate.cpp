@@ -1805,23 +1805,12 @@ void BBSaveState::cell(Object* c) {
 
 void BBSaveState::section_exist_info(Section* sec) {
 	char buf[256];
+	// not used for python sections
+	assert(!sec->prop->dparam[PROP_PY_INDEX]._pvoid);
 	Symbol* sym = sec->prop->dparam[0].sym;
 	if (sym) {
 		sprintf(buf, "%s", sym->name);
 		f->s(buf);
-	}else{
-		// Must be a python section. Want only the base name after
-		// the cell name component. At restore time, can verify that
-		// all names are unique to the cell. (Latter is needed in case
-		// different multisplit applied to a cell.)
-		assert(sec->prop->dparam[PROP_PY_INDEX]._pvoid);
-		// The basename is everything after the last dot
-		sprintf(buf, "%s", secname(sec));
-		char* lastdot = strrchr(buf, '.');
-		assert(lastdot);
-		char* b = lastdot + 1;
-		assert(strlen(b) > 0); // name does not end in '.'.
-		f->s(b);
 	}
 	int indx = sec->prop->dparam[5].i;
 	f->i(indx);

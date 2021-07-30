@@ -1,4 +1,5 @@
 # Test proper management of HOC PythonObject (no memory leaks)
+# Expanded for more testing and coverage of BBSaveState.
 
 from neuron import h
 from neuron.units import ms, mV
@@ -165,7 +166,8 @@ def test_2():
 
 # some helpers copied from ../parallel_tests/test_bas.py
 def subprocess_run(cmd):
-  subprocess.run(cmd, shell=True).check_returncode()
+    subprocess.run(cmd, shell=True).check_returncode()
+
 
 def rmfiles():
     if pc.id() == 0:
@@ -182,7 +184,7 @@ def cp_out_to_in():
     out2in_sh = r"""
 #!/bin/bash
 out=bbss_out
-rm -f in/*
+rm -r -f in
 mkdir in
 cat $out/tmp > in/tmp
 for f in $out/tmp.*.* ; do
@@ -212,15 +214,15 @@ def prun(tstop, mode=None):
     if mode == "save_test":  # integrate to tstop/2 and save
         pc.psolve(tstop / 2)
         bbss = h.BBSaveState()
-        bbss.save_test() # creates separate file in bbss_out for each piece
+        bbss.save_test()  # creates separate file in bbss_out for each piece
     elif mode == "save_test_bin":
         pc.psolve(tstop / 2)
         bbss = h.BBSaveState()
-        bbss.save_test_bin() # like save_test but binary wholecell in binbufout
+        bbss.save_test_bin()  # like save_test but binary wholecell in binbufout
     elif mode == "save":
         pc.psolve(tstop / 2)
         bbss = h.BBSaveState()
-        bbss.save("allcell-bbss.dat") # single file for everything (nhost==1!)
+        bbss.save("allcell-bbss.dat")  # single file for everything (nhost==1!)
     elif mode == "restore_test":
         cp_out_to_in()  # prepare for restore.
         bbss = h.BBSaveState()
@@ -230,10 +232,10 @@ def prun(tstop, mode=None):
         subprocess_run("cp binbufout/* binbufin")
         bbss = h.BBSaveState()
         bbss.restore_test_bin()
-    elif mode == "restore": 
+    elif mode == "restore":
         bbss = h.BBSaveState()
         bbss.restore("allcell-bbss.dat")
-        bbss.vector_play_init() # just for coverage as there are none.
+        bbss.vector_play_init()  # just for coverage as there are none.
 
     pc.psolve(tstop)  # integrate the rest of the way
 
@@ -367,7 +369,28 @@ def test_3():
 
     pc.gid_clear()
 
-def test_4(): # for some extra coverage of BBSaveState
+
+def run2(tstop, mode=None):
+    pc.set_maxstep(10)
+    h.finitialize()
+    if mode == "save_test":
+        pc.psolve(tstop / 2)
+        h.BBSaveState().save_test()
+    elif mode == "restore_test":
+        cp_out_to_in()
+        h.BBSaveState().restore_test()
+    pc.psolve(tstop)
+
+
+def cmpspikes2(tbegin, tvec, gidvec, tvec_std, gidvec_std):
+    i = tvec.indwhere(">=", tbegin)
+    j = tvec_std.indwhere(">=", tbegin)
+    assert tvec.c(i).eq(tvec_std.c(j))
+    assert gidvec.c(i).eq(gidvec_std.c(j))
+
+
+def test_4():  # for some extra coverage of BBSaveState
+    # Save and restore SelfEvent, Random123, NetStims hava a gid
     # NetStim ring
     ncell = 2
     gids = range(pc.id(), ncell, pc.nhost())
@@ -378,57 +401,128 @@ def test_4(): # for some extra coverage of BBSaveState
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid, h.NetCon(cell, None))
         cell.interval = 1
-        cell.number = 3 # >1 has no effect but helps with coverage
-        cell.start = 1 if gid == 0 else -1 # gid 0 initiates spike
+        cell.number = 3  # >1 has no effect but helps with coverage
+        cell.start = 1 if gid == 0 else -1  # gid 0 initiates spike
         cell.noise = 0.1
         cell.noiseFromRandom123(gid, 0, 0)
-    netcons = [pc.gid_connect((gid+ncell-1)%ncell, cells[gid]) for gid in gids]
+    netcons = [pc.gid_connect((gid + ncell - 1) % ncell, cells[gid]) for gid in gids]
     for netcon in netcons:
-      netcon.weight[0] = 1
+        netcon.weight[0] = 1
 
     spiketimes = h.Vector()
     spikegids = h.Vector()
     pc.spike_record(-1, spiketimes, spikegids)
 
-    def run(tstop, mode=None):
-        pc.set_maxstep(10)
-        h.finitialize()
-        if mode == "save_test":
-            pc.psolve(tstop/2)
-            h.BBSaveState().save_test()
-        elif mode == "restore_test":
-            cp_out_to_in()
-            h.BBSaveState().restore_test()
-        pc.psolve(tstop)
-
     tstop = 20
-    run(tstop)
+    run2(tstop)
     spiketimes_std = spiketimes.c()
     spikegids_std = spikegids.c()
-    def cmpspikes(tbegin, tvec, gidvec):
-        i = tvec.indwhere(">=", tbegin)
-        j = spiketimes_std.indwhere(">=", tbegin)
-        print("i=", i, j)
-        tvec.c(i).printf()
-        gidvec.c(i).printf()
-        spiketimes_std.c(j).printf()
-        spikegids_std.c(j).printf()
-        assert tvec.c(i).eq(spiketimes_std.c(j))
-        assert gidvec.c(i).eq(spikegids_std.c(j))
 
-    run(20, mode="save_test")
-    cmpspikes(0.0, spiketimes, spikegids)
-    
-    run(20, mode ="restore_test")
-    cmpspikes(tstop/2., spiketimes, spikegids)
+    run2(tstop, mode="save_test")
+    cmpspikes2(0.0, spiketimes, spikegids, spiketimes_std, spikegids_std)
+
+    run2(tstop, mode="restore_test")
+    cmpspikes2(tstop / 2.0, spiketimes, spikegids, spiketimes_std, spikegids_std)
+
+    pc.gid_clear()
+
+
+def test_5():
+    # NetStim (with no gid) stimulates intrinsically firing IntFire2
+    # which stimulates a soma with ExpSyn
+    gids = range(pc.id(), 1, pc.nhost())
+    cells = {}
+    for gid in gids:
+        cells[gid] = h.IntFire2()
+        cell = cells[gid]
+        cell.ib = 2
+        cell.taus = 2
+        cell.taum = 1
+
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(cell, None))
+
+    if pc.gid_exists(0):
+        ns = h.NetStim()
+        nc = h.NetCon(ns, cells[0])
+        ns.interval = 1
+        ns.start = 0.2
+        nc.weight[0] = 0.01
+
+    spiketimes = h.Vector()
+    spikegids = h.Vector()
+    pc.spike_record(-1, spiketimes, spikegids)
+
+    tstop = 10
+    run2(tstop)
+    spiketimes_std = spiketimes.c()
+    spikegids_std = spikegids.c()
+
+    run2(tstop, mode="save_test")
+    cmpspikes2(0.0, spiketimes, spikegids, spiketimes_std, spikegids_std)
+
+    run2(tstop, mode="restore_test")
+    cmpspikes2(tstop / 2.0, spiketimes, spikegids, spiketimes_std, spikegids_std)
     for i, t in enumerate(spiketimes):
         print(t, spikegids[i])
 
     pc.gid_clear()
+
+
+def test_6():  # Test BBSaveState.ignore
+    rmfiles()
+    model = Ring(5, 0)
+    syn = model.cells[0].syn
+    prun(1)
+    h.finitialize(-65)
+    g_expect = syn.g
+    pc.psolve(20)
+    g_actual = syn.g
+    bbss = h.BBSaveState()
+    bbss.ignore(syn)
+    bbss.save("allcell-bbss.dat")
+    h.finitialize(-65)
+    bbss.restore("allcell-bbss.dat")
+    print(g_expect, g_actual, syn.g)
+    assert syn.g == g_expect
+    h.finitialize(-65)
+    pc.psolve(20)
+    bbss.ignore(syn)
+    bbss.ignore()
+    bbss.save("allcell-bbss.dat")
+    h.finitialize(-65)
+    bbss.restore("allcell-bbss.dat")
+    print(g_expect, g_actual, syn.g)
+    assert abs((syn.g - g_actual) / (syn.g + g_actual)) < 1e-12
+
+    pc.gid_clear()
+
+
+def test_7():  # save a ring with n cells and extra section, restore n-1 cells
+    rmfiles()
+    model = Ring(5, 0)
+    model.cells[0].foo = h.Section(name="foo", cell=model.cells[0])
+    prun(5)
+    v_expect = model.cells[0].soma(0.5).v
+    bbss = h.BBSaveState()
+    bbss.save_test()
+    model = Ring(4, 0)
+    prun(0.1)
+    bbss = h.BBSaveState()
+    cp_out_to_in()
+    bbss.restore_test()
+    print(v_expect, model.cells[0].soma(0.5).v)
+    assert v_expect == model.cells[0].soma(0.5).v
+
+    pc.gid_clear()
+
 
 if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
     test_4()
+    test_5()
+    test_6()
+    test_7()
     h.allobjects()
