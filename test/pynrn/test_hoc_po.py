@@ -512,7 +512,7 @@ def test_7():  # save a ring with n cells and extra section, restore n-1 cells
     cp_out_to_in()
     bbss.restore_test()
     print(v_expect, model.cells[0].soma(0.5).v)
-    assert v_expect == model.cells[0].soma(0.5).v
+    assert abs(v_expect - model.cells[0].soma(0.5).v) < 1e-13
 
     pc.gid_clear()
 
