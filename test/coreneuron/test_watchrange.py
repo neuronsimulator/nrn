@@ -54,7 +54,8 @@ def test_watchrange():
 
     cells = [Cell(gid) for gid in gids]
 
-    tstop = 20
+    # @olupton changed from 20 to trigger assert(datum==2) failure.
+    tstop = 0.5
 
     def run(tstop, mode):
         pc.set_maxstep(10)
