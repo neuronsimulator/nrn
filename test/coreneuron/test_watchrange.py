@@ -55,7 +55,7 @@ def test_watchrange():
     cells = [Cell(gid) for gid in gids]
 
     # @olupton changed from 20 to trigger assert(datum==2) failure.
-    tstop = 0.5
+    tstop = 1.0
 
     def run(tstop, mode):
         pc.set_maxstep(10)
@@ -64,11 +64,11 @@ def test_watchrange():
             pc.psolve(tstop)
         elif mode == 1:
             while h.t < tstop:
-                pc.psolve(h.t + 1.0)
+                pc.psolve(h.t + h.dt)
         else:
             while h.t < tstop:
-                h.continuerun(h.t + 0.5)
-                pc.psolve(h.t + 0.5)
+                h.continuerun(h.t + h.dt)
+                pc.psolve(h.t + h.dt)
 
     tvec = h.Vector()
     tvec.record(h._ref_t, sec=cells[0].soma)
