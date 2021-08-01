@@ -29,8 +29,9 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install --fix-missing build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
-          sudo apt-get install --fix-missing ffmpeg doxygen
+          sudo apt-get update --fix-missing
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
+          sudo apt-get install ffmpeg doxygen
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}
