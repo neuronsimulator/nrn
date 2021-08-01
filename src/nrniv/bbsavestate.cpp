@@ -748,16 +748,7 @@ extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz) { // call 
 	io->d(1, nrn_threads->_t);
 	t = nrn_threads->_t;
 	delete io;
-	clear_event_queue();
-#if NRNMPI
-	use_spikecompress_ = nrn_use_compress_;
-	use_gidcompress_ = nrn_use_localgid_;
-	nrn_use_compress_ = false;
-	nrn_use_localgid_ = false;
-#endif
-	if (nrn_use_bin_queue_) {
-		nrn_binq_enqueue_error_handler = bbss_early;
-	}
+	bbss_restore_begin();
 }
 extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
 	usebin_ = 1;
@@ -897,8 +888,6 @@ static double restore_test_bin(void* v) { //assumes whole cells
 	char* buf;
 	char fname[100];
 	FILE* f;
-	bbss_restore_begin();
-	ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
 
 	sprintf(fname, "binbufin/global.size");
 	nrn_assert(f = fopen(fname, "r"));
@@ -915,6 +904,8 @@ static double restore_test_bin(void* v) { //assumes whole cells
 	fclose(f);
 	bbss_restore_global(ref, buf, global_size);
 	delete [] buf;
+
+	ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
 
 	for (int i = 0; i < len; ++i) {
 		npiece = 1;

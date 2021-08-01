@@ -366,6 +366,20 @@ def test_3():
     bbss.save_gid()
     bbss.restore_gid()
     assert hl.count() == npo
+    del bbss
+
+    # binq
+    rmfiles()
+    h.CVode().queue_mode(1)
+    prun(100, mode="save")
+    compare_dicts(get_all_spikes(ring), stdspikes)
+    prun(100, mode="restore")
+    compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+    prun(100, mode="save_test_bin")
+    compare_dicts(get_all_spikes(ring), stdspikes)
+    prun(100, mode="restore_test_bin")
+    compare_dicts(get_all_spikes(ring), stdspikes_after_50)
+    h.CVode().queue_mode(0)
 
     pc.gid_clear()
 
