@@ -13,12 +13,6 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * Random123 shall be used if a random generator is needed (instead of MCellRan4)
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
-> ⚠️⚠️
-> 
-> It is not possible for a single build of CoreNEURON to support usage of Random123 in both CPU and GPU code ([CoreNEURON#345](https://github.com/BlueBrain/CoreNeuron/issues/345)). This means that, if your model makes use of Random123, you can only execute it on CPU by disabling GPU support.
-> 
-> ⚠️⚠️
-
 ## Build Dependencies
 * Bison
 * Flex

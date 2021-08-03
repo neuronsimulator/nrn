@@ -29,7 +29,8 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
+          sudo apt-get update --fix-missing
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
           sudo apt-get install ffmpeg doxygen
         shell: bash
 
