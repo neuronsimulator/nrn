@@ -1,9 +1,10 @@
 objref f
 f = new File()
-f.ropen("temp.txt")
+f.ropen("association.hoc.out")
 f.close()
 f.unlink()
-f.wopen("temp.txt")
+f.wopen("association.hoc.out")
 f.printf("%s\n","hello")
+f.flush()
 f.close()
 quit()

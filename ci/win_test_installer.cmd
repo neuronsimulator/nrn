@@ -20,6 +20,10 @@ echo %PATH%
 echo %PYTHONPATH%
 echo %NEURONHOME%
 
+:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps
+:: 1st step -> launch association.hoc and rely on runner entropy to test the output after all other tests at the end.
+start /REALTIME %cd%\ci\association.hoc
+
 :: test all pythons
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -39,17 +43,6 @@ nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
 :: test mpi
 mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || set "errorfound=y"
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || set "errorfound=y"
-
-:: test of association with hoc files
-:: disable if SKIP_ASSOCIATION_TEST is set
-IF "%SKIP_ASSOCIATION_TEST%"=="" (
-  start %cd%\ci\association.hoc
-  ping -n 20 127.0.0.1
-  cat temp.txt
-  findstr /i "^hello$" temp.txt || set "errorfound=y"
-) else (
-  echo "SKIP_ASSOCIATION_TEST is set, skipping HOC association test"
-)
 
 :: setup for mknrndll/nrnivmodl
 set N=C:\nrn_test
@@ -78,6 +71,11 @@ echo "Uninstalled NEURON"
 
 :: if something failed, exit with error
 if defined errorfound (goto :error)
+
+:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
+:: 2nd step -> check association.hoc output after we've run all other tests.
+cat association.hoc.out
+findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 
 :: if all goes well, go to end
 goto :EOF
