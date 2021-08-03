@@ -1287,8 +1287,6 @@ static void tqcallback(const TQItem* tq, int i) {
 		// Actually, for simplicity, just put all the PreSyn items in
 		// the list for fanout if PreSyn::deliver time < t.
 		if (type == PreSynType) {
-PreSyn* ps = (PreSyn*)tq->data_;
-printf("PreSyn %d deliver %g\n", ps->gid_, tq->t_);
 			if (tq->t_ < t) {
 				tq_presyn_fanout->push_back((TQItem*)tq);
 			}
