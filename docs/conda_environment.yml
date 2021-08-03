@@ -11,4 +11,4 @@ dependencies:
   - cython
   - pip
   - pip:
-      - -r file:docs_requirements.txt
+      - -r docs_requirements.txt
