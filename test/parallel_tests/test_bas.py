@@ -154,7 +154,9 @@ class Ring:
         self.cells = {}
         for i in self.gidlist:  ### only create the cells that exist on this host
             theta = i * 2 * h.PI / self._N
-            self.cells[i] = BallAndStick(i, h.cos(theta) * r, h.sin(theta) * r, 0, theta)
+            self.cells[i] = BallAndStick(
+                i, h.cos(theta) * r, h.sin(theta) * r, 0, theta
+            )
 
         ### associate the cell with this host and gid
         for cell in self.cells.values():
@@ -168,67 +170,69 @@ class Ring:
             nc.delay = self._syn_delay
             target._ncs.append(nc)
 
+
 class StarNet:
-  '''NetStim -> Cell -> N Cells -> Cell'''
-  def __init__(self, n):
-    self.ncell = [1, n, 1]
-    self.nlayer = len(self.ncell)
-    self.cells = {}
-    # make cells
-    for ilayer in range(self.nlayer):
-      for icell in range(self.ncell[ilayer]):
-        gid = self.info2gid(ilayer, icell)
-        if (gid%pc.nhost()) == pc.id():
-          cell = BallAndStick(gid, float(icell), float(ilayer), 0.0, 0.0)
-          self.cells[gid] = cell
-          cell.ilayer = ilayer
-          cell.icell = icell
-          pc.set_gid2node(gid, pc.id())
-          pc.cell(gid, self.cells[gid]._spike_detector)
-    # make connections (all to all from layer i-1 to layer i)
-    self.nclist = {}
-    for gid, cell in self.cells.items():
-      if cell.ilayer > 0:
-        src_ilayer = cell.ilayer - 1
-        for src_icell in range(self.ncell[src_ilayer]):
-          srcgid = self.info2gid(src_ilayer, src_icell)
-          nc = pc.gid_connect(srcgid, cell.syn)
-          nc.weight[0] = .01
-          nc.delay = 20
-          self.nclist[(srcgid, gid)] = nc
-    # stimulate gid 0 with NetStim
-    if 0 in self.cells:
-      self.ns = h.NetStim()
-      self.ncstim = h.NetCon(self.ns, self.cells[0].syn)
-      ns = self.ns
-      ns.start = 6
-      ns.interval = 10
-      ns.number = 100
-      nc = self.ncstim
-      nc.delay = 2
-      nc.weight[0] = .01
-    # For some extra coverage of BBSaveState::node01
-    if 100 in self.cells:
-      cell = self.cells[100]
-      self.xsyns = [h.ExpSyn(seg) for seg in cell.dend.allseg()]
-      self.xnc = []
-      for syn in self.xsyns:
-        nc = pc.gid_connect(0, syn)
-        nc.delay = 20
-        nc.weight[0] = .0001
-        self.xnc.append(nc)
+    """NetStim -> Cell -> N Cells -> Cell"""
 
-  def info2gid(self, ilayer, icell):
-    return ilayer*100 + icell
+    def __init__(self, n):
+        self.ncell = [1, n, 1]
+        self.nlayer = len(self.ncell)
+        self.cells = {}
+        # make cells
+        for ilayer in range(self.nlayer):
+            for icell in range(self.ncell[ilayer]):
+                gid = self.info2gid(ilayer, icell)
+                if (gid % pc.nhost()) == pc.id():
+                    cell = BallAndStick(gid, float(icell), float(ilayer), 0.0, 0.0)
+                    self.cells[gid] = cell
+                    cell.ilayer = ilayer
+                    cell.icell = icell
+                    pc.set_gid2node(gid, pc.id())
+                    pc.cell(gid, self.cells[gid]._spike_detector)
+        # make connections (all to all from layer i-1 to layer i)
+        self.nclist = {}
+        for gid, cell in self.cells.items():
+            if cell.ilayer > 0:
+                src_ilayer = cell.ilayer - 1
+                for src_icell in range(self.ncell[src_ilayer]):
+                    srcgid = self.info2gid(src_ilayer, src_icell)
+                    nc = pc.gid_connect(srcgid, cell.syn)
+                    nc.weight[0] = 0.01
+                    nc.delay = 20
+                    self.nclist[(srcgid, gid)] = nc
+        # stimulate gid 0 with NetStim
+        if 0 in self.cells:
+            self.ns = h.NetStim()
+            self.ncstim = h.NetCon(self.ns, self.cells[0].syn)
+            ns = self.ns
+            ns.start = 6
+            ns.interval = 10
+            ns.number = 100
+            nc = self.ncstim
+            nc.delay = 2
+            nc.weight[0] = 0.01
+        # For some extra coverage of BBSaveState::node01
+        if 100 in self.cells:
+            cell = self.cells[100]
+            self.xsyns = [h.ExpSyn(seg) for seg in cell.dend.allseg()]
+            self.xnc = []
+            for syn in self.xsyns:
+                nc = pc.gid_connect(0, syn)
+                nc.delay = 20
+                nc.weight[0] = 0.0001
+                self.xnc.append(nc)
 
-  def gid2info(self, gid):
-    return (int(gid/100)), gid%100
+    def info2gid(self, ilayer, icell):
+        return ilayer * 100 + icell
 
-  def topol(self):
-    print(pc.id(), self.cells)
-    print(pc.id(), self.nclist)
-    
-    
+    def gid2info(self, gid):
+        return (int(gid / 100)), gid % 100
+
+    def topol(self):
+        print(pc.id(), self.cells)
+        print(pc.id(), self.nclist)
+
+
 out2in_sh = r"""
 #!/bin/bash
 out=bbss_out
@@ -326,9 +330,9 @@ def compare_dicts(dict1, dict2):
     array_1 = np.array([val for k in keylist for val in dict1[k]])
     array_2 = np.array([val for k in keylist for val in dict2[k]])
     if not np.allclose(array_1, array_2):
-      print (array_1)
-      print (array_2)
-      print (array_1 - array_2)
+        print(array_1)
+        print(array_2)
+        print(array_1 - array_2)
     assert np.allclose(array_1, array_2)
 
 
@@ -361,16 +365,17 @@ def test_bas():
     prun(200 * ms, "BBSaveState")  # BBSaveState restore to start at t = tstop/2
     compare_dicts(get_all_spikes(ring), stdspikes_after_100)
 
+
 def test_starnet():
     pc.gid_clear()
     starnet = StarNet(8)
     starnet.topol()
-    tstop = 100.
+    tstop = 100.0
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}
     for gid in stdspikes:
-        stdspikes_half[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= tstop/2]
+        stdspikes_half[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= tstop / 2]
     prun(tstop, "BBSaveState")  # BBSaveState restore to start at t = tstop/2
     compare_dicts(get_all_spikes(starnet), stdspikes_half)
 
@@ -379,17 +384,18 @@ def test_starnet():
     prun(tstop)
     compare_dicts(get_all_spikes(starnet), stdspikes)
 
-    h.dt = 1.0/64. # bug when 0.025 (not an exact binary fraction)
+    h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}
     for gid in stdspikes:
-        stdspikes_half[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= tstop/2]
+        stdspikes_half[gid] = [spk_t for spk_t in stdspikes[gid] if spk_t >= tstop / 2]
 
     prun(tstop, "BBSaveState")
     compare_dicts(get_all_spikes(starnet), stdspikes_half)
     h.CVode().queue_mode(0)
     h.dt = 0.025
+
 
 if __name__ == "__main__":
     test_bas()
