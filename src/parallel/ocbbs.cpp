@@ -886,10 +886,6 @@ static double broadcast(void*) {
 	return double(cnt);
 }
 
-static double checkpoint(void*) {
-	return 0.;
-}
-
 static double nthrd(void*) {
 	int ip = 1;
 	hoc_return_type_code = 1; // integer
@@ -1054,7 +1050,6 @@ static Member_func members[] = {
 	"set_maxstep", set_maxstep,
 	"spike_statistics", spike_stat,
 	"max_histogram", maxhist,
-	"checkpoint", checkpoint,
 	"spike_compress", spcompress,
 	"gid_clear", gid_clear,
 	"prcellstate", prcellstate,
