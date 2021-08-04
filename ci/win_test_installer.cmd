@@ -63,6 +63,11 @@ python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum
 :: text rxd
 python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
+:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
+:: 2nd step -> check association.hoc output after we've run all other tests.
+cat association.hoc.out
+findstr /i "^hello$" association.hoc.out || set "errorfound=y"
+
 echo "All tests finished!"
 
 :: uninstall neuron
@@ -71,11 +76,6 @@ echo "Uninstalled NEURON"
 
 :: if something failed, exit with error
 if defined errorfound (goto :error)
-
-:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
-:: 2nd step -> check association.hoc output after we've run all other tests.
-cat association.hoc.out
-findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 
 :: if all goes well, go to end
 goto :EOF
