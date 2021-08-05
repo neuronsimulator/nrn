@@ -107,7 +107,7 @@ CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 
 Ninja
 -----
-  Use Ninja as the 'make' executable. ('make' is the default 'make' executable.)
+  Use the Ninja build system ('make' is the default 'CMake' build system).
   
   .. code-block:: shell
 
