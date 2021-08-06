@@ -3,14 +3,6 @@
 :: error variable
 set "errorfound="
 
-:: install installer
-:: TODO : need to fix this as next command will not wait till installer finishes
-start /b /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
-
-:: take a look
-dir C:\nrn_test
-tree /F C:\nrn_test\lib\python
-
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
@@ -19,10 +11,6 @@ set NEURONHOME=C:\nrn_test
 echo %PATH%
 echo %PYTHONPATH%
 echo %NEURONHOME%
-
-:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps
-:: 1st step -> launch association.hoc and rely on runner entropy to test the output after all other tests at the end.
-start /REALTIME %cd%\ci\association.hoc
 
 :: test all pythons
 C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -64,7 +52,7 @@ python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum
 python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
-:: 2nd step -> check association.hoc output after we've run all other tests.
+:: 2nd step -> check association.hoc output after we've launched 1step in previous CI step
 cat association.hoc.out
 findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 

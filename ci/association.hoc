@@ -1,8 +1,9 @@
 objref f
 f = new File()
-f.ropen("association.hoc.out")
-f.close()
-f.unlink()
+if (f.ropen("association.hoc.out")) {
+  f.close()
+  f.unlink()
+}
 f.wopen("association.hoc.out")
 f.printf("%s\n","hello")
 f.flush()
