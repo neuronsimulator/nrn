@@ -29,7 +29,7 @@ strings which are not marked as INTERNAL or ADVANCED. Alternatively,
   ccmake ..
 
 allows one to interactively inspect cached variables.
-In the build folder, ``cmake -LH`` (missing <path-to-source) will not
+In the build folder, ``cmake -LH`` (missing <path-to-source>) will not
 run cmake, but if there is a ``CMakeCache.txt`` file, the cache variables
 will be listed.
 
@@ -104,6 +104,37 @@ CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 
   Custom and Fast depend on specific compilers and (super)computers and are tailored to those
   machines. See ``nrn/cmake/ReleaseDebugAutoFlags.cmake``
+
+Ninja
+-----
+  Use the Ninja build system ('make' is the default 'CMake' build system).
+  
+  .. code-block:: shell
+
+    cmake .. -G Ninja ...
+    ninja install
+
+  Ninja can be faster than make during development when compiling
+  just a few files. Some rough timings on a mac powerbook arm64 with and
+  without -G Ninja for ``cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=install``
+  are:
+
+  .. code-block:: shell
+
+    # Note: make executed in build-make folder, ninja executed in build-ninja folder.
+    time make -j install) # 39s
+    time ninja install    # 35s
+    touch ../src/nrnoc/section.h
+    time make -j          # 8.3s
+    time ninja            # 7.4s
+
+  On mac, install ninja with ``brew install ninja``
+
+  ``ninja help`` prints the target names that can be built individually
+
+  ``ninja -j 1`` does a non-parallel build.
+
+  ``ninja -v`` shows each command.
 
 InterViews options
 ==================
@@ -324,7 +355,7 @@ Readline_ROOT_DIR:PATH=/usr
 ---------------------------
   Path to a file.  
 
-  If cmake can't find readline and you don't want the nrn internal version, you
+  If cmake can't find readline, you
 can give this hint as to where it is.
 
 NRN_ENABLE_TESTS:BOOL=OFF
@@ -336,7 +367,8 @@ NRN_ENABLE_TESTS:BOOL=OFF
   May also need to ``pip install pytest``.
   ``make test`` is quite terse. To get the same verbose output that is
   seen with the CI tests, use ``ctest -VV`` (executed in the
-  build folder). One can also run individual test files
+  build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
+  One can also run individual test files
   with ``python3 -m pytest <testfile.py>`` or all the test files in that
   folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
   first to ensure any mod files needed are available to the tests. If
@@ -355,7 +387,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
     cmake .. -DNRN_ENABLE_TESTS=ON ...
     make -j
     make test
-    ctest -VV
+    ctest -VV -R parallel_tests
     cd ../test/pynrn
     python3 -m pytest
     python3 -m pytest test_currents.py
@@ -388,9 +420,7 @@ NRN_COVERAGE_FILES:STRING=
   Coverage limited to semicolon (;) separated list of file paths
   relative to ``PROJECT_SOURCE_DIR``.
 
-  ```
-  -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"
-  ```
+  ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
 NEURON_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
@@ -401,6 +431,24 @@ NEURON_CMAKE_FORMAT:BOOL=OFF
   After a build using ``make`` can reformat cmake files with ``make cmake-format``
   See nrn/CONTRIBUTING.md for further details.
   How does one reformat a specific cmake file?
+
+NEURON_CLANG_FORMAT:BOOL=OFF
+-------------------------
+  Enable code formatting
+
+  Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
+  For mac, need: ``brew install clang-format``
+  After a build using ``make``, can reformat all sources with ``make clang_format``
+  Note: this option is not yet available and this paragraph is a
+  placeholder for what is intended. Until it is available, one can
+  prepare for manual use of clang-format by using
+  ``-DNEURON_CMAKE_FORMAT=ON`` to clone into external/coding-conventions
+  and ``cp external/coding-conventions/cpp/clang-format-11 .clang-format``
+  which seems to work also for ``clang-format version 12.0.1``
+
+  To reformat one file, run in the top folder, e.g.
+  
+  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
@@ -455,12 +503,6 @@ NRN_ENABLE_THREADS:BOOL=ON
 NRN_USE_REL_RPATH=OFF
 ---------------------
   Turned on when creating python wheels.  
-
-NRN_ENABLE_INTERNAL_READLINE:BOOL=OFF
--------------------------------------
-  Use internal Readline library shipped with NEURON  
-
-Forces use of the readline code distributed with NEURON even if there is a system supplied readline.
 
 NRN_ENABLE_BACKTRACE:BOOL=OFF
 -------------------------------------
