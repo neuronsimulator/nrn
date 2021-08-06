@@ -11,10 +11,10 @@ steps:
     displayName: "Use System Python"
 
   - task: BatchScript@1
-      inputs:
-        filename: ci/win_install_neuron.cmd
-      displayName: "Run Installer and launch .hoc association test"
-      condition: succeeded()
+    inputs:
+      filename: ci/win_install_neuron.cmd
+    displayName: "Run Installer and launch .hoc association test"
+    condition: succeeded()
 
   - task: BatchScript@1
     inputs:
