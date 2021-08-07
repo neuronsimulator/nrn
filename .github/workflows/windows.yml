@@ -59,6 +59,11 @@ jobs:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
 
+    - name: Run installer and launch .hoc associaton test
+      run: .\ci\win_install_neuron.cmd
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Test Installer
       # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
       # see https://github.com/neuronsimulator/nrn/issues/1522
