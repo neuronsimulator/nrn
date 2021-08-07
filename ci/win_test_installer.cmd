@@ -3,14 +3,6 @@
 :: error variable
 set "errorfound="
 
-:: install installer
-:: TODO : need to fix this as next command will not wait till installer finishes
-start /b /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
-
-:: take a look
-dir C:\nrn_test
-tree /F C:\nrn_test\lib\python
-
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
@@ -42,17 +34,6 @@ nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
 :: test mpi
 mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || set "errorfound=y"
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || set "errorfound=y"
-
-:: test of association with hoc files
-del temp.txt
-echo wopen("temp.txt") > .\temp.hoc
-echo fprint("hello\n") >> .\temp.hoc
-echo wopen() >> .\temp.hoc
-echo quit() >> .\temp.hoc
-start .\temp.hoc
-ping -n 10 127.0.0.1
-cat temp.txt
-findstr /i "^hello$" temp.txt || set "errorfound=y"
 
 :: setup for mknrndll/nrnivmodl
 set N=C:\nrn_test
