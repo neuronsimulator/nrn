@@ -3,14 +3,6 @@
 :: error variable
 set "errorfound="
 
-:: install installer
-:: TODO : need to fix this as next command will not wait till installer finishes
-start /b /wait .\nrn-nightly-AMD64.exe /S /D=C:\nrn_test
-
-:: take a look
-dir C:\nrn_test
-tree /F C:\nrn_test\lib\python
-
 :: setup environment
 set PATH=C:\nrn_test\bin;%PATH%
 set PYTHONPATH=C:\nrn_test\lib\python;%PYTHONPATH%
@@ -40,17 +32,6 @@ nrniv -python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()"
 mpiexec -n 2 nrniv %cd%\src\parallel\test0.hoc -mpi || set "errorfound=y"
 mpiexec -n 2 python %cd%\src\parallel\test0.py -mpi --expected-hosts 2 || set "errorfound=y"
 
-:: test of association with hoc files
-:: disable if SKIP_ASSOCIATION_TEST is set
-IF "%SKIP_ASSOCIATION_TEST%"=="" (
-  start %cd%\ci\association.hoc
-  ping -n 20 127.0.0.1
-  cat temp.txt
-  findstr /i "^hello$" temp.txt || set "errorfound=y"
-) else (
-  echo "SKIP_ASSOCIATION_TEST is set, skipping HOC association test"
-)
-
 :: setup for mknrndll/nrnivmodl
 set N=C:\nrn_test
 set PATH=C:\nrn_test\mingw\usr\bin;%PATH%
@@ -69,6 +50,11 @@ python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum
 
 :: text rxd
 python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
+
+:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
+:: 2nd step -> check association.hoc output after we've launched 1step in previous CI step
+cat association.hoc.out
+findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 
 echo "All tests finished!"
 
