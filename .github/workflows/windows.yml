@@ -1,5 +1,9 @@
 name: Windows Installer
 
+concurrency: 
+  group: ${{ github.workflow }}#${{ github.ref }}
+  cancel-in-progress: true  
+
 on:
   push:
     branches: 
@@ -24,7 +28,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
+      with:
+        fetch-depth: 0
+        
+    - name: Set up Python3
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
     - name: Download Dependencies
       run: |
         .\nrn\ci\win_download_deps.cmd
@@ -56,6 +67,11 @@ jobs:
       with:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
+
+    - name: Run installer and launch .hoc associaton test
+      run: .\ci\win_install_neuron.cmd
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
       run: .\ci\win_test_installer.cmd

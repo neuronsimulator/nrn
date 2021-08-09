@@ -183,6 +183,7 @@ callback to bbss_early when needed.
 #include "tqueue.h"
 #include "netcon.h"
 #include "vrecitem.h"
+#include "nrniv_mf.h"
 
 // on mingw, OUT became defined
 #undef IN
@@ -261,7 +262,7 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
 #endif // NRNMPI
 
 #if BGPDMA
-extern int use_bgpdma_;
+extern bool use_bgpdma_;
 #endif
 
 extern "C" Point_process* ob2pntproc(Object*);
@@ -973,6 +974,7 @@ static void ssi_def() {
 	Symbol* s = hoc_lookup("NetCon");
 	nct = s->u.ctemplate;
 	ssi = new StateStructInfo[n_memb_func];
+	int sav = v_structure_change;
 	for (int im=0; im < n_memb_func; ++im) {
 		ssi[im].offset = -1;
 		ssi[im].size = 0;
@@ -1023,6 +1025,9 @@ static void ssi_def() {
         }
 	    delete np;
 	}
+	// Following set to 1 when NrnProperty constructor calls prop_alloc.
+	// so set back to original value.
+	v_structure_change = sav;
 }
 
 // if we know the Point_process, we can find the NetCon

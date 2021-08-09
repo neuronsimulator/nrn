@@ -32,7 +32,7 @@ def test_include_flux(neuron_instance):
 
     for nd in ip3.nodes(sec(0.9)):
         nd.include_flux(sec(0.3)._ref_ip3i)
-    
+
     h.continuerun(10)
     if not save_path:
         max_err = compare_data(data)

@@ -341,7 +341,14 @@ void apply_node_flux(int n, long* index, double* scale, PyObject** source, doubl
             {
                 src = (PyHocObject*)source[i];
                 /*TODO: check it is a reference */
-                states[j] +=  dt * *(src->u.px_) / scale[i];
+                if(src->type_ == PyHoc::HocRefNum)
+                {
+                    states[j] +=  dt * (src->u.x_) / scale[i];
+                }
+                else
+                {
+                    states[j] +=  dt * *(src->u.px_) / scale[i];
+                }
             }
             else
             {
@@ -715,6 +722,10 @@ extern "C" void setup_currents(int num_currents, int num_fluxes,
     _memb_cur_mapped = (int***)malloc(sizeof(int**)*num_currents);
     induced_currents_ecs_idx = (int*)malloc(sizeof(int)*_memb_curr_total);
     induced_currents_grid_id = (int*)malloc(sizeof(int)*_memb_curr_total);
+    // initialize memory here to allow currents from an intracellular species
+    // with no corresponding nrn_region='o' or Extracellular species 
+    memset(induced_currents_ecs_idx, SPECIES_ABSENT,
+           sizeof(int)*_memb_curr_total);
 
     for(i = 0, k = 0; i < num_currents; i++)
     {
@@ -806,20 +817,12 @@ static void _currents(double* rhs)
     if(!_membrane_flux)
         return;
     get_all_reaction_rates(states, NULL, NULL);
-
     for (g = Parallel_grids[0]; g != NULL; g = g -> next)
     {
         grid = dynamic_cast<ECS_Grid_node*>(g);
         if(grid)
-        {
             grid->induced_idx = 0;
-            //TODO: Find a better place to initialize multicompartment reactions
-            //This method if often called before all multicompartment reactions
-            //have been added but after nonvint initialization.
-            grid->initialize_multicompartment_reaction();
-        }
     }
-
     for(i = 0, k = 0; i < _memb_count; i++)
     {
         idx = _cur_node_indices[i];
@@ -1061,6 +1064,13 @@ extern "C" void register_rate(int nspecies, int nparam, int nregions, int nseg,
     {
         react -> next = _reactions;
         _reactions = react;
+    }
+
+    for (g = Parallel_grids[0]; g != NULL; g = g -> next)
+    {
+        grid = dynamic_cast<ECS_Grid_node*>(g);
+        if(grid)
+            grid->initialize_multicompartment_reaction();
     }
 }
 

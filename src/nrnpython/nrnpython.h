@@ -23,30 +23,16 @@
 #endif
 #include <nrnwrap_Python.h>
 
-#if (PY_MAJOR_VERSION >= 3)
-#define myPyMODINIT_FUNC PyObject *
-#else
-#define myPyMODINIT_FUNC void
-
-#ifndef PyMODINIT_FUNC /* declarations for DLL import/export */
-#define PyMODINIT_FUNC void
-#endif /*PyMODINIT_FUNC*/
-#ifndef PY_FORMAT_SIZE_T
-#define Py_ssize_t int
-#endif /*PY_FORMAT_SIZE_T*/
-#endif /* PY_MAJOR_VERSION */
-
 #endif /*USE_PYTHON*/
 
-#if (PY_MAJOR_VERSION >= 3)
 #define PyString_FromString PyUnicode_FromString
 #define PyInt_Check PyLong_Check
 #define PyInt_CheckExact PyLong_CheckExact
 #define PyInt_AS_LONG PyLong_AsLong
 #define PyInt_AsLong PyLong_AsLong
 #define PyInt_FromLong PyLong_FromLong
-#endif
 
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 6), "Python >= 3.6 required");
 
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);
@@ -58,4 +44,42 @@ extern int nrnpy_numbercheck(PyObject*);
 #endif
 
 
+
+/*
+Because python types have so many methods, attempt to do all set and get
+using a PyHocObject which has different amounts filled in as the information
+is gathered with a view toward ultimately making a call to hoc_object_component.
+That requires that array indices or function arguments are on the stack.
+The major variant is that we may be at the top level. The function arg
+case is easy since they all come as a tuple in the call method. The
+array indices come sequentially with a series of calls to the
+sequence method. A nice side effect of intermediate objects is the extra
+efficiency of reuse that avoids symbol lookup. Sadly, the scalar case does
+not give this since the value is set/get instead of  returning the
+intermediate.
+*/
+namespace PyHoc {
+enum ObjectType {
+  HocTopLevelInterpreter = 0,
+  HocObject = 1,
+  HocFunction = 2,  // function or TEMPLATE
+  HocArray = 3,
+  HocRefNum = 4,
+  HocRefStr = 5,
+  HocRefObj = 6,
+  HocForallSectionIterator = 7,
+  HocSectionListIterator = 8,
+  HocScalarPtr = 9,
+  HocArrayIncomplete =
+      10,  // incomplete pointer to a hoc array (similar to HocArray)
+  HocRefPStr = 11,
+};
+enum IteratorState {
+  Begin,
+  NextNotLast,
+  Last
+};
+}  // namespace PyHoc
+
 #endif
+

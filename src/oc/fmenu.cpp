@@ -105,16 +105,17 @@ fmenu.c,v
 
 #include <stdlib.h>
 
-#if defined(WITHOUT_MEMACS)
-#define OCSMALL 1
-#endif
+#ifndef WITHOUT_MEMACS
+#include "hoc.h"
+#include "estruct.h"
+extern TERM emacs_term;
 
-#if OCSMALL
 void hoc_fmenu(void) {
 	hoc_ret(); hoc_pushx(0.);
 }
-hoc_menu_cleanup() {
+void hoc_menu_cleanup() {
 }
+#define BEEP	(*emacs_term.t_beep)()
 #else
 #if defined(__GO32__)
 #define G32 1
@@ -131,8 +132,6 @@ extern int egagrph; /* detect if in graphics mode */
 #else
 #if !G32
 static int egagrph = 0;
-#include "estruct.h"
-extern TERM emacs_term;
 #endif
 #endif
 #include "hoc.h"
@@ -142,11 +141,7 @@ extern TERM emacs_term;
 #endif
 #define NUL	0
 #define SPACE	'\040'
-#if DOS || G32
 #define BEEP	Printf("\007")
-#else
-#define BEEP	(*emacs_term.t_beep)()
-#endif
 /* structure and functions from getsym.c */
 #include "hocgetsym.h"
 
@@ -209,7 +204,7 @@ static void menu_manager(int nmenu) {
 	char *command;
 	previous = current_menu;
 	current_menu = nmenu;
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
 	if (first) {
 		(*emacs_term.t_open)();
@@ -326,7 +321,9 @@ static void xcursor(int r, int c){
 		int86(0x10, &regs, &regs);
 	}
 #else
+#ifndef WITHOUT_MEMACS
 	(*emacs_term.t_move)(r, c);
+#endif
 #endif
 #endif
 }
@@ -343,7 +340,9 @@ static int ibmgetc(void){       /* Copied from ibm.c file in memacs */
 	intdos(&regs,&regs);
 	return (int)regs.h.al;
 #else
+#ifndef WITHOUT_MEMACS
 	return (*emacs_term.t_getchar)();
+#endif
 #endif
 #endif
 }
@@ -477,7 +476,7 @@ static char *navigate(int imenu) {
 	if (menu == (Menuitem *)0) {
 		return (char *)0;
 	}
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
 	(*emacs_term.t_open)(); /* before return be sure to close */
 #endif
@@ -502,7 +501,7 @@ static char *navigate(int imenu) {
         		if(key == 27 || key == 3)
 				goto label;
 			if (key == 5) {
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 				return "plt(-5)";
 #else
 				(*emacs_term.t_close)();
@@ -554,7 +553,7 @@ static char *navigate(int imenu) {
 			if (pnow->command) {
 				prs(0, pnow->row+1, pnow->col, "executing");
 				xcursor(menuslast[imenu]->row+2, 0);
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
 				(*emacs_term.t_close)();
 #endif
@@ -565,7 +564,7 @@ static char *navigate(int imenu) {
 		} else if (key == 015 && pnow->type == MENU_ACTION) {
 			prs(0, pnow->row+1, pnow->col, "executing");
 			xcursor(menuslast[imenu]->row+2, 0);
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
 			(*emacs_term.t_close)();
 #endif
@@ -596,7 +595,7 @@ static char *navigate(int imenu) {
 		}
 	}
 label:	xcursor(menuslast[imenu]->row+2, 0);
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
 	(*emacs_term.t_close)();
 #endif
@@ -701,8 +700,10 @@ static int cexecute(const char* command) {
 #if DOS || G32
 #else
 static void clrscr(void){
+#ifndef WITHOUT_MEMACS
 	(*emacs_term.t_move)(0, 0);
 	(*emacs_term.t_eeop)();
+#endif
 }
 #endif
 
@@ -724,7 +725,7 @@ static void undisplay(int imenu) {
 
 void hoc_menu_cleanup(void) {
     current_menu = -1;
-#if DOS || G32
+#if DOS || G32 || WITHOUT_MEMACS
 #else
     if (!first) {
         (*emacs_term.t_close)();
@@ -733,4 +734,4 @@ void hoc_menu_cleanup(void) {
 }
 
 
-#endif /*OCSMALL*/
+#endif /*WITHOUT_MEMACS*/

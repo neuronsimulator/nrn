@@ -1,5 +1,5 @@
 [flake8]
 application-import-names = neuron
-ignore = W503,E203,F841
+ignore = W503, E203, E221, F841, E731
 import-order-style = google
-max-line-length = 88
+max-line-length = 92

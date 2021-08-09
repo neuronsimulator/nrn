@@ -29,7 +29,13 @@ Welcome to NEURON's documentation!
    scm/index
    dev/index
    doxygen
-   
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Changelog
+
+   changelog.md
+
 Indices and tables
 ==================
 

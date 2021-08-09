@@ -42,12 +42,12 @@ extern "C" void set_hybrid_data(int64_t* num_1d_indices_per_grid, int64_t* num_3
             grid->hybrid = true;
             grid->hybrid_data->indices1d = (long*)malloc(sizeof(long)*num_grid_1d_indices);
             grid->hybrid_data->num_3d_indices_per_1d_seg = (long*)malloc(sizeof(long)*num_grid_1d_indices);
-            grid->hybrid_data->volumes1d = (double*)malloc(sizeof(long)*num_grid_1d_indices);
+            grid->hybrid_data->volumes1d = (double*)malloc(sizeof(double)*num_grid_1d_indices);
 
 
             grid->hybrid_data->indices3d = (long*)malloc(sizeof(long)*num_grid_3d_indices);
-            grid->hybrid_data->rates = (double*)malloc(sizeof(long)*num_grid_3d_indices);
-            grid->hybrid_data->volumes3d = (double*)malloc(sizeof(long)*num_grid_3d_indices);
+            grid->hybrid_data->rates = (double*)malloc(sizeof(double)*num_grid_3d_indices);
+            grid->hybrid_data->volumes3d = (double*)malloc(sizeof(double)*num_grid_3d_indices);
 
             dx = *dxs++;
 

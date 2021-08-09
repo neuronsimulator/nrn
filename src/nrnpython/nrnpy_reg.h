@@ -1,4 +1,4 @@
-extern myPyMODINIT_FUNC nrnpy_hoc();
-extern myPyMODINIT_FUNC nrnpy_nrn();
+extern PyObject* nrnpy_hoc();
+extern PyObject* nrnpy_nrn();
 
-static myPyMODINIT_FUNC (*nrnpy_reg_[])() = {nrnpy_hoc, nrnpy_nrn, 0};
+static PyObject* (*nrnpy_reg_[])() = {nrnpy_hoc, nrnpy_nrn, 0};

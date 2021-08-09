@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 # distribution built with
-# bash bldnrnmacpkgcmake.sh python2.7 python3.6 python3.7 python3.8 python3.9
+# bash bldnrnmacpkgcmake.sh python3.6 python3.7 python3.8 python3.9
 # without args, default is the 5 pythons above.
 
 CPU=`uname -m`
@@ -9,7 +9,7 @@ CPU=`uname -m`
 args="$*"
 if test "$args" = "" ; then
   if test "$CPU" = "x86_64" ; then
-    args="python2.7 python3.6 python3.7 python3.8 python3.9"
+    args="python3.6 python3.7 python3.8 python3.9"
   else # arm64
     args="python3 python3.9"
   fi
@@ -26,7 +26,6 @@ fi
 NRN_BLD=$NRN_SRC/build
 NSRC=$NRN_SRC
 export NSRC
-NRN_VERSION="`sh $NRN_SRC/nrnversion.sh 3`"
 
 NRN_INSTALL=/Applications/NEURON
 export PATH=$NRN_INSTALL/bin:$PATH
@@ -51,7 +50,6 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
-  -DNRN_ENABLE_INTERNAL_READLINE=ON \
   -DNRN_RX3D_OPT_LEVEL=2 \
   -DCMAKE_OSX_ARCHITECTURES="$CPU" \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++

@@ -26,3 +26,8 @@ additional_commands:
     kwargs:
       GROUP: 1
       REFERENCE_OUTPUT: '*'
+  cpp_cc_build_time_copy:
+    flags: ['NO_TARGET']
+    kwargs:
+      INPUT: '1'
+      OUTPUT: '1'

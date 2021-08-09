@@ -47,20 +47,19 @@ int (*p_nrnpy_pyrun)(const char* fname);
 extern int stdin_event_ready();
 #endif
 
-#if HAVE_FENV_H
-#if defined(linux)
+#if HAVE_FEENABLEEXCEPT
 #define NRN_FLOAT_EXCEPTION 1
 #else
 #define NRN_FLOAT_EXCEPTION 0
 #endif
-#endif
 
 #if NRN_FLOAT_EXCEPTION
+#if !defined(__USE_GNU)
 #define __USE_GNU
+#endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
 int matherr1(void) {
-#if defined(FE_NOMASK_ENV) /* should be updated to be more generic */
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -73,17 +72,20 @@ int matherr1(void) {
 		fprintf(stderr, "Floating exception: Overflow\n");
 		break;
 	}
-#endif /*FE_NOMASK_ENV*/
 }
 #endif
 
+int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
+
 void nrn_feenableexcept() {
-  int result = -1;
-#if NRN_FLOAT_EXCEPTION && defined(FE_NOMASK_ENV)
+  int result = -2; // feenableexcept does not exist.
+  nrn_feenableexcept_ = 0;
+#if NRN_FLOAT_EXCEPTION
   if (ifarg(1) && chkarg(1, 0., 1.) == 0.) {
-    result = feenableexcept(0);
+    result = fedisableexcept(FEEXCEPT);
   }else{
     result = feenableexcept(FEEXCEPT);
+    nrn_feenableexcept_ = (result == -1) ? 0 : 1;
   }
 #endif
   hoc_ret();
@@ -823,7 +825,7 @@ RETSIGTYPE fpecatch(int sig)	/* catch floating point exceptions */
 #if DOS
 _fpreset();
 #endif
-#if 1 && NRN_FLOAT_EXCEPTION
+#if NRN_FLOAT_EXCEPTION
 	matherr1();
 #endif
 	Fprintf(stderr, "Floating point exception\n");
@@ -832,7 +834,7 @@ _fpreset();
 		abort();
 	}
 	signal(SIGFPE, fpecatch);
-	execerror("Aborting.", (char *) 0);
+	execerror("Floating point exception.", (char *) 0);
 }
 
 #if HAVE_SIGSEGV
@@ -1786,6 +1788,9 @@ CHAR* hoc_fgets_unlimited(HocStr* bufstr, NrnFILEWrap* f) {
 static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans) {
 	int c, i;
 	int nl1, nl2;
+        if (!f) {
+		hoc_execerr_ext("No file (or stdin) for input");
+	}
 	if (nltrans) { nl1 = 26; nl2 = 4;}else{nl1 = nl2 = EOF;}
 	for(i=0;; ++ i) {
 		c = nrn_fw_getc(f);
@@ -1925,6 +1930,11 @@ ENDGUI
 			hoc_check_intupt(0);
 #endif
 			n = strlen(line);
+			for (int i=0; i < n; ++i) {
+				if (!isascii(line[i])) {
+hoc_execerr_ext("Non-ASCII character value 0x%hhx at input position %d\n", (unsigned)line[i], i);
+				}
+			}
 			if (n >= hoc_cbufstr->size - 3) {
 				hocstr_resize(hoc_cbufstr, n+100);
 				ctp = cbuf = hoc_cbufstr->buf;

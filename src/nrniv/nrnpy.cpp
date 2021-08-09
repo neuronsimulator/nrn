@@ -29,12 +29,6 @@ char* hoc_forward2back(char* s);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
-#if defined(NRNCMAKE)
-// CMAKE installs libnrnpythonx.so not in <prefix>/x86_64/lib but <prefix>/lib
-#undef NRNHOSTCPU
-#define NRNHOSTCPU "."
-#endif
-
 #ifdef MINGW
 #define RTLD_NOW 0
 #define RTLD_GLOBAL 0
@@ -53,27 +47,19 @@ extern char* dlerror();
 
 extern char* neuron_home;
 
-#if NRNPYTHON_DYNAMICLOAD >= 20 && NRNPYTHON_DYNAMICLOAD < 30
+#if NRNPYTHON_DYNAMICLOAD >= 30
 
 #ifdef MINGW
-static const char* ver[] = {"2.7", 0};
+static const char* ver[] = {"3.6", 0};
 #else
-static const char* ver[] = {"2.7", "2.6", "2.5", 0};
+static const char* ver[] = {"3.9", "3.8", "3.7", "3.6", 0};
 #endif // !MINGW
 
-#elif NRNPYTHON_DYNAMICLOAD >= 30
-
-#ifdef MINGW
-static const char* ver[] = {"3.5", 0};
 #else
-static const char* ver[] = {"3.6", "3.5", "3.4", 0};
-#endif // !MINGW
-
-#else //NRNPYTHON_DYNAMICLOAD < 20
 
 static const char* ver[] = {0};
 
-#endif //NRNPYTHON_DYNAMICLOAD < 20
+#endif
 
 static int iver; // which python is loaded?
 static void* python_already_loaded();
@@ -124,7 +110,7 @@ neuron_home);
 
 static void set_nrnpylib() {
   nrnpy_pylib = getenv("NRN_PYLIB");
-  nrnpy_pyhome = getenv("PYTHONHOME");
+  nrnpy_pyhome = getenv("NRN_PYTHONHOME");
   if (nrnpy_pylib && nrnpy_pyhome) { return; }
   // copy allows free of the copy if needed
   if (nrnpy_pylib) { nrnpy_pylib = strdup(nrnpy_pylib); }
@@ -148,13 +134,8 @@ static void set_nrnpylib() {
     free(bnrnhome);
     #else
     char* line = new char[linesz+1];
-#if defined(NRNCMAKE)
     sprintf(line, "bash %s/../../bin/nrnpyenv.sh %s",
      neuron_home,
-#else
-    sprintf(line, "bash %s/../../%s/bin/nrnpyenv.sh %s",
-     neuron_home, NRNHOSTCPU,
-#endif
       (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
    #endif
     FILE* p = popen(line, "r");
@@ -167,13 +148,13 @@ static void set_nrnpylib() {
       while(fgets(line, linesz, p)) {
         char* cp;
         // must get rid of beginning '"' and trailing '"\n'
-        if (!nrnpy_pyhome && (cp = strstr(line, "export PYTHONHOME="))) {
-          cp += 19;
+        if (!nrnpy_pyhome && (cp = strstr(line, "export NRN_PYTHONHOME="))) {
+          cp += strlen("export NRN_PYTHONHOME=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pyhome) { free(nrnpy_pyhome); }
           nrnpy_pyhome = strdup(cp);
         }else if (!nrnpy_pylib && (cp = strstr(line, "export NRN_PYLIB="))) {
-          cp += 18;
+          cp += strlen("export NRN_PYLIB=") + 1;
           cp[strlen(cp) - 2] = '\0';
           if (nrnpy_pylib) { free(nrnpy_pylib); }
           nrnpy_pylib = strdup(cp);
@@ -348,17 +329,9 @@ static void* load_nrnpython_helper(const char* npylib) {
 	sprintf(name, "%s.dll", npylib);
 #else // !MINGW
 #if DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.dylib", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.dylib", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #else // !DARWIN
-#if defined(NRNCMAKE)
 	sprintf(name, "%s/../../lib/%s.so", neuron_home, npylib);
-#else // !NRNCMAKE
-	sprintf(name, "%s/../../%s/lib/%s.so", neuron_home, NRNHOSTCPU, npylib);
-#endif // NRNCMAKE
 #endif // DARWIN
 #endif // MINGW
 	void* handle = dlopen(name, RTLD_NOW);
@@ -420,12 +393,9 @@ static void load_nrnpython(int pyver10, const char* pylib) {
 #else
     handle = load_nrnpython_helper("libnrnpython3");
     if (!handle) {
-        handle = load_nrnpython_helper("libnrnpython2");
-        if (!handle) {
-            printf("Could not load either libnrnpython3 or libnrnpython2\n");
-            printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
-            return;
-        }
+        printf("Could not load libnrnpython3\n");
+        printf("pyver10=%d pylib=%s\n", pyver10, pylib ? pylib : "NULL");
+        return;
     }
 #endif
 	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");

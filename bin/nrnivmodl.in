@@ -5,9 +5,6 @@ ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
 USER_PWD="`pwd`"
 
-UsingCMake="no"
-@USING_CMAKE_TRUE@UsingCMake="yes"
-
 if test "x${NRNHOME}" = x ; then
   prefix=@prefix@
   exec_prefix=@exec_prefix@
@@ -16,10 +13,8 @@ if test "x${NRNHOME}" = x ; then
 else
   prefix="$NRNHOME"
   exec_prefix="${prefix}/${ARCH}"
-  @USING_CMAKE_FALSE@bindir="${prefix}/${ARCH}/bin"
-  @USING_CMAKE_FALSE@libdir="${prefix}/${ARCH}/lib"
-  @USING_CMAKE_TRUE@bindir="${prefix}/bin"
-  @USING_CMAKE_TRUE@libdir="${prefix}/lib"
+  bindir="${prefix}/bin"
+  libdir="${prefix}/lib"
 fi
 
 if [ -z ${CNRNHOME+x} ]; then
@@ -47,8 +42,8 @@ export libdir
 MAKEFILEDIR="${bindir}"
 
 if command -v xcrun; then
-    @USING_CMAKE_TRUE@@NRN_OSX_BUILD_TRUE@export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
-    @USING_CMAKE_TRUE@@NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
+    @NRN_OSX_BUILD_TRUE@export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
+    @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
         unset MACOSX_DEPLOYMENT_TARGET
     fi
@@ -100,39 +95,29 @@ remove_spaces() {
 
 # files is the complete list of mod files to process
 files=""
-@USING_CMAKE_FALSE@incs=""
 if test $# -gt 0 ; then
   for i in "$@" ; do
     i_hide=`hide_spaces "$i"`
     if test -d "$i" ; then
       set +e
-      if test "$UsingCMake" = "yes" ; then
-        for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
-          files="$files $i_hide/$j"
-        done
-      else
-        files="$files $(unset LC_ALL; ls $i/*.mod)"
-        incs="$incs $(unset LC_ALL; ls $i/*.inc)"
-      fi
+      for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
+        files="$files $i_hide/$j"
+      done
       set -e
     else
-      if test "$UsingCMake" = "yes" ; then
-        if test -e "$i" -o -e "$i.mod" ; then
-          files="$files $i_hide"
-        else
-          echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
-
-          echo ""
-          echo -n "  Mod file, folder args:"
-          for j in "$@" ; do
-            echo -n " \"$j\""
-          done
-          echo ""
-
-          exit 1
-        fi
+      if test -e "$i" -o -e "$i.mod" ; then
+        files="$files $i_hide"
       else
-        files="$files $i"
+        echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
+
+        echo ""
+        echo -n "  Mod file, folder args:"
+        for j in "$@" ; do
+          echo -n " \"$j\""
+        done
+        echo ""
+
+        exit 1
       fi
     fi
   done
@@ -148,16 +133,15 @@ for i in $files ; do
   base_names="$base_names `basename $i .mod`"
 done
 
-if test "$UsingCMake" = "yes" ; then
-  echo -n "Mod files:"
-  for i in $files ; do
-    base_name=`basename "$i" .mod`
-    dir_name=`dirname "$i"`
-    echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
-  done
-  echo ""
-  echo ""
-fi
+echo -n "Mod files:"
+for i in $files ; do
+  base_name=`basename "$i" .mod`
+  dir_name=`dirname "$i"`
+  echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
+done
+echo ""
+echo ""
+
 
 if [ ! -d $MODSUBDIR ] ; then
   echo "Creating $MODSUBDIR directory for .o files."
@@ -174,7 +158,6 @@ fi
 cd $MODSUBDIR
 mdir="`pwd`"
 
-if test "$UsingCMake" = "yes" ; then
   # construct file to be included by makefile to specify mod to c rule when
   # executed in $MODSUBDIR (child folder of launch location folder)
   MODMAKE=makemod2c_inc
@@ -223,24 +206,6 @@ if test "$UsingCMake" = "yes" ; then
     done
     IFS="$ifs"
   fi
-else
-  for i in $files; do
-       rm -f "`basename $i`".mod
-       ln -s ../$i.mod .
-  done
-
-  if test "$incs" != "" ; then
-       for i in $incs ; do
-               rm -f "`basename $i`"
-               ln -s ../$i .
-       done
-  fi
-
-  for i in $nrnivmodl_cfiles; do
-       rm -f "$i"
-       ln -s "../$i" .
-  done
-fi
 
 COBJS=
 MODOBJS=
@@ -277,8 +242,7 @@ echo '    fprintf(stderr, "'$newline'");
 
 for i in $base_names; do
   echo '  _'`remove_spaces "$i"`'_reg();'
-  @USING_CMAKE_TRUE@MODOBJS="$MODOBJS ./$i.o"
-  @USING_CMAKE_FALSE@MODOBJS="$MODOBJS $i.o"
+  MODOBJS="$MODOBJS ./$i.o"
 done >> mod_func.cpp
 
 echo "}" >> mod_func.cpp
@@ -289,82 +253,39 @@ echo '
 #endif' >> mod_func.cpp
 
 if test -n "$nrnivmodl_cfiles" ; then
-  if test "$UsingCMake" = "yes" ; then
-    sp=""
-    COBJS=""
-    ifs="$IFS"
-    IFS=';'
-    for i in $nrnivmodl_cfiles ; do
-      base_name=`basename "$i" .c`
-      COBJS="${COBJS}${sp}./${base_name}.o"
-      sp=" "
-    done
-    IFS="$ifs"
-  else
-    COBJS=`echo "$nrnivmodl_cfiles" | sed 's/\.c/.o/g'`
-  fi
+  sp=""
+  COBJS=""
+  ifs="$IFS"
+  IFS=';'
+  for i in $nrnivmodl_cfiles ; do
+    base_name=`basename "$i" .c`
+    COBJS="${COBJS}${sp}./${base_name}.o"
+    sp=" "
+  done
+  IFS="$ifs"
 fi
 echo "COBJS='$COBJS'"
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 UsingCoreNEURON="no"
-@USING_CMAKE_TRUE@@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
+@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
 if [ "$LinkCoreNEURON" = true ] ; then
-  if [ "$UsingCMake" = "yes" ] ; then
-    if [ "$UsingCoreNEURON" = "yes" ] ; then
-      cd $USER_PWD
-      args=""
-      # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
-      for i in "$@"; do
-        j=`hide_spaces "$i"`
-        j=`escape_spaces "$j"`
-        args="$args $j"
-      done
-      "${cnrn_prefix}/bin/nrnivmodl-core" $args
-      cd $MODSUBDIR
-    else
-      printf "ERROR : CoreNEURON support is not enabled!\n"
-      exit 1
-    fi
+  if [ "$UsingCoreNEURON" = "yes" ] ; then
+    cd $USER_PWD
+    args=""
+    # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
+    for i in "$@"; do
+      j=`hide_spaces "$i"`
+      j=`escape_spaces "$j"`
+      args="$args $j"
+    done
+    "${cnrn_prefix}/bin/nrnivmodl-core" $args
+    cd $MODSUBDIR
   else
-    printf "ERROR : CoreNEURON is not compatible with autotools, build with CMake build system!\n"
+    printf "ERROR : CoreNEURON support is not enabled!\n"
     exit 1
   fi
 fi
 
-@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
-@NRN_BINARY_SPECIAL_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
-@NRN_BINARY_SPECIAL_TRUE@  echo "Successfully created $MODSUBDIR/special"
-
-@NRN_BINARY_SPECIAL_FALSE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
-@NRN_BINARY_SPECIAL_FALSE@CLO=`echo "$COBJS" | sed 's/\.o/.lo/g'`
-@NRN_BINARY_SPECIAL_FALSE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
-@NRN_BINARY_SPECIAL_FALSE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
-@NRN_BINARY_SPECIAL_FALSE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" mech_lib_shared VERBOSE=1
-@NRN_BINARY_SPECIAL_FALSE@  echo '#!/bin/sh
-@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNHOME}" = "x" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNHOME='"\"${prefix}\""'
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "${NEURONHOME}" = "" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NEURONHOME=${NRNHOME}/share/nrn
-@NRN_BINARY_SPECIAL_FALSE@    export NEURONHOME
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "x${NRNBIN}" = "x" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNBIN='"\"${NRNBIN}\""'
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@if test "@enable_carbon@" = "yes" ; then
-@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv.app/Contents/MacOS/nrniv"
-@NRN_BINARY_SPECIAL_FALSE@else
-@NRN_BINARY_SPECIAL_FALSE@    NRNIV="${NRNBIN}/nrniv"
-@NRN_BINARY_SPECIAL_FALSE@fi
-@NRN_BINARY_SPECIAL_FALSE@"${NRNIV}"'" -dll \"${mdir}/.libs/libnrnmech.so\" \"\$@\"" > special &&
-@NRN_BINARY_SPECIAL_FALSE@  chmod 755 special &&
-@NRN_BINARY_SPECIAL_FALSE@  echo "Successfully created $MODSUBDIR/special"
-
-@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_TRUE@if false ; then
-@NRN_BINARY_SPECIAL_FALSE@@MAC_DARWIN_FALSE@if false ; then
-@NRN_BINARY_SPECIAL_TRUE@if false ; then
-  false #for empty if block
-fi
+make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+echo "Successfully created $MODSUBDIR/special"

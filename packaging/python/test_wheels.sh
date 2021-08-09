@@ -78,7 +78,7 @@ run_serial_test () {
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
-      python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+      $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
     # Test 8: run demo
@@ -97,7 +97,7 @@ run_parallel_test() {
       brew link mpich
 
       # TODO : latest mpich has issuee on Azure OSX
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      if [[ "$CI_OS_NAME" == "osx" ]]; then
           run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
       fi
 
@@ -105,8 +105,8 @@ run_parallel_test() {
       brew link openmpi
       run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
-    # Travis Linux or Azure Linux
-    elif [[ "$TRAVIS_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
+    # CI Linux or Azure Linux
+    elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
       sudo update-alternatives --set mpi /usr/include/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
       sudo update-alternatives --set mpi /usr/lib/x86_64-linux-gnu/openmpi/include
@@ -161,13 +161,12 @@ else
   echo " == Using global install == "
 fi
 
-# on osx we need to install pip from source
-if [[ "$OSTYPE" == "darwin"* ]] && [[ "$python_ver" == "35" ]]; then
-  echo "Updating pip for OSX with Python 3.5"
-  curl https://raw.githubusercontent.com/pypa/get-pip/20.3.4/get-pip.py | python
+# python 3.6 needs updated pip
+if [[ "$python_ver" == "36" ]]; then
+  $python_exe -m pip install --upgrade pip
 fi
 
-# install neuron and neuron
+# install numpy and neuron
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly

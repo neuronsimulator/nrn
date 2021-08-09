@@ -60,6 +60,9 @@
 /* Define to 1 if you have the `fesetround' function. */
 #undef HAVE_FESETROUND
 
+/* Define to 1 if you have the `feenableexcept' function. */
+#undef HAVE_FEENABLEEXCEPT
+
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 

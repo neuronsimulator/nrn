@@ -330,7 +330,7 @@ void RangeVarPlot_reg() {
 #if HAVE_IV
 RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : GraphVector(var ? var : "pyobj") {
 #else
-RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : NoIVGraphVector(var) {
+RangeVarPlot::RangeVarPlot(const char* var, Object* pyobj) : NoIVGraphVector(var ? var : "pyobj") {
 #endif
 	color_ = 1;
 	begin_section_ = 0;
@@ -772,7 +772,7 @@ void RangeExpr::fill() {
 		if (cmd_->pyobject()) {
 			hoc_pushx(hoc_ac_);
 			int err = 0; // no messages
-			cmd_->func_call(1, &err); // return err==0 means success
+			val_[i] = cmd_->func_call(1, &err); // return err==0 means success
 			exist_[i] = err ? false : true;
 			if (err) { val_[i] = 0.0; }
 			nrn_popsec();

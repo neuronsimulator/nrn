@@ -13,29 +13,35 @@ _c_ptr_vector_storage_nrn = None
 _c_ptr_vector_storage = None
 _last_c_ptr_length = None
 
-def _donothing(): pass
+
+def _donothing():
+    pass
+
 
 class _SectionLookup:
     class Lookup:
         def __init__(self):
-            self.rxd_sec_list = {} 
+            self.rxd_sec_list = {}
             self.nrn_sec_list = h.SectionList()
+
     _instance = None
-    
+
     def __init__(self):
         if _SectionLookup._instance is None:
-           _SectionLookup._instance = _SectionLookup.Lookup()
+            _SectionLookup._instance = _SectionLookup.Lookup()
 
     def __getitem__(self, key):
-        if (key in _SectionLookup._instance.nrn_sec_list and
-            key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list):
+        if (
+            key in _SectionLookup._instance.nrn_sec_list
+            and key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list
+        ):
             return _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()]
         return []
 
     def __setitem__(self, key, value):
         _SectionLookup._instance.nrn_sec_list.append(key)
         _SectionLookup._instance.rxd_sec_list[key.hoc_internal_name()] = value
-    
+
     def __delitem__(self, key):
         _SectionLookup._instance.nrn_sec_list.remove(key)
         if key.hoc_internal_name() in _SectionLookup._instance.rxd_sec_list:
@@ -54,22 +60,23 @@ class _SectionLookup:
         return res.items()
 
     def remove(self, rxdsec):
-        for key,val in _SectionLookup._instance.rxd_sec_list.items():
+        for key, val in _SectionLookup._instance.rxd_sec_list.items():
             if val == rxdsec:
                 del _SectionLookup._instance.rxd_sec_list[key]
 
 
-
 def add_values(mat, i, js, vals):
     mat_i = mat[i]
-    for (j,val) in zip(js,vals):
-        if val == 0: continue
+    for (j, val) in zip(js, vals):
+        if val == 0:
+            continue
         if j in mat_i:
             mat_i[j] += val
-            #if mat_i[j] == 0:
+            # if mat_i[j] == 0:
             #    del mat_i[j]
         else:
             mat_i[j] = val
+
 
 def _parent(sec):
     """Return the parent of seg or None if sec is a root"""
@@ -91,6 +98,7 @@ def _parent(sec):
             return None
     return None
 
+
 def _purge_cptrs():
     """purges all cptr information"""
 
@@ -103,10 +111,11 @@ def _purge_cptrs():
     _c_ptr_vector_storage = None
     _last_c_ptr_length = None
 
+
 def _transfer_to_legacy():
-    global  _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
+    global _c_ptr_vector, _c_ptr_vector_storage, _c_ptr_vector_storage_nrn
     global _last_c_ptr_length
-    
+
     size = len(_all_cptrs)
     if _last_c_ptr_length != size:
         if size:
@@ -123,14 +132,15 @@ def _transfer_to_legacy():
         _c_ptr_vector_storage[:] = node._get_states()[_all_cindices]
         _c_ptr_vector.scatter(_c_ptr_vector_storage_nrn)
 
+
 def replace(rmsec, offset, nseg):
-    """ Replace the section (rmsec) in node data lists and update the offsets"""
+    """Replace the section (rmsec) in node data lists and update the offsets"""
     # remove entries from node global variables and update the states
     node._replace(rmsec._offset, rmsec._nseg, offset, nseg)
 
     # correct the offsets for all section1ds
-    old_offset = rmsec._offset 
-    dur = rmsec._nseg + 1 
+    old_offset = rmsec._offset
+    dur = rmsec._nseg + 1
     rmsec._offset = offset
     rmsec._nseg = nseg
 
@@ -155,6 +165,7 @@ class Section1D(rxdsection.RxDSection):
             self._rxd_sec_lookup[sec].append(self)
         else:
             self._rxd_sec_lookup[sec] = [self]
+
     @property
     def _sec(self):
         sl = list(self._secref)
@@ -173,7 +184,7 @@ class Section1D(rxdsection.RxDSection):
         if isinstance(other, nrn.Section):
             return self._sec == other
         return id(self) == id(other)
-    
+
     def __ne__(self, other):
         # necessary for Python 2 but not for Python 3
         return not (self == other)
@@ -195,18 +206,20 @@ class Section1D(rxdsection.RxDSection):
         volumes, surface_area, diffs = node._get_data()
         geo = self._region._geometry
         volumes[self._offset : self._offset + self._nseg] = geo.volumes1d(self)
-        surface_area[self._offset : self._offset + self._nseg] = geo.surface_areas1d(self)
+        surface_area[self._offset : self._offset + self._nseg] = geo.surface_areas1d(
+            self
+        )
         self._neighbor_areas = geo.neighbor_areas1d(self)
         if nseg_changed:
-            volumes[(self._offset - self.species._num_roots):self._offset] = 0
+            volumes[(self._offset - self.species._num_roots) : self._offset] = 0
             self._init_diffusion_rates()
         return nseg_changed
 
     def _delete(self):
         # memory in node global variables is handled by the species
         _rxd_sec_lookup = _SectionLookup()
-        
-        # remove ref to this section -- at exit weakref.ref might be none 
+
+        # remove ref to this section -- at exit weakref.ref might be none
         if self._sec:
             if self._sec in _rxd_sec_lookup:
                 sec_list = [s for s in _rxd_sec_lookup[self._sec] if s != self]
@@ -219,7 +232,7 @@ class Section1D(rxdsection.RxDSection):
 
         # check if memory has already been free'd
         if self._nseg < 0:
-             return
+            return
 
         # node data is removed here in case references to sec remains
         if hasattr(self, "_num_roots"):
@@ -239,54 +252,69 @@ class Section1D(rxdsection.RxDSection):
     def __del__(self):
         self._delete()
 
-
     @property
     def indices(self):
         return list(range(self._offset, self._offset + self.nseg))
 
-        
     def _setup_currents(self, indices, scales, ptrs, cur_map):
         from . import rxd
-        if self.nrn_region is not None and self.species.name is not None and self.species.charge != 0:
-            ion_curr = '_ref_i%s' % self.species.name
+
+        if (
+            self.nrn_region is not None
+            and self.species.name is not None
+            and self.species.charge != 0
+        ):
+            ion_curr = "_ref_i%s" % self.species.name
             indices.extend(self.indices)
             volumes, surface_area, diffs = node._get_data()
             # TODO: this implicitly assumes that o and i border the membrane
             # different signs depending on if an outward current decreases the region's concentration or increases it
-            if self.nrn_region == 'i':
+            if self.nrn_region == "i":
                 sign = -1
-            elif self.nrn_region == 'o':
+            elif self.nrn_region == "o":
                 sign = 1
             else:
-                raise RxDException('bad nrn_region for setting up currents (should never get here)')
-            scales.append(sign * surface_area[self.indices] * 10000. / (self.species.charge * h.FARADAY * volumes[self.indices]))
+                raise RxDException(
+                    "bad nrn_region for setting up currents (should never get here)"
+                )
+            scales.append(
+                sign
+                * surface_area[self.indices]
+                * 10000.0
+                / (self.species.charge * h.FARADAY * volumes[self.indices])
+            )
             for i in range(self.nseg):
                 seg = self._sec((i + 0.5) / self.nseg)
                 cur_map[self.species.name + self.nrn_region][seg] = len(ptrs)
                 ptrs.append(getattr(seg, ion_curr))
-            #ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
+            # ptrs.extend([self._sec((i + 0.5) / self.nseg).__getattribute__(ion_curr) for i in range(self.nseg)])
 
     @property
     def nodes(self):
         dx = self.L / self.nseg
-        return nodelist.NodeList([node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in range(self.nseg)])
-            
+        return nodelist.NodeList(
+            [node.Node1D(self, i, ((i + 0.5) * dx) / self.L) for i in range(self.nseg)]
+        )
+
     def _transfer_to_legacy(self):
         states = node._get_states()
         if self._concentration_ptrs is not None:
-            for i, ptr in zip(list(range(self._offset, self._offset + self.nseg)), self._concentration_ptrs):
+            for i, ptr in zip(
+                list(range(self._offset, self._offset + self.nseg)),
+                self._concentration_ptrs,
+            ):
                 ptr[0] = states[i]
-        
+
     def _register_cptrs(self):
         global _all_cptrs, _all_cindices
         if self.nrn_region is not None and self.species.name is not None:
-            ion = '_ref_' + self.species.name + self.nrn_region
+            ion = "_ref_" + self.species.name + self.nrn_region
             nseg = self.nseg
             for i in range(nseg):
                 x = (i + 0.5) / nseg
                 _all_cptrs.append(getattr(self._sec(x), ion))
                 _all_cindices.append(self._offset + i)
-            self._concentration_ptrs = _all_cptrs[-nseg :]
+            self._concentration_ptrs = _all_cptrs[-nseg:]
         else:
             self._concentration_ptrs = []
 
@@ -298,8 +326,8 @@ class Section1D(rxdsection.RxDSection):
         _volumes, _surface_area, _diffs = node._get_data()
         offset = self._offset
         dx = self.L / self.nseg
-        #print 'volumes:', _volumes
-        #print 'areas:', self._neighbor_areas
+        # print 'volumes:', _volumes
+        # print 'areas:', self._neighbor_areas
         for i in range(self.nseg):
             io = i + offset
             if i > 0:
@@ -313,11 +341,11 @@ class Section1D(rxdsection.RxDSection):
             # between nodes, which we approx by averaging
             # TODO: is this the best way to handle boundary nodes?
             if i > 0:
-                d_l = (_diffs[io] + _diffs[io - 1]) / 2.
+                d_l = (_diffs[io] + _diffs[io - 1]) / 2.0
             else:
                 d_l = _diffs[io]
             if i < self.nseg - 1:
-                d_r = (_diffs[io] + _diffs[io + 1]) / 2.
+                d_r = (_diffs[io] + _diffs[io + 1]) / 2.0
             else:
                 d_r = _diffs[io]
             rate_l = d_l * self._neighbor_areas[i] / (_volumes[io] * dx)
@@ -331,14 +359,14 @@ class Section1D(rxdsection.RxDSection):
                 # TODO: verify this is the right thing to do
                 rate_r *= 2
             # TODO: does this try/except add overhead? remove
-            #try:
+            # try:
             #    g[io, io] += rate_r + rate_l
             #    g[io, io + 1] -= rate_r
             #    g[io, il] -= rate_l
-            #except IndexError:
+            # except IndexError:
             #    print(('indexerror: g.shape = %r, io = %r, il = %r, len(node._states) = %r' % (g.shape, io, il, len(node._states))))
             #    raise
-            add_values(mat, io, [il, io, io+1], [-rate_l, rate_r + rate_l, -rate_r])
+            add_values(mat, io, [il, io, io + 1], [-rate_l, rate_r + rate_l, -rate_r])
 
             # TODO: verify that these are correct
             if i == 0:
@@ -357,7 +385,10 @@ class Section1D(rxdsection.RxDSection):
         """imports concentration from NEURON; else 0s it if not in NEURON"""
         states = node._get_states()
         if self.nrn_region is not None and self.species.name is not None:
-            for i, ptr in zip(list(range(self._offset, self._offset + self.nseg)), self._concentration_ptrs):
+            for i, ptr in zip(
+                list(range(self._offset, self._offset + self.nseg)),
+                self._concentration_ptrs,
+            ):
                 states[i] = ptr[0]
 
         elif init:
@@ -369,7 +400,9 @@ class Section1D(rxdsection.RxDSection):
         # assign parents and root nodes
         parent_seg = _parent(self._sec)
         parent_sec = parent_seg.sec if parent_seg else None
-        if parent_sec is None or not self._species()._has_region_section(self._region, parent_sec):
+        if parent_sec is None or not self._species()._has_region_section(
+            self._region, parent_sec
+        ):
             if parent_sec is None:
                 pt = (self._region, None)
             else:
@@ -380,7 +413,7 @@ class Section1D(rxdsection.RxDSection):
                 root_children.append([])
             local_root = missing[pt]
             # TODO: which way do I want to do the first entry here?
-            #self._parent = (self, local_root)
+            # self._parent = (self, local_root)
             self._parent = (self._species, local_root)
             root_children[local_root].append(self)
         else:
@@ -388,10 +421,5 @@ class Section1D(rxdsection.RxDSection):
             #       but doesn't matter much since only done at setup
             parent_section = self.species._region_section(self._region, parent_sec)
             self._parent = (parent_section, int(parent_sec.nseg * parent_seg.x))
-        #print 'parent:', self._parent
+        # print 'parent:', self._parent
         return root_id
-
-
-
-
-

@@ -5,19 +5,19 @@
 
 
 from neuron import h, rxd
-from matplotlib import pyplot
-h.load_file('stdrun.hoc')
+
+h.load_file("stdrun.hoc")
 
 
 # In[2]:
 
 
-axon = h.Section(name='s1')
-axon_terminal = h.Section(name='s')
+axon = h.Section(name="s1")
+axon_terminal = h.Section(name="s")
 axon.connect(axon_terminal)
 
-axon_terminal_region = rxd.Region([axon_terminal], nrn_region='i')
-synaptic_cleft = rxd.Region([axon_terminal], nrn_region='o')
+axon_terminal_region = rxd.Region([axon_terminal], nrn_region="i")
+synaptic_cleft = rxd.Region([axon_terminal], nrn_region="o")
 terminal_membrane = rxd.Region(h.allsec(), geometry=rxd.DistributedBoundary(1))
 
 
@@ -31,7 +31,14 @@ T = rxd.Species([synaptic_cleft], name="T", initial=10, charge=1)
 # In[4]:
 
 # if you comment the exocytosis line below, the error will go away
-exocytosis = rxd.MultiCompartmentReaction(VA[axon_terminal_region], T[synaptic_cleft], 500, 0, membrane=terminal_membrane, membrane_flux=True)
+exocytosis = rxd.MultiCompartmentReaction(
+    VA[axon_terminal_region],
+    T[synaptic_cleft],
+    500,
+    0,
+    membrane=terminal_membrane,
+    membrane_flux=True,
+)
 
 
 # In[5]:
@@ -44,6 +51,9 @@ t_vec = h.Vector().record(h._ref_t)
 h.finitialize(-70)
 h.continuerun(100)
 
-pyplot.plot(t_vec,VA_conc)
-pyplot.plot(t_vec,T_conc)
-pyplot.show()
+if __name__ == "__main__":
+    from matplotlib import pyplot
+
+    pyplot.plot(t_vec, VA_conc)
+    pyplot.plot(t_vec, T_conc)
+    pyplot.show()

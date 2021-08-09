@@ -535,13 +535,12 @@ void part2_clean() {
 // at present. Assertion errors are generated if not type 0 of if we
 // cannot determine the index into the NrnThread._data .
 
-int nrnthread_dat2_vecplay(int tid, int& n) {
+int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
     if (tid >= nrn_nthread) { return 0; }
     NrnThread& nt = nrn_threads[tid];
 
-    // count the instances for this thread
+    // add the index of each instance in fixed_play_ for thread tid.
     // error if not a VecPlayContinuous with no discon vector
-    n = 0;
     PlayRecList* fp = net_cvode_instance->fixed_play_;
     for (int i=0; i < fp->count(); ++i){
         if (fp->item(i)->type() == VecPlayContinuousType) {
@@ -549,7 +548,7 @@ int nrnthread_dat2_vecplay(int tid, int& n) {
             if (vp->discon_indices_ == NULL) {
                 if (vp->ith_ == nt.id) {
                     assert(vp->y_ && vp->t_);
-                    ++n;
+                    indices.push_back(i);
                 }
             }else{
                 assert(0);

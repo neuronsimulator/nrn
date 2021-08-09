@@ -225,14 +225,16 @@ proc nrnmainmenu() {
 }
 
 proc helpmenu() {
+    xmenu("Help", 1)
     if (nrnpython("import webbrowser")) {
-	    xmenu("Help", 1)
 	    xbutton("Programmer's Reference", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/python/index.html')\")")
 	    xbutton("Tutorials", "nrnpython(\"webbrowser.open('https://nrn.readthedocs.io/en/latest/tutorials/index.html')\")")
 	    xbutton("NEURON Forum", "nrnpython(\"webbrowser.open('https://neuron.yale.edu/phpBB/')\")")
 	    xbutton("NEURON Models on ModelDB", "nrnpython(\"webbrowser.open('http://senselab.med.yale.edu/ModelDB/ModelList.cshtml?id=1882')\")")
-	    xmenu()
     }
+    sprint(tstr, "continue_dialog(\"This is %s on %s.\")", nrnversion(1), nrnversion(8))
+    xbutton("About", tstr)
+    xmenu()
 }
 
 proc buildmenu() {

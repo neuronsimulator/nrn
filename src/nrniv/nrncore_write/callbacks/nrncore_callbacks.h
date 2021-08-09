@@ -49,7 +49,7 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 int nrnthread_dat2_corepointer(int tid, int& n);
 int nrnthread_dat2_corepointer_mech(int tid, int type,
                                     int& icnt, int& dcnt, int*& iarray, double*& darray);
-int nrnthread_dat2_vecplay(int tid, int& n);
+int nrnthread_dat2_vecplay(int tid, std::vector<int>& n);
 int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
                                 int& ix, int& sz, double*& yvec, double*& tvec);
 

@@ -11,8 +11,7 @@ if test "x${NRNHOME}" = x ; then
 	NRNDEMO=@prefix@/share/@PACKAGE@/demo/
 else
     prefix="$NRNHOME"
-    @USING_CMAKE_FALSE@exec_prefix="${prefix}/${ARCH}"
-    @USING_CMAKE_TRUE@exec_prefix="${prefix}"
+    exec_prefix="${prefix}"
 	NRNBIN="${exec_prefix}/bin/"
 	NRNDEMO="${prefix}/share/@PACKAGE@/demo/"
 fi
@@ -25,8 +24,7 @@ fi
 export NRNDEMO
 
 if [ ! -f "${NRNDEMO}neuron" ] ; then
-	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; ln -s release/${MODSUBDIR}/special neuron)
+	(cd "${NRNDEMO}release" ; "${NRNBIN}nrnivmodl" ; cd .. ; rm -f neuron ; touch neuron)
 fi
 
-@NRN_BINARY_SPECIAL_TRUE@"${NRNDEMO}neuron" "${NRNDEMO}demo.hoc" "$@" -
-@NRN_BINARY_SPECIAL_FALSE@${NRNBIN}nrniv -dll "${NRNDEMO}release/${ARCH}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -
+${NRNBIN}nrniv -dll "${NRNDEMO}release/${MODSUBDIR}/.libs/libnrnmech.so" "${NRNDEMO}demo.hoc" "$@" -

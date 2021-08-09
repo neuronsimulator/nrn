@@ -44,7 +44,7 @@ double Log10(double x) {
 extern "C" double hoc_Exp(double x) {
     if (x < -700.) {
         return 0.;
-    } else if (x > 700) {
+    } else if (x > 700 && nrn_feenableexcept_ == 0) {
         errno = ERANGE;
         if (++hoc_errno_count < MAXERRCOUNT) {
             fprintf(stderr, "exp(%g) out of range, returning exp(700)\n", x);

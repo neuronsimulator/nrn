@@ -8,8 +8,7 @@ s = "mpi4py thinks I am %d of %d\
 \nNEURON thinks I am %d of %d"
 
 cw = MPI.COMM_WORLD
-print s % (cw.rank, cw.size, \
-           pc.id(),pc.nhost())
+print s % (cw.rank, cw.size, pc.id(), pc.nhost())
 
 pc.done()
 
@@ -33,8 +32,7 @@ pc.done()
 ## mpi4py thinks I am 3 of 4, NEURON thinks I am 3 of 4
 
 
-
-## >>> 
+## >>>
 ## emuller@drishti ~/hg/nrn_neurens_hg/src/nrnpython/examples $
 
 
@@ -67,7 +65,7 @@ pc.done()
 
 
 ## emuller@drishti ~/hg/nrn_neurens_hg/src/nrnpython/examples $ python
-## Python 2.5.2 (r252:60911, Aug 22 2008, 18:45:05) 
+## Python 2.5.2 (r252:60911, Aug 22 2008, 18:45:05)
 ## [GCC 4.1.2 (Gentoo 4.1.2 p1.1)] on linux2
 ## Type "help", "copyright", "credits" or "license" for more information.
 ## >>> import neuron
@@ -77,4 +75,3 @@ pc.done()
 ## See http://neuron.yale.edu/credits.html
 
 ## >>>
-
