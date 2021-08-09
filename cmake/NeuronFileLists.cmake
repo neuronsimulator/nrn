@@ -216,7 +216,6 @@ set(NRNIV_FILE_LIST
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
-    nrnrtime.cpp
     nrnste.cpp
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
