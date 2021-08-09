@@ -1,14 +1,6 @@
 #include <../../nrnconf.h>
 #include <hocdec.h>
 
-#include <nrnrtuse.h>
-#if NRN_REALTIME
-double t, dt;
-void nrn_fixed_step(void){}
-void nrn_fake_step(void) {}
-#endif
-
-
 
 int stoprun;
 void clear_sectionlist(void) {}
