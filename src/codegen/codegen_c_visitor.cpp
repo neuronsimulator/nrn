@@ -3615,7 +3615,7 @@ void CodegenCVisitor::print_net_move_call(const FunctionCall& node) {
         auto point_process = get_variable_name("point_process");
         std::string t = get_variable_name("t");
         printer->add_text("net_send_buffering(");
-        printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, {}+"_format(tqitem, weight_index, point_process, t));
+        printer->add_text("ml->_net_send_buffer, 2, {}, {}, {}, "_format(tqitem, weight_index, point_process));
         print_vector_elements(arguments, ", ");
         printer->add_text(", 0.0");
         printer->add_text(")");
