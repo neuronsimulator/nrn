@@ -30,6 +30,9 @@
 #if USEBBS
 	,ParallelContext_reg()
 #endif
+#if NRN_REALTIME
+	, NrnRealTime_reg()
+#endif
 #if NRN_DAQ
 	, NrnDAQ_reg()
 #endif
@@ -65,6 +68,9 @@
 #endif
 #if USEBBS
 	,ParallelContext_reg
+#endif
+#if NRN_REALTIME
+	, NrnRealTime_reg
 #endif
 #if NRN_DAQ
 	, NrnDAQ_reg

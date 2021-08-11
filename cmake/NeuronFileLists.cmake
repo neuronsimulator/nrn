@@ -218,6 +218,7 @@ set(NRNIV_FILE_LIST
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
+    nrnrtime.cpp
     nrnste.cpp
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
@@ -467,7 +468,7 @@ set(MEMACS_FILES_LIST
     window.c
     word.c)
 
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
 
 set(NRNGNU_FILES_LIST
     ACG.cpp

@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 
 #include <nrnmpi.h>
+#include <nrnrt.h>
 #include <stdlib.h>
 #include <errno.h>
 #include "neuron.h"
@@ -559,6 +560,19 @@ void* nrn_ms_bksub_through_triang(NrnThread* nth) {
 	return nullptr;
 }
 
+#if NRN_REALTIME
+void nrn_fake_step() { /* get as much into cache as possible */
+	/* if we could do a full nrn_fixed_step we would save about 10 us */
+
+	/*Not nearly enough. This only saving a few */
+	setup_tree_matrix();
+	nrn_solve();
+
+#if 0
+	nonvint(); /* this is an important one, 2 more us,  but ... */
+#endif
+}
+#endif
 
 static void update(NrnThread* _nt)
 {
