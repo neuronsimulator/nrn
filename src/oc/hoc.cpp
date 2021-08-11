@@ -14,6 +14,7 @@
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
+#include "nrnrt.h"
 #include "nrnfilewrap.h"
 #if defined(__GO32__)
 #include <dos.h>
