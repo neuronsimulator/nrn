@@ -68,6 +68,11 @@ jobs:
         name: nrn-nightly-AMD64.exe
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
 
+    - name: Run installer and launch .hoc associaton test
+      run: .\ci\win_install_neuron.cmd
+      shell: cmd
+      working-directory: ${{runner.workspace}}\nrn
+
     - name: Test Installer
       run: .\ci\win_test_installer.cmd
       shell: cmd
