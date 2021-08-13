@@ -26,8 +26,11 @@ if os.name != "posix":
 # Main source of the version. Dont rename, used by Cmake
 try:
     # github actions somehow fails with check_output and python3
+
+    # Official Versioning shall rely on annotated tags (don't use `--tags` or `--all`)
+    # (please refer to NEURON SCM documentation)
     v = (
-        subprocess.run(["git", "describe", "--tags"], stdout=subprocess.PIPE)
+        subprocess.run(["git", "describe"], stdout=subprocess.PIPE)
         .stdout.strip()
         .decode()
     )
