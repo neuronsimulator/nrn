@@ -16,11 +16,8 @@ target_link_libraries(
   ${corenrn_mech_lib}
   ${reportinglib_LIBRARY}
   ${sonatareport_LIBRARY})
-
-if(CORENRN_ENABLE_GPU)
-  target_link_libraries(lfp_test_bin ${link_cudacoreneuron} ${CUDA_LIBRARIES})
-endif()
-
+# Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the
+# NVHPC C++ compiler handle this implicitly.
+set_target_properties(lfp_test_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
 add_dependencies(lfp_test_bin nrniv-core)
-
 add_test(NAME lfp_test COMMAND ${TEST_EXEC_PREFIX} $<TARGET_FILE:lfp_test_bin>)

@@ -137,8 +137,14 @@ nrnran123_State* nrnran123_newstream3(uint32_t id1,
     nrnran123_State* s{nullptr};
     if (use_unified_memory) {
 #ifdef __CUDACC__
-        assert(cudaMallocManaged(&s, sizeof(nrnran123_State)) == cudaSuccess);
-        assert(cudaMemset(s, 0, sizeof(nrnran123_State)) == cudaSuccess);
+        {
+            auto const code = cudaMallocManaged(&s, sizeof(nrnran123_State));
+            assert(code == cudaSuccess);
+        }
+        {
+            auto const code = cudaMemset(s, 0, sizeof(nrnran123_State));
+            assert(code == cudaSuccess);
+        }
 #else
         throw std::runtime_error("Tried to use CUDA unified memory in a non-GPU build.");
 #endif

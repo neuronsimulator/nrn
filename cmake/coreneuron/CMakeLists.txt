@@ -3,9 +3,11 @@
 #
 # See top-level LICENSE file for details.
 # =============================================================================
-
 cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-project(coreneuron VERSION 0.21.0)
+project(
+  coreneuron
+  VERSION 1.0
+  LANGUAGES C CXX)
 
 # ~~~
 # It is a bad idea having floating point versions, since macros cant handle them
@@ -96,15 +98,83 @@ option(CORENRN_ENABLE_SHARED "Enable shared library build" ON)
 option(CORENRN_ENABLE_LEGACY_UNITS "Enable legacy FARADAY, R, etc" OFF)
 option(CORENRN_ENABLE_PRCELLSTATE "Enable NRN_PRCELLSTATE debug feature" OFF)
 
-set(CORENRN_GPU_CUDA_COMPUTE_CAPABILITY
-    "60" "70"
-    CACHE STRING "List of CUDA compute capabilities to compile CUDA/OpenACC for")
 set(CORENRN_NMODL_DIR
     ""
     CACHE PATH "Path to nmodl source-to-source compiler installation")
 set(LIKWID_DIR
     ""
     CACHE PATH "Path to likwid performance analysis suite")
+
+# Older CMake versions label NVHPC as PGI, newer ones label it as NVHPC.
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
+  set(CORENRN_HAVE_NVHPC_COMPILER ON)
+else()
+  set(CORENRN_HAVE_NVHPC_COMPILER OFF)
+endif()
+
+if(CORENRN_ENABLE_GPU)
+  # Older CMake versions have not been tested for GPU/CUDA/OpenACC support after
+  # https://github.com/BlueBrain/CoreNeuron/pull/609.
+  # https://cmake.org/cmake/help/latest/release/3.14.html#properties suggests there would be
+  # problems because of expressions like set_target_properties(lfp_test_bin PROPERTIES
+  # CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
+  if(${CMAKE_VERSION} VERSION_LESS 3.15)
+    message(FATAL_ERROR "GPU support requires at least CMake v3.15!")
+  endif()
+
+  # Fail hard and early if we don't have the PGI/NVHPC compiler.
+  if(NOT CORENRN_HAVE_NVHPC_COMPILER)
+    message(
+      FATAL_ERROR
+        "GPU support is available via OpenACC using PGI/NVIDIA compilers."
+        " Use NVIDIA HPC SDK with -DCMAKE_C_COMPILER=nvc -DCMAKE_CUDA_COMPILER=nvcc -DCMAKE_CXX_COMPILER=nvc++"
+    )
+  endif()
+
+  # Set some sensible default CUDA architectures.
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES 60 70)
+    message(STATUS "Setting default CUDA architectures to ${CMAKE_CUDA_ARCHITECTURES}")
+  endif()
+
+  if(${CMAKE_VERSION} VERSION_LESS 3.16)
+    if(DEFINED CMAKE_CUDA_HOST_COMPILER)
+      unset(ENV{CUDAHOSTCXX})
+    endif()
+  endif()
+
+  # Enable CUDA language support.
+  enable_language(CUDA)
+
+  # Prefer shared libcudart.so
+  if(${CMAKE_VERSION} VERSION_LESS 3.17)
+    # Ugly workaround from https://gitlab.kitware.com/cmake/cmake/-/issues/17559, remove when
+    # possible
+    if(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES)
+      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart_static")
+      list(REMOVE_ITEM CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudadevrt")
+      list(APPEND CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudart")
+    endif()
+    if(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES)
+      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart_static")
+      list(REMOVE_ITEM CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudadevrt")
+      list(APPEND CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudart")
+    endif()
+  else()
+    # nvc++ -cuda implicitly links dynamically to libcudart.so. Setting this makes sure that CMake
+    # does not add -lcudart_static and trigger errors due to mixed dynamic/static linkage.
+    set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
+  endif()
+
+  # Patch CUDA_ARCHITECTURES support into older CMake versions
+  if(${CMAKE_VERSION} VERSION_LESS 3.18)
+    foreach(cuda_arch ${CMAKE_CUDA_ARCHITECTURES})
+      string(
+        APPEND CMAKE_CUDA_FLAGS
+        " --generate-code=arch=compute_${cuda_arch},code=[compute_${cuda_arch},sm_${cuda_arch}]")
+    endforeach()
+  endif()
+endif()
 
 # =============================================================================
 # Project version from git and project directories
@@ -141,7 +211,7 @@ endif()
 # =============================================================================
 # Build option specific compiler flags
 # =============================================================================
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
+if(CORENRN_HAVE_NVHPC_COMPILER)
   # PGI with llvm code generation doesn't have necessary assembly intrinsic headers
   add_definitions(-DEIGEN_DONT_VECTORIZE=1)
 endif()
@@ -390,57 +460,58 @@ endif()
 message(STATUS "")
 message(STATUS "Configured CoreNEURON ${PROJECT_VERSION}")
 message(STATUS "")
-string(TOLOWER "${CMAKE_GENERATOR}" cmake_generator_tolower)
-if(cmake_generator_tolower MATCHES "makefile")
-  message(STATUS "Some things you can do now:")
-  message(STATUS "--------------------+--------------------------------------------------------")
-  message(STATUS "Command             |   Description")
-  message(STATUS "--------------------+--------------------------------------------------------")
-  message(STATUS "make install        | Will install CoreNEURON to: ${CMAKE_INSTALL_PREFIX}")
-  message(STATUS "make docs           | Build full docs. Calls targets: doxygen, sphinx")
-  message(STATUS "--------------------+--------------------------------------------------------")
-  message(STATUS " Build option       | Status")
-  message(STATUS "--------------------+--------------------------------------------------------")
-
-  message(STATUS "C COMPILER          | ${CMAKE_C_COMPILER}")
-  message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
-  message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
-  message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
-  message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
-  if(CORENRN_ENABLE_MPI)
-    message(STATUS "  INC               | ${MPI_C_INCLUDE_PATH}")
-  endif()
-  message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
-  message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
-  message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
-  if(CORENRN_ENABLE_NMODL)
-    message(STATUS "  ISPC              | ${CORENRN_ENABLE_ISPC}")
-    message(STATUS "  FLAGS             | ${CORENRN_NMODL_FLAGS}")
-  endif()
-  message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
-  message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
-  if(CORENRN_ENABLE_GPU)
-    message(STATUS "  CUDA              | ${CUDA_TOOLKIT_ROOT_DIR}")
-    message(STATUS "  Unified Memory    | ${CORENRN_ENABLE_CUDA_UNIFIED_MEMORY}")
-    message(STATUS "  HOST COMPILER     | ${CUDA_HOST_COMPILER}")
-  endif()
-  message(STATUS "Auto Timeout        | ${CORENRN_ENABLE_TIMEOUT}")
-  message(STATUS "Wrap exp()          | ${CORENRN_ENABLE_HOC_EXP}")
-  message(STATUS "SplayTree Queue     | ${CORENRN_ENABLE_SPLAYTREE_QUEUING}")
-  message(STATUS "NetReceive Buffer   | ${CORENRN_ENABLE_NET_RECEIVE_BUFFER}")
-  message(STATUS "Caliper             | ${CORENRN_ENABLE_CALIPER_PROFILING}")
-  message(STATUS "Likwid              | ${CORENRN_ENABLE_LIKWID_PROFILING}")
-  message(STATUS "Unit Tests          | ${CORENRN_ENABLE_UNIT_TESTS}")
-  message(STATUS "Reporting           | ${CORENRN_ENABLE_REPORTING}")
-  if(CORENRN_ENABLE_REPORTING)
-    message(STATUS "  sonatareport_INC  | ${sonatareport_INCLUDE_DIR}")
-    message(STATUS "  sonatareport_LIB  | ${sonatareport_LIBRARY}")
-    message(STATUS "  reportinglib_INC  | ${reportinglib_INCLUDE_DIR}")
-    message(STATUS "  reportinglib_LIB  | ${reportinglib_LIBRARY}")
-  endif()
-
-  message(STATUS "--------------+--------------------------------------------------------------")
-  message(STATUS " See documentation : https://github.com/BlueBrain/CoreNeuron/")
-  message(STATUS "--------------+--------------------------------------------------------------")
+message(STATUS "You can now build CoreNEURON using:")
+if(${CMAKE_VERSION} VERSION_LESS "3.12")
+  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
+else()
+  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 endif()
+message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
+message(STATUS "Some non-default targets you might want to build:")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS " Target             |   Description")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "install             | Will install CoreNEURON to: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "docs                | Build full docs. Calls targets: doxygen, sphinx")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS " Build option       | Status")
+message(STATUS "--------------------+--------------------------------------------------------")
+message(STATUS "C COMPILER          | ${CMAKE_C_COMPILER}")
+message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
+message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
+message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
+message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
+if(CORENRN_ENABLE_MPI)
+  message(STATUS "  INC               | ${MPI_C_INCLUDE_PATH}")
+endif()
+message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
+message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")
+message(STATUS "NMODL               | ${CORENRN_ENABLE_NMODL}")
+if(CORENRN_ENABLE_NMODL)
+  message(STATUS "  ISPC              | ${CORENRN_ENABLE_ISPC}")
+  message(STATUS "  FLAGS             | ${CORENRN_NMODL_FLAGS}")
+endif()
+message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
+message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
+if(CORENRN_ENABLE_GPU)
+  message(STATUS "  CUDA              | ${CUDAToolkit_LIBRARY_DIR}")
+  message(STATUS "  Unified Memory    | ${CORENRN_ENABLE_CUDA_UNIFIED_MEMORY}")
+endif()
+message(STATUS "Auto Timeout        | ${CORENRN_ENABLE_TIMEOUT}")
+message(STATUS "Wrap exp()          | ${CORENRN_ENABLE_HOC_EXP}")
+message(STATUS "SplayTree Queue     | ${CORENRN_ENABLE_SPLAYTREE_QUEUING}")
+message(STATUS "NetReceive Buffer   | ${CORENRN_ENABLE_NET_RECEIVE_BUFFER}")
+message(STATUS "Caliper             | ${CORENRN_ENABLE_CALIPER_PROFILING}")
+message(STATUS "Likwid              | ${CORENRN_ENABLE_LIKWID_PROFILING}")
+message(STATUS "Unit Tests          | ${CORENRN_ENABLE_UNIT_TESTS}")
+message(STATUS "Reporting           | ${CORENRN_ENABLE_REPORTING}")
+if(CORENRN_ENABLE_REPORTING)
+  message(STATUS "  sonatareport_INC  | ${sonatareport_INCLUDE_DIR}")
+  message(STATUS "  sonatareport_LIB  | ${sonatareport_LIBRARY}")
+  message(STATUS "  reportinglib_INC  | ${reportinglib_INCLUDE_DIR}")
+  message(STATUS "  reportinglib_LIB  | ${reportinglib_LIBRARY}")
+endif()
+message(STATUS "--------------+--------------------------------------------------------------")
+message(STATUS " See documentation : https://github.com/BlueBrain/CoreNeuron/")
+message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS "")

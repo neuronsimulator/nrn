@@ -13,6 +13,8 @@ target_link_libraries(
   ${reportinglib_LIBRARY}
   ${sonatareport_LIBRARY})
 add_dependencies(interleave_info_bin nrniv-core)
-
+# Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the
+# NVHPC C++ compiler handle this implicitly.
+set_target_properties(interleave_info_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
 add_test(NAME interleave_info_constructor_test COMMAND ${TEST_EXEC_PREFIX}
                                                        $<TARGET_FILE:interleave_info_bin>)

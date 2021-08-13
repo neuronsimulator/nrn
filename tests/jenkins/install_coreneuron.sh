@@ -31,24 +31,24 @@ echo "${CORENRN_TYPE} build"
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ]; then
     cmake \
         -DCORENRN_ENABLE_GPU=ON \
+        -DCMAKE_CUDA_COMPILER=nvcc \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=OFF \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
         -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
-        -DCMAKE_CXX_FLAGS="-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1" \
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
     cmake \
         -DCORENRN_ENABLE_GPU=ON \
+        -DCMAKE_CUDA_COMPILER=nvcc \
         -DCORENRN_ENABLE_CUDA_UNIFIED_MEMORY=ON \
         -DCMAKE_INSTALL_PREFIX=$WORKSPACE/install_${CORENRN_TYPE}/ \
         -DTEST_MPI_EXEC_BIN="srun;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DTEST_EXEC_PREFIX="srun;-n;6;--account=proj16;--partition=$SALLOC_PARTITION;--constraint=volta;--gres=gpu:2;--mem;0;-t;00:05:00" \
         -DAUTO_TEST_WITH_SLURM=OFF \
         -DAUTO_TEST_WITH_MPIEXEC=OFF \
-        -DCMAKE_CXX_FLAGS="-D__GCC_ATOMIC_TEST_AND_SET_TRUEVAL=1" \
         $WORKSPACE/
 elif [ "${CORENRN_TYPE}" = "AoS" ] || [ "${CORENRN_TYPE}" = "SoA" ]; then
     CORENRN_ENABLE_SOA=ON

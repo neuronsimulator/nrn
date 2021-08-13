@@ -50,7 +50,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
     nrn_ion_global_map_copyto_device();
 
-#ifdef UNIFIED_MEMORY
+#ifdef CORENEURON_UNIFIED_MEMORY
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;  // NrnThread on host
 
