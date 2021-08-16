@@ -8,7 +8,7 @@
 #include "config/config.h"
 
 /// Git version of the project
-const std::string nmodl::Version::GIT_REVISION = "@GIT_REVISION@";
+const std::string nmodl::Version::GIT_REVISION = "@NMODL_GIT_REVISION@";
 
 /// NMODL version
 const std::string nmodl::Version::NMODL_VERSION = "@PROJECT_VERSION@";
