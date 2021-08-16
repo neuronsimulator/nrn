@@ -31,4 +31,7 @@ To that end, the following table's columns constitute:
      - C Preprocessor flag.
      - `#1415 <https://github.com/neuronsimulator/nrn/pull/1415>`_
      - e9ef741
+   * - NRN_REALTIME
+     - This related to realtime usage inside nrn.
+     - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
 
