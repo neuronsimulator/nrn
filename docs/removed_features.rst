@@ -20,4 +20,7 @@ To that end, the following table's columns constitute:
      - This related to a circa 2007 project implementing hard real time dynamic clamp under RTAI linux.
        The development was done in conjunction with National Instruments' NI PCI-6229 DAQ card.
      - `#1399 <https://github.com/neuronsimulator/nrn/pull/1399>`_
+   * - bluegene
+     - Code related to BlueGene L, P and Q; support for BlueGene Checkpoint API (keywords: BGLCheckpoint, BGLCheckpointInit).
+     - `#1286 <https://github.com/neuronsimulator/nrn/pull/1286>`_
 
