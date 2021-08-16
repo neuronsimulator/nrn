@@ -281,7 +281,6 @@ int prcellstate(int gid, const char* suffix) {
             PreSyn& ps = nt.presyns[ip];
             if (ps.output_index_ == gid) {
                 // found it so create a <gid>_<suffix>.corenrn file
-                char buf[200];
                 std::string filename = std::to_string(gid) + "_" + suffix + ".corenrn";
                 FILE* f = fopen(filename.c_str(), "w");
                 assert(f);

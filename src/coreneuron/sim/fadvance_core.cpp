@@ -138,7 +138,6 @@ void nrn_fixed_single_steps_minimal(int total_sim_steps, double tstop) {
 
 
 void nrn_fixed_step_group_minimal(int total_sim_steps) {
-    static int current_steps = 0;
     dt2thread(dt);
     nrn_thread_table_check();
     int step_group_n = total_sim_steps;

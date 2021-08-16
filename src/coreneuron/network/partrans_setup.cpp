@@ -171,7 +171,6 @@ void nrn_partrans::gap_mpi_setup(int ngroup) {
     // for a given thread
     // for j: outsrc_buf[outsrc_indices[j]] = src_gather[gather2outsrc_indices[j]]
     for (int tid = 0; tid < ngroup; ++tid) {
-        NrnThread& nt = nrn_threads[tid];
         auto& ttd = transfer_thread_data_[tid];
         std::map<int, int> data2gather_indices;
         for (size_t i = 0; i < ttd.src_indices.size(); ++i) {

@@ -210,7 +210,7 @@ coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 
 # compile cpp files to .o
 $(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp $(KINDERIV_H_PATH) | $(MOD_OBJS_DIR)
-	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE)
+	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE) @CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS@
 
 # compile ispc files to .obj
 $(MOD_OBJS_DIR)/%.obj: $(MOD_TO_CPP_DIR)/%.ispc | $(MOD_OBJS_DIR)

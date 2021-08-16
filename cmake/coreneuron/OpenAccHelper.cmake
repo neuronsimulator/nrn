@@ -63,8 +63,6 @@ if(CORENRN_ENABLE_GPU)
   foreach(compute_capability ${CMAKE_CUDA_ARCHITECTURES})
     string(APPEND NVHPC_ACC_COMP_FLAGS ",cc${compute_capability}")
   endforeach()
-  # disable very verbose diagnosis messages and obvious warnings for mod2c
-  set(PGI_DIAG_FLAGS "--diag_suppress 161,177,550")
   # avoid PGI adding standard compliant "-A" flags
   set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
@@ -86,3 +84,29 @@ else()
   set_property(GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS
                                "-L${CMAKE_HOST_SYSTEM_PROCESSOR} -lcorenrnmech")
 endif(CORENRN_ENABLE_GPU)
+
+if(CORENRN_HAVE_NVHPC_COMPILER)
+  if(${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 20.7)
+    # https://forums.developer.nvidia.com/t/many-all-diagnostic-numbers-increased-by-1-from-previous-values/146268/3
+    # changed the numbering scheme in newer versions. The following list is from a clean start 13
+    # August 2021. It would clearly be nicer to apply these suppressions only to relevant files.
+    # Examples of the suppressed warnings are given below.
+    # ~~~
+    # "include/Random123/array.h", warning #111-D: statement is unreachable
+    # "include/Random123/features/sse.h", warning #550-D: variable "edx" was set but never used
+    # ~~~
+    set(CORENEURON_CXX_WARNING_SUPPRESSIONS --diag_suppress=111,550)
+    # This one can be a bit more targeted
+    # ~~~
+    # "boost/test/unit_test_log.hpp", warning #612-D: overloaded virtual function "..." is only partially overridden in class "..."
+    # ~~~
+    set(CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS --diag_suppress=612)
+    # Extra suppressions for .cpp files translated from .mod files.
+    # ~~~
+    # "x86_64/corenrn/mod2c/pattern.cpp", warning #161-D: unrecognized #pragma
+    # "x86_64/corenrn/mod2c/svclmp.cpp", warning #177-D: variable "..." was declared but never referenced
+    # ~~~
+    string(JOIN " " CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS ${CORENEURON_CXX_WARNING_SUPPRESSIONS}
+           --diag_suppress=161,177)
+  endif()
+endif()

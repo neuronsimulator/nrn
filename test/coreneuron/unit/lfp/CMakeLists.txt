@@ -19,5 +19,6 @@ target_link_libraries(
 # Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the
 # NVHPC C++ compiler handle this implicitly.
 set_target_properties(lfp_test_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
+target_compile_options(lfp_test_bin PRIVATE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
 add_dependencies(lfp_test_bin nrniv-core)
 add_test(NAME lfp_test COMMAND ${TEST_EXEC_PREFIX} $<TARGET_FILE:lfp_test_bin>)

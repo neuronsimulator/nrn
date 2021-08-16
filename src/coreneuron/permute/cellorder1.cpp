@@ -92,7 +92,9 @@ static void admin2(int ncell,
                    int*& nodebegin,
                    int*& ncycles);
 static void check(VecTNode&);
+#if DEBUG
 static void prtree(VecTNode&);
+#endif
 
 using TNI = std::pair<TNode*, int>;
 using HashCnt = std::map<size_t, std::pair<TNode*, int>>;
@@ -409,6 +411,7 @@ void check(VecTNode& nodevec) {
     }
 }
 
+#if DEBUG
 void prtree(VecTNode& nodevec) {
     size_t nnode = nodevec.size();
     for (size_t i = 0; i < nnode; ++i) {
@@ -426,6 +429,7 @@ void prtree(VecTNode& nodevec) {
                nd.parent ? int(nd.parent->nodeindex) : -1);
     }
 }
+#endif
 
 /**
  * \brief Perform tree preparation for interleaving strategies

@@ -165,6 +165,9 @@ add_library(
 # Prevent CMake from running a device code link step when assembling libcoreneuron.a in GPU builds.
 # The device code linking needs to be deferred to the final step, where it is done by `nvc++ -cuda`.
 set_target_properties(coreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+# Suppress some compiler warnings. Note in GPU builds this library includes CUDA files.
+target_compile_options(coreneuron
+                       PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CORENEURON_CXX_WARNING_SUPPRESSIONS}>)
 
 # need to have _kinderiv.h for mod2c generated files and nrnivmodl-core and nmodl building
 add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)

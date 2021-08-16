@@ -24,7 +24,7 @@ find_package(Boost 1.41.0 QUIET COMPONENTS filesystem system atomic unit_test_fr
 
 if(Boost_FOUND)
   if(CORENRN_ENABLE_UNIT_TESTS)
-    include_directories(${Boost_INCLUDE_DIRS})
+    include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
     add_subdirectory(unit/cmdline_interface)
     add_subdirectory(unit/interleave_info)
     add_subdirectory(unit/alignment)

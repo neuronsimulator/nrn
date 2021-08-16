@@ -7,10 +7,6 @@
  *
  ******************************************************************************/
 
-#ifndef LINT
-static char RCSid[] = "sparse.c,v 1.7 1998/03/12 13:17:17 hines Exp";
-#endif
-
 #if defined(__PGI) && defined(_OPENACC)
 #include "accelmath.h"
 #endif

@@ -80,6 +80,7 @@ static void set_treenode_order(VVTN& levels) {
     }
 }
 
+#if DEBUG
 // every level starts out with no race conditions involving both
 // parent and child in the same level. Can we arrange things so that
 // every level has at least 32 nodes?
@@ -96,6 +97,7 @@ static bool is_parent_race(TNode* nd) {  // vitiating
     }
     return false;
 }
+#endif
 
 // less than 32 apart
 static bool is_parent_race2(TNode* nd) {  // vitiating
@@ -108,6 +110,7 @@ static bool is_parent_race2(TNode* nd) {  // vitiating
     return false;
 }
 
+#if DEBUG
 static bool is_child_race(TNode* nd) {  // potentially handleable by atomic
     if (nd->children.size() < 2) {
         return false;
@@ -125,6 +128,7 @@ static bool is_child_race(TNode* nd) {  // potentially handleable by atomic
     }
     return false;
 }
+#endif
 
 static bool is_child_race2(TNode* nd) {  // potentially handleable by atomic
     if (nd->children.size() < 2) {
@@ -194,13 +198,13 @@ static void move_nodes(size_t start, size_t length, size_t dst, VTN& nodes) {
     }
 }
 
+#if DEBUG
 // least number of nodes to move after nd to eliminate prace
 static size_t need2move(TNode* nd) {
     size_t d = dist2child(nd);
     return warpsize - ((nd->nodevec_index % warpsize) + d);
 }
 
-#if DEBUG
 static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
     size_t n = 0;
     for (size_t i = 0; i < nodes.size(); i += warpsize) {
@@ -218,7 +222,6 @@ static void how_many_warpsize_groups_have_only_leaves(VTN& nodes) {
     }
     printf("number of warpsize groups with only leaves = %ld\n", n);
 }
-#endif
 
 static void pr_race_situation(VTN& nodes) {
     size_t prace2 = 0;
@@ -248,6 +251,7 @@ static void pr_race_situation(VTN& nodes) {
     }
     printf("prace=%ld  crace=%ld prace2=%ld\n", prace, crace, prace2);
 }
+#endif
 
 static size_t next_leaf(TNode* nd, VTN& nodes) {
     size_t i = 0;

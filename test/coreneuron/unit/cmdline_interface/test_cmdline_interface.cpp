@@ -126,12 +126,4 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     BOOST_CHECK(corenrn_param_test.spkcompress == 32);
 
     BOOST_CHECK(corenrn_param_test.multisend == true);
-
-    // check if default flags are false
-    const char* argv_empty[] = {"nrniv-core"};
-    argc = 1;
-
-    corenrn_param_test.dt = 18.1;
-
-    BOOST_CHECK(corenrn_param_test.dt == 18.1);
 }
