@@ -59,6 +59,12 @@ set(LEXER_SOURCE_FILES
     ${C_DRIVER_FILES}
     ${UNIT_DRIVER_FILES})
 
+if(NMODL_PGI_COMPILER)
+  # "verbatim_lexer.cpp", warning #550-D: variable "..." was set but never used
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.cpp
+                              PROPERTIES COMPILE_FLAGS "--diag_suppress 550")
+endif()
+
 # =============================================================================
 # Directories for parsers (as they need to be in separate directories)
 # =============================================================================
