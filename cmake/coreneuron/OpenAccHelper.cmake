@@ -9,7 +9,7 @@
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
   # Enable cudaProfiler{Start,Stop}() behind the Instrumentor::phase... APIs
-  add_compile_definitions(CORENEURON_CUDA_PROFILING)
+  add_compile_definitions(CORENEURON_CUDA_PROFILING CORENEURON_ENABLE_GPU)
   # cuda unified memory support
   if(CORENRN_ENABLE_CUDA_UNIFIED_MEMORY)
     add_compile_definitions(CORENEURON_UNIFIED_MEMORY)
@@ -49,8 +49,8 @@ if(CORENRN_ENABLE_GPU)
   endif()
   # -acc enables OpenACC support, -cuda links CUDA libraries and (very importantly!) seems to be
   # required to make the NVHPC compiler do the device code linking. Otherwise the explicit CUDA
-  # device code (.cu files in libcudacoreneuron) has to be linked in a separate, earlier, step,
-  # which apparently causes problems with interoperability with OpenACC. Passing -cuda to nvc++ when
+  # device code (.cu files in libcoreneuron) has to be linked in a separate, earlier, step, which
+  # apparently causes problems with interoperability with OpenACC. Passing -cuda to nvc++ when
   # compiling (as opposed to linking) seems to enable CUDA C++ support, which has other consequences
   # due to e.g. __CUDACC__ being defined. See https://github.com/BlueBrain/CoreNeuron/issues/607 for
   # more information about this. -gpu=cudaX.Y ensures that OpenACC code is compiled with the same
@@ -80,7 +80,7 @@ if(CORENRN_ENABLE_GPU)
     GLOBAL
     PROPERTY
       CORENEURON_LIB_LINK_FLAGS
-      "${NVHPC_ACC_COMP_FLAGS} ${NVHPC_ACC_LINK_FLAGS} -rdynamic -lrt -Wl,--whole-archive -L${CMAKE_HOST_SYSTEM_PROCESSOR} -lcorenrnmech -L${CMAKE_INSTALL_PREFIX}/lib -lcoreneuron -lcudacoreneuron -Wl,--no-whole-archive"
+      "${NVHPC_ACC_COMP_FLAGS} ${NVHPC_ACC_LINK_FLAGS} -rdynamic -lrt -Wl,--whole-archive -L${CMAKE_HOST_SYSTEM_PROCESSOR} -lcorenrnmech -L${CMAKE_INSTALL_PREFIX}/lib -lcoreneuron -Wl,--no-whole-archive"
   )
 else()
   set_property(GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS

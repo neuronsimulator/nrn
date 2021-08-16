@@ -140,9 +140,6 @@ void nrn_init_and_load_data(int argc,
     // initialise default coreneuron parameters
     initnrn();
 
-    // create mutex for nrn123, protect instance_count_
-    nrnran123_mutconstruct();
-
     // set global variables
     // precedence is: set by user, globals.dat, 34.0
     celsius = corenrn_param.celsius;

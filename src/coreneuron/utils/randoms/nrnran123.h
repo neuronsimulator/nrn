@@ -74,13 +74,10 @@ struct nrnran123_array4x32 {
     uint32_t v[4];
 };
 
-/* do this on launch to make nrnran123_newstream threadsafe */
-void nrnran123_mutconstruct();
-
 /* global index. eg. run number */
 /* all generator instances share this global index */
 void nrnran123_set_globalindex(uint32_t gix);
-CORENRN_HOST_DEVICE_ACC uint32_t nrnran123_get_globalindex();
+uint32_t nrnran123_get_globalindex();
 
 // Utilities used for calculating model size, only called from the CPU.
 std::size_t nrnran123_instance_count();

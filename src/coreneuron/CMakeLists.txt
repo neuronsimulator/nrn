@@ -108,6 +108,7 @@ if(CORENRN_ENABLE_GPU)
   # ~~~
   # artificial cells and some other cpp files (using Random123) should be compiled
   # without OpenACC to avoid use of GPU Random123 streams
+  # OL210813: this shouldn't be needed anymore, but it may have a small performance benefit
   # ~~~
   set(OPENACC_EXCLUDED_FILES
       ${CMAKE_CURRENT_BINARY_DIR}/netstim.cpp
@@ -119,23 +120,15 @@ if(CORENRN_ENABLE_GPU)
       ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/global_vars.cpp)
 
-  set_source_files_properties(${DIMPLIC_CODE_FILE} ${NMODL_INBUILT_MOD_OUTPUTS}
-                              PROPERTIES COMPILE_FLAGS "")
-
   set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
                                                                    "-DDISABLE_OPENACC")
-
-  add_library(cudacoreneuron STATIC ${CORENEURON_CUDA_FILES})
-  set_target_properties(cudacoreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-  set(link_cudacoreneuron cudacoreneuron)
   # nrnran123.cpp is a symlink to nrnran123.cu, in GPU builds we compile this as CUDA code (so we
   # want to remove the .cpp here), while in non-GPU builds we compile it as plain C++. Unfortunately
   # CMake <v3.20 does not pass explicit -x <lang> options based on the LANGUAGE property
   # (https://cmake.org/cmake/help/latest/policy/CMP0119.html), so using a single .cu file and
   # setting LANGUAGE=CXX in non-GPU builds does not work.
   list(REMOVE_ITEM CORENEURON_CODE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp")
-else()
-  set(link_cudacoreneuron "")
+  list(APPEND CORENEURON_CODE_FILES ${CORENEURON_CUDA_FILES})
 endif()
 
 # =============================================================================
@@ -171,9 +164,7 @@ add_library(
              ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
 # Prevent CMake from running a device code link step when assembling libcoreneuron.a in GPU builds.
 # The device code linking needs to be deferred to the final step, where it is done by `nvc++ -cuda`.
-# OL210811: it's not clear why this is needed, given that coreneuron is a static library in GPU
-# builds.
-set_target_properties(coreneuron PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
+set_target_properties(coreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # need to have _kinderiv.h for mod2c generated files and nrnivmodl-core and nmodl building
 add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
@@ -181,21 +172,15 @@ add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 # scopmath is created separately for nrnivmodl-core workflow
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
 
-target_link_libraries(
-  coreneuron
-  ${reportinglib_LIBRARY}
-  ${sonatareport_LIBRARY}
-  ${link_cudacoreneuron}
-  ${CALIPER_LIB}
-  ${likwid_LIBRARIES}
-  ${MPI_C_LIBRARIES})
+target_link_libraries(coreneuron ${reportinglib_LIBRARY} ${sonatareport_LIBRARY} ${CALIPER_LIB}
+                      ${likwid_LIBRARIES} ${MPI_C_LIBRARIES})
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include)
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
 set_target_properties(
-  coreneuron scopmath ${link_cudacoreneuron}
+  coreneuron scopmath
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              POSITION_INDEPENDENT_CODE ON)
@@ -253,7 +238,7 @@ file(COPY apps/coreneuron.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/coreneuron)
 
 # coreneuron main libraries
 install(
-  TARGETS coreneuron ${link_cudacoreneuron}
+  TARGETS coreneuron
   EXPORT coreneuron
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

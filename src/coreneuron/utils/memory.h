@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -20,6 +21,98 @@
 // simd memory bus)
 #define NRN_SOA_BYTE_ALIGN (8 * sizeof(double))
 #endif
+
+namespace coreneuron {
+/** @brief Check if allocate_unified will return a unified memory address.
+ *
+ *  If false, [de]allocate_unified simply forward to new/delete. It is
+ *  convenient to include this method here to avoid having to access
+ *  corenrn_param directly.
+ */
+bool unified_memory_enabled();
+
+/** @brief Allocate unified memory in GPU builds iff GPU enabled, otherwise new
+ */
+void* allocate_unified(std::size_t num_bytes);
+
+/** @brief Deallocate memory allocated by `allocate_unified`.
+ */
+void deallocate_unified(void* ptr, std::size_t num_bytes);
+
+/** @brief C++ allocator that uses [de]allocate_unified.
+ */
+template <typename T>
+struct unified_allocator {
+    using value_type = T;
+
+    unified_allocator() = default;
+
+    template <typename U>
+    unified_allocator(unified_allocator<U> const&) noexcept {}
+
+    value_type* allocate(std::size_t n) {
+        return static_cast<value_type*>(allocate_unified(n * sizeof(value_type)));
+    }
+
+    void deallocate(value_type* p, std::size_t n) noexcept {
+        deallocate_unified(p, n * sizeof(value_type));
+    }
+};
+
+template <typename T, typename U>
+bool operator==(unified_allocator<T> const&, unified_allocator<U> const&) noexcept {
+    return true;
+}
+
+template <typename T, typename U>
+bool operator!=(unified_allocator<T> const& x, unified_allocator<U> const& y) noexcept {
+    return !(x == y);
+}
+
+/** @brief Allocator-aware deleter for use with std::unique_ptr.
+ *
+ *  This is copied from https://stackoverflow.com/a/23132307. See also
+ *  http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0316r0.html,
+ *  http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0211r3.html, and
+ *  boost::allocate_unique<...>.
+ *  Hopefully std::allocate_unique will be included in C++23.
+ */
+template <typename Alloc>
+struct alloc_deleter {
+    alloc_deleter() = default;  // OL210813 addition
+    alloc_deleter(const Alloc& a)
+        : a(a) {}
+
+    typedef typename std::allocator_traits<Alloc>::pointer pointer;
+
+    void operator()(pointer p) const {
+        Alloc aa(a);
+        std::allocator_traits<Alloc>::destroy(aa, std::addressof(*p));
+        std::allocator_traits<Alloc>::deallocate(aa, p, 1);
+    }
+
+  private:
+    Alloc a;
+};
+
+template <typename T, typename Alloc, typename... Args>
+auto allocate_unique(const Alloc& alloc, Args&&... args) {
+    using AT = std::allocator_traits<Alloc>;
+    static_assert(std::is_same<typename AT::value_type, std::remove_cv_t<T>>{}(),
+                  "Allocator has the wrong value_type");
+
+    Alloc a(alloc);
+    auto p = AT::allocate(a, 1);
+    try {
+        AT::construct(a, std::addressof(*p), std::forward<Args>(args)...);
+        using D = alloc_deleter<Alloc>;
+        return std::unique_ptr<T, D>(p, D(a));
+    } catch (...) {
+        AT::deallocate(a, p, 1);
+        throw;
+    }
+}
+}  // namespace coreneuron
 
 /// for gpu builds with unified memory support
 /// OL210812: why do we include __CUDACC__ here?
