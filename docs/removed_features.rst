@@ -23,4 +23,7 @@ To that end, the following table's columns constitute:
    * - bluegene
      - Code related to BlueGene L, P and Q; support for BlueGene Checkpoint API (keywords: BGLCheckpoint, BGLCheckpointInit).
      - `#1286 <https://github.com/neuronsimulator/nrn/pull/1286>`_
+   * - NRN_REALTIME
+     - This related to realtime usage inside nrn.
+     - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
 
