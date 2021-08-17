@@ -14,7 +14,7 @@ To that end, the following table's columns constitute:
    :header-rows: 1
    :class: fixed-table
 
-   * - Name / Tag
+   * - Name / Keyword
      - Short description
      - Removal PR(s)
      - SHA
