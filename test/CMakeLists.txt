@@ -3,6 +3,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
                     ${PROJECT_SOURCE_DIR}/src/nrniv ${PROJECT_SOURCE_DIR}/src/oc)
 
+# Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
+# targets from included projects like CoreNEURON and NMODL
+add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+
 # =============================================================================
 # Test executables
 # =============================================================================
@@ -134,7 +138,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-8)
-    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
+    elseif(NRN_HAVE_NVHPC_COMPILER)
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
     nrn_add_test(
