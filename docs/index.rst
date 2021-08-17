@@ -32,6 +32,12 @@ Welcome to NEURON's documentation!
 
 .. toctree::
    :maxdepth: 1
+   :caption: Removed Features
+
+   removed_features.rst
+
+.. toctree::
+   :maxdepth: 1
    :caption: Changelog
 
    changelog.md

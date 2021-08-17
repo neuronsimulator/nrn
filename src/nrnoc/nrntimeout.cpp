@@ -13,9 +13,7 @@
 void (*nrntimeout_call)();
 static double told;
 static struct itimerval value;
-#if !defined(BLUEGENE)
 static struct sigaction act, oact;
-#endif
 
 #define NRNTIMEOUT_DEBUG 0
 #if NRNTIMEOUT_DEBUG
@@ -42,17 +40,9 @@ old_nrn_time = z;
 void nrn_timeout(int seconds) {
     if (nrnmpi_myid != 0) { return; }
 #if NRNTIMEOUT_DEBUG
-printf("nrn_timeout(%d) t=%g\n", seconds, nrn_threads->_t);
-old_nrn_time = nrn_time();
+    printf("nrn_timeout(%d) t=%g\n", seconds, nrn_threads->_t);
+    old_nrn_time = nrn_time();
 #endif
-#if BLUEGENE
-    if (seconds) {
-        told = nrn_threads->_t;
-        signal(SIGALRM, timed_out);
-    }else{
-        signal(SIGALRM, SIG_DFL);
-    }
-#else
     if (seconds) {
         told = nrn_threads->_t;
         act.sa_handler = timed_out;
@@ -61,10 +51,9 @@ old_nrn_time = nrn_time();
             printf("sigaction failed\n");
             nrnmpi_abort(0);
         }
-    }else{
+    } else {
         sigaction(SIGALRM, &oact, (struct sigaction*)0);
     }
-#endif
     value.it_interval.tv_sec = seconds;
     value.it_interval.tv_usec = 0;
     value.it_value.tv_sec = seconds;

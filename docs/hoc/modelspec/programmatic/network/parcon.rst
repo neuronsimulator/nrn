@@ -2490,22 +2490,6 @@ Description:
 
 
 
-.. method:: ParallelContext.checkpoint
-
-
-    Syntax:
-        ``i = pc.checkpoint()``
-
-
-    Description:
-        Available only for the BlueGene. 
-
-         
-
-----
-
-
-
 .. _paralleltransfer:
 
 Parallel Transfer
