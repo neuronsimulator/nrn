@@ -32,6 +32,6 @@ To that end, the following table's columns constitute:
      - `#1415 <https://github.com/neuronsimulator/nrn/pull/1415>`_
      - e9ef741
    * - NRN_REALTIME
-     - This related to realtime usage inside nrn.
+     - NEURON support for RTAI - Real Time Application Interface for Linux. Also relates to `ni_pci_6229`
      - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
-
+     - a3a6a3c
