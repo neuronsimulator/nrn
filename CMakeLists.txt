@@ -154,13 +154,13 @@ set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7
 # sub-directorty containing project submodules
 set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/external")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
-include(PlatformHelper)
-include(CompilerHelper)
-include(MacroHelper)
-include(RpathHelper)
-include(ExternalProjectHelper)
-include(FindPythonModule)
-include(Coverage)
+include(cmake/PlatformHelper.cmake)
+include(cmake/CompilerHelper.cmake)
+include(cmake/MacroHelper.cmake)
+include(cmake/RpathHelper.cmake)
+include(cmake/ExternalProjectHelper.cmake)
+include(cmake/modules/FindPythonModule.cmake)
+include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
