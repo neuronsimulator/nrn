@@ -79,6 +79,10 @@ extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
  */
 extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
+#if NRNMPI == 0
+double nrn_bgp_receive_time(int) { return 0.; }
+#endif
+
 #if PARANEURON
 extern void nrnmpi_split_clear();
 #endif
@@ -978,14 +982,16 @@ void nrnmpi_gid_clear(int arg) {
 	gid2in_donot_remove = 1;
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 	    if (arg == 4) {
-		delete ps;
+            delete ps;
 	    }else{
-		bgpdma_cleanup_presyn(ps);
-		ps->gid_ = -1;
-		ps->output_index_ = -1;
-		if (ps->dil_.count() == 0) {
-			delete ps;
-		}
+#if NRNMPI
+            bgpdma_cleanup_presyn(ps);
+#endif
+            ps->gid_ = -1;
+            ps->output_index_ = -1;
+            if (ps->dil_.count() == 0) {
+                delete ps;
+            }
 	    }
 	}}}
 	gid2in_donot_remove = 0;
