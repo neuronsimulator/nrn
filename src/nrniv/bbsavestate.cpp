@@ -230,6 +230,8 @@ extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
+
+extern bool use_bgpdma_;
 #else
 static void nrn_spike_exchange(NrnThread*) {}
 static void nrnmpi_barrier() {}
@@ -259,8 +261,6 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
     r[i] = s[i];
   }
 }
-
-extern bool use_bgpdma_;
 #endif // NRNMPI
 
 extern "C" Point_process* ob2pntproc(Object*);
