@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is
 # because CMake reads the CRAYPE_LINK_TYPE environment variable inside the call
 # to project(...) and sets various flags and properties based on its value.
@@ -294,12 +294,7 @@ if(NRN_ENABLE_MPI)
   add_definitions("-DOMPI_SKIP_MPICXX=1")
   add_definitions("-DMPICH_SKIP_MPICXX=1")
 
-  # FindMPI broke backward compatibility with v3.19
-  if(${CMAKE_VERSION} VERSION_LESS "3.10")
-    set(NRN_MPIEXEC_EXECUTABLE ${MPIEXEC})
-  else()
-    set(NRN_MPIEXEC_EXECUTABLE ${MPIEXEC_EXECUTABLE})
-  endif()
+  set(NRN_MPIEXEC_EXECUTABLE ${MPIEXEC_EXECUTABLE})
 
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
@@ -651,11 +646,7 @@ message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
 message(STATUS "You can now build NEURON using:")
-if(${CMAKE_VERSION} VERSION_LESS "3.12")
-  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
-else()
-  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
-endif()
+message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
 message(STATUS "Some non-default targets you might want to build:")
 message(STATUS "--------------+--------------------------------------------------------------")
