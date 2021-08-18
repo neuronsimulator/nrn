@@ -16,8 +16,8 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 ## Build Dependencies
 * Bison
 * Flex
-* CMake >=3.8
-* Python >=2.7
+* CMake >=3.15.0
+* Python >=3.6
 * MPI Library [Optional, for MPI support]
 * [PGI Compiler / NVIDIA HPC SDK](https://developer.nvidia.com/hpc-sdk) [Optional, for GPU support]
 * [CUDA Toolkit >=9.0](https://developer.nvidia.com/cuda-downloads) [Optional, for GPU support]
