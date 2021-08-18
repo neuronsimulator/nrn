@@ -1,16 +1,14 @@
-FROM quay.io/pypa/manylinux2010_x86_64
-LABEL authors="Omar Awile,Pramod Kumbhar"
+FROM quay.io/pypa/manylinux2014_x86_64
+LABEL authors="Omar Awile, Pramod Kumbhar, Alexandru Savulescu"
 
 # install basic packages
 RUN yum -y install \
     git \
     wget \
-    cmake3 \
     make \
     vim \
     curl \
     unzip \
-    pkg-config \
     autoconf \
     automake \
     make \
@@ -18,12 +16,6 @@ RUN yum -y install \
     libtool
 
 WORKDIR /root
-
-RUN curl -L -o cmake-3.12.3.tar.gz https://github.com/Kitware/CMake/releases/download/v3.12.3/cmake-3.12.3.tar.gz \
-    && tar -xvzf cmake-3.12.3.tar.gz \
-    && cd cmake-3.12.3 \
-    && ./bootstrap -- -DCMAKE_INSTALL_PREFIX=/nmodlwheel/cmake \
-    && make -j 3 install
 
 RUN curl -L -o flex-2.6.4.tar.gz https://github.com/westes/flex/files/981163/flex-2.6.4.tar.gz \
     && tar -xvzf flex-2.6.4.tar.gz \
