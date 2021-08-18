@@ -5,7 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
 project(NMODL LANGUAGES CXX)
 
@@ -238,11 +238,7 @@ message(STATUS "")
 message(STATUS "Configured NMODL ${PROJECT_VERSION} (${NMODL_GIT_REVISION})")
 message(STATUS "")
 message(STATUS "You can now build NMODL using:")
-if(${CMAKE_VERSION} VERSION_LESS "3.12")
-  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
-else()
-  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
-endif()
+message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
 message(STATUS "Some non-default targets you might want to build:")
 message(STATUS "Some things you can do now:")
