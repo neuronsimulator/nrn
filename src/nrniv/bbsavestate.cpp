@@ -259,9 +259,9 @@ static void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl) {
     r[i] = s[i];
   }
 }
-#endif // NRNMPI
 
 extern bool use_bgpdma_;
+#endif // NRNMPI
 
 extern "C" Point_process* ob2pntproc(Object*);
 extern void nrn_play_init();
@@ -802,10 +802,12 @@ extern "C" void bbss_restore_done(void* bbss) {
 	npe->savestate_restore(t, net_cvode_instance);
 	delete npe;
 	nrn_spike_exchange(nrn_threads);
+#if NRNMPI
 	// only necessary if multisend method is using two subintervals
 	if (use_bgpdma_) {
 		nrn_spike_exchange(nrn_threads);
 	}
+#endif
 	// The queue may now contain spikes which have already been
 	// delivered and so those must be removed if delivery time < t.
 	// Actually, the Presyn spikes may end up as NetCon spikes some

@@ -490,12 +490,14 @@ static int bgp_advance() {
 	return i;
 }
 
+#if NRNMPI
 void nrnbgp_messager_advance() {
 	if (use_bgpdma_) { bgp_advance(); }
 #if ENQUEUE == 2
 	bgp_receive_buffer[current_rbuf]->enqueue();
 #endif
 }
+#endif
 
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
@@ -552,9 +554,11 @@ void BGP_DMASend::send(int gid, double t) {
 	bgp_receive_buffer[0]->nsend_cell_ += 1;
 #endif
 	nsend_ += 1;
+#if NRNMPI
     if (use_bgpdma_) {
 	    nrnmpi_bgp_multisend(&spk_, NTARGET_HOSTS_PHASE1, target_hosts_);
     }
+#endif
   }
 #if 0
 	// I am given to understand that multisend cannot send to itself
@@ -609,24 +613,26 @@ void bgp_dma_receive(NrnThread* nt) {
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
+#if NRNMPI
     if (use_bgpdma_) {
-	nrnbgp_messager_advance();
-	TBUF
+        nrnbgp_messager_advance();
+        TBUF
 #if ENQUEUE == 2
-	// want the overlap with computation, not conserve
-	tfind = enq2_find_time_;
-	tsend = enq2_enqueue_time_ - enq2_find_time_;
+        // want the overlap with computation, not conserve
+        tfind = enq2_find_time_;
+        tsend = enq2_enqueue_time_ - enq2_find_time_;
 #endif
 #if TBUFSIZE
-	nrnmpi_barrier();
+        nrnmpi_barrier();
 #endif
-	TBUF
-	while (nrnmpi_bgp_conserve(s, r) != 0) {
-		nrnbgp_messager_advance();
-		++ncons;
-	}
-	TBUF
+        TBUF
+        while (nrnmpi_bgp_conserve(s, r) != 0) {
+            nrnbgp_messager_advance();
+            ++ncons;
+        }
+        TBUF
     }
+#endif // NRNMPI
 	w1 = nrnmpi_wtime() - w1;
 	w2 = nrnmpi_wtime();
 #if TBUFSIZE
