@@ -265,12 +265,12 @@ class CMakeAugmentedBuilder(build_ext):
                 cmake_version = LooseVersion(
                     re.search(r"version\s*([\d.]+)", out.decode()).group(1)
                 )
-                if cmake_version >= "3.5.0":
+                if cmake_version >= "3.15.0":
                     return candidate
             except OSError:
                 pass
 
-        raise RuntimeError("Project requires CMake >=3.5.0")
+        raise RuntimeError("Project requires CMake >=3.15.0")
 
 
 class Docs(Command):
