@@ -57,170 +57,17 @@ hocedit.c,v
  *
 */
 
-/* example to show how microemacs can be embedded in a larger program */
-
 #include <stdio.h>
 #include <hocdec.h>
 #include <hocparse.h>
 #include <setjmp.h>
 
-#ifndef WITHOUT_MEMACS
-
-#include "estruct.h"
-extern "C" {
-extern int emacs_main(int n, char **cpp);
-extern int emacs_refresh(int i, int j);
-extern int emacs_vtinit(void);
-} // extern "C"
-#define IGNORE(arg)	arg
-#define Fprintf		fprintf
-
-extern TERM emacs_term;
-extern BUFFER *emacs_curbp;
-extern WINDOW *emacs_curwp;
-
-extern int hoc_pipeflag;
-extern int hoc_lineno;
-
-static jmp_buf	emacs_begin;
-
-static int called = 0;
-static LINE *lp, *lhead;
-static short cnt;
-
-static char *argv[] = { "embedded", nullptr};
-
-#endif /* !WITHOUT_MEMACS */
-
-void hoc_edit(void)
-{
-#ifndef WITHOUT_MEMACS
-#if	DOS || defined(__GO32__) /*must erase screen if in graphics mode*/
-    extern int egagrph;
-	if (egagrph) {
-		plt(-3,0.,0.);
-	}
-#endif
-    if (hoc_retrieving_audit()) {
-        hoc_emacs_from_audit();
-        return;
-    }
-    if (setjmp(emacs_begin)) {
-        return;
-    }
-    if (!called) {
-        called = 1;
-        emacs_main(1, argv);
-    } else {
-        emacs_vtinit();
-        emacs_refresh(0, 1);
-        emacs_main(-1, argv);
-    }
-#endif
-}
-
-void hoc_edit_quit(void)
-{
-#ifndef WITHOUT_MEMACS
-    char s[2];
-    if (called) {
-        argv[0] = s;
-        argv[0][0] = 'Z' & 037;
-        rewind(stdin);	/* else continuous EOF */
-        hoc_edit();
-    }
-#endif
-}
-
-#ifndef WITHOUT_MEMACS
-extern "C" int emacs_exit(int status) {
-
-    if (status) {
-        Fprintf(stderr, "emacs--status = %d\n", status);
-        hoc_pipeflag = 0;
-        hoc_execerror("Error in emacs return", (char *)0);
-    }
-
-    if (status == 0) {
-        lhead = emacs_curbp->b_linep;
-        lp = lforw(lhead);
-        cnt = 0;
-        hoc_pipeflag = 1;
-        hoc_lineno = 0;
-        hoc_audit_from_emacs(emacs_curbp->b_bname, emacs_curbp->b_fname);
-        lp = lforw(lhead);
-        cnt = 0;
-    }
-    longjmp(emacs_begin, 1);
-    return 0;
-}
-#endif
-
-#ifndef WITHOUT_MEMACS
-static LINE *lastlp;
-#endif
-
-void hoc_pipeflush(void)
-{
-#ifndef WITHOUT_MEMACS
-    if (hoc_pipeflag == 1) {
-        extern int hoc_ictp;
-        if (ired("\nReenter emacs", 1, 0, 1)) {
-            emacs_curwp->w_dotp = lback(lp);
-            if (hoc_ictp < llength(lback(lp))) {
-                emacs_curwp->w_doto = hoc_ictp;
-            }else{
-                emacs_curwp->w_doto = llength(lback(lp))-1;
-            }
-            IGNORE(emacs_refresh(1, 1));	/* recenters "." in current window */
-            hoc_edit();
-        } else {
-            cnt = 0;
-            lp = lastlp = lhead;
-        }
-    }
-#endif
-}
-
 size_t hoc_pipegets_need(void) {
-#ifndef WITHOUT_MEMACS
-    if (hoc_pipeflag == 1) {
-        if (lp == lhead) {
-            return 0;
-        }else{
-            return llength(lp);
-        }
-    }else{
-        return hoc_strgets_need();
-    }
-#else
     return hoc_strgets_need();
-#endif
 }
 
 char* hoc_pipegets(char* cbuf, int nc) {
-    char *cp = cbuf;
-
-    nc--;
-#ifndef WITHOUT_MEMACS
-    if (hoc_pipeflag == 1) {
-        if (lp == lhead) {
-            cnt = 0;
-            return (char *) 0;
-        }
-        for (cnt = 0; cnt < llength(lp) && cnt < nc; cnt++) {
-            *cp++ = lgetc(lp, cnt);
-        }
-        *cp++ = '\n';
-        *cp = '\0';
-        lp = lforw(lp);
-        return cbuf;
-    } else {
-#else
-        {
-#endif
-        return hoc_strgets(cbuf, nc);
-    }
+    return hoc_strgets(cbuf, nc - 1);
 }
 
 

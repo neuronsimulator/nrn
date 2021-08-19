@@ -1400,7 +1400,6 @@ static void hoc_run1(void)	/* execute until EOF */
 	}
 	hoc_execerror_messages = 1;
 	if (pipeflag == 1) {	/*at this location multiple emacs errors */
-        hoc_pipeflush(); /* don't eat up stack space */
 	}else{
 		pipeflag=0;
 	}
@@ -1645,7 +1644,6 @@ int hoc_yyparse(void) {
 		switch (i) {
         case 'e':
             i = '\n';
-            hoc_edit();
             break;
         case -3 : /* need more input */
 			hoc_in_yyparse = 1;
