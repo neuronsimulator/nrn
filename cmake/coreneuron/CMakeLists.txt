@@ -3,7 +3,7 @@
 #
 # See top-level LICENSE file for details.
 # =============================================================================
-cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(
   coreneuron
   VERSION 1.0
@@ -118,14 +118,11 @@ else()
 endif()
 
 if(CORENRN_ENABLE_GPU)
-  # Older CMake versions have not been tested for GPU/CUDA/OpenACC support after
+  # Older CMake versions than 3.15 have not been tested for GPU/CUDA/OpenACC support after
   # https://github.com/BlueBrain/CoreNeuron/pull/609.
   # https://cmake.org/cmake/help/latest/release/3.14.html#properties suggests there would be
   # problems because of expressions like set_target_properties(lfp_test_bin PROPERTIES
   # CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
-  if(${CMAKE_VERSION} VERSION_LESS 3.15)
-    message(FATAL_ERROR "GPU support requires at least CMake v3.15!")
-  endif()
 
   # Fail hard and early if we don't have the PGI/NVHPC compiler.
   if(NOT CORENRN_HAVE_NVHPC_COMPILER)
@@ -466,11 +463,7 @@ message(STATUS "")
 message(STATUS "Configured CoreNEURON ${PROJECT_VERSION}")
 message(STATUS "")
 message(STATUS "You can now build CoreNEURON using:")
-if(${CMAKE_VERSION} VERSION_LESS "3.12")
-  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
-else()
-  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
-endif()
+message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
 message(STATUS "Some non-default targets you might want to build:")
 message(STATUS "--------------------+--------------------------------------------------------")

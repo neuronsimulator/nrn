@@ -14,7 +14,7 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](docs/userdoc/MemoryManagement/bbcorepointer.md))
 
 ## Dependencies
-* [CMake 3.7+](https://cmake.org)
+* [CMake 3.15+](https://cmake.org)
 * MPI Library [Optional, for MPI support]
 * [PGI OpenACC Compiler / NVIDIA HPC SDK](https://developer.nvidia.com/hpc-sdk) [Optional, for GPU support]
 * [CUDA Toolkit >=9.0](https://developer.nvidia.com/cuda-downloads) [Optional, for GPU support]
