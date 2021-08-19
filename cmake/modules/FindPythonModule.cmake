@@ -9,7 +9,7 @@
 #
 # https://github.com/openturns/otsubsetinverse/blob/master/cmake/FindPythonModule.cmake
 
-macro(find_python_module module)
+macro(nrn_find_python_module module)
 
   string(TOUPPER ${module} module_upper)
   if(NOT ${module_upper}_FOUND)
@@ -67,4 +67,4 @@ macro(find_python_module module)
     endif()
     mark_as_advanced(${module_upper}_LOCATION)
   endif(NOT ${module_upper}_FOUND)
-endmacro(find_python_module)
+endmacro(nrn_find_python_module)
