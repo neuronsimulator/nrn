@@ -78,7 +78,7 @@ def test_netmove():
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.verbose = 1
+    coreneuron.verbose = 0
     coreneuron.gpu = enable_gpu
 
     def runassert(mode):
@@ -88,11 +88,14 @@ def test_netmove():
             std = stdlist[i]
             for j in range(2):
                 if std[j] != result[j]:
-                    print('std[{}]={} result[{}]={}'.format(j, std[j], j, result[j]))
+                    print('cell {} std[{}]={} result[{}]={}'.format(i, j, std[j], j, result[j]))
                     assert False
             if not std[2].eq(result[2]):
+                print('Cell', i, 'mode', mode)
                 print(std[2], len(std[2]), result[2], len(result[2]))
+                print("NEURON")
                 print(list(std[2]))
+                print("CoreNEURON")
                 print(list(result[2]))
                 assert False
 
