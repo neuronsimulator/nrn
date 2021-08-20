@@ -121,10 +121,7 @@ void CodegenAccVisitor::print_abort_routine() const {
 }
 
 void CodegenAccVisitor::print_net_send_buffering_grow() {
-    auto error = add_escape_quote("Error : netsend buffer size (%d) exceeded\\n");
-
-    printer->add_line("printf({}, nsb->_cnt);"_format(error));
-    printer->add_line("coreneuron_abort();");
+    // can not grow buffer during gpu execution
 }
 
 /**
