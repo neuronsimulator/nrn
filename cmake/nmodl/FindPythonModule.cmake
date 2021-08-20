@@ -1,6 +1,6 @@
 # * Macro to find a python module
 #
-# Usage: find_python_module (module [VERSION] [REQUIRED])
+# Usage: nmodl_find_python_module (module [VERSION] [REQUIRED])
 #
 # Copyright 2005-2018 Airbus-EDF-IMACS-Phimeca
 #
@@ -9,7 +9,7 @@
 #
 # https://github.com/openturns/otsubsetinverse/blob/master/cmake/FindPythonModule.cmake
 
-macro(find_python_module module)
+macro(nmodl_find_python_module module)
 
   string(TOUPPER ${module} module_upper)
   if(NOT ${module_upper}_FOUND)
@@ -71,4 +71,4 @@ macro(find_python_module module)
     endif()
     mark_as_advanced(${module_upper}_LOCATION)
   endif(NOT ${module_upper}_FOUND)
-endmacro(find_python_module)
+endmacro(nmodl_find_python_module)

@@ -142,11 +142,11 @@ endif()
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.5 REQUIRED)
-find_python_module(jinja2 2.9.3 REQUIRED)
-find_python_module(pytest 3.3.0 REQUIRED)
-find_python_module(sympy 1.2 REQUIRED)
-find_python_module(textwrap 0.9 REQUIRED)
-find_python_module(yaml 3.12 REQUIRED)
+nmodl_find_python_module(jinja2 2.9.3 REQUIRED)
+nmodl_find_python_module(pytest 3.3.0 REQUIRED)
+nmodl_find_python_module(sympy 1.2 REQUIRED)
+nmodl_find_python_module(textwrap 0.9 REQUIRED)
+nmodl_find_python_module(yaml 3.12 REQUIRED)
 
 # =============================================================================
 # Compiler specific flags for external submodules
