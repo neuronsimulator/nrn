@@ -66,7 +66,7 @@ void (*nrn2core_get_trajectory_requests_)(int tid,
 
 void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
 
-void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** vpr, double t);
+void (*nrn2core_trajectory_return_)(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 
 int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec, std::vector<int>& gidvec);
 

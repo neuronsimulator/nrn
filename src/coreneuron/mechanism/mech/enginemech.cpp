@@ -85,10 +85,7 @@ int corenrn_embedded_run(int nthread,
     corenrn_embedded = true;
     corenrn_embedded_nthread = nthread;
     coreneuron::nrn_have_gaps = have_gaps != 0;
-
-    if (use_fast_imem != 0) {
-        coreneuron::nrn_use_fast_imem = true;
-    }
+    coreneuron::nrn_use_fast_imem = use_fast_imem != 0;
 
     // set number of openmp threads
     set_openmp_threads(nthread);

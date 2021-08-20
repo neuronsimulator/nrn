@@ -581,6 +581,14 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
     if (!nt->compute_gpu)
         return;
 
+    // check if nsb->_cnt was exceeded on GPU: as the buffer can not be increased
+    // during gpu execution, we should just abort the execution.
+    // \todo: this needs to be fixed with different memory allocation strategy
+    if (nsb->_cnt > nsb->_size) {
+        printf("ERROR: NetSendBuffer exceeded during GPU execution (rank %d)\n", nrnmpi_myid);
+        nrn_abort(1);
+    }
+
     if (nsb->_cnt) {
         acc_update_self(nsb->_sendtype, sizeof(int) * nsb->_cnt);
         acc_update_self(nsb->_vdata_index, sizeof(int) * nsb->_cnt);
@@ -685,6 +693,11 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 acc_update_self(nt->weights, sizeof(double) * nt->n_weight);
             }
 
+            if (nt->n_presyn) {
+                acc_update_self(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
+                acc_update_self(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+            }
+
             /* dont update vdata, its pointer array
                if(nt->_nvdata) {
                acc_update_self(nt->_vdata, sizeof(double)*nt->_nvdata);
@@ -779,6 +792,11 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 acc_update_device(nt->weights, sizeof(double) * nt->n_weight);
             }
 
+            if (nt->n_presyn) {
+                acc_update_device(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
+                acc_update_device(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+            }
+
             /* don't and don't update vdata, its pointer array
                if(nt->_nvdata) {
                acc_update_device(nt->_vdata, sizeof(double)*nt->_nvdata);
@@ -790,37 +808,6 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
     (void) threads;
     (void) nthreads;
 #endif
-}
-
-/**
- * Copy voltage vector from GPU to CPU
- *
- * \todo Currently we are copying all voltage vector from GPU
- *       to CPU. We need fine-grain implementation to copy
- *       only requested portion of the voltage vector.
- */
-void update_voltage_from_gpu(NrnThread* nt) {
-    if (nt->compute_gpu && nt->end > 0) {
-        double* voltage = nt->_actual_v;
-        int num_voltage = nrn_soa_padded_size(nt->end, 0);
-        // clang-format off
-
-        #pragma acc update host(voltage [0:num_voltage])
-        // clang-format on
-    }
-}
-
-/**
- * @brief Copy fast_imem vectors from GPU to CPU.
- *
- */
-void update_fast_imem_from_gpu(NrnThread* nt) {
-    if (nt->compute_gpu && nt->end > 0 && nt->nrn_fast_imem) {
-        int num_fast_imem = nt->end;
-        double* fast_imem_d = nt->nrn_fast_imem->nrn_sav_d;
-        double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
-#pragma acc update host(fast_imem_d [0:num_fast_imem], fast_imem_rhs [0:num_fast_imem])
-    }
 }
 
 /**

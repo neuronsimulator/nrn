@@ -25,10 +25,6 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
 namespace coreneuron {
-bool _nrn_skip_initmodel;
-}  // namespace coreneuron
-
-namespace coreneuron {
 
 // Those functions comes from mod file directly
 extern int checkpoint_save_patternstim(_threadargsproto_);
@@ -530,20 +526,7 @@ bool CheckPoints::initialize() {
     nrn_thread_table_check();
     nrn_spike_exchange_init();
 
-    // in case some nrn_init allocate data we need to do that but do not
-    // want to call initmodel.
-    _nrn_skip_initmodel = true;
-    for (int i = 0; i < nrn_nthread; ++i) {  // should be parallel
-        NrnThread& nt = nrn_threads[i];
-        for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
-            Memb_list* ml = tml->ml;
-            mod_f_t s = corenrn.get_memb_func(tml->index).initialize;
-            if (s) {
-                (*s)(&nt, ml, tml->index);
-            }
-        }
-    }
-    _nrn_skip_initmodel = false;
+    allocate_data_in_mechanism_nrn_init();
 
     // if PatternStim exists, needs initialization
     for (NrnThreadMembList* tml = nrn_threads[0].tml; tml; tml = tml->next) {

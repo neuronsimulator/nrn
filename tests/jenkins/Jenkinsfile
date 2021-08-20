@@ -51,7 +51,13 @@ pipeline {
 
         stage('Spack installations'){
             steps {
-                sh 'sh tests/jenkins/install_neuron_reportinglib.sh'
+                script{
+                    alt_branches=setAlternateBranches()
+                    sh("""export ${alt_branches};
+                          source $WORKSPACE/tests/jenkins/install_neuron_reportinglib.sh
+                       """
+                    )
+                }
             }
         }
 

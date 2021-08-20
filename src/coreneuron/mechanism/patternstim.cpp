@@ -26,7 +26,9 @@
 #include "coreneuron/coreneuron.hpp"
 
 namespace coreneuron {
+// from translated patstim.mod
 void _pattern_reg(void);
+// from patstim.mod
 extern void pattern_stim_setup_helper(int size,
                                       double* tvec,
                                       int* gidvec,
@@ -47,9 +49,6 @@ void nrn_set_extra_thread0_vdata() {
     // if called, must be called before nrn_setup and after mk_mech.
     int type = nrn_get_mechtype("PatternStim");
     if (!corenrn.get_memb_func(type).initialize) {
-        // the NEURON mod file version is not vectorized so the param size
-        // differs by 1 from the coreneuron version.
-        corenrn.get_prop_param_size()[type] += 1;
         _pattern_reg();
     }
     nrn_extra_thread0_vdata = corenrn.get_prop_dparam_size()[type];

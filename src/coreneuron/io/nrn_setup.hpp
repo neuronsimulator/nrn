@@ -38,6 +38,7 @@ extern void nrn_init_and_load_data(int argc,
                                    CheckPoints& checkPoints,
                                    bool is_mapping_needed = false,
                                    bool run_setup_cleanup = true);
+extern void allocate_data_in_mechanism_nrn_init();
 extern void nrn_setup_cleanup();
 
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);

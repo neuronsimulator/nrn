@@ -86,7 +86,10 @@ extern int (*nrn2core_get_dat2_vecplay_inst_)(int tid,
                                               int& ix,
                                               int& sz,
                                               double*& yvec,
-                                              double*& tvec);
+                                              double*& tvec,
+                                              int& last_index,
+                                              int& discon_index,
+                                              int& ubound_index);
 
 extern void (*nrn2core_part2_clean_)();
 
@@ -105,7 +108,8 @@ extern void (*nrn2core_get_trajectory_requests_)(int tid,
 extern void (*nrn2core_trajectory_values_)(int tid, int n_pr, void** vpr, double t);
 
 /* Filled the Vector data arrays and send back the sizes at end of run */
-extern void (*nrn2core_trajectory_return_)(int tid, int n_pr, int vecsz, void** vpr, double t);
+extern void (
+    *nrn2core_trajectory_return_)(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 
 /* send all spikes vectors to NEURON */
 extern int (*nrn2core_all_spike_vectors_return_)(std::vector<double>& spikevec,

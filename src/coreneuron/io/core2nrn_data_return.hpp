@@ -11,9 +11,15 @@
 
 namespace coreneuron {
 
-/** @brief Copies back to NEURON the voltage, i_membrane_, and mechanism data.
+/** @brief Copies back to NEURON everything needed to analyze and continue simulation.
+    I.e. voltage, i_membrane_, mechanism data, event queue, WATCH state,
+    Play state, etc.
  */
 extern void core2nrn_data_return();
+
+/** @brief return first and last datum indices of WATCH statements
+ */
+extern void watch_datum_indices(int type, int& first, int& last);
 
 }  // namespace coreneuron
 #endif  // _H_CORENRNDATARETURN_

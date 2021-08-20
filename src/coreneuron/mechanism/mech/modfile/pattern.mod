@@ -119,6 +119,14 @@ void pattern_stim_setup_helper(int size, double* tv, int* gv, _threadargsproto_)
     // initiate event chain (needed in case of restore)
 	artcell_net_send ( _tqitem, -1, (Point_process*) _nt->_vdata[_ppvar[1*_STRIDE]], t +  0.0 , 1.0 ) ;
 }
+
+Info** pattern_stim_info_ref(_threadargsproto_) {
+    // Info shared with NEURON.
+    // So nrn <-> corenrn needs no actual transfer for direct mode psolve.
+    INFOCAST;
+    return ip; // Caller sets *ip to NEURON's PatternStim Info*
+}
+
 } // namespace coreneuron
 ENDVERBATIM
 

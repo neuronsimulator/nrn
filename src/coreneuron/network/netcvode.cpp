@@ -85,7 +85,9 @@ void net_send(void** v, int weight_index_, Point_process* pnt, double td, double
     se->flag_ = flag;
     se->target_ = pnt;
     se->weight_index_ = weight_index_;
-    se->movable_ = v;  // needed for SaveState
+    if (v >= nt->_vdata) {
+        se->movable_ = v;  // needed for SaveState
+    }
     assert(net_cvode_instance);
     ++p.unreffed_event_cnt_;
     if (td < nt->_t) {
@@ -97,7 +99,7 @@ void net_send(void** v, int weight_index_, Point_process* pnt, double td, double
     }
     TQItem* q;
     q = net_cvode_instance->event(td, se, nt);
-    if (flag == 1.0) {
+    if (flag == 1.0 && v >= nt->_vdata) {
         *v = (void*) q;
     }
     // printf("net_send %g %s %g %p\n", td, pnt_name(pnt), flag, *v);
@@ -149,7 +151,11 @@ void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
 
 NetCvode::NetCvode() {
     eps_ = 100. * DBL_EPSILON;
+#if PRINT_EVENT
+    print_event_ = 1;
+#else
     print_event_ = 0;
+#endif
     pcnt_ = 0;
     p = nullptr;
     p_construct(1);
@@ -289,6 +295,7 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 }
 
 void net_move(void** v, Point_process* pnt, double tt) {
+    // assert, if possible that *v == pnt->movable.
     if (!(*v))
         hoc_execerror("No event with flag=1 for net_move in ",
                       corenrn.get_memb_func(pnt->_type).sym);
@@ -312,7 +319,7 @@ void NetCvode::move_event(TQItem* q, double tnew, NrnThread* nt) {
     if (print_event_) {
         SelfEvent* se = (SelfEvent*) q->data_;
         printf("NetCvode::move_event self event target %s t=%g, old=%g new=%g\n",
-               memb_func[se->target_->_type].sym,
+               corenrn.get_memb_func(se->target_->_type).sym,
                nt->_t,
                q->t_,
                tnew);
@@ -514,7 +521,7 @@ SelfEvent::~SelfEvent() {}
 void SelfEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
     nrn_assert(nt == PP2NT(target_));
     PP2t(target_) = tt;
-    // printf("SelfEvent::deliver t=%g tt=%g %s\n", PP2t(target), tt, pnt_name(target_));
+    // printf("SelfEvent::deliver t=%g tt=%g %s\n", PP2t(target_), tt, pnt_name(target_));
     call_net_receive(ns);
 }
 
