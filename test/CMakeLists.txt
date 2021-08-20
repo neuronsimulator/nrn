@@ -264,6 +264,20 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/coreneuron/test_units.py)
   nrn_add_test(
     GROUP coreneuron_modtests
+    NAME test_netmove_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_netmove.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_test_netmove_py ${modtests_launch_py}
+            test/coreneuron/test_netmove.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME test_watchrange_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py ${modtests_launch_py}
+            test/coreneuron/test_watchrange.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
     NAME test_natrans_py
     REQUIRES coreneuron
     SCRIPT_PATTERNS test/gjtests/test_natrans.py

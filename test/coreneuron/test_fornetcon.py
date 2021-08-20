@@ -9,6 +9,8 @@ enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
+h.load_file("stdrun.hoc")
+
 pc = h.ParallelContext()
 h.dt = 1.0 / 32
 
@@ -52,12 +54,20 @@ def test_fornetcon():
 
     tstop = 8
 
-    def run(tstop):
+    def run(tstop, mode):
         pc.set_maxstep(10)
         h.finitialize(-65)
-        pc.psolve(tstop)
+        if mode == 0:
+            pc.psolve(tstop)
+        elif mode == 1:
+            while h.t < tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
-    run(tstop)  # NEURON run
+    run(tstop, 0)  # NEURON run
 
     spiketime_std = spiketime.c()
     spikegid_std = spikegid.c()
@@ -71,21 +81,26 @@ def test_fornetcon():
 
     weight_std = get_weights()
 
-    spiketime.resize(0)
-    spikegid.resize(0)
-
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.gpu = enable_gpu
-    run(tstop)
-    coreneuron.enable = False
-    assert len(spiketime) > 0
-    assert spiketime_std.eq(spiketime) == 1.0
-    assert spikegid_std.eq(spikegid) == 1.0
-    assert len(weight_std) > 0
-    assert weight_std == get_weights()
 
+    def runassert(mode):
+        spiketime.resize(0)
+        spikegid.resize(0)
+
+        run(tstop, mode)
+        assert len(spiketime) > 0
+        assert spiketime_std.eq(spiketime) == 1.0
+        assert spikegid_std.eq(spikegid) == 1.0
+        assert len(weight_std) > 0
+        assert weight_std == get_weights()
+
+    for mode in [0, 1, 2]:
+        runassert(mode)
+
+    coreneuron.enable = False
     # teardown
     pc.gid_clear()
 
