@@ -147,7 +147,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
               pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
-      find_python_module(mpi4py)
+      nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
@@ -284,7 +284,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     COMMAND COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${modtests_launch_py}
             test/gjtests/test_natrans.py)
   if(NRN_ENABLE_MPI)
-    find_python_module(mpi4py)
+    nrn_find_python_module(mpi4py)
     if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
