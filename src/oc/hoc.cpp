@@ -1624,7 +1624,6 @@ int hoc_yyparse(void) {
 	and then call yyparse() directly. yyparse() returns
 	0 : end of file
 	'\n' : ready to execute a command
-	'e' : user gave it em command, you should go to an editor
 	-3: need more input, not at a point where it accepts or rejects the
 		input.
 	*/
