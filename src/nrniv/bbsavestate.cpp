@@ -719,7 +719,6 @@ static double save_test_bin(void* v) {  // only for whole cells
     char* buf;
     char fname[100];
     FILE* f;
-    BBSaveState* ss = (BBSaveState*) v;
     usebin_ = 1;
     void* ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
     if (nrnmpi_myid == 0) {  // save global time
@@ -968,7 +967,7 @@ static double restore_test_bin(void* v) {  // assumes whole cells
     assert(f);
     nrn_assert(fread(buf, sizeof(char), global_size, f) == global_size);
     fclose(f);
-    bbss_restore_global(ref, buf, global_size);
+    bbss_restore_global(NULL, buf, global_size);
     delete[] buf;
 
     ref = bbss_buffer_counts(&len, &gids, &sizes, &global_size);
@@ -1012,34 +1011,22 @@ static double vector_play_init(void* v) {
 
 static Member_func members[] = {
     // text test
-    "save",
-    save,
-    "restore",
-    restore,
-    "save_test",
-    save_test,
-    "restore_test",
-    restore_test,
+    {"save", save},
+    {"restore", restore},
+    {"save_test", save_test},
+    {"restore_test", restore_test},
     // binary test
-    "save_test_bin",
-    save_test_bin,
-    "restore_test_bin",
-    restore_test_bin,
+    {"save_test_bin", save_test_bin},
+    {"restore_test_bin", restore_test_bin},
     // binary save/restore interface to interpreter
-    "save_request",
-    save_request,
-    "save_gid",
-    save_gid,
-    "restore_gid",
-    restore_gid,
+    {"save_request", save_request},
+    {"save_gid", save_gid},
+    {"restore_gid", restore_gid},
     // indicate which point processes are to be ignored
-    "ignore",
-    ppignore,
+    {"ignore", ppignore},
     // allow Vector.play to work
-    "vector_play_init",
-    vector_play_init,
-    0,
-    0};
+    {"vector_play_init", vector_play_init},
+    {0, 0}};
 
 void BBSaveState_reg() {
     class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
@@ -1232,15 +1219,14 @@ static void tqcallback(const TQItem* tq, int i) {
     case 0: {  // the self events
         if (type == SelfEventType) {
             Point_process* pp = ((SelfEvent*) tq->data_)->target_;
-            DEList *dl = 0, *dl1 = 0;
+            DEList* dl1 = NULL;
             SEWrap* sew = 0;
             const auto& dl1iter = pp2de->find(pp);
             if (dl1iter != pp2de->end()) {
                 dl1 = dl1iter->second;
                 sew = new SEWrap(tq, dl1);
             } else {
-                dl1 = 0;
-                sew = new SEWrap(tq, 0);
+                sew = new SEWrap(tq, NULL);
             }
             if (sew->ncindex == -2) {  // ignore the self event
                 // printf("%d Ignoring a SelfEvent to %s\n", nrnmpi_myid,
@@ -1267,7 +1253,7 @@ static void tqcallback(const TQItem* tq, int i) {
 
     case 1: {  // the NetCon (and PreSyn) events
         int srcid, i;
-        double ts, tt;
+        double ts;
         PreSyn* ps;
         int cntinc;  // number on queue to be delivered due to this event
         NetCon* nc = 0;
@@ -1467,7 +1453,7 @@ static void del_presyn_info() {
 }
 
 void BBSaveState::del_pp2de() {
-    DEList *dl, *dl1;
+    DEList* dl1;
     if (!pp2de) {
         return;
     }
@@ -2107,9 +2093,9 @@ void BBSaveState::mech(Prop* p) {
         hoc_pushpx(xval);
         if (memb_func[p->type].is_point) {
             hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
-            double d = hoc_xpop();
+            hoc_xpop();
         } else {
-            double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+            nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
         }
         int sz = int(xdir);
         if (sz > 0) {
@@ -2122,17 +2108,17 @@ void BBSaveState::mech(Prop* p) {
                 f->d(sz, xval);
                 if (memb_func[p->type].is_point) {
                     hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
-                    double d = hoc_xpop();
+                    hoc_xpop();
                 } else {
-                    double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+                    nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
                 }
             } else {
                 xdir = 0.;
                 if (memb_func[p->type].is_point) {
                     hoc_call_ob_proc(pp->ob, ssi[p->type].callback, narg);
-                    double d = hoc_xpop();
+                    hoc_xpop();
                 } else {
-                    double d = nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
+                    nrn_call_mech_func(ssi[p->type].callback, narg, p, p->type);
                 }
                 f->d(sz, xval);
             }
@@ -2154,7 +2140,6 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
     sprintf(buf, "%s", hoc_object_name(pp->ob));
     f->s(buf);
 
-    int type = pp->prop->type;
     // associated NetCon, and queue SelfEvent
     DEList *dl, *dl1;
     const auto& dliter = pp2de->find(pp);
@@ -2315,7 +2300,6 @@ static void all2allv_helper(int* scnt, int* sdispl, int* rcnt, int* rdispl) {
 
 static void all2allv_int2(int* scnt, int* sdispl, int* gidsrc, int* ndsrc) {
 #if NRNMPI
-    int i;
     int np = nrnmpi_numprocs;
     int* rcnt = new int[np];
     int* rdispl = new int[np + 1];
@@ -2340,7 +2324,7 @@ static void all2allv_int2(int* scnt, int* sdispl, int* gidsrc, int* ndsrc) {
 
 static void all2allv_dbl1(int* scnt, int* sdispl, double* tssrc) {
 #if NRNMPI
-    int i, size;
+    int size;
     int np = nrnmpi_numprocs;
     int* rcnt = new int[np];
     int* rdispl = new int[np + 1];
@@ -2365,8 +2349,7 @@ static void scatteritems() {
     // many processors, we send all the gid,tscnt pairs (and tslists
     // with undelivered NetCon counts)
     // to the round-robin host (we do not know the gid owner host yet).
-    int i, gid, host;
-    DblList* dl;
+    int i, host;
     src2send_cnt = 0;
     src2send = new Int2DblList(1000);
     TQueue* tq = net_cvode_instance_event_queue(nrn_threads);
@@ -2524,8 +2507,7 @@ static void construct_presyn_queue() {
 
     // note that undelivered netcon count is interleaved with tsend
     // in the DblList of the Int2DblList
-    int gid, tscnt, i;
-    double ts, tt;
+    int tscnt, i;
     DblList* dl;
     if (presyn_queue) {
         del_presyn_info();
@@ -2543,9 +2525,6 @@ static void construct_presyn_queue() {
         const auto& dliter = m->find(gid);
         if (dliter != m->end()) {
             dl = dliter->second;
-            // in the days when there could only be one
-            // initiation time for a gid.
-            // assert( fabs(tt - ts) < 1e-12 );
         } else {
             dl = new DblList();
             (*m)[gid] = dl;
@@ -2562,7 +2541,6 @@ static void construct_presyn_queue() {
             // no thought given to efficiency
             // Actually, need to test to accumulate
             for (int j = 0; j < dl->size(); j += 2) {
-                double t2 = (*dl)[j];
                 double dt = fabs((*dl)[j] - t1);
                 if (dt < 1e-12) {
                     (*dl)[j + 1] += inccnt;
