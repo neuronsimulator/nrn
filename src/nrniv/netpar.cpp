@@ -1304,12 +1304,11 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vect
         if (all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
             all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
 
-            all_spiketvec->resize(spiketvec.size());
-            all_spikegidvec->resize(spikegidvec.size());
-            for (int i = 0; i < all_spiketvec->size(); ++i) {
-                all_spiketvec->elem(i) = spiketvec[i];
-                all_spikegidvec->elem(i) = spikegidvec[i];
-            }
+            all_spiketvec->buffer_size(spiketvec.size() + all_spiketvec->size());
+            all_spikegidvec->buffer_size(spikegidvec.size() + all_spikegidvec->size());
+            all_spiketvec->vec().insert(all_spiketvec->end(), spiketvec.begin(), spiketvec.end());
+            all_spikegidvec->vec().insert(all_spikegidvec->end(), spikegidvec.begin(), spikegidvec.end());
+            
         }else{ // different underlying vectors for PreSyns
             for (int i = 0; i < spikegidvec.size(); ++i ) {
                 PreSyn* ps;
@@ -1624,5 +1623,4 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
 #endif
   delete [] gidcnt;
 }
-
 

@@ -293,7 +293,8 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     for (auto i: indices) {
         int vptype, mtype, ix, sz; double *yvec, *tvec;
         // the 'if' is not necessary as item i is certainly in this thread 
-        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec)) {
+        int unused = 0;
+        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec, unused, unused, unused)) {
             fprintf(f, "%d\n", vptype);
             fprintf(f, "%d\n", mtype);
             fprintf(f, "%d\n", ix);
