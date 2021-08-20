@@ -71,7 +71,6 @@ set(OC_FILE_LIST
     functabl.cpp
     getsym.cpp
     hoc.cpp
-    hocedit.cpp
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp

@@ -225,7 +225,6 @@ extern int hoc_retrieve_audit (int id);
 extern int hoc_saveaudit (void);
 
 extern void hoc_close_plot(void);
-extern size_t hoc_pipegets_need(void);
 extern void ivoc_cleanup(void);
 extern void ivoc_final_exit(void);
 extern int hoc_oc(const char*);

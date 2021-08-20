@@ -1822,8 +1822,6 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
 
 #if MAC
 int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
-	int hoc_pipegets_need();
-	char *hoc_pipegets();
 	if (*ctp) {
 		hoc_execerror("Internal error:", "Not finished with previous input line");
 	}
@@ -1835,10 +1833,10 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 			return EOF;
 		}
 	}else if (pipeflag) {
-		if (hoc_pipegets_need() > hoc_cbufstr->size) {
-			hocstr_resize(hoc_cbufstr, hoc_pipegets_need());
+		if (hoc_strgets_need() > hoc_cbufstr->size) {
+			hocstr_resize(hoc_cbufstr, hoc_strgets_need());
 		}
-		if (hoc_pipegets(cbuf, hoc_cbufstr->size) == (char *)0) {
+		if (hoc_strgets(cbuf, hoc_cbufstr->size - 1) == (char *)0) {
 			return EOF;
 		}
 	}else{
@@ -1870,7 +1868,6 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 
 #else
 int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
-	extern char* hoc_pipegets(char* cbuf, int nc);
 	if (*ctp) {
 		hoc_execerror("Internal error:", "Not finished with previous input line");
 	}
@@ -1882,10 +1879,10 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 			return EOF;
 		}
 	}else if (pipeflag) {
-		if (hoc_pipegets_need() > hoc_cbufstr->size) {
-			hocstr_resize(hoc_cbufstr, hoc_pipegets_need() + 100);
+		if (hoc_strgets_need() > hoc_cbufstr->size) {
+			hocstr_resize(hoc_cbufstr, hoc_strgets_need() + 100);
 		}
-		if (hoc_pipegets(cbuf, CBUFSIZE) == (char *)0) {
+		if (hoc_strgets(cbuf, CBUFSIZE - 1) == (char *)0) {
 			return EOF;
 		}
 	}else{
