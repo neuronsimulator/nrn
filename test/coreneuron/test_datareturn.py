@@ -6,7 +6,7 @@ import traceback
 
 enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
-from neuron import h
+from neuron import h, gui
 
 pc = h.ParallelContext()
 h.dt = 1.0 / 32
@@ -145,9 +145,17 @@ def test_datareturn():
 
     pc.set_maxstep(10)
 
-    def run(tstop):
+    def run(tstop, mode):
         h.finitialize(-65)
-        pc.psolve(tstop)
+        if mode == 0:
+            pc.psolve(tstop)
+        elif mode == 1:
+            while h.t < tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
     if show:
         # visual verify that cells and acells have different final results so that
@@ -160,7 +168,7 @@ def test_datareturn():
         mkgraphs(model)
         h.run()
     else:
-        run(tstop)  # NEURON run
+        run(tstop, 0)  # NEURON run
     std = model.data()
 
     print("CoreNEURON run")
@@ -169,31 +177,36 @@ def test_datareturn():
     coreneuron.gpu = enable_gpu
 
     coreneuron.cell_permute = 0
-    run(tstop)
-    tst = model.data()
-    max_unpermuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
-    print("max diff unpermuted = %g" % max_unpermuted)
+    for mode in [0, 1, 2]:
+        run(tstop, mode)
+        tst = model.data()
+        max_unpermuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
+        print("mode ", mode)
+        print("max diff unpermuted = %g" % max_unpermuted)
 
-    coreneuron.cell_permute = 1
-    run(tstop)
-    tst = model.data()
-    max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
-    print("max diff permuted = %g" % max_permuted)
+        coreneuron.cell_permute = 1
+        run(tstop, mode)
+        tst = model.data()
+        max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
+        print("max diff permuted = %g" % max_permuted)
 
-    pc.nthread(2)
-    run(tstop)
-    tst = model.data()
-    max_permuted_thread = h.Vector(std).sub(h.Vector(tst)).abs().max()
+        pc.nthread(2)
+        run(tstop, mode)
 
-    coreneuron.enable = False
+        tst = model.data()
+        max_permuted_thread = h.Vector(std).sub(h.Vector(tst)).abs().max()
 
-    print(
-        "max diff permuted with %d threads = %g" % (pc.nthread(), max_permuted_thread)
-    )
+        coreneuron.enable = False
 
-    assert max_unpermuted < 1e-10
-    assert max_permuted < 1e-10
-    assert max_permuted_thread < 1e-10
+        print(
+            "max diff permuted with %d threads = %g"
+            % (pc.nthread(), max_permuted_thread)
+        )
+
+        assert max_unpermuted < 1e-10
+        assert max_permuted < 1e-10
+        assert max_permuted_thread < 1e-10
+        pc.nthread(1)
 
     if __name__ != "__main__":
         # tear down

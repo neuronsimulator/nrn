@@ -13,6 +13,7 @@ Symbol	       *scop_indep;	/* independent used by SCoP */
 Symbol         *indepsym;	/* only one independent variable */
 Symbol         *stepsym;	/* one or fewer stepped variables */
 List		*indeplist;	/* FROM TO WITH START UNITS */
+List* watch_alloc; /* text of the void _watch_alloc(Datum*) function */
 extern List    *syminorder;	/* Order in which variables are output to
 				 * .var file */
 
@@ -1155,10 +1156,24 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype )
 	replacstr(dir, ") - (");
 	lappendstr(procfunc, ";\n}\n");
 
+	// nrn_watch_allocate function called from core2nrn_watch_activate.
+	if (!watch_alloc) {
+		watch_alloc = newlist();
+		lappendstr(watch_alloc,
+"\nstatic void _watch_alloc(Datum* _ppvar) {\n"
+"  Point_process* _pnt = (Point_process*)_ppvar[1]._pvoid;\n"
+		);
+	}
+	sprintf(buf,
+ "  _nrn_watch_allocate(_watch_array, _watch%d_cond, %d, _pnt, %s);\n",
+		watch_seen_, watch_seen_, STR(flag));
+	lappendstr(watch_alloc, buf);
+
 	sprintf(buf,
  "  _nrn_watch_activate(_watch_array, _watch%d_cond, %d, _pnt, _watch_rm++, %s);\n",
 		watch_seen_, watch_seen_, STR(flag));
 	replacstr(flag, buf);
+
 	++watch_seen_;
 }
 
