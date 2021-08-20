@@ -29,6 +29,6 @@ To that end, the following table's columns constitute:
      - 74d3db9
    * - SEJNOWSKI
      - C Preprocessor flag.
-     - PR#
-     - SHA
+     - `#1415 <https://github.com/neuronsimulator/nrn/pull/1415>`_
+     - e9ef741
 
