@@ -3796,7 +3796,9 @@ void CodegenCVisitor::print_net_receive_buffering(bool need_mech_inst) {
 }
 
 void CodegenCVisitor::print_net_send_buffering_grow() {
-    printer->add_line("nsb->grow();");
+    printer->add_line("if(i >= nsb->_size) {");
+    printer->add_line("    nsb->grow();");
+    printer->add_line("}");
 }
 
 void CodegenCVisitor::print_net_send_buffering() {
@@ -3813,17 +3815,15 @@ void CodegenCVisitor::print_net_send_buffering() {
     printer->add_line("int i = 0;");
     print_device_atomic_capture_annotation();
     printer->add_line("i = nsb->_cnt++;");
-    printer->add_line("if(i >= nsb->_size) {");
-    printer->increase_indent();
     print_net_send_buffering_grow();
-    printer->decrease_indent();
+    printer->add_line("if(i < nsb->_size) {");
+    printer->add_line("    nsb->_sendtype[i] = type;");
+    printer->add_line("    nsb->_vdata_index[i] = vdata_index;");
+    printer->add_line("    nsb->_weight_index[i] = weight_index;");
+    printer->add_line("    nsb->_pnt_index[i] = point_index;");
+    printer->add_line("    nsb->_nsb_t[i] = t;");
+    printer->add_line("    nsb->_nsb_flag[i] = flag;");
     printer->add_line("}");
-    printer->add_line("nsb->_sendtype[i] = type;");
-    printer->add_line("nsb->_vdata_index[i] = vdata_index;");
-    printer->add_line("nsb->_weight_index[i] = weight_index;");
-    printer->add_line("nsb->_pnt_index[i] = point_index;");
-    printer->add_line("nsb->_nsb_t[i] = t;");
-    printer->add_line("nsb->_nsb_flag[i] = flag;");
     printer->end_block(1);
 }
 
