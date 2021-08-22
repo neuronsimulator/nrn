@@ -46,7 +46,7 @@ done
 
 XQUARTZ_CMAKE_INCLUDE=""
 if test "$CPU" = "arm64" ; then
-  XQUARTZ_INCLUDE="-DX11_INCLUDE_DIR=/usr/X11R6/include"
+  XQUARTZ_CMAKE_INCLUDE="-DX11_INCLUDE_DIR=/usr/X11R6/include"
 fi
 
 cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
