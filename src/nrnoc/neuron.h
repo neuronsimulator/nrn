@@ -24,9 +24,7 @@ extern void make_mechanism(), make_pointprocess();
 extern void nrnpython();
 extern void nrnunit_use_legacy();
 
-#if !SEJNOWSKI
 extern void fsyn(), fsyng(), fsyni();
-#endif
 extern void fclamp(), fclampi(), fclampv(), prstim();
 extern void fcurrent(), fmatrix(), frecord_init();
 extern void issection(), ismembrane(), sectionname(), psection();
@@ -47,26 +45,3 @@ extern void nrnallsectionmenu(), nrnallpointmenu(), nrnsecmenu();
 extern void nrnglobalmechmenu(), nrnmechmenu(), nrnpointmenu();
 extern void this_section(), this_node(), parent_section(), parent_node();
 extern void parent_connection(), section_orientation();
-#if SEJNOWSKI
-extern void fdefault();			 		      				   /* for sej_menu.cpp  */
-extern void dump_vars();                                       /* sej_default.cpp   */
-extern void update_id_info(), params(), private_menu(); 	   /* sej_menu.cpp    	*/
-extern void save_run(), save_params(), flush(), file_exist();  /* sej_menu.cpp    	*/
-extern void sassign(), dassign(), setup_id_info(), clean_dir();/* sej_menu.cpp    	*/
-extern void ftime(), fseed(), fran(), rand(), norm(), pois();  /* sej_ransyn.cpp  	*/
-extern void syn_reset(), fsyn(), fsyn_set(), fsyng(), fsyni(); /* sej_synapse.cpp 	*/
-extern void con_reset(), fcon(), fcon_set(), fcong(), fconi(); /* sej_connect.cpp 	*/
-extern void top2(), dump(), dump_all();                        /* sej_dump.cpp      */
-extern void ptest();
-
-/* non-initialized variables */
-double ic;
-double id_number, param_number; 			      /* for sej_menu.cpp    */
-
-/* initialized variables */
-double stop_time, nsteps, vrest;
-double init_seed, run_seed, cainit, kinit, nainit;
-double dump_flag, print_flag, graph_flag, gray_flag;
-double fig_flag, timer_flag, stim_flag, view_flag;
-
-#endif
