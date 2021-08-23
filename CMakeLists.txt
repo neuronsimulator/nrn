@@ -252,6 +252,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
