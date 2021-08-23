@@ -566,14 +566,8 @@ int hoc_ParseExec(int yystart) {
 		execute(progbase);
 		rinitcode();
 		break;
-	case 'e':
-		hoc_edit();
-		for (rinitcode(); hoc_yyparse(); rinitcode()) {
-			execute(progbase);
-		}
-		break;
 	case -3 :
-		hoc_execerror("incomplete statement parse not allowed\n", (char*)0);
+		hoc_execerror("incomplete statement parse not allowed\n", nullptr);
 	default:
 		break;
 	}
