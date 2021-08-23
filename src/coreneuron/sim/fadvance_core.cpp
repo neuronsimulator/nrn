@@ -20,7 +20,7 @@
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
-#include "coreneuron/utils/progressbar/progressbar.h"
+#include "coreneuron/utils/progressbar/progressbar.hpp"
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/io/nrn2core_direct.h"
 

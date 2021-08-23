@@ -9,11 +9,11 @@
  * progressbar -- a C class (by convention) for displaying progress
  * on the command line (to stdout).
  */
+#include "coreneuron/utils/progressbar/progressbar.hpp"
 
 #include <assert.h>
 #include <limits.h>
 #include <unistd.h>
-#include "coreneuron/utils/progressbar/progressbar.h"
 
 ///  How wide we assume the screen is if termcap fails.
 enum { DEFAULT_SCREEN_WIDTH = 80 };
@@ -57,27 +57,28 @@ static int progressbar_remaining_seconds(const progressbar* bar);
  * bar like "<---------->". Returns NULL if there isn't enough memory to allocate a progressbar
  */
 progressbar* progressbar_new_with_format(const char* label, unsigned long max, const char* format) {
-    progressbar* new = malloc(sizeof(progressbar));
-    if (new == NULL) {
+    auto* new_bar = static_cast<progressbar*>(malloc(sizeof(progressbar)));
+    if (new_bar == NULL) {
         return NULL;
     }
 
-    new->max = max;
-    new->value = 0;
-    new->draw_time_interval = isatty(STDOUT_FILENO) ? BAR_DRAW_INTERVAL : BAR_DRAW_INTERVAL_NOTTY;
-    new->t = 0;
-    new->start = time(NULL);
+    new_bar->max = max;
+    new_bar->value = 0;
+    new_bar->draw_time_interval = isatty(STDOUT_FILENO) ? BAR_DRAW_INTERVAL
+                                                        : BAR_DRAW_INTERVAL_NOTTY;
+    new_bar->t = 0;
+    new_bar->start = time(NULL);
     assert(3 == strlen(format) && "format must be 3 characters in length");
-    new->format.begin = format[0];
-    new->format.fill = format[1];
-    new->format.end = format[2];
+    new_bar->format.begin = format[0];
+    new_bar->format.fill = format[1];
+    new_bar->format.end = format[2];
 
-    progressbar_update_label(new, label);
-    progressbar_draw(new);
-    new->prev_t = difftime(time(NULL), new->start);
-    new->drawn_count = 1;
+    progressbar_update_label(new_bar, label);
+    progressbar_draw(new_bar);
+    new_bar->prev_t = difftime(time(NULL), new_bar->start);
+    new_bar->drawn_count = 1;
 
-    return new;
+    return new_bar;
 }
 
 /**

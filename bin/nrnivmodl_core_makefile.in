@@ -50,7 +50,7 @@ CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@,-L@caliper_LIB_DIR@,)
 
 # Includes paths gathered by CMake
 INCLUDES = $(INCFLAGS) -I$(CORENRN_INC_DIR) -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms
-INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
+INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
 INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 
 # C++ compilation and link commands

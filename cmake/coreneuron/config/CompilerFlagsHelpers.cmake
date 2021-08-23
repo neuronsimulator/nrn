@@ -9,7 +9,7 @@
 # set of Convenience functions for portable compiler flags
 # ~~~
 
-set(SUPPORTED_COMPILER_LANGUAGE_LIST "C;CXX")
+set(SUPPORTED_COMPILER_LANGUAGE_LIST "CXX")
 
 # detect compiler
 foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})

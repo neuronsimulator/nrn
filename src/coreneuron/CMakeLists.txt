@@ -176,7 +176,7 @@ add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
 
 target_link_libraries(coreneuron ${reportinglib_LIBRARY} ${sonatareport_LIBRARY} ${CALIPER_LIB}
-                      ${likwid_LIBRARIES} ${MPI_C_LIBRARIES})
+                      ${likwid_LIBRARIES} ${MPI_CXX_LIBRARIES})
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include)
 target_include_directories(coreneuron SYSTEM

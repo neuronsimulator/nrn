@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(
   coreneuron
   VERSION 1.0
-  LANGUAGES C CXX)
+  LANGUAGES CXX)
 
 # ~~~
 # It is a bad idea having floating point versions, since macros cant handle them
@@ -54,9 +54,9 @@ list(APPEND CMAKE_MODULE_PATH ${CORENEURON_PROJECT_SOURCE_DIR}/CMake
 set(CODING_CONV_PREFIX "CORENRN")
 set(CORENRN_3RDPARTY_DIR "external")
 # Adds .cu with respect to the current default in hpc-coding-conventions, and drops various patterns
-# that don't match anything in CoreNEURON. Note there's only one .c file left!
+# that don't match anything in CoreNEURON.
 set(CORENRN_ClangFormat_FILES_RE
-    "^.*\\\\.cu?$$" "^.*\\\\.[chi]pp$$"
+    "^.*\\\\.cu$$" "^.*\\\\.[chi]pp$$"
     CACHE STRING "List of regular expressions matching C/C++ filenames" FORCE)
 set(CORENRN_ClangFormat_EXCLUDES_RE
     "${CORENRN_PROJECT_SOURCE_DIR}/external/.*$$"
@@ -474,13 +474,12 @@ message(STATUS "docs                | Build full docs. Calls targets: doxygen, s
 message(STATUS "--------------------+--------------------------------------------------------")
 message(STATUS " Build option       | Status")
 message(STATUS "--------------------+--------------------------------------------------------")
-message(STATUS "C COMPILER          | ${CMAKE_C_COMPILER}")
 message(STATUS "CXX COMPILER        | ${CMAKE_CXX_COMPILER}")
 message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
 message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
 message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
 if(CORENRN_ENABLE_MPI)
-  message(STATUS "  INC               | ${MPI_C_INCLUDE_PATH}")
+  message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
 message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")

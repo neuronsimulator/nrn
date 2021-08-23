@@ -9,18 +9,11 @@
  * progressbar -- a C class (by convention) for displaying progress
  * on the command line (to stderr).
  */
-
-#ifndef PROGRESSBAR_H
-#define PROGRESSBAR_H
-
+#pragma once
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Progressbar data structure (do not modify or create directly)
@@ -103,9 +96,3 @@ void progressbar_update_label(progressbar* bar, const char* label);
 /// Finalize (and free!) a progressbar. Call this when you're done, or if you break out
 /// partway through.
 void progressbar_finish(progressbar* bar);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
