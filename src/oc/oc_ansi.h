@@ -275,6 +275,7 @@ extern void nrnpy_pass();
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
+extern void* nrn_opaque_obj2pyobj(Object*); // PyObject reference not incremented
 
 #if defined(__cplusplus)
 }
