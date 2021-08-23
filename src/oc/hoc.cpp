@@ -1399,10 +1399,7 @@ static void hoc_run1(void)	/* execute until EOF */
 		intset = 0;
 	}
 	hoc_execerror_messages = 1;
-	if (pipeflag == 1) {	/*at this location multiple emacs errors */
-	}else{
-		pipeflag=0;
-	}
+	pipeflag=0; // reset pipeflag
 #if defined(WIN32) && !defined(CYGWIN)
 	if (!nrn_fw_eq(fin, stdin)) {
 		hoc_win_wait_cursor();
@@ -1640,16 +1637,11 @@ int hoc_yyparse(void) {
 		hoc_in_yyparse = 1;
 		i = yyparse();
 		hoc_in_yyparse = 0;
-		switch (i) {
-        case 'e':
-            i = '\n';
-            break;
-        case -3 : /* need more input */
-			hoc_in_yyparse = 1;
+		if (i==-3) { // need more input
+       			hoc_in_yyparse = 1;
 			i = '\n';
-			break;
 		}
-	}while (i == '\n');
+	} while (i == '\n');
 	return i;
 }
 
