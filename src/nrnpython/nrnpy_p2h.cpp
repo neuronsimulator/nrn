@@ -109,6 +109,13 @@ static void call_python_with_section(Object* pyact, Section* sec) {
   Py_XDECREF(r);
 }
 
+extern void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
+static void* opaque_obj2pyobj(Object* ho) {
+  assert(ho && ho->ctemplate->sym == nrnpy_pyobj_sym_);
+  PyObject* po =((Py2Nrn*)ho->u.this_pointer)->po_;  
+  assert(po);
+  return po;     
+}
 
 extern "C" void nrnpython_reg_real() {
   //printf("nrnpython_reg_real()\n");
@@ -135,6 +142,7 @@ extern "C" void nrnpython_reg_real() {
   nrnpy_pysame = pysame;
   nrnpy_save_thread = save_thread;
   nrnpy_restore_thread = restore_thread;
+  nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
   dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem_p = &nrnpy_site_problem;
