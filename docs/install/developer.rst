@@ -11,3 +11,4 @@ dependencies and special instructions.
 
    code_coverage.md
    mac_pkg.md
+   debug.md
