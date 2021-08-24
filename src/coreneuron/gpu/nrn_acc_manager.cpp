@@ -400,6 +400,47 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         } else {
             printf("\n WARNING: NrnThread %d not permuted, error for linear algebra?", i);
         }
+
+        {
+            TrajectoryRequests* tr = nt->trajec_requests;
+            if (tr) {
+                // Create a device-side copy of the `trajec_requests` struct and
+                // make sure the device-side NrnThread object knows about it.
+                auto* d_trajec_requests = reinterpret_cast<TrajectoryRequests*>(
+                    acc_copyin(tr, sizeof(TrajectoryRequests)));
+                acc_memcpy_to_device(&(d_nt->trajec_requests),
+                                     &d_trajec_requests,
+                                     sizeof(TrajectoryRequests*));
+                // Initialise the double** varrays member of the struct.
+                auto* d_tr_varrays = reinterpret_cast<double**>(
+                    acc_copyin(tr->varrays, sizeof(double*) * tr->n_trajec));
+                acc_memcpy_to_device(&(d_trajec_requests->varrays),
+                                     &d_tr_varrays,
+                                     sizeof(double**));
+                // Initialise the double** gather member of the struct.
+                auto* d_tr_gather = reinterpret_cast<double**>(
+                    acc_copyin(tr->gather, sizeof(double*) * tr->n_trajec));
+                acc_memcpy_to_device(&(d_trajec_requests->gather), &d_tr_gather, sizeof(double**));
+                // `varrays` and `gather` are minimal, the host-size buffers have
+                // `bsize` elements.
+                for (int i = 0; i < tr->n_trajec; ++i) {
+                    // tr->varrays[i] is a buffer of tr->bsize doubles on the host,
+                    // make a device-side copy of it and store a pointer to it in
+                    // the device-side version of tr->varrays.
+                    auto* d_buf_traj_i = reinterpret_cast<double*>(
+                        acc_copyin(tr->varrays[i], tr->bsize * sizeof(double)));
+                    acc_memcpy_to_device(&(d_tr_varrays[i]), &d_buf_traj_i, sizeof(double*));
+                    // tr->gather[i] is a double* referring to (host) data in the
+                    // (host) _data block
+                    auto* d_gather_i = acc_deviceptr(tr->gather[i]);
+                    acc_memcpy_to_device(&(d_tr_gather[i]), &d_gather_i, sizeof(double*));
+                }
+                // TODO: other `double** scatter` and `void** vpr` members of
+                // the TrajectoryRequests struct are not copied to the device.
+                // The `int vsize` member is updated during the simulation but
+                // not kept up to date timestep-by-timestep on the device.
+            }
+        }
     }
 
 #endif
@@ -698,6 +739,17 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 acc_update_self(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
             }
 
+            {
+                TrajectoryRequests* tr = nt->trajec_requests;
+                if (tr) {
+                    // The full buffers have `bsize` entries, but only `vsize`
+                    // of them are valid.
+                    for (int i = 0; i < tr->n_trajec; ++i) {
+                        acc_update_self(tr->varrays[i], tr->vsize * sizeof(double));
+                    }
+                }
+            }
+
             /* dont update vdata, its pointer array
                if(nt->_nvdata) {
                acc_update_self(nt->_vdata, sizeof(double)*nt->_nvdata);
@@ -795,6 +847,17 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             if (nt->n_presyn) {
                 acc_update_device(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
                 acc_update_device(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+            }
+
+            {
+                TrajectoryRequests* tr = nt->trajec_requests;
+                if (tr) {
+                    // The full buffers have `bsize` entries, but only `vsize`
+                    // of them are valid.
+                    for (int i = 0; i < tr->n_trajec; ++i) {
+                        acc_update_device(tr->varrays[i], tr->vsize * sizeof(double));
+                    }
+                }
             }
 
             /* don't and don't update vdata, its pointer array
@@ -913,7 +976,17 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef _OPENACC
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
-
+        {
+            TrajectoryRequests* tr = nt->trajec_requests;
+            if (tr) {
+                for (int i = 0; i < tr->n_trajec; ++i) {
+                    acc_delete(tr->varrays[i], tr->bsize * sizeof(double));
+                }
+                acc_delete(tr->gather, sizeof(double*) * tr->n_trajec);
+                acc_delete(tr->varrays, sizeof(double*) * tr->n_trajec);
+                acc_delete(tr, sizeof(TrajectoryRequests));
+            }
+        }
         if (nt->_permute) {
             if (interleave_permute_type == 1) {
                 InterleaveInfo* info = interleave_info + i;
