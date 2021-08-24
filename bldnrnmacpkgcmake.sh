@@ -44,11 +44,6 @@ for i in $args ; do
   pythons="${pythons}${i};"
 done
 
-XQUARTZ_CMAKE_INCLUDE=""
-if test "$CPU" = "arm64" ; then
-  XQUARTZ_CMAKE_INCLUDE="-DX11_INCLUDE_DIR=/usr/X11R6/include"
-fi
-
 cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
@@ -57,17 +52,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
   -DCMAKE_OSX_ARCHITECTURES="$CPU" \
-  -DX11_INCLUDE_DIR=/usr/X11R6/include \
-  $XQUARTZ_CMAKE_INCLUDE \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-
-# work around the possibility of linking against a homebrew
-# installation of XQuartz which would cause trouble on user machine
-# that has the standard XQuartz installation
-if test "$CPU" = "arm64" ; then
-  sed s,/opt/homebrew/lib,/usr/X11R6/lib,g < CMakeCache.txt > temp.txt
-  mv temp.txt CMakeCache.txt
-fi
 
 make -j install
 $NRN_INSTALL/bin/neurondemo -c 'quit()'
