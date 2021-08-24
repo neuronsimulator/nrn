@@ -34,7 +34,7 @@ xcrun altool --notarize-app \
 # However it is unclear how long the wait will be if you do a wait loop over
 # xcrun altool --notarization-info $RequestUUID \
 #  --username "michael.hines@yale.edu" \
-#  --password "$app_specific_password" \
+#  --password "$app_specific_password"
 # until
 #   Status: in progress
 # changes to
@@ -55,3 +55,10 @@ so that Gatekeeper will be able to find the whitelist in the file itself
 without the need to perform an online check.
 "
 
+# If the notarization fails. E.g. the message from Apple is
+#    "Your Mac software was not notarized"
+# then review the notarization LogFileURL by obtaining the log url with
+# xcrun altool --notarization-info $RequestUUID \
+#  --username "michael.hines@yale.edu" \
+#  --password "$app_specific_password"
+# and address the issues it shows and try again.

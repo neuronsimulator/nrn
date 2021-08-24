@@ -1,8 +1,11 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
-
 import os
 import pytest
+import traceback
+
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+
 
 from neuron import h
 
@@ -51,7 +54,8 @@ def test_watchrange():
 
     cells = [Cell(gid) for gid in gids]
 
-    tstop = 20
+    # @olupton changed from 20 to trigger assert(datum==2) failure.
+    tstop = 1.0
 
     def run(tstop, mode):
         pc.set_maxstep(10)
@@ -60,11 +64,11 @@ def test_watchrange():
             pc.psolve(tstop)
         elif mode == 1:
             while h.t < tstop:
-                pc.psolve(h.t + 1.0)
+                pc.psolve(h.t + h.dt)
         else:
             while h.t < tstop:
-                h.continuerun(h.t + 0.5)
-                pc.psolve(h.t + 0.5)
+                h.continuerun(h.t + h.dt)
+                pc.psolve(h.t + h.dt)
 
     tvec = h.Vector()
     tvec.record(h._ref_t, sec=cells[0].soma)
@@ -136,12 +140,20 @@ def test_watchrange():
 
 
 if __name__ == "__main__":
-    from neuron import gui
+    try:
+        from neuron import gui
 
-    stdlist, tvec = test_watchrange()
-    g = h.Graph()
-    print("n_high  n_mid  n_low")
-    for i, result in enumerate(stdlist):
-        print(result[0], result[1], result[2])
-        result[4].line(g, tvec, i, 2)
-    g.exec_menu("View = plot")
+        stdlist, tvec = test_watchrange()
+        g = h.Graph()
+        print("n_high  n_mid  n_low")
+        for i, result in enumerate(stdlist):
+            print(result[0], result[1], result[2])
+            result[4].line(g, tvec, i, 2)
+        g.exec_menu("View = plot")
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    if enable_gpu:
+        h.quit()

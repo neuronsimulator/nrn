@@ -3,6 +3,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/test)
 include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
                     ${PROJECT_SOURCE_DIR}/src/nrniv ${PROJECT_SOURCE_DIR}/src/oc)
 
+# Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
+# targets from included projects like CoreNEURON and NMODL
+add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+
 # =============================================================================
 # Test executables
 # =============================================================================
@@ -10,7 +14,7 @@ set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
-if (${USE_PTHREAD} EQUAL 1)
+if(${USE_PTHREAD} EQUAL 1)
   target_link_libraries(testneuron Threads::Threads)
 endif()
 if(NOT MINGW)
@@ -120,7 +124,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest ${PYTEST_COVERAGE_ARGS} ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
+            ${PYTEST_COVERAGE_ARGS} ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
 
@@ -133,7 +138,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # GCC. Other compilers produce larger differences.
     if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-8)
-    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "PGI" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "NVHPC")
+    elseif(NRN_HAVE_NVHPC_COMPILER)
       set(change_test_tolerance NRN_RXD_TEST_TOLERANCE=1e-4)
     endif()
     nrn_add_test(
@@ -142,7 +147,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
               pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
-      find_python_module(mpi4py)
+      nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
@@ -168,6 +173,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
+    add_test(
+        NAME parallel_bas
+        COMMAND
+        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
+    list(APPEND TESTS parallel_tests parallel_bas)
   endif()
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
@@ -187,6 +199,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_launch_hoc CORENRN_ENABLE_GPU=true special -mpi)
     set(modtests_launch_py ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
+        CORENRN_ENABLE_GPU=true
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
         2
@@ -278,7 +291,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     COMMAND COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${modtests_launch_py}
             test/gjtests/test_natrans.py)
   if(NRN_ENABLE_MPI)
-    find_python_module(mpi4py)
+    nrn_find_python_module(mpi4py)
     if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
@@ -287,15 +300,34 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         PROCESSORS 2
         COMMAND NRN_TEST_SPIKES_MPI4PY=1 ${modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
     endif()
+    # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
+    # discussion. Launching this test via `python` (not `special`) does not work on Linux with
+    # OpenMPI 2.x and without dynamic MPI enabled in NEURON, which corresponds to the GitHub Actions
+    # environment. GPU builds are already launched using `special`.
+    if(NOT NRN_ENABLE_MPI_DYNAMIC
+       AND NOT CORENEURON_ENABLE_GPU
+       AND NRN_HAVE_OPENMPI2_OR_LESS)
+      set(launch_spikes_mpi_file_mode_py
+          ${MPIEXEC_NAME}
+          ${MPIEXEC_NUMPROC_FLAG}
+          2
+          ${MPIEXEC_PREFLAGS}
+          special
+          ${MPIEXEC_POSTFLAGS}
+          -python
+          -pyexe
+          ${PYTHON_EXECUTABLE})
+      message(STATUS "Hitting workaround")
+    else()
+      set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
+    endif()
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME spikes_mpi_file_mode_py
       REQUIRES coreneuron
       PROCESSORS 2
-      COMMAND
-        NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1 ${MPIEXEC_NAME}
-        ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -python -pyexe
-        ${PYTHON_EXECUTABLE} test/coreneuron/test_spikes.py)
+      COMMAND NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
+              ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
   endif()
 endif()
 

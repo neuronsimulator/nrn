@@ -3,6 +3,9 @@
 
 import os
 import pytest
+import traceback
+
+enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -76,7 +79,7 @@ def test_netmove():
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = enable_gpu
 
     def runassert(mode):
         run(tstop, mode)
@@ -84,8 +87,17 @@ def test_netmove():
             result = cell.result()
             std = stdlist[i]
             for j in range(2):
-                assert std[j] == result[j]
-            assert std[2].eq(result[2])
+                if std[j] != result[j]:
+                    print('cell {} std[{}]={} result[{}]={}'.format(i, j, std[j], j, result[j]))
+                    assert False
+            if not std[2].eq(result[2]):
+                print('Cell', i, 'mode', mode)
+                print(std[2], len(std[2]), result[2], len(result[2]))
+                print("NEURON")
+                print(list(std[2]))
+                print("CoreNEURON")
+                print(list(result[2]))
+                assert False
 
     for mode in [0, 1, 2]:
         runassert(mode)
@@ -97,12 +109,20 @@ def test_netmove():
 
 
 if __name__ == "__main__":
-    from neuron import gui
+    try:
+        from neuron import gui
 
-    stdlist = test_netmove()
-    g = h.Graph()
-    print("n_netsend  n_netmove")
-    for result in stdlist:
-        print(result[0], result[1])
-        result[2].line(g)
-    g.exec_menu("View = plot")
+        stdlist = test_netmove()
+        g = h.Graph()
+        print("n_netsend  n_netmove")
+        for result in stdlist:
+            print(result[0], result[1])
+            result[2].line(g)
+        g.exec_menu("View = plot")
+    except:
+        traceback.print_exc()
+        # Make the CTest test fail
+        sys.exit(42)
+    # The test doesn't exit without this.
+    if enable_gpu:
+        h.quit()

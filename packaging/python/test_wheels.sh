@@ -78,7 +78,7 @@ run_serial_test () {
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
       nrniv -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     else
-      python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
+      $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
     # Test 8: run demo
@@ -154,19 +154,19 @@ echo "== Testing $python_wheel using $python_exe ($python_ver) =="
 if [[ "$use_venv" != "false" ]]; then
   echo " == Creating virtual environment == "
   venv_name="nrn_test_venv_${python_ver}"
-  if [[ "$python_ver" == "27" ]]; then
-    $python_exe -m pip install virtualenv
-    $python_exe -m virtualenv $venv_name
-  else
-    $python_exe -m venv $venv_name
-  fi
+  $python_exe -m venv $venv_name
   . $venv_name/bin/activate
   python_exe=`which python`
 else
   echo " == Using global install == "
 fi
 
-# install neuron and neuron
+# python 3.6 needs updated pip
+if [[ "$python_ver" == "36" ]]; then
+  $python_exe -m pip install --upgrade pip
+fi
+
+# install numpy and neuron
 $python_exe -m pip install numpy
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly

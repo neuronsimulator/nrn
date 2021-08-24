@@ -33,6 +33,12 @@ if(NRN_ENABLE_COVERAGE)
   set(NRN_COVERAGE_FLAGS_UNQUOTED --coverage -O0 -fno-inline -g)
   set(NRN_COVERAGE_FLAGS "--coverage -O0 -fno-inline -g")
   set(NRN_COVERAGE_LIB gcov)
+
+  if (NRN_MACOS_BUILD)
+    unset(NRN_COVERAGE_LIB)
+    add_link_options(-fprofile-arcs)
+  endif()
+
   if (NRN_COVERAGE_FILES)
     # ~~~
     # cannot figure out how to set specific file flags here. So they are

@@ -1,13 +1,30 @@
 import os
-import pytest
-import sys
-import traceback
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
 enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 mpi4py_option = bool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", ""))
 file_mode_option = bool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", ""))
 nrnmpi_init_option = bool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", ""))
+
+# following at top level and early enough avoids...
+# *** The MPI_Iprobe() function was called after MPI_FINALIZE was invoked.
+
+# mpi4py needs to be imported before importing h
+if mpi4py_option:
+    from mpi4py import MPI
+    from neuron import h, gui
+# without mpi4py we need to call nrnmpi_init explicitly
+elif nrnmpi_init_option:
+    from neuron import h, gui
+
+    h.nrnmpi_init()
+# otherwise serial execution
+else:
+    from neuron import h, gui
+
+import pytest
+import sys
+import traceback
 
 
 def test_spikes(
@@ -20,19 +37,6 @@ def test_spikes(
             use_mpi4py, use_nrnmpi_init, file_mode
         )
     )
-    # mpi4py needs tp be imported before importing h
-    if use_mpi4py:
-        from mpi4py import MPI
-        from neuron import h, gui
-    # without mpi4py we need to call nrnmpi_init explicitly
-    elif use_nrnmpi_init:
-        from neuron import h, gui
-
-        h.nrnmpi_init()
-    # otherwise serial execution
-    else:
-        from neuron import h, gui
-
     h("""create soma""")
     h.soma.L = 5.6419
     h.soma.diam = 5.6419
@@ -135,4 +139,6 @@ if __name__ == "__main__":
         # Make the CTest test fail
         sys.exit(42)
     # The test doesn't exit without this.
+    pc = h.ParallelContext()
+    pc.barrier()
     h.quit()

@@ -26,8 +26,11 @@ if os.name != "posix":
 # Main source of the version. Dont rename, used by Cmake
 try:
     # github actions somehow fails with check_output and python3
+
+    # Official Versioning shall rely on annotated tags (don't use `--tags` or `--all`)
+    # (please refer to NEURON SCM documentation)
     v = (
-        subprocess.run(["git", "describe", "--tags"], stdout=subprocess.PIPE)
+        subprocess.run(["git", "describe"], stdout=subprocess.PIPE)
         .stdout.strip()
         .decode()
     )
@@ -174,7 +177,6 @@ class CMakeAugmentedBuilder(build_ext):
         cmake = self._find_cmake()
         cfg = "Debug" if self.debug else "Release"
         self.outdir = os.path.abspath(ext.cmake_install_prefix)
-        readline_flag = "ON" if sys.platform[:6] == "darwin" else "OFF"
 
         log.info("Building lib to: %s", self.outdir)
         cmake_args = [
@@ -182,7 +184,6 @@ class CMakeAugmentedBuilder(build_ext):
             "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
-            "-DNRN_ENABLE_INTERNAL_READLINE=" + readline_flag,
         ] + ext.cmake_flags
         # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
@@ -264,12 +265,12 @@ class CMakeAugmentedBuilder(build_ext):
                 cmake_version = LooseVersion(
                     re.search(r"version\s*([\d.]+)", out.decode()).group(1)
                 )
-                if cmake_version >= "3.5.0":
+                if cmake_version >= "3.15.0":
                     return candidate
             except OSError:
                 pass
 
-        raise RuntimeError("Project requires CMake >=3.5.0")
+        raise RuntimeError("Project requires CMake >=3.15.0")
 
 
 class Docs(Command):

@@ -98,7 +98,8 @@ struct NrnCoreTransferEvents {
 };
 
 // For direct transfer of CoreNEURON WATCH activation back to NEURON
-typedef std::vector<std::vector<int> > Core2NrnWatchInfo;
+typedef std::vector<std::pair<int, bool> > Core2NrnWatchInfoItem;
+typedef std::vector<Core2NrnWatchInfoItem> Core2NrnWatchInfo;
 
 extern "C" {
 extern NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid);

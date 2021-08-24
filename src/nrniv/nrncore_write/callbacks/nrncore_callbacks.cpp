@@ -1023,10 +1023,12 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
     NrnThread& nt = nrn_threads[tid];
     Memb_list* ml = nt._ml_list[type];
     for (size_t i = 0; i < wi.size(); ++i) {
-        auto& active_watch_indices = wi[i];
+        Core2NrnWatchInfoItem& active_watch_items = wi[i];
         Datum* pd = ml->pdata[i];
         int r = 0; // first activate removes formerly active from pd.
-        for (auto watch_index: active_watch_indices){
+        for (auto watch_item: active_watch_items){
+            int watch_index = watch_item.first;
+            bool above_thresh = watch_item.second;
             WatchCondition* wc = (WatchCondition*)pd[watch_index]._pvoid;
             if (!wc) { // if any do not exist in this instance, create them all
                        // with proper callback and flag.
@@ -1035,20 +1037,10 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
             }
             _nrn_watch_activate(pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_,
                 r++, wc->nrflag_);
-            wc->flag_ = false; // this is a mystery
-            // Note that with the testcorenrn WATCH statement test with
-            // mode 2, the conceptual flag about being above threshold is
-            // not set. (And we added an assert statement for that referencing
-            // the above code line.) However, on this nrn side, it is
-            // sometimes the case (in WatchCondition::activate(nrflag)) that
-            // a call to value() indicates above threshold. Without the above
-            // code statement, there will not be a (immediate) transition event
-            // til the value() becomes negative again and then goes possitive.
-            // Apparently, on the coreneuron side, the last threshold check
-            // was performed prior to the last voltage (and hopefully any
-            // STATE update) as the end of psolve on the coreneuron side.
-            // So, in that case, on the nrn side, though value() > 0, the
-            // WATCH event needs to be triggere on the next threshold check.
+            wc->flag_ = above_thresh ? 1 : 0;
+            // If flag_ is 1
+            // there will not be a (immediate) transition event
+            // til the value() becomes negative again and then goes positive.
         }
     }
 }

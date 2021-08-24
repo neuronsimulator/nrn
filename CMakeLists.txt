@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is
 # because CMake reads the CRAYPE_LINK_TYPE environment variable inside the call
 # to project(...) and sets various flags and properties based on its value.
@@ -58,7 +58,6 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
-option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -67,7 +66,7 @@ option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic uni
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
-option(NRN_ENABLE_INTERNAL_READLINE "Use internal Readline library shipped with NEURON" ${NRN_ENABLE_INTERNAL_READLINE_DEFAULT})
+option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
@@ -154,13 +153,13 @@ set(Python_ADDITIONAL_VERSIONS 3 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0 2.8 2.7
 # sub-directorty containing project submodules
 set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/external")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
-include(PlatformHelper)
-include(CompilerHelper)
-include(MacroHelper)
-include(RpathHelper)
-include(ExternalProjectHelper)
-include(FindPythonModule)
-include(Coverage)
+include(cmake/PlatformHelper.cmake)
+include(cmake/CompilerHelper.cmake)
+include(cmake/MacroHelper.cmake)
+include(cmake/RpathHelper.cmake)
+include(cmake/ExternalProjectHelper.cmake)
+include(cmake/modules/FindPythonModule.cmake)
+include(cmake/Coverage.cmake)
 
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
@@ -172,8 +171,31 @@ include(ReleaseDebugAutoFlags)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
-if(NOT NRN_ENABLE_INTERNAL_READLINE)
-  find_package(Readline)
+# When shipping the wheels we want to link readline libs statically.
+if(NRN_WHEEL_STATIC_READLINE)
+  # CMake will prefer dynamic libraries over static ones. With the following construct we make sure we get them.
+  set( ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set( CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+endif()
+
+find_package(Readline REQUIRED)
+if(READLINE_FOUND)
+  # MAC libedit.3.dylib does not have rl_event_hook
+  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
+  # points to the library and mentions all its definitions.
+  # this part has to be prior to adding the nrniv subdirectory.
+  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
+  if(NOT result EQUAL 0)
+    # define for src/oc/hoc.cpp
+    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
+  endif()
+  find_package(Curses QUIET)
+  find_package(Termcap QUIET)
+endif()
+
+# Reset original CMake library suffixes
+if (ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES)
+  set (CMAKE_FIND_LIBRARY_SUFFIXES ${ORIGINAL_CMAKE_FIND_LIBRARY_SUFFIXES} )
 endif()
 
 if(NRN_ENABLE_RX3D)
@@ -230,6 +252,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
@@ -271,14 +294,26 @@ if(NRN_ENABLE_MPI)
   add_definitions("-DOMPI_SKIP_MPICXX=1")
   add_definitions("-DMPICH_SKIP_MPICXX=1")
 
-  # Launching mpi executable with full path can mangle different python versions and libraries
-  # (see issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
+  # Launching mpi executable with full path can mangle different python versions and libraries (see
+  # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
   # ${MPIEXEC_NAME} does not.
-  # Also, FindMPI broke backward compatibility with v3.19
-  if(${CMAKE_VERSION} VERSION_LESS "3.10")
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC} NAME)
-  else()
-    get_filename_component(MPIEXEC_NAME ${MPIEXEC_EXECUTABLE} NAME)
+  get_filename_component(MPIEXEC_NAME ${MPIEXEC_EXECUTABLE} NAME)
+
+  # Detect if we have an OpenMPI v2 or older.
+  execute_process(
+    COMMAND "${MPIEXEC_EXECUTABLE}" --version
+    RESULT_VARIABLE OPENMPI_TEST_RESULT
+    OUTPUT_VARIABLE OPENMPI_TEST_OUTPUT)
+  set(NRN_HAVE_OPENMPI2_OR_LESS OFF)
+  if(${OPENMPI_TEST_RESULT} EQUAL 0 AND "${OPENMPI_TEST_OUTPUT}" MATCHES
+                                        "^mpiexec \\(OpenRTE\\) ([0-9\.]+)")
+    set(NRN_OPENMPI_VERSION "${CMAKE_MATCH_1}")
+    message(STATUS "Detected OpenMPI ${NRN_OPENMPI_VERSION}")
+    if("${NRN_OPENMPI_VERSION}" VERSION_LESS 3)
+      set(NRN_HAVE_OPENMPI2_OR_LESS ON)
+      message(STATUS "OpenMPI<v3: `mpirun python` may not work, try `mpirun special -python`.")
+      message(STATUS "See also: https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297")
+    endif()
   endif()
 else()
   set(NRNMPI 0)
@@ -429,26 +464,6 @@ endif()
 # =============================================================================
 # Add project directories AFTER CMake modules
 # =============================================================================
-
-if(READLINE_FOUND)
-  # MAC libedit.3.dylib does not have rl_event_hook
-  # Readline_LIBRARY may be a binary lib or (on the MAC) a tbd file that
-  # points to the library and mentions all its definitions.
-  # this part has to be prior to adding the nrniv subdirectory.
-  execute_process(COMMAND grep -q rl_event_hook ${Readline_LIBRARY} RESULT_VARIABLE result)
-  if(NOT result EQUAL 0)
-    # define for src/oc/hoc.cpp
-    set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
-  endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
-else()
-  find_package(Curses REQUIRED QUIET)
-  add_subdirectory(src/readline)
-  set(INTERNAL_READLINE readline)
-  unset(Readline_LIBRARY CACHE)
-endif()
-
 add_subdirectory(src/nrniv)
 add_subdirectory(bin)
 
@@ -545,8 +560,8 @@ if(NRN_ENABLE_TESTS)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
   include(CTest)
   include(Catch)
-  find_python_module(pytest)
-  find_python_module(pytest_cov)
+  nrn_find_python_module(pytest)
+  nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)
     if(NOT PYTEST_FOUND)
       message(SEND_ERROR "pytest Python package is required.")
@@ -629,11 +644,7 @@ message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
 message(STATUS "You can now build NEURON using:")
-if(${CMAKE_VERSION} VERSION_LESS "3.12")
-  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
-else()
-  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
-endif()
+message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
 message(STATUS "Some non-default targets you might want to build:")
 message(STATUS "--------------+--------------------------------------------------------------")
