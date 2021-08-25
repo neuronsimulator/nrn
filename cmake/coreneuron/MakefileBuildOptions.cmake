@@ -72,7 +72,9 @@ endforeach()
 # PGI compiler adds --c++14;-A option for C++14, remove ";"
 string(REPLACE ";" " " CXX14_STD_FLAGS "${CMAKE_CXX14_STANDARD_COMPILE_OPTION}")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
-set(CORENRN_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE}} ${CXX14_STD_FLAGS}")
+set(CORENRN_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE}} ${CXX14_STD_FLAGS} ${NVHPC_CXX_INLINE_FLAGS}"
+)
 
 # =============================================================================
 # nmodl/mod2c related options : TODO

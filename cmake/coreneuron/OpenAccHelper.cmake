@@ -68,6 +68,11 @@ if(CORENRN_ENABLE_GPU)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
   string(APPEND CMAKE_CXX_FLAGS " ${NVHPC_ACC_COMP_FLAGS} ${PGI_DIAG_FLAGS}")
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${NVHPC_ACC_LINK_FLAGS}")
+  # Use `-Mautoinline` option to compile .cpp files generated from .mod files only. This is
+  # especially needed when we compile with -O0 or -O1 optimisation level where we get link errors.
+  # Use of `-Mautoinline` ensure that the necessary functions like `net_receive_kernel` are inlined
+  # for OpenACC code generation.
+  set(NVHPC_CXX_INLINE_FLAGS "-Mautoinline")
 endif()
 
 # =============================================================================
