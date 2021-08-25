@@ -189,8 +189,12 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
+  # If we are not using self contained, static readline library
+  # created for building wheel then only look for curses and termcap
+  if(NOT NRN_WHEEL_STATIC_READLINE)
+    find_package(Curses QUIET)
+    find_package(Termcap QUIET)
+  endif()
 endif()
 
 # Reset original CMake library suffixes
