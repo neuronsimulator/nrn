@@ -320,7 +320,10 @@ def test_deleted_sec():
     expect_hocerr(imp.loc, (seg,))
     expect_hocerr(h.distance, (0, seg))
 
-    return s, seg, mech, rvlist, vref, gnabarref, dend
+    del ic, imp, dend
+    locals()
+
+    return s, seg, mech, rvlist, vref, gnabarref
 
 
 if __name__ == "__main__":
@@ -328,3 +331,5 @@ if __name__ == "__main__":
     test_soma()
     test_simple_sim()
     result = test_deleted_sec()
+    h.topology()
+    h.allobjects()

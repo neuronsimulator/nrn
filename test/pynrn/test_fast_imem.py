@@ -3,6 +3,7 @@
 # sprinkled on zero and non-zero area nodes.
 
 from neuron import h
+h.load_file("stdrun.hoc") # for h.cvode_active
 
 class Cell():
   def __init__(self, id, nsec):
@@ -183,10 +184,10 @@ def test_fastimem():
   h.finitialize(-65)
   run(1.0, ics, 1e-13)
   total_syn_g(syns)
-  cvode.active(1)
+  h.cvode_active(1)
   run(1.0, ics, 1e-12)
   cvode.use_fast_imem(0)
-  cvode.active(0)
+  h.cvode_active(0)
 
 if __name__ == "__main__":
   test_allseg_unique_iter()
