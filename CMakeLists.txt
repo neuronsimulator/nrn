@@ -346,7 +346,6 @@ if(NRN_ENABLE_INTERVIEWS)
         )
       endif()
     endif()
-    nrn_check_xquartz()
     include_directories(${X11_INCLUDE_DIR})
   endif()
 

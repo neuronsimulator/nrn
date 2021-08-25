@@ -257,37 +257,3 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
     # create symbolic link
     install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
 endmacro(nrn_install_dir_symlink)
-
-# ============================================================================
-# Verify X11 suitable for installer (e.g. not homebrew)
-# ============================================================================
-macro(nrn_check_xquartz)
-  if (APPLE)
-    # My M1 has an xquartz installation under /opt/homebrew probably because
-    # of "brew install gedit". The consequence is that a package install
-    # on most user machines will install an nrniv that links against that
-    # path and will fail. I know of no way to have  "find_package(X11)" get
-    # the XQuartz installation from /usr/X11R6 (or /usr/X11 or /opt/X11) and
-    # hence the following work around.
-    if (X11_LIBRARY_DIR MATCHES "^/opt/homebrew/")
-      if (EXISTS "/usr/X11R6/lib/libX11.dylib")
-        # X11 from xquartz.org is installed
-        # so replace all X11 variable value /opt/homebrew substrings with /usr/X11R6
-        # There are about 20 of them but the the most important are
-        # X11_INCLUDE_DIR, X11_LIBRARIES, X11_LIBRARY_DIR.
-        get_cmake_property(_variableNames VARIABLES)
-        foreach(_variableName ${_variableNames})
-          if (_variableName MATCHES "X11")
-            if (${_variableName} MATCHES "^/opt/homebrew")
-              string(REGEX REPLACE "/opt/homebrew" "/usr/X11R6" _foo "${${_variableName}}")
-              set(${_variableName} "${_foo}" CACHE PATH "" FORCE)
-              unset(_foo)
-            endif()
-          endif()
-        endforeach()
-      else()
-        message(FATAL_ERROR "/usr/X11R6/lib/libX11.dylib does not exist: Install from xquartz.org")
-      endif()
-    endif()
-  endif()
-endmacro(nrn_check_xquartz)

@@ -44,6 +44,12 @@ for i in $args ; do
   pythons="${pythons}${i};"
 done
 
+# The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
+# is to definitely link against the xquartz.org installation instead
+# of the one under /opt/homebrew/ (which I think came
+# from brew install gedit). User installations are expected to have the
+# former and would only accidentally have the latter.
+
 cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
@@ -52,6 +58,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
   -DCMAKE_OSX_ARCHITECTURES="$CPU" \
+  -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
 make -j install
