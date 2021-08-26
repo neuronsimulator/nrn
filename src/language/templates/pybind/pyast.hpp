@@ -102,6 +102,10 @@ struct PyAst: public Ast {
         PYBIND11_OVERLOAD(std::shared_ptr<Ast>, Ast, get_shared_ptr, );
     }
 
+    std::shared_ptr<const Ast> get_shared_ptr() const override {
+        PYBIND11_OVERLOAD(std::shared_ptr<const Ast>, Ast, get_shared_ptr, );
+    }
+
     const ModToken* get_token() const override {
         PYBIND11_OVERLOAD(const ModToken*, Ast, get_token, );
     }

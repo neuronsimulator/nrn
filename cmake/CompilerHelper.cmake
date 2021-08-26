@@ -39,5 +39,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
     # "nvc++IkWUbMugiSgNH.s: Warning: stand-alone `data16' prefix
     # ~~~
     set(NMODL_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=1,111,186,998,1098,1626)
+    # There are a few more warnings produced by the unit test infrastructure.
+    # ~~~
+    # "test/unit/visitor/constant_folder.cpp", warning #177-D: variable "..." was declared but never referenced
+    # ~~~
+    set(NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=177)
   endif()
 endif()

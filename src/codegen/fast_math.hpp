@@ -133,7 +133,7 @@ static inline double vexpm1(double initial_x) {
     double px = std::floor(LOG2E * x + 0.5);
     const int32_t n = px;
 
-    const uint64_t twopnm1 = (((uint64_t)(n - 1)) + 1023) << 52;
+    const uint64_t twopnm1 = (static_cast<uint64_t>(n - 1) + 1023) << 52;
     x = 2 * (uint642dp(twopnm1) * egm1(x, px) + uint642dp(twopnm1)) - 1;
 
     if (initial_x > EXP_LIMIT)

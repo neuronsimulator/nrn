@@ -74,101 +74,124 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/parser/nmodl ${PROJECT_BINARY_DIR}
 # =============================================================================
 # Lexer & Parser commands
 # =============================================================================
-# command to generate nmodl parser
+# Command to generate nmodl parser Construct a relative path to avoid baking any absolute paths into
+# the output .cpp and .hpp files (via __FILE__ and so on), which cause ccache misses when the build
+# prefix changes (e.g. GitLab CI).
+set(NMODL_PARSER_SOURCE_DIR "${NMODL_PROJECT_SOURCE_DIR}/src/parser")
+set(NMODL_PARSER_BINARY_DIR "${NMODL_PROJECT_BINARY_DIR}/src/parser")
+file(RELATIVE_PATH NMODL_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
+     "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy")
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
-         ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
-         ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/nmodl/position.hh
-         ${PROJECT_BINARY_DIR}/src/parser/nmodl/stack.hh
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl.yy
-  DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl.yy pyastgen
+  OUTPUT "${NMODL_PARSER_BINARY_DIR}/nmodl/location.hh"
+         "${NMODL_PARSER_BINARY_DIR}/nmodl/nmodl_parser.cpp"
+         "${NMODL_PARSER_BINARY_DIR}/nmodl/nmodl_parser.hpp"
+         "${NMODL_PARSER_BINARY_DIR}/nmodl/position.hh"
+         "${NMODL_PARSER_BINARY_DIR}/nmodl/stack.hh"
+  WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} ARGS -d -o nmodl/nmodl_parser.cpp "${NMODL_YY_FROM_PARSER_BINARY_DIR}"
+  DEPENDS "${NMODL_PARSER_SOURCE_DIR}/nmodl.yy" pyastgen
   COMMENT "-- NMODL : GENERATING NMODL_CORE PARSER WITH BISON! --")
 
-# command to generate verbatim parser
+# Command to generate verbatim parser. See comment above about absolute paths.
+file(RELATIVE_PATH VERBATIM_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
+     "${NMODL_PARSER_SOURCE_DIR}/verbatim.yy")
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
-         ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.hpp
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
-  DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/verbatim.yy
+  OUTPUT "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.cpp"
+         "${NMODL_PARSER_BINARY_DIR}/verbatim_parser.hpp"
+  WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} ARGS -d -o verbatim_parser.cpp "${VERBATIM_YY_FROM_PARSER_BINARY_DIR}"
+  DEPENDS "${NMODL_PARSER_SOURCE_DIR}/verbatim.yy"
   COMMENT "-- NMODL : GENERATING VERBATIM PARSER WITH BISON! --")
 
-# command to generate differential equation parser
+# Command to generate differential equation parser. See comment above about absolute paths.
+file(RELATIVE_PATH DIFFEQ_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
+     "${NMODL_PARSER_SOURCE_DIR}/diffeq.yy")
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
-         ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/diffeq/stack.hh
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
-  DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq.yy
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp
+  OUTPUT "${NMODL_PARSER_BINARY_DIR}/diffeq/diffeq_parser.cpp"
+         "${NMODL_PARSER_BINARY_DIR}/diffeq/diffeq_parser.hpp"
+         "${NMODL_PARSER_BINARY_DIR}/diffeq/stack.hh"
+  WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} ARGS -d -o diffeq/diffeq_parser.cpp
+          "${DIFFEQ_YY_FROM_PARSER_BINARY_DIR}"
+  DEPENDS "${NMODL_PARSER_SOURCE_DIR}/diffeq.yy" "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.hpp"
+          "${NMODL_PARSER_SOURCE_DIR}/diffeq_context.cpp"
+          "${NMODL_PARSER_SOURCE_DIR}/diffeq_helper.hpp"
   COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION PARSER WITH BISON! --")
 
-# command to generate C (11) parser
+# Command to generate C (11) parser. See comment above about absolute paths.
+file(RELATIVE_PATH C11_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
+     "${NMODL_PARSER_SOURCE_DIR}/c11.yy")
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
-         ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/c/stack.hh
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11.yy
-  DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11.yy
+  OUTPUT "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.cpp" "${NMODL_PARSER_BINARY_DIR}/c/c11_parser.hpp"
+         "${NMODL_PARSER_BINARY_DIR}/c/stack.hh"
+  WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} ARGS -d -o c/c11_parser.cpp "${C11_YY_FROM_PARSER_BINARY_DIR}"
+  DEPENDS "${NMODL_PARSER_SOURCE_DIR}/c11.yy"
   COMMENT "-- NMODL : GENERATING C (11) PARSER WITH BISON! --")
 
-# command to generate Units parser
+# Command to generate Units parser. See comment above about absolute paths.
+file(RELATIVE_PATH UNIT_YY_FROM_PARSER_BINARY_DIR "${NMODL_PARSER_BINARY_DIR}"
+     "${NMODL_PARSER_SOURCE_DIR}/unit.yy")
 add_custom_command(
-  OUTPUT ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
-         ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.hpp
-         ${PROJECT_BINARY_DIR}/src/parser/unit/stack.hh
-  COMMAND ${BISON_EXECUTABLE} ARGS -d -o ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
-          ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit.yy
-  DEPENDS ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit.yy
+  OUTPUT "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.cpp"
+         "${NMODL_PARSER_BINARY_DIR}/unit/unit_parser.hpp"
+         "${NMODL_PARSER_BINARY_DIR}/unit/stack.hh"
+  WORKING_DIRECTORY "${NMODL_PARSER_BINARY_DIR}"
+  COMMAND ${BISON_EXECUTABLE} ARGS -d -o unit/unit_parser.cpp "${UNIT_YY_FROM_PARSER_BINARY_DIR}"
+  DEPENDS "${NMODL_PARSER_SOURCE_DIR}/unit.yy"
   COMMENT "-- NMODL : GENERATING UNIT PARSER WITH BISON! --")
 
-# command to generate nmodl lexer
+# Command to generate nmodl lexer. See comment above about absolute paths.
+file(RELATIVE_PATH NMODL_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+     "${CMAKE_CURRENT_SOURCE_DIR}/nmodl.ll")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.hpp
-  COMMAND ${FLEX_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/nmodl.ll
+  COMMAND ${FLEX_EXECUTABLE} ARGS "${NMODL_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/nmodl.ll ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.hpp
   COMMENT "-- NMODL : GENERATING NMODL LEXER WITH FLEX! --")
 
-# command to generate verbatim lexer
+# Command to generate verbatim lexer. See comment above about absolute paths.
+file(RELATIVE_PATH VERBATIM_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+     "${CMAKE_CURRENT_SOURCE_DIR}/verbatim.l")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.hpp
-  COMMAND ${FLEX_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/verbatim.l
+  COMMAND ${FLEX_EXECUTABLE} ARGS "${VERBATIM_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/verbatim.l
   COMMENT "-- NMODL : GENERATING VERBATIM LEXER WITH FLEX! --")
 
-# command to generate differential equation lexer
+# Command to generate differential equation lexer. See comment above about absolute paths.
+file(RELATIVE_PATH DIFFEQ_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+     "${CMAKE_CURRENT_SOURCE_DIR}/diffeq.ll")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.hpp
-  COMMAND ${FLEX_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/diffeq.ll
+  COMMAND ${FLEX_EXECUTABLE} ARGS "${DIFFEQ_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/diffeq.ll
   COMMENT "-- NMODL : GENERATING DIFFERENTIAL EQUATION LEXER WITH FLEX! --")
 
-# command to generate C (11) lexer
+# Command to generate C (11) lexer. See comment above about absolute paths.
+file(RELATIVE_PATH C11_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+     "${CMAKE_CURRENT_SOURCE_DIR}/c11.ll")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.hpp
-  COMMAND ${FLEX_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
+  COMMAND ${FLEX_EXECUTABLE} ARGS "${C11_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/c11.ll
   COMMENT "-- NMODL : GENERATING C(11) LEXER WITH FLEX! --")
 
-# command to generate Units lexer
+# Command to generate Units lexer. See comment above about absolute paths.
+file(RELATIVE_PATH UNIT_LL_FROM_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+     "${CMAKE_CURRENT_SOURCE_DIR}/unit.ll")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.cpp
          ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.hpp
-  COMMAND ${FLEX_EXECUTABLE} ARGS ${CMAKE_CURRENT_SOURCE_DIR}/unit.ll
+  COMMAND ${FLEX_EXECUTABLE} ARGS "${UNIT_LL_FROM_BINARY_DIR}"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/unit.ll
   COMMENT "-- NMODL : GENERATING UNIT LEXER WITH FLEX! --")

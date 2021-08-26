@@ -179,7 +179,6 @@ void SympyReplaceSolutionsVisitor::try_replace_tagged_statement(
     case ReplacePolicy::VALUE: {
         const auto dependencies = statement_dependencies(get_lhs(node), get_rhs(node));
         const auto& key = dependencies.first;
-        const auto& vars = dependencies.second;
 
         if (solution_statements.is_var_assigned_here(key)) {
             logger->debug("SympyReplaceSolutionsVisitor :: marking for replacement {}",
