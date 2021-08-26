@@ -89,48 +89,51 @@ def test_watchrange():
         for i, cell in enumerate(cells):
             result = cell.result()
             std = stdlist[i]
-            for j in range(3):
-                if std[j] != result[j]:
-                    print(
-                        "cell=%d %s:(%d %d) mode=%d"
-                        % (i, hml[j], std[j], result[j], mode)
-                    )
-                    if not std[4].eq(result[4]):
-                        k = int(std[4].c().sub(result[4]).indwhere("!=", 0))
+            # Organised this way so we get a better overview of what went wrong
+            # when something fails.
+            success = all(std[j] == result[j] for j in range(3)) and all(
+                std[j].eq(result[j]) for j in range(3, 6)
+            )
+            if not success:
+                print("mode=" + str(mode))
+                for j in range(3):
+                    if std[j] != result[j]:
                         print(
-                            "first difference at %d (%g, %s, r=%g) vs (%g, %s, r=%g)"
-                            % (
-                                k,
-                                std[3][k],
-                                hml[int(std[4][k])],
-                                std[5][k],
-                                result[3][k],
-                                hml[int(result[4][k])],
-                                result[5][k],
-                            )
+                            "cell=%d %s:(nrn: %d cnrn: %d)"
+                            % (i, ("high", "mid", "low")[j], std[j], result[j])
                         )
-                        for ik in range(k + 1):
-                            print(
-                                "  %d %g (%g, %s, r=%g) vs (%g, %s, r=%g)"
-                                % (
-                                    ik,
-                                    tvec[ik],
-                                    std[3][ik],
-                                    hml[int(std[4][ik])],
-                                    std[5][ik],
-                                    result[3][ik],
-                                    hml[int(result[4][ik])],
-                                    result[5][ik],
-                                )
-                            )
+                # Look at the first place the flag value differs
+                k = int(std[4].c().sub(result[4]).indwhere("!=", 0))
+                print(
+                    "first difference at %d (%g, %s, r=%g) vs (%g, %s, r=%g)"
+                    % (
+                        k,
+                        std[3][k],
+                        hml[int(std[4][k])],
+                        std[5][k],
+                        result[3][k],
+                        hml[int(result[4][k])],
+                        result[5][k],
+                    )
+                )
+                for ik in range(k + 1):
+                    print(
+                        "  %d %g nrn(%g, %s, r=%g) vs cnrn(%g, %s, r=%g)"
+                        % (
+                            ik,
+                            tvec[ik],
+                            std[3][ik],
+                            hml[int(std[4][ik])],
+                            std[5][ik],
+                            result[3][ik],
+                            hml[int(result[4][ik])],
+                            result[5][ik],
+                        )
+                    )
 
-                assert std[j] == result[j]
-            for j in range(3, 6):
-                pass
-                assert std[j].eq(result[j])
+            assert success
 
     for mode in [0, 1, 2]:
-        print("mode=", mode)
         runassert(mode)
 
     coreneuron.enable = False
