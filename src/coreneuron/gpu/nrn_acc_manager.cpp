@@ -411,25 +411,29 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 acc_memcpy_to_device(&(d_nt->trajec_requests),
                                      &d_trajec_requests,
                                      sizeof(TrajectoryRequests*));
-                // Initialise the double** varrays member of the struct.
-                auto* d_tr_varrays = reinterpret_cast<double**>(
-                    acc_copyin(tr->varrays, sizeof(double*) * tr->n_trajec));
-                acc_memcpy_to_device(&(d_trajec_requests->varrays),
-                                     &d_tr_varrays,
-                                     sizeof(double**));
                 // Initialise the double** gather member of the struct.
                 auto* d_tr_gather = reinterpret_cast<double**>(
                     acc_copyin(tr->gather, sizeof(double*) * tr->n_trajec));
                 acc_memcpy_to_device(&(d_trajec_requests->gather), &d_tr_gather, sizeof(double**));
-                // `varrays` and `gather` are minimal, the host-size buffers have
-                // `bsize` elements.
+                // Initialise the double** varrays member of the struct if it's
+                // set.
+                double** d_tr_varrays{nullptr};
+                if (tr->varrays) {
+                    d_tr_varrays = reinterpret_cast<double**>(
+                        acc_copyin(tr->varrays, sizeof(double*) * tr->n_trajec));
+                    acc_memcpy_to_device(&(d_trajec_requests->varrays),
+                                         &d_tr_varrays,
+                                         sizeof(double**));
+                }
                 for (int i = 0; i < tr->n_trajec; ++i) {
-                    // tr->varrays[i] is a buffer of tr->bsize doubles on the host,
-                    // make a device-side copy of it and store a pointer to it in
-                    // the device-side version of tr->varrays.
-                    auto* d_buf_traj_i = reinterpret_cast<double*>(
-                        acc_copyin(tr->varrays[i], tr->bsize * sizeof(double)));
-                    acc_memcpy_to_device(&(d_tr_varrays[i]), &d_buf_traj_i, sizeof(double*));
+                    if (tr->varrays) {
+                        // tr->varrays[i] is a buffer of tr->bsize doubles on the host,
+                        // make a device-side copy of it and store a pointer to it in
+                        // the device-side version of tr->varrays.
+                        auto* d_buf_traj_i = reinterpret_cast<double*>(
+                            acc_copyin(tr->varrays[i], tr->bsize * sizeof(double)));
+                        acc_memcpy_to_device(&(d_tr_varrays[i]), &d_buf_traj_i, sizeof(double*));
+                    }
                     // tr->gather[i] is a double* referring to (host) data in the
                     // (host) _data block
                     auto* d_gather_i = acc_deviceptr(tr->gather[i]);
@@ -741,7 +745,7 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
 
             {
                 TrajectoryRequests* tr = nt->trajec_requests;
-                if (tr) {
+                if (tr && tr->varrays) {
                     // The full buffers have `bsize` entries, but only `vsize`
                     // of them are valid.
                     for (int i = 0; i < tr->n_trajec; ++i) {
@@ -851,7 +855,7 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 
             {
                 TrajectoryRequests* tr = nt->trajec_requests;
-                if (tr) {
+                if (tr && tr->varrays) {
                     // The full buffers have `bsize` entries, but only `vsize`
                     // of them are valid.
                     for (int i = 0; i < tr->n_trajec; ++i) {
@@ -979,11 +983,13 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         {
             TrajectoryRequests* tr = nt->trajec_requests;
             if (tr) {
-                for (int i = 0; i < tr->n_trajec; ++i) {
-                    acc_delete(tr->varrays[i], tr->bsize * sizeof(double));
+                if (tr->varrays) {
+                    for (int i = 0; i < tr->n_trajec; ++i) {
+                        acc_delete(tr->varrays[i], tr->bsize * sizeof(double));
+                    }
+                    acc_delete(tr->varrays, sizeof(double*) * tr->n_trajec);
                 }
                 acc_delete(tr->gather, sizeof(double*) * tr->n_trajec);
-                acc_delete(tr->varrays, sizeof(double*) * tr->n_trajec);
                 acc_delete(tr, sizeof(TrajectoryRequests));
             }
         }
