@@ -933,9 +933,6 @@ void recalc_diam(void) {
 	++diam_change_cnt;
 	stim_prepare();
 	synapse_prepare();
-#if SEJNOWSKI
-	connect_prepare();
-#endif
 	clamp_prepare();
 }
 

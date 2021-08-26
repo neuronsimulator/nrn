@@ -203,6 +203,11 @@ public:
 	double nrflag_;
 	Point_process* pnt_;
 	double(*c_)(Point_process*);
+	// For WatchCondition transfer to CoreNEURON.
+	// Could be figured out from watch semantics and 
+	// the index where this == _watch_array[index]
+	// At least this avoids a search over the _watch_array.
+	int watch_index_;
 
 	static unsigned long watch_send_;
 	static unsigned long watch_deliver_;

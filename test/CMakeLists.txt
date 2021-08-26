@@ -147,7 +147,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
               pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
-      find_python_module(mpi4py)
+      nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
         nrn_add_test(
           GROUP rxdmod_tests
@@ -173,6 +173,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
+    add_test(
+        NAME parallel_bas
+        COMMAND
+        ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
+    list(APPEND TESTS parallel_tests parallel_bas)
   endif()
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
@@ -264,13 +271,27 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/coreneuron/test_units.py)
   nrn_add_test(
     GROUP coreneuron_modtests
+    NAME test_netmove_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_netmove.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_test_netmove_py ${modtests_launch_py}
+            test/coreneuron/test_netmove.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME test_watchrange_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py ${modtests_launch_py}
+            test/coreneuron/test_watchrange.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
     NAME test_natrans_py
     REQUIRES coreneuron
     SCRIPT_PATTERNS test/gjtests/test_natrans.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_test_natrans_py ${modtests_launch_py}
             test/gjtests/test_natrans.py)
   if(NRN_ENABLE_MPI)
-    find_python_module(mpi4py)
+    nrn_find_python_module(mpi4py)
     if(mpi4py_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests

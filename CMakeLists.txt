@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 # Note that this needs to happen **before** the call to project(...). This is
 # because CMake reads the CRAYPE_LINK_TYPE environment variable inside the call
 # to project(...) and sets various flags and properties based on its value.
@@ -58,7 +58,6 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
-option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -190,8 +189,12 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
+  # If we are not using self contained, static readline library
+  # created for building wheel then only look for curses and termcap
+  if(NOT NRN_WHEEL_STATIC_READLINE)
+    find_package(Curses QUIET)
+    find_package(Termcap QUIET)
+  endif()
 endif()
 
 # Reset original CMake library suffixes
@@ -253,6 +256,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
@@ -294,21 +298,14 @@ if(NRN_ENABLE_MPI)
   add_definitions("-DOMPI_SKIP_MPICXX=1")
   add_definitions("-DMPICH_SKIP_MPICXX=1")
 
-  # FindMPI broke backward compatibility with v3.19
-  if(${CMAKE_VERSION} VERSION_LESS "3.10")
-    set(NRN_MPIEXEC_EXECUTABLE ${MPIEXEC})
-  else()
-    set(NRN_MPIEXEC_EXECUTABLE ${MPIEXEC_EXECUTABLE})
-  endif()
-
   # Launching mpi executable with full path can mangle different python versions and libraries (see
   # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
   # ${MPIEXEC_NAME} does not.
-  get_filename_component(MPIEXEC_NAME ${NRN_MPIEXEC_EXECUTABLE} NAME)
+  get_filename_component(MPIEXEC_NAME ${MPIEXEC_EXECUTABLE} NAME)
 
   # Detect if we have an OpenMPI v2 or older.
   execute_process(
-    COMMAND "${NRN_MPIEXEC_EXECUTABLE}" --version
+    COMMAND "${MPIEXEC_EXECUTABLE}" --version
     RESULT_VARIABLE OPENMPI_TEST_RESULT
     OUTPUT_VARIABLE OPENMPI_TEST_OUTPUT)
   set(NRN_HAVE_OPENMPI2_OR_LESS OFF)
@@ -567,8 +564,8 @@ if(NRN_ENABLE_TESTS)
   list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
   include(CTest)
   include(Catch)
-  find_python_module(pytest)
-  find_python_module(pytest_cov)
+  nrn_find_python_module(pytest)
+  nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)
     if(NOT PYTEST_FOUND)
       message(SEND_ERROR "pytest Python package is required.")
@@ -651,11 +648,7 @@ message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
 message(STATUS "")
 message(STATUS "You can now build NEURON using:")
-if(${CMAKE_VERSION} VERSION_LESS "3.12")
-  message(STATUS "  cmake --build . [--target TARGET] -- -j 8")
-else()
-  message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
-endif()
+message(STATUS "  cmake --build . --parallel 8 [--target TARGET]")
 message(STATUS "You might want to adjust the number of parallel build jobs for your system.")
 message(STATUS "Some non-default targets you might want to build:")
 message(STATUS "--------------+--------------------------------------------------------------")
@@ -737,6 +730,7 @@ if(NRN_ENABLE_INTERVIEWS)
   message(STATUS "  PATH        | ${IV_DIR}")
   message(STATUS "  INC         | ${IV_INCLUDE_DIR}")
   message(STATUS "  X11 (INC)   | ${X11_INCLUDE_DIR}")
+  message(STATUS "      (LIBDIR)| ${X11_LIBRARY_DIR}")
   if(IV_ENABLE_X11_DYNAMIC)
     message(STATUS "              | IV_ENABLE_X11_DYNAMIC ${IV_ENABLE_X11_DYNAMIC}")
     message(STATUS "              | IV_ENABLE_SHARED ${IV_ENABLE_SHARED}")

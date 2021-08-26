@@ -306,7 +306,10 @@ int nrncore_run(const char* arg) {
     dlclose(handle);
 
     // Note: possibly non-empty only if nrn_nthread > 1
-    CellGroup::clean_deferred_type2artdata();
+    CellGroup::clean_deferred_type2artml();
+
+    // Huge memory waste
+    CellGroup::clean_deferred_netcons();
 
     return result;
 }
