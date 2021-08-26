@@ -476,12 +476,6 @@ NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
   Dynamically load nrnmech shared library  
 
-NRN_ENABLE_MEMACS:BOOL=OFF
---------------------------
-  Enable use of memacs  
-
-  Microemacs is a tiny emacs like editor I have been using since the mid-eighties. I might be the only one in the world who uses it now.
-
 NRN_ENABLE_SHARED:BOOL=ON
 -------------------------
   Build shared libraries (otherwise static library)  

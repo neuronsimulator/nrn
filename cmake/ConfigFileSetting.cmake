@@ -139,12 +139,6 @@ else()
   unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
 endif()
 
-if(NRN_ENABLE_MEMACS)
-  unset(WITHOUT_MEMACS)
-else()
-  set(WITHOUT_MEMACS 1)
-endif()
-
 # =============================================================================
 # Dependencies option
 # =============================================================================

@@ -58,7 +58,6 @@ option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fal
        ${NRN_ENABLE_PYTHON_DEFAULT})
 option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
-option(NRN_ENABLE_MEMACS "Enable use of memacs" ${NRN_ENABLE_EMACS})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
@@ -190,8 +189,12 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
+  # If we are not using self contained, static readline library
+  # created for building wheel then only look for curses and termcap
+  if(NOT NRN_WHEEL_STATIC_READLINE)
+    find_package(Curses QUIET)
+    find_package(Termcap QUIET)
+  endif()
 endif()
 
 # Reset original CMake library suffixes
@@ -253,6 +256,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
@@ -726,6 +730,7 @@ if(NRN_ENABLE_INTERVIEWS)
   message(STATUS "  PATH        | ${IV_DIR}")
   message(STATUS "  INC         | ${IV_INCLUDE_DIR}")
   message(STATUS "  X11 (INC)   | ${X11_INCLUDE_DIR}")
+  message(STATUS "      (LIBDIR)| ${X11_LIBRARY_DIR}")
   if(IV_ENABLE_X11_DYNAMIC)
     message(STATUS "              | IV_ENABLE_X11_DYNAMIC ${IV_ENABLE_X11_DYNAMIC}")
     message(STATUS "              | IV_ENABLE_SHARED ${IV_ENABLE_SHARED}")

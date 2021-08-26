@@ -46,7 +46,7 @@ cd ${N}/${CPU}/bin
 rm -f hoc_e ivoc mos2nrn nrnoc oc
 
 # and strip the others
-for i in memacs modlunit nocmodl nrniv ; do
+for i in modlunit nocmodl nrniv ; do
 	strip -x $i
 done
 if test "$carbon" = "yes" ; then
