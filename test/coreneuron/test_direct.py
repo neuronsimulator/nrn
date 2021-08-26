@@ -68,6 +68,12 @@ def test_direct_memory_transfer():
     for mode in [0, 1, 2]:
         run(mode)
 
+    cnargs = coreneuron.nrncore_arg(h.tstop)
+    h.stdinit()
+    assert tv.size() == 1 and tvstd.size() != 1
+    pc.nrncore_run(cnargs, 1)
+    assert tv.eq(tvstd)
+
 
 if __name__ == "__main__":
     try:
