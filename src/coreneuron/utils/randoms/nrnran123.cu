@@ -23,9 +23,12 @@
 #endif
 
 namespace {
-/* global data structure per process */
-using g_k_allocator_t = coreneuron::unified_allocator<philox4x32_key_t>;
-std::unique_ptr<philox4x32_key_t, coreneuron::alloc_deleter<g_k_allocator_t>> g_k;
+/* Global data structure per process. Using a unique_ptr here causes [minor]
+ * problems because its destructor can be called very late during application
+ * shutdown. If the destructor calls cudaFree and the CUDA runtime has already
+ * been shut down then tools like cuda-memcheck reports errors.
+ */
+philox4x32_key_t* g_k{};
 
 // In a GPU build we need a device-side global pointer to this global state.
 // This is set to the same unified memory address as `g_k` in
@@ -46,15 +49,16 @@ void setup_global_state() {
         // Already initialised, nothing to do
         return;
     }
-    g_k = coreneuron::allocate_unique<philox4x32_key_t>(g_k_allocator_t{});
+    g_k = coreneuron::allocate_unique<philox4x32_key_t>(
+              coreneuron::unified_allocator<philox4x32_key_t>{})
+              .release();
 #ifdef __CUDACC__
     if (coreneuron::unified_memory_enabled()) {
         // Set the device-side global g_k_dev to point to the newly-allocated
         // unified memory. If this is false, g_k is just a host pointer and
         // there is no point initialising the device global to it.
         {
-            auto* k = g_k.get();
-            auto const code = cudaMemcpyToSymbol(g_k_dev, &k, sizeof(k));
+            auto const code = cudaMemcpyToSymbol(g_k_dev, &g_k, sizeof(g_k));
             assert(code == cudaSuccess);
         }
         // Make sure g_k_dev is updated.
@@ -75,7 +79,7 @@ CORENRN_HOST_DEVICE philox4x32_key_t& get_global_state() {
     ret = g_k_dev;
 #else
     // Called from host code
-    ret = g_k.get();
+    ret = g_k;
 #endif
     assert(ret);
     return *ret;
@@ -179,7 +183,7 @@ void nrnran123_set_globalindex(uint32_t gix) {
                 << "nrnran123_set_globalindex(" << gix
                 << ") called when a non-zero number of Random123 streams (" << g_instance_count
                 << ") were active. This is not safe, some streams will remember the old value ("
-                << get_global_state().v[0] << ')';
+                << get_global_state().v[0] << ')' << std::endl;
         }
     }
     get_global_state().v[0] = gix;
@@ -189,7 +193,7 @@ void nrnran123_set_globalindex(uint32_t gix) {
  *  @todo  It would be nicer if the API return type was
  *  std::unique_ptr<nrnran123_State, ...not specified...>, so we could use a
  *  custom allocator/deleter and avoid the (fragile) need for matching
- *  nrnran123_deletestream calls. See `g_k` for an example.
+ *  nrnran123_deletestream calls.
  */
 nrnran123_State* nrnran123_newstream3(uint32_t id1,
                                       uint32_t id2,

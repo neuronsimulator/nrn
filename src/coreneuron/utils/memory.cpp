@@ -44,9 +44,9 @@ void deallocate_unified(void* ptr, std::size_t num_bytes) {
     // See comments in allocate_unified to understand the different branches.
 #ifdef CORENEURON_ENABLE_GPU
     if (corenrn_param.gpu) {
-        // Don't assert success because it will fail if called at application
-        // teardown, e.g. by a global std::unique_ptr destructor...this is not very nice.
-        cudaFree(ptr);
+        // Deallocate managed/unified memory.
+        auto const code = cudaFree(ptr);
+        assert(code == cudaSuccess);
         return;
     }
 #endif
