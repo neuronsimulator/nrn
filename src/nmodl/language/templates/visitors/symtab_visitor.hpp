@@ -36,7 +36,7 @@ namespace visitor {
  */
 class SymtabVisitor: public AstVisitor {
   private:
-    symtab::ModelSymbolTable* modsymtab;
+    symtab::ModelSymbolTable* modsymtab = nullptr;
 
     std::unique_ptr<printer::JSONPrinter> printer;
     std::set<std::string> block_to_solve;
@@ -46,6 +46,10 @@ class SymtabVisitor: public AstVisitor {
   public:
     explicit SymtabVisitor(bool update = false)
         : printer(new printer::JSONPrinter())
+        , update(update) {}
+
+    SymtabVisitor(symtab::ModelSymbolTable* _modsymtab, bool update = false)
+        : modsymtab(_modsymtab)
         , update(update) {}
 
     SymtabVisitor(std::ostream& os, bool update = false)

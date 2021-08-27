@@ -86,11 +86,14 @@ std::string DUChain::to_string(bool compact) const {
  *  As these are innermost blocks, we have to just check first use
  *  of variable in this block and that's the result of this block.
  */
-DUState DUInstance::sub_block_eval() const {
+DUState DUInstance::sub_block_eval(DUVariableType variable_type = DUVariableType::Global) const {
     DUState result = DUState::NONE;
     for (const auto& chain: children) {
-        const auto& child_state = chain.eval();
-        if (child_state == DUState::U || child_state == DUState::D) {
+        const auto& child_state = chain.eval(variable_type);
+        if ((variable_type == DUVariableType::Global &&
+             (child_state == DUState::U || child_state == DUState::D)) ||
+            (variable_type == DUVariableType::Local &&
+             (child_state == DUState::LU || child_state == DUState::LD))) {
             result = child_state;
             break;
         }
@@ -127,23 +130,27 @@ DUState DUInstance::sub_block_eval() const {
  *    block encountered, this means every block has either "D" or "CD". In
  *    this case we can say that entire block effectively has "D".
  */
-DUState DUInstance::conditional_block_eval() const {
+DUState DUInstance::conditional_block_eval(
+    DUVariableType variable_type = DUVariableType::Global) const {
     DUState result = DUState::NONE;
     bool block_with_none = false;
 
     for (const auto& chain: children) {
-        auto child_state = chain.eval();
-        if (child_state == DUState::U) {
+        auto child_state = chain.eval(variable_type);
+        if ((variable_type == DUVariableType::Global && child_state == DUState::U) ||
+            (variable_type == DUVariableType::Local && child_state == DUState::LU)) {
             result = child_state;
             break;
         }
         if (child_state == DUState::NONE) {
             block_with_none = true;
         }
-        if (child_state == DUState::D || child_state == DUState::CD) {
+        if ((variable_type == DUVariableType::Global && child_state == DUState::D) ||
+            (variable_type == DUVariableType::Local && child_state == DUState::LD) ||
+            child_state == DUState::CD) {
             result = DUState::CD;
             if (chain.state == DUState::ELSE && !block_with_none) {
-                result = DUState::D;
+                result = child_state;
                 break;
             }
         }
@@ -155,12 +162,12 @@ DUState DUInstance::conditional_block_eval() const {
  *  Note that we are interested in "global" variable usage
  *  and hence we consider only [U,D] states and not [LU, LD]
  */
-DUState DUInstance::eval() const {
+DUState DUInstance::eval(DUVariableType variable_type = DUVariableType::Global) const {
     auto result = state;
     if (state == DUState::IF || state == DUState::ELSEIF || state == DUState::ELSE) {
-        result = sub_block_eval();
+        result = sub_block_eval(variable_type);
     } else if (state == DUState::CONDITIONAL_BLOCK) {
-        result = conditional_block_eval();
+        result = conditional_block_eval(variable_type);
     }
     return result;
 }
@@ -170,8 +177,9 @@ DUState DUInstance::eval() const {
 DUState DUChain::eval() const {
     auto result = DUState::NONE;
     for (auto& inst: chain) {
-        auto re = inst.eval();
-        if (re == DUState::U || re == DUState::D) {
+        auto re = inst.eval(variable_type);
+        if ((variable_type == DUVariableType::Global && (re == DUState::U || re == DUState::D)) ||
+            (variable_type == DUVariableType::Local && (re == DUState::LU || re == DUState::LD))) {
             result = re;
             break;
         }
@@ -418,9 +426,18 @@ DUChain DefUseAnalyzeVisitor::analyze(const ast::Ast& node, const std::string& n
     visiting_lhs = false;
     current_symtab = global_symtab;
     unsupported_node = false;
+    auto global_symbol = global_symtab->lookup_in_scope(variable_name);
+    // If global_symbol exists in the global_symtab then search for a global variable. Otherwise the
+    // variable can only be local if it exists
+    auto global_symbol_properties = NmodlType::global_var | NmodlType::range_var;
+    if (global_symbol != nullptr && global_symbol->has_any_property(global_symbol_properties)) {
+        variable_type = DUVariableType::Global;
+    } else {
+        variable_type = DUVariableType::Local;
+    }
 
     /// new chain
-    DUChain usage(node.get_node_type_name());
+    DUChain usage(node.get_node_type_name(), variable_type);
     current_chain = &usage.chain;
 
     /// analyze given node
