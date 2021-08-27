@@ -30,11 +30,11 @@ enum class DUState {
     U,
     /// global variable is defined
     D,
-    /// global variable is conditionally defined
+    /// global or local variable is conditionally defined
     CD,
     /// local variable is used
     LU,
-    /// local variable is used
+    /// local variable is defined
     LD,
     /// state not known
     UNKNOWN,
@@ -49,6 +49,14 @@ enum class DUState {
     /// variable is not used
     NONE
 };
+
+/**
+ * Variable type processed by DefUseAnalyzeVisitor
+ *
+ * DUVariableType::Local means that we are looking for LD, LU and CD DUStates, while Global means we
+ * are looking for U, D and CD DUStates.
+ */
+enum class DUVariableType { Local, Global };
 
 std::ostream& operator<<(std::ostream& os, DUState state);
 
@@ -88,13 +96,13 @@ class DUInstance {
         , binary_expression(binary_expression) {}
 
     /// analyze all children and return "effective" usage
-    DUState eval() const;
+    DUState eval(DUVariableType variable_type) const;
 
     /// if, elseif and else evaluation
-    DUState sub_block_eval() const;
+    DUState sub_block_eval(DUVariableType variable_type) const;
 
     /// evaluate global usage i.e. with [D,U] states of children
-    DUState conditional_block_eval() const;
+    DUState conditional_block_eval(DUVariableType variable_type) const;
 
     void print(printer::JSONPrinter& printer) const;
 
@@ -125,12 +133,16 @@ class DUChain {
     /// name of the node
     std::string name;
 
+    /// type of variable
+    DUVariableType variable_type;
+
     /// def-use chain for a variable
     std::vector<DUInstance> chain;
 
     DUChain() = default;
-    explicit DUChain(std::string name)
-        : name(std::move(name)) {}
+    DUChain(std::string name, DUVariableType type)
+        : name(std::move(name))
+        , variable_type(type) {}
 
     /// return "effective" usage of a variable
     DUState eval() const;
@@ -216,6 +228,9 @@ class DefUseAnalyzeVisitor: protected ConstAstVisitor {
 
     /// variable for which to construct def-use chain
     std::string variable_name;
+
+    /// variable type (Local or Global)
+    DUVariableType variable_type;
 
     /// indicate that there is unsupported construct encountered
     bool unsupported_node = false;

@@ -238,7 +238,7 @@ class SymbolTable {
  */
 class ModelSymbolTable {
     /// symbol table for mod file (always top level symbol table)
-    std::shared_ptr<SymbolTable> symtab = nullptr;
+    std::shared_ptr<SymbolTable> symtab;
 
     /// current symbol table being constructed
     SymbolTable* current_symtab = nullptr;

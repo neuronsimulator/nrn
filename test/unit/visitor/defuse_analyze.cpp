@@ -244,7 +244,7 @@ SCENARIO("Perform DefUse analysis on NMODL constructs") {
         std::string expected_text =
             R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"LD"}]},{"ELSE":[{"name":"D"}]}]}]})";
 
-        THEN("Def-Use chains should return NONE") {
+        THEN("Def-Use chains should return CD") {
             std::string input = reindent_text(nmodl_text);
             auto chains = run_defuse_visitor(input, "tau");
             REQUIRE(chains[0].to_string() == expected_text);
@@ -312,6 +312,135 @@ SCENARIO("Perform DefUse analysis on NMODL constructs") {
             auto chains = run_defuse_visitor(input, "tau");
             REQUIRE(chains[0].to_string() == expected_text);
             REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("local variable usage in else block") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE tau
+            }
+
+            DERIVATIVE states {
+                IF (tau == 1) {
+                } ELSE {
+                    LOCAL tau
+                    tau = 1 + tau
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"U"}]},{"ELSE":[{"name":"LU"},{"name":"LD"}]}]}]})";
+
+        THEN("Def-Use chains should return USE because global variables have precedence in eval") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::U);
+        }
+    }
+
+    GIVEN("local variable conditional definition") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE beta
+            }
+
+            DERIVATIVE states {
+                LOCAL tau
+                IF (beta == 0) {
+                    tau = 1
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"LD"}]}]}]})";
+
+        THEN("Def-Use chains should return USE because global variables have precedence in eval") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "tau");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::CD);
+        }
+    }
+
+    GIVEN("local and range variables usage and definitions") {
+        std::string nmodl_text = R"(
+            NEURON {
+                RANGE beta
+            }
+
+            DERIVATIVE states {
+                LOCAL tau
+                IF (beta == 0) {
+                    tau = 1
+                } ELSE {
+                    beta = 0
+                }
+            }
+        )";
+
+        std::string expected_text =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"name":"IF"},{"name":"ELSE"}]}]})";
+
+        THEN(
+            "Def-Use chains should return NONE because the variable we look for is not one of "
+            "them") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains = run_defuse_visitor(input, "alpha");
+            REQUIRE(chains[0].to_string() == expected_text);
+            REQUIRE(chains[0].eval() == DUState::NONE);
+        }
+    }
+
+    GIVEN("Simple check of local and global variables") {
+        std::string nmodl_text = R"(
+            NEURON {
+                GLOBAL x
+            }
+
+            DERIVATIVE states {
+                LOCAL a, b
+                a = 1
+                IF (x == 1) {
+                    LOCAL c
+                    c = 1
+                }
+            }
+        )";
+
+        std::string expected_text_x =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"U"}]}]}]})";
+        std::string expected_text_a =
+            R"({"DerivativeBlock":[{"name":"LD"},{"CONDITIONAL_BLOCK":[{"name":"IF"}]}]})";
+        std::string expected_text_b =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"name":"IF"}]}]})";
+        std::string expected_text_c =
+            R"({"DerivativeBlock":[{"CONDITIONAL_BLOCK":[{"IF":[{"name":"LD"}]}]}]})";
+
+        THEN("local and global variables are correctly analyzed") {
+            std::string input = reindent_text(nmodl_text);
+            auto chains_x = run_defuse_visitor(input, "x");
+            // Global variable "x" should be U as it's only used in the IF-ELSE statement
+            REQUIRE(chains_x[0].to_string() == expected_text_x);
+            REQUIRE(chains_x[0].eval() == DUState::U);
+
+            auto chains_a = run_defuse_visitor(input, "a");
+            // Local variable "a" should be LD as it's local and defined
+            REQUIRE(chains_a[0].to_string() == expected_text_a);
+            REQUIRE(chains_a[0].eval() == DUState::LD);
+
+            auto chains_b = run_defuse_visitor(input, "b");
+            // Local variable "b" should be NONE as it's not used
+            REQUIRE(chains_b[0].to_string() == expected_text_b);
+            REQUIRE(chains_b[0].eval() == DUState::NONE);
+
+            auto chains_c = run_defuse_visitor(input, "c");
+            // Local variable "c" should be CD as it's conditionally defined
+            REQUIRE(chains_c[0].to_string() == expected_text_c);
+            REQUIRE(chains_c[0].eval() == DUState::CD);
         }
     }
 
