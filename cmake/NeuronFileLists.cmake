@@ -452,7 +452,6 @@ set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
-    Complex.cpp
     DiscUnif.cpp
     Erlang.cpp
     Geom.cpp

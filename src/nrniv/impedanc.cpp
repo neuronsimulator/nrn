@@ -3,169 +3,7 @@
 #include "nrnmpi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
-#if defined(__GO32__)
-#define NoInlineComplex
-#include <_complex.h>
-#if defined(NoInlineComplex)
-inline double  Complex::real() const { return re; }
-inline double  Complex::imag() const { return im; }
-
-inline Complex::Complex() {}
-inline Complex::Complex(const Complex& y) :re(y.real()), im(y.imag()) {}
-inline Complex::Complex(double r, double i) :re(r), im(i) {}
-
-inline Complex::~Complex() {}
-
-inline Complex&  Complex::operator =  (const Complex& y) 
-{ 
-  re = y.real(); im = y.imag(); return *this; 
-} 
-
-inline Complex&  Complex::operator += (const Complex& y)
-{ 
-  re += y.real();  im += y.imag(); return *this; 
-}
-
-inline Complex&  Complex::operator += (double y)
-{ 
-  re += y; return *this; 
-}
-
-inline Complex&  Complex::operator -= (const Complex& y)
-{ 
-  re -= y.real();  im -= y.imag(); return *this; 
-}
-
-inline Complex&  Complex::operator -= (double y)
-{ 
-  re -= y; return *this; 
-}
-
-inline Complex&  Complex::operator *= (const Complex& y)
-{  
-  double r = re * y.real() - im * y.imag();
-  im = re * y.imag() + im * y.real(); 
-  re = r; 
-  return *this; 
-}
-
-inline Complex&  Complex::operator *= (double y)
-{  
-  re *=  y; im *=  y; return *this; 
-}
-
-//  functions
-
-inline int  operator == (const Complex& x, const Complex& y)
-{
-  return x.real() == y.real() && x.imag() == y.imag();
-}
-
-inline int  operator == (const Complex& x, double y)
-{
-  return x.imag() == 0.0 && x.real() == y;
-}
-
-inline int  operator != (const Complex& x, const Complex& y)
-{
-  return x.real() != y.real() || x.imag() != y.imag();
-}
-
-inline int  operator != (const Complex& x, double y)
-{
-  return x.imag() != 0.0 || x.real() != y;
-}
-
-inline Complex  operator - (const Complex& x)
-{
-  return Complex(-x.real(), -x.imag());
-}
-
-inline Complex  conj(const Complex& x)
-{
-  return Complex(x.real(), -x.imag());
-}
-
-inline Complex  operator + (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() + y.real(), x.imag() + y.imag());
-}
-
-inline Complex  operator + (const Complex& x, double y)
-{
-  return Complex(x.real() + y, x.imag());
-}
-
-inline Complex  operator + (double x, const Complex& y)
-{
-  return Complex(x + y.real(), y.imag());
-}
-
-inline Complex  operator - (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() - y.real(), x.imag() - y.imag());
-}
-
-inline Complex  operator - (const Complex& x, double y)
-{
-  return Complex(x.real() - y, x.imag());
-}
-
-inline Complex  operator - (double x, const Complex& y)
-{
-  return Complex(x - y.real(), -y.imag());
-}
-
-inline Complex  operator * (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() * y.real() - x.imag() * y.imag(), 
-                 x.real() * y.imag() + x.imag() * y.real());
-}
-
-inline Complex  operator * (const Complex& x, double y)
-{
-  return Complex(x.real() * y, x.imag() * y);
-}
-
-inline Complex  operator * (double x, const Complex& y)
-{
-  return Complex(x * y.real(), x * y.imag());
-}
-
-inline double  real(const Complex& x)
-{
-  return x.real();
-}
-
-inline double  imag(const Complex& x)
-{
-  return x.imag();
-}
-
-inline double  abs(const Complex& x)
-{
-  return hypot(x.real(), x.imag());
-}
-
-inline double  norm(const Complex& x)
-{
-  return (x.real() * x.real() + x.imag() * x.imag());
-}
-
-inline double  arg(const Complex& x)
-{
-  return atan2(x.imag(), x.real());
-}
-
-inline Complex  polar(double r, double t)
-{
-  return Complex(r * cos(t), r * sin(t));
-}
-#endif
-
-#else
-#include <Complex.h>
-#endif
+#include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include <ivstream.h>
@@ -206,10 +44,10 @@ public:
 	double deltafac_;
 private:
 	int n;
-	Complex* transfer;
-	Complex* input;
-	Complex* d;	/* diagonal */
-	Complex* pivot;
+	std::complex<double>* transfer;
+	std::complex<double>* input;
+	std::complex<double>* d;	/* diagonal */
+	std::complex<double>* pivot;
 	int istim;	/* where current injected */
 	Section* sloc_;
 	double xloc_;
@@ -372,10 +210,10 @@ void Imp::alloc(){
 	NrnThread* _nt = nrn_threads;
 	impfree();
 	n = _nt->end;
-	d = new Complex[n];
-	transfer = new Complex[n];
-	input = new Complex[n];
-	pivot = new Complex[n];
+	d = new std::complex<double>[n];
+	transfer = new std::complex<double>[n];
+	input = new std::complex<double>[n];
+	pivot = new std::complex<double>[n];
 }
 int Imp::loc(Section* sec, double x){
 	if (x < 0.0 || sec == NULL) { return -1; }
@@ -463,7 +301,7 @@ void Imp::setmat(double omega) {
 	int i;
 	setmat1();
 	for (i=0; i < n; ++i) {
-		d[i] = Complex(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
+		d[i] = std::complex<double>(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
 		transfer[i] = 0.;
 	}
 	transfer[istim] = 1.e2/NODEAREA(_nt->_v_node[istim]); // injecting 1nA
@@ -531,7 +369,7 @@ void Imp::solve() {
 		ip = _nt->_v_parent[i]->v_node_index;
 		transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
 		transfer[i] /= d[i];
-		input[i] = (1 + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
+		input[i] = (std::complex<double>(1) + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
 	}
 	// take into account area
 	for (i=i2; i < i3; ++i) {
