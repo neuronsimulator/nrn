@@ -3,169 +3,7 @@
 #include "nrnmpi.h"
 #include "nonlinz.h"
 #include <InterViews/resource.h>
-#if defined(__GO32__)
-#define NoInlineComplex
-#include <_complex.h>
-#if defined(NoInlineComplex)
-inline double  Complex::real() const { return re; }
-inline double  Complex::imag() const { return im; }
-
-inline Complex::Complex() {}
-inline Complex::Complex(const Complex& y) :re(y.real()), im(y.imag()) {}
-inline Complex::Complex(double r, double i) :re(r), im(i) {}
-
-inline Complex::~Complex() {}
-
-inline Complex&  Complex::operator =  (const Complex& y) 
-{ 
-  re = y.real(); im = y.imag(); return *this; 
-} 
-
-inline Complex&  Complex::operator += (const Complex& y)
-{ 
-  re += y.real();  im += y.imag(); return *this; 
-}
-
-inline Complex&  Complex::operator += (double y)
-{ 
-  re += y; return *this; 
-}
-
-inline Complex&  Complex::operator -= (const Complex& y)
-{ 
-  re -= y.real();  im -= y.imag(); return *this; 
-}
-
-inline Complex&  Complex::operator -= (double y)
-{ 
-  re -= y; return *this; 
-}
-
-inline Complex&  Complex::operator *= (const Complex& y)
-{  
-  double r = re * y.real() - im * y.imag();
-  im = re * y.imag() + im * y.real(); 
-  re = r; 
-  return *this; 
-}
-
-inline Complex&  Complex::operator *= (double y)
-{  
-  re *=  y; im *=  y; return *this; 
-}
-
-//  functions
-
-inline int  operator == (const Complex& x, const Complex& y)
-{
-  return x.real() == y.real() && x.imag() == y.imag();
-}
-
-inline int  operator == (const Complex& x, double y)
-{
-  return x.imag() == 0.0 && x.real() == y;
-}
-
-inline int  operator != (const Complex& x, const Complex& y)
-{
-  return x.real() != y.real() || x.imag() != y.imag();
-}
-
-inline int  operator != (const Complex& x, double y)
-{
-  return x.imag() != 0.0 || x.real() != y;
-}
-
-inline Complex  operator - (const Complex& x)
-{
-  return Complex(-x.real(), -x.imag());
-}
-
-inline Complex  conj(const Complex& x)
-{
-  return Complex(x.real(), -x.imag());
-}
-
-inline Complex  operator + (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() + y.real(), x.imag() + y.imag());
-}
-
-inline Complex  operator + (const Complex& x, double y)
-{
-  return Complex(x.real() + y, x.imag());
-}
-
-inline Complex  operator + (double x, const Complex& y)
-{
-  return Complex(x + y.real(), y.imag());
-}
-
-inline Complex  operator - (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() - y.real(), x.imag() - y.imag());
-}
-
-inline Complex  operator - (const Complex& x, double y)
-{
-  return Complex(x.real() - y, x.imag());
-}
-
-inline Complex  operator - (double x, const Complex& y)
-{
-  return Complex(x - y.real(), -y.imag());
-}
-
-inline Complex  operator * (const Complex& x, const Complex& y)
-{
-  return Complex(x.real() * y.real() - x.imag() * y.imag(), 
-                 x.real() * y.imag() + x.imag() * y.real());
-}
-
-inline Complex  operator * (const Complex& x, double y)
-{
-  return Complex(x.real() * y, x.imag() * y);
-}
-
-inline Complex  operator * (double x, const Complex& y)
-{
-  return Complex(x * y.real(), x * y.imag());
-}
-
-inline double  real(const Complex& x)
-{
-  return x.real();
-}
-
-inline double  imag(const Complex& x)
-{
-  return x.imag();
-}
-
-inline double  abs(const Complex& x)
-{
-  return hypot(x.real(), x.imag());
-}
-
-inline double  norm(const Complex& x)
-{
-  return (x.real() * x.real() + x.imag() * x.imag());
-}
-
-inline double  arg(const Complex& x)
-{
-  return atan2(x.imag(), x.real());
-}
-
-inline Complex  polar(double r, double t)
-{
-  return Complex(r * cos(t), r * sin(t));
-}
-#endif
-
-#else
-#include <Complex.h>
-#endif
+#include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include <ivstream.h>
@@ -182,7 +20,7 @@ typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 
 class Imp {
 public:
-	Imp();
+	Imp() = default;
 	virtual ~Imp();
 	// v(x)/i(x) and  v(loc)/i(x) == v(x)/i(loc)
 	int compute(double freq, bool nonlin = false, int maxiter = 500);
@@ -203,17 +41,17 @@ private:
 	void LUDecomp();
 	void solve();
 public:
-	double deltafac_;
+	double deltafac_ = .001;
 private:
-	int n;
-	Complex* transfer;
-	Complex* input;
-	Complex* d;	/* diagonal */
-	Complex* pivot;
-	int istim;	/* where current injected */
-	Section* sloc_;
-	double xloc_;
-	NonLinImp* nli_;
+	int n = 0;
+	std::complex<double>* transfer = nullptr;
+	std::complex<double>* input = nullptr;
+	std::complex<double>* d = nullptr; /* diagonal */
+	std::complex<double>* pivot = nullptr;
+	int istim = -1;	/* where current injected */
+	Section* sloc_ = nullptr;
+	double xloc_ = 0.;
+	NonLinImp* nli_ = nullptr;
 };
 	
 static void* cons(Object*) {
@@ -244,7 +82,7 @@ static double compute(void* v) {
 static double location(void* v) {
 	Imp* imp = (Imp*)v;
 	double x;
-	Section* sec = NULL;
+	Section* sec = nullptr;
 	if (hoc_is_double_arg(1)) {
 		x = chkarg(1, -1., 1.);
 		if (x >= 0.0) { sec = chk_access(); }
@@ -312,21 +150,7 @@ static Member_func members[] = {
 };
 
 void Impedance_reg() {
-	class2oc("Impedance", cons, destruct, members, NULL, NULL, NULL);
-}
-
-Imp::Imp(){
-	n = 0;
-	d = NULL;
-	pivot = NULL;
-	transfer = NULL;
-	input = NULL;
-	nli_ = NULL;
-	
-	sloc_ = NULL;
-	xloc_ = 0.;
-	istim = -1;
-	deltafac_ = .001;
+	class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);
 }
 
 Imp::~Imp(){
@@ -342,11 +166,11 @@ void Imp::impfree(){
 		delete [] transfer;
 		delete [] input;
 		delete [] pivot;
-		d = NULL;
+		d = nullptr;
 	}
 	if (nli_) {
 		delete nli_;
-		nli_ = NULL;
+		nli_ = nullptr;
 	}
 }
 
@@ -355,7 +179,7 @@ void Imp::check() {
 	nrn_thread_error("Impedance works with only one thread");
 	if (sloc_ && !sloc_->prop) {
 		section_unref(sloc_);
-		sloc_ = NULL;
+		sloc_ = nullptr;
 	}
 	if (tree_changed) {
 		setup_topology();
@@ -372,18 +196,15 @@ void Imp::alloc(){
 	NrnThread* _nt = nrn_threads;
 	impfree();
 	n = _nt->end;
-	d = new Complex[n];
-	transfer = new Complex[n];
-	input = new Complex[n];
-	pivot = new Complex[n];
+	d = new std::complex<double>[n];
+	transfer = new std::complex<double>[n];
+	input = new std::complex<double>[n];
+	pivot = new std::complex<double>[n];
 }
 int Imp::loc(Section* sec, double x){
-	if (x < 0.0 || sec == NULL) { return -1; }
-	Node* nd;
-	int i;
-	nd = node_exact(sec, x);
-	i = nd->v_node_index;
-	return i;
+    if (x < 0.0 || sec == nullptr) { return -1; }
+    const Node* nd = node_exact(sec, x);
+    return nd->v_node_index;
 }
 
 double Imp::transfer_amp(Section* sec, double x){
@@ -446,7 +267,7 @@ int Imp::compute(double freq, bool nonlin, int maxiter){
 	}else{
 		if (nli_) {
 			delete nli_;
-			nli_ = NULL;
+			nli_ = nullptr;
 		}
 		if (istim == -1) {
 		hoc_execerror("Impedance stimulus location is not specified.", 0);
@@ -459,11 +280,10 @@ int Imp::compute(double freq, bool nonlin, int maxiter){
 }
 
 void Imp::setmat(double omega) {
-	NrnThread* _nt = nrn_threads;
-	int i;
+	const NrnThread* _nt = nrn_threads;
 	setmat1();
-	for (i=0; i < n; ++i) {
-		d[i] = Complex(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
+	for (int i = 0; i < n; ++i) {
+		d[i] = std::complex<double>(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
 		transfer[i] = 0.;
 	}
 	transfer[istim] = 1.e2/NODEAREA(_nt->_v_node[istim]); // injecting 1nA
@@ -472,70 +292,58 @@ void Imp::setmat(double omega) {
 
 
 void Imp::setmat1() {
-//printf("Imp::setmat1\n");
-	/*
-		The calculated g is good til someone else
-		changes something having to do with the matrix.
-	*/
-	NrnThread* _nt = nrn_threads;
-	Memb_list* mlc = _nt->tml->ml;
-	int i;
-	assert(_nt->tml->index == CAP);
-	for (i=0; i < nrn_nthread; ++i) {
-		double cj = nrn_threads[i].cj;
-		nrn_threads[i].cj = 0;
-		nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
-			// computing i
-		nrn_lhs(nrn_threads+i);
-		nrn_threads[i].cj = cj;
-	}
-	for (i=0; i < n; ++i) {
-		NODERHS(_nt->_v_node[i]) = 0;
-	}
-	for (i=0; i < mlc->nodecount; ++i) {
-		NODERHS(mlc->nodelist[i]) = mlc->data[i][0];
-	}
+    /*
+    The calculated g is good til someone else
+    changes something having to do with the matrix.
+    */
+    const NrnThread* _nt = nrn_threads;
+    const Memb_list* mlc = _nt->tml->ml;
+    assert(_nt->tml->index == CAP);
+    for (int i = 0; i < nrn_nthread; ++i) {
+        double cj = nrn_threads[i].cj;
+        nrn_threads[i].cj = 0;
+        nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
+        // computing i
+        nrn_lhs(nrn_threads+i);
+        nrn_threads[i].cj = cj;
+    }
+    for (int i = 0; i < n; ++i) {
+        NODERHS(_nt->_v_node[i]) = 0;
+    }
+    for (int i = 0; i < mlc->nodecount; ++i) {
+        NODERHS(mlc->nodelist[i]) = mlc->data[i][0];
+    }
 }
 
 void Imp::LUDecomp() {
-	int i, ip;
-	NrnThread* _nt = nrn_threads;
-	int i1, i2, i3;
-	i1 = 0;
-	i2 = i1 + _nt->ncell;
-	i3 = _nt->end;
-	for (i=i3-1; i >= i2; --i) {
-		ip = _nt->_v_parent[i]->v_node_index;
-		pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
-		d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
-	}
+    const NrnThread* _nt = nrn_threads;
+    for (int i = _nt->end - 1; i >= _nt->ncell; --i) {
+        int ip = _nt->_v_parent[i]->v_node_index;
+        pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
+        d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
+    }
 }
 
 void Imp::solve() {
-	int i, ip, j;
-    for (j=0; j < nrn_nthread; ++j) {
-	NrnThread* _nt = nrn_threads + j;
-	int i1, i2, i3;
-	i1 = 0;
-	i2 = i1 + _nt->ncell;
-	i3 = _nt->end;
-	for (i=istim; i >= i2; --i) {
-		ip = _nt->_v_parent[i]->v_node_index;
-		transfer[ip] -= transfer[i] * pivot[i];
-	}
-	for (i=i1; i < i2; ++i) {
-		transfer[i] /= d[i];
-		input[i] = 1./d[i];
-	}
-	for (i=i2; i < i3; ++i) {
-		ip = _nt->_v_parent[i]->v_node_index;
-		transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
-		transfer[i] /= d[i];
-		input[i] = (1 + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
-	}
-	// take into account area
-	for (i=i2; i < i3; ++i) {
-		input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
-	}
+    for (int j = 0; j < nrn_nthread; ++j) {
+        const NrnThread* _nt = nrn_threads + j;
+        for (int i=istim; i >= _nt->ncell; --i) {
+            int ip = _nt->_v_parent[i]->v_node_index;
+            transfer[ip] -= transfer[i] * pivot[i];
+        }
+        for (int i = 0; i < _nt->ncell; ++i) {
+            transfer[i] /= d[i];
+            input[i] = 1./d[i];
+        }
+        for (int i = _nt->ncell; i < _nt->end; ++i) {
+            int ip = _nt->_v_parent[i]->v_node_index;
+            transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
+            transfer[i] /= d[i];
+            input[i] = (std::complex<double>(1) + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
+        }
+        // take into account area
+        for (int i = _nt->ncell; i < _nt->end; ++i) {
+            input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
+        }
     }
 }

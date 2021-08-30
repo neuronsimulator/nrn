@@ -106,9 +106,6 @@ static double dmaxint_ = 9007199254740992;
 
 #include "ivocvect.h"
 
-// definition of SampleHistogram from the gnu c++ class library
-#include <SmplHist.h>
-
 // definition of random numer generator
 #include "random1.h"
 #include <Uniform.h>
