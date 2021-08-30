@@ -18,6 +18,10 @@ h.dt = 1.0 / 32
 class Cell:
     def __init__(self, gid):
         self.soma = h.Section(name="soma", cell=self)
+        if gid % 2 == 0:
+            # CoreNEURON permutation not the identity if cell topology not homogeneous
+            self.dend = h.Section(name="dend", cell=self)
+            self.dend.connect(self.soma(0.5))
         self.gid = gid
         pc.set_gid2node(gid, pc.id())
         self.r = h.Random()

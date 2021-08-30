@@ -19,6 +19,10 @@ h.steps_per_ms = 4
 class Cell:
     def __init__(self, gid):
         self.soma = h.Section(name="soma", cell=self)
+        if gid % 2 == 0:
+            # CoreNEURON permutation not the identity if cell topology not homogeneous
+            self.dend = h.Section(name="dend", cell=self)
+            self.dend.connect(self.soma(0.5))
         self.gid = gid
         pc.set_gid2node(gid, pc.id())
         self.r = h.Random()
@@ -88,10 +92,14 @@ def test_netmove():
             std = stdlist[i]
             for j in range(2):
                 if std[j] != result[j]:
-                    print('cell {} std[{}]={} result[{}]={}'.format(i, j, std[j], j, result[j]))
+                    print(
+                        "cell {} std[{}]={} result[{}]={}".format(
+                            i, j, std[j], j, result[j]
+                        )
+                    )
                     assert False
             if not std[2].eq(result[2]):
-                print('Cell', i, 'mode', mode)
+                print("Cell", i, "mode", mode)
                 print(std[2], len(std[2]), result[2], len(result[2]))
                 print("NEURON")
                 print(list(std[2]))
