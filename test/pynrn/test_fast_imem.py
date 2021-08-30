@@ -36,7 +36,7 @@ class Cell:
         self.netcons = []
         self.netstim = h.NetStim()
         self.netstim.number = 1
-        self.netstim.start = 0.0
+        self.netstim.start = 2.0
         for sec in self.secs:
             for seg in sec.allseg():
                 ic = h.IClamp(seg)
@@ -49,8 +49,9 @@ class Cell:
                 syn.e = -65 * r.uniform(1.0, 1.1)
                 syn.tau = r.uniform(0.1, 1.0)
                 self.syns.append(syn)
+
                 nc = h.NetCon(self.netstim, syn)
-                nc.delay = 0.1
+                nc.delay = 0.2
                 nc.weight[0] = 0.001 * r.uniform(1.0, 1.1)
                 self.netcons.append(nc)
 
@@ -204,6 +205,96 @@ def test_fastimem():
     h.cvode_active(0)
 
 
+def test_fastimem_corenrn():
+    if "NRN_ENABLE_CORENEURON=ON" not in h.nrnversion(6):
+        # Not ideal. Maybe someday it will be default ON and then
+        # will not appear in h.nrnversion(6)
+        return
+
+    print("test_fastimem_corenrn")
+    pc = h.ParallelContext()
+    ncell = 5
+    cvode = h.CVode()
+    cvode.cache_efficient(0)
+    cells = [Cell(id, 10) for id in range(ncell)]
+    cvode.use_fast_imem(1)
+    imem = [h.Vector().record(cell.secs[3](0.5)._ref_i_membrane_) for cell in cells]
+    tstop = 1.0
+
+    def init_v():
+        # to get nontrivial initialized i_membrane_, initialize to random voltage.
+        r = h.Random()
+        r.Random123(0, 1, 0)
+        for sec in h.allsec():
+            for seg in sec.allseg():
+                # don't care if some segments counted twice
+                seg.v = -65.0 + r.uniform(0, 5)
+        h.finitialize()
+
+    def run(tstop):
+        pc.set_maxstep(10)
+        init_v()
+        pc.psolve(tstop)
+
+    # standard
+    run(tstop)
+    imem_std = [vec.c() for vec in imem]
+
+    def compare():
+        for i in range(ncell):
+            if not imem_std[i].eq(imem[i]):
+                print("imem for cell ", i)
+                for j, x in enumerate(imem_std[i]):
+                    print(j, x, imem[i][j], x - imem[i][j])
+            assert imem_std[i].eq(imem[i])
+            imem[i].resize(0)
+
+    compare()  # just starting iwth imem cleared
+
+    print("cache efficient NEURON")
+    cvode.cache_efficient(1)
+    run(tstop)
+    compare()
+
+    print("direct mode (online) coreneuron")
+    from neuron import coreneuron
+
+    coreneuron.enable = True
+    coreneuron.verbose = 0
+    coreneuron.cell_permute = 0
+    run(tstop)
+    compare()
+    coreneuron.enable = False
+
+    print("File mode (offline) coreneuron")
+    # The cells must have gids.
+    for i, cell in enumerate(cells):
+        pc.set_gid2node(i, pc.id())
+        sec = cell.secs[0]
+        pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
+
+    # Write the data files
+    init_v()
+    pc.nrncore_write("./corenrn_data")
+
+    # run
+    coreneuron.enable = True
+    coreneuron.file_mode = True
+    arg = coreneuron.nrncore_arg(tstop)
+    coreneuron.enable = False
+    print(arg)
+    h.finitialize(-65)  # Not same as std
+    init_v()
+    # Would like for this to do a CoreNEURON finitialize
+    pc.nrncore_run(arg)
+    compare()
+
+    pc.gid_clear()
+
+    cvode.use_fast_imem(0)
+
+
 if __name__ == "__main__":
     test_allseg_unique_iter()
     test_fastimem()
+    test_fastimem_corenrn()
