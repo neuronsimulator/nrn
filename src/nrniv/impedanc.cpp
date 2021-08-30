@@ -20,7 +20,7 @@ typedef void (*Pfrv4)(int, Node**, double**, Datum**);
 
 class Imp {
 public:
-	Imp();
+	Imp() = default;
 	virtual ~Imp();
 	// v(x)/i(x) and  v(loc)/i(x) == v(x)/i(loc)
 	int compute(double freq, bool nonlin = false, int maxiter = 500);
@@ -41,17 +41,17 @@ private:
 	void LUDecomp();
 	void solve();
 public:
-	double deltafac_;
+	double deltafac_ = .001;
 private:
-	int n;
-	std::complex<double>* transfer;
-	std::complex<double>* input;
-	std::complex<double>* d;	/* diagonal */
-	std::complex<double>* pivot;
-	int istim;	/* where current injected */
-	Section* sloc_;
-	double xloc_;
-	NonLinImp* nli_;
+	int n = 0;
+	std::complex<double>* transfer = nullptr;
+	std::complex<double>* input = nullptr;
+	std::complex<double>* d = nullptr; /* diagonal */
+	std::complex<double>* pivot = nullptr;
+	int istim = -1;	/* where current injected */
+	Section* sloc_ = nullptr;
+	double xloc_ = 0.;
+	NonLinImp* nli_ = nullptr;
 };
 	
 static void* cons(Object*) {
@@ -82,7 +82,7 @@ static double compute(void* v) {
 static double location(void* v) {
 	Imp* imp = (Imp*)v;
 	double x;
-	Section* sec = NULL;
+	Section* sec = nullptr;
 	if (hoc_is_double_arg(1)) {
 		x = chkarg(1, -1., 1.);
 		if (x >= 0.0) { sec = chk_access(); }
@@ -150,21 +150,7 @@ static Member_func members[] = {
 };
 
 void Impedance_reg() {
-	class2oc("Impedance", cons, destruct, members, NULL, NULL, NULL);
-}
-
-Imp::Imp(){
-	n = 0;
-	d = NULL;
-	pivot = NULL;
-	transfer = NULL;
-	input = NULL;
-	nli_ = NULL;
-	
-	sloc_ = NULL;
-	xloc_ = 0.;
-	istim = -1;
-	deltafac_ = .001;
+	class2oc("Impedance", cons, destruct, members, nullptr, nullptr, nullptr);
 }
 
 Imp::~Imp(){
@@ -180,11 +166,11 @@ void Imp::impfree(){
 		delete [] transfer;
 		delete [] input;
 		delete [] pivot;
-		d = NULL;
+		d = nullptr;
 	}
 	if (nli_) {
 		delete nli_;
-		nli_ = NULL;
+		nli_ = nullptr;
 	}
 }
 
@@ -193,7 +179,7 @@ void Imp::check() {
 	nrn_thread_error("Impedance works with only one thread");
 	if (sloc_ && !sloc_->prop) {
 		section_unref(sloc_);
-		sloc_ = NULL;
+		sloc_ = nullptr;
 	}
 	if (tree_changed) {
 		setup_topology();
@@ -216,7 +202,7 @@ void Imp::alloc(){
 	pivot = new std::complex<double>[n];
 }
 int Imp::loc(Section* sec, double x){
-	if (x < 0.0 || sec == NULL) { return -1; }
+	if (x < 0.0 || sec == nullptr) { return -1; }
 	Node* nd;
 	int i;
 	nd = node_exact(sec, x);
@@ -284,7 +270,7 @@ int Imp::compute(double freq, bool nonlin, int maxiter){
 	}else{
 		if (nli_) {
 			delete nli_;
-			nli_ = NULL;
+			nli_ = nullptr;
 		}
 		if (istim == -1) {
 		hoc_execerror("Impedance stimulus location is not specified.", 0);
@@ -336,44 +322,41 @@ void Imp::setmat1() {
 }
 
 void Imp::LUDecomp() {
-	int i, ip;
 	NrnThread* _nt = nrn_threads;
-	int i1, i2, i3;
-	i1 = 0;
-	i2 = i1 + _nt->ncell;
-	i3 = _nt->end;
-	for (i=i3-1; i >= i2; --i) {
-		ip = _nt->_v_parent[i]->v_node_index;
+    int i1 = 0;
+	int i2 = i1 + _nt->ncell;
+	int i3 = _nt->end;
+	for (int i=i3-1; i >= i2; --i) {
+		int ip = _nt->_v_parent[i]->v_node_index;
 		pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
 		d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
 	}
 }
 
 void Imp::solve() {
-	int i, ip, j;
-    for (j=0; j < nrn_nthread; ++j) {
-	NrnThread* _nt = nrn_threads + j;
-	int i1, i2, i3;
-	i1 = 0;
-	i2 = i1 + _nt->ncell;
-	i3 = _nt->end;
-	for (i=istim; i >= i2; --i) {
-		ip = _nt->_v_parent[i]->v_node_index;
-		transfer[ip] -= transfer[i] * pivot[i];
-	}
-	for (i=i1; i < i2; ++i) {
-		transfer[i] /= d[i];
-		input[i] = 1./d[i];
-	}
-	for (i=i2; i < i3; ++i) {
-		ip = _nt->_v_parent[i]->v_node_index;
-		transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
-		transfer[i] /= d[i];
-		input[i] = (std::complex<double>(1) + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
-	}
-	// take into account area
-	for (i=i2; i < i3; ++i) {
-		input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
-	}
+    for (int j=0; j < nrn_nthread; ++j) {
+        NrnThread* _nt = nrn_threads + j;
+        int i1, i2, i3;
+        i1 = 0;
+        i2 = i1 + _nt->ncell;
+        i3 = _nt->end;
+        for (int i=istim; i >= i2; --i) {
+            int ip = _nt->_v_parent[i]->v_node_index;
+            transfer[ip] -= transfer[i] * pivot[i];
+        }
+        for (int i=i1; i < i2; ++i) {
+            transfer[i] /= d[i];
+            input[i] = 1./d[i];
+        }
+        for (int i=i2; i < i3; ++i) {
+            int ip = _nt->_v_parent[i]->v_node_index;
+            transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
+            transfer[i] /= d[i];
+            input[i] = (std::complex<double>(1) + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
+        }
+        // take into account area
+        for (int i=i2; i < i3; ++i) {
+            input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
+        }
     }
 }
