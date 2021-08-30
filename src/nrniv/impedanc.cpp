@@ -202,12 +202,9 @@ void Imp::alloc(){
 	pivot = new std::complex<double>[n];
 }
 int Imp::loc(Section* sec, double x){
-	if (x < 0.0 || sec == nullptr) { return -1; }
-	Node* nd;
-	int i;
-	nd = node_exact(sec, x);
-	i = nd->v_node_index;
-	return i;
+    if (x < 0.0 || sec == nullptr) { return -1; }
+    const Node* nd = node_exact(sec, x);
+    return nd->v_node_index;
 }
 
 double Imp::transfer_amp(Section* sec, double x){
@@ -283,10 +280,9 @@ int Imp::compute(double freq, bool nonlin, int maxiter){
 }
 
 void Imp::setmat(double omega) {
-	NrnThread* _nt = nrn_threads;
-	int i;
+	const NrnThread* _nt = nrn_threads;
 	setmat1();
-	for (i=0; i < n; ++i) {
+	for (int i = 0; i < n; ++i) {
 		d[i] = std::complex<double>(NODED(_nt->_v_node[i]), NODERHS(_nt->_v_node[i]) * omega);
 		transfer[i] = 0.;
 	}
@@ -296,66 +292,57 @@ void Imp::setmat(double omega) {
 
 
 void Imp::setmat1() {
-//printf("Imp::setmat1\n");
-	/*
-		The calculated g is good til someone else
-		changes something having to do with the matrix.
-	*/
-	NrnThread* _nt = nrn_threads;
-	Memb_list* mlc = _nt->tml->ml;
-	int i;
-	assert(_nt->tml->index == CAP);
-	for (i=0; i < nrn_nthread; ++i) {
-		double cj = nrn_threads[i].cj;
-		nrn_threads[i].cj = 0;
-		nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
-			// computing i
-		nrn_lhs(nrn_threads+i);
-		nrn_threads[i].cj = cj;
-	}
-	for (i=0; i < n; ++i) {
-		NODERHS(_nt->_v_node[i]) = 0;
-	}
-	for (i=0; i < mlc->nodecount; ++i) {
-		NODERHS(mlc->nodelist[i]) = mlc->data[i][0];
-	}
+    /*
+    The calculated g is good til someone else
+    changes something having to do with the matrix.
+    */
+    const NrnThread* _nt = nrn_threads;
+    const Memb_list* mlc = _nt->tml->ml;
+    assert(_nt->tml->index == CAP);
+    for (int i = 0; i < nrn_nthread; ++i) {
+        double cj = nrn_threads[i].cj;
+        nrn_threads[i].cj = 0;
+        nrn_rhs(nrn_threads+i); // not useful except that many model description set g while
+        // computing i
+        nrn_lhs(nrn_threads+i);
+        nrn_threads[i].cj = cj;
+    }
+    for (int i = 0; i < n; ++i) {
+        NODERHS(_nt->_v_node[i]) = 0;
+    }
+    for (int i = 0; i < mlc->nodecount; ++i) {
+        NODERHS(mlc->nodelist[i]) = mlc->data[i][0];
+    }
 }
 
 void Imp::LUDecomp() {
-	NrnThread* _nt = nrn_threads;
-    int i1 = 0;
-	int i2 = i1 + _nt->ncell;
-	int i3 = _nt->end;
-	for (int i=i3-1; i >= i2; --i) {
-		int ip = _nt->_v_parent[i]->v_node_index;
-		pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
-		d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
-	}
+    const NrnThread* _nt = nrn_threads;
+    for (int i = _nt->end - 1; i >= _nt->ncell; --i) {
+        int ip = _nt->_v_parent[i]->v_node_index;
+        pivot[i] = NODEA(_nt->_v_node[i]) / d[i];
+        d[ip] -= pivot[i] * NODEB(_nt->_v_node[i]);
+    }
 }
 
 void Imp::solve() {
-    for (int j=0; j < nrn_nthread; ++j) {
-        NrnThread* _nt = nrn_threads + j;
-        int i1, i2, i3;
-        i1 = 0;
-        i2 = i1 + _nt->ncell;
-        i3 = _nt->end;
-        for (int i=istim; i >= i2; --i) {
+    for (int j = 0; j < nrn_nthread; ++j) {
+        const NrnThread* _nt = nrn_threads + j;
+        for (int i=istim; i >= _nt->ncell; --i) {
             int ip = _nt->_v_parent[i]->v_node_index;
             transfer[ip] -= transfer[i] * pivot[i];
         }
-        for (int i=i1; i < i2; ++i) {
+        for (int i = 0; i < _nt->ncell; ++i) {
             transfer[i] /= d[i];
             input[i] = 1./d[i];
         }
-        for (int i=i2; i < i3; ++i) {
+        for (int i = _nt->ncell; i < _nt->end; ++i) {
             int ip = _nt->_v_parent[i]->v_node_index;
             transfer[i] -= NODEB(_nt->_v_node[i]) * transfer[ip];
             transfer[i] /= d[i];
             input[i] = (std::complex<double>(1) + input[ip]*pivot[i]*NODEB(_nt->_v_node[i]))/d[i];
         }
         // take into account area
-        for (int i=i2; i < i3; ++i) {
+        for (int i = _nt->ncell; i < _nt->end; ++i) {
             input[i] *= 1e2/NODEAREA(_nt->_v_node[i]);
         }
     }
