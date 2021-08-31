@@ -199,6 +199,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrnthread_dat2_3(nt.id, nweight, output_vindex, output_threshold,
                      netcon_pnttype, netcon_pntindex, weights, delays);
     writeint(output_vindex, cg.n_presyn);
+    delete [] output_vindex;
     writedbl(output_threshold, cg.n_real_output);
     delete [] output_threshold;
 
