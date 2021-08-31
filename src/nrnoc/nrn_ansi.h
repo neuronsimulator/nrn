@@ -61,6 +61,7 @@ extern void nrn_diam_change(Section*);
 extern void sec_free(hoc_Item*);
 extern int node_index(Section* sec, double x);
 extern void extcell_node_create(Node*);
+extern void extnode_free_elements(Extnode*);
 extern const char* sec_and_position(Section* sec, Node* nd);
 extern void section_order(void);
 extern Section* nrn_sec_pop(void);
