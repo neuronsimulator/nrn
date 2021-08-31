@@ -81,18 +81,26 @@ void write_globals(const char* fname) {
     fprintf(f, "%s\n", bbcore_write_version);
     const char* name;
     int size; // 0 means scalar, is 0 will still allocated one element for val.
-    double* val; // Allocated by new in get_global_item, must be delete [] here.
-    for (void* sp = NULL;
-         (sp = get_global_dbl_item(sp, name, size, val)) != NULL;) {
-        if (size) {
-            fprintf(f, "%s[%d]\n", name, size);
-            for (int i=0; i < size; ++i) {
-                fprintf(f, "%.20g\n", val[i]);
+    double* val = NULL; // Allocated by new in get_global_item, must be delete [] here.
+    // Note that it is possible for get_global_dbl_item to return NULL but
+    // name, size, and val must still be handled if val != NULL
+    for (void* sp = NULL;;) {
+        sp = get_global_dbl_item(sp, name, size, val);
+        if (val) {
+            if (size) {
+                fprintf(f, "%s[%d]\n", name, size);
+                for (int i=0; i < size; ++i) {
+                    fprintf(f, "%.20g\n", val[i]);
+                }
+            }else{
+                fprintf(f, "%s %.20g\n", name, val[0]);
             }
-        }else{
-            fprintf(f, "%s %.20g\n", name, val[0]);
+            delete [] val;
+            val = NULL;
         }
-        delete [] val;
+        if (!sp) {
+            break;
+        }
     }
     fprintf(f, "0 0\n");
     fprintf(f, "secondorder %d\n", secondorder);
