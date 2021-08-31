@@ -5,9 +5,8 @@
 # =============================================================================
 
 # commonly included directories
-include_directories(
-  utils/randoms ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron
-  ${CMAKE_BINARY_DIR}/coreneuron ${CMAKE_BINARY_DIR}/include)
+include_directories(utils/randoms ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron
+                    ${CMAKE_BINARY_DIR}/coreneuron ${CMAKE_BINARY_DIR}/include)
 
 # put libraries (e.g. dll) in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -26,7 +25,6 @@ file(
   "io/*.cpp"
   "io/reports/*.cpp"
   "mechanism/*.cpp"
-  "mpi/*.cpp"
   "network/*.cpp"
   "permute/*.cpp"
   "sim/*.cpp"
@@ -35,6 +33,7 @@ file(
   "utils/*/*.cpp")
 file(GLOB_RECURSE CORENEURON_CUDA_FILES "*.cu")
 file(GLOB SCOPMATH_CODE_FILES "sim/scopmath/*.cpp")
+file(GLOB MPI_CODE_FILES "mpi/*.cpp")
 file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include/Random123
      DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
@@ -158,10 +157,21 @@ add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
 # create libraries
 # =============================================================================
 
+# mpi related target, this will be a separate library for dynamic MPI
+add_library(corenrn_mpi OBJECT ${MPI_CODE_FILES})
+target_include_directories(corenrn_mpi PRIVATE ${MPI_INCLUDE_PATH})
+set_property(TARGET corenrn_mpi PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 # main coreneuron library
 add_library(
-  coreneuron ${COMPILE_LIBRARY_TYPE} ${CORENEURON_HEADER_FILES} ${CORENEURON_TEMPLATE_FILES}
-             ${CORENEURON_CODE_FILES} ${cudacorenrn_objs} ${NMODL_INBUILT_MOD_OUTPUTS})
+  coreneuron
+  ${COMPILE_LIBRARY_TYPE}
+  ${CORENEURON_HEADER_FILES}
+  ${CORENEURON_TEMPLATE_FILES}
+  ${CORENEURON_CODE_FILES}
+  ${cudacorenrn_objs}
+  $<TARGET_OBJECTS:corenrn_mpi>
+  ${NMODL_INBUILT_MOD_OUTPUTS})
 # Prevent CMake from running a device code link step when assembling libcoreneuron.a in GPU builds.
 # The device code linking needs to be deferred to the final step, where it is done by `nvc++ -cuda`.
 set_target_properties(coreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

@@ -11,7 +11,6 @@
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
-#include "coreneuron/mpi/nrnmpi_impl.h"
 
 namespace coreneuron {
 

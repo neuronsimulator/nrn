@@ -6,7 +6,8 @@
 # =============================================================================.
 */
 
-#include <cstring>
+#include <iostream>
+#include <string>
 #include <sys/time.h>
 
 #include "coreneuron/nrnconf.h"
@@ -197,5 +198,45 @@ int nrnmpi_local_size() {
     return local_size;
 }
 
+#if NRNMPI
+
+/**
+ * Write given buffer to a new file using MPI collective I/O
+ *
+ * For output like spikes, each rank has to write spike timing
+ * information to a single file. This routine writes buffers
+ * of length len1, len2, len3... at the offsets 0, 0+len1,
+ * 0+len1+len2... offsets. This write op is a collective across
+ * all ranks of the common MPI communicator used for spike exchange.
+ *
+ * @param filename Name of the file to write
+ * @param buffer Buffer to write
+ * @param length Length of the buffer to write
+ */
+void nrnmpi_write_file(const std::string& filename, const char* buffer, size_t length) {
+    MPI_File fh;
+    MPI_Status status;
+
+    // global offset into file
+    unsigned long offset = 0;
+    MPI_Exscan(&length, &offset, 1, MPI_UNSIGNED_LONG, MPI_SUM, nrnmpi_comm);
+
+    int op_status = MPI_File_open(
+        nrnmpi_comm, filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
+        std::cerr << "Error while opening output file " << filename << std::endl;
+        abort();
+    }
+
+    op_status = MPI_File_write_at_all(fh, offset, buffer, length, MPI_BYTE, &status);
+    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
+        std::cerr << "Error while writing output " << std::endl;
+        abort();
+    }
+
+    MPI_File_close(&fh);
+}
+
+#endif
 
 }  // namespace coreneuron

@@ -16,12 +16,10 @@
 #include <limits>
 
 #include "coreneuron/nrnconf.h"
-#include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/utils/nrnmutdec.h"
-#include "coreneuron/mpi/nrnmpi_impl.h"
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "coreneuron/utils/string_utils.h"
 #ifdef ENABLE_SONATA_REPORTS
@@ -151,10 +149,7 @@ void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& spikevec_
     local_spikevec_sort(svt_buf, svg_buf, spikevec_time, spikevec_gid);
 }
 
-/** Write generated spikes to out.dat using mpi parallel i/o.
- *  \todo : MPI related code should be factored into nrnmpi.c
- *          Check spike record length which is set to 64 chars
- */
+// Write generated spikes to out.dat using mpi parallel i/o.
 void output_spikes_parallel(const char* outpath, const std::string& population_name) {
     std::stringstream ss;
     ss << outpath << "/out.dat";
@@ -203,33 +198,9 @@ void output_spikes_parallel(const char* outpath, const std::string& population_n
     // calculate offset into global file. note that we don't write
     // all num_bytes but only "populated" buffer
     unsigned long num_chars = strlen(spike_data);
-    unsigned long offset = 0;
 
-    // global offset into file
-    MPI_Exscan(&num_chars, &offset, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    nrnmpi_write_file(fname, spike_data, num_chars);
 
-    // write to file using parallel mpi i/o
-    MPI_File fh;
-    MPI_Status status;
-
-    // ibm mpi (bg-q) expects char* instead of const char* (even though it's standard)
-    int op_status = MPI_File_open(MPI_COMM_WORLD,
-                                  (char*) fname.c_str(),
-                                  MPI_MODE_CREATE | MPI_MODE_WRONLY,
-                                  MPI_INFO_NULL,
-                                  &fh);
-    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
-        std::cerr << "Error while opening spike output file " << fname << std::endl;
-        abort();
-    }
-
-    op_status = MPI_File_write_at_all(fh, offset, spike_data, num_chars, MPI_BYTE, &status);
-    if (op_status != MPI_SUCCESS && nrnmpi_myid == 0) {
-        std::cerr << "Error while writing spike output " << std::endl;
-        abort();
-    }
-
-    MPI_File_close(&fh);
     free(spike_data);
 }
 

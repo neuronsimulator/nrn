@@ -23,7 +23,6 @@
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/mpi/nrnmpi.h"
-#include "coreneuron/mpi/nrnmpi_impl.h"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
@@ -34,8 +33,6 @@
 #include "coreneuron/io/phase1.hpp"
 #include "coreneuron/io/phase2.hpp"
 #include "coreneuron/io/mech_report.h"
-#include "coreneuron/apps/corenrn_parameters.hpp"
-#include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/io/reports/nrnreport.hpp"
 
 // callbacks into nrn/src/nrniv/nrnbbcore_write.cpp

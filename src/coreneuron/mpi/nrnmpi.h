@@ -8,6 +8,9 @@
 
 #ifndef nrnmpi_h
 #define nrnmpi_h
+
+#include <string>
+
 #include "coreneuron/mpi/nrnmpiuse.h"
 
 namespace coreneuron {
@@ -39,6 +42,9 @@ typedef struct {
 } NRNMPI_Spike;
 
 extern bool nrnmpi_use; /* NEURON does MPI init and terminate?*/
+
+// Write given buffer to a new file using MPI collective I/O
+extern void nrnmpi_write_file(const std::string& filename, const char* buffer, size_t length);
 
 }  // namespace coreneuron
 #include "coreneuron/mpi/nrnmpidec.h"
