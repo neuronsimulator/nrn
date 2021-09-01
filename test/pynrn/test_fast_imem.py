@@ -36,7 +36,7 @@ class Cell:
         self.netcons = []
         self.netstim = h.NetStim()
         self.netstim.number = 1
-        self.netstim.start = 2.0
+        self.netstim.start = 0.0001 # coreneuron bug if set to 0.0
         for sec in self.secs:
             for seg in sec.allseg():
                 ic = h.IClamp(seg)
