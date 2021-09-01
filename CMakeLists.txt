@@ -67,6 +67,8 @@ option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic uni
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
+option(NRN_ENABLE_CALIPER_PROFILING "Enable caliper profiling provided by CoreNEURON" OFF)
+option(NRN_ENABLE_LIKWID_PROFILING "Enable likwid profiling  provided by CoreNEURON" OFF)
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
@@ -409,6 +411,10 @@ if(NRN_ENABLE_CORENEURON)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+
+    set(CORENRN_ENABLE_CALIPER_PROFILING ${NRN_ENABLE_CALIPER_PROFILING})
+    set(CORENRN_ENABLE_LIKWID_PROFILING ${NRN_ENABLE_LIKWID_PROFILING})
+
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
     # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
@@ -418,6 +424,26 @@ if(NRN_ENABLE_CORENEURON)
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
   endif()
+endif()
+
+# =============================================================================
+# Profiler/Instrumentation Options
+# =============================================================================
+if(NRN_ENABLE_CALIPER_PROFILING OR NRN_ENABLE_LIKWID_PROFILING)
+  add_definitions("-DNRN_PROFILING")
+endif()
+
+if(NRN_ENABLE_CALIPER_PROFILING)
+  find_package(caliper REQUIRED)
+  include_directories(${caliper_INCLUDE_DIR})
+  add_definitions("-DNRN_CALIPER")
+  set(CALIPER_LIB "caliper")
+endif()
+
+if(NRN_ENABLE_LIKWID_PROFILING)
+  find_package(likwid REQUIRED)
+  include_directories(${likwid_INCLUDE_DIRS})
+  add_definitions("-DLIKWID_PERFMON")
 endif()
 
 # =============================================================================

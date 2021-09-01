@@ -12,6 +12,7 @@
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
+#include "../utils/profile/profiler_interface.h"
 #include <vector>
 
 /*
@@ -457,7 +458,13 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 
 void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
-	deliver_net_events(nth);
+  nrn::Instrumentor::phase_begin("timestep");
+
+  {
+    nrn::Instrumentor::phase p("deliver_events");
+	  deliver_net_events(nth);
+  }
+
 	wt = nrnmpi_wtime();
 	nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
@@ -467,10 +474,22 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 #endif
 	fixed_play_continuous(nth);
-	setup_tree_matrix(nth);
-	nrn_solve(nth);
-	second_order_cur(nth);
-	update(nth);
+  {
+    nrn::Instrumentor::phase p("setup_tree_matrix");
+	  setup_tree_matrix(nth);
+  }
+  {
+    nrn::Instrumentor::phase p("matrix-solver");
+    nrn_solve(nth);
+  }
+  {
+    nrn::Instrumentor::phase p("second_order_cur");
+	  second_order_cur(nth);
+  }
+  {
+    nrn::Instrumentor::phase p("update");
+	  update(nth);
+  }
 	CTADD
 /*
   To simplify the logic,
@@ -479,6 +498,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
+  nrn::Instrumentor::phase_end("timestep");
 	return nullptr;
 }
 
@@ -731,8 +751,12 @@ void nonvint(NrnThread* _nt)
 	NrnThreadMembList* tml;
 #if 1 || PARANEURON
 	/* nrnmpi_v_transfer if needed was done earlier */
-	if (nrnthread_v_transfer_) {(*nrnthread_v_transfer_)(_nt);}
+	if (nrnthread_v_transfer_) {
+    nrn::Instrumentor::phase p("gap-v-transfer");
+    (*nrnthread_v_transfer_)(_nt);
+  }
 #endif
+  nrn::Instrumentor::phase_begin("state-update");
 	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
@@ -748,6 +772,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
   	  }
 	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
 	nrn_nonvint_block_fixed_step_solve(_nt->id);
+  nrn::Instrumentor::phase_end("state-update");
 #endif
 }
 

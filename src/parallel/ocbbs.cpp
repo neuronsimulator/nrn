@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "../utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -661,7 +662,8 @@ static double spike_record(void* v) {
 }
 
 static double psolve(void* v) {
-	OcBBS* bbs = (OcBBS*)v;
+  nrn::Instrumentor::phase_begin("psolve");
+  OcBBS* bbs = (OcBBS*)v;
 	double tstop = chkarg(1, t, 1e9);
 	int enabled = nrncore_is_enabled();
 	int file_mode = nrncore_is_file_mode();
@@ -671,6 +673,7 @@ static double psolve(void* v) {
 		// Classic case
 		bbs->netpar_solve(tstop);
 	}
+  nrn::Instrumentor::phase_end("psolve");
 	return double(enabled);
 }
 
