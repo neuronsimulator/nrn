@@ -295,11 +295,8 @@ else()
   endif()
 endif()
 
-if(NRN_ENABLE_CALIPER_PROFILING)
-  target_link_libraries(nrniv_lib ${CALIPER_LIB})
-endif()
-if(NRN_ENABLE_LIKWID_PROFILING)
-  target_link_libraries(nrniv_lib ${likwid_LIBRARIES})
+if(NRN_ENABLE_PROFILING)
+  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)

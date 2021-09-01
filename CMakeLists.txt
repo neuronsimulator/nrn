@@ -67,8 +67,6 @@ option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic uni
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
-option(NRN_ENABLE_CALIPER_PROFILING "Enable caliper profiling provided by CoreNEURON" OFF)
-option(NRN_ENABLE_LIKWID_PROFILING "Enable likwid profiling  provided by CoreNEURON" OFF)
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
 
 # =============================================================================
@@ -143,6 +141,11 @@ set(NRN_NMODL_CXX_FLAGS
       STRING
       "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
+
+option(NRN_ENABLE_PROFILING "Enable profiling" OFF)
+set(NRN_PROFILER
+    "caliper"
+    CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
 
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
@@ -412,8 +415,13 @@ if(NRN_ENABLE_CORENEURON)
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
 
-    set(CORENRN_ENABLE_CALIPER_PROFILING ${NRN_ENABLE_CALIPER_PROFILING})
-    set(CORENRN_ENABLE_LIKWID_PROFILING ${NRN_ENABLE_LIKWID_PROFILING})
+    if(NRN_ENABLE_PROFILING)
+      if(NRN_PROFILER STREQUAL "caliper")
+        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+      elseif(NRN_PROFILER STREQUAL "likwid")
+        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
+      endif()
+    endif()
 
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
@@ -429,21 +437,18 @@ endif()
 # =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
-if(NRN_ENABLE_CALIPER_PROFILING OR NRN_ENABLE_LIKWID_PROFILING)
+if(NRN_ENABLE_PROFILING)
   add_definitions("-DNRN_PROFILING")
-endif()
-
-if(NRN_ENABLE_CALIPER_PROFILING)
-  find_package(caliper REQUIRED)
-  include_directories(${caliper_INCLUDE_DIR})
-  add_definitions("-DNRN_CALIPER")
-  set(CALIPER_LIB "caliper")
-endif()
-
-if(NRN_ENABLE_LIKWID_PROFILING)
-  find_package(likwid REQUIRED)
-  include_directories(${likwid_INCLUDE_DIRS})
-  add_definitions("-DLIKWID_PERFMON")
+  if(NRN_PROFILER STREQUAL "caliper")
+    find_package(caliper REQUIRED)
+    include_directories(${caliper_INCLUDE_DIR})
+    add_definitions("-DNRN_CALIPER")
+    set(CALIPER_LIB "caliper")
+  elseif(NRN_PROFILER STREQUAL "likwid")
+    find_package(likwid REQUIRED)
+    include_directories(${likwid_INCLUDE_DIRS})
+    add_definitions("-DLIKWID_PERFMON")
+  endif()
 endif()
 
 # =============================================================================
