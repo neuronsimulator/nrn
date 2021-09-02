@@ -827,6 +827,13 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         size_t iloc = core_te->intdata.size();
         core_te->intdata.push_back(-1);
         presyn2intdata[nc].push_back(iloc);
+        // CoreNEURON PreSyn has no notion of use_min_delay_ so if that
+        // is in effect, then the send time is actually tt - nc->delay_
+        // (Note there is no core2nrn inverse as PreSyn does not appear on
+        //  the CoreNEURON event queue).
+        if (nc->use_min_delay_) {
+          core_te->td.back() -= nc->delay_;
+        }
       } break;
       case HocEventType: { // 5
       } break;

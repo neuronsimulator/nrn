@@ -9,10 +9,12 @@ h.load_file("stdrun.hoc")  # for h.cvode_active
 
 class Cell:
     def __init__(self, id, nsec):
-        self.id = id
-        self.secs = [h.Section(name="d" + str(i), cell=self) for i in range(nsec)]
         r = h.Random()
         r.Random123(id, 0, 0)
+        nsec += int(r.discunif(0, 4)) # for nontrivial cell_permute=1
+
+        self.id = id
+        self.secs = [h.Section(name="d" + str(i), cell=self) for i in range(nsec)]
 
         # somewhat random tree, d[0] plays role of soma with connections to
         # d[0](0.5) and all others to 1.0
@@ -36,7 +38,7 @@ class Cell:
         self.netcons = []
         self.netstim = h.NetStim()
         self.netstim.number = 1
-        self.netstim.start = 0.0001 # coreneuron bug if set to 0.0
+        self.netstim.start = 0.0
         for sec in self.secs:
             for seg in sec.allseg():
                 ic = h.IClamp(seg)
