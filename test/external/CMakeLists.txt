@@ -27,6 +27,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(ringtest testcorenrn nrntest)
 
+add_subdirectory(channel-benchmark)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
 add_subdirectory(nrntest)
