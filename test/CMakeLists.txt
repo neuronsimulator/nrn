@@ -257,6 +257,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/coreneuron/test_fornetcon.py)
   nrn_add_test(
     GROUP coreneuron_modtests
+    NAME fast_imem_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/pynrn/test_fast_imem.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_fast_imem_py ${modtests_launch_py}
+            test/pynrn/test_fast_imem.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
     NAME datareturn_py
     REQUIRES coreneuron
     SCRIPT_PATTERNS test/coreneuron/test_datareturn.py

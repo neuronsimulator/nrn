@@ -205,11 +205,34 @@ def test_fastimem():
     h.cvode_active(0)
 
 
-def test_fastimem_corenrn():
+def coreneuron_available():
     if "NRN_ENABLE_CORENEURON=ON" not in h.nrnversion(6):
         # Not ideal. Maybe someday it will be default ON and then
         # will not appear in h.nrnversion(6)
-        return
+        return False
+    # But can it be loaded?
+    cvode = h.CVode()
+    cvode.cache_efficient(1)
+    pc = h.ParallelContext()
+    h.finitialize()
+    result = 0
+    import sys
+    from io import StringIO
+    original_stderr = sys.stderr
+    sys.stderr = StringIO()
+    try:
+        pc.nrncore_run("--tstop 1 --verbose 0")
+        result = 1
+    except Exception as e:
+        pass
+    sys.stderr = original_stderr;
+    cvode.cache_efficient(0)
+    return result
+
+def test_fastimem_corenrn():
+
+    if not coreneuron_available():
+        return;
 
     print("test_fastimem_corenrn")
     pc = h.ParallelContext()
