@@ -121,8 +121,12 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     if (agid < std::numeric_limits<int>::min() ||
                         agid > std::numeric_limits<int>::max()) {
                         std::ostringstream oss;
-                        oss << "cannot store cgs[" << i << "].output_vindex[" << npre
-                            << "]=" << agid;
+                        oss << "maximum of ~" << std::numeric_limits<int>::max() / 1000
+                            << " artificial cells of a given type can be created per NrnThread, "
+                               "this model has "
+                            << ml->nodecount << " instances of " << memb_func[type].sym->name
+                            << " (cannot store cgs[" << i << "].output_vindex[" << npre
+                            << "]=" << agid << ')';
                         hoc_execerror("integer overflow", oss.str().c_str());
                     }
                     cgs[i].output_vindex[npre] = agid;
