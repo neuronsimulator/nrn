@@ -4,8 +4,10 @@
 #include <stddef.h>
 #include <assert.h>
 
+#include "../utils/profile/profiler_interface.h"
+
 /* do not want the redef in the dynamic load case */
-#include <nrnmpiuse.h>   
+#include <nrnmpiuse.h>
 
 #if NRNMPI_DYNAMICLOAD
 #include <nrnmpi_dynam.h>
@@ -93,6 +95,7 @@ static void make_spikebuf_type() {
 #endif
 
 int nrnmpi_spike_exchange() {
+  nrn::Instrumentor::phase_begin("spike-exchange");
 	int i, n, novfl, n1;
 	if (!displs) {
 		np = nrnmpi_numprocs;
@@ -150,6 +153,7 @@ int nrnmpi_spike_exchange() {
 	}
 	ovfl_ = novfl;
 #endif
+  nrn::Instrumentor::phase_end("spike-exchange");
 	return n;
 }
 

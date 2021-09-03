@@ -474,10 +474,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 #endif
 	fixed_play_continuous(nth);
-  {
-    nrn::Instrumentor::phase p("setup_tree_matrix");
-	  setup_tree_matrix(nth);
-  }
+	setup_tree_matrix(nth);
   {
     nrn::Instrumentor::phase p("matrix-solver");
     nrn_solve(nth);
@@ -528,7 +525,10 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 #endif
 	fixed_record_continuous(nth);
 	CTADD
-	nrn_deliver_events(nth) ; /* up to but not past texit */
+  {
+    nrn::Instrumentor::phase p("deliver_events");
+	  nrn_deliver_events(nth) ; /* up to but not past texit */
+  }
 	return nullptr;
 }
 
@@ -760,7 +760,11 @@ void nonvint(NrnThread* _nt)
 	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
+		std::string mechname("state-");
+    mechname += memb_func[tml->index].sym->name;
+    nrn::Instrumentor::phase_begin(mechname.c_str());
 		Pvmi s = memb_func[tml->index].state;
+    nrn::Instrumentor::phase_end(mechname.c_str());
 		if (measure) { w = nrnmpi_wtime(); }
 		(*s)(_nt, tml->ml, tml->index);
 		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
@@ -834,6 +838,7 @@ void nrn_finitialize(int setv, double v) {
     extern short *nrn_is_artificial_;
     ++_ninits;
 
+    nrn::Instrumentor::phase_begin("finitialize");
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
 #if ELIMINATE_T_ROUNDOFF
@@ -983,6 +988,7 @@ void nrn_finitialize(int setv, double v) {
     if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 
     nrn_fihexec(2); /* just before return */
+    nrn::Instrumentor::phase_end("finitialize");
 }
 
 void finitialize(void) {

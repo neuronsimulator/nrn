@@ -94,7 +94,7 @@ jobs:
           ctest -VV;
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
-          
+
           # Download codecov script and perform shasum checks
           curl -fLso codecov https://codecov.io/bash;
           VERSION=$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2);
