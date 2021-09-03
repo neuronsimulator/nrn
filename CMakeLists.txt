@@ -413,6 +413,8 @@ if(NRN_ENABLE_CORENEURON)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+    # Propagate NEURON MPI option to CoreNEURON
+    set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
     # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
