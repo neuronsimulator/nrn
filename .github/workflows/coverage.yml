@@ -36,13 +36,13 @@ jobs:
         run: |
           sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
         shell: bash
-      - name: Setup caliper profiler
+      - name: Setup Caliper profiler
         run: |
           git clone https://github.com/LLNL/Caliper.git
           cd Caliper
           mkdir build && cd build
           cmake ..
-          make && make install
+          make && sudo make install
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v2
         with:
