@@ -118,8 +118,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     }
                     // the way we associate an acell PreSyn with the
                     // Point_process.
-                    if (agid < std::numeric_limits<int>::min() ||
-                        agid > std::numeric_limits<int>::max()) {
+                    if (agid < std::numeric_limits<int>::min() || agid >= -1) {
                         std::ostringstream oss;
                         oss << "maximum of ~" << std::numeric_limits<int>::max() / 1000
                             << " artificial cells of a given type can be created per NrnThread, "
