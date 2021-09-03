@@ -409,6 +409,7 @@ static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
       free(*it);
     }
   }
+  s2free.clear();
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
@@ -642,12 +643,14 @@ static void* nrnpy_hoc_bool_pop() {
   return (void*) PyBool_FromLong((long) hoc_xpop());
 }
 
+static std::vector<char*> strings_to_free;
+
 static void* fcall(void* vself, void* vargs) {
   PyHocObject* self = (PyHocObject*)vself;
   if (self->ho_) {
     hoc_push_object(self->ho_);
   }
-  std::vector<char*> strings_to_free;
+
   int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
   int var_type;
   if (self->ho_) {
@@ -1377,6 +1380,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         if (nrn_inpython_ == 2) {  // error in component
           nrn_inpython_ = 0;
           PyErr_SetString(PyExc_TypeError, "No value");
+          Py_XDECREF(result);
           return -1;
         }
         Py_DECREF(po);
@@ -1385,10 +1389,12 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         char e[200];
         sprintf(e, "'%s' requires subscript for assignment", n);
         PyErr_SetString(PyExc_TypeError, e);
+        Py_DECREF(po);
         return -1;
       }
     } else {
       PyErr_SetString(PyExc_TypeError, "not assignable");
+      Py_DECREF(po);
       return -1;
     }
   }

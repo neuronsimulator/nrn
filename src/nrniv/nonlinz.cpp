@@ -572,6 +572,8 @@ int NonLinImpRep::gapsolve() {
   }
 #endif
 
+  pargap_jacobi_setup(0);
+
   double *rx, *jx, *rx1, *jx1, *rb, *jb;
   if (neq_) {
     rx = new double[neq_];
@@ -588,8 +590,6 @@ int NonLinImpRep::gapsolve() {
     rb[i] = rv_[i];
     jb[i] = jv_[i];
   }
-
-  pargap_jacobi_setup(0);
 
   // iterate till change in x is small
   double tol = 1e-9;

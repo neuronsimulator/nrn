@@ -3161,7 +3161,7 @@ static Object** v_medfltr(void* v)
   for (i=0;i <n; i++) {
     ans->elem(i) = res[i];
   }
-  delete [] res;
+  free(res);
   if (flag) {
   	delete v1;
   }
