@@ -36,7 +36,13 @@ jobs:
         run: |
           sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
         shell: bash
-
+      - name: Setup caliper profiler
+        run: |
+          git clone https://github.com/LLNL/Caliper.git
+          cd Caliper
+          mkdir build && cd build
+          cmake ..
+          make && make install
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v2
         with:
@@ -75,7 +81,7 @@ jobs:
 
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON";
+          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON";
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
