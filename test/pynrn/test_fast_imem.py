@@ -11,7 +11,7 @@ class Cell:
     def __init__(self, id, nsec):
         r = h.Random()
         r.Random123(id, 0, 0)
-        nsec += int(r.discunif(0, 4)) # for nontrivial cell_permute=1
+        nsec += int(r.discunif(0, 4))  # for nontrivial cell_permute=1
 
         self.id = id
         self.secs = [h.Section(name="d" + str(i), cell=self) for i in range(nsec)]
@@ -220,6 +220,7 @@ def coreneuron_available():
     result = 0
     import sys
     from io import StringIO
+
     original_stderr = sys.stderr
     sys.stderr = StringIO()
     try:
@@ -227,14 +228,35 @@ def coreneuron_available():
         result = 1
     except Exception as e:
         pass
-    sys.stderr = original_stderr;
+    sys.stderr = original_stderr
     cvode.cache_efficient(0)
     return result
+
+
+def print_fast_imem():
+    ix = h.Vector()
+    imem = h.Vector()
+    for sec in h.allsec():
+        for seg in sec.allseg():
+            if seg.x == 0.0 and sec.parentseg() is not None:
+                continue  # don't count twice
+            ix.append(seg.node_index())
+            imem.append(seg.i_membrane_)
+    si = ix.sortindex()
+    ix.index(ix.c(), si)
+    imem.index(imem.c(), si)
+    f = open("fastimem.nrn", "w")
+    f.write("%d\n" % int(ix.size()))
+    for i, x in enumerate(imem):
+        assert i == int(ix[i])
+        f.write("%d %.20g\n" % (i, x))
+    f.close()
+
 
 def test_fastimem_corenrn():
 
     if not coreneuron_available():
-        return;
+        return
 
     print("test_fastimem_corenrn")
     pc = h.ParallelContext()
@@ -291,7 +313,22 @@ def test_fastimem_corenrn():
     compare()
     coreneuron.enable = False
 
-    print("File mode (offline) coreneuron")
+    print("Are the i_membrane_ trajectories correct when ...")
+
+    tvec = h.Vector().record(h._ref_t)
+    init_v()
+    while h.t < tstop - h.dt / 2:
+        coreneuron.enable = True
+        pc.psolve(h.t + h.dt)
+        coreneuron.enable = False
+        pc.psolve(h.t + h.dt)
+    compare()
+
+    print("For file mode (offline) coreneuron comparison of i_membrane_ initialization")
+
+    init_v()
+    print_fast_imem()
+
     # The cells must have gids.
     for i, cell in enumerate(cells):
         pc.set_gid2node(i, pc.id())
@@ -302,19 +339,13 @@ def test_fastimem_corenrn():
     init_v()
     pc.nrncore_write("./corenrn_data")
 
-    # run
+    # args needed for offline run of coreneuron
     coreneuron.enable = True
     coreneuron.file_mode = True
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False
-    print(arg)
-    h.finitialize(-65)  # Not same as std
-    init_v()
-    # Would like for this to do a CoreNEURON finitialize
-    pc.nrncore_run(arg)
-    compare()
-
     pc.gid_clear()
+    print(arg)
 
     cvode.use_fast_imem(0)
 
