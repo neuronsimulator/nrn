@@ -651,6 +651,7 @@ void nrn_node_destruct1(Node* nd) {
 #endif
 #if EXTRACELLULAR
 	if (nd->extnode) {
+		extnode_free_elements(nd->extnode);
 		free((char *)nd->extnode);
 	}
 #endif

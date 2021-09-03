@@ -194,8 +194,12 @@ if(READLINE_FOUND)
     # define for src/oc/hoc.cpp
     set(DEF_RL_GETC_FUNCTION use_rl_getc_function)
   endif()
-  find_package(Curses QUIET)
-  find_package(Termcap QUIET)
+  # If we are not using self contained, static readline library
+  # created for building wheel then only look for curses and termcap
+  if(NOT NRN_WHEEL_STATIC_READLINE)
+    find_package(Curses QUIET)
+    find_package(Termcap QUIET)
+  endif()
 endif()
 
 # Reset original CMake library suffixes
@@ -757,6 +761,7 @@ if(NRN_ENABLE_INTERVIEWS)
   message(STATUS "  PATH        | ${IV_DIR}")
   message(STATUS "  INC         | ${IV_INCLUDE_DIR}")
   message(STATUS "  X11 (INC)   | ${X11_INCLUDE_DIR}")
+  message(STATUS "      (LIBDIR)| ${X11_LIBRARY_DIR}")
   if(IV_ENABLE_X11_DYNAMIC)
     message(STATUS "              | IV_ENABLE_X11_DYNAMIC ${IV_ENABLE_X11_DYNAMIC}")
     message(STATUS "              | IV_ENABLE_SHARED ${IV_ENABLE_SHARED}")
