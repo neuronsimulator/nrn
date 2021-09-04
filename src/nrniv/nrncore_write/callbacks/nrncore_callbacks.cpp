@@ -829,6 +829,13 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         presyn2intdata[nc].push_back(iloc);
       } break;
       case HocEventType: { // 5
+        // Not supported in CoreNEURON, discard and print a warning.
+        core_te->td.pop_back();
+        core_te->type.pop_back();
+        HocEvent* he = (HocEvent*)de;
+        // Delivery time was often reduced by a quarter step to avoid
+        // fixed step roundoff problems.
+        Fprintf(stderr, "WARNING: HocEvent for delivery time at step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
       } break;
       case PlayRecordEventType: { // 6
       } break;
