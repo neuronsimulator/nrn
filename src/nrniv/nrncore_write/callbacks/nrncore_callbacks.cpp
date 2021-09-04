@@ -835,7 +835,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         HocEvent* he = (HocEvent*)de;
         // Delivery time was often reduced by a quarter step to avoid
         // fixed step roundoff problems.
-        Fprintf(stderr, "WARNING: HocEvent for delivery time at step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
+        Fprintf(stderr, "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
       } break;
       case PlayRecordEventType: { // 6
       } break;
