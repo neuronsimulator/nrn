@@ -46,6 +46,7 @@ def test_direct_memory_transfer():
     pc = h.ParallelContext()
 
     def run(mode):
+        pc.set_maxstep(10)
         h.stdinit()
         if mode == 0:
             pc.psolve(h.tstop)
@@ -74,6 +75,16 @@ def test_direct_memory_transfer():
     pc.nrncore_run(cnargs, 1)
     assert tv.eq(tvstd)
 
+    # print warning if HocEvent on event queue when CoreNEURON starts
+    def test_hoc_event():
+       print("in test_hoc_event() at t=%g"%h.t)
+       if h.t < 1.001:
+           h.CVode().event(h.t + 1.0, test_hoc_event)
+    fi = h.FInitializeHandler(2, test_hoc_event)
+    coreneuron.enable = False
+    run(0)
+    coreneuron.enable = True
+    run(0)
 
 if __name__ == "__main__":
     try:
