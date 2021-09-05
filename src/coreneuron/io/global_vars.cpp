@@ -55,22 +55,32 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         const char* name;
         int size;
         double* val = nullptr;
-        for (void* p = nullptr;
-             (p = (*nrn2core_get_global_dbl_item_)(p, name, size, val)) != nullptr;) {
-            N2V::iterator it = n2v->find(name);
-            if (it != n2v->end()) {
-                if (size == 0) {
-                    nrn_assert(it->second.first == 0);
-                    *(it->second.second) = val[0];
-                } else {
-                    nrn_assert(it->second.first == (size_t) size);
-                    double* pval = it->second.second;
-                    for (int i = 0; i < size; ++i) {
-                        pval[i] = val[i];
+        void* p = nullptr;
+        while (1) {
+            p = (*nrn2core_get_global_dbl_item_)(p, name, size, val);
+            // If the last item in the NEURON symbol table is a USERDOUBLE
+            // then p is NULL but val is not NULL and following fragment
+            // will be processed before exit from loop.
+            if (val) {
+                N2V::iterator it = n2v->find(name);
+                if (it != n2v->end()) {
+                    if (size == 0) {
+                        nrn_assert(it->second.first == 0);
+                        *(it->second.second) = val[0];
+                    } else {
+                        nrn_assert(it->second.first == (size_t) size);
+                        double* pval = it->second.second;
+                        for (int i = 0; i < size; ++i) {
+                            pval[i] = val[i];
+                        }
                     }
                 }
+                delete[] val;
+                val = nullptr;
             }
-            delete[] val;
+            if (!p) {
+                break;
+            }
         }
         secondorder = (*nrn2core_get_global_int_item_)("secondorder");
         nrnran123_set_globalindex((*nrn2core_get_global_int_item_)("Random123_global_index"));
