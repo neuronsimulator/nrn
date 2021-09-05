@@ -101,7 +101,7 @@ void nrn_finitialize(int setv, double v) {
     for (int i = 0; i < nrn_nthread; ++i) {
         setup_tree_matrix_minimal(nrn_threads + i);
         if (nrn_use_fast_imem) {
-            nrn_calc_fast_imem(nrn_threads + i);
+            nrn_calc_fast_imem_init(nrn_threads + i);
         }
     }
     for (int i = 0; i < nrn_nthread; ++i) {

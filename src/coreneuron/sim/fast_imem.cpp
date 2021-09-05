@@ -59,4 +59,20 @@ void nrn_calc_fast_imem(NrnThread* nt) {
     }
 }
 
+void nrn_calc_fast_imem_init(NrnThread* nt) {
+    // See the corresponding NEURON nrn_calc_fast_imem_fixedstep_init
+    int i1 = 0;
+    int i3 = nt->end;
+
+    double* vec_rhs = nt->_actual_rhs;
+    double* vec_area = nt->_actual_area;
+
+    double* fast_imem_rhs = nt->nrn_fast_imem->nrn_sav_rhs;
+#pragma acc parallel loop present(vec_rhs, vec_area, fast_imem_rhs) if (nt->compute_gpu) \
+    async(nt->stream_id)
+    for (int i = i1; i < i3; ++i) {
+        fast_imem_rhs[i] = (vec_rhs[i] + fast_imem_rhs[i]) * vec_area[i] * 0.01;
+    }
+}
+
 }  // namespace coreneuron

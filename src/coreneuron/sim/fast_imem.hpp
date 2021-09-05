@@ -29,9 +29,14 @@ void fast_imem_free();
 void nrn_fast_imem_alloc();
 
 /* Calculate the new values of rhs array at every timestep.
- * Found in src/nrnoc/fadvance.c in NEURON.
+ * Found in src/nrnoc/fadvance.cpp in NEURON.
  */
+
 void nrn_calc_fast_imem(NrnThread* _nt);
+/* Initialization used only in offline (file) mode.
+ * See NEURON nrn_calc_fast_imem_fixedstep_init in src/nrnoc/fadvance.cpp
+ */
+void nrn_calc_fast_imem_init(NrnThread* _nt);
 
 }  // namespace coreneuron
 #endif  // fast_imem_h
