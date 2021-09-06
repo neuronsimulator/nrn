@@ -16,9 +16,3 @@
 [submodule "external/backward"]
 	path = external/backward
 	url = https://github.com/bombela/backward-cpp.git
-[submodule "external/tests/ringtest"]
-	path = external/tests/ringtest
-	url = https://github.com/neuronsimulator/ringtest
-[submodule "external/tests/testcorenrn"]
-	path = external/tests/testcorenrn
-	url = https://github.com/neuronsimulator/testcorenrn.git
