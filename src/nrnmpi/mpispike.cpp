@@ -95,8 +95,8 @@ static void make_spikebuf_type() {
 #endif
 
 int nrnmpi_spike_exchange() {
-  nrn::Instrumentor::phase_begin("spike-exchange");
-	int i, n, novfl, n1;
+    nrn::Instrumentor::phase_begin("spike-exchange");
+    int i, n, novfl, n1;
 	if (!displs) {
 		np = nrnmpi_numprocs;
 		displs = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
@@ -153,8 +153,8 @@ int nrnmpi_spike_exchange() {
 	}
 	ovfl_ = novfl;
 #endif
-  nrn::Instrumentor::phase_end("spike-exchange");
-	return n;
+    nrn::Instrumentor::phase_end("spike-exchange");
+    return n;
 }
 
 /*
