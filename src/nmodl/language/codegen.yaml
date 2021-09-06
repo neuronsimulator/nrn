@@ -111,3 +111,13 @@
                             brief: "Block to be solved (callback node or solution node itself)"
                             type: Expression
             - Statement:
+                brief: "Statement base class"
+                children:
+                  - UpdateDt:
+                      nmodl: "dt"
+                      members:
+                        - value:
+                            brief: "Value of new timestep"
+                            type: Double
+                            prefix: {value: " = "}
+                      brief: "Statement to indicate a change in timestep in a given block"

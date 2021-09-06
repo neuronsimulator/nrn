@@ -311,6 +311,10 @@ struct CodegenInfo {
     /// note that if tqitem doesn't exist then the default value should be 0
     int tqitem_index = 0;
 
+    // updated dt to use with steadystate solver (in initial block)
+    // empty string means no change in dt
+    std::string changed_dt;
+
     /// global variables
     std::vector<SymbolType> global_variables;
 

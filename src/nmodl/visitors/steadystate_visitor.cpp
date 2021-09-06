@@ -53,38 +53,24 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
         logger->debug("SteadystateVisitor :: -> adding new DERIVATIVE block: {}",
                       ss_block->get_node_name());
 
-        // create statements to alter value of dt within DERIVATIVE block
-        // TODO: make sure dt_tmp_var_name variable name does not clash
-        std::string dt_tmp_var_name = std::string(codegen::naming::NTHREAD_DT_VARIABLE) +
-                                      "_saved_value";
-        std::string dt_save = dt_tmp_var_name + " = " + codegen::naming::NTHREAD_DT_VARIABLE;
-        std::string dt_assign = std::string(codegen::naming::NTHREAD_DT_VARIABLE) + " = ";
-        std::string dt_restore = dt_assign + dt_tmp_var_name;
+        std::string new_dt;
         if (steadystate_method == codegen::naming::SPARSE_METHOD) {
-            dt_assign += "{:.16g}"_format(STEADYSTATE_SPARSE_DT);
+            new_dt = "{:.16g}"_format(STEADYSTATE_SPARSE_DT);
         } else if (steadystate_method == codegen::naming::DERIVIMPLICIT_METHOD) {
-            dt_assign += "{:.16g}"_format(STEADYSTATE_DERIVIMPLICIT_DT);
+            new_dt += "{:.16g}"_format(STEADYSTATE_DERIVIMPLICIT_DT);
         } else {
             logger->warn("SteadystateVisitor :: solve method {} not supported for STEADYSTATE",
                          steadystate_method);
             return nullptr;
         }
+
         auto statement_block = ss_block->get_statement_block();
-        // declare tmp variable to save dt value (this will go into the LOCAL statement at the top
-        // of the statement block)
-        add_local_variable(*statement_block.get(), dt_tmp_var_name);
-        // get a copy of existing statements
         auto statements = statement_block->get_statements();
-        // insert dt_save and dt_assign statements just below first LOCAL statement
-        auto insertion_point = statements.begin();
-        while ((*insertion_point)->is_local_list_statement()) {
-            ++insertion_point;
-        }
-        insertion_point = statements.insert(insertion_point, create_statement(dt_save));
-        ++insertion_point;
-        statements.insert(insertion_point, create_statement(dt_assign));
-        // insert dt_restore statement at the end
-        statements.push_back(create_statement(dt_restore));
+
+        // add statement for changing the timestep
+        auto update_dt_statement = std::make_shared<ast::UpdateDt>(new ast::Double(new_dt));
+        statements.insert(statements.begin(), update_dt_statement);
+
         // replace old set of statements in AST with new one
         statement_block->set_statements(std::move(statements));
 

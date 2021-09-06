@@ -20,6 +20,12 @@ using symtab::syminfo::NmodlType;
 /*                      Routines must be overloaded in backend                          */
 /****************************************************************************************/
 
+// TODO: Update of dt and other variables on device via CUDA backend is not handled
+//       yet. We need to review device code generation in OpenACC backend.
+void CodegenCudaVisitor::print_dt_update_to_device() const {
+    throw std::runtime_error("CUDA backend doesn't handled dt update on GPU");
+}
+
 /**
  * As initial block is/can be executed on c/cpu backend, gpu/cuda
  * backend can mark the parameter as constant even if they have

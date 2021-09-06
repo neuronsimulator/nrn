@@ -86,11 +86,8 @@ SCENARIO("Solving ODEs with STEADYSTATE solve method", "[visitor][steadystate]")
             })";
         std::string expected_text2 = R"(
             DERIVATIVE states_steadystate {
-                LOCAL dt_saved_value
-                dt_saved_value = dt
                 dt = 1000000000
                 m' = m+h
-                dt = dt_saved_value
             })";
         THEN("Construct DERIVATIVE block with steadystate solution & update SOLVE statement") {
             auto result = run_steadystate_visitor(nmodl_text);
@@ -115,11 +112,8 @@ SCENARIO("Solving ODEs with STEADYSTATE solve method", "[visitor][steadystate]")
             })";
         std::string expected_text2 = R"(
             DERIVATIVE states_steadystate {
-                LOCAL dt_saved_value
-                dt_saved_value = dt
                 dt = 1e-09
                 m' = m+h
-                dt = dt_saved_value
             })";
         THEN("Construct DERIVATIVE block with steadystate solution & update SOLVE statement") {
             auto result = run_steadystate_visitor(nmodl_text);
@@ -160,21 +154,15 @@ SCENARIO("Solving ODEs with STEADYSTATE solve method", "[visitor][steadystate]")
             })";
         std::string expected_text3 = R"(
             DERIVATIVE states0_steadystate {
-                LOCAL dt_saved_value
-                dt_saved_value = dt
                 dt = 1e-09
                 Z'[0] = Z[1]-Z[2]
                 Z'[1] = Z[0]+2*Z[2]
                 Z'[2] = Z[0]*Z[0]-3.10
-                dt = dt_saved_value
             })";
         std::string expected_text4 = R"(
             DERIVATIVE states1_steadystate {
-                LOCAL dt_saved_value
-                dt_saved_value = dt
                 dt = 1000000000
                 x' = x+c
-                dt = dt_saved_value
             })";
         THEN("Construct DERIVATIVE blocks with steadystate solution & update SOLVE statements") {
             auto result = run_steadystate_visitor(nmodl_text);

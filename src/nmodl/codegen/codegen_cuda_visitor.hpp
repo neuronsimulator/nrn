@@ -95,6 +95,8 @@ class CodegenCudaVisitor: public CodegenCVisitor {
     /// print wrapper function that calls cuda kernel
     void print_wrapper_routine(std::string wrapper_function, BlockType type);
 
+    // update dt from host to device
+    void print_dt_update_to_device() const override;
 
     /// wrapper/caller routines for nrn_state and nrn_cur
     void codegen_wrapper_routines();

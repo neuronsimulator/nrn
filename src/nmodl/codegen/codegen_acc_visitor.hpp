@@ -100,6 +100,9 @@ class CodegenAccVisitor: public CodegenCVisitor {
     // update NetSendBuffer_t count from host to device
     virtual void print_net_send_buf_count_update_to_device() const override;
 
+    // update dt from host to device
+    virtual void print_dt_update_to_device() const override;
+
     // synchronise/wait on stream specific to NrnThread
     virtual void print_device_stream_wait() const override;
 
