@@ -19,6 +19,14 @@ Logout and log back in to have docker service properly configured.
 
 #### Pull and start the docker image
 
+**GPU WHEEL NOTE**
+
+To build the experimental GPU wheel there is a new Dockerfile under `gpu_wheel` (image to be made avail in docker hub).
+
+Once the image is ready and running you can move to build the wheel. There's an extra step of loading the environment, which can be taken care of by the script gpu_wheel/build_wheel.sh
+
+**---**
+
 We mount local neuron repository inside docker as a volume to preserve any code changed. We can use -v option to mount the local folder as:
 
 ```
