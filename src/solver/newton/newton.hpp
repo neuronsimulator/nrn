@@ -15,6 +15,10 @@
  * \brief Implementation of Newton method for solving system of non-linear equations
  */
 
+#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+#include "partial_piv_lu/partial_piv_lu.h"
+#endif
+
 #include <Eigen/LU>
 
 namespace nmodl {
@@ -69,9 +73,13 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
             // we have converged: return iteration count
             return iter;
         }
+#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+        X -= partialPivLu<N>(J, F);
+#else
         // update X use in-place LU decomposition of J with partial pivoting
         // (suitable for any N, but less efficient than .inverse() for N <=4)
         X -= Eigen::PartialPivLU<Eigen::Ref<Eigen::Matrix<double, N, N>>>(J).solve(F);
+#endif
     }
     // If we fail to converge after max_iter iterations, return -1
     return -1;
@@ -142,10 +150,13 @@ EIGEN_DEVICE_FUNC int newton_numerical_diff_solver(Eigen::Matrix<double, N, 1>& 
             // restore X
             X[i] += dX;
         }
-        // update X
-        // use in-place LU decomposition of J with partial pivoting
+#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+        X -= partialPivLu<N>(J, F);
+#else
+        // update X use in-place LU decomposition of J with partial pivoting
         // (suitable for any N, but less efficient than .inverse() for N <=4)
         X -= Eigen::PartialPivLU<Eigen::Ref<Eigen::Matrix<double, N, N>>>(J).solve(F);
+#endif
     }
     // If we fail to converge after max_iter iterations, return -1
     return -1;
@@ -171,6 +182,8 @@ EIGEN_DEVICE_FUNC int newton_solver_small_N(Eigen::Matrix<double, N, 1>& X,
         if (error < eps) {
             return iter;
         }
+        // The inverse can be called from within OpenACC regions without any issue, as opposed to
+        // Eigen::PartialPivLU.
         X -= J.inverse() * F;
     }
     return -1;

@@ -531,21 +531,27 @@ std::string CodegenCVisitor::breakpoint_current(std::string current) const {
 
 
 int CodegenCVisitor::float_variables_size() const {
-    auto count_length = [](const std::vector<SymbolType>& variables) -> int {
-        int length = 0;
-        for (const auto& variable: variables) {
-            length += variable->get_length();
-        }
-        return length;
+    auto count_length = [](int l, const SymbolType& variable) {
+        return l += variable->get_length();
     };
 
-    int float_size = count_length(info.range_parameter_vars);
-    float_size += count_length(info.range_assigned_vars);
-    float_size += count_length(info.range_state_vars);
-    float_size += count_length(info.assigned_vars);
+    int float_size = std::accumulate(info.range_parameter_vars.begin(),
+                                     info.range_parameter_vars.end(),
+                                     0,
+                                     count_length);
+    float_size += std::accumulate(info.range_assigned_vars.begin(),
+                                  info.range_assigned_vars.end(),
+                                  0,
+                                  count_length);
+    float_size += std::accumulate(info.range_state_vars.begin(),
+                                  info.range_state_vars.end(),
+                                  0,
+                                  count_length);
+    float_size +=
+        std::accumulate(info.assigned_vars.begin(), info.assigned_vars.end(), 0, count_length);
 
     /// all state variables for which we add Dstate variables
-    float_size += count_length(info.state_vars);
+    float_size += std::accumulate(info.state_vars.begin(), info.state_vars.end(), 0, count_length);
 
     /// for v_unused variable
     if (info.vectorize) {
@@ -1779,13 +1785,16 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolv
     // try to use a different string for the matrices created by sympy in the form
     // X_<random_number>, J_<random_number>, Jm_<random_number> and F_<random_number>
     std::string X = find_var_unique_name("X");
+    std::string Xm = find_var_unique_name("Xm");
     std::string J = find_var_unique_name("J");
     std::string Jm = find_var_unique_name("Jm");
     std::string F = find_var_unique_name("F");
+    std::string Fm = find_var_unique_name("Fm");
 
     auto float_type = default_float_data_type();
     int N = node.get_n_state_vars()->get_value();
-    printer->add_line("Eigen::Matrix<{}, {}, 1> {};"_format(float_type, N, X));
+    printer->add_line("Eigen::Matrix<{}, {}, 1> {};"_format(float_type, N, Xm));
+    printer->add_line("{}* {} = {}.data();"_format(float_type, X, Xm));
 
     print_statement_block(*node.get_setup_x_block(), false, false);
 
@@ -1823,12 +1832,14 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolv
         "Eigen::Matrix<{0}, {1}, {1}>& {4}) {5}"_format(
             float_type,
             N,
-            X,
-            F,
+            Xm,
+            Fm,
             Jm,
             is_functor_const(variable_block, functor_block) ? "const " : ""));
     printer->start_block();
+    printer->add_line("const {}* {} = {}.data();"_format(float_type, X, Xm));
     printer->add_line("{}* {} = {}.data();"_format(float_type, J, Jm));
+    printer->add_line("{}* {} = {}.data();"_format(float_type, F, Fm));
     print_statement_block(functor_block, false, false);
     printer->end_block(2);
 
@@ -1846,7 +1857,7 @@ void CodegenCVisitor::visit_eigen_newton_solver_block(const ast::EigenNewtonSolv
     printer->add_line("functor newton_functor(nt, inst, id, pnodecount, v, indexes);");
     printer->add_line("newton_functor.initialize();");
     printer->add_line(
-        "int newton_iterations = nmodl::newton::newton_solver({}, newton_functor);"_format(X));
+        "int newton_iterations = nmodl::newton::newton_solver({}, newton_functor);"_format(Xm));
 
     // assign newton solver results in matrix X to state vars
     print_statement_block(*node.get_update_states_block(), false, false);
@@ -1860,25 +1871,44 @@ void CodegenCVisitor::visit_eigen_linear_solver_block(const ast::EigenLinearSolv
     // try to use a different string for the matrices created by sympy in the form
     // X_<random_number>, J_<random_number>, Jm_<random_number> and F_<random_number>
     std::string X = find_var_unique_name("X");
+    std::string Xm = find_var_unique_name("Xm");
     std::string J = find_var_unique_name("J");
     std::string Jm = find_var_unique_name("Jm");
     std::string F = find_var_unique_name("F");
+    std::string Fm = find_var_unique_name("Fm");
 
     const std::string float_type = default_float_data_type();
     int N = node.get_n_state_vars()->get_value();
-    printer->add_line("Eigen::Matrix<{0}, {1}, 1> {2}, {3};"_format(float_type, N, X, F));
+    printer->add_line("Eigen::Matrix<{0}, {1}, 1> {2}, {3};"_format(float_type, N, Xm, Fm));
     printer->add_line("Eigen::Matrix<{0}, {1}, {1}> {2};"_format(float_type, N, Jm));
+    printer->add_line("{}* {} = {}.data();"_format(float_type, X, Xm));
     printer->add_line("{}* {} = {}.data();"_format(float_type, J, Jm));
+    printer->add_line("{}* {} = {}.data();"_format(float_type, F, Fm));
     print_statement_block(*node.get_variable_block(), false, false);
     print_statement_block(*node.get_initialize_block(), false, false);
     print_statement_block(*node.get_setup_x_block(), false, false);
 
     printer->add_newline();
-    printer->add_line(
-        "{0} = Eigen::PartialPivLU<Eigen::Ref<Eigen::Matrix<{1}, {2}, {2}>>>({3}).solve({4});"_format(
-            X, float_type, N, Jm, F));
+    print_eigen_linear_solver(float_type, N, Xm, Jm, Fm);
+    printer->add_newline();
+
     print_statement_block(*node.get_update_states_block(), false, false);
     print_statement_block(*node.get_finalize_block(), false, false);
+}
+
+void CodegenCVisitor::print_eigen_linear_solver(const std::string& float_type,
+                                                int N,
+                                                const std::string& Xm,
+                                                const std::string& Jm,
+                                                const std::string& Fm) {
+    if (N <= 4) {
+        // Faster compared to LU, given the template specialization in Eigen.
+        printer->add_line("{0} = {1}.inverse()*{2};"_format(Xm, Jm, Fm));
+    } else {
+        printer->add_line(
+            "{0} = Eigen::PartialPivLU<Eigen::Ref<Eigen::Matrix<{1}, {2}, {2}>>>({3}).solve({4});"_format(
+                Xm, float_type, N, Jm, Fm));
+    }
 }
 
 /****************************************************************************************/
