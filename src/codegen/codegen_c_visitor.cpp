@@ -318,6 +318,9 @@ void CodegenCVisitor::visit_verbatim(const Verbatim& node) {
     }
 }
 
+void CodegenCVisitor::visit_update_dt(const ast::UpdateDt& node) {
+    // dt change statement should be pulled outside already
+}
 
 /****************************************************************************************/
 /*                               Common helper routines                                 */
@@ -1059,6 +1062,10 @@ void CodegenCVisitor::print_net_send_buf_count_update_to_host() const {
 }
 
 void CodegenCVisitor::print_net_send_buf_count_update_to_device() const {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_dt_update_to_device() const {
     // backend specific, do nothing
 }
 
@@ -3434,6 +3441,14 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
         printer->start_block("if (_nrn_skip_initmodel == 0)");
     }
 
+    if (!info.changed_dt.empty()) {
+        printer->add_line(
+            "double _save_prev_dt = {};"_format(get_variable_name(naming::NTHREAD_DT_VARIABLE)));
+        printer->add_line(
+            "{} = {};"_format(get_variable_name(naming::NTHREAD_DT_VARIABLE), info.changed_dt));
+        print_dt_update_to_device();
+    }
+
     print_channel_iteration_tiling_block_begin(BlockType::Initial);
     print_channel_iteration_block_begin(BlockType::Initial);
 
@@ -3445,6 +3460,13 @@ void CodegenCVisitor::print_nrn_init(bool skip_init_check) {
     print_channel_iteration_block_end();
     print_shadow_reduction_statements();
     print_channel_iteration_tiling_block_end();
+
+    if (!info.changed_dt.empty()) {
+        printer->add_line(
+            "{} = _save_prev_dt;"_format(get_variable_name(naming::NTHREAD_DT_VARIABLE)));
+        print_dt_update_to_device();
+    }
+
     printer->end_block(1);
 
     if (info.derivimplicit_used()) {

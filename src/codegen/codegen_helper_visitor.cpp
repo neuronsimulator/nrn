@@ -557,11 +557,13 @@ void CodegenHelperVisitor::visit_function_block(const ast::FunctionBlock& node) 
 void CodegenHelperVisitor::visit_eigen_newton_solver_block(
     const ast::EigenNewtonSolverBlock& node) {
     info.eigen_newton_solver_exist = true;
+    node.visit_children(*this);
 }
 
 void CodegenHelperVisitor::visit_eigen_linear_solver_block(
     const ast::EigenLinearSolverBlock& node) {
     info.eigen_linear_solver_exist = true;
+    node.visit_children(*this);
 }
 
 void CodegenHelperVisitor::visit_function_call(const FunctionCall& node) {
@@ -702,6 +704,10 @@ void CodegenHelperVisitor::visit_discrete_block(const ast::DiscreteBlock& node) 
 
 void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& node) {
     info.vectorize = false;
+}
+
+void CodegenHelperVisitor::visit_update_dt(const ast::UpdateDt& node) {
+    info.changed_dt = node.get_value()->eval();
 }
 
 }  // namespace codegen

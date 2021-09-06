@@ -297,5 +297,10 @@ void CodegenAccVisitor::print_net_send_buf_count_update_to_device() const {
     printer->add_line("#pragma acc update device(nsb->_cnt) if (nt->compute_gpu)");
 }
 
+void CodegenAccVisitor::print_dt_update_to_device() const {
+    printer->add_line("#pragma acc update device({}) if (nt->compute_gpu)"_format(
+        get_variable_name(naming::NTHREAD_DT_VARIABLE)));
+}
+
 }  // namespace codegen
 }  // namespace nmodl
