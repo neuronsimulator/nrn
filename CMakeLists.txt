@@ -142,9 +142,9 @@ set(NRN_NMODL_CXX_FLAGS
       "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
-option(NRN_ENABLE_PROFILING "Enable profiling" OFF)
+option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER
-    "caliper"
+    "${NRN_PROFILER_DEFAULT}"
     CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
 
 # =============================================================================
