@@ -7,6 +7,9 @@
 
 #include "codegen/codegen_acc_visitor.hpp"
 
+#include "ast/eigen_linear_solver_block.hpp"
+#include "ast/integer.hpp"
+
 
 using namespace fmt::literals;
 
@@ -73,6 +76,15 @@ void CodegenAccVisitor::print_backend_includes() {
         printer->add_line("#include <cuda_runtime_api.h>");
         printer->add_line("#include <openacc.h>");
     }
+
+    if (info.eigen_linear_solver_exist && std::accumulate(info.state_vars.begin(),
+                                                          info.state_vars.end(),
+                                                          0,
+                                                          [](int l, const SymbolType& variable) {
+                                                              return l += variable->get_length();
+                                                          }) > 4) {
+        printer->add_line("#include <partial_piv_lu/partial_piv_lu.h>");
+    }
 }
 
 
@@ -122,6 +134,18 @@ void CodegenAccVisitor::print_abort_routine() const {
 
 void CodegenAccVisitor::print_net_send_buffering_grow() {
     // can not grow buffer during gpu execution
+}
+
+void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type,
+                                                  int N,
+                                                  const std::string& Xm,
+                                                  const std::string& Jm,
+                                                  const std::string& Fm) {
+    if (N <= 4) {
+        printer->add_line("{0} = {1}.inverse()*{2};"_format(Xm, Jm, Fm));
+    } else {
+        printer->add_line("{0} = partialPivLu<{1}>({2}, {3});"_format(Xm, N, Jm, Fm));
+    }
 }
 
 /**
