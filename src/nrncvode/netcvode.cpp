@@ -2875,7 +2875,7 @@ void NetCvode::init_events() {
 #if BBTQ == 5
 	for (i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
-		p[i].tqe_->shift_bin(nt_t);
+		p[i].tqe_->shift_bin(nt_t - 0.5*nt_dt);
 	}
 #endif
 	if (psl_) {

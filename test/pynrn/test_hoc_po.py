@@ -531,6 +531,145 @@ def test_7():  # save a ring with n cells and extra section, restore n-1 cells
     pc.gid_clear()
 
 
+def test_8():
+    print("focus on BinQ initialization Issue #1444")
+    ncell = 3
+    n = 5
+    # gid -> [n NetCons] -> gid+1
+    cells = {gid: h.Follower() for gid in range(pc.id(), ncell, pc.nhost())}
+    for gid in cells:
+        pc.set_gid2node(gid, pc.id())
+        pc.cell(gid, h.NetCon(cells[gid], None))
+    netcons = {}
+    for gid in cells:
+        netcons[gid] = [
+            pc.gid_connect(gid - 1, cells[gid]) for _ in range(n) if gid > 0
+        ]
+    # Stimulate gid 0
+    if 0 in cells:
+        # stim cell[0] with fast burst of 5 spikes
+        ns = h.NetStim()
+        ns.start = 0.9999
+        ns.number = 5
+        ns.interval = 0.1
+        nsnc = h.NetCon(ns, cells[0])
+        nsnc.delay = 0
+        nsnc.weight[0] = 0
+    for gid, cell in cells.items():
+        # cells generate spike on every input of weight > 1
+        # cell.refrac = 0
+        for i, nc in enumerate(netcons[gid]):
+            nc.weight[0] = 0.001 * i + h.dt
+            nc.delay = (1.0 + 0.01 * i) * h.dt
+    spiketime = h.Vector()
+    spikegid = h.Vector()
+    pc.spike_record(-1, spiketime, spikegid)
+
+    def run(tstop):
+        pc.set_maxstep(10)
+        h.finitialize()
+        pc.psolve(tstop)
+
+    spiketime_std = spiketime.c()
+    spikegid_std = spikegid.c()
+
+    def set_stdspikes():
+        spiketime_std.copy(spiketime)
+        spikegid_std.copy(spikegid)
+
+    tstop = 5
+    run(tstop)
+    set_stdspikes()
+
+    def prspikes():
+        print("prspikes")
+        for i, gid in enumerate(spikegid):
+            print("%g %d" % (spiketime[i], gid))
+
+    def compare_spikes():
+        x = list(zip(spiketime_std, spikegid_std))
+        x = sorted(x, key=lambda e: e[1])
+        y = list(zip(spiketime, spikegid))
+        y = sorted(y, key=lambda e: e[1])
+        if len(x) != len(y):
+            print(len(x), len(y))
+        # assert len(x) == len(y)
+        if x != y:
+            q = (x, y) if len(x) <= len(y) else (y, x)
+            for i, a in enumerate(q[0]):
+                b = q[1][i]
+                if a != b:
+                    # assert a[1] == b[1]
+                    z = abs(a[0] - b[0])
+                    if z >= 1e-9:
+                        print(x[i], y[i])
+                    assert z < 1e-9
+
+    def srun(tsave, tstop):
+        cvode = h.CVode()
+        qm = cvode.queue_mode()
+        print(
+            "srun tsave=%g tstop=%g start=%g delay=%g %s"
+            % (tsave, tstop, ns.start, nsnc.delay, "binq" if qm else "")
+        )
+        run(tsave)
+        st = spiketime.c()
+        sg = spikegid.c()
+        bbss = h.BBSaveState()
+        bbss.save("allcell_bbss.dat")
+        qm = 0
+        if qm:
+            print("after save")
+            h.CVode().print_event_queue()
+        h.finitialize(-65)
+        spiketime.resize(0)
+        spikegid.resize(0)
+        bbss.restore("allcell_bbss.dat")
+        if qm:
+            print("after restore")
+            h.CVode().print_event_queue()
+        pc.psolve(tstop)
+        st.append(spiketime)
+        sg.append(spikegid)
+        spiketime.copy(st)
+        spikegid.copy(sg)
+        print("    %d spikes" % len(spiketime))
+
+    srun(1.1, tstop)
+    compare_spikes()
+
+    cvode = h.CVode()
+    cvode.queue_mode(1)
+    run(tstop)
+    assert len(spiketime_std) == len(spiketime)
+    spiketime_std = spiketime.c()
+    spikegid_std = spikegid.c()
+
+    srun(1.1, tstop)
+    compare_spikes()
+    for binq in [0, 1]:
+        cvode.queue_mode(binq)
+        parms = [
+            (1, 0),
+            (1e-10, 0),
+            (0, 0),
+            (0.25 * h.dt, 0),
+            (0.5 * h.dt, 0),
+            (0.75 * h.dt, 0),
+        ]
+        for parm in parms:
+            if 0 in cells:
+                ns.start, nsnc.delay = parm
+            for tsave in [0.0, h.dt]:
+                run(tstop)
+                set_stdspikes()
+                srun(tsave, tstop)
+                compare_spikes()
+
+    cvode.queue_mode(0)
+    pc.gid_clear()
+
+
 if __name__ == "__main__":
     test_1()
     test_2()
@@ -539,4 +678,4 @@ if __name__ == "__main__":
     test_5()
     test_6()
     test_7()
-    h.allobjects()
+    test_8()
