@@ -20,6 +20,8 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
+C:\Python27\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python35\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python36\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python37\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"

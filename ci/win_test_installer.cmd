@@ -12,6 +12,10 @@ echo %PATH%
 echo %PYTHONPATH%
 echo %NEURONHOME%
 
+:: Mitigation strategy -> for reasons uknown(thank you Windows), association.hoc.out may not be generated from previous step.
+:: If so, try again to generate it. No wait required like previous strategies, we rely on testing entropy from this point on.
+if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
+
 :: test all pythons
 C:\Python27\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
 C:\Python35\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
@@ -50,6 +54,11 @@ copy /A share\examples\nrniv\nmodl\cacum.mod .
 call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
+
+:: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
+:: 2nd step -> check association.hoc output after we've launched 1step in previous CI step
+cat association.hoc.out
+findstr /i "^hello$" association.hoc.out || set "errorfound=y"
 
 echo "All tests finished!"
 
