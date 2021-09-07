@@ -52,6 +52,9 @@ corenrn_parameters::corenrn_parameters() {
                      "parent adjacency.",
                      true)
         ->check(CLI::Range(0, 3));
+    sub_gpu->add_flag("--cuda-interface",
+                      this->cuda_interface,
+                      "Activate CUDA branch of the code.");
 
     auto sub_input = app.add_option_group("input", "Input dataset options.");
     sub_input->add_option("-d, --datpath", this->datpath, "Path containing CoreNeuron data files.")
@@ -190,6 +193,7 @@ std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_par
        << "GPU" << std::endl
        << "--nwarp=" << corenrn_param.nwarp << std::endl
        << "--cell-permute=" << corenrn_param.cell_interleave_permute << std::endl
+       << "--cuda-interface=" << (corenrn_param.cuda_interface ? "true" : "false") << std::endl
        << std::endl
        << "INPUT PARAMETERS" << std::endl
        << "--voltage=" << corenrn_param.voltage << std::endl

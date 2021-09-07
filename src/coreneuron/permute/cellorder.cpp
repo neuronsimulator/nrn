@@ -15,6 +15,7 @@
 #include "coreneuron/network/tnode.hpp"
 #include "coreneuron/utils/lpt.hpp"
 #include "coreneuron/utils/memory.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include "coreneuron/permute/node_permute.h"  // for print_quality
 
@@ -567,14 +568,6 @@ static void bksub_interleaved2(NrnThread* nt,
     }
 }
 
-#ifdef ENABLE_CUDA_INTERFACE
-void solve_interleaved_launcher(NrnThread* nt, InterleaveInfo* info, int ncell);
-#endif
-
-int temp1[1024] = {0};
-int temp2[1024] = {0};
-int temp3[1024] = {0};
-
 /**
  * \brief Solve Hines matrices/cells with compartment-based granularity.
  *
@@ -583,65 +576,65 @@ int temp3[1024] = {0};
  * warp deals with a group of cells, therefore multiple compartments (finer level of parallelism).
  */
 void solve_interleaved2(int ith) {
-    static int foo = 1;
     NrnThread* nt = nrn_threads + ith;
     InterleaveInfo& ii = interleave_info[ith];
     int nwarp = ii.nwarp;
-    if (nwarp == 0) {
+    if (nwarp == 0)
         return;
-    }
-    int* ncycles = ii.cellsize;         // nwarp of these
-    int* stridedispl = ii.stridedispl;  // nwarp+1 of these
-    int* strides = ii.stride;           // sum ncycles of these (bad since ncompart/warpsize)
-    int* rootbegin = ii.firstnode;      // nwarp+1 of these
-    int* nodebegin = ii.lastnode;       // nwarp+1 of these
-#ifdef _OPENACC
-    int nstride = stridedispl[nwarp];
-    int stream_id = nt->stream_id;
-#endif
 
     int ncore = nwarp * warpsize;
-#ifdef _OPENACC
-    // clang-format off
 
-    #pragma acc parallel loop present(                  \
-        nt[0:1], strides[0:nstride],                    \
-        ncycles[0:nwarp], stridedispl[0:nwarp+1],       \
-        rootbegin[0:nwarp+1], nodebegin[0:nwarp+1])     \
-        if (nt->compute_gpu) async(stream_id)
+#ifdef _OPENACC
+    if (corenrn_param.gpu && corenrn_param.cuda_interface) {
+        auto* d_nt = static_cast<NrnThread*>(acc_deviceptr(nt));
+        auto* d_info = static_cast<InterleaveInfo*>(acc_deviceptr(interleave_info + ith));
+        solve_interleaved2_launcher(d_nt, d_info, ncore, acc_get_cuda_stream(nt->stream_id));
+    } else {
+#endif
+        int* ncycles = ii.cellsize;         // nwarp of these
+        int* stridedispl = ii.stridedispl;  // nwarp+1 of these
+        int* strides = ii.stride;           // sum ncycles of these (bad since ncompart/warpsize)
+        int* rootbegin = ii.firstnode;      // nwarp+1 of these
+        int* nodebegin = ii.lastnode;       // nwarp+1 of these
+#ifdef _OPENACC
+        int nstride = stridedispl[nwarp];
+        int stream_id = nt->stream_id;
+#endif
+
+#ifdef _OPENACC
+        // clang-format off
+        
+        #pragma acc parallel loop gang vector vector_length(warpsize) \
+            present(nt[0:1], strides[0:nstride],                      \
+            ncycles[0:nwarp], stridedispl[0:nwarp+1],                 \
+            rootbegin[0:nwarp+1], nodebegin[0:nwarp+1])               \
+            if (nt->compute_gpu) async(stream_id)
 // clang-format on
 #endif
-    for (int icore = 0; icore < ncore; ++icore) {
-        int iwarp = icore / warpsize;     // figure out the >> value
-        int ic = icore & (warpsize - 1);  // figure out the & mask
-        int ncycle = ncycles[iwarp];
-        int* stride = strides + stridedispl[iwarp];
-        int root = rootbegin[iwarp];
-        int lastroot = rootbegin[iwarp + 1];
-        int firstnode = nodebegin[iwarp];
-        int lastnode = nodebegin[iwarp + 1];
-// temp1[icore] = ic;
-// temp2[icore] = ncycle;
-// temp3[icore] = stride - strides;
+        for (int icore = 0; icore < ncore; ++icore) {
+            int iwarp = icore / warpsize;     // figure out the >> value
+            int ic = icore & (warpsize - 1);  // figure out the & mask
+            int ncycle = ncycles[iwarp];
+            int* stride = strides + stridedispl[iwarp];
+            int root = rootbegin[iwarp];
+            int lastroot = rootbegin[iwarp + 1];
+            int firstnode = nodebegin[iwarp];
+            int lastnode = nodebegin[iwarp + 1];
 #if !defined(_OPENACC)
-        if (ic == 0) {  // serial test mode. triang and bksub do all cores in warp
+            if (ic == 0) {  // serial test mode. triang and bksub do all cores in warp
 #endif
-            triang_interleaved2(nt, ic, ncycle, stride, lastnode);
-            bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
+                triang_interleaved2(nt, ic, ncycle, stride, lastnode);
+                bksub_interleaved2(nt, root + ic, lastroot, ic, ncycle, stride, firstnode);
 #if !defined(_OPENACC)
-        }  // serial test mode
+            }  // serial test mode
 #endif
-    }
+        }
 #ifdef _OPENACC
 #pragma acc wait(nt->stream_id)
 #endif
-    if (foo == 1) {
-        return;
+#ifdef _OPENACC
     }
-    foo = 0;
-    for (int i = 0; i < ncore; ++i) {
-        printf("%d => %d %d %d\n", i, temp1[i], temp2[i], temp3[i]);
-    }
+#endif
 }
 
 /**
@@ -667,11 +660,6 @@ void solve_interleaved1(int ith) {
     int stream_id = nt->stream_id;
 #endif
 
-#ifdef ENABLE_CUDA_INTERFACE
-    NrnThread* d_nt = (NrnThread*) acc_deviceptr(nt);
-    InterleaveInfo* d_info = (InterleaveInfo*) acc_deviceptr(interleave_info + ith);
-    solve_interleaved_launcher(d_nt, d_info, ncell);
-#else
 #ifdef _OPENACC
     // clang-format off
 
@@ -689,7 +677,6 @@ void solve_interleaved1(int ith) {
     }
 #ifdef _OPENACC
 #pragma acc wait(stream_id)
-#endif
 #endif
 }
 

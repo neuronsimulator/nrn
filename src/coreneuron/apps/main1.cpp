@@ -191,6 +191,12 @@ void nrn_init_and_load_data(int argc,
                 "missing --gpu\n");
         exit(1);
     }
+    if (!corenrn_param.gpu && corenrn_param.cuda_interface) {
+        fprintf(stderr,
+                "compiled with OpenACC/CUDA does not allow the combination of --cuda-interface and "
+                "missing --gpu\n");
+        exit(1);
+    }
 #endif
 
 // if multi-threading enabled, make sure mpi library supports it
