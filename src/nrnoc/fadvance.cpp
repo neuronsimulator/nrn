@@ -9,7 +9,7 @@
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
-#include "../utils/profile/profiler_interface.h"
+#include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
@@ -524,7 +524,8 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	nrn_daq_ai();
 #endif
 	fixed_record_continuous(nth);
-    CTADD {
+    CTADD
+    {
         nrn::Instrumentor::phase p("deliver_events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }

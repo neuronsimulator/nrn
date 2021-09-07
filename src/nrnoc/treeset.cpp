@@ -17,7 +17,7 @@
 #include "spmatrix.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
-#include "../utils/profile/profiler_interface.h"
+#include "utils/profile/profiler_interface.h"
 
 extern spREAL *spGetElement(char*, int ,int);
 

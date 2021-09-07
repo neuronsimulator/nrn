@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <assert.h>
 
-#include "../utils/profile/profiler_interface.h"
+#include "utils/profile/profiler_interface.h"
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>

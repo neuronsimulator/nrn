@@ -11,7 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
-#include "../utils/profile/profiler_interface.h"
+#include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
