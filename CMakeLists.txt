@@ -142,6 +142,11 @@ set(NRN_NMODL_CXX_FLAGS
       "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
+option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
+set(NRN_PROFILER
+    "${NRN_PROFILER_DEFAULT}"
+    CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
+
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
 # =============================================================================
@@ -413,6 +418,13 @@ if(NRN_ENABLE_CORENEURON)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+    if(NRN_ENABLE_PROFILING)
+      if(NRN_PROFILER STREQUAL "caliper")
+        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+      elseif(NRN_PROFILER STREQUAL "likwid")
+        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
+      endif()
+    endif()
     # Propagate NEURON MPI option to CoreNEURON
     set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
@@ -423,6 +435,23 @@ if(NRN_ENABLE_CORENEURON)
     # variable in this scope. If CoreNEURON is installed externally then this
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  endif()
+endif()
+
+# =============================================================================
+# Profiler/Instrumentation Options
+# =============================================================================
+if(NRN_ENABLE_PROFILING)
+  add_definitions("-DNRN_PROFILING")
+  if(NRN_PROFILER STREQUAL "caliper")
+    find_package(caliper REQUIRED)
+    include_directories(${caliper_INCLUDE_DIR})
+    add_definitions("-DNRN_CALIPER")
+    set(CALIPER_LIB "caliper")
+  elseif(NRN_PROFILER STREQUAL "likwid")
+    find_package(likwid REQUIRED)
+    include_directories(${likwid_INCLUDE_DIRS})
+    add_definitions("-DLIKWID_PERFMON")
   endif()
 endif()
 
@@ -750,6 +779,12 @@ if(NRN_ENABLE_COVERAGE)
   message(STATUS "Coverage      | Enabled")
   if (NRN_COVERAGE_FILES)
   message(STATUS "  Files       | ${NRN_COVERAGE_FILES}")
+  endif()
+endif()
+if(NRN_ENABLE_PROFILING)
+  message(STATUS "Profiling     | ON")
+  if(NRN_PROFILER STREQUAL "caliper")
+    message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
