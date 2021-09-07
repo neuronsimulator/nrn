@@ -128,6 +128,14 @@ if(CORENRN_ENABLE_GPU)
   # setting LANGUAGE=CXX in non-GPU builds does not work.
   list(REMOVE_ITEM CORENEURON_CODE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp")
   list(APPEND CORENEURON_CODE_FILES ${CORENEURON_CUDA_FILES})
+
+  # Eigen-3.5+ provides better GPU support. However, some functions cannot be called directly from
+  # within an OpenACC region. Therefore, we need to wrap them in a special API (decorate them with
+  # __device__ & acc routine tokens), which allows us to eventually call them from OpenACC. Calling
+  # these functions from CUDA kernels presents no issue ...
+  if(CORENRN_ENABLE_NMODL AND EXISTS ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cu)
+    list(APPEND CORENEURON_CODE_FILES ${CORENRN_MOD2CPP_INCLUDE}/partial_piv_lu/partial_piv_lu.cu)
+  endif()
 endif()
 
 # =============================================================================

@@ -133,7 +133,7 @@ With CoreNEURON, existing NEURON models can be run with minimal changes. For a g
 3. If GPU support is enabled during build, enable GPU execution using :
 	```
 	coreneuron.gpu = True
-  ```
+	```
 
 4. Use `psolve` to run simulation after initialization :
 
