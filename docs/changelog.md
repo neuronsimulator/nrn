@@ -51,7 +51,7 @@ Existing models should work without any changes.  In order to upgrade NEURON ver
 - Install from source, preferably using CMake build system 
 - For new version, it's always a good idea to start over from scratch with nrnivmodl (deleting existing directory like `x86_64`)
 
-See `Installation` section under [nrn.readthedocs.io/](nrn.readthedocs.io/). In the very rare case that numerical differences exist, check selection of legacy vs modern units.
+See `Installation` section under [nrn.readthedocs.io/en/8.0.0](https://nrn.readthedocs.io/en/8.0.0/). In the very rare case that numerical differences exist, check selection of legacy vs modern units.
 
 ## Contributors
 
