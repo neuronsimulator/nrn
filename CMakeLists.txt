@@ -425,8 +425,10 @@ if(NRN_ENABLE_CORENEURON)
         set(CORENRN_ENABLE_LIKWID_PROFILING ON)
       endif()
     endif()
-    # Propagate NEURON MPI option to CoreNEURON
-    set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
+    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
+    if(NOT DEFINED CORENRN_ENABLE_MPI)
+      set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
+    endif()
     add_external_project(coreneuron)
     set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
     # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.

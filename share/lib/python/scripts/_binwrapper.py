@@ -56,6 +56,7 @@ def _config_exe(exe_name):
     )
     os.environ["NEURONHOME"] = os.path.join(NRN_PREFIX, "share/nrn")
     os.environ["NRNHOME"] = NRN_PREFIX
+    os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
