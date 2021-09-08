@@ -126,3 +126,93 @@ target remote | /usr/local/lib/valgrind/../../bin/vgdb --pid=31925
 Every press of the 'c' key in the gdb shell will move to the location of
 the next valgrind error.
 
+
+Profiling and performance benchmarking
+--------------------------------------
+
+NEURON has recently gained built-in support for performance profilers. Many modern profilers provide APIs for instrumenting code. This allows the profiler to enable timers or performance counters and store results into appropriate data structures. For implementation details of the generic profiler interface check `src/utils/profile/profiler_interface.h` NEURON now supports following profilers:
+
+* [Caliper](https://software.llnl.gov/Caliper/)
+* [likwid](https://github.com/RRZE-HPC/likwid)
+* [tau](https://www.paratools.com/tau)*
+* [craypat](https://docs.nersc.gov/tools/performance/craypat/)*
+
+*to use this profiler some additional changes to the CMake files might be needed.
+
+#### Instrumentation
+
+NEURONs code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
+
+1. using calls to `phase_begin()`, `phase_end()`
+
+```c++
+void some_function() {
+    nrn::Instrumentor::phase_begin("some_function");
+    // code to be benchmarked
+    nrn::Instrumentor::phase_end("some_function");
+}
+```
+
+2. using scoped automatic variables
+
+```c++
+void some_function() {
+    // unrelated code
+    {
+        nrn::Instrumentor::phase p("critical_region");
+        // code to be benchmarked
+    }
+    // more unrelated code
+}
+```
+Note: Don't forget to include the profiler header in the respective source files.
+
+#### Running benchmarks
+
+To enable a profiler, one needs to rebuild NEURON with the appropriate flags set. Here is how one would build NEURON with Caliper enabled:
+
+```bash
+mkdir build && cd build
+cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DNRN_ENABLE_TESTS=ON
+make
+```
+
+Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described [here](https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling).
+
+```
+$ CALI_CONFIG=runtime-report,calc.inclusive NRNHOME=/Users/awile/projects/cellular/nrn/build2 NEURONHOME=/Users/awile/projects/cellular/nrn/build2/share/nrn /Users/awile/projects/cellular/nrn/build2/bin/nrniv ring.hoc
+NEURON -- VERSION 8.0a-658-g07fc295af+ enh/1421 (07fc295af+) 2021-09-07
+Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021
+See http://neuron.yale.edu/neuron/credits
+
+Path                  Time (E) Time (I) Time % (E) Time % (I)
+psolve                0.022743 1.047956   2.119599  97.667258
+  timestep            0.189271 1.025213  17.639652  95.547659
+    state-update      0.116918 0.208878  10.896508  19.466983
+      state-IClamp    0.012888 0.012888   1.201134   1.201134
+      state-hh        0.026252 0.026252   2.446630   2.446630
+      state-ExpSyn    0.026171 0.026171   2.439081   2.439081
+      state-pas       0.026649 0.026649   2.483630   2.483630
+    update            0.027531 0.027531   2.565830   2.565830
+    second_order_cur  0.026720 0.026720   2.490247   2.490247
+    matrix-solver     0.031381 0.031381   2.924642   2.924642
+    setup_tree_matrix 0.240728 0.483874  22.435335  45.096022
+      cur-IClamp      0.026415 0.026415   2.461821   2.461821
+      cur-hh          0.053054 0.053054   4.944519   4.944519
+      cur-ExpSyn      0.053927 0.053927   5.025881   5.025881
+      cur-k_ion       0.026331 0.026331   2.453993   2.453993
+      cur-na_ion      0.026849 0.026849   2.502269   2.502269
+      cur-pas         0.056570 0.056570   5.272203   5.272203
+    deliver_events    0.057558 0.057558   5.364282   5.364282
+finitialize           0.000655 0.000881   0.061045   0.082107
+  setup_tree_matrix   0.000120 0.000226   0.011184   0.021063
+    cur-hh            0.000022 0.000022   0.002050   0.002050
+    cur-ExpSyn        0.000023 0.000023   0.002144   0.002144
+    cur-IClamp        0.000011 0.000011   0.001025   0.001025
+    cur-k_ion         0.000010 0.000010   0.000932   0.000932
+    cur-na_ion        0.000013 0.000013   0.001212   0.001212
+    cur-pas           0.000027 0.000027   0.002516   0.002516
+```
+
+
+
