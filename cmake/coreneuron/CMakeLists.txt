@@ -135,7 +135,7 @@ if(CORENRN_ENABLE_GPU)
 
   # Set some sensible default CUDA architectures.
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 60 70)
+    set(CMAKE_CUDA_ARCHITECTURES 60 70 80)
     message(STATUS "Setting default CUDA architectures to ${CMAKE_CUDA_ARCHITECTURES}")
   endif()
 
