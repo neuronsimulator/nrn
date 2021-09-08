@@ -173,7 +173,7 @@ To enable a profiler, one needs to rebuild NEURON with the appropriate flags set
 
 ```bash
 mkdir build && cd build
-cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DNRN_ENABLE_TESTS=ON
+cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/share/cmake/caliper -DNRN_ENABLE_TESTS=ON
 make
 ```
 
