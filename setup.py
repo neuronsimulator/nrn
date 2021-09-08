@@ -12,10 +12,11 @@ from setuptools import setup
 
 
 class Components:
-    RX3D = False
-    IV = False
-    MPI = False
-    GPU = True
+    RX3D = True
+    IV = True
+    MPI = True
+    CORENRN = False # still early support
+    GPU = False     # still early support
 
 
 if os.name != "posix":
@@ -57,6 +58,14 @@ if "--disable-iv" in sys.argv:
 if "--disable-mpi" in sys.argv:
     Components.MPI = False
     sys.argv.remove("--disable-mpi")
+
+if "--enable-coreneuron" in sys.argv:
+    Components.CORENRN = True
+    sys.argv.remove("--enable-coreneuron")
+
+if "--enable-gpu" in sys.argv:
+    Components.GPU = True
+    sys.argv.remove("--enable-gpu")
 
 if Components.RX3D:
     try:
@@ -187,8 +196,6 @@ class CMakeAugmentedBuilder(build_ext):
             "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
             "-DPYTHON_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
-            "-DNO_CPP_WARNINGS=ON",
-            "-DNRN_ENABLE_INTERNAL_READLINE=" + readline_flag,
         ] + ext.cmake_flags
         # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
@@ -330,7 +337,7 @@ def setup_package():
             ["src/nrnpython/inithoc.cpp"],
             cmake_collect_dirs=NRN_COLLECT_DIRS,
             cmake_flags=[
-                "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.GPU else "OFF"),
+                "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
@@ -340,14 +347,11 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
-                "-DCXX_NO_WARN=ON",
             ] + ([
                 "-DCORENRN_ENABLE_GPU=ON",
-                "-DCORENRN_ENABLE_MPI=OFF",
-                "-DCMAKE_C_COMPILER=nvc",
+                "-DCORENRN_ENABLE_MPI=OFF", # dynamic MPI support is not added yet
+                "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
                 "-DCMAKE_CXX_COMPILER=nvc++",
-                #"-DCMAKE_C_FLAGS=-static-nvidia",
-                #"-DCMAKE_CXX_FLAGS=-static-nvidia"
             ] if Components.GPU else []),
             include_dirs=[
                 "src",
