@@ -643,13 +643,15 @@ static void* nrnpy_hoc_bool_pop() {
   return (void*) PyBool_FromLong((long) hoc_xpop());
 }
 
-static std::vector<char*> strings_to_free;
-
 static void* fcall(void* vself, void* vargs) {
   PyHocObject* self = (PyHocObject*)vself;
   if (self->ho_) {
     hoc_push_object(self->ho_);
   }
+
+  //TODO: this will still have some memory leaks in case of errors.
+  //      see discussion in https://github.com/neuronsimulator/nrn/pull/1437
+  std::vector<char*> strings_to_free;
 
   int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
   int var_type;
