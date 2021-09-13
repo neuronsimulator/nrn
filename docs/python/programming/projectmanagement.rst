@@ -175,9 +175,9 @@ Mechanisms
 ==========
 
 Mechanisms need to be compiled against the user's installation of NEURON, so don't
-include them in your version control. The mod files can be packaged along with your
-Python source code, and your project's README.md best contains instructions how to
-compile them.
+include the compiled library in your version control. The mod files can be packaged
+along with your Python source code, and your project's README.md best contains
+instructions how to compile them.
 
 Another good practice is to include a check for the compiled library's existence:
 
