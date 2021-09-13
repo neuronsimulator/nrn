@@ -167,8 +167,8 @@ examples are Python's own ``unittest`` module, ``pytest`` and ``tox``. Place tes
 a ``tests`` folder.
 
 Make sure that you test for common mistakes in user input validation and to run a few
-computationally light scaled down versions of your model and validate the output. This
-guarantees that
+computationally light scaled down versions of your model and validate the output. If the
+tests pass you'll be sure that all of the essential parts of your model work as expected.
 
 Coverage
 --------
