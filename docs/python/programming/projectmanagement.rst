@@ -77,6 +77,7 @@ naming <https://www.python.org/dev/peps/pep-0008/#package-and-module-names>`_:
     ⌞mod
     ⌞morphologies
     ⌞__init__.py
+    ⌞__main__.py
     ⌞other_src.py
   ⌞tests
   ⌞pyproject.toml
