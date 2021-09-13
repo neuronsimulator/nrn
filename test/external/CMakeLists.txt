@@ -18,7 +18,14 @@ FetchContent_Declare(
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/testcorenrn
 )
 
-FetchContent_MakeAvailable(ringtest testcorenrn)
+FetchContent_Declare(
+    nrntest
+    GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest
+)
+
+FetchContent_MakeAvailable(ringtest testcorenrn nrntest)
 
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
+add_subdirectory(nrntest)
