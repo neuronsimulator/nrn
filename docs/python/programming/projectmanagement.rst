@@ -20,6 +20,18 @@ Currently the most used version control protocol is `git`. And the most common c
 providers of `git` servers are GitHub, GitLab and BitBucket. See their respective
 documentation and make yourself familiar with creating and managing repositories.
 
+Continuous integration
+======================
+
+Continuous integration is an important step to assure the quality of your model over
+time. It is a collection of steps that is performed every time you update your code, to
+test that all components are working and the quality is up to standards you have set.
+
+Your own software and all of the dependencies that you use (including NEURON) 
+continually change, and these changes can introduce errors that weren't there before.
+Make sure that you set up a continuous integration pipeline with your version control
+provider that executes `testing`_, `coverage`_, `documentation`_ and `formatting`_.
+
 ===============
 Code Guidelines
 ===============
@@ -28,6 +40,8 @@ Modern Python projects follow several well-described standards. The
 `Python Zen <https://www.python.org/dev/peps/pep-0020/#id2>`_ is a farcical collection of
 rules of thumb that can help you assess the clarity of your code. A more
 formal specification can be found in `PEP8 <https://www.python.org/dev/peps/pep-0008/>`_
+
+.. _formatting:
 
 Several automatic linters and formatters exist that can automatically format your code
 every time you commit to your version control. Some examples include `flake8`, 
@@ -151,6 +165,18 @@ Testing
 There are many frameworks available that will run your test suites for you. Some common
 examples are Python's own ``unittest`` module, ``pytest`` and ``tox``. Place tests under
 a ``tests`` folder.
+
+Make sure that you test for common mistakes in user input validation and to run a few
+computationally light scaled down versions of your model and validate the output. This
+guarantees that
+
+Coverage
+--------
+
+Several tools exist, such as `coverage <https://pypi.org/project/coverage/>`_, that will
+analyse how much over the code was actually tested during the testing process. You can
+send these reports to online service providers such as `Codecov.io <https://codecov.io/`_
+to analyse and visualize which parts of your model might still contain errors.
 
 ======
 NEURON
