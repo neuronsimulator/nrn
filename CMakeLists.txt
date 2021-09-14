@@ -533,10 +533,6 @@ include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
 if(NRN_CMAKE_FORMAT OR NRN_CLANG_FORMAT)
-  set(NRN_CMakeFormat_EXCLUDES_RE
-      ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
-      ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
-      CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
   add_subdirectory(external/coding-conventions/cpp)
 endif()
 

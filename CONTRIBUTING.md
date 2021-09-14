@@ -96,19 +96,20 @@ The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.
 
 ### Code Formatting
 
-Currently we have enabled CMake code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format). Before submitting PR, if you have changed any CMake build related code, make sure to run cmake-format as below:
+Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format as below:
 
-* Make sure to install cmake-format utility with Python version you are using:
+* Make sure to install clang-format and cmake-format with Python version you are using:
 
 ```
 pip3.7 install cmake-format==0.6.0 pyyaml --user
+brew install clang-format # or your favorite package manager
 ```
-Now you should have `cmake-format` command available.
+Now you should have the `clang-format` and `cmake-format` commands available.
 
-* Use `-DNEURON_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
+* Use `-DNRN_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
 
 ```
-cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNEURON_CMAKE_FORMAT=ON
+cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
 ```
 
 With this, new target called **cmake-format** can be used to automatically format all CMake files:
@@ -140,6 +141,26 @@ Or,
 ```
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
+
+For `clang-format` you should restrict formatting to only the code parts relevant to your change.
+This can be eachieved by setting following build options:
+
+```
+cmake .. -DNRN_CLANG_FORMAT=ON \
+    -DNRN_CMAKE_FORMAT=ON \
+    -DNRN_FORMATTING_ON="since-ref:master" \
+    -DNRN_FORMATTING_CPP_CHANGES_ONLY=ON
+```
+
+Note: Sometimes it might be necessary to point your build-system to the clang-format-diff utility,
+this can be done by supplying an additional flag:
+`-DClangFormatDiff_EXECUTABLE=/path/to/share/clang/clang-format-diff.py`
+
+You can then run the `clang-format` target after a full build:
+
+```
+make && make clang-format
+```
 
 ## Python Contributions
 
