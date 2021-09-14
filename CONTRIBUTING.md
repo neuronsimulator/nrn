@@ -96,7 +96,7 @@ The [Neuron Development Topics](https://neuronsimulator.github.io/nrn/dev/index.
 
 ### Code Formatting
 
-Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format as below:
+Currently we have enabled CMake and Clang code formatting using [cmake-format](https://github.com/cheshirekow/cmake_format) and [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Before submitting a PR, make sure to run cmake-format and clang-format as below:
 
 * Make sure to install clang-format and cmake-format with Python version you are using:
 
@@ -142,8 +142,8 @@ Or,
 
 See [cmake-format](https://github.com/cheshirekow/cmake_format) documentation for details.
 
-For `clang-format` you should restrict formatting to only the code parts relevant to your change.
-This can be eachieved by setting following build options:
+* For `clang-format` you should restrict formatting to only the code parts relevant to your change.
+  This can be eachieved by setting following build options:
 
 ```
 cmake .. -DNRN_CLANG_FORMAT=ON \
@@ -156,7 +156,7 @@ Note: Sometimes it might be necessary to point your build-system to the clang-fo
 this can be done by supplying an additional flag:
 `-DClangFormatDiff_EXECUTABLE=/path/to/share/clang/clang-format-diff.py`
 
-You can then run the `clang-format` target after a full build:
+* You can then run the `clang-format` target after a full build:
 
 ```
 make && make clang-format
