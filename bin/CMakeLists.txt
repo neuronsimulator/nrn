@@ -35,6 +35,7 @@ include(CMakeListsNrnMech)
 # =============================================================================
 nrn_configure_file(nrngui bin)
 nrn_configure_file(neurondemo bin)
+configure_file(sortspike sortspike COPYONLY)
 nrn_configure_dest_src(nrnivmodl bin/tmp nrnivmodl bin)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
@@ -64,7 +65,7 @@ install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/nrngui ${PROJECT_BINARY_DIR}/bin/neur
                  ${PROJECT_BINARY_DIR}/bin/nrnivmodl DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 install(FILES ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh ${CMAKE_CURRENT_SOURCE_DIR}/sortspike
+install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh ${CMAKE_CURRENT_BINARY_DIR}/sortspike
                  ${CMAKE_CURRENT_SOURCE_DIR}/mkthreadsafe ${CMAKE_CURRENT_SOURCE_DIR}/nrnpyenv.sh
                  ${CMAKE_CURRENT_SOURCE_DIR}/set_nrnpyenv.sh
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
