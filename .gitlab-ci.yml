@@ -62,7 +62,7 @@ test intel:
     # We cloned in .pre
     GIT_STRATEGY: none
 
-build pgi:
+build nvhpc:
   needs: ["setup virtualenv"]
   extends: .common
   stage: build
@@ -71,8 +71,8 @@ build pgi:
     GIT_STRATEGY: none
     bb5_constraint: volta
 
-test pgi:
-  needs: ["build pgi"]
+test nvhpc:
+  needs: ["build nvhpc"]
   extends: .common
   stage: test
   variables:

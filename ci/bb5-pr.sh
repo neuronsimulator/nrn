@@ -5,9 +5,7 @@ set -xe
 git show HEAD
 
 source /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/modules.sh
-module use /gpfs/bbp.cscs.ch/apps/tools/modules/tcl/linux-rhel7-x86_64/
-
-module load archive/2020-10 cmake bison flex python-dev doxygen
+module load archive/2021-08 cmake bison flex python-dev doxygen llvm ninja
 module list
 
 function bb5_pr_setup_virtualenv() {
@@ -16,33 +14,24 @@ function bb5_pr_setup_virtualenv() {
     virtualenv venv
     . venv/bin/activate
     pip3 install "breathe<=4.12.0"
-    pip3 install "cmake-format==0.6.13"
-}
-
-function find_clang_format() {
-    module load llvm
-    clang_format_exe=$(which clang-format)
-    module unload llvm
 }
 
 function build_with() {
     compiler="$1"
     module load $compiler
     . venv/bin/activate
-    find_clang_format
 
     echo "Building NMODL with $compiler"
     module load $compiler
     rm -rf build_$compiler
     mkdir build_$compiler
     pushd build_$compiler
-    cmake .. -DCMAKE_C_COMPILER=$MPICC_CC \
+    cmake .. -G Ninja \
+             -DCMAKE_C_COMPILER=$MPICC_CC \
              -DCMAKE_CXX_COMPILER=$MPICXX_CXX \
              -DPYTHON_EXECUTABLE=$(which python3) \
-             -DNMODL_FORMATTING:BOOL=ON \
-             -DClangFormat_EXECUTABLE=$clang_format_exe \
-             -DLLVM_DIR=/gpfs/bbp.cscs.ch/apps/hpc/jenkins/merge/deploy/externals/latest/linux-rhel7-x86_64/gcc-9.3.0/llvm-11.0.0-kzl4o5/lib/cmake/llvm
-    make -j6
+             -DNMODL_FORMATTING:BOOL=ON
+    cmake --build . --parallel 6
     popd
 }
 
@@ -51,7 +40,7 @@ function test_with() {
     module load $compiler
     . venv/bin/activate
     cd build_$compiler
-    env CTEST_OUTPUT_ON_FAILURE=1 make test
+    env CTEST_OUTPUT_ON_FAILURE=1 cmake --build . --target test
 }
 
 function make_target() {
@@ -59,7 +48,7 @@ function make_target() {
     target=$2
     . venv/bin/activate
     cd build_$compiler
-    make $target
+    cmake --build . --target $target
 }
 
 function bb5_pr_cmake_format() {
@@ -78,8 +67,8 @@ function bb5_pr_build_intel() {
     build_with intel
 }
 
-function bb5_pr_build_pgi() {
-    build_with pgi
+function bb5_pr_build_nvhpc() {
+    build_with nvhpc
 }
 
 function bb5_pr_test_gcc() {
@@ -90,8 +79,8 @@ function bb5_pr_test_intel() {
     test_with intel
 }
 
-function bb5_pr_test_pgi() {
-    test_with pgi
+function bb5_pr_test_nvhpc() {
+    test_with nvhpc
 }
 
 function bb5_pr_build_llvm() {
