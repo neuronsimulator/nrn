@@ -119,10 +119,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // AES-NI Whitepaper by Gueron says that icc has supported AES-NI from
 // 11.1 onwards.
 //
-#if ((__ICC>=1101) && defined(__AES__))
-#define R123_USE_AES_NI 1
+#if defined(__AES__)
+#define R123_USE_AES_NI ((__ICC>=1101) && 1/*defined(__AES__)*/)
 #else
-#define R123_USE_AES_NI 0
+#define R123_USE_AES_NI ((__ICC>=1101) && 0/*defined(__AES__)*/)
 #endif
 #endif
 

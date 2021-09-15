@@ -34,8 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define R123_GNUC_VERSION (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__)
 
-#if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc__) && !defined(__aarch64__)
-#  error "This code has only been tested on x86 and powerpc platforms."
+#if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc__) && !defined(__arm__) && !defined(__aarch64__) && !defined(__s390x__)
+#  error "This code has only been tested on x86, powerpc and a few arm platforms."
 #include <including_a_nonexistent_file_will_stop_some_compilers_from_continuing_with_a_hopeless_task>
 { /* maybe an unbalanced brace will terminate the compilation */
  /* Feel free to try the Random123 library on other architectures by changing
@@ -44,7 +44,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  Please let the authors know of any successes (or failures). */
 #endif
 
-#ifdef __powerpc__
+#if defined(__powerpc__) && !defined(__clang__)
 #include <ppu_intrinsics.h>
 #endif
 
@@ -74,16 +74,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 /* According to the C++0x standard, we should be able to test the numeric
-   value of __cplusplus == 199701L for C++98, __cplusplus == 201103L for C++0x
+   value of __cplusplus == 199701L for C++98, __cplusplus == 201103L for C++11
    But gcc has had an open bug  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=1773
    since early 2001, which was finally fixed in 4.7 (early 2012).  For
    earlier versions, the only way  to detect whether --std=c++0x was requested
    on the command line is to look at the __GCC_EXPERIMENTAL_CXX0X__ pp-symbol.
 */
-#if (__cplusplus>=201103L || (R123_GNUC_VERSION<40700 && defined(__GCC_EXPERIMENTAL_CXX0X__) ))
-#define GNU_CXX11 1
+#if defined(__GCC_EXPERIMENTAL_CXX0X__)
+#define GNU_CXX11 (__cplusplus>=201103L || (R123_GNUC_VERSION<40700 && 1/* defined(__GCC_EXPERIMENTAL_CXX0X__) */))
 #else
-#define GNU_CXX11 0
+#define GNU_CXX11 (__cplusplus>=201103L || (R123_GNUC_VERSION<40700 && 0/* defined(__GCC_EXPERIMENTAL_CXX0X__) */))
 #endif
 
 #ifndef R123_USE_CXX11_UNRESTRICTED_UNIONS
@@ -154,7 +154,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_GNU_UINT128
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 #define R123_USE_GNU_UINT128 1
 #else
 #define R123_USE_GNU_UINT128 0
@@ -162,12 +162,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_ASM_GNU
-/* avoid "macro expansion producing 'defined' has undefined behavior */
 #if (defined(__x86_64__)||defined(__i386__))
 #define R123_USE_ASM_GNU 1
 #else
-#define R123_USE_ASM_GNU 0
-#endif
+#define R123_USE_ASM_GNU 1
+#endif    
 #endif
 
 #ifndef R123_USE_CPUID_MSVC
@@ -175,11 +174,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifndef R123_USE_X86INTRIN_H
-/* avoid "macro expansion producing 'defined' has undefined behavior */
-#if ((defined(__x86_64__)||defined(__i386__)) && R123_GNUC_VERSION >= 40402)
-#define R123_USE_X86INTRIN_H 1
+#if (defined(__x86_64__)||defined(__i386__))
+#define R123_USE_X86INTRIN_H (1/* (defined(__x86_64__)||defined(__i386__)) */  && R123_GNUC_VERSION >= 40402)
 #else
-#define R123_USE_X86INTRIN_H 0
+#define R123_USE_X86INTRIN_H (0/* (defined(__x86_64__)||defined(__i386__)) */  && R123_GNUC_VERSION >= 40402)
 #endif
 #endif
 
@@ -216,10 +214,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define R123_USE_MULHILO32_ASM 0
 #endif
 
-#ifndef R123_USE_MULHILO64_ASM
-#define R123_USE_MULHILO64_ASM 0
-#endif
-
 #ifndef R123_USE_MULHILO64_MSVC_INTRIN
 #define R123_USE_MULHILO64_MSVC_INTRIN 0
 #endif
@@ -238,6 +232,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
 #define R123_USE_MULHILO64_MULHI_INTRIN 0
 #endif
+#endif
+
+#ifndef R123_USE_MULHILO64_ASM
+/* Shouldn't we use asm for mulhilo64 when the #ifdefs above haven't
+   chosen something else?  Everything about the mulhilo64
+   implementation is so fragile and difficult to test that I'm
+   reluctant to make this change without a compelling reason, but this
+   seems preferable to just turning off USE_MULHILO64_ASM.
+ 
+#define R123_USE_MULHILO64_ASM (R123_USE_ASM_GNU && (!R123_USE_GNU_UINT128) && (!R123_USE_MULHILO64_CUDA_INTRIN) && (!R123_USE_MULHILO64_MULHI_INTRIN) && (!R123_USE_MULHILO64_OPENCL_INTRIN) && (!R123_USE_MULHILO64_MSVC_INTRIN))
+*/
+#define R123_USE_MULHILO64_ASM 0
+#endif
+
+#if defined(__powerpc__) && defined(__clang__)
+#ifdef __powerpc64__
+static inline unsigned long long __mulhdu(unsigned long long a, unsigned long long b) {
+  __uint128_t c = (__uint128_t) a * (__uint128_t) b;
+  return c >> 64;
+}
+#endif
+
+static inline unsigned int __mulhwu(unsigned int a, unsigned int b) {
+  unsigned long long c = (unsigned long long) a * (unsigned long long) b;
+  return c >> 32;
+}
 #endif
 
 #ifndef R123_MULHILO64_MULHI_INTRIN

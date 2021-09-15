@@ -116,7 +116,7 @@ R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, Word* hip){       \
 /* N.B.  This really should be called _mulhilo_mulhi_intrin.  It just
    happens that CUDA was the first time we used the idiom. */
 #define _mulhilo_cuda_intrin_tpl(W, Word, INTRIN)                       \
-R123_CUDA_DEVICE R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, Word* hip){ \
+R123_CUDA_DEVICE R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, R123_METAL_THREAD_ADDRESS_SPACE Word* hip){ \
     *hip = INTRIN(a, b);                                                \
     return a*b;                                                         \
 }
@@ -125,17 +125,19 @@ R123_CUDA_DEVICE R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, Word* hip){ 
 // A template for mulhilo using only word-size operations and
 // C99 operators (no adc, no mulhi).  It
 // requires four multiplies and a dozen or so shifts, adds
-// and tests.  It's not clear what this is good for, other than
-// completeness.  On 32-bit platforms, it could be used to
+// and tests.  It's *SLOW*.  It can be used to
+// implement philoxNx32 on platforms that completely lack
+// 64-bit types, e.g., Metal.  
+// On 32-bit platforms, it could be used to
 // implement philoxNx64, but on such platforms both the philoxNx32
 // and the threefryNx64 cbrngs are going to have much better
 // performance.  It is enabled below by R123_USE_MULHILO64_C99,
-// but that is currently (Sep 2011) not set by any of the
-// features/XXfeatures.h headers.  It can, of course, be
+// but that is currently (Feb 2019) only set by 
+// features/metalfeatures.h headers.  It can, of course, be
 // set with a compile-time -D option.
 */
 #define _mulhilo_c99_tpl(W, Word) \
-R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, Word *hip){ \
+R123_STATIC_INLINE Word mulhilo##W(Word a, Word b, R123_METAL_THREAD_ADDRESS_SPACE Word *hip){ \
     const unsigned WHALF = W/2;                                    \
     const Word LOMASK = ((((Word)1)<<WHALF)-1);                    \
     Word lo = a*b;               /* full low multiply */           \
@@ -178,7 +180,13 @@ _mulhilo_asm_tpl(32, uint32_t, "mulhwu")
 _mulhilo_asm_tpl(32, uint32_t, "mull")
 #endif /* __powerpc__ */
 #else
+#if R123_USE_64BIT
 _mulhilo_dword_tpl(32, uint32_t, uint64_t)
+#elif R123_USE_MULHILO32_MULHI_INTRIN
+_mulhilo_cuda_intrin_tpl(32, uint32_t, R123_MULHILO32_MULHI_INTRIN)
+#else
+_mulhilo_c99_tpl(32, uint32_t)
+#endif
 #endif
 
 #if R123_USE_PHILOX_64BIT
@@ -250,6 +258,7 @@ _mulhilo_fail_tpl(64, uint64_t)
 #define PHILOX_W32_1 ((uint32_t)0xBB67AE85)
 #endif
 
+/** \endcond */
 #ifndef PHILOX2x32_DEFAULT_ROUNDS
 #define PHILOX2x32_DEFAULT_ROUNDS 10
 #endif
@@ -265,6 +274,7 @@ _mulhilo_fail_tpl(64, uint64_t)
 #ifndef PHILOX4x64_DEFAULT_ROUNDS
 #define PHILOX4x64_DEFAULT_ROUNDS 10
 #endif
+/** \cond HIDDEN_FROM_DOXYGEN */
 
 /* The ignored fourth argument allows us to instantiate the
    same macro regardless of N. */
@@ -301,6 +311,7 @@ R123_CUDA_DEVICE R123_STATIC_INLINE struct r123array2x##W _philox4x##W##bumpkey(
     return key;                                                         \
 }
 
+/** \endcond */
 #define _philoxNxW_tpl(N, Nhalf, W, T)                         \
 /** @ingroup PhiloxNxW */                                       \
 enum r123_enum_philox##N##x##W { philox##N##x##W##_rounds = PHILOX##N##x##W##_DEFAULT_ROUNDS }; \
@@ -332,9 +343,9 @@ R123_CUDA_DEVICE R123_STATIC_INLINE philox##N##x##W##_ctr_t philox##N##x##W##_R(
          
 _philox2xWbumpkey_tpl(32)
 _philox4xWbumpkey_tpl(32)
-_philox2xWround_tpl(32, uint32_t) /* philo2x32round */
+_philox2xWround_tpl(32, uint32_t) /* philox2x32round */
 _philox4xWround_tpl(32, uint32_t)            /* philo4x32round */
-/** \endcond */
+
 _philoxNxW_tpl(2, 1, 32, uint32_t)    /* philox2x32bijection */
 _philoxNxW_tpl(4, 2, 32, uint32_t)    /* philox4x32bijection */
 #if R123_USE_PHILOX_64BIT
@@ -355,10 +366,7 @@ _philoxNxW_tpl(4, 2, 64, uint64_t)    /* philox4x64bijection */
 #define philox4x64(c,k) philox4x64_R(philox4x64_rounds, c, k)
 #endif /* R123_USE_PHILOX_64BIT */
 
-#ifdef __cplusplus
-#include <stdexcept>
-
-/** \cond HIDDEN_FROM_DOXYGEN */
+#if defined(__cplusplus) 
 
 #define _PhiloxNxW_base_tpl(CType, KType, N, W)                         \
 namespace r123{                                                          \
@@ -367,7 +375,7 @@ struct Philox##N##x##W##_R{                                             \
     typedef CType ctr_type;                                         \
     typedef KType key_type;                                             \
     typedef KType ukey_type;                                         \
-    static const unsigned int rounds=ROUNDS;                                 \
+    static const R123_METAL_CONSTANT_ADDRESS_SPACE unsigned int rounds=ROUNDS;				\
     inline R123_CUDA_DEVICE R123_FORCE_INLINE(ctr_type operator()(ctr_type ctr, key_type key) const){ \
         R123_STATIC_ASSERT(ROUNDS<=16, "philox is only unrolled up to 16 rounds\n"); \
         return philox##N##x##W##_R(ROUNDS, ctr, key);                       \
@@ -375,7 +383,6 @@ struct Philox##N##x##W##_R{                                             \
 };                                                                      \
 typedef Philox##N##x##W##_R<philox##N##x##W##_rounds> Philox##N##x##W; \
  } // namespace r123
-/** \endcond */
 
 _PhiloxNxW_base_tpl(r123array2x32, r123array1x32, 2, 32) // Philox2x32_R<R>
 _PhiloxNxW_base_tpl(r123array4x32, r123array2x32, 4, 32) // Philox4x32_R<R>

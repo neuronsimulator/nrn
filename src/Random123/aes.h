@@ -137,6 +137,35 @@ struct aesni1xm128i_key_t{
         aesni1xm128iexpand(uk128, k);
         return *this;
     }
+    bool operator==(const aesni1xm128i_key_t& rhs) const{
+        for(int i=0; i<11; ++i){
+            // Sigh... No r123m128i(__m128i) constructor!
+            r123m128i li; li.m = k[i];
+            r123m128i ri; ri.m = rhs.k[i];
+            if( li != ri ) return false;
+        }
+        return true;
+    }
+    bool operator!=(const aesni1xm128i_key_t& rhs) const{
+        return !(*this == rhs);
+    }
+    friend std::ostream& operator<<(std::ostream& os, const aesni1xm128i_key_t& v){
+        r123m128i ki;
+        for(int i=0; i<10; ++i){
+            ki.m = v.k[i];
+            os << ki << " ";
+        }
+        ki.m = v.k[10];
+        return os << ki;
+    }
+    friend std::istream& operator>>(std::istream& is, aesni1xm128i_key_t& v){
+        r123m128i ki;
+        for(int i=0; i<11; ++i){
+            is >> ki;
+            v.k[i] = ki;
+        }
+        return is;
+    }
 };
 #else
 typedef struct { 
@@ -284,6 +313,7 @@ struct AESNI4x32_R : public AESNI4x32{
 #endif /* R123_USE_AES_NI */
 
 #if R123_USE_AES_OPENSSL
+#include "string.h"
 #include <openssl/aes.h>
 typedef struct r123array16x8 aesopenssl16x8_ctr_t;
 typedef struct r123array16x8 aesopenssl16x8_ukey_t;
@@ -300,6 +330,30 @@ struct aesopenssl16x8_key_t{
     aesopenssl16x8_key_t& operator=(const aesopenssl16x8_ukey_t& ukey){
         AES_set_encrypt_key((const unsigned char *)&ukey.v[0], 128, &k);
         return *this;
+    }
+    bool operator==(const aesopenssl16x8_key_t& rhs) const{
+        return (k.rounds == rhs.k.rounds) && 0==::memcmp(&k.rd_key[0], &rhs.k.rd_key[0], (k.rounds+1) * 4 * sizeof(uint32_t));
+    }
+    bool operator!=(const aesopenssl16x8_key_t& rhs) const{
+        return !(*this == rhs);
+    }
+    friend std::ostream& operator<<(std::ostream& os, const aesopenssl16x8_key_t& v){
+        os << v.k.rounds;
+        const unsigned int *p = &v.k.rd_key[0];
+        for(int i=0; i<(v.k.rounds+1); ++i){
+            os << " " << p[0] << " " << p[1] << " " << p[2] << " " << p[3];
+            p += 4;
+        }
+        return os;
+    }
+    friend std::istream& operator>>(std::istream& is, aesopenssl16x8_key_t& v){
+        is >> v.k.rounds;
+        unsigned int *p = &v.k.rd_key[0];
+        for(int i=0; i<(v.k.rounds+1); ++i){
+            is >> p[0] >> p[1] >> p[2] >> p[3];
+            p += 4;
+        }
+        return is;
     }
 };
 #else

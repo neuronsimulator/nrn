@@ -34,9 +34,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "features/compilerfeatures.h"
 #include "features/sse.h"
 
-#ifndef __cplusplus
+#if !defined(__cplusplus) || defined(__METAL_MACOS__)
 #define CXXMETHODS(_N, W, T)
 #define CXXOVERLOADS(_N, W, T)
+#define CXXMETHODS_REQUIRING_STL
 #else
 
 #include <stddef.h>
@@ -49,8 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /** @defgroup arrayNxW The r123arrayNxW classes 
 
     Each of the r123arrayNxW is a fixed size array of N W-bit unsigned integers.
-    It is functionally equivalent to the C++0x std::array<N, uintW_t>,
-    but does not require C++0x features or libraries.
+    It is functionally equivalent to the C++11 std::array<N, uintW_t>,
+    but does not require C++11 features or libraries.
 
     In addition to meeting most of the requirements of a Container,
     it also has a member function, incr(), which increments the zero-th
@@ -60,10 +61,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     If SSE is supported by the compiler, then the class
     r123array1xm128i is also defined, in which the data member is an
-    array of one r123128i object.
+    array of one r123m128i object.
 
-    @cond HIDDEN_FROM_DOXYGEN
+    When compiling with __CUDA_ARCH__ defined, the reverse iterator
+    methods (rbegin, rend, crbegin, crend) are not defined because
+    CUDA does not support std::reverse_iterator.
+
 */
+
+/** @cond HIDDEN_FROM_DOXYGEN */
 
 template <typename value_type>
 inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
@@ -72,6 +78,26 @@ inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
         v |= ((value_type)(*p32++)) << (32*i);
     return v;
 }
+
+/** @endcond */
+
+#ifdef __CUDA_ARCH__
+/* CUDA can't handle std::reverse_iterator.  We *could* implement it
+   ourselves, but let's not bother until somebody really feels a need
+   to reverse-iterate through an r123array */
+#define CXXMETHODS_REQUIRING_STL
+#else
+#define  CXXMETHODS_REQUIRING_STL \
+    public: \
+    typedef std::reverse_iterator<iterator> reverse_iterator;           \
+    typedef std::reverse_iterator<const_iterator> const_reverse_iterator; \
+    R123_CUDA_DEVICE reverse_iterator rbegin(){ return reverse_iterator(end()); }                         \
+    R123_CUDA_DEVICE const_reverse_iterator rbegin() const{ return const_reverse_iterator(end()); } \
+    R123_CUDA_DEVICE reverse_iterator rend(){ return reverse_iterator(begin()); }        \
+    R123_CUDA_DEVICE const_reverse_iterator rend() const{ return const_reverse_iterator(begin()); } \
+    R123_CUDA_DEVICE const_reverse_iterator crbegin() const{ return const_reverse_iterator(cend()); } \
+    R123_CUDA_DEVICE const_reverse_iterator crend() const{ return const_reverse_iterator(cbegin()); } 
+#endif
 
 // Work-alike methods and typedefs modeled on std::array:
 #define CXXMETHODS(_N, W, T)                                            \
@@ -84,8 +110,6 @@ inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
     typedef ptrdiff_t difference_type;                                  \
     typedef T* pointer;                                                 \
     typedef const T* const_pointer;                                     \
-    typedef std::reverse_iterator<iterator> reverse_iterator;           \
-    typedef std::reverse_iterator<const_iterator> const_reverse_iterator; \
     /* Boost.array has static_size.  C++11 specializes tuple_size */    \
     enum {static_size = _N};                                            \
     R123_CUDA_DEVICE reference operator[](size_type i){return v[i];}                     \
@@ -101,12 +125,6 @@ inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
     R123_CUDA_DEVICE const_iterator end() const { return &v[_N]; }                       \
     R123_CUDA_DEVICE const_iterator cbegin() const { return &v[0]; }                     \
     R123_CUDA_DEVICE const_iterator cend() const { return &v[_N]; }                      \
-    R123_CUDA_DEVICE reverse_iterator rbegin(){ return reverse_iterator(end()); }        \
-    R123_CUDA_DEVICE const_reverse_iterator rbegin() const{ return const_reverse_iterator(end()); } \
-    R123_CUDA_DEVICE reverse_iterator rend(){ return reverse_iterator(begin()); }        \
-    R123_CUDA_DEVICE const_reverse_iterator rend() const{ return const_reverse_iterator(begin()); } \
-    R123_CUDA_DEVICE const_reverse_iterator crbegin() const{ return const_reverse_iterator(cend()); } \
-    R123_CUDA_DEVICE const_reverse_iterator crend() const{ return const_reverse_iterator(cbegin()); } \
     R123_CUDA_DEVICE pointer data(){ return &v[0]; }                                     \
     R123_CUDA_DEVICE const_pointer data() const{ return &v[0]; }                         \
     R123_CUDA_DEVICE reference front(){ return v[0]; }                                   \
@@ -199,8 +217,9 @@ protected:                                                              \
         }                                                               \
         return *this;                                                   \
     }                                                                   \
-    
-                                                                        
+
+/** @cond HIDDEN_FROM_DOXYGEN */
+
 // There are several tricky considerations for the insertion and extraction
 // operators:
 // - we would like to be able to print r123array16x8 as a sequence of 16 integers,
@@ -248,6 +267,7 @@ struct r123arrayextractable<uint8_t>{
         return is;
     }
 };
+/** @endcond */
 
 #define CXXOVERLOADS(_N, W, T)                                          \
                                                                         \
@@ -291,20 +311,29 @@ namespace r123{                                                        \
 struct r123array##_N##x##W{                         \
  T v[_N];                                       \
  CXXMETHODS(_N, W, T)                           \
+ CXXMETHODS_REQUIRING_STL                       \
 };                                              \
                                                 \
 CXXOVERLOADS(_N, W, T)
 
-/** @endcond */
 
+#if defined(__CUDACC__)
+/* Disable complaints from CUDA8 and C++ */
+#pragma diag_suppress = code_is_unreachable
+#endif
 _r123array_tpl(1, 32, uint32_t)  /* r123array1x32 */
 _r123array_tpl(2, 32, uint32_t)  /* r123array2x32 */
 _r123array_tpl(4, 32, uint32_t)  /* r123array4x32 */
 _r123array_tpl(8, 32, uint32_t)  /* r123array8x32 */
 
+#if R123_USE_64BIT
 _r123array_tpl(1, 64, uint64_t)  /* r123array1x64 */
 _r123array_tpl(2, 64, uint64_t)  /* r123array2x64 */
 _r123array_tpl(4, 64, uint64_t)  /* r123array4x64 */
+#endif
+#if defined(__CUDACC__)
+#pragma diag_default = code_is_unreachable
+#endif
 
 _r123array_tpl(16, 8, uint8_t)  /* r123array16x8 for ARSsw, AESsw */
 

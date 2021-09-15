@@ -54,12 +54,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // a couple of things and then include either gccfeatures.h
 // or msvcfeatures.h
 
+//#ifdef  __CUDA_ARCH__ allows Philox32 and Philox64 to be compiled
+//for both device and host functions in CUDA by setting compiler flags
+//for the device function
+#ifdef  __CUDA_ARCH__
 #ifndef R123_CUDA_DEVICE
 #define R123_CUDA_DEVICE __device__
 #endif
 
 #ifndef R123_USE_MULHILO64_CUDA_INTRIN
 #define R123_USE_MULHILO64_CUDA_INTRIN 1
+#endif
+
+#ifndef R123_THROW
+// No exceptions in CUDA, at least upto 4.0
+#define R123_THROW(x)    R123_ASSERT(0)
 #endif
 
 #ifndef R123_ASSERT
@@ -96,12 +105,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define R123_ULONG_LONG unsigned long long
 #endif
 
-#ifndef R123_THROW
-// No exceptions in CUDA, at least upto 4.0
-#define R123_THROW(x)    R123_ASSERT(0)
-#endif
+#else // ! __CUDA_ARCH__
 
-#if defined(__GNUC__)
+// If we're using nvcc, but not compiling for the CUDA architecture,
+// then we must be compiling for the host.  But host-compilation might
+// use gcc, msvc, or xlc.  This #else/#endif used to be higher up,
+// mistakenly turning off all kinds of things the host that are really
+// problematic only in device code.  It's not clear that we need to do
+// anything special for host-code that we wouldn't otherwise do in
+// xlcfeatures, gccfeatures or msvcfeatures.  But if we do, this is
+// the place to do it.
+
+#endif // __CUDA_ARCH__
+
+#if defined(__xlC__) || defined(__ibmxl__)
+#include "xlcfeatures.h"
+#elif defined(__GNUC__)
 #include "gccfeatures.h"
 #elif defined(_MSC_FULL_VER)
 #include "msvcfeatures.h"

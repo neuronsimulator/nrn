@@ -90,7 +90,7 @@ R123_STATIC_INLINE int haveAESNI(){
 // R123_USE_feature tests for each of these in each of the
 // compilerfeatures.h files we just keep the complexity localized
 // to here...
-#if (defined(__ICC) && __ICC<1210) || (defined(_MSC_VER) && !defined(_WIN64))
+#if (defined(__ICC) && __ICC<1210) || (defined(_MSC_VER) && !defined(_WIN64) && _MSC_VER < 1900)
 /* Is there an intrinsic to assemble an __m128i from two 64-bit words? 
    If not, use the 4x32-bit intrisic instead.  N.B.  It looks like Intel
    added _mm_set_epi64x to icc version 12.1 in Jan 2012.
@@ -159,12 +159,12 @@ struct r123m128i{
     r123m128i& operator=(const __m128i& rhs){ m=rhs; return *this;}
     r123m128i& operator=(R123_ULONG_LONG n){ m = _mm_set_epi64x(0, n); return *this;}
 #if R123_USE_CXX11_EXPLICIT_CONVERSIONS
-    // With C++0x we can attach explicit to the bool conversion operator
+    // With C++11 we can attach explicit to the bool conversion operator
     // to disambiguate undesired promotions.  For g++, this works
     // only in 4.5 and above.
     explicit operator bool() const {return _bool();}
 #else
-    // Pre-C++0x, we have to do something else.  Google for the "safe bool"
+    // Pre-C++11, we have to do something else.  Google for the "safe bool"
     // idiom for other ideas...
     operator const void*() const{return _bool()?this:0;}
 #endif
@@ -209,7 +209,7 @@ R123_STATIC_INLINE r123m128i& operator+=(r123m128i& lhs, R123_ULONG_LONG n){
 
     int64_t lo64 = _mm_extract_lo64(c);
     if((uint64_t)lo64 < n)
-        c = _mm_add_epi64(c, _mm_set_epi64x(1,0));
+        c = _mm_add_epi64(c, _mm_set_epi64x(R123_64BIT(1),R123_64BIT(0)));
     lhs.m = c;
     return lhs; 
 }
