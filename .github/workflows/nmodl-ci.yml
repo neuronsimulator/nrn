@@ -15,24 +15,18 @@ on:
       - release/**
 
 env:
-  BUILD_TYPE: Release
-  DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
+  CTEST_PARALLEL_LEVEL: 1
+  CMAKE_BUILD_PARALLEL_LEVEL: 3
   DEFAULT_PY_VERSION: 3.8
   DESIRED_CMAKE_VERSION: 3.15.0
 
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
-
     name: ${{ matrix.os }}
-
-    env:
-      INSTALL_DIR: install
-      SDK_ROOT: $(xcrun --sdk macosx --show-sdk-path)
-
     strategy:
       matrix:
-        os: [ ubuntu-18.04, macOS-10.15 ]
+        os: [ ubuntu-18.04, macos-10.15, ubuntu-20.04, macos-11 ]
       fail-fast: true
 
     steps:
@@ -45,13 +39,13 @@ jobs:
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
-          brew install coreutils bison flex boost openmpi
+          brew install ccache coreutils bison boost clang-format flex ninja
         shell: bash
 
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get install flex bison dvipng libfl-dev python3-dev python3-pip
+          sudo apt-get install bison ccache flex libfl-dev ninja-build python3-dev python3-pip
         shell: bash
 
       - name: Set up Python3
@@ -63,36 +57,74 @@ jobs:
        
       - name: Install Python3 dependencies
         run: |
-          pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest 'sympy>=1.3'
+          pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest \
+            'sympy>=1.3' 'cmake-format==0.6.13'
           
       - uses: actions/checkout@v2
-        
-      - name: Build and Test
-        id: build-test
+
+      - name: Configure
         shell: bash
         working-directory: ${{runner.workspace}}/nmodl
         run:  |
-          if [[ "${{ startsWith(matrix.os, 'macOS') }}" = "true" ]]; then
-              export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH;
-              export CXX=g++;
-              export CC=gcc;
+          echo "------- Configure -------"
+          if [[ "${{ startsWith(matrix.os, 'macos') }}" = "true" ]]; then
+            export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:${PATH}
           fi
-          if [[ "${{ startsWith(matrix.os, 'ubuntu') }}" = "true" ]]; then
-              export CXX=c++;
-              export CC=cc;
-          fi
-          echo "------- Build, Test and Install -------"
           mkdir build && pushd build
-          cmake .. -DPYTHON_EXECUTABLE=$(which python3) -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-          make;
-          if [ $? -ne 0 ]; then
-            make VERBOSE=1;
-          fi
-          ctest -VV
-          make install
-         
+          cmake .. -G Ninja \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DPYTHON_EXECUTABLE=$(which python3) \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+            -DNMODL_FORMATTING:BOOL=ON
         env:
           INSTALL_DIR: ${{ runner.workspace }}/install
+
+      - name: Formatting
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        run:  |
+          echo "------- Check formatting -------"
+          status=0 # Check both clang and cmake formatting before exiting.
+          if ! cmake --build . --target check-cmake-format; then status=1; fi
+          if ! cmake --build . --target check-clang-format; then status=1; fi
+          exit ${status}
+
+      - name: Restore compiler cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{runner.workspace}}/ccache
+          key: ${{matrix.os}}-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ${{matrix.os}}-${{github.ref}}-
+            ${{matrix.os}}-
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        env:
+          CCACHE_DIR: ${{runner.workspace}}/ccache
+        run:  |
+          echo "------- Building -------"
+          ccache -z
+          ccache -s
+          cmake --build .
+          ccache -s
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        run:  |
+          echo "------- Testing -------"
+          ctest --output-on-failure
+
+      - name: Install
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        run:  |
+          echo "------- Installing -------"
+          cmake --build . --target install
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To trigger it, simply add 'live-debug-tests' to your last pushed commit message
