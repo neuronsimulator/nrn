@@ -335,7 +335,9 @@ def parse_args(args=None):
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--clang-format", help="Path to clang-format executable")
-    parser.add_argument("--clang-format-opts", help="clang-format options", nargs="+")
+    parser.add_argument(
+        "--clang-format-opts", help="clang-format options", action="append"
+    )
     parser.add_argument("--base-dir", help="output root directory")
     parser.add_argument(
         "-v", "--verbosity", action="count", default=0, help="increase output verbosity"
