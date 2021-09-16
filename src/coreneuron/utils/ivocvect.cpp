@@ -26,9 +26,12 @@ void* vector_new1(int n) {
     return (void*) (new IvocVect(n));
 }
 
+#pragma acc routine seq
 int vector_capacity(void* v) {
     return ((IvocVect*) v)->size();
 }
+
+#pragma acc routine seq
 double* vector_vec(void* v) {
     return ((IvocVect*) v)->data();
 }
