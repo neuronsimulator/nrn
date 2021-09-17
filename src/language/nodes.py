@@ -344,16 +344,13 @@ class ChildNode(BaseNode):
                           * \\brief Erase member to {self.varname}
                           */
                          {self.class_name}Vector::const_iterator {parent.class_name}::erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first) {{
-                            auto first_it = const_iter_cast({self.varname}, first);
-                            return {self.varname}.erase(first_it);
+                            return {self.varname}.erase(first);
                          }}
                          /**
                           * \\brief Erase members to {self.varname}
                           */
                          {self.class_name}Vector::const_iterator {parent.class_name}::erase_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator first, {self.class_name}Vector::const_iterator last) {{
-                            auto first_it = const_iter_cast({self.varname}, first);
-                            auto last_it = const_iter_cast({self.varname}, last);
-                            return {self.varname}.erase(first_it, last_it);
+                            return {self.varname}.erase(first, last);
                          }}
                          /**
                           * \\brief Erase non-consecutive members to {self.varname}
@@ -386,8 +383,7 @@ class ChildNode(BaseNode):
                           */
                          {self.class_name}Vector::const_iterator {parent.class_name}::insert_{to_snake_case(self.class_name)}({self.class_name}Vector::const_iterator position, const std::shared_ptr<{self.class_name}>& n) {{
                              {set_parent}
-                            auto pos_it = const_iter_cast({self.varname}, position);
-                            return {self.varname}.insert(pos_it, n);
+                            return {self.varname}.insert(position, n);
                          }}
 
                          /**
@@ -435,10 +431,7 @@ class ChildNode(BaseNode):
                              //set parents
                              {set_parent}
                           }}
-                         auto pos_it = const_iter_cast({self.varname}, position);
-                         auto first_it = const_iter_cast(to, first);
-                         auto last_it = const_iter_cast(to, last);
-                         {self.varname}.insert(pos_it, first_it, last_it);
+                         {self.varname}.insert(position, first, last);
                      }}
                   """
             s = textwrap.dedent(method)

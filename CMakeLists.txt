@@ -12,7 +12,7 @@ project(NMODL LANGUAGES CXX)
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
@@ -88,7 +88,11 @@ add_external_project(eigen OFF)
 
 add_subdirectory(${THIRD_PARTY_DIRECTORY}/fmt EXCLUDE_FROM_ALL)
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-
+if(NMODL_PGI_COMPILER)
+  # "format.cc", warning #128-D: loop is not reachable
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ext/fmt/src/format.cc
+                              PROPERTIES COMPILE_FLAGS "--diag_suppress=128")
+endif()
 include_directories(
   SYSTEM ${THIRD_PARTY_DIRECTORY} ${THIRD_PARTY_DIRECTORY}/catch/include
   ${THIRD_PARTY_DIRECTORY}/fmt/include ${THIRD_PARTY_DIRECTORY}/spdlog/include

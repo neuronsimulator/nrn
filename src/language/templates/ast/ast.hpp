@@ -29,8 +29,6 @@
 #include "utils/common_utils.hpp"
 #include "visitors/visitor.hpp"
 
-using nmodl::utils::const_iter_cast;
-
 namespace nmodl {
 namespace ast {
 
