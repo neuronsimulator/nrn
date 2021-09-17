@@ -121,18 +121,11 @@ foreach(
   testunitlexer
   testunitparser)
 
-  if(${CMAKE_VERSION} VERSION_GREATER "3.10")
-    if(${test_name} STREQUAL "testvisitor")
-      catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
-                           "${testvisitor_env}")
-    else()
-      catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/")
-    endif()
+  if(${test_name} STREQUAL "testvisitor")
+    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
+                         "${testvisitor_env}")
   else()
-    add_test(NAME ${test_name} COMMAND ${test_name})
-    if(${test_name} STREQUAL "testvisitor")
-      set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${testvisitor_env}")
-    endif()
+    catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/")
   endif()
 endforeach()
 

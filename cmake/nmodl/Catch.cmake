@@ -133,26 +133,11 @@ function(catch_discover_tests TARGET)
     "if(EXISTS \"${ctest_tests_file}\")\n" "  include(\"${ctest_tests_file}\")\n" "else()\n"
     "  add_test(${TARGET}_NOT_BUILT-${args_hash} ${TARGET}_NOT_BUILT-${args_hash})\n" "endif()\n")
 
-  if(NOT ${CMAKE_VERSION} VERSION_LESS "3.10.0")
-    # Add discovered tests to directory TEST_INCLUDE_FILES
-    set_property(
-      DIRECTORY
-      APPEND
-      PROPERTY TEST_INCLUDE_FILES "${ctest_include_file}")
-  else()
-    # Add discovered tests as directory TEST_INCLUDE_FILE if possible
-    get_property(
-      test_include_file_set
-      DIRECTORY
-      PROPERTY TEST_INCLUDE_FILE
-      SET)
-    if(NOT ${test_include_file_set})
-      set_property(DIRECTORY PROPERTY TEST_INCLUDE_FILE "${ctest_include_file}")
-    else()
-      message(FATAL_ERROR "Cannot set more than one TEST_INCLUDE_FILE")
-    endif()
-  endif()
-
+  # Add discovered tests to directory TEST_INCLUDE_FILES
+  set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY TEST_INCLUDE_FILES "${ctest_include_file}")
 endfunction()
 
 #

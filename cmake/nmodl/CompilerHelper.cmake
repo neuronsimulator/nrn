@@ -1,16 +1,7 @@
-# minimal check for c++11 compliant gnu compiler
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
-  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-  if(NOT (GCC_VERSION VERSION_GREATER 4.8.2 OR GCC_VERSION VERSION_EQUAL 4.8.2))
-    message(FATAL_ERROR "${PROJECT_NAME} requires g++ >= 4.8.2 (for C++11 support)")
-  endif()
-endif()
-
 if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
   set(NMODL_PGI_COMPILER TRUE)
 
   # CMake adds standard complaint PGI flag "-A" which breaks compilation of of spdlog and fmt
-  set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
 
   # ~~~
