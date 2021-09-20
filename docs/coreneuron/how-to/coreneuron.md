@@ -13,7 +13,7 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * Random123 shall be used if a random generator is needed (instead of MCellRan4)
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
-For compatibility purposes, please make sure to refer to [non supported NEURON features list](../non_supported_features.md).
+For compatibility purposes, please make sure to refer to [non supported NEURON features list](../non_supported_features.rst).
 
 ## Build Dependencies
 * Bison
