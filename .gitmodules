@@ -16,6 +16,3 @@
 [submodule "external/backward"]
 	path = external/backward
 	url = https://github.com/bombela/backward-cpp.git
-[submodule "external/tests/channel-benchmark"]
-	path = external/tests/channel-benchmark
-	url = git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
