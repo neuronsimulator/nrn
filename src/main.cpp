@@ -109,6 +109,9 @@ int main(int argc, const char* argv[]) {
     /// true if global variables to be converted to range
     bool nmodl_global_to_range(false);
 
+    /// true if top level local variables to be converted to range
+    bool nmodl_local_to_range(false);
+
     /// true if localize variables even if verbatim block is used
     bool localize_verbatim(false);
 
@@ -218,6 +221,9 @@ int main(int argc, const char* argv[]) {
     passes_opt->add_flag("--global-to-range",
          nmodl_global_to_range,
          "Convert GLOBAL variables to RANGE ({})"_format(nmodl_global_to_range))->ignore_case();
+    passes_opt->add_flag("--local-to-range",
+         nmodl_local_to_range,
+         "Convert top level LOCAL variables to RANGE ({})"_format(nmodl_local_to_range))->ignore_case();
     passes_opt->add_flag("--localize-verbatim",
         localize_verbatim,
         "Convert RANGE variables to LOCAL even if verbatim block exist ({})"_format(localize_verbatim))->ignore_case();
@@ -345,7 +351,7 @@ int main(int argc, const char* argv[]) {
         }
 
         /// LOCAL to ASSIGNED visitor
-        {
+        if (nmodl_local_to_range) {
             logger->info("Running LOCAL to ASSIGNED visitor");
             PerfVisitor().visit_program(*ast);
             LocalToAssignedVisitor().visit_program(*ast);
