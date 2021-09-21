@@ -331,7 +331,7 @@ PlotShape
 
         ``ps.plot(pyplot).mark(h.soma[0](0.5)).mark(h.apical_dendrite[68](1))``
 
-        ``plt.show``
+        ``plt.show()``
 
     Description:
         Above syntax is allowed in NEURON 7.7+, for older versions:
