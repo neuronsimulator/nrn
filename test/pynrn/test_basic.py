@@ -365,7 +365,7 @@ if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    test_deleted_sec()
+    result = test_deleted_sec()
     test_disconnect()
     h.topology()
     h.allobjects()
