@@ -360,6 +360,9 @@ def test_disconnect():
     expect_err("h.disconnect(sl[2])")
     expect_err("h.delete_section(sl[2])")
 
+    del sl
+    locals()
+
 
 if __name__ == "__main__":
     set_quiet(False)
