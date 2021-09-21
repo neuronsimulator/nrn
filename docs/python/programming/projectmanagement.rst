@@ -136,7 +136,14 @@ and morphologies you can use the ``include_package_data`` and ``package_data`` k
           ]
       },
   )
-
+  
+.. note:: There is a 60MB package size limit on PyPI. Also GitHub limits single files
+  to 125MB. Do not include large datasets in your Python package or git repository.
+  Find alternative hosting providers for scientific data like `ModelDB
+  <https://senselab.med.yale.edu/ModelDB/>`_ or the `EBRAINS Knowledge Graph
+  <https://kg.ebrains.eu/>`. Use your ``.gitignore`` file to exclude large files in
+  your repository.
+  
 =============
 Documentation
 =============
