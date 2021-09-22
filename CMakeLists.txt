@@ -599,7 +599,7 @@ if(NRN_ENABLE_TESTS)
     elseif(NOT PYTEST_COV_FOUND)
       message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
-  else() # share/demo still required for testing
+  else()  # share/demo still required for testing
     add_custom_target(copy_demo_to_build
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo ${NRN_BUILD_SHARE_DIR}/demo
             COMMENT "Copying ${PROJECT_SOURCE_DIR}/share/demo to ${NRN_BUILD_SHARE_DIR}"
