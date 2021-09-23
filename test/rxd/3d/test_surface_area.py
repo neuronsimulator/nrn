@@ -1,6 +1,4 @@
-import pytest
 import numpy
-from math import pi
 
 
 def test_surface_area(neuron_instance):
@@ -20,12 +18,11 @@ def test_surface_area(neuron_instance):
     h.finitialize(-65)
 
     # true surface area
-    sa = 1.5*pi
-    
+    sa = 1.5 * numpy.pi
+
     areas = numpy.array(ca.nodes.surface_area)
     # surface area 0.9 to 1.1 of true value
-    assert(abs(1-sum(areas)/sa) <= 0.1) 
+    assert abs(1 - sum(areas) / sa) <= 0.1
 
     # not surface nodes have zero surface area
-    assert(not any(areas[r._surface_nodes_by_seg[0]]==0))
-
+    assert not any(areas[r._surface_nodes_by_seg[0]] == 0)
