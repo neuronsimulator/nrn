@@ -21,8 +21,9 @@ def test_surface_area(neuron_instance):
     sa = 1.5 * numpy.pi
 
     areas = numpy.array(ca.nodes.surface_area)
-    # surface area 0.9 to 1.1 of true value
+
+    # check surface area is 0.9 to 1.1 of the true value
     assert abs(1 - sum(areas) / sa) <= 0.1
 
-    # not surface nodes have zero surface area
+    # check all surface nodes have non-zero surface area
     assert not any(areas[r._surface_nodes_by_seg[0]] == 0)
