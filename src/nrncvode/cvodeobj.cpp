@@ -697,6 +697,7 @@ Cvode::Cvode() {
 	cvode_constructor();
 }
 void Cvode::cvode_constructor() {
+	MUTCONSTRUCT(1)
 	nthsizes_ = nil;
 	nth_ = nil;
 	ncv_ = nil;
