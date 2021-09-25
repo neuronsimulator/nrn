@@ -5,6 +5,7 @@
 
 #include "mymath.h"
 #include "tqueue.h"
+#include <vector>
 
 struct NrnThread;
 class PreSyn;
@@ -22,7 +23,11 @@ class IvocVect;
 class BAMechList;
 class MaxStateTable;
 class HTList;
-class HTListList;
+// nrn_nthread vectors of HTList* for fixed step method
+// Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
+// Interior vector needed because of the chance of local variable time step.
+//   Practically it will always have length <= 1.
+typedef std::vector<std::vector<HTList*> > HTListList;
 class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
@@ -201,7 +206,7 @@ public:
 	void set_CVRhsFn();
 	bool use_partrans();
 	hoc_Item* psl_; //actually a hoc_List
-	HTListList* wl_list_; // for faster deliver_net_events when many cvode
+	HTListList wl_list_; // nrn_nthread of these for faster deliver_net_events when many cvode
 	int pcnt_;
 	NetCvodeThreadData* p;
 	int enqueueing_;
