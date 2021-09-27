@@ -134,7 +134,7 @@ Here is how to enable it:
 ```
 cmake ... -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="-O0 -fno-inline -g -fsanitize=thread" -DCMAKE_CXX_FLAGS="-O0 -fno-inline -g -fsanitize=thread" ..
 ```
-You can then target a specific test, i.e. `ctest -VV -R ringtest` and have a look at the generated output, for example:
+You can then target a specific test, i.e. `ctest -VV -R test_name` and have a look at the generated output, for example:
 ```
 94: WARNING: ThreadSanitizer: data race (pid=2572)
 94:   Read of size 8 at 0x7b3c00000bf0 by thread T1:
