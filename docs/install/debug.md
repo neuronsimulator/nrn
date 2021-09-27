@@ -163,8 +163,6 @@ You can then target a specific test, i.e. `ctest -VV -R ringtest` and have a loo
 ```
 
 
-
-
 Profiling and performance benchmarking
 --------------------------------------
 
