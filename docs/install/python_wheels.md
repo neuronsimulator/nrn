@@ -3,7 +3,7 @@
 
 ## Linux wheels
 
-In order to have NEURON binaries run on most Linux distros, we are relying on the [manylinux project](https://github.com/pypa/manylinux).
+In order to have NEURON binaries run on most Linux distros, we rely on the [manylinux project](https://github.com/pypa/manylinux).
 Current NEURON Linux image is based on `manylinux2014`.
 
 ### Setting up Docker
@@ -41,7 +41,7 @@ docker build -t neuronsimulator/neuron_wheel:<tag> .
 ```
 where `<tag>` is:
 * `latest` for official publishing (after merging related PR)
-* `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it)
+* `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to `Job: 'ManyLinuxWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 ### Pushing to DockerHub
 
@@ -63,18 +63,18 @@ Status: Downloaded newer image for neuronsimulator/neuron_wheel:latest
 docker.io/neuronsimulator/neuron_wheel:latest
 ```
 
-We can conveniently mount the local neuron repository inside docker, by using the `-v` option:
+We can conveniently mount the local NEURON repository inside docker, by using the `-v` option:
 
 ```
 docker run -v /home/user/nrn:/root/nrn -it neuronsimulator/neuron_wheel bash
 ```
-where `/home/user/nrn` is a neuron repository on the host machine that ends up mounted at `/root/nrn`.
+where `/home/user/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
 This is how you can test your NEURON updates inside the NEURON Docker image.
 
 
 ## macOS wheels
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
-In order to have the wheels working on multiple macOS target versions, special consideration must be mad for MACOSX_DEPLOYMENT_TARGET.
+In order to have the wheels working on multiple macOS target versions, special consideration must be made for MACOSX_DEPLOYMENT_TARGET.
 
 Taking Azure macOS wheels for example, `readline` has been manually built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
 See [packaging/python/Dockerfile](../../packaging/python/Dockerfile) for readline build instructions.
@@ -82,9 +82,9 @@ See [packaging/python/Dockerfile](../../packaging/python/Dockerfile) for readlin
 ## Launch the wheel building
 
 ### Linux
-Once we are inside docker container, we can start building wheels. 
-There is a build script which loops over available pythons in the Docker image under `/opt/python`, build and audit the generated wheels.
-Wheels are generated under `/root/nrn/wheelhouse` and also accessible from outside the Docker image (c.f. -v option).
+Once we've cloned and mounted NEURON inside Docker(c.f. `-v` option described previously), we can proceed with wheels building. 
+There is a build script which loops over available pythons in the Docker image under `/opt/python`, and then builds and audits the generated wheels.
+Wheels are generated under `/root/nrn/wheelhouse` and also accessible in the mounted NEURON folder from outside the Docker image.
 
 ```
 cd /root/nrn
