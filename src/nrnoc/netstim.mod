@@ -46,7 +46,7 @@ VERBATIM
 
 /*
    1 means noiseFromRandom was called when _ran_compat was previously 0 .
-   2 means noiseFromRandom123 was called when _ran_compart was previously 0.
+   2 means noiseFromRandom123 was called when _ran_compat was previously 0.
 */
 static int _ran_compat; /* specifies the noise style for all instances */
 #define IFNEWSTYLE(arg) if(_ran_compat == 2) { arg }
@@ -121,6 +121,8 @@ VERBATIM
 double nrn_random_pick(void* r);
 void* nrn_random_arg(int argpos);
 int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+int nrn_random123_setseq(void* r, uint32_t seq, char which);
+int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
 #endif
 ENDVERBATIM
 
@@ -226,9 +228,8 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 				fprintf(stderr, "NetStim: Random123 generator is required\n");
 				assert(0);
 			}
-                        // Assume an unpicked stream.
-			di[3] = 0;
-			di[4] = 0;
+			nrn_random123_getseq(*pv, di+3, &which);
+			di[4] = (int)which;
 		}else{
 #else
     {
@@ -244,32 +245,42 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 }
 
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
-	/*assert(!_p_donotuse);*/
+	if (!noise) { return; }
         /* Generally, CoreNEURON, in the context of psolve, begins with
            an empty model so this call takes place in the context of a freshly
-           created instance. Hence the assert above. However, this function
+           created instance and _p_donotuse is not NULL.
+	   However, this function
            is also now called from NEURON at the end of coreneuron psolve
-           in order to transfer back the nrnran123 sequence state, so that
-           we can continue with a subsequent psolve within NEURON or
+           in order to transfer back the nrnran123 sequence state. That
+           allows continuation with a subsequent psolve within NEURON or
            properly transfer back to CoreNEURON if we continue the psolve
            there. So now, extra logic is needed for this call to work in
-           a NEURON context. Note: although we assume _ran_compat == 2,
-           we could deal with _ran_compat == 1 with a couple extra line.
+           a NEURON context.
         */
-	if (noise) {
-		uint32_t* di = ((uint32_t*)d) + *offset;
-		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
-#if !NRNBBCORE
-		assert(_ran_compat == 2);
-		if (*pv) {
-			nrnran123_deletestream(*pv);
-		}		
-#endif
-		*pv = nrnran123_newstream3(di[0], di[1], di[2]);
-		nrnran123_setseq(*pv, di[3], (char)di[4]);
+
+	uint32_t* di = ((uint32_t*)d) + *offset;
+#if NRNBBCORE
+	nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+	assert(!_p_donotuse);
+	*pv = nrnran123_newstream3(di[0], di[1], di[2]);
+	nrnran123_setseq(*pv, di[3], (char)di[4]);
+#else
+	uint32_t id1, id2, id3;
+	assert(_p_donotuse);
+	if (_ran_compat == 1) { /* Hoc Random.Random123 */
+		void** pv = (void**)(&_p_donotuse);
+		int b = nrn_random_isran123(*pv, &id1, &id2, &id3);
+		assert(b);
+		nrn_random123_setseq(*pv, di[3], (char)di[4]);
 	}else{
-		return;
+		assert(_ran_compat == 2);
+		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+		nrnran123_getids3(*pv, &id1, &id2, &id3);
+		nrnran123_setseq(*pv, di[3], (char)di[4]);
 	}
+        /* Random123 on NEURON side has same ids as on CoreNEURON side */
+	assert(di[0] == id1 && di[1] == id2 && di[2] == id3);
+#endif
 	*offset += 5;
 }
 ENDVERBATIM
@@ -334,7 +345,7 @@ VERBATIM
     if (*xdir == 1) {
       nrnran123_setseq(*pv, (uint32_t)xval[0], (char)xval[1]);
     }
-  } // else do nothing
+  } /* else do nothing */
 ENDVERBATIM
 }
 
