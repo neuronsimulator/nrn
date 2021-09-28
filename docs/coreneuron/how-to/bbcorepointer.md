@@ -1,5 +1,5 @@
-
-## Transferring dynamically allocated data between NEURON and CoreNEURON
+## BBCOREPOINTER
+### Transferring dynamically allocated data between NEURON and CoreNEURON
 
 
 User-allocated data can be managed in NMODL using the `POINTER` type. It allows the
