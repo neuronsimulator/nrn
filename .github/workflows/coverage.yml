@@ -13,10 +13,11 @@ on:
     branches:
       - master
       - release/**
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
 
 env:
   PY_MIN_VERSION: 3.6
