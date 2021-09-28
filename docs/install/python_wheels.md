@@ -98,7 +98,7 @@ bash packaging/python/build_wheels.bash linux 3.8
 ```
 
 ### macOS
-For OSX on a system with the all dependencies you have to clone NEURON repository and have to do:
+As mentioned above, for macOS all dependencies have to be available on a system. You have to then clone NEURON repository and execute:
 
 ```
 cd nrn
@@ -110,6 +110,6 @@ bash packaging/python/build_wheels.bash osx
 To test the generated wheels, you can do:
 
 ```
-# first arg as python exe and second arg as a corresponding wheel
+# first arg is a python exe and second arg is the corresponding wheel
 bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-cp38-macosx_10_9_x86_64.whl
 ```
