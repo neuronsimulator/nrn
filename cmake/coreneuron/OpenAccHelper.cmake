@@ -64,7 +64,6 @@ if(CORENRN_ENABLE_GPU)
     string(APPEND NVHPC_ACC_COMP_FLAGS ",cc${compute_capability}")
   endforeach()
   # avoid PGI adding standard compliant "-A" flags
-  set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
   string(APPEND CMAKE_CXX_FLAGS " ${NVHPC_ACC_COMP_FLAGS} ${PGI_DIAG_FLAGS}")
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${NVHPC_ACC_LINK_FLAGS}")
