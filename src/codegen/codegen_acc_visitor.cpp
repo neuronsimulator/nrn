@@ -172,6 +172,29 @@ void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
     }
 }
 
+/**
+ * `INITIAL` block from `NET_RECEIVE` generates `net_init` function. The `net_init`
+ * function pointer is registered with the coreneuron and called from the CPU.
+ * As the data is on GPU, we need to launch `net_init` on the GPU.
+ *
+ * \todo: With the current code structure for NMODL and MOD2C, we use `serial`
+ *        construct to launch serial kernels. This is during initialization
+ *        but still inefficient. This should be improved when we drop MOD2C.
+ */
+void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_begin() {
+    if (!info.artificial_cell) {
+        printer->add_line("#pragma acc serial present(inst, indexes, weights) if(nt->compute_gpu)");
+        printer->add_line("{");
+        printer->increase_indent();
+    }
+}
+
+void CodegenAccVisitor::print_net_init_acc_serial_annotation_block_end() {
+    if (!info.artificial_cell) {
+        printer->add_line("}");
+        printer->decrease_indent();
+    }
+}
 
 void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
@@ -288,14 +311,23 @@ void CodegenAccVisitor::print_device_stream_wait() const {
 
 
 void CodegenAccVisitor::print_net_send_buf_count_update_to_host() const {
-    print_device_stream_wait();
     printer->add_line("#pragma acc update self(nsb->_cnt) if(nt->compute_gpu)");
+}
+
+
+void CodegenAccVisitor::print_net_send_buf_update_to_host() const {
+    print_device_stream_wait();
+    printer->start_block("if (nsb)");
+    print_net_send_buf_count_update_to_host();
+    printer->add_line("update_net_send_buffer_on_host(nt, nsb);");
+    printer->end_block(1);
 }
 
 
 void CodegenAccVisitor::print_net_send_buf_count_update_to_device() const {
     printer->add_line("#pragma acc update device(nsb->_cnt) if (nt->compute_gpu)");
 }
+
 
 void CodegenAccVisitor::print_dt_update_to_device() const {
     printer->add_line("#pragma acc update device({}) if (nt->compute_gpu)"_format(

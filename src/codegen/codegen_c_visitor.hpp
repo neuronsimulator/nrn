@@ -1104,6 +1104,11 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      */
     virtual void print_net_send_buf_count_update_to_host() const;
 
+    /**
+     * Print the code to update NetSendBuffer_t from device to host
+     */
+    virtual void print_net_send_buf_update_to_host() const;
+
 
     /**
      * Print the code to update NetSendBuffer_t count from host to device
@@ -1306,6 +1311,18 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Print matching block end of accelerator annotations for data presence on device
      */
     virtual void print_kernel_data_present_annotation_block_end();
+
+
+    /**
+     * Print accelerator kernels begin annotation for net_init kernel
+     */
+    virtual void print_net_init_acc_serial_annotation_block_begin();
+
+
+    /**
+     * Print accelerator kernels end annotation for net_init kernel
+     */
+    virtual void print_net_init_acc_serial_annotation_block_end();
 
 
     /**
