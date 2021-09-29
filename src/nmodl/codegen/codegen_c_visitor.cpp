@@ -1061,6 +1061,10 @@ void CodegenCVisitor::print_net_send_buf_count_update_to_host() const {
     // backend specific, do nothing
 }
 
+void CodegenCVisitor::print_net_send_buf_update_to_host() const {
+    // backend specific, do nothing
+}
+
 void CodegenCVisitor::print_net_send_buf_count_update_to_device() const {
     // backend specific, do nothing
 }
@@ -1096,6 +1100,13 @@ void CodegenCVisitor::print_kernel_data_present_annotation_block_end() {
     // backend specific, do nothing
 }
 
+void CodegenCVisitor::print_net_init_acc_serial_annotation_block_begin() {
+    // backend specific, do nothing
+}
+
+void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
+    // backend specific, do nothing
+}
 
 /**
  * \details Depending programming model and compiler, we print compiler hint
@@ -3655,6 +3666,10 @@ void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need
         printer->add_line("NrnThread* nt = nrn_threads + tid;");
         printer->add_line("Memb_list* ml = nt->_ml_list[pnt->_type];");
     }
+    if (node.is_initial_block()) {
+        print_kernel_data_present_annotation_block_begin();
+    }
+
     printer->add_line("{}int nodecount = ml->nodecount;"_format(param_type_qualifier()));
     printer->add_line("{}int pnodecount = ml->_nodecount_padded;"_format(param_type_qualifier()));
     printer->add_line("double* data = ml->data;");
@@ -3663,6 +3678,10 @@ void CodegenCVisitor::print_net_receive_common_code(const Block& node, bool need
     printer->add_line("ThreadDatum* thread = ml->_thread;");
     if (need_mech_inst) {
         printer->add_line("{0}* inst = ({0}*) ml->instance;"_format(instance_struct()));
+    }
+
+    if (node.is_initial_block()) {
+        print_net_init_acc_serial_annotation_block_begin();
     }
 
     // rename variables but need to see if they are actually used
@@ -3817,6 +3836,12 @@ void CodegenCVisitor::print_net_init() {
     } else {
         print_net_receive_common_code(*node);
         print_statement_block(*block, false, false);
+        if (node->is_initial_block()) {
+            print_net_init_acc_serial_annotation_block_end();
+            print_kernel_data_present_annotation_block_end();
+            printer->add_line("auto& nsb = ml->_net_send_buffer;");
+            print_net_send_buf_update_to_host();
+        }
     }
     printer->end_block(1);
     codegen = false;
@@ -3826,8 +3851,7 @@ void CodegenCVisitor::print_net_init() {
 void CodegenCVisitor::print_send_event_move() {
     printer->add_newline();
     printer->add_line("NetSendBuffer_t* nsb = ml->_net_send_buffer;");
-    print_net_send_buf_count_update_to_host();
-    printer->add_line("update_net_send_buffer_on_host(nt, nsb);");
+    print_net_send_buf_update_to_host();
     printer->add_line("for (int i=0; i < nsb->_cnt; i++) {");
     printer->add_line("    int type = nsb->_sendtype[i];");
     printer->add_line("    int tid = nt->id;");
