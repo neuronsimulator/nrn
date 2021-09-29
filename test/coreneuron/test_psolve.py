@@ -64,13 +64,18 @@ def test_psolve():
 
 def test_NetStim_noise():
     # Can use noiseFromRandom
+    use_noiseFromRandom123 = False
+
     cells = {gid:(h.NetStim(), h.Random()) for gid in range(pc.id(), 5, pc.nhost())}
     for gid, cell in cells.items():
         pc.set_gid2node(gid, pc.id())
         pc.cell(gid,  h.NetCon(cell[0], None))
         cell[1].Random123(gid, 2, 3)
         cell[1].negexp(1)
-        cell[0].noiseFromRandom(cell[1])
+        if use_noiseFromRandom123:
+            cell[0].noiseFromRandom123(gid, 2, 3)
+        else:
+            cell[0].noiseFromRandom(cell[1])
         cell[0].interval = gid + 1
         cell[0].number = 100
         cell[0].start = 0
@@ -114,6 +119,8 @@ if __name__ == "__main__":
     try:
         test_psolve()
         test_NetStim_noise()
+        for i in range(0):
+            test_NetStim_noise() # for checking memory leak
     except:
         traceback.print_exc()
         # Make the CTest test fail

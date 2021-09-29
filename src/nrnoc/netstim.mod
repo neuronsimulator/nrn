@@ -209,6 +209,23 @@ VERBATIM
 ENDVERBATIM
 }
 
+DESTRUCTOR {
+VERBATIM
+	if (!noise) { return; }
+	if (_p_donotuse) {
+#if NRNBBCORE
+		{ /* but note that mod2c does not translate DESTRUCTOR */
+#else
+		if (_ran_compat == 2) {
+#endif
+			nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+			nrnran123_deletestream(*pv);
+			*pv = (nrnran123_State*)0;
+		}
+	}
+ENDVERBATIM
+}
+
 VERBATIM
 static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_) {
 	if (!noise) { return; }
@@ -218,7 +235,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 		assert(0);
 	}
 	if (d) {
-                char which;
+		char which;
 		uint32_t* di = ((uint32_t*)d) + *offset;
 #if !NRNBBCORE
 		if (_ran_compat == 1) {
@@ -238,6 +255,11 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 			nrnran123_getids3(*pv, di, di+1, di+2);
 			nrnran123_getseq(*pv, di+3, &which);
 			di[4] = (int)which;
+#if NRNBBCORE
+			/* CORENeuron does not call DESTRUCTOR so... */
+			nrnran123_deletestream(*pv);
+                        *pv = (nrnran123_State*)0;
+#endif
 		}
 		/*printf("Netstim bbcore_write %d %d %d\n", di[0], di[1], di[3]);*/
 	}
@@ -246,7 +268,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
 	if (!noise) { return; }
-        /* Generally, CoreNEURON, in the context of psolve, begins with
+	/* Generally, CoreNEURON, in the context of psolve, begins with
            an empty model so this call takes place in the context of a freshly
            created instance and _p_donotuse is not NULL.
 	   However, this function
@@ -328,6 +350,7 @@ FUNCTION bbsavestate() {
   bbsavestate = 0
   : limited to noiseFromRandom123
 VERBATIM
+#if !NRNBBCORE
   if (_ran_compat == 2) {
     nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
     if (!*pv) { return 0.0; }
@@ -346,6 +369,7 @@ VERBATIM
       nrnran123_setseq(*pv, (uint32_t)xval[0], (char)xval[1]);
     }
   } /* else do nothing */
+#endif
 ENDVERBATIM
 }
 
