@@ -1,33 +1,10 @@
 include:
   - project: hpc/gitlab-pipelines
-    file: github-project-pipelines.gitlab-ci.yml
+    file:
+      - spack-build-components.gitlab-ci.yml
+      - github-project-pipelines.gitlab-ci.yml
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
-
-stages:
-  - .pre
-  - build
-  - linters
-  - test
-
-.common:
-  tags: [bb5]
-  script: ci/bb5-pr.sh
-  variables:
-    # Just run everything in the same, persistent, directory.
-    bb5_build_dir: pipeline
-
-setup virtualenv:
-  extends: .common
-  stage: .pre
-  before_script:
-    - export
-  variables:
-    # This might pull in more than needed, but it should be enough to allow the
-    # two build jobs to run in parallel safely. Otherwise they will race each
-    # other to lazily update the submodules during the CMake phase, which can
-    # cause errors.
-    GIT_SUBMODULE_STRATEGY: recursive
 
 trigger cvf:
   stage: .pre
@@ -46,51 +23,46 @@ trigger cvf:
     # Make the NMODL CI status depend on the CVF CI status
     strategy: depend
 
-build intel:
-  needs: ["setup virtualenv"]
-  extends: .common
-  stage: build
+.spack_nmodl:
   variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
+    SPACK_PACKAGE: nmodl
+    SPACK_PACKAGE_SPEC: ~legacy-unit+python
 
-test intel:
-  needs: ["build intel"]
-  extends: .common
-  stage: test
+spack_setup:
+  extends: .spack_setup_ccache
   variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
+    # Enable fetching GitHub PR descriptions and parsing them to find out what
+    # branches to build of other projects.
+    PARSE_GITHUB_PR_DESCRIPTIONS: "true"
 
-build nvhpc:
-  needs: ["setup virtualenv"]
-  extends: .common
-  stage: build
+build:intel:
+  extends:
+    - .spack_build
+    - .spack_nmodl
   variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
-    bb5_constraint: volta
+    SPACK_PACKAGE_COMPILER: intel
 
-test nvhpc:
-  needs: ["build nvhpc"]
-  extends: .common
-  stage: test
+build:nvhpc:
+  extends:
+    - .spack_build
+    - .spack_nmodl
   variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
+    SPACK_PACKAGE_COMPILER: nvhpc
+    SPACK_PACKAGE_DEPENDENCIES: ^bison%gcc^flex%gcc^py-jinja2%gcc^py-sympy%gcc^py-pyyaml%gcc
 
-cmake format:
-  extends: .common
-  stage: linters
-  needs: ["build intel"]
+.nmodl_tests:
   variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
+    # https://github.com/BlueBrain/nmodl/issues/737
+    bb5_ntasks: 1
 
-clang format:
-  extends: .common
-  stage: linters
-  needs: ["build intel"]
-  variables:
-    # We cloned in .pre
-    GIT_STRATEGY: none
+test:intel:
+  extends:
+    - .ctest
+    - .nmodl_tests
+  needs: ["build:intel"]
+
+test:nvhpc:
+  extends:
+    - .ctest
+    - .nmodl_tests
+  needs: ["build:nvhpc"]
