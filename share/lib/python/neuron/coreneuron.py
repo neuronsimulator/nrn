@@ -2,7 +2,7 @@
 enable = False  # Use CoreNEURON when calling ParallelContext.psolve(tstop).
 gpu = False  # Activate GPU computation.
 file_mode = False  # Run via file transfer mode instead of in-memory transfer
-cell_permute = 1  # 0 no permutation; 1 optimize node adjacency
+cell_permute = 0  # 0 no permutation; 1 optimize node adjacency
 # 2 optimize parent node adjacency (only for gpu = True)
 warp_balance = 0  # Number of warps to balance. (0 no balance)
 verbose = 2  # 0 quiet, 1 Error, 2 Info, 3 Debug
@@ -19,8 +19,10 @@ def property_check(tstop):
     enable = bool(int(enable))
     gpu = bool(gpu)
     cell_permute = int(cell_permute)
+    if gpu and cell_permute < 1:
+        cell_permute = 1  # set cell_permute to 1 by default for gpu exec
     assert cell_permute in range(3)
-    assert cell_permute in (range(3) if gpu else range(2))
+    assert cell_permute in ([1, 2] if gpu else [0, 1])
     warp_balance = int(warp_balance)
     assert warp_balance >= 0
     verbose = int(verbose)
