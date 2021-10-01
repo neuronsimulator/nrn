@@ -102,9 +102,10 @@ void register_target_type(ReportConfiguration& report, ReportType report_type) {
     }
 }
 
-std::vector<ReportConfiguration> create_report_configurations(const std::string& conf_file,
-                                                              const std::string& output_dir,
-                                                              std::string& spikes_population_name) {
+std::vector<ReportConfiguration> create_report_configurations(
+    const std::string& conf_file,
+    const std::string& output_dir,
+    std::vector<std::pair<std::string, int>>& spikes_population_name_offset) {
     std::vector<ReportConfiguration> reports;
     std::string report_on;
     int target;
@@ -157,8 +158,26 @@ std::vector<ReportConfiguration> create_report_configurations(const std::string&
         }
         reports.push_back(report);
     }
+    // read population information for spike report
+    int num_populations;
+    std::string spikes_population_name;
+    int spikes_population_offset;
+    if (isdigit(report_conf.peek())) {
+        report_conf >> num_populations;
+    } else {
+        // support old format: one single line "All"
+        num_populations = 1;
+    }
+    for (int i = 0; i < num_populations; i++) {
+        if (!(report_conf >> spikes_population_name >> spikes_population_offset)) {
+            // support old format: one single line "All"
+            report_conf >> spikes_population_name;
+            spikes_population_offset = 0;
+        }
+        spikes_population_name_offset.emplace_back(
+            std::make_pair(spikes_population_name, spikes_population_offset));
+    }
 
-    report_conf >> spikes_population_name;
     return reports;
 }
 }  // namespace coreneuron

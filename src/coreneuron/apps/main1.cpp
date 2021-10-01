@@ -481,7 +481,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     std::vector<ReportConfiguration> configs;
     std::vector<std::unique_ptr<ReportHandler>> report_handlers;
-    std::string spikes_population_name;
+    std::vector<std::pair<std::string, int>> spikes_population_name_offset;
     bool reports_needs_finalize = false;
 
     if (!corenrn_param.is_quiet()) {
@@ -496,7 +496,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     if (!corenrn_param.reportfilepath.empty()) {
         configs = create_report_configurations(corenrn_param.reportfilepath,
                                                corenrn_param.outpath,
-                                               spikes_population_name);
+                                               spikes_population_name_offset);
         reports_needs_finalize = configs.size();
     }
 
@@ -600,7 +600,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     // write spike information to outpath
     {
         Instrumentor::phase p("output-spike");
-        output_spikes(output_dir.c_str(), spikes_population_name);
+        output_spikes(output_dir.c_str(), spikes_population_name_offset);
     }
 
     // copy weights back to NEURON NetCon
