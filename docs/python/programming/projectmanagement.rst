@@ -2,7 +2,7 @@
 
 .. note:: This document contains some best practices regarding project management.
   Adhering to these principles drastically increases the future value of your
-  project to the neuroscience community. Reproducability, replicability,
+  project to the neuroscience community. Reproducibility, replicability,
   transparency and understandability are key pillars of good science.
 
 ##################
@@ -45,8 +45,7 @@ formal specification can be found in `PEP8 <https://www.python.org/dev/peps/pep-
 
 Several automatic linters and formatters exist that can automatically format your code
 every time you commit to your version control. Some examples include `flake8`, 
-`autopep8` and `black`. The latter is used by NEURON itself to format its Python source
-code.
+`autopep8` and `black`. The latter has been used to format NEURON's Python source code.
 
 A good model can be used and adapted by others with minimal understanding of the code
 itself. Your code should be organized as a proper library with modules and functions.
@@ -212,7 +211,7 @@ include the compiled library in your version control. The mod files can be packa
 along with your Python source code, and your project's README.md best contains
 instructions how to compile them.
 
-Another good practice is to include a check for the compiled library's existence:
+Another good practice is to include a check for the compiled library's existence. For example, on `x86_64` UNIX platforms, you could:
 
 .. code-block:: python
 
@@ -221,14 +220,8 @@ Another good practice is to include a check for the compiled library's existence
   this_dir = os.path.dirname(__file__)
   lib = os.path.join(this_dir, "mod", "x86_64", "libnrnmech.so"))
   assert os.path.exists(lib), "Mechanism library not found, please compile it."
-  
-.. note:: This check only works on UNIX distributions
+
 
 Another option is to use community developed tools such as `Glia 
 <https://pypi.org/project/nrn-glia/>`_ to manage mod files.
 
-Morphologies
-============
-
-Morphology files can be packaged along with the source code as shown in 
-`Python Packaging`_.
