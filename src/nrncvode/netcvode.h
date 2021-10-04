@@ -27,7 +27,7 @@ class HTList;
 // Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
 // Interior vector needed because of the chance of local variable time step.
 //   Practically it will always have length <= 1.
-typedef std::vector<std::vector<HTList*> > HTListList;
+using HTListList = std::vector<std::vector<HTList*>>;
 class NetCvode;
 class MaxStateItem;
 class CvodeThreadData;
