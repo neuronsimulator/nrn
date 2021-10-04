@@ -1,4 +1,4 @@
-# Using CoreNEURON with NEURON
+# How to use CoreNEURON
 
 [CoreNEURON](https://github.com/BlueBrain/CoreNeuron) is a compute engine for the NEURON simulator optimised for both memory usage and computational speed on modern CPU/GPU architectures. The goals of CoreNEURON are:
 
@@ -13,6 +13,8 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * Random123 shall be used if a random generator is needed (instead of MCellRan4)
 * POINTER variables need to be converted to BBCOREPOINTER ([details here](bbcorepointer.md))
 
+For compatibility purposes, please make sure to refer to [non supported NEURON features list](../non_supported_features.rst).
+
 ## Build Dependencies
 * Bison
 * Flex
@@ -22,7 +24,7 @@ CoreNEURON is designed as a library within the NEURON simulator and can transpar
 * [PGI Compiler / NVIDIA HPC SDK](https://developer.nvidia.com/hpc-sdk) [Optional, for GPU support]
 * [CUDA Toolkit >=9.0](https://developer.nvidia.com/cuda-downloads) [Optional, for GPU support]
 
-#### Choosing Compiler
+#### Compiler Selection
 
 CoreNEURON relies on compiler [auto-vectorisation](https://en.wikipedia.org/wiki/Automatic_vectorization) to achieve better performance on moder CPUs.
 With this release we recommend compilers like **Intel / PGI / Cray  Compiler**.
