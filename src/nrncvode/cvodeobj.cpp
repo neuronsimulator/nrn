@@ -29,6 +29,17 @@ extern int hoc_return_type_code;
 static MUTDEC
 #endif
 
+// Use of the above static mutex was broken by changeset 7ffd95c in 2014
+// when a MUTDEC was added explicitly to the NetCvode class namespace to
+// handle interthread send events.
+static void static_mutex_for_at_time(bool b) {
+    if (b) {
+        MUTCONSTRUCT(1)
+    } else {
+        MUTDESTRUCT
+    }
+}
+
 //I have no idea why this is necessary
 // but it stops codewarrior from complaining
 // about illegal overloading in math.h
@@ -1032,9 +1043,13 @@ void Cvode::free_cvodemem() {
 
 void NetCvode::set_CVRhsFn() {
 	MUTDESTRUCT
+        static_mutex_for_at_time(false);
 	if (single_) {
 		pf_ = f_gvardt;
-		if (nrn_nthread > 1) { MUTCONSTRUCT(1) }
+		if (nrn_nthread > 1) {
+			MUTCONSTRUCT(1)
+		        static_mutex_for_at_time(true);
+		}
 	}else{
 		pf_ = f_lvardt;
 	}
