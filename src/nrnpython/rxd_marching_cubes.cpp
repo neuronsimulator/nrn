@@ -338,7 +338,7 @@ void vi(double* p1, double* p2, double v1, double v2, double* out) {
     out[2] = p1[2] + mu * (p2[2] - p1[2]);
 }
 
-extern "C" int find_triangles(double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out) {
+extern "C" int find_triangles(double thresh, double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out) {
     double position[8][3] = {{x0, y0, z0},
                 {x1, y0, z0},
                 {x1, y1, z0},
@@ -359,15 +359,17 @@ extern "C" int find_triangles(double value0, double value1, double value2, doubl
     if (value6 < 0) cubeIndex |= 64;
     if (value7 < 0) cubeIndex |= 128;
 
-    if (cubeIndex == 0) {
-        if (value0 <= 0) cubeIndex |= 1;
-        if (value1 <= 0) cubeIndex |= 2;
-        if (value2 <= 0) cubeIndex |= 4;
-        if (value3 <= 0) cubeIndex |= 8;
-        if (value4 <= 0) cubeIndex |= 16;
-        if (value5 <= 0) cubeIndex |= 32;
-        if (value6 <= 0) cubeIndex |= 64;
-        if (value7 <= 0) cubeIndex |= 128;
+    /* No triangles were found because all corners are inside or not inside
+       the object. */
+    if (cubeIndex == 0 || cubeIndex == 255) {
+        if (fabs(value0) <= thresh) cubeIndex ^= 1;
+        if (fabs(value1) <= thresh) cubeIndex ^= 2;
+        if (fabs(value2) <= thresh) cubeIndex ^= 4;
+        if (fabs(value3) <= thresh) cubeIndex ^= 8;
+        if (fabs(value4) <= thresh) cubeIndex ^= 16;
+        if (fabs(value5) <= thresh) cubeIndex ^= 32;
+        if (fabs(value6) <= thresh) cubeIndex ^= 64;
+        if (fabs(value7) <= thresh) cubeIndex ^= 128;
     }
     
     /*
