@@ -359,19 +359,9 @@ extern "C" int find_triangles(double thresh, double value0, double value1, doubl
     if (value6 < 0) cubeIndex |= 64;
     if (value7 < 0) cubeIndex |= 128;
 
-    /* No triangle were found because all corners are 'inside' the object*/
-    if (cubeIndex == 0) {
-        if (fabs(value0) <= thresh) cubeIndex |= 1;
-        if (fabs(value1) <= thresh) cubeIndex |= 2;
-        if (fabs(value2) <= thresh) cubeIndex |= 4;
-        if (fabs(value3) <= thresh) cubeIndex |= 8;
-        if (fabs(value4) <= thresh) cubeIndex |= 16;
-        if (fabs(value5) <= thresh) cubeIndex |= 32;
-        if (fabs(value6) <= thresh) cubeIndex |= 64;
-        if (fabs(value7) <= thresh) cubeIndex |= 128;
-    }
-    /* No triangle were found because all corners are not 'inside' the object*/
-    if (cubeIndex == 255) {
+    /* No triangles were found because all corners are inside or not inside
+       the object. */
+    if (cubeIndex == 0 || cubeIndex == 255) {
         if (fabs(value0) <= thresh) cubeIndex ^= 1;
         if (fabs(value1) <= thresh) cubeIndex ^= 2;
         if (fabs(value2) <= thresh) cubeIndex ^= 4;
