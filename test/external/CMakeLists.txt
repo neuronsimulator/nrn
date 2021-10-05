@@ -30,3 +30,14 @@ FetchContent_MakeAvailable(ringtest testcorenrn nrntest)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
 add_subdirectory(nrntest)
+
+if(NRN_ENABLE_TESTS_BBP)
+    FetchContent_Declare(
+        channel-benchmark
+        GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
+        GIT_TAG f83be1
+        SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark
+    )
+    FetchContent_MakeAvailable(channel-benchmark)
+    add_subdirectory(channel-benchmark)
+endif()
