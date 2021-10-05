@@ -1126,67 +1126,69 @@ int number_states(Symbol* fun, Rlist** prlst, Rlist** pclst)
 	return istate;
 }
 
-void kinlist(Symbol* fun, Rlist* rlst)
-{
-	int i;
-	Symbol *s;
-	Item* qv;
-	
-	if (rlst->slist_decl) {
-		return;
-	}
-	rlst->slist_decl = 1;
-	/* put slist and dlist in initlist */
-	for (i=0; i < rlst->nsym; i++) {
-		s = rlst->symorder[i];
+void kinlist(Symbol* fun, Rlist* rlst) {
+    int i;
+    Symbol* s;
+    Item* qv;
+
+    if (rlst->slist_decl) {
+        return;
+    }
+    rlst->slist_decl = 1;
+    /* put slist and dlist in initlist */
+    for (i = 0; i < rlst->nsym; i++) {
+        s = rlst->symorder[i];
 #if CVODE
-		slist_data(s, s->varnum, fun->u.i);
+        slist_data(s, s->varnum, fun->u.i);
 #endif
-if (s->subtype & ARRAY) { int dim = s->araydim;
-	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;"
-		,dim, fun->u.i , s->varnum, s->name);
-	qv = lappendstr(initlist, buf);
+        if (s->subtype & ARRAY) {
+            int dim = s->araydim;
+            Sprintf(buf,
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                    dim,
+                    fun->u.i,
+                    s->varnum,
+                    s->name);
+            qv = lappendstr(initlist, buf);
 #if 0 && VECTORIZE
-if (vectorize){
-	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p[_ix];"
-		,dim, fun->u.i , s->varnum, s->name);
-	vectorize_substitute(qv, buf);
-}
-#endif
-	Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p;}\n"
-		, fun->u.i, s->varnum, s->name);
-	qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-if (vectorize){
-	Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p[_ix];}\n"
-		, fun->u.i, s->varnum, s->name);
-	vectorize_substitute(qv, buf);
-}
-#endif
-}else{
-		Sprintf(buf, "_slist%d[%d] = &(%s) - _p;",
-			fun->u.i, s->varnum, s->name);
-		qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-if (vectorize){
-		Sprintf(buf, "_slist%d[%d] = &(%s) - _p[_ix];",
-			fun->u.i, s->varnum, s->name);
+	if (vectorize){
+		Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p[_ix];"
+			,dim, fun->u.i , s->varnum, s->name);
 		vectorize_substitute(qv, buf);
-}
-#endif
-		Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p;\n",
-			fun->u.i, s->varnum, s->name);
-		qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-if (vectorize){
-		Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p[_ix];\n",
-			fun->u.i, s->varnum, s->name);
-		vectorize_substitute(qv, buf);
-}
-#endif
-}
-		s->used = 0;
 	}
+#endif
+            Sprintf(
+                buf, " _dlist%d[%d+_i] = D%s_columnindex + _i;}\n", fun->u.i, s->varnum, s->name);
+            qv = lappendstr(initlist, buf);
+#if 0 && VECTORIZE
+	if (vectorize){
+		Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p[_ix];}\n"
+			, fun->u.i, s->varnum, s->name);
+		vectorize_substitute(qv, buf);
+	}
+#endif
+        } else {
+            Sprintf(buf, "_slist%d[%d] = %s_columnindex;", fun->u.i, s->varnum, s->name);
+            qv = lappendstr(initlist, buf);
+#if 0 && VECTORIZE
+	if (vectorize){
+			Sprintf(buf, "_slist%d[%d] = &(%s) - _p[_ix];",
+				fun->u.i, s->varnum, s->name);
+			vectorize_substitute(qv, buf);
+	}
+#endif
+            Sprintf(buf, " _dlist%d[%d] = D%s_columnindex;\n", fun->u.i, s->varnum, s->name);
+            qv = lappendstr(initlist, buf);
+#if 0 && VECTORIZE
+	if (vectorize){
+			Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p[_ix];\n",
+				fun->u.i, s->varnum, s->name);
+			vectorize_substitute(qv, buf);
+	}
+#endif
+        }
+        s->used = 0;
+    }
 }
 
 /* for now we only check CONSERVE and COMPARTMENT */

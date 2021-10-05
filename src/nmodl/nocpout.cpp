@@ -1539,20 +1539,28 @@ static void var_count(Symbol* s)
 		}
 }
 
-void defs_h(Symbol* s)
-{
-	Item *q;
+void defs_h(Symbol* s) {
+    Item* q;
 
-	if (s->subtype & ARRAY) {
-		Sprintf(buf, "#define %s (_p + %d)\n", s->name, parraycount);
-		q = lappendstr(defs_list, buf);
-	} else {
-		Sprintf(buf, "#define %s _p[%d]\n", s->name, parraycount);
-		q = lappendstr(defs_list, buf);
-	}
-	q->itemtype = VERBATIM;
+    if (s->subtype & ARRAY) {
+        Sprintf(buf,
+                "#define %s (_p + %d)\n#define %s_columnindex %d\n",
+                s->name,
+                parraycount,
+                s->name,
+                parraycount);
+        q = lappendstr(defs_list, buf);
+    } else {
+        Sprintf(buf,
+                "#define %s _p[%d]\n#define %s_columnindex %d\n",
+                s->name,
+                parraycount,
+                s->name,
+                parraycount);
+        q = lappendstr(defs_list, buf);
+    }
+    q->itemtype = VERBATIM;
 }
-
 
 void nrn_list(Item* q1, Item* q2)
 {

@@ -216,29 +216,43 @@ static char *indexstr;	/* set in lin_state_term, used in linterm */
 
 void lin_state_term(Item* q1, Item* q2) /* term last*/
 {
-	char *qconcat(Item*, Item*); /* but puts extra ) at end */
-	
-	statsym = SYM(q1);
-	replacstr(q1, "1.0");
-	if (statsym->subtype & ARRAY) { 
-		indexstr = qconcat(q1->next->next, q2->prev);
-		deltokens(q1->next, q2->prev); /*can't erase lastok*/
-		replacstr(q2, "");
-	}
-	if (statsym->used == 1) {
-		statsym->varnum = nstate;
-		if (statsym->subtype & ARRAY) {int dim = statsym->araydim;
-			using_array=1;
-		        Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
-		                ,dim, numlist , nstate, statsym->name);
-			nstate += dim;
-		}else{
-			Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
-				numlist, nstate, statsym->name);
-			nstate++;
-		}
-	        Lappendstr(initlist, buf);
-	}
+    char* qconcat(Item*, Item*); /* but puts extra ) at end */
+
+    statsym = SYM(q1);
+    replacstr(q1, "1.0");
+    if (statsym->subtype & ARRAY) {
+        indexstr = qconcat(q1->next->next, q2->prev);
+        deltokens(q1->next, q2->prev); /*can't erase lastok*/
+        replacstr(q2, "");
+    }
+    if (statsym->used == 1) {
+        statsym->varnum = nstate;
+        if (statsym->subtype & ARRAY) {
+            int dim = statsym->araydim;
+            using_array = 1;
+            Sprintf(buf,
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n",
+                    dim,
+                    numlist,
+                    nstate,
+                    statsym->name);
+            nstate += dim;
+        } else {
+            // This used to generate expressions like:
+            //   _slist1[0] = &(vi) - _p;
+            // where
+            //   #define vi _p[17]
+            // which produce undefined behaviour if _p is nullptr:
+            //   UndefinedBehaviorSanitizer: undefined-behavior in
+            //   {path}/nrn/src/nrnoc/vclmp.c: runtime error: applying non-zero
+            //   offset 128 to null pointer
+            // because pointer arithmetic is only permitted within arrays
+            // https://en.cppreference.com/w/c/language/operator_arithmetic#Pointer_arithmetic
+            Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, nstate, statsym->name);
+            nstate++;
+        }
+        Lappendstr(initlist, buf);
+    }
 }
 
 void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
