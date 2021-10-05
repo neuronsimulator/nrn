@@ -15,8 +15,8 @@ set(channel_benchmark_neuron_prefix
 
 set(channel_benchmark_hippo_num_cells 6) # Should be at least 6 to cover all cell types
 set(channel_benchmark_sscx_num_cells 16) # Similarly, should be at least 16.
-set(channel_benchmark_gpu_args -c arg_coreneuron_gpu=1)
-set(channel_benchmark_coreneuron_gpu_args --gpu --cell-permute=2)
+set(channel_benchmark_gpu_args -c arg_coreneuron_gpu=1) # TODO: test --cell-permute=2
+set(channel_benchmark_filemode_args -c arg_coreneuron_filemode=1)
 foreach(model hippo sscx)
   nrn_add_test_group(
     NAME channel_benchmark_${model}
@@ -47,25 +47,16 @@ foreach(model hippo sscx)
     PROCESSORS ${channel_benchmark_mpi_ranks}
     COMMAND ${channel_benchmark_neuron_prefix} ${channel_benchmark_neuron_args})
   foreach(processor gpu cpu)
-    nrn_add_test(
-      GROUP channel_benchmark_${model}
-      NAME coreneuron_${processor}
-      REQUIRES coreneuron ${processor}
-      PROCESSORS ${channel_benchmark_mpi_ranks}
-      COMMAND ${channel_benchmark_neuron_prefix} -c arg_coreneuron=1
-              ${channel_benchmark_${processor}_args} ${channel_benchmark_neuron_args})
-    nrn_add_test(
-      GROUP channel_benchmark_${model}
-      NAME coreneuron_${processor}_offline
-      REQUIRES coreneuron mpi ${processor}
-      PROCESSORS ${channel_benchmark_mpi_ranks}
-      PRECOMMAND ${channel_benchmark_neuron_prefix} -c arg_dump_coreneuron_model=1
-                 ${channel_benchmark_${processor}_args} ${channel_benchmark_neuron_args}
-      COMMAND
-        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${channel_benchmark_mpi_ranks}
-        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} --mpi
-        --tstop ${channel_benchmark_sim_time} --voltage 1000. -d coredat/
-        ${channel_benchmark_coreneuron_${processor}_args})
+    foreach(mode online filemode)
+      nrn_add_test(
+        GROUP channel_benchmark_${model}
+        NAME coreneuron_${processor}_${mode}
+        REQUIRES coreneuron ${processor}
+        PROCESSORS ${channel_benchmark_mpi_ranks}
+        COMMAND
+          ${channel_benchmark_neuron_prefix} -c arg_coreneuron=1 ${channel_benchmark_${mode}_args}
+          ${channel_benchmark_${processor}_args} ${channel_benchmark_neuron_args})
+    endforeach()
   endforeach()
   nrn_add_test_group_comparison(GROUP channel_benchmark_${model})
 endforeach()
