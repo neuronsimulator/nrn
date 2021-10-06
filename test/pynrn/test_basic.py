@@ -360,10 +360,8 @@ def test_disconnect():
 
 def test_py_alltoall_dict_err():
     pc = h.ParallelContext()
-    pc.nthread(2)
     src = {i: (100 + i) for i in range(2)}
     expect_hocerr(pc.py_alltoall, src,  ('hocobj_call error',))
-    pc.nthread(1)
 
 
 if __name__ == "__main__":
