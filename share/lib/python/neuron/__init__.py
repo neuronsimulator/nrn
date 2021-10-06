@@ -154,7 +154,7 @@ if not hasattr(hoc, "__file__"):
     if origin is not None:
         import sysconfig
 
-        hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var("SO")
+        hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var("EXT_SUFFIX")
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__

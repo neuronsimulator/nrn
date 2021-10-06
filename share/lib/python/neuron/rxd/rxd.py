@@ -11,7 +11,7 @@ from .rxdException import RxDException
 from . import initializer
 import collections
 import os
-from distutils import sysconfig
+import sysconfig
 import uuid
 import sys
 import itertools
@@ -544,7 +544,7 @@ def _c_compile(formula):
     # TODO: Check this works on non-Linux machines
     gcc_cmd = "%s -I%s -I%s " % (
         gcc,
-        sysconfig.get_python_inc(),
+        sysconfig.get_path("include"),
         os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
     gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
