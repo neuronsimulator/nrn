@@ -422,9 +422,9 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-NEURON_CMAKE_FORMAT:BOOL=OFF
+NRN_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
-  Enable CMake code formatting  
+  Enable CMake code formatting
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   Also need to ``pip install cmake-format=0.6.0 --user``.
@@ -432,23 +432,16 @@ NEURON_CMAKE_FORMAT:BOOL=OFF
   See nrn/CONTRIBUTING.md for further details.
   How does one reformat a specific cmake file?
 
-NEURON_CLANG_FORMAT:BOOL=OFF
+NRN_CLANG_FORMAT:BOOL=OFF
 -------------------------
-  Enable code formatting
+  Enable code formatting  
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   For mac, need: ``brew install clang-format``
   After a build using ``make``, can reformat all sources with ``make clang_format``
-  Note: this option is not yet available and this paragraph is a
-  placeholder for what is intended. Until it is available, one can
-  prepare for manual use of clang-format by using
-  ``-DNEURON_CMAKE_FORMAT=ON`` to clone into external/coding-conventions
-  and ``cp external/coding-conventions/cpp/clang-format-11 .clang-format``
-  which seems to work also for ``clang-format version 12.0.1``
-
-  To reformat one file, run in the top folder, e.g.
-  
-  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
+  Incremental code formatting (of the current patch) can be done by setting additional build flags
+  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
+  ```
 
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================

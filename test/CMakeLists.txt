@@ -371,6 +371,12 @@ add_custom_target(
 # list(APPEND TESTS modlunit_test)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
+# If profiling is enabled, run ringtest with profiler
+if(NRN_ENABLE_PROFILING)
+  set(TEST_PROFILING_ENV ${TEST_ENV})
+  list(APPEND TEST_PROFILING_ENV "CALI_CONFIG=runtime-report,calc.inclusive")
+  set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_PROFILING_ENV}")
+endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)

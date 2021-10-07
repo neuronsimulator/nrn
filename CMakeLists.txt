@@ -142,6 +142,11 @@ set(NRN_NMODL_CXX_FLAGS
       "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
+option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
+set(NRN_PROFILER
+    "${NRN_PROFILER_DEFAULT}"
+    CACHE STRING "Set which profiler to build against ('caliper', 'likwid')")
+
 # =============================================================================
 # Set Python additional versions earlier (especially for old CMake)
 # =============================================================================
@@ -270,11 +275,11 @@ find_program(JUPYTER_EXE jupyter QUIET)
 if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
   add_custom_target(
           docs
-          COMMAND make doxygen
+          COMMAND ${CMAKE_COMMAND} --build . --target doxygen
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make notebooks
+          COMMAND ${CMAKE_COMMAND} --build . --target notebooks
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-          COMMAND make sphinx
+          COMMAND ${CMAKE_COMMAND} --build . --target sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating full documentation"
   )
@@ -413,6 +418,13 @@ if(NRN_ENABLE_CORENEURON)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+    if(NRN_ENABLE_PROFILING)
+      if(NRN_PROFILER STREQUAL "caliper")
+        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+      elseif(NRN_PROFILER STREQUAL "likwid")
+        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
+      endif()
+    endif()
     # Propagate NEURON MPI option to CoreNEURON
     set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
     add_external_project(coreneuron)
@@ -423,6 +435,23 @@ if(NRN_ENABLE_CORENEURON)
     # variable in this scope. If CoreNEURON is installed externally then this
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  endif()
+endif()
+
+# =============================================================================
+# Profiler/Instrumentation Options
+# =============================================================================
+if(NRN_ENABLE_PROFILING)
+  add_definitions("-DNRN_PROFILING")
+  if(NRN_PROFILER STREQUAL "caliper")
+    find_package(caliper REQUIRED)
+    include_directories(${caliper_INCLUDE_DIR})
+    add_definitions("-DNRN_CALIPER")
+    set(CALIPER_LIB "caliper")
+  elseif(NRN_PROFILER STREQUAL "likwid")
+    find_package(likwid REQUIRED)
+    include_directories(${likwid_INCLUDE_DIRS})
+    add_definitions("-DLIKWID_PERFMON")
   endif()
 endif()
 
@@ -503,11 +532,7 @@ include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 # =============================================================================
 # Add coding-conventions submodule if code formatting enabled
 # =============================================================================
-if(NEURON_CMAKE_FORMAT)
-  set(NEURON_CMakeFormat_EXCLUDES_RE
-      ".*/external/\\(backward\\|catch2\\|coding-conventions\\|iv\\|tests\\)/.*$$"
-      ".*/external/coreneuron/\\(external/nmodl\\|external/mod2c\\|external/CLI11\\|CMake/hpc-coding-conventions\\)/.*$$"
-      CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
+if(NRN_CMAKE_FORMAT OR NRN_CLANG_FORMAT)
   add_subdirectory(external/coding-conventions/cpp)
 endif()
 
@@ -574,6 +599,12 @@ if(NRN_ENABLE_TESTS)
     elseif(NOT PYTEST_COV_FOUND)
       message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
+  else()  # share/demo still required for testing
+    add_custom_target(copy_demo_to_build
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo ${NRN_BUILD_SHARE_DIR}/demo
+            COMMENT "Copying ${PROJECT_SOURCE_DIR}/share/demo to ${NRN_BUILD_SHARE_DIR}"
+            VERBATIM)
+    add_dependencies(nrniv_lib copy_demo_to_build)
   endif()
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy
@@ -750,6 +781,12 @@ if(NRN_ENABLE_COVERAGE)
   message(STATUS "Coverage      | Enabled")
   if (NRN_COVERAGE_FILES)
   message(STATUS "  Files       | ${NRN_COVERAGE_FILES}")
+  endif()
+endif()
+if(NRN_ENABLE_PROFILING)
+  message(STATUS "Profiling     | ON")
+  if(NRN_PROFILER STREQUAL "caliper")
+    message(STATUS "  Caliper     | ${caliper_DIR}")
   endif()
 endif()
 message(STATUS "--------------+--------------------------------------------------------------")
