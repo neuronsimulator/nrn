@@ -42,7 +42,6 @@ bool nrn_spec_dialog_pos(Coord& x, Coord& y) {
 }
 
 bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
-	Style* s = Session::instance()->style();
 	if (nrn_spec_dialog_pos(x, y)) {
 		return d->post_at_aligned(x, y, 0.0, 0.0);
 	}

@@ -2727,7 +2727,6 @@ void PWMImpl::printer_control() {
 	if (w_ && w_->is_mapped()) {
 		b = b_printer_->post_for(w_);
 	}else{
-		Style* s = Session::instance()->style();
 		Coord x, y, ax, ay;
 		if (nrn_spec_dialog_pos(x, y)) {
 			ax = 0.0;
