@@ -184,7 +184,17 @@ static double srun(void* v) {
 IFGUI
 	SymChooser* sc = (SymChooser*)v;
 	Display* d = Session::instance()->default_display();
-	b = sc->post_at_aligned(d->width()/2, d->height()/2, .5, .5);
+	Style* s = Session::instance()->style();
+	if (s->value_is_on("dialog_spec_position")) {
+printf("one\n");
+		Coord x, y;
+		s->find_attribute("dialog_left_position", x);
+		s->find_attribute("dialog_bottom_position", y);
+		b = sc->post_at_aligned(x, y, 0.0, 0.0);
+	}else{
+printf("two\n");
+		b = sc->post_at_aligned(d->width()/2, d->height()/2, .5, .5);
+	}
 ENDGUI
 	return double(b);
 #else
