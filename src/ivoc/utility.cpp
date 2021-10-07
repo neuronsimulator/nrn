@@ -31,12 +31,19 @@ extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
 extern Object** (*nrnpy_gui_helper3_)(const char* name, Object* obj, int handle_strptr);
 
-bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
+bool nrn_spec_dialog_pos(Coord& x, Coord& y) {
 	Style* s = Session::instance()->style();
 	if (s->value_is_on("dialog_spec_position")) {
-		Coord x, y;
 		s->find_attribute("dialog_left_position", x);
 		s->find_attribute("dialog_bottom_position", y);
+		return true;
+	}
+	return false;
+}
+
+bool oc_post_dialog(Dialog* d, Coord x, Coord y) {
+	Style* s = Session::instance()->style();
+	if (nrn_spec_dialog_pos(x, y)) {
 		return d->post_at_aligned(x, y, 0.0, 0.0);
 	}
 	if (x != 400. || y != 400.) {

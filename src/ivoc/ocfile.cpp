@@ -504,9 +504,7 @@ bool OcFile::file_chooser_popup() {
 	Display* d = Session::instance()->default_display();
 	Style* s = Session::instance()->style();
 	Coord x, y, ax, ay;
-	if (s->value_is_on("dialog_spec_position")) {
-		s->find_attribute("dialog_left_position", x);
-		s->find_attribute("dialog_bottom_position", y);
+	if (nrn_spec_dialog_pos(x, y)) {
 		ax = 0.0;
 		ay = 0.0;
 	} else {
