@@ -13,6 +13,7 @@
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
 bool stoprun;
@@ -29,7 +30,9 @@ char* pnt_name(Point_process* pnt) {
 
 void nrn_exit(int err) {
 #if NRNMPI
-    nrnmpi_finalize();
+    if (corenrn_param.mpi_enable) {
+        nrnmpi_finalize();
+    }
 #endif
     exit(err);
 }

@@ -1,4 +1,5 @@
 #include "coreneuron/io/lfp.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #include <cmath>
 #include <limits>
@@ -6,7 +7,6 @@
 
 
 namespace coreneuron {
-
 // extern variables require acc declare
 #pragma acc declare create(pi)
 
@@ -112,12 +112,15 @@ inline void LFPCalculator<Type, SegmentIdTy>::lfp(const Vector& membrane_current
         }
     }
 #if NRNMPI
-    lfp_values_.resize(res.size());
-    int mpi_sum{1};
-    nrnmpi_dbl_allreduce_vec(res.data(), lfp_values_.data(), res.size(), mpi_sum);
-#else
-    std::swap(res, lfp_values_);
+    if (corenrn_param.mpi_enable) {
+        lfp_values_.resize(res.size());
+        int mpi_sum{1};
+        nrnmpi_dbl_allreduce_vec(res.data(), lfp_values_.data(), res.size(), mpi_sum);
+    } else
 #endif
+    {
+        std::swap(res, lfp_values_);
+    }
 }
 
 

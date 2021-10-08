@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-#include "coreneuron/mpi/nrnmpidec.h"
+#include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/utils/nrn_assert.h"
 

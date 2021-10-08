@@ -25,8 +25,6 @@
 #include "coreneuron/io/nrn2core_direct.h"
 
 namespace coreneuron {
-
-extern corenrn_parameters corenrn_param;
 static void* nrn_fixed_step_thread(NrnThread*);
 static void* nrn_fixed_step_group_thread(NrnThread*, int, int, int&);
 

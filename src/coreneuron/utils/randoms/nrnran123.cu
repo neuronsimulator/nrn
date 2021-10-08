@@ -5,6 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/randoms/nrnran123.h"

@@ -24,8 +24,6 @@
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/io/output_spikes.hpp"
 namespace coreneuron {
-extern corenrn_parameters corenrn_param;
-
 const int NUM_STATS = 13;
 enum event_type { enq = 0, spike, ite };
 
@@ -58,11 +56,14 @@ void report_cell_stats(void) {
     stat_array[6] = spikevec_positive_gid_size;  // number of non-negative gid spikes
 
 #if NRNMPI
-    nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);
-#else
-    assert(sizeof(stat_array) == sizeof(gstat_array));
-    memcpy(gstat_array, stat_array, sizeof(stat_array));
+    if (corenrn_param.mpi_enable) {
+        nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);
+    } else
 #endif
+    {
+        assert(sizeof(stat_array) == sizeof(gstat_array));
+        std::memcpy(gstat_array, stat_array, sizeof(stat_array));
+    }
 
     if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         printf("\n\n Simulation Statistics\n");

@@ -32,8 +32,11 @@ file(
   "utils/*/*.c"
   "utils/*/*.cpp")
 file(GLOB_RECURSE CORENEURON_CUDA_FILES "*.cu")
-file(GLOB SCOPMATH_CODE_FILES "sim/scopmath/*.cpp")
-file(GLOB MPI_CODE_FILES "mpi/*.cpp")
+set(SCOPMATH_CODE_FILES
+    "sim/scopmath/abort.cpp" "sim/scopmath/crout_thread.cpp" "sim/scopmath/newton_thread.cpp"
+    "sim/scopmath/sparse_thread.cpp" "sim/scopmath/ssimplic_thread.cpp")
+set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
+set(MPI_CORE_FILES "mpi/core/nrnmpi_def_cinc.cpp" "mpi/core/nrnmpi.cpp" "mpi/core/nrnmpidec.cpp")
 file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include/Random123
      DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
@@ -165,8 +168,13 @@ add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
 # create libraries
 # =============================================================================
 
-# mpi related target, this will be a separate library for dynamic MPI
-add_library(corenrn_mpi OBJECT ${MPI_CODE_FILES})
+# mpi related target, this is a separate library for dynamic MPI
+if(CORENRN_ENABLE_DYNAMIC_MPI)
+  add_library(corenrn_mpi SHARED ${MPI_LIB_FILES})
+else()
+  add_library(corenrn_mpi OBJECT ${MPI_LIB_FILES})
+  set(OBJ_MPI $<TARGET_OBJECTS:corenrn_mpi>)
+endif()
 target_include_directories(corenrn_mpi PRIVATE ${MPI_INCLUDE_PATH})
 set_property(TARGET corenrn_mpi PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -178,8 +186,17 @@ add_library(
   ${CORENEURON_TEMPLATE_FILES}
   ${CORENEURON_CODE_FILES}
   ${cudacorenrn_objs}
-  $<TARGET_OBJECTS:corenrn_mpi>
-  ${NMODL_INBUILT_MOD_OUTPUTS})
+  ${NMODL_INBUILT_MOD_OUTPUTS}
+  ${MPI_CORE_FILES}
+  ${OBJ_MPI})
+if(CORENRN_ENABLE_DYNAMIC_MPI)
+  target_link_libraries(coreneuron ${CMAKE_DL_LIBS})
+  target_link_libraries(corenrn_mpi ${MPI_CXX_LIBRARIES})
+  target_compile_definitions(coreneuron
+                             PUBLIC CMAKE_SHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX})
+else()
+  target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES})
+endif()
 # Prevent CMake from running a device code link step when assembling libcoreneuron.a in GPU builds.
 # The device code linking needs to be deferred to the final step, where it is done by `nvc++ -cuda`.
 set_target_properties(coreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
@@ -194,14 +211,15 @@ add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
 
 target_link_libraries(coreneuron ${reportinglib_LIBRARY} ${sonatareport_LIBRARY} ${CALIPER_LIB}
-                      ${likwid_LIBRARIES} ${MPI_CXX_LIBRARIES})
+                      ${likwid_LIBRARIES})
+
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include)
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
 set_target_properties(
-  coreneuron scopmath
+  coreneuron scopmath corenrn_mpi
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              POSITION_INDEPENDENT_CODE ON)

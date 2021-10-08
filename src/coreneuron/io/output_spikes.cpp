@@ -19,9 +19,11 @@
 #include "coreneuron/io/nrn2core_direct.h"
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "coreneuron/utils/string_utils.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #ifdef ENABLE_SONATA_REPORTS
 #include "bbp/sonata/reports.h"
 #endif  // ENABLE_SONATA_REPORTS
@@ -39,7 +41,6 @@ static bool all_spikes_return(std::vector<double>& spiketvec, std::vector<int>& 
 }
 
 namespace coreneuron {
-
 /// --> Coreneuron as SpikeBuffer class
 std::vector<double> spikevec_time;
 std::vector<int> spikevec_gid;
@@ -286,14 +287,13 @@ void output_spikes(const char* outpath,
         return;
     }
 #if NRNMPI
-    if (nrnmpi_initialized()) {
+    if (corenrn_param.mpi_enable && nrnmpi_initialized()) {
         output_spikes_parallel(outpath, population_name_offset);
-    } else {
+    } else
+#endif
+    {
         output_spikes_serial(outpath);
     }
-#else
-    output_spikes_serial(outpath);
-#endif
     clear_spike_vectors();
 }
 

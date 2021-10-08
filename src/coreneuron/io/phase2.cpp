@@ -13,6 +13,7 @@
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/permute/cellorder.hpp"
 #include "coreneuron/permute/node_permute.h"
+#include "coreneuron/utils/utils.hpp"
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/io/setup_fornetcon.hpp"

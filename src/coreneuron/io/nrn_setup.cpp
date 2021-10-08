@@ -22,7 +22,9 @@
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/memory.h"
+#include "coreneuron/utils/utils.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/io/nrn_setup.hpp"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/io/nrn_checkpoint.hpp"
@@ -147,8 +149,6 @@ void (*nrn2core_all_weights_return_)(std::vector<double*>& weights);
 // files with the first containing output_gids and netcon_srcgid which are
 // stored in the nt.presyns array and nt.netcons array respectively
 namespace coreneuron {
-extern corenrn_parameters corenrn_param;
-
 static OMP_Mutex mut;
 
 /// Vector of maps for negative presyns
@@ -1091,18 +1091,21 @@ size_t model_size(bool detailed_report) {
     if (detailed_report) {
         size_data[12] = nbyte;
 #if NRNMPI
-        // last arg is op type where 1 is sum, 2 is max and any other value is min
-        nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_sum[0], 13, 1);
-        nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_max[0], 13, 2);
-        nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_min[0], 13, 3);
-        for (int i = 0; i < 13; i++) {
-            global_size_data_avg[i] = global_size_data_sum[i] / float(nrnmpi_numprocs);
-        }
-#else
-        global_size_data_max = size_data;
-        global_size_data_min = size_data;
-        global_size_data_avg.assign(size_data.cbegin(), size_data.cend());
+        if (corenrn_param.mpi_enable) {
+            // last arg is op type where 1 is sum, 2 is max and any other value is min
+            nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_sum[0], 13, 1);
+            nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_max[0], 13, 2);
+            nrnmpi_long_allreduce_vec(&size_data[0], &global_size_data_min[0], 13, 3);
+            for (int i = 0; i < 13; i++) {
+                global_size_data_avg[i] = global_size_data_sum[i] / float(nrnmpi_numprocs);
+            }
+        } else
 #endif
+        {
+            global_size_data_max = size_data;
+            global_size_data_min = size_data;
+            global_size_data_avg.assign(size_data.cbegin(), size_data.cend());
+        }
         // now print the collected data:
         if (nrnmpi_myid == 0) {
             printf("Memory size information for all NrnThreads per rank\n");
@@ -1197,9 +1200,11 @@ size_t model_size(bool detailed_report) {
     }
 
 #if NRNMPI
-    long global_nbyte = 0;
-    nrnmpi_long_allreduce_vec(&nbyte, &global_nbyte, 1, 1);
-    nbyte = global_nbyte;
+    if (corenrn_param.mpi_enable) {
+        long global_nbyte = 0;
+        nrnmpi_long_allreduce_vec(&nbyte, &global_nbyte, 1, 1);
+        nbyte = global_nbyte;
+    }
 #endif
 
     return nbyte;

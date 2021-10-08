@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include "coreneuron/utils/memory_utils.h"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
@@ -34,7 +36,6 @@
 #endif
 
 namespace coreneuron {
-
 double nrn_mallinfo(void) {
     // -ve mem usage for non-supported platforms
     double mbs = -1.0;
@@ -79,12 +80,15 @@ void report_mem_usage(const char* message, bool all_ranks) {
 
 /* @todo: avoid three all reduce class */
 #if NRNMPI
-    mem_avg = nrnmpi_dbl_allreduce(cur_mem, 1) / nrnmpi_numprocs;
-    mem_max = nrnmpi_dbl_allreduce(cur_mem, 2);
-    mem_min = nrnmpi_dbl_allreduce(cur_mem, 3);
-#else
-    mem_avg = mem_max = mem_min = cur_mem;
+    if (corenrn_param.mpi_enable) {
+        mem_avg = nrnmpi_dbl_allreduce(cur_mem, 1) / nrnmpi_numprocs;
+        mem_max = nrnmpi_dbl_allreduce(cur_mem, 2);
+        mem_min = nrnmpi_dbl_allreduce(cur_mem, 3);
+    } else
 #endif
+    {
+        mem_avg = mem_max = mem_min = cur_mem;
+    }
 
     // all ranks prints information if all_ranks is true
     if (all_ranks) {

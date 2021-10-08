@@ -9,6 +9,7 @@
 #include "report_handler.hpp"
 #include "coreneuron/io/nrnsection_mapping.hpp"
 #include "coreneuron/mechanism/mech_mapping.hpp"
+#include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
 

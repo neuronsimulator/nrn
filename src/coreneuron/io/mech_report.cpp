@@ -11,9 +11,9 @@
 
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
-
 /** display global mechanism count */
 void write_mech_report() {
     /// mechanim count across all gids, local to rank
@@ -33,15 +33,19 @@ void write_mech_report() {
     std::vector<long> total_mech_count(n_memb_func);
 
 #if NRNMPI
-    /// get global sum of all mechanism instances
-    nrnmpi_long_allreduce_vec(&local_mech_count[0],
-                              &total_mech_count[0],
-                              local_mech_count.size(),
-                              1);
+    if (corenrn_param.mpi_enable) {
+        /// get global sum of all mechanism instances
+        nrnmpi_long_allreduce_vec(&local_mech_count[0],
+                                  &total_mech_count[0],
+                                  local_mech_count.size(),
+                                  1);
 
-#else
-    total_mech_count = local_mech_count;
+    } else
 #endif
+    {
+        total_mech_count = local_mech_count;
+    }
+
     /// print global stats to stdout
     if (nrnmpi_myid == 0) {
         printf("\n================ MECHANISMS COUNT BY TYPE ==================\n");

@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef usenrnmpi_h
-#define usenrnmpi_h
+#pragma once
 
 /* define to 1 if you want MPI specific features activated
    (optionally provided by CMake option NRNMPI) */
@@ -23,9 +22,6 @@
 /* define to 1 if you want parallel distributed cells (and gap junctions) */
 #define PARANEURON 1
 
-/* define to 1 if you want mpi dynamically loaded instead of linked normally */
-#undef NRNMPI_DYNAMICLOAD
-
 /* define to 1 if you want the MUSIC - MUlti SImulation Coordinator */
 #undef NRN_MUSIC
 
@@ -37,5 +33,3 @@
 
 /* Define to 1 for possibility of rank 0 xopen/ropen a file and broadcast everywhere */
 #undef USE_NRNFILEWRAP
-
-#endif

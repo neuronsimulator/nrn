@@ -19,6 +19,8 @@ Need to define HAVEWANT_t, HAVEWANT_alltoallv, and HAVEWANT2Int
 #define have2want_h
 
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 
 /*
 
@@ -28,7 +30,7 @@ ranks want their information. Ranks that want info do not know which ranks
 own that info.
 
 The have_to_want function returns two new vectors of keys along with
-associated count and displacement vectors of length nhost and nhost+1
+associated count and displacement vectors of length nrnmpi_numprocs and nrnmpi_numprocs+1
 respectively. Note that a send_to_want_displ[i+1] =
   send_to_want_cnt[i] + send_to_want_displ[i] .
 
@@ -66,7 +68,7 @@ static int* cnt2displ(int* cnt) {
 static int* srccnt2destcnt(int* srccnt) {
     int* destcnt = new int[nrnmpi_numprocs];
 #if NRNMPI
-    if (nrnmpi_numprocs > 1) {
+    if (corenrn_param.mpi_enable) {
         nrnmpi_int_alltoall(srccnt, destcnt, 1);
     } else
 #endif
@@ -87,11 +89,9 @@ static void rendezvous_rank_get(HAVEWANT_t* data,
                                 int*& rcnt,
                                 int*& rdispl,
                                 int (*rendezvous_rank)(HAVEWANT_t)) {
-    int nhost = nrnmpi_numprocs;
-
     // count what gets sent
-    scnt = new int[nhost];
-    for (int i = 0; i < nhost; ++i) {
+    scnt = new int[nrnmpi_numprocs];
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
         scnt[i] = 0;
     }
     for (int i = 0; i < size; ++i) {
@@ -102,10 +102,10 @@ static void rendezvous_rank_get(HAVEWANT_t* data,
     sdispl = cnt2displ(scnt);
     rcnt = srccnt2destcnt(scnt);
     rdispl = cnt2displ(rcnt);
-    sdata = new HAVEWANT_t[sdispl[nhost]];
-    rdata = new HAVEWANT_t[rdispl[nhost]];
+    sdata = new HAVEWANT_t[sdispl[nrnmpi_numprocs]];
+    rdata = new HAVEWANT_t[rdispl[nrnmpi_numprocs]];
     // scatter data into sdata by recalculating scnt.
-    for (int i = 0; i < nhost; ++i) {
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
         scnt[i] = 0;
     }
     for (int i = 0; i < size; ++i) {
@@ -114,12 +114,12 @@ static void rendezvous_rank_get(HAVEWANT_t* data,
         ++scnt[r];
     }
 #if NRNMPI
-    if (nhost > 1) {
+    if (corenrn_param.mpi_enable) {
         HAVEWANT_alltoallv(sdata, scnt, sdispl, rdata, rcnt, rdispl);
     } else
 #endif
     {
-        for (int i = 0; i < sdispl[nhost]; ++i) {
+        for (int i = 0; i < sdispl[nrnmpi_numprocs]; ++i) {
             rdata[i] = sdata[i];
         }
     }
@@ -141,8 +141,6 @@ static void have_to_want(HAVEWANT_t* have,
     // 3) Rendezvous ranks tell the want ranks which ranks own the keys
     // 4) Ranks that want tell owner ranks where to send.
 
-    int nhost = nrnmpi_numprocs;
-
     // 1) Send have and want to the rendezvous ranks.
     HAVEWANT_t *have_s_data, *have_r_data;
     int *have_s_cnt, *have_s_displ, *have_r_cnt, *have_r_displ;
@@ -158,7 +156,7 @@ static void have_to_want(HAVEWANT_t* have,
     // assume it is an error if two ranks have the same key so create
     // hash table of key2rank. Will also need it for matching have and want
     HAVEWANT2Int havekey2rank = HAVEWANT2Int();
-    for (int r = 0; r < nhost; ++r) {
+    for (int r = 0; r < nrnmpi_numprocs; ++r) {
         for (int i = 0; i < have_r_cnt[r]; ++i) {
             HAVEWANT_t key = have_r_data[have_r_displ[r] + i];
             if (havekey2rank.find(key) != havekey2rank.end()) {
@@ -192,9 +190,9 @@ static void have_to_want(HAVEWANT_t* have,
     //    we already have made the havekey2rank map.
     // Create an array parallel to want_r_data which contains the ranks that
     // have that data.
-    int n = want_r_displ[nhost];
+    int n = want_r_displ[nrnmpi_numprocs];
     int* want_r_ownerranks = new int[n];
-    for (int r = 0; r < nhost; ++r) {
+    for (int r = 0; r < nrnmpi_numprocs; ++r) {
         for (int i = 0; i < want_r_cnt[r]; ++i) {
             int ix = want_r_displ[r] + i;
             HAVEWANT_t key = want_r_data[ix];
@@ -213,9 +211,9 @@ static void have_to_want(HAVEWANT_t* have,
     // The want_s_ownerranks will be parallel to the want_s_data.
     // That is, each item defines the rank from which information associated
     // with that key is coming from
-    int* want_s_ownerranks = new int[want_s_displ[nhost]];
+    int* want_s_ownerranks = new int[want_s_displ[nrnmpi_numprocs]];
 #if NRNMPI
-    if (nhost > 1) {
+    if (corenrn_param.mpi_enable) {
         nrnmpi_int_alltoallv(want_r_ownerranks,
                              want_r_cnt,
                              want_r_displ,
@@ -225,7 +223,7 @@ static void have_to_want(HAVEWANT_t* have,
     } else
 #endif
     {
-        for (int i = 0; i < want_r_displ[nhost]; ++i) {
+        for (int i = 0; i < want_r_displ[nrnmpi_numprocs]; ++i) {
             want_s_ownerranks[i] = want_r_ownerranks[i];
         }
     }
@@ -240,9 +238,9 @@ static void have_to_want(HAVEWANT_t* have,
     // The parallel want_s_ownerranks and want_s_data are now uselessly ordered
     // by rendezvous rank. Reorganize so that want ranks can tell owner ranks
     // what they want.
-    n = want_s_displ[nhost];
+    n = want_s_displ[nrnmpi_numprocs];
     delete[] want_s_displ;
-    for (int i = 0; i < nhost; ++i) {
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
         want_s_cnt[i] = 0;
     }
     HAVEWANT_t* old_want_s_data = want_s_data;
@@ -253,7 +251,7 @@ static void have_to_want(HAVEWANT_t* have,
         ++want_s_cnt[r];
     }
     want_s_displ = cnt2displ(want_s_cnt);
-    for (int i = 0; i < nhost; ++i) {
+    for (int i = 0; i < nrnmpi_numprocs; ++i) {
         want_s_cnt[i] = 0;
     }  // recount while filling
     for (int i = 0; i < n; ++i) {
@@ -266,15 +264,15 @@ static void have_to_want(HAVEWANT_t* have,
     delete[] old_want_s_data;
     want_r_cnt = srccnt2destcnt(want_s_cnt);
     want_r_displ = cnt2displ(want_r_cnt);
-    want_r_data = new HAVEWANT_t[want_r_displ[nhost]];
+    want_r_data = new HAVEWANT_t[want_r_displ[nrnmpi_numprocs]];
 #if NRNMPI
-    if (nhost > 1) {
+    if (corenrn_param.mpi_enable) {
         HAVEWANT_alltoallv(
             want_s_data, want_s_cnt, want_s_displ, want_r_data, want_r_cnt, want_r_displ);
     } else
 #endif
     {
-        for (int i = 0; i < want_s_displ[nhost]; ++i) {
+        for (int i = 0; i < want_s_displ[nrnmpi_numprocs]; ++i) {
             want_r_data[i] = want_s_data[i];
         }
     }

@@ -23,9 +23,9 @@
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
-
 // Those functions comes from mod file directly
 extern int checkpoint_save_patternstim(_threadargsproto_);
 extern void checkpoint_restore_patternstim(int, double, _threadargsproto_);
@@ -62,7 +62,9 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
     }
 
 #if NRNMPI
-    nrnmpi_barrier();
+    if (corenrn_param.mpi_enable) {
+        nrnmpi_barrier();
+    }
 #endif
 
     /**
@@ -79,7 +81,9 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
         write_time();
     }
 #if NRNMPI
-    nrnmpi_barrier();
+    if (corenrn_param.mpi_enable) {
+        nrnmpi_barrier();
+    }
 #endif
 }
 

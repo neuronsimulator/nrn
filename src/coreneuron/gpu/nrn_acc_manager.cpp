@@ -19,7 +19,8 @@
 #include "coreneuron/sim/scopmath/newton_struct.h"
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
-#include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/nrnmpidec.h"
+#include "coreneuron/utils/utils.hpp"
 
 #ifdef _OPENACC
 #include <openacc.h>

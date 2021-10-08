@@ -21,6 +21,7 @@
 #include "coreneuron/mechanism/mech_mapping.hpp"
 #include "coreneuron/sim/fast_imem.hpp"
 #include "coreneuron/utils/nrn_assert.h"
+#include "coreneuron/utils/utils.hpp"
 
 namespace coreneuron {
 

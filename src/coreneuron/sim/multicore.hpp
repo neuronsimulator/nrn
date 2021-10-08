@@ -12,6 +12,7 @@
 #include "coreneuron/mechanism/membfunc.hpp"
 #include "coreneuron/utils/memory.h"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/io/reports/nrnreport.hpp"
 #include <vector>
 #include <memory>

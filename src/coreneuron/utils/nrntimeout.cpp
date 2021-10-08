@@ -9,6 +9,7 @@
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
+#include "coreneuron/utils/utils.hpp"
 
 #if NRNMPI
 
