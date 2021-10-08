@@ -10,15 +10,6 @@
 
 #include "coreneuron/sim/multicore.hpp"
 
-namespace coreneuron {
-struct Memb_list;
-
-extern bool nrn_have_gaps;
-extern void nrnmpi_v_transfer();
-extern void nrnthread_v_transfer(NrnThread*);
-
-namespace nrn_partrans {
-
 #ifndef NRNLONGSGID
 #define NRNLONGSGID 0
 #endif
@@ -28,6 +19,15 @@ using sgid_t = int64_t;
 #else
 using sgid_t = int;
 #endif
+
+namespace coreneuron {
+struct Memb_list;
+
+extern bool nrn_have_gaps;
+extern void nrnmpi_v_transfer();
+extern void nrnthread_v_transfer(NrnThread*);
+
+namespace nrn_partrans {
 
 /** The basic problem is to copy sources to targets.
  *  It may be the case that a source gets copied to several targets.
@@ -86,6 +86,9 @@ struct TransferThreadData {
 };
 extern TransferThreadData* transfer_thread_data_; /* array for threads */
 
+}  // namespace nrn_partrans
+}  // namespace coreneuron
+
 // For direct transfer,
 // must be same as corresponding struct SetupTransferInfo in NEURON
 struct SetupTransferInfo {
@@ -96,6 +99,10 @@ struct SetupTransferInfo {
     std::vector<int> tar_type;
     std::vector<int> tar_index;
 };
+
+namespace coreneuron {
+namespace nrn_partrans {
+
 extern SetupTransferInfo* setup_info_; /* array for threads exists only during setup*/
 
 extern void gap_mpi_setup(int ngroup);

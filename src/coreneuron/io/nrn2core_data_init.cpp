@@ -107,8 +107,14 @@ void vec_play_activate() {
     }
 }
 
+}  // namespace coreneuron
+
 // For direct transfer of event queue information
 // Must be the same as corresponding struct NrnCoreTransferEvents in NEURON
+// Do not put this coreneuron version in the coreneuron namespace so that the
+// function pointer/callback has the same type in both NEURON and CoreNEURON.
+// Calling a function through a pointer to a function of different type is
+// undefined behaviour.
 struct NrnCoreTransferEvents {
     std::vector<int> type;        // DiscreteEvent type
     std::vector<double> td;       // delivery time
@@ -116,6 +122,7 @@ struct NrnCoreTransferEvents {
     std::vector<double> dbldata;  // doubles specific to the type.
 };
 
+namespace coreneuron {
 
 extern "C" {
 /** Pointer to function in NEURON that iterates over its tqeueue **/

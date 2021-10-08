@@ -19,7 +19,7 @@
 namespace coreneuron {
 using namespace coreneuron::nrn_partrans;
 
-nrn_partrans::SetupTransferInfo* nrn_partrans::setup_info_;
+SetupTransferInfo* nrn_partrans::setup_info_;
 
 class SidInfo {
   public:

@@ -47,8 +47,9 @@ int corenrn_embedded_nthread;
 void (*nrn2core_group_ids_)(int*);
 
 extern "C" {
-coreneuron::nrn_partrans::SetupTransferInfo* (
-    *nrn2core_get_partrans_setup_info_)(int ngroup, int cn_nthread, size_t cn_sidt_size);
+SetupTransferInfo* (*nrn2core_get_partrans_setup_info_)(int ngroup,
+                                                        int cn_nthread,
+                                                        size_t cn_sidt_size);
 }
 
 void (*nrn2core_get_trajectory_requests_)(int tid,
@@ -500,11 +501,12 @@ void nrn_setup(const char* filesdat,
     if (nrn_have_gaps) {
         nrn_partrans::transfer_thread_data_ = new nrn_partrans::TransferThreadData[nrn_nthread];
         if (!corenrn_embedded) {
-            nrn_partrans::setup_info_ = new nrn_partrans::SetupTransferInfo[nrn_nthread];
+            nrn_partrans::setup_info_ = new SetupTransferInfo[nrn_nthread];
             coreneuron::phase_wrapper<coreneuron::gap>(userParams);
         } else {
-            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(
-                userParams.ngroup, nrn_nthread, sizeof(nrn_partrans::sgid_t));
+            nrn_partrans::setup_info_ = (*nrn2core_get_partrans_setup_info_)(userParams.ngroup,
+                                                                             nrn_nthread,
+                                                                             sizeof(sgid_t));
         }
 
         nrn_multithread_job(nrn_partrans::gap_data_indices_setup);
@@ -596,7 +598,7 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
     F.checkpoint(0);
 
     int sidt_size = F.read_int();
-    assert(sidt_size == int(sizeof(nrn_partrans::sgid_t)));
+    assert(sidt_size == int(sizeof(sgid_t)));
     ntar = size_t(F.read_int());
     nsrc = size_t(F.read_int());
 
@@ -604,7 +606,7 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
     si.src_type.resize(nsrc);
     si.src_index.resize(nsrc);
     if (nsrc) {
-        F.read_array<nrn_partrans::sgid_t>(si.src_sid.data(), nsrc);
+        F.read_array<sgid_t>(si.src_sid.data(), nsrc);
         F.read_array<int>(si.src_type.data(), nsrc);
         F.read_array<int>(si.src_index.data(), nsrc);
     }
@@ -613,7 +615,7 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
     si.tar_type.resize(ntar);
     si.tar_index.resize(ntar);
     if (ntar) {
-        F.read_array<nrn_partrans::sgid_t>(si.tar_sid.data(), ntar);
+        F.read_array<sgid_t>(si.tar_sid.data(), ntar);
         F.read_array<int>(si.tar_type.data(), ntar);
         F.read_array<int>(si.tar_index.data(), ntar);
     }
