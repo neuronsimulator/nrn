@@ -275,11 +275,11 @@ find_program(JUPYTER_EXE jupyter QUIET)
 if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
   add_custom_target(
           docs
-          COMMAND make doxygen
+          COMMAND ${CMAKE_COMMAND} --build . --target doxygen
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make notebooks
+          COMMAND ${CMAKE_COMMAND} --build . --target notebooks
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-          COMMAND make sphinx
+          COMMAND ${CMAKE_COMMAND} --build . --target sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating full documentation"
   )
