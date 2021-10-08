@@ -294,7 +294,7 @@ def prun(tstop, restore=False):
         z = h.List("PythonObject")
         for i, y in enumerate(z):
             print(i, y)
-        h.allobjects()
+        # h.allobjects()
 
     pc.psolve(tstop)
 
@@ -383,8 +383,10 @@ def test_starnet():
     h.CVode().queue_mode(1)
     prun(tstop)
     compare_dicts(get_all_spikes(starnet), stdspikes)
+    prun(tstop, "BBSaveState")
+    compare_dicts(get_all_spikes(starnet), stdspikes_half)
 
-    # h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
+    h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}
