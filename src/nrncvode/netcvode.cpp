@@ -1387,6 +1387,7 @@ CvodeThreadData::~CvodeThreadData() {
 void NetCvode::delete_list() {
 	int i, j;
 	wl_list_.clear();
+	wl_list_.resize(nrn_nthread);
 	if (gcv_) {
 		delete_list(gcv_);
 		delete gcv_;
