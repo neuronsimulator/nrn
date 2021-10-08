@@ -46,7 +46,7 @@ VERBATIM
 
 /*
    1 means noiseFromRandom was called when _ran_compat was previously 0 .
-   2 means noiseFromRandom123 was called when _ran_compart was previously 0.
+   2 means noiseFromRandom123 was called when _ran_compat was previously 0.
 */
 static int _ran_compat; /* specifies the noise style for all instances */
 #define IFNEWSTYLE(arg) if(_ran_compat == 2) { arg }
@@ -121,6 +121,8 @@ VERBATIM
 double nrn_random_pick(void* r);
 void* nrn_random_arg(int argpos);
 int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+int nrn_random123_setseq(void* r, uint32_t seq, char which);
+int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
 #endif
 ENDVERBATIM
 
@@ -175,7 +177,7 @@ VERBATIM
 	if (ifarg(1)) {
 		*pv = nrn_random_arg(1);
 	}else{
-		*pv = nullptr;
+		*pv = (void*)0;
 	}
  }
 #endif
@@ -195,7 +197,7 @@ VERBATIM
 	_ran_compat = 2;
 	if (*pv) {
 		nrnran123_deletestream(*pv);
-		*pv = nullptr;
+		*pv = (nrnran123_State*)0;
 	}
 	if (ifarg(3)) {
 		*pv = nrnran123_newstream3((uint32_t)*getarg(1), (uint32_t)*getarg(2), (uint32_t)*getarg(3));
@@ -204,6 +206,23 @@ VERBATIM
 	}
  }
 #endif
+ENDVERBATIM
+}
+
+DESTRUCTOR {
+VERBATIM
+	if (!noise) { return; }
+	if (_p_donotuse) {
+#if NRNBBCORE
+		{ /* but note that mod2c does not translate DESTRUCTOR */
+#else
+		if (_ran_compat == 2) {
+#endif
+			nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+			nrnran123_deletestream(*pv);
+			*pv = (nrnran123_State*)0;
+		}
+	}
 ENDVERBATIM
 }
 
@@ -216,7 +235,7 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 		assert(0);
 	}
 	if (d) {
-        char which;
+		char which;
 		uint32_t* di = ((uint32_t*)d) + *offset;
 #if !NRNBBCORE
 		if (_ran_compat == 1) {
@@ -226,9 +245,8 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 				fprintf(stderr, "NetStim: Random123 generator is required\n");
 				assert(0);
 			}
-                        // Assume an unpicked stream.
-			di[3] = 0;
-			di[4] = 0;
+			nrn_random123_getseq(*pv, di+3, &which);
+			di[4] = (int)which;
 		}else{
 #else
     {
@@ -237,6 +255,11 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 			nrnran123_getids3(*pv, di, di+1, di+2);
 			nrnran123_getseq(*pv, di+3, &which);
 			di[4] = (int)which;
+#if NRNBBCORE
+			/* CORENeuron does not call DESTRUCTOR so... */
+			nrnran123_deletestream(*pv);
+                        *pv = (nrnran123_State*)0;
+#endif
 		}
 		/*printf("Netstim bbcore_write %d %d %d\n", di[0], di[1], di[3]);*/
 	}
@@ -244,15 +267,42 @@ static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargspro
 }
 
 static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_) {
+	if (!noise) { return; }
+	/* Generally, CoreNEURON, in the context of psolve, begins with
+           an empty model so this call takes place in the context of a freshly
+           created instance and _p_donotuse is not NULL.
+	   However, this function
+           is also now called from NEURON at the end of coreneuron psolve
+           in order to transfer back the nrnran123 sequence state. That
+           allows continuation with a subsequent psolve within NEURON or
+           properly transfer back to CoreNEURON if we continue the psolve
+           there. So now, extra logic is needed for this call to work in
+           a NEURON context.
+        */
+
+	uint32_t* di = ((uint32_t*)d) + *offset;
+#if NRNBBCORE
+	nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
 	assert(!_p_donotuse);
-	if (noise) {
-		uint32_t* di = ((uint32_t*)d) + *offset;
-		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
-		*pv = nrnran123_newstream3(di[0], di[1], di[2]);
-		nrnran123_setseq(*pv, di[3], (char)di[4]);
+	*pv = nrnran123_newstream3(di[0], di[1], di[2]);
+	nrnran123_setseq(*pv, di[3], (char)di[4]);
+#else
+	uint32_t id1, id2, id3;
+	assert(_p_donotuse);
+	if (_ran_compat == 1) { /* Hoc Random.Random123 */
+		void** pv = (void**)(&_p_donotuse);
+		int b = nrn_random_isran123(*pv, &id1, &id2, &id3);
+		assert(b);
+		nrn_random123_setseq(*pv, di[3], (char)di[4]);
 	}else{
-		return;
+		assert(_ran_compat == 2);
+		nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+		nrnran123_getids3(*pv, &id1, &id2, &id3);
+		nrnran123_setseq(*pv, di[3], (char)di[4]);
 	}
+        /* Random123 on NEURON side has same ids as on CoreNEURON side */
+	assert(di[0] == id1 && di[1] == id2 && di[2] == id3);
+#endif
 	*offset += 5;
 }
 ENDVERBATIM
@@ -295,6 +345,34 @@ NET_RECEIVE (w) {
 		}
 	}
 }
+
+FUNCTION bbsavestate() {
+  bbsavestate = 0
+  : limited to noiseFromRandom123
+VERBATIM
+#if !NRNBBCORE
+  if (_ran_compat == 2) {
+    nrnran123_State** pv = (nrnran123_State**)(&_p_donotuse);
+    if (!*pv) { return 0.0; }
+    char which;
+    uint32_t seq;
+    double *xdir, *xval;
+    xdir = hoc_pgetarg(1);
+    if (*xdir == -1.) { *xdir = 2; return 0.0; }
+    xval = hoc_pgetarg(2);
+    if (*xdir == 0.) {
+      nrnran123_getseq(*pv, &seq, &which);
+      xval[0] = (double)seq;
+      xval[1] = (double)which;
+    }
+    if (*xdir == 1) {
+      nrnran123_setseq(*pv, (uint32_t)xval[0], (char)xval[1]);
+    }
+  } /* else do nothing */
+#endif
+ENDVERBATIM
+}
+
 
 COMMENT
 Presynaptic spike generator

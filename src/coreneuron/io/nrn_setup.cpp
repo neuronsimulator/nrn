@@ -759,11 +759,13 @@ void nrn_cleanup() {
                     free_memory(nrb->_nrb_index);
                 }
                 free_memory(nrb);
+                ml->_net_receive_buffer = nullptr;
             }
 
             NetSendBuffer_t* nsb = ml->_net_send_buffer;
             if (nsb) {
                 delete nsb;
+                ml->_net_send_buffer = nullptr;
             }
 
             if (tml->dependencies)

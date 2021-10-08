@@ -22,12 +22,6 @@ static void (*mechanism[])(void) = {/* type will start at 3 */
                                     /* extracellular requires special handling and must be type 5 */
                                     extracell_reg_,
 #endif
-                                    _stim_reg,
-                                    _hh_reg,
-                                    _expsyn_reg,
-                                    _netstim_reg,
-                                    _exp2syn_reg,
-                                    _svclmp_reg,
                                     0};
 
 }  // namespace coreneuron

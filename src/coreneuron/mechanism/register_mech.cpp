@@ -426,4 +426,14 @@ void _nrn_setdata_reg(int i, void (*call)(double*, Datum*)) {
 
     corenrn.get_memb_func(i).setdata_ = call;
 }
+
+Memb_func::~Memb_func() {
+    if (sym != nullptr) {
+        free(sym);
+    }
+    if (dparam_semantics != nullptr) {
+        free(dparam_semantics);
+    }
+}
+
 }  // namespace coreneuron

@@ -41,6 +41,7 @@ struct Memb_func {
     int is_point;
     void (*setdata_)(double*, Datum*);
     int* dparam_semantics; /* for nrncore writing. */
+    ~Memb_func();
 };
 
 #define VINDEX       -1

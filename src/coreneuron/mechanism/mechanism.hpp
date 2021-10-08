@@ -120,15 +120,15 @@ struct Memb_list {
      * directly via the nrn_actual_* arrays instead of accessing it in the
      * order of insertion and via the node-structure, making it more
      * cache-efficient */
-    int* nodeindices;
-    int* _permute;
-    double* data;
-    Datum* pdata;
-    ThreadDatum* _thread; /* thread specific data (when static is no good) */
-    NetReceiveBuffer_t* _net_receive_buffer;
-    NetSendBuffer_t* _net_send_buffer;
+    int* nodeindices = nullptr;
+    int* _permute = nullptr;
+    double* data = nullptr;
+    Datum* pdata = nullptr;
+    ThreadDatum* _thread = nullptr; /* thread specific data (when static is no good) */
+    NetReceiveBuffer_t* _net_receive_buffer = nullptr;
+    NetSendBuffer_t* _net_send_buffer = nullptr;
     int nodecount; /* actual node count */
     int _nodecount_padded;
-    void* instance; /* mechanism instance */
+    void* instance = nullptr; /* mechanism instance */
 };
 }  // namespace coreneuron

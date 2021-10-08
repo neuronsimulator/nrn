@@ -410,7 +410,7 @@ std::map<int, int*> type2invperm;
 
 static void clear_inv_perm_for_selfevent_targets() {
     for (auto it: type2invperm) {
-        delete it.second;
+        delete[] it.second;
     }
     type2invperm.clear();
 }
@@ -418,9 +418,11 @@ static void clear_inv_perm_for_selfevent_targets() {
 
 typedef std::map<int, std::vector<TQItem*>> SelfEventWeightMap;
 
-static void core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread& nt) {
+// return false unless q is pushed to sewm
+static bool core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread& nt) {
     DiscreteEvent* d = (DiscreteEvent*) q->data_;
     double td = q->t_;
+    bool in_sewm = false;
 
     switch (d->type()) {
         case NetConType: {
@@ -457,6 +459,8 @@ static void core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
                 // same weight index. More importantly, collect them all
                 // so that we only need to iterate over the nt.netcons once
                 sewm[weight_index].push_back(q);
+                in_sewm = true;
+
             } else {
                 int tar_index = pnt->_i_instance;  // correct for no permutation
                 if (ml->_permute) {
@@ -464,6 +468,7 @@ static void core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
                 }
                 (*core2nrn_SelfEvent_event_noweight_)(
                     nt.id, td, tar_type, tar_index, flag, is_movable);
+                delete se;
             }
             break;
         }
@@ -490,6 +495,7 @@ static void core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread&
             break;
         }
     }
+    return in_sewm;
 }
 
 void core2nrn_tqueue(NrnThread& nt) {
@@ -510,11 +516,13 @@ void core2nrn_tqueue(NrnThread& nt) {
     SelfEventWeightMap sewm;
     // TQItems from atomic_dq
     while ((q = tqe->atomic_dq(1e20)) != nullptr) {
-        core2nrn_tqueue_item(q, sewm, nt);
+        if (core2nrn_tqueue_item(q, sewm, nt) == false) {
+            delete q;
+        }
     }
     // TQitems from binq_
     for (q = tqe->binq_->first(); q; q = tqe->binq_->next(q)) {
-        core2nrn_tqueue_item(q, sewm, nt);
+        assert(core2nrn_tqueue_item(q, sewm, nt) == false);
     }
 
     // For self events with weight, find the NetCon index and send that
@@ -538,13 +546,23 @@ void core2nrn_tqueue(NrnThread& nt) {
                     assert(d->type() == SelfEventType);
                     SelfEvent* se = (SelfEvent*) d;
                     int tar_type = se->target_->_type;
-                    int tar_index = se->target_ - nt.pntprocs;
-                    // Note: nt.pntprocs is not permuted.
+                    // Note that instead of getting tar_index from the permuted
+                    // pnt->_i_instance here and for the noweight case above
+                    // which then needs the possibly large inverse permutation
+                    // vectors, it would save some space to use the unpermuted
+                    // nt.pntprocs array along with a much shorter vector
+                    // of type offsets.
+                    int tar_index = se->target_->_i_instance;
+                    if (nt._ml_list[tar_type]->_permute) {
+                        tar_index = type2invperm[tar_type][tar_index];
+                    }
                     double flag = se->flag_;
                     TQItem** movable = (TQItem**) (se->movable_);
                     int is_movable = (movable && *movable == q) ? 1 : 0;
                     (*core2nrn_SelfEvent_event_)(
                         nt.id, td, tar_type, tar_index, flag, nc_index, is_movable);
+                    delete q;
+                    delete se;
                 }
             }
         }
