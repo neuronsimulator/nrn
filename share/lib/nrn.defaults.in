@@ -16,6 +16,10 @@
 *dismiss_button: Close
 *use_transient_windows: yes
 
+*dialog_spec_position: off
+*dialog_bottom_position: 400
+*dialog_left_position: 400
+
 *mswin_scale: 1.2
 // above only applies to the mswin version. If the width of the screen in pixels
 // is pw, then the default scale is 1 if pw>1100 otherwise scale is 1200/pw
