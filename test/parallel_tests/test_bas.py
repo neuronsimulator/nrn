@@ -237,7 +237,7 @@ out2in_sh = r"""
 #!/bin/bash
 out=bbss_out
 rm -f in/*
-mkdir in
+mkdir -p in
 cat $out/tmp > in/tmp
 for f in $out/tmp.*.* ; do
   i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
@@ -386,7 +386,7 @@ def test_starnet():
     prun(tstop, "BBSaveState")
     compare_dicts(get_all_spikes(starnet), stdspikes_half)
 
-    h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
+    h.dt = 1.0 / 64.0  # issue 1480
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}
