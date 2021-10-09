@@ -44,7 +44,7 @@ struct InterThreadEvent {
 
 class NetCvodeThreadData {
   public:
-    int unreffed_event_cnt_;
+    int unreffed_event_cnt_ = 0;
     TQueue<QTYPE>* tqe_;
     std::vector<InterThreadEvent> inter_thread_events_;
     OMP_Mutex mut;

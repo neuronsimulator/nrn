@@ -136,17 +136,16 @@ static void mk_mech(std::istream& s) {
 
 /// Get mechanism type by the mechanism name
 int nrn_get_mechtype(const char* name) {
-    std::string str(name);
-    std::map<std::string, int>::const_iterator mapit = mech2type.find(str);
+    auto mapit = mech2type.find(name);
     if (mapit == mech2type.end())
         return -1;  // Could not find the mechanism
     return mapit->second;
 }
 
 const char* nrn_get_mechname(int type) {
-    for (std::map<std::string, int>::iterator i = mech2type.begin(); i != mech2type.end(); ++i) {
-        if (type == i->second) {
-            return i->first.c_str();
+    for (const auto& item: mech2type) {
+        if (type == item.second) {
+            return item.first.c_str();
         }
     }
     return nullptr;

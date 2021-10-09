@@ -346,7 +346,6 @@ int point_register_mech(const char** m,
                         mod_f_t constructor,
                         mod_f_t destructor,
                         int vectorized) {
-    (void) constructor;
     const Symbol* s = m[1];
     register_mech(m, alloc, cur, jacob, stat, initialize, nrnpointerindex, vectorized);
     register_constructor(constructor);

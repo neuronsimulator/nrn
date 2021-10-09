@@ -18,7 +18,7 @@
 /**
  * Progressbar data structure (do not modify or create directly)
  */
-typedef struct _progressbar_t {
+struct progressbar {
     /// maximum value
     unsigned long max;
 
@@ -53,7 +53,7 @@ typedef struct _progressbar_t {
         char fill;
         char end;
     } format;
-} progressbar;
+};
 
 /// Create a new progressbar with the specified label and number of steps.
 ///

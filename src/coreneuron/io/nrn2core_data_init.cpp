@@ -101,7 +101,7 @@ void vec_play_activate() {
             assert(pr->type() == VecPlayContinuousType);
             VecPlayContinuous* vpc = (VecPlayContinuous*) pr;
             assert(vpc->e_);
-            assert(vpc->discon_indices_ == NULL);  // not implemented
+            assert(vpc->discon_indices_ == nullptr);  // not implemented
             vpc->e_->send(vpc->t_[vpc->ubound_index_], net_cvode_instance, nt);
         }
     }

@@ -11,7 +11,9 @@
 
 #include <vector>
 
-std::vector<size_t>* lpt(size_t nbag, std::vector<size_t>& pieces, double* bal = nullptr);
+std::vector<std::size_t> lpt(std::size_t nbag,
+                             std::vector<std::size_t>& pieces,
+                             double* bal = nullptr);
 
 double load_balance(std::vector<size_t>&);
 #endif

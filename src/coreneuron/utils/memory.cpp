@@ -18,8 +18,9 @@ namespace coreneuron {
 bool unified_memory_enabled() {
 #ifdef CORENEURON_ENABLE_GPU
     return corenrn_param.gpu;
-#endif
+#else
     return false;
+#endif
 }
 
 void* allocate_unified(std::size_t num_bytes) {

@@ -13,22 +13,22 @@
  *
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <climits>
 #include <vector>
-#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/utils/nrn_stats.h"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/netcvode.hpp"
 #include "coreneuron/network/partrans.hpp"
 #include "coreneuron/io/output_spikes.hpp"
+#include "coreneuron/apps/corenrn_parameters.hpp"
 namespace coreneuron {
 const int NUM_STATS = 13;
-enum event_type { enq = 0, spike, ite };
 
-void report_cell_stats(void) {
-    long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, gstat_array[NUM_STATS];
+void report_cell_stats() {
+    long stat_array[NUM_STATS] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         stat_array[0] += nrn_threads[ith].ncell;           // number of cells
@@ -46,26 +46,23 @@ void report_cell_stats(void) {
     }
     stat_array[5] = spikevec_gid.size();  // number of spikes
 
-    int spikevec_positive_gid_size = 0;
-    for (std::size_t i = 0; i < spikevec_gid.size(); ++i) {
-        if (spikevec_gid[i] > -1) {
-            spikevec_positive_gid_size++;
-        }
-    }
-
-    stat_array[6] = spikevec_positive_gid_size;  // number of non-negative gid spikes
+    stat_array[6] = std::count_if(spikevec_gid.cbegin(), spikevec_gid.cend(), [](const int& s) {
+        return s > -1;
+    });  // number of non-negative gid spikes
 
 #if NRNMPI
+    long gstat_array[NUM_STATS];
     if (corenrn_param.mpi_enable) {
         nrnmpi_long_allreduce_vec(stat_array, gstat_array, NUM_STATS, 1);
-    } else
-#endif
-    {
+    } else {
         assert(sizeof(stat_array) == sizeof(gstat_array));
         std::memcpy(gstat_array, stat_array, sizeof(stat_array));
     }
+#else
+    const long(&gstat_array)[NUM_STATS] = stat_array;
+#endif
 
-    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
+    if (nrnmpi_myid == 0) {
         printf("\n\n Simulation Statistics\n");
         printf(" Number of cells: %ld\n", gstat_array[0]);
         printf(" Number of compartments: %ld\n", gstat_array[10]);

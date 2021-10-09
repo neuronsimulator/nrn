@@ -14,7 +14,7 @@
 namespace coreneuron {
 
 /* avoid incessant alloc/free memory */
-typedef struct NewtonSpace {
+struct NewtonSpace {
     int n;
     int n_instance;
     double* delta_x;
@@ -23,7 +23,7 @@ typedef struct NewtonSpace {
     double* high_value;
     double* low_value;
     double* rowmax;
-} NewtonSpace;
+};
 
 #pragma acc routine seq
 extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _threadargsproto_);

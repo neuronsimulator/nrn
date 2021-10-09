@@ -22,7 +22,7 @@ int (*nrn2core_get_dat1_)(int tid,
                           std::vector<int>& netcon_negsrcgid_tid);
 
 namespace coreneuron {
-void Phase1::read_file(FileHandler& F) {
+Phase1::Phase1(FileHandler& F) {
     assert(!F.fail());
     int n_presyn = F.read_int();  /// Number of PreSyn-s in NrnThread nt
     int n_netcon = F.read_int();  /// Number of NetCon-s in NrnThread nt
@@ -35,7 +35,7 @@ void Phase1::read_file(FileHandler& F) {
     F.close();
 }
 
-void Phase1::read_direct(int thread_id) {
+Phase1::Phase1(int thread_id) {
     int* output_gids;
     int* netcon_srcgid;
     int n_presyn;

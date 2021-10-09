@@ -83,7 +83,7 @@ struct alloc_deleter {
     alloc_deleter(const Alloc& a)
         : a(a) {}
 
-    typedef typename std::allocator_traits<Alloc>::pointer pointer;
+    using pointer = typename std::allocator_traits<Alloc>::pointer;
 
     void operator()(pointer p) const {
         Alloc aa(a);

@@ -22,10 +22,9 @@
 void* (*nrn2core_get_global_dbl_item_)(void*, const char*& name, int& size, double*& val);
 int (*nrn2core_get_global_int_item_)(const char* name);
 
-using namespace std;
 namespace coreneuron {
-using PSD = pair<size_t, double*>;
-using N2V = map<string, PSD>;
+using PSD = std::pair<std::size_t, double*>;
+using N2V = std::map<std::string, PSD>;
 
 static N2V* n2v;
 
@@ -86,7 +85,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
         nrnran123_set_globalindex((*nrn2core_get_global_int_item_)("Random123_global_index"));
 
     } else {  // get the info from the globals.dat file
-        string fname = string(path) + string("/globals.dat");
+        std::string fname = std::string(path) + std::string("/globals.dat");
         FILE* f = fopen(fname.c_str(), "r");
         if (!f) {
             printf("ignore: could not open %s\n", fname.c_str());
@@ -148,7 +147,7 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
                             "CORENRN_ENABLE_LEGACY_UNITS not"
                             " consistent with NEURON value of"
                             " nrnunit_use_legacy()",
-                            NULL);
+                            nullptr);
                     }
                 }
             }
@@ -163,8 +162,8 @@ void set_globals(const char* path, bool cli_global_seed, int cli_global_seed_val
     }
 
 #if DEBUG
-    for (N2V::iterator i = n2v->begin(); i != n2v->end(); ++i) {
-        printf("%s %ld %p\n", i->first.c_str(), i->second.first, i->second.second);
+    for (const auto& item: *n2v) {
+        printf("%s %ld %p\n", item.first.c_str(), item.second.first, item.second.second);
     }
 #endif
 

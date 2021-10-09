@@ -14,14 +14,15 @@
 namespace coreneuron {
 class PlayRecord;
 
+#define PlayRecordType        0
 #define VecPlayContinuousType 4
 #define PlayRecordEventType   21
 
 // used by PlayRecord subclasses that utilize discrete events
 class PlayRecordEvent: public DiscreteEvent {
   public:
-    PlayRecordEvent();
-    virtual ~PlayRecordEvent();
+    PlayRecordEvent() = default;
+    virtual ~PlayRecordEvent() = default;
     virtual void deliver(double, NetCvode*, NrnThread*) override;
     virtual void pr(const char*, double t, NetCvode*) override;
     virtual NrnThread* thread();
@@ -37,7 +38,7 @@ class PlayRecordEvent: public DiscreteEvent {
 class PlayRecord {
   public:
     PlayRecord(double* pd, int ith);
-    virtual ~PlayRecord();
+    virtual ~PlayRecord() = default;
     virtual void play_init() {}  // called near beginning of finitialize
     virtual void continuous(double) {
     }  // play - every f(y, t) or res(y', y, t); record - advance_tn and initialize flag
@@ -47,7 +48,7 @@ class PlayRecord {
     }
     virtual void pr();  // print identifying info
     virtual int type() const {
-        return 0;
+        return PlayRecordType;
     }
 
     double* pd_;
@@ -79,11 +80,11 @@ class VecPlayContinuous: public PlayRecord {
     IvocVect y_;
     IvocVect t_;
     IvocVect* discon_indices_;
-    size_t last_index_;
-    size_t discon_index_;
-    size_t ubound_index_;
+    std::size_t last_index_{};
+    std::size_t discon_index_{};
+    std::size_t ubound_index_{};
 
-    PlayRecordEvent* e_;
+    PlayRecordEvent* e_ = nullptr; // Need to be a raw pointer for acc
 };
 }  // namespace coreneuron
 #endif

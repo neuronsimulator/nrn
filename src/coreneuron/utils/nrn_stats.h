@@ -22,7 +22,7 @@ namespace coreneuron {
  *  @param void
  *  @return void
  */
-void report_cell_stats(void);
+void report_cell_stats();
 
 }  // namespace coreneuron
 #endif /* ifndef _H_NRN_STATS_ */

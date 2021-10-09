@@ -33,8 +33,8 @@ class NetCvode;
 
 class DiscreteEvent {
   public:
-    DiscreteEvent();
-    virtual ~DiscreteEvent();
+    DiscreteEvent() = default;
+    virtual ~DiscreteEvent() = default;
     virtual void send(double deliverytime, NetCvode*, NrnThread*);
     virtual void deliver(double t, NetCvode*, NrnThread*);
     virtual int type() const {
@@ -48,19 +48,19 @@ class DiscreteEvent {
 
 class NetCon: public DiscreteEvent {
   public:
-    bool active_;
-    double delay_;
-    Point_process* target_;
+    bool active_{};
+    double delay_{1.0};
+    Point_process* target_{};
     union {
-        int weight_index_;
+        int weight_index_{};
         int srcgid_;  // only to help InputPreSyn during setup
         // before weights are read and stored. Saves on transient
         // memory requirements by avoiding storage of all group file
         // netcon_srcgid lists. ie. that info is copied into here.
     } u;
 
-    NetCon();
-    virtual ~NetCon();
+    NetCon() = default;
+    virtual ~NetCon() = default;
     virtual void send(double sendtime, NetCvode*, NrnThread*) override;
     virtual void deliver(double, NetCvode* ns, NrnThread*) override;
     virtual int type() const override {
@@ -76,8 +76,8 @@ class SelfEvent: public DiscreteEvent {
     void** movable_;  // actually a TQItem**
     int weight_index_;
 
-    SelfEvent();
-    virtual ~SelfEvent();
+    SelfEvent() = default;
+    virtual ~SelfEvent() = default;
     virtual void deliver(double, NetCvode*, NrnThread*) override;
     virtual int type() const override {
         return SelfEventType;
@@ -92,32 +92,32 @@ class SelfEvent: public DiscreteEvent {
 class ConditionEvent: public DiscreteEvent {
   public:
     // condition detection factored out of PreSyn for re-use
-    ConditionEvent();
-    virtual ~ConditionEvent();
+    ConditionEvent() = default;
+    virtual ~ConditionEvent() = default;
     virtual bool check(NrnThread*);
     virtual double value(NrnThread*) {
         return -1.;
     }
 
-    int flag_;  // true when below, false when above. (changed from bool to int to avoid cray acc
-                // bug(?))
+    int flag_{};  // true when below, false when above. (changed from bool to int to avoid cray acc
+                  // bug(?))
 };
 
 class PreSyn: public ConditionEvent {
   public:
 #if NRNMPI
-    unsigned char localgid_;  // compressed gid for spike transfer
+    unsigned char localgid_{};  // compressed gid for spike transfer
 #endif
-    int nc_index_;  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_;    // how many netcon starting at nc_index_
-    int output_index_;
-    int gid_;
-    double threshold_;
-    int thvar_index_;  // >=0 points into NrnThread._actual_v
-    Point_process* pntsrc_;
+    int nc_index_{};  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
+    int nc_cnt_{};    // how many netcon starting at nc_index_
+    int output_index_{};
+    int gid_{-1};
+    double threshold_{10.};
+    int thvar_index_{-1};  // >=0 points into NrnThread._actual_v
+    Point_process* pntsrc_{};
 
-    PreSyn();
-    virtual ~PreSyn();
+    PreSyn() = default;
+    virtual ~PreSyn() = default;
     virtual void send(double sendtime, NetCvode*, NrnThread*) override;
     virtual void deliver(double, NetCvode*, NrnThread*) override;
     virtual int type() const override {
@@ -127,24 +127,24 @@ class PreSyn: public ConditionEvent {
     virtual double value(NrnThread*) override;
     void record(double t);
 #if NRN_MULTISEND
-    int multisend_index_;
+    int multisend_index_{-1};
 #endif
 };
 
 class InputPreSyn: public DiscreteEvent {
   public:
-    int nc_index_;  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
-    int nc_cnt_;    // how many netcon starting at nc_index_
+    int nc_index_{-1};  // replaces dil_, index into global NetCon** netcon_in_presyn_order_
+    int nc_cnt_{};      // how many netcon starting at nc_index_
 
-    InputPreSyn();
-    virtual ~InputPreSyn();
+    InputPreSyn() = default;
+    virtual ~InputPreSyn() = default;
     virtual void send(double sendtime, NetCvode*, NrnThread*) override;
     virtual void deliver(double, NetCvode*, NrnThread*) override;
     virtual int type() const override {
         return InputPreSynType;
     }
 #if NRN_MULTISEND
-    int multisend_phase2_index_;
+    int multisend_phase2_index_{-1};
 #endif
 };
 

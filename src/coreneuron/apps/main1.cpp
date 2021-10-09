@@ -520,7 +520,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
         configs = create_report_configurations(corenrn_param.reportfilepath,
                                                corenrn_param.outpath,
                                                spikes_population_name_offset);
-        reports_needs_finalize = configs.size();
+        reports_needs_finalize = !configs.empty();
     }
 
     CheckPoints checkPoints{corenrn_param.checkpointpath, corenrn_param.restorepath};
@@ -616,7 +616,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
         }
 
         // Report global cell statistics
-        report_cell_stats();
+        if (!corenrn_param.is_quiet()) {
+            report_cell_stats();
+        }
 
         // prcellstate after end of solver
         call_prcellstate_for_prcellgid(corenrn_param.prcellgid, compute_gpu, 0);
@@ -634,7 +636,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
         update_weights_from_gpu(nrn_threads, nrn_nthread);
 
         // store weight pointers
-        std::vector<double*> weights(nrn_nthread, NULL);
+        std::vector<double*> weights(nrn_nthread, nullptr);
 
         // could be one thread more (empty) than in NEURON but does not matter
         for (int i = 0; i < nrn_nthread; ++i) {

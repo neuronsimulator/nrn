@@ -50,14 +50,13 @@ static int ml_permute(int i, Memb_list* ml) {
 // Note: cellnodes array is in unpermuted order.
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {
-    int is_art = corenrn.get_is_artificial()[type];
-    if (is_art)
+    if (corenrn.get_is_artificial()[type])
         return;
 
-    int header_printed = 0;
+    bool header_printed = false;
     int size = corenrn.get_prop_param_size()[type];
     int psize = corenrn.get_prop_dparam_size()[type];
-    int receives_events = corenrn.get_pnt_receive()[type] ? 1 : 0;
+    bool receives_events = corenrn.get_pnt_receive()[type];
     int layout = corenrn.get_mech_data_layout()[type];
     int cnt = ml->nodecount;
     for (int iorig = 0; iorig < ml->nodecount; ++iorig) {  // original index
@@ -66,7 +65,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
         int cix = cellnodes[inv_permute(inode, nt)];       // original index relative to this cell
         if (cix >= 0) {
             if (!header_printed) {
-                header_printed = 1;
+                header_printed = true;
                 fprintf(f, "type=%d %s size=%d\n", type, corenrn.get_memb_func(type).sym, size);
             }
             if (receives_events) {
@@ -92,8 +91,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
 
     // List of NetCon for each of the NET_RECEIVE point process instances
     // Also create the initial map of NetCon <-> DiscreteEvent (PreSyn)
-    std::vector<std::vector<NetCon*>> nclist;
-    nclist.resize(pntindex);
+    std::vector<std::vector<NetCon*>> nclist(pntindex);
     map_nc2src.clear();
     int nc_cnt = 0;
     for (int i = 0; i < nt.n_netcon; ++i) {
@@ -110,8 +108,6 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     fprintf(f, " pntindex srcgid active delay weights\n");
 
     /// Fill the NetCon <-> DiscreteEvent map with PreSyn-s
-    DiscreteEvent* de;
-    std::map<NetCon*, DiscreteEvent*>::iterator it_nc2src;
     // presyns can come from any thread
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         NrnThread& ntps = nrn_threads[ith];
@@ -119,7 +115,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
             PreSyn* ps = ntps.presyns + i;
             for (int j = 0; j < ps->nc_cnt_; ++j) {
                 NetCon* nc = netcon_in_presyn_order_[ps->nc_index_ + j];
-                it_nc2src = map_nc2src.find(nc);
+                auto it_nc2src = map_nc2src.find(nc);
                 if (it_nc2src != map_nc2src.end()) {
                     it_nc2src->second = ps;
                 }
@@ -132,15 +128,14 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
     /// correspondent InputPreSyn. If NetCon is in the nc2src map,
     /// remember its ips and the gid
     std::map<NetCon*, int> map_nc2gid;
-    std::map<int, InputPreSyn*>::iterator it_gid2in = gid2in.begin();
-    for (; it_gid2in != gid2in.end(); ++it_gid2in) {
-        InputPreSyn* ips = it_gid2in->second;  /// input presyn
+    for (const auto& gid: gid2in) {
+        InputPreSyn* ips = gid.second;  /// input presyn
         for (int i = 0; i < ips->nc_cnt_; ++i) {
             NetCon* nc = netcon_in_presyn_order_[ips->nc_index_ + i];
-            it_nc2src = map_nc2src.find(nc);
+            auto it_nc2src = map_nc2src.find(nc);
             if (it_nc2src != map_nc2src.end()) {
                 it_nc2src->second = ips;
-                map_nc2gid[nc] = it_gid2in->first;  /// src gid of the input presyn
+                map_nc2gid[nc] = gid.first;  /// src gid of the input presyn
             }
         }
     }
@@ -149,10 +144,10 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         for (int j = 0; j < (int) (nclist[i].size()); ++j) {
             NetCon* nc = nclist[i][j];
             int srcgid = -3;
-            it_nc2src = map_nc2src.find(nc);
+            auto it_nc2src = map_nc2src.find(nc);
             if (it_nc2src != map_nc2src.end()) {  // seems like there should be no NetCon which is
                                                   // not in the map
-                de = it_nc2src->second;
+                DiscreteEvent* de = it_nc2src->second;
                 if (de && de->type() == PreSynType) {
                     PreSyn* ps = (PreSyn*) de;
                     srcgid = ps->gid_;

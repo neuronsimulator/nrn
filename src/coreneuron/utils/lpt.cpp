@@ -6,8 +6,9 @@
 # =============================================================================
 */
 
-#include <functional>
 #include <algorithm>
+#include <functional>
+#include <numeric>
 #include <queue>
 
 #include "coreneuron/nrnconf.h"  // for size_t
@@ -16,45 +17,35 @@
 
 using P = std::pair<size_t, size_t>;
 
-// always want the largest remaining piece
-bool piece_comp(const P& a, const P& b) {
-    return a.second > b.second;
-}
-
-// always want the smallest bag
-struct bag_comp {
-    bool operator()(const P& a, const P& b) {
-        return a.second > b.second;
-    }
-};
-
 // lpt Least Processing Time algorithm.
 // Largest piece goes into least size bag.
 // in: number of bags, vector of sizes
 // return: a new vector of bag indices parallel to the vector of sizes.
 
-std::vector<size_t>* lpt(size_t nbag, std::vector<size_t>& pieces, double* bal) {
+std::vector<std::size_t> lpt(std::size_t nbag, std::vector<std::size_t>& pieces, double* bal) {
     nrn_assert(nbag > 0);
-    nrn_assert(pieces.size() > 0);
+    nrn_assert(!pieces.empty());
 
     std::vector<P> pvec;
     for (size_t i = 0; i < pieces.size(); ++i) {
         pvec.push_back(P(i, pieces[i]));
     }
-    std::sort(pvec.begin(), pvec.end(), piece_comp);
 
-    std::vector<size_t>* bagindices = new std::vector<size_t>(pieces.size());
+    auto P_comp = [](const P& a, const P& b) { return a.second > b.second; };
 
-    std::priority_queue<P, std::vector<P>, bag_comp> bagq;
+    std::sort(pvec.begin(), pvec.end(), P_comp);
+
+    std::vector<std::size_t> bagindices(pieces.size());
+
+    std::priority_queue<P, std::vector<P>, decltype(P_comp)> bagq(P_comp);
     for (size_t i = 0; i < nbag; ++i) {
         bagq.push(P(i, 0));
     }
 
-    for (size_t i = 0; i < pvec.size(); ++i) {
-        P& p = pvec[i];
+    for (const auto& p: pvec) {
         P bagqitem = bagq.top();
         bagq.pop();
-        (*bagindices)[p.first] = bagqitem.first;
+        bagindices[p.first] = bagqitem.first;
         bagqitem.second += p.second;
         bagq.push(bagqitem);
     }
@@ -76,14 +67,8 @@ std::vector<size_t>* lpt(size_t nbag, std::vector<size_t>& pieces, double* bal) 
 }
 
 double load_balance(std::vector<size_t>& v) {
-    size_t sum = 0;
-    size_t max = 1;
-    for (size_t i = 0; i < v.size(); ++i) {
-        size_t val = v[i];
-        sum += val;
-        if (max < val) {
-            max = val;
-        }
-    }
+    nrn_assert(!v.empty());
+    std::size_t sum = std::accumulate(v.begin(), v.end(), 0);
+    std::size_t max = *std::max_element(v.begin(), v.end());
     return (double(sum) / v.size()) / max;
 }

@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(priority_queue_nq_dq) {
     }
 
     BOOST_CHECK(cnter == num);
-    BOOST_CHECK(tq.pq_que_.size() == 0);
+    BOOST_CHECK(tq.pq_que_.empty());
     BOOST_CHECK(tq.least() == NULL);
 }
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(tqueue_ordered_test) {
         delete item;
     }
     BOOST_CHECK(cnter == num);
-    BOOST_CHECK(tq.pq_que_.size() == 0);
+    BOOST_CHECK(tq.pq_que_.empty());
     BOOST_CHECK(tq.least() == NULL);
 }
 
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(threaddata_enqueue){
 
     //enqueue the inter_thread_events_
     n.p[1].enqueue(&n, &(n.p[1]));
-    BOOST_CHECK(n.p[1].inter_thread_events_.size() == 0);
+    BOOST_CHECK(n.p[1].inter_thread_events_.empty());
     BOOST_CHECK(n.p[1].tqe_->pq_que_.size() == num);
 
     //cleanup priority queue

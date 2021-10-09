@@ -232,8 +232,7 @@ void netpar_tid_gid2ps(int tid, int gid, PreSyn** ps, InputPreSyn** psi) {
         if (gid2out_it != gid2out.end()) {
             *ps = gid2out_it->second;
         } else {
-            std::map<int, InputPreSyn*>::iterator gid2in_it;
-            gid2in_it = gid2in.find(gid);
+            auto gid2in_it = gid2in.find(gid);
             if (gid2in_it != gid2in.end()) {
                 *psi = gid2in_it->second;
             }
@@ -478,8 +477,7 @@ void nrn_setup(const char* filesdat,
         coreneuron::phase_wrapper<coreneuron::phase::one>(userParams);
     } else {
         nrn_multithread_job([](NrnThread* n) {
-            Phase1 p1;
-            p1.read_direct(n->id);
+            Phase1 p1{n->id};
             NrnThread& nt = *n;
             p1.populate(nt, mut);
         });
@@ -585,23 +583,19 @@ void setup_ThreadData(NrnThread& nt) {
 }
 
 void read_phasegap(NrnThread& nt, UserParams& userParams) {
-    auto& si = nrn_partrans::setup_info_[nt.id];
-    size_t ntar = 0;
-    size_t nsrc = 0;
-
     auto& F = userParams.file_reader[nt.id];
     if (F.fail()) {
         return;
     }
 
-    int chkpntsave = F.checkpoint();
     F.checkpoint(0);
 
     int sidt_size = F.read_int();
     assert(sidt_size == int(sizeof(sgid_t)));
-    ntar = size_t(F.read_int());
-    nsrc = size_t(F.read_int());
+    std::size_t ntar = F.read_int();
+    std::size_t nsrc = F.read_int();
 
+    auto& si = nrn_partrans::setup_info_[nt.id];
     si.src_sid.resize(nsrc);
     si.src_type.resize(nsrc);
     si.src_index.resize(nsrc);
@@ -622,10 +616,10 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 
 #if DEBUG
     printf("%d read_phasegap tid=%d nsrc=%d ntar=%d\n", nrnmpi_myid, nt.id, nsrc, ntar);
-    for (int i = 0; i < si.nsrc; ++i) {
+    for (int i = 0; i < nsrc; ++i) {
         printf("src %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
     }
-    for (int i = 0; i < si.ntar; ++i) {
+    for (int i = 0; i < ntar; ++i) {
         printf("tar %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);
     }
 #endif
@@ -903,8 +897,7 @@ void delete_trajectory_requests(NrnThread& nt) {
 }
 
 void read_phase1(NrnThread& nt, UserParams& userParams) {
-    Phase1 p1;
-    p1.read_file(userParams.file_reader[nt.id]);
+    Phase1 p1{userParams.file_reader[nt.id]};
 
     // Protect gid2in, gid2out and neg_gid2out
     p1.populate(nt, mut);
@@ -1046,13 +1039,16 @@ size_t model_size(bool detailed_report) {
         printf("ncell=%d end=%d nmech=%d\n", nt.ncell, nt.end, nmech);
         printf("ndata=%ld nidata=%ld nvdata=%ld\n", nt._ndata, nt._nidata, nt._nvdata);
         printf("nbyte so far %ld\n", nb_nt);
-        printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_ps, nt.n_presyn * sz_ps);
+        printf("n_presyn = %d sz=%ld nbyte=%ld\n", nt.n_presyn, sz_presyn, nt.n_presyn * sz_presyn);
         printf("n_input_presyn = %d sz=%ld nbyte=%ld\n",
                nt.n_input_presyn,
-               sz_psi,
-               nt.n_input_presyn * sz_psi);
-        printf("n_pntproc=%d sz=%ld nbyte=%ld\n", nt.n_pntproc, sz_pp, nt.n_pntproc * sz_pp);
-        printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_nc, nt.n_netcon * sz_nc);
+               sz_input_presyn,
+               nt.n_input_presyn * sz_input_presyn);
+        printf("n_pntproc=%d sz=%ld nbyte=%ld\n",
+               nt.n_pntproc,
+               sz_pntproc,
+               nt.n_pntproc * sz_pntproc);
+        printf("n_netcon=%d sz=%ld nbyte=%ld\n", nt.n_netcon, sz_netcon, nt.n_netcon * sz_netcon);
         printf("n_weight = %d\n", nt.n_weight);
 
         printf("%d thread %d total bytes %ld\n", nrnmpi_myid, i, nb_nt);

@@ -25,15 +25,12 @@ int cellorder_nwarp = 0;  // 0 means do not balance
 
 // ordering by warp, then old order
 bool warpcmp(const TNode* a, const TNode* b) {
-    bool res = false;
     if (a->groupindex < b->groupindex) {
-        res = true;
-    } else if (a->groupindex == b->groupindex) {
-        if (a->nodevec_index < b->nodevec_index) {
-            res = true;
-        }
+        return true;
+    } else if (a->groupindex == b->groupindex && a->nodevec_index < b->nodevec_index) {
+        return true;
     }
-    return res;
+    return false;
 }
 
 // order the ncell nodevec roots for balance and return a displacement
@@ -53,7 +50,7 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
     }
     size_t nwarp = size_t(cellorder_nwarp);
     // cannot be more warps than cells
-    nwarp = (ncell < nwarp) ? ncell : nwarp;
+    nwarp = std::min(ncell, nwarp);
 
     // cellsize vector and location of types.
     std::vector<size_t> cellsize(ncell);
@@ -81,7 +78,7 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
     // balance when order is unrestricted (identical cells not together)
     // i.e. pieces are cellsize
     double best_balance = 0.0;
-    std::vector<size_t>* inwarp = lpt(nwarp, cellsize, &best_balance);
+    auto inwarp = lpt(nwarp, cellsize, &best_balance);
     printf("best_balance=%g ncell=%ld ntype=%ld nwarp=%ld\n",
            best_balance,
            ncell,
@@ -91,7 +88,7 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
     // order the roots for balance
     for (size_t i = 0; i < ncell; ++i) {
         TNode* nd = nodevec[i];
-        nd->groupindex = (*inwarp)[i];
+        nd->groupindex = inwarp[i];
     }
     std::sort(nodevec.begin(), nodevec.begin() + ncell, warpcmp);
     for (size_t i = 0; i < nodevec.size(); ++i) {
@@ -101,8 +98,6 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec) {
         }
         nd->nodevec_index = i;
     }
-
-    delete inwarp;
 
     return nwarp;
 }

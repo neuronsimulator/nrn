@@ -19,8 +19,8 @@ struct NrnThread;
 
 class Phase1 {
   public:
-    void read_file(FileHandler& F);
-    void read_direct(int thread_id);
+    Phase1(FileHandler& F);
+    Phase1(int thread_id);
     void populate(NrnThread& nt, OMP_Mutex& mut);
 
   private:

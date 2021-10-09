@@ -96,13 +96,6 @@ void nrn_mkPatternStim(const char* fname, double tstop) {
     pattern_stim_setup_helper(size, tvec, gidvec, _iml, _cntml, _p, _ppvar, nullptr, nt, 0.0);
 }
 
-// comparator to sort spikes based on time
-using spike_type = std::pair<double, int>;
-static bool spike_comparator(const spike_type& l, const spike_type& r) {
-    return l.first < r.first;
-}
-
-
 size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double tstop) {
     FILE* f = fopen(fname, "r");
     nrn_assert(f);
@@ -111,7 +104,7 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
     char dummy[100];
     nrn_assert(fgets(dummy, 100, f));
 
-    std::vector<spike_type> spikes;
+    std::vector<std::pair<double, int>> spikes;
     spikes.reserve(10000);
 
     double stime;
@@ -128,7 +121,7 @@ size_t read_raster_file(const char* fname, double** tvec, int** gidvec, double t
     // pattern.mod expects sorted spike raster (this is to avoid
     // injecting all events at the begining of the simulation).
     // sort spikes according to time
-    std::sort(spikes.begin(), spikes.end(), spike_comparator);
+    std::sort(spikes.begin(), spikes.end());
 
     // fill gid and time vectors
     *tvec = (double*) emalloc(spikes.size() * sizeof(double));

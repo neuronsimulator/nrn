@@ -174,8 +174,8 @@ static void core2nrn_tqueue(NrnThread&);
  */
 // vector in unpermuted Memb_list index order of vector of
 // activated watch_index (the bool is whether it is above threshold).
-typedef std::vector<std::pair<int, bool>> Core2NrnWatchInfoItem;
-typedef std::vector<Core2NrnWatchInfoItem> Core2NrnWatchInfo;
+using Core2NrnWatchInfoItem = std::vector<std::pair<int, bool>>;
+using Core2NrnWatchInfo = std::vector<Core2NrnWatchInfoItem>;
 
 extern "C" {
 void (*core2nrn_watch_clear_)();
@@ -416,7 +416,7 @@ static void clear_inv_perm_for_selfevent_targets() {
 }
 
 
-typedef std::map<int, std::vector<TQItem*>> SelfEventWeightMap;
+using SelfEventWeightMap = std::map<int, std::vector<TQItem*>>;
 
 // return false unless q is pushed to sewm
 static bool core2nrn_tqueue_item(TQItem* q, SelfEventWeightMap& sewm, NrnThread& nt) {
