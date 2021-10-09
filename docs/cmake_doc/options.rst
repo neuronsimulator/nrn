@@ -308,8 +308,27 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
   to become thread specific variables. This option is
   automatically turned on if NRN_ENABLE_CORENEURON=ON.
 
-  There are a large number of cmake arguments specific to a CoreNEURON
-  build that are explained in ???.
+Other CoreNEURON options:
+-------------------------
+  There are 20 or so cmake arguments specific to a CoreNEURON
+  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  The ones of particular interest that can be used on the NEURON
+  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  For developers preparing a pull request that involves associated changes
+  to CoreNEURON sources, a CoreNEURON pull request will fail if the
+  changes are not formatted properly. In this case, note that
+  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
+  configure line in external/coreneuron/build.
+
+  .. code-block::
+
+    cd external/coreneuron
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
+    make clang-format
+
+
 
 Occasionally useful advanced options:
 =====================================
