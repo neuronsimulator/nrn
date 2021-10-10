@@ -22,6 +22,7 @@ PyObject* nrnpy_hoc2pyobject(Object*);
 PyObject* hocobj_call_arg(int);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
+char* nrnpyerr_str();
 extern void* (*nrnpy_save_thread)();
 extern void (*nrnpy_restore_thread)(void*);
 static void* save_thread() { return PyEval_SaveThread(); }
@@ -210,8 +211,12 @@ PyObject_Print(callable, stdout, 0);
 printf("\nargs\n");
 PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
-if (p) { PyObject_Print(p, stdout, 0); printf("\n");}
 #endif
+  if (!p && PyErr_Occurred()) {
+    char* mes = nrnpyerr_str();
+    Fprintf(stderr, "%s\n", mes);
+    free(mes);
+  }
   HocContextRestore return p;
 }
 
@@ -682,30 +687,61 @@ static Object* pickle2po(char* s, size_t size) {
  *  free the return value.
 **/
 char* nrnpyerr_str() {
-  static char** pmes;
   if (PyErr_Occurred()) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
     // try for full backtrace
-    PyObject* module_name = PyString_FromString("traceback");
-    if (!module_name) { return NULL; }
-    PyObject* pyth_module = PyImport_Import(module_name);
-    if (!pyth_module) { return NULL; }
-    Py_DECREF(module_name);   
-    PyObject* pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
-    if (!pyth_func) { return NULL; }
-    PyObject* pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback);
-    if (!pyth_val) { return NULL; }
-    Py_DECREF(pyth_func);
+    PyObject* module_name = NULL;
+    PyObject* pyth_module = NULL;
+    PyObject* pyth_func = NULL;
+    PyObject* pyth_val = NULL;
+    PyObject* py_str = NULL;
+    char* cmes = NULL;
+    int err = 0;
+
+    module_name = PyString_FromString("traceback");
+    if (module_name) {
+        pyth_module = PyImport_Import(module_name);
+    }
+    if (pyth_module && ptraceback) {
+        pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
+        if (pyth_func) {
+            pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback, NULL);
+        }
+    } else if (pyth_module) {
+        pyth_func = PyObject_GetAttrString(pyth_module, "format_exception_only");
+        if (pyth_func) {
+            pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, NULL);
+        }
+    }
+    if (pyth_val) {
+        py_str = PyObject_Str(pyth_val);
+    }
+    if (py_str) {
+        Py2NRNString mes(py_str);
+        if (mes.err()) {
+            Fprintf(stderr, "nrnperr_str: Py2NRNString failed\n");
+        } else {
+            cmes = strdup(mes.c_str());
+            if (!cmes) {
+                Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
+            }
+        }
+    }
+
+    if (!py_str) {
+        PyErr_Print();
+    }
+
+    Py_XDECREF(pyth_func);
+    Py_XDECREF(pyth_module);
     Py_XDECREF(ptype);
     Py_XDECREF(pvalue);
     Py_XDECREF(ptraceback);
-    PyObject* py_str = PyObject_Str(pyth_val);
-    Py_DECREF(pyth_func);
-    Py2NRNString mes(py_str);
-    Py_DECREF(py_str);
-    char* cmes = strdup(mes.c_str());
+    Py_XDECREF(pyth_val);
+    Py_XDECREF(py_str);
+
     return cmes;
   }
   return NULL;
