@@ -462,6 +462,9 @@ NRN_CLANG_FORMAT:BOOL=OFF
   ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
   ```
 
+  To manually format a single file, run in the top folder, e.g.:
+  ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
+
 Miscellaneous Rarely used options specific to NEURON:
 =====================================================
 
