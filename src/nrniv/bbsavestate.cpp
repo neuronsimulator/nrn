@@ -1196,16 +1196,15 @@ static int src2send_cnt;
 static Int2DblList* queuecheck_gid2unc;
 #endif
 
-static double binq_time2(double tt) {
-    double dt = nrn_threads->_dt;
-    return tt;
-    return int(tt / dt + 0.5 + 1.e-10) * dt;  // 0.5 due to deliver at dt/2
-}
-
 static double binq_time(double tt) {
     if (nrn_use_bin_queue_) {
         double dt = nrn_threads->_dt;
-        double t1 = int(tt / dt + 0.5 + 1e-10) * dt;  // 0.5 due to deliver at dt/2
+        // For a given event time, return a time which would put it in the
+        // same bin on restore, that it came from on save.
+        // Note that, before save, it was put on the queue via BinQ::enqueue
+        // with int idt = (int)((td - tt_)/nt_dt + 1.e-10);
+        // where tt_ is the early half step edge time of the current bin.
+        double t1 = int(tt / dt + 0.5 + 1e-10) * dt;
         return t1;
     }
     return tt;
@@ -1218,7 +1217,7 @@ static void bbss_early(double td, TQItem* tq) {
         return;
     } else if (type == PreSynType) {
         PreSyn* ps = (PreSyn*) tq->data_;
-        ps->fanout(binq_time2(td), net_cvode_instance, nrn_threads);
+        ps->fanout(td, net_cvode_instance, nrn_threads);
     } else {
         assert(0);
     }
@@ -2740,9 +2739,6 @@ void BBSaveState::possible_presyn(int gid) {
 #endif
                 for (int j = 0; j < cnt; j += 2) {
                     f->d(1, ts);
-                    if (nrn_use_bin_queue_ == 1) {
-                        ts = binq_time2(ts);
-                    }
                     f->i(unc);                  // expected undelivered NetCon count
                     nrn_fake_fire(gid, ts, 2);  // only owned by this
 #if QUEUECHECK

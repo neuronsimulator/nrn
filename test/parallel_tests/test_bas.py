@@ -287,14 +287,12 @@ def prun(tstop, restore=False):
         sf.close()
 
         # BBSaveState Save
+        cnt = h.List("PythonObject").count()
         for i in range(1):
             bbss = h.BBSaveState()
             bbss.save_test()
             bbss = None
-        z = h.List("PythonObject")
-        for i, y in enumerate(z):
-            print(i, y)
-        # h.allobjects()
+        assert h.List("PythonObject").count() == cnt
 
     pc.psolve(tstop)
 
