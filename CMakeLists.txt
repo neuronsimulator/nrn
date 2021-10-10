@@ -275,11 +275,11 @@ find_program(JUPYTER_EXE jupyter QUIET)
 if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
   add_custom_target(
           docs
-          COMMAND make doxygen
+          COMMAND ${CMAKE_COMMAND} --build . --target doxygen
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-          COMMAND make notebooks
+          COMMAND ${CMAKE_COMMAND} --build . --target notebooks
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-          COMMAND make sphinx
+          COMMAND ${CMAKE_COMMAND} --build . --target sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
           COMMENT "Generating full documentation"
   )
@@ -599,6 +599,12 @@ if(NRN_ENABLE_TESTS)
     elseif(NOT PYTEST_COV_FOUND)
       message(WARNING "pytest-cov package not installed. Python coverage will not be generated.")
     endif()
+  else()  # share/demo still required for testing
+    add_custom_target(copy_demo_to_build
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/demo ${NRN_BUILD_SHARE_DIR}/demo
+            COMMENT "Copying ${PROJECT_SOURCE_DIR}/share/demo to ${NRN_BUILD_SHARE_DIR}"
+            VERBATIM)
+    add_dependencies(nrniv_lib copy_demo_to_build)
   endif()
   # Initialize the submodule *before* including the test/CMakeLists.txt that uses it. This ensures
   # that the test infrastructure can find the names of the input data files and set up rules to copy

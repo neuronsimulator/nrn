@@ -684,9 +684,16 @@ class Region(object):
             if nrn_region == "o":
                 raise RxDException('3d simulations do not support nrn_region="o" yet')
 
-            internal_voxels, surface_voxels, mesh_grid = self._geometry.volumes3d(
-                self._secs3d, dx=dx
-            )
+            if hasattr(self, "_voxelization"):
+                internal_voxels, surface_voxels, mesh_grid = (
+                    self._voxelization["internal_voxels"],
+                    self._voxelization["surface_voxels"],
+                    self._voxelization["mesh_grid"],
+                )
+            else:
+                internal_voxels, surface_voxels, mesh_grid = self._geometry.volumes3d(
+                    self._secs3d, dx=dx
+                )
 
             self._sa = numpy.zeros(len(surface_voxels) + len(internal_voxels))
             self._vol = numpy.ones(len(surface_voxels) + len(internal_voxels))
