@@ -40,6 +40,7 @@ jobs:
         if: startsWith(matrix.os, 'macOS')
         run: |
           brew install ccache coreutils bison boost clang-format flex ninja
+          echo /usr/local/opt/flex/bin:/usr/local/opt/bison/bin >> $GITHUB_PATH
         shell: bash
 
       - name: Install apt packages
@@ -58,7 +59,7 @@ jobs:
       - name: Install Python3 dependencies
         run: |
           pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest \
-            'sympy>=1.3' 'cmake-format==0.6.13'
+            'sympy>=1.3,<1.9' 'cmake-format==0.6.13'
           
       - uses: actions/checkout@v2
 
@@ -67,9 +68,6 @@ jobs:
         working-directory: ${{runner.workspace}}/nmodl
         run:  |
           echo "------- Configure -------"
-          if [[ "${{ startsWith(matrix.os, 'macos') }}" = "true" ]]; then
-            export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:${PATH}
-          fi
           mkdir build && pushd build
           cmake .. -G Ninja \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
