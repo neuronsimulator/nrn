@@ -318,10 +318,13 @@ def test_fastimem_corenrn():
     tvec = h.Vector().record(h._ref_t)
     init_v()
     while h.t < tstop - h.dt / 2:
+        dt_above = 1.1*h.dt # comfortably above dt to avoid 0 step advance
         coreneuron.enable = True
-        pc.psolve(h.t + h.dt)
+        told = h.t
+        pc.psolve(h.t + dt_above)
+        assert h.t > told
         coreneuron.enable = False
-        pc.psolve(h.t + h.dt)
+        pc.psolve(h.t + dt_above)
     compare()
 
     print("For file mode (offline) coreneuron comparison of i_membrane_ initialization")
