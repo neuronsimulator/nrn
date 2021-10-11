@@ -48,13 +48,13 @@ installers for recent releases.
 
 #### Windows
 
-On Windows only recommended way to install NEURON is using binary installer. You can download alpha
-or recent releases from below URLs:
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
+or recent releases from:
 
 * [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
 * [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
 
-Windows installers have name in the format of `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
 The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
 with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
 by double clicking like any other Windows application. Note that you have to install python separately
