@@ -156,7 +156,7 @@ Or using CTest as:
 ctest -T memcheck
 ```
 
-If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.5` and use following cmake option:
+If you want to enable `clang-tidy` checks with CMake, make sure to have `CMake >= 3.15` and use following cmake option:
 
 ```
 cmake .. -DENABLE_CLANG_TIDY=ON
