@@ -88,7 +88,9 @@ sudo apt install python3-pip python3-numpy
 ```
 
 3. Install NEURON
-   In the same terminal run:
+   
+In the same terminal run:
+
 ```bash
 pip3 install neuron
 ```
