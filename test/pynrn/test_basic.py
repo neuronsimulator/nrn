@@ -320,7 +320,10 @@ def test_deleted_sec():
     expect_hocerr(imp.loc, (seg,))
     expect_hocerr(h.distance, (0, seg))
 
-    return s, seg, mech, rvlist, vref, gnabarref, dend
+    del ic, imp, dend
+    locals()
+
+    return s, seg, mech, rvlist, vref, gnabarref
 
 
 def test_disconnect():
@@ -357,6 +360,9 @@ def test_disconnect():
     expect_err("h.disconnect(sl[2])")
     expect_err("h.delete_section(sl[2])")
 
+    del sl
+    locals()
+
 
 def test_py_alltoall_dict_err():
     pc = h.ParallelContext()
@@ -368,5 +374,7 @@ if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
-    test_deleted_sec()
+    result = test_deleted_sec()
     test_disconnect()
+    h.topology()
+    h.allobjects()
