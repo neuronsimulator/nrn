@@ -14,7 +14,6 @@
 #include "nrnmpi.hpp"
 #include "coreneuron/utils/profile/profiler_interface.h"
 
-#if NRNMPI
 #include <mpi.h>
 
 #include <cstring>
@@ -371,4 +370,3 @@ int nrnmpi_multisend_conserve_impl(int nsend, int nrecv) {
 
 #endif /*NRN_MULTISEND*/
 }  // namespace coreneuron
-#endif /*NRNMPI*/

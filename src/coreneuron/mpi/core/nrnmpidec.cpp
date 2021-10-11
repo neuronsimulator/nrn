@@ -6,7 +6,6 @@
 # =============================================================================.
 */
 
-#if NRNMPI
 #include "../nrnmpi.h"
 
 namespace coreneuron {
@@ -68,4 +67,3 @@ mpi_function<cnrn_make_integral_constant_t(nrnmpi_multisend_conserve_impl)>
 #endif  // NRN_MULTISEND
 
 }  // namespace coreneuron
-#endif  // NRNMPI

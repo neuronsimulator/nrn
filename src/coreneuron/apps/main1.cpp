@@ -455,7 +455,7 @@ using namespace coreneuron;
 #define TOSTRING(x)  STRINGIFY(x)
 static void* load_dynamic_mpi() {
     dlerror();
-    void* handle = dlopen("libcorenrn_mpi" TOSTRING(CMAKE_SHARED_LIBRARY_SUFFIX),
+    void* handle = dlopen("libcorenrn_mpi" TOSTRING(CORENRN_SHARED_LIBRARY_SUFFIX),
                           RTLD_NOW | RTLD_GLOBAL);
     const char* error = dlerror();
     if (error) {

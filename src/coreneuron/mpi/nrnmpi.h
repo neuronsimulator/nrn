@@ -15,7 +15,6 @@
 
 #include "coreneuron/mpi/nrnmpiuse.h"
 
-#if NRNMPI
 #ifndef nrn_spikebuf_size
 #define nrn_spikebuf_size 0
 #endif
@@ -89,5 +88,3 @@ struct mpi_function<std::integral_constant<function_ptr, fptr>> : mpi_function_b
 };
 }  // namespace coreneuron
 #include "coreneuron/mpi/nrnmpidec.h"
-
-#endif /*NRNMPI*/

@@ -1,4 +1,3 @@
-#if NRNMPI
 #include <dlfcn.h>
 #include <sstream>
 #include "../nrnmpi.h"
@@ -26,4 +25,3 @@ void mpi_function_base::resolve(void* handle) {
     m_fptr = ptr;
 }
 }  // namespace coreneuron
-#endif  // NRNMPI

@@ -17,12 +17,9 @@
 #if _OPENMP
 #include <omp.h>
 #endif
-#if NRNMPI
 #include <mpi.h>
-#endif
 namespace coreneuron {
 
-#if NRNMPI
 MPI_Comm nrnmpi_world_comm;
 MPI_Comm nrnmpi_comm;
 int nrnmpi_numprocs_;
@@ -103,8 +100,6 @@ double nrnmpi_wtime_impl() {
     return MPI_Wtime();
 }
 
-#endif
-
 /**
  * Return local mpi rank within a shared memory node
  *
@@ -114,7 +109,6 @@ double nrnmpi_wtime_impl() {
  */
 int nrnmpi_local_rank_impl() {
     int local_rank = 0;
-#if NRNMPI
     if (nrnmpi_initialized_impl()) {
         MPI_Comm local_comm;
         MPI_Comm_split_type(
@@ -122,7 +116,6 @@ int nrnmpi_local_rank_impl() {
         MPI_Comm_rank(local_comm, &local_rank);
         MPI_Comm_free(&local_comm);
     }
-#endif
     return local_rank;
 }
 
@@ -134,7 +127,6 @@ int nrnmpi_local_rank_impl() {
  */
 int nrnmpi_local_size_impl() {
     int local_size = 1;
-#if NRNMPI
     if (nrnmpi_initialized_impl()) {
         MPI_Comm local_comm;
         MPI_Comm_split_type(
@@ -142,11 +134,8 @@ int nrnmpi_local_size_impl() {
         MPI_Comm_size(local_comm, &local_size);
         MPI_Comm_free(&local_comm);
     }
-#endif
     return local_size;
 }
-
-#if NRNMPI
 
 /**
  * Write given buffer to a new file using MPI collective I/O
@@ -184,7 +173,4 @@ void nrnmpi_write_file_impl(const std::string& filename, const char* buffer, siz
 
     MPI_File_close(&fh);
 }
-
-#endif
-
 }  // namespace coreneuron
