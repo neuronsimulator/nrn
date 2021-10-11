@@ -2877,7 +2877,11 @@ void NetCvode::init_events() {
 #if BBTQ == 5
 	for (i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
-		p[i].tqe_->shift_bin(nt_t);
+		// first bin starts 1/2 time step early because per time step
+		// binq delivery during simulation from deliver_net_events,
+		// after delivering all events in the current bin, shifts to
+		// nt->_t + 0.5*nt->_dt where nt->_t is a multiple of dt.
+		p[i].tqe_->shift_bin(nt_t - 0.5*nt_dt);
 	}
 #endif
 	if (psl_) {
