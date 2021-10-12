@@ -390,6 +390,8 @@ if(CORENRN_ENABLE_CALIPER_PROFILING)
   include_directories(${caliper_INCLUDE_DIR})
   add_definitions("-DCORENEURON_CALIPER")
   set(CALIPER_LIB "caliper")
+  set_property(GLOBAL APPEND_STRING PROPERTY CORENEURON_LIB_LINK_FLAGS
+                                             " -L${caliper_LIB_DIR} -l${CALIPER_LIB}")
 endif()
 
 if(CORENRN_ENABLE_LIKWID_PROFILING)

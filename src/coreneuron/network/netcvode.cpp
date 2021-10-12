@@ -16,6 +16,7 @@
 #include "coreneuron/network/netcvode.hpp"
 #include "coreneuron/network/netpar.hpp"
 #include "coreneuron/utils/ivocvect.hpp"
+#include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/utils/nrn_assert.h"
@@ -385,6 +386,9 @@ void NetCon::deliver(double tt, NetCvode* /* ns */, NrnThread* nt) {
     nt->_t = tt;
 
     // printf("NetCon::deliver t=%g tt=%g %s\n", t, tt, pnt_name(target_));
+    std::string ss("net-receive-");
+    ss += nrn_get_mechname(typ);
+    Instrumentor::phase p_get_pnt_receive(ss.c_str());
     (*corenrn.get_pnt_receive()[typ])(target_, u.weight_index_, 0);
 #ifdef DEBUG
     if (errno && nrn_errno_check(typ))
@@ -518,6 +522,7 @@ double PreSyn::value(NrnThread* nt) {
 }
 
 void NetCvode::check_thresh(NrnThread* nt) {  // for default method
+    Instrumentor::phase p("check-threshold");
     double teps = 1e-10;
 
     nt->_net_send_buffer_cnt = 0;
@@ -697,6 +702,9 @@ tryagain:
     update_net_receive_buffer(nt);
 
     for (auto& net_buf_receive: corenrn.get_net_buf_receive()) {
+        std::string ss("net-buf-receive-");
+        ss += nrn_get_mechname(net_buf_receive.second);
+        Instrumentor::phase p_net_buf_receive(ss.c_str());
         (*net_buf_receive.first)(nt);
     }
 }

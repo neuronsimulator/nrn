@@ -554,6 +554,7 @@ struct comp {
 };
 
 static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
+    Instrumentor::phase p_net_receive_buffer_order("net-receive-buf-order");
     if (nrb->_cnt == 0) {
         nrb->_displ_cnt = 0;
         return;
@@ -593,6 +594,7 @@ static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
  * functional version.
  */
 void update_net_receive_buffer(NrnThread* nt) {
+    Instrumentor::phase p_update_net_receive_buffer("update-net-receive-buf");
     for (auto tml = nt->tml; tml; tml = tml->next) {
         // net_receive buffer to copy
         NetReceiveBuffer_t* nrb = tml->ml->_net_receive_buffer;
@@ -604,6 +606,7 @@ void update_net_receive_buffer(NrnThread* nt) {
 
 #ifdef _OPENACC
             if (nt->compute_gpu) {
+                Instrumentor::phase p_net_receive_buffer_order("net-receive-buf-cpu2gpu");
                 // note that dont update nrb otherwise we lose pointers
 
                 /* update scalar elements */
@@ -636,6 +639,7 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
     }
 
     if (nsb->_cnt) {
+        Instrumentor::phase p_net_receive_buffer_order("net-send-buf-gpu2cpu");
         acc_update_self(nsb->_sendtype, sizeof(int) * nsb->_cnt);
         acc_update_self(nsb->_vdata_index, sizeof(int) * nsb->_cnt);
         acc_update_self(nsb->_pnt_index, sizeof(int) * nsb->_cnt);

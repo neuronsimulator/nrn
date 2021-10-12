@@ -66,6 +66,7 @@ void nrn_finitialize(int setv, double v) {
     }
 
     if (nrn_have_gaps) {
+        Instrumentor::phase p("gap-v-transfer");
         nrnmpi_v_transfer();
         for (int i = 0; i < nrn_nthread; ++i) {
             nrnthread_v_transfer(nrn_threads + i);

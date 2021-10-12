@@ -598,6 +598,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
         // handle forwardskip
         if (corenrn_param.forwardskip > 0.0) {
+            Instrumentor::phase p("handle-forward-skip");
             handle_forward_skip(corenrn_param.forwardskip, corenrn_param.prcellgid);
         }
 

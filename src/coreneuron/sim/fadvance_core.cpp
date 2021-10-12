@@ -88,6 +88,7 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
 }
 
 void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
+    Instrumentor::phase p_timestep("timestep");
     if (t != nrn_threads->_t) {
         dt2thread(-1.);
     } else {
@@ -96,7 +97,10 @@ void nrn_fixed_step_minimal() { /* not so minimal anymore with gap junctions */
     nrn_thread_table_check();
     nrn_multithread_job(nrn_fixed_step_thread);
     if (nrn_have_gaps) {
-        nrnmpi_v_transfer();
+        {
+            Instrumentor::phase p_gap("gap-v-transfer");
+            nrnmpi_v_transfer();
+        }
         nrn_multithread_job(nrn_fixed_step_lastpart);
     }
 #if NRNMPI
@@ -148,7 +152,6 @@ void nrn_fixed_step_group_minimal(int total_sim_steps) {
     int step_group_end = 0;
 
     ProgressBar progress_bar(step_group_n);
-
     while (step_group_end < step_group_n) {
         nrn_multithread_job(nrn_fixed_step_group_thread,
                             step_group_n,
@@ -179,6 +182,7 @@ static void nrn_fixed_step_group_thread(NrnThread* nth,
                                         int& step_group_end) {
     nth->_stop_stepping = 0;
     for (int i = step_group_begin; i < step_group_max; ++i) {
+        Instrumentor::phase p_timestep("timestep");
         nrn_fixed_step_thread(nth);
         if (nth->_stop_stepping) {
             if (nth->id == 0) {
@@ -339,10 +343,8 @@ void nrncore2nrn_send_values(NrnThread* nth) {
 static void* nrn_fixed_step_thread(NrnThread* nth) {
     /* check thresholds and deliver all (including binqueue)
        events up to t+dt/2 */
-    Instrumentor::phase_begin("timestep");
-
     {
-        Instrumentor::phase p("deliver_events");
+        Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
@@ -361,7 +363,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
         fixed_play_continuous(nth);
 
         {
-            Instrumentor::phase p("setup_tree_matrix");
+            Instrumentor::phase p("setup-tree-matrix");
             setup_tree_matrix_minimal(nth);
         }
 
@@ -371,7 +373,7 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
         }
 
         {
-            Instrumentor::phase p("second_order_cur");
+            Instrumentor::phase p("second-order-cur");
             second_order_cur(nth, secondorder);
         }
 
@@ -383,7 +385,6 @@ static void* nrn_fixed_step_thread(NrnThread* nth) {
     if (!nrn_have_gaps) {
         nrn_fixed_step_lastpart(nth);
     }
-    Instrumentor::phase_end("timestep");
     return nullptr;
 }
 
@@ -408,7 +409,7 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
     }
 
     {
-        Instrumentor::phase p("deliver_events");
+        Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
 

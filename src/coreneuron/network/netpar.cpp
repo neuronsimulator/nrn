@@ -24,6 +24,7 @@
 #include "coreneuron/network/multisend.hpp"
 #include "coreneuron/utils/nrn_assert.h"
 #include "coreneuron/utils/nrnoc_aux.hpp"
+#include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/utils/utils.hpp"
 
 #if NRNMPI
@@ -301,6 +302,7 @@ void nrn_spike_exchange_init() {
 
 #if NRNMPI
 void nrn_spike_exchange(NrnThread* nt) {
+    Instrumentor::phase p_spike_exchange("spike-exchange");
     if (!active_) {
         return;
     }
