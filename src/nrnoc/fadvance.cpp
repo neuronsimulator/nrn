@@ -171,8 +171,8 @@ int nrn_use_fast_imem;
 #include "profile.h"
 
 void fadvance(void) {
-	nrn::Instrumentor::phase p_fadvance("fadvance");
-	tstopunset;
+    nrn::Instrumentor::phase p_fadvance("fadvance");
+    tstopunset;
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
@@ -342,8 +342,8 @@ void nrn_daspk_init_step(double tt, double dteps, int upd){
 }
 
 void nrn_fixed_step() {
-	nrn::Instrumentor::phase p_timestep("timestep");
-	int i;
+    nrn::Instrumentor::phase p_timestep("timestep");
+    int i;
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
 #endif
@@ -364,8 +364,8 @@ void nrn_fixed_step() {
 			/* see comment below */
 			if (nrnthread_v_transfer_) {
 				if (nrnmpi_v_transfer_) {
-					nrn::Instrumentor::phase p_gap("gap-v-transfer");
-					(*nrnmpi_v_transfer_)();
+                    nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                    (*nrnmpi_v_transfer_)();
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
@@ -378,8 +378,8 @@ void nrn_fixed_step() {
 */
 		if (nrnthread_v_transfer_) {
 			if (nrnmpi_v_transfer_) {
-				nrn::Instrumentor::phase p_gap("gap-v-transfer");
-				(*nrnmpi_v_transfer_)();
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
 			}
 			nrn_multithread_job(nrn_fixed_step_lastpart);
 		}
@@ -448,8 +448,8 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	int i;
 	nth->_stop_stepping = 0;
 	for (i = step_group_begin; i < step_group_n; ++i) {
-		nrn::Instrumentor::phase p_timestep("timestep");
-		nrn_fixed_step_thread(nth);
+        nrn::Instrumentor::phase p_timestep("timestep");
+        nrn_fixed_step_thread(nth);
 		if (nth->_stop_stepping) {
 			if (nth->id == 0) { step_group_end = i + 1; }
 			nth->_stop_stepping = 0;
@@ -901,16 +901,16 @@ void nrn_finitialize(int setv, double v) {
     {
         (*nrnthread_vi_compute_)(_nt);
     }
-	{
-		nrn::Instrumentor::phase p_gap("gap-v-transfer");
-		if (nrnmpi_v_transfer_) {
-			(nrnmpi_v_transfer_)();
-		}
-		if (nrnthread_v_transfer_) FOR_THREADS(_nt)
-		{
-			(*nrnthread_v_transfer_)(_nt);
-		}
-	}
+    {
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        if (nrnmpi_v_transfer_) {
+            (nrnmpi_v_transfer_)();
+        }
+        if (nrnthread_v_transfer_)
+            FOR_THREADS(_nt) {
+                (*nrnthread_v_transfer_)(_nt);
+            }
+    }
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
     for (i = 0; i < nrn_nthread; ++i) {

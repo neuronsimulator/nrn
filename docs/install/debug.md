@@ -216,7 +216,7 @@ make
 Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described [here](https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling).
 
 ```
-$ CALI_CONFIG=runtime-report,calc.inclusive NRNHOME=/Users/awile/projects/cellular/nrn/build2 NEURONHOME=/Users/awile/projects/cellular/nrn/build2/share/nrn /Users/awile/projects/cellular/nrn/build2/bin/nrniv ring.hoc
+$ CALI_CONFIG=runtime-report,calc.inclusive nrniv ring.hoc
 NEURON -- VERSION 8.0a-658-g07fc295af+ enh/1421 (07fc295af+) 2021-09-07
 Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021
 See http://neuron.yale.edu/neuron/credits

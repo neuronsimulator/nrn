@@ -35,13 +35,13 @@
 #include "vrecitem.h"
 #include "oclist.h"
 #define PROFILE 0
-#include "profile.h"
+#include "htlist.h"
 #include "ivocvect.h"
-#include "nrnste.h"
 #include "netcon.h"
 #include "netcvode.h"
-#include "htlist.h"
 #include "nrncore_write/utils/nrncore_utils.h"
+#include "nrnste.h"
+#include "profile.h"
 #include "utils/profile/profiler_interface.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
@@ -3108,13 +3108,13 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	assert(target_);
-	int type = target_->prop->type;
-	std::string ss("net-receive-");
-	ss += memb_func[type].sym->name;
-	nrn::Instrumentor::phase p_get_pnt_receive(ss.c_str());
-if (PP2NT(target_) != nt) {
-Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
-}
+    int type = target_->prop->type;
+    std::string ss("net-receive-");
+    ss += memb_func[type].sym->name;
+    nrn::Instrumentor::phase p_get_pnt_receive(ss.c_str());
+    if (PP2NT(target_) != nt) {
+        Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
+	}
 	assert(PP2NT(target_) == nt);
 	Cvode* cv = (Cvode*)target_->nvi_;
 	if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
@@ -5876,9 +5876,8 @@ void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void**
 // factored this out from deliver_net_events so we can
 // stay in the cache
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
-	nrn::Instrumentor::phase p_check_threshold("check-threshold");
-	int i;
-
+    nrn::Instrumentor::phase p_check_threshold("check-threshold");
+    int i;
 	hoc_Item* pth = p[nt->id].psl_thr_;
 
 	if (pth) { /* only look at ones with a threshold */
