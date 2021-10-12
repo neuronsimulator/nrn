@@ -259,6 +259,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     nodecounts = std::vector<int>(nodecounts_, nodecounts_ + n_mech);
     delete[] nodecounts_;
 
+    check_mechanism();
 
     // TODO: fix it in the future
     int n_data_padded = nrn_soa_padded_size(n_node, MATRIX_LAYOUT);
