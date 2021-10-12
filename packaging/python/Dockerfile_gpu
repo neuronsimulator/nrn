@@ -7,10 +7,10 @@ RUN wget --no-verbose \
       https://developer.download.nvidia.com/hpc-sdk/21.7/nvhpc-2021-21.7-1.x86_64.rpm \
       https://developer.download.nvidia.com/hpc-sdk/21.7/nvhpc-21-7-21.7-1.x86_64.rpm \
       https://developer.download.nvidia.com/hpc-sdk/21.7/nvhpc-21-7-cuda-multi-21.7-1.x86_64.rpm \
-    && yum install -y *.rpm
-    && rm *.rpm
+    && yum install -y *.rpm \
+    && rm *.rpm && yum clean all
 
-RUN yum install -y environment-modules \
+RUN yum install -y environment-modules && yum clean all \
     && echo "module use /opt/nvidia/hpc_sdk/modulefiles" >> ~/.bashrc \
     && /opt/nvidia/hpc_sdk/Linux_x86_64/21.7/compilers/bin/makelocalrc -x \
         -gcc `which gcc` -gpp `which g++` -g77 `which gfortran` -cuda 11.0
