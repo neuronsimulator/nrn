@@ -9,13 +9,29 @@ import subprocess
 import sys
 from pkg_resources import working_set
 from distutils.ccompiler import new_compiler
-from distutils.sysconfig import customize_compiler, get_config_var
+from sysconfig import get_config_vars, get_config_var
+
+
+# This replaces the now depricated distutils.sysutils.customize_compiler
+def _customize_compiler(compiler):
+    """Do platform-sepcific customizations of compilers on unix platforms."""
+    if compiler.compiler_type == "unix":
+        (cc, cxx, cflags) = get_config_vars('CC', 'CXX', 'CFLAGS')
+        if 'CC' in os.environ:
+            cc = os.environ['CC']
+        if 'CXX' in os.environ:
+            cxx = os.environ['CXX']
+        if 'CFLAGS' in os.environ:
+            cflags = cflags + ' ' + os.environ['CFLAGS']
+        cc_cmd = cc + ' ' + cflags
+        # We update executables in compiler to take advantage of distutils arg splitting
+        compiler.set_executables(compiler=cc_cmd, compiler_cxx=cxx)
 
 
 def _set_default_compiler():
     """Set (dont overwrite) CC/CXX so that apps dont use the build-time ones"""
     ccompiler = new_compiler()
-    customize_compiler(ccompiler)
+    _customize_compiler(ccompiler)
     # xcrun wrapper must bring all args
     if ccompiler.compiler[0] == "xcrun":
         ccompiler.compiler[0] = get_config_var("CC")

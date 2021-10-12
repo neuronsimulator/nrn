@@ -21,7 +21,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     nrntest
     GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-    GIT_TAG 0898b3c
+    GIT_TAG 05e44b8e8abedfb21efa471bf8d3f591aef7f1e2
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest
 )
 
@@ -30,3 +30,14 @@ FetchContent_MakeAvailable(ringtest testcorenrn nrntest)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
 add_subdirectory(nrntest)
+
+if(NRN_ENABLE_TESTS_BBP)
+    FetchContent_Declare(
+        channel-benchmark
+        GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
+        GIT_TAG f83be1
+        SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark
+    )
+    FetchContent_MakeAvailable(channel-benchmark)
+    add_subdirectory(channel-benchmark)
+endif()

@@ -1382,7 +1382,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         if (nrn_inpython_ == 2) {  // error in component
           nrn_inpython_ = 0;
           PyErr_SetString(PyExc_TypeError, "No value");
-          Py_XDECREF(result);
+          Py_DECREF(po);
           return -1;
         }
         Py_DECREF(po);
