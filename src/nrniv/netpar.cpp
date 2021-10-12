@@ -5,6 +5,7 @@
 #include <math.h>
 #include <InterViews/resource.h>
 #include <nrnoc2iv.h>
+#include "utils/profile/profiler_interface.h"
 #define ALTHASH 1
 #if ALTHASH
 #include <nrnhash_alt.h>
@@ -540,6 +541,7 @@ void nrn_spike_exchange_init() {
 
 #if NRNMPI
 void nrn_spike_exchange(NrnThread* nt) {
+	nrn::Instrumentor::phase p_spike_exchange("spike-exchange");
 	if (!active_) { return; }
 #if BGPDMA
 	if (use_bgpdma_) {

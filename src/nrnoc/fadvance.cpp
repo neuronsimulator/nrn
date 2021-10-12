@@ -342,6 +342,7 @@ void nrn_daspk_init_step(double tt, double dteps, int upd){
 }
 
 void nrn_fixed_step() {
+	nrn::Instrumentor::phase p_timestep("timestep");
 	int i;
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
@@ -363,6 +364,7 @@ void nrn_fixed_step() {
 			/* see comment below */
 			if (nrnthread_v_transfer_) {
 				if (nrnmpi_v_transfer_) {
+					nrn::Instrumentor::phase p_gap("gap-v-transfer");
 					(*nrnmpi_v_transfer_)();
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
@@ -376,6 +378,7 @@ void nrn_fixed_step() {
 */
 		if (nrnthread_v_transfer_) {
 			if (nrnmpi_v_transfer_) {
+				nrn::Instrumentor::phase p_gap("gap-v-transfer");
 				(*nrnmpi_v_transfer_)();
 			}
 			nrn_multithread_job(nrn_fixed_step_lastpart);
@@ -445,6 +448,7 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	int i;
 	nth->_stop_stepping = 0;
 	for (i = step_group_begin; i < step_group_n; ++i) {
+		nrn::Instrumentor::phase p_timestep("timestep");
 		nrn_fixed_step_thread(nth);
 		if (nth->_stop_stepping) {
 			if (nth->id == 0) { step_group_end = i + 1; }
@@ -458,10 +462,8 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 
 void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
-    nrn::Instrumentor::phase_begin("timestep");
-
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
@@ -480,7 +482,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
         nrn_solve(nth);
     }
     {
-        nrn::Instrumentor::phase p("second_order_cur");
+        nrn::Instrumentor::phase p("second-order-cur");
         second_order_cur(nth);
     }
     {
@@ -495,7 +497,6 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
-    nrn::Instrumentor::phase_end("timestep");
     return nullptr;
 }
 
@@ -526,7 +527,7 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	fixed_record_continuous(nth);
     CTADD
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
     return nullptr;
