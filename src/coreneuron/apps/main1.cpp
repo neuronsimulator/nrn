@@ -389,6 +389,7 @@ void handle_forward_skip(double forwardskip, int prcellgid) {
 
     dt = forwardskip * 0.1;
     t = -1e9;
+    dt2thread(-1.);
 
     for (int step = 0; step < 10; ++step) {
         nrn_fixed_step_minimal();

@@ -78,6 +78,11 @@ void dt2thread(double adt) { /* copied from nrnoc/fadvance.c */
             } else {
                 nt->cj = 1.0 / dt;
             }
+            // clang-format off
+
+            #pragma acc update device(nt->_t, nt->_dt, nt->cj) \
+                    async(nt->stream_id) if(nt->compute_gpu)
+            // clang-format on
         }
     }
 }
