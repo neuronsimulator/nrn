@@ -170,8 +170,8 @@ int nrn_use_fast_imem;
 #define PROFILE 0
 #include "profile.h"
 
-void fadvance(void)
-{
+void fadvance(void) {
+	nrn::Instrumentor::phase p_fadvance("fadvance");
 	tstopunset;
 #if CVODE
 	if (cvode_active_) {
