@@ -779,7 +779,7 @@ void nonvint(NrnThread* _nt)
 #if 1 || PARANEURON
 	/* nrnmpi_v_transfer if needed was done earlier */
     if (nrnthread_v_transfer_) {
-        nrn::Instrumentor::phase p("gap-v-transfer");
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
         (*nrnthread_v_transfer_)(_nt);
     }
 #endif
@@ -901,13 +901,16 @@ void nrn_finitialize(int setv, double v) {
     {
         (*nrnthread_vi_compute_)(_nt);
     }
-    if (nrnmpi_v_transfer_) {
-        (nrnmpi_v_transfer_)();
-    }
-    if (nrnthread_v_transfer_) FOR_THREADS(_nt)
-    {
-        (*nrnthread_v_transfer_)(_nt);
-    }
+	{
+		nrn::Instrumentor::phase p_gap("gap-v-transfer");
+		if (nrnmpi_v_transfer_) {
+			(nrnmpi_v_transfer_)();
+		}
+		if (nrnthread_v_transfer_) FOR_THREADS(_nt)
+		{
+			(*nrnthread_v_transfer_)(_nt);
+		}
+	}
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
     for (i = 0; i < nrn_nthread; ++i) {
