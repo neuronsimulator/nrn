@@ -41,10 +41,19 @@ jobs:
       Python39:
         python.version: '3.9'
   steps:
+  - task: DownloadSecureFile@1
+    name: mpt_headersSF
+    displayName: 'Download mpt_headers secure file'
+    inputs:
+      secureFile: 'mpt_headears.2.21.tar.gz'
+      
   - script: |
+      sudo mkdir -p /opt/nrnwheel/mpt
+      sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
       docker run --rm \
         -w /root/nrn \
         -v $PWD:/root/nrn \
+        -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
         -e NEURON_NIGHTLY_TAG \
         -e NRN_NIGHTLY_UPLOAD \
         -e NRN_RELEASE_UPLOAD \
