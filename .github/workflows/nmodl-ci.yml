@@ -98,7 +98,7 @@ jobs:
             ${{matrix.os}}-${{github.ref}}-
             ${{matrix.os}}-
 
-      - name: Build
+      - name: Build, Test and Install
         shell: bash
         working-directory: ${{runner.workspace}}/nmodl/build
         env:
@@ -117,24 +117,17 @@ jobs:
           cmake --build .
           ccache -sv || ccache -s
 
-      - name: Test
-        shell: bash
-        working-directory: ${{runner.workspace}}/nmodl/build
-        run:  |
           echo "------- Testing -------"
           ctest --output-on-failure
 
-      - name: Install
-        shell: bash
-        working-directory: ${{runner.workspace}}/nmodl/build
-        run:  |
           echo "------- Installing -------"
           cmake --build . --target install
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply add 'live-debug-tests' to your last pushed commit message
-      # OL210928: this does not seem to work, at least for commits on PRs.
-      - name: live debug session on failure
-        if: failure() && contains(github.event.head_commit.message, 'live-debug-tests')
+      # To enable it, you have to: 
+      #   * add 'live-debug-tests' to your PR title
+      #   * push something to your PR branch (note that just re-running disregards the title update)
+      - name: live debug session on failure (manual steps required, check `nmodl-ci.yml`)
+        if: failure() && contains(github.event.pull_request.title, 'live-debug-tests')
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 60
