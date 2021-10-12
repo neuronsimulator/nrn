@@ -405,42 +405,6 @@ else()
 endif()
 
 # =============================================================================
-# Enable CoreNEURON support
-# =============================================================================
-if(NRN_ENABLE_CORENEURON)
-  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(coreneuron_FOUND)
-    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
-    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
-    set(cnrn_prefix "${CORENEURON_DIR}")
-  else()
-    message(STATUS "Building CoreNEURON from submodule")
-    # If NEURON tests are enabled then enable CoreNEURON tests too
-    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
-    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
-    if(NRN_ENABLE_PROFILING)
-      if(NRN_PROFILER STREQUAL "caliper")
-        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
-      elseif(NRN_PROFILER STREQUAL "likwid")
-        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
-      endif()
-    endif()
-    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
-    if(NOT DEFINED CORENRN_ENABLE_MPI)
-      set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
-    endif()
-    add_external_project(coreneuron)
-    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
-    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
-    # CoreNEURON exports this list of flags as a property; turn it into a
-    # variable in this scope. If CoreNEURON is installed externally then this
-    # is exported into coreneuron-config.cmake.
-    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
-  endif()
-endif()
-
-# =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
 if(NRN_ENABLE_PROFILING)
@@ -474,6 +438,45 @@ include(NeuronFileLists)
 include(MPIDynamicHelper)
 include(ConfigFileSetting)
 include(PythonDynamicHelper)
+
+# =============================================================================
+# Enable CoreNEURON support
+# =============================================================================
+if(NRN_ENABLE_CORENEURON)
+  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
+  if(coreneuron_FOUND)
+    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
+    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
+    set(cnrn_prefix "${CORENEURON_DIR}")
+  else()
+    message(STATUS "Building CoreNEURON from submodule")
+    # If NEURON tests are enabled then enable CoreNEURON tests too
+    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
+    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+    if(NRN_ENABLE_PROFILING)
+      if(NRN_PROFILER STREQUAL "caliper")
+        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+      elseif(NRN_PROFILER STREQUAL "likwid")
+        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
+      endif()
+    endif()
+    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
+    if(NOT DEFINED CORENRN_ENABLE_MPI)
+      set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
+    endif()
+    if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
+      set(CORENRN_ENABLE_MPI_DYNAMIC ${NRN_ENABLE_MPI_DYNAMIC} CACHE BOOL "" FORCE)
+    endif()
+    add_external_project(coreneuron)
+    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
+    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
+    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
+    # CoreNEURON exports this list of flags as a property; turn it into a
+    # variable in this scope. If CoreNEURON is installed externally then this
+    # is exported into coreneuron-config.cmake.
+    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+  endif()
+endif()
 
 # =============================================================================
 # Set install location for libraries (before src/nrniv)
