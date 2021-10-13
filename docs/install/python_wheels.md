@@ -71,6 +71,15 @@ docker run -v /home/user/nrn:/root/nrn -it neuronsimulator/neuron_wheel bash
 where `/home/user/nrn` is a NEURON repository on the host machine that ends up mounted at `/root/nrn`.
 This is how you can test your NEURON updates inside the NEURON Docker image.
 
+### MPI support
+The `neuronsimulator/neuron_wheel` provides out-of-the-box support for `mpich` and `openmpi`.
+For `HPE MPT`, since it's not open source, you need to acquire the headers and mount them in the docker image:
+
+```
+docker run -v /home/user/nrn:/root/nrn -v /home/user/mpt:/nrnwheel/mpt -it neuronsimulator/neuron_wheel bash
+```
+where `/home/user/mpt` is the path to the MPT headers on the host machine that end up mounted at `/nrnwheel/mpt`.
+
 
 ## macOS wheels
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
