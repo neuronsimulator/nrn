@@ -58,6 +58,8 @@ def _config_exe(exe_name):
     os.environ["NRNHOME"] = NRN_PREFIX
     os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
+    os.environ["CORENRN_PYTHONEXE"] = sys.executable
+    os.environ["CORENRN_PERLNEXE"] = shutil.which('perl')
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
     _set_default_compiler()
