@@ -78,8 +78,8 @@ build_wheel_linux() {
         setup_args="--enable-coreneuron"
     elif [ "$2" == "coreneuron-gpu" ]; then
         setup_args="--enable-coreneuron --enable-gpu"
-        # nvhpc is required for GPU support but make
-        # sure CC and CXX are unset for building wheel extensions
+        # nvhpc is required for GPU support but make sure
+        # CC and CXX are unset for building python extensions
         module load nvhpc
         unset CC CXX
     fi
@@ -191,7 +191,7 @@ case "$1" in
     ;;
 
   *)
-    echo "Usage: $(basename $0) < linux | osx > [python version 36|37|38|3*]  [coreneuron | coreneuron-gpu]"
+    echo "Usage: $(basename $0) < linux | osx > [python version 36|37|38|39|3*]  [coreneuron | coreneuron-gpu]"
     exit 1
     ;;
 

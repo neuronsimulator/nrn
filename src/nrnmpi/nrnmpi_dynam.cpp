@@ -132,7 +132,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 		if (!load_nrnmpi("libnrnmpi_msmpi.dll", pmes+strlen(pmes))){
 			return pmes;
 		}
-		corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_msmpi.dll";
+		corenrn_mpi_library = "libcorenrnmpi_msmpi.dll";
 	}else{
 		ismes = 1;
 		return pmes;
@@ -180,7 +180,9 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
 			sprintf(lname, "%slibnrnmpi_ompi.so", prefix);
 			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_ompi.so";
-		}else if (dlsym(handle, "MPI_SGI_init")) { /* it is sgi-mpt */
+		}else if (dlsym(handle, "MPI_SGI_vtune_is_running")) { /* it is sgi-mpt */
+			// MPI_SGI_init exist in both mpt as well as hmpt and hence look
+			// for MPI_SGI_vtune_is_running which exist in non-hmpt version only.
 			sprintf(lname, "%slibnrnmpi_mpt.so", prefix);
 			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_mpt.so";
 		}else{ /* must be mpich. Could check for MPID_nem_mpich_init...*/
