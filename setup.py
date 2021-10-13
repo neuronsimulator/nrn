@@ -349,9 +349,9 @@ def setup_package():
                 "-DLINK_AGAINST_PYTHON=OFF",
             ] + ([
                 "-DCORENRN_ENABLE_GPU=ON",
-                "-DCORENRN_ENABLE_MPI=OFF", # dynamic MPI support is not added yet
                 "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
                 "-DCMAKE_CXX_COMPILER=nvc++",
+                "-DCMAKE_CUDA_COMPILER=nvcc",
             ] if Components.GPU else []),
             include_dirs=[
                 "src",
