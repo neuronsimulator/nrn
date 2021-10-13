@@ -41,12 +41,18 @@ jobs:
       Python39:
         python.version: '3.9'
   steps:
+  
+  # Secure files documentation:
+  #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
+  #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
   - task: DownloadSecureFile@1
     name: mpt_headersSF
     displayName: 'Download mpt_headers secure file'
     inputs:
       secureFile: 'mpt_headears.2.21.tar.gz'
-      
+  
+  # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
+  # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
   - script: |
       sudo mkdir -p /opt/nrnwheel/mpt
       sudo tar -zxf $(mpt_headersSF.secureFilePath) --directory /opt/nrnwheel/mpt
@@ -106,12 +112,12 @@ jobs:
       cmake --version
     displayName: 'Install OSX System Dependencies'
 
-  # readline has been manually built with MACOSX_DEPLOYMENT_TARGET=10.9 and stored as secure files on Azure.
+  # readline has been manually built with ncurses and MACOSX_DEPLOYMENT_TARGET=10.9 and stored as secure file on Azure.
   # See `packaging/python/Dockerfile` for build instructions.
   #
   # Secure files documentation:
   #   https://docs.microsoft.com/en-us/azure/devops/pipelines/library/secure-files?view=azure-devops
-  #   NOTE: when uploading new secure files, access must be permitted from pipeline interface (see message there)
+  #   NOTE: when uploading new secure files, access must be permitted from the Azure pipeline interface (check message there)
   - task: DownloadSecureFile@1
     name: readlineSF
     displayName: 'Download readline secure file'
