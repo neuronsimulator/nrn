@@ -434,8 +434,6 @@ declareTable(MaxStateTable, void*, MaxStateItem*)
 implementTable(MaxStateTable, void*, MaxStateItem*)
 declarePtrList(PreSynList, PreSyn)
 implementPtrList(PreSynList, PreSyn)
-declarePtrList(HTListList, HTList)
-implementPtrList(HTListList, HTList)
 declarePtrList(WatchList, WatchCondition)
 implementPtrList(WatchList, WatchCondition)
 declareTable(PreSynTable, double*, PreSyn*)
@@ -1209,7 +1207,6 @@ NetCvode::NetCvode(bool single) {
 	single_ = single;
 	nrn_use_daspk_ = false;
 	gcv_ = nil;
-	wl_list_ = new HTListList();
 	allthread_hocevents_ = new HocEventList();
 	pcnt_ = 0;
 	p = nil;
@@ -1275,7 +1272,7 @@ NetCvode::~NetCvode() {
 	}
 	delete prl_;
 	unused_presyn = nil;
-	delete wl_list_;		
+	wl_list_.clear();
 	delete allthread_hocevents_;
 }
 
@@ -1387,7 +1384,8 @@ CvodeThreadData::~CvodeThreadData() {
 
 void NetCvode::delete_list() {
 	int i, j;
-	wl_list_->remove_all();
+	wl_list_.clear();
+	wl_list_.resize(nrn_nthread);
 	if (gcv_) {
 		delete_list(gcv_);
 		delete gcv_;
@@ -1548,6 +1546,8 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 void NetCvode::alloc_list() {
 	int i;
 	set_CVRhsFn();
+	wl_list_.clear();
+	wl_list_.resize(nrn_nthread);
 	if (single_) {
 		gcv_ = new Cvode();
 		Cvode& cv = *gcv_;
@@ -2538,9 +2538,11 @@ extern "C" void _nrn_watch_allocate(Datum* d, double (*c)(Point_process*), int i
  *  that exists on the corenrn side.
 **/
 extern "C" void nrn_watch_clear() {
-  for (int i = 0; i < net_cvode_instance->wl_list_->count(); ++i) {
-    HTList* wl = net_cvode_instance->wl_list_->item(i);
-    wl->RemoveAll();
+  assert(net_cvode_instance->wl_list_.size() == (size_t)nrn_nthread);
+  for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
+    for (HTList* wl: htlists_of_thread) {
+      wl->RemoveAll();
+    }
   }
   // not necessary to empty the WatchList in the Point_process dparam array
   // as that will happen when _nrn_watch_activate is called with an r
@@ -2873,7 +2875,11 @@ void NetCvode::init_events() {
 #if BBTQ == 5
 	for (i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
-		p[i].tqe_->shift_bin(nt_t);
+		// first bin starts 1/2 time step early because per time step
+		// binq delivery during simulation from deliver_net_events,
+		// after delivering all events in the current bin, shifts to
+		// nt->_t + 0.5*nt->_dt where nt->_t is a multiple of dt.
+		p[i].tqe_->shift_bin(nt_t - 0.5*nt_dt);
 	}
 #endif
 	if (psl_) {
@@ -5334,7 +5340,7 @@ void WatchCondition::activate(double flag) {
 	HTList*& wl = cv->ctd_[id].watch_list_;
 	if (!wl) {
 		wl = new HTList(nil);
-		net_cvode_instance->wl_list_->append(wl);
+		net_cvode_instance->wl_list_[id].push_back(wl);
 	}
 	Remove();
 	wl->Append(this);
@@ -5877,14 +5883,11 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		    }
 		}
 	}
-	for (i=0; i < wl_list_->count(); ++i) {
-		HTList* wl = wl_list_->item(i);
+
+	for (HTList* wl: wl_list_[nt->id]) {
 		for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-		    WatchCondition* wc = (WatchCondition*)item;
-		    NrnThread* nt1 = wc->pnt_ ? PP2NT(wc->pnt_) : nrn_threads;
-		    if (nt1 == nt) {
+			WatchCondition* wc = (WatchCondition*)item;
 			wc->check(nt, nt->_t);
-		    }
 		}
 	}
 }
@@ -5896,11 +5899,14 @@ extern "C" {
 void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
 }
 void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int)) {
-  for (int i = 0; i < net_cvode_instance->wl_list_->count(); ++i) {
-    HTList* wl = net_cvode_instance->wl_list_->item(i);
-    for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-      WatchCondition* wc = (WatchCondition*)item;
-      nrn2core_transfer_WatchCondition(wc, cb);
+  // should be revisited for possible simplification since wl_list now
+  // segregated by threads.
+  for (auto& htlists_of_thread : net_cvode_instance->wl_list_) {
+    for (HTList* wl : htlists_of_thread) {
+      for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+        WatchCondition* wc = (WatchCondition*)item;
+        nrn2core_transfer_WatchCondition(wc, cb);
+      }
     }
   }
 }

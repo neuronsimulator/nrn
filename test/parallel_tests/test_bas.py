@@ -237,7 +237,7 @@ out2in_sh = r"""
 #!/bin/bash
 out=bbss_out
 rm -f in/*
-mkdir in
+mkdir -p in
 cat $out/tmp > in/tmp
 for f in $out/tmp.*.* ; do
   i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
@@ -287,14 +287,12 @@ def prun(tstop, restore=False):
         sf.close()
 
         # BBSaveState Save
+        cnt = h.List("PythonObject").count()
         for i in range(1):
             bbss = h.BBSaveState()
             bbss.save_test()
             bbss = None
-        z = h.List("PythonObject")
-        for i, y in enumerate(z):
-            print(i, y)
-        h.allobjects()
+        assert h.List("PythonObject").count() == cnt
 
     pc.psolve(tstop)
 
@@ -383,8 +381,10 @@ def test_starnet():
     h.CVode().queue_mode(1)
     prun(tstop)
     compare_dicts(get_all_spikes(starnet), stdspikes)
+    prun(tstop, "BBSaveState")
+    compare_dicts(get_all_spikes(starnet), stdspikes_half)
 
-    h.dt = 1.0 / 64.0  # bug when 0.025 (not an exact binary fraction)
+    h.dt = 1.0 / 64.0  # issue 1480
     prun(tstop)
     stdspikes = get_all_spikes(starnet)
     stdspikes_half = {}

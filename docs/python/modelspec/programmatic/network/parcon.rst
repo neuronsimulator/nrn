@@ -3350,3 +3350,44 @@ Parallel Transfer
         Real cells must have gids, Artificial cells without gids connect
         only to cells in the same thread. No POINTER to data outside of the
         thread that holds the pointer. 
+
+----
+
+..  method:: ParallelContext.nrncore_run
+
+    Syntax:
+        ``pc.nrncore_run(argstr, [bool])``
+
+    Description:
+        Run the model using CoreNEURON in online (direct transfer) mode
+        using the arguments specified in
+        argstr. If the optional second arg, bool, default 0, is 1, then
+        trajectory values are sent back to NEURON on every time step to allow
+        incremental plotting of Graph lines. Otherwise, trajectories are
+        buffered and sent back at the end of the run. In any case, all
+        variables and event queue state are copied back to NEURON at the end
+        of the run as well as spike raster data.
+
+        This method is not generally used since running a model using CoreNEURON
+        in online mode is easier with the idiom:
+
+        .. code-block:: python
+
+            from neuron import h, gui
+            pc = h. ParallelContext()
+            # construct model ...
+
+            # run model
+            from neuron import coreneuron
+            coreneuron.enable = True
+            h.cvode.cache_efficient(1)
+            h.stdinit()
+            pc.psolve(h.tstop)
+
+        In this case, :func:`psolve`, uses ``nrncore_run`` behind the scenes
+        with the argstr it gets from ``coreneuron.nrncore_arg(h.tstop)``
+        which is ``" --tstop 5 --cell-permute 1 --verbose 2 --voltage 1000."``
+
+        CoreNEURON in online mode does not do the
+        equivalent :func:`finitialize`
+        but relies on NEURON's initialization of states and event queue.

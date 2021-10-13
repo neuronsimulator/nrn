@@ -5,6 +5,8 @@
 #include "nrnmpi.h"
 #include "netcon.h"
 
+#include <limits>
+#include <sstream>
 
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
@@ -86,15 +88,19 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     Point_process *pnt = (Point_process *) ml->pdata[j][1]._pvoid;
                     PreSyn *ps = (PreSyn *) pnt->presyn_;
                     cgs[i].output_ps[npre] = ps;
-                    int agid = -1;
+                    long agid = -1;
                     if (nrn_is_artificial_[type]) {
-                        agid = -(type + 1000 * nrncore_art2index(pnt->prop->param));
+                        // static_cast<long> ensures the RHS is calculated with
+                        // `long` precision, not `int` precision. This lets us
+                        // check for overflow below.
+                        agid = -(type +
+                                 1000 * static_cast<long>(nrncore_art2index(pnt->prop->param)));
                     } else { // POINT_PROCESS with net_event
                         int sz = nrn_prop_param_size_[type];
                         double *d1 = ml->data[0];
                         double *d2 = pnt->prop->param;
                         assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        int ix = (d2 - d1) / sz;
+                        long ix{(d2 - d1) / sz};
                         agid = -(type + 1000 * ix);
                     }
                     if (ps) {
@@ -110,7 +116,18 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     } else { // if an acell is never a source, it will not have a presyn
                         cgs[i].output_gid[npre] = -1;
                     }
-                    // the way we associate an acell PreSyn with the Point_process.
+                    // the way we associate an acell PreSyn with the
+                    // Point_process.
+                    if (agid < std::numeric_limits<int>::min() || agid >= -1) {
+                        std::ostringstream oss;
+                        oss << "maximum of ~" << std::numeric_limits<int>::max() / 1000
+                            << " artificial cells of a given type can be created per NrnThread, "
+                               "this model has "
+                            << ml->nodecount << " instances of " << memb_func[type].sym->name
+                            << " (cannot store cgs[" << i << "].output_vindex[" << npre
+                            << "]=" << agid << ')';
+                        hoc_execerror("integer overflow", oss.str().c_str());
+                    }
                     cgs[i].output_vindex[npre] = agid;
                     ++npre;
                 }

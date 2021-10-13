@@ -105,6 +105,7 @@ void ion_register(void) {
       // define with charge 2.0
       ion_reg(name, 2.0);
       // and emit a recoverable error as above to avoid an exit in ion_reg
+      free(buf);
       hoc_execerr_ext("ca_ion already defined with charge 2, cannot redefine with charge %g\n", charge);
     }
     ion_reg(name, charge);

@@ -308,8 +308,27 @@ NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
   to become thread specific variables. This option is
   automatically turned on if NRN_ENABLE_CORENEURON=ON.
 
-  There are a large number of cmake arguments specific to a CoreNEURON
-  build that are explained in ???.
+Other CoreNEURON options:
+-------------------------
+  There are 20 or so cmake arguments specific to a CoreNEURON
+  build that are listed in https://github.com/BlueBrain/CoreNeuron/blob/master/CMakeLists.txt.
+  The ones of particular interest that can be used on the NEURON
+  CMake configure line are `CORENRN_ENABLE_NMODL` and `CORENRN_ENABLE_GPU`.
+  For developers preparing a pull request that involves associated changes
+  to CoreNEURON sources, a CoreNEURON pull request will fail if the
+  changes are not formatted properly. In this case, note that
+  `CORENRN_CLANG_FORMAT` can only be used in a CoreNEURON specific CMake
+  configure line in external/coreneuron/build.
+
+  .. code-block::
+
+    cd external/coreneuron
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
+    make clang-format
+
+
 
 Occasionally useful advanced options:
 =====================================
@@ -422,9 +441,9 @@ NRN_COVERAGE_FILES:STRING=
 
   ``-DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"``
 
-NEURON_CMAKE_FORMAT:BOOL=OFF
+NRN_CMAKE_FORMAT:BOOL=OFF
 ----------------------------
-  Enable CMake code formatting  
+  Enable CMake code formatting
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   Also need to ``pip install cmake-format=0.6.0 --user``.
@@ -432,22 +451,18 @@ NEURON_CMAKE_FORMAT:BOOL=OFF
   See nrn/CONTRIBUTING.md for further details.
   How does one reformat a specific cmake file?
 
-NEURON_CLANG_FORMAT:BOOL=OFF
+NRN_CLANG_FORMAT:BOOL=OFF
 -------------------------
-  Enable code formatting
+  Enable code formatting  
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   For mac, need: ``brew install clang-format``
   After a build using ``make``, can reformat all sources with ``make clang_format``
-  Note: this option is not yet available and this paragraph is a
-  placeholder for what is intended. Until it is available, one can
-  prepare for manual use of clang-format by using
-  ``-DNEURON_CMAKE_FORMAT=ON`` to clone into external/coding-conventions
-  and ``cp external/coding-conventions/cpp/clang-format-11 .clang-format``
-  which seems to work also for ``clang-format version 12.0.1``
+  Incremental code formatting (of the current patch) can be done by setting additional build flags
+  ``NRN_FORMATTING_ON="since-ref:master"`` and ``NRN_FORMATTING_CPP_CHANGES_ONLY=ON``.
+  ```
 
-  To reformat one file, run in the top folder, e.g.
-  
+  To manually format a single file, run in the top folder, e.g.:
   ``clang-format --style=file -i src/nrniv/bbsavestate.cpp``
 
 Miscellaneous Rarely used options specific to NEURON:

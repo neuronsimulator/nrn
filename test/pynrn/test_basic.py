@@ -320,7 +320,54 @@ def test_deleted_sec():
     expect_hocerr(imp.loc, (seg,))
     expect_hocerr(h.distance, (0, seg))
 
-    return s, seg, mech, rvlist, vref, gnabarref, dend
+    del ic, imp, dend
+    locals()
+
+    return s, seg, mech, rvlist, vref, gnabarref
+
+
+def test_disconnect():
+    print("test_disconnect")
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
+    h.topology()
+    n = 5
+
+    def setup(n):
+        sections = [h.Section(name="s%d" % i) for i in range(n)]
+        for i, sec in enumerate(sections[1:]):
+            sec.connect(sections[i])
+        return sections
+
+    sl = setup(n)
+
+    def chk(sections, i):
+        print(sections, i)
+        h.topology()
+        x = len(sections[0].wholetree())
+        assert x == i
+
+    chk(sl, n)
+
+    h.disconnect(sec=sl[2])
+    chk(sl, 2)
+
+    sl = setup(n)
+    sl[2].disconnect()
+    chk(sl, 2)
+
+    sl = setup(n)
+    expect_err("h.disconnect(sl[2])")
+    expect_err("h.delete_section(sl[2])")
+
+    del sl
+    locals()
+
+
+def test_py_alltoall_dict_err():
+    pc = h.ParallelContext()
+    src = {i: (100 + i) for i in range(2)}
+    expect_hocerr(pc.py_alltoall, src,  ('hocobj_call error',))
 
 
 if __name__ == "__main__":
@@ -328,3 +375,6 @@ if __name__ == "__main__":
     test_soma()
     test_simple_sim()
     result = test_deleted_sec()
+    test_disconnect()
+    h.topology()
+    h.allobjects()

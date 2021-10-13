@@ -630,6 +630,9 @@ static void bbss_restore_begin() {
 #endif
 
     if (nrn_use_bin_queue_) {
+        // Start the BinQ with the same time it had at save time.
+        TQueue* tq = net_cvode_instance_event_queue(nrn_threads);
+        tq->shift_bin(nrn_threads->_t - 0.5 * nrn_threads->_dt);
         nrn_binq_enqueue_error_handler = bbss_early;
     }
 }
@@ -1192,20 +1195,27 @@ static Int2DblList* queuecheck_gid2unc;
 #endif
 
 static double binq_time(double tt) {
-    double dt = nrn_threads->_dt;
-    return int(tt / dt + 0.5 + 1.e-10) * dt;  // 0.5 due to deliver at dt/2
+    if (nrn_use_bin_queue_) {
+        double dt = nrn_threads->_dt;
+        // For a given event time, return a time which would put it in the
+        // same bin on restore, that it came from on save.
+        // Note that, before save, it was put on the queue via BinQ::enqueue
+        // with int idt = (int)((td - tt_)/nt_dt + 1.e-10);
+        // where tt_ is the early half step edge time of the current bin.
+        double t1 = int(tt / dt + 0.5 + 1e-10) * dt;
+        return t1;
+    }
+    return tt;
 }
 
 static void bbss_early(double td, TQItem* tq) {
     int type = ((DiscreteEvent*) tq->data_)->type();
-    //	printf("bbss_early td=%g tq->t=%g t=%g bqt=%g type=%d\n", td, tq->t_, t,
-    // binq_time(td), type);
-    // if NetCon, discard. If PreSyn, fanout.
+    // If NetCon, discard. If PreSyn, fanout.
     if (type == NetConType) {
         return;
     } else if (type == PreSynType) {
         PreSyn* ps = (PreSyn*) tq->data_;
-        ps->fanout(binq_time(td), net_cvode_instance, nrn_threads);
+        ps->fanout(td, net_cvode_instance, nrn_threads);
     } else {
         assert(0);
     }
@@ -1372,17 +1382,18 @@ static void tqcallback(const TQItem* tq, int i) {
             break;
         }
         if (tq->t_ == t) {
-            printf("%d Have not decided whether to remove this event\n", nrnmpi_myid);
-            assert(0);
+            DiscreteEvent* de = (DiscreteEvent*) tq->data_;
+            de->pr("Don't know if this event has already been delivered", t, net_cvode_instance);
+            // assert(0);
         }
         double td = tq->t_;
         double tt = t;
         // td should be on bin queue boundary
         if (nrn_use_bin_queue_) {
-            td = binq_time(td);
-            tt = binq_time(tt);
+            // not discarded if in the current bin
+            tt = net_cvode_instance_event_queue(nrn_threads)->tbin();
         }
-        if (td < tt) {
+        if (td <= tt) {
             //((DiscreteEvent*)tq->data_)->pr("tq_removal_list", td,
             // net_cvode_instance);
             tq_removal_list->push_back((TQItem*) tq);
@@ -2193,6 +2204,7 @@ void BBSaveState::netrecv_pp(Point_process* pp) {
             for (int i = 0; i < j; ++i) {
                 double x;
                 f->d(1, x);
+                x = binq_time(x);
                 nrn_netcon_event(nc, x);
             }
             int has_stim = 0;
@@ -2725,9 +2737,6 @@ void BBSaveState::possible_presyn(int gid) {
 #endif
                 for (int j = 0; j < cnt; j += 2) {
                     f->d(1, ts);
-                    if (nrn_use_bin_queue_ == 1) {
-                        ts = binq_time(ts);
-                    }
                     f->i(unc);                  // expected undelivered NetCon count
                     nrn_fake_fire(gid, ts, 2);  // only owned by this
 #if QUEUECHECK

@@ -257,6 +257,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             test/coreneuron/test_fornetcon.py)
   nrn_add_test(
     GROUP coreneuron_modtests
+    NAME fast_imem_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/pynrn/test_fast_imem.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_fast_imem_py ${modtests_launch_py}
+            test/pynrn/test_fast_imem.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
     NAME datareturn_py
     REQUIRES coreneuron
     SCRIPT_PATTERNS test/coreneuron/test_datareturn.py
@@ -283,6 +290,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/coreneuron/test_watchrange.py
     COMMAND COVERAGE_FILE=.coverage.coreneuron_test_watchrange_py ${modtests_launch_py}
             test/coreneuron/test_watchrange.py)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME test_psolve_py
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_test_psolve_py ${modtests_launch_py}
+            test/coreneuron/test_psolve.py)
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME test_natrans_py
@@ -371,6 +385,12 @@ add_custom_target(
 # list(APPEND TESTS modlunit_test)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
+# If profiling is enabled, run ringtest with profiler
+if(NRN_ENABLE_PROFILING)
+  set(TEST_PROFILING_ENV ${TEST_ENV})
+  list(APPEND TEST_PROFILING_ENV "CALI_CONFIG=runtime-report,calc.inclusive")
+  set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_PROFILING_ENV}")
+endif()
 
 # Add tests that are configured using external repositories
 add_subdirectory(external)
