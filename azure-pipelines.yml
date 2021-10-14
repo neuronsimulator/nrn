@@ -32,8 +32,8 @@ jobs:
   - script: |
       sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
       sudo apt-add-repository -y ppa:deadsnakes/ppa
-      sudo apt update
-      sudo apt install -y g++-8 flex bison libfl-dev cython libx11-dev libxcomposite-dev libncurses-dev
+      sudo apt-get update
+      sudo apt-get install -y g++-8 flex bison libfl-dev cython libx11-dev libxcomposite-dev libncurses-dev mpich
       sudo apt-get install -y python3.7 python3.7-dev python3.7-venv
       python3.7 -m pip install -U pip setuptools
       python3.7 -m pip install --user 'Jinja2>=2.9.3' 'PyYAML>=3.13' pytest pytest-cov 'sympy>=1.3,<1.6' numpy
@@ -46,7 +46,7 @@ jobs:
       ispc_version_suffix="b";
       url="https://github.com/ispc/ispc/releases/download/${ispc_version}/ispc-${ispc_version}${ispc_version_suffix}-${url_os}.tar.gz";
       mkdir $(pwd)/$CMAKE_PKG/ispc
-      wget --output-document=- $url | tar -xvzf - -C $(pwd)/$CMAKE_PKG/ispc --strip 1;
+      wget --quiet --output-document=- $url | tar -xvzf - -C $(pwd)/$CMAKE_PKG/ispc --strip 1;
     env:
       CMAKE_VER: 'v3.15.0'
       CMAKE_PKG: 'cmake-3.15.0-Linux-x86_64'
@@ -72,11 +72,11 @@ jobs:
   - script: |
       export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
       export CXX='g++-8'
-      git clone --recursive --shallow-submodules https://github.com/neuronsimulator/nrn.git
+      git clone --recursive --single-branch --shallow-submodules https://github.com/neuronsimulator/nrn.git
       mkdir nrn/build
       cd nrn/build
       cmake --version
-      cmake .. -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_TESTS=ON -DCORENRN_ENABLE_MPI=OFF -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl/lib -DPYTHON_EXECUTABLE=$(which python3.7) -DCORENRN_NMODL_FLAGS="sympy --analytic"
+      cmake .. -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_BINARY_SPECIAL=ON -DNRN_ENABLE_MPI=ON -DNRN_ENABLE_TESTS=ON -DCORENRN_ENABLE_NMODL=ON -DCORENRN_NMODL_DIR=$HOME/nmodl -Dnmodl_PYTHONPATH=$HOME/nmodl/lib -DPYTHON_EXECUTABLE=$(which python3.7) -DCORENRN_NMODL_FLAGS="sympy --analytic"
       make -j 2
       if [ $? -ne 0 ]
       then
@@ -149,7 +149,7 @@ jobs:
   - script: |
       export PATH=$(pwd)/$CMAKE_PKG/bin:/home/vsts/.local/bin:$PATH
       export CXX='g++-8'
-      git clone --recursive --shallow-submodules https://github.com/neuronsimulator/nrn.git
+      git clone --single-branch --recursive --shallow-submodules https://github.com/neuronsimulator/nrn.git
       mkdir nrn/build
       cd nrn/build
       cmake --version
@@ -212,7 +212,7 @@ jobs:
     displayName: 'Publish wheel as build artifact'
   - script: |
       sudo apt-add-repository -y ppa:deadsnakes/ppa
-      sudo apt update
+      sudo apt-get update
       sudo apt-get install -y python$(python.version) python$(python.version)-dev python$(python.version)-venv
       packaging/test_wheel.bash python$(python.version) wheelhouse/*.whl
     condition: succeeded()
