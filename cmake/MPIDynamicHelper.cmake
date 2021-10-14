@@ -44,13 +44,18 @@ if(NRN_ENABLE_MPI)
       if (result EQUAL 0)
         set(type "ompi")
       else()
-        execute_process(COMMAND grep -q "define MPICH  *1" ${idir}/mpi.h RESULT_VARIABLE result)
+        # ~~~
+        # MPT releases of hpe-mpi defines MPT_VERSION as well as SGIABI. But HMPT releases
+        # only defines MPT_VERSION. So first check for the existence of SGIABI to decide if a
+        # a given library is MPT and then check MPT_VERSION to define it as MPICH.
+        # ~~~
+        execute_process(COMMAND grep -q "define SGIABI" ${idir}/mpi.h RESULT_VARIABLE result)
         if (result EQUAL 0)
-          set(type "mpich")
+          set(type "mpt")
         else()
-          execute_process(COMMAND grep -q "define MPT_VERSION" ${idir}/mpi.h RESULT_VARIABLE result)
+          execute_process(COMMAND grep -q -e "define MPICH  *1" -e "define MPT_VERSION" ${idir}/mpi.h RESULT_VARIABLE result)
           if (result EQUAL 0)
-            set(type "mpt")
+            set(type "mpich")
           else()
             execute_process(COMMAND grep -q "define MSMPI_VER " ${idir}/mpi.h RESULT_VARIABLE result)
             if (result EQUAL 0)
