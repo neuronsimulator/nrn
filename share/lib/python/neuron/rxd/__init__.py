@@ -11,7 +11,7 @@ from .rate import Rate
 from .reaction import Reaction
 from . import geometry
 from .multiCompartmentReaction import MultiCompartmentReaction
-from .rxd import re_init, set_solve_type, nthread
+from .rxd import re_init, set_solve_type, nthread, save_rxd, restore_rxd
 from .rxdmath import v
 
 try:

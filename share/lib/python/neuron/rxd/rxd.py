@@ -2031,3 +2031,33 @@ def nthread(n=None):
     if n:
         _set_num_threads(n)
     return _get_num_threads()
+
+def save_rxd(outdir='./'):
+    pc = h.ParallelContext()
+    pcid = pc.id()  
+    for sp in species._all_species:
+        s = sp()
+        numpy.save(os.path.join(outdir, s.name + '_concentrations_' + str(pcid) + '.npy'), s.nodes.concentration)
+    svst = h.SaveState()
+    svst.save()
+    f = h.File(os.path.join(outdir,'save_test_' + str(pcid) + '.dat'))
+    svst.fwrite(f)
+
+def restore_rxd(restoredir='./'):
+    pc = h.ParallelContext()
+    pcid = pc.id()  
+
+    def restoreSim():
+        svst = h.SaveState()
+        f = h.File(os.path.join(restoredir, 'save_test_'+str(pcid) + '.dat'))
+        svst.fread(f)
+        svst.restore()
+        for sp in species._all_species:
+            s = sp()
+            print(s.name)
+            temp = numpy.load(os.path.join(restoredir, s.name + '_concentrations_' + str(pcid) + '.npy'))
+            s.nodes.concentration = list(temp)
+            print('PCID ' + str(pcid) + ': resotred ' + s.name)
+
+    fih = h.FInitializeHandler(1, restoreSim)
+    h.finitialize()
