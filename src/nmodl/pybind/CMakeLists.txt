@@ -3,6 +3,19 @@
 # =============================================================================
 set_source_files_properties(${PYBIND_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
+# Set -fno-var-tracking-assignments on pyast.cpp with GCC to avoid a warning + double compilation
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+  foreach(pybind_file "${PROJECT_BINARY_DIR}/src/pybind/pyast.cpp")
+    get_source_file_property(pybind_file_compile_options "${pybind_file}" COMPILE_OPTIONS)
+    if("${pybind_file_compile_options}" STREQUAL "NOTFOUND")
+      set(pybind_file_compile_options)
+    endif()
+    list(APPEND pybind_file_compile_options "-fno-var-tracking-assignments")
+    set_source_files_properties("${pybind_file}" PROPERTIES COMPILE_OPTIONS
+                                                            "${pybind_file_compile_options}")
+  endforeach()
+endif()
+
 # build nmodl python module under lib/nmodl
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/nmodl)
 

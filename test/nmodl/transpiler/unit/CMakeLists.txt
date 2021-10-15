@@ -1,5 +1,10 @@
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
+# =============================================================================
+# Add extra compile flags to NMODL test sources
+# =============================================================================
+add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
+add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
 
 include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})

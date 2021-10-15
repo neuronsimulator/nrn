@@ -1,3 +1,9 @@
+# =============================================================================
+# Add extra compile flags to NMODL sources
+# =============================================================================
+add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
+add_link_options(${NMODL_EXTRA_CXX_FLAGS})
+
 add_subdirectory(codegen)
 add_subdirectory(language)
 add_subdirectory(lexer)

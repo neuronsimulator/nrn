@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2018-2019 Blue Brain Project
+ * Copyright (C) 2018-2021 Blue Brain Project
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
@@ -47,14 +47,6 @@ namespace parser {
  * because the yylex() defined in UnitFlexLexer has no parameters.
  */
 class UnitLexer: public UnitFlexLexer {
-    /**
-     * \brief Reference to driver object where this lexer resides
-     *
-     * Currently driver object is not used within lexer but could be
-     * used for accessing previous units if needed.
-     */
-    UnitDriver& driver;
-
   public:
     /// location of the parsed token
     location loc;
@@ -69,9 +61,10 @@ class UnitLexer: public UnitFlexLexer {
      * @param in Input stream from where tokens will be read
      * @param out Output stream where output will be sent
      */
-    explicit UnitLexer(UnitDriver& driver, std::istream* in = nullptr, std::ostream* out = nullptr)
-        : UnitFlexLexer(in, out)
-        , driver(driver) {}
+    explicit UnitLexer(UnitDriver& /* driver */,
+                       std::istream* in = nullptr,
+                       std::ostream* out = nullptr)
+        : UnitFlexLexer(in, out) {}
 
     ~UnitLexer() override = default;
 
