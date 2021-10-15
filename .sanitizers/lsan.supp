@@ -1,0 +1,2 @@
+leak:nmodl::parser::NmodlParser::parse()
+leak:PyInit__nmodl

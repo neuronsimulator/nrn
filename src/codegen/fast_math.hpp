@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2018-2019 Blue Brain Project
+ * Copyright (C) 2018-2021 Blue Brain Project
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 
 /**
  * \file
@@ -21,30 +22,54 @@
 namespace nmodl {
 namespace fast_math {
 
-static inline double uint642dp(uint64_t ll) {
-    return *((double*) (&ll));
+static inline double uint642dp(uint64_t x) {
+    static_assert(sizeof(double) == sizeof(uint64_t),
+                  "nmodl::fast_math::uint642dp requires sizeof(double) == sizeof(uint64_t)");
+    double v;
+    std::memcpy(&v, &x, sizeof(double));
+    return v;
 }
 
 static inline uint64_t dp2uint64(double x) {
-    return *((uint64_t*) (&x));
+    static_assert(sizeof(double) == sizeof(uint64_t),
+                  "nmodl::fast_math::dp2uint64 requires sizeof(double) == sizeof(uint64_t)");
+    uint64_t v;
+    std::memcpy(&v, &x, sizeof(uint64_t));
+    return v;
 }
 
 static inline float int322sp(int32_t x) {
-    return *((float*) (&x));
+    static_assert(sizeof(float) == sizeof(int32_t),
+                  "nmodl::fast_math::int322sp requires sizeof(float) == sizeof(int32_t)");
+    float v;
+    std::memcpy(&v, &x, sizeof(float));
+    return v;
 }
 
 static inline unsigned int sp2uint32(float x) {
-    return *((uint32_t*) (&x));
+    static_assert(sizeof(float) == sizeof(unsigned int),
+                  "nmodl::fast_math::sp2uint32 requires sizeof(float) == sizeof(unsigned int)");
+    unsigned int v;
+    std::memcpy(&v, &x, sizeof(unsigned int));
+    return v;
 }
 
 static inline float f_inf() {
-    uint32_t v = 0x7F800000;
-    return *((float*) (&v));
+    static_assert(sizeof(float) == sizeof(uint32_t),
+                  "nmodl::fast_math::f_inf requires sizeof(float) == sizeof(uint32_t)");
+    float v;
+    uint32_t int_val{0x7F800000};
+    std::memcpy(&v, &int_val, sizeof(float));
+    return v;
 }
 
 static inline double inf() {
-    uint64_t v = 0x7FF0000000000000;
-    return *((double*) (&v));
+    static_assert(sizeof(double) == sizeof(uint64_t),
+                  "nmodl::fast_math::inf requires sizeof(double) == sizeof(uint64_t)");
+    double v;
+    uint64_t int_val{0x7FF0000000000000};
+    std::memcpy(&v, &int_val, sizeof(double));
+    return v;
 }
 
 

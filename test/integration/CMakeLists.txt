@@ -1,4 +1,10 @@
 # =============================================================================
+# Add extra compile flags to NMODL test sources
+# =============================================================================
+add_compile_options(${NMODL_EXTRA_CXX_FLAGS})
+add_link_options(${NMODL_EXTRA_CXX_FLAGS})
+
+# =============================================================================
 # translation of mod files
 # =============================================================================
 file(GLOB modfiles "${NMODL_PROJECT_SOURCE_DIR}/test/integration/mod/*.mod")

@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2018-2019 Blue Brain Project
+ * Copyright (C) 2018-2021 Blue Brain Project
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
@@ -549,7 +549,7 @@ void CodegenIspcVisitor::print_backend_compute_routine_decl() {
 }
 
 bool CodegenIspcVisitor::check_incompatibilities() {
-    const auto& has_incompatible_nodes = [this](const ast::Ast& node) {
+    const auto& has_incompatible_nodes = [](const ast::Ast& node) {
         return !collect_nodes(node, incompatible_node_types).empty();
     };
 
@@ -652,7 +652,7 @@ void CodegenIspcVisitor::move_procs_to_wrapper() {
     populate_nameset(info.nrn_state_block);
     populate_nameset(info.breakpoint_node);
 
-    const auto& has_incompatible_nodes = [this](const ast::Ast& node) {
+    const auto& has_incompatible_nodes = [](const ast::Ast& node) {
         return !collect_nodes(node, incompatible_node_types).empty();
     };
 

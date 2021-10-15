@@ -1,0 +1,20 @@
+{
+    "problemMatcher": [
+        {
+            "owner": "ubsan-problem-matcher",
+            "severity": "warning",
+            "pattern": [
+                {
+                    "regexp": "^.*\\/(src\\/.*):(\\d+):(\\d+): runtime error: (.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "message": 4
+                },
+                {
+                    "regexp": "^.*UndefinedBehaviorSanitizer:.*$"
+                }
+            ]
+        }
+    ]
+}

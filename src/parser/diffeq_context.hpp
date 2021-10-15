@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2018-2019 Blue Brain Project
+ * Copyright (C) 2018-2021 Blue Brain Project
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
@@ -78,9 +78,6 @@ class DiffEqContext {
     /// rhs of equation
     std::string rhs;
 
-    /// order of the diff equation
-    int order = 0;
-
     /// return solution for cnexp method
     std::string get_cnexp_solution() const;
 
@@ -110,9 +107,8 @@ class DiffEqContext {
 
     DiffEqContext() = default;
 
-    DiffEqContext(std::string state, int order, std::string rhs, std::string method)
+    DiffEqContext(std::string state, int /* order */, std::string rhs, std::string method)
         : state(std::move(state))
-        , order(order)
         , rhs(std::move(rhs))
         , method(std::move(method)) {}
 

@@ -6,7 +6,7 @@ concurrency:
 
 on:
   push:
-    branches: 
+    branches:
       - master
       - release/**
   pull_request:
@@ -35,7 +35,7 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.4
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
-          
+
       - name: Install homebrew packages
         if: startsWith(matrix.os, 'macOS')
         run: |
@@ -55,12 +55,12 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
         env:
           PYTHON_VERSION:  ${{ env.DEFAULT_PY_VERSION }}
-       
+
       - name: Install Python3 dependencies
         run: |
           pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest \
             'sympy>=1.3,<1.9' 'cmake-format==0.6.13'
-          
+
       - uses: actions/checkout@v2
 
       - name: Configure
@@ -70,6 +70,7 @@ jobs:
           echo "------- Configure -------"
           mkdir build && pushd build
           cmake .. -G Ninja \
+            -DNMODL_EXTRA_CXX_FLAGS="-Wall -Wno-reorder -Wno-unknown-pragmas -Wno-unused-variable -Wno-sign-compare -Wno-overloaded-virtual" \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DPYTHON_EXECUTABLE=$(which python3) \
@@ -98,6 +99,11 @@ jobs:
             ${{matrix.os}}-${{github.ref}}-
             ${{matrix.os}}-
 
+      - name: Register gcc problem matcher
+        # Only report warnings from one gcc build and one clang build
+        if: ${{matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-11'}}
+        run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+
       - name: Build, Test and Install
         shell: bash
         working-directory: ${{runner.workspace}}/nmodl/build
@@ -113,15 +119,20 @@ jobs:
           echo "------- Building -------"
           ccache -z
           # Older versions don't support -v (verbose)
-          ccache -sv || ccache -s
+          ccache -vs 2>/dev/null || ccache -s
           cmake --build .
-          ccache -sv || ccache -s
+          ccache -vs 2>/dev/null || ccache -s
 
           echo "------- Testing -------"
-          ctest --output-on-failure
+          ctest --output-on-failure -T Test
 
           echo "------- Installing -------"
           cmake --build . --target install
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ctest-results-${{matrix.os}}
+          path: ${{runner.workspace}}/nmodl/build/Testing/*/Test.xml
 
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To enable it, you have to: 
@@ -131,3 +142,147 @@ jobs:
         if: failure() && contains(github.event.pull_request.title, 'live-debug-tests')
         uses: mxschmitt/action-tmate@v3
         timeout-minutes: 60
+
+  sanitizers:
+    needs: ci
+    name: ${{ matrix.sanitizer }}-sanitizer
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        # TODO: might be interesting to add the thread sanitizer too
+        sanitizer: [undefined, address]
+      fail-fast: false
+    steps:
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.11
+
+      - name: Install apt packages
+        run: |
+          sudo apt install bison ccache flex libfl-dev clang-12 ninja-build \
+            python3-dev python3-pip
+          # Make clang++ and llvm-symbolizer point at clang/llvm-12
+          # Priority (200) chosen to be bigger than that in
+          # https://github.com/actions/virtual-environments/blob/main/images/linux/scripts/installers/clang.sh
+          sudo update-alternatives --install /usr/bin/clang++         clang++         /usr/bin/clang++-12         200
+          sudo update-alternatives --install /usr/bin/llvm-symbolizer llvm-symbolizer /usr/bin/llvm-symbolizer-12 200
+          clang++ --version
+          llvm-symbolizer --version
+        shell: bash
+
+      - name: Set up Python3
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install Python3 dependencies
+        run: |
+          pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest \
+            'sympy>=1.3,<1.9'
+
+      - uses: actions/checkout@v2
+
+      - name: Configure
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl
+        run:  |
+          echo "------- Configure -------"
+          # Figure out the path to clang's sanitizer runtime libraries
+          # See also: https://github.com/google/sanitizers/issues/1086
+          if [[ "${{matrix.sanitizer}}" == "address" ]]; then
+            # Based on https://stackoverflow.com/questions/47021422/how-to-enable-address-sanitizer-for-multiple-c-binaries,
+            # this should avoid undefined asan symbols when tests launched via
+            # `python` load sanitized nmodl .so files
+            SANITIZER_RUNTIME_LIB=$(clang++ -print-file-name=libclang_rt.asan-x86_64.so)
+            SANITIZER_FLAGS="-fsanitize=${{matrix.sanitizer}} -fsanitize-address-use-after-scope"
+          elif [[ "${{matrix.sanitizer}}" == "undefined" ]]; then
+            # This is to let non-sanitized Python load sanitized NMODL libraries.
+            SANITIZER_RUNTIME_LIB=$(clang++ -print-file-name=libclang_rt.ubsan_standalone-x86_64.so)
+            # NOT: -fsanitize=implicit-conversion
+            #      -fsanitize=local-bounds
+            #      -fsanitize=nullability-arg
+            #      -fsanitize=nullability-assign
+            #      -fsanitize=nullability-return
+            #      -fsanitize=unsigned-integer-overflow
+            SANITIZER_FLAGS="-fsanitize=${{matrix.sanitizer}} -fsanitize=float-divide-by-zero"
+          else
+            echo "WARNING: do not know what runtime library to load for ${{matrix.sanitizer}}"
+          fi
+          # Save SANITIZER_RUNTIME_LIB for the next steps, where it will be
+          # added to LD_PRELOAD.
+          echo "SANITIZER_RUNTIME_LIB=${SANITIZER_RUNTIME_LIB}" >> $GITHUB_ENV
+          # Add the directory containing the runtime library to LD_LIBRARY_PATH
+          # now, so that CMake is able to execute the test executables it makes
+          SANITIZER_RUNTIME_DIR=$(dirname "${SANITIZER_RUNTIME_LIB}")
+          echo "SANITIZER_RUNTIME_DIR=${SANITIZER_RUNTIME_DIR}" >> $GITHUB_ENV
+          export LD_LIBRARY_PATH=${SANITIZER_RUNTIME_DIR}${SANITIZER_RUNTIME_DIR:+:}${LD_LIBRARY_PATH}
+          echo "SANITIZER_RUNTIME_LIB=${SANITIZER_RUNTIME_LIB}"
+          echo "SANITIZER_RUNTIME_DIR=${SANITIZER_RUNTIME_DIR}"
+          echo "SANITIZER_FLAGS=${SANITIZER_FLAGS}"
+          echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+          mkdir build && pushd build
+          cmake .. -G Ninja \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DNMODL_EXTRA_CXX_FLAGS="-fno-omit-frame-pointer ${SANITIZER_FLAGS} -shared-libsan" \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DPYTHON_EXECUTABLE=$(which python3) \
+            -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+        env:
+          INSTALL_DIR: ${{ runner.workspace }}/install
+
+      - name: Restore compiler cache
+        uses: pat-s/always-upload-cache@v2
+        with:
+          path: |
+            ${{runner.workspace}}/ccache
+          key: ${{matrix.sanitizer}}-${{github.ref}}-${{github.sha}}
+          restore-keys: |
+            ${{matrix.sanitizer}}-${{github.ref}}-
+            ${{matrix.sanitizer}}-
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        env:
+          CCACHE_DIR: ${{runner.workspace}}/ccache
+        run:  |
+          if ccache --version | grep -E '^ccache version 4\.(4|4\.1)$'
+          then
+            echo "------- Disable ccache direct mode -------"
+            # https://github.com/ccache/ccache/issues/935
+            export CCACHE_NODIRECT=1
+          fi
+          echo "------- Building -------"
+          ccache -z
+          # Older versions don't support -v (verbose)
+          ccache -vs 2>/dev/null || ccache -s
+          # NMODL likes to execute bits of itself during the build, so it must
+          # be possible to find the sanitizer runtime libraries.
+          export LD_LIBRARY_PATH=${SANITIZER_RUNTIME_DIR}${SANITIZER_RUNTIME_DIR:+:}${LD_LIBRARY_PATH}
+          # Be tolerant of bad code during the build.
+          export ASAN_OPTIONS=detect_leaks=0
+          cmake --build .
+          ccache -vs 2>/dev/null || ccache -s
+
+      - name: Register problem matcher
+        run: echo "::add-matcher::.github/problem-matchers/${{matrix.sanitizer}}.json"
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/nmodl/build
+        run: |
+          echo "------- Testing -------"
+          export UBSAN_OPTIONS="print_stacktrace=0:halt_on_error=1"
+          export ASAN_OPTIONS="detect_stack_use_after_return=1:check_initialization_order=1"
+          export LSAN_OPTIONS="suppressions=${PWD}/../.sanitizers/lsan.supp"
+          export LD_PRELOAD="${SANITIZER_RUNTIME_LIB}"
+          if [[ "${{matrix.sanitizer}}" == "address" ]]; then
+            # Force Python to use plain malloc. This removes a lot of noise...
+            export PYTHONMALLOC=malloc
+          fi
+          ctest -T Test --output-on-failure
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ctest-results-${{matrix.sanitizer}}-sanitizer
+          path: ${{runner.workspace}}/nmodl/build/Testing/*/Test.xml
