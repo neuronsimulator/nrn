@@ -6,21 +6,6 @@ environment you can choose one of the installation method described below.
 If you want to quickly get started with NEURON, we provide binary installers for Linux, Mac and
 Windows platforms.
 
-#### Windows
-
-On Windows only recommended way to install NEURON is using binary installer. You can download alpha
-or recent releases from below URLs:
-
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
-
-Windows installers have name in the format of `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
-The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
-with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
-by double clicking like any other Windows application. Note that you have to install python separately
-if python support is required. You can find detailed step-by-step instructions in [this presentation]
-(https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
-
 #### Mac OS
 
 Since version 7.8.1 we are providing Python wheels and NEURON can be installed using `pip` as:
@@ -60,6 +45,75 @@ pip3 install neuron
 
 Note that Python2 wheels are provided for the 8.0.x release series exclusively. Also, we are not providing .rpm or .deb
 installers for recent releases.
+
+#### Windows
+
+On Windows, the only recommended way to install NEURON is using the binary installer. You can download alpha
+or recent releases from:
+
+* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
+* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+
+The naming convention for Windows installers is `nrn-<version-id>-mingw-py-36-37-38-39-setup.exe`.
+The `py-36-37-38-39` string in the installer name indicates that the given installer is compatible
+with Python versions 3.6, 3.7, 3.8 and 3.9. Once the installer is downloaded, you can install it
+by double clicking like any other Windows application. Note that you have to install python separately
+if python support is required. You can find detailed step-by-step instructions in [this presentation]
+(https://neuron.yale.edu/ftp/neuron/nrn_mswin_install.pdf).
+
+#### Windows Subsystem for Linux (WSL) Python Wheel
+By using the Windows Subsystem for Linux, you can install the available Linux Python wheel. 
+Note that the default Linux distro installed by WSL is Ubuntu, and the following instructions are tailored accordingly.  
+
+Steps: 
+
+1. Follow official Microsoft WSL installation guide: https://docs.microsoft.com/en-us/windows/wsl/install
+
+```
+Notes:
+      * WSL requires virtualization capabilities, please ensure they are enabled on your system (i.e. BIOS).
+      * If you are using VirtualBox, WSL2 is not supported (https://forums.virtualbox.org/viewtopic.php?t=95302)
+        To enable WSL1 from command prompt or powershell: 
+          wsl --set-default-version 1
+          wsl --install -d Ubuntu
+```
+
+2. Install `pip3`
+
+Open `Ubuntu` from programs and run the following:
+
+```bash
+sudo apt-get update
+sudo apt install python3-pip python3-numpy
+```
+
+3. Install NEURON
+   
+In the same terminal run:
+
+```bash
+pip3 install neuron
+```
+Close and open another terminal. You can do some sanity testing:
+```
+python3 -c "import neuron; neuron.test(); quit()"
+```
+
+4.  (Optional: NEURON GUI) Install `VcXsrv`, a Windows X-server
+* Download and install `VcXsrv` from  [SourceForge](https://sourceforge.net/projects/vcxsrv/).
+* Open `XLaunch` from the Start Menu. In the setup wizard accept the default options until `Extra settings` where you have to tick `Disable access control`. Additionally on the last page, click on the `Save configuration` button and save the configuration file in `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` in order to automatically launch `VcXsrv`at startup without re-doing the wizard. If prompted via Windows Defender Firewall, click on `Allow access`.
+* In an Ubuntu terminal run:
+```bash
+export DISPLAY=:0
+```
+and then you can just launch `nrngui`. In order to have this setting automatically when you open an Ubuntu terminal:
+```bash
+echo "export DISPLAY=:0" >> ~/.bashrc
+```
+In order to perform sanity checks of the NEURON GUI, from the Ubuntu terminal you can call: 
+```bash
+neurondemo
+```
 
 ## Installing Source Distributions
 

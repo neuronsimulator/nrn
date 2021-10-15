@@ -146,8 +146,12 @@ bare=$3
 case "$1" in
 
   linux)
-    # include here /nrnwheel/mpt/include if have MPT headers
     MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    # Check for MPT headers. On Azure, we extract them from a secure file and mount them in the docker image in:
+    MPT_INCLUDE_PATH="/nrnwheel/mpt/include"
+    if [ -d "$MPT_INCLUDE_PATH" ]; then
+        MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${MPT_INCLUDE_PATH}"
+    fi
     USE_STATIC_READLINE=1
     python_wheel_version=${python_wheel_version//[-._]/}
     for py_bin in /opt/python/cp${python_wheel_version}*/bin/python; do
