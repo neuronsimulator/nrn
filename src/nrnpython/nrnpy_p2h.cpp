@@ -212,12 +212,15 @@ printf("\nargs\n");
 PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
+  HocContextRestore
   if (!p && PyErr_Occurred()) {
     char* mes = nrnpyerr_str();
-    Fprintf(stderr, "%s\n", mes);
-    free(mes);
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+    }
   }
-  HocContextRestore return p;
+  return p;
 }
 
 void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -684,10 +687,10 @@ static Object* pickle2po(char* s, size_t size) {
 }
 
 /** Full python traceback error message returned as string.
- *  free the return value.
+ *  Caller should free the return value if not NULL
 **/
 char* nrnpyerr_str() {
-  if (PyErr_Occurred()) {
+  if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_Exception)) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
@@ -695,28 +698,25 @@ char* nrnpyerr_str() {
     PyObject* module_name = NULL;
     PyObject* pyth_module = NULL;
     PyObject* pyth_func = NULL;
-    PyObject* pyth_val = NULL;
     PyObject* py_str = NULL;
     char* cmes = NULL;
     int err = 0;
 
-    module_name = PyString_FromString("traceback");
+    // Since traceback.format_exception returns list of strings, wrap
+    // in neuron.format_exception that returns a string.    
+    if (!ptraceback) {
+        ptraceback = Py_None;
+        Py_INCREF(ptraceback);
+    }
+    module_name = PyString_FromString("neuron");
     if (module_name) {
         pyth_module = PyImport_Import(module_name);
     }
-    if (pyth_module && ptraceback) {
+    if (pyth_module) {
         pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
         if (pyth_func) {
-            pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback, NULL);
+            py_str = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback, NULL);
         }
-    } else if (pyth_module) {
-        pyth_func = PyObject_GetAttrString(pyth_module, "format_exception_only");
-        if (pyth_func) {
-            pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, NULL);
-        }
-    }
-    if (pyth_val) {
-        py_str = PyObject_Str(pyth_val);
     }
     if (py_str) {
         Py2NRNString mes(py_str);
@@ -732,6 +732,7 @@ char* nrnpyerr_str() {
 
     if (!py_str) {
         PyErr_Print();
+        Fprintf(stderr, "nrnpyerr_str failed\n");
     }
 
     Py_XDECREF(pyth_func);
@@ -739,7 +740,6 @@ char* nrnpyerr_str() {
     Py_XDECREF(ptype);
     Py_XDECREF(pvalue);
     Py_XDECREF(ptraceback);
-    Py_XDECREF(pyth_val);
     Py_XDECREF(py_str);
 
     return cmes;
