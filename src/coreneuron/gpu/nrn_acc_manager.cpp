@@ -9,6 +9,7 @@
 #include <queue>
 #include <utility>
 
+#include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
@@ -1324,8 +1325,14 @@ void init_gpu() {
 
     // get local rank within a node and assign specific gpu gpu for this node.
     // multiple threads within the node will use same device.
-    int local_rank = nrnmpi_local_rank();
-    int local_size = nrnmpi_local_size();
+    int local_rank = 0;
+    int local_size = 1;
+#if NRNMPI
+    if (corenrn_param.mpi_enable) {
+        local_rank = nrnmpi_local_rank();
+        local_size = nrnmpi_local_size();
+    }
+#endif
 
     int device_num = local_rank % num_devices;
     acc_set_device_num(device_num, device_type);

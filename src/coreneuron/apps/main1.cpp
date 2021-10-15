@@ -543,7 +543,6 @@ extern "C" int run_solve_core(int argc, char** argv) {
     }
 #endif
     bool compute_gpu = corenrn_param.gpu;
-    bool skip_mpi_finalize = corenrn_param.skip_mpi_finalize;
 
     // clang-format off
 
@@ -672,7 +671,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
 // mpi finalize
 #if NRNMPI
-    if (corenrn_param.mpi_enable && !skip_mpi_finalize) {
+    if (corenrn_param.mpi_enable && !corenrn_param.skip_mpi_finalize) {
         nrnmpi_finalize();
     }
 #endif

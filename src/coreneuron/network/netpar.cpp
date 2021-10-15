@@ -49,12 +49,12 @@ namespace coreneuron {
 class PreSyn;
 class InputPreSyn;
 
-static double t_exchange_;
-static double dt1_;  // 1/dt
-
 void nrn_spike_exchange_init();
 
 #if NRNMPI
+static double t_exchange_;
+static double dt1_;  // 1/dt
+
 NRNMPI_Spike* spikeout;
 NRNMPI_Spike* spikein;
 
