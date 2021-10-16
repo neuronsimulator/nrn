@@ -108,6 +108,18 @@ static void call_python_with_section(Object* pyact, Section* sec) {
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Call of Python Callable failed", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+  }
 }
 
 extern void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
@@ -213,13 +225,24 @@ PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
 #endif
   HocContextRestore
-  if (!p && PyErr_Occurred()) {
+  // It would be nice to handle the error here, ending with a hoc_execerror
+  // for any Exception (note, that does not include SystemExit). However
+  // since many, but not all, of the callers need to clean up and
+  // release the GIL, errors get handled by the caller or higher up.
+  // The almost generic idiom is:
+  /**
+  if (!p) {
     char* mes = nrnpyerr_str();
     if (mes) {
       Fprintf(stderr, "%s\n", mes);
       free(mes);
+      hoc_execerror("Call of Python Callable failed", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print(); // Python process will exit with the error code specified by the SystemExit instance.
     }
   }
+  **/
   return p;
 }
 
@@ -278,9 +301,19 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     // PyObject_Print(result, stdout, 0);
     // printf("  result of call\n");
     if (!result) {
-      PyErr_Print();
-      lock.release();
-      hoc_execerror("PyObject method call failed:", sym->name);
+      char* mes = nrnpyerr_str();
+      Py_XDECREF(tail);
+      Py_XDECREF(head);
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+        lock.release();
+        hoc_execerror("PyObject method call failed:", sym->name);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print();
+      }
+      return;
     }
   } else if (nindex) {
     PyObject* arg;
@@ -413,9 +446,6 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     r = nrnpy_pyCallObject(po, args);
     Py_DECREF(args);
   }
-  if (r == NULL) {
-    PyErr_Print();
-  }
   return r;
 }
 
@@ -434,11 +464,24 @@ static double praxis_efun(Object* ho, Object* v) {
   Py_XDECREF(pc);
   Py_XDECREF(pv);
   PyObject* r = hoccommand_exec_help1(po);
+  Py_XDECREF(po);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+    return 1e9; // SystemExit?
+  }
   PyObject* pn = PyNumber_Float(r);
   double x = PyFloat_AsDouble(pn);
   Py_XDECREF(pn);
   Py_XDECREF(r);
-  Py_XDECREF(po);
   return x;
 }
 
@@ -447,8 +490,16 @@ static int hoccommand_exec(Object* ho) {
 
   PyObject* r = hoccommand_exec_help(ho);
   if (r == NULL) {
-    lock.release();
-    hoc_execerror("Python Callback failed", 0);
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   Py_XDECREF(r);
   return (r != NULL);
@@ -466,8 +517,16 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     buf[size - 1] = '\0';
     Py_XDECREF(r);
   } else {
-    lock.release();
-    hoc_execerror("Python Callback failed", 0);
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   return (r != NULL);
 }
@@ -482,6 +541,18 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+  }
 }
 
 static Object* callable_with_args(Object* ho, int narg) {
@@ -547,13 +618,20 @@ static double func_call(Object* ho, int narg, int* err) {
   double rval = 0.0;
   if (r == NULL) {
     if (!err || *err) {
-      PyErr_Print();
+      char* mes = nrnpyerr_str();
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print();
+      }
     }else{
       PyErr_Clear();
     }
     if (!err || *err) {
       lock.release();
-      hoc_execerror("func_call failed", 0);
+      hoc_execerror("func_call failed", NULL);
     }
     if (err) { *err = 1; }
   }else{
@@ -776,9 +854,14 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
   Py_DECREF(args);
   if (!result) {
     char* mes = nrnpyerr_str();
-    Fprintf(stderr, "%s\n", mes);
-    free(mes);
-    hoc_execerror("PyObject method call failed:", NULL);
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      hoc_execerror("PyObject method call failed:", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   char* rs = pickle(result, retsize);
   Py_XDECREF(result);
