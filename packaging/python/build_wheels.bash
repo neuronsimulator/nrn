@@ -80,6 +80,7 @@ build_wheel_linux() {
         setup_args="--enable-coreneuron --enable-gpu"
         # nvhpc is required for GPU support but make sure
         # CC and CXX are unset for building python extensions
+        source ~/.bashrc
         module load nvhpc
         unset CC CXX
         # preferred cuda version e.g. 11.0
