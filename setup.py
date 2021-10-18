@@ -12,8 +12,8 @@ from setuptools import setup
 
 
 class Components:
-    RX3D = True
-    IV = True
+    RX3D = False # Temporary, enable again
+    IV = False  # Temporary, enable again
     MPI = True
     CORENRN = False # still early support
     GPU = False     # still early support
@@ -41,6 +41,11 @@ try:
     # allow to override version during development/testing
     if "NEURON_WHEEL_VERSION" in os.environ:
         __version__ = os.environ["NEURON_WHEEL_VERSION"]
+
+    # TODO: Add .gpu suffix for gpu wheel temporarily
+    if "--enable-gpu" in sys.argv:
+        __version__ += ".gpu"
+
 
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo : " + str(e))
@@ -347,6 +352,7 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
+                "-DCMAKE_VERBOSE_MAKEFILE=ON", # Temporary, remove
             ] + ([
                 "-DCORENRN_ENABLE_GPU=ON",
                 "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
