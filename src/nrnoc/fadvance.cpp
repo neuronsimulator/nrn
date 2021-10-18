@@ -170,9 +170,9 @@ int nrn_use_fast_imem;
 #define PROFILE 0
 #include "profile.h"
 
-void fadvance(void)
-{
-	tstopunset;
+void fadvance(void) {
+    nrn::Instrumentor::phase p_fadvance("fadvance");
+    tstopunset;
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
@@ -342,7 +342,8 @@ void nrn_daspk_init_step(double tt, double dteps, int upd){
 }
 
 void nrn_fixed_step() {
-	int i;
+    nrn::Instrumentor::phase p_timestep("timestep");
+    int i;
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
 #endif
@@ -363,7 +364,8 @@ void nrn_fixed_step() {
 			/* see comment below */
 			if (nrnthread_v_transfer_) {
 				if (nrnmpi_v_transfer_) {
-					(*nrnmpi_v_transfer_)();
+                    nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                    (*nrnmpi_v_transfer_)();
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
@@ -376,7 +378,8 @@ void nrn_fixed_step() {
 */
 		if (nrnthread_v_transfer_) {
 			if (nrnmpi_v_transfer_) {
-				(*nrnmpi_v_transfer_)();
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
 			}
 			nrn_multithread_job(nrn_fixed_step_lastpart);
 		}
@@ -445,7 +448,8 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	int i;
 	nth->_stop_stepping = 0;
 	for (i = step_group_begin; i < step_group_n; ++i) {
-		nrn_fixed_step_thread(nth);
+        nrn::Instrumentor::phase p_timestep("timestep");
+        nrn_fixed_step_thread(nth);
 		if (nth->_stop_stepping) {
 			if (nth->id == 0) { step_group_end = i + 1; }
 			nth->_stop_stepping = 0;
@@ -458,10 +462,8 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 
 void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
-    nrn::Instrumentor::phase_begin("timestep");
-
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         deliver_net_events(nth);
     }
 
@@ -480,7 +482,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
         nrn_solve(nth);
     }
     {
-        nrn::Instrumentor::phase p("second_order_cur");
+        nrn::Instrumentor::phase p("second-order-cur");
         second_order_cur(nth);
     }
     {
@@ -495,7 +497,6 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
-    nrn::Instrumentor::phase_end("timestep");
     return nullptr;
 }
 
@@ -526,7 +527,7 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	fixed_record_continuous(nth);
     CTADD
     {
-        nrn::Instrumentor::phase p("deliver_events");
+        nrn::Instrumentor::phase p("deliver-events");
         nrn_deliver_events(nth); /* up to but not past texit */
     }
     return nullptr;
@@ -778,7 +779,7 @@ void nonvint(NrnThread* _nt)
 #if 1 || PARANEURON
 	/* nrnmpi_v_transfer if needed was done earlier */
     if (nrnthread_v_transfer_) {
-        nrn::Instrumentor::phase p("gap-v-transfer");
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
         (*nrnthread_v_transfer_)(_nt);
     }
 #endif
@@ -900,12 +901,15 @@ void nrn_finitialize(int setv, double v) {
     {
         (*nrnthread_vi_compute_)(_nt);
     }
-    if (nrnmpi_v_transfer_) {
-        (nrnmpi_v_transfer_)();
-    }
-    if (nrnthread_v_transfer_) FOR_THREADS(_nt)
     {
-        (*nrnthread_v_transfer_)(_nt);
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        if (nrnmpi_v_transfer_) {
+            (nrnmpi_v_transfer_)();
+        }
+        if (nrnthread_v_transfer_)
+            FOR_THREADS(_nt) {
+                (*nrnthread_v_transfer_)(_nt);
+            }
     }
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
