@@ -12,8 +12,8 @@ from setuptools import setup
 
 
 class Components:
-    RX3D = False # Temporary, enable again
-    IV = False  # Temporary, enable again
+    RX3D = True
+    IV = True
     MPI = True
     CORENRN = False # still early support
     GPU = False     # still early support
@@ -352,7 +352,7 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
-                "-DCMAKE_VERBOSE_MAKEFILE=ON", # Temporary, remove
+                "-DCMAKE_VERBOSE_MAKEFILE=OFF",
             ] + ([
                 "-DCORENRN_ENABLE_GPU=ON",
                 "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
