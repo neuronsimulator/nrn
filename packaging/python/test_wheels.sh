@@ -19,6 +19,7 @@ use_venv=$3 #if $3 is not "false" then use virtual environment
 
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
+
 run_mpi_test () {
   mpi_launcher=${1}
   mpi_name=${2}
@@ -47,6 +48,13 @@ run_mpi_test () {
     $mpi_launcher -n 2 ./x86_64/special -python src/parallel/test0.py -mpi --expected-hosts 2
     $mpi_launcher -n 2 nrniv -python src/parallel/test0.py -mpi --expected-hosts 2
   fi
+
+  # coreneuron execution via neuron
+  rm -rf x86_64
+  nrnivmodl -coreneuron test/coreneuron/mod/
+  $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
+  $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+  $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
@@ -90,6 +98,13 @@ run_serial_test () {
 
     # Test 9: modlunit available (and can find nrnunits.lib)
     modlunit tmp_mod/cacum.mod
+
+    # Test 10: coreneuron execution via neuron
+    rm -rf x86_64
+    nrnivmodl -coreneuron test/coreneuron/mod/
+    $python_exe test/coreneuron/test_direct.py
+    nrniv -python test/coreneuron/test_direct.py
+    ./x86_64/special -python test/coreneuron/test_direct.py
 }
 
 run_parallel_test() {
@@ -170,8 +185,8 @@ if [[ "$python_ver" == "36" ]]; then
   $python_exe -m pip install --upgrade pip
 fi
 
-# install numpy and neuron
-$python_exe -m pip install numpy
+# install numpy, pytest and neuron
+$python_exe -m pip install numpy pytest
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 

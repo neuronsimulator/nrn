@@ -24,7 +24,7 @@ We mount local neuron repository inside docker as a volume to preserve any code 
 ```
 git clone https://github.com/neuronsimulator/nrn.git
 
-docker run -v $PWD/nrn:/root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
+docker run -w /root/nrn -v $PWD/nrn:/root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel bash
 ```
 
 where `$PWD/nrn` is a neuron repository on the host machine and `$PWD/mpt-headers` is a directory containing HPE-MPT MPI headers (optional). We mount those directories inside docker at location `/root/nrn` and `/nrnwheel/mpt/include` inside the container. The MPT headers are optional and maintained in the separate repository as it's not open source library. You can download the headers as:
@@ -36,7 +36,7 @@ git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
 If you want to build wheel with *GPU support* via CoreNEURON then we have to use image `neuronsimulator/neuron_wheel_gpu` i.e.
 
 ```
-docker run -v $PWD/nrn:/root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel_gpu bash
+docker run -w /root/nrn -v $PWD/nrn:/root/nrn -v $PWD/mpt-headers/2.21/include:/nrnwheel/mpt/include -it neuronsimulator/neuron_wheel_gpu bash
 ```
 
 Note that for OS X there is no docker image but on a system where all dependencies exist, you have to perform next building step.
@@ -45,7 +45,6 @@ Note that for OS X there is no docker image but on a system where all dependenci
 Once we are inside docker container, we can start building wheels. There is a build script which loop over the pythons `>=3.5` in `/opt/python`, build and audit the generated wheels. Results are placed in this wheelhouse directory.
 
 ```
-cd /root/nrn
 bash packaging/python/build_wheels.bash linux
 ```
 
