@@ -8,7 +8,7 @@ if [ ! -f setup.py ]; then
 fi
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
+    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env] [test_coreneuron]"
     exit 1
 fi
 
@@ -16,6 +16,7 @@ fi
 python_exe=$1
 python_wheel=$2
 use_venv=$3 #if $3 is not "false" then use virtual environment
+test_coreneuron=$4 #if $4 is "true" then test coreneuron
 
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
@@ -50,11 +51,13 @@ run_mpi_test () {
   fi
 
   # coreneuron execution via neuron
-  rm -rf x86_64
-  nrnivmodl -coreneuron test/coreneuron/mod/
-  $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
-  $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
-  $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+  if [[ "$test_coreneuron" == "true" ]]; then
+    rm -rf x86_64
+    nrnivmodl -coreneuron test/coreneuron/mod/
+    $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
+    $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+    $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+  fi
 
   if [ -n "$mpi_module" ]; then
      echo "Unloading module $mpi_module"
@@ -100,11 +103,13 @@ run_serial_test () {
     modlunit tmp_mod/cacum.mod
 
     # Test 10: coreneuron execution via neuron
-    rm -rf x86_64
-    nrnivmodl -coreneuron test/coreneuron/mod/
-    $python_exe test/coreneuron/test_direct.py
-    nrniv -python test/coreneuron/test_direct.py
-    ./x86_64/special -python test/coreneuron/test_direct.py
+    if [[ "$test_coreneuron" == "true" ]]; then
+      rm -rf x86_64
+      nrnivmodl -coreneuron test/coreneuron/mod/
+      $python_exe test/coreneuron/test_direct.py
+      nrniv -python test/coreneuron/test_direct.py
+      ./x86_64/special -python test/coreneuron/test_direct.py
+    fi
 }
 
 run_parallel_test() {
