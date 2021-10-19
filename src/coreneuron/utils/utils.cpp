@@ -1,7 +1,5 @@
 #include <sys/time.h>
 #include "utils.hpp"
-#include "coreneuron/mpi/nrnmpi.h"
-#include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
@@ -14,13 +12,6 @@ void nrn_abort(int errcode) {
     {
         abort();
     }
-}
-
-void nrn_fatal_error(const char* msg) {
-    if (nrnmpi_myid == 0) {
-        printf("%s\n", msg);
-    }
-    nrn_abort(-1);
 }
 
 double nrn_wtime() {

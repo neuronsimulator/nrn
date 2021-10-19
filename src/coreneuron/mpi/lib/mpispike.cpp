@@ -32,11 +32,6 @@ static void* emalloc(size_t size) {
     return memptr;
 }
 
-static void hoc_execerror(const char* s1, const char* s2) {
-    printf("error: %s %s\n", s1, s2 ? s2 : "");
-    abort();
-}
-
 // Register type NRNMPI_Spike
 void nrnmpi_spike_initialize() {
     NRNMPI_Spike s;

@@ -46,7 +46,8 @@ struct corenrn_parameters {
     unsigned ms_subint = 2;                /// Number of multisend interval. 1 or 2
     unsigned spkcompress = 0;              /// Spike Compression
     unsigned cell_interleave_permute = 0;  /// Cell interleaving permutation
-    unsigned nwarp = 0;  /// Number of warps to balance for cell_interleave_permute == 2
+    unsigned nwarp = 0;     /// Number of warps to balance for cell_interleave_permute == 2
+    unsigned num_gpus = 0;  /// Number of gpus to use per node
     unsigned report_buff_size = report_buff_size_default;  /// Size in MB of the report buffer.
     int seed = -1;  /// Initialization seed for random number generator (int)
 
