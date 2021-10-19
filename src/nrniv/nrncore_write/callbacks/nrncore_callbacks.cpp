@@ -823,17 +823,31 @@ printf("NetCon on queue\n");
 
       } break;
       case PreSynType: { // 4
-        PreSyn* nc = (PreSyn*)de;
-        // similar to NetCon but more data
-        size_t iloc = core_te->intdata.size();
-        core_te->intdata.push_back(-1);
-        presyn2intdata[nc].push_back(iloc);
+        PreSyn* ps = (PreSyn*)de;
+        // Output PreSyn similar to NetCon but more data.
+        // Input PreSyn (ps->output_index = -1 and ps->gid >= 0) can be
+        // figured out on the CoreNEURON side from the gid.
+        // Output PreSyn format is output_index, presyn index 
+	// initialized to -1 and figured out from presyn2intdata, and
+        // ps->delay_
+        // Input PreSyn format is output_index, gid, and ps->delay_
+        core_te->intdata.push_back(ps->output_index_);
+        if (ps->output_index_ < 0) {
+          // InputPreSyn on the CoreNEURON side
+          assert(ps->gid_ >= 0);
+          core_te->intdata.push_back(ps->gid_);
+        }else{
+          // PreSyn on the NEURON side
+          size_t iloc = core_te->intdata.size();
+          core_te->intdata.push_back(-1);
+          presyn2intdata[ps].push_back(iloc);
+        }
         // CoreNEURON PreSyn has no notion of use_min_delay_ so if that
         // is in effect, then the send time is actually tt - nc->delay_
         // (Note there is no core2nrn inverse as PreSyn does not appear on
         //  the CoreNEURON event queue).
-        if (nc->use_min_delay_) {
-          core_te->td.back() -= nc->delay_;
+        if (ps->use_min_delay_) {
+          core_te->td.back() -= ps->delay_;
         }
       } break;
       case HocEventType: { // 5
