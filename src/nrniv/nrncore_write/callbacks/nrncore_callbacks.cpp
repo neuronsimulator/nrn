@@ -867,14 +867,38 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   }
 
   // NEURON PreSyn* to CoreNEURON index into nt.presyns
+#define NRN_SENTINAL 100000000
   for (int i = 0; i < cg.n_presyn; ++i) {
     PreSyn* ps = cg.output_ps[i];
     auto iter = presyn2intdata.find(ps);
     if (iter != presyn2intdata.end()) {
+      if (iter->second[0] > NRN_SENTINAL) {
+        fprintf(stderr, "PreSyn %p visited twice\n", ps);
+      }
       for (auto iloc: iter->second) {
         core_te->intdata[iloc] = i;
       }
+      presyn2intdata[ps][0] = i + NRN_SENTINAL;
     }
+  }
+  // all presyn2intdata should have been visited
+  for (auto& iter: presyn2intdata) {
+    if (iter.second[0] < NRN_SENTINAL) {
+      PreSyn* ps = iter.first;
+      fprintf(stderr, "PreSyn %p not visited\n", ps);
+      fprintf(stderr, "PreSyn %p is source to %ld NetCons\n", ps, ps->dil_.count());
+      fprintf(stderr, "PreSyn %p gid=%d output_index=%d\n", ps, ps->gid_, ps->output_index_);
+      fprintf(stderr, "PreSyn %p associated with thread %d (current thread is %d)\n", ps, ps->nt_->id, tid);
+      if (ps->osrc_) {
+        fprintf(stderr, "PreSyn %p source is %s\n", ps, hoc_object_name(ps->osrc_));
+      }else if (ps->ssrc_) {
+        fprintf(stderr, "PreSyn %p source on %s\n", ps, secname(ps->ssrc_));
+      }else{
+        fprintf(stderr, "Presyn %p seems to have no source\n", ps);
+      }
+      assert(0);
+    }
+    assert(iter.second[0] >= NRN_SENTINAL);
   }
 
   // NEURON SelfEvent weight* into CoreNEURON index into nt.netcons
