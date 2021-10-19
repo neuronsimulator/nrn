@@ -769,6 +769,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       case TstopEventType: { // 1
       } break;
       case NetConType: { // 2
+printf("NetCon on queue\n");
         NetCon* nc = (NetCon*)de;
         // To find the i for cg.netcons[i] == nc
         // and since there are generally very many fewer nc on the queue
@@ -885,16 +886,18 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   for (auto& iter: presyn2intdata) {
     if (iter.second[0] < NRN_SENTINAL) {
       PreSyn* ps = iter.first;
-      fprintf(stderr, "PreSyn %p not visited\n", ps);
-      fprintf(stderr, "PreSyn %p is source to %ld NetCons\n", ps, ps->dil_.count());
-      fprintf(stderr, "PreSyn %p gid=%d output_index=%d\n", ps, ps->gid_, ps->output_index_);
-      fprintf(stderr, "PreSyn %p associated with thread %d (current thread is %d)\n", ps, ps->nt_->id, tid);
+      fprintf(stderr, "%d PreSyn %p not visited\n", nrnmpi_myid, ps);
+      fprintf(stderr, "%d PreSyn %p is source to %ld NetCons\n", nrnmpi_myid, ps, ps->dil_.count());
+      fprintf(stderr, "%d PreSyn %p gid=%d output_index=%d\n", nrnmpi_myid, ps, ps->gid_, ps->output_index_);
+      if (ps->nt_) {
+        fprintf(stderr, "%d PreSyn %p associated with thread %d (current thread is %d)\n", nrnmpi_myid, ps, ps->nt_->id, tid);
+      }
       if (ps->osrc_) {
-        fprintf(stderr, "PreSyn %p source is %s\n", ps, hoc_object_name(ps->osrc_));
+        fprintf(stderr, "%d PreSyn %p source is %s\n", nrnmpi_myid, ps, hoc_object_name(ps->osrc_));
       }else if (ps->ssrc_) {
-        fprintf(stderr, "PreSyn %p source on %s\n", ps, secname(ps->ssrc_));
+        fprintf(stderr, "%d PreSyn %p source on %s\n", nrnmpi_myid, ps, secname(ps->ssrc_));
       }else{
-        fprintf(stderr, "Presyn %p seems to have no source\n", ps);
+        fprintf(stderr, "%d Presyn %p seems to have no source\n", nrnmpi_myid, ps);
       }
       assert(0);
     }
