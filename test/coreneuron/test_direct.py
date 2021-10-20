@@ -7,6 +7,7 @@ enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 # TODO: temporary change until find a bug in gpu enabled coreneuron
 #       when we execute on CPU then imembrane current values are wrong.
+#       See BlueBrain/CoreNeuron/issues/670
 skip_imem = bool(os.environ.get("CORENRN_SKIP_IMEM", ""))
 
 from neuron import h, gui

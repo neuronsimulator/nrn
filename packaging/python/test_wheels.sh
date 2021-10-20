@@ -23,11 +23,13 @@ use_venv=$3     # if $3 is not "false" then use virtual environment
 #   nrniv and nrniv-core without existence of NVC/NVC++ compilers
 # - if coreneuron gpu support exist and nvc compiler available then we
 #   can compile mod files and run tests via special binary
-# - Note that python/nrniv based coreneuron tests can not be launched because
-#   coreneuron is linked as static library to only special exe.
+# - Note that the tests that use coreneuron can not be launched using
+#   python or nrniv -python because in gpu build coreneuron is created
+#   as a static library and linked to special. Hence only special can
+#   be used to launch GPU tests
 has_coreneuron=false   # true if coreneuron support is available
 has_gpu_support=false  # true if coreneuron gpu support is available
-has_dev_env=true       # true if c/c++ dev environment exist to compile mod files 
+has_dev_env=true       # true if c/c++ dev environment exist to compile mod files
 run_gpu_test=false     # true if test should be run on the gpu
 
 # python version being used
@@ -91,7 +93,7 @@ run_mpi_test () {
     fi
 
     # avoid imem comparison in a gpu build
-    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
+    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "")
     CORENRN_ENABLE_GPU=$run_on_gpu CORENRN_SKIP_IMEM=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
   fi
 
@@ -161,7 +163,8 @@ run_serial_test () {
       # we can run special with or without gpu wheel. currently
       # there is a bug for imem comparison when executing on cpu
       # with gpu build
-      skip_imem=$([ "$has_gpu_support" == "true" ] && echo "1" || echo "0")
+      # see BlueBrain/CoreNeuron/issues/670
+      skip_imem=$([ "$has_gpu_support" == "true" ] && echo "1" || echo "")
       CORENRN_SKIP_IMEM=$skip_imem ./x86_64/special -python test/coreneuron/test_direct.py
 
       # python and nrniv can be used only for non-gpu wheel
@@ -206,8 +209,7 @@ run_parallel_test() {
     elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
       run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
       run_mpi_test "mpirun" "Intel MPI" "intel-mpi"
-      run_mpi_test "srun" "MVAPICH2" "mvapich2/2.3"
-      run_mpi_test "mpirun" "OpenMPI" "openmpi/4.0.0"
+      run_mpi_test "srun" "MVAPICH2" "mvapich2"
 
     # linux desktop or docker container used for wheel
     else
@@ -255,10 +257,8 @@ else
 fi
 
 
-# python 3.6 needs updated pip
-if [[ "$python_ver" == "36" ]]; then
-  $python_exe -m pip install --upgrade pip
-fi
+# python 3.6 and gpu wheel needs updated pip
+$python_exe -m pip install --upgrade pip
 
 
 # install numpy, pytest and neuron
