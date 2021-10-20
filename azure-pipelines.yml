@@ -81,6 +81,8 @@ jobs:
   timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
+  variables:
+    GPU_BUILD: 'true'
   strategy:
     matrix:
       Python36:

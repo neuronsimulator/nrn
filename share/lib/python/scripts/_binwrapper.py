@@ -44,13 +44,20 @@ def _config_exe(exe_name):
     """Sets the environment to run the real executable (returned)"""
 
     package_name = "neuron"
-    if package_name not in working_set.by_key:
-        print("INFO : Using neuron-nightly Package (Developer Version)")
-        package_name = "neuron-nightly"
 
-    assert (
-        package_name in working_set.by_key
-    ), "NEURON package not found! Verify PYTHONPATH"
+    # determine package to find the install location
+    if "neuron-gpu-nightly" in working_set.by_key:
+        print("INFO : Using neuron-gpu-nightly Package (Alpha Developer Version)")
+        package_name = "neuron-gpu-nightly"
+    elif "neuron-gpu" in working_set.by_key:
+        print("INFO : Using neuron-gpu Package (Alpha Version)")
+        package_name = "neuron-gpu"
+    elif "neuron-nightly" in working_set.by_key:
+       print("INFO : Using neuron-nightly Package (Developer Version)")
+       package_name = "neuron-nightly"
+    else:
+       raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
+
     NRN_PREFIX = os.path.join(
         working_set.by_key[package_name].location, "neuron", ".data"
     )
