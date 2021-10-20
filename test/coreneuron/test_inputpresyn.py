@@ -9,20 +9,22 @@ def test_inputpresyn():
     # NetStim with gid = 1 connected to IntFire1 with gid = 2
     # sadly IntFire1 does not exist in coreneuron so use IntervalFire
     # make cells
-    ncell = 10
+    nstim = 3
+    ncell = 15
     cells = {gid: None for gid in range(pc.id(), ncell, pc.nhost())}
     for gid in cells:
         pc.set_gid2node(gid, pc.id())
-        cells[gid] = h.NetStim() if gid == 0 else h.IntervalFire()
+        cells[gid] = h.NetStim() if gid < nstim else h.IntervalFire()
         pc.cell(gid, h.NetCon(cells[gid], None))
 
     # connect
     netcons = {}
     for gid in cells:
-        if gid != 0:
-            netcons[(0, gid)] = nc = pc.gid_connect(0, cells[gid])
-            nc.delay = 1
-            nc.weight[0] = 2
+        if gid >= nstim:
+            for srcgid in range(nstim):
+                netcons[(srcgid, gid)] = nc = pc.gid_connect(srcgid, cells[gid])
+                nc.delay = 1
+                nc.weight[0] = 2
         else:  # The NetStim
             ns = cells[gid]
             ns.start = 0
@@ -30,10 +32,11 @@ def test_inputpresyn():
             ns.interval = 10
 
     # does it look like what we want?
-    for gid in cells:
-        print(pc.id(), gid, cells[gid])
-    for con in netcons:
-        print(pc.id(), con)
+    if False:
+        for gid in cells:
+            print(pc.id(), gid, cells[gid])
+        for con in netcons:
+            print(pc.id(), con)
 
     spiketime = h.Vector()
     gidvec = h.Vector()
@@ -51,11 +54,6 @@ def test_inputpresyn():
     gidvec_std = gidvec.c()
 
     def same():
-        if gidvec_std.size() != gidvec.size():
-            # temporarily work around counting spike at 0 twice.
-            print("Counting spike at 0 twice. So remove element 0")
-            gidvec.remove(0)
-            spiketime.remove(0)
         assert spiketime_std.eq(spiketime)
         # assert gidvec_std.eq(gidvec) #not sorted properly
 

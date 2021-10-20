@@ -769,7 +769,6 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       case TstopEventType: { // 1
       } break;
       case NetConType: { // 2
-printf("NetCon on queue\n");
         NetCon* nc = (NetCon*)de;
         // To find the i for cg.netcons[i] == nc
         // and since there are generally very many fewer nc on the queue
