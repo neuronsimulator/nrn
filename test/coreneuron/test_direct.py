@@ -1,9 +1,7 @@
+import distutils.util
 import os
-import pytest
 import sys
 import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -41,7 +39,9 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
     pc = h.ParallelContext()
 
@@ -95,6 +95,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         # Make the CTest test fail
         sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    h.quit()
