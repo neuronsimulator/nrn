@@ -13,6 +13,7 @@
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "nrnmpi.hpp"
 #include "coreneuron/utils/profile/profiler_interface.h"
+#include "coreneuron/utils/nrn_assert.h"
 
 #include <mpi.h>
 
@@ -81,11 +82,12 @@ void wait_before_spike_exchange() {
 int nrnmpi_spike_exchange_impl(int* nin,
                                NRNMPI_Spike* spikeout,
                                int icapacity,
-                               NRNMPI_Spike* spikein,
+                               NRNMPI_Spike** spikein,
                                int& ovfl,
                                int nout,
                                NRNMPI_Spikebuf* spbufout,
                                NRNMPI_Spikebuf* spbufin) {
+    nrn_assert(spikein);
     Instrumentor::phase_begin("spike-exchange");
 
     {
@@ -112,10 +114,10 @@ int nrnmpi_spike_exchange_impl(int* nin,
     if (n) {
         if (icapacity < n) {
             icapacity = n + 10;
-            free(spikein);
-            spikein = (NRNMPI_Spike*) emalloc(icapacity * sizeof(NRNMPI_Spike));
+            free(*spikein);
+            *spikein = (NRNMPI_Spike*) emalloc(icapacity * sizeof(NRNMPI_Spike));
         }
-        MPI_Allgatherv(spikeout, nout, spike_type, spikein, nin, displs, spike_type, nrnmpi_comm);
+        MPI_Allgatherv(spikeout, nout, spike_type, *spikein, nin, displs, spike_type, nrnmpi_comm);
     }
 #else
     MPI_Allgather(spbufout, 1, spikebuf_type, spbufin, 1, spikebuf_type, nrnmpi_comm);
@@ -141,11 +143,11 @@ int nrnmpi_spike_exchange_impl(int* nin,
     if (novfl) {
         if (icapacity < novfl) {
             icapacity = novfl + 10;
-            free(spikein);
-            spikein = (NRNMPI_Spike*) emalloc(icapacity * sizeof(NRNMPI_Spike));
+            free(*spikein);
+            *spikein = (NRNMPI_Spike*) emalloc(icapacity * sizeof(NRNMPI_Spike));
         }
         int n1 = (nout > nrn_spikebuf_size) ? nout - nrn_spikebuf_size : 0;
-        MPI_Allgatherv(spikeout, n1, spike_type, spikein, nin, displs, spike_type, nrnmpi_comm);
+        MPI_Allgatherv(spikeout, n1, spike_type, *spikein, nin, displs, spike_type, nrnmpi_comm);
     }
     ovfl = novfl;
 #endif
