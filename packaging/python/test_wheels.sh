@@ -114,13 +114,7 @@ run_serial_test () {
     # Test 3: execute nrniv
     nrniv -c "print \"hello\""
 
-    # Test 4: run demo
-    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
-
-    # Test 5: modlunit available (and can find nrnunits.lib)
-    modlunit tmp_mod/cacum.mod
-
-    # Test 6: run coreneuron binary shipped inside wheel
+    # Test 4: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
         nrniv-core --datpath external/coreneuron/tests/integration/ring
 	diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
@@ -132,20 +126,20 @@ run_serial_test () {
         return
     fi
 
-    # Test 7: execute nrnivmodl
+    # Test 5: execute nrnivmodl
     rm -rf x86_64
     nrnivmodl tmp_mod
 
-    # Test 8: execute special hoc interpreter
+    # Test 6: execute special hoc interpreter
     ./x86_64/special -c "print \"hello\""
 
-    # Test 9: run basic tests via python while loading shared library
+    # Test 7: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 10: run basic test to use compiled mod file
+    # Test 8: run basic test to use compiled mod file
     $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
 
-    # Test 11: run basic tests via special : azure pipelines get stuck with their
+    # Test 9: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -154,7 +148,7 @@ run_serial_test () {
       $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
-    # Test 12: coreneuron execution via neuron
+    # Test 10: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
       rm -rf x86_64
       nrnivmodl -coreneuron test/coreneuron/mod/
@@ -171,8 +165,15 @@ run_serial_test () {
       if [[ "$run_gpu_test" == "true" ]]; then
         CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
       fi
-
+      rm -rf x86_64
     fi
+
+
+    # Test 11: run demo
+    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+
+    # Test 12: modlunit available (and can find nrnunits.lib)
+    modlunit tmp_mod/cacum.mod
 }
 
 

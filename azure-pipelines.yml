@@ -131,7 +131,7 @@ jobs:
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
-  timeoutInMinutes: 45
+  timeoutInMinutes: 30
   pool:
     vmImage: 'macOS-10.15'
   strategy:
