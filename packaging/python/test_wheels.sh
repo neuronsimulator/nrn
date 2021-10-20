@@ -8,16 +8,29 @@ if [ ! -f setup.py ]; then
 fi
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env] [test_coreneuron]"
+    echo "Usage: $(basename $0) python_exe python_wheel [use_virtual_env]"
     exit 1
 fi
 
 # cli parameters
-python_exe=$1
-python_wheel=$2
-use_venv=$3 #if $3 is not "false" then use virtual environment
-test_coreneuron=$4 #if $4 is "true" then test coreneuron
+python_exe=$1   # python to be used for testing
+python_wheel=$2 # python wheel to be tested
+use_venv=$3     # if $3 is not "false" then use virtual environment
 
+# There are some considerations to test coreneuron with gpu support:
+# - if coreneuron support exist then we can always run all tests on cpu
+# - if coreneuron gpu support exist then we can run always binaries like
+#   nrniv and nrniv-core without existence of NVC/NVC++ compilers
+# - if coreneuron gpu support exist and nvc compiler available then we
+#   can compile mod files and run tests via special binary
+# - Note that python/nrniv based coreneuron tests can not be launched because
+#   coreneuron is linked as static library to only special exe.
+has_coreneuron=false   # true if coreneuron support is available
+has_gpu_support=false  # true if coreneuron gpu support is available
+has_dev_env=true       # true if c/c++ dev environment exist to compile mod files 
+run_gpu_test=false     # true if test should be run on the gpu
+
+# python version being used
 python_ver=$("$python_exe" -c "import sys; print('%d%d' % tuple(sys.version_info)[:2])")
 
 
@@ -36,13 +49,30 @@ run_mpi_test () {
      module load $mpi_module
   fi
 
-  # build new special
-  rm -rf x86_64
-  nrnivmodl tmp_mod
-
   # hoc and python based test
   $mpi_launcher -n 2 $python_exe src/parallel/test0.py -mpi --expected-hosts 2
   $mpi_launcher -n 2 nrniv src/parallel/test0.hoc -mpi --expected-hosts 2
+
+  # TODO: run coreneuron binary shipped inside wheel. This can not be executed in platform
+  #       independent manner because we need to pre-load libmpi library beforehand e.g. using
+  #       LD_PRELOAD mechanism. For now, execute without --mpi argument
+  if [[ "$has_coreneuron" == "true" ]] && [[ $mpi_name == *"MPICH"* || $mpi_name == *"Intel MPI"* ]]; then
+      site_package_dir=`$python_exe -c 'import os, neuron; print(os.path.dirname(neuron.__file__))'`
+      corenrn_mpi_lib=`ls $site_package_dir/.data/lib/libcorenrnmpi_mpich*`
+      $mpi_launcher -n 1 nrniv-core --datpath external/coreneuron/tests/integration/ring --mpi-lib=$corenrn_mpi_lib
+      diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+  fi
+
+  # rest of the tests we need development environment. For GPU wheel
+  # make sure we have necessary compiler.
+  if [[ "$has_dev_env" == "false" ]]; then
+      echo "WARNING: Development environment missing, skipping rest of the MPI tests!"
+      return
+  fi
+
+  # build new special
+  rm -rf x86_64
+  nrnivmodl tmp_mod
 
   # run python test via nrniv and special (except on azure pipelines)
   if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
@@ -51,12 +81,18 @@ run_mpi_test () {
   fi
 
   # coreneuron execution via neuron
-  if [[ "$test_coreneuron" == "true" ]]; then
+  if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf x86_64
     nrnivmodl -coreneuron test/coreneuron/mod/
-    $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
-    $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
-    $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    # python and nrniv can be used only for non-gpu wheel
+    if [[ "$has_gpu_support" == "false" ]]; then
+      $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
+      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+    fi
+
+    # avoid imem comparison in a gpu build
+    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
+    CORENRN_ENABLE_GPU=$run_on_gpu CORENRN_SKIP_IMEM=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -71,23 +107,44 @@ run_serial_test () {
     # Test 1: run base tests for within python
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
-    # Test 2: execute nrniv
+    # Test 2: execute python via nrniv
+    nrniv -python -c "import neuron; neuron.test(); quit()"
+
+    # Test 3: execute nrniv
     nrniv -c "print \"hello\""
 
-    # Test 3: execute nrnivmodl
+    # Test 4: run demo
+    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
+
+    # Test 5: modlunit available (and can find nrnunits.lib)
+    modlunit tmp_mod/cacum.mod
+
+    # Test 6: run coreneuron binary shipped inside wheel
+    if [[ "$has_coreneuron" == "true" ]]; then
+        nrniv-core --datpath external/coreneuron/tests/integration/ring
+	diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+    fi
+
+    # rest of the tests we need development environment
+    if [[ "$has_dev_env" == "false" ]]; then
+        echo "WARNING: Development environment missing, skipping rest of the serial tests!"
+        return
+    fi
+
+    # Test 7: execute nrnivmodl
     rm -rf x86_64
     nrnivmodl tmp_mod
 
-    # Test 4: execute special hoc interpreter
+    # Test 8: execute special hoc interpreter
     ./x86_64/special -c "print \"hello\""
 
-    # Test 5: run basic tests via python while loading shared library
+    # Test 9: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 6: run basic test to use compiled mod file
+    # Test 10: run basic test to use compiled mod file
     $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
 
-    # Test 7: run basic tests via special : azure pipelines get stuck with their
+    # Test 11: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -96,21 +153,30 @@ run_serial_test () {
       $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
-    # Test 8: run demo
-    neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
-
-    # Test 9: modlunit available (and can find nrnunits.lib)
-    modlunit tmp_mod/cacum.mod
-
-    # Test 10: coreneuron execution via neuron
-    if [[ "$test_coreneuron" == "true" ]]; then
+    # Test 12: coreneuron execution via neuron
+    if [[ "$has_coreneuron" == "true" ]]; then
       rm -rf x86_64
       nrnivmodl -coreneuron test/coreneuron/mod/
-      $python_exe test/coreneuron/test_direct.py
-      nrniv -python test/coreneuron/test_direct.py
-      ./x86_64/special -python test/coreneuron/test_direct.py
+
+      # we can run special with or without gpu wheel. currently
+      # there is a bug for imem comparison when executing on cpu
+      # with gpu build
+      skip_imem=$([ "$has_gpu_support" == "true" ] && echo "1" || echo "0")
+      CORENRN_SKIP_IMEM=$skip_imem ./x86_64/special -python test/coreneuron/test_direct.py
+
+      # python and nrniv can be used only for non-gpu wheel
+      if [[ "$has_gpu_support" == "false" ]]; then
+        $python_exe test/coreneuron/test_direct.py
+        nrniv -python test/coreneuron/test_direct.py
+      fi
+
+      if [[ "$run_gpu_test" == "true" ]]; then
+        CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+      fi
+
     fi
 }
+
 
 run_parallel_test() {
     # this is for MacOS system
@@ -155,6 +221,7 @@ run_parallel_test() {
     fi
 }
 
+
 test_wheel () {
     # sample mod file for nrnivmodl check
     mkdir -p tmp_mod
@@ -171,7 +238,9 @@ test_wheel () {
     rm -rf tmp_mod x86_64
 }
 
+
 echo "== Testing $python_wheel using $python_exe ($python_ver) =="
+
 
 # creat python virtual environment and use `python` as binary name
 # because it will be correct one from venv.
@@ -185,18 +254,46 @@ else
   echo " == Using global install == "
 fi
 
+
 # python 3.6 needs updated pip
 if [[ "$python_ver" == "36" ]]; then
   $python_exe -m pip install --upgrade pip
 fi
+
 
 # install numpy, pytest and neuron
 $python_exe -m pip install numpy pytest
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron || $python_exe -m pip show neuron-nightly
 
+
+# check the existence of coreneuron support
+compile_options=`nrniv -nobanner -nogui -c 'nrnversion(6)'`
+if echo $compile_options | grep "NRN_ENABLE_CORENEURON=ON" > /dev/null ; then
+  has_coreneuron=true
+fi
+
+# check if the gpu support is enabled
+if echo $compile_options | grep "CORENRN_ENABLE_GPU=ON" > /dev/null ; then
+  has_gpu_support=true
+fi
+
+# in case of gpu support, nvc/nvc++ compiler must exist to compile mod files
+if [[ "$has_gpu_support" == "true" ]]; then
+  if ! command -v nvc &> /dev/null; then
+    has_dev_env=false
+  fi
+
+  # check if nvidia gpu exist (todo: not a robust check)
+  if pgaccelinfo -nvidia | grep -q "Device Name"; then
+    run_gpu_test=true
+  fi
+fi
+
+
 # run tests
 test_wheel $(which python)
+
 
 # cleanup
 if [[ "$use_venv" != "false" ]]; then
