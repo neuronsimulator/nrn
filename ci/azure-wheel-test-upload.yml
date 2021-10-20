@@ -26,9 +26,15 @@ steps:
       pythonUploadServiceConnection: AzureNeuronPypiNightly
     #condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
 
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNeuronGpuPypiNightly
+    #condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
+
   - script: |
       python -m pip install twine
-      python -m twine upload --verbose --skip-existing -r NeuronPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+      repo=$( ls wheelhouse/*gpu* 1> /dev/null 2>&1 && echo "NeuronGpuPypiNightly" || echo "NeuronPypiNightly")
+      python -m twine upload --verbose --skip-existing -r $repo --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     #condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
     displayName: 'Upload nightly wheel to pypi.org'
 
@@ -37,8 +43,14 @@ steps:
       pythonUploadServiceConnection: AzureNeuronPypi
     condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
 
+  - task: TwineAuthenticate@1
+    inputs:
+      pythonUploadServiceConnection: AzureNeuronGpuPypi
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
+
   - script: |
       python -m pip install twine
-      python -m twine upload --verbose --skip-existing -r NeuronPypi --config-file $(PYPIRC_PATH) wheelhouse/*.whl
+      repo=$( ls wheelhouse/*gpu* 1> /dev/null 2>&1 && echo "NeuronGpuPypiProj" || echo "NeuronPypi")
+      python -m twine upload --verbose --skip-existing -r $repo --config-file $(PYPIRC_PATH) wheelhouse/*.whl
     condition: and(succeeded(), in(variables['Build.Reason'], 'Manual'), eq(variables['NRN_RELEASE_UPLOAD'], 'true'))
     displayName: 'Upload release wheel to pypi.org'

@@ -42,11 +42,6 @@ try:
     if "NEURON_WHEEL_VERSION" in os.environ:
         __version__ = os.environ["NEURON_WHEEL_VERSION"]
 
-    # TODO: Add .gpu suffix for gpu wheel temporarily
-    if "--enable-gpu" in sys.argv:
-        __version__ += ".gpu"
-
-
 except Exception as e:
     raise RuntimeError("Could not get version from Git repo : " + str(e))
 
@@ -420,7 +415,9 @@ def setup_package():
 
     log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
-    package_name = "NEURON"
+    # package name
+    package_name = "NEURON-gpu" if Components.GPU else "NEURON"
+
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
