@@ -89,11 +89,11 @@ run_mpi_test () {
     # python and nrniv can be used only for non-gpu wheel
     if [[ "$has_gpu_support" == "false" ]]; then
       $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
-      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+      $mpi_launcher -n 2 nrniv -python -pyexe $python_exe -mpi test/coreneuron/test_direct.py
     fi
 
     run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "")
-    CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -pyexe $python_exe -mpi test/coreneuron/test_direct.py
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -109,7 +109,7 @@ run_serial_test () {
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
     # Test 2: execute python via nrniv
-    nrniv -python -c "import neuron; neuron.test(); quit()"
+    nrniv -python -pyexe $python_exe -c "import neuron; neuron.test(); quit()"
 
     # Test 3: execute nrniv
     nrniv -c "print \"hello\""
@@ -117,7 +117,7 @@ run_serial_test () {
     # Test 4: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
         nrniv-core --datpath external/coreneuron/tests/integration/ring
-	diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
     fi
 
     # rest of the tests we need development environment
@@ -154,16 +154,16 @@ run_serial_test () {
       nrnivmodl -coreneuron test/coreneuron/mod/
 
       # we can run special with or without gpu wheel
-      ./x86_64/special -python test/coreneuron/test_direct.py
+      ./x86_64/special -python -pyexe $python_exe test/coreneuron/test_direct.py
 
       # python and nrniv can be used only for non-gpu wheel
       if [[ "$has_gpu_support" == "false" ]]; then
         $python_exe test/coreneuron/test_direct.py
-        nrniv -python test/coreneuron/test_direct.py
+        nrniv -python -pyexe $python_exe test/coreneuron/test_direct.py
       fi
 
       if [[ "$run_gpu_test" == "true" ]]; then
-        CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+        CORENRN_ENABLE_GPU=1 ./x86_64/special -python -pyexe $python_exe test/coreneuron/test_direct.py
       fi
       rm -rf x86_64
     fi
