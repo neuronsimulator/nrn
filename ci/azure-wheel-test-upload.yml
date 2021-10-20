@@ -40,7 +40,7 @@ steps:
   - script: |
       python -m pip install twine
       python -m twine upload --verbose --skip-existing -r NeuronGpuPypiNightly --config-file $(PYPIRC_PATH) wheelhouse/*.whl
-    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule'), eq(variables.GPU_BUILD, 'true'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
+    condition: and(succeeded(), in(variables['Build.Reason'], 'Manual', 'Schedule', 'PullRequest'), eq(variables.GPU_BUILD, 'true'), ne(variables['NRN_NIGHTLY_UPLOAD'], 'false'))
     displayName: 'Upload nightly GPU wheel to pypi.org'
 
   - task: TwineAuthenticate@1

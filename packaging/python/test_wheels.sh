@@ -92,9 +92,8 @@ run_mpi_test () {
       $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
     fi
 
-    # avoid imem comparison in a gpu build
     run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "")
-    CORENRN_ENABLE_GPU=$run_on_gpu CORENRN_SKIP_IMEM=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -160,12 +159,8 @@ run_serial_test () {
       rm -rf x86_64
       nrnivmodl -coreneuron test/coreneuron/mod/
 
-      # we can run special with or without gpu wheel. currently
-      # there is a bug for imem comparison when executing on cpu
-      # with gpu build
-      # see BlueBrain/CoreNeuron/issues/670
-      skip_imem=$([ "$has_gpu_support" == "true" ] && echo "1" || echo "")
-      CORENRN_SKIP_IMEM=$skip_imem ./x86_64/special -python test/coreneuron/test_direct.py
+      # we can run special with or without gpu wheel
+      ./x86_64/special -python test/coreneuron/test_direct.py
 
       # python and nrniv can be used only for non-gpu wheel
       if [[ "$has_gpu_support" == "false" ]]; then
