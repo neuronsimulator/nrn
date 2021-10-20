@@ -825,19 +825,22 @@ printf("NetCon on queue\n");
       case PreSynType: { // 4
         PreSyn* ps = (PreSyn*)de;
         // Output PreSyn similar to NetCon but more data.
-        // Input PreSyn (ps->output_index = -1 and ps->gid >= 0) can be
-        // figured out on the CoreNEURON side from the gid.
-        // Output PreSyn format is output_index, presyn index 
+        // Input PreSyn (ps->output_index = -1 and ps->gid >= 0)
+        // is distinquished from PreSyn (ps->output_index == ps->gid
+        // or both negative) by the first item of 0 or 1 respectively followed
+        // by gid or presyn index respectively.
+        // That is:
+        // Output PreSyn format is 0, presyn index 
 	// initialized to -1 and figured out from presyn2intdata, and
         // ps->delay_
-        // Input PreSyn format is output_index, gid, and ps->delay_
-        core_te->intdata.push_back(ps->output_index_);
-        if (ps->output_index_ < 0) {
+        // Input PreSyn format is 1, gid, and ps->delay_
+        if (ps->output_index_ < 0 && ps->gid_ >= 0) {
           // InputPreSyn on the CoreNEURON side
-          assert(ps->gid_ >= 0);
+          core_te->intdata.push_back(1);
           core_te->intdata.push_back(ps->gid_);
         }else{
           // PreSyn on the NEURON side
+          core_te->intdata.push_back(0);
           size_t iloc = core_te->intdata.size();
           core_te->intdata.push_back(-1);
           presyn2intdata[ps].push_back(iloc);
