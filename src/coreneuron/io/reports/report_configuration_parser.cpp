@@ -163,6 +163,10 @@ std::vector<ReportConfiguration> create_report_configurations(
     int num_populations;
     std::string spikes_population_name;
     int spikes_population_offset;
+    if (report_conf.peek() == '\n') {
+        // skip newline and move forward to spike reports
+        report_conf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
     if (isdigit(report_conf.peek())) {
         report_conf >> num_populations;
     } else {
