@@ -75,7 +75,7 @@ bash packaging/python/build_wheels.bash osx
 
 #### Testing wheels
 
-To test the generated wheels, you can do:
+To test the generated wheels, you can execute following commands from nrn repository:
 
 ```
 # first arg as python exe and second arg as a corresponding wheel
@@ -85,13 +85,31 @@ bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-
 bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/ NEURON==7.8.11.2"
 ```
 
-On BB5, we test wheels as:
+On BB5, we test CPU wheels as:
 
 ```
 salloc -A proj16  -N 1 --ntasks-per-node=4 -C "cpu" --time=1:00:00 -p interactive
-module load unstable python/3.7.4
+module load unstable python
 bash packaging/python/test_wheels.sh python3.7 wheelhouse/NEURON-7.8.0.236-cp37-cp37m-manylinux1_x86_64.whl
 ```
+
+The GPU wheel can be also tested in same way on the CPU partition. In this case only pre-compiled binaries
+like nrniv and nrniv-core are tested on CPU. In order to test full functionality of GPU wheel we need to
+do following:
+* Allocate GPU node
+* Load NVHPC compiler
+* Launch `test_wheels.sh`
+
+```
+salloc -A proj16 -N 1 --ntasks-per-node=4 -C "volta" --time=1:00:00 -p prod --partition=prod --exclusive
+module load unstable python nvhpc
+
+bash packaging/python/test_wheels.sh python3 NEURON_gpu_nightly-8.0a709-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+```
+
+The `test_wheels.sh` will check if nvc/nvc++ compiler is available and run tests with hpe-mpi, intel-mpi and mvapich2 MPI modules.
+Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then run few tests on GPU as well.
+
 
 #### Upload wheels
 
