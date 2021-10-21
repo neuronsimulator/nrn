@@ -1,9 +1,7 @@
+import distutils.util
 import os
-import pytest
 import sys
 import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -41,7 +39,9 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
     pc = h.ParallelContext()
 
@@ -51,10 +51,10 @@ def test_direct_memory_transfer():
         if mode == 0:
             pc.psolve(h.tstop)
         elif mode == 1:
-            while h.t < h.tstop:
+            while abs(h.t - h.tstop) > 0.1 * h.dt:
                 pc.psolve(h.t + 1.0)
         else:
-            while h.t < h.tstop:
+            while abs(h.t - h.tstop) > 0.1 * h.dt:
                 h.continuerun(h.t + 0.5)
                 pc.psolve(h.t + 0.5)
         tran = [h.t, h.soma(0.5).v, h.soma(0.5).hh.m]

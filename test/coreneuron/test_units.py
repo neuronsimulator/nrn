@@ -1,7 +1,7 @@
+import distutils.util
 import os
+import sys
 import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -22,7 +22,9 @@ def test_units():
 
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.psolve(h.dt)
@@ -41,6 +43,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         # Make the CTest test fail
         sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    h.quit()
