@@ -110,7 +110,7 @@ bash packaging/python/test_wheels.sh python3 NEURON_gpu_nightly-8.0a709-cp38-cp3
 The `test_wheels.sh` will check if nvc/nvc++ compiler is available and run tests with hpe-mpi, intel-mpi and mvapich2 MPI modules.
 Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then run few tests on GPU as well.
 
-Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded.
+Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
 
 
 #### Upload wheels

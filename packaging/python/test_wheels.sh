@@ -108,13 +108,10 @@ run_serial_test () {
     # Test 1: run base tests for within python
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd()"
 
-    # Test 2: execute python via nrniv
-    nrniv -python -c "import neuron; neuron.test(); quit()"
-
-    # Test 3: execute nrniv
+    # Test 2: execute nrniv
     nrniv -c "print \"hello\""
 
-    # Test 4: run coreneuron binary shipped inside wheel
+    # Test 3: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
         nrniv-core --datpath external/coreneuron/tests/integration/ring
         diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
@@ -126,20 +123,20 @@ run_serial_test () {
         return
     fi
 
-    # Test 5: execute nrnivmodl
+    # Test 4: execute nrnivmodl
     rm -rf x86_64
     nrnivmodl tmp_mod
 
-    # Test 6: execute special hoc interpreter
+    # Test 5: execute special hoc interpreter
     ./x86_64/special -c "print \"hello\""
 
-    # Test 7: run basic tests via python while loading shared library
+    # Test 6: run basic tests via python while loading shared library
     $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
 
-    # Test 8: run basic test to use compiled mod file
+    # Test 7: run basic test to use compiled mod file
     $python_exe -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); quit()"
 
-    # Test 9: run basic tests via special : azure pipelines get stuck with their
+    # Test 8: run basic tests via special : azure pipelines get stuck with their
     # own python from hosted cache (most likely security settings).
     if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
       ./x86_64/special -python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
@@ -148,7 +145,7 @@ run_serial_test () {
       $python_exe -c "import neuron; neuron.test(); neuron.test_rxd(); quit()"
     fi
 
-    # Test 10: coreneuron execution via neuron
+    # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
       rm -rf x86_64
       nrnivmodl -coreneuron test/coreneuron/mod/
@@ -169,10 +166,10 @@ run_serial_test () {
     fi
 
 
-    # Test 11: run demo
+    # Test 10: run demo
     neurondemo -c 'demo(4)' -c 'run()' -c 'quit()'
 
-    # Test 12: modlunit available (and can find nrnunits.lib)
+    # Test 11: modlunit available (and can find nrnunits.lib)
     modlunit tmp_mod/cacum.mod
 }
 
