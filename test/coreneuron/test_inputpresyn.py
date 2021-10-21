@@ -5,6 +5,10 @@ from neuron import h
 pc = h.ParallelContext()
 
 
+def sortspikes(spiketime, gidvec):
+    return sorted(zip(spiketime, gidvec))
+
+
 def test_inputpresyn():
     # NetStim with gid = 1 connected to IntFire1 with gid = 2
     # sadly IntFire1 does not exist in coreneuron so use IntervalFire
@@ -50,12 +54,11 @@ def test_inputpresyn():
         pc.psolve(tstop)
 
     run(2)
-    spiketime_std = spiketime.c()
-    gidvec_std = gidvec.c()
+    spikes_std = sortspikes(spiketime, gidvec)
 
     def same():
-        assert spiketime_std.eq(spiketime)
-        # assert gidvec_std.eq(gidvec) #not sorted properly
+        spikes = sortspikes(spiketime, gidvec)
+        assert spikes_std == spikes
 
     h.CVode().cache_efficient(1)
     from neuron import coreneuron
