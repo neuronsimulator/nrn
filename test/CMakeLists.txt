@@ -348,7 +348,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME inputpresyn_py_${processor}
-        REQUIRES coreneuron
+        REQUIRES coreneuron ${processor}
         PROCESSORS 2
         COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                 ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
