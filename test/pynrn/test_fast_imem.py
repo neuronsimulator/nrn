@@ -4,6 +4,7 @@
 import distutils.util
 import os
 import sys
+import traceback
 
 from neuron import h
 
