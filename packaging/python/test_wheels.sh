@@ -117,7 +117,7 @@ run_serial_test () {
     # Test 4: run coreneuron binary shipped inside wheel
     if [[ "$has_coreneuron" == "true" ]]; then
         nrniv-core --datpath external/coreneuron/tests/integration/ring
-	diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
+        diff -w out.dat external/coreneuron/tests/integration/ring/out.dat.ref
     fi
 
     # rest of the tests we need development environment
