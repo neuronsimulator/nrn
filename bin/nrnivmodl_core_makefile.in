@@ -53,8 +53,24 @@ INCLUDES = $(INCFLAGS) -I$(CORENRN_INC_DIR) -I$(CORENRN_INC_DIR)/coreneuron/util
 INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
 INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 
-# C++ compilation and link commands
-CXX = @CMAKE_CXX_COMPILER@
+# CXX is always defined. If the definition comes from default change it
+ifeq ($(origin CXX), default)
+    CXX = @CMAKE_CXX_COMPILER@
+endif
+
+# In case of wheel, python and perl exe paths are from the build machine.
+# First prefer env variables set by neuron's nrnivmodl wrapper then check
+# binary used during build. If they don't exist then simply use python and
+# perl as the name of binaries.
+CORENRN_PYTHONEXE ?= @PYTHON_EXECUTABLE@
+CORENRN_PERLEXE ?= @PERL_EXECUTABLE@
+ifeq ($(wildcard $(CORENRN_PYTHONEXE)),)
+  CORENRN_PYTHONEXE=python
+endif
+ifeq ($(wildcard $(CORENRN_PERLEXE)),)
+  CORENRN_PERLEXE=perl
+endif
+
 CXXFLAGS = @CORENRN_CXX_FLAGS@
 CXX_COMPILE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ @CORENRN_COMMON_COMPILE_DEFS@ $(INCLUDES)
 CXX_LINK_EXE_CMD = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@
@@ -229,14 +245,14 @@ $(mod_ispc_cpp_files): $(MOD_TO_CPP_DIR)/%.cpp: $(MOD_TO_CPP_DIR)/%.ispc
 
 # generate mod registration function. Dont overwrite if it's not changed
 $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
-	@PERL_EXECUTABLE@ $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.pl $(mod_files_names) > $(MOD_FUNC_CPP).tmp
+	$(CORENRN_PERLEXE) $(CORENRN_SHARE_CORENRN_DIR)/mod_func.c.pl $(mod_files_names) > $(MOD_FUNC_CPP).tmp
 	diff -q $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP) || \
 	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
 
 # header to avoid function callbacks using function pointers
 $(KINDERIV_H_PATH): $(mod_cpp_files) build_always | $(MOD_TO_CPP_DIR)
 	cd $(MOD_TO_CPP_DIR); \
-	@PYTHON_EXECUTABLE@ $(CORENRN_SHARE_CORENRN_DIR)/kinderiv.py;
+	$(CORENRN_PYTHONEXE) $(CORENRN_SHARE_CORENRN_DIR)/kinderiv.py;
 
 # symlink to cpp files provided by coreneuron
 $(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2CPP_DIR)/%.cpp | $(MOD_TO_CPP_DIR)

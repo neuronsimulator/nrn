@@ -25,6 +25,10 @@ corenrn_parameters::corenrn_parameters() {
         "--mpi",
         this->mpi_enable,
         "Enable MPI. In order to initialize MPI environment this argument must be specified.");
+    app.add_option("--mpi-lib",
+                   this->mpi_lib,
+                   "CoreNEURON MPI library to load for dynamic MPI support",
+                   false);
     app.add_flag("--gpu", this->gpu, "Activate GPU computation.");
     app.add_option("--dt",
                    this->dt,
@@ -187,6 +191,7 @@ void corenrn_parameters::parse(int argc, char** argv) {
 std::ostream& operator<<(std::ostream& os, const corenrn_parameters& corenrn_param) {
     os << "GENERAL PARAMETERS" << std::endl
        << "--mpi=" << (corenrn_param.mpi_enable ? "true" : "false") << std::endl
+       << "--mpi-lib=" << corenrn_param.mpi_lib << std::endl
        << "--gpu=" << (corenrn_param.gpu ? "true" : "false") << std::endl
        << "--dt=" << corenrn_param.dt << std::endl
        << "--tstop=" << corenrn_param.tstop << std::endl

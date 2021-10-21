@@ -31,7 +31,7 @@ if(Boost_FOUND)
     add_subdirectory(unit/queueing)
     # lfp test uses nrnmpi_* wrappers but does not load the dynamic MPI library TODO: re-enable
     # after NEURON and CoreNEURON dynamic MPI are merged
-    if(NOT CORENRN_ENABLE_DYNAMIC_MPI)
+    if(NOT CORENRN_ENABLE_MPI_DYNAMIC)
       add_subdirectory(unit/lfp)
     endif()
   endif()

@@ -24,7 +24,7 @@ double integral(F f, double a, double b, int n) {
 
 BOOST_AUTO_TEST_CASE(LFP_PointSource_LineSource) {
 #if NRNMPI
-    nrnmpi_init(nullptr, nullptr);
+    nrnmpi_init(nullptr, nullptr, false);
 #endif
     double segment_length{1.0e-6};
     double segment_start_val{1.0e-6};

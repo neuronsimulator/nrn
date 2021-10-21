@@ -83,13 +83,21 @@ void set_openmp_threads(int nthread) {
  * Convert char* containing arguments from neuron to char* argv[] for
  * coreneuron command line argument parser.
  */
-char* prepare_args(int& argc, char**& argv, int use_mpi, const char* arg) {
+char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, const char* arg) {
     // first construct all arguments as string
     std::string args(arg);
     args.insert(0, " coreneuron ");
     args.append(" --skip-mpi-finalize ");
     if (use_mpi) {
         args.append(" --mpi ");
+    }
+
+    // if neuron has passed name of MPI library then add it to CLI
+    std::string corenrn_mpi_lib{mpi_lib};
+    if (!corenrn_mpi_lib.empty()) {
+        args.append(" --mpi-lib ");
+        corenrn_mpi_lib += " ";
+        args.append(corenrn_mpi_lib);
     }
 
     // we can't modify string with strtok, make copy
@@ -452,12 +460,9 @@ std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config
 using namespace coreneuron;
 
 #if NRNMPI
-#define STRINGIFY(x) #x
-#define TOSTRING(x)  STRINGIFY(x)
-static void* load_dynamic_mpi() {
+static void* load_dynamic_mpi(const std::string& libname) {
     dlerror();
-    void* handle = dlopen("libcorenrn_mpi" TOSTRING(CORENRN_SHARED_LIBRARY_SUFFIX),
-                          RTLD_NOW | RTLD_GLOBAL);
+    void* handle = dlopen(libname.c_str(), RTLD_NOW | RTLD_GLOBAL);
     const char* error = dlerror();
     if (error) {
         std::string err_msg = std::string("Could not open dynamic MPI library: ") + error + "\n";
@@ -473,11 +478,26 @@ extern "C" void mk_mech_init(int argc, char** argv) {
 
 #if NRNMPI
     if (corenrn_param.mpi_enable) {
-#ifdef CORENRN_ENABLE_DYNAMIC_MPI
-        auto mpi_handle = load_dynamic_mpi();
-        mpi_manager().resolve_symbols(mpi_handle);
+#ifdef CORENRN_ENABLE_MPI_DYNAMIC
+        // coreneuron rely on neuron to detect mpi library distribution and
+        // the name of the library itself. Make sure the library name is specified
+        // via CLI option.
+        if (corenrn_param.mpi_lib.empty()) {
+            throw std::runtime_error(
+                "For dynamic MPI support you must pass '--mpi-lib "
+                "/path/libcorenrnmpi_<name>.<suffix>` argument!\n");
+        }
+
+        // neuron can call coreneuron multiple times and hence we do not
+        // want to initialize/load mpi library multiple times
+        static bool mpi_lib_loaded = false;
+        if (!mpi_lib_loaded) {
+            auto mpi_handle = load_dynamic_mpi(corenrn_param.mpi_lib);
+            mpi_manager().resolve_symbols(mpi_handle);
+            mpi_lib_loaded = true;
+        }
 #endif
-        auto ret = nrnmpi_init(&argc, &argv);
+        auto ret = nrnmpi_init(&argc, &argv, corenrn_param.is_quiet());
         nrnmpi_numprocs = ret.numprocs;
         nrnmpi_myid = ret.myid;
     }

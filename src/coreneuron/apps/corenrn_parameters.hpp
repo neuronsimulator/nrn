@@ -85,6 +85,7 @@ struct corenrn_parameters {
     std::string reportfilepath;          /// Reports configuration file.
     std::string checkpointpath;  /// Enable checkpoint and specify directory to store related files.
     std::string writeParametersFilepath;  /// Write parameters to this file
+    std::string mpi_lib;                  /// Name of CoreNEURON MPI library to load dynamically.
 
     CLI::App app{"CoreNeuron - Optimised Simulator Engine for NEURON."};  /// CLI app that performs
                                                                           /// CLI parsing

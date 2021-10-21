@@ -21,7 +21,7 @@ struct nrnmpi_init_ret_t {
     int numprocs;
     int myid;
 };
-extern "C" nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv);
+extern "C" nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv, bool is_quiet);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_init_impl)> nrnmpi_init;
 extern "C" void nrnmpi_finalize_impl(void);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_finalize_impl)> nrnmpi_finalize;

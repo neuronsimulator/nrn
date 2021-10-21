@@ -76,7 +76,7 @@ struct mpi_function<std::integral_constant<function_ptr, fptr>> : mpi_function_b
     using mpi_function_base::mpi_function_base;
     template <typename... Args> // in principle deducible from `function_ptr`
     auto operator()(Args&&... args) const {
-#ifdef CORENRN_ENABLE_DYNAMIC_MPI
+#ifdef CORENRN_ENABLE_MPI_DYNAMIC
         // Dynamic MPI, m_fptr should have been initialised via dlsym.
         assert(m_fptr);
         return (*reinterpret_cast<decltype(fptr)>(m_fptr))(std::forward<Args>( args )...);

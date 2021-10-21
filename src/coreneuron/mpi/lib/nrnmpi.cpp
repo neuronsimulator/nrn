@@ -34,7 +34,7 @@ static void nrn_fatal_error(const char* msg) {
     nrnmpi_abort_impl(-1);
 }
 
-nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv) {
+nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv, bool is_quiet) {
     nrnmpi_under_nrncontrol_ = true;
 
     if (!nrnmpi_initialized_impl()) {
@@ -54,7 +54,7 @@ nrnmpi_init_ret_t nrnmpi_init_impl(int* pargc, char*** pargv) {
     nrn_assert(MPI_Comm_size(nrnmpi_world_comm, &nrnmpi_numprocs_) == MPI_SUCCESS);
     nrnmpi_spike_initialize();
 
-    if (nrnmpi_myid_ == 0) {
+    if (nrnmpi_myid_ == 0 && !is_quiet) {
 #if defined(_OPENMP)
         printf(" num_mpi=%d\n num_omp_thread=%d\n\n", nrnmpi_numprocs_, omp_get_max_threads());
 #else

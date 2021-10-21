@@ -73,7 +73,7 @@ endforeach()
 string(REPLACE ";" " " CXX14_STD_FLAGS "${CMAKE_CXX14_STANDARD_COMPILE_OPTION}")
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(CORENRN_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE}} ${CXX14_STD_FLAGS} ${NVHPC_CXX_INLINE_FLAGS}"
+    "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE}} ${CXX14_STD_FLAGS} ${NVHPC_ACC_COMP_FLAGS} ${NVHPC_CXX_INLINE_FLAGS}"
 )
 
 # =============================================================================

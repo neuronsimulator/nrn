@@ -168,16 +168,17 @@ add_custom_target(kin_deriv_header DEPENDS "${KINDERIV_HEADER_FILE}")
 # create libraries
 # =============================================================================
 
-# mpi related target, this is a separate library for dynamic MPI
-if(CORENRN_ENABLE_MPI)
-  if(CORENRN_ENABLE_DYNAMIC_MPI)
-    add_library(corenrn_mpi SHARED ${MPI_LIB_FILES})
-  else()
-    add_library(corenrn_mpi OBJECT ${MPI_LIB_FILES})
-    set(OBJ_MPI $<TARGET_OBJECTS:corenrn_mpi>)
-  endif()
-  target_include_directories(corenrn_mpi PRIVATE ${MPI_INCLUDE_PATH})
-  set_property(TARGET corenrn_mpi PROPERTY POSITION_INDEPENDENT_CODE ON)
+# name of coreneuron mpi objects or dynamic library
+set(CORENRN_MPI_LIB_NAME
+    "corenrn_mpi"
+    CACHE INTERNAL "")
+
+# for non-dynamic mpi mode just build object files
+if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+  add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
+  target_include_directories(${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH})
+  set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+  set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
 
 # main coreneuron library
@@ -190,17 +191,78 @@ add_library(
   ${cudacorenrn_objs}
   ${NMODL_INBUILT_MOD_OUTPUTS}
   ${MPI_CORE_FILES}
-  ${OBJ_MPI})
-if(CORENRN_ENABLE_MPI)
-  if(CORENRN_ENABLE_DYNAMIC_MPI)
-    target_link_libraries(coreneuron ${CMAKE_DL_LIBS})
-    target_link_libraries(corenrn_mpi ${MPI_CXX_LIBRARIES})
-    target_compile_definitions(coreneuron
-                               PUBLIC CORENRN_SHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX})
-  else()
-    target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES})
-  endif()
+  ${CORENRN_MPI_OBJ})
+
+# we can link to MPI libraries in non-dynamic-mpi build
+if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
+  target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES})
 endif()
+
+# this is where we handle dynamic mpi library build
+if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
+  # ~~~
+  # main coreneuron library needs to be linked to libdl.so and
+  # and should be aware of shared library suffix on different platforms.
+  # ~~~
+  target_link_libraries(coreneuron ${CMAKE_DL_LIBS})
+
+  # store mpi library targets that will be built
+  list(APPEND corenrn_mpi_targets "")
+
+  # ~~~
+  # if coreneuron is built as a submodule of neuron then check if NEURON has created
+  # list of libraries that needs to be built. We use neuron cmake variables here because
+  # we don't need to duplicate CMake code into coreneuron (we want to have unified cmake
+  # project soon). In the absense of neuron just build a single library libcorenrn_mpi.
+  # This is mostly used for the testing.
+  # ~~~
+  if(NOT CORENEURON_AS_SUBPROJECT)
+    add_library(${CORENRN_MPI_LIB_NAME} SHARED ${MPI_LIB_FILES})
+    target_link_libraries(${CORENRN_MPI_LIB_NAME} ${MPI_CXX_LIBRARIES})
+    target_include_directories(${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH})
+    set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+    list(APPEND corenrn_mpi_targets ${CORENRN_MPI_LIB_NAME})
+  else()
+    # ~~~
+    # from neuron we know how many different libraries needs to be built, their names
+    # include paths to be used for building shared libraries. Iterate through those
+    # and build separate library for each MPI distribution. For example, following
+    # libraries are created:
+    # - libcorenrn_mpich.so
+    # - libcorenrn_ompi.so
+    # - libcorenrn_mpt.so
+    # ~~~
+    list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+    math(EXPR num_mpi "${_num_mpi} - 1")
+    foreach(val RANGE ${num_mpi})
+      list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+      list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+
+      add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
+      target_include_directories(core${libname}_lib PUBLIC ${include})
+
+      # ~~~
+      # TODO: somehow mingw requires explicit linking. This needs to be verified
+      # when we will test coreneuron on windows.
+      # ~~~
+      if(MINGW) # type msmpi only
+        add_dependencies(core${libname}_lib coreneuron)
+        target_link_libraries(core${libname}_lib ${MPI_C_LIBRARIES})
+        target_link_libraries(core${libname}_lib coreneuron)
+      endif()
+      set_property(TARGET core${libname}_lib PROPERTY OUTPUT_NAME core${libname})
+      list(APPEND corenrn_mpi_targets "core${libname}_lib")
+    endforeach(val)
+  endif()
+
+  set_target_properties(
+    ${corenrn_mpi_targets}
+    PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+               POSITION_INDEPENDENT_CODE ON)
+  install(TARGETS ${corenrn_mpi_targets} DESTINATION lib)
+endif()
+
 # Prevent CMake from running a device code link step when assembling libcoreneuron.a in GPU builds.
 # The device code linking needs to be deferred to the final step, where it is done by `nvc++ -cuda`.
 set_target_properties(coreneuron PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
@@ -222,13 +284,6 @@ target_include_directories(coreneuron SYSTEM
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
-if(CORENRN_ENABLE_MPI)
-  set_target_properties(
-    corenrn_mpi
-    PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-               POSITION_INDEPENDENT_CODE ON)
-endif()
 set_target_properties(
   coreneuron scopmath
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
@@ -252,6 +307,12 @@ add_custom_command(
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
 
 include_directories(${CORENEURON_PROJECT_SOURCE_DIR})
+
+if(CORENRN_ENABLE_GPU)
+  separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")
+  target_compile_options(coreneuron BEFORE PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CORENRN_ACC_FLAGS}>)
+  target_compile_options(scopmath BEFORE PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${CORENRN_ACC_FLAGS}>)
+endif()
 
 # =============================================================================
 # Extract link definitions to be used with nrnivmodl-core

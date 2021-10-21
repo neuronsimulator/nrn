@@ -88,7 +88,7 @@ option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" 
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of ReportingLib for soma reports" OFF)
 option(CORENRN_ENABLE_MPI "Enable MPI-based execution" ON)
-option(CORENRN_ENABLE_DYNAMIC_MPI "Enable dynamic MPI support" OFF)
+option(CORENRN_ENABLE_MPI_DYNAMIC "Enable dynamic MPI support" OFF)
 option(CORENRN_ENABLE_SOA "Enable SoA Memory Layout" ON)
 option(CORENRN_ENABLE_HOC_EXP "Enable wrapping exp with hoc_exp()" OFF)
 option(CORENRN_ENABLE_SPLAYTREE_QUEUING "Enable use of Splay tree for spike queuing" ON)
@@ -332,11 +332,11 @@ set(NMODL_ENABLE_LEGACY_UNITS
     ${CORENRN_ENABLE_LEGACY_UNITS}
     CACHE BOOL "" FORCE)
 
-if(CORENRN_ENABLE_DYNAMIC_MPI)
+if(CORENRN_ENABLE_MPI_DYNAMIC)
   if(NOT CORENRN_ENABLE_MPI)
     message(FATAL_ERROR "Cannot enable dynamic mpi without mpi")
   endif()
-  add_compile_definitions(CORENRN_ENABLE_DYNAMIC_MPI)
+  add_compile_definitions(CORENRN_ENABLE_MPI_DYNAMIC)
 endif()
 
 if(CORENRN_ENABLE_PRCELLSTATE)
@@ -499,7 +499,21 @@ message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
 message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
 if(CORENRN_ENABLE_MPI)
   message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
-  message(STATUS "  DYNAMIC           | ${CORENRN_ENABLE_DYNAMIC_MPI}")
+  message(STATUS "  DYNAMIC           | ${CORENRN_ENABLE_MPI_DYNAMIC}")
+  if(CORENRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
+    # ~~~
+    # for dynamic mpi, rely on neuron for list of libraries to build
+    # this is to avoid cmake code duplication on the coreneuron side
+    # ~~~
+    list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
+    math(EXPR num_mpi "${_num_mpi} - 1")
+    foreach(val RANGE ${num_mpi})
+      list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
+      list(GET NRN_MPI_INCLUDE_LIST ${val} include)
+      message(STATUS "    LIBNAME         | core${libname}")
+      message(STATUS "    INC             | ${include}")
+    endforeach(val)
+  endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")
 message(STATUS "Use legacy units    | ${CORENRN_ENABLE_LEGACY_UNITS}")

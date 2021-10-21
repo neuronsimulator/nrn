@@ -56,7 +56,7 @@ if(CORENRN_ENABLE_GPU)
   # more information about this. -gpu=cudaX.Y ensures that OpenACC code is compiled with the same
   # CUDA version as is used for the explicit CUDA code.
   set(NVHPC_ACC_COMP_FLAGS "-acc -gpu=cuda${CORENRN_CUDA_VERSION_SHORT}")
-  set(NVHPC_ACC_LINK_FLAGS "-cuda")
+  set(NVHPC_ACC_LINK_FLAGS "-acc -cuda")
   # Make sure that OpenACC code is generated for the same compute capabilities as the explicit CUDA
   # code. Otherwise there may be confusing linker errors. We cannot rely on nvcc and nvc++ using the
   # same default compute capabilities as each other, particularly on GPU-less build machines.
@@ -65,7 +65,6 @@ if(CORENRN_ENABLE_GPU)
   endforeach()
   # avoid PGI adding standard compliant "-A" flags
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
-  string(APPEND CMAKE_CXX_FLAGS " ${NVHPC_ACC_COMP_FLAGS} ${PGI_DIAG_FLAGS}")
   string(APPEND CMAKE_EXE_LINKER_FLAGS " ${NVHPC_ACC_LINK_FLAGS}")
   # Use `-Mautoinline` option to compile .cpp files generated from .mod files only. This is
   # especially needed when we compile with -O0 or -O1 optimisation level where we get link errors.
