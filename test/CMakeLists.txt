@@ -314,6 +314,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         PROCESSORS 2
         COMMAND NRN_TEST_SPIKES_MPI4PY=1 ${modtests_launch_py_mpi} test/coreneuron/test_spikes.py)
     endif()
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME inputpresyn_py
+      REQUIRES coreneuron
+      PROCESSORS 2
+      SCRIPT_PATTERNS test/coreneuron/test_inputpresyn.py
+      COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+            ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+            ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein for more
     # discussion. Launching this test via `python` (not `special`) does not work on Linux with
     # OpenMPI 2.x and without dynamic MPI enabled in NEURON, which corresponds to the GitHub Actions

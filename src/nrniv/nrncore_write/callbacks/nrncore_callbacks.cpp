@@ -884,22 +884,23 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   }
 
   // NEURON PreSyn* to CoreNEURON index into nt.presyns
-#define NRN_SENTINAL 100000000
+#define NRN_SENTINAL 100000000000
   for (int i = 0; i < cg.n_presyn; ++i) {
     PreSyn* ps = cg.output_ps[i];
     auto iter = presyn2intdata.find(ps);
     if (iter != presyn2intdata.end()) {
-      if (iter->second[0] > NRN_SENTINAL) {
-        fprintf(stderr, "PreSyn %p visited twice\n", ps);
-      }
+      // not visited twice
+      assert(iter->second[0] < NRN_SENTINAL);
       for (auto iloc: iter->second) {
         core_te->intdata[iloc] = i;
       }
       presyn2intdata[ps][0] = i + NRN_SENTINAL;
     }
   }
-  // all presyn2intdata should have been visited
+  // all presyn2intdata should have been visited so all
+  // presyn2intdata[ps][0] must be >= NRN_SENTINAL
   for (auto& iter: presyn2intdata) {
+#if 0 // for debugging
     if (iter.second[0] < NRN_SENTINAL) {
       PreSyn* ps = iter.first;
       fprintf(stderr, "%d PreSyn %p not visited\n", nrnmpi_myid, ps);
@@ -915,8 +916,8 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       }else{
         fprintf(stderr, "%d Presyn %p seems to have no source\n", nrnmpi_myid, ps);
       }
-      assert(0);
     }
+#endif
     assert(iter.second[0] >= NRN_SENTINAL);
   }
 
