@@ -183,7 +183,7 @@ jobs:
       export NRN_BUILD_FOR_UPLOAD=1
       sudo mkdir /opt/nrnwheel
       sudo tar -zxf $(readlineSF.secureFilePath) --directory /opt/nrnwheel/
-      packaging/python/build_wheels.bash osx $(python.version)
+      packaging/python/build_wheels.bash osx $(python.version) coreneuron
     displayName: 'Build MacOS Wheel'
 
   - template: ci/azure-wheel-test-upload.yml
