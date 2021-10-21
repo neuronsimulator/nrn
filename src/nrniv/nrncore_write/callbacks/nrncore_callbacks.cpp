@@ -830,7 +830,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         // by gid or presyn index respectively.
         // That is:
         // Output PreSyn format is 0, presyn index 
-	// initialized to -1 and figured out from presyn2intdata, and
+        // initialized to -1 and figured out from presyn2intdata, and
         // ps->delay_
         // Input PreSyn format is 1, gid, and ps->delay_
         if (ps->output_index_ < 0 && ps->gid_ >= 0) {
