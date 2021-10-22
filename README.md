@@ -20,6 +20,8 @@ pip3 install neuron
 If you want to build the latest version from source, we support **CMake** as build system. **Autotools** build system has been removed after 8.0 release.
 See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 
+It is possible to install the Linux Python wheels on Windows via the Windows Subsystem for Linux (WSL) - check the installation instructions above.
+
 ## Documentation
 
 * See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
