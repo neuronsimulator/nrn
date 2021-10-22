@@ -92,8 +92,8 @@ run_mpi_test () {
       $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
     fi
 
-    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "")
-    CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
+    NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -160,7 +160,7 @@ run_serial_test () {
       fi
 
       if [[ "$run_gpu_test" == "true" ]]; then
-        CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+        NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
       fi
       rm -rf x86_64
     fi
