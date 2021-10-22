@@ -15,6 +15,8 @@ class Components:
     RX3D = True
     IV = True
     MPI = True
+    CORENRN = False # still early support
+    GPU = False     # still early support
 
 
 if os.name != "posix":
@@ -44,12 +46,28 @@ except Exception as e:
     raise RuntimeError("Could not get version from Git repo : " + str(e))
 
 
-# RX3D must be checked for very early as it changes imports
+# setup options must be checked for very early as it impacts imports
 if "--disable-rx3d" in sys.argv:
     Components.RX3D = False
     sys.argv.remove("--disable-rx3d")
-    from setuptools.command.build_ext import build_ext
-else:
+
+if "--disable-iv" in sys.argv:
+    Components.IV = False
+    sys.argv.remove("--disable-iv")
+
+if "--disable-mpi" in sys.argv:
+    Components.MPI = False
+    sys.argv.remove("--disable-mpi")
+
+if "--enable-coreneuron" in sys.argv:
+    Components.CORENRN = True
+    sys.argv.remove("--enable-coreneuron")
+
+if "--enable-gpu" in sys.argv:
+    Components.GPU = True
+    sys.argv.remove("--enable-gpu")
+
+if Components.RX3D:
     try:
         from Cython.Distutils import Extension as CyExtension
         from Cython.Distutils import build_ext
@@ -59,14 +77,8 @@ else:
             "ERROR: RX3D wheel requires Cython and numpy. Please install beforehand"
         )
         sys.exit(1)
-
-if "--disable-iv" in sys.argv:
-    Components.IV = False
-    sys.argv.remove("--disable-iv")
-
-if "--disable-mpi" in sys.argv:
-    Components.MPI = False
-    sys.argv.remove("--disable-mpi")
+else:
+    from setuptools.command.build_ext import build_ext
 
 
 class CMakeAugmentedExtension(Extension):
@@ -325,7 +337,7 @@ def setup_package():
             ["src/nrnpython/inithoc.cpp"],
             cmake_collect_dirs=NRN_COLLECT_DIRS,
             cmake_flags=[
-                "-DNRN_ENABLE_CORENEURON=OFF",
+                "-DNRN_ENABLE_CORENEURON=" + ("ON" if Components.CORENRN else "OFF"),
                 "-DNRN_ENABLE_INTERVIEWS=" + ("ON" if Components.IV else "OFF"),
                 "-DIV_ENABLE_X11_DYNAMIC=" + ("ON" if Components.IV else "OFF"),
                 "-DNRN_ENABLE_RX3D=OFF",  # Never build within CMake
@@ -335,7 +347,13 @@ def setup_package():
                 "-DNRN_ENABLE_MODULE_INSTALL=OFF",
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
-            ],
+                "-DCMAKE_VERBOSE_MAKEFILE=OFF",
+            ] + ([
+                "-DCORENRN_ENABLE_GPU=ON",
+                "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
+                "-DCMAKE_CXX_COMPILER=nvc++",
+                "-DCMAKE_CUDA_COMPILER=nvcc",
+            ] if Components.GPU else []),
             include_dirs=[
                 "src",
                 "src/oc",
@@ -397,7 +415,9 @@ def setup_package():
 
     log.info("RX3D is %s", "ENABLED" if Components.RX3D else "DISABLED")
 
-    package_name = "NEURON"
+    # package name
+    package_name = "NEURON-gpu" if Components.GPU else "NEURON"
+
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
