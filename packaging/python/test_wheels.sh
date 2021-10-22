@@ -86,14 +86,20 @@ run_mpi_test () {
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf x86_64
     nrnivmodl -coreneuron test/coreneuron/mod/
-    # python and nrniv can be used only for non-gpu wheel
+
+    # python as a launcher can be used only with non-gpi build
     if [[ "$has_gpu_support" == "false" ]]; then
       $mpi_launcher -n 1 $python_exe test/coreneuron/test_direct.py
-      $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
     fi
 
-    run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
-    NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    # using -python doesn't work on Azure CI
+    if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+      if [[ "$has_gpu_support" == "false" ]]; then
+        $mpi_launcher -n 2 nrniv -python -mpi test/coreneuron/test_direct.py
+      fi
+      run_on_gpu=$([ "$run_gpu_test" == "true" ] && echo "1" || echo "0")
+      NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=$run_on_gpu $mpi_launcher -n 2 ./x86_64/special -python -mpi test/coreneuron/test_direct.py
+    fi
   fi
 
   if [ -n "$mpi_module" ]; then
@@ -150,18 +156,26 @@ run_serial_test () {
       rm -rf x86_64
       nrnivmodl -coreneuron test/coreneuron/mod/
 
-      # we can run special with or without gpu wheel
-      ./x86_64/special -python test/coreneuron/test_direct.py
-
-      # python and nrniv can be used only for non-gpu wheel
+      # coreneuron+gpu can be used via python but special only
       if [[ "$has_gpu_support" == "false" ]]; then
         $python_exe test/coreneuron/test_direct.py
-        nrniv -python test/coreneuron/test_direct.py
       fi
 
-      if [[ "$run_gpu_test" == "true" ]]; then
-        NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+      # using -python doesn't work on Azure CI
+      if [[ "$SKIP_EMBEDED_PYTHON_TEST" != "true" ]]; then
+        # we can run special with or without gpu wheel
+        ./x86_64/special -python test/coreneuron/test_direct.py
+
+        # python and nrniv can be used only for non-gpu wheel
+        if [[ "$has_gpu_support" == "false" ]]; then
+          nrniv -python test/coreneuron/test_direct.py
+        fi
+
+        if [[ "$run_gpu_test" == "true" ]]; then
+          NVCOMPILER_ACC_TIME=1 CORENRN_ENABLE_GPU=1 ./x86_64/special -python test/coreneuron/test_direct.py
+        fi
       fi
+
       rm -rf x86_64
     fi
 
