@@ -900,24 +900,6 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   // all presyn2intdata should have been visited so all
   // presyn2intdata[ps][0] must be >= NRN_SENTINAL
   for (auto& iter: presyn2intdata) {
-#if 0 // for debugging
-    if (iter.second[0] < NRN_SENTINAL) {
-      PreSyn* ps = iter.first;
-      fprintf(stderr, "%d PreSyn %p not visited\n", nrnmpi_myid, ps);
-      fprintf(stderr, "%d PreSyn %p is source to %ld NetCons\n", nrnmpi_myid, ps, ps->dil_.count());
-      fprintf(stderr, "%d PreSyn %p gid=%d output_index=%d\n", nrnmpi_myid, ps, ps->gid_, ps->output_index_);
-      if (ps->nt_) {
-        fprintf(stderr, "%d PreSyn %p associated with thread %d (current thread is %d)\n", nrnmpi_myid, ps, ps->nt_->id, tid);
-      }
-      if (ps->osrc_) {
-        fprintf(stderr, "%d PreSyn %p source is %s\n", nrnmpi_myid, ps, hoc_object_name(ps->osrc_));
-      }else if (ps->ssrc_) {
-        fprintf(stderr, "%d PreSyn %p source on %s\n", nrnmpi_myid, ps, secname(ps->ssrc_));
-      }else{
-        fprintf(stderr, "%d Presyn %p seems to have no source\n", nrnmpi_myid, ps);
-      }
-    }
-#endif
     assert(iter.second[0] >= NRN_SENTINAL);
   }
 
