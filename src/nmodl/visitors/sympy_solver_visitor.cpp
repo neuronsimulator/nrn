@@ -324,7 +324,6 @@ void SympySolverVisitor::solve_linear_system(const std::vector<std::string>& pre
         return;
     }
     // find out where to insert solutions in statement block
-    const auto& statements = block_with_expression_statements->get_statements();
     if (small_system) {
         // for small number of state vars, linear solver
         // directly returns solution by solving symbolically at compile time
@@ -400,7 +399,6 @@ void SympySolverVisitor::visit_var_name(ast::VarName& node) {
 
 void SympySolverVisitor::visit_diff_eq_expression(ast::DiffEqExpression& node) {
     const auto& lhs = node.get_expression()->get_lhs();
-    const auto& rhs = node.get_expression()->get_rhs();
 
     if (!lhs->is_var_name()) {
         logger->warn("SympySolverVisitor :: LHS of differential equation is not a VariableName");

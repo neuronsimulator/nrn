@@ -150,7 +150,6 @@ bool InlineVisitor::inline_function_call(ast::Block& callee,
         ModToken tok;
         name->set_token(tok);
 
-        const ast::StatementVector& statements = caller.get_statements();
         auto local_list_statement = get_local_list_statement(caller);
         /// each block should already have local statement
         if (local_list_statement == nullptr) {
