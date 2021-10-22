@@ -1,10 +1,8 @@
 # Test of data return covering most of the functionality.
+import distutils.util
 import os
-import pytest
 import sys
 import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h, gui
 
@@ -174,7 +172,9 @@ def test_datareturn():
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
     coreneuron.cell_permute = 0
     for mode in [0, 1, 2]:
@@ -225,6 +225,4 @@ if __name__ == "__main__":
         traceback.print_exc()
         # Make the CTest test fail
         sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    h.quit()
