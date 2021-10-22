@@ -345,6 +345,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         PROCESSORS 2
         COMMAND ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
                 ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
+      nrn_add_test(
+        GROUP coreneuron_modtests
+        NAME inputpresyn_py_${processor}
+        REQUIRES coreneuron ${processor}
+        PROCESSORS 2
+        COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+                special ${MPIEXEC_POSTFLAGS} -mpi -python
+                ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
 endif()
