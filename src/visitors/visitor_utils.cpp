@@ -80,8 +80,6 @@ void add_local_statement(StatementBlock& node) {
 LocalVar* add_local_variable(StatementBlock& node, Identifier* varname) {
     add_local_statement(node);
 
-    const ast::StatementVector& statements = node.get_statements();
-
     auto local_list_statement = get_local_list_statement(node);
     /// each block should already have local statement
     if (local_list_statement == nullptr) {

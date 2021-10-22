@@ -768,7 +768,7 @@ void CodegenCVisitor::update_index_semantics() {
         info.semantics.emplace_back(index++, naming::POINT_PROCESS_SEMANTIC, 1);
     }
     for (const auto& ion: info.ions) {
-        for (const auto& var: ion.reads) {
+        for (auto i = 0; i < ion.reads.size(); ++i) {
             info.semantics.emplace_back(index++, ion.name + "_ion", 1);
         }
         for (const auto& var: ion.writes) {
@@ -2298,7 +2298,6 @@ std::string CodegenCVisitor::float_variable_name(const SymbolType& symbol,
                                                  bool use_instance) const {
     auto name = symbol->get_name();
     auto dimension = symbol->get_length();
-    auto num_float = float_variables_size();
     auto position = position_of_float_var(name);
     // clang-format off
     if (symbol->is_array()) {
@@ -2319,7 +2318,6 @@ std::string CodegenCVisitor::int_variable_name(const IndexVariableInfo& symbol,
                                                const std::string& name,
                                                bool use_instance) const {
     auto position = position_of_int_var(name);
-    auto num_int = int_variables_size();
     // clang-format off
     if (symbol.is_index) {
         if (use_instance) {
@@ -3995,7 +3993,6 @@ void CodegenCVisitor::visit_for_netcon(const ast::ForNetcon& node) {
         std::find_if(info.semantics.begin(), info.semantics.end(), [](const IndexSemantics& a) {
             return a.name == naming::FOR_NETCON_SEMANTIC;
         })->index;
-    const auto num_int = int_variables_size();
 
     printer->add_text("const size_t offset = {}*pnodecount + id;"_format(index));
     printer->add_newline();

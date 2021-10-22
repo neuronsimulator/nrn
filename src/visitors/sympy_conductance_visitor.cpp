@@ -65,7 +65,6 @@ std::vector<std::string> SympyConductanceVisitor::generate_statement_strings(
         // look for a current name that matches lhs of expr (current write name)
         auto it = i_name.find(lhs_str);
         if (it != i_name.end()) {
-            const auto& equation_string = ordered_binary_exprs[binary_expr_index[lhs_str]];
             std::string i_name_str = it->second;
             // SymPy needs the current expression & all previous expressions
             std::vector<std::string> expressions(ordered_binary_exprs.begin(),
