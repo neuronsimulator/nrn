@@ -351,7 +351,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         REQUIRES coreneuron ${processor}
         PROCESSORS 2
         COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+                special ${MPIEXEC_POSTFLAGS} -mpi -python
                 ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
