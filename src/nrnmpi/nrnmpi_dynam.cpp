@@ -26,6 +26,7 @@ extern char* dlerror();
 #include "nrnmpi.h"
 
 extern char* cxx_char_alloc(size_t);
+extern std::string corenrn_mpi_library;
 
 #if DARWIN || defined(__linux__)
 extern const char* path_prefix_to_libnrniv();
@@ -109,10 +110,12 @@ char* nrnmpi_load(int is_python) {
 			if (!load_nrnmpi("@loader_path/libnrnmpi_ompi.dylib", pmes+strlen(pmes))) {
 				return pmes;
 			}
+			corenrn_mpi_library = "@loader_path/libcorenrnmpi_ompi.dylib";
 		}else{ /* must be mpich. Could check for MPID_nem_mpich_init...*/
 			if (!load_nrnmpi("@loader_path/libnrnmpi_mpich.dylib", pmes+strlen(pmes))) {
 				return pmes;
 			}
+			corenrn_mpi_library = "@loader_path/libcorenrnmpi_mpich.dylib";
 		}
 	}else{
 		ismes = 1;
@@ -129,6 +132,7 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 		if (!load_nrnmpi("libnrnmpi_msmpi.dll", pmes+strlen(pmes))){
 			return pmes;
 		}
+		corenrn_mpi_library = "libcorenrnmpi_msmpi.dll";
 	}else{
 		ismes = 1;
 		return pmes;
@@ -175,10 +179,15 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 		/* loaded but is it openmpi or mpich */
 		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
 			sprintf(lname, "%slibnrnmpi_ompi.so", prefix);
-		}else if (dlsym(handle, "MPI_SGI_init")) { /* it is sgi-mpt */
+			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_ompi.so";
+		}else if (dlsym(handle, "MPI_SGI_vtune_is_running")) { /* it is sgi-mpt */
+			// MPI_SGI_init exist in both mpt as well as hmpt and hence look
+			// for MPI_SGI_vtune_is_running which exist in non-hmpt version only.
 			sprintf(lname, "%slibnrnmpi_mpt.so", prefix);
+			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_mpt.so";
 		}else{ /* must be mpich. Could check for MPID_nem_mpich_init...*/
 			sprintf(lname, "%slibnrnmpi_mpich.so", prefix);
+			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_mpich.so";
 		}
 		if (!load_nrnmpi(lname, pmes+strlen(pmes))) {
 			free(lname);

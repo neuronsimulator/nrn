@@ -822,17 +822,34 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
 
       } break;
       case PreSynType: { // 4
-        PreSyn* nc = (PreSyn*)de;
-        // similar to NetCon but more data
-        size_t iloc = core_te->intdata.size();
-        core_te->intdata.push_back(-1);
-        presyn2intdata[nc].push_back(iloc);
+        PreSyn* ps = (PreSyn*)de;
+        // Output PreSyn similar to NetCon but more data.
+        // Input PreSyn (ps->output_index = -1 and ps->gid >= 0)
+        // is distinquished from PreSyn (ps->output_index == ps->gid
+        // or both negative) by the first item of 0 or 1 respectively followed
+        // by gid or presyn index respectively.
+        // That is:
+        // Output PreSyn format is 0, presyn index 
+        // initialized to -1 and figured out from presyn2intdata, and
+        // ps->delay_
+        // Input PreSyn format is 1, gid, and ps->delay_
+        if (ps->output_index_ < 0 && ps->gid_ >= 0) {
+          // InputPreSyn on the CoreNEURON side
+          core_te->intdata.push_back(1);
+          core_te->intdata.push_back(ps->gid_);
+        }else{
+          // PreSyn on the NEURON side
+          core_te->intdata.push_back(0);
+          size_t iloc = core_te->intdata.size();
+          core_te->intdata.push_back(-1);
+          presyn2intdata[ps].push_back(iloc);
+        }
         // CoreNEURON PreSyn has no notion of use_min_delay_ so if that
         // is in effect, then the send time is actually tt - nc->delay_
         // (Note there is no core2nrn inverse as PreSyn does not appear on
         //  the CoreNEURON event queue).
-        if (nc->use_min_delay_) {
-          core_te->td.back() -= nc->delay_;
+        if (ps->use_min_delay_) {
+          core_te->td.back() -= ps->delay_;
         }
       } break;
       case HocEventType: { // 5
@@ -867,14 +884,23 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   }
 
   // NEURON PreSyn* to CoreNEURON index into nt.presyns
+#define NRN_SENTINAL 100000000000
   for (int i = 0; i < cg.n_presyn; ++i) {
     PreSyn* ps = cg.output_ps[i];
     auto iter = presyn2intdata.find(ps);
     if (iter != presyn2intdata.end()) {
+      // not visited twice
+      assert(iter->second[0] < NRN_SENTINAL);
       for (auto iloc: iter->second) {
         core_te->intdata[iloc] = i;
       }
+      presyn2intdata[ps][0] = i + NRN_SENTINAL;
     }
+  }
+  // all presyn2intdata should have been visited so all
+  // presyn2intdata[ps][0] must be >= NRN_SENTINAL
+  for (auto& iter: presyn2intdata) {
+    assert(iter.second[0] >= NRN_SENTINAL);
   }
 
   // NEURON SelfEvent weight* into CoreNEURON index into nt.netcons

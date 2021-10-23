@@ -17,11 +17,11 @@ else
   libdir="${prefix}/lib"
 fi
 
-if [ -z ${CNRNHOME+x} ]; then
-  # CNRNHOME wasn't set, use the install prefix
+if [ -z ${CORENRNHOME+x} ]; then
+  # CORENRNHOME wasn't set, use the install prefix
   cnrn_prefix=@cnrn_prefix@
 else
-  cnrn_prefix="${CNRNHOME}"
+  cnrn_prefix="${CORENRNHOME}"
 fi
 
 if test "${NRNHOME_EXEC}" != "" ; then

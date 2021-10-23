@@ -38,6 +38,8 @@ set(IV_LIB_DEFAULT "")
 # For wheel deployment
 set(NRN_WHEEL_STATIC_READLINE_DEFAULT OFF)
 
+# we add some coreneuron options in order to check
+# support like GPU
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
     NRN_ENABLE_INTERVIEWS
@@ -60,7 +62,8 @@ set(NRN_OPTION_NAME_LIST
     CMAKE_INSTALL_PREFIX
     CMAKE_C_COMPILER
     PYTHON_EXECUTABLE
-    IV_LIB)
+    IV_LIB
+    CORENRN_ENABLE_GPU)
 
 # For profiling
 set(NRN_ENABLE_PROFILING_DEFAULT OFF)
