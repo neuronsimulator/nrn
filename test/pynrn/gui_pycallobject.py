@@ -1,3 +1,14 @@
+"""
+Some tests of nrnpy_pyCallObject that need to be run manually as they involve
+errors generated via gui usage. Run with 'python -i gui_pycallobject.py'
+axonerr: ZeroDivisionError: division by zero
+axonexit: exits immediately (need 'stty sane' in termina)
+In the Graph, select 'mouse events'.
+  hold Crtl key and press mouse button: ZeroDivisionError
+  hold Shift key and press mouse button: exits immediately (need 'stty sane')
+
+"""
+
 from neuron import h, gui
 import sys
 
