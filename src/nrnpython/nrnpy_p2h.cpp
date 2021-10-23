@@ -728,7 +728,7 @@ static char* pickle(PyObject* p, size_t* size) {
   *size = PyBytes_Size(r);
   char* buf1 = PyBytes_AsString(r);
   char* buf = new char[*size];
-  for (int i = 0; i < *size; ++i) {
+  for (size_t i = 0; i < *size; ++i) {
     buf[i] = buf1[i];
   }
   Py_XDECREF(r);
@@ -778,7 +778,6 @@ char* nrnpyerr_str() {
     PyObject* pyth_func = NULL;
     PyObject* py_str = NULL;
     char* cmes = NULL;
-    int err = 0;
 
     // Since traceback.format_exception returns list of strings, wrap
     // in neuron.format_exception that returns a string.    
@@ -951,7 +950,6 @@ static PyObject* py_gather(PyObject* psrc, int root){
 
 static PyObject* py_broadcast(PyObject* psrc, int root){
   // Note: root returns reffed psrc.
-  int np = nrnmpi_numprocs;
   char* buf = NULL;
   int cnt = 0;
   if (root == nrnmpi_myid) {
@@ -1084,8 +1082,8 @@ Object* py_alltoall_type(int size, int type) {
   if (size >= 0) {  // otherwise count only
     s = new char[bufsz];
   }
-  int curpos = 0;
-  for (int i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
+  size_t curpos = 0;
+  for (size_t i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
     if (p == Py_None) {
       scnt[i] = 0;
       Py_DECREF(p);
@@ -1097,13 +1095,13 @@ Object* py_alltoall_type(int size, int type) {
       if (curpos + sz >= bufsz) {
         bufsz = bufsz * 2 + sz;
         char* s2 = new char[bufsz];
-        for (int i = 0; i < curpos; ++i) {
+        for (size_t i = 0; i < curpos; ++i) {
           s2[i] = s[i];
         }
         delete[] s;
         s = s2;
       }
-      for (int j = 0; j < sz; ++j) {
+      for (size_t j = 0; j < sz; ++j) {
         s[curpos + j] = b[j];
       }
     }
