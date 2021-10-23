@@ -723,6 +723,9 @@ static char* pickle(PyObject* p, size_t* size) {
   PyObject* arg = PyTuple_Pack(1, p);
   PyObject* r = nrnpy_pyCallObject(dumps, arg);
   Py_XDECREF(arg);
+  if (!r && PyErr_Occurred()) {
+    PyErr_Print();
+  }
   assert(r);
   assert(PyBytes_Check(r));
   *size = PyBytes_Size(r);
@@ -812,6 +815,7 @@ char* nrnpyerr_str() {
         Fprintf(stderr, "nrnpyerr_str failed\n");
     }
 
+    Py_XDECREF(module_name);
     Py_XDECREF(pyth_func);
     Py_XDECREF(pyth_module);
     Py_XDECREF(ptype);

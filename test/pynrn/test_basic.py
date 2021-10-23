@@ -367,7 +367,7 @@ def test_disconnect():
 def test_py_alltoall_dict_err():
     pc = h.ParallelContext()
     src = {i: (100 + i) for i in range(2)}
-    expect_hocerr(pc.py_alltoall, src,  ('hocobj_call error',))
+    expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
 
 
 if __name__ == "__main__":
