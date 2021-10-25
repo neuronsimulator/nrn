@@ -78,10 +78,9 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@4.1.5
         if: steps.documentation.outputs.status == 'done' && github.ref == 'refs/heads/master'
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
-          CLEAN: false # Automatically remove deleted files from the deploy branch
+          branch: gh-pages # The branch the action should deploy to.
+          folder: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
+          single-commit: true #have a single commit on the deployment branch instead of maintaining the full history
