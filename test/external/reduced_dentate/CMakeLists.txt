@@ -22,7 +22,7 @@ set(reduced_dentate_neuron_prefix
 nrn_add_test(
   GROUP reduced_dentate
   NAME neuron
-  REQUIRES mpi
+  REQUIRES mpi python
   PROCESSORS ${reduced_dentate_mpi_ranks}
   COMMAND ${reduced_dentate_neuron_prefix} -c mytstop=${reduced_dentate_sim_time} run.hoc)
 set(reduced_dentate_cpu_arg -c gpu=0)
@@ -31,7 +31,7 @@ foreach(processor cpu gpu)
   nrn_add_test(
     GROUP reduced_dentate
     NAME coreneuron_${processor}
-    REQUIRES coreneuron mpi ${processor}
+    REQUIRES coreneuron mpi ${processor} python
     PROCESSORS ${reduced_dentate_mpi_ranks}
     COMMAND ${reduced_dentate_neuron_prefix} -c mytstop=${reduced_dentate_sim_time} -c coreneuron=1
             ${reduced_dentate_${processor}_arg} run.hoc)
