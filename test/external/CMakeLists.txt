@@ -25,7 +25,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/pramodk/reduced_dentate
-  GIT_TAG 5551abe5803926849cd3060b64f4fd52fb5e9c62
+  GIT_TAG 22734b8652d156eb591417966c9194e508522315
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn)
