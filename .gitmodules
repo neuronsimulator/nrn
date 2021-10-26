@@ -9,7 +9,7 @@
 	url = https://github.com/CLIUtils/CLI11.git
 [submodule "ext/spdlog"]
 	path = ext/spdlog
-	url = https://github.com/BlueBrain/spdlog.git
+	url = https://github.com/gabime/spdlog
 [submodule "ext/fmt"]
 	path = ext/fmt
 	url = https://github.com/fmtlib/fmt.git
