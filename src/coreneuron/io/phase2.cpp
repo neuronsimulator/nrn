@@ -12,6 +12,7 @@
 #include "coreneuron/io/nrn_checkpoint.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 #include "coreneuron/permute/cellorder.hpp"
+#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/permute/node_permute.h"
 #include "coreneuron/utils/utils.hpp"
 #include "coreneuron/utils/vrecitem.h"
@@ -122,7 +123,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     v_parent_index = (int*) ecalloc_align(n_node, sizeof(int));
     F.read_array<int>(v_parent_index, n_node);
 
-    int n_data_padded = nrn_soa_padded_size(n_node, MATRIX_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(n_node, SOA_LAYOUT);
     {
         {  // Compute size of _data and allocate
             int n_data = 6 * n_data_padded;
@@ -262,7 +263,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     check_mechanism();
 
     // TODO: fix it in the future
-    int n_data_padded = nrn_soa_padded_size(n_node, MATRIX_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(n_node, SOA_LAYOUT);
     int n_data = 6 * n_data_padded;
     if (n_diam > 0) {
         n_data += n_data_padded;
@@ -915,7 +916,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         nt._vdata = nullptr;
 
     // The data format begins with the matrix data
-    int n_data_padded = nrn_soa_padded_size(nt.end, MATRIX_LAYOUT);
+    int n_data_padded = nrn_soa_padded_size(nt.end, SOA_LAYOUT);
     nt._data = _data;
     nt._actual_rhs = nt._data + 0 * n_data_padded;
     nt._actual_d = nt._data + 1 * n_data_padded;

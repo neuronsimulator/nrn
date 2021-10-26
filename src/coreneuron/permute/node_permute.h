@@ -12,7 +12,6 @@
 #include "coreneuron/sim/multicore.hpp"
 
 namespace coreneuron {
-
 // determine ml->_permute and permute the ml->nodeindices accordingly
 void permute_nodeindices(Memb_list* ml, int* permute);
 
@@ -27,8 +26,5 @@ void permute_ml(Memb_list* ml, int type, NrnThread& nt);
 int nrn_index_permute(int, int type, Memb_list* ml);
 
 int* inverse_permute(int* p, int n);
-
-extern int* nrn_index_sort(int* values, int n);
-
 }  // namespace coreneuron
 #endif

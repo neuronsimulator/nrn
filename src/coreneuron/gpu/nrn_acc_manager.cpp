@@ -16,6 +16,7 @@
 #include "coreneuron/utils/vrecitem.h"
 #include "coreneuron/utils/profile/profiler_interface.h"
 #include "coreneuron/permute/cellorder.hpp"
+#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/utils/profile/cuda_profile.h"
 #include "coreneuron/sim/scopmath/newton_struct.h"
 #include "coreneuron/coreneuron.hpp"
@@ -185,7 +186,6 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             int szp = corenrn.get_prop_param_size()[type];
             int szdp = corenrn.get_prop_dparam_size()[type];
             int is_art = corenrn.get_is_artificial()[type];
-            int layout = corenrn.get_mech_data_layout()[type];
 
             // get device pointer for corresponding mechanism data
             dptr = (double*) acc_deviceptr(tml->ml->data);
@@ -198,7 +198,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             }
 
             if (szdp) {
-                int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
                 int* d_pdata = (int*) acc_copyin(tml->ml->pdata, sizeof(int) * pcnt);
                 acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
             }
@@ -689,7 +689,6 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                 int szp = corenrn.get_prop_param_size()[type];
                 int szdp = corenrn.get_prop_dparam_size()[type];
                 int is_art = corenrn.get_is_artificial()[type];
-                int layout = corenrn.get_mech_data_layout()[type];
 
                 // Artificial mechanisms such as PatternStim and IntervalFire
                 // are not copied onto the GPU. They should not, therefore, be
@@ -698,13 +697,13 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                     continue;
                 }
 
-                int pcnt = nrn_soa_padded_size(n, layout) * szp;
+                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
 
                 acc_update_self(ml->data, pcnt * sizeof(double));
                 acc_update_self(ml->nodeindices, n * sizeof(int));
 
                 if (szdp) {
-                    int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
                     acc_update_self(ml->pdata, pcnt * sizeof(int));
                 }
 
@@ -803,9 +802,8 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 int n = ml->nodecount;
                 int szp = corenrn.get_prop_param_size()[type];
                 int szdp = corenrn.get_prop_dparam_size()[type];
-                int layout = corenrn.get_mech_data_layout()[type];
 
-                int pcnt = nrn_soa_padded_size(n, layout) * szp;
+                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
 
                 acc_update_device(ml->data, pcnt * sizeof(double));
 
@@ -814,7 +812,7 @@ void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 }
 
                 if (szdp) {
-                    int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
                     acc_update_device(ml->pdata, pcnt * sizeof(int));
                 }
 
@@ -1091,13 +1089,12 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             int n = tml->ml->nodecount;
             int szdp = corenrn.get_prop_dparam_size()[type];
             int is_art = corenrn.get_is_artificial()[type];
-            int layout = corenrn.get_mech_data_layout()[type];
             int ts = corenrn.get_memb_funcs()[type].thread_size_;
             if (ts) {
                 acc_delete(tml->ml->_thread, ts * sizeof(ThreadDatum));
             }
             if (szdp) {
-                int pcnt = nrn_soa_padded_size(n, layout) * szdp;
+                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
                 acc_delete(tml->ml->pdata, sizeof(int) * pcnt);
             }
             if (!is_art) {

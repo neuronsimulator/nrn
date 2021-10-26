@@ -19,13 +19,6 @@ namespace coreneuron {
 #define NRN_SOA_PAD 8
 #endif
 
-#if !defined(LAYOUT)
-#define LAYOUT        Layout::AoS
-#define MATRIX_LAYOUT Layout::AoS
-#else
-#define MATRIX_LAYOUT LAYOUT
-#endif
-
 /// return the new offset considering the byte aligment settings
 size_t nrn_soa_byte_align(size_t i);
 

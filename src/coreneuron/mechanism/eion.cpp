@@ -14,17 +14,10 @@
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/mechanism/membfunc.hpp"
+#include "coreneuron/permute/data_layout.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
-#if !defined(LAYOUT)
-/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
-#define LAYOUT 1
-#endif
-#if LAYOUT >= 1
-#define _STRIDE LAYOUT
-#else
 #define _STRIDE _cntml_padded + _iml
-#endif
 
 // clang-format off
 
@@ -127,7 +120,7 @@ void ion_reg(const char* name, double valence) {
                       -1,
                       1);
         mechtype = nrn_get_mechtype(mechanism[1]);
-        _nrn_layout_reg(mechtype, LAYOUT);
+        _nrn_layout_reg(mechtype, SOA_LAYOUT);
         hoc_register_prop_size(mechtype, nparm, 1);
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
@@ -212,14 +205,10 @@ void nrn_wrote_conc(int type,
                     double celsius,
                     int _cntml_padded) {
     if (it & 040) {
-#if LAYOUT <= 0 /* SoA */
         int _iml = 0;
-/* passing _nt to this function causes cray compiler to segfault during compilation
- * hence passing _cntml_padded
- */
-#else
-        (void) _cntml_padded;
-#endif
+        /* passing _nt to this function causes cray compiler to segfault during compilation
+         * hence passing _cntml_padded
+         */
         double* pe = p1 - p2 * _STRIDE;
         pe[0] = nrn_nernst(pe[1 * _STRIDE], pe[2 * _STRIDE], gimap[type][2], celsius);
     }
@@ -291,22 +280,12 @@ void nrn_cur_ion(NrnThread* nt, Memb_list* ml, int type) {
 #if defined(_OPENACC)
     int stream_id = nt->stream_id;
 #endif
-/*printf("ion_cur %s\n", memb_func[type].sym->name);*/
-// AoS
-#if LAYOUT == 1
-    for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-        pd = ml->data + _iml * nparm;
-        ppd = ml->pdata + _iml * 1;
-// SoA
-#elif LAYOUT == 0
+    /*printf("ion_cur %s\n", memb_func[type].sym->name);*/
     int _cntml_padded = ml->_nodecount_padded;
     pd = ml->data;
     ppd = ml->pdata;
     _PRAGMA_FOR_CUR_ACC_LOOP_
     for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-#else
-#error AoSoA not implemented.
-#endif
         dcurdv = 0.;
         cur = 0.;
         if (iontype & 0100) {
@@ -329,22 +308,12 @@ void nrn_init_ion(NrnThread* nt, Memb_list* ml, int type) {
         return;
     }
 
-/*printf("ion_init %s\n", memb_func[type].sym->name);*/
-// AoS
-#if LAYOUT == 1
-    for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-        pd = ml->data + _iml * nparm;
-        ppd = ml->pdata + _iml * 1;
-// SoA
-#elif LAYOUT == 0
+    /*printf("ion_init %s\n", memb_func[type].sym->name);*/
     int _cntml_padded = ml->_nodecount_padded;
     pd = ml->data;
     ppd = ml->pdata;
     _PRAGMA_FOR_INIT_ACC_LOOP_
     for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-#else
-#error AoSoA not implemented.
-#endif
         if (iontype & 04) {
             conci = conci0;
             conco = conco0;
@@ -360,9 +329,7 @@ void nrn_alloc_ion(double* p, Datum* ppvar, int _type) {
 }
 
 void second_order_cur(NrnThread* _nt, int secondorder) {
-#if LAYOUT == 0
     int _cntml_padded;
-#endif
     double* pd;
     (void) _nt; /* unused */
 #if defined(_OPENACC)
@@ -376,19 +343,10 @@ void second_order_cur(NrnThread* _nt, int secondorder) {
                 Memb_list* ml = tml->ml;
                 int _cntml_actual = ml->nodecount;
                 int* ni = ml->nodeindices;
-// AoS
-#if LAYOUT == 1
-                for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-                    pd = ml->data + _iml * nparm;
-// SoA
-#elif LAYOUT == 0
                 _cntml_padded = ml->_nodecount_padded;
                 pd = ml->data;
                 _PRAGMA_FOR_SEC_ORDER_CUR_ACC_LOOP_
                 for (int _iml = 0; _iml < _cntml_actual; ++_iml) {
-#else
-#error AoSoA not implemented.
-#endif
                     cur += dcurdv * (_vec_rhs[ni[_iml]]);
                 }
             }

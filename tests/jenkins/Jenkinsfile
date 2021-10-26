@@ -63,31 +63,16 @@ pipeline {
 
         stage('build CoreNeuron'){
             parallel{
-                stage('AoS'){
-                    stages{
-                        stage('build'){
-                            steps{
-                                sh 'sh tests/jenkins/install_coreneuron.sh AoS'
-                            }
-                        }
-                        stage('unit & ring tests'){
-                            steps{
-                                sh 'sh tests/jenkins/ringtest.sh AoS'
-                            }
-                        }
-                    }
-                }
-
-                stage('SoA'){
+                stage('non-gpu'){
                     stages{
                         stage('build'){
                             steps {
-                                sh 'sh tests/jenkins/install_coreneuron.sh SoA'
+                                sh 'sh tests/jenkins/install_coreneuron.sh non-gpu'
                             }
                         }
                         stage('unit & ring tests'){
                             steps{
-                                sh 'sh tests/jenkins/ringtest.sh SoA'
+                                sh 'sh tests/jenkins/ringtest.sh non-gpu'
                             }
                         }
                     }
@@ -127,14 +112,9 @@ pipeline {
 
         stage('neuron_direct'){
             parallel{
-                stage('AoS'){
+                stage('non-gpu'){
                     steps{
-                        sh 'sh tests/jenkins/run_neuron_direct.sh AoS'
-                    }
-                }
-                stage('SoA'){
-                    steps{
-                        sh 'sh tests/jenkins/run_neuron_direct.sh SoA'
+                        sh 'sh tests/jenkins/run_neuron_direct.sh non-gpu'
                     }
                 }
             }
@@ -183,34 +163,19 @@ pipeline {
                         sh 'sh tests/jenkins/nrnivmodl.sh tqperf'
                     }
                 }
-                stage('nrnivmodl-core testcorenrn AoS'){
+                stage('nrnivmodl-core testcorenrn non-gpu'){
                     steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh testcorenrn AoS'
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh testcorenrn non-gpu'
                     }
                 }
-                stage('nrnivmodl-core testcorenrn SoA'){
+                stage('nrnivmodl-core ringtest non-gpu'){
                     steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh testcorenrn SoA'
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest non-gpu'
                     }
                 }
-                stage('nrnivmodl-core ringtest AoS'){
+                stage('nrnivmodl-core tqperf non-gpu'){
                     steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest AoS'
-                    }
-                }
-                stage('nrnivmodl-core ringtest SoA'){
-                    steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh ringtest SoA'
-                    }
-                }
-                stage('nrnivmodl-core tqperf AoS'){
-                    steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh tqperf AoS'
-                    }
-                }
-                stage('nrnivmodl-core tqperf SoA'){
-                    steps{
-                        sh 'sh tests/jenkins/nrnivmodl-core.sh tqperf SoA'
+                        sh 'sh tests/jenkins/nrnivmodl-core.sh tqperf non-gpu'
                     }
                 }
             }
@@ -225,14 +190,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn deriv 1'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS deriv 1'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA deriv 1'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu deriv 1'
                             }
                         }
                     }
@@ -244,14 +204,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn gf 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS gf 6'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA gf 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu gf 6'
                             }
                         }
                     }
@@ -263,14 +218,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn kin 1'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS kin 1'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA kin 1'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu kin 1'
                             }
                         }
                     }
@@ -282,14 +232,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn conc 1'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS conc 1'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA conc 1'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu conc 1'
                             }
                         }
                     }
@@ -301,14 +246,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn watch 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS watch 6'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA watch 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu watch 6'
                             }
                         }
                     }
@@ -320,14 +260,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn bbcore 1'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS bbcore 1'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA bbcore 1'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu bbcore 1'
                             }
                         }
                     }
@@ -339,14 +274,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn vecplay 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS vecplay 6'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA vecplay 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu vecplay 6'
                             }
                         }
                     }
@@ -358,14 +288,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh testcorenrn patstim 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn AoS patstim 6'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn SoA patstim 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh testcorenrn non-gpu patstim 6'
                             }
                         }
                     }
@@ -377,29 +302,19 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh ringtest ringtest 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu 3 MPI Ranks'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh ringtest AoS ringtest 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh ringtest non-gpu ringtest 3'
                             }
                         }
-                        stage('corenrn SoA 3 MPI Ranks'){
+                        stage('corenrn non-gpu 7 MPI Ranks'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh ringtest SoA ringtest 3'
+                                sh 'sh tests/jenkins/run_corenrn.sh ringtest non-gpu ringtest 7'
                             }
                         }
-                        stage('corenrn SoA 7 MPI Ranks'){
+                        stage('corenrn restore non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh ringtest SoA ringtest 7'
-                            }
-                        }
-                        stage('corenrn restore AoS'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn_restore.sh AoS 6'
-                            }
-                        }
-                        stage('corenrn restore SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn_restore.sh SoA 6'
+                                sh 'sh tests/jenkins/run_corenrn_restore.sh non-gpu 6'
                             }
                         }
                     }
@@ -411,14 +326,9 @@ pipeline {
                                 sh 'sh tests/jenkins/run_neuron.sh tqperf tqperf 6'
                             }
                         }
-                        stage('corenrn AoS'){
+                        stage('corenrn non-gpu'){
                             steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh tqperf AoS tqperf 6'
-                            }
-                        }
-                        stage('corenrn SoA'){
-                            steps{
-                                sh 'sh tests/jenkins/run_corenrn.sh tqperf SoA tqperf 6'
+                                sh 'sh tests/jenkins/run_corenrn.sh tqperf non-gpu tqperf 6'
                             }
                         }
                     }

@@ -130,7 +130,7 @@ static void invert_permute(int* p, int n) {
     delete[] pinv;
 }
 
-void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
+static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
     // assumes AoS to SoA transformation already made since we are using
     // nrn_i_layout to determine indices into both ml->pdata and into target data
     int psz = corenrn.get_prop_dparam_size()[type];
@@ -306,7 +306,7 @@ static bool nrn_index_sort_cmp(const std::pair<int, int>& a, const std::pair<int
     return result;
 }
 
-int* nrn_index_sort(int* values, int n) {
+static int* nrn_index_sort(int* values, int n) {
     std::vector<std::pair<int, int>> vi(n);
     for (int i = 0; i < n; ++i) {
         vi[i].first = values[i];

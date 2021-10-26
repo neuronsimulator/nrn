@@ -10,6 +10,7 @@
 */
 
 #include "coreneuron/coreneuron.hpp"
+#include "coreneuron/permute/data_layout.hpp"
 
 // clang-format off
 
@@ -30,15 +31,7 @@
 
 // clang-format on
 
-#if !defined(LAYOUT)
-/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
-#define LAYOUT 1
-#endif
-#if LAYOUT >= 1
-#define _STRIDE LAYOUT
-#else
 #define _STRIDE _cntml_padded + _iml
-#endif
 
 namespace coreneuron {
 
@@ -62,7 +55,7 @@ void capacitance_reg(void) {
                   -1,
                   1);
     int mechtype = nrn_get_mechtype(mechanism[1]);
-    _nrn_layout_reg(mechtype, LAYOUT);
+    _nrn_layout_reg(mechtype, SOA_LAYOUT);
     hoc_register_prop_size(mechtype, nparm, 0);
 }
 
@@ -92,14 +85,9 @@ void nrn_jacob_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     { /*if (use_cachevec) {*/
         int* ni = ml->nodeindices;
 
-#if LAYOUT == 1 /*AoS*/
-        for (_iml = 0; _iml < _cntml_actual; _iml++) {
-            vdata = ml->data + _iml * nparm;
-#else
         vdata = ml->data;
         _PRAGMA_FOR_JACOB_ACC_LOOP_
         for (_iml = 0; _iml < _cntml_actual; _iml++) {
-#endif
             _vec_d[ni[_iml]] += cfac * cm;
         }
     }
@@ -116,15 +104,9 @@ void nrn_init_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
         return;
     }
 
-#if LAYOUT == 1  /*AoS*/
-    (void) _nt;  // Only use by _PRAGMA_FOR_INIT_ACC_LOOP_
-    for (int _iml = 0; _iml < _cntml_actual; _iml++) {
-        vdata = ml->data + _iml * nparm;
-#else
     vdata = ml->data;
     _PRAGMA_FOR_INIT_ACC_LOOP_
     for (int _iml = 0; _iml < _cntml_actual; _iml++) {
-#endif
         i_cap = 0;
     }
 }
@@ -148,14 +130,9 @@ void nrn_cur_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     int stream_id = _nt->stream_id;
 #endif
 
-#if LAYOUT == 1 /*AoS*/
-    for (int _iml = 0; _iml < _cntml_actual; _iml++) {
-        vdata = ml->data + _iml * nparm;
-#else
     vdata = ml->data;
     _PRAGMA_FOR_CUR_ACC_LOOP_
     for (int _iml = 0; _iml < _cntml_actual; _iml++) {
-#endif
         i_cap = cfac * cm * _vec_rhs[ni[_iml]];
     }
 }
@@ -180,14 +157,9 @@ void nrn_div_capacity(NrnThread* _nt, Memb_list* ml, int type) {
 
     int* ni = ml->nodeindices;
 
-#if LAYOUT == 1 /*AoS*/
-    for (_iml = 0; _iml < _cntml_actual; _iml++) {
-        vdata = ml->data + _iml * nparm;
-#else
     vdata = ml->data;
     _PRAGMA_FOR_INIT_ACC_LOOP_
     for (_iml = 0; _iml < _cntml_actual; _iml++) {
-#endif
         i_cap = VEC_RHS(ni[_iml]);
         VEC_RHS(ni[_iml]) /= 1.e-3 * cm;
         // fprintf(stderr, "== nrn_div_cap: RHS[%d]=%.12f\n", ni[_iml], VEC_RHS(ni[_iml])) ;
@@ -208,14 +180,9 @@ void nrn_mul_capacity(NrnThread* _nt, Memb_list* ml, int type) {
 
     const double cfac = .001 * _nt->cj;
 
-#if LAYOUT == 1 /*AoS*/
-    for (_iml = 0; _iml < _cntml_actual; _iml++) {
-        vdata = ml->data + _iml * nparm;
-#else
     vdata = ml->data;
     _PRAGMA_FOR_INIT_ACC_LOOP_
     for (_iml = 0; _iml < _cntml_actual; _iml++) {
-#endif
         VEC_RHS(ni[_iml]) *= cfac * cm;
     }
 }

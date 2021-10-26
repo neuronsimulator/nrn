@@ -14,15 +14,7 @@
 
 namespace coreneuron {
 
-#if !defined(LAYOUT)
-/* 1 means AoS, >1 means AoSoA, <= 0 means SOA */
-#define LAYOUT 1
-#endif
-#if LAYOUT >= 1
-#define _STRIDE LAYOUT
-#else
 #define _STRIDE _cntml_padded + _iml
-#endif
 
 #define _threadargscomma_ _iml, _cntml_padded, _p, _ppvar, _thread, _nt, _v,
 #define _threadargsprotocomma_                                                                    \

@@ -18,10 +18,7 @@ namespace coreneuron {
  */
 int get_data_index(int node_index, int variable_index, int mtype, Memb_list* ml) {
     int layout = corenrn.get_mech_data_layout()[mtype];
-    if (layout == AOS_LAYOUT) {
-        return variable_index + node_index * corenrn.get_prop_dparam_size()[mtype];
-    }
-    assert(layout == SOA_LAYOUT);
+    nrn_assert(layout == SOA_LAYOUT);
     return variable_index * ml->_nodecount_padded + node_index;
 }
 }  // namespace coreneuron

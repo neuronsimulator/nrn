@@ -11,7 +11,7 @@ MPI_RANKS="$4"
 
 cd $WORKSPACE/${TEST_DIR}
 
-if [ "${TEST_DIR}" = "testcorenrn" ] || [ "${CORENRN_TYPE}" = "AoS" ]; then
+if [ "${TEST_DIR}" = "testcorenrn" ] ; then
     export OMP_NUM_THREADS=1
 else
     export OMP_NUM_THREADS=2
