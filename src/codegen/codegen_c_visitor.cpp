@@ -3055,6 +3055,11 @@ void CodegenCVisitor::print_global_variable_setup() {
 
     // offsets for state variables
     if (info.primes_size != 0) {
+        if (info.primes_size != info.prime_variables_by_order.size()) {
+            throw std::runtime_error{
+                "primes_size = {} differs from prime_variables_by_order.size() = {}, this should not happen."_format(
+                    info.primes_size, info.prime_variables_by_order.size())};
+        }
         auto slist1 = get_variable_name("slist1");
         auto dlist1 = get_variable_name("dlist1");
         auto n = info.primes_size;

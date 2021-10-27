@@ -602,6 +602,12 @@ void CodegenHelperVisitor::visit_conductance_hint(const ConductanceHint& node) {
  * Dstate then we have to lookup state to find out corresponding symbol. This
  * is because prime_variables_by_order should contain state variable name and
  * not the one replaced by solver pass.
+ *
+ * \todo AST can have duplicate DERIVATIVE blocks if a mod file uses SOLVE
+ *       statements in its INITIAL block (e.g. in case of kinetic schemes using
+ *       `STEADYSTATE sparse` solver). Such duplicated DERIVATIVE blocks could
+ *       be removed by `SolveBlockVisitor`, or we have to avoid visiting them
+ *       here. See e.g. SH_na8st.mod test and original reduced_dentate .mod.
  */
 void CodegenHelperVisitor::visit_statement_block(const ast::StatementBlock& node) {
     const auto& statements = node.get_statements();
@@ -618,8 +624,15 @@ void CodegenHelperVisitor::visit_statement_block(const ast::StatementBlock& node
                     if (from_state) {
                         symbol = psymtab->lookup(name.substr(1, name.size()));
                     }
-                    info.prime_variables_by_order.push_back(symbol);
-                    info.num_equations++;
+                    // See the \todo note above.
+                    if (std::find_if(info.prime_variables_by_order.begin(),
+                                     info.prime_variables_by_order.end(),
+                                     [&](auto const& sym) {
+                                         return sym->get_name() == symbol->get_name();
+                                     }) == info.prime_variables_by_order.end()) {
+                        info.prime_variables_by_order.push_back(symbol);
+                        info.num_equations++;
+                    }
                 }
             }
         }
