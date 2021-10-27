@@ -8,6 +8,10 @@ nrn_add_test_group(
 
 set(reduced_dentate_mpi_ranks 4)
 set(reduced_dentate_sim_time 10)
+# TODO/WARNING: the max_cells_per_type=100 option shrinks the model in a way that has no particular
+# scientific meaning. This was done as a short-term measure to keep the CTest suite reasonably fast,
+# but it should be revisited. Ideally we would use a small model based on a newer version of
+# https://github.com/soltesz-lab/dentate.
 set(reduced_dentate_neuron_prefix
     OMP_NUM_THREADS=1
     HOC_LIBRARY_PATH=templates
