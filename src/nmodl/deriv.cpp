@@ -488,10 +488,10 @@ if (s->subtype & ARRAY) { int dim = s->araydim;
 	Lappendstr(initlist, buf);
 	count += dim;
 }else{
-			Sprintf(buf, "_slist%d[%d] = &(%s) - _p;",
+			Sprintf(buf, "_slist%d[%d] = %s_columnindex;",
 				numlist, count, state->name);
 			Lappendstr(initlist, buf);
-			Sprintf(buf, " _dlist%d[%d] = &(%s) - _p;\n",
+			Sprintf(buf, " _dlist%d[%d] = %s_columnindex;\n",
 			   numlist, count, name_forderiv(indx + 1));
 			Lappendstr(initlist, buf);
 			count++;
