@@ -1150,42 +1150,14 @@ void kinlist(Symbol* fun, Rlist* rlst) {
                     s->varnum,
                     s->name);
             qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-	if (vectorize){
-		Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p[_ix];"
-			,dim, fun->u.i , s->varnum, s->name);
-		vectorize_substitute(qv, buf);
-	}
-#endif
             Sprintf(
                 buf, " _dlist%d[%d+_i] = D%s_columnindex + _i;}\n", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-	if (vectorize){
-		Sprintf(buf, " _dlist%d[%d+_i] = (D%s + _i) - _p[_ix];}\n"
-			, fun->u.i, s->varnum, s->name);
-		vectorize_substitute(qv, buf);
-	}
-#endif
         } else {
             Sprintf(buf, "_slist%d[%d] = %s_columnindex;", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-	if (vectorize){
-			Sprintf(buf, "_slist%d[%d] = &(%s) - _p[_ix];",
-				fun->u.i, s->varnum, s->name);
-			vectorize_substitute(qv, buf);
-	}
-#endif
             Sprintf(buf, " _dlist%d[%d] = D%s_columnindex;\n", fun->u.i, s->varnum, s->name);
             qv = lappendstr(initlist, buf);
-#if 0 && VECTORIZE
-	if (vectorize){
-			Sprintf(buf, " _dlist%d[%d] = &(D%s) - _p[_ix];\n",
-				fun->u.i, s->varnum, s->name);
-			vectorize_substitute(qv, buf);
-	}
-#endif
         }
         s->used = 0;
     }

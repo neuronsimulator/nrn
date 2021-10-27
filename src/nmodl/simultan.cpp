@@ -87,21 +87,24 @@ int nonlin_common(Item* q4, int sensused)	/* used by massagenonlin() and mixed_e
 #endif
 			if (s->subtype & ARRAY) {int dim = s->araydim;
 				using_array=1;
-		        	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
-			                ,dim, numlist , counts, s->name);
-				counts += dim;
-			}else{
-				Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
-					numlist, counts, s->name);
-				counts++;
-			}
-		        Lappendstr(initlist, buf);
-			s->used = 0;
-			if (sensused) {
-				add_sens_statelist(s);
-			}
-		}
-	}
+                Sprintf(buf,
+                        "for(_i=0;_i<%d;_i++){\n  _slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        dim,
+                        numlist,
+                        counts,
+                        s->name);
+                counts += dim;
+            } else {
+                Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, counts, s->name);
+                counts++;
+            }
+            Lappendstr(initlist, buf);
+            s->used = 0;
+            if (sensused) {
+                add_sens_statelist(s);
+            }
+        }
+    }
 
 	ITERATE(lq, eqnq) {
 		char *eqtype = SYM(ITM(lq))->name;
@@ -212,7 +215,7 @@ void init_lineq(Item* q1) /* the colon */
 	}
 }
 
-static char *indexstr;	/* set in lin_state_term, used in linterm */
+static char *indexstr; /* set in lin_state_term, used in linterm */
 
 void lin_state_term(Item* q1, Item* q2) /* term last*/
 {
@@ -231,7 +234,7 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
             int dim = statsym->araydim;
             using_array = 1;
             Sprintf(buf,
-                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n",
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;}\n",
                     dim,
                     numlist,
                     nstate,

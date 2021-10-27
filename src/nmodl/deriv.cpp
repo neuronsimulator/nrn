@@ -479,25 +479,35 @@ is not allowed on the left hand side.");
 #if CVODE
 			slist_data(state, count, numlist);
 #endif
-if (s->subtype & ARRAY) { int dim = s->araydim;
-	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;"
-		,dim, numlist , count, state->name);
-	Lappendstr(initlist, buf);
-	Sprintf(buf, " _dlist%d[%d+_i] = (%s + _i) - _p;}\n"
-		, numlist, count, name_forderiv(indx + 1));
-	Lappendstr(initlist, buf);
-	count += dim;
-}else{
-			Sprintf(buf, "_slist%d[%d] = %s_columnindex;",
-				numlist, count, state->name);
-			Lappendstr(initlist, buf);
-			Sprintf(buf, " _dlist%d[%d] = %s_columnindex;\n",
-			   numlist, count, name_forderiv(indx + 1));
-			Lappendstr(initlist, buf);
-			count++;
-}
-		}
-	}
+            if (s->subtype & ARRAY) {
+                int dim = s->araydim;
+                Sprintf(buf,
+                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                        dim,
+                        numlist,
+                        count,
+                        state->name);
+                Lappendstr(initlist, buf);
+                Sprintf(buf,
+                        " _dlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        numlist,
+                        count,
+                        name_forderiv(indx + 1));
+                Lappendstr(initlist, buf);
+                count += dim;
+            } else {
+                Sprintf(buf, "_slist%d[%d] = %s_columnindex;", numlist, count, state->name);
+                Lappendstr(initlist, buf);
+                Sprintf(buf,
+                        " _dlist%d[%d] = %s_columnindex;\n",
+                        numlist,
+                        count,
+                        name_forderiv(indx + 1));
+                Lappendstr(initlist, buf);
+                count++;
+            }
+        }
+    }
 	if (count == 0) {
 		diag("DERIVATIVE contains no derivatives", (char *)0);
 	}
@@ -822,15 +832,18 @@ Sprintf(buf, "error=shoot(%d, &(%s) - _p, _pmatch_time, _pmatch_value, _state_ma
 	ITERATE(q, deriv_state_list) {
 		s = SYM(q);
 		if (s->subtype & ARRAY) {
-Sprintf(buf, "for (_i=0; _i<%d; _i++) {_state_get[%d+_i] = (%s + _i) - _p;}\n",
-	s->araydim, j, s->name);
-			j += s->araydim;
-		} else {
-			Sprintf(buf, "_state_get[%d] = &(%s) - _p;\n", j, s->name);
-			j++;
-		}
-		Lappendstr(initlist, buf);
-	}
+            Sprintf(buf,
+                    "for (_i=0; _i<%d; _i++) {_state_get[%d+_i] = %s_columnindex + _i;}\n",
+                    s->araydim,
+                    j,
+                    s->name);
+            j += s->araydim;
+        } else {
+            Sprintf(buf, "_state_get[%d] = %s_columnindex;\n", j, s->name);
+            j++;
+        }
+        Lappendstr(initlist, buf);
+    }
 	/* declare the arrays */
 	Sprintf(buf, "static int _state_get[%d], _state_match[%d];\n\
 static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
@@ -851,9 +864,12 @@ static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
 		vmatch = LST(q = q->next);
 		if (s->subtype & ARRAY) {
 			imatch = STR(q = q->next);
-Sprintf(buf, "for (_i=0; _i<%d; _i++) {_state_match[%d+_i] = (%s + _i) - _p;}\n",
-			s->araydim, j, s->name);
-			Lappendstr(initlist, buf);
+            Sprintf(buf,
+                    "for (_i=0; _i<%d; _i++) {_state_match[%d+_i] = %s_columnindex + _i;}\n",
+                    s->araydim,
+                    j,
+                    s->name);
+            Lappendstr(initlist, buf);
 Sprintf(buf, "{int %s; for (%s=0; %s<%d; %s++) {\n",
 imatch, imatch, imatch, s->araydim, imatch);
 			Insertstr(setup, buf);
@@ -867,8 +883,8 @@ Sprintf(buf, ";\n _match_value[%s + %d] = ", imatch, j);
 			j += s->araydim;
 			count += s->araydim;
 		}else{
-Sprintf(buf, "_state_match[%d] = &(%s) - _p;\n", j, s->name);
-			Lappendstr(initlist, buf);
+            Sprintf(buf, "_state_match[%d] = %s_columnindex;\n", j, s->name);
+            Lappendstr(initlist, buf);
 Sprintf(buf, "_match_time[%d] = ", j);
 			Insertstr(setup, buf);
 			copylist(tmatch, setup);
