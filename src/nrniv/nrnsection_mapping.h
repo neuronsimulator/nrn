@@ -23,6 +23,9 @@ struct SecMapping {
     /** list sections associated with each segment */
     std::vector<int> sections;
 
+    /** list of lfp factors associated with each segment */
+    std::vector<double> seglfp_factors;
+
     SecMapping(int n, std::string s)
         : nsec(n)
         , name(s) {}

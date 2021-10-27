@@ -571,6 +571,7 @@ void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
             if (s->size()) {
                 writeint(&(s->sections.front()), s->size());
                 writeint(&(s->segments.front()), s->size());
+                writedbl(&(s->seglfp_factors.front()), s->size());
             }
         }
     }
