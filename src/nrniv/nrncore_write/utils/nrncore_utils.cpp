@@ -102,6 +102,7 @@ int count_distinct(double* data, int len) {
  *      nsec : number of sections
  *      sections : list of sections
  *      segments : list of segments
+ *      seg_lfp_factors: list of lfp factors
  */
 void nrnbbcore_register_mapping() {
     // gid of a cell
@@ -113,12 +114,15 @@ void nrnbbcore_register_mapping() {
     // hoc vectors: sections and segments
     Vect* sec = vector_arg(3);
     Vect* seg = vector_arg(4);
+    Vect* lfp = vector_arg(5);
 
-    double* sections = vector_vec(sec);
-    double* segments = vector_vec(seg);
+    double* sections  = vector_vec(sec);
+    double* segments  = vector_vec(seg);
+    double* seg_lfp_factors  = vector_vec(lfp);
 
     int nsec = vector_capacity(sec);
     int nseg = vector_capacity(seg);
+    int nlfp = vector_capacity(lfp);
 
     if (nsec != nseg) {
         std::cout << "Error: Section and Segment mapping vectors should have same size!\n";
@@ -128,9 +132,10 @@ void nrnbbcore_register_mapping() {
     // number of unique sections
     nsec = count_distinct(sections, nsec);
 
-    SecMapping* smap = new SecMapping(nsec, name);
-    smap->sections.assign(sections, sections + nseg);
-    smap->segments.assign(segments, segments + nseg);
+    SecMapping *smap = new SecMapping(nsec, name);
+    smap->sections.assign(sections, sections+nseg);
+    smap->segments.assign(segments, segments+nseg);
+    smap->seglfp_factors.assign(seg_lfp_factors, seg_lfp_factors+nlfp);
 
     // store mapping information
     mapinfo.add_sec_mapping(gid, smap);
