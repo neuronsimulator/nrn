@@ -42,10 +42,6 @@
 /*  Functions called: makevector(), freevector()		*/
 /*                                                              */
 /*--------------------------------------------------------------*/
-
-#if defined(__PGI) && defined(_OPENACC)
-#include "accelmath.h"
-#endif
 #include <cmath>
 #include "coreneuron/mechanism/mech/cfile/scoplib.h"
 #include "coreneuron/sim/scopmath/newton_struct.h"

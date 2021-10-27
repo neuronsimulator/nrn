@@ -6,10 +6,6 @@
  *   Duke University
  *
  ******************************************************************************/
-
-#if defined(__PGI) && defined(_OPENACC)
-#include "accelmath.h"
-#endif
 #include <stdlib.h>
 #include "coreneuron/mechanism/mech/cfile/scoplib.h"
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp" /* _threadargs, _STRIDE, etc. */
