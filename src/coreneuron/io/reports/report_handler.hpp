@@ -43,6 +43,10 @@ class ReportHandler {
                                             const std::vector<int>& gids_to_report,
                                             const ReportConfiguration& report,
                                             const std::vector<int>& nodes_to_gids) const;
+    VarsToReport get_lfp_vars_to_report(const NrnThread& nt,
+                                        ReportConfiguration& report,
+                                        double* report_variable,
+                                        const std::vector<int>& nodes_to_gids) const;
     std::vector<int> map_gids(const NrnThread& nt) const;
 #endif
   protected:

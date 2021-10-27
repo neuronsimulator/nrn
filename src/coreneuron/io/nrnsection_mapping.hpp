@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <unordered_map>
 
 namespace coreneuron {
 
@@ -73,6 +74,9 @@ struct CellMapping {
     /** list of section lists (like soma, axon, apic) */
     std::vector<SecMapping*> secmapvec;
 
+    /** map containing segment ids an its respective lfp factors */
+    std::unordered_map<int, std::vector<double>> lfp_factors;
+
     CellMapping(int g)
         : gid(g) {}
 
@@ -94,6 +98,15 @@ struct CellMapping {
                                [](int psum, const auto& secmap) {
                                    return psum + secmap->num_segments();
                                });
+    }
+
+    /** @brief return the number of electrodes in the lfp_factors map **/
+    int num_electrodes() const {
+        int num_electrodes = 0;
+        if (!lfp_factors.empty()) {
+            num_electrodes = lfp_factors.begin()->second.size();
+        }
+        return num_electrodes;
     }
 
     /** @brief number of section lists */
@@ -137,6 +150,11 @@ struct CellMapping {
         return count;
     }
 
+    /** @brief add the lfp electrode factors of a segment_id */
+    void add_segment_lfp_factor(const int segment_id, std::vector<double> factors) {
+        lfp_factors.insert({segment_id, factors});
+    }
+
     ~CellMapping() {
         for (size_t i = 0; i < secmapvec.size(); i++) {
             delete secmapvec[i];
@@ -152,6 +170,11 @@ struct CellMapping {
 struct NrnThreadMappingInfo {
     /** list of cells mapping */
     std::vector<CellMapping*> mappingvec;
+
+    /** list of segment ids */
+    std::vector<int> segment_ids;
+
+    std::vector<double> _lfp;
 
     /** @brief number of cells */
     size_t size() const {
@@ -180,6 +203,20 @@ struct NrnThreadMappingInfo {
     /** @brief add mapping information of new cell */
     void add_cell_mapping(CellMapping* c) {
         mappingvec.push_back(c);
+    }
+
+    /** @brief add a new segment */
+    void add_segment_id(const int segment_id) {
+        segment_ids.push_back(segment_id);
+    }
+
+    /** @brief Resize the lfp vector */
+    void prepare_lfp() {
+        size_t lfp_size = 0;
+        for (const auto& mapping: mappingvec) {
+            lfp_size += mapping->num_electrodes();
+        }
+        _lfp.resize(lfp_size);
     }
 };
 }  // namespace coreneuron

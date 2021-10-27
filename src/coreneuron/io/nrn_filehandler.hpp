@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 
 #include "coreneuron/utils/nrn_assert.h"
+#include "coreneuron/io/nrnsection_mapping.hpp"
 
 namespace coreneuron {
 /** Encapsulate low-level reading of coreneuron input data files.
@@ -110,27 +111,45 @@ class FileHandler {
      * Read count no of mappings for section to segment
      */
     template <typename T>
-    int read_mapping_info(T* mapinfo) {
+    int read_mapping_info(T* mapinfo, NrnThreadMappingInfo* ntmapping, CellMapping* cmap) {
         int nsec, nseg, n_scan;
+        size_t total_lfp_factors;
+        int num_electrodes;
         char line_buf[max_line_length], name[max_line_length];
 
         F.getline(line_buf, sizeof(line_buf));
-        n_scan = sscanf(line_buf, "%s %d %d", name, &nsec, &nseg);
+        n_scan = sscanf(
+            line_buf, "%s %d %d %zd %d", name, &nsec, &nseg, &total_lfp_factors, &num_electrodes);
 
-        nrn_assert(n_scan == 3);
+        nrn_assert(n_scan == 5);
 
         mapinfo->name = std::string(name);
 
         if (nseg) {
             std::vector<int> sec, seg;
+            std::vector<double> lfp_factors;
+
             sec.reserve(nseg);
             seg.reserve(nseg);
+            lfp_factors.reserve(total_lfp_factors);
 
             read_array<int>(&sec[0], nseg);
             read_array<int>(&seg[0], nseg);
+            if (total_lfp_factors > 0) {
+                read_array<double>(&lfp_factors[0], total_lfp_factors);
+            }
 
+            int factor_offset = 0;
             for (int i = 0; i < nseg; i++) {
                 mapinfo->add_segment(sec[i], seg[i]);
+                ntmapping->add_segment_id(seg[i]);
+                int factor_offset = i * num_electrodes;
+                if (total_lfp_factors > 0) {
+                    std::vector<double> segment_factors(lfp_factors.begin() + factor_offset,
+                                                        lfp_factors.begin() + factor_offset +
+                                                            num_electrodes);
+                    cmap->add_segment_lfp_factor(seg[i], segment_factors);
+                }
             }
         }
         return nseg;

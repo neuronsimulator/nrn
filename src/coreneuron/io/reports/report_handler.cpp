@@ -79,6 +79,14 @@ void ReportHandler::create_report(ReportConfiguration& report_config,
                 get_summation_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
             register_custom_report(nt, report_config, vars_to_report);
             break;
+        case LFPReport:
+                mapinfo->prepare_lfp();
+                vars_to_report =
+                    get_lfp_vars_to_report(nt, m_report_config, mapinfo->_lfp.data(), nodes_to_gid);
+                is_soma_target = m_report_config.section_type == SectionType::Soma ||
+                                 m_report_config.section_type == SectionType::Cell;
+                register_section_report(nt, m_report_config, vars_to_report, is_soma_target);
+                break;
         default:
             vars_to_report =
                 get_synapse_vars_to_report(nt, gids_to_report, report_config, nodes_to_gid);
@@ -332,6 +340,55 @@ VarsToReport ReportHandler::get_synapse_vars_to_report(
                 nrn_assert(synapse_id && var_value);
                 to_report.emplace_back(static_cast<int>(*synapse_id), var_value);
             }
+        }
+        if (!to_report.empty()) {
+            vars_to_report[gid] = to_report;
+        }
+    }
+    return vars_to_report;
+}
+
+VarsToReport ReportHandler::get_lfp_vars_to_report(const NrnThread& nt,
+                                                   ReportConfiguration& report,
+                                                   double* report_variable,
+                                                   const std::vector<int>& nodes_to_gids) const {
+    const auto* mapinfo = static_cast<NrnThreadMappingInfo*>(nt.mapping);
+    if (!mapinfo) {
+        std::cerr << "[LFP] Error : mapping information is missing for a Cell group " << nt.ncell
+                  << '\n';
+        nrn_abort(1);
+    }
+    auto& summation_report = nt.summation_report_handler_->summation_reports_[report.output_path];
+    VarsToReport vars_to_report;
+    off_t offset_lfp = 0;
+    for (int i = 0; i < nt.ncell; i++) {
+        int gid = nt.presyns[i].gid_;
+        if (report.target.find(gid) == report.target.end()) {
+            continue;
+        }
+        // IClamp is needed for the LFP calculation
+        auto mech_id = nrn_get_mechtype("IClamp");
+        Memb_list* ml = nt._ml_list[mech_id];
+        if (ml) {
+            for (int j = 0; j < ml->nodecount; j++) {
+                auto segment_id = ml->nodeindices[j];
+                if ((nodes_to_gids[segment_id] == gid)) {
+                    double* var_value = get_var_location_from_var_name(mech_id, "i", ml, j);
+                    summation_report.currents_[segment_id].push_back(std::make_pair(var_value, -1));
+                }
+            }
+        }
+        const auto& cell_mapping = mapinfo->get_cell_mapping(gid);
+        if (cell_mapping == nullptr) {
+            std::cerr << "[LFP] Error : Compartment mapping information is missing for gid " << gid
+                      << '\n';
+            nrn_abort(1);
+        }
+        std::vector<VarWithMapping> to_report;
+        int num_electrodes = cell_mapping->num_electrodes();
+        for (int electrode_id = 0; electrode_id < num_electrodes; electrode_id++) {
+            to_report.emplace_back(VarWithMapping(electrode_id, report_variable + offset_lfp));
+            offset_lfp++;
         }
         if (!to_report.empty()) {
             vars_to_report[gid] = to_report;
