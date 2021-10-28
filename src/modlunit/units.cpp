@@ -161,7 +161,7 @@ static int Getc(FILE* inp)
 }
 
 #define UNIT_STK_SIZE	20
-static struct unit unit_stack[UNIT_STK_SIZE], *usp;
+static struct unit unit_stack[UNIT_STK_SIZE], *usp{nullptr};
 
 static char* neuronhome() {
 #if defined(WIN32)
@@ -214,9 +214,13 @@ char *Unit_str(unit* up)
 }
 
 void unit_pop() {
-	IFUNITS
-	assert(usp >= unit_stack);
-	--usp;
+    IFUNITS
+    assert(usp >= unit_stack);
+    if (usp == unit_stack) {
+        usp = nullptr;
+    } else {
+        --usp;
+    }
 }
 
 void unit_swap() { /*exchange top two elements of stack*/
@@ -277,20 +281,23 @@ void ucopypush(unit* up)
 	usp->isnum = up->isnum;
 }
 
-void Unit_push(char* str)
-{
-	IFUNITS
-	assert(usp < unit_stack + (UNIT_STK_SIZE - 1));
-	++usp;
-	pc = str;
-	if (str) {
-		usp->isnum = 0;
-	}else{
-		pc = "";
-		usp->isnum = 1;
-	}
-	convr(usp);
-/*printf("unit_push %s\n", str); units(usp);*/
+void Unit_push(char* str) {
+    IFUNITS
+    assert(usp < unit_stack + (UNIT_STK_SIZE - 1));
+    if (usp) {
+        ++usp;
+    } else {
+        usp = unit_stack;
+    }
+    pc = str;
+    if (str) {
+        usp->isnum = 0;
+    } else {
+        pc = "";
+        usp->isnum = 1;
+    }
+    convr(usp);
+    /*printf("unit_push %s\n", str); units(usp);*/
 }
 
 void unit_push_num(double d)
@@ -565,10 +572,10 @@ fprintf(stderr, "The previous expression needs the conversion factor (%g)\n",
 }
 
 void unit_stk_clean() {
-	IFUNITS
-	usp = unit_stack - 1;
+    IFUNITS
+    usp = nullptr;
 }
-	
+
 // allow the outside world to call either modl_units() or unit_init().
 static void units_alloc() {
   int i;
