@@ -1,7 +1,7 @@
 include(NeuronTestHelper)
 set(prefix "sim") # everything is under this prefix in the repository
 set(olfcatory_bulb_3d_sim_time 50)
-set(olfcatory_bulb_3d_mpi_ranks 2)
+set(olfcatory_bulb_3d_mpi_ranks 4)
 set(olfcatory_bulb_3d_neuron_prefix
     OMP_NUM_THREADS=1
     ${MPIEXEC_NAME}
@@ -30,7 +30,7 @@ nrn_add_test(
     SIM_DIRECTORY "sim"
     COMMAND ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} ${olfcatory_bulb_3d_sim_time} 0 0 0 olfactory)
 foreach(processor gpu cpu)
-foreach(mode online filemode)
+foreach(mode online)
     if(${processor} STREQUAL "gpu")
         set(olfcatory_bulb_3d_gpu_args 1)
     else()
@@ -51,4 +51,4 @@ foreach(mode online filemode)
         ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} ${olfcatory_bulb_3d_sim_time} 1 ${olfcatory_bulb_3d_gpu_args} ${olfcatory_bulb_3d_filemode} olfactory)
 endforeach()
 endforeach()
-nrn_add_test_group_comparison(GROUP olfactory-bulb-3d_${model})
+nrn_add_test_group_comparison(GROUP olfactory-bulb-3d)

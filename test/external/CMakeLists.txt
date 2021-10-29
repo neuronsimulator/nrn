@@ -41,9 +41,8 @@ add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
-add_subdirectory(olfactory-bulb-3d)
 
-if(NRN_ENABLE_TESTS_BBP)
+if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
@@ -51,4 +50,8 @@ if(NRN_ENABLE_TESTS_BBP)
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
+endif()
+
+if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
+  add_subdirectory(olfactory-bulb-3d)
 endif()
