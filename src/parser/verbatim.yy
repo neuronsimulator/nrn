@@ -23,7 +23,7 @@
 %define parse.error verbose
 
 /** make a reentrant parser */
-%pure-parser
+%define api.pure
 
 /** parser prefix */
 %name-prefix "Verbatim_"
