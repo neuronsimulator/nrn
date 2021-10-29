@@ -105,7 +105,8 @@ function(nrn_add_test)
       REQUIRES
       CONFLICTS
       MODFILE_PATTERNS
-      PRECOMMAND)
+      PRECOMMAND
+      SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -198,6 +199,11 @@ function(nrn_add_test)
   set(group_working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}")
   # Finally a working directory for this specific test within the group
   set(working_directory "${group_working_directory}/${NRN_ADD_TEST_NAME}")
+  if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
+    set(simulation_directory ${working_directory}/${NRN_ADD_TEST_SIM_DIRECTORY})
+  else()
+    set(simulation_directory ${working_directory})
+  endif()
 
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
@@ -331,13 +337,13 @@ function(nrn_add_test)
   add_test(
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${working_directory}")
+    WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
   if(DEFINED NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
       COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${working_directory}")
+      WORKING_DIRECTORY "${simulation_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
@@ -356,7 +362,7 @@ function(nrn_add_test)
   set(output_file_string "${NRN_ADD_TEST_NAME}")
   foreach(output_file ${output_files})
     # output_file is `type1::fname1` output_full_path is `type1::${working_directory}/fname1`
-    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${working_directory}/\\2" output_full_path
+    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${simulation_directory}/\\2" output_full_path
                          "${output_file}")
     set(output_file_string "${output_file_string}::${output_full_path}")
   endforeach()
