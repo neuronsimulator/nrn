@@ -149,6 +149,10 @@ static constexpr char THREAD_ARGS[] = "_threadargs_";
 /// verbatim name of the variable for nrn thread arguments in prototype
 static constexpr char THREAD_ARGS_PROTO[] = "_threadargsproto_";
 
+/// prefix for ion variable
+static constexpr char ION_VARNAME_PREFIX[] = "ion_";
+
+
 /// commonly used variables in verbatim block and how they
 /// should be mapped to new code generation backends
 // clang-format off

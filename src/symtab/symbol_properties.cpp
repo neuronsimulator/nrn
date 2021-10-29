@@ -162,6 +162,10 @@ std::vector<std::string> to_string_vector(const NmodlType& obj) {
         properties.emplace_back("define");
     }
 
+    if (has_property(obj, NmodlType::codegen_var)) {
+        properties.emplace_back("codegen_var");
+    }
+
     return properties;
 }
 

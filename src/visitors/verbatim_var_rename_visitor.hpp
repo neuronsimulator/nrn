@@ -58,6 +58,9 @@ class VerbatimVarRenameVisitor: public AstVisitor {
     /// prefix used for range variables
     const std::string RANGE_PREFIX = "_p_";
 
+    /// prefix used for range variables
+    const std::string ION_PREFIX = "_ion_";
+
     std::string rename_variable(const std::string& name);
 
   public:

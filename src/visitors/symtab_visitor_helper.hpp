@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include "codegen/codegen_info.hpp"
+#include "codegen/codegen_naming.hpp"
 #include "lexer/token_mapping.hpp"
 #include "visitors/symtab_visitor.hpp"
 
@@ -123,6 +125,20 @@ void SymtabVisitor::setup_symbol(ast::Node* node, NmodlType property) {
     if (node->is_define()) {
         auto define = dynamic_cast<ast::Define*>(node);
         symbol->set_value(define->get_value()->to_double());
+    }
+
+    // for a given USEION statement, add all possible ion variables
+    // these variables can be used within VERBATIM block and hence
+    // needs to be populated in the symbol table
+    if (node->is_useion()) {
+        auto use_ion = dynamic_cast<ast::Useion*>(node);
+        auto name = use_ion->get_name()->get_node_name();
+        for (const auto& variable: codegen::Ion::get_possible_variables(name)) {
+            std::string ion_variable(codegen::naming::ION_VARNAME_PREFIX + variable);
+            auto symbol = std::make_shared<symtab::Symbol>(ion_variable, nullptr, ModToken());
+            symbol->add_property(NmodlType::codegen_var);
+            modsymtab->insert(symbol);
+        }
     }
 
     /// visit children, most likely variables are already

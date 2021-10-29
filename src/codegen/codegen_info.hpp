@@ -102,6 +102,13 @@ struct Ion {
     bool is_ionic_conc(const std::string& text) const {
         return is_intra_cell_conc(text) || is_extra_cell_conc(text);
     }
+
+    /// for a given ion, return different variable names/properties
+    /// like internal/external concentration, reversial potential,
+    /// ionic current etc.
+    static std::vector<std::string> get_possible_variables(const std::string& ion_name) {
+        return {"i" + ion_name, ion_name + "i", ion_name + "o", "e" + ion_name};
+    }
 };
 
 
