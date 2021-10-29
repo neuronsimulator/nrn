@@ -55,7 +55,9 @@ BREAKPOINT {
 INCLUDE "var_init.inc"
 
 DERIVATIVE state {
-
+    VERBATIM
+    cai = 2 * _ion_cai;
+    ENDVERBATIM
 	drive_channel =  - (10000) * ica / (2 * FARADAY * depth)
 	if (drive_channel <= 0.) { drive_channel = 0.  }   : cannot pump inward 
         ca' = drive_channel/18 + (cainf -ca)/taur*11
