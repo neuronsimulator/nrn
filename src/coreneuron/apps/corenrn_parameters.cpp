@@ -55,7 +55,7 @@ corenrn_parameters::corenrn_parameters() {
                      "Cell permutation: 0 No permutation; 1 optimise node adjacency; 2 optimize "
                      "parent adjacency.",
                      true)
-        ->check(CLI::Range(0, 3));
+        ->check(CLI::Range(0, 2));
     sub_gpu->add_flag("--cuda-interface",
                       this->cuda_interface,
                       "Activate CUDA branch of the code.");
