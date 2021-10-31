@@ -121,7 +121,9 @@ void copy_align_array(T*& dest, T* src, size_t n) {
     std::copy(src, src + n, dest);
 }
 
+#ifndef INTERLEAVE_DEBUG
 #define INTERLEAVE_DEBUG 0
+#endif
 
 #if INTERLEAVE_DEBUG
 void mk_cell_indices();

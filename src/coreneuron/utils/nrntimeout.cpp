@@ -34,7 +34,7 @@ static struct sigaction act, oact;
 
 static void timed_out(int sig) {
     (void) sig; /* unused */
-#if DEBUG
+#if CORENRN_DEBUG
     printf("timed_out told=%g t=%g\n", told, t);
 #endif
     if (nrn_threads->_t == told) { /* nothing has been accomplished since last signal*/
@@ -51,7 +51,7 @@ void nrn_timeout(int seconds) {
     if (nrnmpi_myid != 0) {
         return;
     }
-#if DEBUG
+#if CORENRN_DEBUG
     printf("nrn_timeout %d\n", seconds);
 #endif
     if (seconds) {

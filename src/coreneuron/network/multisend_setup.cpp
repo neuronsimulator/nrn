@@ -10,8 +10,9 @@
 #include <cmath>
 #include <numeric>
 
-#if DEBUG
+#if CORENRN_DEBUG
 #include <fstream>
+#include <iomanip>
 #endif
 
 #include "coreneuron/utils/randoms/nrnran123.h"
@@ -36,7 +37,7 @@ namespace coreneuron {
 using Gid2IPS = std::map<int, InputPreSyn*>;
 using Gid2PS = std::map<int, PreSyn*>;
 
-#if DEBUG
+#if CORENRN_DEBUG
 template <typename T>
 static void celldebug(const char* p, T& map) {
     std::string fname = std::string("debug.") + std::to_string(nrnmpi_myid);
@@ -90,7 +91,7 @@ static void alltoalldebug(const char*,
                           const std::vector<int>&) {}
 #endif
 
-#if DEBUG
+#if CORENRN_DEBUG
 void phase1debug(int* targets_phase1) {
     std::string fname = std::string("debug.") + std::to_string(nrnmpi_myid);
     std::ofstream f(fname, std::ios::app);

@@ -524,7 +524,10 @@ void nrn_setup(const char* filesdat,
         nrn_setup_cleanup();
 
 #if INTERLEAVE_DEBUG
-    mk_cell_indices();
+    // mk_cell_indices debug code is supposed to be used with cell-per-core permutations
+    if (corenrn_param.cell_interleave_permute == 1) {
+        mk_cell_indices();
+    }
 #endif
 
     /// Allocate memory for fast_imem calculation
@@ -614,7 +617,7 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
         F.read_array<int>(si.tar_index.data(), ntar);
     }
 
-#if DEBUG
+#if CORENRN_DEBUG
     printf("%d read_phasegap tid=%d nsrc=%d ntar=%d\n", nrnmpi_myid, nt.id, nsrc, ntar);
     for (int i = 0; i < nsrc; ++i) {
         printf("src %z %d %d\n", size_t(si.src_sid[i]), si.src_type[i], si.src_index[i]);

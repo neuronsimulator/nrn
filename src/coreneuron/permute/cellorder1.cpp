@@ -92,7 +92,7 @@ static void admin2(int ncell,
                    int*& nodebegin,
                    int*& ncycles);
 static void check(VecTNode&);
-#if DEBUG
+#if CORENRN_DEBUG
 static void prtree(VecTNode&);
 #endif
 
@@ -168,13 +168,13 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
 
     // print result
     qcnt = 0;
-#if DEBUG
+#if CORENRN_DEBUG
     for (const auto& q: qual) {
         qcnt += q.second;
         printf("%6ld %6ld\n", q.first, q.second);
     }
 #endif
-#if DEBUG
+#if CORENRN_DEBUG
     printf("qual.size=%ld  qual total nodes=%ld  nodevec.size=%ld\n",
            qual.size(),
            qcnt,
@@ -209,7 +209,7 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
             }
         }
     }
-#if DEBUG
+#if CORENRN_DEBUG
     printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
     printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
 #endif
@@ -342,7 +342,7 @@ int* node_order(int ncell,
     }
     check(nodevec);
 
-#if DEBUG
+#if CORENRN_DEBUG
     for (int i = 0; i < ncell; ++i) {
         TNode& nd = *nodevec[i];
         printf("%d size=%ld hash=%ld ix=%d\n", i, nd.treesize, nd.hash, nd.nodeindex);
@@ -411,7 +411,7 @@ void check(VecTNode& nodevec) {
     }
 }
 
-#if DEBUG
+#if CORENRN_DEBUG
 void prtree(VecTNode& nodevec) {
     size_t nnode = nodevec.size();
     for (size_t i = 0; i < nnode; ++i) {
@@ -501,7 +501,7 @@ void node_interleave_order(int ncell, VecTNode& nodevec) {
     // Traversal of nodevec: From root to leaves (this is why we compute the tree node order)
     std::sort(nodevec.begin() + ncell, nodevec.end(), interleave_comp);
 
-#if DEBUG
+#if CORENRN_DEBUG
     for (size_t i = 0; i < nodevec.size(); ++i) {
         TNode& nd = *nodevec[i];
         printf("%ld cell=%ld ix=%d\n", i, nd.cellindex, nd.nodeindex);
@@ -651,7 +651,7 @@ static void admin2(int ncell,
         }
     }
 
-#if DEBUG
+#if CORENRN_DEBUG
     printf("warp rootbegin nodebegin stridedispl\n");
     for (int i = 0; i <= nwarp; ++i) {
         printf("%4d %4d %4d %4d\n", i, rootbegin[i], nodebegin[i], stridedispl[i]);

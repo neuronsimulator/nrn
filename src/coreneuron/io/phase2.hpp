@@ -19,6 +19,7 @@ struct NrnThread;
 struct NrnThreadMembList;
 struct Memb_func;
 struct Memb_list;
+class NrnThreadChkpnt;
 
 class Phase2 {
   public:
@@ -82,9 +83,11 @@ class Phase2 {
     void fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>& memb_func);
     void pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>& memb_func);
     void set_dependencies(const NrnThread& nt, const std::vector<Memb_func>& memb_func);
-    void handle_weights(NrnThread& nt, int n_netcon);
-    void get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& memb_func);
-    void set_vec_play(NrnThread& nt);
+    void handle_weights(NrnThread& nt, int n_netcon, NrnThreadChkpnt& ntc);
+    void get_info_from_bbcore(NrnThread& nt,
+                              const std::vector<Memb_func>& memb_func,
+                              NrnThreadChkpnt& ntc);
+    void set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc);
 
     int n_output;
     int n_real_output;

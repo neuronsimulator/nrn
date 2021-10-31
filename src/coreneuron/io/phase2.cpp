@@ -707,7 +707,7 @@ void Phase2::set_dependencies(const NrnThread& nt, const std::vector<Memb_func>&
     free(mech_deps);
 }
 
-void Phase2::handle_weights(NrnThread& nt, int n_netcon) {
+void Phase2::handle_weights(NrnThread& nt, int n_netcon, NrnThreadChkpnt& ntc) {
     nt.n_weight = weights.size();
     // weights in netcons order in groups defined by Point_process target type.
     nt.weights = (double*) ecalloc_align(nt.n_weight, sizeof(double));
@@ -731,7 +731,7 @@ void Phase2::handle_weights(NrnThread& nt, int n_netcon) {
 
 #if CHKPNTDEBUG
     ntc.delay = new double[n_netcon];
-    memcpy(ntc.delay, delay, n_netcon * sizeof(double));
+    memcpy(ntc.delay, delay.data(), n_netcon * sizeof(double));
 #endif
     for (int i = 0; i < n_netcon; ++i) {
         NetCon& nc = nt.netcons[i];
@@ -739,13 +739,16 @@ void Phase2::handle_weights(NrnThread& nt, int n_netcon) {
     }
 }
 
-void Phase2::get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& memb_func) {
+void Phase2::get_info_from_bbcore(NrnThread& nt,
+                                  const std::vector<Memb_func>& memb_func,
+                                  NrnThreadChkpnt& ntc) {
     // BBCOREPOINTER information
 #if CHKPNTDEBUG
     ntc.nbcp = num_point_process;
-    ntc.bcpicnt = new int[num_point_process];
-    ntc.bcpdcnt = new int[num_point_process];
-    ntc.bcptype = new int[num_point_process];
+    ntc.bcpicnt = new int[n_mech];
+    ntc.bcpdcnt = new int[n_mech];
+    ntc.bcptype = new int[n_mech];
+    size_t point_proc_id = 0;
 #endif
     for (size_t i = 0; i < n_mech; ++i) {
         int type = mech_types[i];
@@ -754,9 +757,10 @@ void Phase2::get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& m
         }
         type = tmls[i].type;  // This is not an error, but it has to be fixed I think
 #if CHKPNTDEBUG
-        ntc.bcptype[i] = type;
-        ntc.bcpicnt[i] = icnt;
-        ntc.bcpdcnt[i] = dcnt;
+        ntc.bcptype[point_proc_id] = type;
+        ntc.bcpicnt[point_proc_id] = tmls[i].iArray.size();
+        ntc.bcpdcnt[point_proc_id] = tmls[i].dArray.size();
+        point_proc_id++;
 #endif
         int ik = 0;
         int dk = 0;
@@ -792,7 +796,7 @@ void Phase2::get_info_from_bbcore(NrnThread& nt, const std::vector<Memb_func>& m
     }
 }
 
-void Phase2::set_vec_play(NrnThread& nt) {
+void Phase2::set_vec_play(NrnThread& nt, NrnThreadChkpnt& ntc) {
     // VecPlayContinuous instances
     // No attempt at memory efficiency
     nt.n_vecplay = vec_play_continuous.size();
@@ -851,7 +855,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     auto& memb_func = corenrn.get_memb_funcs();
 #if CHKPNTDEBUG
     ntc.mlmap = new Memb_list_chkpnt*[memb_func.size()];
-    for (int i = 0; i < _memb_func.size(); ++i) {
+    for (int i = 0; i < memb_func.size(); ++i) {
         ntc.mlmap[i] = nullptr;
     }
 #endif
@@ -994,7 +998,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
             mech_data_layout_transform<int>(ml->pdata, n, szdp, layout);
 
 #if CHKPNTDEBUG  // Not substantive. Only for debugging.
-            Memb_list_ckpnt* mlc = ntc.mlmap[type];
+            Memb_list_chkpnt* mlc = ntc.mlmap[type];
             mlc->pdata_not_permuted = (int*) coreneuron::ecalloc_align(n * szdp, sizeof(int));
             if (layout == Layout::AoS) {  // only copy
                 for (int i = 0; i < n; ++i) {
@@ -1064,7 +1068,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         permute_ptr(nt._v_parent_index, nt.end, p);
         node_permute(nt._v_parent_index, nt.end, p);
 
-#if DEBUG
+#if CORENRN_DEBUG
         for (int i = 0; i < nt.end; ++i) {
             printf("parent[%d] = %d\n", i, nt._v_parent_index[i]);
         }
@@ -1129,7 +1133,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     // nt.presyns order same as output_vindex order
 #if CHKPNTDEBUG
     ntc.output_vindex = new int[nt.n_presyn];
-    memcpy(ntc.output_vindex, output_vindex, nt.n_presyn * sizeof(int));
+    memcpy(ntc.output_vindex, output_vindex.data(), nt.n_presyn * sizeof(int));
 #endif
     if (nt._permute) {
         // only indices >= 0 (i.e. _actual_v indices) will be changed.
@@ -1137,7 +1141,7 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
     }
 #if CHKPNTDEBUG
     ntc.output_threshold = new double[nt.ncell];
-    memcpy(ntc.output_threshold, output_threshold, nt.ncell * sizeof(double));
+    memcpy(ntc.output_threshold, output_threshold.data(), nt.ncell * sizeof(double));
 #endif
     for (int i = 0; i < nt.n_presyn; ++i) {  // real cells
         PreSyn* ps = nt.presyns + i;
@@ -1182,8 +1186,8 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
 #if CHKPNTDEBUG
     ntc.pnttype = new int[nnetcon];
     ntc.pntindex = new int[nnetcon];
-    memcpy(ntc.pnttype, pnttype, nnetcon * sizeof(int));
-    memcpy(ntc.pntindex, pntindex, nnetcon * sizeof(int));
+    memcpy(ntc.pnttype, pnttype.data(), nnetcon * sizeof(int));
+    memcpy(ntc.pntindex, pntindex.data(), nnetcon * sizeof(int));
 #endif
     for (int i = 0; i < nnetcon; ++i) {
         int type = pnttype[i];
@@ -1196,11 +1200,11 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
         }
     }
 
-    handle_weights(nt, nnetcon);
+    handle_weights(nt, nnetcon, ntc);
 
-    get_info_from_bbcore(nt, memb_func);
+    get_info_from_bbcore(nt, memb_func, ntc);
 
-    set_vec_play(nt);
+    set_vec_play(nt, ntc);
 
     if (!events.empty()) {
         userParams.checkPoints.restore_tqueue(nt, *this);

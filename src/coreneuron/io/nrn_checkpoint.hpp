@@ -76,7 +76,7 @@ extern int patstimtype;
 // nrn_setup.cpp and debugging only information which is retrievable from
 // NrnThread and Memb_list. Ideally, this should all go away
 
-struct Memb_list_ckpnt {
+struct Memb_list_chkpnt {
     // debug only
     double* data_not_permuted;
     Datum* pdata_not_permuted;

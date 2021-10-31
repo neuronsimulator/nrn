@@ -541,7 +541,7 @@ static void get_next_pivot(SparseObj* so, unsigned i) {
         reduce_order(so, el->row);
     }
 
-#if DEBUG
+#if CORENRN_DEBUG
     {
         int j;
         Item* _or;

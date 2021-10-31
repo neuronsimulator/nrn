@@ -395,6 +395,11 @@ if(CORENRN_ENABLE_LIKWID_PROFILING)
   add_definitions("-DLIKWID_PERFMON")
 endif()
 
+# enable debugging code with extra logs to stdout
+if(CORENRN_ENABLE_DEBUG_CODE)
+  add_definitions(-DCORENRN_DEBUG -DCHKPNTDEBUG -DCORENRN_DEBUG_QUEUE -DINTERLEAVE_DEBUG)
+endif()
+
 # =============================================================================
 # Common CXX flags : ignore unknown pragma warnings
 # =============================================================================

@@ -78,7 +78,7 @@ static void set_treenode_order(VVTN& levels) {
     }
 }
 
-#if DEBUG
+#if CORENRN_DEBUG
 // every level starts out with no race conditions involving both
 // parent and child in the same level. Can we arrange things so that
 // every level has at least 32 nodes?
@@ -108,7 +108,7 @@ static bool is_parent_race2(TNode* nd) {  // vitiating
     return false;
 }
 
-#if DEBUG
+#if CORENRN_DEBUG
 static bool is_child_race(TNode* nd) {  // potentially handleable by atomic
     if (nd->children.size() < 2) {
         return false;
@@ -196,7 +196,7 @@ static void move_nodes(size_t start, size_t length, size_t dst, VTN& nodes) {
     }
 }
 
-#if DEBUG
+#if CORENRN_DEBUG
 // least number of nodes to move after nd to eliminate prace
 static size_t need2move(TNode* nd) {
     size_t d = dist2child(nd);
@@ -426,7 +426,7 @@ static void analyze(VVTN& levels) {
 }
 
 void prgroupsize(VVVTN& groups) {
-#if DEBUG
+#if CORENRN_DEBUG
     for (size_t i = 0; i < groups[0].size(); ++i) {
         printf("%5ld\n", i);
         for (const auto& group: groups) {
