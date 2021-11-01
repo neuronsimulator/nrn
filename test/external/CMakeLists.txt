@@ -28,14 +28,7 @@ FetchContent_Declare(
   GIT_TAG 70f363d7f82dfe6037fbddd8ed2e58cb20df6343
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
-FetchContent_Declare(
-    olfactory-bulb-3d
-    GIT_REPOSITORY git@github.com:iomaganaris/olfactory-bulb-3d.git
-    GIT_TAG ae4bcb8f04d0e1ced29a462d4f891de5b0b4bd52
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d
-)
-
-FetchContent_MakeAvailable(ringtest reduced_dentate testcorenrn nrntest olfactory-bulb-3d)
+FetchContent_MakeAvailable(ringtest reduced_dentate testcorenrn nrntest)
 
 add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)
@@ -53,5 +46,12 @@ if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
 endif()
 
 if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
+  FetchContent_Declare(
+    olfactory-bulb-3d
+    GIT_REPOSITORY git@github.com:iomaganaris/olfactory-bulb-3d.git
+    GIT_TAG ae4bcb8f04d0e1ced29a462d4f891de5b0b4bd52
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d
+  )
+  FetchContent_MakeAvailable(olfactory-bulb-3d)
   add_subdirectory(olfactory-bulb-3d)
 endif()
