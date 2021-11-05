@@ -49,6 +49,7 @@ add_executable(
   visitor/nmodl.cpp
   visitor/perf.cpp
   visitor/rename.cpp
+  visitor/semantic_analysis.cpp
   visitor/solve_block.cpp
   visitor/steadystate.cpp
   visitor/sympy_conductance.cpp
