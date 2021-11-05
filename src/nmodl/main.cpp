@@ -37,6 +37,7 @@
 #include "visitors/neuron_solve_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 #include "visitors/perf_visitor.hpp"
+#include "visitors/semantic_analysis_visitor.hpp"
 #include "visitors/solve_block_visitor.hpp"
 #include "visitors/steadystate_visitor.hpp"
 #include "visitors/sympy_conductance_visitor.hpp"
@@ -315,6 +316,12 @@ int main(int argc, const char* argv[]) {
 
         /// just visit the ast
         AstVisitor().visit_program(*ast);
+
+        /// Check some rules that ast should follow
+        {
+            logger->info("Running semantic analysis visitor");
+            SemanticAnalysisVisitor().visit_program(*ast);
+        }
 
         /// construct symbol table
         {
