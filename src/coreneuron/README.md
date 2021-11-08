@@ -63,7 +63,7 @@ Note that if you are building on Cray system with the GNU toolchain, you have to
    -DNRN_ENABLE_CORENEURON=ON \
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_RX3D=OFF \
-   -DCMAKE_INSTALL_PREFIX=$HOME/install
+   -DCMAKE_INSTALL_PREFIX=$HOME/install \
    -DCMAKE_C_COMPILER=icc \
    -DCMAKE_CXX_COMPILER=icpc
   ```
@@ -258,7 +258,7 @@ cmake .. \
   -DNRN_ENABLE_CORENEURON=ON \
   -DNRN_ENABLE_INTERVIEWS=OFF \
   -DNRN_ENABLE_RX3D=OFF \
-  -DCMAKE_INSTALL_PREFIX=$HOME/install
+  -DCMAKE_INSTALL_PREFIX=$HOME/install \
   -DCMAKE_C_COMPILER=icc \
   -DCMAKE_CXX_COMPILER=icpc \
   -DNRN_ENABLE_TESTS=ON
