@@ -32,7 +32,6 @@
 #include "coreneuron/utils/memory_utils.h"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 #include "coreneuron/io/prcellstate.hpp"
-#include "coreneuron/utils/nrnmutdec.h"
 #include "coreneuron/utils/nrn_stats.h"
 #include "coreneuron/io/reports/nrnreport.hpp"
 #include "coreneuron/io/reports/binary_report_handler.hpp"

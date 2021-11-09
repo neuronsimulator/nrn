@@ -33,7 +33,6 @@
 #include <vector>
 #include <map>
 #include <utility>
-#include "coreneuron/utils/nrnmutdec.h"
 
 namespace coreneuron {
 #define STRCMP(a, b) (a - b)
@@ -172,7 +171,6 @@ class TQueue {
     TQPair make_TQPair(TQItem* p) {
         return TQPair(p->t_, p);
     }
-    MUTDEC
 };
 }  // namespace coreneuron
 #include "coreneuron/network/tqueue.ipp"

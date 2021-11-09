@@ -20,7 +20,7 @@
 #include "coreneuron/io/output_spikes.hpp"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/mpi/core/nrnmpi.hpp"
-#include "coreneuron/utils/nrnmutdec.h"
+#include "coreneuron/utils/nrnmutdec.hpp"
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "coreneuron/utils/string_utils.h"
 #include "coreneuron/apps/corenrn_parameters.hpp"

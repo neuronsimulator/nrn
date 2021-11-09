@@ -31,7 +31,6 @@ of struct _spblk, we are really using TQItem
 
 template <container C>
 TQueue<C>::TQueue() {
-    MUTCONSTRUCT(0)
     nshift_ = 0;
     sptree_ = new SPTREE;
     spinit(sptree_);
@@ -66,18 +65,14 @@ TQueue<C>::~TQueue() {
         delete pq_que_.top().second;
         pq_que_.pop();
     }
-
-    MUTDESTRUCT
 }
 
 template <container C>
 TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
-    MUTLOCK
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = td;
     binq_->enqueue(td, i);
-    MUTUNLOCK
     return i;
 }
 
@@ -115,7 +110,6 @@ inline void TQueue<pq_que>::move_least_nolock(double tnew) {
 /// Splay tree priority queue implementation
 template <>
 inline void TQueue<spltree>::move(TQItem* i, double tnew) {
-    MUTLOCK
     if (i == least_) {
         move_least_nolock(tnew);
     } else if (tnew < least_->t_) {
@@ -128,13 +122,11 @@ inline void TQueue<spltree>::move(TQItem* i, double tnew) {
         i->t_ = tnew;
         spenq(i, sptree_);
     }
-    MUTUNLOCK
 }
 
 /// STL priority queue implementation
 template <>
 inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
-    MUTLOCK
     if (i == least_) {
         move_least_nolock(tnew);
     } else if (tnew < least_->t_) {
@@ -153,13 +145,11 @@ inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
         i->t_ = -1.;
         pq_que_.push(make_TQPair(qmove));
     }
-    MUTUNLOCK
 }
 
 /// Splay tree priority queue implementation
 template <>
 inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
-    MUTLOCK
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -177,14 +167,12 @@ inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
     } else {
         spenq(i, sptree_);
     }
-    MUTUNLOCK
     return i;
 }
 
 /// STL priority queue implementation
 template <>
 inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
-    MUTLOCK
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -202,14 +190,12 @@ inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
     } else {
         pq_que_.push(make_TQPair(i));
     }
-    MUTUNLOCK
     return i;
 }
 
 /// Splay tree priority queue implementation
 template <>
 inline void TQueue<spltree>::remove(TQItem* q) {
-    MUTLOCK
     if (q) {
         if (q == least_) {
             if (sptree_->root) {
@@ -222,13 +208,11 @@ inline void TQueue<spltree>::remove(TQItem* q) {
         }
         delete q;
     }
-    MUTUNLOCK
 }
 
 /// STL priority queue implementation
 template <>
 inline void TQueue<pq_que>::remove(TQItem* q) {
-    MUTLOCK
     if (q) {
         if (q == least_) {
             if (pq_que_.size()) {
@@ -241,14 +225,12 @@ inline void TQueue<pq_que>::remove(TQItem* q) {
             q->t_ = -1.;
         }
     }
-    MUTUNLOCK
 }
 
 /// Splay tree priority queue implementation
 template <>
 inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
     TQItem* q = nullptr;
-    MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
         if (sptree_->root) {
@@ -257,7 +239,6 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
             least_ = nullptr;
         }
     }
-    MUTUNLOCK
     return q;
 }
 
@@ -265,7 +246,6 @@ inline TQItem* TQueue<spltree>::atomic_dq(double tt) {
 template <>
 inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
     TQItem* q = nullptr;
-    MUTLOCK
     if (least_ && least_->t_ <= tt) {
         q = least_;
         //        int qsize = pq_que_.size();
@@ -284,7 +264,6 @@ inline TQItem* TQueue<pq_que>::atomic_dq(double tt) {
             least_ = nullptr;
         }
     }
-    MUTUNLOCK
     return q;
 }
 }  // namespace coreneuron

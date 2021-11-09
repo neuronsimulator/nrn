@@ -11,7 +11,6 @@
 
 #include <cstdio>
 #include <utility>
-#include "coreneuron/utils/nrnmutdec.h"
 
 namespace coreneuron {
 template <typename T>

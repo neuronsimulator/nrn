@@ -19,6 +19,10 @@
 #include "coreneuron/io/mem_layout_util.hpp"
 #include "coreneuron/io/setup_fornetcon.hpp"
 
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
+
 int (*nrn2core_get_dat2_1_)(int tid,
                             int& ngid,
                             int& n_real_gid,

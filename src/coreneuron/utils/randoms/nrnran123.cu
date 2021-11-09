@@ -7,7 +7,7 @@
 */
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/utils/memory.h"
-#include "coreneuron/utils/nrnmutdec.h"
+#include "coreneuron/utils/nrnmutdec.hpp"
 #include "coreneuron/utils/randoms/nrnran123.h"
 
 #include <cmath>

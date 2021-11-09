@@ -9,6 +9,7 @@
 #ifndef netcvode_h
 #define netcvode_h
 
+#include "coreneuron/utils/nrnmutdec.hpp"
 #include "coreneuron/network/tqueue.hpp"
 
 #define PRINT_EVENT 0

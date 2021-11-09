@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "coreneuron/io/nrn_filehandler.hpp"
-#include "coreneuron/utils/nrnmutdec.h"
+#include "coreneuron/utils/nrnmutdec.hpp"
 
 namespace coreneuron {
 
