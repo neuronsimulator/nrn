@@ -27,6 +27,18 @@ ASSIGNED {
   g (umho)
 }
 
+CONSTRUCTOR {
+  VERBATIM
+  // only to verify that it is well handled
+  ENDVERBATIM
+}
+
+DESTRUCTOR {
+  VERBATIM
+  // only to verify that it is well handled
+  ENDVERBATIM
+}
+
 DEFINE init 1
 DEFINE rise 2
 DEFINE fall 3

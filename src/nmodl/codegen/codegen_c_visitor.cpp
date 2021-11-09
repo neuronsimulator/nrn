@@ -1606,12 +1606,17 @@ void CodegenCVisitor::print_table_replacement_function(const ast::Block& node) {
     print_function_declaration(node, name);
     printer->start_block();
     {
-        printer->add_line("if ( {} == 0) {}"_format(use_table_var, "{"));
-        printer->add_line("    {}({}, arg_v);"_format(function_name, internal_method_arguments()));
+        const auto& params = node.get_parameters();
+        printer->add_line("if ( {} == 0) {{"_format(use_table_var));
+        printer->add_line("    {}({}, {});"_format(function_name,
+                                                   internal_method_arguments(),
+                                                   params[0].get()->get_node_name()));
         printer->add_line("     return 0;");
         printer->add_line("}");
 
-        printer->add_line("double xi = {} * (arg_v - {});"_format(mfac_name, tmin_name));
+        printer->add_line("double xi = {} * ({} - {});"_format(mfac_name,
+                                                               params[0].get()->get_node_name(),
+                                                               tmin_name));
         printer->add_line("if (isnan(xi)) {");
         for (const auto& var: table_variables) {
             auto name = get_variable_name(var->get_node_name());
