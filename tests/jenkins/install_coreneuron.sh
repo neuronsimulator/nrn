@@ -23,7 +23,7 @@ else
     mkdir build_${CORENRN_TYPE} build_intel_${CORENRN_TYPE}
 fi
 
-export SALLOC_PARTITION="prod,interactive";
+export SALLOC_PARTITION="prod";
 
 cd $WORKSPACE/build_${CORENRN_TYPE}
 
