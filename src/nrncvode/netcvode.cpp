@@ -35,13 +35,14 @@
 #include "vrecitem.h"
 #include "oclist.h"
 #define PROFILE 0
-#include "profile.h"
+#include "htlist.h"
 #include "ivocvect.h"
-#include "nrnste.h"
 #include "netcon.h"
 #include "netcvode.h"
-#include "htlist.h"
 #include "nrncore_write/utils/nrncore_utils.h"
+#include "nrnste.h"
+#include "profile.h"
+#include "utils/profile/profiler_interface.h"
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -116,7 +117,7 @@ extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 extern "C" void nrnthread_get_trajectory_requests(int tid, int& bsize, int& n_pr, void**& vpr, int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays);
 extern "C" void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double t);
-extern "C" void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double t);
+extern "C" void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double t);
 bool nrn_trajectory_request_per_time_step_ = false;
 #if NRN_MUSIC
 extern void nrnmusic_injectlist(void*, double);
@@ -240,11 +241,8 @@ extern void nrn2ncs_outputevent(int netcon_output_index, double firetime);
 
 #if BGPDMA
 extern void bgp_dma_send(PreSyn*, double t);
-extern int use_bgpdma_;
+extern bool use_bgpdma_;
 extern void nrnbgp_messager_advance();
-#endif
-#if BGPDMA > 1
-extern int use_dcmf_record_replay;
 #endif
 
 bool nrn_use_fifo_queue_;
@@ -439,8 +437,6 @@ declareTable(MaxStateTable, void*, MaxStateItem*)
 implementTable(MaxStateTable, void*, MaxStateItem*)
 declarePtrList(PreSynList, PreSyn)
 implementPtrList(PreSynList, PreSyn)
-declarePtrList(HTListList, HTList)
-implementPtrList(HTListList, HTList)
 declarePtrList(WatchList, WatchCondition)
 implementPtrList(WatchList, WatchCondition)
 declareTable(PreSynTable, double*, PreSyn*)
@@ -1214,7 +1210,6 @@ NetCvode::NetCvode(bool single) {
 	single_ = single;
 	nrn_use_daspk_ = false;
 	gcv_ = nil;
-	wl_list_ = new HTListList();
 	allthread_hocevents_ = new HocEventList();
 	pcnt_ = 0;
 	p = nil;
@@ -1280,7 +1275,7 @@ NetCvode::~NetCvode() {
 	}
 	delete prl_;
 	unused_presyn = nil;
-	delete wl_list_;		
+	wl_list_.clear();
 	delete allthread_hocevents_;
 }
 
@@ -1392,7 +1387,8 @@ CvodeThreadData::~CvodeThreadData() {
 
 void NetCvode::delete_list() {
 	int i, j;
-	wl_list_->remove_all();
+	wl_list_.clear();
+	wl_list_.resize(nrn_nthread);
 	if (gcv_) {
 		delete_list(gcv_);
 		delete gcv_;
@@ -1553,6 +1549,8 @@ void NetCvode::distribute_dinfo(int* cellnum, int tid) {
 void NetCvode::alloc_list() {
 	int i;
 	set_CVRhsFn();
+	wl_list_.clear();
+	wl_list_.resize(nrn_nthread);
 	if (single_) {
 		gcv_ = new Cvode();
 		Cvode& cv = *gcv_;
@@ -2171,11 +2169,6 @@ void NetCvode::deliver_least_event(NrnThread* nt) {
 	de->deliver(tt, this, nt);
 }
 
-#if BGPDMA > 1
-#define RP_COUNT 50
-static int rp_count;
-#endif
-
 bool NetCvode::deliver_event(double til, NrnThread* nt) {
 	TQItem* q;
 	if ((q = p[nt->id].tqe_->atomic_dq(til)) != 0) {
@@ -2187,12 +2180,6 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
 #endif
 		STATISTICS(deliver_cnt_);
 		de->deliver(tt, this, nt);
-#if BGPDMA > 1
-		if (use_dcmf_record_replay) if (--rp_count < 0) {
-			nrnbgp_messager_advance();
-			rp_count = RP_COUNT;
-		}
-#endif
 		return true;
 	}else{
 		return false;
@@ -2448,12 +2435,12 @@ extern "C" void net_event(Point_process* pnt, double time) {
 }
 
 extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, int r, double flag) {
-//	printf("_nrn_cond_activate %s flag=%g first return = %g\n", hoc_object_name(pnt->ob), flag, c(pnt));
-	if (!d->_pvoid) {
-		d->_pvoid = (void*)new WatchList();
-	}
-	if (!d[i]._pvoid) {
-		d[i]._pvoid = (void*)new WatchCondition(pnt, c);
+	if (!d[i]._pvoid || !d[0]._pvoid) {
+		// When c is NULL, i.e. called from CoreNEURON,
+		// we never get here because we made sure
+		// _nrn_watch_allocated for this has been called earlier from
+		// within the translated mod file.
+		_nrn_watch_allocate(d, c, i, pnt, flag); // d[0]._pvoid and d[i]._pvoid exist
 	}
 	WatchList* wl = (WatchList*)d->_pvoid;
 	if (r == 0) {
@@ -2470,9 +2457,102 @@ extern "C" void _nrn_watch_activate(Datum* d, double (*c)(Point_process*), int i
 	}
 	WatchCondition* wc = (WatchCondition*)d[i]._pvoid;
 	wl->append(wc);
-	wc->activate(flag);
+	wc->activate(flag); // nr_flag_ (NetReceive flag) not flag_ for above threshold.
 }
 
+/*
+An example of a call to _nrn_watch_activate from within the NET_RECEIVE
+block of a translated mod file is
+_nrn_watch_activate(_watch_array, _watch1_cond, 1, _pnt, _watch_rm++, 2.0);
+
+_watch_array begins at _ppvar+first_index_of_watch_information and the number
+  of indices is 1 more than the number of watch statements. Each of those
+  (starting at index 1) is a pointer to a WatchCondition.
+  The 0th is a pointer to a HTList (HeadTailList) of the active WatchConditions.
+  Third arg is index of the WatchCondition to be activated.
+  The _watch_rm when 0 means, empty the HTList before adding the
+  WatchCondition to the HTList, when > 0, just add (It is possible for  
+  several WatchCondition to be active at the same time. That is useful when
+  the conceptual condition is for a variable to be within a specific range
+  or when multiple variables need to be watched at the same time.
+  The last arg is the flag value used by the NET_RECEIVE block to activate
+  a new set of WATCH statements. Note that that particular flag does not
+  have to result in the activation of a new set. In that case, the old set 
+  stays active.
+
+Note. At time of writing this note,
+  _watch_array[1:] are only created the first time that 'i' WatchCondition
+  is activated. And at that time the 2nd callback arg is stored in the
+  WatchCondition. So, at the moment, return from CoreNEURON cannot count on
+  all WatchConditions being in existence. Given that the 2nd callback arg
+  is only known to the translated mod file, the most straightforward solution
+  is for nocmodl to generate
+  an "initialization" function that calls all possible _nrn_watch_activate.
+  That could be done at the Point_process* pnt creation time (or after
+  transfer of WATCH info to CoreNEURON (using structure_change_cnt_).)
+  It could even be done as necessary when CoreNEURON sends back activated
+  WatchCondition info when the WatchCondition* slot on the NEURON side
+  is NULL. Then the "initialization" function could call a stripped down
+  version of _nrn_watch_activate for only its NULL slots.
+
+Here are some more notes about WatchCondition, HTList, HTListList, and
+  WatchList.
+  The (WatchList*)d->_pvoid is used only in _nrn_watch_activate to
+  iterate over its previously activated list in order to remove all those from
+  its HTList.
+  WatchCondition is a subclass of ConditionEvent and HTList
+  Because of the latter, we can say
+  WatchCondition.Remove() and HTList.append(WatchCondition)
+  The former can be called any number of times. When it is called it becomes
+  a singleton WatchCondition (only in itself as an HTList).
+  The latter can be called any number of times. Whereever the
+  WatchCondition is located before calling HTList.append ---
+  singleton, in another list, or already in this list --- it will end up
+  as the htlist.Last()
+
+*/
+
+/** Introduced so corenrn->nrn can request the mod file to make sure
+ *  all WatchCondition are allocated. When that is the case then
+ *  corenrn can call _nrn_watch_activate with all args filled out
+ *  because the allocated WatchCondition has double (*c_)(Point_process)
+ *  and flag_ filled in.
+**/
+extern "C" void _nrn_watch_allocate(Datum* d, double (*c)(Point_process*), int i, Point_process* pnt, double flag) {
+  if (!d->_pvoid) {
+    d->_pvoid = (void*)new WatchList();
+  }
+  if (!d[i]._pvoid) {
+    WatchCondition* wc = new WatchCondition(pnt, c);
+    wc->c_ = c;
+    wc->nrflag_ = flag;
+    d[i]._pvoid = (void*)wc;
+    // Simplify transfer to CoreNEURON
+    // To avoid searching for the beginning of _watch_array after
+    // transfer to CoreNEURON, compute the offset with respect to
+    // dparam.  That, of course, assumes NEURON and CoreNEURON
+    // have same pdata arrangement.
+    wc->watch_index_ = i + (d - pnt->prop->dparam);
+  }
+}
+
+/** Watch info corenrn->nrn transfer requires all activated
+ *  WatchCondition be deactivated prior to mirroring the activation
+ *  that exists on the corenrn side.
+**/
+extern "C" void nrn_watch_clear() {
+  assert(net_cvode_instance->wl_list_.size() == (size_t)nrn_nthread);
+  for (auto& htlists_of_thread: net_cvode_instance->wl_list_) {
+    for (HTList* wl: htlists_of_thread) {
+      wl->RemoveAll();
+    }
+  }
+  // not necessary to empty the WatchList in the Point_process dparam array
+  // as that will happen when _nrn_watch_activate is called with an r
+  // arg of 0.
+}
+
+/** Called by Point_process destructor in translated mod file **/
 extern "C" void _nrn_free_watch(Datum* d, int offset, int n) {
 	int i;
 	int nn = offset + n;
@@ -2798,7 +2878,11 @@ void NetCvode::init_events() {
 #if BBTQ == 5
 	for (i=0; i < nrn_nthread; ++i) {
 		p[i].tqe_->nshift_ = -1;
-		p[i].tqe_->shift_bin(nt_t);
+		// first bin starts 1/2 time step early because per time step
+		// binq delivery during simulation from deliver_net_events,
+		// after delivering all events in the current bin, shifts to
+		// nt->_t + 0.5*nt->_dt where nt->_t is a multiple of dt.
+		p[i].tqe_->shift_bin(nt_t - 0.5*nt_dt);
 	}
 #endif
 	if (psl_) {
@@ -3024,12 +3108,15 @@ void NetCon::send(double tt, NetCvode* ns, NrnThread* nt) {
 
 void NetCon::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 	assert(target_);
-if (PP2NT(target_) != nt) {
-Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
-}
+    int type = target_->prop->type;
+    std::string ss("net-receive-");
+    ss += memb_func[type].sym->name;
+    nrn::Instrumentor::phase p_get_pnt_receive(ss.c_str());
+    if (PP2NT(target_) != nt) {
+        Printf("NetCon::deliver nt=%d target=%d\n", nt->id, PP2NT(target_)->id);
+	}
 	assert(PP2NT(target_) == nt);
 	Cvode* cv = (Cvode*)target_->nvi_;
-	int type = target_->prop->type;
 	if (nrn_use_selfqueue_ && nrn_is_artificial_[type]) {
 		TQItem** pq = (TQItem**)(&target_->prop->dparam[nrn_artcell_qindex_[type]]._pvoid);
 		TQItem* q;
@@ -5223,6 +5310,7 @@ WatchCondition::WatchCondition(Point_process* pnt, double(*c)(Point_process*))
 {
 	pnt_ = pnt;
 	c_ = c;
+	watch_index_ = 0; // For transfer, will be a small positive integer.
 }
 
 WatchCondition::~WatchCondition() {
@@ -5261,7 +5349,7 @@ void WatchCondition::activate(double flag) {
 	HTList*& wl = cv->ctd_[id].watch_list_;
 	if (!wl) {
 		wl = new HTList(nil);
-		net_cvode_instance->wl_list_->append(wl);
+		net_cvode_instance->wl_list_[id].push_back(wl);
 	}
 	Remove();
 	wl->Append(this);
@@ -5497,19 +5585,28 @@ void NetCvode::fixed_play_continuous(NrnThread* nt) {
 
 // nrnthread_get_trajectory_requests helper for buffered trajectories
 // also for per time step return (no Vector and varrays is NULL)
-// if bsize > 0 then vectors need to be at least that size
+// if bsize > 0 then CoreNEURON will write that number of values to the vectors.
+// If CoreNEURON has a start time > 0, (current value of t),
+// the amount to augment the vector depends
+// on the vector's current size in the current NEURON context and the
+// varray[i_trajec] double* will be determined by that current size.
 // However determination of whether to do per time step return or buffering
 // can be specified on the NEURON side.
-static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
+static int trajec_buffered(NrnThread& nt,
+    int bsize, IvocVect* v,
+    double* pd,
     int i_pr, PlayRecord* pr, void** vpr,
     int i_trajec, int* types, int* indices, double** pvars, double** varrays)
 {
   int err = 0; //success
   if (bsize > 0) {
-    if (v->size() < bsize) {
-      v->resize(bsize);
+    int cur_size = v->size();
+    if (v->buffer_size() < bsize + cur_size) {
+      v->buffer_size(bsize + cur_size);
     }
-    varrays[i_trajec] = vector_vec(v);
+    // nrnthread_trajectory_values will resize to correct size.
+    v->resize(bsize + cur_size);
+    varrays[i_trajec] = vector_vec(v) + cur_size; // begin filling here
   }else{
     pvars[i_trajec] = pd;
   }
@@ -5532,7 +5629,9 @@ static int trajec_buffered(NrnThread& nt, int bsize, IvocVect* v, double* pd,
 // bsize > 0: Greatest performance, fill the entire trajectory arrays on
 // the CoreNEURON side and transferring at the end of a CoreNEURON run.
 // Here, we ensure the arrays have at least bsize size (i.e. at least tstop/dt)
-// and CoreNEURON will start filling from the beginning of the arrays.
+// beyond their current size and CoreNEURON will start filling from the
+// current fill time, h.t, location of the arrays. I.e. starting at CoreNEURON's
+// start time. (Multiple calls to psolve append to these arrays.)
 // n_pr refers the the number of PlayRecord instances in the vpr array.
 // n_trajec refers to the number of trajectories to be recorded on the
 // CoreNEURON side and is the size of the types, indices, and varrays.
@@ -5745,7 +5844,7 @@ void nrnthread_trajectory_values(int tid, int n_pr, void** vpr, double tt){ //, 
 // more range variables that individually were resolved into pointers. In
 // this case in glr->plot, the relevant Vector elements are copied into those
 // pointers and the expression is then evaluated and plotted.
-void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, double tt) {
+void nrnthread_trajectory_return(int tid, int n_pr, int bsize, int vecsz, void** vpr, double tt) {
   if (tid < 0) {
     return;
   }
@@ -5757,12 +5856,11 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
       IvocVect* v = NULL;
       if (pr->type() == TvecRecordType) {
         v = ((TvecRecord*)pr)->t_;
-        assert(v->buffer_size() >= vecsz);
-        v->resize(vecsz); // do not zero
+        // reserved bsize but only used vecsz. (need non-zeroing resize).
+        v->resize(v->size() - (bsize - vecsz)); // do not zero
       }else if (pr->type() == YvecRecordType) {
         v = ((YvecRecord*)pr)->y_;
-        assert(v->buffer_size() >= vecsz);
-        v->resize(vecsz); // do not zero
+        v->resize(v->size() - (bsize - vecsz)); // do not zero
 #if HAVE_IV
       }else if (pr->type() == GLineRecordType) {
         GLineRecord* glr = (GLineRecord*)pr;
@@ -5778,8 +5876,8 @@ void nrnthread_trajectory_return(int tid, int n_pr, int vecsz, void** vpr, doubl
 // factored this out from deliver_net_events so we can
 // stay in the cache
 void NetCvode::check_thresh(NrnThread* nt) { // for default method
-	int i;
-
+    nrn::Instrumentor::phase p_check_threshold("check-threshold");
+    int i;
 	hoc_Item* pth = p[nt->id].psl_thr_;
 
 	if (pth) { /* only look at ones with a threshold */
@@ -5794,16 +5892,32 @@ void NetCvode::check_thresh(NrnThread* nt) { // for default method
 		    }
 		}
 	}
-	for (i=0; i < wl_list_->count(); ++i) {
-		HTList* wl = wl_list_->item(i);
+
+	for (HTList* wl: wl_list_[nt->id]) {
 		for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
-		    WatchCondition* wc = (WatchCondition*)item;
-		    NrnThread* nt1 = wc->pnt_ ? PP2NT(wc->pnt_) : nrn_threads;
-		    if (nt1 == nt) {
+			WatchCondition* wc = (WatchCondition*)item;
 			wc->check(nt, nt->_t);
-		    }
 		}
 	}
+}
+
+/** In nrncore_callbacks.cpp **/
+extern void nrn2core_transfer_WatchCondition(WatchCondition* wc,
+  void(*cb)(int, int, int, int, int));
+extern "C" {
+void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int));
+}
+void nrn2core_transfer_WATCH(void(*cb)(int, int, int, int, int)) {
+  // should be revisited for possible simplification since wl_list now
+  // segregated by threads.
+  for (auto& htlists_of_thread : net_cvode_instance->wl_list_) {
+    for (HTList* wl : htlists_of_thread) {
+      for (HTList* item = wl->First(); item != wl->End(); item = item->Next()) {
+        WatchCondition* wc = (WatchCondition*)item;
+        nrn2core_transfer_WatchCondition(wc, cb);
+      }
+    }
+  }
 }
 
 void NetCvode::deliver_net_events(NrnThread* nt) { // for default method

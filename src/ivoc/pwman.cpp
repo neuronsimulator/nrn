@@ -2727,7 +2727,18 @@ void PWMImpl::printer_control() {
 	if (w_ && w_->is_mapped()) {
 		b = b_printer_->post_for(w_);
 	}else{
-		b = b_printer_->post_at(300, 500);
+		Coord x, y, ax, ay;
+		if (nrn_spec_dialog_pos(x, y)) {
+			ax = 0.0;
+			ay = 0.0;
+		} else { // original default
+			x = 300.;
+			y = 500.;
+			ax = 0.5;
+			ay = 0.5;
+		}
+
+		b = b_printer_->post_at_aligned(x, y, ax, ay);
 	}
 	if (b) {
 		printer_control_accept_ = true;

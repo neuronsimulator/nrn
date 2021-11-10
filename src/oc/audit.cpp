@@ -153,33 +153,6 @@ void hoc_audit_from_final_exit(void) {
 #endif
 }
 
-#ifndef WITHOUT_EMACS
-void hoc_audit_from_emacs(const char *bufname, const char *filname)
-{
-	char fname[200];
-	char s[256];
-	FILE* f;
-    char* hoc_pipegets(char* cbuf, int nc);
-    static int n=0;
-
-	if (!doaudit) {
-		return;
-	}
-	sprintf(fname, "%s/%d/bf%d", AUDIT_DIR, hoc_pid(), n);
-	if ((f = fopen(fname, "w")) == (FILE*)0) {
-hoc_warning("audit:Couldn't open temporary emacs buffer file:", fname);
-		return;
-	}
-	while (hoc_pipegets(s, 256)) {
-		fprintf(f, "%s", s);
-	}
-	fclose(f);
-	sprintf(s, "%s %s %s", fname, bufname, filname);
-	pipesend(2, s);
-	n++;
-#endif
-}
-
 void hoc_Saveaudit(void) {
 	int err;
 #if !OCSMALL
@@ -295,14 +268,3 @@ fprintf(stderr, "Warning: xopen_from_audit files have different names %s %s\n", 
 #endif
 }
 
-#ifndef WITHOUT_EMACS
-void hoc_emacs_from_audit(void) {
-	int i;
-	char buf[200];
-	/* check synchronization */
-	nrn_assert(fgets(buf, 200, retrieve_audit.pipe));
-	i = strncmp(buf, "em", 2);
-	assert(i == 0);
-	xopen_audit();
-}
-#endif

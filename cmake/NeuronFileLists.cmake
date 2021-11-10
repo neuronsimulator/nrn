@@ -71,7 +71,6 @@ set(OC_FILE_LIST
     functabl.cpp
     getsym.cpp
     hoc.cpp
-    hocedit.cpp
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
@@ -191,7 +190,6 @@ set(NRNIV_FILE_LIST
     bbslsrv2.cpp
     bbsrcli.cpp
     bbssrv.cpp
-    bgpmeminfo.cpp
     cachevec.cpp
     classreg.cpp
     cxprop.cpp
@@ -449,32 +447,11 @@ set(SCOPMATH_FILES_LIST
     crout_thread.c
     ssimplic_thread.c)
 
-set(MEMACS_FILES_LIST
-    ansi.c
-    basic.c
-    bind.c
-    buffer.c
-    display.c
-    file.c
-    fileio.c
-    line.c
-    lock.c
-    main1.c
-    random.c
-    region.c
-    search.c
-    spawn.c
-    tcap.c
-    termio.c
-    window.c
-    word.c)
-
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
 
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
-    Complex.cpp
     DiscUnif.cpp
     Erlang.cpp
     Geom.cpp
@@ -487,11 +464,8 @@ set(NRNGNU_FILES_LIST
     RNG.cpp
     Random.cpp
     RndInt.cpp
-    SmplHist.cpp
-    SmplStat.cpp
     Uniform.cpp
-    Weibull.cpp
-    builtin.cpp)
+    Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -613,9 +587,6 @@ nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-if(NRN_ENABLE_MEMACS)
-  nrn_create_file_list(NRN_MEMACS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/memacs ${MEMACS_FILES_LIST})
-endif()
 nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})

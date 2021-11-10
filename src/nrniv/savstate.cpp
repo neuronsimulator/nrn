@@ -222,7 +222,7 @@ void SaveState::ssi_def() {
 	Symbol* s = hoc_lookup("NetCon");
 	nct = s->u.ctemplate;
 	ssi = new StateStructInfo[n_memb_func];
-	assert(v_structure_change == 0);
+	int sav = v_structure_change;
 	for (int im=0; im < n_memb_func; ++im) {
 		ssi[im].offset = -1;
 		ssi[im].size = 0;
@@ -257,7 +257,8 @@ void SaveState::ssi_def() {
 	    delete np;
 	}
 	// Following set to 1 when NrnProperty constructor calls prop_alloc.
-	v_structure_change = 0;
+	// so change back to original value.
+	v_structure_change = sav;
 }
 
 bool SaveState::check(bool warn) {

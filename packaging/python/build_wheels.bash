@@ -73,11 +73,25 @@ build_wheel_linux() {
 
     echo " - Building..."
     rm -rf dist build
-    if [ "$2" == "--bare" ]; then
-        python setup.py bdist_wheel
-    else
-        python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+
+    if [ "$2" == "coreneuron" ]; then
+        setup_args="--enable-coreneuron"
+    elif [ "$2" == "coreneuron-gpu" ]; then
+        setup_args="--enable-coreneuron --enable-gpu"
+        # nvhpc is required for GPU support but make sure
+        # CC and CXX are unset for building python extensions
+        source ~/.bashrc
+        module load nvhpc
+        unset CC CXX
+        # preferred cuda version e.g. 11.0
+        export PATH=${CORENRN_CUDA_HOME}/bin:$PATH
     fi
+
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    if [ "$USE_STATIC_READLINE" == "1" ]; then
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+    fi
+    python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     # For CI runs we skip wheelhouse repairs
     if [ "$SKIP_WHEELHOUSE_REPAIR" = true ] ; then
@@ -106,11 +120,19 @@ build_wheel_osx() {
 
     echo " - Building..."
     rm -rf dist build
-    if [ "$2" == "--bare" ]; then
-        python setup.py bdist_wheel
-    else
-        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+
+    if [ "$2" == "coreneuron" ]; then
+        setup_args="--enable-coreneuron"
+    elif [ "$2" == "coreneuron-gpu" ]; then
+        echo "Error: GPU support on MacOS is not available!"
+        exit 1
     fi
+
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    if [ "$USE_STATIC_READLINE" == "1" ]; then
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+    fi
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
@@ -130,42 +152,49 @@ if [ ! -z "$2" ]; then
   python_wheel_version=$2
 fi
 
-# if to build non-dynamic mpi wheel (TODO: should be removed)
-bare=$3
+# enable coreneuron support: "coreneuron" or "coreneuron-gpu"
+# this should be removed/improved once wheel is stable
+coreneuron=$3
 
 # MAIN
 
 case "$1" in
 
   linux)
-    # include here /nrnwheel/mpt/include if have MPT headers
     MPI_INCLUDE_HEADERS="/nrnwheel/openmpi/include;/nrnwheel/mpich/include"
+    # Check for MPT headers. On Azure, we extract them from a secure file and mount them in the docker image in:
+    MPT_INCLUDE_PATH="/nrnwheel/mpt/include"
+    if [ -d "$MPT_INCLUDE_PATH" ]; then
+        MPI_INCLUDE_HEADERS="${MPI_INCLUDE_HEADERS};${MPT_INCLUDE_PATH}"
+    fi
+    USE_STATIC_READLINE=1
     python_wheel_version=${python_wheel_version//[-._]/}
     for py_bin in /opt/python/cp${python_wheel_version}*/bin/python; do
-        build_wheel_linux "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
+        build_wheel_linux "$py_bin" "$coreneuron" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   osx)
     MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
+    USE_STATIC_READLINE=1
     for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
-        build_wheel_osx "$py_bin" "$bare" "$MPI_INCLUDE_HEADERS"
+        build_wheel_osx "$py_bin" "$coreneuron" "$MPI_INCLUDE_HEADERS"
     done
     ;;
 
   CI)
     if [ "$CI_OS_NAME" == "osx" ]; then
         MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
-        build_wheel_osx $(which python3) "$bare" "$MPI_INCLUDE_HEADERS"
+        build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
         MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"
-        build_wheel_linux $(which python3) "$bare" "$MPI_INCLUDE_HEADERS"
+        build_wheel_linux $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     fi
     ls wheelhouse/
     ;;
 
   *)
-    echo "Usage: $(basename $0) < linux | osx > [--bare]"
+    echo "Usage: $(basename $0) < linux | osx > [python version 36|37|38|39|3*]  [coreneuron | coreneuron-gpu]"
     exit 1
     ;;
 

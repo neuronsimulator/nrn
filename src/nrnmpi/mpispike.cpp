@@ -5,7 +5,7 @@
 #include <assert.h>
 
 /* do not want the redef in the dynamic load case */
-#include <nrnmpiuse.h>   
+#include <nrnmpiuse.h>
 
 #if NRNMPI_DYNAMICLOAD
 #include <nrnmpi_dynam.h>
@@ -93,7 +93,7 @@ static void make_spikebuf_type() {
 #endif
 
 int nrnmpi_spike_exchange() {
-	int i, n, novfl, n1;
+    int i, n, novfl, n1;
 	if (!displs) {
 		np = nrnmpi_numprocs;
 		displs = (int*)hoc_Emalloc(np*sizeof(int)); hoc_malchk();
@@ -150,7 +150,7 @@ int nrnmpi_spike_exchange() {
 	}
 	ovfl_ = novfl;
 #endif
-	return n;
+    return n;
 }
 
 /*

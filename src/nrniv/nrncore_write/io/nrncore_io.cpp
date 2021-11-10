@@ -81,18 +81,26 @@ void write_globals(const char* fname) {
     fprintf(f, "%s\n", bbcore_write_version);
     const char* name;
     int size; // 0 means scalar, is 0 will still allocated one element for val.
-    double* val; // Allocated by new in get_global_item, must be delete [] here.
-    for (void* sp = NULL;
-         (sp = get_global_dbl_item(sp, name, size, val)) != NULL;) {
-        if (size) {
-            fprintf(f, "%s[%d]\n", name, size);
-            for (int i=0; i < size; ++i) {
-                fprintf(f, "%.20g\n", val[i]);
+    double* val = NULL; // Allocated by new in get_global_item, must be delete [] here.
+    // Note that it is possible for get_global_dbl_item to return NULL but
+    // name, size, and val must still be handled if val != NULL
+    for (void* sp = NULL;;) {
+        sp = get_global_dbl_item(sp, name, size, val);
+        if (val) {
+            if (size) {
+                fprintf(f, "%s[%d]\n", name, size);
+                for (int i=0; i < size; ++i) {
+                    fprintf(f, "%.20g\n", val[i]);
+                }
+            }else{
+                fprintf(f, "%s %.20g\n", name, val[0]);
             }
-        }else{
-            fprintf(f, "%s %.20g\n", name, val[0]);
+            delete [] val;
+            val = NULL;
         }
-        delete [] val;
+        if (!sp) {
+            break;
+        }
     }
     fprintf(f, "0 0\n");
     fprintf(f, "secondorder %d\n", secondorder);
@@ -199,6 +207,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrnthread_dat2_3(nt.id, nweight, output_vindex, output_threshold,
                      netcon_pnttype, netcon_pntindex, weights, delays);
     writeint(output_vindex, cg.n_presyn);
+    delete [] output_vindex;
     writedbl(output_threshold, cg.n_real_output);
     delete [] output_threshold;
 
@@ -293,7 +302,8 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     for (auto i: indices) {
         int vptype, mtype, ix, sz; double *yvec, *tvec;
         // the 'if' is not necessary as item i is certainly in this thread 
-        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec)) {
+        int unused = 0;
+        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec, unused, unused, unused)) {
             fprintf(f, "%d\n", vptype);
             fprintf(f, "%d\n", mtype);
             fprintf(f, "%d\n", ix);

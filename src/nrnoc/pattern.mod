@@ -1,13 +1,14 @@
 : The spikeout pairs (t, gid) resulting from a parallel network simulation
 : can become the stimulus for any single cpu subnet as long as the gid's are
 : consistent.
-: Note: hoc must retain references to the tvec and gidvec vectors
-: to prevent the Info from going out of existence
+: Note: hoc need not retain references to the tvec and gidvec vectors
+: as Info makes a copy of those, double for tvec, int for gidvec.
 
 NEURON {
 	ARTIFICIAL_CELL PatternStim
+	THREADSAFE
 	RANGE fake_output
-	POINTER ptr
+	BBCOREPOINTER ptr
 }
 
 PARAMETER {
@@ -37,9 +38,20 @@ extern int vector_capacity(void* vv);
 extern void* vector_arg(int iarg);
 extern void nrn_fake_fire(int gid, double spiketime, int fake_out);
 
-typedef struct {
-	void* tvec;
-	void* gidvec;
+/* Changed Info definition to correspond to that of CoreNEURON pattern.mod
+   in order to reduce memory requirements of separate copies of what
+   used to here be an IvocVect of doubles for gidvec but in CoreNEURON was
+   an int*. Also it obviates the copying of index back and forth.
+   The user differnce here is that both tvec and gidvec are copies (double
+   and int) of the passed in Vector. That is bad, but the user does not
+   have to retain a reference to those Vectors so that memory can be
+   potentially freed. On the other hand, it is now a simple matter to
+   implement reading the Info directly from a file.
+*/
+typedef struct { /* same as in CoreNEURON */
+	int size;
+	double* tvec;
+	int* gidvec;
 	int index;
 } Info;
 
@@ -53,8 +65,9 @@ VERBATIM {
 	INFOCAST;
 	Info* info = (Info*)hoc_Emalloc(sizeof(Info)); hoc_malchk();
 	*ip = info;
-	info->tvec = (void*)0;
-	info->gidvec = (void*)0;
+	info->size = 0;
+	info->tvec = (double*)0;
+	info->gidvec = (int*)0;
 	info->index = 0;
 }
 ENDVERBATIM
@@ -63,6 +76,10 @@ ENDVERBATIM
 DESTRUCTOR {
 VERBATIM {
 	INFOCAST; Info* info = *ip;
+	if (info->size > 0) {
+		free(info->tvec);
+		free(info->gidvec);
+	}
 	free(info);
 }
 ENDVERBATIM
@@ -84,10 +101,10 @@ ENDVERBATIM
 FUNCTION sendgroup() {
 VERBATIM {
 	INFOCAST; Info* info = *ip;
-	int size = vector_capacity(info->tvec);
+	int size = info->size;
 	int fake_out;
-	double* tvec = vector_vec(info->tvec);
-	double* gidvec = vector_vec(info->gidvec);
+	double* tvec = info->tvec;
+	int* gidvec = info->gidvec;
 	int i;
 	fake_out = fake_output ? 1 : 0;
 	for (i=0; info->index < size; ++i) {
@@ -108,15 +125,44 @@ ENDVERBATIM
 PROCEDURE play() {
 VERBATIM {
 	INFOCAST; Info* info = *ip;
-	if (ifarg(1)) {
-		info->tvec = vector_arg(1);
-		info->gidvec = vector_arg(2);
-	}else{
+	if (info->size > 0) {
+		free(info->tvec);
+		free(info->gidvec);
+		info->size = 0;
 		info->tvec = (void*)0;
 		info->gidvec = (void*)0;
+	}
+
+	if (ifarg(1)) {
+		int _i;
+		void* tvec = vector_arg(1);
+		void* gidvec = vector_arg(2);
+		int size = vector_capacity(tvec);
+		//assert(size == vector_capacity(gidvec);
+                double* tdata = vector_vec(tvec);
+		double* giddata = vector_vec(gidvec);
+
+		info->size = size;
+		info->tvec = (double*)hoc_Emalloc(size*sizeof(double)); hoc_malchk();
+		info->gidvec = (int*)hoc_Emalloc(size*sizeof(int)); hoc_malchk();
+
+		for (_i = 0; _i < size; ++_i) {
+			info->tvec[_i] = tdata[_i];
+			info->gidvec[_i] = (int)giddata[_i];
+		}
 	}
 }
 ENDVERBATIM
 }
         
+VERBATIM
 
+static void bbcore_write(double* x, int* d, int* xx, int *offset, _threadargsproto_){}
+static void bbcore_read(double* x, int* d, int* xx, int* offset, _threadargsproto_){}
+
+Info* nrn_patternstim_info_ref(Datum* _ppvar) {
+  // CoreNEURON PatternStim will use this Info*
+  INFOCAST;
+  return *ip;
+}
+ENDVERBATIM

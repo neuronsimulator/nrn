@@ -316,6 +316,9 @@ void delete_section(void) {
 	Item** pitm;
 	Symbol* sym;
 	int i;
+	if (ifarg(1)) {
+		hoc_execerror("delete_section takes no positional arguments and deletes the HOC currently accessed section. If using Python, did you mean a named arg of the form, sec=section?", NULL);
+	}
 	sec = chk_access();
 	if (!sec->prop) { /* already deleted */
 		hoc_retpushx(0.0);
@@ -557,6 +560,9 @@ static void reverse_sibling_list(Section* sec)
 }
 
 void disconnect(void) {
+	if (ifarg(1)) {
+		hoc_execerror("disconnect takes no positional arguments and disconnects the HOC currently accessed section. If using Python, did you mean a named arg of the form, sec=section? Or you can use section.disconnect().", NULL);
+	}
 	nrn_disconnect(chk_access());
 	hoc_retpushx(0.);
 }

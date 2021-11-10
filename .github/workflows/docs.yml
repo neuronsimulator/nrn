@@ -29,7 +29,8 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
+          sudo apt-get update --fix-missing
+          sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
           sudo apt-get install ffmpeg doxygen
         shell: bash
 
@@ -69,16 +70,17 @@ jobs:
           echo ::set-output name=status::done;
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply add 'live-debug-docs' to your last pushed commit message.
-      - name: live debug session on failure
-        if: failure() && contains(github.event.head_commit.message, 'live-debug-docs')
+      # To enable it, you have to:
+      #   * add 'live-debug-docs' to your PR title
+      #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+      - name: live debug session on failure (manual steps required, check `.github/docs.yml`)
+        if: failure() && contains(github.event.pull_request.title, 'live-debug-docs')
         uses: mxschmitt/action-tmate@v3
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@4.1.5
         if: steps.documentation.outputs.status == 'done' && github.ref == 'refs/heads/master'
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
-          CLEAN: false # Automatically remove deleted files from the deploy branch
+          branch: gh-pages # The branch the action should deploy to.
+          folder: ${{runner.workspace}}/nrn/docs/_build # The folder the action should deploy.
+          single-commit: true #have a single commit on the deployment branch instead of maintaining the full history

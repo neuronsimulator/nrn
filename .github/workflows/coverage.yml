@@ -13,10 +13,11 @@ on:
     branches:
       - master
       - release/**
-    paths-ignore:
-      - '**.md'
-      - '**.rst'
-      - 'docs/**'
+# TODO : https://github.com/neuronsimulator/nrn/issues/1063
+#    paths-ignore:
+#      - '**.md'
+#      - '**.rst'
+#      - 'docs/**'
 
 env:
   PY_MIN_VERSION: 3.6
@@ -34,8 +35,16 @@ jobs:
 
       - name: Install apt packages
         run: |
-          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf g++-5 g++-6 g++-8 g++-9
+          sudo apt-get install  build-essential doxygen lcov libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf gpg
         shell: bash
+
+      - name: Setup Caliper profiler
+        run: |
+          git clone https://github.com/LLNL/Caliper.git
+          cd Caliper
+          mkdir build && cd build
+          cmake ..
+          make && sudo make install
 
       - name: Set up Python@${{ env.PY_MIN_VERSION }}
         uses: actions/setup-python@v2
@@ -75,7 +84,7 @@ jobs:
 
           # CMake options & flags
           export COVERAGE_FLAGS="--coverage -O0 -fno-inline -g";
-          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_MEMACS=ON";
+          export CMAKE_OPTION="-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON -DNRN_ENABLE_PROFILING=ON";
           cmake $CMAKE_OPTION -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DNRN_ENABLE_TESTS=ON -DCMAKE_C_FLAGS="${COVERAGE_FLAGS}" -DCMAKE_CXX_FLAGS="${COVERAGE_FLAGS}" ..;
 
           # Coverage
@@ -88,15 +97,27 @@ jobs:
           ctest -VV;
           (cd ..; lcov --capture  --directory . --no-external --output-file build/coverage-run.info)
           lcov --add-tracefile coverage-base.info --add-tracefile coverage-run.info --output-file coverage-combined.info
+
+          # Download codecov script and perform integrity checks
+          curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --import # One-time step 
+          curl -Os https://uploader.codecov.io/latest/linux/codecov 
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM 
+          curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig 
+          gpg --verify codecov.SHA256SUM.sig codecov.SHA256SUM 
+          shasum -a 256 -c codecov.SHA256SUM 
+          chmod +x codecov 
+
           # Prefer auto-discovery for now. Specify reports once all python testing is unified under single report (-f option).
-          bash <(curl -s https://codecov.io/bash)
+          ./codecov
         env:
           MATRIX_EVAL: "CC=gcc CXX=g++"
           PYTHON_MIN_NAME: "python${{ env.PY_MIN_VERSION }}"
           PYTHON_MAX_NAME: "python${{ env.PY_MAX_VERSION }}"
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply add 'live-debug-coverage' to your last pushed commit message.
-      - name: live debug session on failure
-        if: failure() && contains(github.event.head_commit.message, 'live-debug-coverage')
+      # To enable it, you have to:
+      #   * add 'live-debug-coverage' to your PR title
+      #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+      - name: live debug session on failure (manual steps required, check `.github/coverage.yml`)
+        if: failure() && contains(github.event.pull_request.title, 'live-debug-coverage')
         uses: mxschmitt/action-tmate@v3

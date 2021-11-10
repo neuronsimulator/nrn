@@ -1,10 +1,11 @@
+#include "utils/profile/profiler_interface.h"
 #include <../../nrnconf.h>
+#include <InterViews/resource.h>
+#include <math.h>
 #include <nrnmpi.h>
+#include <nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <InterViews/resource.h>
-#include <nrnoc2iv.h>
 #define ALTHASH 1
 #if ALTHASH
 #include <nrnhash_alt.h>
@@ -79,10 +80,8 @@ extern double nrnmpi_step_wait_; // barrier at beginning of spike exchange.
  */
 extern "C" int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vector<int>& spikegidvec);
 
-// BGPDMA can be 0,1,2,3,6,7
+// BGPDMA can be 0 or 1
 // (BGPDMA & 1) > 0 means multisend ISend allowed
-// (BGPDMA & 2) > 0 means multisend Blue Gene/P DMA allowed
-// (BGPDMA & 4) > 0 means multisend Blue Gene/P DMA Record Replay allowed
 #if !defined(BGPDMA)
 #define BGPDMA 0
 #endif
@@ -212,15 +211,8 @@ static int idxout_;
 static void nrn_spike_exchange_compressed(NrnThread*);
 #endif // NRNMPI
 
-#if BGPDMA & 4
-#define HAVE_DCMF_RECORD_REPLAY 1
-#else
-#define HAVE_DCMF_RECORD_REPLAY 0
-#endif
-
 #if BGPDMA
-int use_dcmf_record_replay;
-int use_bgpdma_; // can be 0, 1, or 2 : allgather, multisend (ISend, bgpdma)
+bool use_bgpdma_; // false: allgather, true: multisend (ISend, bgpdma)
 static void bgp_dma_setup();
 static void bgp_dma_init();
 static void bgp_dma_receive(NrnThread*);
@@ -549,7 +541,8 @@ void nrn_spike_exchange_init() {
 
 #if NRNMPI
 void nrn_spike_exchange(NrnThread* nt) {
-	if (!active_) { return; }
+    nrn::Instrumentor::phase p_spike_exchange("spike-exchange");
+    if (!active_) { return; }
 #if BGPDMA
 	if (use_bgpdma_) {
 		bgp_dma_receive(nt);
@@ -1313,12 +1306,11 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vect
         if (all_spiketvec != NULL && all_spiketvec->obj_ != NULL  && all_spiketvec->obj_->refcount > 0 &&
             all_spikegidvec != NULL && all_spikegidvec->obj_ != NULL && all_spikegidvec->obj_->refcount > 0) {
 
-            all_spiketvec->resize(spiketvec.size());
-            all_spikegidvec->resize(spikegidvec.size());
-            for (int i = 0; i < all_spiketvec->size(); ++i) {
-                all_spiketvec->elem(i) = spiketvec[i];
-                all_spikegidvec->elem(i) = spikegidvec[i];
-            }
+            all_spiketvec->buffer_size(spiketvec.size() + all_spiketvec->size());
+            all_spikegidvec->buffer_size(spikegidvec.size() + all_spikegidvec->size());
+            all_spiketvec->vec().insert(all_spiketvec->end(), spiketvec.begin(), spiketvec.end());
+            all_spikegidvec->vec().insert(all_spikegidvec->end(), spikegidvec.begin(), spikegidvec.end());
+            
         }else{ // different underlying vectors for PreSyns
             for (int i = 0; i < spikegidvec.size(); ++i ) {
                 PreSyn* ps;
@@ -1429,10 +1421,8 @@ that makes sense.
 
 The situation that needs to be captured by xchng_meth is
 
-Allgather
-multisend implemented as MPI_ISend
-multisend DCMF (only for Blue Gene/P)
-multisend record_replay (only for Blue Gene/P with recordreplay_v1r4m2.patch)
+0: Allgather
+1: multisend implemented as MPI_ISend
 
 n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
  that concept valid for all methods
@@ -1440,7 +1430,7 @@ n_bgp_interval 1 or 2 per minimum interprocessor NetCon delay
 Note that Allgather allows spike compression and an allgather spike buffer
  with size chosen at setup time.  All methods allow bin queueing.
 
-All the multisend methods should allow two phase multisend.
+The multisend methods should allow two phase multisend.
 
 Note that, in principle, MPI_ISend allows the source to send the index   
  of the target PreSyn to avoid a hash table lookup (even with a two phase
@@ -1448,14 +1438,13 @@ Note that, in principle, MPI_ISend allows the source to send the index
 
 Not all variation are useful. e.g. it is pointless to combine Allgather and
 n_bgp_interval=2.
-RecordReplay should be best on the BG/P. The whole point is to make the
+The whole point is to make the
 spike transfer initiation as lowcost as possible since that is what causes
 most load imbalance. I.e. since 10K more spikes arrive than are sent, spikes
 received per processor per interval are much more statistically
 balanced than spikes sent per processor per interval. And presently
 DCMF multisend injects 10000 messages per spike into the network which
-is quite expensive. record replay avoids this overhead and the idea of
-two phase multisend distributes the injection
+is quite expensive. 
 
 See case 8 of nrn_bgp_receive_time for the xchng_meth properties
 */
@@ -1467,19 +1456,10 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
 #endif
 #if BGPDMA
-	use_bgpdma_ = (xchng_meth & 3);
-	if (use_bgpdma_ == 3) {	assert(HAVE_DCMF_RECORD_REPLAY); }
-#if TWOPHASE
+	use_bgpdma_ = (xchng_meth & 1) == 1;
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
 	if (nrnmpi_myid == 0) {Printf("use_phase2_ = %d\n", use_phase2_);}
-#endif
-#if HAVE_DCMF_RECORD_REPLAY
-	use_dcmf_record_replay = (use_bgpdma_ == 3 ? 1 : 0);
-	if (nrnmpi_myid == 0) {Printf("use_dcmf_record_replay = %d\n", use_dcmf_record_replay);}
-#endif
-	if (use_bgpdma_ == 3) { use_bgpdma_ = 2; }
-	if (use_bgpdma_ == 2) { assert(BGPDMA & 2); }
-	if (use_bgpdma_ == 1) { assert(BGPDMA & 1); }
+	if (use_bgpdma_) { assert(BGPDMA); }
 	if (nrnmpi_myid == 0) {Printf("use_bgpdma_ = %d\n", use_bgpdma_);}
 #else // BGPDMA == 0
 	assert(xchng_meth == 0);
@@ -1645,5 +1625,4 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
 #endif
   delete [] gidcnt;
 }
-
 

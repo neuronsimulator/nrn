@@ -2,6 +2,10 @@
 # Build nrniv binary and corresponding library
 # =============================================================================
 
+# Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
+# targets from included projects like CoreNEURON and NMODL
+add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -69,7 +73,6 @@ set(NRN_BASE_SRC_FILES ${NRN_IVOC_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
 
 set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_BASE_SRC_FILES}
-    ${NRN_MEMACS_SRC_FILES}
     ${NRN_MESCH_SRC_FILES}
     ${NRN_MODFILE_C}
     ${NRN_NRNGNU_SRC_FILES}
@@ -118,7 +121,6 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/sundials/shared
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
-    ${PROJECT_SOURCE_DIR}/src/memacs
     ${PROJECT_SOURCE_DIR}/src/mesch
     ${PROJECT_SOURCE_DIR}/src/nrncvode
     ${PROJECT_SOURCE_DIR}/src/nrnmpi
@@ -238,6 +240,13 @@ set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJEC
 set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
                             ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
 
+# NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
+# https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
+if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 21.7)
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
+                                                                                 -Mnovect)
+endif()
+
 if(NRN_ENABLE_MPI_DYNAMIC)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
                               OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
@@ -284,6 +293,10 @@ else()
   elseif(TERMCAP_FOUND)
     target_link_libraries(nrniv_lib ${TERMCAP_LIBRARIES})
   endif()
+endif()
+
+if(NRN_ENABLE_PROFILING)
+  target_link_libraries(nrniv_lib ${likwid_LIBRARIES} ${CALIPER_LIB})
 endif()
 
 set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)

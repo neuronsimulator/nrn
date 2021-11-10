@@ -154,7 +154,11 @@ if not hasattr(hoc, "__file__"):
     if origin is not None:
         import sysconfig
 
-        hoc_path = origin.rstrip("__init__.py") + "hoc" + sysconfig.get_config_var("SO")
+        hoc_path = (
+            origin.rstrip("__init__.py")
+            + "hoc"
+            + sysconfig.get_config_var("EXT_SUFFIX")
+        )
         setattr(hoc, "__file__", hoc_path)
 else:
     _original_hoc_file = hoc.__file__
@@ -1444,6 +1448,21 @@ def _has_scipy():
 def _pkl(arg):
     # print 'neuron._pkl arg is ', arg
     return h.Vector(0)
+
+
+def format_exception(type, value, tb):
+    """Single string return wrapper for traceback.format_exception
+    used by nrnpyerr_str
+    """
+    import traceback
+
+    slist = (
+        traceback.format_exception_only(type, value)
+        if tb is None
+        else traceback.format_exception(type, value, tb)
+    )
+    s = "".join(slist)
+    return s
 
 
 def nrnpy_pass():

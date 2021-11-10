@@ -253,7 +253,12 @@ def fullmorph(source, dx, soma_step=100, mesh_grid=None, relevant_pts=None):
         else:
             V = simplevolume(itemlist, distances, vox, grid)
             A = surface_area(itemlist, vox, grid)
-            final_surface_voxels[vox] = [V, A, seg]
+            # if the voxel form a corner of itemlist it may have no surface
+            # area
+            if A == 0:
+                final_intern_voxels[vox] = [dx ** 3, seg]
+            else:
+                final_surface_voxels[vox] = [V, A, seg]
 
     def has_vox(*vox):
         return vox in final_surface_voxels or vox in final_intern_voxels

@@ -9,6 +9,7 @@
 #include "nrniv_mf.h"
 #include "multisplit.h"
 #define nrnoc_fadvance_c
+#include "utils/profile/profiler_interface.h"
 #include "nonvintblock.h"
 #include "nrncvode.h"
 #include "spmatrix.h"
@@ -169,9 +170,9 @@ int nrn_use_fast_imem;
 #define PROFILE 0
 #include "profile.h"
 
-void fadvance(void)
-{
-	tstopunset;
+void fadvance(void) {
+    nrn::Instrumentor::phase p_fadvance("fadvance");
+    tstopunset;
 #if CVODE
 	if (cvode_active_) {
 		cvode_fadvance(-1.);
@@ -341,7 +342,8 @@ void nrn_daspk_init_step(double tt, double dteps, int upd){
 }
 
 void nrn_fixed_step() {
-	int i;
+    nrn::Instrumentor::phase p_timestep("timestep");
+    int i;
 #if ELIMINATE_T_ROUNDOFF
 	nrn_chk_ndt();
 #endif
@@ -362,7 +364,8 @@ void nrn_fixed_step() {
 			/* see comment below */
 			if (nrnthread_v_transfer_) {
 				if (nrnmpi_v_transfer_) {
-					(*nrnmpi_v_transfer_)();
+                    nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                    (*nrnmpi_v_transfer_)();
 				}
 				nrn_multithread_job(nrn_fixed_step_lastpart);
 			}
@@ -375,7 +378,8 @@ void nrn_fixed_step() {
 */
 		if (nrnthread_v_transfer_) {
 			if (nrnmpi_v_transfer_) {
-				(*nrnmpi_v_transfer_)();
+                nrn::Instrumentor::phase p_gap("gap-v-transfer");
+                (*nrnmpi_v_transfer_)();
 			}
 			nrn_multithread_job(nrn_fixed_step_lastpart);
 		}
@@ -444,7 +448,8 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 	int i;
 	nth->_stop_stepping = 0;
 	for (i = step_group_begin; i < step_group_n; ++i) {
-		nrn_fixed_step_thread(nth);
+        nrn::Instrumentor::phase p_timestep("timestep");
+        nrn_fixed_step_thread(nth);
 		if (nth->_stop_stepping) {
 			if (nth->id == 0) { step_group_end = i + 1; }
 			nth->_stop_stepping = 0;
@@ -457,8 +462,12 @@ void* nrn_fixed_step_group_thread(NrnThread* nth) {
 
 void* nrn_fixed_step_thread(NrnThread* nth) {
 	double wt;
-	deliver_net_events(nth);
-	wt = nrnmpi_wtime();
+    {
+        nrn::Instrumentor::phase p("deliver-events");
+        deliver_net_events(nth);
+    }
+
+    wt = nrnmpi_wtime();
 	nrn_random_play();
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
@@ -468,10 +477,19 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 #endif
 	fixed_play_continuous(nth);
 	setup_tree_matrix(nth);
-	nrn_solve(nth);
-	second_order_cur(nth);
-	update(nth);
-	CTADD
+    {
+        nrn::Instrumentor::phase p("matrix-solver");
+        nrn_solve(nth);
+    }
+    {
+        nrn::Instrumentor::phase p("second-order-cur");
+        second_order_cur(nth);
+    }
+    {
+        nrn::Instrumentor::phase p("update");
+        update(nth);
+    }
+    CTADD
 /*
   To simplify the logic,
   if there is no nrnthread_v_transfer then there cannot be an nrnmpi_v_transfer.
@@ -479,7 +497,7 @@ void* nrn_fixed_step_thread(NrnThread* nth) {
 	if (!nrnthread_v_transfer_) {
 		nrn_fixed_step_lastpart(nth);
 	}
-	return nullptr;
+    return nullptr;
 }
 
 extern void nrn_extra_scatter_gather(int direction, int tid);
@@ -507,9 +525,12 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	nrn_daq_ai();
 #endif
 	fixed_record_continuous(nth);
-	CTADD
-	nrn_deliver_events(nth) ; /* up to but not past texit */
-	return nullptr;
+    CTADD
+    {
+        nrn::Instrumentor::phase p("deliver-events");
+        nrn_deliver_events(nth); /* up to but not past texit */
+    }
+    return nullptr;
 }
 
 /* nrn_fixed_step_thread is split into three pieces */
@@ -645,6 +666,32 @@ void nrn_calc_fast_imem(NrnThread* _nt) {
     }
 }
 
+void nrn_calc_fast_imem_fixedstep_init(NrnThread* _nt) {
+  // nrn_rhs() is called near end of nrn_finitialize() via setup_tree_matrix()
+  // and nrn_rhs() sets up _nrn_sav_rhs as -total ionic_current (without
+  // ELECTRODE_CURRENT contributions) and RHS as axial + ionic + stim currents
+  // So sum, scaled by area, is i_membrane_ in nA.
+  // (Note: capacitance does not appear on rhs because delta_v is the
+  // variable in the current balance equations set up by setup_tree_matrix.)
+  // Warning: Have not thought deeply about extracellular or LinearMechanism.
+  //          But there is a good chance things are ok. But needs testing.
+  // I don't believe this is used by Cvode or IDA.
+	int i;
+	int i1 = 0;
+	int i3 = _nt->end;
+	double* prhs = _nt->_nrn_fast_imem->_nrn_sav_rhs;
+    if (use_cachevec) {
+	for (i = i1; i < i3 ; ++i) {
+		prhs[i] = (VEC_RHS(i) + prhs[i])*VEC_AREA(i)*0.01;
+	}
+    }else{
+	for (i = i1; i < i3 ; ++i) {
+		Node* nd = _nt->_v_node[i];
+		prhs[i] = (NODERHS(nd) + prhs[i])*NODEAREA(nd)*0.01;
+	}
+    }
+}
+
 void fcurrent(void)
 {
 	int i;
@@ -731,13 +778,22 @@ void nonvint(NrnThread* _nt)
 	NrnThreadMembList* tml;
 #if 1 || PARANEURON
 	/* nrnmpi_v_transfer if needed was done earlier */
-	if (nrnthread_v_transfer_) {(*nrnthread_v_transfer_)(_nt);}
+    if (nrnthread_v_transfer_) {
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        (*nrnthread_v_transfer_)(_nt);
+    }
 #endif
-	if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
+    nrn::Instrumentor::phase_begin("state-update");
+    if (_nt->id == 0 && nrn_mech_wtime_) { measure = 1; }
 	errno = 0;
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].state) {
-		Pvmi s = memb_func[tml->index].state;
-		if (measure) { w = nrnmpi_wtime(); }
+            std::string mechname("state-");
+            mechname += memb_func[tml->index].sym->name;
+            nrn::Instrumentor::phase_begin(mechname.c_str());
+            Pvmi s = memb_func[tml->index].state;
+            nrn::Instrumentor::phase_end(mechname.c_str());
+            if (measure) {
+                w = nrnmpi_wtime(); }
 		(*s)(_nt, tml->ml, tml->index);
 		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
 		if (errno) {
@@ -748,6 +804,7 @@ hoc_warning("errno set during calculation of states", (char*)0);
   	  }
 	long_difus_solve(0, _nt); /* if any longitudinal diffusion */
 	nrn_nonvint_block_fixed_step_solve(_nt->id);
+    nrn::Instrumentor::phase_end("state-update");
 #endif
 }
 
@@ -809,6 +866,7 @@ void nrn_finitialize(int setv, double v) {
     extern short *nrn_is_artificial_;
     ++_ninits;
 
+    nrn::Instrumentor::phase_begin("finitialize");
     nrn_fihexec(3); /* model structure changes can be made */
     verify_structure();
 #if ELIMINATE_T_ROUNDOFF
@@ -843,12 +901,15 @@ void nrn_finitialize(int setv, double v) {
     {
         (*nrnthread_vi_compute_)(_nt);
     }
-    if (nrnmpi_v_transfer_) {
-        (nrnmpi_v_transfer_)();
-    }
-    if (nrnthread_v_transfer_) FOR_THREADS(_nt)
     {
-        (*nrnthread_v_transfer_)(_nt);
+        nrn::Instrumentor::phase p_gap("gap-v-transfer");
+        if (nrnmpi_v_transfer_) {
+            (nrnmpi_v_transfer_)();
+        }
+        if (nrnthread_v_transfer_)
+            FOR_THREADS(_nt) {
+                (*nrnthread_v_transfer_)(_nt);
+            }
     }
 #endif
     nrn_fihexec(0); /* after v is set but before INITIAL blocks are called*/
@@ -935,7 +996,7 @@ void nrn_finitialize(int setv, double v) {
         for (i = 0; i < nrn_nthread; ++i) {
             setup_tree_matrix(nrn_threads + i);
             if (nrn_use_fast_imem) {
-                nrn_calc_fast_imem(nrn_threads + i);
+                nrn_calc_fast_imem_fixedstep_init(nrn_threads + i);
             }
         }
         state_discon_allowed_ = 1;
@@ -958,6 +1019,7 @@ void nrn_finitialize(int setv, double v) {
     if (nrn_allthread_handle) { (*nrn_allthread_handle)(); }
 
     nrn_fihexec(2); /* just before return */
+    nrn::Instrumentor::phase_end("finitialize");
 }
 
 void finitialize(void) {
