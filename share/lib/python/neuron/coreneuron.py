@@ -33,7 +33,7 @@ class coreneuron(object):
         self._file_mode = False
         self._cell_permute = None
         self._warp_balance = 0
-        self._verbose = 2
+        self._verbose = 2  # INFO
         self._prcellstate = -1
 
     def _valid_cell_permute(self):
@@ -53,7 +53,7 @@ class coreneuron(object):
 
     @property
     def gpu(self):
-        """Activate GPU computation."""
+        """Activate GPU computation in CoreNEURON."""
         return self._gpu
 
     @gpu.setter
@@ -83,8 +83,11 @@ class coreneuron(object):
 
     @property
     def cell_permute(self):
-        """0 no permutation; 1 optimize node adjacency; 2 optimize parent node
-        adjacency (only for gpu = True)"""
+        """Get/set the cell permutation order. Possible values are:
+        - 0: no permutation (requires gpu = False)
+        - 1: optimize node adjacency
+        - 2: optimise parent node adjacency (requires gpu = True)
+        """
         if self._cell_permute is None:
             return self._default_cell_permute()
         return self._cell_permute
@@ -97,7 +100,9 @@ class coreneuron(object):
 
     @property
     def warp_balance(self):
-        """Number of warps to balance. (0 no balance)"""
+        """Number of warps to balance. A value of 0 indicates no balancing
+        should be done. This has no effect without cell_permute = 2 (and
+        therefore gpu = True)."""
         return self._warp_balance
 
     @warp_balance.setter
@@ -108,7 +113,12 @@ class coreneuron(object):
 
     @property
     def verbose(self):
-        """0 quiet, 1 Error, 2 Info, 3 Debug"""
+        """Configure the verbosity of CoreNEURON. Possible values are:
+        - 0: quiet/no output
+        - 1: error
+        - 2: info (default)
+        - 3: debug
+        """
         return self._verbose
 
     @verbose.setter
@@ -119,7 +129,9 @@ class coreneuron(object):
 
     @property
     def prcellstate(self):
-        """Output prcellstate information for the gid at t=0 and at tstop. -1 means no output"""
+        """Output prcellstate information for the given gid at t=0 and at tstop.
+        A value of -1 indicates no prcellstate output will be generated.
+        """
         return self._prcellstate
 
     @prcellstate.setter
@@ -127,10 +139,6 @@ class coreneuron(object):
         value = int(value)
         assert value >= -1
         self._prcellstate = value
-
-    def property_check(self, tstop):
-        """Legacy check of user property values."""
-        tstop = float(tstop)
 
     def nrncore_arg(self, tstop):
         """
@@ -142,7 +150,7 @@ class coreneuron(object):
         from neuron import h
 
         arg = ""
-        self.property_check(tstop)
+        tstop = float(tstop)
         if not self.enable:
             return arg
 
@@ -150,23 +158,29 @@ class coreneuron(object):
         CORENRN_DATA_DIR = "corenrn_data"
 
         # args derived from user properties
-        arg += " --gpu" if self.gpu else ""
-        arg += " --datpath %s" % CORENRN_DATA_DIR if self.file_mode else ""
+        if self._gpu:
+            arg += " --gpu"
+        if self._file_mode:
+            arg += " --datpath %s" % CORENRN_DATA_DIR
         arg += " --tstop %g" % tstop
         arg += " --cell-permute %d" % self.cell_permute
-        arg += (" --nwarp %d" % self.warp_balance) if self.warp_balance > 0 else ""
-        arg += (" --prcellgid %d" % self.prcellstate) if self.prcellstate >= 0 else ""
+        if self._warp_balance > 0:
+            arg += " --nwarp %d" % self.warp_balance
+        if self._prcellstate >= 0:
+            arg += " --prcellgid %d" % self.prcellstate
         arg += " --verbose %d" % self.verbose
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()
         cvode = h.CVode()
-        arg += " --mpi" if pc.nhost() > 1 else ""
+        if pc.nhost() > 1:
+            arg += " --mpi"
         arg += " --voltage 1000."
-        binqueue = cvode.queue_mode() & 1
-        arg += " --binqueue" if binqueue else ""
+        if cvode.queue_mode() & 1:
+            arg += " --binqueue"
         spkcompress = int(pc.spike_compress(-1))
-        arg += (" --spkcompress %g" % spkcompress) if spkcompress else ""
+        if spkcompress:
+            arg += " --spkcompress %g" % spkcompress
 
         # since multisend is undocumented in NEURON, perhaps it would be best
         # to make the next three arg set from user properties here
@@ -174,9 +188,11 @@ class coreneuron(object):
         if (multisend & 1) == 1:
             arg += " --multisend"
             interval = (multisend & 2) / 2 + 1
-            arg += (" --ms_subinterval %d" % interval) if interval != 2 else ""
+            if interval != 2:
+                arg += " --ms_subinterval %d" % interval
             phases = (multisend & 4) / 4 + 1
-            arg += (" --ms_phases %d" % phases) if phases != 2 else ""
+            if phases != 2:
+                arg += " --ms_phases %d" % phases
 
         return arg
 
