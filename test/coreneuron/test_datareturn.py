@@ -175,20 +175,21 @@ def test_datareturn():
     coreneuron.gpu = bool(
         distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     )
+    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
 
-    coreneuron.cell_permute = 0
+    coreneuron.cell_permute = cell_permute_values[0]
     for mode in [0, 1, 2]:
         run(tstop, mode)
         tst = model.data()
         max_unpermuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
         print("mode ", mode)
-        print("max diff unpermuted = %g" % max_unpermuted)
+        print("max diff permute=%d = %g" % (coreneuron.cell_permute, max_unpermuted))
 
-        coreneuron.cell_permute = 1
+        coreneuron.cell_permute = cell_permute_values[1]
         run(tstop, mode)
         tst = model.data()
         max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
-        print("max diff permuted = %g" % max_permuted)
+        print("max diff permute=%d = %g" % (coreneuron.cell_permute, max_permuted))
 
         pc.nthread(2)
         run(tstop, mode)
