@@ -30,6 +30,7 @@ class coreneuron(object):
     def __init__(self):
         self._enable = False
         self._gpu = False
+        self._num_gpus = 0
         self._file_mode = False
         self._cell_permute = None
         self._warp_balance = 0
@@ -71,6 +72,17 @@ class coreneuron(object):
                 )
             )
             self._cell_permute = self._default_cell_permute()
+
+    @property
+    def num_gpus(self):
+        """Get/set the number of GPU to use.
+        0 means to use all that are avilable.
+        """
+        return self._num_gpus
+
+    @num_gpus.setter
+    def num_gpus(self, value):
+        self._num_gpus = int(value)
 
     @property
     def file_mode(self):
@@ -160,6 +172,8 @@ class coreneuron(object):
         # args derived from user properties
         if self._gpu:
             arg += " --gpu"
+            if setf._num_gpus:
+                arg += " --num-gpus %d" % self._num_gpus
         if self._file_mode:
             arg += " --datpath %s" % CORENRN_DATA_DIR
         arg += " --tstop %g" % tstop
