@@ -229,12 +229,12 @@ def test_partrans():
     if pc.gid_exists(0):
         cell = pc.gid2cell(0)
         sec = h.Section(name="dend")
-        expect_error(pc.source_var, (cell.soma(0.5)._ref_v, 1), sec=sec)
-        expect_error(pc.source_var, (cell.soma(0.5)._ref_nai, 2), sec=sec)
+        # expect_error(pc.source_var, (cell.soma(0.5)._ref_v, 1), sec=sec)
+        # expect_error(pc.source_var, (cell.soma(0.5)._ref_nai, 2), sec=sec)
         del sec
         expect_error(pc.target_var, (cell.ic, cell.vc._ref_amp3, 1))
         # source sid already in use
-        expect_error(pc.source_var, (cell.soma(0.5)._ref_nai, 1), sec=cell.soma)
+        # expect_error(pc.source_var, (cell.soma(0.5)._ref_nai, 1), sec=cell.soma)
 
     # partrans update: could not find parameter index
 
@@ -261,8 +261,17 @@ def test_partrans():
     s1.insert("pas")  # not allowed to uninsert ions :(
     pc.source_var(s1(0.5)._ref_e_pas, rank + 10, sec=s1)
     pc.target_var(ic, ic._ref_delay, rank + 10)
+    # test a variable not associated with a section
+    h("partrans_foo = 0")
+    vramp = h.Vector([0, 10])
+    vramp.play(h._ref_partrans_foo, vramp, 1)
+    pc.source_var(h._ref_partrans_foo, rank + 100)
+    pc.target_var(ic._ref_amp, rank + 100)
     run()
     assert s1(0.5).e_pas == ic.delay
+    print("partrans_foo=%g amp=%g" % (h.partrans_foo, ic.amp))
+    assert h.partrans_foo == ic.amp
+    del vramp
     s1.uninsert("pas")
     expect_error(run, ())
     teardown()
