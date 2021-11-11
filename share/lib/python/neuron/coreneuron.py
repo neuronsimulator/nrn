@@ -172,7 +172,7 @@ class coreneuron(object):
         # args derived from user properties
         if self._gpu:
             arg += " --gpu"
-            if setf._num_gpus:
+            if self._num_gpus:
                 arg += " --num-gpus %d" % self._num_gpus
         if self._file_mode:
             arg += " --datpath %s" % CORENRN_DATA_DIR
