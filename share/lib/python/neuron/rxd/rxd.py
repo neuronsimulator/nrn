@@ -542,7 +542,7 @@ def _c_compile(formula):
         else:
             gcc = "gcc"
     # TODO: Check this works on non-Linux machines
-    gcc_cmd = "%s -I%s -I%s " % (
+    gcc_cmd = "%s -I%s -I%s -v " % (
         gcc,
         sysconfig.get_path("include"),
         os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
@@ -556,6 +556,7 @@ def _c_compile(formula):
             my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
         )
         os.system(gcc_cmd)
+        os.system("cygcheck " + filename + ".so")
         os.putenv("PATH", my_path)
     else:
         os.system(gcc_cmd)
