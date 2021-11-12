@@ -45,7 +45,8 @@ cp 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\rcdll.dll' 'C:\P
 
 :: install msys2 / mingw packages.
 :: NOTE: msys2 is already installed in the CI VM image. Otherwise it could be installed with the following line:
-:: choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
+:: TODO: temporarily use choco install until #1522 is fixed
+choco install --no-progress msys2 --params="/InstallDir:%MSYS2_ROOT% /NoUpdate /NoPath" || goto :error
 set PATH=%MSYS2_ROOT%\usr\bin;%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%
 
 
