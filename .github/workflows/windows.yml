@@ -27,13 +27,6 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    # TODO: temporarily use choco install until #1522 is fixed
-    # we need to move out of the way the image installed msys64
-    - name: Move installed msys64
-      run: |
-        move C:\msys64 C:\msys64-from-image
-      shell: cmd
-
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
