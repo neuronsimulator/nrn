@@ -19,6 +19,7 @@ from numpy.ctypeslib import ndpointer
 import re
 import platform
 from warnings import warn
+import subprocess
 
 # aliases to avoid repeatedly doing multiple hash-table lookups
 _numpy_array = numpy.array
@@ -555,8 +556,11 @@ def _c_compile(formula):
             "PATH",
             my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
         )
-        os.system(gcc_cmd)
-        os.system("cygcheck " + filename + ".so")
+        #os.system(gcc_cmd)
+        result = subprocess.run(gcc_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        print(result.returncode, result.stdout, result.stderr)
+        os.system("ls")
+        os.system("cygcheck ./" + filename + ".so")
         os.putenv("PATH", my_path)
     else:
         os.system(gcc_cmd)
