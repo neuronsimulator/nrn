@@ -520,6 +520,11 @@ def _find_librxdmath():
     return dll
 
 
+def subprocrun(cmd):
+    print("\nbegin subprocrun\n", cmd)
+    result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    print("\nreturncode\n",result.returncode, "\nstdout\n", result.stdout, "\nstderr\n", result.stderr, "\nend subprocrun")
+
 def _c_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
     with open(filename + ".c", "w") as f:
@@ -557,16 +562,17 @@ def _c_compile(formula):
             my_path + ";" + os.path.join(h.neuronhome(), "mingw", "mingw64", "bin"),
         )
         #os.system(gcc_cmd)
-        result = subprocess.run(gcc_cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        print(result.returncode, result.stdout, result.stderr)
-        os.system("ls")
-        os.system("cygcheck ./" + filename + ".so")
+        subprocrun(gcc_cmd)
+        subprocrun("ls")
+        subprocrun("cygcheck ./" + filename + ".so")
         os.putenv("PATH", my_path)
     else:
-        os.system(gcc_cmd)
+        subprocrun(gcc_cmd)
     # TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
-    dll = ctypes.cdll["%s.so" % os.path.abspath(filename)]
+    soname = os.path.abspath(filename + ".so")
+    print("load ", soname)
+    dll = ctypes.cdll[soname]
     reaction = dll.reaction
     reaction.argtypes = [
         ctypes.POINTER(ctypes.c_double),
