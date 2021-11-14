@@ -523,7 +523,7 @@ def _find_librxdmath():
 def subprocrun(cmd):
     print("\nbegin subprocrun\n", cmd)
     result = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    print("\nreturncode\n",result.returncode, "\nstdout\n", result.stdout, "\nstderr\n", result.stderr, "\nend subprocrun")
+    print("\nreturncode\n",result.returncode, "\nstdout\n", result.stdout, "\nstderr\n", result.stderr, "\nend subprocrun", flush=True)
 
 def _c_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
@@ -571,7 +571,7 @@ def _c_compile(formula):
     # TODO: Find a better way of letting the system locate librxdmath.so.0
     rxdmath_dll = ctypes.cdll[_find_librxdmath()]
     soname = os.path.abspath(filename + ".so")
-    print("load ", soname)
+    print("ctypesload ", soname, flush=True)
     dll = ctypes.cdll[soname]
     reaction = dll.reaction
     reaction.argtypes = [
