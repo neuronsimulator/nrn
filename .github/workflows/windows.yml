@@ -79,3 +79,11 @@ jobs:
       run: .\ci\win_test_installer.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
+      
+    # This step will set up an SSH connection on tmate.io for live debugging.
+    # To enable it, you have to:
+    #   * add 'live-debug-win' to your PR title
+    #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
+      if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
+      uses: mxschmitt/action-tmate@v3
