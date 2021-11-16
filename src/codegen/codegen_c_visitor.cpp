@@ -69,13 +69,8 @@ void CodegenCVisitor::visit_integer(const Integer& node) {
     if (!codegen) {
         return;
     }
-    const auto& macro = node.get_macro();
     const auto& value = node.get_value();
-    if (macro) {
-        macro->accept(*this);
-    } else {
-        printer->add_text(std::to_string(value));
-    }
+    printer->add_text(std::to_string(value));
 }
 
 
