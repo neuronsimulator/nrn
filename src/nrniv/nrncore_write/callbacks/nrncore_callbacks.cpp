@@ -484,7 +484,7 @@ int core2nrn_corepointer_mech(int tid, int type,
     Memb_list* ml = nt._ml_list[type];
     // ARTIFICIAL_CELL are not in nt.
     if (!ml) {
-        ml = memb_list + type;
+        ml = CellGroup::deferred_type2artml_[tid][type];
         assert(ml);
     }
 
