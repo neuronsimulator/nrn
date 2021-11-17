@@ -1,5 +1,5 @@
 # ***********************************************************************
-# Copyright (C) 2018-2019 Blue Brain Project
+# Copyright (C) 2018-2021 Blue Brain Project
 #
 # This file is part of NMODL distributed under the terms of the GNU
 # Lesser General Public License. See top-level LICENSE file for details.
@@ -44,17 +44,6 @@ class BaseNode:
     def cpp_header(self):
         """Path to C++ header file of this class relative to BUILD_DIR"""
         return "ast/" + to_snake_case(self.class_name) + ".hpp"
-
-    @property
-    def cpp_fence(self):
-        """Preprocessor macro to use to prevent symbol redefinition
-
-            #ifndef {{ node.cpp_fence }}
-            #define {{ node.cpp_fence }}
-            // ...
-            # endif
-        """
-        return "NMODL_AST_" + to_snake_case(self.class_name).upper() + '_HPP'
 
     @property
     def is_statement_block_node(self):

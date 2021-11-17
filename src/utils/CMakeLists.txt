@@ -10,6 +10,7 @@ set(UTIL_SOURCE_FILES
     logger.hpp
     perf_stat.cpp
     perf_stat.hpp
+    string_utils.cpp
     string_utils.hpp
     table_data.cpp
     table_data.hpp

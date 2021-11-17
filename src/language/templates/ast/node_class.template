@@ -401,9 +401,9 @@ class {{ node.class_name }} : public {{ node.base_class }} {
 
 /** @} */  // end of ast_class
 
-{% if render_ast_all is not defined %}
-{% include "ast/node_class_inline_definition.template" %}
-{% endif %}
+{% for child in node.children %}
+  {{ child.get_add_methods_inline_definition(node) }}
+{% endfor %}
 
 }  // namespace ast
 }  // namespace nmodl
