@@ -199,7 +199,6 @@ def test_datareturn():
                 mode, nthread, cell_permute, max_diff
             )
         )
-        # print([x for x in h.Vector(std).sub(h.Vector(tst))])
         results.append(max_diff)
         if max_diff > 1e-10:
             for i in range(len(std)):
