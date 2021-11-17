@@ -1,5 +1,5 @@
 # ***********************************************************************
-# Copyright (C) 2018-2019 Blue Brain Project
+# Copyright (C) 2018-2021 Blue Brain Project
 #
 # This file is part of NMODL distributed under the terms of the GNU
 # Lesser General Public License. See top-level LICENSE file for details.
@@ -10,6 +10,7 @@ import collections
 import filecmp
 import itertools
 import logging
+import math
 import os
 from pathlib import Path, PurePath
 import shutil
@@ -152,25 +153,24 @@ class CodeGenerator(
         """
         # special template "ast/node.hpp used to generate multiple .hpp files
         node_hpp_tpl = self.jinja_templates_dir / "ast" / "node.hpp"
+        pyast_cpp_tpl = self.jinja_templates_dir / "pybind" / "pyast.cpp"
+        pynode_cpp_tpl = self.jinja_templates_dir / "pybind" / "pynode.cpp"
         # special template only included by other templates
         node_class_tpl = self.jinja_templates_dir / "ast" / "node_class.template"
-        node_class_inline_def_tpl = self.jinja_templates_dir / "ast" / "node_class_inline_definition.template"
-        # Jinja templates that should be ignored
-        ignored_templates = {node_class_tpl}
         # Additional dependencies Path -> [Path, ...]
-        extradeps = collections.defaultdict(
-            list,
-            {
-                self.jinja_templates_dir / "ast" / "all.hpp": [node_class_tpl, node_class_inline_def_tpl],
-                node_hpp_tpl: [node_class_tpl, node_class_inline_def_tpl],
-            },
-        )
+        extradeps = collections.defaultdict(list, {node_hpp_tpl: [node_class_tpl]})
         # Additional Jinja context set when rendering the template
+        num_pybind_files = 2
         extracontext = collections.defaultdict(
             dict,
             {
-                self.jinja_templates_dir / "ast" / "all.hpp": dict(render_ast_all=True)
-            }
+                pyast_cpp_tpl: {
+                    "setup_pybind_methods": [
+                        "init_pybind_classes_{}".format(x)
+                        for x in range(num_pybind_files)
+                    ]
+                }
+            },
         )
 
         tasks = []
@@ -179,8 +179,6 @@ class CodeGenerator(
             # create output directory if missing
             (self.base_dir / sub_dir).mkdir(parents=True, exist_ok=True)
             for filepath in path.glob("*.[ch]pp"):
-                if filepath in ignored_templates:
-                    continue
                 if filepath == node_hpp_tpl:
                     # special treatment for this template.
                     # generate one C++ header per AST node type
@@ -190,6 +188,23 @@ class CodeGenerator(
                             input=filepath,
                             output=self.base_dir / node.cpp_header,
                             context=dict(node=node, **extracontext[filepath]),
+                            extradeps=extradeps[filepath],
+                        )
+                        tasks.append(task)
+                        yield task
+                elif filepath == pynode_cpp_tpl:
+                    chunk_length = math.ceil(len(self.nodes) / num_pybind_files)
+                    for chunk_k in range(num_pybind_files):
+                        task = JinjaTask(
+                            app=self,
+                            input=filepath,
+                            output=self.base_dir / sub_dir / "pynode_{}.cpp".format(chunk_k),
+                            context=dict(
+                                nodes=self.nodes[
+                                    chunk_k * chunk_length : (chunk_k + 1) * chunk_length
+                                ],
+                                setup_pybind_method="init_pybind_classes_{}".format(chunk_k),
+                            ),
                             extradeps=extradeps[filepath],
                         )
                         tasks.append(task)
