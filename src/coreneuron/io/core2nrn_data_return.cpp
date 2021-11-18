@@ -511,6 +511,9 @@ void core2nrn_tqueue(NrnThread& nt) {
 
     // The items on the queue
     NetCvodeThreadData& ntd = net_cvode_instance->p[nt.id];
+    // make sure all buffered interthread events are on the queue
+    ntd.enqueue(net_cvode_instance, &nt);
+
     TQueue<QTYPE>* tqe = ntd.tqe_;
     TQItem* q;
     SelfEventWeightMap sewm;
