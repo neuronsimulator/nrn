@@ -262,7 +262,7 @@
                                   type: Identifier
                                   node_name: true
                               - length:
-                                  brief: "legth of an array or index position"
+                                  brief: "length of an array or index position"
                                   type: Expression
                                   prefix: {value: "["}
                                   suffix: {value: "]"}
@@ -271,7 +271,7 @@
                                     If variable is declared as an array or when array element is accessed,
                                     it is stored in the ast as ast::IndexedName. For example, in below NMODL,
                                     construct `m[4]` is stored as ast::IndexedName with `m` as ast::IndexedName::name
-                                    and `4` as ast::IndexedName::legth.
+                                    and `4` as ast::IndexedName::length.
 
                                     \code
                                         STATE {
