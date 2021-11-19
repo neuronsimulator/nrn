@@ -41,6 +41,7 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
+extern void* nrn_interthread_enqueue(NrnThread*);
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
@@ -484,7 +485,7 @@ int core2nrn_corepointer_mech(int tid, int type,
     Memb_list* ml = nt._ml_list[type];
     // ARTIFICIAL_CELL are not in nt.
     if (!ml) {
-        ml = memb_list + type;
+        ml = CellGroup::deferred_type2artml_[tid][type];
         assert(ml);
     }
 
@@ -755,6 +756,9 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   TQueue* tq = net_cvode_instance_event_queue(&nt);
   TQItem* tqi;
   auto& cg = cellgroups_[tid];
+  // make sure all buffered interthread events are on the queue
+  nrn_interthread_enqueue(&nt);
+
   while ((tqi = tq->atomic_dq(1e15)) != NULL) {
     // removes all items from NEURON queue to reappear in CoreNEURON queue
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
