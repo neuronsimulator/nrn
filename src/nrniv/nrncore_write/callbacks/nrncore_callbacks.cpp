@@ -827,6 +827,19 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       } break;
       case PreSynType: { // 4
         PreSyn* ps = (PreSyn*)de;
+
+        // NEURON puts PreSyn on every thread queue
+        // Skip if PreSyn not associated with this thread.
+        bool skip = (ps->nt_ && (ps->nt_->id != tid)) ? true : false;
+        // Skip if effectively an InputPresyn (ps->nt_ == NULL)
+        //     and this is not thread 0.
+        skip = (!ps->nt_ && tid != 0) ? true : skip;
+        if (skip) {
+          // erase what was already added
+          core_te->type.pop_back();
+          core_te->td.pop_back();
+          break;
+        }
         // Output PreSyn similar to NetCon but more data.
         // Input PreSyn (ps->output_index = -1 and ps->gid >= 0)
         // is distinquished from PreSyn (ps->output_index == ps->gid
