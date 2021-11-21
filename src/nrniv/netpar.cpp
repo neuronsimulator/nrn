@@ -966,8 +966,14 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 	bgpdma_cleanup_presyn(ps);
 #endif
 	PreSyn* pss;
+	if (ps->output_index_ >= 0 && gid2out_) {
+		gid2out_->remove(ps->output_index_);
+		ps->output_index_ = -1;
+		ps->gid_ = -1;
+	}
 	if (ps->gid_ >= 0 && gid2in_ && gid2in_donot_remove == 0) {
 		gid2in_->remove(ps->gid_);
+		ps->gid_ = -1;
 	}
 }
 
