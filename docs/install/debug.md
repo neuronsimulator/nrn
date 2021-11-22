@@ -177,7 +177,7 @@ NEURON has recently gained built-in support for performance profilers. Many mode
 
 #### Instrumentation
 
-NEURONs code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
+NEURON's code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
 
 1. using calls to `phase_begin()`, `phase_end()`
 
@@ -210,8 +210,15 @@ To enable a profiler, one needs to rebuild NEURON with the appropriate flags set
 ```bash
 mkdir build && cd build
 cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/share/cmake/caliper -DNRN_ENABLE_TESTS=ON
-make
+cmake --build . --parallel
 ```
+or if you are building CoreNEURON standalone:
+```bash
+mkdir build && cd build
+cmake .. -DCORENRN_ENABLE_CALIPER_PROFILING=ON -DCORENRN_ENABLE_UNIT_TESTS=ON
+cmake --build . --parallel
+```
+in both cases you might need to add something like `/path/to/caliper/share/cmake/caliper` to the `CMAKE_PREFIX_PATH` variable to help CMake find your installed version of Caliper.
 
 Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described [here](https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling).
 
@@ -256,5 +263,17 @@ finitialize                   0.000235      0.000235      0.000235  0.161020
   gap-v-transfer              0.000003      0.000003      0.000003  0.002056
 ```
 
-
-
+#### Running GPU benchmarks
+Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en/latest/) annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA's tools.
+In a CoreNEURON build with Caliper (`-DCORENRN_ENABLE_CALIPER_PROFILING=ON`) and GPU (`-DCORENRN_ENABLE_GPU=ON`) support enabled (this is currently based on OpenACC, so you [probably need to use the NVIDIA HPC compilers](../coreneuron/how-to/coreneuron.html)) you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
+A complete prefix to profile a CoreNEURON process with NVIDIA NSight Systems could be
+```bash
+CALI_CONFIG=nvtx nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0 --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt <coreneuron>
+```
+where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs.
+The `<coreneuron>` command is likely to be something similar to
+```bash
+path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
+```
+and you might also like to set `OMP_NUM_THREADS=1` when studying OpenACC performance, as otherwise there may be multiple CPU threads launching GPU kernels in parallel.
+CALI_CONFIG=nvtx OMP_NUM_THREADS=1 NSYS_NVTX_PROFILER_REGISTER_ONLY=0 nsys profile --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt {coreneuron_build_dir}/bin/x86_64/special-core --datpath {coreneuron_checkout_dir}/tests/integration/ring --tstop 1 --gpu
