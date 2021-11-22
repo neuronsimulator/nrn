@@ -48,8 +48,8 @@ endif()
 if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     olfactory-bulb-3d
-    GIT_REPOSITORY git@github.com:iomaganaris/olfactory-bulb-3d.git
-    GIT_TAG ae4bcb8f04d0e1ced29a462d4f891de5b0b4bd52
+    GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
+    GIT_TAG ace2ce9
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d
   )
   FetchContent_MakeAvailable(olfactory-bulb-3d)
