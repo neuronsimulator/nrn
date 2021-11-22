@@ -268,7 +268,7 @@ Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en
 In a CoreNEURON build with Caliper (`-DCORENRN_ENABLE_CALIPER_PROFILING=ON`) and GPU (`-DCORENRN_ENABLE_GPU=ON`) support enabled (this is currently based on OpenACC, so you [probably need to use the NVIDIA HPC compilers](../coreneuron/how-to/coreneuron.html)) you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
 A complete prefix to profile a CoreNEURON process with NVIDIA NSight Systems could be
 ```bash
-CALI_CONFIG=nvtx nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0 --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt <coreneuron>
+CALI_CONFIG=nvtx nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0 --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <coreneuron>
 ```
 where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs.
 The `<coreneuron>` command is likely to be something similar to
@@ -276,4 +276,3 @@ The `<coreneuron>` command is likely to be something similar to
 path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
 ```
 and you might also like to set `OMP_NUM_THREADS=1` when studying OpenACC performance, as otherwise there may be multiple CPU threads launching GPU kernels in parallel.
-CALI_CONFIG=nvtx OMP_NUM_THREADS=1 NSYS_NVTX_PROFILER_REGISTER_ONLY=0 nsys profile --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt {coreneuron_build_dir}/bin/x86_64/special-core --datpath {coreneuron_checkout_dir}/tests/integration/ring --tstop 1 --gpu
