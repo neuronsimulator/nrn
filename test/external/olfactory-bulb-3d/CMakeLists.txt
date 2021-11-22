@@ -15,7 +15,7 @@ set(olfcatory_bulb_3d_neuron_prefix
 nrn_add_test_group(
     NAME olfactory-bulb-3d
     SUBMODULE tests/olfactory-bulb-3d
-    OUTPUT asciispikes::olfactory.spikes.dat.000
+    OUTPUT asciispikes::olfactory_bulb.spikes.dat.000
     MODFILE_PATTERNS "${prefix}/*.mod"
     SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic")
 set(olfactory_bulb_3d_neuron_args
@@ -28,18 +28,19 @@ nrn_add_test(
     REQUIRES mpi python
     PROCESSORS ${olfcatory_bulb_3d_mpi_ranks}
     SIM_DIRECTORY "sim"
-    COMMAND ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} ${olfcatory_bulb_3d_sim_time} 0 0 0 olfactory)
+    PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g" bulb3dtest.py
+    COMMAND ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop ${olfcatory_bulb_3d_sim_time})
 foreach(processor gpu cpu)
 foreach(mode online)
     if(${processor} STREQUAL "gpu")
-        set(olfcatory_bulb_3d_gpu_args 1)
+        set(olfcatory_bulb_3d_gpu_args "--gpu")
     else()
-        set(olfcatory_bulb_3d_gpu_args 0)
+        set(olfcatory_bulb_3d_gpu_args "")
     endif()
     if(${mode} STREQUAL "online")
-        set(olfcatory_bulb_3d_filemode 0)
+        set(olfcatory_bulb_3d_filemode "")
     else()
-        set(olfcatory_bulb_3d_filemode 1)
+        set(olfcatory_bulb_3d_filemode "--filemode")
     endif()
     nrn_add_test(
         GROUP olfactory-bulb-3d
@@ -47,8 +48,9 @@ foreach(mode online)
         REQUIRES coreneuron python ${processor}
         PROCESSORS ${olfcatory_bulb_3d_mpi_ranks}
         SIM_DIRECTORY "sim"
+        PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g" bulb3dtest.py
         COMMAND
-        ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} ${olfcatory_bulb_3d_sim_time} 1 ${olfcatory_bulb_3d_gpu_args} ${olfcatory_bulb_3d_filemode} olfactory)
+        ${olfcatory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop ${olfcatory_bulb_3d_sim_time} --coreneuron ${olfcatory_bulb_3d_gpu_args} ${olfcatory_bulb_3d_filemode})
 endforeach()
 endforeach()
 nrn_add_test_group_comparison(GROUP olfactory-bulb-3d)
