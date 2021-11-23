@@ -28,7 +28,7 @@ FetchContent_Declare(
   GIT_TAG 70f363d7f82dfe6037fbddd8ed2e58cb20df6343
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
-FetchContent_MakeAvailable(ringtest reduced_dentate testcorenrn nrntest)
+FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn)
 
 add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)

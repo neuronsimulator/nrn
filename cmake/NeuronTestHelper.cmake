@@ -41,7 +41,8 @@
 #                 [SUBMODULE some/submodule]
 #                 [MODFILE_PATTERNS mod_file_pattern ...]
 #                 [OUTPUT datatype::file.ext otherdatatype::otherfile.ext ...]
-#                 [SCRIPT_PATTERNS "*.py" ...])
+#                 [SCRIPT_PATTERNS "*.py" ...]
+#                 [SIM_DIRECTORY sim_dir])
 #
 #    Create a new integration test inside the given group, which must have
 #    previously been created using nrn_add_test_group. The COMMAND option is
@@ -52,6 +53,8 @@
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
 #    if certain features are, or are not, available. Seven features are currently
 #    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
+#    The SIM_DIRECTORY argument is used to override the default directory in which
+#    the simulation is run.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
 #                                  REFERENCE_OUTPUT datatype::file.ext [...])

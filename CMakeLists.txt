@@ -64,7 +64,6 @@ option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACK
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 option(NRN_ENABLE_MODEL_TESTS "Enable tests with detailed models specified" ${NRN_ENABLE_MODEL_TESTS_DEFAULT})
 # parse NRN_ENABLE_MODEL_TESTS as list
-string(REPLACE " " ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
 string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
 option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units" ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
