@@ -810,7 +810,7 @@ class _Arithmeticed:
 
     def __abs__(self):
         return _Arithmeticed(
-            _Function(self, "numpy.abs", "abs"), valid_reaction_term=False
+            _Function(self, "numpy.abs", "fabs"), valid_reaction_term=False
         )
 
     def __pos__(self):
