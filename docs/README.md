@@ -13,11 +13,11 @@ Contents:
 ### Local build
 
 #### Setup
-It is recommended to use a `virtualenv`, for example:
+It is recommended to use a Python virtual environment, for example:
 
 ```
 pip3 install virtualenv
-python3 -m virtualenv venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 
@@ -26,8 +26,8 @@ In order to build documentation locally, you need to pip install the [docs_requi
 pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
 
-Also, make sure to have installed dependencies listed in [conda_environment.yml](conda_environment.yml)
-(note that this file is intended for the ReadTheDocs setup, but lists all desired requirements).
+Also, make sure to have `Doxygen` installed and the dependencies listed in [conda_environment.yml](conda_environment.yml)
+(note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements).
 
 With all dependencies installed, configure project with CMake as described in [README](../README.md). 
 
@@ -40,6 +40,8 @@ cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install
 #### Building the documentation
 
 **NOTE**: Executing the jupyter notebooks requires NEURON; make sure the neuron python module can be imported.
+For that, you would normally do a `make build` + `make install`, but you could also do a `pip install neuron`
+(in case you don't want/need to compile NEURON).
 
 In order to build the full documentation (Doxygen, Jupyter notebooks, Sphinx):
 ```
