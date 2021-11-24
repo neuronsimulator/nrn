@@ -117,7 +117,7 @@ int main(int argc, const char* argv[]) {
     bool localize_verbatim(false);
 
     /// true if local variables to be renamed
-    bool local_rename(false);
+    bool local_rename(true);
 
     /// true if inline even if verbatim block exist
     bool verbatim_inline(false);
