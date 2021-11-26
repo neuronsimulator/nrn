@@ -320,7 +320,9 @@ int main(int argc, const char* argv[]) {
         /// Check some rules that ast should follow
         {
             logger->info("Running semantic analysis visitor");
-            SemanticAnalysisVisitor().visit_program(*ast);
+            if (SemanticAnalysisVisitor().check(*ast)) {
+                return 1;
+            }
         }
 
         /// construct symbol table
