@@ -5942,6 +5942,18 @@ void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
     // but I do not want to affect the case of not using a bin queue.
 
 	if (nrn_use_bin_queue_) {
+		// it was noticed on binq + compressed spike exchange +
+		// threads that a transferred event may be languishing in
+		// the interthread event buffer. Perhaps this is better done
+		// as a multithread job at the end of nrn_spike_exchange
+		// instead of every time step --- but here we are
+		// already in a multithread job, so what is the overhead of
+		// starting such a small one in nrn_spike_exchange.
+		extern bool nrn_use_compress_;
+		if (nrn_use_compress_ && nrn_nthread > 1) {
+			p[tid].enqueue(this, nt);
+		}
+
 		while ((q = p[tid].tqe_->dequeue_bin()) != 0) {
 			DiscreteEvent* db = (DiscreteEvent*)q->data_;
 #if PRINT_EVENT
