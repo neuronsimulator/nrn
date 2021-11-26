@@ -23,10 +23,10 @@ using nmodl::parser::NmodlDriver;
 // Procedure/Function inlining tests
 //=============================================================================
 
-void run_semantic_analysis_visitor(const std::string& text) {
+bool run_semantic_analysis_visitor(const std::string& text) {
     NmodlDriver driver;
     const auto& ast = driver.parse_string(text);
-    SemanticAnalysisVisitor().visit_program(*ast);
+    return SemanticAnalysisVisitor{}.check(*ast);
 }
 
 SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
@@ -37,8 +37,8 @@ SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
                 ainf = 1
             }
         )";
-        THEN("throw") {
-            REQUIRE_THROWS(run_semantic_analysis_visitor(nmodl_text));
+        THEN("fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
     GIVEN("Procedure with exactly one argument") {
@@ -48,8 +48,8 @@ SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
                 ainf = 1
             }
         )";
-        THEN("no throw") {
-            REQUIRE_NOTHROW(run_semantic_analysis_visitor(nmodl_text));
+        THEN("pass") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
     GIVEN("Procedure with less than one argument") {
@@ -59,8 +59,49 @@ SCENARIO("TABLE stmt", "[visitor][semantic_analysis]") {
                 ainf = 1
             }
         )";
-        THEN("throw") {
-            REQUIRE_THROWS(run_semantic_analysis_visitor(nmodl_text));
+        THEN("fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+}
+
+SCENARIO("Destructor block", "[visitor][semantic_analysis]") {
+    GIVEN("A point-process mod file, with a destructor") {
+        std::string nmodl_text = R"(
+            DESTRUCTOR { : Destructor is before
+            }
+
+            NEURON {
+                POINT_PROCESS test
+            }
+        )";
+        THEN("pass") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A artifial-cell mod file, with a destructor") {
+        std::string nmodl_text = R"(
+            NEURON {
+                ARTIFICIAL_CELL test
+            }
+
+            DESTRUCTOR {
+            }
+        )";
+        THEN("pass") {
+            REQUIRE_FALSE(run_semantic_analysis_visitor(nmodl_text));
+        }
+    }
+    GIVEN("A non point-process mod file, with a destructor") {
+        std::string nmodl_text = R"(
+            NEURON {
+            }
+
+            DESTRUCTOR {
+            }
+        )";
+        THEN("fail") {
+            REQUIRE(run_semantic_analysis_visitor(nmodl_text));
         }
     }
 }
