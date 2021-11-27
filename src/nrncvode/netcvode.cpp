@@ -2860,7 +2860,7 @@ void NetCvode::clear_events() {
 		}
 #if BBTQ == 5
 		d.tqe_->nshift_ = -1;
-		d.tqe_->shift_bin(nt_t);
+		d.tqe_->shift_bin(nt_t - 0.5*nt_dt);
 #endif
 	}
 	// I don't believe this is needed anymore since cvode not needed

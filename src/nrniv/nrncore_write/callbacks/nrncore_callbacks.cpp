@@ -5,6 +5,7 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "nrncvode.h"
 #include "nrniv_mf.h"
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
@@ -935,6 +936,14 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   }
 
   return core_te;
+}
+
+/** @brief Initialize queues before transfer
+    Probably aleady clear, but if binq then must be initialized to time.
+ */
+void core2nrn_clear_queues(double time) {
+    nrn_threads[0]._t = time; // used by clear_event_queue
+    clear_event_queue();
 }
 
 /** @brief Called from CoreNEURON core2nrn_tqueue_item.
