@@ -93,11 +93,12 @@ public:
 	void forall_callback(void (*)(const TQItem*, int));
 	int nshift_;
 	void deleteitem(TQItem*);
+public:
+	BinQ* binq_; // made public for nrn2core_transfer_tqueue
 private:
 	double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
 	void move_least_nolock(double tnew);
 	SPTREE<TQItem>* sptree_;
-	BinQ* binq_;
 	TQItem* least_;
 	TQItemPool* tpool_;
 	MUTDEC
