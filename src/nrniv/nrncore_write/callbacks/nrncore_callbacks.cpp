@@ -760,7 +760,33 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   // make sure all buffered interthread events are on the queue
   nrn_interthread_enqueue(&nt);
 
-  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
+  //while ((tqi = tq->atomic_dq(1e15)) != NULL) { // misses the binq events
+  // need to iterate over atomic_dq and the binq. Could factor out the body
+  // and have two loops that call a function but involves passing references
+  // as well as other things local to this method. So use a more elaborate
+  // while(true) that knows enought state to to both queues.
+  int what = 0; // 0 means atomic_dq, 1 means first binq, 2 means next binq
+  while (true) {
+    if (what == 0) {
+      tqi = tq->atomic_dq(1e15);
+      if (tqi == NULL) {
+        what = 1; // start on the binq
+        continue; // from the begining of the for loop
+      }
+    } else if (what == 1) {
+      extern bool nrn_use_bin_queue_;
+      if (!nrn_use_bin_queue_) {
+        break; // done with the for loop
+      }
+      tqi = tq->binq_->first();
+      what = 2;
+    } else {
+      tqi = tq->binq_->next(tqi);
+    }
+    if (!tqi) {
+      break; // done with the for loop
+    }
+
     // removes all items from NEURON queue to reappear in CoreNEURON queue
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
     int type = de->type();
