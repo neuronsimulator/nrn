@@ -405,13 +405,16 @@ class SpeciesOnExtracellular(_SpeciesMathable):
         """Return a single alpha value for a homogeneous volume fraction of a list of alpha values for an inhomogeneous volume fraction at grid locations given in a list (locs)."""
         e = self._extracellular()._region
         if numpy.isscalar(e.alpha):
-            return e.alpha
-        alphas = []
-        for loc in locs:
-            i = int((loc[0] - e._xlo) / e._dx[0])
-            j = int((loc[1] - e._ylo) / e._dx[1])
-            k = int((loc[2] - e._zlo) / e._dx[2])
-            alphas.append(e.alpha[i, j, k])
+            return e.alpha 
+        elif hasattr(e.alpha,'nodes'):
+           alphas = [e.alpha.nodes((x,y,z)).value[0] for (x,y,z) in locs]   
+        else:
+            alphas = []
+            for loc in locs:
+                i = int((loc[0] - e._xlo) / e._dx[0])
+                j = int((loc[1] - e._ylo) / e._dx[1])
+                k = int((loc[2] - e._zlo) / e._dx[2])
+                alphas.append(e.alpha[i, j, k])
         return numpy.array(alphas)
 
     def node_by_ijk(self, i, j, k):
