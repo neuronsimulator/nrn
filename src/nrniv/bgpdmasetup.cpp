@@ -356,7 +356,7 @@ static void fill_dma_send_lists(int sz, int* r) {
 		}
 	}}}
 	if (use_phase2_) NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
+		BGP_DMASend_Phase2* bsp = ps->bgp.dma_send_phase2_;
 		if (bsp && max_multisend_targets < bsp->ntarget_hosts_phase2_) {
 			max_multisend_targets = bsp->ntarget_hosts_phase2_;
 		}
@@ -598,6 +598,7 @@ static int setup_target_lists(int** r_return) {
 		delete tl;
 	}}}
 	delete gid2tarlist;
+	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
 	all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "lists");
 	del(s);
