@@ -740,54 +740,15 @@ static void setup_type2semantics() {
   }
 }
 
-NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
-  if (tid >= nrn_nthread) { return NULL; }
+// Copying TQItem information for transfer to CoreNEURON has been factored
+// out of nrn2core_transfer_tqueue since, if BinQ is being used, it involves
+// iterating over the BinQ as well as the normal TQueue.
+static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
+  std::unordered_map<NetCon*, std::vector<size_t> >& netcon2intdata,
+  std::unordered_map<PreSyn*, std::vector<size_t> >& presyn2intdata,
+  std::unordered_map<double*, std::vector<size_t> >& weight2intdata) {
 
-  setup_type2semantics();
-
-  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
-
-  // see comments below about same object multiple times on queue
-  // and single sweep fill
-  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
-  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
-  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
-
-  NrnThread& nt = nrn_threads[tid];
-  TQueue* tq = net_cvode_instance_event_queue(&nt);
-  TQItem* tqi;
-  auto& cg = cellgroups_[tid];
-  // make sure all buffered interthread events are on the queue
-  nrn_interthread_enqueue(&nt);
-
-  //while ((tqi = tq->atomic_dq(1e15)) != NULL) { // misses the binq events
-  // need to iterate over atomic_dq and the binq. Could factor out the body
-  // and have two loops that call a function but involves passing references
-  // as well as other things local to this method. So use a more elaborate
-  // while(true) that knows enought state to to both queues.
-  int what = 0; // 0 means atomic_dq, 1 means first binq, 2 means next binq
-  while (true) {
-    if (what == 0) {
-      tqi = tq->atomic_dq(1e15);
-      if (tqi == NULL) {
-        what = 1; // start on the binq
-        continue; // from the begining of the for loop
-      }
-    } else if (what == 1) {
-      extern bool nrn_use_bin_queue_;
-      if (!nrn_use_bin_queue_) {
-        break; // done with the for loop
-      }
-      tqi = tq->binq_->first();
-      what = 2;
-    } else {
-      tqi = tq->binq_->next(tqi);
-    }
-    if (!tqi) {
-      break; // done with the for loop
-    }
-
-    // removes all items from NEURON queue to reappear in CoreNEURON queue
+    NrnThread& nt = nrn_threads[tid];
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
     int type = de->type();
     double tdeliver = tqi->t_;
@@ -911,7 +872,42 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       } break;
       default: {
       } break;
-    }            
+    }
+}
+
+NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
+  if (tid >= nrn_nthread) { return NULL; }
+
+  setup_type2semantics();
+
+  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
+
+  // see comments below about same object multiple times on queue
+  // and single sweep fill
+  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
+  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
+  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
+
+  NrnThread& nt = nrn_threads[tid];
+  TQueue* tq = net_cvode_instance_event_queue(&nt);
+  TQItem* tqi;
+  auto& cg = cellgroups_[tid];
+  // make sure all buffered interthread events are on the queue
+  nrn_interthread_enqueue(&nt);
+
+  // Iterate over all tqueue items to record info needed for transfer to
+  // coreneuron. The atomic_dq removes items from the queue but misses
+  // BinQ items if present. So need separate iteration for that (hence the
+  // factoring out of the loop bodies into set_info.)
+  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
+    set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+  }
+  if (nrn_use_bin_queue_) {
+    // does not remove items but the entire queue will be cleared
+    // before using again. 
+    for (tqi = tq->binq_->first(); tqi; tqi = tq->binq_->next(tqi)) {
+      set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+    }
   }
 
   // fill in the integers for the pointer translation
