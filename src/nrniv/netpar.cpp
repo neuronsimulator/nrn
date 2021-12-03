@@ -965,7 +965,6 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 #if BGPDMA
 	bgpdma_cleanup_presyn(ps);
 #endif
-	PreSyn* pss;
 	if (ps->output_index_ >= 0 && gid2out_) {
 		gid2out_->remove(ps->output_index_);
 		ps->output_index_ = -1;
@@ -987,7 +986,7 @@ void nrnmpi_gid_clear(int arg) {
 	if (arg == 0 || arg == 2 || arg == 4) { nrnmpi_multisplit_clear(); }
 	if (arg == 2 || arg == 3) { return; }
 	if (!gid2out_) { return; }
-	PreSyn* ps, *psi;
+	PreSyn* psi;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps && !gid2in_->find(ps->gid_, psi)) {
 		    if (arg == 4) {
@@ -1318,7 +1317,7 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vect
             all_spikegidvec->vec().insert(all_spikegidvec->end(), spikegidvec.begin(), spikegidvec.end());
             
         }else{ // different underlying vectors for PreSyns
-            for (int i = 0; i < spikegidvec.size(); ++i ) {
+            for (size_t i = 0; i < spikegidvec.size(); ++i ) {
                 PreSyn* ps;
                 if (gid2out_->find(spikegidvec[i], ps)) {
                     ps->record(spiketvec[i]);
@@ -1538,7 +1537,6 @@ PreSyn* nrn_gid2presyn(int gid) { // output PreSyn
 }
 
 void nrn_gidout_iter(PFIO callback) {
-	PreSyn* ps;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps) {
 			int gid = ps->gid_;
@@ -1558,7 +1556,6 @@ static int weightcnt(NetCon* nc) {
 }
 
 size_t nrncore_netpar_bytes() {
-  PreSyn* ps;
   size_t ntot, nin, nout, nnet, nweight;
   ntot = nin = nout = nnet = nweight = 0;
 size_t npnt = 0;
@@ -1609,7 +1606,6 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
     gidcnt[i] = 0;
   }
 
-  PreSyn* ps;
   NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
     if (ps && ps->thvar_) {
       int ith = ps->nt_->id;

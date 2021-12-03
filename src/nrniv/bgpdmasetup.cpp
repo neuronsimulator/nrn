@@ -121,7 +121,6 @@ static int* newoffset(int* acnt, int size) {
 
 // input scnt, sdispl ; output, newly allocated rcnt, rdispl
 static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
-	int i;
 	int np = nrnmpi_numprocs;
 	int* c = newintval(1, np);
 	rdispl = newoffset(c, np);
@@ -380,6 +379,7 @@ static int setup_target_lists(int** r_return) {
 	// scnt is number of input gids from target
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+                assert(ps->gid_ == gid); // avoid unused warning
 		++scnt[gid%nhost];
 	}}}
 
@@ -387,6 +387,7 @@ static int setup_target_lists(int** r_return) {
 	sdispl = newoffset(scnt, nhost);
 	s = newintval(0, sdispl[nhost]);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+		assert(ps->gid_ == gid); // avoid unused warning
 		s[sdispl[gid%nhost]++] = gid;
 	}}}
 	// Restore sdispl for the message.
@@ -528,6 +529,7 @@ static int setup_target_lists(int** r_return) {
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+		assert(gid >= 0); // avoid unused warning
 		if (tl->rank < 0) {
 			// When the output gid does not generate spikes, that rank
 			// is not interested if there is a target list for it.
