@@ -151,7 +151,6 @@ public:
 };
 
 static int use_phase2_;
-static void setup_phase2();
 #define NTARGET_HOSTS_PHASE1 ntarget_hosts_phase1_
 
 class BGP_DMASend {
@@ -162,11 +161,6 @@ public:
 	int ntarget_hosts_;
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
-#if 0
-	// There is no possibility of send2self because an output PreSyn
-	// is never in the gid2in_ table.
-	int send2self_; // if 1 then send spikes to this host also
-#endif
 	int ntarget_hosts_phase1_;
 };
 
@@ -474,7 +468,6 @@ static void bgp_dma_init() {
 
 static int bgp_advance() {
 	NRNMPI_Spike spk;
-	PreSyn* ps;
 	int i = 0;
 	while(nrnmpi_bgp_single_advance(&spk)) {
 		i += 1;
@@ -505,9 +498,6 @@ void nrnbgp_messager_advance() {
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
 	target_hosts_ = NULL;
-#if 0
-	send2self_ = 0;
-#endif
 	ntarget_hosts_phase1_ = 0;
 }
 
@@ -527,8 +517,6 @@ BGP_DMASend_Phase2::~BGP_DMASend_Phase2() {
 		delete [] target_hosts_phase2_;
 	}
 }
-
-static	int isend;
 
 // helps debugging when core dump since otherwise cannot tell where
 // BGP_DMASend::send fails
@@ -563,16 +551,6 @@ void BGP_DMASend::send(int gid, double t) {
     }
 #endif
   }
-#if 0
-	// I am given to understand that multisend cannot send to itself
-	// one is never supposed to send to oneself since an output presyn
-	// can never be in the gid2in_ table (ie. the assert below would fail).
-	if (send2self_) {
-		PreSyn* ps;
-		nrn_assert(gid2in_->find(gid, ps));
-		ps->send(t, net_cvode_instance, nrn_threads);
-	}
-#endif
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
@@ -596,15 +574,6 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
   }
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
-
-
-static void determine_source_hosts();
-static void determine_targid_count_on_srchost(int* src, int* send);
-static void determine_targids_on_srchost(int* s, int* scnt, int* sdispl,
-    int* r, int* rcnt, int* rdispl);
-static void determine_target_hosts();
-static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
-	int* thishostgid, int* n, int* displ, int bsize, int* buf);
 
 void bgp_dma_receive(NrnThread* nt) {
 //	nrn_spike_exchange();
@@ -724,12 +693,18 @@ static void bgpdma_cleanup() {
 	}}}
 }
 
+#ifndef BGPTIMEOUT
+#define BGPTIMEOUT 1
+#endif
+
+#if BGPTIMEOUT
 static void bgptimeout() {
 	printf("%d timeout %d %d %d\n", nrnmpi_myid, current_rbuf,
 		bgp_receive_buffer[current_rbuf]->nsend_,
 		bgp_receive_buffer[current_rbuf]->nrecv_
 	);
 }
+#endif
 
 #if WORK_AROUND_RECORD_BUG
 static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
@@ -770,8 +745,9 @@ void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (!use_bgpdma_) { return; }
 	//not sure this is useful for debugging when stuck in a collective.
-	//nrntimeout_call = bgptimeout;
-	double wt = nrnmpi_wtime();
+#if BGPTIMEOUT
+	nrntimeout_call = bgptimeout;
+#endif
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
 	// although we only care about the set of hosts that gid2out_

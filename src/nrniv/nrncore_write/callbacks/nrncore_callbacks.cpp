@@ -288,7 +288,6 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
-    int n = nt.end;
     if (copy) {
         for (int i=0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
@@ -390,7 +389,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
-    NrnThread& nt = nrn_threads[tid];
 
     output_vindex = new int[cg.n_presyn];
     output_threshold = new double[cg.n_real_output];
@@ -428,7 +426,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 int nrnthread_dat2_corepointer(int tid, int& n) {
 
     if (tid >= nrn_nthread) { return 0; }
-    NrnThread& nt = nrn_threads[tid];
 
     n = 0;
     MlWithArt& mla = cellgroups_[tid].mlwithart;
@@ -506,7 +503,6 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
     for (int i=0; i < ml->nodecount; ++i) {
-        Datum* d = ml->pdata[i];
         int ioff = i*sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
@@ -687,7 +683,6 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, in
   assert(pnt);
   int tid = ((NrnThread*)(pnt->_vnt))->id;
   int pnttype = pnt->prop->type;
-  double nrflag = wc->nrflag_; // don't care about this
   int watch_index = wc->watch_index_;
   int triggered = wc->flag_ ? 1 : 0;
   int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
@@ -748,7 +743,6 @@ static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
   std::unordered_map<PreSyn*, std::vector<size_t> >& presyn2intdata,
   std::unordered_map<double*, std::vector<size_t> >& weight2intdata) {
 
-    NrnThread& nt = nrn_threads[tid];
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
     int type = de->type();
     double tdeliver = tqi->t_;
@@ -792,7 +786,6 @@ static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
         // can only be determined by sweeping over all NetCon.
         
         double* data = pnt->prop->param;
-        Memb_list* ml = nt._ml_list[type];
         // Introduced the public static method below because ARTIFICIAL_CELL
         // are not located in NrnThread and are not cache efficient.
         int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
@@ -861,7 +854,6 @@ static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
         // Not supported in CoreNEURON, discard and print a warning.
         core_te->td.pop_back();
         core_te->type.pop_back();
-        HocEvent* he = (HocEvent*)de;
         // Delivery time was often reduced by a quarter step to avoid
         // fixed step roundoff problems.
         Fprintf(stderr, "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
