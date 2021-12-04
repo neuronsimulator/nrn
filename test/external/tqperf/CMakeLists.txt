@@ -3,7 +3,7 @@ nrn_add_test_group(
   NAME tqperf
   SUBMODULE tests/tqperf
   MODFILE_PATTERNS "mod/*.mod modx/*.mod"
-  SCRIPT_PATTERNS "*.py" "*.hoc" "mod/*.mod" "modx/*.mod")
+  SCRIPT_PATTERNS "*.py" "*.hoc" "ci-test.sh" "mod/*.mod" "modx/*.mod")
 
 set(tqperf_mpi_ranks 16)
 set(tqperf_sim_time 100)
