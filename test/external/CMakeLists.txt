@@ -19,7 +19,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG 2fbb3c8303c94d76113cc74f13ef9df0014fdf71
+  GIT_TAG 1d283f3e72fba9fd1dda3a81e8ccd7616b49b559
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
@@ -35,7 +35,7 @@ add_subdirectory(reduced_dentate)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
 
-if(NRN_ENABLE_TESTS_BBP)
+if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
@@ -43,4 +43,15 @@ if(NRN_ENABLE_TESTS_BBP)
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
+endif()
+
+if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
+  FetchContent_Declare(
+    olfactory-bulb-3d
+    GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
+    GIT_TAG e3c2312
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d
+  )
+  FetchContent_MakeAvailable(olfactory-bulb-3d)
+  add_subdirectory(olfactory-bulb-3d)
 endif()
