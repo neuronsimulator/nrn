@@ -56,15 +56,17 @@ foreach(processor cpu gpu)
     COMMAND OMP_NUM_THREADS=1 ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
     OUTPUT asciispikes::out.dat)
 
-  set(ringtest_num_threads 2)
+  # Following suggestion on #1552, run a test with more threads than datasets.
+  set(ringtest_num_threads 3)
+  set(ringtest_num_datasets 2)
   math(EXPR ringtest_mpi_ranks_times_threads "${ringtest_mpi_ranks}*${ringtest_num_threads}")
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_threads
     REQUIRES coreneuron mpi python ${processor}
     PROCESSORS ${ringtest_mpi_ranks_times_threads}
-    COMMAND OMP_NUM_THREADS=2 ${ringtest_special} -tstop 100 -coreneuron -nt
-            ${ringtest_num_threads} ${gpu_arg})
+    COMMAND OMP_NUM_THREADS=${ringtest_num_threads} ${ringtest_special} -tstop 100 -coreneuron -nt
+            ${ringtest_num_datasets} ${gpu_arg})
 endforeach()
 # Step 3 -- add a job that compares the outputs of all the tests added in Step 2
 nrn_add_test_group_comparison(
