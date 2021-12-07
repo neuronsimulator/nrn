@@ -698,7 +698,7 @@ static void bgpdma_cleanup() {
 }
 
 #ifndef BGPTIMEOUT
-#define BGPTIMEOUT 1
+#define BGPTIMEOUT 0
 #endif
 
 #if BGPTIMEOUT
