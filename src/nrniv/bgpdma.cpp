@@ -140,8 +140,10 @@ public:
 	NRNMPI_Spike** buffer_;
 	SpkPool* pool_;
 
+#if ENQUEUE == 1
 	void enqueue1();
 	void enqueue2();
+#endif
 	PreSyn** psbuf_;
 	void phase2send();
 	int phase2_head_;
@@ -310,6 +312,7 @@ void BGP_ReceiveBuffer::enqueue() {
 	phase2send();
 }
 
+#if ENQUEUE == 1
 void BGP_ReceiveBuffer::enqueue1() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
@@ -350,6 +353,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 	nsend_cell_ = 0;
 	busy_ = 0;
 }
+#endif // ENQUEUE == 1
 
 void BGP_ReceiveBuffer::phase2send() {
 	while (phase2_head_ != phase2_tail_) {
