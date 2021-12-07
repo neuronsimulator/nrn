@@ -60,6 +60,8 @@ jobs:
         path: ${{runner.workspace}}\nrn\nrn-nightly-AMD64.exe
 
     - name: Test Installer
-      run: .\ci\win_test_installer.cmd
+      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
+      # see https://github.com/neuronsimulator/nrn/issues/1522
+      run: .\ci\win_test_installer_wo_rxd.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn
