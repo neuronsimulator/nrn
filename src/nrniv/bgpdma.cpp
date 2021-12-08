@@ -671,9 +671,6 @@ void bgp_dma_send(PreSyn* ps, double t) {
 	if (ps->bgp.dma_send_) ps->bgp.dma_send_->send(ps->output_index_, t);
 }
 
-void bgpdma_send_init(PreSyn* ps) {
-}
-
 void bgpdma_cleanup_presyn(PreSyn* ps) {
 	if (ps->bgp.dma_send_) {
 		if (ps->output_index_ >= 0) {
@@ -695,6 +692,16 @@ static void bgpdma_cleanup() {
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 		bgpdma_cleanup_presyn(ps);
 	}}}
+	if (!use_bgpdma_ && bgp_receive_buffer[1]) {
+		delete bgp_receive_buffer[0];
+		bgp_receive_buffer[0] = NULL;
+	}
+#if BGP_INTERVAL == 2
+	if ((!use_bgpdma_ || n_bgp_interval != 2) && bgp_receive_buffer[1]) {
+		delete bgp_receive_buffer[1];
+		bgp_receive_buffer[1] = NULL;
+	}
+#endif
 }
 
 #ifndef BGPTIMEOUT
