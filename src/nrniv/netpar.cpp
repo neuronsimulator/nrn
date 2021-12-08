@@ -1468,6 +1468,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	use_bgpdma_ = (xchng_meth & 1) == 1;
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
 	if (use_bgpdma_) { assert(BGPDMA); }
+	bgpdma_cleanup();
 #else // BGPDMA == 0
 	assert(xchng_meth == 0);
 #endif
