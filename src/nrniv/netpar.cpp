@@ -6,6 +6,7 @@
 #include <nrnoc2iv.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unordered_map>
 #define ALTHASH 1
 #if ALTHASH
 #include <nrnhash_alt.h>
