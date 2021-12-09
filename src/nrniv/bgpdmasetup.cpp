@@ -178,9 +178,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-declareNrnHash(Int2TarList, int, TarList*)
-implementNrnHash(Int2TarList, int, TarList*)
-static Int2TarList* gid2tarlist;
+using Int2TarList = std::unordered_map<int, TarList*>;
 
 TarList::TarList() {
 	size = 0;
@@ -401,21 +399,16 @@ static int setup_target_lists(int** r_return) {
 	// r is the gids received by this intermediate rank from all other ranks.
 
 	// Construct hash table for finding the target rank list for a given gid.
-	gid2tarlist = new Int2TarList(1000);
+	Int2TarList gid2tarlist;
 	// Now figure out the size of the target list for each distinct gid in r.
 	for (int i=0; i < rdispl[nhost]; ++i) {
-#if ALTHASH
-		TarList* tl;
-		if (gid2tarlist->find(r[i], tl)) {
-			tl->size += 1;
-		}else{
-			tl = new TarList();
-			tl->size = 1;
-			gid2tarlist->insert(r[i], tl);
+		int gid = r[i];
+		if (gid2tarlist.find(gid) == gid2tarlist.end()) {
+			gid2tarlist[gid] = new TarList{};
+			gid2tarlist[gid]->size = 0;
 		}
-#else
-		assert(0);
-#endif
+		TarList* tl = gid2tarlist[gid];
+		++(tl->size);
 	}
 
 	// Conceptually, now the intermediate is the mpi source and the gid
@@ -432,18 +425,20 @@ static int setup_target_lists(int** r_return) {
 	// target lists.
 
 	// Allocate the target lists (and set size to 0 (we will recount when filling).
-	NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+	for (auto& iter: gid2tarlist) {
+		TarList* tl = iter.second;
 		tl->alloc();
 		tl->size = 0;
-	}}}
+	}
 
 	// fill the target lists
 	for (int rank=0; rank < nhost; ++rank) {
 		int b = rdispl[rank];
 		int e = rdispl[rank + 1];
 		for (int i=b; i < e; ++i) {
-			TarList* tl;
-			if (gid2tarlist->find(r[i], tl)) {
+			const auto iter = gid2tarlist.find(r[i]);
+			if (iter != gid2tarlist.end()) {
+				TarList* tl = iter->second;
 				tl->list[tl->size] = rank;
 				tl->size++;
 			}
@@ -496,7 +491,9 @@ static int setup_target_lists(int** r_return) {
 			// that case the tl->rank remains -1.
 			// For example multisplit gids or simulation of a subset of
 			// cells.
-			if (gid2tarlist->find(r[i], tl)) {
+			const auto iter = gid2tarlist.find(r[i]);
+			if (iter != gid2tarlist.end()) {
+				TarList* tl = iter->second;
 				tl->rank = rank;
 			}
 		}
@@ -505,11 +502,12 @@ static int setup_target_lists(int** r_return) {
 
 	if (use_phase2_) {
 		random_init(nrnmpi_myid + 1);
-		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+		for (const auto& iter: gid2tarlist) {
+			TarList* tl = iter.second;
 			if (tl->rank >= 0) { // only if output gid is spike generating
 				phase2organize(tl);
 			}
-		}}}
+		}
 	}
 
 	// For clarity, use the all2allv_int style of information flow
@@ -528,8 +526,8 @@ static int setup_target_lists(int** r_return) {
 
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
-	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
-		assert(gid >= 0); // avoid unused warning
+	for (const auto& iter: gid2tarlist) {
+		TarList* tl = iter.second;
 		if (tl->rank < 0) {
 			// When the output gid does not generate spikes, that rank
 			// is not interested if there is a target list for it.
@@ -559,11 +557,13 @@ static int setup_target_lists(int** r_return) {
 			// total list size (needed for conservation);
 			scnt[tl->rank] += 1;
 		}
-	}}}
+	}
 	sdispl = newoffset(scnt, nhost);
 	s = newintval(0, sdispl[nhost]);
 	// what to send to each rank
-	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+	for (const auto& iter: gid2tarlist) {
+		int gid = iter.first;
+		TarList* tl = iter.second;
 		if (tl->rank < 0) {
 			continue;
 		}
@@ -598,8 +598,7 @@ static int setup_target_lists(int** r_return) {
 			}
 		}
 		delete tl;
-	}}}
-	delete gid2tarlist;
+	}
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
 	all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "lists");
