@@ -290,8 +290,9 @@ void BGP_ReceiveBuffer::enqueue1() {
 	busy_ = 1;
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
-		PreSyn* ps;
-		nrn_assert(gid2in_->find(spk->gid, ps));
+		auto iter = gid2in_->find(spk->gid);
+		nrn_assert(iter != gid2in_.end()));
+		PreSyn* ps = iter->second;
 		psbuf_[i] = ps;
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
@@ -379,23 +380,12 @@ double nrn_bgp_receive_time(int type) { // and others
 		}
 #endif
 		break;
-#if ALTHASH
-	case 5:
-		rt = double(gid2in_->max_chain_length());
-		break;
-	case 6:
-		rt = double(gid2in_->nclash());
-		break;
-	case 7:
-		rt = double(gid2in_->nfind());
-		break;
-#endif
 	case 8: // exchange method properties
 		// bit 0: 0 allgather, 1 multisend (MPI_ISend)
 		// bit 1: unused, legacy
 		// bit 2: n_bgp_interval, 0 means one interval, 1 means 2
 		// bit 3: number of phases, 0 means 1 phase, 1 means 2
-		// bit 4: 1 means althash used
+		// bit 4: unused (1 used to mean althash used)
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
 		int method = use_bgpdma_ ? 1 : 0;
@@ -768,15 +758,16 @@ void bgp_dma_setup() {
 int ncs_bgp_sending_info( int **sendlist2build )
 {
 	int nsrcgid = 0;
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		if (ps->output_index_ >= 0) {
+	for (const auto& iter: gid2out_) {
+		if (iter.second->output_index_ >= 0) {
 			++nsrcgid;
 		}
-	}}}
+	}
 
 	*sendlist2build = nsrcgid ? new int[nsrcgid] : 0;
 	int i = 0;
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+	for (const auto& iter: gid2out) {
+		PreSyn* ps = iter.second;
 		if (ps->output_index_ >= 0) {
 			(*sendlist2build)[i] = ps->gid_;
 			++i;
@@ -791,8 +782,9 @@ int ncs_bgp_sending_info( int **sendlist2build )
 //function to access the sending information of a presyn
 int ncs_bgp_target_hosts( int gid, int** targetnodes )
 {
-    PreSyn* ps;
-    nrn_assert(gid2out_->find(gid, ps));
+    auto iter = gid2out_->find(gid);
+    nrn_assert(iter != gid2out_.end());
+    PreSyn* ps = iter->second;
     if( ps->bgp.dma_send_ ) {
         (*targetnodes) = ps->bgp.dma_send_->ntarget_hosts_? new int[ps->bgp.dma_send_->ntarget_hosts_] : 0;
         return ps->bgp.dma_send_->ntarget_hosts_;
@@ -806,32 +798,31 @@ int ncs_bgp_target_info( int **presyngids )
 {
     //(*presyngids) = 0;
 
-	int i, nsrcgid;
-	PreSyn* ps;
+    int i, nsrcgid;
     nsrcgid = 0;
 
-	// some target PreSyns may not have any input
-	// so initialize all to -1
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    // some target PreSyns may not have any input
+    // so initialize all to -1
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             ++nsrcgid;
             //printf( "Node %d: Presyn for gid %d has src %d\n", nrnmpi_myid, ps->gid_, ps->bgp.srchost_ );
         }
-	}}}
+    }
     
     (*presyngids) = nsrcgid ? new int[nsrcgid] : 0;
     
     i=0;
-    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             (*presyngids)[i] = ps->gid_;
             ++i;
         }
-	}}}
+    }
     
     return nsrcgid;
 }
@@ -840,27 +831,28 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 {
     int i, nsrcgid=0;
 
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
         assert(ps->output_index_ < 0);
-        if( ps->bgp.srchost_ != -1 )  //has input
-        {
+        if( ps->bgp.srchost_ != -1 ) { //has input
             ++nsrcgid;
         }
-	}}}
+    }
 
     (*delays) = nsrcgid ? new double[nsrcgid] : 0;
     (*srchost) = nsrcgid ? new int[nsrcgid] : 0;
     
     i=0;
     NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             (*delays)[i] = ps->mindelay();
             (*srchost)[i] = ps->bgp.srchost_;
             ++i;
         }
-	}}}
+    }
     
     return nsrcgid;
 }
