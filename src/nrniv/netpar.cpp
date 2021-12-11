@@ -979,7 +979,7 @@ void nrnmpi_gid_clear(int arg) {
 	gid_donot_remove = 1;
 	for (const auto& iter: gid2out_) {
 		PreSyn* ps = iter.second;
-		if (ps && gid2in_.find(ps->gid_) != gid2in_.end()) {
+		if (ps && gid2in_.find(ps->gid_) == gid2in_.end()) {
 		    if (arg == 4) {
 			delete ps;
 		    }else{
@@ -1015,7 +1015,6 @@ void nrnmpi_gid_clear(int arg) {
 }
 
 int nrn_gid_exists(int gid) {
-	PreSyn* ps;
 	alloc_space();
 	auto iter = gid2out_.find(gid);
 	if (iter != gid2out_.end()) {
