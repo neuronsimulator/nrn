@@ -24,11 +24,13 @@ endif()
 # =============================================================================
 # Copy necessary hoc files to build directory if they have not been copied yet
 # =============================================================================
-add_custom_command(
-  TARGET testneuron
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
-          ${PROJECT_BINARY_DIR}/share/nrn/lib)
+if(NOT TARGET hoc_module)
+  add_custom_command(
+    TARGET testneuron
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/share/lib
+            ${PROJECT_BINARY_DIR}/share/nrn/lib)
+endif()
 
 # Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
 set(TEST_ENV NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
