@@ -497,7 +497,6 @@ static int setup_target_lists(int** r_return) {
 		int b = rdispl[rank];
 		int e = rdispl[rank+1];
 		for (int i=b; i < e; ++i) {
-			TarList* tl;
 			// note that there may be input gids with no corresponding
 			// output gid so that the find may not return true and in
 			// that case the tl->rank remains -1.

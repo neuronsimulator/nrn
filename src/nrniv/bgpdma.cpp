@@ -548,7 +548,7 @@ void bgp_dma_receive(NrnThread* nt) {
 	int ncons = 0;
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
-#if ENQUEUE == 2
+#if ENQUEUE == 2 && TBUFSIZE
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
@@ -556,7 +556,7 @@ void bgp_dma_receive(NrnThread* nt) {
     if (use_bgpdma_) {
 	nrnbgp_messager_advance();
 	TBUF
-#if ENQUEUE == 2
+#if ENQUEUE == 2 && TBUFSIZE
 	// want the overlap with computation, not conserve
 	tfind = enq2_find_time_;
 	tsend = enq2_enqueue_time_ - enq2_find_time_;

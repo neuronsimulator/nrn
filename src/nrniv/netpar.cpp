@@ -729,7 +729,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 			double firetime = spfixin_[idx++]*dt + t_exchange_;
 			int lgid = (int)spfixin_[idx];
 			idx += localgid_size_;
-			PreSyn* ps;
 			auto iter = gps->find(lgid);
 			if (iter != gps->end()) {
 				PreSyn* ps = iter->second;
@@ -797,9 +796,6 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 }
 
 static void mk_localgid_rep() {
-	int i, j, k;
-	PreSyn* ps;
-
 	// how many gids are there on this machine
 	// and can they be compressed into one byte
 	int ngid = 0;
@@ -845,15 +841,15 @@ static void mk_localgid_rep() {
 	// perfect hash functions, or even simple Vectors.
 	localmaps_ = new Gid2PreSyn*[nrnmpi_numprocs];
 	localmaps_[nrnmpi_myid] = 0;
-	for (i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
+	for (int i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
 		localmaps_[i] = new Gid2PreSyn();
 	}
 
 	// fill in the maps
-	for (i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
+	for (int i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
 		sbuf = rbuf + i*(ngidmax + 1);
 		ngid = *(sbuf++);
-		for (k=0; k < ngid; ++k) {
+		for (int k=0; k < ngid; ++k) {
 			auto iter = gid2in_.find(int(sbuf[k]));
 			if (iter != gid2in_.end()) {
 				PreSyn* ps = iter->second;
