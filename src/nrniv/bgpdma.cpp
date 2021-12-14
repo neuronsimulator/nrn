@@ -843,7 +843,6 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
     (*srchost) = nsrcgid ? new int[nsrcgid] : 0;
     
     i=0;
-    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
     for (const auto& iter: gid2in_) {
         PreSyn* ps = iter.second;
         assert(ps->output_index_ < 0);
