@@ -93,6 +93,9 @@ def err_test2():
     pc.max_histogram(v1)
     v2 = h.Vector(10)
     pc.max_histogram()
+    # cover nrn_gid2outpresyn
+    pc.prcellstate(10000, "tmp")
+    pc.prcellstate(0, "tmp")
 
     pc.gid_clear()
     del r
