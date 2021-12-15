@@ -107,7 +107,7 @@ def simplevolume(flist, distances, voxel, g):
     res = options.ics_partial_volume_resolution
     distance_threshold = options.ics_distance_threshold
 
-    sx, sy, sz = g["dx"] / (res + 1), g["dy"] / (res + 1), g["dz"] / (res + 1)
+    sx, sy, sz = g["dx"] / res, g["dy"] / res, g["dz"] / res
     # count up the interior points on the boundary
     if res == 1:
         count = sum(1 if d <= distance_threshold else 0 for d in distances)
@@ -129,6 +129,5 @@ def simplevolume(flist, distances, voxel, g):
                         for f in flist
                     ):
                         count += 1
-
-    volume = count * sx * sy * sz
+    volume = count * g["dx"] * g["dy"] * g["dz"] / (res1 ** 3)
     return volume
