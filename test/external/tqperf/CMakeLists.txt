@@ -2,6 +2,10 @@ include(NeuronTestHelper)
 nrn_add_test_group(
   NAME tqperf
   SUBMODULE tests/tqperf
+  # Need non-empty MODFILE_PATTERNS even though not used by the COMMAND
+  # to avoid CI errors of the form
+  #cd: ... : No such file or directory
+  MODFILE_PATTERNS mod/*.mod
   SCRIPT_PATTERNS "*.py" "*.hoc" "ci-test.sh" "mod/*.mod" "modx/*.mod")
 
 set(tqperf_mpi_ranks 16)
