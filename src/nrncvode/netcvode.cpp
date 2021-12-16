@@ -5949,11 +5949,12 @@ void NetCvode::deliver_net_events(NrnThread* nt) { // for default method
 		// instead of every time step --- but here we are
 		// already in a multithread job, so what is the overhead of
 		// starting such a small one in nrn_spike_exchange.
+#if NRNMPI
 		extern bool nrn_use_compress_;
 		if (nrn_use_compress_ && nrn_nthread > 1) {
 			p[tid].enqueue(this, nt);
 		}
-
+#endif
 		while ((q = p[tid].tqe_->dequeue_bin()) != 0) {
 			DiscreteEvent* db = (DiscreteEvent*)q->data_;
 #if PRINT_EVENT
