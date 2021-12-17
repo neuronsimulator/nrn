@@ -160,7 +160,12 @@ corenrn_parameters::corenrn_parameters() {
     app.add_flag("-v, --version", this->show_version, "Show version information and quit.");
 
     CLI::retire_option(app, "--show");
-};
+}
+
+void corenrn_parameters::reset() {
+    static_cast<corenrn_parameters_data&>(*this) = corenrn_parameters_data{};
+    app.clear();
+}
 
 void corenrn_parameters::parse(int argc, char** argv) {
     try {

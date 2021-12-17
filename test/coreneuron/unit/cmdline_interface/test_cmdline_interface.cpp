@@ -5,13 +5,14 @@
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
+#include "coreneuron/apps/corenrn_parameters.hpp"
 
 #define BOOST_TEST_MODULE cmdline_interface
 #define BOOST_TEST_MAIN
 
 #include <boost/test/unit_test.hpp>
+
 #include <cfloat>
-#include "coreneuron/apps/corenrn_parameters.hpp"
 
 using namespace coreneuron;
 
@@ -74,13 +75,7 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
         "--dt_io",
         "0.2"};
-
-    int argc = 0;
-
-    for (; strcmp(argv[argc], "0.2"); argc++)
-        ;
-
-    argc++;
+    constexpr int argc = sizeof argv / sizeof argv[0];
 
     corenrn_parameters corenrn_param_test;
 
@@ -126,4 +121,14 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     BOOST_CHECK(corenrn_param_test.spkcompress == 32);
 
     BOOST_CHECK(corenrn_param_test.multisend == true);
+
+    // Reset all parameters to their default values.
+    corenrn_param_test.reset();
+
+    // Should match a default-constructed set of parameters.
+    BOOST_CHECK_EQUAL(corenrn_param_test.voltage, corenrn_parameters{}.voltage);
+
+    // Everything has its default value, and the first `false` says not to
+    // include default values in the output, so this should be empty
+    BOOST_CHECK(corenrn_param_test.app.config_to_str(false, false).empty());
 }
