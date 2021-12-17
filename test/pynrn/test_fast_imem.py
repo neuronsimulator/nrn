@@ -312,7 +312,9 @@ def test_fastimem_corenrn():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.cell_permute = 0
+    coreneuron.gpu = distutils.util.strtobool(
+        os.environ.get("CORENRN_ENABLE_GPU", "false")
+    )
     run(tstop)
     compare()
     coreneuron.enable = False
@@ -349,9 +351,6 @@ def test_fastimem_corenrn():
     # args needed for offline run of coreneuron
     coreneuron.enable = True
     coreneuron.file_mode = True
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
 
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False

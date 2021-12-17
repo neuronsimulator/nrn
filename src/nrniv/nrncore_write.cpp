@@ -95,6 +95,7 @@ correctness has not been validated for cells without gids.
 #include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
+#include "nrncvode.h"
 
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 #include "nrnsection_mapping.h"
@@ -353,6 +354,8 @@ int nrncore_psolve(double tstop, int file_mode) {
       // data return nt._t so copy to t
       t = nrn_threads[0]._t;
       free(arg);
+      // Really just want to get NetParEvent back onto queue.
+      nrn_spike_exchange_init();
       return 0;
     }
   }

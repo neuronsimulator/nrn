@@ -41,6 +41,7 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
+extern void* nrn_interthread_enqueue(NrnThread*);
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
@@ -484,7 +485,7 @@ int core2nrn_corepointer_mech(int tid, int type,
     Memb_list* ml = nt._ml_list[type];
     // ARTIFICIAL_CELL are not in nt.
     if (!ml) {
-        ml = memb_list + type;
+        ml = CellGroup::deferred_type2artml_[tid][type];
         assert(ml);
     }
 
@@ -755,6 +756,9 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   TQueue* tq = net_cvode_instance_event_queue(&nt);
   TQItem* tqi;
   auto& cg = cellgroups_[tid];
+  // make sure all buffered interthread events are on the queue
+  nrn_interthread_enqueue(&nt);
+
   while ((tqi = tq->atomic_dq(1e15)) != NULL) {
     // removes all items from NEURON queue to reappear in CoreNEURON queue
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
@@ -823,6 +827,19 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       } break;
       case PreSynType: { // 4
         PreSyn* ps = (PreSyn*)de;
+
+        // NEURON puts PreSyn on every thread queue
+        // Skip if PreSyn not associated with this thread.
+        bool skip = (ps->nt_ && (ps->nt_->id != tid)) ? true : false;
+        // Skip if effectively an InputPresyn (ps->nt_ == NULL)
+        //     and this is not thread 0.
+        skip = (!ps->nt_ && tid != 0) ? true : skip;
+        if (skip) {
+          // erase what was already added
+          core_te->type.pop_back();
+          core_te->td.pop_back();
+          break;
+        }
         // Output PreSyn similar to NetCon but more data.
         // Input PreSyn (ps->output_index = -1 and ps->gid >= 0)
         // is distinquished from PreSyn (ps->output_index == ps->gid
