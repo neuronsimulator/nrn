@@ -966,8 +966,14 @@ void nrn_cleanup_presyn(PreSyn* ps) {
 	bgpdma_cleanup_presyn(ps);
 #endif
 	PreSyn* pss;
+	if (ps->output_index_ >= 0 && gid2out_) {
+		gid2out_->remove(ps->output_index_);
+		ps->output_index_ = -1;
+		ps->gid_ = -1;
+	}
 	if (ps->gid_ >= 0 && gid2in_ && gid2in_donot_remove == 0) {
 		gid2in_->remove(ps->gid_);
+		ps->gid_ = -1;
 	}
 }
 
@@ -1452,18 +1458,18 @@ See case 8 of nrn_bgp_receive_time for the xchng_meth properties
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 #if NRNMPI
 	if (nrnmpi_numprocs < 2) { return 0; }
+    if (nspike >= 0) { // otherwise don't set any multisend properties
 #if BGP_INTERVAL == 2
 	n_bgp_interval = (xchng_meth & 4) ? 2 : 1;
 #endif
 #if BGPDMA
 	use_bgpdma_ = (xchng_meth & 1) == 1;
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
-	if (nrnmpi_myid == 0) {Printf("use_phase2_ = %d\n", use_phase2_);}
 	if (use_bgpdma_) { assert(BGPDMA); }
-	if (nrnmpi_myid == 0) {Printf("use_bgpdma_ = %d\n", use_bgpdma_);}
 #else // BGPDMA == 0
 	assert(xchng_meth == 0);
 #endif
+    }
 	if (nspike >= 0) {
 		ag_send_nspike_ = 0;
 		if (spfixout_) { free(spfixout_); spfixout_ = 0; }
