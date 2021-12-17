@@ -8,6 +8,7 @@
 
 #include "cuda_profiler_api.h"
 #include <stdio.h>
+#include <ostream>
 
 void print_gpu_memory_usage() {
     size_t free_byte;
@@ -23,7 +24,7 @@ void print_gpu_memory_usage() {
     double free_db = (double) free_byte;
     double total_db = (double) total_byte;
     double used_db = total_db - free_db;
-    printf("\n  => GPU MEMORY USAGE (MB) : Used = %f, Free = %f MB, Total = %f",
+    printf(" GPU Memory (MBs) : Used = %f, Free = %f, Total = %f\n",
            used_db / 1024.0 / 1024.0,
            free_db / 1024.0 / 1024.0,
            total_db / 1024.0 / 1024.0);

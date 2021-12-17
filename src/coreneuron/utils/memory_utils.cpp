@@ -25,6 +25,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "coreneuron/utils/memory_utils.h"
+#include "coreneuron/utils/profile/cuda_profile.h"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
@@ -105,6 +106,11 @@ void report_mem_usage(const char* message, bool all_ranks) {
                mem_max,
                mem_min,
                mem_avg);
+#ifdef CORENEURON_ENABLE_GPU
+        if (corenrn_param.gpu) {
+            print_gpu_memory_usage();
+        }
+#endif
     }
     fflush(stdout);
 }
