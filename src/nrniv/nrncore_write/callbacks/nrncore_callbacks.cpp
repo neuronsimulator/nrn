@@ -897,7 +897,7 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   if (nrn_use_bin_queue_) {
     // does not remove items but the entire queue will be cleared
     // before using again. 
-    for (tqi = tq->binq_->first(); tqi; tqi = tq->binq_->next(tqi)) {
+    for (tqi = tq->binq()->first(); tqi; tqi = tq->binq()->next(tqi)) {
       set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
     }
   }
