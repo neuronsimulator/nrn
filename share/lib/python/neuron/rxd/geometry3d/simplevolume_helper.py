@@ -108,12 +108,14 @@ def simplevolume(flist, distances, voxel, g):
     distance_threshold = options.ics_distance_threshold
 
     sx, sy, sz = g["dx"] / res, g["dy"] / res, g["dz"] / res
+    
+    res1 = res + 1
+    
     # count up the interior points on the boundary
     if res == 1:
         count = sum(1 if d <= distance_threshold else 0 for d in distances)
 
     else:
-        res1 = res + 1
         vi, vj, vk = voxel
         startx, starty, startz = g["xlo"] + vi * g["dx"], g["ylo"] + vj * g["dy"], g["zlo"] + vk * g["dz"]
 
