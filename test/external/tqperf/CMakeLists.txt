@@ -27,5 +27,5 @@ nrn_add_test(
   NAME neuron
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
-  COMMAND bash "./ci-test.sh"
+  COMMAND MPIEXEC_OVERSUBSCRIBE=${MPIEXEC_OVERSUBSCRIBE} bash "./ci-test.sh"
 )
