@@ -26,6 +26,7 @@
 #include "visitors/ast_visitor.hpp"
 #include "visitors/constant_folder_visitor.hpp"
 #include "visitors/global_var_visitor.hpp"
+#include "visitors/indexedname_visitor.hpp"
 #include "visitors/inline_visitor.hpp"
 #include "visitors/ispc_rename_visitor.hpp"
 #include "visitors/json_visitor.hpp"
