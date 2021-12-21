@@ -1,5 +1,5 @@
 wheel
-setuptools
+setuptools<59.7.0
 scikit-build
 matplotlib
 bokeh
