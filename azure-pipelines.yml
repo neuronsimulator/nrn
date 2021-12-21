@@ -199,13 +199,6 @@ jobs:
 
   steps:
 
-  # TODO: temporarily use choco install until #1522 is fixed
-  # we need to move out of the way the image installed msys64
-  - script: |
-      move C:\msys64 C:\msys64-from-image
-    displayName: "Move installed msys64"
-    condition: succeeded()
-
   - task: BatchScript@1
     inputs:
       filename: ci/win_download_deps.cmd
