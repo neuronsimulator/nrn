@@ -18,6 +18,7 @@
 #include "visitors/lookup_visitor.hpp"
 #include "visitors/nmodl_visitor.hpp"
 
+#include <fmt/format.h>
 
 namespace nmodl {
 namespace visitor {
@@ -244,9 +245,9 @@ std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
         return {key, out};
     }
 
-    key = to_nmodl(lhs);
-    key.erase(std::remove(key.begin(), key.end(), '\''),
-              key.end());  // we want to match derivatives and variables
+    const auto& lhs_var_name = std::dynamic_pointer_cast<ast::VarName>(lhs);
+    key = get_full_var_name(*lhs_var_name);
+
     visitor::AstLookupVisitor lookup_visitor;
     lookup_visitor.lookup(*rhs, ast::AstNodeType::VAR_NAME);
     auto rhs_nodes = lookup_visitor.get_nodes();
@@ -256,6 +257,21 @@ std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
 
 
     return {key, out};
+}
+
+std::string get_indexed_name(const ast::IndexedName& node) {
+    return fmt::format("{}[{}]", node.get_node_name(), to_nmodl(node.get_length()));
+}
+
+std::string get_full_var_name(const ast::VarName& node) {
+    std::string full_var_name;
+    if (node.get_name()->is_indexed_name()) {
+        auto index_name_node = std::dynamic_pointer_cast<ast::IndexedName>(node.get_name());
+        full_var_name = get_indexed_name(*index_name_node);
+    } else {
+        full_var_name = node.get_node_name();
+    }
+    return full_var_name;
 }
 
 }  // namespace nmodl

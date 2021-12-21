@@ -124,5 +124,10 @@ std::pair<std::string, std::unordered_set<std::string>> statement_dependencies(
     const std::shared_ptr<ast::Expression>& lhs,
     const std::shared_ptr<ast::Expression>& rhs);
 
+/// Given a Indexed node, return the name with index
+std::string get_indexed_name(const ast::IndexedName& node);
+
+/// Given a VarName node, return the full var name including index
+std::string get_full_var_name(const ast::VarName& node);
 
 }  // namespace nmodl
