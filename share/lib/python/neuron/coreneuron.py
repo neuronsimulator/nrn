@@ -201,12 +201,12 @@ class coreneuron(object):
         multisend = int(pc.send_time(8))
         if (multisend & 1) == 1:
             arg += " --multisend"
-            interval = (multisend & 2) / 2 + 1
+            interval = (multisend & 4) / 4 + 1
             if interval != 2:
-                arg += " --ms_subinterval %d" % interval
-            phases = (multisend & 4) / 4 + 1
+                arg += " --ms-subintervals %d" % interval
+            phases = (multisend & 8) / 8 + 1
             if phases != 2:
-                arg += " --ms_phases %d" % phases
+                arg += " --ms-phases %d" % phases
 
         return arg
 

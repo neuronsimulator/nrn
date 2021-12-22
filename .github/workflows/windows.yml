@@ -27,13 +27,6 @@ jobs:
     timeout-minutes: 45
 
     steps:
-    # TODO: temporarily use choco install until #1522 is fixed
-    # we need to move out of the way the image installed msys64
-    - name: Move installed msys64
-      run: |
-        move C:\msys64 C:\msys64-from-image
-      shell: cmd
-
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
@@ -83,6 +76,8 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      run: .\ci\win_test_installer.cmd
+      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
+      # see https://github.com/neuronsimulator/nrn/issues/1522
+      run: .\ci\win_test_installer_wo_rxd.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn

@@ -3,6 +3,8 @@
 
 
 #if NRNMPI
+void (*nrntimeout_call)();
+
 #if defined(HAVE_SETITIMER) && defined(HAVE_SIGACTION)
 
 #include <stdio.h>
@@ -10,7 +12,6 @@
 #include <sys/time.h>
 #include <section.h>
 
-void (*nrntimeout_call)();
 static double told;
 static struct itimerval value;
 static struct sigaction act, oact;

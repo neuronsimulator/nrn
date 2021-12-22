@@ -132,7 +132,13 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
 	rdispl = newoffset(rcnt, np);
 }
 
-#define all2allv_perf 1
+/*
+define following to 1 if desire space/performance information such as:
+all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
+all2allv_int gidout space=528 total=37379376 time=1.641e-05
+all2allv_int lists space=3088 total=37351312 time=4.4708e-05
+*/
+#define all2allv_perf 0
 extern "C" {
     extern unsigned long long nrn_mallinfo(int);
 } // extern "C"
