@@ -88,7 +88,8 @@ class CodegenAccVisitor: public CodegenCVisitor {
 
 
     /// create global variable on the device
-    void print_global_variable_device_create_annotation() override;
+    void print_global_variable_device_create_annotation_pre() override;
+    void print_global_variable_device_create_annotation_post() override;
 
     /// update global variable from host to the device
     void print_global_variable_device_update_annotation() override;

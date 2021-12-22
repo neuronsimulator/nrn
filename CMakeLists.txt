@@ -92,11 +92,6 @@ add_external_project(eigen OFF)
 
 add_subdirectory(${THIRD_PARTY_DIRECTORY}/fmt EXCLUDE_FROM_ALL)
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-if(NMODL_PGI_COMPILER)
-  # "format.cc", warning #128-D: loop is not reachable
-  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ext/fmt/src/format.cc
-                              PROPERTIES COMPILE_FLAGS "--diag_suppress=128")
-endif()
 include_directories(
   SYSTEM ${THIRD_PARTY_DIRECTORY} ${THIRD_PARTY_DIRECTORY}/catch/include
   ${THIRD_PARTY_DIRECTORY}/fmt/include ${THIRD_PARTY_DIRECTORY}/spdlog/include

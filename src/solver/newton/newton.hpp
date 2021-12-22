@@ -15,7 +15,7 @@
  * \brief Implementation of Newton method for solving system of non-linear equations
  */
 
-#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+#if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 #include "partial_piv_lu/partial_piv_lu.h"
 #endif
 
@@ -73,7 +73,7 @@ EIGEN_DEVICE_FUNC int newton_solver(Eigen::Matrix<double, N, 1>& X,
             // we have converged: return iteration count
             return iter;
         }
-#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+#if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
         X -= partialPivLu<N>(J, F);
 #else
         // update X use in-place LU decomposition of J with partial pivoting
@@ -150,7 +150,7 @@ EIGEN_DEVICE_FUNC int newton_numerical_diff_solver(Eigen::Matrix<double, N, 1>& 
             // restore X
             X[i] += dX;
         }
-#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
+#if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
         X -= partialPivLu<N>(J, F);
 #else
         // update X use in-place LU decomposition of J with partial pivoting
