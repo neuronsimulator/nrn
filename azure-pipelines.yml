@@ -160,7 +160,6 @@ jobs:
         python.version: '3.10'
         python.org.version: '3.10.0'
         python.installer.name: 'macos11.pkg'
-        python.installer.universal2: true
         
   steps:
 
@@ -192,14 +191,6 @@ jobs:
 
   - script: |
       export MACOSX_DEPLOYMENT_TARGET=10.9
-      if [ "$(python.installer.universal2)" = true ] ; then
-              # We need to "fix" the platform tag if the Python installer is universal2
-              # See:
-              #     * https://github.com/pypa/setuptools/issues/2520
-              #     * https://github.com/neuronsimulator/nrn/pull/1562
-
-              export _PYTHON_HOST_PLATFORM="macosx-${MACOSX_DEPLOYMENT_TARGET}-x86_64"
-      fi
       export PATH=/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH
       export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       export NRN_BUILD_FOR_UPLOAD=1
