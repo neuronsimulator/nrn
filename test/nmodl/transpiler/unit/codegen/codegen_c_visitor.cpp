@@ -93,7 +93,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->ion_cao = nt->_data;
                     inst->ion_ica = nt->_data;
                     inst->ion_dicadv = nt->_data;
-                    ml->instance = (void*) inst;
+                    ml->instance = inst;
                 }
             )";
             auto expected = reindent_text(generated_code);
@@ -137,7 +137,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->v_unused = ml->data+4*pnodecount;
                     inst->ion_cai = nt->_data;
                     inst->ion_cao = nt->_data;
-                    ml->instance = (void*) inst;
+                    ml->instance = inst;
                 }
             )";
 
@@ -212,7 +212,7 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
                     inst->ion_ilca = nt->_data;
                     inst->ion_elca = nt->_data;
                     inst->style_lca = ml->pdata;
-                    ml->instance = (void*) inst;
+                    ml->instance = inst;
                 }
             )";
 

@@ -19,17 +19,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "PGI" OR CMAKE_CXX_COMPILER_ID MATCHES "NVHPC")
     # ~~~
     # "ext/spdlog/include/spdlog/fmt/fmt.h", warning #1-D: last line of file ends without a newline
     # "ext/fmt/include/fmt/format.h", warning #111-D: statement is unreachable
+    # "ext/fmt/include/fmt/format.h", warning #128-D: loop is not reachable
+    # "ext/spdlog/include/spdlog/fmt/bundled/format.h", warning #185-D: dynamic initialization in unreachable code
     # "ext/json/json.hpp", warning #186-D: pointless comparison of unsigned integer with zero
     # "src/ast/all.hpp", warning #998-D: function "..." is hidden by "..." -- virtual function override intended?
     # "ext/spdlog/include/spdlog/fmt/bundled/format.h", warning #1098-D: unknown attribute "fallthrough"
     # "ext/pybind11/include/pybind11/detail/common.h", warning #1626-D: routine is both "inline" and "noinline"
+    # "ext/spdlog/include/spdlog/fmt/bundled/core.h", warning #1676-D: unrecognized GCC pragma
     # ~~~
     # The following warnings do not seem to be suppressible with --diag_suppress:
     # ~~~
     # "src/codegen/codegen_cuda_visitor.cpp", NVC++-W-0277-Cannot inline function - data type mismatch
     # "nvc++IkWUbMugiSgNH.s: Warning: stand-alone `data16' prefix
     # ~~~
-    set(NMODL_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=1,111,186,998,1098,1626)
+    # The situation may be better once https://github.com/fmtlib/fmt/pull/2582 is included in a
+    # release.
+    set(NMODL_COMPILER_WARNING_SUPPRESSIONS --diag_suppress=1,111,128,185,186,998,1098,1626,1676)
     # There are a few more warnings produced by the unit test infrastructure.
     # ~~~
     # "test/unit/visitor/constant_folder.cpp", warning #177-D: variable "..." was declared but never referenced
