@@ -30,8 +30,8 @@ FetchContent_Declare(
 
 FetchContent_Declare(
   tqperf
-  GIT_REPOSITORY https://github.com/nrnhines/tqperf
-  GIT_TAG 6ab9a73f33
+  GIT_REPOSITORY https://github.com/pramodk/tqperf.git
+  GIT_TAG b13deec425
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
