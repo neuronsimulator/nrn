@@ -396,6 +396,7 @@ void check(VecTNode& nodevec) {
             ncell++;
         }
     }
+    ///  Check that the first compartments of nodevec are the root nodes (cells)
     for (size_t i = 0; i < ncell; ++i) {
         nrn_assert(nodevec[i]->parent == nullptr);
     }
@@ -543,12 +544,16 @@ static void admin1(int ncell,
         }
     }
 
+    // this vector is used to move from one compartment to the other (per cell)
+    // its length is equal to the cell with the highest number of compartments
     stride = (int*) ecalloc_align(nstride + 1, sizeof(int));
     for (int i = 0; i <= nstride; ++i) {
         stride[i] = 0;
     }
     for (size_t i = ncell; i < nodevec.size(); ++i) {
         TNode& nd = *nodevec[i];
+        // compute how many compartments with the same order
+        // treenode_order : defined in breadth first fashion (for each cell separately)
         stride[nd.treenode_order - 1] += 1;  // -1 because treenode order includes root
     }
 }
@@ -590,6 +595,26 @@ static size_t stride_length(size_t begin, size_t end, VecTNode& nodevec) {
     return end - begin;
 }
 
+/**
+ * \brief Prepare for solve_interleaved2
+ *
+ * One group of cells per warp.
+ *
+ * warp[i] has a number of compute cycles (ncycle[i])
+ * the index of its first root (rootbegin[i], last rootbegin[nwarp] = ncell)
+ * the index of its first node (nodebegin[i], last nodebegin[nwarp] = nnode)
+ *
+ * Each compute cycle has a stride
+ * A stride is how many nodes are processed by a warp in one compute cycle
+ * There are nstride strides. nstride is the sum of ncycles of all warps.
+ * warp[i] has ncycle[i] strides
+ * same as sum of ncycle
+ * warp[i] has a stridedispl[i] which is stridedispl[i-1] + ncycle[i].
+ * ie. The zeroth cycle of warp[j] works on stride[stridedispl[j]]
+ * The value of a stride beginning at node i (node i is computed by core 0 of
+ * some warp for some cycle) is determined by stride_length(i, j, nodevec)
+ *
+ */
 static void admin2(int ncell,
                    VecTNode& nodevec,
                    int& nwarp,
@@ -628,6 +653,7 @@ static void admin2(int ncell,
         size_t j = size_t(nodebegin[iwarp + 1]);
         int nc = 0;
         size_t i = nodebegin[iwarp];
+        // in this loop we traverse all the children of all the cells in the current warp (iwarp)
         while (i < j) {
             i += stride_length(i, j, nodevec);
             ++nc;  // how many times the warp should loop in order to finish with all the tree

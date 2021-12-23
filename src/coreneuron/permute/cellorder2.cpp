@@ -69,6 +69,7 @@ static void sortlevel(VTN& level) {
     }
 }
 
+// TODO: refactor since sortlevel() is traversing the nodes in same order
 static void set_treenode_order(VVTN& levels) {
     size_t order = 0;
     for (auto& level: levels) {
@@ -344,8 +345,8 @@ static void question2(VVTN& levels) {
     // belong to separate warps
 
     // work backward and check the distance from parent to children.
-    // if parent in different group then there is no vitiating race.
-    // if children in different group then ther is no race (satisfied by
+    // if parent in different group (warp?) then there is no vitiating race.
+    // if children in different group (warp?) then ther is no race (satisfied by
     // atomic).
     // If there is a vitiating race, then figure out how many nodes
     // need to be inserted just before the parent to avoid the race.

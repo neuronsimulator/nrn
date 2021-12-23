@@ -616,7 +616,7 @@ void solve_interleaved2(int ith) {
             int ic = icore & (warpsize - 1);  // figure out the & mask
             int ncycle = ncycles[iwarp];
             int* stride = strides + stridedispl[iwarp];
-            int root = rootbegin[iwarp];
+            int root = rootbegin[iwarp];  // cell ID -> [0, ncell)
             int lastroot = rootbegin[iwarp + 1];
             int firstnode = nodebegin[iwarp];
             int lastnode = nodebegin[iwarp + 1];
