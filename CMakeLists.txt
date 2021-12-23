@@ -347,7 +347,7 @@ endif()
 if(NRN_ENABLE_INTERVIEWS)
   # x11 is not required on windows
   if(NOT NRN_WINDOWS_BUILD)
-    find_package(X11 QUIET)
+    find_package(X11 HINTS /usr/x11 QUIET)
     if(NOT X11_FOUND)
       if(APPLE)
         message(SEND_ERROR "You must install XQuartz from https://www.xquartz.org/ to build iv")
