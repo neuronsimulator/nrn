@@ -177,7 +177,12 @@ NEURON has recently gained built-in support for performance profilers. Many mode
 
 #### Instrumentation
 
-NEURON's code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
+Many performance-critical regions of the NEURON codebase have been instrumented
+for profiling.
+The existing regions have been given the same names as in CoreNEURON to allow
+side-by-side comparision when running simulations with and without CoreNEURON
+enabled.
+More regions can easily be added into the code in one of two ways:
 
 1. using calls to `phase_begin()`, `phase_end()`
 
@@ -266,18 +271,34 @@ finitialize                   0.000235      0.000235      0.000235  0.161020
 #### Running GPU benchmarks
 Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en/latest/) annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA's tools.
 In a CoreNEURON build with Caliper (`-DCORENRN_ENABLE_CALIPER_PROFILING=ON`) and GPU (`-DCORENRN_ENABLE_GPU=ON`) support enabled (this is currently based on OpenACC, so you [probably need to use the NVIDIA HPC compilers](../coreneuron/how-to/coreneuron.html)) you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
-A complete prefix to profile a CoreNEURON process with NVIDIA NSight Systems could be
+A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be
 ```bash
-CALI_CONFIG=nvtx nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <coreneuron>
+ nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0,CALI_CONFIG=nvtx,OMP_NUM_THREADS=1 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <coreneuron>
 ```
 where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs.
 The `<coreneuron>` command is likely to be something similar to
 ```bash
 path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
 ```
-and you might also like to set `OMP_NUM_THREADS=1` when studying OpenACC performance, as otherwise there may be multiple CPU threads launching GPU kernels in parallel.
+you may like to experiment with setting `OMP_NUM_THREADS` to a value larger than
+1, but the profiling tools can struggle if there are too many CPU threads
+launching GPU kernels in parallel.
 
-For a more detailed analysis on a certain kernel you're interested in you may use [NVIDIA Nsight Compute](https://developer.nvidia.com/nsight-compute). This is a kernel profiler for applications executed on NVIDIA GPUs and supports the OpenACC and OpenMP backends of CoreNEURON. This tool provides more detailed information in a nice graphical environment about the kernel execution on the GPU like SM throughput, Memory bandwidth utilization, automatic roofline model generation, etc. To provide all these information the tool needs to rerun the kernel you're interested in multiple time which makes it's execution ~20-30 times slower than the standalone CoreNEURON simulation. For this reason we recommend running first Caliper with NSight Systems, find out which kernel takes most time or you're interested in and then select on this kernel for analysis with Nsight Compute. In case you're interested for multiple kernel you can relaunch Nsight Compute with the other kernels separately. To launch Nsight Compute with CoreNEURON you can use the following command:
+For a more detailed analysis of a certain kernel you can use [NVIDIA Nsight
+Compute](https://developer.nvidia.com/nsight-compute). This is a kernel profiler
+for applications executed on NVIDIA GPUs and supports the OpenACC and OpenMP
+backends of CoreNEURON.
+This tool provides more detailed information in a nice graphical environment
+about the kernel execution on the GPU including metrics like SM throughput, memory
+bandwidth utilization, automatic roofline model generation, etc.
+To provide all this information the tool needs to rerun the kernel you're interested in
+multiple times, which makes execution ~20-30 times slower.
+For this reason we recommend running first Caliper with Nsight Systems to find
+the name of the kernel you're interested in and then select on this kernel for
+analysis with Nsight Compute.
+In case you're interested in multiple kernels you can relaunch Nsight Compute with the other
+kernels separately.
+To launch Nsight Compute with CoreNEURON you can use the following command:
 ```bash
 ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <section_set> <coreneuron>
 ```
@@ -287,4 +308,11 @@ ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <sect
 For more information about Nsight Compute options you can consult the [Nsight Compute Documentation](https://docs.nvidia.com/nsight-compute/2021.3/NsightComputeCli/index.html).
 
 Notes:
-- CoreNEURON is doing a lot of small memory allocations on the GPU for storing the randomly generated numbers used by various stimulus. This makes the Nsight Compute profiler very slow. To overcome this issue you may install CoreNEURON with `Boost` which enables the allocations for these numbers in a `Boost.Pool` and makes the analysis of the kernel much faster and usable during development.
+- CoreNEURON allocates a large number of small objects separately in CUDA
+  managed memory to record the state of the Random123 pseudorandom number
+  generator. This makes the Nsight Compute profiler very slow, and makes it
+  impractical to use Nsight Systems during the initialization phase. If the
+  Boost library is available then CoreNEURON will use a memory pool for these
+  small objects to dramatically reduce the number of calls to the CUDA runtime
+  API to allocate managed memory. It is, therefore, highly recommended to make
+  Boost available when using GPU profiling tools.
