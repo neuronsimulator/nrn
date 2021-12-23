@@ -9,6 +9,7 @@
 
 #include "ast/program.hpp"
 #include "codegen/codegen_c_visitor.hpp"
+#include "codegen/codegen_helper_visitor.hpp"
 #include "parser/nmodl_driver.hpp"
 #include "test/unit/utils/test_utils.hpp"
 #include "visitors/symtab_visitor.hpp"
@@ -21,11 +22,9 @@ using nmodl::parser::NmodlDriver;
 using nmodl::test_utils::reindent_text;
 
 /// Helper for creating C codegen visitor
-std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::string& text, std::stringstream& ss) {
-    /// parse mod file and create AST
-    NmodlDriver driver;
-    const auto& ast = driver.parse_string(text);
-
+std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::shared_ptr<ast::Program>& ast,
+                                                  const std::string& text,
+                                                  std::stringstream& ss) {
     /// construct symbol table
     SymtabVisitor().visit_program(*ast);
 
@@ -37,8 +36,9 @@ std::shared_ptr<CodegenCVisitor> create_c_visitor(const std::string& text, std::
 
 /// print instance structure for testing purpose
 std::string get_instance_var_setup_function(std::string& nmodl_text) {
+    const auto& ast = NmodlDriver().parse_string(nmodl_text);
     std::stringstream ss;
-    auto cvisitor = create_c_visitor(nmodl_text, ss);
+    auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
     cvisitor->print_instance_variable_setup();
     return reindent_text(ss.str());
 }
@@ -219,6 +219,51 @@ SCENARIO("Check instance variable definition order", "[codegen][var_order]") {
             auto expected = reindent_text(generated_code);
             auto result = get_instance_var_setup_function(nmodl_text);
             REQUIRE(result.find(expected) != std::string::npos);
+        }
+    }
+}
+
+SCENARIO("Check parameter constness with VERBATIM block",
+         "[codegen][verbatim_variable_constness]") {
+    GIVEN("A mod file containing parameter range variables that are updated in VERBATIM block") {
+        std::string const nmodl_text = R"(
+            NEURON {
+                SUFFIX IntervalFire
+                RANGE invl, burst_start
+            }
+            PARAMETER {
+                invl = 10 (ms) <1e-9,1e9>
+                burst_start = 0 (ms)
+            }
+            INITIAL {
+                LOCAL temp
+                : as invl is used in verbatim, it shouldn't be treated as const
+                VERBATIM
+                invl = 11
+                ENDVERBATIM
+                : burst_start time is read-only and hence can be const
+                temp = burst_start
+            }
+        )";
+
+        THEN("Variable used in VERBATIM shouldn't be marked as const") {
+            std::stringstream ss;
+
+            /// parse mod file & print mechanism structure
+            const auto& ast = NmodlDriver().parse_string(nmodl_text);
+            auto cvisitor = create_c_visitor(ast, nmodl_text, ss);
+            cvisitor->print_mechanism_range_var_structure();
+
+            std::string expected_code = R"(
+                /** all mechanism instance variables */
+                struct IntervalFire_Instance  {
+                    double* __restrict__ invl;
+                    const double* __restrict__ burst_start;
+                    double* __restrict__ v_unused;
+                };
+            )";
+
+            REQUIRE(reindent_text(ss.str()) == reindent_text(expected_code));
         }
     }
 }

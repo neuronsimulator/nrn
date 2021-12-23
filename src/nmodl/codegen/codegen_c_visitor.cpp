@@ -746,8 +746,12 @@ bool CodegenCVisitor::is_constant_variable(const std::string& name) const {
         // per mechanism ion variables needs to be updated from neuron/coreneuron values
         if (info.is_ion_variable(name)) {
             is_constant = false;
-        } else if (symbol->has_any_property(NmodlType::param_assign) &&
-                   symbol->get_write_count() == 0) {
+        }
+        // for parameter variable to be const, make sure it's write count is 0
+        // and it's not used in the verbatim block
+        else if (symbol->has_any_property(NmodlType::param_assign) &&
+                 info.variables_in_verbatim.find(name) == info.variables_in_verbatim.end() &&
+                 symbol->get_write_count() == 0) {
             is_constant = true;
         }
     }

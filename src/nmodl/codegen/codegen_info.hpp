@@ -13,6 +13,7 @@
  */
 
 #include <string>
+#include <unordered_set>
 
 #include "ast/ast.hpp"
 #include "symtab/symbol_table.hpp"
@@ -362,6 +363,9 @@ struct CodegenInfo {
 
     /// all watch statements
     std::vector<const ast::WatchStatement*> watch_statements;
+
+    /// all variables/symbols used in the verbatim block
+    std::unordered_set<std::string> variables_in_verbatim;
 
     /// true if eigen newton solver is used
     bool eigen_newton_solver_exist = false;
