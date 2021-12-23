@@ -12,6 +12,7 @@
 
 #include "ast/all.hpp"
 #include "codegen/codegen_naming.hpp"
+#include "parser/c11_driver.hpp"
 #include "visitors/visitor_utils.hpp"
 
 
@@ -721,6 +722,25 @@ void CodegenHelperVisitor::visit_partial_block(const ast::PartialBlock& node) {
 
 void CodegenHelperVisitor::visit_update_dt(const ast::UpdateDt& node) {
     info.changed_dt = node.get_value()->eval();
+}
+
+/// visit verbatim block and find all symbols used
+void CodegenHelperVisitor::visit_verbatim(const Verbatim& node) {
+    const auto& text = node.get_statement()->eval();
+    // use C parser to get all tokens
+    parser::CDriver driver;
+    driver.scan_string(text);
+    const auto& tokens = driver.all_tokens();
+
+    // check if the token exist in the symbol table
+    for (auto& token: tokens) {
+        if (info.variables_in_verbatim.find(token) == info.variables_in_verbatim.end()) {
+            auto symbol = psymtab->lookup(token);
+            if (symbol != nullptr) {
+                info.variables_in_verbatim.insert(token);
+            }
+        }
+    }
 }
 
 }  // namespace codegen
