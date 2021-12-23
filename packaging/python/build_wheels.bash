@@ -128,11 +128,11 @@ build_wheel_osx() {
         exit 1
     fi
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3,CMAKE_PREFIX_PATH=/usr/x11"
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
     fi
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
