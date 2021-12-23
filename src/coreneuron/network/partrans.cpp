@@ -129,45 +129,58 @@ void nrnthread_v_transfer(NrnThread* _nt) {
     }
 }
 
-/// TODO: Corresponding exit data cluase for OpenACC/OpenMP is missing and hence
-///       GPU buffers are not freed.
-void nrn_partrans::gap_update_indices() {
+void nrn_partrans::copy_gap_indices_to_device() {
     // Ensure index vectors, src_gather, and insrc_buf_ are on the gpu.
     if (insrcdspl_) {
         int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
-        nrn_pragma_acc(enter data create(insrc_buf_ [0:n_insrc_buf]) if (corenrn_param.gpu))
+        nrn_pragma_acc(enter data create(insrc_buf_[:n_insrc_buf]))
         // clang-format off
-        nrn_pragma_omp(target enter data map(alloc: insrc_buf_[0:n_insrc_buf])
-                                         if(corenrn_param.gpu))
+        nrn_pragma_omp(target enter data map(alloc: insrc_buf_[:n_insrc_buf]))
         // clang-format off
     }
     for (int tid = 0; tid < nrn_nthread; ++tid) {
-        TransferThreadData& ttd = transfer_thread_data_[tid];
+        const NrnThread* nt = nrn_threads + tid;
+        if (!nt->compute_gpu) {
+            continue;
+        }
 
-        size_t n_src_indices = ttd.src_indices.size();
-        size_t n_src_gather = ttd.src_gather.size();
-        NrnThread* nt = nrn_threads + tid;
-        if (n_src_indices) {
-            int* src_indices = ttd.src_indices.data();
-            double* src_gather = ttd.src_gather.data();
-            nrn_pragma_acc(enter data copyin(src_indices[0:n_src_indices]) if(nt->compute_gpu))
-            nrn_pragma_acc(enter data create(src_gather[0:n_src_gather]) if(nt->compute_gpu))
-            // clang-format off
-            nrn_pragma_omp(target enter data map(to: src_indices [0:n_src_indices])
-                                             map(alloc: src_gather[0:n_src_gather])
-                                             if(nt->compute_gpu))
-            // clang-format on
+        const TransferThreadData& ttd = transfer_thread_data_[tid];
+
+        if (!ttd.src_indices.empty()) {
+            cnrn_target_copyin(ttd.src_indices.data(), ttd.src_indices.size());
+
+            size_t n_src_gather = ttd.src_gather.size();
+            const double* src_gather = ttd.src_gather.data();
+            nrn_pragma_acc(enter data create(src_gather[:n_src_gather]))
+            nrn_pragma_omp(target enter data map(alloc: src_gather[:n_src_gather]))
         }
 
         if (ttd.insrc_indices.size()) {
-            int* insrc_indices = ttd.insrc_indices.data();
-            size_t n_insrc_indices = ttd.insrc_indices.size();
-            nrn_pragma_acc(
-                enter data copyin(insrc_indices [0:n_insrc_indices]) if (nt->compute_gpu))
-            // clang-format off
-            nrn_pragma_omp(target enter data map(to: insrc_indices[0:n_insrc_indices])
-                                             if(nt->compute_gpu))
-            // clang-format on
+            cnrn_target_copyin(ttd.insrc_indices.data(), ttd.insrc_indices.size());
+        }
+    }
+}
+
+void nrn_partrans::delete_gap_indices_from_device() {
+    if (insrcdspl_) {
+        int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
+        cnrn_target_delete(insrc_buf_, n_insrc_buf);
+    }
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        const NrnThread* nt = nrn_threads + tid;
+        if (!nt->compute_gpu) {
+            continue;
+        }
+
+        TransferThreadData& ttd = transfer_thread_data_[tid];
+
+        if (!ttd.src_indices.empty()) {
+            cnrn_target_delete(ttd.src_indices.data(), ttd.src_indices.size());
+            cnrn_target_delete(ttd.src_gather.data(), ttd.src_gather.size());
+        }
+
+        if (!ttd.insrc_indices.empty()) {
+            cnrn_target_delete(ttd.insrc_indices.data(), ttd.insrc_indices.size());
         }
     }
 }

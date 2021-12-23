@@ -352,8 +352,10 @@ void nrn_init_and_load_data(int argc,
         allocate_data_in_mechanism_nrn_init();
     }
 
-    if (nrn_have_gaps) {
-        nrn_partrans::gap_update_indices();
+    if (corenrn_param.gpu) {
+        if (nrn_have_gaps) {
+            nrn_partrans::copy_gap_indices_to_device();
+        }
     }
 
     // call prcellstate for prcellgid
@@ -676,6 +678,9 @@ extern "C" int run_solve_core(int argc, char** argv) {
     // cleanup threads on GPU
     if (corenrn_param.gpu) {
         delete_nrnthreads_on_device(nrn_threads, nrn_nthread);
+        if (nrn_have_gaps) {
+            nrn_partrans::delete_gap_indices_from_device();
+        }
     }
 
     // Cleaning the memory
