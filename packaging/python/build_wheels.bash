@@ -123,6 +123,20 @@ build_wheel_osx() {
         python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
     fi
 
+    # We need to "fix" the platform tag if the Python installer is universal2
+    # See:
+    #     * https://github.com/pypa/setuptools/issues/2520
+    #     * https://github.com/neuronsimulator/nrn/pull/1562
+    py_platform=$(python -c "import sysconfig; print('%s' % sysconfig.get_platform());")
+
+    echo " - Python platform: ${py_platform}"
+    if [[ "${py_platform}" == *"-universal2" ]] ; then
+      export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
+      echo " - Python installation is universal2, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
+    fi
+
+    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
 
