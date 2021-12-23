@@ -128,7 +128,7 @@ build_wheel_osx() {
         exit 1
     fi
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3,CMAKE_PREFIX_PATH=/usr/x11"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
       CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
     fi
