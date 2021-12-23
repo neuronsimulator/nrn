@@ -50,6 +50,7 @@ namespace coreneuron {
 #define ix(arg) ((arg) *_STRIDE)
 
 /* having a differnt permutation per instance may not be a good idea */
+nrn_pragma_omp(declare target)
 int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _threadargsproto_) {
     int save_i = 0;
 
@@ -224,4 +225,5 @@ void nrn_scopmath_solve_thread(int n,
         }
     }
 }
+nrn_pragma_omp(end declare target)
 }  // namespace coreneuron

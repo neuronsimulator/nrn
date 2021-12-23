@@ -9,6 +9,8 @@
 #ifndef _H_NRNCONF_
 #define _H_NRNCONF_
 
+#include "coreneuron/utils/offload.hpp"
+
 #include <cstdio>
 #include <cmath>
 #include <cassert>
@@ -32,14 +34,16 @@ using Symbol = char;
 #define VECTORIZE   1
 
 // extern variables require acc declare
+nrn_pragma_omp(declare target)
 extern double celsius;
-#pragma acc declare create(celsius)
+nrn_pragma_acc(declare create(celsius))
 
 extern double pi;
-#pragma acc declare create(pi)
+nrn_pragma_acc(declare create(pi))
 
 extern int secondorder;
-#pragma acc declare create(secondorder)
+nrn_pragma_acc(declare create(secondorder))
+nrn_pragma_omp(end declare target)
 
 extern double t, dt;
 extern int rev_dt;

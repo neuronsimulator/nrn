@@ -11,6 +11,7 @@
 
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"
+#include "coreneuron/utils/offload.hpp"
 
 namespace coreneuron {
 
@@ -35,15 +36,17 @@ using DIFUN = int;
 using NEWTFUN = int;
 using SPFUN = int;
 using EULFUN = int;
-#pragma acc routine seq
+nrn_pragma_omp(declare target)
+nrn_pragma_acc(routine seq)
 extern int nrn_derivimplicit_steer(int, _threadargsproto_);
 #define difun(arg) nrn_derivimplicit_steer(arg, _threadargs_);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int nrn_newton_steer(int, _threadargsproto_);
 #define newtfun(arg) nrn_newton_steer(arg, _threadargs_);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int nrn_euler_steer(int, _threadargsproto_);
 #define eulerfun(arg) nrn_euler_steer(arg, _threadargs_);
+nrn_pragma_omp(end declare target)
 
 struct Elm {
     unsigned row;        /* Row location */
@@ -89,15 +92,19 @@ struct SparseObj {          /* all the state information */
     int do_flag;
 };
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
+nrn_pragma_omp(declare target)
 extern double* _nrn_thread_getelm(SparseObj* so, int row, int col, int _iml);
+nrn_pragma_omp(end declare target)
 
 extern void* nrn_cons_sparseobj(SPFUN, int, Memb_list*, _threadargsproto_);
 
 extern void _nrn_destroy_sparseobj_thread(SparseObj* so);
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
+nrn_pragma_omp(declare target)
 extern int nrn_kinetic_steer(int, SparseObj*, double*, _threadargsproto_);
+nrn_pragma_omp(end declare target)
 #define spfun(arg1, arg2, arg3) nrn_kinetic_steer(arg1, arg2, arg3, _threadargs_);
 
 // derived from nrn/src/scopmath/euler.c
@@ -116,14 +123,15 @@ static inline int euler_thread(int neqn, int* var, int* der, DIFUN fun, _threada
     return 0;
 }
 
-#pragma acc routine seq
+nrn_pragma_omp(declare target)
+nrn_pragma_acc(routine seq)
 extern int derivimplicit_thread(int, int*, int*, DIFUN, _threadargsproto_);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int _ss_derivimplicit_thread(int n, int* slist, int* dlist, DIFUN fun, _threadargsproto_);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int
 sparse_thread(SparseObj*, int, int*, int*, double*, double, SPFUN, int, _threadargsproto_);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 int _ss_sparse_thread(SparseObj*,
                       int n,
                       int* s,
@@ -134,10 +142,11 @@ int _ss_sparse_thread(SparseObj*,
                       int linflag,
                       _threadargsproto_);
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern double _modl_get_dt_thread(NrnThread*);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern void _modl_set_dt_thread(double, NrnThread*);
+nrn_pragma_omp(end declare target)
 
 void nrn_sparseobj_copyto_device(SparseObj* so);
 void nrn_sparseobj_delete_from_device(SparseObj* so);

@@ -15,6 +15,11 @@
 #include <memory>
 #include <mutex>
 
+#ifdef CORENEURON_USE_BOOST_POOL
+#include <boost/pool/pool_alloc.hpp>
+#include <unordered_map>
+#endif
+
 // In a GPU build this file will be compiled by NVCC as CUDA code
 // In a CPU build this file will be compiled by a C++ compiler as C++ code
 #ifdef __CUDACC__
@@ -24,6 +29,48 @@
 #endif
 
 namespace {
+#ifdef CORENEURON_USE_BOOST_POOL
+/** Tag type for use with boost::fast_pool_allocator that forwards to
+ *  coreneuron::[de]allocate_unified(). Using a Random123-specific type here
+ *  makes sure that allocations do not come from the same global pool as other
+ *  usage of boost pools for objects with sizeof == sizeof(nrnran123_State).
+ *
+ *  The messy m_block_sizes map is just because `deallocate_unified` uses sized
+ *  deallocations, but the Boost pool allocators don't. Because this is hidden
+ *  behind the pool mechanism, these methods are not called very often and the
+ *  overhead is minimal.
+ */
+struct random123_allocate_unified {
+    using size_type = std::size_t;
+    using difference_type = std::size_t;
+    static char* malloc(const size_type bytes) {
+        std::lock_guard<std::mutex> const lock{m_mutex};
+        static_cast<void>(lock);
+        auto* buffer = coreneuron::allocate_unified(bytes);
+        m_block_sizes[buffer] = bytes;
+        return reinterpret_cast<char*>(buffer);
+    }
+    static void free(char* const block) {
+        std::lock_guard<std::mutex> const lock{m_mutex};
+        static_cast<void>(lock);
+        auto const iter = m_block_sizes.find(block);
+        assert(iter != m_block_sizes.end());
+        auto const size = iter->second;
+        m_block_sizes.erase(iter);
+        return coreneuron::deallocate_unified(block, size);
+    }
+    static std::mutex m_mutex;
+    static std::unordered_map<void*, std::size_t> m_block_sizes;
+};
+
+std::mutex random123_allocate_unified::m_mutex{};
+std::unordered_map<void*, std::size_t> random123_allocate_unified::m_block_sizes{};
+
+using random123_allocator =
+    boost::fast_pool_allocator<coreneuron::nrnran123_State, random123_allocate_unified>;
+#else
+using random123_allocator = coreneuron::unified_allocator<coreneuron::nrnran123_State>;
+#endif
 /* Global data structure per process. Using a unique_ptr here causes [minor]
  * problems because its destructor can be called very late during application
  * shutdown. If the destructor calls cudaFree and the CUDA runtime has already
@@ -212,9 +259,7 @@ nrnran123_State* nrnran123_newstream3(uint32_t id1,
 #endif
     nrnran123_State* s{nullptr};
     if (use_unified_memory) {
-        s = coreneuron::allocate_unique<nrnran123_State>(
-                coreneuron::unified_allocator<nrnran123_State>{})
-                .release();
+        s = coreneuron::allocate_unique<nrnran123_State>(random123_allocator{}).release();
     } else {
         s = new nrnran123_State{};
     }
@@ -244,9 +289,7 @@ void nrnran123_deletestream(nrnran123_State* s, bool use_unified_memory) {
         --g_instance_count;
     }
     if (use_unified_memory) {
-        std::unique_ptr<nrnran123_State,
-                        coreneuron::alloc_deleter<coreneuron::unified_allocator<nrnran123_State>>>
-            _{s};
+        std::unique_ptr<nrnran123_State, coreneuron::alloc_deleter<random123_allocator>> _{s};
     } else {
         delete s;
     }

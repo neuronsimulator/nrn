@@ -9,6 +9,8 @@
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
+#include "coreneuron/utils/offload.hpp"
+
 #include <cstdio>
 #include <utility>
 
@@ -52,17 +54,17 @@ class fixed_vector {
         return data_[i];
     }
 
-#pragma acc routine seq
+    nrn_pragma_acc(routine seq)
     const T* data(void) const {
         return data_;
     }
 
-#pragma acc routine seq
+    nrn_pragma_acc(routine seq)
     T* data(void) {
         return data_;
     }
 
-#pragma acc routine seq
+    nrn_pragma_acc(routine seq)
     size_t size() const {
         return n_;
     }
@@ -76,9 +78,9 @@ extern double* vector_vec(IvocVect* v);
 
 // retro-compatibility API
 extern void* vector_new1(int n);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int vector_capacity(void* v);
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern double* vector_vec(void* v);
 
 }  // namespace coreneuron

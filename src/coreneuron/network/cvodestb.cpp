@@ -55,17 +55,15 @@ void init_net_events() {
         net_cvode_instance->init_events();
     }
 
-#if defined(_OPENACC)
+#ifdef CORENEURON_ENABLE_GPU
     /* weight vectors could be updated (from INITIAL block of NET_RECEIVE, update those on GPU's */
     for (int ith = 0; ith < nrn_nthread; ++ith) {
         NrnThread* nt = nrn_threads + ith;
         double* weights = nt->weights;
         int n_weight = nt->n_weight;
-        if (n_weight) {
-            // clang-format off
-
-            #pragma acc update device(weights[0 : n_weight]) if (nt->compute_gpu)
-            // clang-format on
+        if (n_weight && nt->compute_gpu) {
+            nrn_pragma_acc(update device(weights [0:n_weight]))
+            nrn_pragma_omp(target update to(weights [0:n_weight]))
         }
     }
 #endif
@@ -88,6 +86,7 @@ void fixed_play_continuous(NrnThread* nt) {
 
 // NOTE : this implementation is duplicated in "coreneuron/mechanism/nrnoc_ml.ispc"
 // for the ISPC backend. If changes are required, make sure to change ISPC as well.
+nrn_pragma_omp(declare target)
 int at_time(NrnThread* nt, double te) {
     double x = te - 1e-11;
     if (x <= nt->_t && x > (nt->_t - nt->_dt)) {
@@ -95,5 +94,6 @@ int at_time(NrnThread* nt, double te) {
     }
     return 0;
 }
+nrn_pragma_omp(end declare target)
 
 }  // namespace coreneuron

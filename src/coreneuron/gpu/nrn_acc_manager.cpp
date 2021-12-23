@@ -24,13 +24,14 @@
 #include "coreneuron/mpi/nrnmpidec.h"
 #include "coreneuron/utils/utils.hpp"
 
-#ifdef _OPENACC
-#include <openacc.h>
-#endif
-
 #ifdef CRAYPAT
 #include <pat_api.h>
 #endif
+
+#if defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+#include <cuda_runtime_api.h>
+#endif
+
 namespace coreneuron {
 extern InterleaveInfo* interleave_info;
 void copy_ivoc_vect_to_device(const IvocVect& iv, IvocVect& div);
@@ -40,9 +41,227 @@ void nrn_ion_global_map_delete_from_device();
 void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay);
 void nrn_VecPlay_delete_from_device(NrnThread* nt);
 
+int cnrn_target_get_num_devices() {
+#if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
+    defined(_OPENACC)
+    // choose nvidia GPU by default
+    acc_device_t device_type = acc_device_nvidia;
+    // check how many gpu devices available per node
+    return acc_get_num_devices(device_type);
+#elif defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
+    defined(_OPENMP)
+    return omp_get_num_devices();
+#else
+    throw std::runtime_error(
+        "cnrn_target_get_num_devices() not implemented without OpenACC/OpenMP and gpu build");
+#endif
+}
+
+void cnrn_target_set_default_device(int device_num) {
+#if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
+    defined(_OPENACC)
+    acc_set_device_num(device_num, acc_device_nvidia);
+#elif defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
+    defined(_OPENMP)
+    omp_set_default_device(device_num);
+    // It seems that with NVHPC 21.9 then only setting the default OpenMP device
+    // is not enough: there were errors on some nodes when not-the-0th GPU was
+    // used. These seemed to be related to the NMODL instance structs, which are
+    // allocated using cudaMallocManaged.
+    auto const cuda_code = cudaSetDevice(device_num);
+    assert(cuda_code == cudaSuccess);
+#else
+    throw std::runtime_error(
+        "cnrn_target_set_default_device() not implemented without OpenACC/OpenMP and gpu build");
+#endif
+}
+
+static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
+    // As we never run code for artificial cell inside GPU we don't copy it.
+    int is_art = corenrn.get_is_artificial()[type];
+    if (is_art) {
+        return nullptr;
+    }
+
+    auto d_ml = cnrn_target_copyin(ml);
+
+    int n = ml->nodecount;
+    int szp = corenrn.get_prop_param_size()[type];
+    int szdp = corenrn.get_prop_dparam_size()[type];
+
+    double* dptr = cnrn_target_deviceptr(ml->data);
+    cnrn_target_memcpy_to_device(&(d_ml->data), &(dptr));
+
+
+    int* d_nodeindices = cnrn_target_copyin(ml->nodeindices, n);
+    cnrn_target_memcpy_to_device(&(d_ml->nodeindices), &d_nodeindices);
+
+    if (szdp) {
+        int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+        int* d_pdata = cnrn_target_copyin(ml->pdata, pcnt);
+        cnrn_target_memcpy_to_device(&(d_ml->pdata), &d_pdata);
+    }
+
+    int ts = corenrn.get_memb_funcs()[type].thread_size_;
+    if (ts) {
+        ThreadDatum* td = cnrn_target_copyin(ml->_thread, ts);
+        cnrn_target_memcpy_to_device(&(d_ml->_thread), &td);
+    }
+
+    // net_receive buffer associated with mechanism
+    NetReceiveBuffer_t* nrb = ml->_net_receive_buffer;
+
+    // if net receive buffer exist for mechanism
+    if (nrb) {
+        NetReceiveBuffer_t* d_nrb = cnrn_target_copyin(nrb);
+        cnrn_target_memcpy_to_device(&(d_ml->_net_receive_buffer), &d_nrb);
+
+        int* d_pnt_index = cnrn_target_copyin(nrb->_pnt_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index);
+
+        int* d_weight_index = cnrn_target_copyin(nrb->_weight_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index);
+
+        double* d_nrb_t = cnrn_target_copyin(nrb->_nrb_t, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t);
+
+        double* d_nrb_flag = cnrn_target_copyin(nrb->_nrb_flag, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag);
+
+        int* d_displ = cnrn_target_copyin(nrb->_displ, nrb->_size + 1);
+        cnrn_target_memcpy_to_device(&(d_nrb->_displ), &d_displ);
+
+        int* d_nrb_index = cnrn_target_copyin(nrb->_nrb_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index);
+    }
+
+    /* copy NetSendBuffer_t on to GPU */
+    NetSendBuffer_t* nsb = ml->_net_send_buffer;
+
+    if (nsb) {
+        NetSendBuffer_t* d_nsb;
+        int* d_iptr;
+        double* d_dptr;
+
+        d_nsb = cnrn_target_copyin(nsb);
+        cnrn_target_memcpy_to_device(&(d_ml->_net_send_buffer), &d_nsb);
+
+        d_iptr = cnrn_target_copyin(nsb->_sendtype, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_sendtype), &d_iptr);
+
+        d_iptr = cnrn_target_copyin(nsb->_vdata_index, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_vdata_index), &d_iptr);
+
+        d_iptr = cnrn_target_copyin(nsb->_pnt_index, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_pnt_index), &d_iptr);
+
+        d_iptr = cnrn_target_copyin(nsb->_weight_index, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_weight_index), &d_iptr);
+
+        d_dptr = cnrn_target_copyin(nsb->_nsb_t, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_nsb_t), &d_dptr);
+
+        d_dptr = cnrn_target_copyin(nsb->_nsb_flag, nsb->_size);
+        cnrn_target_memcpy_to_device(&(d_nsb->_nsb_flag), &d_dptr);
+    }
+
+    return d_ml;
+}
+
+static void update_ml_on_host(const Memb_list* ml, int type) {
+    int is_art = corenrn.get_is_artificial()[type];
+    if (is_art) {
+        // Artificial mechanisms such as PatternStim and IntervalFire
+        // are not copied onto the GPU. They should not, therefore, be
+        // updated from the GPU.
+        return;
+    }
+
+    int n = ml->nodecount;
+    int szp = corenrn.get_prop_param_size()[type];
+    int szdp = corenrn.get_prop_dparam_size()[type];
+
+    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
+
+    nrn_pragma_acc(update self(ml->data[:pcnt], ml->nodeindices[:n]))
+    nrn_pragma_omp(target update from(ml->data[:pcnt], ml->nodeindices[:n]))
+
+    int dpcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+    nrn_pragma_acc(update self(ml->pdata[:dpcnt]) if (szdp))
+    nrn_pragma_omp(target update from(ml->pdata[:dpcnt]) if (szdp))
+
+    auto nrb = ml->_net_receive_buffer;
+
+    // clang-format off
+    nrn_pragma_acc(update self(nrb->_cnt,
+                               nrb->_size,
+                               nrb->_pnt_offset,
+                               nrb->_displ_cnt,
+                               nrb->_pnt_index[:nrb->_size],
+                               nrb->_weight_index[:nrb->_size],
+                               nrb->_displ[:nrb->_size + 1],
+                               nrb->_nrb_index[:nrb->_size])
+                          if (nrb != nullptr))
+    nrn_pragma_omp(target update from(nrb->_cnt,
+                                      nrb->_size,
+                                      nrb->_pnt_offset,
+                                      nrb->_displ_cnt,
+                                      nrb->_pnt_index[:nrb->_size],
+                                      nrb->_weight_index[:nrb->_size],
+                                      nrb->_displ[:nrb->_size + 1],
+                                      nrb->_nrb_index[:nrb->_size])
+                                 if (nrb != nullptr))
+    // clang-format on
+}
+
+static void delete_ml_from_device(Memb_list* ml, int type) {
+    int is_art = corenrn.get_is_artificial()[type];
+    if (is_art) {
+        return;
+    }
+    // Cleanup the net send buffer if it exists
+    {
+        NetSendBuffer_t* nsb{ml->_net_send_buffer};
+        if (nsb) {
+            cnrn_target_delete(nsb->_nsb_flag, nsb->_size);
+            cnrn_target_delete(nsb->_nsb_t, nsb->_size);
+            cnrn_target_delete(nsb->_weight_index, nsb->_size);
+            cnrn_target_delete(nsb->_pnt_index, nsb->_size);
+            cnrn_target_delete(nsb->_vdata_index, nsb->_size);
+            cnrn_target_delete(nsb->_sendtype, nsb->_size);
+            cnrn_target_delete(nsb);
+        }
+    }
+    // Cleanup the net receive buffer if it exists.
+    {
+        NetReceiveBuffer_t* nrb{ml->_net_receive_buffer};
+        if (nrb) {
+            cnrn_target_delete(nrb->_nrb_index, nrb->_size);
+            cnrn_target_delete(nrb->_displ, nrb->_size + 1);
+            cnrn_target_delete(nrb->_nrb_flag, nrb->_size);
+            cnrn_target_delete(nrb->_nrb_t, nrb->_size);
+            cnrn_target_delete(nrb->_weight_index, nrb->_size);
+            cnrn_target_delete(nrb->_pnt_index, nrb->_size);
+            cnrn_target_delete(nrb);
+        }
+    }
+    int n = ml->nodecount;
+    int szdp = corenrn.get_prop_dparam_size()[type];
+    int ts = corenrn.get_memb_funcs()[type].thread_size_;
+    if (ts) {
+        cnrn_target_delete(ml->_thread, ts);
+    }
+    if (szdp) {
+        int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
+        cnrn_target_delete(ml->pdata, pcnt);
+    }
+    cnrn_target_delete(ml->nodeindices, n);
+    cnrn_target_delete(ml);
+}
+
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     // initialize NrnThreads for gpu execution
     // empty thread or only artificial cells should be on cpu
     for (int i = 0; i < nthreads; i++) {
@@ -58,13 +277,13 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         NrnThread* nt = threads + i;  // NrnThread on host
 
         if (nt->n_presyn) {
-            PreSyn* d_presyns = (PreSyn*) acc_copyin(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
+            PreSyn* d_presyns = cnrn_target_copyin(nt->presyns, nt->n_presyn);
         }
 
         if (nt->n_vecplay) {
             /* copy VecPlayContinuous instances */
             /** just empty containers */
-            void** d_vecplay = (void**) acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
+            void** d_vecplay = cnrn_target_copyin(nt->_vecplay, nt->n_vecplay);
             // note: we are using unified memory for NrnThread. Once VecPlay is copied to gpu,
             // we dont want to update nt->vecplay because it will also set gpu pointer of vecplay
             // inside nt on cpu (due to unified memory).
@@ -82,7 +301,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
      * find
      * corresponding NrnThread using Point_process in NET_RECEIVE block
      */
-    NrnThread* d_threads = (NrnThread*) acc_copyin(threads, sizeof(NrnThread) * nthreads);
+    NrnThread* d_threads = cnrn_target_copyin(threads, nthreads);
 
     if (interleave_info == nullptr) {
         printf("\n Warning: No permutation data? Required for linear algebra!");
@@ -101,7 +320,8 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         /* -- copy _data to device -- */
 
         /*copy all double data for thread */
-        d__data = (double*) acc_copyin(nt->_data, nt->_ndata * sizeof(double));
+        d__data = cnrn_target_copyin(nt->_data, nt->_ndata);
+
 
         /* Here is the example of using OpenACC data enter/exit
          * Remember that we are not allowed to use nt->_data but we have to use:
@@ -111,7 +331,7 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
          */
 
         /*update d_nt._data to point to device copy */
-        acc_memcpy_to_device(&(d_nt->_data), &d__data, sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_data), &d__data);
 
         /* -- setup rhs, d, a, b, v, node_aread to point to device copy -- */
         double* dptr;
@@ -120,36 +340,34 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         int ne = nrn_soa_padded_size(nt->end, 0);
 
         dptr = d__data + 0 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_rhs), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_rhs), &(dptr));
 
         dptr = d__data + 1 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_d), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_d), &(dptr));
 
         dptr = d__data + 2 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_a), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_a), &(dptr));
 
         dptr = d__data + 3 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_b), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_b), &(dptr));
 
         dptr = d__data + 4 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_v), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_v), &(dptr));
 
         dptr = d__data + 5 * ne;
-        acc_memcpy_to_device(&(d_nt->_actual_area), &(dptr), sizeof(double*));
+        cnrn_target_memcpy_to_device(&(d_nt->_actual_area), &(dptr));
 
         if (nt->_actual_diam) {
             dptr = d__data + 6 * ne;
-            acc_memcpy_to_device(&(d_nt->_actual_diam), &(dptr), sizeof(double*));
+            cnrn_target_memcpy_to_device(&(d_nt->_actual_diam), &(dptr));
         }
 
-        int* d_v_parent_index = (int*) acc_copyin(nt->_v_parent_index, nt->end * sizeof(int));
-        acc_memcpy_to_device(&(d_nt->_v_parent_index), &(d_v_parent_index), sizeof(int*));
+        int* d_v_parent_index = cnrn_target_copyin(nt->_v_parent_index, nt->end);
+        cnrn_target_memcpy_to_device(&(d_nt->_v_parent_index), &(d_v_parent_index));
 
         /* nt._ml_list is used in NET_RECEIVE block and should have valid membrane list id*/
-        Memb_list** d_ml_list = (Memb_list**) acc_copyin(nt->_ml_list,
-                                                         corenrn.get_memb_funcs().size() *
-                                                             sizeof(Memb_list*));
-        acc_memcpy_to_device(&(d_nt->_ml_list), &(d_ml_list), sizeof(Memb_list**));
+        Memb_list** d_ml_list = cnrn_target_copyin(nt->_ml_list, corenrn.get_memb_funcs().size());
+        cnrn_target_memcpy_to_device(&(d_nt->_ml_list), &(d_ml_list));
 
         /* -- copy NrnThreadMembList list ml to device -- */
 
@@ -160,119 +378,25 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
         for (auto tml = nt->tml; tml; tml = tml->next) {
             /*copy tml to device*/
             /*QUESTIONS: does tml will point to nullptr as in host ? : I assume so!*/
-            auto d_tml = (NrnThreadMembList*) acc_copyin(tml, sizeof(NrnThreadMembList));
+            auto d_tml = cnrn_target_copyin(tml);
 
             /*first tml is pointed by nt */
             if (first_tml) {
-                acc_memcpy_to_device(&(d_nt->tml), &d_tml, sizeof(NrnThreadMembList*));
+                cnrn_target_memcpy_to_device(&(d_nt->tml), &d_tml);
                 first_tml = false;
             } else {
                 /*rest of tml forms linked list */
-                acc_memcpy_to_device(&(d_last_tml->next), &d_tml, sizeof(NrnThreadMembList*));
+                cnrn_target_memcpy_to_device(&(d_last_tml->next), &d_tml);
             }
 
             // book keeping for linked-list
             d_last_tml = d_tml;
 
             /* now for every tml, there is a ml. copy that and setup pointer */
-            auto d_ml = (Memb_list*) acc_copyin(tml->ml, sizeof(Memb_list));
-            acc_memcpy_to_device(&(d_tml->ml), &d_ml, sizeof(Memb_list*));
-
+            Memb_list* d_ml = copy_ml_to_device(tml->ml, tml->index);
+            cnrn_target_memcpy_to_device(&(d_tml->ml), &d_ml);
             /* setup nt._ml_list */
-            acc_memcpy_to_device(&(d_ml_list[tml->index]), &d_ml, sizeof(Memb_list*));
-
-            int type = tml->index;
-            int n = tml->ml->nodecount;
-            int szp = corenrn.get_prop_param_size()[type];
-            int szdp = corenrn.get_prop_dparam_size()[type];
-            int is_art = corenrn.get_is_artificial()[type];
-
-            // get device pointer for corresponding mechanism data
-            dptr = (double*) acc_deviceptr(tml->ml->data);
-            acc_memcpy_to_device(&(d_ml->data), &(dptr), sizeof(double*));
-
-
-            if (!is_art) {
-                int* d_nodeindices = (int*) acc_copyin(tml->ml->nodeindices, sizeof(int) * n);
-                acc_memcpy_to_device(&(d_ml->nodeindices), &d_nodeindices, sizeof(int*));
-            }
-
-            if (szdp) {
-                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
-                int* d_pdata = (int*) acc_copyin(tml->ml->pdata, sizeof(int) * pcnt);
-                acc_memcpy_to_device(&(d_ml->pdata), &d_pdata, sizeof(int*));
-            }
-
-            int ts = corenrn.get_memb_funcs()[type].thread_size_;
-            if (ts) {
-                ThreadDatum* td = (ThreadDatum*) acc_copyin(tml->ml->_thread,
-                                                            ts * sizeof(ThreadDatum));
-                acc_memcpy_to_device(&(d_ml->_thread), &td, sizeof(ThreadDatum*));
-            }
-
-            NetReceiveBuffer_t *nrb, *d_nrb;
-            int *d_weight_index, *d_pnt_index, *d_displ, *d_nrb_index;
-            double *d_nrb_t, *d_nrb_flag;
-
-            // net_receive buffer associated with mechanism
-            nrb = tml->ml->_net_receive_buffer;
-
-            // if net receive buffer exist for mechanism
-            if (nrb) {
-                d_nrb = (NetReceiveBuffer_t*) acc_copyin(nrb, sizeof(NetReceiveBuffer_t));
-                acc_memcpy_to_device(&(d_ml->_net_receive_buffer),
-                                     &d_nrb,
-                                     sizeof(NetReceiveBuffer_t*));
-
-                d_pnt_index = (int*) acc_copyin(nrb->_pnt_index, sizeof(int) * nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
-
-                d_weight_index = (int*) acc_copyin(nrb->_weight_index, sizeof(int) * nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
-
-                d_nrb_t = (double*) acc_copyin(nrb->_nrb_t, sizeof(double) * nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
-
-                d_nrb_flag = (double*) acc_copyin(nrb->_nrb_flag, sizeof(double) * nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag, sizeof(double*));
-
-                d_displ = (int*) acc_copyin(nrb->_displ, sizeof(int) * (nrb->_size + 1));
-                acc_memcpy_to_device(&(d_nrb->_displ), &d_displ, sizeof(int*));
-
-                d_nrb_index = (int*) acc_copyin(nrb->_nrb_index, sizeof(int) * nrb->_size);
-                acc_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index, sizeof(int*));
-            }
-
-            /* copy NetSendBuffer_t on to GPU */
-            NetSendBuffer_t* nsb;
-            nsb = tml->ml->_net_send_buffer;
-
-            if (nsb) {
-                NetSendBuffer_t* d_nsb;
-                int* d_iptr;
-                double* d_dptr;
-
-                d_nsb = (NetSendBuffer_t*) acc_copyin(nsb, sizeof(NetSendBuffer_t));
-                acc_memcpy_to_device(&(d_ml->_net_send_buffer), &d_nsb, sizeof(NetSendBuffer_t*));
-
-                d_iptr = (int*) acc_copyin(nsb->_sendtype, sizeof(int) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_sendtype), &d_iptr, sizeof(int*));
-
-                d_iptr = (int*) acc_copyin(nsb->_vdata_index, sizeof(int) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_vdata_index), &d_iptr, sizeof(int*));
-
-                d_iptr = (int*) acc_copyin(nsb->_pnt_index, sizeof(int) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_pnt_index), &d_iptr, sizeof(int*));
-
-                d_iptr = (int*) acc_copyin(nsb->_weight_index, sizeof(int) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_weight_index), &d_iptr, sizeof(int*));
-
-                d_dptr = (double*) acc_copyin(nsb->_nsb_t, sizeof(double) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_nsb_t), &d_dptr, sizeof(double*));
-
-                d_dptr = (double*) acc_copyin(nsb->_nsb_flag, sizeof(double) * nsb->_size);
-                acc_memcpy_to_device(&(d_nsb->_nsb_flag), &d_dptr, sizeof(double*));
-            }
+            cnrn_target_memcpy_to_device(&(d_ml_list[tml->index]), &d_ml);
         }
 
         if (nt->shadow_rhs_cnt) {
@@ -281,50 +405,46 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
 
             /* copy shadow_rhs to device and fix-up the pointer */
-            d_shadow_ptr = (double*) acc_copyin(nt->_shadow_rhs, pcnt * sizeof(double));
-            acc_memcpy_to_device(&(d_nt->_shadow_rhs), &d_shadow_ptr, sizeof(double*));
+            d_shadow_ptr = cnrn_target_copyin(nt->_shadow_rhs, pcnt);
+            cnrn_target_memcpy_to_device(&(d_nt->_shadow_rhs), &d_shadow_ptr);
 
             /* copy shadow_d to device and fix-up the pointer */
-            d_shadow_ptr = (double*) acc_copyin(nt->_shadow_d, pcnt * sizeof(double));
-            acc_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr, sizeof(double*));
+            d_shadow_ptr = cnrn_target_copyin(nt->_shadow_d, pcnt);
+            cnrn_target_memcpy_to_device(&(d_nt->_shadow_d), &d_shadow_ptr);
         }
 
         /* Fast membrane current calculation struct */
         if (nt->nrn_fast_imem) {
-            auto* d_fast_imem = reinterpret_cast<NrnFastImem*>(
-                acc_copyin(nt->nrn_fast_imem, sizeof(NrnFastImem)));
-            acc_memcpy_to_device(&(d_nt->nrn_fast_imem), &d_fast_imem, sizeof(NrnFastImem*));
+            NrnFastImem* d_fast_imem = cnrn_target_copyin(nt->nrn_fast_imem);
+            cnrn_target_memcpy_to_device(&(d_nt->nrn_fast_imem), &d_fast_imem);
             {
-                auto* d_ptr = reinterpret_cast<double*>(
-                    acc_copyin(nt->nrn_fast_imem->nrn_sav_rhs, nt->end * sizeof(double)));
-                acc_memcpy_to_device(&(d_fast_imem->nrn_sav_rhs), &d_ptr, sizeof(double*));
+                double* d_ptr = cnrn_target_copyin(nt->nrn_fast_imem->nrn_sav_rhs, nt->end);
+                cnrn_target_memcpy_to_device(&(d_fast_imem->nrn_sav_rhs), &d_ptr);
             }
             {
-                auto* d_ptr = reinterpret_cast<double*>(
-                    acc_copyin(nt->nrn_fast_imem->nrn_sav_d, nt->end * sizeof(double)));
-                acc_memcpy_to_device(&(d_fast_imem->nrn_sav_d), &d_ptr, sizeof(double*));
+                double* d_ptr = cnrn_target_copyin(nt->nrn_fast_imem->nrn_sav_d, nt->end);
+                cnrn_target_memcpy_to_device(&(d_fast_imem->nrn_sav_d), &d_ptr);
             }
         }
 
         if (nt->n_pntproc) {
             /* copy Point_processes array and fix the pointer to execute net_receive blocks on GPU
              */
-            Point_process* pntptr =
-                (Point_process*) acc_copyin(nt->pntprocs, nt->n_pntproc * sizeof(Point_process));
-            acc_memcpy_to_device(&(d_nt->pntprocs), &pntptr, sizeof(Point_process*));
+            Point_process* pntptr = cnrn_target_copyin(nt->pntprocs, nt->n_pntproc);
+            cnrn_target_memcpy_to_device(&(d_nt->pntprocs), &pntptr);
         }
 
         if (nt->n_weight) {
             /* copy weight vector used in NET_RECEIVE which is pointed by netcon.weight */
-            double* d_weights = (double*) acc_copyin(nt->weights, sizeof(double) * nt->n_weight);
-            acc_memcpy_to_device(&(d_nt->weights), &d_weights, sizeof(double*));
+            double* d_weights = cnrn_target_copyin(nt->weights, nt->n_weight);
+            cnrn_target_memcpy_to_device(&(d_nt->weights), &d_weights);
         }
 
         if (nt->_nvdata) {
             /* copy vdata which is setup in bbcore_read. This contains cuda allocated
              * nrnran123_State * */
-            void** d_vdata = (void**) acc_copyin(nt->_vdata, sizeof(void*) * nt->_nvdata);
-            acc_memcpy_to_device(&(d_nt->_vdata), &d_vdata, sizeof(void**));
+            void** d_vdata = cnrn_target_copyin(nt->_vdata, nt->_nvdata);
+            cnrn_target_memcpy_to_device(&(d_nt->_vdata), &d_vdata);
         }
 
         if (nt->n_presyn) {
@@ -333,25 +453,24 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
              * while updating PreSyn objects which has virtual base class. May be this is issue due
              * to
              * VTable and alignment */
-            PreSynHelper* d_presyns_helper =
-                (PreSynHelper*) acc_copyin(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
-            acc_memcpy_to_device(&(d_nt->presyns_helper), &d_presyns_helper, sizeof(PreSynHelper*));
-            PreSyn* d_presyns = (PreSyn*) acc_copyin(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
-            acc_memcpy_to_device(&(d_nt->presyns), &d_presyns, sizeof(PreSyn*));
+            PreSynHelper* d_presyns_helper = cnrn_target_copyin(nt->presyns_helper, nt->n_presyn);
+            cnrn_target_memcpy_to_device(&(d_nt->presyns_helper), &d_presyns_helper);
+            PreSyn* d_presyns = cnrn_target_copyin(nt->presyns, nt->n_presyn);
+            cnrn_target_memcpy_to_device(&(d_nt->presyns), &d_presyns);
         }
 
         if (nt->_net_send_buffer_size) {
             /* copy send_receive buffer */
-            int* d_net_send_buffer = (int*) acc_copyin(nt->_net_send_buffer,
-                                                       sizeof(int) * nt->_net_send_buffer_size);
-            acc_memcpy_to_device(&(d_nt->_net_send_buffer), &d_net_send_buffer, sizeof(int*));
+            int* d_net_send_buffer = cnrn_target_copyin(nt->_net_send_buffer,
+                                                        nt->_net_send_buffer_size);
+            cnrn_target_memcpy_to_device(&(d_nt->_net_send_buffer), &d_net_send_buffer);
         }
 
         if (nt->n_vecplay) {
             /* copy VecPlayContinuous instances */
             /** just empty containers */
-            void** d_vecplay = (void**) acc_copyin(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
-            acc_memcpy_to_device(&(d_nt->_vecplay), &d_vecplay, sizeof(void**));
+            void** d_vecplay = cnrn_target_copyin(nt->_vecplay, nt->n_vecplay);
+            cnrn_target_memcpy_to_device(&(d_nt->_vecplay), &d_vecplay);
 
             nrn_VecPlay_copyto_device(nt, d_vecplay);
         }
@@ -360,41 +479,41 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             if (interleave_permute_type == 1) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
-                InterleaveInfo* d_info = (InterleaveInfo*) acc_copyin(info, sizeof(InterleaveInfo));
                 int* d_ptr = nullptr;
+                InterleaveInfo* d_info = cnrn_target_copyin(info);
 
-                d_ptr = (int*) acc_copyin(info->stride, sizeof(int) * (info->nstride + 1));
-                acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->stride, info->nstride + 1);
+                cnrn_target_memcpy_to_device(&(d_info->stride), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->firstnode, sizeof(int) * nt->ncell);
-                acc_memcpy_to_device(&(d_info->firstnode), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->firstnode, nt->ncell);
+                cnrn_target_memcpy_to_device(&(d_info->firstnode), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->lastnode, sizeof(int) * nt->ncell);
-                acc_memcpy_to_device(&(d_info->lastnode), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->lastnode, nt->ncell);
+                cnrn_target_memcpy_to_device(&(d_info->lastnode), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->cellsize, sizeof(int) * nt->ncell);
-                acc_memcpy_to_device(&(d_info->cellsize), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->cellsize, nt->ncell);
+                cnrn_target_memcpy_to_device(&(d_info->cellsize), &d_ptr);
 
             } else if (interleave_permute_type == 2) {
                 /* todo: not necessary to setup pointers, just copy it */
                 InterleaveInfo* info = interleave_info + i;
-                InterleaveInfo* d_info = (InterleaveInfo*) acc_copyin(info, sizeof(InterleaveInfo));
+                InterleaveInfo* d_info = cnrn_target_copyin(info);
                 int* d_ptr = nullptr;
 
-                d_ptr = (int*) acc_copyin(info->stride, sizeof(int) * info->nstride);
-                acc_memcpy_to_device(&(d_info->stride), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->stride, info->nstride);
+                cnrn_target_memcpy_to_device(&(d_info->stride), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->firstnode, sizeof(int) * (info->nwarp + 1));
-                acc_memcpy_to_device(&(d_info->firstnode), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->firstnode, info->nwarp + 1);
+                cnrn_target_memcpy_to_device(&(d_info->firstnode), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->lastnode, sizeof(int) * (info->nwarp + 1));
-                acc_memcpy_to_device(&(d_info->lastnode), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->lastnode, info->nwarp + 1);
+                cnrn_target_memcpy_to_device(&(d_info->lastnode), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->stridedispl, sizeof(int) * (info->nwarp + 1));
-                acc_memcpy_to_device(&(d_info->stridedispl), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->stridedispl, info->nwarp + 1);
+                cnrn_target_memcpy_to_device(&(d_info->stridedispl), &d_ptr);
 
-                d_ptr = (int*) acc_copyin(info->cellsize, sizeof(int) * info->nwarp);
-                acc_memcpy_to_device(&(d_info->cellsize), &d_ptr, sizeof(int*));
+                d_ptr = cnrn_target_copyin(info->cellsize, info->nwarp);
+                cnrn_target_memcpy_to_device(&(d_info->cellsize), &d_ptr);
             } else {
                 printf("\n ERROR: only --cell_permute = [12] implemented");
                 abort();
@@ -408,38 +527,30 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             if (tr) {
                 // Create a device-side copy of the `trajec_requests` struct and
                 // make sure the device-side NrnThread object knows about it.
-                auto* d_trajec_requests = reinterpret_cast<TrajectoryRequests*>(
-                    acc_copyin(tr, sizeof(TrajectoryRequests)));
-                acc_memcpy_to_device(&(d_nt->trajec_requests),
-                                     &d_trajec_requests,
-                                     sizeof(TrajectoryRequests*));
+                TrajectoryRequests* d_trajec_requests = cnrn_target_copyin(tr);
+                cnrn_target_memcpy_to_device(&(d_nt->trajec_requests), &d_trajec_requests);
                 // Initialise the double** gather member of the struct.
-                auto* d_tr_gather = reinterpret_cast<double**>(
-                    acc_copyin(tr->gather, sizeof(double*) * tr->n_trajec));
-                acc_memcpy_to_device(&(d_trajec_requests->gather), &d_tr_gather, sizeof(double**));
+                double** d_tr_gather = cnrn_target_copyin(tr->gather, tr->n_trajec);
+                cnrn_target_memcpy_to_device(&(d_trajec_requests->gather), &d_tr_gather);
                 // Initialise the double** varrays member of the struct if it's
                 // set.
                 double** d_tr_varrays{nullptr};
                 if (tr->varrays) {
-                    d_tr_varrays = reinterpret_cast<double**>(
-                        acc_copyin(tr->varrays, sizeof(double*) * tr->n_trajec));
-                    acc_memcpy_to_device(&(d_trajec_requests->varrays),
-                                         &d_tr_varrays,
-                                         sizeof(double**));
+                    d_tr_varrays = cnrn_target_copyin(tr->varrays, tr->n_trajec);
+                    cnrn_target_memcpy_to_device(&(d_trajec_requests->varrays), &d_tr_varrays);
                 }
                 for (int i = 0; i < tr->n_trajec; ++i) {
                     if (tr->varrays) {
                         // tr->varrays[i] is a buffer of tr->bsize doubles on the host,
                         // make a device-side copy of it and store a pointer to it in
                         // the device-side version of tr->varrays.
-                        auto* d_buf_traj_i = reinterpret_cast<double*>(
-                            acc_copyin(tr->varrays[i], tr->bsize * sizeof(double)));
-                        acc_memcpy_to_device(&(d_tr_varrays[i]), &d_buf_traj_i, sizeof(double*));
+                        double* d_buf_traj_i = cnrn_target_copyin(tr->varrays[i], tr->bsize);
+                        cnrn_target_memcpy_to_device(&(d_tr_varrays[i]), &d_buf_traj_i);
                     }
                     // tr->gather[i] is a double* referring to (host) data in the
                     // (host) _data block
-                    auto* d_gather_i = acc_deviceptr(tr->gather[i]);
-                    acc_memcpy_to_device(&(d_tr_gather[i]), &d_gather_i, sizeof(double*));
+                    auto* d_gather_i = cnrn_target_deviceptr(tr->gather[i]);
+                    cnrn_target_memcpy_to_device(&(d_tr_gather[i]), &d_gather_i);
                 }
                 // TODO: other `double** scatter` and `void** vpr` members of
                 // the TrajectoryRequests struct are not copied to the device.
@@ -457,14 +568,14 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 }
 
 void copy_ivoc_vect_to_device(const IvocVect& from, IvocVect& to) {
-#ifdef _OPENACC
-    IvocVect* d_iv = (IvocVect*) acc_copyin((void*) &from, sizeof(IvocVect));
-    acc_memcpy_to_device(&to, &d_iv, sizeof(IvocVect*));
+#ifdef CORENEURON_ENABLE_GPU
+    /// by default `to` is desitionation pointer on a device
+    IvocVect* d_iv = &to;
 
     size_t n = from.size();
     if (n) {
-        double* d_data = (double*) acc_copyin((void*) from.data(), sizeof(double) * n);
-        acc_memcpy_to_device(&(d_iv->data_), &d_data, sizeof(double*));
+        double* d_data = cnrn_target_copyin(from.data(), n);
+        cnrn_target_memcpy_to_device(&(d_iv->data_), &d_data);
     }
 #else
     (void) from;
@@ -473,12 +584,12 @@ void copy_ivoc_vect_to_device(const IvocVect& from, IvocVect& to) {
 }
 
 void delete_ivoc_vect_from_device(IvocVect& vec) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     auto const n = vec.size();
     if (n) {
-        acc_delete(vec.data(), sizeof(double) * n);
+        cnrn_target_delete(vec.data(), n);
     }
-    acc_delete(&vec, sizeof(IvocVect));
+    cnrn_target_delete(&vec);
 #else
     (void) vec;
 #endif
@@ -490,15 +601,15 @@ void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
         return;
     }
 
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     if (nt->compute_gpu) {
         // free existing vectors in buffers on gpu
-        acc_delete(nrb->_pnt_index, nrb->_size * sizeof(int));
-        acc_delete(nrb->_weight_index, nrb->_size * sizeof(int));
-        acc_delete(nrb->_nrb_t, nrb->_size * sizeof(double));
-        acc_delete(nrb->_nrb_flag, nrb->_size * sizeof(double));
-        acc_delete(nrb->_displ, (nrb->_size + 1) * sizeof(int));
-        acc_delete(nrb->_nrb_index, nrb->_size * sizeof(int));
+        cnrn_target_delete(nrb->_pnt_index, nrb->_size);
+        cnrn_target_delete(nrb->_weight_index, nrb->_size);
+        cnrn_target_delete(nrb->_nrb_t, nrb->_size);
+        cnrn_target_delete(nrb->_nrb_flag, nrb->_size);
+        cnrn_target_delete(nrb->_displ, nrb->_size + 1);
+        cnrn_target_delete(nrb->_nrb_index, nrb->_size);
     }
 #endif
 
@@ -511,34 +622,35 @@ void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
     nrb->_displ = (int*) erealloc(nrb->_displ, (nrb->_size + 1) * sizeof(int));
     nrb->_nrb_index = (int*) erealloc(nrb->_nrb_index, nrb->_size * sizeof(int));
 
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     if (nt->compute_gpu) {
         int *d_weight_index, *d_pnt_index, *d_displ, *d_nrb_index;
         double *d_nrb_t, *d_nrb_flag;
 
         // update device copy
-        acc_update_device(nrb, sizeof(NetReceiveBuffer_t));
+        nrn_pragma_acc(update device(nrb));
+        nrn_pragma_omp(target update to(nrb));
 
-        NetReceiveBuffer_t* d_nrb = (NetReceiveBuffer_t*) acc_deviceptr(nrb);
+        NetReceiveBuffer_t* d_nrb = cnrn_target_deviceptr(nrb);
 
         // recopy the vectors in the buffer
-        d_pnt_index = (int*) acc_copyin(nrb->_pnt_index, sizeof(int) * nrb->_size);
-        acc_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index, sizeof(int*));
+        d_pnt_index = cnrn_target_copyin(nrb->_pnt_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index);
 
-        d_weight_index = (int*) acc_copyin(nrb->_weight_index, sizeof(int) * nrb->_size);
-        acc_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index, sizeof(int*));
+        d_weight_index = cnrn_target_copyin(nrb->_weight_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index);
 
-        d_nrb_t = (double*) acc_copyin(nrb->_nrb_t, sizeof(double) * nrb->_size);
-        acc_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t, sizeof(double*));
+        d_nrb_t = cnrn_target_copyin(nrb->_nrb_t, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t);
 
-        d_nrb_flag = (double*) acc_copyin(nrb->_nrb_flag, sizeof(double) * nrb->_size);
-        acc_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag, sizeof(double*));
+        d_nrb_flag = cnrn_target_copyin(nrb->_nrb_flag, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag);
 
-        d_displ = (int*) acc_copyin(nrb->_displ, sizeof(int) * (nrb->_size + 1));
-        acc_memcpy_to_device(&(d_nrb->_displ), &d_displ, sizeof(int*));
+        d_displ = cnrn_target_copyin(nrb->_displ, nrb->_size + 1);
+        cnrn_target_memcpy_to_device(&(d_nrb->_displ), &d_displ);
 
-        d_nrb_index = (int*) acc_copyin(nrb->_nrb_index, sizeof(int) * nrb->_size);
-        acc_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index, sizeof(int*));
+        d_nrb_index = cnrn_target_copyin(nrb->_nrb_index, nrb->_size);
+        cnrn_target_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index);
     }
 #endif
 }
@@ -597,6 +709,10 @@ static void net_receive_buffer_order(NetReceiveBuffer_t* nrb) {
 void update_net_receive_buffer(NrnThread* nt) {
     Instrumentor::phase p_update_net_receive_buffer("update-net-receive-buf");
     for (auto tml = nt->tml; tml; tml = tml->next) {
+        int is_art = corenrn.get_is_artificial()[tml->index];
+        if (is_art) {
+            continue;
+        }
         // net_receive buffer to copy
         NetReceiveBuffer_t* nrb = tml->ml->_net_receive_buffer;
 
@@ -605,29 +721,39 @@ void update_net_receive_buffer(NrnThread* nt) {
             // instance order to avoid race. setup _displ and _nrb_index
             net_receive_buffer_order(nrb);
 
-#ifdef _OPENACC
             if (nt->compute_gpu) {
                 Instrumentor::phase p_net_receive_buffer_order("net-receive-buf-cpu2gpu");
                 // note that dont update nrb otherwise we lose pointers
 
-                /* update scalar elements */
-                acc_update_device(&nrb->_cnt, sizeof(int));
-                acc_update_device(&nrb->_displ_cnt, sizeof(int));
+                // clang-format off
 
-                acc_update_device(nrb->_pnt_index, sizeof(int) * nrb->_cnt);
-                acc_update_device(nrb->_weight_index, sizeof(int) * nrb->_cnt);
-                acc_update_device(nrb->_nrb_t, sizeof(double) * nrb->_cnt);
-                acc_update_device(nrb->_nrb_flag, sizeof(double) * nrb->_cnt);
-                acc_update_device(nrb->_displ, sizeof(int) * (nrb->_displ_cnt + 1));
-                acc_update_device(nrb->_nrb_index, sizeof(int) * nrb->_cnt);
+                /* update scalar elements */
+                nrn_pragma_acc(update device(nrb->_cnt,
+                                             nrb->_displ_cnt,
+                                             nrb->_pnt_index[:nrb->_cnt],
+                                             nrb->_weight_index[:nrb->_cnt],
+                                             nrb->_nrb_t[:nrb->_cnt],
+                                             nrb->_nrb_flag[:nrb->_cnt],
+                                             nrb->_displ[:nrb->_displ_cnt + 1],
+                                             nrb->_nrb_index[:nrb->_cnt])
+                                             async(nt->stream_id))
+                nrn_pragma_omp(target update to(nrb->_cnt,
+                                                nrb->_displ_cnt,
+                                                nrb->_pnt_index[:nrb->_cnt],
+                                                nrb->_weight_index[:nrb->_cnt],
+                                                nrb->_nrb_t[:nrb->_cnt],
+                                                nrb->_nrb_flag[:nrb->_cnt],
+                                                nrb->_displ[:nrb->_displ_cnt + 1],
+                                                nrb->_nrb_index[:nrb->_cnt]))
+                // clang-format on
             }
-#endif
         }
     }
+    nrn_pragma_acc(wait(nt->stream_id))
 }
 
 void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     if (!nt->compute_gpu)
         return;
 
@@ -641,13 +767,23 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 
     if (nsb->_cnt) {
         Instrumentor::phase p_net_receive_buffer_order("net-send-buf-gpu2cpu");
-        acc_update_self(nsb->_sendtype, sizeof(int) * nsb->_cnt);
-        acc_update_self(nsb->_vdata_index, sizeof(int) * nsb->_cnt);
-        acc_update_self(nsb->_pnt_index, sizeof(int) * nsb->_cnt);
-        acc_update_self(nsb->_weight_index, sizeof(int) * nsb->_cnt);
-        acc_update_self(nsb->_nsb_t, sizeof(double) * nsb->_cnt);
-        acc_update_self(nsb->_nsb_flag, sizeof(double) * nsb->_cnt);
     }
+    // clang-format off
+    nrn_pragma_acc(update self(nsb->_sendtype[:nsb->_cnt],
+                               nsb->_vdata_index[:nsb->_cnt],
+                               nsb->_pnt_index[:nsb->_cnt],
+                               nsb->_weight_index[:nsb->_cnt],
+                               nsb->_nsb_t[:nsb->_cnt],
+                               nsb->_nsb_flag[:nsb->_cnt])
+                          if (nsb->_cnt))
+    nrn_pragma_omp(target update from(nsb->_sendtype[:nsb->_cnt],
+                                      nsb->_vdata_index[:nsb->_cnt],
+                                      nsb->_pnt_index[:nsb->_cnt],
+                                      nsb->_weight_index[:nsb->_cnt],
+                                      nsb->_nsb_t[:nsb->_cnt],
+                                      nsb->_nsb_flag[:nsb->_cnt])
+                                 if (nsb->_cnt))
+    // clang-format on
 #else
     (void) nt;
     (void) nsb;
@@ -655,7 +791,7 @@ void update_net_send_buffer_on_host(NrnThread* nt, NetSendBuffer_t* nsb) {
 }
 
 void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
 
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
@@ -665,88 +801,63 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
 
             int ne = nrn_soa_padded_size(nt->end, 0);
 
-            acc_update_self(nt->_actual_rhs, ne * sizeof(double));
-            acc_update_self(nt->_actual_d, ne * sizeof(double));
-            acc_update_self(nt->_actual_a, ne * sizeof(double));
-            acc_update_self(nt->_actual_b, ne * sizeof(double));
-            acc_update_self(nt->_actual_v, ne * sizeof(double));
-            acc_update_self(nt->_actual_area, ne * sizeof(double));
-            if (nt->_actual_diam) {
-                acc_update_self(nt->_actual_diam, ne * sizeof(double));
-            }
+            // clang-format off
+            nrn_pragma_acc(update self(nt->_actual_rhs[:ne],
+                                       nt->_actual_d[:ne],
+                                       nt->_actual_a[:ne],
+                                       nt->_actual_b[:ne],
+                                       nt->_actual_v[:ne],
+                                       nt->_actual_area[:ne]))
+            nrn_pragma_omp(target update from(nt->_actual_rhs[:ne],
+                                              nt->_actual_d[:ne],
+                                              nt->_actual_a[:ne],
+                                              nt->_actual_b[:ne],
+                                              nt->_actual_v[:ne],
+                                              nt->_actual_area[:ne]))
+            // clang-format on
+
+            nrn_pragma_acc(update self(nt->_actual_diam[:ne]) if (nt->_actual_diam != nullptr))
+            nrn_pragma_omp(
+                target update from(nt->_actual_diam[:ne]) if (nt->_actual_diam != nullptr))
 
             /* @todo: nt._ml_list[tml->index] = tml->ml; */
 
             /* -- copy NrnThreadMembList list ml to host -- */
             for (auto tml = nt->tml; tml; tml = tml->next) {
-                Memb_list* ml = tml->ml;
-
-                acc_update_self(&tml->index, sizeof(int));
-                acc_update_self(&ml->nodecount, sizeof(int));
-
-                int type = tml->index;
-                int n = ml->nodecount;
-                int szp = corenrn.get_prop_param_size()[type];
-                int szdp = corenrn.get_prop_dparam_size()[type];
-                int is_art = corenrn.get_is_artificial()[type];
-
-                // Artificial mechanisms such as PatternStim and IntervalFire
-                // are not copied onto the GPU. They should not, therefore, be
-                // updated from the GPU.
-                if (is_art) {
-                    continue;
+                if (!corenrn.get_is_artificial()[tml->index]) {
+                    nrn_pragma_acc(update self(tml->index, tml->ml->nodecount))
+                    nrn_pragma_omp(target update from(tml->index, tml->ml->nodecount))
                 }
-
-                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
-
-                acc_update_self(ml->data, pcnt * sizeof(double));
-                acc_update_self(ml->nodeindices, n * sizeof(int));
-
-                if (szdp) {
-                    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
-                    acc_update_self(ml->pdata, pcnt * sizeof(int));
-                }
-
-                auto nrb = tml->ml->_net_receive_buffer;
-
-                if (nrb) {
-                    acc_update_self(&nrb->_cnt, sizeof(int));
-                    acc_update_self(&nrb->_size, sizeof(int));
-                    acc_update_self(&nrb->_pnt_offset, sizeof(int));
-                    acc_update_self(&nrb->_displ_cnt, sizeof(int));
-
-                    acc_update_self(nrb->_pnt_index, sizeof(int) * nrb->_size);
-                    acc_update_self(nrb->_weight_index, sizeof(int) * nrb->_size);
-                    acc_update_self(nrb->_displ, sizeof(int) * (nrb->_size + 1));
-                    acc_update_self(nrb->_nrb_index, sizeof(int) * nrb->_size);
-                }
+                update_ml_on_host(tml->ml, tml->index);
             }
 
-            if (nt->shadow_rhs_cnt) {
-                int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
-                /* copy shadow_rhs to host */
-                acc_update_self(nt->_shadow_rhs, pcnt * sizeof(double));
-                /* copy shadow_d to host */
-                acc_update_self(nt->_shadow_d, pcnt * sizeof(double));
-            }
+            int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
+            /* copy shadow_rhs to host */
+            /* copy shadow_d to host */
+            nrn_pragma_acc(
+                update self(nt->_shadow_rhs[:pcnt], nt->_shadow_d[:pcnt]) if (nt->shadow_rhs_cnt))
+            nrn_pragma_omp(target update from(
+                nt->_shadow_rhs[:pcnt], nt->_shadow_d[:pcnt]) if (nt->shadow_rhs_cnt))
 
-            if (nt->nrn_fast_imem) {
-                acc_update_self(nt->nrn_fast_imem->nrn_sav_rhs, nt->end * sizeof(double));
-                acc_update_self(nt->nrn_fast_imem->nrn_sav_d, nt->end * sizeof(double));
-            }
+            // clang-format off
+            nrn_pragma_acc(update self(nt->nrn_fast_imem->nrn_sav_rhs[:nt->end],
+                                       nt->nrn_fast_imem->nrn_sav_d[:nt->end])
+                                  if (nt->nrn_fast_imem != nullptr))
+            nrn_pragma_omp(target update from(nt->nrn_fast_imem->nrn_sav_rhs[:nt->end],
+                                              nt->nrn_fast_imem->nrn_sav_d[:nt->end])
+                                         if (nt->nrn_fast_imem != nullptr))
+            // clang-format on
 
-            if (nt->n_pntproc) {
-                acc_update_self(nt->pntprocs, nt->n_pntproc * sizeof(Point_process));
-            }
+            nrn_pragma_acc(update self(nt->pntprocs[:nt->n_pntproc]) if (nt->n_pntproc))
+            nrn_pragma_omp(target update from(nt->pntprocs[:nt->n_pntproc]) if (nt->n_pntproc))
 
-            if (nt->n_weight) {
-                acc_update_self(nt->weights, sizeof(double) * nt->n_weight);
-            }
+            nrn_pragma_acc(update self(nt->weights[:nt->n_weight]) if (nt->n_weight))
+            nrn_pragma_omp(target update from(nt->weights[:nt->n_weight]) if (nt->n_weight))
 
-            if (nt->n_presyn) {
-                acc_update_self(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
-                acc_update_self(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
-            }
+            nrn_pragma_acc(update self(
+                nt->presyns_helper[:nt->n_presyn], nt->presyns[:nt->n_presyn]) if (nt->n_presyn))
+            nrn_pragma_omp(target update from(
+                nt->presyns_helper[:nt->n_presyn], nt->presyns[:nt->n_presyn]) if (nt->n_presyn))
 
             {
                 TrajectoryRequests* tr = nt->trajec_requests;
@@ -754,124 +865,15 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
                     // The full buffers have `bsize` entries, but only `vsize`
                     // of them are valid.
                     for (int i = 0; i < tr->n_trajec; ++i) {
-                        acc_update_self(tr->varrays[i], tr->vsize * sizeof(double));
+                        nrn_pragma_acc(update self(tr->varrays[i][:tr->vsize]))
+                        nrn_pragma_omp(target update from(tr->varrays[i][:tr->vsize]))
                     }
                 }
             }
 
             /* dont update vdata, its pointer array
-               if(nt->_nvdata) {
-               acc_update_self(nt->_vdata, sizeof(double)*nt->_nvdata);
-               }
-             */
-        }
-    }
-#else
-    (void) threads;
-    (void) nthreads;
-#endif
-}
-
-void update_nrnthreads_on_device(NrnThread* threads, int nthreads) {
-#ifdef _OPENACC
-
-    for (int i = 0; i < nthreads; i++) {
-        NrnThread* nt = threads + i;
-
-        if (nt->compute_gpu && (nt->end > 0)) {
-            /* -- copy data to device -- */
-
-            int ne = nrn_soa_padded_size(nt->end, 0);
-
-            acc_update_device(nt->_actual_rhs, ne * sizeof(double));
-            acc_update_device(nt->_actual_d, ne * sizeof(double));
-            acc_update_device(nt->_actual_a, ne * sizeof(double));
-            acc_update_device(nt->_actual_b, ne * sizeof(double));
-            acc_update_device(nt->_actual_v, ne * sizeof(double));
-            acc_update_device(nt->_actual_area, ne * sizeof(double));
-            if (nt->_actual_diam) {
-                acc_update_device(nt->_actual_diam, ne * sizeof(double));
-            }
-
-            /* @todo: nt._ml_list[tml->index] = tml->ml; */
-
-            /* -- copy NrnThreadMembList list ml to host -- */
-            for (auto tml = nt->tml; tml; tml = tml->next) {
-                Memb_list* ml = tml->ml;
-                int type = tml->index;
-                int n = ml->nodecount;
-                int szp = corenrn.get_prop_param_size()[type];
-                int szdp = corenrn.get_prop_dparam_size()[type];
-
-                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szp;
-
-                acc_update_device(ml->data, pcnt * sizeof(double));
-
-                if (!corenrn.get_is_artificial()[type]) {
-                    acc_update_device(ml->nodeindices, n * sizeof(int));
-                }
-
-                if (szdp) {
-                    int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
-                    acc_update_device(ml->pdata, pcnt * sizeof(int));
-                }
-
-                auto nrb = tml->ml->_net_receive_buffer;
-
-                if (nrb) {
-                    acc_update_device(&nrb->_cnt, sizeof(int));
-                    acc_update_device(&nrb->_size, sizeof(int));
-                    acc_update_device(&nrb->_pnt_offset, sizeof(int));
-                    acc_update_device(&nrb->_displ_cnt, sizeof(int));
-
-                    acc_update_device(nrb->_pnt_index, sizeof(int) * nrb->_size);
-                    acc_update_device(nrb->_weight_index, sizeof(int) * nrb->_size);
-                    acc_update_device(nrb->_displ, sizeof(int) * (nrb->_size + 1));
-                    acc_update_device(nrb->_nrb_index, sizeof(int) * nrb->_size);
-                }
-            }
-
-            if (nt->shadow_rhs_cnt) {
-                int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
-                /* copy shadow_rhs to host */
-                acc_update_device(nt->_shadow_rhs, pcnt * sizeof(double));
-                /* copy shadow_d to host */
-                acc_update_device(nt->_shadow_d, pcnt * sizeof(double));
-            }
-
-            if (nt->nrn_fast_imem) {
-                acc_update_device(nt->nrn_fast_imem->nrn_sav_rhs, nt->end * sizeof(double));
-                acc_update_device(nt->nrn_fast_imem->nrn_sav_d, nt->end * sizeof(double));
-            }
-
-            if (nt->n_pntproc) {
-                acc_update_device(nt->pntprocs, nt->n_pntproc * sizeof(Point_process));
-            }
-
-            if (nt->n_weight) {
-                acc_update_device(nt->weights, sizeof(double) * nt->n_weight);
-            }
-
-            if (nt->n_presyn) {
-                acc_update_device(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
-                acc_update_device(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
-            }
-
-            {
-                TrajectoryRequests* tr = nt->trajec_requests;
-                if (tr && tr->varrays) {
-                    // The full buffers have `bsize` entries, but only `vsize`
-                    // of them are valid.
-                    for (int i = 0; i < tr->n_trajec; ++i) {
-                        acc_update_device(tr->varrays[i], tr->vsize * sizeof(double));
-                    }
-                }
-            }
-
-            /* don't and don't update vdata, its pointer array
-               if(nt->_nvdata) {
-               acc_update_device(nt->_vdata, sizeof(double)*nt->_nvdata);
-               }
+               nrn_pragma_acc(update self(nt->_vdata[:nt->_nvdata) if nt->_nvdata)
+               nrn_pragma_omp(target update from(nt->_vdata[:nt->_nvdata) if (nt->_nvdata))
              */
         }
     }
@@ -894,85 +896,30 @@ void update_weights_from_gpu(NrnThread* threads, int nthreads) {
         size_t n_weight = nt->n_weight;
         if (nt->compute_gpu && n_weight > 0) {
             double* weights = nt->weights;
-            // clang-format off
-
-            #pragma acc update host(weights [0:n_weight])
-            // clang-format on
+            nrn_pragma_acc(update host(weights [0:n_weight]))
+            nrn_pragma_omp(target update from(weights [0:n_weight]))
         }
     }
 }
 
-void update_matrix_from_gpu(NrnThread* _nt) {
-#ifdef _OPENACC
-    if (_nt->compute_gpu && (_nt->end > 0)) {
-        /* before copying, make sure all computations in the stream are completed */
-
-        // clang-format off
-
-        #pragma acc wait(_nt->stream_id)
-
-        /* openacc routine doesn't allow asyn, use pragma */
-        // acc_update_self(_nt->_actual_rhs, 2*_nt->end*sizeof(double));
-
-        /* RHS and D are contigious, copy them in one go!
-         * NOTE: in pragma you have to give actual pointer like below and not nt->rhs...
-         */
-        double* rhs = _nt->_actual_rhs;
-        int ne = nrn_soa_padded_size(_nt->end, 0);
-
-        #pragma acc update host(rhs[0 : 2 * ne]) async(_nt->stream_id)
-        #pragma acc wait(_nt->stream_id)
-        // clang-format on
-    }
-#else
-    (void) _nt;
-#endif
-}
-
-void update_matrix_to_gpu(NrnThread* _nt) {
-#ifdef _OPENACC
-    if (_nt->compute_gpu && (_nt->end > 0)) {
-        /* before copying, make sure all computations in the stream are completed */
-
-        // clang-format off
-
-        #pragma acc wait(_nt->stream_id)
-
-        /* while discussion with Michael we found that RHS is also needed on
-         * gpu because nrn_cap_jacob uses rhs which is being updated on GPU
-         */
-        double* v = _nt->_actual_v;
-        double* rhs = _nt->_actual_rhs;
-        int ne = nrn_soa_padded_size(_nt->end, 0);
-
-        #pragma acc update device(v[0 : ne]) async(_nt->stream_id)
-        #pragma acc update device(rhs[0 : ne]) async(_nt->stream_id)
-        #pragma acc wait(_nt->stream_id)
-        // clang-format on
-    }
-#else
-    (void) _nt;
-#endif
-}
-
 /** Cleanup device memory that is being tracked by the OpenACC runtime.
  *
- *  This function painstakingly calls `acc_delete` in reverse order on all
- *  pointers that were passed to `acc_copyin` in `setup_nrnthreads_on_device`.
+ *  This function painstakingly calls `cnrn_target_delete` in reverse order on all
+ *  pointers that were passed to `cnrn_target_copyin` in `setup_nrnthreads_on_device`.
  *  This cleanup ensures that if the GPU is initialised multiple times from the
  *  same process then the OpenACC runtime will not be polluted with old
  *  pointers, which can cause errors. In particular if we do:
  *  @code
  *    {
  *      // ... some_ptr is dynamically allocated ...
- *      acc_copyin(some_ptr, some_size);
+ *      cnrn_target_copyin(some_ptr, some_size);
  *      // ... do some work ...
- *      // acc_delete(some_ptr);
+ *      // cnrn_target_delete(some_ptr);
  *      free(some_ptr);
  *    }
  *    {
  *      // ... same_ptr_again is dynamically allocated at the same address ...
- *      acc_copyin(same_ptr_again, some_other_size); // ERROR
+ *      cnrn_target_copyin(same_ptr_again, some_other_size); // ERROR
  *    }
  *  @endcode
  *  the application will/may abort with an error such as:
@@ -981,7 +928,7 @@ void update_matrix_to_gpu(NrnThread* _nt) {
  *  the same process.
  */
 void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
         {
@@ -989,132 +936,91 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
             if (tr) {
                 if (tr->varrays) {
                     for (int i = 0; i < tr->n_trajec; ++i) {
-                        acc_delete(tr->varrays[i], tr->bsize * sizeof(double));
+                        cnrn_target_delete(tr->varrays[i], tr->bsize);
                     }
-                    acc_delete(tr->varrays, sizeof(double*) * tr->n_trajec);
+                    cnrn_target_delete(tr->varrays, tr->n_trajec);
                 }
-                acc_delete(tr->gather, sizeof(double*) * tr->n_trajec);
-                acc_delete(tr, sizeof(TrajectoryRequests));
+                cnrn_target_delete(tr->gather, tr->n_trajec);
+                cnrn_target_delete(tr);
             }
         }
         if (nt->_permute) {
             if (interleave_permute_type == 1) {
                 InterleaveInfo* info = interleave_info + i;
-                acc_delete(info->cellsize, sizeof(int) * nt->ncell);
-                acc_delete(info->lastnode, sizeof(int) * nt->ncell);
-                acc_delete(info->firstnode, sizeof(int) * nt->ncell);
-                acc_delete(info->stride, sizeof(int) * (info->nstride + 1));
-                acc_delete(info, sizeof(InterleaveInfo));
+                cnrn_target_delete(info->cellsize, nt->ncell);
+                cnrn_target_delete(info->lastnode, nt->ncell);
+                cnrn_target_delete(info->firstnode, nt->ncell);
+                cnrn_target_delete(info->stride, info->nstride + 1);
+                cnrn_target_delete(info);
             } else if (interleave_permute_type == 2) {
                 InterleaveInfo* info = interleave_info + i;
-                acc_delete(info->cellsize, sizeof(int) * info->nwarp);
-                acc_delete(info->stridedispl, sizeof(int) * (info->nwarp + 1));
-                acc_delete(info->lastnode, sizeof(int) * (info->nwarp + 1));
-                acc_delete(info->firstnode, sizeof(int) * (info->nwarp + 1));
-                acc_delete(info->stride, sizeof(int) * info->nstride);
-                acc_delete(info, sizeof(InterleaveInfo));
+                cnrn_target_delete(info->cellsize, info->nwarp);
+                cnrn_target_delete(info->stridedispl, info->nwarp + 1);
+                cnrn_target_delete(info->lastnode, info->nwarp + 1);
+                cnrn_target_delete(info->firstnode, info->nwarp + 1);
+                cnrn_target_delete(info->stride, info->nstride);
+                cnrn_target_delete(info);
             }
         }
 
         if (nt->n_vecplay) {
             nrn_VecPlay_delete_from_device(nt);
-            acc_delete(nt->_vecplay, sizeof(void*) * nt->n_vecplay);
+            cnrn_target_delete(nt->_vecplay, nt->n_vecplay);
         }
 
         // Cleanup send_receive buffer.
         if (nt->_net_send_buffer_size) {
-            acc_delete(nt->_net_send_buffer, sizeof(int) * nt->_net_send_buffer_size);
+            cnrn_target_delete(nt->_net_send_buffer, nt->_net_send_buffer_size);
         }
 
         if (nt->n_presyn) {
-            acc_delete(nt->presyns, sizeof(PreSyn) * nt->n_presyn);
-            acc_delete(nt->presyns_helper, sizeof(PreSynHelper) * nt->n_presyn);
+            cnrn_target_delete(nt->presyns, nt->n_presyn);
+            cnrn_target_delete(nt->presyns_helper, nt->n_presyn);
         }
 
         // Cleanup data that's setup in bbcore_read.
         if (nt->_nvdata) {
-            acc_delete(nt->_vdata, sizeof(void*) * nt->_nvdata);
+            cnrn_target_delete(nt->_vdata, nt->_nvdata);
         }
 
         // Cleanup weight vector used in NET_RECEIVE
         if (nt->n_weight) {
-            acc_delete(nt->weights, sizeof(double) * nt->n_weight);
+            cnrn_target_delete(nt->weights, nt->n_weight);
         }
 
         // Cleanup point processes
         if (nt->n_pntproc) {
-            acc_delete(nt->pntprocs, nt->n_pntproc * sizeof(Point_process));
+            cnrn_target_delete(nt->pntprocs, nt->n_pntproc);
         }
 
         if (nt->nrn_fast_imem) {
-            acc_delete(nt->nrn_fast_imem->nrn_sav_d, nt->end * sizeof(double));
-            acc_delete(nt->nrn_fast_imem->nrn_sav_rhs, nt->end * sizeof(double));
-            acc_delete(nt->nrn_fast_imem, sizeof(NrnFastImem));
+            cnrn_target_delete(nt->nrn_fast_imem->nrn_sav_d, nt->end);
+            cnrn_target_delete(nt->nrn_fast_imem->nrn_sav_rhs, nt->end);
+            cnrn_target_delete(nt->nrn_fast_imem);
         }
 
         if (nt->shadow_rhs_cnt) {
             int pcnt = nrn_soa_padded_size(nt->shadow_rhs_cnt, 0);
-            acc_delete(nt->_shadow_d, pcnt * sizeof(double));
-            acc_delete(nt->_shadow_rhs, pcnt * sizeof(double));
+            cnrn_target_delete(nt->_shadow_d, pcnt);
+            cnrn_target_delete(nt->_shadow_rhs, pcnt);
         }
 
         for (auto tml = nt->tml; tml; tml = tml->next) {
-            // Cleanup the net send buffer if it exists
-            {
-                NetSendBuffer_t* nsb{tml->ml->_net_send_buffer};
-                if (nsb) {
-                    acc_delete(nsb->_nsb_flag, sizeof(double) * nsb->_size);
-                    acc_delete(nsb->_nsb_t, sizeof(double) * nsb->_size);
-                    acc_delete(nsb->_weight_index, sizeof(int) * nsb->_size);
-                    acc_delete(nsb->_pnt_index, sizeof(int) * nsb->_size);
-                    acc_delete(nsb->_vdata_index, sizeof(int) * nsb->_size);
-                    acc_delete(nsb->_sendtype, sizeof(int) * nsb->_size);
-                    acc_delete(nsb, sizeof(NetSendBuffer_t));
-                }
-            }
-            // Cleanup the net receive buffer if it exists.
-            {
-                NetReceiveBuffer_t* nrb{tml->ml->_net_receive_buffer};
-                if (nrb) {
-                    acc_delete(nrb->_nrb_index, sizeof(int) * nrb->_size);
-                    acc_delete(nrb->_displ, sizeof(int) * (nrb->_size + 1));
-                    acc_delete(nrb->_nrb_flag, sizeof(double) * nrb->_size);
-                    acc_delete(nrb->_nrb_t, sizeof(double) * nrb->_size);
-                    acc_delete(nrb->_weight_index, sizeof(int) * nrb->_size);
-                    acc_delete(nrb->_pnt_index, sizeof(int) * nrb->_size);
-                    acc_delete(nrb, sizeof(NetReceiveBuffer_t));
-                }
-            }
-            int type = tml->index;
-            int n = tml->ml->nodecount;
-            int szdp = corenrn.get_prop_dparam_size()[type];
-            int is_art = corenrn.get_is_artificial()[type];
-            int ts = corenrn.get_memb_funcs()[type].thread_size_;
-            if (ts) {
-                acc_delete(tml->ml->_thread, ts * sizeof(ThreadDatum));
-            }
-            if (szdp) {
-                int pcnt = nrn_soa_padded_size(n, SOA_LAYOUT) * szdp;
-                acc_delete(tml->ml->pdata, sizeof(int) * pcnt);
-            }
-            if (!is_art) {
-                acc_delete(tml->ml->nodeindices, sizeof(int) * n);
-            }
-            acc_delete(tml->ml, sizeof(Memb_list));
-            acc_delete(tml, sizeof(NrnThreadMembList));
+            delete_ml_from_device(tml->ml, tml->index);
+            cnrn_target_delete(tml);
         }
-        acc_delete(nt->_ml_list, corenrn.get_memb_funcs().size() * sizeof(Memb_list*));
-        acc_delete(nt->_v_parent_index, nt->end * sizeof(int));
-        acc_delete(nt->_data, nt->_ndata * sizeof(double));
+        cnrn_target_delete(nt->_ml_list, corenrn.get_memb_funcs().size());
+        cnrn_target_delete(nt->_v_parent_index, nt->end);
+        cnrn_target_delete(nt->_data, nt->_ndata);
     }
-    acc_delete(threads, sizeof(NrnThread) * nthreads);
+    cnrn_target_delete(threads, nthreads);
     nrn_ion_global_map_delete_from_device();
 #endif
 }
 
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
@@ -1123,59 +1029,59 @@ void nrn_newtonspace_copyto_device(NewtonSpace* ns) {
 
     int n = ns->n * ns->n_instance;
     // actually, the values of double do not matter, only the  pointers.
-    NewtonSpace* d_ns = (NewtonSpace*) acc_copyin(ns, sizeof(NewtonSpace));
+    NewtonSpace* d_ns = cnrn_target_copyin(ns);
 
     double* pd;
 
-    pd = (double*) acc_copyin(ns->delta_x, n * sizeof(double));
-    acc_memcpy_to_device(&(d_ns->delta_x), &pd, sizeof(double*));
+    pd = cnrn_target_copyin(ns->delta_x, n);
+    cnrn_target_memcpy_to_device(&(d_ns->delta_x), &pd);
 
-    pd = (double*) acc_copyin(ns->high_value, n * sizeof(double));
-    acc_memcpy_to_device(&(d_ns->high_value), &pd, sizeof(double*));
+    pd = cnrn_target_copyin(ns->high_value, n);
+    cnrn_target_memcpy_to_device(&(d_ns->high_value), &pd);
 
-    pd = (double*) acc_copyin(ns->low_value, n * sizeof(double));
-    acc_memcpy_to_device(&(d_ns->low_value), &pd, sizeof(double*));
+    pd = cnrn_target_copyin(ns->low_value, n);
+    cnrn_target_memcpy_to_device(&(d_ns->low_value), &pd);
 
-    pd = (double*) acc_copyin(ns->rowmax, n * sizeof(double));
-    acc_memcpy_to_device(&(d_ns->rowmax), &pd, sizeof(double*));
+    pd = cnrn_target_copyin(ns->rowmax, n);
+    cnrn_target_memcpy_to_device(&(d_ns->rowmax), &pd);
 
-    auto pint = (int*) acc_copyin(ns->perm, n * sizeof(int));
-    acc_memcpy_to_device(&(d_ns->perm), &pint, sizeof(int*));
+    auto pint = cnrn_target_copyin(ns->perm, n);
+    cnrn_target_memcpy_to_device(&(d_ns->perm), &pint);
 
-    auto ppd = (double**) acc_copyin(ns->jacobian, ns->n * sizeof(double*));
-    acc_memcpy_to_device(&(d_ns->jacobian), &ppd, sizeof(double**));
+    auto ppd = cnrn_target_copyin(ns->jacobian, ns->n);
+    cnrn_target_memcpy_to_device(&(d_ns->jacobian), &ppd);
 
     // the actual jacobian doubles were allocated as a single array
-    double* d_jacdat = (double*) acc_copyin(ns->jacobian[0], ns->n * n * sizeof(double));
+    double* d_jacdat = cnrn_target_copyin(ns->jacobian[0], ns->n * n);
 
     for (int i = 0; i < ns->n; ++i) {
         pd = d_jacdat + i * n;
-        acc_memcpy_to_device(&(ppd[i]), &pd, sizeof(double*));
+        cnrn_target_memcpy_to_device(&(ppd[i]), &pd);
     }
 #endif
 }
 
 void nrn_newtonspace_delete_from_device(NewtonSpace* ns) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
         return;
     }
     int n = ns->n * ns->n_instance;
-    acc_delete(ns->jacobian[0], ns->n * n * sizeof(double));
-    acc_delete(ns->jacobian, ns->n * sizeof(double*));
-    acc_delete(ns->perm, n * sizeof(int));
-    acc_delete(ns->rowmax, n * sizeof(double));
-    acc_delete(ns->low_value, n * sizeof(double));
-    acc_delete(ns->high_value, n * sizeof(double));
-    acc_delete(ns->delta_x, n * sizeof(double));
-    acc_delete(ns, sizeof(NewtonSpace));
+    cnrn_target_delete(ns->jacobian[0], ns->n * n);
+    cnrn_target_delete(ns->jacobian, ns->n);
+    cnrn_target_delete(ns->perm, n);
+    cnrn_target_delete(ns->rowmax, n);
+    cnrn_target_delete(ns->low_value, n);
+    cnrn_target_delete(ns->high_value, n);
+    cnrn_target_delete(ns->delta_x, n);
+    cnrn_target_delete(ns);
 #endif
 }
 
 void nrn_sparseobj_copyto_device(SparseObj* so) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
@@ -1183,82 +1089,82 @@ void nrn_sparseobj_copyto_device(SparseObj* so) {
     }
 
     unsigned n1 = so->neqn + 1;
-    SparseObj* d_so = (SparseObj*) acc_copyin(so, sizeof(SparseObj));
+    SparseObj* d_so = cnrn_target_copyin(so);
     // only pointer fields in SparseObj that need setting up are
     //   rowst, diag, rhs, ngetcall, coef_list
     // only pointer fields in Elm that need setting up are
     //   r_down, c_right, value
     // do not care about the Elm* ptr value, just the space.
 
-    Elm** d_rowst = (Elm**) acc_copyin(so->rowst, n1 * sizeof(Elm*));
-    acc_memcpy_to_device(&(d_so->rowst), &d_rowst, sizeof(Elm**));
+    Elm** d_rowst = cnrn_target_copyin(so->rowst, n1);
+    cnrn_target_memcpy_to_device(&(d_so->rowst), &d_rowst);
 
-    Elm** d_diag = (Elm**) acc_copyin(so->diag, n1 * sizeof(Elm*));
-    acc_memcpy_to_device(&(d_so->diag), &d_diag, sizeof(Elm**));
+    Elm** d_diag = cnrn_target_copyin(so->diag, n1);
+    cnrn_target_memcpy_to_device(&(d_so->diag), &d_diag);
 
-    auto pu = (unsigned*) acc_copyin(so->ngetcall, so->_cntml_padded * sizeof(unsigned));
-    acc_memcpy_to_device(&(d_so->ngetcall), &pu, sizeof(Elm**));
+    unsigned* pu = cnrn_target_copyin(so->ngetcall, so->_cntml_padded);
+    cnrn_target_memcpy_to_device(&(d_so->ngetcall), &pu);
 
-    auto pd = (double*) acc_copyin(so->rhs, n1 * so->_cntml_padded * sizeof(double));
-    acc_memcpy_to_device(&(d_so->rhs), &pd, sizeof(double*));
+    double* pd = cnrn_target_copyin(so->rhs, n1 * so->_cntml_padded);
+    cnrn_target_memcpy_to_device(&(d_so->rhs), &pd);
 
-    auto d_coef_list = (double**) acc_copyin(so->coef_list, so->coef_list_size * sizeof(double*));
-    acc_memcpy_to_device(&(d_so->coef_list), &d_coef_list, sizeof(double**));
+    double** d_coef_list = cnrn_target_copyin(so->coef_list, so->coef_list_size);
+    cnrn_target_memcpy_to_device(&(d_so->coef_list), &d_coef_list);
 
     // Fill in relevant Elm pointer values
 
     for (unsigned irow = 1; irow < n1; ++irow) {
         for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
-            Elm* pelm = (Elm*) acc_copyin(elm, sizeof(Elm));
+            Elm* pelm = cnrn_target_copyin(elm);
 
             if (elm == so->rowst[irow]) {
-                acc_memcpy_to_device(&(d_rowst[irow]), &pelm, sizeof(Elm*));
+                cnrn_target_memcpy_to_device(&(d_rowst[irow]), &pelm);
             } else {
-                Elm* d_e = (Elm*) acc_deviceptr(elm->c_left);
-                acc_memcpy_to_device(&(pelm->c_left), &d_e, sizeof(Elm*));
+                Elm* d_e = cnrn_target_deviceptr(elm->c_left);
+                cnrn_target_memcpy_to_device(&(pelm->c_left), &d_e);
             }
 
             if (elm->col == elm->row) {
-                acc_memcpy_to_device(&(d_diag[irow]), &pelm, sizeof(Elm*));
+                cnrn_target_memcpy_to_device(&(d_diag[irow]), &pelm);
             }
 
             if (irow > 1) {
                 if (elm->r_up) {
-                    Elm* d_e = (Elm*) acc_deviceptr(elm->r_up);
-                    acc_memcpy_to_device(&(pelm->r_up), &d_e, sizeof(Elm*));
+                    Elm* d_e = cnrn_target_deviceptr(elm->r_up);
+                    cnrn_target_memcpy_to_device(&(pelm->r_up), &d_e);
                 }
             }
 
-            pd = (double*) acc_copyin(elm->value, so->_cntml_padded * sizeof(double));
-            acc_memcpy_to_device(&(pelm->value), &pd, sizeof(double*));
+            pd = cnrn_target_copyin(elm->value, so->_cntml_padded);
+            cnrn_target_memcpy_to_device(&(pelm->value), &pd);
         }
     }
 
     // visit all the Elm again and fill in pelm->r_down and pelm->c_left
     for (unsigned irow = 1; irow < n1; ++irow) {
         for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
-            auto pelm = (Elm*) acc_deviceptr(elm);
+            auto pelm = cnrn_target_deviceptr(elm);
             if (elm->r_down) {
-                auto d_e = (Elm*) acc_deviceptr(elm->r_down);
-                acc_memcpy_to_device(&(pelm->r_down), &d_e, sizeof(Elm*));
+                auto d_e = cnrn_target_deviceptr(elm->r_down);
+                cnrn_target_memcpy_to_device(&(pelm->r_down), &d_e);
             }
             if (elm->c_right) {
-                auto d_e = (Elm*) acc_deviceptr(elm->c_right);
-                acc_memcpy_to_device(&(pelm->c_right), &d_e, sizeof(Elm*));
+                auto d_e = cnrn_target_deviceptr(elm->c_right);
+                cnrn_target_memcpy_to_device(&(pelm->c_right), &d_e);
             }
         }
     }
 
     // Fill in the d_so->coef_list
     for (unsigned i = 0; i < so->coef_list_size; ++i) {
-        pd = (double*) acc_deviceptr(so->coef_list[i]);
-        acc_memcpy_to_device(&(d_coef_list[i]), &pd, sizeof(double*));
+        pd = cnrn_target_deviceptr(so->coef_list[i]);
+        cnrn_target_memcpy_to_device(&(d_coef_list[i]), &pd);
     }
 #endif
 }
 
 void nrn_sparseobj_delete_from_device(SparseObj* so) {
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     // FIXME this check needs to be tweaked if we ever want to run with a mix
     //       of CPU and GPU threads.
     if (nrn_threads[0].compute_gpu == 0) {
@@ -1267,31 +1173,29 @@ void nrn_sparseobj_delete_from_device(SparseObj* so) {
     unsigned n1 = so->neqn + 1;
     for (unsigned irow = 1; irow < n1; ++irow) {
         for (Elm* elm = so->rowst[irow]; elm; elm = elm->c_right) {
-            acc_delete(elm->value, so->_cntml_padded * sizeof(double));
-            acc_delete(elm, sizeof(Elm));
+            cnrn_target_delete(elm->value, so->_cntml_padded);
+            cnrn_target_delete(elm);
         }
     }
-    acc_delete(so->coef_list, so->coef_list_size * sizeof(double*));
-    acc_delete(so->rhs, n1 * so->_cntml_padded * sizeof(double));
-    acc_delete(so->ngetcall, so->_cntml_padded * sizeof(unsigned));
-    acc_delete(so->diag, n1 * sizeof(Elm*));
-    acc_delete(so->rowst, n1 * sizeof(Elm*));
-    acc_delete(so, sizeof(SparseObj));
+    cnrn_target_delete(so->coef_list, so->coef_list_size);
+    cnrn_target_delete(so->rhs, n1 * so->_cntml_padded);
+    cnrn_target_delete(so->ngetcall, so->_cntml_padded);
+    cnrn_target_delete(so->diag, n1);
+    cnrn_target_delete(so->rowst, n1);
+    cnrn_target_delete(so);
 #endif
 }
 
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
 
 void nrn_ion_global_map_copyto_device() {
     if (nrn_ion_global_map_size) {
-        double** d_data = (double**) acc_copyin(nrn_ion_global_map,
-                                                sizeof(double*) * nrn_ion_global_map_size);
+        double** d_data = cnrn_target_copyin(nrn_ion_global_map, nrn_ion_global_map_size);
         for (int j = 0; j < nrn_ion_global_map_size; j++) {
             if (nrn_ion_global_map[j]) {
-                double* d_mechmap = (double*) acc_copyin(nrn_ion_global_map[j],
-                                                         ion_global_map_member_size *
-                                                             sizeof(double));
-                acc_memcpy_to_device(&(d_data[j]), &d_mechmap, sizeof(double*));
+                double* d_mechmap = cnrn_target_copyin(nrn_ion_global_map[j],
+                                                       ion_global_map_member_size);
+                cnrn_target_memcpy_to_device(&(d_data[j]), &d_mechmap);
             }
         }
     }
@@ -1300,20 +1204,17 @@ void nrn_ion_global_map_copyto_device() {
 void nrn_ion_global_map_delete_from_device() {
     for (int j = 0; j < nrn_ion_global_map_size; j++) {
         if (nrn_ion_global_map[j]) {
-            acc_delete(nrn_ion_global_map[j], ion_global_map_member_size * sizeof(double));
+            cnrn_target_delete(nrn_ion_global_map[j], ion_global_map_member_size);
         }
     }
     if (nrn_ion_global_map_size) {
-        acc_delete(nrn_ion_global_map, sizeof(double*) * nrn_ion_global_map_size);
+        cnrn_target_delete(nrn_ion_global_map, nrn_ion_global_map_size);
     }
 }
 
 void init_gpu() {
-    // choose nvidia GPU by default
-    acc_device_t device_type = acc_device_nvidia;
-
     // check how many gpu devices available per node
-    int num_devices_per_node = acc_get_num_devices(device_type);
+    int num_devices_per_node = cnrn_target_get_num_devices();
 
     // if no gpu found, can't run on GPU
     if (num_devices_per_node == 0) {
@@ -1341,10 +1242,9 @@ void init_gpu() {
     }
 #endif
 
-    int device_num = local_rank % num_devices_per_node;
-    acc_set_device_num(device_num, device_type);
+    cnrn_target_set_default_device(local_rank % num_devices_per_node);
 
-    if (nrnmpi_myid == 0) {
+    if (nrnmpi_myid == 0 && !corenrn_param.is_quiet()) {
         std::cout << " Info : " << num_devices_per_node << " GPUs shared by " << local_size
                   << " ranks per node\n";
     }
@@ -1355,42 +1255,44 @@ void nrn_VecPlay_copyto_device(NrnThread* nt, void** d_vecplay) {
         VecPlayContinuous* vecplay_instance = (VecPlayContinuous*) nt->_vecplay[i];
 
         /** just VecPlayContinuous object */
-        void* d_p = (void*) acc_copyin(vecplay_instance, sizeof(VecPlayContinuous));
-        acc_memcpy_to_device(&(d_vecplay[i]), &d_p, sizeof(void*));
-
-        VecPlayContinuous* d_vecplay_instance = (VecPlayContinuous*) d_p;
+        VecPlayContinuous* d_vecplay_instance = cnrn_target_copyin(vecplay_instance);
+        cnrn_target_memcpy_to_device((VecPlayContinuous**) (&(d_vecplay[i])), &d_vecplay_instance);
 
         /** copy y_, t_ and discon_indices_ */
         copy_ivoc_vect_to_device(vecplay_instance->y_, d_vecplay_instance->y_);
         copy_ivoc_vect_to_device(vecplay_instance->t_, d_vecplay_instance->t_);
+        // OL211213: beware, the test suite does not currently include anything
+        // with a non-null discon_indices_.
         if (vecplay_instance->discon_indices_) {
+            IvocVect* d_discon_indices = cnrn_target_copyin(vecplay_instance->discon_indices_);
+            cnrn_target_memcpy_to_device(&(d_vecplay_instance->discon_indices_), &d_discon_indices);
             copy_ivoc_vect_to_device(*(vecplay_instance->discon_indices_),
                                      *(d_vecplay_instance->discon_indices_));
         }
 
         /** copy PlayRecordEvent : todo: verify this */
-        PlayRecordEvent* d_e_ = (PlayRecordEvent*) acc_copyin(vecplay_instance->e_,
-                                                              sizeof(PlayRecordEvent));
-        acc_memcpy_to_device(&(d_e_->plr_), &d_vecplay_instance, sizeof(VecPlayContinuous*));
-        acc_memcpy_to_device(&(d_vecplay_instance->e_), &d_e_, sizeof(PlayRecordEvent*));
+        PlayRecordEvent* d_e_ = cnrn_target_copyin(vecplay_instance->e_);
+
+        cnrn_target_memcpy_to_device(&(d_e_->plr_), (PlayRecord**) (&d_vecplay_instance));
+        cnrn_target_memcpy_to_device(&(d_vecplay_instance->e_), &d_e_);
 
         /** copy pd_ : note that it's pointer inside ml->data and hence data itself is
          * already on GPU */
-        double* d_pd_ = (double*) acc_deviceptr(vecplay_instance->pd_);
-        acc_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_, sizeof(double*));
+        double* d_pd_ = cnrn_target_deviceptr(vecplay_instance->pd_);
+        cnrn_target_memcpy_to_device(&(d_vecplay_instance->pd_), &d_pd_);
     }
 }
 
 void nrn_VecPlay_delete_from_device(NrnThread* nt) {
     for (int i = 0; i < nt->n_vecplay; i++) {
         auto* vecplay_instance = reinterpret_cast<VecPlayContinuous*>(nt->_vecplay[i]);
-        acc_delete(vecplay_instance->e_, sizeof(PlayRecordEvent));
+        cnrn_target_delete(vecplay_instance->e_);
         if (vecplay_instance->discon_indices_) {
             delete_ivoc_vect_from_device(*(vecplay_instance->discon_indices_));
         }
         delete_ivoc_vect_from_device(vecplay_instance->t_);
         delete_ivoc_vect_from_device(vecplay_instance->y_);
-        acc_delete(vecplay_instance, sizeof(VecPlayContinuous));
+        cnrn_target_delete(vecplay_instance);
     }
 }
 

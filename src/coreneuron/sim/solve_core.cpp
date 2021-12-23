@@ -24,7 +24,9 @@ void nrn_solve_minimal(NrnThread* _nt) {
     }
 }
 
-/** TODO loops are executed seq in OpenACC just for debugging, remove it! */
+/** @todo OpenACC GPU offload is sequential/slow. Because --cell-permute=0 and
+ *  --gpu is forbidden anyway, no OpenMP target offload equivalent is implemented.
+ */
 
 /* triangularization of the matrix equations */
 static void triang(NrnThread* _nt) {
@@ -37,17 +39,9 @@ static void triang(NrnThread* _nt) {
     double* vec_rhs = &(VEC_RHS(0));
     int* parent_index = _nt->_v_parent_index;
 
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
-    /** @todo: just for benchmarking, otherwise produces wrong results */
-    // clang-format off
-
-    #pragma acc parallel loop seq present(      \
-        vec_a[0:i3], vec_b[0:i3], vec_d[0:i3],  \
-        vec_rhs[0:i3], parent_index[0:i3])      \
-        async(stream_id) if (_nt->compute_gpu)
-    // clang-format on
+    nrn_pragma_acc(parallel loop seq present(
+        vec_a [0:i3], vec_b [0:i3], vec_d [0:i3], vec_rhs [0:i3], parent_index [0:i3])
+                       async(_nt->stream_id) if (_nt->compute_gpu))
     for (int i = i3 - 1; i >= i2; --i) {
         double p = vec_a[i] / vec_d[i];
         vec_d[parent_index[i]] -= p * vec_b[i];
@@ -66,33 +60,22 @@ static void bksub(NrnThread* _nt) {
     double* vec_rhs = &(VEC_RHS(0));
     int* parent_index = _nt->_v_parent_index;
 
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
-    /** @todo: just for benchmarking, otherwise produces wrong results */
-    // clang-format off
-
-    #pragma acc parallel loop seq present(      \
-        vec_d[0:i2], vec_rhs[0:i2])             \
-        async(stream_id) if (_nt->compute_gpu)
-    // clang-format on
+    nrn_pragma_acc(parallel loop seq present(vec_d [0:i2], vec_rhs [0:i2])
+                       async(_nt->stream_id) if (_nt->compute_gpu))
     for (int i = i1; i < i2; ++i) {
         vec_rhs[i] /= vec_d[i];
     }
 
-    /** @todo: just for benchmarking, otherwise produces wrong results */
-    // clang-format off
-
-    #pragma acc parallel loop seq present(          \
-        vec_b[0:i3], vec_d[0:i3], vec_rhs[0:i3],    \
-        parent_index[0:i3]) async(stream_id)        \
-        if (_nt->compute_gpu)
+    nrn_pragma_acc(
+        parallel loop seq present(vec_b [0:i3], vec_d [0:i3], vec_rhs [0:i3], parent_index [0:i3])
+            async(_nt->stream_id) if (_nt->compute_gpu))
     for (int i = i2; i < i3; ++i) {
         vec_rhs[i] -= vec_b[i] * vec_rhs[parent_index[i]];
         vec_rhs[i] /= vec_d[i];
     }
 
-    #pragma acc wait(stream_id)
-    // clang-format on
+    if (_nt->compute_gpu) {
+        nrn_pragma_acc(wait(_nt->stream_id))
+    }
 }
 }  // namespace coreneuron

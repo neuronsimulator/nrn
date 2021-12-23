@@ -105,7 +105,7 @@ static void check_assert(SparseObj* so);
 static void re_link(SparseObj* so, unsigned i);
 static SparseObj* create_sparseobj();
 
-#if defined(_OPENACC)
+#ifdef CORENEURON_ENABLE_GPU
 #undef emalloc
 #undef ecalloc
 #define emalloc(arg)        malloc(arg)

@@ -7,6 +7,7 @@
 */
 
 #include "coreneuron/utils/ivocvect.hpp"
+#include "coreneuron/utils/offload.hpp"
 
 namespace coreneuron {
 IvocVect* vector_new(int n) {
@@ -26,12 +27,12 @@ void* vector_new1(int n) {
     return (void*) (new IvocVect(n));
 }
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 int vector_capacity(void* v) {
     return ((IvocVect*) v)->size();
 }
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 double* vector_vec(void* v) {
     return ((IvocVect*) v)->data();
 }

@@ -284,6 +284,16 @@ target_include_directories(coreneuron SYSTEM
 target_include_directories(coreneuron SYSTEM
                            PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11/include)
 
+if(CORENRN_ENABLE_GPU)
+  # nrnran123.cpp possibly-temporarily uses Boost.Pool in GPU builds if it's available.
+  find_package(Boost QUIET)
+  if(Boost_FOUND)
+    message(STATUS "Boost found, enabling use of memory pools for Random123...")
+    target_include_directories(coreneuron SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
+    target_compile_definitions(coreneuron PRIVATE CORENEURON_USE_BOOST_POOL)
+  endif()
+endif()
+
 set_target_properties(
   coreneuron scopmath
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib

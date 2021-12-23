@@ -115,8 +115,7 @@ auto allocate_unique(const Alloc& alloc, Args&&... args) {
 }  // namespace coreneuron
 
 /// for gpu builds with unified memory support
-/// OL210812: why do we include __CUDACC__ here?
-#if (defined(__CUDACC__) || defined(CORENEURON_UNIFIED_MEMORY))
+#ifdef CORENEURON_UNIFIED_MEMORY
 
 #include <cuda_runtime_api.h>
 

@@ -41,40 +41,38 @@ void nrnmpi_v_transfer() {
     // gather the source values. can be done in parallel
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         auto& ttd = transfer_thread_data_[tid];
-        auto& nt = nrn_threads[tid];
+        auto* nt = &nrn_threads[tid];
         int n = int(ttd.outsrc_indices.size());
         if (n == 0) {
             continue;
         }
-        double* src_data = nt._data;
+        double* src_data = nt->_data;
         int* src_indices = ttd.src_indices.data();
 
         // gather sources on gpu and copy to cpu, cpu scatters to outsrc_buf
         double* src_gather = ttd.src_gather.data();
         size_t n_src_gather = ttd.src_gather.size();
-        // clang-format off
 
-        #pragma acc parallel loop present(                                          \
-            src_indices[0:n_src_gather], src_data[0:nt._ndata],                     \
-            src_gather[0 : n_src_gather]) /*copyout(src_gather[0:n_src_gather])*/   \
-            if (nt.compute_gpu) async(nt.stream_id)
+        nrn_pragma_acc(parallel loop present(src_indices [0:n_src_gather],
+                                             src_data [0:nt->_ndata],
+                                             src_gather [0:n_src_gather]) if (nt->compute_gpu)
+                           async(nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for simd if(nt->compute_gpu))
         for (int i = 0; i < n_src_gather; ++i) {
             src_gather[i] = src_data[src_indices[i]];
         }
-        // do not know why the copyout above did not work
-        // and the following update is needed
-        #pragma acc update host(src_gather[0 : n_src_gather])   \
-            if (nrn_threads[0].compute_gpu)                     \
-            async(nt.stream_id)
-        // clang-format on
+        nrn_pragma_acc(update host(src_gather [0:n_src_gather]) if (nt->compute_gpu)
+                           async(nt->stream_id))
+        nrn_pragma_omp(target update from(src_gather [0:n_src_gather]) if (nt->compute_gpu))
     }
 
     // copy gathered source values to outsrc_buf_
+    bool compute_gpu = false;
     for (int tid = 0; tid < nrn_nthread; ++tid) {
-        // clang-format off
-
-        #pragma acc wait(nrn_threads[tid].stream_id)
-        // clang-format on
+        if (nrn_threads[tid].compute_gpu) {
+            compute_gpu = true;
+            nrn_pragma_acc(wait(nrn_threads[tid].stream_id))
+        }
         TransferThreadData& ttd = transfer_thread_data_[tid];
         size_t n_outsrc_indices = ttd.outsrc_indices.size();
         int* outsrc_indices = ttd.outsrc_indices.data();
@@ -102,12 +100,8 @@ void nrnmpi_v_transfer() {
     }
 
     // insrc_buf_ will get copied to targets via nrnthread_v_transfer
-    // clang-format off
-
-    #pragma acc update device(          \
-        insrc_buf_[0:n_insrc_buf])      \
-        if (nrn_threads[0].compute_gpu)
-    // clang-format on
+    nrn_pragma_acc(update device(insrc_buf_ [0:n_insrc_buf]) if (compute_gpu))
+    nrn_pragma_omp(target update to(insrc_buf_ [0:n_insrc_buf]) if (compute_gpu))
 }
 
 void nrnthread_v_transfer(NrnThread* _nt) {
@@ -119,33 +113,33 @@ void nrnthread_v_transfer(NrnThread* _nt) {
     int* insrc_indices = ttd.insrc_indices.data();
     double* tar_data = _nt->_data;
     // last element in the displacement vector gives total length
+#if defined(CORENEURON_ENABLE_GPU) && !defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && \
+    defined(_OPENACC)
     int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
     int ndata = _nt->_ndata;
+#endif
 
-    // clang-format off
-
-    #pragma acc parallel loop present(  \
-        insrc_indices[0:ntar],          \
-        tar_data[0:ndata],              \
-        insrc_buf_[0:n_insrc_buf])      \
-    if (_nt->compute_gpu)               \
-        async(_nt->stream_id)
-    // clang-format on
+    nrn_pragma_acc(parallel loop present(insrc_indices [0:ntar],
+                                         tar_data [0:ndata],
+                                         insrc_buf_ [0:n_insrc_buf]) if (_nt->compute_gpu)
+                       async(_nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for simd map(to: tar_indices[0:ntar]) if(_nt->compute_gpu))
     for (size_t i = 0; i < ntar; ++i) {
         tar_data[tar_indices[i]] = insrc_buf_[insrc_indices[i]];
     }
 }
 
+/// TODO: Corresponding exit data cluase for OpenACC/OpenMP is missing and hence
+///       GPU buffers are not freed.
 void nrn_partrans::gap_update_indices() {
     // Ensure index vectors, src_gather, and insrc_buf_ are on the gpu.
     if (insrcdspl_) {
         int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
+        nrn_pragma_acc(enter data create(insrc_buf_ [0:n_insrc_buf]) if (corenrn_param.gpu))
         // clang-format off
-
-        #pragma acc enter data create(      \
-            insrc_buf_[0:n_insrc_buf])      \
-            if (nrn_threads[0].compute_gpu)
-        // clang-format on
+        nrn_pragma_omp(target enter data map(alloc: insrc_buf_[0:n_insrc_buf])
+                                         if(corenrn_param.gpu))
+        // clang-format off
     }
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         TransferThreadData& ttd = transfer_thread_data_[tid];
@@ -154,21 +148,25 @@ void nrn_partrans::gap_update_indices() {
         size_t n_src_gather = ttd.src_gather.size();
         NrnThread* nt = nrn_threads + tid;
         if (n_src_indices) {
+            int* src_indices = ttd.src_indices.data();
+            double* src_gather = ttd.src_gather.data();
+            nrn_pragma_acc(enter data copyin(src_indices[0:n_src_indices]) if(nt->compute_gpu))
+            nrn_pragma_acc(enter data create(src_gather[0:n_src_gather]) if(nt->compute_gpu))
             // clang-format off
-
-            int *src_indices = ttd.src_indices.data();
-            double *src_gather = ttd.src_gather.data();
-            #pragma acc enter data copyin(src_indices[0 : n_src_indices]) if (nt->compute_gpu)
-            #pragma acc enter data create(src_gather[0 : n_src_gather]) if (nt->compute_gpu)
+            nrn_pragma_omp(target enter data map(to: src_indices [0:n_src_indices])
+                                             map(alloc: src_gather[0:n_src_gather])
+                                             if(nt->compute_gpu))
             // clang-format on
         }
 
         if (ttd.insrc_indices.size()) {
-            // clang-format off
-
-            int *insrc_indices = ttd.insrc_indices.data();
+            int* insrc_indices = ttd.insrc_indices.data();
             size_t n_insrc_indices = ttd.insrc_indices.size();
-            #pragma acc enter data copyin(insrc_indices[0 : n_insrc_indices]) if (nt->compute_gpu)
+            nrn_pragma_acc(
+                enter data copyin(insrc_indices [0:n_insrc_indices]) if (nt->compute_gpu))
+            // clang-format off
+            nrn_pragma_omp(target enter data map(to: insrc_indices[0:n_insrc_indices])
+                                             if(nt->compute_gpu))
             // clang-format on
         }
     }

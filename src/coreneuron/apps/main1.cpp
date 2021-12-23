@@ -193,10 +193,11 @@ void nrn_init_and_load_data(int argc,
     // precedence is: set by user, globals.dat, 34.0
     celsius = corenrn_param.celsius;
 
-#if _OPENACC
+#if CORENEURON_ENABLE_GPU
     if (!corenrn_param.gpu && corenrn_param.cell_interleave_permute == 2) {
         fprintf(stderr,
-                "compiled with _OPENACC does not allow the combination of --cell-permute=2 and "
+                "compiled with CORENEURON_ENABLE_GPU does not allow the combination of "
+                "--cell-permute=2 and "
                 "missing --gpu\n");
         exit(1);
     }
@@ -499,7 +500,7 @@ extern "C" void mk_mech_init(int argc, char** argv) {
     }
 #endif
 
-#ifdef _OPENACC
+#ifdef CORENEURON_ENABLE_GPU
     if (corenrn_param.gpu) {
         init_gpu();
     }
@@ -560,10 +561,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
 #endif
     bool compute_gpu = corenrn_param.gpu;
 
-    // clang-format off
-
-    #pragma acc update device(celsius, secondorder, pi) if (compute_gpu)
-    // clang-format on
+    nrn_pragma_acc(update device(celsius, secondorder, pi) if (compute_gpu))
+    nrn_pragma_omp(target update to(celsius, secondorder, pi) if (compute_gpu))
     {
         double v = corenrn_param.voltage;
         double dt = corenrn_param.dt;

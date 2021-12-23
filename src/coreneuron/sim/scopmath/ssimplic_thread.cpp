@@ -9,12 +9,15 @@
 #include "coreneuron/mechanism/mech/cfile/scoplib.h"
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
 #include "coreneuron/sim/scopmath/errcodes.h"
+#include "coreneuron/utils/offload.hpp"
 
 namespace coreneuron {
 #define s_(arg) _p[s[arg] * _STRIDE]
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
+nrn_pragma_omp(declare target)
 static int check_state(int, int*, _threadargsproto_);
+nrn_pragma_omp(end declare target)
 
 int _ss_sparse_thread(SparseObj* v,
                       int n,

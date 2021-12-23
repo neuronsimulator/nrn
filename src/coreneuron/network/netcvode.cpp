@@ -26,9 +26,6 @@
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/utils/nrnoc_aux.hpp"
 
-#ifdef _OPENACC
-#include <openacc.h>
-#endif
 namespace coreneuron {
 #define PP2NT(pp) (nrn_threads + (pp)->_tid)
 #define PP2t(pp)  (PP2NT(pp)->_t)
@@ -531,28 +528,13 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
     PreSynHelper* presyns_helper = nt->presyns_helper;
     double* actual_v = nt->_actual_v;
 
-#if defined(_OPENACC)
-    int stream_id = nt->stream_id;
-#endif
-
     if (nt->ncell == 0)
         return;
 
-        //_net_send_buffer_cnt is no longer used in openacc kernel, remove this?
-        //#ifdef _OPENACC
-        //    if(nt->compute_gpu)
-        //        acc_update_device(&(nt->_net_send_buffer_cnt), sizeof(int));
-        //#endif
-
-        // on GPU...
-        // clang-format off
-
-    #pragma acc parallel loop present(                  \
-        nt[0:1], presyns_helper[0:nt->n_presyn],        \
-        presyns[0:nt->n_presyn], actual_v[0:nt->end])   \
-        copy(net_send_buf_count) if (nt->compute_gpu)   \
-        async(stream_id)
-    // clang-format on
+    nrn_pragma_acc(parallel loop present(
+        nt [0:1], presyns_helper [0:nt->n_presyn], presyns [0:nt->n_presyn], actual_v [0:nt->end])
+                       copy(net_send_buf_count) if (nt->compute_gpu) async(nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for map(tofrom: net_send_buf_count) if(nt->compute_gpu))
     for (int i = 0; i < nt->ncell; ++i) {
         PreSyn* ps = presyns + i;
         PreSynHelper* psh = presyns_helper + i;
@@ -563,7 +545,7 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
         int* flag = &(psh->flag_);
 
         if (pscheck(v, threshold, flag)) {
-#ifndef _OPENACC
+#ifndef CORENEURON_ENABLE_GPU
             nt->_net_send_buffer_cnt = net_send_buf_count;
             if (nt->_net_send_buffer_cnt >= nt->_net_send_buffer_size) {
                 nt->_net_send_buffer_size *= 2;
@@ -572,31 +554,23 @@ void NetCvode::check_thresh(NrnThread* nt) {  // for default method
             }
 #endif
 
-            // clang-format off
-
-            #pragma acc atomic capture
-            // clang-format on
+            nrn_pragma_acc(atomic capture)
+            nrn_pragma_omp(atomic capture)
             idx = net_send_buf_count++;
 
             nt->_net_send_buffer[idx] = i;
         }
     }
-
-    // clang-format off
-
-    #pragma acc wait(stream_id)
-    // clang-format on
+    nrn_pragma_acc(wait(nt->stream_id))
     nt->_net_send_buffer_cnt = net_send_buf_count;
 
-    if (nt->_net_send_buffer_cnt) {
-#ifdef _OPENACC
+    if (nt->compute_gpu && nt->_net_send_buffer_cnt) {
+#ifdef CORENEURON_ENABLE_GPU
         int* nsbuffer = nt->_net_send_buffer;
 #endif
-        // clang-format off
-
-        #pragma acc update host(nsbuffer[0:nt->_net_send_buffer_cnt]) if (nt->compute_gpu) async(stream_id)
-        #pragma acc wait(stream_id)
-        // clang-format on
+        nrn_pragma_acc(update host(nsbuffer [0:nt->_net_send_buffer_cnt]) async(nt->stream_id))
+        nrn_pragma_acc(wait(nt->stream_id))
+        nrn_pragma_omp(target update from(nsbuffer [0:nt->_net_send_buffer_cnt]))
     }
 
     // on CPU...

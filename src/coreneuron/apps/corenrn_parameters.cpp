@@ -47,7 +47,12 @@ corenrn_parameters::corenrn_parameters() {
                  "Print number of instances of each mechanism and detailed memory stats.");
 
     auto sub_gpu = app.add_option_group("GPU", "Commands relative to GPU.");
-    sub_gpu->add_option("-W, --nwarp", this->nwarp, "Number of warps to balance.", true)
+    sub_gpu
+        ->add_option("-W, --nwarp",
+                     this->nwarp,
+                     "Number of warps to execute in parallel the Hines solver. Each warp solves a "
+                     "group of cells. (Only used with cell permute 2)",
+                     true)
         ->check(CLI::Range(0, 1'000'000));
     sub_gpu
         ->add_option("-R, --cell-permute",

@@ -12,25 +12,9 @@
 #include "coreneuron/coreneuron.hpp"
 #include "coreneuron/permute/data_layout.hpp"
 
-// clang-format off
-
-#if defined(_OPENACC)
-#define _PRAGMA_FOR_INIT_ACC_LOOP_  \
-    _Pragma("acc parallel loop present(vdata[0:_cntml_padded*nparm]) if(_nt->compute_gpu)")
-#define _PRAGMA_FOR_CUR_ACC_LOOP_   \
-    _Pragma(                        \
-        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_rhs[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
-#define _PRAGMA_FOR_JACOB_ACC_LOOP_ \
-    _Pragma(                        \
-        "acc parallel loop present(vdata[0:_cntml_padded*nparm], ni[0:_cntml_actual], _vec_d[0:_nt->end]) if(_nt->compute_gpu) async(stream_id)")
-#else
-#define _PRAGMA_FOR_INIT_ACC_LOOP_  _Pragma("")
-#define _PRAGMA_FOR_CUR_ACC_LOOP_   _Pragma("")
-#define _PRAGMA_FOR_JACOB_ACC_LOOP_ _Pragma("")
-#endif
-
-// clang-format on
-
+#define _PRAGMA_FOR_INIT_ACC_LOOP_                                                               \
+    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm]) if (_nt->compute_gpu)) \
+    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
 #define _STRIDE _cntml_padded + _iml
 
 namespace coreneuron {
@@ -78,15 +62,16 @@ void nrn_jacob_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     (void) _cntml_padded; /* unused when layout=1*/
 
     double* _vec_d = _nt->_actual_d;
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
 
     { /*if (use_cachevec) {*/
         int* ni = ml->nodeindices;
 
         vdata = ml->data;
-        _PRAGMA_FOR_JACOB_ACC_LOOP_
+        nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm],
+                                             ni [0:_cntml_actual],
+                                             _vec_d [0:_nt->end]) if (_nt->compute_gpu)
+                           async(_nt->stream_id))
+        nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
         for (_iml = 0; _iml < _cntml_actual; _iml++) {
             _vec_d[ni[_iml]] += cfac * cm;
         }
@@ -126,12 +111,13 @@ void nrn_cur_capacitance(NrnThread* _nt, Memb_list* ml, int /* type */) {
     /* no need to distinguish secondorder */
     int* ni = ml->nodeindices;
     double* _vec_rhs = _nt->_actual_rhs;
-#if defined(_OPENACC)
-    int stream_id = _nt->stream_id;
-#endif
 
     vdata = ml->data;
-    _PRAGMA_FOR_CUR_ACC_LOOP_
+    nrn_pragma_acc(parallel loop present(vdata [0:_cntml_padded * nparm],
+                                         ni [0:_cntml_actual],
+                                         _vec_rhs [0:_nt->end]) if (_nt->compute_gpu)
+                       async(_nt->stream_id))
+    nrn_pragma_omp(target teams distribute parallel for simd if(_nt->compute_gpu))
     for (int _iml = 0; _iml < _cntml_actual; _iml++) {
         i_cap = cfac * cm * _vec_rhs[ni[_iml]];
     }

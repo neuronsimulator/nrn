@@ -88,7 +88,7 @@ struct NetSendBuffer_t: MemoryManaged {
     }
 
     void grow() {
-#if defined(_OPENACC)
+#ifdef CORENEURON_ENABLE_GPU
         int cannot_reallocate_on_device = 0;
         assert(cannot_reallocate_on_device);
 #else

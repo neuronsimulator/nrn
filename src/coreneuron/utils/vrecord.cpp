@@ -78,7 +78,8 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
     last_index_ = ubound_index_;
     // clang-format off
 
-    #pragma acc update device(last_index_) if (nt->compute_gpu)
+    nrn_pragma_acc(update device(last_index_) if (nt->compute_gpu))
+    nrn_pragma_omp(target update to(last_index_) if (nt->compute_gpu))
     // clang-format on
     if (discon_indices_) {
         if (discon_index_ < discon_indices_->size()) {
@@ -96,7 +97,8 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
     }
     // clang-format off
 
-    #pragma acc update device(ubound_index_) if (nt->compute_gpu)
+    nrn_pragma_acc(update device(ubound_index_) if (nt->compute_gpu))
+    nrn_pragma_omp(target update to(ubound_index_) if (nt->compute_gpu))
     // clang-format on
     continuous(tt);
 }
@@ -105,7 +107,8 @@ void VecPlayContinuous::continuous(double tt) {
     NrnThread* nt = nrn_threads + ith_;
     // clang-format off
 
-    #pragma acc kernels present(this) if(nt->compute_gpu)
+    nrn_pragma_acc(kernels present(this) if(nt->compute_gpu))
+    nrn_pragma_omp(target if(nt->compute_gpu))
     {
         *pd_ = interpolate(tt);
     }

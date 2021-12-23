@@ -24,6 +24,7 @@
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
 #include "_kinderiv.h"
 namespace coreneuron {
+nrn_pragma_omp(declare target)
 int derivimplicit_thread(int n, int* slist, int* dlist, DIFUN fun, _threadargsproto_) {
     difun(fun);
     return 0;
@@ -48,5 +49,6 @@ int nrn_kinetic_steer(int fun, SparseObj* so, double* rhs, _threadargsproto_) {
     switch (fun) { _NRN_KINETIC_CASES }
     return 0;
 }
+nrn_pragma_omp(end declare target)
 
 }  // namespace coreneuron

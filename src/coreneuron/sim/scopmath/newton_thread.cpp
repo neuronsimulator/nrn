@@ -59,6 +59,7 @@ namespace coreneuron {
 #define ix(arg) ((arg) *_STRIDE)
 #define s_(arg) _p[s[arg] * _STRIDE]
 
+nrn_pragma_omp(declare target)
 int nrn_newton_thread(NewtonSpace* ns,
                       int n,
                       int* s,
@@ -136,6 +137,7 @@ int nrn_newton_thread(NewtonSpace* ns,
 
     return (error);
 }
+nrn_pragma_omp(end declare target)
 
 /*------------------------------------------------------------*/
 /*                                                            */

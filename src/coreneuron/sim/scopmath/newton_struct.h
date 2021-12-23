@@ -25,10 +25,11 @@ struct NewtonSpace {
     double* rowmax;
 };
 
-#pragma acc routine seq
+nrn_pragma_omp(declare target)
+nrn_pragma_acc(routine seq)
 extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _threadargsproto_);
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern void nrn_scopmath_solve_thread(int n,
                                       double** a,
                                       double* value,
@@ -37,7 +38,7 @@ extern void nrn_scopmath_solve_thread(int n,
                                       int* s,
                                       _threadargsproto_);
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern int nrn_newton_thread(NewtonSpace* ns,
                              int n,
                              int* s,
@@ -45,7 +46,7 @@ extern int nrn_newton_thread(NewtonSpace* ns,
                              double* value,
                              _threadargsproto_);
 
-#pragma acc routine seq
+nrn_pragma_acc(routine seq)
 extern void nrn_buildjacobian_thread(NewtonSpace* ns,
                                      int n,
                                      int* s,
@@ -53,6 +54,7 @@ extern void nrn_buildjacobian_thread(NewtonSpace* ns,
                                      double* value,
                                      double** jacobian,
                                      _threadargsproto_);
+nrn_pragma_omp(end declare target)
 
 extern NewtonSpace* nrn_cons_newtonspace(int n, int n_instance);
 extern void nrn_destroy_newtonspace(NewtonSpace* ns);

@@ -37,6 +37,8 @@ http://www.deshawresearch.com/resources_random123.html
 #define R123_USE_GNU_UINT128            1
 #endif
 
+#include "coreneuron/utils/offload.hpp"
+
 #include <Random123/philox.h>
 #include <inttypes.h>
 
@@ -46,17 +48,12 @@ http://www.deshawresearch.com/resources_random123.html
 #define CORENRN_HOST_DEVICE
 #endif
 
-// Is there actually any harm leaving the pragma in when DISABLE_OPENACC is true?
-#if defined(_OPENACC) && !defined(DISABLE_OPENACC)
-#define CORENRN_HOST_DEVICE_ACC CORENRN_HOST_DEVICE _Pragma("acc routine seq")
-#else
-#define CORENRN_HOST_DEVICE_ACC CORENRN_HOST_DEVICE
-#endif
+#define CORENRN_HOST_DEVICE_ACC CORENRN_HOST_DEVICE nrn_pragma_acc(routine seq)
 
 // Some files are compiled with DISABLE_OPENACC, and some builds have no GPU
 // support at all. In these two cases, request that the random123 state is
 // allocated using new/delete instead of CUDA unified memory.
-#if (defined(__CUDACC__) || defined(_OPENACC)) && !defined(DISABLE_OPENACC)
+#if defined(CORENEURON_ENABLE_GPU) && !defined(DISABLE_OPENACC)
 #define CORENRN_RAN123_USE_UNIFIED_MEMORY true
 #else
 #define CORENRN_RAN123_USE_UNIFIED_MEMORY false
@@ -100,6 +97,7 @@ void nrnran123_deletestream(nrnran123_State* s,
                             bool use_unified_memory = CORENRN_RAN123_USE_UNIFIED_MEMORY);
 
 /* minimal data stream */
+nrn_pragma_omp(declare target)
 CORENRN_HOST_DEVICE_ACC void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
 CORENRN_HOST_DEVICE_ACC void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
 CORENRN_HOST_DEVICE_ACC void nrnran123_getids3(nrnran123_State*,
@@ -128,6 +126,7 @@ CORENRN_HOST_DEVICE_ACC nrnran123_array4x32 nrnran123_iran(uint32_t seq,
                                                            uint32_t id1,
                                                            uint32_t id2);
 CORENRN_HOST_DEVICE_ACC double nrnran123_uint2dbl(uint32_t);
+nrn_pragma_omp(end declare target)
 }  // namespace coreneuron
 
 #endif

@@ -85,6 +85,7 @@ add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11)
 # Build options
 # =============================================================================
 option(CORENRN_ENABLE_OPENMP "Build the CORE NEURON with OpenMP implementation" ON)
+option(CORENRN_ENABLE_OPENMP_OFFLOAD "Prefer OpenMP target offload to OpenACC" ON)
 option(CORENRN_ENABLE_TIMEOUT "Enable nrn_timeout implementation" ON)
 option(CORENRN_ENABLE_REPORTING "Enable use of ReportingLib for soma reports" OFF)
 option(CORENRN_ENABLE_MPI "Enable MPI-based execution" ON)
@@ -117,6 +118,7 @@ else()
   set(CORENRN_HAVE_NVHPC_COMPILER OFF)
 endif()
 
+set(CORENRN_ACCELERATOR_OFFLOAD "Disabled")
 if(CORENRN_ENABLE_GPU)
   # Older CMake versions than 3.15 have not been tested for GPU/CUDA/OpenACC support after
   # https://github.com/BlueBrain/CoreNeuron/pull/609.
@@ -135,7 +137,7 @@ if(CORENRN_ENABLE_GPU)
 
   # Set some sensible default CUDA architectures.
   if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 60 70 80)
+    set(CMAKE_CUDA_ARCHITECTURES 70 80)
     message(STATUS "Setting default CUDA architectures to ${CMAKE_CUDA_ARCHITECTURES}")
   endif()
 
@@ -185,6 +187,18 @@ if(CORENRN_ENABLE_GPU)
   set(CMAKE_CUDA_FLAGS
       "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr -Xcudafe --diag_suppress=3057,--diag_suppress=3085"
   )
+
+  if(CORENRN_ENABLE_NMODL)
+    # NMODL supports both OpenACC and OpenMP target offload
+    if(CORENRN_ENABLE_OPENMP AND CORENRN_ENABLE_OPENMP_OFFLOAD)
+      set(CORENRN_ACCELERATOR_OFFLOAD "OpenMP")
+    else()
+      set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
+    endif()
+  else()
+    # MOD2C only supports OpenACC offload
+    set(CORENRN_ACCELERATOR_OFFLOAD "OpenACC")
+  endif()
 endif()
 
 # =============================================================================
@@ -526,6 +540,7 @@ message(STATUS "MOD2CPP PATH        | ${CORENRN_MOD2CPP_BINARY}")
 message(STATUS "GPU Support         | ${CORENRN_ENABLE_GPU}")
 if(CORENRN_ENABLE_GPU)
   message(STATUS "  CUDA              | ${CUDAToolkit_LIBRARY_DIR}")
+  message(STATUS "  Offload           | ${CORENRN_ACCELERATOR_OFFLOAD}")
   message(STATUS "  Unified Memory    | ${CORENRN_ENABLE_CUDA_UNIFIED_MEMORY}")
 endif()
 message(STATUS "Auto Timeout        | ${CORENRN_ENABLE_TIMEOUT}")
