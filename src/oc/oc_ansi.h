@@ -278,6 +278,7 @@ extern void bbs_done(void);
 extern int hoc_main1(int, const char**, const char**);
 extern char* cxx_char_alloc(size_t size);
 extern int stoprun;
+extern int nrn_mpiabort_on_error_;
 
 #endif
 

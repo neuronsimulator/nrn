@@ -61,6 +61,9 @@ code-executing
         of the object. If second arg not present then execute it at the 
         top level of the interpreter. 
          
+        When running under MPI, an error in the statement does NOT call
+        MPI_Abort but returns 0.
+
     Example:
         Execute1 is heavily used in the construction of the fitter widgets. 
         It is also useful to objects in gaining information about the outside with 
