@@ -93,6 +93,8 @@ public:
 	void forall_callback(void (*)(const TQItem*, int));
 	int nshift_;
 	void deleteitem(TQItem*);
+public:
+	BinQ* binq(){return binq_;}
 private:
 	double least_t_nolock(){if (least_) { return least_->t_;}else{return 1e15;}}
 	void move_least_nolock(double tnew);
