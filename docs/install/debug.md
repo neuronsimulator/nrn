@@ -269,18 +269,27 @@ finitialize                   0.000235      0.000235      0.000235  0.161020
 ```
 
 #### Running GPU benchmarks
+
 Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en/latest/) annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA's tools.
-In a CoreNEURON build with Caliper (`-DCORENRN_ENABLE_CALIPER_PROFILING=ON`) and GPU (`-DCORENRN_ENABLE_GPU=ON`) support enabled (this is currently based on OpenACC, so you [probably need to use the NVIDIA HPC compilers](../coreneuron/how-to/coreneuron.html)) you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
-A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be
+In a GPU build with Caliper support (`-DCORENRN_ENABLE_GPU=ON -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper`), you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
+
+A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be:
+
 ```bash
- nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0,CALI_CONFIG=nvtx,OMP_NUM_THREADS=1 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <coreneuron>
+ nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0,CALI_CONFIG=nvtx,OMP_NUM_THREADS=1 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <exe>
 ```
-where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs.
-The `<coreneuron>` command is likely to be something similar to
+where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs. The `<exe>` command is likely to be something similar to
+
 ```bash
+# with python
+path/to/x86_64/special -python your_sim.py
+# or, with hoc
+path/to/x86_64/special your_sim.hoc
+# or, if you are executing coreneuron directly
 path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
 ```
-you may like to experiment with setting `OMP_NUM_THREADS` to a value larger than
+
+You may like to experiment with setting `OMP_NUM_THREADS` to a value larger than
 1, but the profiling tools can struggle if there are too many CPU threads
 launching GPU kernels in parallel.
 
@@ -298,13 +307,18 @@ the name of the kernel you're interested in and then select on this kernel for
 analysis with Nsight Compute.
 In case you're interested in multiple kernels you can relaunch Nsight Compute with the other
 kernels separately.
-To launch Nsight Compute with CoreNEURON you can use the following command:
-```bash
-ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <section_set> <coreneuron>
-```
-`kernel_name`: The name of the kernel you want to profile. You may also provide a regex with `regex:<name>`.
 
-`section_set`: Provides set of sections of the kernel you want to be analyzed. To get the list of sections you can run `ncu --list-sets`. The most commonly used is `detailed` which provides most information about the kernel execution and `full` which provides all the details about the kernel execution and memory utilization in the GPU but takes more time to run.
+To launch Nsight Compute you can use the following command:
+```bash
+ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <section_set> <exe>
+```
+
+where
+* `kernel_name`: The name of the kernel you want to profile. You may also provide a regex with `regex:<name>`.
+* `section_set`: Provides set of sections of the kernel you want to be analyzed. To get the list of sections you can run `ncu --list-sets`.
+
+The most commonly used is `detailed` which provides most information about the kernel execution and `full` which provides all the details
+about the kernel execution and memory utilization in the GPU but takes more time to run.
 For more information about Nsight Compute options you can consult the [Nsight Compute Documentation](https://docs.nvidia.com/nsight-compute/2021.3/NsightComputeCli/index.html).
 
 Notes:
