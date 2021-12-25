@@ -890,8 +890,8 @@ extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 			ps->send(spiketime, net_cvode_instance, nrn_threads);
 #if NRNSTAT
 			++nrecv_useful_;
-		}
 #endif
+		}
 	}else if (fake_out && !ps) {
 		auto iter = gid2out_.find(gid);
 		if (iter != gid2out_.end()) {
