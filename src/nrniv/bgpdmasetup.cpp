@@ -178,7 +178,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-using Int2TarList = std::unordered_map<int, std::unique_ptr<TarList>>;
+using Int2TarList = std::unordered_map<int, TarList*>;
 
 TarList::TarList() {
 	size = 0;
@@ -596,7 +596,6 @@ static int setup_target_lists(int** r_return) {
 					s[sdispl[rank]++] = tl->list[j];
 				}
 			}
-			
 		}else{
 			// gid, list size, list
 			s[sdispl[tl->rank]++] = gid;
@@ -608,6 +607,7 @@ static int setup_target_lists(int** r_return) {
 				s[sdispl[tl->rank]++] = tl->list[i];
 			}
 		}
+		delete tl;
 	}
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
