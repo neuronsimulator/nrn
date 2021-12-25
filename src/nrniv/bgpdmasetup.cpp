@@ -178,7 +178,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-using Int2TarList = std::unordered_map<int, TarList*>;
+using Int2TarList = std::unordered_map<int, std::unique_ptr<TarList>>;
 
 TarList::TarList() {
 	size = 0;
@@ -305,7 +305,7 @@ static void fill_dma_send_lists(int sz, int* r) {
 	for (int i = 0; i < sz;) {
 		int gid = r[i++];
 		int size = r[i++];
-		PreSyn* ps = NULL;
+		PreSyn* ps{nullptr};
 		if (use_phase2_) { // look in gid2in first
 		    auto iter = gid2in_.find(gid);
 		    if (iter != gid2in_.end()) {
@@ -608,7 +608,6 @@ static int setup_target_lists(int** r_return) {
 				s[sdispl[tl->rank]++] = tl->list[i];
 			}
 		}
-		delete tl;
 	}
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
