@@ -70,9 +70,6 @@ while test -n "$1" ; do
     -loadflags)
         # extra link flags, paths, libraries (NEURON only)
         UserLDFLAGS="$2"
-        shift
-        shift;;
-    -l)
         # extra lin flags, paths. libraries (CoreNEURON)
         UserCOREFLAGS="$UserCOREFLAGS -l $2"
         shift
