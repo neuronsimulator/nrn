@@ -117,14 +117,14 @@ int ncs_netcon_mindelays( int**hosts, double **delays )
 
 double ncs_netcon_localmindelay( int srcgid )
 {
-    PreSyn *ps = gid2out_.at[srcgid];
+    PreSyn *ps = gid2out_.at(srcgid);
     return ps->mindelay();
 }
 
 //get the number of netcons for an object, if it sends here
 int ncs_netcon_count( int srcgid, bool localNetCons )
 {
-    PreSyn *ps = NULL;
+    PreSyn *ps{nullptr};
     if( localNetCons ) {
         auto iter = gid2out_.find(srcgid);
         if (iter != gid2out_.end()) {
@@ -881,7 +881,7 @@ static void mk_localgid_rep() {
 // will get the spike delivered and nobody gets it twice.
 
 extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
-	PreSyn* ps = NULL;
+	PreSyn* ps{nullptr};
 	if (fake_out < 2) {
 		auto iter = gid2in_.find(gid);
 		if (iter != gid2in_.end()) {
@@ -939,7 +939,7 @@ void BBS::set_gid2node(int gid, int nid) {
 			sprintf(m, "gid=%d already exists on this process as an output port", gid);
 			hoc_execerror(m, 0);                            
 		}
-		gid2out_[gid] = NULL;
+		gid2out_[gid] = nullptr;
 	}
 }
 
@@ -1099,7 +1099,9 @@ void BBS::spike_record(int gid, IvocVect* spikevec, IvocVect* gidvec) {
 
 void BBS::spike_record(IvocVect* gids, IvocVect* spikevec, IvocVect* gidvec) {
 	int sz = vector_capacity(gids);
-	all_spiketvec = NULL, all_spikegidvec = NULL; // invalidate global spike vectors
+        // invalidate global spike vectors
+	all_spiketvec = nullptr;
+	all_spikegidvec = nullptr;
 	double* pd = vector_vec(gids);
 	for (int i = 0; i < sz; ++i) {
 		int gid = int(pd[i]);
