@@ -959,19 +959,21 @@ void BBS::set_gid2node(int gid, int nid) {
 	}
 }
 
-static int gid2in_donot_remove = 0; // avoid  gid2in_ removal when iterating gid2in_
+static int gid_donot_remove = 0; // avoid  gid2in_, gid2out removal when iterating
 
 void nrn_cleanup_presyn(PreSyn* ps) {
 #if BGPDMA
 	bgpdma_cleanup_presyn(ps);
 #endif
-	PreSyn* pss;
+        if (gid_donot_remove) {
+		return;
+	}
 	if (ps->output_index_ >= 0 && gid2out_) {
 		gid2out_->remove(ps->output_index_);
 		ps->output_index_ = -1;
 		ps->gid_ = -1;
 	}
-	if (ps->gid_ >= 0 && gid2in_ && gid2in_donot_remove == 0) {
+	if (ps->gid_ >= 0 && gid2in_) {
 		gid2in_->remove(ps->gid_);
 		ps->gid_ = -1;
 	}
@@ -987,7 +989,8 @@ void nrnmpi_gid_clear(int arg) {
 	if (arg == 0 || arg == 2 || arg == 4) { nrnmpi_multisplit_clear(); }
 	if (arg == 2 || arg == 3) { return; }
 	if (!gid2out_) { return; }
-	PreSyn* ps, *psi;
+	PreSyn* psi;
+	gid_donot_remove = 1;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps && !gid2in_->find(ps->gid_, psi)) {
 		    if (arg == 4) {
@@ -1004,7 +1007,6 @@ void nrnmpi_gid_clear(int arg) {
 		    }
 		}
 	}}}
-	gid2in_donot_remove = 1;
 	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
 	    if (arg == 4) {
 		delete ps;
@@ -1019,7 +1021,7 @@ void nrnmpi_gid_clear(int arg) {
 		}
 	    }
 	}}}
-	gid2in_donot_remove = 0;
+	gid_donot_remove = 0;
 #if ALTHASH
 	gid2in_->remove_all();
 	gid2out_->remove_all();
@@ -1318,7 +1320,7 @@ int nrnthread_all_spike_vectors_return(std::vector<double>& spiketvec, std::vect
             all_spikegidvec->vec().insert(all_spikegidvec->end(), spikegidvec.begin(), spikegidvec.end());
             
         }else{ // different underlying vectors for PreSyns
-            for (int i = 0; i < spikegidvec.size(); ++i ) {
+            for (size_t i = 0; i < spikegidvec.size(); ++i ) {
                 PreSyn* ps;
                 if (gid2out_->find(spikegidvec[i], ps)) {
                     ps->record(spiketvec[i]);
@@ -1466,6 +1468,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 	use_bgpdma_ = (xchng_meth & 1) == 1;
 	use_phase2_ = (xchng_meth & 8) ? 1 : 0;
 	if (use_bgpdma_) { assert(BGPDMA); }
+	bgpdma_cleanup();
 #else // BGPDMA == 0
 	assert(xchng_meth == 0);
 #endif
@@ -1538,7 +1541,6 @@ PreSyn* nrn_gid2presyn(int gid) { // output PreSyn
 }
 
 void nrn_gidout_iter(PFIO callback) {
-	PreSyn* ps;
 	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
 		if (ps) {
 			int gid = ps->gid_;
@@ -1558,7 +1560,6 @@ static int weightcnt(NetCon* nc) {
 }
 
 size_t nrncore_netpar_bytes() {
-  PreSyn* ps;
   size_t ntot, nin, nout, nnet, nweight;
   ntot = nin = nout = nnet = nweight = 0;
 size_t npnt = 0;
@@ -1609,7 +1610,6 @@ void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
     gidcnt[i] = 0;
   }
 
-  PreSyn* ps;
   NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
     if (ps && ps->thvar_) {
       int ith = ps->nt_->id;

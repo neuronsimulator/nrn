@@ -74,6 +74,8 @@ int core2nrn_corepointer_mech(int tid, int type,
 
 // For direct transfer of event queue information from CoreNEURON
 extern "C" {
+void core2nrn_clear_queues(double t);
+
 void core2nrn_NetCon_event(int tid, double td, size_t nc_index);
 
 void core2nrn_SelfEvent_event(int tid, double td,
@@ -155,6 +157,7 @@ static core2nrn_callback_t cnbs[]  = {
         {"core2nrn_vecplay_", (CNB)core2nrn_vecplay},
         {"core2nrn_vecplay_events_", (CNB)core2nrn_vecplay_events},
 
+        {"core2nrn_clear_queues_", (CNB)core2nrn_clear_queues},
         {"core2nrn_corepointer_mech_", (CNB)core2nrn_corepointer_mech},
         {"core2nrn_NetCon_event_", (CNB)core2nrn_NetCon_event},
         {"core2nrn_SelfEvent_event_", (CNB)core2nrn_SelfEvent_event},
