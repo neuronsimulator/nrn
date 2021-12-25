@@ -24,7 +24,7 @@ extern MPI_Comm nrnmpi_comm;
 
 static int np;
 static int* displs{nullptr};
-static int* byteovfl; /* for the compressed transfer method */
+static int* byteovfl{nullptr}; /* for the compressed transfer method */
 static MPI_Datatype spike_type;
 
 static void* emalloc(size_t size) {
@@ -175,7 +175,7 @@ The allgather sends the first part of the buf and the allgatherv buffer
 sends any overflow.
 */
 int nrnmpi_spike_exchange_compressed_impl(int localgid_size,
-                                          unsigned char* spfixin_ovfl,
+                                          unsigned char*& spfixin_ovfl,
                                           int send_nspike,
                                           int* nin,
                                           int ovfl_capacity,
@@ -187,9 +187,10 @@ int nrnmpi_spike_exchange_compressed_impl(int localgid_size,
         np = nrnmpi_numprocs_;
         displs = (int*) emalloc(np * sizeof(int));
         displs[0] = 0;
+    }
+    if (!byteovfl) {
         byteovfl = (int*) emalloc(np * sizeof(int));
     }
-
     MPI_Allgather(
         spikeout_fixed, ag_send_size, MPI_BYTE, spikein_fixed, ag_send_size, MPI_BYTE, nrnmpi_comm);
     int novfl = 0;

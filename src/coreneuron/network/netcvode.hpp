@@ -37,6 +37,7 @@ class DiscreteEvent;
 class NetCvode;
 
 extern NetCvode* net_cvode_instance;
+extern void interthread_enqueue(NrnThread*);
 
 struct InterThreadEvent {
     DiscreteEvent* de_;

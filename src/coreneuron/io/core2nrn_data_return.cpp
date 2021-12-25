@@ -170,6 +170,14 @@ static void core2nrn_corepointer(int tid, NrnThreadMembList* tml) {
  */
 static void core2nrn_tqueue(NrnThread&);
 
+/** @brief Callback to clear NEURON thread queues.
+    In particular need to initialize bin queues to the current time before
+    transferring events.
+ */
+extern "C" {
+void (*core2nrn_clear_queues_)(double t);
+}
+
 /** @brief All activated WATCH statements need activation on NEURON side.
  */
 // vector in unpermuted Memb_list index order of vector of
@@ -200,6 +208,9 @@ void core2nrn_data_return() {
     if (!nrn2core_type_return_) {
         return;
     }
+
+    (*core2nrn_clear_queues_)(nrn_threads[0]._t);  // all threads at same time
+
     for (int tid = 0; tid < nrn_nthread; ++tid) {
         size_t n = 0;
         double* data = nullptr;

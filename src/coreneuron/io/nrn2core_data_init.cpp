@@ -51,6 +51,8 @@ void direct_mode_initialize() {
     dt2thread(-1.);
     nrn_thread_table_check();
 
+    clear_event_queue();
+
     // Reproduce present NEURON WATCH activation
     // Start from nothing active.
     watch_activate_clear();

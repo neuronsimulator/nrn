@@ -224,7 +224,7 @@ void TarList::alloc() {
 
 // for two phase
 
-static nrnran123_State* ranstate;
+static nrnran123_State* ranstate{nullptr};
 
 static void random_init(int i) {
     if (!ranstate) {
@@ -234,6 +234,14 @@ static void random_init(int i) {
 
 static unsigned int get_random() {
     return nrnran123_ipick(ranstate);
+}
+
+// Avoid warnings if the global index is changed on subsequent psolve.
+static void random_delete() {
+    if (ranstate) {
+        nrnran123_deletestream(ranstate);
+        ranstate = nullptr;
+    }
 }
 
 static int iran(int i1, int i2) {
@@ -575,6 +583,7 @@ static std::vector<int> setup_target_lists(bool use_phase2) {
                 phase2organize(tl);
             }
         }
+        random_delete();
     }
 
     // For clarity, use the all2allv_int style of information flow

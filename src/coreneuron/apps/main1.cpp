@@ -472,6 +472,7 @@ static void* load_dynamic_mpi(const std::string& libname) {
 extern "C" void mk_mech_init(int argc, char** argv) {
     // reset all parameters to their default values
     corenrn_param.reset();
+
     // read command line parameters and parameter config files
     corenrn_param.parse(argc, argv);
 

@@ -180,7 +180,7 @@ void nrn_read_filesdat(int& ngrp, int*& grp, const char* filesdat) {
     FILE* fp = fopen(filesdat, "r");
 
     if (!fp) {
-        nrn_fatal_error("No input file with nrnthreads, exiting...");
+        nrn_fatal_error("No input file ( %s ) with nrnthreads, exiting...", filesdat);
     }
 
     char version[256];
@@ -710,6 +710,9 @@ void nrn_cleanup_ion_map() {
 
 void nrn_cleanup() {
     clear_event_queue();  // delete left-over TQItem
+    for (auto psi: gid2in) {
+        delete psi.second;
+    }
     gid2in.clear();
     gid2out.clear();
 

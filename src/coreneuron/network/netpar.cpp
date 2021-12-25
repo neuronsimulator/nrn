@@ -286,7 +286,10 @@ void nrn_spike_exchange_init() {
             t_exchange_ = t;
             dt1_ = rev_dt;
             usable_mindelay_ = floor(mindelay_ * dt1_ + 1e-9) * dt;
-            assert(usable_mindelay_ >= dt && (usable_mindelay_ * dt1_) < 255);
+            if (usable_mindelay_ * dt1_ >= 255.) {
+                usable_mindelay_ = 255. / dt1_;
+            }
+            assert(usable_mindelay_ >= dt && (usable_mindelay_ * dt1_) <= 255.);
         } else {
 #if nrn_spikebuf_size > 0
             if (spbufout) {
@@ -366,6 +369,7 @@ void nrn_spike_exchange(NrnThread* nt) {
             ps->send(spikein[i].spiketime, net_cvode_instance, nt);
         }
     }
+    nrn_multithread_job(interthread_enqueue);
     wt1_ = nrn_wtime() - wt;
 }
 
@@ -482,6 +486,12 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
             }
         }
     }
+    // In case of multiple threads some above ps->send events put
+    // NetCon events into interthread buffers. Some of those may
+    // need to be delivered early enough that the interthread buffers
+    // need transfer to the thread event queues before the next dqueue_bin
+    // while loop in deliver_net_events. So enqueue now...
+    nrn_multithread_job(interthread_enqueue);
     t_exchange_ = nrn_threads->_t;
     wt1_ = nrn_wtime() - wt;
 }
@@ -606,6 +616,7 @@ void BBS_netpar_solve(double tstop) {
         }
 
         nrn_timeout(timeout_);
+        nrn_multithread_job(interthread_enqueue);
         ncs2nrn_integrate(tstop * (1. + 1e-11));
         nrn_spike_exchange(nrn_threads);
         nrn_timeout(0);

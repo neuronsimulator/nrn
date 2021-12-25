@@ -135,6 +135,10 @@ void NetCvodeThreadData::interthread_send(double td, DiscreteEvent* db, NrnThrea
     inter_thread_events_.emplace_back(InterThreadEvent{db, td});
 }
 
+void interthread_enqueue(NrnThread* nt) {
+    net_cvode_instance->p[nt->id].enqueue(net_cvode_instance, nt);
+}
+
 void NetCvodeThreadData::enqueue(NetCvode* nc, NrnThread* nt) {
     std::lock_guard<OMP_Mutex> lock(mut);
     for (const auto& ite: inter_thread_events_) {
@@ -229,14 +233,14 @@ void NetCvode::clear_events() {
         d.unreffed_event_cnt_ = 0;
         d.inter_thread_events_.clear();
         d.tqe_->nshift_ = -1;
-        d.tqe_->shift_bin(nrn_threads->_t);
+        d.tqe_->shift_bin(nrn_threads->_t - 0.5 * nrn_threads->_dt);
     }
 }
 
 void NetCvode::init_events() {
     for (int i = 0; i < nrn_nthread; ++i) {
         p[i].tqe_->nshift_ = -1;
-        p[i].tqe_->shift_bin(nrn_threads->_t);
+        p[i].tqe_->shift_bin(nrn_threads->_t - 0.5 * nrn_threads->_dt);
     }
 
     for (int tid = 0; tid < nrn_nthread; ++tid) {  // can be done in parallel
