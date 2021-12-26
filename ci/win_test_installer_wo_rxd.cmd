@@ -1,3 +1,6 @@
+:: temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
+:: see https://github.com/neuronsimulator/nrn/issues/1522
+
 @echo on
 
 :: error variable
@@ -17,17 +20,17 @@ echo %NEURONHOME%
 if not exist association.hoc.out (start /wait /REALTIME %cd%\ci\association.hoc)
 
 :: test all pythons
-C:\Python36\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python37\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python38\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python39\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
-C:\Python310\python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+C:\Python36\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python37\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python38\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python39\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
+C:\Python310\python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: install numpy dependency
 python -m pip install numpy
 :: run also using whatever is system python
 python --version
-python -c "import neuron; neuron.test(); neuron.test_rxd(); quit()" || set "errorfound=y"
+python -c "import neuron; neuron.test(); quit()" || set "errorfound=y"
 
 :: test python and nrniv
 python -c "from neuron import h; s = h.Section(); s.insert('hh'); quit()" || set "errorfound=y"
@@ -52,9 +55,6 @@ copy /A share\examples\nrniv\nmodl\cacum.mod .
 call nrnivmodl
 echo "nrnivmodl successfull"
 python -c "import neuron; from neuron import h; s = h.Section(); s.insert('cacum'); print('cacum inserted'); quit()" || set "errorfound=y"
-
-:: text rxd
-python share\lib\python\neuron\rxdtests\run_all.py || set "errorfound=y"
 
 :: Test of association with hoc files. This test is very tricky to handle. We do it in two steps.
 :: 2nd step -> check association.hoc output after we've launched 1step in previous CI step

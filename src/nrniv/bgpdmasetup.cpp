@@ -121,7 +121,6 @@ static int* newoffset(int* acnt, int size) {
 
 // input scnt, sdispl ; output, newly allocated rcnt, rdispl
 static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
-	int i;
 	int np = nrnmpi_numprocs;
 	int* c = newintval(1, np);
 	rdispl = newoffset(c, np);
@@ -132,7 +131,13 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
 	rdispl = newoffset(rcnt, np);
 }
 
-#define all2allv_perf 1
+/*
+define following to 1 if desire space/performance information such as:
+all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
+all2allv_int gidout space=528 total=37379376 time=1.641e-05
+all2allv_int lists space=3088 total=37351312 time=4.4708e-05
+*/
+#define all2allv_perf 0
 extern "C" {
     extern unsigned long long nrn_mallinfo(int);
 } // extern "C"
@@ -350,7 +355,7 @@ static void fill_dma_send_lists(int sz, int* r) {
 		}
 	}}}
 	if (use_phase2_) NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
+		BGP_DMASend_Phase2* bsp = ps->bgp.dma_send_phase2_;
 		if (bsp && max_multisend_targets < bsp->ntarget_hosts_phase2_) {
 			max_multisend_targets = bsp->ntarget_hosts_phase2_;
 		}
@@ -374,6 +379,7 @@ static int setup_target_lists(int** r_return) {
 	// scnt is number of input gids from target
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+                assert(ps->gid_ == gid); // avoid unused warning
 		++scnt[gid%nhost];
 	}}}
 
@@ -381,6 +387,7 @@ static int setup_target_lists(int** r_return) {
 	sdispl = newoffset(scnt, nhost);
 	s = newintval(0, sdispl[nhost]);
 	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+		assert(ps->gid_ == gid); // avoid unused warning
 		s[sdispl[gid%nhost]++] = gid;
 	}}}
 	// Restore sdispl for the message.
@@ -522,6 +529,7 @@ static int setup_target_lists(int** r_return) {
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
 	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+		assert(gid >= 0); // avoid unused warning
 		if (tl->rank < 0) {
 			// When the output gid does not generate spikes, that rank
 			// is not interested if there is a target list for it.
@@ -592,6 +600,7 @@ static int setup_target_lists(int** r_return) {
 		delete tl;
 	}}}
 	delete gid2tarlist;
+	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
 	all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "lists");
 	del(s);
