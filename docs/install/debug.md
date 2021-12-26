@@ -177,7 +177,12 @@ NEURON has recently gained built-in support for performance profilers. Many mode
 
 #### Instrumentation
 
-NEURONs code has been already instrumented with instrumentor regions in many performance-critical functions of the code. The existing regions have been given the same names as in CoreNEURON to allow side-by-side comparision when running simulations with and without CoreNEURON enabled. More regions can easily be added into the code in one of two ways:
+Many performance-critical regions of the NEURON codebase have been instrumented
+for profiling.
+The existing regions have been given the same names as in CoreNEURON to allow
+side-by-side comparision when running simulations with and without CoreNEURON
+enabled.
+More regions can easily be added into the code in one of two ways:
 
 1. using calls to `phase_begin()`, `phase_end()`
 
@@ -210,12 +215,19 @@ To enable a profiler, one needs to rebuild NEURON with the appropriate flags set
 ```bash
 mkdir build && cd build
 cmake .. -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper -DCMAKE_PREFIX_PATH=/path/to/caliper/share/cmake/caliper -DNRN_ENABLE_TESTS=ON
-make
+cmake --build . --parallel
 ```
+or if you are building CoreNEURON standalone:
+```bash
+mkdir build && cd build
+cmake .. -DCORENRN_ENABLE_CALIPER_PROFILING=ON -DCORENRN_ENABLE_UNIT_TESTS=ON
+cmake --build . --parallel
+```
+in both cases you might need to add something like `/path/to/caliper/share/cmake/caliper` to the `CMAKE_PREFIX_PATH` variable to help CMake find your installed version of Caliper.
 
 Now, one can easily benchmark the default ringtest by prepending the proper Caliper environment variable, as described [here](https://software.llnl.gov/Caliper/CaliperBasics.html#region-profiling).
 
-```
+```bash
 $ CALI_CONFIG=runtime-report,calc.inclusive nrniv ring.hoc
 NEURON -- VERSION 8.0a-693-gabe0abaac+ magkanar/instrumentation (abe0abaac+) 2021-10-12
 Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021
@@ -256,5 +268,65 @@ finitialize                   0.000235      0.000235      0.000235  0.161020
   gap-v-transfer              0.000003      0.000003      0.000003  0.002056
 ```
 
+#### Running GPU benchmarks
 
+Caliper can also be configured to generate [NVTX](https://nvtx.readthedocs.io/en/latest/) annotations for instrumented code regions, which is useful for profiling GPU execution using NVIDIA's tools.
+In a GPU build with Caliper support (`-DCORENRN_ENABLE_GPU=ON -DNRN_ENABLE_PROFILING=ON -DNRN_PROFILER=caliper`), you can enable NVTX annotations at runtime by adding `nvtx` to the `CALI_CONFIG` environment variable.
 
+A complete prefix to profile a CoreNEURON process with NVIDIA Nsight Systems could be:
+
+```bash
+ nsys profile --env-var NSYS_NVTX_PROFILER_REGISTER_ONLY=0,CALI_CONFIG=nvtx,OMP_NUM_THREADS=1 --stats=true --cuda-um-gpu-page-faults=true --cuda-um-cpu-page-faults=true --trace=cuda,nvtx,openacc,openmp,osrt --capture-range=nvtx --nvtx-capture=simulation <exe>
+```
+where `NSYS_NVTX_PROFILER_REGISTER_ONLY=0` is required because Caliper does not use NVTX registered string APIs. The `<exe>` command is likely to be something similar to
+
+```bash
+# with python
+path/to/x86_64/special -python your_sim.py
+# or, with hoc
+path/to/x86_64/special your_sim.hoc
+# or, if you are executing coreneuron directly
+path/to/x86_64/special-core --datpath path/to/input/data --gpu --tstop 1
+```
+
+You may like to experiment with setting `OMP_NUM_THREADS` to a value larger than
+1, but the profiling tools can struggle if there are too many CPU threads
+launching GPU kernels in parallel.
+
+For a more detailed analysis of a certain kernel you can use [NVIDIA Nsight
+Compute](https://developer.nvidia.com/nsight-compute). This is a kernel profiler
+for applications executed on NVIDIA GPUs and supports the OpenACC and OpenMP
+backends of CoreNEURON.
+This tool provides more detailed information in a nice graphical environment
+about the kernel execution on the GPU including metrics like SM throughput, memory
+bandwidth utilization, automatic roofline model generation, etc.
+To provide all this information the tool needs to rerun the kernel you're interested in
+multiple times, which makes execution ~20-30 times slower.
+For this reason we recommend running first Caliper with Nsight Systems to find
+the name of the kernel you're interested in and then select on this kernel for
+analysis with Nsight Compute.
+In case you're interested in multiple kernels you can relaunch Nsight Compute with the other
+kernels separately.
+
+To launch Nsight Compute you can use the following command:
+```bash
+ncu -k <kernel_name> --profile-from-start=off --target-processes all --set <section_set> <exe>
+```
+
+where
+* `kernel_name`: The name of the kernel you want to profile. You may also provide a regex with `regex:<name>`.
+* `section_set`: Provides set of sections of the kernel you want to be analyzed. To get the list of sections you can run `ncu --list-sets`.
+
+The most commonly used is `detailed` which provides most information about the kernel execution and `full` which provides all the details
+about the kernel execution and memory utilization in the GPU but takes more time to run.
+For more information about Nsight Compute options you can consult the [Nsight Compute Documentation](https://docs.nvidia.com/nsight-compute/2021.3/NsightComputeCli/index.html).
+
+Notes:
+- CoreNEURON allocates a large number of small objects separately in CUDA
+  managed memory to record the state of the Random123 pseudorandom number
+  generator. This makes the Nsight Compute profiler very slow, and makes it
+  impractical to use Nsight Systems during the initialization phase. If the
+  Boost library is available then CoreNEURON will use a memory pool for these
+  small objects to dramatically reduce the number of calls to the CUDA runtime
+  API to allocate managed memory. It is, therefore, highly recommended to make
+  Boost available when using GPU profiling tools.
