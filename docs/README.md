@@ -6,9 +6,9 @@ Latest NEURON documentation is available on:
 * GithubPages @ [https://neuronsimulator.github.io/nrn/](https://neuronsimulator.github.io/nrn/).
 
 Contents:
-* documentation on building NEURON
-* user documentation (HOC, Python, tutorials, rxd)
-* developer documentation (SCM, technical topics, Doxygen)
+* Documentation on building NEURON
+* User documentation (HOC, Python, tutorials, rxd)
+* Developer documentation (SCM, technical topics, Doxygen)
 
 ### Local build
 
@@ -27,9 +27,9 @@ pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
 
 Also, make sure to have `Doxygen` installed and the dependencies listed in [conda_environment.yml](conda_environment.yml)
-(note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements).
+Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
 
-With all dependencies installed, configure project with CMake as described in [README](../README.md). 
+With all dependencies installed, configure project with CMake as described in [README](../README.md).
 
 e.g. in your CMake build folder:
 
@@ -39,20 +39,20 @@ cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install
 
 #### Building the documentation
 
-**NOTE**: Executing the jupyter notebooks requires NEURON; make sure the neuron python module can be imported.
-For that, you would normally do a `make build` + `make install`, but you could also do a `pip install neuron`
-(in case you don't want/need to compile NEURON).
+Note that executing the jupyter notebooks requires working NEURON installation. So make sure the neuron python
+module can be imported. For this, you can build and install neuron from source first or you could also do a
+`pip install neuron` (in case you don't want/need to compile NEURON from source).
 
 In order to build the full documentation (Doxygen, Jupyter notebooks, Sphinx):
 ```
 make docs
-```  
-That will build everything in the `nrn/docs/_build` folder from where you can open `index.html` locally. 
+```
+That will build everything in the `nrn/docs/_build` folder from where you can open `index.html` locally.
 
 In case you just want the Sphinx build to be performed(i.e. you are not working on Jupyter notebooks or doxygen):
 ```
 make sphinx
-```  
+```
 
 #### Faster Local Iterations
 
@@ -63,11 +63,11 @@ When working locally on documentation, depending on what you work on, be aware o
 * `notebooks-noexec`	- simply convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
 * `sphinx` 				- build Sphinx documentation
 
-**NOTE**: `docs` target calls: `doxygen` `notebooks` `sphinx`.
+**NOTE**:
+* `docs` target calls: `doxygen` `notebooks` `sphinx`.
+* `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
 
-**NOTE**: `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
-
-### ReadTheDocs.io setup
+### ReadTheDocs setup
 #### Config file
 Configuration file is in the top directory: [../.readthedocs.yml](../.readthedocs.yml).
 
