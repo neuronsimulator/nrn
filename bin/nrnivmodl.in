@@ -50,24 +50,37 @@ if command -v xcrun; then
 fi
 
 LinkCoreNEURON=false
-if [ "$1" = "-coreneuron" ] ; then
-      LinkCoreNEURON=true
-      shift
-fi
-
 UserINCFLAGS=""
-if [ "$1" = "-incflags" ] ; then
-      UserINCFLAGS="$2"
-      shift
-      shift
-fi
-
 UserLDFLAGS=""
-if [ "$1" = "-loadflags" ] ; then
-       UserLDFLAGS="$2"
-       shift
-       shift
-fi
+UserCOREFLAGS=""
+
+# - options come first but can be in any order.
+while test -n "$1" ; do
+    opt="$1"
+    case "$opt" in
+    -coreneuron)
+        # also run nrnivmodl-core
+        LinkCoreNEURON=true
+        shift;;
+    -incflags)
+        # extra include flags and paths (NEURON only)
+        UserINCFLAGS="$2"
+        shift
+        shift;;
+    -loadflags)
+        # extra link flags, paths, libraries (NEURON only)
+        UserLDFLAGS="$2"
+        # extra lin flags, paths. libraries (CoreNEURON)
+        UserCOREFLAGS="$UserCOREFLAGS -l $2"
+        shift
+        shift;;
+    -*)
+        echo "$opt unrecognized"
+        exit 1;;
+    *)
+        break;;
+    esac
+done
 
 pwd
 
@@ -279,7 +292,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
       j=`escape_spaces "$j"`
       args="$args $j"
     done
-    "${cnrn_prefix}/bin/nrnivmodl-core" $args
+    "${cnrn_prefix}/bin/nrnivmodl-core" $UserCOREFLAGS $args
     cd $MODSUBDIR
   else
     printf "ERROR : CoreNEURON support is not enabled!\n"

@@ -5,6 +5,7 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "nrncvode.h"
 #include "nrniv_mf.h"
 #include "hocdec.h"
 #include "nrncore_write/data/cell_group.h"
@@ -287,7 +288,6 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
-    int n = nt.end;
     if (copy) {
         for (int i=0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
@@ -389,7 +389,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
-    NrnThread& nt = nrn_threads[tid];
 
     output_vindex = new int[cg.n_presyn];
     output_threshold = new double[cg.n_real_output];
@@ -427,7 +426,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 int nrnthread_dat2_corepointer(int tid, int& n) {
 
     if (tid >= nrn_nthread) { return 0; }
-    NrnThread& nt = nrn_threads[tid];
 
     n = 0;
     MlWithArt& mla = cellgroups_[tid].mlwithart;
@@ -505,7 +503,6 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
     for (int i=0; i < ml->nodecount; ++i) {
-        Datum* d = ml->pdata[i];
         int ioff = i*sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
@@ -686,7 +683,6 @@ void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, in
   assert(pnt);
   int tid = ((NrnThread*)(pnt->_vnt))->id;
   int pnttype = pnt->prop->type;
-  double nrflag = wc->nrflag_; // don't care about this
   int watch_index = wc->watch_index_;
   int triggered = wc->flag_ ? 1 : 0;
   int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
@@ -739,28 +735,14 @@ static void setup_type2semantics() {
   }
 }
 
-NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
-  if (tid >= nrn_nthread) { return NULL; }
+// Copying TQItem information for transfer to CoreNEURON has been factored
+// out of nrn2core_transfer_tqueue since, if BinQ is being used, it involves
+// iterating over the BinQ as well as the normal TQueue.
+static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
+  std::unordered_map<NetCon*, std::vector<size_t> >& netcon2intdata,
+  std::unordered_map<PreSyn*, std::vector<size_t> >& presyn2intdata,
+  std::unordered_map<double*, std::vector<size_t> >& weight2intdata) {
 
-  setup_type2semantics();
-
-  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
-
-  // see comments below about same object multiple times on queue
-  // and single sweep fill
-  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
-  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
-  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
-
-  NrnThread& nt = nrn_threads[tid];
-  TQueue* tq = net_cvode_instance_event_queue(&nt);
-  TQItem* tqi;
-  auto& cg = cellgroups_[tid];
-  // make sure all buffered interthread events are on the queue
-  nrn_interthread_enqueue(&nt);
-
-  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
-    // removes all items from NEURON queue to reappear in CoreNEURON queue
     DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
     int type = de->type();
     double tdeliver = tqi->t_;
@@ -804,7 +786,6 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         // can only be determined by sweeping over all NetCon.
         
         double* data = pnt->prop->param;
-        Memb_list* ml = nt._ml_list[type];
         // Introduced the public static method below because ARTIFICIAL_CELL
         // are not located in NrnThread and are not cache efficient.
         int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
@@ -873,7 +854,6 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
         // Not supported in CoreNEURON, discard and print a warning.
         core_te->td.pop_back();
         core_te->type.pop_back();
-        HocEvent* he = (HocEvent*)de;
         // Delivery time was often reduced by a quarter step to avoid
         // fixed step roundoff problems.
         Fprintf(stderr, "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
@@ -884,7 +864,42 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
       } break;
       default: {
       } break;
-    }            
+    }
+}
+
+NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
+  if (tid >= nrn_nthread) { return NULL; }
+
+  setup_type2semantics();
+
+  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
+
+  // see comments below about same object multiple times on queue
+  // and single sweep fill
+  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
+  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
+  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
+
+  NrnThread& nt = nrn_threads[tid];
+  TQueue* tq = net_cvode_instance_event_queue(&nt);
+  TQItem* tqi;
+  auto& cg = cellgroups_[tid];
+  // make sure all buffered interthread events are on the queue
+  nrn_interthread_enqueue(&nt);
+
+  // Iterate over all tqueue items to record info needed for transfer to
+  // coreneuron. The atomic_dq removes items from the queue but misses
+  // BinQ items if present. So need separate iteration for that (hence the
+  // factoring out of the loop bodies into set_info.)
+  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
+    set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+  }
+  if (nrn_use_bin_queue_) {
+    // does not remove items but the entire queue will be cleared
+    // before using again. 
+    for (tqi = tq->binq()->first(); tqi; tqi = tq->binq()->next(tqi)) {
+      set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+    }
   }
 
   // fill in the integers for the pointer translation
@@ -935,6 +950,14 @@ NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
   }
 
   return core_te;
+}
+
+/** @brief Initialize queues before transfer
+    Probably aleady clear, but if binq then must be initialized to time.
+ */
+void core2nrn_clear_queues(double time) {
+    nrn_threads[0]._t = time; // used by clear_event_queue
+    clear_event_queue();
 }
 
 /** @brief Called from CoreNEURON core2nrn_tqueue_item.
