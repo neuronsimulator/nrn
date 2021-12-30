@@ -75,6 +75,8 @@ int matherr1(void) {
 }
 #endif
 
+int nrn_mpiabort_on_error_{1};
+
 int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
 
 void nrn_feenableexcept() {
@@ -713,12 +715,12 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	ctp = cbuf;
 	*ctp = '\0';
 
-	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
+	if (oc_jump_target_ && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
 		hoc_newobj1_err();
 		(*oc_jump_target_)();
 	}
 #if NRNMPI
-	if (nrnmpi_numprocs_world > 1) {
+	if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
 		nrnmpi_abort(-1);
 	}
 #endif
