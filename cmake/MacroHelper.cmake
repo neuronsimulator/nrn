@@ -257,3 +257,23 @@ macro(nrn_install_dir_symlink source_dir symlink_dir)
     # create symbolic link
     install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
 endmacro(nrn_install_dir_symlink)
+
+# ========================================================================
+# There is an edge case to 'find_package(MPI REQUIRED)' in that we can
+# still build a universal2 macos package on an arm64 architecture even if
+# the mpi library has no slice for x86_64.
+# ========================================================================
+macro(NRN_MPI_FIND_PACKAGE)
+  if ("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
+    AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+    AND NRN_ENABLE_MPI_DYNAMIC)
+    set(_temp ${CMAKE_OSX_ARCHITECTURES})
+    set(CMAKE_OSX_ARCHITECTURES arm64 CACHE INTERNAL "" FORCE)
+    find_package(MPI REQUIRED)
+    set(CMAKE_OSX_ARCHITECTURES ${_temp} CACHE INTERNAL "" FORCE)
+    set(NRN_UNIVERSAL2_BUILD ON)
+  else()
+    find_package(MPI REQUIRED)
+  endif()
+endmacro()
+

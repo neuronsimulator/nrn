@@ -1,18 +1,22 @@
 #!/bin/bash
 set -ex
+
+default_pythons="python3.8 python3.9 python3.10"
 # distribution built with
-# bash bldnrnmacpkgcmake.sh python3.6 python3.7 python3.8 python3.9
-# without args, default is the 5 pythons above.
+# bash bldnrnmacpkgcmake.sh
+# without args, default are the pythons above.
+
 
 CPU=`uname -m`
 
+universal="yes" # changes to "no" if not arm64 or any python not universal
+if test "$CPU" != "arm64" ; then
+  universal="no"
+fi
+
 args="$*"
 if test "$args" = "" ; then
-  if test "$CPU" = "x86_64" ; then
-    args="python3.6 python3.7 python3.8 python3.9"
-  else # arm64
-    args="python3 python3.9"
-  fi
+  args="$default_pythons"
 fi
 
 #10.7 possible if one builds with pythons that are consistent with that.
@@ -36,13 +40,25 @@ mkdir -p $NRN_BLD
 rm -r -f $NRN_BLD/*
 cd $NRN_BLD
 
-PYVS="py" # will be part of package file name, eg. py-27-35-36-37-38
+PYVS="py" # will be part of package file name, eg. py-37-38-39-310
 pythons="" # will be arg value of NRN_PYTHON_DYNAMIC
 for i in $args ; do
   PYVER=`$i -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
   PYVS=${PYVS}-${PYVER}
   pythons="${pythons}${i};"
+  pypath="`which $i`"
+  archs="`lipo -archs $pypath"
+  if test "$archs" != "x86_64 arm64" ; then
+    universal="no"
+  fi
 done
+
+archs_pkg="" # will be part of the package file name, eg. -arm64-x86_64
+archs_cmake="" # arg for CMAKE_OSX_ARCHITECTURES, eg. arm64;x86_64
+if test "$universal" = "yes" ; then
+  archs_pkg="-arm64-x86_64"
+  archs_cmake='-DCMAKE_OSX_ARCHITECTURE="arm64;x86_64"'
+fi
 
 # The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
 # is to definitely link against the xquartz.org installation instead
@@ -57,11 +73,19 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
-  -DCMAKE_OSX_ARCHITECTURES="$CPU" \
+  $archs_cmake \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
 make -j install
+
+if test "$universal" = "yes" ; then
+  _temp="`lipo -archs $NRN_INSTALL/share/nrn/demo/release/arm64/special`"
+  if test "$_temp" != "x86_64 arm64" ; then
+    echo "universal build failed. lipo -archs .../special is \"$_temp\" instead of \"x86_64 arm64\""
+    exit 1
+  fi
+fi
 $NRN_INSTALL/bin/neurondemo -c 'quit()'
 
 chk () {
@@ -99,7 +123,7 @@ done
 # upload package to neuron.yale.edu
 ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
-PACKAGE_FULL_NAME=nrn-${describe}-osx-${CPU}-${PYVS}.pkg
+PACKAGE_FULL_NAME=nrn-${describe}-osx${archs_pkg}-${PYVS}.pkg
 PACKATE_DOWNLOAD_NAME=$ALPHADIR/$PACKAGE_FULL_NAME
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 echo "
