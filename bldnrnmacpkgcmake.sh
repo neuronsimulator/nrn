@@ -47,7 +47,7 @@ for i in $args ; do
   PYVS=${PYVS}-${PYVER}
   pythons="${pythons}${i};"
   pypath="`which $i`"
-  archs="`lipo -archs $pypath"
+  archs="`lipo -archs $pypath`"
   if test "$archs" != "x86_64 arm64" ; then
     universal="no"
   fi
@@ -57,7 +57,7 @@ archs_pkg="" # will be part of the package file name, eg. -arm64-x86_64
 archs_cmake="" # arg for CMAKE_OSX_ARCHITECTURES, eg. arm64;x86_64
 if test "$universal" = "yes" ; then
   archs_pkg="-arm64-x86_64"
-  archs_cmake='-DCMAKE_OSX_ARCHITECTURE="arm64;x86_64"'
+  archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 fi
 
 # The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
