@@ -17,23 +17,69 @@ pip3 install neuron
 Python wheels are provided via [pypi.org](https://pypi.org/project/NEURON/). Note that Python2
 wheels are provided for the 8.0.x release series exclusively.
 
-Like Windows, you can also use a binary installer to install NEURON. You can download alpha or recent
-releases from below URLs:
+Like Windows, you can also use a binary installer to install NEURON.
+Recent releases are at
 
-* [Alpha releases](https://neuron.yale.edu/ftp/neuron/versions/alpha/)
-* [Recent Releases](https://neuron.yale.edu/ftp/neuron/versions/)
+* [Recent Releases](https://github.com/neuronsimulator/nrn/releases)
 
-Mac OS installers have name in the format of `nrn-<version-id>-osx-36-37-38-39.pkg`. Like windows
-installer, `py-36-37-38-39` string in the installer name indicates that the given installer is
+You can download legacy versions from:
+
+* [Legacy Versions](https://neuron.yale.edu/ftp/neuron/versions/)
+
+Earlier Mac OS pkg installers have name in the format of
+`nrn-<version-id>-osx-36-37-38-39.pkg`.
+Like windows installers,
+the, `py-36-37-38-39` string in the installer name indicates that the given installer is
 compatible with Python versions 3.6, 3.7, 3.8 and 3.9. Note that if you double-click the installer
 then you might see warning like below. In this case you have to right-click on the installer and then
 click `Open`. You can then see an option to `Open` installer: 
 
+The latest Mac OS pkg installers (as of 2022-01-01) are universal2 installers
+(for arm64 and x86_64) and extend the name convention to specify which
+architectures they run on. 
+`nrn-<version-id>-osx-<archs>-py-<pythonversions>.pkg`
+e.g.
+`nrn-8.0a-690-g3ddaecc21-osx-arm64-x86_64-py-38-39-310.pkg`
+
 ![Installer Warning](../_static/osx_installer_warning_solution.png "Mac OS Warning")
 
-This will install NEURON under directory `/Applications/NEURON-<version>/` directory. For GUI support you
+The latest pkg installers will install NEURON under the directory `/Applications/NEURON/` directory.
+Uninstallng consists of dragging that folder to the trash. For GUI support you
 have to install [XQuartz](https://www.xquartz.org/) separately. Once you start Terminal application, NEURON
 binaries (`nrniv`, `neurondemo` etc.) should be available to start.
+
+* Universal2 installers generally "just work" on either an x86_64 or arm64
+architecture.
+
+  ```
+  python
+  from neuron import h
+  ```
+  and ```nrnivmodl``` will by default create an nmodl mechanism library
+  specifically for the architecture you run on.
+
+  But it may be the case on Apple M1 that you install a python that can
+  only run as an x86_64 program under Rosetta2.
+  E.g. The latest Anaconda Python3.9 (though it seems likely that the next
+  distribution will be universal2).
+  In this case, if you wish to launch nrniv, force nrniv to launch as an x86_64
+  program. E.g.
+  ```
+  arch -arch x86_64 nrniv -python
+  from neuron import h
+  ```
+  Furthermore, be sure to run nrnivmodl in such a way that it compiles as an
+  x86_64 library. e.g.
+  ```
+  arch -arch x86_64 nrnivmodl
+  ```
+  although this constructs an arm64 folder, it will compile and link as x86_64.
+  ```
+  % lipo -archs arm64/libnrnmech.dylib
+  x86_64
+  ```
+  Note: there is an environment variable called `ARCHPREFERENCE`. See 
+  `man arch`.
 
 #### Linux
 

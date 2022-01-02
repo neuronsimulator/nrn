@@ -1,22 +1,29 @@
 Mac Binary Package (Apple M1 and Mac x86_64)
 ------------------
 
-Binary packages are built with the ```nrnmacpkgcmake.sh``` script which,
-near the end of its operation,
-involves code signing, package signing, and notarization.
+Macos binary packages are built with the
+[bldnrnmacpkgcmake.sh](https://github.com/neuronsimulator/nrn/blob/master/bldnrnmacpkgcmake.sh)
+script which, near the end of its operation,
+involves code signing, package signing, and notarization. If built on an
+Apple M1, the build will be universal2 and work on arm64 and x86_64 architectures.
 Preparing your Mac development environment for correct functioning of
 the script requires installing a few extra [Dependencies](#Dependencies) beyond the
-[normal user source build](./install_instructions.html#Mac-OS-Depend), obtaining an Apple Developer Program membership,
+[normal user source build](./install_instructions.html#Mac-OS-Depend),
+obtaining an Apple Developer Program membership,
 and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
 On an Apple M1,
 the script, by default, creates, e.g.,
-```nrn-8.0a-427-g1a80b2cc-osx-arm64-py-38-39.pkg```
-where the information between nrn and osx comes from ```git describe```
+```nrn-8.0a-714-g76a270bbc-osx-arm64-x86_64-py-38-39-310.pkg```
+where the information between nrn and osx comes from ```git describe```,
+the item(s) between osx and py indicate the architecures on which
+the program can run,
 and the numbers after the py indicate the python versions that are
 compatible with this package. Those python versions must be installed on
 the developer machine. On a Mac x86_64 architecture the script, by default,
-creates, e.g., ```nrn-8.0a-427-g1a80b2cc-osx-x86_64-py-27-36-37-38-39.pkg```
+creates, e.g., ```nrn-8.0a-427-g1a80b2cc-osx-x86_64-py-38-39-310.pkg```
+On a Mac arm64 architecture, the script will build a universal pkg only
+if all the Python's are themselves universal.
 
 A space separated list of python executable arguments can be used in
 place of the internal default lists. ```$NRN_SRC``` is the location of the
@@ -28,22 +35,27 @@ At time of writing, the cmake
 command in the script that is used to configure the build is
 ```
 cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
-  -DNRN_ENABLE_MPI_DYNAMIC=ON \ 
+  -DNRN_ENABLE_MPI_DYNAMIC=ON \
   -DPYTHON_EXECUTABLE=`which python3` -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
   -DNRN_PYTHON_DYNAMIC="$pythons" \
   -DIV_ENABLE_X11_DYNAMIC=ON \
   -DNRN_ENABLE_CORENEURON=OFF \
   -DNRN_RX3D_OPT_LEVEL=2 \
-  -DCMAKE_OSX_ARCHITECTURES="$CPU" \
+  $archs_cmake \
+  -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+```
+An an arm64 the default variables above will be
+```
+pythons="python3.8 python3.9 python3.10"
+archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 ```
 
 A universal build is possible with ```-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"```
-but the installations for openmpi and python on your machine must also be universal.
-I.e. configure with ```-DNRN_ENABLE_MPI_DYNAMIC=OFF -DNRN_PYTHON_DYNAMIC=/usr/bin/python3```.
-As we have been unable to find or build a universal openmpi, and
-only the Big Sur default Python 3.8 installaion is universal, we are
-currently building separate installers for arm64 and x86_64.
+but the installations of python on your machine must also be universal.
+The MPI library does not have to be universal if configuring with
+```-DNRN_ENABLE_MPI_DYNAMIC=ON``` as the library is not linked against
+during the build.
 
 ```make -j install``` is used to build and install in ```/Applications/NEURON```
 
@@ -73,6 +85,12 @@ currently building separate installers for arm64 and x86_64.
 
 - request Apple to notarize NEURON.pkg ```src/macnrn_notarize.sh```
 
+  If notatarizaton fails, it is occasionally due to Apple
+  changing the contracts and demanding that 
+  "You must first sign the relevant contracts online. (1048)". In that
+  case, go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com
+  to accept the legal docs.
+
 The script ends by printing:
 ```
   Until we figure out how to automatically staple the notarization
@@ -100,25 +118,28 @@ x86_64 arm64
 ```
 which is generally the case for all Big Sur mac software. On the other
 hand, ```brew install ...``` executables and libraries are 
-generally only for the architecture indicated by
-```
-uname -m
-```
+generally only for the architecture indicated by ```uname -m```. That is
+ok for openmpi but since the various python libraries are linked against
+during build to create the version specific neuron modules, those python
+installers also have to be universal. Fortunately, universal python versions
+can be found at [python.org](http://python.org/Downloads/macOS) at least for
+(as of 2022-01-01) python3.8, python3.9, and python3.10.
 
 - ```xcode-select --install```:
 
   - Sadly, notarization requires ```altool``` which is not distributed
     with the command line tools. So one needs to install the full xcode
     (at least version 12) from the App Store. That is very large and may
-    take an hour or so to download.
+    take an hour or so to download. (should be checked to see if this is
+    still the case.)
 
 - Install latest [XQuartz](http://xquartz.org) release. At least XQuartz-2.8.0_rc1
 
 - Install [PackagesBuild](http://s.sudre.free.fr/Software/Packages/about.html)
 
-- ```brew install cmake open-mpi python3.9```
+- ```brew install coreutils cmake bison flex open-mpi```
 
-  - Python 3.8 is already installed as /usr/bin/python3
+  - Python 3.8 is already installed as /usr/bin/python3 and is universal2.
 
   - The [normal source build](./install_instructions.html#Mac-OS-Depend)
     explains how to install brew and add it to the PATH.
@@ -128,15 +149,17 @@ uname -m
     eval $(/opt/homebrew/bin/brew shellenv)
     ```
 
-  - Both pythons need numpy installed
+  - Default build uses universal pythons from python.org. I also redundantly
+    include their python3.8 as I find it more convenient to be able to
+    explicitly specify the full name as python3.8.
+
+  - All pythons used for building need numpy installed, e.g.
     ```
     pip3.9 install --user --upgrade pip
     pip3.9 install --user numpy
-    python3 -m pip install --user --upgrade pip
-    python3 -m pip install --user numpy
     ```
 
-  - At least the first python3 in your PATH needs cython installed
+  - At least one python3 in your PATH needs cython installed
     ```
     python3 -m pip install --user cython
     ```
