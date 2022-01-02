@@ -24,6 +24,9 @@ static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 extern "C" char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
+#if DARWIN
+extern void  nrn_possible_mismatched_arch(const char*);
+#endif
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
@@ -230,6 +233,9 @@ void nrnpython_reg() {
 		handle = dlopen(nrnpy_pylib, RTLD_NOW|RTLD_GLOBAL);
 		if (!handle) {
 			fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrnpy_pylib);
+#if DARWIN
+			nrn_possible_mismatched_arch(nrnpy_pylib);
+#endif
 			exit(1);
 		}
 	}

@@ -57,6 +57,35 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
 #endif
 
+// error message hint with regard to mismatched arch
+void nrn_possible_mismatched_arch(const char* libname) {
+    if (strncmp(NRNHOSTCPU, "arm64", 5) == 0) {
+        // what arch are we running on
+#if __arm64__
+        const char* we_are{"arm64"};
+#elif __x86_64__
+        const char* we_are{"x86_64"};
+#endif
+
+        // what arch did we try to dlopen
+        char* cmd;
+        cmd = new char[strlen(libname) + 100];
+        sprintf(cmd, "lipo -archs %s 2> /dev/null", libname);
+	char libname_arch[20]{0};
+        FILE* p = popen(cmd, "r");
+        delete [] cmd;
+        if (!p) { return; }
+        fgets(libname_arch, 18, p);
+        if (strlen(libname_arch) == 0) {return;}
+        pclose(p);
+        
+        if (strstr(libname_arch, we_are) == NULL) {
+            fprintf(stderr, "libnrniv.dylib running as %s\n", we_are);
+            fprintf(stderr, "but %s can only run as %s\n", libname, libname_arch);
+        }
+    }
+}
+
 #if __GNUC__ < 4
 #include "osxdlfcn.h"
 #include "osxdlfcn.cpp"
@@ -230,12 +259,20 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
 #endif /* not HAVE_REALPATH */
   if (abspath) {
     handle = dlopen(abspath, flags);
+#if DARWIN
+    if (!handle) {
+        nrn_possible_mismatched_arch(abspath);
+    }
+#endif
     free(abspath);
   }else{
     int patherr = errno;
     handle = dlopen(relpath, flags);
     if (!handle) {
       Fprintf(stderr, "realpath failed errno=%d (%s) and dlopen failed with %s\n", patherr, strerror(patherr), relpath);
+#if DARWIN
+        nrn_possible_mismatched_arch(abspath);
+#endif
     }
   }
   return handle;

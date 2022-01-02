@@ -78,6 +78,16 @@ architecture.
   % lipo -archs arm64/libnrnmech.dylib
   x86_64
   ```
+
+  If, at runtime there is architecture mismatch between python, MPI,
+  libnrnmech.so, or libnrniv.dylib, you will see an error message similar
+  to
+  ```
+  Could not dlopen NRN_PYLIB: /Users/hines/opt/anaconda3/lib/libpython3.9.dylib
+  libnrniv.dylib running as arm64
+  but /Users/hines/opt/anaconda3/lib/libpython3.9.dylib can only run as x86_64
+  ```
+
   Note: there is an environment variable called `ARCHPREFERENCE`. See 
   `man arch`.
 
