@@ -16,7 +16,7 @@ On an Apple M1,
 the script, by default, creates, e.g.,
 ```nrn-8.0a-714-g76a270bbc-osx-arm64-x86_64-py-38-39-310.pkg```
 where the information between nrn and osx comes from ```git describe```,
-the item(s) between osx and py indicate the architecures on which
+the item(s) between osx and py indicate the architectures on which
 the program can run,
 and the numbers after the py indicate the python versions that are
 compatible with this package. Those python versions must be installed on
@@ -45,7 +45,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 ```
-An an arm64 the default variables above will be
+On an arm64 the default variables above will be
 ```
 pythons="python3.8 python3.9 python3.10"
 archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
