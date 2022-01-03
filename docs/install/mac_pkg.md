@@ -85,11 +85,28 @@ during the build.
 
 - request Apple to notarize NEURON.pkg ```src/macnrn_notarize.sh```
 
-  If notatarizaton fails, it is occasionally due to Apple
+  If notarizaton fails, it is occasionally due to Apple
   changing the contracts and demanding that 
   "You must first sign the relevant contracts online. (1048)". In that
-  case, go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com
-  to accept the legal docs.
+  case, go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
+  to accept the legal docs.  For other notarization failures, one must consult
+  the LogFileURL which can be obtained with
+  ```
+  % xcrun altool  --notarization-info $RequestIdentifier \
+      --username "michael.hines@yale.edu" \
+      --password "`cat ~/.ssh/notarization-password`"
+  No errors getting notarization info.
+
+            Date: 2022-01-02 23:38:12 +0000
+            Hash: 7254157952d4f3573c2804879cf6da8d...
+     LogFileURL: https://osxapps-ssl.itunes.apple.com/itunes-assets...
+     RequestUUID: 152f0f0e-af58-4d22-b291-6a441825dd20
+          Status: invalid
+     Status Code: 2
+  Status Message: Package Invalid
+  ```
+  where RequestIdentifer (the RequestUUID) appears in the email sent
+  back in response to the notarization request.
 
 The script ends by printing:
 ```
