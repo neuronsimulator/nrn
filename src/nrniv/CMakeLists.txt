@@ -9,42 +9,71 @@ add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
-flex_target(modlunitlexer ${NRN_MODLUNIT_SRC_DIR}/lex.lpp ${NRN_MODLUNIT_SRC_DIR}/lex.cpp)
+set(NRN_MODLUNIT_GEN "${CMAKE_CURRENT_BINARY_DIR}/modlunit_generated")
+file(MAKE_DIRECTORY "${NRN_MODLUNIT_GEN}")
+file(RELATIVE_PATH NRN_MODLUNIT_SRC_REL "${NRN_MODLUNIT_GEN}" "${NRN_MODLUNIT_SRC_DIR}")
+# Run flex and bison with relative paths, so absolute paths are not present in the generated source
+# file because of include, __FILE__ and so on. This improves ccache performance.
+add_custom_command(
+  OUTPUT "${NRN_MODLUNIT_GEN}/lex.cpp"
+  WORKING_DIRECTORY "${NRN_MODLUNIT_GEN}"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS -o lex.cpp "${NRN_MODLUNIT_SRC_REL}/lex.lpp"
+  DEPENDS "${NRN_MODLUNIT_SRC_DIR}/lex.lpp"
+  COMMENT "[FLEX][modlunitlexer] Building scanner with flex ${FLEX_VERSION}")
+add_custom_command(
+  OUTPUT "${NRN_MODLUNIT_GEN}/parse1.hpp" "${NRN_MODLUNIT_GEN}/parse1.cpp"
+  WORKING_DIRECTORY "${NRN_MODLUNIT_GEN}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse1.hpp -o parse1.cpp
+          "${NRN_MODLUNIT_SRC_REL}/parse1.ypp"
+  DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
+  COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
-bison_target(modlunitparser ${NRN_MODLUNIT_SRC_DIR}/parse1.ypp ${NRN_MODLUNIT_SRC_DIR}/parse1.cpp
-             DEFINES_FILE ${NRN_MODLUNIT_SRC_DIR}/parse1.hpp)
+add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
+                        "${NRN_MODLUNIT_GEN}/parse1.cpp")
+target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
+# Generated .cpp needs to find source-directory .hpp and vice versa.
+target_include_directories(modlunit PRIVATE "${NRN_MODLUNIT_SRC_DIR}" "${NRN_MODLUNIT_GEN}")
 
-set_property(
-  SOURCE ${NRN_MODLUNIT_SRC_FILES}
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS NRNUNIT=1)
-
-add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES})
-
-if (NRN_NMODL_CXX_FLAGS)
+if(NRN_NMODL_CXX_FLAGS)
   target_compile_options(modlunit PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()
 
 # =============================================================================
 # Build nocmodl : source-to-source compiler for NMODL
 # =============================================================================
-flex_target(nocmodllexer ${NRN_NMODL_SRC_DIR}/lex.lpp ${NRN_NMODL_SRC_DIR}/lex.cpp)
+set(NRN_NMODL_GEN "${CMAKE_CURRENT_BINARY_DIR}/nocmodl_generated")
+file(MAKE_DIRECTORY "${NRN_NMODL_GEN}")
+file(RELATIVE_PATH NRN_NMODL_SRC_REL "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}")
+add_custom_command(
+  OUTPUT "${NRN_NMODL_GEN}/lex.cpp"
+  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
+  COMMAND "${FLEX_EXECUTABLE}" ARGS -o lex.cpp "${NRN_NMODL_SRC_REL}/lex.lpp"
+  DEPENDS "${NRN_NMODL_SRC_DIR}/lex.lpp"
+  COMMENT "[FLEX][nocmodllexer] Building scanner with flex ${FLEX_VERSION}")
+add_custom_command(
+  OUTPUT "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
+  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse1.hpp -o parse1.cpp
+          "${NRN_NMODL_SRC_REL}/parse1.ypp"
+  DEPENDS "${NRN_NMODL_SRC_DIR}/parse1.ypp"
+  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
+add_custom_command(
+  OUTPUT "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp"
+  WORKING_DIRECTORY "${NRN_NMODL_GEN}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=diffeq.hpp -o diffeq.cpp
+          "${NRN_NMODL_SRC_REL}/diffeq.ypp"
+  DEPENDS "${NRN_NMODL_SRC_DIR}/diffeq.ypp"
+  COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/parse1.ypp ${NRN_NMODL_SRC_DIR}/parse1.cpp DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/parse1.hpp)
-
-bison_target(nocmodlparser ${NRN_NMODL_SRC_DIR}/diffeq.ypp ${NRN_NMODL_SRC_DIR}/diffeq.cpp DEFINES_FILE
-             ${NRN_NMODL_SRC_DIR}/diffeq.hpp)
-
-set_property(
-  SOURCE ${NRN_NMODL_SRC_FILES}
-  APPEND
-  PROPERTY COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1 VECTORIZE=1
-    NRN_DYNAMIC_UNITS=1)
-
-add_executable(nocmodl ${NRN_NMODL_SRC_FILES})
-
-if (NRN_NMODL_CXX_FLAGS)
+add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
+                       "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
+target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1
+                                           VECTORIZE=1 NRN_DYNAMIC_UNITS=1)
+# Otherwise the generated code in the binary directory does not find headers in the modlunit source
+# directory and the source files in the source directory do not find generated headers in the binary
+# directory.
+target_include_directories(nocmodl PRIVATE "${NRN_NMODL_GEN}" "${NRN_NMODL_SRC_DIR}")
+if(NRN_NMODL_CXX_FLAGS)
   target_compile_options(nocmodl PRIVATE ${NRN_NMODL_CXX_FLAGS})
 endif()
 
@@ -61,18 +90,27 @@ set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
 # =============================================================================
 # Bison parser for HOC interpreter
 # =============================================================================
-bison_target(ocparser ${NRN_OC_SRC_DIR}/parse.ypp ${NRN_OC_SRC_DIR}/parse.cpp DEFINES_FILE
-             ${NRN_OC_SRC_DIR}/parse.hpp)
+set(NRN_OC_GEN "${CMAKE_CURRENT_BINARY_DIR}/oc_generated")
+file(MAKE_DIRECTORY "${NRN_OC_GEN}")
+file(RELATIVE_PATH NRN_OC_SRC_REL "${NRN_OC_GEN}" "${NRN_OC_SRC_DIR}")
+add_custom_command(
+  OUTPUT "${NRN_OC_GEN}/parse.hpp" "${NRN_OC_GEN}/parse.cpp"
+  WORKING_DIRECTORY "${NRN_OC_GEN}"
+  COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse.hpp -o parse.cpp "${NRN_OC_SRC_REL}/parse.ypp"
+  DEPENDS "${NRN_OC_SRC_DIR}/parse.ypp"
+  COMMENT "[BISON][ocparser] Building parser with bison ${BISON_VERSION}")
+list(APPEND NRN_OC_SRC_FILES "${NRN_OC_GEN}/parse.cpp")
+set(NRN_OC_GENERATED_SOURCES "${NRN_OC_GEN}" PARENT_SCOPE)
 
 # =============================================================================
 # Source code lists
 # =============================================================================
-set(NRN_BASE_SRC_FILES ${NRN_IVOC_SRC_FILES} ${NRN_NRNCVODE_SRC_FILES}
-                       ${NRN_NRNIV_SRC_FILES} ${NRN_NRNOC_SRC_FILES}
-                       ${NRN_OC_SRC_FILES})
-
 set(NRN_NRNIV_LIB_SRC_FILES
-    ${NRN_BASE_SRC_FILES}
+    ${NRN_IVOC_SRC_FILES}
+    ${NRN_NRNCVODE_SRC_FILES}
+    ${NRN_NRNIV_SRC_FILES}
+    ${NRN_NRNOC_SRC_FILES}
+    ${NRN_OC_SRC_FILES}
     ${NRN_MESCH_SRC_FILES}
     ${NRN_MODFILE_C}
     ${NRN_NRNGNU_SRC_FILES}
@@ -231,15 +269,6 @@ if(NRN_USE_BACKWARD)
     PROPERTY COMPILE_DEFINITIONS USE_BACKWARD=1)
 endif()
 
-set_source_files_properties(${NRN_OC_SRC_DIR}/code.cpp PROPERTIES OBJECT_DEPENDS
-                            ${NRN_OC_SRC_DIR}/parse.hpp)
-
-set_source_files_properties(${NRN_NRNOC_SRC_DIR}/nrnversion.cpp PROPERTIES OBJECT_DEPENDS
-                            ${PROJECT_SOURCE_DIR}/src/nrnoc/nrnversion.h)
-
-set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPENDS
-                            ${PROJECT_BINARY_DIR}/src/oc/hocusr.h)
-
 # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
 # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
 if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 21.7)
@@ -276,7 +305,9 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
-if (${USE_PTHREAD} EQUAL 1)
+# Source-directory .cpp needs to find generated .hpp.
+target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
+if(${USE_PTHREAD} EQUAL 1)
   target_link_libraries(nrniv_lib Threads::Threads)
 endif()
 if(NRN_WINDOWS_BUILD)
