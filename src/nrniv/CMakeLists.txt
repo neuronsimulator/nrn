@@ -6,6 +6,10 @@
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
 
+if(NRN_AVOID_ABSOLUTE_PATHS)
+  add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
+endif()
+
 # =============================================================================
 # Build modlunit : Mod file units checker
 # =============================================================================
@@ -100,7 +104,9 @@ add_custom_command(
   DEPENDS "${NRN_OC_SRC_DIR}/parse.ypp"
   COMMENT "[BISON][ocparser] Building parser with bison ${BISON_VERSION}")
 list(APPEND NRN_OC_SRC_FILES "${NRN_OC_GEN}/parse.cpp")
-set(NRN_OC_GENERATED_SOURCES "${NRN_OC_GEN}" PARENT_SCOPE)
+set(NRN_OC_GENERATED_SOURCES
+    "${NRN_OC_GEN}"
+    PARENT_SCOPE)
 
 # =============================================================================
 # Source code lists
