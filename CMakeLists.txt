@@ -300,7 +300,7 @@ endif()
 if(NRN_ENABLE_MPI)
   
   # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
-  NRN_MPI_FIND_PACKAGE()
+  nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
   # avoid linking to C++ bindings

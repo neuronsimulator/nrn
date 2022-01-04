@@ -263,12 +263,12 @@ endmacro(nrn_install_dir_symlink)
 # still build a universal2 macos package on an arm64 architecture even if
 # the mpi library has no slice for x86_64.
 # ========================================================================
-macro(NRN_MPI_FIND_PACKAGE)
+macro(nrn_mpi_find_package)
   if ("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
     AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
     AND NRN_ENABLE_MPI_DYNAMIC)
     set(_temp ${CMAKE_OSX_ARCHITECTURES})
-    set(CMAKE_OSX_ARCHITECTURES arm64 CACHE INTERNAL "" FORCE)
+    unset(CMAKE_OSX_ARCHITECTURES CACHE)
     find_package(MPI REQUIRED)
     set(CMAKE_OSX_ARCHITECTURES ${_temp} CACHE INTERNAL "" FORCE)
     set(NRN_UNIVERSAL2_BUILD ON)

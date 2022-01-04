@@ -9,10 +9,7 @@ default_pythons="python3.8 python3.9 python3.10"
 
 CPU=`uname -m`
 
-universal="yes" # changes to "no" if not arm64 or any python not universal
-if test "$CPU" != "arm64" ; then
-  universal="no"
-fi
+universal="yes" # changes to "no" if any python not universal
 
 args="$*"
 if test "$args" = "" ; then
@@ -80,7 +77,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
 make -j install
 
 if test "$universal" = "yes" ; then
-  _temp="`lipo -archs $NRN_INSTALL/share/nrn/demo/release/arm64/special`"
+  _temp="`lipo -archs $NRN_INSTALL/share/nrn/demo/release/$CPU/special`"
   if test "$_temp" != "x86_64 arm64" ; then
     echo "universal build failed. lipo -archs .../special is \"$_temp\" instead of \"x86_64 arm64\""
     exit 1

@@ -4,15 +4,16 @@ Mac Binary Package (Apple M1 and Mac x86_64)
 Macos binary packages are built with the
 [bldnrnmacpkgcmake.sh](https://github.com/neuronsimulator/nrn/blob/master/bldnrnmacpkgcmake.sh)
 script which, near the end of its operation,
-involves code signing, package signing, and notarization. If built on an
-Apple M1, the build will be universal2 and work on arm64 and x86_64 architectures.
+involves code signing, package signing, and notarization.
+The build will be universal2 and work on arm64 and x86_64 architectures
+(if the pythons used are themselves, universal2).
 Preparing your Mac development environment for correct functioning of
 the script requires installing a few extra [Dependencies](#Dependencies) beyond the
 [normal user source build](./install_instructions.html#Mac-OS-Depend),
 obtaining an Apple Developer Program membership,
 and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
-On an Apple M1,
+On an Apple M1 or x86_64,
 the script, by default, creates, e.g.,
 ```nrn-8.0a-714-g76a270bbc-osx-arm64-x86_64-py-38-39-310.pkg```
 where the information between nrn and osx comes from ```git describe```,
@@ -20,9 +21,8 @@ the item(s) between osx and py indicate the architectures on which
 the program can run,
 and the numbers after the py indicate the python versions that are
 compatible with this package. Those python versions must be installed on
-the developer machine. On a Mac x86_64 architecture the script, by default,
-creates, e.g., ```nrn-8.0a-427-g1a80b2cc-osx-x86_64-py-38-39-310.pkg```
-On a Mac arm64 architecture, the script will build a universal pkg only
+the developer machine.
+The script will build a universal pkg only
 if all the Python's are themselves universal.
 
 A space separated list of python executable arguments can be used in
@@ -45,7 +45,7 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$NRN_INSTALL \
   -DCMAKE_PREFIX_PATH=/usr/X11 \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 ```
-On an arm64 the default variables above will be
+The default variables above will be
 ```
 pythons="python3.8 python3.9 python3.10"
 archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
@@ -176,9 +176,10 @@ can be found at [python.org](http://python.org/Downloads/macOS) at least for
     pip3.9 install --user numpy
     ```
 
-  - At least one python3 in your PATH needs cython installed
+  - At least one python3 in your PATH needs cython installed.
+    And, to avoid compile errors, the minimum version is 0.29.26
     ```
-    python3 -m pip install --user cython
+    python3.10 -m pip install --user cython
     ```
 
 #### Signing and Notarization

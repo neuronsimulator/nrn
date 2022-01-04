@@ -78,6 +78,10 @@ architecture.
   % lipo -archs arm64/libnrnmech.dylib
   x86_64
   ```
+  Alternatively, one can get a universal2 result with
+  ```
+  nrnivmodl -incflags '-arch x86_64 -arch arm64' -loadflags '-arch x86_64 -arch arm64'
+  ```
 
   If, at runtime there is architecture mismatch between python, MPI,
   libnrnmech.so, or libnrniv.dylib, you will see an error message similar
