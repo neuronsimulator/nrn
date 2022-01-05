@@ -25,8 +25,8 @@ It is possible to install the Linux Python wheels on Windows via the Windows Sub
 ## Documentation
 
 * See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
-* See [docs/README.md](docs/README.md) for developers documentation
-* See [http://neuronsimulator.github.io/nrn/](http://neuronsimulator.github.io/nrn/) for latest, nightly snapshot
+* See [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/) for latest, nightly snapshot
+* See [docs/README.md](docs/README.md) for information on documentation (local build, Read the Docs setup)
 
 ## Changelog
 

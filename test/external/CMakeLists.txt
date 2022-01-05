@@ -40,7 +40,15 @@ add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
-add_subdirectory(tqperf)
+
+# tqperf requires libcrypto library
+find_package(OpenSSL)
+
+if(OPENSSL_FOUND)
+  add_subdirectory(tqperf)
+else()
+  message(INFO "Skipping tqperf test as OpenSSL package not found")
+endif()
 
 if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(

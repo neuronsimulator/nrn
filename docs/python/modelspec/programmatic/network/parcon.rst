@@ -312,6 +312,20 @@ ParallelContext
 
 ----
 
+.. method:: ParallelContext.mpiabort_on_error
+
+
+    Syntax:
+        ``oldflag = pc.mpiabort_on_error(newflag)``
+
+    Description:
+        Normally, when running with MPI, a hoc error causes a call to MPI_Abort
+        so that all processes can be notified to exit cleanly without
+        any processes hanging. (e.g. waiting for a communicator
+        collective to complete). The call to MPI_Abort can be avoided by
+        calling this method with newflag = 0. This occurs automatically
+        when :func:`execute1` is used.  The method returns the previous
+        value of the flag.
 
 
 .. method:: ParallelContext.submit
