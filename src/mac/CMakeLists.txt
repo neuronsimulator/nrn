@@ -7,10 +7,10 @@ if (NRN_MACOS_BUILD)
   # If universal build, definitely needs to run after (or at end of)
   # install, so we create a macro and run at end of
   # top level CMakeLists.txt
-  MACRO (NRN_MACOS_AFTER_INSTALL)
+  macro(nrn_macos_after_install)
     install(CODE
       "execute_process(COMMAND sh ${PROJECT_SOURCE_DIR}/src/mac/activate-apps-cmake.sh \"x86_64\" \"${CMAKE_INSTALL_PREFIX}\" \"${PROJECT_SOURCE_DIR}\" \"${CMAKE_INSTALL_PREFIX}/lib\" \"${NRN_UNIVERSAL2_BUILD}\")")
-  ENDMACRO()
+  endmacro()
 
   set(MACPKG_INSTALL_PATH "/Applications/NEURON")
   if (${CMAKE_INSTALL_PREFIX} STREQUAL ${MACPKG_INSTALL_PATH})

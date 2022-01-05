@@ -647,7 +647,7 @@ install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREF
 
 if (NRN_MACOS_BUILD)
   # universal build for neurondemo needs to be after, or at end of, install
-  NRN_MACOS_AFTER_INSTALL()
+  nrn_macos_after_install()
 endif()
 
 # =============================================================================
@@ -793,7 +793,7 @@ if(NRN_ENABLE_CORENEURON)
   endif()
 endif()
 if (NRN_UNIVERSAL2_BUILD)
-  message(STATUS "CMAKE_OSX_A...| ${CMAKE_OSX_ARCHITECTURES}")
+  message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
 message(STATUS "Tests         | ${NRN_ENABLE_TESTS}")
 if(NRN_ENABLE_COVERAGE)
