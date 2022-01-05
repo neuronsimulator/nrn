@@ -12,6 +12,7 @@ endif()
 nrn_add_test(
   GROUP tqperf
   NAME coreneuron
+  CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
   NRNIVMODL_ARGS -loadflags -lcrypto
