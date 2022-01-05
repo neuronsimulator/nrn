@@ -160,8 +160,8 @@ can be found at [python.org](http://python.org/Downloads/macOS) at least for
 
   - The [normal source build](./install_instructions.html#Mac-OS-Depend)
     explains how to install brew and add it to the PATH.
-    ```
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/H$
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     echo 'eval $(/opt/homebrew/bin/brew shellenv)' >> $HOME/.zprofile
     eval $(/opt/homebrew/bin/brew shellenv)
     ```
