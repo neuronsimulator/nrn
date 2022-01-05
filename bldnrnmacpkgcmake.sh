@@ -17,9 +17,7 @@ if test "$args" = "" ; then
 fi
 
 #10.7 possible if one builds with pythons that are consistent with that.
-if test "$CPU" = "x86_64" ; then
-  export MACOSX_DEPLOYMENT_TARGET=10.9
-fi
+export MACOSX_DEPLOYMENT_TARGET=11
 
 if test "$NRN_SRC" == "" ; then
   NRN_SRC=$HOME/neuron/nrn
