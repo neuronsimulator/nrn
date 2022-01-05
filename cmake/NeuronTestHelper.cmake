@@ -109,7 +109,8 @@ function(nrn_add_test)
       CONFLICTS
       MODFILE_PATTERNS
       PRECOMMAND
-      SIM_DIRECTORY)
+      SIM_DIRECTORY
+      NRNIVMODL_ARGS)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -211,8 +212,8 @@ function(nrn_add_test)
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
-  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
-  set(hash_components nrnivmodl)
+  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_NRNIVMODL_ARGS})
+  set(hash_components nrnivmodl ${NRN_ADD_TEST_NRNIVMODL_ARGS})
   if(requires_coreneuron)
     # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
     # reduce the number of times we call nrnivmodl.
