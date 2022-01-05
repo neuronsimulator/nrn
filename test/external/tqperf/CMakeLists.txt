@@ -4,7 +4,11 @@ nrn_add_test_group(
   SUBMODULE tests/tqperf
   MODFILE_PATTERNS "mod/*.mod" "modx/*.mod"
   SCRIPT_PATTERNS "test1.py" "*.hoc")
-set(tqperf_mpi_ranks 16)
+if("tqperf-heavy" IN_LIST NRN_ENABLE_MODEL_TESTS)
+  set(tqperf_mpi_ranks 16)
+else()
+  set(tqperf_mpi_ranks 2)
+endif()
 nrn_add_test(
   GROUP tqperf
   NAME coreneuron
