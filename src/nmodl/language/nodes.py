@@ -589,7 +589,7 @@ class Node(BaseNode):
         for child in self.children:
             if child.is_ptr_excluded_node or child.is_vector:
                 dependent_classes.add(child.class_name)
-        return ["ast/{}.hpp".format(to_snake_case(clazz)) for clazz in dependent_classes]
+        return sorted(["ast/{}.hpp".format(to_snake_case(clazz)) for clazz in dependent_classes])
 
     @property
     def ast_enum_name(self):
