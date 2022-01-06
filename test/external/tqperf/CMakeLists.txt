@@ -2,30 +2,20 @@ include(NeuronTestHelper)
 nrn_add_test_group(
   NAME tqperf
   SUBMODULE tests/tqperf
-  # Need non-empty MODFILE_PATTERNS even though not used by the COMMAND
-  # to avoid CI errors of the form
-  #cd: ... : No such file or directory
-  MODFILE_PATTERNS mod/*.mod
-  SCRIPT_PATTERNS "*.py" "*.hoc" "ci-test.sh" "mod/*.mod" "modx/*.mod")
-
-set(tqperf_mpi_ranks 16)
-set(tqperf_sim_time 100)
-set(tqperf_neuron_prefix
-    OMP_NUM_THREADS=1
-    ${MPIEXEC_NAME}
-    ${MPIEXEC_NUMPROC_FLAG}
-    ${tqperf_mpi_ranks}
-    ${MPIEXEC_OVERSUBSCRIBE}
-    ${MPIEXEC_PREFLAGS}
-    special
-    ${MPIEXEC_POSTFLAGS}
-    -mpi
-    -python
-    )
+  MODFILE_PATTERNS "mod/*.mod" "modx/*.mod"
+  SCRIPT_PATTERNS "test1.py" "*.hoc")
+if("tqperf-heavy" IN_LIST NRN_ENABLE_MODEL_TESTS)
+  set(tqperf_mpi_ranks 16)
+else()
+  set(tqperf_mpi_ranks 2)
+endif()
 nrn_add_test(
   GROUP tqperf
-  NAME neuron
+  NAME coreneuron
+  CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
-  COMMAND MPIEXEC_OVERSUBSCRIBE=${MPIEXEC_OVERSUBSCRIBE} bash "./ci-test.sh"
-)
+  NRNIVMODL_ARGS -loadflags -lcrypto
+  COMMAND
+    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks}
+    ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -python test1.py)
