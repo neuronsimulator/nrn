@@ -99,6 +99,17 @@ foreach(COMPILER_LANGUAGE ${SUPPORTED_COMPILER_LANGUAGE_LIST})
 
     # CLANG
   elseif(CMAKE_${COMPILER_LANGUAGE}_COMPILER_IS_CLANG)
+    set(CMAKE_${COMPILER_LANGUAGE}_WARNING_ALL "-Wall")
+    set(CMAKE_${COMPILER_LANGUAGE}_DEBUGINFO_FLAGS "-g")
+
+    set(CMAKE_${COMPILER_LANGUAGE}_OPT_NONE "-O0")
+    set(CMAKE_${COMPILER_LANGUAGE}_OPT_NORMAL "-O2")
+    set(CMAKE_${COMPILER_LANGUAGE}_OPT_AGGRESSIVE "-O3")
+    set(CMAKE_${COMPILER_LANGUAGE}_OPT_FASTEST "-Ofast -march=native")
+
+    set(CMAKE_${COMPILER_LANGUAGE}_STACK_PROTECTION "-fstack-protector")
+    set(CMAKE_${COMPILER_LANGUAGE}_POSITION_INDEPENDENT "-fPIC")
+
     # Force same ld behavior as when called from gcc --as-needed forces the linker to check whether
     # a dynamic library mentioned in the command line is actually needed by the objects being
     # linked. Symbols needed in shared objects are already linked when building that library.

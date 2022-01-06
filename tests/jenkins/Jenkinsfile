@@ -139,7 +139,7 @@ pipeline {
                 stage('tqperf'){
                     steps{
                         dir('tqperf'){
-                            git url: 'https://github.com/nrnhines/tqperf.git'
+                            git url: 'https://github.com/neuronsimulator/tqperf'
                         }
                     }
                 }

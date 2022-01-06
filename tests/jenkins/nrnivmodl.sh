@@ -8,4 +8,10 @@ set -x
 TEST_DIR="$1"
 
 cd $WORKSPACE/${TEST_DIR}
-nrnivmodl mod
+
+# tqperf has extra mod files under modx
+if [ "${TEST_DIR}" = "tqperf" ]; then
+    cp modx/*.mod mod/
+fi
+
+nrnivmodl -loadflags -lcrypto mod
