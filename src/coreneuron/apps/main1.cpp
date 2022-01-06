@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "coreneuron/config/config.h"
-#include "coreneuron/engine.h"
 #include "coreneuron/utils/randoms/nrnran123.h"
 #include "coreneuron/nrnconf.h"
 #include "coreneuron/sim/fast_imem.hpp"

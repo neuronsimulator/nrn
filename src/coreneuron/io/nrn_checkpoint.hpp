@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_NRNCHECKPOINT_
-#define _H_NRNCHECKPOINT_
+#pragma once
 
 #include "coreneuron/io/phase2.hpp"
 
@@ -117,4 +116,3 @@ struct NrnThreadChkpnt {
 
 extern NrnThreadChkpnt* nrnthread_chkpnt;
 }  // namespace coreneuron
-#endif

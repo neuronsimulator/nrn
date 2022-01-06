@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef nrnmultisend_h
-#define nrnmultisend_h
+#pragma once
 
 #include "coreneuron/mpi/nrnmpiuse.h"
 namespace coreneuron {
@@ -28,4 +27,3 @@ void nrn_multisend_setup();
 
 void nrn_multisend_setup_targets(bool use_phase2, int*& targets_phase1, int*& targets_phase2);
 }  // namespace coreneuron
-#endif  // nrnmultisend_h

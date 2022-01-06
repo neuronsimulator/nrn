@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_NRNCONF_
-#define _H_NRNCONF_
+#pragma once
 
 #include "coreneuron/utils/offload.hpp"
 
@@ -60,5 +59,3 @@ extern void check_bbcore_write_version(const char*);
 
 
 }  // namespace coreneuron
-
-#endif

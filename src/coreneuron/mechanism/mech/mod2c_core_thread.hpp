@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef mod2c_core_thread_h
-#define mod2c_core_thread_h
+#pragma once
 
 #include "coreneuron/sim/multicore.hpp"
 #include "coreneuron/mechanism/mechanism.hpp"
@@ -152,5 +151,3 @@ void nrn_sparseobj_copyto_device(SparseObj* so);
 void nrn_sparseobj_delete_from_device(SparseObj* so);
 
 }  // namespace coreneuron
-
-#endif

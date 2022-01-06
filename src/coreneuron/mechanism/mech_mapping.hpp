@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef MECH_MAPPING_H
-#define MECH_MAPPING_H
+#pragma once
 
 /*
  * todo : currently mod2c has exactly 4 different variable categories
@@ -41,4 +40,3 @@ extern double* get_var_location_from_var_name(int mech_id,
 extern void register_all_variables_offsets(int mech_id, SerializedNames variable_names);
 
 }  // namespace coreneuron
-#endif

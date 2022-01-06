@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef fast_imem_h
-#define fast_imem_h
+#pragma once
 
 #include "coreneuron/sim/multicore.hpp"
 
@@ -39,4 +38,3 @@ void nrn_calc_fast_imem(NrnThread* _nt);
 void nrn_calc_fast_imem_init(NrnThread* _nt);
 
 }  // namespace coreneuron
-#endif  // fast_imem_h

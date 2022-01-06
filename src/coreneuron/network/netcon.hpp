@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef netcon_h
-#define netcon_h
+#pragma once
 
 #include "coreneuron/mpi/nrnmpi.h"
 
@@ -164,4 +163,3 @@ class NetParEvent: public DiscreteEvent {
     virtual void pr(const char*, double t, NetCvode*) override;
 };
 }  // namespace coreneuron
-#endif

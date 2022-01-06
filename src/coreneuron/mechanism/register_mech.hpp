@@ -5,9 +5,7 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 */
-
-#ifndef register_mech_h
-#define register_mech_h
+#pragma once
 
 namespace coreneuron {
 void add_nrn_artcell(int type, int qi);
@@ -24,5 +22,3 @@ extern void _nrn_thread_table_reg(
 extern void alloc_mech(int);
 
 }  // namespace coreneuron
-
-#endif

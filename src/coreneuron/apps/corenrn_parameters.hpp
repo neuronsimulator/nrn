@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef CN_PARAMETERS_H
-#define CN_PARAMETERS_H
+#pragma once
 
 #include <string>
 #include <fstream>
@@ -116,5 +115,3 @@ extern corenrn_parameters corenrn_param;  /// Declaring global corenrn_parameter
 extern int nrn_nobanner_;                 /// Global no banner setting
 
 }  // namespace coreneuron
-
-#endif  // CN_PARAMETERS_H

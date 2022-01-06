@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_SETUP_FORNETCON_
-#define _H_SETUP_FORNETCON_
+#pragma once
 
 #include "coreneuron/sim/multicore.hpp"
 
@@ -20,4 +19,3 @@ namespace coreneuron {
 void setup_fornetcon_info(NrnThread& nt);
 
 }  // namespace coreneuron
-#endif  //_H_SETUP_FORNETCON_

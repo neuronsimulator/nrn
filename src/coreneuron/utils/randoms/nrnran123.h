@@ -7,8 +7,7 @@
 */
 // Beware changing this to #pragma once, we rely on this file shadowing the
 // equivalent file from NEURON.
-#ifndef nrnran123_h
-#define nrnran123_h
+#pragma once
 
 /* interface to Random123 */
 /* http://www.thesalmons.org/john/random123/papers/random123sc11.pdf */
@@ -128,5 +127,3 @@ CORENRN_HOST_DEVICE_ACC nrnran123_array4x32 nrnran123_iran(uint32_t seq,
 CORENRN_HOST_DEVICE_ACC double nrnran123_uint2dbl(uint32_t);
 nrn_pragma_omp(end declare target)
 }  // namespace coreneuron
-
-#endif

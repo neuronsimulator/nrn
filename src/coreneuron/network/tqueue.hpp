@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef tqueue_h
-#define tqueue_h
+#pragma once
 
 /*
 **  SPTREE:  The following type declarations provide the binary tree
@@ -174,4 +173,3 @@ class TQueue {
 };
 }  // namespace coreneuron
 #include "coreneuron/network/tqueue.ipp"
-#endif

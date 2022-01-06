@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef nrn_filehandler_h
-#define nrn_filehandler_h
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -255,4 +254,3 @@ class FileHandler {
     }
 };
 }  // namespace coreneuron
-#endif  // ifndef nrn_filehandler_h

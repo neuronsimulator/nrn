@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_MEMORY_
-#define _H_MEMORY_
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -239,5 +238,3 @@ inline void* ecalloc_align(size_t n, size_t size, size_t alignment = NRN_SOA_BYT
     return p;
 }
 }  // namespace coreneuron
-
-#endif

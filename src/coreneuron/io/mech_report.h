@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef NRN_MECH_REPORT_UTILS
-#define NRN_MECH_REPORT_UTILS
+#pragma once
 
 #include <string>
 
@@ -15,5 +14,3 @@ namespace coreneuron {
 /// write mechanism counts to stdout
 void write_mech_report();
 }  // namespace coreneuron
-
-#endif

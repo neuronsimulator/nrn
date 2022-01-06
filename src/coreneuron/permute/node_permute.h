@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef node_permute_h
-#define node_permute_h
+#pragma once
 
 #include "coreneuron/sim/multicore.hpp"
 
@@ -27,4 +26,3 @@ int nrn_index_permute(int, int type, Memb_list* ml);
 
 int* inverse_permute(int* p, int n);
 }  // namespace coreneuron
-#endif

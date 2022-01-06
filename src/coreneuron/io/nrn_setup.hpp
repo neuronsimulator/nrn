@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_NRNSETUP_
-#define _H_NRNSETUP_
+#pragma once
 
 #include <string>
 #include "coreneuron/sim/multicore.hpp"
@@ -144,4 +143,3 @@ inline static void phase_wrapper(UserParams& userParams, int direct = 0) {
 }
 }  // namespace coreneuron
 }  // namespace coreneuron
-#endif

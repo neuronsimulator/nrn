@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef CORENEURON_ENGINE_H
-#define CORENEURON_ENGINE_H
+#pragma once
 
 // Use MAJOR.MINOR for public version
 #define CORENEURON_VERSION @CORENEURON_VERSION_COMBINED@
@@ -26,6 +25,4 @@ extern int run_solve_core(int argc, char** argv);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

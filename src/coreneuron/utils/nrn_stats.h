@@ -13,8 +13,7 @@
  *
  */
 
-#ifndef _H_NRN_STATS_
-#define _H_NRN_STATS_
+#pragma once
 namespace coreneuron {
 /** @brief Reports global cell statistics of the simulation
  *
@@ -25,4 +24,3 @@ namespace coreneuron {
 void report_cell_stats();
 
 }  // namespace coreneuron
-#endif /* ifndef _H_NRN_STATS_ */

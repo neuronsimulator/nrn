@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef ivoc_vector_h
-#define ivoc_vector_h
+#pragma once
 
 #include "coreneuron/utils/offload.hpp"
 
@@ -84,5 +83,3 @@ nrn_pragma_acc(routine seq)
 extern double* vector_vec(void* v);
 
 }  // namespace coreneuron
-
-#endif

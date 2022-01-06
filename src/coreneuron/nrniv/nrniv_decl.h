@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef nrniv_dec_h
-#define nrniv_dec_h
+#pragma once
 
 #include <vector>
 #include <map>
@@ -69,4 +68,3 @@ extern int cellorder_nwarp;
 // Mechanism pdata index values into _actual_v and _actual_area data need to be updated.
 enum Layout { SoA = 0, AoS = 1 };
 }  // namespace coreneuron
-#endif

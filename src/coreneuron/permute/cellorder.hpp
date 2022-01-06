@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef cellorder_h
-#define cellorder_h
+#pragma once
 
 #include "coreneuron/utils/memory.h"
 #include <algorithm>
@@ -129,4 +128,3 @@ void copy_align_array(T*& dest, T* src, size_t n) {
 void mk_cell_indices();
 #endif
 }  // namespace coreneuron
-#endif

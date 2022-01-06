@@ -111,4 +111,5 @@ void nrn_flush_reports(double t);
 void set_report_buffer_size(int n);
 
 }  // namespace coreneuron
+
 #endif  //_H_NRN_REPORT_

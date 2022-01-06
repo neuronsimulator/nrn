@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef netcvode_h
-#define netcvode_h
+#pragma once
 
 #include "coreneuron/utils/nrnmutdec.hpp"
 #include "coreneuron/network/tqueue.hpp"
@@ -83,4 +82,3 @@ class NetCvode {
     void point_receive(int, Point_process*, double*, double);
 };
 }  // namespace coreneuron
-#endif

@@ -12,8 +12,7 @@
  *
  */
 
-#ifndef CORENEURON_STRING_UTILS_HPP
-#define CORENEURON_STRING_UTILS_HPP
+#pragma once
 
 /** @brief Appends a copy of the source string to the destination string.
  *
@@ -29,5 +28,3 @@
  * terminating character)
  */
 unsigned strcat_at_pos(char* dest, unsigned start_position, char* src, unsigned src_length);
-
-#endif /* ifndef CORENEURON_STRING_UTILS_HPP */

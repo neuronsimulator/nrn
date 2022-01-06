@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef newton_struct_h
-#define newton_struct_h
+#pragma once
 
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
 
@@ -63,5 +62,3 @@ void nrn_newtonspace_copyto_device(NewtonSpace* ns);
 void nrn_newtonspace_delete_from_device(NewtonSpace* ns);
 
 }  // namespace coreneuron
-
-#endif

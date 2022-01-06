@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef lpt_h
-#define lpt_h
+#pragma once
 
 #include <vector>
 
@@ -16,4 +15,3 @@ std::vector<std::size_t> lpt(std::size_t nbag,
                              double* bal = nullptr);
 
 double load_balance(std::vector<size_t>&);
-#endif

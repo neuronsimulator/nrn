@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef _H_NRN_ASSERT
-#define _H_NRN_ASSERT
+#pragma once
 
 #include <cstdio>
 #include <cstdlib>
@@ -34,4 +33,3 @@ static void abortf(const char* fmt, ...) {
 #define nrn_assert(x) \
     ((x) || (abortf("%s:%d: Assertion '%s' failed.\n", __FILE__, __LINE__, #x), 0))
 
-#endif

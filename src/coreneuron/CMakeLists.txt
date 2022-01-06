@@ -4,10 +4,6 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
-# commonly included directories
-include_directories(utils/randoms ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/coreneuron
-                    ${CMAKE_BINARY_DIR}/coreneuron ${CMAKE_BINARY_DIR}/include)
-
 # put libraries (e.g. dll) in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -176,7 +172,10 @@ set(CORENRN_MPI_LIB_NAME
 # for non-dynamic mpi mode just build object files
 if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
   add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
-  target_include_directories(${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH})
+  target_include_directories(
+    ${CORENRN_MPI_LIB_NAME}
+    PRIVATE ${MPI_INCLUDE_PATH}
+    PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
@@ -193,6 +192,7 @@ add_library(
   ${MPI_CORE_FILES}
   ${CORENRN_MPI_OBJ})
 
+target_include_directories(coreneuron PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
 # we can link to MPI libraries in non-dynamic-mpi build
 if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES})
@@ -219,7 +219,10 @@ if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
   if(NOT CORENEURON_AS_SUBPROJECT)
     add_library(${CORENRN_MPI_LIB_NAME} SHARED ${MPI_LIB_FILES})
     target_link_libraries(${CORENRN_MPI_LIB_NAME} ${MPI_CXX_LIBRARIES})
-    target_include_directories(${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH})
+    target_include_directories(
+      ${CORENRN_MPI_LIB_NAME}
+      PRIVATE ${MPI_INCLUDE_PATH}
+      PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
     set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
     list(APPEND corenrn_mpi_targets ${CORENRN_MPI_LIB_NAME})
   else()
@@ -275,6 +278,7 @@ add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 
 # scopmath is created separately for nrnivmodl-core workflow
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
+target_include_directories(scopmath PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
 
 target_link_libraries(coreneuron ${reportinglib_LIBRARY} ${sonatareport_LIBRARY} ${CALIPER_LIB}
                       ${likwid_LIBRARIES})
@@ -315,8 +319,6 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   COMMENT "Running nrnivmodl-core with halfgap.mod")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
-
-include_directories(${CORENEURON_PROJECT_SOURCE_DIR})
 
 if(CORENRN_ENABLE_GPU)
   separate_arguments(CORENRN_ACC_FLAGS UNIX_COMMAND "${NVHPC_ACC_COMP_FLAGS}")

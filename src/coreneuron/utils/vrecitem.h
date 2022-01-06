@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef vrecitem_h
-#define vrecitem_h
+#pragma once
 
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/utils/ivocvect.hpp"
@@ -87,4 +86,3 @@ class VecPlayContinuous: public PlayRecord {
     PlayRecordEvent* e_ = nullptr; // Need to be a raw pointer for acc
 };
 }  // namespace coreneuron
-#endif

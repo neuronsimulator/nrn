@@ -14,8 +14,7 @@
  *
  */
 
-#ifndef NRN_MEMORY_UTILS
-#define NRN_MEMORY_UTILS
+#pragma once
 
 namespace coreneuron {
 /** @brief Reports current memory usage of the simulator to stdout
@@ -34,4 +33,3 @@ void report_mem_usage(const char* message, bool all_ranks = false);
  */
 double nrn_mallinfo(void);
 }  // namespace coreneuron
-#endif /* ifndef NRN_MEMORY_UTILS */

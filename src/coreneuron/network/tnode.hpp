@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef tnode_h
-#define tnode_h
+#pragma once
 
 #include <vector>
 
@@ -85,4 +84,3 @@ size_t warp_balance(size_t ncell, VecTNode& nodevec);
 
 #define warpsize 32
 }  // namespace coreneuron
-#endif

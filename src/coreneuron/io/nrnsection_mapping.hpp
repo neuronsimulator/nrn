@@ -6,8 +6,7 @@
 # =============================================================================
 */
 
-#ifndef NRN_SECTION_MAPPING
-#define NRN_SECTION_MAPPING
+#pragma once
 
 #include <numeric>
 #include <string>
@@ -184,5 +183,3 @@ struct NrnThreadMappingInfo {
     }
 };
 }  // namespace coreneuron
-
-#endif  // NRN_SECTION_MAPPING

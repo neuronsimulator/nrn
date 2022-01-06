@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef nmodl1_redef_h
-#define nmodl1_redef_h
+#pragma once
 
 #define v _v
 #define area _area
@@ -42,5 +41,3 @@
 #define id _id
 #define weights _weights
 #define weight_index_ _weight_index
-
-#endif

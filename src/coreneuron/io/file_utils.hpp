@@ -12,13 +12,10 @@
  *
  */
 
-#ifndef NRN_FILE_UTILS
-#define NRN_FILE_UTILS
+#pragma once
 
 /** @brief Creates directory if doesn't exisit (similar to mkdir -p)
  *  @param Directory path
  *  @return Status
  */
 int mkdir_p(const char* path);
-
-#endif /* ifndef NRN_FILE_UTILS */

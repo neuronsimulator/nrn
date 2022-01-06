@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef nmodl2_redef_h
-#define nmodl2_redef_h
+#pragma once
 
 #undef v
 #undef area
@@ -33,5 +32,3 @@
 #undef weight_index_
 
 #undef id
-
-#endif

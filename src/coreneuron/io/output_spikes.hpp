@@ -6,8 +6,7 @@
 # =============================================================================.
 */
 
-#ifndef output_spikes_h
-#define output_spikes_h
+#pragma once
 
 #include <string>
 #include <vector>
@@ -26,4 +25,3 @@ void validation(std::vector<std::pair<double, int>>& res);
 void spikevec_lock();
 void spikevec_unlock();
 }  // namespace coreneuron
-#endif
