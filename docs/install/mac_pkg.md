@@ -15,15 +15,18 @@ and requesting two signing certificates from Apple. Those actions are
 described in separate sections below.
 On an Apple M1 or x86_64,
 the script, by default, creates, e.g.,
-```nrn-8.0a-714-g76a270bbc-osx-arm64-x86_64-py-38-39-310.pkg```
-where the information between nrn and osx comes from ```git describe```,
-the item(s) between osx and py indicate the architectures on which
-the program can run,
+```nrn-8.0a-726-gb9a811a32-macos11-arm64-x86_64-py-38-39-310.pkg```
+where the information between nrn and macos comes from ```git describe```,
+the number after macos refers to the ```MACOSX_DEPLOYMENT_TARGET=11```
+the next item(s) before py indicate the architectures on which
+the program can run (```arm64-x86_64```)
 and the numbers after the py indicate the python versions that are
 compatible with this package. Those python versions must be installed on
 the developer machine.
 The script will build a universal pkg only
 if all the Python's are themselves universal.
+Presently, one must manually make sure that all the python builds used
+the same MACOSX_DEPLOYMENT_TARGET.
 
 A space separated list of python executable arguments can be used in
 place of the internal default lists. ```$NRN_SRC``` is the location of the

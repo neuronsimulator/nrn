@@ -37,9 +37,9 @@ click `Open`. You can then see an option to `Open` installer:
 The latest Mac OS pkg installers (as of 2022-01-01) are universal2 installers
 (for arm64 and x86_64) and extend the name convention to specify which
 architectures they run on. 
-`nrn-<version-id>-osx-<archs>-py-<pythonversions>.pkg`
+`nrn-<version-id>-macos<target>-<archs>-py-<pythonversions>.pkg`
 e.g.
-`nrn-8.0a-690-g3ddaecc21-osx-arm64-x86_64-py-38-39-310.pkg`
+`nrn-8.0a-726-gb9a811a32-macos11-arm64-x86_64-py-38-39-310.pkg`
 
 ![Installer Warning](../_static/osx_installer_warning_solution.png "Mac OS Warning")
 
@@ -94,6 +94,15 @@ architecture.
 
   Note: there is an environment variable called `ARCHPREFERENCE`. See 
   `man arch`.
+
+  It may be the case on an x86_64 that if you have an older x86_64
+  version of python3.8 or 3.9 installed that those versions of python
+  are for macos earlier than 11. In that case, you may get a warning of
+  the form `warning: ... built for newer macOS version (11.0) than being linked (10.9)`
+  One work around is to install a more recent python or a python with a
+  more recent build. For example, the package installers at [python.org](http://python.org)
+  contain the "macos11" string within the package name for the universal2
+  installers for python 3.8, 3.9, and 3.10.
 
 #### Linux
 
@@ -222,7 +231,7 @@ export PATH=/usr/local/bin/:$PATH
 ```
 
 If the desired python version is not installed, you can install it using
-[official distribution](https://www.python.org/downloads/mac-osx/). Also, note that
+[official distribution](https://www.python.org/downloads/macos/). Also, note that
 [Xcode Command Line Tools](https://stackoverflow.com/questions/9329243/how-to-install-xcode-command-line-tools)
 needs to be installed for development.
 
