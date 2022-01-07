@@ -118,7 +118,8 @@ done
 # upload package to neuron.yale.edu
 ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
-PACKAGE_FULL_NAME=nrn-${describe}-osx${archs_pkg}-${PYVS}.pkg
+macos=macos${MACOSX_DEPLOYMENT_TARGET}
+PACKAGE_FULL_NAME=nrn-${describe}-${macos}${archs_pkg}-${PYVS}.pkg
 PACKATE_DOWNLOAD_NAME=$ALPHADIR/$PACKAGE_FULL_NAME
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 echo "
