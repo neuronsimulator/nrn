@@ -141,10 +141,10 @@ if(CORENRN_ENABLE_GPU)
     message(STATUS "Setting default CUDA architectures to ${CMAKE_CUDA_ARCHITECTURES}")
   endif()
 
-  if(${CMAKE_VERSION} VERSION_LESS 3.16)
-    if(DEFINED CMAKE_CUDA_HOST_COMPILER)
-      unset(ENV{CUDAHOSTCXX})
-    endif()
+  # See https://gitlab.kitware.com/cmake/cmake/-/issues/23081, this should not be needed according
+  # to the CMake documentation, but it is not clear that any version behaves as documented.
+  if(DEFINED CMAKE_CUDA_HOST_COMPILER)
+    unset(ENV{CUDAHOSTCXX})
   endif()
 
   # Enable CUDA language support.
