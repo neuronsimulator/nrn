@@ -242,7 +242,10 @@ if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(core${libname}_lib SHARED ${MPI_LIB_FILES})
-      target_include_directories(core${libname}_lib PUBLIC ${include})
+      target_include_directories(
+        core${libname}_lib
+        PUBLIC ${include}
+        PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
 
       # ~~~
       # TODO: somehow mingw requires explicit linking. This needs to be verified
