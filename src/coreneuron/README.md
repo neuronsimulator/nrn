@@ -215,6 +215,12 @@ We can run this model as:
 ```
 python test.py
 ```
+:warning: If you want to run this example with a GPU build due to technical limitations you need to use the NEURON `special` executable:
+
+```
+nrnivmodl -coreneuron .
+./x86_64/special test.py
+```
 
 You can find [HOC example](https://github.com/neuronsimulator/nrn/blob/master/test/coreneuron/test_direct.hoc) here.
 
