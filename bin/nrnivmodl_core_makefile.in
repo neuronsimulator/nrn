@@ -49,7 +49,9 @@ CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@, -W$(subst ;, -W,l,-rpath,@caliper_LI
 CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@,-L@caliper_LIB_DIR@,)
 
 # Includes paths gathered by CMake
-INCLUDES = $(INCFLAGS) -I$(CORENRN_INC_DIR) -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms
+# coreneuron/utils/randoms goes first because it needs to override the NEURON
+# directory in INCFLAGS
+INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR)
 INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
 INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 
