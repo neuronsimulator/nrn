@@ -163,5 +163,11 @@ constexpr const char* eval_method() {
 )";
 }
 
+constexpr const char* parent_property() {
+    return R"(
+    Get or set the parent of this node
+)";
+}
+
 }  // namespace docstring
 }  // namespace nmodl

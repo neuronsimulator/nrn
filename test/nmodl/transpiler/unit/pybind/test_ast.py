@@ -27,6 +27,19 @@ class TestAst(object):
         neuron_block = ast.NeuronBlock(block)
         assert nmodl.to_nmodl(neuron_block) == 'NEURON {\n}'
 
+    def test_get_parent(self):
+        x_name = ast.Name(ast.String("x"))
+        int_macro = nmodl.ast.Integer(1, x_name)
+        assert x_name.parent == int_macro # getting the parent
+
+    def test_set_parent(self):
+        x_name = ast.Name(ast.String("x"))
+        y_name = ast.Name(ast.String("y"))
+        int_macro = nmodl.ast.Integer(1, x_name)
+        y_name.parent = int_macro # setting the parent
+        int_macro.macro = y_name
+        assert nmodl.to_nmodl(int_macro) == 'y'
+
     def test_ast_node_repr(self):
         string = ast.String("tau")
         name = ast.Name(string)

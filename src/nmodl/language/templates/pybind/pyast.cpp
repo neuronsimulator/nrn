@@ -99,8 +99,8 @@ void init_ast_module(py::module& m) {
     // clang-format off
     {% for node in nodes %}
     .def("is_{{ node.class_name | snake_case }}", &Ast::is_{{ node.class_name | snake_case }}, "Check if node is of type ast.{{ node.class_name}}")
-    {% if loop.last -%};{% endif %}
     {% endfor %}
+        .def_property("parent", &Ast::get_parent, &Ast::set_parent, docstring::parent_property());
 
     {% for setup_pybind_method in setup_pybind_methods %}
     nmodl::ast::pybind::{{setup_pybind_method}}(m_ast);
