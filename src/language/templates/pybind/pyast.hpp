@@ -141,6 +141,14 @@ struct PyAst: public Ast {
     }
 
     {% endfor %}
+
+    Ast* get_parent() const override {
+        PYBIND11_OVERLOAD(Ast*, Ast, get_parent, );
+    }
+
+    void set_parent(Ast* p) override {
+        PYBIND11_OVERLOAD(void, Ast, set_parent, p);
+    }
 };
 
 /** \} */  // end of ast_python
