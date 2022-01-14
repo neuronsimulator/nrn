@@ -51,6 +51,7 @@ foreach(processor cpu gpu)
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi_offline
     REQUIRES coreneuron mpi python ${processor}
+    CONFLICTS mpi_dynamic
     PROCESSORS ${ringtest_mpi_ranks}
     PRECOMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 0 -coreneuron -dumpmodel
     COMMAND OMP_NUM_THREADS=1 ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
