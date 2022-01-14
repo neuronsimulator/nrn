@@ -135,8 +135,10 @@ if test $# -gt 0 ; then
     fi
   done
 else
-  # Unset LC_ALL for consistent mod order
-  files=$(unset LC_ALL; ls *.mod)
+  if ls *.mod 1> /dev/null 2> /dev/null ; then  # only if there are mod files
+    # Unset LC_ALL for consistent mod order
+    files=$(unset LC_ALL; ls *.mod)
+  fi
 fi
 
 files=`echo "$files" | sed 's/^ *//'`
