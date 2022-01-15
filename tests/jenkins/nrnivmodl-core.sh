@@ -2,7 +2,7 @@
 
 set -e
 source ${JENKINS_DIR:-.}/_env_setup.sh
-module load intel
+module load intel-oneapi-compilers
 
 set -x
 TEST_DIR="$1"

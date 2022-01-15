@@ -11,12 +11,10 @@ libsonata_report_dir=$(spack install libsonata-report%intel | cut -d' ' -f2)
 CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ] || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
-    # PGI compiler issue in unstable :  BSD-204
-    # load gcc so CUDA uses deployed gcc ~v9 not systen ~v4
-    module load gcc nvhpc cuda/11.0.2 hpe-mpi cmake boost
+    module load gcc nvhpc cuda/11.4.2 hpe-mpi cmake boost
     mkdir build_${CORENRN_TYPE}
 else
-    module load boost intel hpe-mpi cmake
+    module load boost intel-oneapi-compilers hpe-mpi cmake
     export CC=mpicc
     export CXX=mpicxx
 

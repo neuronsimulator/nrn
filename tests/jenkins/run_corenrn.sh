@@ -17,6 +17,10 @@ else
     export OMP_NUM_THREADS=2
 fi
 
+if [ "${CORENRN_TYPE}" = "non-gpu" ]; then
+    module load intel-oneapi-compilers
+fi
+
 if [ "${TEST}" = "patstim" ]; then
     # first run full run
     mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core --mpi -e 100 --pattern patstim.spk -d testpatstimdat -o ${TEST}

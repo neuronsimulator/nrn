@@ -7,6 +7,10 @@ set -x
 CORENRN_TYPE="$1"
 MPI_RANKS="$2"
 
+if [ "${CORENRN_TYPE}" = "non-gpu" ]; then
+    module load intel-oneapi-compilers
+fi
+
 cd $WORKSPACE/ringtest
 
 mpirun -n ${MPI_RANKS} ./${CORENRN_TYPE}/special-core --mpi -e 10 -d coredat --checkpoint part0 --outpath part0

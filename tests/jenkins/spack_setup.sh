@@ -27,11 +27,25 @@ install_spack() (
     git clone $SPACK_REPO $SPACK_ROOT --depth 1 $BRANCH_OPT
 
     # Use BBP configs
-    mkdir -p $SPACK_ROOT/etc/spack/defaults/linux
-    cp /gpfs/bbp.cscs.ch/apps/hpc/jenkins/config/*.yaml $SPACK_ROOT/etc/spack/
-    sed -i -e  's/neuron+mpi~debug%intel/neuron+mpi/g' $SPACK_ROOT/etc/spack/modules.yaml
+
+    rm -f ${SPACK_ROOT}/etc/spack/*.yaml
+    cp ${SPACK_ROOT}/bluebrain/sysconfig/bluebrain5/*.yaml ${SPACK_ROOT}/etc/spack
+
     # Remove configs from $HOME/.spack
-    rm -rf $HOME/.spack
+    rm -rf $HOME/.spack/*
+    mkdir -p $HOME/.spack
+
+    # minimum user config for creating modules
+    cat << EOF >> $HOME/.spack/modules.yaml
+    modules:
+      default:
+        tcl:
+          hash_length: 0
+          whitelist: ['neuron+debug']
+          projections:
+            all: '{name}/{version}'
+EOF
+
 )
 
 source ${JENKINS_DIR:-.}/_env_setup.sh

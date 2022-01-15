@@ -3,7 +3,7 @@
 set -e
 source ${JENKINS_DIR:-.}/_env_setup.sh
 module purge
-module load unstable neuron/develop intel hpe-mpi
+module load unstable neuron/develop intel-oneapi-compilers hpe-mpi
 
 set -x
 CORENRN_TYPE="$1"
