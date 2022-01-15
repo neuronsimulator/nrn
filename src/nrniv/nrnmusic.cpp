@@ -127,10 +127,11 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 	// except pc.cell(gid, nc) has already been called and this
 	// will add this to the PreSyn.music_out_ list.
 	alloc_music_space();
-	PreSyn* ps;
-	if (!gid2out_->find(gid, ps)) {
+	auto iter = gid2out_.find(gid);
+	if (iter == gid2out_.end()) {
 		return;
-	}	
+	}
+	PreSyn* ps = iter->second;
 	ps->music_port_ = new MusicPortPair((void*)this, gi, ps->music_port_);
 
 	// to create an IndexList for a later map, need to
