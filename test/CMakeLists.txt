@@ -176,6 +176,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
     add_test(
+      NAME parallel_netpar
+      COMMAND
+        ${CMAKE_COMMAND} -E env PYTHONPATH=$PYTHONPATH:${PROJECT_SOURCE_DIR}/test/pynrn ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
+    list(APPEND TESTS parallel_tests parallel_netpar)
+    add_test(
       NAME parallel_bas
       COMMAND
         ${CMAKE_COMMAND} -E env ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
