@@ -372,10 +372,17 @@ NRN_NMODL_CXX_FLAGS:STRING=""
 
 Readline_ROOT_DIR:PATH=/usr
 ---------------------------
-  Path to a file.  
+  Install directory prefix where readline is installed.
 
-  If cmake can't find readline, you
-can give this hint as to where it is.
+  If cmake can't find readline, you can give this hint with the directory
+  path under which readline is installed. Note that on some platforms
+  with multi-arch support (e.g. Debian/Ubuntu), CMake versions < 3.20 are not
+  able to find readline library when NVHPC/PGI compiler is used (for GPU
+  support). In this case you can install newer CMake (>= 3.20) or explicitly
+  specify readline library using `-DReadline_LIBRARY=` option:
+  .. code-block::
+
+    -DReadline_LIBRARY=/usr/lib/x86_64-linux-gnu/libreadline.so
 
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
