@@ -6,6 +6,10 @@ default_pythons="python3.8 python3.9 python3.10"
 # bash bldnrnmacpkgcmake.sh
 # without args, default are the pythons above.
 
+# If all the pythons are universal, then so is NEURON.
+# Otherwise $CPU
+# All pythons must have the same macos version and that will become
+# the MACOSX_DEPLOYMENT_TARGET
 
 CPU=`uname -m`
 
@@ -16,8 +20,22 @@ if test "$args" = "" ; then
   args="$default_pythons"
 fi
 
-#10.7 possible if one builds with pythons that are consistent with that.
-export MACOSX_DEPLOYMENT_TARGET=11
+
+# Choose MACOSX_DEPLOYMENT_TARGET consistent with all Pythons
+macosver=""
+for i in $args ; do
+  mver=`$i -c 'import sysconfig; print(sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")); quit()'`
+  echo "macos version for $i is $mver"
+  if test "$macosver" = "" ; then
+    macosver=$mver
+  fi
+  if test "$macosver" != "$mver" ; then
+    echo "$i macos $mver differs from previous python macos $macosver"
+    exit 1
+  fi
+done
+export MACOSX_DEPLOYMENT_TARGET=$macosver
+echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
 if test "$NRN_SRC" == "" ; then
   NRN_SRC=$HOME/neuron/nrn
@@ -54,6 +72,8 @@ if test "$universal" = "yes" ; then
   archs_pkg="-arm64-x86_64"
   archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 fi
+
+echo "archs_pkg=$archs_pkg"
 
 # The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
 # is to definitely link against the xquartz.org installation instead
