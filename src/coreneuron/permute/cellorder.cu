@@ -102,7 +102,8 @@ void solve_interleaved2_launcher(NrnThread* nt, InterleaveInfo* info, int ncore,
     /// blocksPerGrid we launch the CUDA kernel with doesn't exceed this number
     const auto maxBlocksPerGrid = 65535;
     int provisionalBlocksPerGrid = (ncore + threadsPerBlock - 1) / threadsPerBlock;
-    int blocksPerGrid = provisionalBlocksPerGrid <= maxBlocksPerGrid ? provisionalBlocksPerGrid : maxBlocksPerGrid;
+    int blocksPerGrid = provisionalBlocksPerGrid <= maxBlocksPerGrid ? provisionalBlocksPerGrid
+                                                                     : maxBlocksPerGrid;
 
     solve_interleaved2_kernel<<<blocksPerGrid, threadsPerBlock, 0, cuda_stream>>>(nt, info, ncore);
 
