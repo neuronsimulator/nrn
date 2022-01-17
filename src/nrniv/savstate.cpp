@@ -143,15 +143,7 @@ void tqcallback(const TQItem* tq, int i) {
 		this_savestate->tqsave(tq, i);
 	}
 }
-/*
-#if __sgi && 0
-// fixed in version 5 of os
-StateStructInfo* SaveState::ssi;
-#else
-SaveState::StateStructInfo* SaveState::ssi;
-#endif
-cTemplate* SaveState::nct;
-*/
+
 SaveState::SaveState() {
 	int i, j;
 	nct = NULL;
