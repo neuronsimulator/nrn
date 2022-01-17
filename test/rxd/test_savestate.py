@@ -2,6 +2,10 @@ def test_savestate(neuron_instance):
     """Test rxd SaveState
     
     Ensures restoring to the right point and getting the right result later.
+
+    Note: getting the right result later was a problem in a prior version of
+    NEURON, so the continuation test is important. The issue was that somehow
+    restoring from a SaveState broke the rxd connection to the integrator.
     """
 
     h, rxd, data, save_path = neuron_instance
