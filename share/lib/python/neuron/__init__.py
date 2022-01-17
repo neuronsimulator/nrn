@@ -602,7 +602,7 @@ def nrn_dll_sym_nt(name, type):
         if h.nrnversion(8).find("i686") == 0:
             b = "bin"
         path = os.path.join(h.neuronhome().replace("/", "\\"), b)
-        fac = 10 if sys.version_info[1] < 10 else 100 # 3.9 is 39 ; 3.10 is 310
+        fac = 10 if sys.version_info[1] < 10 else 100  # 3.9 is 39 ; 3.10 is 310
         p = sys.version_info[0] * fac + sys.version_info[1]
         for dllname in ["libnrniv.dll", "libnrnpython%d.dll" % p]:
             p = os.path.join(path, dllname)
@@ -1372,10 +1372,42 @@ class DensityMechanism:
         return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
 
 
-my_data = b"This was write_savestate"
+_store_savestates = []
+_restore_savestates = []
+_id_savestates = []
+
+
+def register_savestate(id_, store, restore):
+    """register routines to be called during SaveState
+
+    id_ -- unique id (consider using a UUID)
+    store -- called when saving the state to the object; returns a bytestring
+    restore -- called when loading the state from the object; receives a bytestring
+    """
+    _id_savestates.append(id_)
+    _store_savestates.append(store)
+    _restore_savestates.append(restore)
+
+
 def _store_savestate():
-    print("inside _store_savestate")
-    return bytearray(my_data)
+    import array
+    import itertools
+
+    version = 0
+    result = [array.array("Q", [version]).tobytes()]
+    for id_, store in zip(_id_savestates, _store_savestates):
+        data = store()
+        if len(data):
+            result.append(
+                array.array("Q", [len(id_)]).tobytes()
+                + bytes(id_.encode("utf8"))
+                + array.array("Q", [len(data)]).tobytes()
+                + data
+            )
+    if len(result) == 1:
+        # if no data to save, then don't even bother with a version
+        result = []
+    return bytearray(itertools.chain.from_iterable(result))
 
 
 def _restore_savestate(data):
@@ -1383,6 +1415,7 @@ def _restore_savestate(data):
     data = bytes(data)
     print("hello from _restore_savestate")
     print("data:", data)
+
 
 try:
     import ctypes
@@ -1436,7 +1469,11 @@ try:
     _restore_savestate_callback = ctypes.py_object(_restore_savestate)
     _store_savestate_callback = ctypes.py_object(_store_savestate)
     set_toplevel_callbacks(
-        _rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback, _store_savestate_callback, _restore_savestate_callback
+        _rvp_plot_callback,
+        _plotshape_plot_callback,
+        _get_mech_object_callback,
+        _store_savestate_callback,
+        _restore_savestate_callback,
     )
 except:
     pass

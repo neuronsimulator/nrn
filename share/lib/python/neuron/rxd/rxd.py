@@ -1997,6 +1997,16 @@ def _do_nbs_register():
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
 
+        # register save state mechanism
+        import neuron
+        from neuron import rxd
+
+        neuron.register_savestate(
+            "rxd-9e015bfa-93ba-485c-9dd2-09857ae58e4d",
+            rxd.save_state,
+            rxd.restore_state,
+        )
+
 
 # register the Python callbacks
 do_setup_fptr = fptr_prototype(_setup)
