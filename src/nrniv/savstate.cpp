@@ -591,7 +591,11 @@ void SaveState::save() {
 		}
 	}
 	savenet();
-	nrnpy_store_savestate(&plugin_data_, &plugin_size_);
+	if (nrnpy_store_savestate) {
+		nrnpy_store_savestate(&plugin_data_, &plugin_size_);
+	} else {
+		plugin_size_ = 0;
+	}
 }
 
 void SaveState::savenode(NodeState& ns, Node* nd) {
