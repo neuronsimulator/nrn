@@ -105,6 +105,7 @@ def restore_state(oldstate):
             s = sp()
             if s is not None:
                 raise RxDException("Invalid state data: inconsistent number of Species")
+        return
     metadata = array.array("Q")
     metadata.frombytes(oldstate[:16])
     version, length = metadata
