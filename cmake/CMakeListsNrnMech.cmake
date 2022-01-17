@@ -11,6 +11,9 @@ if(NRN_COMPILE_DEFS)
   endforeach()
 endif()
 
+# Turn the CMake list NRN_COMPILE_FLAGS into a flat string
+string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS})
+
 # extract link defs to the whole project
 get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)
 if(NOT NRN_LINK_LIBS)
