@@ -1950,7 +1950,7 @@ class Species(_SpeciesMathable):
             # happens when not a multiple of 8 bytes
             raise RxDException("Invalid state data length") from None
         # at 8 bytes per data point, the total number of bytes should match the stored
-        if len(data) * 8 != length:
+        if len(data) * 8 != length or len(data) != len(self.nodes):
             raise RxDException("Invalid state data length")
         self.nodes.concentration = data
 
