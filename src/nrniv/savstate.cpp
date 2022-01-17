@@ -105,8 +105,8 @@ private:
 	int tqcnt_; // volatile for index of forall_callback
 	int nprs_;
 	PlayRecordSave** prs_;
-	static StateStructInfo* ssi;
-	static cTemplate* nct;
+	StateStructInfo* ssi;
+	cTemplate* nct;
 	char* plugin_data_;
 	uint64_t plugin_size_;
 private:
@@ -143,7 +143,7 @@ void tqcallback(const TQItem* tq, int i) {
 		this_savestate->tqsave(tq, i);
 	}
 }
-
+/*
 #if __sgi && 0
 // fixed in version 5 of os
 StateStructInfo* SaveState::ssi;
@@ -151,9 +151,10 @@ StateStructInfo* SaveState::ssi;
 SaveState::StateStructInfo* SaveState::ssi;
 #endif
 cTemplate* SaveState::nct;
-
+*/
 SaveState::SaveState() {
 	int i, j;
+	nct = NULL;
 	ssi_def();
 	nroot_ = 0;
 	ss_ = NULL;
