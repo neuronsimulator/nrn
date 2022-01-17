@@ -600,6 +600,7 @@ void SaveState::save() {
 		nrnpy_store_savestate(&plugin_data_, &plugin_size_);
 	} else {
 		plugin_size_ = 0;
+		plugin_data_ = NULL;
 	}
 }
 
