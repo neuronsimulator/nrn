@@ -552,6 +552,11 @@ void SaveState::ssfree() {
 		delete [] prs_;
 	}
 	nprs_ = 0;
+	if (plugin_data_) {
+		delete[] plugin_data_;
+		plugin_data_ = NULL;
+		plugin_size_ = 0;
+	}
 }
 
 void SaveState::save() {
@@ -811,7 +816,12 @@ void SaveState::read(OcFile* ocf, bool close) {
 	// if version 7, load new plugin data
 	if (version == 7) {
 		ASSERTfread(&plugin_size_, sizeof(int64_t), 1, f);
-		plugin_data_ = new char[plugin_size_];
+		try {
+			plugin_data_ = new char[plugin_size_];
+		} catch (const std::bad_alloc& e) {
+			ocf -> close();
+			hoc_execerror("SaveState:", "Failed to allocate memory.");
+		}
 		if (plugin_data_ == NULL) {
 			ocf -> close();
 			hoc_execerror("SaveState:", "Failed to allocate memory.");
