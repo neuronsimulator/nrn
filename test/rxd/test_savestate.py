@@ -1,6 +1,6 @@
 def test_savestate(neuron_instance):
     """Test rxd SaveState
-    
+
     Ensures restoring to the right point and getting the right result later.
 
     Note: getting the right result later was a problem in a prior version of
@@ -15,7 +15,9 @@ def test_savestate(neuron_instance):
     soma.nseg = 51
     cyt = rxd.Region(h.allsec(), name="cyt")
     c = rxd.Species(cyt, name="c", d=1, initial=lambda node: 1 if node.x < 0.5 else 0)
-    c2 = rxd.Species(cyt, name="c2", d=0.6, initial=lambda node: 1 if node.x > 0.5 else 0)
+    c2 = rxd.Species(
+        cyt, name="c2", d=0.6, initial=lambda node: 1 if node.x > 0.5 else 0
+    )
     r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
     r2 = rxd.Reaction(c + c2 > c2, 1)
 
@@ -26,7 +28,11 @@ def test_savestate(neuron_instance):
         h.fadvance()
 
     def get_state():
-        return (soma(0.5).v, c.nodes(soma(0.5)).concentration[0], c2.nodes(soma(0.5)).concentration[0])
+        return (
+            soma(0.5).v,
+            c.nodes(soma(0.5)).concentration[0],
+            c2.nodes(soma(0.5)).concentration[0],
+        )
 
     s1 = get_state()
     s = h.SaveState()
@@ -38,11 +44,11 @@ def test_savestate(neuron_instance):
     s2 = get_state()
     s.restore()
 
-    assert(get_state() == s1)
-    assert(get_state() != s2)
+    assert get_state() == s1
+    assert get_state() != s2
 
     while h.t < 10:
         h.fadvance()
 
-    assert(get_state() != s1)
-    assert(get_state() == s2)
+    assert get_state() != s1
+    assert get_state() == s2
