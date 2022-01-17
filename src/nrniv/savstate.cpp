@@ -813,6 +813,7 @@ void SaveState::read(OcFile* ocf, bool close) {
 	// any old plugin information is no longer relevant regardless of what version
 	if (plugin_data_) {
 		delete[] plugin_data_;
+		plugin_data_ = NULL;
 	}
 	plugin_size_ = 0;
 	// if version 7, load new plugin data
