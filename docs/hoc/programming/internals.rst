@@ -3,13 +3,13 @@ Debugging and Internals Access
 
 .. seealso::
 
-    :func:`neuron.nrn_dll`
+    :hoc:func:`neuron.nrn_dll`
 
 
 Namespace Related
 ~~~~~~~~~~~~~~~~~
 
-.. function:: name_declared
+.. hoc:function:: name_declared
 
     Syntax:
         ``type = name_declared("name")``
@@ -35,9 +35,9 @@ Namespace Related
          
         3 if a Section 
          
-        4 if a :ref:`strdef <keyword_strdef>` 
+        4 if a :ref:`strdef <hoc_keyword_strdef>`
          
-        5 if a scalar or :ref:`double <keyword_double>` variable. (if second arg is not 2)
+        5 if a scalar or :ref:`double <hoc_keyword_double>` variable. (if second arg is not 2)
 
           if second arg is 2
 
@@ -54,7 +54,7 @@ Namespace Related
         Note that names can be (re)declared only if they do not already 
         exist or are already of the same type. 
         This is too useful to require the user to waste an objref in creating a 
-        :class:`StringFunctions` class to use :meth:`~StringFunctions.is_name`. 
+        :hoc:class:`StringFunctions` class to use :hoc:meth:`~StringFunctions.is_name`.
 
         .. code-block::
             none
@@ -66,7 +66,7 @@ Namespace Related
 
 ----
 
-.. function:: symbols
+.. hoc:function:: symbols
 
     Name:
         symbols --- type the names of HOC functions and variables 
@@ -79,7 +79,7 @@ Namespace Related
         of arrays are also indicated. 
 
     .. warning::
-        No longer works. The nearest replacement is :func:`SymChooser` . 
+        No longer works. The nearest replacement is :hoc:func:`SymChooser` .
 
 
 
@@ -89,7 +89,7 @@ Object Related
 ~~~~~~~~~~~~~~
 
 
-.. function:: object_id
+.. hoc:function:: object_id
 
     Syntax:
         ``object_id(objref)``
@@ -106,7 +106,7 @@ Object Related
 
 ----
 
-.. function:: allobjectvars
+.. hoc:function:: allobjectvars
 
     Syntax:
         ``allobjectvars()``
@@ -122,7 +122,7 @@ Object Related
 
 ----
 
-.. function:: allobjects
+.. hoc:function:: allobjects
 
     Syntax:
         ``allobjects()``
@@ -145,7 +145,7 @@ Object Related
 
 ----
 
-.. function:: object_push
+.. hoc:function:: object_push
 
     Syntax:
         ``object_push(objref)``
@@ -153,27 +153,27 @@ Object Related
     Description:
         Enter the context of the object referenced by objref. In this context you 
         can directly access any variables or call any functions, even those not 
-        declared as :ref:`public <keyword_public>`. Do not attempt to create any new symbol names! 
+        declared as :ref:`public <hoc_keyword_public>`. Do not attempt to create any new symbol names!
         This function is generally used by the object itself to save its state 
         in a session. 
 
 
 ----
 
-.. function:: object_pop
+.. hoc:function:: object_pop
 
     Syntax:
         ``object_pop()``
 
     Description:
-        Pop the last object from an :func:`object_push` . 
+        Pop the last object from an :hoc:func:`object_push` .
 
 ----
 
 Miscellaneous
 ~~~~~~~~~~~~~
 
-.. function:: hoc_pointer_
+.. hoc:function:: hoc_pointer_
 
     Syntax:
         ``hoc_pointer_(&variable)``

@@ -1,10 +1,11 @@
-.. _printf_doc:
+
+.. _hoc_printf_doc:
 
 
 Printf (Formatted Output)
 -------------------------
 
-.. function:: printf
+.. hoc:function:: printf
 
          
 
@@ -103,7 +104,7 @@ Printf (Formatted Output)
          
 
     .. seealso::
-        :meth:`File.ropen`
+        :hoc:meth:`File.ropen`
         
 
     .. warning::
@@ -116,7 +117,7 @@ Printf (Formatted Output)
 Redirect Standard Out
 ---------------------
 
-.. function:: hoc_stdio
+.. hoc:function:: hoc_stdio
 
 
     Syntax:
