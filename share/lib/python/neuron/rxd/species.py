@@ -1924,7 +1924,7 @@ class Species(_SpeciesMathable):
         return [all_states[i] for i in numpy.sort(self.indices())]
 
     @property
-    def state(self):
+    def _state(self):
         """return a bytestring representing the Species state"""
         # format: version identifier (unsigned long long), size (unsigned long long), binary data
         import array
@@ -1933,8 +1933,8 @@ class Species(_SpeciesMathable):
         data = array.array("d", self.nodes.concentration).tobytes()
         return array.array("Q", [version, len(data)]).tobytes() + data
 
-    @state.setter
-    def state(self, oldstate):
+    @_state.setter
+    def _state(self, oldstate):
         """restore Species state"""
         import array
 

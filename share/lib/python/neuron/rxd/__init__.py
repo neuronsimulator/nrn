@@ -77,7 +77,7 @@ def save_state():
     for sp in species._all_species:
         s = sp()
         if s is not None:
-            my_state = s.state
+            my_state = s._state
             state.append(array.array("Q", [len(my_state)]).tobytes())
             state.append(my_state)
             num_species += 1
@@ -134,6 +134,6 @@ def restore_state(oldstate):
         size = size_array[0]
         data.frombytes(oldstate[position : position + size])
         position += size
-        sp.state = bytes(data)
+        sp._state = bytes(data)
     if position != len(oldstate):
         raise RxDException("Invalid state data: bad length")
