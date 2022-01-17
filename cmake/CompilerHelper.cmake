@@ -41,11 +41,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
     list(APPEND NRN_COMPILE_FLAGS
-        --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
+         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
   endif()
   if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 21.11)
-    # Random123 does not play nicely with NVHPC 21.11+'s detection of ABM
-    # features, see: https://github.com/BlueBrain/CoreNeuron/issues/724.
+    # Random123 does not play nicely with NVHPC 21.11+'s detection of ABM features, see:
+    # https://github.com/BlueBrain/CoreNeuron/issues/724 and
+    # https://github.com/DEShawResearch/random123/issues/6.
     list(APPEND NRN_COMPILE_FLAGS -mno-abm)
   endif()
 else()
