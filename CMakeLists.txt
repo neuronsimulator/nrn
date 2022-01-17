@@ -65,9 +65,12 @@ option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 option(NRN_ENABLE_MODEL_TESTS "Enable tests with detailed models specified" ${NRN_ENABLE_MODEL_TESTS_DEFAULT})
 # parse NRN_ENABLE_MODEL_TESTS as list
 string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
+# This can be helpful in very specific CI build configurations, where ccache is used *and* different
+# CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
        "Avoid embedding absolute paths in generated code (ccache optimisation)"
        ${NRN_AVOID_ABSOLUTE_PATHS_DEFAULT})
+mark_as_advanced(NRN_AVOID_ABSOLUTE_PATHS)
 option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
        ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
