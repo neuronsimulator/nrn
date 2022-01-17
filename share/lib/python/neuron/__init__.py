@@ -1411,10 +1411,37 @@ def _store_savestate():
 
 
 def _restore_savestate(data):
+    import array
+
     # convert from bytearray
     data = bytes(data)
-    print("hello from _restore_savestate")
-    print("data:", data)
+    metadata = array.array("Q")
+    metadata.frombytes(data[:8])
+    version = metadata[0]
+    if version != 0:
+        raise Exception("Unsupported SaveState version")
+    position = 8
+    while position < len(data):
+        metadata = array.array("Q")
+        metadata.frombytes(data[position : position + 8])
+        name_length = metadata[0]
+        position += 8
+        name = data[position : position + name_length].decode("utf8")
+        position += name_length
+        metadata = array.array("Q")
+        metadata.frombytes(data[position : position + 8])
+        data_length = metadata[0]
+        position += 8
+        my_data = data[position : position + data_length]
+        position += data_length
+        # lookup the index because not everything that is registered is used
+        try:
+            index = _id_savestates.index(name)
+        except ValueError:
+            raise Exception("Undefined SaveState type " + name)
+        _restore_savestates[index](my_data)
+    if position != len(data):
+        raise Exception("SaveState length error")
 
 
 try:
