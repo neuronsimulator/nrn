@@ -2,6 +2,7 @@
 #undef check
 #include <InterViews/resource.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "ocfile.h"
 #include "nrnoc2iv.h"
 #include "classreg.h"
@@ -27,6 +28,8 @@ extern PlayRecList* net_cvode_instance_prl();
 extern double t;
 extern short* nrn_is_artificial_;
 static void tqcallback(const TQItem* tq, int i);
+void (*nrnpy_restore_savestate)(int64_t, char*) = NULL;
+void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size) = NULL;
 
 #define ASSERTfgets(a,b,c) nrn_assert(fgets(a,b,c) != 0)
 #define ASSERTfread(a,b,c,d) nrn_assert(fread(a,b,c,d) == c)
@@ -104,6 +107,8 @@ private:
 	PlayRecordSave** prs_;
 	static StateStructInfo* ssi;
 	static cTemplate* nct;
+	char* plugin_data_;
+	uint64_t plugin_size_;
 private:
 	void savenode(NodeState&, Node*);
 	void restorenode(NodeState&, Node*);
@@ -162,6 +167,8 @@ SaveState::SaveState() {
 	nprs_ = 0;
 	prs_ = NULL;
 	nacell_ = 0;
+	plugin_data_ = NULL;
+	plugin_size_ = 0;
 	for (i=0; i < n_memb_func; ++i) if (nrn_is_artificial_[i]) {
 		++nacell_;
 	}
@@ -584,6 +591,7 @@ void SaveState::save() {
 		}
 	}
 	savenet();
+	nrnpy_store_savestate(&plugin_data_, &plugin_size_);
 }
 
 void SaveState::savenode(NodeState& ns, Node* nd) {
@@ -662,6 +670,9 @@ void SaveState::restore(int type) {
 		prs_[i]->savestate_restore();
 	}
 	restorenet();
+	if (nrnpy_restore_savestate) {
+		nrnpy_restore_savestate(plugin_size_, plugin_data_);
+	}
 }
 
 void SaveState::restorenode(NodeState& ns, Node* nd) {
@@ -702,6 +713,7 @@ void SaveState::restoreacell(ACellState& ac, int type) {
 }
 
 void SaveState::read(OcFile* ocf, bool close) {
+	int version = 6;
 	if (!ocf->open(ocf->get_name(), "r")) {
 		hoc_execerror("Couldn't open file for reading:", ocf->get_name());
 	}
@@ -712,8 +724,12 @@ void SaveState::read(OcFile* ocf, bool close) {
 	char buf[200];
 	ASSERTfgets(buf, 200, f);
 	if (strcmp(buf, "SaveState binary file version 6.0\n") != 0) {
-		ocf->close();
-		hoc_execerror("Bad SaveState binary file", " Not version 6.0");
+		if (strcmp(buf, "SaveState binary file version 7.0\n") == 0) {
+			version = 7;
+		} else {
+			ocf->close();
+			hoc_execerror("Bad SaveState binary file", " Neither version 6.0 or 7.0");
+		}
 	}
 	ASSERTfread(&t_, sizeof(double), 1, f);
 //	fscanf(f, "%d %d\n", &nsec_, &nrootnode_);
@@ -779,6 +795,21 @@ void SaveState::read(OcFile* ocf, bool close) {
 		}
 	}
 	readnet(f);
+	// any old plugin information is no longer relevant regardless of what version
+	if (plugin_data_) {
+		delete[] plugin_data_;
+	}
+	plugin_size_ = 0;
+	// if version 7, load new plugin data
+	if (version == 7) {
+		ASSERTfread(&plugin_size_, sizeof(int64_t), 1, f);
+		plugin_data_ = new char[plugin_size_];
+		if (plugin_data_ == NULL) {
+			ocf -> close();
+			hoc_execerror("SaveState:", "Failed to allocate memory.");
+		}
+		ASSERTfread(plugin_data_, sizeof(char), plugin_size_, f);
+	}
 	if (close) {
 		ocf->close();
 	}
@@ -790,7 +821,8 @@ void SaveState::write(OcFile* ocf, bool close) {
 	}
 	BinaryMode(ocf)
 	FILE* f = ocf->file();
-	fprintf(f, "SaveState binary file version 6.0\n");
+	int version = plugin_size_ ? 7 : 6;
+	fprintf(f, "SaveState binary file version %d.0\n", version);
 	ASSERTfwrite(&t_, sizeof(double), 1, f);
 	fprintf(f, "%d %d\n", nsec_, nroot_);
 	fwrite_SecState(ss_, nsec_, f);
@@ -830,6 +862,10 @@ void SaveState::write(OcFile* ocf, bool close) {
 		prs_[i]->savestate_write(f);
 	}
 	writenet(f);
+	if (version == 7) {
+		ASSERTfwrite(&plugin_size_, sizeof(int64_t), 1, f);
+		ASSERTfwrite(plugin_data_, 1, plugin_size_, f);
+	}
 	if (close) {
 		ocf->close();
 	}

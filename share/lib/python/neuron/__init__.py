@@ -1372,6 +1372,18 @@ class DensityMechanism:
         return [nmodl.to_nmodl(ont.ontology_id) for ont in onts]
 
 
+my_data = b"This was write_savestate"
+def _store_savestate():
+    print("inside _store_savestate")
+    return bytearray(my_data)
+
+
+def _restore_savestate(data):
+    # convert from bytearray
+    data = bytes(data)
+    print("hello from _restore_savestate")
+    print("data:", data)
+
 try:
     import ctypes
 
@@ -1421,8 +1433,10 @@ try:
     _rvp_plot_callback = ctypes.py_object(_rvp_plot)
     _plotshape_plot_callback = ctypes.py_object(_plotshape_plot)
     _get_mech_object_callback = ctypes.py_object(_get_mech_object)
+    _restore_savestate_callback = ctypes.py_object(_restore_savestate)
+    _store_savestate_callback = ctypes.py_object(_store_savestate)
     set_toplevel_callbacks(
-        _rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback
+        _rvp_plot_callback, _plotshape_plot_callback, _get_mech_object_callback, _store_savestate_callback, _restore_savestate_callback
     )
 except:
     pass
