@@ -674,7 +674,11 @@ void SaveState::restore(int type) {
 		prs_[i]->savestate_restore();
 	}
 	restorenet();
-	if (nrnpy_restore_savestate) {
+	if (plugin_size_) {
+		if (!nrnpy_restore_savestate) {
+			hoc_execerror("SaveState:",
+				"This state requires Python to unpack.");
+		}
 		nrnpy_restore_savestate(plugin_size_, plugin_data_);
 	}
 }
