@@ -81,6 +81,8 @@ def save_state():
             state.append(array.array("Q", [len(my_state)]).tobytes())
             state.append(my_state)
             num_species += 1
+    if num_species == 0:
+        return b""
     data = gzip.compress(
         array.array("Q", [num_species]).tobytes()
         + bytes(itertools.chain.from_iterable(state))
@@ -98,6 +100,11 @@ def restore_state(oldstate):
     import itertools
     import gzip
 
+    if oldstate == b"":
+        for sp in species._all_species:
+            s = sp()
+            if s is not None:
+                raise RxDException("Invalid state data: inconsistent number of Species")
     metadata = array.array("Q")
     metadata.frombytes(oldstate[:16])
     version, length = metadata
