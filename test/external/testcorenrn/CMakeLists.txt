@@ -143,60 +143,33 @@ foreach(test ${spike_comparison_tests})
         set_tests_properties(testcorenrn_${test}::coreneuron_${processor}_offline_saverestore
                              PROPERTIES DEPENDS ${testcorenrn_patstim_script})
       endif()
-      nrn_add_test(
-        GROUP testcorenrn_${test}
-        NAME coreneuron_${processor}_offline
-        REQUIRES coreneuron mpi ${processor}
-        CONFLICTS mpi_dynamic
-        PROCESSORS ${local_mpi_ranks}
-        PRECOMMAND OMP_NUM_THREADS=1
-                   HOC_LIBRARY_PATH=.
-                   ${MPIEXEC_NAME}
-                   ${MPIEXEC_NUMPROC_FLAG}
-                   ${local_mpi_ranks}
-                   ${MPIEXEC_OVERSUBSCRIBE}
-                   ${MPIEXEC_PREFLAGS}
-                   special
-                   ${MPIEXEC_POSTFLAGS}
-                   -mpi
-                   -c
-                   arg_tstop=100
-                   -c
-                   arg_dump_coreneuron_model=1
-                   test${test}.hoc
-        COMMAND
-          OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
-          ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-          --mpi -e 100 --pattern patstim.spk ${${processor}_args_offline}
-        OUTPUT asciispikes::out.dat)
-    else()
-      nrn_add_test(
-        GROUP testcorenrn_${test}
-        NAME coreneuron_${processor}_offline
-        REQUIRES coreneuron mpi ${processor}
-        CONFLICTS mpi_dynamic
-        PROCESSORS ${local_mpi_ranks}
-        PRECOMMAND OMP_NUM_THREADS=1
-                   HOC_LIBRARY_PATH=.
-                   ${MPIEXEC_NAME}
-                   ${MPIEXEC_NUMPROC_FLAG}
-                   ${local_mpi_ranks}
-                   ${MPIEXEC_OVERSUBSCRIBE}
-                   ${MPIEXEC_PREFLAGS}
-                   special
-                   ${MPIEXEC_POSTFLAGS}
-                   -mpi
-                   -c
-                   arg_tstop=100
-                   -c
-                   arg_dump_coreneuron_model=1
-                   test${test}.hoc
-        COMMAND
-          OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
-          ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-          --mpi -e 100 ${extra_args} ${${processor}_args_offline}
-        OUTPUT asciispikes::out.dat)
     endif()
+    nrn_add_test(
+      GROUP testcorenrn_${test}
+      NAME coreneuron_${processor}_offline
+      REQUIRES coreneuron mpi ${processor}
+      CONFLICTS mpi_dynamic
+      PROCESSORS ${local_mpi_ranks}
+      PRECOMMAND OMP_NUM_THREADS=1
+                 HOC_LIBRARY_PATH=.
+                 ${MPIEXEC_NAME}
+                 ${MPIEXEC_NUMPROC_FLAG}
+                 ${local_mpi_ranks}
+                 ${MPIEXEC_OVERSUBSCRIBE}
+                 ${MPIEXEC_PREFLAGS}
+                 special
+                 ${MPIEXEC_POSTFLAGS}
+                 -mpi
+                 -c
+                 arg_tstop=100
+                 -c
+                 arg_dump_coreneuron_model=1
+                 test${test}.hoc
+      COMMAND
+        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
+        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
+        --mpi -e 100 ${extra_args} ${${processor}_args_offline}
+      OUTPUT asciispikes::out.dat)
   endforeach()
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
