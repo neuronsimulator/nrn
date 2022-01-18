@@ -310,6 +310,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
               ${modtests_launch_py} test/coreneuron/test_psolve.py)
     nrn_add_test(
       GROUP coreneuron_modtests
+      NAME test_ba_py_${processor}
+      REQUIRES coreneuron ${processor}
+      SCRIPT_PATTERNS test/coreneuron/test_ba.py
+      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
+              ${modtests_launch_py} test/coreneuron/test_ba.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
       NAME test_natrans_py_${processor}
       REQUIRES coreneuron ${processor}
       SCRIPT_PATTERNS test/gjtests/test_natrans.py
