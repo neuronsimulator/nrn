@@ -46,6 +46,7 @@ foreach(processor cpu gpu)
       GROUP external_ringtest
       NAME coreneuron_${processor}_mpi_offline_saverestore
       REQUIRES coreneuron mpi python ${processor}
+      CONFLICTS mpi_dynamic
       PROCESSORS ${ringtest_mpi_ranks}
       COMMAND bash coreneuron_${processor}_mpi_offline_saverestore.sh
       OUTPUT asciispikes::out.dat)

@@ -110,6 +110,7 @@ foreach(test ${spike_comparison_tests})
         GROUP testcorenrn_${test}
         NAME coreneuron_${processor}_offline_saverestore
         REQUIRES coreneuron mpi ${processor}
+        CONFLICTS mpi_dynamic
         PROCESSORS ${local_mpi_ranks}
         COMMAND bash coreneuron_${processor}_offline_saverestore.sh
         OUTPUT asciispikes::out.dat)
@@ -146,6 +147,7 @@ foreach(test ${spike_comparison_tests})
         GROUP testcorenrn_${test}
         NAME coreneuron_${processor}_offline
         REQUIRES coreneuron mpi ${processor}
+        CONFLICTS mpi_dynamic
         PROCESSORS ${local_mpi_ranks}
         PRECOMMAND OMP_NUM_THREADS=1
                    HOC_LIBRARY_PATH=.
@@ -172,6 +174,7 @@ foreach(test ${spike_comparison_tests})
         GROUP testcorenrn_${test}
         NAME coreneuron_${processor}_offline
         REQUIRES coreneuron mpi ${processor}
+        CONFLICTS mpi_dynamic
         PROCESSORS ${local_mpi_ranks}
         PRECOMMAND OMP_NUM_THREADS=1
                    HOC_LIBRARY_PATH=.
