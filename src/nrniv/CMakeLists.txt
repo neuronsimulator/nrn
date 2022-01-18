@@ -4,7 +4,8 @@
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
-add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+add_compile_options(${NRN_COMPILE_FLAGS})
+add_compile_definitions(${NRN_COMPILE_DEFS})
 
 # =============================================================================
 # Build modlunit : Mod file units checker
@@ -242,7 +243,7 @@ set_source_files_properties(${NRN_OC_SRC_DIR}/hocusr.cpp PROPERTIES OBJECT_DEPEN
 
 # NVHPC/21.7 cannot compile znorm.c with -O2 or above. See also:
 # https://forums.developer.nvidia.com/t/nvc-21-7-regression-internal-compiler-error-can-only-coerce-indirect-args/184847
-if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 21.7)
+if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
   set_source_files_properties(${PROJECT_SOURCE_DIR}/src/mesch/znorm.c PROPERTIES COMPILE_OPTIONS
                                                                                  -Mnovect)
 endif()
@@ -324,7 +325,7 @@ if(NRN_ENABLE_MPI)
       list(GET NRN_MPI_LIBNAME_LIST ${val} libname)
 
       add_library(${libname}_lib SHARED ${NRN_NRNMPI_SRC_FILES})
-      target_include_directories(${libname}_lib PUBLIC ${include})
+      target_include_directories(${libname}_lib BEFORE PUBLIC ${include})
       # Note that we do not link here to libmpi. That is dlopen first.
       if(MINGW) # type msmpi only
         add_dependencies(${libname}_lib nrniv_lib)

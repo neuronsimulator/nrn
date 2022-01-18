@@ -52,8 +52,8 @@
 #    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
 #    can be used to override the defaults defined when nrn_add_test_group is
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
-#    if certain features are, or are not, available. Seven features are currently
-#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
+#    if certain features are, or are not, available. Eight features are currently
+#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, mpi_dynamic, nmodl and python.
 #    The SIM_DIRECTORY argument is used to override the default directory in which
 #    the simulation is run. The NRNIVMODL_ARGS argument allows extra arguments
 #    to be passed to nrnivmodl.
@@ -131,6 +131,7 @@ function(nrn_add_test)
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
   set(feature_cpu_enabled ON)
   set(feature_mpi_enabled ${NRN_ENABLE_MPI})
+  set(feature_mpi_dynamic_enabled ${NRN_ENABLE_MPI_DYNAMIC})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
   if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})

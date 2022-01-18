@@ -1923,6 +1923,37 @@ class Species(_SpeciesMathable):
         all_states = node._get_states()
         return [all_states[i] for i in numpy.sort(self.indices())]
 
+    @property
+    def _state(self):
+        """return a bytestring representing the Species state"""
+        # format: version identifier (unsigned long long), size (unsigned long long), binary data
+        import array
+
+        version = 0
+        data = array.array("d", self.nodes.concentration).tobytes()
+        return array.array("Q", [version, len(data)]).tobytes() + data
+
+    @_state.setter
+    def _state(self, oldstate):
+        """restore Species state"""
+        import array
+
+        metadata_array = array.array("Q")
+        metadata_array.frombytes(oldstate[:16])
+        version, length = metadata_array
+        if version != 0:
+            raise RxdException("Unsupported state data version")
+        data = array.array("d")
+        try:
+            data.frombytes(oldstate[16:])
+        except ValueError:
+            # happens when not a multiple of 8 bytes
+            raise RxDException("Invalid state data length") from None
+        # at 8 bytes per data point, the total number of bytes should match the stored
+        if len(data) * 8 != length or len(data) != len(self.nodes):
+            raise RxDException("Invalid state data length")
+        self.nodes.concentration = data
+
     def _setup_matrices3d(self, euler_matrix):
         return
         # TODO: REmove this
