@@ -105,31 +105,72 @@ foreach(test ${spike_comparison_tests})
     endif()
     # Set up a test that runs the simulation using CoreNEURON's offline mode. First we must run
     # NEURON and tell it to dump the model without simulating it.
-    nrn_add_test(
-      GROUP testcorenrn_${test}
-      NAME coreneuron_${processor}_offline
-      REQUIRES coreneuron mpi ${processor}
-      PROCESSORS ${local_mpi_ranks}
-      PRECOMMAND OMP_NUM_THREADS=1
-                 HOC_LIBRARY_PATH=.
-                 ${MPIEXEC_NAME}
-                 ${MPIEXEC_NUMPROC_FLAG}
-                 ${local_mpi_ranks}
-                 ${MPIEXEC_OVERSUBSCRIBE}
-                 ${MPIEXEC_PREFLAGS}
-                 special
-                 ${MPIEXEC_POSTFLAGS}
-                 -mpi
-                 -c
-                 arg_tstop=100
-                 -c
-                 arg_dump_coreneuron_model=1
-                 test${test}.hoc
-      COMMAND
-        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
-        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-        --mpi -e 100 ${extra_args} ${${processor}_args_offline}
-      OUTPUT asciispikes::out.dat)
+    if("${test}" STREQUAL "patstim")
+      nrn_add_test(
+        GROUP testcorenrn_${test}
+        NAME coreneuron_${processor}_offline_saverestore
+        REQUIRES coreneuron mpi ${processor}
+        PROCESSORS ${local_mpi_ranks}
+        COMMAND bash coreneuron_${processor}_offline_saverestore.sh
+        OUTPUT asciispikes::out.dat)
+      if((${CORENRN_ENABLE_GPU} STREQUAL "ON" AND "${processor}" STREQUAL "gpu") OR NOT "${processor}" STREQUAL "gpu")
+        set(testcorenrn_patstim_script ${PROJECT_BINARY_DIR}/test/testcorenrn_${test}/coreneuron_${processor}_offline_saverestore/coreneuron_${processor}_offline_saverestore.sh)
+        file(WRITE ${testcorenrn_patstim_script} "#!/bin/bash\nset -e\nOMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_dump_coreneuron_model=1 test${test}.hoc\necho 1000 > patstim.1.spk\nsed -n 2,1001p patstim.spk >> patstim.1.spk\necho 1000 > patstim.2.spk\nsed -n 1002,2001p patstim.spk >> patstim.2.spk\nOMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat --mpi -e 49 --pattern patstim.1.spk ${${processor}_args_offline} --checkpoint checkpoint -o part1\nOMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat --mpi -e 100 --pattern patstim.2.spk ${${processor}_args_offline} --restore checkpoint -o part2\ncat part1/out.dat part2/out.dat > out.dat")
+        set_tests_properties(testcorenrn_${test}::coreneuron_${processor}_offline_saverestore PROPERTIES DEPENDS ${testcorenrn_patstim_script})
+        message(STATUS "testcorenrn_${test}::coreneuron_${processor}_offline_saverestore depends on coreneuron_${processor}_offline_saverestore.sh")
+      endif()
+      nrn_add_test(
+        GROUP testcorenrn_${test}
+        NAME coreneuron_${processor}_offline
+        REQUIRES coreneuron mpi ${processor}
+        PROCESSORS ${local_mpi_ranks}
+        PRECOMMAND OMP_NUM_THREADS=1
+                  HOC_LIBRARY_PATH=.
+                  ${MPIEXEC_NAME}
+                  ${MPIEXEC_NUMPROC_FLAG}
+                  ${local_mpi_ranks}
+                  ${MPIEXEC_OVERSUBSCRIBE}
+                  ${MPIEXEC_PREFLAGS}
+                  special
+                  ${MPIEXEC_POSTFLAGS}
+                  -mpi
+                  -c
+                  arg_tstop=100
+                  -c
+                  arg_dump_coreneuron_model=1
+                  test${test}.hoc
+        COMMAND
+          OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
+          ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
+          --mpi -e 100 --pattern patstim.spk ${${processor}_args_offline}
+        OUTPUT asciispikes::out.dat)
+    else()
+      nrn_add_test(
+        GROUP testcorenrn_${test}
+        NAME coreneuron_${processor}_offline
+        REQUIRES coreneuron mpi ${processor}
+        PROCESSORS ${local_mpi_ranks}
+        PRECOMMAND OMP_NUM_THREADS=1
+                  HOC_LIBRARY_PATH=.
+                  ${MPIEXEC_NAME}
+                  ${MPIEXEC_NUMPROC_FLAG}
+                  ${local_mpi_ranks}
+                  ${MPIEXEC_OVERSUBSCRIBE}
+                  ${MPIEXEC_PREFLAGS}
+                  special
+                  ${MPIEXEC_POSTFLAGS}
+                  -mpi
+                  -c
+                  arg_tstop=100
+                  -c
+                  arg_dump_coreneuron_model=1
+                  test${test}.hoc
+        COMMAND
+          OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
+          ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
+          --mpi -e 100 ${extra_args} ${${processor}_args_offline}
+        OUTPUT asciispikes::out.dat)
+    endif()
   endforeach()
   nrn_add_test_group_comparison(
     GROUP testcorenrn_${test}
