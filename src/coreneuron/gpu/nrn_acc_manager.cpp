@@ -76,6 +76,8 @@ void cnrn_target_set_default_device(int device_num) {
 #endif
 }
 
+#ifdef CORENEURON_ENABLE_GPU
+
 static Memb_list* copy_ml_to_device(const Memb_list* ml, int type) {
     // As we never run code for artificial cell inside GPU we don't copy it.
     int is_art = corenrn.get_is_artificial()[type];
@@ -258,6 +260,8 @@ static void delete_ml_from_device(Memb_list* ml, int type) {
     cnrn_target_delete(ml->nodeindices, n);
     cnrn_target_delete(ml);
 }
+
+#endif
 
 /* note: threads here are corresponding to global nrn_threads array */
 void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
@@ -891,6 +895,7 @@ void update_nrnthreads_on_host(NrnThread* threads, int nthreads) {
  * from GPU to CPU.
  */
 void update_weights_from_gpu(NrnThread* threads, int nthreads) {
+#ifdef CORENEURON_ENABLE_GPU
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
         size_t n_weight = nt->n_weight;
@@ -900,6 +905,7 @@ void update_weights_from_gpu(NrnThread* threads, int nthreads) {
             nrn_pragma_omp(target update from(weights [0:n_weight]))
         }
     }
+#endif
 }
 
 /** Cleanup device memory that is being tracked by the OpenACC runtime.

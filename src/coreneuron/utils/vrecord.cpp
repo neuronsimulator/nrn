@@ -104,7 +104,9 @@ void VecPlayContinuous::deliver(double tt, NetCvode* ns) {
 }
 
 void VecPlayContinuous::continuous(double tt) {
+#ifdef CORENEURON_ENABLE_GPU
     NrnThread* nt = nrn_threads + ith_;
+#endif
     // clang-format off
 
     nrn_pragma_acc(kernels present(this) if(nt->compute_gpu))
