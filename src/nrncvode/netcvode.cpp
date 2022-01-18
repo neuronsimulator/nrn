@@ -3367,6 +3367,7 @@ Point_process* SelfEvent::index2pp(int type, int oindex) {
 	if (!sepp_) {
 		int i;
 		sepp_.reset(new SelfEventPPTable());
+		sepp_->reserve(211);
 		// should only be the ones that call net_send
 		for (i=0; i < n_memb_func; ++i) if (pnt_receive[i]) {
 			hoc_List* hl = nrn_pnt_template_[i]->olist;

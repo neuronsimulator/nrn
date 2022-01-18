@@ -379,7 +379,7 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 	}
 	if (!classical_root_to_multisplit_) {
 		classical_root_to_multisplit_.reset(new MultiSplitTable());
-        classical_root_to_multisplit_->reserve(97);
+		classical_root_to_multisplit_->reserve(97);
 		multisplit_list_ = new MultiSplitList();
 	}
 	Node* nd = node_exact(sec, x);
