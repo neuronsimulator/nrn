@@ -47,7 +47,7 @@ find_package(OpenSSL)
 if(OPENSSL_FOUND)
   add_subdirectory(tqperf)
 else()
-  message(INFO "Skipping tqperf test as OpenSSL package not found")
+  message(STATUS "Skipping tqperf test as OpenSSL package not found")
 endif()
 
 if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
