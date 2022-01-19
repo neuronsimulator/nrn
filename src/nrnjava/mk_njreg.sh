@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 sed -n '
 	1i\

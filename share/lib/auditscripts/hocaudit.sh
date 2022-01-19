@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 auditprogpath=`dirname $0`
 pid=$1

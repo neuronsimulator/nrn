@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Mac os x intermediate between applescript and neurondemo
 echo -e "\033]0;neurondemo\007"
 

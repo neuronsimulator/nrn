@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Mac os x intermediate between applescript and nrnivmodl
 echo -e "\033]0;mknrndll\007"
 

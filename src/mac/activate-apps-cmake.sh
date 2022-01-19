@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This started as a copy of after-install.sh and is modified to work in the
 # context subsequent to a cmake build 'make install'. The main differences

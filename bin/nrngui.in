@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@

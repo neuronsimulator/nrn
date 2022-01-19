@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # extract commit version info from src/nrnoc/nrnversion.h
 # and PACKAGE_VERSION from configure.ac
 

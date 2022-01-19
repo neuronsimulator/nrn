@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Mac os x intermediate between applescript and nrngui
 echo -e "\033]0;nrngui\007"
 

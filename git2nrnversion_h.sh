@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 a=$1
 if test "$a" = "" ; then

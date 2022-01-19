@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if test "$1" = "" ; then
 	echo "clean-for-pkg-cmake.sh needs a installation directory argument"
