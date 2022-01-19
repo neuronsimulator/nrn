@@ -743,5 +743,13 @@ void CodegenHelperVisitor::visit_verbatim(const Verbatim& node) {
     }
 }
 
+void CodegenHelperVisitor::visit_before_block(const ast::BeforeBlock& node) {
+    info.before_after_blocks.push_back(&node);
+}
+
+void CodegenHelperVisitor::visit_after_block(const ast::AfterBlock& node) {
+    info.before_after_blocks.push_back(&node);
+}
+
 }  // namespace codegen
 }  // namespace nmodl
