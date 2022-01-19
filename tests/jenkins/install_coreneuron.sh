@@ -11,7 +11,7 @@ libsonata_report_dir=$(spack install libsonata-report%intel | cut -d' ' -f2)
 CORENRN_TYPE="$1"
 
 if [ "${CORENRN_TYPE}" = "GPU-non-unified" ] || [ "${CORENRN_TYPE}" = "GPU-unified" ]; then
-    module load gcc nvhpc cuda/11.4.2 hpe-mpi cmake boost
+    module load gcc nvhpc cuda hpe-mpi cmake boost
     mkdir build_${CORENRN_TYPE}
 else
     module load boost intel-oneapi-compilers hpe-mpi cmake
