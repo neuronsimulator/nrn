@@ -418,8 +418,8 @@ ELSE                    {
                             loc.step();
                         }
 
-:.* |
-\?.*                    {
+:[^\r\n]* |
+\?[^\r\n]*              {
                             /** Todo : add grammar support for inline vs single-line comments
                               auto str = std::string(yytext);
                               return NmodlParser::make_LINE_COMMENT(str, loc);

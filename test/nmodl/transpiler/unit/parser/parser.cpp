@@ -34,6 +34,17 @@ bool is_valid_construct(const std::string& construct) {
 }
 
 
+SCENARIO("NMODL can accept \\r as return char for one line comment", "[parser]") {
+    GIVEN("A comment defined with \\r as return char") {
+        WHEN("parsing") {
+            THEN("success") {
+                REQUIRE(is_valid_construct(R"(: see you next linePROCEDURE foo() {
+                })"));
+            }
+        }
+    }
+}
+
 SCENARIO("NMODL can define macros using DEFINE keyword", "[parser]") {
     GIVEN("A valid macro definition") {
         WHEN("DEFINE NSTEP 6") {
