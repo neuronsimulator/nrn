@@ -1,6 +1,7 @@
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
-add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+add_compile_options(${NRN_COMPILE_FLAGS})
+add_compile_definitions(${NRN_COMPILE_DEFS})
 
 # =============================================================================
 # Definitions used in setup.py
