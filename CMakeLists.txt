@@ -15,14 +15,15 @@ if(DEFINED ENV{CRAYPE_VERSION})
   set(ENV{CRAYPE_LINK_TYPE} dynamic)
   message(STATUS "Cray system detected...setting CRAYPE_LINK_TYPE=dynamic")
 endif()
-project(NEURON C CXX)
+project(
+  NEURON
+  VERSION 8.0
+  LANGUAGES C CXX)
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 8)
-set(PROJECT_VERSION_MINOR 0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
