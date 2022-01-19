@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # howto-cmake 36   # builds for 3.6
 # howto-cmake 36 37 38 39 310 # builds for all those
 

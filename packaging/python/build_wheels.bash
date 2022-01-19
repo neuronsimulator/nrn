@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -xe
 # A script to loop over the available pythons installed
 # on Linux/OSX and build wheels

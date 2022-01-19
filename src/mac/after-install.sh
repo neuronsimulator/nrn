@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if test "$1" = "" ; then
 	echo "afer-install needs a host_cpu argument"

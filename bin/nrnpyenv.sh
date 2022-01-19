@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # eval "`sh nrnpyenv.sh`"
 # will set bash environment variables so that nrniv -python has same

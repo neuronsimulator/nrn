@@ -134,7 +134,7 @@ BBSaveState
         .. code-block::
           none
 
-          #!/bin/bash
+          #!/usr/bin/env bash
           rm -f in/*
           cat out/tmp > in/tmp
           for f in out/tmp.*.* ; do
