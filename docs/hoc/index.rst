@@ -5,13 +5,13 @@ NEURON HOC documentation
 
 Quick Links
 -----------
-- :ref:`genindex`, `Download in zip format <http://www.neuron.yale.edu/neuron/static/new_doc/nrnhelp.zip>`_
+- :ref:`genindex`, `Download in zip format <hoc_http://www.neuron.yale.edu/neuron/static/new_doc/nrnhelp.zip>`_
 - Old documentation: `Quick Index <http://www.neuron.yale.edu/neuron/static/docs/help/quick_reference.html>`_ (contributed by `Mike Neubig <neubig@salk.edu>`_\ ),
   `Index <http://www.neuron.yale.edu/neuron/static/docs/help/index.html>`_\ ,
   `Contents <http://www.neuron.yale.edu/neuron/static/docs/help/hier.html>`_,
   `Download in zip format <http://www.neuron.yale.edu/neuron/static/docs/nrnhelp.zip>`_
 - Commonly used:
-    :class:`Deck`, `File <programming/io/file.html>`_, `Glyph <visualization/glyph.html>`_,
+    :hoc:class:`Deck`, `File <programming/io/file.html>`_, `Glyph <visualization/glyph.html>`_,
     `Graph <visualization/graph.html>`_, `GUIMath <programming/math/guimath.html>`_,
     `List <programming/gui/list.html>`_, `Matrix <programming/math/matrix.html>`_,
     `Pointer <programming/pointers/pointer.html>`_,
@@ -20,22 +20,22 @@ Quick Links
     `Random <programming/math/random.html>`_, `StringFunctions <programming/strfun.html>`_,
     `SymChooser <programming/gui/symchooser.html>`_,
     `TextEditor <programming/gui/texteditor.html>`_, `Timer <programming/timer.html>`_, `ValueFieldEditor <programming/gui/vfe.html>`_,
-    :class:`VBox`, `Vector <programming/math/vector.html>`_
+    :hoc:class:`VBox`, `Vector <programming/math/vector.html>`_
     
-    `BBSaveState <simctrl/bbsavestate.html>`_, `CVode <simctrl/cvode.html>`_, :class:`FInitializeHandler`, `Impedance <analysis/programmatic/impedance.html>`_,
+    `BBSaveState <simctrl/bbsavestate.html>`_, `CVode <simctrl/cvode.html>`_, :hoc:class:`FInitializeHandler`, `Impedance <analysis/programmatic/impedance.html>`_,
     `KSChan <modelspec/programmatic/kschan.html>`_, `LinearMechanism <modelspec/programmatic/linmod.html>`_,
     `MechanismStandard <programming/mechstan.html>`_,
     `MechanismType <modelspec/programmatic/mechtype.html>`_, `NetCon <modelspec/programmatic/network/netcon.html>`_, `ParallelContext <modelspec/programmatic/network/parcon.html>`_,
-    `ParallelNetManager <modelspec/programmatic/network/parnet.html>`_, `PlotShape <visualization/plotshapeclass.html>`_, :ref:`Python`,
+    `ParallelNetManager <modelspec/programmatic/network/parnet.html>`_, `PlotShape <visualization/plotshapeclass.html>`_, :ref:`hoc_Python`,
     `RangeVarPlot <visualization/rvarplt.html>`_, `SaveState <simctrl/savstate.html>`_, `SectionBrowser <programming/gui/secbrows.html>`_,
     `SectionList <modelspec/programmatic/topology/seclist.html>`_, `SectionRef <modelspec/programmatic/topology/secref.html>`_, `Shape <visualization/shape.html>`_,
     `StateTransitionEvent <modelspec/programmatic/ste.html>`_
 
-    :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
-    :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
-    :ref:`ocsyntax`, :ref:`topology`
+    :ref:`hoc_panel`, :ref:`hoc_funfit`, :ref:`hoc_geometry`, :ref:`hoc_printf_doc`, :ref:`hoc_ockeywor`, :ref:`hoc_math`,
+    :ref:`hoc_nmodl2`, :ref:`hoc_nmodl`, :ref:`hoc_mech`, :ref:`hoc_predec`, :ref:`hoc_standardruntools`,
+    :ref:`hoc_ocsyntax`, :ref:`hoc_topology`
     
-    :ref:`neuron_rxd`
+    :ref:`hoc_neuron_rxd`
 
 Basic Programming
 -----------------

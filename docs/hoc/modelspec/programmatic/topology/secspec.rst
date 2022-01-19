@@ -1,12 +1,14 @@
-.. _secspec:
 
-.. _CurrentlyAccessedSection:
+.. _hoc_secspec:
+
+
+.. _hoc_CurrentlyAccessedSection:
 
 Section and Segment Selection
 -----------------------------
 
 
-Since sections share property names eg. a length called :data:`L` 
+Since sections share property names eg. a length called :hoc:data:`L`
 it is always necessary to specify 
 *which* section is being discussed. 
 
@@ -59,18 +61,18 @@ Avoid the error:
 
             soma L=10 diam=10 
 
-which sets ``soma.L``, then pops the section stack and sets :data:`diam` 
+which sets ``soma.L``, then pops the section stack and sets :hoc:data:`diam`
 for whatever section is then on the stack. 
  
 It is important that control flow reach the end of *stmt* in order to 
 automatically pop the section stack. Therefore, one cannot use 
-the :ref:`continue <keyword_continue>`, :ref:`break <keyword_break>`, or :ref:`return <keyword_return>` statements in *stmt*. 
+the :ref:`continue <hoc_keyword_continue>`, :ref:`break <hoc_keyword_break>`, or :ref:`return <hoc_keyword_return>` statements in *stmt*.
  
 There is no explicit notion of a section variable in NEURON but the same 
-effect can be obtained with the :class:`SectionRef` class. The use of :func:`push_section` 
+effect can be obtained with the :hoc:class:`SectionRef` class. The use of :hoc:func:`push_section`
 for this purpose is not recommended except as a last resort. 
  
-Looping over sets of sections is done most often with the :ref:`forall <keyword_forall>` and :ref:`forsec <keyword_forsec>` 
+Looping over sets of sections is done most often with the :ref:`forall <hoc_keyword_forall>` and :ref:`forsec <hoc_keyword_forsec>`
 commands. 
  
 
@@ -111,7 +113,8 @@ use the section stack.
 
 .. index::  access (keyword)
 
-.. _keyword_access:
+
+.. _hoc_keyword_access:
 
 **access**
 
@@ -164,7 +167,8 @@ use the section stack.
 
 .. index::  forall (keyword)
 
-.. _keyword_forall:
+
+.. _hoc_keyword_forall:
 
 **forall**
 
@@ -181,16 +185,16 @@ use the section stack.
         declared in the object. This is generally the right thing to do when a template 
         creates sections but is inconvenient when a template is constructed which 
         needs to compute using sections external to it. In this case, one can pass a collection 
-        of sections into a template function as a :class:`SectionList` object argument. 
+        of sections into a template function as a :hoc:class:`SectionList` object argument.
          
         The ``forall`` is relatively slow, 
-        especially when used in conjunction with :func:`issection` 
-        and :func:`ismembrane` selectors. If you are often iterating over the same 
-        sets it is much faster to keep the sets in :class:`SectionList` objects and use 
-        the much faster :ref:`forsec <keyword_forsec>` command. 
+        especially when used in conjunction with :hoc:func:`issection`
+        and :hoc:func:`ismembrane` selectors. If you are often iterating over the same
+        sets it is much faster to keep the sets in :hoc:class:`SectionList` objects and use
+        the much faster :ref:`forsec <hoc_keyword_forsec>` command.
          
         The iteration sequence order is undefined but will remain the same for 
-        a given sequence of :ref:`create <keyword_create>` statements. 
+        a given sequence of :ref:`create <hoc_keyword_create>` statements.
          
 
     Example:
@@ -215,7 +219,7 @@ use the section stack.
             dend[2] 
 
     .. seealso::
-        :ref:`forsec <keyword_forsec>`, :ref:`ifsec <keyword_ifsec>`, :func:`issection`, :func:`SectionList`, :func:`ismembrane`
+        :ref:`forsec <hoc_keyword_forsec>`, :ref:`ifsec <hoc_keyword_ifsec>`, :hoc:func:`issection`, :hoc:func:`SectionList`, :hoc:func:`ismembrane`
 
          
 
@@ -225,7 +229,8 @@ use the section stack.
 
 .. index::  ifsec (keyword)
 
-.. _keyword_ifsec:
+
+.. _hoc_keyword_ifsec:
 
 **ifsec**
 
@@ -250,7 +255,7 @@ use the section stack.
 
 
     .. seealso::
-        :ref:`forsec <keyword_forsec>`, :class:`SectionList`, :func:`issection`
+        :ref:`forsec <hoc_keyword_forsec>`, :hoc:class:`SectionList`, :hoc:func:`issection`
 
          
 
@@ -260,7 +265,8 @@ use the section stack.
 
 .. index::  forsec (keyword)
 
-.. _keyword_forsec:
+
+.. _hoc_keyword_forsec:
 
 **forsec**
     Syntax:
@@ -308,7 +314,7 @@ use the section stack.
 
 
 
-.. function:: pop_section
+.. hoc:function:: pop_section
 
 
     Syntax:
@@ -341,7 +347,7 @@ use the section stack.
 
 
 
-.. function:: push_section
+.. hoc:function:: push_section
 
 
     Syntax:
@@ -354,8 +360,8 @@ use the section stack.
         This function, along with ``pop_section()`` should only be used as a last resort. 
         It will place a specified section on the top of the section stack, 
         becoming the current section to which all operations apply. It is 
-        probably always better to use :class:`SectionRef` 
-        or :class:`SectionList` . 
+        probably always better to use :hoc:class:`SectionRef`
+        or :hoc:class:`SectionList` .
 
 
         :samp:`push_section({number})` 
@@ -373,7 +379,7 @@ use the section stack.
 
 
     .. seealso::
-        :class:`SectionRef`
+        :hoc:class:`SectionRef`
 
          
          

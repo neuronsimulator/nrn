@@ -9,22 +9,22 @@ Strings
         strfun.rst
         sscanf.rst
         
-    - :ref:`strdef <keyword_strdef>`
+    - :ref:`strdef <hoc_keyword_strdef>`
 
 ----
 
-.. function:: sprint
+.. hoc:function:: sprint
 
     Syntax:
         ``sprint(strdef, "format", args)``
 
     Description:
-        Prints to a string. See :func:`printf` for the description of the format.
+        Prints to a string. See :hoc:func:`printf` for the description of the format.
 
 
 ----
 
-.. function:: strcmp
+.. hoc:function:: strcmp
 
     Syntax:
         ``x = strcmp("string1", "string2")``

@@ -1,4 +1,5 @@
-.. _grapher:
+
+.. _hoc_grapher:
 
 
 Grapher
@@ -12,7 +13,7 @@ It iterates the independent variable over the range specified by the
 "Indep Begin" and "Indep End" field editors using "Steps" steps. 
 At each step, it executes the statements 
 specified in the Generator field (if any), and plots the values that are 
-specified in the Graph scene from the :ref:`gui_PlotWhat` menu item at the x-axis 
+specified in the Graph scene from the :ref:`hoc_gui_PlotWhat` menu item at the x-axis
 location specified by the value of the "X-expr" (normally the same 
 as the independent variable). 
  
