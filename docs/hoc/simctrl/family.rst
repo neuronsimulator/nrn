@@ -1,6 +1,7 @@
 .. index:: makeFamily (HOC function)
 
-.. _family:
+
+.. _hoc_family:
 
 
 Family
@@ -51,14 +52,16 @@ Cont:
     (If the previous action was stopped in the middle, 
     that action is not restarted where it left off.) 
      
-.. _execcommand:
+
+.. _hoc_execcommand:
 
 ExecCommand
 -----------
 
 Specify a command and execute it. 
      
-.. _gathervec:
+
+.. _hoc_gathervec:
 
 GatherVec
 ---------
@@ -70,7 +73,8 @@ candidate for the x variable. Then one does a run, selects a point with
 crosshairs, and presses the record button on the GatherValues tool) 
      
 
-.. _vectorplay:
+
+.. _hoc_vectorplay:
 
 VectorPlay
 ----------
@@ -79,7 +83,8 @@ Copy a vector from the clipboard and play it into some
 chosen (from a Symchooser) variable name. There is button to connect 
 and disconnect (return the default value to the variable) the vector. 
  
-.. _vecwrap:
+
+.. _hoc_vecwrap:
 
 VecWrap
 -------

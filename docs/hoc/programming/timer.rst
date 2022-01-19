@@ -1,11 +1,12 @@
-.. _timer:
+
+.. _hoc_timer:
 
 Timer
 -----
 
 
 
-.. class:: Timer
+.. hoc:class:: Timer
 
 
     Syntax:
@@ -62,7 +63,7 @@ Timer
 
 
 
-.. method:: Timer.seconds
+.. hoc:method:: Timer.seconds
 
 
     Syntax:
@@ -82,7 +83,7 @@ Timer
 
 
 
-.. method:: Timer.start
+.. hoc:method:: Timer.start
 
 
     Syntax:
@@ -99,7 +100,7 @@ Timer
 
 
 
-.. method:: Timer.end
+.. hoc:method:: Timer.end
 
 
     Syntax:

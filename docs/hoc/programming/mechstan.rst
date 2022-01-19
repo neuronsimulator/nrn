@@ -1,4 +1,5 @@
-.. _mechstan:
+
+.. _hoc_mechstan:
 
          
 MechanismStandard (Parameter Control)
@@ -6,7 +7,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. class:: MechanismStandard
+.. hoc:class:: MechanismStandard
 
 
     Syntax:
@@ -22,11 +23,11 @@ MechanismStandard (Parameter Control)
         be used to specify values for a set of sections. 
          
         *name* is a density mechanism such as ``hh`` or a point process 
-        such as :class:`VClamp`. A ``MechanismStandard`` instance, when created, 
+        such as :hoc:class:`VClamp`. A ``MechanismStandard`` instance, when created,
         contains default values for all parameters associated with the mechanism. 
          
         In combination with the 
-        :class:`MechanismType` class it is possible to create generic graphical interface 
+        :hoc:class:`MechanismType` class it is possible to create generic graphical interface
         widgets that are independent of the particular mechanism and parameter names. 
          
         If vartype = 1, 2, or 3, the storage is for PARAMETER, ASSIGNED, or STATE 
@@ -89,7 +90,7 @@ MechanismStandard (Parameter Control)
 
 
     .. seealso::
-        :class:`MechanismType`
+        :hoc:class:`MechanismType`
 
          
 
@@ -97,7 +98,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.panel
+.. hoc:method:: MechanismStandard.panel
 
 
     Syntax:
@@ -114,7 +115,7 @@ MechanismStandard (Parameter Control)
         mechanism. Otherwise the string is used as the first item label. 
 
     .. seealso::
-        :func:`nrnglobalmechmenu`, :func:`nrnmechmenu`, :func:`nrnpointmenu`
+        :hoc:func:`nrnglobalmechmenu`, :hoc:func:`nrnmechmenu`, :hoc:func:`nrnpointmenu`
 
          
 
@@ -122,7 +123,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.action
+.. hoc:method:: MechanismStandard.action
 
 
     Syntax:
@@ -131,7 +132,7 @@ MechanismStandard (Parameter Control)
 
     Description:
         action to be executed when any variable is changed in the panel. 
-        The hoc variable :data:`hoc_ac_` is set to the index of the variable (0 to count-1). 
+        The hoc variable :hoc:data:`hoc_ac_` is set to the index of the variable (0 to count-1).
 
     Example:
         forall delete_section() 
@@ -165,7 +166,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.in
+.. hoc:method:: MechanismStandard.in
 
 
     Syntax:
@@ -189,7 +190,7 @@ MechanismStandard (Parameter Control)
             the mechanism located in the segment containing x of the currently accessed section. 
             (Note that x=0 and 1 are considered to lie in the 
             0+ and 1- segments respectively so a proper iteration uses for(x, 0). 
-            See :ref:`for <keyword_for>`.
+            See :ref:`for <hoc_keyword_for>`.
 
         :samp:`ms.in({pointprocess})` 
             the point process object 
@@ -205,7 +206,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.out
+.. hoc:method:: MechanismStandard.out
 
 
     Syntax:
@@ -244,7 +245,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.set
+.. hoc:method:: MechanismStandard.set
 
 
     Syntax:
@@ -261,7 +262,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.get
+.. hoc:method:: MechanismStandard.get
 
 
     Syntax:
@@ -278,7 +279,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.save
+.. hoc:method:: MechanismStandard.save
 
 
     Syntax:
@@ -297,7 +298,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.count
+.. hoc:method:: MechanismStandard.count
 
 
     Syntax:
@@ -314,7 +315,7 @@ MechanismStandard (Parameter Control)
 
 
 
-.. method:: MechanismStandard.name
+.. hoc:method:: MechanismStandard.name
 
 
     Syntax:

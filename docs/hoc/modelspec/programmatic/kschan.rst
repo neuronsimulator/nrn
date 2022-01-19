@@ -1,4 +1,5 @@
-.. _kschan:
+
+.. _hoc_kschan:
 
          
 KSChan
@@ -6,7 +7,7 @@ KSChan
 
 
 
-.. class:: KSChan
+.. hoc:class:: KSChan
 
 
     Syntax:
@@ -15,7 +16,7 @@ KSChan
 
     Description:
         Declare and manage a new density channel type which can 
-        be instantiated in sections with the :ref:`insert <keyword_insert>` 
+        be instantiated in sections with the :ref:`insert <hoc_keyword_insert>`
         statement. After the type comes into existence it 
         is always a valid type and the conductance style, 
         ligands, name, gating functions, etc can be changed 
@@ -29,7 +30,7 @@ KSChan
         kinetic scheme gates. The administrative extensions 
         allowed a more convenient re-implementation of the 
         channel builder gui in HOC --- albeit substantially 
-        similar. The KSChan :meth:`KSChan.setstructure` method 
+        similar. The KSChan :hoc:meth:`KSChan.setstructure` method
         uses a slightly modified vector format so the old 
         Java channelbuilder tool will not work without 
         updating the Java implementation. 
@@ -39,7 +40,7 @@ KSChan
 
 
 
-.. method:: KSChan.setstructure
+.. hoc:method:: KSChan.setstructure
 
 
     Syntax:
@@ -54,7 +55,7 @@ KSChan
 
 
 
-.. method:: KSChan.remove_state
+.. hoc:method:: KSChan.remove_state
 
 
     Syntax:
@@ -70,7 +71,7 @@ KSChan
 
 
 
-.. method:: KSChan.remove_transition
+.. hoc:method:: KSChan.remove_transition
 
 
     Syntax:
@@ -87,7 +88,7 @@ KSChan
 
 
 
-.. method:: KSChan.ngate
+.. hoc:method:: KSChan.ngate
 
 
     Syntax:
@@ -101,7 +102,7 @@ KSChan
 
 
 
-.. method:: KSChan.nstate
+.. hoc:method:: KSChan.nstate
 
 
     Syntax:
@@ -115,7 +116,7 @@ KSChan
 
 
 
-.. method:: KSChan.ntrans
+.. hoc:method:: KSChan.ntrans
 
 
     Syntax:
@@ -129,7 +130,7 @@ KSChan
 
 
 
-.. method:: KSChan.nligand
+.. hoc:method:: KSChan.nligand
 
 
     Syntax:
@@ -143,7 +144,7 @@ KSChan
 
 
 
-.. method:: KSChan.pr
+.. hoc:method:: KSChan.pr
 
 
     Syntax:
@@ -158,7 +159,7 @@ KSChan
 
 
 
-.. method:: KSChan.iv_type
+.. hoc:method:: KSChan.iv_type
 
 
     Syntax:
@@ -174,7 +175,7 @@ KSChan
 
 
 
-.. method:: KSChan.gmax
+.. hoc:method:: KSChan.gmax
 
 
     Syntax:
@@ -190,7 +191,7 @@ KSChan
 
 
 
-.. method:: KSChan.erev
+.. hoc:method:: KSChan.erev
 
 
     Syntax:
@@ -207,7 +208,7 @@ KSChan
 
 
 
-.. method:: KSChan.add_hhstate
+.. hoc:method:: KSChan.add_hhstate
 
 
     Syntax:
@@ -221,7 +222,7 @@ KSChan
 
 
 
-.. method:: KSChan.add_ksstate
+.. hoc:method:: KSChan.add_ksstate
 
 
     Syntax:
@@ -235,7 +236,7 @@ KSChan
 
 
 
-.. method:: KSChan.add_transition
+.. hoc:method:: KSChan.add_transition
 
 
     Syntax:
@@ -251,7 +252,7 @@ KSChan
 
 
 
-.. method:: KSChan.trans
+.. hoc:method:: KSChan.trans
 
 
     Syntax:
@@ -267,7 +268,7 @@ KSChan
 
 
 
-.. method:: KSChan.state
+.. hoc:method:: KSChan.state
 
 
     Syntax:
@@ -281,7 +282,7 @@ KSChan
 
 
 
-.. method:: KSChan.gate
+.. hoc:method:: KSChan.gate
 
 
     Syntax:
@@ -296,7 +297,7 @@ KSChan
 
 
 
-.. method:: KSChan.name
+.. hoc:method:: KSChan.name
 
 
     Syntax:
@@ -312,7 +313,7 @@ KSChan
 
 
 
-.. method:: KSChan.ion
+.. hoc:method:: KSChan.ion
 
 
     Syntax:
@@ -328,7 +329,7 @@ KSChan
 
 
 
-.. method:: KSChan.ligand
+.. hoc:method:: KSChan.ligand
 
 
     Syntax:
@@ -343,7 +344,7 @@ KSChan
 
 
 
-.. class:: KSState
+.. hoc:class:: KSState
 
 
     Syntax:
@@ -351,14 +352,14 @@ KSChan
 
 
     Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
+        A helper class for :hoc:class:`KSChan`. KSChan creates and destroys
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
         the referenced KSState. 
 
     .. seealso::
-        :meth:`KSChan.add_hhstate`, :meth:`KSChan.add_ksstate`
+        :hoc:meth:`KSChan.add_hhstate`, :hoc:meth:`KSChan.add_ksstate`
 
          
 
@@ -366,7 +367,7 @@ KSChan
 
 
 
-.. method:: KSState.frac
+.. hoc:method:: KSState.frac
 
 
     Syntax:
@@ -382,7 +383,7 @@ KSChan
 
 
 
-.. method:: KSState.index
+.. hoc:method:: KSState.index
 
 
     Syntax:
@@ -397,7 +398,7 @@ KSChan
 
 
 
-.. method:: KSState.gate
+.. hoc:method:: KSState.gate
 
 
     Syntax:
@@ -412,7 +413,7 @@ KSChan
 
 
 
-.. method:: KSState.name
+.. hoc:method:: KSState.name
 
 
     Syntax:
@@ -429,7 +430,7 @@ KSChan
 
 
 
-.. class:: KSGate
+.. hoc:class:: KSGate
 
 
     Syntax:
@@ -437,14 +438,14 @@ KSChan
 
 
     Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
+        A helper class for :hoc:class:`KSChan`. KSChan creates and destroys
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
         the referenced KSGate. 
 
     .. seealso::
-        :meth:`KSChan.gate`
+        :hoc:meth:`KSChan.gate`
 
          
 
@@ -452,7 +453,7 @@ KSChan
 
 
 
-.. method:: KSGate.nstate
+.. hoc:method:: KSGate.nstate
 
 
     Syntax:
@@ -466,7 +467,7 @@ KSChan
 
 
 
-.. method:: KSGate.power
+.. hoc:method:: KSGate.power
 
 
     Syntax:
@@ -482,7 +483,7 @@ KSChan
 
 
 
-.. method:: KSGate.sindex
+.. hoc:method:: KSGate.sindex
 
 
     Syntax:
@@ -496,7 +497,7 @@ KSChan
 
 
 
-.. method:: KSGate.index
+.. hoc:method:: KSGate.index
 
 
     Syntax:
@@ -511,7 +512,7 @@ KSChan
 
 
 
-.. class:: KSTrans
+.. hoc:class:: KSTrans
 
 
     Syntax:
@@ -519,14 +520,14 @@ KSChan
 
 
     Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
+        A helper class for :hoc:class:`KSChan`. KSChan creates and destroys
         these objects internally. It cannot be created directly 
         with the "new" keyword. An error message will be printed 
         if a hoc reference is used after KSChan has destroyed 
         the referenced KSTrans. 
 
     .. seealso::
-        :meth:`KSChan.add_transition`, :meth:`KSChan.trans`
+        :hoc:meth:`KSChan.add_transition`, :hoc:meth:`KSChan.trans`
 
          
 
@@ -534,7 +535,7 @@ KSChan
 
 
 
-.. method:: KSTrans.set_f
+.. hoc:method:: KSTrans.set_f
 
 
     Syntax:
@@ -548,7 +549,7 @@ KSChan
 
 
 
-.. method:: KSTrans.index
+.. hoc:method:: KSTrans.index
 
 
     Syntax:
@@ -562,7 +563,7 @@ KSChan
 
 
 
-.. method:: KSTrans.type
+.. hoc:method:: KSTrans.type
 
 
     Syntax:
@@ -578,7 +579,7 @@ KSChan
 
 
 
-.. method:: KSTrans.ftype
+.. hoc:method:: KSTrans.ftype
 
 
     Syntax:
@@ -592,7 +593,7 @@ KSChan
 
 
 
-.. method:: KSTrans.ab
+.. hoc:method:: KSTrans.ab
 
 
     Syntax:
@@ -606,7 +607,7 @@ KSChan
 
 
 
-.. method:: KSTrans.inftau
+.. hoc:method:: KSTrans.inftau
 
 
     Syntax:
@@ -620,7 +621,7 @@ KSChan
 
 
 
-.. method:: KSTrans.f
+.. hoc:method:: KSTrans.f
 
 
     Syntax:
@@ -635,7 +636,7 @@ KSChan
 
 
 
-.. method:: KSTrans.src
+.. hoc:method:: KSTrans.src
 
 
     Syntax:
@@ -649,7 +650,7 @@ KSChan
 
 
 
-.. method:: KSTrans.target
+.. hoc:method:: KSTrans.target
 
 
     Syntax:
@@ -663,7 +664,7 @@ KSChan
 
 
 
-.. method:: KSTrans.parm
+.. hoc:method:: KSTrans.parm
 
 
     Syntax:
@@ -678,7 +679,7 @@ KSChan
 
 
 
-.. method:: KSTrans.ligand
+.. hoc:method:: KSTrans.ligand
 
 
     Syntax:

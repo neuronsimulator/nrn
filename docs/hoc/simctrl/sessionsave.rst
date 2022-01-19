@@ -1,7 +1,7 @@
 Session Printing and Saving
 ---------------------------
 
-.. function:: print_session
+.. hoc:function:: print_session
 
     Syntax:
         ``0 = print_session(useprinter, "name")``
@@ -18,8 +18,8 @@ Session Printing and Saving
         the postscript is saved in the file specified by "name". 
          
         If there is a third arg equal to 1 then the printed windows are those 
-        selected and arranged on the paper icon of the :ref:`PWM` and calling this function 
-        is equivalent to pressing the :ref:`PWM_Print` button. Otherwise all 
+        selected and arranged on the paper icon of the :ref:`hoc_PWM` and calling this function
+        is equivalent to pressing the :ref:`hoc_PWM_Print` button. Otherwise all
         printable windows are printed in landscape mode with a size such that 
         the screen fits on the paper. 
          
@@ -29,7 +29,7 @@ Session Printing and Saving
 
 ----
 
-.. function:: save_session
+.. hoc:function:: save_session
 
     Syntax:
         ``0 = save_session("filename")``
@@ -38,12 +38,12 @@ Session Printing and Saving
 
     Description:
         Save all the (saveable) windows on the screen to filename. 
-        This is equivalent to pressing the :ref:`Session_SaveAll` button 
-        on the :ref:`pwm`.
+        This is equivalent to pressing the :ref:`hoc_Session_SaveAll` button
+        on the :ref:`hoc_pwm`.
         If the header argument exists, it is copied to the beginning of 
         the file. 
 
     .. seealso::
-        :meth:`PWManager.save`
+        :hoc:meth:`PWManager.save`
 
 

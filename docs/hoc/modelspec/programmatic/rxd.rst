@@ -1,4 +1,5 @@
-.. _neuron_rxd:
+
+.. _hoc_neuron_rxd:
 
 Basic Reaction-Diffusion
 ========================
