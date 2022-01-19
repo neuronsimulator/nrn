@@ -225,7 +225,7 @@ no longer adequate for saying we can not */
  if (nmodl_text) {
 	Item* q;
 	char* pf = NULL;
-#if HAVE_REALPATH
+#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
 	pf = realpath(finname, NULL);
 #endif
 	fprintf(fcout, "\n#if NMODL_TEXT\nstatic const char* nmodl_filename = \"%s\";\nstatic const char* nmodl_file_text = \n", pf ? pf : finname);
