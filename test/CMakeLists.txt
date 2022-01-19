@@ -5,7 +5,8 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
 
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
-add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+add_compile_options(${NRN_COMPILE_FLAGS})
+add_compile_definitions(${NRN_COMPILE_DEFS})
 
 # =============================================================================
 # Test executables
@@ -175,6 +176,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
+    add_test(
+      NAME parallel_netpar
+      COMMAND
+        ${CMAKE_COMMAND} -E env PYTHONPATH=$PYTHONPATH:${PROJECT_SOURCE_DIR}/test/pynrn ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
+    list(APPEND TESTS parallel_tests parallel_netpar)
     add_test(
       NAME parallel_bas
       COMMAND

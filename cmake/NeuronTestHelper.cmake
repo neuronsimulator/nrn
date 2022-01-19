@@ -42,7 +42,8 @@
 #                 [MODFILE_PATTERNS mod_file_pattern ...]
 #                 [OUTPUT datatype::file.ext otherdatatype::otherfile.ext ...]
 #                 [SCRIPT_PATTERNS "*.py" ...]
-#                 [SIM_DIRECTORY sim_dir])
+#                 [SIM_DIRECTORY sim_dir]
+#                 [NRNIVMODL_ARGS arg1 ...])
 #
 #    Create a new integration test inside the given group, which must have
 #    previously been created using nrn_add_test_group. The COMMAND option is
@@ -51,10 +52,11 @@
 #    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
 #    can be used to override the defaults defined when nrn_add_test_group is
 #    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
-#    if certain features are, or are not, available. Seven features are currently
-#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
+#    if certain features are, or are not, available. Eight features are currently
+#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, mpi_dynamic, nmodl and python.
 #    The SIM_DIRECTORY argument is used to override the default directory in which
-#    the simulation is run.
+#    the simulation is run. The NRNIVMODL_ARGS argument allows extra arguments
+#    to be passed to nrnivmodl.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
 #                                  REFERENCE_OUTPUT datatype::file.ext [...])
@@ -109,7 +111,8 @@ function(nrn_add_test)
       CONFLICTS
       MODFILE_PATTERNS
       PRECOMMAND
-      SIM_DIRECTORY)
+      SIM_DIRECTORY
+      NRNIVMODL_ARGS)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -128,6 +131,7 @@ function(nrn_add_test)
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
   set(feature_cpu_enabled ON)
   set(feature_mpi_enabled ${NRN_ENABLE_MPI})
+  set(feature_mpi_dynamic_enabled ${NRN_ENABLE_MPI_DYNAMIC})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
   if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
@@ -211,8 +215,8 @@ function(nrn_add_test)
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
-  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
-  set(hash_components nrnivmodl)
+  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_NRNIVMODL_ARGS})
+  set(hash_components nrnivmodl ${NRN_ADD_TEST_NRNIVMODL_ARGS})
   if(requires_coreneuron)
     # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
     # reduce the number of times we call nrnivmodl.

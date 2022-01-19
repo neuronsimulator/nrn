@@ -21,6 +21,8 @@ additional_commands:
       CONFLICTS: '*'
       OUTPUT: '*'
       PROCESSORS: '?'
+      SIM_DIRECTORY: '?'
+      NRNIVMODL_ARGS: '+'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

@@ -28,12 +28,27 @@ FetchContent_Declare(
   GIT_TAG 70f363d7f82dfe6037fbddd8ed2e58cb20df6343
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
-FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn)
+FetchContent_Declare(
+  tqperf
+  GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
+  GIT_TAG 79df2a59ac4a56be3be840b4887222cea761b1ff
+  SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
+
+FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
 
 add_subdirectory(nrntest)
 add_subdirectory(reduced_dentate)
 add_subdirectory(ringtest)
 add_subdirectory(testcorenrn)
+
+# tqperf requires libcrypto library
+find_package(OpenSSL)
+
+if(OPENSSL_FOUND)
+  add_subdirectory(tqperf)
+else()
+  message(INFO "Skipping tqperf test as OpenSSL package not found")
+endif()
 
 if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(

@@ -40,6 +40,8 @@ jobs:
         python.version: '3.8'
       Python39:
         python.version: '3.9'
+      Python310:
+        python.version: '3.10'
   steps:
   
   # Secure files documentation:
@@ -93,6 +95,8 @@ jobs:
         python.version: '3.8'
       Python39:
         python.version: '3.9'
+      Python310:
+        python.version: '3.10'
   steps:
 
   # Secure files documentation:
@@ -139,19 +143,28 @@ jobs:
       Python36:
         python.version: '3.6'
         python.org.version: '3.6.8'
+        python.installer.name: 'macosx10.9.pkg'
       Python37:
         python.version: '3.7'
         python.org.version: '3.7.7'
+        python.installer.name: 'macosx10.9.pkg'
       Python38:
         python.version: '3.8'
         python.org.version: '3.8.2'
+        python.installer.name: 'macosx10.9.pkg'
       Python39:
         python.version: '3.9'
         python.org.version: '3.9.0'
+        python.installer.name: 'macosx10.9.pkg'
+      Python310:
+        python.version: '3.10'
+        python.org.version: '3.10.0'
+        python.installer.name: 'macos11.pkg'
+        
   steps:
 
   - script: |
-      installer=python-$(python.org.version)-macosx10.9.pkg
+      installer=python-$(python.org.version)-$(python.installer.name)
       url=https://www.python.org/ftp/python/$(python.org.version)/$installer
       curl $url -o $installer
       sudo installer -pkg $installer -target /
@@ -198,13 +211,6 @@ jobs:
     MSYS2_ROOT: C:\msys64
 
   steps:
-
-  # TODO: temporarily use choco install until #1522 is fixed
-  # we need to move out of the way the image installed msys64
-  - script: |
-      move C:\msys64 C:\msys64-from-image
-    displayName: "Move installed msys64"
-    condition: succeeded()
 
   - task: BatchScript@1
     inputs:

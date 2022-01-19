@@ -25,8 +25,8 @@ It is possible to install the Linux Python wheels on Windows via the Windows Sub
 ## Documentation
 
 * See documentation section of the [NEURON website](https://neuron.yale.edu/neuron/docs)
-* See [docs/README.md](docs/README.md) for developers documentation
-* See [http://neuronsimulator.github.io/nrn/](http://neuronsimulator.github.io/nrn/) for latest, nightly snapshot
+* See [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/) for latest, nightly snapshot
+* See [docs/README.md](docs/README.md) for information on documentation (local build, Read the Docs setup)
 
 ## Changelog
 
@@ -35,3 +35,10 @@ Refer to [docs/changelog.md](docs/changelog.md)
 ## Contributing to NEURON development
 
 Refer to [NEURON contribution guidelines](CONTRIBUTING.md)
+
+## Funding
+
+NEURON development is supported by NIH grant R01NS11613 (PI M.L. Hines at Yale University).
+
+Collaboration is provided by the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL) with funding from the Swiss government's ETH Board of the Swiss Federal Institutes of Technology. Additional funding from the European Union Seventh Framework Program (FP7/20072013) under grant agreement no. 604102 (HBP) and the European Union's Horizon 2020 Framework Programme for Research and Innovation under Specific Grant Agreement no. 720270 (Human Brain Project SGA1), no. 785907 (Human Brain Project SGA2) and no. 945539 (Human Brain Project SGA3).
+
