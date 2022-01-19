@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # to be executed by retrieve_audit
 auditprogpath=`dirname $0`

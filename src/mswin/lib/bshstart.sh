@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 N=`pwd`
 if false ; then
   PATH=$N/bin

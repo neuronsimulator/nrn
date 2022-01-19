@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -ex
 # distribution built with
 # bash bldnrnmacpkgcmake.sh python3.6 python3.7 python3.8 python3.9

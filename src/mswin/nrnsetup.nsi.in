@@ -118,7 +118,7 @@ Section "${NEURON} (required)"
   File /r "${MARSHAL}\nrn\*.*"
   ; otherwise cannot figure out how to put the installation folder in the file
   FileOpen $r1 "$INSTDIR\lib\nrnstart.bsh" "w"
-  FileWrite $r1 "#!/bin/bash$\n"
+  FileWrite $r1 "#!/usr/bin/env bash$\n"
   FileWrite $r1 "export N=$uINSTDIR$\n"
   FileWrite $r1 "export PATH=$$N/bin:$$PATH$\n"
   FileWrite $r1 "export PYTHONHOME=$$N$\n"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 export N=/cygdrive/c/nrn73
 export PATH=$N/bin:$PATH
 export PYTHONHOME=$N
