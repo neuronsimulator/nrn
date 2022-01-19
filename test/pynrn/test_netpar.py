@@ -1,14 +1,24 @@
 # Error tests for netpar.cpp
 # Some minor coverage increase for netpar.cpp when nhost > 1
+import os, sys, traceback
 
-from neuron import h
+try:
+    from neuron import h
 
-pc = h.ParallelContext()
+    pc = h.ParallelContext()
 
-from neuron.expect_hocerr import expect_err
-from test_hoc_po import Ring
+    from neuron.expect_hocerr import expect_err
 
-cvode = h.CVode()
+    # Prepend the directory of this script to the search path.
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+
+    from test_hoc_po import Ring
+
+    cvode = h.CVode()
+except:
+    traceback.print_exc()
+    # make the ctest test fail
+    sys.exit(24)
 
 
 def run(tstop):
@@ -116,6 +126,11 @@ def test_1():
 
 
 if __name__ == "__main__":
-    test_1()
-    pc.barrier()
+    try:
+        test_1()
+        pc.barrier()
+    except:
+        traceback.print_exc()
+        # make the ctest test fail
+        sys.exit(42)
     h.quit()
