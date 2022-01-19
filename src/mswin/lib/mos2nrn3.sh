@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 export TEMP="$1"
 shift
 export N="$1"

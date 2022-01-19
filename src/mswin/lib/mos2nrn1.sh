@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #derived from nrn/bin/mos2nrn2.sh.in
 # mos2nrn2 zipfile
