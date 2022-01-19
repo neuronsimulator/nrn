@@ -40,8 +40,7 @@ STATE {
 
  
 BREAKPOINT {
-	SOLVE state METHOD euler
-}
+	SOLVE state METHOD euler : this comment is terminated by a \r only, and it should not break the parser}
 
 INCLUDE "var_init.inc"
 
@@ -62,6 +61,9 @@ PROCEDURE test_table(br) {
     TABLE ainf FROM 0 TO FOO WITH 1
     ainf = 1
 }
+
+: to test \r only as newlinePROCEDURE test_r(){
+} : add something that will breaks the parser
 
 INITIAL {
     var_init(var)

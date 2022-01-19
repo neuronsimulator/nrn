@@ -40,6 +40,7 @@ jobs:
           
       - name: Install apt packages
         run: |
+          sudo apt-get update
           sudo apt-get install bison ccache dvipng doxygen flex libfl-dev \
             ninja-build pandoc python3-dev python3-pip \
             texlive-latex-recommended texlive-latex-extra
