@@ -362,7 +362,8 @@ void CodegenIspcVisitor::print_procedure(const ast::ProcedureBlock& node) {
 }
 
 
-void CodegenIspcVisitor::print_global_function_common_code(BlockType type) {
+void CodegenIspcVisitor::print_global_function_common_code(BlockType type,
+                                                           const std::string& function_name) {
     // If we are printing the cpp file, we have to use the c version of this function
     if (wrapper_codegen) {
         return CodegenCVisitor::print_global_function_common_code(type);

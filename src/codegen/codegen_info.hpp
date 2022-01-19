@@ -364,6 +364,9 @@ struct CodegenInfo {
     /// all watch statements
     std::vector<const ast::WatchStatement*> watch_statements;
 
+    /// all before after blocks
+    std::vector<const ast::Block*> before_after_blocks;
+
     /// all variables/symbols used in the verbatim block
     std::unordered_set<std::string> variables_in_verbatim;
 

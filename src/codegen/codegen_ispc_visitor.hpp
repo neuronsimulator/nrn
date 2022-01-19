@@ -131,7 +131,8 @@ class CodegenIspcVisitor: public CodegenCVisitor {
     ParamVector get_global_function_parms(const std::string& arg_qualifier);
 
 
-    void print_global_function_common_code(BlockType type) override;
+    void print_global_function_common_code(BlockType type,
+                                           const std::string& function_name = "") override;
 
 
     /// backend specific channel instance iteration block start

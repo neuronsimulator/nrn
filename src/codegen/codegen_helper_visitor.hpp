@@ -112,6 +112,8 @@ class CodegenHelperVisitor: public visitor::ConstAstVisitor {
     void visit_partial_block(const ast::PartialBlock& node) override;
     void visit_update_dt(const ast::UpdateDt& node) override;
     void visit_verbatim(const ast::Verbatim& node) override;
+    void visit_before_block(const ast::BeforeBlock& node) override;
+    void visit_after_block(const ast::AfterBlock& node) override;
 };
 
 /** @} */  // end of codegen_details

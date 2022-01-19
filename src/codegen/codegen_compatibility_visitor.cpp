@@ -24,10 +24,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
     CodegenCompatibilityVisitor::unhandled_ast_types_func(
         {{AstNodeType::MATCH_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<MatchBlock>},
-         {AstNodeType::BEFORE_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<BeforeBlock>},
-         {AstNodeType::AFTER_BLOCK,
-          &CodegenCompatibilityVisitor::return_error_without_name<AfterBlock>},
          {AstNodeType::TERMINAL_BLOCK,
           &CodegenCompatibilityVisitor::return_error_without_name<TerminalBlock>},
          {AstNodeType::DISCRETE_BLOCK,
