@@ -81,7 +81,6 @@ set(OC_FILE_LIST
     nrnfilewrap.cpp
     ocerf.cpp
     parallel.cpp
-    parse.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
@@ -502,8 +501,6 @@ set(MODFILE_BASE_NAMES
     svclmp)
 
 set(MODLUNIT_FILES_LIST
-    parse1.cpp
-    lex.cpp
     consist.cpp
     declare.cpp
     init.cpp
@@ -519,9 +516,6 @@ set(MODLUNIT_FILES_LIST
     version.cpp)
 
 set(NMODL_FILES_LIST
-    parse1.cpp
-    diffeq.cpp
-    lex.cpp
     consist.cpp
     deriv.cpp
     discrete.cpp
