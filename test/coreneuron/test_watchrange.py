@@ -2,8 +2,6 @@
 # mixed up with other instances.
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -147,18 +145,11 @@ def test_watchrange():
 
 
 if __name__ == "__main__":
-    try:
-        from neuron import gui
-
-        stdlist, tvec = test_watchrange()
-        g = h.Graph()
-        print("n_high  n_mid  n_low")
-        for i, result in enumerate(stdlist):
-            print(result[0], result[1], result[2])
-            result[4].line(g, tvec, i, 2)
-        g.exec_menu("View = plot")
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    stdlist, tvec = test_watchrange()
+    g = h.Graph()
+    print("n_high  n_mid  n_low")
+    for i, result in enumerate(stdlist):
+        print(result[0], result[1], result[2])
+        result[4].line(g, tvec, i, 2)
+    g.exec_menu("View = plot")
     h.quit()
