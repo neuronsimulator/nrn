@@ -3,7 +3,7 @@ import distutils.util
 import itertools
 import os
 
-from neuron import h
+from neuron import h, gui
 
 pc = h.ParallelContext()
 h.dt = 1.0 / 32

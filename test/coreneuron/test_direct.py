@@ -1,7 +1,7 @@
 import distutils.util
 import os
 
-from neuron import h
+from neuron import h, gui
 
 
 def test_direct_memory_transfer():

@@ -145,6 +145,8 @@ def test_watchrange():
 
 
 if __name__ == "__main__":
+    from neuron import gui
+
     stdlist, tvec = test_watchrange()
     g = h.Graph()
     print("n_high  n_mid  n_low")
