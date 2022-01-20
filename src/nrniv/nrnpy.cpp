@@ -18,7 +18,7 @@ extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
-extern void (*p_nrnpython_start)(int);
+extern int (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
@@ -66,7 +66,7 @@ static void* python_already_loaded();
 static void* load_python();
 static void load_nrnpython(int, const char*);
 #else //!defined(NRNPYTHON_DYNAMICLOAD)
-extern "C" void nrnpython_start(int);
+extern "C" int nrnpython_start(int);
 extern "C" void nrnpython_reg_real();
 extern "C" void nrnpython_real();
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
@@ -398,7 +398,7 @@ static void load_nrnpython(int pyver10, const char* pylib) {
         return;
     }
 #endif
-	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
+	p_nrnpython_start = (int(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");
 	p_nrnpython_reg_real = (void(*)())load_sym(handle, "nrnpython_reg_real");
 }
