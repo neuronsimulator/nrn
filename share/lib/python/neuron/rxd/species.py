@@ -322,8 +322,8 @@ class _SpeciesMathable(object):
                     raise RxDException(
                         "Intracellular 1D can only have one diffusion coefficient. To set 3D intracellular or extracellular diffusion, access the species on the regions; `species[region].d = (Dx, Dy, Dz)`"
                     )
-                rxd._setup_matrices()
                 _diffs[self._indices1d()] = values
+                rxd._setup_matrices()
 
 
 class SpeciesOnExtracellular(_SpeciesMathable):
