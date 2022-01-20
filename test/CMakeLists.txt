@@ -360,9 +360,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         NAME inputpresyn_py_${processor}
         REQUIRES coreneuron ${processor}
         PROCESSORS 2
-        COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                special ${MPIEXEC_POSTFLAGS} -mpi -python
-                ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
+        COMMAND
+          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
+          ${MPIEXEC_POSTFLAGS} -mpi -python
+          ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()
 endif()
