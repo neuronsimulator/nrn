@@ -1,7 +1,5 @@
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h, gui
 
@@ -90,10 +88,5 @@ def test_direct_memory_transfer():
 
 
 if __name__ == "__main__":
-    try:
-        test_direct_memory_transfer()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_direct_memory_transfer()
     h.quit()

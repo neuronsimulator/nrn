@@ -2,8 +2,6 @@
 import distutils.util
 import itertools
 import os
-import sys
-import traceback
 
 from neuron import h, gui
 
@@ -219,10 +217,5 @@ def test_datareturn():
 
 if __name__ == "__main__":
     show = False
-    try:
-        test_datareturn()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_datareturn()
     h.quit()

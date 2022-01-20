@@ -1,6 +1,12 @@
 # Error tests for netpar.cpp
 # Some minor coverage increase for netpar.cpp when nhost > 1
 
+# Prepend the location of the current script to the search path, so we can
+# import from test_hoc_po.
+import os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+
 from neuron import h
 
 pc = h.ParallelContext()
