@@ -129,8 +129,8 @@ static wchar_t* mywstrdup(char* s) {
 }
 
 /** @brief Start the Python interpreter.
- *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize), 2 (execute
- *         commands/scripts) or possibly 3 (?).
+ *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
+ *         or 2 (execute commands/scripts)
  *  @return 0 on success, non-zero on error
  *
  *  There is an internal state variable that stores whether or not Python has
@@ -202,22 +202,13 @@ extern "C" int nrnpython_start(int b) {
         break;
       }
     }
-    // When running in non-interactive/batch mode then python_error_encountered
-    // imply NEURON exits with a nonzero code. In interactive mode, we can start
-    // a Python interpreter.
+    // python_error_encountered dictates whether NEURON will exit with a nonzero
+    // code. In noninteractive/batch mode that happens immediately, in
+    // interactive mode then we start a Python interpreter first.
     if(nrn_istty_) {
       PyRun_InteractiveLoop(hoc_fin, "stdin");
     }
     return python_error_encountered;
-  }
-  // olupton 2022-01-20: is this code ever reached?
-  if (b == 3 && started) {
-#if HAVE_IV
-    if (Session::instance()) {
-      Session::instance()->quit();
-      rl_stuff_char(EOF);
-    }
-#endif
   }
 #endif
   return 0;
