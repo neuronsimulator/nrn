@@ -322,8 +322,7 @@ class _SpeciesMathable(object):
                     raise RxDException(
                         "Intracellular 1D can only have one diffusion coefficient. To set 3D intracellular or extracellular diffusion, access the species on the regions; `species[region].d = (Dx, Dy, Dz)`"
                     )
-                _diffs[self._indices1d()] = value
-                rxd._setup_matrices()
+                _diffs[self._indices1d()] = values
 
 
 class SpeciesOnExtracellular(_SpeciesMathable):
@@ -1953,112 +1952,6 @@ class Species(_SpeciesMathable):
         if len(data) * 8 != length or len(data) != len(self.nodes):
             raise RxDException("Invalid state data length")
         self.nodes.concentration = data
-
-    def _setup_matrices3d(self, euler_matrix):
-        return
-        # TODO: REmove this
-        for r in self._regions:
-            region_mesh = r._mesh.values
-            indices = {}
-            xs, ys, zs = region_mesh.nonzero()
-            diffs = node._diffs
-            offset = self._3doffset_by_region[r]
-            for i in range(len(xs)):
-                indices[(xs[i], ys[i], zs[i])] = i + offset
-            dx = self._regions[0]._dx
-            naf = self._regions[0]._geometry.neighbor_area_fraction
-            if not isinstance(naf, Callable):
-                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf
-                for nodeobj in self._nodes:
-                    i, j, k, index, vol = (
-                        nodeobj._i,
-                        nodeobj._j,
-                        nodeobj._k,
-                        nodeobj._index,
-                        nodeobj.volume,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j, k - 1),
-                        (i, j, k + 1),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areazl,
-                        areazr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j - 1, k),
-                        (i, j + 1, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areayl,
-                        areayr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i - 1, j, k),
-                        (i + 1, j, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areaxl,
-                        areaxr,
-                        dx,
-                    )
-            else:
-                for nodeobj in self._nodes:
-                    i, j, k, index, vol = (
-                        nodeobj._i,
-                        nodeobj._j,
-                        nodeobj._k,
-                        nodeobj._index,
-                        nodeobj.volume,
-                    )
-                    areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
-                    _setup_matrices_process_neighbors(
-                        (i, j, k - 1),
-                        (i, j, k + 1),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areazl,
-                        areazr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j - 1, k),
-                        (i, j + 1, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areayl,
-                        areayr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i - 1, j, k),
-                        (i + 1, j, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areaxl,
-                        areaxr,
-                        dx,
-                    )
 
     def re_init(self):
         """Reinitialize the rxd concentration of this species to match the NEURON grid"""
