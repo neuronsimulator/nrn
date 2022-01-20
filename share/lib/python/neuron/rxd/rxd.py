@@ -12,7 +12,7 @@ from . import initializer
 import collections
 import os
 import sysconfig
-import uuisetd
+import uuid
 import sys
 import itertools
 from numpy.ctypeslib import ndpointer
