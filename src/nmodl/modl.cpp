@@ -1,5 +1,4 @@
 #include <../../nmodlconf.h>
-
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is
  * successful. Diag will exit with 1 if error. 
@@ -42,6 +41,9 @@
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+
+#include <regex>
+
 #include "modl.h"
 FILE
 	* fin,			/* input file descriptor for filename.mod */
@@ -367,21 +369,26 @@ void verbatim_adjust(char* q) {
     // over into many .mod files in the wild. Try and remove declarations from
     // VERBATIM blocks and assume that the correct declarations of these utility
     // functions are visible via implicitly included headers.
-    repl = str_replace(std::move(repl), "extern void vector_resize();", "");
-    repl = str_replace(std::move(repl), "extern void vector_resize(void* vec, int size);", "");
-    repl = str_replace(std::move(repl), "extern double* vector_vec();", "");
-    repl = str_replace(std::move(repl), "extern double* vector_vec(void* vv);", "");
-    repl = str_replace(std::move(repl), "extern double* vector_vec(void* vec);", "");
-    repl = str_replace(std::move(repl), "extern void* vector_new1(int _i);", "");
-    repl = str_replace(std::move(repl), "extern int vector_capacity(void* vv);", "");
-    repl = str_replace(std::move(repl), "extern int vector_capacity(void* vec);", "");
-    // TODO better pattern-matching for vector_arg declarations?
-    repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
-    repl = str_replace(std::move(repl), "extern void* vector_arg(int iarg);", "");
+    auto const regex_replace = [&repl](const char* pattern, const char* replacement) {
+      repl = std::regex_replace(std::move(repl), std::regex{pattern}, replacement);
+    };
+    auto const regex_remove = [&](const char* pattern) { regex_replace(pattern, ""); };
+		regex_remove("extern void vector_resize\\([^)]*\\);");
+    regex_remove("extern double\\* vector_vec\\([^)]*\\);");
+    regex_remove("extern void\\* vector_new1\\([^)]*\\);");
+    regex_remove("extern int vector_capacity\\([^)]*\\);");
+    regex_remove("extern void\\* vector_arg\\([^)]*\\);");
+    regex_remove("extern Symbol \\*hoc_lookup\\(\\);");
+		regex_remove("Object\\*\\* hoc_objgetarg\\(\\);");
+    regex_remove("char\\s*\\*\\*\\s*hoc_pgargstr\\(\\);");
+    regex_remove("extern Symbol\\s*\\*\\s*hoc_get_symbol\\(\\);");
+    regex_remove("extern double\\* hoc_pgetarg\\(\\);");
+    regex_remove("extern int vector_instance_px\\(\\);");
+    regex_remove("extern double mcell_ran4\\(\\);");
+    regex_replace("char\\s+\\*gargstr\\(\\),(.*?);", "char \\1");
+    regex_replace("double(.*?), \\*hoc_pgetarg\\(\\)", "double\\1");
     // C++ has stricter rules about pointer casting. For example, you cannot
     // assign (void*)0 to a double* variable in C++.
     repl = str_replace(std::move(repl), "(void*)0", "nullptr");
-    // Remove C-style declaration with incorrect argument count.
-    repl = str_replace(std::move(repl), ", *hoc_pgetarg()", "");
     Fprintf(fcout, "%s", repl.c_str());
 }
