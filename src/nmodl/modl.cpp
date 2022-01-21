@@ -368,8 +368,13 @@ void verbatim_adjust(char* q) {
     // VERBATIM blocks and assume that the correct declarations of these utility
     // functions are visible via implicitly included headers.
     repl = str_replace(std::move(repl), "extern void vector_resize();", "");
+    repl = str_replace(std::move(repl), "extern void vector_resize(void* vec, int size);", "");
     repl = str_replace(std::move(repl), "extern double* vector_vec();", "");
+    repl = str_replace(std::move(repl), "extern double* vector_vec(void* vv);", "");
+    repl = str_replace(std::move(repl), "extern double* vector_vec(void* vec);", "");
     repl = str_replace(std::move(repl), "extern void* vector_new1(int _i);", "");
+    repl = str_replace(std::move(repl), "extern int vector_capacity(void* vv);", "");
+    repl = str_replace(std::move(repl), "extern int vector_capacity(void* vec);", "");
     // TODO better pattern-matching for vector_arg declarations?
     repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
     repl = str_replace(std::move(repl), "extern void* vector_arg(int iarg);", "");
