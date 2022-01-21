@@ -363,11 +363,20 @@ static std::string str_replace(std::string str, const std::string& search_str, c
 void verbatim_adjust(char* q) {
     // template is a reserved CPP keyword
     std::string repl = str_replace(q, "u.template", "u.ctemplate");
-    // C++ declarations must be correct; assume that the correct declarations
-    // are visible via implicitly included headers
-    repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
+    // C++ declarations must be correct; C was much sloppier and this carries
+    // over into many .mod files in the wild. Try and remove declarations from
+    // VERBATIM blocks and assume that the correct declarations of these utility
+    // functions are visible via implicitly included headers.
     repl = str_replace(std::move(repl), "extern void vector_resize();", "");
-    repl = str_replace(std::move(repl), "extern double* vector_vec()", "");
+    repl = str_replace(std::move(repl), "extern double* vector_vec();", "");
+    repl = str_replace(std::move(repl), "extern void* vector_new1(int _i);", "");
+    // TODO better pattern-matching for vector_arg declarations?
     repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
+    repl = str_replace(std::move(repl), "extern void* vector_arg(int iarg);", "");
+    // C++ has stricter rules about pointer casting. For example, you cannot
+    // assign (void*)0 to a double* variable in C++.
+    repl = str_replace(std::move(repl), "(void*)0", "nullptr");
+    // Remove C-style declaration with incorrect argument count.
+    repl = str_replace(std::move(repl), ", *hoc_pgetarg()", "");
     Fprintf(fcout, "%s", repl.c_str());
 }

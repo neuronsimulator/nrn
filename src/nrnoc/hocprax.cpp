@@ -56,7 +56,6 @@ extern int praxis_stop(int);
 
 extern int stoprun;
 extern double chkarg(int, double, double);
-extern IvocVect* vector_arg(int); //TODO: IvocVect?
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
 extern int nrn_praxis_ran_index;

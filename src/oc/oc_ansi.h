@@ -63,14 +63,17 @@ extern int ifarg(int);
 extern int vector_instance_px(void*, double**);
 extern void install_vector_method(const char*, double(*)(void*));
 
-extern IvocVect* vector_arg(int);
 extern int vector_arg_px(int i, double** p);
 
 #if defined(__cplusplus)
 }
 #endif
 
+IvocVect* vector_arg(int);
 int vector_capacity(IvocVect*);
+IvocVect* vector_new(int, Object* = nullptr);
+IvocVect* vector_new0();
+IvocVect* vector_new2(IvocVect*);
 Object** vector_pobj(IvocVect*);
 void vector_resize(IvocVect*, int);
 double* vector_vec(IvocVect*);
@@ -78,6 +81,7 @@ double* vector_vec(IvocVect*);
 //                     with pre-C++ mechanisms. They should be marked
 //                     deprecated for use in modern code.
 int vector_capacity(void*);
+double* vector_new1(int);
 Object** vector_pobj(void*);
 void vector_resize(void*, int);
 double* vector_vec(void*);
@@ -203,10 +207,6 @@ extern void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
 
 extern void vector_append(IvocVect*, double);
-extern IvocVect* vector_new(int, Object*); /*use this if possible*/
-extern IvocVect* vector_new0();
-extern IvocVect* vector_new1(int);
-extern IvocVect* vector_new2(IvocVect*);
 extern void vector_delete(IvocVect*);
 extern int vector_buffer_size(IvocVect*);
 

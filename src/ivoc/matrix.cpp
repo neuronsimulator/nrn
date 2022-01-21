@@ -202,7 +202,7 @@ static Object** m_mulv(void* v) {
 		vout = vector_arg(2);
 	}else{
 #ifdef WIN32
-		vout = vector_new1(m->nrow());
+		vout = vector_new(m->nrow());
 #else
 		vout = new Vect(m->nrow());
 #endif
@@ -331,7 +331,7 @@ static Object** m_symmeig(void* v) {
 	out->resize(m->nrow(), m->ncol());
 	Vect* vout;
 #ifdef WIN32
-	vout = vector_new1(m->nrow());
+	vout = vector_new(m->nrow());
 	p = vector_temp_objvar(vout);
 #else
 	vout = new Vect(m->nrow());
@@ -354,7 +354,7 @@ static Object** m_svd(void* vv) {
 	Vect* d;
 	int dsize = m->nrow() < m->ncol() ? m->nrow() : m->ncol();
 #ifdef WIN32
-	d = vector_new1(dsize);
+	d = vector_new(dsize);
 	p = vector_temp_objvar(d);
 #else
 	d = new Vect(dsize);
@@ -392,7 +392,7 @@ static Object** m_getrow(void* v) {
 #endif
 	}else{
 #ifdef WIN32
-		vout = vector_new1(m->ncol());
+		vout = vector_new(m->ncol());
 #else
 		vout = new Vect(m->ncol());
 #endif
@@ -418,7 +418,7 @@ static Object** m_getcol(void* v) {
 #endif
 	}else{
 #ifdef WIN32
-		vout = vector_new1(m->nrow());
+		vout = vector_new(m->nrow());
 #else
 		vout = new Vect(m->nrow());
 #endif
@@ -495,7 +495,7 @@ static Object** m_getdiag(void* v) {
 #endif
 	}else{
 #ifdef WIN32
-		vout = vector_new1(m->nrow());
+		vout = vector_new(m->nrow());
 #else
 		vout = new Vect(m->nrow());
 #endif
@@ -578,7 +578,7 @@ static Object** m_solv(void* v) {
 	}
 	if (!vout) {
 #ifdef WIN32
-		vout = vector_new1(m->nrow());
+		vout = vector_new(m->nrow());
 #else
 		vout = new Vect(m->nrow());
 #endif
@@ -633,7 +633,7 @@ static Object** m_to_vector(void* v) {
 		vout = vector_arg(1);
 		vector_resize(vout, nrow*ncol);
 	}else{
-		vout = vector_new1(nrow*ncol);
+		vout = vector_new(nrow*ncol);
 	}
 	k = 0;
 	double* ve = vector_vec(vout);

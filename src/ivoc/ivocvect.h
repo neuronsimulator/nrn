@@ -109,10 +109,6 @@ double stdDev(InputIterator begin, InputIterator end) {
 }
 
 extern "C" {
-extern IvocVect* vector_new(int, Object*); // use this if possible
-extern IvocVect* vector_new0();
-extern IvocVect* vector_new1(int);
-extern IvocVect* vector_new2(IvocVect*);
 extern void vector_delete(IvocVect*);
 extern int vector_buffer_size(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
@@ -122,18 +118,7 @@ extern char* vector_get_label(IvocVect*);
 extern void vector_set_label(IvocVect*, char*);
 } // extern "C"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-extern IvocVect* vector_arg(int);
-
-#if defined(__cplusplus)
-}
-#endif
-
 // olupton 2022-01-21: backwards compatibility
 using Vect = IvocVect;
 
 #endif
-

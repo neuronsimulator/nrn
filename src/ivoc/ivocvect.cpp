@@ -259,35 +259,50 @@ static Symbol* svec_;
 
 // extern "C" vector functions used by ocmatrix.dll
 // can also be used in mod files
-Vect* vector_new(int n, Object* o){return new Vect(n, o);}
-Vect* vector_new0(){return new Vect();}
-Vect* vector_new1(int n){return new Vect(n);}
-Vect* vector_new2(Vect* v){return new Vect(*v);}
 void vector_delete(Vect* v){delete v;}
 int vector_buffer_size(Vect* v){return v->buffer_size();}
+IvocVect* vector_arg(int i) {
+	Object* ob = *hoc_objgetarg(i);
+	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
+		check_obj_type(ob, "Vector");
+	}
+	return static_cast<IvocVect*>(ob->u.this_pointer);
+}
 int vector_capacity(IvocVect* v){
 	return v->size();
 }
 int vector_capacity(void* v) {
-	return vector_capacity(reinterpret_cast<IvocVect*>(v));
+	return vector_capacity(static_cast<IvocVect*>(v));
+}
+IvocVect* vector_new(int n, Object* o) {
+	return new IvocVect(n, o);
+}
+IvocVect* vector_new0() {
+	return new IvocVect();
+}
+double* vector_new1(int n) {
+	return reinterpret_cast<double*>(new IvocVect(n));
+}
+IvocVect* vector_new2(IvocVect* v) {
+	return new IvocVect(*v);
 }
 Object** vector_pobj(IvocVect* v){
 	return &v->obj_;
 }
 Object** vector_pobj(void* v) {
-	return vector_pobj(reinterpret_cast<IvocVect*>(v));
+	return vector_pobj(static_cast<IvocVect*>(v));
 }
 void vector_resize(IvocVect* v, int n) {
 	v->resize(n);
 }
 void vector_resize(void* v, int n) {
-	vector_resize(reinterpret_cast<IvocVect*>(v), n);
+	vector_resize(static_cast<IvocVect*>(v), n);
 }
 double* vector_vec(IvocVect* v) {
 	return v->data();
 }
 double* vector_vec(void* v) {
-	return vector_vec(reinterpret_cast<IvocVect*>(v));
+	return vector_vec(static_cast<IvocVect*>(v));
 }
 Object** vector_temp_objvar(Vect* v){return v->temp_objvar();}
 char* vector_get_label(Vect* v) { return v->label_; }
@@ -347,14 +362,6 @@ extern "C" int vector_instance_px(void* v, double** px) {
 	Vect* x = (Vect*)v;
 	*px = x->data();
 	return x->size();
-}
-
-extern "C" Vect* vector_arg(int i) {
-	Object* ob = *hoc_objgetarg(i);
-	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-		check_obj_type(ob, "Vector");
-	}
-	return (Vect*)(ob->u.this_pointer);
 }
 
 int is_vector_arg(int i) {
