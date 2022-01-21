@@ -80,7 +80,7 @@ static void ext_vdef() {
 			P("    _v = NODEV(_nd);\n");
 			P("  }\n");
 #endif
-			
+
 			P(" }\n");
 		}else{
 #if CACHEVEC == 0
@@ -143,7 +143,7 @@ P("#include \"md2redef.h\"\n");
 	P("static int _reset;\n");
 #if NMODL
 	P("static ");
-#endif	
+#endif
 	if (modelline) {
 		Fprintf(fcout, "char *modelname = \"%s\";\n\n", modelline);
 	} else {
@@ -154,20 +154,20 @@ P("#include \"md2redef.h\"\n");
 	P("static int error;\n");
 #if NMODL
 	P("static ");
-#endif	
+#endif
 	P("int _ninits = 0;\n");
 	P("static int _match_recurse=1;\n");
 #if NMODL
 	P("static void ");
-#endif	
+#endif
 	P("_modl_cleanup(){ _match_recurse=1;}\n");
 	/*
 	 * many machinations are required to make the infinite number of
-	 * definitions involving _p in defs.h to be invisible to the user 
+	 * definitions involving _p in defs.h to be invisible to the user
 	 */
 	/*
 	 * This one allows scop variables in functions which do not have the
-	 * p array as an argument 
+	 * p array as an argument
 	 */
 #if SIMSYS || HMODL || NMODL
 #else
@@ -178,7 +178,7 @@ P("#include \"md2redef.h\"\n");
 
 	/*
 	 * translations of named blocks into functions, procedures, etc. Also
-	 * some special declarations used by some blocks 
+	 * some special declarations used by some blocks
 	 */
 	printlist(procfunc);
 	Fflush(fcout);
@@ -465,12 +465,13 @@ P("#include \"md2redef.h\"\n");
 	P("  if (!_first) return;\n");
 	printlist(initlist);
 	P("_first = 0;\n}\n");
+	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 /*
  * One of the things initmodel() must do is initialize all states to the
  * value of state0.  This generated code goes before any explicit initialize
- * code written by the user. 
+ * code written by the user.
  */
 static void initstates()
 {
@@ -508,7 +509,7 @@ static void initstates()
 
 /*
  * here is the only place as of 18-apr-89 where we don't explicitly know the
- * type of a list element 
+ * type of a list element
  */
 
 static int newline, indent;
@@ -580,7 +581,7 @@ void printlist(List* s)
         newline = 0, indent = 0;
 	/*
 	 * most of this is merely to decide where newlines and indentation
-	 * goes so that the .c file can be read if something goes wrong 
+	 * goes so that the .c file can be read if something goes wrong
 	 */
 	if (!s) {
 		return;
@@ -643,10 +644,10 @@ if (vectorize) {
 void c_out_vectorize()
 {
 	Item *q;
-	
+
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n#include \"oc_ansi.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
@@ -673,7 +674,7 @@ P("#include \"md2redef.h\"\n");
 
 	/*
 	 * translations of named blocks into functions, procedures, etc. Also
-	 * some special declarations used by some blocks 
+	 * some special declarations used by some blocks
 	 */
 	printlist(procfunc);
 	Fflush(fcout);
@@ -939,7 +940,7 @@ Item* vectorize_replacement_item(Item* q) {
 		ITERATE(q1, vectorize_replacements) {
 			if (ITM(q1) == q) {
 				return q1->next;
-			}			
+			}
 		}
 	}
 	return (Item*)0;
@@ -1018,7 +1019,7 @@ static void conductance_cout() {
     i += 1;
   }
   if (i > 0) {
-    P(";\n");    
+    P(";\n");
   }
 
   i = 0;

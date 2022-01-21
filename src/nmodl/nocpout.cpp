@@ -234,12 +234,7 @@ void parout() {
 	if (brkpnt_exists) {
 		brkpnt_str_ = "nrn_cur, nrn_jacob, nrn_state";
 	}else{
-		brkpnt_str_ = "0, 0, 0";
-#if 1 || defined(__MINGW32__)
-		/* x86_64-w64-mingw32-gcc passed 0 without zeroing the high 32 bits */
-		/* also cygwin64 gcc 4.8.1, so cast to void* universally */
-		brkpnt_str_ = "(void*)0, (void*)0, (void*)0";
-#endif
+		brkpnt_str_ = "nullptr, nullptr, nullptr";
 	}
 
 	for (modbase = modprefix + strlen(modprefix); modbase != modprefix;
@@ -274,7 +269,7 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 \n#if METHOD3\nextern int _method3;\n#endif\n\
 \n#if !NRNGPU\
 \n#undef exp\
-\n#define exp hoc_Exp\nextern double hoc_Exp(double);\
+\n#define exp hoc_Exp\nextern \"C\" double hoc_Exp(double);\
 \n#endif\n\
 ");
 	if (protect_include_) {
@@ -325,7 +320,7 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	/*SUPPRESS 763*/\n\
 	/*SUPPRESS 765*/\n\
 	");
-	Lappendstr(defs_list, "extern double *getarg();\n");
+	Lappendstr(defs_list, "extern \"C\" double *getarg(int);\n");
 #if VECTORIZE
     if (vectorize) {
 	Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
@@ -403,7 +398,7 @@ extern Memb_func* memb_func;\n\
 
 	if (nmodl_text) {
 		Lappendstr(defs_list, "\n"
-"#define NMODL_TEXT 1\n"
+"#define NMODL_TEXT 0\n"
 "#if NMODL_TEXT\n"
 "static const char* nmodl_file_text;\n"
 "static const char* nmodl_filename;\n"
@@ -2596,7 +2591,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend)
 	    if (0) {
 		insertstr(qstmt, " assert(_tsav <= t); _tsav = t;");
 	    }else{
-		insertstr(qstmt, " if (_tsav > t){ extern char* hoc_object_name(); hoc_execerror(hoc_object_name(_pnt->ob), \":Event arrived out of order. Must call ParallelContext.set_maxstep AFTER assigning minimum NetCon.delay\");}\n _tsav = t;");
+		insertstr(qstmt, " if (_tsav > t){ hoc_execerror(hoc_object_name(_pnt->ob), \":Event arrived out of order. Must call ParallelContext.set_maxstep AFTER assigning minimum NetCon.delay\");}\n _tsav = t;");
 	    }
 	}
 	insertstr(qend, "}");

@@ -67,8 +67,8 @@ NET_RECEIVE (w) {
 DESTRUCTOR {
 VERBATIM
 #if !NRNBBCORE
-	void* vv = (void*)(_p_ptr);  
-        if (vv) {
+	auto* vv = reinterpret_cast<IvocVect*>(_p_ptr);
+	if (vv) {
 		hoc_obj_unref(*vector_pobj(vv));
 	}
 #endif
@@ -77,10 +77,10 @@ ENDVERBATIM
 
 PROCEDURE element() {
 VERBATIM	
-  { void* vv; int i, size; double* px;
+  { int i, size; double* px;
 	i = (int)index;
 	if (i >= 0) {
-		vv = (void*)(_p_ptr);
+		auto* vv = reinterpret_cast<IvocVect*>(_p_ptr);
 		if (vv) {
 			size = vector_capacity(vv);
 			px = vector_vec(vv);
@@ -102,13 +102,12 @@ PROCEDURE play() {
 VERBATIM
 #if !NRNBBCORE
   {
-	void** pv;
-	void* ptmp = NULL;
+	IvocVect* ptmp{};
 	if (ifarg(1)) {
 		ptmp = vector_arg(1);
 		hoc_obj_ref(*vector_pobj(ptmp));
 	}
-	pv = (void**)(&_p_ptr);
+	auto* pv = reinterpret_cast<IvocVect**>(&_p_ptr);
 	if (*pv) {
 		hoc_obj_unref(*vector_pobj(*pv));
 	}
@@ -123,11 +122,11 @@ static void bbcore_write(double* xarray, int* iarray, int* xoffset, int* ioffset
   int i, dsize, *ia;
   double *xa, *dv;
   dsize = 0;
-  if (_p_ptr) {
-    dsize = vector_capacity(_p_ptr);
+	auto* vec = reinterpret_cast<IvocVect*>(_p_ptr);
+  if (vec) {
+    dsize = vector_capacity(vec);
   }
   if (iarray) {
-    void* vec = _p_ptr;
     ia = iarray + *ioffset;
     xa = xarray + *xoffset;
     ia[0] = dsize;
@@ -148,11 +147,13 @@ static void bbcore_read(double* xarray, int* iarray, int* xoffset, int* ioffset,
   xa = xarray + *xoffset;
   ia = iarray + *ioffset;
   dsize = ia[0];
-  if (!_p_ptr) {
-    _p_ptr = vector_new1(dsize);
+	auto* vec = reinterpret_cast<IvocVect*>(_p_ptr);
+  if (!vec) {
+    vec = vector_new1(dsize);
   }
-  assert(dsize == vector_capacity(_p_ptr));
-  dv = vector_vec(_p_ptr);
+  assert(dsize == vector_capacity(vec));
+  dv = vector_vec(vec);
+	_p_ptr = reinterpret_cast<double*>(vec);
   for (i = 0; i < dsize; ++i) {
     dv[i] = xa[i];
   }

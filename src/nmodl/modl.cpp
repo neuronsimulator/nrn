@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
 #if NMODL || HMODL
 #else
 #if !SIMSYS
-	Fprintf(stderr, "Translating %s into %s.c and %s.var\n", finname,
+	Fprintf(stderr, "Translating %s into %s.cpp and %s.var\n", finname,
 		modprefix, modprefix);
 #endif
 #endif
@@ -258,7 +258,7 @@ no longer adequate for saying we can not */
 	}
 	if (usederivstatearray) {
 fprintf(stderr, "Derivatives of STATE array variables are not translated correctly and compile time errors will be generated.\n");
-fprintf(stderr, "The %s.c file may be manually edited to fix these errors.\n", modprefix);
+fprintf(stderr, "The %s.cpp file may be manually edited to fix these errors.\n", modprefix);
 	}
 #endif
 
@@ -313,12 +313,12 @@ static void openfiles(char* given_filename, char* output_dir) {
       } 
       char* basename = strrchr(modprefix,'/');
       if (basename) {
-        Sprintf(output_filename, "%s%s.c", output_dir, basename);
+        Sprintf(output_filename, "%s%s.cpp", output_dir, basename);
       } else {
-        Sprintf(output_filename, "%s/%s.c", output_dir, modprefix);
+        Sprintf(output_filename, "%s/%s.cpp", output_dir, modprefix);
       }
   } else {
-    Sprintf(output_filename, "%s.c", modprefix);
+    Sprintf(output_filename, "%s.cpp", modprefix);
   }
 
   if ((fcout = fopen(output_filename, "w")) == (FILE *) 0) {

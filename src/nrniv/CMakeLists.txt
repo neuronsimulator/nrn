@@ -86,11 +86,11 @@ endif()
 # Translate all MOD files to C and mark them generated
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
-  nocmodl_mod_to_c(${modfile})
-  list(APPEND NRN_MODFILE_C ${modfile}.c)
+  nocmodl_mod_to_cpp(${modfile})
+  list(APPEND NRN_MODFILE_CPP ${modfile}.cpp)
 endforeach()
 
-set_source_files_properties(${NRN_MODFILE_C} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${NRN_MODFILE_CPP} PROPERTIES GENERATED TRUE)
 
 # =============================================================================
 # Bison parser for HOC interpreter
@@ -119,7 +119,7 @@ set(NRN_NRNIV_LIB_SRC_FILES
     ${NRN_NRNOC_SRC_FILES}
     ${NRN_OC_SRC_FILES}
     ${NRN_MESCH_SRC_FILES}
-    ${NRN_MODFILE_C}
+    ${NRN_MODFILE_CPP}
     ${NRN_NRNGNU_SRC_FILES}
     ${NRN_SCOPMATH_SRC_FILES}
     ${NRN_SPARSE_SRC_FILES}

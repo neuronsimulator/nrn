@@ -65,12 +65,12 @@ typedef union Inst { /* machine instruction list type */
 
 #define STOP	(Inst *)0
 
-typedef struct Arrayinfo  { /* subscript info for arrays */
+struct Arrayinfo  { /* subscript info for arrays */
 	unsigned *a_varn;	/* dependent variable number for array elms */
 	int	nsub;		/* number of subscripts */
 	int	refcount;	/* because one object always uses symbol's */
 	int	sub[1];		/* subscript range */
-} Arrayinfo;
+};
 
 typedef struct Proc {
 	Inst	defn;	/* FUNCTION, PROCEDURE, FUN_BLTIN */
@@ -81,10 +81,10 @@ typedef struct Proc {
 	int	nobjauto;	/* the last of these are pointers to objects */
 } Proc;
 
-typedef struct Symlist {
+struct Symlist {
 	HocStruct Symbol *first;
 	HocStruct Symbol *last;
-}Symlist;
+};
 
 typedef char	*Upoint;
 
@@ -107,13 +107,13 @@ typedef char	*Upoint;
 #define OBJECTALIAS 1
 #define VARALIAS 2
 
-typedef struct HocSymExtension {
+struct HocSymExtension {
 	float *parmlimits;	/* some variables have suggested bounds */
 	char* units;
 	float tolerance;	/* some states have cvode absolute tolerance */
-}HocSymExtension;
+};
 
-typedef struct Symbol {	/* symbol table entry */
+struct Symbol {	/* symbol table entry */
 	char	*name;
 	short	type;
 	short	subtype;	/* Flag for user integers */
@@ -159,7 +159,7 @@ typedef struct Symbol {	/* symbol table entry */
 	HocSymExtension* extra; /* additions to symbol allow compatibility
 					with old nmodl dll's */
 	HocStruct Symbol	*next;	/* to link to another */
-} Symbol;
+};
 #define	ISARRAY(arg)	(arg->arayinfo != (Arrayinfo *)0)
 
 
@@ -173,7 +173,7 @@ typedef struct hoc_Item	hoc_List;
 #endif
 #endif
 
-typedef union Datum {	/* interpreter stack type */
+union Datum {	/* interpreter stack type */
 	double	val;
 	Symbol	*sym;
 	int i;
@@ -184,11 +184,11 @@ typedef union Datum {	/* interpreter stack type */
 	HocStruct hoc_Item* itm;
 	hoc_List* lst;
 	void* _pvoid;	/* not used on stack, see nrnoc/point.cpp */
-} Datum;
+};
 
 #if OOP
 //#if defined(__cplusplus)
-typedef struct cTemplate {
+struct cTemplate {
 //#else
 //typedef struct Template {
 //#endif
@@ -208,12 +208,12 @@ typedef struct cTemplate {
 	void (*steer)(void*);	/* normally nil */
 	int (*checkpoint)(void**);
 //#if defined(__cplusplus)
-} cTemplate;
+};
 //#else
 //}
 //#endif
 
-typedef union Objectdata{
+union Objectdata{
 	double *pval;	/* pointer to array of doubles, usually just 1 */
 	char **ppstr;	/* pointer to pointer to string ,allows vectors someday*/
 	HocStruct Object **pobj;	/* pointer to array of object pointers, usually just 1*/
@@ -221,9 +221,9 @@ typedef union Objectdata{
 	hoc_List** plist;	/* array of pointers to linked lists */
 	Arrayinfo* arayinfo;
 	void* _pvoid;		/* Point_process */
-}Objectdata;
+};
 
-typedef struct Object {
+struct Object {
 	int refcount;		/* how many object variables point to this */
 	int index;		/* unique integer used for names of sections */
 	union {
@@ -241,24 +241,24 @@ typedef struct Object {
 	void* observers;	/* hook to c++ ObjObservable */
 	short recurse;		/* to stop infinite recursions */
 	short unref_recurse_cnt; /* free only after last return from unref callback */
-} Object;
+};
 #endif
 
-typedef struct {		/* User Functions */
+struct VoidFunc {		/* User Functions */
 	const char 	*name;
 	void	(*func)(void);
-} VoidFunc;
+};
 
-typedef struct {		/* User Double Scalars */
+struct DoubScal {		/* User Double Scalars */
 	const char 	*name;
 	double	*pdoub;
-} DoubScal;
+};
 
-typedef struct {		/* User Vectors */
+struct DoubVec {		/* User Vectors */
 	const char 	*name;
 	double	*pdoub;
 	int	index1;
-} DoubVec;
+};
 
 typedef struct {		/* recommended limits for symbol values */
 	const char	*name;

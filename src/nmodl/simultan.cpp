@@ -174,7 +174,7 @@ numlist, numlist-1, counts);
 	Sprintf(buf, "error = newton(%d,_slist%d, _p, %s, _dlist%d);\n",
 		counts, numlist, SYM(q2)->name, numlist);
 	qret = insertstr(q3, buf);
-	Sprintf(buf, "error = nrn_newton_thread(_newtonspace%d, %d,_slist%d, _p, %s, _dlist%d, _ppvar, _thread, _nt);\n",
+	Sprintf(buf, "error = nrn_newton_thread(reinterpret_cast<NewtonSpace*>(_newtonspace%d), %d,_slist%d, _p, %s, _dlist%d, _ppvar, _thread, _nt);\n",
 		numlist-1, counts, numlist, SYM(q2)->name, numlist);
 	vectorize_substitute(qret, buf);
 	Insertstr(q3, "_recurse = 0; if(error) {abort_run(error);}}\n");

@@ -22,7 +22,18 @@
 
 
 #if defined(__cplusplus)
+struct Arrayinfo;
+struct cTemplate;
+union Datum;
+struct DoubScal;
+struct DoubVec;
+struct HocSymExtension;
 class IvocVect;
+struct Object;
+union Objectdata;
+struct Symbol;
+struct Symlist;
+struct VoidFunc;
 #else
 #define IvocVect void
 #endif
@@ -81,7 +92,7 @@ extern int hoc_is_double_arg(int);
 extern int hoc_is_pdouble_arg(int);
 extern int hoc_is_str_arg(int);
 extern int hoc_is_object_arg(int);
-extern char* gargstr(int);
+extern char* hoc_gargstr(int);
 extern char** hoc_pgargstr(int);
 
 extern double* hoc_pgetarg(int);
@@ -256,7 +267,7 @@ extern void hoc_obj_disconnect(Object*);
 extern void hoc_free_object(Object*);
 extern void hoc_free_pstring(char**);
 extern int hoc_returning;
-extern void hoc_on_init_register(Pfrv);
+extern void hoc_on_init_register(void(*)());
 extern int hoc_pid(void);
 extern int hoc_ired(const char*, int, int, int);
 extern double hoc_xred(const char*, double, double, double);
