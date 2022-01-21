@@ -358,6 +358,18 @@ cmake --build . --target cmake-format
 cmake --build . --target clang-format
 ```
 
+## Run CI
+
+CoreNeuron run several CI:
+
+- Github Action: defined [here](https://github.com/BlueBrain/CoreNeuron/tree/master/.github/workflows) and is self contained
+
+- Gitlab CI: defined [here](https://github.com/BlueBrain/CoreNeuron/blob/master/.gitlab-ci.yml) and depends on [gitlab pipelines](https://bbpgitlab.epfl.ch/hpc/gitlab-pipelines) and [blueconfigs](https://bbpgitlab.epfl.ch/hpc/sim/blueconfigs)
+
+### Configure gitlab CI
+
+See the [README](https://bbpgitlab.epfl.ch/hpc/gitlab-pipelines/-/blob/main/README.md) of `gitlab pipelines` to configure build.
+
 ## Citation
 
 If you would like to know more about CoreNEURON or would like to cite it, then use the following paper:
