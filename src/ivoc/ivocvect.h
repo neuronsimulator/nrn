@@ -127,8 +127,6 @@ extern "C" {
 #endif
 
 extern IvocVect* vector_arg(int);
-extern double* vector_vec(IvocVect*);
-extern void vector_resize(IvocVect*, int);
 
 #if defined(__cplusplus)
 }

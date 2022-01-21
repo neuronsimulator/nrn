@@ -277,9 +277,19 @@ Object** vector_pobj(IvocVect* v){
 Object** vector_pobj(void* v) {
 	return vector_pobj(reinterpret_cast<IvocVect*>(v));
 }
-void vector_resize(Vect* v, int n){v->resize(n);}
+void vector_resize(IvocVect* v, int n) {
+	v->resize(n);
+}
+void vector_resize(void* v, int n) {
+	vector_resize(reinterpret_cast<IvocVect*>(v), n);
+}
+double* vector_vec(IvocVect* v) {
+	return v->data();
+}
+double* vector_vec(void* v) {
+	return vector_vec(reinterpret_cast<IvocVect*>(v));
+}
 Object** vector_temp_objvar(Vect* v){return v->temp_objvar();}
-double* vector_vec(Vect* v){return v->data();}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
 void vector_append(Vect* v, double x){

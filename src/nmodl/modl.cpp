@@ -362,6 +362,12 @@ static std::string str_replace(std::string str, const std::string& search_str, c
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
     // template is a reserved CPP keyword
-    const std::string repl = str_replace(q, "u.template", "u.ctemplate");
+    std::string repl = str_replace(q, "u.template", "u.ctemplate");
+    // C++ declarations must be correct; assume that the correct declarations
+    // are visible via implicitly included headers
+    repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
+    repl = str_replace(std::move(repl), "extern void vector_resize();", "");
+    repl = str_replace(std::move(repl), "extern double* vector_vec()", "");
+    repl = str_replace(std::move(repl), "extern void* vector_arg();", "");
     Fprintf(fcout, "%s", repl.c_str());
 }

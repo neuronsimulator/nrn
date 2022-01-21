@@ -30,7 +30,6 @@ of spikes sent is equal to the number of spikes sent.
 extern "C" {
 
 extern IvocVect* vector_arg(int);
-extern void vector_resize(IvocVect*, int);
 
 } // extern "C"
 extern void (*nrntimeout_call)();

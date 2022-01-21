@@ -19,12 +19,18 @@ ASSIGNED {
 	space
 }
 
+VERBATIM
+extern void vector_resize();
+extern double* vector_vec();
+extern void* vector_arg();
+ENDVERBATIM
+
 INITIAL {
 	n = 0
 	firing = 0
 VERBATIM
-	{
-		auto* vv = *reinterpret_cast<IvocVect**>(&space);
+	{ void* vv;
+		vv = *((void**)(&space));
 		if (vv) {
 			vector_resize(vv, 0);
 		}
@@ -40,11 +46,11 @@ BREAKPOINT {
 PROCEDURE check() {
 VERBATIM
 	if (v >= thresh && !firing) {
-		int size; double* px;
+		int size; double* px; void* vv;
 		firing = 1;
 		time = t;
 		n += 1.;
-		auto* vv = *reinterpret_cast<IvocVect**>(&space);
+		vv = *((void**)(&space));
 		if (vv) {
 			size = (int)n;
 			vector_resize(vv, size);
@@ -60,8 +66,10 @@ ENDVERBATIM
 
 PROCEDURE record() {
 VERBATIM
-  auto* vv = reinterpret_cast<IvocVect**>(&space);
-	*vv = nullptr;
+	extern void* vector_arg();
+	void** vv;
+	vv = (void**)(&space);
+	*vv = (void*)0;
 	if (ifarg(1)) {
 		*vv = vector_arg(1);
 	}
