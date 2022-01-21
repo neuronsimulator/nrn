@@ -66,12 +66,19 @@ extern void install_vector_method(const char*, double(*)(void*));
 extern IvocVect* vector_arg(int);
 extern int vector_arg_px(int i, double** p);
 extern double* vector_vec(IvocVect*);
-extern int vector_capacity(IvocVect*);
 extern void vector_resize(IvocVect*, int);
 
 #if defined(__cplusplus)
 }
 #endif
+
+int vector_capacity(IvocVect*);
+Object** vector_pobj(IvocVect*);
+// olupton 2022-01-21: These overloads are added for backwards compatibility
+//                     with pre-C++ mechanisms. They should be marked
+//                     deprecated for use in modern code.
+int vector_capacity(void*);
+Object** vector_pobj(void*);
 
 extern int nrnignore;
 
@@ -202,7 +209,6 @@ extern void vector_delete(IvocVect*);
 extern int vector_buffer_size(IvocVect*);
 
 extern Object** vector_temp_objvar(IvocVect*);
-extern Object** vector_pobj(IvocVect*);
 
 extern int is_vector_arg(int);
 

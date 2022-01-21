@@ -116,7 +116,6 @@ extern IvocVect* vector_new2(IvocVect*);
 extern void vector_delete(IvocVect*);
 extern int vector_buffer_size(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
-extern Object** vector_pobj(IvocVect*);
 
 extern int is_vector_arg(int);
 extern char* vector_get_label(IvocVect*);
@@ -129,7 +128,6 @@ extern "C" {
 
 extern IvocVect* vector_arg(int);
 extern double* vector_vec(IvocVect*);
-extern int vector_capacity(IvocVect*);
 extern void vector_resize(IvocVect*, int);
 
 #if defined(__cplusplus)

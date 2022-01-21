@@ -265,11 +265,21 @@ Vect* vector_new1(int n){return new Vect(n);}
 Vect* vector_new2(Vect* v){return new Vect(*v);}
 void vector_delete(Vect* v){delete v;}
 int vector_buffer_size(Vect* v){return v->buffer_size();}
-int vector_capacity(Vect* v){return v->size();}
+int vector_capacity(IvocVect* v){
+	return v->size();
+}
+int vector_capacity(void* v) {
+	return vector_capacity(reinterpret_cast<IvocVect*>(v));
+}
+Object** vector_pobj(IvocVect* v){
+	return &v->obj_;
+}
+Object** vector_pobj(void* v) {
+	return vector_pobj(reinterpret_cast<IvocVect*>(v));
+}
 void vector_resize(Vect* v, int n){v->resize(n);}
 Object** vector_temp_objvar(Vect* v){return v->temp_objvar();}
 double* vector_vec(Vect* v){return v->data();}
-Object** vector_pobj(Vect* v){return &v->obj_;}
 char* vector_get_label(Vect* v) { return v->label_; }
 void vector_set_label(Vect* v, char* s) { v->label(s); }
 void vector_append(Vect* v, double x){
