@@ -69,7 +69,6 @@ extern int tree_changed, nrn_matrix_cnt_;
 extern int diam_changed;
 extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;

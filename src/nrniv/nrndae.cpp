@@ -13,7 +13,6 @@ extern void nrndae_dkres(double*, double*, double*);
 extern void nrndae_dkpsol(double);
 extern void nrndae_update();
 extern void nrn_matrix_node_free();
-extern int cvode_active_;
 extern int nrn_use_daspk_;
 extern int secondorder;
 extern int nrndae_list_is_empty();

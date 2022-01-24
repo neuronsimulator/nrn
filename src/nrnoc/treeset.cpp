@@ -21,10 +21,6 @@
 
 extern spREAL *spGetElement(char*, int ,int);
 
-#if CVODE
-extern int cvode_active_;
-#endif
-
 int nrn_shape_changed_;	/* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
 

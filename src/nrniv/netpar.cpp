@@ -40,7 +40,6 @@ static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern int cvode_active_;
 extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
