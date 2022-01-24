@@ -357,6 +357,9 @@ void inithoc() {
   nrn_nobanner_ = 1;
   const char* pyver = Py_GetVersion();
   nrn_is_python_extension = (pyver[0]-'0')*10 + (pyver[2] - '0');
+  if (isdigit(pyver[3])) { // minor >= 10 e.g. 3.10  is 310
+    nrn_is_python_extension = nrn_is_python_extension*10 + pyver[3] - '0';
+  }
   p_nrnpython_finalize = nrnpython_finalize;
 #if NRNMPI
   if (libnrnmpi_is_loaded) {

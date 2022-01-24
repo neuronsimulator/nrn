@@ -584,7 +584,8 @@ def nrn_dll_sym_nt(name, type):
       if h.nrnversion(8).find('i686') == 0:
         b = 'bin'
       path = os.path.join(h.neuronhome().replace('/','\\'), b)
-      p = sys.version_info[0]*10 + sys.version_info[1]
+      fac = 10 if sys.version_info[1] < 10 else 100 # 3.9 is 39 ; 3.10 is 310
+      p = sys.version_info[0] * fac + sys.version_info[1]
       for dllname in ['libnrniv.dll', 'libnrnpython%d.dll'%p]:
         p = os.path.join(path, dllname)
         try:
