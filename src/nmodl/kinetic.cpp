@@ -899,7 +899,7 @@ Insertstr(rlst->position, "}");
 	*(_getelm(_row + 1, _col + 1))\n", fun->u.i);
 	qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-	Sprintf(buf, "\n#define _MATELM%d(_row,_col) *(_nrn_thread_getelm(reinterpret_cast<SparseObj*>(_so), _row + 1, _col + 1))\n", fun->u.i);
+	Sprintf(buf, "\n#define _MATELM%d(_row,_col) *(_nrn_thread_getelm(static_cast<SparseObj*>(_so), _row + 1, _col + 1))\n", fun->u.i);
 	vectorize_substitute(qv, buf);
 #endif
 	{static int first = 1; if (first) {

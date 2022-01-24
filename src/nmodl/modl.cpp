@@ -42,9 +42,10 @@
 #include <stdlib.h>
 #endif
 
+#include "modl.h"
+
 #include <regex>
 
-#include "modl.h"
 FILE
 	* fin,			/* input file descriptor for filename.mod */
 				/* or file2 from the second argument */

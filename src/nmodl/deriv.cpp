@@ -106,7 +106,7 @@ if (deriv_imp_list) {	/* make sure deriv block translation matches method */
 	lappendstr(thread_mem_init_list, buf);
 	Sprintf(buf, "  free((void*)(_thread[_dith%d]._pval));\n", listnum);
 	lappendstr(thread_cleanup_list, buf);
-	Sprintf(buf, "  nrn_destroy_newtonspace(reinterpret_cast<NewtonSpace*>(_newtonspace%d));\n", listnum);
+	Sprintf(buf, "  nrn_destroy_newtonspace(static_cast<NewtonSpace*>(_newtonspace%d));\n", listnum);
 	lappendstr(thread_cleanup_list, buf);
 	thread_data_index += 4;
 }else{
