@@ -293,7 +293,7 @@ int mswin_load_dll(const char* cp1) {
 		if (mreg) {
 			(*mreg)();
 		}else{
-			fprintf(stderr, "dlsym _modl_reg failed\n%s\n", dlerror());
+			fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
 			dlclose(handle);
 			return 0;
 		}

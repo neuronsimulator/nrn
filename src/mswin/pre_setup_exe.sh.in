@@ -71,7 +71,7 @@ cp_dlls $N/bin
   export MODLUNIT=$N/lib/nrnunits.lib
   export PATH=$nx/bin:$nx/mingw/usr/bin:$nx/mingw/mingw64/bin:$PATH
   cd $N/demo/release ; $N/lib/mknrndl2.sh
-  rm *.o *.c
+  rm *.o *.cpp
   if test ! -f nrnmech.dll ; then
     echo 'could not build nrnmech.dll'
     exit 1;
