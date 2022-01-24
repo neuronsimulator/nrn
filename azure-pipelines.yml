@@ -26,7 +26,7 @@ trigger:
 
 jobs:
 
-- job: 'ManyLinuxWheels'
+- job: 'ManyLinuxWheelsDeprecated'
   timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
@@ -38,14 +38,6 @@ jobs:
         python.version: '3.5'
       Python36:
         python.version: '3.6'
-      Python37:
-        python.version: '3.7'
-      Python38:
-        python.version: '3.8'
-      Python39:
-        python.version: '3.9'
-      Python310:
-        python.version: '3.10'
   steps:
   - script: |
       docker run --rm \
@@ -67,6 +59,41 @@ jobs:
 
   - template: ci/azure-wheel-test-upload.yml
 
+
+- job: 'ManyLinuxWheels'
+  timeoutInMinutes: 30
+  pool:
+    vmImage: 'ubuntu-18.04'
+  strategy:
+    matrix:
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
+      Python39:
+        python.version: '3.9'
+      Python310:
+        python.version: '3.10'
+  steps:
+    - script: |
+        docker run --rm \
+          -w /root/nrn \
+          -v $PWD:/root/nrn \
+          -e NEURON_NIGHTLY_TAG \
+          -e NRN_NIGHTLY_UPLOAD \
+          -e NRN_RELEASE_UPLOAD \
+          -e NEURON_WHEEL_VERSION \
+          -e NRN_BUILD_FOR_UPLOAD=1 \
+          'neuronsimulator/neuron_wheel:latest' \
+          packaging/python/build_wheels.bash linux $(python.version)
+      displayName: 'Building ManyLinux Wheel'
+
+    - script: |
+        sudo apt update
+        sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+      displayName: 'Install Test System Depdendencies'
+
+    - template: ci/azure-wheel-test-upload.yml
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
