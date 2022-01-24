@@ -594,7 +594,7 @@ class _Arithmeticed:
         return self._do_mul(other)
     
     def __abs__(self):
-        return _Arithmeticed(_Function(self, 'numpy.abs', 'abs'), valid_reaction_term=False)
+        return _Arithmeticed(_Function(self, 'numpy.fabs', 'abs'), valid_reaction_term=False)
 
     def __pos__(self):
         return self
