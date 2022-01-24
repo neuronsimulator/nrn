@@ -63,7 +63,7 @@ ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
   INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 endif
 
-# CXX are always defined. If the definition comes from default change it
+# CXX is always defined. If the definition comes from default change it
 ifeq ($(origin CXX), default)
     CXX = @CMAKE_CXX_COMPILER@
 endif

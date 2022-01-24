@@ -1184,11 +1184,12 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
 
   double legacy = dynam_unit_mag(1, u1, u2);
   double modern = dynam_unit_mag(0, u1, u2);
-  sprintf(buf,"\n"
-"#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
-/*since c++17/c99, %a instead of %.18g for exact hex representation of double*/
-"static double _nrnunit_%s[2] = {%a, %g}; /* %.18g */\n",
-    name, name, name, modern, legacy, modern);
+	// TODO: use %a instead of %.18g when translated mechanisms are compiled with
+	//       C++17 instead of C++14 to get an exact hex representation of a double
+  sprintf(buf, "\n"
+          "#define %s _nrnunit_%s[_nrnunit_use_legacy_]\n"
+          "static double _nrnunit_%s[2] = {%.18g, %g};\n",
+          name, name, name, modern, legacy, modern);
 
 #else
 
