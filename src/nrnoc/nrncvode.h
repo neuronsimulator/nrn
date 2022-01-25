@@ -1,8 +1,8 @@
-#ifndef nrncvode_h
-#define nrncvode_h
+#pragma once
 
-
-extern "C" void cvode_fadvance(double);
+typedef struct Memb_list Memb_list;
+typedef struct NrnThread NrnThread;
+void cvode_fadvance(double);
 extern void cvode_finitialize(double);
 extern void nrncvode_set_t(double);
 extern void deliver_net_events(NrnThread*);
@@ -23,5 +23,3 @@ extern void nrn_capacity_current(NrnThread* _nt, Memb_list* ml);
 extern void nrn_spike_exchange_init(void);
 extern void nrn_spike_exchange(NrnThread* nt);
 extern bool nrn_use_bin_queue_;
-
-#endif
