@@ -70,6 +70,7 @@ extern int vector_arg_px(int i, double** p);
 #endif
 
 IvocVect* vector_arg(int);
+int vector_buffer_size(IvocVect*);
 int vector_capacity(IvocVect*);
 IvocVect* vector_new(int, Object* = nullptr);
 IvocVect* vector_new0();
@@ -80,6 +81,7 @@ double* vector_vec(IvocVect*);
 // olupton 2022-01-21: These overloads are added for backwards compatibility
 //                     with pre-C++ mechanisms. They should be marked
 //                     deprecated for use in modern code.
+int vector_buffer_size(void*);
 int vector_capacity(void*);
 double* vector_new1(int);
 Object** vector_pobj(void*);
@@ -208,7 +210,6 @@ extern void* nrn_parsing_pysec_;
 
 extern void vector_append(IvocVect*, double);
 extern void vector_delete(IvocVect*);
-extern int vector_buffer_size(IvocVect*);
 
 extern Object** vector_temp_objvar(IvocVect*);
 

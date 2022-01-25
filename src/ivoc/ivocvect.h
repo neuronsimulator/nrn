@@ -110,7 +110,6 @@ double stdDev(InputIterator begin, InputIterator end) {
 
 extern "C" {
 extern void vector_delete(IvocVect*);
-extern int vector_buffer_size(IvocVect*);
 extern Object** vector_temp_objvar(IvocVect*);
 
 extern int is_vector_arg(int);

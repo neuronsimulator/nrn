@@ -260,13 +260,18 @@ static Symbol* svec_;
 // extern "C" vector functions used by ocmatrix.dll
 // can also be used in mod files
 void vector_delete(Vect* v){delete v;}
-int vector_buffer_size(Vect* v){return v->buffer_size();}
 IvocVect* vector_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
 		check_obj_type(ob, "Vector");
 	}
 	return static_cast<IvocVect*>(ob->u.this_pointer);
+}
+int vector_buffer_size(IvocVect* v) {
+	return v->buffer_size();
+}
+int vector_buffer_size(void* v) {
+	return vector_buffer_size(static_cast<IvocVect*>(v));
 }
 int vector_capacity(IvocVect* v){
 	return v->size();
