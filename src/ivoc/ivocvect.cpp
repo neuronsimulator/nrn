@@ -148,12 +148,10 @@ static int narg() {
 
 
 int cmpfcn(double a, double b) { return ((a) <= (b))? (((a) == (b))? 0 : -1) : 1; }
-typedef int (*doubleComparator)(double, double);
 
 extern "C" {
 extern void install_vector_method(const char* name, Pfrd_vp);
 extern int vector_instance_px(void*, double**);
-extern int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp);
 } // extern "C"
 
 extern int vector_arg_px(int, double**);
@@ -3832,8 +3830,7 @@ static inline void SWAP(int* A, int* B)
       smaller partition.  This *guarantees* no more than log (n)
       stack size is needed! */
       
-extern "C" int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, doubleComparator cmp)
-{
+int nrn_mlh_gsort (double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double)) {
 /* Stack node declarations used to store unfulfilled partition obligations. */
   struct stack_node {  int *lo;  int *hi; };
   int   pivot_buffer;

@@ -70,6 +70,7 @@ extern int vector_arg_px(int i, double** p);
 }
 #endif
 
+int nrn_mlh_gsort(double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double));
 IvocVect* vector_arg(int);
 int vector_buffer_size(IvocVect*);
 int vector_capacity(IvocVect*);
