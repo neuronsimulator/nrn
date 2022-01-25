@@ -607,7 +607,6 @@ if(ISARRAY(sp)){
 
 double chkarg(int arg, double low, double high) /* argument checking for user functions */
 {
-//	double *getarg(),;
 	double val;
 
 	val = *getarg(arg);
