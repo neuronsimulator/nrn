@@ -275,7 +275,7 @@ void c_out()
 	P("#include \"common.h\"\n#include \"softbus.h\"\n");
 	P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
 #else
-	P("#include <stdio.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
 	P("#undef PI\n");
 #endif
 	printlist(defs_list);
@@ -596,7 +596,7 @@ void c_out_vectorize()
 	Fflush(fcout);
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n");
-	P("#include <stdio.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
 	P("#undef PI\n");
 	printlist(defs_list);
 	printlist(firstlist);

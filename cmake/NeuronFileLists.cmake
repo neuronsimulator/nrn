@@ -16,6 +16,7 @@ set(HEADER_FILES_TO_INSTALL
     ivstream.h
     md1redef.h
     md2redef.h
+    mech_api.h
     membdef.h
     membfunc.h
     multicore.h

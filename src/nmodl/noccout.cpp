@@ -129,7 +129,7 @@ void c_out()
 	P("#include \"common.h\"\n#include \"softbus.h\"\n");
 	P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
 #else
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
@@ -646,7 +646,7 @@ void c_out_vectorize()
 
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n#include \"oc_ansi.h\"\n#include \"nrnran123.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"mech_api.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
