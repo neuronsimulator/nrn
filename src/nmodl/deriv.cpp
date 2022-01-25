@@ -93,7 +93,7 @@ if (deriv_imp_list) {	/* make sure deriv block translation matches method */
 	Sprintf(buf, "static int _deriv%d_advance = 0;\n", listnum);
 	q = linsertstr(procfunc, buf);
 	Sprintf(buf, "\n#define _deriv%d_advance _thread[%d]._i\n\
-#define _dith%d %d\n#define _recurse _thread[%d]._i\n#define _newtonspace%d _thread[%d]._pvoid\nextern void* nrn_cons_newtonspace(int);\n\
+#define _dith%d %d\n#define _recurse _thread[%d]._i\n#define _newtonspace%d _thread[%d]._pvoid\nextern NewtonSpace* nrn_cons_newtonspace(int);\n\
 ", listnum, thread_data_index, listnum, thread_data_index+1, thread_data_index+2,
 listnum, thread_data_index+3);
 	vectorize_substitute(q, buf);
