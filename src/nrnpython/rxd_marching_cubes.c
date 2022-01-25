@@ -338,7 +338,7 @@ void vi(double* p1, double* p2, double v1, double v2, double* out) {
     out[2] = p1[2] + mu * (p2[2] - p1[2]);
 }
 
-extern "C" int find_triangles(double thresh, double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out) {
+int find_triangles(double thresh, double value0, double value1, double value2, double value3, double value4, double value5, double value6, double value7, double x0, double x1, double y0, double y1, double z0, double z1, double* out) {
     double position[8][3] = {{x0, y0, z0},
                 {x1, y0, z0},
                 {x1, y1, z0},

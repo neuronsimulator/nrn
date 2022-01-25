@@ -313,7 +313,7 @@ class Node(object):
                 source[0]
             except:
                 raise RxDException("HocObject must be a pointer")
-        elif len(args) == 1 and isinstance(args[0], collections.abc.Callable):
+        elif len(args) == 1 and isinstance(args[0], collections.Callable):
             flux_type = 2
             source = args[0]
             warnings.warn(
