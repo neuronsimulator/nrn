@@ -91,10 +91,11 @@ double* vector_vec(void*);
 
 extern int nrnignore;
 
+double* hoc_pgetarg(int);
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
 
 /**
  * \brief Brief explanation of hoc_obj_run
@@ -111,7 +112,6 @@ extern int hoc_is_object_arg(int);
 extern char* hoc_gargstr(int);
 extern char** hoc_pgargstr(int);
 
-extern double* hoc_pgetarg(int);
 extern Object** hoc_objgetarg(int);
 extern Object* hoc_name2obj(const char* name, int index);
 

@@ -374,8 +374,16 @@ void verbatim_adjust(char* q) {
       repl = std::regex_replace(std::move(repl), std::regex{pattern}, replacement);
     };
     auto const regex_remove = [&](const char* pattern) { regex_replace(pattern, ""); };
-    // This needs to be fudged out because we cannot overload by return type.
-    regex_remove("extern void\\* vector_arg\\([^)]*\\);");
+    // These needs to be fudged out because we cannot overload by return type.
+    regex_remove("extern\\s+void\\s*\\*\\s*vector_arg\\([^)]*\\);");
+    regex_remove("extern\\s+void\\s*\\*\\s*vector_new1\\(int[^)]*\\);");
+    // Local declaration of double *hoc_pgetarg(void) shadows the global
+    // declaration that takes int. Transforms:
+    //   double *xdir, *xval, *hoc_pgetarg();
+    // into
+    //   double *xdir, *xval;
+    // (hopefully)
+    regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
     // This needs to be fudged out because it's declared with the wrong return
     // type and we can't overload on that.
     // regex_remove("int nrn_random123_getseq\\(void\\* r, uint32_t\\* seq, char\\* which\\);");
@@ -394,7 +402,6 @@ void verbatim_adjust(char* q) {
     // regex_remove("extern int vector_instance_px\\(\\);");
     // regex_remove("extern double mcell_ran4\\(\\);");
     // regex_replace("char\\s+\\*gargstr\\(\\),(.*?);", "char \\1");
-    //regex_replace("double(.*?), \\*hoc_pgetarg\\(\\)", "double\\1");
     // C++ has stricter rules about pointer casting. For example, you cannot
     // assign (void*)0 to a double* variable in C++.
     repl = str_replace(std::move(repl), "(void*)0", "nullptr");

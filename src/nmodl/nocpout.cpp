@@ -1034,13 +1034,13 @@ extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, Datum*, NrnThrea
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\
 extern void _cvode_abstol( Symbol**, double*, int);\n\n\
 ");
-	Sprintf(buf, "void _%s_reg() {\n\
+	Sprintf(buf, "extern \"C\" void _%s_reg() {\n\
 	int _vectorized = %d;\n", modbase, vectorize);
 	Lappendstr(defs_list, buf);
 	q = lappendstr(defs_list, "");
 	Lappendstr(defs_list, "_initlists();\n");
 #else
-	Sprintf(buf, "void _%s_reg() {\n	_initlists();\n", modbase);
+	Sprintf(buf, "extern \"C\" void _%s_reg() {\n	_initlists();\n", modbase);
 	Lappendstr(defs_list, buf);
 #endif
 

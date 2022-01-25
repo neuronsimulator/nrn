@@ -181,7 +181,7 @@ int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
 
-extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
+void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
 	nrn_watch_allocate_[type] = waf;
 }
 

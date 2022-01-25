@@ -128,7 +128,6 @@ extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
 void _nrn_free_fornetcon(void**);
-//int _nrn_netcon_args(void*, double***);
 
 // for use in mod files
 double nrn_netcon_get_delay(NetCon* nc) { return nc->delay_; }
@@ -4098,7 +4097,7 @@ ForNetConsInfo* fnc = (ForNetConsInfo*)pnt->prop->dparam[t2i[pnt->prop->type]]._
 	delete [] t2i;
 }
 
-extern "C" int _nrn_netcon_args(void* v, double*** argslist) {
+int _nrn_netcon_args(void* v, double*** argslist) {
 	ForNetConsInfo* fnc = (ForNetConsInfo*)v;
 	assert(fnc);
 	*argslist = fnc->argslist;
