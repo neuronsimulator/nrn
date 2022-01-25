@@ -157,7 +157,7 @@ extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
 }
 
 // also for read
-typedef int (*bbcore_write_t)(void*, int, int*, double*, Datum*, Datum*, NrnThread*);
+typedef void (*bbcore_write_t)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
@@ -286,7 +286,7 @@ void hoc_nrn_load_dll(void) {
 		hoc_retpushx((double)i);
 	}else{
 		hoc_retpushx(0.);
-	}	
+	}
 }
 
 extern void nrn_threads_create(int, int);
@@ -304,14 +304,14 @@ void hoc_last_init(void)
 	Symbol *s;
 
 	hoc_register_var(scdoub, (DoubVec*)0, (VoidFunc*)0);
-	nrn_threads_create(1, 0); // single thread 
+	nrn_threads_create(1, 0); // single thread
 
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) {
  	    extern char* nrn_version(int i);
 	    Fprintf(stderr, "%s\n", nrn_version(1));
 	    Fprintf(stderr, "%s\n", banner);
 	    IGNORE(fflush(stderr));
- 	} 
+ 	}
 	memb_func_size_ = 30;
 	memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
 	memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
@@ -337,13 +337,13 @@ void hoc_last_init(void)
 	nrn_nmodl_text_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
 	nrn_nmodl_filename_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
         nrn_watch_allocate_ = (NrnWatchAllocateFunc_t*)ecalloc(memb_func_size_, sizeof(NrnWatchAllocateFunc_t));
-	
+
 #if KEEP_NSEG_PARM
 	{extern int keep_nseg_parm_; keep_nseg_parm_ = 1; }
 #endif
 
 	section_list = hoc_l_newlist();
-	
+
 	CHECK("v");
 	s = hoc_install("v", RANGEVAR, 0.0, &hoc_symlist);
 	s->u.rng.type = VINDEX;
@@ -351,7 +351,7 @@ void hoc_last_init(void)
 	CHECK("i_membrane_");
 	s = hoc_install("i_membrane_", RANGEVAR, 0.0, &hoc_symlist);
 	s->u.rng.type = IMEMFAST;
-	
+
 	for (i = 0; usrprop[i].name; i++) {
 		CHECK(usrprop[i].name);
 		s = hoc_install(usrprop[i].name, UNDEF, 0.0, &hoc_symlist);
@@ -533,7 +533,7 @@ void nrn_register_mech_common(
 	   Note that internal mechanisms have a version of "0" and are
 	   by nature consistent.
 	*/
-	
+
 /*printf("%s %s\n", m[0], m[1]);*/
 	if (strcmp(m[0], "0") == 0) { /* valid by nature */
 	}else if (m[0][0] > '9') { /* must be 5.1 or before */
@@ -732,7 +732,7 @@ fprintf(stderr, "mechanism %s : unknown semantics for %s\n", memb_func[type].sym
 assert(0);
 		}
 	}
-#if 0   
+#if 0
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
 #endif
@@ -814,7 +814,7 @@ extern "C" int point_register_mech(
 }
 
 /* some stuff from scopmath needed for built-in models */
- 
+
 #if 0
 double* makevector(int nrows)
 {
@@ -823,7 +823,7 @@ double* makevector(int nrows)
         return v;
 }
 #endif
-  
+
 int _ninits;
 extern "C" void _modl_cleanup(void){}
 
@@ -838,7 +838,7 @@ extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
 extern "C" double _modl_get_dt_thread(NrnThread* nt) {
 	return nt->_dt;
 }
-#endif	
+#endif
 
 extern "C" int nrn_pointing(double* pd) {
 	return pd ? 1 : 0;
@@ -947,7 +947,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
 			sym = hoc_lookup(tol[i].name);
 		}
 		hoc_symbol_tolerance(sym, tol[i].tolerance);
-	}			
+	}
 
 	if (memb_func[type].ode_count) {
 		Symbol** psym, *msym, *vsym;
@@ -955,7 +955,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
 		Node** pnode;
 		Prop* p;
 		int i, j, k, n, na, index=0;
-		
+
 		n = (*memb_func[type].ode_count)(type);
 		if (n > 0) {
 			psym = (Symbol**)ecalloc(n, sizeof(Symbol*));
@@ -971,7 +971,7 @@ p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
 						break;
 					}
 				}
-				
+
 				/* p is the prop and index is the index
 					into the p->param array */
 				assert(p);
@@ -989,11 +989,11 @@ p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
 							}
 						}
 						break;
-					} 
+					}
 				}
 				assert (j < msym->s_varn);
 			}
-					
+
 			node_destruct(pnode, 1);
 			*stol = psym;
 			free (pv);
@@ -1012,7 +1012,7 @@ extern "C" void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
 	}
 }
 
-extern "C" void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {
+extern "C" void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, NrnThread*, int)) {
 	memb_func[i].thread_table_check_ = f;
 }
 
@@ -1021,7 +1021,7 @@ extern "C" void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
 }
 /* there is some question about the _extcall_thread variables, if any. */
 extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
-	double x;	
+	double x;
 	extern double hoc_call_func(Symbol*, int);
 	void (*call)(Prop*) = memb_func[type].setdata_;
 	if (call) {
