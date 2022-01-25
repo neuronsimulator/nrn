@@ -381,10 +381,13 @@ void verbatim_adjust(char* q) {
     regex_remove("void\\*\\s+nrn_random_arg\\(int argpos[^)]*\\);");
     // Local declaration of double *hoc_pgetarg(void) shadows the global
     // declaration that takes int. Transforms:
+    //   FILE* f, *hoc_obj_file_arg();
     //   double *xdir, *xval, *hoc_pgetarg();
     // into
+    //   FILE* f;
     //   double *xdir, *xval;
     // (hopefully)
+    regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s**\\);", "FILE$1;");
     regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
     // C++ has stricter rules about pointer casting. For example, you cannot
     // assign (void*)0 to a double* variable in C++.
