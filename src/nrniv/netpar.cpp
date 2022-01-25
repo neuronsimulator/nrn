@@ -45,9 +45,7 @@ extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
-extern "C" {
 extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-} // extern "C"
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
@@ -861,7 +859,7 @@ static void mk_localgid_rep() {
 // ensures that all the target cells, regardless of what rank they are on
 // will get the spike delivered and nobody gets it twice.
 
-extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+void nrn_fake_fire(int gid, double spiketime, int fake_out) {
 	PreSyn* ps{nullptr};
 	if (fake_out < 2) {
 		auto iter = gid2in_.find(gid);

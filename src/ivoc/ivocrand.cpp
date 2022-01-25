@@ -58,16 +58,10 @@ declarePtrList(RandomPlayList,RandomPlay)
 implementPtrList(RandomPlayList, RandomPlay)
 static RandomPlayList* random_play_list_;
 
-extern "C" {
-double nrn_random_pick(Rand* r);
 void nrn_random_reset(Rand* r);
 Rand* nrn_random_arg(int);
 long nrn_get_random_sequence(Rand* r);
 void nrn_set_random_sequence(Rand* r, long seq);
-int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
-int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
-} // extern "C"
 
 #include <mcran4.h>
 
@@ -296,19 +290,19 @@ static double r_MCellRan4(void* r) {
   return (double)mcr->orig_;
 }
 
-extern "C" long nrn_get_random_sequence(Rand* r) {
+long nrn_get_random_sequence(Rand* r) {
 	assert(r->type_ == 2);
 	MCellRan4* mcr = (MCellRan4*)r->gen;
 	return mcr->ihigh_;
 }
 
-extern "C" void nrn_set_random_sequence(Rand* r, long seq) {
+void nrn_set_random_sequence(Rand* r, long seq) {
 	assert(r->type_ == 2);
 	MCellRan4* mcr = (MCellRan4*)r->gen;
 	mcr->ihigh_ = seq;
 }
 
-extern "C" int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
 	if (r->type_ == 4) {
 		NrnRandom123* nr = (NrnRandom123*)r->gen;
 		nrnran123_getids3(nr->s_, id1, id2, id3);
@@ -402,7 +396,7 @@ static double r_repick(void* r)
   return (*(x->rand))();
 }
 
-extern "C" double nrn_random_pick(Rand* r) {
+double nrn_random_pick(Rand* r) {
 	if (r) {
 		return (*(r->rand))();
 	}else{
@@ -410,13 +404,13 @@ extern "C" double nrn_random_pick(Rand* r) {
 	}
 }
 
-extern "C" void nrn_random_reset(Rand* r) {
+void nrn_random_reset(Rand* r) {
 	if(r) {
 		r->gen->reset();
 	}
 }
 
-extern "C" Rand* nrn_random_arg(int i) {
+Rand* nrn_random_arg(int i) {
 	Object* ob = *hoc_objgetarg(i);
 	check_obj_type(ob, "Random");
 	Rand* r = (Rand*)(ob->u.this_pointer);

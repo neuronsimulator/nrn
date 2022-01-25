@@ -62,6 +62,27 @@ extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 }
 #endif
 
+class Rand;
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+double nrn_random_pick(Rand* r);
+int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
+int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
+
+// TODO: mark deprecated
+inline int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+	return nrn_random_isran123(static_cast<Rand*>(r), id1, id2, id3);
+}
+inline double nrn_random_pick(void* r) {
+	return nrn_random_pick(static_cast<Rand*>(r));
+}
+inline int nrn_random123_getseq(void* r, uint32_t* seq, char* which) {
+	return nrn_random123_getseq(static_cast<Rand*>(r), seq, which);
+}
+inline int nrn_random123_setseq(void* r, uint32_t seq, char which) {
+	return nrn_random123_setseq(static_cast<Rand*>(r), seq, which);
+}
+
+
 /* more fundamental (stateless) (though the global index is still used) */
 extern nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
 extern nrnran123_array4x32 nrnran123_iran3(uint32_t seq, uint32_t id1, uint32_t id2, uint32_t id3);

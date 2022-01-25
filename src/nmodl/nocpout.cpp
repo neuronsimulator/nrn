@@ -336,7 +336,6 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	declare_p();
 	ioncount = iondef(&pointercount); /* first is _nd_area if point process */
 	Lappendstr(defs_list, "\n#if MAC\n#if !defined(v)\n#define v _mlhv\n#endif\n#if !defined(h)\n#define h _mlhh\n#endif\n#endif\n");
-	Lappendstr(defs_list, "\n#if defined(__cplusplus)\nextern \"C\" {\n#endif\n");
 	Lappendstr(defs_list, "static int hoc_nrnpointerindex = ");
 	if (pointercount) {
 		q = nrnpointers->next;

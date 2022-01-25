@@ -1138,7 +1138,7 @@ void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchIn
 
 // nrn<->corenrn PatternStim
 
-extern "C" { void* nrn_patternstim_info_ref(Datum*); }
+void* nrn_patternstim_info_ref(Datum*);
 static int patternstim_type;
 
 // Info from NEURON PatternStim at beginning of psolve.

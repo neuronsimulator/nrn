@@ -216,8 +216,8 @@ extern void nrn_gidout_iter(PFIO);
 extern short* nrn_is_artificial_;
 extern "C" {
 extern void net_send(void**, double*, Point_process*, double, double);
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 }  // extern "C"
+extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);

@@ -465,7 +465,6 @@ P("#include \"md2redef.h\"\n");
 	P("  if (!_first) return;\n");
 	printlist(initlist);
 	P("_first = 0;\n}\n");
-	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 /*
@@ -647,7 +646,7 @@ void c_out_vectorize()
 
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n#include \"oc_ansi.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n#include \"oc_ansi.h\"\n#include \"nrnran123.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
@@ -922,7 +921,6 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	P("  if (!_first) return;\n");
 	printlist(initlist);
 	P("_first = 0;\n}\n");
-	P("\n#if defined(__cplusplus)\n} /* extern \"C\" */\n#endif\n");
 }
 
 void vectorize_substitute(Item* q, char* str)
