@@ -374,9 +374,10 @@ void verbatim_adjust(char* q) {
       repl = std::regex_replace(std::move(repl), std::regex{pattern}, replacement);
     };
     auto const regex_remove = [&](const char* pattern) { regex_replace(pattern, ""); };
-    // These needs to be fudged out because we cannot overload by return type.
+    // These need to be fudged out because we cannot overload by return type.
     regex_remove("extern\\s+void\\s*\\*\\s*vector_arg\\([^)]*\\);");
     regex_remove("extern\\s+void\\s*\\*\\s*vector_new1\\(int[^)]*\\);");
+    regex_remove("void\\*\\s+nrn_random_arg\\(int argpos[^)]*\\);");
     // Local declaration of double *hoc_pgetarg(void) shadows the global
     // declaration that takes int. Transforms:
     //   double *xdir, *xval, *hoc_pgetarg();

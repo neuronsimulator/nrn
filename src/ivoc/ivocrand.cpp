@@ -58,8 +58,6 @@ declarePtrList(RandomPlayList,RandomPlay)
 implementPtrList(RandomPlayList, RandomPlay)
 static RandomPlayList* random_play_list_;
 
-Rand* nrn_random_arg(int);
-
 #include <mcran4.h>
 
 class NrnRandom123 : public RNG {
