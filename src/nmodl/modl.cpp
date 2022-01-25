@@ -46,6 +46,7 @@
 #include "modl.h"
 
 #include <regex>
+#include <unordered_set>
 
 FILE
 	* fin,			/* input file descriptor for filename.mod */
@@ -90,19 +91,25 @@ static struct option long_options[] = {
   {"version", no_argument, 0, 'v'},
   {"help", no_argument, 0, 'h'},
   {"outdir", required_argument, 0, 'o'},
+  {"tranformations", required_argument, 0, 't'},
   {0,0,0,0}
 };
 
 static void show_options(char** argv) {
-  fprintf(stderr, "Source to source compiler from NMODL to C\n");
+  fprintf(stderr, "Source to source compiler from NMODL to C++\n");
   fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
+  fprintf(stderr, "\t-t | --transformations <T1[,T2...]> code transformations to attempt\n");
   fprintf(stderr, "\t-h | --help                         print this message\n");
   fprintf(stderr, "\t-v | --version                      print version number\n");
 }
 
 static void openfiles(char* given_filename, char* output_dir);
+
+namespace {
+  std::unordered_set<std::string> transformations;
+}
 
 int main(int argc, char** argv) {
   int option        = -1;
@@ -114,7 +121,7 @@ int main(int argc, char** argv) {
     exit(1);
   }   
     
-  while ( (option = getopt_long (argc, argv, ":vho:", long_options, &option_index)) != -1) {
+  while( (option = getopt_long(argc, argv, ":vho:t:", long_options, &option_index)) != -1) {
     switch (option) {
       case 'v':
         printf("%s\n", nmodl_version_);
@@ -122,6 +129,16 @@ int main(int argc, char** argv) {
  
       case 'o':
         output_dir = strdup(optarg);   
+        break;
+
+      case 't':
+        {
+          std::istringstream iss{optarg};
+          std::string transformation{};
+          while(std::getline(iss, transformation, ',')) {
+            transformations.insert(transformation);
+          }
+        }
         break;
   
       case 'h':
@@ -365,32 +382,46 @@ static std::string str_replace(std::string str, const std::string& search_str, c
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
-    // template is a reserved CPP keyword
-    std::string repl = str_replace(q, "u.template", "u.ctemplate");
-    // C++ declarations must be correct; C was much sloppier and this carries
-    // over into many .mod files in the wild. Try and remove declarations from
-    // VERBATIM blocks and assume that the correct declarations of these utility
-    // functions are visible via implicitly included headers.
+    std::string repl{q};
     auto const regex_replace = [&repl](const char* pattern, const char* replacement) {
       repl = std::regex_replace(std::move(repl), std::regex{pattern}, replacement);
     };
     auto const regex_remove = [&](const char* pattern) { regex_replace(pattern, ""); };
-    // These need to be fudged out because we cannot overload by return type.
-    regex_remove("extern\\s+void\\s*\\*\\s*vector_arg\\([^)]*\\);");
-    regex_remove("extern\\s+void\\s*\\*\\s*vector_new1\\(int[^)]*\\);");
-    regex_remove("void\\*\\s+nrn_random_arg\\(int argpos[^)]*\\);");
-    // Local declaration of double *hoc_pgetarg(void) shadows the global
-    // declaration that takes int. Transforms:
-    //   FILE* f, *hoc_obj_file_arg();
-    //   double *xdir, *xval, *hoc_pgetarg();
-    // into
-    //   FILE* f;
-    //   double *xdir, *xval;
-    // (hopefully)
-    regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s**\\);", "FILE$1;");
-    regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
-    // C++ has stricter rules about pointer casting. For example, you cannot
-    // assign (void*)0 to a double* variable in C++.
-    regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
+    // Adjustments that aim to make old mechanisms compilable as C++. From
+    // around NEURON 8.1 this will be the default, and these transformations
+    // should not be enabled for new mechanisms.
+    if(transformations.count("c++")) {
+      // `template` is a C++ keyword
+      regex_replace("u\\.template", "u\\.ctemplate");
+      // C++ declarations must be correct; C was much sloppier and this carries
+      // over into many .mod files in the wild. Try and remove declarations
+      // from VERBATIM blocks and assume that the correct declarations of these
+      // utility functions are visible via implicitly included headers.
+
+      // These need to be fudged out because we cannot overload by return type.
+      // This is supposed to match an optionally-extern function returning void*
+      // called nrn_random_arg, vector_arg or vector_new1 and taking any number of
+      // arguments.
+      regex_remove("(extern\\s{1}|)\\s*void\\s*\\*\\s*(nrn_random_arg|vector_arg|vector_new1)\\(.*?\\);");
+      // Local declarations of double *hoc_pgetarg(void) shadow the global
+      // declaration that takes int. Transforms:
+      //   FILE* f, *hoc_obj_file_arg();
+      //   double *xdir, *xval, *hoc_pgetarg();
+      //   char *gargstr(), *filename;"
+      //   char** hoc_pgargstr();
+      // into
+      //   FILE* f;
+      //   double *xdir, *xval;
+      //   char *filename;"
+      //   <empty>
+      // (hopefully)
+      regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s**\\);", "FILE$1;");
+      regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
+      regex_replace("char\\s*\\*gargstr\\(\\),(.*?);\\s*$", "char $1;");
+      regex_remove("char\\s*\\*\\*\\s*hoc_pgargstr\\(\\);");
+      // C++ has stricter rules about pointer casting. For example, you cannot
+      // assign (void*)0 to a double* variable in C++.
+      regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
+    }
     Fprintf(fcout, "%s", repl.c_str());
 }

@@ -188,7 +188,7 @@ mdir="`pwd`"
     echo "\
 ./$base_name.cpp: `escape_spaces "$f.mod"`
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o \"$mdir\")
+	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \$(NOCMODLFLAGS\) $base_name.mod -o \"$mdir\")
 
 ./$base_name.o: ./$base_name.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
@@ -302,5 +302,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "NOCMODLFLAGS='-t c++'" special &&
 echo "Successfully created $MODSUBDIR/special"
