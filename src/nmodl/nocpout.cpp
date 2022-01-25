@@ -1311,7 +1311,7 @@ void ldifusreg() {
 		cfindex = STR(q); q = q->next;
 		dfdcur = STR(q);
 		++n;
-sprintf(buf, "static void* _difspace%d;\nextern double nrn_nernst_coef();\n\
+sprintf(buf, "static void* _difspace%d;\nextern double nrn_nernst_coef(int);\n\
 static double _difcoef%d(int _i, double* _p, Datum* _ppvar, double* _pdvol, double* _pdfcdc, Datum* _thread, NrnThread* _nt) {\n  \
  *_pdvol = ", n, n);
 		lappendstr(procfunc, buf);
