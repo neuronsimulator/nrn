@@ -748,7 +748,7 @@ int hoc_is_object_arg(int narg) {
     return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
-extern "C" int hoc_is_tempobj_arg(int narg) {
+int hoc_is_tempobj_arg(int narg) {
     return (hoc_argtype(narg) == OBJECTTMP);
 }
 

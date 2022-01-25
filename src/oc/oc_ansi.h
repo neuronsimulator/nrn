@@ -70,6 +70,7 @@ extern int vector_arg_px(int i, double** p);
 }
 #endif
 
+int hoc_is_tempobj_arg(int narg);
 FILE* hoc_obj_file_arg(int i);
 int nrn_mlh_gsort(double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double));
 IvocVect* vector_arg(int);
