@@ -12,6 +12,7 @@
 #include "parse.hpp"
 #include "ocfunc.h"
 #include "ocmisc.h"
+#include "oc_ansi.h"
 #include "hocparse.h"
 #include "equation.h"
 #include <math.h>

@@ -43,6 +43,7 @@ extern "C" {
 #endif
 
     // nocpout.cpp
+extern Symbol* hoc_get_symbol(const char *var);
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 extern void ivoc_help(const char*);
 
