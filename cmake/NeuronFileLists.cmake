@@ -21,6 +21,7 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    newton_struct.h
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -39,7 +40,6 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     scoplib.h
-    scoplib_ansi.h
     section.h
     spconfig.h
     spmatrix.h)
