@@ -136,7 +136,7 @@ int nrn_netcon_weight(NetCon* nc, double** pw) {
 	*pw = nc->weight_;
 	return nc->cnt_;
 }
-extern "C" double nrn_event_queue_stats(double* stats) {
+double nrn_event_queue_stats(double* stats) {
 #if COLLECT_TQueue_STATISTICS
 	net_cvode_instance_event_queue(nrn_threads)->spike_stat(stats);  
 	return (stats[0]-stats[2]);

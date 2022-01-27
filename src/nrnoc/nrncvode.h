@@ -1,5 +1,4 @@
 #pragma once
-
 typedef struct Memb_list Memb_list;
 typedef struct NrnThread NrnThread;
 void cvode_fadvance(double);
@@ -23,3 +22,4 @@ extern void nrn_capacity_current(NrnThread* _nt, Memb_list* ml);
 extern void nrn_spike_exchange_init(void);
 extern void nrn_spike_exchange(NrnThread* nt);
 extern bool nrn_use_bin_queue_;
+double nrn_event_queue_stats(double* stats);
