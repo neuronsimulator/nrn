@@ -366,20 +366,6 @@ static void openfiles(char* given_filename, char* output_dir) {
 #endif
 }
 
-static std::string str_replace(std::string str, const std::string& search_str, const std::string& replace_str)
-{
-    if (search_str.empty()) {
-        return str;
-    }
-
-    size_t pos;
-    while ( (pos = str.find(search_str)) != std::string::npos ) {
-        str.replace(pos, search_str.size(), replace_str);
-    }
-
-    return str;
-}
-
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
     std::string repl{q};
