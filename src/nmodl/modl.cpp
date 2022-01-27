@@ -2,27 +2,27 @@
 
 /*
  * int main(int argc, char *argv[]) --- returns 0 if translation is
- * successful. Diag will exit with 1 if error. 
+ * successful. Diag will exit with 1 if error.
  *
- * ---The overall strategy of the translation consists of three phases. 
+ * ---The overall strategy of the translation consists of three phases.
  *
  * 1) read in the whole file as a sequence of tokens, parsing as we go. Most of
  * the trivial C translation such as appending ';' to statements is performed
  * in this phase as is the creation of the symbol table. Item lists maintain
  * the proper token order. Ater a whole block is read in, nontrivial
- * manipulation may be performed on the entire block. 
+ * manipulation may be performed on the entire block.
  *
  * 2) Some blocks and statements can be manipulated only after the entire file
  * has been read in. The solve statement is an example since it can be
  * analysed only after we know what is the type of the associated block.  The
  * kinetic block is another example whose translation depends on the SOLVE
  * method and so cannot be processed until the whole input file has been
- * read. 
+ * read.
  *
- * 3) Output the lists. 
+ * 3) Output the lists.
  *
  * void openfiles(int argc, char *argv[]) parse the argument list, and open
- * files. Print usage message and exit if no argument 
+ * files. Print usage message and exit if no argument
  *
  */
 
@@ -115,20 +115,20 @@ int main(int argc, char** argv) {
   int option        = -1;
   int option_index  = 0;
   char* output_dir = NULL;
-      
+
   if (argc < 2) {
     show_options(argv);
     exit(1);
-  }   
-    
+  }
+
   while( (option = getopt_long(argc, argv, ":vho:t:", long_options, &option_index)) != -1) {
     switch (option) {
       case 'v':
         printf("%s\n", nmodl_version_);
         exit(0);
- 
+
       case 'o':
-        output_dir = strdup(optarg);   
+        output_dir = strdup(optarg);
         break;
 
       case 't':
@@ -140,15 +140,15 @@ int main(int argc, char** argv) {
           }
         }
         break;
-  
+
       case 'h':
         show_options(argv);
         exit(0);
-  
+
       case ':':
         fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
         exit (-1);
-  
+
       case '?':
       default:
         fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
@@ -167,8 +167,8 @@ int main(int argc, char** argv) {
 	Fprintf(stderr, "%s   %s   %s\n",
 		pgm_name, RCS_version, RCS_date);
 #endif
-#endif	
-							
+#endif
+
 	init();			/* keywords into symbol table, initialize
 				 * lists, etc. */
 
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
 	IGNORE(yyparse());
 	/*
 	 * At this point all blocks are fully processed except the kinetic
-	 * block and the solve statements. Even in these cases the 
+	 * block and the solve statements. Even in these cases the
 	 * processing doesn't involve syntax since the information is
 	 * held in intermediate lists of specific structure.
 	 *
@@ -193,11 +193,11 @@ int main(int argc, char** argv) {
 
 	/*
 	 * go through the list of solve statements and construct the model()
-	 * code 
+	 * code
 	 */
 	solvhandler();
 	netrec_discon();
-	/* 
+	/*
 	 * NAME's can be used in many cases before they were declared and
 	 * no checking up to this point has been done to make sure that
 	 * names have been used in only one way.
@@ -331,7 +331,7 @@ static void openfiles(char* given_filename, char* output_dir) {
       if(mkdir_p(output_dir) != 0) {
         fprintf(stderr, "Can't create output directory %s\n", output_dir);
         exit(1);
-      } 
+      }
       char* basename = strrchr(modprefix,'/');
       if (basename) {
         Sprintf(output_filename, "%s%s.cpp", output_dir, basename);
@@ -390,9 +390,7 @@ void verbatim_adjust(char* q) {
     // Adjustments that aim to make old mechanisms compilable as C++. From
     // around NEURON 8.1 this will be the default, and these transformations
     // should not be enabled for new mechanisms.
-    if(transformations.count("c++")) {
-      // `template` is a C++ keyword
-      regex_replace("u\\.template", "u\\.ctemplate");
+    if(transformations.count("cxx")) {
       // C++ declarations must be correct; C was much sloppier and this carries
       // over into many .mod files in the wild. Try and remove declarations
       // from VERBATIM blocks and assume that the correct declarations of these
