@@ -42,15 +42,7 @@ namespace visitor {
  * For `DERIVATIVE` block, solver method `euler`:
  *  - replace each ODE with forwards Euler timestep
  *
- * For `DERIVATIVE` block, solver method `sparse`:
- *  - construct backwards Euler timestep linear system
- *  - for small systems: solves resulting linear algebraic equation by
- *    Gaussian elimination, replaces differential equations
- *    with explicit solution of backwards Euler equations
- *  - for large systems, returns matrix and vector of linear system
- *    to be solved by e.g. LU factorization
- *
- * For `DERIVATIVE` block, solver method `derivimplicit`:
+ * For `DERIVATIVE` block, solver method `sparse` and `derivimplicit`:
  *  - construct backwards Euler timestep non-linear system
  *  - return function F and its Jacobian J to be solved by newton solver
  *
@@ -86,10 +78,10 @@ class SympySolverVisitor: public AstVisitor {
                                       const std::vector<std::string>& solutions,
                                       bool linear);
 
-    /// solve linear system (for "sparse" and "LINEAR")
+    /// solve linear system (for "LINEAR")
     void solve_linear_system(const std::vector<std::string>& pre_solve_statements = {});
 
-    /// solve non-linear system (for "derivimplicit" and "NONLINEAR")
+    /// solve non-linear system (for "derivimplicit", "sparse" and "NONLINEAR")
     void solve_non_linear_system(const std::vector<std::string>& pre_solve_statements = {});
 
     /// return NMODL string version of node, excluding any units
