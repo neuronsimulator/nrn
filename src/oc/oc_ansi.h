@@ -73,6 +73,7 @@ extern int vector_arg_px(int i, double** p);
 int hoc_is_tempobj_arg(int narg);
 FILE* hoc_obj_file_arg(int i);
 int nrn_mlh_gsort(double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double));
+void state_discontinuity(int i, double* pd, double d);
 IvocVect* vector_arg(int);
 int vector_buffer_size(IvocVect*);
 int vector_capacity(IvocVect*);
