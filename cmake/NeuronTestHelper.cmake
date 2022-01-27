@@ -249,7 +249,9 @@ function(nrn_add_test)
   # NEURON and CoreNEURON versions of a test will share the same hash, which is
   # probably fine, but also means that any NEURON-only tests will be compiled
   # for CoreNEURON too.
+  set(nrnivmodl_dependencies)
   if(NRN_ENABLE_CORENEURON)
+    list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
     list(APPEND nrnivmodl_command -coreneuron)
     list(APPEND hash_components -coreneuron)
   endif()
@@ -302,12 +304,9 @@ function(nrn_add_test)
     # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would be
     # a wrapper that invokes CMake?
     set(output_binaries "${special}")
-    set(nrnivmodl_dependencies nrniv_lib)
+    list(APPEND nrnivmodl_dependencies nrniv_lib)
     if(requires_coreneuron)
-      # See above; if the condition is changed to NRN_ENABLE_CORENEURON there it should be changed
-      # here too.
       list(APPEND output_binaries "${special}-core")
-      list(APPEND nrnivmodl_dependencies coreneuron)
       if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
         message(
           WARNING
