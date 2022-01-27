@@ -390,11 +390,13 @@ void verbatim_adjust(char* q) {
       // Local declarations of double *hoc_pgetarg(void) shadow the global
       // declaration that takes int. Transforms:
       //   extern double hoc_call_func();
+      //   extern Object** hoc_objgetarg();
       //   FILE* f, *hoc_obj_file_arg();
       //   double *xdir, *xval, *hoc_pgetarg();
       //   char *gargstr(), *filename;"
       //   char** hoc_pgargstr();
       // into
+      //   <empty>
       //   <empty>
       //   FILE* f;
       //   double *xdir, *xval;
@@ -402,6 +404,7 @@ void verbatim_adjust(char* q) {
       //   <empty>
       // (hopefully)
       regex_remove("extern\\s+double\\s+hoc_call_func\\(\\s*\\);");
+      regex_remove("extern\\s+Object\\*\\*\\s+hoc_objgetarg\\(\\s*\\);");
       regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s*\\);", "FILE$1;");
       regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
       regex_replace("char\\s*\\*gargstr\\(\\),(.*?);\\s*$", "char $1;");
