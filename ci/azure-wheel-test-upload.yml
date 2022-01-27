@@ -12,6 +12,7 @@ steps:
     displayName: 'Test with brew Python'
 
   - task: UsePythonVersion@0
+    condition: ne(variables['python.version'], '3.5')
     inputs:
       versionSpec: '$(python.version)'
 
@@ -20,6 +21,7 @@ steps:
       # note : python2 has two wheels cp27m and cp27mu (unicode). cp27mu is built last
       # and this is what compatible for testing on azure host.
       packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
+    condition: ne(variables['python.version'], '3.5')
     displayName: 'Test with System Python'
 
   - task: TwineAuthenticate@1
