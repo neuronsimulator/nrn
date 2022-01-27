@@ -19,12 +19,6 @@ ASSIGNED {
 	space
 }
 
-VERBATIM
-extern void vector_resize();
-extern double* vector_vec();
-extern void* vector_arg();
-ENDVERBATIM
-
 INITIAL {
 	n = 0
 	firing = 0
@@ -66,7 +60,6 @@ ENDVERBATIM
 
 PROCEDURE record() {
 VERBATIM
-	extern void* vector_arg();
 	void** vv;
 	vv = (void**)(&space);
 	*vv = (void*)0;

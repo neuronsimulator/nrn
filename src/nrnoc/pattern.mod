@@ -33,9 +33,6 @@ NET_RECEIVE (w) {LOCAL nst
 VERBATIM
 
 extern int ifarg(int iarg);
-extern double* vector_vec(void* vv);
-extern int vector_capacity(void* vv);
-extern void* vector_arg(int iarg);
 extern void nrn_fake_fire(int gid, double spiketime, int fake_out);
 
 /* Changed Info definition to correspond to that of CoreNEURON pattern.mod
@@ -129,8 +126,8 @@ VERBATIM {
 		free(info->tvec);
 		free(info->gidvec);
 		info->size = 0;
-		info->tvec = (void*)0;
-		info->gidvec = (void*)0;
+		info->tvec = nullptr;
+		info->gidvec = nullptr;
 	}
 
 	if (ifarg(1)) {
