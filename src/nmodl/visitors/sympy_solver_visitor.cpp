@@ -555,9 +555,8 @@ void SympySolverVisitor::visit_derivative_block(ast::DerivativeBlock& node) {
             }
         }
 
-        if (solve_method == codegen::naming::SPARSE_METHOD) {
-            solve_linear_system(pre_solve_statements);
-        } else if (solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
+        if (solve_method == codegen::naming::SPARSE_METHOD ||
+            solve_method == codegen::naming::DERIVIMPLICIT_METHOD) {
             solve_non_linear_system(pre_solve_statements);
         } else {
             logger->error("SympySolverVisitor :: Solve method {} not supported", solve_method);

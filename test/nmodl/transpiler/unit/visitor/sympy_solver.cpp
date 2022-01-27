@@ -690,11 +690,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_y, old_x
-                old_y = y
-                old_x = x
-                y = a*dt+old_y
-                x = b*dt+old_x
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL a, b, old_y, old_x
+                }{
+                    old_y = y
+                    old_x = x
+                }{
+                    X[0] = x
+                    X[1] = y
+                }{
+                    F[0] = -X[1]+a*dt+old_y
+                    J[0] = 0
+                    J[2] = -1.0
+                    F[1] = -X[0]+b*dt+old_x
+                    J[1] = -1.0
+                    J[3] = 0
+                }{
+                    x = X[0]
+                    y = X[1]
+                }{
+                }
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -719,11 +734,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_M_1, old_M_0
-                old_M_1 = M[1]
-                old_M_0 = M[0]
-                M[1] = a*dt+old_M_1
-                M[0] = b*dt+old_M_0
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL a, b, old_M_1, old_M_0
+                }{
+                    old_M_1 = M[1]
+                    old_M_0 = M[0]
+                }{
+                    X[0] = M[0]
+                    X[1] = M[1]
+                }{
+                    F[0] = -X[1]+a*dt+old_M_1
+                    J[0] = 0
+                    J[2] = -1.0
+                    F[1] = -X[0]+b*dt+old_M_0
+                    J[1] = -1.0
+                    J[3] = 0
+                }{
+                    M[0] = X[0]
+                    M[1] = X[1]
+                }{
+                }
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -749,12 +779,27 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_x, old_y
-                old_x = x
-                old_y = y
-                x = a*dt+old_x
-                b = b+1
-                y = b*dt+old_y
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL a, b, old_x, old_y
+                }{
+                    old_x = x
+                    old_y = y
+                }{
+                    X[0] = x
+                    X[1] = y
+                }{
+                    F[0] = -X[0]+a*dt+old_x
+                    J[0] = -1.0
+                    J[2] = 0
+                    b = b+1
+                    F[1] = -X[1]+b*dt+old_y
+                    J[1] = 0
+                    J[3] = -1.0
+                }{
+                    x = X[0]
+                    y = X[1]
+                }{
+                }
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -811,11 +856,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             DERIVATIVE states {
                 LOCAL a, b
                 IF (a == 1) {
-                    LOCAL old_x, old_y
-                    old_x = x
-                    old_y = y
-                    x = a*dt+old_x
-                    y = b*dt+old_y
+                    EIGEN_NEWTON_SOLVE[2]{
+                        LOCAL old_x, old_y
+                    }{
+                        old_x = x
+                        old_y = y
+                    }{
+                        X[0] = x
+                        X[1] = y
+                    }{
+                        F[0] = -X[0]+a*dt+old_x
+                        J[0] = -1.0
+                        J[2] = 0
+                        F[1] = -X[1]+b*dt+old_y
+                        J[1] = 0
+                        J[3] = -1.0
+                    }{
+                        x = X[0]
+                        y = X[1]
+                    }{
+                    }
                 }
             })";
 
@@ -846,32 +906,55 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_x, old_y
-                old_x = x
-                old_y = y
-                x = (a*b*pow(dt, 2)+a*dt*old_x-a*dt*old_y-b*dt-old_x)/(a*pow(dt, 2)+a*dt-1.0)
-                IF (b == 1) {
-                    a = a+1
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL a, b, old_x, old_y
+                }{
+                    old_x = x
+                    old_y = y
+                }{
+                    X[0] = x
+                    X[1] = y
+                }{
+                    F[0] = -X[0]+X[1]*a*dt+b*dt+old_x
+                    J[0] = -1.0
+                    J[2] = a*dt
+                    IF (b == 1) {
+                        a = a+1
+                    }
+                    F[1] = X[0]*dt+X[1]*a*dt-X[1]+old_y
+                    J[1] = dt
+                    J[3] = a*dt-1.0
+                }{
+                    x = X[0]
+                    y = X[1]
+                }{
                 }
-                y = (-b*pow(dt, 2)-dt*old_x-old_y)/(a*pow(dt, 2)+a*dt-1.0)
             })";
         std::string expected_result_cse = R"(
             DERIVATIVE states {
-                LOCAL a, b, old_x, old_y, tmp_0, tmp_1, tmp_2, tmp_3
-                old_x = x
-                old_y = y
-                tmp_0 = a*dt
-                tmp_1 = pow(dt, 2)
-                tmp_2 = a*tmp_1
-                tmp_3 = 1.0/(tmp_0+tmp_2-1.0)
-                x = -tmp_3*(b*dt-b*tmp_2-old_x*tmp_0+old_x+old_y*tmp_0)
-                IF (b == 1) {
-                    a = a+1
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL a, b, old_x, old_y
+                }{
+                    old_x = x
+                    old_y = y
+                }{
+                    X[0] = x
+                    X[1] = y
+                }{
+                    F[0] = -X[0]+X[1]*a*dt+b*dt+old_x
+                    J[0] = -1.0
+                    J[2] = a*dt
+                    IF (b == 1) {
+                        a = a+1
+                    }
+                    F[1] = X[0]*dt+X[1]*a*dt-X[1]+old_y
+                    J[1] = dt
+                    J[3] = a*dt-1.0
+                }{
+                    x = X[0]
+                    y = X[1]
+                }{
                 }
-                tmp_0 = a*dt
-                tmp_2 = a*tmp_1
-                tmp_3 = 1.0/(tmp_0+tmp_2-1.0)
-                y = -tmp_3*(b*tmp_1+dt*old_x+old_y)
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -902,29 +985,67 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, c, d, h, old_x, old_y, old_z
-                old_x = x
-                old_y = y
-                old_z = z
-                x = (-a*dt*(dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)-old_z)+(b*dt*h+old_x)*(2.0*a*pow(dt, 3)-d*dt+1.0))/(2.0*a*pow(dt, 3)-d*dt+1.0)
-                y = (-2.0*a*pow(dt, 2)*(dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)-old_z)+(2.0*a*pow(dt, 3)-d*dt+1.0)*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y))/(2.0*a*pow(dt, 3)-d*dt+1.0)
-                z = (-dt*(c*dt+2.0*dt*(b*dt*h+old_x)+old_y)+old_z)/(2.0*a*pow(dt, 3)-d*dt+1.0)
+                EIGEN_NEWTON_SOLVE[3]{
+                    LOCAL a, b, c, d, h, old_x, old_y, old_z
+                }{
+                    old_x = x
+                    old_y = y
+                    old_z = z
+                }{
+                    X[0] = x
+                    X[1] = y
+                    X[2] = z
+                }{
+                    F[0] = -X[0]+X[2]*a*dt+b*dt*h+old_x
+                    J[0] = -1.0
+                    J[3] = 0
+                    J[6] = a*dt
+                    F[1] = 2.0*X[0]*dt-X[1]+c*dt+old_y
+                    J[1] = 2.0*dt
+                    J[4] = -1.0
+                    J[7] = 0
+                    F[2] = -X[1]*dt+X[2]*d*dt-X[2]+old_z
+                    J[2] = 0
+                    J[5] = -dt
+                    J[8] = d*dt-1.0
+                }{
+                    x = X[0]
+                    y = X[1]
+                    z = X[2]
+                }{
+                }
             })";
         std::string expected_cse_result = R"(
             DERIVATIVE states {
-                LOCAL a, b, c, d, h, old_x, old_y, old_z, tmp_0, tmp_1, tmp_2, tmp_3, tmp_4, tmp_5
-                old_x = x
-                old_y = y
-                old_z = z
-                tmp_0 = 2.0*a
-                tmp_1 = -d*dt+pow(dt, 3)*tmp_0+1.0
-                tmp_2 = 1.0/tmp_1
-                tmp_3 = b*dt*h+old_x
-                tmp_4 = c*dt+2.0*dt*tmp_3+old_y
-                tmp_5 = dt*tmp_4-old_z
-                x = -tmp_2*(a*dt*tmp_5-tmp_1*tmp_3)
-                y = -tmp_2*(pow(dt, 2)*tmp_0*tmp_5-tmp_1*tmp_4)
-                z = -tmp_2*tmp_5
+                EIGEN_NEWTON_SOLVE[3]{
+                    LOCAL a, b, c, d, h, old_x, old_y, old_z
+                }{
+                    old_x = x
+                    old_y = y
+                    old_z = z
+                }{
+                    X[0] = x
+                    X[1] = y
+                    X[2] = z
+                }{
+                    F[0] = -X[0]+X[2]*a*dt+b*dt*h+old_x
+                    J[0] = -1.0
+                    J[3] = 0
+                    J[6] = a*dt
+                    F[1] = 2.0*X[0]*dt-X[1]+c*dt+old_y
+                    J[1] = 2.0*dt
+                    J[4] = -1.0
+                    J[7] = 0
+                    F[2] = -X[1]*dt+X[2]*d*dt-X[2]+old_z
+                    J[2] = 0
+                    J[5] = -dt
+                    J[8] = d*dt-1.0
+                }{
+                    x = X[0]
+                    y = X[1]
+                    z = X[2]
+                }{
+                }
             })";
 
         THEN("Construct & solve linear system for backwards Euler") {
@@ -952,11 +1073,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL old_mc, old_m
-                old_mc = mc
-                old_m = m
-                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1.0)
-                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1.0)
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_mc, old_m
+                }{
+                    old_mc = mc
+                    old_m = m
+                }{
+                    X[0] = mc
+                    X[1] = m
+                }{
+                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
+                    J[0] = -a*dt-1.0
+                    J[2] = b*dt
+                    F[1] = X[0]*a*dt-X[1]*b*dt-X[1]+old_m
+                    J[1] = a*dt
+                    J[3] = -b*dt-1.0
+                }{
+                    mc = X[0]
+                    m = X[1]
+                }{
+                }
             })";
         THEN("Construct & solve linear system") {
             CAPTURE(nmodl_text);
@@ -981,10 +1117,25 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL old_mc
-                old_mc = mc
-                mc = (b*dt+old_mc)/(a*dt+b*dt+1.0)
-                m = (a*dt-old_mc+1.0)/(a*dt+b*dt+1.0)
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_mc
+                }{
+                    old_mc = mc
+                }{
+                    X[0] = mc
+                    X[1] = m
+                }{
+                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
+                    J[0] = -a*dt-1.0
+                    J[2] = b*dt
+                    F[1] = -X[0]-X[1]+1.0
+                    J[1] = -1.0
+                    J[3] = -1.0
+                }{
+                    mc = X[0]
+                    m = X[1]
+                }{
+                }
             })";
         THEN("Construct & solve linear system, replace ODE for m with rhs of CONSERVE statement") {
             CAPTURE(nmodl_text);
@@ -1011,11 +1162,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL old_mc, old_m
-                old_mc = mc
-                old_m = m
-                mc = (b*dt*old_m+b*dt*old_mc+old_mc)/(a*dt+b*dt+1.0)
-                m = (a*dt*old_m+a*dt*old_mc+old_m)/(a*dt+b*dt+1.0)
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_mc, old_m
+                }{
+                    old_mc = mc
+                    old_m = m
+                }{
+                    X[0] = mc
+                    X[1] = m
+                }{
+                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
+                    J[0] = -a*dt-1.0
+                    J[2] = b*dt
+                    F[1] = X[0]*a*dt-X[1]*b*dt-X[1]+old_m
+                    J[1] = a*dt
+                    J[3] = -b*dt-1.0
+                }{
+                    mc = X[0]
+                    m = X[1]
+                }{
+                }
             })";
         THEN("Construct & solve linear system, ignore invalid CONSERVE statement") {
             CAPTURE(nmodl_text);
@@ -1045,7 +1211,7 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
             })";
         std::string expected_result = R"(
             DERIVATIVE ihkin {
-                EIGEN_LINEAR_SOLVE[5]{
+                EIGEN_NEWTON_SOLVE[5]{
                     LOCAL alpha, beta, k3p, k4, k1ca, k2, old_c1, old_o1, old_p0
                 }{
                     evaluate_fct(v, cai)
@@ -1058,31 +1224,32 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     X[2] = o2
                     X[3] = p0
                     X[4] = p1
-                    F[0] = -old_c1
-                    F[1] = -old_o1
-                    F[2] = -1.0
-                    F[3] = -old_p0
-                    F[4] = -1.0
+                }{
+                    F[0] = -X[0]*alpha*dt-X[0]+X[1]*beta*dt+old_c1
                     J[0] = -alpha*dt-1.0
                     J[5] = beta*dt
                     J[10] = 0
                     J[15] = 0
                     J[20] = 0
+                    F[1] = X[0]*alpha*dt-X[1]*beta*dt-X[1]*dt*k3p-X[1]+X[2]*dt*k4+old_o1
                     J[1] = alpha*dt
                     J[6] = -beta*dt-dt*k3p-1.0
                     J[11] = dt*k4
                     J[16] = 0
                     J[21] = 0
+                    F[2] = -X[0]-X[1]-X[2]+1.0
                     J[2] = -1.0
                     J[7] = -1.0
                     J[12] = -1.0
                     J[17] = 0
                     J[22] = 0
+                    F[3] = -X[3]*dt*k1ca-X[3]+X[4]*dt*k2+old_p0
                     J[3] = 0
                     J[8] = 0
                     J[13] = 0
                     J[18] = -dt*k1ca-1.0
                     J[23] = dt*k2
+                    F[4] = -X[3]-X[4]+1.0
                     J[4] = 0
                     J[9] = 0
                     J[14] = 0
@@ -1124,9 +1291,19 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL old_W_0
-                old_W_0 = W[0]
-                W[0] = (3.0*dt*A[1]+old_W_0)/(dt*A[0]-dt*B[0]+1.0)
+                EIGEN_NEWTON_SOLVE[1]{
+                    LOCAL old_W_0
+                }{
+                    old_W_0 = W[0]
+                }{
+                    X[0] = W[0]
+                }{
+                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3.0*dt*A[1]+old_W_0
+                    J[0] = -dt*A[0]+dt*B[0]-1.0
+                }{
+                    W[0] = X[0]
+                }{
+                }
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
@@ -1154,11 +1331,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
         )";
         std::string expected_result = R"(
             DERIVATIVE scheme1 {
-                LOCAL old_M_0, old_M_1
-                old_M_0 = M[0]
-                old_M_1 = M[1]
-                M[0] = (dt*old_M_0*B[1]+dt*old_M_1*B[0]+old_M_0)/(pow(dt, 2)*A[0]*B[1]-pow(dt, 2)*A[1]*B[0]+dt*A[0]+dt*B[1]+1.0)
-                M[1] = -(dt*old_M_0*A[1]+old_M_1*(dt*A[0]+1.0))/(pow(dt, 2)*A[1]*B[0]-(dt*A[0]+1.0)*(dt*B[1]+1.0))
+                EIGEN_NEWTON_SOLVE[2]{
+                    LOCAL old_M_0, old_M_1
+                }{
+                    old_M_0 = M[0]
+                    old_M_1 = M[1]
+                }{
+                    X[0] = M[0]
+                    X[1] = M[1]
+                }{
+                    F[0] = -X[0]*dt*A[0]-X[0]+X[1]*dt*B[0]+old_M_0
+                    J[0] = -dt*A[0]-1.0
+                    J[2] = dt*B[0]
+                    F[1] = X[0]*dt*A[1]-X[1]*dt*B[1]-X[1]+old_M_1
+                    J[1] = dt*A[1]
+                    J[3] = -dt*B[1]-1.0
+                }{
+                    M[0] = X[0]
+                    M[1] = X[1]
+                }{
+                }
             })";
         THEN("Construct & solver linear system") {
             CAPTURE(nmodl_text);
