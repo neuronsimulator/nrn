@@ -26,7 +26,7 @@ trigger:
 
 jobs:
 
-- job: 'ManyLinuxWheelsDeprecated'
+- job: 'ManyLinux1Wheels'
   timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
@@ -38,6 +38,12 @@ jobs:
         python.version: '3.5'
       Python36:
         python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
+      Python39:
+        python.version: '3.9'
   steps:
   - script: |
       docker run --rm \
@@ -60,18 +66,12 @@ jobs:
   - template: ci/azure-wheel-test-upload.yml
 
 
-- job: 'ManyLinuxWheels'
+- job: 'ManyLinux2014Wheels'
   timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
-      Python37:
-        python.version: '3.7'
-      Python38:
-        python.version: '3.8'
-      Python39:
-        python.version: '3.9'
       Python310:
         python.version: '3.10'
   steps:
