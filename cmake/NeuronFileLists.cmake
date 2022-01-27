@@ -14,6 +14,7 @@ set(HEADER_FILES_TO_INSTALL
     hocparse.h
     isoc99.h
     ivstream.h
+    mcran4.h
     md1redef.h
     md2redef.h
     mech_api.h
