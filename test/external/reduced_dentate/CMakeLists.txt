@@ -4,6 +4,7 @@ nrn_add_test_group(
   SUBMODULE tests/reduced_dentate
   OUTPUT "asciispikes::results/dentatenet_spikeout_*.dat"
   MODFILE_PATTERNS "mechanisms/*.mod"
+  NRNIVMODL_ARGS -legacytransformations cxx
   SCRIPT_PATTERNS "commonutils.py" "dat/*.dat" "datasets/Control/*.dat" "*.hoc" "templates/*.hoc")
 
 set(reduced_dentate_mpi_ranks 4)

@@ -17,6 +17,7 @@ nrn_add_test_group(
   SUBMODULE tests/olfactory-bulb-3d
   OUTPUT asciispikes::olfactory_bulb.spikes.dat.000
   MODFILE_PATTERNS "${prefix}/*.mod"
+  NRNIVMODL_ARGS -legacytransformations cxx
   SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic"
   SIM_DIRECTORY ${prefix})
 set(olfactory_bulb_3d_neuron_args -mpi -python "bulb3dtest.py")

@@ -23,6 +23,7 @@ foreach(model hippo sscx)
     SUBMODULE tests/channel-benchmark
     OUTPUT asciispikes::out.dat
     MODFILE_PATTERNS "${prefix}/lib/modlib/*.mod"
+    NRNIVMODL_ARGS -legacytransformations cxx
     SCRIPT_PATTERNS "${prefix}/lib/hoclib/*.hoc" "${prefix}/${model}/*.txt"
                     "${prefix}/${model}/morphologies/*.asc")
   set(channel_benchmark_neuron_args
