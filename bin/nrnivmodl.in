@@ -49,6 +49,7 @@ if command -v xcrun; then
     fi
 fi
 
+LegacyModelTransformations=""
 LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
@@ -61,6 +62,11 @@ while test -n "$1" ; do
     -coreneuron)
         # also run nrnivmodl-core
         LinkCoreNEURON=true
+        shift;;
+    -legacytransformations)
+        # add extra compile flags and nocmodl options
+        LegacyModelTransformations="$2"
+        shift
         shift;;
     -incflags)
         # extra include flags and paths (NEURON only)
@@ -83,6 +89,10 @@ while test -n "$1" ; do
 done
 
 pwd
+
+if [ -n "${LegacyModelTransformations}" ]; then
+  NOCMODLFLAGS="-t ${LegacyModelTransformations}"
+fi
 
 # Mod file paths may contain spaces which make variable lists of those
 # hard to manage as space is the item separator. Furthermore, when a
@@ -188,7 +198,7 @@ mdir="`pwd`"
     echo "\
 ./$base_name.cpp: `escape_spaces "$f.mod"`
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \$(NOCMODLFLAGS\) $base_name.mod -o \"$mdir\")
+	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) ${NOCMODLFLAGS} $base_name.mod -o \"$mdir\")
 
 ./$base_name.o: ./$base_name.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
@@ -302,5 +312,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" "NOCMODLFLAGS='-t c++'" special &&
+make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 echo "Successfully created $MODSUBDIR/special"
