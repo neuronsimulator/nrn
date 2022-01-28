@@ -147,7 +147,7 @@ void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type,
     if (N <= 4) {
         printer->add_line("{0} = {1}.inverse()*{2};"_format(Xm, Jm, Fm));
     } else {
-        printer->add_line("{0} = partialPivLu{1}({2}, {3});"_format(Xm, N, Jm, Fm));
+        printer->add_line("{0} = partialPivLu<{1}>({2}, {3});"_format(Xm, N, Jm, Fm));
     }
 }
 
