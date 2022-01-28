@@ -115,13 +115,9 @@ build_wheel_osx() {
     pip install -U delocate -r packaging/python/build_requirements.txt
     pip_numpy_install
 
+
     echo " - Building..."
     rm -rf dist build
-    if [ "$2" == "--bare" ]; then
-        python setup.py bdist_wheel
-    else
-        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
-    fi
 
     # We need to "fix" the platform tag if the Python installer is universal2
     # See:
@@ -135,7 +131,12 @@ build_wheel_osx() {
       echo " - Python installation is universal2, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
     fi
 
-    python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
+    if [ "$2" == "--bare" ]; then
+        python setup.py bdist_wheel
+    else
+        python setup.py build_ext --cmake-defs="NRN_MPI_DYNAMIC=$3" bdist_wheel
+    fi
+
 
     echo " - Calling delocate-listdeps"
     delocate-listdeps dist/*.whl
