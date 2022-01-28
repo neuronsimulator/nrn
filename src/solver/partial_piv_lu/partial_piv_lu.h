@@ -12,10 +12,10 @@
 #include "Eigen/Dense"
 #include "Eigen/LU"
 
-template<int dim>
+template <int dim>
 using MatType = Eigen::Matrix<double, dim, dim, Eigen::ColMajor, dim, dim>;
 
-template<int dim>
+template <int dim>
 using VecType = Eigen::Matrix<double, dim, 1, Eigen::ColMajor, dim, 1>;
 
 // Eigen-3.5+ provides better GPU support. However, some functions cannot be called directly
@@ -23,40 +23,44 @@ using VecType = Eigen::Matrix<double, dim, 1, Eigen::ColMajor, dim, 1>;
 // them with __device__ & acc routine tokens), which allows us to eventually call them from OpenACC.
 // Calling these functions from CUDA kernels presents no issue ...
 
+// We want to declare a function template that is callable from OpenMP and
+// OpenACC code, but whose instantiations are compiled by CUDA. This is to avoid
+// Eigen internals having to be digested by OpenACC/OpenMP compilers. The
+// problem is that it is apparently not sufficient to declare a template in a OpenMP
+// declare target region and have the OpenMP compiler assume that device
+// versions of instantations of it will be available. The convoluted approach
+// here has two ingredients:
+//  - partialPivLu<N>(...), a function template that has explicit
+//    instantiations visible in this header file that call:
+//  - partialPivLuN(...), functions that are declared in this header but defined
+//    in the CUDA file partial_piv_lu.cu.
 nrn_pragma_omp(declare target)
 nrn_pragma_acc(routine seq)
-template<int dim>
+template <int dim>
 EIGEN_DEVICE_FUNC VecType<dim> partialPivLu(const MatType<dim>&, const VecType<dim>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<1> partialPivLu1(const MatType<1>&, const VecType<1>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<2> partialPivLu2(const MatType<2>&, const VecType<2>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<3> partialPivLu3(const MatType<3>&, const VecType<3>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<4> partialPivLu4(const MatType<4>&, const VecType<4>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<5> partialPivLu5(const MatType<5>&, const VecType<5>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<6> partialPivLu6(const MatType<6>&, const VecType<6>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<7> partialPivLu7(const MatType<7>&, const VecType<7>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<8> partialPivLu8(const MatType<8>&, const VecType<8>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<9> partialPivLu9(const MatType<9>&, const VecType<9>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<10> partialPivLu10(const MatType<10>&, const VecType<10>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<11> partialPivLu11(const MatType<11>&, const VecType<11>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<12> partialPivLu12(const MatType<12>&, const VecType<12>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<13> partialPivLu13(const MatType<13>&, const VecType<13>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<14> partialPivLu14(const MatType<14>&, const VecType<14>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<15> partialPivLu15(const MatType<15>&, const VecType<15>&);
-nrn_pragma_acc(routine seq)
-EIGEN_DEVICE_FUNC VecType<16> partialPivLu16(const MatType<16>&, const VecType<16>&);
+#define InstantiatePartialPivLu(N)                                                               \
+    nrn_pragma_acc(routine seq)                                                                  \
+    EIGEN_DEVICE_FUNC VecType<N> partialPivLu##N(const MatType<N>&, const VecType<N>&);          \
+    nrn_pragma_acc(routine seq)                                                                  \
+    template <>                                                                                  \
+    EIGEN_DEVICE_FUNC inline VecType<N> partialPivLu(const MatType<N>& A, const VecType<N>& b) { \
+        return partialPivLu##N(A, b);                                                            \
+    }
+InstantiatePartialPivLu(1)
+InstantiatePartialPivLu(2)
+InstantiatePartialPivLu(3)
+InstantiatePartialPivLu(4)
+InstantiatePartialPivLu(5)
+InstantiatePartialPivLu(6)
+InstantiatePartialPivLu(7)
+InstantiatePartialPivLu(8)
+InstantiatePartialPivLu(9)
+InstantiatePartialPivLu(10)
+InstantiatePartialPivLu(11)
+InstantiatePartialPivLu(12)
+InstantiatePartialPivLu(13)
+InstantiatePartialPivLu(14)
+InstantiatePartialPivLu(15)
+InstantiatePartialPivLu(16)
+#undef InstantiatePartialPivLu
 nrn_pragma_omp(end declare target)
