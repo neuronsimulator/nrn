@@ -214,7 +214,7 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_SCRIPT_PATTERNS)
     set(script_patterns "${NRN_ADD_TEST_SCRIPT_PATTERNS}")
   endif()
-  if(DEFINED NRN_ADD_TEST_SCRIPT_PATTERNS)
+  if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
     set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
   if(DEFINED NRN_ADD_TEST_SUBMODULE)
@@ -245,10 +245,9 @@ function(nrn_add_test)
   set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
                         ${nrnivmodl_args})
   set(hash_components nrnivmodl ${nrnivmodl_args})
-  # This condition used to be `requires_coreneuron`. This tends to mean that
-  # NEURON and CoreNEURON versions of a test will share the same hash, which is
-  # probably fine, but also means that any NEURON-only tests will be compiled
-  # for CoreNEURON too.
+  # This condition used to be `requires_coreneuron`. This tends to mean that NEURON and CoreNEURON
+  # versions of a test will share the same hash, which is probably fine, but also means that any
+  # NEURON-only tests will be compiled for CoreNEURON too.
   set(nrnivmodl_dependencies)
   if(NRN_ENABLE_CORENEURON)
     list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})

@@ -17,14 +17,14 @@ nrn_add_test_group(
   SUBMODULE tests/olfactory-bulb-3d
   OUTPUT asciispikes::olfactory_bulb.spikes.dat.000
   MODFILE_PATTERNS "${prefix}/*.mod"
-  SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic")
+  SCRIPT_PATTERNS "${prefix}/*.py" "${prefix}/*.txt" "${prefix}/*.hoc" "${prefix}/*.dic"
+  SIM_DIRECTORY ${prefix})
 set(olfactory_bulb_3d_neuron_args -mpi -python "bulb3dtest.py")
 nrn_add_test(
   GROUP olfactory-bulb-3d
   NAME neuron
   REQUIRES mpi python
   PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-  SIM_DIRECTORY ${prefix}
   PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g" bulb3dtest.py
   COMMAND ${olfactory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop
           ${olfactory_bulb_3d_sim_time})
@@ -45,7 +45,6 @@ foreach(processor gpu cpu)
       NAME coreneuron_${processor}_${mode}
       REQUIRES coreneuron python ${processor}
       PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-      SIM_DIRECTORY ${prefix}
       PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
                  bulb3dtest.py
       COMMAND
