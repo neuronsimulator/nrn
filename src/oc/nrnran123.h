@@ -72,14 +72,13 @@ int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
 int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
 void nrn_set_random_sequence(Rand* r, long seq);
 
-// TODO: mark deprecated
-long nrn_get_random_sequence(void* r);
-int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-double nrn_random_pick(void* r);
-void nrn_random_reset(void* r);
-int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
-int nrn_random123_setseq(void* r, uint32_t seq, char which);
-void nrn_set_random_sequence(void* r, int seq);
+[[deprecated("non-void* overloads are preferred")]] long nrn_get_random_sequence(void* r);
+[[deprecated("non-void* overloads are preferred")]] int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+[[deprecated("non-void* overloads are preferred")]] double nrn_random_pick(void* r);
+[[deprecated("non-void* overloads are preferred")]] void nrn_random_reset(void* r);
+[[deprecated("non-void* overloads are preferred")]] int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
+[[deprecated("non-void* overloads are preferred")]] int nrn_random123_setseq(void* r, uint32_t seq, char which);
+[[deprecated("non-void* overloads are preferred")]] void nrn_set_random_sequence(void* r, int seq);
 
 /* more fundamental (stateless) (though the global index is still used) */
 extern nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);

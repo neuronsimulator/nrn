@@ -82,15 +82,15 @@ IvocVect* vector_new2(IvocVect*);
 Object** vector_pobj(IvocVect*);
 void vector_resize(IvocVect*, int);
 double* vector_vec(IvocVect*);
+
 // olupton 2022-01-21: These overloads are added for backwards compatibility
-//                     with pre-C++ mechanisms. They should be marked
-//                     deprecated for use in modern code.
-int vector_buffer_size(void*);
-int vector_capacity(void*);
-double* vector_new1(int);
-Object** vector_pobj(void*);
-void vector_resize(void*, int);
-double* vector_vec(void*);
+//                     with pre-C++ mechanisms.
+[[deprecated("non-void* overloads are preferred")]] int vector_buffer_size(void*);
+[[deprecated("non-void* overloads are preferred")]] int vector_capacity(void*);
+[[deprecated("vector_new is preferred")]] double* vector_new1(int);
+[[deprecated("non-void* overloads are preferred")]] Object** vector_pobj(void*);
+[[deprecated("non-void* overloads are preferred")]] void vector_resize(void*, int);
+[[deprecated("non-void* overloads are preferred")]] double* vector_vec(void*);
 
 extern int nrnignore;
 
