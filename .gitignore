@@ -1,7 +1,9 @@
 .clang-format
 .cmake-format.yaml
+external/tests/
 nmodlconf.h.in
 nrnconf.h.in
+test/ringtest/*.dat
 build
 .DS_Store
 .eggs/
