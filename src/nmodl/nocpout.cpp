@@ -391,7 +391,7 @@ extern void hoc_register_prop_size(int, int, int);\n\
 extern void hoc_register_limits(int, HocParmLimits*);\n\
 extern void hoc_register_units(int, HocParmUnits*);\n\
 extern void nrn_promote(Prop*, int, int);\n\
-extern \"C++\" Memb_func* memb_func;\n\
+extern Memb_func* memb_func;\n\
 "	);
 
 	if (nmodl_text) {
