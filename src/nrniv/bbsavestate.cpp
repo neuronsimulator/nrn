@@ -772,7 +772,7 @@ static double ppignore(void* v) {
         }
         (*pp_ignore_map)[pp] = 0;  // naive set instead of map
     } else if (pp_ignore_map) {    // clear
-        pp_ignore_map.release();
+        pp_ignore_map.reset();
     }
     return 0.;
 }
@@ -1452,13 +1452,13 @@ static void del_presyn_info() {
         for (const auto& dl: *presyn_queue) {
             delete dl.second;
         }
-        presyn_queue.release();
+        presyn_queue.reset();
     }
     if (nc2dblist) {
         for (const auto& dl: *nc2dblist) {
             delete dl.second;
         }
-        nc2dblist.release();
+        nc2dblist.reset();
     }
 }
 
@@ -1478,7 +1478,7 @@ void BBSaveState::del_pp2de() {
             delete dl;
         }
     }
-    pp2de.release();
+    pp2de.reset();
     if (sewrap_list) {
         for (SEWrap* sewrap: *sewrap_list) {
             delete sewrap;
@@ -1533,9 +1533,7 @@ void BBSaveState::init() {
 void BBSaveState::finish() {
     del_pp2de();
     del_presyn_info();
-    if (base2spgid) {
-        base2spgid.release();
-    }
+    base2spgid.reset();
     if (f->type() == BBSS_IO::IN) {
         nrn_spike_exchange(nrn_threads);
     }
@@ -2422,6 +2420,7 @@ static void scatteritems() {
     for (const auto& pair: *src2send) {
         delete pair.second;
     }
+    src2send.reset();
 
     if (nrnmpi_numprocs > 1) {
         all2allv_int2(cnts, off, gidsrc, ndsrc);
@@ -2604,7 +2603,6 @@ static void construct_presyn_queue() {
         ++mcnt;
         delete dl;
     }
-    m.release();
     presyn_queue.reset(new Int2DblList());
     presyn_queue->reserve(127);
     spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, presyn_queue.get());
@@ -2833,7 +2831,7 @@ static void bbss_queuecheck() {
         for (const auto& pair: *queuecheck_gid2unc) {
             delete pair.second;
         }
-        queuecheck_gid2unc.release();
+        queuecheck_gid2unc.reset();
     }
     del_presyn_info();
 }

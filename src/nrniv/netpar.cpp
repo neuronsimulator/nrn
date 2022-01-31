@@ -125,8 +125,8 @@ double ncs_netcon_localmindelay( int srcgid )
 int ncs_netcon_count( int srcgid, bool localNetCons )
 {
     const auto& map = localNetCons ? gid2out_ : gid2in_;
-    const auto iter = map.find(srcgid);
-    PreSyn* ps{iter != map.end ? iter->second : nullptr};
+    const auto& iter = map.find(srcgid);
+    PreSyn* ps{iter != map.end() ? iter->second : nullptr};
 
     if( !ps ) {  //no cells on this cpu receive from the given gid
         fprintf( stderr, "should never happen!\n" );
@@ -141,8 +141,8 @@ void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool loca
 {
     NetCvode* ns = net_cvode_instance;
     const auto& map = localNetCons ? gid2out_ : gid2in_;
-    const auto iter = map.find(srcgid);
-    PreSyn* ps{iter != map.end ? iter->second : nullptr};
+    const auto& iter = map.find(srcgid);
+    PreSyn* ps{iter != map.end() ? iter->second : nullptr};
     if( !ps ) {  //no cells on this cpu receive from the given gid
         return;
     }

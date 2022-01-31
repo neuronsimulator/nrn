@@ -11,7 +11,6 @@
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>
-#include <unordered_map>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -43,6 +42,7 @@
 #include "nrnste.h"
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
+#include <unordered_map>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -3358,8 +3358,6 @@ DiscreteEvent* SelfEvent::savestate_read(FILE* f) {
 	return se;
 }
 
-
-// put following here to avoid conflict with gnu vector
 std::unique_ptr<SelfEventPPTable> SelfEvent::sepp_;
 
 Point_process* SelfEvent::index2pp(int type, int oindex) {
@@ -3378,14 +3376,13 @@ Point_process* SelfEvent::index2pp(int type, int oindex) {
 			}
 		}
 	}
-	nrn_assert(sepp_->count(type + n_memb_func*oindex));
-	return (*sepp_)[type + n_memb_func*oindex];
+    const auto& iter = sepp_->find(type + n_memb_func*oindex);
+    nrn_assert(iter != sepp_->end());
+    return iter->second;
 }
 
 void SelfEvent::savestate_free() {
-	if (sepp_) {
-		sepp_.release();
-	}
+	sepp_.reset();
 }
 
 void SelfEvent::savestate_write(FILE* f) {
@@ -4677,7 +4674,7 @@ NetCon::NetCon(PreSyn* src, Object* target) {
 	src_ = src;
 	delay_ = 1.0;
 	if (src_) {
-		src_->dil_.push_back((NetCon*)this);
+		src_->dil_.push_back(this);
 		src_->use_min_delay_ = 0;
 	}
 	if (target == nil) {
@@ -4731,6 +4728,7 @@ void NetCon::rmsrc() {
 	if (src_->output_index_ == -1)
 #endif
 					delete src_;
+				    src_ = nullptr;
 				}
 				break;
 			}
@@ -4743,7 +4741,7 @@ void NetCon::replace_src(PreSyn* p) {
 	rmsrc();
 	src_ = p;
 	if (src_) {
-		src_->dil_.push_back((NetCon*)this);
+		src_->dil_.push_back(this);
 		src_->use_min_delay_ = 0;
 	}
 }
