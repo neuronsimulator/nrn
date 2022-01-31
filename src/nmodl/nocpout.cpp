@@ -1215,7 +1215,7 @@ if (_nd->_extnode) {\n\
 	}
 	if (ldifuslist) {
 		Lappendstr(defs_list, "\thoc_register_ldifus1(_difusfunc);\n");
-		Linsertstr(defs_list, "extern \"C\" { static void _difusfunc(ldifusfunc2_t, NrnThread*); }\n");
+		Linsertstr(defs_list, "static void _difusfunc(ldifusfunc2_t, NrnThread*);\n");
 	}
     } /* end of not "nothing" */
 	Lappendstr(defs_list, "\
