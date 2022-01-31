@@ -6,7 +6,7 @@
 
 struct NrnThread;
 typedef struct SparseObj SparseObj;
-union Datum;
+union Datum;	
 
 typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
 typedef void ldifusfunc2_t(int, ldifusfunc3_t, void**, int, int, int, NrnThread*);
