@@ -1141,7 +1141,7 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype )
 	if (blocktype != NETRECEIVE) {
 		diag("\"WATCH\" statement only allowed in NET_RECEIVE block", (char*)0);
 	}
-	sprintf(buf, "\nstatic double _watch%d_cond(_pnt) Point_process* _pnt; {\n",
+	sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n",
 		watch_seen_);
 	lappendstr(procfunc, buf);
 	vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");

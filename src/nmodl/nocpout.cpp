@@ -2564,7 +2564,7 @@ void net_receive(Item* qarg, Item* qp1, Item* qp2, Item* qstmt, Item* qend)
 	}
 	net_receive_ = 1;
 	deltokens(qp1, qp2);
-	insertstr(qstmt, "(_pnt, _args, _lflag) Point_process* _pnt; double* _args; double _lflag;");
+	insertstr(qstmt, "(Point_process* _pnt, double* _args, double _lflag)");
 	i = 0;
 	ITERATE(q1, qarg) if (q1->next != qarg) { /* skip last "flag" arg */
 		s = SYM(q1);
