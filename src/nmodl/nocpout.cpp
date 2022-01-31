@@ -384,7 +384,7 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 		s = SYM(q);
 		if (s->subtype & (FUNCT | PROCED) && s->name[0] != '_') {
 			if (point_process) {
-                Sprintf(buf, "static double _hoc_%s();\n", s->name);
+                Sprintf(buf, "static double _hoc_%s(void*);\n", s->name);
 			}else{
                 Sprintf(buf, "static void _hoc_%s(void);\n", s->name);
 			}

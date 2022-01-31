@@ -907,7 +907,7 @@ Insertstr(rlst->position, "}");
 		Sprintf(buf,"extern double *_getelm();\n");
 		qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-		Sprintf(buf,"extern double *_nrn_thread_getelm();\n");
+		Sprintf(buf,"extern double *_nrn_thread_getelm(SparseObj*, int, int);\n");
 		vectorize_substitute(qv, buf);
 #endif
 	}}
