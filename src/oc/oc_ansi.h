@@ -20,8 +20,6 @@
  * @{
  */
 
-
-#if defined(__cplusplus)
 struct Arrayinfo;
 struct cTemplate;
 union Datum;
@@ -34,9 +32,6 @@ union Objectdata;
 struct Symbol;
 struct Symlist;
 struct VoidFunc;
-#else
-#define IvocVect void
-#endif
 
 #if defined(__cplusplus)
 extern "C" {
