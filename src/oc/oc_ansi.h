@@ -58,7 +58,7 @@ extern void hoc_execerr_ext(const char* fmt, ...);
 extern char* hoc_object_name(Object*);
 extern void hoc_retpushx(double);
 
-extern double* getarg(int);
+extern double* hoc_getarg(int);
 extern int ifarg(int);
 
 extern int vector_instance_px(void*, double**);

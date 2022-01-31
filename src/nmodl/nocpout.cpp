@@ -319,7 +319,7 @@ fprintf(stderr, "Notice: ARTIFICIAL_CELL models that would require thread specif
 	/*SUPPRESS 763*/\n\
 	/*SUPPRESS 765*/\n\
 	");
-	Lappendstr(defs_list, "extern \"C\" double *hoc_getarg(int);\n");
+	Lappendstr(defs_list, "extern double *hoc_getarg(int);\n");
 #if VECTORIZE
     if (vectorize) {
 	Sprintf(buf, "/* Thread safe. No static _p or _ppvar. */\n");
