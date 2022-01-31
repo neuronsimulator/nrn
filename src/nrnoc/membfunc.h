@@ -13,7 +13,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "nrnoc_ml.h"
 
-struct NrnThread;
+typedef struct NrnThread NrnThread;
 typedef Datum *(*Pfrpdat)();
 typedef void(*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
