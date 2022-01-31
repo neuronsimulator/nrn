@@ -116,6 +116,8 @@ static double dmaxint_ = 9007199254740992;
 #include "oc2iv.h"
 #include "parse.hpp"
 #include "ocfile.h"
+#include "ocfunc.h"
+#include "oc_ansi.h"
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
@@ -123,14 +125,6 @@ extern "C" void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-
-// math functions with error checking defined in oc/SRC/math.cpp
-extern double hoc_Log(double x), hoc_Log10(double x), /*hoc_Exp(double x), */hoc_Sqrt(double x);
-extern double hoc_scan(FILE*);
-
-extern "C" {
-    extern double hoc_Exp(double);
-} // extern "C"
 
 static int narg() {
   int i=0;

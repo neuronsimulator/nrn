@@ -41,7 +41,7 @@ double Log10(double x) {
 }
 
 /* used by nmodl and other c, c++ code */
-extern "C" double hoc_Exp(double x) {
+double hoc_Exp(double x) {
     if (x < -700.) {
         return 0.;
     } else if (x > 700 && nrn_feenableexcept_ == 0) {
