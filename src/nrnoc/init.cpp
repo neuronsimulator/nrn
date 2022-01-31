@@ -157,7 +157,7 @@ extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
 }
 
 // also for read
-using bbcore_write_t = void(*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
+using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
@@ -1012,8 +1012,8 @@ extern "C" void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
 	}
 }
 
-extern "C" void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, NrnThread*, int)) {
-	memb_func[i].thread_table_check_ = f;
+extern "C" void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
+    memb_func[i].thread_table_check_ = f;
 }
 
 extern "C" void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
