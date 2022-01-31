@@ -21,7 +21,6 @@
 #undef nodecount
 #undef type
 
-#define NrnThread _NrnThread
 #define Memb_list _Memb_list
 #define nodelist _nodelist
 #define nodeindices _nodeindices
