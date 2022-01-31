@@ -73,6 +73,8 @@ extern int vector_arg_px(int i, double** p);
 double hoc_Exp(double);
 int hoc_is_tempobj_arg(int narg);
 FILE* hoc_obj_file_arg(int i);
+void hoc_reg_nmodl_text(int type, const char* txt);
+void hoc_reg_nmodl_filename(int type, const char* filename);
 int nrn_mlh_gsort(double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double));
 void state_discontinuity(int i, double* pd, double d);
 

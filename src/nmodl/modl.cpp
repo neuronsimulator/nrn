@@ -246,12 +246,14 @@ no longer adequate for saying we can not */
 #endif
  if (nmodl_text) {
 	Item* q;
-	char* pf = NULL;
+	char* pf{nullptr};
 #if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
-	pf = realpath(finname, NULL);
+	pf = realpath(finname, nullptr);
 #endif
-	fprintf(fcout, "\n#if NMODL_TEXT\nstatic const char* nmodl_filename = \"%s\";\nstatic const char* nmodl_file_text = \n", pf ? pf : finname);
+	fprintf(fcout, "\n#if NMODL_TEXT\nstatic void register_nmodl_text_and_filename(int mech_type) {\n");
+	fprintf(fcout, "    const char* nmodl_filename = \"%s\";\n", pf ? pf : finname);
 	if (pf) { free(pf); }
+	fprintf(fcout, "    const char* nmodl_file_text = \n");
 	ITERATE(q, filetxtlist) {
 		char* s = STR(q);
 		char* cp;
@@ -267,7 +269,11 @@ no longer adequate for saying we can not */
 			fputc(*cp, fcout);
 		}
 	}
-	fprintf(fcout, "  ;\n#endif\n");
+	fprintf(fcout, "  ;\n");
+	fprintf(fcout, "    hoc_reg_nmodl_filename(mech_type, nmodl_filename);\n");
+	fprintf(fcout, "    hoc_reg_nmodl_text(mech_type, nmodl_file_text);\n");
+	fprintf(fcout, "}\n");
+	fprintf(fcout, "#endif\n");
 }
 #endif
 

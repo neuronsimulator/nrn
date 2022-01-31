@@ -199,12 +199,12 @@ void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
 }
 
 const char** nrn_nmodl_text_;
-extern "C" void hoc_reg_nmodl_text(int type, const char* txt) {
+void hoc_reg_nmodl_text(int type, const char* txt) {
 	nrn_nmodl_text_[type] = txt;
 }
 
 const char** nrn_nmodl_filename_;
-extern "C" void hoc_reg_nmodl_filename(int type, const char* filename) {
+void hoc_reg_nmodl_filename(int type, const char* filename) {
 	nrn_nmodl_filename_[type] = filename;
 }
 
