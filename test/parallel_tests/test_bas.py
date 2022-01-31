@@ -234,7 +234,7 @@ class StarNet:
 
 
 out2in_sh = r"""
-#!/bin/bash
+#!/usr/bin/env bash
 out=bbss_out
 rm -f in/*
 mkdir -p in

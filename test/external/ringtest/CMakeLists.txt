@@ -41,6 +41,33 @@ foreach(processor cpu gpu)
     set(gpu_arg)
     set(special_gpu_arg)
   endif()
+  set(ringtest_corenrn_script
+      ${PROJECT_BINARY_DIR}/test/external_ringtest/coreneuron_${processor}_mpi_offline_saverestore/coreneuron_${processor}_mpi_offline_saverestore.sh
+  )
+  string(REPLACE ";" " " ringtest_special_str "${ringtest_special}")
+  string(REPLACE ";" " " ringtest_special_core_str "${ringtest_special_core}")
+  file(
+    WRITE ${ringtest_corenrn_script}
+    "#!/bin/bash\n"
+    "set -e\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_str} -tstop 0 -coreneuron -dumpmodel\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 10 --checkpoint part0"
+    " --outpath part0\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 40 --checkpoint part1"
+    " --restore part0 --outpath part1\n"
+    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 100 --checkpoint part2"
+    " --restore part1 --outpath part2\n"
+    "cat part0/out.dat > out.dat\n"
+    "cat part1/out.dat >> out.dat\n"
+    "cat part2/out.dat >> out.dat\n")
+  nrn_add_test(
+    GROUP external_ringtest
+    NAME coreneuron_${processor}_mpi_offline_saverestore
+    REQUIRES coreneuron mpi python ${processor}
+    CONFLICTS mpi_dynamic
+    PROCESSORS ${ringtest_mpi_ranks}
+    COMMAND bash coreneuron_${processor}_mpi_offline_saverestore.sh
+    OUTPUT asciispikes::out.dat)
   nrn_add_test(
     GROUP external_ringtest
     NAME coreneuron_${processor}_mpi

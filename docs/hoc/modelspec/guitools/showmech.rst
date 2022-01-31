@@ -1,4 +1,5 @@
-.. _showmech:
+
+.. _hoc_showmech:
 
 
 ShowMechanism

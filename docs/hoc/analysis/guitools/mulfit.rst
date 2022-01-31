@@ -1,4 +1,5 @@
-.. _mulfit:
+
+.. _hoc_mulfit:
 
 
 MulRunFitter
@@ -79,13 +80,13 @@ OptimizerPanel
     This controls the fitting algorithm. This menu item 
     does not really belong here since it has nothing to do with parameters 
     but it had to go somewhere. Currently, the only fitting algorithm 
-    that can be used by the MulRunFitter tool is :func:`fit_praxis` . 
+    that can be used by the MulRunFitter tool is :hoc:func:`fit_praxis` .
     "Real time", "#multiple runs", and "Minimum so far" 
     show some statistics for the current fitting process. 
-    "# quad forms before return" is the argument to a :func:`stop_praxis` function 
+    "# quad forms before return" is the argument to a :hoc:func:`stop_praxis` function
     call. A value of 0 means that praxis returns when the local space 
     around the minimum it has found meets the criterion chosen by 
-    :func:`attr_praxis` . In this tool, the default values are 
+    :hoc:func:`attr_praxis` . In this tool, the default values are
     tolerance=1e-4 
     maxstepsize=.5 
     printmode=0. A non-zero value indicates the number of complete 
@@ -94,7 +95,7 @@ OptimizerPanel
     find the minimum in one of these steps. After a quad form step, praxis 
     contains a quadratic form approximation to the local search space. 
     The eigenvalues and eigenvectors of this quadratic form are obtainable 
-    from :func:`pval_praxis` 
+    from :hoc:func:`pval_praxis`
 
  
 When the :guilabel:`Append the path to savepath.fit` checkbox is checked, 
@@ -115,7 +116,7 @@ Generators Menu
 The :guilabel:`Generators` menu is used to add and view stimulus protocols 
 (which include error functions for calculating the difference between 
 simulation results and data). Each generator is a generalization of 
-a :ref:`RunFitter`. 
+a :ref:`hoc_RunFitter`.
  
 :guilabel:`Add Generator`
     creates an empty "Unnamed single run protocol" which 
@@ -151,7 +152,7 @@ a :ref:`RunFitter`.
     ``SEClamp[0].i`` to fit to data. Then close the panel and reopen 
     it (requires double clicking if the item is already selected in 
     the generator list) in order to see the Graph portion of the display. 
-    The generator panel is a :class:`Deck` and the top card is the one 
+    The generator panel is a :hoc:class:`Deck` and the top card is the one
     selected in the generator list. 
  
 Fitness menu of a Generator instance in the generator Panel
@@ -184,7 +185,7 @@ Fitness menu of a Generator instance in the generator Panel
     a menu which specifies the fitness (error) 
     functions available for comparing the currently selected (radio list) 
     dependent variable. "RegionFitness" is the default error function 
-    and is very similar to the error function for the :ref:`RunFitter` . 
+    and is very similar to the error function for the :ref:`hoc_RunFitter` .
     In every case, the Graph menu is used to get the data from the 
     clipboard. 
  

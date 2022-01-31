@@ -1227,16 +1227,14 @@ if (_nd->_extnode) {\n\
     } /* end of not "nothing" */
 	Lappendstr(defs_list, "\
 	hoc_register_var(hoc_scdoub, hoc_vdoub, hoc_intfunc);\n");
-	if (GETWD(buf)) {
+	{
 		char buf1[NRN_BUFSIZE];
-#if defined(MINGW)
-{		char* cp;
-		for (cp = buf; *cp; ++cp) {
-			if (*cp == '\\') { *cp = '/'; }
-		}
-}
+		char* pf{};
+#if HAVE_REALPATH && !defined(NRN_AVOID_ABSOLUTE_PATHS)
+		pf = realpath(finname, NULL);
 #endif
-sprintf(buf1, "\tivoc_help(\"help ?1 %s %s/%s\\n\");\n", mechname, buf, finname);
+		sprintf(buf1, "\tivoc_help(\"help ?1 %s %s\\n\");\n", mechname, pf ? pf : finname);
+		if(pf) { free(pf); }
 		Lappendstr(defs_list, buf1);
 	}
     if (suffix[0]) {

@@ -1,13 +1,14 @@
-.. _savstate:
+
+.. _hoc_savstate:
 
 SaveState
 ---------
 
 
 
-.. class:: SaveState
+.. hoc:class:: SaveState
 
-    The state includes :data:`t`, the voltage for all segments of all sections, 
+    The state includes :hoc:data:`t`, the voltage for all segments of all sections,
     and all the STATEs defined in all the membrane and point process 
     mechanisms. With regard to model descriptions, it does not include 
     PARAMETERs, ASSIGNED variables. 
@@ -50,13 +51,13 @@ SaveState
         fadvance() calls different cells will be at different t values in 
         general and SaveState will be useless. 
 
-    :class:`BBSaveState` is a more flexible cell centered version of SaveState
+    :hoc:class:`BBSaveState` is a more flexible cell centered version of SaveState
 
 ----
 
 
 
-.. method:: SaveState.save
+.. hoc:method:: SaveState.save
 
 
     Syntax:
@@ -72,7 +73,7 @@ SaveState
 
 
 
-.. method:: SaveState.restore
+.. hoc:method:: SaveState.restore
 
 
     Syntax:
@@ -100,7 +101,7 @@ SaveState
 
 
 
-.. method:: SaveState.fread
+.. hoc:method:: SaveState.fread
 
 
     Syntax:
@@ -126,9 +127,9 @@ SaveState
         setup, old files may become incompatible. 
          
         In a parallel simulation, each host 
-        :meth:`ParallelContext.id` , should 
+        :hoc:meth:`ParallelContext.id` , should
         write an id specific file. Note that the set of files is 
-        at least :meth:`ParallelContext.nhost` specific. 
+        at least :hoc:meth:`ParallelContext.nhost` specific.
 
          
 
@@ -136,7 +137,7 @@ SaveState
 
 
 
-.. method:: SaveState.fwrite
+.. hoc:method:: SaveState.fwrite
 
 
     Syntax:
@@ -148,7 +149,7 @@ SaveState
         binary state data to the beginning of the file. 
         On return the file is closed unless the second arg exists 
         and is 1. In that case, extra computer state information 
-        may be written to the file, e.g. :meth:`Random.seq`.
+        may be written to the file, e.g. :hoc:meth:`Random.seq`.
 
          
 
@@ -156,7 +157,7 @@ SaveState
 
 
 
-.. method:: SaveState.writehoc
+.. hoc:method:: SaveState.writehoc
 
 
     Syntax:

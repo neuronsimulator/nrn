@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #github master branch and bitbucket trunk branch mirror each other
 # keep neuron.yale.edu up to date with respect to bitbucket

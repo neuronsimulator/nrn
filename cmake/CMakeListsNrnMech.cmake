@@ -3,13 +3,13 @@
 # =============================================================================
 
 # extract the COMPILE_DEFINITIONS property from the directory
-get_directory_property(NRN_COMPILE_DEFS COMPILE_DEFINITIONS)
-if(NRN_COMPILE_DEFS)
-  set(NRN_COMPILE_DEFS "")
-  foreach(flag ${NRN_COMPILE_DEFS})
-    set(NRN_COMPILE_DEFS "${NRN_COMPILE_DEFS} -D${flag}")
-  endforeach()
-endif()
+get_directory_property(NRN_COMPILE_DEFS_DIR_PROPERTY COMPILE_DEFINITIONS)
+list(APPEND NRN_COMPILE_DEFS ${NRN_COMPILE_DEFS_DIR_PROPERTY})
+
+# Turn the CMake lists NRN_COMPILE_DEFS and NRN_COMPILE_FLAGS into flat strings
+list(TRANSFORM NRN_COMPILE_DEFS PREPEND -D OUTPUT_VARIABLE NRN_COMPILE_DEF_FLAGS)
+string(JOIN " " NRN_COMPILE_DEFS_STRING ${NRN_COMPILE_DEF_FLAGS})
+string(JOIN " " NRN_COMPILE_FLAGS_STRING ${NRN_COMPILE_FLAGS})
 
 # extract link defs to the whole project
 get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)

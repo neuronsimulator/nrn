@@ -3,8 +3,6 @@
 # sprinkled on zero and non-zero area nodes.
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -361,12 +359,7 @@ def test_fastimem_corenrn():
 
 
 if __name__ == "__main__":
-    try:
-        test_allseg_unique_iter()
-        test_fastimem()
-        test_fastimem_corenrn()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_allseg_unique_iter()
+    test_fastimem()
+    test_fastimem_corenrn()
     h.quit()

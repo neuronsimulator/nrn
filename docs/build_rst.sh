@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # ------------------------------------------------------------
 # Script to generate the html and .rst stubs to show the
 # ipynb within Sphinx generated docs

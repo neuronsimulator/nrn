@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #NETSCAPE='/u3/local/hines/netscape/netscape'
 NETSCAPE=`which netscape`

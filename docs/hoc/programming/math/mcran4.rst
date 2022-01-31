@@ -4,7 +4,7 @@ mcell_ran4
          
 
 
-.. function:: mcell_ran4
+.. hoc:function:: mcell_ran4
 
 
     Syntax:
@@ -19,10 +19,10 @@ mcell_ran4
         with different starting values but the difference between highindex starting 
         values should be greater than the length of each stream. 
         The lowindex 32 bits are 0 by default and 
-        can be set using :func:`mcell_ran4_init` . Streams can be replayed at any index 
+        can be set using :hoc:func:`mcell_ran4_init` . Streams can be replayed at any index
         (as long as the lowindex is the same). 
          
-        See :meth:`Random.Random123` for an even more useful alternative. 
+        See :hoc:meth:`Random.Random123` for an even more useful alternative.
          
         This generator was obtained from Tom Bartol ``<bartol@salk.edu>``
         who uses them in his mcell program. (hence the mcell prefix) 
@@ -78,8 +78,8 @@ mcell_ran4
 
 
     .. seealso::
-        :class:`Random`, :meth:`Random.MCellRan4`, :func:`use_mcell_ran4`, :func:`mcell_ran4_init`,
-        :meth:`Random.Random123`
+        :hoc:class:`Random`, :hoc:meth:`Random.MCellRan4`, :hoc:func:`use_mcell_ran4`, :hoc:func:`mcell_ran4_init`,
+        :hoc:meth:`Random.Random123`
 
          
 
@@ -87,7 +87,7 @@ mcell_ran4
 
 
 
-.. function:: use_mcell_ran4
+.. hoc:function:: use_mcell_ran4
 
 
     Syntax:
@@ -98,7 +98,7 @@ mcell_ran4
 
     Description:
         use_mcell_ran4(1) causes scop_random in model descriptions to use 
-        the :func:`mcell_ran4` cryptographic quality random generator. Otherwise, the 
+        the :hoc:func:`mcell_ran4` cryptographic quality random generator. Otherwise, the
         low quality (but faster) linear congruential generator is used. 
          
         At present (version 5.2) the default is 0. 
@@ -107,7 +107,7 @@ mcell_ran4
         model descriptions that use the functions: 
         scop_random, exprand, normrand, and poisrand. Also note that when a model 
         description uses set_seed(seed) and use_mcell_ran4 is true then the 
-        seed refers to the 32 bit highindex as in :func:`mcell_ran4` . 
+        seed refers to the 32 bit highindex as in :hoc:func:`mcell_ran4` .
 
          
 
@@ -115,7 +115,7 @@ mcell_ran4
 
 
 
-.. function:: mcell_ran4_init
+.. hoc:function:: mcell_ran4_init
 
 
     Syntax:
@@ -125,13 +125,13 @@ mcell_ran4
 
 
     Description:
-        Sets the 32 bit lowindex of the :func:`mcell_ran4` generator. The default lowindex 
+        Sets the 32 bit lowindex of the :hoc:func:`mcell_ran4` generator. The default lowindex
         is 0. This affects random number streams (when use_mcell_ran4() returns 1) 
         in model descriptions using scop_rand, etc. It also affects Random 
-        class streams that are using the :meth:`Random.MCellRan4` generator. 
+        class streams that are using the :hoc:meth:`Random.MCellRan4` generator.
          
-        :meth:`Random.Random123_globalindex` plays a similar role as this function for 
-        the :meth:`Random.Random123` generator. 
+        :hoc:meth:`Random.Random123_globalindex` plays a similar role as this function for
+        the :hoc:meth:`Random.Random123` generator.
          
 
          

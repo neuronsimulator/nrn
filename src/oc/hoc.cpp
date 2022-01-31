@@ -32,7 +32,7 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_start)(int);
+int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
