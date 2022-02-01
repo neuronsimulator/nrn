@@ -16,6 +16,7 @@ on:
 
 env:
   # Python 3.10 fails executing jupyter notebooks. Don't need 3.10 for building docs anyway.
+  # see https://github.com/neuronsimulator/nrn/issues/1612
   DEFAULT_PY_VERSION: '3.8'
 
 jobs:
