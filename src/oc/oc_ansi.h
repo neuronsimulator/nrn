@@ -38,7 +38,7 @@ extern "C" {
 #endif
 
     // nocpout.cpp
-extern Symbol* hoc_get_symbol(const char *var);
+extern Symbol* hoc_get_symbol(const char* var);
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 extern void ivoc_help(const char*);
 
@@ -70,7 +70,7 @@ int hoc_is_tempobj_arg(int narg);
 FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
 void hoc_reg_nmodl_filename(int type, const char* filename);
-int nrn_mlh_gsort(double* vec, int *base_ptr, int total_elems, int(*cmp)(double, double));
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
 void state_discontinuity(int i, double* pd, double d);
 
 IvocVect* vector_arg(int);
@@ -280,7 +280,7 @@ extern void hoc_obj_disconnect(Object*);
 extern void hoc_free_object(Object*);
 extern void hoc_free_pstring(char**);
 extern int hoc_returning;
-extern void hoc_on_init_register(void(*)());
+extern void hoc_on_init_register(void (*)());
 extern int hoc_pid(void);
 extern int hoc_ired(const char*, int, int, int);
 extern double hoc_xred(const char*, double, double, double);

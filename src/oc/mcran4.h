@@ -2,7 +2,7 @@
 #include <cstdint>
 
 void mcell_ran4_init(uint32_t);
-double mcell_ran4(uint32_t *idx1, double *x, unsigned int n, double range);
+double mcell_ran4(uint32_t* idx1, double* x, unsigned int n, double range);
 double mcell_ran4a(uint32_t* idx1);
 uint32_t mcell_iran4(uint32_t* idx1);
 double nrnRan4dbl(uint32_t* idx1, uint32_t idx2);

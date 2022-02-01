@@ -623,23 +623,23 @@ void Random_reg() {
 
 // Deprecated backwards-compatibility definitions
 long nrn_get_random_sequence(void* r) {
-	return nrn_get_random_sequence(static_cast<Rand*>(r));
+    return nrn_get_random_sequence(static_cast<Rand*>(r));
 }
 int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
-	return nrn_random_isran123(static_cast<Rand*>(r), id1, id2, id3);
+    return nrn_random_isran123(static_cast<Rand*>(r), id1, id2, id3);
 }
 double nrn_random_pick(void* r) {
-	return nrn_random_pick(static_cast<Rand*>(r));
+    return nrn_random_pick(static_cast<Rand*>(r));
 }
 void nrn_random_reset(void* r) {
-	nrn_random_reset(static_cast<Rand*>(r));
+    nrn_random_reset(static_cast<Rand*>(r));
 }
 int nrn_random123_getseq(void* r, uint32_t* seq, char* which) {
-	return nrn_random123_getseq(static_cast<Rand*>(r), seq, which);
+    return nrn_random123_getseq(static_cast<Rand*>(r), seq, which);
 }
 int nrn_random123_setseq(void* r, uint32_t seq, char which) {
-	return nrn_random123_setseq(static_cast<Rand*>(r), seq, which);
+    return nrn_random123_setseq(static_cast<Rand*>(r), seq, which);
 }
 void nrn_set_random_sequence(void* r, int seq) {
-	nrn_set_random_sequence(static_cast<Rand*>(r), static_cast<long>(seq));
+    nrn_set_random_sequence(static_cast<Rand*>(r), static_cast<long>(seq));
 }

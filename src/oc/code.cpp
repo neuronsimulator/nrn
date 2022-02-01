@@ -1609,7 +1609,7 @@ double *hoc_pgetarg(int narg) {    /* return pointer to nth argument */
     return fp->argn[(narg - fp->nargs) * 2].pval;
 }
 
-double *hoc_getarg(int narg) {    /* return pointer to nth argument */
+double* hoc_getarg(int narg) { /* return pointer to nth argument */
     if (narg > fp->nargs)
         execerror(fp->sp->name, "not enough arguments");
 #if 1

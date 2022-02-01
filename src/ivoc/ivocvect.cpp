@@ -114,10 +114,10 @@ static double dmaxint_ = 9007199254740992;
 #include "utility.h"
 #endif
 #include "oc2iv.h"
-#include "parse.hpp"
+#include "oc_ansi.h"
 #include "ocfile.h"
 #include "ocfunc.h"
-#include "oc_ansi.h"
+#include "parse.hpp"
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
@@ -253,53 +253,53 @@ static Symbol* svec_;
 // can also be used in mod files
 void vector_delete(Vect* v){delete v;}
 IvocVect* vector_arg(int i) {
-	Object* ob = *hoc_objgetarg(i);
-	if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-		check_obj_type(ob, "Vector");
-	}
-	return static_cast<IvocVect*>(ob->u.this_pointer);
+    Object* ob = *hoc_objgetarg(i);
+    if (!ob || ob->ctemplate != svec_->u.ctemplate) {
+        check_obj_type(ob, "Vector");
+    }
+    return static_cast<IvocVect*>(ob->u.this_pointer);
 }
 int vector_buffer_size(IvocVect* v) {
-	return v->buffer_size();
+    return v->buffer_size();
 }
 int vector_buffer_size(void* v) {
-	return vector_buffer_size(static_cast<IvocVect*>(v));
+    return vector_buffer_size(static_cast<IvocVect*>(v));
 }
-int vector_capacity(IvocVect* v){
-	return v->size();
+int vector_capacity(IvocVect* v) {
+    return v->size();
 }
 int vector_capacity(void* v) {
-	return vector_capacity(static_cast<IvocVect*>(v));
+    return vector_capacity(static_cast<IvocVect*>(v));
 }
 IvocVect* vector_new(int n, Object* o) {
-	return new IvocVect(n, o);
+    return new IvocVect(n, o);
 }
 IvocVect* vector_new0() {
-	return new IvocVect();
+    return new IvocVect();
 }
 double* vector_new1(int n) {
-	return reinterpret_cast<double*>(new IvocVect(n));
+    return reinterpret_cast<double*>(new IvocVect(n));
 }
 IvocVect* vector_new2(IvocVect* v) {
-	return new IvocVect(*v);
+    return new IvocVect(*v);
 }
-Object** vector_pobj(IvocVect* v){
-	return &v->obj_;
+Object** vector_pobj(IvocVect* v) {
+    return &v->obj_;
 }
 Object** vector_pobj(void* v) {
-	return vector_pobj(static_cast<IvocVect*>(v));
+    return vector_pobj(static_cast<IvocVect*>(v));
 }
 void vector_resize(IvocVect* v, int n) {
-	v->resize(n);
+    v->resize(n);
 }
 void vector_resize(void* v, int n) {
-	vector_resize(static_cast<IvocVect*>(v), n);
+    vector_resize(static_cast<IvocVect*>(v), n);
 }
 double* vector_vec(IvocVect* v) {
-	return v->data();
+    return v->data();
 }
 double* vector_vec(void* v) {
-	return vector_vec(static_cast<IvocVect*>(v));
+    return vector_vec(static_cast<IvocVect*>(v));
 }
 Object** vector_temp_objvar(Vect* v){return v->temp_objvar();}
 char* vector_get_label(Vect* v) { return v->label_; }

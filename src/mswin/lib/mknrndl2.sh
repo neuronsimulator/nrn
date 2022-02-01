@@ -70,11 +70,6 @@ do
 done
 echo "}" >> mod_func.cpp
 
-echo mod_func.cpp
-echo ----
-cat mod_func.cpp
-echo ----
-
 #echo ' "' >> $$.tmp
 # cat $$.tmp
 make -f $M/mknrndll.mak "`cat $$.tmp`" nrnmech.dll TARGET="$$.nrnmech.dll"

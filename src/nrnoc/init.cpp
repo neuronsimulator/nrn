@@ -958,8 +958,7 @@ printf("before-after processing type %d for %s not implemented\n", type, memb_fu
 	}
 }
 
-void _cvode_abstol(Symbol** s, double* tol, int i)
-{
+void _cvode_abstol(Symbol** s, double* tol, int i) {
 #if CVODE
 	if (s && s[i]->extra) {
 		double x;
@@ -1057,11 +1056,11 @@ void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
 }
 
 void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
-	memb_func[i].thread_table_check_ = f;
+    memb_func[i].thread_table_check_ = f;
 }
 
-void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
-	memb_func[i].setdata_ = call;
+void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
+    memb_func[i].setdata_ = call;
 }
 /* there is some question about the _extcall_thread variables, if any. */
 extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {

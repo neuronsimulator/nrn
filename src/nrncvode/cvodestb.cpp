@@ -97,7 +97,7 @@ void nrn_solver_prepare() {
 
 extern "C" int v_structure_change;
 
-void cvode_fadvance(double tstop) { // tstop = -1 means single step
+void cvode_fadvance(double tstop) {  // tstop = -1 means single step
 #if USECVODE
 	int err;
     extern int tree_changed;

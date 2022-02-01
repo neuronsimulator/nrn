@@ -882,17 +882,17 @@ Insertstr(rlst->position, "}");
 
       } else { /*for sparse matrix solver*/
 	/* boilerplate for using sparse matrix solver */
-    {
-        static int first = 1;
-        if (first) {
-            first = 0;
-            Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
-            qv = linsertstr(procfunc, buf);
+	{
+		static int first = 1;
+		if (first) {
+			first = 0;
+			Sprintf(buf, "static double *_coef%d;\n", fun->u.i);
+			qv = linsertstr(procfunc, buf);
 #if VECTORIZE
-            vectorize_substitute(qv, "");
+			vectorize_substitute(qv, "");
 #endif
-        }
-    }
+		}
+	}
 	Sprintf(buf, "\n#define _RHS%d(_arg) _coef%d[_arg + 1]\n",
 		fun->u.i, fun->u.i);
 	qv = linsertstr(procfunc, buf);
