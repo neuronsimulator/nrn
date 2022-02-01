@@ -15,7 +15,7 @@ on:
       - release/**
 
 env:
-  DEFAULT_PY_VERSION: 3.8
+  DEFAULT_PY_VERSION: '3.10'
 
 jobs:
   documentation:
