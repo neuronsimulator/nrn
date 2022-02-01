@@ -12,6 +12,7 @@
 #include "classreg.h"
 #include "nonvintblock.h"
 #include "nrnmpi.h"
+#include <algorithm>
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
@@ -338,41 +339,24 @@ static void* load_nrnpython_helper(const char* npylib) {
 	return handle;
 }
 
-int digit_to_int(char ch) {
-  int d = ch - '0';
-  if ((unsigned) d < 10) {
-    return d;
-  }
-  d = ch - 'a';
-  if ((unsigned) d < 6) {
-    return d + 10;
-  }
-  d = ch - 'A';
-  if ((unsigned) d < 6) {
-    return d + 10;
-  }
-  return -1;
-}
+// Get python version as integer from pythonlib path
+static int pylib2pyver10(std::string pylib) {
+	//skip past last \ or /
+	const auto pos = pylib.find_last_of("/\\");
+	if (pos != std::string::npos) {
+		pylib = pylib.substr(pos + 1);
+	}
+	
+	// erase nondigits
+	pylib.erase(
+	  std::remove_if(pylib.begin(),
+	    pylib.end(),
+	    [](char c) {
+	      return !isdigit(c);
+	    }), pylib.end());
 
-static int pylib2pyver10(const char* pylib) {
-  // check backwards for N.N or NN // obvious limitations
-  int n1 = -1; int n2 = -1;
-  for (const char* cp = pylib + strlen(pylib) -1 ; cp > pylib; --cp) {
-    if (isdigit(*cp)) {
-      if (n2 < 0) {
-        n2 = digit_to_int(*cp);
-      } else {
-        n1 = digit_to_int(*cp);
-        return n1*10 + n2;
-      }
-    }else if (*cp == '.') {
-      // skip
-    }else{ //
-      // start over
-      n2 = -1;
-    }
-  }
-  return 0;
+	// parse number. 0 is fine to return as error (no need for stoi)
+	return std::atoi(pylib.c_str());
 }
 
 static void load_nrnpython(int pyver10, const char* pylib) {

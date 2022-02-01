@@ -15,7 +15,8 @@ on:
       - release/**
 
 env:
-  DEFAULT_PY_VERSION: '3.10'
+  # Python 3.10 fails executing jupyter notebooks. Don't need 3.10 for building docs anyway.
+  DEFAULT_PY_VERSION: '3.8'
 
 jobs:
   documentation:
