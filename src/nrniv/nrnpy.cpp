@@ -12,7 +12,9 @@
 #include "classreg.h"
 #include "nonvintblock.h"
 #include "nrnmpi.h"
+
 #include <algorithm>
+#include <cctype>
 
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
@@ -352,7 +354,7 @@ static int pylib2pyver10(std::string pylib) {
 	  std::remove_if(pylib.begin(),
 	    pylib.end(),
 	    [](char c) {
-	      return !isdigit(c);
+	      return !std::isdigit(c);
 	    }), pylib.end());
 
 	// parse number. 0 is fine to return as error (no need for stoi)
