@@ -5153,7 +5153,7 @@ if (d->obj_) {
 	printf("source %s\n", osrc_ ? hoc_object_name(osrc_) : secname(ssrc_));
 }
 #endif
-		d->src_ = nil;
+		d->src_ = nullptr;
 	}
 	if (tvec_) {
 #if DISCRETE_EVENT_OBSERVER
