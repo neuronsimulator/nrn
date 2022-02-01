@@ -7,7 +7,13 @@ import weakref
 from .rxdException import RxDException
 import warnings
 import ctypes
-import collections
+
+# For 8.0.x release, keep backward compat with older python versions
+try:
+    from collections.abc import Callable
+except ImportError:
+    from collections import Callable
+
 
 # function to change extracellular diffusion
 set_diffusion = nrn_dll_sym("set_diffusion")
@@ -313,7 +319,7 @@ class Node(object):
                 source[0]
             except:
                 raise RxDException("HocObject must be a pointer")
-        elif len(args) == 1 and isinstance(args[0], collections.abc.Callable):
+        elif len(args) == 1 and isinstance(args[0], Callable):
             flux_type = 2
             source = args[0]
             warnings.warn(
