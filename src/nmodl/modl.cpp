@@ -416,6 +416,10 @@ void verbatim_adjust(char* q) {
         // C++ has stricter rules about pointer casting. For example, you cannot
         // assign (void*)0 to a double* variable in C++.
         regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
+        // Symbol::u is a union with a member that used to be called template
+        // but which is now called ctemplate because of the clash with the C++
+        // keyword.
+        regex_replace("sym->u\\.template", "sym->u.ctemplate");
     }
     Fprintf(fcout, "%s", repl.c_str());
 }
