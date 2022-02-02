@@ -1,5 +1,14 @@
 # NEURON 8.0
 
+## 8.0.2
+_Release Date_ : 02-02-2022
+
+
+### Bug Fixes
+
+Python 3.10 bugfixes for RXD and Windows, more details in [GitHub PR #1614](https://github.com/neuronsimulator/nrn/pull/1614)
+
+
 ## 8.0.1
 _Release Date_ : 28-01-2022
 
