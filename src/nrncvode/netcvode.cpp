@@ -39,6 +39,7 @@
 #include "netcon.h"
 #include "netcvode.h"
 #include "nrncore_write/utils/nrncore_utils.h"
+#include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
@@ -86,7 +87,6 @@ extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
 extern "C" void net_send(void**, double*, Point_process*, double, double);
 extern "C" void net_move(void**, Point_process*, double);
-extern "C" void artcell_net_send(void**, double*, Point_process*, double, double);
 extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
@@ -2371,7 +2371,7 @@ extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td
 //printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-extern "C" void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
 	STATISTICS(SelfEvent::selfevent_send_);
 	NrnThread* nt = PP2NT(pnt);
@@ -2403,6 +2403,11 @@ extern "C" void artcell_net_send(void** v, double* weight, Point_process* pnt, d
     }else{
 	net_send(v, weight, pnt, td, flag);
     }
+}
+
+// Deprecated overload for backwards compatibility
+void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
 extern "C" void net_event(Point_process* pnt, double time) {

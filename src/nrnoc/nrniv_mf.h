@@ -17,6 +17,13 @@ typedef void (*pnt_receive_init_t)(Point_process*, double*, double);
 extern Prop* need_memb_cl(Symbol*,int*,int*);
 extern Prop* prop_alloc(Prop**, int, Node*);
 
+void artcell_net_send(void**, double*, Point_process*, double, double);
+[[deprecated("non-void* overloads are preferred")]] void artcell_net_send(void**,
+                                                                          double*,
+                                                                          void*,
+                                                                          double,
+                                                                          double);
+
 extern double nrn_ion_charge(Symbol*);
 #if defined(__cplusplus)
 extern "C" {
@@ -76,7 +83,6 @@ extern Prop* nrn_point_prop_;
 
 extern int at_time(NrnThread*, double);
 
-extern void artcell_net_send(void**, double*, Point_process*, double, double);
 extern void artcell_net_move(void**, Point_process*, double);
 
 extern int ifarg(int);
