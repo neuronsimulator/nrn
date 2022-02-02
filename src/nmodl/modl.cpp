@@ -398,7 +398,7 @@ void verbatim_adjust(char* q) {
         //   FILE* f, *hoc_obj_file_arg();
         //   double *xdir, *xval, *hoc_pgetarg();
         //   char *gargstr(), *filename;"
-        //   char** hoc_pgargstr();
+        //   [extern] char** hoc_pgargstr();
         // into
         //   <empty>
         //   <empty>
@@ -412,7 +412,7 @@ void verbatim_adjust(char* q) {
         regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s*\\);", "FILE$1;");
         regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
         regex_replace("char\\s*\\*gargstr\\(\\),(.*?);\\s*$", "char $1;");
-        regex_remove("char\\s*\\*\\*\\s*hoc_pgargstr\\(\\);");
+        regex_remove("(extern\\s{1}|)\\s*char\\s*\\*\\*\\s*hoc_pgargstr\\(\\);");
         // C++ has stricter rules about pointer casting. For example, you cannot
         // assign (void*)0 to a double* variable in C++.
         regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
