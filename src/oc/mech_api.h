@@ -9,6 +9,7 @@
  *        header has to be sandwiched between md1redef.h and md2redef.h, which
  *        we leave to nocmodl.
  */
+#include "bbsavestate.h"
 #include "mcran4.h"
 #include "nrncvode.h"
 #include "nrnran123.h"

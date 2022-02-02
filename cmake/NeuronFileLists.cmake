@@ -2,6 +2,7 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    bbsavestate.h
     cabvars.h
     cspmatrix.h
     cspredef.h
