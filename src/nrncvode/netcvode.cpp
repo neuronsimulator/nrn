@@ -86,7 +86,6 @@ extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
 extern short* nrn_is_artificial_; // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
-extern "C" void net_send(void**, double*, Point_process*, double, double);
 extern "C" void net_move(void**, Point_process*, double);
 extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
@@ -2336,7 +2335,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
 	STATISTICS(SelfEvent::selfevent_send_);
 	NrnThread* nt = PP2NT(pnt);
 	NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2405,9 +2404,13 @@ void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, d
     }
 }
 
-// Deprecated overload for backwards compatibility
+// Deprecated overloads for backwards compatibility
 void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
     artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+}
+
+void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
 extern "C" void net_event(Point_process* pnt, double time) {
