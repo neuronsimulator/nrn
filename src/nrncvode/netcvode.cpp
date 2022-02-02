@@ -42,6 +42,7 @@
 #include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
+#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 #include <unordered_map>
 
@@ -110,7 +111,6 @@ extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
-extern "C" double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
