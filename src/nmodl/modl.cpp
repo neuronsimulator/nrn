@@ -416,6 +416,22 @@ void verbatim_adjust(char* q) {
         // C++ has stricter rules about pointer casting. For example, you cannot
         // assign (void*)0 to a double* variable in C++.
         regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
+    }
+    if (transformations.count("bbp")) {
+        // These are specific to the current state of some internal BBP models; it
+        // should be possible to retire this quite soon, but at least this way
+        // the .mod files may be able to be updated straight to C++ without an
+        // intermediate step of dual C/C++ compatibility.
+
+        // Cannot overload by return type, and int is not correct.
+        regex_remove("(extern\\s{1}|)\\s*int\\s*nrn_mallinfo\\(.*?\\);");
+
+        // T* foo = alloca(size) is invalid in C++ because void* is not
+        // implicitly convertible to T*. Emit a C-style cast because then we
+        // don't have to find the end of the alloca(...) expression. Expressions
+        // using malloc() are similar.
+        regex_replace("(\\w+)\\s*\\*\\s*(\\w+)\\s*=\\s*(alloca|malloc)\\(", "$1* $2 = ($1*)$3(");
+
         // Symbol::u is a union with a member that used to be called template
         // but which is now called ctemplate because of the clash with the C++
         // keyword.
