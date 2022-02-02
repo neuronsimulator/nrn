@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hoc.h"
+#include "oc_ansi.h"
 #include "parse.hpp"
 #include "hoclist.h"
 #if MAC
@@ -403,7 +404,7 @@ void hoc_free_pstring(char** p) {
 	}
 }
 
-extern "C" unsigned long long nrn_mallinfo(int item) {
+unsigned long long nrn_mallinfo(int item) {
 #if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured

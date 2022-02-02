@@ -7,6 +7,7 @@ To reduce this setup time we experiment with a very different algorithm in which
 we construct a gid target host list on host gid%nhost and copy that list to
 the source host owning the gid.
 */
+#include "oc_ansi.h"
 
 #if 0
 void celldebug(const char* p, Gid2PreSyn& map) {
@@ -138,9 +139,6 @@ all2allv_int gidout space=528 total=37379376 time=1.641e-05
 all2allv_int lists space=3088 total=37351312 time=4.4708e-05
 */
 #define all2allv_perf 0
-extern "C" {
-    extern unsigned long long nrn_mallinfo(int);
-} // extern "C"
 //input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void all2allv_int(int* s, int* scnt, int* sdispl, int*& r, int*& rcnt, int*& rdispl, const char* dmes) {
 #if all2allv_perf
