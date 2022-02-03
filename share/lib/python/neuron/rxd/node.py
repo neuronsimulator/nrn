@@ -8,11 +8,7 @@ from .rxdException import RxDException
 import warnings
 import ctypes
 
-# For 8.0.x release, keep backward compat with older python versions
-try:
-    from collections.abc import Callable
-except ImportError:
-    from collections import Callable
+from collections.abc import Callable
 
 
 # function to change extracellular diffusion
