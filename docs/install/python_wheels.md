@@ -186,3 +186,29 @@ The `test_wheels.sh` will check if `nvc/nvc++` compilers are available and run t
 Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then runs a few tests on the GPU as well.
 
 Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
+
+
+## Publishing the wheels on Pypi via Azure
+
+### Official Release wheels
+
+Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
+
+After creating the tag on the `release/x.y` branch, perform the following steps:
+
+1) Click on `Run pipeline`
+2) Input the release tag ref `refs/tags/x.y.z`
+3) Click on `Variables`
+4) We need to define two variables: 
+   * `NRN_RELEASE_UPLOAD` : `true`
+   * `NEURON_NIGHTLY_TAG` : null (leave empty)
+   
+   Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
+5) Click on `Run`
+
+![](images/azure-release.png)
+
+### Nightly wheels
+
+Nightly wheels get automatically published from `master` in CRON mode.
+
