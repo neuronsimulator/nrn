@@ -631,6 +631,14 @@ static double set_timeout(void* v) {
 	return double(arg);
 }
 
+static double set_mpiabort_on_error(void*) {
+	double ret = double(nrn_mpiabort_on_error_);
+	if (ifarg(1)) {
+		nrn_mpiabort_on_error_ = int(chkarg(1, 0, 1));
+	}
+	return ret;
+}
+
 static double gid_clear(void* v) {
 	int arg = 0;
 	if (ifarg(1)){
@@ -1042,6 +1050,7 @@ static Member_func members[] = {
 	"vtransfer_time", vtransfer_time,
 	"mech_time", mech_time,
 	"timeout", set_timeout,
+	"mpiabort_on_error", set_mpiabort_on_error,
 
 	"set_gid2node", set_gid2node,
 	"gid_exists", gid_exists,

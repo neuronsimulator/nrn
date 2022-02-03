@@ -1,4 +1,5 @@
-.. _celbild:
+
+.. _hoc_celbild:
 
 
 CellBuilder
@@ -9,7 +10,8 @@ level and/or as a cell in a network. Usage information is
 available by pressing the :guilabel:`About` button and, for each of the 
 subtools, the :guilabel:`Hints` button in each subtool. 
 
-.. _kineticbuild:
+
+.. _hoc_kineticbuild:
 
 KineticBuild
 ------------

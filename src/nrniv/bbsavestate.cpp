@@ -759,18 +759,18 @@ static double save_test_bin(void* v) {  // only for whole cells
 }
 
 typedef std::unordered_map<Point_process*, int> PointProcessMap;
-static PointProcessMap* pp_ignore_map;
+static std::unique_ptr<PointProcessMap> pp_ignore_map;
 
 static double ppignore(void* v) {
     if (ifarg(1)) {
         Point_process* pp = ob2pntproc(*(hoc_objgetarg(1)));
         if (!pp_ignore_map) {
-            pp_ignore_map = new PointProcessMap(100);
+            pp_ignore_map.reset(new PointProcessMap());
+            pp_ignore_map->reserve(100);
         }
         (*pp_ignore_map)[pp] = 0;  // naive set instead of map
     } else if (pp_ignore_map) {    // clear
-        delete pp_ignore_map;
-        pp_ignore_map = 0;
+        pp_ignore_map.reset();
     }
     return 0.;
 }
@@ -1113,11 +1113,11 @@ typedef struct DEList {
     struct DEList* next;
 } DEList;
 typedef std::unordered_map<Point_process*, DEList*> PP2DE;
-static PP2DE* pp2de;
+static std::unique_ptr<PP2DE> pp2de;
 // NetCon.events
 typedef std::vector<double> DblList;
 typedef std::unordered_map<NetCon*, DblList*> NetCon2DblList;
-static NetCon2DblList* nc2dblist;
+static std::unique_ptr<NetCon2DblList> nc2dblist;
 
 class SEWrap: public DiscreteEvent {
   public:
@@ -1158,11 +1158,11 @@ typedef std::vector<SEWrap*> SEWrapList;
 static SEWrapList* sewrap_list;
 
 typedef std::unordered_map<int, int> Int2Int;
-static Int2Int* base2spgid;  // base gids are the host independent key for a cell
+static std::unique_ptr<Int2Int> base2spgid{new Int2Int()};  // base gids are the host independent key for a cell
                              // which was multisplit
 
 typedef std::unordered_map<int, DblList*> Int2DblList;
-static Int2DblList* src2send;  // gid to presyn send time map
+static std::unique_ptr<Int2DblList> src2send{new Int2DblList()};;  // gid to presyn send time map
 static int src2send_cnt;
 // the DblList was needed in place of just a double because there might
 // be several spikes from a single PreSyn (interval between spikes less
@@ -1191,7 +1191,7 @@ static int src2send_cnt;
 // we have factored out the relevant code so it can be used for both
 // save and restore (for the latter see bbss_queuecheck()).
 #if QUEUECHECK
-static Int2DblList* queuecheck_gid2unc;
+static std::unique_ptr<Int2DblList> queuecheck_gid2unc;
 #endif
 
 static double binq_time(double tt) {
@@ -1273,7 +1273,7 @@ static void tqcallback(const TQItem* tq, int i) {
         } else if (type == PreSynType) {
             ps = (PreSyn*) tq->data_;
             ts = tq->t_ - ps->delay_;
-            cntinc = ps->dil_.count();
+            cntinc = ps->dil_.size();
         } else {
             return;
         }
@@ -1405,7 +1405,8 @@ void BBSaveState::mk_pp2de() {
     hoc_Item* q;
     assert(!pp2de);  // one only or make it a field.
     int n = nct->count;
-    pp2de = new PP2DE(n + 1);
+    pp2de.reset(new PP2DE);
+    pp2de->reserve(n + 1);
     sewrap_list = new SEWrapList();
     ITERATE(q, nct->olist) {
         NetCon* nc = (NetCon*) OBJ(q)->u.this_pointer;
@@ -1419,7 +1420,7 @@ void BBSaveState::mk_pp2de() {
             continue;
         }
         // has a gid or else only one connection
-        assert(nc->src_->gid_ >= 0 || nc->src_->dil_.count() == 1);
+        assert(nc->src_->gid_ >= 0 || nc->src_->dil_.size() == 1);
         Point_process* pp = nc->target_;
         DEList* dl = new DEList;
         dl->de = nc;
@@ -1442,22 +1443,20 @@ void BBSaveState::mk_pp2de() {
     tq->forall_callback(tqcallback);
 }
 
-static Int2DblList* presyn_queue;
+static std::unique_ptr<Int2DblList> presyn_queue;
 
 static void del_presyn_info() {
     if (presyn_queue) {
         for (const auto& dl: *presyn_queue) {
             delete dl.second;
         }
-        delete presyn_queue;
-        presyn_queue = 0;
+        presyn_queue.reset();
     }
     if (nc2dblist) {
         for (const auto& dl: *nc2dblist) {
             delete dl.second;
         }
-        delete nc2dblist;
-        nc2dblist = 0;
+        nc2dblist.reset();
     }
 }
 
@@ -1477,8 +1476,7 @@ void BBSaveState::del_pp2de() {
             delete dl;
         }
     }
-    delete pp2de;
-    pp2de = 0;
+    pp2de.reset();
     if (sewrap_list) {
         for (SEWrap* sewrap: *sewrap_list) {
             delete sewrap;
@@ -1533,10 +1531,7 @@ void BBSaveState::init() {
 void BBSaveState::finish() {
     del_pp2de();
     del_presyn_info();
-    if (base2spgid) {
-        delete base2spgid;
-        base2spgid = 0;
-    }
+    base2spgid.reset();
     if (f->type() == BBSS_IO::IN) {
         nrn_spike_exchange(nrn_threads);
     }
@@ -1554,10 +1549,8 @@ static void base2spgid_item(int spgid, Object* obj) {
 }
 
 void BBSaveState::mk_base2spgid() {
-    if (base2spgid) {
-        delete base2spgid;
-    }
-    base2spgid = new Int2Int(1000);
+    base2spgid.reset(new Int2Int());
+    base2spgid->reserve(1000);
     nrn_gidout_iter(&base2spgid_item);
 }
 
@@ -2361,7 +2354,8 @@ static void scatteritems() {
     // to the round-robin host (we do not know the gid owner host yet).
     int i, host;
     src2send_cnt = 0;
-    src2send = new Int2DblList(1000);
+    src2send.reset( new Int2DblList());
+    src2send->reserve(1000);
     TQueue* tq = net_cvode_instance_event_queue(nrn_threads);
     // if event on queue at t we will not be able to decide whether or
     // not it should be delivered during restore.
@@ -2424,7 +2418,7 @@ static void scatteritems() {
     for (const auto& pair: *src2send) {
         delete pair.second;
     }
-    delete src2send;
+    src2send.reset();
 
     if (nrnmpi_numprocs > 1) {
         all2allv_int2(cnts, off, gidsrc, ndsrc);
@@ -2522,10 +2516,12 @@ static void construct_presyn_queue() {
     if (presyn_queue) {
         del_presyn_info();
     }
-    nc2dblist = new NetCon2DblList(20);
+    nc2dblist.reset(new NetCon2DblList());
+    nc2dblist->reserve(20);
     scatteritems();
     int cnt = giddest_size;
-    Int2DblList* m = new Int2DblList(cnt + 1);
+    std::unique_ptr<Int2DblList> m{new Int2DblList()};
+    m->reserve(cnt + 1);
     int mcnt = 0;
     int mdcnt = 0;
     int its = 0;
@@ -2605,9 +2601,9 @@ static void construct_presyn_queue() {
         ++mcnt;
         delete dl;
     }
-    delete m;
-    presyn_queue = m = new Int2DblList(127);
-    spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, m);
+    presyn_queue.reset(new Int2DblList());
+    presyn_queue->reserve(127);
+    spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, presyn_queue.get());
     if (gidsrc) {
         delete[] gidsrc;
         delete[] tssrc_cnt;
@@ -2730,7 +2726,8 @@ void BBSaveState::possible_presyn(int gid) {
 #if QUEUECHECK
                 // map from gid to unc for later checking
                 if (!queuecheck_gid2unc) {
-                    queuecheck_gid2unc = new Int2DblList(1000);
+                    queuecheck_gid2unc.reset(new Int2DblList());
+                    queuecheck_gid2unc->reserve(1000);
                 }
                 DblList* dl = new DblList();
                 (*queuecheck_gid2unc)[i] = dl;
@@ -2832,8 +2829,7 @@ static void bbss_queuecheck() {
         for (const auto& pair: *queuecheck_gid2unc) {
             delete pair.second;
         }
-        delete queuecheck_gid2unc;
-        queuecheck_gid2unc = 0;
+        queuecheck_gid2unc.reset();
     }
     del_presyn_info();
 }

@@ -1,7 +1,7 @@
 PtrVector
 ---------
 
-.. class:: PtrVector
+.. hoc:class:: PtrVector
 
   Syntax:
     :samp:`pv = new PtrVector({size})`
@@ -16,8 +16,8 @@ PtrVector
     all pointers point to an internal dummy variable. So it is possible
     to scatter from a larger Vector into a smaller Vector.
 
-    If :meth:`CVode.cache_efficient` is used, a callback should be registered
-    with the :meth:`PtrVector.ptr_update_callback` method in order to prevent
+    If :hoc:meth:`CVode.cache_efficient` is used, a callback should be registered
+    with the :hoc:meth:`PtrVector.ptr_update_callback` method in order to prevent
     memory segfaults when internal memory is reallocated.
 
   Python Example:
@@ -40,7 +40,7 @@ PtrVector
 
 ----
 
-.. method:: PtrVector.size
+.. hoc:method:: PtrVector.size
 
   Syntax:
     ``length = pv.size()``
@@ -51,7 +51,7 @@ PtrVector
     
 ----
 
-.. method:: PtrVector.resize
+.. hoc:method:: PtrVector.resize
 
   Syntax:
     ``newsize = pv.resize(newsize)``
@@ -65,7 +65,7 @@ PtrVector
 
 ----
 
-.. method:: PtrVector.pset
+.. hoc:method:: PtrVector.pset
 
   Syntax:
      ``var_val = pv.pset(i, &var)``
@@ -74,7 +74,7 @@ PtrVector
   Description:
     The ith pointer in the PtrVector points to var. 0 <= i < pv.size()
  
-.. method:: PtrVector.scatter
+.. hoc:method:: PtrVector.scatter
 
   Syntax:
     ``0. = pv.scatter(srcvec)``
@@ -85,7 +85,7 @@ PtrVector
   
 ----
  
-.. method:: PtrVector.gather
+.. hoc:method:: PtrVector.gather
 
   Syntax:
     ``0. = pv.gather(destvec)``
@@ -96,7 +96,7 @@ PtrVector
 
 ----
 
-.. method:: PtrVector.getval
+.. hoc:method:: PtrVector.getval
 
   Syntax:
     :samp:`{val} = pv.getval({i})`
@@ -106,7 +106,7 @@ PtrVector
 
 ----
 
-.. method:: PtrVector.setval
+.. hoc:method:: PtrVector.setval
 
   Syntax:
     :samp:`{val} = pv.getval({i}, {x})`
@@ -116,7 +116,7 @@ PtrVector
 
 ----
 
-.. method:: PtrVector.ptr_update_callback
+.. hoc:method:: PtrVector.ptr_update_callback
 
   Syntax:
     :samp:`0. = pv.ptr_update_callback("hoc_statement", [object])`
@@ -126,6 +126,6 @@ PtrVector
   Description:
     The statement or pythoncallback is executed whenever range variables
     are re-allocated in order to establish cache efficiency.
-    (see :meth:`CVode.cache_efficient`)  Within the callback, the
-    :meth:`PtrVector.resize` method may be called but the PtrVector should
+    (see :hoc:meth:`CVode.cache_efficient`)  Within the callback, the
+    :hoc:meth:`PtrVector.resize` method may be called but the PtrVector should
     not be destroyed.

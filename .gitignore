@@ -21,15 +21,6 @@ virtualenv
 # These files are generated at build time
 # It would be a good idea to create them in the
 # build directory in the future.
-src/modlunit/lex.cpp
-src/modlunit/parse1.cpp
-src/modlunit/parse1.hpp
-src/nmodl/diffeq.hpp
-src/nmodl/diffeq.cpp
-src/nmodl/diffeq.h
-src/nmodl/lex.cpp
-src/nmodl/parse1.cpp
-src/nmodl/parse1.hpp
 src/nrnoc/apcount.c
 src/nrnoc/exp2syn.c
 src/nrnoc/expsyn.c
@@ -51,6 +42,4 @@ src/nrnoc/stim.c
 src/nrnoc/svclmp.c
 src/nrnoc/syn.c
 src/nrnoc/vclmp.c
-src/oc/parse.cpp
-src/oc/parse.hpp
 share/lib/python/neuron/help_data.dat

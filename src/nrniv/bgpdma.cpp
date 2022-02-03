@@ -53,10 +53,6 @@ extern void vector_resize(IvocVect*, int);
 // setup time with a bgp.dma_send_ so as to pass on the spike to the
 // phase2 list of target hosts.
 
-// set to 1 if you have problems with Record_Replay when some cells send
-// spikes to fewer than 4 hosts.
-#define WORK_AROUND_RECORD_BUG 0
-
 #if !defined(DCMFTICK)
 #define DCMFTICK 0
 #define DCMFTIMEBASE 0
@@ -139,8 +135,10 @@ public:
 	NRNMPI_Spike** buffer_;
 	SpkPool* pool_;
 
+#if ENQUEUE == 1
 	void enqueue1();
 	void enqueue2();
+#endif
 	PreSyn** psbuf_;
 	void phase2send();
 	int phase2_head_;
@@ -150,7 +148,6 @@ public:
 };
 
 static int use_phase2_;
-static void setup_phase2();
 #define NTARGET_HOSTS_PHASE1 ntarget_hosts_phase1_
 
 class BGP_DMASend {
@@ -161,11 +158,6 @@ public:
 	int ntarget_hosts_;
 	int* target_hosts_;
 	NRNMPI_Spike spk_;
-#if 0
-	// There is no possibility of send2self because an output PreSyn
-	// is never in the gid2in_ table.
-	int send2self_; // if 1 then send spikes to this host also
-#endif
 	int ntarget_hosts_phase1_;
 };
 
@@ -225,20 +217,6 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 //printf("%d %p.incoming %g %g %d\n", nrnmpi_myid, this, t, spk->spiketime, spk->gid);
 	assert(busy_ == 0);
 	busy_ = 1;
-#if 0 && ENQUEUE == 2
-	// this section is potential race if both ReceiveBuffer called at
-	// once, but in fact this is only called from within messager advance.
-	// Note that this does not work as we occasionally get a timeout        
-	// during conservation checking. For this reason we return to buffer    
-	// usage but overlap through a call to enqueue on both ReceiveBuffer    
-	// on each messager advance
-	unsigned long long tb = DCMFTIMEBASE;
-	PreSyn* ps;
-	nrn_assert(gid2in_->find(gid, ps));
-	enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
-	ps->send(spiketime, net_cvode_instance, nrn_threads);
-	enq2_enqueue_time_ += (unsigned long)(DCMFTIMEBASE - tb);
-#else
 	if (count_ >= size_) {
 		size_ *= 2;
 		NRNMPI_Spike** newbuf = new NRNMPI_Spike*[size_];
@@ -257,7 +235,6 @@ void BGP_ReceiveBuffer::incoming(int gid, double spiketime) {
 	spk->spiketime = spiketime;
 	buffer_[count_++] = spk;
 	if (maxcount_ < count_) { maxcount_ = count_; }
-#endif
 	++nrecv_;
 	busy_ = 0;	
 }
@@ -268,23 +245,13 @@ void BGP_ReceiveBuffer::enqueue() {
 #if 1
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
-		PreSyn* ps;
 #if ENQUEUE == 2
 		unsigned long long tb = DCMFTIMEBASE;
 #endif
 
-#if WORK_AROUND_RECORD_BUG
-		if (!gid2in_->find(spk->gid, ps)) {
-#if ENQUEUE == 2
-			enq2_find_time_ += (unsigned long)(DCMFTIMEBASE - tb);
-#endif
-			pool_->hpfree(spk);
-			continue;
-		}
-#else
-		nrn_assert(gid2in_->find(spk->gid, ps));
-#endif
-
+		auto iter = gid2in_.find(spk->gid);
+		nrn_assert(iter != gid2in_.end());
+		PreSyn* ps = iter->second;
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
 			//ps->bgp.dma_send_phase2_->send_phase2(spk->gid, spk->spiketime, this);
@@ -315,14 +282,16 @@ void BGP_ReceiveBuffer::enqueue() {
 	phase2send();
 }
 
+#if ENQUEUE == 1
 void BGP_ReceiveBuffer::enqueue1() {
 //printf("%d %lx.enqueue count=%d t=%g nrecv=%d nsend=%d\n", nrnmpi_myid, (long)this, t, count_, nrecv_, nsend_);
 	assert(busy_ == 0);
 	busy_ = 1;
 	for (int i=0; i < count_; ++i) {
 		NRNMPI_Spike* spk = buffer_[i];
-		PreSyn* ps;
-		nrn_assert(gid2in_->find(spk->gid, ps));
+		auto iter = gid2in_->find(spk->gid);
+		nrn_assert(iter != gid2in_.end()));
+		PreSyn* ps = iter->second;
 		psbuf_[i] = ps;
 		if (use_phase2_ && ps->bgp.dma_send_phase2_) {
 			// cannot do directly because busy_;
@@ -355,6 +324,7 @@ void BGP_ReceiveBuffer::enqueue2() {
 	nsend_cell_ = 0;
 	busy_ = 0;
 }
+#endif // ENQUEUE == 1
 
 void BGP_ReceiveBuffer::phase2send() {
 	while (phase2_head_ != phase2_tail_) {
@@ -409,29 +379,18 @@ double nrn_bgp_receive_time(int type) { // and others
 		}
 #endif
 		break;
-#if ALTHASH
-	case 5:
-		rt = double(gid2in_->max_chain_length());
-		break;
-	case 6:
-		rt = double(gid2in_->nclash());
-		break;
-	case 7:
-		rt = double(gid2in_->nfind());
-		break;
-#endif
 	case 8: // exchange method properties
 		// bit 0: 0 allgather, 1 multisend (MPI_ISend)
 		// bit 1: unused, legacy
 		// bit 2: n_bgp_interval, 0 means one interval, 1 means 2
 		// bit 3: number of phases, 0 means 1 phase, 1 means 2
-		// bit 4: 1 means althash used
+		// bit 4: unused (1 used to mean althash used)
 		// bit 5: 1 means enqueue separated into two parts for timeing
 	    {
 		int method = use_bgpdma_ ? 1 : 0;
 		int p = method + 4*(n_bgp_interval == 2 ? 1 : 0)
 			+ 8*use_phase2_
-			+ 16*(ALTHASH == 1 ? 1 : 0)
+			+ 16*(0) // no hash selection, just std::unordered_map
 			+ 32*ENQUEUE;
 		rt = double(p);
 	    }
@@ -473,7 +432,6 @@ static void bgp_dma_init() {
 
 static int bgp_advance() {
 	NRNMPI_Spike spk;
-	PreSyn* ps;
 	int i = 0;
 	while(nrnmpi_bgp_single_advance(&spk)) {
 		i += 1;
@@ -502,9 +460,6 @@ void nrnbgp_messager_advance() {
 BGP_DMASend::BGP_DMASend() {
 	ntarget_hosts_ = 0;
 	target_hosts_ = NULL;
-#if 0
-	send2self_ = 0;
-#endif
 	ntarget_hosts_phase1_ = 0;
 }
 
@@ -524,8 +479,6 @@ BGP_DMASend_Phase2::~BGP_DMASend_Phase2() {
 		delete [] target_hosts_phase2_;
 	}
 }
-
-static	int isend;
 
 // helps debugging when core dump since otherwise cannot tell where
 // BGP_DMASend::send fails
@@ -560,16 +513,6 @@ void BGP_DMASend::send(int gid, double t) {
     }
 #endif
   }
-#if 0
-	// I am given to understand that multisend cannot send to itself
-	// one is never supposed to send to oneself since an output presyn
-	// can never be in the gid2in_ table (ie. the assert below would fail).
-	if (send2self_) {
-		PreSyn* ps;
-		nrn_assert(gid2in_->find(gid, ps));
-		ps->send(t, net_cvode_instance, nrn_threads);
-	}
-#endif
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
@@ -592,15 +535,6 @@ void BGP_DMASend_Phase2::send_phase2(int gid, double t, BGP_ReceiveBuffer* rb) {
 	dmasend_time_ += DCMFTIMEBASE - tb;
 }
 
-
-static void determine_source_hosts();
-static void determine_targid_count_on_srchost(int* src, int* send);
-static void determine_targids_on_srchost(int* s, int* scnt, int* sdispl,
-    int* r, int* rcnt, int* rdispl);
-static void determine_target_hosts();
-static int gathersrcgid(int hostbegin, int totalngid, int* ngid,
-	int* thishostgid, int* n, int* displ, int bsize, int* buf);
-
 void bgp_dma_receive(NrnThread* nt) {
 //	nrn_spike_exchange();
 	assert(nt == nrn_threads);
@@ -609,18 +543,18 @@ void bgp_dma_receive(NrnThread* nt) {
 	int ncons = 0;
 	int& s = bgp_receive_buffer[current_rbuf]->nsend_;
 	int& r = bgp_receive_buffer[current_rbuf]->nrecv_;
-#if ENQUEUE == 2
+#if ENQUEUE == 2 && TBUFSIZE
 	unsigned long tfind, tsend;
 #endif
 	w1 = nrnmpi_wtime();
 #if NRNMPI
     if (use_bgpdma_) {
-        nrnbgp_messager_advance();
-        TBUF
-#if ENQUEUE == 2
-        // want the overlap with computation, not conserve
-        tfind = enq2_find_time_;
-        tsend = enq2_enqueue_time_ - enq2_find_time_;
+	nrnbgp_messager_advance();
+	TBUF
+#if ENQUEUE == 2 && TBUFSIZE
+	// want the overlap with computation, not conserve
+	tfind = enq2_find_time_;
+	tsend = enq2_enqueue_time_ - enq2_find_time_;
 #endif
 #if TBUFSIZE
         nrnmpi_barrier();
@@ -693,9 +627,6 @@ void bgp_dma_send(PreSyn* ps, double t) {
 	if (ps->bgp.dma_send_) ps->bgp.dma_send_->send(ps->output_index_, t);
 }
 
-void bgpdma_send_init(PreSyn* ps) {
-}
-
 void bgpdma_cleanup_presyn(PreSyn* ps) {
 	if (ps->bgp.dma_send_) {
 		if (ps->output_index_ >= 0) {
@@ -710,13 +641,67 @@ void bgpdma_cleanup_presyn(PreSyn* ps) {
 }
 
 static void bgpdma_cleanup() {
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		bgpdma_cleanup_presyn(ps);
-	}}}
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		bgpdma_cleanup_presyn(ps);
-	}}}
+	nrntimeout_call = 0;
+	for (const auto& iter: gid2out_) {
+		bgpdma_cleanup_presyn(iter.second);
+	}
+	for (const auto& iter: gid2in_) {
+		bgpdma_cleanup_presyn(iter.second);
+	}
+	if (!use_bgpdma_ && bgp_receive_buffer[1]) {
+		delete bgp_receive_buffer[0];
+		bgp_receive_buffer[0] = NULL;
+	}
+#if BGP_INTERVAL == 2
+	if ((!use_bgpdma_ || n_bgp_interval != 2) && bgp_receive_buffer[1]) {
+		delete bgp_receive_buffer[1];
+		bgp_receive_buffer[1] = NULL;
+	}
+#endif
 }
+
+#ifndef BGPTIMEOUT
+#define BGPTIMEOUT 0
+#endif
+
+#if BGPTIMEOUT
+static void bgptimeout() {
+	printf("%d timeout %d %d %d\n", nrnmpi_myid, current_rbuf,
+		bgp_receive_buffer[current_rbuf]->nsend_,
+		bgp_receive_buffer[current_rbuf]->nrecv_
+	);
+}
+#endif
+
+#if WORK_AROUND_RECORD_BUG
+static void ensure_ntarget_gt_3(BGP_DMASend* bs) {
+	// work around for bug in RecordReplay
+	if (bs->ntarget_hosts_ > 3) { return; }
+	int nold = bs->ntarget_hosts_;
+	int* old = bs->target_hosts_;
+	bs->target_hosts_ = new int[4];
+	for (int i=0; i < nold; ++i) {
+		bs->target_hosts_[i] = old[i];
+	}
+	delete [] old;
+	int h = (nrnmpi_myid + 4)%nrnmpi_numprocs;
+	while (bs->ntarget_hosts_ < 4) {
+		int b = 0;
+		for (int i=0; i < bs->ntarget_hosts_; ++i) {
+			if (h == bs->target_hosts_[i]) {
+				h = (h + 4)%nrnmpi_numprocs;
+				b = 1;
+				break;
+			}
+		}
+		if (b == 0) {
+			bs->target_hosts_[bs->ntarget_hosts_++] = h;
+			h = (h + 1)%nrnmpi_numprocs;
+		}
+	}
+	bs->ntarget_hosts_phase1_ = bs->ntarget_hosts_;
+}
+#endif
 
 #define FASTSETUP 1
 #if FASTSETUP
@@ -727,8 +712,9 @@ void bgp_dma_setup() {
 	bgpdma_cleanup();
 	if (!use_bgpdma_) { return; }
 	//not sure this is useful for debugging when stuck in a collective.
-	//nrntimeout_call = bgptimeout;
-	double wt = nrnmpi_wtime();
+#if BGPTIMEOUT
+	nrntimeout_call = bgptimeout;
+#endif
 	nrnmpi_bgp_comm();
 	//if (nrnmpi_myid == 0) printf("bgp_dma_setup()\n");
 	// although we only care about the set of hosts that gid2out_
@@ -767,15 +753,16 @@ void bgp_dma_setup() {
 int ncs_bgp_sending_info( int **sendlist2build )
 {
 	int nsrcgid = 0;
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
-		if (ps->output_index_ >= 0) {
+	for (const auto& iter: gid2out_) {
+		if (iter.second->output_index_ >= 0) {
 			++nsrcgid;
 		}
-	}}}
+	}
 
 	*sendlist2build = nsrcgid ? new int[nsrcgid] : 0;
 	int i = 0;
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+	for (const auto& iter: gid2out) {
+		PreSyn* ps = iter.second;
 		if (ps->output_index_ >= 0) {
 			(*sendlist2build)[i] = ps->gid_;
 			++i;
@@ -790,8 +777,9 @@ int ncs_bgp_sending_info( int **sendlist2build )
 //function to access the sending information of a presyn
 int ncs_bgp_target_hosts( int gid, int** targetnodes )
 {
-    PreSyn* ps;
-    nrn_assert(gid2out_->find(gid, ps));
+    auto iter = gid2out_->find(gid);
+    nrn_assert(iter != gid2out_.end());
+    PreSyn* ps = iter->second;
     if( ps->bgp.dma_send_ ) {
         (*targetnodes) = ps->bgp.dma_send_->ntarget_hosts_? new int[ps->bgp.dma_send_->ntarget_hosts_] : 0;
         return ps->bgp.dma_send_->ntarget_hosts_;
@@ -805,32 +793,31 @@ int ncs_bgp_target_info( int **presyngids )
 {
     //(*presyngids) = 0;
 
-	int i, nsrcgid;
-	PreSyn* ps;
+    int i, nsrcgid;
     nsrcgid = 0;
 
-	// some target PreSyns may not have any input
-	// so initialize all to -1
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    // some target PreSyns may not have any input
+    // so initialize all to -1
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             ++nsrcgid;
             //printf( "Node %d: Presyn for gid %d has src %d\n", nrnmpi_myid, ps->gid_, ps->bgp.srchost_ );
         }
-	}}}
+    }
     
     (*presyngids) = nsrcgid ? new int[nsrcgid] : 0;
     
     i=0;
-    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             (*presyngids)[i] = ps->gid_;
             ++i;
         }
-	}}}
+    }
     
     return nsrcgid;
 }
@@ -839,27 +826,27 @@ int ncs_bgp_mindelays( int **srchost, double **delays )
 {
     int i, nsrcgid=0;
 
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
         assert(ps->output_index_ < 0);
-        if( ps->bgp.srchost_ != -1 )  //has input
-        {
+        if( ps->bgp.srchost_ != -1 ) { //has input
             ++nsrcgid;
         }
-	}}}
+    }
 
     (*delays) = nsrcgid ? new double[nsrcgid] : 0;
     (*srchost) = nsrcgid ? new int[nsrcgid] : 0;
     
     i=0;
-    NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		assert(ps->output_index_ < 0);
-		if( ps->bgp.srchost_ != -1 )  //has input
-        {
+    for (const auto& iter: gid2in_) {
+        PreSyn* ps = iter.second;
+        assert(ps->output_index_ < 0);
+        if( ps->bgp.srchost_ != -1 ) { //has input
             (*delays)[i] = ps->mindelay();
             (*srchost)[i] = ps->bgp.srchost_;
             ++i;
         }
-	}}}
+    }
     
     return nsrcgid;
 }

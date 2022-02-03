@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 names=`sed -n '
 /extern /s/extern [a-z*]* \(nrnmpi_[a-zA-Z0-9_]*\)(.*);/\1/p

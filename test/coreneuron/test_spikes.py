@@ -1,10 +1,19 @@
+import distutils.util
 import os
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
-mpi4py_option = bool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", ""))
-file_mode_option = bool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", ""))
-nrnmpi_init_option = bool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", ""))
+enable_gpu = bool(
+    distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+)
+mpi4py_option = bool(
+    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_MPI4PY", "false"))
+)
+file_mode_option = bool(
+    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_FILE_MODE", "false"))
+)
+nrnmpi_init_option = bool(
+    distutils.util.strtobool(os.environ.get("NRN_TEST_SPIKES_NRNMPI_INIT", "false"))
+)
 
 # following at top level and early enough avoids...
 # *** The MPI_Iprobe() function was called after MPI_FINALIZE was invoked.
@@ -21,10 +30,6 @@ elif nrnmpi_init_option:
 # otherwise serial execution
 else:
     from neuron import h, gui
-
-import pytest
-import sys
-import traceback
 
 
 def test_spikes(
@@ -132,13 +137,8 @@ def test_spikes(
 
 
 if __name__ == "__main__":
-    try:
-        h = test_spikes()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    pc = h.ParallelContext()
-    pc.barrier()
+    h = test_spikes()
+    if mpi4py_option or nrnmpi_init_option:
+        pc = h.ParallelContext()
+        pc.barrier()
     h.quit()

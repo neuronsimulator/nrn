@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # look in tardir and print the next available id number as a name
 tardir=$1

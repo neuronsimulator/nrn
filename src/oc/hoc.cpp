@@ -32,7 +32,7 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_start)(int);
+int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
@@ -59,7 +59,7 @@ extern int stdin_event_ready();
 #endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
-int matherr1(void) {
+static void matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -74,6 +74,8 @@ int matherr1(void) {
 	}
 }
 #endif
+
+int nrn_mpiabort_on_error_{1};
 
 int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
 
@@ -713,12 +715,12 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	ctp = cbuf;
 	*ctp = '\0';
 
-	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
+	if (oc_jump_target_ && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
 		hoc_newobj1_err();
 		(*oc_jump_target_)();
 	}
 #if NRNMPI
-	if (nrnmpi_numprocs_world > 1) {
+	if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
 		nrnmpi_abort(-1);
 	}
 #endif

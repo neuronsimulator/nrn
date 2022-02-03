@@ -1,6 +1,8 @@
 # Sum of all i_membrane_ should equal sum of all ElectrodeCurrent
 # For a demanding test, use a tree with many IClamp and ExpSyn point processes
 # sprinkled on zero and non-zero area nodes.
+import distutils.util
+import os
 
 from neuron import h
 
@@ -308,7 +310,9 @@ def test_fastimem_corenrn():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.cell_permute = 0
+    coreneuron.gpu = distutils.util.strtobool(
+        os.environ.get("CORENRN_ENABLE_GPU", "false")
+    )
     run(tstop)
     compare()
     coreneuron.enable = False
@@ -318,7 +322,7 @@ def test_fastimem_corenrn():
     tvec = h.Vector().record(h._ref_t)
     init_v()
     while h.t < tstop - h.dt / 2:
-        dt_above = 1.1*h.dt # comfortably above dt to avoid 0 step advance
+        dt_above = 1.1 * h.dt  # comfortably above dt to avoid 0 step advance
         coreneuron.enable = True
         told = h.t
         pc.psolve(h.t + dt_above)
@@ -345,6 +349,7 @@ def test_fastimem_corenrn():
     # args needed for offline run of coreneuron
     coreneuron.enable = True
     coreneuron.file_mode = True
+
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False
     pc.gid_clear()
@@ -357,3 +362,4 @@ if __name__ == "__main__":
     test_allseg_unique_iter()
     test_fastimem()
     test_fastimem_corenrn()
+    h.quit()

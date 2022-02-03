@@ -1,6 +1,7 @@
-.. _impedanx:
 
-.. _impedance_impx:   
+.. _hoc_impedanx:
+
+.. _hoc_impedance_impx:
 
 Impx
 ----
@@ -30,11 +31,12 @@ path that is closest to the root of the cell (The root is normally the
 soma). Negative abscissa values are on the path start side and 
 positive values are on the path end side. 
  
-This tool uses the :class:`Impedance` class to calculate voltage 
+This tool uses the :hoc:class:`Impedance` class to calculate voltage
 attenuations. 
 
 
-.. _impedance_logavsx:
+
+.. _hoc_impedance_logavsx:
 
 LogAvsX
 -------

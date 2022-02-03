@@ -1,11 +1,12 @@
-.. _pltshape_doc:
+
+.. _hoc_pltshape_doc:
 
 PlotShape
 ---------
 
 
 
-.. class:: PlotShape
+.. hoc:class:: PlotShape
 
         Class for making a Shape window useful for coloring a shape 
         according to a variable value and creating time and space graphs 
@@ -16,7 +17,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.scale
+.. hoc:method:: PlotShape.scale
 
 
     Syntax:
@@ -31,62 +32,62 @@ PlotShape
 
 
 
-.. method:: PlotShape.view
+.. hoc:method:: PlotShape.view
 
 
     .. seealso::
-        :meth:`Shape.view`
+        :hoc:meth:`Shape.view`
 
 
 ----
 
 
 
-.. method:: PlotShape.size
+.. hoc:method:: PlotShape.size
 
 
     .. seealso::
-        :meth:`Shape.size`
+        :hoc:meth:`Shape.size`
 
 
 ----
 
 
 
-.. method:: PlotShape.view_count
+.. hoc:method:: PlotShape.view_count
 
 
     .. seealso::
-        :meth:`Shape.view_count`
+        :hoc:meth:`Shape.view_count`
 
 
 ----
 
 
 
-.. method:: PlotShape.show
+.. hoc:method:: PlotShape.show
 
 
     .. seealso::
-        :meth:`Shape.show`
+        :hoc:meth:`Shape.show`
 
 
 ----
 
 
 
-.. method:: PlotShape.flush
+.. hoc:method:: PlotShape.flush
 
 
     .. seealso::
-        :meth:`Shape.flush`
+        :hoc:meth:`Shape.flush`
 
 
 ----
 
 
 
-.. method:: PlotShape.fastflush
+.. hoc:method:: PlotShape.fastflush
 
 
     Syntax:
@@ -94,14 +95,14 @@ PlotShape
 
 
     Description:
-        Speeds up drawing of :meth:`PlotShape.hinton` elements. 
+        Speeds up drawing of :hoc:meth:`PlotShape.hinton` elements.
 
 
 ----
 
 
 
-.. method:: PlotShape.variable
+.. hoc:method:: PlotShape.variable
 
 
     Syntax:
@@ -116,175 +117,175 @@ PlotShape
 
 
 
-.. method:: PlotShape.save_name
+.. hoc:method:: PlotShape.save_name
 
 
     .. seealso::
-        :meth:`Shape.save_name`
+        :hoc:meth:`Shape.save_name`
 
 
 ----
 
 
 
-.. method:: PlotShape.unmap
+.. hoc:method:: PlotShape.unmap
 
 
     .. seealso::
-        :meth:`Shape.unmap`
+        :hoc:meth:`Shape.unmap`
 
 
 ----
 
 
 
-.. method:: PlotShape.printfile
+.. hoc:method:: PlotShape.printfile
 
 
     .. seealso::
-        :meth:`Shape.printfile`
+        :hoc:meth:`Shape.printfile`
 
 
 ----
 
 
 
-.. method:: PlotShape.menu_action
+.. hoc:method:: PlotShape.menu_action
 
 
     .. seealso::
-        :meth:`Graph.menu_action`
+        :hoc:meth:`Graph.menu_action`
 
 
 ----
 
 
 
-.. method:: PlotShape.menu_tool
+.. hoc:method:: PlotShape.menu_tool
 
 
     .. seealso::
-        :meth:`Shape.menu_tool`
+        :hoc:meth:`Shape.menu_tool`
 
 
 ----
 
 
 
-.. method:: PlotShape.observe
+.. hoc:method:: PlotShape.observe
 
 
     .. seealso::
-        :meth:`Shape.observe`
+        :hoc:meth:`Shape.observe`
 
 
 ----
 
 
 
-.. method:: PlotShape.nearest
+.. hoc:method:: PlotShape.nearest
 
 
     .. seealso::
-        :meth:`Shape.nearest`
+        :hoc:meth:`Shape.nearest`
 
 
 ----
 
 
 
-.. method:: PlotShape.push_selected
+.. hoc:method:: PlotShape.push_selected
 
 
     .. seealso::
-        :meth:`Shape.push_selected`
+        :hoc:meth:`Shape.push_selected`
 
 
 ----
 
 
 
-.. method:: PlotShape.exec_menu
+.. hoc:method:: PlotShape.exec_menu
 
 
     .. seealso::
-        :meth:`Graph.exec_menu`
+        :hoc:meth:`Graph.exec_menu`
 
 
 ----
 
 
 
-.. method:: PlotShape.erase
+.. hoc:method:: PlotShape.erase
 
 
     .. seealso::
-        :meth:`Graph.erase`
+        :hoc:meth:`Graph.erase`
 
 
 ----
 
 
 
-.. method:: PlotShape.erase_all
+.. hoc:method:: PlotShape.erase_all
 
 
     Description:
         Erases everything in the PlotShape, including all Sections and hinton plots 
 
     .. seealso::
-        :meth:`Graph.erase_all`, :meth:`PlotShape.observe`, :meth:`PlotShape.hinton`
+        :hoc:meth:`Graph.erase_all`, :hoc:meth:`PlotShape.observe`, :hoc:meth:`PlotShape.hinton`
 
 
 ----
 
 
 
-.. method:: PlotShape.beginline
+.. hoc:method:: PlotShape.beginline
 
 
     .. seealso::
-        :meth:`Graph.beginline`
+        :hoc:meth:`Graph.beginline`
 
 
 ----
 
 
 
-.. method:: PlotShape.line
+.. hoc:method:: PlotShape.line
 
 
     .. seealso::
-        :meth:`Graph.line`
+        :hoc:meth:`Graph.line`
 
 
 ----
 
 
 
-.. method:: PlotShape.mark
+.. hoc:method:: PlotShape.mark
 
 
     .. seealso::
-        :meth:`Graph.mark`
+        :hoc:meth:`Graph.mark`
 
 
 ----
 
 
 
-.. method:: PlotShape.label
+.. hoc:method:: PlotShape.label
 
 
     .. seealso::
-        :meth:`Graph.label`
+        :hoc:meth:`Graph.label`
 
 
 ----
 
 
 
-.. method:: PlotShape.color
+.. hoc:method:: PlotShape.color
 
 
     Syntax:
@@ -303,7 +304,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.color_all
+.. hoc:method:: PlotShape.color_all
 
 
     Syntax:
@@ -319,7 +320,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.color_list
+.. hoc:method:: PlotShape.color_list
 
 
     Syntax:
@@ -335,7 +336,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.colormap
+.. hoc:method:: PlotShape.colormap
 
 
     Syntax:
@@ -359,7 +360,7 @@ PlotShape
         and specify the intensity of these colors. 
          
         If an existing colormap is displayed in the view, it will be redrawn with 
-        the proper colors when :meth:`PlotShape.scale` is called. 
+        the proper colors when :hoc:meth:`PlotShape.scale` is called.
 
          
 
@@ -367,7 +368,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.hinton
+.. hoc:method:: PlotShape.hinton
 
 
     Syntax:
@@ -378,10 +379,10 @@ PlotShape
 
     Description:
         A filled square or rectangle is drawn with center at (x, y) and edge length given by 
-        size. The color depends on the :meth:`PlotShape.colormap` and :meth:`PlotShape.scale` 
-        and is redrawn on :meth:`PlotShape.flush`. 
+        size. The color depends on the :hoc:meth:`PlotShape.colormap` and :hoc:meth:`PlotShape.scale`
+        and is redrawn on :hoc:meth:`PlotShape.flush`.
          
-        If there are many of these elements then :meth:`PlotShape.fastflush` can 
+        If there are many of these elements then :hoc:meth:`PlotShape.fastflush` can
         speed plotting by up to a factor of 4 if not too many elements change 
         color between fastflush calls. 
 
@@ -435,7 +436,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.len_scale
+.. hoc:method:: PlotShape.len_scale
 
 
     Syntax:
@@ -443,7 +444,7 @@ PlotShape
 
 
     Description:
-        See :meth:`Shape.len_scale` 
+        See :hoc:meth:`Shape.len_scale`
 
          
 
@@ -451,7 +452,7 @@ PlotShape
 
 
 
-.. method:: PlotShape.rotate
+.. hoc:method:: PlotShape.rotate
 
 
     Syntax:
@@ -461,7 +462,7 @@ PlotShape
 
 
     Description:
-        See :meth:`Shape.rotate` 
+        See :hoc:meth:`Shape.rotate`
 
          
          

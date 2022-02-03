@@ -1,10 +1,11 @@
-.. _math:
+
+.. _hoc_math:
 
 Common Math Functions (HOC)
 ---------------------------
 
 These math functions return a double precision value and take a double 
-precision argument. The exception is :func:`atan2` which has two double precision arguments. 
+precision argument. The exception is :hoc:func:`atan2` which has two double precision arguments.
 
 Diagnostics:
     Arguments that are out of range give an argument domain diagnostic. 
@@ -14,32 +15,32 @@ Diagnostics:
 
 ----
 
-.. function:: abs
+.. hoc:function:: abs
 
         absolute value 
 
-        see :meth:`Vector.abs` for the :class:`Vector` class. 
+        see :hoc:meth:`Vector.abs` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: int
+.. hoc:function:: int
 
         returns the integer part of its argument (truncates toward 0). 
 
 
 ----
 
-.. function:: sqrt
+.. hoc:function:: sqrt
 
         square root 
 
-        see :meth:`Vector.sqrt` for the :class:`Vector` class. 
+        see :hoc:meth:`Vector.sqrt` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: exp
+.. hoc:function:: exp
 
     Description:
         returns the exponential function to the base e 
@@ -60,57 +61,57 @@ Diagnostics:
 
 ----
 
-.. function:: log
+.. hoc:function:: log
 
         logarithm to the base e 
-        see :meth:`Vector.log` for the :class:`Vector` class. 
+        see :hoc:meth:`Vector.log` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: log10
+.. hoc:function:: log10
 
         logarithm to the base 10 
 
-        see :meth:`Vector.log10` for the :class:`Vector` class. 
+        see :hoc:meth:`Vector.log10` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: cos
+.. hoc:function:: cos
 
     trigonometric function of radian argument. 
 
-    see :meth:`Vector.sin` 
+    see :hoc:meth:`Vector.sin`
 
 
 ----
 
-.. function:: sin
+.. hoc:function:: sin
 
     trigonometric function of radian argument. 
 
-    see :meth:`Vector.sin` for the :class:`Vector` class. 
+    see :hoc:meth:`Vector.sin` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: tanh
+.. hoc:function:: tanh
 
         hyperbolic tangent. 
-        see :meth:`Vector.tanh` for the :class:`Vector` class. 
+        see :hoc:meth:`Vector.tanh` for the :hoc:class:`Vector` class.
 
 
 ----
 
-.. function:: atan
+.. hoc:function:: atan
 
         returns the arc-tangent of y/x in the range -PI/2 to PI/2. (x > 0) 
 
 
 ----
 
-.. function:: atan2
+.. hoc:function:: atan2
 
     Syntax:
         ``radians = atan2(y, x)``
@@ -140,7 +141,7 @@ Diagnostics:
 
 ----
 
-.. function:: erf
+.. hoc:function:: erf
 
         normalized error function 
 
@@ -151,7 +152,7 @@ Diagnostics:
 
 ----
 
-.. function:: erfc
+.. hoc:function:: erfc
 
         returns ``1.0 - erf(z)`` but on sun machines computed by other methods 
         that avoid cancellation for large z. 

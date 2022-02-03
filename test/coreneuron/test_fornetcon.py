@@ -1,11 +1,8 @@
 # Basically want to test that FOR_NETCONS statement works when
 # the NetCons connecting to ForNetConTest instances are created
 # in random order.
+import distutils.util
 import os
-import pytest
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
 
@@ -88,7 +85,9 @@ def test_fornetcon():
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
     def runassert(mode):
         spiketime.resize(0)
@@ -110,14 +109,5 @@ def test_fornetcon():
 
 
 if __name__ == "__main__":
-    try:
-        test_fornetcon()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # This test is not actually executed on GPU, but it has this logic anyway
-    # for consistency with the other .py tests in this folder when
-    # https://github.com/BlueBrain/CoreNeuron/issues/512 is resolved.
-    if enable_gpu:
-        h.quit()
+    test_fornetcon()
+    h.quit()

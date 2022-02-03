@@ -18,8 +18,8 @@ Note that models using the following features cannot presently be simulated with
      -
    * - Extracellular Mechanism
      - ✔
-     - ✖
-     -
+     - ✖ *
+     - If `i_membrane` is of sole interest, then you can switch from extracellular to `cvode.use_fast_imem(1)` and make use of `i_membrane_`
    * - Linear Mechanism
      - ✔
      - ✖

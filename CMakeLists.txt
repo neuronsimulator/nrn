@@ -62,7 +62,17 @@ option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
-option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units" ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
+option(NRN_ENABLE_MODEL_TESTS "Enable tests with detailed models specified" ${NRN_ENABLE_MODEL_TESTS_DEFAULT})
+# parse NRN_ENABLE_MODEL_TESTS as list
+string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
+# This can be helpful in very specific CI build configurations, where ccache is used *and* different
+# CI builds are built under different directories.
+option(NRN_AVOID_ABSOLUTE_PATHS
+       "Avoid embedding absolute paths in generated code (ccache optimisation)"
+       ${NRN_AVOID_ABSOLUTE_PATHS_DEFAULT})
+mark_as_advanced(NRN_AVOID_ABSOLUTE_PATHS)
+option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic units"
+       ${NRN_DYNAMIC_UNITS_USE_LEGACY_DEFAULT})
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
@@ -405,40 +415,6 @@ else()
 endif()
 
 # =============================================================================
-# Enable CoreNEURON support
-# =============================================================================
-if(NRN_ENABLE_CORENEURON)
-  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
-  if(coreneuron_FOUND)
-    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
-    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
-    set(cnrn_prefix "${CORENEURON_DIR}")
-  else()
-    message(STATUS "Building CoreNEURON from submodule")
-    # If NEURON tests are enabled then enable CoreNEURON tests too
-    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
-    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
-    if(NRN_ENABLE_PROFILING)
-      if(NRN_PROFILER STREQUAL "caliper")
-        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
-      elseif(NRN_PROFILER STREQUAL "likwid")
-        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
-      endif()
-    endif()
-    # Propagate NEURON MPI option to CoreNEURON
-    set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
-    add_external_project(coreneuron)
-    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
-    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
-    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
-    # CoreNEURON exports this list of flags as a property; turn it into a
-    # variable in this scope. If CoreNEURON is installed externally then this
-    # is exported into coreneuron-config.cmake.
-    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
-  endif()
-endif()
-
-# =============================================================================
 # Profiler/Instrumentation Options
 # =============================================================================
 if(NRN_ENABLE_PROFILING)
@@ -472,6 +448,47 @@ include(NeuronFileLists)
 include(MPIDynamicHelper)
 include(ConfigFileSetting)
 include(PythonDynamicHelper)
+
+# =============================================================================
+# Enable CoreNEURON support
+# =============================================================================
+if(NRN_ENABLE_CORENEURON)
+  find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
+  if(coreneuron_FOUND)
+    message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
+    # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
+    set(cnrn_prefix "${CORENEURON_DIR}")
+  else()
+    message(STATUS "Building CoreNEURON from submodule")
+    # If NEURON tests are enabled then enable CoreNEURON tests too
+    set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
+    set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
+    if(NRN_ENABLE_PROFILING)
+      if(NRN_PROFILER STREQUAL "caliper")
+        set(CORENRN_ENABLE_CALIPER_PROFILING ON)
+      elseif(NRN_PROFILER STREQUAL "likwid")
+        set(CORENRN_ENABLE_LIKWID_PROFILING ON)
+      endif()
+    endif()
+    # Propagate NEURON MPI option to CoreNEURON if not set explicitly
+    if(NOT DEFINED CORENRN_ENABLE_MPI)
+      set(CORENRN_ENABLE_MPI ${NRN_ENABLE_MPI} CACHE BOOL "" FORCE)
+    endif()
+    if(NOT DEFINED CORENRN_ENABLE_MPI_DYNAMIC)
+      set(CORENRN_ENABLE_MPI_DYNAMIC ${NRN_ENABLE_MPI_DYNAMIC} CACHE BOOL "" FORCE)
+    endif()
+    add_external_project(coreneuron)
+    set(CORENEURON_DIR ${PROJECT_SOURCE_DIR}/external/coreneuron)
+    # By default `nrnivmodl` should look for `nrnivmodl-core` in the NEURON install prefix.
+    set(cnrn_prefix "${CMAKE_INSTALL_PREFIX}")
+    # CoreNEURON exports this list of flags as a property; turn it into a
+    # variable in this scope. If CoreNEURON is installed externally then this
+    # is exported into coreneuron-config.cmake.
+    get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+    # NEURON tests that link against CoreNEURON need to depend on it.
+    set(CORENEURON_TARGET_TO_DEPEND coreneuron)
+  endif()
+endif()
 
 # =============================================================================
 # Set install location for libraries (before src/nrniv)
@@ -777,6 +794,7 @@ if(NRN_ENABLE_CORENEURON)
     message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
   endif()
 endif()
+message(STATUS "Tests         | ${NRN_ENABLE_TESTS}")
 if(NRN_ENABLE_COVERAGE)
   message(STATUS "Coverage      | Enabled")
   if (NRN_COVERAGE_FILES)

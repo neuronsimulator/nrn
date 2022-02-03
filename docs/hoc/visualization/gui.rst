@@ -1,11 +1,12 @@
-.. _gui:
+
+.. _hoc_gui:
 
 
 GUI Look And Feel
 *****************
 
 .. seealso::
-     :ref:`NEURONMainMenu`, :ref:`standardruntools`
+     :ref:`hoc_NEURONMainMenu`, :ref:`hoc_standardruntools`
 
      
 The Print window manager gives special meaning to each mouse button 
@@ -61,7 +62,8 @@ scenes have a common View menu as the first menu item
 with which one can create a new view, zoom in/out, round the view 
 or make the view correspond to the natural size of the scene. 
      
-.. _gui_view_equal_plot:
+
+.. _hoc_gui_view_equal_plot:
 
 View_equal_Plot
 ===============
@@ -195,7 +197,7 @@ Browsers can be scrolled with :kbd:`d`, :kbd:`u`, :kbd:`j`, :kbd:`k`, :kbd:`n`, 
 FieldEditor
 ~~~~~~~~~~~
 
-See also :ref:`ValueEditor`, a FieldEditor for floating point numbers. 
+See also :ref:`hoc_ValueEditor`, a FieldEditor for floating point numbers.
 Field editors accept a string entered by the user.  The allowed strings 
 are determined by the context.  In not all cases does typing the return 
 key signal the execution of a selection (if not, press the :guilabel:`accept`
@@ -234,7 +236,7 @@ than the number in the ``*panel_scroll:`` resource in the
 are shown in a scroll box so that they do not take up so much screen 
 space. 
  
-See :func:`xpanel` for hoc functions to generate panels 
+See :hoc:func:`xpanel` for hoc functions to generate panels
 
 .. code-block::
     none
@@ -285,7 +287,8 @@ Menus: Drag the mouse to the desired item. If the menu fails to go away you
 can press one item and then move the mouse away and release. This 
 should cause the menu to unmap without executing the item. 
 
-.. _valueeditor:
+
+.. _hoc_valueeditor:
 
 ValueEditor
 ===========
@@ -338,7 +341,8 @@ value field. Stepper delays use the resources:
 *   autorepeatDelay: .02 
  
  
-.. _pwm:
+
+.. _hoc_pwm:
 
 Print & File Window Manager
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -348,7 +352,7 @@ The manager contains two scenes representing the screen and a piece of
 paper.  The location and relative size of each hoc window appears on the 
 screen scene. 
  
-See :func:`pwman_place`. 
+See :hoc:func:`pwman_place`.
 
 ScreenItem
 ==========
@@ -406,15 +410,16 @@ is not working properly on your machine, the help
 button can be removed by specifying ``*pwm_help: off`` in the 
 :file:`nrn/lib/nrn.defaults` file. 
 
-.. _pwm_print:
+
+.. _hoc_pwm_print:
 
 Print
 =====
 
 Print: Sends the postscript images of the windows to a printer 
-selected by the Other menu item, :ref:`SelectPrinter`. 
+selected by the Other menu item, :ref:`hoc_SelectPrinter`.
 If no printer has been selected a printer 
-dialog pops up. See :ref:`WindowTitlesPrinted` . 
+dialog pops up. See :ref:`hoc_WindowTitlesPrinted` .
  
 
 PrintToFile
@@ -423,7 +428,7 @@ PrintToFile
 Print to File: Menu for saving windows to a printable file in the formats 
  
 .. seealso::
-    :func:`print_session`, :ref:`WindowTitlesPrinted` 
+    :hoc:func:`print_session`, :ref:`hoc_WindowTitlesPrinted`
 
 PostScript
 """"""""""
@@ -439,15 +444,16 @@ in the page icon. Each graph is an idraw group. Idraw is an excellent
 program for polishing graphs to publication quality. 
 A .id suffix is recommended. 
 
-.. _printtofile_ascii:
+
+.. _hoc_printtofile_ascii:
 
 Ascii
 """""
 
 Ascii: Filename for saving an ascii format of the lines in graph windows 
-appearing in the page icon. :meth:`Graph.addvar` and :meth:`Graph.addexpr` 
+appearing in the page icon. :hoc:meth:`Graph.addvar` and :hoc:meth:`Graph.addexpr`
 lines in a Graph window are saved if there are some and there 
-is no :meth:`Graph.family` label. If there are no addvar/addexpr lines 
+is no :hoc:meth:`Graph.family` label. If there are no addvar/addexpr lines
 or if there is a family label then all lines on the graph with more 
 than two points are printed (along with their labels, if any). 
 If all the lines have the same number of points and they are all 
@@ -468,7 +474,7 @@ Unlabeled lines are printed at the end of the file with the format
 
 
  
-.. seealso:: :ref:`FamilyLabel` 
+.. seealso:: :ref:`hoc_FamilyLabel`
  
 
 Session
@@ -495,21 +501,23 @@ The model coordinate size of all scenes is given by the view size
 of the primary view window. Therefore after a retrieve, the 
 "whole scene" menu operation will restore the view size when saved. 
 
-.. _session_saveall:
+
+.. _hoc_session_saveall:
 
 SaveAll
 """""""
 
 SaveAll: Saves all windows in the specified file. 
  
-See :func:`save_session` 
+See :hoc:func:`save_session`
 
 Other
 =====
 
 Other: Menu of other options 
 
-.. _selectprinter:
+
+.. _hoc_selectprinter:
 
 SelectPrinter
 """""""""""""
@@ -534,13 +542,14 @@ be set in the nrn.def(aults) file. The default printer command is
 In the unix version the printer command is found from the 
 "PRINT_CMD" environment variable. 
  
-.. _windowtitlesprinted:
+
+.. _hoc_windowtitlesprinted:
 
 WindowTitlesPrinted
 """""""""""""""""""
 
 If checked, then window titles are printed when the windows are printed. 
-Titles are always printed when :func:`print_session` is executed. 
+Titles are always printed when :hoc:func:`print_session` is executed.
  
 
 VirtualScreen
@@ -586,12 +595,14 @@ Quit
 Quit: Pops up dialog to allow Exit from NEURON. 
 On exit will ask if you want to save open editor buffers. 
  
-.. _gui_graph:
+
+.. _hoc_gui_graph:
 
 Graph
 ~~~~~
 
-.. _graph_crosshair:
+
+.. _hoc_graph_crosshair:
 
 Crosshair
 =========
@@ -605,17 +616,18 @@ at the nearest point on the line. On dragging it searches from the
 last point for the nearest point but will stop searching if any point 
 becomes farther away. This makes it possible to easily follow 
 phase plane plots. Crosshairs may call a hoc function on a keypress. 
-See :meth:`Graph.crosshair_action`.
+See :hoc:meth:`Graph.crosshair_action`.
  
 If no crosshair action has been installed, any keypress will print 
 the x,y coordinates of the crosshair in the terminal window. 
  
 Note that a crosshair_action can obtain all the x,y coordinate data 
-for a line. Also the global variables :data:`hoc_cross_x_` and 
-:data:`hoc_cross_y_` contain the last value of the crosshair coordinates. 
+for a line. Also the global variables :hoc:data:`hoc_cross_x_` and
+:hoc:data:`hoc_cross_y_` contain the last value of the crosshair coordinates.
  
 
-.. _gui_plotwhat:
+
+.. _hoc_gui_plotwhat:
 
 PlotWhat
 ========
@@ -642,19 +654,20 @@ a session.
  
 If a variable in the browser contains the word [all] in place of 
 an explicit index then the Graph will plot it as a function of 
-its index. See :meth:`Graph.vector` . 
+its index. See :hoc:meth:`Graph.vector` .
  
 
-.. _gui_pickvector:
+
+.. _hoc_gui_pickvector:
 
 PickVector
 ==========
 
 When this tool is chosen, clicking the left mouse button near 
 a graphed line will copy the y and x coordinates of the line 
-into two new :class:`Vector`'s which are referenced by :data:`hoc_obj_`\ [0] and 
-:data:`hoc_obj_`\ [1] respectively. The vectors may be saved to a file by selecting 
-the :ref:`Vector_SavetoFile` item from the Vector menu of the 
+into two new :hoc:class:`Vector`'s which are referenced by :hoc:data:`hoc_obj_`\ [0] and
+:hoc:data:`hoc_obj_`\ [1] respectively. The vectors may be saved to a file by selecting
+the :ref:`hoc_Vector_SavetoFile` item from the Vector menu of the
 NEURONMainMenu 
  
 
@@ -668,7 +681,8 @@ an expression involving $1. The expression will be executed for
 each section in the path for each arc position set to $1. 
  
 
-.. _gui_changecolor_brush:
+
+.. _hoc_gui_changecolor_brush:
 
 ChangeColor-Brush
 =================
@@ -714,33 +728,35 @@ Erases the old axis and draws an axis box as a background
 with clipping. The box is sized dynamically with respect to the 
 view coordinates. 
  
-.. _keeplines:
+
+.. _hoc_keeplines:
 
 KeepLines
 =========
 
 Keep Lines: While checked, lines are saved. When not checked 
 the previous line is discarded every time 
-:meth:`Graph.begin` is executed in preparation for plotting new lines. 
+:hoc:meth:`Graph.begin` is executed in preparation for plotting new lines.
 A useful idiom to save a reference line is to toggle the Keep Lines 
 item on and then off. 
 
 .. seealso::
-    :meth:`Graph.family`, :ref:`FamilyLabel`
+    :hoc:meth:`Graph.family`, :ref:`hoc_FamilyLabel`
 
-.. _familylabel:
+
+.. _hoc_familylabel:
 
 FamilyLabel
 ===========
 
 Pops up a global (same for all Graph windows) symbol chooser 
-which is used to select a label for :ref:`KeepLines`. Function is 
-identical to :meth:`Graph.family`. Ie. the label is used as a variable name 
+which is used to select a label for :ref:`hoc_KeepLines`. Function is
+identical to :hoc:meth:`Graph.family`. Ie. the label is used as a variable name
 and the value of the variable is used to actually label the kept lines. 
-To get a compatible label (instead of an :meth:`Graph.addexpr` label) 
+To get a compatible label (instead of an :hoc:meth:`Graph.addexpr` label)
 for the last line, the KeepLines menu item should be toggled off. 
  
-If all lines are labeled and have the same size then :ref:`PrintToFile_Ascii` 
+If all lines are labeled and have the same size then :ref:`hoc_PrintToFile_Ascii`
 has a matrix format. 
  
 

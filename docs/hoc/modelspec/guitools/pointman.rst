@@ -1,4 +1,5 @@
-.. _pointman:
+
+.. _hoc_pointman:
 
 
 Managers
@@ -8,7 +9,7 @@ Managers
 PointManager
 ~~~~~~~~~~~~
 
-Starts a general purpose :ref:`pointprocessmanager` for specifying a 
+Starts a general purpose :ref:`hoc_pointprocessmanager` for specifying a
 location and defining what kind of point process should exist 
 there. Any number of these managers can exist simultaneously. 
 It is more general than the Electrode below in the sense that 
@@ -18,7 +19,7 @@ implementation.
 PointGroup
 ~~~~~~~~~~
 
-Starts a :ref:`PointProcessGroupManager` for managing a collection of 
+Starts a :ref:`hoc_PointProcessGroupManager` for managing a collection of
 related point processes. If all the members of the collection are 
 of the same type, then the values of their variables can be changed 
 "globally" and all the values of a single parameter can be displayed. 
@@ -26,13 +27,13 @@ of the same type, then the values of their variables can be changed
 Electrode
 ~~~~~~~~~
 
-Starts a general purpose :class:`Electrode` 
+Starts a general purpose :hoc:class:`Electrode`
 voltage/current clamp (with some 
 voltage clamp families) that can be moved to any position in any 
 section. Any number of these may be present simultaneously. When 
 one is dismissed from the screen, it is also removed from the neuron 
 and the point processes it manages are destroyed. This widget is 
-pretty much superseded by the :ref:`pointprocessmanager`. 
+pretty much superseded by the :ref:`hoc_pointprocessmanager`.
 
 Viewers
 -------
@@ -47,12 +48,13 @@ point process, and, if global parameters exist, a button for popping
 up a panel showing the global parameters for this type of point 
 process. Double clicking a location on the browser pops up a panel 
 showing the values for a particular point process instance. 
-See :ref:`mech` for details about built-in point 
+See :ref:`hoc_mech` for details about built-in point
 processes. The corresponding .mod file must in general be 
 examined in order to understand the particulars about a given 
 point process type. 
      
-.. _pointprocessmanager:
+
+.. _hoc_pointprocessmanager:
 
 PointProcessManager
 -------------------
@@ -72,7 +74,7 @@ scene (right mouse button) and then clicking on a location (left mouse
 button). 
  
 Note that when one point process is replaced by another 
-the parameters are saved in a :class:`MechanismStandard`. When 
+the parameters are saved in a :hoc:class:`MechanismStandard`. When
 the point process is re-installed, those parameters are restored. 
  
 If the panel is saved in a session, the MechanismStandard's are 
@@ -89,9 +91,10 @@ p.pp is the point process currently installed in the cell.
      
 
 .. seealso::
-    :ref:`mech`
+    :ref:`hoc_mech`
 
-.. _pointprocessgroupmanager:
+
+.. _hoc_pointprocessgroupmanager:
 
 PointProcessGroupManager
 ------------------------

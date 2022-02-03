@@ -1,4 +1,5 @@
-.. _topology:
+
+.. _hoc_topology:
 
          
 Topology
@@ -22,7 +23,8 @@ This document describes the construction and manipulation of a stylized topology
 
 .. index::  create (keyword)
 
-.. _keyword_create:
+
+.. _hoc_keyword_create:
 
 **create**
 
@@ -62,7 +64,7 @@ This document describes the construction and manipulation of a stylized topology
          
 
     .. seealso::
-        :ref:`connect <keyword_connect>`, :ref:`insert <keyword_insert>`, :ref:`forall <keyword_forall>`
+        :ref:`connect <hoc_keyword_connect>`, :ref:`insert <hoc_keyword_insert>`, :ref:`forall <hoc_keyword_forall>`
         
 
          
@@ -73,7 +75,8 @@ This document describes the construction and manipulation of a stylized topology
 
 .. index::  connect (keyword)
 
-.. _keyword_connect:
+
+.. _hoc_keyword_connect:
 
 **connect**
 
@@ -91,7 +94,7 @@ This document describes the construction and manipulation of a stylized topology
         is connected twice a Notice is printed on the standard error device 
         saying that the section has been reconnected (the last connection takes 
         precedence).  To avoid the notice, disconnect the section first with the 
-        function :func:`disconnect`.  If sections are inadvertently connected in a 
+        function :hoc:func:`disconnect`.  If sections are inadvertently connected in a
         loop, an error will be generated when the internal data structures are 
         created and the user will be required to disconnect one of the sections 
         forming the loop. 
@@ -118,7 +121,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: topology
+.. hoc:function:: topology
 
 
     Syntax:
@@ -135,7 +138,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: delete_section
+.. hoc:function:: delete_section
 
 
     Syntax:
@@ -149,10 +152,10 @@ This document describes the construction and manipulation of a stylized topology
         will remove all sections. 
          
         Note: deleted sections still exist (even though 
-        :meth:`SectionRef.exists`
+        :hoc:meth:`SectionRef.exists`
         returns 0 and an error will result if one attempts to access 
         the section) so 
-        that other objects (such as :class:`SectionList`\ s and :class:`Shape`\ s) which 
+        that other objects (such as :hoc:class:`SectionList`\ s and :hoc:class:`Shape`\ s) which
         hold pointers to these sections will still work. When the last 
         pointer to a section is destroyed, the section memory will be 
         freed. 
@@ -163,7 +166,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_exists
+.. hoc:function:: section_exists
 
 
     Syntax:
@@ -185,7 +188,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_owner
+.. hoc:function:: section_owner
 
 
     Syntax:
@@ -206,7 +209,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: disconnect
+.. hoc:function:: disconnect
 
 
     Syntax:
@@ -222,7 +225,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. data:: nseg
+.. hoc:data:: nseg
 
 
     Description:
@@ -246,7 +249,7 @@ This document describes the construction and manipulation of a stylized topology
         and, if PARAMETER range variables are 
         constant, that all the new segments have the proper PARAMETER values. 
         (It generally doesn't matter that ASSIGNED and STATE values do not get 
-        interpolated since those values are computed with :func:`fadvance`). 
+        interpolated since those values are computed with :hoc:func:`fadvance`).
         If range variables are not constant then the hoc expressions used to 
         set them should be re-executed. 
          
@@ -275,7 +278,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: issection
+.. hoc:function:: issection
 
 
     Syntax:
@@ -338,7 +341,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
     .. seealso::
-        :ref:`ifsec <keyword_ifsec>`, :ref:`forsec <keyword_forsec>`
+        :ref:`ifsec <hoc_keyword_ifsec>`, :ref:`forsec <hoc_keyword_forsec>`
 
          
 
@@ -346,7 +349,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: ismembrane
+.. hoc:function:: ismembrane
 
 
     Syntax:
@@ -376,7 +379,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: sectionname
+.. hoc:function:: sectionname
 
 
     Syntax:
@@ -386,7 +389,7 @@ This document describes the construction and manipulation of a stylized topology
     Description:
         The name of the currently accessed section is placed in *strvar*. 
          
-        This function is superseded by the easier to use, :func:`secname`. 
+        This function is superseded by the easier to use, :hoc:func:`secname`.
 
          
 
@@ -394,7 +397,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: secname
+.. hoc:function:: secname
 
 
     Syntax:
@@ -431,7 +434,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: psection
+.. hoc:function:: psection
 
 
     Syntax:
@@ -453,7 +456,7 @@ This document describes the construction and manipulation of a stylized topology
 ----
 
 
-.. function:: parent_section
+.. hoc:function:: parent_section
 
 
     Syntax:
@@ -463,7 +466,7 @@ This document describes the construction and manipulation of a stylized topology
     Description:
         Return the pointer to the section parent of the segment containing *x*. 
         Because a 64 bit pointer cannot safely be represented as a 
-        double this function is deprecated in favor of :meth:`SectionRef.parent`. 
+        double this function is deprecated in favor of :hoc:meth:`SectionRef.parent`.
 
          
 
@@ -471,7 +474,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: parent_node
+.. hoc:function:: parent_node
 
 
     Syntax:
@@ -490,7 +493,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: parent_connection
+.. hoc:function:: parent_connection
 
 
     Syntax:
@@ -513,7 +516,7 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_orientation
+.. hoc:function:: section_orientation
 
 
     Syntax:

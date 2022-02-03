@@ -1,4 +1,5 @@
-.. _pltshape:
+
+.. _hoc_pltshape:
 
 
 PlotShape Window
@@ -13,7 +14,7 @@ connections, diam, and L values of the sections.
  
 .. note::
 
-    When :func:`define_shape` is called, 3d info for sections that were not 
+    When :hoc:func:`define_shape` is called, 3d info for sections that were not
     cleared is translated in order to appear connected to its parent. 
  
  
@@ -22,7 +23,7 @@ Section
 ~~~~~~~
 
 It is a vestigial menu item for PlotShape's and does nothing. 
-In :class:`Shape` it selects the tool for calling various 
+In :hoc:class:`Shape` it selects the tool for calling various
 actions when clicking on a part of the shape. 
  
 

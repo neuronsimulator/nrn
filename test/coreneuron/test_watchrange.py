@@ -1,11 +1,7 @@
 # Basically want to test that net_move statement doesn't get
 # mixed up with other instances.
+import distutils.util
 import os
-import pytest
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
-
 
 from neuron import h
 
@@ -85,7 +81,9 @@ def test_watchrange():
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
     def runassert(mode):
         run(tstop, mode)
@@ -147,20 +145,13 @@ def test_watchrange():
 
 
 if __name__ == "__main__":
-    try:
-        from neuron import gui
+    from neuron import gui
 
-        stdlist, tvec = test_watchrange()
-        g = h.Graph()
-        print("n_high  n_mid  n_low")
-        for i, result in enumerate(stdlist):
-            print(result[0], result[1], result[2])
-            result[4].line(g, tvec, i, 2)
-        g.exec_menu("View = plot")
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    stdlist, tvec = test_watchrange()
+    g = h.Graph()
+    print("n_high  n_mid  n_low")
+    for i, result in enumerate(stdlist):
+        print(result[0], result[1], result[2])
+        result[4].line(g, tvec, i, 2)
+    g.exec_menu("View = plot")
+    h.quit()

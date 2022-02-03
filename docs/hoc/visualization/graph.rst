@@ -1,3 +1,4 @@
+
 .. _graph:
 
          
@@ -6,7 +7,7 @@ Graph
 
 
 
-.. class:: Graph
+.. hoc:class:: Graph
 
 
     Syntax:
@@ -20,7 +21,7 @@ Graph
         An instance of the Graph class  manages a window on which  x-y plots can 
         be drawn by calling various member functions. 
         The first form immediately maps the window to the screen. With a 0 argument 
-        the window is not mapped but can be sized and placed with the :func:`view` function. 
+        the window is not mapped but can be sized and placed with the :hoc:func:`view` function.
          
 
     Example:
@@ -88,7 +89,7 @@ Graph
 
 
 
-.. method:: Graph.xaxis
+.. hoc:method:: Graph.xaxis
 
 
     Syntax:
@@ -103,7 +104,7 @@ Graph
 
     Description:
         The single mode argument draws both x and y axes (no arg == mode 0). 
-        See :func:`yaxis` for a complete description of the arguments. 
+        See :hoc:func:`yaxis` for a complete description of the arguments.
 
          
 
@@ -111,7 +112,7 @@ Graph
 
 
 
-.. method:: Graph.yaxis
+.. hoc:method:: Graph.yaxis
 
 
     Syntax:
@@ -215,7 +216,7 @@ Graph
 
 
 
-.. method:: Graph.addvar
+.. hoc:method:: Graph.addvar
 
 
     Syntax:
@@ -255,7 +256,7 @@ Graph
 
 
 
-.. method:: Graph.addexpr
+.. hoc:method:: Graph.addexpr
 
 
     Syntax:
@@ -274,7 +275,7 @@ Graph
         color and brush is used if the optional arguments are not present. A label 
         is also added to the graph that indicates the name of the variable. 
         The expression is interpreted every time ``g.plot(x)`` is 
-        called so it is more general than :func:`addvar`, but slower. 
+        called so it is more general than :hoc:func:`addvar`, but slower.
          
         If the optional label is present that string will appear as the label instead 
         of the expr string. If the optional object is present the expr will be 
@@ -312,7 +313,7 @@ Graph
 
 
 
-.. method:: Graph.addobject
+.. hoc:method:: Graph.addobject
 
 
     Syntax:
@@ -322,8 +323,8 @@ Graph
 
 
     Description:
-        Adds the :class:`RangeVarPlot` to the list of items to be plotted on 
-        :meth:`Graph.flush` 
+        Adds the :hoc:class:`RangeVarPlot` to the list of items to be plotted on
+        :hoc:meth:`Graph.flush`
 
          
 
@@ -331,7 +332,7 @@ Graph
 
 
 
-.. method:: Graph.begin
+.. hoc:method:: Graph.begin
 
 
     Syntax:
@@ -374,7 +375,7 @@ Graph
 
 
 
-.. method:: Graph.plot
+.. hoc:method:: Graph.plot
 
 
     Syntax:
@@ -417,7 +418,7 @@ Graph
 
 
 
-.. method:: Graph.xexpr
+.. hoc:method:: Graph.xexpr
 
 
     Syntax:
@@ -472,7 +473,7 @@ Graph
 
 
 
-.. method:: Graph.flush
+.. hoc:method:: Graph.flush
 
 
     Syntax:
@@ -481,7 +482,7 @@ Graph
 
     Description:
         Actually draw what has been placed in the graph scene. (If 
-        you are continuing to compute you will also need to call :func:`doEvents` 
+        you are continuing to compute you will also need to call :hoc:func:`doEvents`
         before you see the results on the screen.) This redraws all objects 
         in the scene and therefore should not be executed very much during 
         plotting of lines with thousands of points. 
@@ -497,7 +498,7 @@ Graph
 
 
 
-.. method:: Graph.fastflush
+.. hoc:method:: Graph.fastflush
 
 
     Syntax:
@@ -505,9 +506,9 @@ Graph
 
 
     Description:
-        Flushes only the :func:`plot` (x) points since the last :func:`flush` 
+        Flushes only the :hoc:func:`plot` (x) points since the last :hoc:func:`flush`
         (or ``fastflush``). 
-        This is useful for seeing the progress of :func:`addvar` plots during long 
+        This is useful for seeing the progress of :hoc:func:`addvar` plots during long
         computations in which the graphlines contain many thousands of points. 
         Make sure you do a normal ``.flush`` when the lines are complete since 
         fastflush does not notify the system of the true size of the lines. 
@@ -554,7 +555,7 @@ Graph
 
 
 
-.. method:: Graph.family
+.. hoc:method:: Graph.family
 
 
     Syntax:
@@ -581,7 +582,7 @@ Graph
         the string is printed as a label and when keep lines 
         is selected each line is labeled with the value of the variable. 
          
-        When graphs are printed to a file in :ref:`printtofile_ascii` mode, 
+        When graphs are printed to a file in :ref:`hoc_printtofile_ascii` mode,
         the lines are labeled 
         with these labels. If every line has a label and each line has the same size, 
         then the file is printed in matrix form. 
@@ -592,7 +593,7 @@ Graph
 
 
 
-.. method:: Graph.vector
+.. hoc:method:: Graph.vector
 
 
     Syntax:
@@ -613,7 +614,7 @@ Graph
              
             These vectors are assumed to be doubles and not vectors from 
             the Vector class.  The Vector class has its own functions 
-            :meth:`Vector.plot`, :meth:`Vector.line`, :meth:`Vector.mark` 
+            :hoc:meth:`Vector.plot`, :hoc:meth:`Vector.line`, :hoc:meth:`Vector.mark`
             for graphing vectors constructed in that class. 
              
             A segmentation violation will result if 
@@ -633,7 +634,7 @@ Graph
 
 
 
-.. method:: Graph.getline
+.. hoc:method:: Graph.getline
 
 
     Syntax:
@@ -641,9 +642,9 @@ Graph
 
 
     Description:
-        Copy a graph line into the :class:`Vector`\ 's xvec and yvec. Those vectors are 
+        Copy a graph line into the :hoc:class:`Vector`\ 's xvec and yvec. Those vectors are
         resized to the number of points in the line. Also, if the line has a 
-        label, it is copied to the vector as well (see :meth:`Vector.label`). 
+        label, it is copied to the vector as well (see :hoc:meth:`Vector.label`).
         The index of the line is returned. To re-get the line at a later time 
         (assuming no line has been inserted into the graphlist earlier than 
         its index value --- new lines are generally appended to the list but 
@@ -677,7 +678,7 @@ Graph
 
 
 
-.. method:: Graph.line_info
+.. hoc:method:: Graph.line_info
 
 
     Syntax:
@@ -698,7 +699,7 @@ Graph
 
 
 
-.. method:: Graph.erase
+.. hoc:method:: Graph.erase
 
 
     Syntax:
@@ -714,7 +715,7 @@ Graph
 
 
 
-.. method:: Graph.erase_all
+.. hoc:method:: Graph.erase_all
 
 
     Syntax:
@@ -730,7 +731,7 @@ Graph
 
 
 
-.. method:: Graph.size
+.. hoc:method:: Graph.size
 
 
     Syntax:
@@ -756,7 +757,7 @@ Graph
             Returns the xmin, xmax, ymin, ymax values of all marks and lines of more than two 
             points in the graph in dbl[0],..., dbl[3] respectively. This allows 
             convenient computation of a view size which will display everything on the 
-            graph. See :ref:`gui_view_equal_plot`. In the absence of any graphics, it gives 
+            graph. See :ref:`hoc_gui_view_equal_plot`. In the absence of any graphics, it gives
             the size as in the .size(1-4) prototype. 
 
 
@@ -766,7 +767,7 @@ Graph
 
 
 
-.. method:: Graph.label
+.. hoc:method:: Graph.label
 
 
     Syntax:
@@ -801,7 +802,7 @@ Graph
 
 
 
-.. method:: Graph.fixed
+.. hoc:method:: Graph.fixed
 
 
     Syntax:
@@ -818,7 +819,7 @@ Graph
 
 
 
-.. method:: Graph.vfixed
+.. hoc:method:: Graph.vfixed
 
 
     Syntax:
@@ -838,7 +839,7 @@ Graph
 
 
 
-.. method:: Graph.relative
+.. hoc:method:: Graph.relative
 
 
     Syntax:
@@ -856,7 +857,7 @@ Graph
 
 
 
-.. method:: Graph.align
+.. hoc:method:: Graph.align
 
 
     Syntax:
@@ -891,7 +892,7 @@ Graph
 
 
 
-.. method:: Graph.color
+.. hoc:method:: Graph.color
 
 
     Syntax:
@@ -933,7 +934,7 @@ Graph
 
 
 
-.. method:: Graph.brush
+.. hoc:method:: Graph.brush
 
 
     Syntax:
@@ -957,7 +958,7 @@ Graph
             work with postscript but not idraw. Axes are drawn with the 
             nrn.defaults property ``*default_brush: 0.0`` 
 
-        The user may also use the :ref:`gui_changecolor_brush` button in the graphical user interface, which 
+        The user may also use the :ref:`hoc_gui_changecolor_brush` button in the graphical user interface, which
         is called by placing the mouse arrow in the graph window and pressing the right button. 
 
          
@@ -966,7 +967,7 @@ Graph
 
 
 
-.. method:: Graph.view
+.. hoc:method:: Graph.view
 
 
     Syntax:
@@ -994,7 +995,7 @@ Graph
 
 
 
-.. method:: Graph.save_name
+.. hoc:method:: Graph.save_name
 
 
     Syntax:
@@ -1016,7 +1017,7 @@ Graph
 
 
 
-.. method:: Graph.beginline
+.. hoc:method:: Graph.beginline
 
 
     Syntax:
@@ -1070,7 +1071,7 @@ Graph
 
 
 
-.. method:: Graph.line
+.. hoc:method:: Graph.line
 
 
     Syntax:
@@ -1134,7 +1135,7 @@ Graph
 
 
 
-.. method:: Graph.mark
+.. hoc:method:: Graph.mark
 
 
     Syntax:
@@ -1161,7 +1162,7 @@ Graph
 
 
 
-.. method:: Graph.crosshair_action
+.. hoc:method:: Graph.crosshair_action
 
 
     Syntax:
@@ -1199,7 +1200,7 @@ Graph
         With an empty string arg, the existing action is removed. 
 
     .. seealso::
-        :ref:`gui_PickVector`, :func:`menu_tool`
+        :ref:`hoc_gui_PickVector`, :hoc:func:`menu_tool`
 
          
 
@@ -1207,7 +1208,7 @@ Graph
 
 
 
-.. method:: Graph.view_count
+.. hoc:method:: Graph.view_count
 
 
     Syntax:
@@ -1226,7 +1227,7 @@ Graph
 
 
 
-.. method:: Graph.unmap
+.. hoc:method:: Graph.unmap
 
 
     Syntax:
@@ -1244,7 +1245,7 @@ Graph
 
 
 
-.. method:: Graph.printfile
+.. hoc:method:: Graph.printfile
 
 
     Syntax:
@@ -1261,7 +1262,7 @@ Graph
 
 
 
-.. method:: Graph.menu_remove
+.. hoc:method:: Graph.menu_remove
 
 
     Syntax:
@@ -1277,7 +1278,7 @@ Graph
 
 
 
-.. method:: Graph.exec_menu
+.. hoc:method:: Graph.exec_menu
 
 
     Syntax:
@@ -1294,7 +1295,7 @@ Graph
         to the primary (first) view, eg selecting "View = plot" of a Grapher will 
         always refer to the view in the Grapher tool as opposed to other views of 
         the same graph created via the "NewView" menu item. Any items created 
-        with :meth:`Graph.menu_action` or :meth:`Graph.menu_tool` are selectable with this 
+        with :hoc:meth:`Graph.menu_action` or :hoc:meth:`Graph.menu_tool` are selectable with this
         function. 
 
     Example:
@@ -1313,7 +1314,7 @@ Graph
 
 
 
-.. method:: Graph.menu_action
+.. hoc:method:: Graph.menu_action
 
 
     Syntax:
@@ -1340,7 +1341,7 @@ Graph
 
 
 
-.. method:: Graph.menu_tool
+.. hoc:method:: Graph.menu_tool
 
 
     Syntax:
@@ -1351,7 +1352,7 @@ Graph
 
     Description:
         Add a selectable tool menu item to the Graph popup menu or else, if an 
-        :func:`xpanel` is open, an :func:`xradiobutton` will be added to the panel having the 
+        :hoc:func:`xpanel` is open, an :hoc:func:`xradiobutton` will be added to the panel having the
         same action. (note: all menu_tool radiobuttons whether in the graph menu 
         or in a panel, are in the same telltalegroup, so selecting one deselects the 
         previous selection.) 
@@ -1360,7 +1361,7 @@ Graph
         the radioitem is pressed (if it is not already selected). 
          
         When selected, the item will be marked and the label will appear on 
-        the window title bar (but not if the Graph is enclosed in a :func:`VBox` ). 
+        the window title bar (but not if the Graph is enclosed in a :hoc:func:`VBox` ).
         When this tool is selected, pressing the left mouse 
         button, dragging the mouse, and releasing the left button, will cause 
         procedure_name to be called with four arguments: type, x, y, keystate. 
@@ -1391,7 +1392,7 @@ Graph
 
 
 
-.. method:: Graph.gif
+.. hoc:method:: Graph.gif
 
 
     Syntax:
@@ -1447,7 +1448,7 @@ Graph
 
 
 
-.. method:: Graph.view_info
+.. hoc:method:: Graph.view_info
 
 
     Syntax:
@@ -1499,7 +1500,7 @@ Graph
 
 
 
-.. method:: Graph.view_size
+.. hoc:method:: Graph.view_size
 
 
     Syntax:
@@ -1508,7 +1509,7 @@ Graph
 
     Description:
         Specifies the model coordinates of the ith view of a Graph. 
-        It is possible to use this in a :meth:`Graph.menu_tool` callback procedure. 
+        It is possible to use this in a :hoc:meth:`Graph.menu_tool` callback procedure.
 
          
 
@@ -1516,7 +1517,7 @@ Graph
 
 
 
-.. method:: Graph.glyph
+.. hoc:method:: Graph.glyph
 
 
     Syntax:
@@ -1524,7 +1525,7 @@ Graph
 
 
     Description:
-        Add the :func:`Glyph` object to the graph at indicated coordinates (the origin 
+        Add the :hoc:func:`Glyph` object to the graph at indicated coordinates (the origin
         of the Glyph will appear at x,y) first scaling the Glyph and then 
         rotating by the indicated angle in degrees. The last four arguments 
         are optional and have defaults of 1,1,0,0 respectively. Fixtype 
@@ -1538,7 +1539,7 @@ Graph
 
 
 
-.. method:: Graph.simgraph
+.. hoc:method:: Graph.simgraph
 
 
     Syntax:
@@ -1546,7 +1547,7 @@ Graph
 
 
     Description:
-        Adds all the :meth:`Graph.addvar` lines to a list managed by :class:`CVode` which 
+        Adds all the :hoc:meth:`Graph.addvar` lines to a list managed by :hoc:class:`CVode` which
         allows the local variable time step method to properly graph the lines. 
         See the implementation in share/lib/hoc/stdrun.hoc for usage. 
 

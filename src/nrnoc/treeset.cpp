@@ -612,12 +612,11 @@ has taken effect
 
 /* for the fixed step method */
 void* setup_tree_matrix(NrnThread* _nt){
-    nrn::Instrumentor::phase_begin("setup_tree_matrix");
+    nrn::Instrumentor::phase p_setup_tree_matrix("setup-tree-matrix");
     nrn_rhs(_nt);
     nrn_lhs(_nt);
 	nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 	nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
-    nrn::Instrumentor::phase_end("setup_tree_matrix");
     return nullptr;
 }
 

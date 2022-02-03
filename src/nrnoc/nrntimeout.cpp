@@ -3,6 +3,8 @@
 
 
 #if NRNMPI
+void (*nrntimeout_call)();
+
 #if defined(HAVE_SETITIMER) && defined(HAVE_SIGACTION)
 
 #include <stdio.h>
