@@ -9,15 +9,8 @@ import itertools
 from . import options
 from .rxdException import RxDException
 from . import initializer
+from collections.abc import Callable
 
-# Fix for deprecation above python 3.3
-# DeprecationWarning: Using or importing the ABCs from 'collections' instead
-# of from 'collections.abc' is deprecated since Python 3.3, and in 3.9 it will stop working
-# https://stackoverflow.com/questions/53978542/how-to-use-collections-abc-from-both-python-3-8-and-python-2-7
-try:
-    from collections.abc import Callable
-except ImportError:
-    from collections import Callable
 
 import ctypes
 import re
