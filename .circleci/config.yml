@@ -1,0 +1,58 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@0.3.2
+
+jobs:
+  manylinux2014-aarch64:
+    parameters:
+      cibw_build:
+        type: string
+
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - run:
+          name: Build manylinux AArch64 wheel
+          command: |
+            docker run --rm \
+                -w /root/nrn \
+                -v $PWD:/root/nrn \
+                -v /opt/nrnwheel/mpt:/nrnwheel/mpt \
+                -e NEURON_NIGHTLY_TAG \
+                -e NRN_NIGHTLY_UPLOAD \
+                -e NRN_RELEASE_UPLOAD \
+                -e NEURON_WHEEL_VERSION \
+                -e NRN_BUILD_FOR_UPLOAD=1 \
+                'odidev/neuron_wheel' \
+                packaging/python/build_wheels.bash linux << parameters.cibw_build >> coreneuron
+      - store_artifacts:
+          path: ./wheelhouse
+          destination: artifacts
+
+workflows:
+  main:
+    jobs:
+      - manylinux2014-aarch64:
+          matrix:
+            parameters:
+              cibw_build: ["36", "37", "38", "39", "310"]
+          filters:
+            branches:
+              only:
+                - master
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - manylinux2014-aarch64:
+          matrix:
+            parameters:
+              cibw_build: ["36", "37", "38", "39", "310"]
