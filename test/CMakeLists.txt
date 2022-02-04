@@ -229,7 +229,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/pynrn/unitstest.mod test/gjtests/natrans.mod)
+    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod test/gjtests/natrans.mod)
   # See https://github.com/BlueBrain/CoreNeuron/issues/512, this doesn't work on GPU.
   nrn_add_test(
     GROUP coreneuron_modtests
@@ -295,6 +295,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       SCRIPT_PATTERNS test/coreneuron/test_netmove.py
       COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_netmove_py
               ${modtests_launch_py} test/coreneuron/test_netmove.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME test_pointer_py_${processor}
+      REQUIRES coreneuron ${processor}
+      SCRIPT_PATTERNS test/coreneuron/test_pointer.py
+      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
+              ${modtests_launch_py} test/coreneuron/test_pointer.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_watchrange_py_${processor}
