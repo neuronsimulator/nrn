@@ -89,7 +89,6 @@ foreach(test ${spike_comparison_tests})
       # Set up a test that runs the simulation using CoreNEURON's online mode
       if(NOT "${test}" STREQUAL "patstim")
         # Exclude the patstim test from running via CoreNEURON online mode
-
         nrn_add_test(
           GROUP testcorenrn_${test}
           NAME coreneuron_${processor}_online${psolve_test_mode_suffix}
