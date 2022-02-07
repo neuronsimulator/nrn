@@ -22,7 +22,7 @@ class Cell:
 
         # uniform L and diam but somewhat random passive g and e
         for i, sec in enumerate(self.secs):
-            sec.nseg = 3 if i > 0 else 1
+            sec.nseg = int(r.discunif(3, 5)) if i > 0 else 1
             sec.L = 20 if i > 0 else 5
             sec.diam = 1 if i > 0 else 5
             sec.insert("pas")
@@ -118,13 +118,12 @@ class Model:
         self._callback_setup.ptr_update_callback(self.update_pointers)
 
     def update_pointers(self):
-        print("update_pointers")
         for cell in self.cells:
             cell.update_pointers()
 
 
 def test_axial():
-    m = Model(1, 5)
+    m = Model(5, 5)
     cvode.use_fast_imem(1)
 
     def result(m):
@@ -132,9 +131,11 @@ def test_axial():
         ia = []
         im = []
         imem = []
+        loc = []
 
         def add(cell, seg):  # for axial and AxialPP
             mech = cell.get_axial(seg)
+            loc.append((seg, mech, mech.im))
             v.append(seg.v)
             ia.append(mech.ia)
             im.append(mech.im)
@@ -148,11 +149,16 @@ def test_axial():
                 add(cell, sec(1))
 
         # im == imem
-        assert sum([abs(imem[i] - x) for i, x in enumerate(im)]) < 1e-12
-        return v, ia, im, imem
+        x = sum([abs(imem[i] - y) for i, y in enumerate(im)])
+        assert x < 1e-12
+        return v, ia, im, imem, loc
 
     def chk(std, result):
-        assert std == result
+        # cell_permute = 1 --- im and imem addition is not associative
+        # assert std == result
+        for i in [0, 1, 2, 3]:
+            x = sum([abs(std[i][j] - x) for j, x in enumerate(result[i])])
+            assert x < 1e-13
 
     def run(tstop):
         pc.set_maxstep(10)
@@ -163,13 +169,14 @@ def test_axial():
     std = run(1)
 
     cvode.cache_efficient(1)
+    chk(std, run(1))
 
     from neuron import coreneuron
 
     coreneuron.verbose = 0
+    coreneuron.enable = True
     coreneuron.cell_permute = 0
-    for coreneuron.enable in [False, True]:
-        print("coreneuron.enable = ", coreneuron.enable)
+    for coreneuron.cell_permute in [0, 1]:
         chk(std, run(1))
 
 
