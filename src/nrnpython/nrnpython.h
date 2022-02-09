@@ -17,10 +17,6 @@
 #if defined(USE_PYTHON)
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
-#if defined(__MINGW32__)
-//at least a problem with g++6.3.0
-#define _hypot hypot
-#endif
 #include <nrnwrap_Python.h>
 
 #endif /*USE_PYTHON*/
