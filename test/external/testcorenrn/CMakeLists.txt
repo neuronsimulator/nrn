@@ -49,6 +49,10 @@ function(set_psolve_test_mode_suffix psolve_test_mode)
       PARENT_SCOPE)
 endfunction()
 
+# bbcore test generated gids starting at zero, we need to enable this feature in libsonata
+# otherwise an assert fail inside libsonata-report
+set(SONATA_GIDS_ZERO "LIBSONATA_ZERO_BASED_GIDS=1")
+
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
 foreach(test ${spike_comparison_tests})
   if(DEFINED mpi_ranks_${test})
@@ -72,14 +76,6 @@ foreach(test ${spike_comparison_tests})
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
       ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
       arg_tstop=100 test${test}.hoc)
-
-  # bbcore test generated gids starting at zero, we need to enable this feature in libsonata
-  # otherwise an assert fail inside libsonata-report
-  if(NOT "${test}" STREQUAL "vecevent")
-      set(SONATA_GIDS_ZERO "LIBSONATA_ZERO_BASED_GIDS=1")
-  else()
-      set(SONATA_GIDS_ZERO "")
-  endif()
 
   # Set up tests that run the simulation using CoreNEURON. In principle we run all combinations of
   # [online, offline]*[CPU, GPU], but some of these may be disabled.
