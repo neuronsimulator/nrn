@@ -2336,13 +2336,27 @@ if(!ISARRAY(sym)) {
 	pushxm(d2);
 }
 
-void hoc_assign_str(char** cpp, const char* buf) {
-	char* s = *cpp;
-	*cpp = (char *)emalloc((unsigned)(strlen(buf) + 1));
-	Strcpy(*cpp, buf);
-	if (s) {
-		hoc_free_string(s);
+/** @brief Copy `src` to `*pdst`, reallocating if needed.
+ */
+void hoc_assign_str(char **pdst, const char *src) {
+	assert(src);
+	assert(pdst);
+	if(*pdst == src) {
+		// Note that memcpy with overlapping buffers triggers undefined behaviour.
+		// The old implementation with *pdst == src would have left *pdst pointing
+		// to a valid string and buf pointing to a freed one.
+    return;
+  }
+	size_t src_size = strlen(src) + 1;
+  size_t dst_size = *pdst ? (strlen(*pdst) + 1) : 0;
+  if(dst_size < src_size) {
+		// *pdst is not big enough to copy buf into, need to reallocate it
+		if(*pdst) {
+			hoc_free_string(*pdst);
+		}
+		*pdst = (char*)emalloc(src_size);
 	}
+	memcpy(*pdst, src, src_size);
 }
 
 void assstr(void) {	/* assign string on top to stack - 1 */
