@@ -433,6 +433,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
 # =============================================================================
 add_subdirectory(coreneuron)
 
+if(CORENRN_ENABLE_GPU)
+  get_target_property(CORENRN_LINK_LIBRARIES coreneuron INTERFACE_LINK_LIBRARIES)
+  foreach(LIB ${CORENRN_LINK_LIBRARIES})
+    set_property(GLOBAL APPEND_STRING PROPERTY CORENEURON_LIB_LINK_FLAGS " ${LIB}")
+  endforeach()
+endif()
+
 include(MakefileBuildOptions)
 add_subdirectory(extra)
 
