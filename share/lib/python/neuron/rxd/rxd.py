@@ -673,25 +673,7 @@ def _setup_matrices():
 
         n = len(_node_get_states())
 
-        # TODO: Replace with ADI version
-        """
-        if species._has_3d:
-            _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
-    
-            for sr in list(_species_get_all_species().values()):
-                s = sr()
-                if s is not None: s._setup_matrices3d(_euler_matrix)
-    
-            _diffusion_matrix = -_euler_matrix
-    
-            _euler_matrix = _euler_matrix.tocsr()
-            _update_node_data(True)
-    
-            # NOTE: if we also have 1D, this will be replaced with the correct values below
-            _zero_volume_indices = []
-            _nonzero_volume_indices = list(range(len(_node_get_states())))
-            
-        """
+        
         volumes = node._get_data()[0]
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
@@ -743,8 +725,7 @@ def _setup_matrices():
 
                 # _cvode_object.re_init()
 
-                # if species._has_3d:
-                #    _euler_matrix = -_diffusion_matrix
+
 
         # Hybrid logic
         if species._has_1d and species._has_3d:

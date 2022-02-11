@@ -124,18 +124,10 @@ double ncs_netcon_localmindelay( int srcgid )
 //get the number of netcons for an object, if it sends here
 int ncs_netcon_count( int srcgid, bool localNetCons )
 {
-    PreSyn *ps{nullptr};
-    if( localNetCons ) {
-        auto iter = gid2out_.find(srcgid);
-        if (iter != gid2out_.end()) {
-            ps = iter->second;
-        }
-    }else{
-        auto iter = gid2in_.find(srcgid);
-        if (iter != gid2in_.end()) {
-            ps = iter->second;
-        }
-    }
+    const auto& map = localNetCons ? gid2out_ : gid2in_;
+    const auto& iter = map.find(srcgid);
+    PreSyn* ps{iter != map.end() ? iter->second : nullptr};
+
     if( !ps ) {  //no cells on this cpu receive from the given gid
         fprintf( stderr, "should never happen!\n" );
         return 0;
@@ -147,19 +139,10 @@ int ncs_netcon_count( int srcgid, bool localNetCons )
 //inject a spike into the appropriate netcon
 void ncs_netcon_inject( int srcgid, int netconIndex, double spikeTime, bool localNetCons )
 {
-    PreSyn *ps;
     NetCvode* ns = net_cvode_instance;
-    if( localNetCons ) {
-        auto iter = gid2out_.find(srcgid);   
-        if (iter != gid2out_.end()) {
-            ps = iter->second;
-        }
-    }else{
-        auto iter = gid2in_.find(srcgid);
-        if (iter != gid2in_.end()) {
-            ps = iter->second;
-        }
-    }
+    const auto& map = localNetCons ? gid2out_ : gid2in_;
+    const auto& iter = map.find(srcgid);
+    PreSyn* ps{iter != map.end() ? iter->second : nullptr};
     if( !ps ) {  //no cells on this cpu receive from the given gid
         return;
     }
@@ -194,7 +177,7 @@ int ncs_target_hosts( int gid, int** targetnodes ) {
 // for compressed gid info during spike exchange
 bool nrn_use_localgid_;
 void nrn_outputevent(unsigned char localgid, double firetime);
-static Gid2PreSyn** localmaps_;
+static std::vector<std::unique_ptr<Gid2PreSyn>> localmaps_;
 
 #define NRNSTAT 1
 static int nsend_, nsendmax_, nrecv_, nrecv_useful_;
@@ -717,7 +700,7 @@ void nrn_spike_exchange_compressed(NrnThread* nt) {
 			}
 			continue;
 		}
-		Gid2PreSyn* gps = localmaps_[i];
+		Gid2PreSyn* gps = localmaps_[i].get();
 		if (nn > ag_send_nspike_) {
 			nnn = ag_send_nspike_;
 		}else{
@@ -839,10 +822,11 @@ static void mk_localgid_rep() {
 	// create the maps
 	// there is a lot of potential for efficiency here. i.e. use of
 	// perfect hash functions, or even simple Vectors.
-	localmaps_ = new Gid2PreSyn*[nrnmpi_numprocs];
-	localmaps_[nrnmpi_myid] = 0;
+	localmaps_.clear();
+	localmaps_.resize(nrnmpi_numprocs);
+
 	for (int i = 0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
-		localmaps_[i] = new Gid2PreSyn();
+		localmaps_[i].reset(new Gid2PreSyn());
 	}
 
 	// fill in the maps
@@ -984,7 +968,7 @@ void nrnmpi_gid_clear(int arg) {
 #endif
 			ps->gid_ = -1;
 			ps->output_index_ = -1;
-			if (ps->dil_.count() == 0) {
+			if (ps->dil_.empty()) {
 				delete ps;
 			}
 		    }
@@ -1000,7 +984,7 @@ void nrnmpi_gid_clear(int arg) {
 #endif
 		ps->gid_ = -1;
 		ps->output_index_ = -1;
-		if (ps->dil_.count() == 0) {
+		if (ps->dil_.empty()) {
 			delete ps;
 		}
 	    }
@@ -1462,13 +1446,7 @@ int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth) {
 		if (spfixout_) { free(spfixout_); spfixout_ = 0; }
 		if (spfixin_) { free(spfixin_); spfixin_ = 0; }
 		if (spfixin_ovfl_) { free(spfixin_ovfl_); spfixin_ovfl_ = 0; }
-		if (localmaps_) {
-			for (int i=0; i < nrnmpi_numprocs; ++i) if (i != nrnmpi_myid) {
-				if (localmaps_[i]) { delete localmaps_[i]; }
-			}
-			delete [] localmaps_;
-			localmaps_ = 0;
-		}
+		localmaps_.clear();
 	}
 	if (nspike == 0) { // turn off
 		use_compress_ = false;
@@ -1556,11 +1534,11 @@ size_t npnt = 0;
     PreSyn* ps = iter.second;
     if (ps) {
       nout += 1;
-      int n = ps->dil_.count();
+      int n = ps->dil_.size();
       nnet += n;
       for (int i=0; i < n; ++i) {
-        nweight += weightcnt(ps->dil_.item(i));
-        NetCon* nc = ps->dil_.item(i);
+        nweight += weightcnt(ps->dil_[i]);
+        NetCon* nc = ps->dil_[i];
         if (nc->target_) { npnt += 1; }
       }
     }
@@ -1570,11 +1548,11 @@ size_t npnt = 0;
     PreSyn* ps = iter.second;
     if (ps) {
       nin += 1;
-      int n = ps->dil_.count();
+      int n = ps->dil_.size();
       nnet += n;
       for (int i=0; i < n; ++i) {
-        nweight += weightcnt(ps->dil_.item(i));
-        NetCon* nc = ps->dil_.item(i);
+        nweight += weightcnt(ps->dil_[i]);
+        NetCon* nc = ps->dil_[i];
         if (nc->target_) { npnt += 1; }
       }
     }

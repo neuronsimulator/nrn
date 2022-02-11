@@ -556,10 +556,10 @@ int check_tables_threads(List* p) {
 	Item* q;
 	if (check_table_thread_list) {
 		ITERATE(q, check_table_thread_list) {
-			sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, _NrnThread*);", STR(q));
+			sprintf(buf, "\nstatic void %s(double*, Datum*, Datum*, NrnThread*);", STR(q));
 			lappendstr(p, buf);
 		}
-		lappendstr(p, "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, int _type) {\n");
+		lappendstr(p, "\nstatic void _check_table_thread(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, int _type) {\n");
 		ITERATE(q, check_table_thread_list) {
 			sprintf(buf, "  %s(_p, _ppvar, _thread, _nt);\n", STR(q));
 			lappendstr(p, buf);
@@ -662,7 +662,7 @@ diag("FUNCTION or PROCEDURE containing a TABLE stmt\n",
 	vectorize_substitute(q, "");
 	Sprintf(buf, "static void _check_%s() {\n", fname);
 	q = lappendstr(procfunc, buf);
-	Sprintf(buf, "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n", fname);
+	Sprintf(buf, "static void _check_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n", fname);
 	vectorize_substitute(q, buf);
 	Lappendstr(procfunc, " static int _maktable=1; int _i, _j, _ix = 0;\n");
 	Lappendstr(procfunc, " double _xi, _tmax;\n");
@@ -758,7 +758,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 			fname, arg->name);
 	Lappendstr(procfunc, buf);		
 #if VECTORIZE
-	Sprintf(buf, "%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double %s) {",
+	Sprintf(buf, "%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s) {",
 		fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
@@ -793,7 +793,7 @@ Sprintf(buf, "   _t_%s[_i] = %s;\n", s->name, s->name);
 			fname, arg->name);
 	Lappendstr(procfunc, buf);		
 #if VECTORIZE
-	Sprintf(buf, "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double %s){",
+	Sprintf(buf, "_n_%s(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double %s){",
 		fname, arg->name);
 	vectorize_substitute(procfunc->prev, buf);
 #endif
@@ -937,14 +937,14 @@ void hocfunchack(Symbol* n, Item* qpar1, Item* qpar2, int hack)
    }
 	Lappendstr(procfunc, buf);
 	vectorize_substitute(lappendstr(procfunc, ""), "\
-  double* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;\n\
+  double* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\
 ");
 	if (point_process) {
 		vectorize_substitute(lappendstr(procfunc, "  _hoc_setdata(_vptr);\n"), "\
   _p = ((Point_process*)_vptr)->_prop->param;\n\
   _ppvar = ((Point_process*)_vptr)->_prop->dparam;\n\
   _thread = _extcall_thread;\n\
-  _nt = (_NrnThread*)((Point_process*)_vptr)->_vnt;\n\
+  _nt = (NrnThread*)((Point_process*)_vptr)->_vnt;\n\
 ");
 	}else{
 		vectorize_substitute(lappendstr(procfunc, ""), "\
@@ -1141,10 +1141,10 @@ void watchstmt(Item* par1, Item* dir, Item* par2, Item* flag, int blocktype )
 	if (blocktype != NETRECEIVE) {
 		diag("\"WATCH\" statement only allowed in NET_RECEIVE block", (char*)0);
 	}
-	sprintf(buf, "\nstatic double _watch%d_cond(_pnt) Point_process* _pnt; {\n",
+	sprintf(buf, "\nstatic double _watch%d_cond(Point_process* _pnt) {\n",
 		watch_seen_);
 	lappendstr(procfunc, buf);
-	vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; _NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (_NrnThread*)_pnt->_vnt;\n");
+	vectorize_substitute(lappendstr(procfunc, ""),(char*)"\tdouble* _p; Datum* _ppvar; Datum* _thread; NrnThread* _nt;\n\t_thread= (Datum*)0; _nt = (NrnThread*)_pnt->_vnt;\n");
 	sprintf(buf, "\t_p = _pnt->_prop->param; _ppvar = _pnt->_prop->dparam;\n\tv = NODEV(_pnt->node);\n	return ");
 	lappendstr(procfunc, buf);
 	movelist(par1, par2, procfunc);

@@ -1,11 +1,12 @@
-.. _nfunc:
+
+.. _hoc_nfunc:
 
 Miscellaneous Menus
 -------------------
 
 
 
-.. function:: nrnglobalmechmenu
+.. hoc:function:: nrnglobalmechmenu
 
 
     Syntax:
@@ -27,15 +28,15 @@ Miscellaneous Menus
 
 
 
-.. function:: nrnmechmenu
+.. hoc:function:: nrnmechmenu
 
-        vestigial. does nothing. taken over by :func:`nrnsecmenu` 
+        vestigial. does nothing. taken over by :hoc:func:`nrnsecmenu`
 
 ----
 
 
 
-.. function:: nrnpointmenu
+.. hoc:function:: nrnpointmenu
 
          
 
@@ -62,7 +63,7 @@ Miscellaneous Menus
 
 
 
-.. function:: nrnsecmenu
+.. hoc:function:: nrnsecmenu
 
 
     Syntax:

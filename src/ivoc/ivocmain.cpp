@@ -163,7 +163,7 @@ static OptionDesc options[] = {
 #if defined(USE_PYTHON)
 	int nrn_nopython;
 	extern int use_python_interpreter;
-	extern void (*p_nrnpython_start)(int);
+	extern int (*p_nrnpython_start)(int);
 	char* nrnpy_pyexe;
 #endif
 
@@ -856,7 +856,11 @@ PR_PROFILE
 #if defined(USE_PYTHON)
 	if (use_python_interpreter) {
 		// process the .py files and an interactive interpreter
-		if (p_nrnpython_start) {(*p_nrnpython_start)(2);}
+		if (p_nrnpython_start && (*p_nrnpython_start)(2) != 0) {
+			// We encountered an error when processing the -c argument or Python
+			// script given on the commandline.
+			exit_status = 1;
+		}
 	}
 	if (p_nrnpython_start) { (*p_nrnpython_start)(0); }
 #endif

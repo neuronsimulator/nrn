@@ -7,8 +7,9 @@
 #include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
-#include <nrnhash.h>
 #include <multisplit.h>
+#include <unordered_map>
+#include <memory>
 
 void nrnmpi_multisplit(Section*, double x, int sid, int backbone_style);
 int nrn_multisplit_active_;
@@ -201,8 +202,7 @@ struct Area2RT {
 	MultiSplit* ms; // for recalculating pd pointers after v_setup
 };
 
-declareNrnHash(Int2IntTable, int, int)
-implementNrnHash(Int2IntTable, int, int)
+using Int2IntTable = std::unordered_map< int, int>;
 
 // d and rhs keep getting reorderd according to thread cache efficiency
 // so we need to retain some logical info in order to update the
@@ -245,7 +245,7 @@ public:
 	double* v; // needed for nocap when cvode used
 
 	void reorder(int j, int nt, int* mark, int* all_bb_relation, int* allsid);
-	Int2IntTable* s2rt; // sid2rank table
+	std::unique_ptr<Int2IntTable> s2rt{new Int2IntTable()}; // sid2rank table
 	void fillrmap(int sid1, int sid2, double* pd);
 	void fillsmap(int sid, double* prhs, double* pdiag);
 	void pr_map(int, double*);
@@ -297,8 +297,7 @@ struct MultiSplitTransferInfo {
 	int rthost_; // host id where the reduced tree is located (normally -1)
 };
 
-declareNrnHash(MultiSplitTable, Node*, MultiSplit*)
-implementNrnHash(MultiSplitTable, Node*, MultiSplit*)
+using MultiSplitTable = std::unordered_map< Node*, MultiSplit*>;
 declarePtrList(MultiSplitList, MultiSplit)
 implementPtrList(MultiSplitList, MultiSplit)
 
@@ -334,7 +333,6 @@ MultiSplitControl::MultiSplitControl() {
 	nrtree_ = 0;
 	rtree_ = 0;
 
-	classical_root_to_multisplit_ = 0;
 
 	multisplit_list_ = 0;
 	nth_ = 0;
@@ -380,7 +378,8 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 		hoc_execerror("only backbone_style 2 is now supported", 0);
 	}
 	if (!classical_root_to_multisplit_) {
-		classical_root_to_multisplit_ = new MultiSplitTable(97);
+		classical_root_to_multisplit_.reset(new MultiSplitTable());
+		classical_root_to_multisplit_->reserve(97);
 		multisplit_list_ = new MultiSplitList();
 	}
 	Node* nd = node_exact(sec, x);
@@ -393,8 +392,10 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
 	assert(root);
 //	printf("is %s\n", secname(root->sec));
 	MultiSplit* ms;
-	if (classical_root_to_multisplit_->find(root, ms)) {
-		if (backbone_style == 2) {
+	const auto& msiter = classical_root_to_multisplit_->find(root);
+	if (msiter != classical_root_to_multisplit_->end()) {
+		ms = msiter->second;
+	    if (backbone_style == 2) {
 			if(ms->backbone_style != 2) {
 hoc_execerror("earlier call for this cell did not have a backbone style = 2", 0);
 			}
@@ -519,12 +520,11 @@ void MultiSplitControl::multisplit_clear() {
 	del_msti();
 	if (classical_root_to_multisplit_) {
 		MultiSplit* ms;
-		NrnHashIterate(MultiSplitTable, classical_root_to_multisplit_, MultiSplit*, ms) {
-			delete ms;
-		}}}
-		delete classical_root_to_multisplit_;
+		for(const auto& mspair : *classical_root_to_multisplit_) {
+		    delete mspair.second;
+        }
+		classical_root_to_multisplit_.reset();
 		delete multisplit_list_;
-		classical_root_to_multisplit_ = 0;
 		multisplit_list_ = 0;
 	}
 }
@@ -886,13 +886,15 @@ bb_relation[j], rthost[j]);
 		for (j=0; j < n; ++j) {
 			if (rthost[j] == nrnmpi_myid) {
 				// sid to rank table
-				Int2IntTable* s2rt = new Int2IntTable(20);
-				int rank = 0; int mapsize = 0; int r;
+				std::unique_ptr<Int2IntTable> s2rt{new Int2IntTable()};
+				s2rt->reserve(20);
+				int rank = 0; int mapsize = 0;
 				for (k=0; k < nt; ++k) {
 					if (mark[k] == j && all_bb_relation[k] >= 2) {
-						if (!s2rt->find(allsid[k], r)) {
-							(*s2rt)[allsid[k]] = rank++;
-						}
+                        const auto& result = s2rt->insert({allsid[k], rank});
+                        if (result.second) {
+                            rank++;
+                        }
 						if (all_bb_relation[k] == 2) {
 							mapsize += 2;
 						}else{
@@ -907,7 +909,7 @@ bb_relation[j], rthost[j]);
 	// (in fact we do not even know if it is a tree)
 	// so reorder. For a tree, we know there must be ReducedTree.n - 1
 	// edges.
-				rtree_[i]->s2rt = s2rt;
+				rtree_[i]->s2rt = std::move(s2rt);
 				rtree_[i]->reorder(j, nt, mark, all_bb_relation, allsid);
 				++i;
 			}
@@ -2436,7 +2438,6 @@ ReducedTree::ReducedTree(MultiSplitControl* ms, int rank, int mapsize) {
 	nzindex = new int[n];
 	rmap2smap_index = new int[nmap];
 	v = new double[n];
-	s2rt = 0;
 	nsmap = 0;
 	irfill = 0;
 	for (i = 0; i < nmap; ++i) {
@@ -2459,7 +2460,6 @@ ReducedTree::~ReducedTree() {
 	delete [] nzindex;
 	delete [] v;
 	delete [] rmap2smap_index;
-	if (s2rt) { delete s2rt; }
 }
 
 void ReducedTree::nocap() {
@@ -2631,9 +2631,13 @@ void ReducedTree::reorder(int j, int nt, int* mark, int* allbbr, int* allsid) {
 		if (mark[i] == j && allbbr[i] > 2 && allsid[i] < allbbr[i]-3) {
 //printf("i=%d ie=%d ne=%d mark=%d allsid=%d allbbr=%d\n", i, ie, ne, mark[i], allsid[i], allbbr[i]-3);
 			assert(ie < ne);
-			nrn_assert(s2rt->find(allsid[i], e1[ie]));
+			const auto& e1ieiter = s2rt->find(allsid[i]);
+			nrn_assert(e1ieiter != s2rt->end());
+            e1[ie] = e1ieiter->second;
 			sid[e1[ie]]= allsid[i];
-			nrn_assert(s2rt->find(allbbr[i]-3, e2[ie]));
+            const auto& e2ieiter = s2rt->find(allbbr[i]-3);
+			nrn_assert(e2ieiter != s2rt->end());
+            e2[ie] = e2ieiter->second;
 			sid[e2[ie]] = allbbr[i]-3;
 			++ie;
 		}
@@ -2689,15 +2693,20 @@ void ReducedTree::reorder(int j, int nt, int* mark, int* allbbr, int* allsid) {
 }
 
 void ReducedTree::fillrmap(int sid1, int sid2, double* pd) {
-	int i, j;
-	nrn_assert(s2rt->find(sid1, i));
+    const auto& sid1_iter = s2rt->find(sid1);
+    nrn_assert(sid1_iter != s2rt->end());
+    const int i = sid1_iter->second;
+    int j;
+
 	// type order is RHS, D, A, B
 	if (sid2 < 0) { // RHS
 		j = i;
 	}else if (sid2 == sid1) { // D
 		j = i + n;
 	}else{ // A or B?
-		nrn_assert(s2rt->find(sid2, j));
+        const auto& sid2_iter = s2rt->find(sid2);
+        nrn_assert(sid2_iter != s2rt->end());
+        j = sid2_iter->second;
 		if (ip[i] == j) { // A
 			j = i + 2*n;
 		}else if (ip[j] == i) { // B
@@ -2717,8 +2726,10 @@ void ReducedTree::fillrmap(int sid1, int sid2, double* pd) {
 }
 
 void ReducedTree::fillsmap(int sid, double* prhs, double* pd) {
-	int i;
-	nrn_assert(s2rt->find(sid, i));
+    const auto& sid_iter = s2rt->find(sid);
+    nrn_assert(sid_iter != s2rt->end());
+    const int i = sid_iter->second;
+
 //printf("%d fillsmap sid=%d i=%d nsmap=%d\n", nrnmpi_myid, sid, i, nsmap);
 	ismap[nsmap] = i;
 	smap[nsmap] = prhs;
@@ -2986,7 +2997,7 @@ void MultiSplitThread::v_setup(NrnThread* nt) {
 	i3 = nt->end;
 	int nnode = i3 - i1;
 	
-	MultiSplitTable* classical_root_to_multisplit_ = msc_->classical_root_to_multisplit_;
+	MultiSplitTable* classical_root_to_multisplit_ = msc_->classical_root_to_multisplit_.get();
 	MultiSplitList* multisplit_list_ = msc_->multisplit_list_;
 
 	// node vs v_node relation is always with an i1 offset
@@ -3054,26 +3065,28 @@ for (i=i1; i < i3; ++i) {
 	// reorder the trees so sid0 is the root, at least with respect to v_parent
 	for (i = i1; i < i2; ++i) {
 		Node* oldroot = nt->_v_node[i];
-		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find(oldroot, ms)) {
-			nd = ms->nd[0];
-			if (nd == oldroot) { // the cell tree is fine
-				// the way it is (the usual case)
-				nt->_v_parent[nd->v_node_index] = 0;
-			}else{
-				// need to reverse the parent/child relationship
-				// on the path from nd to oldroot
-				in = nd->v_node_index;
-				nd = 0;
-				while (in > i) {
-					ip = nt->_v_parent[in]->v_node_index;
-					nt->_v_parent[in] = nd;
-					nd = nt->_v_node[in];
-					in = ip;
-				}
-				nt->_v_parent[in] = nd;
-			}
-		}
+        if (classical_root_to_multisplit_) {
+            const auto& msiter = classical_root_to_multisplit_->find(oldroot);
+            if (msiter != classical_root_to_multisplit_->end()) {
+                nd = msiter->second->nd[0];
+                if (nd == oldroot) { // the cell tree is fine
+                    // the way it is (the usual case)
+                    nt->_v_parent[nd->v_node_index] = 0;
+                } else {
+                    // need to reverse the parent/child relationship
+                    // on the path from nd to oldroot
+                    in = nd->v_node_index;
+                    nd = 0;
+                    while (in > i) {
+                        ip = nt->_v_parent[in]->v_node_index;
+                        nt->_v_parent[in] = nd;
+                        nd = nt->_v_node[in];
+                        in = ip;
+                    }
+                    nt->_v_parent[in] = nd;
+                }
+            }
+        }
 	}
 
 	// Now the only problem is that assert(v_parent[i] < v_node[i])
@@ -3099,8 +3112,8 @@ for (i=i1; i < i3; ++i) {
 	ibs = backbone_begin;
 	for (i = i1; i < i2; ++i) {
 		nd = nt->_v_node[i];
-		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find(nd, ms)) {
+		if(classical_root_to_multisplit_ && classical_root_to_multisplit_->find(nd) != classical_root_to_multisplit_->end()) {
+            MultiSplit* ms = classical_root_to_multisplit_->operator[](nd);
 			if (ms->nd[1]) {
 				ib = ms->backbone_style >= 1 ? ibs : ibl;
 				node[ib-i1] = ms->nd[0];
@@ -3159,41 +3172,45 @@ for (i=i1; i < i3; ++i) {
 	int ibrt = 0;
 	for (i = i1; i < i2; ++i) {
 		nd = nt->_v_node[i];
-		MultiSplit* ms;
-		if (classical_root_to_multisplit_->find(nd, ms)) {
-			ms->ithread = nt->id;
-			if (ms->nd[1]) {
-				if (ms->backbone_style >= 1) {
-					is0 = iss0++;
-					is1 = iss1++;
-				}else{
-					is0 = isl0++;
-					is1 = isl1++;
-				}
-				i0 = ms->nd[0]->v_node_index;
-				ii = ms->nd[1]->v_node_index;
-				node[is1-i1] = ms->nd[1];
-				parent[is1-i1] = nt->_v_parent[ii];
-				ii = nt->_v_parent[ii]->v_node_index;
-				while(i0 != ii) {
-					--ib;
-					node[ib-i1] = nt->_v_node[ii];
-					parent[ib-i1] = nt->_v_parent[ii];
-//printf("sid0i[%d] = %d\n", ib-backbone_begin, is0);
-					sid0i[ib-backbone_begin] = is0;
-					ii = nt->_v_parent[ii]->v_node_index;
-				}
-				if (ms->backbone_style == 2) {
-					backsid_[ibrt] = ms->sid[0];
-					ms->back_index = ibrt;
-					backAindex_[ibrt] = is0 - backbone_begin;
-					backBindex_[ibrt] = is1 - backbone_begin;
-//printf("backAindex[%d] = %d sid=%d Bindex=%d\n",
-//ibrt, backAindex_[ibrt], backsid_[ibrt], backBindex_[ibrt]);
-					++ibrt;
-				}
-			}
-		}
+		if(classical_root_to_multisplit_) {
+            MultiSplit * ms;
+            const auto &msiter = classical_root_to_multisplit_->find(nd);
+            if (msiter != classical_root_to_multisplit_->end()) {
+                ms = msiter->second;
+                ms->ithread = nt->id;
+                if (ms->nd[1]) {
+                    if (ms->backbone_style >= 1) {
+                        is0 = iss0++;
+                        is1 = iss1++;
+                    } else {
+                        is0 = isl0++;
+                        is1 = isl1++;
+                    }
+                    i0 = ms->nd[0]->v_node_index;
+                    ii = ms->nd[1]->v_node_index;
+                    node[is1 - i1] = ms->nd[1];
+                    parent[is1 - i1] = nt->_v_parent[ii];
+                    ii = nt->_v_parent[ii]->v_node_index;
+                    while (i0 != ii) {
+                        --ib;
+                        node[ib - i1] = nt->_v_node[ii];
+                        parent[ib - i1] = nt->_v_parent[ii];
+                        //printf("sid0i[%d] = %d\n", ib-backbone_begin, is0);
+                        sid0i[ib - backbone_begin] = is0;
+                        ii = nt->_v_parent[ii]->v_node_index;
+                    }
+                    if (ms->backbone_style == 2) {
+                        backsid_[ibrt] = ms->sid[0];
+                        ms->back_index = ibrt;
+                        backAindex_[ibrt] = is0 - backbone_begin;
+                        backBindex_[ibrt] = is1 - backbone_begin;
+                        //printf("backAindex[%d] = %d sid=%d Bindex=%d\n",
+                        //ibrt, backAindex_[ibrt], backsid_[ibrt], backBindex_[ibrt]);
+                        ++ibrt;
+                    }
+                }
+            }
+        }
 	}
 //printf("backbone order complete\n");
 

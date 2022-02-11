@@ -1,6 +1,5 @@
 import distutils.util
 import os
-import sys
 
 # Hacky, but it's non-trivial to pass commandline arguments to pytest tests.
 enable_gpu = bool(
@@ -31,10 +30,6 @@ elif nrnmpi_init_option:
 # otherwise serial execution
 else:
     from neuron import h, gui
-
-import pytest
-import sys
-import traceback
 
 
 def test_spikes(
@@ -142,12 +137,7 @@ def test_spikes(
 
 
 if __name__ == "__main__":
-    try:
-        h = test_spikes()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    h = test_spikes()
     if mpi4py_option or nrnmpi_init_option:
         pc = h.ParallelContext()
         pc.barrier()

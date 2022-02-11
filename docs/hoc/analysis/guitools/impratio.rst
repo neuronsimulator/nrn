@@ -1,4 +1,5 @@
-.. _impratio:
+
+.. _hoc_impratio:
 
 
 ImpedanceRatio
@@ -19,7 +20,7 @@ input impedance, transfer impedance, or ``V(measure)/V(inject)``.
 Input impedance is plotted with 
 respect to the measurement site and the injection site is unused. 
  
-This tool uses the :class:`Impedance` 
+This tool uses the :hoc:class:`Impedance`
 class to calculate voltage attenuations. 
      
 

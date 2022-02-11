@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Signing the package with an identified developer certificate means the
 # installer does not have to lower the security settings on their machine.

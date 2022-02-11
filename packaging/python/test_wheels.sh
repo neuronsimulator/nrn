@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # A simple set of tests checking if a wheel is working correctly
 set -xe
 

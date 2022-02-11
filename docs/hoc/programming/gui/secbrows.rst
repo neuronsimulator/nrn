@@ -1,11 +1,12 @@
-.. _secbrows:
+
+.. _hoc_secbrows:
 
 SectionBrowser
 --------------
 
 
 
-.. class:: SectionBrowser
+.. hoc:class:: SectionBrowser
 
 
     Syntax:
@@ -20,7 +21,7 @@ SectionBrowser
         section names are shown in the browser. 
 
     .. seealso::
-        :class:`SectionList`, :ref:`stdrun_shape`
+        :hoc:class:`SectionList`, :ref:`hoc_stdrun_shape`
 
          
 
@@ -28,7 +29,7 @@ SectionBrowser
 
 
 
-.. method:: SectionBrowser.select
+.. hoc:method:: SectionBrowser.select
 
 
     Syntax:
@@ -44,7 +45,7 @@ SectionBrowser
 
 
 
-.. method:: SectionBrowser.select_action
+.. hoc:method:: SectionBrowser.select_action
 
 
     Syntax:
@@ -84,7 +85,7 @@ SectionBrowser
 
 
 
-.. method:: SectionBrowser.accept_action
+.. hoc:method:: SectionBrowser.accept_action
 
 
     Syntax:

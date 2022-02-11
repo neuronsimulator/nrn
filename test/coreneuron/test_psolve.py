@@ -1,7 +1,5 @@
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h, gui
 
@@ -117,13 +115,8 @@ def test_NetStim_noise():
 
 
 if __name__ == "__main__":
-    try:
-        test_psolve()
-        test_NetStim_noise()
-        for i in range(0):
-            test_NetStim_noise()  # for checking memory leak
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_psolve()
+    test_NetStim_noise()
+    for i in range(0):
+        test_NetStim_noise()  # for checking memory leak
     h.quit()

@@ -182,7 +182,7 @@ def rmfiles():
 
 def cp_out_to_in():
     out2in_sh = r"""
-#!/bin/bash
+#!/usr/bin/env bash
 out=bbss_out
 rm -r -f in
 mkdir in

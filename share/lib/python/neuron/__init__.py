@@ -632,15 +632,15 @@ def nrn_dll(printpath=False):
         be used with care.
     """
     import ctypes
-    import os
-    import platform
     import glob
+    import os
+    import sys
 
     try:
         # extended? if there is a __file__, then use that
         if printpath:
             print("hoc.__file__ %s" % _original_hoc_file)
-        the_dll = ctypes.cdll[_original_hoc_file]
+        the_dll = ctypes.pydll[_original_hoc_file]
         return the_dll
     except:
         pass
@@ -657,7 +657,7 @@ def nrn_dll(printpath=False):
         dlls = glob.glob(base_path + "*.*")
         for dll in dlls:
             try:
-                the_dll = ctypes.cdll[dll]
+                the_dll = ctypes.pydll[dll]
                 if printpath:
                     print(dll)
                 return the_dll
@@ -672,7 +672,7 @@ def nrn_dll(printpath=False):
         dlls = glob.glob(base_path + "*" + extension)
         for dll in dlls:
             try:
-                the_dll = ctypes.cdll[dll]
+                the_dll = ctypes.pydll[dll]
                 if printpath:
                     print(dll)
                 success = True

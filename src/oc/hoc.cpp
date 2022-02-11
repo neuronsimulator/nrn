@@ -32,7 +32,7 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_start)(int);
+int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
@@ -59,7 +59,7 @@ extern int stdin_event_ready();
 #endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
-int matherr1(void) {
+static void matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:

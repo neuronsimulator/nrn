@@ -1,4 +1,5 @@
-.. _vect:
+
+.. _hoc_vect:
 
          
 Vector
@@ -6,7 +7,7 @@ Vector
 
 
 
-.. class:: Vector
+.. hoc:class:: Vector
 
          
     This class was implemented by 
@@ -139,8 +140,8 @@ Vector
          
 
     .. seealso::
-        :ref:`double <keyword_double>`,	:data:`Vector.x`, :meth:`Vector.resize`,
-        :meth:`Vector.apply`
+        :ref:`double <hoc_keyword_double>`,	:hoc:data:`Vector.x`, :hoc:meth:`Vector.resize`,
+        :hoc:meth:`Vector.apply`
 
          
 
@@ -148,7 +149,7 @@ Vector
 
 
 
-.. data:: Vector.x
+.. hoc:data:: Vector.x
 
 
     Syntax:
@@ -183,7 +184,7 @@ Vector
             xpvalue("last element", &vec.x[vec.size() - 1]) 
             xpanel() 
 
-        Note, however, that there is a potential difficulty with the :func:`xpvalue` field 
+        Note, however, that there is a potential difficulty with the :hoc:func:`xpvalue` field
         editor since, if vec is ever resized, then the pointer will be invalid. In 
         this case, the field editor will display the string, "Free'd". 
 
@@ -199,7 +200,7 @@ Vector
 
 
 
-.. method:: Vector.size
+.. hoc:method:: Vector.size
 
 
     Syntax:
@@ -220,7 +221,7 @@ Vector
         freed and reallocated if the size needed is greater than the memory storage 
         previously allocated to the vector. Thus the memory used by vectors 
         tends to grow but not shrink. To reduce the memory used by a vector, one 
-        can explicitly call :func:`buffer_size` . 
+        can explicitly call :hoc:func:`buffer_size` .
 
          
 
@@ -228,7 +229,7 @@ Vector
 
 
 
-.. method:: Vector.resize
+.. hoc:method:: Vector.resize
 
 
     Syntax:
@@ -243,7 +244,7 @@ Vector
         Warning: Any function that 
         resizes the vector to a larger size than its available space 
         will make existing pointers to the elements invalid 
-        (see note in :meth:`Vector.size`). 
+        (see note in :hoc:meth:`Vector.size`).
         For example, resizing vectors that have been plotted will remove that vector 
         from the plot list. Other functions may not be so forgiving and result in 
         a memory error (segmentation violation or unhandled exception). 
@@ -268,7 +269,7 @@ Vector
         10 elements are unchanged. 
 
     .. seealso::
-        :meth:`Vector.buffer_size`
+        :hoc:meth:`Vector.buffer_size`
 
          
 
@@ -276,7 +277,7 @@ Vector
 
 
 
-.. method:: Vector.buffer_size
+.. hoc:method:: Vector.buffer_size
 
 
     Syntax:
@@ -321,7 +322,7 @@ Vector
 
 
 
-.. method:: Vector.get
+.. hoc:method:: Vector.get
 
 
     Syntax:
@@ -339,7 +340,7 @@ Vector
 
 
 
-.. method:: Vector.set
+.. hoc:method:: Vector.set
 
 
     Syntax:
@@ -358,7 +359,7 @@ Vector
 
 
 
-.. method:: Vector.fill
+.. hoc:method:: Vector.fill
 
 
     Syntax:
@@ -386,7 +387,7 @@ Vector
         (a total of 6 elements) 
 
     .. seealso::
-        :meth:`Vector.indgen`, :meth:`Vector.append`
+        :hoc:meth:`Vector.indgen`, :hoc:meth:`Vector.append`
 
          
 
@@ -394,7 +395,7 @@ Vector
 
 
 
-.. method:: Vector.label
+.. hoc:method:: Vector.label
 
 
     Syntax:
@@ -408,7 +409,7 @@ Vector
     Description:
         Label the vector with a string. 
         The return value is the label, which is an empty string if there is no label. 
-        Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
+        Labels are printed on a Graph when the :hoc:meth:`Graph.plot` method is called.
 
     Example:
 
@@ -423,14 +424,14 @@ Vector
 
 
     .. seealso::
-        :meth:`Graph.family`, :meth:`Graph.beginline`
+        :hoc:meth:`Graph.family`, :hoc:meth:`Graph.beginline`
 
 
 ----
 
 
 
-.. method:: Vector.record
+.. hoc:method:: Vector.record
 
 
     Syntax:
@@ -472,8 +473,8 @@ Vector
  
         In the third form, ``t = tvec.x[index]``. 
          
-        For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
-        threads, :meth:`ParallelContext.nthread` , it is 
+        For the local variable timestep method, :hoc:meth:`CVode.use_local_dt` and/or multiple
+        threads, :hoc:meth:`ParallelContext.nthread` , it is
         often helpful to provide specific information about which cell the 
         *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
         object which is located on the cell. This is necessary if the pointer is not 
@@ -483,8 +484,8 @@ Vector
         a good idea to supply it if possible. 
 
     .. warning::
-        record/play behavior is reasonable but surprising if :data:`dt` is greater than 
-        ``Dt``. Things work best if ``Dt`` happens to be a multiple of :data:`dt`. All combinations 
+        record/play behavior is reasonable but surprising if :hoc:data:`dt` is greater than
+        ``Dt``. Things work best if ``Dt`` happens to be a multiple of :hoc:data:`dt`. All combinations
         of record ; play ; ``Dt =>< dt`` ; and tvec sequences 
         have not been tested. 
 
@@ -507,7 +508,7 @@ Vector
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector as it automatically performs an init() before running the
-	simulation. Thus dv should be copied to another vector ( see :func:`copy` ). 
+	simulation. Thus dv should be copied to another vector ( see :hoc:func:`copy` ).
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
@@ -523,7 +524,7 @@ Vector
 
 
     .. seealso::
-        :func:`finitialize`, :func:`fadvance`, :func:`play`, :data:`t`, :func:`play_remove`
+        :hoc:func:`finitialize`, :hoc:func:`fadvance`, :hoc:func:`play`, :hoc:data:`t`, :hoc:func:`play_remove`
 
          
 
@@ -531,7 +532,7 @@ Vector
 
 
 
-.. method:: Vector.play
+.. hoc:method:: Vector.play
 
 
     Syntax:
@@ -581,8 +582,8 @@ Vector
         inserted as the first arg). 
          
         For the fixed step method 
-        transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
-        At the beginning of :func:`finitialize`, ``var = v.x[0]``. On :func:`fadvance` a transfer will 
+        transfers take place on entry to :hoc:func:`finitialize` and  on entry to :hoc:func:`fadvance`.
+        At the beginning of :hoc:func:`finitialize`, ``var = v.x[0]``. On :hoc:func:`fadvance` a transfer will
         take place if t will be (after the ``fadvance`` increment) equal 
         or greater than the associated time of the next index. For the variable step 
         methods, transfers take place exactly at the times specified by the Dt 
@@ -631,8 +632,8 @@ Vector
         the breakpoints depends on the details of how the parameter being played 
         into affects the states. 
          
-        For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
-        threads, :meth:`ParallelContext.nthread` , it is 
+        For the local variable timestep method, :hoc:meth:`CVode.use_local_dt` and/or multiple
+        threads, :hoc:meth:`ParallelContext.nthread` , it is
         often helpful to provide specific information about which cell the 
         *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
         object which is located on the cell. This is necessary if the pointer is not 
@@ -643,7 +644,7 @@ Vector
          
 
     .. seealso::
-        :meth:`Vector.record`, :meth:`Vector.play_remove`
+        :hoc:meth:`Vector.record`, :hoc:meth:`Vector.play_remove`
 
          
 
@@ -651,7 +652,7 @@ Vector
 
 
 
-.. method:: Vector.play_remove
+.. hoc:method:: Vector.play_remove
 
 
     Syntax:
@@ -670,7 +671,7 @@ Vector
          
 
     .. seealso::
-        :meth:`Vector.record`, :meth:`Vector.play`
+        :hoc:meth:`Vector.record`, :hoc:meth:`Vector.play`
 
          
 
@@ -678,7 +679,7 @@ Vector
 
 
 
-.. method:: Vector.indgen
+.. hoc:method:: Vector.indgen
 
 
     Syntax:
@@ -729,7 +730,7 @@ Vector
         expands the vector to 31 elements going from 90 to 990 in increments of 30. 
 
     .. seealso::
-        :meth:`Vector.fill`, :meth:`Vector.append`
+        :hoc:meth:`Vector.fill`, :hoc:meth:`Vector.append`
 
          
 
@@ -737,7 +738,7 @@ Vector
 
 
 
-.. method:: Vector.append
+.. hoc:method:: Vector.append
 
 
     Syntax:
@@ -771,7 +772,7 @@ Vector
 
 
 
-.. method:: Vector.insrt
+.. hoc:method:: Vector.insrt
 
 
     Syntax:
@@ -790,7 +791,7 @@ Vector
 
 
 
-.. method:: Vector.remove
+.. hoc:method:: Vector.remove
 
 
     Syntax:
@@ -809,7 +810,7 @@ Vector
 
 
 
-.. method:: Vector.contains
+.. hoc:method:: Vector.contains
 
 
     Syntax:
@@ -819,7 +820,7 @@ Vector
     Description:
         Return whether or not 
         the vector contains *value* as at least one 
-        of its elements (to within :data:`float_epsilon`). A return value of 1 signifies true; 0 signifies false. 
+        of its elements (to within :hoc:data:`float_epsilon`). A return value of 1 signifies true; 0 signifies false.
 
     Example:
 
@@ -845,7 +846,7 @@ Vector
 
 
 
-.. method:: Vector.copy
+.. hoc:method:: Vector.copy
 
 
     Syntax:
@@ -885,7 +886,7 @@ Vector
         range of either vsrc or vdest are ignored. This function allows mapping 
         of a subset of a source vector into the subset of a destination vector. 
          
-        This function can be slightly more efficient than :func:`c` since 
+        This function can be slightly more efficient than :hoc:func:`c` since
         if vdest contains enough space, memory will not have to 
         be allocated for it. Also it is convenient for those cases 
         in which vdest is being plotted and therefore reallocation 
@@ -961,7 +962,7 @@ Vector
 
 
 
-.. method:: Vector.c
+.. hoc:method:: Vector.c
 
 
     Syntax:
@@ -974,8 +975,8 @@ Vector
 
     Description:
         Return a new vector which is a copy of the vsrc vector, but does not copy 
-        the label. For a complete copy including the label use :meth:`Vector.cl`. 
-        (Identical to the :meth:`Vector.at` function but has a short name that suggests 
+        the label. For a complete copy including the label use :hoc:meth:`Vector.cl`.
+        (Identical to the :hoc:meth:`Vector.at` function but has a short name that suggests
         copy or clone). Useful in the construction of filter chains. 
         Note that with no arguments, it is not necessary to type the 
         parentheses. 
@@ -987,7 +988,7 @@ Vector
 
 
 
-.. method:: Vector.cl
+.. hoc:method:: Vector.cl
 
 
     Syntax:
@@ -1000,7 +1001,7 @@ Vector
 
     Description:
         Return a new vector which is a copy, including the label, of the vsrc vector. 
-        (Similar to the :meth:`Vector.c` function which does not copy the label) 
+        (Similar to the :hoc:meth:`Vector.c` function which does not copy the label)
         Useful in the construction of filter chains. 
         Note that with no arguments, it is not necessary to type the 
         parentheses. 
@@ -1011,7 +1012,7 @@ Vector
 
 
 
-.. method:: Vector.at
+.. hoc:method:: Vector.at
 
 
     Syntax:
@@ -1058,7 +1059,7 @@ Vector
 
 
 
-.. method:: Vector.from_double
+.. hoc:method:: Vector.from_double
 
 
     Syntax:
@@ -1076,7 +1077,7 @@ Vector
 
 
 
-.. method:: Vector.where
+.. hoc:method:: Vector.where
 
 
     Syntax:
@@ -1094,7 +1095,7 @@ Vector
         that match the condition opstring. 
          
         Opstring is a string matching one of these (all comparisons 
-        are with respect to :data:`float_epsilon` ): ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
+        are with respect to :hoc:data:`float_epsilon` ): ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 
         Op2string requires two numbers defining open/closed ranges and matches one 
         of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
@@ -1129,7 +1130,7 @@ Vector
         according to the order of their appearance in ``vec``. 
 
     .. seealso::
-        :meth:`Vector.indvwhere`, :meth:`Vector.indwhere`
+        :hoc:meth:`Vector.indvwhere`, :hoc:meth:`Vector.indwhere`
 
          
 
@@ -1137,11 +1138,11 @@ Vector
 
 
 
-.. method:: Vector.indwhere
+.. hoc:method:: Vector.indwhere
 
 
     .. seealso::
-        :meth:`Vector.indvwhere`
+        :hoc:meth:`Vector.indvwhere`
 
          
 
@@ -1149,7 +1150,7 @@ Vector
 
 
 
-.. method:: Vector.indvwhere
+.. hoc:method:: Vector.indvwhere
 
 
     Syntax:
@@ -1181,7 +1182,7 @@ Vector
         Op2string is a string matching one of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
 
          
-        Comparisons are relative to the :data:`float_epsilon` global variable. 
+        Comparisons are relative to the :hoc:data:`float_epsilon` global variable.
          
 
     Example:
@@ -1206,7 +1207,7 @@ Vector
          
 
     .. seealso::
-        :meth:`Vector.where`
+        :hoc:meth:`Vector.where`
 
          
 
@@ -1214,7 +1215,7 @@ Vector
 
 
 
-.. method:: Vector.fwrite
+.. hoc:method:: Vector.fwrite
 
 
     Syntax:
@@ -1224,19 +1225,19 @@ Vector
 
 
     Description:
-        Write the vector ``vec`` to an open *fileobj* of type :class:`File` in 
+        Write the vector ``vec`` to an open *fileobj* of type :hoc:class:`File` in
         machine dependent binary format. 
         You must keep track of the vector's 
         size for later reading, so it is recommended that you store the size of the 
         vector as the first element of the file. 
          
-        It is almost always better to use :func:`vwrite` since it stores the size 
+        It is almost always better to use :hoc:func:`vwrite` since it stores the size
         of the vector automatically and is more portable since the corresponding 
         vread will take care of machine dependent binary byte ordering differences. 
          
         Return value is the number of items. (0 if error) 
          
-        :func:`fread` is used to read a file containing numbers stored by ``fwrite`` but 
+        :hoc:func:`fread` is used to read a file containing numbers stored by ``fwrite`` but
         must have the same size. 
 
          
@@ -1245,7 +1246,7 @@ Vector
 
 
 
-.. method:: Vector.fread
+.. hoc:method:: Vector.fread
 
 
     Syntax:
@@ -1273,7 +1274,7 @@ Vector
 
 
 
-.. method:: Vector.vwrite
+.. hoc:method:: Vector.vwrite
 
 
     Syntax:
@@ -1285,8 +1286,8 @@ Vector
     Description:
         Write the vector in binary format 
         to an already opened for writing * fileobj* of type 
-        :class:`File`. 
-        :meth:`~Vector.vwrite` is easier to use than ``fwrite()`` 
+        :hoc:class:`File`.
+        :hoc:meth:`~Vector.vwrite` is easier to use than ``fwrite()``
         since it stores the size of the vector and type information 
         for a more 
         automated read/write. The file data can also be vread on a machine with 
@@ -1312,7 +1313,7 @@ Vector
          
         .. warning::
         
-            These are useful primarily for storage of data: exact 
+            These are useful primarily for storage of hoc:data: exact
             values will not necessarily be maintained due to the conversion 
             process.
          
@@ -1325,7 +1326,7 @@ Vector
 
 
 
-.. method:: Vector.vread
+.. hoc:method:: Vector.vread
 
 
     Syntax:
@@ -1365,7 +1366,7 @@ Vector
 
 
 
-.. method:: Vector.printf
+.. hoc:method:: Vector.printf
 
 
     Syntax:
@@ -1415,7 +1416,7 @@ Vector
 
 
 
-.. method:: Vector.scanf
+.. hoc:method:: Vector.scanf
 
 
     Syntax:
@@ -1429,7 +1430,7 @@ Vector
 
 
     Description:
-        Read ascii values from a :class:`File` instance (must already be opened for reading) 
+        Read ascii values from a :hoc:class:`File` instance (must already be opened for reading)
         into vector.  If present, scanning takes place til *n* items are 
         read or until EOF. Otherwise, ``vec.scanf`` reads until end of file. 
         If reading 
@@ -1443,7 +1444,7 @@ Vector
         expected number of elements to be scanned. 
         Note that although the vector is resized to 
         the actual number of elements scanned, the space allocated to the 
-        vector remains available for growth. See :meth:`Vector.buffer_size` . 
+        vector remains available for growth. See :hoc:meth:`Vector.buffer_size` .
          
         Read from 
         column *c* of *nc* columns when data is in column format.  It numbers 
@@ -1454,7 +1455,7 @@ Vector
         Return value is number of items read. 
 
     .. seealso::
-        :meth:`Vector.scantil`
+        :hoc:meth:`Vector.scantil`
 
          
 
@@ -1462,7 +1463,7 @@ Vector
 
 
 
-.. method:: Vector.scantil
+.. hoc:method:: Vector.scantil
 
 
     Syntax:
@@ -1472,7 +1473,7 @@ Vector
 
 
     Description:
-        Like :meth:`Vector.scanf` but scans til it reads a value equal to the 
+        Like :hoc:meth:`Vector.scanf` but scans til it reads a value equal to the
         sentinel. e.g. -1e15 is a possible sentinel value in many situations. 
         The vector does not include the sentinel value. The file pointer is 
         left at the character following the sentinel. 
@@ -1494,7 +1495,7 @@ Vector
 
 
 
-.. method:: Vector.plot
+.. hoc:method:: Vector.plot
 
 
     Syntax:
@@ -1512,7 +1513,7 @@ Vector
 
 
     Description:
-        Plot vector in a :class:`Graph` object.  The default is to plot the elements of the 
+        Plot vector in a :hoc:class:`Graph` object.  The default is to plot the elements of the
         vector as y values with their indices as x values.  An optional 
         argument can be used to 
         specify the x-axis.  Such an argument can be either a 
@@ -1531,7 +1532,7 @@ Vector
         in order to display further changes to the vector.  In this way it 
         is possible to produce rather rapid line animation. 
          
-        If the vector :meth:`Graph.label` is not empty it will be used as the label for 
+        If the vector :hoc:meth:`Graph.label` is not empty it will be used as the label for
         the line on the Graph. 
          
         Resizing a vector that has been plotted will remove it from the Graph. 
@@ -1559,7 +1560,7 @@ Vector
 
 
     .. seealso::
-        :meth:`Graph.vector`
+        :hoc:meth:`Graph.vector`
 
          
 
@@ -1567,7 +1568,7 @@ Vector
 
 
 
-.. method:: Vector.line
+.. hoc:method:: Vector.line
 
 
     Syntax:
@@ -1585,13 +1586,13 @@ Vector
 
 
     Description:
-        Plot vector on a :class:`Graph`.  Exactly like ``.plot()`` except the vector 
+        Plot vector on a :hoc:class:`Graph`.  Exactly like ``.plot()`` except the vector
         is *not* plotted by reference so that the values may be changed 
         subsequently w/o disturbing the plot.  It is therefore possible to produce 
         a number of plots of the same function on the same graph, 
         without erasing any previous plot. 
          
-        The line on a graph is given the :meth:`Graph.label` if the label is not empty. 
+        The line on a graph is given the :hoc:meth:`Graph.label` if the label is not empty.
          
         The number of point plotted is the minimum of vec.size and x_vec.size . 
          
@@ -1611,7 +1612,7 @@ Vector
 
 
     .. seealso::
-        :meth:`Graph.family`
+        :hoc:meth:`Graph.family`
 
          
 
@@ -1619,7 +1620,7 @@ Vector
 
 
 
-.. method:: Vector.ploterr
+.. hoc:method:: Vector.ploterr
 
 
     Syntax:
@@ -1674,7 +1675,7 @@ Vector
 
 
 
-.. method:: Vector.mark
+.. hoc:method:: Vector.mark
 
 
     Syntax:
@@ -1704,7 +1705,7 @@ Vector
 
 
 
-.. method:: Vector.histogram
+.. hoc:method:: Vector.histogram
 
 
     Syntax:
@@ -1772,7 +1773,7 @@ Vector
 
 
 
-.. method:: Vector.hist
+.. hoc:method:: Vector.hist
 
 
     Syntax:
@@ -1780,7 +1781,7 @@ Vector
 
 
     Description:
-        Similar to :func:`histogram` (but notice the different argument meanings. 
+        Similar to :hoc:func:`histogram` (but notice the different argument meanings.
         Put a histogram in *vdest* by binning 
         the data in *vsrc*. 
         Bins run from *low* to ``low + size * width`` 
@@ -1794,7 +1795,7 @@ Vector
 
 
 
-.. method:: Vector.sumgauss
+.. hoc:method:: Vector.sumgauss
 
 
     Syntax:
@@ -1849,7 +1850,7 @@ Vector
 
 
 
-.. method:: Vector.smhist
+.. hoc:method:: Vector.smhist
 
 
     Syntax:
@@ -1859,7 +1860,7 @@ Vector
 
 
     Description:
-        Very similar to :func:`sumgauss` . Calculate a smooth histogram by convolving 
+        Very similar to :hoc:func:`sumgauss` . Calculate a smooth histogram by convolving
         the raw data set with a gaussian kernel.  The histogram begins at 
         ``varstart`` and has ``varsize`` values in increments of size ``varstep``. 
         ``varvar`` sets the variance of the gaussians. 
@@ -1873,7 +1874,7 @@ Vector
 
 
 
-.. method:: Vector.ind
+.. hoc:method:: Vector.ind
 
 
     Syntax:
@@ -1907,7 +1908,7 @@ Vector
 
 
 
-.. method:: Vector.addrand
+.. hoc:method:: Vector.addrand
 
 
     Syntax:
@@ -1951,7 +1952,7 @@ Vector
 
 
 
-.. method:: Vector.setrand
+.. hoc:method:: Vector.setrand
 
 
     Syntax:
@@ -1970,7 +1971,7 @@ Vector
 
 
 
-.. method:: Vector.sin
+.. hoc:method:: Vector.sin
 
 
     Syntax:
@@ -1989,7 +1990,7 @@ Vector
 
 
 
-.. method:: Vector.apply
+.. hoc:method:: Vector.apply
 
 
     Syntax:
@@ -2020,7 +2021,7 @@ Vector
 
 
 
-.. method:: Vector.reduce
+.. hoc:method:: Vector.reduce
 
 
     Syntax:
@@ -2061,7 +2062,7 @@ Vector
 
 
 
-.. method:: Vector.floor
+.. hoc:method:: Vector.floor
 
 
     Syntax:
@@ -2069,7 +2070,7 @@ Vector
 
 
     Description:
-        Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
+        Rounds toward negative infinity. Note that :hoc:data:`float_epsilon` is not
         used in this calculation. 
 
          
@@ -2079,7 +2080,7 @@ Vector
 
 
 
-.. method:: Vector.to_python
+.. hoc:method:: Vector.to_python
 
 
     Syntax:
@@ -2101,7 +2102,7 @@ Vector
 
 
 
-.. method:: Vector.from_python
+.. hoc:method:: Vector.from_python
 
 
     Syntax:
@@ -2120,7 +2121,7 @@ Vector
 ----
 
 
-.. method:: Vector.as_numpy()
+.. hoc:method:: Vector.as_numpy()
 
 
     Syntax:
@@ -2151,7 +2152,7 @@ Vector
 ----
 
 
-.. method:: Vector.fit
+.. hoc:method:: Vector.fit
 
 
     Syntax:
@@ -2206,7 +2207,7 @@ Vector
 
     .. warning::
         This function is not very useful for fitting the results of simulation runs 
-        due to its argument organization. For that purpose the :func:`fit_praxis` syntax 
+        due to its argument organization. For that purpose the :hoc:func:`fit_praxis` syntax
         is more suitable. This function should become a top-level function which 
         merely takes a user error function name and a parameter list. 
          
@@ -2214,7 +2215,7 @@ Vector
         the scopmath library. 
 
     .. seealso::
-        :func:`fit_praxis`
+        :hoc:func:`fit_praxis`
 
     Example:
         The :menuselection:`NEURON Main Menu --> Miscellaneous --> Parameterized Function` widget uses this function 
@@ -2262,9 +2263,10 @@ Vector
 
 ----
 
+
 .. _vect2:
 
-.. method:: Vector.interpolate
+.. hoc:method:: Vector.interpolate
 
 
     Syntax:
@@ -2314,7 +2316,7 @@ Vector
 
 
 
-.. method:: Vector.deriv
+.. hoc:method:: Vector.deriv
 
 
     Syntax:
@@ -2397,7 +2399,7 @@ Vector
             8	9 
 
          
-        The Euler method vs. the Central difference method:
+        The Euler method vs. the Central difference :hoc:method:
  
         Beginning with the vector ``vec``: 
 
@@ -2409,7 +2411,7 @@ Vector
             16	25 
 
         ``vec1.deriv(vec, 1, 1)`` (Euler) would go about 
-        producing ``vec1`` by the following method: 
+        producing ``vec1`` by the following :hoc:method:
 
         .. code-block::
             none
@@ -2435,7 +2437,7 @@ Vector
 
 
 
-.. method:: Vector.integral
+.. hoc:method:: Vector.integral
 
 
     Syntax:
@@ -2522,7 +2524,7 @@ Vector
 
 
 
-.. method:: Vector.median
+.. hoc:method:: Vector.median
 
 
     Syntax:
@@ -2538,7 +2540,7 @@ Vector
 
 
 
-.. method:: Vector.medfltr
+.. hoc:method:: Vector.medfltr
 
 
     Syntax:
@@ -2563,7 +2565,7 @@ Vector
 
 
 
-.. method:: Vector.sort
+.. hoc:method:: Vector.sort
 
 
     Syntax:
@@ -2579,7 +2581,7 @@ Vector
 
 
 
-.. method:: Vector.sortindex
+.. hoc:method:: Vector.sortindex
 
 
     Syntax:
@@ -2618,7 +2620,7 @@ Vector
 
 
 
-.. method:: Vector.reverse
+.. hoc:method:: Vector.reverse
 
 
     Syntax:
@@ -2634,7 +2636,7 @@ Vector
 
 
 
-.. method:: Vector.rotate
+.. hoc:method:: Vector.rotate
 
 
     Syntax:
@@ -2700,7 +2702,7 @@ Vector
 
 
 
-.. method:: Vector.rebin
+.. hoc:method:: Vector.rebin
 
 
     Syntax:
@@ -2754,7 +2756,7 @@ Vector
 
 
 
-.. method:: Vector.pow
+.. hoc:method:: Vector.pow
 
 
     Syntax:
@@ -2773,7 +2775,7 @@ Vector
 
 
 
-.. method:: Vector.sqrt
+.. hoc:method:: Vector.sqrt
 
 
     Syntax:
@@ -2791,7 +2793,7 @@ Vector
 
 
 
-.. method:: Vector.log
+.. hoc:method:: Vector.log
 
 
     Syntax:
@@ -2809,7 +2811,7 @@ Vector
 
 
 
-.. method:: Vector.log10
+.. hoc:method:: Vector.log10
 
 
     Syntax:
@@ -2827,7 +2829,7 @@ Vector
 
 
 
-.. method:: Vector.tanh
+.. hoc:method:: Vector.tanh
 
 
     Syntax:
@@ -2845,7 +2847,7 @@ Vector
 
 
 
-.. method:: Vector.abs
+.. hoc:method:: Vector.abs
 
 
     Syntax:
@@ -2870,7 +2872,7 @@ Vector
 
 
     .. seealso::
-        :func:`abs`
+        :hoc:func:`abs`
 
          
 
@@ -2878,7 +2880,7 @@ Vector
 
 
 
-.. method:: Vector.index
+.. hoc:method:: Vector.index
 
 
     Syntax:
@@ -2915,7 +2917,7 @@ Vector
 
 
 
-.. method:: Vector.min
+.. hoc:method:: Vector.min
 
 
     Syntax:
@@ -2933,7 +2935,7 @@ Vector
 
 
 
-.. method:: Vector.min_ind
+.. hoc:method:: Vector.min_ind
 
 
     Syntax:
@@ -2951,7 +2953,7 @@ Vector
 
 
 
-.. method:: Vector.max
+.. hoc:method:: Vector.max
 
 
     Syntax:
@@ -2969,7 +2971,7 @@ Vector
 
 
 
-.. method:: Vector.max_ind
+.. hoc:method:: Vector.max_ind
 
 
     Syntax:
@@ -2987,7 +2989,7 @@ Vector
 
 
 
-.. method:: Vector.sum
+.. hoc:method:: Vector.sum
 
 
     Syntax:
@@ -3005,7 +3007,7 @@ Vector
 
 
 
-.. method:: Vector.sumsq
+.. hoc:method:: Vector.sumsq
 
 
     Syntax:
@@ -3023,7 +3025,7 @@ Vector
 
 
 
-.. method:: Vector.mean
+.. hoc:method:: Vector.mean
 
 
     Syntax:
@@ -3041,7 +3043,7 @@ Vector
 
 
 
-.. method:: Vector.var
+.. hoc:method:: Vector.var
 
 
     Syntax:
@@ -3059,7 +3061,7 @@ Vector
 
 
 
-.. method:: Vector.stdev
+.. hoc:method:: Vector.stdev
 
 
     Syntax:
@@ -3077,7 +3079,7 @@ Vector
 
 
 
-.. method:: Vector.stderr
+.. hoc:method:: Vector.stderr
 
 
     Syntax:
@@ -3095,7 +3097,7 @@ Vector
 
 
 
-.. method:: Vector.dot
+.. hoc:method:: Vector.dot
 
 
     Syntax:
@@ -3111,7 +3113,7 @@ Vector
 
 
 
-.. method:: Vector.mag
+.. hoc:method:: Vector.mag
 
 
     Syntax:
@@ -3127,7 +3129,7 @@ Vector
 
 
 
-.. method:: Vector.add
+.. hoc:method:: Vector.add
 
 
     Syntax:
@@ -3147,7 +3149,7 @@ Vector
 
 
 
-.. method:: Vector.sub
+.. hoc:method:: Vector.sub
 
 
     Syntax:
@@ -3167,7 +3169,7 @@ Vector
 
 
 
-.. method:: Vector.mul
+.. hoc:method:: Vector.mul
 
 
     Syntax:
@@ -3187,7 +3189,7 @@ Vector
 
 
 
-.. method:: Vector.div
+.. hoc:method:: Vector.div
 
 
     Syntax:
@@ -3207,7 +3209,7 @@ Vector
 
 
 
-.. method:: Vector.scale
+.. hoc:method:: Vector.scale
 
 
     Syntax:
@@ -3224,7 +3226,7 @@ Vector
 
 
 
-.. method:: Vector.eq
+.. hoc:method:: Vector.eq
 
 
     Syntax:
@@ -3233,7 +3235,7 @@ Vector
 
     Description:
         Test equality of vectors.  Returns 1 if all elements of vec == 
-        corresponding elements of *vec1* (to within :data:`float_epsilon`). 
+        corresponding elements of *vec1* (to within :hoc:data:`float_epsilon`).
         Otherwise it returns 0. 
 
          
@@ -3242,7 +3244,7 @@ Vector
 
 
 
-.. method:: Vector.meansqerr
+.. hoc:method:: Vector.meansqerr
 
 
     Syntax:
@@ -3273,7 +3275,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.correl
+.. hoc:method:: Vector.correl
 
 
     Syntax:
@@ -3292,7 +3294,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.convlv
+.. hoc:method:: Vector.convlv
 
 
     Syntax:
@@ -3331,7 +3333,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.spctrm
+.. hoc:method:: Vector.spctrm
 
 
     Syntax:
@@ -3347,7 +3349,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.filter
+.. hoc:method:: Vector.filter
 
 
     Syntax:
@@ -3368,7 +3370,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.fft
+.. hoc:method:: Vector.fft
 
 
     Syntax:
@@ -3381,7 +3383,7 @@ Refer to this source for further information.
         Compute the fast fourier transform of the source data vector.  If 
         *sign*\ =-1 then compute the inverse fft. 
          
-        If vsrc.\ :meth:`~Vector.size` is not an integral power of 2, it is padded with 0's to 
+        If vsrc.\ :hoc:meth:`~Vector.size` is not an integral power of 2, it is padded with 0's to
         the next power of 2 size. 
          
         The complex frequency domain is represented in the vector as pairs of 
@@ -3596,9 +3598,9 @@ Refer to this source for further information.
 
 
     .. seealso::
-        :func:`fft`, :func:`spctrm`
+        :hoc:func:`fft`, :hoc:func:`spctrm`
 
-.. method:: Vector.trigavg
+.. hoc:method:: Vector.trigavg
 
 
     Syntax:
@@ -3617,7 +3619,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.spikebin
+.. hoc:method:: Vector.spikebin
 
 
     Syntax:
@@ -3636,7 +3638,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.psth
+.. hoc:method:: Vector.psth
 
 
     Syntax:
@@ -3734,7 +3736,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.inf
+.. hoc:method:: Vector.inf
 
 
     Syntax:
@@ -3758,7 +3760,7 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.resample
+.. hoc:method:: Vector.resample
 
 
     Syntax:
@@ -3769,7 +3771,7 @@ Refer to this source for further information.
         Resamples the vector at another rate -- integers work best. 
 
     .. seealso::
-        :func:`copy`
+        :hoc:func:`copy`
 
 
 
