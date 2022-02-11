@@ -120,6 +120,7 @@ extern double nrn_ghk(double v, double ci, double co, double z);
 nrn_pragma_omp(end declare target)
 extern void hoc_register_prop_size(int, int, int);
 extern void hoc_register_dparam_semantics(int type, int, const char* name);
+extern void hoc_reg_ba(int, mod_f_t, int);
 
 struct DoubScal {
     const char* name;
