@@ -50,10 +50,10 @@ function(set_psolve_test_mode_suffix psolve_test_mode)
 endfunction()
 
 # Libsonata-report automatically converts 1-based GIDs to 0-based by subtracting 1 from them.
-# If there is already a GID 0 in the reports, libsonata-report assertion for 1-based GIDs is going to fail.
+# If there is already a GID 0 in the reports, libsonata-report throws.
 # Since some of the NEURON integration tests create 0-based GID cells we set the environment variable
 # LIBSONATA_ZERO_BASED_GIDS to 1 to avoid libsonata-reports's automatic conversion of 1-based GIDs to
-# 0-based that would trigger the assertion to fail.
+# 0-based that would trigger the throw.
 set(SONATA_GIDS_ZERO "LIBSONATA_ZERO_BASED_GIDS=1")
 
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
