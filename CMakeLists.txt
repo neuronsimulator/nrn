@@ -485,6 +485,8 @@ if(NRN_ENABLE_CORENEURON)
     # variable in this scope. If CoreNEURON is installed externally then this
     # is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+    # NEURON tests that link against CoreNEURON need to depend on it.
+    set(CORENEURON_TARGET_TO_DEPEND coreneuron)
   endif()
 endif()
 

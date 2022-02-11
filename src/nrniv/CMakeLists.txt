@@ -171,6 +171,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/src/nrnmpi
     ${PROJECT_SOURCE_DIR}/src/nrnpython
     ${PROJECT_SOURCE_DIR}/src/parallel
+    ${PROJECT_SOURCE_DIR}/src/scopmath
     ${PROJECT_SOURCE_DIR}/src/sparse
     ${PROJECT_SOURCE_DIR}/src/sparse13
     ${PROJECT_SOURCE_DIR}/src/sundials

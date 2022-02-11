@@ -13,6 +13,7 @@ extern void hoc_register_prop_size(int type, int psize, int dpsize);
 
 #include "nrnoc_ml.h"
 
+typedef struct NrnThread NrnThread;
 typedef Datum *(*Pfrpdat)();
 typedef void(*Pvmi)(struct NrnThread*, Memb_list*, int);
 typedef void (*Pvmp)(Prop*);
@@ -47,7 +48,7 @@ typedef struct Memb_func {
 	int thread_size_; /* how many Datum needed in Memb_list if vectorized */
 	void (*thread_mem_init_)(Datum*); /* after Memb_list._thread is allocated */
 	void (*thread_cleanup_)(Datum*); /* before Memb_list._thread is freed */
-	void (*thread_table_check_)(double*, Datum*, Datum*, void*, int);
+	void (*thread_table_check_)(double*, Datum*, Datum*, NrnThread*, int);
 	void (*_update_ion_pointers)(Datum*);
 	int is_point;
 	void* hoc_mech;

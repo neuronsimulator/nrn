@@ -103,5 +103,7 @@ extern void nrn_thread_table_check();
 
 #define FOR_THREADS(nt) for (nt = nrn_threads; nt < nrn_threads + nrn_nthread; ++nt)
 
+// olupton 2022-01-31: could add a _NrnThread typedef here for .mod file
+//                     backwards compatibility if needed.
 
 #endif
