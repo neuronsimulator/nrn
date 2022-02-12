@@ -24,9 +24,10 @@ if mpi4py_option:
     from neuron import h, gui
 # without mpi4py we need to call nrnmpi_init explicitly
 elif nrnmpi_init_option:
-    from neuron import h, gui
+    from neuron import h
 
     h.nrnmpi_init()
+    from neuron import gui  # if mpi is active, don't ask for it til gui turned off
 # otherwise serial execution
 else:
     from neuron import h, gui
