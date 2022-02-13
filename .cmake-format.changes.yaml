@@ -3,24 +3,28 @@ additional_commands:
     pargs: 0
     kwargs:
       NAME: 1
-      SUBMODULE: '?'
-      MODFILE_PATTERNS: '*'
-      SCRIPT_PATTERNS: '*'
-      OUTPUT: '*'
+      MODFILE_PATTERNS: '+'
+      NRNIVMODL_ARGS: '+'
+      OUTPUT: '+'
+      SCRIPT_PATTERNS: '+'
+      SIM_DIRECTORY: 1
+      SUBMODULE: 1
   nrn_add_test:
     pargs: 0
     kwargs:
       GROUP: 1
       NAME: 1
-      SUBMODULE: '?'
-      MODFILE_PATTERNS: '*'
-      PRECOMMAND: '+'
       COMMAND: '+'
-      SCRIPT_PATTERNS: '*'
-      REQUIRES: '*'
-      CONFLICTS: '*'
+      CONFLICTS: '+'
+      PRECOMMAND: '+'
+      PROCESSORS: 1
+      REQUIRES: '+'
+      MODFILE_PATTERNS: '*'
+      NRNIVMODL_ARGS: '*'
       OUTPUT: '*'
-      PROCESSORS: '?'
+      SCRIPT_PATTERNS: '*'
+      SIM_DIRECTORY: '?'
+      SUBMODULE: '?'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

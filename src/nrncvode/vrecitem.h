@@ -34,6 +34,7 @@ public:
 	virtual void pr(const char*, double t, NetCvode*);
 	virtual void frecord_init(TQItem* q);
 	virtual NrnThread* thread();
+	virtual int type() { return PlayRecordEventType; }
 	PlayRecord* plr_;
 	static unsigned long playrecord_send_;
 	static unsigned long playrecord_deliver_;

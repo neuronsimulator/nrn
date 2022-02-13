@@ -4,19 +4,22 @@
 # of operation.
 #
 # 1. nrn_add_test_group(NAME name
-#                       SUBMODULE some/submodule
-#                       MODFILE_PATTERNS mod/file/dir/*.mod other/file.mod
-#                       OUTPUT datatype::file.ext otherdatatype::otherfile.ext
-#                       SCRIPT_PATTERNS "*.py")
+#                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
+#                       [NRNIVMODL_ARGS arg1 ...]
+#                       [OUTPUT datatype::file.ext ...]
+#                       [SCRIPT_PATTERNS "*.py" ...]
+#                       [SIM_DIRECTORY sim_dir]
+#                       [SUBMODULE some/submodule]
+#                      )
 #
 #    Create a new group of integration tests with the given name. The group
 #    consists of different configurations of running logically the same
 #    simulation. The outputs of the different configurations will be compared.
 #
-#    SUBMODULE        - the name of the git submodule containing test data.
 #    MODFILE_PATTERNS - a list of patterns that will be matched against the
 #                       submodule directory tree to find the modfiles that must
 #                       be compiled (using nrnivmodl) to run the test.
+#    NRNIVMODL_ARGS   - extra arguments that will be passed to nrnivmodl.
 #    OUTPUT           - zero or more expressions of the form `datatype::path`
 #                       describing the output data produced by a test. The
 #                       data type must be supported by the comparison script
@@ -27,34 +30,51 @@
 #                       submodule directory, matching scripts that must be
 #                       copied from the submodule to the working directory in
 #                       which the test is run.
+#    SIM_DIRECTORY    - extra directory name under which the test will be run,
+#                       this is useful for some models whose scripts make
+#                       assumptions about directory layout.
+#    SUBMODULE        - the name of the git submodule containing test data.
 #
-#    The SUBMODULE, MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are
-#    default values that will be inherited tests that are added to this group
-#    using nrn_add_test. They can be overriden for specific tests by passing
-#    the same keyword arguments to nrn_add_test.
+#    The MODFILE_PATTERNS, NRNIVMODL_ARGS, OUTPUT, SCRIPT_PATTERNS,
+#    SIM_DIRECTORY and SUBMODULE arguments are default values that will be
+#    inherited tests that are added to this group using nrn_add_test.
+#    They can be overriden for specific tests by passing the same keyword
+#    arguments to nrn_add_test.
 #
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
-#                 [REQUIRES feature1 ...]
 #                 [CONFLICTS feature1 ...]
+#                 [PRECOMMAND command ...]
+#                 [PROCESSORS required_processors]
+#                 [REQUIRES feature1 ...]
+#                 [MODFILE_PATTERNS mod/file/dir/*.mod ...]
+#                 [NRNIVMODL_ARGS arg1 ...]
+#                 [OUTPUT datatype::file.ext ...]
+#                 [SCRIPT_PATTERNS "*.py" ...]
+#                 [SIM_DIRECTORY sim_dir]
 #                 [SUBMODULE some/submodule]
-#                 [MODFILE_PATTERNS mod_file_pattern ...]
-#                 [OUTPUT datatype::file.ext otherdatatype::otherfile.ext ...]
-#                 [SCRIPT_PATTERNS "*.py" ...])
+#                )
 #
 #    Create a new integration test inside the given group, which must have
 #    previously been created using nrn_add_test_group. The COMMAND option is
 #    the test expression, which is run in an environment whose PATH includes
-#    the `special` binary built from the specified modfiles. The SUBMODULE,
-#    MODFILE_PATTERNS, OUTPUT and SCRIPT_PATTERNS arguments are optional and
-#    can be used to override the defaults defined when nrn_add_test_group is
-#    called. The REQUIRES and CONFLICTS arguments allow a test to be disabled
-#    if certain features are, or are not, available. Seven features are currently
-#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, nmodl and python.
+#    the `special` binary built from the specified modfiles.
+#    The REQUIRES and CONFLICTS arguments allow a test to be disabled if
+#    certain features are, or are not, available. Eight features are currently
+#    supported: coreneuron, cpu, gpu, mod_compatibility, mpi, mpi_dynamic,
+#    nmodl and python. The PRECOMMAND argument is an optional command that will
+#    be executed before COMMAND and in the same directory. It can be used to
+#    prepare input data for simulations. The PROCESSORS argument specifies the
+#    number of processors used by the test. This is passed to CTest and allows
+#    invocations such as `ctest -j 16` to avoid overcommitting resources by
+#    running too many tests with internal parallelism.
+#    The remaining arguments can documented in nrn_add_test_group. The default
+#    values specified there can be overriden on a test-by-test basis by passing
+#    the same arguments here.
 #
 # 3. nrn_add_test_group_comparison(GROUP group_name
-#                                  REFERENCE_OUTPUT datatype::file.ext [...])
+#                                  [REFERENCE_OUTPUT datatype::file.ext ...])
 #
 #    Add a test job that runs after all the tests in this group (as defined by
 #    prior calls to nrn_add_test) and compares their output data. The optional
@@ -68,7 +88,7 @@ function(nrn_add_test_group)
   # NAME is used as a key, everything else is a default that can be overriden in subsequent calls to
   # nrn_add_test
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs OUTPUT SCRIPT_PATTERNS MODFILE_PATTERNS)
+  set(multiValueArgs MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
     message(
@@ -81,31 +101,39 @@ function(nrn_add_test_group)
 
   # Store the default values for this test group in parent-scope variables based on the group name
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_NAME})
+  set(${prefix}_DEFAULT_MODFILE_PATTERNS
+      "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}"
+      PARENT_SCOPE)
+  set(${prefix}_DEFAULT_NRNIVMODL_ARGS
+      "${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS}"
+      PARENT_SCOPE)
   set(${prefix}_DEFAULT_OUTPUT
       "${NRN_ADD_TEST_GROUP_OUTPUT}"
-      PARENT_SCOPE)
-  set(${prefix}_DEFAULT_SUBMODULE
-      "${NRN_ADD_TEST_GROUP_SUBMODULE}"
       PARENT_SCOPE)
   set(${prefix}_DEFAULT_SCRIPT_PATTERNS
       "${NRN_ADD_TEST_GROUP_SCRIPT_PATTERNS}"
       PARENT_SCOPE)
-  set(${prefix}_DEFAULT_MODFILE_PATTERNS
-      "${NRN_ADD_TEST_GROUP_MODFILE_PATTERNS}"
+  set(${prefix}_DEFAULT_SIM_DIRECTORY
+      "${NRN_ADD_TEST_GROUP_SIM_DIRECTORY}"
+      PARENT_SCOPE)
+  set(${prefix}_DEFAULT_SUBMODULE
+      "${NRN_ADD_TEST_GROUP_SUBMODULE}"
       PARENT_SCOPE)
 endfunction()
 
 function(nrn_add_test)
   # Parse the function arguments
-  set(oneValueArgs GROUP NAME SUBMODULE PROCESSORS)
+  set(oneValueArgs GROUP NAME PROCESSORS SUBMODULE)
   set(multiValueArgs
       COMMAND
+      CONFLICTS
+      PRECOMMAND
+      REQUIRES
+      MODFILE_PATTERNS
+      NRNIVMODL_ARGS
       OUTPUT
       SCRIPT_PATTERNS
-      REQUIRES
-      CONFLICTS
-      MODFILE_PATTERNS
-      PRECOMMAND)
+      SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
@@ -124,6 +152,7 @@ function(nrn_add_test)
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
   set(feature_cpu_enabled ON)
   set(feature_mpi_enabled ${NRN_ENABLE_MPI})
+  set(feature_mpi_dynamic_enabled ${NRN_ENABLE_MPI_DYNAMIC})
   set(feature_python_enabled ${NRN_ENABLE_PYTHON})
   set(feature_coreneuron_enabled ${NRN_ENABLE_CORENEURON})
   if(${NRN_ENABLE_CORENEURON} OR ${NRN_ENABLE_MOD_COMPATIBILITY})
@@ -131,7 +160,6 @@ function(nrn_add_test)
   else()
     set(feature_mod_compatibility_enabled OFF)
   endif()
-  # TODO: Do these work if CoreNEURON is installed externally?
   set(feature_gpu_enabled ${CORENRN_ENABLE_GPU})
   set(feature_nmodl_enabled ${CORENRN_ENABLE_NMODL})
   # Check REQUIRES
@@ -167,30 +195,37 @@ function(nrn_add_test)
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP})
 
   # Get the submodule etc. variables that have global defaults but which can be overriden locally
-  set(output_files "${${prefix}_DEFAULT_OUTPUT}")
-  set(git_submodule "${${prefix}_DEFAULT_SUBMODULE}")
-  set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
   set(modfile_patterns "${${prefix}_DEFAULT_MODFILE_PATTERNS}")
+  set(nrnivmodl_args "${${prefix}_DEFAULT_NRNIVMODL_ARGS}")
+  set(output_files "${${prefix}_DEFAULT_OUTPUT}")
+  set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
+  set(sim_directory "${${prefix}_DEFAULT_SIM_DIRECTORY}")
+  set(submodule "${${prefix}_DEFAULT_SUBMODULE}")
   # Override them locally if appropriate
+  if(DEFINED NRN_ADD_TEST_MODFILE_PATTERNS)
+    set(modfile_patterns "${NRN_ADD_TEST_MODFILE_PATTERNS}")
+  endif()
+  if(DEFINED NRN_ADD_TEST_NRNIVMODL_ARGS)
+    set(nrnivmodl_args "${NRN_ADD_TEST_NRNIVMODL_ARGS}")
+  endif()
   if(DEFINED NRN_ADD_TEST_OUTPUT)
     set(output_files "${NRN_ADD_TEST_OUTPUT}")
-  endif()
-  if(DEFINED NRN_ADD_TEST_SUBMODULE)
-    set(git_submodule "${NRN_ADD_TEST_SUBMODULE}")
   endif()
   if(DEFINED NRN_ADD_TEST_SCRIPT_PATTERNS)
     set(script_patterns "${NRN_ADD_TEST_SCRIPT_PATTERNS}")
   endif()
-  if(DEFINED NRN_ADD_TEST_MODFILE_PATTERNS)
-    set(modfile_patterns "${NRN_ADD_TEST_MODFILE_PATTERNS}")
+  if(DEFINED NRN_ADD_TEST_SIM_DIRECTORY)
+    set(sim_directory "${NRN_ADD_TEST_SIM_DIRECTORY}")
   endif()
-
+  if(DEFINED NRN_ADD_TEST_SUBMODULE)
+    set(submodule "${NRN_ADD_TEST_SUBMODULE}")
+  endif()
   # First, make sure the specified submodule is initialised. If there is no submodule, everything is
   # relative to the root nrn/ directory.
-  if(NOT ${git_submodule} STREQUAL "")
-    cpp_cc_git_submodule(${git_submodule} QUIET)
+  if(NOT ${submodule} STREQUAL "")
+    cpp_cc_git_submodule(${submodule} QUIET)
     # Construct the name of the source tree directory where the submodule has been checked out.
-    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${git_submodule}")
+    set(test_source_directory "${PROJECT_SOURCE_DIR}/external/${submodule}")
   else()
     set(test_source_directory "${PROJECT_SOURCE_DIR}")
   endif()
@@ -198,15 +233,24 @@ function(nrn_add_test)
   set(group_working_directory "${PROJECT_BINARY_DIR}/test/${NRN_ADD_TEST_GROUP}")
   # Finally a working directory for this specific test within the group
   set(working_directory "${group_working_directory}/${NRN_ADD_TEST_NAME}")
+  if(NOT ${sim_directory} STREQUAL "")
+    set(simulation_directory ${working_directory}/${sim_directory})
+  else()
+    set(simulation_directory ${working_directory})
+  endif()
 
   # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
   # members of the group will ask for exactly the same thing, so it's worth de-duplicating. TODO:
   # allow extra arguments to be inserted here
-  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl)
-  set(hash_components nrnivmodl)
-  if(requires_coreneuron)
-    # TODO: consider replacing the condition here with NRN_ENABLE_CORENEURON; this would tend to
-    # reduce the number of times we call nrnivmodl.
+  set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
+                        ${nrnivmodl_args})
+  set(hash_components nrnivmodl ${nrnivmodl_args})
+  # This condition used to be `requires_coreneuron`. This tends to mean that NEURON and CoreNEURON
+  # versions of a test will share the same hash, which is probably fine, but also means that any
+  # NEURON-only tests will be compiled for CoreNEURON too.
+  set(nrnivmodl_dependencies)
+  if(NRN_ENABLE_CORENEURON)
+    list(APPEND nrnivmodl_dependencies ${CORENEURON_TARGET_TO_DEPEND})
     list(APPEND nrnivmodl_command -coreneuron)
     list(APPEND hash_components -coreneuron)
   endif()
@@ -259,12 +303,9 @@ function(nrn_add_test)
     # translated to CMake, so it can be called natively here and the `nrnivmodl` executable would be
     # a wrapper that invokes CMake?
     set(output_binaries "${special}")
-    set(nrnivmodl_dependencies nrniv_lib)
+    list(APPEND nrnivmodl_dependencies nrniv_lib)
     if(requires_coreneuron)
-      # See above; if the condition is changed to NRN_ENABLE_CORENEURON there it should be changed
-      # here too.
       list(APPEND output_binaries "${special}-core")
-      list(APPEND nrnivmodl_dependencies coreneuron)
       if((NOT coreneuron_FOUND) AND (NOT DEFINED CORENEURON_BUILTIN_MODFILES))
         message(
           WARNING
@@ -331,13 +372,13 @@ function(nrn_add_test)
   add_test(
     NAME "${test_name}"
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${working_directory}")
+    WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
   if(DEFINED NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
       COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${working_directory}")
+      WORKING_DIRECTORY "${simulation_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
   endif()
@@ -356,7 +397,7 @@ function(nrn_add_test)
   set(output_file_string "${NRN_ADD_TEST_NAME}")
   foreach(output_file ${output_files})
     # output_file is `type1::fname1` output_full_path is `type1::${working_directory}/fname1`
-    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${working_directory}/\\2" output_full_path
+    string(REGEX REPLACE "^([^:]+)::(.*)$" "\\1::${simulation_directory}/\\2" output_full_path
                          "${output_file}")
     set(output_file_string "${output_file_string}::${output_full_path}")
   endforeach()

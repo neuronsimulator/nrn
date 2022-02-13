@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # eval "`sh nrnpyenv.sh`"
 # will set bash environment variables so that nrniv -python has same
@@ -179,7 +179,7 @@ if test "$kernel_name" = "Darwin" ; then
   python_path=`$WHICH $PYTHON`
   pyexedir=`dirname $python_path`
   # Get the python lib dir in an official way, working with virtualenv
-  PYLIB=$($python_path -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
+  PYLIB=$($python_path -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))')
   for path in $PYLIB/libpython*.dylib; do
     if test -f "$path"; then
       nrn_pylib="$path"
@@ -385,7 +385,7 @@ def nrnpylib_linux():
   import os, sys, re, subprocess
 
   # Try the official way first
-  from distutils import sysconfig
+  import sysconfig
   libdir=sysconfig.get_config_var("LIBDIR")
   try:
     from os.path import isfile, join

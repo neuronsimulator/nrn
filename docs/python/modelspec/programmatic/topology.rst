@@ -143,6 +143,37 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
+.. method:: Section.disconnect
+
+
+    Syntax:
+        ``section.disconnect()``
+
+    Description:
+        Disconnect the section. The section becomes the root of its subtree.
+
+    Example:
+
+        .. code::
+
+            from neuron import h
+            sl = [h.Section(name="s_%d" % i) for i in range(4)]
+            for i, sec in enumerate(sl[1:]):
+                sec.connect(sl[i](1))
+
+            h.topology()
+            sl[2].disconnect()
+            h.topology()
+            sl[2].connect(sl[0](.5), 1)
+            h.topology()
+            sl[2].disconnect()
+            h.topology()
+            sl[2].connect(sl[0](.5))
+            h.topology()
+
+----
+
+
 .. data:: Section.nseg
 
     Syntax:
@@ -475,7 +506,8 @@ This document describes the construction and manipulation of a stylized topology
 
     Description:
         Disconnect ``section`` from its parent. Such 
-        a parent can be reconnected with the connect method. 
+        a section can be reconnected with the connect method. The alternative
+        :meth:`Section.disconnect` is recommended.
 
     .. warning::
 

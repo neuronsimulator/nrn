@@ -39,6 +39,7 @@ set(bindir \${exec_prefix}/bin)
 set(modsubdir ${host_cpu})
 set(bindir \${exec_prefix}/bin)
 set(libdir \${exec_prefix}/lib)
+set(BGPDMA ${NRNMPI})
 
 # =============================================================================
 # Comment or empty character to enable/disable cmake specific settings
@@ -137,12 +138,6 @@ if(NRN_DYNAMIC_UNITS_USE_LEGACY)
   set(DYNAMIC_UNITS_USE_LEGACY_DEFAULT 1)
 else()
   unset(DYNAMIC_UNITS_USE_LEGACY_DEFAULT)
-endif()
-
-if(NRN_ENABLE_MEMACS)
-  unset(WITHOUT_MEMACS)
-else()
-  set(WITHOUT_MEMACS 1)
 endif()
 
 # =============================================================================

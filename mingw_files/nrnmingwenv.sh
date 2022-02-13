@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -ex
 
@@ -93,7 +93,7 @@ copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1.exe
 libgcc.a
 libgcc_s.a
-liblto_plugin-0.dll
+liblto_plugin.dll
 '
 cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
 rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin

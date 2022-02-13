@@ -1,4 +1,5 @@
-.. _python:
+
+.. _hoc_python:
 
          
 Python Language
@@ -69,7 +70,7 @@ Description:
     In the past we also recommended an "import nrn" but this is no longer 
     necessary as everything in that module is also directly available from 
     the "h" object. 
-    You can use the hoc function :func:`nrn_load_dll` to load mechanism files 
+    You can use the hoc function :hoc:func:`nrn_load_dll` to load mechanism files
     as well, e.g. if neurondemo was used earlier so the shared object exists, 
 
     .. code-block::
@@ -79,7 +80,8 @@ Description:
         h('nrn_load_dll("$(NEURONHOME)/demo/release/x86_64/.libs/libnrnmech.so")') 
 
 
-.. _python_accessing_hoc:
+
+.. _hoc_python_accessing_hoc:
 
 Python Accessing HOC
 ~~~~~~~~~~~~~~~~~~~~
@@ -108,7 +110,7 @@ Description:
 
 
 
-.. method:: neuron.hoc.execute
+.. hoc:method:: neuron.hoc.execute
 
 
     Syntax:
@@ -131,7 +133,7 @@ Description:
 
 
     .. seealso::
-        :func:`nrnpython`
+        :hoc:func:`nrnpython`
 
          
 
@@ -139,7 +141,7 @@ Description:
 
 
 
-.. class:: neuron.hoc.HocObject
+.. hoc:class:: neuron.hoc.HocObject
 
 
     Syntax:
@@ -253,7 +255,7 @@ Description:
             h('create soma, axon') 
             ax = h.axon 
 
-        makes ax a Python :class:`~neuron.h.Section` which references the hoc 
+        makes ax a Python :hoc:class:`~neuron.h.Section` which references the hoc
         axon section. Many hoc functions require a currently accessed section 
         and for these a typical idiom is 
 
@@ -338,7 +340,7 @@ Description:
 
         and thus in not what is needed in the most common 
         case of a hoc function holding a pointer to a variable such as 
-        :meth:`Vector.record` or :meth:`Vector.play`. For this one needs the :samp:`_ref_{varname}` idiom 
+        :hoc:meth:`Vector.record` or :hoc:meth:`Vector.play`. For this one needs the :samp:`_ref_{varname}` idiom
         which works for any hoc variable and acts exactly like a c pointer. eg: 
 
         .. code-block::
@@ -493,7 +495,7 @@ Description:
          
 
     .. seealso::
-        :meth:`Vector.to_python`, :meth:`Vector.from_python`
+        :hoc:meth:`Vector.to_python`, :hoc:meth:`Vector.from_python`
 
          
 
@@ -501,7 +503,7 @@ Description:
 
 
 
-.. method:: neuron.hoc.hoc_ac
+.. hoc:method:: neuron.hoc.hoc_ac
 
 
     Syntax:
@@ -513,7 +515,7 @@ Description:
 
 
     Description:
-        Get and set the hoc global scalar, :data:`hoc_ac_`-variables. 
+        Get and set the hoc global scalar, :hoc:data:`hoc_ac_`-variables.
         This is obsolete since HocObject 
         is far more general. 
 
@@ -533,7 +535,7 @@ Description:
 
 
 
-.. method:: neuron.h.cas
+.. hoc:method:: neuron.h.cas
 
 
     Syntax:
@@ -547,8 +549,8 @@ Description:
 
 
     Description:
-        Returns the :ref:`currently accessed section <CurrentlyAccessedSection>` as a Python 
-        :class:`~neuron.h.Section` object. 
+        Returns the :ref:`currently accessed section <hoc_CurrentlyAccessedSection>` as a Python
+        :hoc:class:`~neuron.h.Section` object.
 
         .. code-block::
             python
@@ -569,7 +571,7 @@ Description:
 
 
 
-.. class:: neuron.h.Section
+.. hoc:class:: neuron.h.Section
 
 
     Syntax:
@@ -586,8 +588,8 @@ Description:
 
     Description:
         The Python Section object allows modification and evaluation of the 
-        information associated with a NEURON :ref:`geometry_section`. The typical way to get 
-        a reference to a Section in Python is with :meth:`neuron.h.cas`  or 
+        information associated with a NEURON :ref:`hoc_geometry_section`. The typical way to get
+        a reference to a Section in Python is with :hoc:meth:`neuron.h.cas`  or
         by using the hoc section name as in ``asec = h.dend[4]``. 
         The ``sec = Section()`` will create an anonymous Section with a hoc name 
         constructed from "Section" and the Python reference address. 
@@ -595,7 +597,7 @@ Description:
         The "anonymous" python section can be given a name with the named 
         parameter and/or associated with a cell object using the named cell parameter. 
         Note that a cell association is required if one anticipates using the 
-        :meth:`~ParallelContext.gid2cell` method of :class:`ParallelContext`. 
+        :hoc:meth:`~ParallelContext.gid2cell` method of :hoc:class:`ParallelContext`.
 
         .. code-block::
             python
@@ -613,7 +615,7 @@ Description:
                 print sec.name(), seg.x, mech.name() 
 
         A Python Section can be made the currently accessed 
-        section by using its push method. Be sure to use :func:`pop_section` 
+        section by using its push method. Be sure to use :hoc:func:`pop_section`
         when done with it to restore the previous currently accessed section. 
         I.e, given the above fragment, 
 
@@ -642,7 +644,7 @@ Description:
             h.psection(sec=sec) 
 
          
-        With a :class:`SectionRef` one can, for example, 
+        With a :hoc:class:`SectionRef` one can, for example,
 
         .. code-block::
             python
@@ -734,7 +736,8 @@ Mechanism
 
 ----
 
-.. _Hoc_accessing_Python:
+
+.. _hoc_Hoc_accessing_Python:
 
 HOC accessing Python
 ~~~~~~~~~~~~~~~~~~~~
@@ -756,7 +759,7 @@ HOC accessing Python
 
 
 
-.. function:: nrnpython
+.. hoc:function:: nrnpython
 
 
     Syntax:
@@ -790,7 +793,7 @@ HOC accessing Python
 
 
 
-.. class:: PythonObject
+.. hoc:class:: PythonObject
 
 
     Syntax:
@@ -798,7 +801,7 @@ HOC accessing Python
 
 
     Description:
-        Accesses any python object. Almost equivalent to :class:`~neuron.hoc.HocObject` in the 
+        Accesses any python object. Almost equivalent to :hoc:class:`~neuron.hoc.HocObject` in the
         python world but because of some hoc syntax limitations, ie. hoc does not 
         allow an object to be a callable function, and top level indices have 
         different semantics, we sometimes need to use a special idiom, ie. the '_' 

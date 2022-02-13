@@ -1,11 +1,12 @@
-.. _file:
+
+.. _hoc_file:
 
 File Access (Recommended Way)
 -----------------------------
 
 
 
-.. class:: File
+.. hoc:class:: File
 
 
     Syntax:
@@ -16,10 +17,10 @@ File Access (Recommended Way)
 
     Description:
         This class allows you to open several files at once, whereas the top level 
-        functions, :func:`ropen` and :func:`wopen` , 
+        functions, :hoc:func:`ropen` and :hoc:func:`wopen` ,
         allow you to deal only with one file at a time. 
          
-        The functionality of :func:`xopen` is not implemented in this class so use 
+        The functionality of :hoc:func:`xopen` is not implemented in this class so use
 
         .. code-block::
             none
@@ -59,14 +60,14 @@ File Access (Recommended Way)
         vector.  This issue does not arise with the unix version. 
 
     .. seealso::
-        :ref:`printf_doc`, :func:`ropen`, :func:`xopen`, :func:`wopen`
+        :ref:`hoc_printf_doc`, :hoc:func:`ropen`, :hoc:func:`xopen`, :hoc:func:`wopen`
 
 
 ----
 
 
 
-.. method:: File.ropen
+.. hoc:method:: File.ropen
 
 
     Syntax:
@@ -85,7 +86,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.wopen
+.. hoc:method:: File.wopen
 
 
     Syntax:
@@ -104,7 +105,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.aopen
+.. hoc:method:: File.aopen
 
 
     Syntax:
@@ -123,7 +124,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.xopen
+.. hoc:method:: File.xopen
 
 
     Syntax:
@@ -144,7 +145,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.close
+.. hoc:method:: File.close
 
 
     Syntax:
@@ -161,7 +162,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.mktemp
+.. hoc:method:: File.mktemp
 
 
     Syntax:
@@ -178,7 +179,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.unlink
+.. hoc:method:: File.unlink
 
 
     Syntax:
@@ -196,7 +197,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.printf
+.. hoc:method:: File.printf
 
 
     Syntax:
@@ -205,7 +206,7 @@ File Access (Recommended Way)
 
     Description:
         As in standard C \ ``printf`` and the normal 
-        hoc :func:`printf` . 
+        hoc :hoc:func:`printf` .
 
          
 
@@ -213,7 +214,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.scanvar
+.. hoc:method:: File.scanvar
 
 
     Syntax:
@@ -235,7 +236,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.scanstr
+.. hoc:method:: File.scanstr
 
 
     Syntax:
@@ -253,7 +254,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.gets
+.. hoc:method:: File.gets
 
 
     Syntax:
@@ -270,7 +271,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.getname
+.. hoc:method:: File.getname
 
 
     Syntax:
@@ -289,7 +290,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.dir
+.. hoc:method:: File.dir
 
 
     Syntax:
@@ -298,7 +299,7 @@ File Access (Recommended Way)
 
     Description:
         Return the pathname of the last directory moved to in the chooser. 
-        If the :meth:`File.chooser` has not been created, return the empty string. 
+        If the :hoc:meth:`File.chooser` has not been created, return the empty string.
 
          
 
@@ -306,7 +307,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.eof
+.. hoc:method:: File.eof
 
 
     Syntax:
@@ -322,7 +323,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.flush
+.. hoc:method:: File.flush
 
 
     Syntax:
@@ -338,7 +339,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.isopen
+.. hoc:method:: File.isopen
 
 
     Syntax:
@@ -354,7 +355,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.chooser
+.. hoc:method:: File.chooser
 
 
     Syntax:
@@ -407,7 +408,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.vwrite
+.. hoc:method:: File.vwrite
 
 
     Syntax:
@@ -430,7 +431,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.vread
+.. hoc:method:: File.vread
 
 
     Syntax:
@@ -444,7 +445,7 @@ File Access (Recommended Way)
         or variable using \ ``fread()``. 
 
     .. seealso::
-        :func:`vwrite`
+        :hoc:func:`vwrite`
         
 
          
@@ -454,7 +455,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.seek
+.. hoc:method:: File.seek
 
 
     Syntax:
@@ -471,7 +472,7 @@ File Access (Recommended Way)
         the beginning of file.  Offset is in characters and is measured 
         from the beginning of the file unless origin is 1 (measures from 
         the current position) or 2 (from the end of the file).  Returns 
-        0 if successful, non-zero on error.  Used with :meth:`tell`. 
+        0 if successful, non-zero on error.  Used with :hoc:meth:`tell`.
 
          
 
@@ -479,7 +480,7 @@ File Access (Recommended Way)
 
 
 
-.. method:: File.tell
+.. hoc:method:: File.tell
 
 
     Syntax:
@@ -487,5 +488,5 @@ File Access (Recommended Way)
 
 
     Description:
-        Return the current file position or -1 on error.  Used with :meth:`seek`. 
+        Return the current file position or -1 on error.  Used with :hoc:meth:`seek`.
 

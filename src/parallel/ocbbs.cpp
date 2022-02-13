@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -630,6 +631,14 @@ static double set_timeout(void* v) {
 	return double(arg);
 }
 
+static double set_mpiabort_on_error(void*) {
+	double ret = double(nrn_mpiabort_on_error_);
+	if (ifarg(1)) {
+		nrn_mpiabort_on_error_ = int(chkarg(1, 0, 1));
+	}
+	return ret;
+}
+
 static double gid_clear(void* v) {
 	int arg = 0;
 	if (ifarg(1)){
@@ -661,8 +670,9 @@ static double spike_record(void* v) {
 }
 
 static double psolve(void* v) {
-	OcBBS* bbs = (OcBBS*)v;
-	double tstop = chkarg(1, t, 1e9);
+    nrn::Instrumentor::phase_begin("psolve");
+    OcBBS* bbs = (OcBBS*) v;
+    double tstop = chkarg(1, t, 1e9);
 	int enabled = nrncore_is_enabled();
 	int file_mode = nrncore_is_file_mode();
 	if (enabled == 1) {
@@ -671,7 +681,8 @@ static double psolve(void* v) {
 		// Classic case
 		bbs->netpar_solve(tstop);
 	}
-	return double(enabled);
+    nrn::Instrumentor::phase_end("psolve");
+    return double(enabled);
 }
 
 static double set_maxstep(void* v) {
@@ -1039,6 +1050,7 @@ static Member_func members[] = {
 	"vtransfer_time", vtransfer_time,
 	"mech_time", mech_time,
 	"timeout", set_timeout,
+	"mpiabort_on_error", set_mpiabort_on_error,
 
 	"set_gid2node", set_gid2node,
 	"gid_exists", gid_exists,

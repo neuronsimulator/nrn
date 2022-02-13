@@ -1,4 +1,5 @@
-.. _panel:
+
+.. _hoc_panel:
 
          
 Widgets
@@ -12,7 +13,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xpanel
+.. hoc:function:: xpanel
 
 
     Syntax:
@@ -66,7 +67,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xbutton
+.. hoc:function:: xbutton
 
 
     Syntax:
@@ -93,7 +94,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xstatebutton
+.. hoc:function:: xstatebutton
 
 
     Syntax:
@@ -101,7 +102,7 @@ panels of buttons, menus, and field editors.
 
 
     Description:
-        like :func:`xbutton`, but when pressed var is set to 0 or 1 so that it matches the 
+        like :hoc:func:`xbutton`, but when pressed var is set to 0 or 1 so that it matches the
         telltale state of the button. If the var is set by another way the 
         telltale state is updated to reflect the correct value. 
 
@@ -111,7 +112,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xcheckbox
+.. hoc:function:: xcheckbox
 
 
     Syntax:
@@ -119,7 +120,7 @@ panels of buttons, menus, and field editors.
 
 
     Description:
-        like :func:`xstatebutton`, but checkbox appearance. 
+        like :hoc:func:`xstatebutton`, but checkbox appearance.
 
          
 
@@ -127,7 +128,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xradiobutton
+.. hoc:function:: xradiobutton
 
 
     Syntax:
@@ -175,7 +176,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xmenu
+.. hoc:function:: xmenu
 
 
     Syntax:
@@ -292,7 +293,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xlabel
+.. hoc:function:: xlabel
 
 
     Syntax:
@@ -308,7 +309,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xvarlabel
+.. hoc:function:: xvarlabel
 
 
     Syntax:
@@ -324,7 +325,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xvalue
+.. hoc:function:: xvalue
 
 
     Syntax:
@@ -360,7 +361,7 @@ panels of buttons, menus, and field editors.
 
         The domain of values that can be entered by the user into a field editor 
         may be limited to the domain specified by the 
-        :func:`variable_domain` function , the domain specified for the variable in 
+        :hoc:func:`variable_domain` function , the domain specified for the variable in
         a model description file, or a default domain that exists 
         for some special NEURON variables such as diam, Ra, L, etc. 
         For a field editor to check the domain, domain limits must be in effect 
@@ -372,7 +373,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xpvalue
+.. hoc:function:: xpvalue
 
 
     Syntax:
@@ -382,18 +383,18 @@ panels of buttons, menus, and field editors.
 
 
     Description:
-        like :func:`xvalue` but definitely uses address of the variable. 
+        like :hoc:func:`xvalue` but definitely uses address of the variable.
 
     .. seealso::
     
-        :func:`units`
+        :hoc:func:`units`
          
 
 ----
 
 
 
-.. function:: xfixedvalue
+.. hoc:function:: xfixedvalue
 
 
     Syntax:
@@ -414,7 +415,7 @@ panels of buttons, menus, and field editors.
 
 
 
-.. function:: xslider
+.. hoc:function:: xslider
 
 
     Syntax:
@@ -437,7 +438,7 @@ panels of buttons, menus, and field editors.
 ----
 
 
-.. function:: units
+.. hoc:function:: units
 
     Syntax:
         ``current_units = units(&variable)``

@@ -58,7 +58,7 @@ public:
 	static char* object_str(const char* symname, Object* = NULL);
 };
 
-class Symlist;
+struct Symlist;
 
 #ifndef OCMATRIX
 

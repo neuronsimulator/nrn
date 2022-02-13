@@ -1,6 +1,7 @@
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
-add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+add_compile_options(${NRN_COMPILE_FLAGS})
+add_compile_definitions(${NRN_COMPILE_DEFS})
 
 # =============================================================================
 # Definitions used in setup.py
@@ -131,6 +132,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     if(NRNPYTHON_INCLUDE3)
       add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
       add_dependencies(nrnpython3 nrniv_lib)
+      target_include_directories(nrnpython3 PRIVATE "${NRN_OC_GENERATED_SOURCES}")
       list(APPEND nrnpython_lib_list nrnpython3)
       target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
       install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})

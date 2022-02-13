@@ -31,7 +31,7 @@ char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
-void (*p_nrnpython_start)(int);
+int (*p_nrnpython_start)(int);
 void (*p_nrnpython_finalize)();
 #endif
 int nrn_inpython_;
@@ -58,7 +58,7 @@ extern int stdin_event_ready();
 #endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
-int matherr1(void) {
+static void matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
@@ -73,6 +73,8 @@ int matherr1(void) {
 	}
 }
 #endif
+
+int nrn_mpiabort_on_error_{1};
 
 int nrn_feenableexcept_ = 0; // 1 if feenableexcept(FEEXCEPT) is successful
 
@@ -712,12 +714,12 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt){	/* recover from 
 	ctp = cbuf;
 	*ctp = '\0';
 
-	if (oc_jump_target_ && nrnmpi_numprocs_world == 1) {
+	if (oc_jump_target_ && (nrnmpi_numprocs_world == 1 || !nrn_mpiabort_on_error_)) {
 		hoc_newobj1_err();
 		(*oc_jump_target_)();
 	}
 #if NRNMPI
-	if (nrnmpi_numprocs_world > 1) {
+	if (nrnmpi_numprocs_world > 1 && nrn_mpiabort_on_error_) {
 		nrnmpi_abort(-1);
 	}
 #endif
@@ -1398,11 +1400,7 @@ static void hoc_run1(void)	/* execute until EOF */
 		intset = 0;
 	}
 	hoc_execerror_messages = 1;
-	if (pipeflag == 1) {	/*at this location multiple emacs errors */
-        hoc_pipeflush(); /* don't eat up stack space */
-	}else{
-		pipeflag=0;
-	}
+	pipeflag=0; // reset pipeflag
 #if defined(WIN32) && !defined(CYGWIN)
 	if (!nrn_fw_eq(fin, stdin)) {
 		hoc_win_wait_cursor();
@@ -1624,7 +1622,6 @@ int hoc_yyparse(void) {
 	and then call yyparse() directly. yyparse() returns
 	0 : end of file
 	'\n' : ready to execute a command
-	'e' : user gave it em command, you should go to an editor
 	-3: need more input, not at a point where it accepts or rejects the
 		input.
 	*/
@@ -1641,17 +1638,11 @@ int hoc_yyparse(void) {
 		hoc_in_yyparse = 1;
 		i = yyparse();
 		hoc_in_yyparse = 0;
-		switch (i) {
-        case 'e':
-            i = '\n';
-            hoc_edit();
-            break;
-        case -3 : /* need more input */
-			hoc_in_yyparse = 1;
+		if (i==-3) { // need more input
+       			hoc_in_yyparse = 1;
 			i = '\n';
-			break;
 		}
-	}while (i == '\n');
+	} while (i == '\n');
 	return i;
 }
 
@@ -1824,8 +1815,6 @@ static CHAR* fgets_unlimited_nltrans(HocStr* bufstr, NrnFILEWrap* f, int nltrans
 
 #if MAC
 int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
-	int hoc_pipegets_need();
-	char *hoc_pipegets();
 	if (*ctp) {
 		hoc_execerror("Internal error:", "Not finished with previous input line");
 	}
@@ -1837,10 +1826,10 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 			return EOF;
 		}
 	}else if (pipeflag) {
-		if (hoc_pipegets_need() > hoc_cbufstr->size) {
-			hocstr_resize(hoc_cbufstr, hoc_pipegets_need());
+		if (hoc_strgets_need() > hoc_cbufstr->size) {
+			hocstr_resize(hoc_cbufstr, hoc_strgets_need());
 		}
-		if (hoc_pipegets(cbuf, hoc_cbufstr->size) == (char *)0) {
+		if (hoc_strgets(cbuf, hoc_cbufstr->size - 1) == (char *)0) {
 			return EOF;
 		}
 	}else{
@@ -1872,7 +1861,6 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 
 #else
 int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
-	extern char* hoc_pipegets(char* cbuf, int nc);
 	if (*ctp) {
 		hoc_execerror("Internal error:", "Not finished with previous input line");
 	}
@@ -1884,10 +1872,10 @@ int hoc_get_line(void){ /* supports re-entry. fill cbuf with next line */
 			return EOF;
 		}
 	}else if (pipeflag) {
-		if (hoc_pipegets_need() > hoc_cbufstr->size) {
-			hocstr_resize(hoc_cbufstr, hoc_pipegets_need() + 100);
+		if (hoc_strgets_need() > hoc_cbufstr->size) {
+			hocstr_resize(hoc_cbufstr, hoc_strgets_need() + 100);
 		}
-		if (hoc_pipegets(cbuf, CBUFSIZE) == (char *)0) {
+		if (hoc_strgets(cbuf, CBUFSIZE - 1) == (char *)0) {
 			return EOF;
 		}
 	}else{

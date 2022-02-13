@@ -1,13 +1,12 @@
 
-Code Coverage
--------------
+# Code Coverage
 
-**Dependencies** (Linux)
+## Dependencies (Linux)
 ```
 sudo apt install lcov
 ```
 
-**Instructions**
+## Instructions
 
 Clone the nrn repository and get ready to build.
 ```
@@ -78,8 +77,7 @@ genhtml coverage-combined.info --output-directory html
 
 And view the report by loading ```./html/index.html``` into your browser.
 
-Simplified Workflow
--------------------
+## Simplified Workflow
 
 ```
 cmake .. -DCMAKE_INSTALL_PREFIX=install \

@@ -1,13 +1,12 @@
 # Basically want to test that FOR_NETCONS statement works when
 # the NetCons connecting to ForNetConTest instances are created
 # in random order.
+import distutils.util
 import os
-import pytest
-import traceback
-
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
 
 from neuron import h
+
+h.load_file("stdrun.hoc")
 
 pc = h.ParallelContext()
 h.dt = 1.0 / 32
@@ -16,6 +15,10 @@ h.dt = 1.0 / 32
 class Cell:
     def __init__(self, gid):
         self.soma = h.Section(name="soma", cell=self)
+        if gid % 2 == 0:
+            # CoreNEURON permutation not the identity if cell topology not homogeneous
+            self.dend = h.Section(name="dend", cell=self)
+            self.dend.connect(self.soma(0.5))
         self.gid = gid
         pc.set_gid2node(gid, pc.id())
         self.r = h.Random()
@@ -52,12 +55,20 @@ def test_fornetcon():
 
     tstop = 8
 
-    def run(tstop):
+    def run(tstop, mode):
         pc.set_maxstep(10)
         h.finitialize(-65)
-        pc.psolve(tstop)
+        if mode == 0:
+            pc.psolve(tstop)
+        elif mode == 1:
+            while h.t < tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
-    run(tstop)  # NEURON run
+    run(tstop, 0)  # NEURON run
 
     spiketime_std = spiketime.c()
     spikegid_std = spikegid.c()
@@ -71,34 +82,32 @@ def test_fornetcon():
 
     weight_std = get_weights()
 
-    spiketime.resize(0)
-    spikegid.resize(0)
-
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
-    run(tstop)
-    coreneuron.enable = False
-    assert len(spiketime) > 0
-    assert spiketime_std.eq(spiketime) == 1.0
-    assert spikegid_std.eq(spikegid) == 1.0
-    assert len(weight_std) > 0
-    assert weight_std == get_weights()
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
+    )
 
+    def runassert(mode):
+        spiketime.resize(0)
+        spikegid.resize(0)
+
+        run(tstop, mode)
+        assert len(spiketime) > 0
+        assert spiketime_std.eq(spiketime) == 1.0
+        assert spikegid_std.eq(spikegid) == 1.0
+        assert len(weight_std) > 0
+        assert weight_std == get_weights()
+
+    for mode in [0, 1, 2]:
+        runassert(mode)
+
+    coreneuron.enable = False
     # teardown
     pc.gid_clear()
 
 
 if __name__ == "__main__":
-    try:
-        test_fornetcon()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # This test is not actually executed on GPU, but it has this logic anyway
-    # for consistency with the other .py tests in this folder when
-    # https://github.com/BlueBrain/CoreNeuron/issues/512 is resolved.
-    if enable_gpu:
-        h.quit()
+    test_fornetcon()
+    h.quit()

@@ -657,9 +657,11 @@ General
     are delivered.
     
   .. Note::
-      Must retain references to the tvec and gidvec vectors to avoid use of freed memory
-      since PatternStim does not increment the reference count for those vectors.
-      Calling s.play() with no arguments turns off the PatternStim.
+      PatternStim.play(tvec, gidvec) makes a copy of the information in
+      tvec and gidvec so those vectors can be unreferenced so that their
+      memory is freed.
+      Calling s.play() with no arguments turns off the PatternStim and frees
+      its copy of the (t, gid) information.
   
   Example:
     .. code-block::
@@ -687,6 +689,7 @@ General
       gidvec = h.Vector(range(10)) # only 0,1,2 go to cell
       ps = h.PatternStim()
       ps.play(tvec, gidvec)
+      del tvec, gidvec # ps retains a copy of the (t, gid) info.
 
       #Run
       pc.set_maxstep(10.)

@@ -14,14 +14,17 @@ import os
 import sys
 import subprocess
 
-# Translators
+# Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
-import html2
+sys.path.insert(0, os.path.abspath("./domains"))
+
+import html2        # responsible for creating jump tables in python and hoc documentation
+import hocdomain    # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
 
 # -- Project information -----------------------------------------------------
 
 project = "NEURON"
-copyright = "2021, Duke, Yale and the Blue Brain Project"
+copyright = "2022, Duke, Yale and the Blue Brain Project"
 author = "Michael Hines"
 
 # -- General configuration ---------------------------------------------------
@@ -47,6 +50,9 @@ source_suffix = {
 def setup(app):
     """Setup connect events to the sitemap builder"""
     app.set_translator("html", html2.HTMLTranslator)
+
+    # Set-up HOC domain
+    hocdomain.setup(app)
 
 
 # Add any paths that contain templates here, relative to this directory.

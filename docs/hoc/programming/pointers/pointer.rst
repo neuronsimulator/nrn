@@ -1,11 +1,12 @@
-.. _pointer:
+
+.. _hoc_pointer:
 
 Pointer Class
 -------------
 
 
 
-.. class:: Pointer
+.. hoc:class:: Pointer
 
 
     Syntax:
@@ -22,13 +23,13 @@ Pointer Class
         Holds a reference to a variable. When memory for the variable is freed, 
         the Pointer will return an error if used. 
          
-        See :meth:`Pointer.assign` for the meaning of the optional second arg. 
+        See :hoc:meth:`Pointer.assign` for the meaning of the optional second arg.
 
 ----
 
 
 
-.. method:: Pointer.val
+.. hoc:method:: Pointer.val
 
 
     Syntax:
@@ -47,7 +48,7 @@ Pointer Class
 
 
 
-.. method:: Pointer.s
+.. hoc:method:: Pointer.s
 
 
     Syntax:
@@ -64,7 +65,7 @@ Pointer Class
 
 
 
-.. method:: Pointer.assign
+.. hoc:method:: Pointer.assign
 
 
     Syntax:
@@ -75,10 +76,10 @@ Pointer Class
         Sets the value of the pointer variable to val. If  prt was constructed 
         with a second arg then the execution depends on its form. If the 
         second arg string contains one or more $1 tokens, then the tokens 
-        are replaced by :data:`hoc_ac_`, :data:`hoc_ac_` is set to the val and the resulting 
+        are replaced by :hoc:data:`hoc_ac_`, :hoc:data:`hoc_ac_` is set to the val and the resulting
         statement is executed. Otherwise the second arg string is assumed to 
         be a variable name and a statement of the form 
-        variablename = :data:`hoc_ac_` is executed. 
+        variablename = :hoc:data:`hoc_ac_` is executed.
         Note that the compiling of these statements takes place just once when 
         the Pointer is constructed. Thus ptr.assign(val) is marginally 
         faster than execute("stmt with val"). 

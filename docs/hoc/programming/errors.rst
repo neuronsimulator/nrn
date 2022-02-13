@@ -1,7 +1,7 @@
 Error Handling
 --------------
 
-.. function:: coredump_on_error
+.. hoc:function:: coredump_on_error
 
     Syntax:
         ``coredump_on_error(1 or 0)``
@@ -9,11 +9,11 @@ Error Handling
     Description:
         On unix machines, sets a flag which requests (1) a coredump in case 
         of memory or bus errors --- Or floating exceptions if
-        :func:`nrn_fenableexcept` has been turned on.
+        :hoc:func:`nrn_fenableexcept` has been turned on.
 
 ----
 
-.. function:: nrn_feenableexcept
+.. hoc:function:: nrn_feenableexcept
 
     Syntax:
         ``previous_floating_point_mask = nrn_feenableexcept(boolean)``
@@ -36,20 +36,20 @@ Error Handling
 
 ----
 
-.. function:: show_errmess_always
+.. hoc:function:: show_errmess_always
 
     Syntax:
         ``show_errmess_always(boolean)``
 
     Description:
         Sets or turns off a flag which, if on, always prints the error message even 
-        if normally turned off by an :func:`execute1` statement or other call to the 
+        if normally turned off by an :hoc:func:`execute1` statement or other call to the
         interpreter. 
 
 
 ----
 
-.. function:: execerror
+.. hoc:function:: execerror
 
     Syntax:
         ``execerror("message1", "message2")``

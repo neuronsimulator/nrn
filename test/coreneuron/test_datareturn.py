@@ -1,12 +1,9 @@
 # Test of data return covering most of the functionality.
+import distutils.util
+import itertools
 import os
-import pytest
-import sys
-import traceback
 
-enable_gpu = bool(os.environ.get("CORENRN_ENABLE_GPU", ""))
-
-from neuron import h
+from neuron import h, gui
 
 pc = h.ParallelContext()
 h.dt = 1.0 / 32
@@ -95,17 +92,20 @@ class Network:
                     pass
         for inst in instances:
             for name in names:
-                d.append(getattr(inst, name))
+                d.append(((mname, name), getattr(inst, name)))
 
     def data(self):
-        d = [h.t]
-        for sec in h.allsec():
-            for seg in sec:
-                d.append(seg.v)
-                d.append(seg.i_membrane_)
-                for mech in seg:
-                    for var in mech:
-                        d.append(var[0])
+        d = [("t", h.t)]
+        for ncell, cell in enumerate(self.cells):
+            for nsec, sec in enumerate(cell.secs):
+                for nseg, seg in enumerate(sec):
+                    d.append(((ncell, nsec, nseg, "v"), seg.v))
+                    d.append(((ncell, nsec, nseg, "i"), seg.i_membrane_))
+                    for mech in seg:
+                        for var in mech:
+                            d.append(
+                                ((ncell, nsec, nseg, mech.name(), var.name()), var[0])
+                            )
 
         # all NetStim, ExpSyn, ...
         for mname in ["NetStim", "Exp2Syn", "IntervalFire"]:
@@ -145,9 +145,17 @@ def test_datareturn():
 
     pc.set_maxstep(10)
 
-    def run(tstop):
+    def run(tstop, mode):
         h.finitialize(-65)
-        pc.psolve(tstop)
+        if mode == 0:
+            pc.psolve(tstop)
+        elif mode == 1:
+            while h.t < tstop:
+                pc.psolve(h.t + 1.0)
+        else:
+            while h.t < tstop:
+                h.continuerun(h.t + 0.5)
+                pc.psolve(h.t + 0.5)
 
     if show:
         # visual verify that cells and acells have different final results so that
@@ -160,58 +168,54 @@ def test_datareturn():
         mkgraphs(model)
         h.run()
     else:
-        run(tstop)  # NEURON run
+        run(tstop, 0)  # NEURON run
     std = model.data()
 
     print("CoreNEURON run")
     h.CVode().cache_efficient(1)
     coreneuron.enable = True
-    coreneuron.gpu = enable_gpu
-
-    coreneuron.cell_permute = 0
-    run(tstop)
-    tst = model.data()
-    max_unpermuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
-    print("max diff unpermuted = %g" % max_unpermuted)
-
-    coreneuron.cell_permute = 1
-    run(tstop)
-    tst = model.data()
-    max_permuted = h.Vector(std).sub(h.Vector(tst)).abs().max()
-    print("max diff permuted = %g" % max_permuted)
-
-    pc.nthread(2)
-    run(tstop)
-    tst = model.data()
-    max_permuted_thread = h.Vector(std).sub(h.Vector(tst)).abs().max()
-
-    coreneuron.enable = False
-
-    print(
-        "max diff permuted with %d threads = %g" % (pc.nthread(), max_permuted_thread)
+    coreneuron.verbose = 0
+    coreneuron.gpu = bool(
+        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     )
 
-    assert max_unpermuted < 1e-10
-    assert max_permuted < 1e-10
-    assert max_permuted_thread < 1e-10
+    results = []
+    cell_permute_values = (1, 2) if coreneuron.gpu else (0, 1)
+    for mode, nthread, cell_permute in itertools.product(
+        [0, 1, 2], [1, 2], cell_permute_values
+    ):
+        pc.nthread(nthread)
+        coreneuron.cell_permute = cell_permute
+        run(tstop, mode)
+        tst = model.data()
+        max_diff = (
+            h.Vector(v for k, v in std).sub(h.Vector(v for k, v in tst)).abs().max()
+        )
+        assert len(std) == len(tst)
+        print(
+            "mode={} nthread={} permute={} max diff={}".format(
+                mode, nthread, cell_permute, max_diff
+            )
+        )
+        results.append(max_diff)
+        if max_diff > 1e-10:
+            for i in range(len(std)):
+                nrn_key, nrn_val = std[i]
+                tst_key, tst_val = tst[i]
+                assert nrn_key == tst_key
+                if abs(nrn_val - tst_val) >= 1e-10:
+                    print(i, nrn_key, nrn_val, tst_val, abs(nrn_val - tst_val))
+
+    assert all(max_diff < 1e-10 for max_diff in results)
 
     if __name__ != "__main__":
         # tear down
+        coreneuron.enable = False
         pc.nthread(1)
         pc.gid_clear()
-        return None
-
-    return model
 
 
 if __name__ == "__main__":
     show = False
-    try:
-        model = test_datareturn()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # The test doesn't exit without this.
-    if enable_gpu:
-        h.quit()
+    test_datareturn()
+    h.quit()

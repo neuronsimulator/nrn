@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -ex
 
 # On Mac, update neurondemo libnrnmech to point to relative libnrniv.

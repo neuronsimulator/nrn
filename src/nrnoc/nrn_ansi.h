@@ -24,7 +24,8 @@ extern Prop* nrn_mechanism(int type, Node*);
 
 // mod stuff
 extern void _nrn_free_watch(Datum *, int, int);
-extern void _nrn_watch_activate(Datum *, double(*)(Point_process *), int, Point_process *, int, double);
+extern void _nrn_watch_activate(Datum *, double(*)(Point_process*), int, Point_process*, int, double);
+extern void _nrn_watch_allocate(Datum *, double(*)(Point_process*), int, Point_process*, double nrflag);
 extern void hoc_reg_ba(int, nrn_bamech_t, int);
 extern int nrn_pointing(double *);
 
@@ -60,6 +61,7 @@ extern void nrn_diam_change(Section*);
 extern void sec_free(hoc_Item*);
 extern int node_index(Section* sec, double x);
 extern void extcell_node_create(Node*);
+extern void extnode_free_elements(Extnode*);
 extern const char* sec_and_position(Section* sec, Node* nd);
 extern void section_order(void);
 extern Section* nrn_sec_pop(void);

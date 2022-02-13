@@ -351,17 +351,23 @@ TQItem* BinQ::dequeue() {
 	return q;
 }
 
+/** Iterate in ascending bin order starting at current bin **/
 TQItem* BinQ::first() {
 	for (int i = 0; i < nbin_; ++i) {
-		if (bins_[i]) {
-			return bins_[i];
+		// start at least time qpt_ up to nbin_, and then wrap
+		// around to 0 and go up to qpt_
+		int j = (qpt_ + i)%nbin_;
+		if (bins_[j]) {
+			return bins_[j];
 		}
 	}
 	return 0;
 }
 TQItem* BinQ::next(TQItem* q) {
 	if (q->left_) { return q->left_; }
-	for (int i = q->cnt_ + 1; i < nbin_; ++i) {
+	// next non-empty bin starting at q->cnt_ + 1, until reach
+	// exactly qpt_, possibly wrapping around back to 0 if reach nbin_
+	for (int i = (q->cnt_ + 1)%nbin_; i != qpt_; i = (i + 1)%nbin_) {
 		if (bins_[i]) {
 			return bins_[i];
 		}

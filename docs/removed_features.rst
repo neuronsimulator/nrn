@@ -27,6 +27,10 @@ To that end, the following table's columns constitute:
      - Code related to BlueGene L, P and Q; support for BlueGene Checkpoint API (keywords: BGLCheckpoint, BGLCheckpointInit).
      - `#1286 <https://github.com/neuronsimulator/nrn/pull/1286>`_
      - 74d3db9
+   * - SEJNOWSKI
+     - C Preprocessor flag.
+     - `#1415 <https://github.com/neuronsimulator/nrn/pull/1415>`_
+     - e9ef741
    * - NRN_REALTIME
      - NEURON support for RTAI - Real Time Application Interface for Linux. Also relates to `ni_pci_6229`
      - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
