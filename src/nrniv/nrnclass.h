@@ -30,9 +30,6 @@
 #if USEBBS
 	,ParallelContext_reg()
 #endif
-#if NRN_DAQ
-	, NrnDAQ_reg()
-#endif
 
 #else //EXTERNS
 
@@ -65,8 +62,5 @@
 #endif
 #if USEBBS
 	,ParallelContext_reg
-#endif
-#if NRN_DAQ
-	, NrnDAQ_reg
 #endif
 #endif // !EXTERNS

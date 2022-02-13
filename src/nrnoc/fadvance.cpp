@@ -83,11 +83,6 @@ static void update(NrnThread*);
 extern short* nrn_is_artificial_;
 extern cTemplate** nrn_pnt_template_;
 #endif
-#if NRN_DAQ
-extern void nrn_daq_scanstart();
-extern void nrn_daq_ai();
-extern void nrn_daq_ao();
-#endif
 
 #define NRNCTIME 1
 #define NONVINT_ODE_COUNT 5
@@ -504,9 +499,6 @@ extern void nrn_ba(NrnThread*, int);
 
 void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	CTBEGIN
-#if NRN_DAQ
-	nrn_daq_ao();
-#endif
 #if ELIMINATE_T_ROUNDOFF
 	nth->nrn_ndt_ += .5;
 	nth->_t = nrn_tbase_ + nth->nrn_ndt_ * nrn_dt_;
@@ -514,15 +506,9 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
 	nth->_t += .5 * nth->_dt;
 #endif
 	fixed_play_continuous(nth);
-#if NRN_DAQ
-	nrn_daq_scanstart();
-#endif
 	nrn_extra_scatter_gather(0, nth->id);
 	nonvint(nth);
 	nrn_ba(nth, AFTER_SOLVE);
-#if NRN_DAQ
-	nrn_daq_ai();
-#endif
 	fixed_record_continuous(nth);
     CTADD
     {
@@ -986,11 +972,6 @@ void nrn_finitialize(int setv, double v) {
             }
         }
         state_discon_allowed_ = 1;
-#if 0 && NRN_DAQ
-        nrn_daq_ao();
-        nrn_daq_scanstart();
-        nrn_daq_ai();
-#endif
         nrn_record_init();
         for (i = 0; i < nrn_nthread; ++i) {
             fixed_record_continuous(nrn_threads + i);
