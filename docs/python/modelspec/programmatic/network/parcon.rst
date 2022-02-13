@@ -1386,7 +1386,7 @@ Description:
 
         launched nrniv without -mpi argument.
 
-        Since ``nrnmpi_init`` turns off gui, do not ``from neuron import gui``
+        Since ``nrnmpi_init`` turns off gui for all ranks > 0, do not ``from neuron import gui``
         beforehand.
 
         The mpi_init method name was removed from ParallelContext and replaced

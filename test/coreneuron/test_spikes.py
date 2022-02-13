@@ -27,7 +27,8 @@ elif nrnmpi_init_option:
     from neuron import h
 
     h.nrnmpi_init()
-    from neuron import gui  # if mpi is active, don't ask for it til gui turned off
+    # if mpi is active, don't ask for gui til it is turned off for all ranks > 0
+    from neuron import gui
 # otherwise serial execution
 else:
     from neuron import h, gui

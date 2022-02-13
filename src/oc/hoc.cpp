@@ -1174,7 +1174,13 @@ void hoc_quit(void) {
 	ivoc_final_exit();
 #if defined(USE_PYTHON)
 	/* if python was launched and neuron is an extension */
-	if (p_nrnpython_finalize) {(*p_nrnpython_finalize)();}
+	if (p_nrnpython_finalize) {
+		extern int bbs_poll_;
+		// don't want an MPI_Iprobe after MPI_Finalize if python gui
+		// thread calls doNotify().
+		bbs_poll_ = -1;
+		(*p_nrnpython_finalize)();
+	}
 #endif
 	exit(0);
 }
