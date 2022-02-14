@@ -967,7 +967,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static void hoc_run1(void);
+static int hoc_run1(void);
 
 int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 {
@@ -1052,7 +1052,7 @@ int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 		--gargc;
 	}
 	while (moreinput())
-		hoc_run1();
+		return hoc_run1();
 	return 0;
 }
 
@@ -1390,7 +1390,7 @@ static void restore_signals(void) {
 #endif
 }
 
-static void hoc_run1(void)	/* execute until EOF */
+static int hoc_run1(void)	/* execute until EOF */
 {
 	int controlled = control_jmpbuf;
 	NrnFILEWrap* sav_fin = fin;
@@ -1400,7 +1400,7 @@ static void hoc_run1(void)	/* execute until EOF */
 		if (setjmp(begin)) {
 			fin = sav_fin;
 			if (!nrn_fw_eq(fin, stdin)) {
-				return;
+				return 1;
 			}
 		}
 		intset = 0;
@@ -1425,6 +1425,7 @@ static void hoc_run1(void)	/* execute until EOF */
 		restore_signals();
 		control_jmpbuf = 0;
 	}
+	return 0;
 }
 
 /* event driven interface to oc. This routine always returns after processing

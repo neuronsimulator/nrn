@@ -828,9 +828,9 @@ ENDGUI
 #endif
        if (start_session) {
 #if HAVE_IV
-        oc.run(our_argc, our_argv);
+        exit_status = oc.run(our_argc, our_argv);
 #else
-	hoc_main1(our_argc, our_argv, env);
+	exit_status = hoc_main1(our_argc, our_argv, env);
 #endif
        } else {
          return 0;
