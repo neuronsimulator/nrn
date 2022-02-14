@@ -33,16 +33,6 @@ jobs:
           destination: artifacts
 
 workflows:
-  main:
-    jobs:
-      - manylinux2014-aarch64:
-          matrix:
-            parameters:
-              cibw_build: ["36", "37", "38", "39", "310"]
-          filters:
-            branches:
-              only:
-                - master
   nightly:
     triggers:
       - schedule:
@@ -50,7 +40,22 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                #- master   #disable master builds until PR is merged
+                - aarch64_wheel
+    jobs:
+      - manylinux2014-aarch64:
+          matrix:
+            parameters:
+              cibw_build: ["310"]
+  weekly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * 0"
+          filters:
+            branches:
+              only:
+                #- master   #disable master builds until PR is merged
+                - aarch64_wheel
     jobs:
       - manylinux2014-aarch64:
           matrix:
