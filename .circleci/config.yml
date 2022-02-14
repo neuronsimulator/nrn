@@ -43,6 +43,7 @@ workflows:
             branches:
               only:
                 - master
+                - aarch64_wheel
   nightly:
     triggers:
       - schedule:
