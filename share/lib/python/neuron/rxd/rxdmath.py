@@ -143,17 +143,6 @@ def _compile(arith, region) -> tuple:
     # (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
-def _ensure_arithmeticed(other) -> _Arithmeticed:
-    from . import species
-
-    if isinstance(other, species._SpeciesMathable):
-        other = _Arithmeticed(other)
-    elif isinstance(other, _Reaction):
-        raise RxDException("Cannot do arithmetic on a reaction")
-    elif not isinstance(other, _Arithmeticed):
-        other = _Arithmeticed(other, valid_reaction_term=False)
-    return other
-
 
 def _validate_reaction_terms(r1, r2) -> None:
     if not (r1._valid_reaction_term or r2._valid_reaction_term):
@@ -899,5 +888,16 @@ class Vm(_Arithmeticed, object):
     def __init__(self):
         super(Vm, self).__init__(Vm._Vm(), valid_reaction_term=True)
 
+
+def _ensure_arithmeticed(other) -> _Arithmeticed:
+    from . import species
+
+    if isinstance(other, species._SpeciesMathable):
+        other = _Arithmeticed(other)
+    elif isinstance(other, _Reaction):
+        raise RxDException("Cannot do arithmetic on a reaction")
+    elif not isinstance(other, _Arithmeticed):
+        other = _Arithmeticed(other, valid_reaction_term=False)
+    return other
 
 v = Vm()
