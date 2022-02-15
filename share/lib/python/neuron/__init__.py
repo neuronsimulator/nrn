@@ -526,41 +526,43 @@ _nrn_hocobj_ptr = None
 _double_ptr = None
 _double_size = None
 
+try:
+    import numpy
+    def numpy_element_ref(numpy_array: numpy.ndarray, index: int) -> hoc.HocObject:
+        """Return a HOC reference into a numpy array.
 
-def numpy_element_ref(numpy_array: numpy.ndarray, index: int):
-    """Return a HOC reference into a numpy array.
+        Parameters
+        ----------
+        numpy_array : :class:`numpy.ndarray`
+            the numpy array
+        index : int
+            the index into the numpy array
 
-    Parameters
-    ----------
-    numpy_array : :class:`numpy.ndarray`
-        the numpy array
-    index : int
-        the index into the numpy array
+        .. warning::
 
-    .. warning::
+            No bounds checking.
 
-        No bounds checking.
+        .. warning::
 
-    .. warning::
+            Assumes a contiguous array of doubles. In particular, be careful when
+            using slices. If the array is multi-dimensional,
+            the user must figure out the integer index to the desired element.
+        """
+        global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
+        import ctypes
 
-        Assumes a contiguous array of doubles. In particular, be careful when
-        using slices. If the array is multi-dimensional,
-        the user must figure out the integer index to the desired element.
-    """
-    global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
-    import ctypes
-
-    if _nrn_hocobj_ptr is None:
-        _nrn_hocobj_ptr = nrn_dll_sym("nrn_hocobj_ptr")
-        _nrn_hocobj_ptr.restype = ctypes.py_object
-        _double_ptr = ctypes.POINTER(ctypes.c_double)
-        _double_size = ctypes.sizeof(ctypes.c_double)
-    void_p = (
-        ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value
-        + index * _double_size
-    )
-    return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
-
+        if _nrn_hocobj_ptr is None:
+            _nrn_hocobj_ptr = nrn_dll_sym("nrn_hocobj_ptr")
+            _nrn_hocobj_ptr.restype = ctypes.py_object
+            _double_ptr = ctypes.POINTER(ctypes.c_double)
+            _double_size = ctypes.sizeof(ctypes.c_double)
+        void_p = (
+            ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value
+            + index * _double_size
+        )
+        return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
+except ImportError:
+    pass
 
 def nrn_dll_sym(name: str, type=None):
     """return the specified object from the NEURON dlls.
@@ -772,18 +774,21 @@ def _pt3dadd_in_obj(obj, name: str, x: float, y: float, z: float, d: float) -> N
     h.pt3dadd(x, y, z, d, sec=getattr(obj, array)[i])
 
 
-def numpy_from_pointer(cpointer, size) -> numpy.ndarray:
-    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-    buf_from_mem.restype = ctypes.py_object
-    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-    cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
-    return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
 
 
 try:
     import ctypes
     import numpy
     import traceback
+
+    def numpy_from_pointer(cpointer, size) -> numpy.ndarray:
+        buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+        buf_from_mem.restype = ctypes.py_object
+        buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+        cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
+        return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
+
+
 
     vec_to_numpy_prototype = ctypes.CFUNCTYPE(
         ctypes.py_object, ctypes.c_int, ctypes.POINTER(ctypes.c_double)
