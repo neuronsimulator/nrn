@@ -1,4 +1,6 @@
-def psection(sec):
+from neuron import nrn
+
+def psection(sec: nrn.Section) -> dict:
     from neuron import h
 
     try:
@@ -17,7 +19,7 @@ def psection(sec):
     # point processes
     pps = {}
     mt = h.MechanismType(1)
-    for i in range(int(mt.count())):
+    for i in range(mt.count()):
         mt.select(i)
         mypps = set()
         pp = mt.pp_begin(sec=sec)
@@ -36,7 +38,7 @@ def psection(sec):
     # membrane mechanisms
     mt = h.MechanismType(0)
 
-    for i in range(int(mt.count())):
+    for i in range(mt.count()):
         mt.select(i)
         mt.selected(mname)
         name = mname[0]
@@ -49,7 +51,7 @@ def psection(sec):
     for mech in mechs_present:
         my_results = {}
         ms = h.MechanismStandard(mech, 0)
-        for j in range(int(ms.count())):
+        for j in range(ms.count()):
             n = int(ms.name(mname, j))
             name = mname[0]
             pvals = []

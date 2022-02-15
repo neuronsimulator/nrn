@@ -48,7 +48,7 @@ class NRNPyHelper(pydoc.Helper):
 help = NRNPyHelper(sys.stdin, sys.stdout)
 
 
-def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0):
+def doc_asstring(thing, title="Python Library Documentation: %s", forceload=0) -> str:
     """return text documentation as a string, given an object or a path to an object."""
     try:
         object, name = pydoc.resolve(thing, forceload)
@@ -168,11 +168,11 @@ https://www.neuron.yale.edu/neuron/static/py_doc/index.html
 """
 
 
-def _get_from_help_dict(name):
+def _get_from_help_dict(name: str) -> str:
     return _help_dict.get(name, "")
 
 
-def _get_class_from_help_dict(name):
+def _get_class_from_help_dict(name: str) -> str:
     result = _get_from_help_dict(name)
     if not result:
         return ""
@@ -186,7 +186,7 @@ def _get_class_from_help_dict(name):
 _help_dict = None
 
 
-def get_docstring(objtype, symbol):
+def get_docstring(objtype: str, symbol: str) -> str:
     """Get the docstring for object-type and symbol.
 
     Ex:

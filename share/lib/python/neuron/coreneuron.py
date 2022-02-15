@@ -37,14 +37,14 @@ class coreneuron(object):
         self._verbose = 2  # INFO
         self._prcellstate = -1
 
-    def _valid_cell_permute(self):
+    def _valid_cell_permute(self) -> set:
         return {1, 2} if self._gpu else {0, 1}
 
-    def _default_cell_permute(self):
+    def _default_cell_permute(self) -> int:
         return 1 if self._gpu else 0
 
     @property
-    def enable(self):
+    def enable(self) -> bool:
         """Use CoreNEURON when calling ParallelContext.psolve(tstop)."""
         return self._enable
 
@@ -74,7 +74,7 @@ class coreneuron(object):
             self._cell_permute = self._default_cell_permute()
 
     @property
-    def num_gpus(self):
+    def num_gpus(self) -> int:
         """Get/set the number of GPU to use.
         0 means to use all that are avilable.
         """

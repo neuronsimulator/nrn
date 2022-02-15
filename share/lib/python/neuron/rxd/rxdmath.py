@@ -83,7 +83,7 @@ def analyze_reaction(r):
 # TODO: change this so that inputs are all automatically converted to numpy.array(s)
 # _compile is called by the reaction (Reaction._update_rates)
 # returns the rate and the species involved
-def _compile(arith, region):
+def _compile(arith, region) -> tuple:
     initializer._do_init()
     # for extracellular reactions ensure the species are _ExtracellularSpecies
     arith = _ensure_arithmeticed(arith)
@@ -143,7 +143,7 @@ def _compile(arith, region):
     # (functools.partial(eval(command), numpy, sys.modules[__name__]), species_dict.values())
 
 
-def _ensure_arithmeticed(other):
+def _ensure_arithmeticed(other) -> _Arithmeticed:
     from . import species
 
     if isinstance(other, species._SpeciesMathable):
@@ -155,7 +155,7 @@ def _ensure_arithmeticed(other):
     return other
 
 
-def _validate_reaction_terms(r1, r2):
+def _validate_reaction_terms(r1, r2) -> None:
     if not (r1._valid_reaction_term or r2._valid_reaction_term):
         raise RxDException("lhs=%r and rhs=%r not valid in a reaction" % (r1, r2))
     elif not r1._valid_reaction_term:
@@ -165,27 +165,27 @@ def _validate_reaction_terms(r1, r2):
 
 
 class _Function:
-    def __init__(self, obj, f, fname):
+    def __init__(self, obj, f, fname: str):
         self._obj = _ensure_arithmeticed(obj)
         self._f = f
         self._fname = fname
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s(%r)" % (self._fname, self._obj)
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         try:
             return "%s(%s)" % (self._fname, self._obj._short_repr())
         except:
             return self.__repr__()
 
-    def _semi_compile(self, region, instruction):
+    def _semi_compile(self, region, instruction) -> str:
         return "%s(%s)" % (self._fname, self._obj._semi_compile(region, instruction))
 
-    def _involved_species(self, the_dict):
+    def _involved_species(self, the_dict) -> None:
         self._obj._involved_species(the_dict)
 
-    def _ensure_extracellular(self, extracellular=None):
+    def _ensure_extracellular(self, extracellular=None) -> None:
         if extracellular:
             from . import species
 
@@ -197,7 +197,7 @@ class _Function:
                 item._ensure_extracellular(extracellular=extracellular)
 
     @property
-    def _voltage_dependent(self):
+    def _voltage_dependent(self) -> bool:
         try:
             return self._obj._voltage_dependent
         except AttributeError:
@@ -721,7 +721,7 @@ class _Arithmeticed:
             result = "0"
         return result
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         from . import species
 
         items = []
@@ -758,7 +758,7 @@ class _Arithmeticed:
                 pass
         return False
 
-    def _semi_compile(self, region, instruction):
+    def _semi_compile(self, region, instruction) -> str:
         items = []
         counts = []
         items_append = items.append

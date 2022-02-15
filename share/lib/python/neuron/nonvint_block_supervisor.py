@@ -80,26 +80,26 @@ call.append([
 ode_count_method_index = 5
 
 
-def register(c):
+def register(c) -> None:
     unregister(c)
     call.append(c)
     activate_callback(True)
 
 
-def unregister(c):
+def unregister(c) -> None:
     v_structure_change.value = 1
     if c in call:
         call.remove(c)
-    if len(call) == 0:
+    if not call:
         activate_callback(False)
 
 
-def clear():
-    while len(call):
+def clear() -> None:
+    while call:
         unregister(call[0])
 
 
-def ode_count_all(offset):
+def ode_count_all(offset: int) -> int:
     global nonvint_block_offset
     nonvint_block_offset = offset
     cnt = 0
@@ -123,7 +123,7 @@ _pd1_arg = (2, 3, 6, 10)
 _float_size = numpy.dtype(float).itemsize
 
 
-def numpy_from_pointer(cpointer, size):
+def numpy_from_pointer(cpointer, size: int) -> numpy.ndarray:
     buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
     buf_from_mem.restype = ctypes.py_object
     buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
@@ -131,7 +131,7 @@ def numpy_from_pointer(cpointer, size):
     return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
 
 
-def nonvint_block(method, size, pd1, pd2, tid):
+def nonvint_block(method, size, pd1, pd2, tid: int) -> int:
     # print('nonvint_block called with method = %d l=%d tid=%d' % (method,size,tid))
     try:
         assert tid == 0
@@ -178,7 +178,7 @@ def nonvint_block(method, size, pd1, pd2, tid):
 _callback = nonvint_block_prototype(nonvint_block)
 
 
-def activate_callback(activate):
+def activate_callback(activate: bool) -> None:
     if activate:
         set_nonvint_block(_callback)
     else:
