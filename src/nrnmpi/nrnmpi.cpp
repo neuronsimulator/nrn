@@ -63,33 +63,16 @@ extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** par
     }
     nrnmpi_under_nrncontrol_ = nrnmpi_under_nrncontrol;
     if (nrnmpi_under_nrncontrol_) {
-#if 0
-{int i;
-printf("nrnmpi_init: argc=%d\n", *pargc);
-for (i=0; i < *pargc; ++i) {
-        printf("%d |%s|\n", i, (*pargv)[i]);
-}
-}
-#endif
-
 #if NRN_MUSIC
         nrnmusic_init(pargc, pargv); /* see src/nrniv/nrnmusic.cpp */
 #endif
 
 #if !ALWAYS_CALL_MPI_INIT
-        /* this is not good. depends on mpirun adding at least one
-           arg that starts with -p4 but that probably is dependent
-           on mpich and the use of the ch_p4 device. We are trying to
-           work around the problem that MPI_Init may change the working
-           directory and so when not invoked under mpirun we would like to
-           NOT call MPI_Init.
-        */
         b = 0;
+        // classically, nrniv has used the -mpi arg to imply
+        // that MPI_Init should be called. In its absence the first arg
+        // above is used to determine nrnmpi_under_nrncontrol_;
         for (i = 0; i < *pargc; ++i) {
-            if (strncmp("-p4", (*pargv)[i], 3) == 0) {
-                b = 1;
-                break;
-            }
             if (strcmp("-mpi", (*pargv)[i]) == 0) {
                 b = 1;
                 break;
@@ -111,17 +94,29 @@ for (i=0; i < *pargc; ++i) {
 
         /* only call MPI_Init if not already initialized */
         if (!flag) {
+            // occasional problems with openmpi when mpi requested but
+            // launched without an mpiexec or equivalent. If some MPI
+            // implementation makes nontrivial use of argv, then perhaps
+            // restrict this hack to openmpi
+            static int argc = 1;
+            static char** argv;
+            if (!argv) {
+                argv = (char**)malloc(sizeof(char*));
+                argv[0] = strdup(*pargc ? (*pargv)[0] : "nrniv");
+            }
+            
 #if (USE_PTHREAD)
             int required = MPI_THREAD_SERIALIZED;
             int provided;
-            asrt(MPI_Init_thread(pargc, pargv, required, &provided));
+            asrt(MPI_Init_thread(&argc, &argv, required, &provided));
             if (required > provided) {
                 nrn_cannot_use_threads_and_mpi = 1;
             }
 #else
-            asrt(MPI_Init(pargc, pargv));
+            asrt(MPI_Init(&argc, &argv));
 #endif
             nrnmpi_under_nrncontrol_ = 1;
+
         } else {
             nrnmpi_under_nrncontrol_ = 0;
         }
