@@ -42,7 +42,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+#                 - master      #disable master builds until PR is merged
                 - aarch64_wheel
   nightly:
     triggers:
