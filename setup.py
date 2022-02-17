@@ -126,13 +126,12 @@ setup(
         "jinja2>=2.9.3",
         "jupyter-client<7", # try and work around: TypeError in notebooks/nmodl-kinetic-schemes.ipynb: 'coroutine' object is not subscriptable
         "jupyter",
-        "m2r",
+        "myst_parser",
         "mistune<2",  # prevents a version conflict with nbconvert
         "nbconvert<6.0",  # prevents issues with nbsphinx
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
-        "sphinx>=2.0",
-        "sphinx<3.0",  # prevents issue with m2r where m2r uses an old API no more supported with sphinx>=3.0
+        "sphinx",
         "sphinx-rtd-theme",
     ]
     + install_requirements,
