@@ -62,7 +62,7 @@ static char RCSid[] =
 #include <math.h>
 #include "errcodes.h"
 
-typedef int (*FUN)(double *, Datum *, Datum *, _NrnThread *);
+typedef int (*FUN)(double *, Datum *, Datum *, NrnThread *);
 
 static void nrn_buildjacobian_thread(NewtonSpace* ns,
   int n, int* index, double* x, FUN pfunc,

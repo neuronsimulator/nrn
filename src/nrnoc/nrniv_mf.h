@@ -5,6 +5,7 @@
 #include <hoc_membf.h>
 
 struct NrnThread;
+typedef struct SparseObj SparseObj;
 union Datum;	
 
 typedef double (*ldifusfunc3_t)(int, double*, Datum*, double*, double*, Datum*, NrnThread*);
@@ -23,7 +24,7 @@ extern "C" {
 extern Point_process *ob2pntproc(Object *);
 extern Point_process* ob2pntproc_0(Object*);
 extern double* _getelm(int, int);
-extern double* _nrn_thread_getelm(void*, int, int);
+extern double* _nrn_thread_getelm(SparseObj*, int, int);
 extern int sparse(void**, int, int*, int*, double*, double*, double,
   int(*)(), double**, int);
 extern int sparse_thread(void**, int, int*, int*, double*, double*, double,

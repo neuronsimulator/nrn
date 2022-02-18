@@ -49,6 +49,13 @@ function(set_psolve_test_mode_suffix psolve_test_mode)
       PARENT_SCOPE)
 endfunction()
 
+# Libsonata-report automatically converts 1-based GIDs to 0-based by subtracting 1 from them.
+# If there is already a GID 0 in the reports, libsonata-report throws.
+# Since some of the NEURON integration tests create 0-based GID cells we set the environment variable
+# LIBSONATA_ZERO_BASED_GIDS to 1 to avoid libsonata-reports's automatic conversion of 1-based GIDs to
+# 0-based that would trigger the throw.
+set(SONATA_GIDS_ZERO "LIBSONATA_ZERO_BASED_GIDS=1")
+
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
 foreach(test ${spike_comparison_tests})
   if(DEFINED mpi_ranks_${test})
@@ -72,6 +79,7 @@ foreach(test ${spike_comparison_tests})
       OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks}
       ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c
       arg_tstop=100 test${test}.hoc)
+
   # Set up tests that run the simulation using CoreNEURON. In principle we run all combinations of
   # [online, offline]*[CPU, GPU], but some of these may be disabled.
   foreach(processor gpu cpu)
@@ -87,10 +95,11 @@ foreach(test ${spike_comparison_tests})
           CONFLICTS ${test_${test}_coreneuron_${processor}_conflicts}
           PROCESSORS ${num_ranks}
           COMMAND
-            OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG}
-            ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS}
-            -mpi -c arg_tstop=100 -c arg_coreneuron=1 -c arg_psolve_test_mode=${psolve_test_mode}
-            ${${processor}_args_online} test${test}.hoc)
+            OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME}
+            ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_coreneuron=1
+            -c arg_psolve_test_mode=${psolve_test_mode} ${${processor}_args_online}
+            test${test}.hoc)
       endif()
     endforeach()
     # This is a workaround to reduce the number of MPI ranks in the GPU version of the patstim test
@@ -121,11 +130,11 @@ foreach(test ${spike_comparison_tests})
         "sed -n 2,1001p patstim.spk >> patstim.1.spk\n"
         "echo 1000 > patstim.2.spk\n"
         "sed -n 1002,2001p patstim.spk >> patstim.2.spk\n"
-        "OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
+        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
         " ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS}"
         " -d coredat --mpi -e 49 --pattern patstim.1.spk ${${processor}_args_offline}"
         " --checkpoint checkpoint -o part1\n"
-        "OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
+        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
         " ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS}"
         " -d coredat --mpi -e 100 --pattern patstim.2.spk ${${processor}_args_offline}"
         " --restore checkpoint -o part2\n"
@@ -161,7 +170,7 @@ foreach(test ${spike_comparison_tests})
                  arg_dump_coreneuron_model=1
                  test${test}.hoc
       COMMAND
-        OMP_NUM_THREADS=1 ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
+        OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
         ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
         --mpi -e 100 ${extra_args} ${${processor}_args_offline}
       OUTPUT asciispikes::out.dat)

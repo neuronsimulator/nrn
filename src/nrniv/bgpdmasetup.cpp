@@ -178,7 +178,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-using Int2TarList = std::unordered_map<int, TarList*>;
+using Int2TarList = std::unordered_map<int, std::unique_ptr<TarList>>;
 
 TarList::TarList() {
 	size = 0;
@@ -410,13 +410,12 @@ static int setup_target_lists(int** r_return) {
 	Int2TarList gid2tarlist;
 	// Now figure out the size of the target list for each distinct gid in r.
 	for (int i=0; i < rdispl[nhost]; ++i) {
-		int gid = r[i];
-		if (gid2tarlist.find(gid) == gid2tarlist.end()) {
-			gid2tarlist[gid] = new TarList{};
-			gid2tarlist[gid]->size = 0;
-		}
-		TarList* tl = gid2tarlist[gid];
-		++(tl->size);
+		const int gid = r[i];
+        auto& tl = gid2tarlist[gid]; // default-construct a new std::unique_ptr<TarList> if needed
+        if(!tl) {
+            tl.reset(new TarList()); // constructor initialises `size` to zero
+        }
+        ++(tl->size);
 	}
 
 	// Conceptually, now the intermediate is the mpi source and the gid
@@ -434,7 +433,7 @@ static int setup_target_lists(int** r_return) {
 
 	// Allocate the target lists (and set size to 0 (we will recount when filling).
 	for (auto& iter: gid2tarlist) {
-		TarList* tl = iter.second;
+		TarList* tl = iter.second.get();
 		tl->alloc();
 		tl->size = 0;
 	}
@@ -446,7 +445,7 @@ static int setup_target_lists(int** r_return) {
 		for (int i=b; i < e; ++i) {
 			const auto iter = gid2tarlist.find(r[i]);
 			if (iter != gid2tarlist.end()) {
-				TarList* tl = iter->second;
+				TarList* tl = iter->second.get();
 				tl->list[tl->size] = rank;
 				tl->size++;
 			}
@@ -504,7 +503,7 @@ static int setup_target_lists(int** r_return) {
 			// cells.
 			const auto iter = gid2tarlist.find(r[i]);
 			if (iter != gid2tarlist.end()) {
-				TarList* tl = iter->second;
+				TarList* tl = iter->second.get();
 				tl->rank = rank;
 			}
 		}
@@ -514,7 +513,7 @@ static int setup_target_lists(int** r_return) {
 	if (use_phase2_) {
 		random_init(nrnmpi_myid + 1);
 		for (const auto& iter: gid2tarlist) {
-			TarList* tl = iter.second;
+			TarList* tl = iter.second.get();
 			if (tl->rank >= 0) { // only if output gid is spike generating
 				phase2organize(tl);
 			}
@@ -538,7 +537,7 @@ static int setup_target_lists(int** r_return) {
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
 	for (const auto& iter: gid2tarlist) {
-		TarList* tl = iter.second;
+		TarList* tl = iter.second.get();
 		if (tl->rank < 0) {
 			// When the output gid does not generate spikes, that rank
 			// is not interested if there is a target list for it.
@@ -574,7 +573,7 @@ static int setup_target_lists(int** r_return) {
 	// what to send to each rank
 	for (const auto& iter: gid2tarlist) {
 		int gid = iter.first;
-		TarList* tl = iter.second;
+		TarList* tl = iter.second.get();
 		if (tl->rank < 0) {
 			continue;
 		}
@@ -607,7 +606,6 @@ static int setup_target_lists(int** r_return) {
 				s[sdispl[tl->rank]++] = tl->list[i];
 			}
 		}
-		delete tl;
 	}
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);

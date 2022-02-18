@@ -14,7 +14,6 @@
 #include "ocfunc.h"
 #include "ocmisc.h"
 #include "nrnmpi.h"
-#include "nrnrt.h"
 #include "nrnfilewrap.h"
 #if defined(__GO32__)
 #include <dos.h>
@@ -59,7 +58,7 @@ extern int stdin_event_ready();
 #endif
 #include <fenv.h>
 #define FEEXCEPT (FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW )
-int matherr1(void) {
+static void matherr1(void) {
 	/* above gives the signal but for some reason fegetexcept returns 0 */
 	switch(fegetexcept()) {
 	case FE_DIVBYZERO:
