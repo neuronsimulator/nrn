@@ -55,6 +55,12 @@ pip_numpy_install() {
       39) numpy_ver="numpy==1.19.3" ;;
       *) numpy_ver="numpy";;
     esac
+
+    # no old version exist for apple m1 and building from source fails
+    if [[ `uname -m` == 'arm64' ]]; then
+      numpy_ver="numpy"
+    fi
+
     echo " - pip install $numpy_ver"
     pip install $numpy_ver
 }
@@ -140,9 +146,18 @@ build_wheel_osx() {
     py_platform=$(python -c "import sysconfig; print('%s' % sysconfig.get_platform());")
 
     echo " - Python platform: ${py_platform}"
-    if [[ "${py_platform}" == *"-universal2" ]] ; then
-      export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
-      echo " - Python installation is universal2, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
+    if [[ "${py_platform}" == *"-universal2" ]]; then
+      if [[ `uname -m` == 'arm64' ]]; then
+        export _PYTHON_HOST_PLATFORM="${py_platform/universal2/arm64}"
+        echo " - Python installation is universal2 and we are on arm64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
+        export ARCHFLAGS="-arch arm64"
+        echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
+      else
+        export _PYTHON_HOST_PLATFORM="${py_platform/universal2/x86_64}"
+        echo " - Python installation is universal2 and we are on x84_64, setting _PYTHON_HOST_PLATFORM to: ${_PYTHON_HOST_PLATFORM}"
+        export ARCHFLAGS="-arch x86_64"
+        echo " - Setting ARCHFLAGS to: ${ARCHFLAGS}"
+      fi
     fi
 
     python setup.py build_ext --cmake-prefix="/opt/nrnwheel/ncurses;/opt/nrnwheel/readline;/usr/x11" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
@@ -188,7 +203,8 @@ case "$1" in
     ;;
 
   osx)
-    MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
+    BREW_PREFIX=$(brew --prefix)
+    MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
     USE_STATIC_READLINE=1
     for py_bin in /Library/Frameworks/Python.framework/Versions/${python_wheel_version}*/bin/python3; do
         build_wheel_osx "$py_bin" "$coreneuron" "$MPI_INCLUDE_HEADERS"
@@ -197,7 +213,8 @@ case "$1" in
 
   CI)
     if [ "$CI_OS_NAME" == "osx" ]; then
-        MPI_INCLUDE_HEADERS="/usr/local/opt/openmpi/include;/usr/local/opt/mpich/include"
+        BREW_PREFIX=$(brew --prefix)
+        MPI_INCLUDE_HEADERS="${BREW_PREFIX}/opt/openmpi/include;${BREW_PREFIX}/opt/mpich/include"
         build_wheel_osx $(which python3) "$coreneuron" "$MPI_INCLUDE_HEADERS"
     else
         MPI_INCLUDE_HEADERS="/usr/lib/x86_64-linux-gnu/openmpi/include;/usr/include/mpich"

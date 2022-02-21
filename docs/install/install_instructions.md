@@ -155,7 +155,7 @@ brew install coreutils openmpi cmake
 brew install --cask xquartz
 ```
 
-Once these packages are installed, you can setup PATH as:
+Once these packages are installed, setup PATH as:
 
 ```bash
 export PATH=/usr/local/bin/:$PATH
@@ -175,7 +175,7 @@ needs to be installed for development.
     xcode-select --install
     ```
 
-- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0_beta3 , and follow instructions. After installing, logout and log back in.
+- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0 (or newer version), and follow instructions. After installing, logout and log back in.
 
     If you desire single click button action for X11 when entering a window then execute below command:
 
@@ -199,6 +199,14 @@ needs to be installed for development.
   export PATH="$HOME/Library/Python/3.8/bin":$PATH
   pip3 install --user cython
   ```
+
+Once these packages are installed, setup PATH as:
+
+```bash
+export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+```
+
+
 
 #### Linux
 

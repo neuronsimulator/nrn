@@ -102,11 +102,16 @@ git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
 ```
 
 ## macOS wheels
+
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
 In order to have the wheels working on multiple macOS target versions, special consideration must be made for MACOSX_DEPLOYMENT_TARGET.
 
-Taking Azure macOS wheels for example, `readline` has been manually built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
-See [packaging/python/Dockerfile](../../packaging/python/Dockerfile) for readline build instructions.
+
+Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
+For `arm64`, the wheels currently need to be built manually; in this case we require `MACOSX_DEPLOYMENT_TARGET=11.0` since we are using `universal2` Python installers.
+
+You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
+You can have a look at the script for requirements and usage. 
 
 ## Launch the wheel building
 
