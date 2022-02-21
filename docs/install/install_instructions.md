@@ -287,7 +287,7 @@ the CMake options.
 NEURON now integrates [CoreNEURON library](https://github.com/BlueBrain/CoreNeuron/) for improved simulation
 performance on modern CPU and GPU architectures. CoreNEURON is designed as a library within the NEURON simulator
 and can transparently handle all spiking network simulations including gap junction coupling with the fixed time
-step method. You can find detailed instructions [here](docs/coreneuron/how-to/coreneuron.md) and
+step method. You can find detailed instructions [here](../coreneuron/index.html) and
 [here](https://github.com/BlueBrain/CoreNeuron/#installation).
 
 #### Run integrated tests
