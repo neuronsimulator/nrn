@@ -1,3 +1,5 @@
+.. _getting-coreneuron:
+
 Getting CoreNEURON
 ##################
 CoreNEURON is integrated into the NEURON repository, and it is straightforward to enable it when compiling from source using CMake as described in :ref:`Installing Source Distributions`.

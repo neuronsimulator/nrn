@@ -1,3 +1,5 @@
+.. _coreneuron-running-a-simulation:
+
 Running a simulation
 ####################
 This section describes how to use CoreNEURON to simulate a NEURON model.
