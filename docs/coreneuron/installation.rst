@@ -127,6 +127,14 @@ For example,
      -DCMAKE_CUDA_COMPILER=nvcc \
      -DCMAKE_CXX_COMPILER=nvc++
 
+.. note::
+  ``nvcc`` is provided both by the NVIDIA HPC SDK and by CUDA toolkit
+   installations, which can lead to fragile and surprising behaviour.
+   See, for example, `this issue <https://forums.developer.nvidia.com/t/nvcc-only-partially-respects-cuda-home-input-file-newer-than-toolkit/182599>`_.
+   On some systems it is necessary to load the ``nvhpc`` module before
+   the ``cuda`` module, thereby ensuring that ``nvcc`` comes from a
+   CUDA toolkit installation, but your mileage may vary.
+
 By default the GPU code will be compiled for NVIDIA devices with compute capability 7.0 or 8.0.
 This can be steered by passing, for example, ``-DCMAKE_CUDA_ARCHITECTURES:STRING=60;70;80`` to CMake.
 

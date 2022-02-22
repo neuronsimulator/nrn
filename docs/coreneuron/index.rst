@@ -17,6 +17,6 @@ Certain conditions that must be met are covered in the :ref:`CoreNEURON compatib
    :maxdepth: 3
 
    compatibility.rst
-   getting-coreneuron.rst
+   installation.rst
    running-a-simulation.rst
    examples.rst

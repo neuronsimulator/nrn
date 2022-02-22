@@ -6,6 +6,10 @@ In order to run a NEURON model with CoreNEURON certain conditions must be met:
 * MOD files must be ``THREADSAFE`` (`more information <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_)
 * Random123 must be used if a random number generator is needed; MCellRan4 is not supported
 * ``POINTER`` variables must be converted to ``BBCOREPOINTER``, for more information see :ref:`BBCOREPOINTER`
+* ``TABLE`` statements should be commented out in MOD files if they are
+  to be executed with CoreNEURON on GPU.
+  See `nrn#1505 <https://github.com/neuronsimulator/nrn/issues/1505>`_
+  for more information.
 
 Note that models using the following features cannot presently be simulated with CoreNEURON.
 

@@ -133,14 +133,20 @@ NVIDIA's NSight Systems utility ``nsys``:
 
 This can be helpful to confirm that compute kernels are really being
 launched on the GPU.
+Substrings such as ``solve_interleaved1``, ``solve_interleaved2``,
+``nrn_cur_`` and ``nrn_state_`` in these kernel names indicate that the
+computationally heavy parts of the simulation are indeed being executed
+on the GPU.
 This test dataset is extremely small, so you should not pay much
 attention to the simulation time in this case.
 
 .. note::
    The kernel names, which start with ``nvkernel__ZN10coreneuron``
    above, are implementation details of the OpenACC or OpenMP
-   implementation being used. If you want to do any more sophisticated
-   profiling then you should use a profiling tool such as Caliper that
-   can access the well-defined human-readable names for these kernels
-   that NEURON and CoreNEURON define.
-
+   implementation being used.
+   They can also depend on whether you use MOD2C or NMODL to translate
+   MOD files.
+   If you want to do any more sophisticated profiling then you should
+   use a profiling tool such as Caliper that can access the
+   well-defined human-readable names for these kernels that NEURON and
+   CoreNEURON define.
