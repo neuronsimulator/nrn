@@ -3,7 +3,7 @@ CoreNEURON compatibility
 CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations, including gap junction coupling, with the **fixed time step method**.
 In order to run a NEURON model with CoreNEURON certain conditions must be met:
 
-* MOD files must be ``THREADSAFE`` (`more information <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_)
+* MOD files must be ``THREADSAFE``, for more information see :ref:`THREADSAFE`
 * Random123 must be used if a random number generator is needed; MCellRan4 is not supported
 * ``POINTER`` variables must be converted to ``BBCOREPOINTER``, for more information see :ref:`BBCOREPOINTER`
 * ``TABLE`` statements should be commented out in MOD files if they are
@@ -43,6 +43,18 @@ Note that models using the following features cannot presently be simulated with
      - ✖ *
      - Generally, `Vector.record` and `Vector.play` are ok, as are the display of GUI variable trajectories.
        Anything requiring callbacks into the interpreter (Python or HOC) are not implemented.
+
+THREADSAFE
+**********
+CoreNEURON's acceleration is made possible through it's ability not only to run the simulations in parallel but also by being able to take advantage of the vectorization support of CPUs and execution on GPUs. To be able to execute a model in parallel using multiple threads the mod file developer should make sure that the mod file is thread safe. You can find more information about ``THREADSAFE`` mod files `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_.
+
+By making the mod file thread safe the initialization and current and state update for all the sections that include this mechanism can be done in parallel using vectorized CPU instructions and can be executed in GPU safely.
+
+Some useful instructions to make a mod file thread safe are:
+
+* Make sure that all the variables that are written in the mod file and are defined as ``GLOBAL`` are now defined as ``RANGE``. More information about ``GLOBAL`` and ``RANGE`` variables can be found `here <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html>`_.
+* In case there are any ``VERBATIM`` blocks those need to be threadsafe and there must be a ``THREADSAFE`` keyword in the ``NEURON`` block to declare that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the mod file
+
 
 BBCOREPOINTER
 *************
