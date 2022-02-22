@@ -142,9 +142,7 @@ The following packages are optional (see build options):
 Depending on platform you can install these dependencies as follows:
 
 <a name="Mac-OS-Depend"></a>
-#### Mac OS
-
-This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
+#### Mac OS - x86_64
 
 The easiest way to install dependencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
@@ -167,7 +165,7 @@ If the desired python version is not installed, you can install it using
 needs to be installed for development.
 
 <a name="Apple-M1-Build-Dependencies"></a>
-##### Apple M1
+#### Mac OS - Apple M1
 
 - Install command line tools as
 
@@ -205,7 +203,6 @@ Once these packages are installed, setup PATH as:
 ```bash
 export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
 ```
-
 
 
 #### Linux
