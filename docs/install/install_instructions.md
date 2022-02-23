@@ -36,10 +36,11 @@ click `Open`. You can then see an option to `Open` installer:
 
 The latest Mac OS pkg installers (as of 2022-01-01) are universal2 installers
 (for arm64 and x86_64) and extend the name convention to specify which
-architectures they run on. 
-`nrn-<version-id>-macos<target>-<archs>-py-<pythonversions>.pkg`
+architectures they run on and the minimum macosx version using the same
+style as the python `sysconfig.get_platform()`
+`nrn-<version-id>-macosx-<target>-<archs>-py-<pythonversions>.pkg`
 e.g.
-`nrn-8.0a-726-gb9a811a32-macos11-arm64-x86_64-py-38-39-310.pkg`
+`nrn-8.0a-726-gb9a811a32-macosx-11-universal2-py-38-39-310.pkg`
 
 ![Installer Warning](../_static/osx_installer_warning_solution.png "Mac OS Warning")
 

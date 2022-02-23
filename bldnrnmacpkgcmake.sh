@@ -21,19 +21,30 @@ if test "$args" = "" ; then
 fi
 
 
-# Choose MACOSX_DEPLOYMENT_TARGET consistent with all Pythons
-macosver=""
+# sysconfig.get_platform() looks like, e.g. "macosx-12.2-arm64" or
+# "macosx-11-universal2". I.e. encodes MACOSX_DEPLOYMENT_TARGET and archs.
+# Demand all pythons we are building against have same platform.
+mac_platform=""
 for i in $args ; do
-  mver=`$i -c 'import sysconfig; print(sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")); quit()'`
-  echo "macos version for $i is $mver"
-  if test "$macosver" = "" ; then
-    macosver=$mver
+  last_py=$i
+  mplat=`$i -c 'import sysconfig; print(sysconfig.get_platform())'`
+  echo "platform for $i is $mplat"
+  if test "$mac_platform" = "" ; then
+    mac_platform=$mplat
   fi
-  if test "$macosver" != "$mver" ; then
-    echo "$i macos $mver differs from previous python macos $macosver"
+  if test "$mac_platform" != "$mplat" ; then
+    echo "$i platform \"$mplat\" differs from previous python \"$mac_platform\"."
     exit 1
   fi
 done
+
+# extract MACOSX_DEPLOYMENT_TARGET and archs from mac_platform
+macosver=`$last_py -c 'import sysconfig; print(sysconfig.get_platform().split("-")[1])'`
+archs=`$last_py -c 'import sysconfig; print(sysconfig.get_platform().split("-")[2])'`
+if test "$archs" != "universal2" ; then
+  universal=no
+fi
+
 export MACOSX_DEPLOYMENT_TARGET=$macosver
 echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
@@ -59,21 +70,12 @@ for i in $args ; do
   PYVER=`$i -c 'from sys import version_info as v ; print (str(v.major) + str(v.minor)); quit()'`
   PYVS=${PYVS}-${PYVER}
   pythons="${pythons}${i};"
-  pypath="`which $i`"
-  archs="`lipo -archs $pypath`"
-  if test "$archs" != "x86_64 arm64" ; then
-    universal="no"
-  fi
 done
 
-archs_pkg="" # will be part of the package file name, eg. -arm64-x86_64
 archs_cmake="" # arg for CMAKE_OSX_ARCHITECTURES, eg. arm64;x86_64
 if test "$universal" = "yes" ; then
-  archs_pkg="-arm64-x86_64"
   archs_cmake='-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64'
 fi
-
-echo "archs_pkg=$archs_pkg"
 
 # The reason for the "-DCMAKE_PREFIX_PATH=/usr/X11" below
 # is to definitely link against the xquartz.org installation instead
@@ -139,7 +141,7 @@ done
 ALPHADIR='hines@neuron.yale.edu:/home/htdocs/ftp/neuron/versions/alpha'
 describe="`sh $NRN_SRC/nrnversion.sh describe`"
 macos=macos${MACOSX_DEPLOYMENT_TARGET}
-PACKAGE_FULL_NAME=nrn-${describe}-${macos}${archs_pkg}-${PYVS}.pkg
+PACKAGE_FULL_NAME=nrn-${describe}-${mac_platform}-${PYVS}.pkg
 PACKATE_DOWNLOAD_NAME=$ALPHADIR/$PACKAGE_FULL_NAME
 PACKAGE_FILE_NAME=$NRN_BLD/src/mac/build/NEURON.pkg
 echo "
