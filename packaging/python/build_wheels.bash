@@ -83,8 +83,6 @@ build_wheel_linux() {
         source ~/.bashrc
         module load nvhpc
         unset CC CXX
-        # preferred cuda version e.g. 11.0
-        export PATH=${CORENRN_CUDA_HOME}/bin:$PATH
     fi
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
