@@ -704,6 +704,11 @@ void nrn_cleanup_ion_map() {
     nrn_ion_global_map_size = 0;
 }
 
+void delete_fornetcon_info(NrnThread& nt) {
+    delete[] std::exchange(nt._fornetcon_perm_indices, nullptr);
+    delete[] std::exchange(nt._fornetcon_weight_perm, nullptr);
+}
+
 /* nrn_threads_free() presumes all NrnThread and NrnThreadMembList data is
  * allocated with malloc(). This is not the case here, so let's try and fix
  * things up first. */
@@ -726,6 +731,7 @@ void nrn_cleanup() {
     for (int it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
         NrnThreadMembList* next_tml = nullptr;
+        delete_fornetcon_info(*nt);
         delete_trajectory_requests(*nt);
         for (NrnThreadMembList* tml = nt->tml; tml; tml = next_tml) {
             Memb_list* ml = tml->ml;

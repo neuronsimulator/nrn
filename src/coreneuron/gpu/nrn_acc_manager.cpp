@@ -562,6 +562,17 @@ void setup_nrnthreads_on_device(NrnThread* threads, int nthreads) {
                 // not kept up to date timestep-by-timestep on the device.
             }
         }
+        {
+            auto* d_fornetcon_perm_indices = cnrn_target_copyin(nt->_fornetcon_perm_indices,
+                                                                nt->_fornetcon_perm_indices_size);
+            cnrn_target_memcpy_to_device(&(d_nt->_fornetcon_perm_indices),
+                                         &d_fornetcon_perm_indices);
+        }
+        {
+            auto* d_fornetcon_weight_perm = cnrn_target_copyin(nt->_fornetcon_weight_perm,
+                                                               nt->_fornetcon_weight_perm_size);
+            cnrn_target_memcpy_to_device(&(d_nt->_fornetcon_weight_perm), &d_fornetcon_weight_perm);
+        }
     }
 
 #endif
@@ -937,6 +948,8 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef CORENEURON_ENABLE_GPU
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
+        cnrn_target_delete(nt->_fornetcon_weight_perm);
+        cnrn_target_delete(nt->_fornetcon_perm_indices);
         {
             TrajectoryRequests* tr = nt->trajec_requests;
             if (tr) {

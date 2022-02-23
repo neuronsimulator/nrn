@@ -126,8 +126,15 @@ void setup_fornetcon_info(NrnThread& nt) {
 
     // Displacement vector has an extra element since the number for last item
     // at n-1 is x[n] - x[n-1] and number for first is x[0] = 0.
-    nt._fornetcon_perm_indices.resize(n_perm_indices + 1);
-    nt._fornetcon_weight_perm.resize(n_weight_perm);
+    delete[] std::exchange(nt._fornetcon_perm_indices, nullptr);
+    delete[] std::exchange(nt._fornetcon_weight_perm, nullptr);
+    // Manual memory management because of needing to copy NrnThread to the GPU
+    // and update device-side pointers there. Note the {} ensure the allocated
+    // arrays are zero-initalised.
+    nt._fornetcon_perm_indices_size = n_perm_indices + 1;
+    nt._fornetcon_perm_indices = new size_t[nt._fornetcon_perm_indices_size]{};
+    nt._fornetcon_weight_perm_size = n_weight_perm;
+    nt._fornetcon_weight_perm = new size_t[nt._fornetcon_weight_perm_size]{};
 
     // From dparam fornetcon slots, compute displacement vector, and
     // set the dparam fornetcon slot to the index of the displacement vector

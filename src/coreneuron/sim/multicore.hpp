@@ -144,8 +144,10 @@ struct NrnThread: public MemoryManaged {
     TrajectoryRequests* trajec_requests = nullptr; /* per time step values returned to NEURON */
 
     /* Needed in case there are FOR_NETCON statements in use. */
-    std::vector<size_t> _fornetcon_perm_indices; /* displacement like list of indices */
-    std::vector<size_t> _fornetcon_weight_perm;  /* permutation indices into weight */
+    std::size_t _fornetcon_perm_indices_size{}; /* length of _fornetcon_perm_indices */
+    size_t* _fornetcon_perm_indices{};          /* displacement like list of indices */
+    std::size_t _fornetcon_weight_perm_size{};  /* length of _fornetcon_weight_perm */
+    size_t* _fornetcon_weight_perm{};           /* permutation indices into weight */
 
     std::vector<int> _pnt_offset; /* for SelfEvent queue transfer */
 };
