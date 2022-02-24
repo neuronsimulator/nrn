@@ -149,7 +149,11 @@ unistd.h
 vadefs.h
 '
 
-copy mingw64/x86_64-w64-mingw32/lib '
+mlib=mingw64/x86_64-w64-mingw32/lib # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/dllcrt2.o ; then # gcc 11.2.0 Rev 9
+  mlib=mingw64/lib
+fi
+copy $mlib '
 crtbegin.o
 crtend.o
 dllcrt2.o
