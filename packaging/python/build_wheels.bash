@@ -74,6 +74,11 @@ build_wheel_linux() {
     echo " - Building..."
     rm -rf dist build
 
+    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
+    if [ "$USE_STATIC_READLINE" == "1" ]; then
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+    fi
+
     if [ "$2" == "coreneuron" ]; then
         setup_args="--enable-coreneuron"
     elif [ "$2" == "coreneuron-gpu" ]; then
@@ -83,14 +88,12 @@ build_wheel_linux() {
         source ~/.bashrc
         module load nvhpc
         unset CC CXX
-        # preferred cuda version e.g. 11.0
-        export PATH=${CORENRN_CUDA_HOME}/bin:$PATH
+        # the default is currently 70;80, partly because NVHPC does not
+        # support OpenMP target offload with 60. Wheels use mod2c and
+        # OpenACC for now, so we can be a little more generic.
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80"
     fi
 
-    CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
-    if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
-    fi
     python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     # For CI runs we skip wheelhouse repairs

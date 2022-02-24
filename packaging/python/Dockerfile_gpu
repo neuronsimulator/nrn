@@ -1,21 +1,15 @@
 FROM neuronsimulator/neuron_wheel
-LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu"
+LABEL authors="Pramod Kumbhar, Olli Lupton, Fernando Pereira, Alexandru Savulescu"
 
 WORKDIR /root
 
-# download nvhpc 21.2 rpms. Note that newer versions until at least 21.7 has various
-# bugs and hence we are sticking to 21.2 until we verify latest release.
-# see https://github.com/BlueBrain/CoreNeuron/issues/605
-RUN wget --no-verbose \
-      https://developer.download.nvidia.com/hpc-sdk/21.2/nvhpc-21-2-21.2-1.x86_64.rpm \
-      https://developer.download.nvidia.com/hpc-sdk/21.2/nvhpc-2021-21.2-1.x86_64.rpm \
-      https://developer.download.nvidia.com/hpc-sdk/21.2/nvhpc-21-2-cuda-multi-21.2-1.x86_64.rpm \
-    && yum install -y *.rpm \
-    && rm *.rpm && yum clean all
+# Install NVHPC from NVIDIA's repository.
+RUN yum-config-manager --add-repo https://developer.download.nvidia.com/hpc-sdk/rhel/nvhpc.repo \
+    && yum install -y nvhpc-22-1 nvhpc-2022-22.1 \
+    && yum clean all
 
 # setup nvhpc environment for building wheel and interactive usage
 RUN yum install -y environment-modules && yum clean all \
     && echo "module use /opt/nvidia/hpc_sdk/modulefiles" >> ~/.bashrc \
-    && echo "export CORENRN_CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/21.2/cuda/11.0" >> ~/.bashrc \
-    && /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/compilers/bin/makelocalrc -x \
-        -gcc `which gcc` -gpp `which g++` -g77 `which gfortran` # -cuda 11.0 option is valid for >=21.7
+    && /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/makelocalrc -x \
+        -gcc `which gcc` -gpp `which g++` -g77 `which gfortran` -cuda 11.5
