@@ -28,6 +28,10 @@ extern char* dlerror();
 extern char* cxx_char_alloc(size_t);
 extern std::string corenrn_mpi_library;
 
+#if DARWIN
+extern void nrn_possible_mismatched_arch(const char*);
+#endif
+
 #if DARWIN || defined(__linux__)
 extern const char* path_prefix_to_libnrniv();
 #endif
@@ -44,6 +48,9 @@ static void* load_mpi(const char* name, char* mes) {
 	int flag = RTLD_NOW | RTLD_GLOBAL;
 	void* handle = dlopen(name, flag);
 	if (!handle) {
+#if DARWIN
+		nrn_possible_mismatched_arch(name);
+#endif
 		sprintf(mes, "load_mpi: %s\n", dlerror());
 	}else{
 		sprintf(mes, "load_mpi: %s successful\n", name);
@@ -99,7 +106,7 @@ char* nrnmpi_load(int is_python) {
         if (mpi_lib_path) {
             handle = load_mpi(mpi_lib_path, pmes+strlen(pmes));
             if (!handle) {
-                sprintf(pmes, "Can not load libmpi.dylib and %s", mpi_lib_path);
+                sprintf(pmes, "Can not load libmpi.dylib and %s\n", mpi_lib_path);
             }
         }
     }

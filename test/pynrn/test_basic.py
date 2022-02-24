@@ -370,6 +370,15 @@ def test_py_alltoall_dict_err():
     expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
 
 
+def test_nosection():
+    expect_err("h.IClamp(.5)")
+    expect_err("h.IClamp(5)")
+    s = h.Section()
+    expect_err("h.IClamp(5)")
+    del s
+    locals()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -378,3 +387,4 @@ if __name__ == "__main__":
     test_disconnect()
     h.topology()
     h.allobjects()
+    test_nosection()

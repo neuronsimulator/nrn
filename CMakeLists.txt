@@ -305,7 +305,9 @@ endif()
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
-  find_package(MPI REQUIRED)
+  
+  # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
+  nrn_mpi_find_package()
   set(NRNMPI 1)
   set(PARANEURON 1)
   # avoid linking to C++ bindings
@@ -442,7 +444,7 @@ else()
 endif()
 
 # =============================================================================
-# Add helpder CMake modules AFTER setting options
+# Add helper CMake modules AFTER setting options
 # =============================================================================
 include(NeuronFileLists)
 include(MPIDynamicHelper)
@@ -652,6 +654,11 @@ file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
      DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+if (NRN_MACOS_BUILD)
+  # universal build for neurondemo needs to be after, or at end of, install
+  nrn_macos_after_install()
+endif()
+
 # =============================================================================
 # Copy bash executable for windows
 # =============================================================================
@@ -793,6 +800,9 @@ if(NRN_ENABLE_CORENEURON)
   if(NOT coreneuron_FOUND)
     message(STATUS "  Legacy Units| ${CORENRN_ENABLE_LEGACY_UNITS}")
   endif()
+endif()
+if (NRN_UNIVERSAL2_BUILD)
+  message(STATUS "CMAKE_OSX_ARCH| ${CMAKE_OSX_ARCHITECTURES}")
 endif()
 message(STATUS "Tests         | ${NRN_ENABLE_TESTS}")
 if(NRN_ENABLE_COVERAGE)
