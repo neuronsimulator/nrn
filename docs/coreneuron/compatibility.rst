@@ -90,27 +90,42 @@ NEURON will call ``bbcore_write`` twice per mechanism instance.
 In a first sweep, the call is used to determine the required memory to be allocated on the serialization arrays.
 In the second sweep the call is used to fill in the data per mechanism instance.
 
-The functions take following arguments
+.. list-table:: Arguments to ``bbcore_read`` and ``bbcore_write``.
+   :widths: 15 85
+   :header-rows: 1
+   :class: fixed-table
 
-* ``x``: A ``double`` type array that will be allocated by NEURON to fill with real-valued data. In the
-  first call, ``x`` is NULL as it has not been allocated yet.
-* ``d``: An ``int`` type array that will be allocated by NEURON to fill with integer-valued data. In the
-  first call, ``d`` is NULL as it has not been allocated yet.
-* ``x_offset``: The offset in ``x`` at which the mechanism instance should write its real-valued
-  ``BBCOREPOINTER`` data. In the first call this is an output argument that is expected to be updated
-  by the per-instance size to be allocated.
-* ``d_offset``: The offset in ``d`` at which the mechanism instance should write its integer-valued
-  ``BBCOREPOINTER`` data. In the first call this is an output argument that is expected to be updated
-  by the per-instance size to be allocated.
-* ``_threadargsproto_``: a macro placeholder for NEURON/CoreNEURON data-structure parameters. They
-  are typically only used through generated defines and not by the programmer. The macro is defined
-  as follows:
+   * - Argument
+     - Description
+   * - ``x``
+     - A ``double`` type array that will be allocated by NEURON to fill
+       with real-valued data. In the first call, ``x`` is ``nullptr``
+       as it has not been allocated yet.
+   * - ``d``
+     - An ``int`` type array that will be allocated by NEURON to fill
+       with integer-valued data. In the first call, ``d`` is
+       ``nullptr`` as it has not been allocated yet.
+   * - ``x_offset``
+     - The offset in ``x`` at which the mechanism instance should write
+       its real-valued ``BBCOREPOINTER`` data. In the first call this is
+       an output argument that is expected to be updated by the
+       per-instance size to be allocated.
+   * - ``d_offset``
+     - The offset in ``d`` at which the mechanism instance should write
+       its integer-valued ``BBCOREPOINTER`` data. In the first call
+       this is an output argument that is expected to be updated by the
+       per-instance size to be allocated.
+   * - ``_threadargsproto_``
+     - A macro placeholder for NEURON/CoreNEURON data-structure
+       parameters. They are typically only used through generated
+       defines and not by the programmer. The macro is defined as
+       follows:
 
-.. code-block:: c++
+       .. code-block:: c++
 
-   #define _threadargsproto_                                                                         \
-       int _iml, int _cntml_padded, double *_p, Datum *_ppvar, ThreadDatum *_thread, NrnThread *_nt, \
-       double _v
+          #define _threadargsproto_ int _iml, int _cntml_padded, double *_p, Datum *_ppvar, \
+                                    ThreadDatum *_thread, NrnThread *_nt, double _v
+
 
 Putting all of this together, the following is a minimal MOD using ``BBCOREPOINTER``:
 

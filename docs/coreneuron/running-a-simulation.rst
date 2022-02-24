@@ -14,14 +14,18 @@ Make sure any necessary modules (compilers, CUDA, MPI etc.) are loaded before yo
 
    nrnivmodl -coreneuron <directory containing .mod files>
 
-If you don't have additional MOD files and are only using MOD files built into NEURON then **you still need to use ``nrnivmodl -coreneuron`` to generate a CoreNEURON library**.
+Even if you don't have additional MOD files (i.e. you are relying on
+builtin NEURON MOD files) **you still need to use** ``nrnivmodl
+-coreneuron`` **to generate a CoreNEURON library**.
 For example, you can run:
 
 .. code-block::
 
    nrnivmodl -coreneuron .
 
-With the above commands, NEURON will create a ``x86_64/special`` binary that is linked to CoreNEURON (here ``x86_64`` is the architecture name of your system).
+With the command above, NEURON will create a ``x86_64/special`` binary
+that is linked to CoreNEURON (here ``x86_64`` is the architecture name
+of your system).
 
 If you see any compilation error then one of the MOD files might be incompatible with CoreNEURON.
 In this case, you should first consult the :ref:`CoreNEURON compatibility` section, and if that does not provide a clear explanation then you should `open an issue <https://github.com/BlueBrain/CoreNeuron/issues>`_ with an example of your MOD file.
@@ -29,7 +33,7 @@ In this case, you should first consult the :ref:`CoreNEURON compatibility` secti
 Enabling CoreNEURON
 *******************
 With CoreNEURON, existing NEURON models can be run with minimal changes.
-For a given NEURON model, we the following steps are usually required:
+For a given NEURON model, the following steps are usually required:
 
 First, enable cache efficiency:
 
@@ -81,7 +85,8 @@ If you are primarily using HOC then before calling ``psolve`` you can enable Cor
    py_obj = new PythonObject()
    py_obj.coreneuron.enable = 1
 
-Once you adapted your model with changes described above then you can execute your model like a normal NEURON simulation.
+Once you have adapted your model by making the changes described above
+then you can execute your model like a normal NEURON simulation.
 For example:
 
 .. code-block::
