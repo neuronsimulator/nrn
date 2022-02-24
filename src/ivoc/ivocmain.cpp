@@ -36,7 +36,6 @@ void iv_display_scale(float);
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
-#include "nrnrt.h"
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
@@ -551,18 +550,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 	}
 #endif
 
-#if NRN_REALTIME
-	if (nrn_optarg_on("-realtime", &argc, argv)) {
-		nrn_realtime_ = 1;
-		nrn_setscheduler();
-	}
-	if (nrn_optarg_on("-schedfifo", &argc, argv)) {
-		if (nrn_realtime_ != 1) {
-			nrn_setscheduler();
-		}
-	}
-
-#endif
 #if !HAVE_IV
 	hoc_usegui = 0;
 	hoc_print_first_instance = 0;
@@ -836,9 +823,6 @@ ENDGUI
 		exit(1);
 	}
 #endif
-#if NRN_REALTIME
-	nrn_maintask_init();
-#endif
        if (start_session) {
 #if HAVE_IV
         oc.run(our_argc, our_argv);
@@ -877,9 +861,6 @@ PR_PROFILE
 void ivoc_final_exit() {
 #if NRNMPI
 	nrnmpi_terminate();
-#endif
-#if NRN_REALTIME
-	nrn_maintask_delete();
 #endif
 }
 
