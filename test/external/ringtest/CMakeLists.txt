@@ -51,11 +51,11 @@ foreach(processor cpu gpu)
     "#!/bin/bash\n"
     "set -e\n"
     "OMP_NUM_THREADS=1 ${ringtest_special_str} -tstop 0 -coreneuron -dumpmodel\n"
-    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 10 --checkpoint part0"
+    "OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 10 --checkpoint part0"
     " --outpath part0\n"
-    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 40 --checkpoint part1"
+    "OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 40 --checkpoint part1"
     " --restore part0 --outpath part1\n"
-    "OMP_NUM_THREADS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 100 --checkpoint part2"
+    "OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core_str} --mpi -d coredat/ -e 100 --checkpoint part2"
     " --restore part1 --outpath part2\n"
     "cat part0/out.dat > out.dat\n"
     "cat part1/out.dat >> out.dat\n"
@@ -81,7 +81,7 @@ foreach(processor cpu gpu)
     CONFLICTS mpi_dynamic
     PROCESSORS ${ringtest_mpi_ranks}
     PRECOMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 0 -coreneuron -dumpmodel
-    COMMAND OMP_NUM_THREADS=1 ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
+    COMMAND OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
     OUTPUT asciispikes::out.dat)
 
   # Following suggestion on #1552, run a test with more threads than datasets.

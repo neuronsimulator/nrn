@@ -76,9 +76,12 @@ Object* nrn_new_pointprocess(Symbol* sym)
 
 extern "C" void destroy_point_process(void* v)
 {
+    // might be NULL if error handling because of error in construction
+    if (v) {
 	Point_process* pp = (Point_process*)v;
 	free_one_point(pp);
 	free(pp);
+    }
 }
 
 void nrn_loc_point_process(int pointtype, Point_process* pnt, Section* sec, Node* node)
