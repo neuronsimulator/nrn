@@ -71,7 +71,7 @@ in that. e.g.
 
 CMAKE_INSTALL_PREFIX:PATH=\<path-where-nrn-should-be-installed\>
 ----------------------------------------------------------------
-  Install path prefix, prepended onto install directories.  
+  Install path prefix, prepended onto install directories.
   This can be a full path or relative. Default is /usr/local .
   A common install folder is 'install' in the build folder. e.g.
 
@@ -91,13 +91,13 @@ CMAKE_INSTALL_PREFIX:PATH=\<path-where-nrn-should-be-installed\>
 
 CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 --------------------------------------
-  Empty or one of Custom;Debug;Release;RelWithDebInfo;Fast.  
+  Empty or one of Custom;Debug;Release;RelWithDebInfo;Fast.
 
-  * RelWithDebInfo means to compile using -O2 -g options.  
-  * Debug means to compile with just -g (and optimization level -O0)  
+  * RelWithDebInfo means to compile using -O2 -g options.
+  * Debug means to compile with just -g (and optimization level -O0)
     This is very useful for debugging with gdb as, otherwise, local
     variables may be optimized away that are useful to inspect.
-  * Release means to compile with -O2 -DNDEBUG.  
+  * Release means to compile with -O2 -DNDEBUG.
     The latter eliminates assert statements.
   * Custom requires that you specify flags with CMAKE_C_FLAGS and CMAKE_CXX_FLAGS
   * Fast requires that you specify flags as indicated in nrn/cmake/ReleaseDebugAutoFlags.cmake
@@ -108,7 +108,7 @@ CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 Ninja
 -----
   Use the Ninja build system ('make' is the default 'CMake' build system).
-  
+
   .. code-block:: shell
 
     cmake .. -G Ninja ...
@@ -148,7 +148,7 @@ NRN_ENABLE_INTERVIEWS:BOOL=ON
 
 IV_DIR:PATH=<path-to-external-installation-of-interviews>
 ---------------------------------------------------------
-  The directory containing a CMake configuration file for iv.  
+  The directory containing a CMake configuration file for iv.
 
   IV_DIR is the install location of iv and the directory actually containing
   the cmake configuration files is ``IV_DIR/lib/cmake``.
@@ -162,23 +162,23 @@ IV_DIR:PATH=<path-to-external-installation-of-interviews>
 
 IV_ENABLE_SHARED:BOOL=OFF
 -------------------------
-  Build libraries shared or static  
+  Build libraries shared or static
 
   I generally build InterViews static. The nrn build will then incorporate
   all of InterViews into libnrniv.so
 
 IV_ENABLE_X11_DYNAMIC:BOOL=OFF
 ------------------------------
-  dlopen X11 after launch  
+  dlopen X11 after launch
 
-  This is most useful for building Mac distributions where XQuartz (X11) may 
+  This is most useful for building Mac distributions where XQuartz (X11) may
   not be installed on the user's machine and the user does not require
   InterViews graphics. If XQuartz is subsequently installed, InterViews graphics
   will suddenly be available.
 
 IV_ENABLE_X11_DYNAMIC_MAKE_HEADERS:BOOL=OFF
 -------------------------------------------
-  Remake the X11 dynamic .h files.  
+  Remake the X11 dynamic .h files.
 
   Don't use this. The scripts are very brittle and X11 is very stable.
   If it is ever necessary to remake the X11 dynamic .h files, I will
@@ -189,21 +189,21 @@ MPI options:
 
 NRN_ENABLE_MPI:BOOL=ON
 ----------------------
-  Enable MPI support  
+  Enable MPI support
 
   Requires an MPI installation, e.g. openmpi or mpich. Note that the Python mpi4py module generally uses
   openmpi which cannot be mixed with mpich.
 
 NRN_ENABLE_MPI_DYNAMIC:BOOL=OFF
 -------------------------------
-  Enable dynamic MPI library support  
+  Enable dynamic MPI library support
 
   This is mostly useful for binary distibutions where MPI may or may not
   exist on the target machine.
 
 NRN_MPI_DYNAMIC:STRING=
 -----------------------
-  semicolon (;) separated list of MPI include directories to build against. Default to first found mpi)  
+  semicolon (;) separated list of MPI include directories to build against. Default to first found mpi)
 
   Cmake knows about openmpi, mpich, mpt, and msmpi. The dynamic loader for linux tries to load libmpi.so and if that fails, libmpich.so (the latter is good for cray mpi). The system then checks to see if a specific symbol exists in the libmpi... and determines whether to  load the libnrnmp_xxx.so for openmpi, mpich, or mpt. To make binary installers good for openmpi and mpich, I use
 
@@ -219,18 +219,18 @@ Python options:
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
   Enable Python interpreter support
-  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)  
+  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
 
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
-  Enable dynamic Python version support  
+  Enable dynamic Python version support
 
   This is mostly useful for binary distributions where it is unknown which
   version, if any, of python exists on the target machine.
 
 NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
-  semicolon (;) separated list of python executables to create interfaces. (default python3)  
+  semicolon (;) separated list of python executables to create interfaces. (default python3)
 
   If the string is empty use the python specified by PYTHON_EXECUTABLE
   or else the default python. Binary distributions often specify a list
@@ -261,7 +261,7 @@ NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 
 NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
 ---------------------------------------------------
-  setup.py options, everything after setup.py install  
+  setup.py options, everything after setup.py install
 
   To install in site-packages use an empty string
 
@@ -273,14 +273,14 @@ NRN_MODULE_INSTALL_OPTIONS:STRING=--home=/usr/local
 
 NRN_ENABLE_RX3D:BOOL=ON
 -----------------------
-  Enable rx3d support  
+  Enable rx3d support
 
   No longer any reason to turn this off as build time is not significantly
   increased due to compiling cython generated files with -O0 by default.
 
 NRN_RX3D_OPT_LEVEL:STRING=0
 ---------------------------
-  Optimization level for Cython generated files (non-zero may compile slowly)  
+  Optimization level for Cython generated files (non-zero may compile slowly)
 
   It is not clear to me if -O0 has significantly less performance than -O2.
   Binary distributions are (or should be) built with
@@ -294,14 +294,14 @@ CoreNEURON options:
 
 NRN_ENABLE_CORENEURON:BOOL=OFF
 ------------------------------
-  Enable CoreNEURON support  
+  Enable CoreNEURON support
 
   If ON and no argument pointing to an external installation, CoreNEURON
   will be cloned as a submodule along with all its NMODL submodule dependencies.
 
 NRN_ENABLE_MOD_COMPATIBILITY:BOOL=OFF
 -------------------------------------
-  Enable CoreNEURON compatibility for MOD files  
+  Enable CoreNEURON compatibility for MOD files
 
   CoreNEURON does not allow the common NEURON THREADSAFE promotion of
   GLOBAL variables that appear on the right hand side of assignment statements
@@ -338,7 +338,7 @@ Occasionally useful advanced options:
 
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 -------------------------------------
-  C compiler  
+  C compiler
 
   On the mac, prior to knowing about
   ``export SDK_ROOT=$(xcrun -sdk macosx --show-sdk-path)``
@@ -353,7 +353,7 @@ CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
-  C plus plus compiler  
+  C plus plus compiler
 
 NRN_NMODL_CXX_FLAGS:STRING=""
 -----------------------------
@@ -384,11 +384,13 @@ Readline_ROOT_DIR:PATH=/usr
 
     -DReadline_LIBRARY=/usr/lib/x86_64-linux-gnu/libreadline.so
 
+.. _cmake-nrn-enable-tests-option:
+
 NRN_ENABLE_TESTS:BOOL=OFF
 -------------------------
-  Enable unit tests  
+  Enable unit tests
 
-  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using 
+  Clones the submodule catch2 from https://github.com/catchorg/Catch2.git and after a build using
   ``make`` can run the tests with ``make test``.
   May also need to ``pip install pytest``.
   ``make test`` is quite terse. To get the same verbose output that is
@@ -460,7 +462,7 @@ NRN_CMAKE_FORMAT:BOOL=OFF
 
 NRN_CLANG_FORMAT:BOOL=OFF
 -------------------------
-  Enable code formatting  
+  Enable code formatting
 
   Clones the submodule coding-conventions from https://github.com/BlueBrain/hpc-coding-conventions.git.
   For mac, need: ``brew install clang-format``
@@ -477,7 +479,7 @@ Miscellaneous Rarely used options specific to NEURON:
 
 NRN_ENABLE_DISCRETE_EVENT_OBSERVER:BOOL=ON
 ------------------------------------------
-  Enable Observer to be a subclass of DiscreteEvent  
+  Enable Observer to be a subclass of DiscreteEvent
   Can save space but a lot of component destruction may not notify other components that are watching it to no longer use that component. Useful only if one builds a model without needing to eliminate pieces of the model.
 
 NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
@@ -496,11 +498,11 @@ NRN_DYNAMIC_UNITS_USE_LEGACY:BOOL=OFF
 
 NRN_ENABLE_MECH_DLL_STYLE:BOOL=ON
 ---------------------------------
-  Dynamically load nrnmech shared library  
+  Dynamically load nrnmech shared library
 
 NRN_ENABLE_SHARED:BOOL=ON
 -------------------------
-  Build shared libraries (otherwise static library)  
+  Build shared libraries (otherwise static library)
 
   This must be ON if python is launched and imports neuron. If OFF and one wants to use python it will be
   necessary to launch
@@ -514,11 +516,11 @@ NRN_ENABLE_SHARED:BOOL=ON
 
 NRN_ENABLE_THREADS:BOOL=ON
 --------------------------
-  Allow use of Pthreads  
+  Allow use of Pthreads
 
 NRN_USE_REL_RPATH=OFF
 ---------------------
-  Turned on when creating python wheels.  
+  Turned on when creating python wheels.
 
 NRN_ENABLE_BACKTRACE:BOOL=OFF
 -------------------------------------
