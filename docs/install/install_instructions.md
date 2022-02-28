@@ -212,9 +212,7 @@ The following packages are optional (see build options):
 Depending on platform you can install these dependencies as follows:
 
 <a name="Mac-OS-Depend"></a>
-#### Mac OS
-
-This is for x86_64. For Apple M1 (arm64), see [here](#Apple-M1-Build-Dependencies)
+#### Mac OS - x86_64
 
 The easiest way to install dependencies on Mac OS is to use [brew](https://brew.sh/) or
 [conda](https://docs.conda.io/projects/conda/en/latest/index.html) package manager. For example,
@@ -225,7 +223,7 @@ brew install coreutils openmpi cmake
 brew install --cask xquartz
 ```
 
-Once these packages are installed, you can setup PATH as:
+Once these packages are installed, setup PATH as:
 
 ```bash
 export PATH=/usr/local/bin/:$PATH
@@ -237,7 +235,7 @@ If the desired python version is not installed, you can install it using
 needs to be installed for development.
 
 <a name="Apple-M1-Build-Dependencies"></a>
-##### Apple M1
+#### Mac OS - Apple M1
 
 - Install command line tools as
 
@@ -245,7 +243,7 @@ needs to be installed for development.
     xcode-select --install
     ```
 
-- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0_beta3 , and follow instructions. After installing, logout and log back in.
+- If desire classical NEURON GUI : from [xquartz.org](https://www.xquartz.org/), click "Releases", click XQuartz-2.8.0 (or newer version), and follow instructions. After installing, logout and log back in.
 
     If you desire single click button action for X11 when entering a window then execute below command:
 
@@ -269,6 +267,13 @@ needs to be installed for development.
   export PATH="$HOME/Library/Python/3.8/bin":$PATH
   pip3 install --user cython
   ```
+
+Once these packages are installed, setup PATH as:
+
+```bash
+export PATH=/opt/homebrew/opt/bison/bin/:/opt/homebrew/opt/flex/bin/:/opt/homebrew/bin/:$PATH
+```
+
 
 #### Linux
 
