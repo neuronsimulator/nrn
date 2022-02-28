@@ -274,12 +274,12 @@ class Extracellular:
 
     def __init__(
         self,
-        xlo,
-        ylo,
-        zlo,
-        xhi,
-        yhi,
-        zhi,
+        xlo: float,
+        ylo: float,
+        zlo: float,
+        xhi: float,
+        yhi: float,
+        zhi: float,
         dx,
         volume_fraction=1,
         tortuosity=None,
@@ -329,7 +329,7 @@ class Extracellular:
                 permeability, True
             )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Extracellular(xlo=%r, ylo=%r, zlo=%r, xhi=%r, yhi=%r, zhi=%r, tortuosity=%r, volume_fraction=%r)" % (
             self._xlo,
             self._ylo,
@@ -341,10 +341,10 @@ class Extracellular:
             self.alpha,
         )
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         return "Extracellular"
 
-    def volume(self, index):
+    def volume(self, index: int) -> float:
         """Returns the volume of the voxel at a given index"""
         if numpy.isscalar(self.alpha):
             return numpy.prod(self._dx) * self.alpha
@@ -591,7 +591,7 @@ class Region(object):
     Examples: Cytosol, ER
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # Note: this used to print out dimension, but that's now on a per-segment basis
         # TODO: remove the note when that is fully true
         return "Region(..., nrn_region=%r, geometry=%r, dx=%r, name=%r)" % (
@@ -601,7 +601,7 @@ class Region(object):
             self._name,
         )
 
-    def __contains__(self, item):
+    def __contains__(self, item) -> bool:
         try:
             if item.region == self:
                 return True
@@ -610,13 +610,13 @@ class Region(object):
         except:
             raise NotImplementedError()
 
-    def _short_repr(self):
+    def _short_repr(self) -> str:
         if self._name is not None:
             return str(self._name)
         else:
             return self.__repr__()
 
-    def mesh_eval(self):
+    def mesh_eval(self) -> dict:
         from .species import _all_species
 
         for spref in _all_species:
@@ -749,7 +749,7 @@ class Region(object):
             return [seg for i, seg in enumerate(segs) if i in index]
         return segs
 
-    def _indices_from_sec_x(self, sec, position):
+    def _indices_from_sec_x(self, sec, position) -> list:
         # TODO: the assert is here because the diameter is not computed correctly
         #       unless it coincides with a 3d point, which we only know to exist at the
         #       endpoints and because the section does not proceed linearly between
@@ -942,7 +942,7 @@ class Region(object):
             raise RxDException("Cannot set geometry now; model already instantiated")
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Get or set the Region's name.
 
         .. note:: New in NEURON 7.4+.
@@ -950,11 +950,11 @@ class Region(object):
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         self._name = value
 
     @property
-    def _semi_compile(self):
+    def _semi_compile(self) -> str:
         return "r%d" % self._id
 
     @property
@@ -994,6 +994,6 @@ class Region(object):
         else:
             raise RxDException("Cannot set secs now; model already instantiated")
 
-    def volume(self, index):
+    def volume(self, index: int) -> float:
         """Returns the volume of the voxel at a given index"""
         return self._vol[index]

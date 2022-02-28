@@ -222,7 +222,7 @@ from neuron.hclass3 import HocBaseObject, hclass
 nrn_dll_loaded = []
 
 
-def load_mechanisms(path, warn_if_already_loaded=True):
+def load_mechanisms(path, warn_if_already_loaded=True) -> bool:
     """
     load_mechanisms(path)
 
@@ -291,7 +291,7 @@ class HocError(Exception):
 class Wrapper(object):
     """Base class to provide attribute access for HocObjects."""
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         if name == "hoc_obj":
             return self.__dict__["hoc_obj"]
         else:
@@ -300,14 +300,14 @@ class Wrapper(object):
             except AttributeError:
                 return self.hoc_obj.__getattribute__(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value):
         try:
             self.hoc_obj.__setattr__(name, value)
         except LookupError:
             object.__setattr__(self, name, value)
 
 
-def new_point_process(name, doc=None):
+def new_point_process(name: str, doc=None):
     """
     Returns a Python-wrapped hoc class where the object needs to be associated
     with a section.
@@ -331,7 +331,7 @@ def new_point_process(name, doc=None):
     return someclass
 
 
-def new_hoc_class(name, doc=None):
+def new_hoc_class(name: str, doc=None):
     """
     Returns a Python-wrapped hoc class where the object does not need to be
     associated with a section.
@@ -402,7 +402,7 @@ def quit(*args, **kwargs):
     return h.quit(*args, **kwargs)
 
 
-def hoc_execute(hoc_commands, comment=None):
+def hoc_execute(hoc_commands: list, comment=None) -> None:
     assert isinstance(hoc_commands, list)
     if comment:
         logging.debug(comment)
@@ -413,11 +413,11 @@ def hoc_execute(hoc_commands, comment=None):
             raise HocError('Error produced by hoc command "%s"' % cmd)
 
 
-def hoc_comment(comment):
+def hoc_comment(comment: str) -> None:
     logging.debug(comment)
 
 
-def psection(section):
+def psection(section: nrn.Section) -> None:
     """
     function psection(section):
 
@@ -442,7 +442,7 @@ def psection(section):
     h.psection(sec=section)
 
 
-def init():
+def init() -> None:
     """
     function init():
 
@@ -476,7 +476,7 @@ def init():
     h.finitialize()
 
 
-def run(tstop):
+def run(tstop: float) -> None:
     """
     function run(tstop)
 
@@ -526,43 +526,45 @@ _nrn_hocobj_ptr = None
 _double_ptr = None
 _double_size = None
 
+try:
+    import numpy
+    def numpy_element_ref(numpy_array: numpy.ndarray, index: int) -> hoc.HocObject:
+        """Return a HOC reference into a numpy array.
 
-def numpy_element_ref(numpy_array, index):
-    """Return a HOC reference into a numpy array.
+        Parameters
+        ----------
+        numpy_array : :class:`numpy.ndarray`
+            the numpy array
+        index : int
+            the index into the numpy array
 
-    Parameters
-    ----------
-    numpy_array : :class:`numpy.ndarray`
-        the numpy array
-    index : int
-        the index into the numpy array
+        .. warning::
 
-    .. warning::
+            No bounds checking.
 
-        No bounds checking.
+        .. warning::
 
-    .. warning::
+            Assumes a contiguous array of doubles. In particular, be careful when
+            using slices. If the array is multi-dimensional,
+            the user must figure out the integer index to the desired element.
+        """
+        global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
+        import ctypes
 
-        Assumes a contiguous array of doubles. In particular, be careful when
-        using slices. If the array is multi-dimensional,
-        the user must figure out the integer index to the desired element.
-    """
-    global _nrn_dll, _double_ptr, _double_size, _nrn_hocobj_ptr
-    import ctypes
+        if _nrn_hocobj_ptr is None:
+            _nrn_hocobj_ptr = nrn_dll_sym("nrn_hocobj_ptr")
+            _nrn_hocobj_ptr.restype = ctypes.py_object
+            _double_ptr = ctypes.POINTER(ctypes.c_double)
+            _double_size = ctypes.sizeof(ctypes.c_double)
+        void_p = (
+            ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value
+            + index * _double_size
+        )
+        return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
+except ImportError:
+    pass
 
-    if _nrn_hocobj_ptr is None:
-        _nrn_hocobj_ptr = nrn_dll_sym("nrn_hocobj_ptr")
-        _nrn_hocobj_ptr.restype = ctypes.py_object
-        _double_ptr = ctypes.POINTER(ctypes.c_double)
-        _double_size = ctypes.sizeof(ctypes.c_double)
-    void_p = (
-        ctypes.cast(numpy_array.ctypes.data_as(_double_ptr), ctypes.c_voidp).value
-        + index * _double_size
-    )
-    return _nrn_hocobj_ptr(ctypes.cast(void_p, _double_ptr))
-
-
-def nrn_dll_sym(name, type=None):
+def nrn_dll_sym(name: str, type=None):
     """return the specified object from the NEURON dlls.
 
     Parameters
@@ -588,7 +590,7 @@ def nrn_dll_sym(name, type=None):
 nt_dlls = []
 
 
-def nrn_dll_sym_nt(name, type):
+def nrn_dll_sym_nt(name: str, type):
     """return the specified object from the NEURON dlls.
     helper for nrn_dll_sym(name, type). Try to find the name in either
     nrniv.dll or libnrnpython1013.dll
@@ -700,7 +702,7 @@ def _modelview_mechanism_docstrings(dmech, tree):
 _sec_db = {}
 
 
-def _declare_contour(secobj, obj, name):
+def _declare_contour(secobj, obj, name: str) -> None:
     array, i = _parse_import3d_name(name)
     if obj is None:
         sec = getattr(h, array)[i]
@@ -726,12 +728,12 @@ def _declare_contour(secobj, obj, name):
     )
 
 
-def _create_all_list(obj):
+def _create_all_list(obj) -> None:
     # used by import3d
     obj.all = []
 
 
-def _create_sections_in_obj(obj, name, numsecs):
+def _create_sections_in_obj(obj, name: str, numsecs: int) -> None:
     # used by import3d to instantiate inside of a Python object
     setattr(
         obj,
@@ -740,7 +742,7 @@ def _create_sections_in_obj(obj, name, numsecs):
     )
 
 
-def _connect_sections_in_obj(obj, childsecname, childx, parentsecname, parentx):
+def _connect_sections_in_obj(obj, childsecname: str, childx: float, parentsecname: str, parentx: float) -> None:
     # used by import3d
     childarray, childi = _parse_import3d_name(childsecname)
     parentarray, parenti = _parse_import3d_name(parentsecname)
@@ -749,7 +751,7 @@ def _connect_sections_in_obj(obj, childsecname, childx, parentsecname, parentx):
     )
 
 
-def _parse_import3d_name(name):
+def _parse_import3d_name(name: str) -> tuple:
     if "[" in name:
         import re
 
@@ -761,29 +763,32 @@ def _parse_import3d_name(name):
     return array, i
 
 
-def _pt3dstyle_in_obj(obj, name, x, y, z):
+def _pt3dstyle_in_obj(obj, name: str, x: float, y: float, z: float) -> None:
     # used by import3d
     array, i = _parse_import3d_name(name)
     h.pt3dstyle(1, x, y, z, sec=getattr(obj, array)[i])
 
 
-def _pt3dadd_in_obj(obj, name, x, y, z, d):
+def _pt3dadd_in_obj(obj, name: str, x: float, y: float, z: float, d: float) -> None:
     array, i = _parse_import3d_name(name)
     h.pt3dadd(x, y, z, d, sec=getattr(obj, array)[i])
 
 
-def numpy_from_pointer(cpointer, size):
-    buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
-    buf_from_mem.restype = ctypes.py_object
-    buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
-    cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
-    return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
 
 
 try:
     import ctypes
     import numpy
     import traceback
+
+    def numpy_from_pointer(cpointer, size) -> numpy.ndarray:
+        buf_from_mem = ctypes.pythonapi.PyMemoryView_FromMemory
+        buf_from_mem.restype = ctypes.py_object
+        buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+        cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
+        return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
+
+
 
     vec_to_numpy_prototype = ctypes.CFUNCTYPE(
         ctypes.py_object, ctypes.c_int, ctypes.POINTER(ctypes.c_double)
@@ -808,7 +813,7 @@ class _WrapperPlot:
         """do not call directly"""
         self._data = data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}.plot()".format(repr(self._data))
 
 
@@ -1059,7 +1064,7 @@ class _PlotShapePlot(_WrapperPlot):
 
             return val
 
-        def _get_3d_pt(segment):
+        def _get_3d_pt(segment: nrn.Segment) -> tuple:
             import numpy as np
 
             # TODO: there has to be a better way to do this
@@ -1106,7 +1111,7 @@ class _PlotShapePlot(_WrapperPlot):
             result.format_coord = format_coord
             return result
 
-        def _get_color(variable, val, cmap, lo, hi, val_range):
+        def _get_color(variable, val: float, cmap, lo: float, hi: float, val_range):
             if variable is None or val is None:
                 col = "black"
             elif val_range == 0:
@@ -1254,7 +1259,7 @@ def _nmodl():
 
 
 class DensityMechanism:
-    def __init__(self, name):
+    def __init__(self, name: str):
         """Initialize the DensityMechanism.
 
         Takes the name of a range mechanism; call via e.g. neuron.DensityMechanism('hh')
@@ -1275,10 +1280,10 @@ class DensityMechanism:
         except ModuleNotFoundError:
             pass
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "neuron.DensityMechanism(%r)" % self.__name
 
-    def __dir__(self):
+    def __dir__(self) -> list:
         my_dir = ["code", "file", "insert", "uninsert", "__repr__", "__str__"]
         if self.__has_nmodl:
             my_dir += ["ast", "ions", "ontology_ids"]
@@ -1300,12 +1305,12 @@ class DensityMechanism:
         return self.__ast
 
     @property
-    def code(self):
+    def code(self) -> str:
         """source code"""
         return self.__mt.code()
 
     @property
-    def file(self):
+    def file(self) -> str:
         """source file path"""
         return self.__mt.file()
 
@@ -1316,7 +1321,7 @@ class DensityMechanism:
         for sec in secs:
             sec.insert(self.__name)
 
-    def uninsert(self, secs):
+    def uninsert(self, secs) -> None:
         """uninsert (remove) this mechanism from a section or iterable of sections"""
         if isinstance(secs, nrn.Section):
             secs = [secs]
@@ -1377,7 +1382,7 @@ _restore_savestates = []
 _id_savestates = []
 
 
-def register_savestate(id_, store, restore):
+def register_savestate(id_, store, restore) -> None:
     """register routines to be called during SaveState
 
     id_ -- unique id (consider using a UUID)
@@ -1389,7 +1394,7 @@ def register_savestate(id_, store, restore):
     _restore_savestates.append(restore)
 
 
-def _store_savestate():
+def _store_savestate() -> bytearray:
     import array
     import itertools
 
@@ -1410,7 +1415,7 @@ def _store_savestate():
     return bytearray(itertools.chain.from_iterable(result))
 
 
-def _restore_savestate(data):
+def _restore_savestate(data: bytearray) -> None:
     import array
 
     # convert from bytearray
@@ -1456,7 +1461,7 @@ try:
 
     _mech_classes = {}
 
-    def _get_mech_object(name):
+    def _get_mech_object(name: str):
         if name in _mech_classes:
             my_class = _mech_classes[name]
         else:
@@ -1506,7 +1511,7 @@ except:
     pass
 
 
-def _has_scipy():
+def _has_scipy() -> int:
     """
     to check for scipy:
 
@@ -1529,7 +1534,7 @@ def _pkl(arg):
     return h.Vector(0)
 
 
-def format_exception(type, value, tb):
+def format_exception(type, value, tb) -> str:
     """Single string return wrapper for traceback.format_exception
     used by nrnpyerr_str
     """
@@ -1544,11 +1549,11 @@ def format_exception(type, value, tb):
     return s
 
 
-def nrnpy_pass():
+def nrnpy_pass() -> int:
     return 1
 
 
-def nrnpy_pr(stdoe, s):
+def nrnpy_pr(stdoe, s) -> int:
     if stdoe == 1:
         sys.stdout.write(s.decode())
     else:
@@ -1671,7 +1676,7 @@ import atexit as _atexit
 
 
 @_atexit.register
-def clear_gui_callback():
+def clear_gui_callback() -> None:
     try:
         nrnpy_set_gui_callback = nrn_dll_sym("nrnpy_set_gui_callback")
         nrnpy_set_gui_callback(None)

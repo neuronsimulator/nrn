@@ -36,15 +36,15 @@ _concentration_node = 0
 _molecule_node = 1
 
 
-def _get_data():
+def _get_data() -> tuple:
     return (_volumes, _surface_area, _diffs)
 
 
-def _get_states():
+def _get_states() -> numpy.ndarray:
     return _states
 
 
-def _allocate(num):
+def _allocate(num: int) -> int:
     """allocate storage for num more nodes, return the starting index
 
     Note: no guarantee is made of preserving previous _ref
@@ -59,7 +59,7 @@ def _allocate(num):
     return start_index
 
 
-def _remove(start, stop):
+def _remove(start: int, stop: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays"""
     global _volumes, _surface_area, _diffs, _states, _node_fluxes, _has_node_fluxes
     # Remove entries that have to be recalculated
@@ -85,7 +85,7 @@ def _remove(start, stop):
                 del lst[i]
 
 
-def _replace(old_offset, old_nseg, new_offset, new_nseg):
+def _replace(old_offset: int, old_nseg: int, new_offset: int, new_nseg: int) -> None:
     """delete old volumes, surface areas and diff values in from global arrays
     move states so that the new segment value is equal to the old segment
     value that contains its centre"""
@@ -118,7 +118,7 @@ _numpy_element_ref = neuron.numpy_element_ref
 
 
 class Node(object):
-    def satisfies(self, condition):
+    def satisfies(self, condition) -> bool:
         """Tests if a Node satisfies a given condition.
 
         If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
@@ -138,7 +138,7 @@ class Node(object):
         raise RxDException("selector %r not supported for this node type" % condition)
 
     @property
-    def _ref_concentration(self):
+    def _ref_concentration(self) -> hoc.HocObject:
         """Returns a HOC reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
@@ -153,7 +153,7 @@ class Node(object):
             )
 
     @property
-    def _ref_molecules(self):
+    def _ref_molecules(self) -> hoc.HocObject:
         """Returns a HOC reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
@@ -166,12 +166,12 @@ class Node(object):
             raise RxDException("_ref_molecules only available for molecule count nodes")
 
     @property
-    def d(self):
+    def d(self) -> float:
         """Gets the diffusion rate within the compartment."""
         return _diffs[self._index]
 
     @d.setter
-    def d(self, value):
+    def d(self, value: float):
         """Sets the diffusion rate within the compartment."""
         from . import rxd
 
@@ -181,7 +181,7 @@ class Node(object):
         rxd._setup_matrices()
 
     @property
-    def concentration(self):
+    def concentration(self) -> float:
         """Gets the concentration at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -194,7 +194,7 @@ class Node(object):
             )
 
     @concentration.setter
-    def concentration(self, value):
+    def concentration(self, value: float):
         """Sets the concentration at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -207,7 +207,7 @@ class Node(object):
             )
 
     @property
-    def molecules(self):
+    def molecules(self) -> float:
         """Gets the molecule count at the Node."""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -220,7 +220,7 @@ class Node(object):
             )
 
     @molecules.setter
-    def molecules(self, value):
+    def molecules(self, value: float):
         """Sets the molecule count at the Node"""
         # TODO: don't use an if statement here... put the if statement at node
         #       construction and change the actual function that is pointed to
@@ -233,12 +233,12 @@ class Node(object):
             )
 
     @property
-    def value(self):
+    def value(self) -> float:
         """Gets the value associated with this Node."""
         return _states[self._index]
 
     @value.setter
-    def value(self, v):
+    def value(self, v: float):
         """Sets the value associated with this Node.
 
         For Species nodes belonging to a deterministic simulation, this is a concentration.
@@ -247,11 +247,11 @@ class Node(object):
         _states[self._index] = v
 
     @property
-    def _ref_value(self):
+    def _ref_value(self) -> hoc.HocObject:
         """Returns a HOC reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
 
-    def include_flux(self, *args, **kwargs):
+    def include_flux(self, *args, **kwargs) -> None:
         """Include a flux contribution to a specific node.
 
         The flux can be described as a HOC reference, a point process and a
@@ -361,12 +361,12 @@ class Node(object):
         _has_node_fluxes = True
 
     @value.getter
-    def _state_index(self):
+    def _state_index(self) -> int:
         return self._index
 
 
 class Node1D(Node):
-    def __init__(self, sec, i, location, data_type=_concentration_node):
+    def __init__(self, sec, i: int, location, data_type=_concentration_node):
         """n = Node1D(sec, i, location)
         Description:
 
@@ -392,7 +392,7 @@ class Node1D(Node):
         self._loc3d = None
         self._data_type = data_type
 
-    def _update_loc3d(self):
+    def _update_loc3d(self) -> None:
         sec = self._sec
         length = sec.L
         normalized_arc3d = [sec._sec.arc3d(i) / length for i in range(sec._sec.n3d())]
@@ -406,7 +406,7 @@ class Node1D(Node):
             numpy.interp(loc1d, normalized_arc3d, z3d),
         )
 
-    def satisfies(self, condition):
+    def satisfies(self, condition) -> bool:
         """Tests if a Node satisfies a given condition.
 
         If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
@@ -434,28 +434,28 @@ class Node1D(Node):
         raise RxDException("unrecognized node condition: %r" % condition)
 
     @property
-    def x3d(self):
+    def x3d(self) -> float:
         """x coordinate"""
         if self._loc3d is None:
             self._update_loc3d()
         return self._loc3d[0]
 
     @property
-    def y3d(self):
+    def y3d(self) -> float:
         """y coordinate"""
         if self._loc3d is None:
             self._update_loc3d()
         return self._loc3d[1]
 
     @property
-    def z3d(self):
+    def z3d(self) -> float:
         """z coordinate"""
         if self._loc3d is None:
             self._update_loc3d()
         return self._loc3d[2]
 
     @property
-    def volume(self):
+    def volume(self) -> float:
         """The volume of the compartment in cubic microns.
 
         Read only."""
@@ -465,11 +465,11 @@ class Node1D(Node):
         return _volumes[self._index]
 
     @property
-    def segment(self):
+    def segment(self) -> nrn.Segment:
         return self._sec._sec(self.x)
 
     @property
-    def surface_area(self):
+    def surface_area(self) -> float:
         """The surface area of the compartment in square microns.
 
         This is the area (if any) of the compartment that lies on the plasma membrane
@@ -484,7 +484,7 @@ class Node1D(Node):
         return _surface_area[self._index]
 
     @property
-    def x(self):
+    def x(self) -> float:
         """The normalized position of the center of the compartment.
 
         Read only."""
@@ -497,11 +497,11 @@ class Node1D(Node):
         return self._sec._region
 
     @property
-    def sec(self):
+    def sec(self) -> nrn.Section:
         """The Section containing the compartment."""
         return self._sec._sec
 
-    def _in_sec(self, sec):
+    def _in_sec(self, sec) -> bool:
         return sec == self.sec or sec == self._sec
 
     @property
@@ -547,10 +547,10 @@ class Node3D(Node):
         _point_indices[self._r][(self._i, self._j, self._k)] = self._index
 
     @property
-    def _seg(self):
+    def _seg(self) -> nrn.Segment:
         return list(self._sec)[0](self._x) if list(self._sec) else None
 
-    def _find_neighbors(self):
+    def _find_neighbors(self) -> tuple:
         self._pos_x_neighbor = _point_indices[self._r].get(
             (self._i + 1, self._j, self._k)
         )
@@ -582,17 +582,17 @@ class Node3D(Node):
         return self._neighbors
 
     @property
-    def neighbors(self):
+    def neighbors(self) -> tuple:
         return (
             self._neighbors if self._neighbors is not None else self._find_neighbors()
         )
 
     @property
-    def _grid_id(self):
+    def _grid_id(self) -> int:
         return self._speciesref()._intracellular_instances[self._r]._grid_id
 
     @property
-    def surface_area(self):
+    def surface_area(self) -> float:
         """The surface area of the compartment in square microns.
 
         This is the area (if any) of the compartment that lies on the plasma membrane
@@ -605,7 +605,7 @@ class Node3D(Node):
         # rxd._update_node_data()
         return self._r._sa[self._index]
 
-    def satisfies(self, condition):
+    def satisfies(self, condition) -> bool:
         """Tests if a Node satisfies a given condition.
 
         If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.
@@ -643,41 +643,41 @@ class Node3D(Node):
         raise RxDException("unrecognized node condition: %r" % condition)
 
     @property
-    def x3d(self):
+    def x3d(self) -> float:
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
         return mesh["xlo"] + (self._i + 0.5) * mesh["dx"]
 
     @property
-    def y3d(self):
+    def y3d(self) -> float:
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
         return mesh["ylo"] + (self._j + 0.5) * mesh["dy"]
 
     @property
-    def z3d(self):
+    def z3d(self) -> float:
         # TODO: need to modify this to work with 1d
         mesh = self._r._mesh_grid
         return mesh["zlo"] + (self._k + 0.5) * mesh["dz"]
 
     @property
-    def x(self):
+    def x(self) -> float:
         # TODO: can we make this more accurate?
         return self._x
 
     @property
-    def segment(self):
+    def segment(self) -> nrn.Segment:
         return self._seg
 
-    def _in_sec(self, sec):
+    def _in_sec(self, sec: nrn.Section) -> bool:
         return sec == self.sec
 
     @property
-    def sec(self):
+    def sec(self) -> nrn.Section:
         return list(self._sec)[0] if any(self._sec) else None
 
     @property
-    def volume(self):
+    def volume(self) -> float:
         return self._r._vol[self._index]
 
     @property
@@ -691,7 +691,7 @@ class Node3D(Node):
         return self._speciesref()
 
     @property
-    def d(self):
+    def d(self) -> float:
         """Gets the value associated with this Node."""
         sp = self._speciesref()._intracellular_instances[self._r]
         if hasattr(sp, "_dgrid"):
@@ -699,7 +699,7 @@ class Node3D(Node):
         return sp._d
 
     @d.setter
-    def d(self, v):
+    def d(self, v: float):
         sp = self._speciesref()._intracellular_instances[self._r]
         if not hasattr(sp, "_dgrid"):
             sp._dgrid = numpy.ndarray((3, sp._nodes_length), dtype=float, order="C")
@@ -708,12 +708,12 @@ class Node3D(Node):
         sp._dgrid[:, self._index] = v
 
     @property
-    def value(self):
+    def value(self) -> float:
         """Gets the value associated with this Node."""
         return self._speciesref()._intracellular_instances[self._r].states[self._index]
 
     @value.setter
-    def value(self, v):
+    def value(self, v: float):
         """Sets the value associated with this Node.
 
         For Species nodes belonging to a deterministic simulation, this is a concentration.
@@ -722,7 +722,7 @@ class Node3D(Node):
         self._speciesref()._intracellular_instances[self._r].states[self._index] = v
 
     @property
-    def _ref_value(self):
+    def _ref_value(self) -> hoc.HocObject:
         """Returns a HOC reference to the Node's value"""
         return (
             self._speciesref()
@@ -757,15 +757,15 @@ class NodeExtracellular(Node):
         self._data_type = _concentration_node
 
     @property
-    def x3d(self):
+    def x3d(self) -> float:
         return self._regionref()._xlo + (self._i + 0.5) * self._regionref()._dx[0]
 
     @property
-    def y3d(self):
+    def y3d(self) -> float:
         return self._regionref()._ylo + (self._j + 0.5) * self._regionref()._dx[1]
 
     @property
-    def z3d(self):
+    def z3d(self) -> float:
         return self._regionref()._zlo + (self._k + 0.5) * self._regionref()._dx[2]
 
     @property
@@ -779,12 +779,12 @@ class NodeExtracellular(Node):
         return self._regionref()
 
     @property
-    def d(self):
+    def d(self) -> float:
         """Gets the diffusion rate within the compartment."""
         return self._speciesref()._d
 
     @d.setter
-    def d(self, value):
+    def d(self, value: float):
         """Sets the diffusion rate within the compartment."""
         from . import rxd
 
@@ -798,14 +798,14 @@ class NodeExtracellular(Node):
             set_diffusion(0, self._grid_id, numpy.repeat(float(value), 3), 1)
 
     @property
-    def value(self):
+    def value(self) -> float:
         """Gets the value associated with this Node."""
         return (
             self._speciesref().__getitem__(self._r).states3d[self._i, self._j, self._k]
         )
 
     @value.setter
-    def value(self, v):
+    def value(self, v: float):
         """Sets the value associated with this Node.
 
         For Species nodes belonging to a deterministic simulation, this is a concentration.
@@ -814,7 +814,7 @@ class NodeExtracellular(Node):
         self._speciesref().__getitem__(self._r).states3d[self._i, self._j, self._k] = v
 
     @property
-    def _ref_value(self):
+    def _ref_value(self) -> hoc.HocObject:
         """Returns a HOC reference to the Node's value"""
         return (
             self._speciesref()
@@ -824,11 +824,11 @@ class NodeExtracellular(Node):
         )
 
     @value.getter
-    def _state_index(self):
+    def _state_index(self) -> int:
         return self._index
 
     @property
-    def volume(self):
+    def volume(self) -> float:
         ecs = self._regionref()
         if numpy.isscalar(ecs.alpha):
             return numpy.prod(ecs._dx) * ecs.alpha
@@ -836,10 +836,10 @@ class NodeExtracellular(Node):
             return numpy.prod(ecs._dx) * ecs.alpha[self._i, self._j, self._k]
 
     @property
-    def _grid_id(self):
+    def _grid_id(self) -> int:
         return self._speciesref()._extracellular_instances[self._r]._grid_id
 
-    def satisfies(self, condition):
+    def satisfies(self, condition) -> bool:
         """Tests if a Node satisfies a given condition.
 
         If a nrn.Section object or RxDSection is provided, returns True if the Node lies in the section; else False.

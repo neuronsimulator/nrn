@@ -9,24 +9,24 @@ nhost = pc.nhost()
 quiet = True
 
 
-def set_quiet(b):
+def set_quiet(b: bool) -> bool:
     global quiet
     old = quiet
     quiet = b
     return old
 
 
-def printerr(e):
+def printerr(e) -> None:
     if not quiet:
         print(e)
 
 
-def checking(s):
+def checking(s) -> None:
     if not quiet:
         print("CHECKING: " + s)
 
 
-def expect_hocerr(callable, args, sec=None):
+def expect_hocerr(callable, args, sec=None) -> None:
     """
     Execute callable(args) and assert that it generated an error.
 
@@ -63,7 +63,7 @@ def expect_hocerr(callable, args, sec=None):
     assert err
 
 
-def expect_err(stmt):
+def expect_err(stmt: str) -> None:
     """
     expect_err('stmt')
     stmt is expected to raise an error

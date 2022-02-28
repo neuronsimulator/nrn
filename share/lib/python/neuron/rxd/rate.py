@@ -138,7 +138,7 @@ class Rate(GeneralizedReaction):
                         % self._original_rate
                     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         short_rate = (
             self._original_rate._short_repr()
             if hasattr(self._original_rate, "_short_repr")
@@ -329,7 +329,7 @@ class Rate(GeneralizedReaction):
         else:
             self._update_jac_cache()
 
-    def _do_memb_scales(self):
+    def _do_memb_scales(self) -> None:
         # TODO: does anyone still call this?
         # TODO: update self._memb_scales (this is just a dummy value to make things run)
         self._memb_scales = 1
