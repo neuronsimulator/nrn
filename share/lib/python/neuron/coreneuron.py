@@ -36,6 +36,7 @@ class coreneuron(object):
         self._warp_balance = 0
         self._verbose = 2  # INFO
         self._prcellstate = -1
+        self._model_stats = False
 
     def _valid_cell_permute(self):
         return {1, 2} if self._gpu else {0, 1}
@@ -152,6 +153,15 @@ class coreneuron(object):
         assert value >= -1
         self._prcellstate = value
 
+    @property
+    def model_stats(self):
+        """Print number of instances of each mechanism and detailed memory stats."""
+        return self._model_stats
+
+    @file_mode.setter
+    def model_stats(self, value):
+        self._model_stats = bool(value)
+
     def nrncore_arg(self, tstop):
         """
         Return str that can be used for pc.nrncore_run(str)
@@ -183,6 +193,8 @@ class coreneuron(object):
         if self._prcellstate >= 0:
             arg += " --prcellgid %d" % self.prcellstate
         arg += " --verbose %d" % self.verbose
+        if self._model_stats:
+            arg += " --model-stats"
 
         # args derived from current NEURON settings.
         pc = h.ParallelContext()
