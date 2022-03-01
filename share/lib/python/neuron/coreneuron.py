@@ -158,7 +158,7 @@ class coreneuron(object):
         """Print number of instances of each mechanism and detailed memory stats."""
         return self._model_stats
 
-    @file_mode.setter
+    @model_stats.setter
     def model_stats(self, value):
         self._model_stats = bool(value)
 
