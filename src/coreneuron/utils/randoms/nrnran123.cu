@@ -76,23 +76,31 @@ using random123_allocator = coreneuron::unified_allocator<coreneuron::nrnran123_
  * shutdown. If the destructor calls cudaFree and the CUDA runtime has already
  * been shut down then tools like cuda-memcheck reports errors.
  */
+#if defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+nrn_pragma_omp(declare target)
+philox4x32_key_t g_k{};
+nrn_pragma_omp(end declare target)
+#else
 philox4x32_key_t* g_k{};
+#endif
 
 // In a GPU build we need a device-side global pointer to this global state.
 // This is set to the same unified memory address as `g_k` in
 // `setup_global_state()` if the GPU is enabled. It would be cleaner to use
 // __managed__ here, but unfortunately that does not work on machines that do
 // not have a GPU.
-#ifdef __CUDACC__
+#if defined(__CUDACC__) && !defined(CORENEURON_PREFER_OPENMP_OFFLOAD)
 CORENRN_DEVICE philox4x32_key_t* g_k_dev;
 #endif
 
 OMP_Mutex g_instance_count_mutex;
+
 std::size_t g_instance_count{};
 
 constexpr double SHIFT32 = 1.0 / 4294967297.0; /* 1/(2^32 + 1) */
 
 void setup_global_state() {
+#if !defined(CORENEURON_PREFER_OPENMP_OFFLOAD)
     if (g_k) {
         // Already initialised, nothing to do
         return;
@@ -107,14 +115,17 @@ void setup_global_state() {
         // there is no point initialising the device global to it.
         {
             auto const code = cudaMemcpyToSymbol(g_k_dev, &g_k, sizeof(g_k));
+            static_cast<void>(code);
             assert(code == cudaSuccess);
         }
         // Make sure g_k_dev is updated.
         {
             auto const code = cudaDeviceSynchronize();
+            static_cast<void>(code);
             assert(code == cudaSuccess);
         }
     }
+#endif
 #endif
 }
 
@@ -126,12 +137,25 @@ CORENRN_HOST_DEVICE philox4x32_key_t& get_global_state() {
     // Called from device code
     ret = g_k_dev;
 #else
+#if defined(CORENEURON_ENABLE_GPU) && defined(CORENEURON_PREFER_OPENMP_OFFLOAD) && defined(_OPENMP)
+    ret = &g_k;
+#else
     // Called from host code
     ret = g_k;
+#endif
 #endif
     assert(ret);
     return *ret;
 }
+
+nrn_pragma_omp(declare target)
+/** @brief Provide a helper function in global namespace that is declared target for OpenMP
+ * offloading to function correctly with NVHPC
+ */
+CORENRN_HOST_DEVICE philox4x32_ctr_t philox4x32_helper(coreneuron::nrnran123_State* s) {
+    return philox4x32(s->c, get_global_state());
+}
+nrn_pragma_omp(end declare target)
 }  // namespace
 
 namespace coreneuron {
@@ -157,7 +181,7 @@ CORENRN_HOST_DEVICE void nrnran123_setseq(nrnran123_State* s, uint32_t seq, char
         s->which_ = which;
     }
     s->c.v[0] = seq;
-    s->r = philox4x32(s->c, get_global_state());
+    s->r = philox4x32_helper(s);
 }
 
 CORENRN_HOST_DEVICE void nrnran123_getids(nrnran123_State* s, uint32_t* id1, uint32_t* id2) {
@@ -181,7 +205,7 @@ CORENRN_HOST_DEVICE uint32_t nrnran123_ipick(nrnran123_State* s) {
     if (which > 3) {
         which = 0;
         s->c.v[0]++;
-        s->r = philox4x32(s->c, get_global_state());
+        s->r = philox4x32_helper(s);
     }
     s->which_ = which;
     return rval;
