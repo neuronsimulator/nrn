@@ -3,6 +3,9 @@
 ParallelContext
 ---------------
 
+A video tutorial of parallelization in NEURON from the 2021 NEURON
+summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
+
 .. toctree::
     :hidden:
 
