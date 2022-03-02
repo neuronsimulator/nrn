@@ -1,4 +1,5 @@
 from neuron import h
+import subprocess
 
 pc = h.ParallelContext()
 cvode = h.CVode()
@@ -64,7 +65,7 @@ class Cell:
     def ptr_helper(self, seg, mech, pseg, pmech):
         # mech and pmech for both axial and AxialPP have same rangevars.
         if pmech is None:
-            mech.ri = 0.0  # indicates pointes not to be used
+            mech.ri = 0.0  # indicates pointers not to be used
             # POINTER unused but must not be NULL for CoreNEURON so point to self
             mech._ref_pv = seg._ref_v
             mech._ref_pia = mech._ref_ia
@@ -120,6 +121,20 @@ class Model:
     def update_pointers(self):
         for cell in self.cells:
             cell.update_pointers()
+
+
+def srun(cmd):
+    print("--------------------")
+    print(cmd)
+    subprocess.run(cmd, shell=True).check_returncode()
+
+
+def runcn(args):
+    import platform
+
+    cpu = platform.machine()
+    cmd = cpu + "/special-core " + args
+    srun(cmd)
 
 
 def test_axial():
@@ -179,6 +194,48 @@ def test_axial():
     for coreneuron.cell_permute in [0, 1]:
         chk(std, run(1))
 
+    m._callback_setup = None  # get rid of the callback first.
+    del m
+
+
+def test_checkpoint():
+    if pc.nhost() > 1:
+        return
+
+    # clear out the old
+    srun("rm -r -f coredat")
+
+    m = Model(5, 5)
+    # file mode CoreNEURON real cells need gids
+    for i, cell in enumerate(m.cells):
+        pc.set_gid2node(i, pc.id())
+        sec = cell.secs[0]
+        pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
+
+    cvode.cache_efficient(1)
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    pc.nrncore_write("coredat")
+
+    # standard to compare wih checkpoint series
+    tstop = 10.0
+    common = "-d coredat --voltage 1000 --verbose 0"
+    runcn(common + " --tstop %g" % float(tstop) + " -o coredat")
+    # sequence of checkpoints
+    interval = 5
+    for i in range(1, 3):
+        tstart = (i - 1) * interval
+        tend = i * interval
+        restore = " --restore coredat/chkpnt%d" % (i - 1,) if i > 1 else ""
+        checkpoint = " --checkpoint coredat/chkpnt%d" % i
+        outpath = " -o coredat/chkpnt%d" % i
+        runcn(common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint)
+
+    m._callback_setup = None
+    pc.gid_clear()
+    del m
+
 
 if __name__ == "__main__":
     test_axial()
+    test_checkpoint()
