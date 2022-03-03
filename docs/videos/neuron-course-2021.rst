@@ -20,14 +20,14 @@ Lecture 2021-06-03
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/31ioJKfPw_g?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/31ioJKfPw_g?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Q & A 2021-06-08
 ################
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/aryIh07hJ_k?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/aryIh07hJ_k?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Branched cells
 --------------
@@ -37,7 +37,7 @@ Lecture 2021-06-10
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/k-CyQp3ZrLI?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/k-CyQp3ZrLI?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Q & A part 1 2021-06-15
 #######################
@@ -46,14 +46,14 @@ Due to technical difficulties, the Q&A was split into two videos.
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/Gt8J5V1JAFo?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/Gt8J5V1JAFo?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Q & A part 2 2021-06-15
 #######################
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/ZCwVaccDjTE?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/ZCwVaccDjTE?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 
@@ -65,14 +65,14 @@ Lecture 2021-06-17
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/eV5dKD_bZ6E?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/eV5dKD_bZ6E?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Q & A 2021-06-22
 ################
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/alr7yqj88Kg?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/alr7yqj88Kg?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 Python scripting
@@ -103,14 +103,14 @@ Topics:
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/ObSHSQCpkoo?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/ObSHSQCpkoo?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 2021-06-29
 ##########
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/9BqJcKiYePM?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/9BqJcKiYePM?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 2021-07-01
 ##########
@@ -123,7 +123,7 @@ Topics:
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/sQ0fa1YRBR0?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/sQ0fa1YRBR0?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Scripting and Morphologies 2021-07-06
 #####################################
@@ -134,7 +134,7 @@ Today we solve the exercises from last class, roughly: (1) examine the role of t
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/yte708tOiVI?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/yte708tOiVI?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 Networks and numerical methods
@@ -151,7 +151,7 @@ Topics:
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/r9dxBS_e_RI?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/r9dxBS_e_RI?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 .. _parallel-neuron-sims-2021-07-13:
 
@@ -168,7 +168,7 @@ Starting about halfway through the next video, we apply these techniques to solv
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/aw_e5WyT1AQ?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/aw_e5WyT1AQ?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 Network exercise solutions and discussion 2021-07-15
@@ -176,7 +176,7 @@ Network exercise solutions and discussion 2021-07-15
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/pRir3mTVtAw?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/pRir3mTVtAw?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 Parallel simulation conclusion, reproducible randomness, more numerical methods 2021-07-20
@@ -184,7 +184,7 @@ Parallel simulation conclusion, reproducible randomness, more numerical methods 
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/n0ZbUnIbpRE?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/n0ZbUnIbpRE?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 
 ModelDB exercises 2021-07-27
@@ -192,7 +192,7 @@ ModelDB exercises 2021-07-27
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/PBrWJ-S_YnM?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/PBrWJ-S_YnM?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Scaling, spines, and reading HOC 2021-07-29
 -------------------------------------------
@@ -201,11 +201,11 @@ We start with a discussion of the implementation of Mainen & Sejnowski 1996 `htt
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/4a-E5aICaVU?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/4a-E5aICaVU?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
 Building GUI interfaces, Initialization, and Circuits 2021-08-03
 ----------------------------------------------------------------
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/E1K5ytVh08I?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/E1K5ytVh08I?rel=0" frameborder="0" allowfullscreen></iframe></center>
