@@ -7,4 +7,4 @@ Specifically, we demonstrate the use of NEURON through `Google Colab <http://col
 
 .. raw:: html
 
-    <center><iframe width="560" height="315" src="http://www.youtube.com/embed/sWXYgCWVB1Y?rel=0" frameborder="0" allowfullscreen></iframe></center>
+    <center><iframe width="560" height="315" src="https://www.youtube.com/embed/sWXYgCWVB1Y?rel=0" frameborder="0" allowfullscreen></iframe></center>
