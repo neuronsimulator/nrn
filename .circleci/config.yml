@@ -17,6 +17,7 @@ jobs:
       - run:
           name: Build manylinux AArch64 wheel
           command: |
+            uname -a
             docker run --rm \
                 -w /root/nrn \
                 -v $PWD:/root/nrn \
@@ -26,13 +27,27 @@ jobs:
                 -e NRN_RELEASE_UPLOAD \
                 -e NEURON_WHEEL_VERSION \
                 -e NRN_BUILD_FOR_UPLOAD=1 \
-                'odidev/neuron_wheel' \
+                'neuronsimulator/neuron_wheel:latest-aarch64' \
                 packaging/python/build_wheels.bash linux << parameters.cibw_build >> coreneuron
+      - run:
+          name: Test manylinux AArch64 wheel
+          command: |
+            sudo apt update
+            sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
+            packaging/python/test_wheels.sh $(which python3) $(ls -t wheelhouse/*.whl)
       - store_artifacts:
           path: ./wheelhouse
           destination: artifacts
 
 workflows:
+
+  build-workflow:
+    jobs:
+      - manylinux2014-aarch64:
+          matrix:
+            parameters:
+              cibw_build: ["38", "39", "310"]
+
   nightly:
     triggers:
       - schedule:
@@ -42,6 +57,7 @@ workflows:
               only:
                 #- master   #disable master builds until PR is merged
                 - aarch64_wheel
+                - pramodk/aarch64_wheel
     jobs:
       - manylinux2014-aarch64:
           matrix:
