@@ -37,6 +37,7 @@ def test_direct_memory_transfer():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
+    coreneuron.model_stats = True
     coreneuron.gpu = bool(
         distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
     )

@@ -230,18 +230,17 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS test/coreneuron/mod/*.mod test/pynrn/unitstest.mod test/gjtests/natrans.mod)
-  # See https://github.com/BlueBrain/CoreNeuron/issues/512, this doesn't work on GPU.
-  nrn_add_test(
-    GROUP coreneuron_modtests
-    NAME fornetcon_py_cpu
-    REQUIRES coreneuron cpu
-    SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
-    COMMAND COVERAGE_FILE=.coverage.coreneuron_fornetcon_py ${modtests_launch_py}
-            test/coreneuron/test_fornetcon.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
     set(processor_env ${coreneuron_modtests_${processor}_env})
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME fornetcon_py_${processor}
+      REQUIRES coreneuron ${processor}
+      SCRIPT_PATTERNS test/coreneuron/test_fornetcon.py
+      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_fornetcon_py
+              ${modtests_launch_py} test/coreneuron/test_fornetcon.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME direct_py_${processor}
@@ -309,6 +308,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
               ${modtests_launch_py} test/coreneuron/test_psolve.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME test_ba_py_${processor}
+      REQUIRES coreneuron ${processor}
+      SCRIPT_PATTERNS test/coreneuron/test_ba.py
+      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
+              ${modtests_launch_py} test/coreneuron/test_ba.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_natrans_py_${processor}

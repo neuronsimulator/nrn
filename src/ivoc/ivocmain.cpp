@@ -389,6 +389,11 @@ void hoc_nrnmpi_init() {
     char** foo = (char**)nrn_global_argv;
     nrnmpi_init(2, &nrn_global_argc, &foo);
     //if (nrnmpi_myid == 0) {printf("hoc_nrnmpi_init called nrnmpi_init\n");}
+    // turn off gui for all ranks > 0
+    if (nrnmpi_myid_world > 0) {
+        hoc_usegui = 0;
+        hoc_print_first_instance = 0;
+    }
   }
 #endif
   hoc_ret();
