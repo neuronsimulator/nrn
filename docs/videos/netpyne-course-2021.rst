@@ -1,7 +1,7 @@
 NetPyNE 2021 Online Course
 ==========================
 
-This courses introduces using NEURON via `NetPyNE <https://netpyne.org>`_,
+This courses introduces using NEURON via `NetPyNE <http://netpyne.org>`_,
 a tool designed to simplify the construction, simulation, and analysis of
 network models.
 
