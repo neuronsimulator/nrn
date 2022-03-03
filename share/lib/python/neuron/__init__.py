@@ -777,7 +777,7 @@ def numpy_from_pointer(cpointer, size):
     buf_from_mem.restype = ctypes.py_object
     buf_from_mem.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
     cbuffer = buf_from_mem(cpointer, size * numpy.dtype(float).itemsize, 0x200)
-    return numpy.ndarray((size,), numpy.float, cbuffer, order="C")
+    return numpy.ndarray((size,), float, cbuffer, order="C")
 
 
 try:

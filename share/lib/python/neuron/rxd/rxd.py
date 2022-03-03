@@ -117,7 +117,7 @@ ics_register_reaction.argtypes = [
     _int_ptr,
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(dtype=numpy.float),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -137,10 +137,10 @@ set_hybrid_data.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 # ics_register_reaction = nrn_dll_sym('ics_register_reaction')
@@ -647,7 +647,7 @@ def _update_node_data(force=False, newspecies=False):
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
     nonzero_i, nonzero_j = list(zip(*list(m.keys())))
-    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
+    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=float)
 
     # number of rows
     n = m.shape[1]
@@ -673,7 +673,6 @@ def _setup_matrices():
 
         n = len(_node_get_states())
 
-        
         volumes = node._get_data()[0]
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
@@ -724,8 +723,6 @@ def _setup_matrices():
                 #        _linmodadd_c[i, i] = 1
 
                 # _cvode_object.re_init()
-
-
 
         # Hybrid logic
         if species._has_1d and species._has_3d:
@@ -886,10 +883,10 @@ def _setup_matrices():
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
-            rates = numpy.asarray(rates, dtype=numpy.float_)
-            volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
-            volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-            dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
+            rates = numpy.asarray(rates, dtype=float)
+            volumes1d = numpy.asarray(volumes1d, dtype=float)
+            volumes3d = numpy.asarray(volumes3d, dtype=float)
+            dxs = numpy.asarray(grids_dx, dtype=float)
             set_hybrid_data(
                 num_1d_indices_per_grid,
                 num_3d_indices_per_grid,
