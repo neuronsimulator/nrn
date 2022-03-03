@@ -34,7 +34,9 @@ jobs:
           command: |
             sudo apt update
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-            packaging/python/test_wheels.sh $(which python3) $(ls -t wheelhouse/*.whl)
+            pyenv install 3.9.0
+            pyenv global 3.9.0
+            packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
       - store_artifacts:
           path: ./wheelhouse
           destination: artifacts

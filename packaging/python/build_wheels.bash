@@ -57,9 +57,9 @@ pip_numpy_install() {
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
-    # no old version exist for apple m1 and building from source fails
+    # older version for apple m1 as building from source fails
     if [[ `uname -m` == 'arm64' ]]; then
-      numpy_ver="numpy"
+      numpy_ver="numpy==1.21.3"
     fi
 
     echo " - pip install $numpy_ver"
