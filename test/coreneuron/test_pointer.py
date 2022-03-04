@@ -4,6 +4,11 @@ import subprocess
 pc = h.ParallelContext()
 cvode = h.CVode()
 
+
+def sortspikes(spiketime, gidvec):
+    return sorted(zip(spiketime, gidvec))
+
+
 # Passive cell random tree so there is some inhomogeneity of ia and im
 class Cell:
     def __init__(self, id, nsec):
@@ -24,19 +29,21 @@ class Cell:
         # uniform L and diam but somewhat random passive g and e
         for i, sec in enumerate(self.secs):
             sec.nseg = int(r.discunif(3, 5)) if i > 0 else 1
-            sec.L = 20 if i > 0 else 5
+            sec.L = 200 if i > 0 else 5
             sec.diam = 1 if i > 0 else 5
             sec.insert("pas")
             sec.g_pas = 0.0001 * r.uniform(1.0, 1.1)
             sec.e_pas = -65 * r.uniform(1.0, 1.1)
+        self.secs[0].insert("hh")
 
         # IClamp at d2(0)
         # As i_membane_ does not include ELECTRODE_CURRENT, comparison with
         # im_axial should be done after ic completes.
         ic = h.IClamp(self.secs[2](0))
         ic.delay = 0.0
-        ic.dur = 0.9
-        ic.amp = 0.001
+        ic.dur = 0.2
+        ic.amp = 5.0
+        self.ic = ic
 
         # axial at every internal segment, a unique AxialPP at root
         # and at every sec(1) zero area node.
@@ -164,16 +171,20 @@ def test_axial():
                 add(cell, sec(1))
 
         # im == imem
+        mx = max([abs(y) for y in imem])
+        mx = mx if mx > 0 else 1.0
         x = sum([abs(imem[i] - y) for i, y in enumerate(im)])
-        assert x < 1e-12
+        assert x / mx < 1e-9
         return v, ia, im, imem, loc
 
     def chk(std, result):
         # cell_permute = 1 --- im and imem addition is not associative
         # assert std == result
         for i in [0, 1, 2, 3]:
+            mx = max([abs(x) for x in std[i]])
+            mx = mx if mx > 0 else 1.0
             x = sum([abs(std[i][j] - x) for j, x in enumerate(result[i])])
-            assert x < 1e-13
+            assert x / mx < 1e-9
 
     def run(tstop):
         pc.set_maxstep(10)
@@ -193,9 +204,13 @@ def test_axial():
     coreneuron.cell_permute = 0
     for coreneuron.cell_permute in [0, 1]:
         chk(std, run(1))
+    coreneuron.enable = False
 
     m._callback_setup = None  # get rid of the callback first.
     del m
+
+
+#    return m
 
 
 def test_checkpoint():
@@ -212,28 +227,89 @@ def test_checkpoint():
         sec = cell.secs[0]
         pc.cell(i, h.NetCon(sec(0.5)._ref_v, None, sec=sec))
 
+    # "integrate" fabs(ia) in each axial_pp and use that as a source of spikes
+    # for actually testing that the checkpoint is working with POINTER.
+    # Would be much better if I knew how to get file mode coreneuron to
+    # print trajectories.
+    for i, p in enumerate(h.List("AxialPP")):
+        pc.set_gid2node(i + 100, pc.id())
+        pc.cell(i + 100, h.NetCon(p, None))
+
+    spktime = h.Vector()
+    spkgid = h.Vector()
+    pc.spike_record(-1, spktime, spkgid)
     cvode.cache_efficient(1)
     pc.set_maxstep(10)
     h.finitialize(-65)
     pc.nrncore_write("coredat")
 
-    # standard to compare wih checkpoint series
-    tstop = 10.0
-    common = "-d coredat --voltage 1000 --verbose 0"
-    runcn(common + " --tstop %g" % float(tstop) + " -o coredat")
-    # sequence of checkpoints
-    interval = 5
-    for i in range(1, 3):
-        tstart = (i - 1) * interval
-        tend = i * interval
-        restore = " --restore coredat/chkpnt%d" % (i - 1,) if i > 1 else ""
-        checkpoint = " --checkpoint coredat/chkpnt%d" % i
-        outpath = " -o coredat/chkpnt%d" % i
-        runcn(common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint)
+    # do a NEURON run to record spikes
+    def run(tstop):
+        pc.set_maxstep(10)
+        h.finitialize(-65)
+        pc.psolve(tstop)
+
+    run(10)
+    spikes_std = sortspikes(spktime, spkgid)
+
+    # Having trouble with WATCH in AxialPP with cell-permute=1.
+    # Does it work in direct mode?
+    from neuron import coreneuron
+
+    coreneuron.enable = True
+    for perm in [0, 1]:
+        coreneuron.cell_permute = perm
+        run(5)
+        pc.psolve(10)
+        spikes = sortspikes(spktime, spkgid)
+        assert spikes_std == spikes
+    coreneuron.enable = False
+
+    # standard to compare with checkpoint series
+    tpnts = [5.0, 10.0]
+    for perm in [0]:  # bug for perm=1 that I think is related to WATCH statement
+        print("\n\ncell_permute ", perm)
+        common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
+        # standard full run
+        runcn(common + " --tstop %g" % float(tpnts[-1]) + " -o coredat")
+        # sequence of checkpoints
+        for i, tpnt in enumerate(tpnts):
+            tend = tpnt
+            restore = " --restore coredat/chkpnt%d" % (i,) if i > 0 else ""
+            checkpoint = " --checkpoint coredat/chkpnt%d" % (i + 1,)
+            outpath = " -o coredat/chkpnt%d" % (i + 1,)
+            runcn(
+                common + " --tstop %g" % (float(tend),) + outpath + restore + checkpoint
+            )
+
+        # compare spikes
+        cmp_spks(
+            spikes_std, "coredat", ["coredat/chkpnt%d" % (i,) for i in range(1, 3)]
+        )
 
     m._callback_setup = None
     pc.gid_clear()
     del m
+
+
+def cmp_spks(spikes, dir, chkpntdirs):
+    # sorted nrn standard spikes into dir/out.spk
+    f = open(dir + "/temp", "w")
+    for spike in spikes:
+        f.write("%.8g\t%d\n" % (spike[0], int(spike[1])))
+    f.close()
+    # sometimes roundoff to %.8g gives different sort.
+    srun("sortspike {}/temp {}/nrn.spk".format(dir, dir))
+
+    srun("sortspike {}/out.dat {}/out.spk".format(dir, dir))
+    srun("cmp {}/out.spk {}/nrn.spk".format(dir, dir))
+
+    cmd = "cat"
+    for i in chkpntdirs:
+        cmd = cmd + " " + i + "/out.dat"
+    srun(cmd + " > " + dir + "/temp")
+    srun("sortspike {}/temp {}/chkptout.spk".format(dir, dir))
+    srun("cmp {}/out.spk {}/chkptout.spk".format(dir, dir))
 
 
 if __name__ == "__main__":

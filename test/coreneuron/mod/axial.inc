@@ -40,9 +40,13 @@ AFTER SOLVE {
     }
 }
 
+COMMENT
+Need to explictly duplicate in axial.mod and axial_pp.mod since
+a test of coreneuron checkpoint requires calculating iaSum and
+nmodl does not currently allow multiple BEFORE STEP in same mod file
 BEFORE STEP {
-    LOCAL i
     if (ri > 0) {
         pim = pim - ia : child contributions
     }
 }
+ENDCOMMENT
