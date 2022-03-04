@@ -17,8 +17,9 @@ namespace coreneuron {
 
 class SonataReportHandler: public ReportHandler {
   public:
-    SonataReportHandler(ReportConfiguration& config)
-        : ReportHandler(config) {}
+    SonataReportHandler(ReportConfiguration& config, const SpikesInfo& spikes_info)
+        : ReportHandler(config)
+        , m_spikes_info(spikes_info) {}
 
     void create_report(double dt, double tstop, double delay) override;
 #ifdef ENABLE_SONATA_REPORTS
@@ -34,7 +35,11 @@ class SonataReportHandler: public ReportHandler {
     void register_report(const NrnThread& nt,
                          ReportConfiguration& config,
                          const VarsToReport& vars_to_report);
+    std::pair<std::string, int> get_population_info(int gid);
 #endif  // ENABLE_SONATA_REPORTS
+
+  private:
+    SpikesInfo m_spikes_info;
 };
 
 }  // Namespace coreneuron

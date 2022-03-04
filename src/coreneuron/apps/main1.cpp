@@ -428,12 +428,13 @@ static void trajectory_return() {
     }
 }
 
-std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config) {
+std::unique_ptr<ReportHandler> create_report_handler(ReportConfiguration& config,
+                                                     const SpikesInfo& spikes_info) {
     std::unique_ptr<ReportHandler> report_handler;
     if (config.format == "Bin") {
         report_handler = std::make_unique<BinaryReportHandler>(config);
     } else if (config.format == "SONATA") {
-        report_handler = std::make_unique<SonataReportHandler>(config);
+        report_handler = std::make_unique<SonataReportHandler>(config, spikes_info);
     } else {
         if (nrnmpi_myid == 0) {
             printf(" WARNING : Report name '%s' has unknown format: '%s'.\n",
@@ -524,7 +525,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
 
     std::vector<ReportConfiguration> configs;
     std::vector<std::unique_ptr<ReportHandler>> report_handlers;
-    std::vector<std::pair<std::string, int>> spikes_population_name_offset;
+    SpikesInfo spikes_info;
     bool reports_needs_finalize = false;
 
     if (!corenrn_param.is_quiet()) {
@@ -539,7 +540,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     if (!corenrn_param.reportfilepath.empty()) {
         configs = create_report_configurations(corenrn_param.reportfilepath,
                                                corenrn_param.outpath,
-                                               spikes_population_name_offset);
+                                               spikes_info);
         reports_needs_finalize = !configs.empty();
     }
 
@@ -592,7 +593,8 @@ extern "C" int run_solve_core(int argc, char** argv) {
         // register all reports into reportinglib
         double min_report_dt = INT_MAX;
         for (size_t i = 0; i < configs.size(); i++) {
-            std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i]);
+            std::unique_ptr<ReportHandler> report_handler = create_report_handler(configs[i],
+                                                                                  spikes_info);
             if (report_handler) {
                 report_handler->create_report(dt, tstop, delay);
                 report_handlers.push_back(std::move(report_handler));
@@ -645,7 +647,7 @@ extern "C" int run_solve_core(int argc, char** argv) {
     // write spike information to outpath
     {
         Instrumentor::phase p("output-spike");
-        output_spikes(output_dir.c_str(), spikes_population_name_offset);
+        output_spikes(output_dir.c_str(), spikes_info);
     }
 
     // copy weights back to NEURON NetCon

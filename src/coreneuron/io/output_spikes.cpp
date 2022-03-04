@@ -154,10 +154,9 @@ static void sort_spikes(std::vector<double>& spikevec_time, std::vector<int>& sp
 /** Split spikevec_time and spikevec_gid by populations
  *  Add spike data with population name and gid offset tolibsonatareport API
  */
-static void output_spike_populations(
-    const std::vector<std::pair<std::string, int>>& population_name_offset) {
+void output_spike_populations(const SpikesInfo& spikes_info) {
     // Write spikes with default population name and offset
-    if (population_name_offset.empty()) {
+    if (spikes_info.population_info.empty()) {
         sonata_add_spikes_population("All",
                                      0,
                                      spikevec_time.data(),
@@ -166,15 +165,15 @@ static void output_spike_populations(
                                      spikevec_gid.size());
         return;
     }
-    int n_populations = population_name_offset.size();
+    int n_populations = spikes_info.population_info.size();
     for (int idx = 0; idx < n_populations; idx++) {
-        auto cur_pop = population_name_offset[idx];
-        std::string population_name = cur_pop.first;
-        int population_offset = cur_pop.second;
+        const auto& curr_pop = spikes_info.population_info[idx];
+        std::string population_name = curr_pop.first;
+        int population_offset = curr_pop.second;
         int gid_lower = population_offset;
         int gid_upper = std::numeric_limits<int>::max();
         if (idx != n_populations - 1) {
-            gid_upper = population_name_offset[idx + 1].second - 1;
+            gid_upper = spikes_info.population_info[idx + 1].second - 1;
         }
         std::vector<double> pop_spikevec_time;
         std::vector<int> pop_spikevec_gid;
@@ -198,10 +197,7 @@ static void output_spike_populations(
  *  \todo : MPI related code should be factored into nrnmpi.c
  *          Check spike record length which is set to 64 chars
  */
-static void output_spikes_parallel(
-    const char* outpath,
-    const char* filename,
-    const std::vector<std::pair<std::string, int>>& population_name_offset) {
+static void output_spikes_parallel(const char* outpath, const SpikesInfo& spikes_info) {
     std::stringstream ss;
     ss << outpath << "/out.dat";
     std::string fname = ss.str();
@@ -211,8 +207,8 @@ static void output_spikes_parallel(
         remove(fname.c_str());
     }
 #ifdef ENABLE_SONATA_REPORTS
-    sonata_create_spikefile(outpath, filename);
-    output_spike_populations(population_name_offset);
+    sonata_create_spikefile(outpath, spikes_info.file_name.data());
+    output_spike_populations(spikes_info);
     sonata_write_spike_populations();
     sonata_close_spikefile();
 #endif  // ENABLE_SONATA_REPORTS
@@ -280,8 +276,7 @@ static void output_spikes_serial(const char* outpath) {
     fclose(f);
 }
 
-void output_spikes(const char* outpath,
-                   const std::vector<std::pair<std::string, int>>& population_name_offset) {
+void output_spikes(const char* outpath, const SpikesInfo& spikes_info) {
     // try to transfer spikes to NEURON. If successfull, don't write out.dat
     if (all_spikes_return(spikevec_time, spikevec_gid)) {
         clear_spike_vectors();
@@ -289,7 +284,7 @@ void output_spikes(const char* outpath,
     }
 #if NRNMPI
     if (corenrn_param.mpi_enable && nrnmpi_initialized()) {
-        output_spikes_parallel(outpath, "out", population_name_offset);
+        output_spikes_parallel(outpath, spikes_info);
     } else
 #endif
     {

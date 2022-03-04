@@ -39,6 +39,11 @@ struct SummationReportMapping {
     std::unordered_map<std::string, SummationReport> summation_reports_;
 };
 
+struct SpikesInfo {
+    std::string file_name = "out";
+    std::vector<std::pair<std::string, int>> population_info;
+};
+
 // name of the variable in mod file that is used to indicate which synapse
 // is enabled or disable for reporting
 #define SELECTED_VAR_MOD_NAME "selected_for_report"
@@ -87,7 +92,6 @@ struct ReportConfiguration {
     std::string unit;                     // unit of the report
     std::string format;                   // format of the report (Bin, hdf5, SONATA)
     std::string type_str;                 // type of report string
-    std::string population_name;          // population name of the report
     TargetType target_type;               // type of the target
     ReportType type;                      // type of the report
     SectionType section_type;             // type of section report
@@ -97,15 +101,13 @@ struct ReportConfiguration {
     double stop;                          // stop time of report
     int num_gids;                         // total number of gids
     int buffer_size;                      // hint on buffer size used for this report
-    uint64_t population_offset;           // offset of the node ids in the population
     std::set<int> target;                 // list of gids for this report
 };
 
 void setup_report_engine(double dt_report, double mindelay);
-std::vector<ReportConfiguration> create_report_configurations(
-    const std::string& filename,
-    const std::string& output_dir,
-    std::vector<std::pair<std::string, int>>& spikes_population_name);
+std::vector<ReportConfiguration> create_report_configurations(const std::string& filename,
+                                                              const std::string& output_dir,
+                                                              SpikesInfo& spikes_info);
 void finalize_report();
 void nrn_flush_reports(double t);
 void set_report_buffer_size(int n);
