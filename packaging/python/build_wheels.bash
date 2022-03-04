@@ -53,7 +53,7 @@ pip_numpy_install() {
       37) numpy_ver="numpy==1.14.6" ;;
       38) numpy_ver="numpy==1.17.5" ;;
       39) numpy_ver="numpy==1.19.3" ;;
-      310) numpy_ver="numpy==1.21.2" ;;
+      310) numpy_ver="numpy==1.21.3" ;;
       *) echo "Error: numpy version not specified for this python!" && exit 1;;
     esac
 
