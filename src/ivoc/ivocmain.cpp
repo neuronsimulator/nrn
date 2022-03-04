@@ -805,7 +805,7 @@ ENDGUI
 #if OCSMALL
 	if (argc == 1) {
 		ocsmall_argv[0] = our_argv[0];
-		oc.run(2, ocsmall_argv);
+		exit_status = oc.run(2, ocsmall_argv);
 	}else
 #endif
 #if defined(USE_PYTHON)

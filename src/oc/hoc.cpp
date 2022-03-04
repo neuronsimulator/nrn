@@ -971,6 +971,7 @@ static int hoc_run1(void);
 
 int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 {
+	int exit_status = 0;
 #ifdef WIN32
 	extern void hoc_set_unhandled_exception_filter();
 	hoc_set_unhandled_exception_filter();
@@ -1052,8 +1053,8 @@ int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 		--gargc;
 	}
 	while (moreinput())
-		return hoc_run1();
-	return 0;
+		exit_status = hoc_run1();
+	return exit_status;
 }
 
 #if carbon
