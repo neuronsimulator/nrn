@@ -52,8 +52,7 @@ RUN cd /nrnwheel/readline/lib \
     && rm *.o
 
 ENV PATH /nrnwheel/openmpi/bin:$PATH
-RUN yum -y install epel-release
-RUN yum -y install libX11-devel libXcomposite-devel vim-enhanced
+RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced
 RUN yum -y remove ncurses-devel
 
 # Copy Dockerfile for reference

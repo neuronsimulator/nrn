@@ -112,6 +112,9 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
+	# TODO: still need work to make sure this robust and usable
+	# currently this will break when coreneuron is used and when
+	# dev environment is not installed.
         auditwheel repair dist/*.whl --exlude "libgomp.so.1"
     fi
 

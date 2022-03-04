@@ -26,12 +26,18 @@ trigger:
 
 jobs:
 
-- job: 'ManyLinuxWheelsARM'
-  timeoutInMinutes: 60
+- job: 'ManyLinuxWheels'
+  timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+      Python38:
+        python.version: '3.8'
       Python39:
         python.version: '3.9'
       Python310:
@@ -47,11 +53,6 @@ jobs:
     inputs:
       secureFile: 'mpt_headears.2.21.tar.gz'
   
-  - script: |
-      sudo apt-get install qemu binfmt-support qemu-user-static
-      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    displayName: 'Docker QEMU emulation for ARM'
-
   # Note that mpt headers must be mounted in the docker imager under `/nrnwheel/mpt`
   # This path is checked by `packaging/python/build_wheels.bash` when run in the image.
   - script: |
@@ -66,7 +67,7 @@ jobs:
         -e NRN_RELEASE_UPLOAD \
         -e NEURON_WHEEL_VERSION \
         -e NRN_BUILD_FOR_UPLOAD=1 \
-        'neuronsimulator/neuron_wheel:latest-aarch64' \
+        'neuronsimulator/neuron_wheel' \
         packaging/python/build_wheels.bash linux $(python.version) coreneuron
     displayName: 'Building ManyLinux Wheel'
 
@@ -79,7 +80,6 @@ jobs:
 
 
 - job: 'ManyLinuxGPUWheels'
-  condition: eq(1,2)
   timeoutInMinutes: 30
   pool:
     vmImage: 'ubuntu-18.04'
@@ -135,7 +135,6 @@ jobs:
 
 # Jobs to build OSX wheels natively
 - job: 'MacOSWheels'
-  condition: eq(1,2)
   timeoutInMinutes: 30
   pool:
     vmImage: 'macOS-10.15'
@@ -206,7 +205,6 @@ jobs:
 # Jobs to build NEURON installer natively
 - job: 'WindowsInstaller'
   timeoutInMinutes: 45
-  condition: eq(1,2)
   pool:
     vmImage: windows-2019
   variables:
