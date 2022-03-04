@@ -222,7 +222,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+              ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
               ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
       COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

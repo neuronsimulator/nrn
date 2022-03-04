@@ -238,12 +238,12 @@ endmacro()
 # =============================================================================
 macro(nocmodl_mod_to_c modfile_basename)
   add_custom_command(
-    OUTPUT ${modfile_basename}.c
+    OUTPUT ${PROJECT_BINARY_DIR}/${modfile_basename}.c
     COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-            ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
-    COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.c > ${modfile_basename}.c.tmp
-    COMMAND mv ${modfile_basename}.c.tmp ${modfile_basename}.c
-    DEPENDS nocmodl ${modfile_basename}.mod
+            ${PROJECT_BINARY_DIR}/bin/nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
+    COMMAND sed "'s/_reg()/_reg_()/'" ${PROJECT_SOURCE_DIR}/${modfile_basename}.c > ${PROJECT_BINARY_DIR}/${modfile_basename}.c
+    COMMAND rm ${PROJECT_SOURCE_DIR}/${modfile_basename}.c
+    DEPENDS nocmodl ${PROJECT_SOURCE_DIR}/${modfile_basename}.mod
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/src/nrniv)
 endmacro()
 
