@@ -34,7 +34,7 @@ jobs:
           command: |
             sudo apt update
             sudo apt install -y mpich openmpi-bin libopenmpi-dev libmpich-dev
-            pyenv install 3.9.0
+            env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.9.0
             pyenv global 3.9.0
             packaging/python/test_wheels.sh $(which python) $(ls -t wheelhouse/*.whl)
       - store_artifacts:
@@ -48,7 +48,7 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              cibw_build: ["38", "39", "310"]
+              cibw_build: ["39"]
 
   nightly:
     triggers:

@@ -74,7 +74,8 @@ build_wheel_linux() {
 
     echo " - Installing build requirements"
     #auditwheel needs to be installed with python3
-    pip install auditwheel
+    # see upstream WIP PR https://github.com/pypa/auditwheel/pull/368
+    pip install git+https://github.com/neuronsimulator/auditwheel.git@exclude_so_files
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
@@ -111,7 +112,7 @@ build_wheel_linux() {
         echo " - Auditwheel show"
         auditwheel show dist/*.whl
         echo " - Repairing..."
-        auditwheel repair dist/*.whl
+        auditwheel repair dist/*.whl --exlude "libgomp.so.1"
     fi
 
     deactivate

@@ -225,9 +225,9 @@ run_parallel_test() {
 
     # circle-ci build
     elif [[ "$CIRCLECI" == "true" ]]; then
-      sudo update-alternatives --set mpi /usr/bin/mpicc.mpich
+      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/include/aarch64-linux-gnu/mpich
       run_mpi_test "mpirun.mpich" "MPICH" ""
-      sudo update-alternatives --set mpi /usr/bin/mpicc.openmpi
+      sudo update-alternatives --set mpi-aarch64-linux-gnu /usr/lib/aarch64-linux-gnu/openmpi/include
       run_mpi_test "mpirun.openmpi" "OpenMPI" ""
 
     # linux desktop or docker container used for wheel
