@@ -389,7 +389,7 @@ function(nrn_add_test)
     ${test_names}
     PROPERTIES
       ENVIRONMENT
-      "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      "${NRN_TEST_ENV};PATH=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:${PROJECT_BINARY_DIR}/bin:$ENV{PATH};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
   )
 
   # Construct an expression containing the names of the test output files that will be passed to the
