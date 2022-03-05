@@ -252,7 +252,6 @@ def test_checkpoint():
     run(10)
     spikes_std = sortspikes(spktime, spkgid)
 
-    # Having trouble with WATCH in AxialPP with cell-permute=1.
     # Does it work in direct mode?
     from neuron import coreneuron
 
@@ -267,7 +266,7 @@ def test_checkpoint():
 
     # standard to compare with checkpoint series
     tpnts = [5.0, 10.0]
-    for perm in [0]:  # bug for perm=1 that I think is related to WATCH statement
+    for perm in [0, 1]:
         print("\n\ncell_permute ", perm)
         common = "-d coredat --voltage 1000 --verbose 0 --cell-permute %d" % (perm,)
         # standard full run
