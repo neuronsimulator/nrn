@@ -1,3 +1,5 @@
+.. _training_videos:
+
 Training videos
 ===============
 

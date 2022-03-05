@@ -16,9 +16,18 @@ Welcome to NEURON's documentation!
    :maxdepth: 2
    :caption: User documentation:
 
+   videos/index
+   guide/index
+   publications
+   
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: NEURON scripting:
+
    python/index
    hoc/index
-   videos/index
    tutorials/index
    rxd-tutorials/index
    coreneuron/index
