@@ -122,7 +122,7 @@ _ics_set_grid_currents.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     ctypes.py_object,
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 
@@ -856,7 +856,7 @@ class _IntracellularSpecies(_SpeciesMathable):
     def create_alphas(self):
         self._isalive()
         alphas = [vol / self._dx ** 3 for vol in self._region._vol]
-        return numpy.asarray(alphas, dtype=numpy.float)
+        return numpy.asarray(alphas, dtype=float)
 
     def _import_concentration(self):
         self._isalive()
@@ -955,9 +955,7 @@ class _IntracellularSpecies(_SpeciesMathable):
                     scale_factors = [
                         sign * area * scale * scale_factor for area in node_area
                     ]
-                    self._scale_factors = numpy.asarray(
-                        scale_factors, dtype=numpy.float_
-                    )
+                    self._scale_factors = numpy.asarray(scale_factors, dtype=float)
                     _ics_set_grid_currents(
                         grid_list_start,
                         self._grid_id,
@@ -1056,9 +1054,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         dc = None
         dgrid = None
         if callable(d) or (hasattr(d, "__len__") and callable(d[0])):
-            dgrid = numpy.ndarray(
-                (3, self._nodes_length), dtype=numpy.float64, order="C"
-            )
+            dgrid = numpy.ndarray((3, self._nodes_length), dtype=float, order="C")
             if hasattr(d, "__len__"):
                 if len(d) == 3:
                     for dr in range(3):
@@ -1103,15 +1099,15 @@ class _IntracellularSpecies(_SpeciesMathable):
                     )
         elif hasattr(d, "__len__"):
             if len(d) == 3:
-                dc = numpy.array(d, dtype=numpy.float64)
+                dc = numpy.array(d, dtype=float)
             elif len(d) == 1:
-                dc = numpy.array(d[0] * numpy.ones(3), dtype=numpy.float64)
+                dc = numpy.array(d[0] * numpy.ones(3), dtype=float)
             else:
                 raise RxDException(
                     "Intracellular diffusion coefficient may be a scalar or a tuple of length 3 for anisotropic diffusion, it can also be a function for inhomogeneous diffusion (or tuple of 3 functions) with arguments x, y, z location or node with optional argument for direction"
                 )
         else:
-            dc = numpy.array(d * numpy.ones(3), dtype=numpy.float64)
+            dc = numpy.array(d * numpy.ones(3), dtype=float)
         return (dc, dgrid)
 
     @property

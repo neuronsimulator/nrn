@@ -18,6 +18,7 @@ Welcome to NEURON's documentation!
 
    python/index
    hoc/index
+   videos/index
    tutorials/index
    rxd-tutorials/index
    coreneuron/index
