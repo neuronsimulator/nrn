@@ -1,7 +1,5 @@
 from .rxdException import RxDException
 
-import re
-
 # TODO: This option is not currently observed
 use_reaction_contribution_to_jacobian = True
 
