@@ -7,6 +7,7 @@ add_compile_definitions(${NRN_COMPILE_DEFS})
 # Definitions used in setup.py
 # =============================================================================
 set(NRN_SRCDIR ${PROJECT_SOURCE_DIR})
+set(NRN_BUILDDIR ${PROJECT_BINARY_DIR})
 set(NRNPYTHON_DEFINES "")
 
 # ~~~
