@@ -510,7 +510,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
             int jj = ioff + j;
             int etype = di.ion_type[jj];
             int eindex = di.ion_index[jj];
-            int seman = semantics[j];
+            const int seman = semantics[j];
             // Would probably be more clear if use seman for as many as
             // possible of the cases
             // below and within each case deal with etype appropriately.

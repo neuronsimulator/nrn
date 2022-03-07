@@ -54,7 +54,7 @@ class Cell:
         # update pointers and ri later after all cells are created
 
     def get_axial(self, seg):
-        if seg.x > 0.0 and seg.x < 1.0:
+        if 0.0 < seg.x < 1.0:
             mech = seg.axial
         else:
             mech = None
@@ -210,7 +210,6 @@ def test_axial():
     del m
 
 
-#    return m
 
 
 def test_checkpoint():
