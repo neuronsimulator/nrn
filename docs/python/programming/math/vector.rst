@@ -606,6 +606,10 @@ Vector
             h.finitialize(-65)
             h.continuerun(6.28)
 
+
+    A runnable example of using this method for a time-varying current clamp is available
+    `here <https://colab.research.google.com/drive/1Jj7Ke1kZSGja1FNNj66XGCdOruKY_oqS?usp=sharing>`_.
+
 ----
 
 .. method:: Vector.play_remove
