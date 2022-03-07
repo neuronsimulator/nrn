@@ -971,7 +971,7 @@ static int hoc_run1(void);
 
 int hoc_main1(int argc, const char** argv, const char** envp)	/* hoc6 */
 {
-	int exit_status = 0;
+	int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
 	extern void hoc_set_unhandled_exception_filter();
 	hoc_set_unhandled_exception_filter();
@@ -1182,7 +1182,8 @@ void hoc_quit(void) {
 		(*p_nrnpython_finalize)();
 	}
 #endif
-	exit(0);
+	int exit_code = ifarg(1) ? int(*getarg(1)) : 0;
+	exit(exit_code);
 }
 
 #if defined(CYGWIN)
@@ -1401,7 +1402,7 @@ static int hoc_run1(void)	/* execute until EOF */
 		if (setjmp(begin)) {
 			fin = sav_fin;
 			if (!nrn_fw_eq(fin, stdin)) {
-				return 1;
+				return EXIT_FAILURE;
 			}
 		}
 		intset = 0;
@@ -1426,7 +1427,7 @@ static int hoc_run1(void)	/* execute until EOF */
 		restore_signals();
 		control_jmpbuf = 0;
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 /* event driven interface to oc. This routine always returns after processing

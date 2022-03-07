@@ -78,3 +78,8 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
         hoc_oc("delete_section()");
     }
 }
+
+TEST_CASE("Test return code of execerror", "[NEURON][execerror]")
+{
+    REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
+}
