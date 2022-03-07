@@ -29,7 +29,7 @@ C:\Python36\python.exe -m pip install numpy==1.12.1 || goto :error
 C:\Python37\python.exe -m pip install numpy==1.14.6 || goto :error
 C:\Python38\python.exe -m pip install numpy==1.17.5 || goto :error
 C:\Python39\python.exe -m pip install numpy==1.19.3 || goto :error
-C:\Python310\python.exe -m pip install numpy==1.21.5 || goto :error
+C:\Python310\python.exe -m pip install numpy==1.21.3 || goto :error
 
 :: install nsis
 nsis-3.05-setup.exe /S || goto :error
