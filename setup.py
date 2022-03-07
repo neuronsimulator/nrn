@@ -348,6 +348,7 @@ def setup_package():
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
+                "-DCORENRN_ENABLE_OPENMP=ON", #TODO: manylinux portability questions
             ] + ([
                 "-DCORENRN_ENABLE_GPU=ON",
                 "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
