@@ -426,7 +426,12 @@ endif()
 # =============================================================================
 # Common CXX flags : ignore unknown pragma warnings
 # =============================================================================
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
+# Do not set this when building wheels. The nrnivmodl workflow means that we do not know what
+# compiler will be invoked with these flags, so we have to use flags that are as generic as
+# possible.
+if(NOT DEFINED NRN_WHEEL_BUILD OR NOT NRN_WHEEL_BUILD)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${IGNORE_UNKNOWN_PRAGMA_FLAGS}")
+endif()
 
 # =============================================================================
 # Add main directories
@@ -436,7 +441,21 @@ add_subdirectory(coreneuron)
 if(CORENRN_ENABLE_GPU)
   get_target_property(CORENRN_LINK_LIBRARIES coreneuron INTERFACE_LINK_LIBRARIES)
   foreach(LIB ${CORENRN_LINK_LIBRARIES})
-    set_property(GLOBAL APPEND_STRING PROPERTY CORENEURON_LIB_LINK_FLAGS " ${LIB}")
+    get_filename_component(dir_path ${LIB} DIRECTORY)
+    if(TARGET ${LIB})
+      # See, for example, caliper where the coreneuron target depends on the caliper target (so we
+      # get LIB=caliper in this loop), but -l and -L are already added manually here:
+      # https://github.com/BlueBrain/CoreNeuron/blob/856cea4aa647c8f2b0d5bda6d0fc32144c5942e3/CMakeLists.txt#L411-L412
+      message(
+        NOTICE
+        "Ignoring dependency '${LIB}' of 'coreneuron' and assuming relevant flags have already been added to CORENEURON_LIB_LINK_FLAGS."
+      )
+    elseif(NOT dir_path)
+      # In case LIB is not a target but is just the name of a library, e.g. "dl"
+      set_property(GLOBAL APPEND_STRING PROPERTY CORENEURON_LIB_LINK_FLAGS " -l${LIB}")
+    else()
+      set_property(GLOBAL APPEND_STRING PROPERTY CORENEURON_LIB_LINK_FLAGS " ${LIB}")
+    endif()
   endforeach()
 endif()
 
@@ -528,7 +547,6 @@ message(STATUS "COMPILE FLAGS       | ${CORENRN_CXX_FLAGS}")
 message(STATUS "Build Type          | ${COMPILE_LIBRARY_TYPE}")
 message(STATUS "MPI                 | ${CORENRN_ENABLE_MPI}")
 if(CORENRN_ENABLE_MPI)
-  message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
   message(STATUS "  DYNAMIC           | ${CORENRN_ENABLE_MPI_DYNAMIC}")
   if(CORENRN_ENABLE_MPI_DYNAMIC AND NRN_MPI_LIBNAME_LIST)
     # ~~~
@@ -543,6 +561,8 @@ if(CORENRN_ENABLE_MPI)
       message(STATUS "    LIBNAME         | core${libname}")
       message(STATUS "    INC             | ${include}")
     endforeach(val)
+  else()
+    message(STATUS "  INC               | ${MPI_CXX_INCLUDE_PATH}")
   endif()
 endif()
 message(STATUS "OpenMP              | ${CORENRN_ENABLE_OPENMP}")

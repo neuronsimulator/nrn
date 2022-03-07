@@ -52,12 +52,24 @@ CORENRNLIB_FLAGS += $(if @caliper_LIB_DIR@,-L@caliper_LIB_DIR@,)
 # coreneuron/utils/randoms goes first because it needs to override the NEURON
 # directory in INCFLAGS
 INCLUDES = -I$(CORENRN_INC_DIR)/coreneuron/utils/randoms $(INCFLAGS) -I$(CORENRN_INC_DIR)
-INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
+ifeq (@CORENRN_ENABLE_MPI_DYNAMIC@, OFF)
+  INCLUDES += $(if @MPI_CXX_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_CXX_INCLUDE_PATH@),)
+endif
 INCLUDES += $(if @reportinglib_INCLUDE_DIR@, -I$(subst ;, -I,@reportinglib_INCLUDE_DIR@),)
 
 # CXX is always defined. If the definition comes from default change it
 ifeq ($(origin CXX), default)
     CXX = @CMAKE_CXX_COMPILER@
+endif
+
+ifeq (@CORENRN_ENABLE_GPU@, ON)
+  ifneq ($(shell $(CXX) --version | grep -o nvc++), nvc++)
+    $(error GPU wheels are only compatible with the NVIDIA C++ compiler nvc++, but CXX=$(CXX) and --version gives $(shell $(CXX) --version))
+  endif
+  # nvc++ -dumpversion is simpler, but only available from 22.2
+  ifeq ($(findstring nvc++ @CORENRN_NVHPC_MAJOR_MINOR_VERSION@, $(shell $(CXX) --version)),)
+    $(error GPU wheels are currently not compatible across NVIDIA HPC SDK versions. You have $(shell $(CXX) -V | grep nvc++) but this wheel was built with @CORENRN_NVHPC_MAJOR_MINOR_VERSION@.)
+  endif
 endif
 
 # In case of wheel, python and perl exe paths are from the build machine.

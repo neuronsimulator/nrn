@@ -4,10 +4,35 @@
 # See top-level LICENSE file for details.
 # =============================================================================
 
+# Helper to parse X.Y[.{anything] into X.Y
+function(cnrn_parse_version FULL_VERSION)
+  cmake_parse_arguments(PARSE_ARGV 1 CNRN_PARSE_VERSION "" "OUTPUT_MAJOR_MINOR" "")
+  if(NOT "${CNRN_PARSE_VERSION_UNPARSED_ARGUMENTS}" STREQUAL "")
+    message(
+      FATAL_ERROR
+        "cnrn_parse_version got unexpected arguments: ${CNRN_PARSE_VERSION_UNPARSED_ARGUMENTS}")
+  endif()
+  string(FIND ${FULL_VERSION} . first_dot)
+  math(EXPR first_dot_plus_one "${first_dot}+1")
+  string(SUBSTRING ${FULL_VERSION} ${first_dot_plus_one} -1 minor_and_later)
+  string(FIND ${minor_and_later} . second_dot_relative)
+  if(${first_dot} EQUAL -1 OR ${second_dot_relative} EQUAL -1)
+    message(FATAL_ERROR "Failed to parse major.minor from ${FULL_VERSION}")
+  endif()
+  math(EXPR second_dot_plus_one "${first_dot}+${second_dot_relative}+1")
+  string(SUBSTRING ${FULL_VERSION} 0 ${second_dot_plus_one} major_minor)
+  set(${CNRN_PARSE_VERSION_OUTPUT_MAJOR_MINOR}
+      ${major_minor}
+      PARENT_SCOPE)
+endfunction()
+
 # =============================================================================
 # Prepare compiler flags for GPU target
 # =============================================================================
 if(CORENRN_ENABLE_GPU)
+  # Get the NVC++ version number for use in nrnivmodl_core_makefile.in
+  cnrn_parse_version(${CMAKE_CXX_COMPILER_VERSION} OUTPUT_MAJOR_MINOR
+                     CORENRN_NVHPC_MAJOR_MINOR_VERSION)
   # Enable cudaProfiler{Start,Stop}() behind the Instrumentor::phase... APIs
   add_compile_definitions(CORENEURON_CUDA_PROFILING CORENEURON_ENABLE_GPU)
   # Plain C++ code in CoreNEURON may need to use CUDA runtime APIs for, for example, starting and
@@ -23,20 +48,7 @@ if(CORENRN_ENABLE_GPU)
     if(NOT ${CMAKE_CUDA_COMPILER_ID} STREQUAL "NVIDIA")
       message(FATAL_ERROR "Unsupported CUDA compiler ${CMAKE_CUDA_COMPILER_ID}")
     endif()
-    # Parse CMAKE_CUDA_COMPILER_VERSION=x.y.z into CUDA_VERSION=x.y
-    string(FIND ${CMAKE_CUDA_COMPILER_VERSION} . first_dot)
-    math(EXPR first_dot_plus_one "${first_dot}+1")
-    string(SUBSTRING ${CMAKE_CUDA_COMPILER_VERSION} ${first_dot_plus_one} -1 minor_and_later)
-    string(FIND ${minor_and_later} . second_dot_relative)
-    if(${first_dot} EQUAL -1 OR ${second_dot_relative} EQUAL -1)
-      message(
-        FATAL_ERROR
-          "Failed to parse a CUDA_VERSION from CMAKE_CUDA_COMPILER_VERSION=${CMAKE_CUDA_COMPILER_VERSION}"
-      )
-    endif()
-    math(EXPR second_dot_plus_one "${first_dot}+${second_dot_relative}+1")
-    string(SUBSTRING ${CMAKE_CUDA_COMPILER_VERSION} 0 ${second_dot_plus_one}
-                     CORENRN_CUDA_VERSION_SHORT)
+    cnrn_parse_version(${CMAKE_CUDA_COMPILER_VERSION} OUTPUT_MAJOR_MINOR CORENRN_CUDA_VERSION_SHORT)
   else()
     # This is a lazy way of getting the major/minor versions separately without parsing
     # ${CMAKE_CUDA_COMPILER_VERSION}
@@ -91,7 +103,7 @@ if(CORENRN_ENABLE_GPU)
     GLOBAL
     PROPERTY
       CORENEURON_LIB_LINK_FLAGS
-      "${NVHPC_ACC_COMP_FLAGS} -rdynamic -lrt -Wl,--whole-archive -L${CMAKE_HOST_SYSTEM_PROCESSOR} -lcorenrnmech -L${CMAKE_INSTALL_PREFIX}/lib -lcoreneuron -Wl,--no-whole-archive"
+      "${NVHPC_ACC_COMP_FLAGS} -rdynamic -lrt -Wl,--whole-archive -L${CMAKE_HOST_SYSTEM_PROCESSOR} -lcorenrnmech -L$(libdir) -lcoreneuron -Wl,--no-whole-archive"
   )
 else()
   set_property(GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS
