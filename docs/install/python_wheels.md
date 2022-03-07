@@ -45,11 +45,18 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
-* `latest` for official publishing (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 and `_gpu` is needed for the GPU wheel. 
+
+If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
+
+```
+docker build -t neuronsimulator/neuron_wheel:latest-aarch64 --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+```
+
 
 ### Pushing to DockerHub
 
