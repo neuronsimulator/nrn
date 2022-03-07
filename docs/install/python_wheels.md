@@ -45,7 +45,7 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
-* `latest-amd64` or `latest-arm64` for official publishing on respective platforms (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
