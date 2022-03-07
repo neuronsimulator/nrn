@@ -44,17 +44,113 @@ Note that models using the following features cannot presently be simulated with
      - Generally, `Vector.record` and `Vector.play` are ok, as are the display of GUI variable trajectories.
        Anything requiring callbacks into the interpreter (Python or HOC) are not implemented.
 
+Some additional suggestions regarding MOD files that are intended to be executed with CoreNEURON are:
+
+* Make sure that the purpose of the MOD file and the mechanism described by it is intended to be executed with CoreNEURON. For example there might be MOD files that only provide an interface to run Python or HOC functions that are not supported in CoreNEURON. Those MOD files normally depend heavily on ``VERBATIM`` blocks. In case you want to keep certain functionallity defined in a ``VERBATIM`` block in NEURON but avoid enabling it in CoreNEURON you can wrap the code in the following macro:
+
+.. code-block:: c++
+
+  VERBATIM
+  #ifndef NRNBBCORE
+  <code block to be executed only by NEURON>
+  #endif
+  ENDVERBATIM
+
+* Explicit initialization of ion currents in ``INITIAL`` blocks using ``VERBATIM`` blocks is not needed in NEURON or CoreNEURON since they are done implicitely by the NMODL transpiler. This means that code blocks like the following should be deleted by the MOD files:
+
+.. code-block:: c++
+
+  VERBATIM
+  cai = _ion_cai;
+  Cai = _ion_Cai;
+  ENDVERBATIM
+
+* ``PROCEDURE`` blocks shouldn't return any value.
+* Make sure that all the C/C++ functions called in ``VERBATIM`` blocks are defined in a C/C++ header file which is included in the MOD file.
+
 THREADSAFE
 **********
-CoreNEURON's acceleration is made possible through it's ability not only to run the simulations in parallel but also by being able to take advantage of the vectorization support of CPUs and execution on GPUs. To be able to execute a model in parallel using multiple threads the mod file developer should make sure that the mod file is thread safe. You can find more information about ``THREADSAFE`` mod files `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_.
+CoreNEURON's acceleration is made possible through it's ability not only to run the simulations in parallel but also by being able to take advantage of the vectorization support of CPUs and execution on GPUs. To be able to execute a model in parallel using multiple threads the MOD file developer should make sure that the MOD file is thread safe. You can find more information about ``THREADSAFE`` MOD files `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_.
 
-By making the mod file thread safe the initialization and current and state update for all the sections that include this mechanism can be done in parallel using vectorized CPU instructions and can be executed in GPU safely.
+By making the MOD file thread safe the initialization and current and state update for all the sections that include this mechanism can be done in parallel using vectorized CPU instructions and can be executed in GPU safely.
 
-Some useful instructions to make a mod file thread safe are:
+Some useful instructions to make a MOD file thread safe are:
 
-* Make sure that all the variables that are written in the mod file and are defined as ``GLOBAL`` are now defined as ``RANGE``. More information about ``GLOBAL`` and ``RANGE`` variables can be found `here <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html>`_.
-* In case there are any ``VERBATIM`` blocks those need to be threadsafe and there must be a ``THREADSAFE`` keyword in the ``NEURON`` block to declare that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the mod file
+* Make sure that all the variables that are written in the MOD file and are defined as ``GLOBAL`` are now defined as ``RANGE``. More information about ``GLOBAL`` and ``RANGE`` variables can be found `here <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html>`_.
+* In case there are any ``VERBATIM`` blocks those need to be threadsafe and there must be a ``THREADSAFE`` keyword in the ``NEURON`` block to declare that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the MOD file
 
+For example here is a showcase MOD file that defines `minf` as a ``GLOBAL`` variable which gets updated during the simulation and also defines a ``VERBATIM`` block before the ``NEURON`` block:
+
+.. code-block:: c++
+
+  VERBATIM
+  #include <stdlib.h>
+  ENDVERBATIM
+
+  NEURON {
+    SUFFIX test
+    GLOBAL minf
+  }
+
+  ASSIGNED {
+    v            (mV)
+    minf
+  }
+
+  STATE {
+    m
+  }
+
+  BREAKPOINT {
+    SOLVE states METHOD cnexp
+  }
+
+  DERIVATIVE states {
+    rates(v)
+    m' = (minf -m)/1.5
+  }
+
+  PROCEDURE rates(v (mV)) {
+    minf = minf+1
+  }
+
+The above MOD file needs to be changed into the following one to be compatible with CoreNEURON:
+
+.. code-block:: c++
+
+  NEURON {
+    SUFFIX test
+    RANGE minf : turned minf variable to RANGE
+    THREADSAFE : added THREADSAFE keyword and moved NEURON block before any VERBATIM block
+  }
+
+  VERBATIM
+  #include <stdlib.h>
+  ENDVERBATIM
+
+  ASSIGNED {
+    v            (mV)
+    minf
+  }
+
+  STATE {
+    m
+  }
+
+  BREAKPOINT {
+    SOLVE states METHOD cnexp
+  }
+
+  DERIVATIVE states {
+    rates(v)
+    m' = (minf -m)/1.5
+  }
+
+  PROCEDURE rates(v (mV)) {
+    minf = minf+1
+  }
+
+The comments in the code indicate the changes applied to the MOD file.
 
 BBCOREPOINTER
 *************
