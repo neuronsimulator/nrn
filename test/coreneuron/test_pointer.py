@@ -133,7 +133,10 @@ class Model:
 def srun(cmd):
     print("--------------------")
     print(cmd)
-    subprocess.run(cmd, shell=True).check_returncode()
+    r = subprocess.run(cmd, shell=True, capture_output=True)
+    if r.returncode != 0:
+        print(r)
+    r.check_returncode()
 
 
 def runcn(args):
@@ -208,8 +211,6 @@ def test_axial():
 
     m._callback_setup = None  # get rid of the callback first.
     del m
-
-
 
 
 def test_checkpoint():
