@@ -252,15 +252,15 @@ if(SPHINX_FOUND)
   # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
           notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
-  # Executing notebooks can take a fair amount of time. Use this target
-  # if you want to skip the execution.
+  # Executing notebooks will add outputs in-place.
+  # We don't want those committed to the repo. This commands cleans them out.
   add_custom_target(
-          notebooks-noexec
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+          notebooks-clean
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 

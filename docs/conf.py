@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "recommonmark",
     "sphinx.ext.mathjax",
+    "nbsphinx"
 ]
 
 source_suffix = {
@@ -86,6 +87,7 @@ html_css_files = [
 ]
 
 nbsphinx_allow_errors = True
+nbsphinx_execute = 'never'
 
 if os.environ.get("READTHEDOCS"):
     # Get RTD build version ('latest' for master and actual version for tags)

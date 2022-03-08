@@ -21,7 +21,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-In order to build documentation locally, you need to pip install the [docs_requirements](docs_requirements.txt) :
+In order to build documentation locally, you need to pip install the ``docs_requirements.txt`` :
 ```
 pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
@@ -59,13 +59,13 @@ make sphinx
 When working locally on documentation, depending on what you work on, be aware of the following targets to speed up building process:
 
 * `doxygen` 			- build the API documentation only. Ends up in [_generated](_generated)
-* `notebooks` 			- execute & convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
-* `notebooks-noexec`	- simply convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
+* `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [notebooks.sh](notebooks.sh)
 * `sphinx` 				- build Sphinx documentation
 
 **NOTE**:
 * `docs` target calls: `doxygen` `notebooks` `sphinx`.
 * `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
+* `notebooks-clean` clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 
 ### ReadTheDocs setup
 #### Config file
