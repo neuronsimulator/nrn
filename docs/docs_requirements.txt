@@ -10,3 +10,4 @@ plotnine
 numpy
 plotly
 nbsphinx
+pandoc

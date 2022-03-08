@@ -26,7 +26,7 @@ In order to build documentation locally, you need to pip install the ``docs_requ
 pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
 
-Also, make sure to have `Doxygen` installed and the dependencies listed in [conda_environment.yml](conda_environment.yml)
+Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
 Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
 
 With all dependencies installed, configure project with CMake as described in [README](../README.md).
