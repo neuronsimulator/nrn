@@ -112,11 +112,45 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 
+include(NeuronTestHelper)
+nrn_add_test_group(NAME mpi_init MODFILE_PATTERNS NONE)
+set(mpi_init_requires_mpiexec mpi)
+set(mpi_init_prefix_mpiexec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
+set(mpi_init_suffix_mpiexec ${MPIEXEC_POSTFLAGS})
+foreach(mpiexec "" "_mpiexec")
+  set(nrniv ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}})
+  nrn_add_test(
+    GROUP mpi_init
+    NAME nrniv${mpiexec}_mpiopt
+    REQUIRES ${mpi_init_requires${mpiexec}}
+    COMMAND ${nrniv} -mpi -c "quit()")
+  nrn_add_test(
+    GROUP mpi_init
+    NAME nrniv${mpiexec}_nrnmpi_init
+    REQUIRES ${mpi_init_requires${mpiexec}}
+    COMMAND ${nrniv} -c "nrnmpi_init()" -c "quit()")
+  # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein.
+  if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
+    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
+  else()
+    set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
+  endif()
+  nrn_add_test(
+    GROUP mpi_init
+    NAME python${mpiexec}_nrnmpi_init
+    REQUIRES python ${mpi_init_requires${mpiexec}}
+    COMMAND ${python} -c "from neuron import h$<SEMICOLON> h.nrnmpi_init()$<SEMICOLON> h.quit()")
+  nrn_add_test(
+    GROUP mpi_init
+    NAME python${mpiexec}_mpienv
+    REQUIRES python ${mpi_init_requires${mpiexec}}
+    COMMAND NEURON_INIT_MPI=1 ${python} -c "from neuron import h$<SEMICOLON> h.quit()")
+endforeach()
+
 # =============================================================================
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  include(NeuronTestHelper)
   if(PYTEST_COV_FOUND)
     set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
   else()

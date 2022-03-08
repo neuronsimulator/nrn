@@ -452,10 +452,13 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 //	prargs("at beginning", argc, argv);
 	force_load();
 	nrn_global_argc = argc;
-	nrn_global_argv = new const char*[argc];
-	for (i = 0; i < argc; ++i) {
+	// https://en.cppreference.com/w/cpp/language/main_function, note that argv is
+	// of length argc + 1 and argv[argc] is null.
+	nrn_global_argv = new const char*[argc+1];
+	for (i = 0; i < argc+1; ++i) {
 		nrn_global_argv[i] = argv[i];
 	}
+	nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
 	if (nrn_optarg_on("-help", &argc, argv)
 	    || nrn_optarg_on("-h", &argc, argv)) {
 		printf("nrniv [options] [fileargs]\n\
