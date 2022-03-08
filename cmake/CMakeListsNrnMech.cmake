@@ -30,16 +30,14 @@ foreach(link_lib ${NRN_LINK_LIBS})
 
   get_filename_component(dir_path ${link_lib} DIRECTORY)
   if(TARGET ${link_lib})
-    message(NOTICE "Using Target in compiling and linking, you should take care of it if
-                    it fail miserabily (CODE: 1234567890)")
     get_property(link_flag TARGET ${link_lib} PROPERTY INTERFACE_LINK_LIBRARIES)
-    string(APPEND NRN_LINK_DEFS ${link_flag})
+    set(description "Extracting link flags from target '${link_lib}', beware that this can be fragile.")
     # Not use it yet because it can be generator expressions
     # get_property(compile_flag TARGET ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS)
     # string(APPEND NRN_COMPILE_DEFS ${compile_flag})
-    continue()
   elseif(NOT dir_path)
-    string(APPEND NRN_LINK_DEFS " -l${link_lib}")
+    set(link_flag "-l${link_lib}")
+    set(description "Generating link flags from name '${link_lib}', beware that this can be fragile.")
   # avoid library paths from special directory /nrnwheel which
   # used to build wheels under docker container
   elseif("${dir_path}" MATCHES "^/nrnwheel")
@@ -49,10 +47,14 @@ foreach(link_lib ${NRN_LINK_LIBS})
     get_filename_component(libname ${link_lib} NAME)
     string(REGEX REPLACE "\\.[^.]*$" "" libname_wle ${libname})
     string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
-    string(APPEND NRN_LINK_DEFS " -l${libname_wle}")
+    set(link_flag "-l${libname_wle}")
+    set(description "Extracting link flags from path '${link_lib}', beware that this can be fragile.")
   else()
-    string(APPEND NRN_LINK_DEFS " ${link_lib} -Wl,-rpath,${dir_path}")
+    set(link_flag "${link_lib} -Wl,-rpath,${dir_path}")
+    set(description "Generating link flags from path ${link_lib}")
   endif()
+  message(NOTICE "${description} Got: ${link_flag}")
+  string(APPEND NRN_LINK_DEFS " ${link_flag}")
 endforeach()
 
 # PGI add --c++11;-A option for c++11 flag
