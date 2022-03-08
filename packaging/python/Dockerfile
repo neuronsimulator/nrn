@@ -1,4 +1,6 @@
-FROM quay.io/pypa/manylinux2014_x86_64
+ARG MANYLINUX_IMAGE=manylinux2014_x86_64
+
+FROM quay.io/pypa/$MANYLINUX_IMAGE
 LABEL authors="Pramod Kumbhar, Fernando Pereira, Alexandru Savulescu"
 
 # install basic packages
@@ -27,7 +29,7 @@ RUN wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
 RUN curl -L -o mpich-3.3.2.tar.gz http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz \
     && tar -xvzf mpich-3.3.2.tar.gz \
     && cd mpich-3.3.2 \
-    && ./configure --prefix=/nrnwheel/mpich \
+    && ./configure --prefix=/nrnwheel/mpich FFLAGS="-w -fallow-argument-mismatch -O2" \
     && make -j install
 
 RUN curl -L -o openmpi-4.0.3.tar.gz  https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.3.tar.gz \
@@ -50,8 +52,7 @@ RUN cd /nrnwheel/readline/lib \
     && rm *.o
 
 ENV PATH /nrnwheel/openmpi/bin:$PATH
-
-RUN yum -y install libX11-devel.x86_64 libXcomposite-devel.x86_64 vim-enhanced.x86_64
+RUN yum -y install epel-release libX11-devel libXcomposite-devel vim-enhanced
 RUN yum -y remove ncurses-devel
 
 # Copy Dockerfile for reference
@@ -59,4 +60,3 @@ COPY Dockerfile .
 
 # build wheels from there
 WORKDIR /root
-
