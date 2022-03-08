@@ -84,7 +84,7 @@ build_wheel_linux() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     if [ "$2" == "coreneuron" ]; then
@@ -96,10 +96,11 @@ build_wheel_linux() {
         source ~/.bashrc
         module load nvhpc
         unset CC CXX
+        # make the NVIDIA compilers default to targeting haswell CPUs
         # the default is currently 70;80, partly because NVHPC does not
         # support OpenMP target offload with 60. Wheels use mod2c and
         # OpenACC for now, so we can be a little more generic.
-        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80"
+        CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
     fi
 
     python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
@@ -144,7 +145,7 @@ build_wheel_osx() {
 
     CMAKE_DEFS="NRN_MPI_DYNAMIC=$3"
     if [ "$USE_STATIC_READLINE" == "1" ]; then
-      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_STATIC_READLINE=ON"
+      CMAKE_DEFS="$CMAKE_DEFS,NRN_WHEEL_BUILD=ON,NRN_WHEEL_STATIC_READLINE=ON"
     fi
 
     # We need to "fix" the platform tag if the Python installer is universal2
