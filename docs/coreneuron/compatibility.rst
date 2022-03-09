@@ -77,7 +77,7 @@ By making the MOD file thread safe the initialization and current and state upda
 Some useful instructions to make a MOD file thread safe are:
 
 * Make sure that all the variables that are written in the MOD file and are defined as ``GLOBAL`` are now defined as ``RANGE``. More information about ``GLOBAL`` and ``RANGE`` variables can be found `here <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html>`_.
-* In case there are any ``VERBATIM`` blocks those need to be threadsafe and there must be a ``THREADSAFE`` keyword in the ``NEURON`` block to declare that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the MOD file
+* In case there are any ``VERBATIM`` blocks those need to be thread safe and there must be a ``THREADSAFE`` keyword in the beginning of the ``NEURON`` block to state that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the MOD file
 
 For example here is a showcase MOD file that defines `minf` as a ``GLOBAL`` variable which gets updated during the simulation and also defines a ``VERBATIM`` block before the ``NEURON`` block:
 
@@ -119,9 +119,9 @@ The above MOD file needs to be changed into the following one to be compatible w
 .. code-block:: c++
 
   NEURON {
+    THREADSAFE : added THREADSAFE keyword in the beginning of the NEURON block and moved the NEURON block before any VERBATIM block
     SUFFIX test
     RANGE minf : turned minf variable to RANGE
-    THREADSAFE : added THREADSAFE keyword and moved NEURON block before any VERBATIM block
   }
 
   VERBATIM
