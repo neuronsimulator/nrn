@@ -86,8 +86,13 @@ html_css_files = [
     "custom.css",
 ]
 
-nbsphinx_allow_errors = True
+# We never execute the notebooks via nbsphinx (for faster local iterations)
+# notebooks are executed thanks to the `notebooks` CMake target
 nbsphinx_execute = 'never'
+
+# Use mathjax@v2 due to plotly
+# https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
+mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
 
 if os.environ.get("READTHEDOCS"):
     # Get RTD build version ('latest' for master and actual version for tags)
