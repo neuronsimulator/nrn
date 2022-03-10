@@ -7,21 +7,21 @@ include:
     file: enable-upload.yml
 
 trigger cvf:
-  stage: .pre
-  variables:
-    # Tell the CVF pipeline to use the current ref of NMODL, this works because
-    # the CVF CI uses the `gitlab-pipelines` helper components.
-    SPACK_PACKAGE_REF_nmodl: "commit='${CI_COMMIT_SHA}'"
+  needs: [spack_setup] # for SPACK_SETUP_COMMIT_MAPPING_URL
   rules:
     # Don't run on PRs targeting the LLVM development branch
     - if: '$CI_EXTERNAL_PULL_REQUEST_TARGET_BRANCH_NAME == "llvm"'
       when: never
     # Otherwise always run this
     - when: always
+  stage: .pre
   trigger:
     project: hpc/cvf
     # Make the NMODL CI status depend on the CVF CI status
     strategy: depend
+  variables:
+    # Tell CVF to use the same commits/branches as NMODL.
+    SPACK_ENV_FILE_URL: $SPACK_SETUP_COMMIT_MAPPING_URL
 
 .spack_nmodl:
   variables:
@@ -31,6 +31,7 @@ trigger cvf:
 spack_setup:
   extends: .spack_setup_ccache
   variables:
+    NMODL_COMMIT: ${CI_COMMIT_SHA}
     # Enable fetching GitHub PR descriptions and parsing them to find out what
     # branches to build of other projects.
     PARSE_GITHUB_PR_DESCRIPTIONS: "true"
