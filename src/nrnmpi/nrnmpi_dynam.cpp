@@ -180,7 +180,8 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 			std::string error{"Promoted none of"};
 			auto const promote_to_global = [&error](const char* lib) {
 				if(!dlopen(lib, RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
-					error = error + ' ' + lib + " (" + dlerror() + ')';
+					char const* dlerr = dlerror();
+					error = error + ' ' + lib + " (" + (dlerr ? dlerr : "nullptr") + ')';
 					return false;
 				}
 				return true;
