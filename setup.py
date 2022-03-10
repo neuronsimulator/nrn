@@ -1,5 +1,5 @@
 # ***********************************************************************
-# Copyright (C) 2018-2019 Blue Brain Project
+# Copyright (C) 2018-2022 Blue Brain Project
 #
 # This file is part of NMODL distributed under the terms of the GNU
 # Lesser General Public License. See top-level LICENSE file for details.
@@ -52,6 +52,13 @@ class lazy_dict(dict):
 def get_sphinx_command():
     """Lazy load of Sphinx distutils command class
     """
+    # If nbconvert is installed to .eggs on the fly when running setup.py then
+    # templates from it will not be found. This is a workaround.
+    if 'JUPYTER_PATH' not in os.environ:
+        import nbconvert
+        os.environ['JUPYTER_PATH'] = os.path.realpath(os.path.join(os.path.dirname(nbconvert.__file__), '..', 'share', 'jupyter'))
+        print("Setting JUPYTER_PATH={}".format(os.environ['JUPYTER_PATH']))
+
     from sphinx.setup_command import BuildDoc
 
     return BuildDoc
@@ -124,11 +131,11 @@ setup(
     zip_safe=False,
     setup_requires=[
         "jinja2>=2.9.3",
-        "jupyter-client<7", # try and work around: TypeError in notebooks/nmodl-kinetic-schemes.ipynb: 'coroutine' object is not subscriptable
+        "jupyter-client",
         "jupyter",
         "myst_parser",
         "mistune<2",  # prevents a version conflict with nbconvert
-        "nbconvert<6.0",  # prevents issues with nbsphinx
+        "nbconvert",
         "nbsphinx>=0.3.2",
         "pytest>=3.7.2",
         "sphinx",
