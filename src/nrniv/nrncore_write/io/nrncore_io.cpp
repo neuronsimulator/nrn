@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char *bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable
+const char *bbcore_write_version = "1.5"; // Generalize POINTER to allow pointing to any RANGE variable
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -183,7 +183,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     for (size_t i = 0; i < mla.size(); ++i) {
         int type = mla[i].first;
         int *nodeindices=NULL, *pdata=NULL; double* data=NULL;
-        nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata);
+        std::vector<int> pointer2type;
+        nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata, pointer2type);
         Memb_list* ml = mla[i].second;
         int n = ml->nodecount;
         int sz = nrn_prop_param_size_[type];
@@ -199,6 +200,11 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             ++dsz_inst;
             writeint(pdata, n * sz);
             delete [] pdata;
+            sz = pointer2type.size();
+            fprintf(f, "%d npointer\n", int(sz));
+            if (sz > 0) {
+                writeint(pointer2type.data(), sz);
+            }
         }
     }
 
