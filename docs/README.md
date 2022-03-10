@@ -60,12 +60,12 @@ When working locally on documentation, depending on what you work on, be aware o
 
 * `doxygen` 			- build the API documentation only. Ends up in [_generated](_generated)
 * `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [notebooks.sh](notebooks.sh)
+* `notebooks-clean`     - clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 * `sphinx` 				- build Sphinx documentation
 
 **NOTE**:
-* `docs` target calls: `doxygen` `notebooks` `sphinx`.
+* `docs` target calls: `doxygen` `notebooks` `sphinx` and `notebooks-clean`.
 * `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
-* `notebooks-clean` clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 
 ### ReadTheDocs setup
 #### Config file
