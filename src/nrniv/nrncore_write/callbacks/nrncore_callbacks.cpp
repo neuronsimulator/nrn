@@ -8,6 +8,7 @@
 #include "nrncvode.h"
 #include "nrniv_mf.h"
 #include "hocdec.h"
+#include "nrncore_write/utils/nrncore_utils.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
 #include "parse.hpp"
@@ -323,7 +324,7 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 }
 
 int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindices,
-                               double*& data, int*& pdata) {
+                               double*& data, int*& pdata, std::vector<int>& pointer2type) {
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
@@ -367,7 +368,7 @@ int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindices,
     sz = bbcore_dparam_size[type]; // nrn_prop_dparam_size off by 1 if cvode_ieq.
     if (sz) {
         int* pdata1;
-        pdata1 = datum2int(type, ml, nt, cg, cg.datumindices[dsz_inst], vdata_offset);
+        pdata1 = datum2int(type, ml, nt, cg, cg.datumindices[dsz_inst], vdata_offset, pointer2type);
         if (copy) {
             int nn = n*sz;
             for (int i=0; i < nn; ++i) {
@@ -498,17 +499,30 @@ int core2nrn_corepointer_mech(int tid, int type,
     return 1;
 }
 
-int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset) {
+int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset, std::vector<int>& pointer2type) {
     int isart = nrn_is_artificial_[di.type];
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
+    int* semantics = memb_func[type].dparam_semantics;
     for (int i=0; i < ml->nodecount; ++i) {
         int ioff = i*sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
             int etype = di.ion_type[jj];
             int eindex = di.ion_index[jj];
-            if (etype == -1) {
+            const int seman = semantics[j];
+            // Would probably be more clear if use seman for as many as
+            // possible of the cases
+            // below and within each case deal with etype appropriately.
+            // ion_type and ion_index have become misnomers as they no longer
+            // refer to ions specificially but the mechanism type where the
+            // range variable lives (and otherwise is generally the same as
+            // seman). And ion_index refers to the index of the range variable
+            // within the mechanism (or voltage, area, etc.)
+            if (seman == -5) { // POINTER to range variable (e.g. voltage)
+                pdata[jj] = eindex;
+                pointer2type.push_back(etype);
+            }else if (etype == -1) {
                 if (isart) {
                     pdata[jj] = -1; // maybe save this space eventually. but not many of these in bb models
                 }else{
@@ -516,7 +530,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
                 }
             }else if (etype == -9) {
                 pdata[jj] = eindex;
-            }else if (etype > 0 && etype < 1000){//ion pointer and also POINTER
+            }else if (etype > 0 && etype < 1000){//ion pointer
                 pdata[jj] = eindex;
             }else if (etype > 1000 && etype < 2000) { //ionstyle can be explicit instead of pointer to int*
                 pdata[jj] = eindex;
@@ -531,9 +545,6 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
             }else if (etype == -7) { // bbcorepointer
                 pdata[jj] = ml_vdata_offset + eindex;
                 //printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
-            }else if (etype == -5) { // POINTER to voltage
-                pdata[jj] = eindex;
-                //printf("etype %d\n", etype);
             }else{ //uninterpreted
                 assert(eindex != -3); // avoided if last
                 pdata[jj] = 0;
