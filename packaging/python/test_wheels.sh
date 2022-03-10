@@ -220,7 +220,7 @@ run_parallel_test() {
     # BB5 with multiple MPI libraries
     elif [[ $(hostname -f) = *r*bbp.epfl.ch* ]]; then
       run_mpi_test "srun" "HPE-MPT" "hpe-mpi"
-      run_mpi_test "mpirun" "Intel MPI" "intel-mpi"
+      run_mpi_test "mpirun" "Intel MPI" "intel-oneapi-mpi"
       run_mpi_test "srun" "MVAPICH2" "mvapich2"
 
     # circle-ci build
