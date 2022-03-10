@@ -38,6 +38,7 @@ set(PYTHON_EXECUTABLE_DEFAULT "")
 set(IV_LIB_DEFAULT "")
 
 # For wheel deployment
+set(NRN_WHEEL_BUILD_DEFAULT OFF)
 set(NRN_WHEEL_STATIC_READLINE_DEFAULT OFF)
 
 # we add some coreneuron options in order to check

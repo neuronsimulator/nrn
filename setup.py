@@ -264,6 +264,15 @@ class CMakeAugmentedBuilder(build_ext):
                     cwd=self.build_temp,
                     env=env,
                 )
+                if Components.GPU:
+                    subprocess.check_call(
+                        [
+                            ext.sourcedir + "/packaging/python/fix_target_processor_in_makefiles.sh",
+                            ext.cmake_install_prefix,
+                        ],
+                        cwd=self.build_temp,
+                        env=env,
+                    )
 
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
@@ -422,6 +431,10 @@ def setup_package():
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
 
+    # GPU wheels use patchelf to avoid duplicating NVIDIA runtime libraries when
+    # using nrnivmodl.
+    maybe_patchelf = ['patchelf'] if Components.GPU else []
+
     setup(
         name=package_name,
         version=__version__,
@@ -435,7 +448,7 @@ def setup_package():
             if f[0] != "_"
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3"],
+        install_requires=["numpy>=1.9.3"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],
