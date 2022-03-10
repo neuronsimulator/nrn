@@ -7,6 +7,20 @@
 */
 
 /*
+Below, the sense of permutation, is reversed. Though consistent, forward
+permutation should be defined as (and the code should eventually transformed)
+so that
+  v: original vector
+  p: forward permutation
+  pv: permuted vector
+  pv[i] = v[p[i]]
+and
+  pinv: inverse permutation
+  pv[pinv[i]] = v[i]
+Note: pinv[p[i]] = i = p[pinv[i]]
+*/
+
+/*
 Permute nodes.
 
 To make gaussian elimination on gpu more efficient.
@@ -130,6 +144,71 @@ static void invert_permute(int* p, int n) {
     delete[] pinv;
 }
 
+// type_of_ntdata: Return the mechanism type (or voltage)  for nt._data[i].
+// Used for updating POINTER. Analogous to nrn_dblpntr2nrncore in NEURON.
+// To reduce search time, consider voltage first, then a few of the previous
+// search results.
+// type_hint first and store a few
+// of the previous search result types to try next.
+// Most usage is for voltage. Most of the rest is likely for a specific type.
+// Occasionally, eg. axial current, there are two types oscillationg between
+// a SUFFIX (for non-zero area node) and POINT_PROCESS (for zero area nodes)
+// version
+// full_search: helper for type_of_ntdata. Return mech type for nt._data[i].
+// Update type_hints.
+
+static std::vector<int> type_hints;
+
+static int full_search(NrnThread& nt, double* pd) {
+    int type = -1;
+    for (NrnThreadMembList* tml = nt.tml; tml; tml = tml->next) {
+        Memb_list* ml = tml->ml;
+        int n = corenrn.get_prop_param_size()[tml->index] * ml->_nodecount_padded;
+        if (pd >= ml->data && pd < ml->data + n) {
+            type = tml->index;
+            // insert into type_hints
+            int i = 0;
+            for (int type_hint: type_hints) {
+                if (type < type_hint) {
+                    break;
+                }
+                i++;
+            }
+            type_hints.insert(type_hints.begin() + i, type);
+            break;
+        }
+    }
+    assert(type > 0);
+    return type;
+}
+
+// no longer static because also used by POINTER in nrn_checkpoint.cpp
+int type_of_ntdata(NrnThread& nt, int i, bool reset) {
+    double* pd = nt._data + i;
+    assert(pd >= nt._actual_v);
+    if (pd < nt._actual_area) {  // voltage first (area just after voltage)
+        return voltage;
+    }
+    assert(size_t(i) < nt._ndata);
+    // then check the type hints. When inserting a hint, keep in type order
+    if (reset) {
+        type_hints.clear();
+    }
+    for (int type: type_hints) {
+        Memb_list* ml = nt._ml_list[type];
+        if (pd >= ml->data) {  // this or later
+            int n = corenrn.get_prop_param_size()[type] * ml->_nodecount_padded;
+            if (pd < ml->data + n) {  // this is the one
+                return type;
+            }
+        } else {  // earlier
+            return full_search(nt, pd);
+        }
+    }
+    // after the last type_hints
+    return full_search(nt, pd);
+}
+
 static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
     // assumes AoS to SoA transformation already made since we are using
     // nrn_i_layout to determine indices into both ml->pdata and into target data
@@ -184,16 +263,45 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                 int ixnew = p_target[ix];
                 *pd = ixnew + diam0;
             }
-        } else if (s == -5) {  // assume pointer to membrane voltage
-            int v0 = nt._actual_v - nt._data;
-            // same as for area semantics
-            int* p_target = nt._permute;
+        } else if (s == -5) {  // POINTER
+            // assume pointer into nt._data. Most likely voltage.
+            // If not voltage, most likely same mechanism for all indices.
             for (int iml = 0; iml < cnt; ++iml) {
                 int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
-                int ix = *pd - v0;  // original integer into area array.
-                nrn_assert((ix >= 0) && (ix < nt.end));
-                int ixnew = p_target[ix];
-                *pd = ixnew + v0;
+                int etype = type_of_ntdata(nt, *pd, iml == 0);
+                if (etype == voltage) {
+                    int v0 = nt._actual_v - nt._data;
+                    int* e_target = nt._permute;
+                    int ix = *pd - v0;  // original integer into area array.
+                    nrn_assert((ix >= 0) && (ix < nt.end));
+                    int ixnew = e_target[ix];
+                    *pd = ixnew + v0;
+                } else if (etype > 0) {
+                    // about same as for ion below but check each instance
+                    Memb_list* eml = nt._ml_list[etype];
+                    int edata0 = eml->data - nt._data;
+                    int ecnt = eml->nodecount;
+                    int esz = corenrn.get_prop_param_size()[etype];
+                    int elayout = corenrn.get_mech_data_layout()[etype];
+                    int* e_permute = eml->_permute;
+                    int i_ecnt, i_esz, padded_ecnt;
+                    int ix = *pd - edata0;
+                    if (elayout == Layout::AoS) {
+                        padded_ecnt = ecnt;
+                        i_ecnt = ix / esz;
+                        i_esz = ix % esz;
+                    } else {  // SoA
+                        assert(elayout == Layout::SoA);
+                        padded_ecnt = nrn_soa_padded_size(ecnt, elayout);
+                        i_ecnt = ix % padded_ecnt;
+                        i_esz = ix / padded_ecnt;
+                    }
+                    int i_ecnt_new = e_permute ? e_permute[i_ecnt] : i_ecnt;
+                    int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
+                    *pd = ix_new + edata0;
+                } else {
+                    nrn_assert(0);
+                }
             }
         } else if (s >= 0 && s < 1000) {  // ion
             int etype = s;
@@ -202,7 +310,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
             int edata0 = eml->data - nt._data;
             int ecnt = eml->nodecount;
             int esz = corenrn.get_prop_param_size()[etype];
-            int* p_target = eml->_permute;
+            int* e_permute = eml->_permute;
             for (int iml = 0; iml < cnt; ++iml) {
                 int* pd = pdata + nrn_i_layout(iml, cnt, i, psz, layout);
                 int ix = *pd - edata0;
@@ -218,7 +326,7 @@ static void update_pdata_values(Memb_list* ml, int type, NrnThread& nt) {
                     i_ecnt = ix % padded_ecnt;
                     i_esz = ix / padded_ecnt;
                 }
-                int i_ecnt_new = p_target[i_ecnt];
+                int i_ecnt_new = e_permute[i_ecnt];
                 int ix_new = nrn_i_layout(i_ecnt_new, ecnt, i_esz, esz, elayout);
                 *pd = ix_new + edata0;
             }

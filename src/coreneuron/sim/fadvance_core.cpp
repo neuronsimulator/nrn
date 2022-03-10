@@ -382,9 +382,9 @@ void* nrn_fixed_step_lastpart(NrnThread* nth) {
         nrn_pragma_omp(target update to(nth->_t) if (nth->compute_gpu))
         fixed_play_continuous(nth);
         nonvint(nth);
-        nrncore2nrn_send_values(nth);
         nrn_ba(nth, AFTER_SOLVE);
         nrn_ba(nth, BEFORE_STEP);
+        nrncore2nrn_send_values(nth);  // consistent with NEURON. (after BEFORE_STEP)
     } else {
         nrncore2nrn_send_values(nth);
     }

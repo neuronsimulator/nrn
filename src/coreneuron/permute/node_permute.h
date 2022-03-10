@@ -25,4 +25,6 @@ void permute_ml(Memb_list* ml, int type, NrnThread& nt);
 int nrn_index_permute(int, int type, Memb_list* ml);
 
 int* inverse_permute(int* p, int n);
+
+int type_of_ntdata(NrnThread&, int index, bool reset);
 }  // namespace coreneuron

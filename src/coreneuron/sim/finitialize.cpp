@@ -105,16 +105,17 @@ void nrn_finitialize(int setv, double v) {
     for (int i = 0; i < nrn_nthread; ++i) {
         nrn_ba(nrn_threads + i, BEFORE_STEP);
     }
+    nrncore2nrn_send_init();
+    for (int i = 0; i < nrn_nthread; ++i) {
+        nrncore2nrn_send_values(nrn_threads + i);
+    }
+    // Consistent with NEURON. BEFORE_STEP and fixed_record_continuous before nrn_deliver_events.
     for (int i = 0; i < nrn_nthread; ++i) {
         nrn_deliver_events(nrn_threads + i); /* The record events at t=0 */
     }
 #if NRNMPI
     nrn_spike_exchange(nrn_threads);
 #endif
-    nrncore2nrn_send_init();
-    for (int i = 0; i < nrn_nthread; ++i) {
-        nrncore2nrn_send_values(nrn_threads + i);
-    }
     Instrumentor::phase_end("finitialize");
 }
 }  // namespace coreneuron

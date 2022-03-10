@@ -9,6 +9,7 @@
 #pragma once
 
 #include <iostream>
+#include <vector>
 
 extern "C" {
 // The callbacks into nrn/src/nrniv/nrnbbcore_write.cpp to get
@@ -56,7 +57,8 @@ extern int (*nrn2core_get_dat2_mech_)(int tid,
                                       int dsz_inst,
                                       int*& nodeindices,
                                       double*& data,
-                                      int*& pdata);
+                                      int*& pdata,
+                                      std::vector<int>& pointer2type);
 
 extern int (*nrn2core_get_dat2_3_)(int tid,
                                    int nweight,

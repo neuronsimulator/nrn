@@ -113,6 +113,7 @@ class Phase2 {
         int type;
         std::vector<int> iArray;
         std::vector<double> dArray;
+        std::vector<int> pointer2type;
     };
     std::vector<TML> tmls;
     std::vector<int> output_vindex;

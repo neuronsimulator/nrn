@@ -88,6 +88,33 @@ void CheckPoints::write_checkpoint(NrnThread* nt, int nb_threads) const {
 #endif
 }
 
+// Factor out the body of ion handling below as the same code
+// handles POINTER
+static int nrn_original_aos_index(int etype, int ix, NrnThread& nt, int** ml_pinv) {
+    // Determine ei_instance and ei from etype and ix.
+    // Deal with existing permutation and SoA.
+    Memb_list* eml = nt._ml_list[etype];
+    int ecnt = eml->nodecount;
+    int esz = corenrn.get_prop_param_size()[etype];
+    int elayout = corenrn.get_mech_data_layout()[etype];
+    // current index into eml->data is a  function
+    // of elayout, eml._permute, ei_instance, ei, and
+    // eml padding.
+    int p = ix - (eml->data - nt._data);
+    assert(p >= 0 && p < eml->_nodecount_padded * esz);
+    int ei_instance, ei;
+    nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz, elayout);
+    if (elayout == Layout::SoA) {
+        if (eml->_permute) {
+            if (!ml_pinv[etype]) {
+                ml_pinv[etype] = inverse_permute(eml->_permute, eml->nodecount);
+            }
+            ei_instance = ml_pinv[etype][ei_instance];
+        }
+    }
+    return ei_instance * esz + ei;
+}
+
 void CheckPoints::write_phase2(NrnThread& nt) const {
     FileHandler fh;
 
@@ -186,7 +213,7 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
     }
 
     auto& memb_func = corenrn.get_memb_funcs();
-    // will need the ml_pinv inverse permutation of ml._permute for ions
+    // will need the ml_pinv inverse permutation of ml._permute for ions and POINTER
     int** ml_pinv = (int**) ecalloc(memb_func.size(), sizeof(int*));
 
     for (NrnThreadMembList* current_tml = nt.tml; current_tml; current_tml = current_tml->next) {
@@ -224,9 +251,10 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
 
         sz = nrn_prop_dparam_size_[type];
         if (sz) {
-            int* d = soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
             // need to update some values according to Datum semantics.
-            if (!nrn_is_artificial_[type])
+            int* d = soa2aos(ml->pdata, cnt, sz, layout, ml->_permute);
+            std::vector<int> pointer2type;  // voltage or mechanism type (starts empty)
+            if (!nrn_is_artificial_[type]) {
                 for (int i_instance = 0; i_instance < cnt; ++i_instance) {
                     for (int i = 0; i < sz; ++i) {
                         int ix = i_instance * sz + i;
@@ -238,32 +266,33 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
                             int p = pinv_nt[d[ix] - (nt._actual_diam - nt._data)];
 
                             d[ix] = p;         // relative to _actual_diam
-                        } else if (s == -5) {  // Assume pointer to membrane voltage
-                            int p = pinv_nt[d[ix] - (nt._actual_v - nt._data)];
-                            d[ix] = p;                    // relative to _actual_v
-                        } else if (s >= 0 && s < 1000) {  // ion
-                            // determine ei_instance and ei
-                            int etype = s;
-                            Memb_list* eml = nt._ml_list[etype];
-                            int ecnt = eml->nodecount;
-                            int esz = nrn_prop_param_size_[etype];
-                            int elayout = corenrn.get_mech_data_layout()[etype];
-                            // current index into eml->data is a  function
-                            // of elayout, eml._permute, ei_instance, ei, and
-                            // eml padding.
-                            int p = d[ix] - (eml->data - nt._data);
-                            int ei_instance, ei;
-                            nrn_inverse_i_layout(p, ei_instance, ecnt, ei, esz, elayout);
-                            if (elayout == Layout::SoA) {
-                                if (eml->_permute) {
-                                    if (!ml_pinv[etype]) {
-                                        ml_pinv[etype] = inverse_permute(eml->_permute,
-                                                                         eml->nodecount);
-                                    }
-                                    ei_instance = ml_pinv[etype][ei_instance];
-                                }
+                        } else if (s == -5) {  // POINTER
+                            // loop over instances, then sz, means that we
+                            // visit consistent with natural order of
+                            // pointer2type
+
+                            // Relevant code that this has to invert
+                            // is permute/node_permute.cpp :: update_pdata_values with
+                            // respect to permutation, and
+                            // io/phase2.cpp :: Phase2::pdata_relocation
+                            // with respect to that AoS -> SoA
+
+                            // Step 1: what mechanism is d[ix] pointing to
+                            int ptype = type_of_ntdata(nt, d[ix], i_instance == 0);
+                            pointer2type.push_back(ptype);
+
+                            // Step 2: replace d[ix] with AoS index relative to type
+                            if (ptype == voltage) {
+                                int p = pinv_nt[d[ix] - (nt._actual_v - nt._data)];
+                                d[ix] = p;  // relative to _actual_v
+                            } else {
+                                // Since we know ptype, the situation is
+                                // identical to ion below. (which was factored
+                                // out into the following function.
+                                d[ix] = nrn_original_aos_index(ptype, d[ix], nt, ml_pinv);
                             }
-                            d[ix] = ei_instance * esz + ei;
+                        } else if (s >= 0 && s < 1000) {  // ion
+                            d[ix] = nrn_original_aos_index(s, d[ix], nt, ml_pinv);
                         }
 #if CHKPNTDEBUG
                         if (s != -8) {  // WATCH values change
@@ -273,8 +302,14 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
 #endif
                     }
                 }
+            }
             fh.write_array<int>(d, cnt * sz);
             delete[] d;
+            size_t s = pointer2type.size();
+            fh << s << " npointer\n";
+            if (s) {
+                fh.write_array<int>(pointer2type.data(), s);
+            }
         }
     }
 
@@ -298,7 +333,17 @@ void CheckPoints::write_phase2(NrnThread& nt) const {
         } else {
             Point_process* pnt = ps->pntsrc_;
             assert(pnt);
-            output_vindex[i] = -(pnt->_i_instance * 1000 + pnt->_type);
+            int type = pnt->_type;
+            int ix = pnt->_i_instance;
+            if (nt._ml_list[type]->_permute) {
+                // pnt->_i_instance is the permuted index into pnt->_type
+                if (!ml_pinv[type]) {
+                    Memb_list* ml = nt._ml_list[type];
+                    ml_pinv[type] = inverse_permute(ml->_permute, ml->nodecount);
+                }
+                ix = ml_pinv[type][ix];
+            }
+            output_vindex[i] = -(ix * 1000 + type);
         }
     }
     fh.write_array<int>(output_vindex, nt.n_presyn);

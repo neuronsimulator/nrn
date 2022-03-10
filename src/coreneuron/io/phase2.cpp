@@ -48,7 +48,8 @@ int (*nrn2core_get_dat2_mech_)(int tid,
                                int dsz_inst,
                                int*& nodeindices,
                                double*& data,
-                               int*& pdata);
+                               int*& pdata,
+                               std::vector<int>& pointer2type);
 
 int (*nrn2core_get_dat2_3_)(int tid,
                             int nweight,
@@ -172,7 +173,14 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
         if (dsz > 0) {
             pdata = F.read_vector<int>(dsz * n);
         }
-        tmls.emplace_back(TML{nodeindices, pdata, 0, {}, {}});
+        tmls.emplace_back(TML{nodeindices, pdata, mech_types[i], {}, {}});
+        if (dsz > 0) {
+            int sz = F.read_int();
+            if (sz) {
+                auto& p2t = tmls.back().pointer2type;
+                p2t = F.read_vector<int>(sz);
+            }
+        }
     }
     output_vindex = F.read_vector<int>(nt.n_presyn);
     output_threshold = F.read_vector<double>(n_real_output);
@@ -314,8 +322,13 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
         int* nodeindices_ = nullptr;
         double* data_ = _data + offset;
         int* pdata_ = const_cast<int*>(tml.pdata.data());
-        (*nrn2core_get_dat2_mech_)(
-            thread_id, i, dparam_sizes[type] > 0 ? dsz_inst : 0, nodeindices_, data_, pdata_);
+        (*nrn2core_get_dat2_mech_)(thread_id,
+                                   i,
+                                   dparam_sizes[type] > 0 ? dsz_inst : 0,
+                                   nodeindices_,
+                                   data_,
+                                   pdata_,
+                                   tml.pointer2type);
         if (dparam_sizes[type] > 0)
             dsz_inst++;
         offset += nrn_soa_padded_size(nodecounts[i], layout) * param_sizes[type];
@@ -586,6 +599,16 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
     // -9 (diam), // or 0-999 (ion variables).
     // Note that pdata has a layout and the // type block in nt.data into which
     // it indexes, has a layout.
+
+    // For faster search of tmls[i].type == type, use a map.
+    // (perhaps would be better to replace tmls so that we can use tmls[type].
+    std::map<int, size_t> type2itml;
+    for (size_t i = 0; i < tmls.size(); ++i) {
+        if (tmls[i].pointer2type.size()) {
+            type2itml[tmls[i].type] = i;
+        }
+    }
+
     for (auto tml = nt.tml; tml; tml = tml->next) {
         int type = tml->index;
         int layout = corenrn.get_mech_data_layout()[type];
@@ -615,8 +638,23 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                             nt._actual_diam - nt._data, cnt, pdata, i, szdp, layout, nt.end);
                         break;
                     case -5:  // pointer assumes a pointer to membrane voltage
+                        // or mechanism data in this thread. The value of the
+                        // pointer on the NEURON side was analyzed by
+                        // nrn_dblpntr2nrncore which returned the
+                        // mechanism index and type. At this moment the index
+                        // is in pdata and the type is in tmls[type].pointer2type.
+                        // However the latter order is according to the nested
+                        // iteration for nodecount { for szdp {}}
+                        // Also the nodecount POINTER instances of mechanism
+                        // might possibly point to differnt range variables.
+                        // Therefore it is not possible to use transform_int_data
+                        // and the transform must be done one at a time.
+                        // So we do nothing here and separately iterate
+                        // after this loop instead of the former voltage only
+                        /**
                         transform_int_data(
                             nt._actual_v - nt._data, cnt, pdata, i, szdp, layout, nt.end);
+                         **/
                         break;
                     default:
                         if (s >= 0 && s < 1000) {  // ion
@@ -636,6 +674,36 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                             }
                         }
                 }
+            }
+            // Handle case -5 POINTER transformation (see comment above)
+            auto search = type2itml.find(type);
+            if (search != type2itml.end()) {
+                auto& ptypes = tmls[type2itml[type]].pointer2type;
+                assert(ptypes.size());
+                size_t iptype = 0;
+                for (int iml = 0; iml < cnt; ++iml) {
+                    for (int i = 0; i < szdp; ++i) {
+                        int s = semantics[i];
+                        if (semantics[i] == -5) {  // POINTER
+                            int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
+                            int ix = *pd;  // relative to elem0
+                            int ptype = ptypes[iptype++];
+                            if (ptype == voltage) {
+                                nrn_assert((ix >= 0) && (ix < nt.end));
+                                int elem0 = nt._actual_v - nt._data;
+                                *pd = elem0 + ix;
+                            } else {
+                                Memb_list* pml = nt._ml_list[ptype];
+                                int pcnt = pml->nodecount;
+                                int psz = corenrn.get_prop_param_size()[ptype];
+                                nrn_assert((ix >= 0) && (ix < pcnt * psz));
+                                int elem0 = pml->data - nt._data;
+                                *pd = elem0 + nrn_param_layout(ix, ptype, pml);
+                            }
+                        }
+                    }
+                }
+                ptypes.clear();
             }
         }
     }
@@ -1079,9 +1147,15 @@ void Phase2::populate(NrnThread& nt, const UserParams& userParams) {
 #endif
 
         // specify the ml->_permute and sort the nodeindices
+        // Have to calculate all the permute before updating pdata in case
+        // POINTER to data of other mechanisms exist.
         for (auto tml = nt.tml; tml; tml = tml->next) {
             if (tml->ml->nodeindices) {  // not artificial
                 permute_nodeindices(tml->ml, p);
+            }
+        }
+        for (auto tml = nt.tml; tml; tml = tml->next) {
+            if (tml->ml->nodeindices) {  // not artificial
                 permute_ml(tml->ml, tml->index, nt);
             }
         }
