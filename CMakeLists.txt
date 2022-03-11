@@ -254,7 +254,7 @@ if(SPHINX_FOUND)
   # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
           notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+          COMMAND ${CMAKE_COMMAND} -E env NEURON_MODULE_OPTIONS="-nogui" bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
@@ -392,9 +392,9 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
 
 if(NRN_ENABLE_PYTHON)
+  find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
   # start afresh with PythonLibsNew's find_library
   # without this, -DPython_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
   # would end up with a NRN_DEFAULT_Python_LIBRARIES of
@@ -407,6 +407,7 @@ if(NRN_ENABLE_PYTHON)
   set(NRN_DEFAULT_Python_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
   set(USE_PYTHON 1)
 else()
+  find_package(Python 3.6 COMPONENTS Interpreter)
   set(USE_PYTHON 0)
 endif()
 

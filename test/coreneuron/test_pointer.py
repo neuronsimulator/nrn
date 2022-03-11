@@ -1,5 +1,6 @@
 from neuron import h
 import subprocess
+from subprocess import PIPE
 
 pc = h.ParallelContext()
 cvode = h.CVode()
@@ -133,7 +134,7 @@ class Model:
 def srun(cmd):
     print("--------------------")
     print(cmd)
-    r = subprocess.run(cmd, shell=True, capture_output=True)
+    r = subprocess.run(cmd, shell=True, stdout=PIPE, stderr=PIPE)
     if r.returncode != 0:
         print(r)
     r.check_returncode()
