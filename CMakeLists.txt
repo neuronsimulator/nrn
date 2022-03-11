@@ -254,7 +254,7 @@ if(SPHINX_FOUND)
   # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
           notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+          COMMAND ${CMAKE_COMMAND} -E env NEURON_MODULE_OPTIONS="-nogui" bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
