@@ -206,7 +206,7 @@ add_custom_command(
     ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
     > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
-  COMMAND ${PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
+  COMMAND ${Python_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
@@ -306,7 +306,7 @@ endif()
 # =============================================================================
 include_directories(${NRN_INCLUDE_DIRS})
 if(NRN_ENABLE_PYTHON)
-  include_directories(${PYTHON_INCLUDE_DIRS})
+  include_directories(${Python_INCLUDE_DIRS})
 endif()
 
 # =============================================================================
@@ -351,7 +351,7 @@ endif()
 # Link with all libraries
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
-  target_link_libraries(nrniv_lib ${PYTHON_LIBRARIES})
+  target_link_libraries(nrniv_lib ${Python_LIBRARIES})
 endif()
 
 if(NRN_ENABLE_MPI)

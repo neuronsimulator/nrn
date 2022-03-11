@@ -194,7 +194,7 @@ class CMakeAugmentedBuilder(build_ext):
         cmake_args = [
             # Generic options only. project options shall be passed as ext param
             "-DCMAKE_INSTALL_PREFIX=" + self.outdir,
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            "-DPython_EXECUTABLE=" + sys.executable,
             "-DCMAKE_BUILD_TYPE=" + cfg,
         ] + ext.cmake_flags
         # RTD neds quick config

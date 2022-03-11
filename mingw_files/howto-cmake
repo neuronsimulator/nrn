@@ -60,7 +60,7 @@ cd build
 if test ! -f src/mswin/$n2 ; then
   /mingw64/bin/cmake .. -G "Unix Makefiles" \
     -DCMAKE_INSTALL_PREFIX=$MARSHAL/nrn \
-    -DPYTHON_EXECUTABLE=/e/python37/python \
+    -DPython_EXECUTABLE=/e/python37/python \
     -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC="$PYTHONS" \
     -DNRN_ENABLE_MPI_DYNAMIC=ON \
     -DCMAKE_PREFIX_PATH="/c/ms-mpi" \

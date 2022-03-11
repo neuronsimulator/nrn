@@ -109,7 +109,7 @@ Now you should have the `clang-format` and `cmake-format` commands available.
 * Use `-DNRN_CMAKE_FORMAT=ON` option of CMake to enable CMake code formatting targets:
 
 ```
-cmake .. -DPYTHON_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
+cmake .. -DPython_EXECUTABLE=`which python3.7` -DNRN_CMAKE_FORMAT=ON
 ```
 
 With this, new target called **cmake-format** can be used to automatically format all CMake files:

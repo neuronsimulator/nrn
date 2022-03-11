@@ -152,7 +152,7 @@ jobs:
               if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
                 export CMAKE_OPTION="-DNRN_ENABLE_PYTHON=ON -DNRN_ENABLE_PYTHON_DYNAMIC=ON -DNRN_PYTHON_DYNAMIC=${PYTHON_MIN};${PYTHON_MAX} -DNRN_ENABLE_CORENEURON=ON";
               else
-                export CMAKE_OPTION="$CMAKE_OPTION -DPYTHON_EXECUTABLE=${PYTHON}";
+                export CMAKE_OPTION="$CMAKE_OPTION -DPython_EXECUTABLE=${PYTHON}";
               fi;
               mkdir build && cd build;
               echo "Building with: "$CMAKE_OPTION

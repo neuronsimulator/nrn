@@ -22,7 +22,7 @@ cd $BUILD_SOURCESDIRECTORY/build
 	-DNRN_ENABLE_PYTHON=ON  \
 	-DNRN_ENABLE_RX3D=ON  \
 	-DNRN_RX3D_OPT_LEVEL=2 \
-	-DPYTHON_EXECUTABLE=/c/Python36/python.exe \
+	-DPython_EXECUTABLE=/c/Python36/python.exe \
 	-DNRN_ENABLE_PYTHON_DYNAMIC=ON  \
 	-DNRN_PYTHON_DYNAMIC='c:/Python36/python.exe;c:/Python37/python.exe;c:/Python38/python.exe;c:/Python39/python.exe;c:/Python310/python.exe'  \
 	-DCMAKE_INSTALL_PREFIX='/c/nrn-install' \

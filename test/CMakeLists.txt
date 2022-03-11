@@ -133,7 +133,7 @@ foreach(mpiexec "" "_mpiexec")
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
     set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
   else()
-    set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
+    set(python ${mpi_init_prefix${mpiexec}} ${Python_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
   endif()
   nrn_add_test(
     GROUP mpi_init
@@ -161,7 +161,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP pynrn_tests
     NAME basic_tests
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${Python_EXECUTABLE} -m pytest
             ${PYTEST_COVERAGE_ARGS} ./test/pynrn
     MODFILE_PATTERNS test/pynrn/*.mod
     SCRIPT_PATTERNS test/pynrn/*.py)
@@ -181,7 +181,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test(
       GROUP rxdmod_tests
       NAME rxd_tests
-      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
+      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${Python_EXECUTABLE} -m
               pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
@@ -191,7 +191,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           NAME rxd_mpi_tests
           COMMAND
             COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
-            ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
+            ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${Python_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
             -m pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd --mpi)
       endif()
     endif()
@@ -243,7 +243,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -mpi)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe ${Python_EXECUTABLE})
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -253,13 +253,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_POSTFLAGS}
         -python
         -pyexe
-        ${PYTHON_EXECUTABLE})
+        ${Python_EXECUTABLE})
   else()
     set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${Python_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-                               ${PYTHON_EXECUTABLE})
+                               ${Python_EXECUTABLE})
   endif()
   nrn_add_test_group(
     NAME coreneuron_modtests
@@ -392,7 +392,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             ${MPIEXEC_POSTFLAGS}
             -python
             -pyexe
-            ${PYTHON_EXECUTABLE})
+            ${Python_EXECUTABLE})
         message(STATUS "Hitting workaround")
       else()
         set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
