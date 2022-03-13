@@ -254,15 +254,15 @@ if(SPHINX_FOUND)
   # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
           notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
+          COMMAND ${CMAKE_COMMAND} -E env NEURON_MODULE_OPTIONS="-nogui" bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
-  # Executing notebooks can take a fair amount of time. Use this target
-  # if you want to skip the execution.
+  # Executing notebooks will add outputs in-place.
+  # We don't want those committed to the repo. This commands cleans them out.
   add_custom_target(
-          notebooks-noexec
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+          notebooks-clean
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
@@ -273,8 +273,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
-          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-          WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
 endif()
@@ -293,6 +292,9 @@ if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMAND ${CMAKE_COMMAND} --build . --target sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND ${CMAKE_COMMAND} --build . --target notebooks-clean
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           COMMENT "Generating full documentation"
   )
 else()
@@ -716,7 +718,7 @@ message(STATUS "--------------+-------------------------------------------------
 message(STATUS "install       | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "              | Change the install location of NEURON using:")
 message(STATUS "              |   cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-message(STATUS "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx")
+message(STATUS "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx, notebooks-clean")
 message(STATUS "uninstall     | Removes files installed by make install (todo)")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " Build option | Status")

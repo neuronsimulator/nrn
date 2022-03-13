@@ -92,7 +92,6 @@ cp_dlls $NM/mingw64/bin $NM/mingw64/bin
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1.exe
 libgcc.a
-libgcc_s.a
 liblto_plugin.dll
 '
 cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
@@ -167,4 +166,12 @@ libpthread.a
 libpthread.dll.a
 libshell32.a
 libuser32.a
+'
+
+gcclib=mingw64/lib/gcc/x86_64-w64-mingw32/$gccver # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/libgcc_s.a ; then # gcc 11.2.0 Rev 10
+  gcclib=mingw64/lib
+fi
+copy $gcclib '
+libgcc_s.a
 '
