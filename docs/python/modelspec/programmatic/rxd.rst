@@ -914,6 +914,9 @@ SBML Export
 
             rxd.export.sbml(segment, filename=None, model_name=None, pretty=True)
 
+    This does not currently support :class:`rxd.MultiCompartmentReaction`; attempting to export dynamics that
+    involve such reactions will raise an :class:`rxd.RxDException`.
+
     .. note::
 
         ``rxd.export`` is not available simply via ``from neuron import rxd``; you must also:
@@ -922,9 +925,56 @@ SBML Export
             python
 
             import neuron.rxd.export
-
     
+Saving and restoring state
+--------------------------
 
+Some simulations require a lengthy initialization before exploring various possible stimuli.
+In these situations, it is often convenient to run the initialization once, save the state,
+do an experiment, and revert back to the saved state.
+
+Beginning in NEURON 8.1, reaction-diffusion states are included automatically when using
+:class:`SaveState` which additionally saves many other model states.
+
+If one wants to save and restore *only* reaction-diffusion states, this can be done via the following
+functions:
+
+.. function: rxd.save_state
+
+    Return a bytestring representation of the current rxd state.
+
+    Note: this is dependent on the order items were created.
+
+    Syntax:
+
+        .. code::
+            python
+
+            state_data = rxd.save_state()
+        
+    .. versionadded: 8.1
+
+
+.. function: rxd.restore_state
+
+    Restore rxd state from a bytestring.
+
+    Note: this is dependent on the order items were created.
+
+    Syntax:
+
+        .. code::
+            python
+
+            rxd.restore_state(state_data)
+        
+    .. versionadded: 8.1
+
+The reaction-diffusion state data returned by :func:`rxd.save_state` and expected by :func:`rxd.restore_state`
+consists of 16 bytes of metadata (8 bytes for a version identifier and 8 bytes for the length of the remaining portion)
+followed by gzip-compresssed state values. In particular, not every binary string of a given length is a valid
+state vector, nor is every state vector for a given model necessarily the same length (as the compressability may
+be different).
 
 
 Error handling
