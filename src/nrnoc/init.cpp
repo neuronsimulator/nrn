@@ -1,11 +1,12 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
 
-# include	<stdio.h>
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <map>
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
@@ -279,7 +280,15 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
 }
 
 int mswin_load_dll(const char* cp1) {
-	void* handle;
+	static std::map<std::string, void*> handle_map;
+
+	// Retrieve handle associated with a given path, allowing us to reload a
+	// dynamic library after an update (i.e., closing the previous handle)
+	auto &handle = handle_map[std::string(cp1)]; //  Ref. needed to update map
+	if (handle) {
+		dlclose(handle);
+	}
+
 	if (nrnmpi_myid < 1) if (!nrn_nobanner_ && nrn_istty_) {
 		fprintf(stderr, "loading membrane mechanisms from %s\n", cp1);
 	}
