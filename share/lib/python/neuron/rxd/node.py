@@ -248,13 +248,13 @@ class Node(object):
 
     @property
     def _ref_value(self):
-        """Returns a HOC reference to the Node's value"""
+        """Returns a NEURON reference to the Node's value"""
         return _numpy_element_ref(_states, self._index)
 
     def include_flux(self, *args, **kwargs):
         """Include a flux contribution to a specific node.
 
-        The flux can be described as a HOC reference, a point process and a
+        The flux can be described as a NEURON reference, a point process and a
         property, a Python function, or something that evaluates to a constant
         Python float.
 

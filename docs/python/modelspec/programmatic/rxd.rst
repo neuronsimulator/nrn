@@ -790,9 +790,213 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
         Warning: Currently only supports nodelists over 1 region.
 
 
-.. currentmodule:: neuron.rxd.node
-.. autoclass:: Node
-    :members: __init__, _ref_concentration, satisfies, volume, surface_area, x, d, region, sec, species, concentration
+.. class:: rxd.node.Node
+
+    The combination of a single :class:`rxd.Species` etc and a unique spatial location
+    at whatever resolution (i.e. could be a segment and a region, or could be a 3D voxel
+    and a region).
+
+    These objects are passed to an initialization function for rxd Species, States, and
+    Parameters as ways of identifying a location.
+    They are also useful for specifying localized fluxes or to record state variables.
+
+    There are three subtypes: :class:`rxd.node.Node1D`, :class:`rxd.node.Node3D`, and
+    :class:`rxd.node.NodeExtracellular`.
+    They all support the methods and properties described here
+    as well as some unique to their case features.
+
+    .. method:: rxd.node.Node.include_flux
+
+        Include a flux contribution to a specific node.
+
+        The flux can be described as a NEURON reference, a point process and a
+        property, a Python function, or something that evaluates to a constant
+        Python float.
+
+        Supported units: molecule/ms, mol/ms, mmol/ms == millimol/ms == mol/s
+
+        Examples:
+
+            .. code::
+                python
+
+                node.include_flux(mglur, 'ip3flux')           # default units: molecule/ms
+                node.include_flux(mglur, 'ip3flux', units='mol/ms') # units: moles/ms
+                node.include_flux(mglur._ref_ip3flux, units='molecule/ms')
+                node.include_flux(lambda: mglur.ip3flux)
+                node.include_flux(lambda: math.sin(h.t))
+                node.include_flux(47)
+
+        Warning:
+
+            Flux denotes a change in *mass* not a change in concentration.
+            For example, a metabotropic synapse produces a certain amount of
+            substance when activated. The corresponding effect on the node's
+            concentration depends on the volume of the node. (This scaling is
+            handled automatically by NEURON's rxd module.)
+
+    .. method:: rxd.node.Node.satisfies
+
+        Tests if a Node satisfies a given condition.
+
+        Syntax:
+
+            .. code::
+                python
+
+                result = node.satisfies(condition)
+
+        If a :class:`nrn.Section` object or RxDSection is provided, returns ``True`` if the Node lies in the section; else ``False``.
+
+        If a :class:`rxd.Region` object is provided, returns ``True`` if the Node lies in the Region; else ``False``.
+
+        Additional options are supported by specific subclasses, see
+        :meth:`rxd.node.Node1D.satisfies`, :meth:`rxd.node.Node3D.satisfies`, and
+        :meth:`rxd.node.NodeExtracellular.satisfies`.
+    
+    .. property:: rxd.node.Node._ref_concentration
+
+        Returns a NEURON reference to the Node's concentration.
+        This result is typically passed to :meth:`Vector.record` to record the concentration
+        changes at a location over time.
+
+        (The node must store concentration data. Use :attr:`rxd.node.Node._ref_molecules` for nodes
+        storing molecule counts.)
+    
+    .. property:: rxd.node.Node._ref_molecules
+
+        Returns a NEURON reference to the Node's concentration
+
+        (The node must store molecule counts. Use _ref_concentrations for nodes
+        storing concentration.)
+
+    .. property:: rxd.node.Node._ref_value
+
+        Returns a NEURON reference to the Node's value. This method always works,
+        regardless of if the node stores a concentration or not.
+    
+    .. property:: rxd.node.Node.d
+
+        Get or set the diffusion rate within the compartment.
+    
+    .. property:: rxd.node.Node.concentration
+
+        Get or set the concentration at the Node.
+    
+        Currently does not support nodes storing molecule counts. Use :attr:`rxd.node.Node.molecules` instead; attempting to use with a molecule count node will raise
+        an :class:`rxd.RxDException`.
+    
+    .. property:: rxd.node.Node.molecules
+
+        Get or set the number of molecules at the Node.
+
+        Currently does not support nodes storing concentrations. Use :attr:`rxd.node.Node.concentration` instead; attempting to use with a concentration node will raise
+        an :class:`rxd.RxDException`.
+
+    .. property:: rxd.node.Node.value
+
+        Get or set the value associated with this Node.
+
+        For Species nodes belonging to a deterministic simulation, this is a concentration.
+        For Species nodes belonging to a stochastic simulation, this is the molecule count.
+    
+    .. property:: rxd.node.Node.x3d
+
+        The 3D x-coordinate of the center of this Node.
+
+    .. property:: rxd.node.Node.y3d
+
+        The 3D y-coordinate of the center of this Node.
+
+    .. property:: rxd.node.Node.z3d
+
+        The 3D z-coordinate of the center of this Node.
+    
+    .. property:: rxd.node.Node.region
+
+        The :class:`rxd.Region` or :class:`rxd.Extracellular` containing the compartment.
+        Read only.
+
+    .. property:: rxd.node.Node.species
+
+        The :class:`rxd.Species`, :class:`rxd.State`, or :class:`rxd.Parameter` containing the compartment. Read only.
+
+    .. property:: rxd.node.Node.volume
+
+        The volume of the region spanned by the Node.
+
+.. class:: rxd.node.Node1D
+
+    A subclass of :class:`rxd.node.Node` used only for nodes being simulated in 1D.
+
+    .. method:: rxd.node.Node1D.satisfies
+
+        Supports the options of :meth:`rxd.node.Node.satisfies` and:
+
+        If a number between 0 and 1 is provided, returns ``True`` if the normalized position lies within the Node; else ``False``.
+    
+    .. property:: rxd.node.Node1D.sec
+
+        The section containing the node. Read-only.
+    
+    .. property:: rxd.node.Node1D.segment
+
+        The segment containing the node. Read-only.
+    
+    .. property:: rxd.node.Node1D.x
+
+        The normalized position of the center of the node. Read-only.
+
+    .. property:: rxd.node.Node1D.surface_area
+
+        The surface area of the compartment in square microns.
+
+        This is the area (if any) of the compartment that lies on the plasma membrane
+        and therefore is the area used to determine the contribution of currents (e.g. ina) from
+        mod files or :class:`KSChan` to the compartment's concentration.
+
+        Read only.
+    
+
+.. class:: rxd.node.Node3D
+
+    A subclass of :class:`rxd.node.Node` used only for intracellular nodes being simulated in 3D.
+
+    .. method:: rxd.node.Node3D.satisfies
+
+        Supports the options of :meth:`rxd.node.Node.satisfies` and:
+
+        If a tuple is provided of length 3, return ``True`` if the Node contains the ``(x, y, z)`` point; else ``False``.
+
+    .. property:: rxd.node.Node3D.sec
+
+        The section containing the node. Read-only.
+    
+    .. property:: rxd.node.Node3D.segment
+
+        The segment containing the node. Read-only.
+
+    .. property:: rxd.node.Node3D.surface_area
+
+        The surface area of the compartment in square microns.
+
+        This is the area (if any) of the compartment that lies on the plasma membrane
+        and therefore is the area used to determine the contribution of currents (e.g. ina) from
+        mod files or :class:`KSChan` to the compartment's concentration.
+
+        Read only.
+
+
+.. class:: rxd.node.NodeExtracellular
+
+    A subclass of :class:`rxd.node.Node` used only for extracellular nodes being simulated in 3D.
+
+    .. method:: rxd.node.Node3D.satisfies
+
+        Supports the options of :meth:`rxd.node.Node.satisfies` and:
+
+        If a tuple is provided of length 3, return ``True`` if the Node contains the ``(x, y, z)`` point; else ``False``.
+
 
 
 Membrane potential
