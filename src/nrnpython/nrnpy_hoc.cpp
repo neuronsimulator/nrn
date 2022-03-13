@@ -11,6 +11,7 @@
 #include "nrnpy_utils.h"
 #include "../nrniv/shapeplt.h"
 #include <vector>
+#include <memory>
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
 #endif
@@ -338,7 +339,7 @@ static Inst* save_pc(Inst* newpc) {
   return savpc;
 }
 
-static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
+static int hocobj_pushargs(PyObject* args, std::vector<std::unique_ptr<char[]>>& s2free) {
   int i, narg = PyTuple_Size(args);
   for (i = 0; i < narg; ++i) {
     PyObject* po = PyTuple_GetItem(args, i);
@@ -358,11 +359,11 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
         // So get the message, clear, and make the message
         // part of the execerror.
         *ts = str.get_pyerr();
-        s2free.push_back(*ts);
+        s2free.push_back(std::unique_ptr<char[]>(*ts));
         hoc_execerr_ext("python string arg cannot decode into c_str. Pyerr message: %s", *ts);
       }
       *ts = str.c_str();
-      s2free.push_back(*ts);
+      s2free.push_back(std::unique_ptr<char[]>(*ts));
       hoc_pushstr(ts);
     } else if (PyObject_TypeCheck(po, hocobject_type)) {
       // The PyObject_TypeCheck above used to be PyObject_IsInstance. The
@@ -406,13 +407,7 @@ static int hocobj_pushargs(PyObject* args, std::vector<char*>& s2free) {
   return narg;
 }
 
-static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
-  std::vector<char*>::iterator it = s2free.begin();
-  for (; it != s2free.end(); ++it) {
-    if (*it) {
-      free(*it);
-    }
-  }
+static void hocobj_pushargs_free_strings(std::vector<std::unique_ptr<char[]>>& s2free) {
   s2free.clear();
 }
 
@@ -653,9 +648,7 @@ static void* fcall(void* vself, void* vargs) {
     hoc_push_object(self->ho_);
   }
 
-  //TODO: this will still have some memory leaks in case of errors.
-  //      see discussion in https://github.com/neuronsimulator/nrn/pull/1437
-  std::vector<char*> strings_to_free;
+  std::vector<std::unique_ptr<char[]>> strings_to_free;
 
   int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
   int var_type;
