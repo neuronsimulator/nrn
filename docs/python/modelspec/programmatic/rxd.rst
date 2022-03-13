@@ -900,6 +900,32 @@ Numerical options
     This function may be called multiple times; the last setting for any given field will be used.
     Different sections may be simulated in different dimensions (a so-called hybrid model).
 
+SBML Export
+-----------
+
+.. function:: rxd.export.sbml
+
+    Export dynamics at a segment to an SBML file.
+
+    Syntax:
+
+        .. code:: 
+            python
+
+            rxd.export.sbml(segment, filename=None, model_name=None, pretty=True)
+
+    .. note::
+
+        ``rxd.export`` is not available simply via ``from neuron import rxd``; you must also:
+
+        .. code::
+            python
+
+            import neuron.rxd.export
+
+    
+
+
 
 Error handling
 --------------
