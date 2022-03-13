@@ -58,7 +58,7 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
 
             r = rxd.Region(secs=None, nrn_region=None, geometry=None, dimension=None, dx=None, name=None)
 
-        In NEURON 7.4+, secs is optional at initial region declaration, but it
+        In NEURON 7.4+, ``secs`` is optional at initial region declaration, but it
         must be specified before the reaction-diffusion model is instantiated.
         
         Here:
@@ -85,7 +85,7 @@ Intracellular regions and regions in Frankenhauser-Hodgkin space
 
         Get or set the sections associated with this region.
         
-        The sections may be expressed as a NEURON SectionList or as any Python
+        The sections may be expressed as a NEURON :class:`SectionList` or as any Python
         iterable of sections.
         
         Note: The return value is a copy of the internal section list; modifying
@@ -300,7 +300,7 @@ they are just fixed values.
     
     .. property:: rxd.Species.nodes
 
-        An :class:`rxd.NodeList` of all the nodes corresponding to the species.
+        An :class:`rxd.nodelist.NodeList` of all the nodes corresponding to the species.
 
         This can then be further restricted using the callable property of NodeList objects.
 
@@ -318,7 +318,7 @@ they are just fixed values.
 
                 nodes_on_dend_center = sp.nodes(dend(0.5))
             
-            For 1D simulation with a species defined on 1 region, this will be a :class:`rxd.NodeList` of length 1 (or 0 if the species is not defined on the segment); for 3D simulation or with multiple regions, the list may be longer and further filtering may be required.
+            For 1D simulation with a species defined on 1 region, this will be a :class:`rxd.nodelist.NodeList` of length 1 (or 0 if the species is not defined on the segment); for 3D simulation or with multiple regions, the list may be longer and further filtering may be required.
         
         .. note::
 
@@ -354,6 +354,10 @@ they are just fixed values.
             where ``sp`` is an instance of an :class:`rxd.Species`.
 
         Reinitialize the rxd concentration of this species to match the NEURON grid. Used when e.g. ``cai`` is modified directly instead of through a corresponding :class:`rxd.Species`.
+
+        .. seealso:
+
+            :func:`rxd.re_init`
     
     .. method:: rxd.Species.concentrations
 
@@ -475,7 +479,7 @@ functions defined in ``neuron.rxd.rxdmath`` as listed :ref:`below <rxdmath_prog_
               :class:`rxd.Parameter`, e.g. ``ca + 2 * cl`` representing the left-hand-side of
               the reaction.
             * ``product_sum`` is like ``reactant_sum`` but represdenting the right-hand-side.
-            * ``forward_rate`` and ``backward_rate`` represent the reaction rates; reactions are assumed to be governed by mass-action kinetics with these as the rate constants unless ``custom_dynamics`` is true, in which case these are expressions fully defining the rate of change.
+            * ``forward_rate`` and ``backward_rate`` represent the reaction rates; reactions are assumed to be governed by mass-action kinetics with these as the rate constants unless ``custom_dynamics`` is true, in which case these are expressions fully defining the rate of change. In particular, these can be constants or expressions combining :class:`rxd.Species` etc with constants, arithmetic, and :attr:`rxd.v`
             * ``region_list`` is a list of regions on which this reaction occurs. If ommitted or ``None``, the reaction occurs on all regions where all involved species are defined.
 
     Examples:
@@ -630,17 +634,273 @@ directly to the documentation for any of its specific functions:
 Manipulating nodes
 ------------------
 
-A :class:`rxd.Node` represents a particular state value or :class:`rxd.Parameter` in a particular location. Individual :class:`rxd.Node` objects are typically obtained either from being passed to an initialization function or by filtering or selecting from an :class:`rxd.NodeList` returned by :attr:`rxd.Species.nodes`. Node objects are often used for recording concentration using :attr:`rxd.Node._ref_concentration`.
+A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Parameter` in a particular location. Individual :class:`rxd.node.Node` objects are typically obtained either from being passed to an initialization function or by filtering or selecting from an :class:`rxd.nodelist.NodeList` returned by :attr:`rxd.Species.nodes`. Node objects are often used for recording concentration using :attr:`rxd.node.Node._ref_concentration`.
+
+.. class:: rxd.nodelist.NodeList
+
+    An :class:`rxd.nodelist.NodeList` is a subclass of a Python `list <https://docs.python.org/3/tutorial/datastructures.html#more-on-lists>`_
+    containing :class:`rxd.node.Node` objects. It is not intended to be created directly in a model, but rather is returned by 
+    :attr:`rxd.Species.nodes`.
+    
+    Standard Python list methods are supported, including ``.append(node)``, ``.extend(node_list)``, 
+    ``.insert(i, node)``, ``.index(node)``, and manipulation of lists like ``len(node_list)``, ``node_list[0]``, or ``node_list[5:12]``. Additionally one may iterate over a NodeList as in:
+
+        .. code::
+            python
+
+            for node in ca.nodes:
+                ...
+    
+    (Here ``ca`` is assumed to be an :class:`rxd.Species` and thus ``ca.nodes`` is an
+    :class:`rxd.nodelist.NodeList`.)
+
+    A key added functionality is the ability to filter the
+    nodes by rxd property (returning a new 
+    :class:`rxd.nodelist.NodeList`). Any filter object supported
+    by the ``.satifies`` method of the node types present in the
+    :class:`rxd.nodelist.NodeList` may be passed in parentheses;
+    e.g.
+
+        To filter the :class:`rxd.Species` ``ca``'s nodes for
+        just the ones present on the :class:`nrn.Segment`
+        ``dend(0.5)``, use:
+
+            .. code::
+                python
+
+                new_node_list = ca.nodes(dend(0.5))
+        
+        To filter the ``new_node_list`` to only contain nodes
+        present in the :class:`rxd.Region` ``er``:
+
+            .. code::
+                python
+
+                just_er = new_node_list(er)
+        
+    In addition, the following methods and properties are supported:
+
+    .. property:: rxd.nodelist.NodeList.value
+
+        Gets or sets the values associated with the stored nodes.
+        Getting always returns a list, even if the :class:`rxd.nodelist.NodeList` has
+        length 0 or 1. Setting may be to a constant (in which case all nodes are set to
+        the same value) or to a list (in which case the list values are assigned in order
+        to the nodes). In the latter case, if the length of the list does not match the length
+        of the node list, an :class:`rxd.RxDException` is raised.
+
+        The list that is returned by reading this property is a copy of the underlying data; 
+        that is, changing it will have no effect on the values stored.
+
+        This currently has the same behavior as :attr:`rxd.nodelist.NodeList.concentration`
+        however in the future these are intended to be different for stochastic simulation.
+    
+    .. property:: rxd.nodelist.NodeList.concentration
+
+        Gets or sets the concentration associated with the stored nodes.
+        Getting always returns a list, even if the :class:`rxd.nodelist.NodeList` has
+        length 0 or 1. Setting may be to a constant (in which case all nodes are set to
+        the same value) or to a list (in which case the list values are assigned in order
+        to the nodes). In the latter case, if the length of the list does not match the length
+        of the node list, an :class:`rxd.RxDException` is raised.
+
+        The list that is returned by reading this property is a copy of the underlying data; 
+        that is, changing it will have no effect on the values stored.
+
+        This currently has the same behavior as :attr:`rxd.nodelist.NodeList.value`
+        however in the future these are intended to be different for stochastic simulation.
+    
+    .. property:: rxd.nodelist.NodeList.segment
+
+        Returns a list of the :class:`nrn.Segment` objects associated with the nodes in the
+        NodeList. 
+
+        The list that is returned by reading this property is a copy of the underlying data; 
+        that is, changing it will have no effect on the values stored.
+
+    .. property:: rxd.nodelist.NodeList._ref_value
+
+        A pointer to the memory location storing the :attr:`rxd.node.Node.value` when
+        the NodeList has length 1; otherwise an :class:`rxd.RxDException` is raised.
+    
+    .. property:: rxd.nodelist.NodeList._ref_concentration
+
+        A pointer to the memory location storing the :attr:`rxd.node.Node.concentration` when
+        the NodeList has length 1; otherwise an :class:`rxd.RxDException` is raised.
+
+    .. property:: rxd.nodelist.NodeList.diff
+
+        Get or set the diffusion constants of the contained Node objects.
+        Getting returns a list that is a copy of the underlying data. Setting accepts either
+        a constant or a list of matching length; passing a list of a different length raises
+        an :class:`rxd.RxDException`.
+
+    .. property:: rxd.nodelist.NodeList.volume
+
+        An iterable of the volumes of the Node objects in the NodeList.
+
+        Read only.
+
+    .. property:: rxd.nodelist.NodeList.surface_area
+
+        An iterable of the surface areas of the Node objects in the NodeList.
+
+        Read only.
+
+    .. property:: rxd.nodelist.NodeList.region
+
+        An iterable of the :class:`rxd.Region` (or :class:`rxd.Extracellular`) objects of the Node objects in the NodeList.
+
+        Read only.
+
+
+    .. property:: rxd.nodelist.NodeList.species
+
+        An iterable of the :class:`rxd.Species` (or :class:`rxd.State` or :class:`rxd.Parameter`, as appropriate) objects of the Node objects in the NodeList.
+
+        Read only.
+
+    .. property:: rxd.nodelist.NodeList.x
+
+        An iterable of the normalized positions of the Node objects in the NodeList.
+        Note: these values are always between 0 and 1 and represent positions within
+        the corresponding :class:`nrn.Section`. For 3D position, query the ``x3d`` property
+        of the :class:`rxd.node.Node` objects themselves.
+
+        Read only.
+
+    .. method:: rxd.nodelist.NodeList.include_flux
+
+        Includes the specified flux on all nodes in the NodeList. All arguments are passed
+        directly to the underlying :class:`rxd.node.Node` objects.
+    
+    .. method:: rxd.nodelist.NodeList.value_to_grid
+
+        Returns a regular grid with the values of the 3D nodes in the list. This is
+        sometimes useful for volumetric visualization however the generated array
+        may be large in certain models.
+
+        The grid is a copy only.
+
+        Grid points not belonging to the object are assigned a value of NaN.
+
+        Nodes that are not 3d will be ignored. If there are no 3D nodes, returns
+        a 0x0x0 numpy array.
+
+        Warning: Currently only supports nodelists over 1 region.
+
 
 .. currentmodule:: neuron.rxd.node
 .. autoclass:: Node
     :members: __init__, _ref_concentration, satisfies, volume, surface_area, x, d, region, sec, species, concentration
 
 
-.. currentmodule:: neuron.rxd.nodelist
-.. autoclass:: NodeList
-    :members: __init__, __call__, concentration, diff, volume, surface_area, region, species, x
+Membrane potential
+------------------
+
+.. property:: rxd.v
+
+    A special object representing the local membrane potential in a reaction-rate
+    expression. This can be used with :class:`rxd.Rate` and 
+    :class:`rxd.MultiCompartmentReaction` to build ion channel models as an alternative
+    to using NMODL, NeuroML (and converting to NMODL via `jneuroml <https://github.com/NeuroML/jNeuroML>`_), the ChannelBuilder,
+    or :class:`KSChan`.
     
+    (If you want a numeric value for the current membrane potential at a
+    segment ``seg`` use ``seg.v`` instead.) 
+
+    Example (adapted from the `Hodgkin Huxley via rxd <https://neuron.yale.edu/neuron/docs/hodgkin-huxley-using-rxd>`_ tutorial)
+
+        .. code::
+            python
+
+            from neuron.rxd.rxdmath import vtrap, exp, log
+            from neuron import rxd
+
+            alpha = 0.01 * vtrap(-(rxd.v + 55.0), 10.0)
+            beta = 0.125 * exp(-(rxd.v + 65.0)/80.0)
+            ntau = 1.0/(alpha + beta)
+            ninf = alpha/(alpha + beta)
+
+            # ... define cyt, mem, sections ...
+
+            ngate = rxd.State([cyt, mem], name='ngate', initial=0.24458654944007166)
+            n_gate = rxd.Rate(ngate, (ninf - ngate)/ntau)
+
+
+Synchronization with segments
+-----------------------------
+
+Changes to :class:`rxd.Species` node concentrations are propagated to segment-level concentrations automatically no later
+than the next time step. This is generally the right direction for information to flow, however NEURON also provides
+a :func:`rxd.re_init` function to transfer data from segments to :class:`rxd.Species`.
+
+.. function:: rxd.re_init
+
+    Reinitialize all :class:`rxd.Species`, :class:`rxd.State`, and :class:`rxd.Parameter` from changes made
+    to NEURON segment-level concentrations. This calls the corresponding :meth:`rxd.Species.re_init` methods.
+    Note that reaction-diffusion models may contain concentration data at a finer-resolution than that of a
+    :class:`nrn.Segment` (e.g. for models being simulated in 3D).
+
+    Syntax:
+
+        .. code::
+            python
+
+            rxd.re_init()
+
+Numerical options
+-----------------
+
+.. function:: rxd.nthread
+
+    Specify a number of threads to use for extracellular and 3D intracellular simulation. Currently has
+    no effect on 1D reaction-diffusion models.
+
+    Syntax:
+
+        .. code::
+            python
+
+            rxd.nthread(num_threads)
+    
+    Example:
+
+        To simulate using 4 threads:
+
+        .. code::
+            python
+
+            rxd.nthread(4)
+
+    Thread scaling performance is discussed in the NEURON
+    `extracellular <https://doi.org/10.3389/fninf.2018.00041>`_ and
+    `3D intracellular <https://doi.org/10.1101/2022.01.01.474683>`_ methods papers.
+
+.. function:: rxd.set_solve_type
+
+    Specify numerical discretization and solver options. Currently the main use is to indicate
+    Sections where reaction-diffusion should be simulated in 3D.
+
+    Syntax:
+
+        .. code::
+            python
+
+            rxd.set_solve_type(domain=None, dimension=None, dx=None, nsubseg=None, method=None)
+
+        where:
+
+            - ``domain`` -- a :class:`nrn.Section` or Python iterable of sections. If the domain is ``None`` or omitted, the specification will apply to the entire model.
+            - ``dimension`` -- 1 or 3
+            - ``dx`` -- not implemented; specify dx for 3D models when creating the :class:`rxd.Region`
+            - ``nsubseg`` -- not implemented
+            - ``method`` -- not implemented
+    
+    This function may be called multiple times; the last setting for any given field will be used.
+    Different sections may be simulated in different dimensions (a so-called hybrid model).
+
+
 Error handling
 --------------
 

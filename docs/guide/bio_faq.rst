@@ -3,6 +3,55 @@
 Biology Modeling FAQ
 ====================
 
+How do I work with neuron morphologies?
+---------------------------------------
+
+`NeuroMorpho.Org <https://neuromorpho.org>`_ hosts over 170k reconstructed neurons,
+all of which are available in SWC format as well as their original format.
+
+NEURON's Import3D tool can read SWC files as well as several other neuron morphology
+types.
+
+The Import3D tool can be used both through the GUI and programmatically, however
+it is generally best to start with the GUI to explore the morphologies and make
+sure they are suitable for use with simulation. See the
+:ref:`Import3D GUI tutorial <import3d_tutorial>` for more on GUI usage.
+
+Example:
+
+    To create ``pyr``, a Pyramidal cell object with morphology from a file called 
+    ``c91662.swc``:
+
+    .. code::
+        python
+
+        from neuron import h
+        h.load_file("stdlib.hoc")
+        h.load_file("import3d.hoc")
+
+        class Pyramidal:
+            def __init__(self):
+                self.load_morphology()
+                # do discretization, ion channels, etc
+            def load_morphology(self):
+                cell = h.Import3d_SWC_read()
+                cell.input("c91662.swc")
+                i3d = h.Import3d_GUI(cell, False)
+                i3d.instantiate(self)
+        
+        pyr = Pyramidal()
+
+Here ``pyr`` has lists of :class:`nrn.Section` objects:
+``pyr.apic``, ``pyr.axon``, ``pyr.soma``, ``pyr.all``.
+Each section has the appropriate ``.name()`` and ``.cell()``.
+
+Note: this example is for an SWC file specifically; other readers are supported
+for different formats including ``h.Import3d_Neurolucida3()``,
+``h.Import3d_MorphML()``, and ``h.Import3d_Eutectic_read()``.
+
+Note: if multiple cells are instantiated from the same reconstruction, they
+will occupy the same spatial locations unless they are explicitly translated.
+
 How do I simulate a current clamp pulse experiment?
 ---------------------------------------------------
 
