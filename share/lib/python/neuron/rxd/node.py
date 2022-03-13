@@ -139,7 +139,7 @@ class Node(object):
 
     @property
     def _ref_concentration(self):
-        """Returns a HOC reference to the Node's concentration
+        """Returns a NEURON reference to the Node's concentration
 
         (The node must store concentration data. Use _ref_molecules for nodes
         storing molecule counts.)
@@ -154,10 +154,10 @@ class Node(object):
 
     @property
     def _ref_molecules(self):
-        """Returns a HOC reference to the Node's concentration
+        """Returns a NEURON reference to the Node's concentration
 
-        (The node must store concentration data. Use _ref_molecules for nodes
-        storing molecule counts.)
+        (The node must store molecule counts. Use _ref_concentrations for nodes
+        storing concentration.)
         """
         # this points to rxd array only, will not change legacy concentration
         if self._data_type == _molecule_node:
