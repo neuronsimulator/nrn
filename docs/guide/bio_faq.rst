@@ -130,6 +130,7 @@ may show significant change.
 
 To specify that intracellular sodium concentration on all sections (:func:`allsec`)
 is to be affected by ion channel activity:
+
 .. code::
     python
 
