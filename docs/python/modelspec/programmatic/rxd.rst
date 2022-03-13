@@ -764,7 +764,7 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
 
         An iterable of the normalized positions of the Node objects in the NodeList.
         Note: these values are always between 0 and 1 and represent positions within
-        the corresponding :class:`nrn.Section`. For 3D position, query the ``x3d`` property
+        the corresponding :class:`Section`. For 3D position, query the ``x3d`` property
         of the :class:`rxd.node.Node` objects themselves.
 
         Read only.
@@ -846,7 +846,7 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
 
                 result = node.satisfies(condition)
 
-        If a :class:`nrn.Section` object or RxDSection is provided, returns ``True`` if the Node lies in the section; else ``False``.
+        If a :class:`Section` object or RxDSection is provided, returns ``True`` if the Node lies in the section; else ``False``.
 
         If a :class:`rxd.Region` object is provided, returns ``True`` if the Node lies in the Region; else ``False``.
 
@@ -1095,7 +1095,7 @@ Numerical options
 
         where:
 
-            - ``domain`` -- a :class:`nrn.Section` or Python iterable of sections. If the domain is ``None`` or omitted, the specification will apply to the entire model.
+            - ``domain`` -- a :class:`Section` or Python iterable of sections. If the domain is ``None`` or omitted, the specification will apply to the entire model.
             - ``dimension`` -- 1 or 3
             - ``dx`` -- not implemented; specify dx for 3D models when creating the :class:`rxd.Region`
             - ``nsubseg`` -- not implemented
