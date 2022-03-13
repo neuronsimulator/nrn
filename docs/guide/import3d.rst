@@ -1,3 +1,5 @@
+.. _import3d_tutorial:
+
 Using the Import3D GUI
 ======================
 
