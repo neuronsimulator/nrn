@@ -324,7 +324,7 @@ can be found in `nrn/CMakeLists.txt` and defaults are shown in `nrn/cmake/BuildO
    -DNRN_ENABLE_INTERVIEWS=OFF \
    -DNRN_ENABLE_MPI=OFF \
    -DNRN_ENABLE_RX3D=OFF \
-   -DPYTHON_EXECUTABLE=$(which python3) \
+   -DPython_EXECUTABLE=$(which python3) \
    -DCMAKE_INSTALL_PREFIX=/path/to/install/directory
   ```
 

@@ -219,7 +219,7 @@ Python options:
 NRN_ENABLE_PYTHON:BOOL=ON
 -------------------------
   Enable Python interpreter support
-  (default python, fallback to python3, but see PYTHON_EXECUTABLE below)
+  (default python, fallback to python3, but see Python_EXECUTABLE below)
 
 NRN_ENABLE_PYTHON_DYNAMIC:BOOL=OFF
 ----------------------------------
@@ -232,7 +232,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 --------------------------
   semicolon (;) separated list of python executables to create interfaces. (default python3)
 
-  If the string is empty use the python specified by PYTHON_EXECUTABLE
+  If the string is empty use the python specified by Python_EXECUTABLE
   or else the default python. Binary distributions often specify a list
   of python versions so that if any one of them is available on the
   target machine, NEURON + Python will be fully functional. Eg. the
@@ -244,14 +244,14 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
-PYTHON_EXECUTABLE:PATH=
+Python_EXECUTABLE:PATH=
 -----------------------
   Use provided python binary instead of the one found by CMake.
   This must be a full path. We generally use
 
   .. code-block:: shell
 
-    -DPYTHON_EXECUTABLE=`which python3.7`
+    -DPython_EXECUTABLE=`which python3.7`
 
 NRN_ENABLE_MODULE_INSTALL:BOOL=ON
 ---------------------------------
@@ -325,7 +325,7 @@ Other CoreNEURON options:
     cd external/coreneuron
     mkdir build
     cd build
-    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPYTHON_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
+    cmake .. -DCMAKE_INSTALL_PREFIX=install -DPython_EXECUTABLE=`which python` -DCORENRN_CLANG_FORMAT=ON
     make clang-format
 
 
@@ -405,7 +405,7 @@ NRN_ENABLE_TESTS:BOOL=OFF
   mentioned in the ``-DNRN_PYTHON_DYNAMIC=...`` (if the semicolon separated
   list is non-empty and ``-DNRN_ENABLE_PYTHON_DYNAMIC=ON``)
   is the one used for ``make test`` and ``ctest -VV``. Otherwise the
-  value specified by ``PYTHON_EXECUTABLE`` is used.
+  value specified by ``Python_EXECUTABLE`` is used.
 
   Example
 

@@ -13,8 +13,8 @@ set(NRNPYTHON_DEFINES "")
 # If NRN_PYTHON_DYNAMIC then the following three will be determined from the
 # actual pyexe that runs setup.py
 # ~~~
-set(NRNPYTHON_EXEC ${PYTHON_EXECUTABLE})
-set(NRNPYTHON_PYVER ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
+set(NRNPYTHON_EXEC ${Python_EXECUTABLE})
+set(NRNPYTHON_PYVER ${Python_VERSION_MAJOR}.${Python_VERSION_MINOR})
 set(npy_pyver10 "")
 
 # reset since no " allowed
@@ -53,7 +53,7 @@ set(BUILD_NRNPYTHON_DYNAMIC_FALSE "#")
 if(NRN_ENABLE_PYTHON_DYNAMIC)
   if("${NRN_PYTHON_DYNAMIC}" STREQUAL "")
     set(NRN_PYTHON_EXE_LIST
-        ${PYTHON_EXECUTABLE}
+        ${Python_EXECUTABLE}
         CACHE INTERNAL "" FORCE)
   else()
     set(NRN_PYTHON_EXE_LIST
@@ -64,7 +64,7 @@ else()
   set(BUILD_NRNPYTHON_DYNAMIC_TRUE "#")
   set(BUILD_NRNPYTHON_DYNAMIC_FALSE "")
   set(NRN_PYTHON_EXE_LIST
-      ${PYTHON_EXECUTABLE}
+      ${Python_EXECUTABLE}
       CACHE INTERNAL "" FORCE)
 endif()
 

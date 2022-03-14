@@ -392,20 +392,22 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
-find_package(PythonInterp 3.6 REQUIRED)
-if(NRN_ENABLE_PYTHON)
-  # start afresh with PythonLibsNew's find_library
-  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
-  # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
-  unset(PYTHON_LIBRARY CACHE)
 
-  find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
-  set(NRN_DEFAULT_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
-  set(NRN_DEFAULT_PYTHON_LIBRARIES ${PYTHON_LIBRARIES})
-  set(NRN_DEFAULT_PYTHON_INCLUDE_DIRS ${PYTHON_INCLUDE_DIRS})
+if(NRN_ENABLE_PYTHON)
+  find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+  # start afresh with PythonLibsNew's find_library
+  # without this, -DPython_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
+  # would end up with a NRN_DEFAULT_Python_LIBRARIES of
+  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
+  unset(Python_LIBRARY CACHE)
+
+  find_package(PythonLibsNew ${Python_VERSION_MAJOR} REQUIRED)
+  set(NRN_DEFAULT_Python_EXECUTABLE ${Python_EXECUTABLE})
+  set(NRN_DEFAULT_Python_LIBRARIES ${Python_LIBRARIES})
+  set(NRN_DEFAULT_Python_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
   set(USE_PYTHON 1)
 else()
+  find_package(Python 3.6 COMPONENTS Interpreter)
   set(USE_PYTHON 0)
 endif()
 
@@ -594,7 +596,7 @@ add_dependencies(nrniv_lib hh_update)
 if(NRN_ENABLE_PYTHON)
   add_custom_target(
       help_data_dat
-      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
+      COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/parse_rst.py
               ${PROJECT_SOURCE_DIR}/docs/python
               ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -752,9 +754,9 @@ if(NRN_ENABLE_MPI)
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")
 if(NRN_ENABLE_PYTHON)
-  message(STATUS "  EXE         | ${NRN_DEFAULT_PYTHON_EXECUTABLE}")
-  message(STATUS "  INC         | ${NRN_DEFAULT_PYTHON_INCLUDE_DIRS}")
-  message(STATUS "  LIB         | ${NRN_DEFAULT_PYTHON_LIBRARIES}")
+  message(STATUS "  EXE         | ${NRN_DEFAULT_Python_EXECUTABLE}")
+  message(STATUS "  INC         | ${NRN_DEFAULT_Python_INCLUDE_DIRS}")
+  message(STATUS "  LIB         | ${NRN_DEFAULT_Python_LIBRARIES}")
   message(STATUS "  MODULE      | ${NRN_ENABLE_MODULE_INSTALL}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_PYTHON_DYNAMIC}")
   if(NRN_ENABLE_PYTHON_DYNAMIC)

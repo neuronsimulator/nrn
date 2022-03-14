@@ -81,7 +81,7 @@ And view the report by loading ```./html/index.html``` into your browser.
 
 ```
 cmake .. -DCMAKE_INSTALL_PREFIX=install \
-  -DPYTHON_EXECUTABLE=`which python3` \
+  -DPython_EXECUTABLE=`which python3` \
   -DNRN_ENABLE_TESTS=ON \
   -DNRN_ENABLE_COVERAGE=ON \
   -DNRN_COVERAGE_FILES="src/nrniv/partrans.cpp;src/nmodl/parsact.cpp;src/nrnpython/nrnpy_hoc.cpp"

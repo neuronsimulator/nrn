@@ -12,7 +12,7 @@
 #  /mingw64/bin/cmake .. -G "Unix Makefiles" \
 #    -DCMAKE_INSTALL_PREFIX=/C/marshalnrn/nrn \
 #    -DIV_DIR=/home/hines/neuron/ivcmake/build/install \
-#    -DPYTHON_EXECUTABLE=/e/python37/python \
+#    -DPython_EXECUTABLE=/e/python37/python \
 #    -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
 #    -DNRN_PYTHON_DYNAMIC="e:/python36/python;e:/python37/python;e:/python38/python" \
 #    -DNRN_ENABLE_MPI_DYNAMIC=ON \

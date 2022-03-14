@@ -172,4 +172,4 @@ Now you should be able to import neuron module as
    python -c "from neuron import h; from neuron import coreneuron"
 
 If you get ``ImportError`` then make sure ``PYTHONPATH`` is set correctly, and that ``python`` is the same version that CMake was configured to use.
-You can use ``-DPYTHON_EXECUTABLE=/path/to/python`` to force CMake to use a particular version.
+You can use ``-DPython_EXECUTABLE=/path/to/python`` to force CMake to use a particular version.
