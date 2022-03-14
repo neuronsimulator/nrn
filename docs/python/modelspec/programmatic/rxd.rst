@@ -991,7 +991,7 @@ A :class:`rxd.node.Node` represents a particular state value or :class:`rxd.Para
 
     A subclass of :class:`rxd.node.Node` used only for extracellular nodes being simulated in 3D.
 
-    .. method:: rxd.node.Node3D.satisfies
+    .. method:: rxd.node.NodeExtracellular.satisfies
 
         Supports the options of :meth:`rxd.node.Node.satisfies` and:
 
