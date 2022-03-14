@@ -30,6 +30,61 @@ SaveState
     change the value of t in a network simulation since most NET_RECEIVE 
     blocks keep t0 (the last event time) as part of their state. 
 
+    Example:
+
+        .. code:: python
+
+            from neuron import h, rxd
+            from neuron.units import mV, ms
+            h.load_file("stdrun.hoc")
+
+            soma = h.Section(name="soma")
+            soma.insert(h.hh)
+            soma.nseg = 51
+            cyt = rxd.Region(h.allsec(), name="cyt")
+            c = rxd.Species(cyt, name="c", d=1, initial=lambda node: 1 if node.x < 0.5 else 0)
+            c2 = rxd.Species(
+                cyt, name="c2", d=0.6, initial=lambda node: 1 if node.x > 0.5 else 0
+            )
+            r = rxd.Rate(c, -c * (1 - c) * (0.3 - c))
+            r2 = rxd.Reaction(c + c2 > c2, 1)
+
+            h.finitialize(-65 * mV)
+            soma(0).v = -30 * mV
+
+            h.continuerun(5 * ms)
+
+            def get_state():
+                return (
+                    soma(0.5).v,
+                    c.nodes(soma(0.5)).concentration[0],
+                    c2.nodes(soma(0.5)).concentration[0],
+                )
+
+            s1 = get_state()   # our local copy, just to prove we saved
+            s = h.SaveState()
+            s.save()
+
+            # NOTE: calling s.save() stores the state to the s object; it does not
+            # store the state to a file; use s.fwrite(file_obj) for that and 
+            # s.fread(file_obj) to read state from a file before restoring.
+
+            h.continuerun(10 * ms)
+
+            # go back to the way things were at 5 * ms (when we called s.save())
+            s.restore()
+
+            # prove we successfully reverted
+            assert get_state() == s1
+            assert get_state() != s2
+
+
+    .. versionchanged:: 8.1
+
+        Prior to NEURON 8.1, :class:`SaveState` did not save 
+        reaction-diffusion states.
+
+
     .. warning::
         The intention is that a save followed by 
         any number of simulation-continue,restore 

@@ -6,6 +6,7 @@ Guides
 
    what_is_neuron
    how_to_get_started
+   bio_faq
    units
    saveses
    cellbuilder

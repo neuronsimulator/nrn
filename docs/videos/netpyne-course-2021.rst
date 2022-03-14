@@ -78,6 +78,7 @@ Single neuron theory II
 
     <center><iframe width="560" height="315" src="https://www.youtube.com/embed/0Al8sJ4ZiE0?rel=0" frameborder="0" allowfullscreen></iframe></center>
 
+.. _netpyne_neuron_rxd_video:
 
 NEURON RxD
 ----------
@@ -97,12 +98,9 @@ To facilitate interaction for the exercises, we split the class into two groups,
 
 The three exercises:
 
-- `https://tinyurl.com/neuron-diffusion-exercise`_
-  * pure diffusion
-- `https://tinyurl.com/neuron-regen-signal`_
-  * regenerative signaling
-- `https://tinyurl.com/neuron-hh-example-2`_
-  * Hodgkin-Huxley, concentrations, and homeostasis
+- `pure diffusion <https://tinyurl.com/neuron-diffusion-exercise>`_
+- `regenerative signaling <https://tinyurl.com/neuron-regen-signal>`_
+- `Hodgkin-Huxley, concentrations, and homeostasis <https://tinyurl.com/neuron-hh-example-2>`_
 
 Group 1
 ~~~~~~~
