@@ -236,6 +236,7 @@ they are just fixed values.
 
 
 .. _hoc_rxd_what:
+
 Defining reactions
 ------------------
 
