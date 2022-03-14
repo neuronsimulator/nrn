@@ -41,7 +41,7 @@ Example:
         
         pyr = Pyramidal()
 
-Here ``pyr`` has lists of :class:`nrn.Section` objects:
+Here ``pyr`` has lists of :class:`Section` objects:
 ``pyr.apic``, ``pyr.axon``, ``pyr.soma``, ``pyr.all``.
 Each section has the appropriate ``.name()`` and ``.cell()``.
 
