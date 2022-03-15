@@ -136,16 +136,6 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
 
     std::string return_error_param_var(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
 
-    /// Takes as parameter an std::shared_ptr<ast::Ast> node
-    /// and returns a relative error with the name and the
-    /// location of the pointer, as well as a suggestion to
-    /// define it as BBCOREPOINTER
-    ///
-    /// \param node Not used by the function
-    /// \param ast_node Ast node which is checked
-    /// \return std::string error
-    std::string return_error_pointer(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node);
-
     /// Takes as parameter the ast::Ast and checks if the
     /// functions "bbcore_read" and "bbcore_write" are defined
     /// in any of the ast::Ast VERBATIM blocks. The function is
