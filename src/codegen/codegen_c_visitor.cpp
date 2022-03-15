@@ -1412,13 +1412,25 @@ void CodegenCVisitor::print_function_call(const FunctionCall& node) {
     auto arguments = node.get_arguments();
     printer->add_text("{}("_format(function_name));
 
+    bool possible_nt_variable_types{false};
+    if (!defined_method(name)) {
+        possible_nt_variable_types = arguments.front()->get_node_type() == AstNodeType::NAME &&
+                                     arguments.front()->get_node_type() == AstNodeType::STRING &&
+                                     arguments.front()->get_node_type() ==
+                                         AstNodeType::CONSTANT_VAR &&
+                                     arguments.front()->get_node_type() == AstNodeType::VAR_NAME &&
+                                     arguments.front()->get_node_type() == AstNodeType::LOCAL_VAR;
+    }
     if (defined_method(name)) {
         printer->add_text(internal_method_arguments());
         if (!arguments.empty()) {
             printer->add_text(", ");
         }
     } else if (nmodl::details::needs_neuron_thread_first_arg(function_name) &&
-               arguments.front()->get_node_name() != "nt") {
+               (!possible_nt_variable_types || arguments.front()->get_node_name() != "nt")) {
+        // If the first argument is not `nt` we should add it.
+        // We compare with type because expression `a+b` is not `nt` but don't have `get_node_name`
+        // implemented
         arguments.insert(arguments.begin(), std::make_shared<ast::String>("nt"));
     }
 
