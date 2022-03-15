@@ -36,7 +36,6 @@ const std::map<ast::AstNodeType, CodegenCompatibilityVisitor::FunctionPointer>
           &CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandled},
          {AstNodeType::GLOBAL_VAR, &CodegenCompatibilityVisitor::return_error_global_var},
          {AstNodeType::PARAM_ASSIGN, &CodegenCompatibilityVisitor::return_error_param_var},
-         {AstNodeType::POINTER_VAR, &CodegenCompatibilityVisitor::return_error_pointer},
          {AstNodeType::BBCORE_POINTER_VAR,
           &CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write}});
 
@@ -84,14 +83,6 @@ std::string CodegenCompatibilityVisitor::return_error_param_var(
                    symbol->get_name(), symbol->get_token().position());
     }
     return error_message_global_var.str();
-}
-
-std::string CodegenCompatibilityVisitor::return_error_pointer(
-    ast::Ast& node,
-    const std::shared_ptr<ast::Ast>& ast_node) {
-    auto pointer_var = std::dynamic_pointer_cast<ast::PointerVar>(ast_node);
-    return "\"{}\" POINTER found at [{}] should be defined as BBCOREPOINTER to use it in CoreNeuron\n"_format(
-        pointer_var->get_node_name(), pointer_var->get_token()->position());
 }
 
 std::string CodegenCompatibilityVisitor::return_error_if_no_bbcore_read_write(
