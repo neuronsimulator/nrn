@@ -26,7 +26,7 @@ Our goal is to approximate this conductance transient with a function of the for
 
 .. math::
 
-    A (e^{- k_1 t} - e{- k_2 t} )
+    A (e^{- k_1 t} - e^{- k_2 t} )
 
 Step 0. Download the data
 -------------------------
