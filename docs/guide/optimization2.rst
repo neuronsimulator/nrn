@@ -49,7 +49,7 @@ For your convenience, I have already
 
 and saved the results to :download:`rawmodel.ses <data/rawmodel.ses>` 
 
-:download:`This link will get you optimization2-code.zip, which contains rawmodel.ses plus other files that are used in this exercise. <data/optimization2-code.zip>`
+`This link will get you neuron-optimization-tutorial2-*.zip, which contains rawmodel.ses plus other files that are used in this exercise. <https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip>`_
 
 Step 2. Set up a current clamp experiment on this model
 -------------------------------------------------------
@@ -131,7 +131,7 @@ Nowhere near the experimentally measured 153 megohms.
 
 Notes:
 
-    * :download:`optimization2-code.zip <data/optimization2-code.zip>` contains my :file:`iclamp_rig.ses` and :file:`init_iclamprawmodel.hoc`
+    * `neuron-optimization-tutorial2-*.zip <https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip>`_ contains our :file:`iclamp_rig.ses` and :file:`init_iclamprawmodel.hoc`
     * The principal difference between :file:`init_makedata.hoc` and :file:`init_iclamprawmodel.hoc` is which model's ``ses`` file is loaded. The former loads the model that has the "actual" biophysical properties of the cell (which we're supposed to use the optimizer to discover). The latter loads the model that has our wildly inaccurate initial guess at these properties. Modular programming!!
 
 Step 3. Configure a MultipleRunFitter to do a "run fitness" optimization
@@ -464,7 +464,7 @@ So we click on the MRF's Error Value button, and a nonzero value does appear in 
 
 This is another good time to save the MRF to a session file.
 
-    In :download:`optimization2-code.zip <data/optimization2-code.zip>` you will find :file:`init_iclampopt.hoc` and all of the hoc and ses files that it needs to recreate the unoptimized model, current clamp "virtual experimental rig," and Multiple Run Fitter, exactly as they should be at this point of the tutorial. Just use NEURON to execute :file:`init_iclampopt.hoc`
+    In `optimization2-code-*.zip <https://github.com/simtooldb/neuron-optimization-tutorial2/archive/8e2c5f1c3688e84ebd3fdc5e5e6bb722db204196.zip>` you will find :file:`init_iclampopt.hoc` and all of the hoc and ses files that it needs to recreate the unoptimized model, current clamp "virtual experimental rig," and Multiple Run Fitter, exactly as they should be at this point of the tutorial. Just use NEURON to execute :file:`init_iclampopt.hoc`
 
 Choose and use an optimization algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
