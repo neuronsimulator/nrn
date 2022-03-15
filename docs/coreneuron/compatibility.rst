@@ -121,7 +121,7 @@ thread safe. NEURON provides a script ``mkthreadsafe`` that can provide some hel
     
       ...
     
-    Technically, this mod file is thread safe as we don't have any race condition. But due to ``VERBATIM`` block this mod file is assumed non thread safe and hence we have to explicitly specify `THREADSAFE` keywork in the beginning NEURON block as:
+    Technically, this mod file is thread safe as we don't have any race condition. But due to ``VERBATIM`` block this mod file is assumed non thread safe and hence we have to explicitly specify `THREADSAFE` keywork in the beginning of the ``NEURON`` block as:
     
     .. code-block:: c++
     
