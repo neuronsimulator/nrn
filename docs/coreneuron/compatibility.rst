@@ -1,19 +1,15 @@
-CoreNEURON compatibility
+CoreNEURON Compatibility
 ########################
-CoreNEURON is designed as a library within the NEURON simulator and can transparently handle all spiking network simulations, including gap junction coupling, with the **fixed time step method**.
-In order to run a NEURON model with CoreNEURON certain conditions must be met:
 
-* MOD files must be ``THREADSAFE``, for more information see :ref:`THREADSAFE`
-* Random123 must be used if a random number generator is needed; MCellRan4 is not supported
-* ``POINTER`` variables must be converted to ``BBCOREPOINTER``, for more information see :ref:`BBCOREPOINTER`
-* ``TABLE`` statements should be commented out in MOD files if they are
-  to be executed with CoreNEURON on GPU.
-  See `nrn#1505 <https://github.com/neuronsimulator/nrn/issues/1505>`_
-  for more information.
+CoreNEURON can transparently handle all spiking network simulations, including gap junction coupling, with the fixed time step method. In this document we summarise NEURON features that are not supported by CoreNEURON and changes required to make a model compatible with CoreNEURON.
 
-Note that models using the following features cannot presently be simulated with CoreNEURON.
 
-.. list-table:: Non-supported NEURON features
+Unsupported Features
+********************
+
+The below table summarises NEURON features that are presently not supported with CoreNEURON:
+
+.. list-table::
    :widths: 45 10 10 35
    :header-rows: 1
    :class: fixed-table
@@ -44,9 +40,128 @@ Note that models using the following features cannot presently be simulated with
      - Generally, `Vector.record` and `Vector.play` are ok, as are the display of GUI variable trajectories.
        Anything requiring callbacks into the interpreter (Python or HOC) are not implemented.
 
-Some additional suggestions regarding MOD files that are intended to be executed with CoreNEURON are:
+If you are using any of the above mentioned features in your model then CoreNEURON library can not be used for simulations. If you are interested in these features with CoreNEURON or performance improvement in general, feel free to provide feedback via a GitHub issue.
 
-* Make sure that the purpose of the MOD file and the mechanism described by it is intended to be executed with CoreNEURON. For example there might be MOD files that only provide an interface to run Python or HOC functions that are not supported in CoreNEURON. Those MOD files normally depend heavily on ``VERBATIM`` blocks. In case you want to keep certain functionallity defined in a ``VERBATIM`` block in NEURON but avoid enabling it in CoreNEURON you can wrap the code in the following macro:
+
+MOD File Compatibility
+**********************
+
+In order to use CoreNEURON, you need to build MOD files with CoreNEURON support i.e. use ``-coreneuron`` option as ``nrnivmodl -coreneuron <mod dir>``. If this command fails during compilation or translating MOD files but ``nrnivmodl <mod dir>`` is working fine then most likely there are MOD files incompatibility issues. In this section we describe how you can address such incompatibility.
+
+
+Thread Safe MOD Files
+~~~~~~~~~~~~~~~~~~~~~
+
+One of the important difference in CoreNEURON execution with respect to NEURON is that multiple instances of a specific channel or synapse are executed in parallel. This parallelism could be via threads or SIMD instructions on modern CPUs/GPUs. Most of the MOD files are thread safe for parallel execution but there are certain constructs like ``GLOBAL`` variables or ``VERBATIM``` blocks that are not compatible by default. In this case user has to make sure MOD files are
+thread safe. NEURON provides a script ``mkthreadsafe`` that can provide some help to make your MOD files are thread safe. You can find more information `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_. Here are some additional examples that will help you to make a MOD file thread safe:
+
+* If you are using ``GLOBAL`` variables in a mod file, make sure those are not updated during execution (e.g. in ``INITIAL``, ``BREAKPOINT`` or ``DERIVATIVE`` block etc). If ``GLOBAL`` variable is writen then those variables are now needs to be defined as ``RANGE``. You can find information about ``GLOBAL`` and ``RANGE`` variables in :ref:`NMODL specification <nmodltoneuron>`.
+
+    As an example, below MOD file defines ``minf`` variable as a ``GLOBAL`` and it is being updated in the ``DERIVATIVE`` block when ``PROCEDURE rates()`` is executed.
+    
+    .. code-block:: c++
+    
+      NEURON {
+        SUFFIX test
+        GLOBAL minf
+      }
+    
+      ...
+    
+      DERIVATIVE states {
+        rates(v)
+        m' = (minf -m)/1.5
+      }
+    
+      PROCEDURE rates(v (mV)) {
+        minf = minf+1
+      }
+
+    As ``GLOBAL`` variable is shared across multiple instances of a mechanism, parallel execution will result into a race condition when ``minf`` is updated. In order to avoid this we need to simply convert it to a ``RANGE`` variables:
+    
+    .. code-block:: c++
+    
+      NEURON {
+        SUFFIX test
+        RANGE minf
+      }
+      ...
+    
+    Note that if you are accessing such variable via HOC or Python scripting interface then syntax for accessing ``GLOBAL`` is different than ``RANGE`` variable. So you need to update your code accordingly.
+
+* If you are using ``VERBATIM`` blocks to overcome some limitations of NMODL language then such MOD file is by default treated as not thread safe. For example, in below case we are are using ``VERBATIM`` block to include some C header and return early from ``INITIAL`` block:
+
+    .. code-block:: c++
+    
+      NEURON {
+        SUFFIX test
+        RANGE minf
+      }
+    
+      VERBATIM
+      #include <stdlib.h>
+      ENDVERBATIM
+    
+      ASSIGNED {
+        v            (mV)
+        minf
+      }
+    
+      STATE {
+        m
+      }
+    
+      INITIAL {
+        rate(v)
+        m = minf
+        VERBATIM
+        return 0;
+        ENDVERBATIM
+      }
+    
+      ...
+    
+    Technically, this mod file is thread safe as we don't have any race condition. But due to ``VERBATIM`` block this mod file is assumed non thread safe and hence we have to explicitly specify `THREADSAFE` keywork in NEURON block as:
+    
+    .. code-block:: c++
+    
+      NEURON {
+        THREADSAFE
+        SUFFIX test
+        RANGE minf
+      }
+    
+      ...
+    
+    Also, note that ``NEURON`` block needs to be before any ``VERBATIM`` block in the MOD file. So its safer to keep ``NEURON`` block at the top of MOD file.
+
+* Certain ``SOLVE`` methods like ``euler`` are not thread safe since the best practical methods are ``cnexp`` for HH-like equations and ``derivimplicit`` for all the others. If you have such a MOD file:
+
+    .. code-block:: c++
+
+      SOLVE state METHOD euler
+
+    then replace ``euler`` with ``cnexp``.
+
+
+TABLE Usage With GPU Execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Currently ``TABLE`` constructs are not supported if you are building MOD files with GPU support. As ``TABLE`` constructs are used for efficiency reason (and not accuracy), you can safely comment out ``TABLE`` statement using ``:`` operator:
+
+    .. code-block:: c++
+
+      PROCEDURE rates(v(mV)) {
+
+         : TABLE minf, mtau, hinf, htau, ninf, ntau DEPEND celsius FROM -100 TO 100 WITH 200
+
+
+NEURON Only MOD Files
+~~~~~~~~~~~~~~~~~~~~~
+
+Certain MOD files are used for aspects like progress callbacks, reading inputs, etc. Often such MOD files are heavily depend on ``VERBATIM`` blocks and use internal data structure or functions provided by NEURON. Most likely such MOD files won't be compiled by CoreNEURON as they are using internal, NEURON specific APIs in ``VERBATIM`` blocks. If such mod file is used for only usability aspect like progress bar then you can exclude that from compilation. Other option is to do conditionally compile all ``VERBATIM`` blocks using macro ``NRNBBCORE``.
+
+As an example, the code in below ``#ifndef NRNBBCORE`` block will be only compiled for NEURON.
 
 .. code-block:: c++
 
@@ -56,7 +171,14 @@ Some additional suggestions regarding MOD files that are intended to be executed
   #endif
   ENDVERBATIM
 
-* Explicit initialization of ion currents in ``INITIAL`` blocks using ``VERBATIM`` blocks is not needed in NEURON or CoreNEURON since they are done implicitely by the NMODL transpiler. This means that code blocks like the following should be deleted by the MOD files:
+This way you can hide NEURON specific code from CoreNEURON compilation process.
+
+
+
+Explicit ION Variables Update
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In some old MOD files ion currents are explicitly initialized in ``INITIAL`` blocks using ``VERBATIM`` construct as:
 
 .. code-block:: c++
 
@@ -65,113 +187,33 @@ Some additional suggestions regarding MOD files that are intended to be executed
   Cai = _ion_Cai;
   ENDVERBATIM
 
-* ``PROCEDURE`` blocks shouldn't return any value.
-* Make sure that all the C/C++ functions called in ``VERBATIM`` blocks are defined in a C/C++ header file which is included in the MOD file.
+Since such ion variables are implicitely updated by the code from NMODL transpiler, ``VERBATIM`` blocks like above are not required and must be deleted from the MOD files.
 
-THREADSAFE
-**********
-CoreNEURON's acceleration is made possible through it's ability not only to run the simulations in parallel but also by being able to take advantage of the vectorization support of CPUs and execution on GPUs. To be able to execute a model in parallel using multiple threads the MOD file developer should make sure that the MOD file is thread safe. You can find more information about ``THREADSAFE`` MOD files `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_.
 
-By making the MOD file thread safe the initialization and current and state update for all the sections that include this mechanism can be done in parallel using vectorized CPU instructions and can be executed in GPU safely.
+Random Number Generators: Random123 vs MCellRan4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Some useful instructions to make a MOD file thread safe are:
+Pseudo-random numbers from a variety of distributions can be generated using NEURON's ``Random`` class. CoreNEURON only supports ``Random123`` generator.
 
-* Make sure that all the variables that are written in the MOD file and are defined as ``GLOBAL`` are now defined as ``RANGE``. More information about ``GLOBAL`` and ``RANGE`` variables can be found `here <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/nmodl2.html>`_.
-* In case there are any ``VERBATIM`` blocks those need to be thread safe and there must be a ``THREADSAFE`` keyword in the beginning of the ``NEURON`` block to state that the ``VERBATIM`` blocks are thread safe. Also make sure that the ``NEURON`` block is defined before any ``VERBATIM`` block in the MOD file
 
-For example here is a showcase MOD file that defines `minf` as a ``GLOBAL`` variable which gets updated during the simulation and also defines a ``VERBATIM`` block before the ``NEURON`` block:
 
-.. code-block:: c++
+Memory Management for POINTER Variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  VERBATIM
-  #include <stdlib.h>
-  ENDVERBATIM
+User-allocated data managed in NMODL is a complex topic. Using``POINTER`` variables, users can reference data that has been allocated in ``HOC`` or in ``VERBATIM`` blocks. Using this end users can built more advanced data-structures that are not natively supported in NMODL. Another commonly used example is point processes / synapses where ``POINTER`` variables used for holding random number generator object.
 
-  NEURON {
-    SUFFIX test
-    GLOBAL minf
-  }
-
-  ASSIGNED {
-    v            (mV)
-    minf
-  }
-
-  STATE {
-    m
-  }
-
-  BREAKPOINT {
-    SOLVE states METHOD cnexp
-  }
-
-  DERIVATIVE states {
-    rates(v)
-    m' = (minf -m)/1.5
-  }
-
-  PROCEDURE rates(v (mV)) {
-    minf = minf+1
-  }
-
-The above MOD file needs to be changed into the following one to be compatible with CoreNEURON:
-
-.. code-block:: c++
-
-  NEURON {
-    THREADSAFE : added THREADSAFE keyword in the beginning of the NEURON block and moved the NEURON block before any VERBATIM block
-    SUFFIX test
-    RANGE minf : turned minf variable to RANGE
-  }
-
-  VERBATIM
-  #include <stdlib.h>
-  ENDVERBATIM
-
-  ASSIGNED {
-    v            (mV)
-    minf
-  }
-
-  STATE {
-    m
-  }
-
-  BREAKPOINT {
-    SOLVE states METHOD cnexp
-  }
-
-  DERIVATIVE states {
-    rates(v)
-    m' = (minf -m)/1.5
-  }
-
-  PROCEDURE rates(v (mV)) {
-    minf = minf+1
-  }
-
-The comments in the code indicate the changes applied to the MOD file.
-
-BBCOREPOINTER
-*************
-``BBCOREPOINTER`` is used to transfer dynamically allocated data between NEURON and CoreNEURON.
-
-User-allocated data can be managed in NMODL using the ``POINTER`` type.
-It allows the programmer to reference data that has been allocated in HOC or in ``VERBATIM`` blocks.
-This allows for more advanced data-structures that are not natively supported in NMODL.
-
-Since NEURON itself has no knowledge of the layout and size of this data it cannot
-transfer ``POINTER`` data automatically to CoreNEURON.
+Since NEURON itself has no knowledge of the layout and size of this user allocated data,
+it cannot transfer ``POINTER`` data automatically to CoreNEURON.
 Furtheremore, in many cases there is no need to transfer the data between the two instances.
 In some cases, however, the programmer would like to transfer certain user-defined data into CoreNEURON.
 The most prominent example are Random123 random number stream parameters used in synapse mechanisms.
-To support this use-case the ``BBCOREPOINTER`` type was introduced.
+
+In order to inform NEURON that such ``POINTER`` variable needs to be transferred, the ``BBCOREPOINTER`` type was introduced.
 Variables that are declared as ``BBCOREPOINTER`` behave exactly the same as ``POINTER`` but are
-additionally taken into account when NEURON is serializing mechanism data (for file writing or
-direct-memory transfer).
+additionally taken into account when NEURON is transferring model to CoreNEURON for simulation.
 For NEURON to be able to write (and indeed CoreNEURON to be able to read) ``BBCOREPOINTER``
 data, the programmer has to additionally provide two C functions that are called as part
-of the serialization/deserialization.
+of the serialization/deserialization:
 
 .. code-block:: c++
 
@@ -230,7 +272,7 @@ Putting all of this together, the following is a minimal MOD using ``BBCOREPOINT
    TITLE A BBCOREPOINTER Example
 
    NEURON {
-     BBCOREPOINTER my_data
+     BBCOREPOINTER my_data : changed from POINTER
    }
 
    ASSIGNED {
@@ -258,3 +300,16 @@ Putting all of this together, the following is a minimal MOD using ``BBCOREPOINT
      *x_offset += 2;
    }
    ENDVERBATIM
+
+If you have models with ``POINTER`` variables and user allocated memory then this requires due diligence. Below are some of the existing models adapted for CoreNEURON. These MOD files can act as a reference or you can simply reuse them if applicable:
+
+* https://github.com/HumanBrainProject/olfactory-bulb-3d/tree/master/sim
+* https://github.com/nrnhines/nrntraub/tree/master/mod
+* https://github.com/suny-downstate-medical-center/M1_NEURON_paper/tree/main/mod
+* https://github.com/neuronsimulator/testcorenrn/tree/master/mod
+* https://github.com/neuronsimulator/reduced_dentate/tree/master/mechanisms
+
+Have Question?
+~~~~~~~~~~~~~~~
+
+If you have any questions to make your model compatible with CoreNEURON, reach out to us via ``GitHub issue <https://github.com/neuronsimulator/nrn/issues>`_.
