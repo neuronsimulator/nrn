@@ -59,7 +59,7 @@ class ParseRst(object):
 
     def parse(self):
         for filename in self._filenames:
-            with open(str(filename)) as f:
+            with open(str(filename), encoding="utf-8") as f:
                 lines = []
                 for line in f:
                     if line[-1] == "\n":
