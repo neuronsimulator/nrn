@@ -52,10 +52,10 @@ In order to use CoreNEURON, you need to build MOD files with CoreNEURON support 
 Thread Safe MOD Files
 ~~~~~~~~~~~~~~~~~~~~~
 
-One of the important difference in CoreNEURON execution with respect to NEURON is that multiple instances of a specific channel or synapse are executed in parallel. This parallelism could be via threads or SIMD instructions on modern CPUs/GPUs. Most of the MOD files are thread safe for parallel execution but there are certain constructs like ``GLOBAL`` variables or ``VERBATIM``` blocks that are not compatible by default. In this case user has to make sure MOD files are
+One of the important difference in CoreNEURON execution with respect to NEURON is that multiple instances of a specific channel or synapse are executed in parallel. This parallelism could be via threads or SIMD instructions on modern CPUs/GPUs. Most of the MOD files are thread safe for parallel execution but there are certain constructs like ``GLOBAL`` variables or ``VERBATIM`` blocks that are not compatible by default. In this case user has to make sure MOD files are
 thread safe. NEURON provides a script ``mkthreadsafe`` that can provide some help to make your MOD files are thread safe. You can find more information `here <https://neuron.yale.edu/neuron/docs/multithread-parallelization>`_. Here are some additional examples that will help you to make a MOD file thread safe:
 
-* If you are using ``GLOBAL`` variables in a mod file, make sure those are not updated during execution (e.g. in ``INITIAL``, ``BREAKPOINT`` or ``DERIVATIVE`` block etc). If ``GLOBAL`` variable is writen then those variables are now needs to be defined as ``RANGE``. You can find information about ``GLOBAL`` and ``RANGE`` variables in :ref:`NMODL specification <nmodltoneuron>`.
+* If you are using ``GLOBAL`` variables in a mod file, make sure those are not updated during execution (e.g. in ``INITIAL``, ``BREAKPOINT`` or ``DERIVATIVE`` block etc). If ``GLOBAL`` variable is writen then those variables are now needed to be defined as ``RANGE``. You can find information about ``GLOBAL`` and ``RANGE`` variables in :ref:`NMODL specification <nmodltoneuron>`.
 
     As an example, below MOD file defines ``minf`` variable as a ``GLOBAL`` and it is being updated in the ``DERIVATIVE`` block when ``PROCEDURE rates()`` is executed.
     
@@ -70,14 +70,14 @@ thread safe. NEURON provides a script ``mkthreadsafe`` that can provide some hel
     
       DERIVATIVE states {
         rates(v)
-        m' = (minf -m)/1.5
+        m' = (minf-m)/1.5
       }
     
       PROCEDURE rates(v (mV)) {
         minf = minf+1
       }
 
-    As ``GLOBAL`` variable is shared across multiple instances of a mechanism, parallel execution will result into a race condition when ``minf`` is updated. In order to avoid this we need to simply convert it to a ``RANGE`` variables:
+    As ``GLOBAL`` variable is shared across multiple instances of a mechanism, parallel execution will result into a race condition when ``minf`` is updated. In order to avoid this we need to simply convert it to a ``RANGE`` variable:
     
     .. code-block:: c++
     
@@ -121,7 +121,7 @@ thread safe. NEURON provides a script ``mkthreadsafe`` that can provide some hel
     
       ...
     
-    Technically, this mod file is thread safe as we don't have any race condition. But due to ``VERBATIM`` block this mod file is assumed non thread safe and hence we have to explicitly specify `THREADSAFE` keywork in NEURON block as:
+    Technically, this mod file is thread safe as we don't have any race condition. But due to ``VERBATIM`` block this mod file is assumed non thread safe and hence we have to explicitly specify `THREADSAFE` keywork in the beginning NEURON block as:
     
     .. code-block:: c++
     
@@ -159,7 +159,7 @@ Currently ``TABLE`` constructs are not supported if you are building MOD files w
 NEURON Only MOD Files
 ~~~~~~~~~~~~~~~~~~~~~
 
-Certain MOD files are used for aspects like progress callbacks, reading inputs, etc. Often such MOD files are heavily depend on ``VERBATIM`` blocks and use internal data structure or functions provided by NEURON. Most likely such MOD files won't be compiled by CoreNEURON as they are using internal, NEURON specific APIs in ``VERBATIM`` blocks. If such mod file is used for only usability aspect like progress bar then you can exclude that from compilation. Other option is to do conditionally compile all ``VERBATIM`` blocks using macro ``NRNBBCORE``.
+Certain MOD files are used for aspects like progress callbacks, reading inputs, etc. Often such MOD files are heavily depend on ``VERBATIM`` blocks and use internal data structure or functions provided by NEURON. Most likely such MOD files won't be compiled by CoreNEURON as they are using internal, NEURON specific APIs in ``VERBATIM`` blocks. If such mod file is used for only a usability aspect like progress bar then you can exclude that from compilation. Other option is to conditionally compile all ``VERBATIM`` blocks using macro ``NRNBBCORE``.
 
 As an example, the code in below ``#ifndef NRNBBCORE`` block will be only compiled for NEURON.
 
@@ -200,7 +200,7 @@ Pseudo-random numbers from a variety of distributions can be generated using NEU
 Memory Management for POINTER Variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-User-allocated data managed in NMODL is a complex topic. Using``POINTER`` variables, users can reference data that has been allocated in ``HOC`` or in ``VERBATIM`` blocks. Using this end users can built more advanced data-structures that are not natively supported in NMODL. Another commonly used example is point processes / synapses where ``POINTER`` variables used for holding random number generator object.
+User-allocated data managed in NMODL is a complex topic. Using ``POINTER`` variables, users can reference data that has been allocated in ``HOC`` or in ``VERBATIM`` blocks. Using this end users can built more advanced data-structures that are not natively supported in NMODL. Another commonly used example is point processes / synapses where ``POINTER`` variables used for holding random number generator object.
 
 Since NEURON itself has no knowledge of the layout and size of this user allocated data,
 it cannot transfer ``POINTER`` data automatically to CoreNEURON.
@@ -312,4 +312,4 @@ If you have models with ``POINTER`` variables and user allocated memory then thi
 Have Question?
 ~~~~~~~~~~~~~~~
 
-If you have any questions to make your model compatible with CoreNEURON, reach out to us via ``GitHub issue <https://github.com/neuronsimulator/nrn/issues>`_.
+If you have any questions to make your model compatible with CoreNEURON, reach out to us via `GitHub issue <https://github.com/neuronsimulator/nrn/issues>`_.
