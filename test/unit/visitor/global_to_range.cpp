@@ -33,7 +33,7 @@ std::shared_ptr<ast::Program> run_global_to_var_visitor(const std::string& text)
 
     SymtabVisitor().visit_program(*ast);
     PerfVisitor().visit_program(*ast);
-    GlobalToRangeVisitor(ast).visit_program(*ast);
+    GlobalToRangeVisitor(*ast).visit_program(*ast);
     SymtabVisitor().visit_program(*ast);
     return ast;
 }
