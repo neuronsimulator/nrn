@@ -15,6 +15,10 @@ jobs:
     machine:
       image: ubuntu-2004:202101-01
 
+    environment:
+      NEURON_WHEEL_VERSION: 8.1a
+      NEURON_NIGHTLY_TAG: ""
+
     resource_class: arm.medium
 
     steps:
@@ -93,7 +97,6 @@ workflows:
             parameters:
               NRN_PYTHON_VERSION: ["36", "37", "38", "39", "310"]
               NRN_NIGHTLY_UPLOAD: ["false"]
-              NEURON_NIGHTLY_TAG: [""]
 
   nightly:
     triggers:
