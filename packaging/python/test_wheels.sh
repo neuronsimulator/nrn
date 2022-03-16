@@ -159,6 +159,12 @@ run_serial_test () {
     # Test 9: coreneuron execution via neuron
     if [[ "$has_coreneuron" == "true" ]]; then
       rm -rf $ARCH_DIR
+
+      # first test vanialla coreneuron support, without nrnivmodl
+      if [[ "$has_gpu_support" == "false" ]]; then
+        $python_exe test/coreneuron/test_psolve.py
+      fi
+
       nrnivmodl -coreneuron test/coreneuron/mod/
 
       # coreneuron+gpu can be used via python but special only

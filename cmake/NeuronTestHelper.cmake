@@ -389,9 +389,15 @@ function(nrn_add_test)
   endif()
   set(test_env "${NRN_TEST_ENV}")
   if(requires_coreneuron)
-    set(test_env
+    if(DEFINED nrnivmodl_working_directory)
+      set(test_env
         "${test_env};CORENEURONLIB=${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
+      )
+    else()
+      set(test_env
+        "${test_env};CORENEURONLIB=${CMAKE_BINARY_DIR}/bin/${CMAKE_HOST_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      )
+    endif()
   endif()
   if(DEFINED nrnivmodl_working_directory)
     set(path_additions "${nrnivmodl_working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")

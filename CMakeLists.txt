@@ -309,7 +309,7 @@ endif()
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
-  
+
   # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
   nrn_mpi_find_package()
   set(NRNMPI 1)
@@ -471,10 +471,12 @@ if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
   if(coreneuron_FOUND)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
+    set(nrn_using_ext_corenrn TRUE)
     # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
     set(cnrn_prefix "${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    set(nrn_using_ext_corenrn FALSE)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
