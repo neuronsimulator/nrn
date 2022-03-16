@@ -61,7 +61,7 @@ namespace visitor {
 class GlobalToRangeVisitor: public AstVisitor {
   private:
     /// ast::Ast* node
-    std::shared_ptr<ast::Program> ast;
+    const ast::Program& ast;
 
   public:
     /// \name Ctor & dtor
@@ -71,8 +71,8 @@ class GlobalToRangeVisitor: public AstVisitor {
     GlobalToRangeVisitor() = delete;
 
     /// Constructor that takes as parameter the AST
-    explicit GlobalToRangeVisitor(std::shared_ptr<ast::Program> node)
-        : ast(std::move(node)) {}
+    explicit GlobalToRangeVisitor(const ast::Program& node)
+        : ast(node) {}
 
     /// \}
 

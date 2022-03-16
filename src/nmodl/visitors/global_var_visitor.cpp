@@ -27,7 +27,7 @@ void GlobalToRangeVisitor::visit_neuron_block(ast::NeuronBlock& node) {
 
     auto& statement_block = node.get_statement_block();
     auto& statements = (*statement_block).get_statements();
-    const auto& symbol_table = ast->get_symbol_table();
+    const auto& symbol_table = ast.get_symbol_table();
 
     for (auto& statement: statements) {
         /// only process global statements

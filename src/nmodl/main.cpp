@@ -355,7 +355,7 @@ int main(int argc, const char* argv[]) {
             // make sure to run the GlobalToRange visitor after all the
             // reinitializations of Symtab
             logger->info("Running GlobalToRange visitor");
-            GlobalToRangeVisitor(ast).visit_program(*ast);
+            GlobalToRangeVisitor(*ast).visit_program(*ast);
             SymtabVisitor(update_symtab).visit_program(*ast);
             ast_to_nmodl(*ast, filepath("global_to_range"));
         }
