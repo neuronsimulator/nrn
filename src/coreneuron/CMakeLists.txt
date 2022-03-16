@@ -326,13 +326,25 @@ set_target_properties(
 # =============================================================================
 set(modfile_directory "${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod")
 file(GLOB modfiles "${modfile_directory}/*.mod")
+
+if(CORENRN_ENABLE_SHARED)
+  set(corenrn_mech_library
+      "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      CACHE INTERNAL "coreneuron mechanism library")
+else()
+  set(corenrn_mech_library
+      "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/libcorenrnmech${CMAKE_STATIC_LIBRARY_SUFFIX}"
+      CACHE INTERNAL "coreneuron mechanism library")
+endif()
+
 set(output_binaries "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/special-core"
-                    "${CMAKE_BINARY_DIR}/bin/${CMAKE_SYSTEM_PROCESSOR}/libcorenrnmech.a")
+                    "${corenrn_mech_library}")
+
 add_custom_command(
   OUTPUT ${output_binaries}
   DEPENDS scopmath coreneuron ${NMODL_TARGET_TO_DEPEND} ${modfiles} ${CORENEURON_BUILTIN_MODFILES}
-  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b STATIC -m ${CORENRN_MOD2CPP_BINARY} -p 1
-          "${modfile_directory}"
+  COMMAND ${CMAKE_BINARY_DIR}/bin/nrnivmodl-core -b ${COMPILE_LIBRARY_TYPE} -m
+          ${CORENRN_MOD2CPP_BINARY} -p 1 "${modfile_directory}"
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
   COMMENT "Running nrnivmodl-core with halfgap.mod")
 add_custom_target(nrniv-core ALL DEPENDS ${output_binaries})
@@ -415,6 +427,9 @@ install(
   DESTINATION bin
   RENAME nrniv-core)
 install(FILES apps/coreneuron.cpp DESTINATION share/coreneuron)
+
+# install mechanism library
+install(FILES ${corenrn_mech_library} DESTINATION lib)
 
 # install random123 and nmodl headers
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)

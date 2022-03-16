@@ -9,7 +9,7 @@ target_link_libraries(
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
   coreneuron
-  ${corenrn_mech_lib}
+  ${corenrn_mech_library}
   ${reportinglib_LIBRARY}
   ${sonatareport_LIBRARY})
 add_dependencies(queuing_test_bin nrniv-core)

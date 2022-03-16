@@ -13,7 +13,7 @@ target_link_libraries(
   ${MPI_CXX_LIBRARIES}
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   coreneuron
-  ${corenrn_mech_lib}
+  ${corenrn_mech_library}
   ${reportinglib_LIBRARY}
   ${sonatareport_LIBRARY})
 # Tell CMake *not* to run an explicit device code linker step (which will produce errors); let the

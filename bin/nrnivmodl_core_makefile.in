@@ -182,6 +182,11 @@ ORIGIN_RPATH := $(if $(filter Darwin,$(OS_NAME)),@loader_path,$$ORIGIN)
 SONAME_OPTION := -Wl,$(if $(filter Darwin,$(OS_NAME)),-install_name${COMMA_OP}@rpath/,-soname${COMMA_OP})$(notdir ${COREMECH_LIB_PATH})
 LIB_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(ORIGIN_RPATH))
 
+# When special-core is installed, it needs to find library in the
+# lib folder of install prefix. We use relative path in order it
+# to be portable when files are moved (e.g. python wheel)
+INSTALL_LIB_RPATH = $(ORIGIN_RPATH)/../lib
+
 # All objects used during build
 ALL_OBJS = $(MOD_FUNC_OBJ) $(DIMPLIC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
 
@@ -214,7 +219,7 @@ $(SPECIAL_EXE): coremech_lib_target
 	$(CXX_LINK_EXE_CMD) -o $(SPECIAL_EXE) $(CORENRN_SHARE_CORENRN_DIR)/coreneuron.cpp \
 	  -I$(CORENRN_INC_DIR) $(INCFLAGS) \
 	  -L$(OUTPUT_DIR) -l$(COREMECH_LIB_NAME) $(CORENRNLIB_FLAGS) $(LDFLAGS) \
-	  -Wl,-rpath,'$(LIB_RPATH)' -Wl,-rpath,$(CORENRN_LIB_DIR)
+	  -Wl,-rpath,'$(LIB_RPATH)' -Wl,-rpath,$(CORENRN_LIB_DIR) -Wl,-rpath,'$(INSTALL_LIB_RPATH)'
 
 coremech_lib_target: $(corenrnmech_lib_target)
 	rm -rf $(OUTPUT_DIR)/.libs/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX); \
