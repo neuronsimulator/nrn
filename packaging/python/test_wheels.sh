@@ -200,15 +200,16 @@ run_parallel_test() {
 
       brew unlink openmpi
       brew link mpich
+      BREW_PREFIX=$(brew --prefix)
 
       # TODO : latest mpich has issuee on Azure OSX
       if [[ "$CI_OS_NAME" == "osx" ]]; then
-          run_mpi_test "/usr/local/opt/mpich/bin/mpirun" "MPICH" ""
+          run_mpi_test "${BREW_PREFIX}/opt/mpich/bin/mpirun" "MPICH" ""
       fi
 
       brew unlink mpich
       brew link openmpi
-      run_mpi_test "/usr/local/opt/open-mpi/bin/mpirun" "OpenMPI" ""
+      run_mpi_test "${BREW_PREFIX}/opt/open-mpi/bin/mpirun" "OpenMPI" ""
 
     # CI Linux or Azure Linux
     elif [[ "$CI_OS_NAME" == "linux" || "$AGENT_OS" == "Linux" ]]; then
