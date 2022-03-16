@@ -11,4 +11,5 @@ Guides
    saveses
    cellbuilder
    import3d
+   optimization
    faq
