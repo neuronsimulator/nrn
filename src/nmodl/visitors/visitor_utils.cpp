@@ -31,18 +31,28 @@ using nmodl::utils::UseNumbersInString;
 std::string suffix_random_string(const std::set<std::string>& vars,
                                  const std::string& original_string,
                                  const UseNumbersInString use_num) {
+    // If the "original_string" is not in the set of the variables to check then
+    // return the "original_string" without suffix
+    if (vars.find(original_string) == vars.end()) {
+        return original_string;
+    }
     std::string new_string = original_string;
-    std::string random_string;
     auto& singleton_random_string_class = nmodl::utils::SingletonRandomString<4>::instance();
-    // Check if there is a variable defined in the mod file as original_string or that
-    // has original_string as prefix and, if yes,
-    // try to use a different string in the form "original_string"_"random_string"
-
-    const auto it = vars.lower_bound(new_string);
-    while ((it != vars.end()) && new_string == it->substr(0, new_string.size())) {
-        random_string = singleton_random_string_class.reset_random_string(original_string, use_num);
-        new_string = original_string;
-        new_string += "_" + random_string;
+    // Check if there is a variable defined in the mod file and, if yes, try to use
+    // a different string in the form "original_string"_"random_string"
+    // If there is already a "random_string" assigned to the "originl_string" return it
+    if (singleton_random_string_class.random_string_exists(original_string)) {
+        const auto random_suffix = "_" +
+                                   singleton_random_string_class.get_random_string(original_string);
+        new_string = original_string + random_suffix;
+    } else {
+        // Check if the "random_string" already exists in the set of variables and if it does try
+        // to find another random string to add as suffix
+        while (vars.find(new_string) != vars.end()) {
+            const auto random_suffix =
+                "_" + singleton_random_string_class.reset_random_string(original_string, use_num);
+            new_string = original_string + random_suffix;
+        }
     }
     return new_string;
 }
