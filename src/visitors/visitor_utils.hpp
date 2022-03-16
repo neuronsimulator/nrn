@@ -25,14 +25,23 @@ namespace visitor {
 
 using nmodl::utils::UseNumbersInString;
 
-/// Return a std::string in the form "original_string"_"random_string", where
-/// random_string is a string defined in the nmodl::utils::SingletonRandomString
-/// for the original_string. Vars is a const ref to std::set<std::string> which
-/// holds the names that need to be checked for uniqueness. Choose if the
-/// "random_string" will include numbers using "use_num"
-/// We make sure that the new string does not match any string in vars AND is not
-/// a prefix for any string in vars. In this way, appending to the result
-/// will always create new unique strings
+/**
+ * \brief Return the "original_string" with a random suffix if "original_string" exists in "vars"
+ *
+ * Return a std::string in the form "original_string"_"random_string", where
+ * random_string is a string defined in the nmodl::utils::SingletonRandomString
+ * for the original_string. Vars is a const ref to std::set<std::string> which
+ * holds the names that need to be checked for uniqueness. Choose if the
+ * "random_string" will include numbers using "use_num"
+ *
+ * \param vars a const ref to std::set<std::string> which holds the names of the variables we should
+ *             check for uniqueness. Normally this is a vector of all the variables defined in the
+ *             mod file.
+ * \param original_string the original string to be suffixed with a random string
+ * \param use_num a UseNumbersInString enum value to choose if the random string will include
+ *                numbers
+ * \return std::string the new string with the proper suffix if needed
+ */
 std::string suffix_random_string(
     const std::set<std::string>& vars,
     const std::string& original_string,
