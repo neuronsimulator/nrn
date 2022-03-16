@@ -15,6 +15,10 @@ jobs:
     machine:
       image: ubuntu-2004:202101-01
 
+    environment:
+      NEURON_WHEEL_VERSION: 8.1a
+      NEURON_NIGHTLY_TAG: ""
+
     resource_class: arm.medium
 
     steps:
@@ -76,8 +80,10 @@ jobs:
           name: Upload nightly wheel to pypi.org
           command: |
             if [ "<< parameters.NRN_NIGHTLY_UPLOAD >>" == "true" ]; then
-              python -m pip install twine
-              python -m twine upload --verbose --skip-existing -u $TWINE_USERNAME -p $TWINE_PASSWORD  wheelhouse/*.whl
+              echo "Doing nothing for now"
+              ls wheelhouse/*
+              #python -m pip install twine
+              #python -m twine upload --verbose --skip-existing -u $TWINE_USERNAME -p $TWINE_PASSWORD  wheelhouse/*.whl
             else
               echo "Skipping pypi.org upload!"
             fi
@@ -89,7 +95,7 @@ workflows:
       - manylinux2014-aarch64:
           matrix:
             parameters:
-              NRN_PYTHON_VERSION: ["310"]
+              NRN_PYTHON_VERSION: ["36", "37", "38", "39", "310"]
               NRN_NIGHTLY_UPLOAD: ["false"]
 
   nightly:
