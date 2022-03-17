@@ -1,4 +1,5 @@
 #include "cell_group.h"
+#include "nrncore_write/utils/nrncore_utils.h"
 #include "nrnran123.h" // globalindex written to globals.dat
 #include "section.h"
 #include "parse.hpp"
@@ -161,7 +162,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
 }
 
 void CellGroup::datumtransform(CellGroup* cgs) {
-    // ions, area, and POINTER to v.
+    // ions, area, and POINTER to v or mechanism data.
     for (int ith=0; ith < nrn_nthread; ++ith) {
         NrnThread& nt = nrn_threads[ith];
         CellGroup& cg = cgs[ith];

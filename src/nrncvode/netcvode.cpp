@@ -5752,14 +5752,14 @@ int& n_trajec, int*& types, int*& indices, double**& pvars, double**& varrays) {
           }
         }
       }
-      if (n_trajec == 0) { // if errors reduced to 0, clean up
-        assert(n_pr == 0);
-        if (types) { delete [] types; types = NULL; }
-        if (indices) { delete [] indices; indices = NULL; }
-        if (vpr) { delete [] vpr; vpr = NULL; }
-        if (varrays) { delete [] varrays; varrays = NULL; }
-        if (pvars) { delete [] pvars; pvars = NULL; }
-      }
+    }
+    if (n_trajec == 0) { // if errors reduced to 0, clean up
+      assert(n_pr == 0);
+      if (types) { delete [] types; types = NULL; }
+      if (indices) { delete [] indices; indices = NULL; }
+      if (vpr) { delete [] vpr; vpr = NULL; }
+      if (varrays) { delete [] varrays; varrays = NULL; }
+      if (pvars) { delete [] pvars; pvars = NULL; }
     }
 #if 0
     printf("nrnthread_get_trajectory_requests tid=%d bsize=%d n_pr=%d n_trajec=%d\n", tid, bsize, n_pr, n_trajec);

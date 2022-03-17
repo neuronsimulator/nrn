@@ -112,11 +112,45 @@ if(NRN_ENABLE_MPI)
   endif()
 endif()
 
+include(NeuronTestHelper)
+nrn_add_test_group(NAME mpi_init MODFILE_PATTERNS NONE)
+set(mpi_init_requires_mpiexec mpi)
+set(mpi_init_prefix_mpiexec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
+set(mpi_init_suffix_mpiexec ${MPIEXEC_POSTFLAGS})
+foreach(mpiexec "" "_mpiexec")
+  set(nrniv ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}})
+  nrn_add_test(
+    GROUP mpi_init
+    NAME nrniv${mpiexec}_mpiopt
+    REQUIRES ${mpi_init_requires${mpiexec}}
+    COMMAND ${nrniv} -mpi -c "quit()")
+  nrn_add_test(
+    GROUP mpi_init
+    NAME nrniv${mpiexec}_nrnmpi_init
+    REQUIRES ${mpi_init_requires${mpiexec}}
+    COMMAND ${nrniv} -c "nrnmpi_init()" -c "quit()")
+  # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein.
+  if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
+    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
+  else()
+    set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
+  endif()
+  nrn_add_test(
+    GROUP mpi_init
+    NAME python${mpiexec}_nrnmpi_init
+    REQUIRES python ${mpi_init_requires${mpiexec}}
+    COMMAND ${python} -c "from neuron import h$<SEMICOLON> h.nrnmpi_init()$<SEMICOLON> h.quit()")
+  nrn_add_test(
+    GROUP mpi_init
+    NAME python${mpiexec}_mpienv
+    REQUIRES python ${mpi_init_requires${mpiexec}}
+    COMMAND NEURON_INIT_MPI=1 ${python} -c "from neuron import h$<SEMICOLON> h.quit()")
+endforeach()
+
 # =============================================================================
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
-  include(NeuronTestHelper)
   if(PYTEST_COV_FOUND)
     set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
   else()
@@ -196,6 +230,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   if(CORENRN_ENABLE_REPORTING)
     set(nrniv_mpi_arg -mpi)
     set(nrnpython_mpi_env NEURON_INIT_MPI=1)
+    # see #1619, required when coreneuron is linked to sonata library
+    set(sonata_zero_gid_env LIBSONATA_ZERO_BASED_GIDS=1)
   endif()
   # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
   # be dynamically loaded by Python or nrniv. In that case (and only in that case, so we still test
@@ -207,7 +243,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -mpi)
-    set(modtests_launch_py ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -220,16 +256,34 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${PYTHON_EXECUTABLE})
   else()
     set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
-    set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
   endif()
+
+  # External coreneuron can be used for testing but for simplicity
+  # we are testing only submodule builds (in near future we want to
+  # support only internal builds anyway)
+  if(NOT nrn_using_ext_corenrn)
+    nrn_add_test_group(
+      NAME coreneuron_standalone
+      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      MODFILE_PATTERNS NONE)
+
+    nrn_add_test(
+      GROUP coreneuron_standalone
+      NAME test_nrn_corenrn_standalone
+      REQUIRES coreneuron cpu
+      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
+      COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py} test/coreneuron/test_psolve.py)
+  endif()
+
   nrn_add_test_group(
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/pynrn/unitstest.mod test/gjtests/natrans.mod)
+    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod test/gjtests/natrans.mod)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
@@ -294,6 +348,13 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       SCRIPT_PATTERNS test/coreneuron/test_netmove.py
       COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_netmove_py
               ${modtests_launch_py} test/coreneuron/test_netmove.py)
+    nrn_add_test(
+      GROUP coreneuron_modtests
+      NAME test_pointer_py_${processor}
+      REQUIRES coreneuron ${processor}
+      SCRIPT_PATTERNS test/coreneuron/test_pointer.py
+      COMMAND ${processor_env} COVERAGE_FILE=.coverage.coreneuron_test_pointer_py
+              ${modtests_launch_py} test/coreneuron/test_pointer.py)
     nrn_add_test(
       GROUP coreneuron_modtests
       NAME test_watchrange_py_${processor}

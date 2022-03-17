@@ -76,8 +76,10 @@ option(NRN_DYNAMIC_UNITS_USE_LEGACY "Use legacy units as default for dynamic uni
 # note that if CoreNEURON is enabled then it is not necessary to enable this option
 option(NRN_ENABLE_MOD_COMPATIBILITY "Enable CoreNEURON compatibility for MOD files" ${NRN_ENABLE_MOD_COMPATIBILITY_DEFAULT})
 option(NRN_ENABLE_REL_RPATH "Use relative RPATH in binaries. for relocatable installs/Python" ${NRN_ENABLE_REL_RPATH_DEFAULT})
+option(NRN_WHEEL_BUILD ${NRN_WHEEL_BUILD_DEFAULT})
 option(NRN_WHEEL_STATIC_READLINE "Use static readline libraries for the wheels." ${NRN_WHEEL_STATIC_READLINE_DEFAULT})
 mark_as_advanced(NRN_ENABLE_REL_RPATH)
+mark_as_advanced(NRN_WHEEL_BUILD)
 
 # =============================================================================
 # Build options (string)
@@ -252,15 +254,15 @@ if(SPHINX_FOUND)
   # Note that neuron must be available for python import. See docs/README.md.
   add_custom_target(
           notebooks
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh execute
+          COMMAND ${CMAKE_COMMAND} -E env NEURON_MODULE_OPTIONS="-nogui" bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
-  # Executing notebooks can take a fair amount of time. Use this target
-  # if you want to skip the execution.
+  # Executing notebooks will add outputs in-place.
+  # We don't want those committed to the repo. This commands cleans them out.
   add_custom_target(
-          notebooks-noexec
-          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+          notebooks-clean
+          COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
   )
 
@@ -271,8 +273,7 @@ if(SPHINX_FOUND)
           sphinx
           COMMAND ${SPHINX_EXECUTABLE} -b html
           ${SPHINX_SOURCE} ${SPHINX_BUILD}
-          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-          WORKING_DIRECTORY WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMENT "Generating documentation with Sphinx"
   )
 endif()
@@ -291,6 +292,9 @@ if(DOXYGEN_FOUND AND SPHINX_FOUND AND JUPYTER_EXE)
           WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
           COMMAND ${CMAKE_COMMAND} --build . --target sphinx
           WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND ${CMAKE_COMMAND} --build . --target notebooks-clean
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+          COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
           COMMENT "Generating full documentation"
   )
 else()
@@ -305,7 +309,7 @@ endif()
 # Enable MPI
 # =============================================================================
 if(NRN_ENABLE_MPI)
-  
+
   # find_package(MPI REQUIRED) has a CMAKE_OSX_ARCHITECTURES edge case
   nrn_mpi_find_package()
   set(NRNMPI 1)
@@ -388,6 +392,15 @@ endif()
 # =============================================================================
 # Enable Python support
 # =============================================================================
+
+# Since PythonInterp module prefers system-wide python,
+# if PYTHON_EXECUTABLE is not set, look it up in the PATH exclusively.
+if(NOT PYTHON_EXECUTABLE)
+  message(STATUS "-DPYTHON_EXECUTABLE not specified. Looking for `python3` in the PATH exclusively...")
+  find_program(PYTHON_EXECUTABLE python3 PATHS ENV PATH  NO_DEFAULT_PATH)
+  message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
+endif()
+
 find_package(PythonInterp 3.6 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library
@@ -458,10 +471,12 @@ if(NRN_ENABLE_CORENEURON)
   find_package(coreneuron QUIET PATHS ${CORENEURON_DIR}/share/cmake ${CORENEURON_DIR})
   if(coreneuron_FOUND)
     message(STATUS "Using external CoreNEURON from ${CORENEURON_DIR}")
+    set(nrn_using_ext_corenrn TRUE)
     # By default `nrnivmodl` should look for `nrnivmodl-core` under the external prefix.
     set(cnrn_prefix "${CORENEURON_DIR}")
   else()
     message(STATUS "Building CoreNEURON from submodule")
+    set(nrn_using_ext_corenrn FALSE)
     # If NEURON tests are enabled then enable CoreNEURON tests too
     set(CORENRN_ENABLE_UNIT_TESTS ${NRN_ENABLE_TESTS} CACHE BOOL "" FORCE)
     set(CORENRN_ENABLE_LEGACY_UNITS ${NRN_DYNAMIC_UNITS_USE_LEGACY} CACHE BOOL "" FORCE)
@@ -714,7 +729,7 @@ message(STATUS "--------------+-------------------------------------------------
 message(STATUS "install       | Will install NEURON to: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "              | Change the install location of NEURON using:")
 message(STATUS "              |   cmake <src_path> -DCMAKE_INSTALL_PREFIX=<install_path>")
-message(STATUS "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx")
+message(STATUS "docs          | Build full docs. Calls targets: doxygen, notebooks, sphinx, notebooks-clean")
 message(STATUS "uninstall     | Removes files installed by make install (todo)")
 message(STATUS "--------------+--------------------------------------------------------------")
 message(STATUS " Build option | Status")
@@ -731,8 +746,6 @@ else()
 endif()
 message(STATUS "MPI           | ${NRN_ENABLE_MPI}")
 if(NRN_ENABLE_MPI)
-  message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
-  message(STATUS "  LIB         | ${MPI_LIBRARY}")
   message(STATUS "  DYNAMIC     | ${NRN_ENABLE_MPI_DYNAMIC}")
   if(NRN_ENABLE_MPI_DYNAMIC)
     list(LENGTH NRN_MPI_LIBNAME_LIST _num_mpi)
@@ -743,6 +756,9 @@ if(NRN_ENABLE_MPI)
       message(STATUS "    LIBNAME   | ${libname}")
       message(STATUS "    INC       | ${include}")
     endforeach(val)
+  else()
+    message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+    message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
 endif()
 message(STATUS "Python        | ${NRN_ENABLE_PYTHON}")

@@ -45,11 +45,18 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
-* `latest` for official publishing (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 and `_gpu` is needed for the GPU wheel. 
+
+If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
+
+```
+docker build -t neuronsimulator/neuron_wheel:latest-aarch64 --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+```
+
 
 ### Pushing to DockerHub
 
@@ -104,11 +111,13 @@ git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
 ## macOS wheels
 
 Note that for macOS there is no docker image needed, but all required dependencies must exist.
-In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`, which has to be set to `10.9`.
+In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
 
 
 Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
-For `arm64`, the wheels currently need to be built manually, using `universal2` Python installers. Note that last and final official release for Python 3.8 has `MACOSX_DEPLOYMENT_TARGET=11.0`.   
+For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers. 
+For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
+
 
 You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
 You can have a look at the script for requirements and usage. 
@@ -163,6 +172,11 @@ bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-
 # Or, you can provide the pypi url
 bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
+
+### MacOS considerations
+
+On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions. 
+For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
 
 ### Testing on BB5
 On BB5, we can test CPU wheels with:

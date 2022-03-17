@@ -36,6 +36,8 @@ extern void nrn_possible_mismatched_arch(const char*);
 extern const char* path_prefix_to_libnrniv();
 #endif
 
+#include <cstddef>
+
 #include "mpispike.h"
 #include "nrnmpi_def_cinc" /* nrnmpi global variables */
 extern "C" {
@@ -174,34 +176,52 @@ sprintf(pmes+strlen(pmes), "Is openmpi or mpich installed? If not in default loc
 		/* with CMAKE the problem of Python launch on LINUX not resolving
 		   variables from already loaded shared libraries has returned.
 		*/
-		if (!dlopen("libnrniv.so", RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
-			fprintf(stderr, "Did not promote libnrniv.so to RTLD_GLOBAL: %s\n", dlerror());
+		{
+			std::string error{"Promoted none of"};
+			auto const promote_to_global = [&error](const char* lib) {
+				if(!dlopen(lib, RTLD_NOW | RTLD_NOLOAD | RTLD_GLOBAL)) {
+					char const* dlerr = dlerror();
+					error = error + ' ' + lib + " (" + (dlerr ? dlerr : "nullptr") + ')';
+					return false;
+				}
+				return true;
+			};
+			if(!promote_to_global("libnrniv.so") && !promote_to_global("libnrniv-without-nvidia.so")) {
+				std::cerr << error << " to RTLD_GLOBAL" << std::endl;
+			}
 		}
-
-		/* safest to use full path for libnrnmpi... */
-		const char* prefix = path_prefix_to_libnrniv();
-		/* enough space for prefix + "libnrnmpi..." */
-		char* lname = static_cast<char*>(malloc(strlen(prefix) + 50));
-		assert(lname);
-		/* loaded but is it openmpi or mpich */
-		if (dlsym(handle, "ompi_mpi_init")) { /* it is openmpi */
-			sprintf(lname, "%slibnrnmpi_ompi.so", prefix);
-			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_ompi.so";
-		}else if (dlsym(handle, "MPI_SGI_vtune_is_running")) { /* it is sgi-mpt */
-			// MPI_SGI_init exist in both mpt as well as hmpt and hence look
-			// for MPI_SGI_vtune_is_running which exist in non-hmpt version only.
-			sprintf(lname, "%slibnrnmpi_mpt.so", prefix);
-			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_mpt.so";
-		}else{ /* must be mpich. Could check for MPID_nem_mpich_init...*/
-			sprintf(lname, "%slibnrnmpi_mpich.so", prefix);
-			corenrn_mpi_library = std::string(prefix) + "libcorenrnmpi_mpich.so";
-		}
-		if (!load_nrnmpi(lname, pmes+strlen(pmes))) {
-			free(lname);
+		// Figure out where to find lib[core]nrnmpi{...} libraries.
+		auto const libnrnmpi_prefix = []() -> std::string {
+			if(const char* nrn_home = std::getenv("NRNHOME")) {
+				// TODO: what about windows path separators?
+				return std::string{nrn_home} + "/lib/";
+			} else {
+				// Use the directory libnrniv.so is in
+				return path_prefix_to_libnrniv();
+			}
+		}();
+		// `handle` refers to "libmpi.so", figure out which MPI implementation that
+		// is.
+		auto const mpi_implementation = [handle] {
+			if (dlsym(handle, "ompi_mpi_init")) {
+				// OpenMPI
+				return "ompi";
+			} else if (dlsym(handle, "MPI_SGI_vtune_is_running")) {
+				// Got sgi-mpt. MPI_SGI_init exists in both mpt and hmpt, so we look
+				// for MPI_SGI_vtune_is_running which only exists in the non-hmpt
+				// version.
+				return "mpt";
+			} else {
+				// Assume mpich. Could check for MPID_nem_mpich_init...
+				return "mpich";
+			}
+		}();
+		auto const nrn_mpi_library = libnrnmpi_prefix + "libnrnmpi_" + mpi_implementation + ".so";
+		corenrn_mpi_library = libnrnmpi_prefix + "libcorenrnmpi_" + mpi_implementation + ".so";
+		if (!load_nrnmpi(nrn_mpi_library.c_str(), pmes + strlen(pmes))) {
 			return pmes;
 		}
-		free(lname);
-	}else{
+	} else {
 		ismes = 1;
 sprintf(pmes+strlen(pmes), "Is openmpi, mpich, intel-mpi, sgi-mpt etc. installed? If not in default location, need a LD_LIBRARY_PATH or MPI_LIB_NRN_PATH.\n");
 	}

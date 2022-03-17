@@ -55,6 +55,8 @@ def _config_exe(exe_name):
     elif "neuron-nightly" in working_set.by_key:
        print("INFO : Using neuron-nightly Package (Developer Version)")
        package_name = "neuron-nightly"
+    elif "neuron" in working_set.by_key:
+       package_name = "neuron"
     else:
        raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
 

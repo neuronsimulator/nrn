@@ -26,7 +26,7 @@ int main( int argc, char* argv[] ) {
     // global setup...
     nrn_main_launch = 2;
     int argc_nompi = 2;
-    const char* argv_nompi[] = {"NEURON", "-nogui"};
+    const char* argv_nompi[] = {"NEURON", "-nogui", nullptr};
     nrn_nobanner_ = 1;
 
     ivocmain_session(argc_nompi, argv_nompi, NULL, 0);

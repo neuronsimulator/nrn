@@ -186,7 +186,7 @@ void nrnpy_pysecname2sec_remove(Section* sec) {
     if (cs.first == CELLTYPE) {
       Name2CellorSec* n2s = (Name2CellorSec*)cs.second;
       Name2CellorSec::iterator its = n2s->find(sname);
-      assert(its != n2s->end())
+      assert(its != n2s->end());
       // must be SECTYPE or OVERLOADCOUNT
       CellorSec& css = its->second;
       if (css.first == SECTYPE) {

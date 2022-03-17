@@ -44,7 +44,7 @@ int nrnthread_dat2_1(int tid, int& ngid, int& n_real_gid, int& nnode, int& ndiam
 int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
                      double*& area, double*& v, double*& diamvec);
 int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindices,
-                        double*& data, int*& pdata);
+                        double*& data, int*& pdata, std::vector<int>& pointer2type);
 int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_threshold,
                      int*& netcon_pnttype, int*& netcon_pntindex, double*& weights, double*& delays);
 int nrnthread_dat2_corepointer(int tid, int& n);
@@ -55,7 +55,7 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
                                 int& ix, int& sz, double*& yvec, double*& tvec,
                                 int& last_index, int& discon_index, int& ubound_index);
 
-int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset);
+int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset, std::vector<int>& pointer2type);
 }
 
 extern "C" {

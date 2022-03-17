@@ -29,13 +29,39 @@ datadir_lib := ${ROOT}/@CMAKE_INSTALL_DATADIR@/lib
 # - @NRN_COMPILE_DEFS
 # - @NRN_LINK_DEFS
 LDFLAGS = $(LINKFLAGS) $(UserLDFLAGS) @NRN_LINK_DEFS@
-NRNLIB_FLAGS = -L$(libdir) -lnrniv
+
+# In GPU wheel distributions then the shipped libnrniv.so is linked against
+# some NVIDIA runtime libraries that are shipped with the wheel. If we use
+# nrnivmodl on the user machine then the NVIDIA compilers will link the local
+# versions of these libraries too, causing duplication.
+libnrniv_without_nvidia: $(libdir)/libnrniv.so
+	cp -v $(libdir)/libnrniv.so $(OUTPUT)/libnrniv-without-nvidia.so
+	patchelf $(OUTPUT)/libnrniv-without-nvidia.so --print-needed | grep '^libnv\(hpcatm\|omp\|cpumath\|cpumath-avx2\|c\)-[a-f0-9]\{8\}\.so' | xargs -t -r -n 1 patchelf $(OUTPUT)/libnrniv-without-nvidia.so --remove-needed
+	patchelf $(OUTPUT)/libnrniv-without-nvidia.so --set-soname libnrniv-without-nvidia.so
+	patchelf $(OUTPUT)/libnrniv-without-nvidia.so --print-rpath
+	ldd $(OUTPUT)/libnrniv-without-nvidia.so
+
+# In a GPU wheel build then we need to fudge libnrniv.so before linking to it.
+# NEURONDEMO should be set when we run this as part of the wheel build, in
+# which case we do *not* want this hack.
+ifeq (@NRN_ENABLE_CORENEURON@@NRN_WHEEL_BUILD@@CORENRN_ENABLE_GPU@$(if $(NRNDEMO),OFF,ON), ONONONON)
+  NRNLIB_FLAGS = -L$(OUTPUT) -lnrniv-without-nvidia
+  NRNLIB_RPATH_FLAGS = -Wl,-rpath,\$$ORIGIN -Wl,-rpath,\$$ORIGIN/..
+  nrn_lib = libnrniv_without_nvidia
+else
+  NRNLIB_FLAGS = -L$(libdir) -lnrniv
+  NRNLIB_RPATH_FLAGS = -Wl,-rpath,$(libdir)
+  nrn_lib =
+endif
+
 OS_NAME := $(shell uname)
 _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
-INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
+ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
+  INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
+endif
 
 # CC/CXX are always defined. If the definition comes from default change it
 ifeq ($(origin CC), default)
@@ -104,13 +130,13 @@ special: $(mech_lib)
 
 $(mech_lib): $(mech_lib_type)
 
-mech_lib_shared: mod_func.o $(mod_objs) $(c_objs) build_always
+mech_lib_shared: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib)\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
-	  $(mod_func_o) $(mod_objs) $(c_objs) $(NRNLIB_FLAGS) -Wl,-rpath,$(libdir) $(LDFLAGS)
+	  $(mod_func_o) $(mod_objs) $(c_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
 	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
 
-mech_lib_static: mod_func.o $(mod_objs) $(c_objs) build_always
+mech_lib_static: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 

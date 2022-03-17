@@ -9,3 +9,4 @@ ipython
 plotnine
 numpy
 plotly
+nbsphinx

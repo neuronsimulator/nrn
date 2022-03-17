@@ -3,10 +3,11 @@
 Publications about NEURON
 =========================
 
+Awile, O., Kumbhar, P., Cornu, N., Dura-Bernal, S., King, J. G., Lupton, O., Magkanaris, I., McDougal, R. A., Newton, A. J. H., Pereira, F., Săvulescu, A., Carnevale, N. T., Lytton, W. W., Hines, M. L., Schürmann, F. (2022). Modernizing the NEURON Simulator for Sustainability, Portability, and Performance. *bioRxiv*. `doi:10.1101/2022.03.03.482816 <https://doi.org/10.1101/2022.03.03.482816>`_
+
 McDougal, R. A., Conte, C., Eggleston, L., Newton, A. J. H., Galijasevic, H. (2022). Efficient simulation of 3D reaction-diffusion in models of neurons and networks. *bioRxiv*. `doi:10.1101/2022.01.01.474683 <https://doi.org/10.1101/2022.01.01.474683>`_
 
 Hines M., Carnevale T., McDougal R.A. NEURON Simulation Environment (2019). In: Jaeger D., Jung R. (eds) *Encyclopedia of Computational Neuroscience*. Springer, New York, NY. `doi:10.1007/978-1-4614-7320-6_795-2 <https://doi.org/10.1007/978-1-4614-7320-6_795-2>`_
-
 
 Newton, A. J., McDougal, R. A., Hines, M. L., Lytton, W. W. (2018). 
 Using NEURON for Reaction-Diffusion modeling of extracellular dynamics.

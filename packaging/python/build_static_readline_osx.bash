@@ -21,8 +21,13 @@ if [[ ! -d "$NRNWHEEL_DIR" || ! -x "$NRNWHEEL_DIR" ]]; then
     exit 1
 fi
 
-# 10.9 regardless of x86_64/arm64/universal2. if you want 11 for universal2 python3.8, see nrn PR #1649 comments
-export MACOSX_DEPLOYMENT_TARGET=10.9
+# Set MACOSX_DEPLOYMENT_TARGET based on wheel arch.
+# For upcoming `universal2` wheels we will consider leveling everything to 11.0.
+if [[ `uname -m` == 'arm64' ]]; then
+	export MACOSX_DEPLOYMENT_TARGET=11.0  # for arm64 we need 11.0
+else
+	export MACOSX_DEPLOYMENT_TARGET=10.9  # for x86_64
+fi
 
 (wget http://ftpmirror.gnu.org/ncurses/ncurses-6.2.tar.gz \
     && tar -xvzf ncurses-6.2.tar.gz \
