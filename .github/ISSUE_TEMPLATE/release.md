@@ -79,7 +79,7 @@ Commits going into x.y.z
 
 Since [a.b.c], with:
 ```bash
-git log --pretty=format:"%h : %s" a.b.c..master
+git log --pretty=format:"%h : %s" a.b.c..release/x.y
 ```
 we get:
 
