@@ -475,7 +475,8 @@ ELSE                    {
                         }
 
 <LINE_MODE>\n   |
-<LINE_MODE>\r\n         {
+<LINE_MODE>\r\n |
+<LINE_MODE>\r           {
                             /** For title return string without new line character */
                             loc.lines(1);
                             std::string str(yytext);
