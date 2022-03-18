@@ -602,37 +602,6 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
 
 SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
          "[visitor][sympy][derivimplicit]") {
-    GIVEN("Derivative block with derivimplicit solver method. Check avoided name-clash") {
-        std::string nmodl_text = R"(
-            UNITS {
-                F = (faraday) (coulombs)
-            }
-            STATE {
-                x
-            }
-            BREAKPOINT {
-                SOLVE integrate METHOD derivimplicit
-            }
-            DERIVATIVE integrate {
-                x' = x + 1
-            }
-        )";
-        THEN("SympySolver correctly renames F vector") {
-            const std::string probable_explaination =
-                "Sympy_visitor left the standard F name for the F_vector. Name "
-                "clash with F faraday.";
-            CAPTURE(nmodl_text);
-            CAPTURE(probable_explaination);
-
-            auto result =
-                run_sympy_solver_visitor(nmodl_text, false, false, AstNodeType::DERIVATIVE_BLOCK);
-
-            REQUIRE(result.size() == 1);
-            REQUIRE(result[0].find("F_") != std::string::npos);
-        }
-    }
-
-
     GIVEN("Derivative block with derivimplicit solver method and conditional block") {
         std::string nmodl_text = R"(
             STATE {
@@ -658,12 +627,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     }
                     old_m = m
                 }{
-                    X[0] = m
+                    nmodl_eigen_x[0] = m
                 }{
-                    F[0] = (-X[0]*dt+dt*mInf+mTau*(-X[0]+old_m))/mTau
-                    J[0] = -(dt+mTau)/mTau
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*mInf+mTau*(-nmodl_eigen_x[0]+old_m))/mTau
+                    nmodl_eigen_j[0] = -(dt+mTau)/mTau
                 }{
-                    m = X[0]
+                    m = nmodl_eigen_x[0]
                 }{
                 }
             })";
@@ -696,18 +665,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_y = y
                     old_x = x
                 }{
-                    X[0] = x
-                    X[1] = y
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
                 }{
-                    F[0] = -X[1]+a*dt+old_y
-                    J[0] = 0
-                    J[2] = -1.0
-                    F[1] = -X[0]+b*dt+old_x
-                    J[1] = -1.0
-                    J[3] = 0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[1]+a*dt+old_y
+                    nmodl_eigen_j[0] = 0
+                    nmodl_eigen_j[2] = -1.0
+                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]+b*dt+old_x
+                    nmodl_eigen_j[1] = -1.0
+                    nmodl_eigen_j[3] = 0
                 }{
-                    x = X[0]
-                    y = X[1]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -740,18 +709,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_M_1 = M[1]
                     old_M_0 = M[0]
                 }{
-                    X[0] = M[0]
-                    X[1] = M[1]
+                    nmodl_eigen_x[0] = M[0]
+                    nmodl_eigen_x[1] = M[1]
                 }{
-                    F[0] = -X[1]+a*dt+old_M_1
-                    J[0] = 0
-                    J[2] = -1.0
-                    F[1] = -X[0]+b*dt+old_M_0
-                    J[1] = -1.0
-                    J[3] = 0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[1]+a*dt+old_M_1
+                    nmodl_eigen_j[0] = 0
+                    nmodl_eigen_j[2] = -1.0
+                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]+b*dt+old_M_0
+                    nmodl_eigen_j[1] = -1.0
+                    nmodl_eigen_j[3] = 0
                 }{
-                    M[0] = X[0]
-                    M[1] = X[1]
+                    M[0] = nmodl_eigen_x[0]
+                    M[1] = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -785,19 +754,19 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_x = x
                     old_y = y
                 }{
-                    X[0] = x
-                    X[1] = y
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
                 }{
-                    F[0] = -X[0]+a*dt+old_x
-                    J[0] = -1.0
-                    J[2] = 0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+a*dt+old_x
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[2] = 0
                     b = b+1
-                    F[1] = -X[1]+b*dt+old_y
-                    J[1] = 0
-                    J[3] = -1.0
+                    nmodl_eigen_f[1] = -nmodl_eigen_x[1]+b*dt+old_y
+                    nmodl_eigen_j[1] = 0
+                    nmodl_eigen_j[3] = -1.0
                 }{
-                    x = X[0]
-                    y = X[1]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -862,18 +831,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                         old_x = x
                         old_y = y
                     }{
-                        X[0] = x
-                        X[1] = y
+                        nmodl_eigen_x[0] = x
+                        nmodl_eigen_x[1] = y
                     }{
-                        F[0] = -X[0]+a*dt+old_x
-                        J[0] = -1.0
-                        J[2] = 0
-                        F[1] = -X[1]+b*dt+old_y
-                        J[1] = 0
-                        J[3] = -1.0
+                        nmodl_eigen_f[0] = -nmodl_eigen_x[0]+a*dt+old_x
+                        nmodl_eigen_j[0] = -1.0
+                        nmodl_eigen_j[2] = 0
+                        nmodl_eigen_f[1] = -nmodl_eigen_x[1]+b*dt+old_y
+                        nmodl_eigen_j[1] = 0
+                        nmodl_eigen_j[3] = -1.0
                     }{
-                        x = X[0]
-                        y = X[1]
+                        x = nmodl_eigen_x[0]
+                        y = nmodl_eigen_x[1]
                     }{
                     }
                 }
@@ -912,21 +881,21 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_x = x
                     old_y = y
                 }{
-                    X[0] = x
-                    X[1] = y
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
                 }{
-                    F[0] = -X[0]+X[1]*a*dt+b*dt+old_x
-                    J[0] = -1.0
-                    J[2] = a*dt
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[1]*a*dt+b*dt+old_x
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[2] = a*dt
                     IF (b == 1) {
                         a = a+1
                     }
-                    F[1] = X[0]*dt+X[1]*a*dt-X[1]+old_y
-                    J[1] = dt
-                    J[3] = a*dt-1.0
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt+nmodl_eigen_x[1]*a*dt-nmodl_eigen_x[1]+old_y
+                    nmodl_eigen_j[1] = dt
+                    nmodl_eigen_j[3] = a*dt-1.0
                 }{
-                    x = X[0]
-                    y = X[1]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -938,21 +907,21 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_x = x
                     old_y = y
                 }{
-                    X[0] = x
-                    X[1] = y
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
                 }{
-                    F[0] = -X[0]+X[1]*a*dt+b*dt+old_x
-                    J[0] = -1.0
-                    J[2] = a*dt
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[1]*a*dt+b*dt+old_x
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[2] = a*dt
                     IF (b == 1) {
                         a = a+1
                     }
-                    F[1] = X[0]*dt+X[1]*a*dt-X[1]+old_y
-                    J[1] = dt
-                    J[3] = a*dt-1.0
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt+nmodl_eigen_x[1]*a*dt-nmodl_eigen_x[1]+old_y
+                    nmodl_eigen_j[1] = dt
+                    nmodl_eigen_j[3] = a*dt-1.0
                 }{
-                    x = X[0]
-                    y = X[1]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -992,26 +961,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_y = y
                     old_z = z
                 }{
-                    X[0] = x
-                    X[1] = y
-                    X[2] = z
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
+                    nmodl_eigen_x[2] = z
                 }{
-                    F[0] = -X[0]+X[2]*a*dt+b*dt*h+old_x
-                    J[0] = -1.0
-                    J[3] = 0
-                    J[6] = a*dt
-                    F[1] = 2.0*X[0]*dt-X[1]+c*dt+old_y
-                    J[1] = 2.0*dt
-                    J[4] = -1.0
-                    J[7] = 0
-                    F[2] = -X[1]*dt+X[2]*d*dt-X[2]+old_z
-                    J[2] = 0
-                    J[5] = -dt
-                    J[8] = d*dt-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[2]*a*dt+b*dt*h+old_x
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[6] = a*dt
+                    nmodl_eigen_f[1] = 2.0*nmodl_eigen_x[0]*dt-nmodl_eigen_x[1]+c*dt+old_y
+                    nmodl_eigen_j[1] = 2.0*dt
+                    nmodl_eigen_j[4] = -1.0
+                    nmodl_eigen_j[7] = 0
+                    nmodl_eigen_f[2] = -nmodl_eigen_x[1]*dt+nmodl_eigen_x[2]*d*dt-nmodl_eigen_x[2]+old_z
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[5] = -dt
+                    nmodl_eigen_j[8] = d*dt-1.0
                 }{
-                    x = X[0]
-                    y = X[1]
-                    z = X[2]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
+                    z = nmodl_eigen_x[2]
                 }{
                 }
             })";
@@ -1024,26 +993,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_y = y
                     old_z = z
                 }{
-                    X[0] = x
-                    X[1] = y
-                    X[2] = z
+                    nmodl_eigen_x[0] = x
+                    nmodl_eigen_x[1] = y
+                    nmodl_eigen_x[2] = z
                 }{
-                    F[0] = -X[0]+X[2]*a*dt+b*dt*h+old_x
-                    J[0] = -1.0
-                    J[3] = 0
-                    J[6] = a*dt
-                    F[1] = 2.0*X[0]*dt-X[1]+c*dt+old_y
-                    J[1] = 2.0*dt
-                    J[4] = -1.0
-                    J[7] = 0
-                    F[2] = -X[1]*dt+X[2]*d*dt-X[2]+old_z
-                    J[2] = 0
-                    J[5] = -dt
-                    J[8] = d*dt-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]+nmodl_eigen_x[2]*a*dt+b*dt*h+old_x
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[6] = a*dt
+                    nmodl_eigen_f[1] = 2.0*nmodl_eigen_x[0]*dt-nmodl_eigen_x[1]+c*dt+old_y
+                    nmodl_eigen_j[1] = 2.0*dt
+                    nmodl_eigen_j[4] = -1.0
+                    nmodl_eigen_j[7] = 0
+                    nmodl_eigen_f[2] = -nmodl_eigen_x[1]*dt+nmodl_eigen_x[2]*d*dt-nmodl_eigen_x[2]+old_z
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[5] = -dt
+                    nmodl_eigen_j[8] = d*dt-1.0
                 }{
-                    x = X[0]
-                    y = X[1]
-                    z = X[2]
+                    x = nmodl_eigen_x[0]
+                    y = nmodl_eigen_x[1]
+                    z = nmodl_eigen_x[2]
                 }{
                 }
             })";
@@ -1079,18 +1048,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_mc = mc
                     old_m = m
                 }{
-                    X[0] = mc
-                    X[1] = m
+                    nmodl_eigen_x[0] = mc
+                    nmodl_eigen_x[1] = m
                 }{
-                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
-                    J[0] = -a*dt-1.0
-                    J[2] = b*dt
-                    F[1] = X[0]*a*dt-X[1]*b*dt-X[1]+old_m
-                    J[1] = a*dt
-                    J[3] = -b*dt-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
+                    nmodl_eigen_j[0] = -a*dt-1.0
+                    nmodl_eigen_j[2] = b*dt
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[1]*b*dt-nmodl_eigen_x[1]+old_m
+                    nmodl_eigen_j[1] = a*dt
+                    nmodl_eigen_j[3] = -b*dt-1.0
                 }{
-                    mc = X[0]
-                    m = X[1]
+                    mc = nmodl_eigen_x[0]
+                    m = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1122,18 +1091,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     old_mc = mc
                 }{
-                    X[0] = mc
-                    X[1] = m
+                    nmodl_eigen_x[0] = mc
+                    nmodl_eigen_x[1] = m
                 }{
-                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
-                    J[0] = -a*dt-1.0
-                    J[2] = b*dt
-                    F[1] = -X[0]-X[1]+1.0
-                    J[1] = -1.0
-                    J[3] = -1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
+                    nmodl_eigen_j[0] = -a*dt-1.0
+                    nmodl_eigen_j[2] = b*dt
+                    nmodl_eigen_f[1] = -nmodl_eigen_x[0]-nmodl_eigen_x[1]+1.0
+                    nmodl_eigen_j[1] = -1.0
+                    nmodl_eigen_j[3] = -1.0
                 }{
-                    mc = X[0]
-                    m = X[1]
+                    mc = nmodl_eigen_x[0]
+                    m = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1168,18 +1137,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_mc = mc
                     old_m = m
                 }{
-                    X[0] = mc
-                    X[1] = m
+                    nmodl_eigen_x[0] = mc
+                    nmodl_eigen_x[1] = m
                 }{
-                    F[0] = -X[0]*a*dt-X[0]+X[1]*b*dt+old_mc
-                    J[0] = -a*dt-1.0
-                    J[2] = b*dt
-                    F[1] = X[0]*a*dt-X[1]*b*dt-X[1]+old_m
-                    J[1] = a*dt
-                    J[3] = -b*dt-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*b*dt+old_mc
+                    nmodl_eigen_j[0] = -a*dt-1.0
+                    nmodl_eigen_j[2] = b*dt
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*a*dt-nmodl_eigen_x[1]*b*dt-nmodl_eigen_x[1]+old_m
+                    nmodl_eigen_j[1] = a*dt
+                    nmodl_eigen_j[3] = -b*dt-1.0
                 }{
-                    mc = X[0]
-                    m = X[1]
+                    mc = nmodl_eigen_x[0]
+                    m = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1219,48 +1188,48 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_o1 = o1
                     old_p0 = p0
                 }{
-                    X[0] = c1
-                    X[1] = o1
-                    X[2] = o2
-                    X[3] = p0
-                    X[4] = p1
+                    nmodl_eigen_x[0] = c1
+                    nmodl_eigen_x[1] = o1
+                    nmodl_eigen_x[2] = o2
+                    nmodl_eigen_x[3] = p0
+                    nmodl_eigen_x[4] = p1
                 }{
-                    F[0] = -X[0]*alpha*dt-X[0]+X[1]*beta*dt+old_c1
-                    J[0] = -alpha*dt-1.0
-                    J[5] = beta*dt
-                    J[10] = 0
-                    J[15] = 0
-                    J[20] = 0
-                    F[1] = X[0]*alpha*dt-X[1]*beta*dt-X[1]*dt*k3p-X[1]+X[2]*dt*k4+old_o1
-                    J[1] = alpha*dt
-                    J[6] = -beta*dt-dt*k3p-1.0
-                    J[11] = dt*k4
-                    J[16] = 0
-                    J[21] = 0
-                    F[2] = -X[0]-X[1]-X[2]+1.0
-                    J[2] = -1.0
-                    J[7] = -1.0
-                    J[12] = -1.0
-                    J[17] = 0
-                    J[22] = 0
-                    F[3] = -X[3]*dt*k1ca-X[3]+X[4]*dt*k2+old_p0
-                    J[3] = 0
-                    J[8] = 0
-                    J[13] = 0
-                    J[18] = -dt*k1ca-1.0
-                    J[23] = dt*k2
-                    F[4] = -X[3]-X[4]+1.0
-                    J[4] = 0
-                    J[9] = 0
-                    J[14] = 0
-                    J[19] = -1.0
-                    J[24] = -1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*alpha*dt-nmodl_eigen_x[0]+nmodl_eigen_x[1]*beta*dt+old_c1
+                    nmodl_eigen_j[0] = -alpha*dt-1.0
+                    nmodl_eigen_j[5] = beta*dt
+                    nmodl_eigen_j[10] = 0
+                    nmodl_eigen_j[15] = 0
+                    nmodl_eigen_j[20] = 0
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*alpha*dt-nmodl_eigen_x[1]*beta*dt-nmodl_eigen_x[1]*dt*k3p-nmodl_eigen_x[1]+nmodl_eigen_x[2]*dt*k4+old_o1
+                    nmodl_eigen_j[1] = alpha*dt
+                    nmodl_eigen_j[6] = -beta*dt-dt*k3p-1.0
+                    nmodl_eigen_j[11] = dt*k4
+                    nmodl_eigen_j[16] = 0
+                    nmodl_eigen_j[21] = 0
+                    nmodl_eigen_f[2] = -nmodl_eigen_x[0]-nmodl_eigen_x[1]-nmodl_eigen_x[2]+1.0
+                    nmodl_eigen_j[2] = -1.0
+                    nmodl_eigen_j[7] = -1.0
+                    nmodl_eigen_j[12] = -1.0
+                    nmodl_eigen_j[17] = 0
+                    nmodl_eigen_j[22] = 0
+                    nmodl_eigen_f[3] = -nmodl_eigen_x[3]*dt*k1ca-nmodl_eigen_x[3]+nmodl_eigen_x[4]*dt*k2+old_p0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[8] = 0
+                    nmodl_eigen_j[13] = 0
+                    nmodl_eigen_j[18] = -dt*k1ca-1.0
+                    nmodl_eigen_j[23] = dt*k2
+                    nmodl_eigen_f[4] = -nmodl_eigen_x[3]-nmodl_eigen_x[4]+1.0
+                    nmodl_eigen_j[4] = 0
+                    nmodl_eigen_j[9] = 0
+                    nmodl_eigen_j[14] = 0
+                    nmodl_eigen_j[19] = -1.0
+                    nmodl_eigen_j[24] = -1.0
                 }{
-                    c1 = X[0]
-                    o1 = X[1]
-                    o2 = X[2]
-                    p0 = X[3]
-                    p1 = X[4]
+                    c1 = nmodl_eigen_x[0]
+                    o1 = nmodl_eigen_x[1]
+                    o2 = nmodl_eigen_x[2]
+                    p0 = nmodl_eigen_x[3]
+                    p1 = nmodl_eigen_x[4]
                 }{
                 }
             })";
@@ -1296,12 +1265,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     old_W_0 = W[0]
                 }{
-                    X[0] = W[0]
+                    nmodl_eigen_x[0] = W[0]
                 }{
-                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3.0*dt*A[1]+old_W_0
-                    J[0] = -dt*A[0]+dt*B[0]-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]+nmodl_eigen_x[0]*dt*B[0]-nmodl_eigen_x[0]+3.0*dt*A[1]+old_W_0
+                    nmodl_eigen_j[0] = -dt*A[0]+dt*B[0]-1.0
                 }{
-                    W[0] = X[0]
+                    W[0] = nmodl_eigen_x[0]
                 }{
                 }
             })";
@@ -1337,18 +1306,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_M_0 = M[0]
                     old_M_1 = M[1]
                 }{
-                    X[0] = M[0]
-                    X[1] = M[1]
+                    nmodl_eigen_x[0] = M[0]
+                    nmodl_eigen_x[1] = M[1]
                 }{
-                    F[0] = -X[0]*dt*A[0]-X[0]+X[1]*dt*B[0]+old_M_0
-                    J[0] = -dt*A[0]-1.0
-                    J[2] = dt*B[0]
-                    F[1] = X[0]*dt*A[1]-X[1]*dt*B[1]-X[1]+old_M_1
-                    J[1] = dt*A[1]
-                    J[3] = -dt*B[1]-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt*B[0]+old_M_0
+                    nmodl_eigen_j[0] = -dt*A[0]-1.0
+                    nmodl_eigen_j[2] = dt*B[0]
+                    nmodl_eigen_f[1] = nmodl_eigen_x[0]*dt*A[1]-nmodl_eigen_x[1]*dt*B[1]-nmodl_eigen_x[1]+old_M_1
+                    nmodl_eigen_j[1] = dt*A[1]
+                    nmodl_eigen_j[3] = -dt*B[1]-1.0
                 }{
-                    M[0] = X[0]
-                    M[1] = X[1]
+                    M[0] = nmodl_eigen_x[0]
+                    M[1] = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1382,12 +1351,12 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                 }{
                     old_W_0 = W[0]
                 }{
-                    X[0] = W[0]
+                    nmodl_eigen_x[0] = W[0]
                 }{
-                    F[0] = -X[0]*dt*A[0]+X[0]*dt*B[0]-X[0]+3.0*dt*A[1]+old_W_0
-                    J[0] = -dt*A[0]+dt*B[0]-1.0
+                    nmodl_eigen_f[0] = -nmodl_eigen_x[0]*dt*A[0]+nmodl_eigen_x[0]*dt*B[0]-nmodl_eigen_x[0]+3.0*dt*A[1]+old_W_0
+                    nmodl_eigen_j[0] = -dt*A[0]+dt*B[0]-1.0
                 }{
-                    W[0] = X[0]
+                    W[0] = nmodl_eigen_x[0]
                 }{
                 }
             })";
@@ -1424,26 +1393,26 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_h = h
                     old_n = n
                 }{
-                    X[0] = m
-                    X[1] = h
-                    X[2] = n
+                    nmodl_eigen_x[0] = m
+                    nmodl_eigen_x[1] = h
+                    nmodl_eigen_x[2] = n
                 }{
-                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]-3.0*X[1]*dt+old_m))/mtau
-                    F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
-                    F[2] = (-X[2]*dt+dt*ninf+ntau*(-X[2]+old_n))/ntau
-                    J[0] = -(dt+mtau)/mtau
-                    J[3] = -3.0*dt
-                    J[6] = 0
-                    J[1] = 2.0*X[0]*dt
-                    J[4] = -(dt+htau)/htau
-                    J[7] = 0
-                    J[2] = 0
-                    J[5] = 0
-                    J[8] = -(dt+ntau)/ntau
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]-3.0*nmodl_eigen_x[1]*dt+old_m))/mtau
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
+                    nmodl_eigen_f[2] = (-nmodl_eigen_x[2]*dt+dt*ninf+ntau*(-nmodl_eigen_x[2]+old_n))/ntau
+                    nmodl_eigen_j[0] = -(dt+mtau)/mtau
+                    nmodl_eigen_j[3] = -3.0*dt
+                    nmodl_eigen_j[6] = 0
+                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]*dt
+                    nmodl_eigen_j[4] = -(dt+htau)/htau
+                    nmodl_eigen_j[7] = 0
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[5] = 0
+                    nmodl_eigen_j[8] = -(dt+ntau)/ntau
                 }{
-                    m = X[0]
-                    h = X[1]
-                    n = X[2]
+                    m = nmodl_eigen_x[0]
+                    h = nmodl_eigen_x[1]
+                    n = nmodl_eigen_x[2]
                 }{
                 }
             })";
@@ -1483,18 +1452,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_m = m
                     old_h = h
                 }{
-                    X[0] = m
-                    X[1] = h
+                    nmodl_eigen_x[0] = m
+                    nmodl_eigen_x[1] = h
                 }{
-                    F[0] = (-X[0]*dt+dt*minf+mtau*(-X[0]+old_m))/mtau
-                    F[1] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
-                    J[0] = -(dt+mtau)/mtau
-                    J[2] = 0
-                    J[1] = 2.0*X[0]*dt
-                    J[3] = -(dt+htau)/htau
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]+old_m))/mtau
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
+                    nmodl_eigen_j[0] = -(dt+mtau)/mtau
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[1] = 2.0*nmodl_eigen_x[0]*dt
+                    nmodl_eigen_j[3] = -(dt+htau)/htau
                 }{
-                    m = X[0]
-                    h = X[1]
+                    m = nmodl_eigen_x[0]
+                    h = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1506,18 +1475,18 @@ SCENARIO("Solve ODEs with derivimplicit method using SympySolverVisitor",
                     old_h = h
                     old_m = m
                 }{
-                    X[0] = m
-                    X[1] = h
+                    nmodl_eigen_x[0] = m
+                    nmodl_eigen_x[1] = h
                 }{
-                    F[0] = (-X[1]*dt+dt*hinf+htau*(pow(X[0], 2)*dt-X[1]+old_h))/htau
-                    F[1] = (-X[0]*dt+dt*minf+mtau*(-X[0]+X[1]*dt+old_m))/mtau
-                    J[0] = 2.0*X[0]*dt
-                    J[2] = -(dt+htau)/htau
-                    J[1] = -(dt+mtau)/mtau
-                    J[3] = dt
+                    nmodl_eigen_f[0] = (-nmodl_eigen_x[1]*dt+dt*hinf+htau*(pow(nmodl_eigen_x[0], 2)*dt-nmodl_eigen_x[1]+old_h))/htau
+                    nmodl_eigen_f[1] = (-nmodl_eigen_x[0]*dt+dt*minf+mtau*(-nmodl_eigen_x[0]+nmodl_eigen_x[1]*dt+old_m))/mtau
+                    nmodl_eigen_j[0] = 2.0*nmodl_eigen_x[0]*dt
+                    nmodl_eigen_j[2] = -(dt+htau)/htau
+                    nmodl_eigen_j[1] = -(dt+mtau)/mtau
+                    nmodl_eigen_j[3] = dt
                 }{
-                    m = X[0]
-                    h = X[1]
+                    m = nmodl_eigen_x[0]
+                    h = nmodl_eigen_x[1]
                 }{
                 }
             })";
@@ -1819,35 +1788,35 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 EIGEN_LINEAR_SOLVE[4]{
                 }{
                 }{
-                    X[0] = w
-                    X[1] = x
-                    X[2] = y
-                    X[3] = z
-                    F[0] = 0
-                    F[1] = 5.343*a
-                    F[2] = a-0.84199999999999997*pow(b, 2)
-                    F[3] = -1.43543/c
-                    J[0] = -1.0
-                    J[4] = 0
-                    J[8] = -2.0
-                    J[12] = -0.3125
-                    J[1] = 0
-                    J[5] = -1.0
-                    J[9] = -4.0*c
-                    J[13] = 0
-                    J[2] = 0
-                    J[6] = -1/b
-                    J[10] = 1.0
-                    J[14] = -1.0
-                    J[3] = 0
-                    J[7] = -1.0
-                    J[11] = -1.3
-                    J[15] = 0.10000000000000001/(pow(a, 2)*b)
+                    nmodl_eigen_x[0] = w
+                    nmodl_eigen_x[1] = x
+                    nmodl_eigen_x[2] = y
+                    nmodl_eigen_x[3] = z
+                    nmodl_eigen_f[0] = 0
+                    nmodl_eigen_f[1] = 5.343*a
+                    nmodl_eigen_f[2] = a-0.84199999999999997*pow(b, 2)
+                    nmodl_eigen_f[3] = -1.43543/c
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[4] = 0
+                    nmodl_eigen_j[8] = -2.0
+                    nmodl_eigen_j[12] = -0.3125
+                    nmodl_eigen_j[1] = 0
+                    nmodl_eigen_j[5] = -1.0
+                    nmodl_eigen_j[9] = -4.0*c
+                    nmodl_eigen_j[13] = 0
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[6] = -1/b
+                    nmodl_eigen_j[10] = 1.0
+                    nmodl_eigen_j[14] = -1.0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[7] = -1.0
+                    nmodl_eigen_j[11] = -1.3
+                    nmodl_eigen_j[15] = 0.10000000000000001/(pow(a, 2)*b)
                 }{
-                    w = X[0]
-                    x = X[1]
-                    y = X[2]
-                    z = X[3]
+                    w = nmodl_eigen_x[0]
+                    x = nmodl_eigen_x[1]
+                    y = nmodl_eigen_x[2]
+                    z = nmodl_eigen_x[3]
                 }{
                 }
             })";
@@ -1881,187 +1850,187 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 EIGEN_LINEAR_SOLVE[12]{
                 }{
                 }{
-                    X[0] = C1
-                    X[1] = C2
-                    X[2] = C3
-                    X[3] = C4
-                    X[4] = C5
-                    X[5] = I1
-                    X[6] = I2
-                    X[7] = I3
-                    X[8] = I4
-                    X[9] = I5
-                    X[10] = I6
-                    X[11] = O
-                    F[0] = 0
-                    F[1] = 0
-                    F[2] = 0
-                    F[3] = 0
-                    F[4] = 0
-                    F[5] = 0
-                    F[6] = 0
-                    F[7] = 0
-                    F[8] = 0
-                    F[9] = 0
-                    F[10] = 0
-                    F[11] = -1.0
-                    J[0] = f01+fi1
-                    J[12] = -b01
-                    J[24] = 0
-                    J[36] = 0
-                    J[48] = 0
-                    J[60] = -bi1
-                    J[72] = 0
-                    J[84] = 0
-                    J[96] = 0
-                    J[108] = 0
-                    J[120] = 0
-                    J[132] = 0
-                    J[1] = -f01
-                    J[13] = b01+f02+fi2
-                    J[25] = -b02
-                    J[37] = 0
-                    J[49] = 0
-                    J[61] = 0
-                    J[73] = -bi2
-                    J[85] = 0
-                    J[97] = 0
-                    J[109] = 0
-                    J[121] = 0
-                    J[133] = 0
-                    J[2] = 0
-                    J[14] = -f02
-                    J[26] = b02+f03+fi3
-                    J[38] = -b03
-                    J[50] = 0
-                    J[62] = 0
-                    J[74] = 0
-                    J[86] = -bi3
-                    J[98] = 0
-                    J[110] = 0
-                    J[122] = 0
-                    J[134] = 0
-                    J[3] = 0
-                    J[15] = 0
-                    J[27] = -f03
-                    J[39] = b03+f04+fi4
-                    J[51] = -b04
-                    J[63] = 0
-                    J[75] = 0
-                    J[87] = 0
-                    J[99] = -bi4
-                    J[111] = 0
-                    J[123] = 0
-                    J[135] = 0
-                    J[4] = 0
-                    J[16] = 0
-                    J[28] = 0
-                    J[40] = -f04
-                    J[52] = b04+f0O+fi5
-                    J[64] = 0
-                    J[76] = 0
-                    J[88] = 0
-                    J[100] = 0
-                    J[112] = -bi5
-                    J[124] = 0
-                    J[136] = -b0O
-                    J[5] = 0
-                    J[17] = 0
-                    J[29] = 0
-                    J[41] = 0
-                    J[53] = -f0O
-                    J[65] = 0
-                    J[77] = 0
-                    J[89] = 0
-                    J[101] = 0
-                    J[113] = 0
-                    J[125] = -bin
-                    J[137] = b0O+fin
-                    J[6] = -fi1
-                    J[18] = 0
-                    J[30] = 0
-                    J[42] = 0
-                    J[54] = 0
-                    J[66] = bi1+f11
-                    J[78] = -b11
-                    J[90] = 0
-                    J[102] = 0
-                    J[114] = 0
-                    J[126] = 0
-                    J[138] = 0
-                    J[7] = 0
-                    J[19] = -fi2
-                    J[31] = 0
-                    J[43] = 0
-                    J[55] = 0
-                    J[67] = -f11
-                    J[79] = b11+bi2+f12
-                    J[91] = -b12
-                    J[103] = 0
-                    J[115] = 0
-                    J[127] = 0
-                    J[139] = 0
-                    J[8] = 0
-                    J[20] = 0
-                    J[32] = -fi3
-                    J[44] = 0
-                    J[56] = 0
-                    J[68] = 0
-                    J[80] = -f12
-                    J[92] = b12+bi3+f13
-                    J[104] = -bi3
-                    J[116] = 0
-                    J[128] = 0
-                    J[140] = 0
-                    J[9] = 0
-                    J[21] = 0
-                    J[33] = 0
-                    J[45] = -fi4
-                    J[57] = 0
-                    J[69] = 0
-                    J[81] = 0
-                    J[93] = -f13
-                    J[105] = b13+bi4+f14
-                    J[117] = -b14
-                    J[129] = 0
-                    J[141] = 0
-                    J[10] = 0
-                    J[22] = 0
-                    J[34] = 0
-                    J[46] = 0
-                    J[58] = -fi5
-                    J[70] = 0
-                    J[82] = 0
-                    J[94] = 0
-                    J[106] = -f14
-                    J[118] = b14+bi5+f1n
-                    J[130] = -b1n
-                    J[142] = 0
-                    J[11] = -1.0
-                    J[23] = -1.0
-                    J[35] = -1.0
-                    J[47] = -1.0
-                    J[59] = -1.0
-                    J[71] = -1.0
-                    J[83] = -1.0
-                    J[95] = -1.0
-                    J[107] = -1.0
-                    J[119] = -1.0
-                    J[131] = -1.0
-                    J[143] = -1.0
+                    nmodl_eigen_x[0] = C1
+                    nmodl_eigen_x[1] = C2
+                    nmodl_eigen_x[2] = C3
+                    nmodl_eigen_x[3] = C4
+                    nmodl_eigen_x[4] = C5
+                    nmodl_eigen_x[5] = I1
+                    nmodl_eigen_x[6] = I2
+                    nmodl_eigen_x[7] = I3
+                    nmodl_eigen_x[8] = I4
+                    nmodl_eigen_x[9] = I5
+                    nmodl_eigen_x[10] = I6
+                    nmodl_eigen_x[11] = O
+                    nmodl_eigen_f[0] = 0
+                    nmodl_eigen_f[1] = 0
+                    nmodl_eigen_f[2] = 0
+                    nmodl_eigen_f[3] = 0
+                    nmodl_eigen_f[4] = 0
+                    nmodl_eigen_f[5] = 0
+                    nmodl_eigen_f[6] = 0
+                    nmodl_eigen_f[7] = 0
+                    nmodl_eigen_f[8] = 0
+                    nmodl_eigen_f[9] = 0
+                    nmodl_eigen_f[10] = 0
+                    nmodl_eigen_f[11] = -1.0
+                    nmodl_eigen_j[0] = f01+fi1
+                    nmodl_eigen_j[12] = -b01
+                    nmodl_eigen_j[24] = 0
+                    nmodl_eigen_j[36] = 0
+                    nmodl_eigen_j[48] = 0
+                    nmodl_eigen_j[60] = -bi1
+                    nmodl_eigen_j[72] = 0
+                    nmodl_eigen_j[84] = 0
+                    nmodl_eigen_j[96] = 0
+                    nmodl_eigen_j[108] = 0
+                    nmodl_eigen_j[120] = 0
+                    nmodl_eigen_j[132] = 0
+                    nmodl_eigen_j[1] = -f01
+                    nmodl_eigen_j[13] = b01+f02+fi2
+                    nmodl_eigen_j[25] = -b02
+                    nmodl_eigen_j[37] = 0
+                    nmodl_eigen_j[49] = 0
+                    nmodl_eigen_j[61] = 0
+                    nmodl_eigen_j[73] = -bi2
+                    nmodl_eigen_j[85] = 0
+                    nmodl_eigen_j[97] = 0
+                    nmodl_eigen_j[109] = 0
+                    nmodl_eigen_j[121] = 0
+                    nmodl_eigen_j[133] = 0
+                    nmodl_eigen_j[2] = 0
+                    nmodl_eigen_j[14] = -f02
+                    nmodl_eigen_j[26] = b02+f03+fi3
+                    nmodl_eigen_j[38] = -b03
+                    nmodl_eigen_j[50] = 0
+                    nmodl_eigen_j[62] = 0
+                    nmodl_eigen_j[74] = 0
+                    nmodl_eigen_j[86] = -bi3
+                    nmodl_eigen_j[98] = 0
+                    nmodl_eigen_j[110] = 0
+                    nmodl_eigen_j[122] = 0
+                    nmodl_eigen_j[134] = 0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[15] = 0
+                    nmodl_eigen_j[27] = -f03
+                    nmodl_eigen_j[39] = b03+f04+fi4
+                    nmodl_eigen_j[51] = -b04
+                    nmodl_eigen_j[63] = 0
+                    nmodl_eigen_j[75] = 0
+                    nmodl_eigen_j[87] = 0
+                    nmodl_eigen_j[99] = -bi4
+                    nmodl_eigen_j[111] = 0
+                    nmodl_eigen_j[123] = 0
+                    nmodl_eigen_j[135] = 0
+                    nmodl_eigen_j[4] = 0
+                    nmodl_eigen_j[16] = 0
+                    nmodl_eigen_j[28] = 0
+                    nmodl_eigen_j[40] = -f04
+                    nmodl_eigen_j[52] = b04+f0O+fi5
+                    nmodl_eigen_j[64] = 0
+                    nmodl_eigen_j[76] = 0
+                    nmodl_eigen_j[88] = 0
+                    nmodl_eigen_j[100] = 0
+                    nmodl_eigen_j[112] = -bi5
+                    nmodl_eigen_j[124] = 0
+                    nmodl_eigen_j[136] = -b0O
+                    nmodl_eigen_j[5] = 0
+                    nmodl_eigen_j[17] = 0
+                    nmodl_eigen_j[29] = 0
+                    nmodl_eigen_j[41] = 0
+                    nmodl_eigen_j[53] = -f0O
+                    nmodl_eigen_j[65] = 0
+                    nmodl_eigen_j[77] = 0
+                    nmodl_eigen_j[89] = 0
+                    nmodl_eigen_j[101] = 0
+                    nmodl_eigen_j[113] = 0
+                    nmodl_eigen_j[125] = -bin
+                    nmodl_eigen_j[137] = b0O+fin
+                    nmodl_eigen_j[6] = -fi1
+                    nmodl_eigen_j[18] = 0
+                    nmodl_eigen_j[30] = 0
+                    nmodl_eigen_j[42] = 0
+                    nmodl_eigen_j[54] = 0
+                    nmodl_eigen_j[66] = bi1+f11
+                    nmodl_eigen_j[78] = -b11
+                    nmodl_eigen_j[90] = 0
+                    nmodl_eigen_j[102] = 0
+                    nmodl_eigen_j[114] = 0
+                    nmodl_eigen_j[126] = 0
+                    nmodl_eigen_j[138] = 0
+                    nmodl_eigen_j[7] = 0
+                    nmodl_eigen_j[19] = -fi2
+                    nmodl_eigen_j[31] = 0
+                    nmodl_eigen_j[43] = 0
+                    nmodl_eigen_j[55] = 0
+                    nmodl_eigen_j[67] = -f11
+                    nmodl_eigen_j[79] = b11+bi2+f12
+                    nmodl_eigen_j[91] = -b12
+                    nmodl_eigen_j[103] = 0
+                    nmodl_eigen_j[115] = 0
+                    nmodl_eigen_j[127] = 0
+                    nmodl_eigen_j[139] = 0
+                    nmodl_eigen_j[8] = 0
+                    nmodl_eigen_j[20] = 0
+                    nmodl_eigen_j[32] = -fi3
+                    nmodl_eigen_j[44] = 0
+                    nmodl_eigen_j[56] = 0
+                    nmodl_eigen_j[68] = 0
+                    nmodl_eigen_j[80] = -f12
+                    nmodl_eigen_j[92] = b12+bi3+f13
+                    nmodl_eigen_j[104] = -bi3
+                    nmodl_eigen_j[116] = 0
+                    nmodl_eigen_j[128] = 0
+                    nmodl_eigen_j[140] = 0
+                    nmodl_eigen_j[9] = 0
+                    nmodl_eigen_j[21] = 0
+                    nmodl_eigen_j[33] = 0
+                    nmodl_eigen_j[45] = -fi4
+                    nmodl_eigen_j[57] = 0
+                    nmodl_eigen_j[69] = 0
+                    nmodl_eigen_j[81] = 0
+                    nmodl_eigen_j[93] = -f13
+                    nmodl_eigen_j[105] = b13+bi4+f14
+                    nmodl_eigen_j[117] = -b14
+                    nmodl_eigen_j[129] = 0
+                    nmodl_eigen_j[141] = 0
+                    nmodl_eigen_j[10] = 0
+                    nmodl_eigen_j[22] = 0
+                    nmodl_eigen_j[34] = 0
+                    nmodl_eigen_j[46] = 0
+                    nmodl_eigen_j[58] = -fi5
+                    nmodl_eigen_j[70] = 0
+                    nmodl_eigen_j[82] = 0
+                    nmodl_eigen_j[94] = 0
+                    nmodl_eigen_j[106] = -f14
+                    nmodl_eigen_j[118] = b14+bi5+f1n
+                    nmodl_eigen_j[130] = -b1n
+                    nmodl_eigen_j[142] = 0
+                    nmodl_eigen_j[11] = -1.0
+                    nmodl_eigen_j[23] = -1.0
+                    nmodl_eigen_j[35] = -1.0
+                    nmodl_eigen_j[47] = -1.0
+                    nmodl_eigen_j[59] = -1.0
+                    nmodl_eigen_j[71] = -1.0
+                    nmodl_eigen_j[83] = -1.0
+                    nmodl_eigen_j[95] = -1.0
+                    nmodl_eigen_j[107] = -1.0
+                    nmodl_eigen_j[119] = -1.0
+                    nmodl_eigen_j[131] = -1.0
+                    nmodl_eigen_j[143] = -1.0
                 }{
-                    C1 = X[0]
-                    C2 = X[1]
-                    C3 = X[2]
-                    C4 = X[3]
-                    C5 = X[4]
-                    I1 = X[5]
-                    I2 = X[6]
-                    I3 = X[7]
-                    I4 = X[8]
-                    I5 = X[9]
-                    I6 = X[10]
-                    O = X[11]
+                    C1 = nmodl_eigen_x[0]
+                    C2 = nmodl_eigen_x[1]
+                    C3 = nmodl_eigen_x[2]
+                    C4 = nmodl_eigen_x[3]
+                    C5 = nmodl_eigen_x[4]
+                    I1 = nmodl_eigen_x[5]
+                    I2 = nmodl_eigen_x[6]
+                    I3 = nmodl_eigen_x[7]
+                    I4 = nmodl_eigen_x[8]
+                    I5 = nmodl_eigen_x[9]
+                    I6 = nmodl_eigen_x[10]
+                    O = nmodl_eigen_x[11]
                 }{
                 }
             })";
@@ -2091,12 +2060,12 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 EIGEN_NEWTON_SOLVE[1]{
                 }{
                 }{
-                    X[0] = x
+                    nmodl_eigen_x[0] = x
                 }{
-                    F[0] = 5.0-X[0]
-                    J[0] = -1.0
+                    nmodl_eigen_f[0] = 5.0-nmodl_eigen_x[0]
+                    nmodl_eigen_j[0] = -1.0
                 }{
-                    x = X[0]
+                    x = nmodl_eigen_x[0]
                 }{
                 }
             })";
@@ -2122,26 +2091,26 @@ SCENARIO("Solve NONLINEAR block using SympySolver Visitor", "[visitor][solver][s
                 EIGEN_NEWTON_SOLVE[3]{
                 }{
                 }{
-                    X[0] = s[0]
-                    X[1] = s[1]
-                    X[2] = s[2]
+                    nmodl_eigen_x[0] = s[0]
+                    nmodl_eigen_x[1] = s[1]
+                    nmodl_eigen_x[2] = s[2]
                 }{
-                    F[0] = 1.0-X[0]
-                    F[1] = 3.0-X[1]
-                    F[2] = X[0]-X[1]-X[2]
-                    J[0] = -1.0
-                    J[3] = 0
-                    J[6] = 0
-                    J[1] = 0
-                    J[4] = -1.0
-                    J[7] = 0
-                    J[2] = 1.0
-                    J[5] = -1.0
-                    J[8] = -1.0
+                    nmodl_eigen_f[0] = 1.0-nmodl_eigen_x[0]
+                    nmodl_eigen_f[1] = 3.0-nmodl_eigen_x[1]
+                    nmodl_eigen_f[2] = nmodl_eigen_x[0]-nmodl_eigen_x[1]-nmodl_eigen_x[2]
+                    nmodl_eigen_j[0] = -1.0
+                    nmodl_eigen_j[3] = 0
+                    nmodl_eigen_j[6] = 0
+                    nmodl_eigen_j[1] = 0
+                    nmodl_eigen_j[4] = -1.0
+                    nmodl_eigen_j[7] = 0
+                    nmodl_eigen_j[2] = 1.0
+                    nmodl_eigen_j[5] = -1.0
+                    nmodl_eigen_j[8] = -1.0
                 }{
-                    s[0] = X[0]
-                    s[1] = X[1]
-                    s[2] = X[2]
+                    s[0] = nmodl_eigen_x[0]
+                    s[1] = nmodl_eigen_x[1]
+                    s[2] = nmodl_eigen_x[2]
                 }{
                 }
             })";

@@ -139,15 +139,12 @@ void CodegenAccVisitor::print_net_send_buffering_grow() {
     // can not grow buffer during gpu execution
 }
 
-void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type,
-                                                  int N,
-                                                  const std::string& Xm,
-                                                  const std::string& Jm,
-                                                  const std::string& Fm) {
+void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type, int N) {
     if (N <= 4) {
-        printer->add_line("{0} = {1}.inverse()*{2};"_format(Xm, Jm, Fm));
+        printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm.inverse()*nmodl_eigen_fm;");
     } else {
-        printer->add_line("{0} = partialPivLu<{1}>({2}, {3});"_format(Xm, N, Jm, Fm));
+        printer->add_line(
+            "nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);"_format(N));
     }
 }
 
