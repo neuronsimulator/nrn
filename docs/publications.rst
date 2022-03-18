@@ -38,7 +38,7 @@ Carnevale NT, Hines ML. (2008). Translating network models to parallel hardware 
 
 Cannon, R. C., Gewaltig, M. O., Gleeson, P., Bhalla, U. S., Cornelis, H., Hines, M. L., ...  De Schutter, E. (2007). Interoperability of neuroscience modeling software: current status and future directions. *Neuroinformatics*, 5(2), 127-138. `doi:10.1007/s12021-007-0004-5 <https://doi.org/10.1007/s12021-007-0004-5>`_
 
-Hines ML, Morse TM, Carnevale NT (2007). Model structure analysis in NEURON (2007). In Crasto CJ. (Ed)*Methods in Molecular Biology, vol 401: Neuroinformatics.* Humana Press Inc., Totowa, NJ. `doi:10.1007/978-1-59745-520-6 <https://doi.org/10.1007/978-1-59745-520-6>`_
+Hines ML, Morse TM, Carnevale NT (2007). Model structure analysis in NEURON (2007). In Crasto CJ. (Ed) *Methods in Molecular Biology, vol 401: Neuroinformatics.* Humana Press Inc., Totowa, NJ. `doi:10.1007/978-1-59745-520-6 <https://doi.org/10.1007/978-1-59745-520-6>`_
 
 Brette, R., Rudolph, M., Carnevale, T., Hines, M., Beeman, D., Bower, J. M., ...  Destexhe, A. (2007). Simulation of networks of spiking neurons: a review of tools and strategies. *Journal of computational neuroscience*, 23(3), 349-398. `doi:10.1007/s10827-007-0038-6 <https://doi.org/10.1007/s10827-007-0038-6>`_
 
