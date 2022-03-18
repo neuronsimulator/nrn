@@ -70,12 +70,14 @@ For the complete list of bug fixes, see the list in [GitHub Issue #[GH_no.]](htt
 * [Describe how to migrate from previous NEURON Version]
 * ...
 
-ReadTheDocs sneak peak
-----
+
+
+ReadTheDocs sneak peek
+======================
 * https://nrn.readthedocs.io/en/release-x.y
 
 Commits going into x.y.z
-----
+========================
 
 [given `a.b.c` is the last release:]
 
