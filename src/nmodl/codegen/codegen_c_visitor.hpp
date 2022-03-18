@@ -1941,11 +1941,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
     void visit_function_call(const ast::FunctionCall& node) override;
     void visit_eigen_newton_solver_block(const ast::EigenNewtonSolverBlock& node) override;
     void visit_eigen_linear_solver_block(const ast::EigenLinearSolverBlock& node) override;
-    virtual void print_eigen_linear_solver(const std::string& float_type,
-                                           int N,
-                                           const std::string& Xm,
-                                           const std::string& Jm,
-                                           const std::string& Fm);
+    virtual void print_eigen_linear_solver(const std::string& float_type, int N);
     void visit_if_statement(const ast::IfStatement& node) override;
     void visit_indexed_name(const ast::IndexedName& node) override;
     void visit_integer(const ast::Integer& node) override;
