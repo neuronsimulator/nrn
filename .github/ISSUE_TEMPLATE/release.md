@@ -59,8 +59,9 @@ _Release Date_ : DD-MM-YYYY
 
 
 ### Bug Fixes
+* [List the important bug fixes]
+* ...
 
-For the complete list of bug fixes, see the list in [GitHub Issue #[GH_no.]](https://github.com/neuronsimulator/nrn/issues/#[GH_no.])
 
 ### Improvements /  Other Changes
 * [List the improvements made in the new release and any other changes]
@@ -70,7 +71,7 @@ For the complete list of bug fixes, see the list in [GitHub Issue #[GH_no.]](htt
 * [Describe how to migrate from previous NEURON Version]
 * ...
 
-
+For the complete list of features and bug fixes, see the list in [GitHub Issue #[GH_no.]](https://github.com/neuronsimulator/nrn/issues/#[GH_no.])
 
 ReadTheDocs sneak peek
 ======================
