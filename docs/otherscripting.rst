@@ -92,3 +92,18 @@ The following code simulates and plots an action potential in a Hodgkin-Huxley p
 Here the ``plot`` function (from the ``Plots`` library) required us to invoke the :meth:`Vector.to_python` which copies it into a list, which Julia interprets as a ``Vector{Float64}``.
 
 Such conversion is not always necessary; Julia correctly handles NEURON :class:`Vector` manipulations like ``length(v)``, ``v[4]``, and vector arithmetic ``v + 2 * v``.
+
+.. note::
+
+    When used inside Julia, NEURON :class:`Vector` objects are 1-indexed, as is the Julia convention.
+    (Python and HOC are 0-indexed.)
+    That is, ``vec[1]`` returns the first item in ``vec`` not the second item.
+
+    .. code::
+        julia
+        
+        julia> vec = h.Vector([5, 72, 16])
+        PyObject Vector[1]
+
+        julia> vec[1]
+        5.0
