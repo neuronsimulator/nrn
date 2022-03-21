@@ -124,4 +124,4 @@ Such conversion is not always necessary; Julia correctly handles NEURON :class:`
         
         jvec = pycall(vec.as_numpy, PyArray)
     
-    Such a ``jvec`` can then be used with e.g. the ``plot`` method.
+    Such a ``jvec`` can then be used with e.g. the ``plot`` function.
