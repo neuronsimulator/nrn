@@ -107,3 +107,21 @@ Such conversion is not always necessary; Julia correctly handles NEURON :class:`
 
         julia> vec[1]
         5.0
+
+.. warning::
+
+    Due to Julia's auto-type-conversion rules,
+    invoking :meth:`Vector.as_numpy` directly in Julia will cause a ``numpy`` array to be created on the
+    Python side but then be immediately *copied* to a ``Vector{Float64}``; as such, changes to the returned
+    object would *not* affect the original :class:`Vector`; that is, a direct call to :meth:`Vector.as_numpy`
+    in Julia behaves functionally equivalent to calling :meth:`Vector.to_python`.
+    
+    To avoid copying the Vector values, explicitly invoke ``pycall`` and specify ``PyArray`` as the return
+    type, e.g.
+    
+    .. code::
+        julia
+        
+        jvec = pycall(vec.as_numpy, PyArray)
+    
+    Such a ``jvec`` can then be used with e.g. the ``plot`` method.
