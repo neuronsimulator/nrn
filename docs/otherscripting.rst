@@ -92,3 +92,36 @@ The following code simulates and plots an action potential in a Hodgkin-Huxley p
 Here the ``plot`` function (from the ``Plots`` library) required us to invoke the :meth:`Vector.to_python` which copies it into a list, which Julia interprets as a ``Vector{Float64}``.
 
 Such conversion is not always necessary; Julia correctly handles NEURON :class:`Vector` manipulations like ``length(v)``, ``v[4]``, and vector arithmetic ``v + 2 * v``.
+
+.. note::
+
+    When used inside Julia, NEURON :class:`Vector` objects are 1-indexed, as is the Julia convention.
+    (Python and HOC are 0-indexed.)
+    That is, ``vec[1]`` returns the first item in ``vec`` not the second item.
+
+    .. code::
+        julia
+        
+        julia> vec = h.Vector([5, 72, 16])
+        PyObject Vector[1]
+
+        julia> vec[1]
+        5.0
+
+.. warning::
+
+    Due to Julia's auto-type-conversion rules,
+    invoking :meth:`Vector.as_numpy` directly in Julia will cause a ``numpy`` array to be created on the
+    Python side but then be immediately *copied* to a ``Vector{Float64}``; as such, changes to the returned
+    object would *not* affect the original :class:`Vector`; that is, a direct call to :meth:`Vector.as_numpy`
+    in Julia behaves functionally equivalent to calling :meth:`Vector.to_python`.
+    
+    To avoid copying the Vector values, explicitly invoke ``pycall`` and specify ``PyArray`` as the return
+    type, e.g.
+    
+    .. code::
+        julia
+        
+        jvec = pycall(vec.as_numpy, PyArray)
+    
+    Such a ``jvec`` can then be used with e.g. the ``plot`` function.
