@@ -241,16 +241,6 @@ void lin_state_term(Item* q1, Item* q2) /* term last*/
                     statsym->name);
             nstate += dim;
         } else {
-            // This used to generate expressions like:
-            //   _slist1[0] = &(vi) - _p;
-            // where
-            //   #define vi _p[17]
-            // which produce undefined behaviour if _p is nullptr:
-            //   UndefinedBehaviorSanitizer: undefined-behavior in
-            //   {path}/nrn/src/nrnoc/vclmp.c: runtime error: applying non-zero
-            //   offset 128 to null pointer
-            // because pointer arithmetic is only permitted within arrays
-            // https://en.cppreference.com/w/c/language/operator_arithmetic#Pointer_arithmetic
             Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, nstate, statsym->name);
             nstate++;
         }
