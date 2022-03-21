@@ -48,7 +48,7 @@ In many projects Tags are used to mark certain revisions as special, maybe becau
 
 GitHub is a development platform and, in some sense, a software collaboration portal based on Git, with a number of features very useful for software development [3] [4], among them :
 
-- **Issues** - An Issue Trackerwhere users and developers can report and discuss enhancements, bugs and tasks of the project.
+- **Issues** - An Issue Tracker where users and developers can report and discuss enhancements, bugs and tasks of the project.
 - **Milestones** - A Release Planner in which project managers can define which Issues (features + bug fixes) are to be included in each release/milestone.
 - **Pull Requests** - A patch integration model adapted to large teams or open-source projects, where any developer may propose a change to be reviewed and eventually merged by a project lead.
 - **Forks** - Clones of other GitHub projects so that developers without any permission in the original repository can still create Pull Requests. One of the issues with forks is the risk of branches to become out of sync with the original repo. Therefore for small/core teams it may be preferable to grant main developers the possibility of creating branches.
