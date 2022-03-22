@@ -213,19 +213,64 @@ Similar to BB5, the wheel can be tested on any desktop system provided that NVHP
 
 Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
 
-After creating the tag on the `release/x.y` branch, perform the following steps:
+After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
 
 1) Click on `Run pipeline`
 2) Input the release tag ref `refs/tags/x.y.z`
 3) Click on `Variables`
-4) We need to define two variables: 
-   * `NRN_RELEASE_UPLOAD` : `true`
+4) We need to define three variables:
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `false`
    * `NEURON_NIGHTLY_TAG` : null (leave empty)
    
    Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
 5) Click on `Run`
 
+![](images/azure-release-no-upload.png)
+
+With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NEURON_NIGHTLY_TAG` : null (leave empty)
+
 ![](images/azure-release.png)
+
+
+## Publishing the wheels on Pypi via CircleCI
+
+Currently CircleCI doesn't have automated pipeline for uploading `release` wheels to pypi.org (nightly wheels are uploaded automatically though). Currently we are using a **hacky**, semi-automated approach described below:
+
+* Checkout your tag as a new branch
+* Update `.circleci/config.yml` as shown below
+* Trigger CI pipeline manually for [the nrn project](https://app.circleci.com/pipelines/github/neuronsimulator/nrn)
+* Upload wheels from artifacts manually
+
+```
+# checkout release tag as a new branch
+$ git checkout 8.1a -b release/8.1a-aarch64
+
+# manually updated `.circleci/config.yml`
+$ git diff
+
+@@ -15,6 +15,10 @@ jobs:
+     machine:
+       image: ubuntu-2004:202101-01
++    environment:
++      NEURON_WHEEL_VERSION: 8.1a
++      NEURON_NIGHTLY_TAG: ""
++      NRN_NIGHTLY_UPLOAD: false
++      NRN_RELEASE_UPLOAD: false
+
+@@ -89,7 +95,7 @@ workflows:
+       - manylinux2014-aarch64:
+           matrix:
+             parameters:
+-              NRN_PYTHON_VERSION: ["310"]
++              NRN_PYTHON_VERSION: ["36", "37", "38", "39", "310"]
+```
+
+The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+
 
 ### Nightly wheels
 
