@@ -11,7 +11,7 @@ else()
 endif()
 
 # initialize submodule with given path
-function(initialize_submodule path)
+function(nrn_initialize_submodule path)
   if(NOT ${GIT_FOUND})
     message(
       FATAL_ERROR "git not found and ${path} sub-module not cloned (use git clone --recursive)")
@@ -28,7 +28,7 @@ function(initialize_submodule path)
 endfunction()
 
 # check for external project and initialize submodule if it is missing
-function(add_external_project name)
+function(nrn_add_external_project name)
   find_path(
     ${name}_PATH
     NAMES CMakeLists.txt
@@ -37,7 +37,7 @@ function(add_external_project name)
     if(NOT_A_GIT_REPO)
       message(FATAL_ERROR "Looks like you are building from source. Git needed for ${name} feature.")
     endif()
-    initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}")
+    nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}")
   else()
     message(STATUS "Sub-project : using ${name} from from ${THIRD_PARTY_DIRECTORY}/${name}")
   endif()
