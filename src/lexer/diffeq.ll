@@ -27,6 +27,7 @@
 
 D   [0-9]
 E   [Ee][-+]?{D}+
+N   [a-zA-Z][a-zA-Z0-9_]*
 
 /** if want to use yymore feature in copy modes */
 %option yymore
@@ -93,7 +94,8 @@ E   [Ee][-+]?{D}+
 {D}+"."{D}*({E})?       |
 {D}*"."{D}+({E})?       |
 {D}+{E}                 |
-[a-zA-Z][a-zA-Z0-9_]*   { return DiffeqParser::make_ATOM(yytext, loc); }
+{N}\[(({D}+)|({N}))\]   |
+{N}                     { return DiffeqParser::make_ATOM(yytext, loc); }
 
 "\n"                    { return DiffeqParser::make_NEWLINE(yytext, loc); }
 
