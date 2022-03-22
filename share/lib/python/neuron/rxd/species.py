@@ -938,7 +938,6 @@ class _IntracellularSpecies(_SpeciesMathable):
                     # TODO: this better
                     if not isinstance(my_dx, tuple):
                         my_dx = (my_dx, my_dx, my_dx)
-                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))
                     self._current_neuron_pointers = [
                         getattr(seg, ion_curr)
                         for seg in self._region._segs3d(
@@ -951,9 +950,11 @@ class _IntracellularSpecies(_SpeciesMathable):
                         for sec in self._region._secs3d
                     ]
                     node_area = [node.surface_area for node in self._nodes]
-                    scale = sum(node_area) / geom_area
+                    node_vol = [node.volume for node in self._nodes]
+                    scale = geom_area / sum(node_area)
                     scale_factors = [
-                        sign * area * scale * scale_factor for area in node_area
+                        sign * area * scale * tenthousand_over_charge_faraday / vol
+                        for area, vol in zip(node_area, node_vol)
                     ]
                     self._scale_factors = numpy.asarray(scale_factors, dtype=float)
                     _ics_set_grid_currents(
