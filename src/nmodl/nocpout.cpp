@@ -2725,7 +2725,7 @@ void chk_global_state() {
     SYMLISTITER {
         Symbol* s = SYM(q);
         if (s->nrntype & NRNGLOBAL && s->subtype & STAT) {
-            diag(s->name, " is as a STATE variable and hence cannot be declared as GLOBAL");
+            diag(s->name, " is a STATE variable and hence cannot be declared as GLOBAL");
         }
     }
 }
