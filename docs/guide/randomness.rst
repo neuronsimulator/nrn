@@ -206,18 +206,18 @@ Save the following to a file called :file:`initn.py`, then use python to execute
 The solution
 ~~~~~~~~~~~~
 
-The solution to these problems is to give each NetStim its own random number generator.
+The solution to these problems is to give each NetStim its own random number stream.
 
 "How?" you might very well ask.
 
-By creating an instance of the Random class for every instance of the :class:`NetStim` class, and using the :meth:`NetStim.noiseFromRandom` to associate the two. You can probably figure out how to do this on your own if I just point you to a good example, like :file:`NEURON/common/netstim.hoc` in the source code for entry 83319 from ModelDB https://modeldb.yale.edu/83319
+By using :meth:`NetStim.noiseFromRandom123` to specify a unique random stream for each NetStim; each stream is independent and selected as a combination of three integer values. 
 
-But for the impatient, here's a quick example. Promise to check out the ModelDB entry after you understand this one.
+Here's a quick example.
 
 Outline of the solution:
 ########################
 
-In essense the solution is this simple:
+In essence the solution is this simple:
 
 .. code:: 
     none
