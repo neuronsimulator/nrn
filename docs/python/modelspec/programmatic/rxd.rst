@@ -1103,6 +1103,14 @@ Numerical options
     
     This function may be called multiple times; the last setting for any given field will be used.
     Different sections may be simulated in different dimensions (a so-called hybrid model).
+    
+    .. warning::
+    
+        For 3D reaction-diffusion simulations, we recommend upgrading to at least NEURON 8.1.
+        
+        (Calculation of 3D concentration changes from MOD file activity
+        in NEURON 7.8.x and 8.0.x was underestimated due to an inconsistency in surface voxel
+        partial volume calculations.)
 
 SBML Export
 -----------
