@@ -99,6 +99,7 @@ _Release Date_ : 25-03-2022
 
 *NOTE:* NEURON is being migrated to C++ codebase and beginning with the next release `MOD` files will be converted to `C++` instead of `C`. This might break compatibility with some legacy MOD files containing `VERBATIM` blocks. We will update the NEURON documentation describing how one can make MOD files compatible with this change.
 
+For the complete list of features and bug fixes, see `Commits going into 8.1.0` in GitHub Issue #1719
 
 # NEURON 8.0
 
