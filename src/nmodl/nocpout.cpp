@@ -2727,6 +2727,18 @@ void chk_thread_safe() {
 }
 
 
+void chk_global_state() {
+    int i;
+    Item *q;
+    SYMLISTITER {
+        Symbol* s = SYM(q);
+        if (s->nrntype & NRNGLOBAL && s->subtype & STAT) {
+            diag(s->name, " is a STATE variable and hence cannot be declared as GLOBAL");
+        }
+    }
+}
+
+
 void threadsafe_seen(Item* q1, Item* q2) {
 	Item* q;
 	assert_threadsafe = 1;
