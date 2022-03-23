@@ -87,21 +87,24 @@ int nonlin_common(Item* q4, int sensused)	/* used by massagenonlin() and mixed_e
 #endif
 			if (s->subtype & ARRAY) {int dim = s->araydim;
 				using_array=1;
-		        	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
-			                ,dim, numlist , counts, s->name);
-				counts += dim;
-			}else{
-				Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
-					numlist, counts, s->name);
-				counts++;
-			}
-		        Lappendstr(initlist, buf);
-			s->used = 0;
-			if (sensused) {
-				add_sens_statelist(s);
-			}
-		}
-	}
+                Sprintf(buf,
+                        "for(_i=0;_i<%d;_i++){\n  _slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        dim,
+                        numlist,
+                        counts,
+                        s->name);
+                counts += dim;
+            } else {
+                Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, counts, s->name);
+                counts++;
+            }
+            Lappendstr(initlist, buf);
+            s->used = 0;
+            if (sensused) {
+                add_sens_statelist(s);
+            }
+        }
+    }
 
 	ITERATE(lq, eqnq) {
 		char *eqtype = SYM(ITM(lq))->name;
@@ -212,33 +215,37 @@ void init_lineq(Item* q1) /* the colon */
 	}
 }
 
-static char *indexstr;	/* set in lin_state_term, used in linterm */
+static char *indexstr; /* set in lin_state_term, used in linterm */
 
 void lin_state_term(Item* q1, Item* q2) /* term last*/
 {
-	char *qconcat(Item*, Item*); /* but puts extra ) at end */
-	
-	statsym = SYM(q1);
-	replacstr(q1, "1.0");
-	if (statsym->subtype & ARRAY) { 
-		indexstr = qconcat(q1->next->next, q2->prev);
-		deltokens(q1->next, q2->prev); /*can't erase lastok*/
-		replacstr(q2, "");
-	}
-	if (statsym->used == 1) {
-		statsym->varnum = nstate;
-		if (statsym->subtype & ARRAY) {int dim = statsym->araydim;
-			using_array=1;
-		        Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;}\n"
-		                ,dim, numlist , nstate, statsym->name);
-			nstate += dim;
-		}else{
-			Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
-				numlist, nstate, statsym->name);
-			nstate++;
-		}
-	        Lappendstr(initlist, buf);
-	}
+    char* qconcat(Item*, Item*); /* but puts extra ) at end */
+
+    statsym = SYM(q1);
+    replacstr(q1, "1.0");
+    if (statsym->subtype & ARRAY) {
+        indexstr = qconcat(q1->next->next, q2->prev);
+        deltokens(q1->next, q2->prev); /*can't erase lastok*/
+        replacstr(q2, "");
+    }
+    if (statsym->used == 1) {
+        statsym->varnum = nstate;
+        if (statsym->subtype & ARRAY) {
+            int dim = statsym->araydim;
+            using_array = 1;
+            Sprintf(buf,
+                    "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                    dim,
+                    numlist,
+                    nstate,
+                    statsym->name);
+            nstate += dim;
+        } else {
+            Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", numlist, nstate, statsym->name);
+            nstate++;
+        }
+        Lappendstr(initlist, buf);
+    }
 }
 
 void linterm(Item* q1, Item* q2, int pstate, int sign) /*primary, last ,, */
