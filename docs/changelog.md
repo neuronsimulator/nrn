@@ -20,7 +20,7 @@ _Release Date_ : 25-03-2022
   * Tight integration for both in-memory and as well as file transfer mode
   * Extend CoreNEURON POINTER transfer to any RANGE variable in a NRN_THREAD (#1622)
   * Support for BEFORE/AFTER constructs in MOD file (#1581)
-* RXD (WIP) @ramcdougal @adamjhn could you list here what is considered new and/or noteworthy mentioning?
+* RXD (WIP) @adamjhn could you list here what is considered new and/or noteworthy mentioning?
   * SaveState support added (#1586)
   * ...
 
@@ -29,7 +29,7 @@ _Release Date_ : 25-03-2022
   * Integrated various documentation & tutorials from neuron.yale.edu website to the readthedocs (#1674)
   * Added training videos, guides and a list of NEURON publications
   * CoreNEURON: usage, MOD files compatibility/migration, profiling and (GPU) performance benchmarking
-  * RxD programmer's reference expanded and rewritten
+  * RxD programmer's reference expanded and rewritten (#1680)
   * Propose changes directly from ReadTheDocs - click on `Edit on GitHub`
 
 ### Breaking Changes
@@ -49,6 +49,10 @@ _Release Date_ : 25-03-2022
 * Fix some BBSaveState issues with BinQ. (#1446)
 * Fixes a 1D/3D voxelization problem where frusta are outside the 3D grid. (#1227)
 * Allow for two point (single section) SWC somas (#1144)
+* Fix for current response in 3D reaction-diffusion simulations (#1721)
+* `rxdmath.abs` no longer raises an exception (#1545)
+* Fixes for 3D reaction-diffusion grid alignment edge cases (#1471, #1227)
+* Support for 3D reaction-diffusion simulations with multiple cells with soma contours (#1147)
 * ...
 
 ### Improvements / Other Changes
@@ -84,8 +88,9 @@ _Release Date_ : 25-03-2022
   * Allow user to specify dialog popup location. (#1487)
   * Allow python section.disconnect(). (#1451)
   * Implement BBSaveState for Python cells (#1355)
-* RXD (@ramcdougal @adamjhn could you list here improvements & any other changes?)
-  *
+* RXD (@adamjhn could you list here improvements & any other changes?)
+  * Faster convergence rate for surface voxel partial volume estimation (#1555)
+  * Internal API for saving/restoring 3D voxelization (#1476)
 
 ### Upgrade Steps
 * Linux wheels are now `manylinux2014`: upgrade your `pip`
