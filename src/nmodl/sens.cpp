@@ -238,23 +238,39 @@ if (type == DERIVATIVE) {
 			assert (s);
 			s->usage |= DEP;
 			/* initialize augmented _slist and _dlist */
-			if (SYM(q1)->subtype & ARRAY) {
-Sprintf(buf, "for (_i=0;_i<%d;_i++){\
-_slist%d[%d+_i] = (%s + _i) - _p; _dlist%d[%d+_i] = (%s + _i) - _p;}\n", SYM(q1)->araydim,
-fn, j + nstate*i, sname, fn, j + nstate*i, dname);
-			}else{
-Sprintf(buf, "_slist%d[%d] = &(%s) - _p; _dlist%d[%d] = &(%s) - _p;\n",
-fn, j + nstate*i, sname, fn, j + nstate*i, dname);
-			}
+            if (SYM(q1)->subtype & ARRAY) {
+                Sprintf(buf,
+                        "for (_i=0;_i<%d;_i++){\n  _slist%d[%d+_i] = %s_columnindex + _i; "
+                        "_dlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        SYM(q1)->araydim,
+                        fn,
+                        j + nstate * i,
+                        sname,
+                        fn,
+                        j + nstate * i,
+                        dname);
+            } else {
+                Sprintf(buf,
+                        "_slist%d[%d] = %s_columnindex; _dlist%d[%d] = %s_columnindex;\n",
+                        fn,
+                        j + nstate * i,
+                        sname,
+                        fn,
+                        j + nstate * i,
+                        dname);
+            }
 }else if (type == NONLINEAR || type == LINEAR) {
 			if (SYM(q1)->subtype & ARRAY) {
-				Sprintf(buf, "for (_i=0;_i<%d;_i++){\
-_slist%d[%d+_i] = (%s + _i) - _p;}\n", SYM(q1)->araydim,
-					fn, j + nstate*i, sname);
-			}else{
-				Sprintf(buf, "_slist%d[%d] = &(%s) - _p;\n",
-					fn, j + nstate*i, sname);
-			}
+                Sprintf(buf,
+                        "for (_i=0;_i<%d;_i++){\
+_slist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        SYM(q1)->araydim,
+                        fn,
+                        j + nstate * i,
+                        sname);
+            } else {
+                Sprintf(buf, "_slist%d[%d] = %s_columnindex;\n", fn, j + nstate * i, sname);
+            }
 }
 			Lappendstr(initlist, buf);
 		}
@@ -312,13 +328,26 @@ depinstall(0, s, SYM(q1)->araydim, "0", "1", "", ITEM0, 0, "");
 
 			/* initialize augmented _slist and _dlist */
 			if (SYM(q1)->subtype & ARRAY) {
-Sprintf(buf, "for (_i=0;_i<%d;_i++){\
-_eplist%d[%d+_i] = (%s + _i) - _p; _emlist%d[%d+_i] = (%s + _i) - _p;}\n", SYM(q1)->araydim,
-fn, j + nstate*i, sname, fn, j + nstate*i, dname);
-			}else{
-Sprintf(buf, "_eplist%d[%d] = &(%s) - _p; _emlist%d[%d] = &(%s) - _p;\n",
-fn, j + nstate*i, sname, fn, j + nstate*i, dname);
-			}
+                Sprintf(buf,
+                        "for (_i=0;_i<%d;_i++){\
+_eplist%d[%d+_i] = %s_columnindex + _i; _emlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        SYM(q1)->araydim,
+                        fn,
+                        j + nstate * i,
+                        sname,
+                        fn,
+                        j + nstate * i,
+                        dname);
+            }else{
+                Sprintf(buf,
+                        "_eplist%d[%d] = %s_columnindex; _emlist%d[%d] = %s_columnindex;\n",
+                        fn,
+                        j + nstate * i,
+                        sname,
+                        fn,
+                        j + nstate * i,
+                        dname);
+            }
 			Lappendstr(initlist, buf);
 		}
 		i++;
