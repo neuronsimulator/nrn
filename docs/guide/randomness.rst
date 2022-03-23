@@ -316,7 +316,7 @@ This file shows how to take advantage of :meth:`NetStim.noiseFromRandom123` in y
         h.finitialize(-65 * mV)
         h.continuerun(TSTOP)
 
-        print(" time         cell")
+        print(" time       cell")
         for t, id_ in zip(stim_t, stim_id):
             print(f"{t:7.3f} \t{id_}")
 
@@ -367,7 +367,7 @@ Running the above code displays:
     Control:  both have interval 10, number 10, start 1, noise True
     ===============================================================
 
-    time         cell
+    time       cell
     7.603 	1.0
     8.226 	1.0
     10.187 	0.0
@@ -380,7 +380,7 @@ Running the above code displays:
     Control part 2: Showing we get the same results each time
     ===============================================================
 
-    time         cell
+    time       cell
     7.603 	1.0
     8.226 	1.0
     10.187 	0.0
@@ -393,7 +393,7 @@ Running the above code displays:
     Test:  NetStim 1 starts at 6 ms
     ===============================================================
 
-    time         cell
+    time       cell
     10.187 	0.0
     11.459 	0.0
     12.603 	1.0
