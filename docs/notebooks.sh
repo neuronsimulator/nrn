@@ -30,7 +30,7 @@ else
   for i in ${notebook_dirs[@]} ; do
     convert_notebooks "$i"
   done
-  echo "Done. NOTE: remember to run target ``notebooks-clean`` before a PR."
+  echo 'Done. NOTE: remember to run target `notebooks-clean` before a PR. The `docs` target does this automatically.'
 fi
 
 
