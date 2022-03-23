@@ -40,20 +40,23 @@ _Release Date_ : 25-03-2022
 * Python wheels are now manylinux2014 (#1365)
 
 ### Deprecations
+* NEURON is being migrated to a C++ codebase and beginning with the next release `MOD` files will be converted to `C++` instead of `C`.
+  This might break compatibility with some legacy MOD files containing `VERBATIM` blocks.
+  We will update the NEURON documentation describing how one can make MOD files compatible with this change.
 * Python 3.6 Is End-of-Life - drop support after 8.1 release (#1651)
 
-### Bug Fixes (WIP)
+### Bug Fixes
 * Can use ParallelContext.mpiabort_on_error(0) to say do not call to MPI_Abort on error (#1567)
 * OpenMPI initialisation crash: argv[argc] should be null. (#1682)
 * Avoid segfault if error during construction of POINT_PROCESS (#1627)
-* Fix some BBSaveState issues with BinQ. (#1446)
 * Fixes a 1D/3D voxelization problem where frusta are outside the 3D grid. (#1227)
 * Allow for two point (single section) SWC somas (#1144)
 * Fix for current response in 3D reaction-diffusion simulations (#1721)
 * `rxdmath.abs` no longer raises an exception (#1545)
 * Fixes for 3D reaction-diffusion grid alignment edge cases (#1471, #1227)
-* Support for 3D reaction-diffusion simulations with multiple cells with soma contours (#1147)
-* ...
+* Update coreneuron : gpu bugfix for the BBP models (#1374)
+* Fix UndefinedBehaviourSanitizer errors. (#1518)
+* import3d_gui bugfix for HOC classes and top-level (#1159)
 
 ### Improvements / Other Changes
 * Documentation
@@ -88,16 +91,18 @@ _Release Date_ : 25-03-2022
   * Allow user to specify dialog popup location. (#1487)
   * Allow python section.disconnect(). (#1451)
   * Implement BBSaveState for Python cells (#1355)
+  * macos build_wheels: add /usr/x11 to CMAKE_PREFIX_PATH (#1565)
+  * Add NRN_NMODL_CXX_FLAGS to facilitate cross compilation (#1174)
 * RXD (@adamjhn could you list here improvements & any other changes?)
   * Faster convergence rate for surface voxel partial volume estimation (#1555)
   * Internal API for saving/restoring 3D voxelization (#1476)
+  * Support for 3D reaction-diffusion simulations with multiple cells with soma contours (#1147)
+
 
 ### Upgrade Steps
 * Linux wheels are now `manylinux2014`: upgrade your `pip`
 * Legacy internal `readline` source code is removed: install `readline` on your system
 * Python2 and Python3.5 support dropped: migrate to Python 3.7+ (3.6 is deprecated)
-
-*NOTE:* NEURON is being migrated to C++ codebase and beginning with the next release `MOD` files will be converted to `C++` instead of `C`. This might break compatibility with some legacy MOD files containing `VERBATIM` blocks. We will update the NEURON documentation describing how one can make MOD files compatible with this change.
 
 For the complete list of features and bug fixes, see `Commits going into 8.1.0` in GitHub Issue #1719
 
