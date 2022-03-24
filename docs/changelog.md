@@ -99,16 +99,13 @@ _Release Date_ : 25-03-2022
   * Internal API for saving/restoring 3D voxelization (#1476)
   * Prevent RxD keeping objects alive (#1270, #1103, #1072)
   * Improved assignment of 3D voxels to segments (#1149)
-
-
-
-
+  
 ### Upgrade Steps
 * Linux wheels are now `manylinux2014`: upgrade your `pip`
 * Legacy internal `readline` source code is removed: install `readline` on your system
 * Python2 and Python3.5 support dropped: migrate to Python 3.7+ (3.6 is deprecated)
 
-For the complete list of features and bug fixes, see `Commits going into 8.1.0` in GitHub Issue #1719
+For the complete list of features and bug fixes, see `Commits going into 8.1.0` in [GitHub Issue #1719](https://github.com/neuronsimulator/nrn/issues/1719)
 
 # NEURON 8.0
 
