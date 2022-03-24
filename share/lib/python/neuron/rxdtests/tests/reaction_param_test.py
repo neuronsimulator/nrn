@@ -16,7 +16,7 @@ ca_intra = rxd.Species(
 F = rxd.Species(axon_terminal_region, name="F", initial=0.001)
 FA = rxd.Species(axon_terminal_region, name="FA", initial=0)
 
-kb = rxd.Parameter(axon_terminal_region, name="kb", value=1e16 / (mM ** 4 * ms))
+kb = rxd.Parameter(axon_terminal_region, name="kb", value=1e16 / (mM**4 * ms))
 ku = rxd.Parameter(axon_terminal_region, name="ku", value=0.1 / ms)
 
 

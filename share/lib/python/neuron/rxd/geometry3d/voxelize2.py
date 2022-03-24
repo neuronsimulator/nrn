@@ -181,7 +181,7 @@ def voxelize2(
     # TODO: compute the correct partial volumes for nodes on the boundary
 
     # start out with the full volumes for every place that contains volume
-    volume_values[grid.nonzero()] = dx ** 3
+    volume_values[grid.nonzero()] = dx**3
 
     # correct the boundary node volumes
     # surface_nodes = sa_grid.nonzero()
