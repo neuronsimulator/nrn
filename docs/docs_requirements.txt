@@ -10,3 +10,5 @@ plotnine
 numpy
 plotly
 nbsphinx
+# 3.1.0 is buggy
+jinja2!=3.1.0
