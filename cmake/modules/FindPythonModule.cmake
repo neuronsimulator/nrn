@@ -60,8 +60,9 @@ macro(nrn_find_python_module module)
     endif()
 
     find_package_handle_standard_args(
-      ${module} REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH VERSION_VAR
-      ${module_upper}_VERSION_STRING)
+      ${module}
+      REQUIRED_VARS ${module_upper}_LOCATION _${module_upper}_VERSION_MATCH
+      VERSION_VAR ${module_upper}_VERSION_STRING)
     if(NOT ${module}_FIND_OPTIONAL AND NOT _${module_upper}_VERSION_MATCH)
       message(FATAL_ERROR "Missing python module ${module}")
     endif()

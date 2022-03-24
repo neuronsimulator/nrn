@@ -243,7 +243,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -mpi)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe
+                           ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -256,15 +257,15 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${PYTHON_EXECUTABLE})
   else()
     set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
-    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${py_args})
+    set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE}
+                           ${py_args})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
   endif()
 
-  # External coreneuron can be used for testing but for simplicity
-  # we are testing only submodule builds (in near future we want to
-  # support only internal builds anyway)
+  # External coreneuron can be used for testing but for simplicity we are testing only submodule
+  # builds (in near future we want to support only internal builds anyway)
   if(NOT nrn_using_ext_corenrn)
     nrn_add_test_group(
       NAME coreneuron_standalone
@@ -276,14 +277,16 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME test_nrn_corenrn_standalone
       REQUIRES coreneuron cpu
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
-      COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py} test/coreneuron/test_psolve.py)
+      COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py}
+              test/coreneuron/test_psolve.py)
   endif()
 
   nrn_add_test_group(
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod test/gjtests/natrans.mod)
+    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc
+                     test/pynrn/unitstest.mod test/gjtests/natrans.mod)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)

@@ -81,7 +81,8 @@ foreach(processor cpu gpu)
     CONFLICTS mpi_dynamic
     PROCESSORS ${ringtest_mpi_ranks}
     PRECOMMAND OMP_NUM_THREADS=1 ${ringtest_special} -tstop 0 -coreneuron -dumpmodel
-    COMMAND OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core} --mpi -d coredat/ -e 100 ${special_gpu_arg}
+    COMMAND OMP_NUM_THREADS=1 LIBSONATA_ZERO_BASED_GIDS=1 ${ringtest_special_core} --mpi -d coredat/
+            -e 100 ${special_gpu_arg}
     OUTPUT asciispikes::out.dat)
 
   # Following suggestion on #1552, run a test with more threads than datasets.

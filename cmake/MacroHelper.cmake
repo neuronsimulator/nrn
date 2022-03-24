@@ -16,13 +16,15 @@ set(CMAKE_REQUIRED_QUIET TRUE)
 # =============================================================================
 macro(nrn_check_dir_exists HEADER VARIABLE)
   # code template to check existence of DIR
-  string(CONCAT CONFTEST_DIR_TPL "#include <sys/types.h>\n"
-                                 "#include <@dir_header@>\n"
-                                 "int main () {\n"
-                                 "  if ((DIR *) 0)\n"
-                                 "    return 0\;\n"
-                                 "  return 0\;\n"
-                                 "}\n")
+  string(
+    CONCAT CONFTEST_DIR_TPL
+           "#include <sys/types.h>\n"
+           "#include <@dir_header@>\n"
+           "int main () {\n"
+           "  if ((DIR *) 0)\n"
+           "    return 0\;\n"
+           "  return 0\;\n"
+           "}\n")
   # first get header file
   check_include_files(${HEADER} HAVE_HEADER)
   if(${HAVE_HEADER})
@@ -41,12 +43,14 @@ endmacro()
 # =============================================================================
 macro(nrn_check_type_exists HEADER TYPE DEFAULT_TYPE VARIABLE)
   # code template to check existence of specific type
-  string(CONCAT CONFTEST_TYPE_TPL "#include <@header@>\n"
-                                  "int main () {\n"
-                                  "  if (sizeof (@type@))\n"
-                                  "    return 0\;\n"
-                                  "  return 0\;\n"
-                                  "}\n")
+  string(
+    CONCAT CONFTEST_TYPE_TPL
+           "#include <@header@>\n"
+           "int main () {\n"
+           "  if (sizeof (@type@))\n"
+           "    return 0\;\n"
+           "  return 0\;\n"
+           "}\n")
   string(REPLACE "@header@" ${HEADER} CONFTEST_TYPE "${CONFTEST_TYPE_TPL}")
   string(REPLACE "@type@" ${TYPE} CONFTEST_TYPE "${CONFTEST_TYPE}")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_TYPE})
@@ -63,11 +67,8 @@ endmacro()
 # =============================================================================
 macro(nrn_check_signal_return_type VARIABLE)
   # code template to check signal support
-  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n"
-                                    "#include <signal.h>\n"
-                                    "int main () {\n"
-                                    "  return *(signal (0, 0)) (0) == 1\;\n"
-                                    "}\n")
+  string(CONCAT CONFTEST_RETSIGTYPE "#include <sys/types.h>\n" "#include <signal.h>\n"
+                "int main () {\n" "  return *(signal (0, 0)) (0) == 1\;\n" "}\n")
   file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp ${CONFTEST_RETSIGTYPE})
   try_compile(MY_RESULT_VAR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/conftest.cpp)
   if(MY_RESULT_VAR)
@@ -105,7 +106,8 @@ macro(nrn_configure_dest_src bfile bdir sfile sdir)
     INPUT_FILE ${infile}
     OUTPUT_FILE ${bin_dir}/_cmake_tmp_${bfile}.in)
   configure_file(${bin_dir}/_cmake_tmp_${bfile}.in ${bin_dir}/_cmake_tmp_${bfile} @ONLY)
-  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile} RESULT_VARIABLE result)
+  execute_process(COMMAND cmp -s ${bin_dir}/_cmake_tmp_${bfile} ${bin_dir}/${bfile}
+                  RESULT_VARIABLE result)
   if(result EQUAL 0)
     file(REMOVE ${bin_dir}/_cmake_tmp_${bfile})
   else()
@@ -123,8 +125,8 @@ macro(nrn_configure_file file dir)
 endmacro()
 
 # =============================================================================
-# Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist
-# Passing an optional CXX will call check_include_files_cxx instead.
+# Perform check_include_files and add it to NRN_HEADERS_INCLUDE_LIST if exist Passing an optional
+# CXX will call check_include_files_cxx instead.
 # =============================================================================
 macro(nrn_check_include_files filename variable)
   set(options CXX)
@@ -247,29 +249,30 @@ endmacro()
 # Create symbolic links
 # =============================================================================
 macro(nrn_install_dir_symlink source_dir symlink_dir)
-    # make sure to have directory path exist upto parent dir
-    get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
-    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
-    # create symbolic link
-    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
+  # make sure to have directory path exist upto parent dir
+  get_filename_component(parent_symlink_dir ${symlink_dir} DIRECTORY)
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${parent_symlink_dir})")
+  # create symbolic link
+  install(
+    CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source_dir} ${symlink_dir})")
 endmacro(nrn_install_dir_symlink)
 
 # ========================================================================
-# There is an edge case to 'find_package(MPI REQUIRED)' in that we can
-# still build a universal2 macos package on an arm64 architecture even if
-# the mpi library has no slice for x86_64.
+# There is an edge case to 'find_package(MPI REQUIRED)' in that we can still build a universal2
+# macos package on an arm64 architecture even if the mpi library has no slice for x86_64.
 # ========================================================================
 macro(nrn_mpi_find_package)
-  if ("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
-    AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
-    AND NRN_ENABLE_MPI_DYNAMIC)
+  if("arm64" IN_LIST CMAKE_OSX_ARCHITECTURES
+     AND "x86_64" IN_LIST CMAKE_OSX_ARCHITECTURES
+     AND NRN_ENABLE_MPI_DYNAMIC)
     set(_temp ${CMAKE_OSX_ARCHITECTURES})
     unset(CMAKE_OSX_ARCHITECTURES CACHE)
     find_package(MPI REQUIRED)
-    set(CMAKE_OSX_ARCHITECTURES ${_temp} CACHE INTERNAL "" FORCE)
+    set(CMAKE_OSX_ARCHITECTURES
+        ${_temp}
+        CACHE INTERNAL "" FORCE)
     set(NRN_UNIVERSAL2_BUILD ON)
   else()
     find_package(MPI REQUIRED)
   endif()
 endmacro()
-
