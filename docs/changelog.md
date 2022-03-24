@@ -20,7 +20,7 @@ _Release Date_ : 25-03-2022
   * Tight integration for both in-memory and as well as file transfer mode
   * Extend CoreNEURON POINTER transfer to any RANGE variable in a NRN_THREAD (#1622)
   * Support for BEFORE/AFTER constructs in MOD file (#1581)
-* RXD (WIP)
+* RXD
   * SaveState support added (#1586)
   * Dynamic extracellular tortuosity and volume fraction (#1260)
   * 3D support for importing multiple morphologies and for moving imported morphologies (#1147)
@@ -97,7 +97,6 @@ _Release Date_ : 25-03-2022
 * RXD
   * Faster convergence rate for surface voxel partial volume estimation (#1555)
   * Internal API for saving/restoring 3D voxelization (#1476)
-  * Support for 3D reaction-diffusion simulations with multiple cells with soma contours (#1147)
   * Prevent RxD keeping objects alive (#1270, #1103, #1072)
   * Improved assignment of 3D voxels to segments (#1149)
 
