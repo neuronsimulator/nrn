@@ -12,4 +12,5 @@ Guides
    cellbuilder
    import3d
    optimization
+   randomness
    faq
