@@ -145,10 +145,13 @@ function(nrn_add_test)
     message(WARNING "nrn_add_test: unknown arguments: ${NRN_ADD_TEST_UNPARSED_ARGUMENTS}")
   endif()
 
-  if(NOT DEFINED NRN_TEST_ENV)
+  if(NOT DEFINED NRN_RUN_FROM_BUILD_DIR_ENV)
     # To avoid duplication we take this value from the {nrn}/test/CMakeLists.txt file by assuming
     # this variable name.
-    message(WARNING "nrn_add_test: NRN_TEST_ENV was not defined; building test files may not work")
+    message(
+      WARNING
+        "nrn_add_test: NRN_RUN_FROM_BUILD_DIR_ENV was not defined; building test files may not work"
+    )
   endif()
 
   # Check if the REQUIRES and/or CONFLICTS arguments mean we should disable this test.
@@ -244,8 +247,8 @@ function(nrn_add_test)
   if(NOT "${modfile_patterns}" STREQUAL "NONE")
     # Add a rule to build the modfiles for this test. The assumption is that it is likely that most
     # members of the group will ask for exactly the same thing, so it's worth de-duplicating.
-    set(nrnivmodl_command cmake -E env ${NRN_TEST_ENV} ${CMAKE_BINARY_DIR}/bin/nrnivmodl
-                          ${nrnivmodl_args})
+    set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
+                          ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${nrnivmodl_args})
     set(hash_components nrnivmodl ${nrnivmodl_args})
     # This condition used to be `requires_coreneuron`. This tends to mean that NEURON and CoreNEURON
     # versions of a test will share the same hash, which is probably fine, but also means that any
@@ -387,7 +390,7 @@ function(nrn_add_test)
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
-  set(test_env "${NRN_TEST_ENV}")
+  set(test_env "${NRN_RUN_FROM_BUILD_DIR_ENV}")
   if(requires_coreneuron)
     if(DEFINED nrnivmodl_working_directory)
       set(test_env

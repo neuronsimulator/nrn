@@ -44,6 +44,14 @@ include(BuildOptionDefaults)
 # =============================================================================
 # Build options (boolean)
 # =============================================================================
+option(NRN_ENABLE_DOCS "Build documentation" ${NRN_ENABLE_DOCS_DEFAULT})
+# This is useful for readthedocs-style builds and the documentation CI, where the actual
+# installation of NEURON comes from an installed binary wheel.
+option(
+  NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION
+  "Build documentation without building NEURON. It will be assumed that import neuron works, nrnivmodl is in PATH, etc."
+  ${NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION_DEFAULT})
+mark_as_advanced(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
 option(NRN_ENABLE_SHARED "Build shared libraries (otherwise static library)"
        ${NRN_ENABLE_SHARED_DEFAULT})
 option(NRN_ENABLE_INTERVIEWS "Enable GUI with INTERVIEWS" ${NRN_ENABLE_INTERVIEWS_DEFAULT})
@@ -239,79 +247,6 @@ if(NRN_ENABLE_RX3D)
 endif()
 if(MINGW)
   find_package(Termcap REQUIRED)
-endif()
-
-# =============================================================================
-# Setup Doxygen documentation
-# =============================================================================
-find_package(Doxygen QUIET)
-if(DOXYGEN_FOUND)
-  # generate Doxyfile with correct source paths
-  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
-  add_custom_target(
-    doxygen
-    COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating API documentation with Doxygen"
-    VERBATIM)
-endif()
-
-# =============================================================================
-# Setup Sphinx documentation
-# =============================================================================
-find_package(Sphinx QUIET)
-if(SPHINX_FOUND)
-  # Target to execute && convert notebooks to html. Note that neuron must be available for python
-  # import. See docs/README.md.
-  add_custom_target(
-    notebooks
-    COMMAND ${CMAKE_COMMAND} -E env NEURON_MODULE_OPTIONS="-nogui" bash
-            ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
-
-  # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
-  # commands cleans them out.
-  add_custom_target(
-    notebooks-clean
-    COMMAND bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
-
-  set(SPHINX_SOURCE ${PROJECT_SOURCE_DIR}/docs)
-  set(SPHINX_BUILD ${PROJECT_SOURCE_DIR}/docs/_build)
-
-  add_custom_target(
-    sphinx
-    COMMAND ${SPHINX_EXECUTABLE} -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-    COMMENT "Generating documentation with Sphinx")
-endif()
-
-# =============================================================================
-# Build full docs
-# =============================================================================
-find_program(JUPYTER_EXE jupyter QUIET)
-
-if(DOXYGEN_FOUND
-   AND SPHINX_FOUND
-   AND JUPYTER_EXE)
-  add_custom_target(
-    docs
-    COMMAND ${CMAKE_COMMAND} --build . --target doxygen
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} --build . --target notebooks
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
-    COMMAND ${CMAKE_COMMAND} --build . --target sphinx
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND ${CMAKE_COMMAND} --build . --target notebooks-clean
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
-    COMMENT "Generating full documentation")
-else()
-  add_custom_target(
-    docs
-    VERBATIM
-    COMMAND echo "Please install docs requirements (see docs/README.md)!"
-    COMMENT "Documentation generation not possible!")
 endif()
 
 # =============================================================================
@@ -569,6 +504,113 @@ endif()
 
 if(MINGW)
   add_subdirectory(src/mswin)
+endif()
+
+# =============================================================================
+# Collect the environment variables that are needed to execute NEURON from the build directory. This
+# is used when configuring tests, and when building documentation targets. TODO: be more careful
+# about trailing colons?
+# =============================================================================
+set(NRN_RUN_FROM_BUILD_DIR_ENV
+    "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}"
+    "NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn" "NRNHOME=${PROJECT_BINARY_DIR}"
+    "PATH=${PROJECT_BINARY_DIR}/bin:$ENV{PATH}")
+if(NRN_ENABLE_CORENEURON AND NOT coreneuron_FOUND)
+  # CoreNEURON is enabled *and* is being built internally
+  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
+endif()
+if(NRN_ENABLE_PYTHON)
+  list(APPEND NRN_RUN_FROM_BUILD_DIR_ENV
+       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
+endif()
+
+if(NRN_ENABLE_DOCS)
+  # Do we need to set extra environment variables to find NEURON?
+  set(NRN_DOCS_COMMAND_PREFIX ${CMAKE_COMMAND} -E env)
+  if(NOT NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+    list(APPEND NRN_DOCS_COMMAND_PREFIX ${NRN_RUN_FROM_BUILD_DIR_ENV})
+  endif()
+
+  # Make sure all dependencies are available
+  find_package(Doxygen REQUIRED)
+  find_program(FFMPEG_EXECUTABLE ffmpeg REQUIRED)
+  find_program(JUPYTER_EXECUTABLE jupyter REQUIRED)
+  find_program(PANDOC_EXECUTABLE pandoc REQUIRED)
+  find_package(Sphinx REQUIRED)
+  set(docs_requirements_file "${PROJECT_SOURCE_DIR}/docs/docs_requirements.txt")
+  file(STRINGS "${docs_requirements_file}" docs_requirements)
+  # Make sure CMake reruns if docs_requirements.txt changeds.
+  set_property(GLOBAL APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${docs_requirements_file}")
+  foreach(docs_requirement ${docs_requirements})
+    if(${skip_next})
+      set(skip_next FALSE)
+      continue()
+    endif()
+    # This is needed for ipython, which is pip installable but not importable.
+    if("${docs_requirement}" STREQUAL "# do not check import of next line")
+      set(skip_next TRUE)
+    elseif("${docs_requirement}" MATCHES "^([a-zA-Z_][a-zA-Z0-9]*)")
+      nrn_find_python_module(${CMAKE_MATCH_0} REQUIRED)
+    endif()
+  endforeach()
+
+  # =============================================================================
+  # Setup Doxygen documentation
+  # =============================================================================
+  # generate Doxyfile with correct source paths
+  configure_file(${PROJECT_SOURCE_DIR}/docs/Doxyfile.in ${PROJECT_BINARY_DIR}/Doxyfile)
+  add_custom_target(
+    doxygen
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
+
+  # =============================================================================
+  # Setup Sphinx documentation
+  # =============================================================================
+
+  # Target to execute && convert notebooks to html. Note that neuron must be available for python
+  # import, so we use NRN_RUN_FROM_BUILD_DIR_ENV. See docs/README.md.
+  add_custom_target(
+    notebooks
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} NEURON_MODULE_OPTIONS="-nogui" bash
+            ${PROJECT_SOURCE_DIR}/docs/notebooks.sh
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+  if(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION)
+    message(STATUS "**Not** making the notebooks target depend on the rest of the NEURON build.")
+    message(STATUS "Documentation building will probably fail if you haven't installed NEURON.")
+  else()
+    # We need NEURON to execute the notebooks. If we're building documentation as part of a normal
+    # build, this means we need to schedule the documenation targets sufficiently late in the build.
+    add_dependencies(notebooks hoc_module rxdmath)
+  endif()
+
+  add_custom_target(
+    sphinx
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} ${SPHINX_EXECUTABLE} -b html "${PROJECT_SOURCE_DIR}/docs"
+            "${PROJECT_SOURCE_DIR}/docs/_build"
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs
+    COMMENT "Generating documentation with Sphinx")
+
+  # Executing notebooks will add outputs in-place. We don't want those committed to the repo. This
+  # commands cleans them out.
+  add_custom_target(
+    notebooks-clean
+    COMMAND ${NRN_DOCS_COMMAND_PREFIX} bash ${PROJECT_SOURCE_DIR}/docs/notebooks.sh --clean
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
+
+  # =============================================================================
+  # Build full docs
+  # =============================================================================
+  add_custom_target(
+    docs
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
+    COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target notebooks-clean
+    COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
+    COMMENT "Generating full documentation")
 endif()
 
 # =============================================================================

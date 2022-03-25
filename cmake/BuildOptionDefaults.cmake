@@ -3,6 +3,8 @@
 # The <optionname>_DEFAULT values should only be changed in this file
 # and not on the command line.
 # ~~~
+set(NRN_ENABLE_DOCS_DEFAULT OFF)
+set(NRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION_DEFAULT OFF)
 set(NRN_ENABLE_SHARED_DEFAULT ON)
 set(NRN_ENABLE_INTERVIEWS_DEFAULT ON)
 set(NRN_ENABLE_MECH_DLL_STYLE_DEFAULT ON)

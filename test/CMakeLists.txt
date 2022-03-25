@@ -33,22 +33,6 @@ if(NOT TARGET hoc_module)
             ${PROJECT_BINARY_DIR}/share/nrn/lib)
 endif()
 
-# Note that DYLD_LIBRARY_PATH is not required and interfere with dlopen
-set(TEST_ENV NEURONHOME=${PROJECT_BINARY_DIR}/share/nrn NRNHOME=${PROJECT_BINARY_DIR}
-             LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH})
-if(NOT coreneuron_FOUND)
-  # CoreNEURON is being built internally
-  list(APPEND TEST_ENV "CORENRNHOME=${PROJECT_BINARY_DIR}")
-endif()
-if(NRN_ENABLE_PYTHON)
-  list(APPEND TEST_ENV
-       PYTHONPATH=${PROJECT_BINARY_DIR}/lib/python:${PROJECT_SOURCE_DIR}/test/rxd:$ENV{PYTHONPATH})
-endif()
-# Give the environment string a more descriptive name that can be used in NeuronTestHelper.cmake
-set(NRN_TEST_ENV "${TEST_ENV}")
-
-set(TESTS "")
-
 # =============================================================================
 # Use add_test method and set environment for testneuron (NEURONHOME env variable needs to be set to
 # run testneuron and other tests based on nrniv)
@@ -441,46 +425,27 @@ endif()
 # ============================================
 # Test modlunit
 # ============================================
+function(add_modlunit_test mod_file)
+  get_filename_component(mod_file_basename "${mod_file}" NAME_WE)
+  add_test(
+    NAME modlunit_${mod_file_basename}
+    COMMAND modlunit "${mod_file}"
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+  list(APPEND TESTS modlunit_${mod_file_basename})
+  set(TESTS
+      "${TESTS}"
+      PARENT_SCOPE)
+endfunction()
+add_modlunit_test("${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod")
+add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
+set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 
-# Strategy. Create a bash script that runs modlunit on a list of mod file expecting success and a
-# list expecting failure. Then run the script with a custom target.
-
-file(
-  WRITE ${PROJECT_BINARY_DIR}/run_modlunit.bash
-  "\
-#!bash\n\
-set -e\n\
-M=${PROJECT_BINARY_DIR}/bin/modlunit
-for i in $1 ; do\n\
-  echo \"expect accept $i\"\n\
-  $M $i\n\
-done\n\
-for i in $2 ; do\n\
-  echo \"expect reject $i\"\n\
-  if $M $i ; then\n\
-    exit 1\n\
-  fi\n\
-done\n\
-exit 0\n\
-")
-
-set(MODFILES_ACCEPT ${PROJECT_SOURCE_DIR}/test/pynrn/unitstest.mod
-                    ${PROJECT_SOURCE_DIR}/src/nrnoc/hh.mod ${PROJECT_SOURCE_DIR}/src/nrnoc/stim.mod)
-set(MODFILES_REJECT ${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod)
-
-add_custom_target(
-  modlunit_test ALL
-  COMMAND ${CMAKE_COMMAND} -E env ${TEST_ENV} $ENV{SHELL} ${PROJECT_BINARY_DIR}/run_modlunit.bash
-          \"${MODFILES_ACCEPT}\" \"${MODFILES_REJECT}\"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  DEPENDS ${PROJECT_BINARY_DIR}/bin/modlunit)
-
-# list(APPEND TESTS modlunit_test)
-
-set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${TEST_ENV}")
+set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
 # If profiling is enabled, run ringtest with profiler
 if(NRN_ENABLE_PROFILING)
-  set(TEST_PROFILING_ENV ${TEST_ENV})
+  set(TEST_PROFILING_ENV ${NRN_RUN_FROM_BUILD_DIR_ENV})
   list(APPEND TEST_PROFILING_ENV "CALI_CONFIG=runtime-report,calc.inclusive")
   set_tests_properties(ringtest PROPERTIES ENVIRONMENT "${TEST_PROFILING_ENV}")
 endif()
