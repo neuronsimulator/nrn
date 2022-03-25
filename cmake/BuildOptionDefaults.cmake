@@ -41,8 +41,7 @@ set(IV_LIB_DEFAULT "")
 set(NRN_WHEEL_BUILD_DEFAULT OFF)
 set(NRN_WHEEL_STATIC_READLINE_DEFAULT OFF)
 
-# we add some coreneuron options in order to check
-# support like GPU
+# we add some coreneuron options in order to check support like GPU
 set(NRN_OPTION_NAME_LIST
     NRN_ENABLE_SHARED
     NRN_ENABLE_INTERVIEWS

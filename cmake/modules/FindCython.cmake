@@ -52,12 +52,9 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   Cython
-  FOUND_VAR
-  CYTHON_FOUND
-  REQUIRED_VARS
-  CYTHON_EXECUTABLE
-  VERSION_VAR
-  CYTHON_VERSION)
+  FOUND_VAR CYTHON_FOUND
+  REQUIRED_VARS CYTHON_EXECUTABLE
+  VERSION_VAR CYTHON_VERSION)
 
 mark_as_advanced(CYTHON_EXECUTABLE)
 # ~~~

@@ -190,7 +190,8 @@ set(NRN_INCLUDE_DIRS
 # ~~~
 add_custom_target(
   nrnversion_h
-  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
+  COMMAND ${CMAKE_COMMAND} -E env PROJECT_VERSION=${PROJECT_VERSION} bash
+          ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh ${PROJECT_SOURCE_DIR} > nrnversion.h.tmp
   COMMAND ${CMAKE_COMMAND} -E copy_if_different nrnversion.h.tmp ${NRN_NRNOC_SRC_DIR}/nrnversion.h
   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
@@ -202,9 +203,8 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
 # generate hocusr.h
 add_custom_command(
   OUTPUT ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
-  COMMAND
-    ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR} ${NRN_NRNOC_SRC_DIR}/neuron.h
-    > neuron.tmp1
+  COMMAND ${CMAKE_C_COMPILER} -E -I${NRN_NRNOC_SRC_DIR} -I${NRN_OC_SRC_DIR}
+          ${NRN_NRNOC_SRC_DIR}/neuron.h > neuron.tmp1
   COMMAND sed "/^#/d" neuron.tmp1 > neuron.tmp2
   COMMAND ${PYTHON_EXECUTABLE} ${NRN_OC_SRC_DIR}/mk_hocusr_h.py < neuron.tmp2 > temp2hoc
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
@@ -285,21 +285,22 @@ if(NRN_HAVE_NVHPC_COMPILER AND ${CMAKE_C_COMPILER_VERSION} VERSION_EQUAL 21.7)
 endif()
 
 if(NRN_ENABLE_MPI_DYNAMIC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp PROPERTIES
-                              OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp PROPERTIES OBJECT_DEPENDS
-                              ${NRNMPI_DYNAMIC_INCLUDE_FILE})
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp PROPERTIES
-                              OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi_dynam.cpp
+                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/nrnmpi.cpp
+                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
+  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/nrnmpi/bbsmpipack.cpp
+                              PROPERTIES OBJECT_DEPENDS ${NRNMPI_DYNAMIC_INCLUDE_FILE})
 endif()
 
-if (NRN_COVERAGE_FILES)
+if(NRN_COVERAGE_FILES)
   foreach(f ${NRN_COVERAGE_FILES})
-    set_property(SOURCE ${PROJECT_SOURCE_DIR}/${f}
+    set_property(
+      SOURCE ${PROJECT_SOURCE_DIR}/${f}
       APPEND
       PROPERTY COMPILE_FLAGS ${NRN_COVERAGE_FLAGS})
   endforeach()
-endif() 
+endif()
 
 # =============================================================================
 # All source directories to include
@@ -344,7 +345,7 @@ set_property(TARGET nrniv_lib PROPERTY OUTPUT_NAME nrniv)
 # Link with backward-cpp if enabled
 # =============================================================================
 if(NRN_USE_BACKWARD)
-    add_backward(nrniv_lib)
+  add_backward(nrniv_lib)
 endif()
 
 # =============================================================================
@@ -408,7 +409,8 @@ if(IV_ENABLE_X11_DYNAMIC)
     set(_suffix ${CMAKE_SHARED_LIBRARY_SUFFIX})
     set(LIBIVX11DYNAM_NAME libivx11dynam${_suffix})
     add_custom_command(
-      TARGET nrniv_lib POST_BUILD
+      TARGET nrniv_lib
+      POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy ${IV_LIB_DIR}/${LIBIVX11DYNAM_NAME}
               ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME})
   endif()
@@ -416,7 +418,7 @@ else()
   target_link_libraries(nrniv_lib ${X11_LIBRARIES})
 endif()
 
-if (NRN_COVERAGE_FILES)
+if(NRN_COVERAGE_FILES)
   target_link_libraries(nrniv_lib ${NRN_COVERAGE_LIB})
   target_link_libraries(modlunit ${NRN_COVERAGE_LIB})
   target_link_libraries(nocmodl ${NRN_COVERAGE_LIB})
@@ -427,7 +429,7 @@ endif()
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
-if (${USE_PTHREAD} EQUAL 1)
+if(${USE_PTHREAD} EQUAL 1)
   target_link_libraries(nrniv Threads::Threads)
 endif()
 if(NOT MINGW)
@@ -449,7 +451,7 @@ endif()
 # ~~~
 install(TARGETS nrniv nocmodl modlunit DESTINATION bin)
 install(TARGETS nrniv_lib DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
-if (LIBIVX11DYNAM_NAME)
+if(LIBIVX11DYNAM_NAME)
   install(FILES ${PROJECT_BINARY_DIR}/lib/${LIBIVX11DYNAM_NAME} DESTINATION lib)
 endif()
 
@@ -460,7 +462,8 @@ endif()
 # For testneuron CTest
 file(COPY ${PROJECT_SOURCE_DIR}/src/ivoc/nrnmain.cpp DESTINATION ${CMAKE_BINARY_DIR}/share/nrn)
 file(COPY ${PROJECT_BINARY_DIR}/src/oc/nrnmpiuse.h DESTINATION ${CMAKE_BINARY_DIR}/include)
-file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
+file(COPY ${PROJECT_BINARY_DIR}/src/nrncvode/nrnneosm.h
+     DESTINATION ${CMAKE_BINARY_DIR}/include/nrncvode)
 file(COPY ${PROJECT_BINARY_DIR}/nrnconf.h DESTINATION ${CMAKE_BINARY_DIR}/include)
 
 # For the installation
