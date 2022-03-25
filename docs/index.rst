@@ -18,6 +18,7 @@ Welcome to NEURON's documentation!
 
    videos/index
    guide/index
+   courses/exercises2018
    publications
    
 
