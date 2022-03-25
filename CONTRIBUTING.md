@@ -179,6 +179,11 @@ To set up automatic formatting run the following commands from the root of the r
     pip install pre-commit
     pre-commit install
 
+**Note**: The first time you commit after installing the hooks, it can take a while to set up the environment.
+If your commit contains any formatting errors, an error will be displayed: Black will have reformatted your staged
+changes and your workspace will contain them as new unstaged changes; stage these changes and re-commit the now
+formatted code!
+
 You can also install and manually apply black formatting as follows:
 
     pip install black
