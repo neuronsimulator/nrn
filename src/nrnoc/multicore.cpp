@@ -826,14 +826,14 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			bamap[ii] = (BAMech*)0;
 		}
 		for (bam = bamech_[i]; bam; bam = bam->next) {
-			// First only. In case multiple bam with same mech type.
-			// Will get others, if any, below with bam->next, etc.
+			//Save first before-after block only.  In case of multiple
+			//before-after blocks with the same mech type, we will get
+			//subsequent ones using linked list below. 
 			if (!bamap[bam->type]) {
 				bamap[bam->type] = bam;
 			}
 		}
-		/* Unnecessary, but keep in order wrt tml */
-		// But necessary to keep in order wrt multiple BAMech with same mech type
+		// necessary to keep in order wrt multiple BAMech with same mech type
 		ptbl = _nt->tbl + i;
 		for (tml = _nt->tml; tml; tml = tml->next) {
 			if (bamap[tml->index]) {
