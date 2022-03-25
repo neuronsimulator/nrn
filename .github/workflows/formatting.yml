@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
-      - name: Set up Python@3.6
+      - name: Set up Python@3.7
         uses: actions/setup-python@v3
         with:
-          python-version: 3.6
+          python-version: 3.7
       
       - name: Install Black
         run: |
@@ -35,4 +35,7 @@ jobs:
       - name: Check Python formatting
         shell: bash
         working-directory: ${{runner.workspace}}/nrn
-        run: git ls-tree -z -r HEAD --name-only | grep -z '\.\(py\|ipynb\)$' | xargs -0 black --check --color --diff --target-version py36
+        run: |
+          git ls-tree -z -r HEAD --name-only \
+          | grep -z '\.\(py\|ipynb\)$' \
+          | xargs -0 black --check --color --diff --target-version py37
