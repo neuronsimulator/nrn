@@ -86,6 +86,11 @@ workflows:
   build-workflow:
     jobs:
       - manylinux2014-aarch64:
+          filters:
+            branches:
+              only:
+                - /release\/.*/
+                - /circleci\/.*/
           matrix:
             parameters:
               NRN_PYTHON_VERSION: ["310"]
