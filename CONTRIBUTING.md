@@ -173,7 +173,7 @@ Please follow [PEP8](https://www.python.org/dev/peps/pep-0008/) conventions in a
 submitted code and apply [black](https://black.readthedocs.io/en/stable/) formatting, a
 stricter superset of PEP8.
 
-Using `pre-commit` hooks, the `black` tool can be executed every time you commit, and automatically reformat your code according to the repository's preferences.
+Using [`pre-commit` hooks](https://pre-commit.com/), the `black` tool can be executed every time you commit, and automatically reformat your code according to the repository's preferences.
 To set up automatic formatting run the following commands from the root of the repository:
 
     pip install pre-commit
