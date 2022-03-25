@@ -107,7 +107,11 @@ This model has a home-brew interface that does not show elapsed walltime, but to
 
 This model also has non-threadsafe mechanisms. So we need to repair with ``mkthreadsafe`` (Another case of using GLOBAL variables for temporary storage.) However, running a sim with two threads gives an error
 
-...usable mindelay is 0 (or less than dt for fixed step method)
+.. code::
+    none
+    
+    ...usable mindelay is 0 (or less than dt for fixed step method)
+
 Sadly, threads cannot be used when any :attr:`NetCon.delay` is 0. Fortunately, this model is not critically sensitive to the delay, so try again by setting all delays to 0.5 ms . (Copy-paste the following into the Python terminal)
 
 .. code::
