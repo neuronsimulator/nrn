@@ -266,7 +266,7 @@ $ git diff
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["36", "37", "38", "39", "310"]
++              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
 ```
 
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!

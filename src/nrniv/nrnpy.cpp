@@ -56,9 +56,9 @@ extern char* neuron_home;
 #if NRNPYTHON_DYNAMICLOAD >= 30
 
 #ifdef MINGW
-static const char* ver[] = {"3.6", 0};
+static const char* ver[] = {"3.7", 0};
 #else
-static const char* ver[] = {"3.9", "3.8", "3.7", "3.6", 0};
+static const char* ver[] = {"3.10", "3.9", "3.8", "3.7", 0};
 #endif // !MINGW
 
 #else

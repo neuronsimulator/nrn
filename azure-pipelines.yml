@@ -32,8 +32,6 @@ jobs:
     vmImage: 'ubuntu-18.04'
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
       Python37:
         python.version: '3.7'
       Python38:
@@ -87,8 +85,6 @@ jobs:
     GPU_BUILD: 'true'
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
       Python37:
         python.version: '3.7'
       Python38:
@@ -140,10 +136,6 @@ jobs:
     vmImage: 'macOS-10.15'
   strategy:
     matrix:
-      Python36:
-        python.version: '3.6'
-        python.org.version: '3.6.8'
-        python.installer.name: 'macosx10.9.pkg'
       Python37:
         python.version: '3.7'
         python.org.version: '3.7.7'

@@ -14,7 +14,7 @@
 #    -DIV_DIR=/home/hines/neuron/ivcmake/build/install \
 #    -DPYTHON_EXECUTABLE=/e/python37/python \
 #    -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
-#    -DNRN_PYTHON_DYNAMIC="e:/python36/python;e:/python37/python;e:/python38/python" \
+#    -DNRN_PYTHON_DYNAMIC="e:/python37/python;e:/python38/python;e:/python39/python" \
 #    -DNRN_ENABLE_MPI_DYNAMIC=ON \
 #    -DCMAKE_PREFIX_PATH="/c/ms-mpi" \
 #    -DNRN_ENABLE_CORENEURON=Off

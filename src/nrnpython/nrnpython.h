@@ -28,7 +28,7 @@
 #define PyInt_AsLong PyLong_AsLong
 #define PyInt_FromLong PyLong_FromLong
 
-static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 6), "Python >= 3.6 required");
+static_assert(PY_MAJOR_VERSION > 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 7), "Python >= 3.7 required");
 
 extern PyObject* nrnpy_hoc_pop();
 extern int nrnpy_numbercheck(PyObject*);

@@ -401,12 +401,12 @@ if(NOT PYTHON_EXECUTABLE)
   message(STATUS "\tSetting PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}")
 endif()
 
-find_package(PythonInterp 3.6 REQUIRED)
+find_package(PythonInterp 3.7 REQUIRED)
 if(NRN_ENABLE_PYTHON)
   # start afresh with PythonLibsNew's find_library
-  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.6;python3.9"
+  # without this, -DPYTHON_EXECUTABLE=`which python3` -DNRN_PYTHON_DYNAMIC="python3.7;python3.10"
   # would end up with a NRN_DEFAULT_PYTHON_LIBRARIES of
-  # /usr/lib/x86_64-linux-gnu/libpython3.6.so
+  # /usr/lib/x86_64-linux-gnu/libpython3.7.so
   unset(PYTHON_LIBRARY CACHE)
 
   find_package(PythonLibsNew ${PYTHON_VERSION_MAJOR} REQUIRED)
