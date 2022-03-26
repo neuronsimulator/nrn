@@ -23,7 +23,11 @@ class PlayRecList;
 class IvocVect;
 class BAMechList;
 class HTList;
-typedef std::vector<HTList*> HTListList;
+// nrn_nthread vectors of HTList* for fixed step method
+// Thread segregated HTList* of all the CVode.CvodeThreadData.HTList*
+// Interior vector needed because of the chance of local variable time step.
+//   Practically it will always have length <= 1.
+using HTListList = std::vector<std::vector<HTList*>>;
 class NetCvode;
 class MaxStateItem;
 typedef std::unordered_map<void*, MaxStateItem*> MaxStateTable;
@@ -203,7 +207,7 @@ public:
 	void set_CVRhsFn();
 	bool use_partrans();
 	hoc_Item* psl_; //actually a hoc_List
-	HTListList* wl_list_; // for faster deliver_net_events when many cvode
+	HTListList wl_list_; // nrn_nthread of these for faster deliver_net_events when many cvode
 	int pcnt_;
 	NetCvodeThreadData* p;
 	int enqueueing_;

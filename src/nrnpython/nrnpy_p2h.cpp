@@ -22,6 +22,7 @@ PyObject* nrnpy_hoc2pyobject(Object*);
 PyObject* hocobj_call_arg(int);
 Object* nrnpy_pyobject_in_obj(PyObject*);
 int nrnpy_ho_eq_po(Object*, PyObject*);
+char* nrnpyerr_str();
 extern void* (*nrnpy_save_thread)();
 extern void (*nrnpy_restore_thread)(void*);
 static void* save_thread() { return PyEval_SaveThread(); }
@@ -107,8 +108,27 @@ static void call_python_with_section(Object* pyact, Section* sec) {
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Call of Python Callable failed", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+  }
 }
 
+extern void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
+static void* opaque_obj2pyobj(Object* ho) {
+  assert(ho && ho->ctemplate->sym == nrnpy_pyobj_sym_);
+  PyObject* po =((Py2Nrn*)ho->u.this_pointer)->po_;  
+  assert(po);
+  return po;     
+}
 
 extern "C" void nrnpython_reg_real() {
   //printf("nrnpython_reg_real()\n");
@@ -135,6 +155,7 @@ extern "C" void nrnpython_reg_real() {
   nrnpy_pysame = pysame;
   nrnpy_save_thread = save_thread;
   nrnpy_restore_thread = restore_thread;
+  nrnpy_opaque_obj2pyobj_p_ = opaque_obj2pyobj;
   dlist = hoc_l_newlist();
 #if NRNPYTHON_DYNAMICLOAD
   nrnpy_site_problem_p = &nrnpy_site_problem;
@@ -202,9 +223,27 @@ PyObject_Print(callable, stdout, 0);
 printf("\nargs\n");
 PyObject_Print(args, stdout, 0);
 printf("\nreturn %p\n", p);
-if (p) { PyObject_Print(p, stdout, 0); printf("\n");}
 #endif
-  HocContextRestore return p;
+  HocContextRestore
+  // It would be nice to handle the error here, ending with a hoc_execerror
+  // for any Exception (note, that does not include SystemExit). However
+  // since many, but not all, of the callers need to clean up and
+  // release the GIL, errors get handled by the caller or higher up.
+  // The almost generic idiom is:
+  /**
+  if (!p) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      hoc_execerror("Call of Python Callable failed", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print(); // Python process will exit with the error code specified by the SystemExit instance.
+    }
+  }
+  **/
+  return p;
 }
 
 void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
@@ -262,9 +301,19 @@ void py2n_component(Object* ob, Symbol* sym, int nindex, int isfunc) {
     // PyObject_Print(result, stdout, 0);
     // printf("  result of call\n");
     if (!result) {
-      PyErr_Print();
-      lock.release();
-      hoc_execerror("PyObject method call failed:", sym->name);
+      char* mes = nrnpyerr_str();
+      Py_XDECREF(tail);
+      Py_XDECREF(head);
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+        lock.release();
+        hoc_execerror("PyObject method call failed:", sym->name);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print();
+      }
+      return;
     }
   } else if (nindex) {
     PyObject* arg;
@@ -397,9 +446,6 @@ static PyObject* hoccommand_exec_help1(PyObject* po) {
     r = nrnpy_pyCallObject(po, args);
     Py_DECREF(args);
   }
-  if (r == NULL) {
-    PyErr_Print();
-  }
   return r;
 }
 
@@ -418,11 +464,24 @@ static double praxis_efun(Object* ho, Object* v) {
   Py_XDECREF(pc);
   Py_XDECREF(pv);
   PyObject* r = hoccommand_exec_help1(po);
+  Py_XDECREF(po);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Call of Python Callable failed in praxis_efun", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+    return 1e9; // SystemExit?
+  }
   PyObject* pn = PyNumber_Float(r);
   double x = PyFloat_AsDouble(pn);
   Py_XDECREF(pn);
   Py_XDECREF(r);
-  Py_XDECREF(po);
   return x;
 }
 
@@ -431,8 +490,16 @@ static int hoccommand_exec(Object* ho) {
 
   PyObject* r = hoccommand_exec_help(ho);
   if (r == NULL) {
-    lock.release();
-    hoc_execerror("Python Callback failed", 0);
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   Py_XDECREF(r);
   return (r != NULL);
@@ -450,8 +517,16 @@ static int hoccommand_exec_strret(Object* ho, char* buf, int size) {
     buf[size - 1] = '\0';
     Py_XDECREF(r);
   } else {
-    lock.release();
-    hoc_execerror("Python Callback failed", 0);
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   return (r != NULL);
 }
@@ -466,6 +541,18 @@ static void grphcmdtool(Object* ho, int type, double x, double y, int key) {
   r = nrnpy_pyCallObject(po, args);
   Py_XDECREF(args);
   Py_XDECREF(r);
+  if (!r) {
+    char* mes = nrnpyerr_str();
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      lock.release();
+      hoc_execerror("Python Callback failed", 0);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
+  }
 }
 
 static Object* callable_with_args(Object* ho, int narg) {
@@ -531,13 +618,20 @@ static double func_call(Object* ho, int narg, int* err) {
   double rval = 0.0;
   if (r == NULL) {
     if (!err || *err) {
-      PyErr_Print();
+      char* mes = nrnpyerr_str();
+      if (mes) {
+        Fprintf(stderr, "%s\n", mes);
+        free(mes);
+      }
+      if (PyErr_Occurred()) {
+        PyErr_Print();
+      }
     }else{
       PyErr_Clear();
     }
     if (!err || *err) {
       lock.release();
-      hoc_execerror("func_call failed", 0);
+      hoc_execerror("func_call failed", NULL);
     }
     if (err) { *err = 1; }
   }else{
@@ -629,12 +723,15 @@ static char* pickle(PyObject* p, size_t* size) {
   PyObject* arg = PyTuple_Pack(1, p);
   PyObject* r = nrnpy_pyCallObject(dumps, arg);
   Py_XDECREF(arg);
+  if (!r && PyErr_Occurred()) {
+    PyErr_Print();
+  }
   assert(r);
   assert(PyBytes_Check(r));
   *size = PyBytes_Size(r);
   char* buf1 = PyBytes_AsString(r);
   char* buf = new char[*size];
-  for (int i = 0; i < *size; ++i) {
+  for (size_t i = 0; i < *size; ++i) {
     buf[i] = buf1[i];
   }
   Py_XDECREF(r);
@@ -671,33 +768,61 @@ static Object* pickle2po(char* s, size_t size) {
 }
 
 /** Full python traceback error message returned as string.
- *  free the return value.
+ *  Caller should free the return value if not NULL
 **/
 char* nrnpyerr_str() {
-  static char** pmes;
-  if (PyErr_Occurred()) {
+  if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_Exception)) {
     PyObject *ptype, *pvalue, *ptraceback;
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
     // try for full backtrace
-    PyObject* module_name = PyString_FromString("traceback");
-    if (!module_name) { return NULL; }
-    PyObject* pyth_module = PyImport_Import(module_name);
-    if (!pyth_module) { return NULL; }
-    Py_DECREF(module_name);   
-    PyObject* pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
-    if (!pyth_func) { return NULL; }
-    PyObject* pyth_val = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback);
-    if (!pyth_val) { return NULL; }
-    Py_DECREF(pyth_func);
+    PyObject* module_name = NULL;
+    PyObject* pyth_module = NULL;
+    PyObject* pyth_func = NULL;
+    PyObject* py_str = NULL;
+    char* cmes = NULL;
+
+    // Since traceback.format_exception returns list of strings, wrap
+    // in neuron.format_exception that returns a string.    
+    if (!ptraceback) {
+        ptraceback = Py_None;
+        Py_INCREF(ptraceback);
+    }
+    module_name = PyString_FromString("neuron");
+    if (module_name) {
+        pyth_module = PyImport_Import(module_name);
+    }
+    if (pyth_module) {
+        pyth_func = PyObject_GetAttrString(pyth_module, "format_exception");
+        if (pyth_func) {
+            py_str = PyObject_CallFunctionObjArgs(pyth_func, ptype, pvalue, ptraceback, NULL);
+        }
+    }
+    if (py_str) {
+        Py2NRNString mes(py_str);
+        if (mes.err()) {
+            Fprintf(stderr, "nrnperr_str: Py2NRNString failed\n");
+        } else {
+            cmes = strdup(mes.c_str());
+            if (!cmes) {
+                Fprintf(stderr, "nrnpyerr_str: strdup failed\n");
+            }
+        }
+    }
+
+    if (!py_str) {
+        PyErr_Print();
+        Fprintf(stderr, "nrnpyerr_str failed\n");
+    }
+
+    Py_XDECREF(module_name);
+    Py_XDECREF(pyth_func);
+    Py_XDECREF(pyth_module);
     Py_XDECREF(ptype);
     Py_XDECREF(pvalue);
     Py_XDECREF(ptraceback);
-    PyObject* py_str = PyObject_Str(pyth_val);
-    Py_DECREF(pyth_func);
-    Py2NRNString mes(py_str);
-    Py_DECREF(py_str);
-    char* cmes = strdup(mes.c_str());
+    Py_XDECREF(py_str);
+
     return cmes;
   }
   return NULL;
@@ -732,9 +857,14 @@ char* call_picklef(char* fname, size_t size, int narg, size_t* retsize) {
   Py_DECREF(args);
   if (!result) {
     char* mes = nrnpyerr_str();
-    Fprintf(stderr, "%s\n", mes);
-    free(mes);
-    hoc_execerror("PyObject method call failed:", NULL);
+    if (mes) {
+      Fprintf(stderr, "%s\n", mes);
+      free(mes);
+      hoc_execerror("PyObject method call failed:", NULL);
+    }
+    if (PyErr_Occurred()) {
+      PyErr_Print();
+    }
   }
   char* rs = pickle(result, retsize);
   Py_XDECREF(result);
@@ -824,7 +954,6 @@ static PyObject* py_gather(PyObject* psrc, int root){
 
 static PyObject* py_broadcast(PyObject* psrc, int root){
   // Note: root returns reffed psrc.
-  int np = nrnmpi_numprocs;
   char* buf = NULL;
   int cnt = 0;
   if (root == nrnmpi_myid) {
@@ -957,8 +1086,8 @@ Object* py_alltoall_type(int size, int type) {
   if (size >= 0) {  // otherwise count only
     s = new char[bufsz];
   }
-  int curpos = 0;
-  for (int i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
+  size_t curpos = 0;
+  for (size_t i = 0; (p = PyIter_Next(iterator)) != NULL; ++i) {
     if (p == Py_None) {
       scnt[i] = 0;
       Py_DECREF(p);
@@ -970,13 +1099,13 @@ Object* py_alltoall_type(int size, int type) {
       if (curpos + sz >= bufsz) {
         bufsz = bufsz * 2 + sz;
         char* s2 = new char[bufsz];
-        for (int i = 0; i < curpos; ++i) {
+        for (size_t i = 0; i < curpos; ++i) {
           s2[i] = s[i];
         }
         delete[] s;
         s = s2;
       }
-      for (int j = 0; j < sz; ++j) {
+      for (size_t j = 0; j < sz; ++j) {
         s[curpos + j] = b[j];
       }
     }

@@ -49,7 +49,9 @@ class Py2NRNString {
       PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     }
     if (pvalue && ptype) {
-      PyErr_SetObject(type, PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue));
+      PyObject* umes = PyUnicode_FromFormat("%s (Note: %S: %S)", message, ptype, pvalue);
+      PyErr_SetObject(type, umes); // umes is borrowed reference
+      Py_XDECREF(umes);
     }else{
       PyErr_SetString(type, message);
     }
@@ -61,7 +63,6 @@ class Py2NRNString {
     PyObject* ptype = NULL;
     PyObject* pvalue = NULL;
     PyObject* ptraceback = NULL;
-    PyObject* pstr = NULL;
     if (err()) {
       PyErr_Fetch(&ptype, &pvalue, &ptraceback);
       if (pvalue) {
@@ -73,6 +74,7 @@ class Py2NRNString {
           } else {
             str_ = strdup("get_pyerr failed at PyUnicode_AsUTF8");
           }
+          Py_XDECREF(pstr);
         } else {
           str_ = strdup("get_pyerr failed at PyObject_Str");
         }
@@ -81,7 +83,6 @@ class Py2NRNString {
       }
     }
     PyErr_Clear(); // in case could not turn pvalue into c_str.
-    Py_XDECREF(pstr);
     Py_XDECREF(ptype);
     Py_XDECREF(pvalue);
     Py_XDECREF(ptraceback);

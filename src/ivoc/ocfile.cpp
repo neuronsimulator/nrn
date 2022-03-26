@@ -502,7 +502,18 @@ bool OcFile::file_chooser_popup() {
 	}
 
 	Display* d = Session::instance()->default_display();
-	while (fc_->post_at(d->width()/2, d->height()/2)) {
+	Coord x, y, ax, ay;
+	if (nrn_spec_dialog_pos(x, y)) {
+		ax = 0.0;
+		ay = 0.0;
+	} else {
+		x = d->width()/2;
+		y = d->height()/2;
+		ax = 0.5;
+		ay = 0.5;
+	}
+
+	while (fc_->post_at_aligned(x, y, ax, ay)) {
 		switch( chooser_type_ ) {
 		case W:
 			if (ok_to_write(*fc_->selected(), NULL)) {

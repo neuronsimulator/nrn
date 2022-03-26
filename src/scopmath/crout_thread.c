@@ -1,5 +1,9 @@
 #include <../../nrnconf.h>
 #include <newton_struct.h>
+#include <stdlib.h>
+extern void* hoc_Emalloc(size_t);
+extern void hoc_malchk();
+#define emalloc(arg) hoc_Emalloc(arg); hoc_malchk()
 /******************************************************************************
  *
  * File: crout.c

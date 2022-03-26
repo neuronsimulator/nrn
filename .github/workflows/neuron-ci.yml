@@ -22,9 +22,9 @@ on:
 env:
   BUILD_TYPE: Release
   DEVELOPER_DIR: /Applications/Xcode_11.3.1.app/Contents/Developer
-  DESIRED_CMAKE_VERSION: 3.8.2
-  PY_MIN_VERSION: 3.6
-  PY_MAX_VERSION: 3.9
+  DESIRED_CMAKE_VERSION: 3.15.0
+  PY_MIN_VERSION: '3.7'
+  PY_MAX_VERSION: '3.10'
 
 jobs:
   ci:
@@ -223,10 +223,9 @@ jobs:
           MATRIX_EVAL: ${{ matrix.config.matrix_eval }}
 
       # This step will set up an SSH connection on tmate.io for live debugging.
-      # To trigger it, simply add 'live-debug-ci' to your last pushed commit message.
-      #
-      # IF SEVERAL JOBS ARE FAILING, USE A FORK OR AT LEAST UPDATE THE MATRIX TO RUN ONLY ONE FAILING JOB AT A TIME,
-      #    SO THAT THE MAIN CI DOESN'T GET SLOWED DOWN OR BLOCKED !
-      - name: live debug session on failure
-        if: failure() && contains(github.event.head_commit.message, 'live-debug-ci')
+      # To enable it, you have to:
+      #   * add 'live-debug-ci' to your PR title
+      #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+      - name: live debug session on failure (manual steps required, check `.github/neuron-ci.yml`)
+        if: failure() && contains(github.event.pull_request.title, 'live-debug-ci')
         uses: mxschmitt/action-tmate@v3

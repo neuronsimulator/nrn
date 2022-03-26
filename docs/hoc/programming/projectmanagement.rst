@@ -1,4 +1,5 @@
-.. _project:
+
+.. _hoc_project:
 
 
 Project Management
@@ -8,7 +9,7 @@ RCS control of simulation projects in a single directory. The idea is to
 be able to reproduce a simulation given its version number. 
 The version number was printed along with all the neuron windows on the screen 
 when the simulation was archived. 
-See :ref:`ArchiveAndHardcopy` 
+See :ref:`hoc_ArchiveAndHardcopy`
 
 To manage parameter sets instead, use:
 
@@ -125,7 +126,7 @@ start.ses
     nrnmainmenu() 
 
  
-The project is initialized with :ref:`prjnrninit` . 
+The project is initialized with :ref:`hoc_prjnrninit` .
 This will create an RCS directory and checkout 
 a nrnversion file with the contents: 
 
@@ -162,14 +163,15 @@ printer specified by the ``$PRINT_CMD`` environment variable.
  
 It is recommended that you play with this simple project for a while 
 to familiarize yourself with the style before employing it in a serious 
-project. Make several different hardcopies. Use :ref:`prjnrnco` to check out 
+project. Make several different hardcopies. Use :ref:`hoc_prjnrnco` to check out
 earlier versions and run them, modify parameters, and make several more 
 hardcopies. Note the way branch version numbers are generated and incremented. 
 
 Utilities
 =========     
 
-.. _prjnrninit:
+
+.. _hoc_prjnrninit:
 
 prjnrninit
 ~~~~~~~~~~
@@ -202,7 +204,8 @@ Description:
     names of the differing files on the standard output. 
 
 
-.. _prjnrnco:
+
+.. _hoc_prjnrnco:
 
 prjnrnco
 ~~~~~~~~
@@ -242,7 +245,8 @@ Description:
     of the simulation (itself) as well as the version numbers of all the 
     working files it needs to reconstruct the simulation. 
 
-.. _prjnrnpr:
+
+.. _hoc_prjnrnpr:
 
 prjnrnpr
 ~~~~~~~~
@@ -265,7 +269,7 @@ Description:
     will be asked whether or not to continue to checkin. If you can't reproduce 
     the simulation or had to change working files to reproduce it, choose "Abort" 
      
-    If the working files did differ then :func:`prjnrnci` is run in an :program:`xterm`. 
+    If the working files did differ then :hoc:func:`prjnrnci` is run in an :program:`xterm`.
      
     The last question for the user to answer is whether to leave the working 
     files at the new or old version. The answer depends on whether you envision 
@@ -275,8 +279,8 @@ Description:
     The log message entered during checkin is added to the postcript stream 
     and sent to ``$PRINT_CMD``.
      
-    This command is called by the :ref:`ArchiveAndHardcopy` menu item in the 
-    :ref:`NEURONMainMenu` which first saves the session in :file:`start.hoc` and 
+    This command is called by the :ref:`hoc_ArchiveAndHardcopy` menu item in the
+    :ref:`hoc_NEURONMainMenu` which first saves the session in :file:`start.hoc` and
     sends the entire session as standard input to this command. 
 
 

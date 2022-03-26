@@ -1,6 +1,6 @@
-#!/bin/bash
-# howto-cmake 36   # builds for 3.6
-# howto-cmake 27 35 36 37 38 # builds for all those
+#!/usr/bin/env bash
+# howto-cmake 37  # builds for 3.7
+# howto-cmake 37 38 39 310 # builds for all those
 
 set -e
 set -x

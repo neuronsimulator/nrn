@@ -1,4 +1,5 @@
-.. _lytton_mpi:
+
+.. _hoc_lytton_mpi:
 
 % $Id: lyttonmpi.txt,v 1.1 2005/08/23 15:47:59 hines Exp $
 

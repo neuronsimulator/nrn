@@ -70,17 +70,17 @@ endif()
 # typically be like "2.7" on unix, and "27" on windows.
 execute_process(
   COMMAND
-    "${PYTHON_EXECUTABLE}" "-c" "from distutils import sysconfig as s;import sys;import struct;
+    "${PYTHON_EXECUTABLE}" "-c" "import sysconfig;import sys;import struct;
 print('.'.join(str(v) for v in sys.version_info));
 print(sys.prefix);
-print(s.get_python_inc(plat_specific=True));
-print(s.get_python_lib(plat_specific=True));
-print(s.get_config_var('SO'));
+print(sysconfig.get_path('include'));
+print(sysconfig.get_path('platlib'));
+print(sysconfig.get_config_var('EXT_SUFFIX'));
 print(hasattr(sys, 'gettotalrefcount')+0);
 print(struct.calcsize('@P'));
-print(s.get_config_var('LDVERSION') or s.get_config_var('VERSION'));
-print(s.get_config_var('LIBDIR') or '');
-print(s.get_config_var('MULTIARCH') or '');
+print(sysconfig.get_config_var('LDVERSION') or sysconfig.get_config_var('VERSION'));
+print(sysconfig.get_config_var('LIBDIR') or '');
+print(sysconfig.get_config_var('MULTIARCH') or '');
 "
   RESULT_VARIABLE _PYTHON_SUCCESS
   OUTPUT_VARIABLE _PYTHON_VALUES
@@ -172,13 +172,12 @@ else()
     set(PYTHON_LIBRARY python${PYTHON_LIBRARY_SUFFIX})
     # Since this isn't very robust. One more try with find_libpython.py
     execute_process(
-      COMMAND
-        "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/find_libpython.py"
+      COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/cmake/find_libpython.py"
       RESULT_VARIABLE _PYTHON_SUCCESS
       OUTPUT_VARIABLE _PYTHON_VALUES
       ERROR_VARIABLE _PYTHON_ERROR_VALUE)
-    if (_PYTHON_SUCCESS MATCHES 0)
-      if (_PYTHON_VALUES)
+    if(_PYTHON_SUCCESS MATCHES 0)
+      if(_PYTHON_VALUES)
         set(PYTHON_LIBRARY "${_PYTHON_VALUES}")
         message(STATUS "PYTHON_LIBRARY from find_libpython.py: \"${PYTHON_LIBRARY}\"")
       endif()

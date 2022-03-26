@@ -897,6 +897,13 @@ static PyObject* newpyseghelp(Section* sec, double x) {
   return (PyObject*)seg;
 }
 
+static PyObject* pysec_disconnect(NPySecObj* self) {
+  CHECK_SEC_INVALID(self->sec_);
+  nrn_disconnect(self->sec_);
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static PyObject* pysec_parentseg(NPySecObj* self) {
   CHECK_SEC_INVALID(self->sec_);
   Section* psec = self->sec_->parentsec;
@@ -2276,6 +2283,8 @@ static PyMethodDef NPySecObj_methods[] = {
      "Section"},
     {"hoc_internal_name", (PyCFunction)hoc_internal_name, METH_NOARGS,
      "Hoc accepts this name wherever a section is syntactically valid."},
+    {"disconnect", (PyCFunction)pysec_disconnect, METH_NOARGS,
+     "disconnect from the parent section."},
     {"parentseg", (PyCFunction)pysec_parentseg, METH_NOARGS,
      "Return the nrn.Segment specified by the connect method. Possibly None."},
     {"trueparentseg", (PyCFunction)pysec_trueparentseg, METH_NOARGS,

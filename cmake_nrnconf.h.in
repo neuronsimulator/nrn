@@ -338,9 +338,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* define if no terminal capabilities */
-#undef WITHOUT_MEMACS
-
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD

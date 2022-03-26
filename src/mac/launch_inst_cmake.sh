@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # this script creates the app bundles so the Finder will allow
 # drag and drop, double clicking of apps, and double clicking of
 # hoc files.

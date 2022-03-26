@@ -44,7 +44,10 @@ pval = pval_praxis(i, Vector)
 extern "C" {
 #endif
 
-extern double praxis(...), praxis_pval(int), *praxis_paxis(int);
+extern double praxis(double* t0, double* machep, double* h0,
+    long int nval, long int* prin, double* x, double(*f)(double*, long int),
+    double* fmin, char* after_quad);
+extern double praxis_pval(int), *praxis_paxis(int);
 extern int praxis_stop(int);
 
 #if defined(__cplusplus)
@@ -64,7 +67,7 @@ extern Object** vector_pobj(IvocVect* v);
 extern int nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 
-static double efun(double*, int);
+static double efun(double*, long int);
 static Symbol* hoc_efun_sym;
 
 static double tolerance, machep, maxstepsize;
@@ -269,7 +272,7 @@ void pval_praxis(void) {
 	hoc_retpushx(praxis_pval(i));
 }
 
-static double efun(double* v, int n)
+static double efun(double* v, long int n)
 {
 	int i;
 	double err;

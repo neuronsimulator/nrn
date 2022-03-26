@@ -34,7 +34,7 @@ jobs:
     - name: Set up Python3
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.10'
 
     - name: Download Dependencies
       run: |
@@ -57,9 +57,11 @@ jobs:
         BUILD_SOURCESDIRECTORY: ${{runner.workspace}}\nrn
 
     # This step will set up an SSH connection on tmate.io for live debugging.
-    # To trigger it, simply add 'live-debug-win' to your last pushed commit message.
-    - name: live debug session on failure
-      if: failure() && contains(github.event.head_commit.message, 'live-debug-win')
+    # To enable it, you have to:
+    #   * add 'live-debug-win' to your PR title
+    #   * push something to your PR branch (note that just re-running the pipeline disregards the title update)
+    - name: live debug session on failure (manual steps required, check `.github/windows.yml`)
+      if: failure() && contains(github.event.pull_request.title, 'live-debug-win')
       uses: mxschmitt/action-tmate@v3
 
     - name: Upload build artifact
@@ -74,6 +76,8 @@ jobs:
       working-directory: ${{runner.workspace}}\nrn
 
     - name: Test Installer
-      run: .\ci\win_test_installer.cmd
+      # temporarily disable rxd testing ( ci/win_test_installer.cmd <-> ci/win_test_installer_wo_rxd.cmd)
+      # see https://github.com/neuronsimulator/nrn/issues/1522
+      run: .\ci\win_test_installer_wo_rxd.cmd
       shell: cmd
       working-directory: ${{runner.workspace}}\nrn

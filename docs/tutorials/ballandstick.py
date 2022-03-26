@@ -65,19 +65,19 @@ class BallAndStick(Cell):
 
     def _setup_biophysics(self):
         for sec in self.all:
-            sec.Ra = 100    # Axial resistance in Ohm * cm
-            sec.cm = 1      # Membrane capacitance in micro Farads / cm^2
-        self.soma.insert('hh')                                          
+            sec.Ra = 100  # Axial resistance in Ohm * cm
+            sec.cm = 1  # Membrane capacitance in micro Farads / cm^2
+        self.soma.insert("hh")
         for seg in self.soma:
             seg.hh.gnabar = 0.12  # Sodium conductance in S/cm2
             seg.hh.gkbar = 0.036  # Potassium conductance in S/cm2
-            seg.hh.gl = 0.0003    # Leak conductance in S/cm2
-            seg.hh.el = -54.3     # Reversal potential in mV
+            seg.hh.gl = 0.0003  # Leak conductance in S/cm2
+            seg.hh.el = -54.3  # Reversal potential in mV
         # Insert passive current in the dendrite
-        self.dend.insert('pas')                 
+        self.dend.insert("pas")
         for seg in self.dend:
             seg.pas.g = 0.001  # Passive conductance in S/cm2
-            seg.pas.e = -65    # Leak reversal potential mV
+            seg.pas.e = -65  # Leak reversal potential mV
 
         # NEW: the synapse
         self.syn = h.ExpSyn(self.dend(0.5))

@@ -220,22 +220,14 @@ extern void hoc_audit_from_hoc_main1(int, const char**, const char**);
 extern void hoc_audit_from_final_exit(void);
 extern void hoc_audit_from_xopen1(const char*, const char*);
 extern void hoc_xopen_from_audit(const char* fname);
-#ifndef WITHOUT_EMACS
-extern void hoc_emacs_from_audit(void);
-extern void hoc_audit_from_emacs(const char*, const char*);
-#endif
 extern int hoc_retrieving_audit (void);
 extern int hoc_retrieve_audit (int id);
 extern int hoc_saveaudit (void);
 
 extern void hoc_close_plot(void);
-extern void hoc_edit(void);
-extern void hoc_edit_quit(void);
-extern size_t hoc_pipegets_need(void);
 extern void ivoc_cleanup(void);
 extern void ivoc_final_exit(void);
 extern int hoc_oc(const char*);
-extern void hoc_pipeflush(void);
 extern void hoc_initcode(void);
 extern int hoc_ParseExec(int);
 extern int hoc_get_line(void);
@@ -275,6 +267,7 @@ extern void nrnpy_pass();
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
+extern void* nrn_opaque_obj2pyobj(Object*); // PyObject reference not incremented
 
 #if defined(__cplusplus)
 }
@@ -285,6 +278,7 @@ extern void bbs_done(void);
 extern int hoc_main1(int, const char**, const char**);
 extern char* cxx_char_alloc(size_t size);
 extern int stoprun;
+extern int nrn_mpiabort_on_error_;
 
 #endif
 

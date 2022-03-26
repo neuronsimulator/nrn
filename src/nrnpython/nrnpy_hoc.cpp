@@ -5,6 +5,8 @@
 #include <ocjump.h>
 #include "ivocvect.h"
 #include "oclist.h"
+#include "ocfile.h"
+#include <cstdint>
 #include "nrniv_mf.h"
 #include "nrnpy_utils.h"
 #include "../nrniv/shapeplt.h"
@@ -36,6 +38,8 @@ extern Object** (*nrnpy_gui_helper3_)(const char*, Object*, int);
 extern char** (*nrnpy_gui_helper3_str_)(const char*, Object*, int);
 extern double (*nrnpy_object_to_double_)(Object*);
 extern void* (*nrnpy_get_pyobj)(Object* obj);
+extern void (*nrnpy_restore_savestate)(int64_t, char*);
+extern void (*nrnpy_store_savestate)(char** save_data, uint64_t* save_data_size);
 extern void (*nrnpy_decref)(void* pyobj);
 extern void lvappendsec_and_ref(void* sl, Section* sec);
 extern Section* nrn_noerr_access();
@@ -409,6 +413,7 @@ static void hocobj_pushargs_free_strings(std::vector<char*>& s2free) {
       free(*it);
     }
   }
+  s2free.clear();
 }
 
 static Symbol* getsym(char* name, Object* ho, int fail) {
@@ -647,7 +652,11 @@ static void* fcall(void* vself, void* vargs) {
   if (self->ho_) {
     hoc_push_object(self->ho_);
   }
+
+  //TODO: this will still have some memory leaks in case of errors.
+  //      see discussion in https://github.com/neuronsimulator/nrn/pull/1437
   std::vector<char*> strings_to_free;
+
   int narg = hocobj_pushargs((PyObject*)vargs, strings_to_free);
   int var_type;
   if (self->ho_) {
@@ -1377,6 +1386,7 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         if (nrn_inpython_ == 2) {  // error in component
           nrn_inpython_ = 0;
           PyErr_SetString(PyExc_TypeError, "No value");
+          Py_DECREF(po);
           return -1;
         }
         Py_DECREF(po);
@@ -1385,10 +1395,12 @@ static int hocobj_setattro(PyObject* subself, PyObject* pyname,
         char e[200];
         sprintf(e, "'%s' requires subscript for assignment", n);
         PyErr_SetString(PyExc_TypeError, e);
+        Py_DECREF(po);
         return -1;
       }
     } else {
       PyErr_SetString(PyExc_TypeError, "not assignable");
+      Py_DECREF(po);
       return -1;
     }
   }
@@ -2315,10 +2327,63 @@ extern "C" int nrnpy_set_vec_as_numpy(PyObject* (*p)(int, double*)) {
   return 0;
 }
 
-extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0) {
+static PyObject* store_savestate_ = NULL;
+static PyObject* restore_savestate_ = NULL;
+
+
+static void nrnpy_store_savestate_(char** save_data, uint64_t* save_data_size) {
+  if(store_savestate_) {
+    // call store_savestate_ with no arguments to get a byte array that we can write out
+    PyObject *args = PyTuple_New(0);
+    PyObject* result = PyObject_CallObject(store_savestate_, args);
+    Py_INCREF(result);
+    Py_DECREF(args);
+    if (result == NULL) {
+      hoc_execerror("SaveState:",	"Data store failure.");    
+    }
+    // free any old data and make a copy
+    if (*save_data) {
+      delete[] (*save_data);
+    }
+    *save_data_size = PyByteArray_Size(result);
+    *save_data = new char[*save_data_size];
+    memcpy(*save_data, PyByteArray_AsString(result), *save_data_size);
+    Py_DECREF(result);
+  } else {
+    *save_data_size = 0;
+  }
+}
+
+static void nrnpy_restore_savestate_(int64_t size, char* data) {
+  if(restore_savestate_) {
+    PyObject *args = PyTuple_New(1);
+    PyObject *py_data = PyByteArray_FromStringAndSize(data, size);
+    Py_INCREF(py_data);
+    if (py_data == NULL) {
+      hoc_execerror("SaveState:", "Data restore failure.");
+    }
+    // note: PyTuple_SetItem steals a ref to py_data
+    PyTuple_SetItem(args, 0, py_data);
+    PyObject* result = PyObject_CallObject(restore_savestate_, args);
+    Py_DECREF(args);
+    if (result == NULL) {
+      hoc_execerror("SaveState:",	"Data restore failure.");    
+    }
+  } else {
+    if (size) {
+      hoc_execerror("SaveState:", "Missing data restore function.");
+    }
+  }
+}
+
+extern "C" int nrnpy_set_toplevel_callbacks(PyObject* rvp_plot0, PyObject* plotshape_plot0, PyObject* get_mech_object_0, PyObject* store_savestate, PyObject* restore_savestate) {
   rvp_plot = rvp_plot0;
   plotshape_plot = plotshape_plot0;
   get_mech_object_ = get_mech_object_0;
+  store_savestate_ = store_savestate;
+  restore_savestate_ = restore_savestate;
+  nrnpy_restore_savestate = nrnpy_restore_savestate_;
+  nrnpy_store_savestate = nrnpy_store_savestate_;
   return 0;
 }
 

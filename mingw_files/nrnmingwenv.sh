@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -ex
 
@@ -92,8 +92,7 @@ cp_dlls $NM/mingw64/bin $NM/mingw64/bin
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1.exe
 libgcc.a
-libgcc_s.a
-liblto_plugin-0.dll
+liblto_plugin.dll
 '
 cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
 rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
@@ -149,7 +148,11 @@ unistd.h
 vadefs.h
 '
 
-copy mingw64/x86_64-w64-mingw32/lib '
+mlib=mingw64/x86_64-w64-mingw32/lib # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/dllcrt2.o ; then # gcc 11.2.0 Rev 9
+  mlib=mingw64/lib
+fi
+copy $mlib '
 crtbegin.o
 crtend.o
 dllcrt2.o
@@ -163,4 +166,12 @@ libpthread.a
 libpthread.dll.a
 libshell32.a
 libuser32.a
+'
+
+gcclib=mingw64/lib/gcc/x86_64-w64-mingw32/$gccver # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/libgcc_s.a ; then # gcc 11.2.0 Rev 10
+  gcclib=mingw64/lib
+fi
+copy $gcclib '
+libgcc_s.a
 '

@@ -36,7 +36,6 @@ void iv_display_scale(float);
 #include "string.h"
 #include "oc2iv.h"
 #include "nrnmpi.h"
-#include "nrnrt.h"
 
 #if defined(IVX11_DYNAM)
 #include <IV-X11/ivx11_dynam.h>
@@ -163,7 +162,7 @@ static OptionDesc options[] = {
 #if defined(USE_PYTHON)
 	int nrn_nopython;
 	extern int use_python_interpreter;
-	extern void (*p_nrnpython_start)(int);
+	extern int (*p_nrnpython_start)(int);
 	char* nrnpy_pyexe;
 #endif
 
@@ -390,6 +389,11 @@ void hoc_nrnmpi_init() {
     char** foo = (char**)nrn_global_argv;
     nrnmpi_init(2, &nrn_global_argc, &foo);
     //if (nrnmpi_myid == 0) {printf("hoc_nrnmpi_init called nrnmpi_init\n");}
+    // turn off gui for all ranks > 0
+    if (nrnmpi_myid_world > 0) {
+        hoc_usegui = 0;
+        hoc_print_first_instance = 0;
+    }
   }
 #endif
   hoc_ret();
@@ -448,10 +452,13 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 //	prargs("at beginning", argc, argv);
 	force_load();
 	nrn_global_argc = argc;
-	nrn_global_argv = new const char*[argc];
-	for (i = 0; i < argc; ++i) {
+	// https://en.cppreference.com/w/cpp/language/main_function, note that argv is
+	// of length argc + 1 and argv[argc] is null.
+	nrn_global_argv = new const char*[argc+1];
+	for (i = 0; i < argc+1; ++i) {
 		nrn_global_argv[i] = argv[i];
 	}
+	nrn_assert(nrn_global_argv[nrn_global_argc] == nullptr);
 	if (nrn_optarg_on("-help", &argc, argv)
 	    || nrn_optarg_on("-h", &argc, argv)) {
 		printf("nrniv [options] [fileargs]\n\
@@ -546,18 +553,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 	}
 #endif
 
-#if NRN_REALTIME
-	if (nrn_optarg_on("-realtime", &argc, argv)) {
-		nrn_realtime_ = 1;
-		nrn_setscheduler();
-	}
-	if (nrn_optarg_on("-schedfifo", &argc, argv)) {
-		if (nrn_realtime_ != 1) {
-			nrn_setscheduler();
-		}
-	}
-
-#endif
 #if !HAVE_IV
 	hoc_usegui = 0;
 	hoc_print_first_instance = 0;
@@ -831,9 +826,6 @@ ENDGUI
 		exit(1);
 	}
 #endif
-#if NRN_REALTIME
-	nrn_maintask_init();
-#endif
        if (start_session) {
 #if HAVE_IV
         oc.run(our_argc, our_argv);
@@ -856,7 +848,11 @@ PR_PROFILE
 #if defined(USE_PYTHON)
 	if (use_python_interpreter) {
 		// process the .py files and an interactive interpreter
-		if (p_nrnpython_start) {(*p_nrnpython_start)(2);}
+		if (p_nrnpython_start && (*p_nrnpython_start)(2) != 0) {
+			// We encountered an error when processing the -c argument or Python
+			// script given on the commandline.
+			exit_status = 1;
+		}
 	}
 	if (p_nrnpython_start) { (*p_nrnpython_start)(0); }
 #endif
@@ -868,9 +864,6 @@ PR_PROFILE
 void ivoc_final_exit() {
 #if NRNMPI
 	nrnmpi_terminate();
-#endif
-#if NRN_REALTIME
-	nrn_maintask_delete();
 #endif
 }
 

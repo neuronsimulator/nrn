@@ -1,22 +1,23 @@
-.. _lw_doc:
+
+.. _hoc_lw_doc:
 
 Obsolete Text Menus
 -------------------
 
 The functions above have been superseded by the graphical user interface 
 but are available for use on unix machines and in the DOS version. 
-See :class:`Graph`.
+See :hoc:class:`Graph`.
 
 ----
 
 
 
-.. function:: fmenu
+.. hoc:function:: fmenu
 
 
     Description:
         This is an old terminal based menu system that has been superseded by the 
-        :ref:`GUI`. 
+        :ref:`hoc_GUI`.
          
         Fmenu creates, displays, and allows user to move within a menu to 
         select and change 

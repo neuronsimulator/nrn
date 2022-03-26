@@ -1,14 +1,20 @@
+#include <vector>
+#include <unordered_map>
 #include "nrncore_callbacks.h"
 #include "nrnconf.h"
 #include "nrnmpi.h"
 #include "section.h"
 #include "netcon.h"
+#include "nrncvode.h"
+#include "nrniv_mf.h"
 #include "hocdec.h"
+#include "nrncore_write/utils/nrncore_utils.h"
 #include "nrncore_write/data/cell_group.h"
 #include "nrncore_write/io/nrncore_io.h"
 #include "parse.hpp"
 #include "nrnran123.h" // globalindex written to globals.
-#include "netcvode.h" // for nrnbbcore_vecplay_write
+#include "netcvode.h" // for nrnbbcore_vecplay_write and PreSyn.flag_
+extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 
 #ifdef MINGW
@@ -29,6 +35,7 @@ extern char* dlerror();
 #endif
 
 extern bbcore_write_t* nrn_bbcore_write_;
+extern bbcore_write_t* nrn_bbcore_read_;
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
@@ -36,6 +43,7 @@ extern double nrn_ion_charge(Symbol*);
 extern CellGroup* cellgroups_;
 extern NetCvode* net_cvode_instance;
 extern char* pnt_map;
+extern void* nrn_interthread_enqueue(NrnThread*);
 
 /** Populate function pointers by mapping function pointers for callback */
 void map_coreneuron_callbacks(void* handle) {
@@ -194,9 +202,9 @@ size_t nrnthreads_type_return(int type, int tid, double*& data, double**& mdata)
                 // is the Memb_list we need. Sadly, by the time we get here, cellgroups_
                 // has already been deleted.  So we defer deletion of the necessary
                 // cellgroups_ portion (deleting it on return from nrncore_run).
-                auto& p = CellGroup::deferred_type2artdata_[tid][type];
-                n = size_t(p.first);
-                mdata = p.second;
+                auto& ml = CellGroup::deferred_type2artml_[tid][type];
+                n = size_t(ml->nodecount);
+                mdata = ml->data;
             }
         }
     }
@@ -281,7 +289,6 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 
     // If direct transfer, copy, because target space already allocated
     bool copy = corenrn_direct;
-    int n = nt.end;
     if (copy) {
         for (int i=0; i < nt.end; ++i) {
             v_parent_index[i] = nt._v_parent_index[i];
@@ -317,7 +324,7 @@ int nrnthread_dat2_2(int tid, int*& v_parent_index, double*& a, double*& b,
 }
 
 int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindices,
-                               double*& data, int*& pdata) {
+                               double*& data, int*& pdata, std::vector<int>& pointer2type) {
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
@@ -361,7 +368,7 @@ int nrnthread_dat2_mech(int tid, size_t i, int dsz_inst, int*& nodeindices,
     sz = bbcore_dparam_size[type]; // nrn_prop_dparam_size off by 1 if cvode_ieq.
     if (sz) {
         int* pdata1;
-        pdata1 = datum2int(type, ml, nt, cg, cg.datumindices[dsz_inst], vdata_offset);
+        pdata1 = datum2int(type, ml, nt, cg, cg.datumindices[dsz_inst], vdata_offset, pointer2type);
         if (copy) {
             int nn = n*sz;
             for (int i=0; i < nn; ++i) {
@@ -383,7 +390,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 
     if (tid >= nrn_nthread) { return 0; }
     CellGroup& cg = cellgroups_[tid];
-    NrnThread& nt = nrn_threads[tid];
 
     output_vindex = new int[cg.n_presyn];
     output_threshold = new double[cg.n_real_output];
@@ -421,7 +427,6 @@ int nrnthread_dat2_3(int tid, int nweight, int*& output_vindex, double*& output_
 int nrnthread_dat2_corepointer(int tid, int& n) {
 
     if (tid >= nrn_nthread) { return 0; }
-    NrnThread& nt = nrn_threads[tid];
 
     n = 0;
     MlWithArt& mla = cellgroups_[tid].mlwithart;
@@ -468,18 +473,56 @@ int nrnthread_dat2_corepointer_mech(int tid, int type,
 }
 
 
-int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset) {
+// primarily to return nrnran123 sequence info when psolve on the coreneuron
+// side is finished so can either do another coreneuron psolve or
+// continue on neuron side.
+int core2nrn_corepointer_mech(int tid, int type,
+                                           int icnt, int dcnt, int* iArray, double* dArray) {
+
+    if (tid >= nrn_nthread) { return 0; }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    // ARTIFICIAL_CELL are not in nt.
+    if (!ml) {
+        ml = CellGroup::deferred_type2artml_[tid][type];
+        assert(ml);
+    }
+
+    int ik = 0;
+    int dk = 0;
+    // data values
+    for (int i = 0; i < ml->nodecount; ++i) {
+        (*nrn_bbcore_read_[type])(dArray, iArray, &dk, &ik, ml->data[i], ml->pdata[i], ml->_thread, &nt);
+    }
+    assert(dk == dcnt);
+    assert(ik == icnt);
+    return 1;
+}
+
+int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndices& di, int ml_vdata_offset, std::vector<int>& pointer2type) {
     int isart = nrn_is_artificial_[di.type];
     int sz = bbcore_dparam_size[type];
     int* pdata = new int[ml->nodecount * sz];
+    int* semantics = memb_func[type].dparam_semantics;
     for (int i=0; i < ml->nodecount; ++i) {
-        Datum* d = ml->pdata[i];
         int ioff = i*sz;
         for (int j = 0; j < sz; ++j) {
             int jj = ioff + j;
             int etype = di.ion_type[jj];
             int eindex = di.ion_index[jj];
-            if (etype == -1) {
+            const int seman = semantics[j];
+            // Would probably be more clear if use seman for as many as
+            // possible of the cases
+            // below and within each case deal with etype appropriately.
+            // ion_type and ion_index have become misnomers as they no longer
+            // refer to ions specificially but the mechanism type where the
+            // range variable lives (and otherwise is generally the same as
+            // seman). And ion_index refers to the index of the range variable
+            // within the mechanism (or voltage, area, etc.)
+            if (seman == -5) { // POINTER to range variable (e.g. voltage)
+                pdata[jj] = eindex;
+                pointer2type.push_back(etype);
+            }else if (etype == -1) {
                 if (isart) {
                     pdata[jj] = -1; // maybe save this space eventually. but not many of these in bb models
                 }else{
@@ -487,7 +530,7 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
                 }
             }else if (etype == -9) {
                 pdata[jj] = eindex;
-            }else if (etype > 0 && etype < 1000){//ion pointer and also POINTER
+            }else if (etype > 0 && etype < 1000){//ion pointer
                 pdata[jj] = eindex;
             }else if (etype > 1000 && etype < 2000) { //ionstyle can be explicit instead of pointer to int*
                 pdata[jj] = eindex;
@@ -502,9 +545,6 @@ int* datum2int(int type, Memb_list* ml, NrnThread& nt, CellGroup& cg, DatumIndic
             }else if (etype == -7) { // bbcorepointer
                 pdata[jj] = ml_vdata_offset + eindex;
                 //printf("etype %d jj=%d eindex=%d pdata=%d\n", etype, jj, eindex, pdata[jj]);
-            }else if (etype == -5) { // POINTER to voltage
-                pdata[jj] = eindex;
-                //printf("etype %d\n", etype);
             }else{ //uninterpreted
                 assert(eindex != -3); // avoided if last
                 pdata[jj] = 0;
@@ -519,11 +559,33 @@ void part2_clean() {
 
     CellGroup::clean_art(cellgroups_);
 
+    if (corenrn_direct) {
+        CellGroup::defer_clean_netcons(cellgroups_);
+    }
+
     delete [] cellgroups_;
     cellgroups_ = NULL;
 }
 
+std::vector<NetCon**> CellGroup::deferred_netcons;
 
+void CellGroup::defer_clean_netcons(CellGroup* cgs) {
+    clean_deferred_netcons();
+    for (int tid = 0; tid < nrn_nthread; ++tid) {
+        CellGroup& cg = cgs[tid];
+        deferred_netcons.push_back(cg.netcons);
+        cg.netcons = nullptr;
+    }
+}
+
+void CellGroup::clean_deferred_netcons() {
+    for (auto ncs: deferred_netcons) {
+        if (ncs) {
+            delete [] ncs;
+        }
+    }
+    deferred_netcons.clear();
+}
 
 // Vector.play information.
 // Must play into a data element in this thread
@@ -562,7 +624,8 @@ int nrnthread_dat2_vecplay(int tid, std::vector<int>& indices) {
 }
 
 int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
-                                       int& ix, int& sz, double*& yvec, double*& tvec) {
+                                       int& ix, int& sz, double*& yvec, double*& tvec,
+                                       int& last_index, int& discon_index, int& ubound_index) {
 
     if (tid >= nrn_nthread) { return 0; }
     NrnThread& nt = nrn_threads[tid];
@@ -590,10 +653,506 @@ int nrnthread_dat2_vecplay_inst(int tid, int i, int& vptype, int& mtype,
                     }
                 }
                 assert(found);
+                // following 3 used for direct-mode.
+                last_index = vp->last_index_;
+                discon_index = vp->discon_index_;
+                ubound_index = vp->ubound_index_;
                 return 1;
             }
         }
     }
 
     return 0;
+}
+
+/** getting one item at a time from CoreNEURON **/
+void core2nrn_vecplay(int tid, int i, int last_index, int discon_index, int ubound_index) {
+  if (tid >= nrn_nthread) { return; }
+  PlayRecList* fp = net_cvode_instance->fixed_play_;
+  assert(fp->item(i)->type() == VecPlayContinuousType);
+  VecPlayContinuous* vp = (VecPlayContinuous*)fp->item(i);
+  vp->last_index_ = last_index;
+  vp->discon_index_ = discon_index;
+  vp->ubound_index_ = ubound_index;
+}
+
+/** start the vecplay events **/
+void core2nrn_vecplay_events() {
+    PlayRecList* fp = net_cvode_instance->fixed_play_;
+    for (int i=0; i < fp->count(); ++i){
+        if (fp->item(i)->type() == VecPlayContinuousType) {
+            VecPlayContinuous* vp = (VecPlayContinuous*)fp->item(i);
+            NrnThread* nt = nrn_threads + vp->ith_;
+            vp->e_->send(vp->t_->elem(vp->ubound_index_), net_cvode_instance, nt);
+        }
+    }
+}
+
+/** getting one item at a time from nrn2core_transfer_WATCH **/
+void nrn2core_transfer_WatchCondition(WatchCondition* wc, void(*cb)(int, int, int, int, int)) {
+  Point_process* pnt = wc->pnt_;
+  assert(pnt);
+  int tid = ((NrnThread*)(pnt->_vnt))->id;
+  int pnttype = pnt->prop->type;
+  int watch_index = wc->watch_index_;
+  int triggered = wc->flag_ ? 1 : 0;
+  int pntindex = CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, pnttype);
+  (*cb)(tid, pnttype, pntindex, watch_index, triggered);
+
+  // This transfers CvodeThreadData activated WatchCondition
+  // information. All WatchCondition stuff is implemented in netcvode.cpp.
+  // cvodeobj.h: HTList* CvodeThreadData.watch_list_
+  // netcon.h: WatchCondition
+  // On the NEURON side, WatchCondition is activated within a
+  // NET_RECEIVE block with the NMODL WATCH statement translated into a
+  // call to _nrn_watch_activate implmented as a function in netcvode.cpp.
+  // Note that on the CoreNEURON side, all the WATCH functionality is
+  // implemented within the mod file translation, and the info from this side
+  // is used to assign a value in the location specified by the
+  // _watch_array(flag) macro.
+  // The return from psolve must transfer back the correct conditions
+  // so that NEURON can continue with a classical psolve, or, if CoreNEURON
+  // continues, receive the correct transfer of conditions back from NEURON
+  // again.
+  // Note: the reason CoreNEURON does not already have the correct watch
+  // condition from phase2 setup is because, on the NEURON side,
+  // _nrn_watch_activate fills in the _watch_array[0] with a pointer to
+  // WatchList and _watch_array[i] with a pointer to WatchCondition.
+  // Activation consists of removing all conditions from a HTList (HeadTailList)
+  // and _watch_array[0] (only on the first _nrn_watch_activate call from a
+  // NET_RECEIVE delivery event). And appending to _watch_array[0] and
+  // Append to the HTList which is the CvodeThreadData.watch_list_;
+  // But on the CoreNEURON side, _watch_array[0] is unused and _watch_array[i]
+  // is a two bit integer. Bit 2 on means the WATCH is activated Bit 1
+  // is used to determine the transition from false to true for doing a
+  // net_send (immediate deliver).
+
+}
+
+// for faster determination of the movable index given the type
+static std::map<int, int> type2movable;
+static void setup_type2semantics() {
+  if (type2movable.empty()) {
+    for (int type = 0; type < n_memb_func; ++type) {
+      int* ds = memb_func[type].dparam_semantics;
+      if (ds) {
+        for (int psz=0; psz < bbcore_dparam_size[type]; ++psz) {
+          if (ds[psz] == -4) { // netsend semantics
+            type2movable[type] = psz;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Copying TQItem information for transfer to CoreNEURON has been factored
+// out of nrn2core_transfer_tqueue since, if BinQ is being used, it involves
+// iterating over the BinQ as well as the normal TQueue.
+static void set_info(TQItem* tqi, int tid, NrnCoreTransferEvents* core_te,
+  std::unordered_map<NetCon*, std::vector<size_t> >& netcon2intdata,
+  std::unordered_map<PreSyn*, std::vector<size_t> >& presyn2intdata,
+  std::unordered_map<double*, std::vector<size_t> >& weight2intdata) {
+
+    DiscreteEvent* de = (DiscreteEvent*)(tqi->data_);
+    int type = de->type();
+    double tdeliver = tqi->t_;
+    core_te->type.push_back(type);
+    core_te->td.push_back(tdeliver);
+
+    switch (type) {
+      case DiscreteEventType: { // 0
+      } break;
+      case TstopEventType: { // 1
+      } break;
+      case NetConType: { // 2
+        NetCon* nc = (NetCon*)de;
+        // To find the i for cg.netcons[i] == nc
+        // and since there are generally very many fewer nc on the queue
+        // than netcons. Begin a nc2i map that we can fill in for i
+        // later in one sweep through the cg.netcons.
+        // Here is where it goes.
+        size_t iloc = core_te->intdata.size();
+        core_te->intdata.push_back(-1);
+        // But must take into account the rare situation where the same
+        // NetCon is on the queue more than once. Hence the std::vector
+        netcon2intdata[nc].push_back(iloc);
+      } break;
+      case SelfEventType: { //3
+        SelfEvent* se = (SelfEvent*)de;
+        Point_process* pnt = se->target_;
+        int type = pnt->prop->type;
+        int movable_index = type2movable[type];
+        double* wt = se->weight_;
+
+        core_te->intdata.push_back(type);
+        core_te->dbldata.push_back(se->flag_);
+
+        // All SelfEvent have a target. A SelfEvent only has a weight if
+        // it was issued in response to a NetCon event to the target
+        // NET_RECEIVE block. Determination of Point_process* target_ on the
+        // CoreNEURON side uses mechanism type and instance index from here
+        // on the NEURON side. And the latter can be determined now from pnt.
+        // On the other hand, if there is a non-null weight pointer, its index
+        // can only be determined by sweeping over all NetCon.
+        
+        double* data = pnt->prop->param;
+        // Introduced the public static method below because ARTIFICIAL_CELL
+        // are not located in NrnThread and are not cache efficient.
+        int index = CellGroup::nrncore_pntindex_for_queue(data, tid, type);
+        core_te->intdata.push_back(index);
+
+        size_t iloc_wt = core_te->intdata.size();
+        if (wt) { // don't bother with NULL weights
+          weight2intdata[wt].push_back(iloc_wt);
+        }
+        core_te->intdata.push_back(-1); // If NULL weight this is the indicator
+
+        TQItem** movable = (TQItem**)se->movable_;
+        TQItem** pnt_movable = (TQItem**)(&pnt->prop->dparam[movable_index]);
+        // Only one SelfEvent on the queue for a given point process can be movable
+        core_te->intdata.push_back((movable && *movable == tqi) ? 1 : 0);
+        if (movable && *movable == tqi) {
+          assert(pnt_movable && *pnt_movable == tqi);
+        }
+
+      } break;
+      case PreSynType: { // 4
+        PreSyn* ps = (PreSyn*)de;
+
+        // NEURON puts PreSyn on every thread queue
+        // Skip if PreSyn not associated with this thread.
+        bool skip = (ps->nt_ && (ps->nt_->id != tid)) ? true : false;
+        // Skip if effectively an InputPresyn (ps->nt_ == NULL)
+        //     and this is not thread 0.
+        skip = (!ps->nt_ && tid != 0) ? true : skip;
+        if (skip) {
+          // erase what was already added
+          core_te->type.pop_back();
+          core_te->td.pop_back();
+          break;
+        }
+        // Output PreSyn similar to NetCon but more data.
+        // Input PreSyn (ps->output_index = -1 and ps->gid >= 0)
+        // is distinquished from PreSyn (ps->output_index == ps->gid
+        // or both negative) by the first item of 0 or 1 respectively followed
+        // by gid or presyn index respectively.
+        // That is:
+        // Output PreSyn format is 0, presyn index 
+        // initialized to -1 and figured out from presyn2intdata, and
+        // ps->delay_
+        // Input PreSyn format is 1, gid, and ps->delay_
+        if (ps->output_index_ < 0 && ps->gid_ >= 0) {
+          // InputPreSyn on the CoreNEURON side
+          core_te->intdata.push_back(1);
+          core_te->intdata.push_back(ps->gid_);
+        }else{
+          // PreSyn on the NEURON side
+          core_te->intdata.push_back(0);
+          size_t iloc = core_te->intdata.size();
+          core_te->intdata.push_back(-1);
+          presyn2intdata[ps].push_back(iloc);
+        }
+        // CoreNEURON PreSyn has no notion of use_min_delay_ so if that
+        // is in effect, then the send time is actually tt - nc->delay_
+        // (Note there is no core2nrn inverse as PreSyn does not appear on
+        //  the CoreNEURON event queue).
+        if (ps->use_min_delay_) {
+          core_te->td.back() -= ps->delay_;
+        }
+      } break;
+      case HocEventType: { // 5
+        // Not supported in CoreNEURON, discard and print a warning.
+        core_te->td.pop_back();
+        core_te->type.pop_back();
+        // Delivery time was often reduced by a quarter step to avoid
+        // fixed step roundoff problems.
+        Fprintf(stderr, "WARNING: CVode.event(...) for delivery at time step nearest %g discarded. CoreNEURON cannot presently handle interpreter events (rank %d, thread %d).\n", nrnmpi_myid, tdeliver, nrnmpi_myid, tid);
+      } break;
+      case PlayRecordEventType: { // 6
+      } break;
+      case NetParEventType: { // 7
+      } break;
+      default: {
+      } break;
+    }
+}
+
+NrnCoreTransferEvents* nrn2core_transfer_tqueue(int tid) {
+  if (tid >= nrn_nthread) { return NULL; }
+
+  setup_type2semantics();
+
+  NrnCoreTransferEvents* core_te = new NrnCoreTransferEvents;
+
+  // see comments below about same object multiple times on queue
+  // and single sweep fill
+  std::unordered_map<NetCon*, std::vector<size_t> > netcon2intdata;
+  std::unordered_map<PreSyn*, std::vector<size_t> > presyn2intdata;
+  std::unordered_map<double*, std::vector<size_t> > weight2intdata;
+
+  NrnThread& nt = nrn_threads[tid];
+  TQueue* tq = net_cvode_instance_event_queue(&nt);
+  TQItem* tqi;
+  auto& cg = cellgroups_[tid];
+  // make sure all buffered interthread events are on the queue
+  nrn_interthread_enqueue(&nt);
+
+  // Iterate over all tqueue items to record info needed for transfer to
+  // coreneuron. The atomic_dq removes items from the queue but misses
+  // BinQ items if present. So need separate iteration for that (hence the
+  // factoring out of the loop bodies into set_info.)
+  while ((tqi = tq->atomic_dq(1e15)) != NULL) {
+    set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+  }
+  if (nrn_use_bin_queue_) {
+    // does not remove items but the entire queue will be cleared
+    // before using again. 
+    for (tqi = tq->binq()->first(); tqi; tqi = tq->binq()->next(tqi)) {
+      set_info(tqi, tid, core_te, netcon2intdata, presyn2intdata, weight2intdata);
+    }
+  }
+
+  // fill in the integers for the pointer translation
+
+  // NEURON NetCon* to CoreNEURON index into nt.netcons
+  for (int i = 0; i < cg.n_netcon; ++i) {
+    NetCon* nc = cg.netcons[i];
+    auto iter = netcon2intdata.find(nc);
+    if (iter != netcon2intdata.end()) {
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+    }
+  }
+
+  // NEURON PreSyn* to CoreNEURON index into nt.presyns
+#define NRN_SENTINAL 100000000000
+  for (int i = 0; i < cg.n_presyn; ++i) {
+    PreSyn* ps = cg.output_ps[i];
+    auto iter = presyn2intdata.find(ps);
+    if (iter != presyn2intdata.end()) {
+      // not visited twice
+      assert(iter->second[0] < NRN_SENTINAL);
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+      presyn2intdata[ps][0] = i + NRN_SENTINAL;
+    }
+  }
+  // all presyn2intdata should have been visited so all
+  // presyn2intdata[ps][0] must be >= NRN_SENTINAL
+  for (auto& iter: presyn2intdata) {
+    assert(iter.second[0] >= NRN_SENTINAL);
+  }
+
+  // NEURON SelfEvent weight* into CoreNEURON index into nt.netcons
+  //    On the CoreNEURON side we find the NetCon and then the
+  //    nc.u.weight_index_
+  for (int i = 0; i < cg.n_netcon; ++i) {
+    NetCon* nc = cg.netcons[i];
+    double* wt = nc->weight_;
+    auto iter = weight2intdata.find(wt);
+    if (iter != weight2intdata.end()) {
+      for (auto iloc: iter->second) {
+        core_te->intdata[iloc] = i;
+      }
+    }
+  }
+
+  return core_te;
+}
+
+/** @brief Initialize queues before transfer
+    Probably aleady clear, but if binq then must be initialized to time.
+ */
+void core2nrn_clear_queues(double time) {
+    nrn_threads[0]._t = time; // used by clear_event_queue
+    clear_event_queue();
+}
+
+/** @brief Called from CoreNEURON core2nrn_tqueue_item.
+ */
+void core2nrn_NetCon_event(int tid, double td, size_t nc_index) {
+  assert(tid < nrn_nthread);
+  NrnThread& nt = nrn_threads[tid];
+  // cellgroups_ has been deleted but deletion of cg.netcons was deferred
+  // (and will be deleted on return from nrncore_run).
+  // This is tragic for memory usage. There are more NetCon's than anything.
+  // Would be better to save the memory at a cost of single iteration over
+  // NetCon.
+  NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
+  nc->send(td, net_cvode_instance, &nt);
+}
+
+static void core2nrn_SelfEvent_helper(int tid, double td,
+  int tar_type, int tar_index,
+  double flag,  double* weight, int is_movable)
+{
+  if (type2movable.empty()) {
+    setup_type2semantics();
+  }
+  Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
+  Point_process* pnt;
+  if (ml) {
+    pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  } else {
+    // In NEURON world, ARTIFICIAL_CELLs do not live in NrnThread.
+    // And the old deferred_type2artdata_ only gave us data, not pdata.
+    // So this is where I decided to replace the more
+    // expensive deferred_type2artml_.
+    ml = CellGroup::deferred_type2artml_[tid][tar_type];
+    pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  }
+
+  // Needs to be tested when permuted on CoreNEURON side.
+  assert(tar_type == pnt->prop->type);
+//  assert(tar_index == CellGroup::nrncore_pntindex_for_queue(pnt->prop->param, tid, tar_type));
+
+  int movable_index = type2movable[tar_type];
+  void** movable_arg = &(pnt->prop->dparam[movable_index]._pvoid);
+  TQItem* old_movable_arg = (TQItem*)(*movable_arg);
+
+  nrn_net_send(&(pnt->prop->dparam[movable_index]._pvoid), weight, pnt, td, flag);
+  if (!is_movable) {
+    *movable_arg = (void*)old_movable_arg;
+  }
+}
+
+void core2nrn_SelfEvent_event(int tid, double td,
+  int tar_type, int tar_index,
+  double flag,  size_t nc_index, int is_movable)
+{
+  assert(tid < nrn_nthread);
+  NetCon* nc = CellGroup::deferred_netcons[tid][nc_index];
+
+#if 1
+  // verify nc->target_ consistent with tar_type, tar_index.
+  Memb_list* ml = nrn_threads[tid]._ml_list[tar_type];
+  Point_process* pnt = (Point_process*)ml->pdata[tar_index][1]._pvoid;
+  assert(nc->target_ == pnt);
+#endif
+
+  double* weight = nc->weight_;
+  core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+}
+
+void core2nrn_SelfEvent_event_noweight(int tid, double td,
+  int tar_type, int tar_index,
+  double flag, int is_movable)
+{
+  assert(tid < nrn_nthread);
+  double* weight = NULL;
+  core2nrn_SelfEvent_helper(tid, td, tar_type, tar_index, flag, weight, is_movable);
+}
+
+//Set of the voltage indices in which PreSyn.flag_ == true
+void core2nrn_PreSyn_flag(int tid, std::set<int> presyns_flag_true) {
+  if (tid >= nrn_nthread) {
+    return;
+  }
+  NetCvodeThreadData& nctd = net_cvode_instance->p[tid];
+  hoc_Item* pth = nctd.psl_thr_;
+  if (pth) {
+    hoc_Item* q;
+    // turn off all the PreSyn.flag_ as they might have been turned off
+    // during the psolve on the coreneuron side.
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      ps->flag_ = false;
+    }
+    if (presyns_flag_true.empty()) {
+      return;
+    }
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      assert(ps->nt_ == (nrn_threads + tid));
+      if (ps->thvar_) {
+        int type = 0;
+        int index_v = -1;
+        nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+        assert(type == voltage);
+        if(presyns_flag_true.erase(index_v)) {
+          ps->flag_ = true;
+          if (presyns_flag_true.empty()) {
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Add the voltage indices in which PreSyn.flag_ == true to the set.
+void nrn2core_PreSyn_flag(int tid, std::set<int>& presyns_flag_true) {
+  if (tid >= nrn_nthread) {
+    return;
+  }
+  NetCvodeThreadData& nctd = net_cvode_instance->p[tid];
+  hoc_Item* pth = nctd.psl_thr_;
+  if (pth) {
+    hoc_Item* q;
+    ITERATE(q, pth) {
+      PreSyn* ps = (PreSyn*)VOIDITM(q);
+      assert(ps->nt_ == (nrn_threads + tid));
+      if (ps->flag_ == true && ps->thvar_) {
+        int type = 0;
+        int index_v = -1;
+        nrn_dblpntr2nrncore(ps->thvar_, *ps->nt_, type, index_v);
+        assert(type == voltage);
+        presyns_flag_true.insert(index_v);
+      }
+    }
+  }
+}
+
+// For each watch index, activate the WatchCondition
+void core2nrn_watch_activate(int tid, int type, int watch_begin, Core2NrnWatchInfo& wi) {
+    if (tid >= nrn_nthread) {
+        return;
+    }
+    NrnThread& nt = nrn_threads[tid];
+    Memb_list* ml = nt._ml_list[type];
+    for (size_t i = 0; i < wi.size(); ++i) {
+        Core2NrnWatchInfoItem& active_watch_items = wi[i];
+        Datum* pd = ml->pdata[i];
+        int r = 0; // first activate removes formerly active from pd.
+        for (auto watch_item: active_watch_items){
+            int watch_index = watch_item.first;
+            bool above_thresh = watch_item.second;
+            WatchCondition* wc = (WatchCondition*)pd[watch_index]._pvoid;
+            if (!wc) { // if any do not exist in this instance, create them all
+                       // with proper callback and flag.
+                (*(nrn_watch_allocate_[type]))(pd);
+                wc = (WatchCondition*)pd[watch_index]._pvoid;
+            }
+            _nrn_watch_activate(pd + watch_begin, wc->c_, watch_index - watch_begin, wc->pnt_,
+                r++, wc->nrflag_);
+            wc->flag_ = above_thresh ? 1 : 0;
+            // If flag_ is 1
+            // there will not be a (immediate) transition event
+            // til the value() becomes negative again and then goes positive.
+        }
+    }
+}
+
+// nrn<->corenrn PatternStim
+
+extern "C" { void* nrn_patternstim_info_ref(Datum*); }
+static int patternstim_type;
+
+// Info from NEURON PatternStim at beginning of psolve.
+void nrn2core_patternstim(void** info) {
+  if (!patternstim_type) {
+    for (int i = 3; i < n_memb_func; ++i) {
+      if (strcmp(memb_func[i].sym->name, "PatternStim") == 0) {
+        patternstim_type = i;
+        break;
+      }
+    }
+  }
+
+  Memb_list& ml = memb_list[patternstim_type];
+  assert(ml.nodecount == 1);
+  *info = nrn_patternstim_info_ref(ml.pdata[0]);
 }

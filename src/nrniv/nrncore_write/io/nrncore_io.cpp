@@ -22,7 +22,7 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char *bbcore_write_version = "1.4"; // Generalize *_gap.dat to allow transfer of any range variable
+const char *bbcore_write_version = "1.5"; // Generalize POINTER to allow pointing to any RANGE variable
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -81,18 +81,26 @@ void write_globals(const char* fname) {
     fprintf(f, "%s\n", bbcore_write_version);
     const char* name;
     int size; // 0 means scalar, is 0 will still allocated one element for val.
-    double* val; // Allocated by new in get_global_item, must be delete [] here.
-    for (void* sp = NULL;
-         (sp = get_global_dbl_item(sp, name, size, val)) != NULL;) {
-        if (size) {
-            fprintf(f, "%s[%d]\n", name, size);
-            for (int i=0; i < size; ++i) {
-                fprintf(f, "%.20g\n", val[i]);
+    double* val = NULL; // Allocated by new in get_global_item, must be delete [] here.
+    // Note that it is possible for get_global_dbl_item to return NULL but
+    // name, size, and val must still be handled if val != NULL
+    for (void* sp = NULL;;) {
+        sp = get_global_dbl_item(sp, name, size, val);
+        if (val) {
+            if (size) {
+                fprintf(f, "%s[%d]\n", name, size);
+                for (int i=0; i < size; ++i) {
+                    fprintf(f, "%.20g\n", val[i]);
+                }
+            }else{
+                fprintf(f, "%s %.20g\n", name, val[0]);
             }
-        }else{
-            fprintf(f, "%s %.20g\n", name, val[0]);
+            delete [] val;
+            val = NULL;
         }
-        delete [] val;
+        if (!sp) {
+            break;
+        }
     }
     fprintf(f, "0 0\n");
     fprintf(f, "secondorder %d\n", secondorder);
@@ -175,7 +183,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     for (size_t i = 0; i < mla.size(); ++i) {
         int type = mla[i].first;
         int *nodeindices=NULL, *pdata=NULL; double* data=NULL;
-        nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata);
+        std::vector<int> pointer2type;
+        nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata, pointer2type);
         Memb_list* ml = mla[i].second;
         int n = ml->nodecount;
         int sz = nrn_prop_param_size_[type];
@@ -191,6 +200,11 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
             ++dsz_inst;
             writeint(pdata, n * sz);
             delete [] pdata;
+            sz = pointer2type.size();
+            fprintf(f, "%d npointer\n", int(sz));
+            if (sz > 0) {
+                writeint(pointer2type.data(), sz);
+            }
         }
     }
 
@@ -199,6 +213,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     nrnthread_dat2_3(nt.id, nweight, output_vindex, output_threshold,
                      netcon_pnttype, netcon_pntindex, weights, delays);
     writeint(output_vindex, cg.n_presyn);
+    delete [] output_vindex;
     writedbl(output_threshold, cg.n_real_output);
     delete [] output_threshold;
 
@@ -293,7 +308,8 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     for (auto i: indices) {
         int vptype, mtype, ix, sz; double *yvec, *tvec;
         // the 'if' is not necessary as item i is certainly in this thread 
-        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec)) {
+        int unused = 0;
+        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec, unused, unused, unused)) {
             fprintf(f, "%d\n", vptype);
             fprintf(f, "%d\n", mtype);
             fprintf(f, "%d\n", ix);

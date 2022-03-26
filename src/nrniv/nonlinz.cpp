@@ -532,20 +532,21 @@ void NonLinImpRep::dsds() {
 	}
 }
 
-void NonLinImpRep::current(int im, Memb_list* ml, int in) { // assume there is in fact a current method
-	Pvmi s = memb_func[im].current;
-	// fake a 1 element memb_list
-	Memb_list mfake;
+void NonLinImpRep::current(int im, Memb_list* ml, int in) {  // assume there is in fact a current
+                                                             // method
+    Pvmi s = memb_func[im].current;
+    // fake a 1 element memb_list
+    Memb_list mfake;
 #if CACHEVEC != 0
-	mfake.nodeindices = ml->nodeindices + in;
+    mfake.nodeindices = ml->nodeindices + in;
 #endif
-	mfake.nodelist = ml->nodelist+in;
-	mfake.data = ml->data + in;
-	mfake.pdata = ml->pdata + in;
-	mfake.prop = ml->prop + in;
-	mfake.nodecount = 1;
-	mfake._thread = ml->_thread;
-	(*s)(nrn_threads, &mfake, im);
+    mfake.nodelist = ml->nodelist + in;
+    mfake.data = ml->data + in;
+    mfake.pdata = ml->pdata + in;
+    mfake.prop = ml->prop ? ml->prop + in : nullptr;
+    mfake.nodecount = 1;
+    mfake._thread = ml->_thread;
+    (*s)(nrn_threads, &mfake, im);
 }
 
 void NonLinImpRep::ode(int im, Memb_list* ml) { // assume there is in fact an ode method
@@ -572,6 +573,8 @@ int NonLinImpRep::gapsolve() {
   }
 #endif
 
+  pargap_jacobi_setup(0);
+
   double *rx, *jx, *rx1, *jx1, *rb, *jb;
   if (neq_) {
     rx = new double[neq_];
@@ -588,8 +591,6 @@ int NonLinImpRep::gapsolve() {
     rb[i] = rv_[i];
     jb[i] = jv_[i];
   }
-
-  pargap_jacobi_setup(0);
 
   // iterate till change in x is small
   double tol = 1e-9;

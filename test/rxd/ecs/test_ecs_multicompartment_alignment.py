@@ -29,7 +29,7 @@ def multicompartment_alignment(neuron_instance):
     dx = 5  # um ECS voxel size
     alpha = 0.2  # ECS free volume fraction
     tortuosity = 1.6  # ECS tortuosity
-    Dkeff = Dk / tortuosity ** 2  # um^2/ms effective diffusion coeffishent
+    Dkeff = Dk / tortuosity**2  # um^2/ms effective diffusion coeffishent
 
     # Where -- shells and border between them
     # cytosol

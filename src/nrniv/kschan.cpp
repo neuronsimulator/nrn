@@ -55,7 +55,7 @@ static void chkobj(void* v) {
 	}
 }
 
-static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, void* vnt, int type) {
+static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, NrnThread* vnt, int type) {
 	KSChan* c = channels->item(type);
 	c->check_table_thread((NrnThread*)vnt);
 }

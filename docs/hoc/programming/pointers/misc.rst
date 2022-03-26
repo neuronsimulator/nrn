@@ -2,7 +2,7 @@ Obsolete Pointer Functions
 ==========================
 
 
-.. function:: this_node
+.. hoc:function:: this_node
 
 
     Syntax:
@@ -39,7 +39,7 @@ Obsolete Pointer Functions
 
 
 
-.. function:: this_section
+.. hoc:function:: this_section
 
 
     Syntax:
@@ -49,9 +49,9 @@ Obsolete Pointer Functions
     Description:
         Return a pointer (coded as a double) to the section which contains location 0 of the 
         currently accessed section. This pointer can be used as the argument 
-        to :func:`push_section`. Functions that return pointers coded as doubles 
+        to :hoc:func:`push_section`. Functions that return pointers coded as doubles
         are unsafe with 64 bit pointers. This function has been superseded by 
-        :class:`SectionRef`. See :meth:`~SectionRef.sec`. 
+        :hoc:class:`SectionRef`. See :hoc:meth:`~SectionRef.sec`.
 
          
 

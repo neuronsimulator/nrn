@@ -280,9 +280,6 @@ if (i == rootnodecount) {
 	}
 	activstim();
 	activsynapse();
-#if SEJNOWSKI
-	activconnect();
-#endif
 	activclamp();
 }
 

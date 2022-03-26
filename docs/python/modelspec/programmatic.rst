@@ -11,5 +11,6 @@ Programmatic Model Specification
     programmatic/network.rst
     programmatic/electrod.rst
     programmatic/mechtype.rst
+    programmatic/ste.rst
     programmatic/obsoletestimuli.rst
     

@@ -141,7 +141,9 @@ def test_push_section():
     s = sections[-1]
     h.delete_section(sec=s)  # but not yet freed (though the name is now "")
     # not [no longer] a section pointer
-    expect_err('s.hoc_internal_name()') # this is what is generating the error in the next statement.
+    expect_err(
+        "s.hoc_internal_name()"
+    )  # this is what is generating the error in the next statement.
     expect_err('h.push_section(int(s.hoc_internal_name().replace("__nrnsec_", ""), 0))')
 
     # not a sectionname
@@ -204,99 +206,185 @@ def test_HocObject_no_deferred_unref():
         sl.append(sec=sec)
     assert len([s for s in sl]) == 0
 
+
 def test_deleted_sec():
-  for sec in h.allsec():
-    h.delete_section(sec=sec)
-  s = h.Section()
-  s.insert("hh")
-  seg = s(.5)
-  ic = h.IClamp(seg)
-  mech = seg.hh
-  rvlist = [rv for rv in mech]
-  vref = seg._ref_v
-  gnabarref = mech._ref_gnabar
-  sec_methods_ok = set([s.cell, s.name, s.hname, s.same,
-    s.hoc_internal_name
-  ])
-  sec_methods_chk = set([getattr(s, n) for n in dir(s) if '__' not in n and type(getattr(s, n)) == type(s.x3d) and getattr(s, n) not in sec_methods_ok])
-  seg_methods_chk = set([getattr(seg, n) for n in dir(seg) if '__' not in n and type(getattr(seg, n)) == type(seg.area)])
-  mech_methods_chk = set([getattr(mech, n) for n in dir(mech) if '__' not in n and type(getattr(mech, n)) == type(mech.segment)])
-  rv_methods_chk = set([getattr(rvlist[0], n) for n in dir(rvlist[0]) if '__' not in n and type(getattr(rvlist[0], n)) == type(rvlist[0].name)])
-  rv_methods_chk.remove(rvlist[0].name)
-  h.delete_section(sec=s)
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
+    s = h.Section()
+    s.insert("hh")
+    seg = s(0.5)
+    ic = h.IClamp(seg)
+    mech = seg.hh
+    rvlist = [rv for rv in mech]
+    vref = seg._ref_v
+    gnabarref = mech._ref_gnabar
+    sec_methods_ok = set([s.cell, s.name, s.hname, s.same, s.hoc_internal_name])
+    sec_methods_chk = set(
+        [
+            getattr(s, n)
+            for n in dir(s)
+            if "__" not in n
+            and type(getattr(s, n)) == type(s.x3d)
+            and getattr(s, n) not in sec_methods_ok
+        ]
+    )
+    seg_methods_chk = set(
+        [
+            getattr(seg, n)
+            for n in dir(seg)
+            if "__" not in n and type(getattr(seg, n)) == type(seg.area)
+        ]
+    )
+    mech_methods_chk = set(
+        [
+            getattr(mech, n)
+            for n in dir(mech)
+            if "__" not in n and type(getattr(mech, n)) == type(mech.segment)
+        ]
+    )
+    rv_methods_chk = set(
+        [
+            getattr(rvlist[0], n)
+            for n in dir(rvlist[0])
+            if "__" not in n and type(getattr(rvlist[0], n)) == type(rvlist[0].name)
+        ]
+    )
+    rv_methods_chk.remove(rvlist[0].name)
+    h.delete_section(sec=s)
 
-  for methods in [sec_methods_chk, seg_methods_chk, mech_methods_chk, rv_methods_chk]:
-    for m in methods:
-      # Most would fail because of no args, but expect a check
-      # for valid section first.
-      words = str(m).split()
-      print('m is ' + words[4] + '.' + words[2])
-      expect_err("m()")
+    for methods in [sec_methods_chk, seg_methods_chk, mech_methods_chk, rv_methods_chk]:
+        for m in methods:
+            # Most would fail because of no args, but expect a check
+            # for valid section first.
+            words = str(m).split()
+            print("m is " + words[4] + "." + words[2])
+            expect_err("m()")
 
-  assert str(s) == '<deleted section>'
-  assert str(seg) == "<segment of deleted section>"
-  assert str(mech) == "<mechanism of deleted section>"
-  expect_err("h.sin(0.0, sec=s)")
-  expect_err("print(s.L)")
-  expect_err("s.L = 100.")
-  expect_err("s.nseg")
-  expect_err("s.nseg = 5")
-  expect_err("print(s.v)")
-  expect_err("print(s.orientation())")
-  expect_err("s.insert('pas')")
-  expect_err("s.insert(h.pas)")
-  expect_err("s(.5)")
-  expect_err("s(.5).v")
-  expect_err("seg.v")
-  expect_err("seg._ref_v")
-  expect_err("s(.5).v = -65.")
-  expect_err("seg.v = -65.")
-  expect_err("seg.gnabar_hh")
-  expect_err("mech.gnabar")
-  expect_err("seg.gnabar_hh = .1")
-  expect_err("mech.gnabar = .1")
-  expect_err("rvlist[0][0]")
-  expect_err("rvlist[0][0] = .1")
-  expect_err("for sg in s: pass")
-  expect_err("for m in seg: pass")
-  expect_err("for r in mech: pass")
+    assert str(s) == "<deleted section>"
+    assert str(seg) == "<segment of deleted section>"
+    assert str(mech) == "<mechanism of deleted section>"
+    expect_err("h.sin(0.0, sec=s)")
+    expect_err("print(s.L)")
+    expect_err("s.L = 100.")
+    expect_err("s.nseg")
+    expect_err("s.nseg = 5")
+    expect_err("print(s.v)")
+    expect_err("print(s.orientation())")
+    expect_err("s.insert('pas')")
+    expect_err("s.insert(h.pas)")
+    expect_err("s(.5)")
+    expect_err("s(.5).v")
+    expect_err("seg.v")
+    expect_err("seg._ref_v")
+    expect_err("s(.5).v = -65.")
+    expect_err("seg.v = -65.")
+    expect_err("seg.gnabar_hh")
+    expect_err("mech.gnabar")
+    expect_err("seg.gnabar_hh = .1")
+    expect_err("mech.gnabar = .1")
+    expect_err("rvlist[0][0]")
+    expect_err("rvlist[0][0] = .1")
+    expect_err("for sg in s: pass")
+    expect_err("for m in seg: pass")
+    expect_err("for r in mech: pass")
 
-  assert(s == s)
-  # See https://github.com/neuronsimulator/nrn/issues/1343
-  if sys.version_info >= (3, 8):
-    expect_err("dir(s)")
-    expect_err("dir(seg)")
-    expect_err("dir(mech)")
-  assert type(dir(rvlist[0])) == list
-  expect_err("help(s)")
-  expect_err("help(seg)")
-  expect_err("help(mech)")
-  help(rvlist[0]) # not an error since it does not access s
+    assert s == s
+    # See https://github.com/neuronsimulator/nrn/issues/1343
+    if sys.version_info >= (3, 8):
+        expect_err("dir(s)")
+        expect_err("dir(seg)")
+        expect_err("dir(mech)")
+    assert type(dir(rvlist[0])) == list
+    expect_err("help(s)")
+    expect_err("help(seg)")
+    expect_err("help(mech)")
+    help(rvlist[0])  # not an error since it does not access s
 
-  dend = h.Section()
-  expect_err("dend.connect(s)")
-  expect_err("dend.connect(seg)")
+    dend = h.Section()
+    expect_err("dend.connect(s)")
+    expect_err("dend.connect(seg)")
 
-  # Note vref and gnabarref if used may cause segfault or other indeterminate result
+    # Note vref and gnabarref if used may cause segfault or other indeterminate result
 
-  assert ic.get_segment() == None
-  assert ic.has_loc() == 0.0
-  expect_err("ic.get_loc()")
-  expect_err("ic.amp")
-  expect_err("ic.amp = .001")
-  ic.loc(dend(.5))
-  assert ic.get_segment() == dend(.5)
+    assert ic.get_segment() == None
+    assert ic.has_loc() == 0.0
+    expect_err("ic.get_loc()")
+    expect_err("ic.amp")
+    expect_err("ic.amp = .001")
+    ic.loc(dend(0.5))
+    assert ic.get_segment() == dend(0.5)
 
-  imp = h.Impedance()
-  expect_err("imp.loc(seg)")
-  expect_err("h.distance(0, seg)")
-  expect_hocerr(imp.loc, (seg,))
-  expect_hocerr(h.distance, (0, seg))
+    imp = h.Impedance()
+    expect_err("imp.loc(seg)")
+    expect_err("h.distance(0, seg)")
+    expect_hocerr(imp.loc, (seg,))
+    expect_hocerr(h.distance, (0, seg))
 
-  return s, seg, mech, rvlist, vref, gnabarref, dend
+    del ic, imp, dend
+    locals()
+
+    return s, seg, mech, rvlist, vref, gnabarref
+
+
+def test_disconnect():
+    print("test_disconnect")
+    for sec in h.allsec():
+        h.delete_section(sec=sec)
+    h.topology()
+    n = 5
+
+    def setup(n):
+        sections = [h.Section(name="s%d" % i) for i in range(n)]
+        for i, sec in enumerate(sections[1:]):
+            sec.connect(sections[i])
+        return sections
+
+    sl = setup(n)
+
+    def chk(sections, i):
+        print(sections, i)
+        h.topology()
+        x = len(sections[0].wholetree())
+        assert x == i
+
+    chk(sl, n)
+
+    h.disconnect(sec=sl[2])
+    chk(sl, 2)
+
+    sl = setup(n)
+    sl[2].disconnect()
+    chk(sl, 2)
+
+    sl = setup(n)
+    expect_err("h.disconnect(sl[2])")
+    expect_err("h.delete_section(sl[2])")
+
+    del sl
+    locals()
+
+
+def test_py_alltoall_dict_err():
+    pc = h.ParallelContext()
+    src = {i: (100 + i) for i in range(2)}
+    expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
+
+
+def test_nosection():
+    expect_err("h.IClamp(.5)")
+    expect_err("h.IClamp(5)")
+    s = h.Section()
+    expect_err("h.IClamp(5)")
+    del s
+    locals()
+
 
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
     test_simple_sim()
     result = test_deleted_sec()
+    test_disconnect()
+    h.topology()
+    h.allobjects()
+    test_nosection()

@@ -13,7 +13,7 @@
 
 #include <hocstr.h>
 extern "C" void nrnpython_real();
-extern "C" void nrnpython_start(int);
+extern "C" int nrnpython_start(int);
 extern int hoc_get_line();
 extern HocStr* hoc_cbufstr;
 extern int nrnpy_nositeflag;
@@ -63,6 +63,9 @@ void nrnpy_augment_path() {
   }
 }
 
+/** @brief Execute a Python script.
+ *  @return 0 on failure, 1 on success.
+ */
 int nrnpy_pyrun(const char* fname) {
 #ifdef MINGW
   // perhaps this should be the generic implementation
@@ -79,11 +82,11 @@ int nrnpy_pyrun(const char* fname) {
 #else // MINGW not defined
   FILE* fp = fopen(fname, "r");
   if (fp) {
-    PyRun_AnyFile(fp, fname);
+    int const code = PyRun_AnyFile(fp, fname);
     fclose(fp);
-    return 1;
+    return !code;
   } else {
-    fprintf(stderr, "Could not open %s\n", fname);
+    std::cerr << "Could not open " << fname << std::endl;
     return 0;
   }
 #endif // MINGW not defined
@@ -125,7 +128,16 @@ static wchar_t* mywstrdup(char* s) {
   return ws;
 }
 
-extern "C" void nrnpython_start(int b) {
+/** @brief Start the Python interpreter.
+ *  @arg b Mode of operation, can be 0 (finalize), 1 (initialize),
+ *         or 2 (execute commands/scripts)
+ *  @return 0 on success, non-zero on error
+ *
+ *  There is an internal state variable that stores whether or not Python has
+ *  been initialized. Mode 1 only has an effect if Python is not initialized,
+ *  while the other modes only take effect if Python is already initialized.
+ */
+extern "C" int nrnpython_start(int b) {
 #if USE_PYTHON
   static int started = 0;
   //printf("nrnpython_start %d started=%d\n", b, started);
@@ -175,29 +187,31 @@ extern "C" void nrnpython_start(int b) {
     PyOS_ReadlineFunctionPointer = nrnpython_getline;
 #endif
     // Is there a -c "command" or file.py arg.
+    bool python_error_encountered{false};
     for (i = 1; i < nrn_global_argc; ++i) {
       char* arg = nrn_global_argv[i];
       if (strcmp(arg, "-c") == 0 && i + 1 < nrn_global_argc) {
-        PyRun_SimpleString(nrn_global_argv[i + 1]);
+        if(PyRun_SimpleString(nrn_global_argv[i + 1])) {
+          python_error_encountered = true;
+        }
         break;
       } else if (strlen(arg) > 3 && strcmp(arg + strlen(arg) - 3, ".py") == 0) {
-        nrnpy_pyrun(arg);
+        if(!nrnpy_pyrun(arg)) {
+          python_error_encountered = true;
+        }
         break;
       }
     }
-    // In any case start interactive.
-    //		PyRun_InteractiveLoop(fopen("/dev/tty", "r"), "/dev/tty");
-    PyRun_InteractiveLoop(hoc_fin, "stdin");
-  }
-  if (b == 3 && started) {
-#if HAVE_IV
-    if (Session::instance()) {
-      Session::instance()->quit();
-      rl_stuff_char(EOF);
+    // python_error_encountered dictates whether NEURON will exit with a nonzero
+    // code. In noninteractive/batch mode that happens immediately, in
+    // interactive mode then we start a Python interpreter first.
+    if(nrn_istty_) {
+      PyRun_InteractiveLoop(hoc_fin, "stdin");
     }
-#endif
+    return python_error_encountered;
   }
 #endif
+  return 0;
 }
 
 extern "C" void nrnpython_real() {

@@ -483,7 +483,7 @@ void ECS_Grid_node::set_volume_fraction(PyHocObject* my_alpha)
         {
             alpha = (double*)malloc(sizeof(double));
             alpha[0] = PyFloat_AsDouble((PyObject*)my_alpha);
-            get_alpha == &get_alpha_scalar;
+            get_alpha = &get_alpha_scalar;
             VARIABLE_ECS_VOLUME = (get_permeability == &get_permeability_scalar) ? TORTUOSITY : FALSE;
         }
     }

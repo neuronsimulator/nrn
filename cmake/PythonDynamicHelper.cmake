@@ -65,7 +65,7 @@ if(NRN_ENABLE_PYTHON)
         execute_process(
           COMMAND
             ${pyexe} -c
-            "from distutils.sysconfig import get_python_inc as p; print(p()); import sys; ${pr_pyver}; quit()"
+            "import sysconfig; print(sysconfig.get_path('include')); import sys; ${pr_pyver}; quit()"
           RESULT_VARIABLE result
           OUTPUT_VARIABLE std_output
           ERROR_VARIABLE err_output

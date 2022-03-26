@@ -95,6 +95,7 @@ correctness has not been validated for cells without gids.
 #include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
+#include "nrncvode.h"
 
 #include "vrecitem.h" // for nrnbbcore_vecplay_write
 #include "nrnsection_mapping.h"
@@ -151,6 +152,9 @@ NrnMappingInfo mapinfo;
 // direct transfer or via files? The latter makes use of group_gid for
 // filename construction.
 bool corenrn_direct;
+
+// name of coreneuron mpi library to load
+std::string corenrn_mpi_library;
 
 static size_t part1();
 static void part2(const char*);
@@ -297,16 +301,19 @@ int nrncore_run(const char* arg) {
 #endif
 
     // typecast function pointer pointer
-    int (*coreneuron_launcher)(int, int, int, int, const char*) = (int (*)(int, int, int, int, const char*))launcher_sym;
+    int (*coreneuron_launcher)(int, int, int, int, const char*, const char*) = (int (*)(int, int, int, int, const char*, const char*))launcher_sym;
 
     // launch coreneuron
-    int result = coreneuron_launcher(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, arg);
+    int result = coreneuron_launcher(nrn_nthread, have_gap, nrnmpi_use, nrn_use_fast_imem, corenrn_mpi_library.c_str(), arg);
 
     // close handle and return result
     dlclose(handle);
 
     // Note: possibly non-empty only if nrn_nthread > 1
-    CellGroup::clean_deferred_type2artdata();
+    CellGroup::clean_deferred_type2artml();
+
+    // Huge memory waste
+    CellGroup::clean_deferred_netcons();
 
     return result;
 }
@@ -347,6 +354,8 @@ int nrncore_psolve(double tstop, int file_mode) {
       // data return nt._t so copy to t
       t = nrn_threads[0]._t;
       free(arg);
+      // Really just want to get NetParEvent back onto queue.
+      nrn_spike_exchange_init();
       return 0;
     }
   }

@@ -122,12 +122,6 @@ int hoc_errno_check(void) {
             errno = 0;
             return 0;
         }
-#if BLUEGENE
-                 if (errno == ENOSYS) {
-                        errno = 0;
-                        return 0;
-                 }
-#endif
 #if !defined(MAC) || defined(DARWIN)
         if (errno == ENOENT) {
             errno = 0;

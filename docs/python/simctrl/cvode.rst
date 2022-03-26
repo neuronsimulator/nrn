@@ -1256,12 +1256,53 @@ CVode
         membrane current out of the segment), is available
         at 0 area nodes (locations 0 and 1 of every section), does not require
         that extracellular be inserted (and so is much faster), and works
-        during parallel simuations with variable step methods. (ie. does not
+        during parallel simulations with variable step methods. (ie. does not
         require IDA which is currently not available in parallel).
-        i_membrane\_ exists as a range variable only when this function has
-        been called with an argument of 1.
+        i_membrane\_ exists as a range variable only when ``use_fast_imem`` has
+        been called with an argument of 1. Conversely, i_membrane\_ is
+        not computed when ``use_fast_imem`` is not called or with an
+        argument of 0.
 
-         
+        i_membrane\_ include capacity current and all transmembrane
+        ionic currents but not stimulus currents. POINT_PROCESS synaptic
+        currents are considered ionic currents and so are included
+        in i_membrane\_. From charge conservation
+        a fundamental property is that the sum of all i_membrane\_ is
+        identical to the sum of all ELECTRODE_CURRENT (Current cannot
+        flow axially out of a cell since the root and leaves of each
+        cell tree have sealed end boundary conditions.)
+
+        The following tests this conservation law, assuming that the only
+        ELECTRODE_CURRENTs are IClamp. Note the idiom that visits all segments
+        of a model but only once each segment to sum up i_membrane\_
+
+        .. code:: python
+
+            from neuron import h
+            h.CVode().use_fast_imem(1)
+
+            def assert_whole_model_charge_conservation():
+                # sum over all membrane current
+                total_imem = 0.0
+                for sec in h.allsec():
+                    for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
+                        if seg.x == sec.orientation() and sec.parentseg() is not None:
+                            continue # skip segment shared with parent
+                        total_imem += seg.i_membrane_
+
+                # sum over all ELECTRODE_CURRENT (if only using IClamp)
+                total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
+
+                print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
+                assert(abs(total_imem - total_iclamp_cur) < 1e-12)
+
+
+        In the above fragment ``sec.parentseg()`` is needed to count
+        the root and use of ``sec.trueparentseg()`` would count all sections
+        that connect to the root section at 0 because all those sections have
+        a trueparentseg of None.
+        Also, although an extremely rare edge case, ``sec.orientation()``
+        is needed to match which segment is closest to root.
 
 ----
 

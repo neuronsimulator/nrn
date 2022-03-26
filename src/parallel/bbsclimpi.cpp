@@ -18,7 +18,7 @@ extern void nrnmpi_int_broadcast(int*, int, int);
 #define debug 0
 
 #if defined(USE_PYTHON)
-extern void (*p_nrnpython_start)(int);
+extern int (*p_nrnpython_start)(int);
 #endif
 
 #if defined(HAVE_STL)

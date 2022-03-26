@@ -95,6 +95,7 @@ static struct {			/* Keywords */
 			        "RANGE", RANGE,
 			        "SECTION", SECTION,
 			        "VALENCE", VALENCE,
+			        "CHARGE", VALENCE,
 			        "GLOBAL", GLOBAL,
 			        "POINTER", POINTER,
 			        "BBCOREPOINTER", POINTER,

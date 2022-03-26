@@ -4,7 +4,7 @@ Ions
 
 
 
-.. function:: ion_style
+.. hoc:function:: ion_style
 
 
     Syntax:
@@ -88,7 +88,7 @@ Ions
 
 
 
-.. function:: ion_register
+.. hoc:function:: ion_register
 
 
     Syntax:
@@ -108,7 +108,7 @@ Ions
 
 
 
-.. function:: ion_charge
+.. hoc:function:: ion_charge
 
 
     Syntax:

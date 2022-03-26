@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 
 ARCH=@host_cpu@
@@ -17,11 +17,11 @@ else
   libdir="${prefix}/lib"
 fi
 
-if [ -z ${CNRNHOME+x} ]; then
-  # CNRNHOME wasn't set, use the install prefix
+if [ -z ${CORENRNHOME+x} ]; then
+  # CORENRNHOME wasn't set, use the install prefix
   cnrn_prefix=@cnrn_prefix@
 else
-  cnrn_prefix="${CNRNHOME}"
+  cnrn_prefix="${CORENRNHOME}"
 fi
 
 if test "${NRNHOME_EXEC}" != "" ; then
@@ -50,24 +50,37 @@ if command -v xcrun; then
 fi
 
 LinkCoreNEURON=false
-if [ "$1" = "-coreneuron" ] ; then
-      LinkCoreNEURON=true
-      shift
-fi
-
 UserINCFLAGS=""
-if [ "$1" = "-incflags" ] ; then
-      UserINCFLAGS="$2"
-      shift
-      shift
-fi
-
 UserLDFLAGS=""
-if [ "$1" = "-loadflags" ] ; then
-       UserLDFLAGS="$2"
-       shift
-       shift
-fi
+UserCOREFLAGS=""
+
+# - options come first but can be in any order.
+while test -n "$1" ; do
+    opt="$1"
+    case "$opt" in
+    -coreneuron)
+        # also run nrnivmodl-core
+        LinkCoreNEURON=true
+        shift;;
+    -incflags)
+        # extra include flags and paths (NEURON only)
+        UserINCFLAGS="$2"
+        shift
+        shift;;
+    -loadflags)
+        # extra link flags, paths, libraries (NEURON only)
+        UserLDFLAGS="$2"
+        # extra lin flags, paths. libraries (CoreNEURON)
+        UserCOREFLAGS="$UserCOREFLAGS -l $2"
+        shift
+        shift;;
+    -*)
+        echo "$opt unrecognized"
+        exit 1;;
+    *)
+        break;;
+    esac
+done
 
 pwd
 
@@ -122,8 +135,10 @@ if test $# -gt 0 ; then
     fi
   done
 else
-  # Unset LC_ALL for consistent mod order
-  files=$(unset LC_ALL; ls *.mod)
+  if ls *.mod 1> /dev/null 2> /dev/null ; then  # only if there are mod files
+    # Unset LC_ALL for consistent mod order
+    files=$(unset LC_ALL; ls *.mod)
+  fi
 fi
 
 files=`echo "$files" | sed 's/^ *//'`
@@ -279,7 +294,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
       j=`escape_spaces "$j"`
       args="$args $j"
     done
-    "${cnrn_prefix}/bin/nrnivmodl-core" $args
+    "${cnrn_prefix}/bin/nrnivmodl-core" $UserCOREFLAGS $args
     cd $MODSUBDIR
   else
     printf "ERROR : CoreNEURON support is not enabled!\n"

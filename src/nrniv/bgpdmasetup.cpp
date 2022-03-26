@@ -9,18 +9,18 @@ the source host owning the gid.
 */
 
 #if 0
-void celldebug(const char* p, Gid2PreSyn* map) {
+void celldebug(const char* p, Gid2PreSyn& map) {
 	FILE* f;
 	char fname[100];
 	sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
-	PreSyn* ps;
 	fprintf(f, "\n%s\n", p);
 	int rank = nrnmpi_myid;
 	fprintf(f, "  %2d:", rank);
-	NrnHashIterateKeyValue(Gid2PreSyn, map, int, gid, PreSyn*, ps) {
+	for (const auto& iter: map) {
+		int gid = iter.first;
 		fprintf(f, " %2d", gid);
-	}}}
+	}
 	fprintf(f, "\n");
 	fclose(f);
 }
@@ -50,7 +50,7 @@ void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* r
 	fclose(f);
 }
 #else
-void celldebug(const char* p, Gid2PreSyn* map) {}
+void celldebug(const char* p, Gid2PreSyn& map) {}
 void alltoalldebug(const char* p, int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl){}
 #endif
 
@@ -60,15 +60,15 @@ void phase1debug() {
 	char fname[100];
 	sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
-	PreSyn* ps;
 	fprintf(f, "\nphase1debug %d", nrnmpi_myid);
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+	for (const auto* iter: gid2out_) {
+		PreSyn* ps = iter.second;
 		fprintf(f, "\n %2d:", ps->gid_);
 		BGP_DMASend* bs = ps->bgp.dma_send_;
 		for (int i=0; i < bs->ntarget_hosts_; ++i) {
 			fprintf(f, " %2d", bs->target_hosts_[i]);
 		}
-	}}}
+	}
 	fprintf(f, "\n");
 	fclose(f);
 }
@@ -78,9 +78,9 @@ void phase2debug() {
 	char fname[100];
 	sprintf(fname, "debug.%d", nrnmpi_myid);
 	f = fopen(fname, "a");
-	PreSyn* ps;
 	fprintf(f, "\nphase2debug %d", nrnmpi_myid);
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+	for (const auto& iter: gid2in_) {
+		PreSyn* ps = iter.second;
 		fprintf(f, "\n %2d:", ps->gid_);
 		BGP_DMASend_Phase2* bs = ps->bgp.dma_send_phase2_;
 	    if (bs) {
@@ -88,7 +88,7 @@ void phase2debug() {
 			fprintf(f, " %2d", bs->target_hosts_phase2_[i]);
 		}
 	    }
-	}}}
+	}
 	fprintf(f, "\n");
 	fclose(f);
 }
@@ -121,7 +121,6 @@ static int* newoffset(int* acnt, int size) {
 
 // input scnt, sdispl ; output, newly allocated rcnt, rdispl
 static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
-	int i;
 	int np = nrnmpi_numprocs;
 	int* c = newintval(1, np);
 	rdispl = newoffset(c, np);
@@ -132,7 +131,13 @@ static void all2allv_helper(int* scnt, int* sdispl, int*& rcnt, int*& rdispl) {
 	rdispl = newoffset(rcnt, np);
 }
 
-#define all2allv_perf 1
+/*
+define following to 1 if desire space/performance information such as:
+all2allv_int gidin to intermediate space=1552 total=37345104 time=0.000495835
+all2allv_int gidout space=528 total=37379376 time=1.641e-05
+all2allv_int lists space=3088 total=37351312 time=4.4708e-05
+*/
+#define all2allv_perf 0
 extern "C" {
     extern unsigned long long nrn_mallinfo(int);
 } // extern "C"
@@ -173,9 +178,7 @@ public:
 	// to send the ith group of phase2 targets.
 };
 
-declareNrnHash(Int2TarList, int, TarList*)
-implementNrnHash(Int2TarList, int, TarList*)
-static Int2TarList* gid2tarlist;
+using Int2TarList = std::unordered_map<int, std::unique_ptr<TarList>>;
 
 TarList::TarList() {
 	size = 0;
@@ -266,7 +269,8 @@ static void fill_dma_send_lists(int, int*);
 
 static void setup_presyn_dma_lists() {
 	// Create and attach BGP_DMASend instances to output Presyn
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+	for (const auto& iter: gid2out_) {
+		PreSyn* ps = iter.second;
 		// only ones that generate spikes. eg. multisplit
 		// registers a gid and even associates with a cell piece, but
 		// that piece may not send spikes.
@@ -274,13 +278,14 @@ static void setup_presyn_dma_lists() {
 			bgpdma_cleanup_presyn(ps);
 			ps->bgp.dma_send_ = new BGP_DMASend();
 		}
-	}}}
+	}
 
 	// Need to use the bgp union slot for dma_send_phase2_.
 	// Only will be non-NULL if the input is a phase 2 sender.
-	NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
+	for (const auto& iter: gid2in_) {
+		PreSyn* ps = iter.second;
 		ps->bgp.srchost_ = 0;
-	}}}
+	}
 
 	int* r;
 	int sz = setup_target_lists(&r);
@@ -300,9 +305,11 @@ static void fill_dma_send_lists(int sz, int* r) {
 	for (int i = 0; i < sz;) {
 		int gid = r[i++];
 		int size = r[i++];
-		PreSyn* ps = 0;
+		PreSyn* ps{nullptr};
 		if (use_phase2_) { // look in gid2in first
-		    if (gid2in_->find(gid, ps)) { // phase 2 target list
+		    auto iter = gid2in_.find(gid);
+		    if (iter != gid2in_.end()) {
+			ps = iter->second;
 			BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
 			ps->bgp.dma_send_phase2_ = bsp;
 			bsp->ntarget_hosts_phase2_ = size;
@@ -316,7 +323,9 @@ static void fill_dma_send_lists(int sz, int* r) {
 		    }
 		}
 		if (!ps) { // phase 1 target list (or whole list if use_phase2 is 0)
-			nrn_assert(gid2out_->find(gid, ps));
+			auto iter = gid2out_.find(gid);
+			nrn_assert(iter != gid2out_.end());
+			ps = iter->second;
 			BGP_DMASend* bs =  ps->bgp.dma_send_;
 			bs->ntarget_hosts_phase1_ = size;
 			if (use_phase2_ == 0) {
@@ -338,7 +347,8 @@ static void fill_dma_send_lists(int sz, int* r) {
 	// compute max_ntarget_host and max_multisend_targets
 	max_ntarget_host = 0;
 	max_multisend_targets = 0;
-	NrnHashIterate(Gid2PreSyn, gid2out_, PreSyn*, ps) {
+	for (const auto& iter: gid2out_) {
+		PreSyn* ps = iter.second;
 		if (ps->output_index_ >= 0) { // only ones that generate spikes
 			BGP_DMASend* bs = ps->bgp.dma_send_;
 			if (max_ntarget_host < bs->ntarget_hosts_) {
@@ -348,13 +358,14 @@ static void fill_dma_send_lists(int sz, int* r) {
 				max_multisend_targets = bs->NTARGET_HOSTS_PHASE1;
 			}
 		}
-	}}}
-	if (use_phase2_) NrnHashIterate(Gid2PreSyn, gid2in_, PreSyn*, ps) {
-		BGP_DMASend_Phase2* bsp = new BGP_DMASend_Phase2();
+	}
+	if (use_phase2_) for (const auto& iter: gid2in_) {
+		PreSyn* ps = iter.second;
+		BGP_DMASend_Phase2* bsp = ps->bgp.dma_send_phase2_;
 		if (bsp && max_multisend_targets < bsp->ntarget_hosts_phase2_) {
 			max_multisend_targets = bsp->ntarget_hosts_phase2_;
 		}
-	}}}
+	}
 }
 
 // return is vector and its size. The vector encodes a sequence of
@@ -373,16 +384,18 @@ static int setup_target_lists(int** r_return) {
 
 	// scnt is number of input gids from target
 	scnt = newintval(0, nhost);
-	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+	for (const auto& iter: gid2in_) {
+		int gid = iter.first;
 		++scnt[gid%nhost];
-	}}}
+	}
 
 	// s are the input gids from target to be sent to the various intermediates
 	sdispl = newoffset(scnt, nhost);
 	s = newintval(0, sdispl[nhost]);
-	NrnHashIterateKeyValue(Gid2PreSyn, gid2in_, int, gid, PreSyn*, ps) {
+	for (const auto& iter: gid2in_) {
+		int gid = iter.first;
 		s[sdispl[gid%nhost]++] = gid;
-	}}}
+	}
 	// Restore sdispl for the message.
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
@@ -394,21 +407,15 @@ static int setup_target_lists(int** r_return) {
 	// r is the gids received by this intermediate rank from all other ranks.
 
 	// Construct hash table for finding the target rank list for a given gid.
-	gid2tarlist = new Int2TarList(1000);
+	Int2TarList gid2tarlist;
 	// Now figure out the size of the target list for each distinct gid in r.
 	for (int i=0; i < rdispl[nhost]; ++i) {
-#if ALTHASH
-		TarList* tl;
-		if (gid2tarlist->find(r[i], tl)) {
-			tl->size += 1;
-		}else{
-			tl = new TarList();
-			tl->size = 1;
-			gid2tarlist->insert(r[i], tl);
-		}
-#else
-		assert(0);
-#endif
+		const int gid = r[i];
+        auto& tl = gid2tarlist[gid]; // default-construct a new std::unique_ptr<TarList> if needed
+        if(!tl) {
+            tl.reset(new TarList()); // constructor initialises `size` to zero
+        }
+        ++(tl->size);
 	}
 
 	// Conceptually, now the intermediate is the mpi source and the gid
@@ -425,18 +432,20 @@ static int setup_target_lists(int** r_return) {
 	// target lists.
 
 	// Allocate the target lists (and set size to 0 (we will recount when filling).
-	NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+	for (auto& iter: gid2tarlist) {
+		TarList* tl = iter.second.get();
 		tl->alloc();
 		tl->size = 0;
-	}}}
+	}
 
 	// fill the target lists
 	for (int rank=0; rank < nhost; ++rank) {
 		int b = rdispl[rank];
 		int e = rdispl[rank + 1];
 		for (int i=b; i < e; ++i) {
-			TarList* tl;
-			if (gid2tarlist->find(r[i], tl)) {
+			const auto iter = gid2tarlist.find(r[i]);
+			if (iter != gid2tarlist.end()) {
+				TarList* tl = iter->second.get();
 				tl->list[tl->size] = rank;
 				tl->size++;
 			}
@@ -457,20 +466,24 @@ static int setup_target_lists(int** r_return) {
 	// be tested for random distributions of gids.
 	// How many on the source rank?
 	scnt = newintval(0, nhost);
-	NrnHashIterateKeyValue(Gid2PreSyn, gid2out_, int, gid, PreSyn*, ps) {
+	for (const auto& iter: gid2out_) {
+		PreSyn* ps = iter.second;
+		int gid = iter.first;
 		if (ps->output_index_ >= 0) { // only ones that generate spikes
 			++scnt[gid%nhost];
 		}
-	}}}
+	}
 	sdispl = newoffset(scnt, nhost);
 
 	// what are the gids of those target lists
 	s = newintval(0, sdispl[nhost]);
-	NrnHashIterateKeyValue(Gid2PreSyn, gid2out_, int, gid, PreSyn*, ps) {
+	for (const auto& iter: gid2out_) {
+		PreSyn* ps = iter.second;
+		int gid = iter.first;
 		if (ps->output_index_ >= 0) { // only ones that generate spikes
 			s[sdispl[gid%nhost]++] = gid;
 		}
-	}}}
+	}
 	// Restore sdispl for the message.
 	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
@@ -483,13 +496,14 @@ static int setup_target_lists(int** r_return) {
 		int b = rdispl[rank];
 		int e = rdispl[rank+1];
 		for (int i=b; i < e; ++i) {
-			TarList* tl;
 			// note that there may be input gids with no corresponding
 			// output gid so that the find may not return true and in
 			// that case the tl->rank remains -1.
 			// For example multisplit gids or simulation of a subset of
 			// cells.
-			if (gid2tarlist->find(r[i], tl)) {
+			const auto iter = gid2tarlist.find(r[i]);
+			if (iter != gid2tarlist.end()) {
+				TarList* tl = iter->second.get();
 				tl->rank = rank;
 			}
 		}
@@ -498,11 +512,12 @@ static int setup_target_lists(int** r_return) {
 
 	if (use_phase2_) {
 		random_init(nrnmpi_myid + 1);
-		NrnHashIterate(Int2TarList, gid2tarlist, TarList*, tl) {
+		for (const auto& iter: gid2tarlist) {
+			TarList* tl = iter.second.get();
 			if (tl->rank >= 0) { // only if output gid is spike generating
 				phase2organize(tl);
 			}
-		}}}
+		}
 	}
 
 	// For clarity, use the all2allv_int style of information flow
@@ -521,7 +536,8 @@ static int setup_target_lists(int** r_return) {
 
 	// how much to send to each rank
 	scnt = newintval(0, nhost);
-	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+	for (const auto& iter: gid2tarlist) {
+		TarList* tl = iter.second.get();
 		if (tl->rank < 0) {
 			// When the output gid does not generate spikes, that rank
 			// is not interested if there is a target list for it.
@@ -551,11 +567,13 @@ static int setup_target_lists(int** r_return) {
 			// total list size (needed for conservation);
 			scnt[tl->rank] += 1;
 		}
-	}}}
+	}
 	sdispl = newoffset(scnt, nhost);
 	s = newintval(0, sdispl[nhost]);
 	// what to send to each rank
-	NrnHashIterateKeyValue(Int2TarList, gid2tarlist, int, gid, TarList*, tl) {
+	for (const auto& iter: gid2tarlist) {
+		int gid = iter.first;
+		TarList* tl = iter.second.get();
 		if (tl->rank < 0) {
 			continue;
 		}
@@ -577,7 +595,6 @@ static int setup_target_lists(int** r_return) {
 					s[sdispl[rank]++] = tl->list[j];
 				}
 			}
-			
 		}else{
 			// gid, list size, list
 			s[sdispl[tl->rank]++] = gid;
@@ -589,9 +606,8 @@ static int setup_target_lists(int** r_return) {
 				s[sdispl[tl->rank]++] = tl->list[i];
 			}
 		}
-		delete tl;
-	}}}
-	delete gid2tarlist;
+	}
+	del(sdispl);
 	sdispl = newoffset(scnt, nhost);
 	all2allv_int(s, scnt, sdispl, r, rcnt, rdispl, "lists");
 	del(s);

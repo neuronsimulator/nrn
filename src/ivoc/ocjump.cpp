@@ -52,7 +52,10 @@ void hoc_execute1() {
 	
 	hemold = hoc_execerror_messages;
 	hoc_execerror_messages = hem;
+	int old_mpiabort_flag = nrn_mpiabort_on_error_;
+	nrn_mpiabort_on_error_ = 0;
 	bool b = valid_stmt1(gargstr(1), ob);
+	nrn_mpiabort_on_error_ = old_mpiabort_flag;
 	hoc_execerror_messages = hemold;
 	hoc_ret();
 	hoc_pushx(double(b));

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # used by the libload command in hoc to find an instance of a procedure,
 #	function, or template

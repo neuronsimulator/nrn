@@ -17,11 +17,6 @@
 #if NRNMPI
 extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 #endif
-#if BLUEGENE_CHECKPOINT
-	void BGLCheckpointInit(char* chkptDirPath);
-	// note: get the path from the environment variable BGL_CHKPT_DIR_PATH
-	// otherwise from $HOME/checkpoint, otherwise $HOME
-#endif	
 
 int main(int argc, char** argv, char** env) {
 	nrn_isdouble(0,0,0);
@@ -54,9 +49,6 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 #endif
 	nrnmpi_init(1, &argc, &argv); // may change argc and argv
 #endif	
-#if BLUEGENE_CHECKPOINT
-	BGLCheckpointInit(0);
-#endif
 	errno = 0;
 	return ivocmain(argc, (const char**)argv, (const char**)env);
 }

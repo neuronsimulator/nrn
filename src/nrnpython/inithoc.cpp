@@ -53,7 +53,7 @@ static size_t arg_size;
 static int argc;
 static char** argv;
 static int add_arg(const char* name, const char* value) {
-  if (size_t(argc + 2) >= arg_size) {
+  if (size_t(argc + 2 + bool(value)) >= arg_size) {
     arg_size += 10;
     argv = (char**)realloc(argv, arg_size*sizeof(char*));
   }
@@ -67,6 +67,15 @@ static int add_arg(const char* name, const char* value) {
   if (value) {
     argv[argc++] = strdup(value);
   }
+  // To match C/C++ semantics for the main function then argv[argc] should
+  // always be null. https://en.cppreference.com/w/cpp/language/main_function,
+  // for example, says argv is a "Pointer to the first element of an array of
+  // argc + 1 pointers, of which the last one is null". Section 11.2.1 of the
+  // MPI 4.0 standard says "MPI_INIT accepts the argc and argv that are provided
+  // by the arguments to main or NULL", so it seems correct to follow the rules
+  // for a C/C++ main function. More pragmatically, OpenMPI assumes argv[argc]
+  // is nullptr and crashes if it is not.
+  argv[argc] = NULL;
   return 1;
 }
 
@@ -315,6 +324,9 @@ extern "C" PyObject* PyInit_hoc() {
   nrn_nobanner_ = 1;
   const char* pyver = Py_GetVersion();
   nrn_is_python_extension = (pyver[0]-'0')*10 + (pyver[2] - '0');
+  if (isdigit(pyver[3])) { // minor >= 10 e.g. 3.10  is 310
+    nrn_is_python_extension = nrn_is_python_extension*10 + pyver[3] - '0';
+  }
   p_nrnpython_finalize = nrnpython_finalize;
 #if NRNMPI
   if (libnrnmpi_is_loaded) {

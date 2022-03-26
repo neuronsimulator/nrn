@@ -1,22 +1,23 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
-#include	<stdio.h>
+#include <stdio.h>
 #if HAVE_STDLIB_H
-#include	<stdlib.h>
+#include <stdlib.h>
 #endif
-#include	<errno.h>
-#include	<math.h>
-#include	"section.h"
-#include	"membfunc.h"
-#include	"neuron.h"
-#include	"parse.hpp"
-#include	"nrnmpi.h"
-#include	"multisplit.h"
+#include <errno.h>
+#include <math.h>
+#include <string>
+#include "section.h"
+#include "membfunc.h"
+#include "neuron.h"
+#include "parse.hpp"
+#include "nrnmpi.h"
+#include "multisplit.h"
 #include "spmatrix.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
-
+#include "utils/profile/profiler_interface.h"
 
 extern spREAL *spGetElement(char*, int ,int);
 
@@ -397,9 +398,15 @@ void nrn_rhs(NrnThread* _nt) {
 	/* note that CAP has no current */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].current) {
 		Pvmi s = memb_func[tml->index].current;
-		if (measure) { w = nrnmpi_wtime(); }
-		(*s)(_nt, tml->ml, tml->index);
-		if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
+        std::string mechname("cur-");
+        mechname += memb_func[tml->index].sym->name;
+        if (measure) {
+            w = nrnmpi_wtime();
+        }
+        nrn::Instrumentor::phase_begin(mechname.c_str());
+        (*s)(_nt, tml->ml, tml->index);
+        nrn::Instrumentor::phase_end(mechname.c_str());
+        if (measure) { nrn_mech_wtime_[tml->index] += nrnmpi_wtime() - w; }
 		if (errno) {
 			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of currents", (char*)0);
@@ -514,8 +521,12 @@ void nrn_lhs(NrnThread* _nt) {
 	/* note that CAP has no jacob */
 	for (tml = _nt->tml; tml; tml = tml->next) if (memb_func[tml->index].jacob) {
 		Pvmi s = memb_func[tml->index].jacob;
-		(*s)(_nt, tml->ml, tml->index);
-		if (errno) {
+        std::string mechname("cur-");
+        mechname += memb_func[tml->index].sym->name;
+        nrn::Instrumentor::phase_begin(mechname.c_str());
+        (*s)(_nt, tml->ml, tml->index);
+        nrn::Instrumentor::phase_end(mechname.c_str());
+        if (errno) {
 			if (nrn_errno_check(tml->index)) {
 hoc_warning("errno set during calculation of jacobian", (char*)0);
 			}
@@ -601,11 +612,12 @@ has taken effect
 
 /* for the fixed step method */
 void* setup_tree_matrix(NrnThread* _nt){
-	nrn_rhs(_nt);
-	nrn_lhs(_nt);
+    nrn::Instrumentor::phase p_setup_tree_matrix("setup-tree-matrix");
+    nrn_rhs(_nt);
+    nrn_lhs(_nt);
 	nrn_nonvint_block_current(_nt->end, _nt->_actual_rhs, _nt->id);
 	nrn_nonvint_block_conductance(_nt->end, _nt->_actual_d, _nt->id);
-	return nullptr;
+    return nullptr;
 }
 
 /* membrane mechanisms needed by other mechanisms (such as Eion by HH)
@@ -933,9 +945,6 @@ void recalc_diam(void) {
 	++diam_change_cnt;
 	stim_prepare();
 	synapse_prepare();
-#if SEJNOWSKI
-	connect_prepare();
-#endif
 	clamp_prepare();
 }
 

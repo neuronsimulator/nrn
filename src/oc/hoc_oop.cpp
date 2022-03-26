@@ -30,6 +30,7 @@ Object** (*p_java2nrn_ometh)(Object* ho, Symbol* method);
 Symbol* nrnpy_pyobj_sym_;
 void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
+void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
 #endif
 
 #if CABLE
@@ -2228,3 +2229,12 @@ int is_obj_type(Object* obj, const char* type_name) {
 }
 
 
+void* nrn_opaque_obj2pyobj(Object* ho) {
+#if USE_PYTHON
+  // The PyObject* reference is not incremented. Use only as last resort
+  if (nrnpy_opaque_obj2pyobj_p_) {
+    return (*nrnpy_opaque_obj2pyobj_p_)(ho);
+  }
+#endif
+  return nullptr;
+}

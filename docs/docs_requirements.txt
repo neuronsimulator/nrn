@@ -5,7 +5,11 @@ nbconvert
 recommonmark
 matplotlib
 bokeh
+# do not check import of next line
 ipython
 plotnine
 numpy
 plotly
+nbsphinx
+# 3.1.0 is buggy
+jinja2!=3.1.0

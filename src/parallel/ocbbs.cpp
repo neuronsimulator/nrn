@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
 
@@ -23,9 +24,6 @@ extern int hoc_return_type_code;
 	Symbol* hoc_which_template(Symbol*);
 	void bbs_done();
 	extern double t;
-#if BLUEGENE_CHECKPOINT
-	int BGLCheckpoint();
-#endif
 	extern void nrnmpi_source_var(), nrnmpi_target_var(), nrnmpi_setup_transfer();
 	extern int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 	extern int nrnmpi_splitcell_connect(int that_host);
@@ -633,6 +631,14 @@ static double set_timeout(void* v) {
 	return double(arg);
 }
 
+static double set_mpiabort_on_error(void*) {
+	double ret = double(nrn_mpiabort_on_error_);
+	if (ifarg(1)) {
+		nrn_mpiabort_on_error_ = int(chkarg(1, 0, 1));
+	}
+	return ret;
+}
+
 static double gid_clear(void* v) {
 	int arg = 0;
 	if (ifarg(1)){
@@ -664,8 +670,9 @@ static double spike_record(void* v) {
 }
 
 static double psolve(void* v) {
-	OcBBS* bbs = (OcBBS*)v;
-	double tstop = chkarg(1, t, 1e9);
+    nrn::Instrumentor::phase_begin("psolve");
+    OcBBS* bbs = (OcBBS*) v;
+    double tstop = chkarg(1, t, 1e9);
 	int enabled = nrncore_is_enabled();
 	int file_mode = nrncore_is_file_mode();
 	if (enabled == 1) {
@@ -674,7 +681,8 @@ static double psolve(void* v) {
 		// Classic case
 		bbs->netpar_solve(tstop);
 	}
-	return double(enabled);
+    nrn::Instrumentor::phase_end("psolve");
+    return double(enabled);
 }
 
 static double set_maxstep(void* v) {
@@ -889,15 +897,6 @@ static double broadcast(void*) {
 	return double(cnt);
 }
 
-static double checkpoint(void*) {
-#if BLUEGENE_CHECKPOINT
-	int i = BGLCheckpoint();
-	return double(i);
-#else
-	return 0.;
-#endif
-}
-
 static double nthrd(void*) {
 	int ip = 1;
 	hoc_return_type_code = 1; // integer
@@ -1051,6 +1050,7 @@ static Member_func members[] = {
 	"vtransfer_time", vtransfer_time,
 	"mech_time", mech_time,
 	"timeout", set_timeout,
+	"mpiabort_on_error", set_mpiabort_on_error,
 
 	"set_gid2node", set_gid2node,
 	"gid_exists", gid_exists,
@@ -1062,7 +1062,6 @@ static Member_func members[] = {
 	"set_maxstep", set_maxstep,
 	"spike_statistics", spike_stat,
 	"max_histogram", maxhist,
-	"checkpoint", checkpoint,
 	"spike_compress", spcompress,
 	"gid_clear", gid_clear,
 	"prcellstate", prcellstate,

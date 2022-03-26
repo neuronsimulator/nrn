@@ -33,6 +33,11 @@ private:
 	CopyString s_;
 };
 
+/** true if Style 'dialog_spec_position: on' and fills x,y with
+  * dialog_left_position and dialog_bottom_position.
+**/
+bool nrn_spec_dialog_pos(Coord& x, Coord& y);
+
 bool ok_to_write(const String&, Window* w=NULL);
 bool ok_to_write(const char*, Window* w=NULL);
 bool ok_to_read(const String&, Window* w=NULL);

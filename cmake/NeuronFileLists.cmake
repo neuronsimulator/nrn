@@ -21,6 +21,7 @@ set(HEADER_FILES_TO_INSTALL
     multicore.h
     multisplit.h
     neuron.h
+    newton_struct.h
     nmodlmutex.h
     nrn_ansi.h
     nrnapi.h
@@ -39,7 +40,6 @@ set(HEADER_FILES_TO_INSTALL
     ocmisc.h
     options.h
     scoplib.h
-    scoplib_ansi.h
     section.h
     spconfig.h
     spmatrix.h)
@@ -71,7 +71,6 @@ set(OC_FILE_LIST
     functabl.cpp
     getsym.cpp
     hoc.cpp
-    hocedit.cpp
     hocusr.cpp
     hoc_init.cpp
     hoc_oop.cpp
@@ -82,7 +81,6 @@ set(OC_FILE_LIST
     nrnfilewrap.cpp
     ocerf.cpp
     parallel.cpp
-    parse.cpp
     plot.cpp
     plt.cpp
     regexp.cpp
@@ -218,7 +216,6 @@ set(NRNIV_FILE_LIST
     nrndae.cpp
     nrnmenu.cpp
     nrnpy.cpp
-    nrnrtime.cpp
     nrnste.cpp
     nvector_nrnserial_ld.cpp
     nvector_nrnthread.cpp
@@ -361,13 +358,7 @@ set(MESCH_FILES_LIST
     zsolve.c
     zvecop.c)
 
-
-set(SPARSE_FILES_LIST
-    bksub.cpp
-    getelm.cpp
-    lineq.cpp
-    prmat.cpp
-    subrows.cpp)
+set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
@@ -448,32 +439,11 @@ set(SCOPMATH_FILES_LIST
     crout_thread.c
     ssimplic_thread.c)
 
-set(MEMACS_FILES_LIST
-    ansi.c
-    basic.c
-    bind.c
-    buffer.c
-    display.c
-    file.c
-    fileio.c
-    line.c
-    lock.c
-    main1.c
-    random.c
-    region.c
-    search.c
-    spawn.c
-    tcap.c
-    termio.c
-    window.c
-    word.c)
-
-set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp nrnrt.cpp)
+set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
-    Complex.cpp
     DiscUnif.cpp
     Erlang.cpp
     Geom.cpp
@@ -486,11 +456,8 @@ set(NRNGNU_FILES_LIST
     RNG.cpp
     Random.cpp
     RndInt.cpp
-    SmplHist.cpp
-    SmplStat.cpp
     Uniform.cpp
-    Weibull.cpp
-    builtin.cpp)
+    Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
@@ -527,8 +494,6 @@ set(MODFILE_BASE_NAMES
     svclmp)
 
 set(MODLUNIT_FILES_LIST
-    parse1.cpp
-    lex.cpp
     consist.cpp
     declare.cpp
     init.cpp
@@ -544,9 +509,6 @@ set(MODLUNIT_FILES_LIST
     version.cpp)
 
 set(NMODL_FILES_LIST
-    parse1.cpp
-    diffeq.cpp
-    lex.cpp
     consist.cpp
     deriv.cpp
     discrete.cpp
@@ -605,16 +567,12 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
-                     ${SPARSE_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath
                      ${SCOPMATH_FILES_LIST})
 nrn_create_file_list(NRN_NRNMPI_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnmpi ${NRNMPI_FILES_LIST})
-if(NRN_ENABLE_MEMACS)
-  nrn_create_file_list(NRN_MEMACS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/memacs ${MEMACS_FILES_LIST})
-endif()
 nrn_create_file_list(NRN_NRNGNU_SRC_FILES ${PROJECT_SOURCE_DIR}/src/gnu ${NRNGNU_FILES_LIST})
 nrn_create_file_list(NRN_NRNPYTHON_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrnpython
                      ${NRNPYTHON_FILES_LIST})

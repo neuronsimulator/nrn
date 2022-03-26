@@ -1,11 +1,12 @@
-.. _sscanf_doc:
+
+.. _hoc_sscanf_doc:
 
 String Parsing (sscanf)
 -----------------------
 
 
 
-.. function:: sscanf
+.. hoc:function:: sscanf
 
 
     Syntax:

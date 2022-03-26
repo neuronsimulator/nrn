@@ -7,7 +7,6 @@
 #include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
-#include <nrnhash.h>
 
 /*
 Started out attempting a general implementation in which the subtrees could be

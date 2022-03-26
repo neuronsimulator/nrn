@@ -92,10 +92,13 @@ if (deriv_imp_list) {	/* make sure deriv block translation matches method */
 	Sprintf(deriv2_advance, "_deriv%d_advance = 0;\n", listnum);
 	Sprintf(buf, "static int _deriv%d_advance = 0;\n", listnum);
 	q = linsertstr(procfunc, buf);
-	Sprintf(buf, "\n#define _deriv%d_advance _thread[%d]._i\n\
-#define _dith%d %d\n#define _recurse _thread[%d]._i\n#define _newtonspace%d _thread[%d]._pvoid\nextern void* nrn_cons_newtonspace(int);\n\
-", listnum, thread_data_index, listnum, thread_data_index+1, thread_data_index+2,
-listnum, thread_data_index+3);
+	Sprintf(buf,
+	        "\n#define _deriv%d_advance _thread[%d]._i\n"
+	        "#define _dith%d %d\n"
+	        "#define _recurse _thread[%d]._i\n"
+	        "#define _newtonspace%d _thread[%d]._pvoid\n",
+	        listnum, thread_data_index, listnum, thread_data_index+1,
+	        thread_data_index+2, listnum, thread_data_index+3);
 	vectorize_substitute(q, buf);
 	Sprintf(buf, "  _thread[_dith%d]._pval = (double*)ecalloc(%d, sizeof(double));\n", listnum, 2*numeqn);
 	lappendstr(thread_mem_init_list, buf);
@@ -431,7 +434,7 @@ void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4, int sensused)
 	Linsertstr(procfunc, buf);
 	replacstr(q1, "\nstatic int"); q = insertstr(q3, "() {_reset=0;\n");
 	derfun = SYM(q2);
-	vectorize_substitute(q, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset=0; int error = 0;\n");
+	vectorize_substitute(q, "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int _reset=0; int error = 0;\n");
 
 	if (derfun->subtype & DERF && derfun->u.i) {
 		diag("DERIVATIVE merging not implemented", (char *)0);
@@ -476,25 +479,35 @@ is not allowed on the left hand side.");
 #if CVODE
 			slist_data(state, count, numlist);
 #endif
-if (s->subtype & ARRAY) { int dim = s->araydim;
-	Sprintf(buf, "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = (%s + _i) - _p;"
-		,dim, numlist , count, state->name);
-	Lappendstr(initlist, buf);
-	Sprintf(buf, " _dlist%d[%d+_i] = (%s + _i) - _p;}\n"
-		, numlist, count, name_forderiv(indx + 1));
-	Lappendstr(initlist, buf);
-	count += dim;
-}else{
-			Sprintf(buf, "_slist%d[%d] = &(%s) - _p;",
-				numlist, count, state->name);
-			Lappendstr(initlist, buf);
-			Sprintf(buf, " _dlist%d[%d] = &(%s) - _p;\n",
-			   numlist, count, name_forderiv(indx + 1));
-			Lappendstr(initlist, buf);
-			count++;
-}
-		}
-	}
+            if (s->subtype & ARRAY) {
+                int dim = s->araydim;
+                Sprintf(buf,
+                        "for(_i=0;_i<%d;_i++){_slist%d[%d+_i] = %s_columnindex + _i;",
+                        dim,
+                        numlist,
+                        count,
+                        state->name);
+                Lappendstr(initlist, buf);
+                Sprintf(buf,
+                        " _dlist%d[%d+_i] = %s_columnindex + _i;}\n",
+                        numlist,
+                        count,
+                        name_forderiv(indx + 1));
+                Lappendstr(initlist, buf);
+                count += dim;
+            } else {
+                Sprintf(buf, "_slist%d[%d] = %s_columnindex;", numlist, count, state->name);
+                Lappendstr(initlist, buf);
+                Sprintf(buf,
+                        " _dlist%d[%d] = %s_columnindex;\n",
+                        numlist,
+                        count,
+                        name_forderiv(indx + 1));
+                Lappendstr(initlist, buf);
+                count++;
+            }
+        }
+    }
 	if (count == 0) {
 		diag("DERIVATIVE contains no derivatives", (char *)0);
 	}
@@ -509,7 +522,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 	Lappendstr(procfunc, buf);
 	{Item* qq = procfunc->prev;
 	copyitems(q1->next, q4, procfunc->prev);
-	vectorize_substitute(qq->next, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {int _reset = 0;");
+	vectorize_substitute(qq->next, "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {int _reset = 0;");
 	vectorize_scan_for_func(qq->next, procfunc);
 	}
 	lappendstr(procfunc, "return _reset;\n}\n");
@@ -520,7 +533,7 @@ Sprintf(buf, "static int _slist%d[%d], _dlist%d[%d];\n",
 	Item* qextra = q1->next->next->next->next;
 	Sprintf(buf, "static int _ode_matsol%d", numlist);
 	Lappendstr(procfunc, buf);
-	vectorize_substitute(lappendstr(procfunc, "() {\n"), "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n");
+	vectorize_substitute(lappendstr(procfunc, "() {\n"), "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n");
 	qq = procfunc->next;
 	cvode_cnexp_possible = 1;
 	ITERATE(q, cvode_diffeq_list) {
@@ -819,15 +832,18 @@ Sprintf(buf, "error=shoot(%d, &(%s) - _p, _pmatch_time, _pmatch_value, _state_ma
 	ITERATE(q, deriv_state_list) {
 		s = SYM(q);
 		if (s->subtype & ARRAY) {
-Sprintf(buf, "for (_i=0; _i<%d; _i++) {_state_get[%d+_i] = (%s + _i) - _p;}\n",
-	s->araydim, j, s->name);
-			j += s->araydim;
-		} else {
-			Sprintf(buf, "_state_get[%d] = &(%s) - _p;\n", j, s->name);
-			j++;
-		}
-		Lappendstr(initlist, buf);
-	}
+            Sprintf(buf,
+                    "for (_i=0; _i<%d; _i++) {_state_get[%d+_i] = %s_columnindex + _i;}\n",
+                    s->araydim,
+                    j,
+                    s->name);
+            j += s->araydim;
+        } else {
+            Sprintf(buf, "_state_get[%d] = %s_columnindex;\n", j, s->name);
+            j++;
+        }
+        Lappendstr(initlist, buf);
+    }
 	/* declare the arrays */
 	Sprintf(buf, "static int _state_get[%d], _state_match[%d];\n\
 static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
@@ -848,9 +864,12 @@ static double _match_time[%d], _match_value[%d], _found_init[%d];\n",
 		vmatch = LST(q = q->next);
 		if (s->subtype & ARRAY) {
 			imatch = STR(q = q->next);
-Sprintf(buf, "for (_i=0; _i<%d; _i++) {_state_match[%d+_i] = (%s + _i) - _p;}\n",
-			s->araydim, j, s->name);
-			Lappendstr(initlist, buf);
+            Sprintf(buf,
+                    "for (_i=0; _i<%d; _i++) {_state_match[%d+_i] = %s_columnindex + _i;}\n",
+                    s->araydim,
+                    j,
+                    s->name);
+            Lappendstr(initlist, buf);
 Sprintf(buf, "{int %s; for (%s=0; %s<%d; %s++) {\n",
 imatch, imatch, imatch, s->araydim, imatch);
 			Insertstr(setup, buf);
@@ -864,8 +883,8 @@ Sprintf(buf, ";\n _match_value[%s + %d] = ", imatch, j);
 			j += s->araydim;
 			count += s->araydim;
 		}else{
-Sprintf(buf, "_state_match[%d] = &(%s) - _p;\n", j, s->name);
-			Lappendstr(initlist, buf);
+            Sprintf(buf, "_state_match[%d] = %s_columnindex;\n", j, s->name);
+            Lappendstr(initlist, buf);
 Sprintf(buf, "_match_time[%d] = ", j);
 			Insertstr(setup, buf);
 			copylist(tmatch, setup);
@@ -1074,7 +1093,7 @@ sprintf(buf," %s = %s + (1. - exp(dt*(%s)))*(%s - %s)",
 		{ Item* qq = procfunc->prev;
 		copyitems(q1, q2, procfunc->prev);
 		/* more or less redundant with massagederiv */
-		vectorize_substitute(qq->next->next, "(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {");
+		vectorize_substitute(qq->next->next, "(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {");
 		vectorize_scan_for_func(qq->next->next, procfunc);
 		}
 		lappendstr(procfunc, " return 0;\n}\n");

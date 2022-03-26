@@ -78,7 +78,7 @@ public:
 	int nrtree_;
 	ReducedTree** rtree_;
 
-	MultiSplitTable* classical_root_to_multisplit_;
+	std::unique_ptr<MultiSplitTable> classical_root_to_multisplit_;
 	MultiSplitList* multisplit_list_; // NrnHashIterate is not in insertion order
 
 	int nth_;

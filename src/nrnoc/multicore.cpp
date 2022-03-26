@@ -826,19 +826,27 @@ hoc_execerror(memb_func[i].sym->name, "is not thread safe");
 			bamap[ii] = (BAMech*)0;
 		}
 		for (bam = bamech_[i]; bam; bam = bam->next) {
-			bamap[bam->type] = bam;
+			//Save first before-after block only.  In case of multiple
+			//before-after blocks with the same mech type, we will get
+			//subsequent ones using linked list below. 
+			if (!bamap[bam->type]) {
+				bamap[bam->type] = bam;
+			}
 		}
-		/* unnecessary but keep in order anyway */
+		// necessary to keep in order wrt multiple BAMech with same mech type
 		ptbl = _nt->tbl + i;
 		for (tml = _nt->tml; tml; tml = tml->next) {
 			if (bamap[tml->index]) {
-				Memb_list* ml = tml->ml;
+			    int mtype = tml->index;
+			    Memb_list* ml = tml->ml;
+			    for (bam = bamap[mtype]; bam && bam->type == mtype; bam = bam->next) {
 				tbl = (NrnThreadBAList*)emalloc(sizeof(NrnThreadBAList));
-				tbl->next = (NrnThreadBAList*)0;
-				tbl->bam = bamap[tml->index];
-				tbl->ml = ml;
 				*ptbl = tbl;
+				tbl->next = (NrnThreadBAList*)0;
+				tbl->bam = bam;
+				tbl->ml = ml;
 				ptbl = &(tbl->next);
+			    }
 			}
 		}
 	}

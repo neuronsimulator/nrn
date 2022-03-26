@@ -9,6 +9,7 @@
 #undef HAVE_MEMALIGN
 #endif
 #if HAVE_MEMALIGN
+#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
 #define _XOPEN_SOURCE 600
 #endif
 
@@ -29,10 +30,6 @@
 #endif
 
 #include "nrnmpiuse.h"
-
-#if BLUEGENEQ
-#include <spi/include/kernel/memory.h>
-#endif
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
@@ -407,12 +404,7 @@ void hoc_free_pstring(char** p) {
 }
 
 extern "C" unsigned long long nrn_mallinfo(int item) {
-#if BLUEGENEQ
-	/* BLUEGENE-Q ------------------------------------------------ */
-    uint64_t heap = 0;
-    Kernel_GetMemorySize(KERNEL_MEMSIZE_HEAP, &heap);
-    return heap;
-#elif defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured
      * in bytes, or zero if the value cannot be determined on this OS.

@@ -1,7 +1,7 @@
 Miscellaneous
 =============
 
-.. function:: ghk
+.. hoc:function:: ghk
 
 
     Syntax:
@@ -24,7 +24,7 @@ Miscellaneous
 
 
 
-.. function:: nernst
+.. hoc:function:: nernst
 
 
     Syntax:

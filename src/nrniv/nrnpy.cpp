@@ -13,17 +13,23 @@
 #include "nonvintblock.h"
 #include "nrnmpi.h"
 
+#include <algorithm>
+#include <cctype>
+
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
 extern int nrn_is_python_extension;
 int* nrnpy_site_problem_p;
-extern void (*p_nrnpython_start)(int);
+extern int (*p_nrnpython_start)(int);
 void nrnpython();
 static void (*p_nrnpython_real)();
 static void (*p_nrnpython_reg_real)();
 extern "C" char* hoc_back2forward(char* s);
 char* hoc_forward2back(char* s);
+#if DARWIN
+extern void  nrn_possible_mismatched_arch(const char*);
+#endif
 
 // following is undefined or else has the value of sys.api_version
 // at time of configure (using the python first in the PATH).
@@ -50,9 +56,9 @@ extern char* neuron_home;
 #if NRNPYTHON_DYNAMICLOAD >= 30
 
 #ifdef MINGW
-static const char* ver[] = {"3.6", 0};
+static const char* ver[] = {"3.7", 0};
 #else
-static const char* ver[] = {"3.9", "3.8", "3.7", "3.6", 0};
+static const char* ver[] = {"3.10", "3.9", "3.8", "3.7", 0};
 #endif // !MINGW
 
 #else
@@ -66,7 +72,7 @@ static void* python_already_loaded();
 static void* load_python();
 static void load_nrnpython(int, const char*);
 #else //!defined(NRNPYTHON_DYNAMICLOAD)
-extern "C" void nrnpython_start(int);
+extern "C" int nrnpython_start(int);
 extern "C" void nrnpython_reg_real();
 extern "C" void nrnpython_real();
 #endif //defined(NRNPYTHON_DYNAMICLOAD)
@@ -230,6 +236,9 @@ void nrnpython_reg() {
 		handle = dlopen(nrnpy_pylib, RTLD_NOW|RTLD_GLOBAL);
 		if (!handle) {
 			fprintf(stderr, "Could not dlopen NRN_PYLIB: %s\n", nrnpy_pylib);
+#if DARWIN
+			nrn_possible_mismatched_arch(nrnpy_pylib);
+#endif
 			exit(1);
 		}
 	}
@@ -338,41 +347,24 @@ static void* load_nrnpython_helper(const char* npylib) {
 	return handle;
 }
 
-int digit_to_int(char ch) {
-  int d = ch - '0';
-  if ((unsigned) d < 10) {
-    return d;
-  }
-  d = ch - 'a';
-  if ((unsigned) d < 6) {
-    return d + 10;
-  }
-  d = ch - 'A';
-  if ((unsigned) d < 6) {
-    return d + 10;
-  }
-  return -1;
-}
+// Get python version as integer from pythonlib path
+static int pylib2pyver10(std::string pylib) {
+	//skip past last \ or /
+	const auto pos = pylib.find_last_of("/\\");
+	if (pos != std::string::npos) {
+		pylib = pylib.substr(pos + 1);
+	}
+	
+	// erase nondigits
+	pylib.erase(
+	  std::remove_if(pylib.begin(),
+	    pylib.end(),
+	    [](char c) {
+	      return !std::isdigit(c);
+	    }), pylib.end());
 
-static int pylib2pyver10(const char* pylib) {
-  // check backwards for N.N or NN // obvious limitations
-  int n1 = -1; int n2 = -1;
-  for (const char* cp = pylib + strlen(pylib) -1 ; cp > pylib; --cp) {
-    if (isdigit(*cp)) {
-      if (n2 < 0) {
-        n2 = digit_to_int(*cp);
-      } else {
-        n1 = digit_to_int(*cp);
-        return n1*10 + n2;
-      }
-    }else if (*cp == '.') {
-      // skip
-    }else{ //
-      // start over
-      n2 = -1;
-    }
-  }
-  return 0;
+	// parse number. 0 is fine to return as error (no need for stoi)
+	return std::atoi(pylib.c_str());
 }
 
 static void load_nrnpython(int pyver10, const char* pylib) {
@@ -398,7 +390,7 @@ static void load_nrnpython(int pyver10, const char* pylib) {
         return;
     }
 #endif
-	p_nrnpython_start = (void(*)(int))load_sym(handle, "nrnpython_start");
+	p_nrnpython_start = (int(*)(int))load_sym(handle, "nrnpython_start");
 	p_nrnpython_real = (void(*)())load_sym(handle, "nrnpython_real");
 	p_nrnpython_reg_real = (void(*)())load_sym(handle, "nrnpython_reg_real");
 }

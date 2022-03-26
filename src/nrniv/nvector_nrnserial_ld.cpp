@@ -25,6 +25,7 @@
 #define HAVE_MEMALIGN 1
 #endif
 #if HAVE_MEMALIGN
+#undef _XOPEN_SOURCE /* avoid warnings about redefining this */
 #define _XOPEN_SOURCE 600
 #endif
 

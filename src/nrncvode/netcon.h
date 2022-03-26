@@ -10,8 +10,9 @@
 #include "htlist.h"
 #include "nrnneosm.h"
 #include "nrnmpi.h"
-#include <vector>
 #include <unordered_map>
+#include <memory>
+#include <vector>
 
 #if 0
 #define STATISTICS(arg) ++arg
@@ -28,11 +29,12 @@ struct NrnThread;
 class NetCvode;
 class HocEventPool;
 class HocCommand;
-class SelfEventPPTable;
 class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
+class Point_process;
+using SelfEventPPTable = std::unordered_map< long, Point_process*> ;
 
 #define DiscreteEventType 0
 #define TstopEventType 1
@@ -156,10 +158,10 @@ public:
 private:
 	void call_net_receive(NetCvode*);
 	static Point_process* index2pp(int type, int oindex);
-	static SelfEventPPTable* sepp_;
+	static std::unique_ptr<SelfEventPPTable> sepp_;
 };
 
-typedef std::vector<NetCon*> NetConPList;
+using NetConPList = std::vector<NetCon*>;
 
 class ConditionEvent : public DiscreteEvent {
 public:
@@ -205,6 +207,11 @@ public:
 	double nrflag_;
 	Point_process* pnt_;
 	double(*c_)(Point_process*);
+	// For WatchCondition transfer to CoreNEURON.
+	// Could be figured out from watch semantics and 
+	// the index where this == _watch_array[index]
+	// At least this avoids a search over the _watch_array.
+	int watch_index_;
 
 	static unsigned long watch_send_;
 	static unsigned long watch_deliver_;

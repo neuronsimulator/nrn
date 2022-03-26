@@ -57,6 +57,35 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
 #endif
 
+// error message hint with regard to mismatched arch
+void nrn_possible_mismatched_arch(const char* libname) {
+    if (strncmp(NRNHOSTCPU, "arm64", 5) == 0) {
+        // what arch are we running on
+#if __arm64__
+        const char* we_are{"arm64"};
+#elif __x86_64__
+        const char* we_are{"x86_64"};
+#endif
+
+        // what arch did we try to dlopen
+        char* cmd;
+        cmd = new char[strlen(libname) + 100];
+        sprintf(cmd, "lipo -archs %s 2> /dev/null", libname);
+	char libname_arch[20]{0};
+        FILE* p = popen(cmd, "r");
+        delete [] cmd;
+        if (!p) { return; }
+        fgets(libname_arch, 18, p);
+        if (strlen(libname_arch) == 0) {return;}
+        pclose(p);
+        
+        if (strstr(libname_arch, we_are) == NULL) {
+            fprintf(stderr, "libnrniv.dylib running as %s\n", we_are);
+            fprintf(stderr, "but %s can only run as %s\n", libname, libname_arch);
+        }
+    }
+}
+
 #if __GNUC__ < 4
 #include "osxdlfcn.h"
 #include "osxdlfcn.cpp"
@@ -150,10 +179,23 @@ int* nrn_prop_param_size_;
 int* nrn_prop_dparam_size_;
 int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
-typedef int (*bbcore_write_t)(void*, int, int*, double*, Datum*, Datum*, NrnThread*);
+NrnWatchAllocateFunc_t* nrn_watch_allocate_;
+
+extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
+	nrn_watch_allocate_[type] = waf;
+}
+
+// also for read
+using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datum*, NrnThread*);
 bbcore_write_t* nrn_bbcore_write_;
+bbcore_write_t* nrn_bbcore_read_;
+
 extern "C" void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
 	nrn_bbcore_write_[type] = f;
+}
+
+extern "C" void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
+	nrn_bbcore_read_[type] = f;
 }
 
 const char** nrn_nmodl_text_;
@@ -217,12 +259,20 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
 #endif /* not HAVE_REALPATH */
   if (abspath) {
     handle = dlopen(abspath, flags);
+#if DARWIN
+    if (!handle) {
+        nrn_possible_mismatched_arch(abspath);
+    }
+#endif
     free(abspath);
   }else{
     int patherr = errno;
     handle = dlopen(relpath, flags);
     if (!handle) {
       Fprintf(stderr, "realpath failed errno=%d (%s) and dlopen failed with %s\n", patherr, strerror(patherr), relpath);
+#if DARWIN
+        nrn_possible_mismatched_arch(abspath);
+#endif
     }
   }
   return handle;
@@ -273,7 +323,7 @@ void hoc_nrn_load_dll(void) {
 		hoc_retpushx((double)i);
 	}else{
 		hoc_retpushx(0.);
-	}	
+	}
 }
 
 extern void nrn_threads_create(int, int);
@@ -291,14 +341,14 @@ void hoc_last_init(void)
 	Symbol *s;
 
 	hoc_register_var(scdoub, (DoubVec*)0, (VoidFunc*)0);
-	nrn_threads_create(1, 0); // single thread 
+	nrn_threads_create(1, 0); // single thread
 
  	if (nrnmpi_myid < 1) if (nrn_nobanner_ == 0) {
  	    extern char* nrn_version(int i);
 	    Fprintf(stderr, "%s\n", nrn_version(1));
 	    Fprintf(stderr, "%s\n", banner);
 	    IGNORE(fflush(stderr));
- 	} 
+ 	}
 	memb_func_size_ = 30;
 	memb_func = (Memb_func*)ecalloc(memb_func_size_, sizeof(Memb_func));
 	memb_list = (Memb_list*)ecalloc(memb_func_size_, sizeof(Memb_list));
@@ -320,15 +370,17 @@ void hoc_last_init(void)
 	bamech_ = (BAMech**)ecalloc(BEFORE_AFTER_SIZE, sizeof(BAMech*));
 	nrn_mk_prop_pools(memb_func_size_);
 	nrn_bbcore_write_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
+	nrn_bbcore_read_ = (bbcore_write_t*)ecalloc(memb_func_size_, sizeof(bbcore_write_t));
 	nrn_nmodl_text_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
 	nrn_nmodl_filename_ = (const char**)ecalloc(memb_func_size_, sizeof(const char*));
-	
+        nrn_watch_allocate_ = (NrnWatchAllocateFunc_t*)ecalloc(memb_func_size_, sizeof(NrnWatchAllocateFunc_t));
+
 #if KEEP_NSEG_PARM
 	{extern int keep_nseg_parm_; keep_nseg_parm_ = 1; }
 #endif
 
 	section_list = hoc_l_newlist();
-	
+
 	CHECK("v");
 	s = hoc_install("v", RANGEVAR, 0.0, &hoc_symlist);
 	s->u.rng.type = VINDEX;
@@ -336,7 +388,7 @@ void hoc_last_init(void)
 	CHECK("i_membrane_");
 	s = hoc_install("i_membrane_", RANGEVAR, 0.0, &hoc_symlist);
 	s->u.rng.type = IMEMFAST;
-	
+
 	for (i = 0; usrprop[i].name; i++) {
 		CHECK(usrprop[i].name);
 		s = hoc_install(usrprop[i].name, UNDEF, 0.0, &hoc_symlist);
@@ -455,8 +507,10 @@ void nrn_register_mech_common(
 		nrn_dparam_ptr_end_ = (int*)erealloc(nrn_dparam_ptr_end_, memb_func_size_*sizeof(int));
 		memb_order_ = (short*)erealloc(memb_order_, memb_func_size_*sizeof(short));
 		nrn_bbcore_write_ = (bbcore_write_t*)erealloc(nrn_bbcore_write_, memb_func_size_*sizeof(bbcore_write_t));
+		nrn_bbcore_read_ = (bbcore_write_t*)erealloc(nrn_bbcore_read_, memb_func_size_*sizeof(bbcore_write_t));
 		nrn_nmodl_text_ = (const char**)erealloc(nrn_nmodl_text_, memb_func_size_*sizeof(const char*));
 		nrn_nmodl_filename_ = (const char**)erealloc(nrn_nmodl_filename_, memb_func_size_*sizeof(const char*));
+	        nrn_watch_allocate_ = (NrnWatchAllocateFunc_t*)erealloc(nrn_watch_allocate_, memb_func_size_*sizeof(NrnWatchAllocateFunc_t));
 		for (j=memb_func_size_ - 20; j < memb_func_size_; ++j) {
 			pnt_map[j] = 0;
 			point_process[j] = (Point_process*)0;
@@ -469,8 +523,10 @@ void nrn_register_mech_common(
 			nrn_artcell_qindex_[j] = 0;
 			memb_order_[j] = 0;
 			nrn_bbcore_write_[j] = (bbcore_write_t)0;
+			nrn_bbcore_read_[j] = (bbcore_write_t)0;
 			nrn_nmodl_text_[j] = (const char*)0;
 			nrn_nmodl_filename_[j] = (const char*) 0;
+			nrn_watch_allocate_[j] = (NrnWatchAllocateFunc_t)0;
 		}
 		nrn_mk_prop_pools(memb_func_size_);
 	}
@@ -514,7 +570,7 @@ void nrn_register_mech_common(
 	   Note that internal mechanisms have a version of "0" and are
 	   by nature consistent.
 	*/
-	
+
 /*printf("%s %s\n", m[0], m[1]);*/
 	if (strcmp(m[0], "0") == 0) { /* valid by nature */
 	}else if (m[0][0] > '9') { /* must be 5.1 or before */
@@ -713,7 +769,7 @@ fprintf(stderr, "mechanism %s : unknown semantics for %s\n", memb_func[type].sym
 assert(0);
 		}
 	}
-#if 0   
+#if 0
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
 #endif
@@ -795,7 +851,7 @@ extern "C" int point_register_mech(
 }
 
 /* some stuff from scopmath needed for built-in models */
- 
+
 #if 0
 double* makevector(int nrows)
 {
@@ -804,7 +860,7 @@ double* makevector(int nrows)
         return v;
 }
 #endif
-  
+
 int _ninits;
 extern "C" void _modl_cleanup(void){}
 
@@ -819,7 +875,7 @@ extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
 extern "C" double _modl_get_dt_thread(NrnThread* nt) {
 	return nt->_dt;
 }
-#endif	
+#endif
 
 extern "C" int nrn_pointing(double* pd) {
 	return pd ? 1 : 0;
@@ -891,8 +947,15 @@ printf("before-after processing type %d for %s not implemented\n", type, memb_fu
 	bam = (BAMech*)emalloc(sizeof(BAMech));
 	bam->f = f;
 	bam->type = mt;
-	bam->next = bamech_[type];
-	bamech_[type] = bam;
+	bam->next = nullptr;
+	// keep in call order
+	if (!bamech_[type]) {
+		bamech_[type] = bam;
+	}else{
+		BAMech* last;
+		for (last = bamech_[type]; last->next; last = last->next) {}
+		last->next = bam;
+	}
 }
 
 extern "C" void _cvode_abstol(Symbol** s, double* tol, int i)
@@ -928,7 +991,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
 			sym = hoc_lookup(tol[i].name);
 		}
 		hoc_symbol_tolerance(sym, tol[i].tolerance);
-	}			
+	}
 
 	if (memb_func[type].ode_count) {
 		Symbol** psym, *msym, *vsym;
@@ -936,7 +999,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
 		Node** pnode;
 		Prop* p;
 		int i, j, k, n, na, index=0;
-		
+
 		n = (*memb_func[type].ode_count)(type);
 		if (n > 0) {
 			psym = (Symbol**)ecalloc(n, sizeof(Symbol*));
@@ -952,7 +1015,7 @@ p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
 						break;
 					}
 				}
-				
+
 				/* p is the prop and index is the index
 					into the p->param array */
 				assert(p);
@@ -970,11 +1033,11 @@ p = prop_alloc(&(pnode[0]->prop), type, pnode[0]); /* this and any ions */
 							}
 						}
 						break;
-					} 
+					}
 				}
 				assert (j < msym->s_varn);
 			}
-					
+
 			node_destruct(pnode, 1);
 			*stol = psym;
 			free (pv);
@@ -993,8 +1056,8 @@ extern "C" void _nrn_thread_reg(int i, int cons, void(*f)(Datum*)) {
 	}
 }
 
-extern "C" void _nrn_thread_table_reg(int i, void(*f)(double*, Datum*, Datum*, void*, int)) {
-	memb_func[i].thread_table_check_ = f;
+extern "C" void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
+    memb_func[i].thread_table_check_ = f;
 }
 
 extern "C" void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
@@ -1002,14 +1065,12 @@ extern "C" void _nrn_setdata_reg(int i, void(*call)(Prop*)) {
 }
 /* there is some question about the _extcall_thread variables, if any. */
 extern "C" double nrn_call_mech_func(Symbol* s, int narg, Prop* p, int type) {
-	double x;	
 	extern double hoc_call_func(Symbol*, int);
 	void (*call)(Prop*) = memb_func[type].setdata_;
 	if (call) {
 		(*call)(p);
 	}
-	x = hoc_call_func(s, narg);
-	return x;
+	return hoc_call_func(s, narg);
 }
 
 void nrnunit_use_legacy() {

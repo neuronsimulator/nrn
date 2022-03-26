@@ -1,6 +1,8 @@
-.. _geometry:
 
-.. _geometry_Section:
+.. _hoc_geometry:
+
+
+.. _hoc_geometry_Section:
          
 Conceptual Overview of Sections
 -------------------------------
@@ -15,7 +17,7 @@ method instead of the more numerically robust fully implicit/crank-nicholson
 methods) 
  
 Do not confuse sections with segments. Sections are divided into segments 
-of equal length for numerical simulation purposes (see :data:`nseg`). 
+of equal length for numerical simulation purposes (see :hoc:data:`nseg`).
 NEURON uses segments to represent the electrical circuit shown below. 
 
 .. code-block::
@@ -39,7 +41,8 @@ compartments in compartmental modeling programs.
 ----
 
 
-.. _geometry_geometry:
+
+.. _hoc_geometry_geometry:
 
 Geometry
 ~~~~~~~~
@@ -55,14 +58,14 @@ There are two ways to specify section geometry:
 Choose the stylized method if the notions of cable length and diameter 
 are authoritative and where 3-d shape is irrelevant. For plotting purposes, 
 length and diameter will be used to generate 3-d info automatically for 
-a stylized straight cylinder. (see :func:`define_shape`) 
+a stylized straight cylinder. (see :hoc:func:`define_shape`)
  
 Choose the 3-D method if the shape comes from 3-d reconstruction data 
 or if your 3-d visualization is paramount. This method makes the 3-d info 
 authoritative and automatically 
 determines the abstract cable's length and diameter. 
 With this method, you may change a section's length/diameter only by 
-changing its 3-d info. (but see :func:`pt3dconst`) 
+changing its 3-d info. (but see :hoc:func:`pt3dconst`)
  
 Stylized specification of geometry
 ==================================
@@ -81,13 +84,13 @@ nseg
 diam 
     The diameter in microns. 
     Note that diam is a range variable and 
-    therefore must be respecified whenever :data:`nseg` is changed. 
+    therefore must be respecified whenever :hoc:data:`nseg` is changed.
 
 Ra 
     Axial resistivity in ohm-cm. 
 
 connectivity 
-    This is established with the :ref:`connect <keyword_connect>` command and defines the 
+    This is established with the :ref:`connect <hoc_keyword_connect>` command and defines the
     parent of the section, which end of the section 
     is attached to the parent, and where on the parent the 
     attachment takes place. To avoid confusion, it is best to attach the 
@@ -174,7 +177,7 @@ Example:
 
      
     If you change the diameter or length, the Shape instances are 
-    automatically redrawn or when :func:`doNotify` is called. 
+    automatically redrawn or when :hoc:func:`doNotify` is called.
     Segment area and axial resistance will be automatically recomputed prior 
     to their use. 
      
@@ -343,13 +346,13 @@ Example:
 
 
 .. seealso::
-    :func:`pt3dclear`, :func:`pt3dadd`, :func:`pt3dconst`, :func:`pt3dstyle`, :func:`n3d`, :func:`x3d`, :func:`y3d`, :func:`z3d`, :func:`diam3d`, :func:`arc3d`
-    :func:`getSpineArea`, :func:`setSpineArea`, :func:`spine3d`
+    :hoc:func:`pt3dclear`, :hoc:func:`pt3dadd`, :hoc:func:`pt3dconst`, :hoc:func:`pt3dstyle`, :hoc:func:`n3d`, :hoc:func:`x3d`, :hoc:func:`y3d`, :hoc:func:`z3d`, :hoc:func:`diam3d`, :hoc:func:`arc3d`
+    :hoc:func:`getSpineArea`, :hoc:func:`setSpineArea`, :hoc:func:`spine3d`
 
      
 
 .. seealso::
-    :func:`define_shape`, :func:`pt3dconst`
+    :hoc:func:`define_shape`, :hoc:func:`pt3dconst`
 
  
 If 3-D shape is not an issue it is sufficient to specify the section variables 
@@ -368,7 +371,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dclear
+.. hoc:function:: pt3dclear
 
 
     Syntax:
@@ -388,7 +391,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dadd
+.. hoc:function:: pt3dadd
 
 
     Syntax:
@@ -413,7 +416,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dconst
+.. hoc:function:: pt3dconst
 
 
     Syntax:
@@ -452,7 +455,7 @@ Defining the 3D Shape
         \ ``n3d()`` in order to understand the exact consequences of interpolation. 
 
     .. seealso::
-        :func:`pt3dstyle`
+        :hoc:func:`pt3dstyle`
 
          
 
@@ -460,7 +463,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dstyle
+.. hoc:function:: pt3dstyle
 
 
     Syntax:
@@ -477,13 +480,13 @@ Defining the 3D Shape
         With no args, returns 1 if using a logical connection point. 
          
         With a first arg of 0, then style is NO logical connection point 
-        and (with :func:`pt3dconst` == 0 and define_shape is executed) 
+        and (with :hoc:func:`pt3dconst` == 0 and define_shape is executed)
         the 3-d location info is translated so the first 3-d point coincides with 
         the parent connection location. This is the classical and default behavior. 
          
         With a first arg of 1 and x,y,z value arguments, those values are used 
         to define a logical connection point relative to the first 3-d point. 
-        When :func:`pt3dconst` == 0 and define_shape is executed, the 3-d location 
+        When :hoc:func:`pt3dconst` == 0 and define_shape is executed, the 3-d location
         info is translated so that the logical connection point coincides 
         with the parent connection location. Note that logical connection points 
         have absolutely no effect on the electrical properties of the structure since 
@@ -501,7 +504,7 @@ Defining the 3D Shape
         in fact was 1). 
 
     .. seealso::
-        :func:`pt3dconst`, :func:`define_shape`
+        :hoc:func:`pt3dconst`, :hoc:func:`define_shape`
 
          
 
@@ -509,7 +512,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dinsert
+.. hoc:function:: pt3dinsert
 
 
     Syntax:
@@ -518,7 +521,7 @@ Defining the 3D Shape
 
     Description:
         Insert the point (so it becomes the i'th point). If i is equal to 
-        :func:`n3d` the point is appended (equivalent to :func:`pt3dadd`). 
+        :hoc:func:`n3d` the point is appended (equivalent to :hoc:func:`pt3dadd`).
 
          
 
@@ -526,7 +529,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dremove
+.. hoc:function:: pt3dremove
 
 
     Syntax:
@@ -542,7 +545,7 @@ Defining the 3D Shape
 
 
 
-.. function:: pt3dchange
+.. hoc:function:: pt3dchange
 
 
     Syntax:
@@ -570,7 +573,7 @@ Defining the 3D Shape
 Reading 3D Data from NEURON
 ---------------------------
 
-.. function:: n3d
+.. hoc:function:: n3d
 
 
     Syntax:
@@ -586,7 +589,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: x3d
+.. hoc:function:: x3d
 
 
     Syntax:
@@ -598,14 +601,14 @@ Reading 3D Data from NEURON
         currently accessed section. 
 
     .. seealso::
-        :func:`y3d`, :func:`z3d`, :func:`arc3d`, :func:`diam3d`
+        :hoc:func:`y3d`, :hoc:func:`z3d`, :hoc:func:`arc3d`, :hoc:func:`diam3d`
 
 
 ----
 
 
 
-.. function:: y3d
+.. hoc:function:: y3d
 
 
     Syntax:
@@ -613,14 +616,14 @@ Reading 3D Data from NEURON
 
 
     .. seealso::
-        :func:`x3d`
+        :hoc:func:`x3d`
 
 
 ----
 
 
 
-.. function:: z3d
+.. hoc:function:: z3d
 
 
     Syntax:
@@ -628,7 +631,7 @@ Reading 3D Data from NEURON
 
 
     .. seealso::
-        :func:`x3d`
+        :hoc:func:`x3d`
 
          
 
@@ -636,7 +639,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: diam3d
+.. hoc:function:: diam3d
 
 
     Syntax:
@@ -650,14 +653,14 @@ Reading 3D Data from NEURON
         if there is a spine at the ith point. 
 
     .. seealso::
-        :func:`spine3d`
+        :hoc:func:`spine3d`
 
 
 ----
 
 
 
-.. function:: arc3d
+.. hoc:function:: arc3d
 
 
     Syntax:
@@ -674,7 +677,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: spine3d
+.. hoc:function:: spine3d
 
 
     Syntax:
@@ -690,7 +693,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: setSpineArea
+.. hoc:function:: setSpineArea
 
 
     Syntax:
@@ -707,7 +710,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: getSpineArea
+.. hoc:function:: getSpineArea
 
 
     Syntax:
@@ -723,7 +726,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: define_shape
+.. hoc:function:: define_shape
 
 
     Syntax:
@@ -734,7 +737,7 @@ Reading 3D Data from NEURON
         Fill in empty pt3d information with a naive algorithm based on current 
         values for *L* and *diam*. Sections that already have pt3d info are 
         translated to ensure that their first point is at the same location 
-        as the parent. But see :func:`pt3dstyle` with regard to the use of 
+        as the parent. But see :hoc:func:`pt3dstyle` with regard to the use of
         a logical connection point if the translation ruins the 
         visualization. 
          
@@ -748,7 +751,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: area
+.. hoc:function:: area
 
 
     Syntax:
@@ -766,7 +769,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: ri
+.. hoc:function:: ri
 
 
     Syntax:
@@ -797,7 +800,7 @@ Reading 3D Data from NEURON
 
 
 
-.. function:: distance
+.. hoc:function:: distance
 
 
     Syntax:
@@ -842,11 +845,11 @@ Reading 3D Data from NEURON
             b print distance(1.0) // 700
 
     .. warning::
-        When subtrees are connected by :meth:`ParallelContext.multisplit` , the 
+        When subtrees are connected by :hoc:meth:`ParallelContext.multisplit` , the
         distance function returns 1e20 if the path spans the split location. 
 
     .. seealso::
-        :class:`RangeVarPlot`
+        :hoc:class:`RangeVarPlot`
 
          
          
@@ -855,7 +858,7 @@ Reading 3D Data from NEURON
 
 
 
-.. data:: diam_changed
+.. hoc:data:: diam_changed
 
 
     Syntax:
@@ -878,7 +881,7 @@ Reading 3D Data from NEURON
 
 
 
-.. data:: L
+.. hoc:data:: L
 
         Length of a section in microns. 
          
@@ -887,7 +890,7 @@ Reading 3D Data from NEURON
 
 
 
-.. data:: diam
+.. hoc:data:: diam
 
         Diameter range variable of a section in microns. 
          
@@ -896,7 +899,7 @@ Reading 3D Data from NEURON
 
 
 
-.. data:: Ra
+.. hoc:data:: Ra
 
 
     Syntax:

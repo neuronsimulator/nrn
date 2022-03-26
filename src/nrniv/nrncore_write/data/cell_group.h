@@ -6,18 +6,16 @@
 #include <map>
 #include <cstddef>
 #include <cassert>
+#include "section.h"
 
-struct Memb_list;
 class PreSyn;
 class NetCon;
 class NrnThread;
 
-extern "C" int nrn_dblpntr2nrncore(double*, NrnThread&, int& type, int& etype);
-
 typedef std::pair < int, Memb_list* > MlWithArtItem;
 typedef std::vector < MlWithArtItem > MlWithArt;
 typedef std::map<double*, int> PVoid2Int;
-typedef std::vector<std::map<int, std::pair<int, double**>>> Deferred_Type2ArtData;
+typedef std::vector<std::map<int, Memb_list*> > Deferred_Type2ArtMl;
 
 class CellGroup {
 public:
@@ -63,16 +61,22 @@ public:
         artdata2index_.clear();
     }
 
-    static inline void clean_deferred_type2artdata() {
-        for (auto& m: deferred_type2artdata_) {
-            for (auto& t: m) {
-                delete [] t.second.second;
+    static inline void clean_deferred_type2artml() {
+        for (auto& th: deferred_type2artml_) {
+            for (auto& p: th) {
+                Memb_list* ml = p.second;
+                if (ml->data) { delete [] ml->data; }
+                if (ml->pdata) { delete [] ml->pdata; }
+                delete ml;
             }
         }
-        deferred_type2artdata_.clear();
+        deferred_type2artml_.clear();
     }
 
-    static Deferred_Type2ArtData deferred_type2artdata_;
+    static Deferred_Type2ArtMl deferred_type2artml_;
+    static std::vector<NetCon**> deferred_netcons;
+    static void defer_clean_netcons(CellGroup*);
+    static void clean_deferred_netcons();    
 
 private:
     static PVoid2Int artdata2index_;
@@ -86,6 +90,16 @@ private:
 
     static inline int nrn_has_net_event(int type) {
         return has_net_event_[type];
+    }
+
+public:
+    static inline int nrncore_pntindex_for_queue(double* d, int tid, int type) {
+        Memb_list* ml = nrn_threads[tid]._ml_list[type];
+        if (ml) {
+            assert(d >= ml->data[0] && d < (ml->data[0] + (ml->nodecount*nrn_prop_param_size_[type])));
+            return (d - ml->data[0])/nrn_prop_param_size_[type];
+        }
+        return nrncore_art2index(d);
     }
 
 };

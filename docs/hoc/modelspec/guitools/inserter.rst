@@ -1,4 +1,5 @@
-.. _inserter:
+
+.. _hoc_inserter:
 
 
 Inserter

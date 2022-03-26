@@ -90,6 +90,18 @@ func change_working_dir1() {
 				default_dll_loaded_ = 1
 			}
 		}
+		if (unix_mac_pc() == 4) {
+		  if (strcmp(nrnversion(8), "arm64-Darwin") == 0) {
+		    if (nrn_load_dll("arm64/libnrnmech.dylib") != 0) {
+		      default_dll_loaded_ = 1
+		    }
+                  }
+		  if (strcmp(nrnversion(8), "x86_64-Darwin") == 0) {
+		    if (nrn_load_dll("x86_64/libnrnmech.dylib") != 0) {
+		      default_dll_loaded_ = 1
+		    }
+                  }
+		}
 	}
 	return 1
 }

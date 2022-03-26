@@ -12,7 +12,7 @@
 #endif
 
 #include "oc2iv.h"
-#include "scoplib_ansi.h"
+#include "scoplib.h"
 extern double (*nrnpy_guigetval)(Object*);
 extern void (*nrnpy_guisetval)(Object*, double);
 extern int (*nrnpy_guigetstr)(Object*, char**);

@@ -129,7 +129,7 @@ void c_out()
 	P("#include \"common.h\"\n#include \"softbus.h\"\n");
 	P("#include \"sbtypes.h\"\n#include \"Solver.h\"\n");
 #else
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
@@ -210,7 +210,7 @@ P("#include \"md2redef.h\"\n");
 #if NMODL
 	/* generation of initmodel interface */
 #if VECTORIZE
-	P("\nstatic void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+	P("\nstatic void nrn_init(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
 	  P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
@@ -257,7 +257,7 @@ P("#include \"md2redef.h\"\n");
 	   as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-	P("\nstatic void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+	P("\nstatic void nrn_cur(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
 	  P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
@@ -330,7 +330,7 @@ P("#include \"md2redef.h\"\n");
 
 	/* for the classic breakpoint block, nrn_cur computed the conductance, _g,
 	   and now the jacobian calculation merely returns that */
-	P("\nstatic void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+	P("\nstatic void nrn_jacob(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
 	  P("Node *_nd; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
 	  P("    _ni = _ml->_nodeindices;\n");
@@ -379,7 +379,7 @@ P("#include \"md2redef.h\"\n");
 	/* nrnstate list contains the EQUATION solve statement so this
 	   advances states by dt */
 #if VECTORIZE
-	P("\nstatic void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+	P("\nstatic void nrn_state(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
 #else
 	P("\nstatic nrn_state(_prop, _v) Prop *_prop; double _v; {\n");
 #endif
@@ -646,7 +646,7 @@ void c_out_vectorize()
 	
 	/* things which must go first and most declarations */
 	P("/* VECTORIZED */\n#define NRN_VECTORIZED 1\n");
-	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib_ansi.h\"\n");
+	P("#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n#include \"scoplib.h\"\n");
 	P("#undef PI\n");
 	P("#define nil 0\n");
 P("#include \"md1redef.h\"\n");
@@ -680,7 +680,7 @@ P("#include \"md2redef.h\"\n");
 
 	/* Initialization function must always be present */
 
-	P("\nstatic void initmodel(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt) {\n  int _i; double _save;");
+	P("\nstatic void initmodel(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt) {\n  int _i; double _save;");
 	P("{\n");
 	initstates();
 	printlist(initfunc);
@@ -692,7 +692,7 @@ P("#include \"md2redef.h\"\n");
 	Fflush(fcout);
 
 	/* generation of initmodel interface */
-	P("\nstatic void nrn_init(_NrnThread* _nt, _Memb_list* _ml, int _type){\n");
+	P("\nstatic void nrn_init(NrnThread* _nt, _Memb_list* _ml, int _type){\n");
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
 	  P("Node *_nd; double _v; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
@@ -717,7 +717,7 @@ P("#include \"md2redef.h\"\n");
 
 	/* standard modl EQUATION without solve computes current */
      if (!conductance_) {
-	P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, _NrnThread* _nt, double _v){double _current=0.;v=_v;");
+	P("\nstatic double _nrn_current(double* _p, Datum* _ppvar, Datum* _thread, NrnThread* _nt, double _v){double _current=0.;v=_v;");
 #if CVODE
 	if (cvode_nrn_current_solve_) {
 		fprintf(fcout, "if (cvode_active_) { %s(_p, _ppvar, _thread, _nt); }\n", cvode_nrn_current_solve_->name);
@@ -741,7 +741,7 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	   as make sure all currents accumulated properly (currents list) */
 
     if (brkpnt_exists) {
-	P("\nstatic void nrn_cur(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+	P("\nstatic void nrn_cur(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
 	  P("Node *_nd; int* _ni; double _rhs, _v; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
@@ -823,7 +823,7 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 	P(" \n}\n");
 	/* for the classic breakpoint block, nrn_cur computed the conductance, _g,
 	   and now the jacobian calculation merely returns that */
-	P("\nstatic void nrn_jacob(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+	P("\nstatic void nrn_jacob(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
 	  P("Node *_nd; int* _ni; int _iml, _cntml;\n");
 	  P("#if CACHEVEC\n");
@@ -874,7 +874,7 @@ diag("current can only be LOCAL in a BREAKPOINT if CONDUCTANCE statements are us
 
 	/* nrnstate list contains the EQUATION solve statement so this
 	   advances states by dt */
-	P("\nstatic void nrn_state(_NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+	P("\nstatic void nrn_state(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
 	if (nrnstate || currents->next == currents) {
 	  P("double* _p; Datum* _ppvar; Datum* _thread;\n");
 	  P("Node *_nd; double _v = 0.0; int* _ni; int _iml, _cntml;\n");
