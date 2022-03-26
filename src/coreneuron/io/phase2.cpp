@@ -575,19 +575,28 @@ void Phase2::fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>
         for (size_t ii = 0; ii < memb_func.size(); ++ii) {
             before_after_map[ii] = nullptr;
         }
+        // Save first before-after block only. In case of multiple before-after blocks with the
+        // same mech type, we will get subsequent ones using linked list below.
         for (auto bam = corenrn.get_bamech()[i]; bam; bam = bam->next) {
-            before_after_map[bam->type] = bam;
+            if (!before_after_map[bam->type]) {
+                before_after_map[bam->type] = bam;
+            }
         }
-        /* unnecessary but keep in order anyway */
+        // necessary to keep in order wrt multiple BAMech with same mech type
         NrnThreadBAList** ptbl = nt.tbl + i;
         for (auto tml = nt.tml; tml; tml = tml->next) {
             if (before_after_map[tml->index]) {
-                auto tbl = (NrnThreadBAList*) emalloc(sizeof(NrnThreadBAList));
-                tbl->next = nullptr;
-                tbl->bam = before_after_map[tml->index];
-                tbl->ml = tml->ml;
-                *ptbl = tbl;
-                ptbl = &(tbl->next);
+                int mtype = tml->index;
+                Memb_list* ml = tml->ml;
+                for (auto bam = before_after_map[mtype]; bam && bam->type == mtype;
+                     bam = bam->next) {
+                    auto tbl = (NrnThreadBAList*) emalloc(sizeof(NrnThreadBAList));
+                    *ptbl = tbl;
+                    tbl->next = nullptr;
+                    tbl->bam = bam;
+                    tbl->ml = tml->ml;
+                    ptbl = &(tbl->next);
+                }
             }
         }
     }

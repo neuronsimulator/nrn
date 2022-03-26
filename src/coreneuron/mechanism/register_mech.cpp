@@ -391,8 +391,16 @@ void hoc_reg_ba(int mt, mod_f_t f, int type) {
     auto bam = (BAMech*) emalloc(sizeof(BAMech));
     bam->f = f;
     bam->type = mt;
-    bam->next = corenrn.get_bamech()[type];
-    corenrn.get_bamech()[type] = bam;
+    bam->next = nullptr;
+    // keep in call order
+    if (!corenrn.get_bamech()[type]) {
+        corenrn.get_bamech()[type] = bam;
+    } else {
+        BAMech* last;
+        for (last = corenrn.get_bamech()[type]; last->next; last = last->next) {
+        }
+        last->next = bam;
+    }
 }
 
 void _nrn_thread_reg0(int i, void (*f)(ThreadDatum*)) {
