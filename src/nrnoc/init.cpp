@@ -947,8 +947,15 @@ printf("before-after processing type %d for %s not implemented\n", type, memb_fu
 	bam = (BAMech*)emalloc(sizeof(BAMech));
 	bam->f = f;
 	bam->type = mt;
-	bam->next = bamech_[type];
-	bamech_[type] = bam;
+	bam->next = nullptr;
+	// keep in call order
+	if (!bamech_[type]) {
+		bamech_[type] = bam;
+	}else{
+		BAMech* last;
+		for (last = bamech_[type]; last->next; last = last->next) {}
+		last->next = bam;
+	}
 }
 
 extern "C" void _cvode_abstol(Symbol** s, double* tol, int i)

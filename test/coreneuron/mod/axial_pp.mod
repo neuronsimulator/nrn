@@ -21,7 +21,6 @@ INITIAL {
 
 BEFORE STEP {
   if (ri > 0) {
-    pim = pim - ia : child contributions
     iaSum = iaSum + fabs(ia)
   }
 }
