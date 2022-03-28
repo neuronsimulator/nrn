@@ -65,8 +65,7 @@ if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
     olfactory-bulb-3d
     GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
     GIT_TAG e3c2312
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d
-  )
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d)
   FetchContent_MakeAvailable(olfactory-bulb-3d)
   add_subdirectory(olfactory-bulb-3d)
 endif()

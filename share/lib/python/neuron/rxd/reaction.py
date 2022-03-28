@@ -119,13 +119,13 @@ class Reaction(GeneralizedReaction):
                 if v == 1:
                     rate_f *= k
                 else:
-                    rate_f *= k ** v
+                    rate_f *= k**v
             if self._dir == "<>":
                 for k, v in zip(list(rhs.keys()), list(rhs.values())):
                     if v == 1:
                         rate_b *= k
                     else:
-                        rate_b *= k ** v
+                        rate_b *= k**v
         rate = rate_f - rate_b
         self._rate_arithmeticed = rate
 

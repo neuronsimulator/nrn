@@ -1314,6 +1314,7 @@ void NetCvode::use_daspk(bool b) {
 	}
 }
 
+// Append new BAMechList item to arg
 BAMechList::BAMechList(BAMechList** first) { // preserve the list order
 	next = nil;
 	BAMechList* last;

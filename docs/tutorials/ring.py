@@ -25,10 +25,10 @@ class Ring:
         :param r: radius of the network
         """
         self._N = N
-        self.set_gids()                   ### assign gids to processors
+        self.set_gids()  ### assign gids to processors
         self._syn_w = syn_w
         self._syn_delay = syn_delay
-        self._create_cells(r)             ### changed to use self._N instead of passing in N
+        self._create_cells(r)  ### changed to use self._N instead of passing in N
         self._connect_cells()
         ### the 0th cell only exists on one process... that's the only one that gets a netstim
         if pc.gid_exists(0):

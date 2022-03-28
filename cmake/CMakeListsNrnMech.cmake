@@ -22,24 +22,29 @@ list(REMOVE_ITEM NRN_LINK_LIBS "interviews")
 
 # CMake does some magic to transform sys libs to -l<libname>. We replicate it
 foreach(link_lib ${NRN_LINK_LIBS})
-  # skip static readline library as it will be linked to nrniv (e.g. with wheel)
-  # also stub libraries from OSX can be skipped
-  if ("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
+  # skip static readline library as it will be linked to nrniv (e.g. with wheel) also stub libraries
+  # from OSX can be skipped
+  if("${link_lib}" MATCHES "(libreadline.a|/*.tbd)")
     continue()
   endif()
 
   get_filename_component(dir_path ${link_lib} DIRECTORY)
   if(TARGET ${link_lib})
-    get_property(link_flag TARGET ${link_lib} PROPERTY INTERFACE_LINK_LIBRARIES)
-    set(description "Extracting link flags from target '${link_lib}', beware that this can be fragile.")
-    # Not use it yet because it can be generator expressions
-    # get_property(compile_flag TARGET ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS)
-    # string(APPEND NRN_COMPILE_DEFS ${compile_flag})
+    get_property(
+      link_flag
+      TARGET ${link_lib}
+      PROPERTY INTERFACE_LINK_LIBRARIES)
+    set(description
+        "Extracting link flags from target '${link_lib}', beware that this can be fragile.")
+    # Not use it yet because it can be generator expressions get_property(compile_flag TARGET
+    # ${link_lib} PROPERTY INTERFACE_COMPILE_OPTIONS) string(APPEND NRN_COMPILE_DEFS
+    # ${compile_flag})
   elseif(NOT dir_path)
     set(link_flag "-l${link_lib}")
-    set(description "Generating link flags from name '${link_lib}', beware that this can be fragile.")
-  # avoid library paths from special directory /nrnwheel which
-  # used to build wheels under docker container
+    set(description
+        "Generating link flags from name '${link_lib}', beware that this can be fragile.")
+    # avoid library paths from special directory /nrnwheel which used to build wheels under docker
+    # container
   elseif("${dir_path}" MATCHES "^/nrnwheel")
     continue()
   elseif("${dir_path}" MATCHES "^(/lib|/lib64|/usr/lib|/usr/lib64)$")
@@ -48,7 +53,8 @@ foreach(link_lib ${NRN_LINK_LIBS})
     string(REGEX REPLACE "\\.[^.]*$" "" libname_wle ${libname})
     string(REGEX REPLACE "^lib" "" libname_wle ${libname_wle})
     set(link_flag "-l${libname_wle}")
-    set(description "Extracting link flags from path '${link_lib}', beware that this can be fragile.")
+    set(description
+        "Extracting link flags from path '${link_lib}', beware that this can be fragile.")
   else()
     set(link_flag "${link_lib} -Wl,-rpath,${dir_path}")
     set(description "Generating link flags from path ${link_lib}")

@@ -16,14 +16,14 @@ from sysconfig import get_config_vars, get_config_var
 def _customize_compiler(compiler):
     """Do platform-sepcific customizations of compilers on unix platforms."""
     if compiler.compiler_type == "unix":
-        (cc, cxx, cflags) = get_config_vars('CC', 'CXX', 'CFLAGS')
-        if 'CC' in os.environ:
-            cc = os.environ['CC']
-        if 'CXX' in os.environ:
-            cxx = os.environ['CXX']
-        if 'CFLAGS' in os.environ:
-            cflags = cflags + ' ' + os.environ['CFLAGS']
-        cc_cmd = cc + ' ' + cflags
+        (cc, cxx, cflags) = get_config_vars("CC", "CXX", "CFLAGS")
+        if "CC" in os.environ:
+            cc = os.environ["CC"]
+        if "CXX" in os.environ:
+            cxx = os.environ["CXX"]
+        if "CFLAGS" in os.environ:
+            cflags = cflags + " " + os.environ["CFLAGS"]
+        cc_cmd = cc + " " + cflags
         # We update executables in compiler to take advantage of distutils arg splitting
         compiler.set_executables(compiler=cc_cmd, compiler_cxx=cxx)
 
@@ -53,12 +53,12 @@ def _config_exe(exe_name):
         print("INFO : Using neuron-gpu Package (Alpha Version)")
         package_name = "neuron-gpu"
     elif "neuron-nightly" in working_set.by_key:
-       print("INFO : Using neuron-nightly Package (Developer Version)")
-       package_name = "neuron-nightly"
+        print("INFO : Using neuron-nightly Package (Developer Version)")
+        package_name = "neuron-nightly"
     elif "neuron" in working_set.by_key:
-       package_name = "neuron"
+        package_name = "neuron"
     else:
-       raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
+        raise RuntimeError("NEURON package not found! Verify PYTHONPATH")
 
     NRN_PREFIX = os.path.join(
         working_set.by_key[package_name].location, "neuron", ".data"
@@ -68,7 +68,7 @@ def _config_exe(exe_name):
     os.environ["CORENRNHOME"] = NRN_PREFIX
     os.environ["NRN_PYTHONEXE"] = sys.executable
     os.environ["CORENRN_PYTHONEXE"] = sys.executable
-    os.environ["CORENRN_PERLNEXE"] = shutil.which('perl')
+    os.environ["CORENRN_PERLNEXE"] = shutil.which("perl")
     os.environ["NRNBIN"] = os.path.dirname(__file__)
 
     _set_default_compiler()

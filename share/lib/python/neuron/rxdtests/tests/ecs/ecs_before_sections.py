@@ -79,7 +79,7 @@ k = rxd.Species(
     name="k",
     d=2.62,
     charge=1,
-    initial=lambda nd: 40 if nd.x3d ** 2 + nd.y3d ** 2 + nd.z3d ** 2 < 50 ** 2 else 3.5,
+    initial=lambda nd: 40 if nd.x3d**2 + nd.y3d**2 + nd.z3d**2 < 50**2 else 3.5,
 )
 
 na = rxd.Species(ecs, name="na", d=1.78, charge=1, initial=134)
@@ -135,7 +135,7 @@ class Neuron:
         self.na_current = rxd.MultiCompartmentReaction(
             self.nai,
             nao,
-            gna * minf ** 3 * (1.0 - self.n) * (v - ena),
+            gna * minf**3 * (1.0 - self.n) * (v - ena),
             mass_action=False,
             membrane=self.mem,
             membrane_flux=True,
@@ -144,7 +144,7 @@ class Neuron:
         self.k_current = rxd.MultiCompartmentReaction(
             self.ki,
             ko,
-            gk * self.n ** 4 * (v - ek),
+            gk * self.n**4 * (v - ek),
             mass_action=False,
             membrane=self.mem,
             membrane_flux=True,
