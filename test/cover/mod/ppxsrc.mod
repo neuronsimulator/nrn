@@ -15,7 +15,6 @@ INITIAL {
   x = v
 }
 
-BREAKPOINT {
+AFTER SOLVE {
   x = v
 }
-

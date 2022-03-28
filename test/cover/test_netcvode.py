@@ -24,23 +24,40 @@ def node():
     ic = h.IClamp(s(0.5))
     ic.delay = 0
     ic.dur = 5
-    ic.amp = 0.1
+    ic.amp = 0.3
     src = h.PPxSrc(s(0.5))
     nc = h.NetCon(src, None)
 
     def ev():
-        print("ev t=%g v=%g x=%g" % (h.t, s.v(0.5), src.x))
+        print("ev t=%g v=%g x=%g nc.x=%g" % (h.t, s(0.5).v, src.x, nc.x))
 
     nc.record(ev)
 
     def run():
+        h.dt = 0.025
+        type = (
+            "fixed" if cv.active() == 0 else "lvardt" if cv.use_local_dt() else "cvode"
+        )
+        if cv.active():
+            type += " condition_order %d" % cv.condition_order()
+        print("\n" + type, "  thresh ", nc.threshold)
         pc.set_maxstep(10)
         h.finitialize(-50)
         pc.psolve(1)
 
-    run()
-    cv.use_local_dt(1)
-    run()
+    def series(condorder):
+        cv.condition_order(condorder)
+        cv.active(0)
+        run()
+        cv.active(1)
+        run()
+        cv.use_local_dt(1)
+        run()
+        cv.use_local_dt(0)
+        cv.active(0)
+
+    series(1)
+    series(2)
 
 
 def test_netcvode_cover():

@@ -42,6 +42,7 @@
 #include "profile.h"
 #include "utils/profile/profiler_interface.h"
 #include <unordered_map>
+#include <unordered_set>
 
 typedef void (*ReceiveFunc)(Point_process*, double*, double);
 
@@ -1702,13 +1703,28 @@ bool NetCvode::init_global() {
 		// divide the memb_list info into per cell info
 		// count
 		CvMembList** last = new CvMembList*[_nt->ncell];
+
+		// Need to determine if a Memb_list needs to be included
+		// in CvMembList because there is a BEFORE/AFTER
+		// statement that needs to be handled.
+		std::unordered_set <int> ba_candidate;
+		{
+		    std::vector<int> batypes = {BEFORE_STEP, BEFORE_BREAKPOINT, AFTER_SOLVE};
+		    for (const auto& bat: batypes) {
+		        for (BAMech* bam = bamech_[bat]; bam; bam = bam->next) {
+		            ba_candidate.insert(bam->type);
+		        }
+		    }
+		}
+
 		for (NrnThreadMembList* tml = _nt->tml; tml; tml = tml->next) {
 		  i = tml->index;
 		  Memb_func* mf = memb_func + i;
 		  Memb_list* ml = tml->ml;
 		  if (ml->nodecount
 		    && (mf->current || mf->ode_count || mf->ode_matsol
-		        || mf->ode_spec || mf->state || i == CAP)
+		        || mf->ode_spec || mf->state || i == CAP
+			|| ba_candidate.count(i) == 1)
 		  ) {
 			// maintain same order (not reversed) for
 			// singly linked list built below
@@ -1766,7 +1782,8 @@ bool NetCvode::init_global() {
 		  Memb_list* ml = tml->ml;
 		  if (ml->nodecount
 		    && (mf->current || mf->ode_count || mf->ode_matsol
-		        || mf->ode_spec || mf->state || i == CAP)
+		        || mf->ode_spec || mf->state || i == CAP
+			|| ba_candidate.count(i) == 1)
 		  ) {
 			int j;
 			for (j = 0; j < ml->nodecount; ++j) {
