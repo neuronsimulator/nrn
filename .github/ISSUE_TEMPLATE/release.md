@@ -27,13 +27,21 @@ Sanity checks
 Releasing
 ---
 - [ ] Update changelog below and agree on it with everyone; then commit it to `docs/changelog` (copy structure as-is)
+- [ ] Run the ReadTheDocs build again for `release-x.y`, make sure the build passes and inspect the Changelog page.
 - [ ] Create new release+tag on GitHub via [release workflow](https://github.com/neuronsimulator/nrn/actions/workflows/release.yml?query=workflow%3A%22NEURON+Release%22)
 - [ ] Create, test and upload manual artifacts (MacOS package installers, arm64/aarch64 wheels, ...)
 - [ ] Publish the `x.y.z` wheels on Pypi; see [wheel publishing instructions](https://nrn.readthedocs.io/en/latest/install/python_wheels.html#publishing-the-wheels-on-pypi-via-azure)
 - [ ] Once wheels are published, activate the `x.y.z` tag on ReadTheDocs
 - [ ] Upload Windows installer from the wheels publishing Azure run (to get correct tag)
 - [ ] Publish release on GitHub (edit https://github.com/neuronsimulator/nrn/releases/tag/x.y.z)
+
+
+Post-release
+---
+- [ ] Tag `master` with `x.(y+1).dev` to mark the start of a new development cycle
+- [ ] Deactivate ReadTheDocs build for release/x.y
 - [ ] Let people know :rocket:
+
 
 Changelog
 ======
