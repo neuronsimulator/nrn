@@ -3229,6 +3229,20 @@ void PreSyn::deliver(double tt, NetCvode* ns, NrnThread* nt) {
 		qthresh_ = nil;
 //printf("PreSyn::deliver %s condition event tt=%20.15g\n", ssrc_?secname(ssrc_):"", tt);
 		STATISTICS(deliver_qthresh_);
+		// If local variable time step and send is recorded,
+		// tt will be recorded correctly. But if the recording results
+		// in a callback, the user might inquire about other variables
+		// as well, so perhaps we need to interpolate first.
+		if (!ns->gcv_ && stmt_) {
+			int i = nt->id;
+			TQItem* q = ns->p[i].tq_->least();
+			Cvode* cv = (Cvode*)q->data_;
+			if (tt < cv->t_) {
+				int err = NVI_SUCCESS;
+				err = cv->handle_step(ns, tt);
+				ns->p[i].tq_->move_least(cv->t_);
+			}
+		}
 		send(tt, ns, nt);
 		return;
 	}
