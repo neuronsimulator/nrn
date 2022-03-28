@@ -18,12 +18,12 @@ extern "C" {
 
 /* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
-	char* buf;
-	int size;
-	int pkposition;
-	int upkpos;
-	int keypos;
-	int refcount;
+    char* buf;
+    int size;
+    int pkposition;
+    int upkpos;
+    int keypos;
+    int refcount;
 } bbsmpibuf;
 
 // clang-format off

@@ -38,9 +38,13 @@ for fast insertion, deletion, iteration
 
 /*****************************************************************************/
 
-HTList::HTList (void* p) { _next = this; _prev = this; _object = p; }
+HTList::HTList(void* p) {
+    _next = this;
+    _prev = this;
+    _object = p;
+}
 
-HTList::~HTList () {
+HTList::~HTList() {
     HTList* next = _next;
     if (next != this && next != NULL) {
         Remove(this);
@@ -48,66 +52,70 @@ HTList::~HTList () {
     }
 }
 
-void HTList::Append (HTList* e) {
+void HTList::Append(HTList* e) {
     _prev->_next = e;
     e->_prev = _prev;
     e->_next = this;
     _prev = e;
 }
 
-void HTList::Prepend (HTList* e) {
+void HTList::Prepend(HTList* e) {
     _next->_prev = e;
     e->_prev = this;
     e->_next = _next;
     _next = e;
 }
 
-void HTList::Remove (HTList* e) {
+void HTList::Remove(HTList* e) {
     e->_prev->_next = e->_next;
     e->_next->_prev = e->_prev;
     e->_prev = e->_next = NULL;
 }
 
 void HTList::Remove() {
-	if (_prev) { _prev->_next = _next; }
-	if (_next) { _next->_prev = _prev; }
-	_prev = _next = NULL;
+    if (_prev) {
+        _prev->_next = _next;
+    }
+    if (_next) {
+        _next->_prev = _prev;
+    }
+    _prev = _next = NULL;
 }
 void HTList::RemoveAll() {
-	while(!IsEmpty()) {
-		Remove(First());
-	}
+    while (!IsEmpty()) {
+        Remove(First());
+    }
 }
-void HTList::Delete (void* p) {
+void HTList::Delete(void* p) {
     HTList* e;
 
     e = Find(p);
     if (e != NULL) {
-	Remove(e);
-	delete e;
+        Remove(e);
+        delete e;
     }
 }
 
-HTList* HTList::Find (void* p) {
+HTList* HTList::Find(void* p) {
     HTList* e;
 
     for (e = _next; e != this; e = e->_next) {
-	if (e->_object == p) {
-	    return e;
-	}
+        if (e->_object == p) {
+            return e;
+        }
     }
     return NULL;
 }
 
-HTList* HTList::operator[] (int count) {
+HTList* HTList::operator[](int count) {
     HTList* pos = First();
     int i;
 
     for (i = 1; i < count && pos != End(); ++i) {
-	pos = pos->Next();
+        pos = pos->Next();
     }
     if (i == count) {
-	return pos;
+        return pos;
     }
     return NULL;
-}	
+}

@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 extern void mcell_ran4_init(uint32_t);
-extern double mcell_ran4(uint32_t *idx1, double *x, unsigned int n, double range);
+extern double mcell_ran4(uint32_t* idx1, double* x, unsigned int n, double range);
 extern double mcell_ran4a(uint32_t* idx1);
 extern uint32_t mcell_iran4(uint32_t* idx1);
 extern double nrnRan4dbl(uint32_t* idx1, uint32_t idx2);

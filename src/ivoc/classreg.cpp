@@ -1,7 +1,7 @@
 #include <../../nrnconf.h>
 // interface c++ class to oc
 #if defined(__GO32__)
-#define HAVE_IV 0
+#define HAVE_IV    0
 #define OC_CLASSES "nrnclass.h"
 #endif
 
@@ -13,21 +13,21 @@
 #define OC_CLASSES "occlass.h"
 #endif
 
-#define	EXTERNS 1
+#define EXTERNS 1
 extern void
 #include OC_CLASSES
-;
+    ;
 
 #undef EXTERNS
 static void (*register_classes[])() = {
 #include OC_CLASSES
-	,0
-};
-	
+    ,
+    0};
+
 void hoc_class_registration(void) {
-	for (int i=0; register_classes[i]; i++) {
-		(*register_classes[i])();
-	}
+    for (int i = 0; register_classes[i]; i++) {
+        (*register_classes[i])();
+    }
 }
 
 /*-----------------------------------------------------*/

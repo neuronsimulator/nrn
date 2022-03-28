@@ -1,8 +1,8 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/oc/parallel.cpp,v 1.5 1997/03/13 14:18:17 hines Exp */
 #if MAC
-	#define OCSMALL 1
-	#define WIN32 1
+#define OCSMALL 1
+#define WIN32   1
 #endif
 
 #if !OCSMALL
@@ -18,16 +18,16 @@
 
 static int parallel_seen;
 
-static double *pval; /* pointer to loop counter value */
+static double* pval;   /* pointer to loop counter value */
 static double end_val; /* value to assign loop counter upon completion of loop */
 
 #define NUM_ARGS 256
-static char *parallel_argv;
-static char *parallel_envp;
-static int sargv=0, senvp=0;
+static char* parallel_argv;
+static char* parallel_envp;
+static int sargv = 0, senvp = 0;
 #endif /*!OCSMALL*/
 
-int parallel_sub=0;
+int parallel_sub = 0;
 int parallel_val; /* for use with parallel neuron (see hoc.cpp) */
 
 /*
@@ -36,12 +36,11 @@ int parallel_val; /* for use with parallel neuron (see hoc.cpp) */
 */
 
 
-
 void hoc_parallel_begin(void) {
 #if !OCSMALL
-    Symbol *sym;
+    Symbol* sym;
     double first, last;
-    char *method;
+    char* method;
     int i, j;
 
 
@@ -72,7 +71,8 @@ void hoc_parallel_begin(void) {
             /* increment pnt to "00000" */
             for (j = 0; j < 2; j++) {
                 /*EMPTY*/
-                while (*pnt++);
+                while (*pnt++)
+                    ;
             }
 
             /* replace "00000" with actual value */
@@ -85,8 +85,8 @@ void hoc_parallel_begin(void) {
                doesn't seem to want to let the fxn in an eval take
                arrays as args */
             __linda_out("parallel sargs", sargv, senvp);
-             __linda_out("parallel args", parallel_argv:sargv, parallel_envp:senvp);
-             __linda_eval("parallel run", parallel_hoc_main(i), i);
+            __linda_out("parallel args", parallel_argv : sargv, parallel_envp : senvp);
+            __linda_eval("parallel run", parallel_hoc_main(i), i);
 #endif
         }
 
@@ -102,9 +102,9 @@ void hoc_parallel_begin(void) {
 
         /* block until all instances of loop have finished */
 #if LINDA
-        i = (int)last - (int)first;
+        i = (int) last - (int) first;
         while (i-- > 0) {
-        int err_val, err_num;
+            int err_val, err_num;
 
         __linda_in("parallel run", ?err_val, ?err_num);
         /* could test err_val != 0 but currently will always equal 0 */
@@ -133,7 +133,6 @@ void hoc_parallel_begin(void) {
         /* only do "parallel_val" pass though loop */
         pushx((double) parallel_val);
         pushx((double) parallel_val);
-
     }
 #endif
 }
@@ -159,60 +158,64 @@ void hoc_parallel_end(void) {
 
 int parallel_hoc_main(int i) {
 #if !OCSMALL
-	/*ARGSUSED*/
-        const char **_largv, **_lenvp;
-	const char* pnt;
-	char *targv, *tenvp;
-	int j, _largc;
-	_largv = static_cast<const char **>(emalloc(NUM_ARGS*sizeof(char*)));
-	_lenvp = static_cast<const char **>(emalloc(NUM_ARGS*sizeof(char*)));
+    /*ARGSUSED*/
+    const char **_largv, **_lenvp;
+    const char* pnt;
+    char *targv, *tenvp;
+    int j, _largc;
+    _largv = static_cast<const char**>(emalloc(NUM_ARGS * sizeof(char*)));
+    _lenvp = static_cast<const char**>(emalloc(NUM_ARGS * sizeof(char*)));
 #if LINDA
-	char name[20];
+    char name[20];
 
-	gethostname(name, 20);
-	Fprintf(stderr, "\nLaunching sub-process on %s.\n\t1\n", name);
+    gethostname(name, 20);
+    Fprintf(stderr, "\nLaunching sub-process on %s.\n\t1\n", name);
 
- 	__linda_in("parallel sargs", ?sargv, ?senvp); 
+    __linda_in("parallel sargs", ?sargv, ?senvp);
 #endif
-	targv = static_cast<char*>(emalloc(sargv));
-	tenvp = static_cast<char*>(emalloc(senvp));
-	/* pointers need to point to memory that will be filled by __linda_in() */
+    targv = static_cast<char*>(emalloc(sargv));
+    tenvp = static_cast<char*>(emalloc(senvp));
+    /* pointers need to point to memory that will be filled by __linda_in() */
 #if LINDA
-  	__linda_in("parallel args", ?targv:, ?tenvp:);  
+    __linda_in("parallel args", ? targv :, ? tenvp :);
 #endif
 
-	pnt = targv;
-	for (j = 0; *pnt; j++) {
- 	    _largv[j] = pnt;  
-	    /*EMPTY*/
-	    while (*pnt++);
-	}
-	_largc = j;
+    pnt = targv;
+    for (j = 0; *pnt; j++) {
+        _largv[j] = pnt;
+        /*EMPTY*/
+        while (*pnt++)
+            ;
+    }
+    _largc = j;
 
-	pnt = tenvp;
-	for (j = 0; *pnt; j++) {
- 	    _lenvp[j] = pnt;  
-	    /*EMPTY*/
-	    while (*pnt++);
-	}
+    pnt = tenvp;
+    for (j = 0; *pnt; j++) {
+        _lenvp[j] = pnt;
+        /*EMPTY*/
+        while (*pnt++)
+            ;
+    }
 
-	/* run is killed at end of parallel for-loop (hoc_parallel_end()) */
-   	hoc_main1(_largc, _largv, _lenvp);   
+    /* run is killed at end of parallel for-loop (hoc_parallel_end()) */
+    hoc_main1(_largc, _largv, _lenvp);
 #endif
-	return 0;
+    return 0;
 }
 
 void save_parallel_argv(int argc, const char** argv) {
     /* first arg is program, save 2 & 3 for -parallel flags */
 #if !defined(WIN32)
-	const char *pnt;
+    const char* pnt;
     int j;
 
     /* count how long the block of memory should be */
     for (j = 0; j < argc && (strcmp(argv[j], "-") != 0); j++) {
-	pnt = argv[j];
-	while (*pnt++) { sargv++; }
-	sargv++; /* add room for '\0' */
+        pnt = argv[j];
+        while (*pnt++) {
+            sargv++;
+        }
+        sargv++; /* add room for '\0' */
     }
     sargv += 16; /* add 10 for "-parallel" and 6 for val ("00000") */
 
@@ -246,38 +249,41 @@ void save_parallel_argv(int argc, const char** argv) {
 #endif
 }
 
-void save_parallel_envp(void) { 
+void save_parallel_envp(void) {
 #if LINDA
 #if !defined(__APPLE__)
-	extern char** environ;
-	char** envp = environ;
+    extern char** environ;
+    char** envp = environ;
 #endif
 #if defined(__APPLE__)
-	char** envp = (*_NSGetEnviron());
+    char** envp = (*_NSGetEnviron());
 #endif
-	 char *pnt;
+    char* pnt;
     int j;
-	char** envp = environ;
+    char** envp = environ;
 
     /* count how long the block of memory should be */
     for (j = 0; envp[j]; j++) {
-	pnt = envp[j];
-	while (*pnt++) { senvp++; }
-	senvp++; /* add room for '\0' */
+        pnt = envp[j];
+        while (*pnt++) {
+            senvp++;
+        }
+        senvp++; /* add room for '\0' */
     }
 
     /* need room for extra '\0' at end, each space is of size (char) */
     senvp = (senvp + 1) * sizeof(char);
 
     /* malloc blocks of memory */
-    parallel_envp = static_cast<char *>(emalloc(senvp));
+    parallel_envp = static_cast<char*>(emalloc(senvp));
 
     /* place the strings into the memory block separated by '\0' */
     pnt = parallel_envp;
     for (j = 0; envp[j]; j++) {
-	strcpy(pnt, envp[j]);
-	/*EMPTY*/
-	while (*pnt++);
+        strcpy(pnt, envp[j]);
+        /*EMPTY*/
+        while (*pnt++)
+            ;
     }
     *pnt = '\0'; /* place extra '\0' at end */
 #endif
