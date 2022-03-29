@@ -13,6 +13,7 @@
 #include "mcran4.h"
 #include "nrncvode.h"
 #include "nrnran123.h"
+#include "nrnrandom.h"
 #include "oc_ansi.h"
 #include "scoplib.h"
 #include "treeset.h"
