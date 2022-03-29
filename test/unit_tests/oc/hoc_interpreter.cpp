@@ -9,5 +9,5 @@ TEST_CASE("Test hoc interpreter", "[Neuron][hoc_interpreter]") {
     hoc_pushx(4.0);
     hoc_pushx(5.0);
     hoc_add();
-    REQUIRE( hoc_xpop() == 9.0 );
+    REQUIRE(hoc_xpop() == 9.0);
 }

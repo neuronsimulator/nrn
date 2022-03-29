@@ -2,9 +2,11 @@
 #define ocfunc_h
 
 
-extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double), hoc_integer(double);
+extern double hoc_Log(double), hoc_Log10(double), hoc1_Exp(double), hoc_Sqrt(double),
+    hoc_integer(double);
 extern double hoc_Pow(double, double);
-extern void hoc_System(void), hoc_Prmat(void), hoc_solve(void), hoc_eqinit(void), hoc_Plt(void), hoc_atan2(void);
+extern void hoc_System(void), hoc_Prmat(void), hoc_solve(void), hoc_eqinit(void), hoc_Plt(void),
+    hoc_atan2(void);
 extern void hoc_symbols(void), hoc_PRintf(void), hoc_Xred(void), hoc_Sred(void);
 extern void hoc_ropen(void), hoc_wopen(void), hoc_xopen(void), hoc_Fscan(void), hoc_Fprint(void);
 extern void hoc_Graph(void), hoc_Graphmode(void), hoc_Plot(void), hoc_axis(void), hoc_Sprint(void);
@@ -21,7 +23,7 @@ extern void nrn_err_dialog(const char*);
 extern void hoc_single_event_run(void), hoc_notify_iv(void), nrniv_bind_thread(void);
 extern void hoc_pointer(void), hoc_Numarg(void), hoc_Argtype(void), hoc_exec_cmd(void);
 extern void hoc_load_proc(void), hoc_load_func(void), hoc_load_template(void), hoc_load_file(void);
-extern void hoc_xcheckbox(void), hoc_xstatebutton(void), hoc_Symbol_limits(void);     
+extern void hoc_xcheckbox(void), hoc_xstatebutton(void), hoc_Symbol_limits(void);
 extern void hoc_coredump_on_error(void), hoc_checkpoint(void), hoc_quit(void);
 extern void hoc_object_push(void), hoc_object_pop(void), hoc_pwman_place(void);
 extern void hoc_show_errmess_always(void), hoc_execute1(void), hoc_secname(void);
@@ -45,5 +47,4 @@ extern void hoc_win_exec();
 #endif
 
 
-#endif  
-
+#endif
