@@ -19,19 +19,19 @@ FetchContent_Declare(
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG 1d283f3e72fba9fd1dda3a81e8ccd7616b49b559
+  GIT_TAG 60256cf665a7bd21acb6a42d282f280c9a766ecc
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG 70f363d7f82dfe6037fbddd8ed2e58cb20df6343
+  GIT_TAG c40e21a9677b3fd36ed46a7fbf5f194f3a4af5ae
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
   tqperf
   GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
-  GIT_TAG 79df2a59ac4a56be3be840b4887222cea761b1ff
+  GIT_TAG aa1344a5764f61bd097b9e2cf2e59d06c577ae85
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
