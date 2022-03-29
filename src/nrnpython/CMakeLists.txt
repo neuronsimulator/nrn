@@ -230,8 +230,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
         ${CMAKE_COMMAND} -E copy_if_different
         ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
         ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND ${pyexe} setup.py build_ext --inplace --build-lib=${NRN_PYTHON_BUILD_LIB}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
 
@@ -253,7 +253,8 @@ if(NRN_ENABLE_MODULE_INSTALL)
 echo 'Installing python module using:'\n\
 set -ex\n\
 cd ${CMAKE_CURRENT_BINARY_DIR}\n\
-$1 setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB} install ${NRN_MODULE_INSTALL_OPTIONS}\n\
+$1 -m pip install ${NRN_MODULE_INSTALL_OPTIONS}\n\
+cp ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat ${CMAKE_INSTALL_PREFIX}/neuron
 ")
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     # install(CODE ...) only takes a single CMake code expression, so we can't easily roll our own
