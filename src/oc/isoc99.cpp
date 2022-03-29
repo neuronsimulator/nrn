@@ -9,18 +9,20 @@ so it can only be used when pd is valid over sizeof(double).
 */
 
 
-extern "C" int nrn_isdouble(double *pd, double min, double max) {
+extern "C" int nrn_isdouble(double* pd, double min, double max) {
     int i;
-    if (!pd) { return 0; }
+    if (!pd) {
+        return 0;
+    }
 #if defined(fpclassify)
-    i = fpclassify(*((double*)pd));
+    i = fpclassify(*((double*) pd));
     if (i == FP_NORMAL || i == FP_ZERO) {
-        return *((double*)pd) >= min && *((double*)pd) <= max;
-    }else{
+        return *((double*) pd) >= min && *((double*) pd) <= max;
+    } else {
         return 0;
     }
 #else
-    return *((double *) pd) >= min && *((double *) pd) <= max;
+    return *((double*) pd) >= min && *((double*) pd) <= max;
 #endif
 }
 //

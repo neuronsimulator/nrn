@@ -16,4 +16,4 @@ extern void backward_wrapper();
 }
 #endif
 
-#endif // backtrace_utils_h
+#endif  // backtrace_utils_h
