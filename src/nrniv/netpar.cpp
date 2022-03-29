@@ -2,6 +2,7 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
 #include <math.h>
+#include "nrncvode.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <stdio.h>
@@ -90,7 +91,6 @@ static double set_mindelay(double maxdelay);
 #include "../nrnmpi/mpispike.h"
 
 void nrn_timeout(int);
-void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -516,7 +516,9 @@ void nrn_spike_exchange_init() {
 	//if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
 
-#if NRNMPI
+#if !NRNMPI
+void nrn_spike_exchange(NrnThread*) {}
+#else
 void nrn_spike_exchange(NrnThread* nt) {
     nrn::Instrumentor::phase p_spike_exchange("spike-exchange");
     if (!active_) { return; }
