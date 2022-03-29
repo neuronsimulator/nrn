@@ -13,4 +13,5 @@ Guides
    import3d
    optimization
    randomness
+   porting_mechanisms_to_cpp
    faq
