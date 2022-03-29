@@ -34,15 +34,16 @@ static HCURSOR old_cursor;
 extern int bad_install_ok;
 #else
 int bad_install_ok;
-#endif // HAVE_IV
+#endif  // HAVE_IV
 extern FILE* hoc_redir_stdout;
 void setneuronhome(const char* p) {
-	// if the program lives in .../bin/neuron.exe
-	// and .../lib exists then use ... as the
-	// NEURONHOME
-	char buf[256]; char *s;
-	int i, j;
-//	printf("p=|%s|\n", p);
+    // if the program lives in .../bin/neuron.exe
+    // and .../lib exists then use ... as the
+    // NEURONHOME
+    char buf[256];
+    char* s;
+    int i, j;
+    //	printf("p=|%s|\n", p);
     bad_install_ok = 1;
 #if 0
 	if (p[0] == '"') {
@@ -51,16 +52,20 @@ void setneuronhome(const char* p) {
 		strcpy(buf, p);
    }
 #endif
-	GetModuleFileName(NULL, buf, 256);
-	for (i=strlen(buf); i >= 0 && buf[i] != '\\'; --i) {;}
-   buf[i] = '\0'; // /neuron.exe gone
-//	printf("setneuronhome |%s|\n", buf);
-   for (j=strlen(buf); j >= 0 && buf[j] != '\\'; --j) {;}
-   buf[j] = '\0'; // /bin gone
-   neuron_home_dos = static_cast<char *>(emalloc(strlen(buf) + 1));
-   strcpy(neuron_home_dos, buf);
-   neuron_home = hoc_dos2unixpath(buf);
-   return;
+    GetModuleFileName(NULL, buf, 256);
+    for (i = strlen(buf); i >= 0 && buf[i] != '\\'; --i) {
+        ;
+    }
+    buf[i] = '\0';  // /neuron.exe gone
+                    //	printf("setneuronhome |%s|\n", buf);
+    for (j = strlen(buf); j >= 0 && buf[j] != '\\'; --j) {
+        ;
+    }
+    buf[j] = '\0';  // /bin gone
+    neuron_home_dos = static_cast<char*>(emalloc(strlen(buf) + 1));
+    strcpy(neuron_home_dos, buf);
+    neuron_home = hoc_dos2unixpath(buf);
+    return;
 #if 0
    // but make sure it was bin Bin or BIN -- damn you bill gates
 //	printf("i=%d j=%d buf=|%s|\n",i, j, buf);
@@ -107,43 +112,48 @@ void setneuronhome(const char* p) {
 #endif
 }
 void HandleOutput(char* s) {
-	printf("%s", s);
+    printf("%s", s);
 }
 static long exception_filter(LPEXCEPTION_POINTERS p) {
-//	hoc_execerror("unhandled exception", "");
-//	return EXCEPTION_CONTINUE_EXECUTION;
-	static int n = 0;
-	++n;
-	if (n == 1) {
-		hoc_execerror("\nUnhandled Exception. This usually means a bad memory \n\
-address.", "It is not possible to make a judgment as to whether it is safe\n\
+    //	hoc_execerror("unhandled exception", "");
+    //	return EXCEPTION_CONTINUE_EXECUTION;
+    static int n = 0;
+    ++n;
+    if (n == 1) {
+        hoc_execerror(
+            "\nUnhandled Exception. This usually means a bad memory \n\
+address.",
+            "It is not possible to make a judgment as to whether it is safe\n\
 to continue. If this happened while compiling a template, you will have to\n\
 quit.");
-	}
-	if (n == 2) {
-MessageBox(NULL, "Second Unhandled Exception: Quitting NEURON. You will be asked to save \
-any unsaved em buffers before exiting.", "NEURON Internal ERROR", MB_OK);
-		hoc_quit();
-	}
-	return EXCEPTION_EXECUTE_HANDLER;
+    }
+    if (n == 2) {
+        MessageBox(NULL,
+                   "Second Unhandled Exception: Quitting NEURON. You will be asked to save \
+any unsaved em buffers before exiting.",
+                   "NEURON Internal ERROR",
+                   MB_OK);
+        hoc_quit();
+    }
+    return EXCEPTION_EXECUTE_HANDLER;
 }
 
 void hoc_set_unhandled_exception_filter() {
-	SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)exception_filter);
+    SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) exception_filter);
 }
 BOOL hoc_copyfile(const char* src, const char* dest) {
-	return CopyFile(src, dest, FALSE);
+    return CopyFile(src, dest, FALSE);
 }
 
-static FILE* dll_stdio_[] = {(FILE*)0x0, (FILE*)0x20, (FILE*)0x40};
+static FILE* dll_stdio_[] = {(FILE*) 0x0, (FILE*) 0x20, (FILE*) 0x40};
 
 void nrn_mswindll_stdio(FILE* i, FILE* o, FILE* e) {
-	if (o != dll_stdio_[1]) {
-		printf("nrn_mswindll_stdio stdio in dll = %p but expected %p\n", o, dll_stdio_[1]);
-	}
-	dll_stdio_[0] = i;
-	dll_stdio_[1] = o;
-	dll_stdio_[2] = e;
+    if (o != dll_stdio_[1]) {
+        printf("nrn_mswindll_stdio stdio in dll = %p but expected %p\n", o, dll_stdio_[1]);
+    }
+    dll_stdio_[0] = i;
+    dll_stdio_[1] = o;
+    dll_stdio_[2] = e;
 }
 
 #if defined(CYGWIN)
@@ -154,12 +164,11 @@ FILE __files[4];
 #define ncyg_fprintf fprintf
 #endif
 
-int ncyg_fprintf(FILE /*_FAR*/ *stream, const char * strFmt, ...)
-{
-	int len;
-	static char s[4096] = {0};
-	va_list marker;
-	va_start(marker, strFmt);
+int ncyg_fprintf(FILE /*_FAR*/* stream, const char* strFmt, ...) {
+    int len;
+    static char s[4096] = {0};
+    va_list marker;
+    va_start(marker, strFmt);
 #if defined(CYGWIN)
 #if 0
 	printf("ncyg stdin=%lx\n", (long)stdin);
@@ -170,35 +179,35 @@ int ncyg_fprintf(FILE /*_FAR*/ *stream, const char * strFmt, ...)
 	printf("ncyg dll_sdtio[2]=%lx\n", (long)dll_stdio_[2]);
 	printf("ncyg stream=%lx\n", (long)stream);
 #endif
-	if (stream == dll_stdio_[1]) {
-		stream = stdout;
-	}else if (stream == dll_stdio_[2]) {
-		stream = stderr;
-	}
-	len = vsprintf(s, strFmt, marker);
-	fputs(s, stream);
-	return len;
+    if (stream == dll_stdio_[1]) {
+        stream = stdout;
+    } else if (stream == dll_stdio_[2]) {
+        stream = stderr;
+    }
+    len = vsprintf(s, strFmt, marker);
+    fputs(s, stream);
+    return len;
 #endif
 }
 
 void hoc_forward2back(char* s) {
-	char* cp;
-		for (cp = s; *cp; ++cp) {
-			if (*cp == '/') {
-				*cp = '\\';
-			}
-		}
+    char* cp;
+    for (cp = s; *cp; ++cp) {
+        if (*cp == '/') {
+            *cp = '\\';
+        }
+    }
 }
 
 extern "C" char* hoc_back2forward(char* s) {
-	char* cp = s;
-	while(*cp) {
-		if (*cp == '\\') {
-			*cp = '/';
-		}
-		++cp;
-	}
-	return s;
+    char* cp = s;
+    while (*cp) {
+        if (*cp == '\\') {
+            *cp = '/';
+        }
+        ++cp;
+    }
+    return s;
 }
 
 #if HAVE_IV
@@ -206,54 +215,55 @@ void ivoc_win32_cleanup();
 #endif
 
 void hoc_win32_cleanup() {
-	char buf[256];
-	char* path;
+    char buf[256];
+    char* path;
 #if HAVE_IV
-	ivoc_win32_cleanup();
+    ivoc_win32_cleanup();
 #endif
-	path = getenv("TEMP");
-	if (path) {
-		sprintf(buf, "%s/oc%d.hl", path, getpid());
-		unlink(buf);
-//      DebugMessage("unlinked %s\n", buf);
-	}
+    path = getenv("TEMP");
+    if (path) {
+        sprintf(buf, "%s/oc%d.hl", path, getpid());
+        unlink(buf);
+        //      DebugMessage("unlinked %s\n", buf);
+    }
 }
 
 void hoc_win_exec(void) {
-	int i;
-	i = SW_SHOW;
-	if (ifarg(2)) {
-		i = (int)chkarg(2, -1000, 1000);
-	}
-	i = WinExec(gargstr(1), i);
-	ret();
-	pushx((double)i);
+    int i;
+    i = SW_SHOW;
+    if (ifarg(2)) {
+        i = (int) chkarg(2, -1000, 1000);
+    }
+    i = WinExec(gargstr(1), i);
+    ret();
+    pushx((double) i);
 }
 
 #if !defined(CYGWIN)
 
 FILE* popen(char* s1, char* s2) {
-	printf("no popen\n");
-	return 0;
+    printf("no popen\n");
+    return 0;
 }
 
 pclose(FILE* p) {
-	printf("no pclose\n");
+    printf("no pclose\n");
 }
 
 void hoc_check_intupt(int intupt) {
 #if !OCSMALL
-	MSG msg;
-	 while (PeekMessage(&msg, hCurrWnd, 0, 0, PM_REMOVE))
-		  {
-		  TranslateMessage(&msg);
-		  DispatchMessage(&msg);
-		  }
+    MSG msg;
+    while (PeekMessage(&msg, hCurrWnd, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 #endif
 }
 
 #if defined(__MWERKS__)
-void __assertfail() { printf("assertfail\n");}
+void __assertfail() {
+    printf("assertfail\n");
+}
 #endif
 
 #if 0
@@ -275,73 +285,85 @@ char* dos_neuronhome() {
 #endif
 
 #define HOCXDOS "lib/nrnsys.sh"
-#define SEMA1 "tmpdos1.tmp"
-#define SEMA2 "tmpdos2.tmp"
+#define SEMA1   "tmpdos1.tmp"
+#define SEMA2   "tmpdos2.tmp"
 
 int system(const char* s) {
-	char buf[256], stin[128];
-	char* redirect;
-	FILE* fin;
+    char buf[256], stin[128];
+    char* redirect;
+    FILE* fin;
 
-	unlink(SEMA1);
-	unlink(SEMA2);
-	errno = 0;
-	redirect = strchr(s, '>');
-	if (redirect) {/* redirection filename is first arg */
-		strcpy(stin, redirect+1);
-		sprintf(buf, "%s\\bin\\sh %s/%s %s %s %s",
-			neuron_home, neuron_home, HOCXDOS, neuron_home, stin, expand_env_var(s));
-		redirect = strchr(buf, '>');
-		*redirect = '\0';
-	}else{
-		sprintf(buf, "%s\\bin\\sh %s/%s %s %s %s",
-			neuron_home, neuron_home, HOCXDOS, neuron_home, SEMA2, expand_env_var(s));
-	}
-//printf("%s\n", buf);
-	if (WinExec(buf, 0) < 32) {
-		hoc_execerror("WinExec failed:", buf);
-	}
-	while((fin = fopen(SEMA1, "r")) == (FILE*)0) {
-		Sleep(1);
-      wmhandler_yield();
-	}
-	fclose(fin);
-	unlink(SEMA1);
-	if (!redirect && (fin = fopen(SEMA2, "r")) != (FILE*)0) {
-		while(fgets(buf, 256, fin)) {
-			printf("%s", buf);
-		}
-		fclose(fin);
-		unlink(SEMA2);
-	}
-	return 0;
+    unlink(SEMA1);
+    unlink(SEMA2);
+    errno = 0;
+    redirect = strchr(s, '>');
+    if (redirect) { /* redirection filename is first arg */
+        strcpy(stin, redirect + 1);
+        sprintf(buf,
+                "%s\\bin\\sh %s/%s %s %s %s",
+                neuron_home,
+                neuron_home,
+                HOCXDOS,
+                neuron_home,
+                stin,
+                expand_env_var(s));
+        redirect = strchr(buf, '>');
+        *redirect = '\0';
+    } else {
+        sprintf(buf,
+                "%s\\bin\\sh %s/%s %s %s %s",
+                neuron_home,
+                neuron_home,
+                HOCXDOS,
+                neuron_home,
+                SEMA2,
+                expand_env_var(s));
+    }
+    // printf("%s\n", buf);
+    if (WinExec(buf, 0) < 32) {
+        hoc_execerror("WinExec failed:", buf);
+    }
+    while ((fin = fopen(SEMA1, "r")) == (FILE*) 0) {
+        Sleep(1);
+        wmhandler_yield();
+    }
+    fclose(fin);
+    unlink(SEMA1);
+    if (!redirect && (fin = fopen(SEMA2, "r")) != (FILE*) 0) {
+        while (fgets(buf, 256, fin)) {
+            printf("%s", buf);
+        }
+        fclose(fin);
+        unlink(SEMA2);
+    }
+    return 0;
 }
 
 hoc_win_normal_cursor() {
-	if (old_cursor) {
-		(HCURSOR)SetClassLong(hCurrWnd, GCL_HCURSOR, (long)old_cursor);
-		SetCursor(old_cursor);
-		old_cursor = 0;
-	}
+    if (old_cursor) {
+        (HCURSOR) SetClassLong(hCurrWnd, GCL_HCURSOR, (long) old_cursor);
+        SetCursor(old_cursor);
+        old_cursor = 0;
+    }
 }
 
 hoc_win_wait_cursor() {
-	static int ready = 0;
-	if (!ready) {
-		wait_cursor = LoadCursor(NULL, IDC_WAIT);
-	}
-	if (!old_cursor) {
-//DebugMessage("set the wait cursor\n");
-		old_cursor = (HCURSOR)SetClassLong(hCurrWnd, GCL_HCURSOR, (long)wait_cursor);
-		SetCursor(wait_cursor);
-	}
+    static int ready = 0;
+    if (!ready) {
+        wait_cursor = LoadCursor(NULL, IDC_WAIT);
+    }
+    if (!old_cursor) {
+        // DebugMessage("set the wait cursor\n");
+        old_cursor = (HCURSOR) SetClassLong(hCurrWnd, GCL_HCURSOR, (long) wait_cursor);
+        SetCursor(wait_cursor);
+    }
 }
 
 #endif /* not CYGWIN */
 
 void hoc_winio_show(int b) {
 #ifndef CYGWIN
-		ShowWindow(hCurrWnd, b ? SW_SHOW : SW_HIDE);
+    ShowWindow(hCurrWnd, b ? SW_SHOW : SW_HIDE);
 #endif
 }
 
@@ -357,32 +379,42 @@ int getpid() {
 	extern int __hInst;
 	return __hInst;
 #else
-	return 1;
+    return 1;
 #endif
 }
 #endif
-//hoc_close_plot(){}
-//hoc_Graphmode(){ret();pushx(0.);}
-//hoc_Graph(){ret();pushx(0.);}
-//hoc_regraph(){ret();pushx(0.);}
-//hoc_plotx(){ret();pushx(0.);}
-//hoc_ploty(){ret();pushx(0.);}
-void hoc_Plt() {TRY_GUI_REDIRECT_DOUBLE("plt", NULL); ret(); pushx(0.);}
-void hoc_Setcolor(){TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL); ret(); pushx(0.);}
-void hoc_Lw(){ret(); pushx(0.);}
+// hoc_close_plot(){}
+// hoc_Graphmode(){ret();pushx(0.);}
+// hoc_Graph(){ret();pushx(0.);}
+// hoc_regraph(){ret();pushx(0.);}
+// hoc_plotx(){ret();pushx(0.);}
+// hoc_ploty(){ret();pushx(0.);}
+void hoc_Plt() {
+    TRY_GUI_REDIRECT_DOUBLE("plt", NULL);
+    ret();
+    pushx(0.);
+}
+void hoc_Setcolor() {
+    TRY_GUI_REDIRECT_DOUBLE("setcolor", NULL);
+    ret();
+    pushx(0.);
+}
+void hoc_Lw() {
+    ret();
+    pushx(0.);
+}
 // TODO : just temporary fix to avoid duplicate symbol error
-//void hoc_settext(){ret(); pushx(0.);}
-//Plot(){ret();pushx(0.);}
-//axis(){ret();pushx(0.);}
-//hoc_fmenu() {ret();pushx(0.);}
+// void hoc_settext(){ret(); pushx(0.);}
+// Plot(){ret();pushx(0.);}
+// axis(){ret();pushx(0.);}
+// hoc_fmenu() {ret();pushx(0.);}
 
-//int gethostname() {printf("no gethostname\n");}
+// int gethostname() {printf("no gethostname\n");}
 
 
-//plt(int mode, double x, double y) {}
+// plt(int mode, double x, double y) {}
 
-//initplot() {}
+// initplot() {}
 #if 0
 Fig_file(){}
 #endif
-

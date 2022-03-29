@@ -65,7 +65,12 @@ class ShapeScene: public Graph {  // entire neuron
         return view_all_;
     }
     void rotate();  // identity
-    void rotate(Coord xorg, Coord yorg, Coord zorg, float xrad, float yrad, float zrad);  // relative
+    void rotate(Coord xorg,
+                Coord yorg,
+                Coord zorg,
+                float xrad,
+                float yrad,
+                float zrad);  // relative
   private:
     bool view_all_;
     ShapeSection* selected_;
