@@ -23,3 +23,4 @@ extern void nrn_spike_exchange_init(void);
 extern void nrn_spike_exchange(NrnThread* nt);
 extern bool nrn_use_bin_queue_;
 double nrn_event_queue_stats(double* stats);
+void nrn_fake_fire(int gid, double spiketime, int fake_out);

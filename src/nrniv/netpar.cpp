@@ -45,7 +45,6 @@ extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
