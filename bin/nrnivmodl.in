@@ -53,7 +53,7 @@ LegacyModelTransformations=""
 LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
-UserCOREFLAGS=""
+UserCOREFLAGS=()
 
 # - options come first but can be in any order.
 while test -n "$1" ; do
@@ -71,13 +71,15 @@ while test -n "$1" ; do
     -incflags)
         # extra include flags and paths (NEURON only)
         UserINCFLAGS="$2"
+        # extra include flags and paths for CoreNEURON
+        UserCOREFLAGS+=(-i "${2}")
         shift
         shift;;
     -loadflags)
         # extra link flags, paths, libraries (NEURON only)
         UserLDFLAGS="$2"
         # extra lin flags, paths. libraries (CoreNEURON)
-        UserCOREFLAGS="$UserCOREFLAGS -l $2"
+        UserCOREFLAGS+=(-l "${2}")
         shift
         shift;;
     -*)
@@ -304,7 +306,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
       j=`escape_spaces "$j"`
       args="$args $j"
     done
-    "${cnrn_prefix}/bin/nrnivmodl-core" $UserCOREFLAGS $args
+    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" $args
     cd $MODSUBDIR
   else
     printf "ERROR : CoreNEURON support is not enabled!\n"

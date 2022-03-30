@@ -33,6 +33,10 @@ add_custom_command(
   DEPENDS "${NRN_MODLUNIT_SRC_DIR}/parse1.ypp"
   COMMENT "[BISON][modlunitparser] Building parser with bison ${BISON_VERSION}")
 
+add_custom_target(generated_source_files true)
+add_custom_target(modlunit_generated_files DEPENDS "${NRN_MODLUNIT_GEN}/lex.cpp"
+                                                   "${NRN_MODLUNIT_GEN}/parse1.cpp")
+add_dependencies(generated_source_files modlunit_generated_files)
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
@@ -70,6 +74,11 @@ add_custom_command(
   DEPENDS "${NRN_NMODL_SRC_DIR}/diffeq.ypp"
   COMMENT "[BISON][nocmodlparser] Building parser with bison ${BISON_VERSION}")
 
+add_custom_target(
+  nocmodl_generated_files
+  DEPENDS "${NRN_NMODL_GEN}/lex.cpp" "${NRN_NMODL_GEN}/parse1.hpp" "${NRN_NMODL_GEN}/parse1.cpp"
+          "${NRN_NMODL_GEN}/diffeq.hpp" "${NRN_NMODL_GEN}/diffeq.cpp")
+add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1
@@ -104,6 +113,8 @@ add_custom_command(
   COMMAND "${BISON_EXECUTABLE}" ARGS --defines=parse.hpp -o parse.cpp "${NRN_OC_SRC_REL}/parse.ypp"
   DEPENDS "${NRN_OC_SRC_DIR}/parse.ypp"
   COMMENT "[BISON][ocparser] Building parser with bison ${BISON_VERSION}")
+add_custom_target(oc_generated_files DEPENDS "${NRN_OC_GEN}/parse.hpp" "${NRN_OC_GEN}/parse.cpp")
+add_dependencies(generated_source_files oc_generated_files)
 list(APPEND NRN_OC_SRC_FILES "${NRN_OC_GEN}/parse.cpp")
 set(NRN_OC_GENERATED_SOURCES
     "${NRN_OC_GEN}"
@@ -196,6 +207,7 @@ add_custom_target(
   DEPENDS ${PROJECT_SOURCE_DIR}/git2nrnversion_h.sh)
 
 add_custom_command(OUTPUT ${NRN_NRNOC_SRC_DIR}/nrnversion.h DEPENDS nrnversion_h)
+add_dependencies(generated_source_files nrnversion_h)
 
 # avoid error with nvector_serial.cpp for #include <../../../nrnconf.h>
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/src/sundials/shared)
@@ -210,6 +222,8 @@ add_custom_command(
   COMMAND sed "s/\\\"nrnhoc_topology\\\"/\\\"topology\\\"/" temp2hoc >
           ${PROJECT_BINARY_DIR}/src/oc/hocusr.h
   DEPENDS ${NRN_NRNOC_SRC_DIR}/neuron.h ${NRN_OC_SRC_DIR}/mk_hocusr_h.py)
+add_custom_target(generate_hocusr_header DEPENDS "${PROJECT_BINARY_DIR}/src/oc/hocusr.h")
+add_dependencies(generated_source_files generate_hocusr_header)
 
 # header for dynamic mpi
 if(NRN_ENABLE_MPI_DYNAMIC)

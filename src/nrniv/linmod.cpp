@@ -28,50 +28,59 @@
 extern int (*nrnpy_hoccommand_exec)(Object*);
 
 
-LinearModelAddition::LinearModelAddition(Matrix* cmat, Matrix* gmat,
-	Vect* yvec, Vect* y0, Vect* bvec, int nnode, Node** nodes, Vect* elayer, Object* f_callable) 
-	: NrnDAE(cmat, yvec, y0, nnode, nodes, elayer), b_(*bvec), f_callable_(f_callable) {
-//printf("LinearModelAddition %p\n", this);
-	g_ = new MatrixMap(gmat);
+LinearModelAddition::LinearModelAddition(Matrix* cmat,
+                                         Matrix* gmat,
+                                         Vect* yvec,
+                                         Vect* y0,
+                                         Vect* bvec,
+                                         int nnode,
+                                         Node** nodes,
+                                         Vect* elayer,
+                                         Object* f_callable)
+    : NrnDAE(cmat, yvec, y0, nnode, nodes, elayer)
+    , b_(*bvec)
+    , f_callable_(f_callable) {
+    // printf("LinearModelAddition %p\n", this);
+    g_ = new MatrixMap(gmat);
 }
 
 LinearModelAddition::~LinearModelAddition() {
-//printf("~LinearModelAddition %p\n", this);
-	delete g_;
+    // printf("~LinearModelAddition %p\n", this);
+    delete g_;
 }
 
 void LinearModelAddition::alloc_(int size, int start, int nnode, Node** nodes, int* elayer) {
-//printf("LinearModelAddition::alloc_ %p\n", this);
-	assert(b_.size() == size);
-	assert(g_->nrow() == size && g_->ncol() == size);
-//printf("g_->alloc start=%d, nnode=%d\n", start_, nnode_);
-	g_->alloc(start, nnode, nodes, elayer);
+    // printf("LinearModelAddition::alloc_ %p\n", this);
+    assert(b_.size() == size);
+    assert(g_->nrow() == size && g_->ncol() == size);
+    // printf("g_->alloc start=%d, nnode=%d\n", start_, nnode_);
+    g_->alloc(start, nnode, nodes, elayer);
 }
 
 void LinearModelAddition::f_(Vect& y, Vect& yprime, int size) {
-//printf("LinearModelAddition::f_ %p\n", this);
-	//right side portion of (c/dt +g)*[dy] =  -g*y + b
-	// given y, returns y'
-	// vm,vext may be reinitialized between fixed steps and certainly
-	// has been adjusted by daspk
-	// size is the number of equations
-	if (f_callable_) {
-		if (!(*nrnpy_hoccommand_exec)(f_callable_)) {
-			hoc_execerror("LinearModelAddition runtime error",0);
-		}
-	}
-	g_->mulv(y, yprime);
-	for (int i = 0; i < size; ++i) {
-		yprime[i] = b_[i] - yprime[i];
-	}
+    // printf("LinearModelAddition::f_ %p\n", this);
+    // right side portion of (c/dt +g)*[dy] =  -g*y + b
+    // given y, returns y'
+    // vm,vext may be reinitialized between fixed steps and certainly
+    // has been adjusted by daspk
+    // size is the number of equations
+    if (f_callable_) {
+        if (!(*nrnpy_hoccommand_exec)(f_callable_)) {
+            hoc_execerror("LinearModelAddition runtime error", 0);
+        }
+    }
+    g_->mulv(y, yprime);
+    for (int i = 0; i < size; ++i) {
+        yprime[i] = b_[i] - yprime[i];
+    }
 }
 
 // indicates that the returned Jacobian must be multiplied by -1 to be
 // true value
 double LinearModelAddition::jacobian_multiplier_() {
-	return -1;
+    return -1;
 }
 
 MatrixMap* LinearModelAddition::jacobian_(Vect& y) {
-	return g_;
+    return g_;
 }

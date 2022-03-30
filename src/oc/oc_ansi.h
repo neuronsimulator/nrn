@@ -37,7 +37,7 @@ struct VoidFunc;
 extern "C" {
 #endif
 
-    // nocpout.cpp
+// nocpout.cpp
 extern Symbol* hoc_get_symbol(const char* var);
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 extern void ivoc_help(const char*);
@@ -57,7 +57,7 @@ extern double* hoc_getarg(int);
 extern int ifarg(int);
 
 extern int vector_instance_px(void*, double**);
-extern void install_vector_method(const char*, double(*)(void*));
+extern void install_vector_method(const char*, double (*)(void*));
 
 extern int vector_arg_px(int i, double** p);
 
@@ -123,8 +123,11 @@ extern char** hoc_temp_charptr(void);
 extern int hoc_is_temp_charptr(char** cpp);
 extern void hoc_assign_str(char** pstr, const char* buf);
 extern double chkarg(int, double low, double high);
-extern double hoc_call_func(Symbol*, int narg); /* push first arg first. Warning: if the function is inside an object make sure you know what you are doing.*/
-extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of an object.*/
+extern double hoc_call_func(Symbol*,
+                            int narg); /* push first arg first. Warning: if the function is inside
+                                          an object make sure you know what you are doing.*/
+extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of
+                                                               an object.*/
 extern double hoc_ac_;
 extern double hoc_epsilon;
 extern int nrn_inpython_;
@@ -143,10 +146,10 @@ extern void hoc_pushpx(double*);
 extern void hoc_pushs(Symbol*);
 extern void hoc_pushi(int);
 extern double hoc_xpop(void);
-extern Symbol *hoc_spop(void);
+extern Symbol* hoc_spop(void);
 extern double* hoc_pxpop(void);
 extern Object** hoc_objpop(void);
-extern Object*  hoc_pop_object(void);
+extern Object* hoc_pop_object(void);
 extern char** hoc_strpop(void);
 extern int hoc_ipop(void);
 extern void hoc_nopop(void);
@@ -168,7 +171,7 @@ extern char* hoc_object_pathname(Object*);
 extern const char* expand_env_var(const char*);
 extern void check_obj_type(Object*, const char*);
 extern int is_obj_type(Object*, const char*);
-extern void hoc_obj_ref(Object*); /* NULL allowed */
+extern void hoc_obj_ref(Object*);   /* NULL allowed */
 extern void hoc_obj_unref(Object*); /* NULL allowed */
 extern void hoc_dec_refcount(Object**);
 extern Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
@@ -245,9 +248,9 @@ extern void hoc_audit_from_hoc_main1(int, const char**, const char**);
 extern void hoc_audit_from_final_exit(void);
 extern void hoc_audit_from_xopen1(const char*, const char*);
 extern void hoc_xopen_from_audit(const char* fname);
-extern int hoc_retrieving_audit (void);
-extern int hoc_retrieve_audit (int id);
-extern int hoc_saveaudit (void);
+extern int hoc_retrieving_audit(void);
+extern int hoc_retrieve_audit(int id);
+extern int hoc_saveaudit(void);
 
 extern void hoc_close_plot(void);
 extern void ivoc_cleanup(void);
@@ -292,7 +295,7 @@ extern void nrnpy_pass();
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
-extern void* nrn_opaque_obj2pyobj(Object*); // PyObject reference not incremented
+extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
 
 #if defined(__cplusplus)
 }

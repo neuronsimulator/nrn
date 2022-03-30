@@ -20,119 +20,112 @@ Type 3 are at the very beginning of finitialize. ie structure changes
 #include <objcmd.h>
 
 class FInitialHandler;
-declarePtrList(FIHList, FInitialHandler)
-implementPtrList(FIHList, FInitialHandler)
+declarePtrList(FIHList, FInitialHandler) implementPtrList(FIHList, FInitialHandler)
 
-class FInitialHandler {
-public:
-	FInitialHandler(int, const char*, Object*, Object* pyact=NULL);
-	virtual ~FInitialHandler();
-	HocCommand* stmt_;
-	int type_;
-	static FIHList* fihlist_[4];
+    class FInitialHandler {
+  public:
+    FInitialHandler(int, const char*, Object*, Object* pyact = NULL);
+    virtual ~FInitialHandler();
+    HocCommand* stmt_;
+    int type_;
+    static FIHList* fihlist_[4];
 };
 
 void nrn_fihexec(int type);
 void nrn_fihexec(int type) {
-	FIHList* fl = FInitialHandler::fihlist_[type];
-	if (fl) {
-		int i, cnt;
-		cnt = fl->count();
-		for (i=0; i < cnt; ++i) {
-			FInitialHandler* f = fl->item(i);
-			f->stmt_->execute();
-		}
-	}
+    FIHList* fl = FInitialHandler::fihlist_[type];
+    if (fl) {
+        int i, cnt;
+        cnt = fl->count();
+        for (i = 0; i < cnt; ++i) {
+            FInitialHandler* f = fl->item(i);
+            f->stmt_->execute();
+        }
+    }
 }
 
 static double allprint(void* v) {
-	int type, i, cnt;
-	for (type=0; type < 4; ++type) {
-		FIHList* fl = FInitialHandler::fihlist_[type];
-		if (fl && fl->count() > 0) {
-			cnt = fl->count();
-			Printf("Type %d FInitializeHandler statements\n", type);
-			for (i=0; i < cnt; ++i) {
-				FInitialHandler* f = fl->item(i);
-				if (f->stmt_->pyobject()) {
-Printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
-				}else if (f->stmt_->object()) {
-Printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
-				}else{
-					Printf("\t%s\n", f->stmt_->name());
-				}
-			}
-		}
-	}
-	return 0.;
+    int type, i, cnt;
+    for (type = 0; type < 4; ++type) {
+        FIHList* fl = FInitialHandler::fihlist_[type];
+        if (fl && fl->count() > 0) {
+            cnt = fl->count();
+            Printf("Type %d FInitializeHandler statements\n", type);
+            for (i = 0; i < cnt; ++i) {
+                FInitialHandler* f = fl->item(i);
+                if (f->stmt_->pyobject()) {
+                    Printf("\t%s\n", hoc_object_name(f->stmt_->pyobject()));
+                } else if (f->stmt_->object()) {
+                    Printf("\t%s.%s\n", hoc_object_name(f->stmt_->object()), f->stmt_->name());
+                } else {
+                    Printf("\t%s\n", f->stmt_->name());
+                }
+            }
+        }
+    }
+    return 0.;
 }
 
-static Member_func members[] = {
-	"allprint", allprint,
-	0, 0
-};
+static Member_func members[] = {"allprint", allprint, 0, 0};
 
 static void* finithnd_cons(Object*) {
-	int type = 1; // default is after INITIAL blocks are called
-	int ia = 1;
-	if (hoc_is_double_arg(ia)) {
-		type = (int)chkarg(ia, 0, 3);
-		++ia;
-	}
-	char* s = NULL;
-	Object* pyact = NULL;
-	if (hoc_is_object_arg(ia)) {
-		pyact = *hoc_objgetarg(ia);
-		if (!pyact) {
-			hoc_execerror("arg is None", 0);
-		}
-	}else{
-		s =gargstr(ia);
-	}
-	++ia;
-	Object* obj = NULL;
-	if (ifarg(ia)) {
-		obj = *hoc_objgetarg(ia);
-	}
-	FInitialHandler* f = new FInitialHandler(type, s, obj, pyact);
-	return f;
+    int type = 1;  // default is after INITIAL blocks are called
+    int ia = 1;
+    if (hoc_is_double_arg(ia)) {
+        type = (int) chkarg(ia, 0, 3);
+        ++ia;
+    }
+    char* s = NULL;
+    Object* pyact = NULL;
+    if (hoc_is_object_arg(ia)) {
+        pyact = *hoc_objgetarg(ia);
+        if (!pyact) {
+            hoc_execerror("arg is None", 0);
+        }
+    } else {
+        s = gargstr(ia);
+    }
+    ++ia;
+    Object* obj = NULL;
+    if (ifarg(ia)) {
+        obj = *hoc_objgetarg(ia);
+    }
+    FInitialHandler* f = new FInitialHandler(type, s, obj, pyact);
+    return f;
 }
 
 static void finithnd_destruct(void* v) {
-	FInitialHandler* f = (FInitialHandler*)v;
-	delete f;
+    FInitialHandler* f = (FInitialHandler*) v;
+    delete f;
 }
 
 void FInitializeHandler_reg() {
-	class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct,
-		members, NULL, NULL, NULL);
+    class2oc("FInitializeHandler", finithnd_cons, finithnd_destruct, members, NULL, NULL, NULL);
 }
 
 FIHList* FInitialHandler::fihlist_[4];
 
 FInitialHandler::FInitialHandler(int i, const char* s, Object* obj, Object* pyact) {
-	if (!fihlist_[i]) {
-		fihlist_[i] = new FIHList(10);
-	}
-	type_ = i;
-	if (pyact) {
-		stmt_ = new HocCommand(pyact);
-	}else{
-		stmt_ = new HocCommand(s, obj);
-	}
-	fihlist_[i]->append(this);
+    if (!fihlist_[i]) {
+        fihlist_[i] = new FIHList(10);
+    }
+    type_ = i;
+    if (pyact) {
+        stmt_ = new HocCommand(pyact);
+    } else {
+        stmt_ = new HocCommand(s, obj);
+    }
+    fihlist_[i]->append(this);
 }
 
 FInitialHandler::~FInitialHandler() {
-	delete stmt_;
-	int i, cnt;
-	cnt = fihlist_[type_]->count();
-	for (i=0; i < cnt; ++i) {
-		if (fihlist_[type_]->item(i) == this) {
-			fihlist_[type_]->remove(i);
-			return;
-		}
-	}
+    delete stmt_;
+    int i, cnt;
+    cnt = fihlist_[type_]->count();
+    for (i = 0; i < cnt; ++i) {
+        if (fihlist_[type_]->item(i) == this) {
+            fihlist_[type_]->remove(i);
+            return;
+        }
+    }
 }
-
-

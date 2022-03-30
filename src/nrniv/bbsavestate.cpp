@@ -1093,11 +1093,12 @@ typedef std::vector<SEWrap*> SEWrapList;
 static SEWrapList* sewrap_list;
 
 typedef std::unordered_map<int, int> Int2Int;
-static std::unique_ptr<Int2Int> base2spgid{new Int2Int()};  // base gids are the host independent key for a cell
-                             // which was multisplit
+static std::unique_ptr<Int2Int> base2spgid{new Int2Int()};  // base gids are the host independent
+                                                            // key for a cell which was multisplit
 
 typedef std::unordered_map<int, DblList*> Int2DblList;
-static std::unique_ptr<Int2DblList> src2send{new Int2DblList()};;  // gid to presyn send time map
+static std::unique_ptr<Int2DblList> src2send{new Int2DblList()};
+;  // gid to presyn send time map
 static int src2send_cnt;
 // the DblList was needed in place of just a double because there might
 // be several spikes from a single PreSyn (interval between spikes less
@@ -2289,7 +2290,7 @@ static void scatteritems() {
     // to the round-robin host (we do not know the gid owner host yet).
     int i, host;
     src2send_cnt = 0;
-    src2send.reset( new Int2DblList());
+    src2send.reset(new Int2DblList());
     src2send->reserve(1000);
     TQueue* tq = net_cvode_instance_event_queue(nrn_threads);
     // if event on queue at t we will not be able to decide whether or

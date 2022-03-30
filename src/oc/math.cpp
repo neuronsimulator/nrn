@@ -7,23 +7,23 @@
 #include <stdio.h>
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-# include	"hoc.h"
+#include "hoc.h"
 
 
-#define EPS hoc_epsilon
+#define EPS         hoc_epsilon
 #define MAXERRCOUNT 5
 
 int hoc_errno_count;
 
 #if _CRAY
-#define log logl
+#define log   logl
 #define log10 log10l
-#define exp expl
-#define sqrt sqrtl
-#define pow powl
+#define exp   expl
+#define sqrt  sqrtl
+#define pow   powl
 #endif
 
-static double errcheck(double, const char *);
+static double errcheck(double, const char*);
 
 void hoc_atan2(void) {
     double d;
@@ -84,7 +84,7 @@ double integer(double x) {
     }
 }
 
-double errcheck(double d, const char *s)    /* check result of library call */
+double errcheck(double d, const char* s) /* check result of library call */
 {
     if (errno == EDOM) {
         errno = 0;
@@ -140,18 +140,20 @@ int hoc_errno_check(void) {
 #endif
         switch (errno) {
         case EDOM:
-fprintf(stderr, "A math function was called with argument out of domain\n");
+            fprintf(stderr, "A math function was called with argument out of domain\n");
             break;
         case ERANGE:
-fprintf(stderr, "A math function was called that returned an out of range value\n");
+            fprintf(stderr, "A math function was called that returned an out of range value\n");
             break;
 #if LINDA
-/* regularly set by eval() and perhaps other linda commands */
-                case EAGAIN:
-                if (parallel_eagain++ == 0) {
+            /* regularly set by eval() and perhaps other linda commands */
+        case EAGAIN:
+            if (parallel_eagain++ == 0) {
                 perror("oc");
-fprintf(stderr, "oc: This error occurs often from LINDA and thus will not be further reported.\n");
-                }
+                fprintf(stderr,
+                        "oc: This error occurs often from LINDA and thus will not be further "
+                        "reported.\n");
+            }
             break;
 #endif
         default:
@@ -159,7 +161,7 @@ fprintf(stderr, "oc: This error occurs often from LINDA and thus will not be fur
             break;
         }
         if (hoc_errno_count == MAXERRCOUNT) {
-fprintf(stderr, "No more errno warnings during this execution\n");
+            fprintf(stderr, "No more errno warnings during this execution\n");
         }
     }
     ierr = errno;
@@ -167,4 +169,3 @@ fprintf(stderr, "No more errno warnings during this execution\n");
     return ierr;
 #endif
 }
-

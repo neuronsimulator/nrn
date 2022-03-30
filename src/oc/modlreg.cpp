@@ -9,4 +9,3 @@ void modl_reg(void) {} /* dummy modl registration: see hocusr.cpp */
 #if defined(__cplusplus)
 }
 #endif
-

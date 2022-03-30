@@ -1,5 +1,5 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#if HAVE_IV  // to end of file
 
 // nrnbbs has been removed. This is no longer working.
 
@@ -31,106 +31,106 @@ static FILE* help_pipe;
 
 extern const char* hoc_current_xopen();
 
-declareList(CopyStringList, CopyString)
-implementList(CopyStringList, CopyString)
+declareList(CopyStringList, CopyString) implementList(CopyStringList, CopyString)
 
-static CopyStringList* filequeue;
+    static CopyStringList* filequeue;
 
 extern "C" void ivoc_help(const char* s) {
 #if 1
-//	printf("online help not currently working\n");	
-	return;
+    //	printf("online help not currently working\n");
+    return;
 #else
-	char buf[256];
-	strncpy(buf, s+4, 256);
-	char* p;
-	for (p = buf; *p; ++p) { // eliminate trailing newline
-		if (*p == '\n') {
-			*p = '\0';
-			break;
-		}
-	}
-	for (p = buf; *p; ++p) { // start at first character
-		if (!isspace(*p)) {
-			break;
-		}
-	}
-	// queue up the help files if haven't invoked help
-	if (!help_pipe) {
-		if (!filequeue) {
-			filequeue = new CopyStringList();
-		}
-		if (strncmp(p, "?0", 2) == 0) {
-			sprintf(buf, "?0 %s", hoc_current_xopen());
-			String str(buf);
-			filequeue->append(str);
-			return;
-		}else if (strncmp(p, "?1", 2) == 0) {
-			filequeue->append(p);
-			return;
-		}
-	}
-	if (*p) {
-		Oc::help(p);
-	}else{
-		Oc::help("Help_root");
-	}
+    char buf[256];
+    strncpy(buf, s + 4, 256);
+    char* p;
+    for (p = buf; *p; ++p) {  // eliminate trailing newline
+        if (*p == '\n') {
+            *p = '\0';
+            break;
+        }
+    }
+    for (p = buf; *p; ++p) {  // start at first character
+        if (!isspace(*p)) {
+            break;
+        }
+    }
+    // queue up the help files if haven't invoked help
+    if (!help_pipe) {
+        if (!filequeue) {
+            filequeue = new CopyStringList();
+        }
+        if (strncmp(p, "?0", 2) == 0) {
+            sprintf(buf, "?0 %s", hoc_current_xopen());
+            String str(buf);
+            filequeue->append(str);
+            return;
+        } else if (strncmp(p, "?1", 2) == 0) {
+            filequeue->append(p);
+            return;
+        }
+    }
+    if (*p) {
+        Oc::help(p);
+    } else {
+        Oc::help("Help_root");
+    }
 #endif
 }
 
 static void readmore() {
 #if !defined(WIN32) && !defined(MAC)
-	char buf[1024];
-	char* cmd = "ls $NEURONHOME/doc/help/*.help";
-	FILE* p = popen(cmd, "r");
-	if (!p) {
-		printf("couldn't do: %s\n", cmd);
-		return;
-	}
-	while (fgets(buf, 1024, p)) {
-		fprintf(help_pipe, "?0 %s", buf);
-	}
+    char buf[1024];
+    char* cmd = "ls $NEURONHOME/doc/help/*.help";
+    FILE* p = popen(cmd, "r");
+    if (!p) {
+        printf("couldn't do: %s\n", cmd);
+        return;
+    }
+    while (fgets(buf, 1024, p)) {
+        fprintf(help_pipe, "?0 %s", buf);
+    }
 #endif
 }
 
-#if !defined(WIN32) && !defined(MAC) 
+#if !defined(WIN32) && !defined(MAC)
 void Oc::help(const char* s) {
 #if 1
-	printf("online help not currently working\n");
+    printf("online help not currently working\n");
 #else
-	if (help_pipe && ferror(help_pipe)) {
-printf("error on the help pipe, restarting\n\
+    if (help_pipe && ferror(help_pipe)) {
+        printf(
+            "error on the help pipe, restarting\n\
 but will be missing this sessions hoc help text\n");
-		pclose(help_pipe);
-		help_pipe = NULL;
-	}
-	if (!help_pipe) {
-		printf("Starting the help system\n");
-		char buf[200];
-		sprintf(buf, "%s/ochelp", "$NEURONHOME/bin/$CPU");
-		if ((help_pipe = popen(buf, "w")) == (FILE*)0) {
-			printf("Could not start %s\n", buf);
-		}
-//printf("help_pipe = %p\n", help_pipe);
-		readmore();
-		if (filequeue) {
-			for (long i = 0; i < filequeue->count(); ++i) {
-fprintf(help_pipe, "%s\n", filequeue->item_ref(i).string());
-			}
-			filequeue->remove_all();
-		}
-	}
-	if (help_pipe) {
-//printf("|%s|\n", s);
-		if (strncmp(s, "?0", 2) == 0) {
-			char buf[1024];
-			sprintf(buf, "?0 %s", hoc_current_xopen());
-			fprintf(help_pipe, "%s\n", buf);
-		}else{
-			fprintf(help_pipe, "%s\n", s);
-		}
-		fflush(help_pipe);
-	}
+        pclose(help_pipe);
+        help_pipe = NULL;
+    }
+    if (!help_pipe) {
+        printf("Starting the help system\n");
+        char buf[200];
+        sprintf(buf, "%s/ochelp", "$NEURONHOME/bin/$CPU");
+        if ((help_pipe = popen(buf, "w")) == (FILE*) 0) {
+            printf("Could not start %s\n", buf);
+        }
+        // printf("help_pipe = %p\n", help_pipe);
+        readmore();
+        if (filequeue) {
+            for (long i = 0; i < filequeue->count(); ++i) {
+                fprintf(help_pipe, "%s\n", filequeue->item_ref(i).string());
+            }
+            filequeue->remove_all();
+        }
+    }
+    if (help_pipe) {
+        // printf("|%s|\n", s);
+        if (strncmp(s, "?0", 2) == 0) {
+            char buf[1024];
+            sprintf(buf, "?0 %s", hoc_current_xopen());
+            fprintf(help_pipe, "%s\n", buf);
+        } else {
+            fprintf(help_pipe, "%s\n", s);
+        }
+        fflush(help_pipe);
+    }
 #endif
 }
 #endif
@@ -155,7 +155,7 @@ void Oc::help(const char* s) {
 		printf("proper ochelp version not running\n");
 		return;
 	}
-			
+
 #if 1
 	readmore();
 	if (filequeue) {
@@ -179,48 +179,87 @@ sprintf(buf, "%s\n", filequeue->item_ref(i).string());
 #endif
 
 void Oc::helpmode(bool b) {
-	helpmode_ = b;
+    helpmode_ = b;
 }
 
 void Oc::helpmode(Window* w) {
-	if (helpmode()) {
-		if (w->cursor() != Oc::help_cursor()) {
-			w->push_cursor();
-			w->cursor(Oc::help_cursor());
-		}
-	}else{
-		if (w->cursor() == Oc::help_cursor()) {
-			w->pop_cursor();
-		}
-	}
+    if (helpmode()) {
+        if (w->cursor() != Oc::help_cursor()) {
+            w->push_cursor();
+            w->cursor(Oc::help_cursor());
+        }
+    } else {
+        if (w->cursor() == Oc::help_cursor()) {
+            w->pop_cursor();
+        }
+    }
 }
 
-static const CursorPattern question_pat = {
-	 0x0000, 0x0000, 0x0000, 0x7c00, 0xce00, 0x0600, 0x0600, 0x0c00,
-	 0x3000, 0x6000, 0x6000, 0x6000, 0x0000, 0x0000, 0x6000, 0x6000
-};
+static const CursorPattern question_pat = {0x0000,
+                                           0x0000,
+                                           0x0000,
+                                           0x7c00,
+                                           0xce00,
+                                           0x0600,
+                                           0x0600,
+                                           0x0c00,
+                                           0x3000,
+                                           0x6000,
+                                           0x6000,
+                                           0x6000,
+                                           0x0000,
+                                           0x0000,
+                                           0x6000,
+                                           0x6000};
 
 static const CursorPattern question_mask = {
 //    0x0000, 0x0000, 0x7c00, 0xfe00, 0xff00, 0xcf00, 0x0f00, 0x3e00,
 //    0x7c00, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000, 0xf000
 #if !defined(UNIX) && (defined(WIN32) || defined(MAC))
-		0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
-		0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff
 #else
-		0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00,
-		0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00, 0xfe00
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00,
+    0xfe00
 #endif
 };
-
 
 
 Cursor* Oc::help_cursor_;
 
 Cursor* Oc::help_cursor() {
-	if (!Oc::help_cursor_) {
-		help_cursor_ = new Cursor(4, 7, question_pat, question_mask);
-	}
-	return help_cursor_;
+    if (!Oc::help_cursor_) {
+        help_cursor_ = new Cursor(4, 7, question_pat, question_mask);
+    }
+    return help_cursor_;
 }
 
 

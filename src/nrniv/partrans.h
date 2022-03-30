@@ -18,17 +18,17 @@ typedef int sgid_t;
 // must be same as corresponding struct SetupTransferInfo in CoreNEURON
 // see coreneuron/network/partrans.hpp
 struct SetupTransferInfo {
-  std::vector<sgid_t> src_sid;
-  std::vector<int> src_type;
-  std::vector<int> src_index;
+    std::vector<sgid_t> src_sid;
+    std::vector<int> src_type;
+    std::vector<int> src_index;
 
-  std::vector<sgid_t> tar_sid;
-  std::vector<int> tar_type;
-  std::vector<int> tar_index;
+    std::vector<sgid_t> tar_sid;
+    std::vector<int> tar_type;
+    std::vector<int> tar_index;
 };
-                   
+
 extern "C" {
 extern SetupTransferInfo* nrn_get_partrans_setup_info(int, int, size_t);
 }
 
-#endif // partrans_h
+#endif  // partrans_h
