@@ -229,11 +229,12 @@ NetCon
         finished with the section or have saved it as in the syntax block above.
 
     .. warning::
-        The return value of x is .5 unless the source is a membrane potential and 
-        located at 0, or 1, in which case value returned is 0 or 1, respectively. 
-        Therefore it does not necessarily correspond to the actual x value location. 
         If the source was an object, the section is not pushed and the return 
         value is -1. 
+        If the source is not a membrane potential (or an object) the
+	return value is -2. But the section was pushed and `h.pop_section()
+        needs to be called.
+        
 
     .. warning::
 
@@ -255,10 +256,8 @@ NetCon
 
     Description:
 
-        Returns a segment associated with the source variable. However, note that
-        the location is 0.5 unless the source is a membrane potential and 
-        located at 0, or 1, in which case the segment is correct. The section,
-        accessible via `seg.sec` is always correct.
+        Returns a segment associated with the source variable.
+        If the source is not a membrane potential the return value is None.
          
 
 ----

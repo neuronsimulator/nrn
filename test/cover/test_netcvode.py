@@ -84,10 +84,86 @@ def node():
     series(2)
 
 
+class Cell:
+    def __init__(self, id):
+        self.id = id
+        self.soma = h.Section(name="soma", cell=self)
+        self.soma.diam = 10.0
+        self.soma.L = 10.0
+        self.soma.insert("hh")
+
+    def __str__(self):
+        return "Cell" + str(self.id)
+
+
+class Net:
+    # all to all
+    def __init__(self, ncell):
+        cells = [Cell(i) for i in range(ncell)]
+        syns = {}  # {(i,j):(ExpSyn,NetCon)}
+        for i in range(ncell):
+            for j in range(ncell):
+                syn = h.ExpSyn(cells[j].soma(0.5))
+                # spikes via inhibitory rebound and synchronizes
+                syn.e = -120
+                syn.tau = 3
+                nc = h.NetCon(cells[i].soma(0.5)._ref_v, syn, sec=cells[i].soma)
+                nc.delay = 5
+                nc.weight[0] = 0.001
+                nc.threshold = -10
+                syns[(i, j)] = (syn, nc)
+        ic = h.IClamp(cells[0].soma(0.5))
+        ic.delay = 0
+        ic.dur = 0.1
+        ic.amp = 0.3
+        self.cells = cells
+        self.syns = syns
+        self.ic = ic
+
+
+def netcon_access():
+    net = Net(4)
+
+    # NetCon.preloc and NetCon.preseg
+    x = net.syns[(0, 1)][1].preloc()
+    sec = h.cas()
+    h.pop_section()
+    assert sec(x) == net.cells[0].soma(0.5)
+    assert net.syns[(0, 1)][1].preseg() == net.cells[0].soma(0.5)
+    # two more lines of coverage if source is at 0 loc of section
+    nc = h.NetCon(
+        net.cells[0].soma(0)._ref_v, net.syns[(0, 1)][0], sec=net.cells[0].soma
+    )
+    x = nc.preloc()
+    sec = h.cas()
+    h.pop_section()
+    assert sec(x) == net.cells[0].soma(0)
+    assert nc.preseg() == net.cells[0].soma(0)
+    del nc
+    # if NetCon source not a section then return -1 or None
+    acell = h.NetStim()
+    nc = h.NetCon(acell, net.syns[(0, 1)][0])
+    x = nc.preloc()
+    assert x == -1.0  # and no need to pop the section
+    assert nc.preseg() == None
+    del nc, acell
+    # if NetCon source not a voltage but in a section then return -2 or None
+    nc = h.NetCon(
+        net.cells[0].soma(0.5).hh._ref_m, net.syns[(0, 1)][0], sec=net.cells[0].soma
+    )
+    x = nc.preloc()
+    assert x == -2.0
+    h.pop_section()
+    assert nc.preseg() == None
+    del nc
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
+    netcon_access()
 
 
 if __name__ == "__main__":
     test_netcvode_cover()
+    pass
