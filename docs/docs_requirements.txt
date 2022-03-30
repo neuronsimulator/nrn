@@ -11,5 +11,5 @@ plotnine
 numpy
 plotly
 nbsphinx
-# 3.1.0 is buggy
-jinja2!=3.1.0
+# 3.1+ removed jinja2.utils.escape that is used by other tools
+jinja2<3.1
