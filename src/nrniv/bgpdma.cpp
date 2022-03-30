@@ -389,14 +389,13 @@ double nrn_bgp_receive_time(int type) {  // and others
              // bit 3: number of phases, 0 means 1 phase, 1 means 2
              // bit 4: unused (1 used to mean althash used)
              // bit 5: 1 means enqueue separated into two parts for timeing
-        {
-            int method = use_bgpdma_ ? 1 : 0;
-            int p = method + 4 * (n_bgp_interval == 2 ? 1 : 0) + 8 * use_phase2_ +
-                    16 * (0)  // no hash selection, just std::unordered_map
-                    + 32 * ENQUEUE;
-            rt = double(p);
-        }
-        break;
+    {
+        int method = use_bgpdma_ ? 1 : 0;
+        int p = method + 4 * (n_bgp_interval == 2 ? 1 : 0) + 8 * use_phase2_ +
+                16 * (0)  // no hash selection, just std::unordered_map
+                + 32 * ENQUEUE;
+        rt = double(p);
+    } break;
     case 12:  // greatest length multisend
     {
         rt = double(max_multisend_targets);

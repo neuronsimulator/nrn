@@ -323,8 +323,9 @@ HDDEDATA EXPENTRY _export DDECallback(WORD wType,
     case XTYP_ADVREQ:
         hData = DdeCreateDataHandle(idInst,
                                     (LPBYTE) szDDEString,
-                                    //						sizeof ( szDDEString ), hsz1, hsz2, wFmt,
-                                    //0
+                                    //						sizeof ( szDDEString ), hsz1, hsz2,
+                                    // wFmt,
+                                    // 0
                                     //);
                                     sizeof(szDDEString),
                                     0L,
