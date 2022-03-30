@@ -25,4 +25,3 @@ void nrn_set_random_sequence(Rand* r, long seq);
                                                                              uint32_t seq,
                                                                              char which);
 [[deprecated("non-void* overloads are preferred")]] void nrn_set_random_sequence(void* r, int seq);
-

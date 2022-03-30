@@ -734,14 +734,14 @@ void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     return ss;
 }
 void bbss_save_global(void* bbss, char* buffer,
-                                 int sz) {  // call only on host 0
+                      int sz) {  // call only on host 0
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
     io->d(1, nrn_threads->_t);
     delete io;
 }
 void bbss_restore_global(void* bbss, char* buffer,
-                                    int sz) {  // call on all hosts
+                         int sz) {  // call on all hosts
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
     io->d(1, nrn_threads->_t);
