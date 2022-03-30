@@ -1,11 +1,12 @@
 #include <../../nrnconf.h>
-#if HAVE_IV // to end of file
+#if HAVE_IV  // to end of file
 
 #include <ivstream.h>
 #include "epsprint.h"
 
 // ps_prolog copied from InterViews's printer.cpp
-static const char* ps_prolog= "\
+static const char* ps_prolog =
+    "\
 save 20 dict begin\n\
 \n\
 /sf {   % scale /fontName => -  (set current font)\n\
@@ -27,26 +28,24 @@ save 20 dict begin\n\
     ashow\n\
 } def\n\
 \n\
-"; 
+";
 
-EPSPrinter::EPSPrinter(ostream* o) : Printer(o) {}
+EPSPrinter::EPSPrinter(ostream* o)
+    : Printer(o) {}
 
-EPSPrinter::~EPSPrinter(){}
+EPSPrinter::~EPSPrinter() {}
 
-void EPSPrinter::eps_prolog(ostream& out, Coord width, Coord height,
-	const char* creator)
-{
-	
-	int bbw = int(width);
-	int bbh = int(height);
-// need to describe it as EPSF = "encapsulated postscript"
+void EPSPrinter::eps_prolog(ostream& out, Coord width, Coord height, const char* creator) {
+    int bbw = int(width);
+    int bbh = int(height);
+    // need to describe it as EPSF = "encapsulated postscript"
     out << "%!PS-Adobe-2.0 EPSF-1.2\n";
- 
+
     out << "%%Creator: " << creator << "\n";
     out << "%%Pages: atend\n";
 
-// adding a bounding box makes this "encapsulated"
-// bbw and bbh are the width and height of the bounding box 1/72 of an inch
+    // adding a bounding box makes this "encapsulated"
+    // bbw and bbh are the width and height of the bounding box 1/72 of an inch
     out << "%%BoundingBox: 0 0 " << bbw << " " << bbh << "\n";
 
     out << "%%EndComments\n";

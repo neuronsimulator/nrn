@@ -16,7 +16,13 @@ void printlist(List*);
 void c_out_vectorize(const char*);
 void vectorize_substitute(Item* q, char* str);
 void vectorize_do_substitute();
-void solv_diffeq(Item* qsol, Symbol* fun, Symbol* method, int numeqn, int listnum, int steadystate, int btype);
+void solv_diffeq(Item* qsol,
+                 Symbol* fun,
+                 Symbol* method,
+                 int numeqn,
+                 int listnum,
+                 int steadystate,
+                 int btype);
 void add_deriv_imp_list(char*);
 void deriv_used(Symbol* s, Item* q1, Item* q2);
 void massagederiv(Item* q1, Item* q2, Item* q3, Item* q4, int sensused);
@@ -55,7 +61,7 @@ void see_astmt(Item* q1, Item* q2);
 void see_ostmt();
 void prn(Item* q1, Item* q2);
 void cvode_kinetic(Item* qsol, Symbol* fun, int numeqn, int listnum);
-void single_channel(Item* qsol, Symbol*  fun, int numeqn, int listnum);
+void single_channel(Item* qsol, Symbol* fun, int numeqn, int listnum);
 void freelist(List**);
 void remove(Item*);
 void deltokens(Item*, Item*);
@@ -78,7 +84,7 @@ void nrn_list(Item*, Item*);
 void bablk(int ba, int type, Item* q1, Item* q2);
 void nrn_use(Item* q1, Item* q2, Item* q3, Item* q4);
 void nrn_var_assigned(Symbol*);
-void slist_data(Symbol* s, int indx, int findx) ;
+void slist_data(Symbol* s, int indx, int findx);
 void out_nt_ml_frag(List*);
 void cvode_emit_interface();
 void cvode_proced_emit();
@@ -96,7 +102,15 @@ void parm_array_install(Symbol* n, char* num, char* units, char* limits, int ind
 void parminstall(Symbol* n, char* num, char* units, char* limits);
 void steppedinstall(Symbol* n, Item* q1, Item* q2, char* units);
 void indepinstall(Symbol* n, char* from, char* to, char* with, Item* qstart, char* units, int scop);
-void depinstall(int type, Symbol* n, int index, char* from, char* to, char* units, Item* qs, int makeconst, char* abstol);
+void depinstall(int type,
+                Symbol* n,
+                int index,
+                char* from,
+                char* to,
+                char* units,
+                Item* qs,
+                int makeconst,
+                char* abstol);
 void statdefault(Symbol* n, int index, char* units, Item* qs, int makeconst);
 void vectorize_scan_for_func(Item* q1, Item* q2);
 void defarg(Item* q1, Item* q2);

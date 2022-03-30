@@ -3,7 +3,7 @@
 
 
 extern void* (*p_java2nrn_cons)(Object*);
-extern void  (*p_java2nrn_destruct)(void* opaque_java_object);
+extern void (*p_java2nrn_destruct)(void* opaque_java_object);
 extern double (*p_java2nrn_dmeth)(Object* ho, Symbol* method);
 extern char** (*p_java2nrn_smeth)(Object* ho, Symbol* method);
 extern Object** (*p_java2nrn_ometh)(Object* ho, Symbol* method);

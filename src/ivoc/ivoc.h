@@ -22,62 +22,69 @@ class Cursor;
 struct Object;
 
 class HandleStdin: public IOHandler {
-public:
-	HandleStdin();
-        virtual int inputReady(int fd);
-        virtual int  exceptionRaised(int fd);
-	bool stdinSeen_;
-	bool acceptInput_; 
+  public:
+    HandleStdin();
+    virtual int inputReady(int fd);
+    virtual int exceptionRaised(int fd);
+    bool stdinSeen_;
+    bool acceptInput_;
 };
 
 struct Symbol;
 struct Symlist;
 
 class Oc {
-public:
-	Oc();
-	Oc(Session*, const char* pname = NULL, const char** env = NULL);
-	virtual ~Oc();
+  public:
+    Oc();
+    Oc(Session*, const char* pname = NULL, const char** env = NULL);
+    virtual ~Oc();
 
-	int run(int argc, const char** argv);
-	int run(const char *, bool show_err_mes = true);
+    int run(int argc, const char** argv);
+    int run(const char*, bool show_err_mes = true);
 
-	Symbol* parseExpr(const char *, Symlist** = NULL);
-	double runExpr(Symbol*);
-	static bool valid_expr(Symbol*);
-	static bool valid_stmt(const char*, Object* ob = NULL);
-	const char* name(Symbol*);
-	
-	void notifyHocValue(); // loops over HocValueBS buttonstates.
+    Symbol* parseExpr(const char*, Symlist** = NULL);
+    double runExpr(Symbol*);
+    static bool valid_expr(Symbol*);
+    static bool valid_stmt(const char*, Object* ob = NULL);
+    const char* name(Symbol*);
 
-	void notify(); // called on doNotify from oc
-	void notify_attach(Observer*); // add to notify list
-	void notify_detach(Observer*);
-		
-	void notify_freed(void (*pf)(void*, int)); // register a callback func
-	void notify_when_freed(void* p, Observer*);
-	void notify_when_freed(double* p, Observer*);
-	void notify_pointer_disconnect(Observer*);
-	
-	static Session* getSession();
-	static int getStdinSeen() {return handleStdin_->stdinSeen_;}
-	static void setStdinSeen(bool i) {handleStdin_->stdinSeen_ = i;}
-	static bool setAcceptInput(bool);
-	static bool helpmode() {return helpmode_;}
-	static void helpmode(bool);
-	static void helpmode(Window*);
-	static void help(const char*);
+    void notifyHocValue();  // loops over HocValueBS buttonstates.
 
-	static ostream* save_stream;
-	static void cleanup();
-private:
-	static int refcnt_;
-	static Session* session_;
-	static HandleStdin* handleStdin_;
-	static bool helpmode_;
-	static Cursor* help_cursor();
-	static Cursor* help_cursor_;
-	static Observable* notify_change_;
+    void notify();                  // called on doNotify from oc
+    void notify_attach(Observer*);  // add to notify list
+    void notify_detach(Observer*);
+
+    void notify_freed(void (*pf)(void*, int));  // register a callback func
+    void notify_when_freed(void* p, Observer*);
+    void notify_when_freed(double* p, Observer*);
+    void notify_pointer_disconnect(Observer*);
+
+    static Session* getSession();
+    static int getStdinSeen() {
+        return handleStdin_->stdinSeen_;
+    }
+    static void setStdinSeen(bool i) {
+        handleStdin_->stdinSeen_ = i;
+    }
+    static bool setAcceptInput(bool);
+    static bool helpmode() {
+        return helpmode_;
+    }
+    static void helpmode(bool);
+    static void helpmode(Window*);
+    static void help(const char*);
+
+    static ostream* save_stream;
+    static void cleanup();
+
+  private:
+    static int refcnt_;
+    static Session* session_;
+    static HandleStdin* handleStdin_;
+    static bool helpmode_;
+    static Cursor* help_cursor();
+    static Cursor* help_cursor_;
+    static Observable* notify_change_;
 };
 
 #endif

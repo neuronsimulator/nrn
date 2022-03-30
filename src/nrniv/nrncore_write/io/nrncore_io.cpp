@@ -6,11 +6,11 @@
 #include "nrnmpi.h"
 #include "section.h"
 #include "hocdec.h"
-#include "ocfile.h" // for idDirExist and makePath
-#include "nrnran123.h" // globalindex written to globals.dat
+#include "ocfile.h"     // for idDirExist and makePath
+#include "nrnran123.h"  // globalindex written to globals.dat
 #include "cvodeobj.h"
-#include "netcvode.h" // for nrnbbcore_vecplay_write
-#include "vrecitem.h" // for nrnbbcore_vecplay_write
+#include "netcvode.h"  // for nrnbbcore_vecplay_write
+#include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include <fstream>
 #include <sstream>
 #include "nrnsection_mapping.h"
@@ -22,7 +22,8 @@ extern NetCvode* net_cvode_instance;
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 
 int chkpnt;
-const char *bbcore_write_version = "1.5"; // Generalize POINTER to allow pointing to any RANGE variable
+const char* bbcore_write_version = "1.5";  // Generalize POINTER to allow pointing to any RANGE
+                                           // variable
 
 /// create directory with given path
 void create_dir_path(const std::string& path) {
@@ -40,23 +41,25 @@ void create_dir_path(const std::string& path) {
 #endif
 }
 
-std::string get_write_path(){
-    std::string path("."); // default path
+std::string get_write_path() {
+    std::string path(".");  // default path
     if (ifarg(1)) {
         path = hoc_gargstr(1);
     }
     return path;
 }
 
-std::string get_filename(const std::string& path, std::string file_name){
-    std::string fname(path+'/'+file_name);
+std::string get_filename(const std::string& path, std::string file_name) {
+    std::string fname(path + '/' + file_name);
     nrn_assert(fname.size() < 1024);
     return fname;
 }
 
 
 void write_memb_mech_types(const char* fname) {
-    if (nrnmpi_myid > 0) { return; } // only rank 0 writes this file
+    if (nrnmpi_myid > 0) {
+        return;
+    }  // only rank 0 writes this file
     std::ofstream fs(fname);
     if (!fs.good()) {
         hoc_execerror("nrncore_write write_mem_mech_types could not open for writing: %s\n", fname);
@@ -67,11 +70,12 @@ void write_memb_mech_types(const char* fname) {
 
 // format is name value
 // with last line of 0 0
-//In case of an array, the line is name[num] with num lines following with
+// In case of an array, the line is name[num] with num lines following with
 // one value per line.  Values are %.20g format.
 void write_globals(const char* fname) {
-
-    if (nrnmpi_myid > 0) { return; } // only rank 0 writes this file
+    if (nrnmpi_myid > 0) {
+        return;
+    }  // only rank 0 writes this file
 
     FILE* f = fopen(fname, "w");
     if (!f) {
@@ -80,8 +84,8 @@ void write_globals(const char* fname) {
 
     fprintf(f, "%s\n", bbcore_write_version);
     const char* name;
-    int size; // 0 means scalar, is 0 will still allocated one element for val.
-    double* val = NULL; // Allocated by new in get_global_item, must be delete [] here.
+    int size;            // 0 means scalar, is 0 will still allocated one element for val.
+    double* val = NULL;  // Allocated by new in get_global_item, must be delete [] here.
     // Note that it is possible for get_global_dbl_item to return NULL but
     // name, size, and val must still be handled if val != NULL
     for (void* sp = NULL;;) {
@@ -89,13 +93,13 @@ void write_globals(const char* fname) {
         if (val) {
             if (size) {
                 fprintf(f, "%s[%d]\n", name, size);
-                for (int i=0; i < size; ++i) {
+                for (int i = 0; i < size; ++i) {
                     fprintf(f, "%.20g\n", val[i]);
                 }
-            }else{
+            } else {
                 fprintf(f, "%s %.20g\n", name, val[0]);
             }
-            delete [] val;
+            delete[] val;
             val = NULL;
         }
         if (!sp) {
@@ -113,7 +117,9 @@ void write_globals(const char* fname) {
 
 void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     char fname[1000];
-    if (cg.n_output <= 0) { return; }
+    if (cg.n_output <= 0) {
+        return;
+    }
     assert(cg.group_id >= 0);
     nrn_assert(snprintf(fname, 1000, "%s/%d_1.dat", path, cg.group_id) < 1000);
     FILE* f = fopen(fname, "wb");
@@ -122,14 +128,20 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     }
     fprintf(f, "%s\n", bbcore_write_version);
 
-    //nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
+    // nrnthread_dat1(int tid, int& n_presyn, int& n_netcon, int*& output_gid, int*& netcon_srcgid);
     fprintf(f, "%d npresyn\n", cg.n_presyn);
     fprintf(f, "%d nnetcon\n", cg.n_netcon);
     writeint(cg.output_gid, cg.n_presyn);
     writeint(cg.netcon_srcgid, cg.n_netcon);
 
-    if (cg.output_gid) {delete [] cg.output_gid; cg.output_gid = NULL; }
-    if (cg.netcon_srcgid) {delete [] cg.netcon_srcgid; cg.netcon_srcgid = NULL; }
+    if (cg.output_gid) {
+        delete[] cg.output_gid;
+        cg.output_gid = NULL;
+    }
+    if (cg.netcon_srcgid) {
+        delete[] cg.netcon_srcgid;
+        cg.netcon_srcgid = NULL;
+    }
     fclose(f);
 
     nrn_assert(snprintf(fname, 1000, "%s/%d_2.dat", path, cg.group_id) < 1000);
@@ -141,10 +153,18 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%s\n", bbcore_write_version);
 
     // sizes and total data count
-    int ngid, n_real_gid, nnode, ndiam, nmech, *tml_index, *ml_nodecount, nidata,
-            nvdata, nweight;
-    nrnthread_dat2_1(nt.id, ngid, n_real_gid, nnode, ndiam,
-                     nmech, tml_index, ml_nodecount, nidata, nvdata, nweight);
+    int ngid, n_real_gid, nnode, ndiam, nmech, *tml_index, *ml_nodecount, nidata, nvdata, nweight;
+    nrnthread_dat2_1(nt.id,
+                     ngid,
+                     n_real_gid,
+                     nnode,
+                     ndiam,
+                     nmech,
+                     tml_index,
+                     ml_nodecount,
+                     nidata,
+                     nvdata,
+                     nweight);
 
     fprintf(f, "%d ngid\n", ngid);
     fprintf(f, "%d n_real_gid\n", n_real_gid);
@@ -152,19 +172,20 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     fprintf(f, "%d ndiam\n", ndiam);
     fprintf(f, "%d nmech\n", nmech);
 
-    for (int i=0; i < nmech; ++i) {
+    for (int i = 0; i < nmech; ++i) {
         fprintf(f, "%d\n", tml_index[i]);
         fprintf(f, "%d\n", ml_nodecount[i]);
     }
-    delete [] tml_index;
-    delete [] ml_nodecount;
+    delete[] tml_index;
+    delete[] ml_nodecount;
 
     fprintf(f, "%d nidata\n", 0);
     fprintf(f, "%d nvdata\n", nvdata);
     fprintf(f, "%d nweight\n", nweight);
 
     // data
-    int *v_parent_index=NULL; double *a=NULL, *b=NULL, *area=NULL, *v=NULL, *diamvec=NULL;
+    int* v_parent_index = NULL;
+    double *a = NULL, *b = NULL, *area = NULL, *v = NULL, *diamvec = NULL;
     nrnthread_dat2_2(nt.id, v_parent_index, a, b, area, v, diamvec);
     assert(cg.n_real_output == nt.ncell);
     writeint(nt._v_parent_index, nt.end);
@@ -174,7 +195,7 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     writedbl(nt._actual_v, nt.end);
     if (cg.ndiam) {
         writedbl(diamvec, nt.end);
-        delete [] diamvec;
+        delete[] diamvec;
     }
 
     // mechanism data
@@ -182,7 +203,8 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     MlWithArt& mla = cg.mlwithart;
     for (size_t i = 0; i < mla.size(); ++i) {
         int type = mla[i].first;
-        int *nodeindices=NULL, *pdata=NULL; double* data=NULL;
+        int *nodeindices = NULL, *pdata = NULL;
+        double* data = NULL;
         std::vector<int> pointer2type;
         nrnthread_dat2_mech(nt.id, i, dsz_inst, nodeindices, data, pdata, pointer2type);
         Memb_list* ml = mla[i].second;
@@ -193,13 +215,13 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
         }
         writedbl(data, n * sz);
         if (nrn_is_artificial_[type]) {
-            delete [] data;
+            delete[] data;
         }
         sz = bbcore_dparam_size[type];
         if (pdata) {
             ++dsz_inst;
             writeint(pdata, n * sz);
-            delete [] pdata;
+            delete[] pdata;
             sz = pointer2type.size();
             fprintf(f, "%d npointer\n", int(sz));
             if (sz > 0) {
@@ -210,24 +232,30 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
 
     int *output_vindex, *netcon_pnttype, *netcon_pntindex;
     double *output_threshold, *weights, *delays;
-    nrnthread_dat2_3(nt.id, nweight, output_vindex, output_threshold,
-                     netcon_pnttype, netcon_pntindex, weights, delays);
+    nrnthread_dat2_3(nt.id,
+                     nweight,
+                     output_vindex,
+                     output_threshold,
+                     netcon_pnttype,
+                     netcon_pntindex,
+                     weights,
+                     delays);
     writeint(output_vindex, cg.n_presyn);
-    delete [] output_vindex;
+    delete[] output_vindex;
     writedbl(output_threshold, cg.n_real_output);
-    delete [] output_threshold;
+    delete[] output_threshold;
 
     // connections
     int n = cg.n_netcon;
-//printf("n_netcon=%d nweight=%d\n", n, nweight);
+    // printf("n_netcon=%d nweight=%d\n", n, nweight);
     writeint(netcon_pnttype, n);
-    delete [] netcon_pnttype;
+    delete[] netcon_pnttype;
     writeint(netcon_pntindex, n);
-    delete [] netcon_pntindex;
+    delete[] netcon_pntindex;
     writedbl(weights, nweight);
-    delete [] weights;
+    delete[] weights;
     writedbl(delays, n);
-    delete [] delays;
+    delete[] delays;
 
     // special handling for BBCOREPOINTER
     // how many mechanisms require it
@@ -238,18 +266,18 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
     for (size_t i = 0; i < mla.size(); ++i) {
         int type = mla[i].first;
         if (nrn_bbcore_write_[type]) {
-            int icnt, dcnt, *iArray; double* dArray;
+            int icnt, dcnt, *iArray;
+            double* dArray;
             nrnthread_dat2_corepointer_mech(nt.id, type, icnt, dcnt, iArray, dArray);
             fprintf(f, "%d\n", type);
             fprintf(f, "%d\n%d\n", icnt, dcnt);
             if (icnt) {
                 writeint(iArray, icnt);
-                delete [] iArray;
+                delete[] iArray;
             }
-            if (dcnt)
-            {
+            if (dcnt) {
                 writedbl(dArray, dcnt);
-                delete [] dArray;
+                delete[] dArray;
             }
         }
     }
@@ -258,8 +286,6 @@ void write_nrnthread(const char* path, NrnThread& nt, CellGroup& cg) {
 
     fclose(f);
 }
-
-
 
 
 void writeint_(int* p, size_t size, FILE* f) {
@@ -274,8 +300,8 @@ void writedbl_(double* p, size_t size, FILE* f) {
     assert(n == size);
 }
 
-#define writeint(p,size) writeint_(p, size, f)
-#define writedbl(p,size) writedbl_(p, size, f)
+#define writeint(p, size) writeint_(p, size, f)
+#define writedbl(p, size) writedbl_(p, size, f)
 
 void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f) {
     fprintf(f, "chkpnt %d\n", chkpnt++);
@@ -288,10 +314,10 @@ void write_contiguous_art_data(double** data, int nitem, int szitem, FILE* f) {
 }
 
 double* contiguous_art_data(double** data, int nitem, int szitem) {
-    double* d1 = new double[nitem*szitem];
+    double* d1 = new double[nitem * szitem];
     int k = 0;
     for (int i = 0; i < nitem; ++i) {
-        for (int j=0; j < szitem; ++j) {
+        for (int j = 0; j < szitem; ++j) {
             d1[k++] = data[i][j];
         }
     }
@@ -306,10 +332,12 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
     nrnthread_dat2_vecplay(nt.id, indices);
     fprintf(f, "%d VecPlay instances\n", int(indices.size()));
     for (auto i: indices) {
-        int vptype, mtype, ix, sz; double *yvec, *tvec;
-        // the 'if' is not necessary as item i is certainly in this thread 
+        int vptype, mtype, ix, sz;
+        double *yvec, *tvec;
+        // the 'if' is not necessary as item i is certainly in this thread
         int unused = 0;
-        if (nrnthread_dat2_vecplay_inst(nt.id, i, vptype, mtype, ix, sz, yvec, tvec, unused, unused, unused)) {
+        if (nrnthread_dat2_vecplay_inst(
+                nt.id, i, vptype, mtype, ix, sz, yvec, tvec, unused, unused, unused)) {
             fprintf(f, "%d\n", vptype);
             fprintf(f, "%d\n", mtype);
             fprintf(f, "%d\n", ix);
@@ -321,15 +349,14 @@ void nrnbbcore_vecplay_write(FILE* f, NrnThread& nt) {
 }
 
 
-
 static void fgets_no_newline(char* s, int size, FILE* f) {
     if (fgets(s, size, f) == NULL) {
         fclose(f);
         hoc_execerror("Error reading line in files.dat", strerror(errno));
     }
     int n = strlen(s);
-    if (n && s[n-1] == '\n') {
-        s[n-1] = '\0';
+    if (n && s[n - 1] == '\n') {
+        s[n - 1] = '\0';
     }
 }
 
@@ -345,14 +372,13 @@ static void fgets_no_newline(char* s, int size, FILE* f) {
  *     ...
  *     idN
  */
-void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
-{
+void write_nrnthread_task(const char* path, CellGroup* cgs, bool append) {
     // ids of datasets that will be created
     std::vector<int> iSend;
 
     // ignore empty nrnthread (has -1 id)
     for (int iInt = 0; iInt < nrn_nthread; ++iInt) {
-        if ( cgs[iInt].group_id >= 0) {
+        if (cgs[iInt].group_id >= 0) {
             iSend.push_back(cgs[iInt].group_id);
         }
     }
@@ -372,7 +398,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
     // gather number of datasets from each task
     if (nrnmpi_numprocs > 1) {
         nrnmpi_int_gather(&num_datasets, begin_ptr(iRecv), 1, 0);
-    }else{
+    } else {
         iRecv[0] = num_datasets;
     }
 #else
@@ -384,8 +410,7 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
 
     // calculate mpi displacements
     if (nrnmpi_myid == 0) {
-        for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt)
-        {
+        for (int iInt = 0; iInt < nrnmpi_numprocs; ++iInt) {
             iDispl[iInt] = iSumThread;
             iSumThread += iRecv[iInt];
         }
@@ -397,10 +422,15 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
 #ifdef NRNMPI
     // gather ids into the array with correspondent offsets
     if (nrnmpi_numprocs > 1) {
-        nrnmpi_int_gatherv(begin_ptr(iSend), num_datasets, begin_ptr(iRecvVec), begin_ptr(iRecv), begin_ptr(iDispl), 0);
-    }else{
+        nrnmpi_int_gatherv(begin_ptr(iSend),
+                           num_datasets,
+                           begin_ptr(iRecvVec),
+                           begin_ptr(iRecv),
+                           begin_ptr(iDispl),
+                           0);
+    } else {
         for (int iInt = 0; iInt < num_datasets; ++iInt) {
-          iRecvVec[iInt] = iSend[iInt];
+            iRecvVec[iInt] = iSend[iInt];
         }
     }
 #else
@@ -409,7 +439,8 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
     }
 #endif
 
-    /// Writing the file with task, correspondent number of threads and list of correspondent first gids
+    /// Writing the file with task, correspondent number of threads and list of correspondent first
+    /// gids
     if (nrnmpi_myid == 0) {
         // If append is false, begin a new files.dat (overwrite old if exists).
         // If append is true, append groupids to existing files.dat.
@@ -422,31 +453,32 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
 
         std::string filename = ss.str();
 
-        FILE *fp = NULL;
-        if (append == false) { // start a new file
+        FILE* fp = NULL;
+        if (append == false) {  // start a new file
             fp = fopen(filename.c_str(), "w");
             if (!fp) {
                 hoc_execerror("nrncore_write: could not open for writing:", filename.c_str());
             }
-        } else { // modify groupid number and append to existing file
+        } else {  // modify groupid number and append to existing file
             fp = fopen(filename.c_str(), "r+");
             if (!fp) {
-                hoc_execerror("nrncore_write append: could not open for modifying:",  filename.c_str());
+                hoc_execerror("nrncore_write append: could not open for modifying:",
+                              filename.c_str());
             }
-        } 
+        }
 
         constexpr int max_line_len = 20;
-        char line[max_line_len]; // All lines are actually no larger than %10d.
+        char line[max_line_len];  // All lines are actually no larger than %10d.
 
         if (append) {
             // verify same version
             fgets_no_newline(line, max_line_len, fp);
             // unfortunately line has the newline
             size_t n = strlen(bbcore_write_version);
-            if ((strlen(line) != n)
-                || strncmp(line, bbcore_write_version, n) != 0) {
+            if ((strlen(line) != n) || strncmp(line, bbcore_write_version, n) != 0) {
                 fclose(fp);
-                hoc_execerror("nrncore_write append: existing files.dat has inconsisten version:", line);
+                hoc_execerror("nrncore_write append: existing files.dat has inconsisten version:",
+                              line);
             }
         } else {
             fprintf(fp, "%s\n", bbcore_write_version);
@@ -458,7 +490,10 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
                 fgets_no_newline(line, max_line_len, fp);
                 if (strcmp(line, "-1") != 0) {
                     fclose(fp);
-                    hoc_execerror("nrncore_write append: existing files.dat does not have a gap junction indicator\n", NULL);
+                    hoc_execerror(
+                        "nrncore_write append: existing files.dat does not have a gap junction "
+                        "indicator\n",
+                        NULL);
                 }
             } else {
                 fprintf(fp, "-1\n");
@@ -477,7 +512,10 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
             }
             if (oldval == -1) {
                 fclose(fp);
-                hoc_execerror("nrncore_write append: existing files.dat has gap junction indicator where we expected a groupgid count.", NULL);
+                hoc_execerror(
+                    "nrncore_write append: existing files.dat has gap junction indicator where we "
+                    "expected a groupgid count.",
+                    NULL);
             }
             iSumThread += oldval;
             fseek(fp, pos, SEEK_SET);
@@ -499,14 +537,13 @@ void write_nrnthread_task(const char* path, CellGroup* cgs, bool append)
 }
 
 /** @brief dump mapping information to gid_3.dat file */
-void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
-
+void nrn_write_mapping_info(const char* path, int gid, NrnMappingInfo& minfo) {
     /** full path of mapping file */
     std::stringstream ss;
     ss << path << "/" << gid << "_3.dat";
 
     std::string fname(ss.str());
-    FILE *f = fopen(fname.c_str(), "w");
+    FILE* f = fopen(fname.c_str(), "w");
 
     if (!f) {
         hoc_execerror("nrnbbcore_write could not open for writing:", fname.c_str());
@@ -518,19 +555,19 @@ void nrn_write_mapping_info(const char *path, int gid, NrnMappingInfo &minfo) {
     fprintf(f, "%zd\n", minfo.size());
 
     /** all cells mapping information in NrnThread */
-    for(size_t i = 0; i < minfo.size(); i++) {
-        CellMapping *c = minfo.mapping[i];
+    for (size_t i = 0; i < minfo.size(); i++) {
+        CellMapping* c = minfo.mapping[i];
 
         /** gid, #section, #compartments,  #sectionlists */
         fprintf(f, "%d %d %d %zd\n", c->gid, c->num_sections(), c->num_segments(), c->size());
 
-        for(size_t j = 0; j < c->size(); j++) {
+        for (size_t j = 0; j < c->size(); j++) {
             SecMapping* s = c->secmapping[j];
             /** section list name, number of sections, number of segments */
             fprintf(f, "%s %d %zd\n", s->name.c_str(), s->nsec, s->size());
 
             /** section - segment mapping */
-            if(s->size()) {
+            if (s->size()) {
                 writeint(&(s->sections.front()), s->size());
                 writeint(&(s->segments.front()), s->size());
             }

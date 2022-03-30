@@ -7,7 +7,7 @@
 #include <nrnmpi.h>
 
 #if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM) // the standard ...
+#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
 #include <set>
 #include <string>
@@ -17,12 +17,12 @@
 #endif
 
 struct ltint {
-	bool operator() (int i, int j) const {
-		return i < j;
-	}
+    bool operator()(int i, int j) const {
+        return i < j;
+    }
 };
 
-class KeepArgs : public std::map<int, const MessageValue*, ltint>{};
+class KeepArgs: public std::map<int, const MessageValue*, ltint> {};
 
 #endif
 
@@ -31,193 +31,220 @@ static MessageValue* taking_;
 static BBSLocalServer* server_;
 
 BBSLocal::BBSLocal() {
-	if (!server_) {
-		server_ = new BBSLocalServer();
-		posting_ = nil;
-		taking_ = nil;
-	}
-	start();
+    if (!server_) {
+        server_ = new BBSLocalServer();
+        posting_ = nil;
+        taking_ = nil;
+    }
+    start();
 #if defined(HAVE_STL)
-	keepargs_ = new KeepArgs();
+    keepargs_ = new KeepArgs();
 #endif
 }
 
 BBSLocal::~BBSLocal() {
-	// need to unref anything in keepargs_;
+    // need to unref anything in keepargs_;
 #if defined(HAVE_STL)
-	delete keepargs_;
+    delete keepargs_;
 #endif
 }
 
-void BBSLocal::context() { }
+void BBSLocal::context() {}
 
 void BBSLocal::perror(const char* s) {
-	hoc_execerror("BBSLocal error in ", s);
+    hoc_execerror("BBSLocal error in ", s);
 }
 
 int BBSLocal::upkint() {
-	int i;
-	if (!taking_ || taking_->upkint(&i)) perror("upkint");
-	return i;
+    int i;
+    if (!taking_ || taking_->upkint(&i))
+        perror("upkint");
+    return i;
 }
 
 double BBSLocal::upkdouble() {
-	double x;
-	if(!taking_ || taking_->upkdouble(&x)) { perror("upkdouble"); }
-	return x;
+    double x;
+    if (!taking_ || taking_->upkdouble(&x)) {
+        perror("upkdouble");
+    }
+    return x;
 }
 
 void BBSLocal::upkvec(int n, double* x) {
-	if(!taking_ || taking_->upkvec(n, x)) { perror("upkdouble"); }
+    if (!taking_ || taking_->upkvec(n, x)) {
+        perror("upkdouble");
+    }
 }
 
 char* BBSLocal::upkstr() {
-	int len;
-	char* s;
-	if( !taking_ || taking_->upkint(&len)) { perror("upkstr length"); }
-	s = new char[len+1];
-	if (taking_->upkstr(s)) { perror("upkstr string"); }
-	return s;
+    int len;
+    char* s;
+    if (!taking_ || taking_->upkint(&len)) {
+        perror("upkstr length");
+    }
+    s = new char[len + 1];
+    if (taking_->upkstr(s)) {
+        perror("upkstr string");
+    }
+    return s;
 }
 
 char* BBSLocal::upkpickle(size_t* n) {
-	int len;
-	char* s;
-	if( !taking_ || taking_->upkint(&len)) { perror("upkpickle length"); }
-	s = new char[len];
-	if (taking_->upkpickle(s, n)) { perror("upkpickle data"); }
-	assert(*n == len);
-	return s;
+    int len;
+    char* s;
+    if (!taking_ || taking_->upkint(&len)) {
+        perror("upkpickle length");
+    }
+    s = new char[len];
+    if (taking_->upkpickle(s, n)) {
+        perror("upkpickle data");
+    }
+    assert(*n == len);
+    return s;
 }
 
 void BBSLocal::pkbegin() {
-	Resource::unref(posting_);
-	posting_ = new MessageValue();
-	posting_->ref();
+    Resource::unref(posting_);
+    posting_ = new MessageValue();
+    posting_->ref();
 }
 
 void BBSLocal::pkint(int i) {
-	if( !posting_ || posting_->pkint(i)) { perror("pkint"); }
+    if (!posting_ || posting_->pkint(i)) {
+        perror("pkint");
+    }
 }
 
 void BBSLocal::pkdouble(double x) {
-	if( !posting_ || posting_->pkdouble(x)) { perror("pkdouble"); }
+    if (!posting_ || posting_->pkdouble(x)) {
+        perror("pkdouble");
+    }
 }
 
 void BBSLocal::pkvec(int n, double* x) {
-	if( !posting_ || posting_->pkvec(n, x)) { perror("pkdouble"); }
+    if (!posting_ || posting_->pkvec(n, x)) {
+        perror("pkdouble");
+    }
 }
 
 void BBSLocal::pkstr(const char* s) {
-	if ( !posting_ || posting_->pkint(strlen(s))) { perror("pkstr length"); }
-	if ( !posting_ || posting_->pkstr(s)) { perror("pkstr string"); }
+    if (!posting_ || posting_->pkint(strlen(s))) {
+        perror("pkstr length");
+    }
+    if (!posting_ || posting_->pkstr(s)) {
+        perror("pkstr string");
+    }
 }
 
 void BBSLocal::pkpickle(const char* s, size_t n) {
-	if ( !posting_ || posting_->pkint(n)) { perror("pkpickle size"); }
-	if ( !posting_ || posting_->pkpickle(s, n)) { perror("pkpickle data"); }
+    if (!posting_ || posting_->pkint(n)) {
+        perror("pkpickle size");
+    }
+    if (!posting_ || posting_->pkpickle(s, n)) {
+        perror("pkpickle data");
+    }
 }
 
 void BBSLocal::post(const char* key) {
-	server_->post(key, posting_);
-	Resource::unref(posting_);
-	posting_ = nil;
+    server_->post(key, posting_);
+    Resource::unref(posting_);
+    posting_ = nil;
 }
 
 bool BBSLocal::look_take(const char* key) {
-	Resource::unref(taking_);
-	taking_ = nil;
-	bool b = server_->look_take(key, &taking_);
-	return b;
+    Resource::unref(taking_);
+    taking_ = nil;
+    bool b = server_->look_take(key, &taking_);
+    return b;
 }
 
 bool BBSLocal::look(const char* key) {
-	Resource::unref(taking_);
-	taking_ = nil;
-	bool b = server_->look(key, &taking_);
-	return b;
+    Resource::unref(taking_);
+    taking_ = nil;
+    bool b = server_->look(key, &taking_);
+    return b;
 }
 
-void BBSLocal::take(const char* key) { // blocking
-	int id;
-	for (;;) {
-		Resource::unref(taking_);
-		taking_ = nil;
-		if (server_->look_take(key, &taking_)) {
-			return;
-		} else if ((id = server_->look_take_todo(&taking_)) != 0) {
-			execute(id);
-		} else {
-			perror("take blocking");
-		}
-	}
+void BBSLocal::take(const char* key) {  // blocking
+    int id;
+    for (;;) {
+        Resource::unref(taking_);
+        taking_ = nil;
+        if (server_->look_take(key, &taking_)) {
+            return;
+        } else if ((id = server_->look_take_todo(&taking_)) != 0) {
+            execute(id);
+        } else {
+            perror("take blocking");
+        }
+    }
 }
 
 void BBSLocal::post_todo(int parentid) {
-	server_->post_todo(parentid, posting_);
-	Resource::unref(posting_);
-	posting_ = nil;
+    server_->post_todo(parentid, posting_);
+    Resource::unref(posting_);
+    posting_ = nil;
 }
 
 void BBSLocal::post_result(int id) {
-	server_->post_result(id, posting_);
-	Resource::unref(posting_);
-	posting_ = nil;
+    server_->post_result(id, posting_);
+    Resource::unref(posting_);
+    posting_ = nil;
 }
 
 int BBSLocal::look_take_result(int pid) {
-	Resource::unref(taking_);
-	taking_ = nil;
-	int id = server_->look_take_result(pid, &taking_);
-	return id;
+    Resource::unref(taking_);
+    taking_ = nil;
+    int id = server_->look_take_result(pid, &taking_);
+    return id;
 }
 
 int BBSLocal::look_take_todo() {
-	Resource::unref(taking_);
-	taking_ = nil;
-	int id = server_->look_take_todo(&taking_);
-	return id;
+    Resource::unref(taking_);
+    taking_ = nil;
+    int id = server_->look_take_todo(&taking_);
+    return id;
 }
 
 int BBSLocal::take_todo() {
-	Resource::unref(taking_);
-	taking_ = nil;
-	int id = look_take_todo();
-	if (id == 0) {
-		perror("take_todo blocking");
-	}
-	return id;
+    Resource::unref(taking_);
+    taking_ = nil;
+    int id = look_take_todo();
+    if (id == 0) {
+        perror("take_todo blocking");
+    }
+    return id;
 }
 
 void BBSLocal::save_args(int userid) {
-	server_->post_todo(working_id_, posting_);
+    server_->post_todo(working_id_, posting_);
 #if defined(HAVE_STL)
-	keepargs_->insert(
-		std::pair<const int, const MessageValue*>(userid, posting_)
-	);
+    keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
 #endif
-	posting_ = nil;
+    posting_ = nil;
 }
 
 void BBSLocal::return_args(int userid) {
 #if defined(HAVE_STL)
-	KeepArgs::iterator i = keepargs_->find(userid);
-	assert(i != keepargs_->end());
-	Resource::unref(taking_);
-	taking_ = (MessageValue*)((*i).second);
-	keepargs_->erase(i);
-	taking_->init_unpack();
-	BBSImpl::return_args(userid);
+    KeepArgs::iterator i = keepargs_->find(userid);
+    assert(i != keepargs_->end());
+    Resource::unref(taking_);
+    taking_ = (MessageValue*) ((*i).second);
+    keepargs_->erase(i);
+    taking_->init_unpack();
+    BBSImpl::return_args(userid);
 #endif
 }
 
 void BBSLocal::done() {
-	BBSImpl::done();
+    BBSImpl::done();
 }
 
 void BBSLocal::start() {
-	if (started_) { return; }
-	BBSImpl::start();
-	mytid_ = 1;
-	is_master_ = true;
+    if (started_) {
+        return;
+    }
+    BBSImpl::start();
+    mytid_ = 1;
+    is_master_ = true;
 }

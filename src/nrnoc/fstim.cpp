@@ -15,7 +15,7 @@ fstim(i, loc, delay, duration, stim)
  each other. delay refers to onset of stimulus relative to t=0
  delay and duration are in msec.
  stim in namps.
-  
+
 fstimi(i)
  returns stimulus current for ith stimulus at the value of the
  global time t.
@@ -29,17 +29,17 @@ fstimi(i)
 
 
 typedef struct Stimulus {
-    double loc;    /* parameter location (0--1) */
+    double loc;      /* parameter location (0--1) */
     double delay;    /* value of t in msec for onset */
-    double duration;/* turns off at t = delay + duration */
-    double mag;    /* magnitude in namps */
-    double mag_seg;    /* value added to rhs, depends on area of seg*/
-    Node *pnd;    /* segment location */
-    Section *sec;
+    double duration; /* turns off at t = delay + duration */
+    double mag;      /* magnitude in namps */
+    double mag_seg;  /* value added to rhs, depends on area of seg*/
+    Node* pnd;       /* segment location */
+    Section* sec;
 } Stimulus;
 
-static int maxstim = 0;        /* size of stimulus array */
-static Stimulus *pstim;        /* pointer to stimulus array */
+static int maxstim = 0; /* size of stimulus array */
+static Stimulus* pstim; /* pointer to stimulus array */
 static void free_stim(void);
 
 static void stim_record(int);
@@ -49,13 +49,19 @@ static void stim_record(int);
 void print_stim() {
     int i;
 
-    if (maxstim == 0) return;
+    if (maxstim == 0)
+        return;
     /*SUPPRESS 440*/
-    Printf("fstim(%d)\n/* section	fstim( #, loc, delay(ms), duration(ms), magnitude(namp)) */\n", maxstim);
+    Printf("fstim(%d)\n/* section	fstim( #, loc, delay(ms), duration(ms), magnitude(namp)) */\n",
+           maxstim);
     for (i = 0; i < maxstim; i++) {
         Printf("%-15s fstim(%2d,%4g,%10g,%13g,%16g)\n",
-               secname(pstim[i].sec), i,
-               pstim[i].loc, pstim[i].delay, pstim[i].duration, pstim[i].mag);
+               secname(pstim[i].sec),
+               i,
+               pstim[i].loc,
+               pstim[i].delay,
+               pstim[i].duration,
+               pstim[i].mag);
     }
 }
 
@@ -64,8 +70,7 @@ static double stimulus(int i) {
     at_time(nrn_threads, pstim[i].delay);
     at_time(nrn_threads, pstim[i].delay + pstim[i].duration);
 #endif
-    if (nt_t < pstim[i].delay - 1e-9
-        || nt_t > pstim[i].delay + pstim[i].duration - 1e-9) {
+    if (nt_t < pstim[i].delay - 1e-9 || nt_t > pstim[i].delay + pstim[i].duration - 1e-9) {
         return 0.0;
     }
     return pstim[i].mag_seg;
@@ -91,7 +96,7 @@ void fstim(void) {
     i = chkarg(1, 0., 10000.);
     if (ifarg(2)) {
         if (i >= maxstim) {
-            hoc_execerror("index out of range", (char *) 0);
+            hoc_execerror("index out of range", (char*) 0);
         }
         pstim[i].loc = chkarg(2, 0., 1.);
         pstim[i].delay = chkarg(3, 0., 1e21);
@@ -104,7 +109,7 @@ void fstim(void) {
         free_stim();
         maxstim = i;
         if (maxstim) {
-            pstim = (Stimulus *) emalloc((unsigned) (maxstim * sizeof(Stimulus)));
+            pstim = (Stimulus*) emalloc((unsigned) (maxstim * sizeof(Stimulus)));
         }
         for (i = 0; i < maxstim; i++) {
             pstim[i].loc = 0;
@@ -126,15 +131,15 @@ static void free_stim(void) {
                 section_unref(pstim[i].sec);
             }
         }
-        free((char *) pstim);
+        free((char*) pstim);
         maxstim = 0;
     }
 }
 
-static void stim_record(int i)    /*fill in the section info*/
+static void stim_record(int i) /*fill in the section info*/
 {
     double area;
-    Section *sec;
+    Section* sec;
 
     sec = pstim[i].sec;
     if (sec) {
@@ -165,4 +170,3 @@ void activstim_rhs(void) {
         }
     }
 }
-

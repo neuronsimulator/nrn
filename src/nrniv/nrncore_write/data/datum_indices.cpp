@@ -6,6 +6,8 @@ DatumIndices::DatumIndices() {
 }
 
 DatumIndices::~DatumIndices() {
-    if (ion_type) delete [] ion_type;
-    if (ion_index) delete [] ion_index;
+    if (ion_type)
+        delete[] ion_type;
+    if (ion_index)
+        delete[] ion_index;
 }

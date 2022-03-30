@@ -11,9 +11,9 @@ placed under the General GNU Public License, version 2. The random.cpp file
 contained the header:
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Filename:  random.cpp
-// 
+//
 // Purpose:   Random utility procedures for BayeSys3.
-// 
+//
 // History:   Random.cpp 17 Nov 1994 - 13 Sep 2003
 //
 // Acknowledgments:
@@ -51,21 +51,23 @@ contained the header:
 static uint32_t lowindex = 0;
 
 extern "C" void mcell_ran4_init(uint32_t low) {
-	lowindex = low;
+    lowindex = low;
 }
 
-extern "C" double mcell_ran4(uint32_t *high, double *x, unsigned int n, double range) {
-  int i;
-  for (i=0;i<n;i++) { x[i]=range*nrnRan4dbl(high, lowindex); }
-  return x[0];
+extern "C" double mcell_ran4(uint32_t* high, double* x, unsigned int n, double range) {
+    int i;
+    for (i = 0; i < n; i++) {
+        x[i] = range * nrnRan4dbl(high, lowindex);
+    }
+    return x[0];
 }
 
-extern "C" double mcell_ran4a(uint32_t *high) {
-	return nrnRan4dbl(high, lowindex);
+extern "C" double mcell_ran4a(uint32_t* high) {
+    return nrnRan4dbl(high, lowindex);
 }
 
-extern "C" uint32_t mcell_iran4(uint32_t *high){
-	return nrnRan4int(high, lowindex);
+extern "C" uint32_t mcell_iran4(uint32_t* high) {
+    return nrnRan4int(high, lowindex);
 }
 
 /* Hoc interface */
@@ -74,38 +76,36 @@ extern int use_mcell_ran4_;
 
 
 void hoc_mcran4() {
-	uint32_t idx;
-	double* xidx;
-	double x;
-	xidx = hoc_pgetarg(1);
-	idx = (uint32_t)(*xidx);
-	x = mcell_ran4a(&idx);
-	*xidx = idx;
-	hoc_ret();
-	hoc_pushx(x);
+    uint32_t idx;
+    double* xidx;
+    double x;
+    xidx = hoc_pgetarg(1);
+    idx = (uint32_t) (*xidx);
+    x = mcell_ran4a(&idx);
+    *xidx = idx;
+    hoc_ret();
+    hoc_pushx(x);
 }
 void hoc_mcran4init() {
-	double prev = (double)lowindex;
-	if (ifarg(1)) {
-		uint32_t idx = (uint32_t) chkarg(1, 0., 4294967295.);
-		mcell_ran4_init(idx);
-	}
-	hoc_ret();
-	hoc_pushx(prev);
-
+    double prev = (double) lowindex;
+    if (ifarg(1)) {
+        uint32_t idx = (uint32_t) chkarg(1, 0., 4294967295.);
+        mcell_ran4_init(idx);
+    }
+    hoc_ret();
+    hoc_pushx(prev);
 }
 void hoc_usemcran4() {
-	double prev = (double)use_mcell_ran4_;
-	if (ifarg(1)) {
-		use_mcell_ran4_ = (int)chkarg(1, 0., 1.);
-	}
-	hoc_ret();
-	hoc_pushx(prev);
+    double prev = (double) use_mcell_ran4_;
+    if (ifarg(1)) {
+        use_mcell_ran4_ = (int) chkarg(1, 0., 1.);
+    }
+    hoc_ret();
+    hoc_pushx(prev);
 }
 
-extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2)
-{
-    uint32_t  u, v, w, m, n;
+extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2) {
+    uint32_t u, v, w, m, n;
     /* 64-bit hash */
     n = (*idx1)++;
     m = idx2;
@@ -136,7 +136,7 @@ extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2)
     w &= 0xffff;
     u = (v - w) * (v + w);
     n ^= (((u >> 16) | (u << 16)) ^ 0xaa5835b9) + w * v;
-    return  n;
+    return n;
 }
 
 /*
@@ -156,19 +156,16 @@ extern "C" uint32_t nrnRan4int(uint32_t* idx1, uint32_t idx2)
 // History:   John Skilling   6 May 1995, 3 Dec 1995, 24 Aug 1996
 //                           20 Oct 2002, 17 Dec 2002
 //-----------------------------------------------------------------------------
-// 
+//
 */
-static const double SHIFT32   = 1.0 / 4294967296.0;          /* 2^-32 */
-extern "C" double nrnRan4dbl(uint32_t* idx1, uint32_t idx2)
-{
-    uint32_t  hi, lo, extra;
-    hi = (uint32_t)nrnRan4int(idx1, idx2);                /*top 32 bits*/
-/*
-//    lo = (extra                               // low bits
-//                  & 0xfffff000) ^ 0x00000800;   // switch lowest (2^-53) bit ON
-//    return  ((double)hi + (double)lo * SHIFT32) * SHIFT32;
-*/
-    return  ((double)hi) * SHIFT32;
+static const double SHIFT32 = 1.0 / 4294967296.0; /* 2^-32 */
+extern "C" double nrnRan4dbl(uint32_t* idx1, uint32_t idx2) {
+    uint32_t hi, lo, extra;
+    hi = (uint32_t) nrnRan4int(idx1, idx2); /*top 32 bits*/
+                                            /*
+                                            //    lo = (extra                               // low bits
+                                            //                  & 0xfffff000) ^ 0x00000800;   // switch lowest (2^-53) bit ON
+                                            //    return  ((double)hi + (double)lo * SHIFT32) * SHIFT32;
+                                            */
+    return ((double) hi) * SHIFT32;
 }
-
-
