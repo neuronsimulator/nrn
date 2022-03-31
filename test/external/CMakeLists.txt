@@ -19,7 +19,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG dac8cf2c2d97f45a81e06dc0bc5db2c02ee475b9
+  GIT_TAG 0752af1fd35ab34f538d6f212fb3d10bcce6a2d3
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
@@ -64,7 +64,7 @@ if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     olfactory-bulb-3d
     GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
-    GIT_TAG 9fb5b17
+    GIT_TAG 4f641cefa8789b5b68f78077549dae1d648c1d01
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d)
   FetchContent_MakeAvailable(olfactory-bulb-3d)
   add_subdirectory(olfactory-bulb-3d)
