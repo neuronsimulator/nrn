@@ -24,4 +24,8 @@ double nrn_random_pick(void* r);
 void nrn_random_reset(void* r);
 int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
 int nrn_random123_setseq(void* r, uint32_t seq, char which);
-void nrn_set_random_sequence(void* r, long seq);
+
+/** Note that in addition to having void* in place of Rand*, this has int in
+ *  place of long.
+ */
+void nrn_set_random_sequence(void* r, int seq);
