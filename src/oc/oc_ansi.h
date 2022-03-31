@@ -79,6 +79,7 @@ int vector_buffer_size(IvocVect*);
 int vector_capacity(IvocVect*);
 IvocVect* vector_new(int, Object* = nullptr);
 IvocVect* vector_new0();
+IvocVect* vector_new1(int);
 IvocVect* vector_new2(IvocVect*);
 Object** vector_pobj(IvocVect*);
 void vector_resize(IvocVect*, int);
@@ -88,7 +89,6 @@ double* vector_vec(IvocVect*);
 //                     with pre-C++ mechanisms.
 [[deprecated("non-void* overloads are preferred")]] int vector_buffer_size(void*);
 [[deprecated("non-void* overloads are preferred")]] int vector_capacity(void*);
-[[deprecated("vector_new is preferred")]] double* vector_new1(int);
 [[deprecated("non-void* overloads are preferred")]] Object** vector_pobj(void*);
 [[deprecated("non-void* overloads are preferred")]] void vector_resize(void*, int);
 [[deprecated("non-void* overloads are preferred")]] double* vector_vec(void*);

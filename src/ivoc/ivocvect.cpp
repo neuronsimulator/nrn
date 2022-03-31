@@ -318,8 +318,8 @@ IvocVect* vector_new(int n, Object* o) {
 IvocVect* vector_new0() {
     return new IvocVect();
 }
-double* vector_new1(int n) {
-    return reinterpret_cast<double*>(new IvocVect(n));
+IvocVect* vector_new1(int n) {
+    return new IvocVect(n);
 }
 IvocVect* vector_new2(IvocVect* v) {
     return new IvocVect(*v);
