@@ -279,7 +279,9 @@ NetCon
         so that it is the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called 
         after you are finished with the section or have saved it as in the syntax block above.
         The x return value is the 
-        relative location of the point process in that section. 
+        relative location of the point process in that section. If there
+        is no target, the return value is -1 and no section is pushed
+        onto the section stack.
 
         In new code, it is recommended to use :meth:`NetCon.postseg` to avoid modifying
         the section stack.
@@ -298,7 +300,8 @@ NetCon
 
     Description:
 
-        Returns the segment containing the target point process. The section is
+        Returns the segment containing the target point process (or None
+        if there is no target). The section is
         accessible via ``seg.sec`` and the normalized position ``x`` is accessible
         via ``seg.x``.
          
@@ -421,7 +424,10 @@ NetCon
     Description:
         :class:`List` (i.e. not a Python list) of all the NetCon objects with postsynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
-        If the List arg is present, the objects are appended. 
+        If the List arg is present, the objects are appended.
+
+        Returns empty list if the target is an ARTIFICIAL_CELL. For that
+        case use :meth:NetCon.synlist
 
     .. seealso::
         :meth:`CVode.netconlist`
@@ -445,6 +451,11 @@ NetCon
         :class:`List` (i.e. not a Python list) of all the NetCon objects with presynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
+
+        Returns empty list if the source is an ARTIFICIAL_CELL. For that
+        case use :meth:NetCon.prelist . Note that it rare for a Cell to
+        have more than one distinct NetCon source but olfactory bulb reciprocal
+        synapses are an example.
 
     .. seealso::
         :meth:`CVode.netconlist`

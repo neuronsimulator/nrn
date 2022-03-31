@@ -1,4 +1,5 @@
 from neuron import h
+from neuron.expect_hocerr import expect_err
 
 cv = h.CVode()
 pc = h.ParallelContext()
@@ -156,6 +157,59 @@ def netcon_access():
     h.pop_section()
     assert nc.preseg() == None
     del nc
+
+    # NetCon.postloc, NetCon.postseg, NetCon.syn, NetCon.pre
+    x = net.syns[(0, 1)][1].postloc()
+    sec = h.cas()
+    h.pop_section()
+    assert sec(x) == net.cells[1].soma(0.5)
+    assert net.syns[(0, 1)][1].postseg() == net.cells[1].soma(0.5)
+    assert net.syns[(0, 1)][1].pre() == None
+    # if NetCon.target not associated with a section then return -1 or None
+    a = [h.IntFire1() for _ in range(2)]
+    nc = h.NetCon(a[0], a[1])
+    x = nc.postloc()
+    assert x == -1.0
+    assert nc.postseg() == None
+    assert nc.pre() == a[0]
+    assert nc.syn() == a[1]
+    nc = h.NetCon(a[0], None)
+    assert nc.syn() == None
+    del nc, a, x, sec
+
+    # NetCon.synlist, NetCon.prelist, NetCon.postcelllist, NetCon.precelllist
+    # NetCon.precell, NetCon.postcell
+    a = [h.IntFire1() for _ in range(2)]
+    nclist = [h.NetCon(a[0], a[1]) for _ in range(10)]
+    nclist2 = nclist[0].synlist()
+    assert nclist2.count() == 10
+    nclist2 = h.List()
+    nclist[0].synlist(nclist2)
+    assert nclist2.count() == 10
+    nclist2 = nclist[0].prelist()
+    assert nclist2.count() == 10
+    nclist2 = net.syns[(0, 1)][1].prelist()
+    assert nclist2.count() == len(net.cells)
+    nclist2 = net.syns[(0, 1)][1].precelllist()
+    assert nclist2.count() == len(net.cells)
+    nclist2 = net.syns[(0, 1)][1].postcelllist()
+    assert nclist2.count() == len(net.cells)
+    nclist2 = nclist[0].postcelllist()  # works only for Real cells
+    assert nclist2.count() == 0
+    assert nclist[0].precell() == None
+    assert nclist[0].postcell() == None
+    assert net.syns[(2, 3)][1].precell() == net.cells[2]
+    assert net.syns[(2, 3)][1].postcell() == net.cells[3]
+    del nclist, nclist2, a
+
+    # NetCon.setpost
+    net.syns[(0, 1)][1].setpost(None)
+    assert net.syns[(0, 1)][1].postseg() == None
+    expect_err("net.syns[(0, 1)][1].setpost([])")
+    net.syns[(0, 1)][1].setpost(net.syns[(0, 1)][0])
+    assert net.syns[(0, 1)][1].syn() == net.syns[(0, 1)][0]
+    # added a setpost test in coreneuron/test_fornetcon.py to cover the
+    # case of a change in weight vector size.
 
 
 def test_netcvode_cover():
