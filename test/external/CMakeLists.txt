@@ -13,25 +13,25 @@ FetchContent_Declare(
 FetchContent_Declare(
   testcorenrn
   GIT_REPOSITORY https://github.com/neuronsimulator/testcorenrn
-  GIT_TAG 40b66929c
+  GIT_TAG fa72e6ef8a789ea6ab38d361827146c1b41a2089
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/testcorenrn)
 
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG dac8cf2c2d97f45a81e06dc0bc5db2c02ee475b9
+  GIT_TAG 0752af1fd35ab34f538d6f212fb3d10bcce6a2d3
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG 70f363d7f82dfe6037fbddd8ed2e58cb20df6343
+  GIT_TAG a1d410e7a2a3e687fcc3e4ee20f4fcf6d52c7cfa
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
   tqperf
   GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
-  GIT_TAG 79df2a59ac4a56be3be840b4887222cea761b1ff
+  GIT_TAG aa1344a5764f61bd097b9e2cf2e59d06c577ae85
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
@@ -54,7 +54,7 @@ if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
-    GIT_TAG f83be1
+    GIT_TAG e412e6
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
@@ -64,7 +64,7 @@ if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     olfactory-bulb-3d
     GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
-    GIT_TAG e3c2312
+    GIT_TAG 4f641cefa8789b5b68f78077549dae1d648c1d01
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d)
   FetchContent_MakeAvailable(olfactory-bulb-3d)
   add_subdirectory(olfactory-bulb-3d)

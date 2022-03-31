@@ -67,7 +67,6 @@ foreach(test ${spike_comparison_tests})
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}
-    NRNIVMODL_ARGS -legacytransformations cxx
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   # Set up a test that runs the simulation using NEURON.
@@ -191,7 +190,6 @@ foreach(test ${direct_tests})
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}
-    NRNIVMODL_ARGS -legacytransformations cxx
     SCRIPT_PATTERNS common.hoc defvar.hoc test${test}.hoc
     OUTPUT asciispikes::out${test}.dat)
   foreach(psolve_test_mode 0 3)
