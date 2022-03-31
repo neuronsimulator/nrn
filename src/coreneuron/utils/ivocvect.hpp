@@ -76,7 +76,7 @@ extern int vector_capacity(IvocVect* v);
 extern double* vector_vec(IvocVect* v);
 
 // retro-compatibility API
-extern void* vector_new1(int n);
+extern IvocVect* vector_new1(int n);
 nrn_pragma_acc(routine seq)
 extern int vector_capacity(void* v);
 nrn_pragma_acc(routine seq)

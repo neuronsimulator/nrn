@@ -23,8 +23,8 @@ double* vector_vec(IvocVect* v) {
 /*
  * Retro-compatibility implementations
  */
-void* vector_new1(int n) {
-    return (void*) (new IvocVect(n));
+IvocVect* vector_new1(int n) {
+    return new IvocVect(n);
 }
 
 nrn_pragma_acc(routine seq)
