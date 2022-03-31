@@ -25,7 +25,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG c40e21a9677b3fd36ed46a7fbf5f194f3a4af5ae
+  GIT_TAG a1d410e7a2a3e687fcc3e4ee20f4fcf6d52c7cfa
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
