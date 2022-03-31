@@ -6,8 +6,7 @@
 
 struct Object;
 
-class Rand {
-  public:
+struct Rand {
     Rand(unsigned long seed = 0, int size = 55, Object* obj = NULL);
     ~Rand();
     RNG* gen;

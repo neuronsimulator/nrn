@@ -14,6 +14,7 @@
 #include <OS/list.h>
 #include <ocnotify.h>
 #include "ocobserv.h"
+#include "nrnrandom.h"
 #include <nrnran123.h>
 
 #include <RNG.h>
@@ -57,17 +58,6 @@ class RandomPlay: public Observer, public Resource {
 
 declarePtrList(RandomPlayList, RandomPlay)
     implementPtrList(RandomPlayList, RandomPlay) static RandomPlayList* random_play_list_;
-
-extern "C" {
-double nrn_random_pick(Rand* r);
-void nrn_random_reset(Rand* r);
-Rand* nrn_random_arg(int);
-long nrn_get_random_sequence(Rand* r);
-void nrn_set_random_sequence(Rand* r, long seq);
-int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
-int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
-}  // extern "C"
 
 #include <mcran4.h>
 

@@ -113,18 +113,6 @@ FUNCTION invl(mean (ms)) (ms) {
 		invl = (1. - noise)*mean + noise*mean*erand()
 	}
 }
-VERBATIM
-#include "nrnran123.h"
-
-#if !NRNBBCORE
-/* backward compatibility */
-double nrn_random_pick(void* r);
-void* nrn_random_arg(int argpos);
-int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-int nrn_random123_setseq(void* r, uint32_t seq, char which);
-int nrn_random123_getseq(void* r, uint32_t* seq, char* which);
-#endif
-ENDVERBATIM
 
 FUNCTION erand() {
 VERBATIM
@@ -138,7 +126,7 @@ VERBATIM
 		if (_ran_compat == 2) {
 			_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
 		}else{
-			_lerand = nrn_random_pick(_p_donotuse);
+			_lerand = nrn_random_pick((Rand*)_p_donotuse);
 		}
 #else
 		_lerand = nrnran123_negexp((nrnran123_State*)_p_donotuse);
