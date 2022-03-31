@@ -4,6 +4,15 @@
 #endif
 #include <stdint.h>
 
+/** Ideally the prototypes below would take Rand* in place of void*, but this
+ *  would break several existing models. We do, however, want to declare the
+ *  Rand type, as this makes it possible to write (for example)
+ *  nrn_random_pick((Rand*)some_rand) now, which will be required to suppress
+ *  deprecation warnings in NEURON 9+ where nrn_random_pick(void*) is a
+ *  [[deprecated]] overload and the non-deprecated version takes Rand*.
+ */
+typedef struct Rand Rand;
+
 /** These declarations are wrong, in the sense that they are inconsistent with
  *  the definitions in ivocrand.cpp. This is an intentional, but possibly
  *  unwise, decision.
