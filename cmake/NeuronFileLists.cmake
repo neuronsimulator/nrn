@@ -16,6 +16,7 @@ set(HEADER_FILES_TO_INSTALL
     ivstream.h
     md1redef.h
     md2redef.h
+    mech_api.h
     membdef.h
     membfunc.h
     multicore.h
@@ -33,6 +34,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
+    nrnrandom.h
     nrnran123.h
     nrnredef.h
     oc_ansi.h
