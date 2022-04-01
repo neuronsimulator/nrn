@@ -2,7 +2,7 @@
 
 .. _porting-mechanisms-to-cpp:
 
-Porting mechanisms to C++ for |neuron_with_cpp_mechanisms|
+Adapting MOD files for C++ with |neuron_with_cpp_mechanisms|
 ==========================================================
 
 In older versions of NEURON, MOD files containing NMODL code were translated
@@ -15,17 +15,23 @@ valid C++, and no changes are required.
 However, C and C++ are not the same language, and there are cases in which MOD
 files containing ``VERBATIM`` blocks need to be modified in order to build with
 |neuron_with_cpp_mechanisms|.
+
 Before you start, you should decided if you need your MOD files to be
 compatible simultaneously with |neuron_with_cpp_mechanisms| **and** older, or
 if you can safely stop supporting older versions.
 Supporting both is generally possible, but it may be more cumbersome than
 committing to using C++ features.
+Considering NEURON has maintained strong backward compatibility and internal
+numerical methods haven't changed with migration to C++, it would be sufficient
+to adapt your MOD files to C++ only and use |neuron_with_cpp_mechanisms|.
 
 .. note::
   If you have a model that stopped compiling when you upgraded to or beyond
   |neuron_with_cpp_mechanisms|, the first thing that you should check is
   whether the relevant MOD files have already been updated in ModelDB or in the
-  GitHub repository of that model. An updated version may already be available!
+  GitHub repository of that model. You can check the repository name with the
+  model accession number under `<https://github.com/ModelDBRepository>`_.
+  An updated version may already be available!
 
 ..
   Does this need some more qualification? Are there non-VERBATIM
@@ -230,14 +236,20 @@ relevant method (``vector_capacity`` in this example) is being called with an
 argument of the correct type (``IvocVect*``), and not a type that is implicitly
 converted to ``void*``.
 
-Automatic transformations
--------------------------
+Automatic transformations for C++ Compatibility
+-----------------------------------------------
 
-Some common issues can be identified and translated automatically, by applying
-regular-expression-based transformations to ``VERBATIM`` blocks in MOD files.
+Some common issues in the MOD file for C++ compatibility can be identified and
+translated automatically, by applying regular-expression-based transformations
+to ``VERBATIM`` blocks in MOD files.
 A relevant set of transformations can be enabled by passing the
 ``-legacytransformations cxx`` option to ``nrnivmodl`` when compiling your MOD
-files.
+files:
+
+.. code-block:: bash
+
+    nrnivmodl -legacytransformations cxx mod-dir
+
 
 .. warning::
   This is not a very robust approach, as the regular expressions are
