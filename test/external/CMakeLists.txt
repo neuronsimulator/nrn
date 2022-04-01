@@ -13,7 +13,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   testcorenrn
   GIT_REPOSITORY https://github.com/neuronsimulator/testcorenrn
-  GIT_TAG fa72e6ef8a789ea6ab38d361827146c1b41a2089
+  GIT_TAG e9d33b09f639c5e571acbe1a383e19e8a2878646
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/testcorenrn)
 
 FetchContent_Declare(
@@ -25,13 +25,13 @@ FetchContent_Declare(
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG a1d410e7a2a3e687fcc3e4ee20f4fcf6d52c7cfa
+  GIT_TAG 6aecc53021dbe1a1c23b20673163051143c168d9
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
   tqperf
   GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
-  GIT_TAG aa1344a5764f61bd097b9e2cf2e59d06c577ae85
+  GIT_TAG add46f2899f1cde55032aa63cda54f3941e81155
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
@@ -54,7 +54,7 @@ if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
-    GIT_TAG e412e6
+    GIT_TAG 85e282834ec04c48adbd4f38d04bbbce6fb99afc
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
