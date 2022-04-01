@@ -13,25 +13,25 @@ FetchContent_Declare(
 FetchContent_Declare(
   testcorenrn
   GIT_REPOSITORY https://github.com/neuronsimulator/testcorenrn
-  GIT_TAG e56028063c83a40a2cecc3bd3868ee0570c4a553
+  GIT_TAG e9d33b09f639c5e571acbe1a383e19e8a2878646
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/testcorenrn)
 
 FetchContent_Declare(
   nrntest
   GIT_REPOSITORY https://github.com/neuronsimulator/nrntest
-  GIT_TAG 0752af1fd35ab34f538d6f212fb3d10bcce6a2d3
+  GIT_TAG aa899cec3109a17d7484ed6edb6cc66712662075
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/nrntest)
 
 FetchContent_Declare(
   reduced_dentate
   GIT_REPOSITORY https://github.com/neuronsimulator/reduced_dentate
-  GIT_TAG 2aa03cfbfe8a620b7e9ae29922513be7842983de
+  GIT_TAG 6aecc53021dbe1a1c23b20673163051143c168d9
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/reduced_dentate)
 
 FetchContent_Declare(
   tqperf
   GIT_REPOSITORY https://github.com/neuronsimulator/tqperf.git
-  GIT_TAG aa1344a5764f61bd097b9e2cf2e59d06c577ae85
+  GIT_TAG add46f2899f1cde55032aa63cda54f3941e81155
   SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/tqperf)
 
 FetchContent_MakeAvailable(nrntest reduced_dentate ringtest testcorenrn tqperf)
@@ -54,7 +54,7 @@ if("channel-benchmark" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     channel-benchmark
     GIT_REPOSITORY git@bbpgitlab.epfl.ch:hpc/channel-benchmark.git
-    GIT_TAG e412e6
+    GIT_TAG 85e282834ec04c48adbd4f38d04bbbce6fb99afc
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/channel-benchmark)
   FetchContent_MakeAvailable(channel-benchmark)
   add_subdirectory(channel-benchmark)
@@ -64,7 +64,7 @@ if("olfactory" IN_LIST NRN_ENABLE_MODEL_TESTS)
   FetchContent_Declare(
     olfactory-bulb-3d
     GIT_REPOSITORY https://github.com/HumanBrainProject/olfactory-bulb-3d.git
-    GIT_TAG dde6f77e0477e5e8c931ca414f15807c326a2089
+    GIT_TAG b07b76dc08173fa4d6dce7ef5d05d559b54769ed
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/tests/olfactory-bulb-3d)
   FetchContent_MakeAvailable(olfactory-bulb-3d)
   add_subdirectory(olfactory-bulb-3d)
