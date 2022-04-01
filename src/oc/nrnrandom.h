@@ -24,4 +24,5 @@ void nrn_set_random_sequence(Rand* r, long seq);
 [[deprecated("non-void* overloads are preferred")]] int nrn_random123_setseq(void* r,
                                                                              uint32_t seq,
                                                                              char which);
+// Note that in addition to having void* in place of Rand*, this has int in place of long.
 [[deprecated("non-void* overloads are preferred")]] void nrn_set_random_sequence(void* r, int seq);

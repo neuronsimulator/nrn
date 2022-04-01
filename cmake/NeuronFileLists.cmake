@@ -36,8 +36,8 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
-    nrnran123.h
     nrnrandom.h
+    nrnran123.h
     nrnredef.h
     oc_ansi.h
     ocfunc.h
