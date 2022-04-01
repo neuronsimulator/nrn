@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -315,6 +315,7 @@ void nrncore2nrn_send_values(NrnThread* nth) {
             // https://github.com/BlueBrain/CoreNeuron/issues/611
             for (int i = 0; i < tr->n_trajec; ++i) {
                 double* gather_i = tr->gather[i];
+                static_cast<void>(gather_i);
                 nrn_pragma_acc(update self(gather_i [0:1]) if (nth->compute_gpu)
                                    async(nth->stream_id))
                 nrn_pragma_omp(target update from(gather_i [0:1]) if (nth->compute_gpu))

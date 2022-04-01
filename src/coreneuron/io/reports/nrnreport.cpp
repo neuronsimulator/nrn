@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -52,6 +52,7 @@ void nrn_flush_reports(double t) {
  */
 void setup_report_engine(double dt_report, double mindelay) {
     int min_steps_to_record = static_cast<int>(std::round(mindelay / dt_report));
+    static_cast<void>(min_steps_to_record);
 #ifdef ENABLE_BIN_REPORTS
     records_set_min_steps_to_record(min_steps_to_record);
     records_setup_communicator();

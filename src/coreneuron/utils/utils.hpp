@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2021 Blue Brain Project/EPFL
+# Copyright (c) 2021-22 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -13,7 +13,7 @@
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 
 namespace coreneuron {
-extern void nrn_abort(int errcode);
+[[noreturn]] void nrn_abort(int errcode);
 template <typename... Args>
 void nrn_fatal_error(const char* msg, Args&&... args) {
     if (nrnmpi_myid == 0) {

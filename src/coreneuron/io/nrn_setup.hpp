@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -21,7 +21,7 @@ void read_phase1(NrnThread& nt, UserParams& userParams);
 void read_phase2(NrnThread& nt, UserParams& userParams);
 void read_phase3(NrnThread& nt, UserParams& userParams);
 void read_phasegap(NrnThread& nt, UserParams& userParams);
-static void setup_ThreadData(NrnThread& nt);
+void setup_ThreadData(NrnThread& nt);
 
 void nrn_setup(const char* filesdat,
                bool is_mapping_needed,

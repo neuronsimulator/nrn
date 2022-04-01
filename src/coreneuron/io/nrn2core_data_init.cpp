@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -135,16 +135,14 @@ NrnCoreTransferEvents* (*nrn2core_transfer_tqueue_)(int tid);
 static std::unordered_map<int, int> type2movable;
 static void setup_type2semantics() {
     if (type2movable.empty()) {
-        for (auto& mf: corenrn.get_memb_funcs()) {
-            size_t n_memb_func = (int) (corenrn.get_memb_funcs().size());
-            for (int type = 0; type < n_memb_func; ++type) {
-                int* ds = corenrn.get_memb_func((size_t) type).dparam_semantics;
-                if (ds) {
-                    int dparam_size = corenrn.get_prop_dparam_size()[type];
-                    for (int psz = 0; psz < dparam_size; ++psz) {
-                        if (ds[psz] == -4) {  // netsend semantics
-                            type2movable[type] = psz;
-                        }
+        std::size_t const n_memb_func{corenrn.get_memb_funcs().size()};
+        for (std::size_t type = 0; type < n_memb_func; ++type) {
+            int* ds{corenrn.get_memb_func(type).dparam_semantics};
+            if (ds) {
+                int dparam_size = corenrn.get_prop_dparam_size()[type];
+                for (int psz = 0; psz < dparam_size; ++psz) {
+                    if (ds[psz] == -4) {  // netsend semantics
+                        type2movable[type] = psz;
                     }
                 }
             }
@@ -154,9 +152,7 @@ static void setup_type2semantics() {
 
 /** Copy each thread's queue from NEURON **/
 static void nrn2core_tqueue() {
-    if (type2movable.empty()) {
-        setup_type2semantics();  // need type2movable for SelfEvent.
-    }
+    setup_type2semantics();                        // need type2movable for SelfEvent.
     for (int tid = 0; tid < nrn_nthread; ++tid) {  // should be parallel
         NrnCoreTransferEvents* ncte = (*nrn2core_transfer_tqueue_)(tid);
         if (ncte) {
@@ -336,7 +332,6 @@ void watch_activate_clear() {
                 // zero all the WATCH slots.
                 Memb_list* ml = tml->ml;
                 int type = tml->index;
-                int* semantics = corenrn.get_memb_func(type).dparam_semantics;
                 int dparam_size = corenrn.get_prop_dparam_size()[type];
                 // which slots are WATCH
                 int first, last;

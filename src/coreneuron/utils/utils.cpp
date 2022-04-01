@@ -1,17 +1,22 @@
+/*
+# =============================================================================
+# Copyright (c) 2021-22 Blue Brain Project/EPFL
+#
+# See top-level LICENSE file for details.
+# =============================================================================.
+*/
 #include <sys/time.h>
 #include "utils.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
 
 namespace coreneuron {
-void nrn_abort(int errcode) {
+[[noreturn]] void nrn_abort(int errcode) {
 #if NRNMPI
     if (corenrn_param.mpi_enable && nrnmpi_initialized()) {
         nrnmpi_abort(errcode);
-    } else
-#endif
-    {
-        abort();
     }
+#endif
+    std::abort();
 }
 
 double nrn_wtime() {

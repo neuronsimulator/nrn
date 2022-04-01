@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -100,23 +100,6 @@ using TNI = std::pair<TNode*, int>;
 using HashCnt = std::map<size_t, std::pair<TNode*, int>>;
 using TNIVec = std::vector<TNI>;
 
-static char* stree(TNode* nd) {
-    char s[1000];
-
-    if (nd->treesize > 100) {
-        return strdup("");
-    }
-    s[0] = '(';
-    s[1] = '\0';
-    for (const auto& child: nd->children) {  // need sorted by child hash
-        char* sr = stree(child);
-        strcat(s, sr);
-        free(sr);
-    }
-    strcat(s, ")");
-    return strdup(s);
-}
-
 /*
 assess the quality of the ordering. The measure is the size of a contiguous
 list of nodes whose parents have the same order. How many contiguous lists
@@ -209,6 +192,8 @@ static void quality(VecTNode& nodevec, size_t max = 32) {
             }
         }
     }
+    static_cast<void>(nrace1);
+    static_cast<void>(nrace2);
 #if CORENRN_DEBUG
     printf("nrace = %ld (parent in same group of %ld nodes)\n", nrace1, max);
     printf("nrace = %ld (parent used more than once by same group of %ld nodes)\n", nrace2, max);
@@ -375,6 +360,7 @@ int* node_order(int ncell,
             ntopol += 1;
         }
     }
+    static_cast<void>(ntopol);
 #ifdef DEBUG
     printf("%d distinct tree topologies\n", ntopol);
 #endif

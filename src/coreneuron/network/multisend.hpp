@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -15,7 +15,7 @@ extern int n_multisend_interval;
 extern bool use_phase2_;
 
 class PreSyn;
-class NrnThread;
+struct NrnThread;
 
 void nrn_multisend_send(PreSyn*, double t, NrnThread*);
 void nrn_multisend_receive(NrnThread*);  // must be thread 0

@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -587,7 +587,6 @@ void Phase2::fill_before_after_lists(NrnThread& nt, const std::vector<Memb_func>
         for (auto tml = nt.tml; tml; tml = tml->next) {
             if (before_after_map[tml->index]) {
                 int mtype = tml->index;
-                Memb_list* ml = tml->ml;
                 for (auto bam = before_after_map[mtype]; bam && bam->type == mtype;
                      bam = bam->next) {
                     auto tbl = (NrnThreadBAList*) emalloc(sizeof(NrnThreadBAList));
@@ -692,7 +691,6 @@ void Phase2::pdata_relocation(const NrnThread& nt, const std::vector<Memb_func>&
                 size_t iptype = 0;
                 for (int iml = 0; iml < cnt; ++iml) {
                     for (int i = 0; i < szdp; ++i) {
-                        int s = semantics[i];
                         if (semantics[i] == -5) {  // POINTER
                             int* pd = pdata + nrn_i_layout(iml, cnt, i, szdp, layout);
                             int ix = *pd;  // relative to elem0

@@ -201,7 +201,7 @@ CORENRN_HOST_DEVICE void nrnran123_getids3(nrnran123_State* s,
 CORENRN_HOST_DEVICE uint32_t nrnran123_ipick(nrnran123_State* s) {
     uint32_t rval;
     char which = s->which_;
-    rval = s->r.v[which++];
+    rval = s->r.v[int{which++}];
     if (which > 3) {
         which = 0;
         s->c.v[0]++;

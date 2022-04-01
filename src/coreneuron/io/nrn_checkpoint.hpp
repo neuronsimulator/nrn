@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -11,7 +11,7 @@
 #include "coreneuron/io/phase2.hpp"
 
 namespace coreneuron {
-class NrnThread;
+struct NrnThread;
 class FileHandler;
 
 class CheckPoints {

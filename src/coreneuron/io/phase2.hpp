@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -19,7 +19,7 @@ struct NrnThread;
 struct NrnThreadMembList;
 struct Memb_func;
 struct Memb_list;
-class NrnThreadChkpnt;
+struct NrnThreadChkpnt;
 
 class Phase2 {
   public:

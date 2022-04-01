@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -82,6 +82,7 @@ void nrnmpi_v_transfer() {
             outsrc_buf_[outsrc_indices[i]] = src_gather[src_gather_indices[i]];
         }
     }
+    static_cast<void>(compute_gpu);
 
     // transfer
     int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
@@ -133,6 +134,7 @@ void nrn_partrans::copy_gap_indices_to_device() {
     // Ensure index vectors, src_gather, and insrc_buf_ are on the gpu.
     if (insrcdspl_) {
         int n_insrc_buf = insrcdspl_[nrnmpi_numprocs];
+        static_cast<void>(n_insrc_buf);
         nrn_pragma_acc(enter data create(insrc_buf_[:n_insrc_buf]))
         // clang-format off
         nrn_pragma_omp(target enter data map(alloc: insrc_buf_[:n_insrc_buf]))
@@ -151,6 +153,8 @@ void nrn_partrans::copy_gap_indices_to_device() {
 
             size_t n_src_gather = ttd.src_gather.size();
             const double* src_gather = ttd.src_gather.data();
+            static_cast<void>(n_src_gather);
+            static_cast<void>(src_gather);
             nrn_pragma_acc(enter data create(src_gather[:n_src_gather]))
             nrn_pragma_omp(target enter data map(alloc: src_gather[:n_src_gather]))
         }
