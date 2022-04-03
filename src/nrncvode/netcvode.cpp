@@ -736,11 +736,7 @@ static double nc_event(void* v) {
     }
     d->chktar();
     NrnThread* nt = PP2NT(d->target_);
-    if (!nt || nt < nrn_threads || nt > (nrn_threads + (nrn_nthread - 1))) {
-        // printf("%s.event %s\n", hoc_object_name(d->obj_), "target does not know its thread
-        // yet.");
-        return 0.0;
-    }
+    assert(nt && nt >= nrn_threads && nt < (nrn_threads + nrn_nthread));
     if (ifarg(2)) {
         double flag = *getarg(2);
         Point_process* pnt = d->target_;
@@ -4778,11 +4774,12 @@ NetCon* NetCvode::install_deliver(double* dsrc,
         psl_ = hoc_l_newlist();
     }
     if (osrc) {
-        if (dsrc) {
-            psrc = dsrc;
-        } else {
-            char buf[256];
-            if (hoc_table_lookup("x", osrc->ctemplate->symtable)) {
+        assert(!dsrc);
+        char buf[256];
+        if (hoc_table_lookup("x", osrc->ctemplate->symtable)) {
+            Point_process* pp = ob2pntproc(osrc);
+            assert(pp && pp->prop);
+            if (!pnt_receive[pp->prop->type]) { // only if no NET_RECEIVE block
                 sprintf(buf, "%s.x", hoc_object_name(osrc));
                 psrc = hoc_val_pointer(buf);
             }

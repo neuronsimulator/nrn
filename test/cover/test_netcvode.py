@@ -178,7 +178,7 @@ def netcon_access():
     del nc, a, x, sec
 
     # NetCon.synlist, NetCon.prelist, NetCon.postcelllist, NetCon.precelllist
-    # NetCon.precell, NetCon.postcell
+    # NetCon.precell, NetCon.postcell NetCon.wcnt
     a = [h.IntFire1() for _ in range(2)]
     nclist = [h.NetCon(a[0], a[1]) for _ in range(10)]
     nclist2 = nclist[0].synlist()
@@ -210,6 +210,62 @@ def netcon_access():
     assert net.syns[(0, 1)][1].syn() == net.syns[(0, 1)][0]
     # added a setpost test in coreneuron/test_fornetcon.py to cover the
     # case of a change in weight vector size.
+
+    # NetCon.valid NetCon.active
+    net = Net(2)
+    assert net.syns[(0, 1)][1].active()
+    assert net.syns[(0, 1)][1].active(0) == True
+    assert net.syns[(0, 1)][1].active() == False
+    assert net.syns[(0, 1)][1].active(1) == False
+    assert net.syns[(0, 1)][1].valid()
+    net.syns[(0, 1)][1].setpost(None)
+    assert net.syns[(0, 1)][1].valid() == False
+
+    # NetCon.event
+    net = Net(2)
+    net.ic.amp = 0.0  # no intrinsic activity
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    net.syns[(0, 1)][1].active(0)
+    assert net.syns[(0, 1)][1].event(0.1) == 0
+    net.syns[(0, 1)][1].active(1)
+    expect_err("net.syns[(0, 1)][1].event(0.1, 1)")
+    del net
+    cv.active(0)
+    h.dt = 0.025
+    a = h.IntFire1()
+    nc = h.NetCon(None, a)
+    h.finitialize()
+    nc.weight[0] = 2
+    nc.event(0)  # when delivered a fires and turns on refractory
+    h.fadvance()
+    assert a.m == 2.0
+    nc.weight[0] = 0.2
+    nc.event(h.t, 1)  # when delivered turns off refractory
+    h.fadvance()
+    assert a.m == 0
+    nc.event(h.t)  # so when delivered this event changes m
+    h.fadvance()
+    assert a.m == 0.2
+
+    # NetCon.record cover a line, NetCon.get_recordvec, NetCon.wcnt
+    assert nc.wcnt() == 1
+    tv = h.Vector()
+    nc.record(tv)
+    assert nc.get_recordvec() == tv
+    nc.record()
+    nc = h.NetCon(None, None)
+    expect_err("nc.record()")  # cover static void NetCon::chksrc()
+
+    # NetCon.srcgid cover a line
+    nc = h.NetCon(a, a)
+    del a
+    assert nc.srcgid() == -1
+
+    # NetCon constructor errors and some coverage
+    expect_err("h.NetCon([], None)")
+    expect_err("h.NetCon(None, [])")
+    h.NetCon(None, None, -10.0, 2.0, 0.001)
 
 
 def test_netcvode_cover():

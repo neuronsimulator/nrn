@@ -102,11 +102,9 @@ NetCon
          
 
     .. warning::
-        NetCon can currently only be used if a CVode object exists. 
-         
         When calling with a pointer (the first usage form, above), the
-        specified ``section`` must contain the pointer. If it does not, a
-        RuntimeError exception will be raised.
+        specified ``section`` (currently accessed section) must contain the pointer.
+        If it does not, a RuntimeError exception will be raised.
          
 
          
@@ -123,9 +121,7 @@ NetCon
 
 
     Description:
-        Returns 0 if the source or target have been freed. If the NetCon object 
-        is used when it is not valid a runtime error message will be printed on 
-        the console terminal. 
+        Returns 0 if the netcon does not have both a source and a target.
 
          
 
@@ -568,9 +564,14 @@ NetCon
 
     Description:
         Value of the source variable which is watched for threshold crossing. 
-        If the source is a membrane potential then ``netcon.x`` is a reference to 
-        that potential. If the source is an object, then ``netcon.x`` is a reference 
-        to the objects field called "x", ie source.x . 
+        If the source is a membrane potential (or other RANGE variable)
+        then ``netcon.x`` is a reference to 
+        that potential or variable.
+        If the source is an object, the source has no
+        NET_RECEIVE block, and the source declares an x RANGE variable,
+        then ``netcon.x`` is a reference 
+        to the objects field called "x", ie source.x (otherwise it
+        evaluates to 0.0 . 
 
          
 
