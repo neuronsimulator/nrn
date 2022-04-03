@@ -83,6 +83,15 @@ def node():
     series(1)
     cv.maxstep(1000)
     series(2)
+    del nc
+
+
+def p(s):
+    print(s)
+    ncl = h.List("NetCon")
+    print("NetCon count ", len(ncl))
+    for nc in ncl:
+        print("    ", nc, nc.pre(), nc.preseg(), nc.syn())
 
 
 class Cell:
@@ -261,11 +270,34 @@ def netcon_access():
     nc = h.NetCon(a, a)
     del a
     assert nc.srcgid() == -1
+    del nc
 
     # NetCon constructor errors and some coverage
     expect_err("h.NetCon([], None)")
     expect_err("h.NetCon(None, [])")
     h.NetCon(None, None, -10.0, 2.0, 0.001)
+    a = h.IntFire1()
+    h.NetCon(a, a, -10.0, 2.0, 0.001)
+    net = Net(2)
+    h.NetCon(
+        net.cells[0].soma(0.5)._ref_v, None, -10.0, 2.0, 0.001, sec=net.cells[0].soma
+    )
+    del net, a
+
+    # CVode.netconlist
+    net = Net(2)
+    a = h.IntFire1()
+    b = h.NetStim()
+    nc = h.NetCon(b, a)
+    lst = cv.netconlist("", "", "")
+    assert len(h.List("NetCon")) == 5
+    assert len(cv.netconlist(b, "", "")) == 1
+    assert len(cv.netconlist("NetStim[<0-9>*]", "", "")) == 1
+    assert len(cv.netconlist(b, "", a)) == 1
+    assert len(cv.netconlist(b, "", "IntFire1")) == 1
+    expect_err('cv.netconlist("foo<<", "", "")')
+    expect_err('cv.netconlist("", "foo<<",  "")')
+    expect_err('cv.netconlist("", "", "foo<<")')
 
 
 def test_netcvode_cover():

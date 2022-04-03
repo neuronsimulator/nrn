@@ -972,6 +972,7 @@ Object** NetCvode::netconlist() {
             spre = new Regexp(escape_bracket(s));
         }
         if (!spre->pattern()) {
+            delete spre;
             hoc_execerror(gargstr(1), "not a valid regular expression");
         }
     }
@@ -985,6 +986,10 @@ Object** NetCvode::netconlist() {
             spost = new Regexp(escape_bracket(s));
         }
         if (!spost->pattern()) {
+            delete spost;
+            if (spre) {
+                delete spre;
+            }
             hoc_execerror(gargstr(2), "not a valid regular expression");
         }
     }
@@ -998,6 +1003,13 @@ Object** NetCvode::netconlist() {
             star = new Regexp(escape_bracket(s));
         }
         if (!star->pattern()) {
+            delete star;
+            if (spre) {
+                delete spre;
+            }
+            if (spost) {
+                delete spost;
+            }
             hoc_execerror(gargstr(3), "not a valid regular expression");
         }
     }
