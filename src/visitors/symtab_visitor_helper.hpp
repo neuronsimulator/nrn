@@ -164,13 +164,13 @@ void SymtabVisitor::add_model_symbol_with_property(ast::Node* node, NmodlType pr
 static void add_external_symbols(symtab::ModelSymbolTable* symtab) {
     ModToken tok(true);
     auto variables = nmodl::get_external_variables();
-    for (auto variable : variables) {
+    for (auto variable: variables) {
         auto symbol = std::make_shared<Symbol>(variable, nullptr, tok);
         symbol->add_property(NmodlType::extern_neuron_variable);
         symtab->insert(symbol);
     }
     auto methods = nmodl::get_external_functions();
-    for (auto method : methods) {
+    for (auto method: methods) {
         auto symbol = std::make_shared<Symbol>(method, nullptr, tok);
         symbol->add_property(NmodlType::extern_method);
         symtab->insert(symbol);
@@ -241,16 +241,17 @@ void SymtabVisitor::setup_symbol_table_for_scoped_block(ast::Node* node, const s
  * @todo we assume table statement follows variable declaration
  */
 void SymtabVisitor::visit_table_statement(ast::TableStatement& node) {
-    auto update_symbol = [this](const ast::NameVector& variables, NmodlType property, int num_values) {
-        for (auto& var : variables) {
-            auto name = var->get_node_name();
-            auto symbol = modsymtab->lookup(name);
-            if (symbol) {
-                symbol->add_property(property);
-                symbol->set_num_values(num_values);
+    auto update_symbol =
+        [this](const ast::NameVector& variables, NmodlType property, int num_values) {
+            for (auto& var: variables) {
+                auto name = var->get_node_name();
+                auto symbol = modsymtab->lookup(name);
+                if (symbol) {
+                    symbol->add_property(property);
+                    symbol->set_num_values(num_values);
+                }
             }
-        }
-    };
+        };
     int num_values = node.get_with()->eval() + 1;
     update_symbol(node.get_table_vars(), NmodlType::table_statement_var, num_values);
     update_symbol(node.get_depend_vars(), NmodlType::table_assigned_var, num_values);

@@ -23,7 +23,6 @@ namespace parser {
  * \brief Class that binds lexer and parser together for parsing VERBATIM block
  */
 class VerbatimDriver {
-
   protected:
     void init_scanner();
     void destroy_scanner();
@@ -53,4 +52,3 @@ class VerbatimDriver {
 
 
 int Verbatim_parse(nmodl::parser::VerbatimDriver*);
-

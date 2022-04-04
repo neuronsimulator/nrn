@@ -101,14 +101,11 @@ include_directories(
 # HPC Coding Conventions
 # =============================================================================
 set(NMODL_ClangFormat_EXCLUDES_RE
-    ".*/ext/.*$$"
+    "ext/.*$$" "src/language/templates/.*$$"
     CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
 set(NMODL_CMakeFormat_EXCLUDES_RE
-    ".*/ext/.*$$" ".*/src/language/templates/.*$$"
+    "ext/.*$$" "src/language/templates/.*$$"
     CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
-set(NMODL_ClangFormat_DEPENDENCIES
-    pyastgen parser-gen
-    CACHE STRING "list of CMake targets to build before formatting C++ code" FORCE)
 
 # initialize submodule of coding conventions under cmake
 set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/cmake")
