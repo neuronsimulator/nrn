@@ -4,6 +4,24 @@ from neuron.expect_hocerr import expect_err
 cv = h.CVode()
 pc = h.ParallelContext()
 
+# helpful for debugging when expect no NetCon exist
+def prNetCon(s):
+    print(s)
+    ncl = h.List("NetCon")
+    print("NetCon count ", len(ncl))
+    for nc in ncl:
+        print("    ", nc, nc.pre(), nc.preseg(), nc.syn())
+
+
+# helpful for debugging when expect no Sections
+def prSection(s):
+    print(s)
+    nsec = sum(1 for _ in h.allsec())
+    print("Section count ", nsec)
+    for sec in h.allsec():
+        print("    ", sec.name())
+
+
 # call netcvode.cpp: void nrn_use_daspk(int b)
 def nrn_use_daspk():
     cv.use_daspk(0)
@@ -106,10 +124,32 @@ class Cell:
         return "Cell" + str(self.id)
 
 
+h(
+    """ // HOC cells work best for CVode.netconlist
+begintemplate HCell
+public soma
+create soma
+proc init() {
+  create soma
+  soma {
+    diam = 10
+    L = 10
+    insert hh
+  }
+}
+endtemplate HCell
+"""
+)
+
+
 class Net:
     # all to all
-    def __init__(self, ncell):
-        cells = [Cell(i) for i in range(ncell)]
+    def __init__(self, ncell, hcell=False):
+        cells = (
+            [Cell(i) for i in range(ncell)]
+            if hcell == False
+            else [h.HCell() for _ in range(ncell)]
+        )
         syns = {}  # {(i,j):(ExpSyn,NetCon)}
         for i in range(ncell):
             for j in range(ncell):
@@ -197,6 +237,7 @@ def netcon_access():
     assert nclist2.count() == 10
     nclist2 = nclist[0].prelist()
     assert nclist2.count() == 10
+    net = Net(4, True)  # til fix nrn_sec2cell memory leak
     nclist2 = net.syns[(0, 1)][1].prelist()
     assert nclist2.count() == len(net.cells)
     nclist2 = net.syns[(0, 1)][1].precelllist()
@@ -210,7 +251,6 @@ def netcon_access():
     assert net.syns[(2, 3)][1].precell() == net.cells[2]
     assert net.syns[(2, 3)][1].postcell() == net.cells[3]
     del nclist, nclist2, a
-
     # NetCon.setpost
     net.syns[(0, 1)][1].setpost(None)
     assert net.syns[(0, 1)][1].postseg() == None
@@ -285,7 +325,7 @@ def netcon_access():
     del net, a
 
     # CVode.netconlist
-    net = Net(2)
+    net = Net(2, True)  # Hoc Cell test til nrn_sec2cell memory leak fixed
     a = h.IntFire1()
     b = h.NetStim()
     nc = h.NetCon(b, a)
@@ -295,9 +335,18 @@ def netcon_access():
     assert len(cv.netconlist("NetStim[<0-9>*]", "", "")) == 1
     assert len(cv.netconlist(b, "", a)) == 1
     assert len(cv.netconlist(b, "", "IntFire1")) == 1
+    assert len(cv.netconlist(net.cells[0], "", "")) == 2
+    assert len(cv.netconlist(net.cells[0].hname(), "", "")) == 2
+    assert len(cv.netconlist("", net.cells[0], "")) == 2
+    assert len(cv.netconlist("", net.cells[0].hname(), "")) == 2
+    assert len(cv.netconlist("", "", net.syns[0, 1][0])) == 1
+    assert len(cv.netconlist("", "", net.syns[0, 1][0].hname())) == 1
+
     expect_err('cv.netconlist("foo<<", "", "")')
     expect_err('cv.netconlist("", "foo<<",  "")')
     expect_err('cv.netconlist("", "", "foo<<")')
+    del lst, nc, a, b, net
+    locals()
 
 
 def test_netcvode_cover():
