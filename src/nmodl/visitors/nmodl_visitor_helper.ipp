@@ -69,4 +69,3 @@ void NmodlPrintVisitor::visit_element(const std::vector<T>& elements,
 
 }  // namespace visitor
 }  // namespace nmodl
-
