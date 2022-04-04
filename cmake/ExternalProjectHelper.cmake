@@ -4,7 +4,7 @@ if(${GIT_FOUND} AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
   execute_process(
     COMMAND ${GIT_EXECUTABLE} --git-dir=.git describe --all
     RESULT_VARIABLE NOT_A_GIT_REPO
-    ERROR_QUIET
+    OUTPUT_QUIET ERROR_QUIET
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 else()
   set(NOT_A_GIT_REPO "NotAGitRepo")
