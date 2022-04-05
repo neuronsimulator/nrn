@@ -11,4 +11,5 @@
  */
 #include "nrnrandom.h"
 #include "nrnran123.h"
+#include "nrnversionmacros.h"
 #include "scoplib.h"

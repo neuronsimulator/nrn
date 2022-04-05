@@ -37,6 +37,7 @@ set(HEADER_FILES_TO_INSTALL
     nrnrandom.h
     nrnran123.h
     nrnredef.h
+    nrnversionmacros.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h

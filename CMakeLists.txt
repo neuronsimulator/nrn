@@ -15,18 +15,18 @@ if(DEFINED ENV{CRAYPE_VERSION})
   set(ENV{CRAYPE_LINK_TYPE} dynamic)
   message(STATUS "Cray system detected...setting CRAYPE_LINK_TYPE=dynamic")
 endif()
-project(NEURON C CXX)
+project(
+  NEURON
+  VERSION 8.2.0
+  LANGUAGES C CXX
+  HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 8)
-set(PROJECT_VERSION_MINOR 0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
 # CMake common project settings
@@ -200,6 +200,77 @@ include(cmake/Coverage.cmake)
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 include(ReleaseDebugAutoFlags)
+
+# Try and emit an intelligent warning if the version number currently set in the CMake project(...)
+# call is inconsistent with the output of git describe.
+find_package(Git QUIET)
+if(GIT_FOUND)
+  # --abbrev=0 just gives the parent tag without a suffix representing the number of commits since
+  # the tag and the current commit hash
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --abbrev=0
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    RESULT_VARIABLE GIT_EXIT_CODE
+    OUTPUT_VARIABLE PARENT_GIT_TAG
+    ERROR_VARIABLE GIT_STDERR
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+  if(${GIT_EXIT_CODE} EQUAL 0)
+    if(NOT GIT_STDERR STREQUAL "")
+      message(FATAL_ERROR "git describe succeeded but had stderr: '${GIT_STDERR}'")
+    endif()
+    # ${PARENT_GIT_TAG} contains the name of the parent tag of the current commit. In a tagged
+    # release, this should be exactly the version number in semver-compatible MAJOR.MINOR.PATCH
+    # format. On a development or feature branch, this should be a tag that has been created just
+    # after the last release from that branch. For example, the master branch (and feature branches
+    # based on it) after the 8.1 release have a parent tag called 8.2.dev, so that git describe
+    # produces output compatible with the guidelines in the NEURON documentation:
+    # https://nrn.readthedocs.io/en/latest/scm/guide/SCMGuide.html#a-versioning-scheme-for-neuron.
+    # In a branch whose parent tag is 8.2.dev, the project(...) call should say that the version is
+    # 8.2.0. If and when an incompatible change is merged to the master branch then a 9.0.dev tag
+    # should be created and the project(...) version should be updated to 9.0.0. If changes are
+    # cherry-picked to a branch such as release/8.1 then a 8.1.1.dev tag should be created there and
+    # the project(...) version in that branch updated to 8.1.1. The three cases handled are:
+    #
+    # * if the parent tag is a MAJOR.MINOR.PATCH version then it should exactly match project(...)
+    # * if the parent tag is MAJOR.MINOR(a|b|rcN) then project(...) should contain MAJOR.MINOR.0
+    # * if the parent tag has a .dev suffix, the part before .dev is suffixed with .0 if needed to
+    #   make a full MAJOR.MINOR.PATCH version, which should exactly match project(...)
+    if(PARENT_GIT_TAG MATCHES "^([0-9]+\\.[0-9]+)\\.dev$")
+      # X.Y.dev CMAKE_MATCH_1 holds X.Y
+      set(expected_version "${CMAKE_MATCH_1}.0")
+    elseif(PARENT_GIT_TAG MATCHES "^([0-9]+\\.[0-9]+\\.[0-9]+)\\.dev$")
+      # X.Y.Z.dev, CMAKE_MATCH_1 holds X.Y.Z
+      set(expected_version "${CMAKE_MATCH_1}")
+    elseif(PARENT_GIT_TAG MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+      # Release tag
+      set(expected_version "${PARENT_GIT_TAG}")
+    elseif(PARENT_GIT_TAG MATCHES "^([0-9]+\\.[0-9]+)(a|b|rc[0-9]+)$")
+      # Alpha, beta or release candidate (what about alpha/beta/rc of a patch release, i.e. 8.1.1a?
+      # This is not foreseen in the docs.)
+      set(expected_version "${CMAKE_MATCH_1}.0")
+    else()
+      message(FATAL_ERROR "Failed to parse Git tag: '${GIT_STDOUT}'")
+    endif()
+    if(NOT expected_version STREQUAL
+       "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+      message(WARNING "Parent git tag is ${PARENT_GIT_TAG} but the CMake version is "
+                      "${PROJECT_VERSION}; you should probably update CMakeLists.txt "
+                      "to contain project(NEURON VERSION ${expected_version} ...)!")
+    endif()
+  else()
+    message(
+      STATUS "git describe failed "
+             "(stdout: '${PARENT_GIT_TAG}', stderr: '${GIT_STDERR}', code: ${GIT_EXIT_CODE}), "
+             "skipping the version check")
+  endif()
+endif()
+# Save the version information from project(...) to an nrnsemanticversion.h header in the build
+# directory. This separate from nrnversion.h, which includes information about the latest git
+# commit, because it should change less frequently, but it is included in many more files.
+set(NRN_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(NRN_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
 
 # =============================================================================
 # Find required packages
@@ -456,8 +527,31 @@ if(NRN_ENABLE_CORENEURON)
     # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
     # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+    get_property(CORENRN_COMPATIBLE_NRN_VERSION_MAJOR GLOBAL
+                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_MAJOR)
+    get_property(CORENRN_COMPATIBLE_NRN_VERSION_MINOR GLOBAL
+                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_MINOR)
+    get_property(CORENRN_COMPATIBLE_NRN_VERSION_PATCH GLOBAL
+                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
     # NEURON tests that link against CoreNEURON need to depend on it.
     set(CORENEURON_TARGET_TO_DEPEND coreneuron)
+  endif()
+  # Check if CoreNEURON is claiming compatibility with the correct NEURON
+  if(NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_MAJOR
+     OR NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_MINOR
+     OR NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
+    message(WARNING "Could not determine what NEURON version CoreNEURON claims compatibility with")
+  elseif(
+    NOT NRN_VERSION_MAJOR EQUAL CORENRN_COMPATIBLE_NRN_VERSION_MAJOR
+    OR NOT NRN_VERSION_MINOR EQUAL CORENRN_COMPATIBLE_NRN_VERSION_MINOR
+    OR NOT NRN_VERSION_PATCH EQUAL CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
+    message(
+      WARNING "The NEURON compatibility version hardcoded in CoreNEURON "
+              "${CORENRN_COMPATIBLE_NRN_VERSION_MAJOR}."
+              "${CORENRN_COMPATIBLE_NRN_VERSION_MINOR}."
+              "${CORENRN_COMPATIBLE_NRN_VERSION_PATCH} does not match the current NEURON "
+              "${NRN_VERSION_MAJOR}.${NRN_VERSION_MINOR}.${NRN_VERSION_PATCH} "
+              "you should probably update CORENRN_COMPATIBLE_NRN_VERSION_*")
   endif()
 endif()
 
@@ -732,8 +826,8 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-     DESTINATION ${PROJECT_BINARY_DIR}/include)
+file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
+          ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)
