@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2002 Jorge Acereda  <jacereda@users.sourceforge.net> &
                    Peter O'Gorman <ogorman@users.sourceforge.net>
-                   
+
 Portions may be copyright others, see the AUTHORS file included with this
 distribution.
 
@@ -35,7 +35,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 extern "C" {
 #endif
 
-#if defined (__GNUC__) && __GNUC__ > 3
+#if defined(__GNUC__) && __GNUC__ > 3
 #define dl_restrict __restrict
 #else
 #define dl_restrict
@@ -45,33 +45,33 @@ extern "C" {
  */
 
 typedef struct dl_info {
-        const char      *dli_fname;     /* Pathname of shared object */
-        void            *dli_fbase;     /* Base address of shared object */
-        const char      *dli_sname;     /* Name of nearest symbol */
-        void            *dli_saddr;     /* Address of nearest symbol */
+    const char* dli_fname; /* Pathname of shared object */
+    void* dli_fbase;       /* Base address of shared object */
+    const char* dli_sname; /* Name of nearest symbol */
+    void* dli_saddr;       /* Address of nearest symbol */
 } Dl_info;
 
-extern void * dlopen(const char *path, int mode);
-extern void * dlsym(void * dl_restrict handle, const char * dl_restrict symbol);
-extern const char * dlerror(void);
-extern int dlclose(void * handle);
-extern int dladdr(const void * dl_restrict, Dl_info * dl_restrict);
+extern void* dlopen(const char* path, int mode);
+extern void* dlsym(void* dl_restrict handle, const char* dl_restrict symbol);
+extern const char* dlerror(void);
+extern int dlclose(void* handle);
+extern int dladdr(const void* dl_restrict, Dl_info* dl_restrict);
 
-#define RTLD_LAZY	0x1
-#define RTLD_NOW	0x2
-#define RTLD_LOCAL	0x4
-#define RTLD_GLOBAL	0x8
-#define RTLD_NOLOAD	0x10
-#define RTLD_NODELETE	0x80
+#define RTLD_LAZY     0x1
+#define RTLD_NOW      0x2
+#define RTLD_LOCAL    0x4
+#define RTLD_GLOBAL   0x8
+#define RTLD_NOLOAD   0x10
+#define RTLD_NODELETE 0x80
 
 /*
  * Special handle arguments for dlsym().
  */
-#define	RTLD_NEXT		((void *) -1)	/* Search subsequent objects. */
-#define	RTLD_DEFAULT	((void *) -2)	/* Use default search algorithm. */
+#define RTLD_NEXT    ((void*) -1) /* Search subsequent objects. */
+#define RTLD_DEFAULT ((void*) -2) /* Use default search algorithm. */
 
 #ifdef __cplusplus
-} // extern "C"
+}  // extern "C"
 #endif
 
 #endif /* _DLFCN_H_ */

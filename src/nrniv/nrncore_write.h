@@ -11,4 +11,4 @@ int nrncore_is_enabled();
 int nrncore_psolve(double tstop, int file_mode);
 
 
-#endif // nrncore_write_h
+#endif  // nrncore_write_h

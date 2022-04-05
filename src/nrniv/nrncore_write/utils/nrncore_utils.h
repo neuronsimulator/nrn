@@ -6,7 +6,7 @@
 class NrnThread;
 
 void model_ready();
-int count_distinct(double *data, int len);
+int count_distinct(double* data, int len);
 extern void nrnbbcore_register_mapping();
 bool file_exist(const std::string& path);
 extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& index);
@@ -22,5 +22,4 @@ void check_coreneuron_compatibility(void* handle);
 #endif
 
 
-#endif //NRN_NRNCORE_UTILS_H
-
+#endif  // NRN_NRNCORE_UTILS_H

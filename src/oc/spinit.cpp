@@ -18,19 +18,18 @@ spinit.cpp,v
  * This was done so init... could be called both from hoc_spinit and from
  * hoc.
  * last function called by hoc_spinit in hocusr.cpp is hoc_last_init()
- * 
+ *
  * Revision 1.1  91/10/11  11:12:18  hines
  * Initial revision
- * 
+ *
  * Revision 2.0  89/07/07  11:33:01  mlh
  * Preparation for newcable
- * 
+ *
  * Revision 1.1  89/07/07  11:17:43  mlh
  * Initial revision
- * 
+ *
 */
 
 
-extern "C" void hoc_spinit(void)	/* Dummy special init */
-{
-}
+extern "C" void hoc_spinit(void) /* Dummy special init */
+{}

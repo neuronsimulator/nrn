@@ -618,6 +618,8 @@ endif()
 # =============================================================================
 set(CODING_CONV_PREFIX "NRN")
 set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
+set(${CODING_CONV_PREFIX}_ClangFormat_REQUIRED_VERSION 12.0.1)
+set(${CODING_CONV_PREFIX}_ClangFormat_EXCLUDES_RE CACHE STRING "") # None needed
 set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
 if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
   nrn_initialize_submodule(external/coding-conventions)

@@ -2,7 +2,7 @@
 #include "../nrnpython/nrnpython_config.h"
 #include <nrnmpi.h>
 #include "bbsconf.h"
-#ifdef NRNMPI	// to end of file
+#ifdef NRNMPI  // to end of file
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +22,7 @@ extern int (*p_nrnpython_start)(int);
 #endif
 
 #if defined(HAVE_STL)
-#if defined(HAVE_SSTREAM) // the standard ...
+#if defined(HAVE_SSTREAM)  // the standard ...
 #include <map>
 #else
 #include <pair.h>
@@ -30,307 +30,315 @@ extern int (*p_nrnpython_start)(int);
 #endif
 
 struct ltint {
-	bool operator() (int i, int j) const {
-		return i < j;
-	}
+    bool operator()(int i, int j) const {
+        return i < j;
+    }
 };
 
-class KeepArgs : public std::map<int, bbsmpibuf*, ltint>{};
+class KeepArgs: public std::map<int, bbsmpibuf*, ltint> {};
 
 #endif
 
 int BBSClient::sid_;
 
 BBSClient::BBSClient() {
-	sendbuf_ = nil;
-	recvbuf_ = nil;
-	request_ = nrnmpi_newbuf(100);
-	nrnmpi_ref(request_);
+    sendbuf_ = nil;
+    recvbuf_ = nil;
+    request_ = nrnmpi_newbuf(100);
+    nrnmpi_ref(request_);
 #if defined(HAVE_STL)
-	keepargs_ = new KeepArgs();
+    keepargs_ = new KeepArgs();
 #endif
-	BBSClient::start();
+    BBSClient::start();
 }
 
 BBSClient::~BBSClient() {
-	nrnmpi_unref(sendbuf_);
-	nrnmpi_unref(recvbuf_);
-	nrnmpi_unref(request_);
+    nrnmpi_unref(sendbuf_);
+    nrnmpi_unref(recvbuf_);
+    nrnmpi_unref(request_);
 #if defined(HAVE_STL)
-	delete keepargs_;
+    delete keepargs_;
 #endif
 }
 
 void BBSClient::perror(const char* s) {
-	printf("BBSClient error: %s\n", s);
+    printf("BBSClient error: %s\n", s);
 }
 
 void BBSClient::upkbegin() {
-	nrnmpi_upkbegin(recvbuf_);
+    nrnmpi_upkbegin(recvbuf_);
 }
 
 char* BBSClient::getkey() {
-	return nrnmpi_getkey(recvbuf_);
+    return nrnmpi_getkey(recvbuf_);
 }
 
 int BBSClient::getid() {
-	return nrnmpi_getid(recvbuf_);
+    return nrnmpi_getid(recvbuf_);
 }
 
 int BBSClient::upkint() {
-	return nrnmpi_upkint(recvbuf_);
+    return nrnmpi_upkint(recvbuf_);
 }
 
 double BBSClient::upkdouble() {
-	return nrnmpi_upkdouble(recvbuf_);
+    return nrnmpi_upkdouble(recvbuf_);
 }
 
 void BBSClient::upkvec(int n, double* x) {
-	nrnmpi_upkvec(n, x, recvbuf_);
+    nrnmpi_upkvec(n, x, recvbuf_);
 }
 
 char* BBSClient::upkstr() {
-	return nrnmpi_upkstr(recvbuf_); // do not forget to free(string)
+    return nrnmpi_upkstr(recvbuf_);  // do not forget to free(string)
 }
 
 char* BBSClient::upkpickle(size_t* n) {
-	return nrnmpi_upkpickle(n, recvbuf_); // do not forget to free(string)
+    return nrnmpi_upkpickle(n, recvbuf_);  // do not forget to free(string)
 }
 
 void BBSClient::pkbegin() {
-	if (!sendbuf_) {
-		sendbuf_ = nrnmpi_newbuf(100);
-		nrnmpi_ref(sendbuf_);
-	}
-	nrnmpi_pkbegin(sendbuf_);
+    if (!sendbuf_) {
+        sendbuf_ = nrnmpi_newbuf(100);
+        nrnmpi_ref(sendbuf_);
+    }
+    nrnmpi_pkbegin(sendbuf_);
 }
 
 void BBSClient::pkint(int i) {
-	nrnmpi_pkint(i, sendbuf_);
+    nrnmpi_pkint(i, sendbuf_);
 }
 
 void BBSClient::pkdouble(double x) {
-	nrnmpi_pkdouble(x, sendbuf_);
+    nrnmpi_pkdouble(x, sendbuf_);
 }
 
 void BBSClient::pkvec(int n, double* x) {
-	nrnmpi_pkvec(n, x, sendbuf_);
+    nrnmpi_pkvec(n, x, sendbuf_);
 }
 
 void BBSClient::pkstr(const char* s) {
-	nrnmpi_pkstr(s, sendbuf_);
+    nrnmpi_pkstr(s, sendbuf_);
 }
 
 void BBSClient::pkpickle(const char* s, size_t n) {
-	nrnmpi_pkpickle(s, n, sendbuf_);
+    nrnmpi_pkpickle(s, n, sendbuf_);
 }
 
 void BBSClient::post(const char* key) {
 #if debug
-printf("%d BBSClient::post |%s|\n", nrnmpi_myid_bbs, key);
-fflush(stdout);
+    printf("%d BBSClient::post |%s|\n", nrnmpi_myid_bbs, key);
+    fflush(stdout);
 #endif
-	nrnmpi_enddata(sendbuf_);
-	nrnmpi_pkstr(key, sendbuf_);
-	nrnmpi_bbssend(sid_, POST, sendbuf_);
-	nrnmpi_unref(sendbuf_);
-	sendbuf_ = nil;
+    nrnmpi_enddata(sendbuf_);
+    nrnmpi_pkstr(key, sendbuf_);
+    nrnmpi_bbssend(sid_, POST, sendbuf_);
+    nrnmpi_unref(sendbuf_);
+    sendbuf_ = nil;
 }
 
 void BBSClient::post_todo(int parentid) {
 #if debug
-printf("%d BBSClient::post_todo for %d\n", nrnmpi_myid_bbs, parentid);
-fflush(stdout);
+    printf("%d BBSClient::post_todo for %d\n", nrnmpi_myid_bbs, parentid);
+    fflush(stdout);
 #endif
-	nrnmpi_enddata(sendbuf_);
-	nrnmpi_pkint(parentid, sendbuf_);
-	nrnmpi_bbssend(sid_, POST_TODO, sendbuf_);
-	nrnmpi_unref(sendbuf_);
-	sendbuf_ = nil;
+    nrnmpi_enddata(sendbuf_);
+    nrnmpi_pkint(parentid, sendbuf_);
+    nrnmpi_bbssend(sid_, POST_TODO, sendbuf_);
+    nrnmpi_unref(sendbuf_);
+    sendbuf_ = nil;
 }
 
 void BBSClient::post_result(int id) {
 #if debug
-printf("%d BBSClient::post_result %d\n", nrnmpi_myid_bbs, id);
-fflush(stdout);
+    printf("%d BBSClient::post_result %d\n", nrnmpi_myid_bbs, id);
+    fflush(stdout);
 #endif
-	nrnmpi_enddata(sendbuf_);
-	nrnmpi_pkint(id, sendbuf_);
-	nrnmpi_bbssend(sid_, POST_RESULT, sendbuf_);
-	nrnmpi_unref(sendbuf_);
-	sendbuf_ = nil;
+    nrnmpi_enddata(sendbuf_);
+    nrnmpi_pkint(id, sendbuf_);
+    nrnmpi_bbssend(sid_, POST_RESULT, sendbuf_);
+    nrnmpi_unref(sendbuf_);
+    sendbuf_ = nil;
 }
 
 int BBSClient::get(const char* key, int type) {
 #if debug
-printf("%d BBSClient::get |%s| type=%d\n", nrnmpi_myid_bbs, key, type);
-fflush(stdout);
+    printf("%d BBSClient::get |%s| type=%d\n", nrnmpi_myid_bbs, key, type);
+    fflush(stdout);
 #endif
-	nrnmpi_pkbegin(request_);
-	nrnmpi_enddata(request_);
-	nrnmpi_pkstr(key, request_);
-	return get(type);
+    nrnmpi_pkbegin(request_);
+    nrnmpi_enddata(request_);
+    nrnmpi_pkstr(key, request_);
+    return get(type);
 }
 
 int BBSClient::get(int key, int type) {
 #if debug
-printf("%d BBSClient::get %d type=%d\n", nrnmpi_myid_bbs, key, type);
-fflush(stdout);
+    printf("%d BBSClient::get %d type=%d\n", nrnmpi_myid_bbs, key, type);
+    fflush(stdout);
 #endif
-	nrnmpi_pkbegin(request_);
-	nrnmpi_enddata(request_);
-	nrnmpi_pkint(key, request_);
-	return get(type)-1; // sent id+1 so cannot be mistaken for QUIT
+    nrnmpi_pkbegin(request_);
+    nrnmpi_enddata(request_);
+    nrnmpi_pkint(key, request_);
+    return get(type) - 1;  // sent id+1 so cannot be mistaken for QUIT
 }
 
-int BBSClient::get(int type) { // blocking
-fflush(stdout);
-fflush(stderr);
-	double ts = time();
-	nrnmpi_unref(recvbuf_);
-	recvbuf_ = nrnmpi_newbuf(100);
-	nrnmpi_ref(recvbuf_);
-	int msgtag = nrnmpi_bbssendrecv(sid_, type, request_, recvbuf_);
-	errno = 0;
-	wait_time_ += time() - ts;
+int BBSClient::get(int type) {  // blocking
+    fflush(stdout);
+    fflush(stderr);
+    double ts = time();
+    nrnmpi_unref(recvbuf_);
+    recvbuf_ = nrnmpi_newbuf(100);
+    nrnmpi_ref(recvbuf_);
+    int msgtag = nrnmpi_bbssendrecv(sid_, type, request_, recvbuf_);
+    errno = 0;
+    wait_time_ += time() - ts;
 #if debug
-printf("%d BBSClient::get return msgtag=%d\n", nrnmpi_myid_bbs, msgtag);
-fflush(stdout);
+    printf("%d BBSClient::get return msgtag=%d\n", nrnmpi_myid_bbs, msgtag);
+    fflush(stdout);
 #endif
-	if (msgtag == QUIT) {
-		done();
-	}
-	return msgtag;
+    if (msgtag == QUIT) {
+        done();
+    }
+    return msgtag;
 }
-	
+
 bool BBSClient::look_take(const char* key) {
 #if debug
-printf("%d BBSClient::look_take %s\n", nrnmpi_myid_bbs, key);
+    printf("%d BBSClient::look_take %s\n", nrnmpi_myid_bbs, key);
 #endif
-	int type = get(key, LOOK_TAKE);
-	bool b = (type == LOOK_TAKE_YES);
-	if (b) {
-		upkbegin();
-	}
-	return b;
+    int type = get(key, LOOK_TAKE);
+    bool b = (type == LOOK_TAKE_YES);
+    if (b) {
+        upkbegin();
+    }
+    return b;
 }
 
 bool BBSClient::look(const char* key) {
 #if debug
-printf("%d BBSClient::look %s\n", nrnmpi_myid_bbs, key);
+    printf("%d BBSClient::look %s\n", nrnmpi_myid_bbs, key);
 #endif
-	int type = get(key, LOOK);
-	bool b = (type == LOOK_YES);
-	if (b) {
-		upkbegin();
-	}
-	return b;
+    int type = get(key, LOOK);
+    bool b = (type == LOOK_YES);
+    if (b) {
+        upkbegin();
+    }
+    return b;
 }
 
-void BBSClient::take(const char* key) { // blocking
-	int bufid;
-	get(key, TAKE);	
-	upkbegin();
+void BBSClient::take(const char* key) {  // blocking
+    int bufid;
+    get(key, TAKE);
+    upkbegin();
 }
-	
+
 int BBSClient::look_take_todo() {
-	int type = get(0, LOOK_TAKE_TODO);
-	if (type) {
-		upkbegin();
-	}
-	return type;
+    int type = get(0, LOOK_TAKE_TODO);
+    if (type) {
+        upkbegin();
+    }
+    return type;
 }
 
 int BBSClient::take_todo() {
-	int type;
-	char* rs;
-	size_t n;
-	while((type = get(0, TAKE_TODO)) == CONTEXT) {
-		upkbegin();
-		upkint(); // throw away userid
-		upkint(); // throw away info in reserved second slot for worker_id
+    int type;
+    char* rs;
+    size_t n;
+    while ((type = get(0, TAKE_TODO)) == CONTEXT) {
+        upkbegin();
+        upkint();  // throw away userid
+        upkint();  // throw away info in reserved second slot for worker_id
 #if debug
-printf("%d execute context\n", nrnmpi_myid_bbs);
-fflush(stdout);
+        printf("%d execute context\n", nrnmpi_myid_bbs);
+        fflush(stdout);
 #endif
-		rs = execute_helper(&n, -1);
-		if (rs) { delete [] rs; }
-	}
-	upkbegin();
-	return type;
+        rs = execute_helper(&n, -1);
+        if (rs) {
+            delete[] rs;
+        }
+    }
+    upkbegin();
+    return type;
 }
 
 int BBSClient::look_take_result(int pid) {
-	int type = get(pid, LOOK_TAKE_RESULT);
-	if (type) {
-		upkbegin();
-	}
-	return type;
+    int type = get(pid, LOOK_TAKE_RESULT);
+    if (type) {
+        upkbegin();
+    }
+    return type;
 }
 
 void BBSClient::save_args(int userid) {
 #if defined(HAVE_STL)
-	nrnmpi_ref(sendbuf_);
-	keepargs_->insert(
-		std::pair<const int, bbsmpibuf* >(userid, sendbuf_)
-	);
-	
+    nrnmpi_ref(sendbuf_);
+    keepargs_->insert(std::pair<const int, bbsmpibuf*>(userid, sendbuf_));
+
 #endif
-	post_todo(working_id_);
+    post_todo(working_id_);
 }
 
 void BBSClient::return_args(int userid) {
 #if defined(HAVE_STL)
-	KeepArgs::iterator i = keepargs_->find(userid);
-	nrnmpi_unref(recvbuf_);
-	recvbuf_ = nil;
-	if (i != keepargs_->end()) {
-		recvbuf_ = (*i).second;
-		nrnmpi_ref(recvbuf_);
-		keepargs_->erase(i);
-		upkbegin();
-		BBSImpl::return_args(userid);
-	}
+    KeepArgs::iterator i = keepargs_->find(userid);
+    nrnmpi_unref(recvbuf_);
+    recvbuf_ = nil;
+    if (i != keepargs_->end()) {
+        recvbuf_ = (*i).second;
+        nrnmpi_ref(recvbuf_);
+        keepargs_->erase(i);
+        upkbegin();
+        BBSImpl::return_args(userid);
+    }
 #endif
 }
 
 void BBSClient::done() {
 #if defined(USE_PYTHON)
-	extern void (*p_nrnpython_finalize)();
+    extern void (*p_nrnpython_finalize)();
 #endif
 #if debug
-printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
-fflush(stdout);
+    printf("%d BBSClient::done\n", nrnmpi_myid_bbs);
+    fflush(stdout);
 #endif
-	if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
-	    if (nrnmpi_myid == 0) {
-		int info[2]; info[0] = -2; info[1] = -1;
-//printf("%d broadcast %d %d\n", nrnmpi_myid_world, info[0], info[1]);
-		nrnmpi_int_broadcast(info, 2, 0);
-	    }
-	}
+    if (nrnmpi_numprocs > 1 && nrnmpi_numprocs_bbs < nrnmpi_numprocs_world) {
+        if (nrnmpi_myid == 0) {
+            int info[2];
+            info[0] = -2;
+            info[1] = -1;
+            // printf("%d broadcast %d %d\n", nrnmpi_myid_world, info[0], info[1]);
+            nrnmpi_int_broadcast(info, 2, 0);
+        }
+    }
 #if defined(USE_PYTHON)
-	if (p_nrnpython_start) { (*p_nrnpython_start)(0);}
+    if (p_nrnpython_start) {
+        (*p_nrnpython_start)(0);
+    }
 #endif
-	BBSImpl::done();
-	nrnmpi_terminate();
+    BBSImpl::done();
+    nrnmpi_terminate();
 #if defined(USE_PYTHON)
-	if (p_nrnpython_finalize) { (*p_nrnpython_finalize)(); }
+    if (p_nrnpython_finalize) {
+        (*p_nrnpython_finalize)();
+    }
 #endif
-	exit(0);
+    exit(0);
 }
 
 void BBSClient::start() {
-	char* client = 0;
-	int tid;
-	int n;
-	if (started_) { return; }
+    char* client = 0;
+    int tid;
+    int n;
+    if (started_) {
+        return;
+    }
 #if debug
-printf("%d BBSClient start\n", nrnmpi_myid_bbs);
-fflush(stdout);
+    printf("%d BBSClient start\n", nrnmpi_myid_bbs);
+    fflush(stdout);
 #endif
-	BBSImpl::start();
-	sid_ = 0;
+    BBSImpl::start();
+    sid_ = 0;
 #if 0
 	{ // a worker
 		is_master_ = false;
@@ -342,4 +350,4 @@ fflush(stdout);
 #endif
 }
 
-#endif //NRNMPI
+#endif  // NRNMPI

@@ -18,14 +18,15 @@ extern "C" {
 
 /* from bbsmpipack.cpp */
 typedef struct bbsmpibuf {
-	char* buf;
-	int size;
-	int pkposition;
-	int upkpos;
-	int keypos;
-	int refcount;
+    char* buf;
+    int size;
+    int pkposition;
+    int upkpos;
+    int keypos;
+    int refcount;
 } bbsmpibuf;
 
+// clang-format off
 extern bbsmpibuf* nrnmpi_newbuf(int size);
 extern void nrnmpi_copy(bbsmpibuf* dest, bbsmpibuf* src);
 extern void nrnmpi_ref(bbsmpibuf* buf);
@@ -117,7 +118,7 @@ extern void nrnmpi_bgp_multisend(NRNMPI_Spike* spk, int n, int* hosts);
 extern int nrnmpi_bgp_single_advance(NRNMPI_Spike* spk);
 extern int nrnmpi_bgp_conserve(int nsend, int nrecv);
 #endif
-
+// clang-format on
 
 #if defined(__cplusplus)
 }
