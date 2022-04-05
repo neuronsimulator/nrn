@@ -65,7 +65,7 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
    changelog.md
 
 
-.. image:: neuron-overview.png
+.. image:: neuron-overview.jpg
    :width: 75%
    :align: center
    :alt: NEURON image with ShapePlot, code, and cortical column
