@@ -94,7 +94,7 @@ Installation
       <code>pip3 install neuron</code>
    </div>
    <p>
-      <a href="https://github.com/neuronsimulator/nrn/releases/tag/8.1.0">All standard versions</a><br>
+      <a href="https://github.com/neuronsimulator/nrn/releases/latest">All standard versions</a><br>
       <a href="http://github.com/neuronsimulator/nrn">Source on github</a><br>
 
    For troubleshooting, see the <a href="install/install_instructions.html">detailed installation instructions</a>.</p>
