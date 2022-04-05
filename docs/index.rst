@@ -74,59 +74,92 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
 Installation
 ------------
 
+.. tab-set::
+
+   .. tab-item:: macOS
+
+      The recommended installation is to:
+
+      .. code::
+
+         pip3 install neuron
+      
+      Alternatively, you can use the `PKG installer <https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0-macosx-10.9-universal2-py-38-39-310.pkg>`_.
+
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+
+
+   .. tab-item:: Linux
+
+      The recommended installation is to:
+
+      .. code::
+
+         pip3 install neuron
+      
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+
+
+   .. tab-item:: Windows
+
+      `Download the Windows Installer <https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0.w64-mingw-py-36-37-38-39-310-setup.exe>`_.
+
+      For troubleshooting, see the `detailed installation instructions <install/install_instructions.html>`_.
+
+   
+   .. tab-item:: Cloud
+
+      On `Google Colab <https://colab.research.google.com>`_ (and many other cloud Jupyter providers), you can install
+      NEURON via
+
+      .. code::
+
+         !pip install neuron
+      
+      NEURON is already installed on `The Neuroscience Gateway <https://www.nsgportal.org>`_
+      and on `EBRAINS <https://ebrains.eu>`_.
+   
+   .. tab-item:: Source code
+
+      View and suggest changes to the source code at:
+      `github.com/neuronsimulator/nrn <https://github.com/neuronsimulator/nrn>`_
+
+
 .. raw:: html
 
-   <div id="downloadMacOS" style="display:none">
-      <p>
-         On macOS, install via:
-         <code>pip3 install neuron</code>
-      </p>
-      <p>
-         Alternatively, 
-         <a href="https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0-macosx-10.9-universal2-py-38-39-310.pkg">download macOS installer</a>
-      </p>
-   </div>
-   <div id="downloadWindows" style="display:none">
-      <a class="button" href="https://github.com/neuronsimulator/nrn/releases/download/8.1.0/nrn-8.1.0.w64-mingw-py-36-37-38-39-310-setup.exe">Download Windows installer (64 bit)</a>
-   </div>
-   <div id="downloadLinux" style="display:none">
-      On Linux, install via:
-      <code>pip3 install neuron</code>
-   </div>
-   <p>
-      <a href="https://github.com/neuronsimulator/nrn/releases/latest">All standard versions</a><br>
-      <a href="http://github.com/neuronsimulator/nrn">Source on github</a><br>
-
-   For troubleshooting, see the <a href="install/install_instructions.html">detailed installation instructions</a>.</p>
 
    <script>
 
-   // script for OS detection from http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
-   osName = 'Unknown';
+      // script for OS detection from http://stackoverflow.com/questions/7044944/jquery-javascript-to-detect-os-without-a-plugin
+      osName = 'Unknown';
 
-   function nav(x, y, z) {
-      z = z || y;
-      if (navigator[x] && navigator[x].indexOf(y) !== -1) {
-         osName = z;
+      function nav(x, y, z) {
+         z = z || y;
+         if (navigator[x] && navigator[x].indexOf(y) !== -1) {
+            osName = z;
+         }
       }
-   }
 
-   /*   navigator     value     download  */
-   nav("appVersion", "Mac", "MacOS");
-   nav("appVersion", "Linux");
-   nav("userAgent", "Linux");
-   nav("platform", "Linux");
-   nav("appVersion", "Win", "Windows");
-   nav("userAgent", "Windows");
-   nav("platform", "Win", "Windows");
-   nav("oscpu", "Windows");
-
-   console.log("download" + osName);
-   document.getElementById("download" + osName).style.display = "block";
-
+      /*   navigator     value     download  */
+      nav("appVersion", "Mac", "MacOS");
+      nav("appVersion", "Linux");
+      nav("userAgent", "Linux");
+      nav("platform", "Linux");
+      nav("appVersion", "Win", "Windows");
+      nav("userAgent", "Windows");
+      nav("platform", "Win", "Windows");
+      nav("oscpu", "Windows");
+      
+      if (osName == "MacOS") {
+         $("#installation input")[0].checked = true;
+      } else if (osName == "Linux") {
+         $("#installation input")[1].checked = true;
+      } else if (osName == "Windows") {
+         $("#installation input")[2].checked = true;
+      }
 
    </script>
 
-----
+|
 
 See also the NEURON documentation `index <genindex.html>`_.
