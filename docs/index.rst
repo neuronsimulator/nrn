@@ -109,7 +109,7 @@ Installation
    
    .. tab-item:: Cloud
 
-      On `Google Colab <https://colab.research.google.com>`_ (and many other cloud Jupyter providers), you can install
+      On `Google Colab <https://colab.research.google.com>`_ and many other cloud Jupyter providers, you can install
       NEURON via
 
       .. code::
