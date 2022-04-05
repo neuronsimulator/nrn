@@ -124,6 +124,9 @@ Installation
       View and suggest changes to the source code at:
       `github.com/neuronsimulator/nrn <https://github.com/neuronsimulator/nrn>`_
 
+      For instructions on how to build from source,
+      `go here <install/install_instructions.html#installing-source-distributions>`_.
+
 
 .. raw:: html
 
