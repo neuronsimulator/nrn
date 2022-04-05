@@ -59,10 +59,10 @@ set(CORENRN_ClangFormat_FILES_RE
     "^.*\\\\.cu$$" "^.*\\\\.[chi]pp$$"
     CACHE STRING "List of regular expressions matching C/C++ filenames" FORCE)
 set(CORENRN_ClangFormat_EXCLUDES_RE
-    "${CORENRN_PROJECT_SOURCE_DIR}/external/.*$$"
+    ""
     CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
 set(CORENRN_CMakeFormat_EXCLUDES_RE
-    "${CORENRN_PROJECT_SOURCE_DIR}/external/.*$$" ".*/CMake/packages/.*$$"
+    "CMake/packages/.*$$"
     CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
 include(AddHpcCodingConvSubmodule)
 add_subdirectory(CMake/hpc-coding-conventions/cpp)

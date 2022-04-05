@@ -58,11 +58,7 @@ extern bool corenrn_embedded;
 extern int corenrn_embedded_nthread;
 
 /// parse arguments from neuron and prepare new one for coreneuron
-char* prepare_args(int& argc,
-                   char**& argv,
-                   int use_mpi,
-                   const char* mpi_lib,
-                   const char* nrn_arg);
+char* prepare_args(int& argc, char**& argv, int use_mpi, const char* mpi_lib, const char* nrn_arg);
 
 /// initialize standard mechanisms from coreneuron
 void mk_mech_init(int argc, char** argv);

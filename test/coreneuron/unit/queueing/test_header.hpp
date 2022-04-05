@@ -12,14 +12,11 @@
 #include <boost/mpl/list.hpp>
 #include "coreneuron/nrniv/sptbinq.h"
 
-template<container C>
-struct data{
-	static const container cont = C;
+template <container C>
+struct data {
+    static const container cont = C;
 };
 
-typedef boost::mpl::list<
-						data<queueing::spltree>,
-						data<queueing::pq_que>
-						> full_test_types;
+using full_test_types = boost::mpl::list<data<queueing::spltree>, data<queueing::pq_que>>;
 
 #endif
