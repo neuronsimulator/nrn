@@ -79,7 +79,6 @@ SCENARIO("Test fast_imem calculation", "[Neuron][fast_imem]") {
     }
 }
 
-TEST_CASE("Test return code of execerror", "[NEURON][execerror]")
-{
+TEST_CASE("Test return code of execerror", "[NEURON][execerror]") {
     REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
 }

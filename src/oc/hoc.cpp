@@ -985,7 +985,7 @@ static int hoc_run1(void);
 
 int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 {
-	int exit_status = EXIT_SUCCESS;
+    int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
     extern void hoc_set_unhandled_exception_filter();
     hoc_set_unhandled_exception_filter();
@@ -1197,7 +1197,7 @@ void hoc_quit(void) {
         (*p_nrnpython_finalize)();
     }
 #endif
-    int exit_code = ifarg(1) ? int(*getarg(1)) : 0;      
+    int exit_code = ifarg(1) ? int(*getarg(1)) : 0;
     exit(exit_code);
 }
 
