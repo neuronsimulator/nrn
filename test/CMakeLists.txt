@@ -158,7 +158,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
             ${PYTEST_COVERAGE_ARGS} ./test/cover
     MODFILE_PATTERNS test/cover/mod/*.mod
-    SCRIPT_PATTERNS test/cover/*.py)
+    SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)
     nrn_add_test_group(

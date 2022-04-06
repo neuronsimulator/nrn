@@ -1,5 +1,11 @@
 from neuron import h
 from neuron.expect_hocerr import expect_err
+from checkresult import Chk
+
+import os
+
+datadir = "test/cover/" if os.path.isdir("test/cover") else "./"
+chk = Chk(datadir + "test_netcvode.json")
 
 cv = h.CVode()
 pc = h.ParallelContext()
@@ -349,12 +355,65 @@ def netcon_access():
     locals()
 
 
+def cvode_meth():
+    s = h.Vector()
+    ds = h.Vector()
+    cv.states(s)
+    assert len(s) == 0
+    cv.dstates(ds)
+    assert len(ds) == 0
+
+    net = Net(2)
+    cv.active(1)
+    cv.use_local_dt(0)
+    h.finitialize(-65)
+    cv.solve(1.0)
+    cv.states(s)
+    sref = h.ref("")
+    snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
+    print(snames)
+    chk("cv.statename", snames)
+    chk("cv.states", s)
+    cv.dstates(ds)
+    chk("cv.dstates", ds)
+    std = (h.t, s.to_python(), ds.to_python())
+    ds.fill(0)
+    cv.f(1.0, s, ds)
+    print("std ", std)
+    print("(t, s, ds)", (h.t, s.to_python(), ds.to_python()))
+    assert (h.t, s.to_python(), ds.to_python()) == std
+    s.resize(0)
+    expect_err("cv.f(1.0, s, ds)")
+    pc.nthread(2)
+    h.finitialize(-65)
+    s = h.Vector(std[1])
+    expect_err("cv.f(std[0], s, ds)")
+    pc.nthread(1)
+    h.finitialize(-65)
+
+    cv.use_local_dt(1)
+    h.finitialize(-65)
+    cv.solve(1.0)
+    expect_err("cv.f(std[0], s, ds)")
+    cv.states(s)
+    sref = h.ref("")
+    snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
+    print(snames)
+    chk("cv.statename lvardt", snames)
+    chk("cv.states lvardt", s)
+    cv.dstates(ds)
+    chk("cv.dstates lvardt", ds)
+    cv.use_local_dt(0)
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
     netcon_access()
+    cvode_meth()
 
 
 if __name__ == "__main__":
     test_netcvode_cover()
+    chk.save()
     pass

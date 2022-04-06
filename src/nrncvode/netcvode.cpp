@@ -797,37 +797,33 @@ static double nc_wcnt(void* v) {
     return d->cnt_;
 }
 
-static Member_func members[] = {"active",  nc_active,  "valid",     nc_valid,   "preloc", nc_preloc,
-                                "postloc", nc_postloc, "setpost",   nc_setpost, "event",  nc_event,
-                                "record",  nc_record,  "srcgid",    nc_srcgid,  "wcnt",   nc_wcnt,
-                                "delay",   0,  // these four changed below
-                                "weight",  0,          "threshold", 0,          "x",      0,
-                                0,         0};
+static Member_func members[] = {{"active", nc_active},
+                                {"valid", nc_valid},
+                                {"preloc", nc_preloc},
+                                {"postloc", nc_postloc},
+                                {"setpost", nc_setpost},
+                                {"event", nc_event},
+                                {"record", nc_record},
+                                {"srcgid", nc_srcgid},
+                                {"wcnt", nc_wcnt},
+                                {"delay", 0},  // these four changed below
+                                {"weight", 0},
+                                {"threshold", 0},
+                                {"x", 0},
+                                {0, 0}};
 
-static Member_ret_obj_func omembers[] = {"syn",
-                                         nc_syn,
-                                         "pre",
-                                         nc_pre,
-                                         "precell",
-                                         nc_precell,
-                                         "postcell",
-                                         nc_postcell,
-                                         "preseg",
-                                         nc_preseg,
-                                         "postseg",
-                                         nc_postseg,
-                                         "prelist",
-                                         nc_prelist,
-                                         "synlist",
-                                         nc_synlist,
-                                         "precelllist",
-                                         nc_precelllist,
-                                         "postcelllist",
-                                         nc_postcelllist,
-                                         "get_recordvec",
-                                         nc_get_recordvec,
-                                         0,
-                                         0};
+static Member_ret_obj_func omembers[] = {{"syn", nc_syn},
+                                         {"pre", nc_pre},
+                                         {"precell", nc_precell},
+                                         {"postcell", nc_postcell},
+                                         {"preseg", nc_preseg},
+                                         {"postseg", nc_postseg},
+                                         {"prelist", nc_prelist},
+                                         {"synlist", nc_synlist},
+                                         {"precelllist", nc_precelllist},
+                                         {"postcelllist", nc_postcelllist},
+                                         {"get_recordvec", nc_get_recordvec},
+                                         {0, 0}};
 
 static void steer_val(void* v) {
     NetCon* d = (NetCon*) v;
@@ -4791,7 +4787,7 @@ NetCon* NetCvode::install_deliver(double* dsrc,
         if (hoc_table_lookup("x", osrc->ctemplate->symtable)) {
             Point_process* pp = ob2pntproc(osrc);
             assert(pp && pp->prop);
-            if (!pnt_receive[pp->prop->type]) { // only if no NET_RECEIVE block
+            if (!pnt_receive[pp->prop->type]) {  // only if no NET_RECEIVE block
                 sprintf(buf, "%s.x", hoc_object_name(osrc));
                 psrc = hoc_val_pointer(buf);
             }
