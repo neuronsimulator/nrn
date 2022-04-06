@@ -13,7 +13,7 @@ set(spike_comparison_tests
 set(modfiles mod/Gfluct3.mod mod/hhderiv.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
 if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
   # These .mod files cannot be compiled with NMODL + OpenACC/GPU because of
-  # https://github.com/BlueBrain/nmodl/issues/311
+  # https://github.com/BlueBrain/nmodl/issues/311 <-- this is apparently fixed?
   list(APPEND modfiles mod/hhkin.mod)
   # These tests depend on the modfiles on the line above.
   list(APPEND spike_comparison_tests conc kin)
@@ -64,6 +64,7 @@ foreach(test ${spike_comparison_tests})
     set(num_ranks 1)
   endif()
   nrn_add_test_group(
+    CORENEURON
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}
@@ -187,6 +188,7 @@ foreach(test ${direct_tests})
     set(num_ranks 1)
   endif()
   nrn_add_test_group(
+    CORENEURON
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}
