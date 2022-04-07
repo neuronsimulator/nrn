@@ -4519,7 +4519,7 @@ void NetCvode::error_weights() {
     vp = vector_vec(v);
     k = 0;
     if (gcv_) {
-        gcv_->states(vp + j);
+        gcv_->error_weights(vp);
     } else {
         lvardtloop(i, j) {
             p[i].lcv_[j].error_weights(vp + k);
@@ -4548,7 +4548,7 @@ void NetCvode::acor() {
     vp = vector_vec(v);
     k = 0;
     if (gcv_) {
-        gcv_->states(vp + j);
+        gcv_->acor(vp);
     } else {
         lvardtloop(i, j) {
             p[i].lcv_[j].acor(vp + k);

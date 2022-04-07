@@ -6,6 +6,8 @@ import os
 
 datadir = "test/cover/" if os.path.isdir("test/cover") else "./"
 chk = Chk(datadir + "test_netcvode.json")
+if hasattr(h, "usetable_hh"):
+    h.usetable_hh = 0  # So same whether compiled with CoreNEURON or not.
 
 cv = h.CVode()
 pc = h.ParallelContext()
@@ -356,18 +358,39 @@ def netcon_access():
 
 
 def cvode_meth():
+    # empty
     s = h.Vector()
     ds = h.Vector()
     cv.states(s)
     assert len(s) == 0
     cv.dstates(ds)
     assert len(ds) == 0
+    h.finitialize(-65)
+    cv.event(0.5)
+    cv.solve(1.0)
+    cv.event(1.1)
+    cv.solve()
+
+    cv.active(1)
+    pc.nthread(2)
+    h.finitialize(-65)
+    cv.event(0.5)
+    cv.solve(1)
+    cv.event(1.01)
+    cv.solve()
+    pc.nthread(1)
+    cv.use_local_dt(1)
+    assert cv.current_method() == 300.0
+    cv.use_local_dt(0)
 
     net = Net(2)
     cv.active(1)
     cv.use_local_dt(0)
     h.finitialize(-65)
     cv.solve(1.0)
+    cv.statistics()
+    cv.spike_stat(ds)
+    # Note: states, dstates, acor are not the same for lvardt
     cv.states(s)
     sref = h.ref("")
     snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
@@ -376,6 +399,11 @@ def cvode_meth():
     chk("cv.states", s)
     cv.dstates(ds)
     chk("cv.dstates", ds)
+    vec = h.Vector()
+    cv.error_weights(vec)
+    chk("cv.error_weights", vec)
+    cv.acor(vec)
+    chk("cv.acor", vec)
     std = (h.t, s.to_python(), ds.to_python())
     ds.fill(0)
     cv.f(1.0, s, ds)
@@ -394,16 +422,26 @@ def cvode_meth():
     cv.use_local_dt(1)
     h.finitialize(-65)
     cv.solve(1.0)
+    cv.statistics()
+    cv.spike_stat(ds)
     expect_err("cv.f(std[0], s, ds)")
     cv.states(s)
     sref = h.ref("")
     snames = [(cv.statename(i, sref), sref[0])[1] for i in range(len(s))]
-    print(snames)
     chk("cv.statename lvardt", snames)
     chk("cv.states lvardt", s)
     cv.dstates(ds)
     chk("cv.dstates lvardt", ds)
+    cv.error_weights(vec)
+    chk("cv.error_weights lvardt", vec)
+    cv.acor(vec)
+    chk("cv.acor lvardt", vec)
+    h.stoprun = 1
+    cv.solve()
     cv.use_local_dt(0)
+
+    del net, sref, snames, s, ds, std
+    locals()
 
 
 def test_netcvode_cover():
