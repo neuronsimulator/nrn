@@ -2,6 +2,7 @@
 include(NeuronTestHelper)
 # Step 1 -- define a group of configurations
 nrn_add_test_group(
+  CORENEURON
   NAME external_ringtest
   SUBMODULE tests/ringtest # git submodule where the relevant tests are defined
   MODFILE_PATTERNS "mod/*.mod"

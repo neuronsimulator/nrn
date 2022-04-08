@@ -1,5 +1,6 @@
 include(NeuronTestHelper)
 nrn_add_test_group(
+  CORENEURON
   NAME reduced_dentate
   SUBMODULE tests/reduced_dentate
   OUTPUT "asciispikes::results/dentatenet_spikeout_*.dat"
