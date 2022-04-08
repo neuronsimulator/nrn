@@ -1,6 +1,6 @@
 NEURON	{
     SUFFIX VersionMacros
-    RANGE eq8_2_0_result, ne9_0_1_result, gt9_0_0_result, lt42_1_2_result, gteq10_4_7_result, lteq8_1_0_result
+    RANGE eq8_2_0_result, ne9_0_1_result, gt9_0_0_result, lt42_1_2_result, gteq10_4_7_result, lteq8_1_0_result, explicit_gteq8_2_0_result
     THREADSAFE
 }
 
@@ -11,6 +11,7 @@ ASSIGNED {
     lt42_1_2_result
     gteq10_4_7_result
     lteq8_1_0_result
+    explicit_gteq8_2_0_result
 }
 
 BREAKPOINT {
@@ -67,6 +68,15 @@ VERBATIM
 #else
 ENDVERBATIM
     lteq8_1_0_result = 0
+VERBATIM
+#endif
+#ifdef NRN_VERSION_GTEQ_8_2_0
+ENDVERBATIM
+    explicit_gteq8_2_0_result = 1
+VERBATIM
+#else
+ENDVERBATIM
+    explicit_gteq8_2_0_result = 0
 VERBATIM
 #endif
 ENDVERBATIM

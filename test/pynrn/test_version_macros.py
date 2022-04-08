@@ -36,6 +36,7 @@ def test_version_macros():
     assert t("lt42_1_2") == (ver < (42, 1, 2))
     assert t("gteq10_4_7") == (ver >= (10, 4, 7))
     assert t("lteq8_1_0") == (ver <= (8, 1, 0))
+    assert t("explicit_gteq8_2_0") == (ver >= (8, 2, 0))
 
 
 if __name__ == "__main__":
