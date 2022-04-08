@@ -163,7 +163,8 @@ int main(int argc, const char* argv[]) {
     app.get_formatter()->column_width(40);
     app.set_help_all_flag("-H,--help-all", "Print this help message including all sub-commands");
 
-    app.add_option("--verbose", verbose, "Verbosity of logger output", true)
+    app.add_option("--verbose", verbose, "Verbosity of logger output")
+        ->capture_default_str()
         ->ignore_case()
         ->check(CLI::IsMember({"trace", "debug", "info", "warning", "error", "critical", "off"}));
 
@@ -172,11 +173,13 @@ int main(int argc, const char* argv[]) {
         ->required()
         ->check(CLI::ExistingFile);
 
-    app.add_option("-o,--output", output_dir, "Directory for backend code output", true)
+    app.add_option("-o,--output", output_dir, "Directory for backend code output")
+        ->capture_default_str()
         ->ignore_case();
-    app.add_option("--scratch", scratch_dir, "Directory for intermediate code output", true)
+    app.add_option("--scratch", scratch_dir, "Directory for intermediate code output")
+        ->capture_default_str()
         ->ignore_case();
-    app.add_option("--units", units_dir, "Directory of units lib file", true)->ignore_case();
+    app.add_option("--units", units_dir, "Directory of units lib file")->capture_default_str()->ignore_case();
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
     host_opt->add_flag("--c", c_backend, "C/C++ backend ({})"_format(c_backend))->ignore_case();
@@ -254,8 +257,7 @@ int main(int argc, const char* argv[]) {
     auto codegen_opt = app.add_subcommand("codegen", "Code generation options")->ignore_case();
     codegen_opt->add_option("--datatype",
         data_type,
-        "Data type for floating point variables",
-        true)->ignore_case()->check(CLI::IsMember({"float", "double"}));
+        "Data type for floating point variables")->capture_default_str()->ignore_case()->check(CLI::IsMember({"float", "double"}));
     codegen_opt->add_flag("--force",
         force_codegen,
         "Force code generation even if there is any incompatibility");
