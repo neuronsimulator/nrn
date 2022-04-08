@@ -59,7 +59,7 @@ _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
-ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
+ifeq (@NRN_INCLUDE_MPI_HEADERS@, ON)
   INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 endif
 
