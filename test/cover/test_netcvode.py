@@ -4,8 +4,8 @@ from checkresult import Chk
 
 import os
 
-datadir = "test/cover/" if os.path.isdir("test/cover") else "./"
-chk = Chk(datadir + "test_netcvode.json")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
 if hasattr(h, "usetable_hh"):
     h.usetable_hh = 0  # So same whether compiled with CoreNEURON or not.
 
@@ -444,11 +444,42 @@ def cvode_meth():
     locals()
 
 
+def state_magnitudes():
+    h.load_file("stdrun.hoc")
+    h.load_file("atoltool.hoc")
+    net = Net(2)
+    atool = h.AtolTool()
+    h.tstop = 1
+
+    def run():
+        xtra = " lvardt" if cv.use_local_dt() else ""
+        atool.anrun()
+        r = [[i.name, i.max, i.acmax] for i in atool.states]
+        chk("AtolTool" + xtra, r)
+        h.init()
+        atool.activate(1)
+        h.run()
+        cv.state_magnitudes(2)
+        vec = h.Vector()
+        cv.state_magnitudes(vec, 0)
+        # bug for lvardt. slot for second cell is all 0
+        chk("state_magnitudes states" + xtra, vec)
+        cv.state_magnitudes(vec, 1)
+        chk("state_magnitudes acor" + xtra, vec)
+        cv.state_magnitudes(0)
+
+    run()
+    cv.use_local_dt(1)
+    run()
+    cv.use_local_dt(0)
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
     netcon_access()
     cvode_meth()
+    state_magnitudes()
 
 
 if __name__ == "__main__":

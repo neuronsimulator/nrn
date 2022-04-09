@@ -150,13 +150,12 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/pynrn/*.py)
 
   # Mostly to increase coverage
-  nrn_add_test_group(NAME coverage_tests)
+  nrn_add_test_group(NAME coverage_tests MODFILE_PATTERNS test/cover/mod/*.mod)
   nrn_add_test(
     GROUP coverage_tests
     NAME cover_tests
     COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
             ${PYTEST_COVERAGE_ARGS} ./test/cover
-    MODFILE_PATTERNS test/cover/mod/*.mod
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)

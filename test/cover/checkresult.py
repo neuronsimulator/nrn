@@ -41,8 +41,15 @@ class Chk:
         if key in self.d:
             if type(value) == type(h.Vector):  # actually hoc.HocObject
                 m = h.Vector(self.d[key]).sub(value).abs().max()
+                if m > tol:
+                    print(key, " difference > ", tol)
+                    print(m)
                 assert m <= tol
                 return
+            if self.d[key] != value:
+                print(key, " difference")
+                print("std = ", self.d[key])
+                print("\nval = ", value)
             assert self.d[key] == value
         else:
             print("{} added {}".format(self, key))
