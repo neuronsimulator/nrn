@@ -474,12 +474,47 @@ def state_magnitudes():
     cv.use_local_dt(0)
 
 
+def vec_record_discrete():
+    net = Net(2)
+    vec = h.Vector()
+    trecord = h.Vector()
+    tvec = h.Vector().indgen(.1, .8, .1)
+    vec.record(net.cells[0].soma(.5)._ref_v, tvec, sec=net.cells[0].soma)
+    trecord.record(h._ref_t, tvec, sec=net.cells[0].soma)
+    cv.active(1)
+    def run(tstop):
+        pc.set_maxstep(10)
+        h.finitialize(-65)
+        h.frecord_init()
+        pc.psolve(tstop)
+    def ssrun(tstop):
+        ss = h.SaveState()
+        run(tstop/2.)
+        ss.save()
+        h.finitialize(-65)
+        ss.restore()
+        pc.psolve(tstop)
+
+    run(1)
+    chk("record discrete tvec", vec)
+    tvec.indgen(1.1, 1.8, .1)
+    ssrun(2)
+    chk("record discrete savestate tvec", vec)
+    cv.record_remove(vec)
+    vec.record(net.cells[0].soma(.5)._ref_v, 0.1, sec=net.cells[0].soma)
+    trecord.record(h._ref_t, 0.1, sec=net.cells[0].soma)
+    run(1)
+    chk("record discrete dt", vec)
+    ssrun(2)
+    chk("record discrete savestate dt", vec)
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
     netcon_access()
     cvode_meth()
     state_magnitudes()
+    vec_record_discrete()
 
 
 if __name__ == "__main__":
