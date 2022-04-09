@@ -12,3 +12,4 @@ numpy
 plotly
 nbsphinx
 jinja2
+sphinx-design
