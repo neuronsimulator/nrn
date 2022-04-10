@@ -562,12 +562,22 @@ def integrator_properties():
         for maxorder in [2, 5]:
             cv.maxorder(maxorder)
             assert cv.maxorder() == maxorder
+            h.finitialize(-65)
+            while h.t < 2.0:
+                cv.solve()
+                order = cv.order(0) if lvardt else cv.order()
+                assert order <= maxorder
         for minstep in [0.0001, 0.0]:
             cv.minstep(minstep)
             assert cv.minstep() == minstep
         for maxstep in [0.5, 1e9]:
             cv.maxstep(maxstep)
             assert cv.maxstep() == maxstep
+
+    # jacobian
+    for jac in [2, 1, 0]:  # end up as default
+        cv.jacobian(jac)
+        run2("jacobian " + str(cv.jacobian()))
 
 
 def test_netcvode_cover():

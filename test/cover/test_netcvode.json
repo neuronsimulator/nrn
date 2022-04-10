@@ -461,5 +461,8 @@
   "stiff=0 lvardt tvec size": 69,
   "stiff=0 tvec size": 73,
   "stiff=1 tvec size": 66,
-  "stiff=2 tvec size": 71
+  "stiff=2 tvec size": 71,
+  "jacobian 2 tvec size": 93,
+  "jacobian 1 tvec size": 78,
+  "jacobian 0 tvec size": 71
 }
