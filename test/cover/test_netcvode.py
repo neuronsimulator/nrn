@@ -478,18 +478,20 @@ def vec_record_discrete():
     net = Net(2)
     vec = h.Vector()
     trecord = h.Vector()
-    tvec = h.Vector().indgen(.1, .8, .1)
-    vec.record(net.cells[0].soma(.5)._ref_v, tvec, sec=net.cells[0].soma)
+    tvec = h.Vector().indgen(0.1, 0.8, 0.1)
+    vec.record(net.cells[0].soma(0.5)._ref_v, tvec, sec=net.cells[0].soma)
     trecord.record(h._ref_t, tvec, sec=net.cells[0].soma)
     cv.active(1)
+
     def run(tstop):
         pc.set_maxstep(10)
         h.finitialize(-65)
         h.frecord_init()
         pc.psolve(tstop)
+
     def ssrun(tstop):
         ss = h.SaveState()
-        run(tstop/2.)
+        run(tstop / 2.0)
         ss.save()
         h.finitialize(-65)
         ss.restore()
@@ -497,16 +499,76 @@ def vec_record_discrete():
 
     run(1)
     chk("record discrete tvec", vec)
-    tvec.indgen(1.1, 1.8, .1)
+    tvec.indgen(1.1, 1.8, 0.1)
     ssrun(2)
     chk("record discrete savestate tvec", vec)
     cv.record_remove(vec)
-    vec.record(net.cells[0].soma(.5)._ref_v, 0.1, sec=net.cells[0].soma)
+    vec.record(net.cells[0].soma(0.5)._ref_v, 0.1, sec=net.cells[0].soma)
     trecord.record(h._ref_t, 0.1, sec=net.cells[0].soma)
     run(1)
     chk("record discrete dt", vec)
     ssrun(2)
     chk("record discrete savestate dt", vec)
+
+
+def integrator_properties():
+    s = h.Section()
+    s.insert("pas")
+    s.e_pas = 0
+    s.g_pas = 0.001
+    cv.active(1)
+    vvec = h.Vector()
+    tvec = h.Vector()
+    vvec.record(s(0.5)._ref_v, sec=s)
+    tvec.record(h._ref_t, sec=s)
+
+    # rtol and atol
+    def run1(key):
+        h.finitialize(0.001)
+        cv.solve(2)
+        chk(key + " tvec", tvec)
+        chk(key + " vvec", vvec)
+
+    cv.rtol(1e-3)
+    cv.atol(0)
+    run1("rtol=%g atol=%g" % (cv.rtol(), cv.atol()))
+    cv.rtol(0)
+    cv.atol(1e-3)
+    run1("rtol=%g atol=%g" % (cv.rtol(), cv.atol()))
+    del s
+
+    net = Net(2)
+    vvec.record(net.cells[0].soma(0.5)._ref_v, sec=net.cells[0].soma)
+    tvec.record(h._ref_t, sec=net.cells[0].soma)
+
+    # stiff
+    def run2(key):
+        h.finitialize(-65)
+        cv.solve(2)
+        chk(key + " tvec size", tvec.size())
+
+    cv.use_local_dt(1)
+    cv.stiff(0)
+    run2("stiff=0 lvardt")
+    cv.stiff(2)
+    cv.use_local_dt(0)
+    for stiff in range(3):
+        cv.stiff(stiff)
+        run2("stiff=%d" % (cv.stiff(),))
+
+    # maxorder, minstep, maxstep
+    for lvardt in [1, 0]:
+        cv.use_local_dt(lvardt)
+        for maxorder in [2, 5]:
+            cv.maxorder(maxorder)
+            assert cv.maxorder() == maxorder
+        for minstep in [0.0001, 0.0]:
+            cv.minstep(minstep)
+            assert cv.minstep() == minstep
+        for maxstep in [0.5, 1e9]:
+            cv.maxstep(maxstep)
+            assert cv.maxstep() == maxstep
+
 
 def test_netcvode_cover():
     nrn_use_daspk()
@@ -515,6 +577,7 @@ def test_netcvode_cover():
     cvode_meth()
     state_magnitudes()
     vec_record_discrete()
+    integrator_properties()
 
 
 if __name__ == "__main__":

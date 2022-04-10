@@ -4704,10 +4704,12 @@ void NetCvode::stiff(int x) {
 void NetCvode::maxorder(int x) {
     maxorder_ = x;
     if (gcv_) {
+        gcv_->free_cvodemem();
         gcv_->maxorder(maxorder_);
     } else {
         int i, j;
         lvardtloop(i, j) {
+            p[i].lcv_[j].free_cvodemem();
             p[i].lcv_[j].maxorder(maxorder_);
         }
     }
