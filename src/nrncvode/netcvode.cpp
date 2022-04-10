@@ -461,7 +461,6 @@ declarePool(SelfEventPool, SelfEvent)
 static TQList* record_init_items_;
 
 static DiscreteEvent* null_event_;
-static DiscreteEvent* tstop_event_;
 
 static PreSyn* unused_presyn;  // holds the NetCons with no source
 
@@ -1225,7 +1224,6 @@ NetCvode::NetCvode(bool single) {
     mst_ = nil;
     condition_order_ = 1;
     null_event_ = new DiscreteEvent();
-    tstop_event_ = new TstopEvent();
     eps_ = 100. * UNIT_ROUNDOFF;
     hdp_ = nil;
     print_event_ = 0;
@@ -2213,25 +2211,6 @@ int NetCvode::solve(double tout) {
     return err;
 }
 
-void NetCvode::handle_tstop_event(double tt, NrnThread* nt) {
-#if 0  // now a HocEvent is used to do this
-	nt->_stop_stepping = 1;
-	if (cvode_active_) {
-		if (gcv_) {
-			retreat(tt, gcv_);
-			gcv_->record_continuous();
-		}else{
-			int i, n = p[nt->id].nlcv_;
-			Cvode* lcv = p[nt->id].lcv_;
-			for (i = 0; i < n; ++i) {
-				local_retreat(tt, lcv + i);
-				lcv[i].record_continuous();
-			}
-		}
-	}
-#endif
-}
-
 void NetCvode::deliver_least_event(NrnThread* nt) {
     TQItem* q = p[nt->id].tqe_->least();
     DiscreteEvent* de = (DiscreteEvent*) q->data_;
@@ -2761,28 +2740,6 @@ void NetCvode::null_event(double tt) {
 #else
     event(tt, null_event_, nt);
 #endif
-}
-
-void NetCvode::tstop_event(double tt) {
-    if (tt - nt_t < 0) {
-        return;
-    }
-#if USENEOSIM
-    if (neosim_entity_) {
-        // ignore for neosim. There is no appropriate cvode_instance
-        // cvode_instance->neosim_self_events_->insert(nt_t + delay, tstop_event_);
-    } else
-#endif
-    {
-        if (gcv_) {
-            event(tt, tstop_event_, nrn_threads);
-        } else {
-            NrnThread* nt;
-            FOR_THREADS(nt) {
-                event(tt, tstop_event_, nt);
-            }
-        }
-    }
 }
 
 void NetCvode::hoc_event(double tt, const char* stmt, Object* ppobj, int reinit, Object* pyact) {
@@ -3622,46 +3579,6 @@ NrnThread* PlayRecordEvent::thread() {
 void PlayRecordEvent::pr(const char* s, double tt, NetCvode* ns) {
     Printf("%s PlayRecordEvent %.15g ", s, tt);
     plr_->pr();
-}
-
-// For localstep makes sure all cvode instances are at this time and
-// makes sure the continuous record records values at this time.
-TstopEvent::TstopEvent() {}
-TstopEvent::~TstopEvent() {}
-
-void TstopEvent::deliver(double tt, NetCvode* ns, NrnThread* nt) {
-    STATISTICS(discretevent_deliver_);
-    ns->handle_tstop_event(tt, nt);
-}
-void TstopEvent::pgvts_deliver(double tt, NetCvode* ns) {
-    assert(0);
-    deliver(tt, ns, 0);
-}
-
-void TstopEvent::pr(const char* s, double tt, NetCvode* ns) {
-    Printf("%s TstopEvent %.15g\n", s, tt);
-}
-
-DiscreteEvent* TstopEvent::savestate_save() {
-    //	pr("savestate_save", 0, net_cvode_instance);
-    if (this != tstop_event_) {
-        hoc_execerror("TstopEvent::savestate_save:", " is not the tstop_event_");
-    }
-    return new TstopEvent();
-}
-
-void TstopEvent::savestate_restore(double tt, NetCvode* nc) {
-    //	pr("savestate_restore", tt, nc);
-    Printf("tstop_event_ onto queue\n");
-    nc->tstop_event(tt);
-}
-
-DiscreteEvent* TstopEvent::savestate_read(FILE* f) {
-    return new TstopEvent();
-}
-
-void TstopEvent::savestate_write(FILE* f) {
-    fprintf(f, "%d\n", TstopEventType);
 }
 
 #include <hocevent.cpp>

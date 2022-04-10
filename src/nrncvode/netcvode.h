@@ -92,7 +92,6 @@ class NetCvode {
     void send2thread(double, DiscreteEvent*, NrnThread*);
     void null_event(double);
     void tstop_event(double);
-    void handle_tstop_event(double, NrnThread* nt);
     void hoc_event(double,
                    const char* hoc_stmt,
                    Object* ppobj = nil,

@@ -826,8 +826,6 @@ static void set_info(TQItem* tqi,
     switch (type) {
     case DiscreteEventType: {  // 0
     } break;
-    case TstopEventType: {  // 1
-    } break;
     case NetConType: {  // 2
         NetCon* nc = (NetCon*) de;
         // To find the i for cg.netcons[i] == nc

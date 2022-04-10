@@ -1059,9 +1059,6 @@ void SaveState::readnet(FILE* f) {
             case DiscreteEventType:
                 de = DiscreteEvent::savestate_read(f);
                 break;
-            case TstopEventType:
-                de = TstopEvent::savestate_read(f);
-                break;
             case NetConType:
                 de = NetCon::savestate_read(f);
                 break;

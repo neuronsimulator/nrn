@@ -37,7 +37,7 @@ class Point_process;
 using SelfEventPPTable = std::unordered_map<long, Point_process*>;
 
 #define DiscreteEventType   0
-#define TstopEventType      1
+#define TstopEventType      1  // no longer used
 #define NetConType          2
 #define SelfEventType       3
 #define PreSynType          4
@@ -384,27 +384,6 @@ class HocEvent: public DiscreteEvent {
     int reinit_;
     static HocEvent* next_del_;
     static HocEventPool* hepool_;
-};
-
-class TstopEvent: public DiscreteEvent {
-  public:
-    TstopEvent();
-    virtual ~TstopEvent();
-    virtual void deliver(double t, NetCvode*, NrnThread*);
-    virtual void pr(const char*, double t, NetCvode*);
-    virtual int pgvts_op(int& i) {
-        i = 0;
-        return 2;
-    }
-    virtual void pgvts_deliver(double t, NetCvode*);
-
-    virtual int type() {
-        return TstopEventType;
-    }
-    virtual DiscreteEvent* savestate_save();
-    virtual void savestate_restore(double deliverytime, NetCvode*);
-    virtual void savestate_write(FILE*);
-    static DiscreteEvent* savestate_read(FILE*);
 };
 
 class NetParEvent: public DiscreteEvent {
