@@ -29,20 +29,26 @@ Description:
       #if NRN_VERSION_EQ(9, 0, 0)
       /* NEURON version is exactly 9.0.0 */
       #endif
-      #if NRN_VERSION_NE(1, 2, 3)
-      /* NEURON version is not 1.2.3 */
+      #if NRN_VERSION_NE(8, 2, 3)
+      /* NEURON version is not 8.2.3 */
       #endif
-      #if NRN_VERSION_GT(8, 0, 0)
-      /* NEURON version is >8.0.0 */
+      #if NRN_VERSION_GT(9, 1, 0)
+      /* NEURON version is >9.1.0 */
       #endif
-      #if NRN_VERSION_LT(8, 2, 0)
+      #if NRN_VERSION_LT(10, 2, 0)
+      /* NEURON version is <10.2.0 */
+      #endif
+      #if NRN_VERSION_GTEQ(8, 2, 1)
+      /* NEURON version is >=8.2.1 */
+      #endif
+      #if NRN_VERSION_LTEQ(8, 2, 2)
+      /* NEURON version is <=8.2.2 */
+      #endif
+      #ifndef NRN_VERSION_GTEQ_8_2_0
       /* NEURON version is <8.2.0 */
-      #endif
-      #if NRN_VERSION_GTEQ(8, 1, 0)
-      /* NEURON version is >=8.1.0 */
-      #endif
-      #if NRN_VERSION_LTEQ(8, 0, 2)
-      /* NEURON version is <=8.0.2 */
+      #else
+      /* NEURON version is >=8.2.0 so NRN_VERSION_{EQ,NE,GT,LT,GTEQ,LTEQ}(...)
+       * are defined. */
       #endif
 
     ``VERBATIM`` should be used with caution and restraint, as it is very easy
