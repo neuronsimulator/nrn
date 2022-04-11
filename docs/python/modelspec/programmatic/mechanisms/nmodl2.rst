@@ -464,3 +464,4 @@ Description:
     model may eliminate the instability. 
 
 
+.. include:: ../../../../nmodl/verbatim.rst
