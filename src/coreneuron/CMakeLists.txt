@@ -187,9 +187,8 @@ set(CORENRN_MPI_LIB_NAME
 if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
   add_library(${CORENRN_MPI_LIB_NAME} OBJECT ${MPI_LIB_FILES})
   target_include_directories(
-    ${CORENRN_MPI_LIB_NAME}
-    PRIVATE ${MPI_INCLUDE_PATH}
-    PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
+    ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH} ${CORENEURON_PROJECT_SOURCE_DIR}
+                                    ${CORENEURON_PROJECT_BINARY_DIR}/generated)
   set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
   set(CORENRN_MPI_OBJ $<TARGET_OBJECTS:${CORENRN_MPI_LIB_NAME}>)
 endif()
@@ -206,7 +205,8 @@ add_library(
   ${MPI_CORE_FILES}
   ${CORENRN_MPI_OBJ})
 
-target_include_directories(coreneuron PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
+target_include_directories(coreneuron PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}
+                                              ${CORENEURON_PROJECT_BINARY_DIR}/generated)
 # we can link to MPI libraries in non-dynamic-mpi build
 if(CORENRN_ENABLE_MPI AND NOT CORENRN_ENABLE_MPI_DYNAMIC)
   target_link_libraries(coreneuron ${MPI_CXX_LIBRARIES})
@@ -234,9 +234,8 @@ if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
     add_library(${CORENRN_MPI_LIB_NAME} SHARED ${MPI_LIB_FILES})
     target_link_libraries(${CORENRN_MPI_LIB_NAME} ${MPI_CXX_LIBRARIES})
     target_include_directories(
-      ${CORENRN_MPI_LIB_NAME}
-      PRIVATE ${MPI_INCLUDE_PATH}
-      PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
+      ${CORENRN_MPI_LIB_NAME} PRIVATE ${MPI_INCLUDE_PATH} ${CORENEURON_PROJECT_SOURCE_DIR}
+                                      ${CORENEURON_PROJECT_BINARY_DIR}/generated)
     set_property(TARGET ${CORENRN_MPI_LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
     list(APPEND corenrn_mpi_targets ${CORENRN_MPI_LIB_NAME})
   else()
@@ -259,7 +258,7 @@ if(CORENRN_ENABLE_MPI AND CORENRN_ENABLE_MPI_DYNAMIC)
       target_include_directories(
         core${libname}_lib
         PUBLIC ${include}
-        PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
+        PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR} ${CORENEURON_PROJECT_BINARY_DIR}/generated)
 
       # ~~~
       # TODO: somehow mingw requires explicit linking. This needs to be verified
@@ -295,7 +294,8 @@ add_dependencies(coreneuron kin_deriv_header nrnivmodl-core)
 
 # scopmath is created separately for nrnivmodl-core workflow
 add_library(scopmath STATIC ${CORENEURON_HEADER_FILES} ${SCOPMATH_CODE_FILES})
-target_include_directories(scopmath PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR})
+target_include_directories(scopmath PRIVATE ${CORENEURON_PROJECT_SOURCE_DIR}
+                                            ${CORENEURON_PROJECT_BINARY_DIR}/generated)
 
 target_link_libraries(coreneuron ${reportinglib_LIBRARY} ${sonatareport_LIBRARY} ${CALIPER_LIB}
                       ${likwid_LIBRARIES})
@@ -374,6 +374,8 @@ file(
   RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
   *.h *.hpp *.ispc)
 
+configure_file("${CORENEURON_PROJECT_BINARY_DIR}/generated/coreneuron/config/neuron_version.hpp"
+               "${CMAKE_BINARY_DIR}/include/coreneuron/config/neuron_version.hpp" COPYONLY)
 foreach(header ${main_headers})
   configure_file("${header}" "${CMAKE_BINARY_DIR}/include/coreneuron/${header}" COPYONLY)
 endforeach()

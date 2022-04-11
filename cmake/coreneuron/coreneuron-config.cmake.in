@@ -1,5 +1,5 @@
 # =============================================================================
-# Copyright (C) 2016-2021 Blue Brain Project
+# Copyright (C) 2016-2022 Blue Brain Project
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -8,6 +8,9 @@
 
 get_filename_component(CONFIG_PATH "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
+set(CORENRN_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(CORENRN_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(CORENRN_VERSION_PATCH @PROJECT_VERSION_PATCH@)
 set(CORENRN_ENABLE_GPU @CORENRN_ENABLE_GPU@)
 set(CORENRN_ENABLE_NMODL @CORENRN_ENABLE_NMODL@)
 set(CORENRN_ENABLE_REPORTING @CORENRN_ENABLE_REPORTING@)
