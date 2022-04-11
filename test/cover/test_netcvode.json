@@ -464,5 +464,57 @@
   "stiff=2 tvec size": 71,
   "jacobian 2 tvec size": 93,
   "jacobian 1 tvec size": 78,
-  "jacobian 0 tvec size": 71
+  "jacobian 0 tvec size": 71,
+  "event queue spikes": [
+    [
+      10.986122886681098,
+      12.527629684953682
+    ],
+    [
+      0.0,
+      1.0
+    ]
+  ],
+  "print_event_queue": " NetCon[0] src=IntFire2[0] target=IntFire2[2] 13.9861228866811\n NetCon[1] src=IntFire2[0] target=IntFire2[2] 13.9861228866811\n SelfEvent target=IntFire2[2] 14.6633706879343 flag=1\n PreSyn src=IntFire2[1] 15.5276296849537\n SelfEvent target=IntFire2[0] 21.9722457733622 flag=1\n SelfEvent target=IntFire2[1] 25.0552593699074 flag=1\n",
+  "print_event_queue tvec": [
+    13.986122886681098,
+    13.986122886681098,
+    14.66337068793427,
+    15.527629684953682,
+    21.972245773362197,
+    25.055259369907365
+  ],
+  "event_queue_info(2...)": [
+    [
+      13.986122886681098,
+      13.986122886681098,
+      15.527629684953682,
+      15.527629684953682,
+      15.527629684953682
+    ],
+    [
+      "NetCon[0]",
+      "NetCon[1]",
+      "NetCon[4]",
+      "NetCon[3]",
+      "NetCon[2]"
+    ]
+  ],
+  "event_queue_info(3...)": [
+    [
+      14.66337068793427,
+      21.972245773362197,
+      25.055259369907365
+    ],
+    [
+      1.0,
+      1.0,
+      1.0
+    ],
+    [
+      "IntFire2[2]",
+      "IntFire2[0]",
+      "IntFire2[1]"
+    ]
+  ]
 }

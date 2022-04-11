@@ -2,7 +2,7 @@ from neuron import h
 from neuron.expect_hocerr import expect_err
 from checkresult import Chk
 
-import os
+import os, sys, io
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
@@ -580,6 +580,47 @@ def integrator_properties():
         run2("jacobian " + str(cv.jacobian()))
 
 
+def event_queue():
+    # two cells with 1 and 3 connections to third cell
+    def mknet():
+        cells = {i: h.IntFire2() for i in range(3)}
+        tvec = h.Vector()
+        idvec = h.Vector()
+        for i, cell in cells.items():
+            cell.ib = 1.5 - 0.1 * i
+            h.NetCon(cell, None).record(tvec, idvec, i)
+        ncs = {}
+        for i, numnc in enumerate([2, 3]):
+            for j in range(numnc):
+                nc = h.NetCon(cells[i], cells[2])
+                ncs[(i, j)] = nc
+                nc.weight[0] = -0.01
+                nc.delay = 3
+        return (cells, ncs, tvec, idvec)
+
+    net = mknet()
+    h.finitialize()
+    cv.solve(13)  # two NetCon from fast cell 0 and 1 presyn from slower cell 1
+    chk("event queue spikes", [net[2].to_python(), net[3].to_python()])
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = io.StringIO()
+    cv.print_event_queue()
+    sys.stdout = old_stdout
+    chk("print_event_queue", mystdout.getvalue())
+    tvec = h.Vector()
+    cv.print_event_queue(tvec)
+    chk("print_event_queue tvec", tvec)
+    objs = h.List()
+    flagvec = h.Vector()
+    cv.event_queue_info(2, tvec, objs)
+    chk("event_queue_info(2...)", [tvec.to_python(), [o.hname() for o in objs]])
+    cv.event_queue_info(3, tvec, flagvec, objs)
+    chk(
+        "event_queue_info(3...)",
+        [tvec.to_python(), flagvec.to_python(), [o.hname() for o in objs]],
+    )
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
@@ -588,6 +629,7 @@ def test_netcvode_cover():
     state_magnitudes()
     vec_record_discrete()
     integrator_properties()
+    event_queue()
 
 
 if __name__ == "__main__":
