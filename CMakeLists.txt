@@ -527,31 +527,27 @@ if(NRN_ENABLE_CORENEURON)
     # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
     # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
-    get_property(CORENRN_COMPATIBLE_NRN_VERSION_MAJOR GLOBAL
-                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_MAJOR)
-    get_property(CORENRN_COMPATIBLE_NRN_VERSION_MINOR GLOBAL
-                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_MINOR)
-    get_property(CORENRN_COMPATIBLE_NRN_VERSION_PATCH GLOBAL
-                 PROPERTY CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
+    get_property(CORENRN_VERSION_MAJOR GLOBAL PROPERTY CORENRN_VERSION_MAJOR)
+    get_property(CORENRN_VERSION_MINOR GLOBAL PROPERTY CORENRN_VERSION_MINOR)
+    get_property(CORENRN_VERSION_PATCH GLOBAL PROPERTY CORENRN_VERSION_PATCH)
     # NEURON tests that link against CoreNEURON need to depend on it.
     set(CORENEURON_TARGET_TO_DEPEND coreneuron)
   endif()
   # Check if CoreNEURON is claiming compatibility with the correct NEURON
-  if(NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_MAJOR
-     OR NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_MINOR
-     OR NOT DEFINED CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
-    message(WARNING "Could not determine what NEURON version CoreNEURON claims compatibility with")
+  if(NOT DEFINED CORENRN_VERSION_MAJOR
+     OR NOT DEFINED CORENRN_VERSION_MINOR
+     OR NOT DEFINED CORENRN_VERSION_PATCH)
+    message(WARNING "Could not determine the CoreNEURON version to check it matches NEURON")
   elseif(
-    NOT NRN_VERSION_MAJOR EQUAL CORENRN_COMPATIBLE_NRN_VERSION_MAJOR
-    OR NOT NRN_VERSION_MINOR EQUAL CORENRN_COMPATIBLE_NRN_VERSION_MINOR
-    OR NOT NRN_VERSION_PATCH EQUAL CORENRN_COMPATIBLE_NRN_VERSION_PATCH)
+    NOT NRN_VERSION_MAJOR EQUAL CORENRN_VERSION_MAJOR
+    OR NOT NRN_VERSION_MINOR EQUAL CORENRN_VERSION_MINOR
+    OR NOT NRN_VERSION_PATCH EQUAL CORENRN_VERSION_PATCH)
     message(
-      WARNING "The NEURON compatibility version hardcoded in CoreNEURON "
-              "${CORENRN_COMPATIBLE_NRN_VERSION_MAJOR}."
-              "${CORENRN_COMPATIBLE_NRN_VERSION_MINOR}."
-              "${CORENRN_COMPATIBLE_NRN_VERSION_PATCH} does not match the current NEURON "
+      WARNING "The CoreNEURON version ${CORENRN_VERSION_MAJOR}."
+              "${CORENRN_VERSION_MINOR}.${CORENRN_VERSION_PATCH} "
+              "does not match the current NEURON "
               "${NRN_VERSION_MAJOR}.${NRN_VERSION_MINOR}.${NRN_VERSION_PATCH} "
-              "you should probably update CORENRN_COMPATIBLE_NRN_VERSION_*")
+              "you should probably update the CoreNEURON version")
   endif()
 endif()
 
