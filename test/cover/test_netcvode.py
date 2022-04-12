@@ -624,12 +624,15 @@ def event_queue():
     def run(tstop):
         h.finitialize()
         cv.solve(tstop)
+
     run(25)
+
     def raster():
         print("spiketimes")
         net[2].printf()
         print("ids")
         net[3].printf()
+
     run(13)
     ss = h.SaveState()
     ss.save()
@@ -642,6 +645,7 @@ def event_queue():
     ss.restore()
     cv.solve(25)
     chk("SaveState restore at 13", [net[2].to_python(), net[3].to_python()])
+
 
 def test_netcvode_cover():
     nrn_use_daspk()
