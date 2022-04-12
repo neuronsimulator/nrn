@@ -286,6 +286,15 @@ Notice the fact that development builds have a dot &quot;.&quot; between MINOR a
 
 Given it is desirable to track, in the SCM, which revision is the exact source of a release, we advocate the use of Git tags for every release (excluding _development builds_ which are not true releases and create an automatic version number via git describe). Guidelines on how to use the SCM effectively to maintain several versions are discussed in the next sections.
 
+Since around version 8.2
+([#1762](https://github.com/neuronsimulator/nrn/pull/1762)), the CMake
+configuration of NEURON has included checks that the parent Git tag found by
+`git describe` is consistent with the MAJOR.MINOR.PATCH version that is
+hardcoded in the top-level CMakeLists.txt file.
+This hardcoded version should be updated in between releases according to the
+semantic rules given above, as it is the basis for the `NRN_VERSION*`
+preprocessor macros that are used to introduce NEURON-version-specific changes
+in MOD files.
 
 ## RELEASE MANAGEMENT WITH GIT
 

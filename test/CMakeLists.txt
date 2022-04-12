@@ -279,8 +279,16 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     NAME coreneuron_modtests
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
-    MODFILE_PATTERNS test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc
-                     test/pynrn/unitstest.mod test/gjtests/natrans.mod)
+    MODFILE_PATTERNS
+      test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod
+      test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+  nrn_add_test(
+    GROUP coreneuron_modtests
+    NAME version_macros
+    REQUIRES coreneuron
+    SCRIPT_PATTERNS test/pynrn/test_version_macros.py
+    COMMAND COVERAGE_FILE=.coverage.coreneuron_version_macros NRN_CORENEURON_ENABLE=true
+            ${modtests_launch_py} test/pynrn/test_version_macros.py)
   # In GPU builds run all of the tests on both CPU and GPU
   set(coreneuron_modtests_gpu_env CORENRN_ENABLE_GPU=true)
   foreach(processor cpu gpu)
