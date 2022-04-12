@@ -253,13 +253,16 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       CORENEURON
       NAME coreneuron_standalone
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       MODFILE_PATTERNS NONE)
 
     nrn_add_test(
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
-      REQUIRES coreneuron cpu
+      REQUIRES coreneuron
+      # In a GPU build ${modtests_launch_py} needs to be a statically-linked `special`. As a
+      # standard NEURON installation doesn't include `special` but only `nrniv` (without link to
+      # `libcorenrnmech.a`), we can not run this test on GPUs.
+      CONFLICTS gpu
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py}
               test/coreneuron/test_psolve.py)
