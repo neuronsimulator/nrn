@@ -620,6 +620,28 @@ def event_queue():
         [tvec.to_python(), flagvec.to_python(), [o.hname() for o in objs]],
     )
 
+    # some savestate coverage
+    def run(tstop):
+        h.finitialize()
+        cv.solve(tstop)
+    run(25)
+    def raster():
+        print("spiketimes")
+        net[2].printf()
+        print("ids")
+        net[3].printf()
+    run(13)
+    ss = h.SaveState()
+    ss.save()
+    sf = h.File("ss.bin")
+    ss.fwrite(sf)
+    del ss
+    h.finitialize()
+    ss = h.SaveState()
+    ss.fread(sf)
+    ss.restore()
+    cv.solve(25)
+    chk("SaveState restore at 13", [net[2].to_python(), net[3].to_python()])
 
 def test_netcvode_cover():
     nrn_use_daspk()
