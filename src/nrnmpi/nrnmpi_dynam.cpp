@@ -102,12 +102,13 @@ char* nrnmpi_load(int is_python) {
         Dl_info info;
         if (dladdr(sym, &info)) {
             if (info.dli_fname[0] == '/') {
-                sprintf(pmes, "<libmpi> is loaded in the sense the MPI_Initialized has an address\n");
+                sprintf(pmes,
+                        "<libmpi> is loaded in the sense the MPI_Initialized has an address\n");
                 handle = load_mpi(info.dli_fname, pmes + strlen(pmes));
                 if (handle) {
                     corenrn_mpi_library = info.dli_fname;
                 } else {
-                  ismes = 1;
+                    ismes = 1;
                 }
             }
         }
