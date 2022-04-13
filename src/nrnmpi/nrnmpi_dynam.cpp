@@ -95,9 +95,29 @@ char* nrnmpi_load(int is_python) {
     pmes = static_cast<char*>(malloc(4096));
     assert(pmes);
     pmes[0] = '\0';
+
+    // If libmpi already in memory, find name and dlopen that.
+    void* sym = dlsym(RTLD_DEFAULT, "MPI_Initialized");
+    if (sym) {
+        Dl_info info;
+        if (dladdr(sym, &info)) {
+            if (info.dli_fname[0] == '/') {
+                sprintf(pmes, "<libmpi> is loaded in the sense the MPI_Initialized has an address\n");
+                handle = load_mpi(info.dli_fname, pmes + strlen(pmes));
+                if (handle) {
+                    corenrn_mpi_library = info.dli_fname;
+                } else {
+                  ismes = 1;
+                }
+            }
+        }
+    }
+
 #if DARWIN
-    sprintf(pmes, "Try loading libmpi\n");
-    handle = load_mpi("libmpi.dylib", pmes + strlen(pmes));
+    if (!handle) {
+        sprintf(pmes, "Try loading libmpi\n");
+        handle = load_mpi("libmpi.dylib", pmes + strlen(pmes));
+    }
     /**
      * If libmpi.dylib is not in the standard location and dlopen fails
      * then try to use user provided or ctypes.find_library() provided
@@ -136,8 +156,10 @@ char* nrnmpi_load(int is_python) {
     }
 #else /*not DARWIN*/
 #if defined(MINGW)
-    sprintf(pmes, "Try loading msmpi\n");
-    handle = load_mpi("msmpi.dll", pmes + strlen(pmes));
+    if (!handle) {
+        sprintf(pmes, "Try loading msmpi\n");
+        handle = load_mpi("msmpi.dll", pmes + strlen(pmes));
+    }
     if (handle) {
         if (!load_nrnmpi("libnrnmpi_msmpi.dll", pmes + strlen(pmes))) {
             return pmes;
@@ -154,8 +176,10 @@ char* nrnmpi_load(int is_python) {
      * (mpich, openmpi, intel-mpi, parastation-mpi, hpe-mpt) but not cray-mpich.
      * we first load libmpi and then libmpich.so as a fallaback for cray system.
      */
-    sprintf(pmes, "Try loading libmpi\n");
-    handle = load_mpi("libmpi.so", pmes + strlen(pmes));
+    if (!handle) {
+        sprintf(pmes, "Try loading libmpi\n");
+        handle = load_mpi("libmpi.so", pmes + strlen(pmes));
+    }
 
     // like osx, check if user has provided library via MPI_LIB_NRN_PATH
     if (!handle) {
