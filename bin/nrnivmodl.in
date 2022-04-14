@@ -251,10 +251,10 @@ void modl_reg(){
 echo "COBJS='$COBJS'"
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
-UsingCoreNEURON="no"
-@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
+UsingCoreNEURON=false
+@CORENEURON_ENABLED_TRUE@UsingCoreNEURON=true
 if [ "$LinkCoreNEURON" = true ] ; then
-  if [ "$UsingCoreNEURON" = "yes" ] ; then
+  if [ "$UsingCoreNEURON" = true ] ; then
     cd "$USER_PWD"
     args=""
     # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
