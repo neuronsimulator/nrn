@@ -103,9 +103,6 @@ unhide_spaces() {
 escape_spaces() {
   echo "${1//+++/\\ }"
 }
-remove_spaces() {
-  echo "${1// }"
-}
 
 # files is the complete list of mod files to process
 files=""
@@ -151,9 +148,8 @@ done
 
 echo -n "Mod files:"
 for i in $files ; do
-  base_name=$(basename "$i" .mod)
   dir_name=$(dirname "$i")
-  echo -n " \"$(unhide_spaces "$dir_name")/$base_name.mod\""
+  echo -n " \"$(unhide_spaces "$dir_name")/${i%.mod}.mod\""
 done
 echo ""
 echo ""
@@ -216,7 +212,7 @@ extern "C" {
 '
 
   for i in $base_names ; do
-    echo 'extern void _'"$(remove_spaces "$i")"'_reg(void);'
+    echo "extern void _${i//}_reg(void);"
   done
 
   echo '
@@ -235,7 +231,7 @@ void modl_reg(){
   echo "}"
 
   for i in $base_names; do
-    echo '  _'"$(remove_spaces "$i")"'_reg();'
+    echo "  _${i//}_reg();"
     MODOBJS="$MODOBJS ./$i.o"
   done
 
