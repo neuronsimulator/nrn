@@ -42,7 +42,7 @@ export libdir
 MAKEFILEDIR="${bindir}"
 
 if command -v xcrun; then
-    @NRN_OSX_BUILD_TRUE@export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
+    @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
         unset MACOSX_DEPLOYMENT_TARGET
@@ -112,7 +112,7 @@ remove_spaces() {
 files=""
 if test $# -gt 0 ; then
   for i in "$@" ; do
-    i_hide=`hide_spaces "$i"`
+    i_hide=$(hide_spaces "$i")
     if test -d "$i" ; then
       set +e
       for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
@@ -143,18 +143,18 @@ else
   fi
 fi
 
-files=`echo "$files" | sed 's/^ *//'`
+files=$(echo "$files" | sed 's/^ *//')
 
 base_names=""
 for i in $files ; do
-  base_names="$base_names `basename $i .mod`"
+  base_names="$base_names $(basename $i .mod)"
 done
 
 echo -n "Mod files:"
 for i in $files ; do
-  base_name=`basename "$i" .mod`
-  dir_name=`dirname "$i"`
-  echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
+  base_name=$(basename "$i" .mod)
+  dir_name=$(dirname "$i")
+  echo -n " \"$(unhide_spaces $dir_name)/$base_name.mod\""
 done
 echo ""
 echo ""
@@ -166,7 +166,7 @@ if [ ! -d $MODSUBDIR ] ; then
   mkdir $MODSUBDIR
 fi
 
-files=`echo "$files" | sed 's/\.mod//g'`
+files=$(echo "$files" | sed 's/\.mod//g')
 
 if test "$files" = '*' ; then
   files=""
@@ -184,17 +184,17 @@ mdir="$PWD"
       /*) f=$i;; # absolute, fine as is
       *)  f=../$i;; # relative
     esac
-    base_name="`basename $f`"
-    dir_name="`dirname $f`"
+    base_name="$(basename $f)"
+    dir_name="$(dirname $f)"
     # Note: indentation for shell lines in make rules must be a tab
     echo "\
-./$base_name.c: `escape_spaces "$f.mod"`
+./$base_name.c: $(escape_spaces "$f.mod")
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o \"$mdir\")
+	(cd \"$(unhide_spaces $dir_name)\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o \"$mdir\")
 
 ./$base_name.o: ./$base_name.c
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(COMPILE) -I\"`unhide_spaces $dir_name`\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+	\$(COMPILE) -I\"$(unhide_spaces $dir_name)\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> $MODMAKE
   done
   if test "$nrnivmodl_cfiles" != "" ; then
@@ -208,17 +208,17 @@ mdir="$PWD"
     ifs="$IFS"
     IFS=';'
     for i in $nrnivmodl_cfiles ; do
-      i_hide=`hide_spaces "$i"`
+      i_hide=$(hide_spaces "$i")
       case "$i_hide" in
         /*) f=$i_hide;; # absolute, fine as is
         *)  f=../$i_hide;; # relative
       esac
-      base_name="`basename $f .c`"
-      dir_name="`dirname $f`"
+      base_name="$(basename $f .c)"
+      dir_name="$(dirname $f)"
       echo "\
-./$base_name.o: `escape_spaces "$f"`
+./$base_name.o: $(escape_spaces "$f")
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o \"$mdir/$base_name.o\")
+	(cd \"$(unhide_spaces $dir_name)\"; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o \"$mdir/$base_name.o\")
 " >> $MODMAKE
     done
     IFS="$ifs"
@@ -226,7 +226,7 @@ mdir="$PWD"
 
 COBJS=
 MODOBJS=
-if [ `echo "\n"` ] ; then
+if [ $(echo "\n") ] ; then
   newline="\n"
 else
   newline="\\\\n"
@@ -241,7 +241,7 @@ extern "C" {
 #endif
 ' > mod_func.cpp
 for i in $base_names ; do
-  echo 'extern void _'`remove_spaces "$i"`'_reg(void);'
+  echo 'extern void _'$(remove_spaces "$i")'_reg(void);'
 done >> mod_func.cpp
 echo '
 void modl_reg(){
@@ -251,14 +251,14 @@ void modl_reg(){
 
 for i in $files
 do
-  echo '    fprintf(stderr," \"'`unhide_spaces "$i"`'.mod\"");'
+  echo '    fprintf(stderr," \"'$(unhide_spaces "$i")'.mod\"");'
 done >>mod_func.cpp
 
 echo '    fprintf(stderr, "'$newline'");
   }' >>mod_func.cpp
 
 for i in $base_names; do
-  echo '  _'`remove_spaces "$i"`'_reg();'
+  echo '  _'$(remove_spaces "$i")'_reg();'
   MODOBJS="$MODOBJS ./$i.o"
 done >> mod_func.cpp
 
@@ -275,7 +275,7 @@ if test -n "$nrnivmodl_cfiles" ; then
   ifs="$IFS"
   IFS=';'
   for i in $nrnivmodl_cfiles ; do
-    base_name=`basename "$i" .c`
+    base_name=$(basename "$i" .c)
     COBJS="${COBJS}${sp}./${base_name}.o"
     sp=" "
   done
@@ -292,8 +292,8 @@ if [ "$LinkCoreNEURON" = true ] ; then
     args=""
     # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
     for i in "$@"; do
-      j=`hide_spaces "$i"`
-      j=`escape_spaces "$j"`
+      j=$(hide_spaces "$i")
+      j=$(escape_spaces "$j")
       args="$args $j"
     done
     "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" $args
