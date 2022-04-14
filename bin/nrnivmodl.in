@@ -96,16 +96,16 @@ echo "$PWD"
 # Only do this for cmake
 
 hide_spaces() {
-  echo "$1" | sed 's/ /+++/g'
+  echo "${1// /+++}"
 }
 unhide_spaces() {
-  echo "$1" | sed 's/+++/ /g'
+  echo "${1//+++/ /}"
 }
 escape_spaces() {
-  echo "$1" | sed 's/+++/\\ /g'
+  echo "${1//+++/\\ }"
 }
 remove_spaces() {
-  echo "$1" | sed 's/ //g'
+  echo "${1// }"
 }
 
 # files is the complete list of mod files to process
