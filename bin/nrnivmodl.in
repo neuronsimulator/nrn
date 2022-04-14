@@ -30,11 +30,6 @@ if [ "${NRNHOME_EXEC}" ] ; then
   libdir="${exec_prefix}/lib"
 fi
 
-# Besides NRNHOME, one may set NRNBIN to override the default location of user binaries
-if [ -z "$NRNBIN" ] ; then
-  NRNBIN=$bindir
-fi
-
 export prefix
 export bindir
 export libdir
