@@ -3,7 +3,7 @@ set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
-USER_PWD="`pwd`"
+USER_PWD="$PWD"
 
 if test "x${NRNHOME}" = x ; then
   prefix=@prefix@
@@ -84,7 +84,7 @@ while test -n "$1" ; do
     esac
 done
 
-pwd
+echo "$PWD"
 
 # Mod file paths may contain spaces which make variable lists of those
 # hard to manage as space is the item separator. Furthermore, when a
@@ -173,7 +173,7 @@ if test "$files" = '*' ; then
 fi
 
 cd $MODSUBDIR
-mdir="`pwd`"
+mdir="$PWD"
 
   # construct file to be included by makefile to specify mod to c rule when
   # executed in $MODSUBDIR (child folder of launch location folder)
