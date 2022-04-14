@@ -5,8 +5,7 @@
 # UserLDFLAGS
 # UserINCFLAGS
 # LinkCoreNEURON
-# Rules to build MODOBJFILES from mod files and COBJFILES from $nrnivmodl_cfiles
-# are found in makemod2c_inc
+# Rules to build MODOBJFILES from mod files are found in makemod2c_inc
 
 # Mechanisms version are by default 0.0, but should be overriden
 MECH_NAME =

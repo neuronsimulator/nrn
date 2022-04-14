@@ -197,32 +197,6 @@ mdir="$PWD"
 	\$(COMPILE) -I\"$(unhide_spaces "$dir_name")\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> $MODMAKE
   done
-  if test "$nrnivmodl_cfiles" != "" ; then
-    # I find it very difficult to construct shell variables which are
-    # space separated lists of items containing spaces. So, for a cmake build,
-    # the nrnivmodl_cfiles variable is required to be a ';' separated list
-    # of c files which may contain spaces.
-    # Save the Internal Field Separator and interpret variables as ';'
-    # separated list of items (which may contain spaces). Restore after
-    # processing nrnivmodl_cfiles.
-    ifs="$IFS"
-    IFS=';'
-    for i in $nrnivmodl_cfiles ; do
-      i_hide=$(hide_spaces "$i")
-      case "$i_hide" in
-        /*) f=$i_hide;; # absolute, fine as is
-        *)  f=../$i_hide;; # relative
-      esac
-      base_name="$(basename "$f" .c)"
-      dir_name="$(dirname "$f")"
-      echo "\
-./$base_name.o: $(escape_spaces "$f")
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	(cd \"$(unhide_spaces "$dir_name")\"; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o \"$mdir/$base_name.o\")
-" >> $MODMAKE
-    done
-    IFS="$ifs"
-  fi
 
 COBJS=
 MODOBJS=
@@ -274,18 +248,6 @@ void modl_reg(){
 #endif'
 } > mod_func.cpp
 
-if test -n "$nrnivmodl_cfiles" ; then
-  sp=""
-  COBJS=""
-  ifs="$IFS"
-  IFS=';'
-  for i in $nrnivmodl_cfiles ; do
-    base_name=$(basename "$i" .c)
-    COBJS="${COBJS}${sp}./${base_name}.o"
-    sp=" "
-  done
-  IFS="$ifs"
-fi
 echo "COBJS='$COBJS'"
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
