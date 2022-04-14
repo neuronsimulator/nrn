@@ -56,8 +56,7 @@ UserCOREFLAGS=()
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
-    opt="$1"
-    case "$opt" in
+    case "$1" in
     -coreneuron)
         # also run nrnivmodl-core
         LinkCoreNEURON=true
@@ -77,7 +76,7 @@ while [ "$1" ] ; do
         shift
         shift;;
     -*)
-        echo "$opt unrecognized"
+        echo "$1 unrecognized"
         exit 1;;
     *)
         break;;
