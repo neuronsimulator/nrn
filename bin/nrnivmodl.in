@@ -5,7 +5,7 @@ ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
 USER_PWD="$PWD"
 
-if test "x${NRNHOME}" = x ; then
+if [ -z "$NRNHOME" ] ; then
   prefix=@prefix@
   exec_prefix=@exec_prefix@
   bindir=@bindir@
@@ -17,21 +17,21 @@ else
   libdir="${prefix}/lib"
 fi
 
-if [ -z ${CORENRNHOME+x} ]; then
+if [ -z ${CORENRNHOME+x} ] ; then
   # CORENRNHOME wasn't set, use the install prefix
   cnrn_prefix=@cnrn_prefix@
 else
   cnrn_prefix="${CORENRNHOME}"
 fi
 
-if test "${NRNHOME_EXEC}" != "" ; then
+if [ "${NRNHOME_EXEC}" ] ; then
   exec_prefix="${NRNHOME_EXEC}"
   bindir="${exec_prefix}/bin"
   libdir="${exec_prefix}/lib"
 fi
 
 # Besides NRNHOME, one may set NRNBIN to override the default location of user binaries
-if test "x$NRNBIN" = "x"; then
+if [ -z "$NRNBIN" ] ; then
   NRNBIN=$bindir
 fi
 
