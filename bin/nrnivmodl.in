@@ -232,42 +232,47 @@ else
   newline="\\\\n"
 fi
 
-echo '#include <stdio.h>
+{
+  echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 #if defined(__cplusplus)
 extern "C" {
 #endif
-' > mod_func.cpp
-for i in $base_names ; do
-  echo 'extern void _'"$(remove_spaces "$i")"'_reg(void);'
-done >> mod_func.cpp
-echo '
+'
+
+  for i in $base_names ; do
+    echo 'extern void _'"$(remove_spaces "$i")"'_reg(void);'
+  done
+
+  echo '
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, "Additional mechanisms from files'$newline'");
-' >> mod_func.cpp
+'
 
-for i in $files
-do
-  echo '    fprintf(stderr," \"'"$(unhide_spaces "$i")"'.mod\"");'
-done >>mod_func.cpp
+  for i in $files
+  do
+    echo '    fprintf(stderr," \"'"$(unhide_spaces "$i")"'.mod\"");'
+  done
 
-echo '    fprintf(stderr, "'$newline'");
-  }' >>mod_func.cpp
+  echo '    fprintf(stderr, "'$newline'");'
 
-for i in $base_names; do
-  echo '  _'"$(remove_spaces "$i")"'_reg();'
-  MODOBJS="$MODOBJS ./$i.o"
-done >> mod_func.cpp
+  echo "}"
 
-echo "}" >> mod_func.cpp
+  for i in $base_names; do
+    echo '  _'"$(remove_spaces "$i")"'_reg();'
+    MODOBJS="$MODOBJS ./$i.o"
+  done
 
-echo '
+  echo "}"
+
+  echo '
 #if defined(__cplusplus)
 }
-#endif' >> mod_func.cpp
+#endif'
+} > mod_func.cpp
 
 if test -n "$nrnivmodl_cfiles" ; then
   sp=""
