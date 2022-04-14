@@ -178,7 +178,7 @@ mdir="$PWD"
   # construct file to be included by makefile to specify mod to c rule when
   # executed in $MODSUBDIR (child folder of launch location folder)
   MODMAKE=makemod2c_inc
-  echo "" > $MODMAKE
+  touch "$MODMAKE"
   for i in $files ; do
     case "$i" in
       /*) f=$i;; # absolute, fine as is
@@ -195,7 +195,7 @@ mdir="$PWD"
 ./$base_name.o: ./$base_name.c
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
 	\$(COMPILE) -I\"$(unhide_spaces "$dir_name")\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
-" >> $MODMAKE
+" >> "$MODMAKE"
   done
 
 COBJS=
