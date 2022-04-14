@@ -25,7 +25,6 @@
 #include <fstream>
 #include <unistd.h>
 #include "coreneuron/utils/memory_utils.h"
-#include "coreneuron/utils/profile/cuda_profile.h"
 #include "coreneuron/mpi/nrnmpi.h"
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 #include "coreneuron/apps/corenrn_parameters.hpp"
@@ -34,6 +33,10 @@
 #include <mach/mach.h>
 #elif defined HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
+#ifdef CORENEURON_ENABLE_GPU
+#include "cuda_profiler_api.h"
 #endif
 
 namespace coreneuron {
@@ -108,7 +111,16 @@ void report_mem_usage(const char* message, bool all_ranks) {
                mem_avg);
 #ifdef CORENEURON_ENABLE_GPU
         if (corenrn_param.gpu) {
-            print_gpu_memory_usage();
+            size_t free_byte, total_byte;
+            cudaError_t cuda_status = cudaMemGetInfo(&free_byte, &total_byte);
+            if (cudaSuccess != cuda_status) {
+                std::printf("cudaMemGetInfo failed: %s\n", cudaGetErrorString(cuda_status));
+            }
+            constexpr double MiB{1. / (1024. * 1024.)};
+            std::printf(" GPU Memory (MiBs) : Used = %f, Free = %f, Total = %f\n",
+                        (total_byte - free_byte) * MiB,
+                        free_byte * MiB,
+                        total_byte * MiB);
         }
 #endif
     }

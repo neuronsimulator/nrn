@@ -1,12 +1,10 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
 */
-// Beware changing this to #pragma once, we rely on this file shadowing the
-// equivalent file from NEURON.
 #pragma once
 
 /* interface to Random123 */
@@ -40,14 +38,6 @@ http://www.deshawresearch.com/resources_random123.html
 
 #include <Random123/philox.h>
 #include <inttypes.h>
-
-#ifdef __CUDACC__
-#define CORENRN_HOST_DEVICE __host__ __device__
-#else
-#define CORENRN_HOST_DEVICE
-#endif
-
-#define CORENRN_HOST_DEVICE_ACC CORENRN_HOST_DEVICE nrn_pragma_acc(routine seq)
 
 // Some files are compiled with DISABLE_OPENACC, and some builds have no GPU
 // support at all. In these two cases, request that the random123 state is
@@ -97,33 +87,37 @@ void nrnran123_deletestream(nrnran123_State* s,
 
 /* minimal data stream */
 nrn_pragma_omp(declare target)
-CORENRN_HOST_DEVICE_ACC void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
-CORENRN_HOST_DEVICE_ACC void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
-CORENRN_HOST_DEVICE_ACC void nrnran123_getids3(nrnran123_State*,
-                                               uint32_t* id1,
-                                               uint32_t* id2,
-                                               uint32_t* id3);
-CORENRN_HOST_DEVICE_ACC uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
+nrn_pragma_acc(routine seq)
+void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
+nrn_pragma_acc(routine seq)
+void nrnran123_getids(nrnran123_State*, uint32_t* id1, uint32_t* id2);
+nrn_pragma_acc(routine seq)
+void nrnran123_getids3(nrnran123_State*, uint32_t* id1, uint32_t* id2, uint32_t* id3);
+nrn_pragma_acc(routine seq)
+uint32_t nrnran123_ipick(nrnran123_State*); /* uniform 0 to 2^32-1 */
 
 /* this could be called from openacc parallel construct */
-CORENRN_HOST_DEVICE_ACC double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
+nrn_pragma_acc(routine seq)
+double nrnran123_dblpick(nrnran123_State*); /* uniform open interval (0,1)*/
 /* nrnran123_dblpick minimum value is 2.3283064e-10 and max value is 1-min */
 
 /* this could be called from openacc parallel construct (in INITIAL block) */
-CORENRN_HOST_DEVICE_ACC void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
-
-CORENRN_HOST_DEVICE_ACC double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
+nrn_pragma_acc(routine seq)
+void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
+nrn_pragma_acc(routine seq)
+double nrnran123_negexp(nrnran123_State*); /* mean 1.0 */
 /* nrnran123_negexp min value is 2.3283064e-10, max is 22.18071 */
 
 /* missing declaration in coreneuron */
-CORENRN_HOST_DEVICE_ACC double nrnran123_normal(nrnran123_State*);
-
-CORENRN_HOST_DEVICE_ACC double nrnran123_gauss(nrnran123_State*); /* mean 0.0, std 1.0 */
+nrn_pragma_acc(routine seq)
+double nrnran123_normal(nrnran123_State*);
+nrn_pragma_acc(routine seq)
+double nrnran123_gauss(nrnran123_State*); /* mean 0.0, std 1.0 */
 
 /* more fundamental (stateless) (though the global index is still used) */
-CORENRN_HOST_DEVICE_ACC nrnran123_array4x32 nrnran123_iran(uint32_t seq,
-                                                           uint32_t id1,
-                                                           uint32_t id2);
-CORENRN_HOST_DEVICE_ACC double nrnran123_uint2dbl(uint32_t);
+nrn_pragma_acc(routine seq)
+nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
+nrn_pragma_acc(routine seq)
+double nrnran123_uint2dbl(uint32_t);
 nrn_pragma_omp(end declare target)
 }  // namespace coreneuron

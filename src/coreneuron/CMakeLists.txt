@@ -31,7 +31,6 @@ file(
   "utils/*.cpp"
   "utils/*/*.c"
   "utils/*/*.cpp")
-file(GLOB_RECURSE CORENEURON_CUDA_FILES "*.cu")
 set(SCOPMATH_CODE_FILES
     "sim/scopmath/abort.cpp" "sim/scopmath/crout_thread.cpp" "sim/scopmath/newton_thread.cpp"
     "sim/scopmath/sparse_thread.cpp" "sim/scopmath/ssimplic_thread.cpp")
@@ -116,7 +115,6 @@ if(CORENRN_ENABLE_GPU)
       ${CMAKE_CURRENT_BINARY_DIR}/netstim.cpp
       ${CMAKE_CURRENT_BINARY_DIR}/netstim_inhpoisson.cpp
       ${CMAKE_CURRENT_BINARY_DIR}/pattern.cpp
-      ${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/nrn_setup.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/setup_fornetcon.cpp
       ${CMAKE_CURRENT_SOURCE_DIR}/io/corenrn_data_return.cpp
@@ -124,23 +122,8 @@ if(CORENRN_ENABLE_GPU)
 
   set_source_files_properties(${OPENACC_EXCLUDED_FILES} PROPERTIES COMPILE_FLAGS
                                                                    "-DDISABLE_OPENACC")
-  # nrnran123.cpp is a symlink to nrnran123.cu, in GPU builds we compile this as CUDA code (so we
-  # want to remove the .cpp here), while in non-GPU builds we compile it as plain C++. Unfortunately
-  # CMake <v3.20 does not pass explicit -x <lang> options based on the LANGUAGE property
-  # (https://cmake.org/cmake/help/latest/policy/CMP0119.html), so using a single .cu file and
-  # setting LANGUAGE=CXX in non-GPU builds does not work.
-  list(APPEND CORENEURON_CODE_FILES ${CORENEURON_CUDA_FILES})
-  if(CORENRN_ACCELERATOR_OFFLOAD STREQUAL "OpenMP")
-    list(REMOVE_ITEM CORENEURON_CODE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cu")
-  elseif(CORENRN_ACCELERATOR_OFFLOAD STREQUAL "OpenACC")
-    list(REMOVE_ITEM CORENEURON_CODE_FILES
-         "${CMAKE_CURRENT_SOURCE_DIR}/utils/randoms/nrnran123.cpp")
-  else()
-    message(
-      FATAL_ERROR
-        "Don't know how to build Random123 compatibility layer for GPU with ${CORENRN_ACCELERATOR_OFFLOAD} offload."
-    )
-  endif()
+  # Only compile the explicit CUDA implementation of the Hines solver in GPU builds.
+  list(APPEND CORENEURON_CODE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/permute/cellorder.cu)
 
   # Eigen-3.5+ provides better GPU support. However, some functions cannot be called directly from
   # within an OpenACC region. Therefore, we need to wrap them in a special API (decorate them with
