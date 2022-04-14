@@ -243,6 +243,10 @@ UsingCoreNEURON=false
 @CORENEURON_ENABLED_TRUE@UsingCoreNEURON=true
 if [ "$LinkCoreNEURON" = true ] ; then
   if [ "$UsingCoreNEURON" = true ] ; then
+    if [ "$#" -gt 1 ] ; then
+        printf "ERROR : when called with -coreneuron only 1 mod dir is accepted.\n"
+        exit 1
+    fi
     cd "$USER_PWD"
     "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$@"
     cd "$MODSUBDIR"
