@@ -55,7 +55,7 @@ UserLDFLAGS=""
 UserCOREFLAGS=()
 
 # - options come first but can be in any order.
-while test -n "$1" ; do
+while [ "$1" ] ; do
     opt="$1"
     case "$opt" in
     -coreneuron)
@@ -110,17 +110,17 @@ remove_spaces() {
 
 # files is the complete list of mod files to process
 files=""
-if test $# -gt 0 ; then
+if [ $# -gt 0 ] ; then
   for i in "$@" ; do
     i_hide=$(hide_spaces "$i")
-    if test -d "$i" ; then
+    if [ -d "$i" ] ; then
       set +e
       for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
         files="$files $i_hide/$j"
       done
       set -e
     else
-      if test -e "$i" -o -e "$i.mod" ; then
+      if [ -e "$i" ] || [ -e "$i.mod" ] ; then
         files="$files $i_hide"
       else
         echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
@@ -168,7 +168,7 @@ fi
 
 files=$(echo "$files" | sed 's/\.mod//g')
 
-if test "$files" = '*' ; then
+if [ "$files" = '*' ] ; then
   files=""
 fi
 
