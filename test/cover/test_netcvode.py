@@ -435,10 +435,20 @@ def cvode_meth():
     cv.error_weights(vec)
     chk("cv.error_weights lvardt", vec)
     cv.acor(vec)
-    chk("cv.acor lvardt", vec)
+    chk("cv.acor lvardt", vec, 1e-18)
     h.stoprun = 1
     cv.solve()
     cv.use_local_dt(0)
+    expect_err("cv.statename(1e9, sref)")
+    cv.active(0)
+    expect_err("cv.statename(0, sref)")
+    assert vec.size() > 0
+    cv.error_weights(vec)
+    assert vec.size() == 0
+    vec.resize(20)
+    cv.acor(vec)
+    assert vec.size() == 0
+    cv.active(1)
 
     del net, sref, snames, s, ds, std
     locals()
@@ -647,6 +657,32 @@ def event_queue():
     chk("SaveState restore at 13", [net[2].to_python(), net[3].to_python()])
 
 
+def scatter_gather():
+    net = Net(1)
+    h.finitialize(-65)
+    cv.solve(2)
+    svec = h.Vector()
+    cv.states(svec)
+    yvec = h.Vector()
+    cv.ygather(yvec)
+    assert yvec.eq(svec)
+    h.finitialize(-65)
+    cv.yscatter(yvec)
+    cv.re_init()
+    cv.states(svec)
+    assert yvec.eq(svec)
+    cv.use_local_dt(1)
+    expect_err("cv.yscatter(yvec)")
+    expect_err("cv.ygather(yvec)")
+    cv.use_local_dt(0)
+    pc.nthread(2)
+    expect_err("cv.yscatter(yvec)")
+    expect_err("cv.ygather(yvec)")
+    pc.nthread(1)
+    yvec.resize(0)
+    expect_err("cv.yscatter(yvec)")
+
+
 def test_netcvode_cover():
     nrn_use_daspk()
     node()
@@ -656,6 +692,7 @@ def test_netcvode_cover():
     vec_record_discrete()
     integrator_properties()
     event_queue()
+    scatter_gather()
 
 
 if __name__ == "__main__":
