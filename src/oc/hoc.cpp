@@ -981,10 +981,11 @@ void hocstr_copy(HocStr* hs, const char* buf) {
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
-static void hoc_run1(void);
+static int hoc_run1(void);
 
 int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 {
+    int exit_status = EXIT_SUCCESS;
 #ifdef WIN32
     extern void hoc_set_unhandled_exception_filter();
     hoc_set_unhandled_exception_filter();
@@ -1063,8 +1064,8 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
         --gargc;
     }
     while (moreinput())
-        hoc_run1();
-    return 0;
+        exit_status = hoc_run1();
+    return exit_status;
 }
 
 #if carbon
@@ -1196,7 +1197,8 @@ void hoc_quit(void) {
         (*p_nrnpython_finalize)();
     }
 #endif
-    exit(0);
+    int exit_code = ifarg(1) ? int(*getarg(1)) : 0;
+    exit(exit_code);
 }
 
 #if defined(CYGWIN)
@@ -1403,7 +1405,7 @@ static void restore_signals(void) {
 #endif
 }
 
-static void hoc_run1(void) /* execute until EOF */
+static int hoc_run1(void) /* execute until EOF */
 {
     int controlled = control_jmpbuf;
     NrnFILEWrap* sav_fin = fin;
@@ -1413,7 +1415,7 @@ static void hoc_run1(void) /* execute until EOF */
         if (setjmp(begin)) {
             fin = sav_fin;
             if (!nrn_fw_eq(fin, stdin)) {
-                return;
+                return EXIT_FAILURE;
             }
         }
         intset = 0;
@@ -1437,6 +1439,7 @@ static void hoc_run1(void) /* execute until EOF */
         restore_signals();
         control_jmpbuf = 0;
     }
+    return EXIT_SUCCESS;
 }
 
 /* event driven interface to oc. This routine always returns after processing

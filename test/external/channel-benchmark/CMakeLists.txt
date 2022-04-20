@@ -19,6 +19,7 @@ set(channel_benchmark_gpu_args -c arg_coreneuron_gpu=1) # TODO: test --cell-perm
 set(channel_benchmark_filemode_args -c arg_coreneuron_filemode=1)
 foreach(model hippo sscx)
   nrn_add_test_group(
+    CORENEURON
     NAME channel_benchmark_${model}
     SUBMODULE tests/channel-benchmark
     OUTPUT asciispikes::out.dat
