@@ -186,7 +186,6 @@ for i in $files ; do
 " >> "$MODMAKE"
 done
 
-COBJS=
 MODOBJS=
 if [ $(echo "\n") ] ; then
   newline="\n"
@@ -236,8 +235,6 @@ void modl_reg(){
 #endif'
 } > mod_func.cpp
 
-echo "COBJS='$COBJS'"
-
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
 UsingCoreNEURON=false
 @CORENEURON_ENABLED_TRUE@UsingCoreNEURON=true
@@ -256,5 +253,5 @@ if [ "$LinkCoreNEURON" = true ] ; then
   fi
 fi
 
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 echo "Successfully created $MODSUBDIR/special"

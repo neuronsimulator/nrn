@@ -1,7 +1,6 @@
 
 # Arguments:
 # MODOBJFILES
-# COBJFILES
 # UserLDFLAGS
 # UserINCFLAGS
 # LinkCoreNEURON
@@ -82,7 +81,6 @@ NRNUNITS = $(datadir_lib)/nrnunits.lib
 MODC_DIR = .
 OBJS_DIR = .
 mod_objs   = $(MODOBJFILES)
-c_objs = $(COBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
 mod_func_cpp = $(MODC_DIR)/mod_func.cpp
@@ -129,13 +127,13 @@ special: $(mech_lib)
 
 $(mech_lib): $(mech_lib_type)
 
-mech_lib_shared: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
+mech_lib_shared: mod_func.o $(mod_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib)\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
-	  $(mod_func_o) $(mod_objs) $(c_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
+	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
 	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
 
-mech_lib_static: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
+mech_lib_static: mod_func.o $(mod_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 
