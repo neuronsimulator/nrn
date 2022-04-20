@@ -225,7 +225,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   if(${CORENRN_ENABLE_GPU})
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
-    set(modtests_launch_hoc special -mpi)
+    set(modtests_launch_hoc special -notatty -mpi)
     set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe
                            ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
@@ -235,6 +235,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_PREFLAGS}
         special
         ${MPIEXEC_POSTFLAGS}
+        -notatty
         -python
         -pyexe
         ${PYTHON_EXECUTABLE})
