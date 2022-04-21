@@ -40,7 +40,7 @@ First, enable cache efficiency:
 .. code-block:: python
 
    from neuron import h
-   h.cvode.cache_efficient(1)
+   h.CVode().cache_efficient(1)
 
 Second, enable CoreNEURON:
 
