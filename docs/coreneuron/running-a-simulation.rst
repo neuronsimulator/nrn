@@ -33,7 +33,7 @@ then you can find it in `/opt/nvidia`:
 
 .. code-block::
 
-   CXX=`find /opt/nvidia -name nvc++` nrnivmodl -coreneuron .
+   CXX=`find /opt/nvidia -wholename *22.1*nvc++` nrnivmodl -coreneuron .
 
 Enabling CoreNEURON
 *******************
