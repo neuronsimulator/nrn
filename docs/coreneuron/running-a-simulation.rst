@@ -71,7 +71,7 @@ Finally, use ``psolve`` to run the simulation after initialization:
 
    pc = h.ParallelContext()
    h.finitialize()
-   pc.psolve(h.tstop)
+   pc.psolve(1000)
 
 With the above steps, NEURON will build the model in memory and transfer it to CoreNEURON for simulation.
 At the end of the simulation CoreNEURON will, by default, transfer spikes, voltages, state variables, NetCon weights, all ``Vector.record``, and most GUI trajectories to NEURON.
