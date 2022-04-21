@@ -8,20 +8,15 @@ Building MOD files
 ******************
 As in a typical NEURON workflow, you can now use ``nrnivmodl`` to translate MOD files.
 In order to enable CoreNEURON support, you must set the ``-coreneuron`` flag.
-Make sure any necessary modules (compilers, CUDA, MPI etc.) are loaded before you run ``nrnivmodl``:
 
 .. code-block::
 
    nrnivmodl -coreneuron <directory containing .mod files>
+   
+.. warning::
 
-Even if you don't have additional MOD files (i.e. you are relying on
-builtin NEURON MOD files) **you still need to use** ``nrnivmodl
--coreneuron`` **to generate a CoreNEURON library**.
-For example, you can run:
-
-.. code-block::
-
-   nrnivmodl -coreneuron .
+   Even if you don't have any MOD files, you must use ``nrnivmodl -coreneuron .`` to generate
+   a CoreNEURON compatible library of the default mechanisms.
 
 With the command above, NEURON will create a ``x86_64/special`` binary
 that is linked to CoreNEURON (here ``x86_64`` is the architecture name
@@ -29,6 +24,16 @@ of your system).
 
 If you see any compilation error then one of the MOD files might be incompatible with CoreNEURON.
 In this case, you should first consult the :ref:`CoreNEURON compatibility` section, and if that does not provide a clear explanation then you should `open an issue <https://github.com/BlueBrain/CoreNeuron/issues>`_ with an example of your MOD file.
+
+Build with GPU support
+----------------------
+To translate MOD files with GPU support, `nrnivmodl` must be executed with `CXX` pointing to the `nvc++` compiler.
+If you've installed the NVIDIA HPC SDK, following the `installation instructions <_getting-coreneuron>`_,
+then you can find it in `/opt/nvidia`:
+
+.. code-block::
+
+   CXX=`find /opt/nvidia -name nvc++` nrnivmodl -coreneuron .
 
 Enabling CoreNEURON
 *******************
@@ -64,7 +69,8 @@ Finally, use ``psolve`` to run the simulation after initialization:
 
 .. code-block:: python
 
-   h.stdinit()
+   pc = h.ParallelContext()
+   h.finitialize()
    pc.psolve(h.tstop)
 
 With the above steps, NEURON will build the model in memory and transfer it to CoreNEURON for simulation.
