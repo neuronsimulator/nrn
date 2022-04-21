@@ -4,7 +4,7 @@ NEURON Course Exercises
 These exercises are adapted from the 2018 NEURON summer course given in Atlanta, Georgia.
 
 1.
-    Introduction to the GUI
+    :ref:`intro_to_gui`
 
     * Lipid bilayer model
 
