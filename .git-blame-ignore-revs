@@ -1,2 +1,10 @@
 # Ignore blame of black formatting
 4c6fd585f2d6138db5f77513a795a53cc56b0646
+# Ignore blame of black formatting fixup #1729
+d65a7083dbc54bede71aaf37c91677c8ce1f089d
+# Ignore blame of cmake-format formatting #1730
+c5d0fc9499c22b947d76b65dfa756be154b93f18
+# Ignore blame of clang-format formatting #1732
+013b69a92bcbd09d917e5519940f75c511ed5072
+# Ignore blame of extra clang-format formatting #1748
+4d9a02539d13636c8e27cc123846072837d760be
