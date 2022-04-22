@@ -93,11 +93,9 @@ files=()
 if [ $# -gt 0 ] ; then
   for i in "$@" ; do
     if [ -d "$i" ] ; then
-      set +e
       files+=( "$i"/*.mod )
-      set -e
     elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
-        files+=( "$i" )
+      files+=( "$i" )
     else
       echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
 
@@ -129,13 +127,13 @@ echo ""
 echo ""
 
 
-if [ ! -d $MODSUBDIR ] ; then
-  echo "Creating $MODSUBDIR directory for .o files."
+if [ ! -d "$MODSUBDIR" ] ; then
+  echo "Creating '$MODSUBDIR' directory for .o files."
   echo
-  mkdir $MODSUBDIR
+  mkdir "$MODSUBDIR"
 fi
 
-files="${files[@]%.mod}"
+files=( "${files[@]%.mod}" )
 
 cd $MODSUBDIR
 mdir="$PWD"
