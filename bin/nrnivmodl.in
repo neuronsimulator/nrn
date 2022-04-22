@@ -97,52 +97,43 @@ escape_spaces() {
   echo "${1//+++/\\ }"
 }
 
+shopt -s nullglob
 # files is the complete list of mod files to process
-files=""
+files=()
 if [ $# -gt 0 ] ; then
   for i in "$@" ; do
-    i_hide=$(hide_spaces "$i")
     if [ -d "$i" ] ; then
       set +e
-      for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
-        files="$files $i_hide/$j"
-      done
+      files+=( "$i"/*.mod )
       set -e
+    elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
+        files+=( "$i" )
     else
-      if [ -e "$i" ] || [ -e "$i.mod" ] ; then
-        files="$files $i_hide"
-      else
-        echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
+      echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
 
-        echo ""
-        echo -n "  Mod file, folder args:"
-        for j in "$@" ; do
-          echo -n " \"$j\""
-        done
-        echo ""
+      echo ""
+      echo -n "  Mod file, folder args:"
+      for j in "$@" ; do
+        echo -n " \"$j\""
+      done
+      echo ""
 
-        exit 1
-      fi
+      exit 1
     fi
   done
 else
-  if ls *.mod 1> /dev/null 2> /dev/null ; then  # only if there are mod files
-    # Unset LC_ALL for consistent mod order
-    files=$(unset LC_ALL; ls *.mod)
-  fi
+  files=( *.mod )
 fi
 
-files=$(echo "$files" | sed 's/^ *//')
-
-base_names=""
-for i in $files ; do
-  base_names="$base_names $(basename "$i" .mod)"
+base_names=()
+for i in "${files[@]}" ; do
+  base_names+=( "$(basename "$i" .mod)" )
 done
 
 echo -n "Mod files:"
-for i in $files ; do
+for i in "${files[@]}" ; do
   dir_name=$(dirname "$i")
-  echo -n " \"$(unhide_spaces "$dir_name")/${i%.mod}.mod\""
+  echo -n " \"$dir_name/${i%.mod}.mod\""
 done
 echo ""
 echo ""
@@ -154,11 +145,7 @@ if [ ! -d $MODSUBDIR ] ; then
   mkdir $MODSUBDIR
 fi
 
-files=$(echo "$files" | sed 's/\.mod//g')
-
-if [ "$files" = '*' ] ; then
-  files=""
-fi
+files="${files[@]%.mod}"
 
 cd $MODSUBDIR
 mdir="$PWD"
@@ -166,23 +153,23 @@ mdir="$PWD"
 # construct file to be included by makefile to specify mod to c rule when
 # executed in $MODSUBDIR (child folder of launch location folder)
 MODMAKE=makemod2c_inc
-touch "$MODMAKE"
-for i in $files ; do
+> "$MODMAKE"
+for i in "${files[@]}" ; do
   case "$i" in
-    /*) f=$i;; # absolute, fine as is
-    *)  f=../$i;; # relative
+    /*) f="$i";; # absolute, fine as is
+    *)  f="../$i";; # relative
   esac
-  base_name="$(basename $f)"
-  dir_name="$(dirname $f)"
+  base_name="$(basename "$f")"
+  dir_name="$(dirname "$f")"
   # Note: indentation for shell lines in make rules must be a tab
   echo "\
-./$base_name.c: $(escape_spaces "$f.mod")
+./${base_name// /\\ }.c: ${f// /\\ }.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$(unhide_spaces "$dir_name")\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o \"$mdir\")
+	(cd \"$dir_name\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
-./$base_name.o: ./$base_name.c
+./${base_name// /\\ }.o: ./${base_name// /\\ }.c
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(COMPILE) -I\"$(unhide_spaces "$dir_name")\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+	\$(COMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> "$MODMAKE"
 done
 
@@ -203,8 +190,8 @@ extern "C" {
 #endif
 '
 
-  for i in $base_names ; do
-    echo "extern void _${i//}_reg(void);"
+  for i in "${base_names[@]}" ; do
+    echo "extern void _${i// }_reg(void);"
   done
 
   echo '
@@ -213,18 +200,18 @@ void modl_reg(){
     fprintf(stderr, "Additional mechanisms from files'$newline'");
 '
 
-  for i in $files
+  for i in "${files[@]}"
   do
-    echo '    fprintf(stderr," \"'"$(unhide_spaces "$i")"'.mod\"");'
+    echo '    fprintf(stderr," \"'"$i"'.mod\"");'
   done
 
   echo '    fprintf(stderr, "'$newline'");'
 
   echo "}"
 
-  for i in $base_names; do
-    echo "  _${i//}_reg();"
-    MODOBJS="$MODOBJS ./$i.o"
+  for i in "${base_names[@]}" ; do
+    echo "  _${i// }_reg();"
+    MODOBJS="$MODOBJS ./${i// /\\ }.o"
   done
 
   echo "}"
