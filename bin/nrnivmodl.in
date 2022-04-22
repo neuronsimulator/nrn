@@ -87,16 +87,6 @@ echo "$PWD"
 # of an item, retranslate back to either a space or an escaped space.
 # Only do this for cmake
 
-hide_spaces() {
-  echo "${1// /+++}"
-}
-unhide_spaces() {
-  echo "${1//+++/ /}"
-}
-escape_spaces() {
-  echo "${1//+++/\\ }"
-}
-
 shopt -s nullglob
 # files is the complete list of mod files to process
 files=()
