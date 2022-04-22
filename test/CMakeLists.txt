@@ -271,7 +271,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
-      test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod
+      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc" test/pynrn/unitstest.mod
       test/pynrn/version_macros.mod test/gjtests/natrans.mod)
   nrn_add_test(
     GROUP coreneuron_modtests
