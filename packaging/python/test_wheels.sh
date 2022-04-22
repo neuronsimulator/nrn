@@ -90,7 +90,7 @@ run_mpi_test () {
   # coreneuron execution via neuron
   if [[ "$has_coreneuron" == "true" ]]; then
     rm -rf $ARCH_DIR
-    nrnivmodl -coreneuron test/coreneuron/mod/
+    nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
     # python as a launcher can be used only with non-gpi build
     if [[ "$has_gpu_support" == "false" ]]; then
@@ -165,7 +165,7 @@ run_serial_test () {
         $python_exe test/coreneuron/test_psolve.py
       fi
 
-      nrnivmodl -coreneuron test/coreneuron/mod/
+      nrnivmodl -coreneuron "test/coreneuron/mod files/"
 
       # coreneuron+gpu can be used via python but special only
       if [[ "$has_gpu_support" == "false" ]]; then
