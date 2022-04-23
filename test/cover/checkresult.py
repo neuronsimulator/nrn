@@ -29,7 +29,6 @@ class Chk:
 
         with open(fname, "rb") as f:
             self.d = json.load(f)
-            print("opened {} d={}".format(fname, self.d))
         assert type(self.d) is dict
 
     def __call__(self, key, value, tol=0.0):

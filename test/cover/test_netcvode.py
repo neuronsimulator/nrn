@@ -318,6 +318,8 @@ def netcon_access():
     nc = h.NetCon(a, a)
     del a
     assert nc.srcgid() == -1
+    nc = h.NetCon(None, None)
+    assert nc.srcgid() == -1
     del nc
 
     # NetCon constructor errors and some coverage
@@ -681,6 +683,39 @@ def scatter_gather():
     pc.nthread(1)
     yvec.resize(0)
     expect_err("cv.yscatter(yvec)")
+    del yvec, svec, net
+    locals()
+
+
+def playrecord():
+    net = Net(1)
+    net.ic.dur = 1.0
+    tvec = h.Vector([0, 1, 1])
+    avec = h.Vector([0, 0.1, 0])
+    avec.play(net.ic._ref_amp, tvec)
+    cv.active(1)
+    cv.debug_event(1)
+    h.finitialize(-65)
+    cv.solve(1)
+    cv.debug_event(0)
+    del net.ic
+    h.finitialize(-65)
+
+
+def interthread():
+    net = Net(4)
+    cv.active(0)
+    cv.debug_event(1)
+    pc.nthread(2, 0)  # serial threads avoid race on print callback
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = io.StringIO()
+    h.finitialize(-65)
+    while h.t < 10:
+        h.fadvance()
+    sys.stdout = old_stdout
+    print(mystdout.getvalue())
+    pc.nthread(1)
+    cv.debug_event(0)
 
 
 def test_netcvode_cover():
@@ -693,6 +728,8 @@ def test_netcvode_cover():
     integrator_properties()
     event_queue()
     scatter_gather()
+    interthread()
+    playrecord()  # interthread hangs if this before it.
 
 
 if __name__ == "__main__":

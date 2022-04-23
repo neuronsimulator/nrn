@@ -220,8 +220,8 @@ void VecPlayStep::deliver(double tt, NetCvode* ns) {
 
 
 void VecPlayStep::pr() {
-    printf("VecPlayStep ");
-    printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
+    Printf("VecPlayStep ");
+    Printf("%s.x[%d]\n", hoc_object_name(y_->obj_), current_index_);
 }
 
 VecPlayContinuous::VecPlayContinuous(double* pd,
