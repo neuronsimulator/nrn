@@ -35,21 +35,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 // at time of configure (using the python first in the PATH).
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
-#ifdef MINGW
-#define RTLD_NOW    0
-#define RTLD_GLOBAL 0
-#define RTLD_NOLOAD 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-//#define _GNU_SOURCE
-#include <dlfcn.h>
-#endif
+#include "nrnwrap_dlfcn.h"
 
 extern char* neuron_home;
 

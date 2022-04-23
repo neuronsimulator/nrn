@@ -8,20 +8,7 @@
 
 #if NRNMPI_DYNAMICLOAD /* to end of file */
 
-#ifdef MINGW
-#define RTLD_NOW    0
-#define RTLD_GLOBAL 0
-#define RTLD_NOLOAD 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#include <dlfcn.h>
-#endif
+#include "nrnwrap_dlfcn.h"
 
 #include "nrnmpi.h"
 
@@ -101,12 +88,13 @@ char* nrnmpi_load(int is_python) {
     if (sym) {
         Dl_info info;
         if (dladdr(sym, &info)) {
-            if (info.dli_fname[0] == '/') {
+            if (info.dli_fname[0] == '/' || strchr(info.dli_fname, ':')) {
                 sprintf(pmes,
                         "<libmpi> is loaded in the sense the MPI_Initialized has an address\n");
                 handle = load_mpi(info.dli_fname, pmes + strlen(pmes));
                 if (handle) {
                     corenrn_mpi_library = info.dli_fname;
+                    printf("already loaded: %s\n", info.dli_fname);
                 } else {
                     ismes = 1;
                 }
