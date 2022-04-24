@@ -36,6 +36,9 @@ extern void nrn_possible_mismatched_arch(const char*);
 #if defined(NRNPYTHON_DYNAMICLOAD)
 
 #include "nrnwrap_dlfcn.h"
+#if !defined(RTLD_NOLOAD)
+#define RTLD_NOLOAD 0
+#endif // RTLD_NOLOAD
 
 extern char* neuron_home;
 

@@ -147,6 +147,10 @@ else()
   list(APPEND NRN_NRNIV_LIB_SRC_FILES ${NRN_NRNMPI_SRC_FILES})
 endif()
 
+if (MINGW)
+  list(APPEND NRN_NRNIV_LIB_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mswin/dlfcn.c)
+endif()
+
 # NRN_ENABLE_MODULE_INSTALL will create a separate nrnpython lib
 if(NRN_ENABLE_PYTHON AND NOT NRN_ENABLE_PYTHON_DYNAMIC)
   # Include nrnpython in nrniv - useful for single lib neuron and wheels

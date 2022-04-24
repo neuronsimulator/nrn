@@ -1,6 +1,7 @@
 #ifndef nrnwrap_dlfcn_h
 #define nrnwrap_dlfcn_h
 
+#include "../../nrnconf.h"
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
 #endif
