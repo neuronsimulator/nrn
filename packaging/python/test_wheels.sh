@@ -283,7 +283,7 @@ else
 fi
 
 
-# python 3.6 and gpu wheel needs updated pip
+# gpu wheel needs updated pip
 $python_exe -m pip install --upgrade pip
 
 

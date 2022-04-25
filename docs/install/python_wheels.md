@@ -221,17 +221,17 @@ After creating the tag on the `release/x.y` or on the `master` branch, perform t
 4) We need to define three variables:
    * `NRN_NIGHTLY_UPLOAD` : `false`
    * `NRN_RELEASE_UPLOAD` : `false`
-   * `NEURON_NIGHTLY_TAG` : null (leave empty)
-   
+   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
+
    Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
 5) Click on `Run`
 
 ![](images/azure-release-no-upload.png)
 
 With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
-   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_NIGHTLY_UPLOAD` : `true`
    * `NRN_RELEASE_UPLOAD` : `false`
-   * `NEURON_NIGHTLY_TAG` : null (leave empty)
+   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
 
 ![](images/azure-release.png)
 
@@ -266,7 +266,7 @@ $ git diff
            matrix:
              parameters:
 -              NRN_PYTHON_VERSION: ["310"]
-+              NRN_PYTHON_VERSION: ["36", "37", "38", "39", "310"]
++              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
 ```
 
 The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!

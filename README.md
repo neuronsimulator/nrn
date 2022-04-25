@@ -14,9 +14,6 @@ Linux and Mac you can install the official Python 3 wheel with:
 pip3 install neuron
 ```
 
-> **_NOTE:_**  If you are using Python 3.6, please upgrade your pip first, i.e.:
-> `python3.6 -m pip install --upgrade pip`
-
 If you want to build the latest version from source, we support **CMake** as build system. **Autotools** build system has been removed after 8.0 release.
 See detailed installation instructions: [docs/install/install_instructions.md](docs/install/install_instructions.md).
 

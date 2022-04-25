@@ -256,4 +256,3 @@ MKDLLvpf("_vector_vec", vector_vec)
 MKDLLvpf("_vector_pobj", vector_pobj)
 MKDLLvpf("_vector_arg", vector_arg)
 MKDLLif("_is_vector_arg", is_vector_arg)
-

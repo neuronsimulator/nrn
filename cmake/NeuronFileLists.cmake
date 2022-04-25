@@ -16,6 +16,7 @@ set(HEADER_FILES_TO_INSTALL
     ivstream.h
     md1redef.h
     md2redef.h
+    mech_api.h
     membdef.h
     membfunc.h
     multicore.h
@@ -33,8 +34,10 @@ set(HEADER_FILES_TO_INSTALL
     nrnoc_ml.h
     nrnmpi.h
     nrnmpidec.h
+    nrnrandom.h
     nrnran123.h
     nrnredef.h
+    nrnversionmacros.h
     oc_ansi.h
     ocfunc.h
     ocmisc.h
@@ -358,13 +361,7 @@ set(MESCH_FILES_LIST
     zsolve.c
     zvecop.c)
 
-
-set(SPARSE_FILES_LIST
-    bksub.cpp
-    getelm.cpp
-    lineq.cpp
-    prmat.cpp
-    subrows.cpp)
+set(SPARSE_FILES_LIST bksub.cpp getelm.cpp lineq.cpp prmat.cpp subrows.cpp)
 
 # sparse13 matrix sources
 set(SPARSE13_FILES_LIST
@@ -573,8 +570,7 @@ nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
                      nvector_parallel.c)
 nrn_create_file_list(NRN_MESCH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/mesch ${MESCH_FILES_LIST})
-nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse
-                     ${SPARSE_FILES_LIST})
+nrn_create_file_list(NRN_SPARSE_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse ${SPARSE_FILES_LIST})
 nrn_create_file_list(NRN_SPARSE13_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sparse13
                      ${SPARSE13_FILES_LIST})
 nrn_create_file_list(NRN_SCOPMATH_SRC_FILES ${PROJECT_SOURCE_DIR}/src/scopmath

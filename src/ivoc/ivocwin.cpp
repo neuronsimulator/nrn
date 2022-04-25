@@ -16,7 +16,7 @@
 #undef MOVE
 #undef DELETE
 #undef IGNORE
-#define MOVE mlhmove
+#define MOVE   mlhmove
 #define DELETE mlhdelete
 #include <Dispatch/dispatcher.h>
 #include <InterViews/window.h>
@@ -39,8 +39,8 @@
 int ivoc_list_look(Object*, Object*, char*, int);
 void hoc_class_registration();
 static void dummy() {
-	ivoc_list_look(NULL, NULL, NULL, 0);
-	hoc_class_registration();
+    ivoc_list_look(NULL, NULL, NULL, 0);
+    hoc_class_registration();
 }
 #endif
 
@@ -48,122 +48,121 @@ int iv_mswin_to_pixel(int);
 int iv_pixel_to_mswin(int);
 
 void pwmimpl_redraw(Window* w) {
-	w->rep()->WMpaint(0, 0);
+    w->rep()->WMpaint(0, 0);
 }
 
 void ivoc_bring_to_top(Window* w) {
-	BringWindowToTop(w->rep()->msWindow());
+    BringWindowToTop(w->rep()->msWindow());
 }
 
 void* mswin_setclip(Canvas* c, int x0, int y0, int x1, int y1) {
-	HRGN clip = CreateRectRgn(x0, y0, x1, y1);
-	SelectClipRgn(((MWcanvas*)c)->hdcOf(), clip);
-	return clip;
+    HRGN clip = CreateRectRgn(x0, y0, x1, y1);
+    SelectClipRgn(((MWcanvas*) c)->hdcOf(), clip);
+    return clip;
 }
 
 void mswin_delete_object(void* v) {
-	DeleteObject((HRGN)v);	
+    DeleteObject((HRGN) v);
 }
 
 //---------------------------------------------------------
 
 void ivoc_win32_cleanup() {
-	Oc::cleanup();
+    Oc::cleanup();
 }
 
 void Oc::cleanup() {
-	if (help_cursor_) {
-		delete help_cursor_;
-	}
+    if (help_cursor_) {
+        delete help_cursor_;
+    }
 }
 
 #if defined(MINGW)
 static void hidewindow(void* v) {
-	HWND w = (HWND)v;
-	ShowWindow(w, SW_HIDE);
+    HWND w = (HWND) v;
+    ShowWindow(w, SW_HIDE);
 }
 
 static int gui_thread_xmove_x;
 static int gui_thread_xmove_y;
 void gui_thread_xmove(void* v) {
-	PrintableWindow* w = (PrintableWindow*)v;
-	w->xmove(gui_thread_xmove_x, gui_thread_xmove_y);
+    PrintableWindow* w = (PrintableWindow*) v;
+    w->xmove(gui_thread_xmove_x, gui_thread_xmove_y);
 }
 
 #endif
 
 void PrintableWindow::hide() {
-	if (is_mapped()) {
-		HWND hwnd = Window::rep()->msWindow();
-//printf("hide %p\n", this);
+    if (is_mapped()) {
+        HWND hwnd = Window::rep()->msWindow();
+// printf("hide %p\n", this);
 #if defined(MINGW)
-		if (!nrn_is_gui_thread()) {
-			nrn_gui_exec(hidewindow, hwnd);
-			return;
-		}
+        if (!nrn_is_gui_thread()) {
+            nrn_gui_exec(hidewindow, hwnd);
+            return;
+        }
 #endif
-		ShowWindow(hwnd, SW_HIDE);
-	}
+        ShowWindow(hwnd, SW_HIDE);
+    }
 }
 
 void PrintableWindow::xmove(int x, int y) {
 #if defined(MINGW)
-	if (!nrn_is_gui_thread()) {
-		gui_thread_xmove_x = x;
-		gui_thread_xmove_y = y;
-		nrn_gui_exec(gui_thread_xmove, this);
-		return;
-	}
+    if (!nrn_is_gui_thread()) {
+        gui_thread_xmove_x = x;
+        gui_thread_xmove_y = y;
+        nrn_gui_exec(gui_thread_xmove, this);
+        return;
+    }
 #endif
-	HWND hwnd = Window::rep()->msWindow();
-	//int width = canvas()->pwidth();
-	//int height = canvas()->pheight();
-	RECT r;
-	GetWindowRect(hwnd, &r);
-	MoveWindow(hwnd,
-		iv_pixel_to_mswin(x), iv_pixel_to_mswin(y),
-		 r.right - r.left, r.bottom - r.top, TRUE);
+    HWND hwnd = Window::rep()->msWindow();
+    // int width = canvas()->pwidth();
+    // int height = canvas()->pheight();
+    RECT r;
+    GetWindowRect(hwnd, &r);
+    MoveWindow(
+        hwnd, iv_pixel_to_mswin(x), iv_pixel_to_mswin(y), r.right - r.left, r.bottom - r.top, TRUE);
 }
 int PrintableWindow::xleft() const {
-	WindowRep& w = *Window::rep();
-	if (w.bound()) {
-		HWND hwnd = w.msWindow();
-		RECT winRect;
-		GetWindowRect(hwnd, &winRect);
-		return iv_mswin_to_pixel(winRect.left);
-	}else{
-		return 0;
-	}
+    WindowRep& w = *Window::rep();
+    if (w.bound()) {
+        HWND hwnd = w.msWindow();
+        RECT winRect;
+        GetWindowRect(hwnd, &winRect);
+        return iv_mswin_to_pixel(winRect.left);
+    } else {
+        return 0;
+    }
 }
 int PrintableWindow::xtop() const {
-	WindowRep& w = *Window::rep();
-	if (w.bound()) {
-		HWND hwnd = w.msWindow();
-		RECT winRect;
-		GetWindowRect(hwnd, &winRect);
-		return iv_mswin_to_pixel(winRect.top);
-	}else{
-		return 0;
-	}
+    WindowRep& w = *Window::rep();
+    if (w.bound()) {
+        HWND hwnd = w.msWindow();
+        RECT winRect;
+        GetWindowRect(hwnd, &winRect);
+        return iv_mswin_to_pixel(winRect.top);
+    } else {
+        return 0;
+    }
 }
 
 void PrintableWindow::xplace(int x, int y) {
-	WindowRep& wr = *Window::rep();
-	if (wr.bound()) {
-		xmove(x, y);
-	}else{
-		xplace_ = true;
-		xleft_ = x;
-		xtop_ = y;
-	}
+    WindowRep& wr = *Window::rep();
+    if (wr.bound()) {
+        xmove(x, y);
+    } else {
+        xplace_ = true;
+        xleft_ = x;
+        xtop_ = y;
+    }
 }
 void PrintableWindow::default_geometry() {
-	 DismissableWindow::default_geometry();
-	 if (xplace_) {
-		pplace(iv_pixel_to_mswin(xleft_),
-			display()->pheight() - iv_pixel_to_mswin(xtop_)
-			- canvas()->to_pixels(height(),Dimension_Y));
-	 }
+    DismissableWindow::default_geometry();
+    if (xplace_) {
+        pplace(iv_pixel_to_mswin(xleft_),
+               display()->pheight() - iv_pixel_to_mswin(xtop_) -
+                   canvas()->to_pixels(height(), Dimension_Y));
+    }
 }
 #if 0
 Object** Graph::new_vect(const DataVec*) {
@@ -172,16 +171,16 @@ Object** Graph::new_vect(const DataVec*) {
 #endif
 //#include "\nrn\src\mswin\winio\debug.h"
 void Rubberband::rubber_on(Canvas* c) {
-//	DebugEnterMessage("Rubberband::rubber_on\n");
-	c->front_buffer();
+    //	DebugEnterMessage("Rubberband::rubber_on\n");
+    c->front_buffer();
 }
 void Rubberband::rubber_off(Canvas* c) {
-	c->back_buffer();
+    c->back_buffer();
 #ifdef WIN32
-// this prevents failure for all future paints
-	c->damage_all();
+    // this prevents failure for all future paints
+    c->damage_all();
 #endif
-//	DebugExitMessage("Rubberband::rubber_off\n");
+    //	DebugExitMessage("Rubberband::rubber_off\n");
 }
 #if 0
 double* ivoc_vector_ptr(Object*, int) {return 0;}
@@ -189,21 +188,27 @@ int ivoc_vector_size(Object*) {return 0;}
 #endif
 
 #ifdef MINGW
-IOHandler::IOHandler(){}
-IOHandler::~IOHandler(){}
-int IOHandler::inputReady(int){return 0;}
-int IOHandler::outputReady(int){return 0;}
-int IOHandler::exceptionRaised(int){return 0;}
-void IOHandler::timerExpired(long, long){}
-void IOHandler::childStatus(pid_t, int){}
-#endif // MINGW
+IOHandler::IOHandler() {}
+IOHandler::~IOHandler() {}
+int IOHandler::inputReady(int) {
+    return 0;
+}
+int IOHandler::outputReady(int) {
+    return 0;
+}
+int IOHandler::exceptionRaised(int) {
+    return 0;
+}
+void IOHandler::timerExpired(long, long) {}
+void IOHandler::childStatus(pid_t, int) {}
+#endif  // MINGW
 
 #ifdef MINGW
 
 #include <nrnmutdec.h>
 static int bind_tid_;
 void nrniv_bind_thread(void);
-extern int (*iv_bind_enqueue_)(void(*)(void*), void* w);
+extern int (*iv_bind_enqueue_)(void (*)(void*), void* w);
 extern void iv_bind_call(void* w, int type);
 extern void nrnpy_setwindowtext(void*);
 
@@ -217,81 +222,82 @@ static pthread_mutex_t* mut_;
 static pthread_cond_t* cond_;
 
 bool nrn_is_gui_thread() {
-	if (cond_ && GetCurrentThreadId() != bind_tid_) {
-		return false;
-	}
-	return true;
+    if (cond_ && GetCurrentThreadId() != bind_tid_) {
+        return false;
+    }
+    return true;
 }
 
-int iv_bind_enqueue(void(*cb)(void*), void* w) {
-	//printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
-	if (GetCurrentThreadId() == bind_tid_) {
-		return 0;
-	}
-	nrn_gui_exec(cb, w);
-	return 1;
+int iv_bind_enqueue(void (*cb)(void*), void* w) {
+    // printf("iv_bind_enqueue %p thread %d\n", w, GetCurrentThreadId());
+    if (GetCurrentThreadId() == bind_tid_) {
+        return 0;
+    }
+    nrn_gui_exec(cb, w);
+    return 1;
 }
 
 void nrn_gui_exec(void (*cb)(void*), void* v) {
-	assert(GetCurrentThreadId() != bind_tid_);
-	// wait for the gui thread to handle the operation
-	void* gs = (*nrnpy_save_thread)();
-	pthread_mutex_lock(mut_);
-	w_ = v;
-	nrn_gui_exec_ = cb;
-	while (w_) {
-		pthread_cond_wait(cond_, mut_);
-	}
-	pthread_mutex_unlock(mut_);
-	(*nrnpy_restore_thread)(gs);
+    assert(GetCurrentThreadId() != bind_tid_);
+    // wait for the gui thread to handle the operation
+    void* gs = (*nrnpy_save_thread)();
+    pthread_mutex_lock(mut_);
+    w_ = v;
+    nrn_gui_exec_ = cb;
+    while (w_) {
+        pthread_cond_wait(cond_, mut_);
+    }
+    pthread_mutex_unlock(mut_);
+    (*nrnpy_restore_thread)(gs);
 }
 
 void nrniv_bind_call() {
-	if (!cond_) { return; }
-	void* w;
-	pthread_mutex_lock(mut_);
-	w = w_;
-	if (w_) {
-		w_ = NULL;
-		(*nrn_gui_exec_)(w);
-		pthread_cond_signal(cond_);
-	}
-	pthread_mutex_unlock(mut_);
+    if (!cond_) {
+        return;
+    }
+    void* w;
+    pthread_mutex_lock(mut_);
+    w = w_;
+    if (w_) {
+        w_ = NULL;
+        (*nrn_gui_exec_)(w);
+        pthread_cond_signal(cond_);
+    }
+    pthread_mutex_unlock(mut_);
 }
 
 
-#endif // MINGW
+#endif  // MINGW
 
-#endif //HAVE_IV
+#endif  // HAVE_IV
 
 void nrniv_bind_thread() {
 #if HAVE_IV
-IFGUI
-        bind_tid_ = int(*hoc_getarg(1));
-        //printf("nrniv_bind_thread %d\n", bind_tid_);
-	iv_bind_enqueue_ = iv_bind_enqueue;
-	cond_ = new pthread_cond_t;
-	mut_ = new pthread_mutex_t;
-	pthread_cond_init(cond_, NULL);
-	pthread_mutex_init(mut_, NULL);
-	w_ = NULL;
-ENDGUI
+    IFGUI
+    bind_tid_ = int(*hoc_getarg(1));
+    // printf("nrniv_bind_thread %d\n", bind_tid_);
+    iv_bind_enqueue_ = iv_bind_enqueue;
+    cond_ = new pthread_cond_t;
+    mut_ = new pthread_mutex_t;
+    pthread_cond_init(cond_, NULL);
+    pthread_mutex_init(mut_, NULL);
+    w_ = NULL;
+    ENDGUI
 #endif
-        hoc_pushx(1.);
-        hoc_ret();
+    hoc_pushx(1.);
+    hoc_ret();
 }
 
 int stdin_event_ready() {
 #if HAVE_IV
-IFGUI
-  static DWORD main_threadid = -1;
-  if (main_threadid == -1) {
-	main_threadid = GetCurrentThreadId();
-	return 1;
-  }
-  PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
-ENDGUI
+    IFGUI
+    static DWORD main_threadid = -1;
+    if (main_threadid == -1) {
+        main_threadid = GetCurrentThreadId();
+        return 1;
+    }
+    PostThreadMessage(main_threadid, WM_QUIT, 0, 0);
+    ENDGUI
 #endif
-  return 1;
+    return 1;
 }
-

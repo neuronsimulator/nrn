@@ -107,7 +107,7 @@ CMAKE_BUILD_TYPE:STRING=RelWithDebInfo
 
 Ninja
 -----
-  Use the Ninja build system ('make' is the default 'CMake' build system).
+  Use the Ninja build system (``make`` is the default CMake build system).
 
   .. code-block:: shell
 
@@ -240,7 +240,7 @@ NRN_PYTHON_DYNAMIC:STRING=
 
   .. code-block:: shell
 
-    -DNRN_PYTHON_DYNAMIC="python3.6;python3.7;python3.8;python3.9"
+    -DNRN_PYTHON_DYNAMIC="python3.7;python3.8;python3.9;python3.10"
 
   This option is ignored unless NRN_ENABLE_PYTHON_DYNAMIC=ON
 
@@ -354,6 +354,41 @@ CMAKE_C_COMPILER:FILEPATH=/usr/bin/cc
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
 ----------------------------------------
   C plus plus compiler
+
+NRN_ENABLE_DOCS:BOOL=OFF
+------------------------
+  Enable documentation targets in the build.
+  This also makes all documentation dependencies into hard requirements, so
+  CMake will report an error if anything is missing.
+  There are five documentation targets:
+    * ``doxygen`` generates Doxygen documentation from the NEURON source code.
+    * ``notebooks`` executes the various Jupyter notebooks that are included in
+      the documentation, so they contain both code and results, instead of just
+      code. These are run in situ in the source tree, so if you run this target
+      manually then make sure not to accidentally commit the results to git.
+    * ``sphinx`` generates Sphinx documentation. This logically depends on
+      ``notebooks``, as it generates HTML from the executed notebooks, but this
+      dependency is not declared in the build system.
+    * ``notebooks-clean`` removes the execution results from the Jupyter
+      notebooks, leaving them in a clean state. This logically depends on
+      ``sphinx``, as the execution results need to be converted to HTML before
+      they are discarded, but this dependency is not declared in the build
+      system.
+    * ``docs`` is shorthand for building ``doxygen``, ``notebooks``, ``sphinx``
+      and ``notebooks-clean`` in that order.
+
+  .. warning::
+    Executing the notebooks requires a functional NEURON installation.
+    There are two possibilities here:
+      * The default, which is sensible for local development, is that the
+        ``notebooks`` target uses NEURON from the current CMake build directory.
+        This implies that building the documentation builds NEURON too.
+      * The alternative, which is enabled by setting
+        ``-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON``, is that ``notebooks``
+        does not depend on any other NEURON build targets. In this case you must
+        provide an installation of NEURON by some other means. It will be assumed
+        that commands like ``nrnivmodl`` work and that ``import neuron`` works
+        in Python.
 
 NRN_NMODL_CXX_FLAGS:STRING=""
 -----------------------------

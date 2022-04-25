@@ -3,10 +3,11 @@
 
 #include <InterViews/adjust.h>
 
-class BoundedValue : public Adjustable {
-protected:
+class BoundedValue: public Adjustable {
+  protected:
     BoundedValue();
-public:
+
+  public:
     BoundedValue(Coord lower, Coord upper);
     virtual ~BoundedValue();
 
@@ -28,7 +29,8 @@ public:
     virtual void scroll_backward(DimensionName);
     virtual void page_forward(DimensionName);
     virtual void page_backward(DimensionName);
-private:
+
+  private:
     Coord curvalue_;
     Coord lower_;
     Coord span_;

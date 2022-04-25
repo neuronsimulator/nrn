@@ -455,4 +455,4 @@ Description:
     merging models into one larger 
     model may eliminate the instability. 
 
-
+.. include:: ../../../../nmodl/verbatim.rst

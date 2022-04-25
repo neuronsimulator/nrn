@@ -18,8 +18,8 @@ import subprocess
 sys.path.insert(0, os.path.abspath("./translators"))
 sys.path.insert(0, os.path.abspath("./domains"))
 
-import html2        # responsible for creating jump tables in python and hoc documentation
-import hocdomain    # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
+import html2  # responsible for creating jump tables in python and hoc documentation
+import hocdomain  # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
 
 # -- Project information -----------------------------------------------------
 
@@ -38,7 +38,8 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "recommonmark",
     "sphinx.ext.mathjax",
-    "nbsphinx"
+    "nbsphinx",
+    "sphinx_design",
 ]
 
 source_suffix = {
@@ -88,17 +89,19 @@ html_css_files = [
 
 # We never execute the notebooks via nbsphinx (for faster local iterations)
 # notebooks are executed thanks to the `notebooks` CMake target
-nbsphinx_execute = 'never'
+nbsphinx_execute = "never"
 
 # Force mathjax@v2 due to plotly requirement
 # https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
-mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+mathjax_path = (
+    "https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+)
 mathjax2_config = {
-    'tex2jax': {
-        'inlineMath': [['$', '$'], ['\\(', '\\)']],
-        'processEscapes': True,
-        'ignoreClass': 'document',
-        'processClass': 'math|output_area',
+    "tex2jax": {
+        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+        "processEscapes": True,
+        "ignoreClass": "document",
+        "processClass": "math|output_area",
     }
 }
 

@@ -3,21 +3,17 @@ include(NeuronTestHelper)
 set(direct_tests netstimdirect)
 set(spike_comparison_tests
     bbcore
+    conc
     deriv
     gf
+    kin
     patstim
     vecplay
     vecevent
     watch)
 
-set(modfiles mod/Gfluct3.mod mod/hhderiv.mod mod/hhwatch.mod mod/nacum.mod mod/vecevent.mod)
-if(NOT CORENRN_ENABLE_NMODL OR NOT CORENRN_ENABLE_GPU)
-  # These .mod files cannot be compiled with NMODL + OpenACC/GPU because of
-  # https://github.com/BlueBrain/nmodl/issues/311
-  list(APPEND modfiles mod/hhkin.mod)
-  # These tests depend on the modfiles on the line above.
-  list(APPEND spike_comparison_tests conc kin)
-endif()
+set(modfiles mod/Gfluct3.mod mod/hhderiv.mod mod/hhkin.mod mod/hhwatch.mod mod/nacum.mod
+             mod/vecevent.mod)
 
 # Set the number of MPI ranks to use for each test. Assume 1 if not explicitly specified.
 set(mpi_ranks_gf 2)
@@ -49,11 +45,11 @@ function(set_psolve_test_mode_suffix psolve_test_mode)
       PARENT_SCOPE)
 endfunction()
 
-# Libsonata-report automatically converts 1-based GIDs to 0-based by subtracting 1 from them.
-# If there is already a GID 0 in the reports, libsonata-report throws.
-# Since some of the NEURON integration tests create 0-based GID cells we set the environment variable
-# LIBSONATA_ZERO_BASED_GIDS to 1 to avoid libsonata-reports's automatic conversion of 1-based GIDs to
-# 0-based that would trigger the throw.
+# Libsonata-report automatically converts 1-based GIDs to 0-based by subtracting 1 from them. If
+# there is already a GID 0 in the reports, libsonata-report throws. Since some of the NEURON
+# integration tests create 0-based GID cells we set the environment variable
+# LIBSONATA_ZERO_BASED_GIDS to 1 to avoid libsonata-reports's automatic conversion of 1-based GIDs
+# to 0-based that would trigger the throw.
 set(SONATA_GIDS_ZERO "LIBSONATA_ZERO_BASED_GIDS=1")
 
 # Run tests that require separate runs of NEURON and CoreNEURON to compare their spikes only
@@ -64,6 +60,7 @@ foreach(test ${spike_comparison_tests})
     set(num_ranks 1)
   endif()
   nrn_add_test_group(
+    CORENEURON
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}
@@ -97,9 +94,8 @@ foreach(test ${spike_comparison_tests})
           COMMAND
             OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-            special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_coreneuron=1
-            -c arg_psolve_test_mode=${psolve_test_mode} ${${processor}_args_online}
-            test${test}.hoc)
+            special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_coreneuron=1 -c
+            arg_psolve_test_mode=${psolve_test_mode} ${${processor}_args_online} test${test}.hoc)
       endif()
     endforeach()
     # This is a workaround to reduce the number of MPI ranks in the GPU version of the patstim test
@@ -170,9 +166,9 @@ foreach(test ${spike_comparison_tests})
                  arg_dump_coreneuron_model=1
                  test${test}.hoc
       COMMAND
-        OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}
-        ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat
-        --mpi -e 100 ${extra_args} ${${processor}_args_offline}
+        OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG}
+        ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core
+        ${MPIEXEC_POSTFLAGS} -d coredat --mpi -e 100 ${extra_args} ${${processor}_args_offline}
       OUTPUT asciispikes::out.dat)
   endforeach()
   nrn_add_test_group_comparison(
@@ -188,6 +184,7 @@ foreach(test ${direct_tests})
     set(num_ranks 1)
   endif()
   nrn_add_test_group(
+    CORENEURON
     NAME testcorenrn_${test}
     SUBMODULE tests/testcorenrn
     MODFILE_PATTERNS ${modfiles}

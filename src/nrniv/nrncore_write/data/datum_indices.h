@@ -7,13 +7,13 @@
 // NrnThread.NrnThreadMembList.Memb_List.data and pdata and
 // NrnThread._actual_area
 class DatumIndices {
-public:
+  public:
     DatumIndices();
     virtual ~DatumIndices();
     int type;
     // ordering as though pdata[i][j] was pdata[0][i*sz+j]
-    int* ion_type; // negative codes semantics, positive codes mechanism type
-    int* ion_index; // index of range variable relative to beginning of that type
+    int* ion_type;   // negative codes semantics, positive codes mechanism type
+    int* ion_index;  // index of range variable relative to beginning of that type
 };
 
-#endif //NRN_DATUM_INDICES_H
+#endif  // NRN_DATUM_INDICES_H

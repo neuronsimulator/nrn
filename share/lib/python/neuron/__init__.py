@@ -894,7 +894,7 @@ class _RangeVarPlot(_WrapperPlot):
                 *args,
                 data=pd.DataFrame({"x": xvec, "y": yvec}),
                 mapping=p9.aes(x="x", y="y"),
-                **kwargs
+                **kwargs,
             )
         str_graph = str(graph)
         if str_graph.startswith("<module 'plotly' from "):
@@ -913,7 +913,7 @@ class _RangeVarPlot(_WrapperPlot):
                 *args,
                 data=pd.DataFrame({"x": xvec, "y": yvec}),
                 mapping=p9.aes(x="x", y="y"),
-                **kwargs
+                **kwargs,
             )
         if hasattr(graph, "plot"):
             # works with e.g. pyplot or a matplotlib axis
@@ -1154,7 +1154,7 @@ class _PlotShapePlot(_WrapperPlot):
                             z=[z],
                             name="",
                             hovertemplate=str(segment),
-                            **kwargs
+                            **kwargs,
                         )
                     )
                     return self

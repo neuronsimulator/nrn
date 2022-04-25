@@ -4,7 +4,7 @@ if(${GIT_FOUND} AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
   execute_process(
     COMMAND ${GIT_EXECUTABLE} --git-dir=.git describe --all
     RESULT_VARIABLE NOT_A_GIT_REPO
-    ERROR_QUIET
+    OUTPUT_QUIET ERROR_QUIET
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 else()
   set(NOT_A_GIT_REPO "NotAGitRepo")
@@ -18,12 +18,11 @@ function(nrn_initialize_submodule path)
   endif()
   message(STATUS "Sub-module : missing ${path} : running git submodule update --init")
   execute_process(
-    COMMAND
-      ${GIT_EXECUTABLE}  submodule update --init -- ${path}
+    COMMAND ${GIT_EXECUTABLE} submodule update --init -- ${path}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     RESULT_VARIABLE ret)
   if(ret EQUAL "1")
-      message( FATAL_ERROR "git submodule init failed")
+    message(FATAL_ERROR "git submodule init failed")
   endif()
 endfunction()
 
@@ -35,7 +34,8 @@ function(nrn_add_external_project name)
     PATHS "${THIRD_PARTY_DIRECTORY}/${name}")
   if(NOT EXISTS ${${name}_PATH})
     if(NOT_A_GIT_REPO)
-      message(FATAL_ERROR "Looks like you are building from source. Git needed for ${name} feature.")
+      message(
+        FATAL_ERROR "Looks like you are building from source. Git needed for ${name} feature.")
     endif()
     nrn_initialize_submodule("${THIRD_PARTY_DIRECTORY}/${name}")
   else()
