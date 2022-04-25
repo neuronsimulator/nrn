@@ -61,7 +61,7 @@ or in Python
 .. code::
     python
 
-    from neuron import h. gui
+    from neuron import h, gui
 
 4. 
     **Get a CellBuilder**
@@ -181,8 +181,8 @@ Double the duration and halve the amplitude of the injected current (injected ch
 
 Notes:
 
-- :menuselection:`Select Show --> Parameters in the PointProcessManager window to view the field editors.`
-- Multiplying a field editor value by 2 can be done by typing ``*2`` <return> at the end of the value. Divide by typing /2 <return>.
+- :menuselection:`Select Show --> Parameters` in the PointProcessManager window to view the field editors.
+- Multiplying a field editor value by 2 can be done by typing ``*2`` <return> at the end of the value. Divide by typing ``/2`` <return>.
 - The mouse cursor must be in the panel that contains the field editor.
 
 Return the duration and amplitude to their default values (click in the checkmark box with left mouse button).
@@ -256,8 +256,8 @@ Halve the duration and double the amplitude.
     .. code::
         python
 
-        from neuron import h. gui
+        from neuron import h, gui
 
-        h. load_file('bilayer.hoc')
+        h.load_file('bilayer.hoc')
 
 

@@ -9,7 +9,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     * Lipid bilayer model
 
 2.    
-    Interactive modeling
+    :ref:`interactive_modeling`
 
     * Squid axon model
 
