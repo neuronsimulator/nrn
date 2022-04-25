@@ -24,6 +24,11 @@
  * THE SOFTWARE.
  */
 
+/*
+ * From https://github.com/dlfcn-win32/dlfcn-win32
+ * Filtered with dos2unix and clang-format.
+ */
+
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>

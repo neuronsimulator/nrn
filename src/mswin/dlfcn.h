@@ -21,6 +21,11 @@
  * THE SOFTWARE.
  */
 
+/*
+ * From https://github.com/dlfcn-win32/dlfcn-win32
+ * Filtered with dos2unix and clang-format.
+ */
+
 #ifndef DLFCN_H
 #define DLFCN_H
 
