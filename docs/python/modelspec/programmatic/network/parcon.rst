@@ -3393,7 +3393,7 @@ Parallel Transfer
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.cvode.cache_efficient(1)
+            h.CVode().cache_efficient(1)
             h.stdinit()
             pc.psolve(h.tstop)
 

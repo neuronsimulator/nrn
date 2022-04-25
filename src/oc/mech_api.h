@@ -15,5 +15,6 @@
 #include "nrnran123.h"
 #include "nrnrandom.h"
 #include "oc_ansi.h"
+#include "nrnversionmacros.h"
 #include "scoplib.h"
 #include "treeset.h"

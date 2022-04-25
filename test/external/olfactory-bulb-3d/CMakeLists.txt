@@ -13,6 +13,7 @@ set(olfactory_bulb_3d_neuron_prefix
     ${MPIEXEC_POSTFLAGS})
 
 nrn_add_test_group(
+  CORENEURON
   NAME olfactory-bulb-3d
   SUBMODULE tests/olfactory-bulb-3d
   OUTPUT asciispikes::olfactory_bulb.spikes.dat.000

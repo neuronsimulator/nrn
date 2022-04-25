@@ -809,7 +809,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #if OCSMALL
     if (argc == 1) {
         ocsmall_argv[0] = our_argv[0];
-        oc.run(2, ocsmall_argv);
+        exit_status = oc.run(2, ocsmall_argv);
     } else
 #endif
 #if defined(USE_PYTHON)
@@ -836,9 +836,9 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 #endif
     if (start_session) {
 #if HAVE_IV
-        oc.run(our_argc, our_argv);
+        exit_status = oc.run(our_argc, our_argv);
 #else
-        hoc_main1(our_argc, our_argv, env);
+        exit_status = hoc_main1(our_argc, our_argv, env);
 #endif
     } else {
         return 0;
