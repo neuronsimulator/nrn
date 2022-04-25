@@ -84,7 +84,19 @@ The basic tools you'll need from the :ref:`NEURON Main Menu <NEURONMainMenu>`
 
 Tool needed: 
 
-:menuselection: `Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
+:menuselection:`Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
+
+
+3. Use two current electrodes to stimulate both ends at the same time
+
+4. Up to this point, the model has used a very fine spatial grid calculated from the Cell Builder's d_lambda rule
+
+.. image:: img/geometry.gif
+    :align: center
+
+Change nseg to 15 and see what happens
+
+:ref:`NEURON Python documentation <python_prog_ref>`
 
 
 
