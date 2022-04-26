@@ -307,7 +307,7 @@ set_target_properties(
 # =============================================================================
 # create special-core with halfgap.mod for tests
 # =============================================================================
-set(modfile_directory "${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod")
+set(modfile_directory "${CORENEURON_PROJECT_SOURCE_DIR}/tests/integration/ring_gap/mod files")
 file(GLOB modfiles "${modfile_directory}/*.mod")
 
 if(CORENRN_ENABLE_SHARED)
