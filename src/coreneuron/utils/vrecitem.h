@@ -83,6 +83,6 @@ class VecPlayContinuous: public PlayRecord {
     std::size_t discon_index_{};
     std::size_t ubound_index_{};
 
-    PlayRecordEvent* e_ = nullptr; // Need to be a raw pointer for acc
+    PlayRecordEvent* e_ = nullptr;  // Need to be a raw pointer for acc
 };
 }  // namespace coreneuron

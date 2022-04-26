@@ -89,7 +89,7 @@ set(CORENRN_3RDPARTY_DIR "external")
 # Adds .cu with respect to the current default in hpc-coding-conventions, and drops various patterns
 # that don't match anything in CoreNEURON.
 set(CORENRN_ClangFormat_FILES_RE
-    "^.*\\\\.cu$$" "^.*\\\\.[chi]pp$$"
+    "^.*\\\\.cu$$" "^.*\\\\.h$$" "^.*\\\\.[chi]pp$$"
     CACHE STRING "List of regular expressions matching C/C++ filenames" FORCE)
 set(CORENRN_ClangFormat_EXCLUDES_RE
     ""

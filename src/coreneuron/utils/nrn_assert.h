@@ -32,4 +32,3 @@ static void abortf(const char* fmt, ...) {
 /** assert()-like macro, independent of NDEBUG status */
 #define nrn_assert(x) \
     ((x) || (abortf("%s:%d: Assertion '%s' failed.\n", __FILE__, __LINE__, #x), 0))
-

@@ -29,15 +29,32 @@ extern "C" void nrnmpi_check_threading_support_impl();
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_check_threading_support_impl)>
     nrnmpi_check_threading_support;
 // Write given buffer to a new file using MPI collective I/O
-extern "C" void nrnmpi_write_file_impl(const std::string& filename, const char* buffer, size_t length);
+extern "C" void nrnmpi_write_file_impl(const std::string& filename,
+                                       const char* buffer,
+                                       size_t length);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_write_file_impl)> nrnmpi_write_file;
 
 
 /* from mpispike.cpp */
-extern "C" int nrnmpi_spike_exchange_impl(int* nin, NRNMPI_Spike* spikeout, int icapacity, NRNMPI_Spike** spikein, int& ovfl, int nout, NRNMPI_Spikebuf* spbufout, NRNMPI_Spikebuf* spbufin);
+extern "C" int nrnmpi_spike_exchange_impl(int* nin,
+                                          NRNMPI_Spike* spikeout,
+                                          int icapacity,
+                                          NRNMPI_Spike** spikein,
+                                          int& ovfl,
+                                          int nout,
+                                          NRNMPI_Spikebuf* spbufout,
+                                          NRNMPI_Spikebuf* spbufin);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_spike_exchange_impl)>
     nrnmpi_spike_exchange;
-extern "C" int nrnmpi_spike_exchange_compressed_impl(int, unsigned char*&, int, int*, int, unsigned char*, int, unsigned char*, int& ovfl);
+extern "C" int nrnmpi_spike_exchange_compressed_impl(int,
+                                                     unsigned char*&,
+                                                     int,
+                                                     int*,
+                                                     int,
+                                                     unsigned char*,
+                                                     int,
+                                                     unsigned char*,
+                                                     int& ovfl);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_spike_exchange_compressed_impl)>
     nrnmpi_spike_exchange_compressed;
 extern "C" int nrnmpi_int_allmax_impl(int i);
@@ -47,18 +64,18 @@ extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_int_allgather_impl)> nr
 extern "C" void nrnmpi_int_alltoall_impl(int* s, int* r, int n);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_int_alltoall_impl)> nrnmpi_int_alltoall;
 extern "C" void nrnmpi_int_alltoallv_impl(const int* s,
-                                      const int* scnt,
-                                      const int* sdispl,
-                                      int* r,
-                                      int* rcnt,
-                                      int* rdispl);
+                                          const int* scnt,
+                                          const int* sdispl,
+                                          int* r,
+                                          int* rcnt,
+                                          int* rdispl);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_int_alltoallv_impl)> nrnmpi_int_alltoallv;
 extern "C" void nrnmpi_dbl_alltoallv_impl(double* s,
-                                      int* scnt,
-                                      int* sdispl,
-                                      double* r,
-                                      int* rcnt,
-                                      int* rdispl);
+                                          int* scnt,
+                                          int* sdispl,
+                                          double* r,
+                                          int* rcnt,
+                                          int* rdispl);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_dbl_alltoallv_impl)> nrnmpi_dbl_alltoallv;
 extern "C" double nrnmpi_dbl_allmin_impl(double x);
 extern mpi_function<cnrn_make_integral_constant_t(nrnmpi_dbl_allmin_impl)> nrnmpi_dbl_allmin;
