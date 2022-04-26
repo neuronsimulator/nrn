@@ -162,11 +162,6 @@ for i in "${files[@]}" ; do
 done
 
 MODOBJS=
-if [ $(echo "\n") ] ; then
-  newline="\n"
-else
-  newline="\\\\n"
-fi
 
 {
   echo '#include <stdio.h>
@@ -182,20 +177,19 @@ extern "C" {
     echo "extern void _${i// }_reg(void);"
   done
 
-  echo '
-void modl_reg(){
-  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
-    fprintf(stderr, "Additional mechanisms from files'$newline'");
-'
+  echo ""
+  echo "void modl_reg() {"
+  echo "  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {"
+  printf '    fprintf(stderr, "Additional mechanisms from files\\n");\n'
 
   for i in "${files[@]}"
   do
-    echo '    fprintf(stderr," \"'"$i"'.mod\"");'
+    echo '    fprintf(stderr, " \"'"$i"'.mod\"");'
   done
 
-  echo '    fprintf(stderr, "'$newline'");'
+  printf '    fprintf(stderr, "\\n");\n'
 
-  echo "}"
+  echo "  }"
 
   for i in "${base_names[@]}" ; do
     echo "  _${i// }_reg();"
