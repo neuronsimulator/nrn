@@ -204,7 +204,7 @@ void penv() {
 #endif
 
 #if DARWIN || defined(__linux__)
-#include <dlfcn.h>
+#include "nrnwrap_dlfcn.h"
 #include <string>
 
 /* It is definitely now the case on mac and I think sometimes the case on
