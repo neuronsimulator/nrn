@@ -68,35 +68,35 @@ Alternatively you can use NEURON to execute ``hhaxon.ses``
 Exercises
 ---------
 
-1. Stimulate with current pulse and see a propagated action potential.
+1. 
+    Stimulate with current pulse and see a propagated action potential.
 
-The basic tools you'll need from the :ref:`NEURON Main Menu <NEURONMainMenu>`
+    The basic tools you'll need from the :ref:`NEURON Main Menu <NEURONMainMenu>`
 
-:menuselection:`Tools --> Point Processes --> Manager -->` :ref:`Point Manager <pointman>` to specify stimulation
+    :menuselection:`Tools --> Point Processes --> Manager -->` :ref:`Point Manager <pointman>` to specify stimulation
 
-:menuselection:`Graph -->` :ref:`Voltage axis <voltage_axis>` and :menuselection:`Graph -->` :ref:`Shape plot <shape_plot>` to create graphs of v vs t and v vs x.
+    :menuselection:`Graph -->` :ref:`Voltage axis <voltage_axis>` and :menuselection:`Graph -->` :ref:`Shape plot <shape_plot>` to create graphs of v vs t and v vs x.
 
-:menuselection:`Tools -->` :ref:`RunControl <runctrl>` to run the simulation
+    :menuselection:`Tools -->` :ref:`RunControl <runctrl>` to run the simulation
 
-:menuselection:`Tools --> Movie Run` to see a smooth evolution of the space plot in time
+    :menuselection:`Tools --> Movie Run` to see a smooth evolution of the space plot in time
 
-2. Change excitability by adjusting sodium channel density.
+2. 
+    Change excitability by adjusting sodium channel density.
 
-Tool needed: 
+    Tool needed: 
 
-:menuselection:`Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
-
-
-3. Use two current electrodes to stimulate both ends at the same time
-
-4. Up to this point, the model has used a very fine spatial grid calculated from the Cell Builder's d_lambda rule
-
-.. image:: img/geometry.gif
-    :align: center
-
-Change nseg to 15 and see what happens
-
-:ref:`NEURON Python documentation <python_prog_ref>`
+    :menuselection:`Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
 
 
+3. 
+    Use two current electrodes to stimulate both ends at the same time
+    
 
+4. 
+    Up to this point, the model has used a very fine spatial grid calculated from the Cell Builder's d_lambda rule
+
+    .. image:: img/geometry.gif
+      :align: center
+
+    Change nseg to 15 and see what happens

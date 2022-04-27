@@ -14,7 +14,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     * Squid axon model
 
 3.    
-    The CellBuilder
+   :ref:`the_cellbuilder`
 
     * Constructing a ball and stick model, saving session files
 
@@ -95,6 +95,8 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 .. toctree::
     :hidden:
 
+    intro_to_gui.rst
+    interactive_modeling.rst
     neuron_scripting_exercises.rst
     using_nmodl_files.rst
     rxd_exercises.rst

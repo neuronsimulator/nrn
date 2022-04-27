@@ -156,7 +156,7 @@ Make it deliver a 1 nA x 1 ms current pulse that starts at 1 ms.
 Make it show the IClamp's i
 
 - Click on the graph's menu button (left upper corner of its canvas) and select "Plot what?"
-- Plot what? / Show / Objects
+-  :menuselection:`Plot what? --> Show --> Objects`
 - Select IClamp (left panel)
 - Select 0 (middle panel)
 - Select i (middle panel)
@@ -181,7 +181,7 @@ Double the duration and halve the amplitude of the injected current (injected ch
 
 Notes:
 
-- :menuselection:`Select Show --> Parameters` in the PointProcessManager window to view the field editors.
+- Select :menuselection:`Show --> Parameters` in the PointProcessManager window to view the field editors.
 - Multiplying a field editor value by 2 can be done by typing ``*2`` <return> at the end of the value. Divide by typing ``/2`` <return>.
 - The mouse cursor must be in the panel that contains the field editor.
 
