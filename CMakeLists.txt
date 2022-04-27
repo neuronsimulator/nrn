@@ -15,18 +15,18 @@ if(DEFINED ENV{CRAYPE_VERSION})
   set(ENV{CRAYPE_LINK_TYPE} dynamic)
   message(STATUS "Cray system detected...setting CRAYPE_LINK_TYPE=dynamic")
 endif()
-project(NEURON C CXX)
+project(
+  NEURON
+  VERSION 8.2.0
+  LANGUAGES C CXX
+  HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(PROJECT_VERSION_MAJOR 8)
-set(PROJECT_VERSION_MINOR 0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 # =============================================================================
 # CMake common project settings
@@ -200,6 +200,18 @@ include(cmake/Coverage.cmake)
 # set CMAKE_BUILD_TYPE and associated flags using allowableBuildTypes and CMAKE_BUILD_TYPE_DEFAULT
 set(allowableBuildTypes Custom Debug Release RelWithDebInfo Fast)
 include(ReleaseDebugAutoFlags)
+
+# Try and emit an intelligent warning if the version number currently set in the CMake project(...)
+# call is inconsistent with the output of git describe.
+include(cmake/CheckGitDescribeCompatibility.cmake)
+
+# Save the version information from project(...) to an nrnsemanticversion.h header in the build
+# directory. This separate from nrnversion.h, which includes information about the latest git
+# commit, because it should change less frequently, but it is included in many more files.
+set(NRN_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(NRN_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
 
 # =============================================================================
 # Find required packages
@@ -463,8 +475,27 @@ if(NRN_ENABLE_CORENEURON)
     # CoreNEURON exports this list of flags as a property; turn it into a variable in this scope. If
     # CoreNEURON is installed externally then this is exported into coreneuron-config.cmake.
     get_property(CORENEURON_LIB_LINK_FLAGS GLOBAL PROPERTY CORENEURON_LIB_LINK_FLAGS)
+    get_property(CORENRN_VERSION_MAJOR GLOBAL PROPERTY CORENRN_VERSION_MAJOR)
+    get_property(CORENRN_VERSION_MINOR GLOBAL PROPERTY CORENRN_VERSION_MINOR)
+    get_property(CORENRN_VERSION_PATCH GLOBAL PROPERTY CORENRN_VERSION_PATCH)
     # NEURON tests that link against CoreNEURON need to depend on it.
     set(CORENEURON_TARGET_TO_DEPEND coreneuron)
+  endif()
+  # Check if CoreNEURON is claiming compatibility with the correct NEURON
+  if(NOT DEFINED CORENRN_VERSION_MAJOR
+     OR NOT DEFINED CORENRN_VERSION_MINOR
+     OR NOT DEFINED CORENRN_VERSION_PATCH)
+    message(WARNING "Could not determine the CoreNEURON version to check it matches NEURON")
+  elseif(
+    NOT NRN_VERSION_MAJOR EQUAL CORENRN_VERSION_MAJOR
+    OR NOT NRN_VERSION_MINOR EQUAL CORENRN_VERSION_MINOR
+    OR NOT NRN_VERSION_PATCH EQUAL CORENRN_VERSION_PATCH)
+    message(
+      WARNING "The CoreNEURON version ${CORENRN_VERSION_MAJOR}."
+              "${CORENRN_VERSION_MINOR}.${CORENRN_VERSION_PATCH} "
+              "does not match the current NEURON "
+              "${NRN_VERSION_MAJOR}.${NRN_VERSION_MINOR}.${NRN_VERSION_PATCH} "
+              "you should probably update the CoreNEURON version")
   endif()
 endif()
 
@@ -739,8 +770,8 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
-file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h
-     DESTINATION ${PROJECT_BINARY_DIR}/include)
+file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
+          ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)

@@ -29,7 +29,7 @@
 #include <locale.h>
 #endif
 #if defined(JVM_DLOPEN)
-#include <dlfcn.h>
+#include "nrnwrap_dlfcn.h"
 jint nrn_CreateJavaVM(JavaVM** pvm, void** penv, void* args);
 #endif
 

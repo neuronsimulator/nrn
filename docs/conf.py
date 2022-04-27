@@ -39,6 +39,7 @@ extensions = [
     "recommonmark",
     "sphinx.ext.mathjax",
     "nbsphinx",
+    "sphinx_design",
 ]
 
 source_suffix = {
