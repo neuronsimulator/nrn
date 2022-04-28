@@ -17,11 +17,10 @@
  * usage of parser and driver class.
  */
 
-using namespace fmt::literals;
 using namespace nmodl;
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"C-Parser : Standalone Parser for C Code({})"_format(Version::to_string())};
+    CLI::App app{fmt::format("C-Parser : Standalone Parser for C Code({})", Version::to_string())};
 
     std::vector<std::string> files;
     app.add_option("file", files, "One or more C files to process")

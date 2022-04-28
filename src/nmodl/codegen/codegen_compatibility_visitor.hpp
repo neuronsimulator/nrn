@@ -22,8 +22,6 @@
 #include "utils/logger.hpp"
 #include "visitors/ast_visitor.hpp"
 
-using namespace fmt::literals;
-
 namespace nmodl {
 namespace codegen {
 
@@ -102,10 +100,10 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     template <typename T>
     std::string return_error_with_name(ast::Ast& node, const std::shared_ptr<ast::Ast>& ast_node) {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
-        return "\"{}\" {}construct found at [{}] is not handled\n"_format(
-            ast_node->get_node_name(),
-            real_type_block->get_nmodl_name(),
-            real_type_block->get_token()->position());
+        return fmt::format("\"{}\" {}construct found at [{}] is not handled\n",
+                           ast_node->get_node_name(),
+                           real_type_block->get_nmodl_name(),
+                           real_type_block->get_token()->position());
     }
 
     /// Takes as parameter an std::shared_ptr<ast::Ast> node
@@ -120,8 +118,9 @@ class CodegenCompatibilityVisitor: public visitor::AstVisitor {
     std::string return_error_without_name(ast::Ast& node,
                                           const std::shared_ptr<ast::Ast>& ast_node) {
         auto real_type_block = std::dynamic_pointer_cast<T>(ast_node);
-        return "{}construct found at [{}] is not handled\n"_format(
-            real_type_block->get_nmodl_name(), real_type_block->get_token()->position());
+        return fmt::format("{}construct found at [{}] is not handled\n",
+                           real_type_block->get_nmodl_name(),
+                           real_type_block->get_token()->position());
     }
 
     /// Takes as parameter the ast::Ast to read the symbol table

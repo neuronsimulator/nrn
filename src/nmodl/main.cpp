@@ -53,15 +53,14 @@
  * \brief Main NMODL code generation program
  */
 
-using namespace fmt::literals;
 using namespace nmodl;
 using namespace codegen;
 using namespace visitor;
 using nmodl::parser::NmodlDriver;
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{
-        "NMODL : Source-to-Source Code Generation Framework [{}]"_format(Version::to_string())};
+    CLI::App app{fmt::format("NMODL : Source-to-Source Code Generation Framework [{}]",
+                             Version::to_string())};
 
     /// list of mod files to process
     std::vector<std::string> mod_files;
@@ -179,80 +178,92 @@ int main(int argc, const char* argv[]) {
     app.add_option("--scratch", scratch_dir, "Directory for intermediate code output")
         ->capture_default_str()
         ->ignore_case();
-    app.add_option("--units", units_dir, "Directory of units lib file")->capture_default_str()->ignore_case();
+    app.add_option("--units", units_dir, "Directory of units lib file")
+        ->capture_default_str()
+        ->ignore_case();
 
     auto host_opt = app.add_subcommand("host", "HOST/CPU code backends")->ignore_case();
-    host_opt->add_flag("--c", c_backend, "C/C++ backend ({})"_format(c_backend))->ignore_case();
-    host_opt->add_flag("--omp", omp_backend, "C/C++ backend with OpenMP ({})"_format(omp_backend))
+    host_opt->add_flag("--c", c_backend, fmt::format("C/C++ backend ({})", c_backend))
         ->ignore_case();
-    host_opt->add_flag("--ispc", ispc_backend, "C/C++ backend with ISPC ({})"_format(ispc_backend))
+    host_opt
+        ->add_flag("--omp", omp_backend, fmt::format("C/C++ backend with OpenMP ({})", omp_backend))
+        ->ignore_case();
+    host_opt
+        ->add_flag("--ispc",
+                   ispc_backend,
+                   fmt::format("C/C++ backend with ISPC ({})", ispc_backend))
         ->ignore_case();
 
     auto acc_opt = app.add_subcommand("acc", "Accelerator code backends")->ignore_case();
     acc_opt
-        ->add_flag("--oacc", oacc_backend, "C/C++ backend with OpenACC ({})"_format(oacc_backend))
+        ->add_flag("--oacc",
+                   oacc_backend,
+                   fmt::format("C/C++ backend with OpenACC ({})", oacc_backend))
         ->ignore_case();
-    acc_opt->add_flag("--cuda", cuda_backend, "C/C++ backend with CUDA ({})"_format(cuda_backend))
+    acc_opt
+        ->add_flag("--cuda",
+                   cuda_backend,
+                   fmt::format("C/C++ backend with CUDA ({})", cuda_backend))
         ->ignore_case();
 
     // clang-format off
     auto sympy_opt = app.add_subcommand("sympy", "SymPy based analysis and optimizations")->ignore_case();
     sympy_opt->add_flag("--analytic",
         sympy_analytic,
-        "Solve ODEs using SymPy analytic integration ({})"_format(sympy_analytic))->ignore_case();
+        fmt::format("Solve ODEs using SymPy analytic integration ({})", sympy_analytic))->ignore_case();
     sympy_opt->add_flag("--pade",
         sympy_pade,
-        "Pade approximation in SymPy analytic integration ({})"_format(sympy_pade))->ignore_case();
+        fmt::format("Pade approximation in SymPy analytic integration ({})", sympy_pade))->ignore_case();
     sympy_opt->add_flag("--cse",
         sympy_cse,
-        "CSE (Common Subexpression Elimination) in SymPy analytic integration ({})"_format(sympy_cse))->ignore_case();
+        fmt::format("CSE (Common Subexpression Elimination) in SymPy analytic integration ({})", sympy_cse))->ignore_case();
     sympy_opt->add_flag("--conductance",
         sympy_conductance,
-        "Add CONDUCTANCE keyword in BREAKPOINT ({})"_format(sympy_conductance))->ignore_case();
+        fmt::format("Add CONDUCTANCE keyword in BREAKPOINT ({})", sympy_conductance))->ignore_case();
 
     auto passes_opt = app.add_subcommand("passes", "Analyse/Optimization passes")->ignore_case();
     passes_opt->add_flag("--inline",
         nmodl_inline,
-        "Perform inlining at NMODL level ({})"_format(nmodl_inline))->ignore_case();
+        fmt::format("Perform inlining at NMODL level ({})", nmodl_inline))->ignore_case();
     passes_opt->add_flag("--unroll",
         nmodl_unroll,
-        "Perform loop unroll at NMODL level ({})"_format(nmodl_unroll))->ignore_case();
+        fmt::format("Perform loop unroll at NMODL level ({})", nmodl_unroll))->ignore_case();
     passes_opt->add_flag("--const-folding",
         nmodl_const_folding,
-        "Perform constant folding at NMODL level ({})"_format(nmodl_const_folding))->ignore_case();
+        fmt::format("Perform constant folding at NMODL level ({})", nmodl_const_folding))->ignore_case();
     passes_opt->add_flag("--localize",
         nmodl_localize,
-        "Convert RANGE variables to LOCAL ({})"_format(nmodl_localize))->ignore_case();
+        fmt::format("Convert RANGE variables to LOCAL ({})", nmodl_localize))->ignore_case();
     passes_opt->add_flag("--global-to-range",
          nmodl_global_to_range,
-         "Convert GLOBAL variables to RANGE ({})"_format(nmodl_global_to_range))->ignore_case();
+         fmt::format("Convert GLOBAL variables to RANGE ({})", nmodl_global_to_range))->ignore_case();
     passes_opt->add_flag("--local-to-range",
          nmodl_local_to_range,
-         "Convert top level LOCAL variables to RANGE ({})"_format(nmodl_local_to_range))->ignore_case();
+         fmt::format("Convert top level LOCAL variables to RANGE ({})", nmodl_local_to_range))->ignore_case();
     passes_opt->add_flag("--localize-verbatim",
         localize_verbatim,
-        "Convert RANGE variables to LOCAL even if verbatim block exist ({})"_format(localize_verbatim))->ignore_case();
+        fmt::format("Convert RANGE variables to LOCAL even if verbatim block exist ({})", localize_verbatim))->ignore_case();
     passes_opt->add_flag("--local-rename",
         local_rename,
-        "Rename LOCAL variable if variable of same name exist in global scope ({})"_format(local_rename))->ignore_case();
+        fmt::format("Rename LOCAL variable if variable of same name exist in global scope ({})", local_rename))->ignore_case();
     passes_opt->add_flag("--verbatim-inline",
         verbatim_inline,
-        "Inline even if verbatim block exist ({})"_format(verbatim_inline))->ignore_case();
+        fmt::format("Inline even if verbatim block exist ({})", verbatim_inline))->ignore_case();
     passes_opt->add_flag("--verbatim-rename",
         verbatim_rename,
-        "Rename variables in verbatim block ({})"_format(verbatim_rename))->ignore_case();
+        fmt::format("Rename variables in verbatim block ({})", verbatim_rename))->ignore_case();
     passes_opt->add_flag("--json-ast",
         json_ast,
-        "Write AST to JSON file ({})"_format(json_ast))->ignore_case();
+        fmt::format("Write AST to JSON file ({})", json_ast))->ignore_case();
     passes_opt->add_flag("--nmodl-ast",
         nmodl_ast,
-        "Write AST to NMODL file ({})"_format(nmodl_ast))->ignore_case();
+        fmt::format("Write AST to NMODL file ({})", nmodl_ast))->ignore_case();
     passes_opt->add_flag("--json-perf",
         json_perfstat,
-        "Write performance statistics to JSON file ({})"_format(json_perfstat))->ignore_case();
+        fmt::format("Write performance statistics to JSON file ({})", json_perfstat))->ignore_case();
     passes_opt->add_flag("--show-symtab",
         show_symtab,
-        "Write symbol table to stdout ({})"_format(show_symtab))->ignore_case();
+        fmt::format("Write symbol table to stdout ({})", show_symtab))->ignore_case();
 
     auto codegen_opt = app.add_subcommand("codegen", "Code generation options")->ignore_case();
     codegen_opt->add_option("--datatype",
@@ -266,7 +277,7 @@ int main(int argc, const char* argv[]) {
                           "Check compatibility and return without generating code");
     codegen_opt->add_flag("--opt-ionvar-copy",
         optimize_ionvar_copies_codegen,
-        "Optimize copies of ion variables ({})"_format(optimize_ionvar_copies_codegen))->ignore_case();
+        fmt::format("Optimize copies of ion variables ({})", optimize_ionvar_copies_codegen))->ignore_case();
 
     // clang-format on
 
@@ -304,7 +315,8 @@ int main(int argc, const char* argv[]) {
         /// create file path for nmodl file
         auto filepath = [scratch_dir, modfile](const std::string& suffix) {
             static int count = 0;
-            return "{}/{}.{}.{}.mod"_format(scratch_dir, modfile, std::to_string(count++), suffix);
+            return fmt::format(
+                "{}/{}.{}.{}.mod", scratch_dir, modfile, std::to_string(count++), suffix);
         };
 
         /// driver object creates lexer and parser, just call parser method
@@ -434,8 +446,9 @@ int main(int argc, const char* argv[]) {
             ast_to_nmodl(*ast, filename);
             if (nmodl_ast && kineticBlockVisitor.get_conserve_statement_count()) {
                 logger->warn(
-                    "{} presents non-standard CONSERVE statements in DERIVATIVE blocks. Use it only for debugging/developing"_format(
-                        filename));
+                    fmt::format("{} presents non-standard CONSERVE statements in DERIVATIVE "
+                                "blocks. Use it only for debugging/developing",
+                                filename));
             }
         }
 

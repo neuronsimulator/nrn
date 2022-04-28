@@ -18,7 +18,6 @@ namespace nmodl {
 namespace visitor {
 
 using symtab::syminfo::NmodlType;
-using namespace fmt::literals;
 
 void KineticBlockVisitor::process_reac_var(const std::string& varname, int count) {
     // lookup index of state var
@@ -238,7 +237,7 @@ void KineticBlockVisitor::visit_reaction_statement(ast::ReactionStatement& node)
                 additive_terms[var_index] += " + ";
             }
             // add to additive terms for this state var
-            additive_terms[var_index] += "({})"_format(expr);
+            additive_terms[var_index] += fmt::format("({})", expr);
             logger->debug("KineticBlockVisitor :: '<<' reaction statement: {}' += {}",
                           varname,
                           expr);
@@ -387,17 +386,17 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock& node) {
                     ode_rhs += " + ";
                 }
                 if (bflux[i].empty()) {
-                    ode_rhs += "({}*({}))"_format(delta_nu, fflux[i]);
+                    ode_rhs += fmt::format("({}*({}))", delta_nu, fflux[i]);
                 } else if (fflux[i].empty()) {
-                    ode_rhs += "({}*(-{}))"_format(delta_nu, bflux[i]);
+                    ode_rhs += fmt::format("({}*(-{}))", delta_nu, bflux[i]);
                 } else {
-                    ode_rhs += "({}*({}-{}))"_format(delta_nu, fflux[i], bflux[i]);
+                    ode_rhs += fmt::format("({}*({}-{}))", delta_nu, fflux[i], bflux[i]);
                 }
             }
         }
         // divide by COMPARTMENT factor if present
         if (!compartment_factors[j].empty()) {
-            ode_rhs = "({})/({})"_format(ode_rhs, compartment_factors[j]);
+            ode_rhs = fmt::format("({})/({})", ode_rhs, compartment_factors[j]);
         }
         // if rhs of ODE is not empty, add to list of ODEs
         if (!ode_rhs.empty()) {
@@ -407,7 +406,7 @@ void KineticBlockVisitor::visit_kinetic_block(ast::KineticBlock& node) {
             if (state_var_split.size() > 1) {
                 index_str = "[" + state_var_split[1];
             }
-            odes.push_back("{}'{} = {}"_format(var_str, index_str, ode_rhs));
+            odes.push_back(fmt::format("{}'{} = {}", var_str, index_str, ode_rhs));
         }
     }
 

@@ -26,7 +26,6 @@
  * it's value and location.
  */
 
-using namespace fmt::literals;
 using namespace nmodl;
 
 using parser::NmodlDriver;
@@ -109,7 +108,8 @@ void tokenize(const std::string& mod_text) {
 
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"NMODL-Lexer : Standalone Lexer for NMODL Code({})"_format(Version::to_string())};
+    CLI::App app{
+        fmt::format("NMODL-Lexer : Standalone Lexer for NMODL Code({})", Version::to_string())};
 
     std::vector<std::string> mod_files;
     std::vector<std::string> mod_texts;

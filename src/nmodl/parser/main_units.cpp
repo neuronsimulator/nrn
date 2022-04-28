@@ -20,12 +20,12 @@
  *
  */
 
-using namespace fmt::literals;
 using namespace nmodl;
 
 
 int main(int argc, const char* argv[]) {
-    CLI::App app{"Unit-Parser : Standalone Parser for Units({})"_format(Version::to_string())};
+    CLI::App app{
+        fmt::format("Unit-Parser : Standalone Parser for Units({})", Version::to_string())};
 
     std::vector<std::string> units_files;
     units_files.push_back(NrnUnitsLib::get_path());

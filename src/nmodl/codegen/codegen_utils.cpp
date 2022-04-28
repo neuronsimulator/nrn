@@ -25,7 +25,7 @@ template <>
 std::string format_double_string<CodegenCVisitor>(const std::string& s_value) {
     double value = std::stod(s_value);
     if (std::ceil(value) == value && s_value.find_first_of("eE") == std::string::npos) {
-        return "{:.1f}"_format(value);
+        return fmt::format("{:.1f}", value);
     }
     return s_value;
 }
@@ -60,7 +60,7 @@ template <>
 std::string format_float_string<CodegenCVisitor>(const std::string& s_value) {
     float value = std::stof(s_value);
     if (std::ceil(value) == value && s_value.find_first_of("eE") == std::string::npos) {
-        return "{:.1f}"_format(value);
+        return fmt::format("{:.1f}", value);
     }
     return s_value;
 }

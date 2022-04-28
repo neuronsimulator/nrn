@@ -11,9 +11,6 @@
 #include "ast/integer.hpp"
 
 
-using namespace fmt::literals;
-
-
 namespace nmodl {
 namespace codegen {
 
@@ -51,8 +48,8 @@ void CodegenAccVisitor::print_channel_iteration_block_parallel_hint(BlockType ty
     }
     present_clause << ')';
     printer->add_line(
-        "nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))"_format(
-            present_clause.str()));
+        fmt::format("nrn_pragma_acc(parallel loop {} async(nt->stream_id) if(nt->compute_gpu))",
+                    present_clause.str()));
     printer->add_line(
         "nrn_pragma_omp(target teams distribute parallel for is_device_ptr(inst) "
         "if(nt->compute_gpu))");
@@ -104,7 +101,7 @@ void CodegenAccVisitor::print_memory_allocation_routine() const {
     }
     printer->add_newline(2);
     auto args = "size_t num, size_t size, size_t alignment = 16";
-    printer->add_line("static inline void* mem_alloc({}) {}"_format(args, "{"));
+    printer->add_line(fmt::format("static inline void* mem_alloc({}) {}", args, "{"));
     printer->add_line("    void* ptr;");
     printer->add_line("    cudaMallocManaged(&ptr, num*size);");
     printer->add_line("    cudaMemset(ptr, 0, num*size);");
@@ -144,7 +141,7 @@ void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type,
         printer->add_line("nmodl_eigen_xm = nmodl_eigen_jm.inverse()*nmodl_eigen_fm;");
     } else {
         printer->add_line(
-            "nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);"_format(N));
+            fmt::format("nmodl_eigen_xm = partialPivLu<{}>nmodl_eigen_jm, nmodl_eigen_fm);", N));
     }
 }
 
@@ -164,9 +161,10 @@ void CodegenAccVisitor::print_eigen_linear_solver(const std::string& float_type,
  */
 void CodegenAccVisitor::print_kernel_data_present_annotation_block_begin() {
     if (!info.artificial_cell) {
-        auto global_variable = "{}_global"_format(info.mod_suffix);
+        auto global_variable = fmt::format("{}_global", info.mod_suffix);
         printer->add_line(
-            "nrn_pragma_acc(data present(nt, ml, {}) if(nt->compute_gpu))"_format(global_variable));
+            fmt::format("nrn_pragma_acc(data present(nt, ml, {}) if(nt->compute_gpu))",
+                        global_variable));
         printer->add_line("{");
         printer->increase_indent();
     }
@@ -200,9 +198,9 @@ void CodegenAccVisitor::print_nrn_cur_matrix_shadow_update() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
     print_atomic_reduction_pragma();
-    printer->add_line("vec_rhs[node_id] {} rhs;"_format(rhs_op));
+    printer->add_line(fmt::format("vec_rhs[node_id] {} rhs;", rhs_op));
     print_atomic_reduction_pragma();
-    printer->add_line("vec_d[node_id] {} g;"_format(d_op));
+    printer->add_line(fmt::format("vec_d[node_id] {} g;", d_op));
 }
 
 void CodegenAccVisitor::print_fast_imem_calculation() {
@@ -214,9 +212,9 @@ void CodegenAccVisitor::print_fast_imem_calculation() {
     auto d_op = operator_for_d();
     printer->start_block("if (nt->nrn_fast_imem)");
     print_atomic_reduction_pragma();
-    printer->add_line("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;"_format(rhs_op));
+    printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_rhs[node_id] {} rhs;", rhs_op));
     print_atomic_reduction_pragma();
-    printer->add_line("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;"_format(d_op));
+    printer->add_line(fmt::format("nt->nrn_fast_imem->nrn_sav_d[node_id] {} g;", d_op));
     printer->end_block(1);
 }
 
@@ -254,15 +252,18 @@ void CodegenAccVisitor::print_global_variable_device_create_annotation_pre() {
 
 void CodegenAccVisitor::print_global_variable_device_create_annotation_post() {
     if (!info.artificial_cell) {
-        printer->add_line("nrn_pragma_acc(declare create ({}_global))"_format(info.mod_suffix));
+        printer->add_line(
+            fmt::format("nrn_pragma_acc(declare create ({}_global))", info.mod_suffix));
         printer->add_line("nrn_pragma_omp(end declare target)");
     }
 }
 
 void CodegenAccVisitor::print_global_variable_device_update_annotation() {
     if (!info.artificial_cell) {
-        printer->add_line("nrn_pragma_acc(update device ({}_global))"_format(info.mod_suffix));
-        printer->add_line("nrn_pragma_omp(target update to({}_global))"_format(info.mod_suffix));
+        printer->add_line(
+            fmt::format("nrn_pragma_acc(update device ({}_global))", info.mod_suffix));
+        printer->add_line(
+            fmt::format("nrn_pragma_omp(target update to({}_global))", info.mod_suffix));
     }
 }
 
@@ -272,7 +273,7 @@ std::string CodegenAccVisitor::get_variable_device_pointer(const std::string& va
     if (info.artificial_cell) {
         return variable;
     }
-    return "nt->compute_gpu ? cnrn_target_deviceptr({}) : {}"_format(variable, variable);
+    return fmt::format("nt->compute_gpu ? cnrn_target_deviceptr({}) : {}", variable, variable);
 }
 
 
@@ -283,11 +284,11 @@ void CodegenAccVisitor::print_newtonspace_transfer_to_device() const {
     printer->add_line("void* device_ns = cnrn_target_deviceptr(*ns);");
     printer->add_line("ThreadDatum* device_thread = cnrn_target_deviceptr(thread);");
     printer->add_line(
-        "cnrn_target_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns);"_format(
-            info.thread_data_index - 1));
+        fmt::format("cnrn_target_memcpy_to_device(&(device_thread[{}]._pvoid), &device_ns);",
+                    info.thread_data_index - 1));
     printer->add_line(
-        "cnrn_target_memcpy_to_device(&(device_thread[dith{}()].pval), &device_vec);"_format(
-            list_num));
+        fmt::format("cnrn_target_memcpy_to_device(&(device_thread[dith{}()].pval), &device_vec);",
+                    list_num));
     printer->end_block(1);
 }
 
@@ -344,8 +345,8 @@ void CodegenAccVisitor::print_net_send_buf_count_update_to_device() const {
 
 
 void CodegenAccVisitor::print_dt_update_to_device() const {
-    printer->add_line("#pragma acc update device({}) if (nt->compute_gpu)"_format(
-        get_variable_name(naming::NTHREAD_DT_VARIABLE)));
+    printer->add_line(fmt::format("#pragma acc update device({}) if (nt->compute_gpu)",
+                                  get_variable_name(naming::NTHREAD_DT_VARIABLE)));
 }
 
 }  // namespace codegen

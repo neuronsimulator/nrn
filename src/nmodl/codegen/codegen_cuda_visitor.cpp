@@ -9,8 +9,6 @@
 #include "symtab/symbol_table.hpp"
 #include "utils/string_utils.hpp"
 
-using namespace fmt::literals;
-
 namespace nmodl {
 namespace codegen {
 
@@ -69,9 +67,9 @@ void CodegenCudaVisitor::print_atomic_op(const std::string& lhs,
     } else if (op == "-") {
         function = "atomicSub";
     } else {
-        throw std::runtime_error("CUDA backend error : {} not supported"_format(op));
+        throw std::runtime_error(fmt::format("CUDA backend error : {} not supported", op));
     }
-    printer->add_line("{}(&{}, {});"_format(function, lhs, rhs));
+    printer->add_line(fmt::format("{}(&{}, {});", function, lhs, rhs));
 }
 
 
@@ -192,11 +190,11 @@ void CodegenCudaVisitor::print_wrapper_routine(std::string wrapper_function, Blo
     auto compute_function = compute_method_name(type);
 
     printer->add_newline(2);
-    printer->start_block("void {}({})"_format(wrapper_function, args));
+    printer->start_block(fmt::format("void {}({})", wrapper_function, args));
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int nthread = 256;");
     printer->add_line("int nblock = (nodecount+nthread-1)/nthread;");
-    printer->add_line("{}<<<nblock, nthread>>>(nt, ml, type);"_format(compute_function));
+    printer->add_line(fmt::format("{}<<<nblock, nthread>>>(nt, ml, type);", compute_function));
     printer->add_line("cudaDeviceSynchronize();");
     printer->end_block();
     printer->add_newline();
