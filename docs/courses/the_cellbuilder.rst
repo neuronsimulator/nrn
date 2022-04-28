@@ -110,7 +110,7 @@ Use the CellBuilder to make a simple ball and stick model that has these propert
      :ref:`CellBuilder overview and hints. <cellbuilder_overview_and_hints>`
 
 3. 
-    Helpful items in the on-line Programmer's Reference:
+    Helpful items in the :ref:`on-line Programmer's Reference <index.rst>`:
 
         diam L nseg hh pas
 
