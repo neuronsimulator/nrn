@@ -8,8 +8,6 @@
 #include "codegen/codegen_omp_visitor.hpp"
 
 
-using namespace fmt::literals;
-
 namespace nmodl {
 namespace codegen {
 
@@ -26,7 +24,7 @@ void CodegenOmpVisitor::print_channel_iteration_task_begin(BlockType type) {
     } else {
         vars = "start, end, node_index, indexes, voltage, inst, thread, nt";
     }
-    printer->add_line("#pragma omp task default(shared) firstprivate({})"_format(vars));
+    printer->add_line(fmt::format("#pragma omp task default(shared) firstprivate({})", vars));
     printer->add_line("{");
     printer->increase_indent();
 }

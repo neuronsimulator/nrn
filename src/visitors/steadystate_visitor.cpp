@@ -15,7 +15,6 @@
 namespace nmodl {
 namespace visitor {
 
-using namespace fmt::literals;
 using symtab::syminfo::NmodlType;
 
 std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_block(
@@ -55,9 +54,9 @@ std::shared_ptr<ast::DerivativeBlock> SteadystateVisitor::create_steadystate_blo
 
         std::string new_dt;
         if (steadystate_method == codegen::naming::SPARSE_METHOD) {
-            new_dt = "{:.16g}"_format(STEADYSTATE_SPARSE_DT);
+            new_dt = fmt::format("{:.16g}", STEADYSTATE_SPARSE_DT);
         } else if (steadystate_method == codegen::naming::DERIVIMPLICIT_METHOD) {
-            new_dt += "{:.16g}"_format(STEADYSTATE_DERIVIMPLICIT_DT);
+            new_dt += fmt::format("{:.16g}", STEADYSTATE_DERIVIMPLICIT_DT);
         } else {
             logger->warn("SteadystateVisitor :: solve method {} not supported for STEADYSTATE",
                          steadystate_method);

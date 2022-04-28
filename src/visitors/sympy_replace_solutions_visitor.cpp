@@ -15,8 +15,6 @@
 namespace nmodl {
 namespace visitor {
 
-using namespace fmt::literals;
-
 /**
  * \details SympyReplaceSolutionsVisitor tells us that a new equation appear and, depending where
  * it is located, it can determine if it is part of the main system of equations or is something
@@ -135,7 +133,7 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
             for (const auto ii: solution_statements.tags) {
                 ss << to_nmodl(solution_statements.statements[ii]) << '\n';
             }
-            throw std::runtime_error(
+            throw std::runtime_error(fmt::format(
                 "Not all solutions were replaced! Sympy returned {} equations but I could not find "
                 "a place "
                 "for all of them. In particular, the following equations remain to be replaced "
@@ -145,8 +143,9 @@ void SympyReplaceSolutionsVisitor::visit_statement_block(ast::StatementBlock& no
                 "sympy "
                 "returned more equations than what we expected\n - There is a bug in the GREEDY "
                 "pass\n - some "
-                "solutions were replaced but not untagged"_format(
-                    solution_statements.statements.size(), ss.str()));
+                "solutions were replaced but not untagged",
+                solution_statements.statements.size(),
+                ss.str()));
         }
 
         if (replaced_statements_range.first == -1) {

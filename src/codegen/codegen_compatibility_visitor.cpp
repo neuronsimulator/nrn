@@ -13,8 +13,6 @@
 #include "visitors/visitor_utils.hpp"
 
 
-using namespace fmt::literals;
-
 namespace nmodl {
 namespace codegen {
 
@@ -51,9 +49,11 @@ std::string CodegenCompatibilityVisitor::return_error_if_solve_method_is_unhandl
     auto unhandled_solver_method = handled_solvers.find(method->get_node_name()) ==
                                    handled_solvers.end();
     if (unhandled_solver_method) {
-        unhandled_method_error_message
-            << "\"{}\" solving method used at [{}] not handled. Supported methods are cnexp, euler, derivimplicit and sparse\n"_format(
-                   method->get_node_name(), method->get_token()->position());
+        unhandled_method_error_message << fmt::format(
+            "\"{}\" solving method used at [{}] not handled. Supported methods are cnexp, euler, "
+            "derivimplicit and sparse\n",
+            method->get_node_name(),
+            method->get_token()->position());
     }
     return unhandled_method_error_message.str();
 }
@@ -64,9 +64,11 @@ std::string CodegenCompatibilityVisitor::return_error_global_var(
     auto global_var = std::dynamic_pointer_cast<ast::GlobalVar>(ast_node);
     std::stringstream error_message_global_var;
     if (node.get_symbol_table()->lookup(global_var->get_node_name())->get_write_count() > 0) {
-        error_message_global_var
-            << "\"{}\" variable found at [{}] should be defined as a RANGE variable instead of GLOBAL to enable backend transformations\n"_format(
-                   global_var->get_node_name(), global_var->get_token()->position());
+        error_message_global_var << fmt::format(
+            "\"{}\" variable found at [{}] should be defined as a RANGE variable instead of GLOBAL "
+            "to enable backend transformations\n",
+            global_var->get_node_name(),
+            global_var->get_token()->position());
     }
     return error_message_global_var.str();
 }
@@ -78,9 +80,10 @@ std::string CodegenCompatibilityVisitor::return_error_param_var(
     std::stringstream error_message_global_var;
     auto symbol = node.get_symbol_table()->lookup(param_assign->get_node_name());
     if (!symbol->is_writable() && symbol->get_write_count() > 0) {
-        error_message_global_var
-            << "\"{}\" variable found at [{}] should be writable if it needs to be written\n"_format(
-                   symbol->get_name(), symbol->get_token().position());
+        error_message_global_var << fmt::format(
+            "\"{}\" variable found at [{}] should be writable if it needs to be written\n",
+            symbol->get_name(),
+            symbol->get_token().position());
     }
     return error_message_global_var.str();
 }
@@ -152,7 +155,7 @@ bool CodegenCompatibilityVisitor::find_unhandled_ast_nodes(Ast& node) {
         std::istringstream ss_stringstream(ss.str());
         while (std::getline(ss_stringstream, line)) {
             if (!line.empty())
-                logger->error("Code Incompatibility :: {}"_format(line));
+                logger->error(fmt::format("Code Incompatibility :: {}", line));
         }
         return true;
     }

@@ -33,7 +33,6 @@
 
 using namespace nmodl;
 using namespace visitor;
-using namespace fmt::literals;
 
 /**
  * \file
@@ -55,14 +54,14 @@ void visit_program(const std::string& mod_file,
                    ast::Program& ast) {
     logger->info("Running {}", visitor.description);
     visitor.v->visit_program(ast);
-    const std::string file = "{}.{}.mod"_format(mod_file, visitor.id);
+    const std::string file = fmt::format("{}.{}.mod", mod_file, visitor.id);
     NmodlPrintVisitor(file).visit_program(ast);
     logger->info("NMODL visitor generated {}", file);
 };
 
 int main(int argc, const char* argv[]) {
     CLI::App app{
-        "NMODL Visitor : Runs standalone visitor classes({})"_format(Version::to_string())};
+        fmt::format("NMODL Visitor : Runs standalone visitor classes({})", Version::to_string())};
 
     bool verbose = false;
     std::vector<std::string> files;

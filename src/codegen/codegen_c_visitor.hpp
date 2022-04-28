@@ -31,8 +31,6 @@
 #include "visitors/ast_visitor.hpp"
 
 
-using namespace fmt::literals;
-
 namespace nmodl {
 /// encapsulates code generation backend implementations
 namespace codegen {
@@ -391,7 +389,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Name of structure that wraps range variables
      */
     std::string instance_struct() const {
-        return "{}_Instance"_format(info.mod_suffix);
+        return fmt::format("{}_Instance", info.mod_suffix);
     }
 
 
@@ -399,7 +397,7 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * Name of structure that wraps range variables
      */
     std::string global_struct() const {
-        return "{}_Store"_format(info.mod_suffix);
+        return fmt::format("{}_Store", info.mod_suffix);
     }
 
 
@@ -2025,9 +2023,8 @@ void CodegenCVisitor::print_function_declaration(const T& node, const std::strin
 
     print_device_method_annotation();
     printer->add_indent();
-    printer->add_text("inline {} {}({})"_format(return_type,
-                                                method_name(name),
-                                                get_parameter_str(internal_params)));
+    printer->add_text(fmt::format(
+        "inline {} {}({})", return_type, method_name(name), get_parameter_str(internal_params)));
 
     enable_variable_name_lookup = true;
 }
