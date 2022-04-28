@@ -22,6 +22,6 @@ static void (*mechanism[])(void) = {/* type will start at 3 */
                                     /* extracellular requires special handling and must be type 5 */
                                     extracell_reg_,
 #endif
-                                    0};
+                                    nullptr};
 
 }  // namespace coreneuron

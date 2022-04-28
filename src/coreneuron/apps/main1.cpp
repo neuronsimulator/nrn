@@ -516,7 +516,6 @@ extern "C" void mk_mech_init(int argc, char** argv) {
     }
 
     // reads mechanism information from bbcore_mech.dat
-
     mk_mech((corenrn_param.datpath).c_str());
 }
 

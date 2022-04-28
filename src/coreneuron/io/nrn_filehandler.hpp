@@ -61,7 +61,7 @@ class FileHandler {
         return F.fail();
     }
 
-    bool file_exist(const std::string& filename) const;
+    static bool file_exist(const std::string& filename);
 
     /** nothing more to read */
     bool eof();

@@ -17,7 +17,7 @@ FileHandler::FileHandler(const std::string& filename)
     this->open(filename);
 }
 
-bool FileHandler::file_exist(const std::string& filename) const {
+bool FileHandler::file_exist(const std::string& filename) {
     struct stat buffer;
     return (stat(filename.c_str(), &buffer) == 0);
 }

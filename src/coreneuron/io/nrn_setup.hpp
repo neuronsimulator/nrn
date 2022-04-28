@@ -117,8 +117,12 @@ inline void* phase_wrapper_w(NrnThread* nt, UserParams& userParams, bool in_memo
                                 ".dat";
 
             // Avoid trying to open the gid_gap.dat file if it doesn't exist when there are no
-            // gap junctions in this gid
-            if (P == gap && !userParams.file_reader[i].file_exist(fname)) {
+            // gap junctions in this gid.
+            // Note that we still need to close `userParams.file_reader[i]`
+            // because files are opened in the order of `gid_1.dat`, `gid_2.dat` and `gid_gap.dat`.
+            // When we open next file, `gid_gap.dat` in this case, we are supposed to close the
+            // handle for `gid_2.dat` even though file doesn't exist.
+            if (P == gap && !FileHandler::file_exist(fname)) {
                 userParams.file_reader[i].close();
             } else {
                 // if no file failed to open or not opened at all
