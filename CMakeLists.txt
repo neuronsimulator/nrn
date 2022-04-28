@@ -423,6 +423,13 @@ include(MPIDynamicHelper)
 include(ConfigFileSetting)
 include(PythonDynamicHelper)
 
+# Set variable to include mpi headers
+set(NRN_INCLUDE_MPI_HEADERS OFF)
+list(LENGTH NRN_MPI_LIBNAME_LIST num_mpi)
+if(NOT NRN_ENABLE_MPI_DYNAMIC OR ${num_mpi} EQUAL 1)
+  set(NRN_INCLUDE_MPI_HEADERS ON)
+endif()
+
 # =============================================================================
 # Enable CoreNEURON support
 # =============================================================================
@@ -859,7 +866,11 @@ if(NRN_ENABLE_MPI)
       message(STATUS "    INC       | ${include}")
     endforeach(val)
   else()
-    message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+    if(NRN_INCLUDE_MPI_HEADERS)
+      message(STATUS "  INC         | ${MPI_INCLUDE_PATH}")
+    else()
+      message(STATUS "  INC         | N/A")
+    endif()
     message(STATUS "  LIB         | ${MPI_LIBRARY}")
   endif()
 endif()
