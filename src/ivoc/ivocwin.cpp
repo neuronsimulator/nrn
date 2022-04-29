@@ -32,7 +32,7 @@
 #undef min
 #include "graph.h"
 
-#if defined(CYGWIN)
+#if defined(MINGW)
 // the link step needs liboc after libivoc but liboc refers to some
 // things in libivoc that wouldn't normally be linked because nothing
 // refers to them while libivoc is linking. So force them to link here

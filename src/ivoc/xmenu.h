@@ -9,7 +9,7 @@
 #include <IV-look/kit.h>
 #include <IV-look/stepper.h>
 #include <IV-look/dialogs.h>
-#if defined(WIN32) || defined(MAC) || defined(CYGWIN)
+#if defined(MINGW) || defined(MAC)
 #define UseFieldEditor 1
 #else
 #define UseFieldEditor 0  // Use the FieldSEditor

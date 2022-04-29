@@ -743,9 +743,6 @@ void hoc_execerror_mes(const char* s, const char* t, int prnt) { /* recover from
     if (fin && pipeflag == 0 && (!nrn_fw_eq(fin, stdin) || !nrn_istty_))
         IGNORE(nrn_fw_fseek(fin, 0L, 2)); /* flush rest of file */
     hoc_oop_initaftererror();
-#if defined(WIN32) && !defined(CYGWIN)
-    hoc_win_normal_cursor();
-#endif
     if (hoc_oc_jmpbuf) {
         hoc_newobj1_err();
         longjmp(hoc_oc_begin, 1);
@@ -977,7 +974,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#if defined(CYGWIN)
+#if defined(MINGW)
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -1044,17 +1041,9 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
 
     if (gargc == 1) /* fake an argument list */
     {
-#if 1
-        /* who knows why this ancient code no longer works under cygwin
-        when the @@ to ' ' was introduced in moreinput*/
         static const char* stdinonly[] = {"-"};
-#else
-        static char* stdinonly[1];
-        stdinonly[0] = static_cast<char*>(emalloc(2 * sizeof(char)));
-        strcpy(stdinonly[0], "-");
-#endif
 
-#if defined(CYGWIN)
+#if defined(MINGW)
         cygonce = 1;
 #endif
         gargv = stdinonly;
@@ -1152,14 +1141,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     NOT_PARALLEL_SUB(hoc_close_plot();)
-#if defined(WIN32) && HAVE_IV
-#ifndef CYGWIN
-    if (winio_exists()) {
-        winio_closeall();
-    }
-#endif
-#endif
-#if READLINE && (!defined(WIN32) || defined(CYGWIN)) && !defined(MAC)
+#if READLINE && !defined(MINGW) && !defined(MAC)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();
@@ -1201,7 +1183,7 @@ void hoc_quit(void) {
     exit(exit_code);
 }
 
-#if defined(CYGWIN)
+#if defined(MINGW)
 static const char* double_at2space(const char* infile) {
     char* buf;
     const char* cp1;
@@ -1228,7 +1210,7 @@ static const char* double_at2space(const char* infile) {
     *cp2 = '\0';
     return buf;
 }
-#endif /*CYGWIN*/
+#endif /*MINGW*/
 
 int moreinput(void) {
     if (pipeflag) {
@@ -1236,18 +1218,9 @@ int moreinput(void) {
         return 1;
     }
 #if defined(WIN32)
-#ifndef CYGWIN
-    if (!winio_exists()) {
-        return 0;
-    }
-#endif
-#if defined(CYGWIN)
     /* like mswin, do not need a '-' after hoc files, but ^D works */
     if (gargc == 0 && cygonce == 0) {
         cygonce = 1;
-#else
-    if (gargc == 0) {
-#endif
         fin = nrn_fw_set_stdin();
         infile = 0;
         hoc_xopen_file_[0] = 0;
@@ -1257,7 +1230,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif
+#endif // WIN32
 #if MAC
     if (gargc == 0) {
         fin = nrn_fw_set_stdin();
@@ -1269,7 +1242,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif
+#endif // MAC
     if (fin && !nrn_fw_eq(fin, stdin)) {
         IGNORE(nrn_fw_fclose(fin));
     }
@@ -1291,8 +1264,8 @@ int moreinput(void) {
         }
         infile = cp;
     }
-#endif
-#if defined(CYGWIN)
+#endif // WIN32
+#if defined(MINGW)
     /* have difficulty passing spaces within arguments from neuron.exe
     through the neuron.sh shell script to nrniv.exe. Therefore
     neuron.exe converts the ' ' to "@@" and here we need to convert
@@ -1325,7 +1298,7 @@ int moreinput(void) {
         HocStr* hs;
         infile = *gargv++;
         gargc--;
-#if defined(CYGWIN)
+#if defined(MINGW)
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
@@ -1422,17 +1395,9 @@ static int hoc_run1(void) /* execute until EOF */
     }
     hoc_execerror_messages = 1;
     pipeflag = 0;  // reset pipeflag
-#if defined(WIN32) && !defined(CYGWIN)
-    if (!nrn_fw_eq(fin, stdin)) {
-        hoc_win_wait_cursor();
-    }
-#endif
     for (initcode(); hoc_yyparse(); initcode()) {
         execute(progbase);
     }
-#if defined(WIN32) && !defined(CYGWIN)
-    hoc_win_normal_cursor();
-#endif
     if (intset)
         execerror("interrupted", (char*) 0);
     if (!controlled) {

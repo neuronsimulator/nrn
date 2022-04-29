@@ -34,34 +34,13 @@ extern int hoc_return_type_code;
 void single_event_run();
 extern char** hoc_strpop();
 
-#if defined(CYGWIN)
+#if defined(MINGW)
 #include <IV-Win/mprinter.h>
 void iv_display_scale(float);
 void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 extern "C" char* hoc_back2forward(char*);
 #endif
 
-#if defined(WIN32) && !defined(CYGWIN)
-#include <IV-Win/mprinter.h>
-#include "../winio/debug.h"
-void iv_display_scale(float);
-void iv_display_scale(Coord, Coord);  // Make if fit into the screen
-#if defined(__MWERKS__)
-#include <OS/dirent.h>
-extern char* mktemp(char*);
-extern int unlink(const char*);
-
-#else  //!__MWERKS__
-#include <dir.h>
-#endif  // __MWERKS__
-
-#include <fstream.h>
-// there seems to be a bug here in that writing goes to the beginning
-// but any existing trailing info remains! So be sure to unlink first.
-#undef IOS_OUT
-#define IOS_OUT (ios::out)
-extern "C" char* hoc_back2forward(char*);
-#else  //! WIN32
 #if MAC && !defined(carbon)
 #include <fstream.h>
 #include <file_io.h>
@@ -75,7 +54,7 @@ extern void debugfile(const char*, ...);
 #include <unistd.h>
 #define Output output
 #endif  // MAC
-#endif  // WIN32
+
 
 #include <IV-look/kit.h>
 #include <IV-look/dialogs.h>
@@ -486,7 +465,7 @@ void PWMDismiss::execute() {
 }
 
 #else  //! HAVE_IV
-#if defined(CYGWIN)
+#if defined(MINGW)
 extern "C" char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
@@ -2232,16 +2211,8 @@ void PrintableWindowManager::psfilter(const char* filename) {
     char buf[512];
     String filt("cat");
     if (s->find_attribute("pwm_postscript_filter", filt)) {
-#if defined(WIN32) && !defined(CYGWIN)
-        if (!hoc_copyfile(filename, tmpfile)) {
-            hoc_warning("CopyFile failed.", "Did not run pwm_postscript_filter");
-            return;
-        }
-        sprintf(buf, "%s %s > %s", filt.string(), tmpfile, filename);
-#else
         sprintf(
             buf, "cat %s > %s; %s < %s > %s", filename, tmpfile, filt.string(), tmpfile, filename);
-#endif
         nrnignore = system(buf);
         unlink(tmpfile);
     }

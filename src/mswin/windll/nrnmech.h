@@ -134,17 +134,8 @@ MKDLLdec("__iob", __files)
 MKDLLdec("__flsbuf", _flsbuf)
 MKDLLdec("__iob", _iob)
 #else
-#if defined(nrnCYGWIN)
-MKDLLdec("__impure_ptr", _impure_ptr)
-MKDLLdec("_putchar", putchar)
-MKDLLdec("__flsbuf", _flsbuf)
-MKDLLdec("__imp___iob", __files)
-MKDLLdec("___assert", __assert)
-MKDLLdec("___getreent", __getreent)
-#else
 MKDLLdec("__flsbuf", _fputc)
 MKDLLdec("__iob", _streams)
-#endif
 #endif
 #endif
 MKDLLdec("_drand48", drand48)
@@ -154,11 +145,7 @@ MKDLLdec("_fflush", fflush)
 MKDLLdec("_fgetc", fgetc)
 MKDLLdec("_fgets", fgets)
 MKDLLdec("_fopen", fopen)
-#if defined(nrnCYGWIN)
-MKDLL("_fprintf", ncyg_fprintf)
-#else
 MKDLLdec("_fprintf", fprintf)
-#endif
 MKDLLdec("_fputc", fputc)
 MKDLLdec("_fputs", fputs)
 MKDLLdec("_fread", fread)

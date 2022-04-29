@@ -19,7 +19,7 @@ static FILE* help_pipe;
 #define WIN32 1
 #endif
 
-#if defined(WIN32) && !defined(CYGWIN)
+#if defined(WIN32) && !defined(MINGW)
 #include "nrnbbs.h"
 #endif
 
@@ -139,7 +139,7 @@ but will be missing this sessions hoc help text\n");
 
 void Oc::help(const char* s) {
 #if 0
-#ifndef CYGWIN
+#ifndef MINGW
 	static bool ran_ochelp = false;
 	char buf[1024];
 	nrnbbs_connect(); // benign if already connected
@@ -156,7 +156,6 @@ void Oc::help(const char* s) {
 		return;
 	}
 
-#if 1
 	readmore();
 	if (filequeue) {
 		for (long i = 0; i < filequeue->count(); ++i) {
@@ -165,7 +164,6 @@ sprintf(buf, "%s\n", filequeue->item_ref(i).string());
 		}
 		filequeue->remove_all();
 	}
-#endif
 
 	if (strncmp(s, "?0", 2) == 0) {
 		sprintf(buf, "?0 %s", hoc_current_xopen());
@@ -173,10 +171,10 @@ sprintf(buf, "%s\n", filequeue->item_ref(i).string());
 	}else{
 		nrnbbs_post_string("ochelp", s);
 	}
-#endif
+#endif // MINGW
 #endif
 }
-#endif
+#endif // WIN32 or MAC
 
 void Oc::helpmode(bool b) {
     helpmode_ = b;
