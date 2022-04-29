@@ -1,5 +1,5 @@
 /*************************************************************************
- * Copyright (C) 2019-2020 Blue Brain Project
+ * Copyright (C) 2019-2022 Blue Brain Project
  *
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
