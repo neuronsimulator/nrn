@@ -72,7 +72,7 @@ static VoidFunc functions[] = {
 for i in voidfun:
     if i:
         prefix = "nrnhoc_"
-        j = i[len(prefix):] if i.startswith(prefix) else i
+        j = i[len(prefix) :] if i.startswith(prefix) else i
         print('"%s", %s,' % (j, i))
 print(
     """0, 0
