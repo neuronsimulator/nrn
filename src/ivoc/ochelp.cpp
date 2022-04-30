@@ -171,10 +171,10 @@ sprintf(buf, "%s\n", filequeue->item_ref(i).string());
 	}else{
 		nrnbbs_post_string("ochelp", s);
 	}
-#endif // MINGW
+#endif  // MINGW
 #endif
 }
-#endif // WIN32 or MAC
+#endif  // WIN32 or MAC
 
 void Oc::helpmode(bool b) {
     helpmode_ = b;

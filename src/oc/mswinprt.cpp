@@ -148,8 +148,7 @@ void hoc_win_exec(void) {
     pushx((double) i);
 }
 
-void hoc_winio_show(int b) {
-}
+void hoc_winio_show(int b) {}
 
 #if !defined(__MWERKS__)
 int getpid() {
@@ -172,4 +171,4 @@ void hoc_Lw() {
     pushx(0.);
 }
 
-#endif // MINGW
+#endif  // MINGW

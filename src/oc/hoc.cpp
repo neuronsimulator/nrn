@@ -1230,7 +1230,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif // WIN32
+#endif  // WIN32
 #if MAC
     if (gargc == 0) {
         fin = nrn_fw_set_stdin();
@@ -1242,7 +1242,7 @@ int moreinput(void) {
         return 1;
 #endif
     }
-#endif // MAC
+#endif  // MAC
     if (fin && !nrn_fw_eq(fin, stdin)) {
         IGNORE(nrn_fw_fclose(fin));
     }
@@ -1264,7 +1264,7 @@ int moreinput(void) {
         }
         infile = cp;
     }
-#endif // WIN32
+#endif  // WIN32
 #if defined(MINGW)
     /* have difficulty passing spaces within arguments from neuron.exe
     through the neuron.sh shell script to nrniv.exe. Therefore
