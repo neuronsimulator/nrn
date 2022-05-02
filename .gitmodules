@@ -18,4 +18,4 @@
 	url = https://github.com/bombela/backward-cpp.git
 [submodule "external/Random123"]
 	path = external/Random123
-	url = https://github.com/DEShawResearch/random123.git
+	url = https://github.com/BlueBrain/Random123.git
