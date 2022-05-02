@@ -49,13 +49,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # https://github.com/DEShawResearch/random123/issues/6.
     list(APPEND NRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
-  # Whether or not this is defined by NVHPC seems to depend on which version of GCC the NVHPC
-  # installation is configured to use.
-  include(CheckTypeSize)
-  check_type_size("__int128_t" INT128_T LANGUAGE CXX)
-  if(NOT HAVE_INT128_T)
-    list(APPEND NRN_COMPILE_DEFS R123_USE_GNU_UINT128=0)
-  endif()
 else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)
   set(USING_PGI_COMPILER_TRUE "#")
