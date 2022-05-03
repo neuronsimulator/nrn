@@ -47,7 +47,6 @@ if command -v xcrun; then
 fi
 
 LinkCoreNEURON=false
-UserVerbose=false
 UserINCFLAGS=""
 UserLDFLAGS=""
 UserCOREFLAGS=()
@@ -73,10 +72,6 @@ while [ "$1" ] ; do
         UserCOREFLAGS+=(-l "${2}")
         shift
         shift;;
-    -verbose)
-        # let command output
-        UserVerbose=true
-        shift;;
     -*)
         echo "$1 unrecognized"
         exit 1;;
@@ -84,14 +79,6 @@ while [ "$1" ] ; do
         break;;
     esac
 done
-
-if [ "$UserVerbose" = true ] ; then
-  exec {stdout}>&1
-  exec {stderr}>&2
-else
-  exec {stdout}>/dev/null
-  exec {stderr}>/dev/null
-fi
 
 if [ "$LinkCoreNEURON" = true ] ; then
   if [ "$UsingCoreNEURON" = true ] ; then
@@ -167,7 +154,7 @@ if [ "$LinkCoreNEURON" = true ] && [ "${NMODL}" ] ; then
   # Cleaning files
   mkdir -p "$MODSUBDIR/cleaned_mod"
   for i in "${files[@]}" ; do
-    "${NMODL}" -o "$MODSUBDIR/cleaned_mod" "$i" passes --convert-neuron >&$stdout 2>&$stderr
+    "${NMODL}" -o "$MODSUBDIR/cleaned_mod" "$i" passes --convert-neuron
   done
 fi
 
@@ -252,13 +239,13 @@ if [ "$LinkCoreNEURON" = true ] ; then
   echo "Compiling files with corenrn"
   cd "$USER_PWD"
   if [ "${NMODL}" ] ; then
-    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$MODSUBDIR/cleaned_mod" >$stdout 2>$stderr
+    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$MODSUBDIR/cleaned_mod"
   else
-    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" $1 >$stdout 2>$stderr
+    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" $1
   fi
   cd "$MODSUBDIR"
 fi
 
 echo "Compiling files with nrn"
-make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special >$stdout 2>$stderr
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special
 echo "Successfully created $MODSUBDIR/special"
