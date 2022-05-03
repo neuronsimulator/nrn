@@ -179,6 +179,7 @@ set(NRN_INCLUDE_DIRS
     ${PROJECT_BINARY_DIR}/src/parallel
     ${PROJECT_BINARY_DIR}/src/sundials
     ${PROJECT_BINARY_DIR}/src/sundials/shared
+    ${PROJECT_SOURCE_DIR}/external/Random123/include
     ${PROJECT_SOURCE_DIR}/src
     ${PROJECT_SOURCE_DIR}/src/gnu
     ${PROJECT_SOURCE_DIR}/src/mesch
