@@ -110,9 +110,9 @@ Use the CellBuilder to make a simple ball and stick model that has these propert
      :ref:`CellBuilder overview and hints. <cellbuilder_overview_and_hints>`
 
 3. 
-    Helpful items in the :ref:`on-line Programmer's Reference <index.rst>`:
+    Helpful items in the :ref:`on-line Programmer's Reference <python_prog_ref>`:
 
-        diam L nseg hh pas
+       :data:`diam` • :data:`L` • :data:`Section.nseg` • :ref:`hh <mech_hh>` • :ref:`pas <mech_pas>`
 
 Using the representation of the biological properties
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -246,6 +246,6 @@ Footnotes and Asides
     The CellBuilder can be used to make your own "digital stem cells." If you have a model cell that you would like to return to later, save the CellBuilder to a session file. To bring the model back, just retrieve the session file. This is a good way to create an "evolutionary sequence" of models that differ only in certain key points.
 
 2.
-    The CellBuilder can also be used to manage models based on etailed morphometric reconstructions. This is covered in a later exercise. 
+    The CellBuilder can also be used to manage models based on detailed morphometric reconstructions. This is covered in a later exercise. 
 
 

@@ -19,7 +19,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     * Constructing a ball and stick model, saving session files
 
 4.    
-    Using morphometric data
+    :ref:`using_morphometric_data`
 
     * The Import3D tool
     
@@ -98,6 +98,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     intro_to_gui.rst
     interactive_modeling.rst
     neuron_scripting_exercises.rst
+    using_morphometric_data
     using_nmodl_files.rst
     rxd_exercises.rst
     custom-initialization.rst
