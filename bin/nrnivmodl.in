@@ -241,7 +241,7 @@ if [ "$LinkCoreNEURON" = true ] ; then
   if [ "${NMODL}" ] ; then
     "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$MODSUBDIR/cleaned_mod"
   else
-    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" $1
+    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$1"
   fi
   cd "$MODSUBDIR"
 fi
