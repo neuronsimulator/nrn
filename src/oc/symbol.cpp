@@ -415,7 +415,7 @@ void hoc_free_pstring(char** p) {
     }
 }
 
-extern "C" unsigned long long nrn_mallinfo(int item) {
+extern "C" size_t nrn_mallinfo(int item) {
 #if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured
@@ -427,11 +427,11 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
         KERN_SUCCESS)
         return (size_t) 0L; /* Can't access? */
     return (size_t) info.resident_size;
-#elif HAVE_MALLINFO
+#elif HAVE_MALLINFO2
     /* *NIX PLATFORMS WITH MALLINFO ------------------------------ */
-    int r;
-    struct mallinfo m;
-    m = mallinfo();
+    size_t r;
+    struct mallinfo2 m;
+    m = mallinfo2();
     if (item == 1) {
         r = m.uordblks;
     } else if (item == 2) {
@@ -447,7 +447,7 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
     } else {
         r = m.hblkhd + m.uordblks;
     }
-    return (unsigned long long) r;
+    return r;
 #else
     /* UNSUPPORTED PLATFORM ------------------------------------ */
     return 0;
@@ -456,7 +456,7 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
 
 int hoc_mallinfo(void) {
     int i;
-    unsigned long long x;
+    size_t x;
     extern double chkarg(int, double, double);
     i = (int) chkarg(1, 0., 10.);
     x = nrn_mallinfo(i);
