@@ -272,6 +272,29 @@ extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
 extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
 
+extern double hoc_Exp(double);
+extern int hoc_is_tempobj_arg(int narg);
+extern FILE* hoc_obj_file_arg(int i);
+extern void hoc_reg_nmodl_text(int type, const char* txt);
+extern void hoc_reg_nmodl_filename(int type, const char* filename);
+extern unsigned long long nrn_mallinfo(int item);
+extern int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
+extern void state_discontinuity(int i, double* pd, double d);
+
+extern Symbol* hoc_get_symbol(const char* var);
+extern double nrn_event_queue_stats(double* stats);
+extern double* nrn_recalc_ptr(double*);
+extern void nrn_register_recalc_ptr_callback(Pfrv f);
+
+//BlueBrain
+extern void* bbss_buffer_counts( int*, int**, int**, int* );
+extern void bbss_save_global( void*, char*, int );
+extern void bbss_restore_global( void*, char*, int );
+extern void bbss_save( void*, int, char*, int );
+extern void bbss_restore( void*, int, int, char*, int );
+extern void bbss_save_done( void* );
+extern void bbss_restore_done( void* );
+
 #if defined(__cplusplus)
 }
 #endif
