@@ -6,6 +6,8 @@
 */
 
 #include <math.h>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cassert>
 //#include <nrnpython.h>
@@ -29,10 +31,6 @@ int geometry3d_find_triangles(double value0,
 
 double geometry3d_llgramarea(double* p0, double* p1, double* p2);
 double geometry3d_sum_area_of_triangles(double* tri_vec, int len);
-
-inline double max(double a, double b) {
-    return a > b ? a : b;
-}
 
 const int edgeTable[] = {
     0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a,
@@ -337,7 +335,7 @@ void geometry3d_vi(double* p1, double* p2, double v1, double v2, double* out) {
         return;
     }
     double mu = v1 / delta_v;
-    if (isnan(mu)) {
+    if (std::isnan(mu)) {
         printf("geometry3d_vi error. delta_v = %g, v1 = %g, v2 = %g\n", delta_v, v1, v2);
     }
     out[0] = p1[0] + mu * (p2[0] - p1[0]);
@@ -445,7 +443,7 @@ double geometry3d_llgramarea(double* p0, double* p1, double* p2) {
     double cpx = a[1] * b[2] - a[2] * b[1];
     double cpy = a[2] * b[0] - a[0] * b[2];
     double cpz = a[0] * b[1] - a[1] * b[0];
-    return sqrt(cpx * cpx + cpy * cpy + cpz * cpz);
+    return std::sqrt(cpx * cpx + cpy * cpy + cpz * cpz);
 }
 
 
@@ -493,7 +491,7 @@ geometry3d_Cylinder::geometry3d_Cylinder(double x0,
     axisx = x1 - x0;
     axisy = y1 - y0;
     axisz = z1 - z0;
-    double axislength = sqrt(axisx * axisx + axisy * axisy + axisz * axisz);
+    double axislength = std::sqrt(axisx * axisx + axisy * axisy + axisz * axisz);
     axisx /= axislength;
     axisy /= axislength;
     axisz /= axislength;
@@ -501,23 +499,22 @@ geometry3d_Cylinder::geometry3d_Cylinder(double x0,
 }
 
 double geometry3d_Cylinder::signed_distance(double px, double py, double pz) {
-    double nx, ny, nz, y, yy, xx, x;
-    nx = px - cx;
-    ny = py - cy;
-    nz = pz - cz;
-    y = fabs(axisx * nx + axisy * ny + axisz * nz);
-    yy = y * y;
-    xx = nx * nx + ny * ny + nz * nz - yy;
+    double const nx{px - cx};
+    double const ny{py - cy};
+    double const nz{pz - cz};
+    double y{std::abs(axisx * nx + axisy * ny + axisz * nz)};
+    double yy{y * y};
+    double const xx{nx * nx + ny * ny + nz * nz - yy};
     if (y < h) {
-        return max(-fabs(h - y), sqrt(xx) - r);
+        return std::max(-std::abs(h - y), std::sqrt(xx) - r);
     } else {
         y -= h;
         yy = y * y;
         if (xx < rr) {
-            return fabs(y);
+            return std::abs(y);
         } else {
-            x = sqrt(xx) - r;
-            return sqrt(yy + x * x);
+            double const x{std::sqrt(xx) - r};
+            return std::sqrt(yy + x * x);
         }
     }
 }
@@ -581,14 +578,14 @@ geometry3d_Cone::geometry3d_Cone(double x0,
     axisx = x1 - x0;
     axisy = y1 - y0;
     axisz = z1 - z0;
-    axislength = sqrt(axisx * axisx + axisy * axisy + axisz * axisz);
+    axislength = std::sqrt(axisx * axisx + axisy * axisy + axisz * axisz);
     axisx /= axislength;
     axisy /= axislength;
     axisz /= axislength;
     h = axislength / 2.;
     rra = r0 * r0;
     rrb = r1 * r1;
-    conelength = sqrt((r1 - r0) * (r1 - r0) + axislength * axislength);
+    conelength = std::sqrt((r1 - r0) * (r1 - r0) + axislength * axislength);
     side1 = (r1 - r0) / conelength;
     side2 = axislength / conelength;
 }
@@ -607,24 +604,24 @@ double geometry3d_Cone::signed_distance(double px, double py, double pz) {
     if (y < 0) {
         if (xx < rra)
             return -y;
-        x = sqrt(xx) - r0;
-        return sqrt(x * x + yy);
+        x = std::sqrt(xx) - r0;
+        return std::sqrt(x * x + yy);
     } else if (xx < rrb) {
         return y - axislength;
     } else {
-        x = sqrt(xx) - r0;
+        x = std::sqrt(xx) - r0;
         if (y < 0) {
             if (x < 0)
                 return y;
-            return sqrt(x * x + yy);
+            return std::sqrt(x * x + yy);
         } else {
             ry = x * side1 + y * side2;
             if (ry < 0)
-                return sqrt(x * x + yy);
+                return std::sqrt(x * x + yy);
             rx = x * side2 - y * side1;
             if (ry > conelength) {
                 ry -= conelength;
-                return sqrt(rx * rx + ry * ry);
+                return std::sqrt(rx * rx + ry * ry);
             } else {
                 return rx;
             }
@@ -668,7 +665,7 @@ geometry3d_Sphere::geometry3d_Sphere(double x, double y, double z, double r)
     , r(r) {}
 
 double geometry3d_Sphere::signed_distance(double px, double py, double pz) {
-    return sqrt(pow(x - px, 2) + pow(y - py, 2) + pow(z - pz, 2)) - r;
+    return std::sqrt(std::pow(x - px, 2) + std::pow(y - py, 2) + std::pow(z - pz, 2)) - r;
 }
 
 void* geometry3d_new_Sphere(double x, double y, double z, double r) {
@@ -697,7 +694,7 @@ geometry3d_Plane::geometry3d_Plane(double x, double y, double z, double nx, doub
     , ny(ny)
     , nz(nz)
     , d(-(nx * x + ny * y + nz * z))
-    , mul(1. / sqrt(nx * nx + ny * ny + nz * nz)) {}
+    , mul(1. / std::sqrt(nx * nx + ny * ny + nz * nz)) {}
 
 double geometry3d_Plane::signed_distance(double px, double py, double pz) {
     return (nx * px + ny * py + nz * pz + d) * mul;

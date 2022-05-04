@@ -214,6 +214,23 @@ set(NRN_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 configure_file(src/nrnoc/nrnsemanticversion.h.in src/nrnoc/nrnsemanticversion.h @ONLY)
 
 # =============================================================================
+# Add coding-conventions submodule so we can use helper functions defined there
+# =============================================================================
+set(CODING_CONV_PREFIX "NRN")
+set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
+set(${CODING_CONV_PREFIX}_ClangFormat_REQUIRED_VERSION 12.0.1)
+set(${CODING_CONV_PREFIX}_ClangFormat_EXCLUDES_RE CACHE STRING "") # None needed
+set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
+if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
+  # Abort with a helpful message if the current source tree lacks .git information, as in that case
+  # we're not going to be able to initialise the submodule.
+  nrn_submodule_file_not_found("3rdparty.cmake")
+  nrn_initialize_submodule(external/coding-conventions)
+endif()
+include("${CODING_CONV_CMAKE}/3rdparty.cmake")
+cpp_cc_git_submodule(Random123)
+
+# =============================================================================
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
@@ -336,7 +353,7 @@ if(NRN_ENABLE_INTERVIEWS)
     get_target_property(IV_INCLUDE_DIR interviews INTERFACE_INCLUDE_DIRECTORIES)
   else()
     nrn_add_external_project(iv)
-    include_directories(external/iv/src/include)
+    include_directories(SYSTEM external/iv/src/include)
     set(IV_DIR ${PROJECT_SOURCE_DIR}/external/iv)
     set(IV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/iv/src/include)
   endif()
@@ -650,19 +667,6 @@ if(NRN_ENABLE_DOCS)
     COMMAND echo "The HTML docs are at file://${PROJECT_SOURCE_DIR}/docs/_build/index.html"
     COMMENT "Generating full documentation")
 endif()
-
-# =============================================================================
-# Add coding-conventions submodule so we can use helper functions defined there
-# =============================================================================
-set(CODING_CONV_PREFIX "NRN")
-set(${CODING_CONV_PREFIX}_3RDPARTY_DIR "external")
-set(${CODING_CONV_PREFIX}_ClangFormat_REQUIRED_VERSION 12.0.1)
-set(${CODING_CONV_PREFIX}_ClangFormat_EXCLUDES_RE CACHE STRING "") # None needed
-set(CODING_CONV_CMAKE "${PROJECT_SOURCE_DIR}/${NRN_3RDPARTY_DIR}/coding-conventions/cpp/cmake")
-if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
-  nrn_initialize_submodule(external/coding-conventions)
-endif()
-include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 
 # =============================================================================
 # Add coding-conventions submodule if code formatting enabled
