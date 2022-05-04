@@ -202,7 +202,7 @@ Saving and Retrieving the Experimental Rig
 
 You now have a complete setup for doing simulation experiments. The CellBuilder, which specifies your "experimental preparation," is safe because you saved it to the session file ballstk.ses. However, the GUI that constitutes your nicely-configured "lab rig" (the RunControl, PointProcessManager, graph of v vs. t, and space plot windows) will be lost if you exit NEURON prematurely or if the computer crashes.
 
-To make it easy to reconstitute the virtual lab rig, use the Print & File Window Manager (PFWM) to save these windows to a session file. :ref:`Here's how <saving_windows>` to bring up the PFWM and use it to select the windows for everything but the CellBuilder, then save these windows to a session file called rig.ses. This will allow you to immediately begin with the current GUI.
+To make it easy to reconstitute the virtual lab rig, use the Print & File Window Manager (PFWM) to save these windows to a session file. :ref:`Here's how <print_and_file_window_manager>` to bring up the PFWM and use it to select the windows for everything but the CellBuilder, then save these windows to a session file called rig.ses. This will allow you to immediately begin with the current GUI.
 
 Test rig.ses by using :menuselection:`NEURONMainMenu --> File --> load session` to retrieve it. Copies of the "lab rig" windows should overlay the originals. If so, exit NEURON and then restart it with the init.hoc argument. It should start up with the windows that you saved.
 
@@ -237,7 +237,7 @@ More Exercises
     Is the time step (``h.dt`` in Python) short enough?
 
 6.
-    Here's something you should try on your own, perhaps after class tonight: :ref:`using the CellBuilder to manage models "on the fly." <managing_models_fly>`
+    Here's something you should try on your own, perhaps after class tonight: :ref:`using the CellBuilder to manage models "on the fly." <managing_models_on_the_fly>`
 
 Footnotes and Asides
 --------------------

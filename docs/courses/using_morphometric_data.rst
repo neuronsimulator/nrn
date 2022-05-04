@@ -22,7 +22,7 @@ B. Choose a file to read.
 
 In the Import3D window, click on the "choose a file" checkbox.
 
-.. img:: choose_file.gif
+.. image:: img/choose_file.gif
     :align: center
 
 This brings up a file browser. Navigate to the directory containing your data, and then click the file browser's Read button. For this exercise, we'll use :download:`111200A.asc <code/111200A.asc>` (so save that on your machine somewhere, navigate there in Import3D, then read the file).
@@ -37,7 +37,7 @@ NEURON's terminal window prints a running tally of how many lines have been read
 
 After a delay that depends on the size of the file and the speed of the computer, a figure will appear on the Import3D tool's canvas. Each point at which a measurement was made is marked by a blue square.
 
-.. img:: showing_points_and_diam.gif
+.. image:: img/showing_points_and_diam.gif
     :align: center
 
 If the Import3D tool finds errors in the data file, a message may be printed in the xterm, and/or a message box may appear on the screen. For this particular example there were no errors--that's always a good sign!
@@ -51,23 +51,24 @@ It's always a good idea to look at the results of any anatomical data conversion
 
 To get rid of the blue squares that are hiding the branched architecture, click on the Show Points button in the right panel of the Import3D tool. The check mark disappears, and so do the blue squares.
 
-.. img:: showpoints_off.gif
+.. image:: img/showpoints_off.gif
     :align: center
 
 That's a very dense and complex branching pattern.
 
 D. Exporting the model.
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The Import3D tool allows us to export the topology (branched architecture) and geometry (anatomical dimensions) of these data to a CellBuilder, or straight to the hoc interpreter. It's generally best to send the data to the CellBuilder, which we can then save to a session file for future re-use. The CellBuilder, which has its own tutorial, is a very convenient tool for managing the biophysical properties and spatial discretization of anatomically complex cell models.
 
 So click on the Export button and select the CellBuilder option.
 
-.. img:: export_cellbuilder.gif
+.. image:: img/export_cellbuilder.gif
     :align: center
 
 But this example contains a surprise: instead of one CellBuilder, there are two! Under MSWin, they are offset diagonally as shown here, but under UNIX/Linux they may lie right on top of each other so you'll have to drag the top one aside.
 
-.. img:: two_cellbuilders.gif
+.. image:: img/two_cellbuilders.gif
     :align: center
 
 Does getting two CellBuilders mean that the morphometric data file contained measurements from two cells? Maybe that's why the branching pattern was so dense and complex.
@@ -78,7 +79,7 @@ How can you decide which of these two possibilities is correct?
 
 Examining the Topology pages of these CellBuilders shows that CellBuild[0] got most of the branches in the bottom half of the Import3D's canvas, and CellBuild[1] got most of the branches in the top half. The morphologies are ugly enough to be two individual cells; at least, neither of them is obviously an orphan dendritic or axonal tree.
 
-.. img:: cb_stickfigs.gif
+.. image:: img/cb_stickfigs.gif
     :align: center
 
 Until you know for sure, it is safest to use the Print & File Window Manager (PFWM) to save each CellBuilder to its own session file. I optimistically called them bottomcell.ses and topcell.ses, respectively.
@@ -88,7 +89,7 @@ At this point, you should really use the Import3D tool to closely examine these 
 E. Take a new look at the shape in the Import3D tool.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. img:: zoomo.gif
+.. image:: img/zoomo.gif
     :align: center
 
 Those two little green lines in the dense clusters are new. They appeared *after* exporting to the CellBuilder. And is there a little orange blob at one end of each green line?
@@ -103,7 +104,7 @@ Then click on the canvas, just to the right of the area of interest, and hold th
 
 Repeat as needed until you get what you want.
 
-.. img:: zoomp.gif
+.. image:: img/zoomp.gif
     :align: center
 
 The irregular shape at the center, with the transverse orange lines, is the soma of a neuron. The green line is its principal axis, as identified by the Import3D tool. At least 9 neurites converge on it, and a fine red line connects the proximal end of each branch to the center of the soma.
@@ -144,7 +145,7 @@ Some morphometric reconstructions contain orphan branches, or measurement points
 
 Here's an example that used a toy cell:
 
-.. img:: v5.gif
+.. image:: img/v5.gif
     :align: center
 
 Left: Vm at t = 0 ms. Right: Vm at 5 ms.
@@ -179,13 +180,13 @@ There are many other potential strategies for checking anatomical data, such as
 Detailed morphometric data: sources, caveats, and importing into NEURON
 -----------------------------------------------------------------------
 
-Currently the largest collection of detailed morphometric data we know of is :link:`https://neuromorpho.org/`. There are many potential pitfalls in the collection and use of such data. Before using any data you find at NeuroMorpho.org or anywhere else, be sure to carefully read any papers that were written about those data by the anatomists who obtained them.
+Currently the largest collection of detailed morphometric data we know of is `NeuroMorpho.org <https://neuromorpho.org/>`_. There are many potential pitfalls in the collection and use of such data. Before using any data you find at NeuroMorpho.org or anywhere else, be sure to carefully read any papers that were written about those data by the anatomists who obtained them.
 
 Some of the artifacts that can afflict morphometric data are discussed in these two papers, which are well worth reading:
 
-Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morphology data bases: morphological noise and assesment of data quality. Network: Computation in Neural Systems 13:357-380. doi:10.1088/0954-898X_13_3_307
+Kaspirzhny AV, Gogan P, Horcholle-Bossavit G, Tyc-Dumont S. 2002. Neuronal morphology data bases: morphological noise and assesment of data quality. Network: Computation in Neural Systems 13:357-380. `doi:10.1088/0954-898X_13_3_307 <https://www.tandfonline.com/doi/abs/10.1088/0954-898X_13_3_307>`_
 
-Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. doi:10.1002/cne.20067
+Scorcioni, R., Lazarewicz, M.T., and Ascoli, G.A. Quantitative morphometry of hippocampal pyramidal cells: differences between anatomical classes and reconstructing laboratories. Journal of Comparative Neurology 473:177-193, 2004. `doi:10.1002/cne.20067 <https://onlinelibrary.wiley.com/doi/10.1002/cne.20067>`_
 
 
 

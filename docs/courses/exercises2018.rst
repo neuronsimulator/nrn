@@ -32,7 +32,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     * Single compartment model with HHk mechanism
 
 7.    
-    Using ModelDB and ModelView
+    :ref:`using_modeldb_and_modelview`
 
     * Neuroinformatics tools for finding and understanding models
 
@@ -90,7 +90,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`numerical_methods_exercises`
     
 22.
-    Electrotonic Analysis
+    :ref:`electrotonic_analysis`
 
 .. toctree::
     :hidden:
@@ -100,9 +100,11 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     neuron_scripting_exercises.rst
     using_morphometric_data
     using_nmodl_files.rst
+    using_modeldb_and_modelview.rst
     rxd_exercises.rst
     custom-initialization.rst
     state_and_parameter_discontinuities.rst
     multithread_parallelization.rst
     using_nsg_portal.rst
     numerical-methods-exercises.rst
+    electrotonic_analysis.rst

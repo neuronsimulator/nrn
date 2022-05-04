@@ -24,6 +24,8 @@ The CellBuilder breaks the process of creating and managing a model of a cell in
 
 The CellBuilder can import a model that already exists during a NEURON session. It can also be used in conjunction with NEURON's Import3D tool to create new model cells based on detailed morphometric reconstructions.
 
+.. _starting_the_cellbuilder:
+
 Starting the CellBuilder
 ------------------------
 
