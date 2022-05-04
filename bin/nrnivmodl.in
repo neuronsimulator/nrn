@@ -2,7 +2,7 @@
 set -e
 
 ARCH=@host_cpu@
-MODSUBDIR="$(realpath @modsubdir@)"
+MODSUBDIR="$PWD/"@modsubdir@
 USER_PWD="$PWD"
 
 if [ -z "$NRNHOME" ] ; then
