@@ -236,7 +236,7 @@ const char* DismissableWindow::name() const {
     // printf("DismissableWindow::name %s\n", v.string());
     return v.string();
 }
-#if defined(MINGW)
+#ifdef MINGW
 static const char* s_;
 static void setwindowtext(void* v) {
     HWND hw = (HWND) v;
@@ -248,7 +248,7 @@ void DismissableWindow::name(const char* s) {
 #ifdef WIN32
     HWND hw = Window::rep()->msWindow();
     if (hw) {
-#if defined(MINGW)
+#ifdef MINGW
         if (!nrn_is_gui_thread()) {
             s_ = s;
             nrn_gui_exec(setwindowtext, hw);

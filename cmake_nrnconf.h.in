@@ -375,7 +375,7 @@
 #include <ivstream.h>
 #endif
 
-#if defined(MINGW)
+#ifdef MINGW
 #define WIN32 1
 #endif
 

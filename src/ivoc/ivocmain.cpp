@@ -68,7 +68,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#if defined(MINGW)
+#ifdef MINGW
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -292,7 +292,7 @@ static void force_load() {
     }
 }
 
-#if defined(MINGW)
+#ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
 static bool isdir(const char* p) {
@@ -656,7 +656,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             fclose(f);
             session->style()->load_file(String(nrn_props), -5);
         } else {
-#if defined(MINGW)
+#ifdef MINGW
             sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
 #else
             sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");

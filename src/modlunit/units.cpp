@@ -34,7 +34,7 @@
 #define NRN_DYNAMIC_UNITS 0
 #endif
 
-#if defined(MINGW)
+#ifdef MINGW
 #include "../mswin/extra/d2upath.cpp"
 #endif
 #if defined(WIN32)

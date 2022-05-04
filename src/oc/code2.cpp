@@ -189,7 +189,7 @@ void hoc_Symbol_units(void) {
 extern "C" char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
     extern char* neuron_home;
-#if defined(WIN32)
+#ifdef WIN32
     static char* buf;
     extern void hoc_forward2back();
     if (!buf) {
@@ -207,7 +207,7 @@ char* neuron_home_dos;
 extern void setneuronhome(const char*);
 void hoc_neuronhome(void) {
     extern char* neuron_home;
-#if defined(WIN32)
+#ifdef WIN32
     if (ifarg(1) && (int) chkarg(1, 0., 1.) == 1) {
         if (!neuron_home_dos) {
             setneuronhome(NULL);

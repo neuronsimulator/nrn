@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-#if defined(MINGW)
+#ifdef MINGW
 
 #include <unistd.h>
 #include <windows.h>

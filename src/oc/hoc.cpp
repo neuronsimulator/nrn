@@ -974,7 +974,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#if defined(MINGW)
+#ifdef MINGW
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -1043,7 +1043,7 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
     {
         static const char* stdinonly[] = {"-"};
 
-#if defined(MINGW)
+#ifdef MINGW
         cygonce = 1;
 #endif
         gargv = stdinonly;
@@ -1091,7 +1091,7 @@ void* inputReadyThread(void* input) {
 }
 #endif
 
-#if defined(MINGW)
+#ifdef MINGW
 static pthread_t* inputReady_;
 static pthread_mutex_t inputMutex_;
 static pthread_cond_t inputCond_;
@@ -1183,7 +1183,7 @@ void hoc_quit(void) {
     exit(exit_code);
 }
 
-#if defined(MINGW)
+#ifdef MINGW
 static const char* double_at2space(const char* infile) {
     char* buf;
     const char* cp1;
@@ -1265,7 +1265,7 @@ int moreinput(void) {
         infile = cp;
     }
 #endif  // WIN32
-#if defined(MINGW)
+#ifdef MINGW
     /* have difficulty passing spaces within arguments from neuron.exe
     through the neuron.sh shell script to nrniv.exe. Therefore
     neuron.exe converts the ' ' to "@@" and here we need to convert
@@ -1298,7 +1298,7 @@ int moreinput(void) {
         HocStr* hs;
         infile = *gargv++;
         gargc--;
-#if defined(MINGW)
+#ifdef MINGW
         infile = double_at2space(infile);
 #endif
         hs = hocstr_create(strlen(infile) + 2);
@@ -1674,7 +1674,7 @@ static int event_hook(void) {
     return 1;
 }
 #else /* not carbon */
-#if defined(MINGW)
+#ifdef MINGW
 extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
     int i;

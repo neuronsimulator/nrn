@@ -132,7 +132,7 @@ int hoc_errno_check(void) {
             errno = 0;
             return 0;
         }
-#if defined(MINGW)
+#ifdef MINGW
         if (errno == EBUSY) {
             errno = 0;
             return 0;

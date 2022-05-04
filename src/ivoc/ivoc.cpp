@@ -253,7 +253,7 @@ static ReqErr1* reqerr1;
 static HandleStdin* hsd_;
 #endif
 
-#if defined(MINGW)
+#ifdef MINGW
 static HandleStdin* hsd_;
 void winio_key_press() {
     hsd_->inputReady(1);
@@ -400,7 +400,7 @@ int run_til_stdin() {
     Oc oc;
     oc.notify();
 #endif
-#if !defined(WIN32)
+#ifndef WIN32
     Oc::setStdinSeen(false);
 #endif
     session->run();
@@ -413,7 +413,7 @@ int run_til_stdin() {
         return 0;
     }
 #endif
-#if defined(WIN32)
+#ifdef WIN32
     return 0;
 #else
     return Oc::getStdinSeen();  // MAC should not reach this point
