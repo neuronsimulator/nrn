@@ -50,6 +50,7 @@ LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
 UserCOREFLAGS=()
+UserNMODL=""
 
 # - options come first but can be in any order.
 while [ "$1" ] ; do
@@ -70,6 +71,12 @@ while [ "$1" ] ; do
         UserLDFLAGS="$2"
         # extra lin flags, paths. libraries (CoreNEURON)
         UserCOREFLAGS+=(-l "${2}")
+        shift
+        shift;;
+    -nmodl)
+        # give a path to nmodl to clean mod files
+        # works only with -coreneuron
+        UserNMODL="$2"
         shift
         shift;;
     -*)
@@ -149,12 +156,12 @@ if [ ! -d "$MODSUBDIR" ] ; then
   mkdir -p "$MODSUBDIR"
 fi
 
-if [ "$LinkCoreNEURON" = true ] && [ "${NMODL}" ] ; then
+if [ "$LinkCoreNEURON" = true ] && [ "${UserNMODL}" ] ; then
   echo "Cleaning files to $MODSUBDIR/cleaned_mod"
   # Cleaning files
   mkdir -p "$MODSUBDIR/cleaned_mod"
   for i in "${files[@]}" ; do
-    "${NMODL}" -o "$MODSUBDIR/cleaned_mod" "$i" passes --convert-neuron
+    "${UserNMODL}" -o "$MODSUBDIR/cleaned_mod" "$i" passes --convert-neuron
   done
 fi
 
@@ -176,7 +183,7 @@ for i in "${files[@]}" ; do
   esac
   base_name="$(basename "$f")"
   dir_name="$(dirname "$f")"
-  if [ "$LinkCoreNEURON" = true ] && [ "${NMODL}" ] ; then
+  if [ "$LinkCoreNEURON" = true ] && [ "${UserNMODL}" ] ; then
     dir_name="$MODSUBDIR/cleaned_mod"
   fi
   # Note: indentation for shell lines in make rules must be a tab
@@ -238,7 +245,7 @@ extern "C" {
 if [ "$LinkCoreNEURON" = true ] ; then
   echo "Compiling files with corenrn"
   cd "$USER_PWD"
-  if [ "${NMODL}" ] ; then
+  if [ "${UserNMODL}" ] ; then
     "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$MODSUBDIR/cleaned_mod"
   else
     "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$1"
