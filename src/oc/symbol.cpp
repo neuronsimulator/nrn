@@ -45,14 +45,14 @@ extern Objectdata* hoc_top_level_data;
 
 Symlist* symlist = nullptr;   /* the current user symbol table: linked list */
 Symlist* p_symlist = nullptr; /* current proc, func, or temp table */
-                                   /* containing constants, strings, and auto */
-                                   /* variables. Discarding these lists at */
-                                   /* appropriate times prevents storage leakage. */
+                              /* containing constants, strings, and auto */
+                              /* variables. Discarding these lists at */
+                              /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
     Printf("%s\n", s);
     if (tab)
-        for (Symbol *sp = tab->first; sp != nullptr; sp = sp->next) {
+        for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
             Printf("%s %p\n", sp->name, sp);
         }
 }
@@ -60,7 +60,7 @@ void print_symlist(const char* s, Symlist* tab) {
 Symbol* hoc_table_lookup(const char* s, Symlist* tab) /* find s in specific table */
 {
     if (tab)
-        for (Symbol *sp = tab->first; sp != nullptr; sp = sp->next) {
+        for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
             if (strcmp(sp->name, s) == 0) {
                 return sp;
             }
@@ -93,7 +93,7 @@ Symbol* install(/* install s in the list symbol table */
                 int t,
                 double d,
                 Symlist** list) {
-    Symbol *sp = (Symbol*) emalloc(sizeof(Symbol));
+    Symbol* sp = (Symbol*) emalloc(sizeof(Symbol));
     sp->name = (char*) emalloc((unsigned) (strlen(s) + 1)); /* +1 for '\0' */
     Strcpy(sp->name, s);
     sp->type = t;
@@ -231,7 +231,7 @@ void* nrn_cacheline_alloc(void** memptr, size_t size) {
         }
     } else
 #endif
-    *memptr = hoc_Emalloc(size);
+        *memptr = hoc_Emalloc(size);
     hoc_malchk();
     return *memptr;
 }
@@ -360,9 +360,9 @@ void free_list(Symlist** list) { /* free the space in a symbol table */
         return;
     }
 
-    Symbol *s1 = (*list)->first;
+    Symbol* s1 = (*list)->first;
     while (s1) {
-        Symbol *s2 = s1->next;
+        Symbol* s2 = s1->next;
         hoc_free_symspace(s1);
         if (s1->name) {
             free(s1->name);
