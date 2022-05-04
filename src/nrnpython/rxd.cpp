@@ -307,21 +307,14 @@ void apply_node_flux(int n,
                      PyObject** source,
                      double dt,
                      double* states) {
-    long i, j;
-    PyObject* result;
-    PyHocObject* src;
-
-    for (i = 0; i < n; i++) {
-        if (index == NULL)
-            j = i;
-        else
-            j = index[i];
+    for (size_t i = 0; i < n; i++) {
+        size_t j = index == nullptr ? i : index[i];
         if (PyFloat_Check(source[i])) {
             states[j] += dt * PyFloat_AsDouble(source[i]) / scale[i];
         } else if (PyCallable_Check(source[i])) {
             /* It is a Python function or a PyHocObject*/
             if (PyObject_TypeCheck(source[i], hocobject_type)) {
-                src = (PyHocObject*) source[i];
+                auto src = (PyHocObject*) source[i];
                 /*TODO: check it is a reference */
                 if (src->type_ == PyHoc::HocRefNum) {
                     states[j] += dt * (src->u.x_) / scale[i];
@@ -329,7 +322,7 @@ void apply_node_flux(int n,
                     states[j] += dt * *(src->u.px_) / scale[i];
                 }
             } else {
-                result = PyEval_CallObject(source[i], NULL);
+                auto result = PyObject_Call(source[i], nullptr, nullptr);
                 if (PyFloat_Check(result)) {
                     states[j] += dt * PyFloat_AsDouble(result) / scale[i];
                 } else if (PyLong_Check(result)) {
