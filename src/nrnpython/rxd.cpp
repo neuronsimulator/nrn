@@ -322,7 +322,7 @@ void apply_node_flux(int n,
                     states[j] += dt * *(src->u.px_) / scale[i];
                 }
             } else {
-                auto result = PyObject_Call(source[i], nullptr, nullptr);
+                auto result = PyObject_CallObject(source[i], nullptr);
                 if (PyFloat_Check(result)) {
                     states[j] += dt * PyFloat_AsDouble(result) / scale[i];
                 } else if (PyLong_Check(result)) {
