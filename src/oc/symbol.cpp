@@ -36,38 +36,36 @@
 #endif
 
 #if OOP
-Symlist* hoc_built_in_symlist = (Symlist*) 0;  /* keywords, built-in functions,
+Symlist* hoc_built_in_symlist = nullptr;  /* keywords, built-in functions,
      all name linked into hoc. Look in this list last */
-Symlist* hoc_top_level_symlist = (Symlist*) 0; /* all user names seen at top-level
+Symlist* hoc_top_level_symlist = nullptr; /* all user names seen at top-level
         (non-public names inside templates do not appear here) */
 extern Objectdata* hoc_top_level_data;
 #endif /*OOP*/
 
-Symlist* symlist = (Symlist*) 0;   /* the current user symbol table: linked list */
-Symlist* p_symlist = (Symlist*) 0; /* current proc, func, or temp table */
-                                   /* containing constants, strings, and auto */
-                                   /* variables. Discarding these lists at */
-                                   /* appropriate times prevents storage leakage. */
+Symlist* symlist = nullptr;   /* the current user symbol table: linked list */
+Symlist* p_symlist = nullptr; /* current proc, func, or temp table */
+                              /* containing constants, strings, and auto */
+                              /* variables. Discarding these lists at */
+                              /* appropriate times prevents storage leakage. */
 
 void print_symlist(const char* s, Symlist* tab) {
-    Symbol* sp;
     Printf("%s\n", s);
     if (tab)
-        for (sp = tab->first; sp != (Symbol*) 0; sp = sp->next) {
+        for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
             Printf("%s %p\n", sp->name, sp);
         }
 }
 
 Symbol* hoc_table_lookup(const char* s, Symlist* tab) /* find s in specific table */
 {
-    Symbol* sp;
     if (tab)
-        for (sp = tab->first; sp != (Symbol*) 0; sp = sp->next) {
+        for (Symbol* sp = tab->first; sp != nullptr; sp = sp->next) {
             if (strcmp(sp->name, s) == 0) {
                 return sp;
             }
         }
-    return (Symbol*) 0;
+    return nullptr;
 }
 
 Symbol* lookup(const char* s) /* find s in symbol table */
@@ -75,19 +73,19 @@ Symbol* lookup(const char* s) /* find s in symbol table */
 {
     Symbol* sp;
 
-    if ((sp = hoc_table_lookup(s, p_symlist)) != (Symbol*) 0) {
+    if ((sp = hoc_table_lookup(s, p_symlist)) != nullptr) {
         return sp;
     }
-    if ((sp = hoc_table_lookup(s, symlist)) != (Symbol*) 0) {
+    if ((sp = hoc_table_lookup(s, symlist)) != nullptr) {
         return sp;
     }
 #if OOP
-    if ((sp = hoc_table_lookup(s, hoc_built_in_symlist)) != (Symbol*) 0) {
+    if ((sp = hoc_table_lookup(s, hoc_built_in_symlist)) != nullptr) {
         return sp;
     }
 #endif
 
-    return 0; /* 0 ==> not found */
+    return nullptr; /* nullptr ==> not found */
 }
 
 Symbol* install(/* install s in the list symbol table */
@@ -95,9 +93,7 @@ Symbol* install(/* install s in the list symbol table */
                 int t,
                 double d,
                 Symlist** list) {
-    Symbol* sp;
-
-    sp = (Symbol*) emalloc(sizeof(Symbol));
+    Symbol* sp = (Symbol*) emalloc(sizeof(Symbol));
     sp->name = (char*) emalloc((unsigned) (strlen(s) + 1)); /* +1 for '\0' */
     Strcpy(sp->name, s);
     sp->type = t;
@@ -105,11 +101,11 @@ Symbol* install(/* install s in the list symbol table */
     sp->defined_on_the_fly = 0;
     sp->cpublic = 0;
     sp->s_varn = 0;
-    sp->arayinfo = (Arrayinfo*) 0;
-    sp->extra = (HocSymExtension*) 0;
+    sp->arayinfo = nullptr;
+    sp->extra = nullptr;
     if (!(*list)) {
         *list = (Symlist*) emalloc(sizeof(Symlist));
-        (*list)->first = (*list)->last = (Symbol*) 0;
+        (*list)->first = (*list)->last = nullptr;
     }
     hoc_link_symbol(sp, *list);
     switch (t) {
@@ -128,19 +124,18 @@ Symbol* install(/* install s in the list symbol table */
     case OBFUNCTION:
     case STRFUNCTION:
         sp->u.u_proc = (Proc*) ecalloc(1, sizeof(Proc));
-        sp->u.u_proc->list = (Symlist*) 0;
+        sp->u.u_proc->list = nullptr;
         sp->u.u_proc->size = 0;
         break;
     default:
-        sp->u.pnum = (double*) 0;
+        sp->u.pnum = nullptr;
         break;
     }
     return sp;
 }
 
 Symbol* hoc_install_var(const char* name, double* pval) {
-    Symbol* s;
-    s = hoc_install(name, UNDEF, 0.0, &symlist);
+    Symbol* s = hoc_install(name, UNDEF, 0., &symlist);
     s->type = VAR;
     s->u.pval = pval;
     s->subtype = USERDOUBLE;
@@ -148,16 +143,16 @@ Symbol* hoc_install_var(const char* name, double* pval) {
 }
 
 void hoc_unlink_symbol(Symbol* s, Symlist* list) {
-    Symbol* sp;
     assert(list);
 
     if (list->first == s) {
         list->first = s->next;
         if (list->last == s) {
-            list->last = (Symbol*) 0;
+            list->last = nullptr;
         }
     } else {
-        for (sp = list->first; sp != (Symbol*) 0; sp = sp->next) {
+        Symbol* sp;
+        for (sp = list->first; sp != nullptr; sp = sp->next) {
             if (sp->next == s) {
                 break;
             }
@@ -168,7 +163,7 @@ void hoc_unlink_symbol(Symbol* s, Symlist* list) {
             list->last = sp;
         }
     }
-    s->next = (Symbol*) 0;
+    s->next = nullptr;
 }
 
 void hoc_link_symbol(Symbol* sp, Symlist* list) {
@@ -179,7 +174,7 @@ void hoc_link_symbol(Symbol* sp, Symlist* list) {
         list->first = sp;
     }
     list->last = sp;
-    sp->next = (Symbol*) 0;
+    sp->next = nullptr;
 }
 
 static int emalloc_error = 0;
@@ -187,15 +182,13 @@ static int emalloc_error = 0;
 extern "C" void hoc_malchk(void) {
     if (emalloc_error) {
         emalloc_error = 0;
-        execerror("out of memory", (char*) 0);
+        execerror("out of memory", nullptr);
     }
 }
 
 extern "C" void* hoc_Emalloc(size_t n) { /* check return from malloc */
-    void* p;
-
-    p = malloc(n);
-    if (p == 0)
+    void* p = malloc(n);
+    if (p == nullptr)
         emalloc_error = 1;
     return p;
 }
@@ -209,13 +202,11 @@ void* emalloc(size_t n) {
 }
 
 extern "C" void* hoc_Ecalloc(size_t n, size_t size) { /* check return from calloc */
-    void* p;
-
     if (n == 0) {
         return nullptr;
     }
-    p = calloc(n, size);
-    if (p == 0)
+    void* p = calloc(n, size);
+    if (p == nullptr)
         emalloc_error = 1;
     return p;
 }
@@ -246,7 +237,6 @@ void* nrn_cacheline_alloc(void** memptr, size_t size) {
 }
 
 void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
-    int i, n;
 #if HAVE_MEMALIGN
     nrn_cacheline_alloc(memptr, nmemb * size);
     memset(*memptr, 0, nmemb * size);
@@ -258,13 +248,11 @@ void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size) {
 }
 
 void* hoc_Erealloc(void* ptr, size_t size) { /* check return from realloc */
-    void* p;
-
     if (!ptr) {
         return hoc_Emalloc(size);
     }
-    p = realloc(ptr, size);
-    if (p == 0) {
+    void* p = realloc(ptr, size);
+    if (p == nullptr) {
         free(ptr);
         emalloc_error = 1;
     }
@@ -283,9 +271,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
     if (s1 && s1->cpublic != 2) {
         switch (s1->type) {
         case UNDEF:
-            break;
         case STRING:
-            break;
         case VAR:
             break;
         case NUMBER:
@@ -296,7 +282,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
             break;
         case PROCEDURE:
         case FUNCTION:
-            if (s1->u.u_proc != (Proc*) 0) {
+            if (s1->u.u_proc != nullptr) {
                 if (s1->u.u_proc->defn.in != STOP)
                     free((char*) s1->u.u_proc->defn.in);
                 free_list(&(s1->u.u_proc->list));
@@ -345,9 +331,9 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
                     s1->name,
                     s1->type);
         }
-        if (s1->arayinfo != (Arrayinfo*) 0) {
+        if (s1->arayinfo != nullptr) {
             free_arrayinfo(s1->arayinfo);
-            s1->arayinfo = (Arrayinfo*) 0;
+            s1->arayinfo = nullptr;
         }
     }
     if (s1->extra) {
@@ -358,7 +344,7 @@ void hoc_free_symspace(Symbol* s1) { /* frees symbol space. Marks it UNDEF */
             free(s1->extra->units);
         }
         free(s1->extra);
-        s1->extra = (HocSymExtension*) 0;
+        s1->extra = nullptr;
     }
     s1->type = UNDEF;
 }
@@ -370,20 +356,22 @@ void sym_extra_alloc(Symbol* sym) {
 }
 
 void free_list(Symlist** list) { /* free the space in a symbol table */
-    Symbol *s1, *s2;
-
-    if (*list) {
-        for (s1 = (*list)->first; s1; s1 = s2) {
-            s2 = s1->next;
-            hoc_free_symspace(s1);
-            if (s1->name) {
-                free(s1->name);
-            }
-            free((char*) s1);
-        }
-        free((char*) (*list));
+    if (!*list) {
+        return;
     }
-    *list = (Symlist*) 0;
+
+    Symbol* s1 = (*list)->first;
+    while (s1) {
+        Symbol* s2 = s1->next;
+        hoc_free_symspace(s1);
+        if (s1->name) {
+            free(s1->name);
+        }
+        free((char*) s1);
+        s1 = s2;
+    }
+    free((char*) (*list));
+    *list = nullptr;
 }
 
 void hoc_free_val(double* p) {
@@ -415,7 +403,7 @@ void hoc_free_pstring(char** p) {
     }
 }
 
-extern "C" unsigned long long nrn_mallinfo(int item) {
+extern "C" size_t nrn_mallinfo(int item) {
 #if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured
@@ -427,11 +415,10 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
         KERN_SUCCESS)
         return (size_t) 0L; /* Can't access? */
     return (size_t) info.resident_size;
-#elif HAVE_MALLINFO
+#elif HAVE_MALLINFO2
     /* *NIX PLATFORMS WITH MALLINFO ------------------------------ */
-    int r;
-    struct mallinfo m;
-    m = mallinfo();
+    size_t r;
+    struct mallinfo2 m = mallinfo2();
     if (item == 1) {
         r = m.uordblks;
     } else if (item == 2) {
@@ -447,7 +434,7 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
     } else {
         r = m.hblkhd + m.uordblks;
     }
-    return (unsigned long long) r;
+    return r;
 #else
     /* UNSUPPORTED PLATFORM ------------------------------------ */
     return 0;
@@ -455,11 +442,9 @@ extern "C" unsigned long long nrn_mallinfo(int item) {
 }
 
 int hoc_mallinfo(void) {
-    int i;
-    unsigned long long x;
     extern double chkarg(int, double, double);
-    i = (int) chkarg(1, 0., 10.);
-    x = nrn_mallinfo(i);
+    int i = (int) chkarg(1, 0., 10.);
+    size_t x = nrn_mallinfo(i);
     hoc_ret();
     pushx((double) x);
     return 0;
