@@ -2,7 +2,7 @@ from neuron import h
 from neuron.expect_hocerr import expect_err
 from checkresult import Chk
 
-import os, sys, io
+import os, sys, io, re
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 chk = Chk(os.path.join(dir_path, "test_netcvode.json"))
@@ -11,6 +11,11 @@ if hasattr(h, "usetable_hh"):
 
 cv = h.CVode()
 pc = h.ParallelContext()
+
+# remove address info from cv.debug_event output
+def debug_event_filter(s):
+    return re.sub(r"cvode_0x[0-9abcdef]* ", "cvode_0x... ", s)
+
 
 # helpful for debugging when expect no NetCon exist
 def prNetCon(s):
@@ -611,8 +616,12 @@ def event_queue():
         return (cells, ncs, tvec, idvec)
 
     net = mknet()
+    vecstore = h.Vector()
+    cv.store_events(vecstore)
     h.finitialize()
     cv.solve(13)  # two NetCon from fast cell 0 and 1 presyn from slower cell 1
+    cv.store_events()
+    chk("store_events", vecstore)
     chk("event queue spikes", [net[2].to_python(), net[3].to_python()])
     old_stdout = sys.stdout
     sys.stdout = mystdout = io.StringIO()
@@ -695,9 +704,13 @@ def playrecord():
     avec.play(net.ic._ref_amp, tvec)
     cv.active(1)
     cv.debug_event(1)
+    old_stdout = sys.stdout
+    sys.stdout = mystdout = io.StringIO()
     h.finitialize(-65)
     cv.solve(1)
     cv.debug_event(0)
+    sys.stdout = old_stdout
+    chk("playrecord debug_event", debug_event_filter(mystdout.getvalue()))
     del net.ic
     h.finitialize(-65)
 
@@ -705,6 +718,7 @@ def playrecord():
 def interthread():
     net = Net(4)
     cv.active(0)
+    h.dt = 0.025
     cv.debug_event(1)
     pc.nthread(2, 0)  # serial threads avoid race on print callback
     old_stdout = sys.stdout
@@ -713,7 +727,7 @@ def interthread():
     while h.t < 10:
         h.fadvance()
     sys.stdout = old_stdout
-    print(mystdout.getvalue())
+    chk("interthread debug_event 2 serial threads", mystdout.getvalue())
     pc.nthread(1)
     cv.debug_event(0)
 
@@ -728,8 +742,8 @@ def test_netcvode_cover():
     integrator_properties()
     event_queue()
     scatter_gather()
+    playrecord()
     interthread()
-    playrecord()  # interthread hangs if this before it.
 
 
 if __name__ == "__main__":
