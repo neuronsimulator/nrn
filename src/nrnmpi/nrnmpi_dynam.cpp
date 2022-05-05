@@ -144,7 +144,7 @@ char* nrnmpi_load(int is_python) {
                 "environmental variable MPI_LIB_NRN_PATH\n");
     }
 #else /*not DARWIN*/
-#if defined(MINGW)
+#ifdef MINGW
     if (!handle) {
         sprintf(pmes, "Try loading msmpi\n");
         handle = load_mpi("msmpi.dll", pmes + strlen(pmes));

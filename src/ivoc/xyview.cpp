@@ -319,7 +319,7 @@ void XYView::request(Requisition& req) const {
 }
 
 void XYView::allocate(Canvas* c, const Allocation& a, Extension& ext) {
-#if defined(WIN32) || defined(CYGWIN)
+#ifdef MINGW
     if (a.y_allotment().span() <= 0. || a.x_allotment().span() <= 0.) {
         // a bug in mswindows iconify
         return;
