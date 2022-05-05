@@ -66,7 +66,6 @@ set(OC_FILE_LIST
     axis.cpp
     code.cpp
     code2.cpp
-    cygwinprt.cpp
     debug.cpp
     fileio.cpp
     fmenu.cpp
@@ -80,6 +79,7 @@ set(OC_FILE_LIST
     isoc99.cpp
     list.cpp
     math.cpp
+    mswinprt.cpp
     nonlin.cpp
     nrnfilewrap.cpp
     ocerf.cpp

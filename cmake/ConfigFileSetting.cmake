@@ -85,10 +85,6 @@ elseif(NRN_WINDOWS_BUILD)
   set(nrndef_mswin "")
 endif()
 
-if(NRN_CYGWIN_BUILD)
-  set(CYGWIN 1)
-endif()
-
 # =============================================================================
 # Options based on user provided build options
 # =============================================================================

@@ -35,3 +35,7 @@ To that end, the following table's columns constitute:
      - NEURON support for RTAI - Real Time Application Interface for Linux. Also relates to `ni_pci_6229`
      - `#1401 <https://github.com/neuronsimulator/nrn/pull/1401>`_
      - d5f6139
+   * - CYGWIN
+     - Windows versions now use MINGW (more native to WINDOWS).
+     - 
+     - 

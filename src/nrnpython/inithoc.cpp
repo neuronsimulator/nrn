@@ -315,7 +315,6 @@ extern "C" PyObject* PyInit_hoc() {
 
 #endif  // NRNMPI
 
-#if !defined(__CYGWIN__)
     sprintf(buf, "%s/.libs/libnrnmech.so", NRNHOSTCPU);
     // printf("buf = |%s|\n", buf);
     FILE* f;
@@ -323,7 +322,6 @@ extern "C" PyObject* PyInit_hoc() {
         fclose(f);
         add_arg("-dll", buf);
     }
-#endif  // !defined(__CYGWIN__)
     nrn_is_python_extension = 1;
     nrn_nobanner_ = 1;
     const char* pyver = Py_GetVersion();
@@ -390,6 +388,6 @@ extern "C" PyObject* PyInit_hoc() {
     return nrnpy_hoc();
 }
 
-#if !defined(CYGWIN)
+#if !defined(MINGW)
 extern "C" void modl_reg() {}
-#endif  // !defined(CYGWIN)
+#endif  // !defined(MINGW)
