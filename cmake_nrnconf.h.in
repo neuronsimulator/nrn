@@ -13,9 +13,6 @@
    */
 #undef CRAY_STACKSEG_END
 
-/* define if using cygwin */
-#undef CYGWIN
-
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
@@ -378,13 +375,10 @@
 #include <ivstream.h>
 #endif
 
-#if defined(CYGWIN) || defined(MINGW)
+#ifdef MINGW
 #define WIN32 1
 #endif
 
-#if defined(MINGW)
-#define CYGWIN
-#endif
 
 #if defined(carbon) && defined(__cplusplus)
 #define MAC 1

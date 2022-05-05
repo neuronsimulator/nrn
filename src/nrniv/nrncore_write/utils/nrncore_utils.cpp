@@ -207,7 +207,7 @@ void* get_coreneuron_handle() {
     }
 
     // name of coreneuron library based on platform
-#if defined(MINGW)
+#ifdef MINGW
     std::string corenrn_mechlib_name("libcorenrnmech.dll");
 #elif defined(DARWIN)
     std::string corenrn_mechlib_name("libcorenrnmech.dylib");
@@ -231,7 +231,7 @@ void* get_coreneuron_handle() {
 
     // last fallback is minimal library with internal mechanisms
     s_path.str("");
-#if defined(MINGW)
+#ifdef MINGW
     s_path << neuron_home << "/lib/" << corenrn_mechlib_name;
 #else
     s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;

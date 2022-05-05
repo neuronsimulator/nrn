@@ -34,7 +34,7 @@
 #define NRN_DYNAMIC_UNITS 0
 #endif
 
-#if defined(CYGWIN)
+#ifdef MINGW
 #include "../mswin/extra/d2upath.cpp"
 #endif
 #if defined(WIN32)
@@ -164,13 +164,11 @@ static char* neuronhome() {
         ;
     }
     buf[i] = '\0';  // /bin gone
-#if defined(CYGWIN)
     {
         char* u = hoc_dos2unixpath(buf);
         strcpy(buf, hoc_dos2unixpath(u));
         free(u);
     }
-#endif
     return buf;
 #else
     return getenv("NEURONHOME");

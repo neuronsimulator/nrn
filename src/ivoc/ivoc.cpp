@@ -147,10 +147,6 @@ void nrn_err_dialog(const char* mes) {
 
 #if HAVE_IV  // to end of file
 
-#if defined(MINGW)
-#undef CYGWIN
-#endif
-
 #include <InterViews/event.h>
 #include <InterViews/reqerr.h>
 #include <InterViews/style.h>
@@ -218,7 +214,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(WIN32) && !defined(MAC) && !defined(CYGWIN) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -257,7 +253,7 @@ static ReqErr1* reqerr1;
 static HandleStdin* hsd_;
 #endif
 
-#if defined(WIN32) && !defined(CYGWIN)
+#ifdef MINGW
 static HandleStdin* hsd_;
 void winio_key_press() {
     hsd_->inputReady(1);
@@ -282,13 +278,13 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if (defined(WIN32) && !defined(CYGWIN)) || defined(MAC)
-        hsd_ = handleStdin_ = new HandleStdin;
-#else
-#if !defined(CYGWIN) && !defined(carbon)
+#if !defined(WIN32) && !defined(MAC) && !defined(carbon)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
+#if defined(MINGW) || defined(MAC)
+        hsd_ = handleStdin_ = new HandleStdin;
+#else
         handleStdin_ = new HandleStdin;
         Dispatcher::instance().link(0, Dispatcher::ReadMask, handleStdin_);
         Dispatcher::instance().link(0, Dispatcher::ExceptMask, handleStdin_);
@@ -313,7 +309,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(WIN32) && !defined(MAC) && !defined(CYGWIN) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -404,7 +400,7 @@ int run_til_stdin() {
     Oc oc;
     oc.notify();
 #endif
-#if !defined(WIN32) || defined(CYGWIN)
+#ifndef WIN32
     Oc::setStdinSeen(false);
 #endif
     session->run();
@@ -417,7 +413,7 @@ int run_til_stdin() {
         return 0;
     }
 #endif
-#if defined(WIN32) && !defined(CYGWIN)
+#ifdef WIN32
     return 0;
 #else
     return Oc::getStdinSeen();  // MAC should not reach this point

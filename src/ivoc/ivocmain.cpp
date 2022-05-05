@@ -68,7 +68,7 @@ static PropertyData properties[] = {{"*gui", "sgimotif"},
                                     {"*brush_width", "0"},
                                     {"*double_buffered", "on"},
                                     {"*flat", "#aaaaaa"},
-#if defined(WIN32) || defined(CYGWIN)
+#ifdef MINGW
                                     {"*font", "*Arial*bold*--12*"},
                                     {"*MenuBar*font", "*Arial*bold*--12*"},
                                     {"*MenuItem*font", "*Arial*bold*--12*"},
@@ -188,7 +188,7 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(WIN32) && !MAC && !defined(CYGWIN)
+#if !defined(MINGW) && !MAC
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }
@@ -292,7 +292,7 @@ static void force_load() {
     }
 }
 
-#if defined(CYGWIN)
+#ifdef MINGW
 // see iv/src/OS/directory.cpp
 #include <sys/stat.h>
 static bool isdir(const char* p) {
@@ -557,7 +557,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     const char** our_argv = argv;
     int exit_status = 0;
     Session* session = NULL;
-#if !defined(WIN32) && !defined(MAC) && !defined(CYGWIN)
+#if !defined(MINGW) && !defined(MAC)
     // Gary Holt's first pass at this was:
     //
     // Set the NEURONHOME environment variable.  This should override any setting
@@ -656,7 +656,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
             fclose(f);
             session->style()->load_file(String(nrn_props), -5);
         } else {
-#if defined(CYGWIN)
+#ifdef MINGW
             sprintf(nrn_props, "%s/%s", neuron_home, "lib/nrn.def");
 #else
             sprintf(nrn_props, "%s\\%s", neuron_home, "lib\\nrn.def");
@@ -792,13 +792,6 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         units_on_flag_ = 1;
     }
     Oc oc(session, our_argv[0], env);
-#if defined(WIN32) && !defined(CYGWIN)
-    if (session->style()->find_attribute("showwinio", str) &&
-        !session->style()->value_is_on("showwinio")) {
-        ShowWindow(hCurrWnd, SW_HIDE);
-        hoc_obj_run("pwman_place(100,100)\n", 0);
-    }
-#endif
 #else
     hoc_main1_init(our_argv[0], env);
 #endif  // HAVE_IV
