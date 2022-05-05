@@ -249,3 +249,8 @@ Footnotes and Asides
     The CellBuilder can also be used to manage models based on detailed morphometric reconstructions. This is covered in a later exercise. 
 
 
+.. toctree::
+    :hidden:
+
+    cellbuilder_overview_and_hints.rst
+    managing_models_on_the_fly.rst

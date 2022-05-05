@@ -1,6 +1,6 @@
 .. _electrotonic_analysis:
 
-Electrotonic Analysis with Neuron
+Electrotonic Analysis with NEURON
 ===============================
 
 What's all this, then?
@@ -257,5 +257,8 @@ Jaffe, D.B. and Carnevale, N.T. Passive normalization of synaptic integration in
 
 
 
+.. toctree::
+    :hidden:
 
+    working_with_shape_plots.rst
 

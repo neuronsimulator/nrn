@@ -153,7 +153,10 @@ Questions and answers about sessions and ses files
 What's a session? What's a ses file good for? What's in a ses file? For answers to these and other questions about sessions and ses files, :ref:`read this. <saving_windows>`
 
 
+.. toctree::
+    :hidden:
 
+    saving_windows.rst
 
 
 

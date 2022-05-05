@@ -40,14 +40,13 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`rxd_exercises`
 
 9.    
-    Specifying inhomogeneous channel distributions
-    with the CellBuilder
+    :ref:`specifying_inhomogeneous_channel_distributions_with_the_cellbuilder`
 
 10.    
     :ref:`custom_initialization`
     
 11.
-    Introduction to the linear circuit builder
+    :ref:`introduction_to_the_linear_circuit`
 
     * A two-electrode voltage clamp
     
@@ -102,7 +101,9 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     using_nmodl_files.rst
     using_modeldb_and_modelview.rst
     rxd_exercises.rst
+    specifying_inhomogeneous_channel_dis.rst
     custom-initialization.rst
+    introduction_to_the_linear_circuit.rst
     state_and_parameter_discontinuities.rst
     multithread_parallelization.rst
     using_nsg_portal.rst
