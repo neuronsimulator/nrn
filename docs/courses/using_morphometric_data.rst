@@ -161,7 +161,7 @@ This Python code checks for pt3d diameters smaller than 0.1 μm, and reports whe
     for sec in h.allsec():
     for i in range(sec.n3d()):
         if sec.diam3d(i) < 0.1:
-            print('%s %d %g' % (sec, i, sec.diam3d(i)))
+            print(f'{sec} {i} {sec.diam3d(i)}')
 
 If you're reusing someone's HOC files, you could use the equivalent HOC statement
 

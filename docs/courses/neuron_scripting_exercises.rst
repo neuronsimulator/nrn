@@ -109,7 +109,7 @@ What is the role of :math:`E_syn`? How does it change for an excitatory vs an in
 
 Construct two single compartment neurons with Hodgkin-Huxley dynamics, one of which receives a current pulse at 2 ms, another which receives a current pulse at 10 ms. Ensure that both cells fire action potentials after the input.
 
-Now, using NetCon and ExpSyn, construct an inhibitory synapse between the two with the cell that fires later as the post-synaptic cell. Choose a delay and strength such that the post-synaptic cell is inhibited from firing. Plot the membrane potentials vs time.
+Now, using :class:`NetCon` and :class:`ExpSyn`, construct an inhibitory synapse between the two with the cell that fires later as the post-synaptic cell. Choose a delay and strength such that the post-synaptic cell is inhibited from firing. Plot the membrane potentials vs time.
 
  
 .. _halfgap_mod_scripting_exercise:

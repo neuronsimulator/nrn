@@ -1,6 +1,6 @@
 .. _using_modeldb_and_modelview:
 
-Using ModelDB with Neuron
+Using ModelDB with NEURON
 =========================
 
 `https://modeldb.yale.edu/ <https://modeldb.yale.edu/>`_ is the the home page of ModelDB.
@@ -20,10 +20,8 @@ Example: Moore et al. 1983 `modeldb.yale.edu/9852 <https://senselab.med.yale.edu
 ------------------------------------------------------------------------------------------------------------------------------
 
     Moore JW, Stockbridge N, Westerfield M (1983)
-
     On the site of impulse initiation in a neurone.
-
-    J. Physiol. 336:301-11
+    J. *Physiol*. 336:301-11 doi: `10.1113/jphysiol.1983.sp014582 <https://pubmed.ncbi.nlm.nih.gov/6308224/>`_
 
 This one doesn't have any mod files, but there's plenty to keep us busy. Begin by downloading the model.
 
@@ -70,6 +68,7 @@ at the >>> prompt.
 At this point, you might think you'd have to start reading source code in order to get any more information about what's in the model. But the ModelView tool can save you a lot of time and effort, and it has the advantage of telling you exactly what the model specification is. This is a big advantage, since some programs use complex specification and initialization routines that change model structure and parameters "on the fly."
 
 Using Model View to Discover What's in a Model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Select the Model Views tab from the model entry. Under "Load Model Views" you will see that there are a number of figures that this model code can generate. Select "Figure 1A". Two windows will appear.
 
@@ -85,15 +84,14 @@ Notice what happens when you get down to
 
 Mouse over the two graphs to explore the relationships between position and conductances gnabar. Do the same for gkbar and gl.
 
-A shortcut for discovering the distributions of spatially inhomogeneous parameters:
-
-:menuselection:`Density Mechanisms --> Heterogeneous parameters`
+A shortcut for discovering the distributions of spatially inhomogeneous parameters: :menuselection:`Density Mechanisms --> Heterogeneous parameters`
 
 reveals all that are spatially nonuniform. Expand any one to see the values over the model.
 
 Repeat the same exercise using NEURON's ModelView tool (:menuselection:`Tools --> Miscellaneous --> Model View`). How are the views similar? How are they different?
 
 Analyzing the Underlying Code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Was this model specified by user-written hoc code, or was a CellBuilder used?
 
@@ -116,11 +114,11 @@ Run mosinit.hoc again and look for a CellBuilder.
 
 If you don't see one, maybe a Window Group Manager is hiding it.
 
-Click on NEURON Main Menu/Window and look for one or more window names that are missing a red check mark. If you see one, scroll down to it and release the mouse button.
+Click on :menuselection:`NEURON Main Menu --> Window` and look for one or more window names that are missing a red check mark. If you see one, scroll down to it and release the mouse button.
 
 If a CellBuilder pops up, examine its Topology, Subsets, Geometry, and Biophysics pages.
 
-Do they agree with the output of for sec in h.allsec(): pprint(sec.psection(()) and/or what you discovered with the Model View tool?
+Do they agree with the output of for sec in ``h.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
 
 "Extra Credit" Question
 
@@ -144,7 +142,7 @@ How does it work?
 
     Hints: look for an xpanel statement in one of the hoc files.
 
-    Read about xpanel, xbutton, and xvarlabel in the help files.
+    Read about :func:`xpanel`, :func:`xbutton`, and :func:`xvarlabel` in the help files.
 
 Find the procedures that implement the actions that are caused by clicking on a button.
 
@@ -174,15 +172,11 @@ What procedure actually changes the stimulus location, duration, and amplitude? 
 Another example: Mainen and Sejnowski 1996 `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
 ----------------------------------------------------------------------------------------------------------------------------------------------
 
-    Mainen ZF, Sejnowski TJ (1996)
-
-    Influence of dendritic structure on firing pattern in model neocortical neurons.
-
-    Nature 382:363-6
+    Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. *Nature* 382:363-6. doi: `https://doi.org/10.1038/382363a0 <https://www.nature.com/articles/382363a0#citeas>`_
 
 This one has interesting anatomy and several mod files. Begin by downloading the model from `https://modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
 
-The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in :menuselection:`exercises --> modeldb_and_modelview --> patdemo`
+The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in exercises/modeldb_and_modelview/patdemo
 
 
 1. What physical system is being represented, and for what purpose?
