@@ -48,7 +48,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 11.
     :ref:`introduction_to_the_linear_circuit`
 
-    * A two-electrode voltage clamp
+        * A two-electrode voltage clamp
     
 12.
     :ref:`state_and_parameter_discontinuities`
