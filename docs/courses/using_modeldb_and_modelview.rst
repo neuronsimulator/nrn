@@ -172,9 +172,9 @@ What procedure actually changes the stimulus location, duration, and amplitude? 
 Another example: Mainen and Sejnowski 1996 `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
 ----------------------------------------------------------------------------------------------------------------------------------------------
 
-    Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. *Nature* 382:363-6. doi: `https://doi.org/10.1038/382363a0 <https://www.nature.com/articles/382363a0#citeas>`_
+    Mainen ZF, Sejnowski TJ (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. *Nature* 382:363-6. doi: `doi.org/10.1038/382363a0 <https://www.nature.com/articles/382363a0#citeas>`_
 
-This one has interesting anatomy and several mod files. Begin by downloading the model from `https://modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
+This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
 
 The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in exercises/modeldb_and_modelview/patdemo
 

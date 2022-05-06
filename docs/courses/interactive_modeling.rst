@@ -84,9 +84,7 @@ Exercises
 2. 
     Change excitability by adjusting sodium channel density.
 
-    Tool needed: 
-
-    :menuselection:`Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
+    Tool needed: :menuselection:`Tools --> Distributed Mechanisms --> Viewers -->` :ref:`Shape Name <shapename>`
 
 
 3. 
