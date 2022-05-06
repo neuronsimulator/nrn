@@ -38,7 +38,7 @@ Do this with a SubsetDomainIterator.
 
     - Click on name_x.
 
-    The right panel of the CellBuider will show the controls for specifying the distance metric. Default is path length in um from the root of the cell (0 end of soma).
+    The right panel of the CellBuider will show the controls for specifying the distance metric. Default is path length in µm from the root of the cell (0 end of soma).
 
     Drag the slider back and forth to see the corresponding location(s) in the shape plot (boundary between red and black). Distance from the root to the red-black boundary is shown on the canvas as "p=nnn.nnn". You can also click on the canvas near the shape and drag the cursor back and forth; the canvas will now show the "range" of the boundary in the nearest section, and the name of that section.
 

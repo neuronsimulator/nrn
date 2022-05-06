@@ -88,7 +88,7 @@ The exercise
 
     - Next, copy the "version 0 model" CellBuilder and modify this copy to implement version 1: a model in which gnabar_hh, gkbar_hh, and gl_hh in the apical tree decrease linearly with distance from the origin of the apical tree, as described above.
 
-Verify the channel distributions, and test this new model with the same rig you used for version 0.
+    Verify the channel distributions, and test this new model with the same rig you used for version 0.
 
 2.
     Pick any anatomically detailed morphology you like, import it into NEURON, and implement a model with biophysical channel densities similar to those described above.
@@ -98,21 +98,21 @@ Verify the channel distributions, and test this new model with the same rig you 
 1.
     Before doing anything, think about the problem. In particular, determine the formulas that will govern channel densities in the apical tree.
 
-In each apical section, gnabar_hh at any point x in that section will be
+    In each apical section, gnabar_hh at any point x in that section will be
 
-    gnabar_hh = gnabar_max * (1 - distance/max_distance)
+        gnabar_hh = gnabar_max * (1 - distance/max_distance)
 
-where
+        where
 
-distance = distance from origin of the apical tree to x
+        distance = distance from origin of the apical tree to x
 
-and
+        and
 
-max_distance = distance from {origin of the apical tree} to {the most remote dendritic termination in the apical tree}.
+        max_distance = distance from {origin of the apical tree} to {the most remote dendritic termination in the apical tree}.
 
-The formulas for gk_hh and gl_hh are similar.
+    The formulas for gk_hh and gl_hh are similar.
 
-distance/max_distance is "normalized distance into the apical tree from its origin." So the distance metric p should be 0 at the origin of the apical tree, and 1 at the end of the most remote dendritic termination in the apical tree.
+    distance/max_distance is "normalized distance into the apical tree from its origin." So the distance metric p should be 0 at the origin of the apical tree, and 1 at the end of the most remote dendritic termination in the apical tree.
 
 2. 
     :ref:`Hints for using the CellBuilder to specify an inhomogeneous channel distribution <hints_for_inhomogeneous_channel_distribution>`

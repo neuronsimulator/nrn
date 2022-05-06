@@ -7,7 +7,7 @@ The linear circuit builder is a graphical interface for electrical circuits cons
 
 During a simulation, the voltages at each circuit node and the currents through each battery and op amp are computed along with the voltage and state variables of each cable section. At present, simulation runs can only use the default implicit fixed time step method (don't use cvode).
 
-Linear circuits are simulated as a specific instance of the more general LinearMechanism class. This latter class allows NEURON to transcend its historical limitation to tree structure and allows simulation of arbitrary extracellular fields and low resistance gap junctions. Unfortunately this generality comes at a significant performance cost. In the worst case (gap junctions connecting every compartment to every compartment) the simulation time for gaussian elimination increases from order N to order N^3. A single gap junction between two cells does not increase the gaussian elimination time. But a gap junction connecting one end of a cable to the other end doubles the gaussian elimination time.
+Linear circuits are simulated as a specific instance of the more general :class:`LinearMechanism` class. This latter class allows NEURON to transcend its historical limitation to tree structure and allows simulation of arbitrary extracellular fields and low resistance gap junctions. Unfortunately this generality comes at a significant performance cost. In the worst case (gap junctions connecting every compartment to every compartment) the simulation time for gaussian elimination increases from order N to order N^3. A single gap junction between two cells does not increase the gaussian elimination time. But a gap junction connecting one end of a cable to the other end doubles the gaussian elimination time.
 
 Physical System
 ---------------
@@ -38,7 +38,7 @@ A working example: :download:`axon.hoc <code/axon.hoc>`
 .. image:: img/label.gif
     :align: center
 
-:ref:`Contruction hints <building_and_labeling_a_two_electrode>`
+:ref:`Construction hints <building_and_labeling_a_two_electrode>`
 
 Notice that the battery has its negative terminal connected to R1 so that Vm will have the same sign as VC.
 

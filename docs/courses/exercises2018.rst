@@ -6,22 +6,22 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 1.
     :ref:`intro_to_gui`
 
-    * Lipid bilayer model
+        * Lipid bilayer model
 
 2.    
-    :ref:`interactive_modeling`
+  :ref:`interactive_modeling`
 
-    * Squid axon model
+        * Squid axon model
 
 3.    
    :ref:`the_cellbuilder`
 
-    * Constructing a ball and stick model, saving session files
+        * Constructing a ball and stick model, saving session files
 
 4.    
     :ref:`using_morphometric_data`
 
-    * The Import3D tool
+        * The Import3D tool
     
 5.
     :ref:`neuron_scripting_exercises`
@@ -29,12 +29,12 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 6.
     :ref:`using_nmodl_files`
 
-    * Single compartment model with HHk mechanism
+        * Single compartment model with HHk mechanism
 
 7.    
     :ref:`using_modeldb_and_modelview`
 
-    * Neuroinformatics tools for finding and understanding models
+        * Neuroinformatics tools for finding and understanding models
 
 8.    
     :ref:`rxd_exercises`
@@ -56,12 +56,12 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 13.
     Bulletin board parallelization
 
-    * Speed up embarrassingly parallel tasks
+        * Speed up embarrassingly parallel tasks
     
 14.
     HOC exercises
 
-    * Introduction to the HOC programming language
+        * Introduction to the HOC programming language
     
 15.
     :ref:`multithread_parallelization`
@@ -69,12 +69,12 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
 16.
     Networks: discrete event simulations with artificial cells
 
-    * Introduction to the Network Builder
+        * Introduction to the Network Builder
     
 17.
     Networks: continuous simulation of nets with biophysical model cells
 
-    * Network ready cells from the CellBuilder
+        * Network ready cells from the CellBuilder
     
 18.
     Hopfield-Brody network in Python
