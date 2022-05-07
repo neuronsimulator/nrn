@@ -844,18 +844,25 @@ Vector
 
 
 
-.. method:: Vector.c() -> Vector
-            Vector.c(srcstart: int) -> Vector
-            Vector.c(srcstart: int, srcend: int) -> Vector
+.. method:: Vector.c([srcstart [, srcend]])
 
-    Return a :class:`Vector` which is a copy of the vsrc Vector, but does not copy 
+    Return a :class:`Vector` which is a copy of the original Vector, but does not copy 
     the label. For a complete copy including the label use :meth:`Vector.cl`. 
     (Identical to the :meth:`Vector.at` function but has a short name that suggests 
     copy or clone). Useful in the construction of filter chains. 
 
-    In versions of NEURON before 7.7, this was often used in building Vectors
-    from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
-    recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
+    :param srcstart: The index of the first element to copy (default 0).
+    :type srcstart: int
+    :param srcend: The index of the last element to copy (default is to go to the end).
+    :type srcend: int
+    :return: A copy of the original Vector or of a slice of the Vector.
+    :rtype: :class:`Vector`
+
+    .. note::
+
+        In versions of NEURON before 7.7, this was often used in building Vectors
+        from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
+        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
 
          
 
@@ -863,25 +870,34 @@ Vector
 
 
 
-.. method:: Vector.cl() -> Vector
-            Vector.cl(srcstart: int) -> Vector
-            Vector.cl(srcstart: int, srcend: int) -> Vector
-
+.. method:: Vector.cl([srcstart, [srcend]])
 
     Return a :class:` which is a copy, including the label, of the vector. 
     (Similar to the :meth:`Vector.c` function which does not copy the label) 
     Useful in the construction of filter chains. 
 
+    :param srcstart: The index of the first element to copy (default 0).
+    :type srcstart: int
+    :param srcend: The index of the last element to copy (default is to go to the end).
+    :type srcend: int
+    :return: A copy of the original Vector or of a slice of the Vector.
+    :rtype: :class:`Vector`
+
 ----
 
 
 
-.. method:: Vector.at() -> Vector
-            Vector.at(start: int) -> Vector
-            Vector.at(start: int, end: int) -> Vector
+.. method:: Vector.at([srcstart, [srcend]])
 
     Return a :class:`Vector` consisting of all or part of another. 
-        
+
+    :param srcstart: The index of the first element to copy (default 0).
+    :type srcstart: int
+    :param srcend: The index of the last element to copy (default is to go to the end).
+    :type srcend: int
+    :return: A copy of the original Vector or of a slice of the Vector.
+    :rtype: :class:`Vector`
+
     This function predates the introduction of the vsrc.c, "clone", function 
     which is synonymous but is retained for backward compatibility. 
         
@@ -916,7 +932,7 @@ Vector
 
 .. method:: Vector.from_double(n: int, pointer) -> Vector
 
-    Resizes the vector to size ``n`` and copies the values from the double array 
+    Resizes the Vector to size ``n`` and copies the values from the double array 
     to the vector.
         
     **Examples:**
@@ -1359,290 +1375,43 @@ Vector
 
 
 
-.. method:: Vector.line
+.. method:: Vector.line(graphobj, [color, brush])
+            Vector.line(graphobj, x_vec, [color, brush])
+            Vector.line(graphobj, x_increment, [color, brush])
 
-
-    Syntax:
-        ``obj = vec.line(graphobj)``
-
-        ``obj = vec.line(graphobj, color, brush)``
-
-        ``obj = vec.line(graphobj, x_vec)``
-
-        ``obj = vec.line(graphobj, x_vec, color, brush)``
-
-        ``obj = vec.line(graphobj, x_increment)``
-
-        ``obj = vec.line(graphobj, x_increment, color, brush)``
-
-
-    Description:
-        Plot vector on a :class:`Graph`.  Exactly like ``.plot()`` except the vector 
-        is *not* plotted by reference so that the values may be changed 
-        subsequently w/o disturbing the plot.  It is therefore possible to produce 
-        a number of plots of the same function on the same graph, 
-        without erasing any previous plot. 
+    Plot vector on a :class:`Graph`.  Exactly like ``.plot()`` except the vector 
+    is *not* plotted by reference so that the values may be changed 
+    subsequently w/o disturbing the plot.  It is therefore possible to produce 
+    a number of plots of the same function on the same graph, 
+    without erasing any previous plot. 
+        
+    The line on a graph is given the :meth:`Graph.label` if the label is not empty. 
+        
+    The number of point plotted is the minimum of vec.size and x_vec.size . 
          
-        The line on a graph is given the :meth:`Graph.label` if the label is not empty. 
-         
-        The number of point plotted is the minimum of vec.size and x_vec.size . 
-         
-
-    Example:
-
-        .. code-block::
-            python
-
-            from neuron import h, gui
-            g = h.Graph() 
-            g.size(0,10,-1,1) 
-            vec = h.Vector() 
-            vec.indgen(0,10, .1) 
-            vec.apply("sin")
-            for i in range(4):
-                vec.line(g, 0.1)
-                vec.rotate(10)
-
-        .. image:: ../../images/vector-line.png
-            :align: center
-
 
     .. seealso::
         :meth:`Graph.family`
 
-         
 
-----
+    **Example:**
 
+    .. code-block::
+        python
 
+        from neuron import h, gui
+        g = h.Graph() 
+        g.size(0,10,-1,1) 
+        vec = h.Vector() 
+        vec.indgen(0,10, .1) 
+        vec.apply("sin")
+        for i in range(4):
+            vec.line(g, 0.1)
+            vec.rotate(10)
 
-.. method:: Vector.ploterr
+    .. image:: ../../images/vector-line.png
+        :align: center
 
-
-    Syntax:
-        ``obj = vec.ploterr(graphobj, x_vec, err_vec)``
-
-        ``obj = vec.ploterr(graphobj, x_vec, err_vec, size)``
-
-        ``obj = vec.ploterr(graphobj, x_vec, err_vec, size, color, brush)``
-
-
-    Description:
-        Similar to ``vec.line()``, but plots error bars with size +/- the elements 
-        of vector *err_vec*. 
-         
-        *size* sets the width of the seraphs on the error bars to a number 
-        of printer dots. 
-         
-        *brush* sets the width of the plot line.  0=invisible, 
-        1=minimum width, 2=1point, etc. 
-         
-
-    Example:
-
-        .. code-block::
-            python
-
-            g = h.Graph() 
-            g.size(0,100, 0,250) 
-            vec = h.Vector() 
-            xvec = h.Vector() 
-            errvec = h.Vector() 
-             
-            vec.indgen(0,200,20) 
-            xvec.indgen(0,100,10) 
-            errvec.copy(xvec) 
-            errvec.apply("sqrt") 
-            vec.ploterr(g, xvec, errvec, 10) 
-            vec.mark(g, xvec, "O", 5) 
-
-
-        .. image:: ../../images/vector-ploterr.png
-            :align: center
-         
-
-
-
-        creates a graph which has x values of 0 through 100 in increments of 10 and 
-        y values of 0 through 200 in increments of 20.  At each point graphed, vertical 
-        error bars are also drawn which are the +/- the length of the square root of the 
-        values 0 through 100 in increments of 10.  Each error bar has seraphs which are 
-        ten printer points wide. The graph is also marked with filled circles 5 printers 
-        points in diameter. 
-
-         
-
-----
-
-
-
-.. method:: Vector.mark
-
-
-    Syntax:
-        ``obj = vec.mark(graphobj, x_vector)``
-
-        ``obj = vec.mark(graphobj, x_vector, "style")``
-
-        ``obj = vec.mark(graphobj, x_vector, "style", size)``
-
-        ``obj = vec.mark(graphobj, x_vector, "style", size, color, brush)``
-
-        ``obj = vec.mark(graphobj, x_increment)``
-
-        ``obj = vec.mark(graphobj, x_increment, "style", size, color, brush)``
-
-
-    Description:
-        Similar to ``vec.line``, but instead of connecting by lines, it make marks, 
-        centered at the indicated position, which do not change size when 
-        window is zoomed or resized. The style is a single character 
-        ``|,-,+,o,O,t,T,s,S`` where ``o,t,s`` stand for circle, triangle, square 
-        and capitalized means filled. Default size is 12 points. 
-
-         
-
-----
-
-
-
-.. method:: Vector.histogram
-
-
-    Syntax:
-        ``newvect = vsrc.histogram(low, high, width)``
-
-
-    Description:
-        Create a histogram constructed by binning the values in ``vsrc``. 
-         
-        Bins run from *low* to *high* in divisions of *width*.  Data outside 
-        the range is not binned. 
-         
-        This function returns a vector that contains the counts in each bin, so while it is 
-        to execute ``newvect = h.Vector()``. 
-         
-        The first element of ``newvect`` is 0 (``newvect[0] = 0``). 
-        For ``ii > 0``, ``newvect[ii]`` equals the number of 
-        items 
-        in ``vsrc`` whose values lie in the half open interval 
-        ``[a,b)`` 
-        where ``b = low + ii*width`` and ``a = b - width``. 
-        In other words, ``newvect[ii]`` is the number of items in 
-        ``vsrc`` 
-        that fall in the bin just below the boundary ``b``. 
-         
-         
-
-    Example:
-
-        .. code-block::
-            python
-
-             
-            rand = h.Random() 
-            rand.negexp(1) 
-             
-            interval = h.Vector(100) 
-            interval.setrand(rand) # random intervals 
-             
-            hist = interval.histogram(0, 10, .1) 
-             
-            # and for a manhattan style plot ... 
-            g = h.Graph() 
-            g.size(0,10,0,30) 
-            # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
-            v2 = h.Vector(2*len(hist))
-            v2.indgen(.5)  
-            v2.apply("int")  
-            #  
-            v3 = h.Vector(1)  
-            v3.index(hist, v2)  
-            v3.rotate(-1)            # so different y's within each pair 
-            v3[0] = 0  
-            v3.plot(g, v2)
-
-        .. image:: ../../images/vector-histogram.png
-            :align: center
-
-
-
-        creates a histogram of the occurrences of random numbers 
-        ranging from 0 to 10 in divisions of 0.1. 
-
-         
-
-----
-
-
-
-.. method:: Vector.hist
-
-
-    Syntax:
-        ``obj = vdest.hist(vsrc, low, size, width)``
-
-
-    Description:
-        Similar to :func:`histogram` (but notice the different argument meanings. 
-        Put a histogram in *vdest* by binning 
-        the data in *vsrc*. 
-        Bins run from *low* to ``low + size * width`` 
-        in divisions of *width*. 
-        Data outside 
-        the range is not binned. 
-
-         
-
-----
-
-
-
-.. method:: Vector.sumgauss
-
-
-    Syntax:
-        ``newvect = vsrc.sumgauss(low, high, width, var)``
-
-        ``newvect = vsrc.sumgauss(low, high, width, var, weight_vec)``
-
-
-    Description:
-        Create a vector which is a curve calculated by summing gaussians of 
-        area 1 centered on all the points in the vector.  This has the 
-        advantage over ``histogram`` of not imposing arbitrary bins. *low* 
-        and *high* set the range of the curve. 
-        *width* determines the granularity of the 
-        curve. *var* sets the variance of the gaussians. 
-         
-        The optional argument ``weight_vec`` is a vector which should be the same 
-        size as ``vec`` and is used to scale or weight the gaussians (default is 
-        for them all to have areas of 1 unit). 
-         
-        This function returns a vector, so while it is 
-        to declare *vectobj* as a ``h.Vector()``. 
-         
-        To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
-
-    Example:
-
-        .. code-block::
-            python
-
-             
-            r = h.Random() 
-            r.normal(1, 2) 
-             
-            data = h.Vector(100) 
-            data.setrand(r) 
-             
-            hist = data.sumgauss(-4, 6, .5, 1) 
-            x = h.Vector(len(hist))
-            x.indgen(-4, 6, .5) 
-             
-            g = h.Graph() 
-            g.size(-4, 6, 0, 30) 
-            hist.plot(g, x) 
 
 
          
@@ -1651,23 +1420,46 @@ Vector
 
 
 
-.. method:: Vector.smhist
+.. method:: Vector.ploterr(graphobj, x_vec, err_vec, [size, [color, brush]])
+
+    Similar to :meth:`Vector.line`, but plots error bars with size +/- the elements 
+    of vector *err_vec*. 
+        
+    *size* sets the width of the seraphs on the error bars to a number 
+    of printer dots. 
+        
+    *brush* sets the width of the plot line.  0=invisible, 
+    1=minimum width, 2=1point, etc. 
+         
+
+    **Example:**
+
+    .. code-block::
+        python
+
+        g = h.Graph() 
+        g.size(0,100, 0,250) 
+        vec = h.Vector() 
+        xvec = h.Vector() 
+        errvec = h.Vector() 
+            
+        vec.indgen(0,200,20) 
+        xvec.indgen(0,100,10) 
+        errvec.copy(xvec) 
+        errvec.apply("sqrt") 
+        vec.ploterr(g, xvec, errvec, 10) 
+        vec.mark(g, xvec, "O", 5) 
 
 
-    Syntax:
-        ``obj = vdest.smhist(vsrc, start, size, step, var)``
-
-        ``obj = vdest.smhist(vsrc, start, size, step, var, weight_vec)``
-
-
-    Description:
-        Very similar to :func:`sumgauss` . Calculate a smooth histogram by convolving 
-        the raw data set with a gaussian kernel.  The histogram begins at 
-        ``varstart`` and has ``varsize`` values in increments of size ``varstep``. 
-        ``varvar`` sets the variance of the gaussians. 
-        The optional argument ``weight_vec`` 
-        is a vector which should be the same size as ``vsrc`` and is used to scale or 
-        weight the number of data points at a particular value. 
+    .. image:: ../../images/vector-ploterr.png
+        :align: center
+         
+    creates a graph which has x values of 0 through 100 in increments of 10 and 
+    y values of 0 through 200 in increments of 20.  At each point graphed, vertical 
+    error bars are also drawn which are the +/- the length of the square root of the 
+    values 0 through 100 in increments of 10.  Each error bar has seraphs which are 
+    ten printer points wide. The graph is also marked with filled circles 5 printers 
+    points in diameter. 
 
          
 
@@ -1675,31 +1467,188 @@ Vector
 
 
 
-.. method:: Vector.ind
+.. method:: Vector.mark(graphobj, x_vector, [style, [size, [color, brush]]])
+            Vector.mark(graphobj, x_increment, [style, [size, [color, brush]]])
 
 
-    Syntax:
-        ``newvect = vsrc.ind(vindex)``
+    Similar to :method:`Vector.line`, but instead of connecting by lines, it make marks, 
+    centered at the indicated position, which do not change size when 
+    window is zoomed or resized. The style is a single character 
+    ``|,-,+,o,O,t,T,s,S`` where ``o,t,s`` stand for circle, triangle, square 
+    and capitalized means filled. Default size is 12 points. 
 
-
-    Description:
-        Return a h.Vector consisting of the elements of ``vsrc`` whose indices are given 
-        by the elements of ``vindex``. 
          
 
-    Example:
+----
 
-        .. code-block::
-            python
 
-            vec = h.Vector(100) 
-            vec2 = h.Vector() 
-            vec.indgen(5) 
-            vec2.indgen(49, 59, 1) 
-            vec1 = vec.ind(vec2) 
 
-        creates ``vec1`` to contain the fiftieth through the sixtieth elements of ``vec2`` 
-        which would have the values 245 through 295 in increments of 5. 
+.. method:: Vector.histogram(low, high, width)
+
+    Create a histogram constructed by binning the values in ``vsrc``. 
+        
+    Bins run from *low* to *high* in divisions of *width*.  Data outside 
+    the range is not binned. 
+        
+    This function returns a vector that contains the counts in each bin, so while it is 
+    to execute ``newvect = h.Vector()``. 
+        
+    The first element of ``newvect`` is 0 (``newvect[0] = 0``). 
+    For ``ii > 0``, ``newvect[ii]`` equals the number of 
+    items 
+    in ``vsrc`` whose values lie in the half open interval 
+    ``[a,b)`` 
+    where ``b = low + ii*width`` and ``a = b - width``. 
+    In other words, ``newvect[ii]`` is the number of items in 
+    ``vsrc`` 
+    that fall in the bin just below the boundary ``b``. 
+         
+         
+
+    **Example:**
+
+    .. code-block::
+        python
+
+            
+        rand = h.Random() 
+        rand.negexp(1) 
+            
+        interval = h.Vector(100) 
+        interval.setrand(rand) # random intervals 
+            
+        hist = interval.histogram(0, 10, .1) 
+            
+        # and for a manhattan style plot ... 
+        g = h.Graph() 
+        g.size(0,10,0,30) 
+        # create an index vector with 0,0, 1,1, 2,2, 3,3, ... 
+        v2 = h.Vector(2*len(hist))
+        v2.indgen(.5)  
+        v2.apply("int")  
+        #  
+        v3 = h.Vector(1)  
+        v3.index(hist, v2)  
+        v3.rotate(-1)            # so different y's within each pair 
+        v3[0] = 0  
+        v3.plot(g, v2)
+
+    .. image:: ../../images/vector-histogram.png
+        :align: center
+
+
+
+    creates a histogram of the occurrences of random numbers 
+    ranging from 0 to 10 in divisions of 0.1. 
+
+         
+
+----
+
+
+
+.. method:: Vector.hist(vsrc, low, size, width)
+
+    Similar to :func:`histogram` (but notice the different argument meanings. 
+    Put a histogram in the vector to the left of the ``.hist`` by binning 
+    the data in *vsrc*. 
+    Bins run from *low* to ``low + size * width`` 
+    in divisions of *width*. 
+    Data outside 
+    the range is not binned. 
+
+         
+
+----
+
+
+
+.. method:: Vector.sumgauss(low, high, width, var, [weight_vec])
+
+    Create a Vector which is a curve calculated by summing gaussians of 
+    area 1 centered on all the points in the vector.  This has the 
+    advantage over :func:`histogram` of not imposing arbitrary bins. *low* 
+    and *high* set the range of the curve. 
+    *width* determines the granularity of the 
+    curve. *var* sets the variance of the gaussians. 
+        
+    The optional argument ``weight_vec`` is a vector which should be the same 
+    size as ``vec`` and is used to scale or weight the gaussians (default is 
+    for them all to have areas of 1 unit). 
+        
+    This function returns a vector, so while it is 
+    to declare *vectobj* as a ``h.Vector()``. 
+        
+    To plot, use ``v.indgen(low,high,width)`` for the x-vector argument. 
+
+    **Example:**
+
+    .. code-block::
+        python
+
+            
+        r = h.Random() 
+        r.normal(1, 2) 
+            
+        data = h.Vector(100) 
+        data.setrand(r) 
+            
+        hist = data.sumgauss(-4, 6, .5, 1) 
+        x = h.Vector(len(hist))
+        x.indgen(-4, 6, .5) 
+            
+        g = h.Graph() 
+        g.size(-4, 6, 0, 30) 
+        hist.plot(g, x) 
+
+
+         
+
+----
+
+
+
+.. method:: Vector.smhist(vsrc, start, size, step, var [, weight_vec])
+
+    Very similar to :meth:`Vector.sumgauss` . Calculate a smooth histogram by convolving 
+    the raw data set with a gaussian kernel.  The histogram begins at 
+    ``varstart`` and has ``varsize`` values in increments of size ``varstep``. 
+    ``varvar`` sets the variance of the gaussians. 
+    The optional argument ``weight_vec`` 
+    is a Vector which should be the same size as ``vsrc`` and is used to scale or 
+    weight the number of data points at a particular value. 
+
+         
+
+----
+
+
+
+.. method:: Vector.ind(vindex)
+
+
+    Return a Vector consisting of the elements of the Vector whose indices are given 
+    by the elements of ``vindex``. 
+
+    :param vindex: Vector of indices.
+    :type vindex: Vector
+    :return: Vector of elements extracted from the original vector at indices given by ``vindex``.
+    :rtype: Vector
+
+
+    **Example:**
+
+    .. code-block::
+        python
+
+        vec = h.Vector(100) 
+        vec2 = h.Vector() 
+        vec.indgen(5) 
+        vec2.indgen(49, 59, 1) 
+        vec1 = vec.ind(vec2) 
+
+    creates ``vec1`` to contain the fiftieth through the sixtieth elements of ``vec2`` 
+    which would have the values 245 through 295 in increments of 5. 
          
 
          
@@ -1708,58 +1657,42 @@ Vector
 
 
 
-.. method:: Vector.addrand
+.. method:: Vector.addrand(randobj, [start, end])
 
+    Adds random values to the elements of the vector by sampling from the 
+    same distribution as last picked in the Random object *randobj*. 
 
-    Syntax:
-        ``obj = vsrcdest.addrand(randobj)``
+    **Example:**
 
-        ``obj = vsrcdest.addrand(randobj, start, end)``
+    .. code-block::
+        python
 
+        from neuron import h, gui
 
-    Description:
-        Adds random values to the elements of the vector by sampling from the 
-        same distribution as last picked in the Random object *randobj*. 
+        vec = h.Vector(50) 
+        g = h.Graph() 
+        g.size(0,50,0,100) 
+        r = h.Random() 
+        r.poisson(.2) 
+        vec.plot(g)
 
-    Example:
+        def race():
+            vec.fill(0)
+            for i in range(300):
+                vec.addrand(r)
+                g.flush()
+                h.doNotify()
 
-        .. code-block::
-            python
-
-            from neuron import h, gui
-
-            vec = h.Vector(50) 
-            g = h.Graph() 
-            g.size(0,50,0,100) 
-            r = h.Random() 
-            r.poisson(.2) 
-            vec.plot(g)
-
-            def race():
-                vec.fill(0)
-                for i in range(300):
-                    vec.addrand(r)
-                    g.flush()
-                    h.doNotify()
-
-            race()  
+        race()  
 
 ----
 
 
 
-.. method:: Vector.setrand
+.. method:: Vector.setrand(randobj, [start, end])
 
-
-    Syntax:
-        ``obj = vdest.setrand(randobj)``
-
-        ``obj = vdest.setrand(randobj, start, end)``
-
-
-    Description:
-        Sets random values for the elements of the vector by sampling from the 
-        same distribution as last picked in *randobj*. 
+    Sets random values for the elements of the vector by sampling from the 
+    same distribution as last picked in *randobj*. Returns the Vector.
 
          
 
@@ -1767,18 +1700,10 @@ Vector
 
 
 
-.. method:: Vector.sin
+.. method:: Vector.sin(freq, phase [, dt])
 
-
-    Syntax:
-        ``obj = vdest.sin(freq, phase)``
-
-        ``obj = vdest.sin(freq, phase, dt)``
-
-
-    Description:
-        Generate a sin function in vector ``vec`` with frequency *freq* hz, phase 
-        *phase* in radians.  *dt* is assumed to be 1 msec unless specified. 
+    Generate a sin function in the Vector with frequency *freq* hz, phase 
+    *phase* in radians.  *dt* is assumed to be 1 msec unless specified. 
 
          
 
@@ -1964,6 +1889,7 @@ Vector
 
 
     Description:
+    
         Use a simplex algorithm to find parameters *p1* through *pN* such to 
         minimize the mean squared error between the "data" contained in 
         ``data_vec`` and the approximation generated by the user-supplied "*fcn*" 
@@ -2022,6 +1948,7 @@ Vector
         :func:`fit_praxis`
 
     Example:
+
         The :menuselection:`NEURON Main Menu --> Miscellaneous --> Parameterized Function` widget uses this function 
         and is implemented in :file:`nrn/lib/hoc/funfit.hoc`
          
@@ -2072,12 +1999,14 @@ Vector
 
 
     Syntax:
+
         ``obj = ysrcdest.interpolate(xdest, xsrc)``
 
         ``obj = ydest.interpolate(xdest, xsrc, ysrc)``
 
 
     Description:
+
         Linearly interpolate points from (xsrc,ysrc) to (xdest,ydest) 
         In the second form, xsrc and ysrc remain unchanged. 
         Destination points outside the domain of xsrc are set to 
@@ -2162,69 +2091,69 @@ Vector
 
          
 
-    Example:
+    **Example:**
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            vec = h.Vector(range(6)) 
-            vec = vec * vec
-            vec1 = h.Vector()
-            vec1.deriv(vec, 0.1) 
+        from neuron import h
+        vec = h.Vector(range(6)) 
+        vec = vec * vec
+        vec1 = h.Vector()
+        vec1.deriv(vec, 0.1) 
 
-        creates ``vec1`` with elements: 
+    creates ``vec1`` with elements: 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            10	20	 
-            40	60	 
-            80	90 
+        10	20	 
+        40	60	 
+        80	90 
 
-        Since *dx*\ =0.1, and there are eleven elements including 0, 
-        the entire function exists between the values of 0 and 1, and the derivative 
-        values are large compared to the function values. With *dx*\ =1,the vector 
-        ``vec1`` would consist of the following elements: 
+    Since *dx*\ =0.1, and there are eleven elements including 0, 
+    the entire function exists between the values of 0 and 1, and the derivative 
+    values are large compared to the function values. With *dx*\ =1,the vector 
+    ``vec1`` would consist of the following elements: 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            1	2	 
-            4	6	 
-            8	9 
+        1	2	 
+        4	6	 
+        8	9 
 
-         
-        The Euler method vs. the Central difference method:
- 
-        Beginning with the vector ``vec``: 
+        
+    The Euler method vs. the Central difference method:
 
-        .. code-block::
-            python
+    Beginning with the vector ``vec``: 
 
-            0	1	 
-            4	9	 
-            16	25 
+    .. code-block::
+        python
 
-        ``vec1.deriv(vec, 1, 1)`` (Euler) would go about 
-        producing ``vec1`` by the following method: 
+        0	1	 
+        4	9	 
+        16	25 
 
-        .. code-block::
-            python
+    ``vec1.deriv(vec, 1, 1)`` (Euler) would go about 
+    producing ``vec1`` by the following method: 
 
-            1-0   = 1	4-1  = 3		 
-            9-4   = 5	16-9 = 7	 
-            25-16 = 9 
+    .. code-block::
+        python
 
-        whereas ``vec1.deriv(vec, 1, 2)`` (Central difference) would go about 
-        producing ``vec1`` as such: 
+        1-0   = 1	4-1  = 3		 
+        9-4   = 5	16-9 = 7	 
+        25-16 = 9 
 
-        .. code-block::
-            python
+    whereas ``vec1.deriv(vec, 1, 2)`` (Central difference) would go about 
+    producing ``vec1`` as such: 
 
-            1-0      = 1		(4-0)/2  = 2	 
-            (9-1)/2  = 4		(16-4)/2 = 6	 
-            (25-9)/2 = 8		25-16    = 9 
+    .. code-block::
+        python
+
+        1-0      = 1		(4-0)/2  = 2	 
+        (9-1)/2  = 4		(16-4)/2 = 6	 
+        (25-9)/2 = 8		25-16    = 9 
 
 
          
@@ -2247,6 +2176,7 @@ Vector
 
 
     Description:
+
         Places a numerical Euler integral of the vsrc elements in vdest. 
         *dx* sets the size of the discretization. 
          
@@ -2327,15 +2257,12 @@ Vector
 
 
 
-.. method:: Vector.median
+.. method:: Vector.median()
 
+    Return the median value of the Vector.
 
-    Syntax:
-        ``median = vsrc.median()``
-
-
-    Description:
-        Find the median value of ``vec``. 
+    :return: The median value of the Vector.
+    :rtype: float
 
          
 
@@ -2347,6 +2274,7 @@ Vector
 
 
     Syntax:
+
         ``obj = vdest.medfltr(vsrc)``
 
         ``obj = vdest.medfltr(vsrc, points)``
@@ -2357,6 +2285,7 @@ Vector
 
 
     Description:
+
         Apply a median filter to vsrc, producing a smoothed version in vdest. 
         Each point is replaced with the median value of the *points* on 
         either side. 
@@ -2368,15 +2297,9 @@ Vector
 
 
 
-.. method:: Vector.sort
+.. method:: Vector.sort()
 
-
-    Syntax:
-        ``obj = vsrcdest.sort()``
-
-
-    Description:
-        Sort the elements of ``vec1`` in place, putting them in numerical order. 
+    Sort the elements of the Vector in place, putting them in numerical order. 
 
          
 
@@ -2388,12 +2311,14 @@ Vector
 
 
     Syntax:
+
         ``vdest = vsrc.sortindex()``
 
         ``vdest = vsrc.sortindex(vdest)``
 
 
     Description:
+
         Return a h.Vector of indices which sort the vsrc elements in numerical 
         order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
         If vdest is present, use that as the destination vector for the indices. 
@@ -2424,79 +2349,73 @@ Vector
 
 
 
-.. method:: Vector.reverse
+.. method:: Vector.reverse()
 
+    Reverses the elements of the Vector in place. 
 
-    Syntax:
-        ``obj = vsrcdest.reverse()``
+    **Example:**
 
+    .. code-block::
+        python
 
-    Description:
-        Reverses the elements of ``vec`` in place. 
-
-         
+        v = h.Vector([1, 2, 3, 4, 5])
+        v.reverse()
+        v.printf()   # displays: 5	4	3	2	1
 
 ----
 
 
 
-.. method:: Vector.rotate
+.. method:: Vector.rotate(value, [0])
 
 
-    Syntax:
-        ``obj = vsrcdest.rotate(value)``
+    A negative *value* will move elements to the left.  A positive argument 
+    will move elements to the right.  In both cases, the elements shifted off one 
+    end of the vector will reappear at the other end. 
+    If a 2nd arg is present, 0 values get shifted in and elements shifted off 
+    one end are lost. 
 
-        ``obj = vsrcdest.rotate(value, 0)``
+    **Example:**
 
+    .. code-block::
+        python
 
-    Description:
-        A negative *value* will move elements to the left.  A positive argument 
-        will move elements to the right.  In both cases, the elements shifted off one 
-        end of the vector will reappear at the other end. 
-        If a 2nd arg is present, 0 values get shifted in and elements shifted off 
-        one end are lost. 
+        vec.indgen(1, 10, 1) 
+        vec.rotate(3) 
 
-    Example:
+    orders the elements of ``vec`` as follows: 
 
-        .. code-block::
-            python
+    .. code-block::
+        none
 
-            vec.indgen(1, 10, 1) 
-            vec.rotate(3) 
+        8  9  10  1  2  3  4  5  6  7 
 
-        orders the elements of ``vec`` as follows: 
+    whereas, 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            8  9  10  1  2  3  4  5  6  7 
+        vec.indgen(1, 10, 1) 
+        vec.rotate(-3) 
 
-        whereas, 
+    orders the elements of ``vec`` as follows: 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            vec.indgen(1, 10, 1) 
-            vec.rotate(-3) 
-
-        orders the elements of ``vec`` as follows: 
-
-        .. code-block::
-            python
-
-            4  5  6  7  8  9  10  1  2  3 
+        4  5  6  7  8  9  10  1  2  3 
 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            vec = h.Vector() 
-            vec.indgen(1,5,1) 
-            vec.printf()
-            vec.c().rotate(2).printf()
-            vec.c().rotate(2, 0).printf() 
-            vec.c().rotate(-2).printf() 
-            vec.c().rotate(-2, 0).printf() 
+        vec = h.Vector() 
+        vec.indgen(1,5,1) 
+        vec.printf()
+        vec.c().rotate(2).printf()
+        vec.c().rotate(2, 0).printf() 
+        vec.c().rotate(-2).printf() 
+        vec.c().rotate(-2, 0).printf() 
 
 
          
@@ -2682,38 +2601,33 @@ Vector
 
 
 
-.. method:: Vector.index
+.. method:: Vector.index(vsrc,  indices)
 
 
-    Syntax:
-        ``obj = vdest.index(vsrc,  indices)``
-
-
-    Description:
-        The values of the vector ``vsrc`` indexed by the vector *indices* are collected 
-        into ``vdest``. 
+    The values of the Vector ``vsrc`` indexed by the vector *indices* are collected 
+    into the left-hand-side Vector. 
          
 
-    Example:
+    **Example:**
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
+        from neuron import h
 
-            vec = h.Vector() 
-            vec1 = h.Vector() 
-            vec2 = h.Vector() 
-            vec3 = h.Vector(6) 
-            vec.indgen(0, 5.1, 0.1)	# vec will have 51 values from 0 to 5, with increment=0.1 
-            vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
-                                    # an x-squared function, dx = 0.1 
-            vec2.indgen(0, 50, 10) 
-            vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
+        vec = h.Vector() 
+        vec1 = h.Vector() 
+        vec2 = h.Vector() 
+        vec3 = h.Vector(6) 
+        vec.indgen(0, 5.1, 0.1)	# vec will have 51 values from 0 to 5, with increment=0.1 
+        vec1.integral(vec, 0.1)	# Euler integral of vec elements approximating 
+                                # an x-squared function, dx = 0.1 
+        vec2.indgen(0, 50, 10) 
+        vec3.index(vec1, vec2)  # put the value of every 10th index in vec2 
 
 
-        makes ``vec3`` with six elements corresponding to the integrated integers from 
-        ``vec``. 
+    makes ``vec3`` with six elements corresponding to the integrated integers from 
+    ``vec``. 
 
          
 
@@ -2721,17 +2635,9 @@ Vector
 
 
 
-.. method:: Vector.min
+.. method:: Vector.min([start, end])
 
-
-    Syntax:
-        ``x = vec.min()``
-
-        ``x = vec.min(start, end)``
-
-
-    Description:
-        Return the minimum value. 
+    Return the minimum value either for the full Vector or over the specified index interval. 
 
          
 
@@ -2739,17 +2645,9 @@ Vector
 
 
 
-.. method:: Vector.min_ind
+.. method:: Vector.min_ind([start, end])
 
-
-    Syntax:
-        ``i = vec.min_ind()``
-
-        ``i = vec.min_ind(start, end)``
-
-
-    Description:
-        Return the index of the minimum value. 
+    Return the index of the minimum value either for the full Vector or over the specified index interval. 
 
          
 
@@ -2757,17 +2655,9 @@ Vector
 
 
 
-.. method:: Vector.max
+.. method:: Vector.max([start, end])
 
-
-    Syntax:
-        ``x = vec.max()``
-
-        ``x = vec.max(start, end)``
-
-
-    Description:
-        Return the maximum value. 
+    Return the maximum value either for the full Vector or over the specified index interval. 
 
          
 
@@ -2775,17 +2665,9 @@ Vector
 
 
 
-.. method:: Vector.max_ind
+.. method:: Vector.max_ind([start, end])
 
-
-    Syntax:
-        ``i = vec.max_ind()``
-
-        ``i = vec.max_ind(start, end)``
-
-
-    Description:
-        Return the index of the maximum value. 
+    Return the index of the maximum value either for the full Vector or over the specified index interval. 
 
          
 
@@ -2793,17 +2675,9 @@ Vector
 
 
 
-.. method:: Vector.sum
+.. method:: Vector.sum([start, end])
 
-
-    Syntax:
-        ``x = vec.sum()``
-
-        ``x = vec.sum(start, end)``
-
-
-    Description:
-        Return the sum of element values. 
+    Return the sum of element values either for the full Vector or over the specified index interval.
 
          
 
@@ -2811,17 +2685,9 @@ Vector
 
 
 
-.. method:: Vector.sumsq
+.. method:: Vector.sumsq([start, end])
 
-
-    Syntax:
-        ``x = vec.sumsq()``
-
-        ``x = vec.sumsq(start, end)``
-
-
-    Description:
-        Return the sum of squared element values. 
+    Return the sum of squared element values either for the full Vector or over the specified index interval. 
 
          
 
@@ -2993,19 +2859,38 @@ Vector
 
 
 
-.. method:: Vector.div
+.. method:: Vector.div(by)
+
+    Divide each element of the Vector by ``by``, which may be either a scalar or a Vector.
+    If a Vector, ``by`` and the original Vector must have the same size.
+        
+
+----
 
 
-    Syntax:
-        ``obj = vsrcdest.div(scalar)``
 
-        ``obj = vsrcdest.div(vec1)``
+.. method:: Vector.scale(low, high)
+
+    Scale values of the elements of a vector to lie within the given range. 
+    Return the scale factor used. 
+
+    :param low: The lower bound of the scaled range.
+    :type low: float
+    :param high: The upper bound of the scaled range.
+    :type high: float
+    :return: The scale factor used.
+    :rtype: float
+         
+
+----
 
 
-    Description:
-        Divide each element of ``vsrcdest`` either by a scalar or by the 
-        corresponding elements of *vec1*.  ``vsrcdest`` 
-        and *vec1* must have the same size. 
+
+.. method:: Vector.eq(vec1)
+
+    Test equality of vectors.  Returns 1 if all elements of vec == 
+    corresponding elements of *vec1* (to within :data:`float_epsilon`). 
+    Otherwise it returns 0.   This can be made into a boolean truth value with Python function bool()
 
          
 
@@ -3013,57 +2898,14 @@ Vector
 
 
 
-.. method:: Vector.scale
+.. method:: Vector.meansqerr(vec1 [, weight_vec])
 
-
-    Syntax:
-        ``scale = vsrcdest.scale(low, high)``
-
-
-    Description:
-        Scale values of the elements of a vector to lie within the given range. 
-        Return the scale factor used. 
-
-         
-
-----
-
-
-
-.. method:: Vector.eq
-
-
-    Syntax:
-        ``numerical_truth_value = vec.eq(vec1)``
-
-
-    Description:
-        Test equality of vectors.  Returns 1 if all elements of vec == 
-        corresponding elements of *vec1* (to within :data:`float_epsilon`). 
-        Otherwise it returns 0.   This can be made into a boolean truth value with Python function bool()
-
-         
-
-----
-
-
-
-.. method:: Vector.meansqerr
-
-
-    Syntax:
-        ``x = vec.meansqerr(vec1)``
-
-        ``x = vec.meansqerr(vec1, weight_vec)``
-
-
-    Description:
-        Return the mean squared error between values of the elements of ``vec`` and 
-        the corresponding elements of *vec1*.  ``vec`` and *vec1* must have the 
-        same size. 
-         
-        If the second vector arg is present, it also must have the same size and the 
-        return value is sum of ``w[i]*(v1[i] - v2[i])^2 / size``
+    Return the mean squared error between values of the elements of the left-hand side Vector (``vec``) and 
+    the corresponding elements of *vec1*.  ``vec`` and *vec1* must have the 
+    same size. 
+        
+    If the second vector arg is present, it also must have the same size and the 
+    return value is sum of ``w[i]*(v1[i] - v2[i])^2 / size``
 
          
 
@@ -3079,18 +2921,10 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.correl
+.. method:: Vector.correl(src [, vec2])
 
-
-    Syntax:
-        ``obj = vdest.correl(src)``
-
-        ``obj = vdest.correl(src, vec2)``
-
-
-    Description:
-        Compute the cross-correlation function of *src* and *vec2* (or the 
-        autocorrelation of *src* if *vec2* is not present). 
+    Compute the cross-correlation function of *src* and *vec2* (or the 
+    autocorrelation of *src* if *vec2* is not present). 
 
          
 
@@ -3098,36 +2932,28 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.convlv
+.. method:: Vector.convlv(src, filter [, sign])
 
+    Compute the convolution of *src* with *filter*.  If <sign>=-1 then 
+    compute the deconvolution. 
+    Assumes filter is given in "wrap-around" order, with countup 
+    ``t=0..t=n/2`` followed by countdown ``t=n..t=n/2``.  The size of *filter* 
+    should be an odd <= the size of *v1*>. 
 
-    Syntax:
-        ``obj = vdest.convlv(src,filter)``
+    **Example:**
 
-        ``obj = vdest.convlv(src,filter, sign)``
+    .. code-block::
+        python
 
-
-    Description:
-        Compute the convolution of *src* with *filter*.  If <sign>=-1 then 
-        compute the deconvolution. 
-        Assumes filter is given in "wrap-around" order, with countup 
-        ``t=0..t=n/2`` followed by countdown ``t=n..t=n/2``.  The size of *filter* 
-        should be an odd <= the size of *v1*>. 
-
-    Example:
-
-        .. code-block::
-            python
-
-            v1 = h.Vector(16) 
-            v2 = h.Vector(16) 
-            v3 = h.Vector() 
-            v1[5] = v1[6] = 1 
-            v2[3] = v2[4] = 3 
-            v3.convlv(v1, v2) 
-            v1.printf() 
-            v2.printf() 
-            v3.printf() 
+        v1 = h.Vector(16) 
+        v2 = h.Vector(16) 
+        v3 = h.Vector() 
+        v1[5] = v1[6] = 1 
+        v2[3] = v2[4] = 3 
+        v3.convlv(v1, v2) 
+        v1.printf() 
+        v2.printf() 
+        v3.printf() 
 
 
          
@@ -3136,15 +2962,9 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.spctrm
+.. method:: Vector.spctrm(vsrc)
 
-
-    Syntax:
-        ``obj = vdest.spctrm(vsrc)``
-
-
-    Description:
-        Return the power spectral density function of vsrc. 
+    Return the power spectral density function of vsrc. 
 
          
 
@@ -3152,20 +2972,13 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.filter
+.. method:: Vector.filter(src, filter)
+            Vector.filter(filter)
 
-
-    Syntax:
-        ``obj = vdest.filter(src,filter)``
-
-        ``obj = vsrcdest.filter(filter)``
-
-
-    Description:
-        Digital filter implemented by taking the inverse fft of 
-        *filter* and convolving it with *vec1*.  *vec* and *vec1* 
-        are in the time 
-        domain and *filter* is in the frequency domain. 
+    Digital filter implemented by taking the inverse fft of 
+    *filter* and convolving it with *vec1*.  *vec* and *vec1* 
+    are in the time 
+    domain and *filter* is in the frequency domain. 
 
          
 
@@ -3173,249 +2986,248 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.fft
+.. method:: Vector.fft(vsrc, sign)
+            Vector.fft(sign)
 
+    Compute the fast fourier transform of the source data vector.  If 
+    *sign*\ =-1 then compute the inverse fft. 
+        
+    If vsrc.\ :meth:`~Vector.size` is not an integral power of 2, it is padded with 0's to 
+    the next power of 2 size. 
+        
+    The complex frequency domain is represented in the vector as pairs of 
+    numbers --- except for the first two numbers. 
+    vec[0] is the amplitude of the 0 frequency cosine (constant) 
+    and vec[1] is the amplitude of the highest (N/2) frequency cosine 
+    (ie. alternating 1,-1's in the time domain) 
+    vec[2, 3] is the amplitude of the cos(2*PI*i/n), sin(2*PI*i/n) components 
+    (ie. one whole wave in the time domain) 
+    vec[n-2, n-1] is the amplitude of the cos(PI*(n-1)*i/n), sin(PI*(n-1)*i/n) 
+    components. The following example of a pure time domain sine wave 
+    sampled at 16 points should be played with to see where 
+    the specified frequency appears in the frequency domain vector (note that if the 
+    frequency is greater than 8, aliasing will occur, ie sampling makes it appear 
+    as a lower frequency) 
+    Also note that the forward transform does not produce the amplitudes of 
+    the frequency components that goes up to make the time domain function but 
+    instead each element is the integral of the product of the time domain 
+    function and a specific pure frequency. Thus the 0 and highest frequency 
+    cosine are N times the amplitudes and all others are N/2 times the amplitudes. 
+        
+    .. code-block::
+        python
+        
+        from neuron import h, gui
 
-    Syntax:
-        ``obj = vdest.fft(vsrc, sign)``
+        N = 16    # should be a power of 2
 
-        ``obj = vsrcdest.fft(sign)``
-
-
-    Description:
-        Compute the fast fourier transform of the source data vector.  If 
-        *sign*\ =-1 then compute the inverse fft. 
-         
-        If vsrc.\ :meth:`~Vector.size` is not an integral power of 2, it is padded with 0's to 
-        the next power of 2 size. 
-         
-        The complex frequency domain is represented in the vector as pairs of 
-        numbers --- except for the first two numbers. 
-        vec[0] is the amplitude of the 0 frequency cosine (constant) 
-        and vec[1] is the amplitude of the highest (N/2) frequency cosine 
-        (ie. alternating 1,-1's in the time domain) 
-        vec[2, 3] is the amplitude of the cos(2*PI*i/n), sin(2*PI*i/n) components 
-        (ie. one whole wave in the time domain) 
-        vec[n-2, n-1] is the amplitude of the cos(PI*(n-1)*i/n), sin(PI*(n-1)*i/n) 
-        components. The following example of a pure time domain sine wave 
-        sampled at 16 points should be played with to see where 
-        the specified frequency appears in the frequency domain vector (note that if the 
-        frequency is greater than 8, aliasing will occur, ie sampling makes it appear 
-        as a lower frequency) 
-        Also note that the forward transform does not produce the amplitudes of 
-        the frequency components that goes up to make the time domain function but 
-        instead each element is the integral of the product of the time domain 
-        function and a specific pure frequency. Thus the 0 and highest frequency 
-        cosine are N times the amplitudes and all others are N/2 times the amplitudes. 
-         
-        .. code-block::
-            python
-         
-            from neuron import h, gui
-
-            N = 16    # should be a power of 2
-
-            class MyGUI:
-                def __init__(self):
-                    self.c = 1
-                    self.f = 1 # waves per domain, max is N/2
-                    self.box = h.VBox()
-                    self.box.intercept(1)
-                    h.xpanel('', 1)
-                    h.xradiobutton('sin   ', lambda: self.p(0))
-                    h.xradiobutton('cos   ', lambda: self.p(1), 1)
-                    h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
-                    h.xpanel()
-                    self.g1 = h.Graph()
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
-                    self.box.intercept(0)
-                    self.box.map()
-                    self.g1.size(0, N, -1, 1)
-                    self.g2.size(0, N, -N, N)
-                    self.g3.size(0, N, -N, N)
-                    self.p(self.c)
+        class MyGUI:
+            def __init__(self):
+                self.c = 1
+                self.f = 1 # waves per domain, max is N/2
+                self.box = h.VBox()
+                self.box.intercept(1)
+                h.xpanel('', 1)
+                h.xradiobutton('sin   ', lambda: self.p(0))
+                h.xradiobutton('cos   ', lambda: self.p(1), 1)
+                h.xvalue('freq (waves/domain)', (self, 'f'), 1, lambda: self.p(self.c))
+                h.xpanel()
+                self.g1 = h.Graph()
+                self.g2 = h.Graph()
+                self.g3 = h.Graph()
+                self.box.intercept(0)
+                self.box.map()
+                self.g1.size(0, N, -1, 1)
+                self.g2.size(0, N, -N, N)
+                self.g3.size(0, N, -N, N)
+                self.p(self.c)
+            
+            def p(self, c):
+                self.v1 = h.Vector(N)
+                self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
+                self.v1.plot(self.g1)
                 
-                def p(self, c):
-                    self.v1 = h.Vector(N)
-                    self.v1.sin(self.f, c * h.PI / 2, 1000. / N)
-                    self.v1.plot(self.g1)
-                    
-                    self.v2 = h.Vector()
-                    self.v2.fft(self.v1, 1)     # forward
-                    self.v2.plot(self.g2)
-                    
-                    self.v3 = h.Vector()
-                    self.v3.fft(self.v2, -1)    # inverse
-                    self.v3.plot(self.g3)       # amplitude N/2 times the original
+                self.v2 = h.Vector()
+                self.v2.fft(self.v1, 1)     # forward
+                self.v2.plot(self.g2)
+                
+                self.v3 = h.Vector()
+                self.v3.fft(self.v2, -1)    # inverse
+                self.v3.plot(self.g3)       # amplitude N/2 times the original
 
-            gui = MyGUI()
-             
-             
-        .. image:: ../../images/fft1.png
-            :align: center
-
-         
-        The inverse fft is mathematically almost identical 
-        to the forward transform but often 
-        has a different operational interpretation. In this 
-        case the result is a time domain function which is merely the sum 
-        of all the pure sinusoids weighted by the (complex) frequency function 
-        (although, remember, points 0 and 1 in the frequency domain are special, 
-        being the constant and the highest alternating cosine, respectively). 
-        The example below shows the index of a particular frequency and phase 
-        as well as the time domain pattern. Note that index 1 is for the higest 
-        frequency cosine instead of the 0 frequency sin. 
-         
-        Because the frequency domain representation is something only a programmer 
-        could love, and because one might wish to plot the real and imaginary 
-        frequency spectra, one might wish to encapsulate the fft in a function 
-        which uses a more convenient representation. 
-         
-        Below is an alternative FFT function where the frequency 
-        values are spectrum amplitudes (no need to divide anything by N) 
-        and the real and complex frequency components are 
-        stored in separate vectors (of length N/2 + 1). 
-         
-        Consider the functions 
-
-        .. code-block::
-            python
+        gui = MyGUI()
             
-            FFT(1, vt_src, vfr_dest, vfi_dest)
-            FFT(-1, vt_dest, vfr_src, vfi_src)
-         
-        The forward transform (first arg = 1) requires 
-        a time domain source vector with a length of N = 2^n where n is some positive 
-        integer. The resultant real (cosine amplitudes) and imaginary (sine amplitudes) 
-        frequency components are stored in the N/2 + 1 
-        locations of the vfr_dest and vfi_dest vectors respectively (Note: 
-        vfi_dest[0] and vfi_dest[N/2] are always set to 0. The index i in the 
-        frequency domain is the number of full pure sinusoid waves in the time domain. 
-        ie. if the time domain has length T then the frequency of the i'th component 
-        is i/T. 
-         
-        The inverse transform (first arg = -1) requires two freqency domain 
-        source vectors for the cosine and sine amplitudes. The size of these 
-        vectors must be N/2+1 where N is a power of 2. The resultant time domain 
-        vector will have a size of N. 
-         
-        If the source vectors are not a power of 2, then the vectors are padded 
-        with 0's til vtsrc is 2^n or vfr_src is 2^n + 1. The destination vectors 
-        are resized if necessary. 
-         
-        This function has the property that the sequence 
-
-        .. code-block::
-            python
-
-            FFT(1, vt, vfr, vfi) 
-            FFT(-1, vt, vfr, vfi) 
-
-        leaves vt unchanged. Reversal of the order would leave vfr and vfi unchanged. 
-         
-        The implementation is:
- 
-
-        .. code-block::
-            python
-
-            def FFT(direction, vt, vfr, vfi):
-                if direction == 1:   # forward
-                    vfr.fft(vt, 1) 
-                    n = len(vfr)
-                    vfr.div(n/2) 
-                    vfr[0] /= 2	# makes the spectrum appear discontinuous 
-                    vfr[1] /= 2	# but the amplitudes are intuitive 
-                    vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
-                    vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
-                    vfr.resize(n/2+1) 
-                    vfi.resize(n/2+1) 
-                    vfr[n/2] = vfi[0]           #highest cos started in vfr[1]
-                    vfi[0] = vfi[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
-                else:                # inverse
-                    # shuffle vfr and vfi into vt
-                    n = len(vfr)
-                    vt.copy(vfr, 0, 0, n-2, 2, 1) 
-                    vt[1] = vfr[n-1] 
-                    vt.copy(vfi, 3, 1, n-2, 2, 1) 
-                    vt[0] *= 2 
-                    vt[1] *= 2  
-                    vt.fft(vt, -1) 
-
-
-
-        If you load the previous example so that FFT is defined, the following 
-        example shows the cosine and sine spectra of a pulse. 
- 
-        .. code-block::
-            python
- 
-            from neuron import h, gui
-
-            N = 128
-
-            class MyGUI:
-                def __init__(self):
-                    self.delay = 0
-                    self.duration = N / 2
-                    self.box = h.VBox()
-                    self.box.intercept(1)
-                    h.xpanel('')
-                    h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
-                    h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
-                    h.xpanel()
-                    self.g1 = h.Graph()
-                    self.b1 = h.HBox()
-                    self.b1.intercept(1)
-                    self.g2 = h.Graph()
-                    self.g3 = h.Graph()
-                    self.b1.intercept(0)
-                    self.b1.map()
-                    self.g4 = h.Graph()
-                    self.box.intercept(0)
-                    self.box.map()
-                    self.g1.size(0, N, -1, 1)
-                    self.g2.size(0, N / 2, -1, 1)
-                    self.g3.size(0, N / 2, -1, 1)
-                    self.g4.size(0, N, -1, 1)
-                    self.p()
-                    
-                def p(self):
-                    self.v1 = h.Vector(N)
-                    self.v1.fill(1, self.delay, self.delay + self.duration - 1)
-                    self.v1.plot(self.g1)
-                    
-                    self.v2 = h.Vector()
-                    self.v3 = h.Vector()
-                    FFT(1, self.v1, self.v2, self.v3)
-                    self.v2.plot(self.g2)
-                    self.v3.plot(self.g3)
-                    self.v4 = h.Vector()
-                    FFT(-1, self.v4, self.v2, self.v3)
-                    self.v4.plot(self.g4)
-
-            mygui = MyGUI()
             
-        .. image:: ../../images/fft2.png
-            :align: center
+    .. image:: ../../images/fft1.png
+        :align: center
+
+        
+    The inverse fft is mathematically almost identical 
+    to the forward transform but often 
+    has a different operational interpretation. In this 
+    case the result is a time domain function which is merely the sum 
+    of all the pure sinusoids weighted by the (complex) frequency function 
+    (although, remember, points 0 and 1 in the frequency domain are special, 
+    being the constant and the highest alternating cosine, respectively). 
+    The example below shows the index of a particular frequency and phase 
+    as well as the time domain pattern. Note that index 1 is for the higest 
+    frequency cosine instead of the 0 frequency sin. 
+        
+    Because the frequency domain representation is something only a programmer 
+    could love, and because one might wish to plot the real and imaginary 
+    frequency spectra, one might wish to encapsulate the fft in a function 
+    which uses a more convenient representation. 
+        
+    Below is an alternative FFT function where the frequency 
+    values are spectrum amplitudes (no need to divide anything by N) 
+    and the real and complex frequency components are 
+    stored in separate vectors (of length N/2 + 1). 
+        
+    Consider the functions 
+
+    .. code-block::
+        python
+        
+        FFT(1, vt_src, vfr_dest, vfi_dest)
+        FFT(-1, vt_dest, vfr_src, vfi_src)
+        
+    The forward transform (first arg = 1) requires 
+    a time domain source vector with a length of N = 2^n where n is some positive 
+    integer. The resultant real (cosine amplitudes) and imaginary (sine amplitudes) 
+    frequency components are stored in the N/2 + 1 
+    locations of the vfr_dest and vfi_dest vectors respectively (Note: 
+    vfi_dest[0] and vfi_dest[N/2] are always set to 0. The index i in the 
+    frequency domain is the number of full pure sinusoid waves in the time domain. 
+    ie. if the time domain has length T then the frequency of the i'th component 
+    is i/T. 
+        
+    The inverse transform (first arg = -1) requires two freqency domain 
+    source vectors for the cosine and sine amplitudes. The size of these 
+    vectors must be N/2+1 where N is a power of 2. The resultant time domain 
+    vector will have a size of N. 
+        
+    If the source vectors are not a power of 2, then the vectors are padded 
+    with 0's til vtsrc is 2^n or vfr_src is 2^n + 1. The destination vectors 
+    are resized if necessary. 
+        
+    This function has the property that the sequence 
+
+    .. code-block::
+        python
+
+        FFT(1, vt, vfr, vfi) 
+        FFT(-1, vt, vfr, vfi) 
+
+    leaves vt unchanged. Reversal of the order would leave vfr and vfi unchanged. 
+        
+    The implementation is:
+
+
+    .. code-block::
+        python
+
+        def FFT(direction, vt, vfr, vfi):
+            if direction == 1:   # forward
+                vfr.fft(vt, 1) 
+                n = len(vfr)
+                vfr.div(n/2) 
+                vfr[0] /= 2	# makes the spectrum appear discontinuous 
+                vfr[1] /= 2	# but the amplitudes are intuitive 
+                vfi.copy(vfr, 0, 1, -1, 1, 2)   # odd elements 
+                vfr.copy(vfr, 0, 0, -1, 1, 2)   # even elements 
+                vfr.resize(n/2+1) 
+                vfi.resize(n/2+1) 
+                vfr[n/2] = vfi[0]           #highest cos started in vfr[1]
+                vfi[0] = vfi[n/2] = 0       # weights for sin(0*i)and sin(PI*i) 
+            else:                # inverse
+                # shuffle vfr and vfi into vt
+                n = len(vfr)
+                vt.copy(vfr, 0, 0, n-2, 2, 1) 
+                vt[1] = vfr[n-1] 
+                vt.copy(vfi, 3, 1, n-2, 2, 1) 
+                vt[0] *= 2 
+                vt[1] *= 2  
+                vt.fft(vt, -1) 
+
+
+
+    If you load the previous example so that FFT is defined, the following 
+    example shows the cosine and sine spectra of a pulse. 
+
+    .. code-block::
+        python
+
+        from neuron import h, gui
+
+        N = 128
+
+        class MyGUI:
+            def __init__(self):
+                self.delay = 0
+                self.duration = N / 2
+                self.box = h.VBox()
+                self.box.intercept(1)
+                h.xpanel('')
+                h.xvalue('delay (points)', (self, 'delay'), 1, self.p)
+                h.xvalue('duration (points)', (self, 'duration'), 1, self.p)
+                h.xpanel()
+                self.g1 = h.Graph()
+                self.b1 = h.HBox()
+                self.b1.intercept(1)
+                self.g2 = h.Graph()
+                self.g3 = h.Graph()
+                self.b1.intercept(0)
+                self.b1.map()
+                self.g4 = h.Graph()
+                self.box.intercept(0)
+                self.box.map()
+                self.g1.size(0, N, -1, 1)
+                self.g2.size(0, N / 2, -1, 1)
+                self.g3.size(0, N / 2, -1, 1)
+                self.g4.size(0, N, -1, 1)
+                self.p()
+                
+            def p(self):
+                self.v1 = h.Vector(N)
+                self.v1.fill(1, self.delay, self.delay + self.duration - 1)
+                self.v1.plot(self.g1)
+                
+                self.v2 = h.Vector()
+                self.v3 = h.Vector()
+                FFT(1, self.v1, self.v2, self.v3)
+                self.v2.plot(self.g2)
+                self.v3.plot(self.g3)
+                self.v4 = h.Vector()
+                FFT(-1, self.v4, self.v2, self.v3)
+                self.v4.plot(self.g4)
+
+        mygui = MyGUI()
+        
+    .. image:: ../../images/fft2.png
+        :align: center
 
 
     .. seealso::
         :func:`fft`, :func:`spctrm`
 
-.. method:: Vector.trigavg
+.. method:: Vector.trigavg(data,trigger,pre,post)
+
+    Perform an event-triggered average of <*data*> using times given by 
+    <*trigger*>. The duration of the average is from -<*pre*> to <*post*>. 
+    This is useful, for example, in calculating a spike triggered stimulus 
+    average. 
+         
+
+----
 
 
-    Syntax:
-        ``v1.trigavg(data,trigger,pre,post)``
 
+.. method:: Vector.spikebin(data, thresh)
 
-    Description:
-        Perform an event-triggered average of <*data*> using times given by 
-        <*trigger*>. The duration of the average is from -<*pre*> to <*post*>. 
-        This is useful, for example, in calculating a spike triggered stimulus 
-        average. 
+    Used to make a binary version of a spike train.  <*data*> is a vector 
+    of membrane potential.  <*thresh*> is the voltage threshold for spike 
+    detection.  <*v*> is set to all zeros except at the onset of spikes 
+    (the first dt which the spike crosses threshold) 
 
          
 
@@ -3423,139 +3235,108 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.spikebin
+.. method:: Vector.psth(vsrchist,dt,trials,size)
 
-
-    Syntax:
-        ``v.spikebin(data,thresh)``
-
-
-    Description:
-        Used to make a binary version of a spike train.  <*data*> is a vector 
-        of membrane potential.  <*thresh*> is the voltage threshold for spike 
-        detection.  <*v*> is set to all zeros except at the onset of spikes 
-        (the first dt which the spike crosses threshold) 
-
-         
-
-----
-
-
-
-.. method:: Vector.psth
-
-
-    Syntax:
-        ``vmeanfreq = vdest.psth(vsrchist,dt,trials,size)``
-
-
-    Description:
-        The name of this function is somewhat misleading, since its 
-        input, vsrchist, is a finely-binned post-stimulus time histogram, 
-        and its output, vdest, is an array whose elements are the mean 
-        frequencies f_mean[i] that correspond to each bin of vsrchist. 
-         
-        For bin i, the corresponding mean frequency f_mean[i] is 
-        determined by centering an adaptive square window on i and 
-        widening the window until the number of spikes under the 
-        window equals size.  Then f_mean[i] is calculated as 
-         
-        ``f_mean[i] = N[i] / (m dt trials)`` 
-         
-        where 
-
-        .. code-block::
-            python
-
-              f_mean[i] is in spikes per _second_ (Hz). 
-              N[i] = total number of events in the window 
-                       centered on bin i 
-              m = total number of bins in the window 
-                       centered on bin i 
-              dt = binwidth of vsrchist in _milliseconds_ 
-                       (so m dt is the width of the window in milliseconds) 
-              trials = an integer scale factor 
-
-         
-        trials is used to adjust for the number of traces that were 
-        superimposed to compute the elements of vsrchist.  In other words, 
-        suppose the elements of vsrchist were computed by adding up the 
-        number of spikes in n traces 
-
-        .. math::
+    The name of this function is somewhat misleading, since its 
+    input, vsrchist, is a finely-binned post-stimulus time histogram, 
+    and its output, vdest, is an array whose elements are the mean 
+    frequencies f_mean[i] that correspond to each bin of vsrchist. 
         
-            v1[i] = \sum_{j=1}^n {\text{number of spikes in bin i of trace j}}
+    For bin i, the corresponding mean frequency f_mean[i] is 
+    determined by centering an adaptive square window on i and 
+    widening the window until the number of spikes under the 
+    window equals size.  Then f_mean[i] is calculated as 
+        
+    ``f_mean[i] = N[i] / (m dt trials)`` 
+        
+    where 
 
-        Then trials would be assigned the value n.  Of course, if 
-        the elements of vsrchist are divided by n before calling psth(), 
-        then trials should be set to 1. 
-         
-        Acknowledgment: 
-        The documentation and example for psth was prepared by Ted Carnevale. 
+    .. code-block::
+        none
+
+        f_mean[i] is in spikes per _second_ (Hz). 
+        N[i] = total number of events in the window 
+                centered on bin i 
+        m = total number of bins in the window 
+                centered on bin i 
+        dt = binwidth of vsrchist in _milliseconds_ 
+                (so m dt is the width of the window in milliseconds) 
+        trials = an integer scale factor 
+
+        
+    trials is used to adjust for the number of traces that were 
+    superimposed to compute the elements of vsrchist.  In other words, 
+    suppose the elements of vsrchist were computed by adding up the 
+    number of spikes in n traces 
+
+    .. math::
+    
+        v1[i] = \sum_{j=1}^n {\text{number of spikes in bin i of trace j}}
+
+    Then trials would be assigned the value n.  Of course, if 
+    the elements of vsrchist are divided by n before calling psth(), 
+    then trials should be set to 1. 
+        
+    *The documentation and example for psth was prepared by Ted Carnevale.*
+
+
+    **Example:**
+
+
+    .. code-block::
+        python
+
+        from neuron import h, gui
+
+        b = h.VBox() 
+        b.intercept(1) 
+        g1 = h.Graph() 
+        g1.size(0,200,0,10) 
+        g2 = h.Graph() 
+        g2.size(0,200,0,10) 
+        b.intercept(0) 
+        b.map("psth and mean freq") 
+
+        VECSIZE = 200 
+        MINSUM = 50 
+        DT = 1000	# ms per bin of v1 (vsrchist) 
+        TRIALS = 1 
+
+        v1 = h.Vector(VECSIZE) 
+
+        r = h.Random() 
+                
+        for ii in range(VECSIZE):
+            v1[ii] = int(r.uniform(0, 10))
+
+        v1.plot(g1) 
+
+        v2 = h.Vector() 
+        v2.psth(v1, DT, TRIALS, MINSUM) 
+        v2.plot(g2) 
+
+
+    .. image:: ../../images/vector-psth.png
+        :align: center
 
     .. warning::
         The total number of spikes in vsrchist must be greater than size. 
 
-    Example:
-
-
-        .. code-block::
-            python
-
-            from neuron import h, gui
-
-            b = h.VBox() 
-            b.intercept(1) 
-            g1 = h.Graph() 
-            g1.size(0,200,0,10) 
-            g2 = h.Graph() 
-            g2.size(0,200,0,10) 
-            b.intercept(0) 
-            b.map("psth and mean freq") 
-
-            VECSIZE = 200 
-            MINSUM = 50 
-            DT = 1000	# ms per bin of v1 (vsrchist) 
-            TRIALS = 1 
-
-            v1 = h.Vector(VECSIZE) 
-
-            r = h.Random() 
-                    
-            for ii in range(VECSIZE):
-                v1[ii] = int(r.uniform(0, 10))
-
-            v1.plot(g1) 
-
-            v2 = h.Vector() 
-            v2.psth(v1, DT, TRIALS, MINSUM) 
-            v2.plot(g2) 
-
-
-        .. image:: ../../images/vector-psth.png
-            :align: center
-         
 
 ----
 
 
 
-.. method:: Vector.inf
+.. method:: Vector.inf(i,dt,gl,el,cm,th,res,[ref])
 
-
-    Syntax:
-        ``v.inf(i,dt,gl,el,cm,th,res,[ref])``
-
-
-    Description:
-        Simulate a leaky integrate and fire neuron.  <*i*> is a vector containing 
-        the input.  <*dt*> is the timestep.  <*gl*> and <*el*> are the conductance 
-        and reversal potential of the leak term <*cm*> is capacitance.  <*th*> 
-        is the threshold voltage and <*res*> is the reset voltage. <*ref*>, if 
-        present sets the duration of ab absolute refractory period. 
-         
-        N.b. Currently working with forward Euler integration, which may give 
-        spurious results. 
+    Simulate a leaky integrate and fire neuron.  <*i*> is a vector containing 
+    the input.  <*dt*> is the timestep.  <*gl*> and <*el*> are the conductance 
+    and reversal potential of the leak term <*cm*> is capacitance.  <*th*> 
+    is the threshold voltage and <*res*> is the reset voltage. <*ref*>, if 
+    present sets the duration of ab absolute refractory period. 
+        
+    N.b. Currently working with forward Euler integration, which may give 
+    spurious results. 
 
          
          
@@ -3564,15 +3345,9 @@ Refer to this source for further information.
 
 
 
-.. method:: Vector.resample
+.. method:: Vector.resample(v2, rate)
 
-
-    Syntax:
-        ``v1.resample(v2,rate)``
-
-
-    Description:
-        Resamples the vector at another rate -- integers work best. 
+    Resamples the vector at another rate -- integers work best. 
 
     .. seealso::
         :func:`copy`
