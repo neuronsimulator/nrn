@@ -68,7 +68,7 @@ Vector
     
         In older code, you may see the use of the arithmetic functions
         add, mul, etc. Those functions changed the vectors they operated on, so to avoid this,
-        the :meth:`.c` method was used to create a new copy of a vector. The expression that can
+        the :meth:`Vector.c` method was used to create a new copy of a vector. The expression that can
         now be written ``v1 = v2*s2 + v3*s3 + v4*s4`` using the older form would be written as
 
         .. code-block::
@@ -777,52 +777,53 @@ Vector
     of memory (with consequent removal of vdest from the Graph) 
     is to be explicitly avoided. 
 
-    Example:
-        To copy the odd elements use:
- 
-        .. code-block::
-            python
+    **Examples:**
+
+    To copy the odd elements use:
+
+    .. code-block::
+        python
+    
+
+        v1 = h.Vector(30) 
+        v1.indgen() 
+        v1.printf() 
         
- 
-            v1 = h.Vector(30) 
-            v1.indgen() 
-            v1.printf() 
-            
-            v2 = h.Vector() 
-            v2.copy(v1, 0, 1, -1, 1, 2) 
-            v2.printf() 
+        v2 = h.Vector() 
+        v2.copy(v1, 0, 1, -1, 1, 2) 
+        v2.printf() 
 
-        To merge or shuffle two vectors into a third, use:
- 
-        .. code-block::
-            python
-            
-            v1 = h.Vector(15) 
-            v1.indgen() 
-            v1.printf() 
-            v2 = h.Vector(15) 
-            v2.indgen(10) 
-            v2.printf() 
-            
-            v3 = h.Vector() 
-            v3.copy(v1, 0, 0, -1, 2, 1) 
-            v3.copy(v2, 1, 0, -1, 2, 1) 
-            v3.printf()
+    To merge or shuffle two vectors into a third, use:
+
+    .. code-block::
+        python
+        
+        v1 = h.Vector(15) 
+        v1.indgen() 
+        v1.printf() 
+        v2 = h.Vector(15) 
+        v2.indgen(10) 
+        v2.printf() 
+        
+        v3 = h.Vector() 
+        v3.copy(v1, 0, 0, -1, 2, 1) 
+        v3.copy(v2, 1, 0, -1, 2, 1) 
+        v3.printf()
 
 
-    Example:
+    **Example:**
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            vec = h.Vector(100,10) 
-            vec1 = h.Vector() 
-            vec1.indgen(5,105,10) 
-            vec.copy(vec1, 50, 3, 6) 
+        vec = h.Vector(100,10) 
+        vec1 = h.Vector() 
+        vec1.indgen(5,105,10) 
+        vec.copy(vec1, 50, 3, 6) 
 
-        turns ``vec`` from a 100 element into a 54 element vector. 
-        The first 50 elements will each have the value 10 and the last four will 
-        have the values 35, 45, 55, and 65 respectively. 
+    turns ``vec`` from a 100 element into a 54 element vector. 
+    The first 50 elements will each have the value 10 and the last four will 
+    have the values 35, 45, 55, and 65 respectively. 
 
     .. warning::
         Vectors copied to themselves are not usually what is expected. eg. 
@@ -911,18 +912,18 @@ Vector
         vdest.copy(vsrc, start, end) 
 
 
-    Example:
+    **Example:**
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            vec = h.Vector() 
-            vec.indgen(10,50,2) 
-            vec1 = vec.at(2, 10) 
+        vec = h.Vector() 
+        vec.indgen(10,50,2) 
+        vec1 = vec.at(2, 10) 
 
-        creates ``vec1`` with 9 elements which correspond to the values at indices 
-        2 - 10 in ``vec``.  The contents of ``vec1`` would then be, in order: 14, 16, 18, 
-        20, 22, 24, 26, 28, 30. 
+    creates ``vec1`` with 9 elements which correspond to the values at indices 
+    2 - 10 in ``vec``.  The contents of ``vec1`` would then be, in order: 14, 16, 18, 
+    20, 22, 24, 26, 28, 30. 
 
          
 
@@ -1711,30 +1712,22 @@ Vector
 
 
 
-.. method:: Vector.apply
+.. method:: Vector.apply(hoc_func_name [, start, end])
 
+    Apply a hoc function to each of the elements in the vector. 
+    The function can be any function that is accessible in oc.  It 
+    must take only one scalar argument and return a scalar. 
+    Note that the function name must be in quotes and that the parentheses 
+    are omitted. 
 
-    Syntax:
-        ``obj = vsrcdest.apply("func")``
+    **Example:**
 
-        ``obj = vsrcdest.apply("func", start, end)``
+    .. code-block::
+        python
 
+        vec.apply("sin", 0, 9) 
 
-    Description:
-        Apply a hoc function to each of the elements in the vector. 
-        The function can be any function that is accessible in oc.  It 
-        must take only one scalar argument and return a scalar. 
-        Note that the function name must be in quotes and that the parentheses 
-        are omitted. 
-
-    Example:
-
-        .. code-block::
-            python
-
-            vec.apply("sin", 0, 9) 
-
-        applies the sin function to the first ten elements of the vector ``vec``. 
+    applies the sin function to the first ten elements of the vector ``vec``. 
 
          
 
@@ -1790,16 +1783,10 @@ Vector
 
 
 
-.. method:: Vector.floor
+.. method:: Vector.floor()
 
-
-    Syntax:
-        ``vec.floor()``
-
-
-    Description:
-        Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
-        used in this calculation. 
+    Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
+    used in this calculation. 
 
          
          
@@ -1812,6 +1799,7 @@ Vector
 
 
     Syntax:
+        
         ``pythonlist = vec.to_python()``
 
         ``pythonlist = vec.to_python(pythonlist)``
@@ -1820,6 +1808,7 @@ Vector
 
 
     Description:
+
         Copy the vector elements from the hoc vector to a pythonlist or 
         1-d numpyarray. If the arg exists the pythonobject must have the same 
         size as the hoc vector. 
@@ -1834,12 +1823,14 @@ Vector
 
 
     Syntax:
+
         ``vec = vec.from_python(pythonlist)``
 
         ``vec = vec.from_python(numpyarray)``
 
 
     Description:
+
         Copy the python list elements into the hoc vector. The elements must be 
         numbers that are convertable to doubles. 
         Copy the numpy 1-d array elements into the hoc vector. 
@@ -1852,30 +1843,24 @@ Vector
 .. method:: Vector.as_numpy()
 
 
-    Syntax:
-        ``numpyarray = vec.as_numpy()``
+    Return a numpy array that points into the data of the Hoc Vector, i.e. does not
+    copy the data. Do not
+    use the numpyarray if the Vector is destroyed.
 
 
-    Description:
-    
-        The numpyarray points into the data of the Hoc Vector, i.e. does not
-        copy the data. Do not
-        use the numpyarray if the Vector is destroyed.
+    **Example:**
 
+    .. code-block::
+        python
 
-    Example:
-
-        .. code-block::
-            python
-
-            from neuron import h
-            v = h.Vector(5).indgen()
-            n = v.as_numpy()
-            print(n) #[0.  1.  2.  3.  4.]
-            v[1] += 10
-            n[2] += 20
-            print(n) #[  0.  11.  22.   3.   4.]
-            v.printf() #0	11	22	3	4
+        from neuron import h
+        v = h.Vector(5).indgen()
+        n = v.as_numpy()
+        print(n) #[0.  1.  2.  3.  4.]
+        v[1] += 10
+        n[2] += 20
+        print(n) #[  0.  11.  22.   3.   4.]
+        v.printf() #0	11	22	3	4
 
 
 ----
@@ -1885,11 +1870,12 @@ Vector
 
 
     Syntax:
+
         ``error = data_vec.fit(fit_vec,"fcn",indep_vec, pointer1, [pointer2], ... [pointerN])``
 
 
     Description:
-    
+
         Use a simplex algorithm to find parameters *p1* through *pN* such to 
         minimize the mean squared error between the "data" contained in 
         ``data_vec`` and the approximation generated by the user-supplied "*fcn*" 
