@@ -1145,6 +1145,9 @@ int Cvode::cvode_init(double) {
         if (!mem_) {
             hoc_execerror("CVodeCreate error", 0);
         }
+        maxorder(ncv_->maxorder());  // Memory Leak if changed after CVodeMalloc
+        minstep(ncv_->minstep());
+        maxstep(ncv_->maxstep());
         CVodeMalloc(mem_, pf_, t0_, y_, CV_SV, &ncv_->rtol_, atolnvec_);
         CVodeSetFdata(mem_, (void*) this);
         if (err != SUCCESS) {
@@ -1154,9 +1157,6 @@ int Cvode::cvode_init(double) {
                    err);
             return err;
         }
-        maxorder(ncv_->maxorder());
-        minstep(ncv_->minstep());
-        maxstep(ncv_->maxstep());
         //		CVodeSetInitStep(mem_, .01);
     }
     matmeth();
@@ -1516,6 +1516,12 @@ void Cvode::matmeth() {
         CVDiag(mem_);
         break;
     default:
+        // free previous method
+        if (((CVodeMem) mem_)->cv_lfree) {
+            ((CVodeMem) mem_)->cv_lfree((CVodeMem) mem_);
+            ((CVodeMem) mem_)->cv_lfree = NULL;
+        }
+
         ((CVodeMem) mem_)->cv_linit = minit;
         ((CVodeMem) mem_)->cv_lsetup = msetup;
         ((CVodeMem) mem_)->cv_setupNonNull = TRUE;  // but since our's does not do anything...
