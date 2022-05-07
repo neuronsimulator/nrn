@@ -6,84 +6,68 @@ Vector
 
 
 
-.. class:: Vector
-
+.. class:: Vector()
+.. class:: Vector(size: int)
+.. class:: Vector(size: int, init)
+.. class:: Vector(python_iterable)
          
-    This class was implemented by 
+    This class was implemented by Zach Mainen and Michael Hines.
+
+    NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
+    one-dimensional array of doubles.  
+    The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
+    extensions that have been written as NMOD programs that make use of this class.
+
+    A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+
+    .. code-block::
+        python
+
+        for x in vec: print(x)
+        [x for x in vec]
+        numpy.array(vec)
+
+    A Vector object created with this class can be thought of as 
+    containing a  one dimensional x array with elements of type float.
+    The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
+    (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
+    all Python-supporting versions of NEURON.
+    Vector slices are not directly supported but are replicated with the functionality
+    of Vector.c() (see below).
+
+    A vector can be created with length *size* and with each element set to the value of *init* or can be created using
+    a Python iterable.
+        
+    Vector methods that modify the elements are generally of the form 
 
     .. code-block::
         none
 
-        ----------------------------- 
-        Zach Mainen and Michael Hines
-        -----------------------------
-         
-    Syntax:
-        ``obj = h.Vector()``
+        obj = vsrcdest.method(...) 
 
-        ``obj = h.Vector(size)``
+    in which the values of vsrcdest on entry to the 
+    method are used as source values by the method to compute values which replace 
+    the old values in vsrcdest.  The return value is simply an additional reference to the same Vector.
 
-        ``obj = h.Vector(size, init)``
-        
-        ``obj = h.Vector(python_iterable)``
-
-    Description:
-
-        NEURON's Vector class provides functionality that is similar (and partly interchangeable) with a numpy
-        one-dimensional array of doubles.  
-        The reason for the continued use of Vector is both due to back-compatibility and due to the many faster C-level
-        extensions that have been written as NMOD programs that make use of this class.
-
-        A Vector is itself an iterable and can be used in any context that takes an iterable, e.g.,
+    Beginning with NEURON 7.7, Vectors support arithmetic operations; e.g. one can write
+    ``v1 = v2*s2 + v3*s3 + v4*s4``.
+    
+    .. note::
+    
+        In older code, you may see the use of the arithmetic functions
+        add, mul, etc. Those functions changed the vectors they operated on, so to avoid this,
+        the :meth:`.c` method was used to create a new copy of a vector. The expression that can
+        now be written ``v1 = v2*s2 + v3*s3 + v4*s4`` using the older form would be written as
 
         .. code-block::
-           python
+            python
 
-           for x in vec: print(x)
-           [x for x in vec]
-           numpy.array(vec)
-
-        A Vector object created with this class can be thought of as 
-        containing a  one dimensional x array with elements of type float.
-        The :samp:`{objref}[{index}]` notation can be used to read and set Vector elements
-        (setting requires NEURON 7.7+). An older syntax :samp:`{objref}.x[{index}]` works on
-        all Python-supporting versions of NEURON.
-        Vector slices are not directly supported but are replicated with the functionality
-        of Vector.c() (see below).
-
-        A vector can be created with length *size* and with each element set to the value of *init* or can be created using
-        a Python iterable.
-         
-        Vector methods that modify the elements are generally of the form 
-
-        .. code-block::
-            none
-
-            obj = vsrcdest.method(...) 
-
-        in which the values of vsrcdest on entry to the 
-        method are used as source values by the method to compute values which replace 
-        the old values in vsrcdest.  The return value is simply an additional reference to the same Vector.
-
-        Beginning with NEURON 7.7, Vectors support arithmetic operations; e.g. one can write
-        ``v1 = v2*s2 + v3*s3 + v4*s4``.
-        
-        .. note::
-        
-            In older code, you may see the use of the arithmetic functions
-            add, mul, etc. Those functions changed the vectors they operated on, so to avoid this,
-            the .c() method was used to create a new copy of a vector. The expression that can
-            now be written ``v1 = v2*s2 + v3*s3 + v4*s4`` using the older form would be written as
-
-            .. code-block::
-                none
-
-                    v1 = v2.c().mul(s2).add(v3.c().mul(s3)).add(v4.c().mul(s4))          
+            v1 = v2.c().mul(s2).add(v3.c().mul(s3)).add(v4.c().mul(s4))          
 
     Examples:
 
         .. code-block::
-            none
+            python
 
             vec = h.Vector(20,5)
 
@@ -163,23 +147,17 @@ Vector
 
 ----
 
-.. method:: Vector.size
+.. method:: Vector.size() -> int
 
+    Deprecated in favor of len(vec); note that ``len(vec) == vec.size()``
+    Return the number of elements in the vector. The last element has the index: 
+    ``vec.size() - 1`` which can be abbreviated using -1 as above.
 
-    Syntax:
-        ``size = vec.size()``
-
-
-    Description:
-        Deprecated in favor of len(vec); note that ``len(vec) == vec.size()``
-        Return the number of elements in the vector. The last element has the index: 
-        ``vec.size() - 1`` which can be abbreviated using -1 as above.
-
-        .. code-block::
-            python
-            
-            for i in range(vec.size()):
-                print(vec[i])
+    .. code-block::
+        python
+        
+        for i in range(vec.size()):
+            print(vec[i])
         
     .. note::
             
@@ -188,7 +166,8 @@ Vector
         .. code-block::
             python
 
-            for item in vec: print(item)
+            for item in vec: 
+                print(item)
 
     .. note::
     
@@ -204,30 +183,26 @@ Vector
 
 ----
 
-.. method:: Vector.resize
+.. method:: Vector.resize(new_size: int) -> Vector
 
-    Syntax:
-        ``obj = vsrcdest.resize(new_size)``
-
-    Description:
-        Resize the vector.  If the vector is made smaller, then trailing elements 
-        will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
-        original elements will remain unchanged. 
-         
-        Warning: Any function that 
-        resizes the vector to a larger size than its available space will reallocate and thereby
-        make existing pointers to the elements invalid 
-        (see note in :meth:`Vector.size`). 
-        For example, resizing vectors that have been plotted will remove that vector 
-        from the plot list. Other functions may not be so forgiving and result in 
-        a memory error (segmentation violation or unhandled exception). 
+    Resize the vector.  If the vector is made smaller, then trailing elements 
+    will be zeroed.  If it is expanded, the new elements will be initialized to 0.0;
+    original elements will remain unchanged. 
+        
+    Warning: Any function that 
+    resizes the vector to a larger size than its available space will reallocate and thereby
+    make existing pointers to the elements invalid 
+    (see note in :meth:`Vector.size`). 
+    For example, resizing vectors that have been plotted will remove that vector 
+    from the plot list. Other functions may not be so forgiving and result in 
+    a memory error (segmentation violation or unhandled exception). 
 
     Example:
 
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
+            vec = h.Vector(20, 5) 
             vec.resize(30) # Appends 10 elements, each having a value of 0
             vec.printf()
             vec.resize(10) # removes the last 20 elements; values of the first 10 elements are unchanged
@@ -237,26 +212,21 @@ Vector
 
 ----
 
-.. method:: Vector.buffer_size
+.. method:: Vector.buffer_size() -> int
+.. method:: Vector.buffer_size(request: int) -> int
 
-    Syntax:
-        ``space = vsrc.buffer_size()``
-
-        ``space = vsrc.buffer_size(request)``
-
-    Description:
-        Returns the length of the double precision array memory allocated to hold the 
-        vector. This is NOT the size of the vector. The vector size can efficiently 
-        grow up to this value without reallocating memory. 
-         
-        With an argument, frees the old memory space and allocates new 
-        memory space for the vector, copying old element values to the new elements. 
-        If the request is less than the size, the size is truncated to the request. 
-        For vectors that grow continuously, it may be more efficient to 
-        allocate enough space at the outset, or else occasionally change the 
-        buffer_size by larger chunks. It is not necessary to worry about the 
-        efficiency of growth during a Vector.record since the space available 
-        automatically increases by doubling. 
+    Returns the length of the double precision array memory allocated to hold the 
+    vector. This is NOT the size of the vector. The vector size can efficiently 
+    grow up to this value without reallocating memory. 
+        
+    With an argument, frees the old memory space and allocates new 
+    memory space for the vector, copying old element values to the new elements. 
+    If the request is less than the size, the size is truncated to the request. 
+    For vectors that grow continuously, it may be more efficient to 
+    allocate enough space at the outset, or else occasionally change the 
+    buffer_size by larger chunks. It is not necessary to worry about the 
+    efficiency of growth during a Vector.record since the space available 
+    automatically increases by doubling. 
 
     Example:
 
@@ -274,48 +244,33 @@ Vector
 
 ----
 
-.. method:: Vector.get
+.. method:: Vector.get(index: int) -> float
 
-
-    Syntax:
-        ``x = vec.get(index)``
-
-    Description:
-        Return the value of a vector element index.
+    Return the value of a vector element at ``index``; equivalent to ``vec[index]``.
 
 ----
 
-.. method:: Vector.set
+.. method:: Vector.set(index: int, value: float) -> Vector
 
 
-    Syntax:
-        ``obj = vsrcdest.set(index,value)``
-
-
-    Description:
-        Set vector element index to value.  Equivalent to ``vec[i] = expr`` notation.
+    Set vector element ``index`` to ``value``.  Equivalent to ``vec[i] = expr`` notation.
 
 ----
 
-.. method:: Vector.fill
+.. method:: Vector.fill(value: float) -> Vector
+.. method:: Vector.fill(value: float, start: int, end: int) -> Vector
 
-    Syntax:
-        ``obj = vsrcdest.fill(value)``
-
-        ``obj = vsrcdest.fill(value, start, end)``
-
-    Description:
-        The first form assigns *value* to every element in vsrcdest. 
-         
-        If *start* and *end* arguments are present, they specify the index range for the assignment. 
+    The first form assigns *value* to every element in the vector. 
+        
+    If *start* and *end* arguments are present, they specify the index range for the assignment. 
 
     Example:
 
         .. code-block::
             python
 
-            vec = h.Vector(20,5) 
-            vec.fill(9,2,7) 
+            vec = h.Vector(20, 5) 
+            vec.fill(9, 2, 7) 
 
         assigns 9 to vec[2] through vec[7] 
         (a total of 6 elements) 
@@ -325,17 +280,12 @@ Vector
 
 ----
 
-.. method:: Vector.label
+.. method:: Vector.label() -> str
+.. method:: Vector.label(label: str) -> str
 
-    Syntax:
-        ``s = vec.label()``
-        
-        ``s = vec.label(str_type)``
-
-    Description:
-        Label the vector with a string. 
-        The return value is the label, which is an empty string if no label has been set. 
-        Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
+    Label the vector with a string. 
+    The return value is the label, which is an empty string if no label has been set. 
+    Labels are printed on a Graph when the :meth:`Graph.plot` method is called. 
 
     Example:
 
@@ -354,61 +304,52 @@ Vector
 
 ----
 
-.. method:: Vector.record
+.. method:: Vector.record(var_reference) -> Vector
+.. method:: Vector.record(var_reference, Dt: float) -> Vector
+.. method:: Vector.record(var_reference, tvec: Vector) -> Vector
+.. method:: Vector.record(point_process_object, var_reference, ...) -> Vector
 
-    Syntax:
-        ``vdest = vdest.record(var_reference)``
-
-        ``vdest = vdest.record(var_reference, Dt)``
-
-        ``vdest = vdest.record(var_reference, tvec)``
-
-        ``vdest = vdest.record(point_process_object, var_reference, ...)``
-
-
-    Description:
-        Save the stream of values of "*var*" during a simulation into the vdest vector. 
-        Previous record and play specifications of this Vector (if any) are destroyed. 
+    Save the stream of values of "*var*" during a simulation into the vdest vector. 
+    Previous record and play specifications of this Vector (if any) are destroyed. 
          
-        Details: 
-        NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
+    NEURON pointers in python are handled using the _ref_ syntax.  e.g., soma(0.5)._ref_v
     To save a scalar from NEURON that scalar must exist in NEURON's scope.
     
 
-        Transfers take place on exit from ``finitialize()`` and on exit from ``fadvance()``. 
-        At the end of ``finitialize()``, ``v[0] = var``. At the end of ``fadvance``, 
-        *var* will be saved if ``t`` (after being incremented by ``fadvance``) 
-        is equal or greater than the associated time of the 
-        next index. The system maintains a set of record vectors and the vector will 
-        be removed from the list if the vector or var is destroyed. 
-        The vector is automatically increased in size by 100 elements at a time 
-        if more space is required, so efficiency will be slightly improved if one 
-        creates vectors with sufficient size to hold the entire stream, and plots will 
-        be more persistent (recall that resizing may cause reallocation of memory 
-        to hold elements and this will make pointers invalid). 
-         
-        The record semantics can be thought of as:
- 
-        ``var(t) -> v[index]`` 
-         
-        The default relationship between ``index`` and 
-        ``t`` is ``t = index*dt``. 
- 
-        In the second form, ``t = index*Dt``. 
- 
-        In the third form, ``t = tvec[index]``. 
-         
-        For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
-        threads, :meth:`ParallelContext.nthread` , it is 
-        often helpful to provide specific information about which cell the 
-        *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
-        object which is located on the cell. This is necessary if the pointer is not 
-        a RANGE variable and is much more efficient if it is. The fixed step and global 
-        variable time step method do not need or use this information for the 
-        local step method but will use it for multiple threads. It is therefore 
-        a good idea to supply it if possible. 
+    Transfers take place on exit from :func:`finitialize` and on exit from :func:`fadvance`. 
+    At the end of :func:`finitialize`, ``v[0] = var``. At the end of :func:`fadvance`, 
+    *var* will be saved if ``t`` (after being incremented by :func:`fadvance`) 
+    is equal or greater than the associated time of the 
+    next index. The system maintains a set of record vectors and the vector will 
+    be removed from the list if the vector or var is destroyed. 
+    The vector is automatically increased in size by 100 elements at a time 
+    if more space is required, so efficiency will be slightly improved if one 
+    creates vectors with sufficient size to hold the entire stream, and plots will 
+    be more persistent (recall that resizing may cause reallocation of memory 
+    to hold elements and this will make pointers invalid). 
+        
+    The record semantics can be thought of as:
 
-        Prior to version 7.7, the record methode returned 1.0 .
+    ``var(t) -> v[index]`` 
+        
+    The default relationship between ``index`` and 
+    ``t`` is ``t = index*dt``. 
+
+    In the second form, ``t = index*Dt``. 
+
+    In the third form, ``t = tvec[index]``. 
+        
+    For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
+    threads, :meth:`ParallelContext.nthread` , it is 
+    often helpful to provide specific information about which cell the 
+    *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
+    object which is located on the cell. This is necessary if the pointer is not 
+    a RANGE variable and is much more efficient if it is. The fixed step and global 
+    variable time step method do not need or use this information for the 
+    local step method but will use it for multiple threads. It is therefore 
+    a good idea to supply it if possible. 
+
+    Prior to version 7.7, the record methode returned 1.0 .
 
     .. warning::
         record/play behavior is reasonable but surprising if :data:`dt` is greater than 
@@ -419,7 +360,7 @@ Vector
     Example:
 
         If NEURON has loaded its standard run library, the time course of membrane potential in the
-    middle of a section called "terminal" can be captured to a vector called dv by
+        middle of a section called "terminal" can be captured to a vector called dv by
 
         .. code-block::
             python
@@ -429,7 +370,7 @@ Vector
 
         Note that the next "run" will overwrite the previous time course stored 
         in the vector as it automatically performs an "init" before running a simulation.
-    Thus dv should be copied to another vector ( see :func:`copy` ). 
+        Thus dv should be copied to another vector ( see :func:`copy` ). 
         To remove 
         dv from the list of record vectors, the easiest method is to destroy the instance 
         with 
@@ -451,126 +392,116 @@ Vector
 
 ----
 
-.. method:: Vector.play
+.. method:: Vector.play(var_reference, Dt: float) -> Vector
+.. method:: Vector.play(var_reference, tvec: Vector) -> Vector
+.. method:: Vector.play(index: int) -> Vector
+.. method:: Vector.play(var_reference or stmt, tvec: Vector, continuous: bool) -> Vector
+.. method:: Vector.play(var_reference or stmt, tvec, indices_of_discontinuities: Vector) -> Vector
+.. method:: Vector.play(point_process_object, var_reference, ...) -> Vector
 
-    Syntax:
-        ``vdest = vsrc.play(var_reference, Dt)``
-
-        ``vdest = vsrc.play(var_reference, tvec)``
-
-        ``vdest = vsrc.play(index)``
-
-        ``vdest = vsrc.play(var_reference or stmt, tvec, continuous)``
-
-        ``vdest = vsrc.play(var_reference or stmt, tvec, indices_of_discontinuities_vector)``
-
-        ``vdest = vsrc.play(point_process_object, var_reference, ...)``
-
-
-    Description:
-        The ``vsrc`` vector values are assigned to the "*var*" variable during a simulation. 
-         
-        The same vector can be played into different variables. 
-         
-        The index form immediately sets the var (or executes the stmt) with the 
-        value of vsrc[index] 
-         
-        The play semantics can be thought of as 
-        ``v[index] -> var(t)`` where t(index) is Dt*index or tvec[index] 
-        The discrete event delivery system is used to determine the precise 
-        time at which values are copied from vsrc to var. Note that for variable 
-        step methods, unless continuity is specifically requested, the function 
-        is a step function. Also, for the local variable dt method, var MUST be 
-        associated with the cell that contains the section accessed via sec=sec in the arg list 
-        (but see the paragraph below about the use of a point_process_object 
-        inserted as the first arg). 
-         
-        For the fixed step method, 
-        transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
-        At the beginning of :func:`finitialize`, ``var = v[0]``. On :func:`fadvance` a transfer will 
-        take place if t will be equal 
-        or greater than the associated time of the next index after the ``fadvance`` increment.
+    The ``vsrc`` vector values are assigned to the "*var*" variable during a simulation. 
+        
+    The same vector can be played into different variables. 
+        
+    The index form immediately sets the var (or executes the stmt) with the 
+    value of vsrc[index] 
+        
+    The play semantics can be thought of as 
+    ``v[index] -> var(t)`` where t(index) is Dt*index or tvec[index] 
+    The discrete event delivery system is used to determine the precise 
+    time at which values are copied from vsrc to var. Note that for variable 
+    step methods, unless continuity is specifically requested, the function 
+    is a step function. Also, for the local variable dt method, var MUST be 
+    associated with the cell that contains the section accessed via sec=sec in the arg list 
+    (but see the paragraph below about the use of a point_process_object 
+    inserted as the first arg). 
+        
+    For the fixed step method, 
+    transfers take place on entry to :func:`finitialize` and  on entry to :func:`fadvance`. 
+    At the beginning of :func:`finitialize`, ``var = v[0]``. On :func:`fadvance` a transfer will 
+    take place if t will be equal 
+    or greater than the associated time of the next index after the :func:`fadvance` increment.
     For the variable step methods, transfers take place exactly at the times specified by the Dt 
-        or tvec arguments. 
-         
-        The system maintains a set of play vectors and the vector will be removed 
-        from the list if the vector or var is destroyed. 
-        If the end of the vector is reached, no further transfers are made (``var`` becomes 
-        constant) 
-         
-        Note well: for the fixed step method, 
-        if ``fadvance`` exits with time equal to ``t`` (ie enters at time t-dt), 
-        then on entry to ``fadvance``, *var* is set equal to the value of 
-        the vector at the index 
-        appropriate to time t. Execute tests/nrniv/vrecord.py to see what this implies 
-        during a simulation. ie the value of var from ``t-dt`` to t played into by 
-        a vector is equal to the value of the vector at ``index(t)``. If the vector 
-        was meant to serve as a continuous stimulus function, this results in 
-        a first order correct simulation with respect to dt. If a second order correct 
-        simulation is desired, it is necessary (though perhaps not sufficient since 
-        all other equations in the system must also be solved using methods at least 
-        second order correct) to fill the vector with function values at f((i-.5)*dt). 
-         
-        When continuous is 1 then linear interpolation is used to define the values 
-        between time points. However, events at each Dt or tvec are still used 
-        and that has beneficial performance implications for variable step methods 
-        since vsrc is equivalent to a piecewise linear function and variable step 
-        methods can excessively reduce dt as one approaches a discontinuity in 
-        the first derivative. Note that if there are discontinuities in the 
-        function itself, then tvec should have adjacent elements with the same 
-        time value. When a value is greater than the range of 
-        the t vector, linear extrapolation of the last two points is used 
-        instead of a constant last value. If a constant outside the range 
-        is desired, make sure the last two points have the same y value and 
-        have different t values (if the last two values are at the same time, 
-        the constant average will be returned). 
-         
-        The indices_of_discontinuities_vector argument is used to 
-        specifying the indices in tvec of the times at which discrete events should 
-        be used to notify that a discontinuity in the function, or any derivative 
-        of the function, occurs. Presently, linear interpolation is used to 
-        determine var(t) in the interval between these discontinuities (instead of 
-        cubic spline) so the length of steps used by variable step methods near 
-        the breakpoints depends on the details of how the parameter being played 
-        into affects the states. 
-         
-        For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
-        threads, :meth:`ParallelContext.nthread` , it is 
-        often helpful to provide specific information about which cell the 
-        *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
-        object which is located on the cell. This is necessary if the pointer is not 
-        a RANGE variable and is much more efficient if it is. The fixed step and global 
-        variable time step method do not need or use this information for the 
-        local step method but will use it for multiple threads. It is therefore 
-        a good idea to supply it if possible. 
+    or tvec arguments. 
+        
+    The system maintains a set of play vectors and the vector will be removed 
+    from the list if the vector or var is destroyed. 
+    If the end of the vector is reached, no further transfers are made (``var`` becomes 
+    constant) 
+        
+    Note well: for the fixed step method, 
+    if :func:`fadvance` exits with time equal to ``t`` (ie enters at time t-dt), 
+    then on entry to :func:`fadvance`, *var* is set equal to the value of 
+    the vector at the index 
+    appropriate to time t. Execute tests/nrniv/vrecord.py to see what this implies 
+    during a simulation. ie the value of var from ``t-dt`` to t played into by 
+    a vector is equal to the value of the vector at ``index(t)``. If the vector 
+    was meant to serve as a continuous stimulus function, this results in 
+    a first order correct simulation with respect to dt. If a second order correct 
+    simulation is desired, it is necessary (though perhaps not sufficient since 
+    all other equations in the system must also be solved using methods at least 
+    second order correct) to fill the vector with function values at f((i-.5)*dt). 
+        
+    When continuous is 1 then linear interpolation is used to define the values 
+    between time points. However, events at each Dt or tvec are still used 
+    and that has beneficial performance implications for variable step methods 
+    since vsrc is equivalent to a piecewise linear function and variable step 
+    methods can excessively reduce dt as one approaches a discontinuity in 
+    the first derivative. Note that if there are discontinuities in the 
+    function itself, then tvec should have adjacent elements with the same 
+    time value. When a value is greater than the range of 
+    the t vector, linear extrapolation of the last two points is used 
+    instead of a constant last value. If a constant outside the range 
+    is desired, make sure the last two points have the same y value and 
+    have different t values (if the last two values are at the same time, 
+    the constant average will be returned). 
+        
+    The indices_of_discontinuities_vector argument is used to 
+    specifying the indices in tvec of the times at which discrete events should 
+    be used to notify that a discontinuity in the function, or any derivative 
+    of the function, occurs. Presently, linear interpolation is used to 
+    determine var(t) in the interval between these discontinuities (instead of 
+    cubic spline) so the length of steps used by variable step methods near 
+    the breakpoints depends on the details of how the parameter being played 
+    into affects the states. 
+        
+    For the local variable timestep method, :meth:`CVode.use_local_dt` and/or multiple 
+    threads, :meth:`ParallelContext.nthread` , it is 
+    often helpful to provide specific information about which cell the 
+    *var* pointer is associated with by inserting as the first arg some POINT_PROCESS 
+    object which is located on the cell. This is necessary if the pointer is not 
+    a RANGE variable and is much more efficient if it is. The fixed step and global 
+    variable time step method do not need or use this information for the 
+    local step method but will use it for multiple threads. It is therefore 
+    a good idea to supply it if possible. 
 
-        Prior to version 7.7, the play method returned 1.0 .
+    Prior to version 7.7, the play method returned 1.0 .
 
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play_remove`
     
-    Example of playing into an Iclamp for varying current:
+    Example of playing into an :class:`IClamp` for varying current:
 
         .. code-block::
-                  python
-        
-                  from neuron import h
-                  import pylab as plt, numpy as np
-                  h.load_file('stdrun.hoc')
-                  sec = h.Section(name='sec')
-                  sec.insert(h.pas)
-                  inp = np.zeros(500)
-                  inp[50:250] = 1
-                  pvec = h.Vector().from_python(inp)
-                  stim = h.IClamp(sec(0.5))
-                  stim.dur = 1e9
-                  pvec.play(stim, stim._ref_amp, True)
-                  rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
-                                                              [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
-                  h.v_init, h.tstop= -70, 500
-                  h.run()
-                  plt.plot(rd['t'], rd['v'])
-                  plt.show()
+            python
+
+            from neuron import h
+            import pylab as plt, numpy as np
+            h.load_file('stdrun.hoc')
+            sec = h.Section(name='sec')
+            sec.insert(h.pas)
+            inp = np.zeros(500)
+            inp[50:250] = 1
+            pvec = h.Vector().from_python(inp)
+            stim = h.IClamp(sec(0.5))
+            stim.dur = 1e9
+            pvec.play(stim, stim._ref_amp, True)
+            rd = {k:h.Vector().record(v) for k,v in zip(['t', 'v', 'stim_i', 'amp'],
+                                                        [h._ref_t, sec(0.5)._ref_v, stim._ref_i, stim._ref_amp])}
+            h.finitialize(-70)
+            h.continuerun(500)
+            plt.plot(rd['t'], rd['v'])
+            plt.show()
 
             
     Example of playing into a segment's ina:
@@ -612,49 +543,28 @@ Vector
 
 ----
 
-.. method:: Vector.play_remove
-
-
-    Syntax:
-        ``v.play_remove()``
-
-    Description:
-        Removes the vector from BOTH record and play lists. 
-        Note that the vector is automatically removed if 
-        the variable which is recorded or played is destroyed 
-        or if the vector is destroyed. 
-        This function is used in those 
-        cases where one wishes to keep the vector data even under subsequent runs. 
+.. method:: Vector.play_remove() -> None
          
     .. seealso::
         :meth:`Vector.record`, :meth:`Vector.play`
          
 ----
 
-.. method:: Vector.indgen
+.. method:: Vector.indgen() -> Vector
+.. method:: Vector.indgen(stetpsize: float) -> Vector
+.. method:: Vector.indgen(start: int, stetpsize: float) -> Vector
+.. method:: Vector.indgen(start: int, stop: int, stepsize: float) -> Vector
 
-
-    Syntax:
-        ``obj = vsrcdest.indgen()``
-
-        ``obj = vsrcdest.indgen(stepsize)``
-
-        ``obj = vsrcdest.indgen(start,stepsize)``
-
-        ``obj = vsrcdest.indgen(start,stop,stepsize)``
-
-
-    Description:
-        Fill the elements of a vector with a sequence of values.  With no 
-        arguments, the sequence is integers from 0 to (size-1). 
-         
-        With only *stepsize* passed, the sequence goes from 0 to 
-        *stepsize**(size-1) 
-        in steps of *stepsize*.  *Stepsize* does not have to be an integer. 
-         
-        With *start*, *stop* and *stepsize*, 
-        the vector is resized to be 1 + (*stop* - $varstart)/*stepsize* long and the sequence goes from 
-        *start* up to and including *stop* in increments of *stepsize*. 
+    Fill the elements of a vector with a sequence of values.  With no 
+    arguments, the sequence is integers from 0 to (size-1). 
+        
+    With only *stepsize* passed, the sequence goes from 0 to 
+    *stepsize**(size-1) 
+    in steps of *stepsize*.  *Stepsize* does not have to be an integer. 
+        
+    With *start*, *stop* and *stepsize*, 
+    the vector is resized to be 1 + (*stop* - $varstart)/*stepsize* long and the sequence goes from 
+    *start* up to and including *stop* in increments of *stepsize*. 
 
     Example:
 
@@ -685,15 +595,11 @@ Vector
          
 ----
 
-.. method:: Vector.append
+.. method:: Vector.append(arg1, arg2, ...) -> Vector
 
-    Syntax:
-        ``obj = vsrcdest.append(vec1, vec2, ...)``
-
-    Description:
-        Concatenate values onto the end of a vector. 
-        The arguments may be either scalars or vectors. 
-        The values are appended to the end of the ``vsrcdest`` vector. 
+    Concatenate values onto the end of a vector. 
+    The arguments may be either scalars or vectors. 
+    The values are appended to the end of the vector. 
 
     Example:
 
@@ -709,48 +615,32 @@ Vector
         turns ``vec`` into a 37 element vector, whose first ten elements = 4, whose 
         second ten elements = 5, whose third ten elements = 6, and whose 31st, 32nd, 
         and 33rd elements = 7, 8, and 9, and 34-37 are 4,1,2,7.  Note that the Vector created to pass the Python list
-    into append is immediately discarded. Remember, index 32 refers to the 33rd element. 
+        into append is immediately discarded. Remember, index 32 refers to the 33rd element. 
          
 ----
 
-.. method:: Vector.insrt
+.. method:: Vector.insrt(index: int, arg1, arg2, ...) -> Vector
 
-
-    Syntax:
-        ``obj = vsrcdest.insrt(index, vec1, vec2, ...)``
-
-
-    Description:
-        Inserts values before the index element. 
-        The arguments may be either scalars or vectors. 
-         
-        ``obj.insrt(obj.size, ...)`` is equivalent to ``obj.append(...)`` 
+    Inserts values before the index element. 
+    The arguments may be either scalars or vectors. 
+        
+    ``obj.insrt(len(obj), ...)`` is equivalent to ``obj.append(...)`` 
          
 ----
 
-.. method:: Vector.remove
+.. method:: Vector.remove(index: int) -> Vector
+.. method:: Vector.remove(start: int, end: int) -> Vector
 
-
-    Syntax:
-        ``obj = vsrcdest.remove(index)``
-
-        ``obj = vsrcdest.remove(start, end)``
-
-    Description:
-        Remove the indexed element (or inclusive range) from the vector. 
-        The vector is resized. 
+    Remove the indexed element (or inclusive range) from the vector. 
+    The vector is resized. 
 
 ----
 
-.. method:: Vector.contains
+.. method:: Vector.contains(value: float) -> bool
 
-    Syntax:
-        ``numerical_truth_value = vsrc.contains(value)``
-
-    Description:
-        Return whether or not 
-        the vector contains *value* as at least one 
-        of its elements (to within :data:`float_epsilon`). It returns True if the value is found; otherwise
+    Return whether or not 
+    the vector contains *value* as at least one 
+    of its elements (to within :data:`float_epsilon`). It returns True if the value is found; otherwise
     it returns False. (In NEURON 7.5 and before, this method returned 1 or 0 instead of True or False, respectively.)
     
     Example:
@@ -774,7 +664,7 @@ Vector
     .. note::
     
         An h.Vector is a Python iterable, so you can also use Python's ``in``
-        keyword: ``5 in h.Vector([1, 5])`` returns True.
+        keyword: ``5 in h.Vector([1, 5])`` returns ``True``.
     
         
          
@@ -783,51 +673,39 @@ Vector
 
 
 
-.. method:: Vector.copy
+.. method:: Vector.copy(vsrc: Vector) -> Vector
+.. method:: Vector.copy(vsrc: Vector, dest_start: int) -> Vector
+.. method:: Vector.copy(vsrc: Vector, src_start: int, src_end: int) -> Vector
+.. method:: Vector.copy(vsrc: Vector, dest_start: int, src_start: int, src_end: int) -> Vector
+.. method:: Vector.copy(vsrc: Vector, dest_start: int, src_start: int, src_end: int, dest_inc: int, src_inc: int) -> Vector
+.. method:: Vector.copy(vsrc: Vector, vsrcdestindex: int) -> Vector
+.. method:: Vector.copy(vsrc: Vector, vsrcindex: int, vdestindex: int) -> Vector
 
-
-    Syntax:
-        ``obj = vdest.copy(vsrc)``
-
-        ``obj = vdest.copy(vsrc, dest_start)``
-
-        ``obj = vdest.copy(vsrc, src_start, src_end)``
-
-        ``obj = vdest.copy(vsrc, dest_start, src_start, src_end)``
-
-        ``obj = vdest.copy(vsrc, dest_start, src_start, src_end, dest_inc, src_inc)``
-
-        ``obj = vdest.copy(vsrc, vsrcdestindex)``
-
-        ``obj = vdest.copy(vsrc, vsrcindex, vdestindex)``
-
-
-    Description:
-        Copies some or all of *vsrc* into *vdest*. 
-        If the dest_start argument is present (an integer index), 
-        source elements (beginning at *src*``[0]``) 
-        are copied to  *vdest* beginning at *dest*``[dest_start]``, 
-        *Src_start* and *src_end* here refer to indices of *vsrcx*, 
-        not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
-        arguments, then it is resized to hold the data. 
-        If the *dest* is larger than required AND there is more than one 
-        argument the *dest* is NOT resized. 
-        One may use -1 for the 
-        src_end argument to specify the entire size (instead of the tedious ``len(src)-1``) 
-         
-        If the second (and third) argument is a vector, 
-        the elements of that vector are the 
-        indices of the vsrc to be copied to the same indices of the vdest. 
-        In this case the vdest is not resized and any indices that are out of 
-        range of either vsrc or vdest are ignored. This function allows mapping 
-        of a subset of a source vector into the subset of a destination vector. 
-         
-        This function can be slightly more efficient than :func:`c` since 
-        if vdest contains enough space, memory will not have to 
-        be allocated for it. Also it is convenient for those cases 
-        in which vdest is being plotted and therefore reallocation 
-        of memory (with consequent removal of vdest from the Graph) 
-        is to be explicitly avoided. 
+    Copies some or all of *vsrc* into *vdest*, where *vdest* is the vector on the left side of the ``copy``.
+    If the dest_start argument is present (an integer index), 
+    source elements (beginning at *src*``[0]``) 
+    are copied to  *vdest* beginning at *dest*``[dest_start]``, 
+    *Src_start* and *src_end* here refer to indices of *vsrcx*, 
+    not *vdest*.  If *vdest* is too small for the size required by *vsrc* and the 
+    arguments, then it is resized to hold the data. 
+    If the *dest* is larger than required AND there is more than one 
+    argument the *dest* is NOT resized. 
+    One may use -1 for the 
+    src_end argument to specify the entire size (instead of the tedious ``len(src)-1``) 
+        
+    If the second (and third) argument is a vector, 
+    the elements of that vector are the 
+    indices of the vsrc to be copied to the same indices of the vdest. 
+    In this case the vdest is not resized and any indices that are out of 
+    range of either vsrc or vdest are ignored. This function allows mapping 
+    of a subset of a source vector into the subset of a destination vector. 
+        
+    This function can be slightly more efficient than :func:`c` since 
+    if vdest contains enough space, memory will not have to 
+    be allocated for it. Also it is convenient for those cases 
+    in which vdest is being plotted and therefore reallocation 
+    of memory (with consequent removal of vdest from the Graph) 
+    is to be explicitly avoided. 
 
     Example:
         To copy the odd elements use:
@@ -896,26 +774,18 @@ Vector
 
 
 
-.. method:: Vector.c
+.. method:: Vector.c() -> Vector
+.. method:: Vector.c(srcstart: int) -> Vector
+.. method:: Vector.c(srcstart: int, srcend: int) -> Vector
 
+    Return a :class:`Vector`` which is a copy of the vsrc Vector, but does not copy 
+    the label. For a complete copy including the label use :meth:`Vector.cl`. 
+    (Identical to the :meth:`Vector.at` function but has a short name that suggests 
+    copy or clone). Useful in the construction of filter chains. 
 
-    Syntax:
-        ``newvec = vsrc.c()``
-
-        ``newvec = vsrc.c(srcstart)``
-
-        ``newvec = vsrc.c(srcstart, srcend)``
-
-
-    Description:
-        Return a h.Vector which is a copy of the vsrc Vector, but does not copy 
-        the label. For a complete copy including the label use :meth:`Vector.cl`. 
-        (Identical to the :meth:`Vector.at` function but has a short name that suggests 
-        copy or clone). Useful in the construction of filter chains. 
-
-        In versions of NEURON before 7.7, this was often used in building Vectors
-        from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
-        recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
+    In versions of NEURON before 7.7, this was often used in building Vectors
+    from other Vectors, e.g. ``vec2 = vec1.c().add(1)``; in new code, it is
+    recommended to use the shorter equivalent ``vec2 = vec1 + 1``.         
 
          
 
@@ -923,25 +793,14 @@ Vector
 
 
 
-.. method:: Vector.cl
+.. method:: Vector.cl() -> Vector
+.. method:: Vector.cl(srcstart: int) -> Vector
+.. method:: Vector.cl(srcstart: int, srcend: int) -> Vector
 
 
-    Syntax:
-        ``newvec = vsrc.cl()``
-
-        ``newvec = vsrc.cl(srcstart)``
-
-        ``newvec = vsrc.cl(srcstart, srcend)``
-
-
-    Description:
-        Return a h.Vector which is a copy, including the label, of the vsrc vector. 
-        (Similar to the :meth:`Vector.c` function which does not copy the label) 
-        Useful in the construction of filter chains. 
-        Note that with no arguments, it is not necessary to type the 
-        parentheses. 
-
-         
+    Return a :class:`Vector`` which is a copy, including the label, of the vector. 
+    (Similar to the :meth:`Vector.c` function which does not copy the label) 
+    Useful in the construction of filter chains. 
 
 ----
 
@@ -949,29 +808,23 @@ Vector
 
 .. method:: Vector.at
 
+.. method:: Vector.at() -> Vector
+.. method:: Vector.at(start: int) -> Vector
+.. method:: Vector.at(start: int, end: int) -> Vector
 
-    Syntax:
-        ``newvec = vsrc.at()``
+    Return a :class:`Vector` consisting of all or part of another. 
+        
+    This function predates the introduction of the vsrc.c, "clone", function 
+    which is synonymous but is retained for backward compatibility. 
+        
+    It merely avoids the necessity of a ``vdest = h.Vector()`` command and 
+    is equivalent to 
 
-        ``newvec = vsrc.at(start)``
+    .. code-block::
+        python
 
-        ``newvec = vsrc.at(start,end)``
-
-
-    Description:
-        Return a h.Vector consisting of all or part of another. 
-         
-        This function predates the introduction of the vsrc.c, "clone", function 
-        which is synonymous but is retained for backward compatibility. 
-         
-        It merely avoids the necessity of a ``vdest = h.Vector()`` command and 
-        is equivalent to 
-
-        .. code-block::
-            python
-
-            vdest = h.Vector() 
-            vdest.copy(vsrc, start, end) 
+        vdest = h.Vector() 
+        vdest.copy(vsrc, start, end) 
 
 
     Example:
@@ -993,16 +846,10 @@ Vector
 
 
 
-.. method:: Vector.from_double
+.. method:: Vector.from_double(n: int, pointer) -> Vector
 
-
-    Syntax:
-        ``obj = vdest.from_double(n, pointer)``
-
-
-    Description:
-        Resizes the vector to size n and copies the values from the double array 
-        to the vector.
+    Resizes the vector to size ``n`` and copies the values from the double array 
+    to the vector.
         
     Examples:
     
@@ -1054,29 +901,20 @@ Vector
 
 
 
-.. method:: Vector.where
+.. method:: Vector.where(vsource: Vector, opstring: str, value1: float) -> Vector
+.. method:: Vector.where(vsource: Vector, op2string: str, value1: float, value2) -> Vector
+.. method:: Vector.where(opstring: str, value1: float) -> Vector
+.. method:: Vector.where(op2string: str, value1: float, value2: float) -> Vector
 
+    The vector before the ``.where`` becomes a vector consisting of those elements of the given vector, ``vsource`` 
+    that match the condition opstring. 
+        
+    Opstring is a string matching one of these (all comparisons 
+    are with respect to :data:`float_epsilon` ): ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 
-    Syntax:
-        ``obj = vdest.where(vsource, opstring, value1)``
-
-        ``obj = vdest.where(vsource, op2string, value1, value2)``
-
-        ``obj = vsrcdest.where(opstring, value1)``
-
-        ``obj = vsrcdest.where(op2string, value1, value2)``
-
-
-    Description:
-        ``vdest`` is vector consisting of those elements of the given vector, ``vsource`` 
-        that match the condition opstring. 
-         
-        Opstring is a string matching one of these (all comparisons 
-        are with respect to :data:`float_epsilon` ): ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
-
-        Op2string requires two numbers defining open/closed ranges and matches one 
-        of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
-         
+    Op2string requires two numbers defining open/closed ranges and matches one 
+    of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
+        
 
     Example:
 
@@ -1114,52 +952,27 @@ Vector
 
 
 
-.. method:: Vector.indwhere
+.. method:: Vector.indwhere(opstring: str, value: float) -> int
+.. method:: Vector.indwhere(op2string: str, low: float, high: float) -> int
+.. method:: Vector.indvwhere(opstring: str, value: float) -> Vector
+.. method:: Vector.indvwhere(vsource: Vector, op2string: str, low: float, high: float) -> Vector
 
 
-    .. seealso::
-        :meth:`Vector.indvwhere`
-
-         
-
-----
-
-
-
-.. method:: Vector.indvwhere
+    The  ``i = vsrc.indwhere`` form returns the index of the first element of v matching 
+    the criterion given by the opstring. If there is no match, the return value 
+    is -1. 
+        
+    With ``indvwhere``, ``vdest`` is a vector consisting of the indices of those elements of 
+    the source vector that match the condition opstring. 
+        
+    Opstring is a string matching one of these: ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
 
 
-    Syntax:
-        ``i = vsrc.indwhere(opstring, value)``
+    Op2string is a string matching one of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
 
-        ``i = vsrc.indwhere(op2string, low, high)``
-
-
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vsrcdest.indvwhere(opstring,value)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
-
-        ``obj = vdest.indvwhere(vsource,op2string,low, high)``
-
-
-    Description:
-        The  i = vsrc form returns the index of the first element of v matching 
-        the criterion given by the opstring. If there is no match, the return value 
-        is -1. 
-         
-        ``vdest`` is a vector consisting of the indices of those elements of 
-        the source vector that match the condition opstring. 
-         
-        Opstring is a string matching one of these: ``"=="``, ``"!="``, ``">"``, ``"<"``, ``">="``, ``"<="``
-
-
-        Op2string is a string matching one of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
-
-         
-        Comparisons are relative to the :data:`float_epsilon` global variable. 
-         
+        
+    Comparisons are relative to the :data:`float_epsilon` global variable. 
+        
 
     Example:
 
@@ -1171,11 +984,11 @@ Vector
             vs.indgen(0, .9, .1) 
             vs.printf()
              
-            print(vs.indwhere(">", .3))
+            print(vs.indwhere(">", 0.3))
             print("note roundoff error, vs[3] - 0.3 = %g" % (vs[3] - 0.3))
-            print(vs.indwhere("==", .5))
+            print(vs.indwhere("==", 0.5))
              
-            vd = vs.c().indvwhere(vs, "[)", .3, .7) 
+            vd = vs.c().indvwhere(vs, "[)", 0.3, 0.7) 
             vd.printf()
 
 
@@ -1190,110 +1003,23 @@ Vector
 
 
 
-.. method:: Vector.fwrite
+.. method:: Vector.fwrite(fileobj: File) -> int
+.. method:: Vector.fwrite(fileobj: File, start: int, end: int) -> int
 
-
-    Syntax:
-        ``n = vsrc.fwrite(fileobj)``
-
-        ``n = vsrc.fwrite(fileobj, start, end)``
-
-
-    Description:
-        Write the vector ``vec`` to an open *fileobj* of type :class:`File` in 
-        machine dependent binary format. 
-        You must keep track of the vector's 
-        size for later reading, so it is recommended that you store the size of the 
-        vector as the first element of the file. 
-         
-        It is almost always better to use :func:`vwrite` since it stores the size 
-        of the vector automatically and is more portable since the corresponding 
-        vread will take care of machine dependent binary byte ordering differences. 
-         
-        Return value is the number of items. (0 if error) 
-         
-        :func:`fread` is used to read a file containing numbers stored by ``fwrite`` but 
-        must have the same size. 
-
-         
-
-----
-
-
-
-.. method:: Vector.fread
-
-
-    Syntax:
-        ``n = vdest.fread(fileobj)``
-
-        ``n = vdest.fread(fileobj, n)``
-
-        ``n = vdest.fread(fileobj, n, precision)``
-
-
-    Description:
-        Read the elements of a vector from the file in binary as written by ``fwrite.`` 
-        If *n* is present, the vector is resized before reading. Note that 
-        files created with fwrite cannot be fread on a machine with different 
-        byte ordering. E.g. spark and intel cpus have different byte ordering. 
-         
-        It is almost always better to use ``vwrite`` in combination with ``vread``. 
-        See vwrite for the meaning of the *precision* argment. 
-         
-        Return value is 1 (no error checking). 
-
-         
-
-----
-
-
-
-.. method:: Vector.vwrite
-
-
-    Syntax:
-        ``n = vec.vwrite(fileobj)``
-
-        ``n = vec.vwrite(fileobj, precision)``
-
-
-    Description:
-        Write the vector in binary format 
-        to an already opened for writing * fileobj* of type 
-        :class:`File`. 
-        :meth:`~Vector.vwrite` is easier to use than ``fwrite()`` 
-        since it stores the size of the vector and type information 
-        for a more 
-        automated read/write. The file data can also be vread on a machine with 
-        different byte ordering. e.g. you can vwrite with an intel cpu and vread 
-        on a sparc. 
-        Precision formats 1 and 2 employ a simple automatic 
-        compression which is uncompressed automatically by vread.  Formats 3 and 4 
-        remain uncompressed. 
-         
-        Default precision is 4 (double) because this is the usual type 
-        used for numbers in oc and therefore requires no conversion or 
-        compression 
-
-        .. code-block::
-            python
-
-            *  1 : char            shortest    8  bits    
-            *  2 : short                       16 bits 
-               3 : float                       32 bits 
-               4 : double          longest     64 bits    
-               5 : int                         sizeof(int) bytes 
-
-         
-        .. warning::
+    Write the vector ``vec`` to an open *fileobj* of type :class:`File` in 
+    machine dependent binary format. 
+    You must keep track of the vector's 
+    size for later reading, so it is recommended that you store the size of the 
+    vector as the first element of the file. 
         
-            These are useful primarily for storage of data: exact 
-            values will not necessarily be maintained due to the conversion 
-            process.
-         
-        Return value is 1. Only if the type field is invalid will the return 
-        value be 0. 
+    It is almost always better to use :meth:`Vector.vwrite` since it stores the size 
+    of the vector automatically and is more portable since the corresponding 
+    :meth:`Vector.vread` will take care of machine dependent binary byte ordering differences. 
+        
+    Return value is the number of items. (0 if error) 
+        
+    :meth:`Vector.fread` is used to read a file containing numbers stored by ``fwrite`` but 
+    must have the same size. 
 
          
 
@@ -1301,20 +1027,79 @@ Vector
 
 
 
-.. method:: Vector.vread
+.. method:: Vector.fread(fileobj: File) -> int
+.. method:: Vector.fread(fileobj: File, n: int) -> int
+.. method:: Vector.fread(fileobj: File, n: int, precision) -> int
 
+    Read the elements of a vector from the file in binary as written by ``fwrite.`` 
+    If *n* is present, the vector is resized before reading. Note that 
+    files created with fwrite cannot be fread on a machine with different 
+    byte ordering. E.g. spark and intel cpus have different byte ordering. 
+        
+    It is almost always better to use ``vwrite`` in combination with ``vread``. 
+    See vwrite for the meaning of the *precision* argment. 
+        
+    Return value is 1 (no error checking). 
 
-    Syntax:
-        ``n = vec.vread(fileobj)``
-
-
-    Description:
-        Read vector from binary format file written with ``vwrite()``. 
-        Size and data type have 
-        been stored by ``vwrite()`` to allow correct retrieval syntax, byte ordering, and 
-        decompression (where necessary).  The vector is automatically resized. 
          
-        Return value is 1. (No error checking.) 
+
+----
+
+
+
+.. method:: Vector.vwrite(fileobj: File) -> int
+.. method:: Vector.vwrite(fileobj: File, precision: int) -> int
+
+    Write the :class:`Vector` in binary format 
+    to an already opened for writing *fileobj* of type 
+    :class:`File`. 
+    :meth:`~Vector.vwrite` is easier to use than :meth:`.fwrite` 
+    since it stores the size of the vector and type information 
+    for a more 
+    automated read/write. The file data can also be vread on a machine with 
+    different byte ordering. e.g. you can vwrite with an intel cpu and vread 
+    on a sparc. 
+    Precision formats 1 and 2 employ a simple automatic 
+    compression which is uncompressed automatically by vread.  Formats 3 and 4 
+    remain uncompressed. 
+        
+    Default precision is 4 (double) because this is the usual type 
+    used for numbers in oc and therefore requires no conversion or 
+    compression 
+
+    .. code-block::
+        python
+
+        *   1 : char            shortest    8  bits    
+        *   2 : short                       16 bits 
+            3 : float                       32 bits 
+            4 : double          longest     64 bits    
+            5 : int                         sizeof(int) bytes 
+
+        
+    .. warning::
+    
+        These are useful primarily for storage of data: exact 
+        values will not necessarily be maintained due to the conversion 
+        process.
+        
+    Return value is 1. Only if the type field is invalid will the return 
+    value be 0. 
+
+         
+
+----
+
+
+
+.. method:: Vector.vread(fileobj: File) -> int
+
+    Read vector from binary format file written with :meth:`.vwrite`. 
+    Size and data type have 
+    been stored by :meth:`.vwrite` to allow correct retrieval syntax, byte ordering, and 
+    decompression (where necessary).  The vector is automatically resized. 
+        
+    Return value is 1. (No error checking.) 
 
     Example:
 
