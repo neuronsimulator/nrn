@@ -848,7 +848,7 @@ Vector
             Vector.c(srcstart: int) -> Vector
             Vector.c(srcstart: int, srcend: int) -> Vector
 
-    Return a :class:`Vector`` which is a copy of the vsrc Vector, but does not copy 
+    Return a :class:`Vector` which is a copy of the vsrc Vector, but does not copy 
     the label. For a complete copy including the label use :meth:`Vector.cl`. 
     (Identical to the :meth:`Vector.at` function but has a short name that suggests 
     copy or clone). Useful in the construction of filter chains. 
@@ -868,7 +868,7 @@ Vector
             Vector.cl(srcstart: int, srcend: int) -> Vector
 
 
-    Return a :class:`Vector`` which is a copy, including the label, of the vector. 
+    Return a :class:` which is a copy, including the label, of the vector. 
     (Similar to the :meth:`Vector.c` function which does not copy the label) 
     Useful in the construction of filter chains. 
 
