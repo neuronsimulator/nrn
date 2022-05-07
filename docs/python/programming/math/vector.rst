@@ -1473,7 +1473,7 @@ Vector
             Vector.mark(graphobj, x_increment, [style, [size, [color, brush]]])
 
 
-    Similar to :method:`Vector.line`, but instead of connecting by lines, it make marks, 
+    Similar to :meth:`Vector.line`, but instead of connecting by lines, it make marks, 
     centered at the indicated position, which do not change size when 
     window is zoomed or resized. The style is a single character 
     ``|,-,+,o,O,t,T,s,S`` where ``o,t,s`` stand for circle, triangle, square 
