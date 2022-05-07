@@ -166,6 +166,7 @@ Vector
     .. seealso::
         :meth:`Vector.buffer_size`
 
+    **Example:**
 
     .. code-block::
         python
