@@ -1813,7 +1813,19 @@ Vector
 .. method:: Vector.floor()
 
     Rounds toward negative infinity. Note that :data:`float_epsilon` is not 
-    used in this calculation. 
+    used in this calculation.
+
+    :return: The modified Vector.
+    :rtype: Vector
+
+    **Example:**
+
+    .. code-block::
+        python
+
+        vec = h.Vector([-0.1, -2.1, -1.9, 1.9, 2.1])
+        vec.floor()
+        vec.printf()  # prints: -1	-3	-2	1	2
 
          
          
@@ -2038,49 +2050,39 @@ Vector
 
 
 
-.. method:: Vector.deriv
+.. method:: Vector.deriv([vsrc], [dx, [method]])
+
+    Fill the Vector with the numerical Euler derivative or the central difference derivative.
+    If ``vsrc`` is omitted, the derivative is taken on the current Vector; otherwise, it is
+    taken on the Vector ``vsrc``.
+
+    :param vsrc: Vector to take derivative of (if omitted, uses the current Vector).
+    :type vsrc: :class:`Vector`, optional.
+    :param dx: Step size between successive elements.
+    :type dx: float, optional but required if ``method`` is specified.
+    :param method: Method to use (1 = Euler, 2 = Central difference)
+    :type method: int, optional.
+    :return: The modified Vector, which contains the derivative.
+    :rtype: :class:`Vector`
 
 
-    Syntax:
-        ``obj = vdest.deriv(vsrc)``
+    *method* = 1 = Euler derivative: ``vec1[i] = (vec[i+1] - vec[i])/dx`` 
 
-        ``obj = vdest.deriv(vsrc, dx)``
+        Each time this method is used, 
+        the first element 
+        of ``vec`` is lost since *i* cannot equal -1.  Therefore, since the 
+        ``integral`` function performs an Euler 
+        integration, the integral of ``vec1`` will reproduce ``vec`` minus the first 
+        element. 
 
-        ``obj = vdest.deriv(vsrc, dx, method)``
+    *method* = 2 = Central difference derivative: ``vec1[i] = ((vec[i+1]-vec[i-1])/2)/dx`` 
 
-        ``obj = vsrcdest.deriv()``
-
-        ``obj = vsrcdest.deriv(dx)``
-
-        ``obj = vsrcdest.deriv(dx, method)``
-
-
-    Description:
-        The numerical Euler derivative or the central difference derivative of ``vec`` 
-        is placed in ``vdest``. 
-        The variable *dx* gives the increment of the independent variable 
-        between successive elements of ``vec``. 
-
-
-        *method* = 1 = Euler derivative: 
-            ``vec1[i] = (vec[i+1] - vec[i])/dx`` 
- 
-            Each time this method is used, 
-            the first element 
-            of ``vec`` is lost since *i* cannot equal -1.  Therefore, since the 
-            ``integral`` function performs an Euler 
-            integration, the integral of ``vec1`` will reproduce ``vec`` minus the first 
-            element. 
-
-        *method* = 2 = Central difference derivative: 
-            ``vec1[i] = ((vec[i+1]-vec[i-1])/2)/dx`` 
- 
-            This method produces an Euler derivative for the first and last 
-            elements of ``vec1``.  The central difference method maintains the 
-            same number of elements in ``vec1`` 
-            as were in ``vec`` and is a more accurate method than the Euler method. 
-            A vector differentiated by this method cannot, however, be integrated 
-            to reproduce the original ``vec``. 
+        This method produces an Euler derivative for the first and last 
+        elements of ``vec1``.  The central difference method maintains the 
+        same number of elements in ``vec1`` 
+        as were in ``vec`` and is a more accurate method than the Euler method. 
+        A vector differentiated by this method cannot, however, be integrated 
+        to reproduce the original ``vec``. 
 
          
 
@@ -2098,7 +2100,7 @@ Vector
     creates ``vec1`` with elements: 
 
     .. code-block::
-        python
+        none
 
         10	20	 
         40	60	 
@@ -2110,7 +2112,7 @@ Vector
     ``vec1`` would consist of the following elements: 
 
     .. code-block::
-        python
+        none
 
         1	2	 
         4	6	 
@@ -2122,17 +2124,17 @@ Vector
     Beginning with the vector ``vec``: 
 
     .. code-block::
-        python
+        none
 
         0	1	 
         4	9	 
         16	25 
 
-    ``vec1.deriv(vec, 1, 1)`` (Euler) would go about 
-    producing ``vec1`` by the following method: 
+    ``vec1.deriv(vec, 1, 1)`` (Euler) would  
+    produce ``vec1`` by the following method: 
 
     .. code-block::
-        python
+        none
 
         1-0   = 1	4-1  = 3		 
         9-4   = 5	16-9 = 7	 
