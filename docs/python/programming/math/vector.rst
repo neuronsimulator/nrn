@@ -1175,14 +1175,18 @@ Vector
 
 
 
-.. method:: Vector.vread(fileobj: File) -> int
+.. method:: Vector.vread(fileobj)
 
     Read vector from binary format file written with :meth:`.vwrite`. 
     Size and data type have 
-    been stored by :meth:`.vwrite` to allow correct retrieval syntax, byte ordering, and 
+    been stored by :meth:`Vector.vwrite` to allow correct retrieval syntax, byte ordering, and 
     decompression (where necessary).  The vector is automatically resized. 
         
-    Return value is 1. (No error checking.) 
+
+    :param fileobj: File object to read from.
+    :type fileobj: :class:`File`
+    :returns: 1. (No error checking.)
+
 
     **Example:**
 
@@ -1704,8 +1708,16 @@ Vector
 
 .. method:: Vector.sin(freq, phase [, dt])
 
-    Generate a sin function in the Vector with frequency *freq* hz, phase 
-    *phase* in radians.  *dt* is assumed to be 1 msec unless specified. 
+    Generate a sin function in the Vector.
+
+    :param freq: Frequency of the sin function in Hz.
+    :type freq: float
+    :param phase: Phase of the sin function in radians.
+    :type phase: float
+    :param dt: Time step in ms (default = 1ms)
+    :type dt: float, optional
+    :return: The Vector.
+    :rtype: Vector
 
          
 
@@ -1715,11 +1727,19 @@ Vector
 
 .. method:: Vector.apply(hoc_func_name [, start, end])
 
-    Apply a hoc function to each of the elements in the vector. 
-    The function can be any function that is accessible in oc.  It 
+    Apply a HOC function to each of the elements in the vector. 
+    The function can be any function that is accessible in HOC.  It 
     must take only one scalar argument and return a scalar. 
-    Note that the function name must be in quotes and that the parentheses 
-    are omitted. 
+
+    :param hoc_func_name: Name of HOC function to apply to each element.
+    :type hoc_func_name: str
+    :param start: Index of first element to apply the function to (default is 0).
+    :type start: int, optional but required if end is specified
+    :param end: Index of last element to apply the function to (default is the last element).
+    :type end: int, optional but required if start is specified
+    :return: The modified Vector.
+    :rtype: float
+
 
     **Example:**
 
@@ -1736,49 +1756,55 @@ Vector
 
 
 
-.. method:: Vector.reduce
+.. method:: Vector.reduce(hoc_func_name [, base, [start, end]])
+
+    Pass all elements of a vector through a HOC function and return the sum of 
+    the results.  Use *base* to initialize the value of the sum. 
+
+    :param hoc_func_name: Name of HOC function to apply to each element.
+    :type hoc_func_name: str
+    :param base: Initial value of the sum (default is 0).
+    :type base: float, optional
+    :param start: Index of first element to apply the function to (default is 0).
+    :type start: int, optional but required if end is specified
+    :param end: Index of last element to apply the function to (default is the last element).
+    :type end: int, optional but required if start is specified
+    :return: The sum of base and the sum of the results of the HOC function.
+    :rtype: float
 
 
-    Syntax:
-        ``x = vsrc.reduce("func")``
+    **Example:**
 
-        ``x = vsrc.reduce("func", base)``
+    .. code-block::
+        python
 
-        ``x = vsrc.reduce("func", base, start, end)``
+        from neuron import h
+        vec = h.Vector() 
+        vec.indgen(0, 10, 2) 
+        h("func sq(){return $1*$1}")
+        print(vec.reduce("sq", 100))
 
-
-    Description:
-        Pass all elements of a vector through a HOC function and return the sum of 
-        the results.  Use *base* to initialize the value x. 
-        Note that the function name must be in quotes and that the parentheses 
-        are omitted. 
-
-    Example:
-
-        .. code-block::
-            python
-
-            from neuron import h
-            vec = h.Vector() 
-            vec.indgen(0, 10, 2) 
-            h("func sq(){return $1*$1}")
-            print(vec.reduce("sq", 100))
-
-        displays the value 320. 
-         
-        100 + 0*0 + 2*2 + 4*4 + 6*6 + 8*8 + 10*10 = 320 
+    displays the value 320. 
         
-    Although reduce only works with HOC functions, it can be emulated in Python
-    using generators and the ``sum`` function. For example, the last
-    two lines of the above example are equivalent to:
-    
-        .. code-block::
-            python
-         
-            def sq(x):
-                return x * x
-            print(sum((sq(x) for x in vec), 100))
-         
+    100 + 0*0 + 2*2 + 4*4 + 6*6 + 8*8 + 10*10 = 320 
+        
+    .. note::
+        
+        Although reduce only works with HOC functions, it can be emulated in Python
+        using generators and the ``sum`` function. For example, the last
+        two lines of the above example are equivalent to:
+        
+            .. code-block::
+                python
+            
+                def sq(x):
+                    return x * x
+
+                print(sum((sq(x) for x in vec), 100))
+
+        An alternative Python approach is to use 
+        `functools.reduce <https://docs.python.org/3/library/functools.html>`_ 
+        which works with Vectors but requires a function that takes two arguments.
 
 ----
 
@@ -1796,46 +1822,32 @@ Vector
 
 
 
-.. method:: Vector.to_python
+.. method:: Vector.to_python([dest])
 
+    Copy the vector elements from the NEURON Vector to a Python list or 
+    1-d numpy array. If the arg exists the pythonobject must have the same 
+    size as the NEURON Vector. 
 
-    Syntax:
-        
-        ``pythonlist = vec.to_python()``
-
-        ``pythonlist = vec.to_python(pythonlist)``
-
-        ``numpyarray = vec.to_python(numpyarray)``
-
-
-    Description:
-
-        Copy the vector elements from the hoc vector to a pythonlist or 
-        1-d numpyarray. If the arg exists the pythonobject must have the same 
-        size as the hoc vector. 
-
-         
+    :param dest: Python object to copy the vector elements to.
+    :type dest: list or numpy.ndarray, optional
+    :return: Python object with a copy of the Vector elements.
+    :rtype: list or numpy.ndarray
 
 ----
 
 
 
-.. method:: Vector.from_python
+.. method:: Vector.from_python(src)
 
+    Copy the python list elements into the NEURON Vector. The elements must be 
+    numbers that are convertable to doubles. 
+    Copy the numpy 1-d array elements into the NEURON Vector. 
+    The NEURON Vector is resized and returned. 
 
-    Syntax:
-
-        ``vec = vec.from_python(pythonlist)``
-
-        ``vec = vec.from_python(numpyarray)``
-
-
-    Description:
-
-        Copy the python list elements into the hoc vector. The elements must be 
-        numbers that are convertable to doubles. 
-        Copy the numpy 1-d array elements into the hoc vector. 
-        The hoc vector is resized. 
+    :param src: Python list or numpy array to copy from.
+    :type src: list or numpy.ndarray
+    :return: The modified Vector.
+    :rtype: Vector
 
 
 ----
@@ -1844,9 +1856,12 @@ Vector
 .. method:: Vector.as_numpy()
 
 
-    Return a numpy array that points into the data of the Hoc Vector, i.e. does not
+    Return a numpy array that points into the data of the NEURON Vector, i.e. does not
     copy the data. Do not
-    use the numpyarray if the Vector is destroyed.
+    use the numpy array if the Vector is destroyed.
+
+    :return: A numpy array that points into the data of the NEURON Vector.
+    :rtype: numpy.ndarray
 
 
     **Example:**
@@ -1867,60 +1882,93 @@ Vector
 ----
 
 
-.. method:: Vector.fit
+.. method:: Vector.fit(fit_vec,"fcn",indep_vec, pointer1, [, pointer2 [, pointer3 [, ...]]])
+
+    Use a simplex algorithm to find parameters *p1* through *pN* such to 
+    minimize the mean squared error between the "data" contained in 
+    ``data_vec`` and the approximation generated by the user-supplied "*fcn*" 
+    applied to the elements of ``indep_vec``. 
+        
+    *fcn* must take one argument which is the main independent variable 
+    followed by one or more arguments which are tunable parameters which 
+    will be optimized.  Thus the arguments to .fit following "*fcn*" should 
+    be completely analogous to the arguments to fcn itself.  The 
+    difference is that the args to fcn must all be scalars while the 
+    corresponding args to .fit will be a vector object (for the 
+    independent variable) and pointers to scalars (for the remaining 
+    parameters). 
+        
+    The results of a call to .fit are three-fold.  First, the parameters 
+    of best fit are returned by setting the values of the variables *p1* to 
+    *pN* (possible because they are passed as pointers).  Second, the values 
+    of the vector fit_vec are set to the fitted function.  If ``fit_vec`` is 
+    not passed with the same size as ``indep_vec`` and ``data_vec``, it is resized 
+    accordingly.  Third, the mean squared error between the fitted 
+    function and the data is returned by ``.fit``.  The ``.fit()`` call may be 
+    reiterated several times until the error has reached an acceptable 
+    level. 
+        
+    Care must be taken in selecting an initial set of parameter values. 
+    Although you need not be too close, wild discrepancies will cause the 
+    simplex algorithm to give up.  Values of 0 are to be avoided.  Trial 
+    and error is sometimes necessary. 
+        
+    Because calls to hoc have a high overhead, this procedure can be 
+    rather slow.  Several commonly-used functions are provided directly 
+    in c code and will work much faster.  In each case, if the name below 
+    is used, the builtin function will be used and the user is expected to 
+    provide the correct number of arguments (here denoted ``a,b,c``...). 
+
+    .. code-block::
+        python
+
+        "exp1": y = a * exp(-x/b)   
+        "exp2": y = a * exp(-x/b) + c * exp (-x/d) 
+        "charging": y = a * (1-exp(-x/b)) + c * (1-exp(-x/d)) 
+        "line": y = a * x + b 
+        "quad": y = a * x^2 + b*x + c 
 
 
-    Syntax:
+    .. seealso::
+        :func:`fit_praxis`
 
-        ``error = data_vec.fit(fit_vec,"fcn",indep_vec, pointer1, [pointer2], ... [pointerN])``
+    **Example:**
 
+    The :menuselection:`NEURON Main Menu --> Miscellaneous --> Parameterized Function` widget uses this function 
+    and is implemented in :file:`nrn/lib/hoc/funfit.hoc`
+        
+    The following example demonstrates the strategy used by the simplex 
+    fitting algorithm to search for a minimum. The location of the parameter 
+    values is plotted on each call to the function. 
+    The sample function has a minimum at the point (1, .5) 
+        
 
-    Description:
+    .. code-block::
+        python
 
-        Use a simplex algorithm to find parameters *p1* through *pN* such to 
-        minimize the mean squared error between the "data" contained in 
-        ``data_vec`` and the approximation generated by the user-supplied "*fcn*" 
-        applied to the elements of ``indep_vec``. 
-         
-        *fcn* must take one argument which is the main independent variable 
-        followed by one or more arguments which are tunable parameters which 
-        will be optimized.  Thus the arguments to .fit following "*fcn*" should 
-        be completely analogous to the arguments to fcn itself.  The 
-        difference is that the args to fcn must all be scalars while the 
-        corresponding args to .fit will be a vector object (for the 
-        independent variable) and pointers to scalars (for the remaining 
-        parameters). 
-         
-        The results of a call to .fit are three-fold.  First, the parameters 
-        of best fit are returned by setting the values of the variables *p1* to 
-        *pN* (possible because they are passed as pointers).  Second, the values 
-        of the vector fit_vec are set to the fitted function.  If ``fit_vec`` is 
-        not passed with the same size as ``indep_vec`` and ``data_vec``, it is resized 
-        accordingly.  Third, the mean squared error between the fitted 
-        function and the data is returned by ``.fit``.  The ``.fit()`` call may be 
-        reiterated several times until the error has reached an acceptable 
-        level. 
-         
-        Care must be taken in selecting an initial set of parameter values. 
-        Although you need not be too close, wild discrepancies will cause the 
-        simplex algorithm to give up.  Values of 0 are to be avoided.  Trial 
-        and error is sometimes necessary. 
-         
-        Because calls to hoc have a high overhead, this procedure can be 
-        rather slow.  Several commonly-used functions are provided directly 
-        in c code and will work much faster.  In each case, if the name below 
-        is used, the builtin function will be used and the user is expected to 
-        provide the correct number of arguments (here denoted ``a,b,c``...). 
+        from neuron import h, gui
 
-        .. code-block::
-            python
+        g = h.Graph() 
+        g.size(0, 3, 0, 3) 
+            
+        def fun(a, x, y):
+            if a == 0:
+                g.line(x, y)
+                g.flush()
+                print('{} {} {}'.format(a, x, y))
+            return (x - 1) ** 2 + (y - 0.5) ** 2
 
-            "exp1": y = a * exp(-x/b)   
-            "exp2": y = a * exp(-x/b) + c * exp (-x/d) 
-            "charging": y = a * (1-exp(-x/b)) + c * (1-exp(-x/d)) 
-            "line": y = a * x + b 
-            "quad": y = a * x^2 + b*x + c 
-
+        dvec = h.Vector(2) 
+        fvec = h.Vector(2) 
+        fvec.fill(1) 
+        ivec = h.Vector(2) 
+        ivec.indgen() 
+            
+        a = h.ref(2)
+        b = h.ref(1) 
+        g.beginline() 
+        error = dvec.fit(fvec, fun, ivec, a, b) 
+        print('{} {} {}'.format(a[0], b[0], error))
 
     .. warning::
         This function is not very useful for fitting the results of simulation runs 
@@ -1930,48 +1978,6 @@ Vector
          
         An alternative implementation of the simplex fitting algorithm is in 
         the scopmath library. 
-
-    .. seealso::
-        :func:`fit_praxis`
-
-    Example:
-
-        The :menuselection:`NEURON Main Menu --> Miscellaneous --> Parameterized Function` widget uses this function 
-        and is implemented in :file:`nrn/lib/hoc/funfit.hoc`
-         
-        The following example demonstrates the strategy used by the simplex 
-        fitting algorithm to search for a minimum. The location of the parameter 
-        values is plotted on each call to the function. 
-        The sample function has a minimum at the point (1, .5) 
-         
-
-        .. code-block::
-            python
-
-            from neuron import h, gui
-
-            g = h.Graph() 
-            g.size(0, 3, 0, 3) 
-             
-            def fun(a, x, y):
-                if a == 0:
-                    g.line(x, y)
-                    g.flush()
-                    print('{} {} {}'.format(a, x, y))
-                return (x - 1) ** 2 + (y - 0.5) ** 2
-
-            dvec = h.Vector(2) 
-            fvec = h.Vector(2) 
-            fvec.fill(1) 
-            ivec = h.Vector(2) 
-            ivec.indgen() 
-             
-            a = h.ref(2)
-            b = h.ref(1) 
-            g.beginline() 
-            error = dvec.fit(fvec, fun, ivec, a, b) 
-            print('{} {} {}'.format(a[0], b[0], error))
-
 
     .. warning::
     
@@ -2153,6 +2159,7 @@ Vector
 
 
     Syntax:
+
         ``obj = vdest.integral(vsrc)``
 
         ``obj = vdest.integral(vsrc, dx)``
@@ -2170,72 +2177,72 @@ Vector
         ``vdest[i+1] = vdest[i] + vsrc[i+1]`` and the first element of ``vdest`` is always 
         equal to the first element of ``vsrc``. 
 
-    Example:
+    **Example:**
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            vec = h.Vector([0, 1, 4, 9, 16, 25]) 
-            vec1 = h.Vector() 
-            vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
-                                    # an x-squared function, dx = 0.1 
-            vec1.printf() 
+        from neuron import h
+        vec = h.Vector([0, 1, 4, 9, 16, 25]) 
+        vec1 = h.Vector() 
+        vec1.integral(vec, 1)	# Euler integral of vec elements approximating 
+                                # an x-squared function, dx = 0.1 
+        vec1.printf() 
 
-        will print the following elements in ``vec1`` to the screen: 
+    will print the following elements in ``vec1`` to the screen: 
 
-        .. code-block::
-            python
+    .. code-block::
+        none
 
-            0	1	5	 
-            14	30	55 
+        0	1	5	 
+        14	30	55 
 
-        In order to make the integral values more accurate, it is necessary to increase 
-        the size of the vector and to decrease the size of *dx*. 
+    In order to make the integral values more accurate, it is necessary to increase 
+    the size of the vector and to decrease the size of *dx*. 
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            import numpy
+        from neuron import h
+        import numpy
 
-            # set vec to the squares of 51 values from 0 to 5
-            vec = h.Vector(numpy.linspace(0, 5, 51))
-            vec.pow(2)
+        # set vec to the squares of 51 values from 0 to 5
+        vec = h.Vector(numpy.linspace(0, 5, 51))
+        vec.pow(2)
 
-            vec1 = h.Vector()
-            vec1.integral(vec, 0.1) # Euler integral of vec elements approximating
-                                    # an x-squared function, dx = 0.1
+        vec1 = h.Vector()
+        vec1.integral(vec, 0.1) # Euler integral of vec elements approximating
+                                # an x-squared function, dx = 0.1
 
-            # print every 10th index
-            for i in range(0, len(vec1), 10):
-                print(vec1[i])
+        # print every 10th index
+        for i in range(0, len(vec1), 10):
+            print(vec1[i])
 
 
-        will print the following elements  of 
-        ``vec1`` corresponding to the integers 0-5 to the screen: 
+    will print the following elements  of 
+    ``vec1`` corresponding to the integers 0-5 to the screen: 
 
-        .. code-block::
-            python
+    .. code-block::
+        none
 
-            0
-            0.385
-            2.87 
-            9.455
-            22.14
-            42.925 
+        0
+        0.385
+        2.87 
+        9.455
+        22.14
+        42.925 
 
-        The integration naturally becomes more accurate as 
-        *dx* is reduced and the size of the vector is increased.  If the vector 
-        is taken to 501 elements from 0-5 and *dx* is made to equal 0.01, the integrals 
-        of the integers 0-5 yield the following (compared to their continuous values 
-        on their right). 
+    The integration naturally becomes more accurate as 
+    *dx* is reduced and the size of the vector is increased.  If the vector 
+    is taken to 501 elements from 0-5 and *dx* is made to equal 0.01, the integrals 
+    of the integers 0-5 yield the following (compared to their continuous values 
+    on their right). 
 
-        .. code-block::
-            python
+    .. code-block::
+        none
 
-            0.00000 -- 0.00000	0.33835 --  0.33333	2.6867  --  2.6666 
-            9.04505 -- 9.00000	21.4134 -- 21.3333	41.7917 -- 41.6666 
+        0.00000 -- 0.00000	0.33835 --  0.33333	2.6867  --  2.6666 
+        9.04505 -- 9.00000	21.4134 -- 21.3333	41.7917 -- 41.6666 
 
 
          
@@ -2294,39 +2301,34 @@ Vector
 
 
 
-.. method:: Vector.sortindex
+.. method:: Vector.sortindex([vdest])
 
+    Return a Vector of indices which sort the original Vector's elements in numerical 
+    order. That is ``vsrc.index(vsrc.sortindex)`` is equivalent to vsrc.sort(). 
+    If ``vdest`` is present, use that as the destination vector for the indices. 
+    This, if it is large enough, avoids the destruct/construct of vdest. 
 
-    Syntax:
+    :param vdest: The destination vector for the indices.
+    :type vdest: Vector, optional
+    :return: The indices which sort the original Vector's elements in numerical order.
+    :rtype: Vector
 
-        ``vdest = vsrc.sortindex()``
+    **Example:**
 
-        ``vdest = vsrc.sortindex(vdest)``
+    .. code-block::
+        python
 
-
-    Description:
-
-        Return a h.Vector of indices which sort the vsrc elements in numerical 
-        order. That is vsrc.index(vsrc.sortindex) is equivalent to vsrc.sort(). 
-        If vdest is present, use that as the destination vector for the indices. 
-        This, if it is large enough, avoids the destruct/construct of vdest. 
-
-    Example:
-
-        .. code-block::
-            python
-
-            from neuron import h
+        from neuron import h
+        
+        r = h.Random() 
+        r.uniform(0, 100) 
+        a = h.Vector(10) 
+        a.setrand(r) 
+        a.printf() 
             
-            r = h.Random() 
-            r.uniform(0, 100) 
-            a = h.Vector(10) 
-            a.setrand(r) 
-            a.printf() 
-             
-            si = a.sortindex()
-            si.printf() 
-            a.index(si).printf() 
+        si = a.sortindex()
+        si.printf() 
+        a.index(si).printf() 
 
          
 
@@ -2388,7 +2390,7 @@ Vector
     orders the elements of ``vec`` as follows: 
 
     .. code-block::
-        python
+        none
 
         4  5  6  7  8  9  10  1  2  3 
 
@@ -2436,7 +2438,7 @@ Vector
         produces ``vec1``: 
 
         .. code-block::
-            python
+            none
 
             3  7  11  15  19 
 
@@ -2454,7 +2456,7 @@ Vector
         ``vec1``: 
 
         .. code-block::
-            python
+            none
 
             6  15  24 
 
@@ -2560,27 +2562,30 @@ Vector
 
 
     Syntax:
+
         ``obj = vdest.abs(vsrc)``
 
         ``obj = vsrcdest.abs()``
 
 
     Description:
+
         Take the absolute value of each element. 
-
-    Example:
-
-        .. code-block::
-            python
-
-            v1 = h.Vector() 
-            v1.indgen(-.5, .5, .1) 
-            v1.printf() 
-            v1.abs().printf() 
-
 
     .. seealso::
         :func:`abs`
+
+    **Example:**
+
+    .. code-block::
+        python
+
+        v1 = h.Vector() 
+        v1.indgen(-.5, .5, .1) 
+        v1.printf() 
+        v1.abs().printf() 
+
+
 
          
 
@@ -2626,6 +2631,12 @@ Vector
 
     Return the minimum value either for the full Vector or over the specified index interval. 
 
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: minimum value
+    :rtype: float            
          
 
 ----
@@ -2636,6 +2647,12 @@ Vector
 
     Return the index of the minimum value either for the full Vector or over the specified index interval. 
 
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: index of minimum value
+    :rtype: int            
          
 
 ----
@@ -2646,7 +2663,12 @@ Vector
 
     Return the maximum value either for the full Vector or over the specified index interval. 
 
-         
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: maximum value
+    :rtype: float            
 
 ----
 
@@ -2656,7 +2678,12 @@ Vector
 
     Return the index of the maximum value either for the full Vector or over the specified index interval. 
 
-         
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: index of maximum value
+    :rtype: int         
 
 ----
 
@@ -2666,7 +2693,12 @@ Vector
 
     Return the sum of element values either for the full Vector or over the specified index interval.
 
-         
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: sum of values
+    :rtype: float            
 
 ----
 
@@ -2677,22 +2709,87 @@ Vector
     Return the sum of squared element values either for the full Vector or over the specified index interval. 
 
          
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: sum of squares
+    :rtype: float   
 
 ----
 
 
 
-.. method:: Vector.mean
+.. method:: Vector.mean([start, end])
+
+    Return the mean of element values over the entire Vector or a specified subset. 
+
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: mean
+    :rtype: float         
+
+----
 
 
-    Syntax:
-        ``x =  vec.mean()``
 
-        ``x =  vec.mean(start, end)``
+.. method:: Vector.var([start, end])
+
+    Return the variance of element values. 
+
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: variance
+    :rtype: float         
+
+----
 
 
-    Description:
-        Return the mean of element values. 
+
+.. method:: Vector.stdev([start, end])
+
+    Return the standard deviation of the element values. 
+
+
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: standard error of the mean
+    :rtype: float     
+
+----
+
+
+
+.. method:: Vector.stderr([start, end])
+
+    Return the standard error of the mean (SEM) of the element values. 
+
+    :param start: start index
+    :type start: int, optional but required if end included
+    :param end: end index
+    :type end: int, optional but required if start included
+    :return: standard error of the mean
+    :rtype: float
+
+
+----
+
+
+
+.. method:: Vector.dot(vec)
+
+    Return the dot (inner) product of the Vector and ``vec``. 
+
+    :param vec: Vector to dot with
+    :type vec: :class:`Vector`
+    :return: dot product
+    :rtype: float
 
          
 
@@ -2700,85 +2797,12 @@ Vector
 
 
 
-.. method:: Vector.var
+.. method:: Vector.mag()
 
+    Return the Vector length or magnitude. (The 2-norm)
 
-    Syntax:
-        ``x = vec.var()``
-
-        ``x = vec.var(start, end)``
-
-
-    Description:
-        Return the variance of element values. 
-
-         
-
-----
-
-
-
-.. method:: Vector.stdev
-
-
-    Syntax:
-        ``vec.stdev()``
-
-        ``vec.stdev(start,end)``
-
-
-    Description:
-        Return the standard deviation of the element values. 
-
-         
-
-----
-
-
-
-.. method:: Vector.stderr
-
-
-    Syntax:
-        ``x = vec.stderr()``
-
-        ``x = vec.stderr(start, end)``
-
-
-    Description:
-        Return the standard error of the mean (SEM) of the element values. 
-
-         
-
-----
-
-
-
-.. method:: Vector.dot
-
-
-    Syntax:
-        ``x = vec.dot(vec1)``
-
-
-    Description:
-        Return the dot (inner) product of ``vec`` and *vec1*. 
-
-         
-
-----
-
-
-
-.. method:: Vector.mag
-
-
-    Syntax:
-        ``x = vec.mag()``
-
-
-    Description:
-        Return the vector length or magnitude. 
+    :return: magnitude of the Vector
+    :rtype: float 
 
          
 
