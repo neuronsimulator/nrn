@@ -125,7 +125,8 @@ void nrnjava_init() {
     //	printf("nrnjava_init\n");
 
     nrn_jclass_symlist = new NJSymList(20);
-    class2oc("JavaObject", joconstruct, jodestruct, jo_members, nullptr, nullptr, jo_retstr_members);
+    class2oc(
+        "JavaObject", joconstruct, jodestruct, jo_members, nullptr, nullptr, jo_retstr_members);
     nrn_jobj_sym = hoc_lookup("JavaObject");
     nrn_vec_sym = hoc_lookup("Vector");
 
