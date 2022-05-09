@@ -84,14 +84,14 @@ JNIEXPORT jstring JNICALL Java_neuron_Neuron_getHocStringArg(JNIEnv* env, jclass
     if (!ifarg(idx)) {
         printf("error - missing string as arg %d\n", idx);
         illegalArg(env, "missing string");
-        return nil;
+        return nullptr;
     }
     if (hoc_is_str_arg(idx)) {
         str = gargstr(idx);
     } else {
         printf("error - expecting string as arg %d\n", idx);
         illegalArg(env, "expecting string");
-        return nil;
+        return nullptr;
     }
     jstring ret = env->NewStringUTF(str);
     return ret;
@@ -397,7 +397,7 @@ JNIEXPORT void JNICALL Java_neuron_Neuron_pushArgS(JNIEnv* env, jclass, jstring 
     if (!cs) {
         cs = new char*[ncs];
         for (i = 0; i < ncs; ++i) {
-            cs[i] = nil;
+            cs[i] = nullptr;
         }
         i = 0;
     }
@@ -436,7 +436,7 @@ JNIEXPORT jlong JNICALL Java_neuron_Neuron_methodID(JNIEnv* env, jclass, jlong j
 JNIEXPORT jlong JNICALL
 Java_neuron_Neuron_pwmListen(JNIEnv* env, jclass, jstring title, jobject jo, jint type) {
     Object** po = nj_j2hObject(jo, type);
-    Object* ho = po ? *po : nil;
+    Object* ho = po ? *po : nullptr;
     jnisave const char* s = env->GetStringUTFChars(title, 0);
     //	printf("pwmListen env=%ld %s\n", (long)env, s);
     jlong ic = (jlong) nrnjava_pwm_listen(s, ho);  // implementation in src/ivoc/pwman.cpp

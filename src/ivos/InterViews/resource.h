@@ -41,7 +41,7 @@ public:
     virtual void unref_deferred() const;
     virtual void cleanup();
 
-    /* nops for nil pointers */
+    /* nops for nullptr */
     static void ref(const Resource*);
     static void unref(const Resource*);
     static void unref_deferred(const Resource*);

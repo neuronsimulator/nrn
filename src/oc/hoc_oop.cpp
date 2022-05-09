@@ -2248,7 +2248,7 @@ void check_obj_type(Object* obj, const char* type_name) {
         if (obj) {
             sprintf(buf, "object type is %s instead of", obj->ctemplate->sym->name);
         } else {
-            sprintf(buf, "object type is nil instead of");
+            sprintf(buf, "object type is nullptr instead of");
         }
         hoc_execerror(buf, type_name);
     }

@@ -715,7 +715,7 @@ static double spike_stat(void* v) {
 
 static double maxhist(void* v) {
     OcBBS* bbs = (OcBBS*) v;
-    IvocVect* vec = ifarg(1) ? vector_arg(1) : nil;
+    IvocVect* vec = ifarg(1) ? vector_arg(1) : nullptr;
     if (vec) {
         hoc_obj_ref(vec->obj_);
     }
@@ -1209,7 +1209,7 @@ static void destruct(void* v) {
 }
 
 void ParallelContext_reg() {
-    class2oc("ParallelContext", cons, destruct, members, nil, retobj_members, retstr_members);
+    class2oc("ParallelContext", cons, destruct, members, nullptr, retobj_members, retstr_members);
 }
 
 char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
@@ -1233,7 +1233,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
             nrnmpi_int_broadcast(&size, 1, 0);
             nrnmpi_char_broadcast(s, size, 0);
         }
-        hoc_obj_run(s, nil);
+        hoc_obj_run(s, nullptr);
         delete[] s;
         break;
     default: {
@@ -1241,7 +1241,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
         int i, j;
         size_t npickle;
         Symbol* fname = 0;
-        Object* ob = nil;
+        Object* ob = nullptr;
         char* sarg[20];    // upto 20 argument may be strings
         int ns = 0;        // number of args that are strings
         int narg = 0;      // total number of args
@@ -1263,7 +1263,7 @@ char* BBSImpl::execute_helper(size_t* size, int id, bool exec) {
                 if (ob->index == i) {
                     break;
                 }
-                ob = nil;
+                ob = nullptr;
             }
             if (!ob) {
                 fprintf(stderr, "%s[%d] is not an Object in this process\n", s, i);

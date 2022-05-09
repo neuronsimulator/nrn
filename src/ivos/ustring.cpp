@@ -68,11 +68,11 @@ UniqueString::UniqueString(const UniqueString& s) : String(s) { }
 UniqueString::~UniqueString() { }
 
 void UniqueString::init(const String& s) {
-    if (table_ == nil) {
+    if (table_ == nullptr) {
         table_ = new UniqueStringTable(256);
     }
     if (!table_->find(*this, s)) {
-        if (pool_ == nil) {
+        if (pool_ == nullptr) {
             pool_ = new UniqueStringPool;
         }
         int n = s.length();
@@ -106,7 +106,7 @@ UniqueStringPool::UniqueStringPool(unsigned poolsize) {
     data = new char[poolsize];
     size = poolsize;
     cur = 0;
-    prev = nil;
+    prev = nullptr;
 }
 
 /*

@@ -53,7 +53,7 @@ int main(int argc, const char** argv) {
     sprintf(buf, "%s/lib/helpdict", neuronhome());
     String sf(buf);
     InputFile* f = InputFile::open(sf);
-    if (f == nil) {
+    if (f == nullptr) {
         printf("Can't open %s\n", sf.string());
         return 1;
     }
@@ -139,7 +139,7 @@ const char* neuronhome() {
     if (n) {
         return n;
     }
-    return nil;
+    return nullptr;
 }
 
 #if defined(WIN32)

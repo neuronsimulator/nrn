@@ -88,7 +88,7 @@ Symbol* nrn_vec_sym;   // for deciding if Vector
 
 static void* joconstruct(Object*) {
     hoc_execerror("JavaObject for internal use only.", "Do not construct");
-    return nil;
+    return nullptr;
 }
 static void jodestruct(void* v) {
     if (v) {
@@ -100,7 +100,7 @@ static double joequals(void* v) {
     jobject jo1 = (jobject) v;
     Object* o2 = *hoc_objgetarg(1);
     jobject jo2;
-    if (o2 == nil) {
+    if (o2 == nullptr) {
         return 0.;
     }
     if (o2->ctemplate->constructor == joconstruct     // a JavaObject
@@ -125,7 +125,7 @@ void nrnjava_init() {
     //	printf("nrnjava_init\n");
 
     nrn_jclass_symlist = new NJSymList(20);
-    class2oc("JavaObject", joconstruct, jodestruct, jo_members, nil, nil, jo_retstr_members);
+    class2oc("JavaObject", joconstruct, jodestruct, jo_members, nullptr, nullptr, jo_retstr_members);
     nrn_jobj_sym = hoc_lookup("JavaObject");
     nrn_vec_sym = hoc_lookup("Vector");
 
@@ -359,14 +359,14 @@ static char** js2charpool(jstring js) {
     if (!cs) {
         cs = new char*[imax];
         for (i = 0; i < imax; ++i) {
-            cs[i] = nil;
+            cs[i] = nullptr;
         }
         i = 0;
     }
     const char* jc = nrnjava_env->GetStringUTFChars(js, 0);
     if (cs[i]) {
         delete[] cs[i];
-        cs[i] = nil;
+        cs[i] = nullptr;
     }
     i = (i + 1) % imax;
     cs[i] = new char[strlen(jc) + 1];
@@ -389,14 +389,14 @@ static char** java2nrn_smeth(Object* ho, Symbol* method) {
                                                                (jint) method->u.u_auto,
                                                                (jint) method->s_varn);
     errno = 0;
-    if (js == nil) {
+    if (js == nullptr) {
         hoc_execerror("Java Exception for", method->name);
     }
     return js2charpool(js);
 }
 
 Object** nj_j2hObject(jobject jo, int type) {
-    Object** po = nil;
+    Object** po = nullptr;
     if (jo == 0) {  // null
         po = hoc_temp_objptr(0);
         return po;
@@ -440,7 +440,7 @@ static Object** java2nrn_ometh(Object* ho, Symbol* method) {
     // long hocObjectCast which we can cast to the correct object.
     // other types are for Java objects that extend HocObject
     // but all have a field called "long hocObjectCast"
-    Object** po = nil;
+    Object** po = nullptr;
     if (method->s_varn) {
         overloaded(ho, method);
     }

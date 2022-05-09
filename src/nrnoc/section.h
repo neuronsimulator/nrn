@@ -57,7 +57,7 @@ typedef struct Section {
     short npt3d;                     /* number of 3-d points */
     short pt3d_bsize;                /* amount of allocated space for 3-d points */
     struct Pt3d* pt3d;               /* list of 3d points with diameter */
-    struct Pt3d* logical_connection; /* nil for legacy, otherwise specifies logical connection
+    struct Pt3d* logical_connection; /* nullptr for legacy, otherwise specifies logical connection
                                         position (for translation) */
 #endif
     struct Prop* prop; /* eg. length, etc. */
@@ -222,7 +222,7 @@ typedef struct Prop {
                   for example one cable section property is a
                   symbol */
     long _alloc_seq;   /* for cache efficiency */
-    Object* ob;        /* nil if normal property, otherwise the object containing the data*/
+    Object* ob;        /* nullptr if normal property, otherwise the object containing the data*/
 } Prop;
 
 #if defined(__cplusplus)

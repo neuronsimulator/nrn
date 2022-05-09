@@ -94,9 +94,9 @@ class NetCvode {
     void handle_tstop_event(double, NrnThread* nt);
     void hoc_event(double,
                    const char* hoc_stmt,
-                   Object* ppobj = nil,
+                   Object* ppobj = nullptr,
                    int reinit = 0,
-                   Object* pyact = nil);
+                   Object* pyact = nullptr);
     NetCon* install_deliver(double* psrc,
                             Section* ssrc,
                             Object* osrc,

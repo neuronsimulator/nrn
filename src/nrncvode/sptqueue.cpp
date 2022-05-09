@@ -67,7 +67,7 @@ TQueue::TQueue() {
 
 TQueue::~TQueue() {
     TQItem* q;
-    while ((q = spdeq(&sptree_->root)) != nil) {
+    while ((q = spdeq(&sptree_->root)) != nullptr) {
         deleteitem(q);
     }
     delete sptree_;
@@ -79,7 +79,7 @@ void TQueue::print() {
         prnt(least_, 0);
     }
 #endif
-    spscan(prnt, nil, sptree_);
+    spscan(prnt, nullptr, sptree_);
 }
 
 void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
@@ -88,7 +88,7 @@ void TQueue::forall_callback(void (*f)(const TQItem*, int)) {
         f(least_, 0);
     }
 #endif
-    spscan(f, nil, sptree_);
+    spscan(f, nullptr, sptree_);
 }
 
 void TQueue::check(const char* mes) {}
@@ -208,7 +208,7 @@ void TQueue::remove(TQItem* q) {
             if (sptree_->root) {
                 least_ = spdeq(&sptree_->root);
             } else {
-                least_ = nil;
+                least_ = nullptr;
             }
         } else {
             spdelete(q, sptree_);

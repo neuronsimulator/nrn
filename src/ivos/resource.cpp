@@ -68,7 +68,7 @@ void Resource::unref_deferred() const {
     if (r->refcount_ == 0) {
 	r->cleanup();
 	if (ResourceImpl::deferred_) {
-	    if (ResourceImpl::deletes_ == nil) {
+	    if (ResourceImpl::deletes_ == nullptr) {
 		ResourceImpl::deletes_ = new ResourceList;
 	    }
 	    ResourceImpl::deletes_->append(r);
@@ -81,19 +81,19 @@ void Resource::unref_deferred() const {
 void Resource::cleanup() { }
 
 void Resource::ref(const Resource* r) {
-    if (r != nil) {
+    if (r != nullptr) {
 	r->ref();
     }
 }
 
 void Resource::unref(const Resource* r) {
-    if (r != nil) {
+    if (r != nullptr) {
 	r->unref();
     }
 }
 
 void Resource::unref_deferred(const Resource* r) {
-    if (r != nil) {
+    if (r != nullptr) {
 	r->unref_deferred();
     }
 }
@@ -109,7 +109,7 @@ bool Resource::defer(bool b) {
 
 void Resource::flush() {
     ResourceList* list = ResourceImpl::deletes_;
-    if (list != nil) {
+    if (list != nullptr) {
 	bool previous = ResourceImpl::deferred_;
 	ResourceImpl::deferred_ = false;
 	for (ListItr(ResourceList) i(*list); i.more(); i.next()) {

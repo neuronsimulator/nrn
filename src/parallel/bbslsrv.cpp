@@ -68,7 +68,7 @@ WorkItem::WorkItem(int id, MessageValue* m) {
     id_ = id;
     val_ = m;
     val_->ref();
-    parent_ = nil;
+    parent_ = nullptr;
 }
 
 WorkItem::~WorkItem() {
@@ -110,7 +110,7 @@ static void nostl() {
 #endif
 
 MessageItem::MessageItem() {
-    next_ = nil;
+    next_ = nullptr;
     type_ = 0;
 }
 
@@ -129,9 +129,9 @@ MessageItem::~MessageItem() {
 }
 
 MessageValue::MessageValue() {
-    first_ = nil;
-    last_ = nil;
-    unpack_ = nil;
+    first_ = nullptr;
+    last_ = nullptr;
+    unpack_ = nullptr;
 }
 
 MessageValue::~MessageValue() {
@@ -304,7 +304,7 @@ bool BBSLocalServer::look(const char* key, MessageValue** val) {
 #endif
         return true;
     } else {
-        val = nil;
+        val = nullptr;
     }
 #if debug
     printf("srvr_look false |%s|\n", key);

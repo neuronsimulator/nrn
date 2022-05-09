@@ -32,10 +32,6 @@
 
 #include <OS/_defines.h>
 
-#ifndef nil
-#define nil 0
-#endif
-
 #ifndef iv_os_u_char
 #define iv_os_u_char
 

@@ -1356,7 +1356,7 @@ double* nrn_rangepointer(Section* sec, Symbol* s, double d) {
     return dprop(s, indx, sec, i);
 }
 
-/* return nil if failure instead of hoc_execerror
+/* return nullptr if failure instead of hoc_execerror
    and return pointer to the 0 element if an array
 */
 double* nrnpy_rangepointer(Section* sec, Symbol* s, double d, int* err) {
@@ -1696,7 +1696,7 @@ void nrn_parent_info(Section* s) {
     }
     if (true_parent == (Section*) 0) {
         if (sec->parentnode) {
-            /* non nil parent node in section without a parent is
+            /* non nullptr parent node in section without a parent is
                 definitely valid
             */
             pnode = sec->parentnode;
@@ -2072,7 +2072,7 @@ double* dprop(Symbol* s, int indx, Section* sec, short inode) {
     }
 }
 
-/* return nil instead of hoc_execerror. */
+/* return nullptr instead of hoc_execerror. */
 /* returns location of property symbol */
 double* nrnpy_dprop(Symbol* s, int indx, Section* sec, short inode, int* err) {
     Prop* m;

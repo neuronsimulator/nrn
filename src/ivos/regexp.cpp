@@ -69,7 +69,7 @@ inline char *
 NextLine(char* s) {
     char* newstart;
 
-    if ((newstart = FindNewline(s)) != nil)
+    if ((newstart = FindNewline(s)) != nullptr)
 	newstart++;
     return newstart;
 }
@@ -82,7 +82,7 @@ Regexp::Regexp (const char* pat) {
     c_pattern = regcomp(pattern_);
     if (!c_pattern) {
     	delete [] pattern_;
-    	pattern_ = nil;
+    	pattern_ = nullptr;
     }
 }
 
@@ -93,7 +93,7 @@ Regexp::Regexp (const char* pat, int length) {
     c_pattern = regcomp(pattern_);
     if (!c_pattern) {
     	delete [] pattern_;
-    	pattern_ = nil;
+    	pattern_ = nullptr;
     }
 }
 
@@ -114,8 +114,8 @@ int Regexp::Search (const char* text, int length, int index, int range) {
     bool endAnchored;
     char* searchStart;
     char* searchLimit;
-    char* endOfLine = nil;
-    char* lastMatch = nil;
+    char* endOfLine = nullptr;
+    char* lastMatch = nullptr;
     char csave;
 
     /*
@@ -129,11 +129,11 @@ int Regexp::Search (const char* text, int length, int index, int range) {
 	    return -1;
     }
 
-    if (c_pattern == nil) {
+    if (c_pattern == nullptr) {
     	return -1;
     }
 
-    c_pattern->startp[0] = nil;
+    c_pattern->startp[0] = nullptr;
 
     if (range < 0) {
 	forwardSearch = false;
@@ -158,7 +158,7 @@ int Regexp::Search (const char* text, int length, int index, int range) {
     while (searchStart && searchStart < searchLimit) {
 	int result;
 
-	if (endAnchored && (endOfLine = FindNewline(searchStart)) != nil) {
+	if (endAnchored && (endOfLine = FindNewline(searchStart)) != nullptr) {
 	    csave = *endOfLine;
 	    *endOfLine = '\0';
 	}
@@ -188,7 +188,7 @@ int Regexp::Search (const char* text, int length, int index, int range) {
     }
 
     if (!forwardSearch && lastMatch) {
-	if (endAnchored && (endOfLine = FindNewline(lastMatch)) != nil) {
+	if (endAnchored && (endOfLine = FindNewline(lastMatch)) != nullptr) {
 	    csave = *endOfLine;
 	    *endOfLine = '\0';
 	}
@@ -205,10 +205,10 @@ int Regexp::Search (const char* text, int length, int index, int range) {
 
 int Regexp::Match (const char* text, int length, int index) {
 
-    if (c_pattern == nil)
+    if (c_pattern == nullptr)
 	return -1;
 
-    c_pattern->startp[0] = nil;
+    c_pattern->startp[0] = nullptr;
 
     char save = *(text+length);
     *(char*)(text+length) = '\0';
@@ -218,7 +218,7 @@ int Regexp::Match (const char* text, int length, int index) {
 
     *(char*)(text+length) = save;
 
-    if (c_pattern->startp[0] != nil)
+    if (c_pattern->startp[0] != nullptr)
         return c_pattern->endp[0] - c_pattern->startp[0];
     else
         return -1;
@@ -226,14 +226,14 @@ int Regexp::Match (const char* text, int length, int index) {
 
 int Regexp::BeginningOfMatch (int subexp) {
     if (subexp < 0 || subexp > NSUBEXP ||
-		c_pattern == nil || c_pattern->startp[0] == nil)
+		c_pattern == nullptr || c_pattern->startp[0] == nullptr)
 	return -1;
     return c_pattern->startp[subexp] - c_pattern->textStart;
 }
 
 int Regexp::EndOfMatch (int subexp) {
     if (subexp < 0 || subexp > NSUBEXP ||
-		c_pattern == nil || c_pattern->startp[0] == nil)
+		c_pattern == nullptr || c_pattern->startp[0] == nullptr)
 	return -1;
     return c_pattern->endp[subexp] - c_pattern->textStart;
 }
@@ -270,7 +270,7 @@ int Regexp::EndOfMatch (int subexp) {
  *
  * regstart	char that must begin a match; '\0' if none obvious
  * reganch	is the match anchored (at beginning-of-line only)?
- * regmust	string (pointer into program) that match must include, or nil
+ * regmust	string (pointer into program) that match must include, or nullptr
  * regmlen	length of regmust string
  *
  * Regstart and reganch permit very fast decisions on suitable starting points
@@ -361,7 +361,7 @@ int Regexp::EndOfMatch (int subexp) {
 
 #define	UCHARAT(p)	((int)*(p)&RE_CHARBITS)
 
-#define	FAIL(m)	{ regerror(m); return(nil); }
+#define	FAIL(m)	{ regerror(m); return(nullptr); }
 #define	ISMULT(c)	((c) == '*' || (c) == '+' || (c) == '?')
 #define	META	"^$.[()|?+*\\"
 
@@ -405,8 +405,8 @@ regcomp(const char* exp) {
 	int len;
 	int flags;
 
-	if (exp == nil)
-		FAIL("nil argument");
+	if (exp == nullptr)
+		FAIL("nullptr argument");
 
 	/* First pass: determine size, legality. */
 	regparse = exp;
@@ -414,8 +414,8 @@ regcomp(const char* exp) {
 	regsize = 0L;
 	regcode = &regdummy;
 	regc(REGEXP_MAGIC);
-	if (reg(0, &flags) == nil)
-		return(nil);
+	if (reg(0, &flags) == nullptr)
+		return(nullptr);
 
 	/* Small enough for pointer-storage convention? */
 	if (regsize >= 32767L)		/* Probably could be 65535L. */
@@ -429,15 +429,15 @@ regcomp(const char* exp) {
 	regnpar = 1;
 	regcode = r->program;
 	regc(REGEXP_MAGIC);
-	if (reg(0, &flags) == nil) {
+	if (reg(0, &flags) == nullptr) {
 		delete [] r;
-		return(nil);
+		return(nullptr);
 	}
 
 	/* Dig out information for optimizations. */
 	r->regstart = '\0';	/* Worst-case defaults. */
 	r->reganch = 0;
-	r->regmust = nil;
+	r->regmust = nullptr;
 	r->regmlen = 0;
 	scan = r->program+1;			/* First BRANCH. */
 	if (OP(regnext(scan)) == END) {		/* Only one top-level choice. */
@@ -458,9 +458,9 @@ regcomp(const char* exp) {
 		 * strong reason, but sufficient in the absence of others.
 		 */
 		if (flags&SPSTART) {
-			longest = nil;
+			longest = nullptr;
 			len = 0;
-			for (; scan != nil; scan = regnext(scan))
+			for (; scan != nullptr; scan = regnext(scan))
 				if (OP(scan) == EXACTLY && strlen(OPERAND(scan)) >= len) {
 					longest = OPERAND(scan);
 					len = strlen(OPERAND(scan));
@@ -500,13 +500,13 @@ reg(int paren, int* flagp) {
 		regnpar++;
 		ret = regnode(OPEN+parno);
 	} else
-		ret = nil;
+		ret = nullptr;
 
 	/* Pick up the branches, linking them together. */
 	br = regbranch(&flags);
-	if (br == nil)
-		return(nil);
-	if (ret != nil)
+	if (br == nullptr)
+		return(nullptr);
+	if (ret != nullptr)
 		regtail(ret, br);	/* OPEN -> first. */
 	else
 		ret = br;
@@ -516,8 +516,8 @@ reg(int paren, int* flagp) {
 	while (*regparse == '|') {
 		regparse++;
 		br = regbranch(&flags);
-		if (br == nil)
-			return(nil);
+		if (br == nullptr)
+			return(nullptr);
 		regtail(ret, br);	/* BRANCH -> BRANCH. */
 		if (!(flags&HASWIDTH))
 			*flagp &= ~HASWIDTH;
@@ -529,7 +529,7 @@ reg(int paren, int* flagp) {
 	regtail(ret, ender);
 
 	/* Hook the tails of the branches to the closing node. */
-	for (br = ret; br != nil; br = regnext(br))
+	for (br = ret; br != nullptr; br = regnext(br))
 		regoptail(br, ender);
 
 	/* Check for proper termination. */
@@ -561,23 +561,23 @@ regbranch(int* flagp) {
 	*flagp = WORST;		/* Tentatively. */
 
 	ret = regnode(BRANCH);
-	chain = nil;
+	chain = nullptr;
 	while (*regparse != '\0' && *regparse != '|') {
 		if (*regparse == '\\' && regparse[1] == ')') {
 			regparse++;
 			break;
 		}
 		latest = regpiece(&flags);
-		if (latest == nil)
-			return(nil);
+		if (latest == nullptr)
+			return(nullptr);
 		*flagp |= flags&HASWIDTH;
-		if (chain == nil)	/* First piece. */
+		if (chain == nullptr)	/* First piece. */
 			*flagp |= flags&SPSTART;
 		else
 			regtail(chain, latest);
 		chain = latest;
 	}
-	if (chain == nil)	/* Loop ran zero times. */
+	if (chain == nullptr)	/* Loop ran zero times. */
 		(void) regnode(NOTHING);
 
 	return(ret);
@@ -600,8 +600,8 @@ regpiece(int* flagp) {
 	int flags;
 
 	ret = regatom(&flags);
-	if (ret == nil)
-		return(nil);
+	if (ret == nullptr)
+		return(nullptr);
 
 	op = *regparse;
 	if (!ISMULT(op)) {
@@ -722,8 +722,8 @@ regatom(int* flagp) {
 		if (*regparse == '(') {
 			regparse++;
 			ret = reg(1, &flags);
-			if (ret == nil)
-				return(nil);
+			if (ret == nullptr)
+				return(nullptr);
 			*flagp |= flags&(HASWIDTH|SPSTART);
 		} else {
 			ret = regnode(EXACTLY);
@@ -837,7 +837,7 @@ regtail(char* p, char* val) {
 	scan = p;
 	for (;;) {
 		temp = regnext(scan);
-		if (temp == nil)
+		if (temp == nullptr)
 			break;
 		scan = temp;
 	}
@@ -856,7 +856,7 @@ regtail(char* p, char* val) {
 static void
 regoptail(char* p, char* val) {
 	/* "Operandless" and "op != BRANCH" are synonymous in practice. */
-	if (p == nil || p == &regdummy || OP(p) != BRANCH)
+	if (p == nullptr || p == &regdummy || OP(p) != BRANCH)
 		return;
 	regtail(OPERAND(p), val);
 }
@@ -881,8 +881,8 @@ regexec(regexp* prog, char* string) {
 	char *s;
 
 	/* Be paranoid... */
-	if (prog == nil || string == nil) {
-		regerror("nil parameter");
+	if (prog == nullptr || string == nullptr) {
+		regerror("nullptr parameter");
 		return(0);
 	}
 
@@ -893,14 +893,14 @@ regexec(regexp* prog, char* string) {
 	}
 
 	/* If there is a "must appear" string, look for it. */
-	if (prog->regmust != nil) {
+	if (prog->regmust != nullptr) {
 		s = string;
-		while ((s = strchr(s, prog->regmust[0])) != nil) {
+		while ((s = strchr(s, prog->regmust[0])) != nullptr) {
 			if (strncmp(s, prog->regmust, prog->regmlen) == 0)
 				break;	/* Found it. */
 			s++;
 		}
-		if (s == nil)	/* Not present. */
+		if (s == nullptr)	/* Not present. */
 			return(0);
 	}
 
@@ -915,7 +915,7 @@ regexec(regexp* prog, char* string) {
 	s = string;
 	if (prog->regstart != '\0')
 		/* We know what char it must start with. */
-		while ((s = strchr(s, prog->regstart)) != nil) {
+		while ((s = strchr(s, prog->regstart)) != nullptr) {
 			if (regtry(prog, s))
 				return(1);
 			s++;
@@ -947,8 +947,8 @@ regtry(regexp* prog, char* string) {
 	sp = prog->startp;
 	ep = prog->endp;
 	for (i = NSUBEXP; i > 0; i--) {
-		*sp++ = nil;
-		*ep++ = nil;
+		*sp++ = nullptr;
+		*ep++ = nullptr;
 	}
 	if (regmatch(prog->program + 1)) {
 		prog->startp[0] = string;
@@ -974,7 +974,7 @@ regmatch(char* prog) {
 	char *next;		/* Next node. */
 
 	scan = prog;
-	while (scan != nil) {
+	while (scan != nullptr) {
 		next = regnext(scan);
 
 		switch (OP(scan)) {
@@ -1008,14 +1008,14 @@ regmatch(char* prog) {
 		case ANYOF:
 			if (*reginput == '\0')
 				return(0);
-			if (strchr(OPERAND(scan), *reginput) == nil)
+			if (strchr(OPERAND(scan), *reginput) == nullptr)
 				return(0);
 			reginput++;
 			break;
 		case ANYBUT:
 			if (*reginput == '\0')
 				return(0);
-			if (strchr(OPERAND(scan), *reginput) != nil)
+			if (strchr(OPERAND(scan), *reginput) != nullptr)
 				return(0);
 			reginput++;
 			break;
@@ -1044,7 +1044,7 @@ regmatch(char* prog) {
 					 * invocation of the same parentheses
 					 * already has.
 					 */
-					if (regstartp[no] == nil)
+					if (regstartp[no] == nullptr)
 						regstartp[no] = save;
 					return(1);
 				} else
@@ -1072,7 +1072,7 @@ regmatch(char* prog) {
 					 * invocation of the same parentheses
 					 * already has.
 					 */
-					if (regendp[no] == nil)
+					if (regendp[no] == nullptr)
 						regendp[no] = save;
 					return(1);
 				} else
@@ -1091,7 +1091,7 @@ regmatch(char* prog) {
 							return(1);
 						reginput = save;
 						scan = regnext(scan);
-					} while (scan != nil && OP(scan) == BRANCH);
+					} while (scan != nullptr && OP(scan) == BRANCH);
 					return(0);
 					/* NOTREACHED */
 				}
@@ -1167,13 +1167,13 @@ regrepeat(char* p) {
 		}
 		break;
 	case ANYOF:
-		while (*scan != '\0' && strchr(opnd, *scan) != nil) {
+		while (*scan != '\0' && strchr(opnd, *scan) != nullptr) {
 			count++;
 			scan++;
 		}
 		break;
 	case ANYBUT:
-		while (*scan != '\0' && strchr(opnd, *scan) == nil) {
+		while (*scan != '\0' && strchr(opnd, *scan) == nullptr) {
 			count++;
 			scan++;
 		}
@@ -1196,11 +1196,11 @@ regnext(char* p) {
 	int offset;
 
 	if (p == &regdummy)
-		return(nil);
+		return(nullptr);
 
 	offset = NEXT(p);
 	if (offset == 0)
-		return(nil);
+		return(nullptr);
 
 	if (OP(p) == BACK)
 		return(p-offset);

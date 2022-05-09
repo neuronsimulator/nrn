@@ -145,8 +145,8 @@ Daspk::Daspk(Cvode* cv, int neq) {
     delta_ = cv->nvnew(neq);
     parasite_ = cv->nvnew(neq);
     use_parasite_ = false;
-    spmat_ = nil;
-    mem_ = nil;
+    spmat_ = nullptr;
+    mem_ = nullptr;
 }
 
 Daspk::~Daspk() {

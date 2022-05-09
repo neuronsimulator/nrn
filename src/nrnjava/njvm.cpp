@@ -223,7 +223,7 @@ static void initialize_jvm1() {
     // Find classes first in the working directory where neuron was launched.
     // Then the users CLASSPATH
     // environment variable (if any). And lastly, the, $NEURONHOME/classes
-    if (ucpenv == nil) {
+    if (ucpenv == nullptr) {
         ucpenv = ".";  // can't hurt to have it twice
     }
     int len = strlen(args.classpath) + strlen(ucpenv) + 2 * strlen(neuron_home) + 100;
@@ -287,8 +287,8 @@ static void initialize_jvm2() {
     args.version = JNI_VERSION_1_2;
     // printf("version = %lx\n", args.version);
 
-    AddOption(classpath, nil);
-    //	AddOption("-verbose", nil);
+    AddOption(classpath, nullptr);
+    //	AddOption("-verbose", nullptr);
     //	AddOption("abort", myabort);
     //	AddOption("exit", myexit);
     args.nOptions = numOptions;

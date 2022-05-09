@@ -140,14 +140,14 @@ FileInfo::FileInfo(CopyString* s, int fd) {
     fd_ = fd;
     pos_ = 0;
     limit_ = 0;
-    map_ = nil;
-    buf_ = nil;
+    map_ = nullptr;
+    buf_ = nullptr;
 }
 #endif
 
 
 File::File(FileInfo* i) {
-    assert(i != nil);
+    assert(i != nullptr);
     rep_ = i;
 }
 
@@ -163,7 +163,7 @@ const String* File::name() const {
 #ifndef MAC    
     return rep_->name_;
 #else
-	return nil;
+	return nullptr;
 #endif
 }
 
@@ -179,12 +179,12 @@ void File::close() {
 #ifndef MAC
     FileInfo* i = rep_;
     if (i->fd_ >= 0) {
-	if (i->map_ != nil) {
+	if (i->map_ != nullptr) {
 #ifdef HAVE_SYS_MMAN_H // #if defined(SGI) || defined(__alpha)
 	    munmap(i->map_, int(i->info_.st_size));
 #endif
 	}
-	if (i->buf_ != nil) {
+	if (i->buf_ != nullptr) {
 	    delete [] i->buf_;
 	}
 #ifdef WIN32
@@ -207,7 +207,7 @@ FileInfo* File::rep() const {
 #ifndef MAC
 	return rep_; 
 #else
-	return nil;
+	return nullptr;
 #endif
 }
 
@@ -224,17 +224,17 @@ InputFile* InputFile::open(const String& name) {
     int fd = ::open(s->string(), O_RDONLY);
     if (fd < 0) {
 	delete s;
-	return nil;
+	return nullptr;
     }
     FileInfo* i = new FileInfo(s, fd);
     if (fstat(fd, &i->info_) < 0) {
 	delete s;
 	delete i;
-	return nil;
+	return nullptr;
     }
     return new InputFile(i);
 #else
-	return nil;
+	return nullptr;
 #endif
 }
 
@@ -255,7 +255,7 @@ int InputFile::read(const char*& start) {
     }
     start = i->map_;
 #else
-    if (i->buf_ == nil) {
+    if (i->buf_ == nullptr) {
 	i->buf_ = new char[len];
     }
     start = i->buf_;
@@ -285,7 +285,7 @@ long StdInput::length() const { return -1; }
 int StdInput::read(const char*& start) {
 #ifndef MAC
     FileInfo* i = rep();
-    if (i->buf_ == nil) {
+    if (i->buf_ == nullptr) {
 	if (i->limit_ == 0) {
 	    i->limit_ = BUFSIZ;
 	}

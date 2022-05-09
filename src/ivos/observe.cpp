@@ -36,12 +36,12 @@ declarePtrList(ObserverList,Observer)
 implementPtrList(ObserverList,Observer)
 
 Observable::Observable() {
-    observers_ = nil;
+    observers_ = nullptr;
 }
 
 Observable::~Observable() {
     ObserverList* list = observers_;
-    if (list != nil) {
+    if (list != nullptr) {
 	// in case a disconnect removes items from the ObserverList
 	for (long i = list->count() - 1; i >= 0; --i) {
 	    list->item(i)->disconnect(this);
@@ -53,7 +53,7 @@ Observable::~Observable() {
 
 void Observable::attach(Observer* o) {
     ObserverList* list = observers_;
-    if (list == nil) {
+    if (list == nullptr) {
 	list = new ObserverList(5);
 	observers_ = list;
     }
@@ -62,7 +62,7 @@ void Observable::attach(Observer* o) {
 
 void Observable::detach(Observer* o) {
     ObserverList* list = observers_;
-    if (list != nil) {
+    if (list != nullptr) {
 	for (ListUpdater(ObserverList) i(*list); i.more(); i.next()) {
 	    if (i.cur() == o) {
 		i.remove_cur();
@@ -74,7 +74,7 @@ void Observable::detach(Observer* o) {
 
 void Observable::notify() {
     ObserverList* list = observers_;
-    if (list != nil) {
+    if (list != nullptr) {
 	for (ListItr(ObserverList) i(*list); i.more(); i.next()) {
 	    i.cur()->update(this);
 	}

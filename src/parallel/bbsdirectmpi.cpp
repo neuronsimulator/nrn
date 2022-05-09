@@ -38,8 +38,8 @@ BBSDirect::BBSDirect() {
     if (!BBSDirectServer::server_) {
         BBSDirectServer::server_ = new BBSDirectServer();
     }
-    sendbuf_ = nil;
-    recvbuf_ = nil;
+    sendbuf_ = nullptr;
+    recvbuf_ = nullptr;
     BBSDirect::start();
 #if defined(HAVE_STL)
     keepargs_ = new KeepArgs();
@@ -81,7 +81,7 @@ void BBSDirect::context() {
     }
 
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
 }
 
 int BBSDirect::upkint() {
@@ -177,7 +177,7 @@ void BBSDirect::post(const char* key) {
     nrnmpi_pkstr(key, sendbuf_);
     BBSDirectServer::server_->post(key, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -189,7 +189,7 @@ void BBSDirect::post_todo(int parentid) {
     nrnmpi_pkint(parentid, sendbuf_);
     BBSDirectServer::server_->post_todo(parentid, nrnmpi_myid_bbs, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -201,7 +201,7 @@ void BBSDirect::post_result(int id) {
     nrnmpi_pkint(id, sendbuf_);
     BBSDirectServer::server_->post_result(id, sendbuf_);
     nrnmpi_unref(sendbuf_);
-    sendbuf_ = nil;
+    sendbuf_ = nullptr;
     BBSDirectServer::handle();
 }
 
@@ -274,7 +274,7 @@ void BBSDirect::return_args(int userid) {
 #if defined(HAVE_STL)
     KeepArgs::iterator i = keepargs_->find(userid);
     nrnmpi_unref(recvbuf_);
-    recvbuf_ = nil;
+    recvbuf_ = nullptr;
     if (i != keepargs_->end()) {
         recvbuf_ = (*i).second;
         keepargs_->erase(i);

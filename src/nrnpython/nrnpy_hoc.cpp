@@ -679,7 +679,7 @@ static void* fcall(void* vself, void* vargs) {
         return result;
     } else {
         HocTopContextSet Inst fc[4];
-        // ugh. so a potential call of hoc_get_last_pointer_symbol will return nil.
+        // ugh. so a potential call of hoc_get_last_pointer_symbol will return nullptr.
         fc[0].in = STOP;
         fc[1].sym = self->sym_;
         fc[2].i = narg;

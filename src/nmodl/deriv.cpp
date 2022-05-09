@@ -1139,7 +1139,7 @@ each has been saved. So we know if the translation is possible.
 int cvode_cnexp_success(Item* q1, Item* q2) {
     Item *q, *q3, *q4, *qeq;
     if (cvode_cnexp_possible) {
-        /* convert Method to nil and the type of the block to
+        /* convert Method to nullptr and the type of the block to
            PROCEDURE */
         SYM(cvode_cnexp_solve->next)->name = stralloc("cnexp", 0);
         remove(deriv_imp_list->next);

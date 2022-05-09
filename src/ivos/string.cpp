@@ -50,7 +50,7 @@ extern "C" {
 */
 
 String::String() {
-    data_ = nil;
+    data_ = nullptr;
     length_ = 0;
 }
 

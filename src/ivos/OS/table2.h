@@ -115,7 +115,7 @@ Table2::Table2(int n) { \
     --size_; \
     last_ = &first_[size_]; \
     for (Table2Entry(Table2)** e = first_; e <= last_; e++) { \
-	*e = nil; \
+	*e = nullptr; \
     } \
 } \
 \
@@ -140,7 +140,7 @@ void Table2::insert(Key1 k1, Key2 k2, Value v) { \
 bool Table2::find(Value& v, Key1 k1, Key2 k2) { \
     for ( \
 	Table2Entry(Table2)* e = probe(k1, k2); \
-	e != nil; \
+	e != nullptr; \
 	e = e->chain_ \
     ) { \
 	if (e->key1_ == k1 && e->key2_ == k2) { \
@@ -154,7 +154,7 @@ bool Table2::find(Value& v, Key1 k1, Key2 k2) { \
 void Table2::remove(Key1 k1, Key2 k2) { \
     Table2Entry(Table2)** a = &probe(k1, k2); \
     Table2Entry(Table2)* e = *a; \
-    if (e != nil) { \
+    if (e != nullptr) { \
 	if (e->key1_ == k1 && e->key2_ == k2) { \
 	    *a = e->chain_; \
 	    delete e; \
@@ -163,8 +163,8 @@ void Table2::remove(Key1 k1, Key2 k2) { \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && (e->key1_ != k1 || e->key2_ != k2)); \
-	    if (e != nil) { \
+	    } while (e != nullptr && (e->key1_ != k1 || e->key2_ != k2)); \
+	    if (e != nullptr) { \
 		prev->chain_ = e->chain_; \
 		delete e; \
 	    } \
@@ -176,7 +176,7 @@ Table2Iterator(Table2)::Table2Iterator(Table2)(Table2& t) { \
     last_ = t.last_; \
     for (entry_ = t.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != nullptr) { \
 	    break; \
 	} \
     } \
@@ -184,12 +184,12 @@ Table2Iterator(Table2)::Table2Iterator(Table2)(Table2& t) { \
 \
 bool Table2Iterator(Table2)::next() { \
     cur_ = cur_->chain_; \
-    if (cur_ != nil) { \
+    if (cur_ != nullptr) { \
 	return true; \
     } \
     for (++entry_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != nullptr) { \
 	    return true; \
 	} \
     } \

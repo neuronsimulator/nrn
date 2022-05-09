@@ -164,7 +164,7 @@ void nrnbbs_disconnect() {
             delete cblist_->item(i);
         }
         delete cblist_;
-        cblist_ = nil;
+        cblist_ = nullptr;
     }
     if (lockfile_) {
         fclose(lockfile_);

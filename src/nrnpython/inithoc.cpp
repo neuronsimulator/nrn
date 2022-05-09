@@ -261,7 +261,7 @@ extern "C" PyObject* PyInit_hoc() {
      * In case of dynamic mpi build we load MPI unless NEURON_INIT_MPI is explicitly set to 0.
      * and there is no '-mpi' arg.
      * We call nrnmpi_load to load MPI library which returns:
-     *  - nil if loading is successfull
+     *  - nullptr if loading is successfull
      *  - error message in case of loading error
      */
     if (env_mpi != NULL && strcmp(env_mpi, "0") == 0 && !have_opt("-mpi")) {

@@ -31,7 +31,7 @@ method3.cpp,v
  * was executed. no more inode_exact(Section** psec, double x)---has been
  * replaced by Node* node_exact(Section* sec, double x)
  * There is now a rootnode list. parentsec of a section which was not
- * connect'ed to anything has a parentsec of nil. One can now disconnect
+ * connect'ed to anything has a parentsec of nullptr. One can now disconnect
  * and delete sections without otherwise changing user spec (except
  * point processes at ends may be moved or changed -- will be fixed later)
  *

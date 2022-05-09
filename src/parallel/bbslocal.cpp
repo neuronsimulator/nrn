@@ -33,8 +33,8 @@ static BBSLocalServer* server_;
 BBSLocal::BBSLocal() {
     if (!server_) {
         server_ = new BBSLocalServer();
-        posting_ = nil;
-        taking_ = nil;
+        posting_ = nullptr;
+        taking_ = nullptr;
     }
     start();
 #if defined(HAVE_STL)
@@ -148,19 +148,19 @@ void BBSLocal::pkpickle(const char* s, size_t n) {
 void BBSLocal::post(const char* key) {
     server_->post(key, posting_);
     Resource::unref(posting_);
-    posting_ = nil;
+    posting_ = nullptr;
 }
 
 bool BBSLocal::look_take(const char* key) {
     Resource::unref(taking_);
-    taking_ = nil;
+    taking_ = nullptr;
     bool b = server_->look_take(key, &taking_);
     return b;
 }
 
 bool BBSLocal::look(const char* key) {
     Resource::unref(taking_);
-    taking_ = nil;
+    taking_ = nullptr;
     bool b = server_->look(key, &taking_);
     return b;
 }
@@ -169,7 +169,7 @@ void BBSLocal::take(const char* key) {  // blocking
     int id;
     for (;;) {
         Resource::unref(taking_);
-        taking_ = nil;
+        taking_ = nullptr;
         if (server_->look_take(key, &taking_)) {
             return;
         } else if ((id = server_->look_take_todo(&taking_)) != 0) {
@@ -183,32 +183,32 @@ void BBSLocal::take(const char* key) {  // blocking
 void BBSLocal::post_todo(int parentid) {
     server_->post_todo(parentid, posting_);
     Resource::unref(posting_);
-    posting_ = nil;
+    posting_ = nullptr;
 }
 
 void BBSLocal::post_result(int id) {
     server_->post_result(id, posting_);
     Resource::unref(posting_);
-    posting_ = nil;
+    posting_ = nullptr;
 }
 
 int BBSLocal::look_take_result(int pid) {
     Resource::unref(taking_);
-    taking_ = nil;
+    taking_ = nullptr;
     int id = server_->look_take_result(pid, &taking_);
     return id;
 }
 
 int BBSLocal::look_take_todo() {
     Resource::unref(taking_);
-    taking_ = nil;
+    taking_ = nullptr;
     int id = server_->look_take_todo(&taking_);
     return id;
 }
 
 int BBSLocal::take_todo() {
     Resource::unref(taking_);
-    taking_ = nil;
+    taking_ = nullptr;
     int id = look_take_todo();
     if (id == 0) {
         perror("take_todo blocking");
@@ -221,7 +221,7 @@ void BBSLocal::save_args(int userid) {
 #if defined(HAVE_STL)
     keepargs_->insert(std::pair<const int, const MessageValue*>(userid, posting_));
 #endif
-    posting_ = nil;
+    posting_ = nullptr;
 }
 
 void BBSLocal::return_args(int userid) {

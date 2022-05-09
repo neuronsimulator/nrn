@@ -117,7 +117,7 @@ Table::Table(int n) { \
     --size_; \
     last_ = &first_[size_]; \
     for (TableEntry(Table)** e = first_; e <= last_; e++) { \
-	*e = nil; \
+	*e = nullptr; \
     } \
 } \
 \
@@ -146,7 +146,7 @@ void Table::insert(Key k, Value v) { \
 } \
 \
 bool Table::find(Value& v, Key k) { \
-    for (TableEntry(Table)* e = probe(k); e != nil; e = e->chain_) { \
+    for (TableEntry(Table)* e = probe(k); e != nullptr; e = e->chain_) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    return true; \
@@ -158,7 +158,7 @@ bool Table::find(Value& v, Key k) { \
 bool Table::find_and_remove(Value& v, Key k) { \
     TableEntry(Table)** a = &probe(k); \
     TableEntry(Table)* e = *a; \
-    if (e != nil) { \
+    if (e != nullptr) { \
 	if (e->key_ == k) { \
 	    v = e->value_; \
 	    *a = e->chain_; \
@@ -169,8 +169,8 @@ bool Table::find_and_remove(Value& v, Key k) { \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != nullptr && e->key_ != k); \
+	    if (e != nullptr) { \
 		v = e->value_; \
 		prev->chain_ = e->chain_; \
 		delete e; \
@@ -184,7 +184,7 @@ bool Table::find_and_remove(Value& v, Key k) { \
 void Table::remove(Key k) { \
     TableEntry(Table)** a = &probe(k); \
     TableEntry(Table)* e = *a; \
-    if (e != nil) { \
+    if (e != nullptr) { \
 	if (e->key_ == k) { \
 	    *a = e->chain_; \
 	    delete e; \
@@ -193,8 +193,8 @@ void Table::remove(Key k) { \
 	    do { \
 		prev = e; \
 		e = e->chain_; \
-	    } while (e != nil && e->key_ != k); \
-	    if (e != nil) { \
+	    } while (e != nullptr && e->key_ != k); \
+	    if (e != nullptr) { \
 		prev->chain_ = e->chain_; \
 		delete e; \
 	    } \
@@ -206,7 +206,7 @@ TableIterator(Table)::TableIterator(Table)(Table& t) { \
     last_ = t.last_; \
     for (entry_ = t.first_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != nullptr) { \
 	    break; \
 	} \
     } \
@@ -214,12 +214,12 @@ TableIterator(Table)::TableIterator(Table)(Table& t) { \
 \
 bool TableIterator(Table)::next() { \
     cur_ = cur_->chain_; \
-    if (cur_ != nil) { \
+    if (cur_ != nullptr) { \
 	return true; \
     } \
     for (++entry_; entry_ <= last_; entry_++) { \
 	cur_ = *entry_; \
-	if (cur_ != nil) { \
+	if (cur_ != nullptr) { \
 	    return true; \
 	} \
     } \

@@ -125,7 +125,7 @@ void nrn_chk_ndt() {
 /*
 There are (too) many variants of nrn_fixed_step depending on
 nrnmpi_numprocs 1 or > 1, nrn_nthread 1 or > 1,
-nrnmpi_v_transfer nil or callable, nrn_multisplit_setup nil or callable,
+nrnmpi_v_transfer nullptr or callable, nrn_multisplit_setup nullptr or callable,
 and whether one step with fadvance
 or possibly many with ParallelContext.psolve before synchronizing with
 NetParEvent. The combination of simultaneous nrnmpi_numprocs > 1 and

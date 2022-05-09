@@ -78,7 +78,7 @@ WorkItem::WorkItem(int id, bbsmpibuf* buf, int cid) {
     id_ = id;
     buf_ = buf;
     cid_ = cid;
-    parent_ = nil;
+    parent_ = nullptr;
 }
 
 WorkItem::~WorkItem() {
@@ -128,7 +128,7 @@ BBSDirectServer::BBSDirectServer() {
     looking_todo_ = new LookingToDoList();
     send_context_ = new LookingToDoList();
     next_id_ = FIRSTID;
-    context_buf_ = nil;
+    context_buf_ = nullptr;
     remaining_context_cnt_ = 0;
 #endif
 }
@@ -154,7 +154,7 @@ bool BBSDirectServer::look_take(const char* key, bbsmpibuf** recv) {
     bool b = false;
 #if defined(HAVE_STL)
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
         b = true;
@@ -177,7 +177,7 @@ bool BBSDirectServer::look(const char* key, bbsmpibuf** recv) {
 #endif
     bool b = false;
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
 #if defined(HAVE_STL)
     MessageList::iterator m = messages_->find(key);
     if (m != messages_->end()) {
@@ -291,7 +291,7 @@ void BBSDirectServer::context(bbsmpibuf* send) {
         Printf("some workers did not receive previous context\n");
         send_context_->erase(send_context_->begin(), send_context_->end());
         nrnmpi_unref(context_buf_);
-        context_buf_ = nil;
+        context_buf_ = nullptr;
     }
     remaining_context_cnt_ = nrnmpi_numprocs_bbs - 1;
     for (j = 1; j < nrnmpi_numprocs_bbs; ++j) {
@@ -343,7 +343,7 @@ bool BBSDirectServer::send_context(int cid) {
         nrnmpi_bbssend(cid, CONTEXT + 1, context_buf_);
         if (--remaining_context_cnt_ <= 0) {
             nrnmpi_unref(context_buf_);
-            context_buf_ = nil;
+            context_buf_ = nullptr;
         }
         return true;
     }
@@ -371,7 +371,7 @@ int BBSDirectServer::look_take_todo(bbsmpibuf** recv) {
     printf("DirectServer::look_take_todo\n");
 #endif
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     ReadyList::iterator i = todo_->begin();
     if (i != todo_->end()) {
         WorkItem* w = (WorkItem*) (*i);
@@ -399,7 +399,7 @@ int BBSDirectServer::look_take_result(int pid, bbsmpibuf** recv) {
 #endif
 #if defined(HAVE_STL)
     nrnmpi_unref(*recv);
-    *recv = nil;
+    *recv = nullptr;
     ResultList::iterator i = results_->find(pid);
     if (i != results_->end()) {
         WorkItem* w = (WorkItem*) ((*i).second);

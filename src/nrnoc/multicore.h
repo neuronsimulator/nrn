@@ -77,7 +77,7 @@ typedef struct NrnThread {
     Node** _v_node;
     Node** _v_parent;
     char* _sp13mat;              /* handle to general sparse matrix */
-    Memb_list* _ecell_memb_list; /* normally nil */
+    Memb_list* _ecell_memb_list; /* normally nullptr */
     Node** _ecell_children;      /* nodes with no extcell but parent has it */
     _nrn_Fast_Imem* _nrn_fast_imem;
     void* _vcv; /* replaces old cvode_instance and nrn_cvode_ */

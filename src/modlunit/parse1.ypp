@@ -668,7 +668,7 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 		  while (q1 != netreceive_arglist && q2 != args) {
 			Symbol* s1 = SYM(q1);
 			Symbol* s2 = SYM(q2);
-			if (s1->u.str) { /* s2 must be nil or same */
+			if (s1->u.str) { /* s2 must be nullptr or same */
 				if (s2->u.str) {
 					if (strcmp(s1->u.str, s2->u.str) != 0) {
 						diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
@@ -676,7 +676,7 @@ fornetcon: FOR_NETCONS '(' arglist ')'
 				}else{
 					s2->u.str = s1->u.str;
 				}
-			}else{ /* s2 must be nil */
+			}else{ /* s2 must be nullptr */
 				if (s2->u.str) {
 					diag(s1->name, "in FOR_NETCONS arglist does not have same units as corresponding arg in NET_RECEIVE arglist");
 				}

@@ -68,7 +68,7 @@ static TQItem* sentinel;
 TQItem::TQItem() {
     left_ = NIL;
     right_ = NIL;
-    parent_ = nil;
+    parent_ = nullptr;
 }
 
 TQItem::~TQItem() {
@@ -83,8 +83,8 @@ static void deleteitem(TQItem* i) {
     if (i->right_ && i->right != NIL) {
         deleteitem(i->right_);
     }
-    i->left_ = nil;
-    i->right_ = nil;
+    i->left_ = nullptr;
+    i->right_ = nullptr;
     tpool_->free(i);
 }
 
@@ -124,7 +124,7 @@ TQueue::TQueue() {
         sentinel = new TQItem();
         sentinel->red_ = BLACK;
         sentinel->t_ = 0.;
-        sentinel->data_ = nil;
+        sentinel->data_ = nullptr;
         sentinel->left_ = NIL;
         sentinel->right_ = NIL;
     }
@@ -164,7 +164,7 @@ void TQueue::check(const char* mes) {
     if (root_ != NIL) {
         root_->t_iterate(chk, 0);
     }
-    errmess_ = nil;
+    errmess_ = nullptr;
 #endif
 }
 
@@ -192,7 +192,7 @@ TQItem* TQueue::least() {
     least_ = b;
 #endif
 #endif
-    return least_ != NIL ? least_ : nil;
+    return least_ != NIL ? least_ : nullptr;
 }
 
 void TQueue::new_least() {

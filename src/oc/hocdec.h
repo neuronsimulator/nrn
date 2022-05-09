@@ -206,7 +206,7 @@ typedef struct cTemplate {
     void* observers; /* hook to c++ ClassObservable */
     void* (*constructor)(struct Object*);
     void (*destructor)(void*);
-    void (*steer)(void*); /* normally nil */
+    void (*steer)(void*); /* normally nullptr */
     int (*checkpoint)(void**);
     //#if defined(__cplusplus)
 } cTemplate;
