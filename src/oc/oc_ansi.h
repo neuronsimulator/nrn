@@ -277,7 +277,7 @@ extern int hoc_is_tempobj_arg(int narg);
 extern FILE* hoc_obj_file_arg(int i);
 extern void hoc_reg_nmodl_text(int type, const char* txt);
 extern void hoc_reg_nmodl_filename(int type, const char* filename);
-extern unsigned long long nrn_mallinfo(int item);
+extern size_t nrn_mallinfo(int item);
 extern int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
 extern void state_discontinuity(int i, double* pd, double d);
 
