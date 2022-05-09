@@ -281,7 +281,6 @@ extern size_t nrn_mallinfo(int item);
 extern int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
 extern void state_discontinuity(int i, double* pd, double d);
 
-extern Symbol* hoc_get_symbol(const char* var);
 extern double nrn_event_queue_stats(double* stats);
 extern double* nrn_recalc_ptr(double*);
 extern void nrn_register_recalc_ptr_callback(Pfrv f);
