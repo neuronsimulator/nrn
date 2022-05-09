@@ -141,7 +141,7 @@ all2allv_int lists space=3088 total=37351312 time=4.4708e-05
 */
 #define all2allv_perf 0
 extern "C" {
-extern unsigned long long nrn_mallinfo(int);
+extern size_t nrn_mallinfo(int);
 }  // extern "C"
 // input s, scnt, sdispl ; output, newly allocated r, rcnt, rdispl
 static void
