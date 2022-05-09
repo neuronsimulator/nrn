@@ -1,7 +1,6 @@
 
 #include <nrnpython.h>
 #include <structmember.h>
-#include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include "nrnpy_utils.h"
 #include <cmath>

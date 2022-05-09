@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #undef check
-#include <InterViews/resource.h>
 #include <ctype.h>
 #include "nrnoc2iv.h"
 #include "nrniv_mf.h"

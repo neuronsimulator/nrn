@@ -1,6 +1,5 @@
 #include "utils/profile/profiler_interface.h"
 #include <../../nrnconf.h>
-#include <InterViews/resource.h>
 #include <math.h>
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>

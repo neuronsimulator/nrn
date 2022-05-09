@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <InterViews/resource.h>
 #include <setjmp.h>
 #include <string.h>
 #if CABLE

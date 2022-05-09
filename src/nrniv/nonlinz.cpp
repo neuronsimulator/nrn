@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
 #include <math.h>
-#include <InterViews/resource.h>
 #include "nonlinz.h"
 #include "nrnoc2iv.h"
 #include "nrnmpi.h"

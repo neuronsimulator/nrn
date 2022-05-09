@@ -9,7 +9,6 @@
       assignment. It will be executed (and p.val assigned) when
     p.assign(val)
 */
-#include <InterViews/resource.h>
 #include <InterViews/observe.h>
 #include <string.h>
 #include "classreg.h"

@@ -1,8 +1,6 @@
 #ifndef bbslsrv2_h
 #define bbslsrv2_h
 
-#include <InterViews/resource.h>
-
 void bbs_handle();
 
 class BBSDirectServer {

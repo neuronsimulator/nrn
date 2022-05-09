@@ -1,7 +1,6 @@
 #include <nrnpython.h>
 #include <nrnpy_utils.h>
 #include <stdio.h>
-#include <InterViews/resource.h>
 #if HAVE_IV
 #include <InterViews/session.h>
 #endif

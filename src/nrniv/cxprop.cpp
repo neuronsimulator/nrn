@@ -8,7 +8,6 @@ greater cache efficiency
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <InterViews/resource.h>
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <membfunc.h>

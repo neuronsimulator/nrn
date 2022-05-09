@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jni.h>
-#include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "njvm.h"
 #if HAVE_LOCALE_H

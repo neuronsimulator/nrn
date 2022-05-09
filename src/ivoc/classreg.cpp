@@ -5,7 +5,6 @@
 #define OC_CLASSES "nrnclass.h"
 #endif
 
-#include <InterViews/resource.h>
 #include <stdio.h>
 #include <nrnpython_config.h>
 #include "classreg.h"

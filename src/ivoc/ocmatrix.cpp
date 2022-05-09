@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #include <vector>
-#include <InterViews/resource.h>
 
 #define v_elem(v, i) (*(vector_vec(v) + i))
 

@@ -7,7 +7,6 @@
 #include <../nrnpython/nrnpython_config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <InterViews/resource.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"
 #include "nonvintblock.h"

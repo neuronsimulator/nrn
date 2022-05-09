@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <InterViews/resource.h>
 #include <OS/list.h>
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>

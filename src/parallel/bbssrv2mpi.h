@@ -2,7 +2,6 @@
 #define bbslsrv2_h
 
 #include <nrnmpiuse.h>
-#include <InterViews/resource.h>
 
 class MpiMessageList;
 class MpiPendingList;

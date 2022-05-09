@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #include <stdio.h>
-#include <InterViews/resource.h>
 #include <OS/string.h>
 #include <OS/table.h>
 #include <OS/list.h>

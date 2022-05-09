@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 
 #include <stdio.h>
-#include "InterViews/resource.h"
 #include "oc2iv.h"
 #include "ocpointer.h"
 

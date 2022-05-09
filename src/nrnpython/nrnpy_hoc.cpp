@@ -1,6 +1,5 @@
 #include <nrnpython.h>
 #include <structmember.h>
-#include <InterViews/resource.h>
 #include <nrnoc2iv.h>
 #include <ocjump.h>
 #include "ivocvect.h"

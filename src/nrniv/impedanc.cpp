@@ -2,7 +2,6 @@
 #undef check
 #include "nrnmpi.h"
 #include "nonlinz.h"
-#include <InterViews/resource.h>
 #include <complex>
 #include "nrnoc2iv.h"
 #include "classreg.h"

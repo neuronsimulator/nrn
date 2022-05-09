@@ -7,7 +7,6 @@
 #include <nrnmpi.h>
 #include <errno.h>
 #include <time.h>
-#include <InterViews/resource.h>
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/table.h>

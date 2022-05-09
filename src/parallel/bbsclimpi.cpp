@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <InterViews/resource.h>
 #include "oc2iv.h"
 #include "bbs.h"
 #include "bbsrcli.h"
