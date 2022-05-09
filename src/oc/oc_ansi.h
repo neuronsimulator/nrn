@@ -286,14 +286,14 @@ extern double nrn_event_queue_stats(double* stats);
 extern double* nrn_recalc_ptr(double*);
 extern void nrn_register_recalc_ptr_callback(Pfrv f);
 
-//BlueBrain
-extern void* bbss_buffer_counts( int*, int**, int**, int* );
-extern void bbss_save_global( void*, char*, int );
-extern void bbss_restore_global( void*, char*, int );
-extern void bbss_save( void*, int, char*, int );
-extern void bbss_restore( void*, int, int, char*, int );
-extern void bbss_save_done( void* );
-extern void bbss_restore_done( void* );
+// BlueBrain
+extern void* bbss_buffer_counts(int*, int**, int**, int*);
+extern void bbss_save_global(void*, char*, int);
+extern void bbss_restore_global(void*, char*, int);
+extern void bbss_save(void*, int, char*, int);
+extern void bbss_restore(void*, int, int, char*, int);
+extern void bbss_save_done(void*);
+extern void bbss_restore_done(void*);
 
 #if defined(__cplusplus)
 }
