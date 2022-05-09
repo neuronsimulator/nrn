@@ -1,9 +1,6 @@
 #include <nrnpython.h>
 #include <nrnpy_utils.h>
 #include <stdio.h>
-#if HAVE_IV
-#include <InterViews/session.h>
-#endif
 #include <nrnoc2iv.h>
 #include <nrnpy_reg.h>
 #include <hoccontext.h>

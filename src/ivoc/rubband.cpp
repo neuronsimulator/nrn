@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <InterViews/session.h>
 #include <InterViews/display.h>
 #include <InterViews/color.h>
 #include <InterViews/brush.h>

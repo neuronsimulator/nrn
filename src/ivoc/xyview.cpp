@@ -9,7 +9,6 @@
 #include <InterViews/hit.h>
 #include <InterViews/canvas.h>
 #include <InterViews/printer.h>
-#include <InterViews/session.h>
 
 #include <InterViews/monoglyph.h>
 #include <InterViews/tformsetter.h>
