@@ -874,7 +874,7 @@ Vector
 
 .. method:: Vector.cl([srcstart, [srcend]])
 
-    Return a :class:` which is a copy, including the label, of the vector. 
+    Return a :class:`Vector` which is a copy, including the label, of the Vector. 
     (Similar to the :meth:`Vector.c` function which does not copy the label) 
     Useful in the construction of filter chains. 
 
@@ -932,10 +932,17 @@ Vector
 
 
 
-.. method:: Vector.from_double(n: int, pointer) -> Vector
+.. method:: Vector.from_double(n, pointer)
 
     Resizes the Vector to size ``n`` and copies the values from the double array 
     to the vector.
+
+    :param n: The new size of the Vector.
+    :type n: int
+    :param pointer: The pointer to a double array.
+    :type pointer: NEURON reference
+    :return: The Vector.
+    :rtype: :class:`Vector`
         
     **Examples:**
 
@@ -987,10 +994,10 @@ Vector
 
 
 
-.. method:: Vector.where(vsource: Vector, opstring: str, value1: float) -> Vector
-            Vector.where(vsource: Vector, op2string: str, value1: float, value2) -> Vector
-            Vector.where(opstring: str, value1: float) -> Vector
-            Vector.where(op2string: str, value1: float, value2: float) -> Vector
+.. method:: Vector.where(vsource: Vector, opstring: str, value1: float)
+            Vector.where(vsource: Vector, op2string: str, value1: float, value2)
+            Vector.where(opstring: str, value1: float)
+            Vector.where(op2string: str, value1: float, value2: float)
 
     The Vector before the ``.where`` becomes a vector consisting of those elements of the given vector, ``vsource`` 
     that match the condition opstring. 
@@ -1000,6 +1007,8 @@ Vector
 
     Op2string requires two numbers defining open/closed ranges and matches one 
     of these: ``"[]"``, ``"[)"``, ``"(]"``, ``"()"``
+
+    :rtype: :class:`Vector`
 
     .. seealso::
         :meth:`Vector.indvwhere`, :meth:`Vector.indwhere`
@@ -1086,10 +1095,9 @@ Vector
 
 
 
-.. method:: Vector.fwrite(fileobj: File) -> int
-            Vector.fwrite(fileobj: File, start: int, end: int) -> int
+.. method:: Vector.fwrite(fileobj, [start, end])
 
-    Write the vector ``vec`` to an open *fileobj* of type :class:`File` in 
+    Write the Vector to an open *fileobj* of type :class:`File` in 
     machine dependent binary format. 
     You must keep track of the vector's 
     size for later reading, so it is recommended that you store the size of the 
@@ -1098,11 +1106,19 @@ Vector
     It is almost always better to use :meth:`Vector.vwrite` since it stores the size 
     of the vector automatically and is more portable since the corresponding 
     :meth:`Vector.vread` will take care of machine dependent binary byte ordering differences. 
-        
-    Return value is the number of items. (0 if error) 
-        
+
     :meth:`Vector.fread` is used to read a file containing numbers stored by ``fwrite`` but 
     must have the same size. 
+    
+    :param fileobj: The File to write to.
+    :type fileobj: :class:`File`
+    :param start: The first element to write.
+    :type start: int, optional but required if end is specified
+    :param end: The last element to write.
+    :type end: int, optional but required if start is specified
+    :return: The number of elements written (0 if error).
+    :rtype: int
+        
 
          
 
@@ -1110,19 +1126,25 @@ Vector
 
 
 
-.. method:: Vector.fread(fileobj: File) -> int
-            Vector.fread(fileobj: File, n: int) -> int
-            Vector.fread(fileobj: File, n: int, precision) -> int
+.. method:: Vector.fread(fileobj [,n [, precision]])
 
     Read the elements of a vector from the file in binary as written by ``fwrite.`` 
     If *n* is present, the vector is resized before reading. Note that 
     files created with fwrite cannot be fread on a machine with different 
     byte ordering. E.g. spark and intel cpus have different byte ordering. 
         
-    It is almost always better to use ``vwrite`` in combination with ``vread``. 
+    It is almost always better to use :meth:`Vector.vwrite` in combination with :meth:`Vector.vread`. 
     See vwrite for the meaning of the *precision* argment. 
         
-    Return value is 1 (no error checking). 
+
+    :param fileobj: The File to read from.
+    :type fileobj: :class:`File`
+    :param n: The number of elements to read.
+    :type n: int, optional but required if precision is specified
+    :param precision: The precision of the elements (1, 2, 3, 4, or 5).
+    :type precision: int, optional
+    :return: 1 (no error checking).
+    :rtype: int
 
          
 
@@ -1130,8 +1152,7 @@ Vector
 
 
 
-.. method:: Vector.vwrite(fileobj: File) -> int
-            Vector.vwrite(fileobj: File, precision: int) -> int
+.. method:: Vector.vwrite(fileobj [, precision])
 
     Write the :class:`Vector` in binary format 
     to an already opened for writing *fileobj* of type 
