@@ -382,8 +382,8 @@ void XYView::ratio_view(Coord x, Coord y, float& xrat, float& yrat) const {
 void XYView::size(Coord x1, Coord y1, Coord x2, Coord y2) {
     x1_ = Math::min(x1, x2);
     y1_ = Math::min(y1, y2);
-    x_span_ = Math::abs(x2 - x1);
-    y_span_ = Math::abs(y2 - y1);
+    x_span_ = std::abs(x2 - x1);
+    y_span_ = std::abs(y2 - y1);
     notify();
 }
 
@@ -611,8 +611,8 @@ void View::transform(Transformer& t, const Allocation& a, const Allocation&) con
 void XYView::move_view(Coord dx1, Coord dy1) {
     //	printf("move by %g %g \n", dx1, dy1);
     Coord x0, x1, y0, y1;
-    Coord dx = Math::abs(dx1);
-    Coord dy = Math::abs(dy1);
+    Coord dx = std::abs(dx1);
+    Coord dy = std::abs(dy1);
     if (dx < .9 * dy) {
         dx = 0.;
         dy = dy1;
@@ -654,8 +654,8 @@ void View::move_view(Coord dx, Coord dy) {
 
 void XYView::scale_view(Coord xorg, Coord yorg, float dxscl, float dyscl) {
     Coord x0, y0, l, b, r, t;
-    Coord dx = Math::abs(dxscl);
-    Coord dy = Math::abs(dyscl);
+    Coord dx = std::abs(dxscl);
+    Coord dy = std::abs(dyscl);
     if (dx < .9 * dy) {
         dx = 0.;
         dy = dyscl;

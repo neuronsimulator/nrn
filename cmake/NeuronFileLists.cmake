@@ -78,7 +78,6 @@ set(OC_FILE_LIST
     hoc_oop.cpp
     isoc99.cpp
     list.cpp
-    math.cpp
     mswinprt.cpp
     nonlin.cpp
     nrnfilewrap.cpp
@@ -535,7 +534,6 @@ set(NMODL_FILES_LIST
 set(IVOS_FILES_LIST
     file.cpp
     listimpl.cpp
-    math.cpp
     memory.cpp
     string.cpp
     ustring.cpp

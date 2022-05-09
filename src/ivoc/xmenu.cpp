@@ -1920,7 +1920,7 @@ double MyMath::resolution(double x) {
         set_format();
     }
     char buf[100];
-    sprintf(buf, xvalue_format->string(), Math::abs(x));
+    sprintf(buf, xvalue_format->string(), std::abs(x));
     char* cp;
     char* least = NULL;
     for (cp = buf; *cp; ++cp) {

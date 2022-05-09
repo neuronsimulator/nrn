@@ -174,7 +174,7 @@ class Canvas;
 
 class Extension {
 public:
-    Extension();
+    Extension() = default;
     Extension(const Extension&);
 
     void operator =(const Extension&);
@@ -184,7 +184,10 @@ public:
     );
 
     void set(Canvas*, const Allocation&);
-    void set_xy(Canvas*, Coord left, Coord bottom, Coord right, Coord top);
+    void set_xy(Canvas*, Coord left, Coord bottom, Coord right, Coord top)
+    {
+        x_begin_ = left; y_begin_ = bottom; x_end_ = right; y_end_ = top;
+    }
     void clear();
 
     void merge(const Extension&);

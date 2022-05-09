@@ -332,7 +332,7 @@ double MyMath::round(float& x1, float& x2, int direction, int digits) {
     if (x2 > x1) {
         d = x2 - x1;
     } else {
-        d = Math::abs(x1);
+        d = std::abs(x1);
     }
     double e = pow(10, floor(log10(d)) + 1 - digits);
     switch (direction) {

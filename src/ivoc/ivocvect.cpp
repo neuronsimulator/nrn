@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ivstream.h>
-#include <math.h>
+#include <cmath>
 #include <errno.h>
 #include <numeric>
 #include <functional>
@@ -3110,7 +3110,7 @@ static Object** v_rotate(void* v) {
     if (r > n)
         r = r % n;
     if (r < 0) {
-        r = n - (Math::abs(r) % n);
+        r = n - (std::abs(r) % n);
         rev = 1;
     }
 
@@ -3600,7 +3600,7 @@ static Object** v_abs(void* v) {
         ans->resize(n);
 
     for (int i = 0; i < n; i++) {
-        ans->elem(i) = Math::abs(v1->elem(i));
+        ans->elem(i) = std::abs(v1->elem(i));
     }
     return ans->temp_objvar();
 }

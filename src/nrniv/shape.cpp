@@ -1403,7 +1403,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     }
     Coord x = x_[0];
     Coord y = y_[0];
-    Coord d2 = Math::abs(sec_->pt3d[0].d) / 2 + 1;
+    Coord d2 = std::abs(sec_->pt3d[0].d) / 2 + 1;
 
     xmin_ = x - d2;
     xmax_ = x + d2;
@@ -1413,7 +1413,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     for (i = 1; i < n_; i++) {
         x = x_[i];
         y = y_[i];
-        d2 = Math::abs(sec_->pt3d[i].d) / 2 + 1;
+        d2 = std::abs(sec_->pt3d[i].d) / 2 + 1;
 
         xmin_ = Math::min(xmin_, x - d2);
         xmax_ = Math::max(xmax_, x + d2);
@@ -1758,8 +1758,8 @@ void ShapeSection::fastidious_draw(Canvas* c,
     switch (ShapeScene::current_draw_scene()->shape_type()) {
     case ShapeScene::show_diam:
         float d1, d2, t1, t2;
-        t1 = Math::abs(sec_->pt3d[i].d) / 2.;
-        t2 = Math::abs(sec_->pt3d[i1].d) / 2.;
+        t1 = std::abs(sec_->pt3d[i].d) / 2.;
+        t2 = std::abs(sec_->pt3d[i1].d) / 2.;
         d1 = f1 * (t2 - t1) + t1;
         d2 = f2 * (t2 - t1) + t1;
         trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1838,8 +1838,8 @@ void ShapeSection::draw_seg(Canvas* c, const Color* color, int iseg) const {
         switch (ShapeScene::current_draw_scene()->shape_type()) {
         case ShapeScene::show_diam:
             float d1, d2, t1, t2;
-            t1 = Math::abs(sec_->pt3d[0].d) / 2.;
-            t2 = Math::abs(sec_->pt3d[1].d) / 2.;
+            t1 = std::abs(sec_->pt3d[0].d) / 2.;
+            t2 = std::abs(sec_->pt3d[1].d) / 2.;
             d1 = darc * iseg * (t2 - t1) + t1;
             d2 = darc * (iseg + 1) * (t2 - t1) + t1;
             trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1877,7 +1877,7 @@ void ShapeSection::draw_points(Canvas* c, const Color* color, int i, int j) cons
             trapezoid(c, color, i);
 #if BEVELJOIN
             if (beveljoin_) {
-                bevel_join(c, color, i - 1, Math::abs(sec_->pt3d[i - 1].d) / 2);
+                bevel_join(c, color, i - 1, std::abs(sec_->pt3d[i - 1].d) / 2);
             }
 #endif
         }
@@ -1906,8 +1906,8 @@ void ShapeSection::trapezoid(Canvas* c, const Color* color, int i) const {
               y_[i - 1],
               x_[i],
               y_[i],
-              Math::abs(sec_->pt3d[i - 1].d) / 2.,
-              Math::abs(sec_->pt3d[i].d) / 2.);
+              std::abs(sec_->pt3d[i - 1].d) / 2.,
+              std::abs(sec_->pt3d[i].d) / 2.);
 }
 
 void ShapeSection::trapezoid(Canvas* c,
@@ -2030,7 +2030,7 @@ bool ShapeSection::near_section(Coord x, Coord y, Coord mineps) const {
                                       y_[i - 1],
                                       x_[i],
                                       y_[i],
-                                      Math::max(float(Math::abs(sec_->pt3d[i - 1].d) / 2.),
+                                      Math::max(float(std::abs(sec_->pt3d[i - 1].d) / 2.),
                                                 float(mineps)))) {
             return true;
         }
