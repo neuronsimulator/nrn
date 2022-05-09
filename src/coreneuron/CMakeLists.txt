@@ -35,7 +35,11 @@ set(SCOPMATH_CODE_FILES
     "sim/scopmath/abort.cpp" "sim/scopmath/crout_thread.cpp" "sim/scopmath/newton_thread.cpp"
     "sim/scopmath/sparse_thread.cpp" "sim/scopmath/ssimplic_thread.cpp")
 set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
-set(MPI_CORE_FILES "mpi/core/nrnmpi_def_cinc.cpp" "mpi/core/nrnmpi.cpp" "mpi/core/nrnmpidec.cpp")
+set(MPI_CORE_FILES "mpi/core/nrnmpi_def_cinc.cpp")
+if(CORENRN_ENABLE_MPI)
+  # Building these requires -ldl, which is only added if MPI is enabled.
+  list(APPEND MPI_CORE_FILES "mpi/core/nrnmpi.cpp" "mpi/core/nrnmpidec.cpp")
+endif()
 file(COPY ${CORENEURON_PROJECT_SOURCE_DIR}/external/Random123/include/Random123
      DESTINATION ${CMAKE_BINARY_DIR}/include)
 list(APPEND CORENEURON_CODE_FILES ${PROJECT_BINARY_DIR}/coreneuron/config/config.cpp)
