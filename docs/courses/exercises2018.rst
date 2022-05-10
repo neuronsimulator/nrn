@@ -54,7 +54,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`state_and_parameter_discontinuities`
     
 13.
-    Bulletin board parallelization
+    :ref:`batch_runs_bulletin_board_parallelization`
 
         * Speed up embarrassingly parallel tasks
     
@@ -105,6 +105,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     custom-initialization.rst
     introduction_to_the_linear_circuit.rst
     state_and_parameter_discontinuities.rst
+    batch_runs_bulletin_board_parallelization.rst
     hoc_exercises.rst
     multithread_parallelization.rst
     using_nsg_portal.rst
