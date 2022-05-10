@@ -59,7 +59,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
         * Speed up embarrassingly parallel tasks
     
 14.
-    HOC exercises
+    :ref:`hoc_exercises`
 
         * Introduction to the HOC programming language
     
@@ -105,6 +105,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     custom-initialization.rst
     introduction_to_the_linear_circuit.rst
     state_and_parameter_discontinuities.rst
+    hoc_exercises.rst
     multithread_parallelization.rst
     using_nsg_portal.rst
     numerical-methods-exercises.rst
