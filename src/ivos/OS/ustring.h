@@ -30,9 +30,9 @@
  */
 
 #include <OS/string.h>
+#include <map>
 
 class UniqueStringPool;
-class UniqueStringTable;
 
 class UniqueString : public String {
 public:
@@ -52,7 +52,7 @@ public:
 
     virtual bool null_terminated() const;
 private:
-    static UniqueStringTable* table_;
+    static std::map<String, String> table_;
     static UniqueStringPool* pool_;
 
     void init(const String&);

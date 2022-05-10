@@ -37,9 +37,6 @@
 
 inline unsigned long key_to_hash(String& s) { return s.hash(); }
 
-declareTable(UniqueStringTable,String,String)
-implementTable(UniqueStringTable,String,String)
-
 static const unsigned strpoolsize = 800;
 
 class UniqueStringPool {
@@ -55,7 +52,7 @@ private:
     UniqueStringPool* prev;
 };
 
-UniqueStringTable* UniqueString::table_;
+std::map<String, String> UniqueString::table_;
 UniqueStringPool* UniqueString::pool_;
 
 UniqueString::UniqueString() : String() { }
@@ -68,16 +65,13 @@ UniqueString::UniqueString(const UniqueString& s) : String(s) { }
 UniqueString::~UniqueString() { }
 
 void UniqueString::init(const String& s) {
-    if (table_ == nil) {
-        table_ = new UniqueStringTable(256);
-    }
-    if (!table_->find(*this, s)) {
+    if (table_.find(s) == table_.end()) {
         if (pool_ == nil) {
             pool_ = new UniqueStringPool;
         }
         int n = s.length();
         set_value(pool_->add(s.string(), n), n);
-        table_->insert(*this, *this);
+        table_.emplace(*this, *this);
     }
 }
 
