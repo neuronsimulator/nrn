@@ -48,10 +48,7 @@ class SingleChanInfo {
     int n_;
 };
 
-declarePtrList(SingleChanInfoList, SingleChanInfo)
-    implementPtrList(SingleChanInfoList, SingleChanInfo)
-
-        SingleChanInfoList* infolist;
+std::vector<SingleChanInfo*> infolist;
 static SingleChan* current_chan;
 
 #define NS 3
@@ -90,12 +87,9 @@ void SingleChanState::rate(int to_state, double value) {
 }
 
 void hoc_reg_singlechan(int type, void (*f)(...)) {
-    if (!infolist) {
-        infolist = new SingleChanInfoList();
-    }
     SingleChanInfo* info = new SingleChanInfo();
     info->type_ = type;
-    infolist->append(info);
+    infolist.push_back(info);
     (*f)();
 #if 0
 	if (nrn_istty_) {
@@ -105,7 +99,10 @@ void hoc_reg_singlechan(int type, void (*f)(...)) {
 }
 
 void _singlechan_declare(void (*f)(double, double*, Datum*), int* slist, int n) {
-    SingleChanInfo* info = infolist->item(infolist->count() - 1);
+    if (infolist.empty()) {
+        return;
+    }
+    SingleChanInfo* info = infolist.back();
     info->f_ = f;
     info->slist_ = slist;
     info->n_ = n;
@@ -121,10 +118,9 @@ SingleChan::SingleChan(const char* name) {
     r_ = NULL;
     erand_ = &SingleChan::erand1;
     nprop_ = new NrnProperty(name);
-    int i;
-    for (i = 0; i < infolist->count(); ++i) {
-        if (infolist->item(i)->type_ == nprop_->type()) {
-            info_ = infolist->item(i);
+    for (const auto& il: infolist) {
+        if (il->type_ == nprop_->type()) {
+            info_ = il;
         }
     }
     if (!info_) {
