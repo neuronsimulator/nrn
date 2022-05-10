@@ -762,7 +762,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
             }
             continue;
         }
-        const auto& it = inst_table_.find((VPfri)in[i].pf);
+        const auto& it = inst_table_.find((VPfri) in[i].pf);
         if (it != inst_table_.end()) {
             val = it->second;
             DEBUG(f_, "  %d\n", val);
@@ -776,7 +776,7 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                 switch (s[j]) {
                 case 's':
                     if (in[i].sym) {
-                        const auto &it = stable_.find(in[i].sym);
+                        const auto& it = stable_.find(in[i].sym);
                         if (it == stable_.end()) {
                             printf("couldn't find |%s| in table at instruction index %ld\n",
                                    in[i].sym->name,
