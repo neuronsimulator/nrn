@@ -3565,10 +3565,9 @@ bool ivoc_snapshot(const Event* e) {
 #include <IV-X11/Xlib.h>
 #include <IV-X11/xdisplay.h>
 
-declareTable(WindowTable, XWindow, Window*)
+declareTable(WindowTable, XWindow, Window*);
 
-
-    Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
+Window* PWMImpl::snap_owned(Printer* pr, Window* wp) {
     WindowTable* wt = Session::instance()->default_display()->rep()->wtable_;
     for (TableIterator(WindowTable) i(*wt); i.more(); i.next()) {
         Window* w = i.cur_value();
