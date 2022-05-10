@@ -3,7 +3,7 @@
 #include "membfunc.h"
 #include "nrniv_mf.h"
 #include "netcon.h"
-#include "OS/table.h"
+#include <map>
 #include "OS/list.h"
 #include "neuron.h"
 
@@ -11,11 +11,9 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon)        // NetCons in same order as Point_process
-    implementPtrList(NetConList, NetCon)  // and there may be several per pp.
-    declareTable(PV2I, void*, int)
-        implementTable(PV2I, void*, int) static PV2I* pnt2index;  // for deciding if NetCon is to be
-                                                                  // printed
+declarePtrList(NetConList, NetCon);   // NetCons in same order as Point_process
+implementPtrList(NetConList, NetCon); // and there may be several per pp.
+static std::map<void*, int> pnt2index;  // for deciding if NetCon is to be printed
 static int pntindex;  // running count of printed point processes.
 
 
@@ -34,7 +32,7 @@ static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE
             if (receives_events) {
                 fprintf(f, "%d nri %d\n", cellnodes[inode], pntindex);
                 Point_process* pp = (Point_process*) ml->pdata[i][1]._pvoid;
-                pnt2index->insert(pp, pntindex);
+                pnt2index.emplace(pp, pntindex);
                 ++pntindex;
             }
             for (int j = 0; j < size; ++j) {
@@ -63,9 +61,9 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         Object* obj = OBJ(q);
         NetCon* nc = (NetCon*) obj->u.this_pointer;
         Point_process* pp = nc->target_;
-        int index;
-        if (pnt2index->find(index, pp)) {
-            nclist[index]->append(nc);
+        const auto& it = pnt2index.find(pp);
+        if (it != pnt2index.end()) {
+            nclist[it->second]->append(nc);
             ++nc_cnt;
         }
     }
@@ -100,8 +98,6 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     // for associating NetCons with Point_process identifiers
-    pnt2index = new PV2I(1000);
-
     pntindex = 0;
 
     // threshold variable is a voltage
@@ -183,7 +179,6 @@ static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
     pr_netcon(nt, f);
 
     delete[] cellnodes;
-    delete pnt2index;
 }
 
 void nrn_prcellstate(int gid, const char* suffix) {
