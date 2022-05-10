@@ -66,11 +66,11 @@ class NetParMusicEvent: public DiscreteEvent {
 static NetParMusicEvent* npme;
 
 #include <OS/table.h>
-declareTable(PortTable, void*, int)  // used as set
-    implementTable(PortTable, void*, int) static PortTable* music_input_ports;
-static PortTable* music_output_ports;
+static std::map<void*, int> music_input_ports;
+static std::map<void*, int> music_output_ports;
 
-declareTable(Gi2PreSynTable, int, PreSyn*) implementTable(Gi2PreSynTable, int, PreSyn*)
+declareTable(Gi2PreSynTable, int, PreSyn*)
+implementTable(Gi2PreSynTable, int, PreSyn*)
 
     NetParMusicEvent::NetParMusicEvent() {}
 NetParMusicEvent::~NetParMusicEvent() {}
@@ -80,14 +80,6 @@ void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
 void NetParMusicEvent::deliver(double t, NetCvode* nc, NrnThread* nt) {
     nrnmusic_runtime->tick();
     send(t, nc, nt);
-}
-
-void alloc_music_space() {
-    if (music_input_ports) {
-        return;
-    }
-    music_input_ports = new PortTable(64);
-    music_output_ports = new PortTable(64);
 }
 
 void nrnmusic_injectlist(void* vp, double tt) {
@@ -128,7 +120,6 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
     // analogous to pc.cell
     // except pc.cell(gid, nc) has already been called and this
     // will add this to the PreSyn.music_out_ list.
-    alloc_music_space();
     auto iter = gid2out_.find(gid);
     if (iter == gid2out_.end()) {
         return;
@@ -139,8 +130,8 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
     // to create an IndexList for a later map, need to
     // save the indices used for each port
     int i = 0;
-    if (!music_output_ports->find(i, (void*) this)) {
-        music_output_ports->insert((void*) this, i);
+    if (music_output_ports.find((void*) this) == music_output_ports.end()) {
+        music_output_ports.emplace((void*) this, i);
         gi_table = new Gi2PreSynTable(1024);
     }
     PreSyn* ps2;
@@ -165,11 +156,10 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
     if (!is_point_process(target)) {
         hoc_execerror("target arg must be a Point_process", 0);
     }
-    alloc_music_space();
     PreSyn* ps;
     int i = 0;
-    if (!music_input_ports->find(i, (void*) this)) {
-        music_input_ports->insert((void*) this, i);
+    if (music_input_ports.find((void*) this) == music_input_ports.end()) {
+        music_input_ports.emplace((void*) this, i);
     }
     // nrn_assert (!gi_table->find(ps, gi));
     if (!gi_table->find(ps, gi)) {
@@ -224,8 +214,8 @@ static void nrnmusic_runtime_phase() {
     called = 1;
 
     // call map on all the input ports
-    for (TableIterator(PortTable) i(*music_input_ports); i.more(); i.next()) {
-        NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*) i.cur_key();
+    for (auto& kv: music_input_ports) {
+        NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*) kv.first;
         NrnMusicEventHandler* eh = new NrnMusicEventHandler();
         Gi2PreSynTable* pst = eip->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
@@ -242,11 +232,11 @@ static void nrnmusic_runtime_phase() {
         eip->map(&indices, eh, usable_mindelay_ / 1000.0);
         delete eip->gi_table;
     }
-    delete music_input_ports;
+    music_input_ports.clear();
 
     // call map on all the output ports
-    for (TableIterator(PortTable) i(*music_output_ports); i.more(); i.next()) {
-        NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*) i.cur_key();
+    for (auto& kv: music_output_ports) {
+        NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*) kv.first;
         Gi2PreSynTable* pst = eop->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
         // iterate over pst and create indices
@@ -259,7 +249,7 @@ static void nrnmusic_runtime_phase() {
         eop->map(&indices, MUSIC::Index::GLOBAL);
         delete eop->gi_table;
     }
-    delete music_output_ports;
+    music_output_ports.clear();
 
     // switch to the runtime phase
     // printf("usable_mindelay = %g\n", usable_mindelay_);

@@ -6,6 +6,7 @@ typedef struct _object PyObject;
 #include <nrnwrap_Python.h>
 #endif
 #include <music.hh>
+#include <map>
 
 class PreSyn;
 class Gi2PreSynTable;
