@@ -29,14 +29,14 @@ On a PC using a version of NEURON before 7.7:
 Step 2:
 -------
 
-Using the location of :file:`hhkchan.mod`` as the working directory, start NEURON by typing ``python`` and then
+Using the location of :file:`hhkchan.mod` as the working directory, start NEURON by typing ``python`` and then
 
 .. code::
     python
 
     from neuron import h, gui
 
-This will automatically load the mechanisms compiled in Step 1. If NEURON doesn't find any compiled mechanisms, only the "built-in" mechanisms (hh, pas, IClamp, etc) will be available.
+This will automatically load the mechanisms compiled in Step 1. If NEURON doesn't find any compiled mechanisms, only the "built-in" mechanisms (hh, pas, :class:`IClamp`, etc) will be available.
 
 Step 3:
 -------
