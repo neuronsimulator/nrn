@@ -2,16 +2,14 @@
 #define symdir_h
 
 #include <InterViews/resource.h>
-#include <OS/table.h>
+#include <map>
 #include <OS/string.h>
 
 struct Object;
 class SymDirectoryImpl;
 struct Symbol;
 
-declareTable(SymbolTable, String, Symbol*)
-
-    class IvocAliases {
+class IvocAliases {
   public:
     IvocAliases(Object*);
     virtual ~IvocAliases();
@@ -22,7 +20,7 @@ declareTable(SymbolTable, String, Symbol*)
     Symbol* symbol(int);
 
     Object* ob_;  // not referenced
-    SymbolTable* symtab_;
+    std::map<String, Symbol*> symtab_;
 };
 
 /* List of Symbols considered as a directory */
