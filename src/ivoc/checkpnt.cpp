@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
+#include <map>
 
 /*
 
@@ -291,15 +292,10 @@ static struct HocInst {
                  0,
                  0};
 
-#define VPfri void*
-declareTable(InstTable, VPfri, short)
-    implementTable(InstTable, VPfri, short) static InstTable* inst_table_;
+using VPfri = void*;
+static std::map<VPfri, short> inst_table_;
 
-declareTable(Symbols, Symbol*, int) implementTable(Symbols, Symbol*, int)
-
-    declareTable(Objects, Object*, int) implementTable(Objects, Object*, int)
-
-        class PortablePointer {
+class PortablePointer {
   public:
     PortablePointer();
     PortablePointer(void* address, int type, unsigned long size = 1);
@@ -386,10 +382,10 @@ declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
   private:
     int cnt_;
     int nobj_;
-    Objects* otable_;
+    std::map<Object*, int> otable_;
     PPList* ppl_;
     bool (OcCheckpoint::*func_)(Symbol*);
-    Symbols* stable_;
+    std::map<Symbol*, int> stable_;
 #if HAVE_XDR
     XDR xdrs_;
 #endif
@@ -525,16 +521,9 @@ int hoc_readcheckpoint(char* fname) {
 OcCheckpoint::OcCheckpoint() {
     ppl_ = NULL;
     func_ = NULL;
-    stable_ = NULL;
-    otable_ = NULL;
-    if (!inst_table_) {
-        short i;
-        for (i = 1; hoc_inst_[i].pi; ++i) {
-            ;
-        }
-        inst_table_ = new InstTable(2 * i);
-        for (i = 1; hoc_inst_[i].pi; ++i) {
-            inst_table_->insert((VPfri) hoc_inst_[i].pi, i);
+    if (inst_table_.empty()) {
+        for (short i = 1; hoc_inst_[i].pi; ++i) {
+            inst_table_.emplace((VPfri) hoc_inst_[i].pi, i);
         }
     }
 }
@@ -542,12 +531,6 @@ OcCheckpoint::OcCheckpoint() {
 OcCheckpoint::~OcCheckpoint() {
     if (ppl_) {
         delete ppl_;
-    }
-    if (stable_) {
-        delete stable_;
-    }
-    if (otable_) {
-        delete otable_;
     }
 }
 
@@ -617,10 +600,7 @@ bool OcCheckpoint::make_sym_table() {
     }
     DEBUG(f_, "#symbols=%d\n", cnt_);
     b = (b && xdr(cnt_));
-    if (stable_) {
-        delete stable_;
-    }
-    stable_ = new Symbols(2 * cnt_);
+    stable_.clear();
     cnt_ = 1;
     func_ = &OcCheckpoint::sym_table_install;
     if (!b) {
@@ -643,13 +623,13 @@ bool OcCheckpoint::sym_count(Symbol* s) {
 }
 
 bool OcCheckpoint::sym_table_install(Symbol* s) {
-    stable_->insert(s, cnt_);
+    stable_.emplace(s, cnt_);
     ++cnt_;
     return true;
 }
 bool OcCheckpoint::sym_out(Symbol* s) {
-    int val;
-    stable_->find(val, s);
+    const auto& it = stable_.find(s);
+    int val = it->second;
     DEBUG(f_, "%d %s %d %d\n", val, s->name, s->type, s->subtype);
     int l1 = strlen(s->name);
     bool b = xdr(val) && xdr(s->name, l1) && xdr(s->type) && xdr(s->subtype) && xdr(s->cpublic) &&
@@ -746,11 +726,12 @@ bool OcCheckpoint::symbol(Symbol* s) {
 bool OcCheckpoint::sym_instructions(Symbol* s) {
     Proc* p = s->u.u_proc;
     if (s->type == FUNCTION || s->type == PROCEDURE) {
-        int val;
-        if (!stable_->find(val, s)) {
+        const auto& it = stable_.find(s);
+        if (it == stable_.end()) {
             printf("couldn't find %s in table\n", s->name);
             return false;
         }
+        int val = it->second;
         if (p->size) {
             DEBUG(f_, "instructions for %d |%s|\n", val, s->name);
             DEBUG(f_, "size %lu\n", p->size);
@@ -781,7 +762,9 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
             }
             continue;
         }
-        if (inst_table_->find(val, (VPfri) in[i].pf)) {
+        const auto& it = inst_table_.find((VPfri)in[i].pf);
+        if (it != inst_table_.end()) {
+            val = it->second;
             DEBUG(f_, "  %d\n", val);
             if (!xdr(val)) {
                 printf("instlist failed 2\n");
@@ -793,12 +776,14 @@ bool OcCheckpoint::instlist(unsigned long size, Inst* in) {
                 switch (s[j]) {
                 case 's':
                     if (in[i].sym) {
-                        if (!stable_->find(sval, in[i].sym)) {
+                        const auto &it = stable_.find(in[i].sym);
+                        if (it == stable_.end()) {
                             printf("couldn't find |%s| in table at instruction index %ld\n",
                                    in[i].sym->name,
                                    i);
                             return false;
                         }
+                        sval = it->second;
                         // DEBUG(f_, "    %d |%s|\n", sval, in[i].sym->name);
                         if (!xdr(sval)) {
                             printf("instlist failed 3\n");
@@ -837,8 +822,11 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
     if (func_ == &OcCheckpoint::sym_values) {
         Objectdata* saveod = objectdata_;
         int ti;
-        bool b;
-        b = stable_->find(ti, s);
+        const auto& it = stable_.find(s);
+        bool b = it != stable_.end();
+        if (b) {
+            ti = it->second;
+        }
         DEBUG(f_, "%d %d %s\n", ti, t->count, s->name);
         b = b && xdr(ti);
         //		b = b && xdr(t->count);
@@ -846,7 +834,11 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
         ITERATE(q, t->olist) {
             Object* ob = OBJ(q);
             int oid;
-            b = b && otable_->find(oid, ob);
+            const auto& it = otable_.find(ob);
+            if (it != otable_.end()) {
+                oid = it->second;
+            }
+            b = b && it != otable_.end();
             b = b && xdr(oid);
             if (t->constructor) {
                 if (t->checkpoint) {
@@ -872,11 +864,8 @@ bool OcCheckpoint::ctemplate(Symbol* s) {
 bool OcCheckpoint::object() {
     bool b;
     int i;
-    if (otable_) {
-        delete otable_;
-    }
     b = xdr(nobj_);
-    otable_ = new Objects(2 * nobj_ + 1);
+    otable_.clear();
     nobj_ = 0;
     func_ = &OcCheckpoint::objects;
     b = pass1();
@@ -888,12 +877,20 @@ bool OcCheckpoint::objects(Symbol* s) {
     bool b = true;
     if (s->type == TEMPLATE) {
         int sid;
-        b = b && stable_->find(sid, s);
+        const auto& it = stable_.find(s);
+        b = b && it != stable_.end();
+        if (b) {
+            sid = it->second;
+        }
         b = b && xdr(sid);
         cTemplate* t = s->u.ctemplate;
 #undef init
         if (t->init) {
-            b = b && stable_->find(sid, t->init);
+            const auto& it = stable_.find(t->init);
+            b = b && it != stable_.end();
+            if (b) {
+                sid = it->second;
+            }
         } else {
             sid = 0;
         }
@@ -903,7 +900,7 @@ bool OcCheckpoint::objects(Symbol* s) {
         ITERATE(q, t->olist) {
             Object* ob = OBJ(q);
             ++nobj_;
-            otable_->insert(ob, nobj_);  // 0 is null object
+            otable_.emplace(ob, nobj_);  // 0 is null object
             b = b && xdr(nobj_) && xdr(ob->refcount) && xdr(ob->index);
         }
     }
@@ -958,12 +955,14 @@ bool OcCheckpoint::proc(Proc*) {
 
 bool OcCheckpoint::sym_values(Symbol* s) {
     int sp;
-    bool b;
-    stable_->find(sp, s);
+    const auto& it = stable_.find(s);
+    if (it != stable_.end()) {
+        sp = it->second;
+    }
     if ((s->type == VAR && s->subtype == NOTUSER) || s->type == OBJECTVAR || s->type == STRING ||
         s->type == SECTION) {
         DEBUG(f_, "%d %s\n", sp, s->name);
-        b = xdr(sp);
+        bool b = xdr(sp);
         long n = arrayinfo(s, objectdata_);
         if (n == -1) {
             return false;
@@ -983,18 +982,13 @@ bool OcCheckpoint::sym_values(Symbol* s) {
                     int i = 0;
                     b = b && xdr(i);
                 } else {
-#if 0
-					int t;
-					stable_->find(t, ob->ctemplate->sym);
-					DEBUG(f_, "  %d %d %s\n", t, ob->index,
-					  ob->ctemplate->sym->name);
-					b = b && xdr(t);
-					b = b && xdr(ob->index);
-#else
                     int oid;
-                    b = b && otable_->find(oid, ob);
+                    const auto& it = otable_.find(ob);
+                    if (it != otable_.end()) {
+                        oid = it->second;
+                    }
+                    b = b && it != otable_.end();
                     b = b && xdr(oid);
-#endif
                 }
             } else if (s->type == STRING) {
                 char* cp = od.ppstr[i];
@@ -1058,8 +1052,11 @@ bool OcCheckpoint::xdr(double& i) {
 #endif
 bool OcCheckpoint::xdr(Object*& o) {
     int i;
-    bool b;
-    b = otable_->find(i, o);
+    const auto& it = otable_.find(o);
+    bool b = it != otable_.end();
+    if (b) {
+        i = it->second;
+    }
     b = b && xdr(i);
     return b;
 }
