@@ -46,6 +46,7 @@ Load mosinit.hoc
 The PointProcessManager shows a shape plot of the cell.
 
 Using Python to Examine What's in the Model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This model was written in HOC, but we can still use Python to explore it. To see what sections exist and how they are connected, type
 
@@ -110,7 +111,7 @@ Alternatively you could try Windows Explorer's semi-useful Search function, or o
 
 If no hoc file contains the create keyword, maybe the CellBuilder was used.
 
-Run mosinit.hoc again and look for a CellBuilder.
+Run :file:`mosinit.hoc` again and look for a CellBuilder.
 
 If you don't see one, maybe a Window Group Manager is hiding it.
 
@@ -118,7 +119,7 @@ Click on :menuselection:`NEURON Main Menu --> Window` and look for one or more w
 
 If a CellBuilder pops up, examine its Topology, Subsets, Geometry, and Biophysics pages.
 
-Do they agree with the output of for sec in ``h.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
+Do they agree with the output of ``for sec in h.allsec(): pprint(sec.psection(())`` and/or what you discovered with the Model View tool?
 
 "Extra Credit" Question
 
@@ -176,7 +177,7 @@ Another example: Mainen and Sejnowski 1996 `modeldb.yale.edu/2488 <https://sense
 
 This one has interesting anatomy and several mod files. Begin by downloading the model from `modeldb.yale.edu/2488 <https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=2488#tabs-1>`_
 
-The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in exercises/modeldb_and_modelview/patdemo
+The model archive patdemo.zip has already been downloaded and unzipped. Its contents are in :file:`exercises/modeldb_and_modelview/patdemo`
 
 
 1. What physical system is being represented, and for what purpose?
@@ -211,7 +212,7 @@ Five active currents and one pump mechanism are included. Examine these mod file
 
 Do they appear to be compatible with CVODE?
 
-Check them with modlunit.
+Check them with ``modlunit``.
 
 Did you find any inconsistencies?
 
@@ -226,7 +227,7 @@ How might you fix the problems that you found?
 3. What is the user interface, how was it implemented, and how do you use it?
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-mosinit.hoc brings up a minimal GUI for selecting cells and running simulations.
+:file:`mosinit.hoc` brings up a minimal GUI for selecting cells and running simulations.
 
 How did they do that?
 
@@ -235,7 +236,7 @@ How did they do that?
 
 Import its morphology into a CellBuilder, then save the CellBuilder to a session file and exit the simulation.
 
-Restart nrngui and load the CellBuilder's session file.
+Restart ``nrngui`` and load the CellBuilder's session file.
 
 Assign a plausible set and spatial distribution of biophysical properties and save to a session file.
 
