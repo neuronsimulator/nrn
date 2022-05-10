@@ -4830,14 +4830,6 @@ void DiscreteEvent::savestate_write(FILE* f) {
     fprintf(f, "%d\n", DiscreteEventType);
 }
 
-NetCon::NetCon() {
-    cnt_ = 0;
-    obj_ = nil;
-    active_ = false;
-    weight_ = nil;
-    NetConSave::invalid();
-}
-
 NetCon::NetCon(PreSyn* src, Object* target) {
     NetConSave::invalid();
     obj_ = nil;

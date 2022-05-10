@@ -82,7 +82,6 @@ class DiscreteEvent {
 
 class NetCon: public DiscreteEvent {
   public:
-    NetCon();
     NetCon(PreSyn* src, Object* target);
     virtual ~NetCon();
     virtual void send(double sendtime, NetCvode*, NrnThread*);

@@ -596,6 +596,14 @@ def integrator_properties():
         cv.jacobian(jac)
         run2("jacobian " + str(cv.jacobian()))
 
+    # selfqueue remove
+    cv.active(0)
+    cv.queue_mode(True, True)
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    pc.psolve(2)
+    cv.queue_mode(False, False)  # or later cv.store_events will abort(0)
+
 
 def event_queue():
     # two cells with 1 and 3 connections to third cell
