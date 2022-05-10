@@ -4,7 +4,7 @@ stdgui.hoc's clipboard_retrieve()
 
 from neuron import h, gui
 
-h.clipboard_retrieve() # user selects file to be read, results in h.hoc_obj_[1] and [0]
+h.clipboard_retrieve()  # user selects file to be read, results in h.hoc_obj_[1] and [0]
 xvec = h.hoc_obj_[1]
 yvec = h.hoc_obj_[0]
 
@@ -18,5 +18,6 @@ if xvec.size() <= 1:
 # below this point, everything is customized by the user
 
 from plotfi import plotfi
+
 # creates a Graph with customized label and axes
 fig = plotfi(xvec, yvec)
