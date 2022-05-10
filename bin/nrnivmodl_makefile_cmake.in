@@ -1,12 +1,10 @@
 
 # Arguments:
 # MODOBJFILES
-# COBJFILES
 # UserLDFLAGS
 # UserINCFLAGS
 # LinkCoreNEURON
-# Rules to build MODOBJFILES from mod files and COBJFILES from $nrnivmodl_cfiles
-# are found in makemod2c_inc
+# Rules to build MODOBJFILES from mod files are found in makemod2c_inc
 
 # Mechanisms version are by default 0.0, but should be overriden
 MECH_NAME =
@@ -59,7 +57,7 @@ _cm =,
 
 # We rebuild the include dirs since a lot of stuff changes place
 INCLUDES = -I. $(INCFLAGS) $(UserINCFLAGS) -I$(incdir)
-ifeq (@NRN_ENABLE_MPI_DYNAMIC@, OFF)
+ifeq (@NRN_INCLUDE_MPI_HEADERS@, ON)
   INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 endif
 
@@ -83,7 +81,6 @@ NRNUNITS = $(datadir_lib)/nrnunits.lib
 MODC_DIR = .
 OBJS_DIR = .
 mod_objs   = $(MODOBJFILES)
-c_objs = $(COBJFILES)
 
 mod_func_o = $(OBJS_DIR)/mod_func.o
 mod_func_cpp = $(MODC_DIR)/mod_func.cpp
@@ -130,13 +127,13 @@ special: $(mech_lib)
 
 $(mech_lib): $(mech_lib_type)
 
-mech_lib_shared: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
+mech_lib_shared: mod_func.o $(mod_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) shared library $(mech_lib)\n"
 	$(CXX_LINK_SHARED) -I $(incdir) -o ${mech_lib} ${_SONAME} \
-	  $(mod_func_o) $(mod_objs) $(c_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
+	  $(mod_func_o) $(mod_objs) $(NRNLIB_FLAGS) $(NRNLIB_RPATH_FLAGS) $(LDFLAGS)
 	rm -f $(OBJS_DIR)/.libs/libnrnmech.so ; mkdir -p $(OBJS_DIR)/.libs ; cp $(mech_lib) $(OBJS_DIR)/.libs/libnrnmech.so
 
-mech_lib_static: mod_func.o $(mod_objs) $(c_objs) $(nrn_lib) build_always
+mech_lib_static: mod_func.o $(mod_objs) $(nrn_lib) build_always
 	@printf " => $(C_GREEN)LINKING$(C_RESET) static library $(mech_lib)\n"
 	ar cq ${mech_lib} $(mod_func_o) $(mod_objs) $(cobjs);
 

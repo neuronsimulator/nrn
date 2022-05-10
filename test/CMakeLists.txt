@@ -225,7 +225,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   if(${CORENRN_ENABLE_GPU})
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
-    set(modtests_launch_hoc special -mpi)
+    set(modtests_launch_hoc special -notatty -mpi)
     set(modtests_launch_py ${sonata_zero_gid_env} ${modtests_launch_hoc} -python -pyexe
                            ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
@@ -235,6 +235,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         ${MPIEXEC_PREFLAGS}
         special
         ${MPIEXEC_POSTFLAGS}
+        -notatty
         -python
         -pyexe
         ${PYTHON_EXECUTABLE})
@@ -253,13 +254,16 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     nrn_add_test_group(
       CORENEURON
       NAME coreneuron_standalone
-      SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       MODFILE_PATTERNS NONE)
 
     nrn_add_test(
       GROUP coreneuron_standalone
       NAME test_nrn_corenrn_standalone
-      REQUIRES coreneuron cpu
+      REQUIRES coreneuron
+      # In a GPU build ${modtests_launch_py} needs to be a statically-linked `special`. As a
+      # standard NEURON installation doesn't include `special` but only `nrniv` (without link to
+      # `libcorenrnmech.a`), we can not run this test on GPUs.
+      CONFLICTS gpu
       SCRIPT_PATTERNS test/coreneuron/test_psolve.py
       COMMAND COVERAGE_FILE=.coverage.coreneuron_standalone_test_psolve_py ${modtests_launch_py}
               test/coreneuron/test_psolve.py)
@@ -271,8 +275,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # This get used in 4 tests so make it the default and override in other tests.
     SCRIPT_PATTERNS test/coreneuron/test_spikes.py
     MODFILE_PATTERNS
-      test/coreneuron/mod/*.mod test/coreneuron/mod/axial.inc test/pynrn/unitstest.mod
-      test/pynrn/version_macros.mod test/gjtests/natrans.mod)
+      "test/coreneuron/mod files/*.mod" "test/coreneuron/mod files/axial.inc"
+      test/pynrn/unitstest.mod test/pynrn/version_macros.mod test/gjtests/natrans.mod)
   nrn_add_test(
     GROUP coreneuron_modtests
     NAME version_macros

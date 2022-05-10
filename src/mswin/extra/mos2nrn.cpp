@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     temp = hoc_dos2unixpath(temp);
     buf = new char[strlen(args) + 3 * strlen(nh) + 200 + strlen(temp)];
 
-#if defined(MINGW)
+#ifdef MINGW
 #if 0
 	if (nh[1] == ':') {
 		nh[1] = nh[0];

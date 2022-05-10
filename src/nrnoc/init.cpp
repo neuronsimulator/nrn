@@ -22,26 +22,10 @@ static char banner[] =
     "Duke, Yale, and the BlueBrain Project -- Copyright 1984-2021\n\
 See http://neuron.yale.edu/neuron/credits\n";
 
-#ifdef WIN32
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#else
-#define RTLD_NOW 0
-extern "C" {
-extern void* dlopen(const char* name, int mode);
-extern void* dlsym(void* handle, char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#endif
-/*#include "../mswin/windll/dll.h"*/
-/*static struct DLL* dll;*/
-#endif  // WIN32
-
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
 extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
-#endif
+#endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
 #if defined(WIN32)
 #undef DLL_DEFAULT_FNAME
@@ -53,7 +37,7 @@ extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "libnrnmech.dylib"
-#endif
+#endif  // DLL_DEFAULT_FNAME
 
 // error message hint with regard to mismatched arch
 void nrn_possible_mismatched_arch(const char* libname) {
@@ -63,7 +47,7 @@ void nrn_possible_mismatched_arch(const char* libname) {
         const char* we_are{"arm64"};
 #elif __x86_64__
         const char* we_are{"x86_64"};
-#endif
+#endif  // !__arm64__
 
         // what arch did we try to dlopen
         char* cmd;
@@ -88,28 +72,16 @@ void nrn_possible_mismatched_arch(const char* libname) {
     }
 }
 
-#if __GNUC__ < 4
-#include "osxdlfcn.h"
-#include "osxdlfcn.cpp"
-#else
-#include <dlfcn.h>
-#endif  // __GNUC__
-
-#else
-
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#endif
+#else  // ! DARWIN
 
 #ifndef DLL_DEFAULT_FNAME
 #define DLL_DEFAULT_FNAME "./libnrnmech.so"
-#endif
-#endif
-#else  // !defined(NRNMECH_DLL_STYLE)
-#if defined(HAVE_DLFCN_H) && !defined(__MINGW32__)
-#include <dlfcn.h>
-#endif
-#endif
+#endif  // DLL_DEFAULT_FNAME
+
+#endif  // ! DARWIN
+#endif  // NRNMECH_DLL_STYLE
+
+#include "nrnwrap_dlfcn.h"
 
 #define CHECK(name)                            \
     if (hoc_lookup(name) != (Symbol*) 0) {     \
@@ -255,7 +227,7 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
         if (!handle) {
             nrn_possible_mismatched_arch(abspath);
         }
-#endif
+#endif  // DARWIN
         free(abspath);
     } else {
         int patherr = errno;
@@ -268,7 +240,7 @@ void* nrn_realpath_dlopen(const char* relpath, int flags) {
                     relpath);
 #if DARWIN
             nrn_possible_mismatched_arch(abspath);
-#endif
+#endif  // DARWIN
         }
     }
     return handle;
@@ -282,9 +254,9 @@ int mswin_load_dll(const char* cp1) {
         }
 #if DARWIN
     handle = nrn_realpath_dlopen(cp1, RTLD_NOW);
-#else
+#else   // not DARWIN
     handle = dlopen(cp1, RTLD_NOW);
-#endif
+#endif  // not DARWIN
     if (handle) {
         Pfrv mreg = (Pfrv) dlsym(handle, "modl_reg");
         if (mreg) {
@@ -374,7 +346,7 @@ void hoc_last_init(void) {
         extern int keep_nseg_parm_;
         keep_nseg_parm_ = 1;
     }
-#endif
+#endif  // KEEP_NSEG_PARM
 
     section_list = hoc_l_newlist();
 
@@ -403,7 +375,7 @@ void hoc_last_init(void) {
     }
 #if !MAC && !defined(WIN32)
     modl_reg();
-#endif
+#endif  // not MAC and not WIN32
     hoc_register_limits(0, _hoc_parm_limits);
     hoc_register_units(0, _hoc_parm_units);
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
@@ -648,7 +620,7 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
                 if (cp[1] == 'N') {
                     indx = nlayer;
                 } else
-#endif
+#endif  // EXTRACELLULAR
                 {
                     sscanf(cp + 1, "%d", &indx);
                 }
@@ -662,9 +634,9 @@ It's version %s \"c\" code is incompatible with this neuron version.\n",
 					IGNORE(fprintf(stderr, CHKmes,
 					buf));
 				}
-#else
+#else   // not 0
                 IGNORE(fprintf(stderr, CHKmes, buf));
-#endif
+#endif  // not 0
             } else {
                 s2 = hoc_install(buf, RANGEVAR, 0.0, &hoc_symlist);
                 s2->subtype = modltype;
@@ -723,7 +695,7 @@ extern "C" void nrn_writes_conc(int type, int unused) {
     memb_order_[lastion] = type;
 #if 0
 	printf("%s reordered from %d to %d\n", memb_func[type].sym->name, type, lastion);
-#endif
+#endif  // 0
     if (nrn_is_ion(type)) {
         ++lastion;
     }
@@ -788,7 +760,7 @@ extern "C" void hoc_register_dparam_semantics(int type, int ix, const char* name
 #if 0
 	printf("dparam semantics %s ix=%d %s %d\n", memb_func[type].sym->name,
 	  ix, name, memb_func[type].dparam_semantics[ix]);
-#endif
+#endif  // 0
 }
 
 #if CVODE
@@ -805,7 +777,7 @@ extern "C" void hoc_register_cvode(int i,
 extern "C" void hoc_register_synonym(int i, void (*syn)(int, double**, Datum**)) {
     memb_func[i].ode_synonym = syn;
 }
-#endif
+#endif  // CVODE
 
 extern "C" void register_destructor(Pvmp d) {
     memb_func[n_memb_func - 1].destructor = d;
@@ -869,7 +841,7 @@ double* makevector(int nrows)
         v = (double*)emalloc((unsigned)(nrows*sizeof(double)));
         return v;
 }
-#endif
+#endif  // 0
 
 int _ninits;
 extern "C" void _modl_cleanup(void) {}
@@ -885,7 +857,7 @@ extern "C" void _modl_set_dt_thread(double newdt, NrnThread* nt) {
 extern "C" double _modl_get_dt_thread(NrnThread* nt) {
     return nt->_dt;
 }
-#endif
+#endif  // 1
 
 extern "C" int nrn_pointing(double* pd) {
     return pd ? 1 : 0;
@@ -981,7 +953,7 @@ extern "C" void _cvode_abstol(Symbol** s, double* tol, int i) {
             tol[i] *= x;
         }
     }
-#endif
+#endif  // CVODE
 }
 
 extern Node** node_construct(int);
@@ -1053,7 +1025,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
             free(pv);
         }
     }
-#endif
+#endif  // CVODE
 }
 
 extern "C" void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
