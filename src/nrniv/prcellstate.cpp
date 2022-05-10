@@ -1,21 +1,19 @@
 #include "../../nrnconf.h"
+#include <vector>
 #include "section.h"
 #include "membfunc.h"
 #include "nrniv_mf.h"
 #include "netcon.h"
 #include "OS/table.h"
-#include "OS/list.h"
 #include "neuron.h"
 
 #define precision 15
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon)        // NetCons in same order as Point_process
-    implementPtrList(NetConList, NetCon)  // and there may be several per pp.
-    declareTable(PV2I, void*, int)
-        implementTable(PV2I, void*, int) static PV2I* pnt2index;  // for deciding if NetCon is to be
-                                                                  // printed
+declareTable(PV2I, void*, int);
+implementTable(PV2I, void*, int);
+static PV2I* pnt2index;  // for deciding if NetCon is to be printed
 static int pntindex;  // running count of printed point processes.
 
 
@@ -52,10 +50,7 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
 
     // List of NetCon for each of the NET_RECEIVE point process instances
     // ... all NetCon list in the hoc NetCon cTemplate
-    NetConList** nclist = new NetConList*[pntindex];
-    for (int i = 0; i < pntindex; ++i) {
-        nclist[i] = new NetConList(1);
-    }
+    std::vector<std::vector<NetCon*>> nclist(pntindex);
     int nc_cnt = 0;
     Symbol* ncsym = hoc_lookup("NetCon");
     hoc_Item* q;
@@ -65,15 +60,14 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
         Point_process* pp = nc->target_;
         int index;
         if (pnt2index->find(index, pp)) {
-            nclist[index]->append(nc);
+            nclist[index].push_back(nc);
             ++nc_cnt;
         }
     }
     fprintf(f, "netcons %d\n", nc_cnt);
     fprintf(f, " pntindex srcgid active delay weights\n");
     for (int i = 0; i < pntindex; ++i) {
-        for (int j = 0; j < nclist[i]->count(); ++j) {
-            NetCon* nc = nclist[i]->item(j);
+        for (const auto& nc: nclist[i]) {
             int srcgid = -3;
             srcgid = (nc->src_) ? nc->src_->gid_ : -3;
             if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
@@ -91,11 +85,6 @@ static void pr_netcon(NrnThread& nt, FILE* f) {
             fprintf(f, "\n");
         }
     }
-    // cleanup
-    for (int i = 0; i < pntindex; ++i) {
-        delete nclist[i];
-    }
-    delete[] nclist;
 }
 
 static void pr_realcell(PreSyn& ps, NrnThread& nt, FILE* f) {
