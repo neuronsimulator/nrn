@@ -55,8 +55,8 @@ void MusicPortPair::clear() {
 
 class NetParMusicEvent: public DiscreteEvent {
   public:
-    NetParMusicEvent();
-    virtual ~NetParMusicEvent();
+    NetParMusicEvent() = default;
+    virtual ~NetParMusicEvent() = default;
     virtual void send(double, NetCvode*, NrnThread*);
     virtual void deliver(double, NetCvode*, NrnThread*);
     virtual int type() {
@@ -69,11 +69,6 @@ static NetParMusicEvent* npme;
 static std::map<void*, int> music_input_ports;
 static std::map<void*, int> music_output_ports;
 
-declareTable(Gi2PreSynTable, int, PreSyn*)
-implementTable(Gi2PreSynTable, int, PreSyn*)
-
-    NetParMusicEvent::NetParMusicEvent() {}
-NetParMusicEvent::~NetParMusicEvent() {}
 void NetParMusicEvent::send(double t, NetCvode* nc, NrnThread* nt) {
     nc->event(t + usable_mindelay_, this, nt);
 }
@@ -99,8 +94,8 @@ void nrnmusic_inject(void* vport, int gi, double tt) {
 void NrnMusicEventHandler::filltable(NRNMUSIC::EventInputPort* port, int cnt) {
     table = new PreSyn*[cnt];
     int j = 0;
-    for (TableIterator(Gi2PreSynTable) i(*port->gi_table); i.more(); i.next()) {
-        PreSyn* ps = i.cur_value();
+    for (const auto& kv: *port->gi_table) {
+        PreSyn* ps = kv.second;
         table[j] = ps;
         ++j;
     }
@@ -132,18 +127,16 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
     int i = 0;
     if (music_output_ports.find((void*) this) == music_output_ports.end()) {
         music_output_ports.emplace((void*) this, i);
-        gi_table = new Gi2PreSynTable(1024);
     }
     PreSyn* ps2;
-    nrn_assert(!gi_table->find(ps2, gi));
+    nrn_assert(gi_table.find(gi) == gi_table.end());
     // printf("gid2index insert %p %d\n", this, gi);
-    gi_table->insert(gi, ps);
+    gi_table.emplace(gi, ps);
 }
 
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
     : MUSIC::Port(s, id)
     , MUSIC::EventInputPort(s, id) {
-    gi_table = new Gi2PreSynTable(1024);
 }
 
 NRNMUSIC::EventInputPort* NRNMUSIC::publishEventInput(std::string id) {
@@ -162,10 +155,10 @@ PyObject* NRNMUSIC::EventInputPort::index2target(int gi, PyObject* ptarget) {
         music_input_ports.emplace((void*) this, i);
     }
     // nrn_assert (!gi_table->find(ps, gi));
-    if (!gi_table->find(ps, gi)) {
+    if (gi_table.find(gi) == gi_table.end()) {
         ps = new PreSyn(NULL, NULL, NULL);
         net_cvode_instance->psl_append(ps);
-        gi_table->insert(gi, ps);
+        gi_tableemplace(gi, ps);
     }
     ps->gid_ = -2;
     ps->output_index_ = -2;
@@ -217,12 +210,11 @@ static void nrnmusic_runtime_phase() {
     for (auto& kv: music_input_ports) {
         NRNMUSIC::EventInputPort* eip = (NRNMUSIC::EventInputPort*) kv.first;
         NrnMusicEventHandler* eh = new NrnMusicEventHandler();
-        Gi2PreSynTable* pst = eip->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
         // iterate over pst and create indices
         int cnt = 0;
-        for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
-            int gi = j.cur_key();
+        for (auto& kv2: eip->gi_table) {
+            int gi = kv2.first;
             // printf("input port eip=%p gi=%d\n", eip, gi);
             gindices.push_back(gi);
             ++cnt;
@@ -230,24 +222,23 @@ static void nrnmusic_runtime_phase() {
         eh->filltable(eip, cnt);
         MUSIC::PermutationIndex indices(&gindices.front(), gindices.size());
         eip->map(&indices, eh, usable_mindelay_ / 1000.0);
-        delete eip->gi_table;
+        eip->gi_table.clear();
     }
     music_input_ports.clear();
 
     // call map on all the output ports
     for (auto& kv: music_output_ports) {
         NRNMUSIC::EventOutputPort* eop = (NRNMUSIC::EventOutputPort*) kv.first;
-        Gi2PreSynTable* pst = eop->gi_table;
         std::vector<MUSIC::GlobalIndex> gindices;
         // iterate over pst and create indices
-        for (TableIterator(Gi2PreSynTable) j(*pst); j.more(); j.next()) {
-            int gi = j.cur_key();
+        for (auto& kv2: eop->gi_table) {
+            int gi = kv2.first;
             // printf("output port eop=%p gi = %d\n", eop, gi);
             gindices.push_back(gi);
         }
         MUSIC::PermutationIndex indices(&gindices.front(), gindices.size());
         eop->map(&indices, MUSIC::Index::GLOBAL);
-        delete eop->gi_table;
+        eop->gi_table.clear();
     }
     music_output_ports.clear();
 

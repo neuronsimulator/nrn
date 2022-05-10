@@ -9,7 +9,6 @@ typedef struct _object PyObject;
 #include <map>
 
 class PreSyn;
-class Gi2PreSynTable;
 
 // Interface which nrnmusic.so module (which mdj writes) will use
 
@@ -24,7 +23,7 @@ class EventOutputPort: public MUSIC::EventOutputPort {
     // Connect a gid to a MUSIC global index in this port
     void gid2index(int gid, int gi);
 
-    Gi2PreSynTable* gi_table;
+    std::map<int, PreSyn*> gi_table;
 };
 
 class EventInputPort: public MUSIC::EventInputPort {
@@ -34,7 +33,7 @@ class EventInputPort: public MUSIC::EventInputPort {
     // Connect a MUSIC global index to a gid in this port
     PyObject* index2target(int gi, PyObject* target);
 
-    Gi2PreSynTable* gi_table;
+    std::map<int, PreSyn*> gi_table;
 };
 
 EventOutputPort* publishEventOutput(std::string identifier);
