@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 
-#include <OS/list.h>
+#include <vector>
 #include <ocnotify.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,11 +22,8 @@ extern double (*nrnpy_object_to_double_)(Object*);
 static MUTDEC
 #endif
 
-    typedef void (*PF)(void*, int);
-declareList(FList, PF);
-implementList(FList, PF);
-
-static FList* f_list;
+using PF = void(void*, int);
+static std::vector<PF*> f_list;
 
 static nrn::tool::bimap<void*, Observer*>* pvob;
 static nrn::tool::bimap<double*, Observer*>* pdob;
@@ -44,10 +41,7 @@ void* (*nrnpy_save_thread)();
 void (*nrnpy_restore_thread)(void*);
 
 void nrn_notify_freed(PF pf) {
-    if (!f_list) {
-        f_list = new FList;
-    }
-    f_list->append(pf);
+    f_list.push_back(pf);
     //	printf("appended to f_list in ivoc.cpp\n");
 }
 
@@ -93,20 +87,14 @@ void notify_pointer_freed(void* pt) {
     }
 }
 void notify_freed(void* p) {
-    if (f_list) {
-        long i, n = f_list->count();
-        for (i = 0; i < n; ++i) {
-            (*f_list->item(i))(p, 1);
-        }
+    for(auto& f: f_list) {
+        f(p, 1);
     }
     notify_pointer_freed(p);
 }
 void notify_freed_val_array(double* p, size_t size) {
-    if (f_list) {
-        long i, n = f_list->count();
-        for (i = 0; i < n; ++i) {
-            (*f_list->item(i))((void*) p, size);
-        }
+    for(auto& f: f_list) {
+        f((void*)p, 1);
     }
     if (pdob) {
         double* pp;
