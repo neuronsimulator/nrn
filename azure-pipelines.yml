@@ -30,6 +30,10 @@ stages:
     steps:
     - checkout: none
     - script: |
+        if [[ -z ${SYSTEM_PULLREQUEST_PULLREQUESTNUMBER+x} ]]; then
+        echo "Not running on a PR."
+        exit 0
+        fi
         cat > parse_description.py << END_SCRIPT
         import os
         import re
