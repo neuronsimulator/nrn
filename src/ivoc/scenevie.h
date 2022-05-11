@@ -75,11 +75,11 @@ with the common append/move.
 #include "apwindow.h"
 #include "ocglyph.h"
 #include <ivstream.h>
+#include <vector>
 
 #undef Scene
 
 class Scene;
-class SceneInfo_List;
 class SceneInfo;
 class XYView;
 class XYView_PtrList;
@@ -331,7 +331,7 @@ class Scene: public Glyph, public Observable {
 
   private:
     Coord x1_, y1_, x2_, y2_;
-    SceneInfo_List* info_;
+    std::vector<SceneInfo> info_;
     XYView_PtrList* views_;
     Glyph* background_;
     ScenePicker* picker_;

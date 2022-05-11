@@ -93,8 +93,6 @@ SceneInfo::SceneInfo(Glyph* g, Coord x, Coord y) {
     status_ = SceneInfoShowing;
 }
 
-declareList(SceneInfo_List, SceneInfo);
-implementList(SceneInfo_List, SceneInfo);
 declarePtrList(XYView_PtrList, XYView);
 implementPtrList(XYView_PtrList, XYView);
 declarePtrList(Scene_PtrList, Scene);
@@ -113,7 +111,7 @@ static const Color* mb_color_;
 void Scene::check_allocation(GlyphIndex index) {
     // will not redraw unless allocation is changed
     // use damage(index) to do a definite redraw on a constant allocation
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     Requisition s;
     info.glyph_->request(s);
     Allocation a_old = info.allocation_;
@@ -140,7 +138,7 @@ void Scene::check_allocation(GlyphIndex index) {
 void Scene::modified(GlyphIndex index) {
     // will not redraw unless allocation is changed
     // use damage(index) to do a definite redraw on a constant allocation
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     Requisition s;
     info.glyph_->request(s);
     Allocation a_old = info.allocation_;
@@ -200,7 +198,6 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg)
     tool_ = NOTOOL;
     background_ = NULL;
     background(bg);
-    info_ = new SceneInfo_List();
     views_ = new XYView_PtrList();
     x1_orig_ = x1;
     x2_orig_ = x2;
@@ -325,13 +322,9 @@ void Scene::new_size(Coord x1, Coord y1, Coord x2, Coord y2) {
 
 Scene::~Scene() {
     // printf("~Scene\n");
-    GlyphIndex count = info_->count();
-    for (GlyphIndex i = 0; i < count; ++i) {
-        SceneInfo& info = info_->item_ref(i);
+    for (const auto& info: info_) {
         Resource::unref(info.glyph_);
     }
-    delete info_;
-    info_ = NULL;
     Resource::unref(background_);
     if (picker_) {
         delete picker_;
@@ -397,7 +390,7 @@ void Scene::dismiss() {
 }
 
 void Scene::damage(GlyphIndex index) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     Allocation& a = info.allocation_;
     long count = views_->count();
     for (long i = 0; i < count; ++i) {
@@ -411,7 +404,7 @@ void Scene::damage(GlyphIndex index) {
 }
 
 void Scene::damage(GlyphIndex index, const Allocation& a) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     long count = views_->count();
     for (long i = 0; i < count; ++i) {
         XYView* view = views_->item(i);
@@ -440,7 +433,7 @@ void Scene::damage(Coord x1, Coord y1, Coord x2, Coord y2) {
 }
 
 void Scene::show(GlyphIndex index, bool showing) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     if (((info.status_ & SceneInfoShowing) == SceneInfoShowing) != showing) {
         // printf("show %d showing=%d want %d\n", index, (info.status_ & SceneInfoHidden) == 0,
         // showing); info.pinfo();
@@ -454,11 +447,11 @@ void Scene::show(GlyphIndex index, bool showing) {
 }
 
 bool Scene::showing(GlyphIndex index) const {
-    return (info_->item_ref(index).status_ & SceneInfoShowing) != 0;
+    return (info_[index].status_ & SceneInfoShowing) != 0;
 }
 
 void Scene::move(GlyphIndex index, Coord x, Coord y) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     float x1 = info.x_, y1 = info.y_;
     info.x_ = x;
     info.y_ = y;
@@ -469,21 +462,21 @@ void Scene::move(GlyphIndex index, Coord x, Coord y) {
 }
 
 void Scene::location(GlyphIndex index, Coord& x, Coord& y) const {
-    SceneInfo& info = info_->item_ref(index);
+    const SceneInfo& info = info_[index];
     x = info.x_;
     y = info.y_;
 }
 
 GlyphIndex Scene::count() const {
-    return info_->count();
+    return info_.size();
 }
 
 Glyph* Scene::component(GlyphIndex index) const {
-    return info_->item_ref(index).glyph_;
+    return info_[index].glyph_;
 }
 
 void Scene::allotment(GlyphIndex index, DimensionName res, Allotment& a) const {
-    a = info_->item_ref(index).allocation_.allotment(res);
+    a = info_[index].allocation_.allotment(res);
 }
 
 void Scene::change(GlyphIndex index) {
@@ -491,7 +484,7 @@ void Scene::change(GlyphIndex index) {
 }
 
 void Scene::change_to_fixed(GlyphIndex index, XYView* v) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     if (info.status_ & SceneInfoViewFixed) {
         info.status_ &= ~SceneInfoViewFixed;
         printf("changed to fixed\n");
@@ -503,7 +496,7 @@ void Scene::change_to_fixed(GlyphIndex index, XYView* v) {
 }
 
 void Scene::change_to_vfixed(GlyphIndex index, XYView* v) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     if (!(info.status_ & SceneInfoViewFixed)) {
         info.status_ |= SceneInfoViewFixed;
         info.status_ |= SceneInfoFixed;
@@ -515,8 +508,7 @@ void Scene::change_to_vfixed(GlyphIndex index, XYView* v) {
 }
 
 void Scene::append(Glyph* glyph) {
-    SceneInfo info(glyph);
-    info_->append(info);
+    info_.emplace_back(glyph);
     Resource::ref(glyph);
     //    modified(info_->count() - 1);
 }
@@ -524,7 +516,7 @@ void Scene::append(Glyph* glyph) {
 void Scene::append_fixed(Glyph* glyph) {
     SceneInfo info(glyph);
     info.status_ |= SceneInfoFixed;
-    info_->append(info);
+    info_.push_back(info);
     Resource::ref(glyph);
     //    modified(info_->count() - 1);
 }
@@ -533,34 +525,34 @@ void Scene::append_viewfixed(Glyph* glyph) {
     // printf("Scene::append_viewfixed\n");
     SceneInfo info(glyph);
     info.status_ |= SceneInfoFixed | SceneInfoViewFixed;
-    info_->append(info);
+    info_.push_back(info);
     Resource::ref(glyph);
     //    modified(info_->count() - 1);
 }
 
 void Scene::prepend(Glyph* glyph) {
     SceneInfo info(glyph);
-    info_->prepend(info);
+    info_.insert(info_.begin(), info);
     Resource::ref(glyph);
     //    modified(0);
 }
 
 void Scene::insert(GlyphIndex index, Glyph* glyph) {
     SceneInfo info(glyph);
-    info_->insert(index, info);
+    info_.insert(info_.begin() + index, info);
     Resource::ref(glyph);
     //    modified(index);
 }
 
 void Scene::remove(GlyphIndex index) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     damage(index);
     Resource::unref(info.glyph_);
-    info_->remove(index);
+    info_.erase(info_.begin() + index);
 }
 
 void Scene::replace(GlyphIndex index, Glyph* glyph) {
-    SceneInfo& info = info_->item_ref(index);
+    SceneInfo& info = info_[index];
     damage(index);
     Resource::ref(glyph);
     Resource::unref(info.glyph_);
@@ -569,11 +561,9 @@ void Scene::replace(GlyphIndex index, Glyph* glyph) {
 }
 
 GlyphIndex Scene::glyph_index(const Glyph* g) {
-    GlyphIndex i, cnt = info_->count();
-    ;
-    for (i = 0; i < cnt; ++i) {
-        if (info_->item_ref(i).glyph_ == g) {
-            return i;
+    for (size_t i = 0; i < info_.size(); ++i) {
+        if (info_[i].glyph_ == g) {
+            return (GlyphIndex)i;
         }
     }
     return -1;
@@ -594,7 +584,7 @@ void Scene::request(Requisition& req) const {
 
 void Scene::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     // printf("Scene::allocate\n");
-    GlyphIndex count = info_->count();
+    GlyphIndex count = info_.size();
     for (GlyphIndex index = 0; index < count; ++index) {
         check_allocation(index);
     }
@@ -634,14 +624,14 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
             canvas->pop_transform();
         }
     }
-    GlyphIndex count = info_->count();
+    GlyphIndex count = info_.size();
     bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = info_->item_ref(index);
+        const SceneInfo& info = info_[index];
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
-            Allocation& a = info.allocation_;
+            const Allocation& a = info.allocation_;
             Extension b;
             b.set(canvas, a);
             // printf("%d alloc %g %g %g %g\n", index, a.left(), a.bottom(), a.right(), a.top());
@@ -661,7 +651,7 @@ void Scene::draw(Canvas* canvas, const Allocation& a) const {
         canvas->transform(tv);
         IfIdraw(pict(tv));
         for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = info_->item_ref(index);
+            const SceneInfo& info = info_[index];
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
@@ -693,14 +683,14 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
     if (background_ != NULL) {
         background_->print(canvas, a);
     }
-    GlyphIndex count = info_->count();
+    GlyphIndex count = info_.size();
     bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = info_->item_ref(index);
+        const SceneInfo& info = info_[index];
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
-            Allocation& a = info.allocation_;
+            const Allocation& a = info.allocation_;
             Extension b;
             b.set(canvas, a);
             if (canvas->damaged(b)) {
@@ -717,7 +707,7 @@ void Scene::print(Printer* canvas, const Allocation& a) const {
         const Transformer& tv = XYView::current_draw_view()->s2o();
         canvas->transform(tv);
         for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = info_->item_ref(index);
+            const SceneInfo& info = info_[index];
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
@@ -760,7 +750,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     if (background_ != NULL) {
         background_->pick(c, a, depth, h);
     }
-    GlyphIndex count = info_->count();
+    GlyphIndex count = info_.size();
 #if 0
     for (GlyphIndex index = 0; index < count; ++index) {
         SceneInfo& info = info_->item_ref(index);
@@ -783,7 +773,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 
     bool are_fixed = false;
     for (GlyphIndex index = 0; index < count; ++index) {
-        SceneInfo& info = info_->item_ref(index);
+        SceneInfo& info = info_[index];
         if (info.status_ & SceneInfoFixed) {
             are_fixed = true;
         } else if (info.glyph_ != NULL && (info.status_ & SceneInfoShowing)) {
@@ -804,7 +794,7 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
         float scx, scy, tmp;
         tv.matrix(scx, tmp, tmp, scy, tmp, tmp);
         for (GlyphIndex index = 0; index < count; ++index) {
-            SceneInfo& info = info_->item_ref(index);
+            SceneInfo& info = info_[index];
             if ((info.status_ & SceneInfoFixed) && info.glyph_ != NULL &&
                 (info.status_ & SceneInfoShowing)) {
                 Allocation a = info.allocation_;
