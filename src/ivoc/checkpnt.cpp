@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
-#include <map>
 
 /*
 
@@ -91,8 +90,7 @@ data depending on type. eg for VAR && NOTUSER it is
 
 #define HAVE_XDR 0
 
-#include <OS/list.h>
-#include <OS/table.h>
+#include <map>
 #include "oc2iv.h"
 #include "ocfunc.h"
 #if HAVE_XDR
@@ -297,9 +295,12 @@ static std::map<VPfri, short> inst_table_;
 
 class PortablePointer {
   public:
-    PortablePointer();
-    PortablePointer(void* address, int type, unsigned long size = 1);
-    virtual ~PortablePointer();
+    PortablePointer() = default;
+    PortablePointer(void* address, int type, unsigned long size = 1)
+    : address_(address), type_(type), size_(size)
+    {}
+
+    virtual ~PortablePointer() = default;
     void set(void* address, int type, unsigned long size = 1);
     void size(unsigned long s) {
         size_ = s;
@@ -315,32 +316,21 @@ class PortablePointer {
     }
 
   private:
-    void* address_;
-    int type_;
-    unsigned long size_;
+    void* address_ = nullptr;
+    int type_ = 0;
+    unsigned long size_ = 0;
 };
 
-PortablePointer::PortablePointer() {
-    address_ = NULL;
-    type_ = 0;
-    size_ = 0;
-}
-PortablePointer::PortablePointer(void* address, int type, unsigned long s) {
-    set(address, type, s);
-}
 void PortablePointer::set(void* address, int type, unsigned long s) {
     address_ = address;
     type_ = type;
     size_ = s;
 }
-PortablePointer::~PortablePointer() {}
 
-declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
-
-    class OcCheckpoint {
+class OcCheckpoint {
   public:
     OcCheckpoint();
-    virtual ~OcCheckpoint();
+    virtual ~OcCheckpoint() = default;
 
     bool write(const char*);
 
@@ -383,7 +373,6 @@ declareList(PPList, PortablePointer) implementList(PPList, PortablePointer)
     int cnt_;
     int nobj_;
     std::map<Object*, int> otable_;
-    PPList* ppl_;
     bool (OcCheckpoint::*func_)(Symbol*);
     std::map<Symbol*, int> stable_;
 #if HAVE_XDR
@@ -519,18 +508,11 @@ int hoc_readcheckpoint(char* fname) {
 
 #ifndef MAC
 OcCheckpoint::OcCheckpoint() {
-    ppl_ = NULL;
     func_ = NULL;
     if (inst_table_.empty()) {
         for (short i = 1; hoc_inst_[i].pi; ++i) {
             inst_table_.emplace((VPfri) hoc_inst_[i].pi, i);
         }
-    }
-}
-
-OcCheckpoint::~OcCheckpoint() {
-    if (ppl_) {
-        delete ppl_;
     }
 }
 
@@ -676,7 +658,7 @@ bool OcCheckpoint::build_map() {
     return false;
 }
 PortablePointer* find(void*) {
-    return NULL;
+    return nullptr;
 }
 bool OcCheckpoint::func(Symbol* s) {
     if (func_) {
