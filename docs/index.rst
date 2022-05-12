@@ -28,6 +28,7 @@ explore the `source code for over 750 NEURON models on ModelDB <https://senselab
    guide/index
    courses/exercises2018
    publications
+   publications-using-neuron
    
 
 
