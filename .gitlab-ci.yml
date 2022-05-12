@@ -6,16 +6,31 @@ include:
   - project: hpc/gitlab-upload-logs
     file: enable-upload.yml
 
+variables:
+  CVF_BRANCH:
+    description: Branch of the channel validation framework (CVF) to trigger the CI of
+    value: main
+  SPACK_BRANCH:
+    description: Branch of BlueBrain Spack to use for the CI pipeline
+    value: develop
+  SPACK_DEPLOYMENT_SUFFIX:
+    description: Extra path component used when finding deployed software. Set to something like `pulls/1497` use software built for https://github.com/BlueBrain/spack/pull/1497. You probably want to set SPACK_BRANCH to the branch used in the relevant PR if you set this.
+    value: ''
+
 trigger cvf:
+  # Stop the globally-defined CVF_BRANCH above from being set in the child pipeline
+  inherit:
+    variables: false
   needs: [spack_setup] # for SPACK_SETUP_COMMIT_MAPPING_URL
+  stage: .pre
   rules:
     # Don't run on PRs targeting the LLVM development branch
     - if: '$CI_EXTERNAL_PULL_REQUEST_TARGET_BRANCH_NAME == "llvm"'
       when: never
     # Otherwise always run this
     - when: always
-  stage: .pre
   trigger:
+    branch: ${CVF_BRANCH}
     project: hpc/cvf
     # Make the NMODL CI status depend on the CVF CI status
     strategy: depend
@@ -30,11 +45,18 @@ trigger cvf:
 
 spack_setup:
   extends: .spack_setup_ccache
+  script:
+    - !reference [.spack_setup_ccache, script]
+    # Setting CVF_BRANCH in the PR description will cause it to be set in the
+    # environment of this job, but because we put CVF in
+    # SPACK_SETUP_IGNORE_PACKAGE_VARIABLES then nothing will be done with it.
+    - echo "CVF_BRANCH=${CVF_BRANCH}" >> spack_clone_variables.env
   variables:
     NMODL_COMMIT: ${CI_COMMIT_SHA}
     # Enable fetching GitHub PR descriptions and parsing them to find out what
     # branches to build of other projects.
     PARSE_GITHUB_PR_DESCRIPTIONS: "true"
+    SPACK_SETUP_IGNORE_PACKAGE_VARIABLES: CVF
 
 build:intel:
   extends:
