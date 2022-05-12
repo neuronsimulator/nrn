@@ -7,7 +7,7 @@ Executable lines below are shown with the hoc prompt ``oc>``.
 
 Typing these, although trivial, can be a valuable way to get familiar with the language.
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> // A comment
 
@@ -24,7 +24,7 @@ Data types: numbers, strings, and objects
 Anything not explicitly declared is assumed to be a number
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> x=5300 // no previous declaration as to what 'x' is
 
@@ -34,13 +34,13 @@ Anything not explicitly declared is assumed to be a number
 
 For scientific notation use ``e`` or ``E``.
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> print 5.3e3,5.3E3 // e preferred (see next)
 
 There are some useful built-in values:
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> print PI, E, FARADAY, R
 
@@ -51,12 +51,12 @@ Must declare an object reference (=object variable) before making an object
 
 Objref: manipulate references to objects, not the objects themselves
 
-- often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a :hoc:class:`Graph` or vec for a :hoc:class:`Vector``) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
+- often names are chosen that make it easy to remember what an object reference is to be used for (eg g for a :hoc:class:`Graph` or vec for a :hoc:class:`Vector`) but it's important to remember that these are just for convenience and that any object reference can be used to point to any kind of object
 
 Objects include vectors, graphs, lists, ...
 ###########################################
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref XO,YO // capital 'oh' not zero
 
@@ -75,7 +75,7 @@ Objects include vectors, graphs, lists, ...
 After creating object reference, can use it to point a new or old object
 ########################################################################
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref vec,foo // two object refs
 
@@ -96,7 +96,7 @@ After creating object reference, can use it to point a new or old object
 Can create an array of objrefs
 ##############################
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref objarr[10]
 
@@ -126,7 +126,7 @@ Strings
 
 Must declare a string before assigning it
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> mystr = "hello" // ERROR: needed to be declared
 
@@ -142,7 +142,7 @@ There are no string arrays; get around this using arrays of String objects
  
 Can also declare number arrays, but vectors are often more useful
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> x=5
 
@@ -157,7 +157,7 @@ Can also declare number arrays, but vectors are often more useful
 Operators and numerical functions
 ---------------------------------
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> x=8 // assignment
 
@@ -178,7 +178,7 @@ Operators and numerical functions
 Blocks of code
 --------------
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> { x=7
 
@@ -193,7 +193,7 @@ Blocks of code
 Conditionals
 ------------
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> x=8
 
@@ -213,7 +213,7 @@ Conditionals
 Procedures and functions
 ------------------------
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> proc hello () { print "hello" }
 
@@ -226,7 +226,7 @@ Procedures and functions
 Numerical arguments to procedures and functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> proc add () { print $1 + $2 } // first and second argument, then $3, $4...
 
@@ -241,7 +241,7 @@ Numerical arguments to procedures and functions
 String (``$s1``, ``$s2``, ...) and object arguments (``$o1``, ``$o2``, ...)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> proc prstuff () { print $1, "::", $s2, "::", $o3 }
 
@@ -262,7 +262,7 @@ Built-in object types: graphs, vectors, lists, files
 Graph
 ~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref g[10]
 
@@ -292,7 +292,7 @@ Exercises
 Vector
 ~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref vec[10]
 
@@ -347,7 +347,7 @@ Exercises
 File
 ~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref file
 
@@ -385,7 +385,7 @@ Exercises
 List
 ~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> objref list
 
@@ -420,7 +420,7 @@ Exercises
 Simulation
 ----------
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> create soma
 
@@ -451,7 +451,7 @@ Simulation
 Recording the simulation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> cvode_active(0) // this turns off variable time step
 
@@ -478,7 +478,7 @@ Recording the simulation
 Graphing and analyzing data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> g=new Graph()
 
@@ -504,7 +504,7 @@ Exercises
 Roll your own GUI
 ~~~~~~~~~~~~~~~~~
 
-.. code-block:: hoc
+.. code-block:: c++
 
     oc> proc sety () { y=x print x }
 

@@ -97,7 +97,7 @@ But it doesn't know the functional relationships between the parameters and the 
 
     **show** allows you to bring up a graph or shape plot for visual confirmation of how the biophysical parameter varies in space. This is convenient, but you'll probably want to check the finished model with Model View.
 
-**Finale trionfale**
+**Finale**
 
 Turn on Continuous Create, and use Model View to verify the channel distributions.
 

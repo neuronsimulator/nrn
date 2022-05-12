@@ -28,7 +28,7 @@ We're going to use the CellBuilder to make a cell that has surface area = 100 um
 Alternatively, we could do this in HOC
 
 .. code:: 
-    hoc
+    c++
 
     create soma
     . . . plus more code . . .

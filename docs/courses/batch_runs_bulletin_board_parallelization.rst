@@ -29,9 +29,9 @@ The model cell is a ball and stick with these properties:
         * - L
           - 10 μm
         * - diam 
-          - 3.1831 μm  (area 100 μm :sup:`2`)
+          - 3.1831 μm  (area 100 μm\ :sup:`2`)
         * - cm
-          - 1 μF/cm :sup:`2`
+          - 1 μF/cm\ :sup:`2`
         * - Ra
           - 100 ohm * cm
         * - nseg
@@ -48,7 +48,7 @@ The model cell is a ball and stick with these properties:
         * - diam 
           - 2 μm
         * - cm
-          - 1 μF/cm :sup:`2`
+          - 1 μF/cm\ :sup:`2`
         * - Ra
           - 100 ohm * cm
         * - nseg
@@ -231,8 +231,8 @@ Things to do
 
     then use its file browser to select one of the dat files.
 
-    Examine :download:`initplotfi.py <code/initplotfi.py>` to see how it takes advantage of procs that are built into NEURON's standard run library (UNIX/Linux users see :file:`nrn/share/nrn/lib/hoc/stdlib.hoc`, MSWin users see :file:`c:\\nrn\\lib\\hoc\\stdlib.hoc`).
-
+    Examine :download:`initplotfi.py <code/initplotfi.py>` to see how it takes advantage of procs that are built into NEURON's standard run library :file:`stdlib.hoc` (view the source code for this file on the NEURON GitHub repository at `https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc`_).
+    
 
 .. toctree::
     :hidden:
