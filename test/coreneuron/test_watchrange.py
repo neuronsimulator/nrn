@@ -54,6 +54,16 @@ def test_watchrange():
 
     cells = [Cell(gid) for gid in gids]
 
+    # complete the coverage of netcvode.cpp static void steer_val
+    # Just so happens that Bounce declares an x var that does not get
+    # mirrored by NetCon.x
+    nc = h.NetCon(cells[2].syn, None)
+    cells[2].syn.x = 0.1
+    nc.x = 2.0
+    assert nc.x == 0.0
+    assert cells[2].syn.x == 0.1
+    del nc
+
     # @olupton changed from 20 to trigger assert(datum==2) failure.
     tstop = 1.0
 

@@ -239,7 +239,7 @@ Object* nrn_sec2cell(Section* sec) {
 }
 
 int nrn_sec2cell_equals(Section* sec, Object* obj) {
-    if (sec->prop) {
+    if (sec && sec->prop) {
         if (sec->prop->dparam[6].obj) {
             return sec->prop->dparam[6].obj == obj;
         } else if (nrnpy_pysec_cell_equals_p_) {
