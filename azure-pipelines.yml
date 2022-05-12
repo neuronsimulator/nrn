@@ -167,6 +167,9 @@ jobs:
       brew install flex bison mpich
       brew unlink mpich && brew install openmpi
       cmake --version
+      # see https://github.com/BlueBrain/CoreNeuron/issues/817, uninstall libomp until we fix this
+      # as we are building wheels, we shouldn't enable OpenMP here anyway
+      brew uninstall --ignore-dependencies libomp || echo "libomp doesn't exist"
     displayName: 'Install OSX System Dependencies'
 
   # readline has been manually built with ncurses and MACOSX_DEPLOYMENT_TARGET=10.9 and stored as secure file on Azure.
