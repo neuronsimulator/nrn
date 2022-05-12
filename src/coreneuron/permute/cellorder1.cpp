@@ -532,10 +532,7 @@ static void admin1(int ncell,
 
     // this vector is used to move from one compartment to the other (per cell)
     // its length is equal to the cell with the highest number of compartments
-    stride = (int*) ecalloc_align(nstride + 1, sizeof(int));
-    for (int i = 0; i <= nstride; ++i) {
-        stride[i] = 0;
-    }
+    stride = static_cast<int*>(ecalloc_align(nstride + 1, sizeof(int)));
     for (size_t i = ncell; i < nodevec.size(); ++i) {
         TNode& nd = *nodevec[i];
         // compute how many compartments with the same order

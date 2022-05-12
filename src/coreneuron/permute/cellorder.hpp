@@ -116,7 +116,7 @@ void copy_array(T*& dest, T* src, size_t n) {
 // copy src array to dest with NRN_SOA_BYTE_ALIGN ecalloc_align allocation
 template <typename T>
 void copy_align_array(T*& dest, T* src, size_t n) {
-    dest = (T*) ecalloc_align(n, sizeof(T));
+    dest = static_cast<T*>(ecalloc_align(n, sizeof(T)));
     std::copy(src, src + n, dest);
 }
 

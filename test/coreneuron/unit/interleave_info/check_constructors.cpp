@@ -25,10 +25,10 @@ BOOST_AUTO_TEST_CASE(interleave_info_test) {
     info1.nstride = nstride;
 
     // to avoid same values, different sub-array is used to initialize different members
-    copy_array(info1.stridedispl, data1, nwarp + 1);
-    copy_array(info1.stride, data1 + 1, nstride);
-    copy_array(info1.firstnode, data1 + 1, nwarp + 1);
-    copy_array(info1.lastnode, data1 + 1, nwarp + 1);
+    copy_align_array(info1.stridedispl, data1, nwarp + 1);
+    copy_align_array(info1.stride, data1 + 1, nstride);
+    copy_align_array(info1.firstnode, data1 + 1, nwarp + 1);
+    copy_align_array(info1.lastnode, data1 + 1, nwarp + 1);
 
     // check if copy_array works
     BOOST_CHECK_NE(info1.firstnode, info1.lastnode);
@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(interleave_info_test) {
                                   info1.lastnode,
                                   info1.lastnode + nwarp + 1);
 
-    copy_array(info1.cellsize, data1 + 4, nwarp);
+    copy_align_array(info1.cellsize, data1 + 4, nwarp);
     copy_array(info1.nnode, data2, nwarp);
     copy_array(info1.ncycle, data2 + 1, nwarp);
     copy_array(info1.idle, data2 + 2, nwarp);

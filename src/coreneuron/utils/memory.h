@@ -213,11 +213,13 @@ inline int soa_padded_size(int cnt, int layout) {
 
 /** Check for the pointer alignment.
  */
-inline bool is_aligned(void* pointer, size_t alignment) {
-    return (((uintptr_t)(const void*) (pointer)) % (alignment) == 0);
+inline bool is_aligned(void* pointer, std::size_t alignment) {
+    return (reinterpret_cast<std::uintptr_t>(pointer) % alignment) == 0;
 }
 
-/** Allocate the aligned memory.
+/**
+ * Allocate aligned memory. This will be unified memory if the corresponding
+ * CMake option is set. This must be freed with the free_memory method.
  */
 inline void* emalloc_align(size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     void* memptr;
@@ -226,7 +228,10 @@ inline void* emalloc_align(size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     return memptr;
 }
 
-/** Allocate the aligned memory and set it to 0.
+/**
+ * Allocate the aligned memory and set it to 0. This will be unified memory if
+ * the corresponding CMake option is set. This must be freed with the
+ * free_memory method.
  */
 inline void* ecalloc_align(size_t n, size_t size, size_t alignment = NRN_SOA_BYTE_ALIGN) {
     void* p;
