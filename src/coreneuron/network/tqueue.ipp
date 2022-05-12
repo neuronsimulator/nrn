@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -68,7 +68,7 @@ TQueue<C>::~TQueue() {
 }
 
 template <container C>
-TQItem* TQueue<C>::enqueue_bin(double td, void* d) {
+TQItem* TQueue<C>::enqueue_bin(double td, DiscreteEvent* d) {
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = td;
@@ -149,7 +149,7 @@ inline void TQueue<pq_que>::move(TQItem* i, double tnew) {
 
 /// Splay tree priority queue implementation
 template <>
-inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
+inline TQItem* TQueue<spltree>::insert(double tt, DiscreteEvent* d) {
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;
@@ -172,7 +172,7 @@ inline TQItem* TQueue<spltree>::insert(double tt, void* d) {
 
 /// STL priority queue implementation
 template <>
-inline TQItem* TQueue<pq_que>::insert(double tt, void* d) {
+inline TQItem* TQueue<pq_que>::insert(double tt, DiscreteEvent* d) {
     TQItem* i = new TQItem;
     i->data_ = d;
     i->t_ = tt;

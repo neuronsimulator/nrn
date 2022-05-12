@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -626,44 +626,50 @@ void realloc_net_receive_buffer(NrnThread* nt, Memb_list* ml) {
         cnrn_target_delete(nrb->_nrb_index, nrb->_size);
     }
 #endif
-
-    // Reallocate host
+    // Reallocate host buffers using ecalloc_align (as in phase2.cpp) and
+    // free_memory (as in nrn_setup.cpp)
+    auto const realloc = [old_size = nrb->_size, nrb](auto*& ptr, std::size_t extra_size = 0) {
+        using T = std::remove_pointer_t<std::remove_reference_t<decltype(ptr)>>;
+        static_assert(std::is_trivial<T>::value,
+                      "Only trivially constructible and copiable types are supported.");
+        static_assert(std::is_same<decltype(ptr), T*&>::value,
+                      "ptr should be reference-to-pointer");
+        auto* const new_data = static_cast<T*>(ecalloc_align((nrb->_size + extra_size), sizeof(T)));
+        std::memcpy(new_data, ptr, (old_size + extra_size) * sizeof(T));
+        free_memory(ptr);
+        ptr = new_data;
+    };
     nrb->_size *= 2;
-    nrb->_pnt_index = (int*) erealloc(nrb->_pnt_index, nrb->_size * sizeof(int));
-    nrb->_weight_index = (int*) erealloc(nrb->_weight_index, nrb->_size * sizeof(int));
-    nrb->_nrb_t = (double*) erealloc(nrb->_nrb_t, nrb->_size * sizeof(double));
-    nrb->_nrb_flag = (double*) erealloc(nrb->_nrb_flag, nrb->_size * sizeof(double));
-    nrb->_displ = (int*) erealloc(nrb->_displ, (nrb->_size + 1) * sizeof(int));
-    nrb->_nrb_index = (int*) erealloc(nrb->_nrb_index, nrb->_size * sizeof(int));
-
+    realloc(nrb->_pnt_index);
+    realloc(nrb->_weight_index);
+    realloc(nrb->_nrb_t);
+    realloc(nrb->_nrb_flag);
+    realloc(nrb->_displ, 1);
+    realloc(nrb->_nrb_index);
 #ifdef CORENEURON_ENABLE_GPU
     if (nt->compute_gpu) {
-        int *d_weight_index, *d_pnt_index, *d_displ, *d_nrb_index;
-        double *d_nrb_t, *d_nrb_flag;
-
         // update device copy
         nrn_pragma_acc(update device(nrb));
         nrn_pragma_omp(target update to(nrb));
 
-        NetReceiveBuffer_t* d_nrb = cnrn_target_deviceptr(nrb);
-
+        NetReceiveBuffer_t* const d_nrb{cnrn_target_deviceptr(nrb)};
         // recopy the vectors in the buffer
-        d_pnt_index = cnrn_target_copyin(nrb->_pnt_index, nrb->_size);
+        int* const d_pnt_index{cnrn_target_copyin(nrb->_pnt_index, nrb->_size)};
         cnrn_target_memcpy_to_device(&(d_nrb->_pnt_index), &d_pnt_index);
 
-        d_weight_index = cnrn_target_copyin(nrb->_weight_index, nrb->_size);
+        int* const d_weight_index{cnrn_target_copyin(nrb->_weight_index, nrb->_size)};
         cnrn_target_memcpy_to_device(&(d_nrb->_weight_index), &d_weight_index);
 
-        d_nrb_t = cnrn_target_copyin(nrb->_nrb_t, nrb->_size);
+        double* const d_nrb_t{cnrn_target_copyin(nrb->_nrb_t, nrb->_size)};
         cnrn_target_memcpy_to_device(&(d_nrb->_nrb_t), &d_nrb_t);
 
-        d_nrb_flag = cnrn_target_copyin(nrb->_nrb_flag, nrb->_size);
+        double* const d_nrb_flag{cnrn_target_copyin(nrb->_nrb_flag, nrb->_size)};
         cnrn_target_memcpy_to_device(&(d_nrb->_nrb_flag), &d_nrb_flag);
 
-        d_displ = cnrn_target_copyin(nrb->_displ, nrb->_size + 1);
+        int* const d_displ{cnrn_target_copyin(nrb->_displ, nrb->_size + 1)};
         cnrn_target_memcpy_to_device(&(d_nrb->_displ), &d_displ);
 
-        d_nrb_index = cnrn_target_copyin(nrb->_nrb_index, nrb->_size);
+        int* const d_nrb_index{cnrn_target_copyin(nrb->_nrb_index, nrb->_size)};
         cnrn_target_memcpy_to_device(&(d_nrb->_nrb_index), &d_nrb_index);
     }
 #endif
@@ -947,8 +953,11 @@ void delete_nrnthreads_on_device(NrnThread* threads, int nthreads) {
 #ifdef CORENEURON_ENABLE_GPU
     for (int i = 0; i < nthreads; i++) {
         NrnThread* nt = threads + i;
-        cnrn_target_delete(nt->_fornetcon_weight_perm);
-        cnrn_target_delete(nt->_fornetcon_perm_indices);
+        if (!nt->compute_gpu) {
+            continue;
+        }
+        cnrn_target_delete(nt->_fornetcon_weight_perm, nt->_fornetcon_weight_perm_size);
+        cnrn_target_delete(nt->_fornetcon_perm_indices, nt->_fornetcon_perm_indices_size);
         {
             TrajectoryRequests* tr = nt->trajec_requests;
             if (tr) {

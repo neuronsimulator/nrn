@@ -28,9 +28,6 @@ CORENRN_INC_DIR := $(ROOT)/include
 CORENRN_SHARE_CORENRN_DIR:= $(ROOT)/share/coreneuron
 CORENRN_SHARE_MOD2CPP_DIR := $(ROOT)/share/mod2c
 
-# file provided by coreneuron for solver
-DERIVIMPLICIT_CPP_FILE = $(CORENRN_SHARE_CORENRN_DIR)/dimplic.cpp
-
 # name of the CoreNEURON binary
 SPECIAL_EXE  = $(OUTPUT_DIR)/special-core
 
@@ -112,11 +109,8 @@ COREMECH_LIB_NAME = corenrnmech$(if $(MECHLIB_SUFFIX),_$(MECHLIB_SUFFIX),)
 COREMECH_LIB_PATH = $(OUTPUT_DIR)/lib$(COREMECH_LIB_NAME)$(LIB_SUFFIX)
 
 # Various header and C++/Object file
-KINDERIV_H_PATH = $(MOD_TO_CPP_DIR)/_kinderiv.h
 MOD_FUNC_CPP = $(MOD_TO_CPP_DIR)/_mod_func.cpp
 MOD_FUNC_OBJ = $(MOD_OBJS_DIR)/_mod_func.o
-DIMPLIC_CPP  = $(MOD_TO_CPP_DIR)/_dimplic.cpp
-DIMPLIC_OBJ  = $(MOD_OBJS_DIR)/_dimplic.o
 ENGINEMECH_OBJ = $(MOD_OBJS_DIR)/enginemech.o
 
 # Depending on static/shared build, determine library name and it's suffix
@@ -188,7 +182,7 @@ LIB_RPATH = $(if $(DESTDIR),$(DESTDIR)/lib,$(ORIGIN_RPATH))
 INSTALL_LIB_RPATH = $(ORIGIN_RPATH)/../lib
 
 # All objects used during build
-ALL_OBJS = $(MOD_FUNC_OBJ) $(DIMPLIC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
+ALL_OBJS = $(MOD_FUNC_OBJ) $(mod_cpp_objs) $(mod_ispc_objs)
 
 # Colors for pretty printing
 C_RESET := \033[0m
@@ -244,7 +238,7 @@ coremech_lib_static: $(ALL_OBJS) $(ENGINEMECH_OBJ) build_always
 	ar cq ${COREMECH_LIB_PATH} $(ENGINEMECH_OBJ) $(ALL_OBJS) $(MOD_OBJS_DIR)/scopmath/*.o;
 
 # compile cpp files to .o
-$(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp $(KINDERIV_H_PATH) | $(MOD_OBJS_DIR)
+$(MOD_OBJS_DIR)/%.o: $(MOD_TO_CPP_DIR)/%.cpp | $(MOD_OBJS_DIR)
 	$(CXX_COMPILE_CMD) -c $< -o $@ -DNRN_PRCELLSTATE=$(NRN_PRCELLSTATE) @CORENEURON_TRANSLATED_CODE_COMPILE_FLAGS@
 
 # compile ispc files to .obj
@@ -268,18 +262,9 @@ $(MOD_FUNC_CPP): build_always | $(MOD_TO_CPP_DIR)
 	diff -q $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP) || \
 	mv $(MOD_FUNC_CPP).tmp $(MOD_FUNC_CPP)
 
-# header to avoid function callbacks using function pointers
-$(KINDERIV_H_PATH): $(mod_cpp_files) build_always | $(MOD_TO_CPP_DIR)
-	cd $(MOD_TO_CPP_DIR); \
-	$(CORENRN_PYTHONEXE) $(CORENRN_SHARE_CORENRN_DIR)/kinderiv.py;
-
 # symlink to cpp files provided by coreneuron
 $(MOD_TO_CPP_DIR)/%.cpp: $(CORENRN_SHARE_MOD2CPP_DIR)/%.cpp | $(MOD_TO_CPP_DIR)
 	ln -s $< $@
-
-# to recompile dimplic.cpp for solvers
-$(DIMPLIC_CPP): $(DERIVIMPLICIT_CPP_FILE) | $(MOD_TO_CPP_DIR)
-	ln -s $(DERIVIMPLICIT_CPP_FILE) $(DIMPLIC_CPP)
 
 # create directories needed
 $(MOD_TO_CPP_DIR):

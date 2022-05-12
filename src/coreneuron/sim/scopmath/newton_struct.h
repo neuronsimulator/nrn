@@ -1,13 +1,11 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
 */
-
 #pragma once
-
 #include "coreneuron/mechanism/mech/mod2c_core_thread.hpp"
 
 namespace coreneuron {
@@ -23,40 +21,6 @@ struct NewtonSpace {
     double* low_value;
     double* rowmax;
 };
-
-nrn_pragma_omp(declare target)
-nrn_pragma_acc(routine seq)
-extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm, _threadargsproto_);
-
-nrn_pragma_acc(routine seq)
-extern void nrn_scopmath_solve_thread(int n,
-                                      double** a,
-                                      double* value,
-                                      int* perm,
-                                      double* delta_x,
-                                      int* s,
-                                      _threadargsproto_);
-
-nrn_pragma_acc(routine seq)
-extern int nrn_newton_thread(NewtonSpace* ns,
-                             int n,
-                             int* s,
-                             NEWTFUN pfunc,
-                             double* value,
-                             _threadargsproto_);
-
-nrn_pragma_acc(routine seq)
-extern void nrn_buildjacobian_thread(NewtonSpace* ns,
-                                     int n,
-                                     int* s,
-                                     NEWTFUN pfunc,
-                                     double* value,
-                                     double** jacobian,
-                                     _threadargsproto_);
-nrn_pragma_omp(end declare target)
-
-extern NewtonSpace* nrn_cons_newtonspace(int n, int n_instance);
-extern void nrn_destroy_newtonspace(NewtonSpace* ns);
 
 void nrn_newtonspace_copyto_device(NewtonSpace* ns);
 void nrn_newtonspace_delete_from_device(NewtonSpace* ns);

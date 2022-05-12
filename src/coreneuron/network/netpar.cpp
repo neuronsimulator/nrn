@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -32,7 +32,9 @@
 #include "coreneuron/mpi/core/nrnmpi.hpp"
 int localgid_size_;
 int ag_send_nspike;
+namespace coreneuron {
 int* nrnmpi_nin_;
+}
 int ovfl_capacity;
 int icapacity;
 unsigned char* spikeout_fixed;

@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -276,7 +276,7 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
         return false;
     }
 
-    DiscreteEvent* de = (DiscreteEvent*) q->data_;
+    DiscreteEvent* de = q->data_;
     double tt = q->t_;
     delete q;
 #if PRINT_EVENT
@@ -287,9 +287,9 @@ bool NetCvode::deliver_event(double til, NrnThread* nt) {
     de->deliver(tt, this, nt);
 
     /// In case of a self event we need to delete the self event
-    if (de->type() == SelfEventType)
-        delete (SelfEvent*) de;
-
+    if (de->type() == SelfEventType) {
+        delete static_cast<SelfEvent*>(de);
+    }
     return true;
 }
 
@@ -651,7 +651,7 @@ tryagain:
     if (nrn_use_bin_queue_) {
         TQItem* q;
         while ((q = p[tid].tqe_->dequeue_bin()) != 0) {
-            DiscreteEvent* db = (DiscreteEvent*) q->data_;
+            DiscreteEvent* db = q->data_;
 
 #if PRINT_EVENT
             if (print_event_) {

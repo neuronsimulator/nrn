@@ -482,12 +482,8 @@ void Phase2::set_net_send_buffer(Memb_list** ml_list, const std::vector<int>& pn
             ml->_net_receive_buffer = nrb;
             nrb->_pnt_offset = pnt_offset[type];
 
-            // begin with a size of 5% of the number of instances
-            nrb->_size = ml->nodecount;
-            // or at least 8
-            nrb->_size = std::max(8, nrb->_size);
-            // but not more than nodecount
-            nrb->_size = std::min(ml->nodecount, nrb->_size);
+            // begin with a size equal to the number of instances, or at least 8
+            nrb->_size = std::max(8, ml->nodecount);
             nrb->_pnt_index = (int*) ecalloc_align(nrb->_size, sizeof(int));
             nrb->_displ = (int*) ecalloc_align(nrb->_size + 1, sizeof(int));
             nrb->_nrb_index = (int*) ecalloc_align(nrb->_size, sizeof(int));

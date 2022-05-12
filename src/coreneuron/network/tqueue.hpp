@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -65,9 +65,10 @@ extern void splay(SPBLK*, SPTREE*);    /* reorganize tree */
 extern SPBLK* sphead(SPTREE*);         /* return first node in tree */
 extern void spdelete(SPBLK*, SPTREE*); /* delete node from tree */
 
+struct DiscreteEvent;
 class TQItem {
   public:
-    void* data_ = nullptr;
+    DiscreteEvent* data_ = nullptr;
     double t_ = 0;
     TQItem* left_ = nullptr;
     TQItem* right_ = nullptr;
@@ -127,8 +128,8 @@ class TQueue {
     inline TQItem* least() {
         return least_;
     }
-    inline TQItem* insert(double t, void* data);
-    inline TQItem* enqueue_bin(double t, void* data);
+    inline TQItem* insert(double t, DiscreteEvent* data);
+    inline TQItem* enqueue_bin(double t, DiscreteEvent* data);
     inline TQItem* dequeue_bin() {
         return binq_->dequeue();
     }

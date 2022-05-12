@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================.
@@ -28,9 +28,9 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
 
         "--tstop",
         "0.1",
-
+#ifdef CORENEURON_ENABLE_GPU
         "--gpu",
-
+#endif
         "--cell-permute",
         "2",
 
@@ -93,9 +93,11 @@ BOOST_AUTO_TEST_CASE(cmdline_interface) {
     BOOST_CHECK(corenrn_param_test.tstop == 0.1);
 
     BOOST_CHECK(corenrn_param_test.prcellgid == 12);
-
+#ifdef CORENEURON_ENABLE_GPU
     BOOST_CHECK(corenrn_param_test.gpu == true);
-
+#else
+    BOOST_CHECK(corenrn_param_test.gpu == false);
+#endif
     BOOST_CHECK(corenrn_param_test.dt_io == 0.2);
 
     BOOST_CHECK(corenrn_param_test.forwardskip == 0.02);
