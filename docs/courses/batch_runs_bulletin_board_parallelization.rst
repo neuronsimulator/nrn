@@ -231,7 +231,7 @@ Things to do
 
     then use its file browser to select one of the dat files.
 
-    Examine :download:`initplotfi.py <code/initplotfi.py>` to see how it takes advantage of procs that are built into NEURON's standard run library :file:`stdlib.hoc` (view the source code for this file on the NEURON GitHub repository at `https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc`_).
+    Examine :download:`initplotfi.py <code/initplotfi.py>` to see how it takes advantage of procs that are built into NEURON's standard run library :file:`stdlib.hoc` (view the source code for this file on the NEURON GitHub repository at `https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc <https://github.com/neuronsimulator/nrn/blob/master/share/lib/hoc/stdlib.hoc>`_).
     
 
 .. toctree::
