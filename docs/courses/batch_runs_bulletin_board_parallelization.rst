@@ -177,6 +177,7 @@ Things to do
     Compare results produced by serial and parallel simulations, to verify that parallelization hasn't broken anything. For example (on Linux and macOS):
 
     .. code-block::
+        none
 
         python initbatser.py
         mv fi.dat fiser.dat
@@ -195,6 +196,7 @@ Things to do
     Here are results of some tests I ran:
 
     .. code-block::
+        none
 
         NEURON 7.5 (266b5a0) 2017-05-22 under Windows Subsystem for Linux
         on a quad core desktop.
@@ -226,6 +228,7 @@ Things to do
     Examine an f-i curve from data saved to one of the dat files.
 
     .. code-block::
+        bash
     
         python -i initplotfi.py
 
