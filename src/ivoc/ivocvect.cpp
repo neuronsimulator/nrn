@@ -33,7 +33,6 @@
 #include <IV-look/kit.h>
 #else
 #include <InterViews/resource.h>
-#include <OS/list.h>
 #endif
 
 #if defined(SVR4)

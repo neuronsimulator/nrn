@@ -17,7 +17,6 @@
 #include <ctype.h>
 #include <jni.h>
 #include <time.h>
-#include <OS/list.h>
 #include "ivoc.h"
 #include "classreg.h"
 

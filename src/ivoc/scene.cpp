@@ -45,7 +45,6 @@
 #include <InterViews/color.h>
 #include <InterViews/brush.h>
 #include <InterViews/background.h>
-#include <OS/list.h>
 
 #include "mymath.h"
 #include "epsprint.h"

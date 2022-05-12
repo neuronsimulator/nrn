@@ -5,7 +5,6 @@
 
 #include <InterViews/cursor.h>
 #include <InterViews/window.h>
-#include <OS/list.h>
 #include <OS/string.h>
 #include <stdio.h>
 #include <string.h>

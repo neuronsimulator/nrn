@@ -1,7 +1,6 @@
 #include <../../nrnconf.h>
 #include <string.h>
 #include <stdlib.h>
-#include <OS/list.h>
 #include <math.h>
 #include "nrnoc2iv.h"
 #include "classreg.h"

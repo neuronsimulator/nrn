@@ -22,7 +22,6 @@ extern int hoc_return_type_code;
 #include "tqueue.h"
 #include "mymath.h"
 #include "htlist.h"
-#include <OS/list.h>
 #include <nrnmutdec.h>
 
 #if USE_PTHREAD

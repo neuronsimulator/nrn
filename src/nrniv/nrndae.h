@@ -12,7 +12,6 @@
 #ifndef nrndae_h
 #define nrndae_h
 // this defines things needed by ocmatrix
-#include <OS/list.h>
 
 #include "ivocvect.h"
 #include "matrixmap.h"

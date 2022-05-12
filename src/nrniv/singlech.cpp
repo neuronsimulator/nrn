@@ -1,5 +1,4 @@
 #include <../../nrnconf.h>
-#include <OS/list.h>
 #include "nrnoc2iv.h"
 #include "ndatclas.h"
 #include "ivocvect.h"

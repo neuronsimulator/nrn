@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <InterViews/resource.h>
 #include <OS/string.h>
-#include <OS/list.h>
 #include "hoclist.h"
 #include <nrnpython_config.h>
 #if HAVE_IV

@@ -2,7 +2,6 @@
 #define matrixmap_h
 
 // this defines things needed by ocmatrix
-#include <OS/list.h>
 
 #include "ocmatrix.h"
 #include "nrnoc2iv.h"
