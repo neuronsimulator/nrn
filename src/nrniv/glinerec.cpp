@@ -57,13 +57,10 @@ void NetCvode::simgraph_remove() {
 }
 
 void Graph::simgraph() {
-    int i, cnt;
     if (!grl) {
         grl = new GLineRecordList();
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         PlayRecord* pr = net_cvode_instance->playrec_uses(gl);
         if (pr) {
             delete pr;

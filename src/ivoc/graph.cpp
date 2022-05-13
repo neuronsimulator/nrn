@@ -1404,7 +1404,6 @@ void GraphItem::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 // Graph
-implementPtrList(LineList, GraphLine);
 declareActionCallback(Graph);
 implementActionCallback(Graph);
 
@@ -1502,8 +1501,8 @@ extern double* nrn_recalc_ptr(double*);
 
 Graph::~Graph() {
     // printf("~Graph\n");
-    for (long i = 0; i < line_list_.count(); ++i) {
-        Resource::unref(line_list_.item(i));
+    for (auto& line: line_list_) {
+        Resource::unref(line);
     }
     Resource::unref(keep_lines_toggle_);
     Resource::unref(x_);
@@ -1545,24 +1544,22 @@ void Graph::help() {
 }
 
 void Graph::delete_label(GLabel* glab) {
-    GraphLine* glin = NULL;
-    GlyphIndex i, cnt;
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        if (line_list_.item(i)->label() == glab) {
-            glin = line_list_.item(i);
+    GraphLine* glin = nullptr;
+    size_t index = 0;
+    for (index = 0; index < line_list_.size(); ++index) {
+        if (line_list_[index]->label() == glab) {
+            glin = line_list_[index];
             break;
         }
     }
     if (glin) {
-        line_list_.remove(i);
+        line_list_.erase(line_list_.begin() + index);
         glin->unref();
-        i = glyph_index(glin);
-        remove(i);
+        remove(glyph_index(glin));
     }
     if (!glin) {  // but possibly a vector line
-        cnt = count();
-        for (i = 0; i < cnt; ++i) {
+        GlyphIndex cnt = count();
+        for (GlyphIndex i = 0; i < cnt; ++i) {
             GraphItem* gi = (GraphItem*) component(i);
             if (gi->is_polyline()) {
                 GPolyLine* gpl = (GPolyLine*) gi->body();
@@ -1573,8 +1570,7 @@ void Graph::delete_label(GLabel* glab) {
             }
         }
     }
-    i = glyph_index(glab);
-    remove(i);
+    remove(glyph_index(glab));
 }
 
 GLabel* Graph::new_proto_label() const {
@@ -1582,18 +1578,17 @@ GLabel* Graph::new_proto_label() const {
 }
 
 bool Graph::change_label(GLabel* glab, const char* text, GLabel* gl) {
-    GlyphIndex i, cnt = line_list_.count();
     if (strcmp(glab->text(), text)) {
-        for (i = 0; i < cnt; ++i) {
-            if (line_list_.item(i)->label() == glab) {
-                if (!line_list_.item(i)->change_expr(text, &symlist_)) {
+        for (auto& line: line_list_) {
+            if (line->label() == glab) {
+                if (!line->change_expr(text, &symlist_)) {
                     return false;
                 }
             }
         }
         glab->text(text);
     }
-    i = glyph_index(glab);
+    GlyphIndex i = glyph_index(glab);
     if (glab->fixtype() != gl->fixtype()) {
         if (gl->fixed()) {
             glab->fixed(gl->scale());
@@ -1647,13 +1642,12 @@ ostream* Graph::ascii() {
 }
 
 void Graph::draw(Canvas* c, const Allocation& a) const {
-    long i, cnt = line_list_.count();
     // if (!extension_flushed_) {
     Scene::draw(c, a);
     //}
     if (extension_flushed_) {
-        for (i = 0; i < cnt; ++i) {
-            line_list_.item(i)->extension()->draw(c, a);
+        for (auto& line: line_list_) {
+            line->extension()->draw(c, a);
         }
     }
     if (ascii_) {
@@ -1662,7 +1656,7 @@ void Graph::draw(Canvas* c, const Allocation& a) const {
 }
 
 void Graph::ascii_save(ostream& o) const {
-    long line, lcnt = line_list_.count();
+    long line, lcnt = line_list_.size();
     int i, dcnt;
     if (lcnt == 0 || !x_ || family_label_) {
         // tries to print in matrix form is labels and each line the same
@@ -1674,7 +1668,7 @@ void Graph::ascii_save(ostream& o) const {
         if (lcnt) {
             o << lcnt << " addvar/addexpr lines:";
             for (i = 0; i < lcnt; ++i) {
-                o << " " << line_list_.item(i)->name();
+                o << " " << line_list_[i]->name();
             }
             o << endl;
         }
@@ -1781,14 +1775,14 @@ void Graph::ascii_save(ostream& o) const {
         o << "x";
     }
     for (line = 0; line < lcnt; ++line) {
-        o << " " << line_list_.item(line)->name();
+        o << " " << line_list_[line]->name();
     }
     o << endl;
     dcnt = x_->count();
     for (i = 0; i < dcnt; ++i) {
         o << x_->get_val(i);
         for (line = 0; line < lcnt; ++line) {
-            o << "\t" << line_list_.item(line)->y(i);
+            o << "\t" << line_list_[line]->y(i);
         }
         o << endl;
     }
@@ -1969,7 +1963,7 @@ GraphLine* Graph::add_var(const char* expr,
     ((GraphItem*) component(i))->save(false);
     glab->color(color);
     gl->label(glab);
-    line_list_.append(gl);
+    line_list_.push_back(gl);
     gl->ref();
     Scene::append(new GPolyLineItem(gl));
     return gl;
@@ -2005,10 +1999,8 @@ void Graph::begin() {
         keep_lines();
         family_value();
     }
-    long count = line_list_.count();
     int hem = hoc_execerror_messages;
-    for (long i = 0; i < count; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->erase();
         if (family_on_) {
             ((GPolyLine*) gl)->color(color());
@@ -2037,9 +2029,8 @@ void Graph::plot(float x) {
     } else {
         x_->add(x);
     }
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->plot();
+    for (auto& line: line_list_) {
+        line->plot();
     }
 }
 void Graph::begin_line(const char* s) {
@@ -2081,9 +2072,8 @@ void Graph::fast_flush() {
 		);
 	}
 #else
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension()->damage(this);
+    for (auto& line: line_list_) {
+        line->extension()->damage(this);
     }
 #endif
     extension_flushed_ = true;
@@ -2091,17 +2081,15 @@ void Graph::fast_flush() {
 
 void Graph::extension_start() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_start();
+    for (auto& line: line_list_) {
+        line->extension_start();
     }
     extension_flushed_ = false;
 }
 void Graph::extension_continue() {
     x_->running_start();
-    long i, cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        line_list_.item(i)->extension_continue();
+    for (auto& line: line_list_) {
+        line->extension_continue();
     }
     extension_flushed_ = false;
 }
@@ -2162,9 +2150,8 @@ void Graph::cross_action(char c, Coord x, Coord y) {
     }
 }
 void Graph::erase() {
-    long count = line_list_.count();
-    for (long i = 0; i < count; ++i) {
-        line_list_.item(i)->erase();
+    for (auto& line: line_list_) {
+        line->erase();
     }
     damage_all();
 }
@@ -2180,10 +2167,10 @@ void Graph::erase_all() {
         remove(i);
     }
 #endif
-    while (line_list_.count()) {
-        Resource::unref(line_list_.item(0));
-        line_list_.remove(0);
+    for (auto& line: line_list_) {
+        Resource::unref(line);
     }
+    line_list_.clear();
     label_n_ = 0;
 }
 void Graph::family_value() {
@@ -2254,9 +2241,7 @@ void Graph::family(bool i) {
     } else {
         family_on_ = false;
         keep_lines_toggle_->set(TelltaleState::is_chosen, false);
-        long count = line_list_.count();
-        for (long i = 0; i < count; ++i) {
-            GraphLine* gl = line_list_.item(i);
+        for (auto& gl: line_list_) {
             gl->color(gl->save_color());
             gl->brush(gl->save_brush());
         }
@@ -2372,18 +2357,14 @@ void Graph::erase_lines() {
             }
         }
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         gl->label()->erase_flag(false);
     }
     cnt = count();
-    for (i = cnt - 1; i >= 0; --i) {
+    for (int i = cnt - 1; i >= 0; --i) {
         ((GraphItem*) component(i))->erase(this, i, GraphItem::ERASE_LINE);
     }
-    cnt = line_list_.count();
-    for (i = 0; i < cnt; ++i) {
-        GraphLine* gl = line_list_.item(i);
+    for (auto& gl: line_list_) {
         Scene::append(new GPolyLineItem(gl));
     }
     erase();
@@ -3556,9 +3537,8 @@ void Graph::update_ptrs() {
             }
         }
     }
-    cnt = line_list_.count();
-    for (i = 0; i < line_list_.count(); ++i) {
-        line_list_.item(i)->update_ptrs();
+    for (auto& line: line_list_) {
+        line->update_ptrs();
     }
 }
 

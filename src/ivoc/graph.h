@@ -23,8 +23,6 @@ class LineExtension;
 class TelltaleState;
 struct Object;
 
-declarePtrList(LineList, GraphLine);
-
 // all Glyphs added to Graph must be enclosed in a GraphItem
 class GraphItem: public MonoGlyph {
   public:
@@ -167,7 +165,7 @@ class Graph: public Scene {  // Scene of GraphLines labels and polylines
 
   private:
     Symlist* symlist_;
-    LineList line_list_;
+    std::vector<GraphLine*> line_list_;
     int loc_;
     DataVec* x_;
     bool extension_flushed_;
