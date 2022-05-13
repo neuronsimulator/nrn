@@ -333,7 +333,9 @@ Scene::~Scene() {
     }
     views_->remove_all();
 #endif
-    auto it = std::remove_if(scene_list.begin(), scene_list.end(), [this](const Scene* s) { return s == this; });
+    auto it = std::remove_if(scene_list.begin(), scene_list.end(), [this](const Scene* s) {
+        return s == this;
+    });
     scene_list.erase(it, scene_list.end());
 }
 
@@ -535,7 +537,7 @@ void Scene::replace(GlyphIndex index, Glyph* glyph) {
 GlyphIndex Scene::glyph_index(const Glyph* g) {
     for (size_t i = 0; i < info_.size(); ++i) {
         if (info_[i].glyph_ == g) {
-            return (GlyphIndex)i;
+            return (GlyphIndex) i;
         }
     }
     return -1;

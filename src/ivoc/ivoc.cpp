@@ -22,7 +22,7 @@ extern double (*nrnpy_object_to_double_)(Object*);
 static MUTDEC
 #endif
 
-using PF = void(void*, int);
+    using PF = void(void*, int);
 static std::vector<PF*> f_list;
 
 static nrn::tool::bimap<void*, Observer*>* pvob;
@@ -87,14 +87,14 @@ void notify_pointer_freed(void* pt) {
     }
 }
 void notify_freed(void* p) {
-    for(auto& f: f_list) {
+    for (auto& f: f_list) {
         f(p, 1);
     }
     notify_pointer_freed(p);
 }
 void notify_freed_val_array(double* p, size_t size) {
-    for(auto& f: f_list) {
-        f((void*)p, 1);
+    for (auto& f: f_list) {
+        f((void*) p, 1);
     }
     if (pdob) {
         double* pp;

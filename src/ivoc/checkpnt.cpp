@@ -297,8 +297,9 @@ class PortablePointer {
   public:
     PortablePointer() = default;
     PortablePointer(void* address, int type, unsigned long size = 1)
-    : address_(address), type_(type), size_(size)
-    {}
+        : address_(address)
+        , type_(type)
+        , size_(size) {}
 
     virtual ~PortablePointer() = default;
     void set(void* address, int type, unsigned long size = 1);
