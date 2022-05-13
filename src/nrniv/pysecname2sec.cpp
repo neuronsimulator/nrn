@@ -29,12 +29,12 @@ static void activate() {
         activated = true;
         hoc_Item* qsec;
         ForAllSections(sec) {
- if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-            nrnpy_pysecname2sec_add(sec);
+            if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+                nrnpy_pysecname2sec_add(sec);
+            }
         }
     }
-}
-End_ForAllSections
+    End_ForAllSections
 #endif
 }
 

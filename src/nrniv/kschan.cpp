@@ -2375,42 +2375,42 @@ void KSChan::ion_consist() {
     }
     int ppsize = poff + 2 * nligand_;
     ForAllSections(sec) {
- for (i = 0; i < sec->nnode; ++i) {
-        nd = sec->pnode[i];
-        Prop *p, *pion;
-        for (p = nd->prop; p; p = p->next) {
-            if (p->type == mtype) {
-                break;
+        for (i = 0; i < sec->nnode; ++i) {
+            nd = sec->pnode[i];
+            Prop *p, *pion;
+            for (p = nd->prop; p; p = p->next) {
+                if (p->type == mtype) {
+                    break;
+                }
             }
-        }
-        if (!p) {
-            continue;
-        }
-        p->dparam = (Datum*) erealloc(p->dparam, ppsize * sizeof(Datum));
-        // printf("KSChan::ion_consist %s node %d mtype=%d ion_type=%d\n",
-        // secname(sec), i, mtype, ion_sym_->subtype);
-        if (ion_sym_) {
-            pion = needion(ion_sym_, nd, p);
-            if (cond_model_ == 0) {  // ohmic
-                nrn_promote(pion, 0, 1);
-            } else if (cond_model_ == 1) {  // nernst
-                nrn_promote(pion, 1, 0);
-            } else {  // ghk
-                nrn_promote(pion, 1, 0);
+            if (!p) {
+                continue;
             }
-            Datum* pp = p->dparam;
-            pp[ppoff_ + 0].pval = pion->param + 0;  // ena
-            pp[ppoff_ + 1].pval = pion->param + 3;  // ina
-            pp[ppoff_ + 2].pval = pion->param + 4;  // dinadv
-            pp[ppoff_ + 3].pval = pion->param + 1;  // nai
-            pp[ppoff_ + 4].pval = pion->param + 2;  // nao
-        }
-        for (j = 0; j < nligand_; ++j) {
-            ligand_consist(j, poff, p, nd);
+            p->dparam = (Datum*) erealloc(p->dparam, ppsize * sizeof(Datum));
+            // printf("KSChan::ion_consist %s node %d mtype=%d ion_type=%d\n",
+            // secname(sec), i, mtype, ion_sym_->subtype);
+            if (ion_sym_) {
+                pion = needion(ion_sym_, nd, p);
+                if (cond_model_ == 0) {  // ohmic
+                    nrn_promote(pion, 0, 1);
+                } else if (cond_model_ == 1) {  // nernst
+                    nrn_promote(pion, 1, 0);
+                } else {  // ghk
+                    nrn_promote(pion, 1, 0);
+                }
+                Datum* pp = p->dparam;
+                pp[ppoff_ + 0].pval = pion->param + 0;  // ena
+                pp[ppoff_ + 1].pval = pion->param + 3;  // ina
+                pp[ppoff_ + 2].pval = pion->param + 4;  // dinadv
+                pp[ppoff_ + 3].pval = pion->param + 1;  // nai
+                pp[ppoff_ + 4].pval = pion->param + 2;  // nao
+            }
+            for (j = 0; j < nligand_; ++j) {
+                ligand_consist(j, poff, p, nd);
+            }
         }
     }
-}
-End_ForAllSections
+    End_ForAllSections
 }
 
 void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
@@ -2430,37 +2430,37 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
     int mtype = rlsym_->subtype;
     ns = soffset_ + 2 * nstate_;
     ForAllSections(sec) {
-for (i = 0; i < sec->nnode; ++i) {
-        nd = sec->pnode[i];
-        Prop* p;
-        for (p = nd->prop; p; p = p->next) {
-            if (p->type == mtype) {
-                if (p->param_size != ns) {
-                    v_structure_change = 1;
-                    double* oldp = p->param;
-                    p->param = (double*) erealloc(oldp, ns * sizeof(double));
-                    if (oldp != p->param || shift != 0) {
-                        // printf("KSChan::state_consist realloc changed location\n");
-                        notify_freed_val_array(oldp, p->param_size);
-                    }
-                    p->param_size = ns;
-                    if (shift == 1) {
-                        for (j = ns - 1; j > 0; --j) {
-                            p->param[j] = p->param[j - 1];
+        for (i = 0; i < sec->nnode; ++i) {
+            nd = sec->pnode[i];
+            Prop* p;
+            for (p = nd->prop; p; p = p->next) {
+                if (p->type == mtype) {
+                    if (p->param_size != ns) {
+                        v_structure_change = 1;
+                        double* oldp = p->param;
+                        p->param = (double*) erealloc(oldp, ns * sizeof(double));
+                        if (oldp != p->param || shift != 0) {
+                            // printf("KSChan::state_consist realloc changed location\n");
+                            notify_freed_val_array(oldp, p->param_size);
                         }
-                        p->param[0] = 1;
-                    } else if (shift == -1) {
-                        for (j = 1; j < ns; ++j) {
-                            p->param[j - 1] = p->param[j];
+                        p->param_size = ns;
+                        if (shift == 1) {
+                            for (j = ns - 1; j > 0; --j) {
+                                p->param[j] = p->param[j - 1];
+                            }
+                            p->param[0] = 1;
+                        } else if (shift == -1) {
+                            for (j = 1; j < ns; ++j) {
+                                p->param[j - 1] = p->param[j];
+                            }
                         }
                     }
+                    break;
                 }
-                break;
             }
         }
     }
-}
-End_ForAllSections
+    End_ForAllSections
 }
 
 void KSChan::delete_schan_node_data() {

@@ -134,13 +134,13 @@ static double allroots(void* v) {
     sl = (List*) v;
     ForAllSections(sec) {
         if (!sec->parentsec) {
-        lappendsec(sl, sec);
-        section_ref(sec);
+            lappendsec(sl, sec);
+            section_ref(sec);
+        }
     }
-}
-End_ForAllSections
+    End_ForAllSections
 
-return 1.;
+        return 1.;
 }
 
 static double seclist_remove(void* v) {
