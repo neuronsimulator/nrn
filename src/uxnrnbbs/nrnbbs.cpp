@@ -4,17 +4,17 @@
 #undef HAVE_LOCKF
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
+#include <vector>
 
 #include <sys/stat.h>
 
-#include <OS/list.h>
 #include <OS/string.h>
 #include "nrnbbs.h"
 
@@ -67,10 +67,7 @@ static void history(const char* s1, int i) {
     history(s1, buf, "");
 }
 
-declarePtrList(NrnBBSCallbackList, NrnBBSCallbackItem)
-    implementPtrList(NrnBBSCallbackList, NrnBBSCallbackItem)
-
-        static NrnBBSCallbackList* cblist_;
+static std::vector<NrnBBSCallbackItem> cblist_;
 static FILE* lockfile_;
 
 static void get_lock() {
@@ -137,7 +134,7 @@ bool nrnbbs_connect() {
 void nrnbbs_disconnect() {
     connected_ = false;
     history("disconnect");
-    if (cblist_) {
+    if (!cblist_.empty()) {
         get_lock();
         int pid = getpid();
         FILE* f = fopen(fname(NOTIFY), "r");
@@ -160,11 +157,7 @@ void nrnbbs_disconnect() {
             rename(fname(TMPFILE), fname(NOTIFY));
         }
         release_lock();
-        for (long i = 0; i < cblist_->count(); ++i) {
-            delete cblist_->item(i);
-        }
-        delete cblist_;
-        cblist_ = nil;
+        cblist_.clear();
     }
     if (lockfile_) {
         fclose(lockfile_);
@@ -310,23 +303,19 @@ void nrnbbs_exec(const char* cmd) {
 
 
 static RETSIGTYPE nrnbbs_handler(int) {
-    long i;
 #if defined(SIGNAL_CAST)
     signal(NOTIFY_SIGNAL, (SIGNAL_CAST) nrnbbs_handler);
 #else
     signal(NOTIFY_SIGNAL, nrnbbs_handler);
 #endif
-    for (i = 0; i < cblist_->count(); ++i) {
-        cblist_->item(i)->execute();
+    for (auto& cb: cblist_) {
+        cb.execute();
     }
 }
 
 void nrnbbs_notify(const char* key, NrnBBSCallback cb) {
     history("nrnbbs_notify", key);
-    if (!cblist_) {
-        cblist_ = new NrnBBSCallbackList();
-    }
-    cblist_->append(new NrnBBSCallbackItem(key, cb));
+    cblist_.emplace_back(key, cb);
     get_lock();
     FILE* f = fopen(fname(NOTIFY), "a");
     if (!f) {
