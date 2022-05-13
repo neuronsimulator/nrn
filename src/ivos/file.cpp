@@ -273,36 +273,3 @@ int InputFile::read(const char*& start) {
 #endif
 }
 
-/* class StdInput */
-
-#if !MAC
-StdInput::StdInput() : InputFile(new FileInfo(new CopyString("-stdin"), 0)) { }
-#endif
-StdInput::~StdInput() { }
-
-long StdInput::length() const { return -1; }
-
-int StdInput::read(const char*& start) {
-#ifndef MAC
-    FileInfo* i = rep();
-    if (i->buf_ == nil) {
-	if (i->limit_ == 0) {
-	    i->limit_ = BUFSIZ;
-	}
-	i->buf_ = new char[i->limit_];
-    }
-
-#ifdef WIN32
-    int nbytes = _read(i->fd_, i->buf_, i->limit_);
-#else
-    int nbytes = ::read(i->fd_, i->buf_, i->limit_);
-#endif /* WIN32 */
-
-    if (nbytes > 0) {
-	start = (const char*)(i->buf_);
-    }
-    return nbytes;
-#else
-	return 0;
-#endif
-}
