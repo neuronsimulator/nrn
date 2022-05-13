@@ -528,16 +528,14 @@ static double nrn_diam_change_count(void* v) {
 int (*nrnpy_pysame)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 
-declarePtrList(ExtraScatterList, Object)
-    implementPtrList(ExtraScatterList,
-                     Object) static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
+using ExtraScatterList = std::vector<Object*>;
+static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (int i = 0; i < esl->count(); ++i) {
-            Object* callable = esl->item(i);
+        for (Object* callable: *esl) {
             if (!(*nrnpy_hoccommand_exec)(callable)) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
@@ -551,10 +549,10 @@ static double extra_scatter_gather(void* v) {
     check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
-        esl = new ExtraScatterList(2);
+        esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->append(o);
+    esl->push_back(o);
     hoc_obj_ref(o);
     return 0.;
 }
@@ -563,15 +561,18 @@ static double extra_scatter_gather_remove(void* v) {
     Object* o = *hoc_objgetarg(1);
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
-        if (esl)
-            for (int i = esl->count() - 1; i >= 0; --i) {
-                Object* o1 = esl->item(i);
+        if (esl) {
+            for (auto it = esl->begin(); it != esl->end();) {
+                Object* o1 = *it;
                 // if esl exists then python exists
                 if ((*nrnpy_pysame)(o, o1)) {
-                    esl->remove(i);
+                    it = esl->erase(it);
                     hoc_obj_unref(o1);
+                } else {
+                    ++it;
                 }
             }
+        }
     }
     return 0.;
 }
