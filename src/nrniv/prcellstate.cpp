@@ -12,7 +12,7 @@
 void nrn_prcellstate(int gid, const char* filesuffix);
 
 static std::map<void*, int> pnt2index;  // for deciding if NetCon is to be printed
-static int pntindex;  // running count of printed point processes.
+static int pntindex;                    // running count of printed point processes.
 
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {

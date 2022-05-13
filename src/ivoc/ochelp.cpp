@@ -58,8 +58,7 @@ void Oc::help(const char* s) {
 
 #if defined(WIN32) || defined(MAC)
 
-void Oc::help(const char* s) {
-}
+void Oc::help(const char* s) {}
 #endif  // WIN32 or MAC
 
 void Oc::helpmode(bool b) {

@@ -136,8 +136,7 @@ void NRNMUSIC::EventOutputPort::gid2index(int gid, int gi) {
 
 NRNMUSIC::EventInputPort::EventInputPort(MUSIC::Setup* s, std::string id)
     : MUSIC::Port(s, id)
-    , MUSIC::EventInputPort(s, id) {
-}
+    , MUSIC::EventInputPort(s, id) {}
 
 NRNMUSIC::EventInputPort* NRNMUSIC::publishEventInput(std::string id) {
     return new NRNMUSIC::EventInputPort(nrnmusic_setup, id);
