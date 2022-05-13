@@ -64,13 +64,4 @@ public:
     virtual int read(const char*& start);
 };
 
-class StdInput : public InputFile {
-public:
-    StdInput();
-    virtual ~StdInput();
-
-    virtual long length() const;
-    virtual int read(const char*& start);
-};
-
 #endif
