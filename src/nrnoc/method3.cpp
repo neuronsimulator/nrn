@@ -331,7 +331,8 @@ method3_connection_coef() /* setup a and b */
         t = 0.;
     }
 
-    ForAllSections(sec) dx = section_length(sec) / ((double) (sec->nnode));
+    ForAllSections(sec) {
+dx = section_length(sec) / ((double) (sec->nnode));
     for (j = 0; j < sec->nnode; ++j) {
         nd = sec->pnode[j];
         p = nrn_mechanism(MORPHOLOGY, nd);
@@ -368,6 +369,7 @@ method3_connection_coef() /* setup a and b */
         }
     }
 }
+End_ForAllSections
 }
 
 

@@ -575,9 +575,11 @@ void SymDirectoryImpl::load_sectionlist() {
 #if CABLE && 0
     List* sl = od[sym->u.oboff].plist[hoc_array_index(sym, od)];
     Item* qsym;
-    ForAllSections(sec) Prop* p = sec->prop;
+    ForAllSections(sec) {
+ Prop* p = sec->prop;
     symbol_list_.append(new SymbolItem(p->dparam[0].sym, p->dparam[6].obj, prop->dparam[5].i));
 }
+End_ForAllSections
 #endif
 }
 

@@ -292,10 +292,12 @@ bool SaveState::check(bool warn) {
     }
     if (nsec_ && ss_[0].sec == NULL) {  // got the data from a read
         isec = 0;
-        ForAllSections(sec) ss_[isec].sec = sec;
+        ForAllSections(sec) {
+ss_[isec].sec = sec;
         section_ref(ss_[isec].sec);
         ++isec;
     }
+    End_ForAllSections
 }
 for (int i = 0, j = 0; i < n_memb_func; ++i)
     if (nrn_is_artificial_[i]) {
@@ -441,7 +443,8 @@ void SaveState::alloc() {
     }
     nroot_ = 0;
     isec = 0;
-    ForAllSections(sec) SecState& ss = ss_[isec];
+    ForAllSections(sec) {
+ SecState& ss = ss_[isec];
     ss.sec = sec;
     section_ref(ss.sec);
     ss.nnode = ss.sec->nnode;
@@ -461,6 +464,7 @@ void SaveState::alloc() {
     }
     ++isec;
 }
+End_ForAllSections
 assert(isec == section_count);
 assert(nroot_ == nrn_global_ncell);
 for (int i = 0, j = 0; i < n_memb_func; ++i)

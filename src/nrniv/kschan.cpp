@@ -2374,7 +2374,8 @@ void KSChan::ion_consist() {
         trans_[i].lig2pd(poff);
     }
     int ppsize = poff + 2 * nligand_;
-    ForAllSections(sec) for (i = 0; i < sec->nnode; ++i) {
+    ForAllSections(sec) {
+ for (i = 0; i < sec->nnode; ++i) {
         nd = sec->pnode[i];
         Prop *p, *pion;
         for (p = nd->prop; p; p = p->next) {
@@ -2409,6 +2410,7 @@ void KSChan::ion_consist() {
         }
     }
 }
+End_ForAllSections
 }
 
 void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
@@ -2427,7 +2429,8 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
     hoc_Item* qsec;
     int mtype = rlsym_->subtype;
     ns = soffset_ + 2 * nstate_;
-    ForAllSections(sec) for (i = 0; i < sec->nnode; ++i) {
+    ForAllSections(sec) {
+for (i = 0; i < sec->nnode; ++i) {
         nd = sec->pnode[i];
         Prop* p;
         for (p = nd->prop; p; p = p->next) {
@@ -2457,6 +2460,7 @@ void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out 
         }
     }
 }
+End_ForAllSections
 }
 
 void KSChan::delete_schan_node_data() {

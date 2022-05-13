@@ -928,8 +928,10 @@ static void reorder_secorder() {
     hoc_List* sl;
     int order, isec, i, j, inode;
     /* count and allocate */
-    ForAllSections(sec) sec->order = -1;
-}
+    ForAllSections(sec) {
+        sec->order = -1;
+    }
+    End_ForAllSections
 order = 0;
 FOR_THREADS(_nt) {
     /* roots of this thread */
@@ -973,8 +975,10 @@ FOR_THREADS(_nt) {
 }
 /* do it again and fill _v_node and _v_parent */
 /* index each cell section in relative order. Do offset later */
-ForAllSections(sec) sec->order = -1;
-}
+ForAllSections(sec) {
+    sec->order = -1;
+    }
+    End_ForAllSections
 order = 0;
 FOR_THREADS(_nt) {
     /* roots of this thread */
@@ -1022,8 +1026,10 @@ FOR_THREADS(_nt) {
 assert(order == section_count);
 /*assert(inode == v_node_count);*/
 /* not missing any */
-ForAllSections(sec) assert(sec->order != -1);
-}
+ForAllSections(sec) {
+    assert(sec->order != -1);
+    }
+    End_ForAllSections
 
 /* here is where multisplit reorders the nodes. Afterwards
   in either case, we can then point to v, d, rhs in proper
@@ -1238,8 +1244,10 @@ int nrn_user_partition() {
         }
     }
 
-    ForAllSections(sec) sec->volatile_mark = 0;
-}
+    ForAllSections(sec) {
+    sec->volatile_mark = 0;
+    }
+    End_ForAllSections
 /* fill in ncell and verify consistency */
 n = 0;
 for (it = 0; it < nrn_nthread; ++it) {

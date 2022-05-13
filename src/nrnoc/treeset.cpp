@@ -867,8 +867,10 @@ void connection_coef(void) /* setup a and b */
 #endif
     ++recalc_diam_count_;
     nrn_area_ri_nocount_ = 1;
-    ForAllSections(sec) nrn_area_ri(sec);
-}
+    ForAllSections(sec) {
+        nrn_area_ri(sec);
+    }
+    End_ForAllSections
 nrn_area_ri_nocount_ = 0;
 /* assume that if only one connection at x=1, then they butte
 together, if several connections at x=1
@@ -878,7 +880,7 @@ If interior connection then child half
 section connects straight to the point*/
 /* for the near future we always have a last node at x=1 with
 no properties */
-ForAllSections(sec)
+ForAllSections(sec) {
 #if 1 /* unnecessary because they are unused, but help when looking at fmatrix */
     if (!sec->parentsec) {
     if (nrn_classicalNodeA(sec->parentnode)) {
@@ -907,12 +909,15 @@ for (j = 1; j < sec->nnode; j++) {
     ClassicalNODEA(nd) = -1.e2 * NODERINV(nd) / area;
 }
 }
+End_ForAllSections
 /* now the effect of parent on node equation. */
-ForAllSections(sec) for (j = 0; j < sec->nnode; j++) {
+ForAllSections(sec) {
+ for (j = 0; j < sec->nnode; j++) {
     nd = sec->pnode[j];
     ClassicalNODEB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
 }
 }
+End_ForAllSections
 #if EXTRACELLULAR
 ext_con_coef();
 #endif
@@ -1887,7 +1892,8 @@ extern "C" void nrn_complain(double* pp) {
     hoc_Item* qsec;
     int j;
     Prop* p;
-    ForAllSections(sec) for (j = 0; j < sec->nnode; ++j) {
+    ForAllSections(sec) {
+for (j = 0; j < sec->nnode; ++j) {
         nd = sec->pnode[j];
         for (p = nd->prop; p; p = p->next) {
             if (p->param == pp) {
@@ -1900,6 +1906,7 @@ extern "C" void nrn_complain(double* pp) {
         }
     }
 }
+End_ForAllSections
 fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 

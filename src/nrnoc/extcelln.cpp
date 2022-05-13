@@ -521,7 +521,7 @@ void ext_con_coef(void) /* setup a and b */
     double* pd;
 
     /* temporarily store half segment resistances in rhs */
-    ForAllSections(sec) /*{*/
+    ForAllSections(sec) {
         if (sec->pnode[0]->extnode) {
         dx = section_length(sec) / ((double) (sec->nnode - 1));
         for (j = 0; j < sec->nnode - 1; j++) {
@@ -551,6 +551,8 @@ void ext_con_coef(void) /* setup a and b */
         }
     }
 }
+End_ForAllSections
+
 /* assume that if only one connection at x=1, then they butte
 together, if several connections at x=1
 then last point is at x=1, has 0 area and other points are at
@@ -559,7 +561,7 @@ If interior connection then child half
 section connects straight to the point*/
 /* for the near future we always have a last node at x=1 with
 no properties */
-ForAllSections(sec) /*{*/
+ForAllSections(sec) {
     if (sec->pnode[0]->extnode) {
     /* node half resistances in general get added to the
     node and to the node's "child node in the same section".
@@ -577,7 +579,8 @@ ForAllSections(sec) /*{*/
     }
 }
 }
-ForAllSections(sec) /*{*/
+End_ForAllSections
+ForAllSections(sec) {
     if (sec->pnode[0]->extnode) {
     /* convert to siemens/cm^2 for all nodes except last
     and microsiemens for last.  This means that a*V = mamps/cm2
@@ -603,8 +606,9 @@ ForAllSections(sec) /*{*/
     }
 }
 }
+End_ForAllSections
 /* now the effect of parent on node equation. */
-ForAllSections(sec) /*{*/
+ForAllSections(sec) {
     if (sec->pnode[0]->extnode) {
     for (j = 0; j < sec->nnode; j++) {
         nd = sec->pnode[j];
@@ -615,6 +619,7 @@ ForAllSections(sec) /*{*/
     }
 }
 }
+End_ForAllSections
 }
 
 #if 0

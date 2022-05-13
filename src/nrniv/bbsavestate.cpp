@@ -1751,7 +1751,7 @@ static void pycell_name2sec_maps_clear() {
 static void pycell_name2sec_maps_fill() {
     pycell_name2sec_maps_clear();
     hoc_Item* qsec;
-    ForAllSections(sec)                                              // macro has the {
+    ForAllSections(sec) {
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {  // PythonSection
         // Assume we can associate with a Python Cell
         // Sadly, cannot use nrn_sec2cell Object* as the key because it
@@ -1779,6 +1779,7 @@ static void pycell_name2sec_maps_fill() {
         hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
     }
 }
+End_ForAllSections
 }
 
 static SecName2Sec& pycell_name2sec_map(Object* c) {

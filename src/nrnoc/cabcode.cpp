@@ -439,7 +439,8 @@ extern "C" Section* chk_access(void) {
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
         hoc_Item* qsec;
-        ForAllSections(lsec) if (lsec->prop) {
+        ForAllSections(lsec) {
+ if (lsec->prop) {
             sec = lsec;
             ++sec->refcount;
             secstack[isecstack] = sec;
@@ -448,6 +449,7 @@ extern "C" Section* chk_access(void) {
         }
     }
 }
+End_ForAllSections
 if (!sec) {
     execerror("Section access unspecified", (char*) 0);
 }
@@ -465,7 +467,8 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
         hoc_Item* qsec;
-        ForAllSections(lsec) if (lsec->prop) {
+        ForAllSections(lsec) {
+ if (lsec->prop) {
             sec = lsec;
             ++sec->refcount;
             secstack[isecstack] = sec;
@@ -474,6 +477,7 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
         }
     }
 }
+End_ForAllSections
 if (!sec) {
     return (Section*) 0;
 }
@@ -1726,7 +1730,7 @@ void setup_topology(void) {
 
     nrn_global_ncell = 0;
 
-    ForAllSections(sec)
+    ForAllSections(sec) {
 #if 0
 		if (sec->nnode < 1) { /* last node is not a segment */
 			hoc_execerror(secname(sec),
@@ -1740,6 +1744,7 @@ void setup_topology(void) {
         ++nrn_global_ncell;
     }
 }
+End_ForAllSections
 
 #if METHOD3
 if (_method3) {
@@ -2363,12 +2368,13 @@ void push_section(void) {
         char* s;
         sec = (Section*) 0;
         s = gargstr(1);
-        ForAllSections(sec1) /* I can't imagine a more inefficient way */
+        ForAllSections(sec1) { /* I can't imagine a more inefficient way */
             if (strcmp(s, nrn_sec2pysecname(sec1)) == 0) {
             sec = sec1;
             break;
         }
     }
+End_ForAllSections
     if (!sec) {
         hoc_execerror("push_section: arg not a sectionname:", s);
     }

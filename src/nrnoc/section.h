@@ -320,6 +320,8 @@ extern int nrn_is_valid_section_ptr(void*);
     ITERATE(qsec, section_list) { \
         Section* sec = hocSEC(qsec);
 
+#define End_ForAllSections }
+
 #if METHOD3
 extern int _method3;
 #endif

@@ -240,15 +240,10 @@ void Rotate3Band::draw(Coord, Coord) {
 
     c->push_transform();
     c->transformer(transformer());
-#if 0
-	hoc_Item* qsec;
-	ForAllSections(sec) //{
-#else
     PolyGlyph* sg = ((ShapeScene*) XYView::current_pick_view()->scene())->shape_section_list();
     GlyphIndex cnt = sg->count();
     for (GlyphIndex i = 0; i < cnt; ++i) {
         Section* sec = ((ShapeSection*) sg->component(i))->section();
-#endif
     if (sec->npt3d) {
         float r[3];
         int i = 0;

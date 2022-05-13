@@ -132,11 +132,13 @@ static double allroots(void* v) {
     List* sl;
     Item* qsec;
     sl = (List*) v;
-    ForAllSections(sec) if (!sec->parentsec) {
+    ForAllSections(sec) {
+        if (!sec->parentsec) {
         lappendsec(sl, sec);
         section_ref(sec);
     }
 }
+End_ForAllSections
 
 return 1.;
 }
