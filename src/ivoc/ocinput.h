@@ -5,7 +5,6 @@
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
 
-class HandlerList;
 
 public
 StandardInputHandler: public InputHandler {
@@ -55,7 +54,7 @@ StandardInputHandler: public InputHandler {
     void remove_all(EventButton);
 
   private:
-    HandlerList* handlers_[4];
+    std::vector<ButtonHandler*> handlers_[4];
 };
 
     /*

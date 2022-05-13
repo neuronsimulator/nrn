@@ -1,12 +1,14 @@
 #ifndef ocpicker_h
 #define ocpicker_h
 
+#include <vector>
+
 #include <InterViews/input.h>
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
 #include "rubband.h"
 
-class HandlerList;
+class ButtonHandler;
 class Canvas;
 class Allocation;
 class Hit;
@@ -66,7 +68,7 @@ class StandardPicker {
     enum { motion, press, drag, release, unknown };
     State ms_;
     EventButton mb_;
-    HandlerList* handlers_[unknown];
+    std::vector<ButtonHandler*> handlers_[unknown];
 };
 
 /*
