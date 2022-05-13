@@ -81,7 +81,7 @@ extern "C" {
 #include <io.h>
 #endif
 
-#ifdef CYGWIN
+#ifdef MINGW
 extern "C" {
 // These are the POSIX definitions.  Hopefully they won't conflict.
     extern int _close(int);
@@ -220,12 +220,8 @@ InputFile* InputFile::open(const String& name) {
 	 CopyString* s = new CopyString(name);
 #ifndef MAC
 
-#if defined(WIN32) && !defined(__MWERKS__) && !defined(CYGWIN)
-	 int fd = _open(s->string(), O_RDONLY);
-#else
     /* cast to workaround DEC C++ prototype bug */
     int fd = ::open(s->string(), O_RDONLY);
-#endif
     if (fd < 0) {
 	delete s;
 	return nil;

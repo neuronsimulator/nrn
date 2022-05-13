@@ -2673,12 +2673,7 @@ void execute(Inst* p) /* run the machine */
 #endif
         }
 #endif
-#if defined(__GO32__) || (defined(WIN32) && !defined(CYGWIN))
-        if (++ntimes > 10) {
-            ntimes = 0;
-            hoc_check_intupt(1);
-        }
-#endif
+
 #if MAC && !defined(DARWIN)
         /* there is significant overhead here */
         if (++ntimes > 100) {

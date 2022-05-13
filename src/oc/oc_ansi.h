@@ -70,7 +70,7 @@ int hoc_is_tempobj_arg(int narg);
 FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
 void hoc_reg_nmodl_filename(int type, const char* filename);
-unsigned long long nrn_mallinfo(int item);
+size_t nrn_mallinfo(int item);
 int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
 void state_discontinuity(int i, double* pd, double d);
 
@@ -296,6 +296,7 @@ extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
 extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
+
 
 #if defined(__cplusplus)
 }

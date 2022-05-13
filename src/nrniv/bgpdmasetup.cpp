@@ -9,6 +9,8 @@ the source host owning the gid.
 */
 #include "oc_ansi.h"
 
+#include "oc_ansi.h"
+
 #if 0
 void celldebug(const char* p, Gid2PreSyn& map) {
 	FILE* f;

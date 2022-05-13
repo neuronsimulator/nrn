@@ -102,11 +102,9 @@ NetCon
          
 
     .. warning::
-        NetCon can currently only be used if a CVode object exists. 
-         
         When calling with a pointer (the first usage form, above), the
-        specified ``section`` must contain the pointer. If it does not, a
-        RuntimeError exception will be raised.
+        specified ``section`` (currently accessed section) must contain the pointer.
+        If it does not, a RuntimeError exception will be raised.
          
 
          
@@ -123,9 +121,7 @@ NetCon
 
 
     Description:
-        Returns 0 if the source or target have been freed. If the NetCon object 
-        is used when it is not valid a runtime error message will be printed on 
-        the console terminal. 
+        Returns 0 if the netcon does not have both a source and a target.
 
          
 
@@ -229,11 +225,12 @@ NetCon
         finished with the section or have saved it as in the syntax block above.
 
     .. warning::
-        The return value of x is .5 unless the source is a membrane potential and 
-        located at 0, or 1, in which case value returned is 0 or 1, respectively. 
-        Therefore it does not necessarily correspond to the actual x value location. 
         If the source was an object, the section is not pushed and the return 
         value is -1. 
+        If the source is not a membrane potential (or an object) the
+	return value is -2. But the section was pushed and `h.pop_section()
+        needs to be called.
+        
 
     .. warning::
 
@@ -255,10 +252,8 @@ NetCon
 
     Description:
 
-        Returns a segment associated with the source variable. However, note that
-        the location is 0.5 unless the source is a membrane potential and 
-        located at 0, or 1, in which case the segment is correct. The section,
-        accessible via `seg.sec` is always correct.
+        Returns a segment associated with the source variable.
+        If the source is not a membrane potential the return value is None.
          
 
 ----
@@ -280,7 +275,9 @@ NetCon
         so that it is the currently accessed section (``h.cas()``). ``h.pop_section()`` must be called 
         after you are finished with the section or have saved it as in the syntax block above.
         The x return value is the 
-        relative location of the point process in that section. 
+        relative location of the point process in that section. If there
+        is no target, the return value is -1 and no section is pushed
+        onto the section stack.
 
         In new code, it is recommended to use :meth:`NetCon.postseg` to avoid modifying
         the section stack.
@@ -299,7 +296,8 @@ NetCon
 
     Description:
 
-        Returns the segment containing the target point process. The section is
+        Returns the segment containing the target point process (or None
+        if there is no target). The section is
         accessible via ``seg.sec`` and the normalized position ``x`` is accessible
         via ``seg.x``.
          
@@ -422,7 +420,10 @@ NetCon
     Description:
         :class:`List` (i.e. not a Python list) of all the NetCon objects with postsynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
-        If the List arg is present, the objects are appended. 
+        If the List arg is present, the objects are appended.
+
+        Returns empty list if the target is an ARTIFICIAL_CELL. For that
+        case use :meth:NetCon.synlist
 
     .. seealso::
         :meth:`CVode.netconlist`
@@ -446,6 +447,11 @@ NetCon
         :class:`List` (i.e. not a Python list) of all the NetCon objects with presynaptic cell object the same as netcon. 
         With no argument, a new List is created. 
         If the List arg is present, the objects are appended. 
+
+        Returns empty list if the source is an ARTIFICIAL_CELL. For that
+        case use :meth:NetCon.prelist . Note that it rare for a Cell to
+        have more than one distinct NetCon source but olfactory bulb reciprocal
+        synapses are an example.
 
     .. seealso::
         :meth:`CVode.netconlist`
@@ -558,9 +564,14 @@ NetCon
 
     Description:
         Value of the source variable which is watched for threshold crossing. 
-        If the source is a membrane potential then ``netcon.x`` is a reference to 
-        that potential. If the source is an object, then ``netcon.x`` is a reference 
-        to the objects field called "x", ie source.x . 
+        If the source is a membrane potential (or other RANGE variable)
+        then ``netcon.x`` is a reference to 
+        that potential or variable.
+        If the source is an object, the source has no
+        NET_RECEIVE block, and the source declares an x RANGE variable,
+        then ``netcon.x`` is a reference 
+        to the objects field called "x", ie source.x (otherwise it
+        evaluates to 0.0 . 
 
          
 

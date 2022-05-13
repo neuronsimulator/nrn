@@ -186,6 +186,7 @@ SaveState::~SaveState() {
     ssfree();
     delete tqs_;
     delete[] acell_;
+    delete[] ssi;
 }
 
 void SaveState::fread_NodeState(NodeState* ns, int cnt, FILE* f) {
@@ -435,7 +436,9 @@ void SaveState::alloc() {
     int inode, isec;
     hoc_Item* qsec;
     nsec_ = section_count;
-    ss_ = new SecState[nsec_];
+    if (nsec_) {
+        ss_ = new SecState[nsec_];
+    }
     nroot_ = 0;
     isec = 0;
     ForAllSections(sec) SecState& ss = ss_[isec];
@@ -506,7 +509,9 @@ void SaveState::allocacell(ACellState& ac, int type) {
     Memb_list& ml = memb_list[type];
     ac.type = type;
     ac.ncell = ml.nodecount;
-    ac.state = new double[ac.ncell * ssi[type].size];
+    if (ac.ncell) {
+        ac.state = new double[ac.ncell * ssi[type].size];
+    }
 }
 
 void SaveState::ssfree() {
@@ -778,8 +783,10 @@ void SaveState::read(OcFile* ocf, bool close) {
     // to enable comparison of SaveState files, we avoid
     // putting pointers in the files and instead explicitly read/write
     // structure elements.
-    ss_ = new SecState[nsec_];
-    fread_SecState(ss_, nsec_, f);
+    if (nsec_) {
+        ss_ = new SecState[nsec_];
+        fread_SecState(ss_, nsec_, f);
+    }
     for (int isec = 0; isec < nsec_; ++isec) {
         SecState& ss = ss_[isec];
         ss.sec = NULL;
@@ -821,8 +828,10 @@ void SaveState::read(OcFile* ocf, bool close) {
             assert(nt == i && nc == memb_list[i].nodecount);
             assert(ns == nc * ssi[i].size);
             acell_[j].ncell = nc;
-            acell_[j].state = new double[ns];
-            ASSERTfread(acell_[j].state, sizeof(double), ns, f);
+            if (nc) {
+                acell_[j].state = new double[ns];
+                ASSERTfread(acell_[j].state, sizeof(double), ns, f);
+            }
             ++j;
         }
     ASSERTfgets(buf, 20, f);
@@ -1058,9 +1067,6 @@ void SaveState::readnet(FILE* f) {
             switch (type) {
             case DiscreteEventType:
                 de = DiscreteEvent::savestate_read(f);
-                break;
-            case TstopEventType:
-                de = TstopEvent::savestate_read(f);
                 break;
             case NetConType:
                 de = NetCon::savestate_read(f);

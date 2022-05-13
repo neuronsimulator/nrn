@@ -1762,7 +1762,9 @@ Symbol* java2nrn_class(const char* name, int id, const char* meth) {
 
         s = hoc_lookup(mname);
         if (s->s_varn > 0) {
-            sprintf(mname + strlen(mname), "%ld%s", strlen(signature), signature);
+            int sz = snprintf(
+                mname + strlen(mname), 256 - strlen(mname), "%ld%s", strlen(signature), signature);
+            assert(sz < 255);
             if (hoc_lookup(mname)) {
                 printf("%s derived from overloaded %s already exists\n", mname, s->name);
             } else {

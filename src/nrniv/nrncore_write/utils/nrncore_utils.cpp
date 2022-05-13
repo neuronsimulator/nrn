@@ -14,24 +14,7 @@
 #include <algorithm>
 #include <cerrno>
 
-
-#ifdef MINGW
-#define RTLD_NOW      0
-#define RTLD_GLOBAL   0
-#define RTLD_NOLOAD   0
-#define RTLD_NODELETE 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
-#endif
+#include "nrnwrap_dlfcn.h"
 
 // RTLD_NODELETE is used with dlopen
 // if not defined it's safe to define as 0
@@ -224,7 +207,7 @@ void* get_coreneuron_handle() {
     }
 
     // name of coreneuron library based on platform
-#if defined(MINGW)
+#ifdef MINGW
     std::string corenrn_mechlib_name("libcorenrnmech.dll");
 #elif defined(DARWIN)
     std::string corenrn_mechlib_name("libcorenrnmech.dylib");
@@ -248,7 +231,7 @@ void* get_coreneuron_handle() {
 
     // last fallback is minimal library with internal mechanisms
     s_path.str("");
-#if defined(MINGW)
+#ifdef MINGW
     s_path << neuron_home << "/lib/" << corenrn_mechlib_name;
 #else
     s_path << neuron_home << "/../../lib/" << corenrn_mechlib_name;

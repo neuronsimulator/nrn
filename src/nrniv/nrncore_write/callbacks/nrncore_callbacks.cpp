@@ -17,22 +17,7 @@
 extern TQueue* net_cvode_instance_event_queue(NrnThread*);
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 
-#ifdef MINGW
-#define RTLD_NOW    0
-#define RTLD_GLOBAL 0
-#define RTLD_NOLOAD 0
-extern "C" {
-extern void* dlopen_noerr(const char* name, int mode);
-#define dlopen dlopen_noerr
-extern void* dlsym(void* handle, const char* name);
-extern int dlclose(void* handle);
-extern char* dlerror();
-}
-#else
-#if defined(HAVE_DLFCN_H)
-#include <dlfcn.h>
-#endif
-#endif
+#include "nrnwrap_dlfcn.h"
 
 extern bbcore_write_t* nrn_bbcore_write_;
 extern bbcore_write_t* nrn_bbcore_read_;
@@ -825,8 +810,6 @@ static void set_info(TQItem* tqi,
 
     switch (type) {
     case DiscreteEventType: {  // 0
-    } break;
-    case TstopEventType: {  // 1
     } break;
     case NetConType: {  // 2
         NetCon* nc = (NetCon*) de;

@@ -1,10 +1,8 @@
-#for cygwin need to avoid mpicc, and for x86_64-w64-mingw64 need the full
-#name of the compiler.
+# for x86_64-w64-mingw64 need the full name of the compiler.
 @BUILD_MINGW_TRUE@CXX = @CXX@
 @BUILD_MINGW_FALSE@CXX = g++
 
-EXTRA_CYGWIN = 
-EXTRA_FLAGS = @MINGW_CFLAG@ @EXTRA_CYGWIN_FLAGS@
+EXTRA_FLAGS = @MINGW_CFLAG@
 
 CXXFLAGS = \
 -DDLL_EXPORT -DPIC \
@@ -66,16 +64,10 @@ bin = bin@binsuffix@
 mod_func.o: mod_func.cpp
 	$(CXX) $(CXXFLAGS) -c $*.cpp
 
-#nrnmech.dll: mod_func.o $(MODOBJFILES)
-#	ld -d -S -x -r -o nrnmech.dll mod_func.o $(MODOBJFILES) -L$N/lib -lscpmt
-
 nrnmech.dll: mod_func.o $(MODOBJFILES)
 	$(CXX) $(EXTRA_FLAGS) -shared mod_func.o $(MODOBJFILES) \
   -L$N/$(bin) -lnrniv -lpthread -o $(TARGET)
 	@nrnskip_rebase@rebase -b 0x64000000 -v nrnmech.dll
-
-#nm nrnmech.dll | mkdll -u > nrnmech.h #will give a list of neuron.exe names
-#required by nrnmech.dll
 
 mod_func.o $(MODOBJFILES): $(N)/$(bin)/nrniv.exe
 

@@ -308,6 +308,12 @@ build system, and they can be installed together as shown below:
   cd nrn
   ```
 
+  > :warning: To build NEURON from source you either need to clone the NEURON Git repository or download a
+  > source code archive that includes Git submodules, such as the `full-src-package-X.Y.Z.tar.gz` file in
+  > the [NEURON releases](https://github.com/neuronsimulator/nrn/releases) on GitHub. The tarballs like
+  > `Source code (tar.gz)` or `Source code (zip)` created by GitHub are incomplete.
+
+
 2. Create a build directory:
 
   ```

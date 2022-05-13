@@ -1621,9 +1621,8 @@ size_t nrncore_netpar_bytes() {
             nout += 1;
             int n = ps->dil_.size();
             nnet += n;
-            for (int i = 0; i < n; ++i) {
-                nweight += weightcnt(ps->dil_[i]);
-                NetCon* nc = ps->dil_[i];
+            for (auto nc: ps->dil_) {
+                nweight += weightcnt(nc);
                 if (nc->target_) {
                     npnt += 1;
                 }
@@ -1637,9 +1636,8 @@ size_t nrncore_netpar_bytes() {
             nin += 1;
             int n = ps->dil_.size();
             nnet += n;
-            for (int i = 0; i < n; ++i) {
-                nweight += weightcnt(ps->dil_[i]);
-                NetCon* nc = ps->dil_[i];
+            for (auto nc: ps->dil_) {
+                nweight += weightcnt(nc);
                 if (nc->target_) {
                     npnt += 1;
                 }
