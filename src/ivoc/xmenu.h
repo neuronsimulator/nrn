@@ -1,10 +1,11 @@
 #ifndef xmenu_h
 #define xmenu_h
 
+#include <vector>
+
 #include <InterViews/window.h>
 #include <InterViews/box.h>
 #include <InterViews/event.h>
-#include <OS/list.h>
 #include <OS/string.h>
 #include <IV-look/kit.h>
 #include <IV-look/stepper.h>
@@ -42,10 +43,7 @@ class ValEdLabel;
 class ScenePicker;
 struct HocSymExtension;
 
-declarePtrList(HocUpdateItemList, HocUpdateItem) declarePtrList(HocItemList, HocItem)
-    declarePtrList(HocPanelList, HocPanel)
-
-        class HocPanel: public OcGlyph {
+class HocPanel: public OcGlyph {
   public:
     HocPanel(const char* name, bool horizontal = false);
     virtual ~HocPanel();
@@ -126,9 +124,9 @@ declarePtrList(HocUpdateItemList, HocUpdateItem) declarePtrList(HocItemList, Hoc
 
   private:
     PolyGlyph* box_;
-    HocUpdateItemList elist_;
-    HocItemList ilist_;
-    static HocUpdateItemList* update_list_;
+    std::vector<HocUpdateItem*> elist_;
+    std::vector<HocItem*> ilist_;
+    static std::vector<HocUpdateItem*> update_list_;
     bool horizontal_;
     InputHandler* ih_;
 };

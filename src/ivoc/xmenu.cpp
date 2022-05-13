@@ -578,8 +578,7 @@ void HocButton::print(Printer* pr, const Allocation& a) const {
     l_->print(pr, a);
 }
 
-implementPtrList(HocPanelList, HocPanel);
-static HocPanelList* hoc_panel_list;
+static std::vector<HocPanel*> hoc_panel_list;
 static HocPanel* curHocPanel;
 static HocValEditor* last_fe_constructed_;
 static void checkOpenPanel() {
@@ -588,39 +587,38 @@ static void checkOpenPanel() {
     }
 }
 
-declarePtrList(HocMenuList, HocMenu) implementPtrList(HocMenuList, HocMenu)
-    /*static*/ class MenuStack {
+/*static*/ class MenuStack {
   public:
     bool isEmpty() {
-        return l_.count() == 0;
+        return l_.empty();
     }
     void push(HocMenu* m);
     void pop() {
-        if (l_.count()) {
-            l_.item(0)->unref();
-            l_.remove(0);
+        if (!l_.empty()) {
+            l_.front()->unref();
+            l_.erase(l_.begin());
         }
     }
     Menu* top() {
-        return (l_.count()) ? l_.item(0)->menu() : NULL;
+        return (!l_.empty()) ? l_.front()->menu() : nullptr;
     }
     HocItem* hoc_item() {
-        return (l_.count()) ? l_.item(0) : NULL;
+        return (!l_.empty()) ? l_.front() : nullptr;
     }
     void clean();
 
   private:
-    HocMenuList l_;
+    std::vector<HocMenu*> l_;
 };
 void MenuStack::push(HocMenu* m) {
     m->ref();
-    l_.prepend(m);
+    l_.insert(l_.begin(), m);
 }
 void MenuStack::clean() {
-    for (long i = 0; i < l_.count(); i++) {
-        l_.item(i)->unref();
+    for (auto& l: l_) {
+        l->unref();
     }
-    l_.remove_all();
+    l_.clear();
 }
 static MenuStack* menuStack;
 static Menu* hocmenubar;
@@ -951,33 +949,26 @@ static char* hideQuote(const char* s) {
 static void saveMenuFile() {}
 
 void HocPanel::save_all(ostream&) {
-    if (!hoc_panel_list)
+    if (hoc_panel_list.empty())
         return;
 
-    long i, cnt;
-
     HocDataPaths* data_paths = new HocDataPaths();
-    cnt = hoc_panel_list->count();
-    if (hoc_panel_list)
-        for (i = 0; i < cnt; ++i) {
-            hoc_panel_list->item(i)->data_path(data_paths, true);
-        }
+    for (auto& h: hoc_panel_list) {
+        h->data_path(data_paths, true);
+    }
     data_paths->search();
-    if (hoc_panel_list)
-        for (i = 0; i < cnt; ++i) {
-            hoc_panel_list->item(i)->data_path(data_paths, false);
-        }
+    for (auto& h: hoc_panel_list) {
+        h->data_path(data_paths, false);
+    }
     delete data_paths;
 }
 
 void HocPanel::update_ptrs() {
-    if (!hoc_panel_list)
+    if (hoc_panel_list.empty())
         return;
-    int i, j;
-    for (i = 0; i < hoc_panel_list->count(); ++i) {
-        HocUpdateItemList& ul = hoc_panel_list->item(i)->elist_;
-        for (j = 0; j < ul.count(); ++j) {
-            ul.item(j)->update_ptrs();
+    for (auto& h: hoc_panel_list) {
+        for (auto& u: h->elist_) {
+            u->update_ptrs();
         }
     }
 }
@@ -993,8 +984,8 @@ void HocPanel::mac_menubar() {
 void HocPanel::mac_menubar(int& mindex, int& i, int m) {
     int mr;
     int mi = 0;
-    while (i < ilist_.count()) {
-        mr = ilist_.item(i)->mac_menubar(mindex, m, mi);
+    while (i < ilist_.size()) {
+        mr = ilist_[i]->mac_menubar(mindex, m, mi);
         ++i;
         ++mi;
         if (mr > m) {
@@ -1034,14 +1025,10 @@ void HocPanel::map_window(int scroll) {
 
 // HocPanel
 
-implementPtrList(HocUpdateItemList, HocUpdateItem);
-implementPtrList(HocItemList, HocItem);
-
 static void var_freed(void* pd, int size) {
-    if (hoc_panel_list)
-        for (long i = hoc_panel_list->count() - 1; i >= 0; --i) {
-            hoc_panel_list->item(i)->check_valid_pointers(pd, size);
-        }
+    for (auto it = hoc_panel_list.rbegin(); it != hoc_panel_list.rend(); ++it) {
+        (*it)->check_valid_pointers(pd, size);
+    }
 }
 
 HocPanel::HocPanel(const char* name, bool h)
@@ -1060,12 +1047,11 @@ HocPanel::HocPanel(const char* name, bool h)
              new Background(new Border(lk.margin(lk.hflexible(box_, fil, 0), 3), wk.foreground()),
                             wk.background()),
              wk.style()));
-    if (!hoc_panel_list) {
-        hoc_panel_list = new HocPanelList;
+    if (hoc_panel_list.empty()) {
         Oc oc;
         oc.notify_freed(var_freed);
     }
-    hoc_panel_list->append(this);
+    hoc_panel_list.push_back(this);
     item_append(new HocItem(name));
     left_ = -1000.;
     bottom_ = -1000.;
@@ -1073,22 +1059,21 @@ HocPanel::HocPanel(const char* name, bool h)
 }
 
 HocPanel::~HocPanel() {
-    long i;
     box_->unref();
-    for (i = 0; i < ilist_.count(); i++) {
-        ilist_.item(i)->HocItem::unref();
+    for (auto& i: ilist_) {
+        i->HocItem::unref();
     }
-    for (i = 0; i < elist_.count(); i++) {
-        elist_.item(i)->HocItem::unref();
+    for (auto& e: elist_) {
+        e->HocItem::unref();
     }
-    for (i = 0; i < hoc_panel_list->count(); ++i) {
-        if (hoc_panel_list->item(i) == this) {
-            hoc_panel_list->remove(i);
+    for (auto it = hoc_panel_list.begin(); it != hoc_panel_list.end(); ++it) {
+        if (*it == this) {
+            hoc_panel_list.erase(it);
             break;
         }
     }
-    ilist_.remove_all();
-    elist_.remove_all();
+    ilist_.clear();
+    elist_.clear();
     //	printf("~HocPanel\n");
 }
 
@@ -1103,28 +1088,23 @@ void HocUpdateItem::check_pointer(void*, int) {}
 void HocUpdateItem::data_path(HocDataPaths*, bool) {}
 
 // ones that get updated on every doEvents()
-HocUpdateItemList* HocPanel::update_list_;
+std::vector<HocUpdateItem*> HocPanel::update_list_;
 
 void HocPanel::keep_updated() {
     static int cnt = 0;
-    if (update_list_ && (++cnt % 10 == 0)) {
-        long i, cnt = update_list_->count();
-        if (cnt)
-            for (i = 0; i < cnt; ++i) {
-                update_list_->item(i)->update_hoc_item();
-            }
+    if (!update_list_.empty() && (++cnt % 10 == 0)) {
+        for (auto& item: update_list_) {
+            item->update_hoc_item();
+        }
     }
 }
 void HocPanel::keep_updated(HocUpdateItem* hui, bool add) {
-    if (!update_list_) {
-        update_list_ = new HocUpdateItemList();
-    }
     if (add) {
-        update_list_->append(hui);
+        update_list_.push_back(hui);
     } else {
-        for (long i = 0; i < update_list_->count(); ++i) {
-            if (update_list_->item(i) == hui) {
-                update_list_->remove(i);
+        for (auto it = update_list_.begin(); it != update_list_.end(); ++it) {
+            if (*it == hui) {
+                update_list_.erase(it);
                 break;
             }
         }
@@ -1161,11 +1141,11 @@ PolyGlyph* HocPanel::box() {
 }
 
 const char* HocPanel::getName() {
-    return ilist_.item(0)->getStr();
+    return ilist_.front()->getStr();
 }
 
 HocItem* HocPanel::hoc_item() {
-    return ilist_.item(0);
+    return ilist_.front();
 }
 
 void HocPanel::pushButton(const char* name, const char* action, bool activate, Object* pyact) {
@@ -1239,7 +1219,7 @@ void HocPanel::label(const char* name) {
 void HocPanel::var_label(char** name, Object* pyvar) {
     HocVarLabel* l = new HocVarLabel(name, box(), pyvar);
     item_append(l);
-    elist_.append(l);
+    elist_.push_back(l);
     l->ref();
 }
 
@@ -1269,7 +1249,7 @@ void HocPanel::slider(double* pd,
         wk->end_style();
     }
     item_append(s);
-    elist_.append(s);
+    elist_.push_back(s);
     s->ref();
 }
 
@@ -1408,7 +1388,7 @@ void HocPanel::valueEd(const char* name,
         fe = new HocValEditor(name, variable, vel, act, pd, canrun, hoc_item(), pyvar);
     }
     ih_->append_input_handler(fe->field_editor());
-    elist_.append(fe);
+    elist_.push_back(fe);
     fe->ref();
     act->setFieldSEditor(fe);  // so button can change the editor
     LayoutKit* lk = LayoutKit::instance();
@@ -1443,14 +1423,12 @@ void HocPanel::save(ostream& o) {
 }
 
 void HocPanel::write(ostream& o) {
-    Oc oc;
     char buf[200];
-    long i;
     //	o << "xpanel(\"" << getName() << "\")" << endl;
     sprintf(buf, "xpanel(\"%s\", %d)", getName(), horizontal_);
     o << buf << endl;
-    for (i = 1; i < ilist_.count(); i++) {
-        ilist_.item(i)->write(o);
+    for (const auto& i: ilist_) {
+        i->write(o);
     }
     if (has_window()) {
         sprintf(buf, "xpanel(%g,%g)", window()->save_left(), window()->save_bottom());
@@ -1462,7 +1440,7 @@ void HocPanel::write(ostream& o) {
 
 void HocPanel::item_append(HocItem* hi) {
     hi->ref();
-    ilist_.append(hi);
+    ilist_.push_back(hi);
 }
 
 // HocItem
@@ -2363,22 +2341,21 @@ void Oc::notifyHocValue() {
     // printf("notifyHocValue %d\n", ++j);
     ParseTopLevel ptl;
     ptl.save();
-    if (hoc_panel_list)
-        for (long i = hoc_panel_list->count() - 1; i >= 0; --i) {
-            hoc_panel_list->item(i)->notifyHocValue();
-        }
+    for (auto it = hoc_panel_list.rbegin(); it != hoc_panel_list.rend(); ++it) {
+        (*it)->notifyHocValue();
+    }
     ptl.restore();
 }
 
 void HocPanel::notifyHocValue() {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->update_hoc_item();
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->update_hoc_item();
     }
 }
 
 void HocPanel::check_valid_pointers(void* v, int size) {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->check_pointer(v, size);
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->check_pointer(v, size);
     }
 }
 
@@ -2403,8 +2380,8 @@ void HocVarLabel::check_pointer(void* v, int) {
 }
 
 void HocPanel::data_path(HocDataPaths* hdp, bool append) {
-    for (long i = elist_.count() - 1; i >= 0; --i) {
-        elist_.item(i)->data_path(hdp, append);
+    for (auto it = elist_.rbegin(); it != elist_.rend(); ++it) {
+        (*it)->data_path(hdp, append);
     }
 }
 
@@ -2897,7 +2874,7 @@ void HocPanel::stateButton(double* pd,
     box()->append(button);
     HocStateButton* hsb = new HocStateButton(pd, name, button, act, style, hoc_item(), pyvar);
     item_append(hsb);
-    elist_.append(hsb);
+    elist_.push_back(hsb);
     hsb->ref();
 }
 
@@ -3055,7 +3032,7 @@ MenuItem* HocPanel::menuStateItem(double* pd,
     HocAction* act = new HocAction(action, pyact);
     HocStateMenuItem* hsb = new HocStateMenuItem(pd, name, mi, act, hoc_item(), pyvar);
     item_append(hsb);
-    elist_.append(hsb);
+    elist_.push_back(hsb);
     hsb->ref();
     return mi;
 }
