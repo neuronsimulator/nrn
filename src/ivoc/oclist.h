@@ -1,9 +1,10 @@
 #ifndef oclist_h
 #define oclist_h
 
+#include <vector>
+
 #include <InterViews/resource.h>
 #include <InterViews/observe.h>
-class OcListImpl;
 struct Object;
 class OcListBrowser;
 class cTemplate;
@@ -36,7 +37,7 @@ class OcList: public Resource, public Observer {
     void ounref(Object*);
 
   private:
-    OcListImpl* oli_;
+    std::vector<Object*> oli_;
     OcListBrowser* b_;
     cTemplate* ct_;
 };
