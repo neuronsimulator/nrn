@@ -16,9 +16,7 @@
 #define strdup _strdup
 #endif
 
-declarePtrList(KSChanList, KSChan) implementPtrList(KSChanList, KSChan)
-
-    static KSChanList* channels;
+static std::vector<KSChan*> channels;
 
 extern char* hoc_symbol_units(Symbol*, const char*);
 extern void nrn_mk_table_check();
@@ -55,24 +53,24 @@ static void chkobj(void* v) {
 }
 
 static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, NrnThread* vnt, int type) {
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->check_table_thread((NrnThread*) vnt);
 }
 
 static void nrn_alloc(Prop* prop) {
-    KSChan* c = channels->item(prop->type);
+    KSChan* c = channels[prop->type];
     c->alloc(prop);
 }
 
 static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 
 static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_cur\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
@@ -85,7 +83,7 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
 
 static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_jacob\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
@@ -98,7 +96,7 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
 
 static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_state\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->data, ml->pdata, nt);
@@ -111,28 +109,28 @@ static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
 
 static int ode_count(int type) {
     // printf("ode_count\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     return c->count();
 }
 static void
 ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol, int type) {
     // printf("ode_map\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->map(ieq, pv, pvdot, p, pd, atol);
 }
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
 }
 static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
     // printf("ode_matsol\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 static void singchan(NrnThread* nt, Memb_list* ml, int type) {
     // printf("singchan_\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = channels[type];
     c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 static void* hoc_create_pnt(Object* ho) {
@@ -142,7 +140,7 @@ static void hoc_destroy_pnt(void* v) {
     // first free the KSSingleNodeData if it exists.
     Point_process* pp = (Point_process*) v;
     if (pp->prop) {
-        KSChan* c = channels->item(pp->prop->type);
+        KSChan* c = channels[pp->prop->type];
         c->destroy_pnt(pp);
     }
 }
@@ -168,7 +166,7 @@ static double hoc_get_loc_pnt(void* v) {
 }
 static double hoc_nsingle(void* v) {
     Point_process* pp = (Point_process*) v;
-    KSChan* c = channels->item(pp->prop->type);
+    KSChan* c = channels[pp->prop->type];
     if (ifarg(1)) {
         c->nsingle(pp, (int) chkarg(1, 1, 1e9));
     }
@@ -885,13 +883,10 @@ void KSChan::add_channel(const char** m) {
     mechtype_ = nrn_get_mechtype(m[1]);
     // printf("mechanism type is %d\n", mechtype_);
     hoc_register_cvode(mechtype_, ode_count, ode_map, ode_spec, ode_matsol);
-    if (!channels) {
-        channels = new KSChanList(50);
+    while (channels.size() < mechtype_) {
+        channels.push_back(nullptr);
     }
-    while (channels->count() < mechtype_) {
-        channels->append(NULL);
-    }
-    channels->append(c);
+    channels.push_back(c);
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
