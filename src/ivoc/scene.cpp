@@ -34,8 +34,9 @@
  */
 
 #include <ivstream.h>
-#include <stdio.h>
-#include <assert.h>
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
 
 #include <InterViews/canvas.h>
 #include <InterViews/hit.h>
@@ -95,11 +96,8 @@ SceneInfo::SceneInfo(Glyph* g, Coord x, Coord y) {
 
 declarePtrList(XYView_PtrList, XYView);
 implementPtrList(XYView_PtrList, XYView);
-declarePtrList(Scene_PtrList, Scene);
-implementPtrList(Scene_PtrList, Scene);
-
 static const float epsilon = 0.001;
-static Scene_PtrList* scene_list;
+static std::vector<Scene*> scene_list;
 
 Coord Scene::mbs_;
 Coord Scene::mbs() const {
@@ -207,9 +205,6 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg)
     x2_ = x2;
     y1_ = y1;
     y2_ = y2;
-    if (!scene_list) {
-        scene_list = new Scene_PtrList;
-    }
     if (mbs_ == 0.) {
 #if MAC
         mbs_ = 10.;
@@ -225,7 +220,7 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg)
         }
         //	printf ("mbs_=%g\n", mbs_);
     }
-    scene_list->append(this);
+    scene_list.push_back(this);
     picker_ = NULL;
     mark_ = false;
     hoc_obj_ptr_ = NULL;
@@ -342,12 +337,8 @@ Scene::~Scene() {
     }
     views_->remove_all();
 #endif
-    for (long j = 0; j < scene_list->count(); ++j) {
-        if (scene_list->item(j) == this) {
-            scene_list->remove(j);
-            break;
-        }
-    }
+    auto it = std::remove_if(scene_list.begin(), scene_list.end(), [this](const Scene* s) { return s == this; });
+    scene_list.erase(it, scene_list.end());
     delete views_;
 }
 
@@ -826,9 +817,8 @@ void Scene::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 }
 
 long Scene::scene_list_index(Scene* s) {
-    long i, cnt = scene_list->count();
-    for (i = 0; i < cnt; ++i) {
-        if (s == scene_list->item(i)) {
+    for (size_t i = 0; i < scene_list.size(); ++i) {
+        if (s == scene_list[i]) {
             return i;
         }
     }
@@ -836,18 +826,15 @@ long Scene::scene_list_index(Scene* s) {
 }
 
 void Scene::save_all(ostream& o) {
-    char buf[200];
     o << "objectvar save_window_, rvp_" << endl;
-    if (!scene_list) {
+    if (scene_list.empty()) {
         return;
     }
-    long count = scene_list->count();
-    if (count) {
-        sprintf(buf, "objectvar scene_vector_[%ld]", count);
-        o << buf << endl;
-    }
-    for (long i = 0; i < count; ++i) {
-        Scene* s = scene_list->item(i);
+    long count = scene_list.size();
+    char buf[200];
+    sprintf(buf, "objectvar scene_vector_[%ld]", count);
+    o << buf << endl;
+    for (auto& s: scene_list) {
         s->mark(false);
     }
 }
