@@ -26,20 +26,17 @@
  */
 
 #include <InterViews/resource.h>
-#include <OS/list.h>
-
-declarePtrList(ResourceList,Resource)
-implementPtrList(ResourceList,Resource)
+#include <vector>
 
 class ResourceImpl {
     friend class Resource;
 
     static bool deferred_;
-    static ResourceList* deletes_;
+    static std::vector<Resource*>deletes_;
 };
 
 bool ResourceImpl::deferred_ = false;
-ResourceList* ResourceImpl::deletes_;
+std::vector<Resource*> ResourceImpl::deletes_;
 
 Resource::Resource() { refcount_ = 0; }
 Resource::~Resource() { }
@@ -68,10 +65,7 @@ void Resource::unref_deferred() const {
     if (r->refcount_ == 0) {
 	r->cleanup();
 	if (ResourceImpl::deferred_) {
-	    if (ResourceImpl::deletes_ == nil) {
-		ResourceImpl::deletes_ = new ResourceList;
-	    }
-	    ResourceImpl::deletes_->append(r);
+	    ResourceImpl::deletes_.push_back(r);
 	} else {
 	    delete r;
 	}
@@ -108,15 +102,12 @@ bool Resource::defer(bool b) {
 }
 
 void Resource::flush() {
-    ResourceList* list = ResourceImpl::deletes_;
-    if (list != nil) {
-	bool previous = ResourceImpl::deferred_;
-	ResourceImpl::deferred_ = false;
-	for (ListItr(ResourceList) i(*list); i.more(); i.next()) {
-	    Resource* r = i.cur();
-	    delete r;
-	}
-	list->remove_all();
-	ResourceImpl::deferred_ = previous;
+    std::vector<Resource*> list = ResourceImpl::deletes_;
+    bool previous = ResourceImpl::deferred_;
+    ResourceImpl::deferred_ = false;
+    for (auto& r: ResourceImpl::deletes_) {
+        delete r;
     }
+    ResourceImpl::deletes_.clear();
+    ResourceImpl::deferred_ = previous;
 }
