@@ -3,10 +3,10 @@ C implementations of Java native methods
 */
 
 #include <../../nrnconf.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
 #include <string.h>
-#include <OS/list.h>
 
 #include "ivoc.h"
 #include "nrnoc2iv.h"
@@ -24,11 +24,10 @@ char* nrn_dot2underbar(const char*);
 jobject nj_encapsulate(Object*);
 Object** nj_j2hObject(jobject, int);
 
-declarePtrList(NJSymList, Symbol)
-    // implemented in nrnjava.cpp
-    // list of cTemplate of java registered classes in id order.
-    // this parallels the classList in Neuron.Java
-    extern NJSymList* nrn_jclass_symlist;
+// implemented in nrnjava.cpp
+// list of cTemplate of java registered classes in id order.
+// this parallels the classList in Neuron.Java
+extern std::vector<Symbol*> nrn_jclass_symlist;
 extern Symbol* nrn_jobj_sym;
 extern Symbol* nrn_vec_sym;
 
@@ -197,7 +196,7 @@ JNIEXPORT void JNICALL Java_neuron_Neuron_java2nrnClass(JNIEnv* env,
 
     //	printf("class %s methods\n%s\n", mangled, m);
     Symbol* s = java2nrn_class(mangled, (int) classindex, m);
-    nrn_jclass_symlist->append(s);
+    nrn_jclass_symlist.push_back(s);
     delete[] mangled;
     env->ReleaseStringUTFChars(methods, m);
 }
