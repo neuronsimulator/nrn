@@ -74,14 +74,12 @@ static jmethodID identityID;
 static jmethodID jclassnameID;
 static jfieldID hocObjectCastID;
 
-declarePtrList(NJSymList, Symbol) implementPtrList(NJSymList, Symbol)
-    // list of cTemplate of java registered classes in id order.
-    // this parallels the classList in Neuron.Java
-    NJSymList* nrn_jclass_symlist;
+// list of cTemplate of java registered classes in id order.
+// this parallels the classList in Neuron.Java
+std::vector<Symbol*> nrn_jclass_symlist;
 
-declarePtrList(NJStrList, String) implementPtrList(NJStrList, String)
-    // list of the full java classnames for use in session save
-    static NJStrList* njclassnames;
+// list of the full java classnames for use in session save
+static std::vector<String*> njclassnames;
 
 Symbol* nrn_jobj_sym;  // for a JavaObject
 Symbol* nrn_vec_sym;   // for deciding if Vector
@@ -124,7 +122,6 @@ static Member_ret_str_func jo_retstr_members[] = {"name", joname, 0, 0};
 void nrnjava_init() {
     //	printf("nrnjava_init\n");
 
-    nrn_jclass_symlist = new NJSymList(20);
     class2oc("JavaObject", joconstruct, jodestruct, jo_members, nil, nil, jo_retstr_members);
     nrn_jobj_sym = hoc_lookup("JavaObject");
     nrn_vec_sym = hoc_lookup("Vector");
@@ -282,9 +279,6 @@ static void java2nrn_destruct(void* opaque_java_object) {
  */
 int convertJavaClassToHoc(JNIEnv* env, const char* jname, const char* hname, const char* path) {
     // only if classname not already in use.
-    if (!njclassnames) {
-        njclassnames = new NJStrList();
-    }
     char* hn = nrn_dot2underbar(hname);
     //	printf("loading %s --- calling it %s\n", jname, hn);
     Symbol* s = hoc_table_lookup(hn, hoc_top_level_symlist);
@@ -304,7 +298,7 @@ int convertJavaClassToHoc(JNIEnv* env, const char* jname, const char* hname, con
 
     int i = env->CallStaticIntMethod(neuronCls, makeHocClassID, js, hs, jp);
     if (i == 1) {
-        njclassnames->append(new CopyString(jname));
+        njclassnames.push_back(new CopyString(jname));
     }
     errno = 0;  // have seen this set to 2 by linux
     delete[] hn;
@@ -314,7 +308,7 @@ int convertJavaClassToHoc(JNIEnv* env, const char* jname, const char* hname, con
 
 static const char* java2nrn_classname(Object* ho) {
     jint cid = -(ho->ctemplate->id) - 1;
-    return njclassnames->item(cid)->string();
+    return njclassnames[cid]->string();
 }
 
 static void overloaded(Object* ho, Symbol* method) {
@@ -403,7 +397,7 @@ Object** nj_j2hObject(jobject jo, int type) {
     }
     if (type >= 0) {
         void* v = nrnjava_env->NewGlobalRef(jo);
-        Symbol* tsym = nrn_jclass_symlist->item(type);
+        Symbol* tsym = nrn_jclass_symlist[type];
         po = hoc_temp_objvar(tsym, v);
         return po;
     } else {
