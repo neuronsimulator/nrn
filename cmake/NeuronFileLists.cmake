@@ -533,7 +533,6 @@ set(NMODL_FILES_LIST
     version.cpp)
 
 set(IVOS_FILES_LIST
-    file.cpp
     listimpl.cpp
     string.cpp
     observe.cpp
