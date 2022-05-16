@@ -94,8 +94,6 @@ SceneInfo::SceneInfo(Glyph* g, Coord x, Coord y) {
     status_ = SceneInfoShowing;
 }
 
-declarePtrList(XYView_PtrList, XYView);
-implementPtrList(XYView_PtrList, XYView);
 static const float epsilon = 0.001;
 static std::vector<Scene*> scene_list;
 
@@ -196,7 +194,6 @@ Scene::Scene(Coord x1, Coord y1, Coord x2, Coord y2, Glyph* bg)
     tool_ = NOTOOL;
     background_ = NULL;
     background(bg);
-    views_ = new XYView_PtrList();
     x1_orig_ = x1;
     x2_orig_ = x2;
     y1_orig_ = y1;
@@ -262,10 +259,10 @@ void Scene::help() {
 }
 
 XYView* Scene::sceneview(int i) const {
-    if (views_->count()) {
-        return views_->item(i);
+    if (!views_.empty()) {
+        return views_[i];
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -286,8 +283,8 @@ void Scene::new_size(Coord x1, Coord y1, Coord x2, Coord y2) {
 #endif
 #if 1
     // resize first view
-    if (views_->count()) {
-        XYView* v = views_->item(0);
+    if (!views_.empty()) {
+        XYView* v = views_.front();
         //		v->origin(x1, y1);
         //		v->x_span(x2 - x1);
         //		v->y_span(y2 - y1);
@@ -327,7 +324,7 @@ Scene::~Scene() {
     // only xyview can manipulate this list. when xyview is deleted it
     // will remove itself from this list. There is no way to delete scene
     // without first deleteing all the views.
-    assert(views_->count() == 0);
+    assert(views_.empty());
 
 #if 0
     count = views_->count();
@@ -339,7 +336,6 @@ Scene::~Scene() {
 #endif
     auto it = std::remove_if(scene_list.begin(), scene_list.end(), [this](const Scene* s) { return s == this; });
     scene_list.erase(it, scene_list.end());
-    delete views_;
 }
 
 void Scene::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
@@ -350,29 +346,22 @@ void Scene::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
 }
 
 int Scene::view_count() const {
-    return int(views_->count());
+    return int(views_.size());
 }
 
 void Scene::append_view(XYView* v) {
-    views_->append(v);
+    views_.push_back(v);
     //	Resource::ref(v);
 }
 
 void Scene::remove_view(XYView* v) {
-    long count = views_->count();
-    for (long i = 0; i < count; ++i) {
-        if (v == views_->item(i)) {
-            views_->remove(i);
-            break;
-            //			Resource::unref(v);
-        }
-    }
+    auto it = std::remove_if(views_.begin(), views_.end(), [&](XYView* e) { return e == v; });
+    views_.erase(it, views_.end());
 }
 
 void Scene::dismiss() {
-    long count = views_->count();
-    for (long i = count - 1; i >= 0; --i) {
-        OcViewGlyph* g = views_->item(i)->parent();
+    for (auto it = views_.rbegin(); it != views_.rend(); ++it) {
+        OcViewGlyph* g = (*it)->parent();
         if (g && g->has_window()) {
             g->window()->dismiss();
             g->window(NULL);
@@ -383,10 +372,8 @@ void Scene::dismiss() {
 void Scene::damage(GlyphIndex index) {
     SceneInfo& info = info_[index];
     Allocation& a = info.allocation_;
-    long count = views_->count();
-    for (long i = 0; i < count; ++i) {
+    for (auto& view: views_) {
         // printf("damage view\n");
-        XYView* view = views_->item(i);
         view->damage(info.glyph_,
                      a,
                      (info.status_ & SceneInfoFixed) != 0,
@@ -396,9 +383,7 @@ void Scene::damage(GlyphIndex index) {
 
 void Scene::damage(GlyphIndex index, const Allocation& a) {
     SceneInfo& info = info_[index];
-    long count = views_->count();
-    for (long i = 0; i < count; ++i) {
-        XYView* view = views_->item(i);
+    for (auto& view: views_) {
         view->damage(info.glyph_,
                      a,
                      (info.status_ & SceneInfoFixed) != 0,
@@ -407,18 +392,15 @@ void Scene::damage(GlyphIndex index, const Allocation& a) {
 }
 
 void Scene::damage_all() {
-    for (long i = 0; i < views_->count(); ++i) {
-        XYView* v = views_->item(i);
-        if (v->canvas()) {
-            v->damage_all();
+    for (auto& view: views_) {
+        if (view->canvas()) {
+            view->damage_all();
         }
     }
 }
 
 void Scene::damage(Coord x1, Coord y1, Coord x2, Coord y2) {
-    long count = views_->count();
-    for (long i = 0; i < count; ++i) {
-        XYView* view = views_->item(i);
+    for (auto& view: views_) {
         view->damage(x1, y1, x2, y2);
     }
 }
@@ -840,13 +822,12 @@ void Scene::save_all(ostream& o) {
 }
 
 void Scene::save_class(ostream& o, const char* s) {
-    long count = views_->count();
     //	PrintableWindow* w = (PrintableWindow*)canvas()->window();
     o << "save_window_ = new " << s << "(0)" << endl;
     char buf[256];
     Coord left, top, right, bottom;
-    if (view_count()) {
-        sceneview(0)->zin(left, bottom, right, top);
+    if (!views_.empty()) {
+        views_.front()->zin(left, bottom, right, top);
     } else {
         left = x1();
         right = x2();
@@ -862,8 +843,8 @@ void Scene::save_phase1(ostream&) {}
 void Scene::save_phase2(ostream&) {}
 
 void Scene::printfile(const char* fname) {
-    if (view_count()) {
-        views_->item(0)->printfile(fname);
+    if (!views_.empty()) {
+        views_.front()->printfile(fname);
     }
 }
 

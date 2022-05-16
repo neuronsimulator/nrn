@@ -82,7 +82,6 @@ with the common append/move.
 class Scene;
 class SceneInfo;
 class XYView;
-class XYView_PtrList;
 class ScenePicker;
 class GLabel;
 class GPolyLine;
@@ -332,7 +331,7 @@ class Scene: public Glyph, public Observable {
   private:
     Coord x1_, y1_, x2_, y2_;
     std::vector<SceneInfo> info_;
-    XYView_PtrList* views_;
+    std::vector<XYView*> views_;
     Glyph* background_;
     ScenePicker* picker_;
     int tool_;
