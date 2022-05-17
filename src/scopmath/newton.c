@@ -57,7 +57,7 @@ static char RCSid[] =
 #include <math.h>
 #include "errcodes.h"
 
-int newton(int n, int* index, double* x, void(*pfunc)(), double* value) {
+int newton(int n, int* index, double* x, int(*pfunc)(), double* value) {
     extern int freevector(), freematrix(), crout(), solve();
     extern double *makevector(), **makematrix();
     int i, count = 0, error, buildjacobian(), *perm;
