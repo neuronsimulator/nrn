@@ -63,6 +63,7 @@ extern void vector_resize(IvocVect*, int);
 #endif
 
 extern int nrnignore;
+Object* ivoc_list_item(Object*, int);
 
 #if defined(__cplusplus)
 extern "C" {
