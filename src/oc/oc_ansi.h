@@ -96,6 +96,7 @@ double* vector_vec(IvocVect*);
 extern int nrnignore;
 
 double* hoc_pgetarg(int);
+Object* ivoc_list_item(Object*, int);
 
 #if defined(__cplusplus)
 extern "C" {
