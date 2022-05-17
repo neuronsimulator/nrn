@@ -1,4 +1,5 @@
 import json
+import math
 from neuron import h
 
 
@@ -33,23 +34,39 @@ class Chk:
 
     def __call__(self, key, value, tol=0.0):
         """Assert value == dict[key] unless value is a hoc_Vector.
-        For the Vector case, assert the maximum element difference is <= tol.
+        For the Vector case, assert the maximum relative element difference is <= tol.
         If the key does not exist add {key:value} to the dict.
         """
 
         if key in self.d:
             if type(value) == type(h.Vector):  # actually hoc.HocObject
-                m = h.Vector(self.d[key]).sub(value).abs().max()
-                if m > tol:
-                    print(key, " difference > ", tol)
-                    print(m)
-                assert m <= tol
-                return
-            if self.d[key] != value:
-                print(key, " difference")
+                # Convert to list to keep the `equal` method below simple
+                value = list(value)
+            # Hand-rolled comparison that uses `tol` for arithmetic values
+            # buried inside lists of lists.
+            def equal(a, b):
+                assert type(a) == type(b)
+                if type(a) in (float, int):
+                    match = math.isclose(a, b, rel_tol=tol)
+                    if not match:
+                        print(a, b, "diff", abs(a - b) / max(abs(a), abs(b)), ">", tol)
+                    return match
+                elif type(a) == str:
+                    return a == b
+                elif type(a) == list:
+                    # List comprehension avoids short-circuit, so the "diff"
+                    # message just above is printed for all elements
+                    return all([equal(aa, bb) for aa, bb in zip(a, b)])
+                raise Exception(
+                    "Don't know how to compare objects of type " + str(type(a))
+                )
+
+            match = equal(value, self.d[key])
+            if not match:
+                print(key, "difference")
                 print("std = ", self.d[key])
-                print("\nval = ", value)
-            assert self.d[key] == value
+                print("val = ", value)
+            assert match
         else:
             print("{} added {}".format(self, key))
             if type(value) == type(h.Vector):  # actually hoc.HocObject
