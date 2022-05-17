@@ -24,7 +24,7 @@ BBSaveState
     save time and continues to tstop.
 
     .. code-block::
-       none
+       python
 
         def prun(tstop, restore=False):
           pc.set_maxstep(10)
@@ -32,7 +32,7 @@ BBSaveState
           bbss = h.BBSaveState()
           if restore:
             bbss.restore_test()
-            print 'after restore t=%g'%h.t
+            print('after restore t=%g'%h.t)
           else:
             pc.psolve(tstop/2)
             bbss.save_test()
@@ -92,7 +92,7 @@ BBSaveState
     For example
 
     .. code-block::
-       none
+       C++
 
           FUNCTION bbsavestate() {
             bbsavestate = 0
@@ -132,7 +132,7 @@ BBSaveState
         efficiently).
 
         .. code-block::
-          none
+          bash
 
           #!/usr/bin/env bash
           rm -f in/*
