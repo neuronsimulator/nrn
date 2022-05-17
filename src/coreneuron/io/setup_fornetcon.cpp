@@ -11,6 +11,7 @@
 #include "coreneuron/network/netcon.hpp"
 #include "coreneuron/nrniv/nrniv_decl.h"
 #include <map>
+#include <utility>
 
 namespace coreneuron {
 
