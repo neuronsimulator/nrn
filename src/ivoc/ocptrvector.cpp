@@ -14,7 +14,7 @@
 #include "ocptrvector.h"
 #include "objcmd.h"
 #include "ivocvect.h"
-#include <OS/math.h>
+
 #if HAVE_IV
 #include "graph.h"
 #endif

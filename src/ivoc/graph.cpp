@@ -1864,19 +1864,19 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
         if (gi->is_polyline()) {
             GPolyLine* gpl = (GPolyLine*) gi->body();
             if (gpl->x_data()->count() > 1) {
-                l = Math::min(l, gpl->x_data()->min());
-                b = Math::min(b, gpl->y_data()->min());
-                r = Math::max(r, gpl->x_data()->max());
-                t = Math::max(t, gpl->y_data()->max());
+                l = std::min(l, gpl->x_data()->min());
+                b = std::min(b, gpl->y_data()->min());
+                r = std::max(r, gpl->x_data()->max());
+                t = std::max(t, gpl->y_data()->max());
             }
         }
         if (gi->is_mark()) {
             Coord x, y;
             location(i, x, y);
-            l = Math::min(l, x);
-            b = Math::min(b, y);
-            r = Math::max(r, x);
-            t = Math::max(t, y);
+            l = std::min(l, x);
+            b = std::min(b, y);
+            r = std::max(r, x);
+            t = std::max(t, y);
         }
     }
     if (l >= r || b >= t) {
@@ -1902,10 +1902,10 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
 	}
 	for (i = 0; i < cnt; ++i) {
 		gl = line_list_.item(i);
-		l = Math::min(l, gl->x_data()->min());
-		b = Math::min(b, gl->y_data()->min());
-		r = Math::max(r, gl->x_data()->max());
-		t = Math::max(t, gl->y_data()->max());
+		l = std::min(l, gl->x_data()->min());
+		b = std::min(b, gl->y_data()->min());
+		r = std::max(r, gl->x_data()->max());
+		t = std::max(t, gl->y_data()->max());
 	}
 	if (l >= r || b >= t) {
 		Scene::wholeplot(l, b, r, t);

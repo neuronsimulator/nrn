@@ -50,7 +50,7 @@
 #include <IV-2_6/InterViews/sensor.h>
 #include <IV-2_6/InterViews/streditor.h>
 #include <IV-2_6/InterViews/textdisplay.h>
-#include <OS/math.h>
+
 #include <OS/string.h>
 #include <stdio.h>
 
@@ -196,9 +196,9 @@ void FieldStringSEditor::release(const Event& event) {
 
 void FieldStringSEditor::do_select(Event& e) {
     if (e.x < 0) {
-        origin_ = Math::min(0, origin_ - e.x);
+        origin_ = std::min(0, origin_ - e.x);
     } else if (e.x > xmax) {
-        origin_ = Math::max(xmax - width_, origin_ - (e.x - xmax));
+        origin_ = std::max(xmax - width_, origin_ - (e.x - xmax));
     }
     display->Scroll(0, origin_, ymax);
     index_ = display->LineIndex(0, e.x);
@@ -215,7 +215,7 @@ void FieldStringSEditor::do_grab_scroll(Event& e) {
     int x = e.x;
     do {
         origin += e.x - x;
-        origin = Math::min(0, Math::max(Math::min(0, xmax - width), origin));
+        origin = std::min(0, std::max(std::min(0, xmax - width), origin));
         display->Scroll(0, origin, ymax);
         x = e.x;
         Poll(e);
@@ -235,7 +235,7 @@ void FieldStringSEditor::do_rate_scroll(Event& e) {
     int x = e.x;
     do {
         origin += x - e.x;
-        origin = Math::min(0, Math::max(Math::min(0, xmax - width), origin));
+        origin = std::min(0, std::max(std::min(0, xmax - width), origin));
         display->Scroll(0, origin, ymax);
         if (e.x - x < 0) {
             w->cursor(left);
@@ -269,8 +269,8 @@ void FieldStringSEditor::focus_out() {}
 
 void FieldStringSEditor::cut(SelectionManager* s) {
     //    s->put_value(Text() + start_, index_ - start_);
-    int st = Math::min(start_, index_);
-    int i = Math::max(index_, start_);
+    int st = std::min(start_, index_);
+    int i = std::max(index_, start_);
     s->put_value(Text() + st, i - st);
 }
 

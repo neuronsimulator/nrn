@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <time.h>
 #include <InterViews/resource.h>
-#include <OS/math.h>
+
 #include <OS/table.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
@@ -6472,7 +6472,7 @@ void VecRecordDiscrete::frecord_init(TQItem* q) {
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     y_->push_back(*pd_);
-    assert(Math::equal(t_->elem(y_->size() - 1), tt, 1e-8));
+    assert(utils::equal(t_->elem(y_->size() - 1), tt, 1e-8));
     if (y_->size() < t_->size()) {
         e_->send(t_->elem(y_->size()), nc, nrn_threads);
     }

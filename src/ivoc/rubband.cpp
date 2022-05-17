@@ -11,7 +11,7 @@
 #include <InterViews/transformer.h>
 #include "rubband.h"
 
-#include <OS/math.h>
+
 #include <stdio.h>
 
 RubberAction::RubberAction() {}
@@ -143,10 +143,10 @@ RubberRect::~RubberRect() {}
 void RubberRect::draw(Coord x, Coord y) {
     // printf("RubberRect::draw(%g %g)\n", x, y);
     Coord x1, y1, x2, y2;
-    x1 = Math::min(x, x_begin());
-    y1 = Math::min(y, y_begin());
-    x2 = Math::max(x, x_begin());
-    y2 = Math::max(y, y_begin());
+    x1 = std::min(x, x_begin());
+    y1 = std::min(y, y_begin());
+    x2 = std::max(x, x_begin());
+    y2 = std::max(y, y_begin());
     if (x1 < x2 && y1 < y2) {
         Canvas* c = canvas();
         c->push_transform();
@@ -164,10 +164,10 @@ void RubberRect::help() {
 }
 
 void RubberRect::get_rect_canvas(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
-    x1 = Math::min(x(), x_begin());
-    y1 = Math::min(y(), y_begin());
-    x2 = Math::max(x(), x_begin());
-    y2 = Math::max(y(), y_begin());
+    x1 = std::min(x(), x_begin());
+    y1 = std::min(y(), y_begin());
+    x2 = std::max(x(), x_begin());
+    y2 = std::max(y(), y_begin());
 }
 void RubberRect::get_rect(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
     get_rect_canvas(x1, y1, x2, y2);

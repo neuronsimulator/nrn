@@ -12,7 +12,7 @@
 #include <IV-look/kit.h>
 #include <InterViews/layout.h>
 #include <InterViews/background.h>
-#include <OS/math.h>
+
 
 #include <ivstream.h>
 #include <stdio.h>

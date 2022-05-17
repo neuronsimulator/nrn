@@ -1,8 +1,9 @@
 #ifndef kssingle_h
 #define kssingle_h
 
+#include <utils/math.h>
 #include <math.h>
-#include <OS/math.h>
+
 #include <kschan.h>
 #include <netcon.h>
 
@@ -53,7 +54,7 @@ class KSSingle {
     void nextNtrans(KSSingleNodeData*);
 
     bool vsame(double x, double y) {
-        return Math::equal(x, y, vres_);
+        return utils::equal(x, y, vres_);
     }
     double exprand() {
         return -log(mcell_ran4a(&idum_));

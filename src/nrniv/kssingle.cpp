@@ -141,7 +141,7 @@ KSSingle::KSSingle(KSChan* c) {
     states_ = new KSSingleState[nstate_];
     ntrans_ = 2 * c->ntrans_;
     transitions_ = new KSSingleTrans[ntrans_];
-    rval_ = new double[Math::max(ntrans_, nstate_)];
+    rval_ = new double[std::max(ntrans_, nstate_)];
     uses_ligands_ = false;
     for (i = 0; i < c->ntrans_; ++i) {
         {
@@ -392,7 +392,7 @@ void KSSingle::init(double v, double* s, KSSingleNodeData* snd, NrnThread* nt) {
         rval_[i] = x;
     }
     // initialization of complex kinetic schemes often not accurate to 9 decimal places
-    //	assert(Math::equal(rval_[nstate_ - 1], 1., 1e-9));
+    //	assert(equal(rval_[nstate_ - 1], 1., 1e-9));
     for (i = 0; i < nstate_; ++i) {
         snd->statepop_[i] = 0;
     }

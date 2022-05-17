@@ -21,10 +21,6 @@ extern int nrn_is_artificial(int);
 
 extern int hoc_return_type_code;
 
-inline unsigned long key_to_hash(String& s) {
-    return s.hash();
-}
-
 static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);

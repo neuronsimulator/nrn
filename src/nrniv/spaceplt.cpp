@@ -5,7 +5,7 @@
 
 #include <OS/list.h>
 #include <OS/string.h>
-#include <OS/math.h>
+
 #include <string.h>
 #include <ivstream.h>
 #if HAVE_IV

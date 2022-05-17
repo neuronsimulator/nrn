@@ -93,17 +93,4 @@ inline Key& TableIterator(Table)::cur_key() { return cur_->key_; } \
 inline Value& TableIterator(Table)::cur_value() { return cur_->value_; } \
 inline bool TableIterator(Table)::more() { return entry_ <= last_; }
 
-/*
- * Predefined hash functions
- */
-
-#ifndef os_table2_h
-inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
-#if defined(__SIZEOF_POINTER__) && __SIZEOF_POINTER__ > __SIZEOF_LONG__
-inline unsigned long key_to_hash(const void* k) { return (unsigned long)((unsigned long long)k); }
-#else
-inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
-#endif
-#endif
-
 #endif

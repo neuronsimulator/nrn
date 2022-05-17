@@ -1898,7 +1898,7 @@ double MyMath::resolution(double x) {
         set_format();
     }
     char buf[100];
-    sprintf(buf, xvalue_format->string(), Math::abs(x));
+    sprintf(buf, xvalue_format->string(), std::abs(x));
     char* cp;
     char* least = NULL;
     for (cp = buf; *cp; ++cp) {
@@ -2212,7 +2212,7 @@ int HocEditorTempData::sn(const Event&) {
 	float ynew = e.pointer_y();
 #undef RES
 #define RES 3
-	if (Math::equal(x_, xnew, float(RES)) && Math::equal(y_, ynew, float(RES))) {
+	if (equal(x_, xnew, float(RES)) && equal(y_, ynew, float(RES))) {
 		return 0;
 	}
 	sn_ = ( ((xnew - x_)*xd_ + (ynew - y_)*yd_ >= 0.)) ? sn_ : -sn_;

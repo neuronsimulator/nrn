@@ -985,13 +985,13 @@ void PaperItem_handler::resize_action(Coord x, Coord y) {
     pwm_impl->paper()->allotment(index_, Dimension_Y, ay);
     Coord xs, ys;
     t_.transform(x, y, xs, ys);
-    float scl = Math::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
+    float scl = std::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
     // printf("scl = %g\n", scl);
     scl = pi_->scale() * scl;
     scl = (scl > .1) ? scl : .1;
     Coord w1;
     w1 = pwm_impl->round(scl * pi_->width());
-    w1 = Math::max(w1, pwm_impl->round_factor());
+    w1 = std::max(w1, pwm_impl->round_factor());
     scl = w1 / pi_->width();
     pi_->scale(scl);
     pwm_impl->paper()->modified(index_);
@@ -1233,11 +1233,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Coord wp = pagewidth / pr_scl;
     Coord hp = pageheight / pr_scl;
-    Coord max = Math::max(wp, hp);
+    Coord max = std::max(wp, hp);
     Rect* r = new Rect(0, 0, wp, hp, outline_color);
     //        wp1 = wp1*1.2;
     //	Scene* paper = new Scene(-5, -1, hp*1.2, hp+1, r);
-    PaperScene* paper = new PaperScene(-5, -2, Math::max(max, d->width() / Scl), max + 2, r);
+    PaperScene* paper = new PaperScene(-5, -2, std::max(max, d->width() / Scl), max + 2, r);
 
     // PGH end
     pwmi_ = new PWMImpl(screen, paper, r);
@@ -2409,7 +2409,7 @@ Coord PaperItem::fsize_;
 
 void PaperItem::request(Requisition& req) const {
     Requirement rx(scale_ * si_->w_->width_pw() / Scl);
-    Requirement ry(Math::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
+    Requirement ry(std::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
     req.require_x(rx);
     req.require_y(ry);
 #if DBG
@@ -2671,7 +2671,7 @@ GlyphIndex PWMImpl::paper_index(PaperItem* pi) {
 }
 
 float PWMImpl::round(float x) {
-    return Math::round(x / round_factor_) * round_factor_;
+    return std::round(x / round_factor_) * round_factor_;
 }
 
 #if MACPRINT
