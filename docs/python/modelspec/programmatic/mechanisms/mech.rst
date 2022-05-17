@@ -597,11 +597,11 @@ General
             ns2.number = 3
             ns2.start=30
             nctrig = h.NetCon(ns2, ns)
-            nctrig.delay = .1
+            nctrig.delay = 0.1
             nctrig.weight[0] = 1
             
             h.tstop=500
-            h.cvode_active(1)
+            h.cvode_active(True)
             h.run()
             
     Output:
@@ -801,7 +801,7 @@ General
             fig, ax = plt.subplots(figsize=(8, 2))
 
             for c, (color, data) in enumerate([("red", stim_times), ("black", output_times)]):
-            ax.vlines(data, c - 0.4, c + 0.4, colors=color)
+                ax.vlines(data, c - 0.4, c + 0.4, colors=color)
 
             ax.set_yticks([0, 1])
             ax.set_yticklabels(['excitatory\nstimuli','output\nevents'])
