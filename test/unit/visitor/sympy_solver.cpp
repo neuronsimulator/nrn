@@ -563,13 +563,15 @@ SCENARIO("Solve ODEs with cnexp or euler method using SympySolverVisitor",
         THEN("Integrate equations analytically where possible, otherwise leave untouched") {
             auto result = run_sympy_solver_visitor(nmodl_text);
             REQUIRE(result.size() == 4);
-            REQUIRE(result[0] == "z' = a/z+b/z/z");
+            /// sympy 1.9 able to solve ode but not older versions
+            REQUIRE((result[0] == "z' = a/z+b/z/z" ||
+                     result[0] ==
+                         "z = (0.5*pow(a, 2)*pow(z, 2)-a*b*z+pow(b, 2)*log(a*z+b))/pow(a, 3)"));
             REQUIRE(result[1] == "h = -h/(c2*dt*h-1.0)");
             REQUIRE(result[2] == "x = a*dt+x");
             /// sympy 1.4 able to solve ode but not older versions
-            bool last_result = (result[3] == "y' = c3*y*y*y" ||
-                                result[3] == "y = sqrt(-pow(y, 2)/(2.0*c3*dt*pow(y, 2)-1.0))");
-            REQUIRE(last_result);
+            REQUIRE((result[3] == "y' = c3*y*y*y" ||
+                     result[3] == "y = sqrt(-pow(y, 2)/(2.0*c3*dt*pow(y, 2)-1.0))"));
         }
     }
     GIVEN("Derivative block with cnexp solver method, AST after SympySolver pass") {
@@ -1837,7 +1839,7 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                 ~ C2*f02 + I3*bi3 + C4*b03 - C3*(b02+fi3+f03) = 0
                 ~ C3*f03 + I4*bi4 + C5*b04 - C4*(b03+fi4+f04) = 0
                 ~ C4*f04 + I5*bi5 + O*b0O  - C5*(b04+fi5+f0O) = 0
-                ~ C5*f0O + I6*bin          - O*(b0O+fin)      = 0
+                ~ C5*f0O + I6*bin0         - O*(b0O+fin0)     = 0
                 ~          C1*fi1 + I2*b11 - I1*(    bi1+f11) = 0
                 ~ I1*f11 + C2*fi2 + I3*b12 - I2*(b11+bi2+f12) = 0
                 ~ I2*f12 + C3*fi3 + I4*bi3 - I3*(b12+bi3+f13) = 0
@@ -1944,8 +1946,8 @@ SCENARIO("LINEAR solve block (SympySolver Visitor)", "[sympy][linear]") {
                     nmodl_eigen_j[89] = 0
                     nmodl_eigen_j[101] = 0
                     nmodl_eigen_j[113] = 0
-                    nmodl_eigen_j[125] = -bin
-                    nmodl_eigen_j[137] = b0O+fin
+                    nmodl_eigen_j[125] = -bin0
+                    nmodl_eigen_j[137] = b0O+fin0
                     nmodl_eigen_j[6] = -fi1
                     nmodl_eigen_j[18] = 0
                     nmodl_eigen_j[30] = 0
