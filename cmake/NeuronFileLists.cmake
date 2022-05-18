@@ -536,9 +536,7 @@ set(IVOS_FILES_LIST
     file.cpp
     listimpl.cpp
     math.cpp
-    memory.cpp
     string.cpp
-    ustring.cpp
     observe.cpp
     regexp.cpp
     resource.cpp)
