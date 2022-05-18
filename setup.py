@@ -100,7 +100,7 @@ def _config_exe(exe_name):
 
 install_requirements = [
     "PyYAML>=3.13",
-    "sympy>=1.3,<1.9",
+    "sympy>=1.3",
 ]
 
 
