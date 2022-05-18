@@ -2,7 +2,6 @@
 #undef CopyString
 #undef List
 #undef Math
-#undef Memory
 #undef NullTerminatedString
 #undef PtrList
 #undef String
