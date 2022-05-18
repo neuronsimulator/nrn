@@ -6,4 +6,3 @@
 #define PtrList _lib_os(PtrList)
 #define String _lib_os(String)
 #define Table _lib_os(Table)
-#define Table2 _lib_os(Table2)

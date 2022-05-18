@@ -7,4 +7,3 @@
 #undef PtrList
 #undef String
 #undef Table
-#undef Table2
