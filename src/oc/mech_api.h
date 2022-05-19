@@ -10,6 +10,7 @@
  *        we leave to nocmodl.
  */
 #include "mcran4.h"
+#include "nrncvode.h"
 #include "nrnrandom.h"
 #include "nrnran123.h"
 #include "nrnversionmacros.h"
