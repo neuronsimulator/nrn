@@ -11,10 +11,10 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon);   // NetCons in same order as Point_process
-implementPtrList(NetConList, NetCon); // and there may be several per pp.
+declarePtrList(NetConList, NetCon);     // NetCons in same order as Point_process
+implementPtrList(NetConList, NetCon);   // and there may be several per pp.
 static std::map<void*, int> pnt2index;  // for deciding if NetCon is to be printed
-static int pntindex;  // running count of printed point processes.
+static int pntindex;                    // running count of printed point processes.
 
 
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f) {

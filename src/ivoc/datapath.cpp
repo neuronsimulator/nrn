@@ -154,7 +154,7 @@ void HocDataPaths::search() {
 String* HocDataPaths::retrieve(double* pd) {
     assert(impl_->pathstyle_ != 2);
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*)pd);
+    const auto& it = impl_->table_.find((void*) pd);
     if (it != impl_->table_.end()) {
         return it->second->path;
     }
@@ -163,7 +163,7 @@ String* HocDataPaths::retrieve(double* pd) {
 
 Symbol* HocDataPaths::retrieve_sym(double* pd) {
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*)pd);
+    const auto& it = impl_->table_.find((void*) pd);
     if (it != impl_->table_.end()) {
         return it->second->sym;
     }
@@ -183,7 +183,7 @@ void HocDataPaths::append(char** pd) {
 
 String* HocDataPaths::retrieve(char** pd) {
     //	printf("HocDataPaths::retrieve\n");
-    const auto& it = impl_->table_.find((void*)pd);
+    const auto& it = impl_->table_.find((void*) pd);
     if (it != impl_->table_.end()) {
         return it->second->path;
     }
