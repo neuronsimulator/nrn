@@ -5,4 +5,3 @@
 #undef NullTerminatedString
 #undef PtrList
 #undef String
-#undef Table
