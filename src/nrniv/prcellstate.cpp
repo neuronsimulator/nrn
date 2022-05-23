@@ -11,11 +11,16 @@
 
 void nrn_prcellstate(int gid, const char* filesuffix);
 
-declarePtrList(NetConList, NetCon);     // NetCons in same order as Point_process
-implementPtrList(NetConList, NetCon);   // and there may be several per pp.
+declarePtrList(NetConList, NetCon);    // NetCons in same order as Point_process
+implementPtrList(NetConList, NetCon);  // and there may be several per pp.
 
 
-static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f, std::map<void*, int>& pnt2index) {
+static void pr_memb(int type,
+                    Memb_list* ml,
+                    int* cellnodes,
+                    NrnThread& nt,
+                    FILE* f,
+                    std::map<void*, int>& pnt2index) {
     int header_printed = 0;
     int size = nrn_prop_param_size_[type];
     int receives_events = pnt_receive[type] ? 1 : 0;
