@@ -304,7 +304,7 @@ using MultiSplitTable = std::unordered_map<Node*, MultiSplit*>;
 using MultiSplitList = std::vector<MultiSplit*>;
 
 #include <multisplitcontrol.h>
-    static MultiSplitControl* msc_;
+static MultiSplitControl* msc_;
 
 void nrnmpi_multisplit(Section* sec, double x, int sid, int backbone_style) {
     if (!msc_) {
@@ -1477,7 +1477,7 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
     if (nrtree_) {
         i = 0;
         int ib = 0;
-        for (MultiSplit *ms: *multisplit_list_) {
+        for (MultiSplit* ms: *multisplit_list_) {
             NrnThread* _nt = nrn_threads + ms->ithread;
             MultiSplitThread& t = mth_[ms->ithread];
             if (ms->rthost == nrnmpi_myid) {
