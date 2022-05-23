@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <InterViews/resource.h>
-#include <OS/list.h>
+#include <vector>
 #include <nrnoc2iv.h>
 #include <nrnmpi.h>
 #include <multisplit.h>
@@ -301,7 +301,7 @@ struct MultiSplitTransferInfo {
 };
 
 using MultiSplitTable = std::unordered_map<Node*, MultiSplit*>;
-declarePtrList(MultiSplitList, MultiSplit) implementPtrList(MultiSplitList, MultiSplit)
+using MultiSplitList = std::vector<MultiSplit*>;
 
 #include <multisplitcontrol.h>
     static MultiSplitControl* msc_;
@@ -382,7 +382,7 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
     if (!classical_root_to_multisplit_) {
         classical_root_to_multisplit_.reset(new MultiSplitTable());
         classical_root_to_multisplit_->reserve(97);
-        multisplit_list_ = new MultiSplitList();
+        multisplit_list_ = new MultiSplitList;
     }
     Node* nd = node_exact(sec, x);
     if (tree_changed) {
@@ -427,7 +427,7 @@ void MultiSplitControl::multisplit(Section* sec, double x, int sid, int backbone
         ms->rmap_index_ = -1;
         ms->smap_index_ = -1;
         (*classical_root_to_multisplit_)[root] = ms;
-        multisplit_list_->append(ms);
+        multisplit_list_->push_back(ms);
     }
 }
 
@@ -534,7 +534,7 @@ void MultiSplitControl::multisplit_clear() {
         }
         classical_root_to_multisplit_.reset();
         delete multisplit_list_;
-        multisplit_list_ = 0;
+        multisplit_list_ = nullptr;
     }
 }
 
@@ -576,8 +576,7 @@ void MultiSplitControl::exchange_setup() {
     int nwc = 0;   // number of backbonestyle=2 nodes.
     if (classical_root_to_multisplit_) {
         MultiSplit* ms;
-        for (i = 0; i < multisplit_list_->count(); ++i) {
-            ms = multisplit_list_->item(i);
+        for (MultiSplit* ms: *multisplit_list_) {
             ++n;
             if (ms->nd[1]) {
                 ++n;
@@ -632,9 +631,7 @@ void MultiSplitControl::exchange_setup() {
     }
     if (classical_root_to_multisplit_) {
         i = 0;
-        MultiSplit* ms;
-        for (int ii = 0; ii < multisplit_list_->count(); ++ii) {
-            ms = multisplit_list_->item(ii);
+        for (MultiSplit* ms: *multisplit_list_) {
             sid[i] = ms->sid[0];
             inode[i] = ms->nd[0]->v_node_index;
             threadid[i] = ms->ithread;
@@ -834,9 +831,7 @@ nrnmpi_myid, i, allsid[i], all_bb_relation[i], mark[i]);}
         rt[j] = 0;
     }
     if (nwc) {
-        MultiSplit* ms;
-        for (int ii = 0; ii < multisplit_list_->count(); ++ii) {
-            ms = multisplit_list_->item(ii);
+        for (MultiSplit* ms: *multisplit_list_) {
             if (ms->backbone_style == 2) {
                 for (j = 0; j < n; ++j) {  // find the mark value
                     if (sid[j] == ms->sid[0]) {
@@ -949,8 +944,8 @@ bb_relation[j], rthost[j]);
     }
 
     // fill in the rest of the rthost[], mt->rthost, and rt
-    for (int ii = 0, j = 0; ii < multisplit_list_->count(); ++ii, ++j) {
-        MultiSplit* ms = multisplit_list_->item(ii);
+    j = 0;
+    for (MultiSplit* ms: *multisplit_list_) {
         if (ms->backbone_style == 2) {
             int jj = mark[displ[nrnmpi_myid] + j];
             ms->rthost = rthost[jj];
@@ -960,6 +955,7 @@ bb_relation[j], rthost[j]);
                 ++j;
             }
         }
+        ++j;
     }
 #if 0
 	for (int ii=0; ii < multisplit_list_->count(); ++ii) {
@@ -1481,9 +1477,7 @@ secname(v_node[j]->sec), v_node[j]->sec_node_index_);
     if (nrtree_) {
         i = 0;
         int ib = 0;
-        MultiSplit* ms;
-        for (int ii = 0; ii < multisplit_list_->count(); ++ii) {
-            ms = multisplit_list_->item(ii);
+        for (MultiSplit *ms: *multisplit_list_) {
             NrnThread* _nt = nrn_threads + ms->ithread;
             MultiSplitThread& t = mth_[ms->ithread];
             if (ms->rthost == nrnmpi_myid) {
@@ -1643,24 +1637,23 @@ void nrn_multisplit_ptr_update() {
 }
 
 void MultiSplitControl::rt_map_update() {
-    for (int i = 0; i < multisplit_list_->count(); ++i) {
-        MultiSplit& ms = *multisplit_list_->item(i);
-        if (ms.rthost == nrnmpi_myid) {  // reduced tree on this host
-            assert(ms.rt_);
-            assert(ms.rmap_index_ >= 0);
-            assert(ms.smap_index_ >= 0);
-            MultiSplitThread& t = mth_[ms.ithread];
-            double** r = ms.rt_->rmap + ms.rmap_index_;
-            double** s = ms.rt_->smap + ms.smap_index_;
+    for (MultiSplit* ms: *multisplit_list_) {
+        if (ms->rthost == nrnmpi_myid) {  // reduced tree on this host
+            assert(ms->rt_);
+            assert(ms->rmap_index_ >= 0);
+            assert(ms->smap_index_ >= 0);
+            MultiSplitThread& t = mth_[ms->ithread];
+            double** r = ms->rt_->rmap + ms->rmap_index_;
+            double** s = ms->rt_->smap + ms->smap_index_;
             for (int j = 0; j < 2; ++j)
-                if (ms.nd[j]) {
-                    *s++ = *r++ = &NODERHS(ms.nd[j]);
-                    *s++ = *r++ = &NODED(ms.nd[j]);
+                if (ms->nd[j]) {
+                    *s++ = *r++ = &NODERHS(ms->nd[j]);
+                    *s++ = *r++ = &NODED(ms->nd[j]);
                 }
-            if (ms.nd[1]) {  // do sid1a and sid1b as well
-                assert(ms.back_index >= 0);
-                *r++ = t.sid1A + t.backAindex_[ms.back_index];
-                *r++ = t.sid1B + t.backBindex_[ms.back_index];
+            if (ms->nd[1]) {  // do sid1a and sid1b as well
+                assert(ms->back_index >= 0);
+                *r++ = t.sid1A + t.backAindex_[ms->back_index];
+                *r++ = t.sid1B + t.backBindex_[ms->back_index];
             }
         }
     }
@@ -1824,9 +1817,9 @@ void MultiSplitControl::prstruct() {
         nrnmpi_barrier();
         if (id == nrnmpi_myid) {
             Printf("myid=%d\n", id);
-            Printf(" MultiSplit %ld\n", multisplit_list_->count());
-            for (i = 0; i < multisplit_list_->count(); ++i) {
-                MultiSplit* ms = multisplit_list_->item(i);
+            Printf(" MultiSplit %ld\n", multisplit_list_->size());
+            for (i = 0; i < multisplit_list_->size(); ++i) {
+                MultiSplit* ms = (*multisplit_list_)[i];
                 Node* nd = ms->nd[0];
                 Printf("  %2d bbs=%d bi=%-2d rthost=%-4d %-4d %s{%d}",
                        i,
@@ -3172,9 +3165,7 @@ for (i=i1; i < i3; ++i) {
     backbone_begin = i2;
     backbone_long_begin = backbone_begin;
     if (classical_root_to_multisplit_) {
-        MultiSplit* ms;
-        for (int ii = 0; ii < multisplit_list_->count(); ++ii) {
-            ms = multisplit_list_->item(ii);
+        for (MultiSplit* ms: *multisplit_list_) {
             if (ms->nd[1]) {
                 if (ms->nd[1]->_nt != nt) {
                     continue;
@@ -3525,14 +3516,12 @@ void MultiSplitControl::pmatf(bool full) {
 void MultiSplitControl::pmat1(const char* s) {
     int it;
     double a, b, d, rhs;
-    MultiSplit* ms;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;
         MultiSplitThread& t = mth_[it];
         int i1 = 0;
         int i3 = _nt->end;
-        for (int ii = 0; ii < multisplit_list_->count(); ++ii) {
-            ms = multisplit_list_->item(ii);
+        for (MultiSplit* ms: *multisplit_list_) {
             int i = ms->nd[0]->v_node_index;
             if (i < i1 || i >= i3) {
                 continue;
