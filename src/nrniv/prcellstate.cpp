@@ -18,7 +18,6 @@ implementPtrList(NetConList, NetCon);   // and there may be several per pp.
 static void pr_memb(int type, Memb_list* ml, int* cellnodes, NrnThread& nt, FILE* f, std::map<void*, int>& pnt2index) {
     int header_printed = 0;
     int size = nrn_prop_param_size_[type];
-    int psize = nrn_prop_dparam_size_[type];
     int receives_events = pnt_receive[type] ? 1 : 0;
     for (int i = 0; i < ml->nodecount; ++i) {
         int inode = ml->nodeindices[i];
@@ -48,7 +47,7 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
     // List of NetCon for each of the NET_RECEIVE point process instances
     // ... all NetCon list in the hoc NetCon cTemplate
     NetConList** nclist = new NetConList*[pnt2index.size()];
-    for (int i = 0; i < pnt2index.size(); ++i) {
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         nclist[i] = new NetConList(1);
     }
     int nc_cnt = 0;
@@ -66,18 +65,18 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
     }
     fprintf(f, "netcons %d\n", nc_cnt);
     fprintf(f, " pntindex srcgid active delay weights\n");
-    for (int i = 0; i < pnt2index.size(); ++i) {
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         for (int j = 0; j < nclist[i]->count(); ++j) {
             NetCon* nc = nclist[i]->item(j);
             int srcgid = -3;
             srcgid = (nc->src_) ? nc->src_->gid_ : -3;
             if (srcgid < 0 && nc->src_ && nc->src_->osrc_) {
                 const char* name = nc->src_->osrc_->ctemplate->sym->name;
-                fprintf(f, "%d %s %d %.*g", i, name, nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %s %d %.*g", i, name, nc->active_ ? 1 : 0, precision, nc->delay_);
             } else if (srcgid < 0 && nc->src_ && nc->src_->ssrc_) {
-                fprintf(f, "%d %s %d %.*g", i, "v", nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %s %d %.*g", i, "v", nc->active_ ? 1 : 0, precision, nc->delay_);
             } else {
-                fprintf(f, "%d %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
+                fprintf(f, "%zd %d %d %.*g", i, srcgid, nc->active_ ? 1 : 0, precision, nc->delay_);
             }
             int wcnt = pnt_receive_size[nc->target_->prop->type];
             for (int k = 0; k < wcnt; ++k) {
@@ -87,7 +86,7 @@ static void pr_netcon(NrnThread& nt, FILE* f, const std::map<void*, int>& pnt2in
         }
     }
     // cleanup
-    for (int i = 0; i < pnt2index.size(); ++i) {
+    for (size_t i = 0; i < pnt2index.size(); ++i) {
         delete nclist[i];
     }
     delete[] nclist;
