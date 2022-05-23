@@ -231,7 +231,11 @@ typedef struct Object {
         Objectdata* dataspace; /* Points to beginning of object's data */
         void* this_pointer;    /* the c++ object */
     } u;
+#if defined(__cplusplus)
     cTemplate* ctemplate;
+#else
+    cTemplate* template;
+#endif
     void* aliases; /* more convenient names for e.g. Vector or List elements dynamically created by
                       this object*/
     HocStruct hoc_Item* itm_me;  /* this object in the template list */
