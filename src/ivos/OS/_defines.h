@@ -5,4 +5,3 @@
 #define NullTerminatedString _lib_os(NullTerminatedString)
 #define PtrList _lib_os(PtrList)
 #define String _lib_os(String)
-#define Table _lib_os(Table)

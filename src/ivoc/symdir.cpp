@@ -538,8 +538,8 @@ void SymDirectoryImpl::load_aliases() {
     IvocAliases* a = (IvocAliases*) obj_->aliases;
     if (!a)
         return;
-    for (TableIterator(SymbolTable) i(*a->symtab_); i.more(); i.next()) {
-        Symbol* s = i.cur_value();
+    for (const auto& kv: a->symtab_) {
+        Symbol* s = kv.second;
         append(s, NULL, obj_);
     }
 }
