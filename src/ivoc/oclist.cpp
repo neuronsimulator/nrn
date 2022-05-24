@@ -371,36 +371,22 @@ static double l_scroll_pos(void* v) {
 }
 
 
-static Member_func l_members[] = {"append",
-                                  l_append,
-                                  "prepend",
-                                  l_prepend,
-                                  "insrt",
-                                  l_insert,
-                                  "remove",
-                                  l_remove,
-                                  "remove_all",
-                                  l_remove_all,
-                                  "index",
-                                  l_index,
-                                  "count",
-                                  l_count,
-                                  "browser",
-                                  l_browser,
-                                  "selected",
-                                  l_selected,
-                                  "select",
-                                  l_select,
-                                  "select_action",
-                                  l_select_action,
-                                  "accept_action",
-                                  l_accept_action,
-                                  "scroll_pos",
-                                  l_scroll_pos,
-                                  0,
-                                  0};
+static Member_func l_members[] = {{"append", l_append},
+                                  {"prepend", l_prepend},
+                                  {"insrt", l_insert},
+                                  {"remove", l_remove},
+                                  {"remove_all", l_remove_all},
+                                  {"index", l_index},
+                                  {"count", l_count},
+                                  {"browser", l_browser},
+                                  {"selected", l_selected},
+                                  {"select", l_select},
+                                  {"select_action", l_select_action},
+                                  {"accept_action", l_accept_action},
+                                  {"scroll_pos", l_scroll_pos},
+                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func l_retobj_members[] = {"object", l_object, "o", l_object, 0, 0};
+static Member_ret_obj_func l_retobj_members[] = {{"object", l_object}, {"o", l_object}, {nullptr, nullptr}};
 
 static void* l_cons(Object*) {
     OcList* o;

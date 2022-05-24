@@ -7,7 +7,7 @@
 #include <InterViews/observe.h>
 struct Object;
 class OcListBrowser;
-class cTemplate;
+struct cTemplate;
 
 class OcList: public Resource, public Observer {
   public:

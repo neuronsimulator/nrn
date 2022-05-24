@@ -373,28 +373,17 @@ static double cond_transitions(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"state_transition",
-                                state_transition,
-                                "cond_transition",
-                                cond_transition,
-                                "set_rates",
-                                set_rates,
-                                "get_rates",
-                                get_rates,
-                                "cond",
-                                cond,
-                                "current_state",
-                                current_state,
-                                "current_cond",
-                                current_cond,
-                                "state_transitions",
-                                state_transitions,
-                                "cond_transitions",
-                                cond_transitions,
-                                "set_rand",
-                                set_rand,
-                                0,
-                                0};
+static Member_func members[] = {{"state_transition", state_transition},
+                                {"cond_transition", cond_transition},
+                                {"set_rates", set_rates},
+                                {"get_rates", get_rates},
+                                {"cond", cond},
+                                {"current_state", current_state},
+                                {"current_cond", current_cond},
+                                {"state_transitions", state_transitions},
+                                {"cond_transitions", cond_transitions},
+                                {"set_rand", set_rand},
+                                {nullptr, nullptr}};
 
 static void* cons(Object*) {
     SingleChan* s;

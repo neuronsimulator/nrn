@@ -33,7 +33,7 @@ class STETransition;
 class IvocVect;
 class BGP_DMASend;
 class BGP_DMASend_Phase2;
-class Point_process;
+struct Point_process;
 using SelfEventPPTable = std::unordered_map<long, Point_process*>;
 
 #define DiscreteEventType   0

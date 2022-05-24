@@ -170,7 +170,6 @@ Symbol* HocDataPaths::retrieve_sym(double* pd) {
 
 void HocDataPaths::append(char** pd) {
     //	printf("HocDataPaths::append\n");
-    PathValue* pv;
     if (*pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
         PathValue* pv = new PathValue;
         pv->str = *pd;
@@ -408,7 +407,6 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
 }
 
 void HocDataPathImpl::search_vectors() {
-    int i, cnt;
     char buf[200];
     CopyString cs("");
     cTemplate* t = sym_vec->u.ctemplate;
@@ -421,9 +419,9 @@ void HocDataPathImpl::search_vectors() {
         Vect* vec = (Vect*) obj->u.this_pointer;
         int size = vec->size();
         double* pd = vector_vec(vec);
-        for (i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             if (pd[i] == sentinal) {
-                sprintf(buf, "x[%d]", i);
+                sprintf(buf, "x[%zu]", i);
                 found(pd + i, buf, sym_vec);
             }
         }
@@ -469,7 +467,6 @@ void HocDataPathImpl::search(Section* sec) {
 }
 void HocDataPathImpl::search(Node* nd, double x) {
     char buf[100];
-    int i, cnt;
     CopyString cs("");
     if (NODEV(nd) == sentinal) {
         sprintf(buf, "v(%g)", x);

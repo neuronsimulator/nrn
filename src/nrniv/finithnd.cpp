@@ -55,7 +55,7 @@ static double allprint(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {"allprint", allprint, 0, 0};
+static Member_func members[] = {{"allprint", allprint}, {nullptr, nullptr}};
 
 static void* finithnd_cons(Object*) {
     int type = 1;  // default is after INITIAL blocks are called

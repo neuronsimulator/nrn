@@ -528,7 +528,6 @@ void MultiSplitControl::multisplit_clear() {
     nth_ = 0;
     del_msti();
     if (classical_root_to_multisplit_) {
-        MultiSplit* ms;
         for (const auto& mspair: *classical_root_to_multisplit_) {
             delete mspair.second;
         }
@@ -572,10 +571,8 @@ void MultiSplitControl::exchange_setup() {
     // pieces on the same host, since each piece <-> reduced tree
     // independently of where the piece and reduced tree are located.
     int n = 0;
-    int nsbb = 0;  // number of short backbone sid's
     int nwc = 0;   // number of backbonestyle=2 nodes.
     if (classical_root_to_multisplit_) {
-        MultiSplit* ms;
         for (MultiSplit* ms: *multisplit_list_) {
             ++n;
             if (ms->nd[1]) {
@@ -587,9 +584,7 @@ void MultiSplitControl::exchange_setup() {
                     ++nwc;
                 }
             } else if (ms->backbone_style == 1) {
-                if (ms->nd[1]) {
-                    nsbb += 2;
-                } else {  // shouldn't be set anyway
+                if (!ms->nd[1]) {
                     ms->backbone_style = 0;
                 }
             }
@@ -1820,7 +1815,6 @@ void MultiSplitControl::prstruct() {
             Printf(" MultiSplit %ld\n", multisplit_list_->size());
             for (i = 0; i < multisplit_list_->size(); ++i) {
                 MultiSplit* ms = (*multisplit_list_)[i];
-                Node* nd = ms->nd[0];
                 Printf("  %2d bbs=%d bi=%-2d rthost=%-4d %-4d %s{%d}",
                        i,
                        ms->backbone_style,
@@ -2033,7 +2027,7 @@ void MultiSplitControl::multisplit_nocap_v_part3(NrnThread* _nt) {
     // So zero-area node information is fine.
     // But for non-zero area nodes, D is the sum of all zero-area
     // node d, and RHS is the sum of all zero-area node rhs.
-    int i, j;
+    int i;
 
     if (_nt->id == 0)
         for (i = 0; i < narea2buf_; ++i) {
@@ -2540,7 +2534,6 @@ ReducedTree::ReducedTree(MultiSplitControl* ms, int rank, int mapsize) {
 }
 
 ReducedTree::~ReducedTree() {
-    int i;
     delete[] ip;
     delete[] rhs;
     delete[] smap;
@@ -2946,7 +2939,7 @@ for (i=i1; i < backbone_end; ++i) {
 // exchange of d and rhs of sids has taken place and we can solve for the
 // backbone nodes
 void MultiSplitThread::bksub_backbone(NrnThread* _nt) {
-    int i, j, ip, ip1, ip2;
+    int i, j; 
     double a, b, p, vsid1;
     // need to solve the 2x2 consisting of sid0 and sid1 points
     // this part has already been done for short backbones
@@ -3438,7 +3431,7 @@ for (i=i1; i < i3; ++i) {
 }
 
 void MultiSplitControl::pmat(bool full) {
-    int it, i, ip, is;
+    int it, i, is;
     Printf("\n");
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* _nt = nrn_threads + it;
@@ -3472,7 +3465,7 @@ void MultiSplitControl::pmat(bool full) {
 }
 
 void MultiSplitControl::pmatf(bool full) {
-    int it, i, ip, is;
+    int it, i, is;
     FILE* f;
     char fname[100];
 
