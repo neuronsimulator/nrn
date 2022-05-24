@@ -881,6 +881,7 @@ void section_order(void) /* create a section order consistent */
 
     for (isec = 0; isec < section_count; isec++) {
         if (isec >= order) {
+            // Sections form a loop.
             // ForAllSections(sec)
             ITERATE(qsec, section_list) {
                 Section* sec = hocSEC(qsec);
