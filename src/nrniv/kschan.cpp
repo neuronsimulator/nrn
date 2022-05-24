@@ -724,7 +724,10 @@ static Member_ret_obj_func ks_omem[] = {{"add_hhstate", ks_add_hhstate},
                                         {"gate", ks_gate},
                                         {nullptr, nullptr}};
 
-static Member_ret_str_func ks_smem[] = {{"name", ks_name}, {"ion", ks_ion}, {"ligand", ks_ligand}, {nullptr, nullptr}};
+static Member_ret_str_func ks_smem[] = {{"name", ks_name},
+                                        {"ion", ks_ion},
+                                        {"ligand", ks_ligand},
+                                        {nullptr, nullptr}};
 
 static Member_func kss_dmem[] = {{"frac", kss_frac}, {"index", kss_index}, {nullptr, nullptr}};
 
@@ -732,8 +735,11 @@ static Member_ret_obj_func kss_omem[] = {{"gate", kss_gate}, {nullptr, nullptr}}
 
 static Member_ret_str_func kss_smem[] = {{"name", kss_name}, {nullptr, nullptr}};
 
-static Member_func ksg_dmem[] =
-    {{"nstate", ksg_nstate}, {"power", ksg_power}, {"sindex", ksg_sindex}, {"index", ksg_index}, {nullptr, nullptr}};
+static Member_func ksg_dmem[] = {{"nstate", ksg_nstate},
+                                 {"power", ksg_power},
+                                 {"sindex", ksg_sindex},
+                                 {"index", ksg_index},
+                                 {nullptr, nullptr}};
 
 static Member_ret_obj_func ksg_omem[] = {{nullptr, nullptr}};
 
@@ -749,8 +755,10 @@ static Member_func kst_dmem[] = {{"set_f", kst_set_f},
                                  {"stoichiometry", kst_stoichiometry},
                                  {nullptr, nullptr}};
 
-static Member_ret_obj_func kst_omem[] =
-    {{"src", kst_src}, {"target", kst_target}, {"parm", kst_parm}, {nullptr, nullptr}};
+static Member_ret_obj_func kst_omem[] = {{"src", kst_src},
+                                         {"target", kst_target},
+                                         {"parm", kst_parm},
+                                         {nullptr, nullptr}};
 
 static Member_ret_str_func kst_smem[] = {{"ligand", kst_ligand}, {nullptr, nullptr}};
 

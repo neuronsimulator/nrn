@@ -386,7 +386,9 @@ static Member_func l_members[] = {{"append", l_append},
                                   {"scroll_pos", l_scroll_pos},
                                   {nullptr, nullptr}};
 
-static Member_ret_obj_func l_retobj_members[] = {{"object", l_object}, {"o", l_object}, {nullptr, nullptr}};
+static Member_ret_obj_func l_retobj_members[] = {{"object", l_object},
+                                                 {"o", l_object},
+                                                 {nullptr, nullptr}};
 
 static void* l_cons(Object*) {
     OcList* o;

@@ -277,12 +277,17 @@ static double from_vector(void* v) {
     return double(cnt);
 }
 
-static Member_func s_members[] = {{"begin",     s_begin},   {"end",         s_end},
-                                  {"origin",    s_origin},  {"d2root",      s_d2root},
-                                  {"left",      s_left},    {"right",       s_right},
-                                  {"list",      s_list},    {"color",       s_color},
-                                  {"to_vector", to_vector}, {"from_vector", from_vector},
-                                  {0,           0}};
+static Member_func s_members[] = {{"begin", s_begin},
+                                  {"end", s_end},
+                                  {"origin", s_origin},
+                                  {"d2root", s_d2root},
+                                  {"left", s_left},
+                                  {"right", s_right},
+                                  {"list", s_list},
+                                  {"color", s_color},
+                                  {"to_vector", to_vector},
+                                  {"from_vector", from_vector},
+                                  {0, 0}};
 
 static Member_ret_obj_func rvp_retobj_members[] = {{"vector", rvp_vector}, {0, 0}};
 

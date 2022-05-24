@@ -571,7 +571,7 @@ void MultiSplitControl::exchange_setup() {
     // pieces on the same host, since each piece <-> reduced tree
     // independently of where the piece and reduced tree are located.
     int n = 0;
-    int nwc = 0;   // number of backbonestyle=2 nodes.
+    int nwc = 0;  // number of backbonestyle=2 nodes.
     if (classical_root_to_multisplit_) {
         for (MultiSplit* ms: *multisplit_list_) {
             ++n;
@@ -2939,7 +2939,7 @@ for (i=i1; i < backbone_end; ++i) {
 // exchange of d and rhs of sids has taken place and we can solve for the
 // backbone nodes
 void MultiSplitThread::bksub_backbone(NrnThread* _nt) {
-    int i, j; 
+    int i, j;
     double a, b, p, vsid1;
     // need to solve the 2x2 consisting of sid0 and sid1 points
     // this part has already been done for short backbones
