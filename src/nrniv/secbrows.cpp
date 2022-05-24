@@ -131,7 +131,6 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
         scnt_ = 0;
         // ForAllSections(sec)  //{
         ITERATE(qsec, section_list) {
-            Section* sec = hocSEC(qsec);
             ++scnt_;
         }
         psec_ = new Section*[scnt_];
