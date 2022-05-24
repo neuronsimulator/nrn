@@ -19,6 +19,7 @@ access s1.sec	// soma becomes the default section
 #include "section.h"
 #include "parse.hpp"
 #include "hoc_membf.h"
+#include "oc_ansi.h"
 #include <nrnpython_config.h>
 
 extern int hoc_return_type_code;
@@ -79,8 +80,6 @@ static double s_unname(void* v) {
     sec->prop->dparam[0].sym = (Symbol*) 0;
     return 1.;
 }
-
-extern "C" Object* ivoc_list_item(Object*, int);
 
 static double s_rename(void* v) {
     extern Objectdata* hoc_top_level_data;

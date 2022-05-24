@@ -24,9 +24,8 @@ extern int hoc_return_type_code;
 inline unsigned long key_to_hash(String& s) {
     return s.hash();
 }
-implementTable(SymbolTable, String, Symbol*)
 
-    static double l_substr(void*) {
+static double l_substr(void*) {
     char* s1 = gargstr(1);
     char* s2 = gargstr(2);
     char* p = strstr(s1, s2);
@@ -168,8 +167,8 @@ static Object** l_alias_list(void*) {
     int id = (*po)->index;
     if (a) {
         char buf[256];
-        for (TableIterator(SymbolTable) i(*a->symtab_); i.more(); i.next()) {
-            Symbol* sym = i.cur_value();
+        for (auto& kv: a->symtab_) {
+            Symbol* sym = kv.second;
             hoc_pushstr(&sym->name);
             Object* sob = hoc_newobj1(st, 1);
             list->append(sob);
@@ -359,26 +358,24 @@ void StringFunctions_reg() {
 IvocAliases::IvocAliases(Object* ob) {
     ob_ = ob;
     ob_->aliases = (void*) this;
-    symtab_ = new SymbolTable(20);
 }
 
 IvocAliases::~IvocAliases() {
     ob_->aliases = NULL;
-    for (TableIterator(SymbolTable) i(*symtab_); i.more(); i.next()) {
-        Symbol* sym = i.cur_value();
+    for (auto& kv: symtab_) {
+        Symbol* sym = kv.second;
         hoc_free_symspace(sym);
         free(sym->name);
         free(sym);
     }
-    delete symtab_;
 }
 Symbol* IvocAliases::lookup(const char* name) {
     String s(name);
-    Symbol* sym;
-    if (!symtab_->find(sym, s)) {
-        sym = NULL;
+    const auto& it = symtab_.find(s);
+    if (it != symtab_.end()) {
+        return it->second;
     }
-    return sym;
+    return nullptr;
 }
 Symbol* IvocAliases::install(const char* name) {
     Symbol* sp;
@@ -390,13 +387,14 @@ Symbol* IvocAliases::install(const char* name) {
     sp->extra = 0;
     sp->arayinfo = 0;
     String s(sp->name);
-    symtab_->insert(s, sp);
+    symtab_.emplace(s, sp);
     return sp;
 }
 void IvocAliases::remove(Symbol* sym) {
     hoc_free_symspace(sym);
     String s(sym->name);
-    symtab_->remove(s);
+    auto it = symtab_.find(s);
+    symtab_.erase(it);
     free(sym->name);
     free(sym);
 }

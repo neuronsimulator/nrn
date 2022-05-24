@@ -482,6 +482,8 @@ Plots values vs t+.5dt
 Suitable for plotting states such as m_hh, n_hh, etc. These 
 plots may be very accurate when :data:`secondorder` = 2. 
 
+.. _shape_plot: 
+
 Shapeplot
 """""""""
 
@@ -510,6 +512,8 @@ Starts a :ref:`Grapher` tool for plotting any expression vs a specified
 independent variable. Lines are not drawn on this graph in 
 response to a run. However it can be made to control a family 
 of runs. 
+
+.. _voltage_axis:
 
 Voltageaxis
 """""""""""

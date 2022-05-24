@@ -14,6 +14,7 @@ set(HEADER_FILES_TO_INSTALL
     hocparse.h
     isoc99.h
     ivstream.h
+    mcran4.h
     md1redef.h
     md2redef.h
     mech_api.h
@@ -532,16 +533,7 @@ set(NMODL_FILES_LIST
     units.cpp
     version.cpp)
 
-set(IVOS_FILES_LIST
-    file.cpp
-    listimpl.cpp
-    math.cpp
-    memory.cpp
-    string.cpp
-    ustring.cpp
-    observe.cpp
-    regexp.cpp
-    resource.cpp)
+set(IVOS_FILES_LIST listimpl.cpp math.cpp string.cpp observe.cpp regexp.cpp resource.cpp)
 
 set(MPI_DYNAMIC_INCLUDE nrnmpi_dynam.h nrnmpi_dynam_cinc nrnmpi_dynam_wrappers.inc)
 

@@ -1,8 +1,8 @@
 #include <../../nrnconf.h>
-#include <stdio.h>
+#include <map>
+#include <cstdio>
 #include <InterViews/resource.h>
 #include <OS/string.h>
-#include <OS/table.h>
 #include <OS/list.h>
 #include "hoclist.h"
 #include <nrnpython_config.h>
@@ -75,8 +75,6 @@ PathValue::~PathValue() {
     }
 }
 
-declareTable(PathTable, void*, PathValue*);
-implementTable(PathTable, void*, PathValue*);
 declarePtrList(StringList, char);
 implementPtrList(StringList, char);
 
@@ -102,7 +100,7 @@ class HocDataPathImpl {
     void search(Prop*, double x);
 #endif
   private:
-    PathTable* table_;
+    std::map<void*, PathValue*> table_;
     StringList strlist_;
     int size_, count_, found_so_far_;
     int pathstyle_;
@@ -136,9 +134,8 @@ int HocDataPaths::style() {
 
 void HocDataPaths::append(double* pd) {
     //	printf("HocDataPaths::append\n");
-    PathValue* pv;
-    if (pd && !impl_->table_->find(pv, (void*) pd)) {
-        impl_->table_->insert((void*) pd, new PathValue);
+    if (pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
+        impl_->table_.emplace((void*) pd, new PathValue);
         ++impl_->count_;
     }
 }
@@ -157,75 +154,68 @@ void HocDataPaths::search() {
 String* HocDataPaths::retrieve(double* pd) {
     assert(impl_->pathstyle_ != 2);
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->path;
-    } else {
-        return NULL;
+    const auto& it = impl_->table_.find((void*) pd);
+    if (it != impl_->table_.end()) {
+        return it->second->path;
     }
+    return nullptr;
 }
 
 Symbol* HocDataPaths::retrieve_sym(double* pd) {
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->sym;
-    } else {
-        return NULL;
+    const auto& it = impl_->table_.find((void*) pd);
+    if (it != impl_->table_.end()) {
+        return it->second->sym;
     }
+    return nullptr;
 }
 
 void HocDataPaths::append(char** pd) {
     //	printf("HocDataPaths::append\n");
     PathValue* pv;
-    if (*pd && !impl_->table_->find(pv, (void*) pd)) {
-        pv = new PathValue;
+    if (*pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
+        PathValue* pv = new PathValue;
         pv->str = *pd;
-        impl_->table_->insert((void*) pd, pv);
+        impl_->table_.emplace((void*) pd, pv);
         ++impl_->count_;
     }
 }
 
 String* HocDataPaths::retrieve(char** pd) {
     //	printf("HocDataPaths::retrieve\n");
-    PathValue* pv;
-    if (impl_->table_->find(pv, (void*) pd)) {
-        return pv->path;
-    } else {
-        return NULL;
+    const auto& it = impl_->table_.find((void*) pd);
+    if (it != impl_->table_.end()) {
+        return it->second->path;
     }
+    return nullptr;
 }
 
 /*------------------------------*/
 HocDataPathImpl::HocDataPathImpl(int size, int pathstyle) {
     pathstyle_ = pathstyle;
-    table_ = new PathTable(size);
     size_ = size;
     count_ = 0;
     found_so_far_ = 0;
 }
 
 HocDataPathImpl::~HocDataPathImpl() {
-    for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-        PathValue* pv = i.cur_value();
+    for (auto& kv: table_) {
+        PathValue* pv = kv.second;
         delete pv;
     }
-    delete table_;
 }
 
 void HocDataPathImpl::search() {
     found_so_far_ = 0;
-    if (table_) {
-        for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-            PathValue* pv = i.cur_value();
-            if (pv->str) {
-                char** pstr = (char**) i.cur_key();
-                *pstr = NULL;
-            } else {
-                double* pd = (double*) i.cur_key();
-                pv->original = *pd;
-                *pd = sentinal;
-            }
+    for (auto& it: table_) {
+        PathValue* pv = it.second;
+        if (pv->str) {
+            char** pstr = (char**) it.first;
+            *pstr = nullptr;
+        } else {
+            double* pd = (double*) it.first;
+            pv->original = *pd;
+            *pd = sentinal;
         }
     }
     if (pathstyle_ > 0) {
@@ -243,16 +233,14 @@ void HocDataPathImpl::search() {
     if (found_so_far_ < count_) {
         search_vectors();
     }
-    if (table_) {
-        for (TableIterator(PathTable) i(*table_); i.more(); i.next()) {
-            PathValue* pv = i.cur_value();
-            if (pv->str) {
-                char** pstr = (char**) i.cur_key();
-                *pstr = pv->str;
-            } else {
-                double* pd = (double*) i.cur_key();
-                *pd = pv->original;
-            }
+    for (auto& it: table_) {
+        PathValue* pv = it.second;
+        if (pv->str) {
+            char** pstr = (char**) it.first;
+            *pstr = pv->str;
+        } else {
+            double* pd = (double*) it.first;
+            *pd = pv->original;
         }
     }
 }
@@ -270,10 +258,12 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
             cs = path;
         }
         sprintf(path, "%s%s", cs.string(), buf);
-        if (!table_->find(pv, v)) {
+        const auto& it = table_.find(v);
+        if (it == table_.end()) {
             hoc_warning("table lookup failed for pointer for-", path);
-            return NULL;
+            return nullptr;
         }
+        pv = it->second;
         if (!pv->path) {
             pv->path = new CopyString(path);
             pv->sym = sym;
@@ -281,10 +271,12 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
         }
         // printf("HocDataPathImpl::found %s\n", path);
     } else {
-        if (!table_->find(pv, v)) {
+        const auto& it = table_.find(v);
+        if (it == table_.end()) {
             hoc_warning("table lookup failed for pointer for-", sym->name);
-            return NULL;
+            return nullptr;
         }
+        pv = it->second;
         if (!pv->sym) {
             pv->sym = sym;
             ++found_so_far_;

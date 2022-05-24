@@ -11,6 +11,7 @@
 #include "oc2iv.h"
 #include "hoclist.h"
 #include "ocobserv.h"
+#include "oc_ansi.h"
 #if HAVE_IV
 #include <InterViews/adjust.h>
 #include <InterViews/hit.h>
@@ -29,7 +30,6 @@
 extern Object** hoc_temp_objptr(Object*);
 extern Symlist* hoc_top_level_symlist;
 int ivoc_list_count(Object*);
-extern "C" Object* ivoc_list_item(Object*, int);
 
 
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
@@ -429,7 +429,8 @@ int ivoc_list_count(Object* olist) {
     OcList* list = (OcList*) olist->u.this_pointer;
     return list->count();
 }
-extern "C" Object* ivoc_list_item(Object* olist, int i) {
+
+Object* ivoc_list_item(Object* olist, int i) {
     chk_list(olist);
     OcList* list = (OcList*) olist->u.this_pointer;
     if (i >= 0 && i < list->count()) {
