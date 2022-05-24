@@ -140,7 +140,7 @@ static double allroots(void* v) {
     }
     End_ForAllSections
 
-        return 1.;
+    return 1.;
 }
 
 static double seclist_remove(void* v) {

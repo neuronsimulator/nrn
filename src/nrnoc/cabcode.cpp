@@ -449,7 +449,8 @@ extern "C" Section* chk_access(void) {
             }
         }
     }
-    End_ForAllSections if (!sec) {
+    End_ForAllSections
+    if (!sec) {
         execerror("Section access unspecified", (char*) 0);
     }
     if (sec->prop) {
@@ -476,7 +477,8 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
             }
         }
     }
-    End_ForAllSections if (!sec) {
+    End_ForAllSections
+    if (!sec) {
         return (Section*) 0;
     }
     if (sec->prop) {
@@ -1744,7 +1746,7 @@ void setup_topology(void) {
     }
     End_ForAllSections
 #if METHOD3
-        if (_method3) {
+    if (_method3) {
         int i;
         Node* nd = root /*obsolete*/ section->pnode;
         for (i = 0; i < unconnected; i++) {
@@ -2371,7 +2373,8 @@ void push_section(void) {
                 break;
             }
         }
-        End_ForAllSections if (!sec) {
+        End_ForAllSections
+        if (!sec) {
             hoc_execerror("push_section: arg not a sectionname:", s);
         }
     } else {

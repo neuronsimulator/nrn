@@ -113,7 +113,7 @@ double debugsolve(void) /* returns solution error */
     }
     End_ForAllSections
 
-        triang(nrn_threads);
+    triang(nrn_threads);
     bksub(nrn_threads);
 
     err = 0.;
@@ -145,7 +145,7 @@ double debugsolve(void) /* returns solution error */
     }
     End_ForAllSections
 
-        return err;
+    return err;
 }
 #endif /*DEBUGSOLVE*/
 
@@ -858,7 +858,7 @@ void section_order(void) /* create a section order consistent */
     }
     End_ForAllSections
 
-        if (secorder) {
+    if (secorder) {
         free((char*) secorder);
         secorder = (Section**) 0;
     }
@@ -875,7 +875,7 @@ void section_order(void) /* create a section order consistent */
     }
     End_ForAllSections
 
-        for (isec = 0; isec < section_count; isec++) {
+    for (isec = 0; isec < section_count; isec++) {
         if (isec >= order) { /* there is a loop */
             ForAllSections(sec) {
                 Section *psec, *s = sec;
@@ -895,7 +895,8 @@ void section_order(void) /* create a section order consistent */
                 }
             }
         }
-        End_ForAllSections sec = secorder[isec];
+        End_ForAllSections
+        sec = secorder[isec];
         for (ch = sec->child; ch; ch = ch->sibling) {
             secorder[order] = ch;
             ch->order = order;

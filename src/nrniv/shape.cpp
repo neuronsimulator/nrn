@@ -889,7 +889,8 @@ declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
             sg_->append(gl);
         }
     }
-    End_ForAllSections recalc_diam();
+    End_ForAllSections
+    recalc_diam();
     selected_ = NULL;
     volatile_ptr_ref = NULL;
     transform3d();

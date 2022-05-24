@@ -931,7 +931,8 @@ static void reorder_secorder() {
     ForAllSections(sec) {
         sec->order = -1;
     }
-    End_ForAllSections order = 0;
+    End_ForAllSections
+    order = 0;
     FOR_THREADS(_nt) {
         /* roots of this thread */
         sl = _nt->roots;
@@ -977,7 +978,8 @@ static void reorder_secorder() {
     ForAllSections(sec) {
         sec->order = -1;
     }
-    End_ForAllSections order = 0;
+    End_ForAllSections
+    order = 0;
     FOR_THREADS(_nt) {
         /* roots of this thread */
         sl = _nt->roots;
@@ -1246,8 +1248,8 @@ int nrn_user_partition() {
         sec->volatile_mark = 0;
     }
     End_ForAllSections
-        /* fill in ncell and verify consistency */
-        n = 0;
+    /* fill in ncell and verify consistency */
+    n = 0;
     for (it = 0; it < nrn_nthread; ++it) {
         nt = nrn_threads + it;
         sl = nt->roots;

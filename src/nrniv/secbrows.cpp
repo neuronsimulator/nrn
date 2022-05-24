@@ -132,7 +132,8 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
         ForAllSections(sec) {
             ++scnt_;
         }
-        End_ForAllSections psec_ = new Section*[scnt_];
+        End_ForAllSections
+        psec_ = new Section*[scnt_];
         scnt_ = 0;
         ForAllSections(sec) {
             psec_[scnt_++] = sec;
@@ -369,13 +370,15 @@ SectionBrowserImpl::SectionBrowserImpl() {
     ForAllSections(sec) {
         ++scnt_;
     }
-    End_ForAllSections psec_ = new Section*[scnt_];
+    End_ForAllSections
+    psec_ = new Section*[scnt_];
     scnt_ = 0;
     ForAllSections(sec) {
         psec_[scnt_++] = sec;
         section_ref(sec);
     }
-    End_ForAllSections ms_ = new MechSelector();
+    End_ForAllSections
+    ms_ = new MechSelector();
     ms_->ref();
     mvt_ = new MechVarType();
     mvt_->ref();

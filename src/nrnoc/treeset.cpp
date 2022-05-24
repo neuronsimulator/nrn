@@ -870,7 +870,8 @@ void connection_coef(void) /* setup a and b */
     ForAllSections(sec) {
         nrn_area_ri(sec);
     }
-    End_ForAllSections nrn_area_ri_nocount_ = 0;
+    End_ForAllSections
+    nrn_area_ri_nocount_ = 0;
     /* assume that if only one connection at x=1, then they butte
     together, if several connections at x=1
     then last point is at x=1, has 0 area and other points are at
@@ -1905,7 +1906,8 @@ extern "C" void nrn_complain(double* pp) {
             }
         }
     }
-    End_ForAllSections fprintf(stderr, "Don't know the location of params at %p\n", pp);
+    End_ForAllSections
+    fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
 void nrn_matrix_node_free(void) {

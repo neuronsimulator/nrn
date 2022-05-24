@@ -579,7 +579,8 @@ void ext_con_coef(void) /* setup a and b */
             }
         }
     }
-    End_ForAllSections ForAllSections(sec) {
+    End_ForAllSections
+    ForAllSections(sec) {
         if (sec->pnode[0]->extnode) {
             /* convert to siemens/cm^2 for all nodes except last
             and microsiemens for last.  This means that a*V = mamps/cm2
