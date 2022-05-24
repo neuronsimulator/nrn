@@ -442,13 +442,16 @@ void HocDataPathImpl::search_pysec() {
 #if USE_PYTHON
     CopyString cs("");
     hoc_Item* qsec;
-    ForAllSections(sec) if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
-        cs = secname(sec);
-        strlist_.append((char*) cs.string());
-        search(sec);
-        strlist_.remove(strlist_.count() - 1);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
+            cs = secname(sec);
+            strlist_.append((char*) cs.string());
+            search(sec);
+            strlist_.remove(strlist_.count() - 1);
+        }
     }
-}
 #endif
 }
 

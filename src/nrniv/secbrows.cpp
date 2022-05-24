@@ -129,21 +129,25 @@ OcSectionBrowser::OcSectionBrowser(Object* ob)
     } else {
         struct hoc_Item* qsec;
         scnt_ = 0;
-        ForAllSections(sec)  //{
-            ++ scnt_;
+        // ForAllSections(sec)  //{
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            ++scnt_;
+        }
+        psec_ = new Section*[scnt_];
+        scnt_ = 0;
+        // ForAllSections(sec)  //{
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            psec_[scnt_++] = sec;
+        }
     }
-    psec_ = new Section*[scnt_];
-    scnt_ = 0;
-    ForAllSections(sec)  //{
-        psec_[scnt_++] = sec;
-}
-}
-for (i = 0; i < scnt_; ++i) {
-    append_item(secname(psec_[i]));
-    section_ref(psec_[i]);
-}
-select_ = NULL;
-accept_ = NULL;
+    for (i = 0; i < scnt_; ++i) {
+        append_item(secname(psec_[i]));
+        section_ref(psec_[i]);
+    }
+    select_ = NULL;
+    accept_ = NULL;
 }
 
 OcSectionBrowser::~OcSectionBrowser() {
@@ -364,19 +368,23 @@ void BrowserAccept::execute() {
 SectionBrowserImpl::SectionBrowserImpl() {
     struct hoc_Item* qsec;
     scnt_ = 0;
-    ForAllSections(sec)  //{
-        ++ scnt_;
-}
-psec_ = new Section*[scnt_];
-scnt_ = 0;
-ForAllSections(sec)  //{
-    psec_[scnt_++] = sec;
-section_ref(sec);
-}
-ms_ = new MechSelector();
-ms_->ref();
-mvt_ = new MechVarType();
-mvt_->ref();
+    // ForAllSections(sec)  //{
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        ++scnt_;
+    }
+    psec_ = new Section*[scnt_];
+    scnt_ = 0;
+    // ForAllSections(sec)  //{
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        psec_[scnt_++] = sec;
+        section_ref(sec);
+    }
+    ms_ = new MechSelector();
+    ms_->ref();
+    mvt_ = new MechVarType();
+    mvt_->ref();
 }
 SectionBrowserImpl::~SectionBrowserImpl() {
     for (int i = 0; i < scnt_; ++i) {

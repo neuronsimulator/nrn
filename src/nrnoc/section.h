@@ -315,11 +315,6 @@ extern Section* nrn_section_alloc();
 extern void nrn_section_free(Section*);
 extern int nrn_is_valid_section_ptr(void*);
 
-/* loop over sections. Must previously declare Item* qsec. Contains the {! */
-#define ForAllSections(sec)       \
-    ITERATE(qsec, section_list) { \
-        Section* sec = hocSEC(qsec);
-
 #if METHOD3
 extern int _method3;
 #endif
