@@ -928,128 +928,137 @@ static void reorder_secorder() {
     hoc_List* sl;
     int order, isec, i, j, inode;
     /* count and allocate */
-    ForAllSections(sec) sec->order = -1;
-}
-order = 0;
-FOR_THREADS(_nt) {
-    /* roots of this thread */
-    sl = _nt->roots;
-    inode = 0;
-    ITERATE(qsec, sl) {
-        sec = hocSEC(qsec);
-        assert(sec->order == -1);
-        secorder[order] = sec;
-        sec->order = order;
-        ++order;
-        nd = sec->parentnode;
-        nd->_nt = _nt;
-        inode += 1;
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        sec->order = -1;
     }
-    /* all children of what is already in secorder */
-    for (isec = order - _nt->ncell; isec < order; ++isec) {
-        sec = secorder[isec];
-        /* to make it easy to fill in PreSyn.nt_*/
-        sec->prop->dparam[9]._pvoid = (void*) _nt;
-        for (j = 0; j < sec->nnode; ++j) {
-            nd = sec->pnode[j];
+    order = 0;
+    FOR_THREADS(_nt) {
+        /* roots of this thread */
+        sl = _nt->roots;
+        inode = 0;
+        ITERATE(qsec, sl) {
+            sec = hocSEC(qsec);
+            assert(sec->order == -1);
+            secorder[order] = sec;
+            sec->order = order;
+            ++order;
+            nd = sec->parentnode;
             nd->_nt = _nt;
             inode += 1;
         }
-        for (ch = sec->child; ch; ch = ch->sibling) {
-            assert(ch->order == -1);
-            secorder[order] = ch;
-            ch->order = order;
-            ++order;
+        /* all children of what is already in secorder */
+        for (isec = order - _nt->ncell; isec < order; ++isec) {
+            sec = secorder[isec];
+            /* to make it easy to fill in PreSyn.nt_*/
+            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            for (j = 0; j < sec->nnode; ++j) {
+                nd = sec->pnode[j];
+                nd->_nt = _nt;
+                inode += 1;
+            }
+            for (ch = sec->child; ch; ch = ch->sibling) {
+                assert(ch->order == -1);
+                secorder[order] = ch;
+                ch->order = order;
+                ++order;
+            }
         }
+        _nt->end = inode;
+        CACHELINE_CALLOC(_nt->_actual_rhs, double, inode);
+        CACHELINE_CALLOC(_nt->_actual_d, double, inode);
+        CACHELINE_CALLOC(_nt->_actual_a, double, inode);
+        CACHELINE_CALLOC(_nt->_actual_b, double, inode);
+        CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
+        CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
+        CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
     }
-    _nt->end = inode;
-    CACHELINE_CALLOC(_nt->_actual_rhs, double, inode);
-    CACHELINE_CALLOC(_nt->_actual_d, double, inode);
-    CACHELINE_CALLOC(_nt->_actual_a, double, inode);
-    CACHELINE_CALLOC(_nt->_actual_b, double, inode);
-    CACHELINE_CALLOC(_nt->_v_node, Node*, inode);
-    CACHELINE_CALLOC(_nt->_v_parent, Node*, inode);
-    CACHELINE_CALLOC(_nt->_v_parent_index, int, inode);
-}
-/* do it again and fill _v_node and _v_parent */
-/* index each cell section in relative order. Do offset later */
-ForAllSections(sec) sec->order = -1;
-}
-order = 0;
-FOR_THREADS(_nt) {
-    /* roots of this thread */
-    sl = _nt->roots;
-    inode = 0;
-    ITERATE(qsec, sl) {
-        sec = hocSEC(qsec);
-        assert(sec->order == -1);
-        secorder[order] = sec;
-        sec->order = order;
-        ++order;
-        nd = sec->parentnode;
-        nd->_nt = _nt;
-        _nt->_v_node[inode] = nd;
-        _nt->_v_parent[inode] = (Node*) 0;
-        _nt->_v_node[inode]->v_node_index = inode;
-        inode += 1;
+    /* do it again and fill _v_node and _v_parent */
+    /* index each cell section in relative order. Do offset later */
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        sec->order = -1;
     }
-    /* all children of what is already in secorder */
-    for (isec = order - _nt->ncell; isec < order; ++isec) {
-        sec = secorder[isec];
-        /* to make it easy to fill in PreSyn.nt_*/
-        sec->prop->dparam[9]._pvoid = (void*) _nt;
-        for (j = 0; j < sec->nnode; ++j) {
-            nd = sec->pnode[j];
+    order = 0;
+    FOR_THREADS(_nt) {
+        /* roots of this thread */
+        sl = _nt->roots;
+        inode = 0;
+        ITERATE(qsec, sl) {
+            sec = hocSEC(qsec);
+            assert(sec->order == -1);
+            secorder[order] = sec;
+            sec->order = order;
+            ++order;
+            nd = sec->parentnode;
             nd->_nt = _nt;
             _nt->_v_node[inode] = nd;
-            if (j) {
-                _nt->_v_parent[inode] = sec->pnode[j - 1];
-            } else {
-                _nt->_v_parent[inode] = sec->parentnode;
-            }
+            _nt->_v_parent[inode] = (Node*) 0;
             _nt->_v_node[inode]->v_node_index = inode;
             inode += 1;
         }
-        for (ch = sec->child; ch; ch = ch->sibling) {
-            assert(ch->order == -1);
-            secorder[order] = ch;
-            ch->order = order;
-            ++order;
+        /* all children of what is already in secorder */
+        for (isec = order - _nt->ncell; isec < order; ++isec) {
+            sec = secorder[isec];
+            /* to make it easy to fill in PreSyn.nt_*/
+            sec->prop->dparam[9]._pvoid = (void*) _nt;
+            for (j = 0; j < sec->nnode; ++j) {
+                nd = sec->pnode[j];
+                nd->_nt = _nt;
+                _nt->_v_node[inode] = nd;
+                if (j) {
+                    _nt->_v_parent[inode] = sec->pnode[j - 1];
+                } else {
+                    _nt->_v_parent[inode] = sec->parentnode;
+                }
+                _nt->_v_node[inode]->v_node_index = inode;
+                inode += 1;
+            }
+            for (ch = sec->child; ch; ch = ch->sibling) {
+                assert(ch->order == -1);
+                secorder[order] = ch;
+                ch->order = order;
+                ++order;
+            }
+        }
+        _nt->end = inode;
+    }
+    assert(order == section_count);
+    /*assert(inode == v_node_count);*/
+    /* not missing any */
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        assert(sec->order != -1);
+    }
+
+    /* here is where multisplit reorders the nodes. Afterwards
+      in either case, we can then point to v, d, rhs in proper
+      node order
+    */
+    FOR_THREADS(_nt) for (inode = 0; inode < _nt->end; ++inode) {
+        _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
+    }
+    if (nrn_multisplit_setup_) {
+        /* classical order abandoned */
+        (*nrn_multisplit_setup_)();
+    }
+    /* make the Nodes point to the proper d, rhs */
+    FOR_THREADS(_nt) {
+        for (j = 0; j < _nt->end; ++j) {
+            Node* nd = _nt->_v_node[j];
+            nd->_d = _nt->_actual_d + j;
+            nd->_rhs = _nt->_actual_rhs + j;
         }
     }
-    _nt->end = inode;
-}
-assert(order == section_count);
-/*assert(inode == v_node_count);*/
-/* not missing any */
-ForAllSections(sec) assert(sec->order != -1);
-}
-
-/* here is where multisplit reorders the nodes. Afterwards
-  in either case, we can then point to v, d, rhs in proper
-  node order
-*/
-FOR_THREADS(_nt) for (inode = 0; inode < _nt->end; ++inode) {
-    _nt->_v_node[inode]->_classical_parent = _nt->_v_parent[inode];
-}
-if (nrn_multisplit_setup_) {
-    /* classical order abandoned */
-    (*nrn_multisplit_setup_)();
-}
-/* make the Nodes point to the proper d, rhs */
-FOR_THREADS(_nt) {
-    for (j = 0; j < _nt->end; ++j) {
-        Node* nd = _nt->_v_node[j];
-        nd->_d = _nt->_actual_d + j;
-        nd->_rhs = _nt->_actual_rhs + j;
+    /* because the d,rhs changed, if multisplit is used we need to update
+      the reduced tree gather/scatter pointers
+    */
+    if (nrn_multisplit_setup_) {
+        nrn_multisplit_ptr_update();
     }
-}
-/* because the d,rhs changed, if multisplit is used we need to update
-  the reduced tree gather/scatter pointers
-*/
-if (nrn_multisplit_setup_) {
-    nrn_multisplit_ptr_update();
-}
 }
 
 
@@ -1238,38 +1247,41 @@ int nrn_user_partition() {
         }
     }
 
-    ForAllSections(sec) sec->volatile_mark = 0;
-}
-/* fill in ncell and verify consistency */
-n = 0;
-for (it = 0; it < nrn_nthread; ++it) {
-    nt = nrn_threads + it;
-    sl = nt->roots;
-    nt->ncell = 0;
-    ITERATE(qsec, sl) {
-        sec = hocSEC(qsec);
-        ++nt->ncell;
-        ++n;
-        if (sec->parentsec) {
-            sprintf(buf, "in thread partition %d is not a root section", it);
-            hoc_execerror(secname(sec), buf);
-        }
-        if (sec->volatile_mark) {
-            sprintf(buf, "appeared again in partition %d", it);
-            hoc_execerror(secname(sec), buf);
-        }
-        sec->volatile_mark = 1;
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        sec->volatile_mark = 0;
     }
-}
-if (n != nrn_global_ncell) {
-    sprintf(
-        buf,
-        "The total number of cells, %d, is different than the number of user partition cells, %d\n",
-        nrn_global_ncell,
-        n);
-    hoc_execerror(buf, (char*) 0);
-}
-return 1;
+    /* fill in ncell and verify consistency */
+    n = 0;
+    for (it = 0; it < nrn_nthread; ++it) {
+        nt = nrn_threads + it;
+        sl = nt->roots;
+        nt->ncell = 0;
+        ITERATE(qsec, sl) {
+            sec = hocSEC(qsec);
+            ++nt->ncell;
+            ++n;
+            if (sec->parentsec) {
+                sprintf(buf, "in thread partition %d is not a root section", it);
+                hoc_execerror(secname(sec), buf);
+            }
+            if (sec->volatile_mark) {
+                sprintf(buf, "appeared again in partition %d", it);
+                hoc_execerror(secname(sec), buf);
+            }
+            sec->volatile_mark = 1;
+        }
+    }
+    if (n != nrn_global_ncell) {
+        sprintf(buf,
+                "The total number of cells, %d, is different than the number of user partition "
+                "cells, %d\n",
+                nrn_global_ncell,
+                n);
+        hoc_execerror(buf, (char*) 0);
+    }
+    return 1;
 }
 
 void nrn_use_busywait(int b) {

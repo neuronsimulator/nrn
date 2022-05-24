@@ -439,24 +439,27 @@ extern "C" Section* chk_access(void) {
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
         hoc_Item* qsec;
-        ForAllSections(lsec) if (lsec->prop) {
-            sec = lsec;
-            ++sec->refcount;
-            secstack[isecstack] = sec;
-            /*printf("automatic default section %s\n", secname(sec));*/
-            break;
+        // ForAllSections(lsec)
+        ITERATE(qsec, section_list) {
+            Section* lsec = hocSEC(qsec);
+            if (lsec->prop) {
+                sec = lsec;
+                ++sec->refcount;
+                secstack[isecstack] = sec;
+                /*printf("automatic default section %s\n", secname(sec));*/
+                break;
+            }
         }
     }
-}
-if (!sec) {
-    execerror("Section access unspecified", (char*) 0);
-}
-if (sec->prop) {
-    return sec;
-} else {
-    execerror("Accessing a deleted section", (char*) 0);
-}
-return NULL; /* never reached */
+    if (!sec) {
+        execerror("Section access unspecified", (char*) 0);
+    }
+    if (sec->prop) {
+        return sec;
+    } else {
+        execerror("Accessing a deleted section", (char*) 0);
+    }
+    return NULL; /* never reached */
 }
 
 Section* nrn_noerr_access(void) /* return 0 if no accessed section */
@@ -465,23 +468,26 @@ Section* nrn_noerr_access(void) /* return 0 if no accessed section */
     if (!sec || !sec->prop) {
         /* use any existing section as a default section */
         hoc_Item* qsec;
-        ForAllSections(lsec) if (lsec->prop) {
-            sec = lsec;
-            ++sec->refcount;
-            secstack[isecstack] = sec;
-            /*printf("automatic default section %s\n", secname(sec));*/
-            break;
+        // ForAllSections(lsec)
+        ITERATE(qsec, section_list) {
+            Section* lsec = hocSEC(qsec);
+            if (lsec->prop) {
+                sec = lsec;
+                ++sec->refcount;
+                secstack[isecstack] = sec;
+                /*printf("automatic default section %s\n", secname(sec));*/
+                break;
+            }
         }
     }
-}
-if (!sec) {
-    return (Section*) 0;
-}
-if (sec->prop) {
-    return sec;
-} else {
-    return (Section*) 0;
-}
+    if (!sec) {
+        return (Section*) 0;
+    }
+    if (sec->prop) {
+        return sec;
+    } else {
+        return (Section*) 0;
+    }
 }
 
 /*sibling and child pointers do not ref sections to avoid mutual references */
@@ -1726,7 +1732,9 @@ void setup_topology(void) {
 
     nrn_global_ncell = 0;
 
-    ForAllSections(sec)
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
 #if 0
 		if (sec->nnode < 1) { /* last node is not a segment */
 			hoc_execerror(secname(sec),
@@ -1736,26 +1744,26 @@ void setup_topology(void) {
         assert(sec->nnode > 0);
 #endif
         nrn_parent_info(sec);
-    if (!sec->parentsec) {
-        ++nrn_global_ncell;
+        if (!sec->parentsec) {
+            ++nrn_global_ncell;
+        }
     }
-}
 
 #if METHOD3
-if (_method3) {
-    int i;
-    Node* nd = root /*obsolete*/ section->pnode;
-    for (i = 0; i < unconnected; i++) {
-        IGNORE(prop_alloc(&nd[i].prop, MORPHOLOGY, nd + i));
-        IGNORE(prop_alloc(&nd[i].prop, CAP, nd + i));
+    if (_method3) {
+        int i;
+        Node* nd = root /*obsolete*/ section->pnode;
+        for (i = 0; i < unconnected; i++) {
+            IGNORE(prop_alloc(&nd[i].prop, MORPHOLOGY, nd + i));
+            IGNORE(prop_alloc(&nd[i].prop, CAP, nd + i));
+        }
     }
-}
 #endif
-section_order();
-tree_changed = 0;
-diam_changed = 1;
-v_structure_change = 1;
-++nrn_shape_changed_;
+    section_order();
+    tree_changed = 0;
+    diam_changed = 1;
+    v_structure_change = 1;
+    ++nrn_shape_changed_;
 }
 
 const char* secname(Section* sec) /* name of section (for use in error messages) */
@@ -2363,25 +2371,26 @@ void push_section(void) {
         char* s;
         sec = (Section*) 0;
         s = gargstr(1);
-        ForAllSections(sec1) /* I can't imagine a more inefficient way */
+        // ForAllSections(sec1) /* I can't imagine a more inefficient way */
+        ITERATE(qsec, section_list) {
+            Section* sec1 = hocSEC(qsec);
             if (strcmp(s, nrn_sec2pysecname(sec1)) == 0) {
-            sec = sec1;
-            break;
+                sec = sec1;
+                break;
+            }
         }
+        if (!sec) {
+            hoc_execerror("push_section: arg not a sectionname:", s);
+        }
+    } else {
+        sec = (Section*) (size_t) (*getarg(1));
     }
-    if (!sec) {
-        hoc_execerror("push_section: arg not a sectionname:", s);
+    if (!sec || !sec->prop || !sec->prop->dparam || !sec->prop->dparam[8].itm ||
+        sec->prop->dparam[8].itm->itemtype != SECTION) {
+        hoc_execerror("Not a Section pointer", (char*) 0);
     }
-}
-else {
-    sec = (Section*) (size_t) (*getarg(1));
-}
-if (!sec || !sec->prop || !sec->prop->dparam || !sec->prop->dparam[8].itm ||
-    sec->prop->dparam[8].itm->itemtype != SECTION) {
-    hoc_execerror("Not a Section pointer", (char*) 0);
-}
-hoc_level_pushsec(sec);
-hoc_retpushx(1.0);
+    hoc_level_pushsec(sec);
+    hoc_retpushx(1.0);
 }
 
 

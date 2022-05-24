@@ -132,13 +132,16 @@ static double allroots(void* v) {
     List* sl;
     Item* qsec;
     sl = (List*) v;
-    ForAllSections(sec) if (!sec->parentsec) {
-        lappendsec(sl, sec);
-        section_ref(sec);
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (!sec->parentsec) {
+            lappendsec(sl, sec);
+            section_ref(sec);
+        }
     }
-}
 
-return 1.;
+    return 1.;
 }
 
 static double seclist_remove(void* v) {
