@@ -1,3 +1,31 @@
+# NEURON 8.2
+
+## 8.2.0
+_Release Date_ : TBC
+
+### What's New
+
+* TODO
+
+### Potential Incompatibilities
+
+* In this release, more declarations of NEURON methods (typically `nrn_` and
+  `hoc_` functions) are implicitly included in translated MOD files. This can
+  cause compilation errors with MOD files that include incorrect declarations
+  of these methods in `VERBATIM` blocks.
+
+### Deprecations
+
+* TODO
+
+### Bug Fixes
+
+* TODO
+
+### Improvements / Other Changes
+
+* TODO
+
 # NEURON 8.1
 
 ## 8.1.0
