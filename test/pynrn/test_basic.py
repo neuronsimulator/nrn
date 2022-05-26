@@ -379,6 +379,28 @@ def test_nosection():
     locals()
 
 
+def test_random_play():
+    s = h.Section()
+    s.L = 10
+    s.diam = 10
+    ic = h.IClamp(s(0.5))
+    ic.delay = 0
+    ic.dur = 10
+    ic.amp = 0
+    r = h.Random()
+    r.Random123(1, 0, 0)
+    r.uniform(0.0, 0.001)
+    r.play(ic._ref_amp)
+    v_vec = h.Vector()
+    v_vec.record(s(0.5)._ref_v)
+    h.dt = 0.025
+    h.finitialize(0)
+    for _ in range(3):
+        h.fadvance()
+    std = [0.0, 0.00046940111168614074, 0.004571699024450762, 0.01086603263672303]
+    assert v_vec.to_python() == std
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -388,3 +410,4 @@ if __name__ == "__main__":
     h.topology()
     h.allobjects()
     test_nosection()
+    test_random_play()
