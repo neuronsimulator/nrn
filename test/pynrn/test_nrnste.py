@@ -62,6 +62,14 @@ def test_ste():
     ste.transition(0, 0, var, thresh1, (act, (1, m1, thresh1, result)))
     ste.transition(0, 0, var, thresh2, (act, (2, m1, thresh2, result)))
     fih = h.FInitializeHandler((on_finit, (ste, result)))
+    # ptrlist #1815 coverage of nrniv/finithnd.cpp
+    import sys, io
+
+    oldstdout = sys.stdout
+    sys.stdout = mystdout = io.StringIO()
+    fih.allprint()
+    sys.stdout = oldstdout
+    assert "Type 1 FInitializeHandler statements" in mystdout.getvalue()
 
     run(5)
     print("final v=%g" % m1["s"](0.5).v)
