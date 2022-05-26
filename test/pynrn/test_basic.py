@@ -379,7 +379,7 @@ def test_nosection():
     locals()
 
 
-def test_random_play():
+def test_random_play():  # for coverage of ptrlist changes #1815
     s = h.Section()
     s.L = 10
     s.diam = 10
@@ -401,6 +401,14 @@ def test_random_play():
     assert v_vec.to_python() == std
 
 
+def test_hoc_list():  # for coverage of ptrlist changes
+    lst = h.List()
+    lst.append(h.Vector().append(0))
+    lst.append(h.Vector().append(1))
+    lst.insrt(1, h.Vector().append(2))
+    assert [v.x[0] for v in lst] == [0.0, 2.0, 1.0]
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -411,3 +419,4 @@ if __name__ == "__main__":
     h.allobjects()
     test_nosection()
     test_random_play()
+    test_hoc_list()
