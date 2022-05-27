@@ -401,12 +401,29 @@ def test_random_play():  # for coverage of ptrlist changes #1815
     assert v_vec.to_python() == std
 
 
-def test_hoc_list():  # for coverage of ptrlist changes
+def test_hoc_list():  # for coverage of ptrlist changes in ivoc/oc_list.cpp
     lst = h.List()
     lst.append(h.Vector().append(0))
     lst.append(h.Vector().append(1))
     lst.insrt(1, h.Vector().append(2))
     assert [v.x[0] for v in lst] == [0.0, 2.0, 1.0]
+
+
+def test_rvp():  # for coverage of ptrlist changes in nrniv/shape.cpp
+    d = [h.Section(name="d_" + str(i)) for i in range(3)]
+    for i in range(1, 3):
+        d[i].connect(d[i - 1](1))
+    for s in d:
+        s.L = 10
+        s.diam = 1
+        s.insert("pas")
+    rvp = h.RangeVarPlot("v", d[0](0), d[2](1))
+    assert rvp.left() == 0.0
+    assert rvp.right() == 30.0
+    sl = h.SectionList()
+    rvp.list(sl)
+    sz = sum([1 for _ in sl])
+    assert sz == 3
 
 
 if __name__ == "__main__":
@@ -420,3 +437,4 @@ if __name__ == "__main__":
     test_nosection()
     test_random_play()
     test_hoc_list()
+    test_rvp()
