@@ -103,45 +103,51 @@ double debugsolve(void) /* returns solution error */
     /* save parts of matrix that will be destroyed */
     assert(0)
         /* need to save the rootnodes too */
-        ForAllSections(sec) assert(sec->pnode && sec->nnode);
-    for (inode = sec->nnode - 1; inode >= 0; inode--) {
-        nd = sec->pnode[inode];
-        nd->savd = NODED(nd);
-        nd->savrhs = NODERHS(nd);
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        assert(sec->pnode && sec->nnode);
+        for (inode = sec->nnode - 1; inode >= 0; inode--) {
+            nd = sec->pnode[inode];
+            nd->savd = NODED(nd);
+            nd->savrhs = NODERHS(nd);
+        }
     }
-}
 
-triang(nrn_threads);
-bksub(nrn_threads);
+    triang(nrn_threads);
+    bksub(nrn_threads);
 
-err = 0.;
-/* need to check the rootnodes too */
-ForAllSections(sec) for (inode = sec->nnode - 1; inode >= 0; inode--) {
-    ndP = sec->pnode + inode;
-    nd = sec->pnode[inode];
-    /* a single internal current equation */
-    sum = nd->savd * NODERHS(nd);
-    if (inode > 0) {
-        sum += NODEB(nd) * NODERHS(nd - 1);
-    } else {
-        pnd = sec->parentnode;
-        sum += NODEB(nd) * NODERHS(pnd);
+    err = 0.;
+    /* need to check the rootnodes too */
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        for (inode = sec->nnode - 1; inode >= 0; inode--) {
+            ndP = sec->pnode + inode;
+            nd = sec->pnode[inode];
+            /* a single internal current equation */
+            sum = nd->savd * NODERHS(nd);
+            if (inode > 0) {
+                sum += NODEB(nd) * NODERHS(nd - 1);
+            } else {
+                pnd = sec->parentnode;
+                sum += NODEB(nd) * NODERHS(pnd);
+            }
+            if (inode < sec->nnode - 1) {
+                sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
+            }
+            for (ch = nd->child; ch; ch = ch->sibling) {
+                psec = ch;
+                pnd = psec->pnode[0];
+                assert(pnd && psec->nnode);
+                sum += NODEA(pnd) * NODERHS(pnd);
+            }
+            sum -= nd->savrhs;
+            err += fabs(sum);
+        }
     }
-    if (inode < sec->nnode - 1) {
-        sum += NODEA(ndP[1]) * NODERHS(ndP[1]);
-    }
-    for (ch = nd->child; ch; ch = ch->sibling) {
-        psec = ch;
-        pnd = psec->pnode[0];
-        assert(pnd && psec->nnode);
-        sum += NODEA(pnd) * NODERHS(pnd);
-    }
-    sum -= nd->savrhs;
-    err += fabs(sum);
-}
-}
 
-return err;
+    return err;
 }
 #endif /*DEBUGSOLVE*/
 
@@ -452,8 +458,11 @@ void bksub(NrnThread* _nt) {
 
 void nrn_clear_mark(void) {
     hoc_Item* qsec;
-    ForAllSections(sec) sec->volatile_mark = 0;
-}
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        sec->volatile_mark = 0;
+    }
 }
 short nrn_increment_mark(Section* sec) {
     return sec->volatile_mark++;
@@ -845,51 +854,60 @@ void section_order(void) /* create a section order consistent */
     /* count the sections */
     section_count = 0;
     /*SUPPRESS 765*/
-    ForAllSections(sec) sec->order = -1;
-    ++section_count;
-}
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        sec->order = -1;
+        ++section_count;
+    }
 
-if (secorder) {
-    free((char*) secorder);
-    secorder = (Section**) 0;
-}
-if (section_count) {
-    secorder = (Section**) emalloc(section_count * sizeof(Section*));
-}
-order = 0;
-ForAllSections(sec) /* all the roots first */
-    if (!sec->parentsec) {
-    secorder[order] = sec;
-    sec->order = order;
-    ++order;
-}
-}
-
-for (isec = 0; isec < section_count; isec++) {
-    if (isec >= order) { /* there is a loop */
-        ForAllSections(sec) Section *psec, *s = sec;
-        for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
-            if (!psec || s->order >= 0) {
-                break;
-            } else if (psec == sec) {
-                fprintf(stderr, "A loop exists consisting of:\n %s", secname(sec));
-                for (s = sec->parentsec; s != sec; s = s->parentsec) {
-                    fprintf(stderr, " %s", secname(s));
-                }
-                fprintf(stderr,
-                        " %s\nUse <section> disconnect() to break the loop\n ",
-                        secname(sec));
-                hoc_execerror("A loop exists involving section", secname(sec));
-            }
+    if (secorder) {
+        free((char*) secorder);
+        secorder = (Section**) 0;
+    }
+    if (section_count) {
+        secorder = (Section**) emalloc(section_count * sizeof(Section*));
+    }
+    order = 0;
+    // ForAllSections(sec) /* all the roots first */
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        if (!sec->parentsec) {
+            secorder[order] = sec;
+            sec->order = order;
+            ++order;
         }
     }
-}
-sec = secorder[isec];
-for (ch = sec->child; ch; ch = ch->sibling) {
-    secorder[order] = ch;
-    ch->order = order;
-    ++order;
-}
-}
-assert(order == section_count);
+
+    for (isec = 0; isec < section_count; isec++) {
+        if (isec >= order) {
+            // Sections form a loop.
+            // ForAllSections(sec)
+            ITERATE(qsec, section_list) {
+                Section* sec = hocSEC(qsec);
+                Section *psec, *s = sec;
+                for (psec = sec->parentsec; psec; s = psec, psec = psec->parentsec) {
+                    if (!psec || s->order >= 0) {
+                        break;
+                    } else if (psec == sec) {
+                        fprintf(stderr, "A loop exists consisting of:\n %s", secname(sec));
+                        for (s = sec->parentsec; s != sec; s = s->parentsec) {
+                            fprintf(stderr, " %s", secname(s));
+                        }
+                        fprintf(stderr,
+                                " %s\nUse <section> disconnect() to break the loop\n ",
+                                secname(sec));
+                        hoc_execerror("A loop exists involving section", secname(sec));
+                    }
+                }
+            }
+        }
+        sec = secorder[isec];
+        for (ch = sec->child; ch; ch = ch->sibling) {
+            secorder[order] = ch;
+            ch->order = order;
+            ++order;
+        }
+    }
+    assert(order == section_count);
 }

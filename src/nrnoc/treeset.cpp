@@ -864,54 +864,62 @@ void connection_coef(void) /* setup a and b */
 #endif
     ++recalc_diam_count_;
     nrn_area_ri_nocount_ = 1;
-    ForAllSections(sec) nrn_area_ri(sec);
-}
-nrn_area_ri_nocount_ = 0;
-/* assume that if only one connection at x=1, then they butte
-together, if several connections at x=1
-then last point is at x=1, has 0 area and other points are at
-centers of nnode-1 segments.
-If interior connection then child half
-section connects straight to the point*/
-/* for the near future we always have a last node at x=1 with
-no properties */
-ForAllSections(sec)
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        nrn_area_ri(sec);
+    }
+    nrn_area_ri_nocount_ = 0;
+    /* assume that if only one connection at x=1, then they butte
+    together, if several connections at x=1
+    then last point is at x=1, has 0 area and other points are at
+    centers of nnode-1 segments.
+    If interior connection then child half
+    section connects straight to the point*/
+    /* for the near future we always have a last node at x=1 with
+    no properties */
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
 #if 1 /* unnecessary because they are unused, but help when looking at fmatrix */
-    if (!sec->parentsec) {
-    if (nrn_classicalNodeA(sec->parentnode)) {
-        ClassicalNODEA(sec->parentnode) = 0.0;
-    }
-    if (nrn_classicalNodeB(sec->parentnode)) {
-        ClassicalNODEB(sec->parentnode) = 0.0;
-    }
-}
+        if (!sec->parentsec) {
+            if (nrn_classicalNodeA(sec->parentnode)) {
+                ClassicalNODEA(sec->parentnode) = 0.0;
+            }
+            if (nrn_classicalNodeB(sec->parentnode)) {
+                ClassicalNODEB(sec->parentnode) = 0.0;
+            }
+        }
 #endif
-/* convert to siemens/cm^2 for all nodes except last
-and microsiemens for last.  This means that a*V = mamps/cm2
-and a*v in last node = nanoamps. Note that last node
-has no membrane properties and no area. It may perhaps receive
-current stimulus later */
-/* first the effect of node on parent equation. Note That
-last nodes have area = 1.e2 in dimensionless units so that
-last nodes have units of microsiemens */
-nd = sec->pnode[0];
-area = NODEAREA(sec->parentnode);
-/* dparam[4] is rall_branch */
-ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].val * NODERINV(nd) / area;
-for (j = 1; j < sec->nnode; j++) {
-    nd = sec->pnode[j];
-    area = NODEAREA(sec->pnode[j - 1]);
-    ClassicalNODEA(nd) = -1.e2 * NODERINV(nd) / area;
-}
-}
-/* now the effect of parent on node equation. */
-ForAllSections(sec) for (j = 0; j < sec->nnode; j++) {
-    nd = sec->pnode[j];
-    ClassicalNODEB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
-}
-}
+        /* convert to siemens/cm^2 for all nodes except last
+        and microsiemens for last.  This means that a*V = mamps/cm2
+        and a*v in last node = nanoamps. Note that last node
+        has no membrane properties and no area. It may perhaps receive
+        current stimulus later */
+        /* first the effect of node on parent equation. Note That
+        last nodes have area = 1.e2 in dimensionless units so that
+        last nodes have units of microsiemens */
+        nd = sec->pnode[0];
+        area = NODEAREA(sec->parentnode);
+        /* dparam[4] is rall_branch */
+        ClassicalNODEA(nd) = -1.e2 * sec->prop->dparam[4].val * NODERINV(nd) / area;
+        for (j = 1; j < sec->nnode; j++) {
+            nd = sec->pnode[j];
+            area = NODEAREA(sec->pnode[j - 1]);
+            ClassicalNODEA(nd) = -1.e2 * NODERINV(nd) / area;
+        }
+    }
+    /* now the effect of parent on node equation. */
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        for (j = 0; j < sec->nnode; j++) {
+            nd = sec->pnode[j];
+            ClassicalNODEB(nd) = -1.e2 * NODERINV(nd) / NODEAREA(nd);
+        }
+    }
 #if EXTRACELLULAR
-ext_con_coef();
+    ext_con_coef();
 #endif
 }
 
@@ -1884,20 +1892,23 @@ extern "C" void nrn_complain(double* pp) {
     hoc_Item* qsec;
     int j;
     Prop* p;
-    ForAllSections(sec) for (j = 0; j < sec->nnode; ++j) {
-        nd = sec->pnode[j];
-        for (p = nd->prop; p; p = p->next) {
-            if (p->param == pp) {
-                fprintf(stderr,
-                        "Error at section location %s(%g)\n",
-                        secname(sec),
-                        nrn_arc_position(sec, nd));
-                return;
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
+        for (j = 0; j < sec->nnode; ++j) {
+            nd = sec->pnode[j];
+            for (p = nd->prop; p; p = p->next) {
+                if (p->param == pp) {
+                    fprintf(stderr,
+                            "Error at section location %s(%g)\n",
+                            secname(sec),
+                            nrn_arc_position(sec, nd));
+                    return;
+                }
             }
         }
     }
-}
-fprintf(stderr, "Don't know the location of params at %p\n", pp);
+    fprintf(stderr, "Don't know the location of params at %p\n", pp);
 }
 
 void nrn_matrix_node_free(void) {

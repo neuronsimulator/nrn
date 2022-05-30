@@ -9,7 +9,6 @@
 #include <time.h>
 #include <InterViews/resource.h>
 #include <OS/math.h>
-#include <OS/table.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"

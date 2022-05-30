@@ -240,59 +240,54 @@ void Rotate3Band::draw(Coord, Coord) {
 
     c->push_transform();
     c->transformer(transformer());
-#if 0
-	hoc_Item* qsec;
-	ForAllSections(sec) //{
-#else
     PolyGlyph* sg = ((ShapeScene*) XYView::current_pick_view()->scene())->shape_section_list();
     GlyphIndex cnt = sg->count();
     for (GlyphIndex i = 0; i < cnt; ++i) {
         Section* sec = ((ShapeSection*) sg->component(i))->section();
-#endif
-    if (sec->npt3d) {
-        float r[3];
-        int i = 0;
-        r[0] = sec->pt3d[i].x;
-        r[1] = sec->pt3d[i].y;
-        r[2] = sec->pt3d[i].z;
-        rot_->rotate(r, r);
-        c->move_to(r[0], r[1]);
-        i = sec->npt3d - 1;
-        r[0] = sec->pt3d[i].x;
-        r[1] = sec->pt3d[i].y;
-        r[2] = sec->pt3d[i].z;
-        rot_->rotate(r, r);
-        c->line_to(r[0], r[1]);
-        c->stroke(color(), brush());
+        if (sec->npt3d) {
+            float r[3];
+            int i = 0;
+            r[0] = sec->pt3d[i].x;
+            r[1] = sec->pt3d[i].y;
+            r[2] = sec->pt3d[i].z;
+            rot_->rotate(r, r);
+            c->move_to(r[0], r[1]);
+            i = sec->npt3d - 1;
+            r[0] = sec->pt3d[i].x;
+            r[1] = sec->pt3d[i].y;
+            r[2] = sec->pt3d[i].z;
+            rot_->rotate(r, r);
+            c->line_to(r[0], r[1]);
+            c->stroke(color(), brush());
+        }
     }
-}
-c->pop_transform();
+    c->pop_transform();
 
-x0 = x_begin();
-y0 = y_begin();
-c->push_transform();
-Transformer t;
-c->transformer(t);
-c->new_path();
-Coord w = canvas()->width() / 4;
-rot_->x_axis(x, y);
-// printf("x_axis %g %g\n", x, y);
-c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    x0 = x_begin();
+    y0 = y_begin();
+    c->push_transform();
+    Transformer t;
+    c->transformer(t);
+    c->new_path();
+    Coord w = canvas()->width() / 4;
+    rot_->x_axis(x, y);
+    // printf("x_axis %g %g\n", x, y);
+    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-c->character(f, 'x', f->width('x'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+    c->character(f, 'x', f->width('x'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
-rot_->y_axis(x, y);
-// printf("y_axis %g %g\n", x, y);
-c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    rot_->y_axis(x, y);
+    // printf("y_axis %g %g\n", x, y);
+    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-c->character(f, 'y', f->width('y'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+    c->character(f, 'y', f->width('y'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
-rot_->z_axis(x, y);
-// printf("z_axis %g %g\n", x, y);
-c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
+    rot_->z_axis(x, y);
+    // printf("z_axis %g %g\n", x, y);
+    c->line(x0, y0, x0 + x * w, y0 + y * w, color(), brush());
 #ifndef WIN32
-c->character(f, 'z', f->width('z'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
+    c->character(f, 'z', f->width('z'), color(), x0 + x * w * 1.1, y0 + y * w * 1.1);
 #endif
-c->pop_transform();
+    c->pop_transform();
 }
 #endif

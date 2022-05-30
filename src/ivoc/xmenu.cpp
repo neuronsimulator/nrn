@@ -168,7 +168,6 @@ static String* xvalue_format;
 
 
 extern int units_on_flag_;
-extern "C" Symbol* hoc_get_symbol(const char*);
 extern Symbol* hoc_get_last_pointer_symbol();
 void hoc_notify_value() {
     Oc oc;

@@ -1684,34 +1684,36 @@ static void pycell_name2sec_maps_clear() {
 static void pycell_name2sec_maps_fill() {
     pycell_name2sec_maps_clear();
     hoc_Item* qsec;
-    ForAllSections(sec)                                              // macro has the {
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {  // PythonSection
-        // Assume we can associate with a Python Cell
-        // Sadly, cannot use nrn_sec2cell Object* as the key because it
-        // is not unique and the map needs definite PyObject* keys.
-        Object* ho = nrn_sec2cell(sec);
-        if (ho) {
-            void* pycell = nrn_opaque_obj2pyobj(ho);
-            hoc_obj_unref(ho);
-            if (pycell) {
-                SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
-                std::string name = secname(sec);
-                // basename is after the cell name component that ends in '.'.
-                size_t last_dot = name.rfind(".");
-                assert(last_dot != std::string::npos);
-                assert(name.size() > (last_dot + 1));
-                std::string basename = name.substr(last_dot + 1);
-                if (sn2s.find(basename) != sn2s.end()) {
-                    hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
-                                    name.c_str());
+            // Assume we can associate with a Python Cell
+            // Sadly, cannot use nrn_sec2cell Object* as the key because it
+            // is not unique and the map needs definite PyObject* keys.
+            Object* ho = nrn_sec2cell(sec);
+            if (ho) {
+                void* pycell = nrn_opaque_obj2pyobj(ho);
+                hoc_obj_unref(ho);
+                if (pycell) {
+                    SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
+                    std::string name = secname(sec);
+                    // basename is after the cell name component that ends in '.'.
+                    size_t last_dot = name.rfind(".");
+                    assert(last_dot != std::string::npos);
+                    assert(name.size() > (last_dot + 1));
+                    std::string basename = name.substr(last_dot + 1);
+                    if (sn2s.find(basename) != sn2s.end()) {
+                        hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
+                                        name.c_str());
+                    }
+                    sn2s[basename] = sec;
+                    continue;
                 }
-                sn2s[basename] = sec;
-                continue;
             }
+            hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
         }
-        hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
     }
-}
 }
 
 static SecName2Sec& pycell_name2sec_map(Object* c) {

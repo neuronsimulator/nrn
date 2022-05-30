@@ -211,6 +211,7 @@ extern void hoc_fake_call(Symbol*);
 extern void hoc_last_init(void);
 extern void hoc_obj_notify(Object*);
 extern int ivoc_list_count(Object*);
+Object* ivoc_list_item(Object*, int);
 extern double hoc_func_table(void* functable, int n, double* args);
 extern void hoc_spec_table(void** pfunctable, int n);
 extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
@@ -297,6 +298,7 @@ extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
 extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
+extern Symbol* hoc_get_symbol(const char* var);
 
 
 #if defined(__cplusplus)

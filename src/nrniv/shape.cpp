@@ -883,19 +883,22 @@ declareRubberCallback(ShapeScene) implementRubberCallback(ShapeScene)
         }
     } else {
         view_all_ = true;
-        ForAllSections(sec) gl = new ShapeSection(sec);
-        append(new FastGraphItem(gl, 0));
-        sg_->append(gl);
+        // ForAllSections(sec)
+        ITERATE(qsec, section_list) {
+            Section* sec = hocSEC(qsec);
+            gl = new ShapeSection(sec);
+            append(new FastGraphItem(gl, 0));
+            sg_->append(gl);
+        }
     }
-}
-recalc_diam();
-selected_ = NULL;
-volatile_ptr_ref = NULL;
-transform3d();
-if (shape_changed_) {
-    force();
-    flush();
-}
+    recalc_diam();
+    selected_ = NULL;
+    volatile_ptr_ref = NULL;
+    transform3d();
+    if (shape_changed_) {
+        force();
+        flush();
+    }
 }
 
 void ShapeScene::force() {
