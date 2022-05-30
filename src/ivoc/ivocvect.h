@@ -1,15 +1,12 @@
 #ifndef ivoc_vector_h
 #define ivoc_vector_h
 
-// definition of vector classes from the gnu c++ class library
-#include <nrnmutdec.h>
+#include "nrnmutdec.h"
+#include "ocnotify.h"
+
 #include <vector>
 #include <numeric>
 #include <algorithm>
-
-extern "C" {
-extern void notify_freed_val_array(double*, size_t);
-}
 
 using ParentVect = std::vector<double>;
 struct Object;

@@ -1,6 +1,19 @@
 #include <../../nrnconf.h>
 /* /local/src/master/nrn/src/nrnoc/treeset.cpp,v 1.39 1999/07/08 14:25:07 hines Exp */
 
+#include "isoc99.h"
+#include "membfunc.h"
+#include "multisplit.h"
+#include "neuron.h"
+#include "nonvintblock.h"
+#include "nrndae_c.h"
+#include "nrnmpi.h"
+#include "ocnotify.h"
+#include "section.h"
+#include "spmatrix.h"
+#include "treeset.h"
+#include "utils/profile/profiler_interface.h"
+
 #include <stdio.h>
 #if HAVE_STDLIB_H
 #include <stdlib.h>
@@ -8,17 +21,6 @@
 #include <errno.h>
 #include <math.h>
 #include <string>
-#include "section.h"
-#include "membfunc.h"
-#include "neuron.h"
-#include "parse.hpp"
-#include "nrnmpi.h"
-#include "multisplit.h"
-#include "spmatrix.h"
-#include "treeset.h"
-#include "nonvintblock.h"
-#include "nrndae_c.h"
-#include "utils/profile/profiler_interface.h"
 
 extern spREAL* spGetElement(char*, int, int);
 

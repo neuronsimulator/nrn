@@ -5,10 +5,11 @@
 #define OOP         1
 
 
-#include <stdio.h>
 #include "nrnapi.h"
 #include "hocassrt.h" /* hoc_execerror instead of abort */
 #include "nrnassrt.h" /* assert in case of side effects (eg. scanf) */
+
+#include <stdio.h>
 #include <string.h>
 
 #define gargstr hoc_gargstr
@@ -16,11 +17,6 @@
 
 /* the dec alpha cxx doesn't understand struct foo* inside a struct */
 
-#if defined(__cplusplus)
-#define HocStruct  /**/
-#define HocTypedef /**/
-#define HocUnion   /**/
-union Inst;
 struct Symbol;
 struct Arrayinfo;
 struct Proc;
@@ -30,11 +26,6 @@ struct cTemplate;
 union Objectdata;
 struct Object;
 struct hoc_Item;
-#else
-#define HocStruct  struct
-#define HocUnion   union
-#define HocTypedef typedef
-#endif
 
 typedef int (*Pfri)(void);
 typedef void (*Pfrv)(void);
@@ -48,7 +39,7 @@ typedef double (*Pfrd_vp)(void*);
 typedef struct Object** (*Pfro_vp)(void*);
 typedef const char** (*Pfrs_vp)(void*);
 
-typedef union Inst { /* machine instruction list type */
+union Inst { /* machine instruction list type */
     Pfrv pf;
     Pfrd pfd;
     Pfro pfo;
@@ -57,33 +48,33 @@ typedef union Inst { /* machine instruction list type */
     Pfrd_vp pfd_vp;
     Pfro_vp pfo_vp;
     Pfrs_vp pfs_vp;
-    HocUnion Inst* in;
-    HocStruct Symbol* sym;
+    Inst* in;
+    Symbol* sym;
     void* ptr;
     int i;
-} Inst;
+};
 
 #define STOP (Inst*) 0
 
-typedef struct Arrayinfo { /* subscript info for arrays */
-    unsigned* a_varn;      /* dependent variable number for array elms */
-    int nsub;              /* number of subscripts */
-    int refcount;          /* because one object always uses symbol's */
-    int sub[1];            /* subscript range */
-} Arrayinfo;
+struct Arrayinfo {    /* subscript info for arrays */
+    unsigned* a_varn; /* dependent variable number for array elms */
+    int nsub;         /* number of subscripts */
+    int refcount;     /* because one object always uses symbol's */
+    int sub[1];       /* subscript range */
+};
 
-typedef struct Proc {
-    Inst defn;               /* FUNCTION, PROCEDURE, FUN_BLTIN */
-    unsigned long size;      /* length of instruction list */
-    HocStruct Symlist* list; /* For constants and strings */
-                             /* not used by FUN_BLTIN */
-    int nauto;               /* total # local variables */
-    int nobjauto;            /* the last of these are pointers to objects */
-} Proc;
+struct Proc {
+    Inst defn;          /* FUNCTION, PROCEDURE, FUN_BLTIN */
+    unsigned long size; /* length of instruction list */
+    Symlist* list;      /* For constants and strings */
+                        /* not used by FUN_BLTIN */
+    int nauto;          /* total # local variables */
+    int nobjauto;       /* the last of these are pointers to objects */
+};
 
 struct Symlist {
-    HocStruct Symbol* first;
-    HocStruct Symbol* last;
+    Symbol* first;
+    Symbol* last;
 };
 
 typedef char* Upoint;
@@ -107,13 +98,13 @@ typedef char* Upoint;
 #define OBJECTALIAS 1
 #define VARALIAS    2
 
-typedef struct HocSymExtension {
+struct HocSymExtension {
     float* parmlimits; /* some variables have suggested bounds */
     char* units;
     float tolerance; /* some states have cvode absolute tolerance */
-} HocSymExtension;
+};
 
-typedef struct Symbol { /* symbol table entry */
+struct Symbol { /* symbol table entry */
     char* name;
     short type;
     short subtype;            /* Flag for user integers */
@@ -129,13 +120,9 @@ typedef struct Symbol { /* symbol table entry */
     short defined_on_the_fly; /* moved here because otherwize gcc and borland do not align the same
                                  way */
     union {
-        int oboff; /* offset into object data pointer space */
-#if 0              /* these are now found via oboff. */
-		char	*str;		/* STRING */
-		HocStruct Object **objvar; /* possibly an array of object variables */
-#endif
+        int oboff;                             /* offset into object data pointer space */
         double* pval;                          /* User defined doubles - also for alias to scalar */
-        HocStruct Object* object_;             /* alias to an object */
+        Object* object_;                       /* alias to an object */
         char* cstr;                            /* constant string */
         double* pnum;                          /* Numbers */
         int* pvalint;                          /* User defined integers */
@@ -147,20 +134,17 @@ typedef struct Symbol { /* symbol table entry */
             short type; /* Membrane type to find Prop */
             int index;  /* prop->param[index] */
         } rng;
-        HocStruct Symbol** ppsym; /* Pointer to symbol pointer array */
-                                  //#if defined(__cplusplus)
-        HocStruct cTemplate* ctemplate;
-        //#else
-        //		HocStruct cTemplate *template;
-        //#endif
-        HocStruct Symbol* sym; /* for external */
+        Symbol** ppsym; /* Pointer to symbol pointer array */
+                        //#if defined(__cplusplus)
+        cTemplate* ctemplate;
+        Symbol* sym; /* for external */
     } u;
     unsigned s_varn;        /* dependent variable number - 0 means indep */
     Arrayinfo* arayinfo;    /* ARRAY information if null then scalar */
     HocSymExtension* extra; /* additions to symbol allow compatibility
                     with old nmodl dll's */
-    HocStruct Symbol* next; /* to link to another */
-} Symbol;
+    Symbol* next;           /* to link to another */
+};
 #define ISARRAY(arg) (arg->arayinfo != (Arrayinfo*) 0)
 
 
@@ -174,25 +158,21 @@ typedef struct hoc_Item hoc_List;
 #endif
 #endif
 
-typedef union Datum { /* interpreter stack type */
+union Datum { /* interpreter stack type */
     double val;
     Symbol* sym;
     int i;
     double* pval; /* first used with Eion in NEURON */
-    HocStruct Object** pobj;
-    HocStruct Object* obj; /* sections keep this to construct a name */
+    Object** pobj;
+    Object* obj; /* sections keep this to construct a name */
     char** pstr;
-    HocStruct hoc_Item* itm;
+    hoc_Item* itm;
     hoc_List* lst;
     void* _pvoid; /* not used on stack, see nrnoc/point.cpp */
-} Datum;
+};
 
 #if OOP
-//#if defined(__cplusplus)
-typedef struct cTemplate {
-    //#else
-    // typedef struct Template {
-    //#endif
+struct cTemplate {
     Symbol* sym;
     Symlist* symtable;
     int dataspace_size;
@@ -208,42 +188,34 @@ typedef struct cTemplate {
     void (*destructor)(void*);
     void (*steer)(void*); /* normally nil */
     int (*checkpoint)(void**);
-    //#if defined(__cplusplus)
-} cTemplate;
-//#else
-//}
-//#endif
+};
 
-typedef union Objectdata {
-    double* pval;                 /* pointer to array of doubles, usually just 1 */
-    char** ppstr;                 /* pointer to pointer to string ,allows vectors someday*/
-    HocStruct Object** pobj;      /* pointer to array of object pointers, usually just 1*/
-    HocStruct hoc_Item** psecitm; /* array of pointers to section items, usually just 1 */
-    hoc_List** plist;             /* array of pointers to linked lists */
+union Objectdata {
+    double* pval;       /* pointer to array of doubles, usually just 1 */
+    char** ppstr;       /* pointer to pointer to string ,allows vectors someday*/
+    Object** pobj;      /* pointer to array of object pointers, usually just 1*/
+    hoc_Item** psecitm; /* array of pointers to section items, usually just 1 */
+    hoc_List** plist;   /* array of pointers to linked lists */
     Arrayinfo* arayinfo;
     void* _pvoid; /* Point_process */
-} Objectdata;
+};
 
-typedef struct Object {
+struct Object {
     int refcount; /* how many object variables point to this */
     int index;    /* unique integer used for names of sections */
     union {
         Objectdata* dataspace; /* Points to beginning of object's data */
         void* this_pointer;    /* the c++ object */
     } u;
-#if defined(__cplusplus)
     cTemplate* ctemplate;
-#else
-    cTemplate* template;
-#endif
     void* aliases; /* more convenient names for e.g. Vector or List elements dynamically created by
                       this object*/
-    HocStruct hoc_Item* itm_me;  /* this object in the template list */
-    HocStruct hoc_Item* secelm_; /* last of a set of contiguous section_list items used by forall */
-    void* observers;             /* hook to c++ ObjObservable */
-    short recurse;               /* to stop infinite recursions */
-    short unref_recurse_cnt;     /* free only after last return from unref callback */
-} Object;
+    hoc_Item* itm_me;        /* this object in the template list */
+    hoc_Item* secelm_;       /* last of a set of contiguous section_list items used by forall */
+    void* observers;         /* hook to c++ ObjObservable */
+    short recurse;           /* to stop infinite recursions */
+    short unref_recurse_cnt; /* free only after last return from unref callback */
+};
 #endif
 
 struct VoidFunc { /* User Functions */

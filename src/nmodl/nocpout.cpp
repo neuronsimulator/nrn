@@ -1122,7 +1122,6 @@ static void _constructor(Prop* _prop) {\n\
     }
     Lappendstr(defs_list,
                "\
-extern Symbol* hoc_lookup(const char*);\n\
 extern void _nrn_thread_reg(int, int, void(*)(Datum*));\n\
 extern void _nrn_thread_table_reg(int, void(*)(double*, Datum*, Datum*, NrnThread*, int));\n\
 extern void hoc_register_tolerance(int, HocStateTolerance*, Symbol***);\n\

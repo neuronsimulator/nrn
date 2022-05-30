@@ -167,7 +167,6 @@ extern int vector_instance_px(void*, double**);
 }  // extern "C"
 
 extern int vector_arg_px(int, double**);
-extern void notify_freed_val_array(double*, size_t);
 
 extern int hoc_return_type_code;
 

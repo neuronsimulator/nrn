@@ -1,6 +1,5 @@
-#ifndef oc_ansi_h
-#define oc_ansi_h
-
+#pragma once
+#include <cstdio>
 
 /**
  * \dir
@@ -33,45 +32,42 @@ struct Symbol;
 struct Symlist;
 struct VoidFunc;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 // nocpout.cpp
-extern Symbol* hoc_get_symbol(const char* var);
-extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
-extern void ivoc_help(const char*);
+Symbol* hoc_get_symbol(const char* var);
+void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
+void ivoc_help(const char*);
 
-extern Symbol* hoc_lookup(const char*);
+Symbol* hoc_lookup(const char*);
 
-extern void* hoc_Ecalloc(size_t nmemb, size_t size);
-extern void* hoc_Emalloc(size_t size);
-extern void hoc_malchk(void);
+// olupton 2022-05-30: This has to have C linkage for now because it is used in
+//                     praxis.c
+extern "C" void* hoc_Ecalloc(std::size_t nmemb, std::size_t size);
+// olupton 2022-05-30: These have to have C linkage for now because it is used
+//                     in newton_thread.c
+extern "C" void* hoc_Emalloc(size_t size);
+extern "C" void hoc_malchk();
+// olupton 2022-05-30: This has to have C linkage for now because it is used in
+//                     abort.c and praxis.c
+extern "C" void hoc_execerror(const char*, const char*);
+void hoc_execerr_ext(const char* fmt, ...);
+char* hoc_object_name(Object*);
+void hoc_retpushx(double);
 
-extern void hoc_execerror(const char*, const char*);
-extern void hoc_execerr_ext(const char* fmt, ...);
-extern char* hoc_object_name(Object*);
-extern void hoc_retpushx(double);
-
-extern double* hoc_getarg(int);
+double* hoc_getarg(int);
 double* hoc_pgetarg(int);
-extern int ifarg(int);
+int ifarg(int);
 
-extern int vector_instance_px(void*, double**);
-extern void install_vector_method(const char*, double (*)(void*));
+int vector_instance_px(void*, double**);
+void install_vector_method(const char*, double (*)(void*));
 
-extern int vector_arg_px(int i, double** p);
-
-#if defined(__cplusplus)
-}
-#endif
+int vector_arg_px(int i, double** p);
 
 double hoc_Exp(double);
 int hoc_is_tempobj_arg(int narg);
-FILE* hoc_obj_file_arg(int i);
+std::FILE* hoc_obj_file_arg(int i);
 void hoc_reg_nmodl_text(int type, const char* txt);
 void hoc_reg_nmodl_filename(int type, const char* filename);
-size_t nrn_mallinfo(int item);
+std::size_t nrn_mallinfo(int item);
 int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
 void state_discontinuity(int i, double* pd, double d);
 
@@ -96,223 +92,210 @@ double* vector_vec(IvocVect*);
 
 extern int nrnignore;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * \brief Brief explanation of hoc_obj_run
  *
  * Detailed explanation of hoc_obj_run goes here.
  */
-extern int hoc_obj_run(const char*, Object*);
+int hoc_obj_run(const char*, Object*);
 
-extern int hoc_argtype(int);
-extern int hoc_is_double_arg(int);
-extern int hoc_is_pdouble_arg(int);
-extern int hoc_is_str_arg(int);
-extern int hoc_is_object_arg(int);
-extern char* hoc_gargstr(int);
-extern char** hoc_pgargstr(int);
+int hoc_argtype(int);
+int hoc_is_double_arg(int);
+int hoc_is_pdouble_arg(int);
+int hoc_is_str_arg(int);
+int hoc_is_object_arg(int);
+char* hoc_gargstr(int);
+char** hoc_pgargstr(int);
 
-extern Object** hoc_objgetarg(int);
-extern Object* hoc_name2obj(const char* name, int index);
+Object** hoc_objgetarg(int);
+Object* hoc_name2obj(const char* name, int index);
 
-extern char** hoc_temp_charptr(void);
-extern int hoc_is_temp_charptr(char** cpp);
-extern void hoc_assign_str(char** pstr, const char* buf);
-extern double chkarg(int, double low, double high);
-extern double hoc_call_func(Symbol*,
-                            int narg); /* push first arg first. Warning: if the function is inside
-                                          an object make sure you know what you are doing.*/
-extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of
-                                                               an object.*/
+char** hoc_temp_charptr();
+int hoc_is_temp_charptr(char** cpp);
+void hoc_assign_str(char** pstr, const char* buf);
+double chkarg(int, double low, double high);
+// push first arg first. Warning: if the function is inside an object make sure
+// you know what you are doing.
+double hoc_call_func(Symbol*, int narg);
+// call a fuction within the context of an object.
+double hoc_call_objfunc(Symbol*, int narg, Object*);
 extern double hoc_ac_;
 extern double hoc_epsilon;
 extern int nrn_inpython_;
 
 extern int hoc_color;
-extern int hoc_set_color(int);
-extern void hoc_plt(int, double, double);
-extern void hoc_plprint(const char*);
-extern void hoc_ret(void); /* but need to push before returning */
+int hoc_set_color(int);
+void hoc_plt(int, double, double);
+void hoc_plprint(const char*);
+void hoc_ret(); /* but need to push before returning */
 
-extern void hoc_pushx(double);
-extern void hoc_pushstr(char**);
-extern void hoc_pushobj(Object**);
-extern void hoc_push_object(Object*);
-extern void hoc_pushpx(double*);
-extern void hoc_pushs(Symbol*);
-extern void hoc_pushi(int);
-extern double hoc_xpop(void);
-extern Symbol* hoc_spop(void);
-extern double* hoc_pxpop(void);
-extern Object** hoc_objpop(void);
-extern Object* hoc_pop_object(void);
-extern char** hoc_strpop(void);
-extern int hoc_ipop(void);
-extern void hoc_nopop(void);
+void hoc_pushx(double);
+void hoc_pushstr(char**);
+void hoc_pushobj(Object**);
+void hoc_push_object(Object*);
+void hoc_pushpx(double*);
+void hoc_pushs(Symbol*);
+void hoc_pushi(int);
+double hoc_xpop();
+Symbol* hoc_spop();
+double* hoc_pxpop();
+Object** hoc_objpop();
+Object* hoc_pop_object();
+char** hoc_strpop();
+int hoc_ipop();
+void hoc_nopop();
 
-extern void hoc_execerror_mes(const char*, const char*, int);
-extern void hoc_warning(const char*, const char*);
-extern double* hoc_val_pointer(const char*);
-extern Symbol* hoc_table_lookup(const char*, Symlist*);
-extern Symbol* hoc_install(const char*, int, double, Symlist**);
+void hoc_execerror_mes(const char*, const char*, int);
+void hoc_warning(const char*, const char*);
+double* hoc_val_pointer(const char*);
+Symbol* hoc_table_lookup(const char*, Symlist*);
+Symbol* hoc_install(const char*, int, double, Symlist**);
 extern Objectdata* hoc_objectdata;
-extern Datum* hoc_look_inside_stack(int, int);
-extern Object* hoc_obj_look_inside_stack(int);
-extern int hoc_obj_look_inside_stack_index(int);
-extern void hoc_stkobj_unref(Object*, int stkindex);
-extern size_t hoc_total_array_data(Symbol*, Objectdata*);
-extern char* hoc_araystr(Symbol*, int, Objectdata*);
+Datum* hoc_look_inside_stack(int, int);
+Object* hoc_obj_look_inside_stack(int);
+int hoc_obj_look_inside_stack_index(int);
+void hoc_stkobj_unref(Object*, int stkindex);
+size_t hoc_total_array_data(Symbol*, Objectdata*);
+char* hoc_araystr(Symbol*, int, Objectdata*);
 
-extern char* hoc_object_pathname(Object*);
-extern const char* expand_env_var(const char*);
-extern void check_obj_type(Object*, const char*);
-extern int is_obj_type(Object*, const char*);
-extern void hoc_obj_ref(Object*);   /* NULL allowed */
-extern void hoc_obj_unref(Object*); /* NULL allowed */
-extern void hoc_dec_refcount(Object**);
-extern Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
-extern Object** hoc_temp_objptr(Object*);
-extern void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
-extern HocSymExtension* hoc_var_extra(const char*);
-extern double check_domain_limits(float*, double);
-extern Object* hoc_obj_get(int i);
-extern void hoc_obj_set(int i, Object*);
-extern void nrn_hoc_lock(void);
-extern void nrn_hoc_unlock(void);
+char* hoc_object_pathname(Object*);
+const char* expand_env_var(const char*);
+void check_obj_type(Object*, const char*);
+int is_obj_type(Object*, const char*);
+void hoc_obj_ref(Object*);   /* NULL allowed */
+void hoc_obj_unref(Object*); /* NULL allowed */
+void hoc_dec_refcount(Object**);
+Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
+Object** hoc_temp_objptr(Object*);
+void hoc_new_object_asgn(Object** obp, Symbol* template_symbol, void* cpp_object);
+HocSymExtension* hoc_var_extra(const char*);
+double check_domain_limits(float*, double);
+Object* hoc_obj_get(int i);
+void hoc_obj_set(int i, Object*);
+void nrn_hoc_lock();
+void nrn_hoc_unlock();
 
-extern void* hoc_Erealloc(void* ptr, size_t size);
+void* hoc_Erealloc(void* ptr, std::size_t size);
 
-extern void* nrn_cacheline_alloc(void** memptr, size_t size);
-extern void* nrn_cacheline_calloc(void** memptr, size_t nmemb, size_t size);
-extern void nrn_exit(int);
-extern void hoc_free_list(Symlist**);
-extern int hoc_errno_check(void);
-extern Symbol* hoc_parse_stmt(const char*, Symlist**);
-extern void hoc_run_stmt(Symbol*);
-extern Symbol* hoc_parse_expr(const char*, Symlist**);
-extern double hoc_run_expr(Symbol*);
-extern void hoc_free_string(char*);
-extern int hoc_xopen1(const char*, const char*);
-extern int hoc_xopen_run(Symbol*, const char*);
-extern void hoc_symbol_limits(Symbol*, float, float);
-extern void sym_extra_alloc(Symbol*);
-extern int hoc_chdir(const char* path);
+void* nrn_cacheline_alloc(void** memptr, std::size_t size);
+void* nrn_cacheline_calloc(void** memptr, std::size_t nmemb, std::size_t size);
+void nrn_exit(int);
+void hoc_free_list(Symlist**);
+int hoc_errno_check();
+Symbol* hoc_parse_stmt(const char*, Symlist**);
+void hoc_run_stmt(Symbol*);
+Symbol* hoc_parse_expr(const char*, Symlist**);
+double hoc_run_expr(Symbol*);
+void hoc_free_string(char*);
+int hoc_xopen1(const char*, const char*);
+int hoc_xopen_run(Symbol*, const char*);
+void hoc_symbol_limits(Symbol*, float, float);
+void sym_extra_alloc(Symbol*);
+int hoc_chdir(const char* path);
 
-extern void hoc_final_exit();
-extern void hoc_sprint1(char**, int);
-extern double hoc_scan(FILE*);
-extern char* hoc_symbol_units(Symbol* sym, const char* units);
-extern void hoc_fake_call(Symbol*);
-extern void hoc_last_init(void);
-extern void hoc_obj_notify(Object*);
-extern int ivoc_list_count(Object*);
+void hoc_final_exit();
+void hoc_sprint1(char**, int);
+double hoc_scan(std::FILE*);
+char* hoc_symbol_units(Symbol* sym, const char* units);
+void hoc_fake_call(Symbol*);
+void hoc_last_init();
+void hoc_obj_notify(Object*);
+int ivoc_list_count(Object*);
 Object* ivoc_list_item(Object*, int);
-extern double hoc_func_table(void* functable, int n, double* args);
-extern void hoc_spec_table(void** pfunctable, int n);
-extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
-extern void* hoc_pysec_name2ptr(const char* s, int eflag);
+double hoc_func_table(void* functable, int n, double* args);
+void hoc_spec_table(void** pfunctable, int n);
+void* hoc_sec_internal_name2ptr(const char* s, int eflag);
+void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
 
-extern void vector_append(IvocVect*, double);
-extern void vector_delete(IvocVect*);
+void vector_append(IvocVect*, double);
+void vector_delete(IvocVect*);
 
-extern Object** vector_temp_objvar(IvocVect*);
+Object** vector_temp_objvar(IvocVect*);
 
-extern int is_vector_arg(int);
+int is_vector_arg(int);
 
-extern char* vector_get_label(IvocVect*);
-extern void vector_set_label(IvocVect*, char*);
+char* vector_get_label(IvocVect*);
+void vector_set_label(IvocVect*, char*);
 
-extern void hoc_regexp_compile(const char*);
-extern int hoc_regexp_search(const char*);
-extern Symbol* hoc_install_var(const char*, double*);
-extern void hoc_class_registration(void);
-extern void hoc_spinit(void);
-extern void hoc_freearay(Symbol*);
-extern int hoc_arayinfo_install(Symbol*, int);
-extern void hoc_free_arrayinfo(Arrayinfo*);
-extern void hoc_free_val_array(double*, size_t);
-extern size_t hoc_total_array(Symbol*);
-extern void hoc_menu_cleanup(void);
-extern void frame_debug(void);
-extern void hoc_oop_initaftererror(void);
-extern void save_parallel_envp(void);
-extern void save_parallel_argv(int, const char**);
-extern void hoc_init(void);
-extern void initplot(void);
-extern void hoc_audit_command(const char*);
-extern void hoc_audit_from_hoc_main1(int, const char**, const char**);
-extern void hoc_audit_from_final_exit(void);
-extern void hoc_audit_from_xopen1(const char*, const char*);
-extern void hoc_xopen_from_audit(const char* fname);
-extern int hoc_retrieving_audit(void);
-extern int hoc_retrieve_audit(int id);
-extern int hoc_saveaudit(void);
+void hoc_regexp_compile(const char*);
+int hoc_regexp_search(const char*);
+Symbol* hoc_install_var(const char*, double*);
+void hoc_class_registration();
+void hoc_spinit();
+void hoc_freearay(Symbol*);
+int hoc_arayinfo_install(Symbol*, int);
+void hoc_free_arrayinfo(Arrayinfo*);
+void hoc_free_val_array(double*, std::size_t);
+std::size_t hoc_total_array(Symbol*);
+void hoc_menu_cleanup();
+void frame_debug();
+void hoc_oop_initaftererror();
+void save_parallel_envp();
+void save_parallel_argv(int, const char**);
+void hoc_init();
+void initplot();
+void hoc_audit_command(const char*);
+void hoc_audit_from_hoc_main1(int, const char**, const char**);
+void hoc_audit_from_final_exit();
+void hoc_audit_from_xopen1(const char*, const char*);
+void hoc_xopen_from_audit(const char* fname);
+int hoc_retrieving_audit();
+int hoc_retrieve_audit(int id);
+int hoc_saveaudit();
 
-extern void hoc_close_plot(void);
-extern void ivoc_cleanup(void);
-extern void ivoc_final_exit(void);
-extern int hoc_oc(const char*);
-extern void hoc_initcode(void);
-extern int hoc_ParseExec(int);
-extern int hoc_get_line(void);
-extern int hoc_araypt(Symbol*, int);
-extern double hoc_opasgn(int op, double dest, double src);
-extern void hoc_install_object_data_index(Symbol*);
-extern void hoc_template_notify(Object*, int);
-extern void hoc_construct_point(Object*, int);
-extern void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg);
-extern void hoc_push_frame(Symbol*, int);
-extern void hoc_pop_frame(void);
-extern int hoc_argindex(void);
-extern void hoc_pop_defer(void);
-extern void hoc_tobj_unref(Object**);
-extern int hoc_stacktype(void);
-extern int hoc_inside_stacktype(int);
-extern void hoc_link_symbol(Symbol*, Symlist*);
-extern void hoc_unlink_symbol(Symbol*, Symlist*);
-extern void notify_freed(void*);
-extern void notify_freed_val_array(double*, size_t);
-extern void notify_pointer_freed(void*);
-extern int ivoc_list_look(Object*, Object*, char*, int);
-extern void ivoc_free_alias(Object*);
-extern Symbol* ivoc_alias_lookup(const char*, Object*);
-extern void hoc_obj_disconnect(Object*);
-extern void hoc_free_object(Object*);
-extern void hoc_free_pstring(char**);
+void hoc_close_plot();
+void ivoc_cleanup();
+void ivoc_final_exit();
+int hoc_oc(const char*);
+void hoc_initcode();
+int hoc_ParseExec(int);
+int hoc_get_line();
+int hoc_araypt(Symbol*, int);
+double hoc_opasgn(int op, double dest, double src);
+void hoc_install_object_data_index(Symbol*);
+void hoc_template_notify(Object*, int);
+void hoc_construct_point(Object*, int);
+void hoc_call_ob_proc(Object* ob, Symbol* sym, int narg);
+void hoc_push_frame(Symbol*, int);
+void hoc_pop_frame();
+int hoc_argindex();
+void hoc_pop_defer();
+void hoc_tobj_unref(Object**);
+int hoc_stacktype();
+int hoc_inside_stacktype(int);
+void hoc_link_symbol(Symbol*, Symlist*);
+void hoc_unlink_symbol(Symbol*, Symlist*);
+void notify_freed(void*);
+void notify_pointer_freed(void*);
+int ivoc_list_look(Object*, Object*, char*, int);
+void ivoc_free_alias(Object*);
+Symbol* ivoc_alias_lookup(const char*, Object*);
+void hoc_obj_disconnect(Object*);
+void hoc_free_object(Object*);
+void hoc_free_pstring(char**);
 extern int hoc_returning;
-extern void hoc_on_init_register(void (*)());
-extern int hoc_pid(void);
-extern int hoc_ired(const char*, int, int, int);
-extern double hoc_xred(const char*, double, double, double);
-extern int hoc_sred(const char*, char*, char*);
-extern int nrnpy_pr(const char* fmt, ...);
-extern int Fprintf(FILE*, const char* fmt, ...);
-extern void nrnpy_pass();
-extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
-extern int nrn_is_cable(void);
-extern int nrn_isdouble(double*, double, double);
-extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
-extern Symbol* hoc_get_symbol(const char* var);
-
-
-#if defined(__cplusplus)
-}
-#endif
+void hoc_on_init_register(void (*)());
+int hoc_pid();
+int hoc_ired(const char*, int, int, int);
+double hoc_xred(const char*, double, double, double);
+int hoc_sred(const char*, char*, char*);
+int nrnpy_pr(const char* fmt, ...);
+int Fprintf(std::FILE*, const char* fmt, ...);
+void nrnpy_pass();
+void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
+int nrn_is_cable();
+void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
+Symbol* hoc_get_symbol(const char* var);
 
 extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
-extern void bbs_done(void);
-extern int hoc_main1(int, const char**, const char**);
-extern char* cxx_char_alloc(size_t size);
+void bbs_done(void);
+int hoc_main1(int, const char**, const char**);
+char* cxx_char_alloc(std::size_t size);
 
 // olupton 2022-01-31: This has to have C linkage for now because it is used in
 //                     praxis.c.
 extern "C" int stoprun;
 extern int nrn_mpiabort_on_error_;
-
-#endif
 
 /** @} */  // end of hoc_functions

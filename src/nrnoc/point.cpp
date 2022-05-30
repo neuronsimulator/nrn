@@ -5,9 +5,11 @@
 saves the pointtype as later argument to create and loc */
 
 #include <stdlib.h>
-#include "section.h"
+
 #include "membfunc.h"
-#include "parse.hpp"
+#include "ocnotify.h"
+#include "parse_with_deps.hpp"  // MECHANISM
+#include "section.h"
 
 
 extern char* pnt_map;

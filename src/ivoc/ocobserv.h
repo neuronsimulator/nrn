@@ -1,6 +1,8 @@
 #ifndef ocobserve_h
 #define ocobserve_h
 
+#include "oc_ansi.h"
+
 #include <InterViews/observe.h>
 
 struct Object;
@@ -32,11 +34,6 @@ class ObjObservable: public Observable {
 };
 
 // For an Observer watching a cTemplate
-
-extern "C" {
-void hoc_template_notify(Object*, int message);
-}  // extern "C"
-
 class ClassObservable: public Observable {
   public:
     // only the first two guarantee an update on the Observer

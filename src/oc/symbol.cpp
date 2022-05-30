@@ -13,14 +13,16 @@
 #define _XOPEN_SOURCE 600
 #endif
 
+#include "hoc.h"
+#include "hoclist.h"
+#include "oc_ansi.h"
+#include "ocnotify.h"
+#include "parse.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "hoc.h"
-#include "oc_ansi.h"
-#include "ocfunc.h"
-#include "parse.hpp"
-#include "hoclist.h"
+
 #if MAC
 #undef HAVE_MALLOC_H
 #endif
