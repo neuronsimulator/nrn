@@ -54,6 +54,7 @@ extern char* hoc_object_name(Object*);
 extern void hoc_retpushx(double);
 
 extern double* hoc_getarg(int);
+double* hoc_pgetarg(int);
 extern int ifarg(int);
 
 extern int vector_instance_px(void*, double**);
@@ -94,9 +95,6 @@ double* vector_vec(IvocVect*);
 [[deprecated("non-void* overloads are preferred")]] double* vector_vec(void*);
 
 extern int nrnignore;
-
-double* hoc_pgetarg(int);
-Object* ivoc_list_item(Object*, int);
 
 #if defined(__cplusplus)
 extern "C" {
