@@ -11,7 +11,7 @@
 #include "oc2iv.h"
 #include "nrnisaac.h"
 
-#include <OS/list.h>
+#include <vector>
 #include <ocnotify.h>
 #include "ocobserv.h"
 #include <nrnran123.h>
@@ -55,8 +55,8 @@ class RandomPlay: public Observer, public Resource {
     double* px_;
 };
 
-declarePtrList(RandomPlayList, RandomPlay)
-    implementPtrList(RandomPlayList, RandomPlay) static RandomPlayList* random_play_list_;
+using RandomPlayList = std::vector<RandomPlay*>;
+static RandomPlayList* random_play_list_;
 
 extern "C" {
 double nrn_random_pick(Rand* r);
@@ -185,7 +185,7 @@ RandomPlay::RandomPlay(Rand* r, double* px) {
     // printf("RandomPlay\n");
     r_ = r;
     px_ = px;
-    random_play_list_->append(this);
+    random_play_list_->push_back(this);
     ref();
     nrn_notify_when_double_freed(px_, this);
     nrn_notify_when_void_freed((void*) r->obj_, this);
@@ -198,11 +198,10 @@ void RandomPlay::play() {
     *px_ = (*(r_->rand))();
 }
 void RandomPlay::list_remove() {
-    long i, cnt = random_play_list_->count();
-    for (i = 0; i < cnt; ++i) {
-        if (random_play_list_->item(i) == (RandomPlay*) this) {
+    for (auto it = random_play_list_->begin(); it != random_play_list_->end(); ++it) {
+        if (*it == (RandomPlay*) this) {
             // printf("RandomPlay %p removed from list cnt=%d i=%d %p\n", this, cnt, i);
-            random_play_list_->remove(i);
+            random_play_list_->erase(it);
             unref_deferred();
             break;
         }
@@ -618,57 +617,35 @@ static double r_play(void* r) {
 }
 
 extern "C" void nrn_random_play() {
-    long i, cnt = random_play_list_->count();
-    for (i = 0; i < cnt; ++i) {
-        random_play_list_->item(i)->play();
+    for (const auto& rp: *random_play_list_) {
+        rp->play();
     }
 }
 
 
-static Member_func r_members[] = {"ACG",
-                                  r_ACG,
-                                  "MLCG",
-                                  r_MLCG,
-                                  "Isaac64",
-                                  r_Isaac64,
-                                  "MCellRan4",
-                                  r_MCellRan4,
-                                  "Random123",
-                                  r_nrnran123,
-                                  "Random123_globalindex",
-                                  r_ran123_globalindex,
-                                  "seq",
-                                  r_sequence,
-                                  "repick",
-                                  r_repick,
-                                  "uniform",
-                                  r_uniform,
-                                  "discunif",
-                                  r_discunif,
-                                  "normal",
-                                  r_normal,
-                                  "lognormal",
-                                  r_lognormal,
-                                  "binomial",
-                                  r_binomial,
-                                  "poisson",
-                                  r_poisson,
-                                  "geometric",
-                                  r_geometric,
-                                  "hypergeo",
-                                  r_hypergeo,
-                                  "negexp",
-                                  r_negexp,
-                                  "erlang",
-                                  r_erlang,
-                                  "weibull",
-                                  r_weibull,
-                                  "play",
-                                  r_play,
-                                  0,
-                                  0};
+static Member_func r_members[] = {{"ACG", r_ACG},
+                                  {"MLCG", r_MLCG},
+                                  {"Isaac64", r_Isaac64},
+                                  {"MCellRan4", r_MCellRan4},
+                                  {"Random123", r_nrnran123},
+                                  {"Random123_globalindex", r_ran123_globalindex},
+                                  {"seq", r_sequence},
+                                  {"repick", r_repick},
+                                  {"uniform", r_uniform},
+                                  {"discunif", r_discunif},
+                                  {"normal", r_normal},
+                                  {"lognormal", r_lognormal},
+                                  {"binomial", r_binomial},
+                                  {"poisson", r_poisson},
+                                  {"geometric", r_geometric},
+                                  {"hypergeo", r_hypergeo},
+                                  {"negexp", r_negexp},
+                                  {"erlang", r_erlang},
+                                  {"weibull", r_weibull},
+                                  {"play", r_play},
+                                  {nullptr, nullptr}};
 
 void Random_reg() {
     class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
-    random_play_list_ = new RandomPlayList();
+    random_play_list_ = new RandomPlayList;
 }

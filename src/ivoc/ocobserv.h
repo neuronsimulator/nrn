@@ -4,7 +4,7 @@
 #include <InterViews/observe.h>
 
 struct Object;
-class cTemplate;
+struct cTemplate;
 
 // For an Observer watching a hoc Object
 // when the last ref disappears, disconnect is called on the Observer

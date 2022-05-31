@@ -236,6 +236,7 @@ class KSGateComplex {
 
 class KSIv {
   public:
+    virtual ~KSIv() = default;
     // this one for ionic ohmic and nernst.
     virtual double cur(double g, double* p, Datum* pd, double v);
     virtual double jacob(double* p, Datum* pd, double v);
