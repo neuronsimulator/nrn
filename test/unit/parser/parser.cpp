@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "ast/program.hpp"
 #include "lexer/modtoken.hpp"
@@ -38,7 +38,8 @@ SCENARIO("NMODL can accept \\r as return char for one line comment", "[parser]")
     GIVEN("A comment defined with \\r as return char") {
         WHEN("parsing") {
             THEN("success") {
-                REQUIRE(is_valid_construct(R"(: see you next linePROCEDURE foo() {
+                REQUIRE(is_valid_construct(R"(: see you next line
+PROCEDURE foo() {
                 })"));
             }
         }

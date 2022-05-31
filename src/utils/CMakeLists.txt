@@ -1,26 +1,14 @@
 # =============================================================================
-# Utility sources
+# Utility library
 # =============================================================================
-set(UTIL_SOURCE_FILES
-    common_utils.cpp
-    common_utils.hpp
-    file_library.cpp
-    file_library.hpp
-    logger.cpp
-    logger.hpp
-    perf_stat.cpp
-    perf_stat.hpp
-    string_utils.cpp
-    string_utils.hpp
-    table_data.cpp
-    table_data.hpp
-    ${PROJECT_BINARY_DIR}/src/config/config.cpp)
-
-# =============================================================================
-# Symbol table library
-# =============================================================================
-
-add_library(util_obj OBJECT ${UTIL_SOURCE_FILES})
-set_property(TARGET util_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-add_library(util STATIC $<TARGET_OBJECTS:util_obj>)
+add_library(
+  util STATIC
+  common_utils.cpp
+  file_library.cpp
+  logger.cpp
+  perf_stat.cpp
+  string_utils.cpp
+  table_data.cpp
+  ${PROJECT_BINARY_DIR}/src/config/config.cpp)
+set_property(TARGET util PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(util PUBLIC fmt::fmt nlohmann_json::nlohmann_json spdlog::spdlog_header_only)

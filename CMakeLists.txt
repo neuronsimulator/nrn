@@ -59,10 +59,8 @@ find_package(BISON 3.0 REQUIRED)
 # =============================================================================
 # Include cmake modules. Filenames ensure we always pick up NMODL's versions.
 # =============================================================================
-include(cmake/Catch.cmake)
 include(cmake/ClangTidyHelper.cmake)
 include(cmake/CompilerHelper.cmake)
-include(cmake/FindPythonModule.cmake)
 include(cmake/FlexHelper.cmake)
 include(cmake/GitRevision.cmake)
 include(cmake/PythonLinkHelper.cmake)
@@ -81,23 +79,6 @@ project(
   LANGUAGES CXX)
 
 # =============================================================================
-# Initialize external libraries as submodule
-# =============================================================================
-set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/ext")
-add_external_project(fmt OFF)
-add_external_project(spdlog OFF)
-add_external_project(pybind11)
-add_external_project(cli11 OFF)
-add_external_project(eigen OFF)
-
-add_subdirectory(${THIRD_PARTY_DIRECTORY}/fmt EXCLUDE_FROM_ALL)
-set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-include_directories(
-  SYSTEM ${THIRD_PARTY_DIRECTORY} ${THIRD_PARTY_DIRECTORY}/catch/include
-  ${THIRD_PARTY_DIRECTORY}/fmt/include ${THIRD_PARTY_DIRECTORY}/spdlog/include
-  ${THIRD_PARTY_DIRECTORY}/cli11/include)
-
-# =============================================================================
 # HPC Coding Conventions
 # =============================================================================
 set(NMODL_ClangFormat_EXCLUDES_RE
@@ -111,7 +92,39 @@ set(NMODL_CMakeFormat_EXCLUDES_RE
 set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/cmake")
 add_external_project(hpc-coding-conventions OFF)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
-include(FindClangFormat)
+include(cmake/hpc-coding-conventions/cpp/cmake/FindClangFormat.cmake)
+
+# =============================================================================
+# Initialize external libraries as submodule
+# =============================================================================
+set(NMODL_3RDPARTY_DIR "${PROJECT_SOURCE_DIR}/ext")
+include(cmake/hpc-coding-conventions/cpp/cmake/3rdparty.cmake)
+cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
+if(NMODL_3RDPARTY_USE_CATCH2)
+  # If we're using the submodule then make sure the Catch.cmake helper can be found. In newer
+  # versions of Catch2, and with hpc-coding-conventions#130, this should just work...
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ext/catch2/contrib")
+endif()
+include(Catch)
+cpp_cc_git_submodule(cli11 BUILD PACKAGE CLI11 REQUIRED)
+# For the moment do not try and use an external Eigen.
+cpp_cc_git_submodule(eigen)
+cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
+# If we're building from the submodule, make sure we pass -fPIC so that we can link the code into a
+# shared library later.
+if(NMODL_3RDPARTY_USE_FMT)
+  set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
+cpp_cc_git_submodule(json BUILD PACKAGE nlohmann_json REQUIRED)
+cpp_cc_git_submodule(pybind11 BUILD PACKAGE pybind11 REQUIRED)
+# Tell spdlog not to use its bundled fmt, it should either use the fmt submodule or a truly external
+# installation for consistency. This line should be harmless if we use an external spdlog.
+set(SPDLOG_FMT_EXTERNAL ON)
+cpp_cc_git_submodule(spdlog BUILD PACKAGE spdlog REQUIRED)
+if(NMODL_3RDPARTY_USE_SPDLOG)
+  # See above, same logic as fmt
+  set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # =============================================================================
 # Format & execute ipynb notebooks in place (pip install nbconvert clean-ipynb)
@@ -142,11 +155,12 @@ endif()
 # =============================================================================
 message(STATUS "CHECKING FOR PYTHON")
 find_package(PythonInterp 3.6 REQUIRED)
-nmodl_find_python_module(jinja2 2.9.3 REQUIRED)
-nmodl_find_python_module(pytest 3.3.0 REQUIRED)
-nmodl_find_python_module(sympy 1.2 REQUIRED)
-nmodl_find_python_module(textwrap 0.9 REQUIRED)
-nmodl_find_python_module(yaml 3.12 REQUIRED)
+include(cmake/hpc-coding-conventions/cpp/cmake/bbp-find-python-module.cmake)
+cpp_cc_find_python_module(jinja2 2.9.3 REQUIRED)
+cpp_cc_find_python_module(pytest 3.3.0 REQUIRED)
+cpp_cc_find_python_module(sympy 1.3 REQUIRED)
+cpp_cc_find_python_module(textwrap 0.9 REQUIRED)
+cpp_cc_find_python_module(yaml 3.12 REQUIRED)
 
 # =============================================================================
 # Compiler specific flags for external submodules

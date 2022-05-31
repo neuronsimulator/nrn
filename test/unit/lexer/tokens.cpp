@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "lexer/modtoken.hpp"
 #include "lexer/nmodl_lexer.hpp"

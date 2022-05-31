@@ -16,3 +16,9 @@
 [submodule "ext/eigen"]
 	path = ext/eigen
 	url = https://github.com/BlueBrain/eigen.git
+[submodule "ext/json"]
+	path = ext/json
+	url = https://github.com/nlohmann/json.git
+[submodule "ext/catch2"]
+	path = ext/catch2
+	url = https://github.com/catchorg/Catch2.git

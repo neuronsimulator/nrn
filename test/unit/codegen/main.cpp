@@ -7,7 +7,7 @@
 
 #define CATCH_CONFIG_RUNNER
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "pybind/pyembed.hpp"
 #include "utils/logger.hpp"

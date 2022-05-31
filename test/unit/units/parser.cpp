@@ -10,7 +10,7 @@
 #include <string>
 #include <utility>
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "config/config.h"
 #include "parser/diffeq_driver.hpp"

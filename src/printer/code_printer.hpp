@@ -14,7 +14,7 @@
  * \file
  * \brief \copybrief nmodl::printer::CodePrinter
  */
-#include <spdlog/spdlog.h>  // want fmt but <submodule rant>
+#include <fmt/format.h>
 
 #include <fstream>
 #include <iostream>

@@ -4,20 +4,18 @@
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
-
-#include <memory>
-#include <set>
-
-#include <pybind11/iostream.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "ast/program.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "pybind/pybind_utils.hpp"
 #include "visitors/visitor_utils.hpp"
 
+#include <pybind11/iostream.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include <memory>
+#include <set>
 
 /**
  * \dir

@@ -4,15 +4,14 @@
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
-
 #pragma once
+
+#include <pybind11/embed.h>
 
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include "pybind11/embed.h"
 
 namespace nmodl {
 namespace pybind_wrappers {

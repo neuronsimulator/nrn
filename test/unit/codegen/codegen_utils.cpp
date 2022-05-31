@@ -5,7 +5,7 @@
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "codegen/codegen_c_visitor.hpp"
 #include "codegen/codegen_ispc_visitor.hpp"

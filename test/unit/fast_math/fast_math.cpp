@@ -9,7 +9,7 @@
 
 #include "codegen/fast_math.hpp"
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 namespace nmodl {
 namespace fast_math {

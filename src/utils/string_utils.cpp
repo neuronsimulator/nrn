@@ -6,7 +6,7 @@
  *************************************************************************/
 #include "utils/string_utils.hpp"
 
-#include <spdlog/spdlog.h>
+#include <fmt/format.h>
 
 #include <limits>
 #include <string>

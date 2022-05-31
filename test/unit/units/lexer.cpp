@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "lexer/unit_lexer.hpp"
 #include "parser/unit_driver.hpp"

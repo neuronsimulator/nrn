@@ -8,7 +8,7 @@ add_link_options(${NMODL_EXTRA_CXX_FLAGS})
 add_compile_options(${NMODL_TESTS_COMPILER_WARNING_SUPPRESSIONS})
 
 include_directories(${PYBIND11_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
-include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/catch ${NMODL_PROJECT_SOURCE_DIR}/test)
+include_directories(${NMODL_PROJECT_SOURCE_DIR}/test)
 include_directories(${NMODL_PROJECT_SOURCE_DIR}/src/solver)
 include_directories(${NMODL_PROJECT_SOURCE_DIR}/src/utils)
 include_directories(${NMODL_PROJECT_SOURCE_DIR}/ext/eigen)
@@ -128,6 +128,7 @@ foreach(
   testunitlexer
   testunitparser)
 
+  target_link_libraries(${test_name} Catch2::Catch2)
   if(${test_name} STREQUAL "testvisitor")
     catch_discover_tests(${test_name} TEST_PREFIX "${test_name}/" PROPERTIES ENVIRONMENT
                          "${testvisitor_env}")
