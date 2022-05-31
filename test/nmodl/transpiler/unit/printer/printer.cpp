@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include "printer/json_printer.hpp"
 

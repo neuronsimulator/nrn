@@ -9,8 +9,8 @@
 
 #include "coreneuron/utils/offload.hpp"
 
-#include "Eigen/Dense"
-#include "Eigen/LU"
+#include <Eigen/Dense>
+#include <Eigen/LU>
 
 template <int dim>
 using MatType = Eigen::Matrix<double, dim, dim, Eigen::ColMajor, dim, dim>;

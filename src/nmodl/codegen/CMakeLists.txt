@@ -1,33 +1,19 @@
 # =============================================================================
-# Codegen sources
+# Codegen library
 # =============================================================================
-set(CODEGEN_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_acc_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_compatibility_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_compatibility_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_cuda_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_omp_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_omp_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_c_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_c_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_helper_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_info.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_ispc_visitor.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_naming.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen_utils.hpp)
-
-# =============================================================================
-# Codegen library and executable
-# =============================================================================
-add_library(codegen STATIC ${CODEGEN_SOURCE_FILES})
-
+add_library(
+  codegen STATIC
+  codegen_acc_visitor.cpp
+  codegen_c_visitor.cpp
+  codegen_compatibility_visitor.cpp
+  codegen_cuda_visitor.cpp
+  codegen_helper_visitor.cpp
+  codegen_info.cpp
+  codegen_ispc_visitor.cpp
+  codegen_omp_visitor.cpp
+  codegen_utils.cpp)
 add_dependencies(codegen lexer util visitor)
+target_link_libraries(codegen PRIVATE util)
 
 # copy to build directory to make usable from build directory
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/fast_math.ispc

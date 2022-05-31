@@ -2,58 +2,42 @@
 # Various project components and their source files
 # =============================================================================
 set(BISON_GENERATED_SOURCE_FILES
-    ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
     ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.cpp
+    ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
+    ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
+    ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
+    ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp)
+set(BISON_GENERATED_HEADER_FILES
+    ${PROJECT_BINARY_DIR}/src/parser/nmodl/location.hh
     ${PROJECT_BINARY_DIR}/src/parser/nmodl/nmodl_parser.hpp
     ${PROJECT_BINARY_DIR}/src/parser/nmodl/position.hh
-    ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/verbatim_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/diffeq/diffeq_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/c/c11_parser.hpp
-    ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.cpp
     ${PROJECT_BINARY_DIR}/src/parser/unit/unit_parser.hpp)
 
-set(UNIT_SOURCE_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.hpp
-                      ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.cpp)
+set(UNIT_SOURCE_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/units/units.cpp)
 
-set(NMODL_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.hpp
-                       ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp)
+set(NMODL_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/nmodl_driver.cpp)
 
-set(DIFFEQ_DRIVER_FILES
-    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.cpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.hpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp
-    ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_helper.hpp)
+set(DIFFEQ_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_driver.cpp
+                        ${NMODL_PROJECT_SOURCE_DIR}/src/parser/diffeq_context.cpp)
 
-set(C_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.hpp
-                   ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
+set(C_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/c11_driver.cpp)
 
 set_source_files_properties(${AST_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
 
-set(UNIT_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.hpp
-                      ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
+set(UNIT_DRIVER_FILES ${NMODL_PROJECT_SOURCE_DIR}/src/parser/unit_driver.cpp)
 
 set(LEXER_SOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/modl.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/token_mapping.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/token_mapping.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/nmodl_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/modtoken.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/modtoken.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/nmodl_base_lexer.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/verbatim_lexer.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/diffeq_base_lexer.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/c11_base_lexer.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/unit_base_lexer.hpp
     ${NMODL_DRIVER_FILES}
     ${DIFFEQ_DRIVER_FILES}
     ${C_DRIVER_FILES}
@@ -199,22 +183,19 @@ add_custom_command(
 # Libraries & executables
 # =============================================================================
 
-add_library(lexer_obj OBJECT ${LEXER_SOURCE_FILES} ${BISON_GENERATED_SOURCE_FILES}
-                             ${AST_GENERATED_SOURCES} ${UNIT_SOURCE_FILES})
-
-set_property(TARGET lexer_obj PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-add_library(lexer STATIC $<TARGET_OBJECTS:lexer_obj>)
-target_link_libraries(lexer fmt::fmt)
+add_library(lexer STATIC ${LEXER_SOURCE_FILES} ${BISON_GENERATED_SOURCE_FILES}
+                         ${AST_GENERATED_SOURCES} ${UNIT_SOURCE_FILES})
+set_property(TARGET lexer PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(lexer PRIVATE util)
 
 if(NOT NMODL_AS_SUBPROJECT)
   add_executable(nmodl_lexer main_nmodl.cpp)
   add_executable(c_lexer main_c.cpp)
   add_executable(units_lexer main_units.cpp)
 
-  target_link_libraries(nmodl_lexer lexer util)
-  target_link_libraries(c_lexer lexer util)
-  target_link_libraries(units_lexer lexer util)
+  target_link_libraries(nmodl_lexer CLI11::CLI11 lexer util)
+  target_link_libraries(c_lexer CLI11::CLI11 lexer util)
+  target_link_libraries(units_lexer CLI11::CLI11 lexer util)
 endif()
 
 # =============================================================================
@@ -235,4 +216,5 @@ if(NOT NMODL_AS_SUBPROJECT)
     CONFIGURATIONS Debug)
 endif()
 
-add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES})
+add_custom_target(parser-gen DEPENDS ${BISON_GENERATED_SOURCE_FILES}
+                                     ${BISON_GENERATED_HEADER_FILES})

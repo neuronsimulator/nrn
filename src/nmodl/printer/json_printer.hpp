@@ -12,12 +12,11 @@
  * \brief \copybrief nmodl::printer::JSONPrinter
  */
 
+#include <nlohmann/json.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <stack>
-
-#include "json/json.hpp"
-
 
 namespace nmodl {
 namespace printer {

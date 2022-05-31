@@ -4,15 +4,14 @@
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
-
-#include <fstream>
-
-#include "CLI/CLI.hpp"
-
 #include "config/config.h"
 #include "lexer/unit_lexer.hpp"
 #include "parser/unit_driver.hpp"
 #include "utils/logger.hpp"
+
+#include <CLI/CLI.hpp>
+
+#include <fstream>
 
 /**
  * \file

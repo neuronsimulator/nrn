@@ -4,16 +4,14 @@
  * This file is part of NMODL distributed under the terms of the GNU
  * Lesser General Public License. See top-level LICENSE file for details.
  *************************************************************************/
+#include "codegen/codegen_naming.hpp"
+#include "pybind/pyembed.hpp"
 
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
 
 #include <set>
 #include <vector>
-
-#include "pybind11/embed.h"
-#include "pybind11/stl.h"
-
-#include "codegen/codegen_naming.hpp"
-#include "pybind/pyembed.hpp"
 
 namespace py = pybind11;
 using namespace py::literals;
