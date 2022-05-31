@@ -66,19 +66,20 @@ void hoc_parallel_begin(void) {
     if (!parallel_sub) { /* if 0 then master */
         /* the master instance executes the following portion of the loop */
         for (i = ((int) first) + 1; i <= (int) last; i++) {
-            char buf[10], *pnt = parallel_argv;
-
-            /* increment pnt to "00000" */
-            for (j = 0; j < 2; j++) {
-                /*EMPTY*/
-                while (*pnt++)
-                    ;
+            // parallel_argv will be null on windows, which triggers an ICE in
+            // some cases, see #1840.
+            if (parallel_argv) {
+                char buf[10], *pnt = parallel_argv;
+                /* increment pnt to "00000" */
+                for (j = 0; j < 2; j++) {
+                    /*EMPTY*/
+                    while (*pnt++)
+                        ;
+                }
+                /* replace "00000" with actual value */
+                sprintf(buf, "%5d", i);
+                strcpy(pnt, buf);
             }
-
-            /* replace "00000" with actual value */
-            sprintf(buf, "%5d", i);
-            strcpy(pnt, buf);
-
             /* farm-out all but the first instance of the loop */
 #if LINDA
             /* place arguments for eval() into tuple space, Linda
