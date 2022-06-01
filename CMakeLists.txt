@@ -231,6 +231,16 @@ include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
 
 # =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+# unsigned integer flow is not actually undefined behaviour, and NEURON has a
+# lot of it...
+set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS unsigned-integer-overflow)
+include("${CODING_CONV_CMAKE}/sanitizers.cmake")
+list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+
+# =============================================================================
 # Find required packages
 # =============================================================================
 find_package(BISON REQUIRED)
@@ -726,11 +736,14 @@ endif()
 # Add tests if enabled
 # =============================================================================
 if(NRN_ENABLE_TESTS)
-  nrn_add_external_project(catch2)
-  set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+  # If CoreNEURON + NMODL are enabled, Catch2 will already have been set up...
+  if(NOT TARGET Catch2::Catch2)
+    nrn_add_external_project(catch2)
+    set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    include(Catch)
+  endif()
   include(CTest)
-  include(Catch)
   nrn_find_python_module(pytest)
   nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)

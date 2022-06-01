@@ -7,12 +7,14 @@ include_directories(${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/src/nrnoc
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
 # Test executables
 # =============================================================================
 set(TEST_SOURCES unit_tests/oc/hoc_interpreter.cpp)
 add_executable(testneuron unit_tests/unit_test.cpp ${TEST_SOURCES})
+cpp_cc_configure_sanitizers(TARGET testneuron)
 target_compile_features(testneuron PUBLIC cxx_std_11)
 target_link_libraries(testneuron Catch2::Catch2 nrniv_lib)
 if(${USE_PTHREAD} EQUAL 1)
@@ -465,6 +467,7 @@ add_modlunit_test("${PROJECT_SOURCE_DIR}/src/nrnoc/pattern.mod")
 set_property(TEST modlunit_pattern PROPERTY WILL_FAIL ON)
 
 set_tests_properties(${TESTS} PROPERTIES ENVIRONMENT "${NRN_RUN_FROM_BUILD_DIR_ENV}")
+cpp_cc_configure_sanitizers(TEST ${TESTS})
 # If profiling is enabled, run ringtest with profiler
 if(NRN_ENABLE_PROFILING)
   set(TEST_PROFILING_ENV ${NRN_RUN_FROM_BUILD_DIR_ENV})

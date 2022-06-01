@@ -2,6 +2,7 @@
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
 # Definitions used in setup.py

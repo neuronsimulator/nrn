@@ -404,6 +404,8 @@ function(nrn_add_test)
   endif()
   list(APPEND test_env "PATH=${path_additions}${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
   set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}")
+  # PRELOAD is not always needed, but it's probably harmless...
+  cpp_cc_configure_sanitizers(TEST ${test_names} PRELOAD)
 
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
