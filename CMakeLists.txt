@@ -235,7 +235,9 @@ cpp_cc_git_submodule(Random123)
 # =============================================================================
 # unsigned integer flow is not actually undefined behaviour, and NEURON has a
 # lot of it...
-set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS unsigned-integer-overflow)
+set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
+    implicit-signed-integer-truncation
+    unsigned-integer-overflow)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
@@ -839,6 +841,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
+string(APPEND COMPILER_FLAGS " ${NRN_COMPILE_FLAGS}")
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")
