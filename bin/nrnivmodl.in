@@ -153,7 +153,7 @@ for i in "${files[@]}" ; do
   echo "\
 ./${base_name// /\\ }.c: ${f// /\\ }.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
+	(cd \"$dir_name\"; @NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
 ./${base_name// /\\ }.o: ./${base_name// /\\ }.c
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
