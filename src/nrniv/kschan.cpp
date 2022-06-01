@@ -16,9 +16,8 @@
 #define strdup _strdup
 #endif
 
-declarePtrList(KSChanList, KSChan) implementPtrList(KSChanList, KSChan)
-
-    static KSChanList* channels;
+using KSChanList = std::vector<KSChan*>;
+static KSChanList* channels;
 
 extern char* hoc_symbol_units(Symbol*, const char*);
 extern void nrn_mk_table_check();
@@ -55,24 +54,24 @@ static void chkobj(void* v) {
 }
 
 static void check_table_thread_(double* p, Datum* ppvar, Datum* thread, NrnThread* vnt, int type) {
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->check_table_thread((NrnThread*) vnt);
 }
 
 static void nrn_alloc(Prop* prop) {
-    KSChan* c = channels->item(prop->type);
+    KSChan* c = (*channels)[prop->type];
     c->alloc(prop);
 }
 
 static void nrn_init(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_init\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->init(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 
 static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_cur\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->cur(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
@@ -85,7 +84,7 @@ static void nrn_cur(NrnThread* nt, Memb_list* ml, int type) {
 
 static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_jacob\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->jacob(ml->nodecount, ml->nodeindices, ml->data, ml->pdata, nt);
@@ -98,7 +97,7 @@ static void nrn_jacob(NrnThread* nt, Memb_list* ml, int type) {
 
 static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
     // printf("nrn_state\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
 #if CACHEVEC
     if (use_cachevec) {
         c->state(ml->nodecount, ml->nodeindices, ml->nodelist, ml->data, ml->pdata, nt);
@@ -111,28 +110,28 @@ static void nrn_state(NrnThread* nt, Memb_list* ml, int type) {
 
 static int ode_count(int type) {
     // printf("ode_count\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     return c->count();
 }
 static void
 ode_map(int ieq, double** pv, double** pvdot, double* p, Datum* pd, double* atol, int type) {
     // printf("ode_map\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->map(ieq, pv, pvdot, p, pd, atol);
 }
 static void ode_spec(NrnThread*, Memb_list* ml, int type) {
     // printf("ode_spec\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->spec(ml->nodecount, ml->nodelist, ml->data, ml->pdata);
 }
 static void ode_matsol(NrnThread* nt, Memb_list* ml, int type) {
     // printf("ode_matsol\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->matsol(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 static void singchan(NrnThread* nt, Memb_list* ml, int type) {
     // printf("singchan_\n");
-    KSChan* c = channels->item(type);
+    KSChan* c = (*channels)[type];
     c->cv_sc_update(ml->nodecount, ml->nodelist, ml->data, ml->pdata, nt);
 }
 static void* hoc_create_pnt(Object* ho) {
@@ -142,7 +141,7 @@ static void hoc_destroy_pnt(void* v) {
     // first free the KSSingleNodeData if it exists.
     Point_process* pp = (Point_process*) v;
     if (pp->prop) {
-        KSChan* c = channels->item(pp->prop->type);
+        KSChan* c = (*channels)[pp->prop->type];
         c->destroy_pnt(pp);
     }
 }
@@ -168,22 +167,17 @@ static double hoc_get_loc_pnt(void* v) {
 }
 static double hoc_nsingle(void* v) {
     Point_process* pp = (Point_process*) v;
-    KSChan* c = channels->item(pp->prop->type);
+    KSChan* c = (*channels)[pp->prop->type];
     if (ifarg(1)) {
         c->nsingle(pp, (int) chkarg(1, 1, 1e9));
     }
     return (double) c->nsingle(pp);
 }
-static Member_func member_func[] = {"loc",
-                                    hoc_loc_pnt,
-                                    "has_loc",
-                                    hoc_has_loc,
-                                    "get_loc",
-                                    hoc_get_loc_pnt,
-                                    "nsingle",
-                                    hoc_nsingle,
-                                    0,
-                                    0};
+static Member_func member_func[] = {{"loc", hoc_loc_pnt},
+                                    {"has_loc", hoc_has_loc},
+                                    {"get_loc", hoc_get_loc_pnt},
+                                    {"nsingle", hoc_nsingle},
+                                    {nullptr, nullptr}};
 
 void kschan_cvode_single_update() {}
 
@@ -288,8 +282,6 @@ static double ks_erev(void* v) {
 }
 
 static double ks_vres(void* v) {
-    KSChan* ks = (KSChan*) v;
-
     if (ifarg(1)) {
         KSSingle::vres_ = chkarg(1, 1e-9, 1e9);
     }
@@ -297,8 +289,6 @@ static double ks_vres(void* v) {
 }
 
 static double ks_rseed(void* v) {
-    KSChan* ks = (KSChan*) v;
-
     if (ifarg(1)) {
         KSSingle::idum_ = (unsigned int) chkarg(1, 0, 1e9);
     }
@@ -651,9 +641,7 @@ static double kst_stoichiometry(void* v) {
 static double ks_pr(void* v) {
     KSChan* ks = (KSChan*) v;
     KSTransition* kt;
-    Symbol* s;
 
-    int i, j;
     Printf("%s type properties\n", hoc_object_name(ks->obj_));
     Printf("name=%s is_point_=%s ion_=%s cond_model_=%d\n",
            ks->name_.string(),
@@ -669,24 +657,24 @@ static double ks_pr(void* v) {
            ks->ivkstrans_,
            ks->iligtrans_);
     Printf("  default gmax=%g erev=%g\n", ks->gmax_deflt_, ks->erev_deflt_);
-    for (i = 0; i < ks->ngate_; ++i) {
+    for (int i = 0; i < ks->ngate_; ++i) {
         Printf("    gate %d index=%d nstate=%d power=%d\n",
                i,
                ks->gc_[i].sindex_,
                ks->gc_[i].nstate_,
                ks->gc_[i].power_);
     }
-    for (i = 0; i < ks->nligand_; ++i) {
+    for (int i = 0; i < ks->nligand_; ++i) {
         Printf("    ligand %d %s\n", i, ks->ligands_[i]->name);
     }
-    for (i = 0; i < ks->iligtrans_; ++i) {
+    for (int i = 0; i < ks->iligtrans_; ++i) {
         kt = ks->trans_ + i;
         Printf("    trans %d src=%d target=%d type=%d\n", i, kt->src_, kt->target_, kt->type_);
         Printf("        f0 type=%d   f1 type=%d\n",
                kt->f0 ? kt->f0->type() : -1,
                kt->f1 ? kt->f1->type() : -1);
     }
-    for (i = ks->iligtrans_; i < ks->ntrans_; ++i) {
+    for (int i = ks->iligtrans_; i < ks->ntrans_; ++i) {
         kt = ks->trans_ + i;
         Printf("    trans %d src=%d target=%d type=%d ligindex=%d\n",
                i,
@@ -699,7 +687,7 @@ static double ks_pr(void* v) {
                kt->f1 ? kt->f1->type() : -1);
     }
     Printf("    state names and fractional conductance\n");
-    for (i = 0; i < ks->nstate_; ++i) {
+    for (int i = 0; i < ks->nstate_; ++i) {
         Printf("    %d %s %g\n", i, ks->state_[i].string(), ks->state_[i].f_);
     }
     return 1;
@@ -707,97 +695,72 @@ static double ks_pr(void* v) {
 
 static Member_func ks_dmem[] = {
     // keeping c++ consistent with java
-    "setstructure",
-    ks_setstructure,
+    {"setstructure", ks_setstructure},
 
-    "remove_state",
-    ks_remove_state,
-    "remove_transition",
-    ks_remove_transition,
+    {"remove_state", ks_remove_state},
+    {"remove_transition", ks_remove_transition},
 
-    "ngate",
-    ks_ngate,
-    "nstate",
-    ks_nstate,
-    "ntrans",
-    ks_ntrans,
-    "nligand",
-    ks_nligand,
-    "is_point",
-    ks_is_point,
-    "single",
-    ks_single,
-    "pr",
-    ks_pr,
+    {"ngate", ks_ngate},
+    {"nstate", ks_nstate},
+    {"ntrans", ks_ntrans},
+    {"nligand", ks_nligand},
+    {"is_point", ks_is_point},
+    {"single", ks_single},
+    {"pr", ks_pr},
 
-    "iv_type",
-    ks_iv_type,
-    "gmax",
-    ks_gmax,
-    "erev",
-    ks_erev,
-    "vres",
-    ks_vres,
-    "rseed",
-    ks_rseed,
-    "usetable",
-    ks_usetable,
-    0,
-    0};
+    {"iv_type", ks_iv_type},
+    {"gmax", ks_gmax},
+    {"erev", ks_erev},
+    {"vres", ks_vres},
+    {"rseed", ks_rseed},
+    {"usetable", ks_usetable},
+    {nullptr, nullptr}};
 
-static Member_ret_obj_func ks_omem[] = {"add_hhstate",
-                                        ks_add_hhstate,
-                                        "add_ksstate",
-                                        ks_add_ksstate,
-                                        "add_transition",
-                                        ks_add_transition,
-                                        "trans",
-                                        ks_trans,
-                                        "state",
-                                        ks_state,
-                                        "gate",
-                                        ks_gate,
-                                        0,
-                                        0};
+static Member_ret_obj_func ks_omem[] = {{"add_hhstate", ks_add_hhstate},
+                                        {"add_ksstate", ks_add_ksstate},
+                                        {"add_transition", ks_add_transition},
+                                        {"trans", ks_trans},
+                                        {"state", ks_state},
+                                        {"gate", ks_gate},
+                                        {nullptr, nullptr}};
 
-static Member_ret_str_func ks_smem[] = {"name", ks_name, "ion", ks_ion, "ligand", ks_ligand, 0, 0};
+static Member_ret_str_func ks_smem[] = {{"name", ks_name},
+                                        {"ion", ks_ion},
+                                        {"ligand", ks_ligand},
+                                        {nullptr, nullptr}};
 
-static Member_func kss_dmem[] = {"frac", kss_frac, "index", kss_index, 0, 0};
+static Member_func kss_dmem[] = {{"frac", kss_frac}, {"index", kss_index}, {nullptr, nullptr}};
 
-static Member_ret_obj_func kss_omem[] = {"gate", kss_gate, 0, 0};
+static Member_ret_obj_func kss_omem[] = {{"gate", kss_gate}, {nullptr, nullptr}};
 
-static Member_ret_str_func kss_smem[] = {"name", kss_name, 0, 0};
+static Member_ret_str_func kss_smem[] = {{"name", kss_name}, {nullptr, nullptr}};
 
-static Member_func ksg_dmem[] =
-    {"nstate", ksg_nstate, "power", ksg_power, "sindex", ksg_sindex, "index", ksg_index, 0, 0};
+static Member_func ksg_dmem[] = {{"nstate", ksg_nstate},
+                                 {"power", ksg_power},
+                                 {"sindex", ksg_sindex},
+                                 {"index", ksg_index},
+                                 {nullptr, nullptr}};
 
-static Member_ret_obj_func ksg_omem[] = {0, 0};
+static Member_ret_obj_func ksg_omem[] = {{nullptr, nullptr}};
 
-static Member_ret_str_func ksg_smem[] = {0, 0};
+static Member_ret_str_func ksg_smem[] = {{nullptr, nullptr}};
 
-static Member_func kst_dmem[] = {"set_f",
-                                 kst_set_f,
-                                 "index",
-                                 kst_index,
-                                 "type",
-                                 kst_type,
-                                 "ftype",
-                                 kst_ftype,
-                                 "ab",
-                                 kst_ab,
-                                 "inftau",
-                                 kst_inftau,
-                                 "f",
-                                 kst_f,
-                                 "stoichiometry",
-                                 kst_stoichiometry,
-                                 0,
-                                 0};
+static Member_func kst_dmem[] = {{"set_f", kst_set_f},
+                                 {"index", kst_index},
+                                 {"type", kst_type},
+                                 {"ftype", kst_ftype},
+                                 {"ab", kst_ab},
+                                 {"inftau", kst_inftau},
+                                 {"f", kst_f},
+                                 {"stoichiometry", kst_stoichiometry},
+                                 {nullptr, nullptr}};
 
-static Member_ret_obj_func kst_omem[] =
-    {"src", kst_src, "target", kst_target, "parm", kst_parm, 0, 0};
+static Member_ret_obj_func kst_omem[] = {{"src", kst_src},
+                                         {"target", kst_target},
+                                         {"parm", kst_parm},
+                                         {nullptr, nullptr}};
 
-static Member_ret_str_func kst_smem[] = {"ligand", kst_ligand, 0, 0};
+static Member_ret_str_func kst_smem[] = {{"ligand", kst_ligand}, {nullptr, nullptr}};
 
 static void* ks_cons(Object* o) {
     /*
@@ -886,21 +849,20 @@ void KSChan::add_channel(const char** m) {
     // printf("mechanism type is %d\n", mechtype_);
     hoc_register_cvode(mechtype_, ode_count, ode_map, ode_spec, ode_matsol);
     if (!channels) {
-        channels = new KSChanList(50);
+        channels = new KSChanList;
     }
-    while (channels->count() < mechtype_) {
-        channels->append(NULL);
+    while (channels->size() < mechtype_) {
+        channels->push_back(nullptr);
     }
-    channels->append(c);
+    channels->push_back(c);
 }
 
 KSChan::KSChan(Object* obj, bool is_p) {
     // printf("KSChan created\n");
-    int i;
     nhhstate_ = 0;
     mechtype_ = -1;
     usetable(false, 0, 1., 0.);
-    ;
+
     is_point_ = is_p;
     is_single_ = false;
     single_ = NULL;
@@ -1511,10 +1473,8 @@ void KSChan::settype(KSTransition* t, int type, const char* lig) {
     }
     // printf("ilig=%d iligold=%d\n", ilig, iligold);
     bool add2list = true;
-    bool move = true;
     // if t already using a ligand, what is to be done with it
     if (t->type_ >= 2) {
-        move = false;  // do not need to reorder the transition
         add2list = false;
         for (i = iligtrans_; i < ntrans_; ++i) {
             if (trans_[i].ligand_index_ == iligold && t->index_ != i) {
@@ -2362,7 +2322,6 @@ Prop* KSChan::needion(Symbol* s, Node* nd, Prop* pm) {
 void KSChan::ion_consist() {
     // printf("KSChan::ion_consist\n");
     int i, j;
-    Section* sec;
     Node* nd;
     hoc_Item* qsec;
     int mtype = rlsym_->subtype;
@@ -2425,7 +2384,6 @@ void KSChan::ligand_consist(int j, int poff, Prop* p, Node* nd) {
 void KSChan::state_consist(int shift) {  // shift when Nsingle winks in and out of existence
                                          // printf("KSChan::state_consist\n");
     int i, j, ns;
-    Section* sec;
     Node* nd;
     hoc_Item* qsec;
     int mtype = rlsym_->subtype;
@@ -3050,8 +3008,7 @@ void KSChan::matsol(int n, Node** nd, double** p, Datum** ppd, NrnThread* nt) {
 
 // from Cvode::do_nonode
 void KSChan::cv_sc_update(int n, Node** nd, double** pp, Datum** ppd, NrnThread* nt) {
-    int i, j;
-    double* s;
+    int i;
     if (nstate_) {
         for (i = 0; i < n; ++i) {
             if (pp[i][NSingleIndex] > .999) {
@@ -3183,7 +3140,6 @@ static int ksusing(int type) {
 }
 
 void KSChan::usetable(bool use) {
-    int i;
     if (nhhstate_ == 0) {
         use = false;
     }

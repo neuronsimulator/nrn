@@ -17,7 +17,7 @@ class DiscreteEvent;
 class TQItemPool;
 class SelfEventPool;
 class SelfEvent;
-class hoc_Item;
+struct hoc_Item;
 class PlayRecord;
 class PlayRecList;
 class IvocVect;

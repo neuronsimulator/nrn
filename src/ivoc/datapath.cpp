@@ -75,9 +75,7 @@ PathValue::~PathValue() {
     }
 }
 
-declarePtrList(StringList, char);
-implementPtrList(StringList, char);
-
+using StringList = std::vector<char*>;
 
 class HocDataPathImpl {
   private:
@@ -172,7 +170,6 @@ Symbol* HocDataPaths::retrieve_sym(double* pd) {
 
 void HocDataPaths::append(char** pd) {
     //	printf("HocDataPaths::append\n");
-    PathValue* pv;
     if (*pd && impl_->table_.find((void*) pd) == impl_->table_.end()) {
         PathValue* pv = new PathValue;
         pv->str = *pd;
@@ -250,11 +247,8 @@ PathValue* HocDataPathImpl::found_v(void* v, const char* buf, Symbol* sym) {
     if (pathstyle_ != 2) {
         char path[500];
         CopyString cs("");
-        long i, cnt;
-        int len = 0;
-        cnt = strlist_.count();
-        for (i = 0; i < cnt; ++i) {
-            sprintf(path, "%s%s.", cs.string(), strlist_.item(i));
+        for (const auto& str: strlist_) {
+            sprintf(path, "%s%s.", cs.string(), str);
             cs = path;
         }
         sprintf(path, "%s%s", cs.string(), buf);
@@ -351,11 +345,11 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                 if (obp[i]->u.dataspace != od) {
                                     sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.append((char*) cs.string());
+                                    strlist_.push_back((char*) cs.string());
                                     obp[i]->recurse = 1;
                                     search(obp[i]->u.dataspace, obp[i]->ctemplate->symtable);
                                     obp[i]->recurse = 0;
-                                    strlist_.remove(strlist_.count() - 1);
+                                    strlist_.pop_back();
                                 }
                             } else {
                                 /* point processes */
@@ -363,9 +357,9 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                                 if (t->is_point_) {
                                     sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                                     cs = buf;
-                                    strlist_.append((char*) cs.string());
+                                    strlist_.push_back((char*) cs.string());
                                     search((Point_process*) obp[i]->u.this_pointer, sym);
-                                    strlist_.remove(strlist_.count() - 1);
+                                    strlist_.pop_back();
                                 }
 #endif
                                 /* seclists, object lists */
@@ -380,9 +374,9 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         if (pitm[i]) {
                             sprintf(buf, "%s%s", sym->name, hoc_araystr(sym, i, od));
                             cs = buf;
-                            strlist_.append((char*) cs.string());
+                            strlist_.push_back((char*) cs.string());
                             search(hocSEC(pitm[i]));
-                            strlist_.remove(strlist_.count() - 1);
+                            strlist_.pop_back();
                         }
                     }
                 } break;
@@ -394,7 +388,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                         Object* obj = OBJ(q);
                         sprintf(buf, "%s[%d]", sym->name, obj->index);
                         cs = buf;
-                        strlist_.append((char*) cs.string());
+                        strlist_.push_back((char*) cs.string());
                         if (!t->constructor) {
                             search(obj->u.dataspace, t->symtable);
                         } else {
@@ -404,7 +398,7 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
                             }
 #endif
                         }
-                        strlist_.remove(strlist_.count() - 1);
+                        strlist_.pop_back();
                     }
                 } break;
                 }
@@ -413,7 +407,6 @@ void HocDataPathImpl::search(Objectdata* od, Symlist* sl) {
 }
 
 void HocDataPathImpl::search_vectors() {
-    int i, cnt;
     char buf[200];
     CopyString cs("");
     cTemplate* t = sym_vec->u.ctemplate;
@@ -422,17 +415,17 @@ void HocDataPathImpl::search_vectors() {
         Object* obj = OBJ(q);
         sprintf(buf, "%s[%d]", sym_vec->name, obj->index);
         cs = buf;
-        strlist_.append((char*) cs.string());
+        strlist_.push_back((char*) cs.string());
         Vect* vec = (Vect*) obj->u.this_pointer;
         int size = vec->size();
         double* pd = vector_vec(vec);
-        for (i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             if (pd[i] == sentinal) {
-                sprintf(buf, "x[%d]", i);
+                sprintf(buf, "x[%zu]", i);
                 found(pd + i, buf, sym_vec);
             }
         }
-        strlist_.remove(strlist_.count() - 1);
+        strlist_.pop_back();
     }
 }
 
@@ -447,9 +440,9 @@ void HocDataPathImpl::search_pysec() {
         Section* sec = hocSEC(qsec);
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {
             cs = secname(sec);
-            strlist_.append((char*) cs.string());
+            strlist_.push_back((char*) cs.string());
             search(sec);
-            strlist_.remove(strlist_.count() - 1);
+            strlist_.pop_back();
         }
     }
 #endif
@@ -474,7 +467,6 @@ void HocDataPathImpl::search(Section* sec) {
 }
 void HocDataPathImpl::search(Node* nd, double x) {
     char buf[100];
-    int i, cnt;
     CopyString cs("");
     if (NODEV(nd) == sentinal) {
         sprintf(buf, "v(%g)", x);

@@ -343,7 +343,6 @@ static double dae_init_dteps(void* v) {
 }
 
 static double use_mxb(void* v) {
-    NetCvode* d = (NetCvode*) v;
     hoc_return_type_code = 2;  // boolean
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
@@ -356,7 +355,6 @@ static double use_mxb(void* v) {
 }
 
 static double cache_efficient(void* v) {
-    NetCvode* d = (NetCvode*) v;
     if (ifarg(1)) {
         int i = (int) chkarg(1, 0, 1);
         nrn_cachevec(i);
@@ -526,16 +524,14 @@ static double nrn_diam_change_count(void* v) {
 int (*nrnpy_pysame)(Object*, Object*);
 extern int (*nrnpy_hoccommand_exec)(Object*);
 
-declarePtrList(ExtraScatterList, Object)
-    implementPtrList(ExtraScatterList,
-                     Object) static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
+using ExtraScatterList = std::vector<Object*>;
+static ExtraScatterList* extra_scatterlist[2];  // 0 scatter, 1 gather
 
 void nrn_extra_scatter_gather(int direction, int tid) {
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (esl) {
         nrn_thread_error("extra_scatter_gather not allowed with multiple threads");
-        for (int i = 0; i < esl->count(); ++i) {
-            Object* callable = esl->item(i);
+        for (Object* callable: *esl) {
             if (!(*nrnpy_hoccommand_exec)(callable)) {
                 hoc_execerror("extra_scatter_gather runtime error", 0);
             }
@@ -549,10 +545,10 @@ static double extra_scatter_gather(void* v) {
     check_obj_type(o, "PythonObject");
     ExtraScatterList* esl = extra_scatterlist[direction];
     if (!esl) {
-        esl = new ExtraScatterList(2);
+        esl = new ExtraScatterList;
         extra_scatterlist[direction] = esl;
     }
-    esl->append(o);
+    esl->push_back(o);
     hoc_obj_ref(o);
     return 0.;
 }
@@ -561,15 +557,18 @@ static double extra_scatter_gather_remove(void* v) {
     Object* o = *hoc_objgetarg(1);
     for (int direction = 0; direction < 2; ++direction) {
         ExtraScatterList* esl = extra_scatterlist[direction];
-        if (esl)
-            for (int i = esl->count() - 1; i >= 0; --i) {
-                Object* o1 = esl->item(i);
+        if (esl) {
+            for (auto it = esl->begin(); it != esl->end();) {
+                Object* o1 = *it;
                 // if esl exists then python exists
                 if ((*nrnpy_pysame)(o, o1)) {
-                    esl->remove(i);
+                    it = esl->erase(it);
                     hoc_obj_unref(o1);
+                } else {
+                    ++it;
                 }
             }
+        }
     }
     return 0.;
 }
@@ -584,106 +583,57 @@ static double use_fast_imem(void* v) {
     return double(i);
 }
 
-static Member_func members[] = {"solve",
-                                solve,
-                                "atol",
-                                nrn_atol,
-                                "rtol",
-                                rtol,
-                                "re_init",
-                                re_init,
-                                "stiff",
-                                stiff,
-                                "active",
-                                active,
-                                "maxorder",
-                                maxorder,
-                                "minstep",
-                                minstep,
-                                "maxstep",
-                                maxstep,
-                                "jacobian",
-                                jacobian,
-                                "states",
-                                states,
-                                "dstates",
-                                dstates,
-                                "error_weights",
-                                error_weights,
-                                "acor",
-                                acor,
-                                "statename",
-                                statename,
-                                "atolscale",
-                                abstol,
-                                "use_local_dt",
-                                use_local_dt,
-                                "record",
-                                n_record,
-                                "record_remove",
-                                n_remove,
-                                "debug_event",
-                                debug_event,
-                                "order",
-                                order,
-                                "use_daspk",
-                                use_daspk,
-                                "event",
-                                tstop_event,
-                                "current_method",
-                                current_method,
-                                "use_mxb",
-                                use_mxb,
-                                "print_event_queue",
-                                peq,
-                                "event_queue_info",
-                                event_queue_info,
-                                "store_events",
-                                store_events,
-                                "condition_order",
-                                condition_order,
-                                "dae_init_dteps",
-                                dae_init_dteps,
-                                "simgraph_remove",
-                                simgraph_remove,
-                                "state_magnitudes",
-                                state_magnitudes,
-                                "ncs_netcons",
-                                ncs_netcons,
-                                "statistics",
-                                statistics,
-                                "spike_stat",
-                                spikestat,
-                                "queue_mode",
-                                queue_mode,
-                                "cache_efficient",
-                                cache_efficient,
-                                "use_long_double",
-                                use_long_double,
-                                "use_parallel",
-                                use_parallel,
-                                "f",
-                                nrn_hoc2fun,
-                                "yscatter",
-                                nrn_hoc2scatter_y,
-                                "ygather",
-                                nrn_hoc2gather_y,
-                                "fixed_step",
-                                nrn_hoc2fixed_step,
-                                "structure_change_count",
-                                nrn_structure_change_count,
-                                "diam_change_count",
-                                nrn_diam_change_count,
-                                "extra_scatter_gather",
-                                extra_scatter_gather,
-                                "extra_scatter_gather_remove",
-                                extra_scatter_gather_remove,
-                                "use_fast_imem",
-                                use_fast_imem,
-                                0,
-                                0};
+static Member_func members[] = {{"solve", solve},
+                                {"atol", nrn_atol},
+                                {"rtol", rtol},
+                                {"re_init", re_init},
+                                {"stiff", stiff},
+                                {"active", active},
+                                {"maxorder", maxorder},
+                                {"minstep", minstep},
+                                {"maxstep", maxstep},
+                                {"jacobian", jacobian},
+                                {"states", states},
+                                {"dstates", dstates},
+                                {"error_weights", error_weights},
+                                {"acor", acor},
+                                {"statename", statename},
+                                {"atolscale", abstol},
+                                {"use_local_dt", use_local_dt},
+                                {"record", n_record},
+                                {"record_remove", n_remove},
+                                {"debug_event", debug_event},
+                                {"order", order},
+                                {"use_daspk", use_daspk},
+                                {"event", tstop_event},
+                                {"current_method", current_method},
+                                {"use_mxb", use_mxb},
+                                {"print_event_queue", peq},
+                                {"event_queue_info", event_queue_info},
+                                {"store_events", store_events},
+                                {"condition_order", condition_order},
+                                {"dae_init_dteps", dae_init_dteps},
+                                {"simgraph_remove", simgraph_remove},
+                                {"state_magnitudes", state_magnitudes},
+                                {"ncs_netcons", ncs_netcons},
+                                {"statistics", statistics},
+                                {"spike_stat", spikestat},
+                                {"queue_mode", queue_mode},
+                                {"cache_efficient", cache_efficient},
+                                {"use_long_double", use_long_double},
+                                {"use_parallel", use_parallel},
+                                {"f", nrn_hoc2fun},
+                                {"yscatter", nrn_hoc2scatter_y},
+                                {"ygather", nrn_hoc2gather_y},
+                                {"fixed_step", nrn_hoc2fixed_step},
+                                {"structure_change_count", nrn_structure_change_count},
+                                {"diam_change_count", nrn_diam_change_count},
+                                {"extra_scatter_gather", extra_scatter_gather},
+                                {"extra_scatter_gather_remove", extra_scatter_gather_remove},
+                                {"use_fast_imem", use_fast_imem},
+                                {nullptr, nullptr}};
 
-static Member_ret_obj_func omembers[] = {"netconlist", netconlist, 0, 0};
+static Member_ret_obj_func omembers[] = {{"netconlist", netconlist}, {nullptr, nullptr}};
 
 static void* cons(Object*) {
 #if 0
@@ -735,7 +685,6 @@ static void f_gvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static void f_lvardt(realtype t, N_Vector y, N_Vector ydot, void* f_data);
 static CVRhsFn pf_;
 
-static void* msetup_thread(NrnThread*);
 static void* msolve_thread(NrnThread*);
 static void* msolve_thread_part1(NrnThread*);
 static void* msolve_thread_part2(NrnThread*);
@@ -970,7 +919,6 @@ void Cvode::activate_maxstate(bool on) {
         maxacor_ = nil;
     }
     if (on && neq_ > 0) {
-        int i;
         maxstate_ = nvnew(neq_);
         maxacor_ = nvnew(neq_);
         N_VConst(0.0, maxstate_);
@@ -1121,7 +1069,6 @@ void NetCvode::set_CVRhsFn() {
 }
 
 int Cvode::cvode_init(double) {
-    int iter;
     int err = SUCCESS;
     // note, a change in stiff_ due to call of stiff() destroys mem_
     gather_y(y_);
@@ -1441,8 +1388,7 @@ int Cvode::cvode_interpolate(double tout) {
 }
 
 int Cvode::daspk_advance_tn() {
-    int flag, err;
-    double tin;
+    int err;
     // printf("Cvode::solve test stop time t=%.20g tstop-t=%g\n", t, tstop_-t);
     // printf("in Cvode::solve t_=%g tstop=%g calling  daspk_->solve(%g)\n", t_, tstop_,
     // daspk_->tout_);
@@ -1610,7 +1556,6 @@ static void* msolve_thread_part1(NrnThread* nt) {
     return 0;
 }
 static void* msolve_thread_part2(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = msolve_cv_;
     cv->solvex_thread_part2(nt);
     return 0;
@@ -1704,13 +1649,11 @@ static void* f_thread_ms_part1(NrnThread* nt) {
     return 0;
 }
 static void* f_thread_ms_part2(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = f_cv_;
     cv->fun_thread_ms_part2(nt);
     return 0;
 }
 static void* f_thread_ms_part3(NrnThread* nt) {
-    int i = nt->id;
     Cvode* cv = f_cv_;
     cv->fun_thread_ms_part3(nt);
     return 0;
