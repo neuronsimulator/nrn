@@ -89,15 +89,17 @@ set(NMODL_CMakeFormat_EXCLUDES_RE
     CACHE STRING "list of regular expressions to exclude CMake files from formatting" FORCE)
 
 # initialize submodule of coding conventions under cmake
-set(THIRD_PARTY_DIRECTORY "${PROJECT_SOURCE_DIR}/cmake")
-add_external_project(hpc-coding-conventions OFF)
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions/cpp/CMakeLists.txt")
+  initialize_submodule("${PROJECT_SOURCE_DIR}/cmake/hpc-coding-conventions")
+endif()
+set(CODING_CONV_PREFIX NMODL)
 add_subdirectory(cmake/hpc-coding-conventions/cpp)
 include(cmake/hpc-coding-conventions/cpp/cmake/FindClangFormat.cmake)
 
 # =============================================================================
-# Initialize external libraries as submodule
+# Initialize external libraries as submodules
 # =============================================================================
-set(NMODL_3RDPARTY_DIR "${PROJECT_SOURCE_DIR}/ext")
+set(NMODL_3RDPARTY_DIR ext)
 include(cmake/hpc-coding-conventions/cpp/cmake/3rdparty.cmake)
 cpp_cc_git_submodule(catch2 BUILD PACKAGE Catch2 REQUIRED)
 if(NMODL_3RDPARTY_USE_CATCH2)
@@ -106,7 +108,11 @@ if(NMODL_3RDPARTY_USE_CATCH2)
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ext/catch2/contrib")
 endif()
 include(Catch)
-cpp_cc_git_submodule(cli11 BUILD PACKAGE CLI11 REQUIRED)
+# If we're being built as a submodule of CoreNEURON then CoreNEURON may have already found/loaded a
+# CLI11 submodule.
+if(NOT TARGET CLI11::CLI11)
+  cpp_cc_git_submodule(cli11 BUILD PACKAGE CLI11 REQUIRED)
+endif()
 # For the moment do not try and use an external Eigen.
 cpp_cc_git_submodule(eigen)
 cpp_cc_git_submodule(fmt BUILD PACKAGE fmt REQUIRED)
