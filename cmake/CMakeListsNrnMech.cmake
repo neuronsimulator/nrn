@@ -16,7 +16,6 @@ if(NRN_SANITIZER_LIBRARY_DIR)
 endif()
 string(JOIN " " NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
 
-
 # extract link defs to the whole project
 get_target_property(NRN_LINK_LIBS nrniv_lib LINK_LIBRARIES)
 if(NOT NRN_LINK_LIBS)
