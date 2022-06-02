@@ -16,12 +16,12 @@ on:
 
 env:
   BUILD_TYPE: Release
-  DEFAULT_PY_VERSION: 3.8
+  PYTHON_VERSION: 3.8
   DESIRED_CMAKE_VERSION: 3.15.0
 
 jobs:
   ci:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     name: documentation
 
@@ -34,7 +34,7 @@ jobs:
     steps:
 
       - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.4
+        uses: jwlawson/actions-setup-cmake@v1
         with:
           cmake-version: ${{ env.DESIRED_CMAKE_VERSION }}
           
@@ -47,18 +47,16 @@ jobs:
         shell: bash
 
       - name: Set up Python3
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-        env:
-          PYTHON_VERSION:  ${{ env.DEFAULT_PY_VERSION }}
        
       - name: Install Python3 dependencies
         run: |
           pip3 install -U pip setuptools scikit-build Jinja2 PyYAML pytest \
-            'sympy>=1.3,<1.9'
+            sympy
           
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         
       # This step will set up an SSH connection on tmate.io for live debugging.
       # To trigger it, simply add 'live-debug-docs' to your last pushed commit message.
@@ -67,7 +65,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
 
       - name: Restore compiler cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ${{runner.workspace}}/ccache
@@ -94,11 +92,9 @@ jobs:
           CCACHE_DIR: ${{runner.workspace}}/ccache
           
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@v4
         if: steps.documentation.outputs.status == 'done' && startsWith(github.ref, 'refs/heads/master')
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: ${{runner.workspace}}/nmodl/_skbuild/linux-x86_64-3.8/setuptools/sphinx # The folder the action should deploy.
-          CLEAN: false # Automatically remove deleted files from the deploy branch
-
+          branch: gh-pages # The branch the action should deploy to.
+          folder: ${{runner.workspace}}/nmodl/_skbuild/linux-x86_64-3.8/setuptools/sphinx # The folder the action should deploy.
+          clean: false # Automatically remove deleted files from the deploy branch
