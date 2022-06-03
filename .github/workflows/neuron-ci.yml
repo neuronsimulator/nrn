@@ -55,9 +55,9 @@ jobs:
           - os: ubuntu-22.04
             config:
               build_mode: cmake
+              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
-                -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
               sanitizer: undefined
       fail-fast: false
 
