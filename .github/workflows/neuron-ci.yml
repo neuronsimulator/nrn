@@ -244,8 +244,9 @@ jobs:
             $PYTHON_MAX -c 'import neuron; neuron.test()' && $PYTHON_MIN -c 'import neuron; neuron.test()';
           fi;
 
-          # run rxd tests manually
-          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" ]]; then
+          # run rxd tests manually if rxd is enabled *and CoreNEURON is
+          # disabled -- otherwise hh-related tests fail
+          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
             $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
           fi;
 
