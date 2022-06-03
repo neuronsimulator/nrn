@@ -51,6 +51,12 @@ jobs:
           - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF", flag_warnings: ON }
           - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake",      python_dynamic : ON }
+        include:
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+              sanitizer: undefined
       fail-fast: false
 
     steps:
@@ -170,20 +176,31 @@ jobs:
           # Some logging
           echo $LANG
           echo $LC_ALL
-          $CXX -v
           python3 -c 'import os,sys; os.set_blocking(sys.stdout.fileno(), True)'
           cmake --version
 
           # different builds with CMake
           if [[ "$BUILD_MODE" == "cmake" ]]; then
-              cmake_args=(-G Ninja \
-                          -DCMAKE_C_COMPILER="${CC}" \
-                          -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                          -DCMAKE_CXX_COMPILER="${CXX}" \
-                          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                          -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
-                          -DNRN_ENABLE_TESTS=ON \
-                          ${{matrix.config.cmake_option}})
+              cmake_args=(-G Ninja)
+              # Sanitizer-specific setup
+              if [[ -n "${{matrix.config.sanitizer}}" ]]; then
+                CC=$(command -v clang-14)
+                CXX=$(command -v clang++-14)
+                symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
+                echo symbolizer_path=${symbolizer_path}
+                cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
+                             -DCMAKE_C_FLAGS="-O1 -g" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g" \
+                             -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
+                             -DNRN_SANITIZERS=$(echo ${{matrix.sanitizer}} | sed -e 's/-/,/g'))
+              fi
+              cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \
+                           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                           -DCMAKE_CXX_COMPILER="${CXX}" \
+                           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                           -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
+                           -DNRN_ENABLE_TESTS=ON \
+                           ${{matrix.config.cmake_option}})
               if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 cmake_args+=(-DNRN_ENABLE_PYTHON=ON \
                              -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
@@ -195,7 +212,14 @@ jobs:
               # Enable more warnings in the builds whose compiler warnings we
               # highlight in the GitHub UI
               if [[ "${{matrix.config.flag_warnings}}" == "ON" ]]; then
-                cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall -Wno-unused-variable -Wno-sign-compare -Wno-missing-braces" \
+                cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall \
+                                -Wno-char-subscripts \
+                                -Wno-unused-variable \
+                                -Wno-unused-function \
+                                -Wno-unused-but-set-variable \
+                                -Wno-sign-compare \
+                                -Wno-missing-braces \
+                                -Wno-mismatched-tags" \
                              -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-maybe-uninitialized")
               fi
               mkdir build && cd build
