@@ -59,6 +59,16 @@ jobs:
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
                 -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
               sanitizer: undefined
+          - os: ubuntu-22.04
+            config:
+              build_mode: cmake
+              # TODO: -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=address,leak
+              # TODO: CoreNEURON is only LeakSanitizer-clean if we disable MPI
+              cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=address
+              # TODO: address-leak is the dream, but there are many problems,
+              # including external ones from the MPI implementations
+              sanitizer: address
       fail-fast: false
 
     steps:
