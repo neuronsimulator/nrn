@@ -56,6 +56,8 @@ jobs:
             config:
               build_mode: cmake
               cmake_option: -DNRN_ENABLE_CORENEURON=ON
+                -DNRN_ENABLE_INTERVIEWS=OFF -DCORENRN_SANITIZERS=undefined
+                -DCORENRN_ENABLE_NMODL=ON -DNMODL_SANITIZERS=undefined
               sanitizer: undefined
       fail-fast: false
 
@@ -196,7 +198,7 @@ jobs:
                              -DCMAKE_C_FLAGS="-O1 -g" \
                              -DCMAKE_CXX_FLAGS="-O1 -g" \
                              -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
-                             -DNRN_SANITIZERS=$(echo ${{matrix.sanitizer}} | sed -e 's/-/,/g'))
+                             -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi
               cmake_args+=(-DCMAKE_C_COMPILER="${CC}" \
                            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -218,10 +220,13 @@ jobs:
               if [[ "${{matrix.config.flag_warnings}}" == "ON" ]]; then
                 cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall \
                                 -Wno-char-subscripts \
+                                -Wno-unknown-pragmas \
                                 -Wno-unused-variable \
                                 -Wno-unused-function \
                                 -Wno-unused-but-set-variable \
+                                -Wno-reorder \
                                 -Wno-sign-compare \
+                                -Wno-strict-aliasing \
                                 -Wno-missing-braces \
                                 -Wno-mismatched-tags" \
                              -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-maybe-uninitialized")
