@@ -43,11 +43,13 @@ jobs:
       matrix:
         os: [ macOS-10.15, ubuntu-18.04]
         config:
-          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON", flag_warnings: ON }
+          - { matrix_eval : "CC=gcc CXX=g++",       build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "setuptools"  }
           - { matrix_eval : "CC=gcc-5 CXX=g++-5",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_CORENEURON=ON" }
-          - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF" }
-          - { matrix_eval : "CC=gcc CXX=g++",       build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
+          # Enable warning flagging from a build that doesn't have too many
+          # external things enabled and which uses a newish gcc on linux
+          - { matrix_eval : "CC=gcc-9 CXX=g++-9",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_MPI=ON -DNRN_ENABLE_INTERVIEWS=ON -DNRN_ENABLE_CORENEURON=OFF", flag_warnings: ON }
+          - { matrix_eval : "CC=gcc-6 CXX=g++-6",   build_mode: "cmake",      cmake_option: "-DNRN_ENABLE_PYTHON=OFF -DNRN_ENABLE_RX3D=OFF -DNRN_ENABLE_CORENEURON=ON" }
           - { matrix_eval : "CC=gcc-8 CXX=g++-8",   build_mode: "cmake",      python_dynamic : ON }
       fail-fast: false
 
@@ -154,8 +156,8 @@ jobs:
           # Python setup
           export PYTHONPATH=$PYTHONPATH:$INSTALL_DIR/lib/python/
           # Python setup
-          export PYTHON_MIN=$(which $PYTHON_MIN_NAME);
-          export PYTHON_MAX=$(which $PYTHON_MAX_NAME);
+          export PYTHON_MIN=$(command -v $PYTHON_MIN_NAME);
+          export PYTHON_MAX=$(command -v $PYTHON_MAX_NAME);
           export PYTHON=$PYTHON_MAX
           if [ "$RUNNER_OS" == "macOS" ]; then
             # Python is not installed as a framework, so we need to writ 'backend: TkAgg' to `matplotlibrc`.
@@ -229,7 +231,7 @@ jobs:
           fi;
 
           # basic test for cmake when python is not disabled
-          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[@]} " =~ " NRN_ENABLE_PYTHON=OFF " ]]; then
+          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[*]} " =~ " NRN_ENABLE_PYTHON=OFF " ]]; then
             $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
           fi;
 
@@ -244,7 +246,7 @@ jobs:
           fi;
 
           # run rxd tests manually
-          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[@]} " =~ " -DNRN_ENABLE_RX3D=OFF "
+          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[*]} " =~ " -DNRN_ENABLE_RX3D=OFF "
           then
             $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
           fi;
