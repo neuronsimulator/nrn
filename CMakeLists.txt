@@ -239,6 +239,9 @@ set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS implicit-signed-intege
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
+if(NRN_SANITIZER_LIBRARY_DIR)
+  list(APPEND NRN_LINK_FLAGS "-Wl,-rpath,${NRN_SANITIZER_LIBRARY_DIR}")
+endif()
 
 # =============================================================================
 # Find required packages
@@ -548,6 +551,16 @@ else()
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
+
+# Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
+set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
+set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS})
+list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
+list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
+list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")
+list(TRANSFORM NRN_LINK_FLAGS_QUOTED PREPEND "'")
+string(JOIN ", " NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_COMPILE_FLAGS_QUOTED})
+string(JOIN ", " NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_LINK_FLAGS_QUOTED})
 
 # =============================================================================
 # Add project directories AFTER CMake modules
