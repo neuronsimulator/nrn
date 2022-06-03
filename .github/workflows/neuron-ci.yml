@@ -174,7 +174,7 @@ jobs:
           cmake --version
 
           # different builds with CMake
-          if [ "$BUILD_MODE" == "cmake" ]; then
+          if [[ "$BUILD_MODE" == "cmake" ]]; then
               cmake_args=(-G Ninja \
                           -DCMAKE_C_COMPILER="${CC}" \
                           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
@@ -183,7 +183,7 @@ jobs:
                           -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
                           -DNRN_ENABLE_TESTS=ON \
                           ${{matrix.config.cmake_option}})
-              if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]; then
+              if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 cmake_args+=(-DNRN_ENABLE_PYTHON=ON \
                              -DNRN_ENABLE_PYTHON_DYNAMIC=ON \
                              -DNRN_PYTHON_DYNAMIC="${PYTHON_MIN};${PYTHON_MAX}" \
@@ -209,8 +209,7 @@ jobs:
               then
                 echo $'[install]\nprefix='>src/nrnpython/setup.cfg;
               fi
-              if [ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]
-              then
+              if [[ "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
                 echo "--RUNNING BASIC TESTS FROM BUILD DIR--"
                 for python in "${PYTHON_MIN}" "${PYTHON_MAX}"
                 do
@@ -226,17 +225,17 @@ jobs:
               ctest --output-on-failure
               cmake --build . --target install
               export PATH="${INSTALL_DIR}/bin:${PATH}"
-          elif [ "$BUILD_MODE" == "setuptools" ]; then
+          elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
 
           # basic test for cmake when python is not disabled
-          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[*]} " =~ " NRN_ENABLE_PYTHON=OFF " ]]; then
+          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
             $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
           fi;
 
           # test neurondemo with cmake
-          if [ "$BUILD_MODE" != "setuptools" ]; then
+          if [[ "$BUILD_MODE" != "setuptools" ]]; then
             neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
           fi;
 
@@ -246,8 +245,7 @@ jobs:
           fi;
 
           # run rxd tests manually
-          if [[ "$BUILD_MODE" == "cmake" && ! " ${cmake_args[*]} " =~ " -DNRN_ENABLE_RX3D=OFF "
-          then
+          if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" ]]; then
             $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
           fi;
 
