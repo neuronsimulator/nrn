@@ -192,8 +192,11 @@ jobs:
               else
                 cmake_args+=(-DPYTHON_EXECUTABLE="${PYTHON}")
               fi
+              # Enable more warnings in the builds whose compiler warnings we
+              # highlight in the GitHub UI
               if [[ "${{matrix.config.flag_warnings}}" == "ON" ]]; then
-                cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall")
+                cmake_args+=(-DNRN_EXTRA_CXX_FLAGS="-Wall -Wno-unused-variable -Wno-sign-compare -Wno-missing-braces" \
+                             -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-maybe-uninitialized")
               fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"

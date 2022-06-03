@@ -161,9 +161,14 @@ separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
 set(NRN_EXTRA_CXX_FLAGS
     ""
-    CACHE STRING "Extra compile flags for NEURON source files")
+    CACHE STRING "Extra compiler flags for NEURON source files")
 separate_arguments(NRN_EXTRA_CXX_FLAGS)
 list(APPEND NRN_COMPILE_FLAGS ${NRN_EXTRA_CXX_FLAGS})
+
+set(NRN_EXTRA_MECH_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for translated NEURON mechanisms")
+separate_arguments(NRN_EXTRA_MECH_CXX_FLAGS)
 
 option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER

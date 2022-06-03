@@ -99,6 +99,7 @@ endif()
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   nocmodl_mod_to_c(${modfile})
+  set_property(SOURCE ${modfile}.c APPEND PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
   list(APPEND NRN_MODFILE_C ${modfile}.c)
 endforeach()
 
