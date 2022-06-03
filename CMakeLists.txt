@@ -159,6 +159,12 @@ set(NRN_NMODL_CXX_FLAGS
     CACHE STRING "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
+set(NRN_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compile flags for NEURON source files")
+separate_arguments(NRN_EXTRA_CXX_FLAGS)
+list(APPEND NRN_COMPILE_FLAGS ${NRN_EXTRA_CXX_FLAGS})
+
 option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER
     "${NRN_PROFILER_DEFAULT}"
