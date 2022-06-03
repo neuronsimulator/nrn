@@ -205,8 +205,8 @@ jobs:
                 symbolizer_path=$(realpath $(command -v llvm-symbolizer-14))
                 echo symbolizer_path=${symbolizer_path}
                 cmake_args+=(-DCMAKE_BUILD_TYPE=Custom \
-                             -DCMAKE_C_FLAGS="-O1 -g" \
-                             -DCMAKE_CXX_FLAGS="-O1 -g" \
+                             -DCMAKE_C_FLAGS="-O1 -g -Wno-writable-strings" \
+                             -DCMAKE_CXX_FLAGS="-O1 -g -Wno-writable-strings" \
                              -DLLVM_SYMBOLIZER_PATH="${symbolizer_path}" \
                              -DNRN_SANITIZERS=$(echo ${{matrix.config.sanitizer}} | sed -e 's/-/,/g'))
               fi

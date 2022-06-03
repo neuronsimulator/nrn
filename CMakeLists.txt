@@ -245,8 +245,14 @@ cpp_cc_git_submodule(Random123)
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
 # unsigned integer flow is not actually undefined behaviour, and NEURON has a lot of it...
-set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS implicit-signed-integer-truncation
-                                                          unsigned-integer-overflow)
+message(STATUS "CODING_CONV_PREFIX=${CODING_CONV_PREFIX}")
+set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
+    implicit-signed-integer-truncation unsigned-integer-overflow
+    CACHE STRING "" FORCE)
+message(
+  STATUS
+    "${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS=${${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS}"
+)
 include("${CODING_CONV_CMAKE}/sanitizers.cmake")
 list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
