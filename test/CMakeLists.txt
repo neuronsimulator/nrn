@@ -139,10 +139,14 @@ endforeach()
 # Add pytest
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
+  set(pytest -m pytest)
+  if(NRN_SANITIZERS)
+    # We configure the santiziers to abort on errors, which can lead to unhelpful output from
+    # pytest. Passing -s means the sanitizer output will be visible in the log.
+    list(APPEND pytest -s)
+  endif()
   if(PYTEST_COV_FOUND)
-    set(PYTEST_COVERAGE_ARGS --cov-report=xml --cov=neuron)
-  else()
-    unset(PYTEST_COVERAGE_ARGS)
+    list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
   nrn_add_test_group(NAME pynrn MODFILE_PATTERNS test/pynrn/*.mod)
@@ -150,8 +154,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     GROUP pynrn
     NAME basic_tests
     PRELOAD_SANITIZER
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
-            ${PYTEST_COVERAGE_ARGS} ./test/pynrn
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
     SCRIPT_PATTERNS test/pynrn/*.py)
 
   # Mostly to increase coverage
@@ -160,8 +163,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} -m pytest
-            ${PYTEST_COVERAGE_ARGS} ./test/cover
+    COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)
@@ -180,8 +182,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       GROUP rxdmod_tests
       NAME rxd_tests
       PRELOAD_SANITIZER
-      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE} -m
-              pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd)
+      COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE}
+              ${pytest} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -192,7 +194,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           COMMAND
             COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            -m pytest ${PYTEST_COVERAGE_ARGS} ./test/rxd --mpi)
+            ${pytest} ./test/rxd --mpi)
       endif()
     endif()
   endif()
@@ -257,10 +259,9 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         -pyexe
         ${PYTHON_EXECUTABLE})
   else()
-    set(py_args -m pytest ${PYTEST_COVERAGE_ARGS} -s)
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${sonata_zero_gid_env} ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE}
-                           ${py_args})
+                           ${pytest})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
