@@ -3,6 +3,7 @@ function:ctng.cpp
 implicit-integer-sign-change:double vector[2] Eigen::internal::pabs<double vector[2]>(double vector[2] const&)
 implicit-integer-sign-change:fgets_unlimited_nltrans(HocStr*, _IO_FILE*, int)
 implicit-integer-sign-change:invlfiresha.c
+implicit-integer-sign-change:ivRegexp::Search(char const*, int, int, int)
 nonnull-attribute:ECS_Grid_node::do_grid_currents(double*, double, int)
 nonnull-attribute:ECS_Grid_node::do_multicompartment_reactions(double*)
 nonnull-attribute:ECS_Grid_node::initialize_multicompartment_reaction()

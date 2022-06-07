@@ -238,7 +238,7 @@ jobs:
                                 -Wno-strict-aliasing \
                                 -Wno-missing-braces \
                                 -Wno-mismatched-tags" \
-                             -DNRN_EXTRA_MECH_CXX_FLAGS="-Wno-maybe-uninitialized")
+                             -DNRN_EXTRA_MECH_CXX_FLAGS="")
               fi
               mkdir build && cd build
               echo "Building with: ${cmake_args[@]}"

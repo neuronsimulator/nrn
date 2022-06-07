@@ -437,7 +437,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       nrn_add_test(
         GROUP coreneuron_modtests
         NAME spikes_mpi_file_mode_py_${processor}
-        REQUIRES coreneuron ${processor}
+        REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
         COMMAND ${processor_env} NRN_TEST_SPIKES_NRNMPI_INIT=1 NRN_TEST_SPIKES_FILE_MODE=1
                 ${launch_spikes_mpi_file_mode_py} test/coreneuron/test_spikes.py)
