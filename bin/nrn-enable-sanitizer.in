@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+@NRN_SANITIZER_ENABLE_ENVIRONMENT@ "$@"

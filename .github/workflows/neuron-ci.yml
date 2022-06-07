@@ -132,9 +132,12 @@ jobs:
           python -m pip install --upgrade pip -r nrn_requirements.txt
 
       - name: Register gcc problem matcher
-        # Only report warnings from one gcc build and one clang build
         if: ${{matrix.config.flag_warnings == 'ON'}}
         run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+
+      - name: Register sanitizer problem matcher
+        if: ${{matrix.config.sanitizer}}
+        run: echo "::add-matcher::.github/problem-matchers/${{matrix.config.sanitizer}}.json"
 
       - name: Hash config dictionary
         run: |
@@ -298,7 +301,7 @@ jobs:
           if [[ "$BUILD_MODE" == "cmake" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
-            $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
+            ./bin/nrn-enable-sanitizer $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then

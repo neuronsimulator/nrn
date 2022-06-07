@@ -259,6 +259,9 @@ list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
 if(NRN_SANITIZER_LIBRARY_DIR)
   list(APPEND NRN_LINK_FLAGS "-Wl,-rpath,${NRN_SANITIZER_LIBRARY_DIR}")
 endif()
+if(NRN_ENABLE_TESTS)
+  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
+endif()
 
 # =============================================================================
 # Find required packages
