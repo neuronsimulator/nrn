@@ -19,7 +19,7 @@ env:
 
 jobs:
   tag-n-release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: tag-n-release ${{ github.event.inputs.rel_tag }} (${{ github.event.inputs.rel_branch }})
     outputs:
       release_url: ${{ steps.create_release.outputs.upload_url }}
