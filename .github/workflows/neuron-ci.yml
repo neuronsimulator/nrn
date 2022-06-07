@@ -116,7 +116,7 @@ jobs:
           python-version: ${{ env.PY_MIN_VERSION }}
 
       - name: Install Python@${{ env.PY_MIN_VERSION }} dependencies
-        if: ${{matrix.config.python_dynamic == 'ON'}}
+        if: ${{ matrix.config.python_dynamic == 'ON' }}
         working-directory: ${{runner.workspace}}/nrn
         run: |
           python -m pip install --upgrade pip -r nrn_requirements.txt

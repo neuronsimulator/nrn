@@ -285,7 +285,6 @@ no longer adequate for saying we can not */
     SIOUXSettings.autocloseonquit = true;
 #endif
     free(modprefix); /* allocated in openfiles below */
-    free(output_dir);
     return 0;
 }
 
