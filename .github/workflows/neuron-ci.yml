@@ -277,23 +277,28 @@ jobs:
               ctest --output-on-failure
               cmake --build . --target install
               export PATH="${INSTALL_DIR}/bin:${PATH}"
+              echo --- bin/nrn-enable-sanitizer ---
+              cat bin/nrn-enable-sanitizer
+              echo ---
+              nrn_enable_sanitizer=${PWD}/bin/nrn-enable-sanitizer
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
             ./packaging/python/build_wheels.bash CI;
           fi;
 
           # basic test for cmake when python is not disabled
           if [[ "$BUILD_MODE" == "cmake" && ! "${cmake_args[*]}" =~ "NRN_ENABLE_PYTHON=OFF" ]]; then
-            $PYTHON --version && $PYTHON -c 'import neuron; neuron.test()';
+            $PYTHON --version && ${nrn_enable_sanitizer} $PYTHON -c 'import neuron; neuron.test()'
           fi;
 
           # test neurondemo with cmake
           if [[ "$BUILD_MODE" != "setuptools" ]]; then
-            neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()';
+            ${nrn_enable_sanitizer} neurondemo -nogui -c 'demo(4)' -c 'run()' -c 'quit()'
           fi;
 
           # with cmake dynamic check python_min and python_max together
           if [[ "$BUILD_MODE" == "cmake" && "$NRN_ENABLE_PYTHON_DYNAMIC" == "ON" ]]; then
-            $PYTHON_MAX -c 'import neuron; neuron.test()' && $PYTHON_MIN -c 'import neuron; neuron.test()';
+            ${nrn_enable_sanitizer} $PYTHON_MAX -c 'import neuron; neuron.test()'
+            ${nrn_enable_sanitizer} $PYTHON_MIN -c 'import neuron; neuron.test()'
           fi;
 
           # run rxd tests manually if rxd is enabled *and CoreNEURON is
@@ -301,15 +306,15 @@ jobs:
           if [[ "$BUILD_MODE" == "cmake" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_RX3D=OFF" \
                 && ! "${cmake_args[*]}" =~ "NRN_ENABLE_CORENEURON=ON" ]]; then
-            ./bin/nrn-enable-sanitizer $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py;
+            ${nrn_enable_sanitizer} $PYTHON ../share/lib/python/neuron/rxdtests/run_all.py
           fi;
 
           if [ "$BUILD_MODE" == "setuptools" ]; then
             neuron_wheel=wheelhouse/NEURON*.whl;
             # test with virtual environment
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel;
+            ${nrn_enable_sanitizer} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel
             # test with global installation
-            ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false;
+            ${nrn_enable_sanitizer} ./packaging/python/test_wheels.sh $PYTHON $neuron_wheel false
           fi;
         env:
           BUILD_MODE: ${{ matrix.config.build_mode }}
