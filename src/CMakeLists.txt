@@ -34,6 +34,7 @@ target_link_libraries(
   util
   lexer
   ${NMODL_WRAPPER_LIBS})
+cpp_cc_configure_sanitizers(TARGET nmodl)
 
 # =============================================================================
 # Add dependency with nmodl pytnon module (for consumer projects)

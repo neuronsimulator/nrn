@@ -97,6 +97,12 @@ add_subdirectory(cmake/hpc-coding-conventions/cpp)
 include(cmake/hpc-coding-conventions/cpp/cmake/FindClangFormat.cmake)
 
 # =============================================================================
+# Enable sanitizer support if the NMODL_SANITIZERS variable is set
+# =============================================================================
+include(cmake/hpc-coding-conventions/cpp/cmake/sanitizers.cmake)
+list(APPEND NMODL_EXTRA_CXX_FLAGS ${NMODL_SANITIZER_COMPILER_FLAGS})
+
+# =============================================================================
 # Initialize external libraries as submodules
 # =============================================================================
 set(NMODL_3RDPARTY_DIR ext)
@@ -237,6 +243,7 @@ if(CMAKE_BUILD_TYPE)
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NMODL_EXTRA_CXX_FLAGS})
 
 # =============================================================================
 # Build status

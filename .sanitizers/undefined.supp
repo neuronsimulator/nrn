@@ -1,0 +1,3 @@
+implicit-integer-sign-change:double vector[2] Eigen::internal::pabs<double vector[2]>(double vector[2] const&)
+unsigned-integer-overflow:nmodl::fast_math::vexp(double)
+unsigned-integer-overflow:nmodl::fast_math::vexpm1(double)
