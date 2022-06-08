@@ -19,3 +19,4 @@ set_target_properties(interleave_info_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS
 target_compile_options(interleave_info_bin PRIVATE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
 add_test(NAME interleave_info_constructor_test COMMAND ${TEST_EXEC_PREFIX}
                                                        $<TARGET_FILE:interleave_info_bin>)
+cpp_cc_configure_sanitizers(TARGET interleave_info_bin TEST interleave_info_constructor_test)

@@ -32,7 +32,7 @@ extern void deliver_net_events(NrnThread*);
 extern void nrn_deliver_events(NrnThread*);
 extern void fixed_play_continuous(NrnThread*);
 
-class DiscreteEvent;
+struct DiscreteEvent;
 class NetCvode;
 
 extern NetCvode* net_cvode_instance;

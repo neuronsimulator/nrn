@@ -268,7 +268,7 @@ void nrn_spike_exchange_init() {
     }
 #endif
 
-    if (npe_.size() != nrn_nthread) {
+    if (npe_.size() != static_cast<std::size_t>(nrn_nthread)) {
         if (!npe_.empty()) {
             npe_.clear();
             npe_.shrink_to_fit();

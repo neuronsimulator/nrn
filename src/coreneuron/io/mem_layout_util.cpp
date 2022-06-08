@@ -18,8 +18,10 @@ int nrn_soa_padded_size(int cnt, int layout) {
 
 /// return the new offset considering the byte aligment settings
 size_t nrn_soa_byte_align(size_t size) {
-    size_t dbl_align = NRN_SOA_BYTE_ALIGN / sizeof(double);
-    size_t remainder = size % dbl_align;
+    static_assert(NRN_SOA_BYTE_ALIGN % sizeof(double) == 0,
+                  "NRN_SOA_BYTE_ALIGN should be a multiple of sizeof(double)");
+    constexpr size_t dbl_align{NRN_SOA_BYTE_ALIGN / sizeof(double)};
+    size_t remainder{size % dbl_align};
     if (remainder) {
         size += dbl_align - remainder;
     }

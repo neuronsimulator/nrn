@@ -340,7 +340,7 @@ static void fill_multisend_lists(bool use_phase2,
     // Count and fill in multisend_index and multisend_phase2_index_
     // From the counts can allocate targets_phase1 and targets_phase2
     // Then can iterate again and copy r to proper target locations.
-    for (int i = 0; i < r.size();) {
+    for (std::size_t i = 0; i < r.size();) {
         InputPreSyn* ips = nullptr;
         int gid = r[i++];
         int size = r[i++];
@@ -370,7 +370,7 @@ static void fill_multisend_lists(bool use_phase2,
     targets_phase2 = new int[phase2_index];
 
     // printf("%d sz=%d\n", nrnmpi_myid, r.size());
-    for (int i = 0; i < r.size();) {
+    for (std::size_t i = 0; i < r.size();) {
         InputPreSyn* ips = nullptr;
         int gid = r[i++];
         int size = r[i++];

@@ -29,7 +29,7 @@ struct progressbar {
     unsigned long prev_sample_value;
 
     /// time interval between consecutive bar redraws (seconds)
-    unsigned long draw_time_interval;
+    time_t draw_time_interval;
 
     /// number of redrawn bars
     unsigned long drawn_count;

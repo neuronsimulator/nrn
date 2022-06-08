@@ -9,6 +9,12 @@ include(TestHelpers)
 include_directories(${CORENEURON_PROJECT_SOURCE_DIR} ${CORENEURON_PROJECT_BINARY_DIR}/generated
                     ${Boost_INCLUDE_DIRS})
 
+# Add compiler flags that should apply to all CoreNEURON targets, but which should not leak into
+# other included projects.
+add_compile_definitions(${CORENRN_COMPILE_DEFS})
+add_compile_options(${CORENRN_EXTRA_CXX_FLAGS})
+add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
+
 if(NOT Boost_USE_STATIC_LIBS)
   add_definitions(-DBOOST_TEST_DYN_LINK=TRUE)
 endif()

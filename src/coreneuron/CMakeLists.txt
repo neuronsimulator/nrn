@@ -7,6 +7,8 @@
 # Add compiler flags that should apply to all CoreNEURON targets, but which should not leak into
 # other included projects.
 add_compile_definitions(${CORENRN_COMPILE_DEFS})
+add_compile_options(${CORENRN_EXTRA_CXX_FLAGS})
+add_link_options(${CORENRN_EXTRA_LINK_FLAGS})
 
 # put libraries (e.g. dll) in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -31,8 +33,7 @@ file(
   "utils/*.cpp"
   "utils/*/*.c"
   "utils/*/*.cpp")
-set(SCOPMATH_CODE_FILES "sim/scopmath/abort.cpp" "sim/scopmath/crout_thread.cpp"
-                        "sim/scopmath/newton_thread.cpp")
+set(SCOPMATH_CODE_FILES "sim/scopmath/abort.cpp" "sim/scopmath/newton_thread.cpp")
 set(MPI_LIB_FILES "mpi/lib/mpispike.cpp" "mpi/lib/nrnmpi.cpp")
 set(MPI_CORE_FILES "mpi/core/nrnmpi_def_cinc.cpp")
 if(CORENRN_ENABLE_MPI)
@@ -274,6 +275,7 @@ set_target_properties(
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
              POSITION_INDEPENDENT_CODE ON)
+cpp_cc_configure_sanitizers(TARGET coreneuron scopmath ${corenrn_mpi_targets})
 
 # =============================================================================
 # create special-core with halfgap.mod for tests

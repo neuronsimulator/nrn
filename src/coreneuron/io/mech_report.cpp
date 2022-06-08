@@ -21,7 +21,7 @@ void write_mech_report() {
     std::vector<long> local_mech_count(n_memb_func, 0);
 
     /// each gid record goes on separate row, only check non-empty threads
-    for (size_t i = 0; i < nrn_nthread; i++) {
+    for (int i = 0; i < nrn_nthread; i++) {
         const auto& nt = nrn_threads[i];
         for (auto* tml = nt.tml; tml; tml = tml->next) {
             const int type = tml->index;

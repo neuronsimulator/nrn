@@ -58,7 +58,7 @@ void nrnmpi_v_transfer() {
                                              src_gather [0:n_src_gather]) if (nt->compute_gpu)
                            async(nt->stream_id))
         nrn_pragma_omp(target teams distribute parallel for simd if(nt->compute_gpu))
-        for (int i = 0; i < n_src_gather; ++i) {
+        for (std::size_t i = 0; i < n_src_gather; ++i) {
             src_gather[i] = src_data[src_indices[i]];
         }
         nrn_pragma_acc(update host(src_gather [0:n_src_gather]) if (nt->compute_gpu)

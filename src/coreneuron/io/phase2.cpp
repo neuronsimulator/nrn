@@ -135,7 +135,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
             if (n_diam > 0) {
                 n_data += n_data_padded;
             }
-            for (size_t i = 0; i < n_mech; ++i) {
+            for (int i = 0; i < n_mech; ++i) {
                 int layout = corenrn.get_mech_data_layout()[mech_types[i]];
                 int n = nodecounts[i];
                 int sz = corenrn.get_prop_param_size()[mech_types[i]];
@@ -157,7 +157,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     if (n_diam > 0) {
         offset += n_data_padded;
     }
-    for (size_t i = 0; i < n_mech; ++i) {
+    for (int i = 0; i < n_mech; ++i) {
         int layout = corenrn.get_mech_data_layout()[mech_types[i]];
         int n = nodecounts[i];
         int sz = corenrn.get_prop_param_size()[mech_types[i]];
@@ -190,7 +190,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
     delay = F.read_vector<double>(nt.n_netcon);
     num_point_process = F.read_int();
 
-    for (size_t i = 0; i < n_mech; ++i) {
+    for (int i = 0; i < n_mech; ++i) {
         if (!corenrn.get_bbcore_read()[mech_types[i]]) {
             continue;
         }
@@ -207,7 +207,7 @@ void Phase2::read_file(FileHandler& F, const NrnThread& nt) {
 
     int n_vec_play_continuous = F.read_int();
     vec_play_continuous.reserve(n_vec_play_continuous);
-    for (size_t i = 0; i < n_vec_play_continuous; ++i) {
+    for (int i = 0; i < n_vec_play_continuous; ++i) {
         VecPlayContinuous_ item;
         item.vtype = F.read_int();
         item.mtype = F.read_int();
@@ -306,7 +306,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
     size_t offset = 6 * n_data_padded;
     if (n_diam > 0)
         offset += n_data_padded;
-    for (size_t i = 0; i < n_mech; ++i) {
+    for (int i = 0; i < n_mech; ++i) {
         auto& tml = tmls[i];
         int type = mech_types[i];
         int layout = corenrn.get_mech_data_layout()[type];
@@ -377,7 +377,7 @@ void Phase2::read_direct(int thread_id, const NrnThread& nt) {
 
     (*nrn2core_get_dat2_corepointer_)(nt.id, num_point_process);
 
-    for (size_t i = 0; i < n_mech; ++i) {
+    for (int i = 0; i < n_mech; ++i) {
         // not all mod files have BBCOREPOINTER data to read
         if (!corenrn.get_bbcore_read()[mech_types[i]]) {
             continue;
@@ -825,7 +825,7 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
     ntc.bcptype = new int[n_mech];
     size_t point_proc_id = 0;
 #endif
-    for (size_t i = 0; i < n_mech; ++i) {
+    for (int i = 0; i < n_mech; ++i) {
         int type = mech_types[i];
         if (!corenrn.get_bbcore_read()[type]) {
             continue;
@@ -866,8 +866,8 @@ void Phase2::get_info_from_bbcore(NrnThread& nt,
                                                &nt,
                                                0.0);
         }
-        assert(dk == tmls[i].dArray.size());
-        assert(ik == tmls[i].iArray.size());
+        assert(dk == static_cast<int>(tmls[i].dArray.size()));
+        assert(ik == static_cast<int>(tmls[i].iArray.size()));
     }
 }
 

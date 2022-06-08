@@ -22,4 +22,8 @@ set_target_properties(lfp_test_bin PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS OFF)
 target_compile_options(lfp_test_bin PRIVATE ${CORENEURON_BOOST_UNIT_TEST_COMPILE_FLAGS})
 add_dependencies(lfp_test_bin nrniv-core)
 add_test(NAME lfp_test COMMAND ${TEST_EXEC_PREFIX} $<TARGET_FILE:lfp_test_bin>)
-set_tests_properties(lfp_test PROPERTIES ENVIRONMENT OMP_NUM_THREADS=1)
+cpp_cc_configure_sanitizers(TARGET lfp_test_bin TEST lfp_test)
+set_property(
+  TEST lfp_test
+  APPEND
+  PROPERTY ENVIRONMENT OMP_NUM_THREADS=1)

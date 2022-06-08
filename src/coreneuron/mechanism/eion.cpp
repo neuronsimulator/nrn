@@ -105,7 +105,13 @@ void ion_reg(const char* name, double valence) {
         hoc_register_dparam_semantics(mechtype, 0, "iontype");
         nrn_writes_conc(mechtype, 1);
 
-        sprintf(buf[0], "%si0_%s", name, buf[0]);
+        {
+            // See https://en.cppreference.com/w/cpp/io/c/fprintf: If a call to
+            // sprintf or snprintf causes copying to take place between objects
+            // that overlap, the behavior is undefined.
+            std::string const old_buf_0{buf[0]};
+            sprintf(buf[0], "%si0_%s", name, old_buf_0.c_str());
+        }
         sprintf(buf[1], "%so0_%s", name, buf[0]);
         if (strcmp("na", name) == 0) {
             na_ion = mechtype;

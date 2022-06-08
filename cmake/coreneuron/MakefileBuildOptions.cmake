@@ -48,6 +48,12 @@ endif()
 # ~~~
 list(REMOVE_ITEM CORENRN_LINK_LIBS "Threads::Threads")
 
+string(JOIN " " CORENRN_COMMON_LDFLAGS ${CORENRN_EXTRA_LINK_FLAGS})
+if(CORENRN_SANITIZER_LIBRARY_DIR)
+  string(APPEND CORENRN_COMMON_LDFLAGS " -Wl,-rpath,${CORENRN_SANITIZER_LIBRARY_DIR}")
+endif()
+string(JOIN " " CORENRN_SANITIZER_ENABLE_ENVIRONMENT_STRING ${CORENRN_SANITIZER_ENABLE_ENVIRONMENT})
+
 # replicate CMake magic to transform system libs to -l<libname>
 foreach(link_lib ${CORENRN_LINK_LIBS})
   if(${link_lib} MATCHES "\-l.*")
@@ -82,7 +88,8 @@ string(
   ${CXX14_STD_FLAGS}
   ${NVHPC_ACC_COMP_FLAGS}
   ${NVHPC_CXX_INLINE_FLAGS}
-  ${CORENRN_COMPILE_DEF_FLAGS})
+  ${CORENRN_COMPILE_DEF_FLAGS}
+  ${CORENRN_EXTRA_MECH_CXX_FLAGS})
 
 # =============================================================================
 # nmodl/mod2c related options : TODO

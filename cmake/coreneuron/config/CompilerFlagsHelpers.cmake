@@ -147,7 +147,7 @@ endforeach()
 # ===============================================================================
 # Allow undefined reference in shared library as mod files will be linked later
 # ===============================================================================
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(UNDEFINED_SYMBOLS_IGNORE_FLAG "-undefined dynamic_lookup")
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")

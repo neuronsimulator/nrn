@@ -101,6 +101,22 @@ include(AddHpcCodingConvSubmodule)
 add_subdirectory(CMake/hpc-coding-conventions/cpp)
 
 # =============================================================================
+# Enable sanitizer support if the CORENRN_SANITIZERS variable is set
+# =============================================================================
+include(CMake/hpc-coding-conventions/cpp/cmake/sanitizers.cmake)
+set(CORENRN_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Add extra compile flags for CoreNEURON sources")
+separate_arguments(CORENRN_EXTRA_CXX_FLAGS)
+set(CORENRN_EXTRA_MECH_CXX_FLAGS
+    ""
+    CACHE STRING "Add extra compile flags for translated mechanisms")
+separate_arguments(CORENRN_EXTRA_MECH_CXX_FLAGS)
+list(APPEND CORENRN_EXTRA_CXX_FLAGS ${CORENRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND CORENRN_EXTRA_MECH_CXX_FLAGS ${CORENRN_SANITIZER_COMPILER_FLAGS})
+list(APPEND CORENRN_EXTRA_LINK_FLAGS ${CORENRN_SANITIZER_COMPILER_FLAGS})
+
+# =============================================================================
 # Include common cmake modules
 # =============================================================================
 include(CheckIncludeFiles)
@@ -109,10 +125,11 @@ include(CrayPortability)
 include(SetRpath)
 include(CTest)
 include(AddRandom123Submodule)
-include(AddCLI11Submodule)
 include(GitRevision)
 
-add_subdirectory(${CORENEURON_PROJECT_SOURCE_DIR}/external/CLI11)
+set(CORENRN_3RDPARTY_DIR external)
+include(CMake/hpc-coding-conventions/cpp/cmake/3rdparty.cmake)
+cpp_cc_git_submodule(CLI11 BUILD PACKAGE CLI11 REQUIRED)
 
 # =============================================================================
 # Build options
@@ -546,10 +563,8 @@ if(NOT CORENEURON_AS_SUBPROJECT)
   if(DOXYGEN_FOUND AND SPHINX_FOUND)
     add_custom_target(
       docs
-      COMMAND make doxygen
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-      COMMAND make sphinx
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target doxygen
+      COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target sphinx
       COMMENT "Generating full documentation")
   else()
     add_custom_target(

@@ -30,8 +30,7 @@ class NetCvode;
 #define NetParEventType   7
 #define InputPreSynType   20
 
-class DiscreteEvent {
-  public:
+struct DiscreteEvent {
     DiscreteEvent() = default;
     virtual ~DiscreteEvent() = default;
     virtual void send(double deliverytime, NetCvode*, NrnThread*);

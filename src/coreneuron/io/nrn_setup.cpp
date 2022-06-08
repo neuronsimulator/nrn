@@ -635,22 +635,20 @@ void read_phasegap(NrnThread& nt, UserParams& userParams) {
 // only voltage, i_membrane_ or mechanism data index allowed. (mtype 0 means time)
 double* stdindex2ptr(int mtype, int index, NrnThread& nt) {
     if (mtype == voltage) {  // voltage
-        int v0 = nt._actual_v - nt._data;
-        int ix = index;  // relative to _actual_v
+        int ix{index};       // relative to _actual_v
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
-        return nt._data + (v0 + ix);    // relative to nt._data
+        return nt._actual_v + ix;
     } else if (mtype == i_membrane_) {  // membrane current from fast_imem calculation
-        int i_mem = nt.nrn_fast_imem->nrn_sav_rhs - nt._data;
-        int ix = index;  // relative to nrn_fast_imem->nrn_sav_rhs
+        int ix{index};                  // relative to nrn_fast_imem->nrn_sav_rhs
         nrn_assert((ix >= 0) && (ix < nt.end));
         if (nt._permute) {
             node_permute(&ix, 1, nt._permute);
         }
-        return nt._data + (i_mem + ix);                                 // relative to nt._data
-    } else if (mtype > 0 && mtype < corenrn.get_memb_funcs().size()) {  //
+        return nt.nrn_fast_imem->nrn_sav_rhs + ix;
+    } else if (mtype > 0 && mtype < static_cast<int>(corenrn.get_memb_funcs().size())) {  //
         Memb_list* ml = nt._ml_list[mtype];
         nrn_assert(ml);
         int ix = nrn_param_layout(index, mtype, ml);
