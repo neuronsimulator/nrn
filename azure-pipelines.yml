@@ -246,7 +246,7 @@ stages:
               
           - task: GitHubComment@0
             inputs:
-              gitHubConnection: 'github.com_alexsavulescu'
+              gitHubConnection: 'neuronsimulator'
               repositoryName: '$(Build.Repository.Name)'
               comment: |
                 ✔️ $(system.pullRequest.sourceCommitId) -> [Azure artifacts URL]($(dropurl))
