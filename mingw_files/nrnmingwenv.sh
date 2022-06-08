@@ -94,7 +94,6 @@ copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
 cc1plus.exe
 libgcc.a
 liblto_plugin.dll
-libstdc++.dll.a
 '
 cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
 rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
@@ -185,4 +184,5 @@ if test -f /mingw64/lib/libgcc_s.a ; then # gcc 11.2.0 Rev 10
 fi
 copy $gcclib '
 libgcc_s.a
+libstdc++.dll.a
 '
