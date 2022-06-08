@@ -9,10 +9,11 @@ _Release Date_ : TBC
 
 ### Potential Incompatibilities
 
+* Support for Python 3.6 was dropped, as it has reached end-of-life (#1733).
 * In this release, more declarations of NEURON methods (typically `nrn_` and
   `hoc_` functions) are implicitly included in translated MOD files. This can
   cause compilation errors with MOD files that include incorrect declarations
-  of these methods in `VERBATIM` blocks.
+  of these methods in `VERBATIM` blocks. (#1755, #1811, #1825).
 
 ### Deprecations
 
