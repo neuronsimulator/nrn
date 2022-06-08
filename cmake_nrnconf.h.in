@@ -99,6 +99,9 @@
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
+/* Define to 1 if you have the `mallinfo' function. */
+#undef HAVE_MALLINFO
+
 /* Define to 1 if you have the `mallinfo2' function. */
 #undef HAVE_MALLINFO2
 
