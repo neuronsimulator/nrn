@@ -244,25 +244,7 @@ cpp_cc_git_submodule(Random123)
 # =============================================================================
 # Enable sanitizer support if the NRN_SANITIZERS variable is set
 # =============================================================================
-# unsigned integer flow is not actually undefined behaviour, and NEURON has a lot of it...
-message(STATUS "CODING_CONV_PREFIX=${CODING_CONV_PREFIX}")
-set(${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS
-    implicit-signed-integer-truncation unsigned-integer-overflow
-    CACHE STRING "" FORCE)
-message(
-  STATUS
-    "${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS=${${CODING_CONV_PREFIX}_SANITIZERS_UNDEFINED_EXCLUSIONS}"
-)
-include("${CODING_CONV_CMAKE}/sanitizers.cmake")
-list(APPEND NRN_COMPILE_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
-list(APPEND NRN_LINK_FLAGS ${NRN_SANITIZER_COMPILER_FLAGS})
-if(NRN_SANITIZER_LIBRARY_DIR)
-  list(APPEND NRN_LINK_FLAGS "-Wl,-rpath,${NRN_SANITIZER_LIBRARY_DIR}")
-endif()
-string(JOIN " " NRN_SANITIZER_ENABLE_ENVIRONMENT_STRING ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
-if(NRN_ENABLE_TESTS)
-  configure_file(bin/nrn-enable-sanitizer.in bin/nrn-enable-sanitizer @ONLY)
-endif()
+include(cmake/SanitizerHelper.cmake)
 
 # =============================================================================
 # Find required packages
@@ -572,16 +554,6 @@ else()
   set(NRN_BUILD_SHARE_DIR ${CMAKE_BINARY_DIR}/share/nrn)
   set(NRN_INSTALL_SHARE_LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif()
-
-# Prepare some variables for @VAR@ expansion in setup.py.in (nrnpython and rx3d)
-set(NRN_COMPILE_FLAGS_QUOTED ${NRN_COMPILE_FLAGS})
-set(NRN_LINK_FLAGS_QUOTED ${NRN_LINK_FLAGS})
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_COMPILE_FLAGS_QUOTED PREPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED APPEND "'")
-list(TRANSFORM NRN_LINK_FLAGS_QUOTED PREPEND "'")
-string(JOIN ", " NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_COMPILE_FLAGS_QUOTED})
-string(JOIN ", " NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS ${NRN_LINK_FLAGS_QUOTED})
 
 # =============================================================================
 # Add project directories AFTER CMake modules
