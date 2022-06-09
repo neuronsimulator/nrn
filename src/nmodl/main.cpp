@@ -16,7 +16,6 @@
 #include "codegen/codegen_compatibility_visitor.hpp"
 #include "codegen/codegen_cuda_visitor.hpp"
 #include "codegen/codegen_ispc_visitor.hpp"
-#include "codegen/codegen_omp_visitor.hpp"
 #include "config/config.h"
 #include "parser/nmodl_driver.hpp"
 #include "pybind/pyembed.hpp"
@@ -70,9 +69,6 @@ int main(int argc, const char* argv[]) {
 
     /// true if serial c code to be generated
     bool c_backend(true);
-
-    /// true if c code with openmp to be generated
-    bool omp_backend(false);
 
     /// true if ispc code to be generated
     bool ispc_backend(false);
@@ -186,9 +182,6 @@ int main(int argc, const char* argv[]) {
     host_opt->add_flag("--c", c_backend, fmt::format("C/C++ backend ({})", c_backend))
         ->ignore_case();
     host_opt
-        ->add_flag("--omp", omp_backend, fmt::format("C/C++ backend with OpenMP ({})", omp_backend))
-        ->ignore_case();
-    host_opt
         ->add_flag("--ispc",
                    ispc_backend,
                    fmt::format("C/C++ backend with ISPC ({})", ispc_backend))
@@ -284,7 +277,7 @@ int main(int argc, const char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     // if any of the other backends is used we force the C backend to be off.
-    if (omp_backend || ispc_backend) {
+    if (ispc_backend) {
         c_backend = false;
     }
 
@@ -547,15 +540,6 @@ int main(int argc, const char* argv[]) {
             else if (oacc_backend) {
                 logger->info("Running OpenACC backend code generator");
                 CodegenAccVisitor visitor(modfile,
-                                          output_dir,
-                                          data_type,
-                                          optimize_ionvar_copies_codegen);
-                visitor.visit_program(*ast);
-            }
-
-            else if (omp_backend) {
-                logger->info("Running OpenMP backend code generator");
-                CodegenOmpVisitor visitor(modfile,
                                           output_dir,
                                           data_type,
                                           optimize_ionvar_copies_codegen);
