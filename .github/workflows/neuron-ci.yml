@@ -283,7 +283,7 @@ jobs:
                 echo ---
                 nrn_enable_sanitizer=${INSTALL_DIR}/bin/nrn-enable-sanitizer
                 nrn_enable_sanitizer_preload="${nrn_enable_sanitizer} --preload"
-              elsec
+              else
                 echo nrn-enable-sanitizer not found, not using it
               fi
           elif [[ "$BUILD_MODE" == "setuptools" ]]; then
