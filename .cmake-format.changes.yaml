@@ -18,6 +18,7 @@ additional_commands:
       COMMAND: '+'
       CONFLICTS: '+'
       PRECOMMAND: '+'
+      PRELOAD_SANITIZER: 0
       PROCESSORS: 1
       REQUIRES: '+'
       OUTPUT: '*'

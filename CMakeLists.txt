@@ -159,6 +159,17 @@ set(NRN_NMODL_CXX_FLAGS
     CACHE STRING "space separated list of flags to be added to host tools (nocmodl, modlunit")
 separate_arguments(NRN_NMODL_CXX_FLAGS UNIX_COMMAND ${NRN_NMODL_CXX_FLAGS})
 
+set(NRN_EXTRA_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for NEURON source files")
+separate_arguments(NRN_EXTRA_CXX_FLAGS)
+list(APPEND NRN_COMPILE_FLAGS ${NRN_EXTRA_CXX_FLAGS})
+
+set(NRN_EXTRA_MECH_CXX_FLAGS
+    ""
+    CACHE STRING "Extra compiler flags for translated NEURON mechanisms")
+separate_arguments(NRN_EXTRA_MECH_CXX_FLAGS)
+
 option(NRN_ENABLE_PROFILING "Enable profiling" ${NRN_ENABLE_PROFILING_DEFAULT})
 set(NRN_PROFILER
     "${NRN_PROFILER_DEFAULT}"
@@ -229,6 +240,11 @@ if(NOT EXISTS "${CODING_CONV_CMAKE}/3rdparty.cmake")
 endif()
 include("${CODING_CONV_CMAKE}/3rdparty.cmake")
 cpp_cc_git_submodule(Random123)
+
+# =============================================================================
+# Enable sanitizer support if the NRN_SANITIZERS variable is set
+# =============================================================================
+include(cmake/SanitizerHelper.cmake)
 
 # =============================================================================
 # Find required packages
@@ -726,11 +742,14 @@ endif()
 # Add tests if enabled
 # =============================================================================
 if(NRN_ENABLE_TESTS)
-  nrn_add_external_project(catch2)
-  set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
-  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+  # If CoreNEURON + NMODL are enabled, Catch2 will already have been set up...
+  if(NOT TARGET Catch2::Catch2)
+    nrn_add_external_project(catch2)
+    set(CATCH_DIR ${PROJECT_SOURCE_DIR}/external/catch2)
+    list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/external/catch2/contrib)
+    include(Catch)
+  endif()
   include(CTest)
-  include(Catch)
   nrn_find_python_module(pytest)
   nrn_find_python_module(pytest_cov)
   if(NRN_ENABLE_PYTHON)
@@ -826,6 +845,7 @@ if(BUILD_TYPE_UPPER MATCHES "CUSTOM")
 else()
   set(COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}}")
 endif()
+string(JOIN " " COMPILER_FLAGS "${COMPILER_FLAGS}" ${NRN_COMPILE_FLAGS})
 
 message(STATUS "")
 message(STATUS "Configured NEURON ${PROJECT_VERSION}")

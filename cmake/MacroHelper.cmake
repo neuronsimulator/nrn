@@ -237,8 +237,9 @@ endmacro()
 macro(nocmodl_mod_to_cpp modfile_basename)
   add_custom_command(
     OUTPUT ${modfile_basename}.cpp
-    COMMAND ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
-            ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
+    COMMAND
+      ${CMAKE_COMMAND} -E env "MODLUNIT=${PROJECT_BINARY_DIR}/share/nrn/lib/nrnunits.lib"
+      ${NRN_NOCMODL_SANITIZER_ENVIRONMENT} ${PROJECT_BINARY_DIR}/bin/nocmodl ${modfile_basename}.mod
     COMMAND sed "'s/_reg()/_reg_()/'" ${modfile_basename}.cpp > ${modfile_basename}.cpp.tmp
     COMMAND mv ${modfile_basename}.cpp.tmp ${modfile_basename}.cpp
     DEPENDS nocmodl ${modfile_basename}.mod
