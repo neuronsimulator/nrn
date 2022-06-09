@@ -1028,16 +1028,6 @@ std::string CodegenCVisitor::get_parameter_str(const ParamVector& params) {
 }
 
 
-void CodegenCVisitor::print_channel_iteration_task_begin(BlockType type) {
-    // backend specific, do nothing
-}
-
-
-void CodegenCVisitor::print_channel_iteration_task_end() {
-    // backend specific, do nothing
-}
-
-
 void CodegenCVisitor::print_channel_iteration_tiling_block_begin(BlockType type) {
     // no tiling for cpu backend, just get loop bounds
     printer->add_line("int start = 0;");
@@ -1130,12 +1120,7 @@ void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType type
 
 
 bool CodegenCVisitor::nrn_cur_reduction_loop_required() {
-    return channel_task_dependency_enabled() || info.point_process;
-}
-
-
-bool CodegenCVisitor::shadow_vector_setup_required() {
-    return (channel_task_dependency_enabled() && !codegen_shadow_variables.empty());
+    return info.point_process;
 }
 
 
@@ -1163,23 +1148,16 @@ void CodegenCVisitor::print_rhs_d_shadow_variables() {
 
 
 void CodegenCVisitor::print_nrn_cur_matrix_shadow_update() {
-    if (channel_task_dependency_enabled()) {
-        auto rhs = get_variable_name("ml_rhs");
-        auto d = get_variable_name("ml_d");
-        printer->add_line(fmt::format("{} = rhs;", rhs));
-        printer->add_line(fmt::format("{} = g;", d));
+    if (info.point_process) {
+        printer->add_line("shadow_rhs[id] = rhs;");
+        printer->add_line("shadow_d[id] = g;");
     } else {
-        if (info.point_process) {
-            printer->add_line("shadow_rhs[id] = rhs;");
-            printer->add_line("shadow_d[id] = g;");
-        } else {
-            auto rhs_op = operator_for_rhs();
-            auto d_op = operator_for_d();
-            print_atomic_reduction_pragma();
-            printer->add_line(fmt::format("vec_rhs[node_id] {} rhs;", rhs_op));
-            print_atomic_reduction_pragma();
-            printer->add_line(fmt::format("vec_d[node_id] {} g;", d_op));
-        }
+        auto rhs_op = operator_for_rhs();
+        auto d_op = operator_for_d();
+        print_atomic_reduction_pragma();
+        printer->add_line(fmt::format("vec_rhs[node_id] {} rhs;", rhs_op));
+        print_atomic_reduction_pragma();
+        printer->add_line(fmt::format("vec_d[node_id] {} g;", d_op));
     }
 }
 
@@ -1187,22 +1165,12 @@ void CodegenCVisitor::print_nrn_cur_matrix_shadow_update() {
 void CodegenCVisitor::print_nrn_cur_matrix_shadow_reduction() {
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
-    if (channel_task_dependency_enabled()) {
-        auto rhs = get_variable_name("ml_rhs");
-        auto d = get_variable_name("ml_d");
+    if (info.point_process) {
         printer->add_line("int node_id = node_index[id];");
         print_atomic_reduction_pragma();
-        printer->add_line(fmt::format("vec_rhs[node_id] {} {};", rhs_op, rhs));
+        printer->add_line(fmt::format("vec_rhs[node_id] {} shadow_rhs[id];", rhs_op));
         print_atomic_reduction_pragma();
-        printer->add_line(fmt::format("vec_d[node_id] {} {};", d_op, d));
-    } else {
-        if (info.point_process) {
-            printer->add_line("int node_id = node_index[id];");
-            print_atomic_reduction_pragma();
-            printer->add_line(fmt::format("vec_rhs[node_id] {} shadow_rhs[id];", rhs_op));
-            print_atomic_reduction_pragma();
-            printer->add_line(fmt::format("vec_d[node_id] {} shadow_d[id];", d_op));
-        }
+        printer->add_line(fmt::format("vec_d[node_id] {} shadow_d[id];", d_op));
     }
 }
 
@@ -1261,16 +1229,6 @@ void CodegenCVisitor::print_backend_includes() {
 
 std::string CodegenCVisitor::backend_name() const {
     return "C (api-compatibility)";
-}
-
-
-bool CodegenCVisitor::block_require_shadow_update(BlockType type) {
-    return false;
-}
-
-
-bool CodegenCVisitor::channel_task_dependency_enabled() {
-    return false;
 }
 
 
@@ -2116,15 +2074,6 @@ std::string CodegenCVisitor::process_shadow_update_statement(const ShadowUseStat
     // when there is no operator or rhs then that statement doesn't need shadow update
     if (statement.op.empty() && statement.rhs.empty()) {
         auto text = statement.lhs + ";";
-        return text;
-    }
-
-    // blocks like initial doesn't use shadow update (e.g. due to wrote_conc call)
-    if (block_require_shadow_update(type)) {
-        shadow_statements.push_back(statement);
-        auto lhs = get_variable_name(shadow_varname(statement.lhs));
-        auto rhs = statement.rhs;
-        auto text = fmt::format("{} = {};", lhs, rhs);
         return text;
     }
 
@@ -3020,12 +2969,6 @@ void CodegenCVisitor::print_mechanism_range_var_structure() {
                 fmt::format("{}{}* {}{};", qualifier, type, ptr_type_qualifier(), name));
         }
     }
-    if (channel_task_dependency_enabled()) {
-        for (auto& var: codegen_shadow_variables) {
-            auto name = var->get_name();
-            printer->add_line(fmt::format("{}* {}{};", float_type, ptr_type_qualifier(), name));
-        }
-    }
     printer->end_block();
     printer->add_text(";");
     printer->add_newline();
@@ -3235,35 +3178,6 @@ void CodegenCVisitor::print_global_variable_setup() {
 }
 
 
-void CodegenCVisitor::print_shadow_vector_setup() {
-    printer->add_newline(2);
-    printer->add_line("/** allocate and initialize shadow vector */");
-    auto args = fmt::format("{}* inst, Memb_list* ml", instance_struct());
-    printer->start_block(fmt::format("static inline void setup_shadow_vectors({}) ", args));
-    if (channel_task_dependency_enabled()) {
-        printer->add_line("int nodecount = ml->nodecount;");
-        for (auto& var: codegen_shadow_variables) {
-            auto name = var->get_name();
-            auto type = default_float_data_type();
-            auto allocation = fmt::format("({0}*) mem_alloc(nodecount, sizeof({0}))", type);
-            printer->add_line(fmt::format("inst->{0} = {1};", name, allocation));
-        }
-    }
-    printer->end_block(3);
-
-    printer->add_line("/** free shadow vector */");
-    args = fmt::format("{}* inst", instance_struct());
-    printer->start_block(fmt::format("static inline void free_shadow_vectors({}) ", args));
-    if (channel_task_dependency_enabled()) {
-        for (auto& var: codegen_shadow_variables) {
-            auto name = var->get_name();
-            printer->add_line(fmt::format("mem_free(inst->{});", name));
-        }
-    }
-    printer->end_block(1);
-}
-
-
 void CodegenCVisitor::print_setup_range_variable() {
     auto type = float_data_type();
     printer->add_newline(2);
@@ -3315,17 +3229,11 @@ void CodegenCVisitor::print_instance_variable_setup() {
         print_setup_range_variable();
     }
 
-    if (shadow_vector_setup_required()) {
-        print_shadow_vector_setup();
-    }
     printer->add_newline(2);
     printer->add_line("/** initialize mechanism instance variables */");
     printer->start_block("static inline void setup_instance(NrnThread* nt, Memb_list* ml) ");
     printer->add_line(
         fmt::format("{0}* inst = ({0}*) mem_alloc(1, sizeof({0}));", instance_struct()));
-    if (channel_task_dependency_enabled() && !codegen_shadow_variables.empty()) {
-        printer->add_line("setup_shadow_vectors(inst, ml);");
-    }
 
     std::string stride;
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
@@ -4555,10 +4463,7 @@ void CodegenCVisitor::print_fast_imem_calculation() {
     std::string rhs, d;
     auto rhs_op = operator_for_rhs();
     auto d_op = operator_for_d();
-    if (channel_task_dependency_enabled()) {
-        rhs = get_variable_name("ml_rhs");
-        d = get_variable_name("ml_d");
-    } else if (info.point_process) {
+    if (info.point_process) {
         rhs = "shadow_rhs[id]";
         d = "shadow_d[id]";
     } else {

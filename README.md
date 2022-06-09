@@ -232,7 +232,6 @@ host
   HOST/CPU code backends
   Options:
     --c                                   C/C++ backend (true)
-    --omp                                 C/C++ backend with OpenMP (false)
     --ispc                                C/C++ backend with ISPC (false)
 
 acc

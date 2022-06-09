@@ -996,29 +996,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Determine whether use of shadow updates at channel level required
-     *
-     *
-     * \param type The backend block type
-     * \return  \c true if shadow updates are needed
-     */
-    virtual bool block_require_shadow_update(BlockType type);
-
-
-    /**
-     * Determine whether this backend is performing channel execution with dependency
-     * \return \c true if task dependency is enabled
-     */
-    virtual bool channel_task_dependency_enabled();
-
-
-    /**
-     * Check if \c shadow\_vector\_setup function is required
-     */
-    bool shadow_vector_setup_required();
-
-
-    /**
      * Check if ion variable copies should be avoided
      */
     bool optimize_ion_variable_copies() const;
@@ -1210,13 +1187,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Print the setup method for allocation of shadow vectors
-     *
-     */
-    void print_shadow_vector_setup();
-
-
-    /**
      * Print the setup method for setting matrix shadow vectors
      *
      */
@@ -1265,23 +1235,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
      * \param node The AST node representing the function call
      */
     void print_net_event_call(const ast::FunctionCall& node);
-
-
-    /**
-     * Print channel iterations from which tasks are created
-     *
-     * \note This is not used for the C backend
-     * \param type
-     */
-    virtual void print_channel_iteration_task_begin(BlockType type);
-
-
-    /**
-     * Print end of channel iteration for task
-     *
-     * \note This is not used for the C backend
-     */
-    virtual void print_channel_iteration_task_end();
 
 
     /**
