@@ -35,7 +35,7 @@ include(CMakeListsNrnMech)
 # =============================================================================
 nrn_configure_file(nrngui bin)
 configure_file(sortspike sortspike COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnivmodl_makefile_cmake.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/nrnmech_makefile.in
                ${PROJECT_BINARY_DIR}/bin/nrnmech_makefile @ONLY)
 
 # if running from the build folder (e.g. make test) may need this.
