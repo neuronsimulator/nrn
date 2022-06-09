@@ -50,6 +50,7 @@
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
+#                 [PRELOAD_SANITIZER]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
 #                 [PROCESSORS required_processors]
@@ -71,7 +72,10 @@
 #    prepare input data for simulations. The PROCESSORS argument specifies the
 #    number of processors used by the test. This is passed to CTest and allows
 #    invocations such as `ctest -j 16` to avoid overcommitting resources by
-#    running too many tests with internal parallelism.
+#    running too many tests with internal parallelism. The PRELOAD_SANITIZER
+#    flag controls whether or not the PRELOAD flag is passed to
+#    cpp_cc_configure_sanitizers; this needs to be set when the test executable
+#    is *not* built by NEURON, typically because it is `python`.
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
@@ -237,7 +241,8 @@ function(nrn_add_test)
       OUTPUT
       SCRIPT_PATTERNS
       SIM_DIRECTORY)
-  cmake_parse_arguments(NRN_ADD_TEST "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(NRN_ADD_TEST "PRELOAD_SANITIZER" "${oneValueArgs}" "${multiValueArgs}"
+                        ${ARGN})
   if(DEFINED NRN_ADD_TEST_MISSING_VALUES)
     message(
       WARNING "nrn_add_test: missing values for keyword arguments: ${NRN_ADD_TEST_MISSING_VALUES}")
@@ -404,6 +409,10 @@ function(nrn_add_test)
   endif()
   list(APPEND test_env "PATH=${path_additions}${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
   set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}")
+  if(NRN_ADD_TEST_PRELOAD_SANITIZER)
+    set(preload PRELOAD)
+  endif()
+  cpp_cc_configure_sanitizers(TEST ${test_names} ${preload})
 
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.

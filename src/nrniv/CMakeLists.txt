@@ -6,6 +6,7 @@
 # targets from included projects like CoreNEURON and NMODL
 add_compile_options(${NRN_COMPILE_FLAGS})
 add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 if(NRN_AVOID_ABSOLUTE_PATHS)
   add_compile_definitions(NRN_AVOID_ABSOLUTE_PATHS)
@@ -40,6 +41,7 @@ add_dependencies(generated_source_files modlunit_generated_files)
 add_executable(modlunit ${NRN_MODLUNIT_SRC_FILES} "${NRN_MODLUNIT_GEN}/lex.cpp"
                         "${NRN_MODLUNIT_GEN}/parse1.cpp")
 target_compile_definitions(modlunit PRIVATE NRNUNIT=1)
+cpp_cc_configure_sanitizers(TARGET modlunit)
 # Generated .cpp needs to find source-directory .hpp and vice versa.
 target_include_directories(modlunit PRIVATE "${NRN_MODLUNIT_SRC_DIR}" "${NRN_MODLUNIT_GEN}")
 
@@ -81,6 +83,7 @@ add_custom_target(
 add_dependencies(generated_source_files nocmodl_generated_files)
 add_executable(nocmodl ${NRN_NMODL_SRC_FILES} "${NRN_NMODL_GEN}/lex.cpp"
                        "${NRN_NMODL_GEN}/parse1.cpp" "${NRN_NMODL_GEN}/diffeq.cpp")
+cpp_cc_configure_sanitizers(TARGET nocmodl)
 target_compile_definitions(nocmodl PRIVATE COMPILE_DEFINITIONS NMODL=1 NOCMODL=1 CVODE=1
                                            VECTORIZE=1 NRN_DYNAMIC_UNITS=1)
 # Otherwise the generated code in the binary directory does not find headers in the modlunit source
@@ -96,6 +99,10 @@ endif()
 # =============================================================================
 foreach(modfile ${NRN_MODFILE_BASE_NAMES})
   nocmodl_mod_to_c(${modfile})
+  set_property(
+    SOURCE ${modfile}.c
+    APPEND
+    PROPERTY COMPILE_OPTIONS ${NRN_EXTRA_MECH_CXX_FLAGS})
   list(APPEND NRN_MODFILE_C ${modfile}.c)
 endforeach()
 
@@ -332,6 +339,7 @@ endif()
 # All source directories to include
 # =============================================================================
 add_library(nrniv_lib ${NRN_LIBRARY_TYPE} ${NRN_NRNIV_LIB_SRC_FILES})
+cpp_cc_configure_sanitizers(TARGET nrniv_lib)
 # Source-directory .cpp needs to find generated .hpp.
 target_include_directories(nrniv_lib PUBLIC "${NRN_OC_GEN}")
 if(${USE_PTHREAD} EQUAL 1)
@@ -446,6 +454,7 @@ endif()
 # Final executable
 # =============================================================================
 add_executable(nrniv ${NRN_BIN_SRC_FILES})
+cpp_cc_configure_sanitizers(TARGET nrniv)
 target_link_libraries(nrniv nrniv_lib ${INTERNAL_READLINE} ${CMAKE_DL_LIBS})
 if(${USE_PTHREAD} EQUAL 1)
   target_link_libraries(nrniv Threads::Threads)

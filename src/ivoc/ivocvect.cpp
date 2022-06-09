@@ -1570,23 +1570,21 @@ static Object** v_copy(void* v) {
 
 
 static Object** v_at(void* v) {
-    Vect* x = (Vect*) v;
-
-    int top = x->size() - 1;
-    int start = 0;
-    int end = top;
+    auto* x = static_cast<Vect*>(v);
+    std::size_t start{};
+    std::size_t end{x->size()};
     if (ifarg(1)) {
-        start = int(chkarg(1, 0, top));
+        start = chkarg(1, 0, x->size() - 1);
     }
     if (ifarg(2)) {
-        end = int(chkarg(2, start, top));
+        end = chkarg(2, start, x->size() - 1) + 1.0;
     }
-    int size = end - start + 1;
-    Vect* y = new Vect(size);
+    std::size_t size{end - start};
+    auto* y = new Vect(size);
     // ZFM: fixed bug -- i<size, not i<=size
-    for (int i = 0; i < size; i++)
+    for (std::size_t i = 0; i < size; ++i) {
         y->elem(i) = x->elem(i + start);
-
+    }
     return y->temp_objvar();
 }
 
@@ -1966,15 +1964,14 @@ static Object** v_indvwhere(void* v) {
 }
 
 static Object** v_fill(void* v) {
-    Vect* x = (Vect*) v;
-    int top = x->size() - 1;
-    int start = 0;
-    int end = top;
+    auto* x = static_cast<Vect*>(v);
+    std::size_t start{};
+    std::size_t end{x->size()};
     if (ifarg(2)) {
-        start = int(chkarg(2, 0, top));
-        end = int(chkarg(3, start, top));
+        start = chkarg(2, 0, x->size() - 1);
+        end = chkarg(3, start, x->size() - 1) + 1.0;
     }
-    std::fill(x->begin() + start, x->begin() + end + 1, *getarg(1));
+    std::fill(x->begin() + start, x->begin() + end, *getarg(1));
     return x->temp_objvar();
 }
 
