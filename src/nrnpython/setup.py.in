@@ -122,7 +122,10 @@ libdirs = [destdir + get_escaped_path("@NRN_LIBDIR@"),
 
 # prepare rpath flags for neuron and iv libs directories
 rpath_prefix_flag='-Wl,-R'
-extra_rpath_flags = [rpath_prefix_flag+lib_path for lib_path in libdirs]
+extra_link_args = [@NRN_LINK_FLAGS_COMMA_SEPARATED_STRINGS@]
+@MAC_DARWIN_FALSE@extra_link_args += [rpath_prefix_flag+lib_path for lib_path in libdirs]
+@MAC_DARWIN_TRUE@extra_link_args.append("-Wl,-rpath,@loader_path/../../")
+@MAC_DARWIN_TRUE@extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
 # as neuron module will be built during make, add build/lib
 # directory for linking. Note that build/lib shouldn't be
@@ -134,28 +137,23 @@ libdirs.append(destdir + get_escaped_path("@CMAKE_BINARY_DIR@/lib"))
 
 pgi_compiler_flags = "-noswitcherror"
 
-extra_link_args = []
 libs = [@BUILD_NRNPYTHON_DYNAMIC_TRUE@nrnpython_pyver10,
 "nrniv"
 ]
 if "@IVHINES@" != "":
     libs.append("@IVHINES@")
-extra_link_args.append("-Wl,-rpath,@loader_path/../../")
-extra_link_args.append("-Wl,-rpath,%s" % ivlibdir)
 
-extra_compile_args = []
+extra_compile_args = [@NRN_COMPILE_FLAGS_COMMA_SEPARATED_STRINGS@]
 
 if using_pgi:
   extra_link_args.append(pgi_compiler_flags)
-  extra_rpath_flags.append(pgi_compiler_flags)
   extra_compile_args.append(pgi_compiler_flags)
 
 hoc_module = Extension(
     "neuron.hoc",
     ["inithoc.cpp"],
     library_dirs=libdirs,
-    @MAC_DARWIN_TRUE@extra_link_args = extra_link_args,
-    @setup_extra_link_args@ = extra_rpath_flags,
+    extra_link_args=extra_link_args,
     #extra_objects = [],
     extra_compile_args = extra_compile_args,
     libraries = libs ,
@@ -189,10 +187,7 @@ if build_rx3d:
     build_path = '../../share/lib/python/neuron/rxd/geometry3d/'
     include_dirs = [nrn_srcdir + '/share/lib/python/neuron/rxd/geometry3d', '.', numpy.get_include()]
     include_dirs += include_dirs_common
-    extra_compile_args=["-O0"] # minimize compile time
-    extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"]
-    if using_pgi:
-      extra_compile_args.append(pgi_compiler_flags)
+    extra_compile_args=["-O@NRN_RX3D_OPT_LEVEL@"] + extra_compile_args
     define_macros = []
     if mingw:
       #Avoid undefined __imp_Py_InitModule4 and hypot problem
@@ -201,17 +196,20 @@ if build_rx3d:
                    Extension("neuron.rxd.geometry3d.graphicsPrimitives",
                              sources=[build_path + "graphicsPrimitives.cpp"],
                              extra_compile_args = extra_compile_args,
+                             extra_link_args=extra_link_args,
                              define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.ctng",
                              sources=[build_path + "ctng.cpp"],
                              extra_compile_args = extra_compile_args,
+                             extra_link_args=extra_link_args,
                              define_macros = define_macros,
                              include_dirs=include_dirs),
                    Extension("neuron.rxd.geometry3d.surfaces",
                              sources=[build_path + "surfaces.cpp", nrn_srcdir + "/src/nrnpython/rxd_marching_cubes.cpp", nrn_srcdir + "/src/nrnpython/rxd_llgramarea.cpp"],
                              define_macros = define_macros,
                              extra_compile_args = extra_compile_args,
+                             extra_link_args=extra_link_args,
                              include_dirs=include_dirs)]
   except:
     pass
