@@ -42,12 +42,7 @@
 #if HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
-
 #include "modl.h"
-
-#include <regex>
-#include <unordered_set>
-
 FILE *fin,    /* input file descriptor for filename.mod */
               /* or file2 from the second argument */
     *fparout, /* output file descriptor for filename.var */
@@ -89,7 +84,6 @@ extern char* RCS_date;
 static struct option long_options[] = {{"version", no_argument, 0, 'v'},
                                        {"help", no_argument, 0, 'h'},
                                        {"outdir", required_argument, 0, 'o'},
-                                       {"tranformations", required_argument, 0, 't'},
                                        {0, 0, 0, 0}};
 
 static void show_options(char** argv) {
@@ -98,16 +92,11 @@ static void show_options(char** argv) {
     fprintf(stderr, "Options:\n");
     fprintf(stderr,
             "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
-    fprintf(stderr, "\t-t | --transformations <T1[,T2...]> code transformations to attempt\n");
     fprintf(stderr, "\t-h | --help                         print this message\n");
     fprintf(stderr, "\t-v | --version                      print version number\n");
 }
 
 static void openfiles(char* given_filename, char* output_dir);
-
-namespace {
-std::unordered_set<std::string> transformations;
-}
 
 int main(int argc, char** argv) {
     int option = -1;
@@ -119,7 +108,7 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    while ((option = getopt_long(argc, argv, ":vho:t:", long_options, &option_index)) != -1) {
+    while ((option = getopt_long(argc, argv, ":vho:", long_options, &option_index)) != -1) {
         switch (option) {
         case 'v':
             printf("%s\n", nmodl_version_);
@@ -128,14 +117,6 @@ int main(int argc, char** argv) {
         case 'o':
             output_dir = strdup(optarg);
             break;
-
-        case 't': {
-            std::istringstream iss{optarg};
-            std::string transformation{};
-            while (std::getline(iss, transformation, ',')) {
-                transformations.insert(transformation);
-            }
-        } break;
 
         case 'h':
             show_options(argv);
@@ -381,71 +362,5 @@ static void openfiles(char* given_filename, char* output_dir) {
 
 // Post-adjustments for VERBATIM blocks  (i.e  make them compatible with CPP).
 void verbatim_adjust(char* q) {
-    std::string repl{q};
-    auto const regex_replace = [&repl](const char* pattern, const char* replacement) {
-        repl = std::regex_replace(std::move(repl), std::regex{pattern}, replacement);
-    };
-    auto const regex_remove = [&](const char* pattern) { regex_replace(pattern, ""); };
-    // Adjustments that aim to make old mechanisms compilable as C++. From
-    // around NEURON 8.1 this will be the default, and these transformations
-    // should not be enabled for new mechanisms.
-    if (transformations.count("cxx")) {
-        // C++ declarations must be correct; C was much sloppier and this carries
-        // over into many .mod files in the wild. Try and remove declarations
-        // from VERBATIM blocks and assume that the correct declarations of these
-        // utility functions are visible via implicitly included headers.
-
-        // These need to be fudged out because we cannot overload by return type.
-        // This is supposed to match an optionally-extern function returning void*
-        // called nrn_random_arg, vector_arg or vector_new1 and taking any number of
-        // arguments.
-        regex_remove(
-            "(extern\\s{1}|)\\s*void\\s*\\*\\s*(nrn_random_arg|vector_arg|vector_new1)\\(.*?\\);");
-        // Local declarations of double *hoc_pgetarg(void) shadow the global
-        // declaration that takes int. Transforms:
-        //   extern double hoc_call_func();
-        //   extern Object** hoc_objgetarg();
-        //   FILE* f, *hoc_obj_file_arg();
-        //   double *xdir, *xval, *hoc_pgetarg();
-        //   char *gargstr(), *filename;"
-        //   [extern] char** hoc_pgargstr();
-        // into
-        //   <empty>
-        //   <empty>
-        //   FILE* f;
-        //   double *xdir, *xval;
-        //   char *filename;"
-        //   <empty>
-        // (hopefully)
-        regex_remove("extern\\s+double\\s+hoc_call_func\\(\\s*\\);");
-        regex_remove("extern\\s+Object\\*\\*\\s+hoc_objgetarg\\(\\s*\\);");
-        regex_replace("FILE(.*?),\\s*\\*hoc_obj_file_arg\\(\\s*\\);", "FILE$1;");
-        regex_replace("double(.*?),\\s*\\*hoc_pgetarg\\(\\s*\\)\\s*;", "double$1;");
-        regex_replace("char\\s*\\*gargstr\\(\\),(.*?);\\s*$", "char $1;");
-        regex_remove("(extern\\s{1}|)\\s*char\\s*\\*\\*\\s*hoc_pgargstr\\(\\);");
-        // C++ has stricter rules about pointer casting. For example, you cannot
-        // assign (void*)0 to a double* variable in C++.
-        regex_replace("\\(\\s*void\\s*\\*\\s*\\)\\s*0", "nullptr");
-    }
-    if (transformations.count("bbp")) {
-        // These are specific to the current state of some internal BBP models; it
-        // should be possible to retire this quite soon, but at least this way
-        // the .mod files may be able to be updated straight to C++ without an
-        // intermediate step of dual C/C++ compatibility.
-
-        // Cannot overload by return type, and int is not correct.
-        regex_remove("(extern\\s{1}|)\\s*int\\s*nrn_mallinfo\\(.*?\\);");
-
-        // T* foo = alloca(size) is invalid in C++ because void* is not
-        // implicitly convertible to T*. Emit a C-style cast because then we
-        // don't have to find the end of the alloca(...) expression. Expressions
-        // using malloc() are similar.
-        regex_replace("(\\w+)\\s*\\*\\s*(\\w+)\\s*=\\s*(alloca|malloc)\\(", "$1* $2 = ($1*)$3(");
-
-        // Symbol::u is a union with a member that used to be called template
-        // but which is now called ctemplate because of the clash with the C++
-        // keyword.
-        regex_replace("sym->u\\.template", "sym->u.ctemplate");
-    }
-    Fprintf(fcout, "%s", repl.c_str());
+    Fprintf(fcout, "%s", q);
 }

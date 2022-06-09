@@ -235,25 +235,3 @@ If your MOD files produce these deprecation warnings, make sure that the
 relevant method (``vector_capacity`` in this example) is being called with an
 argument of the correct type (``IvocVect*``), and not a type that is implicitly
 converted to ``void*``.
-
-Automatic transformations for C++ Compatibility
------------------------------------------------
-
-Some common issues in the MOD file for C++ compatibility can be identified and
-translated automatically, by applying regular-expression-based transformations
-to ``VERBATIM`` blocks in MOD files.
-A relevant set of transformations can be enabled by passing the
-``-legacytransformations cxx`` option to ``nrnivmodl`` when compiling your MOD
-files:
-
-.. code-block:: bash
-
-    nrnivmodl -legacytransformations cxx mod-dir
-
-
-.. warning::
-  This is not a very robust approach, as the regular expressions are
-  (necessarily) based on examples found in ModelDB and cannot be guaranteed to
-  give sensible results when applied to new MOD files. If this option gives
-  compilation errors or, worse, surprising results at runtime then you should
-  be suspicious of this option if you have chosen to use it.

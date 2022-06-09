@@ -42,7 +42,6 @@ if command -v xcrun; then
     fi
 fi
 
-LegacyModelTransformations=""
 LinkCoreNEURON=false
 UserINCFLAGS=""
 UserLDFLAGS=""
@@ -54,11 +53,6 @@ while [ "$1" ] ; do
     -coreneuron)
         # also run nrnivmodl-core
         LinkCoreNEURON=true
-        shift;;
-    -legacytransformations)
-        # add extra compile flags and nocmodl options
-        LegacyModelTransformations="$2"
-        shift
         shift;;
     -incflags)
         # extra include flags and paths (NEURON only)
@@ -83,10 +77,6 @@ while [ "$1" ] ; do
 done
 
 echo "$PWD"
-
-if [ -n "${LegacyModelTransformations}" ]; then
-  NOCMODLFLAGS="-t ${LegacyModelTransformations}"
-fi
 
 # Mod file paths may contain spaces which make variable lists of those
 # hard to manage as space is the item separator. Furthermore, when a
@@ -163,7 +153,7 @@ for i in "${files[@]}" ; do
   echo "\
 ./${base_name// /\\ }.cpp: ${f// /\\ }.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \$(NOCMODLFLAGS) \"$base_name.mod\" -o \"$mdir\")
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
 ./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
