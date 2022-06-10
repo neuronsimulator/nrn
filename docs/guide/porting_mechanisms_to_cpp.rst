@@ -3,7 +3,7 @@
 .. _porting-mechanisms-to-cpp:
 
 Adapting MOD files for C++ with |neuron_with_cpp_mechanisms|
-==========================================================
+============================================================
 
 In older versions of NEURON, MOD files containing NMODL code were translated
 into C code before being compiled and executed by NEURON.
@@ -16,14 +16,17 @@ However, C and C++ are not the same language, and there are cases in which MOD
 files containing ``VERBATIM`` blocks need to be modified in order to build with
 |neuron_with_cpp_mechanisms|.
 
-Before you start, you should decided if you need your MOD files to be
-compatible simultaneously with |neuron_with_cpp_mechanisms| **and** older, or
-if you can safely stop supporting older versions.
+Before you start, you should decide if you need your MOD files to be
+compatible simultaneously with |neuron_with_cpp_mechanisms| **and** older
+versions, or if you can safely stop supporting older versions.
 Supporting both is generally possible, but it may be more cumbersome than
 committing to using C++ features.
-Considering NEURON has maintained strong backward compatibility and internal
-numerical methods haven't changed with migration to C++, it would be sufficient
-to adapt your MOD files to C++ only and use |neuron_with_cpp_mechanisms|.
+Considering NEURON has maintained strong backward compatibility and its
+internal numerical methods haven't changed with migration to C++, it is likely
+to be sufficient to adapt MOD files to C++ only and use
+|neuron_with_cpp_mechanisms|.
+If you do decide to preserve compatibility across versions, the preprocessor
+macros described in :ref:`python_verbatim` may prove useful.
 
 .. note::
   If you have a model that stopped compiling when you upgraded to or beyond
@@ -32,6 +35,89 @@ to adapt your MOD files to C++ only and use |neuron_with_cpp_mechanisms|.
   GitHub repository of that model. You can check the repository name with the
   model accession number under `<https://github.com/ModelDBRepository>`_.
   An updated version may already be available!
+
+  The following models were updated in ModelDB in preparation for
+  |neuron_with_cpp_mechanisms| and may serve as useful references:
+  `2487 <https://github.com/ModelDBRepository/2487/pull/1>`_,
+  `2730 <https://github.com/ModelDBRepository/2730/pull/1>`_,
+  `2733 <https://github.com/ModelDBRepository/2733/pull/1>`_,
+  `3658 <https://github.com/ModelDBRepository/3658/pull/1>`_,
+  `7399 <https://github.com/ModelDBRepository/7399/pull/1>`_,
+  `7400 <https://github.com/ModelDBRepository/7400/pull/1>`_,
+  `8284 <https://github.com/ModelDBRepository/8284/pull/1>`_,
+  `9889 <https://github.com/ModelDBRepository/9889/pull/1>`_,
+  `12631 <https://github.com/ModelDBRepository/12631/pull/2>`_,
+  `26997 <https://github.com/ModelDBRepository/26997/pull/1>`_,
+  `35358 <https://github.com/ModelDBRepository/35358/pull/2>`_,
+  `37819 <https://github.com/ModelDBRepository/37819/pull/1>`_,
+  `51781 <https://github.com/ModelDBRepository/51781/pull/1>`_,
+  `52034 <https://github.com/ModelDBRepository/52034/pull/1>`_,
+  `64229 <https://github.com/ModelDBRepository/64229/pull/1>`_,
+  `64296 <https://github.com/ModelDBRepository/64296/pull/1>`_,
+  `87585 <https://github.com/ModelDBRepository/87585/pull/1>`_,
+  `93321 <https://github.com/ModelDBRepository/93321/pull/1>`_,
+  `97868 <https://github.com/ModelDBRepository/97868/pull/2>`_,
+  `97874 <https://github.com/ModelDBRepository/97874/pull/2>`_,
+  `97917 <https://github.com/ModelDBRepository/97917/pull/2>`_,
+  `105507 <https://github.com/ModelDBRepository/105507/pull/2>`_,
+  `106891 <https://github.com/ModelDBRepository/106891/pull/3>`_,
+  `113732 <https://github.com/ModelDBRepository/113732/pull/1>`_,
+  `116094 <https://github.com/ModelDBRepository/116094/pull/1>`_,
+  `116830 <https://github.com/ModelDBRepository/116830/pull/1>`_,
+  `116838 <https://github.com/ModelDBRepository/116838/pull/1>`_,
+  `116862 <https://github.com/ModelDBRepository/116862/pull/1>`_,
+  `123815 <https://github.com/ModelDBRepository/123815/pull/1>`_,
+  `136095 <https://github.com/ModelDBRepository/136095/pull/1>`_,
+  `136310 <https://github.com/ModelDBRepository/136310/pull/1>`_,
+  `137845 <https://github.com/ModelDBRepository/137845/pull/1>`_,
+  `138379 <https://github.com/ModelDBRepository/138379/pull/1>`_,
+  `139421 <https://github.com/ModelDBRepository/139421/pull/1>`_,
+  `140881 <https://github.com/ModelDBRepository/140881/pull/1>`_,
+  `141505 <https://github.com/ModelDBRepository/141505/pull/1>`_,
+  `144538 <https://github.com/ModelDBRepository/144538/pull/1>`_,
+  `144549 <https://github.com/ModelDBRepository/144549/pull/1>`_,
+  `144586 <https://github.com/ModelDBRepository/144586/pull/1>`_,
+  `146949 <https://github.com/ModelDBRepository/146949/pull/1>`_,
+  `149000 <https://github.com/ModelDBRepository/149000/pull/1>`_,
+  `149739 <https://github.com/ModelDBRepository/149739/pull/1>`_,
+  `150240 <https://github.com/ModelDBRepository/150240/pull/1>`_,
+  `150245 <https://github.com/ModelDBRepository/150245/pull/1>`_,
+  `150551 <https://github.com/ModelDBRepository/150551/pull/1>`_,
+  `150556 <https://github.com/ModelDBRepository/150556/pull/1>`_,
+  `150691 <https://github.com/ModelDBRepository/150691/pull/1>`_,
+  `151126 <https://github.com/ModelDBRepository/151126/pull/1>`_,
+  `151282 <https://github.com/ModelDBRepository/151282/pull/1>`_,
+  `153280 <https://github.com/ModelDBRepository/153280/pull/1>`_,
+  `154732 <https://github.com/ModelDBRepository/154732/pull/1>`_,
+  `155568 <https://github.com/ModelDBRepository/155568/pull/1>`_,
+  `155601 <https://github.com/ModelDBRepository/155601/pull/1>`_,
+  `155602 <https://github.com/ModelDBRepository/155602/pull/1>`_,
+  `156780 <https://github.com/ModelDBRepository/156780/pull/1>`_,
+  `157157 <https://github.com/ModelDBRepository/157157/pull/1>`_,
+  `168874 <https://github.com/ModelDBRepository/168874/pull/4>`_,
+  `181967 <https://github.com/ModelDBRepository/181967/pull/1>`_,
+  `182129 <https://github.com/ModelDBRepository/182129/pull/1>`_,
+  `183300 <https://github.com/ModelDBRepository/183300/pull/1>`_,
+  `185355 <https://github.com/ModelDBRepository/185355/pull/2>`_,
+  `185858 <https://github.com/ModelDBRepository/185858/pull/1>`_,
+  `186768 <https://github.com/ModelDBRepository/186768/pull/1>`_,
+  `187604 <https://github.com/ModelDBRepository/187604/pull/2>`_,
+  `189154 <https://github.com/ModelDBRepository/189154/pull/1>`_,
+  `194897 <https://github.com/ModelDBRepository/194897/pull/2>`_,
+  `195615 <https://github.com/ModelDBRepository/195615/pull/1>`_,
+  `223031 <https://github.com/ModelDBRepository/223031/pull/1>`_,
+  `225080 <https://github.com/ModelDBRepository/225080/pull/1>`_,
+  `231427 <https://github.com/ModelDBRepository/231427/pull/2>`_,
+  `232097 <https://github.com/ModelDBRepository/232097/pull/1>`_,
+  `239177 <https://github.com/ModelDBRepository/239177/pull/1>`_,
+  `241165 <https://github.com/ModelDBRepository/241165/pull/1>`_,
+  `241240 <https://github.com/ModelDBRepository/241240/pull/1>`_,
+  `244262 <https://github.com/ModelDBRepository/244262/pull/1>`_,
+  `244848 <https://github.com/ModelDBRepository/244848/pull/2>`_,
+  `247968 <https://github.com/ModelDBRepository/247968/pull/1>`_,
+  `249463 <https://github.com/ModelDBRepository/249463/pull/1>`_,
+  `256388 <https://github.com/ModelDBRepository/256388/pull/1>`_ and
+  `259366 <https://github.com/ModelDBRepository/259366/pull/1>`_.
 
 ..
   Does this need some more qualification? Are there non-VERBATIM
@@ -124,9 +210,10 @@ Function declarations with incorrect types
 In older MOD files and versions of NEURON, API methods were often accessed by
 declaring them in the MOD file and not by including a correct declaration from
 NEURON itself.
-In |neuron_with_cpp_mechanisms|, more declarations are implicitly included when
-MOD files are compiled. This can lead to problems if the declaration in the MOD
-file did not specify the correct argument and return types.
+In NEURON 8.2+, more declarations are implicitly included when MOD files are
+compiled.
+This can lead to problems if the declaration in the MOD file did not specify
+the correct argument and return types.
 
 .. code-block:: cpp
 
@@ -170,8 +257,10 @@ overload.
 
 K&R function definitions
 ^^^^^^^^^^^^^^^^^^^^^^^^
-C supports a legacy ("K&R") syntax for function declarations. This is slated
-for removal from the C language, and is not valid C++.
+C supports (`until C23
+<https://en.cppreference.com/w/c/language/function_definition>`_) a legacy
+("K&R") syntax for function declarations.
+This is not valid C++.
 
 There is no advantage to the legacy syntax. If you have legacy definitions such
 as
