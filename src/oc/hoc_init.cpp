@@ -26,12 +26,15 @@ extern void hoc_winio_show(int b);
 #endif
 
 #if MAC
-static double Fabs(x) double x;
-{ return (x > 0.) ? x : -x; }
-static double Erf(x) double x;
-{ return erf(x); }
-static double Erfc(x) double x;
-{ return erfc(x); }
+static double Fabs(double x) {
+    return (x > 0.) ? x : -x;
+}
+static double Erf(double x) {
+    return erf(x);
+}
+static double Erfc(double x) {
+    return erfc(x);
+}
 #endif
 
 static struct { /* Keywords */

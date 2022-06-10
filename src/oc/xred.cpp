@@ -170,8 +170,7 @@ int hoc_sred(const char* prompt, char* defalt, char* charlist) {
 }
 
 #if !defined(HAVE_STRSTR)
-char *strstr(cs, ct) char *cs, *ct;
-{
+char* strstr(char* cs, char* ct) {
     char *strchr_ptr, *cs_ptr;
     int ct_len;
 
