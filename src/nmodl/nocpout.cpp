@@ -753,12 +753,12 @@ extern Memb_func* memb_func;\n\
     /*declaration of the range variables names to HOC */
     Lappendstr(
         defs_list,
-        "static void nrn_alloc(Prop*);\nstatic void  nrn_init(NrnThread*, _Memb_list*, int);\nstatic void nrn_state(NrnThread*, _Memb_list*, int);\n\
+        "static void nrn_alloc(Prop*);\nstatic void  nrn_init(NrnThread*, Memb_list*, int);\nstatic void nrn_state(NrnThread*, Memb_list*, int);\n\
 ");
     if (brkpnt_exists) {
         Lappendstr(defs_list,
-                   "static void nrn_cur(NrnThread*, _Memb_list*, int);\nstatic void  "
-                   "nrn_jacob(NrnThread*, _Memb_list*, int);\n");
+                   "static void nrn_cur(NrnThread*, Memb_list*, int);\nstatic void  "
+                   "nrn_jacob(NrnThread*, Memb_list*, int);\n");
     }
     /* count the number of pointers needed */
     ppvar_cnt = ioncount + diamdec + pointercount + areadec;
@@ -2563,8 +2563,8 @@ static int _ode_count(int _type){ hoc_execerror(\"%s\", \"cannot be used with CV
                    "\n\
 static int _ode_count(int);\n\
 static void _ode_map(int, double**, double**, double*, Datum*, double*, int);\n\
-static void _ode_spec(NrnThread*, _Memb_list*, int);\n\
-static void _ode_matsol(NrnThread*, _Memb_list*, int);\n\
+static void _ode_spec(NrnThread*, Memb_list*, int);\n\
+static void _ode_matsol(NrnThread*, Memb_list*, int);\n\
 ");
         sprintf(buf,
                 "\n\
@@ -2578,7 +2578,7 @@ static int _ode_count(int _type){ return %d;}\n",
             cvode_proced_emit();
         } else {
             Lappendstr(procfunc,
-                       "\nstatic void _ode_spec(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+                       "\nstatic void _ode_spec(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)
@@ -2660,7 +2660,7 @@ static void _ode_synonym(int _cnt, double** _pp, Datum** _ppd) {");
             }
             Lappendstr(procfunc, "}\n");
             Lappendstr(procfunc,
-                       "\nstatic void _ode_matsol(NrnThread* _nt, _Memb_list* _ml, int _type) {\n");
+                       "\nstatic void _ode_matsol(NrnThread* _nt, Memb_list* _ml, int _type) {\n");
             out_nt_ml_frag(procfunc);
             lst = get_ion_variables(1);
             if (lst->next->itemtype)

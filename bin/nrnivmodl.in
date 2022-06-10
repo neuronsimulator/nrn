@@ -201,7 +201,6 @@ extern "C" {
   echo '
 #if defined(__cplusplus)
 }
-
 #endif'
 } > mod_func.cpp
 
