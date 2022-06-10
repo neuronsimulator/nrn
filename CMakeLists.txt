@@ -68,7 +68,7 @@ option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON
 option(NRN_ENABLE_BACKTRACE "Enable pretty-printed backtraces" ${NRN_ENABLE_BACKTRACE_DEFAULT})
 option(NRN_ENABLE_TESTS "Enable unit tests" ${NRN_ENABLE_TESTS_DEFAULT})
 set(NRN_ENABLE_MODEL_TESTS
-    ${NRN_ENABLE_MODEL_TESTS_DEFAULT}
+    "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
 string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
