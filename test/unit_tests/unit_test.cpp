@@ -83,6 +83,9 @@ TEST_CASE("Test return code of execerror", "[NEURON][execerror]") {
     REQUIRE(hoc_oc("execerror(\"test error\")") > 0);
 }
 
+// AddressSanitizer seems to intercept the mallinfo[2]() system calls and return
+// null values from them.
+#ifndef NRN_ASAN_ENABLED
 TEST_CASE("Test nrn_mallinfo returns non-zero", "[NEURON][nrn_mallinfo]") {
     SECTION("HOC") {
         REQUIRE(
@@ -94,3 +97,4 @@ TEST_CASE("Test nrn_mallinfo returns non-zero", "[NEURON][nrn_mallinfo]") {
         REQUIRE(nrn_mallinfo(0) > 0);
     }
 }
+#endif

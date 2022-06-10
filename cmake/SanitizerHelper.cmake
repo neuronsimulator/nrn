@@ -25,6 +25,9 @@ if(NRN_SANITIZERS)
   else()
     set(NRN_NOCMODL_SANITIZER_ENVIRONMENT ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
   endif()
+  if("address" IN_LIST nrn_sanitizers)
+    list(APPEND NRN_COMPILE_DEFS NRN_ASAN_ENABLED)
+  endif()
   # generate and install a launcher script called nrn-enable-sanitizer [--preload] that sets
   # *SAN_OPTIONS variables and, optionally, LD_PRELOAD -- this is useful both in CI configuration
   # and when using the sanitizers "downstream" of NEURON
