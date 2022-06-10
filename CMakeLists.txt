@@ -71,7 +71,7 @@ set(NRN_ENABLE_MODEL_TESTS
     "${NRN_ENABLE_MODEL_TESTS_DEFAULT}"
     CACHE STRING "Comma-separated list of detailed models to enable tests of.")
 # parse NRN_ENABLE_MODEL_TESTS as list
-string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS ${NRN_ENABLE_MODEL_TESTS})
+string(REPLACE "," ";" NRN_ENABLE_MODEL_TESTS "${NRN_ENABLE_MODEL_TESTS}")
 # This can be helpful in very specific CI build configurations, where ccache is used *and* different
 # CI builds are built under different directories.
 option(NRN_AVOID_ABSOLUTE_PATHS
