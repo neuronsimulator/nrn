@@ -378,6 +378,8 @@ def test_nosection():
     del s
     locals()
 
+def test_nrn_mallinfo():
+    assert h.nrn_mallinfo(0) > 0
 
 if __name__ == "__main__":
     set_quiet(False)
@@ -388,3 +390,4 @@ if __name__ == "__main__":
     h.topology()
     h.allobjects()
     test_nosection()
+    test_nrn_mallinfo()

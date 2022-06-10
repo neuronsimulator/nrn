@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hoc.h"
+#include "ocfunc.h"
 #include "parse.hpp"
 #include "hoclist.h"
 #if MAC
@@ -446,11 +447,9 @@ extern "C" size_t nrn_mallinfo(int item) {
 #endif
 }
 
-int hoc_mallinfo(void) {
-    extern double chkarg(int, double, double);
-    int i = (int) chkarg(1, 0., 10.);
-    size_t x = nrn_mallinfo(i);
+void hoc_mallinfo() {
+    int const i = chkarg(1, 0, 6);
+    auto const x = nrn_mallinfo(i);
     hoc_ret();
-    pushx((double) x);
-    return 0;
+    hoc_pushx(x);
 }
