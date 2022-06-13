@@ -1,6 +1,6 @@
 /*
 # =============================================================================
-# Copyright (c) 2016 - 2021 Blue Brain Project/EPFL
+# Copyright (c) 2016 - 2022 Blue Brain Project/EPFL
 #
 # See top-level LICENSE file for details.
 # =============================================================================
@@ -40,6 +40,7 @@ namespace detail {
  */
 template <class... TProfilerImpl>
 struct Instrumentor {
+    // Just use a fold expression in C++17
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-value"
     /*! \fn phase_begin
@@ -121,6 +122,19 @@ struct Instrumentor {
         std::initializer_list<int>{(TProfilerImpl::init_profile(), 0)...};
     }
 
+    /*! \fn flush_profile
+     *  \brief Flush the current profiler data.
+     *
+     *  Flush a profiler's internal structure, without finalising collection.
+     *  Depending on the profiler configuration, this might push data to stdout,
+     *  stderr, or to disk. Loops through all enabled profilers and calls the
+     *  relevant `flush_profile` function.
+     */
+    inline void static flush_profile() {
+        std::initializer_list<int>{(TProfilerImpl::flush_profile(), 0)...};
+    }
+
+
     /*! \fn finalize_profile
      *  \brief Finalize the profiler.
      *
@@ -148,13 +162,15 @@ struct Caliper {
         CALI_MARK_END(name);
     };
 
-    inline static void start_profile(){};
+    // Implemented in profiler_impl.cpp
+    static void start_profile();
+    static void flush_profile();
 
     inline static void stop_profile(){};
 
     inline static void init_profile(){};
 
-    inline static void finalize_profile(){};
+    inline static void finalize_profile() { flush_profile(); }
 };
 
 #endif
@@ -169,6 +185,8 @@ struct CrayPat {
     inline static void start_profile() {
         PAT_record(PAT_STATE_ON);
     };
+
+    inline void static flush_profile(){}
 
     inline static void stop_profile() {
         PAT_record(PAT_STATE_OFF);
@@ -190,6 +208,8 @@ struct Tau {
     inline static void start_profile() {
         TAU_ENABLE_INSTRUMENTATION();
     };
+
+    inline void static flush_profile(){}
 
     inline static void stop_profile() {
         TAU_DISABLE_INSTRUMENTATION();
@@ -215,6 +235,8 @@ struct Likwid {
 
     inline static void start_profile(){};
 
+    inline void static flush_profile(){}
+
     inline static void stop_profile(){};
 
     inline static void init_profile() {
@@ -235,6 +257,7 @@ struct NullInstrumentor {
     inline static void phase_begin(const char* name){};
     inline static void phase_end(const char* name){};
     inline static void start_profile(){};
+    inline void static flush_profile(){}
     inline static void stop_profile(){};
     inline static void init_profile(){};
     inline static void finalize_profile(){};
@@ -270,6 +293,10 @@ struct phase {
 
 inline static void start_profile() {
     detail::InstrumentorImpl::start_profile();
+}
+
+inline static void flush_profile() {
+    detail::InstrumentorImpl::flush_profile();
 }
 
 inline static void stop_profile() {

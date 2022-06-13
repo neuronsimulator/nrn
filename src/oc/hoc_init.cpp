@@ -222,6 +222,7 @@ static struct { /* Builtin functions with multiple or variable args */
                  {"mcell_ran4_init", hoc_mcran4init},
                  {"nrn_feenableexcept", nrn_feenableexcept},
                  {"nrnmpi_init", hoc_nrnmpi_init},
+                 {"flush_profiler", hoc_flush_profiler},
 #if PVM
                  {"numprocs", numprocs},
                  {"myproc", myproc},

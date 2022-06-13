@@ -1,5 +1,6 @@
 #include <../../nrnconf.h>
 #include <../nrnpython/nrnpython_config.h>
+#include "utils/profile/profiler_interface.h"
 
 long hoc_nframe, hoc_nstack;
 
@@ -783,6 +784,8 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
         }
     }
 
+    nrn::Instrumentor::start_profile();
+
 #if HAVE_IV
     if (session && session->style()->value_is_on("units_on_flag")) {
         units_on_flag_ = 1;
@@ -863,6 +866,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
 }
 
 void ivoc_final_exit() {
+    nrn::Instrumentor::finalize_profile();
 #if NRNMPI
     nrnmpi_terminate();
 #endif

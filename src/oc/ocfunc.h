@@ -38,6 +38,7 @@ extern void hoc_Setcolor(void);
 extern void hoc_init_space(void);
 extern void hoc_install_hoc_obj(void);
 extern void nrn_feenableexcept(void);
+void hoc_flush_profiler();
 extern int nrn_feenableexcept_;
 #if DOS
 extern void hoc_settext(void);

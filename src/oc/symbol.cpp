@@ -1,6 +1,5 @@
 #include <../../nrnconf.h>
-/* /local/src/master/nrn/src/oc/symbol.cpp,v 1.9 1999/02/25 18:01:58 hines Exp */
-/* version 7.2.1 2-jan-89 */
+#include "utils/profile/profiler_interface.h"
 
 #if HAVE_POSIX_MEMALIGN
 #define HAVE_MEMALIGN 1
@@ -453,4 +452,10 @@ void hoc_mallinfo() {
     auto const x = nrn_mallinfo(i);
     hoc_ret();
     hoc_pushx(x);
+}
+
+void hoc_flush_profiler() {
+    nrn::Instrumentor::flush_profile();
+    hoc_ret();
+    hoc_pushx(0.);    
 }

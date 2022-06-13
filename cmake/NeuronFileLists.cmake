@@ -243,6 +243,9 @@ set(NRNIV_FILE_LIST
     symdir.cpp
     vrecord.cpp)
 
+# Files in utils directory
+set(NRN_UTILS_FILE_LIST profile/profiler_impl.cpp)
+
 # =============================================================================
 # Files in nrncvode directory
 # =============================================================================
@@ -559,6 +562,7 @@ nrn_create_file_list(NRN_NRNOC_SRC_FILES ${NRN_NRNOC_SRC_DIR} ${NRNOC_FILE_LIST}
 nrn_create_file_list(NRN_IVOC_SRC_FILES ${NRN_IVOC_SRC_DIR} ${IVOC_FILE_LIST})
 nrn_create_file_list(NRN_NRNCVODE_SRC_FILES ${NRN_NRNCVODE_SRC_DIR} ${NRNCVODE_FILE_LIST})
 nrn_create_file_list(NRN_NRNIV_SRC_FILES ${NRN_NRNIV_SRC_DIR} ${NRNIV_FILE_LIST})
+nrn_create_file_list(NRN_UTILS_SRC_FILES ${PROJECT_SOURCE_DIR}/src/utils ${NRN_UTILS_FILE_LIST})
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/nrniv
                      nvector_nrnparallel_ld.cpp)
 nrn_create_file_list(NRN_PARALLEL_SRC_FILES ${PROJECT_SOURCE_DIR}/src/sundials/shared
