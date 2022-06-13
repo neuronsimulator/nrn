@@ -18,6 +18,7 @@
 #include <string.h>
 #include "hoc.h"
 #include "oc_ansi.h"
+#include "ocfunc.h"
 #include "parse.hpp"
 #include "hoclist.h"
 #if MAC
@@ -416,10 +417,15 @@ size_t nrn_mallinfo(int item) {
         KERN_SUCCESS)
         return (size_t) 0L; /* Can't access? */
     return (size_t) info.resident_size;
-#elif HAVE_MALLINFO2
-    /* *NIX PLATFORMS WITH MALLINFO ------------------------------ */
+#elif HAVE_MALLINFO || HAVE_MALLINFO2
+    // *nix platforms with mallinfo[2]()
     size_t r;
-    struct mallinfo2 m = mallinfo2();
+    // prefer mallinfo2, fall back to mallinfo
+#if HAVE_MALLINFO2
+    auto const m = mallinfo2();
+#else
+    auto const m = mallinfo();
+#endif
     if (item == 1) {
         r = m.uordblks;
     } else if (item == 2) {
@@ -442,11 +448,9 @@ size_t nrn_mallinfo(int item) {
 #endif
 }
 
-int hoc_mallinfo(void) {
-    extern double chkarg(int, double, double);
-    int i = (int) chkarg(1, 0., 10.);
-    size_t x = nrn_mallinfo(i);
+void hoc_mallinfo() {
+    int const i = chkarg(1, 0, 6);
+    auto const x = nrn_mallinfo(i);
     hoc_ret();
-    pushx((double) x);
-    return 0;
+    hoc_pushx(x);
 }
