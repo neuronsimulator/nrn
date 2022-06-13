@@ -86,11 +86,13 @@ copy mingw64/bin '
 as.exe
 ld.exe
 x86_64-w64-mingw32-g++.exe
+x86_64-w64-mingw32-gcc.exe
 libstdc++-6.dll
 '
 cp_dlls $NM/mingw64/bin $NM/mingw64/bin
 
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
+cc1.exe
 cc1plus.exe
 libgcc.a
 liblto_plugin.dll
