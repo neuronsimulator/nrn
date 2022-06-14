@@ -393,6 +393,16 @@ def test_nrn_mallinfo():
     assert h.nrn_mallinfo(0) > 0
 
 
+def test_delete_section_arg():
+    s = h.Section("soma")
+    d = h.Section("dend")
+    d.connect(s(0.5))
+    expect_err("h.disconnect(d)")
+    expect_err("h.delete_section(d)")
+    del s, d
+    locals()
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -403,3 +413,4 @@ if __name__ == "__main__":
     h.allobjects()
     test_nosection()
     test_nrn_mallinfo()
+    test_delete_section_arg()
