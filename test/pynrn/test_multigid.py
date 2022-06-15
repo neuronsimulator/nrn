@@ -1,0 +1,81 @@
+# Support multiple output gids per cell in coreneuron via
+# pc.cell(gid, h.NetCon(cell.sec(x)._ref_v, None, sec=cell.sec))
+# It is an error to have multiple gids with the same reference.
+
+from neuron import h
+from neuron.expect_hocerr import expect_err
+from math import log10
+
+pc = h.ParallelContext()
+
+
+class Cell:
+    def __init__(self, id):
+        self.id = id
+        self.axon = a = h.Section(name="axon", cell=self)
+        a.L = 1000
+        a.diam = 1
+        a.nseg = 5
+        a.insert("hh")
+        self.ic = ic = h.IClamp(a(0))
+        ic.delay = id / 10.0
+        ic.dur = 0.3
+        ic.amp = 0.4
+
+    def __str__(self):
+        return "Cell_" + str(self.id)
+
+
+def pccell(gid, seg):
+    pc.set_gid2node(gid, pc.id())
+    pc.cell(gid, h.NetCon(seg._ref_v, None, sec=seg.sec))
+    pc.threshold(gid, -10.0)
+
+
+class Net:
+    def __init__(self, ncell):
+        gidfac = 10 ** (int(log10(ncell)) + 1)
+        pc.gid_clear()
+        self.cells = {i: Cell(i) for i in range(pc.id(), ncell, pc.nhost())}
+        for i, cell in self.cells.items():
+            # a gid in every segment
+            for iseg, seg in enumerate(cell.axon.allseg()):
+                gid = i + gidfac * iseg
+                pccell(gid, seg)
+
+        self.raster = [h.Vector(), h.Vector()]
+        pc.spike_record(-1, self.raster[0], self.raster[1])
+
+
+def run(tstop):
+    pc.set_maxstep(10)
+    h.finitialize(-65)
+    pc.psolve(tstop)
+
+
+def praster(r):
+    print("praster")
+    for i in range(r[0].size()):
+        print(r[0][i], r[1][i])
+
+
+def test_multigid():
+    net = Net(3)
+    run(10.0)
+    std = [net.raster[0].c(), net.raster[1].c()]
+    praster(std)
+    assert std[0].size() == 21
+
+    if pc.id() == 0:
+        expect_err("pccell(10001, net.cells[0].axon(.5))")
+        pc.set_gid2node(10002, pc.id())
+        expect_err("pc.cell(10002, h.NetCon(None, None))")
+        s = h.Section("soma", net.cells[0])
+        pc.cell(10002, h.NetCon(s(0.5)._ref_v, None, sec=s), 0)  # line of coverage
+
+    del s, net, std
+    locals()
+
+
+if __name__ == "__main__":
+    test_multigid()
