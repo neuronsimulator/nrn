@@ -159,7 +159,8 @@ bool InlineVisitor::inline_function_call(ast::Block& callee,
     }
 
     /// get a copy of function/procedure body
-    auto inlined_block = callee.get_statement_block()->clone();
+    auto inlined_block = std::unique_ptr<ast::StatementBlock>(
+        callee.get_statement_block()->clone());
 
     /// function definition has function name as return value. we have to rename
     /// it with new variable name
@@ -177,7 +178,7 @@ bool InlineVisitor::inline_function_call(ast::Block& callee,
         add_return_variable(*inlined_block, new_varname);
     }
 
-    auto statement = new ast::ExpressionStatement(inlined_block);
+    auto statement = new ast::ExpressionStatement(std::move(inlined_block));
 
     if (to_replace) {
         replaced_statements[caller_statement] = statement;
