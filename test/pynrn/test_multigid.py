@@ -2,11 +2,16 @@
 # pc.cell(gid, h.NetCon(cell.sec(x)._ref_v, None, sec=cell.sec))
 # It is an error to have multiple gids with the same reference.
 
-from neuron import h
+from neuron import h, coreneuron
 from neuron.expect_hocerr import expect_err
 from math import log10
 
+
 pc = h.ParallelContext()
+
+
+def coreneuron_available():
+    return "NRN_ENABLE_CORENEURON=ON" in h.nrnversion(6)
 
 
 class Cell:
@@ -59,13 +64,27 @@ def praster(r):
         print(r[0][i], r[1][i])
 
 
+def raster_eq(r1, r2):
+    for i in range(2):
+        assert r1[i].eq(r2[i])
+
+
 def test_multigid():
     net = Net(3)
     run(10.0)
     std = [net.raster[0].c(), net.raster[1].c()]
-    praster(std)
     assert std[0].size() == 21
 
+    if coreneuron_available():
+        coreneuron.enable = True
+        coreneuron.verbose = 0
+        h.CVode().cache_efficient(1)
+        #        run(10.0)
+        raster_eq(std, net.raster)
+        coreneuron.enable = False
+        h.CVode().cache_efficient(0)
+
+    s = None
     if pc.id() == 0:
         expect_err("pccell(10001, net.cells[0].axon(.5))")
         pc.set_gid2node(10002, pc.id())
@@ -73,6 +92,7 @@ def test_multigid():
         s = h.Section("soma", net.cells[0])
         pc.cell(10002, h.NetCon(s(0.5)._ref_v, None, sec=s), 0)  # line of coverage
 
+    pc.gid_clear()
     del s, net, std
     locals()
 
