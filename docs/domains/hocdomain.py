@@ -147,7 +147,7 @@ def type_to_xref(
         reftype=reftype,
         reftarget=target,
         refspecific=refspecific,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -829,7 +829,7 @@ class HOCVariable(HOCObject):
                 "",
                 addnodes.desc_sig_punctuation("", ":"),
                 addnodes.desc_sig_space(),
-                *annotations
+                *annotations,
             )
 
         value = self.options.get("value")
@@ -1016,7 +1016,7 @@ class HOCAttribute(HOCObject):
                 "",
                 addnodes.desc_sig_punctuation("", ":"),
                 addnodes.desc_sig_space(),
-                *annotations
+                *annotations,
             )
 
         value = self.options.get("value")
@@ -1070,7 +1070,7 @@ class HOCProperty(HOCObject):
                 "",
                 addnodes.desc_sig_punctuation("", ":"),
                 addnodes.desc_sig_space(),
-                *annotations
+                *annotations,
             )
 
         return fullname, prefix
