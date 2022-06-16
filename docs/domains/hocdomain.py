@@ -1,13 +1,5 @@
-# generated from 'sphinx/domains/python.py' @ Sphinx 4.4.0
-"""
-    sphinx.domains.python
-    ~~~~~~~~~~~~~~~~~~~~~
-
-    The HOC domain.
-
-    :copyright: Copyright 2007-2022 by the Sphinx team, see AUTHORS.
-    :license: BSD, see LICENSE for details.
-"""
+# generated from 'sphinx/domains/python.py' @ Sphinx 5.0.1
+"""The HOC domain."""
 
 import builtins
 import inspect
@@ -38,7 +30,7 @@ from sphinx import addnodes
 from sphinx.addnodes import desc_signature, pending_xref, pending_xref_condition
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
-from sphinx.deprecation import RemovedInSphinx50Warning, RemovedInSphinx60Warning
+from sphinx.deprecation import RemovedInSphinx60Warning
 from sphinx.directives import ObjectDescription
 from sphinx.domains import Domain, Index, IndexEntry, ObjType
 from sphinx.environment import BuildEnvironment
@@ -159,7 +151,7 @@ def type_to_xref(
     )
 
 
-def _parse_annotation(annotation: str, env: BuildEnvironment = None) -> List[Node]:
+def _parse_annotation(annotation: str, env: BuildEnvironment) -> List[Node]:
     """Parse type annotation."""
 
     def unparse(node: ast.AST) -> List[Node]:
@@ -257,13 +249,6 @@ def _parse_annotation(annotation: str, env: BuildEnvironment = None) -> List[Nod
                     return [addnodes.desc_sig_literal_string("", repr(node.s))]
 
             raise SyntaxError  # unsupported syntax
-
-    if env is None:
-        warnings.warn(
-            "The env parameter for _parse_annotation becomes required now.",
-            RemovedInSphinx50Warning,
-            stacklevel=2,
-        )
 
     try:
         tree = ast_parse(annotation)
@@ -689,12 +674,6 @@ class HOCObject(ObjectDescription[Tuple[str, str]]):
         fullname = (modname + "." if modname else "") + name_cls[0]
         node_id = make_id(self.env, self.state.document, "", fullname)
         signode["ids"].append(node_id)
-
-        # Assign old styled node_id(fullname) not to break old hyperlinks (if possible)
-        # Note: Will removed in Sphinx-5.0  (RemovedInSphinx50Warning)
-        if node_id != fullname and fullname not in self.state.document.ids:
-            signode["ids"].append(fullname)
-
         self.state.document.note_explicit_target(signode)
 
         domain = cast(HOCDomain, self.env.get_domain("hoc"))
@@ -1124,36 +1103,6 @@ class HOCProperty(HOCObject):
         return _("%s (HOC %s property)") % (attrname, clsname)
 
 
-class HOCDecoratorMixin:
-    """
-    Mixin for decorator directives.
-    """
-
-    def handle_signature(self, sig: str, signode: desc_signature) -> Tuple[str, str]:
-        for cls in self.__class__.__mro__:
-            if cls.__name__ != "DirectiveAdapter":
-                warnings.warn(
-                    "HOCDecoratorMixin is deprecated. "
-                    "Please check the implementation of %s" % cls,
-                    RemovedInSphinx50Warning,
-                    stacklevel=2,
-                )
-                break
-        else:
-            warnings.warn(
-                "HOCDecoratorMixin is deprecated",
-                RemovedInSphinx50Warning,
-                stacklevel=2,
-            )
-
-        ret = super().handle_signature(sig, signode)  # type: ignore
-        signode.insert(0, addnodes.desc_addname("@", "@"))
-        return ret
-
-    def needs_arglist(self) -> bool:
-        return False
-
-
 class HOCModule(SphinxDirective):
     """
     Directive to mark description of a new module.
@@ -1182,13 +1131,6 @@ class HOCModule(SphinxDirective):
             node_id = make_id(self.env, self.state.document, "module", modname)
             target = nodes.target("", "", ids=[node_id], ismod=True)
             self.set_source_info(target)
-
-            # Assign old styled node_id not to break old hyperlinks (if possible)
-            # Note: Will removed in Sphinx-5.0  (RemovedInSphinx50Warning)
-            old_node_id = self.make_old_id(modname)
-            if node_id != old_node_id and old_node_id not in self.state.document.ids:
-                target["ids"].append(old_node_id)
-
             self.state.document.note_explicit_target(target)
 
             domain.note_module(
@@ -1279,11 +1221,11 @@ def filter_meta_fields(
     for node in content:
         if isinstance(node, nodes.field_list):
             fields = cast(List[nodes.field], node)
-            for field in fields:
+            # removing list items while iterating the list needs reversed()
+            for field in reversed(fields):
                 field_name = cast(nodes.field_body, field[0]).astext().strip()
                 if field_name == "meta" or field_name.startswith("meta "):
                     node.remove(field)
-                    break
 
 
 class HOCModuleIndex(Index):
@@ -1715,7 +1657,7 @@ def builtin_resolver(
         if s.startswith("typing."):
             s = s.split(".", 1)[1]
 
-        return s in typing.__all__  # type: ignore
+        return s in typing.__all__
 
     if node.get("refdomain") != "hoc":
         return None
