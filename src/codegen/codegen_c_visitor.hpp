@@ -910,13 +910,6 @@ class CodegenCVisitor: public visitor::ConstAstVisitor {
 
 
     /**
-     * Returns the \c const keyword
-     * \return  \c const
-     */
-    virtual std::string k_const();
-
-
-    /**
      * Prints the start of the \c coreneuron namespace
      */
     void print_namespace_start();

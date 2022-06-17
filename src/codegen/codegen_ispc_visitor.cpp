@@ -379,10 +379,10 @@ void CodegenIspcVisitor::print_global_function_common_code(BlockType type,
     printer->add_line("uniform int nodecount = ml->nodecount;");
     printer->add_line("uniform int pnodecount = ml->_nodecount_padded;");
     printer->add_line(
-        fmt::format("{}int* {}node_index = ml->nodeindices;", k_const(), ptr_type_qualifier()));
+        fmt::format("const int* {}node_index = ml->nodeindices;", ptr_type_qualifier()));
     printer->add_line(fmt::format("double* {}data = ml->data;", ptr_type_qualifier()));
     printer->add_line(
-        fmt::format("{}double* {}voltage = nt->_actual_v;", k_const(), ptr_type_qualifier()));
+        fmt::format("const double* {}voltage = nt->_actual_v;", ptr_type_qualifier()));
 
     if (type == BlockType::Equation) {
         printer->add_line(

@@ -1299,11 +1299,6 @@ void CodegenCVisitor::print_global_var_struct_decl() {
     printer->add_line(fmt::format("{} {}_global;", global_struct(), info.mod_suffix));
 }
 
-std::string CodegenCVisitor::k_const() {
-    return "const ";
-}
-
-
 /****************************************************************************************/
 /*              printing routines for code generation                                   */
 /****************************************************************************************/
@@ -1914,7 +1909,7 @@ CodegenCVisitor::ParamVector CodegenCVisitor::internal_method_parameters() {
         params.emplace_back("", "IonCurVar&", "", "ionvar");
     }
     params.emplace_back("", "double*", "", "data");
-    params.emplace_back(k_const(), "Datum*", "", "indexes");
+    params.emplace_back("const ", "Datum*", "", "indexes");
     params.emplace_back(param_type_qualifier(), "ThreadDatum*", "", "thread");
     params.emplace_back(param_type_qualifier(), "NrnThread*", param_ptr_qualifier(), "nt");
     params.emplace_back("", "double", "", "v");
@@ -2953,17 +2948,17 @@ void CodegenCVisitor::print_mechanism_range_var_structure() {
     for (auto& var: codegen_float_variables) {
         auto name = var->get_name();
         auto type = get_range_var_float_type(var);
-        auto qualifier = is_constant_variable(name) ? k_const() : "";
+        auto qualifier = is_constant_variable(name) ? "const " : "";
         printer->add_line(fmt::format("{}{}* {}{};", qualifier, type, ptr_type_qualifier(), name));
     }
     for (auto& var: codegen_int_variables) {
         auto name = var.symbol->get_name();
         if (var.is_index || var.is_integer) {
-            auto qualifier = var.is_constant ? k_const() : "";
+            auto qualifier = var.is_constant ? "const " : "";
             printer->add_line(
                 fmt::format("{}{}* {}{};", qualifier, int_type, ptr_type_qualifier(), name));
         } else {
-            auto qualifier = var.is_constant ? k_const() : "";
+            auto qualifier = var.is_constant ? "const " : "";
             auto type = var.is_vdata ? "void*" : default_float_data_type();
             printer->add_line(
                 fmt::format("{}{}* {}{};", qualifier, type, ptr_type_qualifier(), name));
@@ -3372,10 +3367,10 @@ void CodegenCVisitor::print_global_function_common_code(BlockType type,
     printer->add_line("int nodecount = ml->nodecount;");
     printer->add_line("int pnodecount = ml->_nodecount_padded;");
     printer->add_line(
-        fmt::format("{}int* {}node_index = ml->nodeindices;", k_const(), ptr_type_qualifier()));
+        fmt::format("const int* {}node_index = ml->nodeindices;", ptr_type_qualifier()));
     printer->add_line(fmt::format("double* {}data = ml->data;", ptr_type_qualifier()));
     printer->add_line(
-        fmt::format("{}double* {}voltage = nt->_actual_v;", k_const(), ptr_type_qualifier()));
+        fmt::format("const double* {}voltage = nt->_actual_v;", ptr_type_qualifier()));
 
     if (type == BlockType::Equation) {
         printer->add_line(
