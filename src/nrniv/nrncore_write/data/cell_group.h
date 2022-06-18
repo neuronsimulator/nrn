@@ -23,11 +23,12 @@ class CellGroup {
     virtual ~CellGroup();
     Memb_list** type2ml;
     int group_id;
+    int n_real_cell;
     // PreSyn, NetCon, target info
-    int n_presyn;  // real first
-    int n_output;  // real + art with gid
-    int n_real_output;
-    int ndiam;  // > 0 only if diam semantics in use.
+    int n_presyn;       // real first
+    int n_output;       // real + art with gid
+    int n_real_output;  // up to nt.end outputs for the n_real_cells.
+    int ndiam;          // > 0 only if diam semantics in use.
     int n_mech;
     int* ml_vdata_offset;
     // following three are parallel arrays

@@ -1655,37 +1655,3 @@ size_t nrncore_netpar_bytes() {
     //    nrnmpi_myid, nout, nin, nnet, ntot);
     return ntot;
 }
-
-void nrncore_netpar_cellgroups_helper(CellGroup* cgs) {
-    // printf("nrncore_netpar_cellgroups_helper\n");
-
-    // for the real cells in each thread (all have output gid and voltage spike
-    // detector) fill the cgs output_ps, output_gid, and output_vindex
-    // All the other (acell) gids have already been processed.
-    int* gidcnt = new int[nrn_nthread];  // real only
-    for (int i = 0; i < nrn_nthread; ++i) {
-        gidcnt[i] = 0;
-    }
-
-    for (const auto& iter: gid2out_) {
-        PreSyn* ps = iter.second;
-        if (ps && ps->thvar_) {
-            int ith = ps->nt_->id;
-            assert(ith >= 0 && ith < nrn_nthread);
-            int i = gidcnt[ith];
-            cgs[ith].output_ps[i] = ps;
-            cgs[ith].output_gid[i] = ps->output_index_;
-            assert(ps->thvar_ >= ps->nt_->_actual_v);
-            int inode = ps->thvar_ - ps->nt_->_actual_v;
-            assert(inode <= ps->nt_->end);
-            cgs[ith].output_vindex[i] = inode;
-            ++gidcnt[ith];
-        }
-    }
-#if 0  // allow real cells to NOT have a direct voltage threshold.
-  for (int i=0; i < nrn_nthread; ++ i) {
-    assert(nrn_threads[i].ncell == gidcnt[i]);
-  }
-#endif
-    delete[] gidcnt;
-}

@@ -79,10 +79,11 @@ def test_multigid():
         coreneuron.enable = True
         coreneuron.verbose = 0
         h.CVode().cache_efficient(1)
-        #        run(10.0)
+        run(10.0)
         raster_eq(std, net.raster)
         coreneuron.enable = False
         h.CVode().cache_efficient(0)
+        print("test_multigid coreneuron success")
 
     s = None
     if pc.id() == 0:

@@ -69,7 +69,8 @@
 // instances.
 /*
 Assumptions regarding the scope of possible models.(Incomplete list)
-All real cells have gids.
+All real cells have gids (possibly multiple, but no more than one gid
+for a PreSyn instance.)
 Artificial cells without gids connect only to cells in the same thread.
 No POINTER to data outside of NrnThread.
 No POINTER to data in ARTIFICIAL_CELL (that data is not cache_efficient)
