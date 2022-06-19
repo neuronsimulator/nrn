@@ -36,6 +36,9 @@ def coreneuron_available():
     return result
 
 
+cn_avail = coreneuron_available()
+
+
 class Cell:
     def __init__(self, id):
         self.id = id
@@ -97,7 +100,7 @@ def test_multigid():
     std = [net.raster[0].c(), net.raster[1].c()]
     assert std[0].size() == 21
 
-    if coreneuron_available():
+    if cn_avail:
         coreneuron.enable = True
         coreneuron.verbose = 0
         h.CVode().cache_efficient(1)
@@ -115,6 +118,17 @@ def test_multigid():
         s = h.Section("soma", net.cells[0])
         pc.cell(10002, h.NetCon(s(0.5)._ref_v, None, sec=s), 0)  # line of coverage
 
+        if cn_avail:
+            s.insert("hh")
+            pc.set_gid2node(10003, pc.id())
+            pc.cell(10003, h.NetCon(s(0.5).hh._ref_m, None, sec=s), 0)
+            coreneuron.enable = True
+            h.CVode().cache_efficient(1)
+            expect_err("run(10)")
+            coreneuron.enable = False
+            h.CVode().cache_efficient(1)
+
+    print("done")
     pc.gid_clear()
     del s, net, std
     locals()
