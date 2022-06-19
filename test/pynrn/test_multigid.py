@@ -11,7 +11,29 @@ pc = h.ParallelContext()
 
 
 def coreneuron_available():
-    return "NRN_ENABLE_CORENEURON=ON" in h.nrnversion(6)
+    if "NRN_ENABLE_CORENEURON=ON" not in h.nrnversion(6):
+        # Not ideal. Maybe someday it will be default ON and then
+        # will not appear in h.nrnversion(6)
+        return False
+    # But can it be loaded?
+    cvode = h.CVode()
+    cvode.cache_efficient(1)
+    pc = h.ParallelContext()
+    h.finitialize()
+    result = 0
+    import sys
+    from io import StringIO
+
+    original_stderr = sys.stderr
+    sys.stderr = StringIO()
+    try:
+        pc.nrncore_run("--tstop 1 --verbose 0")
+        result = 1
+    except Exception as e:
+        pass
+    sys.stderr = original_stderr
+    cvode.cache_efficient(0)
+    return result
 
 
 class Cell:
