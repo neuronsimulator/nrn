@@ -50,6 +50,7 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 #include "parse.hpp"
 #include "utility.h"
 #include "scenepic.h"
+#include "treeset.h"
 
 
 // The problem this overcomes is that the pick of an input handler normally
@@ -168,7 +169,6 @@ static String* xvalue_format;
 
 extern int units_on_flag_;
 extern Symbol* hoc_get_last_pointer_symbol();
-extern "C" double* nrn_recalc_ptr(double*);
 void hoc_notify_value() {
     Oc oc;
     oc.notify();

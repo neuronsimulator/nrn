@@ -9,7 +9,6 @@
 #include "parse.hpp"
 
 
-extern int cvode_active_;
 extern int nrn_use_daspk_;
 extern void nrn_delete_prop_pool(int type);
 

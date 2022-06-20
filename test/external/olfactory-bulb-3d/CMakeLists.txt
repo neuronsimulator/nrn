@@ -26,7 +26,8 @@ nrn_add_test(
   NAME neuron
   REQUIRES mpi python
   PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-  PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g" bulb3dtest.py
+  PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
+             bulb3dtest.py
   COMMAND ${olfactory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop
           ${olfactory_bulb_3d_sim_time})
 foreach(processor gpu cpu)
@@ -46,7 +47,7 @@ foreach(processor gpu cpu)
       NAME coreneuron_${processor}_${mode}
       REQUIRES coreneuron python ${processor}
       PROCESSORS ${olfactory_bulb_3d_mpi_ranks}
-      PRECOMMAND sed -i "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
+      PRECOMMAND sed -i.bak "s/runsim.build_part_model(.*/runsim.build_part_model([5], [])/g"
                  bulb3dtest.py
       COMMAND
         ${olfactory_bulb_3d_neuron_prefix} ${olfactory_bulb_3d_neuron_args} --tstop

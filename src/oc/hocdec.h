@@ -246,21 +246,21 @@ typedef struct Object {
 } Object;
 #endif
 
-typedef struct { /* User Functions */
+struct VoidFunc { /* User Functions */
     const char* name;
     void (*func)(void);
-} VoidFunc;
+};
 
-typedef struct { /* User Double Scalars */
+struct DoubScal { /* User Double Scalars */
     const char* name;
     double* pdoub;
-} DoubScal;
+};
 
-typedef struct { /* User Vectors */
+struct DoubVec { /* User Vectors */
     const char* name;
     double* pdoub;
     int index1;
-} DoubVec;
+};
 
 typedef struct { /* recommended limits for symbol values */
     const char* name;

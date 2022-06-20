@@ -2,6 +2,7 @@
 # Lists of header files to install
 # =============================================================================
 set(HEADER_FILES_TO_INSTALL
+    bbsavestate.h
     cabvars.h
     cspmatrix.h
     cspredef.h
@@ -46,7 +47,8 @@ set(HEADER_FILES_TO_INSTALL
     scoplib.h
     section.h
     spconfig.h
-    spmatrix.h)
+    spmatrix.h
+    treeset.h)
 
 # =============================================================================
 # Lists of headers populated using check_include_files

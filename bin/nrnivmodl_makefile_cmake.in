@@ -61,15 +61,11 @@ ifeq (@NRN_INCLUDE_MPI_HEADERS@, ON)
   INCLUDES += $(if @MPI_C_INCLUDE_PATH@, -I$(subst ;, -I,@MPI_C_INCLUDE_PATH@),)
 endif
 
-# CC/CXX are always defined. If the definition comes from default change it
-ifeq ($(origin CC), default)
-    CC = @CMAKE_C_COMPILER@
+# CXX is always defined. If the definition comes from default change it
+ifeq ($(origin CXX), default)
     CXX = @CMAKE_CXX_COMPILER@
 endif
-CFLAGS = @BUILD_TYPE_C_FLAGS@ @CMAKE_C_FLAGS@
-CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CXX11_STANDARD_COMPILE_OPTION@
-
-COMPILE = $(CC) $(CFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
+CXXFLAGS = @BUILD_TYPE_CXX_FLAGS@ @CMAKE_CXX_FLAGS@ @CMAKE_CXX14_STANDARD_COMPILE_OPTION@
 CXXCOMPILE = $(CXX) $(CXXFLAGS) @NRN_COMPILE_DEFS_STRING@ @NRN_COMPILE_FLAGS_STRING@
 CXX_LINK_EXE = $(CXX) $(CXXFLAGS) @CMAKE_EXE_LINKER_FLAGS@ @NRN_LINK_FLAGS_STRING@
 CXX_LINK_SHARED = $(CXX) $(CXXFLAGS) @CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS@ @CMAKE_SHARED_LIBRARY_CXX_FLAGS@ @CMAKE_SHARED_LINKER_FLAGS@
@@ -139,12 +135,12 @@ mech_lib_static: mod_func.o $(mod_objs) $(nrn_lib) build_always
 
 mod_func.o: mod_func.cpp
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
-	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
+	$(CXXCOMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 # Generic build c->o. Need PIC for shared lib
 $(OBJS_DIR)/%.o: $(MODC_DIR)/%.c | $(OBJS_DIR)
 	@printf " -> $(C_GREEN)Compiling$(C_RESET) $<\n"
-	$(COMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
+	$(CXXCOMPILE) $(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $< -o $@
 
 
 include makemod2c_inc

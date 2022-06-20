@@ -17,14 +17,14 @@ if(DEFINED ENV{CRAYPE_VERSION})
 endif()
 project(
   NEURON
-  VERSION 8.2.0
+  VERSION 9.0.0
   LANGUAGES C CXX
   HOMEPAGE_URL "https://www.neuron.yale.edu/neuron/")
 
 # =============================================================================
 # CMake common project settings
 # =============================================================================
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

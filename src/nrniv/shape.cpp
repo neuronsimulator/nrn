@@ -38,6 +38,7 @@
 #include "ocobserv.h"
 #include "parse.hpp"
 #include "ivoc.h"
+#include "treeset.h"
 
 #define Shape_Section_ "Section PlotShape"
 #define Shape_Rotate_  "Rotate3D PlotShape"
@@ -50,7 +51,6 @@ extern int section_count;
 extern Section** secorder;
 extern "C" Point_process* ob2pntproc(Object*);
 extern "C" Point_process* ob2pntproc_0(Object*);
-extern "C" double* nrn_recalc_ptr(double*);
 extern Object* (*nrnpy_seg_from_sec_x)(Section*, double);
 
 #if BEVELJOIN

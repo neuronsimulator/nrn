@@ -11,7 +11,6 @@ extern "C" {
 extern void notify_freed_val_array(double*, size_t);
 }
 
-#define Vect IvocVect
 using ParentVect = std::vector<double>;
 struct Object;
 
@@ -115,31 +114,15 @@ double stdDev(InputIterator begin, InputIterator end) {
 }
 
 extern "C" {
-extern Vect* vector_new(int, Object*);  // use this if possible
-extern Vect* vector_new0();
-extern Vect* vector_new1(int);
-extern Vect* vector_new2(Vect*);
-extern void vector_delete(Vect*);
-extern int vector_buffer_size(Vect*);
-extern Object** vector_temp_objvar(Vect*);
-extern Object** vector_pobj(Vect*);
+extern void vector_delete(IvocVect*);
+extern Object** vector_temp_objvar(IvocVect*);
 
 extern int is_vector_arg(int);
-extern char* vector_get_label(Vect*);
-extern void vector_set_label(Vect*, char*);
+extern char* vector_get_label(IvocVect*);
+extern void vector_set_label(IvocVect*, char*);
 }  // extern "C"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
-extern Vect* vector_arg(int);
-extern double* vector_vec(Vect*);
-extern int vector_capacity(Vect*);
-extern void vector_resize(Vect*, int);
-
-#if defined(__cplusplus)
-}
-#endif
+// olupton 2022-01-21: backwards compatibility
+using Vect = IvocVect;
 
 #endif

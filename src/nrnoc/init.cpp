@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <nrnmpiuse.h>
-
+#include "oc_ansi.h"
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -143,7 +143,7 @@ int* nrn_dparam_ptr_start_;
 int* nrn_dparam_ptr_end_;
 NrnWatchAllocateFunc_t* nrn_watch_allocate_;
 
-extern "C" void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
+void hoc_reg_watch_allocate(int type, NrnWatchAllocateFunc_t waf) {
     nrn_watch_allocate_[type] = waf;
 }
 
@@ -152,21 +152,21 @@ using bbcore_write_t = void (*)(double*, int*, int*, int*, double*, Datum*, Datu
 bbcore_write_t* nrn_bbcore_write_;
 bbcore_write_t* nrn_bbcore_read_;
 
-extern "C" void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
+void hoc_reg_bbcore_write(int type, bbcore_write_t f) {
     nrn_bbcore_write_[type] = f;
 }
 
-extern "C" void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
+void hoc_reg_bbcore_read(int type, bbcore_write_t f) {
     nrn_bbcore_read_[type] = f;
 }
 
 const char** nrn_nmodl_text_;
-extern "C" void hoc_reg_nmodl_text(int type, const char* txt) {
+void hoc_reg_nmodl_text(int type, const char* txt) {
     nrn_nmodl_text_[type] = txt;
 }
 
 const char** nrn_nmodl_filename_;
-extern "C" void hoc_reg_nmodl_filename(int type, const char* filename) {
+void hoc_reg_nmodl_filename(int type, const char* filename) {
     nrn_nmodl_filename_[type] = filename;
 }
 
@@ -262,7 +262,7 @@ int mswin_load_dll(const char* cp1) {
         if (mreg) {
             (*mreg)();
         } else {
-            fprintf(stderr, "dlsym _modl_reg failed\n%s\n", dlerror());
+            fprintf(stderr, "dlsym modl_reg failed\n%s\n", dlerror());
             dlclose(handle);
             return 0;
         }
@@ -864,7 +864,7 @@ extern "C" int nrn_pointing(double* pd) {
 }
 
 int state_discon_flag_ = 0;
-extern "C" void state_discontinuity(int i, double* pd, double d) {
+void state_discontinuity(int i, double* pd, double d) {
     if (state_discon_allowed_ && state_discon_flag_ == 0) {
         *pd = d;
         /*printf("state_discontinuity t=%g pd=%lx d=%g\n", t, (long)pd, d);*/
@@ -944,7 +944,7 @@ void hoc_reg_ba(int mt, nrn_bamech_t f, int type) {
     }
 }
 
-extern "C" void _cvode_abstol(Symbol** s, double* tol, int i) {
+void _cvode_abstol(Symbol** s, double* tol, int i) {
 #if CVODE
     if (s && s[i]->extra) {
         double x;
@@ -1028,7 +1028,7 @@ extern "C" void hoc_register_tolerance(int type, HocStateTolerance* tol, Symbol*
 #endif  // CVODE
 }
 
-extern "C" void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
+void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     if (cons == 1) {
         memb_func[i].thread_mem_init_ = f;
     } else if (cons == 0) {
@@ -1038,11 +1038,11 @@ extern "C" void _nrn_thread_reg(int i, int cons, void (*f)(Datum*)) {
     }
 }
 
-extern "C" void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
+void _nrn_thread_table_reg(int i, void (*f)(double*, Datum*, Datum*, NrnThread*, int)) {
     memb_func[i].thread_table_check_ = f;
 }
 
-extern "C" void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
+void _nrn_setdata_reg(int i, void (*call)(Prop*)) {
     memb_func[i].setdata_ = call;
 }
 /* there is some question about the _extcall_thread variables, if any. */

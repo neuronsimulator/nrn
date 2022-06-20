@@ -8,8 +8,8 @@
 #include "classreg.h"
 #include "linmod.h"
 #include "nrnoc2iv.h"
+#include "treeset.h"
 
-extern "C" double* nrn_recalc_ptr(double*);
 // hoc interface to a LinearModelAddition
 // remember that the policy for equation additions to the tree matrix is
 // cmat*y' + gmat*y = b and where the first nnode rows specify

@@ -66,9 +66,6 @@ foreach(link_lib ${NRN_LINK_LIBS})
   string(APPEND NRN_LINK_DEFS " ${link_flag}")
 endforeach()
 
-# PGI add --c++11;-A option for c++11 flag
-string(REPLACE ";" " " CXX11_STANDARD_COMPILE_OPTION "${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
-
 # Compiler flags depending on cmake build type from BUILD_TYPE_<LANG>_FLAGS
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
 set(BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${_BUILD_TYPE}}")

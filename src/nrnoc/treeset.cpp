@@ -15,15 +15,12 @@
 #include "nrnmpi.h"
 #include "multisplit.h"
 #include "spmatrix.h"
+#include "treeset.h"
 #include "nonvintblock.h"
 #include "nrndae_c.h"
 #include "utils/profile/profiler_interface.h"
 
 extern spREAL* spGetElement(char*, int, int);
-
-#if CVODE
-extern int cvode_active_;
-#endif
 
 int nrn_shape_changed_; /* for notifying Shape class in nrniv */
 double* nrn_mech_wtime_;
@@ -2177,7 +2174,7 @@ void nrn_old_thread_save(void) {
 
 static double* (*recalc_ptr_)(double*);
 
-extern "C" double* nrn_recalc_ptr(double* old) {
+double* nrn_recalc_ptr(double* old) {
     if (recalc_ptr_) {
         return (*recalc_ptr_)(old);
     }
@@ -2193,7 +2190,7 @@ extern "C" double* nrn_recalc_ptr(double* old) {
     return old;
 }
 
-extern "C" void nrn_register_recalc_ptr_callback(Pfrv f) {
+void nrn_register_recalc_ptr_callback(Pfrv f) {
     if (n_recalc_ptr_callback >= 20) {
         Printf("More than 20 recalc_ptr_callback functions\n");
         exit(1);

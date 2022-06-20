@@ -58,17 +58,6 @@ class RandomPlay: public Observer, public Resource {
 using RandomPlayList = std::vector<RandomPlay*>;
 static RandomPlayList* random_play_list_;
 
-extern "C" {
-double nrn_random_pick(Rand* r);
-void nrn_random_reset(Rand* r);
-Rand* nrn_random_arg(int);
-long nrn_get_random_sequence(Rand* r);
-void nrn_set_random_sequence(Rand* r, long seq);
-int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3);
-int nrn_random123_setseq(Rand* r, uint32_t seq, char which);
-int nrn_random123_getseq(Rand* r, uint32_t* seq, char* which);
-}  // extern "C"
-
 #include <mcran4.h>
 
 class NrnRandom123: public RNG {
@@ -321,19 +310,19 @@ static double r_MCellRan4(void* r) {
     return (double) mcr->orig_;
 }
 
-extern "C" long nrn_get_random_sequence(Rand* r) {
+long nrn_get_random_sequence(Rand* r) {
     assert(r->type_ == 2);
     MCellRan4* mcr = (MCellRan4*) r->gen;
     return mcr->ihigh_;
 }
 
-extern "C" void nrn_set_random_sequence(Rand* r, long seq) {
+void nrn_set_random_sequence(Rand* r, long seq) {
     assert(r->type_ == 2);
     MCellRan4* mcr = (MCellRan4*) r->gen;
     mcr->ihigh_ = seq;
 }
 
-extern "C" int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+int nrn_random_isran123(Rand* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
     if (r->type_ == 4) {
         NrnRandom123* nr = (NrnRandom123*) r->gen;
         nrnran123_getids3(nr->s_, id1, id2, id3);
@@ -436,7 +425,7 @@ static double r_repick(void* r) {
     return (*(x->rand))();
 }
 
-extern "C" double nrn_random_pick(Rand* r) {
+double nrn_random_pick(Rand* r) {
     if (r) {
         return (*(r->rand))();
     } else {
@@ -444,13 +433,13 @@ extern "C" double nrn_random_pick(Rand* r) {
     }
 }
 
-extern "C" void nrn_random_reset(Rand* r) {
+void nrn_random_reset(Rand* r) {
     if (r) {
         r->gen->reset();
     }
 }
 
-extern "C" Rand* nrn_random_arg(int i) {
+Rand* nrn_random_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
     check_obj_type(ob, "Random");
     Rand* r = (Rand*) (ob->u.this_pointer);
@@ -648,4 +637,27 @@ static Member_func r_members[] = {{"ACG", r_ACG},
 void Random_reg() {
     class2oc("Random", r_cons, r_destruct, r_members, NULL, NULL, NULL);
     random_play_list_ = new RandomPlayList;
+}
+
+// Deprecated backwards-compatibility definitions
+long nrn_get_random_sequence(void* r) {
+    return nrn_get_random_sequence(static_cast<Rand*>(r));
+}
+int nrn_random_isran123(void* r, uint32_t* id1, uint32_t* id2, uint32_t* id3) {
+    return nrn_random_isran123(static_cast<Rand*>(r), id1, id2, id3);
+}
+double nrn_random_pick(void* r) {
+    return nrn_random_pick(static_cast<Rand*>(r));
+}
+void nrn_random_reset(void* r) {
+    nrn_random_reset(static_cast<Rand*>(r));
+}
+int nrn_random123_getseq(void* r, uint32_t* seq, char* which) {
+    return nrn_random123_getseq(static_cast<Rand*>(r), seq, which);
+}
+int nrn_random123_setseq(void* r, uint32_t seq, char which) {
+    return nrn_random123_setseq(static_cast<Rand*>(r), seq, which);
+}
+void nrn_set_random_sequence(void* r, int seq) {
+    nrn_set_random_sequence(static_cast<Rand*>(r), static_cast<long>(seq));
 }

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hoc.h"
+#include "oc_ansi.h"
 #include "ocfunc.h"
 #include "parse.hpp"
 #include "hoclist.h"
@@ -404,7 +405,7 @@ void hoc_free_pstring(char** p) {
     }
 }
 
-extern "C" size_t nrn_mallinfo(int item) {
+size_t nrn_mallinfo(int item) {
 #if defined(__APPLE__) && defined(__MACH__)
     /* OSX ------------------------------------------------------
      * Returns the current resident set size (physical memory use) measured

@@ -51,9 +51,7 @@ int ivoc_unlink(const char* s) {
 }
 
 #include "hocstr.h"
-extern "C" FILE* hoc_obj_file_arg(int i);
-
-extern "C" FILE* hoc_obj_file_arg(int i) {
+FILE* hoc_obj_file_arg(int i) {
     Object* ob = *hoc_objgetarg(i);
     check_obj_type(ob, "File");
     OcFile* f = (OcFile*) (ob->u.this_pointer);

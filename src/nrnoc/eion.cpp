@@ -394,7 +394,7 @@ ion_style("name_ion", [c_style, e_style, einit, eadvance, cinit])
 #define conci0 global_conci(type)
 #define conco0 global_conco(type)
 
-extern "C" double nrn_nernst_coef(int type) {
+double nrn_nernst_coef(int type) {
     /* for computing jacobian element dconc'/dconc */
     return ktf / charge;
 }

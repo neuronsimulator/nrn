@@ -129,8 +129,10 @@ static double dmaxint_ = 9007199254740992;
 #include "utility.h"
 #endif
 #include "oc2iv.h"
-#include "parse.hpp"
+#include "oc_ansi.h"
 #include "ocfile.h"
+#include "ocfunc.h"
+#include "parse.hpp"
 
 extern Object* hoc_thisobject;
 extern Symlist* hoc_top_level_symlist;
@@ -138,14 +140,6 @@ extern "C" void nrn_exit(int);
 IvocVect* (*nrnpy_vec_from_python_p_)(void*);
 Object** (*nrnpy_vec_to_python_p_)(void*);
 Object** (*nrnpy_vec_as_numpy_helper_)(int, double*);
-
-// math functions with error checking defined in oc/SRC/math.cpp
-extern double hoc_Log(double x), hoc_Log10(double x), /*hoc_Exp(double x), */ hoc_Sqrt(double x);
-extern double hoc_scan(FILE*);
-
-extern "C" {
-extern double hoc_Exp(double);
-}  // extern "C"
 
 static int narg() {
     int i = 0;
@@ -166,12 +160,10 @@ static int narg() {
 int cmpfcn(double a, double b) {
     return ((a) <= (b)) ? (((a) == (b)) ? 0 : -1) : 1;
 }
-typedef int (*doubleComparator)(double, double);
 
 extern "C" {
 extern void install_vector_method(const char* name, Pfrd_vp);
 extern int vector_instance_px(void*, double**);
-extern int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, doubleComparator cmp);
 }  // extern "C"
 
 extern int vector_arg_px(int, double**);
@@ -298,38 +290,60 @@ static Symbol* svec_;
 
 // extern "C" vector functions used by ocmatrix.dll
 // can also be used in mod files
-Vect* vector_new(int n, Object* o) {
-    return new Vect(n, o);
-}
-Vect* vector_new0() {
-    return new Vect();
-}
-Vect* vector_new1(int n) {
-    return new Vect(n);
-}
-Vect* vector_new2(Vect* v) {
-    return new Vect(*v);
-}
 void vector_delete(Vect* v) {
     delete v;
 }
-int vector_buffer_size(Vect* v) {
+IvocVect* vector_arg(int i) {
+    Object* ob = *hoc_objgetarg(i);
+    if (!ob || ob->ctemplate != svec_->u.ctemplate) {
+        check_obj_type(ob, "Vector");
+    }
+    return static_cast<IvocVect*>(ob->u.this_pointer);
+}
+int vector_buffer_size(IvocVect* v) {
     return v->buffer_size();
 }
-int vector_capacity(Vect* v) {
+int vector_buffer_size(void* v) {
+    return vector_buffer_size(static_cast<IvocVect*>(v));
+}
+int vector_capacity(IvocVect* v) {
     return v->size();
 }
-void vector_resize(Vect* v, int n) {
+int vector_capacity(void* v) {
+    return vector_capacity(static_cast<IvocVect*>(v));
+}
+IvocVect* vector_new(int n, Object* o) {
+    return new IvocVect(n, o);
+}
+IvocVect* vector_new0() {
+    return new IvocVect();
+}
+IvocVect* vector_new1(int n) {
+    return new IvocVect(n);
+}
+IvocVect* vector_new2(IvocVect* v) {
+    return new IvocVect(*v);
+}
+Object** vector_pobj(IvocVect* v) {
+    return &v->obj_;
+}
+Object** vector_pobj(void* v) {
+    return vector_pobj(static_cast<IvocVect*>(v));
+}
+void vector_resize(IvocVect* v, int n) {
     v->resize(n);
+}
+void vector_resize(void* v, int n) {
+    vector_resize(static_cast<IvocVect*>(v), n);
+}
+double* vector_vec(IvocVect* v) {
+    return v->data();
+}
+double* vector_vec(void* v) {
+    return vector_vec(static_cast<IvocVect*>(v));
 }
 Object** vector_temp_objvar(Vect* v) {
     return v->temp_objvar();
-}
-double* vector_vec(Vect* v) {
-    return v->data();
-}
-Object** vector_pobj(Vect* v) {
-    return &v->obj_;
 }
 char* vector_get_label(Vect* v) {
     return v->label_;
@@ -392,14 +406,6 @@ extern "C" int vector_instance_px(void* v, double** px) {
     Vect* x = (Vect*) v;
     *px = x->data();
     return x->size();
-}
-
-extern "C" Vect* vector_arg(int i) {
-    Object* ob = *hoc_objgetarg(i);
-    if (!ob || ob->ctemplate != svec_->u.ctemplate) {
-        check_obj_type(ob, "Vector");
-    }
-    return (Vect*) (ob->u.this_pointer);
 }
 
 int is_vector_arg(int i) {
@@ -4033,7 +4039,7 @@ static inline void SWAP(int* A, int* B) {
       smaller partition.  This *guarantees* no more than log (n)
       stack size is needed! */
 
-extern "C" int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, doubleComparator cmp) {
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double)) {
     /* Stack node declarations used to store unfulfilled partition obligations. */
     struct stack_node {
         int* lo;

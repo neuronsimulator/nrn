@@ -31,3 +31,12 @@ Using NMODL to add new mechanisms to NEURON
 * NEURON comes with a bunch of mod files that can serve as starting points for "programming by example." Under MSWin the default mechanisms (hh, pas, expsyn etc.) are in `github.com/neuronsimulator/nrn/tree/master/src/nrnoc <https://github.com/neuronsimulator/nrn/tree/master/src/nrnoc>`_. A large collection of mod files is at `github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nmodl <https://github.com/neuronsimulator/nrn/tree/master/share/examples/nrniv/nmodl>`_.
 * You may also find useful examples in `ModelDB <https://modeldb.yale.edu>`_.
 
+.. include:: ../rst_substitutions.txt
+
+.. note::
+  Starting in |neuron_with_cpp_mechanisms|, NMODL is translated into C++ code
+  instead of C.
+  This change is not fully backwards compatible, and you may find that older
+  NMODL code needs to be updated to work with |neuron_with_cpp_mechanisms|.
+  This is principally an issue for MOD files that include ``VERBATIM`` blocks.
+  For more information, see :ref:`porting-mechanisms-to-cpp`.

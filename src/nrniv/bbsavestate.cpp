@@ -170,6 +170,7 @@ callback to bbss_early when needed.
 #include "bbsavestate.h"
 #include "classreg.h"
 #include "ndatclas.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "ocfile.h"
 #include <cmath>
@@ -214,16 +215,11 @@ extern double t;
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern short* nrn_is_artificial_;
-extern "C" {
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-}  // extern "C"
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
-extern void nrn_spike_exchange(NrnThread*);
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
@@ -232,7 +228,6 @@ extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
-static void nrn_spike_exchange(NrnThread*) {}
 static void nrnmpi_barrier() {}
 static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
@@ -296,68 +291,6 @@ static TQItemList* tq_removal_list;
 #if QUEUECHECK
 static void bbss_queuecheck();
 #endif
-
-// API
-// see save_test_bin and restore_test_bin for an example of
-// the use of this following interface. Note in particular the
-// use in restore_test_bin of a prior clear_event_queue() in order
-// to allow bbss_buffer_counts to pass an assert during the restore
-// process.
-
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
-// First call to return the information needed to make the other
-// calls. Returns a pointer used by the other methods.
-// Caller is reponsible for freeing (using free() and not delete [])
-// the returned gids and sizes arrays
-// when finished. The sizes array and global_size are needed for the
-// caller to construct proper buffer sizes to pass to
-// bbss_save_global and bbss_save for filling in. The size of these
-// arrays is returned in *len.
-// They are not needed for restoring
-// (since the caller is passing already filled in buffers that are read
-// by bbss_restore_global and bbss_restore
-// The gids returned are base gids. It is the callers responsibility
-// to somehow concatenate buffers with the same gid (from different hosts)
-// either after save or before restore and preserve the piece count
-// of the number of concatenated buffers for each base gid.
-// Global_size will only be non_zero for host 0.
-
-extern "C" void bbss_save_global(void* bbss, char* buffer, int sz);
-// call only on host 0 with a buffer of size equal to the
-// global_size returned from the bbss_buffer_counts call on host 0
-// sz is the size of the buffer (for error checking only, buffer+sz is
-// out of bounds)
-
-extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz);
-// call on all hosts with the buffer contents returned from the call
-// to bbss_save_global
-// This must be called prior to any calls to bbss_restore
-// sz is the size of the buffer (error checking only)
-// This also does some other important restore initializations.
-
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts along with
-// a buffer of size from the corresponding sizes array. The buffer will
-// be filled in with savestate information. The gid may be the same on
-// different hosts, in which case it is the callers responsibility to
-// concatentate buffers at some point to allow calling of bbss_restore
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_restore(void* bbss, int gid, int npiece, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts, the
-// number of buffers that were concatenated for the gid, and the
-// concatenated buffer (the concatenated buffer does NOT contain npiece
-// as the first value in the char* buffer pointer)
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_save_done(void* bbss);
-// At the end of the save process, call this to cleanup.
-// when this call returns, bbss will be invalid.
-
-extern "C" void bbss_restore_done(void* bbss);
-// At the end of the restore process, call this to do
-// some extra setting up and cleanup.
-// when this call returns, bbss will be invalid.
 
 // 0 no debug, 1 print to stdout, 2 read/write to IO file
 #define DEBUG 0
@@ -787,7 +720,7 @@ static int ignored(Prop* p) {
     return 0;
 }
 
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
+void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     usebin_ = 1;
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
@@ -800,15 +733,15 @@ extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* glob
     *len = ss->counts(gids, sizes);
     return ss;
 }
-extern "C" void bbss_save_global(void* bbss, char* buffer,
-                                 int sz) {  // call only on host 0
+void bbss_save_global(void* bbss, char* buffer,
+                      int sz) {  // call only on host 0
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
     io->d(1, nrn_threads->_t);
     delete io;
 }
-extern "C" void bbss_restore_global(void* bbss, char* buffer,
-                                    int sz) {  // call on all hosts
+void bbss_restore_global(void* bbss, char* buffer,
+                         int sz) {  // call on all hosts
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
     io->d(1, nrn_threads->_t);
@@ -816,7 +749,7 @@ extern "C" void bbss_restore_global(void* bbss, char* buffer,
     delete io;
     bbss_restore_begin();
 }
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
+void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
@@ -824,7 +757,7 @@ extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     ss->gidobj(gid);
     delete io;
 }
-extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
+void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
@@ -835,7 +768,7 @@ extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int 
     }
     delete io;
 }
-extern "C" void bbss_save_done(void* bbss) {
+void bbss_save_done(void* bbss) {
     BBSaveState* ss = (BBSaveState*) bbss;
     delete ss;
 }
@@ -873,7 +806,7 @@ static void bbss_remove_delivered() {
     delete tq_removal_list;
 }
 
-extern "C" void bbss_restore_done(void* bbss) {
+void bbss_restore_done(void* bbss) {
     if (bbss) {
         BBSaveState* ss = (BBSaveState*) bbss;
         delete ss;

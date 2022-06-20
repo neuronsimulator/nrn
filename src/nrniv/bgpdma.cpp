@@ -26,16 +26,7 @@ At the end of a computation subinterval the even or odd buffer spikes
 are enqueued in the priority queue after checking that the number
 of spikes sent is equal to the number of spikes sent.
 */
-
-extern "C" {
-
-extern IvocVect* vector_arg(int);
-extern void vector_resize(IvocVect*, int);
-
-}  // extern "C"
 extern void (*nrntimeout_call)();
-
-
 // The initial idea behind use_phase2_ is to avoid the large overhead of
 // initiating a send of the up to 10k list of target hosts when a cell fires.
 // I.e. when there are a small number of cells on a processor, this causes
