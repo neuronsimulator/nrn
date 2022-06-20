@@ -50,6 +50,7 @@
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
+#                 [ENVIRONMENT VAR1=value1 ...]
 #                 [PRELOAD_SANITIZER]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
@@ -76,6 +77,8 @@
 #    flag controls whether or not the PRELOAD flag is passed to
 #    cpp_cc_configure_sanitizers; this needs to be set when the test executable
 #    is *not* built by NEURON, typically because it is `python`.
+#    The ENVIRONMENT argument takes a list of extra environment variables to
+#    set when running the test.
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
@@ -238,6 +241,7 @@ function(nrn_add_test)
   set(oneValueArgs GROUP NAME PROCESSORS)
   set(multiValueArgs
       COMMAND
+      ENVIRONMENT
       CONFLICTS
       PRECOMMAND
       REQUIRES
@@ -377,13 +381,13 @@ function(nrn_add_test)
   #   same directory).
   add_test(
     NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
+    COMMAND ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
   if(DEFINED NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
+      COMMAND ${NRN_ADD_TEST_PRECOMMAND}
       WORKING_DIRECTORY "${simulation_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
@@ -407,11 +411,32 @@ function(nrn_add_test)
       )
     endif()
   endif()
+  # Get [VAR1, VAR2, ...] from [VAR1=VAL1, VAR2=VAL2, ...]
+  set(test_env_var_names ${test_env})
+  list(TRANSFORM test_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
   if(DEFINED nrnivmodl_directory)
-    set(path_additions "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
+    if(NOT "PATH" IN_LIST test_env_var_names)
+      message(FATAL_ERROR "Expected to find PATH in ${test_env_var_names} but didn't")
+    endif()
+    # PATH will already be set in test_env
+    list(TRANSFORM test_env REPLACE "^PATH="
+                                    "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
-  list(APPEND test_env "PATH=${path_additions}${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
-  set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}")
+  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
+    # Get the list of variables being set
+    set(extra_env_var_names ${NRN_ADD_TEST_ENVIRONMENT})
+    list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
+    # Make sure the new variables don't overlap with the old ones; otherwise we'd need to do some
+    # merging, which sounds hard in the general case.
+    list(APPEND new_vars_being_set ${extra_env_var_names})
+    list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
+    if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
+      message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
+                          "This is not supported.")
+    endif()
+    list(APPEND test_env ${NRN_ADD_TEST_ENVIRONMENT})
+  endif()
+  set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}" TIMEOUT 300)
   if(NRN_ADD_TEST_PRELOAD_SANITIZER)
     set(preload PRELOAD)
   endif()

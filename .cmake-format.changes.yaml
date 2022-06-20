@@ -16,6 +16,7 @@ additional_commands:
       GROUP: 1
       NAME: 1
       COMMAND: '+'
+      ENVIRONMENT: '+'
       CONFLICTS: '+'
       PRECOMMAND: '+'
       PRELOAD_SANITIZER: 0
