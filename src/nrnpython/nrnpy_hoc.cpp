@@ -157,6 +157,8 @@ static PyObject* get_mech_object_ = NULL;
 static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 
 PyTypeObject* hocobject_type;
+PyTypeObject* vectorobject_type;
+
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
@@ -503,15 +505,24 @@ PyObject* nrnpy_ho2po(Object* o) {
     // The return value is None, or the encapsulated PyObject or
     // an encapsulating PyHocObject
     PyObject* po;
+    //printf("inside ho2po\n");
     if (!o) {
         po = Py_BuildValue("");
+        //printf("empty po\n");
     } else if (o->ctemplate->sym == nrnpy_pyobj_sym_) {
         po = nrnpy_hoc2pyobject(o);
         Py_INCREF(po);
+        //printf("from nrnpy_hoc2pyobject\n");
     } else {
         po = hocobj_new(hocobject_type, 0, 0);
         ((PyHocObject*) po)->ho_ = o;
         ((PyHocObject*) po)->type_ = PyHoc::HocObject;
+        if (o->ctemplate->sym == hoc_vec_template_->sym) {
+            //printf("syms match\n");
+            po->ob_type = vectorobject_type;
+        } else {
+            //printf("syms don't match\n");
+        }
         hoc_obj_ref(o);
     }
     return po;
@@ -676,6 +687,16 @@ static void* fcall(void* vself, void* vargs) {
         PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
         result->ho_ = ho;
         result->type_ = PyHoc::HocObject;
+        // Note: I think the only reason we're not using ho2po here is because we don't have to
+        //       hocref ho since it was created by hoc_newobj1... but it would be better if we did
+        //       so we could avoid repetitive code
+        if (ho->ctemplate->sym == hoc_vec_template_->sym) {
+            //printf("TEMPLATE: syms match\n");
+            ((PyObject*) result)->ob_type = vectorobject_type;
+        } else {
+            //printf("TEMPLATE: syms don't match\n");
+        }
+
         hocobj_pushargs_free_strings(strings_to_free);
         return result;
     } else {
@@ -3106,9 +3127,18 @@ PyObject* nrnpy_hoc() {
     if (PyType_Ready(hocobject_type) < 0)
         goto fail;
     Py_INCREF(hocobject_type);
+    //printf("defining vectorobject_type\n");
+    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&nrnpy_HocObjectType_spec, NULL);//(PyObject*) hocobject_type);
+    if (PyType_Ready(vectorobject_type) < 0)
+        goto fail;
+    Py_INCREF(vectorobject_type);
+    //printf("done\n");
     // printf("AddObject HocObject\n");
     PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
-
+    //printf("registering Vector\n");
+    PyModule_AddObject(m, "Vector", (PyObject*) vectorobject_type);
+    //printf("done\n");
+    
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
         PyObject* descr;
