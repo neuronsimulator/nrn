@@ -41,10 +41,6 @@ void iv_display_scale(float);
 #include <IV-X11/ivx11_dynam.h>
 #endif
 
-#if defined(carbon)
-#undef MAC
-#endif
-
 #if MAC || defined(WIN32)
 #include "njconf.h"
 #else
@@ -629,7 +625,7 @@ int ivocmain_session(int argc, const char** argv, const char** env, int start_se
     session = new Session("NEURON", our_argc, our_argv, options, properties);
     SIOUXSettings.asktosaveonclose = false;
 #else
-#if defined(WIN32) || carbon
+#if defined(WIN32)
     IFGUI
     session = new Session("NEURON", our_argc, (char**) our_argv, options, properties);
     ENDGUI
