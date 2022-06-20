@@ -448,6 +448,12 @@ size_t nrn_mallinfo(int item) {
 #endif
 }
 
+void hoc_exit() {
+    int const code = chkarg(1, 0, 255);
+    nrn_exit(code);
+    hoc_ret();
+}
+
 void hoc_mallinfo() {
     int const i = chkarg(1, 0, 6);
     auto const x = nrn_mallinfo(i);
