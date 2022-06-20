@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "nrnpthread.h"
 
 /* do not want the redef in the dynamic load case */
 #include <nrnmpiuse.h>

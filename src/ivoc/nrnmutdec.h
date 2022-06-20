@@ -1,69 +1,31 @@
-#ifndef nrnmutdec_h
-#define nrnmutdec_h
-
-#include <nrnpthread.h>
+#pragma once
 #if USE_PTHREAD
 
-#include <pthread.h>
+// #ifdef MINGW
+// #undef DELETE
+// #undef near
+// #endif
 
-#ifdef MINGW
-#undef DELETE
-#undef near
-#endif
+#include <memory>
+#include <mutex>
 
-#define MUTDEC         pthread_mutex_t* mut_;
-#define MUTCONSTRUCTED (mut_ != (pthread_mutex_t*) 0)
-#if defined(__cplusplus)
+#define MUTDEC         std::unique_ptr<std::mutex> mut_;
+#define MUTCONSTRUCTED bool{mut_}
 #define MUTCONSTRUCT(mkmut)              \
-    {                                    \
-        if (mkmut) {                     \
-            mut_ = new pthread_mutex_t;  \
-            pthread_mutex_init(mut_, 0); \
+        { if (mkmut) {                     \
+            mut_ = std::make_unique<std::mutex>();     \
         } else {                         \
-            mut_ = 0;                    \
-        }                                \
-    }
-#define MUTDESTRUCT                      \
-    {                                    \
-        if (mut_) {                      \
-            pthread_mutex_destroy(mut_); \
-            delete mut_;                 \
-            mut_ = (pthread_mutex_t*) 0; \
-        }                                \
-    }
-#else
-#define MUTCONSTRUCT(mkmut)                                            \
-    {                                                                  \
-        if (mkmut) {                                                   \
-            mut_ = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t)); \
-            pthread_mutex_init(mut_, 0);                               \
-        } else {                                                       \
-            mut_ = 0;                                                  \
-        }                                                              \
-    }
-#define MUTDESTRUCT                      \
-    {                                    \
-        if (mut_) {                      \
-            pthread_mutex_destroy(mut_); \
-            free(mut_);                  \
-            mut_ = NULL;                 \
-        }                                \
-    }
-#endif
+            mut_.reset();              \
+        } }
+#define MUTDESTRUCT mut_.reset();
 #define MUTLOCK                       \
-    {                                 \
-        if (mut_) {                   \
-            pthread_mutex_lock(mut_); \
-        }                             \
-    }
+        { if (mut_) {                   \
+            mut_->lock(); \
+        } }
 #define MUTUNLOCK                       \
-    {                                   \
-        if (mut_) {                     \
-            pthread_mutex_unlock(mut_); \
-        }                               \
-    }
-/*#define MUTLOCK {if (mut_) {printf("lock %lx\n", mut_); pthread_mutex_lock(mut_);}}*/
-/*#define MUTUNLOCK {if (mut_) {printf("unlock %lx\n", mut_); pthread_mutex_unlock(mut_);}}*/
+        { if (mut_) {                     \
+            mut_->unlock(); \
+        } }
 #else
 #define MUTDEC              /**/
 #define MUTCONSTRUCTED      (0)
@@ -71,6 +33,4 @@
 #define MUTDESTRUCT         /**/
 #define MUTLOCK             /**/
 #define MUTUNLOCK           /**/
-#endif
-
 #endif

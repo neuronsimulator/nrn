@@ -3,7 +3,6 @@
 #include <assert.h>
 #include "grids.h"
 #include "rxd.h"
-#include <pthread.h>
 #include <nrnwrap_Python.h>
 
 /*Tortuous diffusion coefficients*/

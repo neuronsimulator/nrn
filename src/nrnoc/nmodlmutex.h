@@ -1,25 +1,24 @@
-#ifndef nmodlmutex_h
-#define nmodlmutex_h
-
-#include <nrnpthread.h>
+#pragma once
 #if USE_PTHREAD
-#include <pthread.h>
-extern pthread_mutex_t* _nmodlmutex;
+#include <memory>
+#include <mutex>
+
+namespace nrn {
+extern std::unique_ptr<std::mutex> nmodlmutex;
+}
 #define _NMODLMUTEXLOCK                      \
     {                                        \
-        if (_nmodlmutex) {                   \
-            pthread_mutex_lock(_nmodlmutex); \
+        if (nrn::nmodlmutex) {                   \
+            nrn::nmodlmutex->lock(); \
         }                                    \
     }
 #define _NMODLMUTEXUNLOCK                      \
     {                                          \
-        if (_nmodlmutex) {                     \
-            pthread_mutex_unlock(_nmodlmutex); \
+        if (nrn::nmodlmutex) {                     \
+            nrn::nmodlmutex->unlock(); \
         }                                      \
     }
 #else
 #define _NMODLMUTEXLOCK   /**/
 #define _NMODLMUTEXUNLOCK /**/
-#endif
-
 #endif

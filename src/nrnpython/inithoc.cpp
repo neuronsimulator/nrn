@@ -1,5 +1,4 @@
 #include "nrnmpiuse.h"
-#include "nrnpthread.h"
 #include <stdio.h>
 #include <stdint.h>
 #include "nrnmpi.h"
