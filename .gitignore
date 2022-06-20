@@ -1,7 +1,9 @@
 .clang-format
 .cmake-format.yaml
+external/tests/
 nmodlconf.h.in
 nrnconf.h.in
+test/ringtest/*.dat
 build
 .DS_Store
 .eggs/
@@ -21,25 +23,25 @@ virtualenv
 # These files are generated at build time
 # It would be a good idea to create them in the
 # build directory in the future.
-src/nrnoc/apcount.c
-src/nrnoc/exp2syn.c
-src/nrnoc/expsyn.c
-src/nrnoc/feature.c
-src/nrnoc/hh.c
+src/nrnoc/apcount.cpp
+src/nrnoc/exp2syn.cpp
+src/nrnoc/expsyn.cpp
+src/nrnoc/feature.cpp
+src/nrnoc/hh.cpp
 src/nrnoc/hh.mod.orig
 src/nrnoc/hocusr.h
-src/nrnoc/intfire1.c
-src/nrnoc/intfire2.c
-src/nrnoc/intfire4.c
-src/nrnoc/netstim.c
+src/nrnoc/intfire1.cpp
+src/nrnoc/intfire2.cpp
+src/nrnoc/intfire4.cpp
+src/nrnoc/netstim.cpp
 src/nrnoc/nrnversion.
 src/nrnoc/nrnversion.h
-src/nrnoc/oclmp.c
-src/nrnoc/passive.c
-src/nrnoc/pattern.c
-src/nrnoc/ppmark.c
-src/nrnoc/stim.c
-src/nrnoc/svclmp.c
-src/nrnoc/syn.c
-src/nrnoc/vclmp.c
+src/nrnoc/oclmp.cpp
+src/nrnoc/passive.cpp
+src/nrnoc/pattern.cpp
+src/nrnoc/ppmark.cpp
+src/nrnoc/stim.cpp
+src/nrnoc/svclmp.cpp
+src/nrnoc/syn.cpp
+src/nrnoc/vclmp.cpp
 share/lib/python/neuron/help_data.dat

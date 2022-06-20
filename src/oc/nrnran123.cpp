@@ -42,7 +42,7 @@ extern "C" void nrnran123_deletestream(nrnran123_State* s) {
     free(s);
 }
 
-extern "C" void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
+void nrnran123_getseq(nrnran123_State* s, uint32_t* seq, char* which) {
     *seq = s->c.v[0];
     *which = s->which_;
 }

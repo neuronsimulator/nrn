@@ -151,13 +151,13 @@ for i in "${files[@]}" ; do
   dir_name="$(dirname "$f")"
   # Note: indentation for shell lines in make rules must be a tab
   echo "\
-./${base_name// /\\ }.c: ${f// /\\ }.mod
+./${base_name// /\\ }.cpp: ${f// /\\ }.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
 	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
-./${base_name// /\\ }.o: ./${base_name// /\\ }.c
+./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(COMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
 " >> "$MODMAKE"
 done
 

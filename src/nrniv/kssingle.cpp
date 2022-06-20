@@ -128,7 +128,6 @@
 // double* KSSingleNodeData.statepop_ which points into the prop->param.
 //----------------
 
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 
 double KSSingle::vres_;

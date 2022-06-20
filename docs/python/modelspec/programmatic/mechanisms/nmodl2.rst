@@ -463,5 +463,6 @@ Description:
     merging models into one larger 
     model may eliminate the instability. 
 
+.. _python_verbatim:
 
 .. include:: ../../../../nmodl/verbatim.rst

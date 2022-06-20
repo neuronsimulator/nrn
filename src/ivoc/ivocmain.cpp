@@ -873,7 +873,6 @@ void ivoc_final_exit() {
 }
 
 extern "C" {
-extern double* getarg(int i);
 extern int ifarg(int);
 }  // extern "C"
 

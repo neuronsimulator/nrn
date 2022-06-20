@@ -60,16 +60,9 @@ extern int praxis_stop(int);
 }
 #endif
 
-extern int stoprun;
 extern double chkarg(int, double, double);
-
-extern void vector_resize(IvocVect*, int);
-extern double* vector_vec(IvocVect*);
-extern IvocVect* vector_arg(int);  // TODO: IvocVect?
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
-extern int vector_capacity(IvocVect*);
-extern Object** vector_pobj(IvocVect* v);
 extern int nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 

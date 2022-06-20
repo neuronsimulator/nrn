@@ -121,7 +121,7 @@ int invert(int n, double** matrix);
 int crout(int n, double** a, int* perm);
 int solve(int n, double** a, double** b, int* perm, double* p, int* y);
 int tridiag(int n, double* a, double* b, double* c, double* d, double* soln);
-int newton(int n, int* index, double* x, int (*pfunc)(), double* value);
+int newton(int n, int* index, double* x, int(*pfunc)(), double* value);
 int simplex(int nparms, int* parms, double* pp, int (*pfunc)(), int* value);
 int buildjacobian(int n, int* index, double* x, int (*pfunc)(), double* value, double** jacobian);
 

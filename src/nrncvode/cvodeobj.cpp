@@ -4,7 +4,6 @@
 
 #include "nrnmpi.h"
 
-extern "C" void cvode_fadvance();
 void cvode_finitialize();
 extern void (*nrn_multisplit_setup_)();
 
@@ -70,7 +69,6 @@ extern "C" Point_process* ob2pntproc(Object*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 extern void (*nrnmpi_v_transfer_)();
 
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern short* nrn_is_artificial_;
 extern "C" int structure_change_cnt;

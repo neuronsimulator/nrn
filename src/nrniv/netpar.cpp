@@ -2,6 +2,7 @@
 #include <../../nrnconf.h>
 #include <InterViews/resource.h>
 #include <math.h>
+#include "nrncvode.h"
 #include <nrnmpi.h>
 #include <nrnoc2iv.h>
 #include <stdio.h>
@@ -40,17 +41,11 @@ static void alloc_space();
 
 extern NetCvode* net_cvode_instance;
 extern double t, dt;
-extern int cvode_active_;
 extern "C" Point_process* ob2pntproc(Object*);
 extern int nrn_use_selfqueue_;
 extern void nrn_pending_selfqueue(double, NrnThread*);
-extern int vector_capacity(IvocVect*);  // ivocvect.h conflicts with STL
-extern double* vector_vec(IvocVect*);
 extern Object* nrn_sec2cell(Section*);
 extern void ncs2nrn_integrate(double tstop);
-extern "C" {
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-}  // extern "C"
 int nrnmpi_spike_compress(int nspike, bool gid_compress, int xchng_meth);
 void nrn_cleanup_presyn(PreSyn*);
 int nrn_set_timeout(int);
@@ -99,7 +94,6 @@ static double set_mindelay(double maxdelay);
 #include "../nrnmpi/mpispike.h"
 
 void nrn_timeout(int);
-void nrn_spike_exchange(NrnThread*);
 extern int nrnmpi_int_allmax(int);
 extern void nrnmpi_int_allgather(int*, int*, int);
 void nrn2ncs_outputevent(int netcon_output_index, double firetime);
@@ -543,7 +537,9 @@ void nrn_spike_exchange_init() {
         // if (nrnmpi_myid == 0){printf("usable_mindelay_ = %g\n", usable_mindelay_);}
 }
 
-#if NRNMPI
+#if !NRNMPI
+void nrn_spike_exchange(NrnThread*) {}
+#else
 void nrn_spike_exchange(NrnThread* nt) {
     nrn::Instrumentor::phase p_spike_exchange("spike-exchange");
     if (!active_) {
@@ -902,7 +898,7 @@ static void mk_localgid_rep() {
 // ensures that all the target cells, regardless of what rank they are on
 // will get the spike delivered and nobody gets it twice.
 
-extern "C" void nrn_fake_fire(int gid, double spiketime, int fake_out) {
+void nrn_fake_fire(int gid, double spiketime, int fake_out) {
     PreSyn* ps{nullptr};
     if (fake_out < 2) {
         auto iter = gid2in_.find(gid);

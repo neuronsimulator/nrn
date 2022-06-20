@@ -293,7 +293,7 @@ if(MINGW)
   nrn_configure_file(nrnsetupmingw.nsi src/mswin)
   nrn_configure_file(pre_setup_exe.sh src/mswin)
   # Just name and not path since setup.exe user chooses location of install.
-  set(CC x86_64-w64-mingw32-gcc.exe)
+  set(CXX x86_64-w64-mingw32-g++.exe)
   set(BUILD_MINGW_TRUE "")
   set(BUILD_MINGW_FALSE "#")
   set(nrnskip_rebase "#")

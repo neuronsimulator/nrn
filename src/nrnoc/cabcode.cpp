@@ -1097,7 +1097,7 @@ Prop* nrn_mechanism_check(int type, Section* sec, int inode) {
     return m;
 }
 
-extern "C" Prop* hoc_getdata_range(int type) {
+Prop* hoc_getdata_range(int type) {
     int inode;
     Section* sec;
     double x;

@@ -12,6 +12,7 @@
 #include "parse.hpp"
 #include "ocfunc.h"
 #include "ocmisc.h"
+#include "oc_ansi.h"
 #include "hocparse.h"
 #include "equation.h"
 #include <math.h>
@@ -758,7 +759,7 @@ int hoc_is_object_arg(int narg) {
     return (type == OBJECTVAR || type == OBJECTTMP);
 }
 
-extern "C" int hoc_is_tempobj_arg(int narg) {
+int hoc_is_tempobj_arg(int narg) {
     return (hoc_argtype(narg) == OBJECTTMP);
 }
 
@@ -1627,7 +1628,7 @@ double* hoc_pgetarg(int narg) { /* return pointer to nth argument */
     return fp->argn[(narg - fp->nargs) * 2].pval;
 }
 
-extern "C" double* getarg(int narg) { /* return pointer to nth argument */
+double* hoc_getarg(int narg) { /* return pointer to nth argument */
     if (narg > fp->nargs)
         execerror(fp->sp->name, "not enough arguments");
 #if 1

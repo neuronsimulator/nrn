@@ -37,8 +37,10 @@
 #include "netcon.h"
 #include "netcvode.h"
 #include "nrncore_write/utils/nrncore_utils.h"
+#include "nrniv_mf.h"
 #include "nrnste.h"
 #include "profile.h"
+#include "treeset.h"
 #include "utils/profile/profiler_interface.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -70,7 +72,6 @@ extern int tree_changed, nrn_matrix_cnt_;
 extern int diam_changed;
 extern int nrn_errno_check(int);
 extern void nrn_ba(NrnThread*, int);
-extern int cvode_active_;
 extern NetCvode* net_cvode_instance;
 extern cTemplate** nrn_pnt_template_;
 extern double t, dt;
@@ -86,9 +87,7 @@ extern ReceiveFunc* pnt_receive_init;
 extern short* pnt_receive_size;
 extern short* nrn_is_artificial_;  // should be bool but not using that type in c
 extern short* nrn_artcell_qindex_;
-extern "C" void net_send(void**, double*, Point_process*, double, double);
 extern "C" void net_move(void**, Point_process*, double);
-extern "C" void artcell_net_send(void**, double*, Point_process*, double, double);
 extern "C" void artcell_net_move(void**, Point_process*, double);
 int nrn_use_selfqueue_;
 void nrn_pending_selfqueue(double tt, NrnThread*);
@@ -117,7 +116,6 @@ extern hoc_Item* net_cvode_instance_psl();
 extern PlayRecList* net_cvode_instance_prl();
 extern void nrn_update_ps2nt();
 extern void nrn_use_busywait(int);
-extern "C" double* nrn_recalc_ptr(double*);
 void* nrn_interthread_enqueue(NrnThread*);
 extern void (*nrnthread_v_transfer_)(NrnThread*);
 Object* (*nrnpy_seg_from_sec_x)(Section*, double);
@@ -148,7 +146,6 @@ extern int nrn_fornetcon_cnt_;
 extern int* nrn_fornetcon_index_;
 extern int* nrn_fornetcon_type_;
 void _nrn_free_fornetcon(void**);
-// int _nrn_netcon_args(void*, double***);
 
 // for use in mod files
 double nrn_netcon_get_delay(NetCon* nc) {
@@ -161,7 +158,7 @@ int nrn_netcon_weight(NetCon* nc, double** pw) {
     *pw = nc->weight_;
     return nc->cnt_;
 }
-extern "C" double nrn_event_queue_stats(double* stats) {
+double nrn_event_queue_stats(double* stats) {
 #if COLLECT_TQueue_STATISTICS
     net_cvode_instance_event_queue(nrn_threads)->spike_stat(stats);
     return (stats[0] - stats[2]);
@@ -2408,7 +2405,7 @@ void NetCvode::remove_event(TQItem* q, int tid) {
 
 // for threads, revised net_send to use absolute time (in the
 // mod file we add the thread time when we call it).
-extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
+void nrn_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     STATISTICS(SelfEvent::selfevent_send_);
     NrnThread* nt = PP2NT(pnt);
     NetCvodeThreadData& p = net_cvode_instance->p[nt->id];
@@ -2443,11 +2440,7 @@ extern "C" void net_send(void** v, double* weight, Point_process* pnt, double td
     // printf("net_send %g %s %g %p\n", td, hoc_object_name(pnt->ob), flag, *v);
 }
 
-extern "C" void artcell_net_send(void** v,
-                                 double* weight,
-                                 Point_process* pnt,
-                                 double td,
-                                 double flag) {
+void artcell_net_send(void** v, double* weight, Point_process* pnt, double td, double flag) {
     if (nrn_use_selfqueue_ && flag == 1.0) {
         STATISTICS(SelfEvent::selfevent_send_);
         NrnThread* nt = PP2NT(pnt);
@@ -2480,6 +2473,15 @@ extern "C" void artcell_net_send(void** v,
     } else {
         net_send(v, weight, pnt, td, flag);
     }
+}
+
+// Deprecated overloads for backwards compatibility
+void artcell_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    artcell_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
+}
+
+void nrn_net_send(void** v, double* weight, void* pnt, double td, double flag) {
+    nrn_net_send(v, weight, static_cast<Point_process*>(pnt), td, flag);
 }
 
 extern "C" void net_event(Point_process* pnt, double time) {
@@ -4233,7 +4235,7 @@ void NetCvode::fornetcon_prepare() {
     delete[] t2i;
 }
 
-extern "C" int _nrn_netcon_args(void* v, double*** argslist) {
+int _nrn_netcon_args(void* v, double*** argslist) {
     ForNetConsInfo* fnc = (ForNetConsInfo*) v;
     assert(fnc);
     *argslist = fnc->argslist;

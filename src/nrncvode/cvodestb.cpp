@@ -3,6 +3,7 @@
 
 #include <InterViews/resource.h>
 #include "classreg.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
 #if USECVODE
@@ -12,7 +13,6 @@
 class Cvode;
 #endif
 
-extern "C" void cvode_fadvance(double);
 void cvode_finitialize(double t0);
 void nrncvode_set_t(double);
 extern "C" bool at_time(NrnThread*, double);
@@ -21,7 +21,6 @@ extern double dt, t;
 #define nt_t  nrn_threads->_t
 #define nt_dt nrn_threads->_dt
 extern "C" void nrn_random_play();
-extern int cvode_active_;
 extern int nrn_use_daspk_;
 
 NetCvode* net_cvode_instance;
@@ -98,7 +97,7 @@ void nrn_solver_prepare() {
 
 extern "C" int v_structure_change;
 
-extern "C" void cvode_fadvance(double tstop) {  // tstop = -1 means single step
+void cvode_fadvance(double tstop) {  // tstop = -1 means single step
 #if USECVODE
     int err;
     extern int tree_changed;
