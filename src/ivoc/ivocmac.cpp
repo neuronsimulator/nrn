@@ -1,10 +1,6 @@
 #include <../../nrnconf.h>
 
-#if defined(carbon)
-#include <Carbon/Carbon.h>
-#else
 #include <CodeFragments.h>
-#endif
 
 
 #include <stdio.h>
@@ -23,11 +19,9 @@
 typedef void (*NrnBBSCallback)(const char*);
 
 
-#if !defined(carbon)
 char* mktemp(char*) {
     return NULL;
 }
-#endif
 
 bool nrnbbs_connect() {
     return false;
@@ -61,12 +55,9 @@ void nrnbbs_notify(const char*, NrnBBSCallback) {}
 
 void nrnbbs_wait(bool* pflag = (bool*) 0) {}
 
-#if !carbon
 bool is_mac_dll(FSSpec*);
 bool mac_open_dll(const char*, FSSpec*);
-#endif
 
-#if !carbon
 bool is_mac_dll(FSSpec* fs) {
     FInfo finfo;
     FSpGetFInfo(fs, &finfo);
@@ -161,7 +152,6 @@ void hoc_nrn_load_dll() {
     int b = mac_load_dll(expand_env_var(gargstr(1)));
     ret((double) b);
 }
-#endif  //! carbon
 
 void pwmimpl_redraw(Window* w) {
     w->rep()->MACpaint();
@@ -185,21 +175,12 @@ void PrintableWindow::hide() {
 }
 
 void PrintableWindow::xmove(int x, int y) {
-#if carbon
-    MoveWindowStructure(Window::rep()->macWindow(), x, y);
-#else
     WindowPtr theWin = Window::rep()->macWindow();
     MoveWindow(theWin, (x + 1), (y + 17), true);
-#endif
 }
 int PrintableWindow::xleft() const {
     WindowRep& w = *Window::rep();
     if (w.bound()) {
-#if carbon
-        Rect r;
-        GetWindowBounds(w.macWindow(), kWindowStructureRgn, &r);
-        return r.left;
-#else
         GrafPtr oldPort;
         GetPort(&oldPort);
         WindowPtr theWin = w.macWindow();
@@ -210,7 +191,6 @@ int PrintableWindow::xleft() const {
         LocalToGlobal(&upperLeft);
         SetPort(oldPort);
         return upperLeft.h - 1;
-#endif
     } else {
         return 0;
     }
@@ -218,11 +198,6 @@ int PrintableWindow::xleft() const {
 int PrintableWindow::xtop() const {
     WindowRep& w = *Window::rep();
     if (w.bound()) {
-#if carbon
-        Rect r;
-        GetWindowBounds(w.macWindow(), kWindowStructureRgn, &r);
-        return r.top;
-#else
         GrafPtr oldPort;
         GetPort(&oldPort);
         WindowPtr theWin = w.macWindow();
@@ -233,7 +208,6 @@ int PrintableWindow::xtop() const {
         LocalToGlobal(&upperLeft);
         SetPort(oldPort);
         return upperLeft.v - 17;
-#endif
     } else {
         return 0;
     }
@@ -246,13 +220,8 @@ void PrintableWindow::xplace(int x, int y) {
         xmove(x, y);
     } else {
         xplace_ = true;
-#if carbon
-        xleft_ = x;
-        xtop_ = y;
-#else
         xleft_ = x + 1;
         xtop_ = y + 17;
-#endif
     }
 }
 void PrintableWindow::default_geometry() {
@@ -272,11 +241,7 @@ void Rubberband::rubber_on(Canvas* c) {
     //	c->front_buffer();
     GetGWorld(&cg_, &gd_);
     WindowPtr mw = c->window()->rep()->macWindow();
-#if carbon
-    SetGWorld(GetWindowPort(mw), GetMainDevice());
-#else
     SetGWorld((CGrafPort*) mw, GetMainDevice());
-#endif
 }
 void Rubberband::rubber_off(Canvas* c) {
     //	c->back_buffer();
@@ -288,7 +253,6 @@ void Rubberband::rubber_off(Canvas* c) {
     //	printf("Rubberband::rubber_off\n");
 }
 
-#if !defined(carbon)
 IOHandler::IOHandler() {}
 IOHandler::~IOHandler() {}
 int IOHandler::inputReady(int) {
@@ -302,4 +266,3 @@ int IOHandler::exceptionRaised(int) {
 }
 void IOHandler::timerExpired(long, long) {}
 void IOHandler::childStatus(pid_t, int) {}
-#endif
