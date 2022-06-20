@@ -140,6 +140,9 @@ endforeach()
 # =============================================================================
 if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   set(pytest -m pytest)
+  if(PYTEST_FORKED_FOUND)
+    list(APPEND pytest --forked -s)
+  endif()
   if(NRN_SANITIZERS)
     # We configure the santiziers to abort on errors, which can lead to unhelpful output from
     # pytest. Passing -s means the sanitizer output will be visible in the log.
