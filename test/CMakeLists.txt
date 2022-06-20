@@ -153,6 +153,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   nrn_add_test(
     GROUP pynrn
     NAME basic_tests
+    CORENEURON
     PRELOAD_SANITIZER
     COMMAND COVERAGE_FILE=.coverage.basic_tests ${PYTHON_EXECUTABLE} ${pytest} ./test/pynrn
     SCRIPT_PATTERNS test/pynrn/*.py)
