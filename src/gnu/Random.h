@@ -28,6 +28,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 
 #include <RNG.h>
+#include <RNG_random123.h>
 
 class Random {
 protected:
@@ -53,6 +54,34 @@ inline RNG *Random::generator()
 }
 
 inline void Random::generator(RNG *p)
+{
+    pGenerator = p;
+}
+
+class Random_random123 {
+protected:
+    RNG_random123 *pGenerator;
+public:
+    Random_random123(RNG_random123 *generator);
+    virtual ~Random_random123() {}
+    virtual double operator()() = 0;
+
+    RNG_random123 *generator();
+    void generator(RNG_random123 *p);
+};
+
+
+inline Random_random123::Random_random123(RNG_random123 *gen)
+{
+    pGenerator = gen;
+}
+
+inline RNG_random123 *Random_random123::generator()
+{
+    return(pGenerator);
+}
+
+inline void Random_random123::generator(RNG_random123 *p)
 {
     pGenerator = p;
 }

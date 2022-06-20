@@ -450,6 +450,7 @@ set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
+    Binomial_random123.cpp
     DiscUnif.cpp
     Erlang.cpp
     Geom.cpp
@@ -460,6 +461,7 @@ set(NRNGNU_FILES_LIST
     Normal.cpp
     Poisson.cpp
     RNG.cpp
+    RNG_random123.cpp
     Random.cpp
     RndInt.cpp
     Uniform.cpp

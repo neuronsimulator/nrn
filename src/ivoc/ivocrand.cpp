@@ -17,6 +17,7 @@
 #include <nrnran123.h>
 
 #include <RNG.h>
+#include <RNG_random123.h>
 #include <ACG.h>
 #include <MLCG.h>
 #include <Random.h>
@@ -24,6 +25,7 @@
 #include <Normal.h>
 #include <Uniform.h>
 #include <Binomial.h>
+#include <Binomial_random123.h>
 #include <DiscUnif.h>
 #include <Erlang.h>
 #include <Geom.h>
@@ -529,6 +531,14 @@ static double r_binomial(void* r) {
     return (*(x->rand))();
 }
 
+static double r_binomial_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    int a1 = int(chkarg(1, 0, 1e99));
+    double a2 = chkarg(2, 0, 1);
+    delete x->rand;
+    x->rand = new Binomial_random123(a1, a2, x->gen);
+    return (*(x->rand))();
+}
 
 // discrete geometric distribution
 // Given 0<=mean<=1, returns the number of uniform random samples
@@ -625,6 +635,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"normal", r_normal},
                                   {"lognormal", r_lognormal},
                                   {"binomial", r_binomial},
+                                  {"binomial_random123", r_binomial_random123},
                                   {"poisson", r_poisson},
                                   {"geometric", r_geometric},
                                   {"hypergeo", r_hypergeo},
