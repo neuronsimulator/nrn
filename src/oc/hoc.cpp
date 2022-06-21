@@ -1080,7 +1080,7 @@ void inputReadyThread() {
         inputReadyFlag_ = 1;
         inputReadyVal_ = i;
         stdin_event_ready();
-        inputCond_.wait(inputMutex_);
+        inputCond_.wait(lock);
     }
     printf("inputReadyThread done\n");
 }
@@ -1612,7 +1612,6 @@ extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
     if (!inputReady_) {
         stdin_event_ready(); /* store main thread id */
-        inputCond_ = std::make_unique<std::condition_variable>();
         inputReady_ = new std::thread{inputReadyThread};
     } else {
         inputMutex_.unlock();
