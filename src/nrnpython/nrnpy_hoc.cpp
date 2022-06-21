@@ -11,6 +11,8 @@
 #include "nrnpy_utils.h"
 #include "../nrniv/shapeplt.h"
 #include <vector>
+#include <unordered_map>
+
 #include "nrnwrap_dlfcn.h"
 
 #if defined(NRNPYTHON_DYNAMICLOAD) && NRNPYTHON_DYNAMICLOAD > 0
@@ -997,14 +999,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         return NULL;
     }
 
-    // TODO: this better
-    if (strcmp(n, "Vector") == 0 && self->type_ == PyHoc::HocTopLevelInterpreter) {
-        //printf("inside vector case\n");
+    Symbol* sym = getsym(n, self->ho_, 0);
+    // Return well known types right away
+    if (sym == hoc_vec_template_->sym) {
         Py_INCREF(vectorobject_type);
         return (PyObject*) vectorobject_type;
     }
 
-    Symbol* sym = getsym(n, self->ho_, 0);
     if (!sym) {
         if (self->type_ == PyHoc::HocObject && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
             PyObject* p = nrnpy_hoc2pyobject(self->ho_);
@@ -1283,14 +1284,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             result = (PyObject*) intermediate(self, sym, -1);
         }
         break;
-    case TEMPLATE:
-        printf("template stuff\n");
     case PROCEDURE:
     case FUNCTION:
     case FUN_BLTIN:
     case BLTIN:
     case HOCOBJFUNCTION:
     case STRINGFUNC:
+    case TEMPLATE:
     case OBJECTFUNC: {
         result = hocobj_new(hocobject_type, 0, 0);
         PyHocObject* po = (PyHocObject*) result;
