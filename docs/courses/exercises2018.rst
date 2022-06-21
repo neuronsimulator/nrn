@@ -67,17 +67,17 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`multithread_parallelization`
     
 16.
-    Networks: discrete event simulations with artificial cells
+    :ref:`Networks: discrete event simulations with artificial cells <intro_to_the_network_builder>`
 
         * Introduction to the Network Builder
     
 17.
-    Networks: continuous simulation of nets with biophysical model cells
+    :ref:`Networks: continuous simulation of nets with biophysical model cells <network_ready_cells_from_the_cellbuilder>`
 
         * Network ready cells from the CellBuilder
     
 18.
-    Hopfield-Brody network in Python
+    :ref:`Hopfield-Brody network in Python <hopfield_brody_network_in_python>`
     
 19.
     MPI Parallelization
@@ -106,6 +106,10 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     introduction_to_the_linear_circuit.rst
     state_and_parameter_discontinuities.rst
     multithread_parallelization.rst
+    intro_to_the_network_builder.rst
+    network_ready_cells_from_the_cellb.rst
+    hopfield_brody_network_in_python.rst
     using_nsg_portal.rst
     numerical-methods-exercises.rst
     electrotonic_analysis.rst
+    

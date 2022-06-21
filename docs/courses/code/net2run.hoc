@@ -1,0 +1,8 @@
+load_file("nrngui.hoc")
+load_file("$(NEURONHOME)/../course/net2/net2run.ses")
+cvode_active(1)
+object_push(NetGUI[0])
+wman = new NetEdgeGUI(net, 0)
+object_pop()
+run()
+

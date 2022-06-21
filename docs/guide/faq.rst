@@ -158,10 +158,98 @@ What's a good stretegy for specifying nseg?
 
 Probably the easiest and most efficient way is to use what we call the d_lambda rule, which means "set nseg to a value that is a small fraction of the AC length constant at a high frequency."
 
-:download:`Get a copy of "NEURON: a Tool for Neuroscientists" <neurontoolforneuroscientists.pdf>`, which explains how it works.
+:download:`Get a copy of "NEURON: a Tool for Neuroscientists" <data/neurontoolforneuroscientists.pdf>`, which explains how it works.
 
-Read :ref:`how to use the d_lambda rule with your own models<using_the_d_lambda_rule>`.
+Read :ref:`how to use the d_lambda rule with your own models <using_the_d_lambda_rule>`.
 
+How do I change the background color used in NEURON's shape plots and other graphs?
+-----------------
+
+Edit the :ref:`nrn.defaults <nrn_defaults>` file
+
+How do I change the color scale used in shape plots?
+--------------------------
+
+:ref:`Create a file that specifies the desired RGB values. <nrn_defaults>`
+
+I see an error message that says ... procedure too bi in ./foo.hoc ...
+----------------
+
+There is an upper limit on the size of a procedure that the hoc parser can handle. The workaround is simple. 
+
+Instead of having a single giant procedure, break it into several smaller procedures, and then call these procedures one after another. For example, suppose your procedure is 
+
+.. code::
+    Python
+
+    proc buildcell() {
+   ... lots of hoc statements ...
+   }
+
+just chop it into smaller chunks like this
+
+.. code::
+    Python
+
+    proc buildcell_1() {
+   ... some hoc statements ...
+   }
+   proc buildcell_2() {
+   ... some more hoc statements ...
+   }
+   ... etc ...
+
+then execute them with
+
+.. code::
+    Python
+
+    buildcell_1()
+   buildcell_2()
+   ...
+
+How big can a procedure be? I've never tried to find out. Try cutting your big procedure in half and see if that works. If it doesn't, cut the pieces in half and try again. Eventually you'll find a size that works.
+
+Where can I find examples of mod files?
+-----------------
+
+See the NMODL tops on :ref:`the "getting started" page. <how_to_get_started_with_neuron>` 
+
+How do I compile mod files?
+----------------
+
+Depends on whether you're running NEURON under :ref:`MSWindows <compiling_new_mechanisms_under_mswindows>`, :ref:`UNIX/Linux <compiling_new_mechanisms_under_unix_linux>`, OS X, or :ref:`MacOS <compiling_new_mechanisms_under_macos>`. Whichever you use, it's a good idea to keep related mod files in the same directory as the hoc files that need them.
+
+I can't get mod files to compile.
+-------------------
+
+Go to `The NEURON Forum <https://www.neuron.yale.edu/phpBB/index.php>`_ and check out the "NEURON installation and configuration" discussions for your particular operating system (OS X, MSWin, UNIX/Linux). For OS X and UNIX/Linux this problem often means that the software development environment (compilers and associated libraries) is missing or incomplete.
+
+I installed a new version of NEURON, and now I see error messages like this: 'mecanisms fooba needs to be re-translated. its version 5.2 "c" code is incompatible with this neuron version'.
+------------------
+
+Compiling NMODL files produces several "intermediate files" whose names end in .o and .c . This error message means that you have some old intermediate files that were produced under the earlier version of NEURON. So just delete all the .o and .c files, then run nrnivmodl (or mknrndll), and the problem should disappear.
+
+Is there a list of functions that are built into NMODL?
+--------------------
+
+:ref:`Look here. <nmodls_built_in_functions>`
+
+Is there a list of functions that are built into hoc?
+---------------
+
+You'll find them in the `Programmer's Reference <https://nrn.readthedocs.io/en/latest/python/index.html>`_. Also see chapter 11. :ref:`Interpreter - General in the old "Reference Manual." <hoc_chapter_11_old_reference>`
+
+What units does NEURON use for current, concentration, etc.?
+--------------
+
+If you're using the GUI, you've probably noticed that buttons next to numeric fields generally indicate the units, such as (mV), (nA), (ms) for millivolt, nanoamp, or millisecond.
+
+`Here's a chart of the units that NEURON uses by default. <https://nrn.readthedocs.io/en/latest/guide/units.html?highlight=units>`_
+
+If you're writing your own mod files, you can specify what units will be used. For example, you may prefer to work with micromolar or nanomolar concentrations when dealing with intracellular free calcium or other second messengers. You can also define new units. :ref:`See this tutorial <units_tutorial>` to get a better understanding of units in NMODL.
+
+For the terminally curious, here is a copy of the :download:`units.dat <data/units.dat.txt>` file that accompanies one of the popular Linux distributions. Presumably mod file variables should be able to use any of its entries.
 
 What units does NEURON use for current, concentration, etc?
 -----------------------------------------------------------
@@ -169,6 +257,98 @@ What units does NEURON use for current, concentration, etc?
 If you're using the GUI, you've probably noticed that buttons next to numeric fields generally indicate the units, such as (mV), (nA), (ms) for millivolt, nanoamp, or millisecond.
 
 :ref:`Here's a chart of the units that NEURON uses by default <units>` along with information on validating units and defining new units in NMODL.
+
+When I type a new value into a numeric field, it doesn't seem to have any effect.
+--------------------------------
+
+You seem to be using a very old version of NEURON. If you can't update to the most recent version, try this:
+
+After entering a new value, be sure to click on the button next to the numeric field (or press the Return key) so that the bright yellow warning indicator on the button is turned off. While the yellow indicator is showing, the field editor is still in entry mode and its contents have not yet been assigned to the proper variable in memory.
+
+What is the difference between SEClamp and VClamp, and which should I use?
+----------------------------
+
+SEClamp is just an ideal voltage source in series with a resistance (Single Electrode Clamp), while VClamp is a model of a two electrode voltage clamp with this equivalent circuit:
+
+.. code::
+    python
+
+                   tau2
+                   gain
+                  +-|\____rstim____>to cell
+  -amp --'\/`-------|/
+                  |
+                  |----||---
+                  |___    __|-----/|___from cell
+                      `'`'        \|
+                      tau1 
+
+
+If the purpose of your model is to study the properties of a cell, use SEClamp. If the purpose is to study how instrumentation artefacts affect voltage clamp data, use VClamp. 
+
+SEClamp and IClamp just deliver rectangular step waveforms. How can I make them produce an arbitrary waveform, e.g. something that I calculated or recorded from a real cell?
+-----------------------
+
+The Vector class's play method can be used to drive any variable with a sequence of values stored in a Vector. For example, you can play a Vector into an IClamp's amp, an SEClamp's amp1, an SEClamp's series resistance rs (e.g. if you have an experimentally measured synaptic conductance time course). To learn how to do this, get :download:`data/vecplay.hoc`, which contains an exercise from one of our 5-day hands-on NEURON courses. Unzip it in an empty directory. This creates a subdirectory called vectorplay, where you will find a file called arbforc.html
+
+Open this file with your browser and start the exercise.
+
+I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.
+---------------
+
+Right you are. Pick up pulsedistrib.zip, and unzip it into an empty directory. This creates a subdirectory called pulsedistrib, which contains ``Ipulse1.mod``, ``Ipulse2.mod``, ``readme.txt``, and ``test_1_and_2.hoc``. Read ``readme.txt``, compile the mod files, and then use NEURON to load ``test_1_and_2.hoc``, which is a simple demo of these two current pulse generators.
+
+pulsedistrib also contains ``ipulse3.mod``, ``ipulse3rig.ses``, and ``test_3.hoc``, which address the next question in this list.
+
+I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.
+-----------------------
+
+Then get pulsedistrib.zip, and unzip it. Inside the pulsedistrib subdirectory you'll find ``ipulse3.mod``, ``ipulse3rig.ses``, and ``test_3.hoc`` (and some other files that pertain to the previous question). ``ipulse3.mod`` contains the NMODL code for a current clamp that produces a current pulse when it receives an input event. ``test_3.hoc`` is a simple demo of the Ipulse3 mechanism, and ``ipulse3rig.ses`` is used by ``test_3.hoc`` to create the GUI for a demo of Ipulse3. It uses a NetStim to generate the events that drive the Ipulse3. If you want to drive an Ipulse3 with recorded or precomputed event times, use the VecStim class as described under the topic `Driving a synapse with recorded or precomputed spike events <https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=2117>`_ in the "Hot tips" area of the `NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_.
+
+I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?
+------------------------
+
+Assuming that your synaptic mechanism has a NET_RECEIVE block, so that it is driven by events delivered by a NetCon, I can think of two ways this might be done. Which one to use depends on how many calculated spike times you are dealing with.
+
+If you only have a "few" spikes (up to a few dozen), you could just dump them into the spike queue at the onset of the simulation. Here's how: 
+
+1.
+    Create a Vector and load it with the times at which you want to activate the synaptic mechanism.
+
+2.
+    Then use an :ref:`FIinitializeHandler <finitialize_handler>` that stuffs the spike times into the NetCon's event queue by calling the `NetCon class's event() method <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html?highlight=netcon>`_ during initialization.
+
+    For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:
+
+For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:
+
+.. code::
+    python
+
+    objref fih
+    fih = new FInitializeHandler("loadqueue()")
+    proc loadqueue() { local ii
+        for ii=0,syntimes.size()-1 nc.event(syntimes.x[ii])
+    }
+
+Don't forget that these are treated as *delivery* times, i.e. the NetCon's delay will have no effect on the times of synaptic activation. If additional conduction latency is needed, you will have to incorporate it by adding the extra time to the elements of syntimes before the FInitializeHandler is called. 
+
+If you have a lot of spikes then it's best to use an NMODL-defined artificial spiking cell that generates spike events at times that are stored in a Vector (which you fill with data before the simulation). For more information see `Driving a synapse with recorded or precomputed spike events <https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=2117>`_ in the "Hot tips" area of the `NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_.
+
+How can I read data from a binary PClamp file?
+--------------------
+
+clampex.zip contains a mod file that defines an object class (ClampExData) whose methods can read PClamp binary files — or at least it could several years ago - plus a sample data file and a hoc file to illustrate usage. If ClampExData doesn't work with the most recent PClamp file formats, at least ``clampex.mod`` is a starting point that you can modify as needed.
+
+How do I exit NEURON? I'm not using the GUI, and when I enter ^D at the oc> prompt it doesn't do anything?
+-----------------------------
+
+You seem to be using an older MSWin or MacOS version of NEURON (why not get the most recent version?). Typing the command
+
+quit()
+
+at the oc> prompt works for all versions, new or old, under all OSes. Don't forget the parentheses, because quit() is a function. Oh, and you need to press the Enter or Return key too.
+
 
 Is there a list of functions that are built into NEURON?
 --------------------------------------------------------
@@ -185,4 +365,12 @@ For functions available when defining ion channel mechanisms etc with NMODL, see
     working_with_postscript_and_idraw.rst
     using_session_files_for_saving.rst
     using_the_d_lambda_rule.rst
+    nrn_defaults
+    how_to_get_started_with_neuron.rst
+    compiling_new_mechanisms_under_msw.rst
+    compiling_new_mechanisms_under_unix.rst
+    compiling_new_mechanisms_under_macos.rst
+    nmodls_built_in_functions.rst
+    units_tutorial.rst
+    finitialize_handler.rst
 
