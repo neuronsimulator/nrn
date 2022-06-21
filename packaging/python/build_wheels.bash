@@ -75,7 +75,7 @@ build_wheel_linux() {
     echo " - Installing build requirements"
     #auditwheel needs to be installed with python3
     # see upstream WIP PR https://github.com/pypa/auditwheel/pull/368
-    pip install git+https://github.com/neuronsimulator/auditwheel.git@exclude_so_files
+    pip install git+https://github.com/neuronsimulator/auditwheel.git@exclude_so_files_patch
     pip install -r packaging/python/build_requirements.txt
     pip_numpy_install
 
