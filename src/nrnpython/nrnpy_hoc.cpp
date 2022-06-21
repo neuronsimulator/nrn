@@ -3097,6 +3097,7 @@ static char* nrncore_arg(double tstop) {
 
 PyObject* nrnpy_hoc() {
     PyObject* m;
+    PyObject* bases;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
@@ -3128,7 +3129,10 @@ PyObject* nrnpy_hoc() {
         goto fail;
     Py_INCREF(hocobject_type);
     //printf("defining vectorobject_type\n");
-    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&nrnpy_HocObjectType_spec, NULL);//(PyObject*) hocobject_type);
+    bases = PyTuple_Pack(1, hocobject_type);
+    Py_INCREF(bases);
+    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&nrnpy_HocObjectType_spec, bases);
+    Py_DECREF(bases);
     if (PyType_Ready(vectorobject_type) < 0)
         goto fail;
     Py_INCREF(vectorobject_type);
