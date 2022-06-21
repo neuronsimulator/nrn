@@ -42,6 +42,7 @@ the handling of v_structure_change as long as possible.
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #define CACHELINE_ALLOC(name, type, size) \
