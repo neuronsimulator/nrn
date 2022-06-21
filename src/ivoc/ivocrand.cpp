@@ -32,6 +32,7 @@
 #include <DiscUnif.h>
 #include <DiscUnif_random123.h>
 #include <Erlang.h>
+#include <Erlang_random123.h>
 #include <Geom.h>
 #include <LogNorm.h>
 #include <NegExp.h>
@@ -652,6 +653,15 @@ static double r_erlang(void* r) {
     return (*(x->rand))();
 }
 
+static double r_erlang_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    double a2 = *getarg(2);
+    delete x->rand;
+    x->rand = new Erlang_random123(a1, a2, x->gen);
+    return (*(x->rand))();
+}
+
 
 // Weibull distribution
 // syntax:
@@ -711,6 +721,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"hypergeo", r_hypergeo},
                                   {"negexp", r_negexp},
                                   {"erlang", r_erlang},
+                                  {"erlang_random123", r_erlang_random123},
                                   {"weibull", r_weibull},
                                   {"weibull_random123", r_weibull_random123},
                                   {"play", r_play},

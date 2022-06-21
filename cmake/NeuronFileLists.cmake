@@ -454,6 +454,7 @@ set(NRNGNU_FILES_LIST
     DiscUnif.cpp
     DiscUnif_random123.cpp
     Erlang.cpp
+    Erlang_random123.cpp
     Geom.cpp
     HypGeom.cpp
     LogNorm.cpp
