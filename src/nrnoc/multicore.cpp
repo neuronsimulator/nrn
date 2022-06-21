@@ -264,9 +264,7 @@ static void wait_for_workers() {
             }
         } else {
             std::unique_lock<std::mutex> lock{mut[i]};
-            while (wc[i].flag != 0) {
-                cond[i].wait(lock);
-            }
+            cond[i].wait(lock, [&wc_i = wc[i]] { return wc_i.flag == 0; });
         }
     }
 }
@@ -330,9 +328,7 @@ static void slave_main(slave_conf_t* my_wc) {
         } else {
             {
                 std::unique_lock<std::mutex> lock{my_mut};
-                while (my_wc->flag == 0) {
-                    my_cond.wait(lock);
-                }
+                my_cond.wait(lock, [my_wc] { return my_wc->flag != 0; });
             }
             my_mut.lock();
             if (my_wc->flag == 1) {
