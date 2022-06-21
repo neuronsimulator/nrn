@@ -103,6 +103,9 @@ static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
 
+static std::vector<const char*> class_name_list;
+static std::unordered_map<Symbol*, PyTypeObject*> sym_to_type_map;
+
 // typestr returned by Vector.__array_interface__
 // byteorder (first element) is modified at import time
 // to reflect the system byteorder
@@ -162,6 +165,11 @@ PyTypeObject* hocobject_type;
 PyTypeObject* vectorobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
+
+void nrnpy_register_class(const char* name) {
+    class_name_list.push_back(name);
+    printf("declared %s\n", name);
+}
 
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
     const char* cmd;
@@ -3136,6 +3144,7 @@ static PyType_Spec obj_spec_from_name(const char* name) {
 PyObject* nrnpy_hoc() {
     PyObject* m;
     PyObject* bases;
+    PyTypeObject* pto;
     PyType_Spec spec;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
@@ -3168,20 +3177,30 @@ PyObject* nrnpy_hoc() {
     if (PyType_Ready(hocobject_type) < 0)
         goto fail;
     Py_INCREF(hocobject_type);
+    PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
+
+    printf("constructing type objects\n");
     //printf("defining vectorobject_type\n");
-    spec = obj_spec_from_name("hoc.Vector");
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
-    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+    for (auto name: class_name_list) {
+        // TODO: obj_spec_from_name needs a hoc. prepended
+        auto long_name = std::string("hoc.") + name;
+        spec = obj_spec_from_name(long_name.c_str());
+        pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
+        sym_to_type_map[hoc_lookup(name)] = pto;
+        if (PyType_Ready(pto) < 0)
+            goto fail;
+        Py_INCREF(pto);
+        PyModule_AddObject(m, name, (PyObject*) pto);
+    }
     Py_DECREF(bases);
-    if (PyType_Ready(vectorobject_type) < 0)
-        goto fail;
-    Py_INCREF(vectorobject_type);
+
+    vectorobject_type = sym_to_type_map[hoc_lookup("Vector")];
+
     //printf("done\n");
     // printf("AddObject HocObject\n");
-    PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
     //printf("registering Vector\n");
-    PyModule_AddObject(m, "Vector", (PyObject*) vectorobject_type);
     //printf("done\n");
     
     topmethdict = PyDict_New();

@@ -30,6 +30,7 @@ Symbol* nrnpy_pyobj_sym_;
 void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
 void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
+extern void nrnpy_register_class(const char* name);
 #endif
 
 #if CABLE
@@ -1611,6 +1612,9 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
+    #if USE_PYTHON
+    nrnpy_register_class(name);
+    #endif
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);
