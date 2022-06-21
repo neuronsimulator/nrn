@@ -69,7 +69,7 @@ class Chk:
             assert match
         else:
             print("{} added {}".format(self, key))
-            if type(value) == type(h.Vector):  # actually hoc.HocObject
+            if isinstance(value, hoc.Vector):
                 self.d[key] = value.to_python()
             else:
                 self.d[key] = value
