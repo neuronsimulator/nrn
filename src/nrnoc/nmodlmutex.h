@@ -6,17 +6,17 @@
 namespace nrn {
 extern std::unique_ptr<std::mutex> nmodlmutex;
 }
-#define _NMODLMUTEXLOCK                      \
-    {                                        \
-        if (nrn::nmodlmutex) {                   \
+#define _NMODLMUTEXLOCK              \
+    {                                \
+        if (nrn::nmodlmutex) {       \
             nrn::nmodlmutex->lock(); \
-        }                                    \
+        }                            \
     }
-#define _NMODLMUTEXUNLOCK                      \
-    {                                          \
-        if (nrn::nmodlmutex) {                     \
+#define _NMODLMUTEXUNLOCK              \
+    {                                  \
+        if (nrn::nmodlmutex) {         \
             nrn::nmodlmutex->unlock(); \
-        }                                      \
+        }                              \
     }
 #else
 #define _NMODLMUTEXLOCK   /**/

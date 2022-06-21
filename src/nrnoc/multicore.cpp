@@ -241,12 +241,6 @@ extern "C" void nrn_malloc_unlock() {
     }
 }
 
-/* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
-/* when 0, create/join instead of wait on condition. */
-#ifndef PERMANENT
-#define PERMANENT 1
-#endif
-
 // TODO check this doesn't need to be volatile anymore
 struct slave_conf_t {
     int flag;
@@ -256,13 +250,12 @@ struct slave_conf_t {
 };
 
 static std::condition_variable* cond;
-static std::mutex *mut{};
+static std::mutex* mut{};
 static std::vector<std::thread> slave_threads;
 static slave_conf_t* wc;
 
 static void wait_for_workers() {
     for (int i = 1; i < nrn_nthread; ++i) {
-#if PERMANENT
         if (busywait_main_) {
             while (wc[i].flag != 0) {
                 ;
@@ -273,9 +266,6 @@ static void wait_for_workers() {
                 cond[i].wait(lock);
             }
         }
-#else
-        pthread_join(slave_threads[i], nullptr);
-#endif
     }
 }
 
@@ -287,16 +277,12 @@ static void wait_for_workers_timeit() {
 }
 
 static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
-#if PERMANENT
     {
         std::lock_guard<std::mutex> _{mut[i]};
         wc[i].job = job;
         wc[i].flag = 1;
     }
     cond[i].notify_one();
-#else
-    pthread_create(slave_threads + i, nullptr, (void* (*) (void*) ) job, (void*) (nrn_threads + i));
-#endif
 }
 
 void setaffinity(int i) {
@@ -311,7 +297,7 @@ void setaffinity(int i) {
 #endif
 }
 
-static void* slave_main(slave_conf_t* my_wc) {
+static void slave_main(slave_conf_t* my_wc) {
     auto& my_mut = mut[my_wc->thread_id];
     auto& my_cond = cond[my_wc->thread_id];
     BENCHDECLARE
@@ -335,7 +321,7 @@ static void* slave_main(slave_conf_t* my_wc) {
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
                 BENCHADD(a2)
             } else {
-                return nullptr;
+                return;
             }
             my_wc->flag = 0;
             my_cond.notify_one();
@@ -354,7 +340,7 @@ static void* slave_main(slave_conf_t* my_wc) {
                 BENCHADD(a2)
             } else {
                 my_mut.unlock();
-                return nullptr;
+                return;
             }
             {
                 std::lock_guard<std::mutex> _{my_mut};
@@ -363,7 +349,7 @@ static void* slave_main(slave_conf_t* my_wc) {
             my_cond.notify_one();
         }
     }
-    return nullptr;
+    return;
 }
 
 static void threads_create_pthread() {
@@ -378,7 +364,6 @@ static void threads_create_pthread() {
 #endif
     setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
-#if PERMANENT
         CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
         // Cannot easily use std::vector because std::condition_variable is not
         // moveable.
@@ -393,9 +378,6 @@ static void threads_create_pthread() {
             wc[i].thread_id = i;
             slave_threads.emplace_back(slave_main, &(wc[i]));
         }
-#else
-        slave_threads = (pthread_t*) emalloc(sizeof(pthread_t) * nrn_nthread);
-#endif /* PERMANENT */
         if (!_interpreter_lock) {
             interpreter_locked = 0;
             _interpreter_lock = std::make_unique<std::mutex>();
@@ -414,7 +396,6 @@ static void threads_create_pthread() {
 
 static void threads_free_pthread() {
     if (!slave_threads.empty()) {
-#if PERMANENT
         wait_for_workers();
         for (int i = 1; i < nrn_nthread; ++i) {
             {
@@ -429,10 +410,6 @@ static void threads_free_pthread() {
         slave_threads.clear();
         free(wc);
         wc = nullptr;
-#else
-        free((char*) slave_threads);
-        slave_threads = (pthread_t*) 0;
-#endif /*PERMANENT*/
     }
     if (_interpreter_lock) {
         _interpreter_lock.reset();
