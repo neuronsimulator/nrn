@@ -99,9 +99,6 @@ static void* nulljob(NrnThread* nt) {
 
 int nrn_inthread_;
 #if USE_PTHREAD
-
-#include <sched.h> /* for sched_setaffinity */
-
 /* abort if using threads and a call to malloc is unprotected */
 #define use_malloc_hook 0
 #if use_malloc_hook
@@ -285,18 +282,6 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
     cond[i].notify_one();
 }
 
-void setaffinity(int i) {
-    int mask;
-    return;
-#if 0
-	cpu_set_t mask;
-	CPU_ZERO(&mask);
-	CPU_SET(i, &mask);
-	mask = (1 << i);
-	sched_setaffinity(0, 4, &mask);
-#endif
-}
-
 static void slave_main(slave_conf_t* my_wc) {
     auto& my_mut = mut[my_wc->thread_id];
     auto& my_cond = cond[my_wc->thread_id];
@@ -309,8 +294,6 @@ static void slave_main(slave_conf_t* my_wc) {
     t_[a1] = t1_[a1];
     t_[a2] = t1_[a2];
 #endif
-    setaffinity(my_wc->thread_id);
-
     for (;;) {
         if (busywait_) {
             while (my_wc->flag == 0) {
@@ -360,7 +343,6 @@ static void threads_create_pthread() {
         return;
     }
 #endif
-    setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
         CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
         // Cannot easily use std::vector because std::condition_variable is not
