@@ -62,7 +62,8 @@ class MyMath {
     static bool le(double x, double y, double e) {
         return x <= (y + e);
     }
-    static bool eq(double x, double y, double e) {
+    template <typename T>
+    static bool eq(T x, T y, T e) {
         return x - y < e && y - x < e;
     }
     static bool eq2(double x, double y, double e) {

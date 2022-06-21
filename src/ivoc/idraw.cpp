@@ -374,12 +374,12 @@ void OcIdraw::poly(int count,
     y1 = MyMath::min(count, y);
     y2 = MyMath::max(count, y);
     float scalex, scaley;
-    if (Math::equal(x1, x2, float(.0001))) {
+    if (MyMath::eq(x1, x2, .0001f)) {
         scalex = 1;
     } else {
         scalex = (x2 - x1) / 10000.;
     }
-    if (Math::equal(y1, y2, float(.0001))) {
+    if (MyMath::eq(y1, y2, .0001f)) {
         scaley = 1;
     } else {
         scaley = (y2 - y1) / 10000.;
@@ -425,12 +425,12 @@ none SetP %I p n\n\
 #endif
 
     float scalex, scaley;
-    if (Math::equal(x1, x2, float(.0001))) {
+    if (MyMath::eq(x1, x2, float(.0001))) {
         scalex = 1;
     } else {
         scalex = (x2 - x1) / 10000;
     }
-    if (Math::equal(y1, y2, float(.0001))) {
+    if (MyMath::eq(y1, y2, float(.0001))) {
         scaley = 1;
     } else {
         scaley = (y2 - y1) / 10000;

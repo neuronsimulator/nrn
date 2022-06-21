@@ -3,8 +3,8 @@
 #include "mymath.h"
 #include "classreg.h"
 #include "oc2iv.h"
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 
 extern int hoc_return_type_code;
 
@@ -115,10 +115,10 @@ float MyMath::max(int count, const float* x) {
 
 bool MyMath::near_line(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2, float epsilon) {
     // printf("near_line %g %g %g %g %g %g %g\n", x,y,x1,y1,x2,y2,epsilon);
-    if (Math::equal(x, x1, epsilon) && Math::equal(y, y1, epsilon)) {
+    if (eq(x, x1, epsilon) && eq(y, y1, epsilon)) {
         return true;
     }
-    if (Math::equal(x1, x2, epsilon) && Math::equal(y1, y2, epsilon)) {
+    if (eq(x1, x2, epsilon) && eq(y1, y2, epsilon)) {
         return false;
     }
     Coord d, norm, norm2, dot;
@@ -332,7 +332,7 @@ double MyMath::round(float& x1, float& x2, int direction, int digits) {
     if (x2 > x1) {
         d = x2 - x1;
     } else {
-        d = Math::abs(x1);
+        d = std::abs(x1);
     }
     double e = pow(10, floor(log10(d)) + 1 - digits);
     switch (direction) {

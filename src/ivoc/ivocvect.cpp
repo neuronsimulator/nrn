@@ -5,11 +5,11 @@
 #endif
 
 //#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ivstream.h>
-#include <math.h>
-#include <errno.h>
+#include <cmath>
+#include <cerrno>
 #include <numeric>
 #include <functional>
 
@@ -1490,7 +1490,7 @@ static double v_contains(void* v) {
     double g = *getarg(1);
     hoc_return_type_code = 2;
     for (int i = 0; i < x->size(); i++) {
-        if (Math::equal(x->elem(i), g, hoc_epsilon))
+        if (equal(x->elem(i), g, hoc_epsilon))
             return 1.;
     }
     return 0.;
@@ -1727,7 +1727,7 @@ static Object** v_where(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (equal(x->elem(i), value, hoc_epsilon)) {
                 //	      y->resize_chunk(++m);
                 //	      y->elem(m-1) = x->elem(i);
                 y->push_back(x->elem(i));
@@ -1735,7 +1735,7 @@ static Object** v_where(void* v) {
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!equal(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(x->elem(i));
             }
         }
@@ -1815,13 +1815,13 @@ static double v_indwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (equal(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!equal(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
