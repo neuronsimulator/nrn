@@ -10,6 +10,9 @@
 #include <nrnwrap_Python.h>
 #include <nrnpython.h>
 
+#include <thread>
+#include <vector>
+
 static void ode_solve(double, double*, double*);
 extern PyTypeObject* hocobject_type;
 extern int structure_change_cnt;
@@ -24,9 +27,13 @@ unsigned char initialized = FALSE;
 */
 extern NrnThread* nrn_threads;
 int NUM_THREADS = 1;
-pthread_t* Threads = NULL;
 TaskQueue* AllTasks = NULL;
-
+namespace nrn {
+namespace rxd {
+std::vector<std::thread> Threads;
+}
+}  // namespace nrn
+using namespace nrn::rxd;
 
 extern double* dt_ptr;
 extern double* t_ptr;
@@ -1066,117 +1073,111 @@ extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, in
 }
 
 void start_threads(const int n) {
-    int i;
-    if (Threads == NULL) {
-        AllTasks = (TaskQueue*) calloc(1, sizeof(TaskQueue));
-        Threads = (pthread_t*) malloc(sizeof(pthread_t) * (n - 1));
-        AllTasks->task_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-        AllTasks->waiting_mutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-        AllTasks->task_cond = (pthread_cond_t*) malloc(sizeof(pthread_cond_t));
-        AllTasks->waiting_cond = (pthread_cond_t*) malloc(sizeof(pthread_cond_t));
-        pthread_mutex_init(AllTasks->task_mutex, NULL);
-        pthread_cond_init(AllTasks->task_cond, NULL);
-        pthread_mutex_init(AllTasks->waiting_mutex, NULL);
-        pthread_cond_init(AllTasks->waiting_cond, NULL);
-        AllTasks->length = 0;
-        for (i = 0; i < n - 1; i++)
-            pthread_create(&Threads[i], NULL, TaskQueue_exe_tasks, AllTasks);
+    if (Threads.empty()) {
+        AllTasks = new TaskQueue{};
+        AllTasks->exit.resize(n - 1, false);
+        Threads.reserve(n - 1);
+        for (int i = 0; i < n - 1; ++i) {
+            Threads.emplace_back(TaskQueue_exe_tasks, i, AllTasks);
+        }
     }
 }
 
 void TaskQueue_add_task(TaskQueue* q, void* (*task)(void*), void* args, void* result) {
-    TaskList* t;
-    t = (TaskList*) malloc(sizeof(TaskList));
+    auto* t = new TaskList{};
     t->task = task;
     t->args = args;
     t->result = result;
-    t->next = NULL;
+    t->next = nullptr;
 
     // Add task to the queue
-    pthread_mutex_lock(q->task_mutex);
-    if (q->first == NULL)  // empty queue
     {
-        q->first = t;
-        q->last = t;
-    } else  // non-empty
-    {
-        q->last->next = t;
-        q->last = t;
+        std::lock_guard<std::mutex> _{q->task_mutex};
+        if (!q->first) {
+            // empty queue
+            q->first = t;
+            q->last = t;
+        } else {
+            // queue not empty
+            q->last->next = t;
+            q->last = t;
+        }
+        {
+            std::lock_guard<std::mutex> _{q->waiting_mutex};
+            ++q->length;
+        }
     }
 
-    pthread_mutex_lock(q->waiting_mutex);
-    q->length++;
-    pthread_mutex_unlock(q->waiting_mutex);
-    pthread_mutex_unlock(q->task_mutex);
-
-    // signal waiting threads
-    pthread_cond_signal(q->task_cond);
+    // signal a waiting thread that there is a new task to pick up
+    q->task_cond.notify_one();
 }
 
-void* TaskQueue_exe_tasks(void* dat) {
-    TaskList* job;
-    TaskQueue* q = (TaskQueue*) dat;
-    /*int id;
-    for(id=0;id<NUM_THREADS;id++)
-    {
-        if (pthread_equal(Threads[id],pthread_self()))
+void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
+    for (;;) {
+        // Wait for a task to be available in the queue, then execute it.
         {
-            break;
+            TaskList* job{};
+            {
+                std::unique_lock<std::mutex> lock{q->task_mutex};
+                // Wait until either for a new task to be received or for this
+                // thread to be told to exit.
+                q->task_cond.wait(lock,
+                                  [q, thread_index] { return q->first || q->exit[thread_index]; });
+                if (q->exit[thread_index]) {
+                    return;
+                }
+                job = q->first;
+                q->first = job->next;
+            }
+            // Execute the task
+            job->result = job->task(job->args);
+            delete job;
+        }
+        // Decrement the list length, if it's now empty then broadcast that to
+        // the master thread, which may be waiting for the queue to be empty.
+        {
+            std::lock_guard<std::mutex> _{q->waiting_mutex};
+            if (--(q->length) == 0) {
+                // Queue is empty. Notify the main thread, which may be blocking
+                // on this condition.
+                // TODO: would notify_one() be enough? Only the main thread
+                // should be blocked here?
+                // TODO: reorganise so the mutex has been freed before we notify.
+                q->waiting_cond.notify_all();
+            }
         }
     }
-    fprintf(stderr,"%i] ready\n",id);
-    */
-    while (1)  // loop until thread is killed
-    {
-        pthread_mutex_lock(q->task_mutex);
-        while (q->first == NULL)  // no tasks
-        {
-            // Wait for new tasks
-            pthread_cond_wait(q->task_cond, q->task_mutex);
-        }
-        // fprintf(stderr,"%i] running\n",id);
-        job = q->first;
-        q->first = job->next;
-        pthread_mutex_unlock(q->task_mutex);
-
-        // execute
-        job->result = job->task(job->args);
-        free(job);
-
-        // fprintf(stderr,"%i] updating\n",id);
-        pthread_mutex_lock(q->waiting_mutex);
-        if (--(q->length) == 0)  // all finished
-        {
-            pthread_cond_broadcast(q->waiting_cond);
-        }
-        pthread_mutex_unlock(q->waiting_mutex);
-        // fprintf(stderr,"%i] done\n",id);
-    }
-
-    return NULL;
 }
 
 
 void set_num_threads(const int n) {
-    int k, old_num = NUM_THREADS;
-    if (Threads == NULL) {
+    int old_num{NUM_THREADS};
+    if (Threads.empty()) {
         start_threads(n);
     } else {
         if (n < old_num) {
-            // Kill some threads
-            for (k = old_num - 1; k >= n; k--) {
-                TaskQueue_sync(AllTasks);
-                pthread_cancel(Threads[k]);
+            // Kill some threads. First, wait until the queue is empty.
+            TaskQueue_sync(AllTasks);
+            // Now signal to the threads that are to be killed that they need to
+            // exit.
+            {
+                std::lock_guard<std::mutex> _{AllTasks->task_mutex};
+                for (int k = old_num - 1; k >= n; k--) {
+                    AllTasks->exit[k] = true;
+                }
             }
-            Threads = (pthread_t*) realloc(Threads, sizeof(pthread_t) * n);
-            assert(Threads);
+            AllTasks->task_cond.notify_all();
+            // Finally, join those threads and destroy the std::thread objects.
+            for (int k = old_num - 1; k >= n; k--) {
+                Threads[k].join();
+            }
+            Threads.resize(n);
         } else if (n > old_num) {
             // Create some threads
-            Threads = (pthread_t*) realloc(Threads, sizeof(pthread_t) * n);
-            assert(Threads);
-
-            for (k = old_num - 1; k < n; k++) {
-                pthread_create(&Threads[k], NULL, TaskQueue_exe_tasks, AllTasks);
+            Threads.reserve(n);
+            for (int k = old_num - 1; k < n; k++) {
+                assert(k == Threads.size());
+                Threads.emplace_back(TaskQueue_exe_tasks, k, AllTasks);
             }
         }
     }
@@ -1186,10 +1187,8 @@ void set_num_threads(const int n) {
 
 void TaskQueue_sync(TaskQueue* q) {
     // Wait till the queue is empty
-    pthread_mutex_lock(q->waiting_mutex);
-    while (q->length > 0)
-        pthread_cond_wait(q->waiting_cond, q->waiting_mutex);
-    pthread_mutex_unlock(q->waiting_mutex);
+    std::unique_lock<std::mutex> lock{q->waiting_mutex};
+    q->waiting_cond.wait(lock, [q] { return q->length == 0; });
 }
 
 int get_num_threads(void) {

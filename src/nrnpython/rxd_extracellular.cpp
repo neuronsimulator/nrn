@@ -18,7 +18,6 @@ static void ecs_refresh_reactions(int);
 ReactGridData* threaded_reactions_tasks;
 
 extern int NUM_THREADS;
-extern pthread_t* Threads;
 extern TaskQueue* AllTasks;
 extern double* t_ptr;
 extern double* states;
