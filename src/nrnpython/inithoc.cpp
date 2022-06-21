@@ -216,7 +216,7 @@ static int have_opt(const char* arg) {
 
 void nrnpython_finalize() {
 #if USE_PTHREAD
-    if(main_thread_ == std::this_thread::get_id()) {
+    if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
 #endif

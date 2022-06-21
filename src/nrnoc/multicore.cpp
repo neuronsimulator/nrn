@@ -1284,54 +1284,11 @@ int nrn_allow_busywait(int b) {
     return old;
 }
 
-#if USE_PTHREAD
-static long waste_;
-static void* waste(void* v) {
-    size_t i, j, n;
-    n = (size_t) v;
-    j = 0;
-    for (i = 0; i < n; ++i) {
-        j += i;
-    }
-    /* hoping it is  not optimized away */
-    waste_ = j;
-    return nullptr;
-}
-
-#define _nt_ 32
-static double trial(int ip) {
-    int i;
-    double t;
-    pthread_t* th;
-    th = (pthread_t*) ecalloc(ip, sizeof(pthread_t));
-    t = nrn_timeus();
-    for (i = 0; i < ip; ++i) {
-        pthread_create(th + i, nullptr, waste, (void*) 100000000);
-    }
-    for (i = 0; i < ip; ++i) {
-        pthread_join(th[i], nullptr);
-    }
-    t = nrn_timeus() - t;
-    free((char*) th);
-    return t;
-}
-#endif
-
 int nrn_how_many_processors() {
 #if USE_PTHREAD
-    int i, ip;
-    double t1, t2;
-    printf("nthread walltime (count to 1e8 on each thread)\n");
-    t1 = trial(1);
-    printf("%4d\t %g\n", 1, t1);
-    for (ip = 2; ip <= _nt_; ip *= 2) {
-        t2 = trial(ip);
-        printf("%4d\t %g\n", ip, t2);
-        if (t2 > 1.3 * t1) {
-            return ip / 2;
-        }
-    }
-    return _nt_;
+    // For machines with hyperthreading this probably returns the number of
+    // logical, not physical, cores.
+    return std::thread::hardware_concurrency();
 #else
     return 1;
 #endif
