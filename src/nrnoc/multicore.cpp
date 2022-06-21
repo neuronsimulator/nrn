@@ -238,9 +238,10 @@ extern "C" void nrn_malloc_unlock() {
     }
 }
 
-// alignas(64) instead of using nrn_cacheline_alloc to allocate an array of
-// these; in C++17 this could be std::hardware_destructive_interference_size
-struct alignas(64) slave_conf_t {
+// With C++17 and alignment-aware allocators we could do something like
+// alignas(std::hardware_destructive_interference_size) here and then use a
+// regular vector.
+struct slave_conf_t {
     int flag{};
     int thread_id{};
     /* for nrn_solve etc.*/
@@ -251,7 +252,7 @@ namespace {
 std::unique_ptr<std::condition_variable[]> cond;
 std::unique_ptr<std::mutex[]> mut;
 std::vector<std::thread> slave_threads;
-std::vector<slave_conf_t> wc;
+slave_conf_t* wc{};
 }  // namespace
 
 static void wait_for_workers() {
@@ -345,6 +346,7 @@ static void threads_create_pthread() {
     }
 #endif
     if (nrn_nthread > 1) {
+        CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
         // Cannot easily use std::vector because std::condition_variable is not
         // moveable.
         cond = std::make_unique<std::condition_variable[]>(nrn_nthread);
@@ -353,7 +355,6 @@ static void threads_create_pthread() {
         slave_threads.reserve(nrn_nthread);
         // slave_threads[0] does not appear to be used
         slave_threads.emplace_back();
-        wc.resize(nrn_nthread);
         for (int i = 1; i < nrn_nthread; ++i) {
             wc[i].flag = 0;
             wc[i].thread_id = i;
@@ -389,7 +390,7 @@ static void threads_free_pthread() {
         cond.reset();
         mut.reset();
         slave_threads.clear();
-        wc.clear();
+        free(std::exchange(wc, nullptr));
     }
     if (_interpreter_lock) {
         _interpreter_lock.reset();
