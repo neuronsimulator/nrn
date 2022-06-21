@@ -6,48 +6,40 @@ RangeVarPlot
 
 
 
-.. class:: RangeVarPlot
+.. class:: h.RangeVarPlot("rangevar" [, start_segment, stop_segment])
+           h.RangeVarPlot(py_callable [, start_segment, stop_segment])
 
-
-    Syntax:
-        ``h.RangeVarPlot("rangevar" [, start_segment, stop_segment])``
+    Class for making a space plot. eg. voltage as function of path between 
+    two points on a cell.  Specification of the start and stop segments is
+    optional, but if one is specified both must be specified.
+    
+    For Interviews plotting, an object of this type needs 
+    to be inserted in a Graph with ``g.addobject(rvp)``. Alternatively, in
+    NEURON 7.7+, the RangeVarPlot's plot method can be used to plot a snapshot
+    of the values on a Graph object, a bokeh plot, a matplotlib plot, or anything
+    with a compatible interface to the last two.
+    By default, the location of the path nearest the root is location 0 
+    (the origin) of the space plot. 
         
-
-        ``h.RangeVarPlot(py_callable [, start_segment, stop_segment])``
-
-
-    Description:
-        Class for making a space plot. eg. voltage as function of path between 
-        two points on a cell.  Specification of the start and stop segments is
-        optional, but if one is specified both must be specified.
+    If the *rangevar* does not exist at certain places in the path it 
+    is assumed to have a value of 0. 
         
-        For Interviews plotting, an object of this type needs 
-        to be inserted in a Graph with ``g.addobject(rvp)``. Alternatively, in
-        NEURON 7.7+, the RangeVarPlot's plot method can be used to plot a snapshot
-        of the values on a Graph object, a bokeh plot, a matplotlib plot, or anything
-        with a compatible interface to the last two.
-        By default, the location of the path nearest the root is location 0 
-        (the origin) of the space plot. 
-         
-        If the *rangevar* does not exist at certain places in the path it 
-        is assumed to have a value of 0. 
-         
-        The first form where *rangevar* is "*v*" or "*m_hh*", etc. is very 
-        efficient since the object can store pointers to the variables 
-        for fast plotting. 
-         
-        The second form is much slower since the expression 
-        must be executed by the interpreter for each point along the path 
-        for each plot.  Execution of the expression is equivalent to 
-        \ ``for sec in h.allsec(): for seg in sec: f(seg.x)``
-        where the expression is the body of f. All section-dependent NEURON
-        functions will default to the correct section for the call; i.e. there is no need
-        to say ``sec=`` unless you want to refer to a section that is not the one
-        whose data is being plotted. The current section may be read via ``h.cas()``.
+    The first form where *rangevar* is "*v*" or "*m_hh*", etc. is very 
+    efficient since the object can store pointers to the variables 
+    for fast plotting. 
+        
+    The second form is much slower since the expression 
+    must be executed by the interpreter for each point along the path 
+    for each plot.  Execution of the expression is equivalent to 
+    \ ``for sec in h.allsec(): for seg in sec: f(seg.x)``
+    where the expression is the body of f. All section-dependent NEURON
+    functions will default to the correct section for the call; i.e. there is no need
+    to say ``sec=`` unless you want to refer to a section that is not the one
+    whose data is being plotted. The current section may be read via ``h.cas()``.
 
-        In NEURON 7.7+, RangeVarPlot's constructor takes optional begin and end arguments.
-        In Python, these would typically be segments, but they can also be normalized position 
-        on a single segment.
+    In NEURON 7.7+, RangeVarPlot's constructor takes optional begin and end arguments.
+    In Python, these would typically be segments, but they can also be normalized position 
+    on a single segment.
 
     .. seealso::
         :func:`distance`, :meth:`Graph.addobject`, :meth:`RangeVarPlot.plot`
@@ -133,19 +125,12 @@ RangeVarPlot
 ----
 
 
-.. method:: RangeVarPlot.plot
+.. method:: RangeVarPlot.plot(graph_object)
+            RangeVarPlot.plot(graph_object, arg1, ..., kwarg1=val1, ...)
 
-
-    Syntax:
-        ``rvp.plot(graph_object)``
-        
-        ``rvp.plot(graph_object, arg1, ..., kwarg1=val1, ...)``
-
-
-    Description:
-        In NEURON 7.7+, RangeVarPlot.plot plots the current state of the path on any of a number of types of graphs,
-        including NEURON Graph objects, matplotlib, bokeh, and anything with a .plot or .line method taking x and y values. 
-        Any additional arguments or keyword arguments are passed to the graph's plotting method. 
+    In NEURON 7.7+, RangeVarPlot.plot plots the current state of the path on any of a number of types of graphs,
+    including NEURON Graph objects, matplotlib, bokeh, and anything with a .plot or .line method taking x and y values. 
+    Any additional arguments or keyword arguments are passed to the graph's plotting method. 
 
     Example: 
         Plotting to a matplotlib axis (instead of pyplot itself), bokeh, and NEURON's Graph objects and passing optional
@@ -190,18 +175,11 @@ RangeVarPlot
 ----
 
 
-.. method:: RangeVarPlot.begin
+.. method:: RangeVarPlot.begin(segment)
+            RangeVarPlot.begin(x, sec=section)
 
-
-    Syntax:
-        ``rvp.begin(segment)``
-        
-        ``rvp.begin(x, sec=section)``
-
-
-    Description:
-        Begins the path for the space plot at the specified segment. Using the first syntax
-        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+    Begins the path for the space plot at the specified segment. Using the first syntax
+    is recommended in later code; the second is another way to specify the segment ``section(x)``.
     
     .. note::
     
@@ -213,18 +191,11 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.end
+.. method:: RangeVarPlot.end(segment)
+            RangeVarPlot.end(x, sec=section)
 
-
-    Syntax:
-        ``rvp.end(segment)``
-        
-        ``rvp.end(x, sec=section)``
-
-
-    Description:
-        Ends the path for the space plot at the specified segment. Using the first syntax
-        is recommended in later code; the second is another way to specify the segment ``section(x)``.
+    Ends the path for the space plot at the specified segment. Using the first syntax
+    is recommended in later code; the second is another way to specify the segment ``section(x)``.
     
     .. note::
     
@@ -237,19 +208,15 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.origin
+.. method:: RangeVarPlot.origin(x, sec=section)
 
 
-    Syntax:
-        ``rvp.origin(x, sec=section)``
-
-
-    Description:
-        Defines the origin (location 0) of the space plot as ``section(x)``.
-        The default is usually 
-        suitable unless you want to have several rangvarplots in one graph 
-        in which case this function is used to arrange all the plots relative 
-        to each other. 
+   
+    Defines the origin (location 0) of the space plot as ``section(x)``.
+    The default is usually 
+    suitable unless you want to have several rangvarplots in one graph 
+    in which case this function is used to arrange all the plots relative 
+    to each other. 
 
          
 
@@ -257,15 +224,9 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.left
+.. method:: RangeVarPlot.left()
 
-
-    Syntax:
-        ``rvp.left()``
-
-
-    Description:
-        returns the coordinate of the beginning of the path. 
+    returns the coordinate of the beginning of the path. 
 
          
 
@@ -273,16 +234,10 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.right
+.. method:: RangeVarPlot.right()
 
-
-    Syntax:
-        ``rvp.right()``
-
-
-    Description:
-        returns the coordinate of the end of the path. The total length 
-        of the path is ``rvp.right() - rvp.left()``. 
+    returns the coordinate of the end of the path. The total length 
+    of the path is ``rvp.right() - rvp.left()``. 
 
          
 
@@ -290,15 +245,10 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.list
+.. method:: RangeVarPlot.list(sectionlist)
 
 
-    Syntax:
-        ``rvp.list(sectionlist)``
-
-
-    Description:
-        append the path of sections to the :class:`SectionList` object argument. 
+    append the path of sections to the :class:`SectionList` object argument. 
          
 
 
@@ -306,16 +256,10 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.color
+.. method:: RangeVarPlot.color(index)
 
-
-    Syntax:
-        ``rvp.color(index)``
-
-
-    Description:
-        Change the color property. To see the change on an already plotted 
-        RangeVarPlot in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
+    Change the color property. To see the change on an already plotted 
+    RangeVarPlot in a Graph, the Graph should be :meth:`~Graph.flush`\ ed. 
 
          
 
@@ -323,15 +267,10 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.vector
+.. method:: RangeVarPlot.vector()
 
-
-    Syntax:
-        ``yvec = rvp.vector()``
-
-    Description:
-        Copy the range variable values to a new :class:`Vector` yvec.
-        (``len(yvec)`` will be equal to the number of range points.)
+    Copy the range variable values to a new :class:`Vector` yvec.
+    (``len(yvec)`` will be equal to the number of range points.)
 
     Note:
         New in NEURON 8.0.
@@ -346,21 +285,14 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.to_vector
+.. method:: RangeVarPlot.to_vector(yvec)
+            RangeVarPlot.to_vector(yvec, xvec)
 
-
-    Syntax:
-        ``rvp.to_vector(yvec)``
-
-        ``rvp.to_vector(yvec, xvec)``
-
-
-    Description:
-        Copy the range variable values to the :func:`Vector` yvec. yvec is resized 
-        to the number of range points. If the second arg is present then 
-        the locations are copied to xvec. A plot of \ ``yvec.line(g, xvec)`` would 
-        be identical to a plot using \ ``g.addobject(rvp)``. Returns the number of
-        range points.
+    Copy the range variable values to the :func:`Vector` yvec. yvec is resized 
+    to the number of range points. If the second arg is present then 
+    the locations are copied to xvec. A plot of \ ``yvec.line(g, xvec)`` would 
+    be identical to a plot using \ ``g.addobject(rvp)``. Returns the number of
+    range points.
 
     .. seealso::
         :meth:`Graph.addobject`
@@ -370,16 +302,10 @@ RangeVarPlot
 
 
 
-.. method:: RangeVarPlot.from_vector
+.. method:: RangeVarPlot.from_vector(yvec)
 
-
-    Syntax:
-        ``rvp.from_vector(yvec)``
-
-
-    Description:
-        Copy the values in yvec to the range variables along the rvp path. 
-        The size of the vector must be consistent with rvp. 
+    Copy the values in yvec to the range variables along the rvp path. 
+    The size of the vector must be consistent with rvp. 
 
          
 
