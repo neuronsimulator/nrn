@@ -249,10 +249,12 @@ struct slave_conf_t {
     void* (*job)(NrnThread*);
 };
 
-static std::condition_variable* cond;
-static std::mutex* mut{};
-static std::vector<std::thread> slave_threads;
-static slave_conf_t* wc;
+namespace {
+std::unique_ptr<std::condition_variable[]> cond;
+std::unique_ptr<std::mutex[]> mut;
+std::vector<std::thread> slave_threads;
+slave_conf_t* wc;
+}  // namespace
 
 static void wait_for_workers() {
     for (int i = 1; i < nrn_nthread; ++i) {
@@ -367,9 +369,9 @@ static void threads_create_pthread() {
         CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
         // Cannot easily use std::vector because std::condition_variable is not
         // moveable.
-        cond = new std::condition_variable[nrn_nthread]{};
+        cond = std::make_unique<std::condition_variable[]>(nrn_nthread);
         // Cannot easily use std::vector because std::mutex is not moveable.
-        mut = new std::mutex[nrn_nthread]{};
+        mut = std::make_unique<std::mutex[]>(nrn_nthread);
         slave_threads.reserve(nrn_nthread);
         // slave_threads[0] does not appear to be used
         slave_threads.emplace_back();
@@ -405,8 +407,8 @@ static void threads_free_pthread() {
             cond[i].notify_one();
             slave_threads[i].join();
         }
-        delete[] cond;
-        delete[] mut;
+        cond.reset();
+        mut.reset();
         slave_threads.clear();
         free(wc);
         wc = nullptr;
