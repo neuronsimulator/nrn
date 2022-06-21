@@ -22,11 +22,11 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #include <Random.h>
 #include <RNG_random123.h>
 
-class Binomial_random123: public Random_random123 {
+class Binomial_random123 : public Random_random123 {
 protected:
     std::binomial_distribution<> d;
 public:
-    Binomial_random123(int t, double p, RNG_random123 *gen);
+    Binomial_random123(int t, double p, RNG_random123 *generator);
 
     int t();
     int t(int xt);
@@ -38,11 +38,16 @@ public:
 
 };
 
-
-inline Binomial_random123::Binomial_random123(int t, double p, RNG_random123 *gen)
-: Random_random123(gen) {
-  d = std::binomial_distribution<>(t, p);
+inline Binomial_random123::Binomial_random123(int t, double p, RNG_random123 *gen) : Random_random123(gen) {
+    d = std::binomial_distribution<>(t, p);
 }
+
+// inline Binomial_random123::Binomial_random123(int t, double p) {
+//     c = {{}};
+//     k = {{}};
+//     longmurng = std::make_unique<r123::MicroURNG<r123::Philox4x32>>(c.incr(), k);
+//     d = std::binomial_distribution<>(t, p);
+// }
 
 inline int Binomial_random123::t() { return d.t(); }
 inline int Binomial_random123::t(int xt) { int tmp = d.t(); d.param(std::binomial_distribution<>::param_type(xt, d.p())); return tmp; }

@@ -234,14 +234,14 @@ static void* r_cons(Object* obj) {
     if (ifarg(2))
         size = int(chkarg(2, 7, 98));
 
-    Rand* r = new Rand(seed, size, obj);
+    Rand_random123* r = new Rand_random123();
     return (void*) r;
 }
 
 // destructor -- called when no longer referenced
 
 static void r_destruct(void* r) {
-    delete (Rand*) r;
+    delete (Rand_random123*) r;
 }
 
 // Use a variant of the Linear Congruential Generator (algorithm M)
@@ -427,6 +427,11 @@ static double r_repick(void* r) {
     return (*(x->rand))();
 }
 
+static double r_repick_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    return (*(x->rand))();
+}
+
 double nrn_random_pick(Rand* r) {
     if (r) {
         return (*(r->rand))();
@@ -536,6 +541,9 @@ static double r_binomial_random123(void* r) {
     int a1 = int(chkarg(1, 0, 1e99));
     double a2 = chkarg(2, 0, 1);
     delete x->rand;
+    // if (x->gen != nullptr) {
+    //     x->gen = new RNG_random123();
+    // }
     x->rand = new Binomial_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
@@ -630,6 +638,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"Random123_globalindex", r_ran123_globalindex},
                                   {"seq", r_sequence},
                                   {"repick", r_repick},
+                                  {"repick_random123", r_repick_random123},
                                   {"uniform", r_uniform},
                                   {"discunif", r_discunif},
                                   {"normal", r_normal},

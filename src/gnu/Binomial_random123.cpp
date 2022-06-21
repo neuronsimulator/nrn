@@ -3,5 +3,5 @@
 
 double Binomial_random123::operator()()
 {
-    return(d(*pGenerator));
+    return(d(*(generator()->get_random_generator())));
 };

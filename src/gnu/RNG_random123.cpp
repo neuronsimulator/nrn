@@ -7,6 +7,6 @@ RNG_random123::RNG_random123() {
 		initialized = 1;
 		c = {{}};
 		k = {{}};
-		*longmurng = r123::MicroURNG<r123::Philox4x32>(c.incr(), k);
+		longmurng = std::make_unique<r123::MicroURNG<r123::Philox4x32>>(c.incr(), k);
 	}
 };

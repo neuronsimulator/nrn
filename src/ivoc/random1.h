@@ -19,8 +19,8 @@ class Rand {
 
 class Rand_random123 {
   public:
-    Rand_random123(unsigned long seed = 0, int size = 55, Object* obj = NULL);
-    ~Rand_random123();
+    Rand_random123() { gen = new RNG_random123(); }
+    ~Rand_random123() { delete gen; delete rand;}
     RNG_random123* gen;
     Random_random123* rand;
     int type_;  // can do special things with some kinds of RNG
