@@ -26,9 +26,11 @@
 #include <Normal.h>
 #include <Normal_random123.h>
 #include <Uniform.h>
+#include <Uniform_random123.h>
 #include <Binomial.h>
 #include <Binomial_random123.h>
 #include <DiscUnif.h>
+#include <DiscUnif_random123.h>
 #include <Erlang.h>
 #include <Geom.h>
 #include <LogNorm.h>
@@ -480,6 +482,15 @@ static double r_uniform(void* r) {
     return (*(x->rand))();
 }
 
+static double r_uniform_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    double a2 = *getarg(2);
+    delete x->rand;
+    x->rand = new Uniform_random123(a1, a2, x->gen);
+    return (*(x->rand))();
+}
+
 // uniform random variable over the closed interval [low...high]
 // syntax:
 //     r.discunif(low,high)
@@ -490,6 +501,15 @@ static double r_discunif(void* r) {
     long a2 = long(*getarg(2));
     delete x->rand;
     x->rand = new DiscreteUniform(a1, a2, x->gen);
+    return (*(x->rand))();
+}
+
+static double r_discunif_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    long a1 = long(*getarg(1));
+    long a2 = long(*getarg(2));
+    delete x->rand;
+    x->rand = new DiscreteUniform_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
 
@@ -667,7 +687,9 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"repick", r_repick},
                                   {"repick_random123", r_repick_random123},
                                   {"uniform", r_uniform},
+                                  {"uniform_random123", r_uniform_random123},
                                   {"discunif", r_discunif},
+                                  {"discunif_random123", r_discunif_random123},
                                   {"normal", r_normal},
                                   {"normal_random123", r_normal_random123},
                                   {"lognormal", r_lognormal},

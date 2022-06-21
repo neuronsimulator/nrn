@@ -452,6 +452,7 @@ set(NRNGNU_FILES_LIST
     Binomial.cpp
     Binomial_random123.cpp
     DiscUnif.cpp
+    DiscUnif_random123.cpp
     Erlang.cpp
     Geom.cpp
     HypGeom.cpp
@@ -467,6 +468,7 @@ set(NRNGNU_FILES_LIST
     Random.cpp
     RndInt.cpp
     Uniform.cpp
+    Uniform_random123.cpp
     Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
