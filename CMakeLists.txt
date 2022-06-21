@@ -415,8 +415,8 @@ endif()
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
-  # TODO: better to use a namespaced macro name like NRN_ENABLE_THREADS, leaving
-  # this for now to manage the size of the diff
+  # TODO: better to use a namespaced macro name like NRN_ENABLE_THREADS, leaving this for now to
+  # manage the size of the diff
   list(APPEND NRN_COMPILE_DEFS USE_PTHREAD)
 endif()
 
@@ -793,7 +793,7 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
-          DESTINATION ${PROJECT_BINARY_DIR}/include)
+     DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)
