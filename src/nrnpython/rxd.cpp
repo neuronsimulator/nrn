@@ -27,12 +27,13 @@ unsigned char initialized = FALSE;
 */
 extern NrnThread* nrn_threads;
 int NUM_THREADS = 1;
-TaskQueue* AllTasks = NULL;
 namespace nrn {
 namespace rxd {
 std::vector<std::thread> Threads;
-}
+TaskQueue task_queue;
+}  // namespace rxd
 }  // namespace nrn
+TaskQueue* AllTasks{&nrn::rxd::task_queue};
 using namespace nrn::rxd;
 
 extern double* dt_ptr;
@@ -1009,6 +1010,10 @@ extern "C" void clear_rates() {
     _reactions = NULL;
     /*clear extracellular reactions*/
     clear_rates_ecs();
+    // There are NUM_THREADS-1 std::thread objects alive, and these need to be
+    // cleaned up before exit (otherwise the std::thread destructor will call
+    // std::terminate.).
+    set_num_threads(1);
 }
 
 
@@ -1070,17 +1075,6 @@ extern "C" void setup_solver(double* my_states, int my_num_states, long* zvi, in
     set_num_threads(NUM_THREADS);
     initialized = TRUE;
     prev_structure_change_cnt = structure_change_cnt;
-}
-
-void start_threads(const int n) {
-    if (Threads.empty()) {
-        AllTasks = new TaskQueue{};
-        AllTasks->exit.resize(n - 1, false);
-        Threads.reserve(n - 1);
-        for (int i = 0; i < n - 1; ++i) {
-            Threads.emplace_back(TaskQueue_exe_tasks, i, AllTasks);
-        }
-    }
 }
 
 void TaskQueue_add_task(TaskQueue* q, void* (*task)(void*), void* args, void* result) {
@@ -1151,36 +1145,49 @@ void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
 
 
 void set_num_threads(const int n) {
-    int old_num{NUM_THREADS};
-    if (Threads.empty()) {
-        start_threads(n);
-    } else {
-        if (n < old_num) {
-            // Kill some threads. First, wait until the queue is empty.
-            TaskQueue_sync(AllTasks);
-            // Now signal to the threads that are to be killed that they need to
-            // exit.
-            {
-                std::lock_guard<std::mutex> _{AllTasks->task_mutex};
-                for (int k = old_num - 1; k >= n; k--) {
-                    AllTasks->exit[k] = true;
-                }
-            }
-            AllTasks->task_cond.notify_all();
-            // Finally, join those threads and destroy the std::thread objects.
-            for (int k = old_num - 1; k >= n; k--) {
-                Threads[k].join();
-            }
-            Threads.resize(n);
-        } else if (n > old_num) {
-            // Create some threads
-            Threads.reserve(n);
-            for (int k = old_num - 1; k < n; k++) {
-                assert(k == Threads.size());
-                Threads.emplace_back(TaskQueue_exe_tasks, k, AllTasks);
+    assert(n > 0);
+    assert(NUM_THREADS > 0);
+    // n and NUM_THREADS include the main thread, old_num and new_num refer to
+    // the number of std::thread workers
+    std::size_t const old_num = NUM_THREADS - 1;
+    std::size_t const new_num = n - 1;
+    assert(old_num == Threads.size());
+    assert(old_num == task_queue.exit.size());
+    if (new_num < old_num) {
+        // Kill some threads. First, wait until the queue is empty.
+        TaskQueue_sync(&task_queue);
+        // Now signal to the threads that are to be killed that they need to
+        // exit.
+        {
+            std::lock_guard<std::mutex> _{task_queue.task_mutex};
+            for (auto k = new_num; k < old_num; ++k) {
+                task_queue.exit[k] = true;
             }
         }
+        task_queue.task_cond.notify_all();
+        // Finally, join those threads and destroy the std::thread objects.
+        for (auto k = new_num; k < old_num; ++k) {
+            Threads[k].join();
+        }
+        // And update the structures
+        {
+            std::lock_guard<std::mutex> _{task_queue.task_mutex};
+            Threads.resize(new_num);
+            task_queue.exit.resize(new_num);
+        }
+    } else if (new_num > old_num) {
+        // Create some threads
+        std::lock_guard<std::mutex> _{task_queue.task_mutex};
+        task_queue.exit.reserve(new_num);
+        Threads.reserve(new_num);
+        for (auto k = old_num; k < new_num; ++k) {
+            assert(k == Threads.size());
+            Threads.emplace_back(TaskQueue_exe_tasks, k, &task_queue);
+            task_queue.exit.emplace_back(false);
+        }
     }
+    assert(new_num == Threads.size());
+    assert(new_num == task_queue.exit.size());
     set_num_threads_3D(n);
     NUM_THREADS = n;
 }

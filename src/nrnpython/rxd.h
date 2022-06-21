@@ -1,6 +1,4 @@
 #pragma once
-#include <pthread.h>
-
 #include "matrix2.h"
 // mesch defines many macros that interact badly with C++ headers
 #undef catch
@@ -252,7 +250,6 @@ void _ecs_ode_reinit(double*);
 void do_currents(Grid_node*, double*, double, int);
 void TaskQueue_add_task(TaskQueue*, void* (*task)(void* args), void*, void*);
 void TaskQueue_exe_tasks(std::size_t, TaskQueue*);
-void start_threads(const int);
 void TaskQueue_sync(TaskQueue*);
 void ecs_atolscale(double*);
 void apply_node_flux3D(Grid_node*, double, double*);
