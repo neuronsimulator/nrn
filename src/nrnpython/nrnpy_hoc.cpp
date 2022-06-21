@@ -246,7 +246,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             PyObject* result = hocobj_new(hocobject_type, 0, 0);
             hbase = (PyHocObject*) result;
             hbase->type_ = PyHoc::HocFunction;
-            hbase->sym_ = location->second; //type_to_sym_map[(PyTypeObject*) item];
+            hbase->sym_ = location->second;
             has_base = true;
         }
         Py_DECREF(item);
@@ -254,17 +254,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             break;
         }
     }
-/*
-    if (PyObject_IsSubclass((PyObject*) subtype, (PyObject*) vectorobject_type)) {
-        //printf("subtype is vectorobject_type\n");
-        PyObject* result = hocobj_new(hocobject_type, 0, 0);
-        hbase = (PyHocObject*) result;
-        hbase->type_ = PyHoc::HocFunction;
-        hbase->sym_ = hoc_vec_template_->sym;
-        has_base = true;
-    } else {
-        //printf("not vectorobject_type\n");
-    }*/
+
     if (kwds && PyDict_Check(kwds)) {
         base = PyDict_GetItemString(kwds, "hocbase");
         if (base) {
@@ -285,6 +275,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             PyObject* r = hocobj_call(hbase, args, kwds);
             if (!r) {
                 Py_DECREF(subself);
+                PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
                 return NULL;
             }
             PyHocObject* rh = (PyHocObject*) r;
@@ -292,7 +283,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             self->ho_ = rh->ho_;
             hoc_obj_ref(self->ho_);
             Py_DECREF(r);
-            ok = 1;
+            ok = true;
         }
         if (!ok) {
             Py_DECREF(subself);
@@ -567,7 +558,7 @@ PyObject* nrnpy_ho2po(Object* o) {
         ((PyHocObject*) po)->type_ = PyHoc::HocObject;
         auto location = sym_to_type_map.find(o->ctemplate->sym);
         if (location != sym_to_type_map.end()) {
-            po->ob_type = sym_to_type_map[o->ctemplate->sym];
+            po->ob_type = location->second;
         }
         hoc_obj_ref(o);
     }
@@ -729,7 +720,6 @@ static void* fcall(void* vself, void* vargs) {
         double d = hoc_call_func(self->sym_, 1);
         hoc_pushx(d);
     } else if (self->sym_->type == TEMPLATE) {
-        //printf("in fcall TEMPLATE case\n");
         Object* ho = hoc_newobj1(self->sym_, narg);
         PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
         result->ho_ = ho;
@@ -3212,11 +3202,6 @@ PyObject* nrnpy_hoc() {
     }
     Py_DECREF(bases);
 
-    //printf("done\n");
-    // printf("AddObject HocObject\n");
-    //printf("registering Vector\n");
-    //printf("done\n");
-    
     topmethdict = PyDict_New();
     for (PyMethodDef* meth = toplevel_methods; meth->ml_name != NULL; meth++) {
         PyObject* descr;
