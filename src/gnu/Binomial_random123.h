@@ -25,13 +25,6 @@ inline Binomial_random123::Binomial_random123(int t, double p, RNG_random123 *ge
     d = std::binomial_distribution<>(t, p);
 }
 
-// inline Binomial_random123::Binomial_random123(int t, double p) {
-//     c = {{}};
-//     k = {{}};
-//     longmurng = std::make_unique<r123::MicroURNG<r123::Philox4x32>>(c.incr(), k);
-//     d = std::binomial_distribution<>(t, p);
-// }
-
 inline int Binomial_random123::t() {
     return d.t();
 }
