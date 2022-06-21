@@ -1,11 +1,6 @@
 #pragma once
 #if USE_PTHREAD
 
-// #ifdef MINGW
-// #undef DELETE
-// #undef near
-// #endif
-
 #include <memory>
 #include <mutex>
 
