@@ -61,7 +61,7 @@ option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of D
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
        ${NRN_ENABLE_PYTHON_DEFAULT})
-option(NRN_ENABLE_THREADS "Allow use of std::thread" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
@@ -415,6 +415,7 @@ endif()
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
+  # Note that at least GCC requires -pthread to be passed even when using std::thread.
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
   # TODO: better to use a namespaced macro name like NRN_ENABLE_THREADS, leaving this for now to
