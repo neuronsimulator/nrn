@@ -208,8 +208,12 @@ static void hocobj_dealloc(PyHocObject* self) {
 
 static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds) {
     PyObject* subself;
+    PyObject* base;
+    PyHocObject* hbase;
+    bool has_base = false;
+    bool ok = true;
     subself = subtype->tp_alloc(subtype, 0);
-    // printf("hocobj_new %s %p\n", subtype->tp_name, subself);
+    //printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
     if (subself == NULL) {
         return NULL;
     }
@@ -221,35 +225,49 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->nindex_ = 0;
     self->type_ = PyHoc::HocTopLevelInterpreter;
     self->iteritem_ = 0;
+    if (PyObject_IsSubclass((PyObject*) subtype, (PyObject*) vectorobject_type)) {
+        //printf("subtype is vectorobject_type\n");
+        PyObject* result = hocobj_new(hocobject_type, 0, 0);
+        hbase = (PyHocObject*) result;
+        hbase->type_ = PyHoc::HocFunction;
+        hbase->sym_ = hoc_vec_template_->sym;
+        has_base = true;
+    } else {
+        //printf("not vectorobject_type\n");
+    }
     if (kwds && PyDict_Check(kwds)) {
-        PyObject* base = PyDict_GetItemString(kwds, "hocbase");
+        base = PyDict_GetItemString(kwds, "hocbase");
         if (base) {
-            int ok = 0;
+            ok = false;
             if (PyObject_TypeCheck(base, hocobject_type)) {
-                PyHocObject* hbase = (PyHocObject*) base;
-                if (hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
-                    // printf("hocobj_new base %s\n", hbase->sym_->name);
-                    // remove the hocbase keyword since hocobj_call only allows
-                    // the "sec" keyword argument
-                    PyDict_DelItemString(kwds, "hocbase");
-                    PyObject* r = hocobj_call(hbase, args, kwds);
-                    if (!r) {
-                        Py_DECREF(subself);
-                        return NULL;
-                    }
-                    PyHocObject* rh = (PyHocObject*) r;
-                    self->type_ = rh->type_;
-                    self->ho_ = rh->ho_;
-                    hoc_obj_ref(self->ho_);
-                    Py_DECREF(r);
-                    ok = 1;
-                }
+                hbase = (PyHocObject*) base;
+                has_base = true;
             }
-            if (!ok) {
+            // TODO: is it a problem doing this before we're done with the base
+            PyDict_DelItemString(kwds, "hocbase");
+        }
+    }
+    if (has_base) {
+        if (hbase->type_ == PyHoc::HocFunction && hbase->sym_->type == TEMPLATE) {
+            // printf("hocobj_new base %s\n", hbase->sym_->name);
+            // remove the hocbase keyword since hocobj_call only allows
+            // the "sec" keyword argument
+            PyObject* r = hocobj_call(hbase, args, kwds);
+            if (!r) {
                 Py_DECREF(subself);
-                PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
                 return NULL;
             }
+            PyHocObject* rh = (PyHocObject*) r;
+            self->type_ = rh->type_;
+            self->ho_ = rh->ho_;
+            hoc_obj_ref(self->ho_);
+            Py_DECREF(r);
+            ok = 1;
+        }
+        if (!ok) {
+            Py_DECREF(subself);
+            PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
+            return NULL;
         }
     }
     return subself;
@@ -683,6 +701,7 @@ static void* fcall(void* vself, void* vargs) {
         double d = hoc_call_func(self->sym_, 1);
         hoc_pushx(d);
     } else if (self->sym_->type == TEMPLATE) {
+        //printf("in fcall TEMPLATE case\n");
         Object* ho = hoc_newobj1(self->sym_, narg);
         PyHocObject* result = (PyHocObject*) hocobj_new(hocobject_type, 0, 0);
         result->ho_ = ho;
@@ -978,6 +997,13 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
         return NULL;
     }
 
+    // TODO: this better
+    if (strcmp(n, "Vector") == 0 && self->type_ == PyHoc::HocTopLevelInterpreter) {
+        //printf("inside vector case\n");
+        Py_INCREF(vectorobject_type);
+        return (PyObject*) vectorobject_type;
+    }
+
     Symbol* sym = getsym(n, self->ho_, 0);
     if (!sym) {
         if (self->type_ == PyHoc::HocObject && self->ho_->ctemplate->sym == nrnpy_pyobj_sym_) {
@@ -1257,13 +1283,14 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
             result = (PyObject*) intermediate(self, sym, -1);
         }
         break;
+    case TEMPLATE:
+        printf("template stuff\n");
     case PROCEDURE:
     case FUNCTION:
     case FUN_BLTIN:
     case BLTIN:
     case HOCOBJFUNCTION:
     case STRINGFUNC:
-    case TEMPLATE:
     case OBJECTFUNC: {
         result = hocobj_new(hocobject_type, 0, 0);
         PyHocObject* po = (PyHocObject*) result;
