@@ -469,7 +469,8 @@ set(NRNGNU_FILES_LIST
     RndInt.cpp
     Uniform.cpp
     Uniform_random123.cpp
-    Weibull.cpp)
+    Weibull.cpp
+    Weibull_random123.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
