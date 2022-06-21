@@ -27,13 +27,6 @@ static PyType_Slot nrnpy_HocObjectType_slots[] = {
     {Py_nb_true_divide, (PyObject*) py_hocobj_div},
     {0, 0},
 };
-static PyType_Spec nrnpy_HocObjectType_spec = {
-    "hoc.HocObject",
-    sizeof(PyHocObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    nrnpy_HocObjectType_slots,
-};
 
 
 static struct PyModuleDef hocmodule = {PyModuleDef_HEAD_INIT,

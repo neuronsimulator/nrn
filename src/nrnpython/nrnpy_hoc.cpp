@@ -3095,9 +3095,21 @@ static char* nrncore_arg(double tstop) {
     return NULL;
 }
 
+
+static PyType_Spec obj_spec_from_name(const char* name) {
+    return {
+        name,
+        sizeof(PyHocObject),
+        0,
+        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        nrnpy_HocObjectType_slots,
+    };
+}
+
 PyObject* nrnpy_hoc() {
     PyObject* m;
     PyObject* bases;
+    PyType_Spec spec;
     nrnpy_vec_from_python_p_ = nrnpy_vec_from_python;
     nrnpy_vec_to_python_p_ = nrnpy_vec_to_python;
     nrnpy_vec_as_numpy_helper_ = vec_as_numpy_helper;
@@ -3124,14 +3136,16 @@ PyObject* nrnpy_hoc() {
     m = PyModule_Create(&hocmodule);
     assert(m);
     Symbol* s = NULL;
-    hocobject_type = (PyTypeObject*) PyType_FromSpec(&nrnpy_HocObjectType_spec);
+    spec = obj_spec_from_name("hoc.HocObject");
+    hocobject_type = (PyTypeObject*) PyType_FromSpec(&spec);
     if (PyType_Ready(hocobject_type) < 0)
         goto fail;
     Py_INCREF(hocobject_type);
     //printf("defining vectorobject_type\n");
+    spec = obj_spec_from_name("hoc.Vector");
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
-    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&nrnpy_HocObjectType_spec, bases);
+    vectorobject_type = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
     Py_DECREF(bases);
     if (PyType_Ready(vectorobject_type) < 0)
         goto fail;
