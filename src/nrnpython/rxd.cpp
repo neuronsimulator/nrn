@@ -1129,16 +1129,16 @@ void TaskQueue_exe_tasks(std::size_t thread_index, TaskQueue* q) {
         }
         // Decrement the list length, if it's now empty then broadcast that to
         // the master thread, which may be waiting for the queue to be empty.
-        {
+        auto const new_length = [q] {
             std::lock_guard<std::mutex> _{q->waiting_mutex};
-            if (--(q->length) == 0) {
-                // Queue is empty. Notify the main thread, which may be blocking
-                // on this condition.
-                // TODO: would notify_one() be enough? Only the main thread
-                // should be blocked here?
-                // TODO: reorganise so the mutex has been freed before we notify.
-                q->waiting_cond.notify_all();
-            }
+            return --(q->length);
+        }();
+        // The immediately-executed lambda means we release the mutex before
+        // calling notify_one()
+        if (new_length == 0) {
+            // Queue is empty. Notify the main thread, which may be blocking on
+            // this condition.
+            q->waiting_cond.notify_one();
         }
     }
 }
