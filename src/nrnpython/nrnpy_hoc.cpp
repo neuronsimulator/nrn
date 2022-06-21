@@ -105,6 +105,7 @@ static cTemplate* hoc_sectionlist_template_;
 
 static std::vector<const char*> class_name_list;
 static std::unordered_map<Symbol*, PyTypeObject*> sym_to_type_map;
+static std::unordered_map<PyTypeObject*, Symbol*> type_to_sym_map;
 
 // typestr returned by Vector.__array_interface__
 // byteorder (first element) is modified at import time
@@ -162,13 +163,11 @@ static PyObject* get_mech_object_ = NULL;
 static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 
 PyTypeObject* hocobject_type;
-PyTypeObject* vectorobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
 
 void nrnpy_register_class(const char* name) {
     class_name_list.push_back(name);
-    printf("declared %s\n", name);
 }
 
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
@@ -235,6 +234,27 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     self->nindex_ = 0;
     self->type_ = PyHoc::HocTopLevelInterpreter;
     self->iteritem_ = 0;
+
+    // if subtype is a subclass of some NEURON class, then one of its
+    // tp_mro's is in sym_to_type_map
+
+    for (Py_ssize_t i = 0; i < PyTuple_Size(subtype->tp_mro); i++) {
+        PyObject* item = PyTuple_GetItem(subtype->tp_mro, i);
+        Py_INCREF(item);
+        auto location = type_to_sym_map.find((PyTypeObject*) item);
+        if (location != type_to_sym_map.end()) {
+            PyObject* result = hocobj_new(hocobject_type, 0, 0);
+            hbase = (PyHocObject*) result;
+            hbase->type_ = PyHoc::HocFunction;
+            hbase->sym_ = location->second; //type_to_sym_map[(PyTypeObject*) item];
+            has_base = true;
+        }
+        Py_DECREF(item);
+        if (has_base) {
+            break;
+        }
+    }
+/*
     if (PyObject_IsSubclass((PyObject*) subtype, (PyObject*) vectorobject_type)) {
         //printf("subtype is vectorobject_type\n");
         PyObject* result = hocobj_new(hocobject_type, 0, 0);
@@ -244,7 +264,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
         has_base = true;
     } else {
         //printf("not vectorobject_type\n");
-    }
+    }*/
     if (kwds && PyDict_Check(kwds)) {
         base = PyDict_GetItemString(kwds, "hocbase");
         if (base) {
@@ -545,11 +565,9 @@ PyObject* nrnpy_ho2po(Object* o) {
         po = hocobj_new(hocobject_type, 0, 0);
         ((PyHocObject*) po)->ho_ = o;
         ((PyHocObject*) po)->type_ = PyHoc::HocObject;
-        if (o->ctemplate->sym == hoc_vec_template_->sym) {
-            //printf("syms match\n");
-            po->ob_type = vectorobject_type;
-        } else {
-            //printf("syms don't match\n");
+        auto location = sym_to_type_map.find(o->ctemplate->sym);
+        if (location != sym_to_type_map.end()) {
+            po->ob_type = sym_to_type_map[o->ctemplate->sym];
         }
         hoc_obj_ref(o);
     }
@@ -719,11 +737,9 @@ static void* fcall(void* vself, void* vargs) {
         // Note: I think the only reason we're not using ho2po here is because we don't have to
         //       hocref ho since it was created by hoc_newobj1... but it would be better if we did
         //       so we could avoid repetitive code
-        if (ho->ctemplate->sym == hoc_vec_template_->sym) {
-            //printf("TEMPLATE: syms match\n");
-            ((PyObject*) result)->ob_type = vectorobject_type;
-        } else {
-            //printf("TEMPLATE: syms don't match\n");
+        auto location = sym_to_type_map.find(ho->ctemplate->sym);
+        if (location != sym_to_type_map.end()) {
+            ((PyObject*) result)->ob_type = location->second;
         }
 
         hocobj_pushargs_free_strings(strings_to_free);
@@ -1009,9 +1025,10 @@ static PyObject* hocobj_getattr(PyObject* subself, PyObject* pyname) {
 
     Symbol* sym = getsym(n, self->ho_, 0);
     // Return well known types right away
-    if (sym == hoc_vec_template_->sym) {
-        Py_INCREF(vectorobject_type);
-        return (PyObject*) vectorobject_type;
+    auto location = sym_to_type_map.find(sym);
+    if (location != sym_to_type_map.end()) {
+        Py_INCREF(location->second);
+        return (PyObject*) location->second;
     }
 
     if (!sym) {
@@ -3179,8 +3196,6 @@ PyObject* nrnpy_hoc() {
     Py_INCREF(hocobject_type);
     PyModule_AddObject(m, "HocObject", (PyObject*) hocobject_type);
 
-    printf("constructing type objects\n");
-    //printf("defining vectorobject_type\n");
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
     for (auto name: class_name_list) {
@@ -3189,14 +3204,13 @@ PyObject* nrnpy_hoc() {
         spec = obj_spec_from_name(long_name.c_str());
         pto = (PyTypeObject*) PyType_FromSpecWithBases(&spec, bases);
         sym_to_type_map[hoc_lookup(name)] = pto;
+        type_to_sym_map[pto] = hoc_lookup(name);
         if (PyType_Ready(pto) < 0)
             goto fail;
         Py_INCREF(pto);
         PyModule_AddObject(m, name, (PyObject*) pto);
     }
     Py_DECREF(bases);
-
-    vectorobject_type = sym_to_type_map[hoc_lookup("Vector")];
 
     //printf("done\n");
     // printf("AddObject HocObject\n");
