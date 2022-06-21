@@ -22,6 +22,7 @@
 #include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
+#include <Poisson_random123.h>
 #include <Normal.h>
 #include <Normal_random123.h>
 #include <Uniform.h>
@@ -220,7 +221,7 @@ Rand::~Rand() {
 }
 
 Rand_random123::Rand_random123() {
-    // printf("Rand\n");
+    // printf("Rand_random123\n");
     gen = new RNG_random123();
     rand = new Normal_random123(0., 1., gen);
 }
@@ -541,6 +542,14 @@ static double r_poisson(void* r) {
     return (*(x->rand))();
 }
 
+static double r_poisson_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    delete x->rand;
+    x->rand = new Poisson_random123(a1, x->gen);
+    return (*(x->rand))();
+}
+
 
 // binomial distribution, which models successfully drawing items from a pool
 // n is the number items in the pool and p is the probablity of each item
@@ -665,6 +674,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"binomial", r_binomial},
                                   {"binomial_random123", r_binomial_random123},
                                   {"poisson", r_poisson},
+                                  {"poisson_random123", r_poisson_random123},
                                   {"geometric", r_geometric},
                                   {"hypergeo", r_hypergeo},
                                   {"negexp", r_negexp},

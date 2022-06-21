@@ -461,6 +461,7 @@ set(NRNGNU_FILES_LIST
     Normal.cpp
     Normal_random123.cpp
     Poisson.cpp
+    Poisson_random123.cpp
     RNG.cpp
     RNG_random123.cpp
     Random.cpp
