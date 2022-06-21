@@ -459,6 +459,7 @@ set(NRNGNU_FILES_LIST
     MLCG.cpp
     NegExp.cpp
     Normal.cpp
+    Normal_random123.cpp
     Poisson.cpp
     RNG.cpp
     RNG_random123.cpp

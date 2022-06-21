@@ -23,6 +23,7 @@
 #include <Random.h>
 #include <Poisson.h>
 #include <Normal.h>
+#include <Normal_random123.h>
 #include <Uniform.h>
 #include <Binomial.h>
 #include <Binomial_random123.h>
@@ -214,6 +215,18 @@ Rand::Rand(unsigned long seed, int size, Object* obj) {
 
 Rand::~Rand() {
     // printf("~Rand\n");
+    delete gen;
+    delete rand;
+}
+
+Rand_random123::Rand_random123() {
+    // printf("Rand\n");
+    gen = new RNG_random123();
+    rand = new Normal_random123(0., 1., gen);
+}
+
+Rand_random123::~Rand_random123() {
+    // printf("~Rand_random123\n");
     delete gen;
     delete rand;
 }
@@ -493,6 +506,14 @@ static double r_normal(void* r) {
     return (*(x->rand))();
 }
 
+static double r_normal_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    double a2 = *getarg(2);
+    delete x->rand;
+    x->rand = new Normal_random123(a1, a2, x->gen);
+    return (*(x->rand))();
+}
 
 // logarithmic normal distribution
 // syntax:
@@ -541,9 +562,6 @@ static double r_binomial_random123(void* r) {
     int a1 = int(chkarg(1, 0, 1e99));
     double a2 = chkarg(2, 0, 1);
     delete x->rand;
-    // if (x->gen != nullptr) {
-    //     x->gen = new RNG_random123();
-    // }
     x->rand = new Binomial_random123(a1, a2, x->gen);
     return (*(x->rand))();
 }
@@ -642,6 +660,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"uniform", r_uniform},
                                   {"discunif", r_discunif},
                                   {"normal", r_normal},
+                                  {"normal_random123", r_normal_random123},
                                   {"lognormal", r_lognormal},
                                   {"binomial", r_binomial},
                                   {"binomial_random123", r_binomial_random123},
