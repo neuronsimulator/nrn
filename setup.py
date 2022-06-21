@@ -458,7 +458,7 @@ def setup_package():
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
         install_requires=["numpy>=1.9.3"] + maybe_patchelf,
-        tests_require=["flake8", "pytest"],
+        tests_require=["flake8", "pytest", "pytest-forked"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],
     )

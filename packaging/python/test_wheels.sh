@@ -288,7 +288,7 @@ $python_exe -m pip install --upgrade pip
 
 
 # install numpy, pytest and neuron
-$python_exe -m pip install numpy pytest
+$python_exe -m pip install numpy pytest pytest-forked
 $python_exe -m pip install $python_wheel
 $python_exe -m pip show neuron \
     || $python_exe -m pip show neuron-nightly \

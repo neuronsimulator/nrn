@@ -7,5 +7,6 @@ ipython
 cython
 pytest
 pytest-cov
+pytest-forked
 mpi4py
 numpy
