@@ -64,8 +64,15 @@ create_plot(rand, "weibull")
 print("Setup rand for Erlang distribution")
 print(rand.erlang(1, 5))
 # print(rand.repick())
-for i in range(10):
-    print(rand.repick())
+# for i in range(10):
+#     print(rand.repick())
 create_plot(rand, "erlang")
+
+print("Setup rand for Erlang distribution")
+print(rand.negexp(1.5))
+# print(rand.repick())
+# for i in range(10):
+#     print(rand.repick())
+create_plot(rand, "negexp")
 
 quit()

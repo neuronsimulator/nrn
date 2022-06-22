@@ -36,6 +36,7 @@
 #include <Geom.h>
 #include <LogNorm.h>
 #include <NegExp.h>
+#include <NegExp_random123.h>
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
@@ -639,6 +640,13 @@ static double r_negexp(void* r) {
     return (*(x->rand))();
 }
 
+static double r_negexp_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    delete x->rand;
+    x->rand = new NegativeExpntl_random123(a1, x->gen);
+    return (*(x->rand))();
+}
 
 // Erlang distribution
 // syntax:
@@ -720,6 +728,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"geometric", r_geometric},
                                   {"hypergeo", r_hypergeo},
                                   {"negexp", r_negexp},
+                                  {"negexp_random123", r_negexp_random123},
                                   {"erlang", r_erlang},
                                   {"erlang_random123", r_erlang_random123},
                                   {"weibull", r_weibull},
