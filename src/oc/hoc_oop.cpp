@@ -1,6 +1,8 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
 #include <classreg.h>
+#include <vector>
+
 #include "hocstr.h"
 #include "parse.hpp"
 #include "hocparse.h"
@@ -30,7 +32,6 @@ Symbol* nrnpy_pyobj_sym_;
 void (*nrnpy_py2n_component)(Object* o, Symbol* s, int nindex, int isfunc);
 void (*nrnpy_hpoasgn)(Object* o, int type);
 void* (*nrnpy_opaque_obj2pyobj_p_)(Object*);
-extern void nrnpy_register_class(const char* name);
 #endif
 
 #if CABLE
@@ -47,8 +48,10 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-int hoc_print_first_instance = 1;
+// The list of classes to be exposed to Python
+std::vector<const char*> class_name_list{};
 
+int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
 static Symbol* hoc_obj_;
@@ -1612,9 +1615,8 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
-    #if USE_PYTHON
-    nrnpy_register_class(name);
-    #endif
+    class_name_list.push_back(name);
+
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);

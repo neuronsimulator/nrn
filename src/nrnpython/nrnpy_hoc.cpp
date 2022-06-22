@@ -22,6 +22,7 @@
 #endif
 
 extern PyTypeObject* psection_type;
+extern std::vector<const char*> class_name_list;
 
 // copied from nrnpy_nrn
 typedef struct {
@@ -103,7 +104,6 @@ static cTemplate* hoc_vec_template_;
 static cTemplate* hoc_list_template_;
 static cTemplate* hoc_sectionlist_template_;
 
-static std::vector<const char*> class_name_list;
 static std::unordered_map<Symbol*, PyTypeObject*> sym_to_type_map;
 static std::unordered_map<PyTypeObject*, Symbol*> type_to_sym_map;
 
@@ -165,10 +165,6 @@ static PyObject* nrnpy_rvp_pyobj_callback = NULL;
 PyTypeObject* hocobject_type;
 
 static PyObject* hocobj_call(PyHocObject* self, PyObject* args, PyObject* kwrds);
-
-void nrnpy_register_class(const char* name) {
-    class_name_list.push_back(name);
-}
 
 static PyObject* nrnexec(PyObject* self, PyObject* args) {
     const char* cmd;
@@ -3188,7 +3184,7 @@ PyObject* nrnpy_hoc() {
 
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
-    for (auto name: class_name_list) {
+    for (auto name : class_name_list) {
         // TODO: obj_spec_from_name needs a hoc. prepended
         auto long_name = std::string("hoc.") + name;
         spec = obj_spec_from_name(long_name.c_str());

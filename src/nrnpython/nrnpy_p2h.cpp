@@ -48,6 +48,7 @@ extern Object* (*nrnpy_pickle2po)(char*, size_t size);
 extern char* (*nrnpy_callpicklef)(char*, size_t size, int narg, size_t* retsize);
 extern int (*nrnpy_pysame)(Object*, Object*);  // contain same Python object
 extern Object* (*nrnpympi_alltoall_type)(int, int);
+
 typedef struct {
     PyObject_HEAD Section* sec_;
     char* name_;
