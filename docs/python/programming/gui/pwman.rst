@@ -6,19 +6,14 @@ PWManager
 
 
 
-.. class:: PWManager
+.. class:: h.PWManager()
 
 
-    Syntax:
-        ``p = h.PWManager()``
-
-
-    Description:
-        A variety of hooks into the :ref:`pwm` to allow program control 
-        of that tool. The implementation of the 
-        Window item of the NeuronMainMenu makes 
-        heavy use of this class. Note that the first window created is called 
-        the leader. It cannot be closed. 
+    A variety of hooks into the :ref:`pwm` to allow program control 
+    of that tool. The implementation of the 
+    Window item of the NeuronMainMenu makes 
+    heavy use of this class. Note that the first window created is called 
+    the leader. It cannot be closed. 
 
          
 
@@ -26,15 +21,10 @@ PWManager
 
 
 
-.. method:: PWManager.count
+.. method:: PWManager.count()
 
 
-    Syntax:
-        ``cnt = p.count()``
-
-
-    Description:
-        Returns number of "Printable" windows on the screen. 
+    Returns number of "Printable" windows on the screen. 
 
     Example:
 
@@ -50,15 +40,10 @@ PWManager
 
 
 
-.. method:: PWManager.is_mapped
+.. method:: PWManager.is_mapped(index)
 
 
-    Syntax:
-        ``boolean = p.is_mapped(index)``
-
-
-    Description:
-        Return 1 if the index'th window is visible. 
+    Return 1 if the index'th window is visible. 
 
     Example:
 
@@ -79,15 +64,10 @@ PWManager
 
 
 
-.. method:: PWManager.map
+.. method:: PWManager.map(index)
 
 
-    Syntax:
-        ``p.map(index)``
-
-
-    Description:
-        Makes the index'th window visible. 
+    Makes the index'th window visible. 
 
     Example:
 
@@ -104,15 +84,11 @@ PWManager
 
 
 
-.. method:: PWManager.hide
+.. method:: PWManager.hide(index)
 
 
-    Syntax:
-        ``p.hide(index)``
-
-
-    Description:
-        Unmaps the index'th window. The window is NOT closed.
+   
+    Unmaps the index'th window. The window is NOT closed.
 
     Example:
 
@@ -133,16 +109,11 @@ PWManager
 
 
 
-.. method:: PWManager.close
+.. method:: PWManager.close(index)
 
 
-    Syntax:
-        ``p.close(index)``
-
-
-    Description:
-        Closes the index'th window. This will destroy the window and decrement the 
-        reference count of the associated hoc object (if any). 
+    Closes the index'th window. This will destroy the window and decrement the 
+    reference count of the associated hoc object (if any). 
 
     Example:
 
@@ -159,15 +130,10 @@ PWManager
 
 
 
-.. method:: PWManager.iconify
+.. method:: PWManager.iconify()
 
 
-    Syntax:
-        ``p.iconify()``
-
-
-    Description:
-        Hides all windows and iconifies the leader. 
+    Hides all windows and iconifies the leader. 
 
     Example:
 
@@ -184,46 +150,32 @@ PWManager
 
 
 
-.. method:: PWManager.deiconify
+.. method:: PWManager.deiconify()
 
 
-    Syntax:
-        ``p.deiconify()``
-
-
-    Description:
-        Un-iconifies the leader window and maps any windows not hidden before it was 
-        iconified. 
+    Un-iconifies the leader window and maps any windows not hidden before it was 
+    iconified. 
 
 
 ----
 
 
 
-.. method:: PWManager.leader
+.. method:: PWManager.leader()
 
 
-    Syntax:
-        ``index = p.leader()``
-
-
-    Description:
-        Window index of the leader window. 
+    Window index of the leader window. 
 
 
 ----
 
 
 
-.. method:: PWManager.manager
+.. method:: PWManager.manager()
 
 
-    Syntax:
-        ``index = p.manager()``
-
-
-    Description:
-        Window index of the :ref:`PWM` window. 
+   
+    Window index of the :ref:`PWM` window. 
 
     
     Example:
@@ -241,24 +193,18 @@ PWManager
 
 
 
-.. method:: PWManager.save
+.. method:: PWManager.save("filename", group_object, ["header"])
+            PWManager.save("filename", selected, ["header"])
 
-
-    Syntax:
-        ``n = p.save("filename", group_object, ["header"])``
-
-        ``n = p.save("filename", selected, ["header"])``
-
-
-    Description:
-        Create a session file with the given filename 
-        consisting oo all windows associated with a 
-        particular group_object in a session file 
-         
-        If selected == 0 then all windows are saved. If selected==1 then only 
-        the windows on the paper icon are saved in the session file. 
-         
-        If the header argument exists, it is copied to the beginning of the file. 
+   
+    Create a session file with the given filename 
+    consisting oo all windows associated with a 
+    particular group_object in a session file 
+        
+    If selected == 0 then all windows are saved. If selected==1 then only 
+    the windows on the paper icon are saved in the session file. 
+        
+    If the header argument exists, it is copied to the beginning of the file. 
 
     .. seealso::
         :func:`save_session`
@@ -279,18 +225,12 @@ PWManager
 
 
 
-.. method:: PWManager.group
+.. method:: PWManager.group(index, group_obj)
+            PWManager.group(index)
 
-
-    Syntax:
-        ``group_obj = p.group(index, group_obj)``
-
-        ``group_obj = p.group(index)``
-
-
-    Description:
-        Associate the index'th window with the group object and returns the 
-        group object associated with that window. 
+    
+    Associate the index'th window with the group object and returns the 
+    group object associated with that window. 
 
     Example:
 
@@ -306,22 +246,16 @@ PWManager
 
 
 
-.. method:: PWManager.snap
+.. method:: PWManager.snap()
+            PWManager.snap("filename")
 
 
-    Syntax:
-        ``p.snap()``
-
-        ``p.snap("filename")``
-
-
-    Description:
-        Only works on the unix version. 
-        Puts the GUI in snapshot mode until the 'p' keyboard character is pressed. 
-        During this time the mouse can be used normally to pop up menus or drag 
-        rubberbands on graphs. When the p character is pressed all windows including 
-        drawings of the window decorations, menus, rubberband, and mouse arrow cursor is 
-        printed to a postscript file with the "filename" or filebrowser selection. 
+    Only works on the unix version. 
+    Puts the GUI in snapshot mode until the 'p' keyboard character is pressed. 
+    During this time the mouse can be used normally to pop up menus or drag 
+    rubberbands on graphs. When the p character is pressed all windows including 
+    drawings of the window decorations, menus, rubberband, and mouse arrow cursor is 
+    printed to a postscript file with the "filename" or filebrowser selection. 
 
     Example:
 
@@ -336,37 +270,29 @@ PWManager
 
 
 
-.. method:: PWManager.jwindow
+.. method:: PWManager.jwindow(hoc_owner, mapORhide, x, y, w, h)
 
 
-    Syntax:
-        ``index = p.jwindow(hoc_owner, mapORhide, x, y, w, h)``
-
-
-    Description:
-        Manipulate the position and size of a java window frame associated with the 
-        java object referenced by the hoc object. The mapORhide value may be 0 
-        or 1. The index of the window is returned. This is used by session file 
-        statements created by the java object in order to specify window attributes. 
+   
+    Manipulate the position and size of a java window frame associated with the 
+    java object referenced by the hoc object. The mapORhide value may be 0 
+    or 1. The index of the window is returned. This is used by session file 
+    statements created by the java object in order to specify window attributes. 
 
 
 ----
 
 
 
-.. method:: PWManager.scale
+.. method:: PWManager.scale(x)
 
 
-    Syntax:
-        ``p.scale(x)``
-
-
-    Description:
-        Works only under mswin. 
-        Immediately rescales all the windows (including font size) and their position 
-        relative to the top, left corner of the screen according to the absolute 
-        scale factor x. 
-        i.e, a scale value of 1 gives normal size windows. 
+    
+    Works only under mswin. 
+    Immediately rescales all the windows (including font size) and their position 
+    relative to the top, left corner of the screen according to the absolute 
+    scale factor x. 
+    i.e, a scale value of 1 gives normal size windows. 
 
     Example:
 
@@ -380,15 +306,10 @@ PWManager
 
 
 
-.. method:: PWManager.name
+.. method:: PWManager.name(index)
 
 
-    Syntax:
-        ``strdef = p.name(index)``
-
-
-    Description:
-        Returns the window title bar string of the index'th window. 
+    Returns the window title bar string of the index'th window. 
 
     Example:
 
@@ -405,16 +326,12 @@ PWManager
 
 
 
-.. method:: PWManager.window_place
+.. method:: PWManager.window_place(index, left, top)
 
 
-    Syntax:
-        ``p.window_place(index, left, top)``
-
-
-    Description:
-        moves the index window to the left,top pixel 
-        coordinates of the screen. 
+   
+    moves the index window to the left,top pixel 
+    coordinates of the screen. 
 
     Example:
 
@@ -431,23 +348,17 @@ PWManager
 
 
 
-.. method:: PWManager.paper_place
+.. method:: PWManager.paper_place(index, show)
+            PWManager.paper_place(index, left, bottom, scale)
 
-
-    Syntax:
-        ``p.paper_place(index, show)``
-
-        ``p.paper_place(index, left, bottom, scale)``
-
-
-    Description:
-        Shows or hides the ith window on the 
-        paper icon. If showing, this constitutes adding this window to the list of 
-        selected windows. 
-         
-        The 4 arg form shows, places, and scales 
-        the index window on the paper icon. The scale and location only has an effect when 
-        the paper is printed in postscript mode. 
+    
+    Shows or hides the ith window on the 
+    paper icon. If showing, this constitutes adding this window to the list of 
+    selected windows. 
+        
+    The 4 arg form shows, places, and scales 
+    the index window on the paper icon. The scale and location only has an effect when 
+    the paper is printed in postscript mode. 
 
          
 
@@ -455,16 +366,11 @@ PWManager
 
 
 
-.. method:: PWManager.landscape
+.. method:: PWManager.landscape(boolean)
 
 
-    Syntax:
-        ``p.landscape(boolean)``
-
-
-    Description:
-        Determines if postscript printing is in landscape 
-        or portrait mode. 
+    Determines if postscript printing is in landscape 
+    or portrait mode. 
 
          
 
@@ -472,20 +378,15 @@ PWManager
 
 
 
-.. method:: PWManager.deco
+.. method:: PWManager.deco(mode)
 
 
-    Syntax:
-        ``p.deco(mode)``
-
-
-    Description:
-        When printing in postscript mode, 
-        0 print only the interior of the window. 
-         
-        1 print the interior and the title above each window 
-         
-        2 print the interior and all window decorations including the window title. 
+    When printing in postscript mode, 
+    0 print only the interior of the window. 
+        
+    1 print the interior and the title above each window 
+        
+    2 print the interior and all window decorations including the window title. 
 
          
 
@@ -493,16 +394,11 @@ PWManager
 
 
 
-.. method:: PWManager.printfile
+.. method:: PWManager.printfile("filename", mode, selected)
 
 
-    Syntax:
-        ``p.printfile("filename", mode, selected)``
-
-
-    Description:
-        Print to a file in postcript, idraw, or ascii mode (mode=0,1,2) the selected windows 
-        or all the windows( selected=0,1) 
+    Print to a file in postcript, idraw, or ascii mode (mode=0,1,2) the selected windows 
+    or all the windows( selected=0,1) 
 
          
          
