@@ -337,6 +337,7 @@ class PaperItem;
     FileChooser* fc_save_;
     const Color* window_outline_;
     CopyString cur_ses_name_;
+
   private:
     friend class PrintableWindowManager;
     PWMImpl(ScreenScene*, PaperScene*, Rect*);
