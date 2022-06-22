@@ -2,13 +2,20 @@ import neuron
 import pytest
 
 
+def test_builtin():
+    with pytest.raises(TypeError):
+        class MyList(neuron.HocBaseObject, hoc_type=neuron.h.List):
+            pass
+
+
 def test_hocbase():
-    class MyList(neuron.HocBaseObject, hoc_type=neuron.h.Vector):
+    class MyStim(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         pass
 
-    assert issubclass(MyList, neuron.hoc.HocObject)
-    assert issubclass(MyList, neuron.HocBaseObject)
-    assert MyList._hoc_type == neuron.h.Vector
+    assert issubclass(MyStim, neuron.hoc.HocObject)
+    assert issubclass(MyStim, neuron.HocBaseObject)
+    assert MyStim._hoc_type == neuron.h.NetStim
+
 
 
 def test_hoc_template_hclass():
@@ -64,25 +71,25 @@ def test_pyobj_constructor():
     # Test that __new__ is required when __init__ is overridden
     with pytest.raises(TypeError):
 
-        class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.List):
-            def __init__(self, first):
+        class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
+            def __init__(self, freq):
                 super().__init__()
                 self.append(first)
 
-    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.List):
-        def __new__(cls, first):
+    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
+        def __new__(cls, freq):
             return super().__new__(cls)
 
-        def __init__(self, first):
+        def __init__(self, freq):
             super().__init__()
-            self.append(first)
+            self.interval = 1000 / freq
 
-    p = PyObj(neuron.h.List())
-    assert p.count() == 1
+    p = PyObj(4)
+    assert p.interval == 250
 
 
 def test_pyobj_def():
-    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.List):
+    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         def my_method(self, a):
             return a * 2
 
@@ -91,20 +98,29 @@ def test_pyobj_def():
 
 
 def test_pyobj_overloading():
-    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.List):
-        def append(self, i):
-            self.last_appended = i
-            return self.baseattr("append")(i)
+    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.PatternStim):
+        def play(self, i):
+            self.played = True
+            v = neuron.h.Vector([i])
+            return self.baseattr("play")(v, v)
 
     p = PyObj()
-    p2 = PyObj()
-    assert p.append(p) == 1
-    assert p.count() == 1
-    assert p[0] == p
+    p.play(2)
+    assert hasattr(p, "played")
+
+
+@pytest.mark.xfail(reason="inf. recursion because baseattr finds Python attrs")
+def test_bad_overload():
+    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.PatternStim):
+        def not_on_base(self):
+            return p.baseattr("not_on_base")()
+
+    p = PyObj()
+    p.not_on_base()
 
 
 def test_pyobj_inheritance():
-    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.List):
+    class PyObj(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         pass
 
     class MyObj(PyObj):
@@ -116,7 +132,7 @@ def test_pyobj_inheritance():
             def __init__(self, arg):
                 pass
 
-    class List(neuron.HocBaseObject, hoc_type=neuron.h.List):
+    class List(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         def __new__(cls, *args, **kwargs):
             super().__new__(cls)
 
@@ -126,17 +142,17 @@ def test_pyobj_inheritance():
             for arg in args:
                 self.append(arg)
 
-    l = InitList(neuron.h.List(), neuron.h.List())
+    l = InitList(neuron.h.NetStim(), neuron.h.NetStim())
 
 
 def test_pyobj_composition():
-    class A(neuron.HocBaseObject, hoc_type=neuron.h.List):
+    class A(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         pass
 
-    class B(neuron.HocBaseObject, hoc_type=neuron.h.List):
+    class B(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
         pass
 
-    class C(neuron.HocBaseObject, hoc_type=neuron.h.Vector):
+    class C(neuron.HocBaseObject, hoc_type=neuron.h.ExpSyn):
         pass
 
     with pytest.raises(TypeError):
@@ -147,7 +163,7 @@ def test_pyobj_composition():
     class E(A, B):
         pass
 
-    assert E._hoc_type == neuron.h.List
+    assert E._hoc_type == neuron.h.NetStim
 
 
 class PickleTest(neuron.HocBaseObject, hoc_type=neuron.h.NetStim):
