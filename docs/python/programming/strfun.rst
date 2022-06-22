@@ -5,24 +5,19 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. class:: StringFunctions
+.. class:: h.StringFunctions()
 
 
-    Syntax:
-        ``obj = h.StringFunctions()``
-
-
-    Description:
-        The StringFunctions class contains functions which you can apply to a \ ``strdef``.  This class 
-        exists purely for the utility of preventing pollution of name space with string operations. 
+    The StringFunctions class contains functions which you can apply to a \ ``strdef``.  This class 
+    exists purely for the utility of preventing pollution of name space with string operations. 
 
     Example:
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            sf = h.StringFunctions() 
+        from neuron import h
+        sf = h.StringFunctions() 
 
 
          
@@ -31,139 +26,116 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.len
+.. method:: StringFunctions.len(str)
 
 
-    Syntax:
-        ``length = strobj.len(str)``
-
-
-    Description:
-        Return the length of a string. 
+    Return the length of a string. 
 
     Example: 
-        .. code-block::
-            python
+
+    .. code-block::
+        python
+
+        from neuron import h
+        s = h.ref("hello")
+        sf = h.StringFunctions()
+        length = sf.len(s)
+        print(length)
+         
+
+----
+
+
+
+.. method:: StringFunctions.substr(s1, s2)
+
+
+    Return the index into *s1* of the first occurrence of *s2*. 
+    If *s2* isn't a substring then the return value is -1. 
+
+    Example:
+    .. code-block::
+        python
+
+        from neuron import h
+        s1 = h.ref("allowed")
+        s2 = h.ref("low")
+        sf = h.StringFunctions()
+        index = sf.substr(s1, s2)
+        
+
+----
+
+
+
+.. method:: StringFunctions.head(str, "regexp", result)
+
+
+    The result contains the head of the string 
+    up to but not including the *regexp*. returns index of 
+    last char. 
+
+    Example:
+    .. code-block::
+        python
     
-            from neuron import h
-            s = h.ref("hello")
-            sf = h.StringFunctions()
-            length = sf.len(s)
-            print(length)
+        from neuron import h
+        s1 = h.ref("hello world")
+        s2 = h.ref("")
+        sf = h.StringFunctions()
+        index = sf.head(s1, "[e]", s2)
+        print(s2[0])
+
          
 
 ----
 
 
 
-.. method:: StringFunctions.substr
+.. method:: StringFunctions.tail(str, "regexp", result)
 
 
-    Syntax:
-        ``index = strobj.substr(s1, s2)``
-
-
-    Description:
-        Return the index into *s1* of the first occurrence of *s2*. 
-        If *s2* isn't a substring then the return value is -1. 
-
-    Example:
-        .. code-block::
-            python
-
-            from neuron import h
-            s1 = h.ref("allowed")
-            s2 = h.ref("low")
-            sf = h.StringFunctions()
-            index = sf.substr(s1, s2)
-         
-
-----
-
-
-
-.. method:: StringFunctions.head
-
-
-    Syntax:
-        ``strobj.head(str, "regexp", result)``
-
-
-    Description:
-        The result contains the head of the string 
-        up to but not including the *regexp*. returns index of 
-        last char. 
-
-    Example:
-        .. code-block::
-            python
+    The result contains the tail of the string 
+    from the char following *regexp* to the end of the string. 
+    return index of first char. 
         
-            from neuron import h
-            s1 = h.ref("hello world")
-            s2 = h.ref("")
-            sf = h.StringFunctions()
-            index = sf.head(s1, "[e]", s2)
-            print(s2[0])
-
-         
-
-----
-
-
-
-.. method:: StringFunctions.tail
-
-
-    Syntax:
-        ``strobj.tail(str, "regexp", result)``
-
-
-    Description:
-        The result contains the tail of the string 
-        from the char following *regexp* to the end of the string. 
-        return index of first char. 
-         
-        Other functions can be added as needed, 
-        eg., \ ``index(s1, c1)``, \ ``char(s1, i)``, etc. 
-        without polluting the global name space. In recent versions 
-        functions can return strings. 
+    Other functions can be added as needed, 
+    eg., \ ``index(s1, c1)``, \ ``char(s1, i)``, etc. 
+    without polluting the global name space. In recent versions 
+    functions can return strings. 
 
     Example:
-        .. code-block::
-            python
-        
-            from neuron import h
-            s1 = h.ref("hello world")
-            s2 = h.ref("")
-            sf = h.StringFunctions()
-            index = sf.tail(s1, "[e]", s2)
-            print(s2[0])
+    .. code-block::
+        python
+    
+        from neuron import h
+        s1 = h.ref("hello world")
+        s2 = h.ref("")
+        sf = h.StringFunctions()
+        index = sf.tail(s1, "[e]", s2)
+        print(s2[0])
 
 
 ----
 
 
 
-.. method:: StringFunctions.right
+.. method:: StringFunctions.right(str, n)
 
 
-    Syntax:
-        ``strobj.right(str, n)``
-
-
-    Description:
-        Removes first n characters from *str* and puts the result in 
-        *str*.
+   
+    Removes first n characters from *str* and puts the result in 
+    *str*.
 
     Example:
-        .. code-block::
-            python
-        
-            from neuron import h
-            s = h.ref("hello")
-            sf = h.StringFunctions()
-            sf.right(s, 3)
-            print(s[0])
+    .. code-block::
+        python
+    
+        from neuron import h
+        s = h.ref("hello")
+        sf = h.StringFunctions()
+        sf.right(s, 3)
+        print(s[0])
 
 
          
@@ -172,68 +144,58 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.left
+.. method:: StringFunctions.left(str, n)
 
 
-    Syntax:
-        ``.left(str, n)``
-
-
-    Description:
-        Removes all but first n characters from *str* and puts the 
-        result in *str* 
+    Removes all but first n characters from *str* and puts the 
+    result in *str* 
 
     Example:
-        .. code-block::
-            python
-        
-            from neuron import h
-            s = h.ref("hello")
-            sf = h.StringFunctions()
-            sf.left(s, 3)
-            print(s[0])
+    .. code-block::
+        python
+    
+        from neuron import h
+        s = h.ref("hello")
+        sf = h.StringFunctions()
+        sf.left(s, 3)
+        print(s[0])
              
 
 ----
 
 
 
-.. method:: StringFunctions.is_name
+.. method:: StringFunctions.is_name(item)
 
 
-    Syntax:
-        ``.is_name(item)``
-
-
-    Description:
-        Returns True if the *item* is the name of a symbol, False otherwise. 
-        This is so useful that the same thing is available with the top level 
-        :func:`name_declared` function (except that returns 1 or 0 instead of True
-        or False). 
+    Returns True if the *item* is the name of a symbol, False otherwise. 
+    This is so useful that the same thing is available with the top level 
+    :func:`name_declared` function (except that returns 1 or 0 instead of True
+    or False). 
 
     Example:
-        .. code-block::
-            python
-    
-            from neuron import h
-            s1 = h.ref("hello world")
-            sf = h.StringFunctions()
-            name = sf.is_name(s1)
-            print(name)
+    .. code-block::
+        python
+
+        from neuron import h
+        s1 = h.ref("hello world")
+        sf = h.StringFunctions()
+        name = sf.is_name(s1)
+        print(name)
 
 
     Here is an example with one string that works, 
     and another that does not:
-        .. code-block::
-            python
-        
-            from neuron import h
-            sf = h.StringFunctions()
-            # valid name
-            print(sf.is_name("xvalue"))
-            # invalid name
-            print(sf.is_name("xsquiggle"))
+    .. code-block::
+        python
     
+        from neuron import h
+        sf = h.StringFunctions()
+        # valid name
+        print(sf.is_name("xvalue"))
+        # invalid name
+        print(sf.is_name("xsquiggle"))
+
     .. note::
 
         This is approximately equivalent to ``item in dir(h)``.
@@ -241,36 +203,28 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.alias
+.. method:: StringFunctions.alias(obj, "name", &var2)
+            StringFunctions.alias(obj, "name", obj2)
+            StringFunctions.alias(obj, "name")
+            StringFunctions.alias(obj)
 
-
-    Syntax:
-        ``.alias(obj, "name", &var2)``
-
-        ``.alias(obj, "name", obj2)``
-
-        ``.alias(obj, "name")``
-
-        ``.alias(obj)``
-
-
-    Description:
-        "name" becomes a public variable for obj and points to the 
-        scalar var2 or object obj2. obj.name may be used anywhere the var2 or obj2 may 
-        be used. With no third arg, the "name" is removed from the objects 
-        alias list. With no second arg, the objects alias list is cleared. 
+    
+    "name" becomes a public variable for obj and points to the 
+    scalar var2 or object obj2. obj.name may be used anywhere the var2 or obj2 may 
+    be used. With no third arg, the "name" is removed from the objects 
+    alias list. With no second arg, the objects alias list is cleared. 
 
     Example:
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            sf = h.StringFunctions()
-            v = h.Vector()
-            sf.alias(v, 't', h._ref_t)
-            print('v.t = %g' % v.t)
-            h.t = 42
-            print('v.t = %g' % v.t)
+        from neuron import h
+        sf = h.StringFunctions()
+        v = h.Vector()
+        sf.alias(v, 't', h._ref_t)
+        print('v.t = %g' % v.t)
+        h.t = 42
+        print('v.t = %g' % v.t)
 
          
 
@@ -278,16 +232,11 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.alias_list
+.. method:: StringFunctions.alias_list(obj)
 
-
-    Syntax:
-        ``list = sf.alias_list(obj)``
-
-
-    Description:
-        Return a new List object containing String objects which contain 
-        the alias names. 
+    
+    Return a new List object containing String objects which contain 
+    the alias names. 
 
     .. warning::
         The String class is not a built-in class. It generally gets declared when 
@@ -297,15 +246,15 @@ StringFunctions (String Manipulation Class)
 
     
     Example:
-        .. code-block::
-            python
-    
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            sf = h.StringFunctions()
-            v = h.Vector()
-            al = sf.alias_list(v)
-            print(al)
+    .. code-block::
+        python
+
+        from neuron import h
+        h.load_file('stdrun.hoc')
+        sf = h.StringFunctions()
+        v = h.Vector()
+        al = sf.alias_list(v)
+        print(al)
 
          
 
@@ -313,91 +262,77 @@ StringFunctions (String Manipulation Class)
 
 
 
-.. method:: StringFunctions.references
+.. method:: StringFunctions.references(object)
 
 
-    Syntax:
-        ``sf.references(object)``
-
-
-    Description:
-        Prints the number of references to the object and all objref names 
-        that reference that object (including references via 
-        :class:`HBox`, :class:`VBox`, and :class:`List`). It also prints the number of references found. 
+    Prints the number of references to the object and all objref names 
+    that reference that object (including references via 
+    :class:`HBox`, :class:`VBox`, and :class:`List`). It also prints the number of references found. 
 
     Example: 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            s1 = h.Section(name='soma')
-            strobj = h.StringFunctions()
-            strobj.references(s1)
+        from neuron import h
+        s1 = h.Section(name='soma')
+        strobj = h.StringFunctions()
+        strobj.references(s1)
 
 
 ----
 
 
 
-.. method:: StringFunctions.is_point_process
+.. method:: StringFunctions.is_point_process(object)
 
 
-    Syntax:
-        ``i = sf.is_point_process(object)``
-
-
-    Description:
-        Returns 0 if the object is not a POINT_PROCESS. Otherwise 
-        returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+    Returns 0 if the object is not a POINT_PROCESS. Otherwise 
+    returns the point type (which is always 1 greater than the index into the 
+    :func:`MechanismType(1) <MechanismType>` list). 
 
     Example:
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            s1 = h.Section(name='soma')
-            syn = h.ExpSyn(s1(0.5))
-            sf = h.StringFunctions()
-            # not point process
-            print(sf.is_point_process(s1))
-            # point process
-            print(sf.is_point_process(syn))
-            c = h.IntFire1()
-            # point process
-            print(ssf.is_point_process(c))
+        from neuron import h
+        h.load_file('stdrun.hoc')
+        s1 = h.Section(name='soma')
+        syn = h.ExpSyn(s1(0.5))
+        sf = h.StringFunctions()
+        # not point process
+        print(sf.is_point_process(s1))
+        # point process
+        print(sf.is_point_process(syn))
+        c = h.IntFire1()
+        # point process
+        print(ssf.is_point_process(c))
 
 ----
 
 
 
-.. method:: StringFunctions.is_artificial
+.. method:: StringFunctions.is_artificial(object)
 
 
-    Syntax:
-        ``i = sf.is_artificial(object)``
-
-
-    Description:
-        Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
-        returns the point type (which is always 1 greater than the index into the 
-        :func:`MechanismType(1) <MechanismType>` list). 
+    
+    Returns 0 if the object is not an ARTIFICIAL_CELL. Otherwise 
+    returns the point type (which is always 1 greater than the index into the 
+    :func:`MechanismType(1) <MechanismType>` list). 
 
          
 
     Example:
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')
-            s1 = h.Section(name='soma')
-            syn = h.ExpSyn(s1(0.5))
-            # initiate string function
-            sf = h.StringFunctions()
-            c = h.IntFire1()
-            # artificial 
-            print(sf.is_artificial(c))
-            # not artificial
-            print(sf.is_artificial(syn))
+        from neuron import h
+        h.load_file('stdrun.hoc')
+        s1 = h.Section(name='soma')
+        syn = h.ExpSyn(s1(0.5))
+        # initiate string function
+        sf = h.StringFunctions()
+        c = h.IntFire1()
+        # artificial 
+        print(sf.is_artificial(c))
+        # not artificial
+        print(sf.is_artificial(syn))
