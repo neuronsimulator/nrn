@@ -2,85 +2,74 @@ Plotter Control (obsolete)
 --------------------------
 
 
-.. function:: lw
-
+.. function:: h.lw(file)
+              h.lw(file, device)
+              h.lw()
          
          
 
-    Name:
-        lw - laser writer graphical output (or HP pen plotter) 
-         
-         
-
-    Syntax:
-        ``h.lw(file)``
-
-        ``h.lw(file, device)``
-
-        ``h.lw()``
+    
+    lw - laser writer graphical output (or HP pen plotter) 
+        
+    ``h.lw(file, device)`` opens a file to keep a copy of subsequent 
+    plots (*file* is a string variable or a name enclosed in double 
+    quotes).  All graphs which are generated on the screen are saved in 
+    this file in a format given by the integer value of the *device* argument. 
+        
 
 
+    *device* =1 
+        Hewlett Packard pen plotter style. 
 
+    *device* =2 
+        Fig style (Fig is a public domain graphics program available 
+        on the SUN computer).  The filter ``f2ps`` translates fig to postscript. 
 
-    Description:
-        ``h.lw(file, device)`` opens a file to keep a copy of subsequent 
-        plots (*file* is a string variable or a name enclosed in double 
-        quotes).  All graphs which are generated on the screen are saved in 
-        this file in a format given by the integer value of the *device* argument. 
-         
+    *device* =3 
+        Codraw style. Files in this style can be read into the 
+        PC program, ``CODRAW``.  The file should be opened with the extension, 
+        ``.DRA``. 
 
-
-        *device* =1 
-            Hewlett Packard pen plotter style. 
-
-        *device* =2 
-            Fig style (Fig is a public domain graphics program available 
-            on the SUN computer).  The filter ``f2ps`` translates fig to postscript. 
-
-        *device* =3 
-            Codraw style. Files in this style can be read into the 
-            PC program, ``CODRAW``.  The file should be opened with the extension, 
-            ``.DRA``. 
-
-         
-        Lw keeps copying every plot to the screen until the file is closed with 
-        the command, ``h.lw()``. Note that erasing the screen with ``h.plt(-3)`` or 
-        a :kbd:`Control-e` will throw away whatever is in the file and restart the file at the 
-        beginning.  Therefore, ``lw`` keeps an accurate representation of the 
-        current graphic status of the screen. 
-         
-        After setting the device once, it remains the same unless changed again 
-        by another call with two arguments.  The default device is 2. 
+        
+    Lw keeps copying every plot to the screen until the file is closed with 
+    the command, ``h.lw()``. Note that erasing the screen with ``h.plt(-3)`` or 
+    a :kbd:`Control-e` will throw away whatever is in the file and restart the file at the 
+    beginning.  Therefore, ``lw`` keeps an accurate representation of the 
+    current graphic status of the screen. 
+        
+    After setting the device once, it remains the same unless changed again 
+    by another call with two arguments.  The default device is 2. 
          
          
 
     Example:
-        Suppose an HP plotter is connected to serial port, ``COM1:``.  Then 
-        the following procedure will plot whatever graphics information 
-        happens to be on the screen (not normal text). 
-         
+    
+    Suppose an HP plotter is connected to serial port, ``COM1:``.  Then 
+    the following procedure will plot whatever graphics information 
+    happens to be on the screen (not normal text). 
+        
 
-        .. code-block::
-            none
+    .. code-block::
+        none
 
-            from neuron import h, gui
-            import os 
+        from neuron import h, gui
+        import os 
 
-            # function for hp style plotter
-            def hp():
-                h.plt(-1)  
-                h.lw() 
-                os.system("cp temp com1:")  
-                h.lw("temp")
+        # function for hp style plotter
+        def hp():
+            h.plt(-1)  
+            h.lw() 
+            os.system("cp temp com1:")  
+            h.lw("temp")
 
-            h.lw("temp", 1)
+        h.lw("temp", 1)
 
 
-         
-        Notice that the above procedure closes a file, prints it, and then 
-        re-opens :file:`temp`.  The initial direct command makes sure the 
-        file is open the first time hp is called. 
-         
+        
+    Notice that the above procedure closes a file, prints it, and then 
+    re-opens :file:`temp`.  The initial direct command makes sure the 
+    file is open the first time hp is called. 
+        
          
 
     .. warning::
