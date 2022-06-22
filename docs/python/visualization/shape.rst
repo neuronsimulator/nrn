@@ -7,36 +7,31 @@ Shape
 
 .. class:: Shape
 
-        Class for making a Shape window for executing a user defined action 
-        when a section is clicked on. (When the section mode is selected 
-        from the mouse menu.) An argument of 0 will prevent default mapping 
-        of the	window. 
-        If the first arg is a :class:`SectionList` (then a second arg of 0 will 
-        prevent default mapping) then only the sections in the list are 
-        drawn. Shape is redrawn automatically whenever length or diameter 
-        of a section changes. 
-        
-        .. warning::
-        
-            The form of the constructor that takes a :class:`SectionList` does not
-            currently work in Python.
+    Class for making a Shape window for executing a user defined action 
+    when a section is clicked on. (When the section mode is selected 
+    from the mouse menu.) An argument of 0 will prevent default mapping 
+    of the	window. 
+    If the first arg is a :class:`SectionList` (then a second arg of 0 will 
+    prevent default mapping) then only the sections in the list are 
+    drawn. Shape is redrawn automatically whenever length or diameter 
+    of a section changes. 
+    
+    .. warning::
+    
+        The form of the constructor that takes a :class:`SectionList` does not
+        currently work in Python.
             
 
 ----
 
 
 
-.. method:: Shape.view
+.. method:: Shape.view(mleft, mbottom, mwidth, mheight, sleft, stop, swidth, sheight)
 
 
-    Syntax:
-        ``.view(mleft, mbottom, mwidth, mheight, sleft, stop, swidth, sheight)``
-
-
-    Description:
-        maps a view of the Shape scene. m stands for model coordinates, 
-        s stands for screen pixel coordinates where 0,0 is the top left 
-        corner of the screen. 
+    maps a view of the Shape scene. m stands for model coordinates, 
+    s stands for screen pixel coordinates where 0,0 is the top left 
+    corner of the screen. 
 
          
 
@@ -44,24 +39,18 @@ Shape
 
 
 
-.. method:: Shape.size
+.. method:: Shape.size(mleft, mright, mbottom, mtop)
+            ...
 
 
-    Syntax:
-        ``.size(mleft, mright, mbottom, mtop)``
-
-        ``...``
-
-
-    Description:
-        Model coordinates for the scene. 
-        This is the "whole scene" size. 
-        Since, the aspect ratio for shape views is unity, the bounding box expressed 
-        by the arguments may not fit exactly on the screen window. The scale factor 
-        is decreased so that the first view window displays the entire bounding box 
-        with the center of the bounding box in the center of the view. 
-         
-        See :meth:`Graph.size` for other, more rarely use argument sequences. 
+    Model coordinates for the scene. 
+    This is the "whole scene" size. 
+    Since, the aspect ratio for shape views is unity, the bounding box expressed 
+    by the arguments may not fit exactly on the screen window. The scale factor 
+    is decreased so that the first view window displays the entire bounding box 
+    with the center of the bounding box in the center of the view. 
+        
+    See :meth:`Graph.size` for other, more rarely use argument sequences. 
 
          
 
@@ -69,25 +58,18 @@ Shape
 
 
 
-.. method:: Shape.show
+.. method:: Shape.show(mode)
 
 
-    Syntax:
-        ``shape.show(mode)``
+    mode = 0 
+        displays diameters 
 
+    mode = 1 
+        displays centroid. ie line through all the 3d points. 
 
-    Description:
-
-
-        mode = 0 
-            displays diameters 
-
-        mode = 1 
-            displays centroid. ie line through all the 3d points. 
-
-        mode = 2 
-            displays schematic. ie line through 1st and last 2d points of each 
-            section. 
+    mode = 2 
+        displays schematic. ie line through 1st and last 2d points of each 
+        section. 
 
 
 
@@ -95,15 +77,10 @@ Shape
 
 
 
-.. method:: Shape.flush
+.. method:: Shape.flush()
 
 
-    Syntax:
-        ``.flush()``
-
-
-    Description:
-        Redraws all views into this scene. 
+    Redraws all views into this scene. 
 
          
 
@@ -111,18 +88,12 @@ Shape
 
 
 
-.. method:: Shape.observe
+.. method:: Shape.observe()
+            Shape.observe(sectionlist)
 
 
-    Syntax:
-        ``shape.observe()``
-
-        ``shape.observe(sectionlist)``
-
-
-    Description:
-        Replace the list of observed sections in the Shape with the specified 
-        list. With no arguments, all sections are observed. 
+    Replace the list of observed sections in the Shape with the specified 
+    list. With no arguments, all sections are observed. 
 
     Example:
         In the context of the pyramidal cell demo of neurondemo (launch via
@@ -138,8 +109,19 @@ Shape
             sl.append(h.soma)
             sl.append(h.dendrite_1[8])
             h.Shape[0].observe(sl)
+      
+
+----
 
 
+
+.. method:: Shape.view_count()
+
+
+    Returns number of views into this scene. (stdrun.hoc removes 
+    scenes from the \ ``flush_list`` and \ ``graphList[]`` when this goes to 
+    0. If no other \ ``objectvar`` points to the scene, it will be 
+    freed.) 
 
          
 
@@ -147,18 +129,10 @@ Shape
 
 
 
-.. method:: Shape.view_count
+.. method:: Shape.select(sec=section)
 
 
-    Syntax:
-        ``.view_count()``
-
-
-    Description:
-        Returns number of views into this scene. (stdrun.hoc removes 
-        scenes from the \ ``flush_list`` and \ ``graphList[]`` when this goes to 
-        0. If no other \ ``objectvar`` points to the scene, it will be 
-        freed.) 
+    Colors red the specified section. 
 
          
 
@@ -166,15 +140,12 @@ Shape
 
 
 
-.. method:: Shape.select
+.. method:: Shape.action("command")
 
 
-    Syntax:
-        ``.select(sec=section)``
-
-
-    Description:
-        Colors red the specified section. 
+    command is executed whenever the user clicks on a section. 
+    The clicked section is pushed before execution and popped after. 
+    \ :data:`hoc_ac_` contains the arc position 0 - 1 of the nearest node. 
 
          
 
@@ -182,17 +153,13 @@ Shape
 
 
 
-.. method:: Shape.action
+.. method:: Shape.color(i, sec=section)
 
 
-    Syntax:
-        ``.action("command")``
-
-
-    Description:
-        command is executed whenever the user clicks on a section. 
-        The clicked section is pushed before execution and popped after. 
-        \ :data:`hoc_ac_` contains the arc position 0 - 1 of the nearest node. 
+    colors the specified section according to color index 
+    (index same as specified in :class:`Graph` class). If there are several 
+    sections to color it is more efficient to make a :class:`SectionList` and 
+    use \ ``.color_list`` 
 
          
 
@@ -200,18 +167,10 @@ Shape
 
 
 
-.. method:: Shape.color
+.. method:: Shape.color_all(i)
 
 
-    Syntax:
-        ``shape.color(i, sec=section)``
-
-
-    Description:
-        colors the specified section according to color index 
-        (index same as specified in :class:`Graph` class). If there are several 
-        sections to color it is more efficient to make a :class:`SectionList` and 
-        use \ ``.color_list`` 
+    colors all the sections 
 
          
 
@@ -219,15 +178,10 @@ Shape
 
 
 
-.. method:: Shape.color_all
+.. method:: Shape.color_list(SectionList, i)
 
 
-    Syntax:
-        ``.color_all(i)``
-
-
-    Description:
-        colors all the sections 
+    colors the sections in the list 
 
          
 
@@ -235,43 +189,19 @@ Shape
 
 
 
-.. method:: Shape.color_list
+.. method:: Shape.point_mark(objvar, colorindex)
+            Shape.point_mark(objvar, colorindex, style)
+            Shape.point_mark(objvar, colorindex, style, size)
 
 
-    Syntax:
-        ``.color_list(SectionList, i)``
-
-
-    Description:
-        colors the sections in the list 
-
-         
-
-----
-
-
-
-.. method:: Shape.point_mark
-
-
-    Syntax:
-        ``.point_mark(objvar, colorindex)``
-
-        ``.point_mark(objvar, colorindex, style)``
-
-        ``.point_mark(objvar, colorindex, style, size)``
-
-
-
-    Description:
-        draw a little filled circle with indicated color where the point process 
-        referenced by \ ``objvar`` is located. Note, if you subsequently relocate 
-        the point process or destroy it the proper thing will happen to the 
-        mark. (at least after a flush) 
-         
-        The optional arguments specify the style and size as in the 
-        :meth:`Graph.mark` method of :class:`Graph`. This extension was contributed 
-        by Yichun Wei ``yichunwe@usc.edu``.
+    draw a little filled circle with indicated color where the point process 
+    referenced by \ ``objvar`` is located. Note, if you subsequently relocate 
+    the point process or destroy it the proper thing will happen to the 
+    mark. (at least after a flush) 
+        
+    The optional arguments specify the style and size as in the 
+    :meth:`Graph.mark` method of :class:`Graph`. This extension was contributed 
+    by Yichun Wei ``yichunwe@usc.edu``.
 
          
 
@@ -279,15 +209,10 @@ Shape
 
 
 
-.. method:: Shape.point_mark_remove
+.. method:: Shape.point_mark_remove([objvar])
 
 
-    Syntax:
-        ``.point_mark_remove([objvar])``
-
-
-    Description:
-        With no arg, removes all the point process marks. 
+    With no arg, removes all the point process marks. 
 
          
 
@@ -295,16 +220,11 @@ Shape
 
 
 
-.. method:: Shape.save_name
+.. method:: Shape.save_name("name")
 
 
-    Syntax:
-        ``.save_name("name")``
-
-
-    Description:
-        The \ ``objectvar`` used to save the scene when the print window 
-        manager is used to save a session. 
+    The \ ``objectvar`` used to save the scene when the print window 
+    manager is used to save a session. 
 
          
 
@@ -312,17 +232,12 @@ Shape
 
 
 
-.. method:: Shape.unmap
+.. method:: Shape.unmap()
 
 
-    Syntax:
-        ``.unmap()``
-
-
-    Description:
-        dismisses all windows that are a direct view into this scene. 
-        (does not unmap boxes containing scenes.) \ ``unmap`` is called 
-        automatically when no hoc object variable references the Shape. 
+    dismisses all windows that are a direct view into this scene. 
+    (does not unmap boxes containing scenes.) \ ``unmap`` is called 
+    automatically when no hoc object variable references the Shape. 
 
          
 
@@ -330,16 +245,11 @@ Shape
 
 
 
-.. method:: Shape.printfile
+.. method:: Shape.printfile("filename")
 
 
-    Syntax:
-        ``.printfile("filename")``
-
-
-    Description:
-        prints the first view of the graph as an encapsulated post script 
-        file 
+    prints the first view of the graph as an encapsulated post script 
+    file 
 
 
 ----
@@ -383,8 +293,7 @@ Shape
 .. method:: Shape.erase_all
 
 
-    Description:
-        Erases everything in the Shape, including all PointMarks and Sections. 
+    Erases everything in the Shape, including all PointMarks and Sections. 
 
     .. seealso::
         :meth:`Graph.erase_all`, :meth:`Shape.observe`, :meth:`Shape.point_mark`
@@ -438,20 +347,15 @@ Shape
 
 
 
-.. method:: Shape.menu_tool
+.. method:: Shape.menu_tool("label", "procname")
 
 
-    Syntax:
-        ``s.menu_tool("label", "procname")``
-
-
-    Description:
-        Same as :meth:`Graph.menu_tool` for the :func:`Graph` class. When procname is 
-        called it is given four arguments: type, x, y, keystate. Type = 1,2,3 means 
-        move, press, release respectively and x and are in model coordinates. 
-        Keystate reflects the 
-        state of control (bit 1), shift (bit 2), and meta (bit 3) keys, ie 
-        control and shift down has a value of 3. 
+    Same as :meth:`Graph.menu_tool` for the :func:`Graph` class. When procname is 
+    called it is given four arguments: type, x, y, keystate. Type = 1,2,3 means 
+    move, press, release respectively and x and are in model coordinates. 
+    Keystate reflects the 
+    state of control (bit 1), shift (bit 2), and meta (bit 3) keys, ie 
+    control and shift down has a value of 3. 
          
 
     .. seealso::
@@ -488,19 +392,14 @@ Shape
 
 
 
-.. method:: Shape.nearest
+.. method:: Shape.nearest(x, y)
 
 
-    Syntax:
-        ``d = shape.nearest(x, y)``
-
-
-    Description:
-        returns the distance (in model coordinates) to the nearest section. 
-        The section becomes the selected section of the Shape. It is NOT 
-        pushed onto the section stack and it is NOT colored. The nearest 
-        arc position of the selected section as well 
-        as the section is available from :func:`push_section`. 
+    returns the distance (in model coordinates) to the nearest section. 
+    The section becomes the selected section of the Shape. It is NOT 
+    pushed onto the section stack and it is NOT colored. The nearest 
+    arc position of the selected section as well 
+    as the section is available from :func:`push_section`. 
 
          
 
@@ -508,10 +407,16 @@ Shape
 
 
 
-.. method:: Shape.push_selected
+.. method:: Shape.push_selected()
 
 
-    Syntax:
+    If there is a selection for the Shape class, then it is pushed onto 
+    the section stack (becomes the currently accessed section) and the 
+    arc position (0 to 1) returned. If no section is selected the function 
+    returns -1 and no section is pushed. 
+
+
+    Example
     
         .. code-block::
             python
@@ -521,12 +426,6 @@ Shape
                 # do something, then end with:
             h.pop_section()
 
-
-    Description:
-        If there is a selection for the Shape class, then it is pushed onto 
-        the section stack (becomes the currently accessed section) and the 
-        arc position (0 to 1) returned. If no section is selected the function 
-        returns -1 and no section is pushed. 
 
     .. note::
         
@@ -548,18 +447,13 @@ Shape
 
 
 
-.. method:: Shape.len_scale
+.. method:: Shape.len_scale(scl, sec=section)
 
 
-    Syntax:
-        ``shape.len_scale(scl, sec=section)``
-
-
-    Description:
-        The drawing of the section length (for the specified section) in the Shape 
-        scene is scaled by the factor. Diameter is drawn normally. 
-        Note that this does not change the physical length of the section but 
-        only its appearance in this Shape instance. 
+    The drawing of the section length (for the specified section) in the Shape 
+    scene is scaled by the factor. Diameter is drawn normally. 
+    Note that this does not change the physical length of the section but 
+    only its appearance in this Shape instance. 
 
          
 
@@ -567,20 +461,14 @@ Shape
 
 
 
-.. method:: Shape.rotate
+.. method:: Shape.rotate()
+            Shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)
 
 
-    Syntax:
-        ``shape.rotate()``
-
-        ``shape.rotate(xorg, yorg, zorg, xrad, yrad, zrad)``
-
-
-    Description:
-        With no args the view is in the xy plane. 
-        With args, incrementally rotate about the indicated origin by the 
-        amount given in radians around the current view coordinates (order is 
-        sequentially about x,y,z axes) 
+    With no args the view is in the xy plane. 
+    With args, incrementally rotate about the indicated origin by the 
+    amount given in radians around the current view coordinates (order is 
+    sequentially about x,y,z axes) 
 
          
          

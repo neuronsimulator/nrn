@@ -18,19 +18,14 @@ This document describes the construction and manipulation of a stylized topology
 
 ----
 
-.. class:: Section
+.. class:: h.Section()
+           h.Section(name='dend')
+           h.Section(cell=mycell)
+           h.Section(name='dend', cell=mycell)
 
-    Syntax:
-        .. code::
-
-            dend = h.Section()
-            dend = h.Section(name='dend')
-            dend = h.Section(cell=mycell)
-            dend = h.Section(name='dend', cell=mycell)
-
-    Description:
-        Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
-        If a cell argument is passed, its repr will be combined with the name to form ``str(s)``.
+    
+    Creates a new section. If no cell argument is specified, the name argument (optional) will be returned via ``str(s)`` or ``s.hname()``; if no name is provided, one will be automatically generated.
+    If a cell argument is passed, its repr will be combined with the name to form ``str(s)``.
 
     Example 1:
 
@@ -83,9 +78,10 @@ This document describes the construction and manipulation of a stylized topology
                 none
 
                 |-|       MyCell[0].soma(0-1)
-                  `|       MyCell[0].dend(0-1)
-                |-|       MyCell[1].soma(0-1)
-                  `|       MyCell[1].dend(0-1)
+
+                 |-|       MyCell[0].dend(0-1)
+                 |-|       MyCell[1].soma(0-1)
+                |-|      MyCell[1].dend(0-1)
 
     .. seealso::
     
@@ -98,28 +94,21 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. method:: Section.connect
+.. method:: Section.connect(parent, [0 or 1])
+            Section.connect(parent(x), [0 or 1])
 
 
-    Syntax:
-        ``child.connect(parent, [0 or 1])``
-
-        ``child.connect(parent(x), [0 or 1])``
-
-
-
-    Description:
-        The first form connects the child at end 0 or 1 to the parent
-        section at position x. By default the child end 0 connects to the parent end 1.
-        An alternative syntax is the second 
-        form in which the location on the parent section is indicated.  If a section 
-        is connected twice a Notice is printed on the standard error device 
-        saying that the section has been reconnected (the last connection takes 
-        precedence).  To avoid the notice, disconnect the section first with the 
-        function :func:`disconnect`.  If sections are inadvertently connected in a 
-        loop, an error will be generated when the internal data structures are 
-        created and the user will be required to disconnect one of the sections 
-        forming the loop. 
+    The first form connects the child at end 0 or 1 to the parent
+    section at position x. By default the child end 0 connects to the parent end 1.
+    An alternative syntax is the second 
+    form in which the location on the parent section is indicated.  If a section 
+    is connected twice a Notice is printed on the standard error device 
+    saying that the section has been reconnected (the last connection takes 
+    precedence).  To avoid the notice, disconnect the section first with the 
+    function :func:`disconnect`.  If sections are inadvertently connected in a 
+    loop, an error will be generated when the internal data structures are 
+    created and the user will be required to disconnect one of the sections 
+    forming the loop. 
          
 
     Example:
@@ -143,14 +132,10 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. method:: Section.disconnect
+.. method:: Section.disconnect()
 
 
-    Syntax:
-        ``section.disconnect()``
-
-    Description:
-        Disconnect the section. The section becomes the root of its subtree.
+    Disconnect the section. The section becomes the root of its subtree.
 
     Example:
 
@@ -176,133 +161,112 @@ This document describes the construction and manipulation of a stylized topology
 
 .. data:: Section.nseg
 
-    Syntax:
-        ``section.nseg``
+    
+    Number of segments (compartments) in ``section``. 
+    When a section is created, nseg is 1. 
+    In versions prior to 3.2, changing nseg throws away all 
+    "inserted" mechanisms including diam 
+    (if 3-d points do not exist). PointProcess, connectivity, L, and 3-d 
+    point information remain unchanged. 
+        
+    Starting in version 3.2, a change to nseg re-uses information contained 
+    in the old segments. 
+        
+    If nseg is increased, all old segments are 
+    relocated to their nearest new locations (no instance variables are modified 
+    and no pointers to data in those segments become invalid). 
+    and new segments are allocated and given mechanisms and values that are 
+    identical to the old segment in which the center of the new segment is 
+    located.  This means that increasing nseg by an odd factor preserves 
+    the locations of all previous data (including all Point Processes) 
+    and, if PARAMETER range variables are 
+    constant, that all the new segments have the proper PARAMETER values. 
+    (It generally doesn't matter that ASSIGNED and STATE values do not get 
+    interpolated since those values are computed with :func:`fadvance`). 
+    If range variables are not constant then the hoc expressions used to 
+    set them should be re-executed. 
+        
+    If nseg is decreased then all the new segments are in fact those old 
+    segments that were nearest the centers of the new segments. Unused old 
+    segments are freed (and thus any existing pointers to variables in those 
+    freed segments are invalid). This means that decreasing nseg by an odd 
+    factor preserves the locations of all previous data.
 
-    Description:
-        Number of segments (compartments) in ``section``. 
-        When a section is created, nseg is 1. 
-        In versions prior to 3.2, changing nseg throws away all 
-        "inserted" mechanisms including diam 
-        (if 3-d points do not exist). PointProcess, connectivity, L, and 3-d 
-        point information remain unchanged. 
-         
-        Starting in version 3.2, a change to nseg re-uses information contained 
-        in the old segments. 
-         
-        If nseg is increased, all old segments are 
-        relocated to their nearest new locations (no instance variables are modified 
-        and no pointers to data in those segments become invalid). 
-        and new segments are allocated and given mechanisms and values that are 
-        identical to the old segment in which the center of the new segment is 
-        located.  This means that increasing nseg by an odd factor preserves 
-        the locations of all previous data (including all Point Processes) 
-        and, if PARAMETER range variables are 
-        constant, that all the new segments have the proper PARAMETER values. 
-        (It generally doesn't matter that ASSIGNED and STATE values do not get 
-        interpolated since those values are computed with :func:`fadvance`). 
-        If range variables are not constant then the hoc expressions used to 
-        set them should be re-executed. 
-         
-        If nseg is decreased then all the new segments are in fact those old 
-        segments that were nearest the centers of the new segments. Unused old 
-        segments are freed (and thus any existing pointers to variables in those 
-        freed segments are invalid). This means that decreasing nseg by an odd 
-        factor preserves the locations of all previous data.
+    POINT PROCESSes are preserved regardless of how nseg is changed.
+    However, any POINT PROCESS that was attached to a location other
+    than 0 or 1 will be moved to the center of the "new segment" that
+    is nearest to the "old segment" to which it was attached.  The same
+    rule applies to child sections that had been attached to locations
+    other than 0 or 1.
+        
+    The intention is to guarantee that the following sequence 
 
-        POINT PROCESSes are preserved regardless of how nseg is changed.
-        However, any POINT PROCESS that was attached to a location other
-        than 0 or 1 will be moved to the center of the "new segment" that
-        is nearest to the "old segment" to which it was attached.  The same
-        rule applies to child sections that had been attached to locations
-        other than 0 or 1.
-         
-        The intention is to guarantee that the following sequence 
+    .. code::
 
-        .. code::
+        run() # sim1 
+        for sec in h.allsec():
+            sec.nseg *= oddfactor
+        run() # sim2 
+        for sec in h.allsec():
+            sec.nseg /= oddfactor
+        run() # sim3 
 
-            run() # sim1 
-            for sec in h.allsec():
-                sec.nseg *= oddfactor
-            run() # sim2 
-            for sec in h.allsec():
-                sec.nseg /= oddfactor
-            run() # sim3 
-
-        will produce identical simulations for sim1 and sim3. And sim2 will be 
-        oddfactor^2 more accurate with regard to spatial discretization error. 
+    will produce identical simulations for sim1 and sim3. And sim2 will be 
+    oddfactor^2 more accurate with regard to spatial discretization error. 
 
 ----
 
-.. method:: Section.orientation
+.. method:: Section.orientation()
 
-    Syntax:
-        ``y = section.orientation()``
+    
+    Return the end (0 or 1) which connects to the parent. This is the 
+    value, y, used in 
+        
+    .. code::
 
-    Description:
-        Return the end (0 or 1) which connects to the parent. This is the 
-        value, y, used in 
-         
-        .. code::
-
-            child.connect(parent(x), y)
+        child.connect(parent(x), y)
 
 ----
 
-.. method:: Section.parentseg
+.. method:: Section.parentseg()
 
-    Syntax:
-        ``seg = child.parentseg()``
 
-    Description:
-        Return the parent segment of the ``child`` section. This is ``parent(x)`` in:
+    Return the parent segment of the ``child`` section. This is ``parent(x)`` in:
 
-        .. code::
+    .. code::
 
-            child.connect(parent(x), y)
+        child.connect(parent(x), y)
 
-        To get the x value, use ``seg.x``.
+    To get the x value, use ``seg.x``.
 
 ----
 
-.. method:: Section.cell
+.. method:: Section.cell()
 
-    Syntax:
-        ``section.cell()``
-
-    Description:
-        Returns the value of the cell keyword argument provided when the Section was created.
+    
+    Returns the value of the cell keyword argument provided when the Section was created.
 
 ----
 
-.. method:: Section.hname
+.. method:: Section.hname()
 
-    Syntax:
-        ``section.hname()``
-
-    Description:
-        Returns the value of the name keyword argument provided when the Section was created.
-        If no name was provided, the internally provided name is returned instead.
+   
+    Returns the value of the name keyword argument provided when the Section was created.
+    If no name was provided, the internally provided name is returned instead.
 
 ----
 
-.. method:: Section.name
+.. method:: Section.name()
 
-    Syntax:
-        ``section.name()``
-
-    Description:
-        Same as :meth:`Section.hname`
+    
+    Same as :meth:`Section.hname`
 
 ----
 
 .. method:: Section.subtree()
 
-    Syntax:
-        ``section.subtree()``
-
-    Description:
-        Returns a Python list of the sub-tree of the Section
+    
+    Returns a Python list of the sub-tree of the Section
 
     Example:
         .. code-block::
@@ -328,11 +292,11 @@ This document describes the construction and manipulation of a stylized topology
             >>> h.topology()
 
             |-|       soma(0-1)
-               `|       dend2(0-1)
-                 `|       dend3(0-1)
-                 `|       dend4(0-1)
-                   `|       dend5(0-1)
-                `|       dend1(0-1)
+               -|       dend2(0-1)
+                 -|       dend3(0-1)
+                 -|       dend4(0-1)
+                   -|       dend5(0-1)
+                -|       dend1(0-1)
 
             1.0
             >>> dend2.subtree()
@@ -351,11 +315,8 @@ This document describes the construction and manipulation of a stylized topology
 
 .. method:: Section.wholetree()
 
-    Syntax:
-        ``section.wholetree()``
-
-    Description:
-        Returns a Python list of the whole tree of the Section
+    
+    Returns a Python list of the whole tree of the Section
 
     Example:
         .. code-block::
@@ -381,11 +342,11 @@ This document describes the construction and manipulation of a stylized topology
             >>> h.topology()
 
             |-|       soma(0-1)
-               `|       dend2(0-1)
-                 `|       dend3(0-1)
-                 `|       dend4(0-1)
-                   `|       dend5(0-1)
-               `|       dend1(0-1)
+               -|       dend2(0-1)
+                 -|       dend3(0-1)
+                 -|       dend4(0-1)
+                   -|       dend5(0-1)
+               -|       dend1(0-1)
 
             1.0
             >>> dend2.wholetree()
@@ -399,15 +360,10 @@ This document describes the construction and manipulation of a stylized topology
             [soma, dend1, dend2, dend4, dend5, dend3]
 ----
 
-.. function:: topology
+.. function:: h.topology()
 
 
-    Syntax:
-        ``h.topology()``
-
-
-    Description:
-        Print the topology of how the sections are connected together. 
+    Print the topology of how the sections are connected together. 
 
          
          
@@ -416,32 +372,27 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: delete_section
+.. function:: h.delete_section(sec=sec)
 
 
-    Syntax:
-        ``h.delete_section(sec=sec)``
+    Delete the specified section ``sec`` from the main section
+    list which is used in computation.
 
+    .. code::
 
-    Description:
-        Delete the specified section ``sec`` from the main section
-        list which is used in computation.
+        for sec in h.allsec():
+            h.delete_section(sec=sec)
 
-        .. code::
-
-            for sec in h.allsec():
-                h.delete_section(sec=sec)
- 
-        will remove all sections. 
-         
-        Note: deleted sections still exist (even though 
-        :meth:`SectionRef.exists`
-        returns 0 and an error will result if one attempts to access 
-        the section) so 
-        that other objects (such as :class:`SectionList`\ s and :class:`Shape`\ s) which 
-        hold pointers to these sections will still work. When the last 
-        pointer to a section is destroyed, the section memory will be 
-        freed. 
+    will remove all sections. 
+        
+    Note: deleted sections still exist (even though 
+    :meth:`SectionRef.exists`
+    returns 0 and an error will result if one attempts to access 
+    the section) so 
+    that other objects (such as :class:`SectionList`\ s and :class:`Shape`\ s) which 
+    hold pointers to these sections will still work. When the last 
+    pointer to a section is destroyed, the section memory will be 
+    freed. 
 
     .. warning::
 
@@ -453,21 +404,16 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_exists
+.. function:: h.section_exists("name", [index], [object])
 
 
-    Syntax:
-        ``boolean = h.section_exists("name", [index], [object])``
-
-
-    Description:
-        Returns 1.0 if the section defined by the args exists and can be used 
-        as a currently accessed section. Otherwise, returns 0.0.
-        The index is optional and if nonzero, can be incorporated into the name as 
-        a literal value such as dend[25]. If the optional object arg is present, that 
-        is the context, otherwise the context is the top level. "name" should 
-        not contain the object prefix. Even if a section is multiply dimensioned, use 
-        a single index value. 
+    Returns 1.0 if the section defined by the args exists and can be used 
+    as a currently accessed section. Otherwise, returns 0.0.
+    The index is optional and if nonzero, can be incorporated into the name as 
+    a literal value such as dend[25]. If the optional object arg is present, that 
+    is the context, otherwise the context is the top level. "name" should 
+    not contain the object prefix. Even if a section is multiply dimensioned, use 
+    a single index value. 
 
     .. warning::
 
@@ -478,36 +424,25 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_owner
+.. function:: h.section_owner(sec=section)
 
 
-    Syntax:
-        ``h.section_owner(sec=section)``
-
-
-    Description:
-        
-        If ``section`` was created in Python, returns the ``cell`` keyword argument or
-        None. This is accessible directly from the Section object via :meth:`Section.cell`.
-        If the section was created in HOC, returns the object that created the section, or
-        None if created at the top level.
+    If ``section`` was created in Python, returns the ``cell`` keyword argument or
+    None. This is accessible directly from the Section object via :meth:`Section.cell`.
+    If the section was created in HOC, returns the object that created the section, or
+    None if created at the top level.
          
 
 ----
 
 
 
-.. function:: disconnect
+.. function:: h.disconnect(sec=section)
 
 
-    Syntax:
-        ``h.disconnect(sec=section)``
-
-
-    Description:
-        Disconnect ``section`` from its parent. Such 
-        a section can be reconnected with the connect method. The alternative
-        :meth:`Section.disconnect` is recommended.
+    Disconnect ``section`` from its parent. Such 
+    a section can be reconnected with the connect method. The alternative
+    :meth:`Section.disconnect` is recommended.
 
     .. warning::
 
@@ -517,30 +452,26 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: issection
+.. function:: h.issection("regular expression", sec=section)
 
 
-    Syntax:
-        ``h.issection("regular expression", sec=section)``
-
-
-    Description:
-        Return 1.0 if the name of ``section`` matches the regular expression. 
-        Return 0.0 otherwise. 
-         
-        Regular expressions are like those of grep except {n1-n2} denotes
-	an integer range and [] is literal instead of denoting a character
-	range. For character ranges use <>. For example <a-z> or <abz45> denotes
-	any character from a to z or to any of the characters abz45.
-        Thus a[{8-15}] matches sections a[8] through a[15]. 
-        A match always begins from the beginning of a section name. If you 
-        don't want to require a match at the beginning use the dot. 
-         
-        (Note, 
-        that ``.`` matches any character and ``*`` matches 0 or more occurrences 
-        of the previous character). The interpreter always closes each string with 
-        an implicit ``$`` to require a match at the end of the string. If you 
-        don't require a match at the end use "``.*``". 
+    
+    Return 1.0 if the name of ``section`` matches the regular expression. 
+    Return 0.0 otherwise. 
+        
+    Regular expressions are like those of grep except {n1-n2} denotes
+    an integer range and [] is literal instead of denoting a character
+    range. For character ranges use <>. For example <a-z> or <abz45> denotes
+    any character from a to z or to any of the characters abz45.
+    Thus a[{8-15}] matches sections a[8] through a[15]. 
+    A match always begins from the beginning of a section name. If you 
+    don't want to require a match at the beginning use the dot. 
+        
+    (Note, 
+    that ``.`` matches any character and ``*`` matches 0 or more occurrences 
+    of the previous character). The interpreter always closes each string with 
+    an implicit ``$`` to require a match at the end of the string. If you 
+    don't require a match at the end use "``.*``". 
 
     Example:
 
@@ -593,17 +524,12 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: ismembrane
+.. function:: h.ismembrane("mechanism", sec=section)
 
 
-    Syntax:
-        ``h.ismembrane("mechanism", sec=section)``
-
-
-    Description:
-        This function returns a 1.0 if the membrane of ``section`` contains this 
-        (density) mechanism.  This is not for point 
-        processes. 
+    This function returns a 1.0 if the membrane of ``section`` contains this 
+    (density) mechanism.  This is not for point 
+    processes. 
          
 
     Example:
@@ -627,55 +553,45 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: sectionname
+.. function:: h.sectionname(strvar, sec=section)
 
 
-    Syntax:
-        ``h.sectionname(strvar, sec=section)``
-
-
-    Description:
-        The name of ``section`` is placed in *strvar*, a HOC string reference.
-        Such a string reference may be created by: ``strvar = h.ref('')``; it's value is ``strvar[0]``.
-         
-        This function is superseded by the easier to use, ``str(section)``.
+    The name of ``section`` is placed in *strvar*, a HOC string reference.
+    Such a string reference may be created by: ``strvar = h.ref('')``; it's value is ``strvar[0]``.
+        
+    This function is superseded by the easier to use, ``str(section)``.
         
 
 ----
 
 
 
-.. function:: secname
+.. function:: h.secname(sec=section)
 
 
-    Syntax:
-        ``h.secname(sec=section)``
+    This function is superseded by the easier to use, ``str(section)``. The below examples
+    can be more cleanly written as: ``s = str(soma)``, ``print(soma)``, and ``for sec in h.allsec(): for seg in sec: print(seg)``.
+
+    Returns the name of ``section``. Usage is 
+
+    .. code::
+
+        s = h.secname(sec=soma)
+
+    or 
+
+    .. code::
+
+        print(h.secname(sec=soma))
+
+    or 
+
+    .. code::
 
 
-    Description:
-        This function is superseded by the easier to use, ``str(section)``. The below examples
-        can be more cleanly written as: ``s = str(soma)``, ``print(soma)``, and ``for sec in h.allsec(): for seg in sec: print(seg)``.
-
-        Returns the name of ``section``. Usage is 
-
-        .. code::
-
-            s = h.secname(sec=soma)
-
-        or 
-
-        .. code::
-
-            print(h.secname(sec=soma))
-
-        or 
-
-        .. code::
-
-
-            for sec in h.allsec():
-                for seg in sec:
-                    print('%s(%g)' % (h.secname(sec=sec), seg.x))
+        for sec in h.allsec():
+            for seg in sec:
+                print('%s(%g)' % (h.secname(sec=sec), seg.x))
 
          
 
@@ -683,16 +599,11 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: psection
+.. function:: h.psection(sec=section)
 
 
-    Syntax:
-        ``h.psection(sec=section)``
-
-
-    Description:
-        Print info about ``section`` in a format which is executable in HOC. 
-        (length, parent, diameter, membrane information) 
+    Print info about ``section`` in a format which is executable in HOC. 
+    (length, parent, diameter, membrane information) 
     
     .. note::
 
@@ -706,17 +617,12 @@ This document describes the construction and manipulation of a stylized topology
 ----
 
 
-.. function:: parent_section
+.. function:: h.parent_section(x, sec=section)
 
 
-    Syntax:
-        ``h.parent_section(x, sec=section)``
-
-
-    Description:
-        Return the pointer to the section parent of the segment ``section(x)``. 
-        Because a 64 bit pointer cannot safely be represented as a 
-        double this function is deprecated in favor of :meth:`SectionRef.parent`. 
+    Return the pointer to the section parent of the segment ``section(x)``. 
+    Because a 64 bit pointer cannot safely be represented as a 
+    double this function is deprecated in favor of :meth:`SectionRef.parent`. 
 
     .. seealso::
 
@@ -727,15 +633,10 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: parent_node
+.. function:: h.parent_node(x, sec=section)
 
 
-    Syntax:
-        ``h.parent_node(x, sec=section)``
-
-
-    Description:
-        Return the pointer of the parent of the segment ``section(x)``. 
+    Return the pointer of the parent of the segment ``section(x)``. 
 
     .. warning::
         This function is useless and currently returns an error. 
@@ -746,22 +647,17 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: parent_connection
+.. function:: h.parent_connection(sec=child)
 
 
-    Syntax:
-        ``y = h.parent_connection(sec=child)``
+    Return location on parent that ``child`` is 
+    connected to. (0 <= x <= 1). This is the value, y, used in 
 
+    .. code::
 
-    Description:
-        Return location on parent that ``child`` is 
-        connected to. (0 <= x <= 1). This is the value, y, used in 
+        child.connect(parent(x), y)
 
-        .. code::
-
-            child.connect(parent(x), y)
-
-        This information is also available via: ``child.parentseg().x``
+    This information is also available via: ``child.parentseg().x``
 
     .. seealso::
 
@@ -774,19 +670,15 @@ This document describes the construction and manipulation of a stylized topology
 
 
 
-.. function:: section_orientation
+.. function:: h.section_orientation(sec=child)
 
 
-    Syntax:
-        ``y = h.section_orientation(sec=child)``
+    Return the end (0 or 1) which connects to the parent. This is the 
+    value, y, used in 
+        
+    .. code::
 
-    Description:
-        Return the end (0 or 1) which connects to the parent. This is the 
-        value, y, used in 
-         
-        .. code::
-
-            child.connect(parent(x), y)
+        child.connect(parent(x), y)
 
     .. note::
 

@@ -51,32 +51,27 @@ the first Section created but entries may be pushed onto or popped off of the
 stack by the following commands. *Use this only as a last resort.*
 
 
-.. function:: pop_section
+.. function:: h.pop_section()
 
 
-    Syntax:
-        ``h.pop_section()``
-
-
-    Description:
-        Take the currently accessed section off the section stack. This can only be used after 
-        a function which pushes a section on the section stack such as 
-        ``point_process.getloc()``. 
+    Take the currently accessed section off the section stack. This can only be used after 
+    a function which pushes a section on the section stack such as 
+    ``point_process.getloc()``. 
 
     Example:
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            
-            soma = h.Section(name='soma')
-            apical = h.Section(name='apical')
-            stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
-            for stim in stims: 
-                x = stim.get_loc() 
-                print("location of %s is %s(%g)" % (stim, h.secname(), x))
-                h.pop_section() 
+        from neuron import h
+        
+        soma = h.Section(name='soma')
+        apical = h.Section(name='apical')
+        stims = [h.IClamp(soma(i / 4.)) for i in range(5)] + [h.IClamp(apical(0.5))]
+        for stim in stims: 
+            x = stim.get_loc() 
+            print("location of %s is %s(%g)" % (stim, h.secname(), x))
+            h.pop_section() 
             
         (Note: in this example as ``nseg=1``, the current clamps will either be at position 0, 0.5, or 1.)
 
@@ -90,35 +85,29 @@ stack by the following commands. *Use this only as a last resort.*
 
 
 
-.. function:: push_section
+.. function:: h.push_section(number)
+              h.push_section(section_name)
+
+   
+    This function, along with ``h.pop_section()`` should only be used as a last resort. 
+    It will place a specified section on the top of the section stack, 
+    becoming the current section to which all operations apply. It is 
+    probably always better to use :class:`SectionRef` 
+    or :class:`SectionList` . 
 
 
-    Syntax:
-        ``h.push_section(number)``
+    :samp:`push_section({number})` 
+        Push the section identified by the number returned by 
+        ``h.this_section()``, etc. which you desire to be the currently accessed 
+        section. Any section pushed must have a corresponding ``h.pop_section()``
+        later or else the section stack will be corrupted. The number is 
+        not guaranteed to be the same across separate invocations of NEURON. 
 
-        ``h.push_section(section_name)``
-
-
-    Description:
-        This function, along with ``h.pop_section()`` should only be used as a last resort. 
-        It will place a specified section on the top of the section stack, 
-        becoming the current section to which all operations apply. It is 
-        probably always better to use :class:`SectionRef` 
-        or :class:`SectionList` . 
-
-
-        :samp:`push_section({number})` 
-            Push the section identified by the number returned by 
-            ``h.this_section()``, etc. which you desire to be the currently accessed 
-            section. Any section pushed must have a corresponding ``h.pop_section()``
-            later or else the section stack will be corrupted. The number is 
-            not guaranteed to be the same across separate invocations of NEURON. 
-
-        :samp:`push_section({section_name})`
-            Push the section identified by the name obtained 
-            from sectionname(*strdef*). Note: at this time the implementation 
-            iterates over all sections to find the proper one; so do not use 
-            in loops. 
+    :samp:`push_section({section_name})`
+        Push the section identified by the name obtained 
+        from sectionname(*strdef*). Note: at this time the implementation 
+        iterates over all sections to find the proper one; so do not use 
+        in loops. 
 
 
     Example:

@@ -111,15 +111,10 @@ SaveState
 
 
 
-.. method:: SaveState.save
+.. method:: SaveState.save()
 
 
-    Syntax:
-        ``.save()``
-
-
-    Description:
-        t, voltage, state and event values are stored in the object. 
+    t, voltage, state and event values are stored in the object. 
 
          
 
@@ -127,27 +122,21 @@ SaveState
 
 
 
-.. method:: SaveState.restore
+.. method:: SaveState.restore()
+            SaveState.restore(1)
 
 
-    Syntax:
-        ``.restore()``
-
-        ``.restore(1)``
-
-
-    Description:
-        t, voltage, state  and event values are put back in the sections. 
-        Between a save and a restore, 
-        it is important not to create or delete sections, change 
-        the number of segments, insert or delete mechanisms, 
-        or change the location or number of point processes. 
-        Before restoring states, the object checks for consistency 
-        between its own data structure and the section structures. 
-         
-        If the arg is 1, then the event queue is not cleared and no saved events are 
-        put back on the queue. Therefore any Vector.play and/or FInitializeHandler 
-        events on the queue after finitialize() are not disturbed. 
+    t, voltage, state  and event values are put back in the sections. 
+    Between a save and a restore, 
+    it is important not to create or delete sections, change 
+    the number of segments, insert or delete mechanisms, 
+    or change the location or number of point processes. 
+    Before restoring states, the object checks for consistency 
+    between its own data structure and the section structures. 
+        
+    If the arg is 1, then the event queue is not cleared and no saved events are 
+    put back on the queue. Therefore any Vector.play and/or FInitializeHandler 
+    events on the queue after finitialize() are not disturbed. 
 
          
 
@@ -155,35 +144,29 @@ SaveState
 
 
 
-.. method:: SaveState.fread
+.. method:: SaveState.fread(File)
+            SaveState.fread(File, close)
 
 
-    Syntax:
-        ``.fread(File)``
-
-        ``.fread(File, close)``
-
-
-    Description:
-        Reads binary state data from a File object into the 
-        SaveState object. (See File in ivochelp). This does 
-        not change the state of the sections. (That is done with 
-        \ ``.restore()``). This function opens the file defined 
-        by the File object. On return the file is closed unless 
-        the second arg exists and is 1. 
-         
-        Warning: file format depends on what 
-        mechanisms are available in the executable and the order 
-        that sections are created (and mechanisms inserted) 
-        by the user. Also the order of NetCon, ArtificialCell, 
-        PointProcess creation and just about everything else that 
-        gets saved in the file. I.e. if you change your simulation 
-        setup, old files may become incompatible. 
-         
-        In a parallel simulation, each host 
-        :meth:`ParallelContext.id` , should 
-        write an id specific file. Note that the set of files is 
-        at least :meth:`ParallelContext.nhost` specific. 
+    Reads binary state data from a File object into the 
+    SaveState object. (See File in ivochelp). This does 
+    not change the state of the sections. (That is done with 
+    \ ``.restore()``). This function opens the file defined 
+    by the File object. On return the file is closed unless 
+    the second arg exists and is 1. 
+        
+    Warning: file format depends on what 
+    mechanisms are available in the executable and the order 
+    that sections are created (and mechanisms inserted) 
+    by the user. Also the order of NetCon, ArtificialCell, 
+    PointProcess creation and just about everything else that 
+    gets saved in the file. I.e. if you change your simulation 
+    setup, old files may become incompatible. 
+        
+    In a parallel simulation, each host 
+    :meth:`ParallelContext.id` , should 
+    write an id specific file. Note that the set of files is 
+    at least :meth:`ParallelContext.nhost` specific. 
 
          
 
@@ -191,19 +174,14 @@ SaveState
 
 
 
-.. method:: SaveState.fwrite
+.. method:: SaveState.fwrite(File)
 
 
-    Syntax:
-        ``.fwrite(File)``
-
-
-    Description:
-        Opens the file defined by the *File* object, writes saved 
-        binary state data to the beginning of the file. 
-        On return the file is closed unless the second arg exists 
-        and is 1. In that case, extra computer state information 
-        may be written to the file, e.g. :meth:`Random.seq`.
+    Opens the file defined by the *File* object, writes saved 
+    binary state data to the beginning of the file. 
+    On return the file is closed unless the second arg exists 
+    and is 1. In that case, extra computer state information 
+    may be written to the file, e.g. :meth:`Random.seq`.
 
          
 
@@ -211,15 +189,10 @@ SaveState
 
 
 
-.. method:: SaveState.writehoc
+.. method:: SaveState.writehoc(File)
 
 
-    Syntax:
-        ``.writehoc(File)``
-
-
-    Description:
-        Writes saved state data as sequence of hoc statements that 
-        can be read with \ ``xopen(...)``. Not implemented at this time. 
+    Writes saved state data as sequence of hoc statements that 
+    can be read with \ ``xopen(...)``. Not implemented at this time. 
 
 
