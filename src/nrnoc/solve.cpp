@@ -226,7 +226,7 @@ double topol_distance(Section* sec1,
 static Section* origin_sec;
 
 void distance(void) {
-    double d, d_origin;
+    double d, d_origin{};
     int mode;
     Node* node;
     Section* sec;
