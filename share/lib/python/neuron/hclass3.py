@@ -12,6 +12,20 @@ import nrn
 import sys
 
 
+def _is_hoc_pytype(hoc_type):
+    return (
+        hoc_type is nrn.Section
+        or (
+            isinstance(hoc_type, type)
+            and issubclass(hoc_type, hoc.HocObject)
+        )
+    )
+
+
+def _rewrite_hoc_pytype_bases(cls, py_type):
+    pass
+
+
 def assert_not_hoc_composite(cls):
     """
     Asserts that a class is not directly composed of multiple HOC types.
@@ -64,10 +78,13 @@ def hclass(hoc_type, module_name=None, name=None):
         module_name = __name__
     if name is None:
         name = hoc_type.hname()[:-2]
-    try:
-        hc = type(name, (HocBaseObject,), {}, hoc_type=hoc_type)
-    except TypeError:
-        raise TypeError("Argument is not a valid HOC type.") from None
+    if _is_hoc_pytype(hoc_type):
+        return hoc_type
+    else:
+        try:
+            hc = type(name, (HocBaseObject,), {}, hoc_type=hoc_type)
+        except TypeError:
+            raise TypeError("Argument is not a valid HOC type.") from None
     hc.__module__ = module_name
     hc.__name__ = name
     hc.__qualname__ = name
@@ -90,31 +107,30 @@ class HocBaseObject(hoc.HocObject):
     """
 
     def __init_subclass__(cls, hoc_type=None, **kwargs):
-        if hoc_type is not None:
-            if (
-                hoc_type is nrn.Section
-                or (
-                    isinstance(hoc_type, type)
-                    and issubclass(hoc_type, hoc.HocObject)
-                )
-            ):
-                return hoc_type
-            elif not isinstance(hoc_type, hoc.HocObject):
+        if _is_hoc_pytype(hoc_type):
+            # The given hoc_type, is actually a pytype: we don't actually need to inherit
+            # from HocBaseObject in this case, and modify the inheritance.
+            return _rewrite_hoc_pytype_bases(cls, hoc_type)
+        if hoc_type is None:
+            if not hasattr(cls, "_hoc_type"):
                 raise TypeError(
-                    f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
+                    "Class keyword argument `hoc_type` is required for HocBaseObjects."
                 )
-            cls._hoc_type = hoc_type
-        elif not hasattr(cls, "_hoc_type"):
+        elif not isinstance(hoc_type, hoc.HocObject):
             raise TypeError(
-                "Class keyword argument `hoc_type` is required for HocBaseObjects."
+                f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
             )
+        else:
+            cls._hoc_type = hoc_type
+        # HOC type classes may not be composed of multiple hoc types
         assert_not_hoc_composite(cls)
-        hobj = hoc.HocObject
-        hbase = HocBaseObject
-        if _overrides(cls, hobj, "__init__") and not _overrides(cls, hbase, "__new__"):
-            # Subclasses that override `__init__` must also implement `__new__` to deal
-            # with the arguments that have to be passed into `HocObject.__new__`.
-            # See https://github.com/neuronsimulator/nrn/issues/1129
+        # Subclasses that override `__init__` must also implement `__new__` to deal
+        # with the arguments that have to be passed into `HocObject.__new__`.
+        # See https://github.com/neuronsimulator/nrn/issues/1129
+        if (
+            _overrides(cls, hoc.HocObject, "__init__")
+            and not _overrides(cls, HocBaseObject, "__new__")
+        ):
             raise TypeError(
                 f"`{cls.__qualname__}` implements `__init__` but misses `__new__`. "
                 + "Class must implement `__new__`"
