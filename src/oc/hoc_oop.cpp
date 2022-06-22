@@ -48,9 +48,6 @@ static int connect_obsec_;
 static void call_constructor(Object*, Symbol*, int);
 static void free_objectdata(Objectdata*, cTemplate*);
 
-// The list of classes to be exposed to Python
-std::vector<const char*> class_name_list{};
-
 int hoc_print_first_instance = 1;
 int hoc_max_builtin_class_id = -1;
 
@@ -1615,12 +1612,12 @@ void class2oc(const char* name,
     if (hoc_lookup(name)) {
         hoc_execerror(name, "already being used as a name");
     }
-    class_name_list.push_back(name);
 
     tsym = hoc_install(name, UNDEF, 0.0, &hoc_symlist);
     tsym->subtype = CPLUSOBJECT;
     hoc_begintemplate(tsym);
     t = tsym->u.ctemplate;
+
     if (!hoc_main1_inited_ && t->id > hoc_max_builtin_class_id) {
         hoc_max_builtin_class_id = t->id;
     }

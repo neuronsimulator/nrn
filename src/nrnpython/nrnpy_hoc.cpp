@@ -3145,6 +3145,52 @@ static PyType_Spec obj_spec_from_name(const char* name) {
 }
 
 PyObject* nrnpy_hoc() {
+    // Neuron classes being exposed to Python as real types (nrn.xxx)
+    std::vector<const char*> class_name_list{"SectionList",
+                                             "SectionRef",
+                                             "PointProcessMark",
+                                             "Graph",
+                                             "HBox",
+                                             "VBox",
+                                             "GUIMath",
+                                             "PWManager",
+                                             "Glyph",
+                                             "ValueFieldEditor",
+                                             "Timer",
+                                             "Deck",
+                                             "SymChooser",
+                                             "StringFunctions",
+                                             "List",
+                                             "Vector",
+                                             "PtrVector",
+                                             "File",
+                                             "Pointer",
+                                             "Matrix",
+                                             "Random",
+                                             "Shape",
+                                             "PlotShape",
+                                             "PPShape",
+                                             "RangeVarPlot",
+                                             "SectionBrowser",
+                                             "MechanismStandard",
+                                             "MechanismType",
+                                             "NetCon",
+                                             "LinearMechanism",
+                                             "KSChan",
+                                             "KSGate",
+                                             "KSState",
+                                             "KSTrans",
+                                             "Impedance",
+                                             "SaveState",
+                                             "BBSaveState",
+                                             "FInitializeHandler",
+                                             "StateTransitionEvent",
+                                             "PythonObject",
+                                             "CVode",
+                                             "TQueue",
+                                             "SingleChan",
+                                             "ParallelContext"};
+
     PyObject* m;
     PyObject* bases;
     PyTypeObject* pto;
