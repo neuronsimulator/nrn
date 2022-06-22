@@ -14,6 +14,6 @@ def test_inheritance_builtin():
     v = neuron.h.Vector()
     assert isinstance(v, neuron.hoc.HocObject), "hoc.HocObject should be parent."
     assert isinstance(v, neuron.hoc.Vector), "Should be instance of its class"
-    assert isinstance(v, neuron.hoc.Deck), "Should not be instance of another class"
+    assert not isinstance(v, neuron.hoc.Deck), "Should not be instance of another class"
     assert type(v) is neuron.hoc.Vector, "Type should be class"
     assert type(v) is not neuron.hoc.Deck, "Type should not be another class"
