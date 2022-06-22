@@ -52,6 +52,8 @@ typedef struct event
 
 static void init_event();
 
+extern int _ninits;
+
 double
 schedule(reset_integ, old_value, t, filename)
 double *old_value, t;
@@ -60,7 +62,6 @@ char *filename;
 {
     static event_t *event_root = (event_t *) 0; /* Root of linked list of schedules */
     event_t *curr_event;
-    extern int _ninits;
     static int initialized = 0;
 
     if (initialized < _ninits)		/* Re-initialize event counters */

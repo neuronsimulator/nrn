@@ -2780,7 +2780,7 @@ static PyObject* hocpickle_setstate(PyObject* self, PyObject* args) {
 }
 
 static PyObject* libpython_path(PyObject* self, PyObject* args) {
-#if defined(HAVE_DLFCN_H) && !defined(MINGW)
+#if defined(HAVE_DLFCN_H) && !defined(MINGW) && !defined(WIN32)
     Dl_info info;
     int rval = dladdr((const void*) Py_Initialize, &info);
     if (!rval) {

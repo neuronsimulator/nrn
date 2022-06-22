@@ -274,8 +274,8 @@ if(READLINE_FOUND)
   # If we are not using self contained, static readline library created for building wheel then only
   # look for curses and termcap
   if(NOT NRN_WHEEL_STATIC_READLINE)
-    find_package(Curses QUIET)
-    find_package(Termcap QUIET)
+    # find_package(Curses QUIET)
+    # find_package(Termcap QUIET)
   endif()
 endif()
 
@@ -292,7 +292,7 @@ if(NRN_ENABLE_RX3D)
   endif()
 endif()
 if(MINGW)
-  find_package(Termcap REQUIRED)
+  # find_package(Termcap REQUIRED)
 endif()
 
 # =============================================================================
@@ -728,16 +728,16 @@ endif()
 separate_arguments(GLOBAL_VAR_TOGGLE_COMMAND UNIX_COMMAND "${GLOBAL_VAR_TOGGLE_COMMAND}")
 separate_arguments(TABLE_VAR_TOGGLE_COMMAND UNIX_COMMAND "${TABLE_VAR_TOGGLE_COMMAND}")
 add_custom_target(
-  hh_update
-  COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
-          ${CMAKE_BINARY_DIR}/hh.mod.1
-  COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
-          ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
-          ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
-  COMMENT "Update hh.mod for CoreNEURON compatibility"
-  VERBATIM)
+ hh_update
+ COMMAND sed ${GLOBAL_VAR_TOGGLE_COMMAND} ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod >
+         ${CMAKE_BINARY_DIR}/hh.mod.1
+ COMMAND sed ${TABLE_VAR_TOGGLE_COMMAND} ${CMAKE_BINARY_DIR}/hh.mod.1 >
+         ${CMAKE_BINARY_DIR}/hh.mod.2
+ COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/hh.mod.2
+         ${CMAKE_SOURCE_DIR}/src/nrnoc/hh.mod
+ COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/hh.mod.1 ${CMAKE_BINARY_DIR}/hh.mod.2
+ COMMENT "Update hh.mod for CoreNEURON compatibility"
+ VERBATIM)
 add_dependencies(nrniv_lib hh_update)
 
 # =============================================================================
@@ -755,7 +755,7 @@ if(NRN_ENABLE_PYTHON)
       ${PROJECT_BINARY_DIR}/lib/python/neuron/help_data.dat
     COMMENT "Generating help_data.dat"
     VERBATIM)
-  add_dependencies(nrniv_lib help_data_dat)
+  #add_dependencies(nrniv_lib help_data_dat)
 endif()
 
 # =============================================================================

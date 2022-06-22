@@ -122,7 +122,7 @@ char* cxx_char_alloc(size_t sz) {
 }
 
 
-#ifndef MINGW  // actual implementation in ivocwin.cpp
+#if !defined(MINGW) && !defined(WIN32)  // actual implementation in ivocwin.cpp
 void nrniv_bind_thread(void);
 void nrniv_bind_thread() {
     hoc_pushx(1.);

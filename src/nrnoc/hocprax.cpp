@@ -55,7 +55,7 @@ extern "C" int praxis_stop(int);
 extern double chkarg(int, double, double);
 extern IvocVect* vector_new2(IvocVect* vec);
 extern void vector_delete(IvocVect* vec);
-extern int nrn_praxis_ran_index;
+extern "C" uint32_t nrn_praxis_ran_index;
 extern Object** hoc_objgetarg(int);
 
 static double efun(double*, long int);

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdarg>
-#include <unistd.h>
+#include <io.h>
 #include "hoc.h"
 #include "ocmisc.h"
 #include "hocstr.h"
@@ -15,9 +15,11 @@
 #include <errno.h>
 #include "nrnfilewrap.h"
 
+#include <direct.h>
+
 
 extern jmp_buf begin;
-extern char* neuron_home;
+extern const char* neuron_home;
 
 NrnFILEWrap* frin;
 FILE* fout;
@@ -141,7 +143,7 @@ const char* expand_env_var(const char* s) {
             if (*cp1) {
                 *cp3 = '\0';
                 if (strcmp(buf, "NEURONHOME") == 0) {
-                    cp3 = neuron_home;
+                    cp3 = strdup(neuron_home);
                 } else {
                     cp3 = getenv(buf);
                 }
@@ -756,9 +758,9 @@ static int hoc_Load_file(int always, const char* name) {
     }
     /* change to the right directory*/
     if (b && path[0]) {
-        goback = (getcwd(old, 1000) != 0);
+        goback = (_getcwd(old, 1000) != 0);
         errno = 0;
-        if (chdir(expand_env_var(path)) == -1) {
+        if (_chdir(expand_env_var(path)) == -1) {
             hoc_warning("Couldn't change directory to:", path);
             path[0] = '\0';
             b = 0;
@@ -794,7 +796,7 @@ void hoc_getcwd(void) {
     if (!buf) {
         buf = static_cast<char*>(emalloc(hoc_load_file_size_));
     }
-    if (!getcwd(buf, hoc_load_file_size_)) {
+    if (!_getcwd(buf, hoc_load_file_size_)) {
         hoc_execerror("getcwd failed. Perhaps the path length is > hoc_load_file_size_", (char*) 0);
     }
 #if defined(WIN32)
@@ -830,7 +832,7 @@ void hoc_machine_name(void) {
 }
 
 int hoc_chdir(const char* path) {
-    return chdir(expand_env_var(path));
+    return _chdir(expand_env_var(path));
 }
 
 void hoc_Chdir(void) {

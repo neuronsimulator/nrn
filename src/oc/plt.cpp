@@ -11,7 +11,7 @@ extern double (*nrnpy_object_to_double_)(Object*);
 
 extern void Fig_file(const char*, int);
 
-#ifndef MINGW
+#if !defined(MINGW) && !defined(WIN32)
 
 void Plt(void) {
     TRY_GUI_REDIRECT_DOUBLE("plt", NULL);

@@ -26,13 +26,11 @@ extern char* neuronhome_forward();
 extern const char* path_prefix_to_libnrniv();
 #endif
 static char* nrnpython_getline(FILE*, FILE*, const char*);
-extern int nrn_global_argc;
-extern char** nrn_global_argv;
 void nrnpy_augment_path();
 int nrnpy_pyrun(const char*);
 extern int (*p_nrnpy_pyrun)(const char*);
 extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern const char** nrn_global_argv;
 #if NRNPYTHON_DYNAMICLOAD
 int nrnpy_site_problem;
 #endif
@@ -67,7 +65,7 @@ void nrnpy_augment_path() {
  *  @return 0 on failure, 1 on success.
  */
 int nrnpy_pyrun(const char* fname) {
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
     // perhaps this should be the generic implementation
     char* cmd = new char[strlen(fname) + 40];
     sprintf(cmd, "exec(open(\"%s\").read(), globals())", fname);

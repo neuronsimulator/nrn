@@ -1,0 +1,16 @@
+{
+    "cmake.configureArgs": [
+        "-DBISON_EXECUTABLE=C:/Users/matze/Downloads/win_flex_bison-2.5.25/win_bison.exe",
+        "-DFLEX_EXECUTABLE=C:/Users/matze/Downloads/win_flex_bison-2.5.25/win_flex.exe",
+        "-DReadline_ROOT_DIR=C:/Program Files (x86)/GnuWin32",
+        "-DNRN_ENABLE_MPI=OFF",
+        "-DNRN_ENABLE_INTERVIEWS=OFF",
+        "-DNRN_ENABLE_THREADS=OFF",
+        "-DNRN_ENABLE_RX3D=OFF",
+        "-DNRN_ENABLE_PYTHON_DYNAMIC=ON",
+        "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
+    ],
+    "cmake.buildArgs": [
+    ],
+    "cmake.parallelJobs": 4
+}

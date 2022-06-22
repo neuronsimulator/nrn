@@ -178,7 +178,7 @@ extern double hoc_default_dll_loaded_;
 extern int hoc_print_first_instance;
 int nrnpy_nositeflag;
 
-#if !defined(MINGW) && !MAC
+#if !defined(MINGW) && !defined(WIN32) && !MAC
 extern void setneuronhome(const char*) {
     neuron_home = getenv("NEURONHOME");
 }

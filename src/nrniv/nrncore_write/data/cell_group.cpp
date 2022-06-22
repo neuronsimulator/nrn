@@ -163,7 +163,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                         double* d1 = ml->_data[0];
                         double* d2 = pnt->prop->param;
                         assert(d2 >= d1 && d2 < (d1 + (sz * ml->nodecount)));
-                        long ix{(d2 - d1) / sz};
+                        long long ix{(d2 - d1) / sz};
                         agid = -(type + 1000 * ix);
                     }
                     if (ps) {

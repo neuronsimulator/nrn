@@ -12,7 +12,7 @@ extern int nrn_err_dialog_active_;
 
 #include <ostream>
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 extern bool nrn_is_gui_thread();
 extern void nrn_gui_exec(void (*)(void*), void*);
 #endif

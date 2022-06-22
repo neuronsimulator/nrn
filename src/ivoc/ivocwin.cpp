@@ -206,7 +206,7 @@ void IOHandler::timerExpired(long, long) {}
 void IOHandler::childStatus(pid_t, int) {}
 #endif  // MINGW
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 
 #include <nrnmutdec.h>
 static int bind_tid_;

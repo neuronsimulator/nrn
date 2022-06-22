@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <cctype>
 
+#include "..\mswin\dlfcn.h"
+
 extern int nrn_nopython;
 extern int nrnpy_nositeflag;
 extern char* nrnpy_pyexe;
@@ -40,7 +42,7 @@ extern void nrn_possible_mismatched_arch(const char*);
 #define RTLD_NOLOAD 0
 #endif  // RTLD_NOLOAD
 
-extern char* neuron_home;
+extern const char* neuron_home;
 
 #if NRNPYTHON_DYNAMICLOAD >= 30
 
@@ -144,7 +146,7 @@ static void set_nrnpylib() {
                 neuron_home,
                 (nrnpy_pyexe && strlen(nrnpy_pyexe) > 0) ? nrnpy_pyexe : "");
 #endif
-        FILE* p = popen(line, "r");
+        FILE* p = _popen(line, "r");
         if (!p) {
             printf("could not popen '%s'\n", line);
         } else {
@@ -170,7 +172,7 @@ static void set_nrnpylib() {
                     nrnpy_pylib = strdup(cp);
                 }
             }
-            pclose(p);
+            _pclose(p);
         }
         delete[] line;
     }

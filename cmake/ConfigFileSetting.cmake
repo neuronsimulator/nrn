@@ -26,7 +26,7 @@ nrn_set_string(DLL_DEFAULT_FNAME "${CMAKE_SYSTEM_PROCESSOR}/.libs/libnrnmech.so"
 add_definitions(-DHAVE_CONFIG_H)
 
 set(YYTEXT_POINTER 1)
-set(TIME_WITH_SYS_TIME 1)
+set(TIME_WITH_SYS_TIME 0)
 set(HAVE_NAMESPACES "/**/")
 set(HAVE_STTY 0)
 # below two are universal nowadays
@@ -239,7 +239,7 @@ set(HAVE_SSTREAM /**/)
 # =============================================================================
 nrn_check_type_exists(sys/types.h gid_t int gid_t)
 nrn_check_type_exists(sys/types.h off_t "long int" off_t)
-nrn_check_type_exists(sys/types.h pid_t int pid_t)
+# nrn_check_type_exists(sys/types.h pid_t int pid_t)
 nrn_check_type_exists(sys/types.h size_t "unsigned int" size_t)
 nrn_check_type_exists(sys/types.h uid_t int uid_t)
 

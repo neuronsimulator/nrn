@@ -6,7 +6,7 @@
 #include "equation.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <io.h>
 #include <math.h>
 #include <errno.h>
 #include "parse.hpp"
@@ -31,7 +31,7 @@ int nrnignore;
 
 /* only set  in ivoc */
 int nrn_global_argc;
-char** nrn_global_argv;
+const char** nrn_global_argv;
 
 #if defined(USE_PYTHON)
 int use_python_interpreter = 0;
@@ -173,7 +173,7 @@ int hoc_ictp;
 
 extern char* RCS_hoc_version;
 extern char* RCS_hoc_date;
-extern char* neuron_home;
+extern const char* neuron_home;
 extern int hoc_print_first_instance;
 
 #define EPS hoc_epsilon
@@ -849,8 +849,10 @@ RETSIGTYPE sigbuscatch(int sig) {
 }
 #endif
 
+#include <process.h>
+
 int hoc_pid(void) {
-    return (int) getpid();
+    return (int) _getpid();
 } /* useful for making unique temporary file names */
 
 /* readline should be avoided if stdin is not a terminal */
@@ -947,7 +949,7 @@ void hocstr_copy(HocStr* hs, const char* buf) {
     strcpy(hs->buf, buf);
 }
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 static int cygonce; /* does not need the '-' after a list of hoc files */
 #endif
 
@@ -1067,7 +1069,7 @@ void hoc_final_exit(void) {
     /* Don't close the plots for the sub-processes when they finish,
        by default they are then closed when the master process ends */
     NOT_PARALLEL_SUB(hoc_close_plot();)
-#if READLINE && !defined(MINGW) && !defined(MAC)
+#if READLINE && !defined(MINGW) && !defined(MAC) && !defined(WIN32)
     rl_deprep_terminal();
 #endif
     ivoc_cleanup();

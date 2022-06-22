@@ -1249,6 +1249,8 @@ int nrn_set_timeout(int timeout) {
     return tt;
 }
 
+extern "C" int v_structure_change;
+
 void BBS::netpar_solve(double tstop) {
     // temporary check to be eventually replaced by verify_structure()
     if (tree_changed) {

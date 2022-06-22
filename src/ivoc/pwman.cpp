@@ -430,7 +430,7 @@ void PWMDismiss::execute() {
 
 #else  //! HAVE_IV
 #ifdef MINGW
-char* hoc_back2forward(char*);
+extern "C" char* hoc_back2forward(char*);
 #endif
 #endif  // HAVE_IV
 
@@ -538,7 +538,7 @@ static double pwman_close(void* v) {
 #endif
     return 0.;
 }
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 static void pwman_iconify1(void* v) {
 #if HAVE_IV
     IFGUI((PrintableWindow*) v)->dismiss();
@@ -667,7 +667,7 @@ static double pwman_snap(void* v) {
     return 0;
 }
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 static double scale_;
 static void pwman_scale1(void*) {
 #if HAVE_IV
@@ -3380,7 +3380,7 @@ declareTable(WindowTable, XWindow, Window*)
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <io.h>
 #include <InterViews/resource.h>
 #include "oc2iv.h"
 

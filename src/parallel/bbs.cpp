@@ -21,7 +21,7 @@ static clock_t starttime;
 #endif
 
 extern int nrn_global_argc;
-extern char** nrn_global_argv;
+extern const char** nrn_global_argv;
 
 bool BBSImpl::is_master_ = false;
 bool BBSImpl::started_ = false;

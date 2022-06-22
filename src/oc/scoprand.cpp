@@ -1,6 +1,6 @@
 #include <../../nrnconf.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <io.h>
 
 /* this was removed from the scopmath library since there could be
 multiple copies of the static value below. One in neuron.exe and the
@@ -55,8 +55,9 @@ static uint32_t value = 1;
  *
  *--------------------------------------------------------------------------- */
 
-double scop_random(void) {
-    extern int use_mcell_ran4_;
+extern int use_mcell_ran4_;
+
+extern "C" double scop_random(void) {
     if (use_mcell_ran4_) {
         /*perhaps 4 times slower but much higher quality*/
         return mcell_ran4a(&value);

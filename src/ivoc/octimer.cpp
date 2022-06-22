@@ -10,7 +10,7 @@
 #endif /* HAVE_IV */
 #include "classreg.h"
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 #include <windows.h>
 #endif
 

@@ -86,8 +86,10 @@ else()
 endif()
 
 # rxdmath libraries (always build)
+if(NRN_ENABLE_THREADS)
 add_library(rxdmath SHARED ${CMAKE_CURRENT_SOURCE_DIR}/rxdmath.cpp)
 install(TARGETS rxdmath DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
+endif()
 
 # =============================================================================
 # nrnpython libraries (one lib per python)

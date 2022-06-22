@@ -470,14 +470,14 @@ set(NRNPYTHON_FILES_LIST
     nrnpython.cpp
     nrnpy_hoc.cpp
     nrnpy_nrn.cpp
-    nrnpy_p2h.cpp
-    grids.cpp
-    rxd.cpp
-    rxd_extracellular.cpp
-    rxd_intracellular.cpp
-    rxd_vol.cpp
-    rxd_marching_cubes.cpp
-    rxd_llgramarea.cpp)
+    nrnpy_p2h.cpp)
+    # grids.cpp
+    # rxd.cpp
+    # rxd_extracellular.cpp
+    # rxd_intracellular.cpp
+    # rxd_vol.cpp
+    # rxd_marching_cubes.cpp
+    # rxd_llgramarea.cpp)
 
 # built-in mod files
 set(MODFILE_BASE_NAMES

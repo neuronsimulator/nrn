@@ -13,7 +13,7 @@ broadcast to all the other ranks.
 #include <errno.h>
 #include <ctype.h>
 #include <limits.h>
-#include <unistd.h>
+#include <io.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "hoc.h"

@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <io.h>
 #include "section.h"
 #include "parse.hpp"
 #include "nrniv_mf.h"
@@ -15,6 +15,9 @@
 #include "membdef.h"
 #include "multicore.h"
 #include "nrnmpi.h"
+
+#include <direct.h>
+#include "..\mswin\dlfcn.h"
 
 
 /* change this to correspond to the ../nmodl/nocpout nmodl_version_ string*/
@@ -25,7 +28,7 @@ static char banner[] =
 See http://neuron.yale.edu/neuron/credits\n";
 
 #if defined(WIN32) || defined(NRNMECH_DLL_STYLE)
-extern char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
+extern const char* nrn_mech_dll;            /* declared in hoc_init.cpp so ivocmain.cpp can see it */
 extern int nrn_noauto_dlopen_nrnmech; /* default 0 declared in hoc_init.cpp */
 #endif                                // WIN32 or NRNMEHC_DLL_STYLE
 
@@ -405,7 +408,7 @@ void hoc_last_init(void) {
         */
         if (strcmp(nrn_mech_dll, "nrnmech.dll") == 0) {
             char buf[5100];
-            char* retval = getcwd(buf, 4096);
+            char* retval = _getcwd(buf, 4096);
             if (retval) {
                 strncat(buf, "\\", 100);
                 strncat(buf, nrn_mech_dll, 100);
@@ -413,7 +416,7 @@ void hoc_last_init(void) {
             }
         } else {
 #endif /*WIN32*/
-            for (cp1 = nrn_mech_dll; *cp1; cp1 = cp2) {
+            for (cp1 = strdup(nrn_mech_dll); *cp1; cp1 = cp2) {
                 for (cp2 = cp1; *cp2; ++cp2) {
                     if (*cp2 == ';') {
                         *cp2 = '\0';

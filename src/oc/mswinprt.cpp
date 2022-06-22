@@ -1,8 +1,11 @@
 #include <../../nrnconf.h>
 
-#ifdef MINGW
+#if defined(MINGW) || defined(WIN32)
 
-#include <unistd.h>
+#include <io.h>
+#include <direct.h>
+#include <process.h>
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -18,7 +21,7 @@
 extern Object** (*nrnpy_gui_helper_)(const char* name, Object* obj);
 extern double (*nrnpy_object_to_double_)(Object*);
 
-extern char* neuron_home;
+extern const char* neuron_home;
 extern char* neuron_home_dos;
 extern void hoc_quit();
 
@@ -131,7 +134,7 @@ void hoc_win32_cleanup() {
 #endif
     path = getenv("TEMP");
     if (path) {
-        sprintf(buf, "%s/oc%d.hl", path, getpid());
+        sprintf(buf, "%s/oc%d.hl", path, _getpid());
         unlink(buf);
         //      DebugMessage("unlinked %s\n", buf);
     }

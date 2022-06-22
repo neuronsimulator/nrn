@@ -7,7 +7,7 @@
 #include "hocparse.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <io.h>
 #include <ctype.h>
 #include <errno.h>
 #include "nrnfilewrap.h"
@@ -188,7 +188,7 @@ void hoc_Symbol_units(void) {
 
 char* hoc_back2forward(char*);
 char* neuronhome_forward(void) {
-    extern char* neuron_home;
+    extern const char* neuron_home;
 #ifdef WIN32
     static char* buf;
     extern void hoc_forward2back();
@@ -206,7 +206,7 @@ char* neuronhome_forward(void) {
 char* neuron_home_dos;
 extern void setneuronhome(const char*);
 void hoc_neuronhome(void) {
-    extern char* neuron_home;
+    extern const char* neuron_home;
 #ifdef WIN32
     if (ifarg(1) && (int) chkarg(1, 0., 1.) == 1) {
         if (!neuron_home_dos) {
@@ -216,7 +216,8 @@ void hoc_neuronhome(void) {
         hoc_pushstr(&neuron_home_dos);
     } else {
         hoc_ret();
-        hoc_pushstr(&neuron_home);
+        auto blargh = strdup(neuron_home);
+        hoc_pushstr(&blargh);
     }
 #else
     hoc_ret();
@@ -488,7 +489,7 @@ void System(void) {
         extern HocStr* hoc_tmpbuf;
         HocStr* line;
         int i;
-        fp = popen(gargstr(1), "r");
+        fp = _popen(gargstr(1), "r");
         if (!fp) {
             hoc_execerror("could not popen the command:", gargstr(1));
         }
@@ -504,7 +505,7 @@ void System(void) {
             strcat(hoc_tmpbuf->buf, line->buf);
         }
         hocstr_delete(line);
-        d = (double) pclose(fp);
+        d = (double) _pclose(fp);
         nrn_fw_delete(fpw);
         hoc_assign_str(hoc_pgargstr(2), hoc_tmpbuf->buf);
     } else {

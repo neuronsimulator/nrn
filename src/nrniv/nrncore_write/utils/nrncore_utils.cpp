@@ -11,7 +11,10 @@
 #include "vrecitem.h"  // for nrnbbcore_vecplay_write
 #include "parse.hpp"
 #include <string>
-#include <unistd.h>
+#ifdef WIN32
+#include <direct.h>
+#include <io.h>
+#endif
 #include <algorithm>
 #include <cerrno>
 #if __has_include(<filesystem>)
@@ -170,7 +173,7 @@ extern "C" int nrn_dblpntr2nrncore(double* pd, NrnThread& nt, int& type, int& in
 #if defined(HAVE_DLFCN_H)
 
 extern int nrn_use_fast_imem;
-extern char* neuron_home;
+extern const char* neuron_home;
 
 /** Check if coreneuron is loaded into memory */
 bool is_coreneuron_loaded() {

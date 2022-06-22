@@ -82,6 +82,8 @@ static void freevars();
 static void freenode();
 static int getinterpval();
 
+extern int _ninits;
+
 double *
 lag(var, curt, lagt, vsize)
 double *var, curt, lagt;
@@ -91,7 +93,6 @@ int vsize;
     static varlist *lagvars = NULL;
     varlist *listptr, *lastvar = NULL;
     node *nodeptr, *nextnode;
-    extern int _ninits;
     static int initialized = 0;
     int i, interp = 0;
 

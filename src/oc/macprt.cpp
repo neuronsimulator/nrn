@@ -16,7 +16,7 @@ extern void debugfile(const char*, ...);
 extern int oc_print_from_dll(char*);
 extern void single_event_run();
 
-extern char* neuron_home;
+extern const char* neuron_home;
 
 int oc_print_from_dll(char* buf) { /* interchange \n and \r !*/
     char* cp;
