@@ -36,6 +36,7 @@
 #include <Geom.h>
 #include <Geom_random123.h>
 #include <LogNorm.h>
+#include <LogNorm_random123.h>
 #include <NegExp.h>
 #include <NegExp_random123.h>
 #include <RndInt.h>
@@ -553,6 +554,14 @@ static double r_lognormal(void* r) {
     return (*(x->rand))();
 }
 
+static double r_lognormal_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = *getarg(1);
+    double a2 = *getarg(2);
+    delete x->rand;
+    x->rand = new LogNormal_random123(a1, a2, x->gen);
+    return (*(x->rand))();
+}
 
 // poisson distribution
 // syntax:
@@ -729,6 +738,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"normal", r_normal},
                                   {"normal_random123", r_normal_random123},
                                   {"lognormal", r_lognormal},
+                                  {"lognormal_random123", r_lognormal_random123},
                                   {"binomial", r_binomial},
                                   {"binomial_random123", r_binomial_random123},
                                   {"poisson", r_poisson},

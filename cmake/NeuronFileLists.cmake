@@ -459,6 +459,7 @@ set(NRNGNU_FILES_LIST
     Geom_random123.cpp
     HypGeom.cpp
     LogNorm.cpp
+    LogNorm_random123.cpp
     MLCG.cpp
     NegExp.cpp
     NegExp_random123.cpp

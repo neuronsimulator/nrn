@@ -8,7 +8,9 @@
 class Normal_random123: public Random_random123 {
 protected:
     std::normal_distribution<> d;
-
+    double pMean;
+    double pStdDev;
+    double pVariance;
 public:
     Normal_random123(double mean, double stddev, RNG_random123 *gen);
     double mean();
@@ -22,6 +24,9 @@ public:
 inline Normal_random123::Normal_random123(double mean, double variance, RNG_random123 *gen)
 : Random_random123(gen) {
   d = std::normal_distribution<>(mean, std::sqrt(variance));
+  pMean = mean;
+  pVariance = variance;
+  pStdDev = std::sqrt(variance);
 }
 
 inline double Normal_random123::mean() {
@@ -29,6 +34,7 @@ inline double Normal_random123::mean() {
 }
 
 inline double Normal_random123::mean(double x) {
+  pMean = x;
   double t = d.mean();
   d.param(std::normal_distribution<>::param_type(x, d.stddev()));
   return t;
@@ -39,8 +45,9 @@ inline double Normal_random123::variance() {
 }
 
 inline double Normal_random123::variance(double x) {
-  auto new_stddev = std::sqrt(x);
+  pStdDev = std::sqrt(x);
+  pVariance = x;
   double t = d.stddev() * d.stddev();
-  d.param(std::normal_distribution<>::param_type(d.mean(), new_stddev));
+  d.param(std::normal_distribution<>::param_type(d.mean(), pStdDev));
   return t;
 };

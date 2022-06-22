@@ -33,6 +33,13 @@ print(rand.normal(5, 2))
 #     print(rand.repick())
 create_plot(rand, "normal")
 
+print("Setup rand for LogNormal distribution")
+print(rand.lognormal(5, 2))
+# print(rand.repick())
+# for i in range(10):
+#     print(rand.repick())
+create_plot(rand, "lognormal")
+
 print("Setup rand for Poisson distribution")
 print(rand.poisson(5))
 # print(rand.repick())
