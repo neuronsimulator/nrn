@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 def create_plot(rand, type):
     values = []
     for i in range(100000):
-        values.append(rand.repick_random123())
+        values.append(rand.repick())
     # plt.plot(values)
     plt.hist(values, bins=1000)
     # plt.show()
@@ -13,59 +13,59 @@ def create_plot(rand, type):
 
 rand = h.Random()
 print("Test default rand")
-# print(rand.repick_random123())
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "random")
 
 print("Setup rand for Binomial distribution")
-print(rand.binomial_random123(20, 0.5))
-# print(rand.repick_random123())
-# print(rand.binomial_random123(20, 0.5))
+print(rand.binomial(20, 0.5))
+# print(rand.repick())
+# print(rand.binomial(20, 0.5))
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "binomial")
 
 print("Setup rand for Normal distribution")
-print(rand.normal_random123(5, 2))
-# print(rand.repick_random123())
+print(rand.normal(5, 2))
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "normal")
 
 print("Setup rand for Poisson distribution")
-print(rand.poisson_random123(5))
-# print(rand.repick_random123())
+print(rand.poisson(5))
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "poisson")
 
 print("Setup rand for Uniform distribution")
-print(rand.uniform_random123(1, 5))
-# print(rand.repick_random123())
+print(rand.uniform(1, 5))
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "uniform")
 
 print("Setup rand for DiscUnif distribution")
-print(rand.discunif_random123(1, 5))
-# print(rand.repick_random123())
+print(rand.discunif(1, 5))
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "discunif")
 
 print("Setup rand for Weibull distribution")
-print(rand.weibull_random123(1, 5))
-# print(rand.repick_random123())
+print(rand.weibull(1, 5))
+# print(rand.repick())
 # for i in range(10):
-#     print(rand.repick_random123())
+#     print(rand.repick())
 create_plot(rand, "weibull")
 
 print("Setup rand for Erlang distribution")
-print(rand.erlang_random123(1, 5))
-# print(rand.repick_random123())
+print(rand.erlang(1, 5))
+# print(rand.repick())
 for i in range(10):
-    print(rand.repick_random123())
+    print(rand.repick())
 create_plot(rand, "erlang")
 
 quit()
