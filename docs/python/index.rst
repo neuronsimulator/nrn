@@ -4,6 +4,52 @@ NEURON Python documentation
 ===========================
 (:ref:`Switch to HOC documentation <hoc_prog_ref>`)
 
+Model specification
+-------------------
+
+.. figure:: /python/images/model-specification.png
+  :figwidth: 450px
+  :align: center
+
+.. grid:: 2 2 2 3
+
+  .. grid-item-card:: Sections :octicon:`code;1em;sd-text-info` :octicon:`book;1em;sd-text-info` :octicon:`eye;1em;sd-text-info`
+
+    * :class:`Section`
+    * :ref:`Import3D <bio_faq>`
+
+  .. grid-item-card:: Membrane mechanisms
+
+    * :ref:`hoc_nmodl2`
+    * :class:`hh`
+    * :class:`pas`
+
+  .. grid-item-card:: Point processes
+
+    * :ref:`mech`
+    * :class:`ExpSyn`
+
+  .. grid-item-card:: Connections
+
+    * :class:`NetCon`
+    * :class:`ParallelContext`
+
+  .. grid-item-card:: Stimulation
+
+    * :class:`IClamp`
+    * :class:`SEClamp`
+    * :class:`NetStim`
+
+  .. grid-item-card:: Recording
+
+    * :meth:`Vector.record`
+    * :class:`Vector`
+
+For more see :doc:`modelspec/programmatic`
+
+Simulation Control
+------------------
+
 Quick Links
 -----------
 - :ref:`genindex`
@@ -18,7 +64,7 @@ Quick Links
     `SymChooser <programming/gui/symchooser.html>`_,
     `TextEditor <programming/gui/texteditor.html>`_, `Timer <programming/timer.html>`_, `ValueFieldEditor <programming/gui/vfe.html>`_,
     :class:`VBox`, `Vector <programming/math/vector.html>`_
-    
+
     `BBSaveState <simctrl/bbsavestate.html>`_, `CVode <simctrl/cvode.html>`_, :class:`FInitializeHandler`, `Impedance <analysis/programmatic/impedance.html>`_,
     `KSChan <modelspec/programmatic/kschan.html>`_, `LinearMechanism <modelspec/programmatic/linmod.html>`_,
     `MechanismStandard <programming/mechstan.html>`_,
@@ -31,7 +77,7 @@ Quick Links
     :ref:`panel`, :ref:`funfit`, :ref:`geometry`, :ref:`printf_doc`, :ref:`ockeywor`, :ref:`math`,
     :ref:`nmodl2`, :ref:`nmodl`, :ref:`mech`, :ref:`predec`, :ref:`standardruntools`,
     :ref:`ocsyntax`, :ref:`topology`
-    
+
     :ref:`neuron_rxd`
 
 Basic Programming
@@ -39,7 +85,7 @@ Basic Programming
 
 .. toctree::
     :maxdepth: 1
-    
+
     NEURON Python tutorial <https://neuronsimulator.github.io/nrn/tutorials/scripting-neuron-basics.html>
     programming/hoc.rst
     programming/mathematics.rst
@@ -58,7 +104,7 @@ Model Specification
 
 .. toctree::
     :maxdepth: 1
-    
+
     modelspec/guitools.rst
     modelspec/programmatic.rst
 
@@ -67,7 +113,7 @@ Simulation Control
 
 .. toctree::
     :maxdepth: 1
-    
+
     simctrl/programmatic.rst
     simctrl/stdrun.rst
     compilationoptions.rst
@@ -79,7 +125,7 @@ Visualization
 
 .. toctree::
     :maxdepth: 1
-    
+
     visualization/glyph.rst
     visualization/graph.rst
     visualization/grapher.rst
@@ -91,14 +137,14 @@ Visualization
     visualization/gui.rst
     visualization/shapebox.rst
     visualization/oldgrph.rst
-    
-    
+
+
 
 Analysis
 --------
 
 .. toctree::
     :maxdepth: 1
-    
+
     analysis/programmatic.rst
     analysis/guitools.rst
