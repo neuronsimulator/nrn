@@ -271,7 +271,6 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
             PyObject* r = hocobj_call(hbase, args, kwds);
             if (!r) {
                 Py_DECREF(subself);
-                PyErr_SetString(PyExc_TypeError, "HOC base class not valid");
                 return NULL;
             }
             PyHocObject* rh = (PyHocObject*) r;
