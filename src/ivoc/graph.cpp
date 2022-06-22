@@ -2301,7 +2301,7 @@ void Graph::new_axis() {
     }
     XYView* v = XYView::current_pick_view();
     erase_axis();
-    Coord x1, x2, y1, y2;
+    Coord x1{}, x2{}, y1{}, y2{};
     if (v) {
         v->zin(x1, y1, x2, y2);
     }
