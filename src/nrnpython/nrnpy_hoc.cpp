@@ -218,7 +218,7 @@ static PyObject* hocobj_new(PyTypeObject* subtype, PyObject* args, PyObject* kwd
     bool has_base = false;
     bool ok = true;
     subself = subtype->tp_alloc(subtype, 0);
-    //printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
+    // printf("hocobj_new %s %p %p\n", subtype->tp_name, subtype, subself);
     if (subself == NULL) {
         return NULL;
     }
@@ -540,14 +540,14 @@ PyObject* nrnpy_ho2po(Object* o) {
     // The return value is None, or the encapsulated PyObject or
     // an encapsulating PyHocObject
     PyObject* po;
-    //printf("inside ho2po\n");
+    // printf("inside ho2po\n");
     if (!o) {
         po = Py_BuildValue("");
-        //printf("empty po\n");
+        // printf("empty po\n");
     } else if (o->ctemplate->sym == nrnpy_pyobj_sym_) {
         po = nrnpy_hoc2pyobject(o);
         Py_INCREF(po);
-        //printf("from nrnpy_hoc2pyobject\n");
+        // printf("from nrnpy_hoc2pyobject\n");
     } else {
         po = hocobj_new(hocobject_type, 0, 0);
         ((PyHocObject*) po)->ho_ = o;
@@ -3184,7 +3184,7 @@ PyObject* nrnpy_hoc() {
 
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
-    for (auto name : class_name_list) {
+    for (auto name: class_name_list) {
         // TODO: obj_spec_from_name needs a hoc. prepended
         auto long_name = std::string("hoc.") + name;
         spec = obj_spec_from_name(long_name.c_str());
