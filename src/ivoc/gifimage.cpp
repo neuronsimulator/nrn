@@ -31,7 +31,7 @@ static int LoadGIF(const char* fname, PICINFO*);
 
 
 Image* gif_image(const char* filename) {
-    Image* image;
+    Image* image{};
     pinfo_ = new PICINFO;
     if (LoadGIF(filename, pinfo_)) {
         image = new Image(pinfo_->raster);
