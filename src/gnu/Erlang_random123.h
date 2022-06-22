@@ -25,7 +25,6 @@ public:
 
 };
 
-
 inline void Erlang_random123::setState() {
   a = int( (pMean * pMean ) / pVariance + 0.5 );
   a = (a > 0) ? a : 1;

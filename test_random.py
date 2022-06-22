@@ -75,4 +75,11 @@ print(rand.negexp(1.5))
 #     print(rand.repick())
 create_plot(rand, "negexp")
 
+print("Setup rand for Geom distribution")
+print(rand.geometric(0.5))
+# print(rand.repick())
+# for i in range(10):
+#     print(rand.repick())
+create_plot(rand, "geom")
+
 quit()

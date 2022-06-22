@@ -34,6 +34,7 @@
 #include <Erlang.h>
 #include <Erlang_random123.h>
 #include <Geom.h>
+#include <Geom_random123.h>
 #include <LogNorm.h>
 #include <NegExp.h>
 #include <NegExp_random123.h>
@@ -613,6 +614,13 @@ static double r_geometric(void* r) {
     return (*(x->rand))();
 }
 
+static double r_geometric_random123(void* r) {
+    Rand_random123* x = (Rand_random123*) r;
+    double a1 = chkarg(1, 0, 1);
+    delete x->rand;
+    x->rand = new Geometric_random123(a1, x->gen);
+    return (*(x->rand))();
+}
 
 // hypergeometric distribution
 // syntax:
@@ -726,6 +734,7 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"poisson", r_poisson},
                                   {"poisson_random123", r_poisson_random123},
                                   {"geometric", r_geometric},
+                                  {"geometric_random123", r_geometric_random123},
                                   {"hypergeo", r_hypergeo},
                                   {"negexp", r_negexp},
                                   {"negexp_random123", r_negexp_random123},

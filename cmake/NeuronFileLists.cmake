@@ -456,10 +456,12 @@ set(NRNGNU_FILES_LIST
     Erlang.cpp
     Erlang_random123.cpp
     Geom.cpp
+    Geom_random123.cpp
     HypGeom.cpp
     LogNorm.cpp
     MLCG.cpp
     NegExp.cpp
+    NegExp_random123.cpp
     Normal.cpp
     Normal_random123.cpp
     Poisson.cpp

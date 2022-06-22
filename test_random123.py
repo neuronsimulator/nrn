@@ -68,12 +68,18 @@ print(rand.erlang_random123(1, 5))
 #     print(rand.repick_random123())
 create_plot(rand, "erlang")
 
-print("Setup rand for Erlang distribution")
+print("Setup rand for NegExp distribution")
 print(rand.negexp_random123(1.5))
 # print(rand.repick_random123())
 # for i in range(10):
 #     print(rand.repick_random123())
 create_plot(rand, "negexp")
 
+print("Setup rand for Geom distribution")
+print(rand.geometric_random123(0.5))
+# print(rand.repick_random123())
+# for i in range(10):
+#     print(rand.repick_random123())
+create_plot(rand, "geom")
 
 quit()

@@ -30,6 +30,9 @@ inline double NegativeExpntl_random123::mean() {
   return pMean;
 }
 inline double NegativeExpntl_random123::mean(double x) {
-  double t = pMean; pMean = x;
+  double t = pMean;
+  pMean = x;
+  lambda = 1 / pMean;
+  d.param(std::exponential_distribution<>::param_type(lambda));
   return t;
 }
