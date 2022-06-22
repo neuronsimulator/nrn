@@ -1,16 +1,11 @@
 Obsolete Stimuli
 ----------------
 
-.. function:: fstim
+.. function:: h.fstim()
 
 
-    Syntax:
-        ``h.fstim()``
-
-
-    Description:
-        Consider this obsolete.  Nevertheless, it does work. See the old NEURON reference 
-        manual. 
+    Consider this obsolete.  Nevertheless, it does work. See the old NEURON reference 
+    manual. 
 
          
 
@@ -18,15 +13,10 @@ Obsolete Stimuli
 
 
 
-.. function:: fstimi
+.. function:: h.fstimi()
 
 
-    Syntax:
-        ``h.fstimi()``
-
-
-    Description:
-        Obsolete 
+    Obsolete 
 
          
 
@@ -35,15 +25,10 @@ Obsolete Stimuli
 
 
 
-.. function:: fclamp
+.. function:: h.fclamp()
 
 
-    Syntax:
-        ``h.fclamp()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+    obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -51,15 +36,10 @@ Obsolete Stimuli
 
 
 
-.. function:: fclampi
+.. function:: h.fclampi()
 
 
-    Syntax:
-        ``h.fclampi()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+    obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -67,15 +47,10 @@ Obsolete Stimuli
 
 
 
-.. function:: fclampv
+.. function:: h.fclampv()
 
 
-    Syntax:
-        ``h.fclampv()``
-
-
-    Description:
-        obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
+    obsolete. Use the :class:`VClamp` or :class:`SEClamp` point process. 
 
          
 
@@ -83,14 +58,9 @@ Obsolete Stimuli
 
 
 
-.. function:: prstim
+.. function:: h.prstim()
 
 
-    Syntax:
-        ``h.prstim()``
-
-
-    Description:
-        obsolete. Print the info about ``fstim``, ``fclamp``, and ``fsyn`` 
+    obsolete. Print the info about ``fstim``, ``fclamp``, and ``fsyn`` 
 
 
