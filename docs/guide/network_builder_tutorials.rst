@@ -20,9 +20,9 @@ This introduces material that you will need to know before moving on to the seco
 
 :ref:`Tutorial 2 : making a hybrid net that contains both artificial and "real" neurons <tutorial_2_hybrid_nets>`
 
-Before starting this one, make sure you know how to use the CellBuilder (if you haven't already done so, you might want to get the CellBuilder tutorial and work through it).
+Before starting this one, make sure you know how to use the CellBuilder (if you haven't already done so, you might want to get the `CellBuilder tutorial <https://nrn.readthedocs.io/en/latest/courses/cellbuilder_overview_and_hints.html?>`_ and work through it).
 
-This link will get you a pkzipped collection of these html files and images.
+:download:`This link will get you a pkzipped collection of these html files and images. <data/nets.zip>`
 
 
 

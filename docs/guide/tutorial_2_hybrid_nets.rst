@@ -18,21 +18,21 @@ Outline
 
         2. :ref:`Specifying what kinds of synapses can be attached to an M cell <step_1_define_type_of_cell2>`
 
-        3. Placing synapses on the M cell
+        3. :ref:`Placing synapses on the M cell <step_1_define_type_of_cell3>`
 
-Step 2. Create each cell in the network
+:ref:`Step 2. Create each cell in the network <step_2_create_each_cell>`
 
     A. We need a Network Builder
 
     B. We need an instance of each of our three cell types.
 
-Step 3. Connect the cells.
+:ref:`Step 3. Connect the cells. <step_3_connect_the_cells>`
 
     A. Network architecture
 
-    B. Parameters
+    B. :ref:`Parameters <step_3_connect_the_cells_continued>`
 
-Run a simulation and plot the input and output spike trains
+:ref:`Run a simulation and plot the input and output spike trains <run_simulation_plot_input_output2>`
 
 .. toctree::
     :hidden:
@@ -40,3 +40,8 @@ Run a simulation and plot the input and output spike trains
     example_hybrid_network.rst
     step_1_define_type_of_cell.rst
     step_1_define_type_of_cell2.rst
+    step_1_define_type_of_cell3.rst
+    step_2_create_each_cell.rst
+    step_3_connect_the_cells.rst
+    step_3_connect_the_cells_continued.rst
+    run_simulation_plot_input_output2.rst
