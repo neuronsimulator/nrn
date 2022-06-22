@@ -41,7 +41,7 @@ int (*p_nrnpy_pyrun)(const char* fname);
 #define use_rl_getc_function
 #endif
 
-#if carbon || defined(MINGW)
+#if defined(MINGW)
 #include <pthread.h>
 extern int stdin_event_ready();
 #endif
@@ -1057,40 +1057,6 @@ int hoc_main1(int argc, const char** argv, const char** envp) /* hoc6 */
     return exit_status;
 }
 
-#if carbon
-#include <sys/select.h>
-static pthread_t* inputReady_;
-static pthread_mutex_t inputMutex_;
-static pthread_cond_t inputCond_;
-static int inputReadyFlag_;
-
-void* inputReadyThread(void* input) {
-    fd_set readfds;
-    int i, j;
-    char c;
-    //	printf("inputReadyThread started\n");
-    //	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &j);
-    FD_ZERO(&readfds);
-    FD_SET(fileno(stdin), &readfds);
-    for (;;) {
-        i = select(1, &readfds, 0, 0, 0);
-        pthread_testcancel();
-        if (FD_ISSET(fileno(stdin), &readfds)) {
-            if (!stdin_event_ready()) {
-                // dialog is open. cannot accept input now.
-                printf("Discarding input til Dialog is closed.\n");
-                read(fileno(stdin), &c, 1);
-                continue;
-            }
-        }
-        pthread_mutex_lock(&inputMutex_);
-        pthread_cond_wait(&inputCond_, &inputMutex_);
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    printf("inputReadyThread done\n");
-}
-#endif
-
 #ifdef MINGW
 static pthread_t* inputReady_;
 static pthread_mutex_t inputMutex_;
@@ -1160,13 +1126,6 @@ void hoc_final_exit(void) {
 }
 
 void hoc_quit(void) {
-#if carbon
-    if (0 && inputReady_) {
-        pthread_cancel(*inputReady_);
-        pthread_kill(*inputReady_, SIGHUP);
-        pthread_join(*inputReady_, 0);
-    }
-#endif
     hoc_final_exit();
     ivoc_final_exit();
 #if defined(USE_PYTHON)
@@ -1656,24 +1615,6 @@ extern int run_til_stdin(); /* runs the interviews event loop. Returns 1
 extern void hoc_notify_value(void);
 
 #if READLINE
-#if carbon
-extern int (*rl_event_hook)(void);
-static int event_hook(void) {
-    if (!inputReady_) {
-        inputReady_ = (pthread_t*) emalloc(sizeof(pthread_t));
-        pthread_mutex_init(&inputMutex_, 0);
-        pthread_cond_init(&inputCond_, 0);
-        pthread_create(inputReady_, 0, inputReadyThread, 0);
-    } else {
-        pthread_mutex_unlock(&inputMutex_);
-    }
-    //	printf("run til stdin\n");
-    run_til_stdin();
-    pthread_mutex_lock(&inputMutex_);
-    pthread_cond_signal(&inputCond_);
-    return 1;
-}
-#else /* not carbon */
 #ifdef MINGW
 extern int (*rl_getc_function)(void);
 static int getc_hook(void) {
@@ -1699,7 +1640,7 @@ static int getc_hook(void) {
     // printf("getc_hook returning %d\n", i);
     return i;
 }
-#else /* not carbon and not MINGW */
+#else /* not MINGW */
 
 #if defined(use_rl_getc_function)
 /* e.g. mac libedit.3.dylib missing rl_event_hook */
@@ -1745,8 +1686,7 @@ static int event_hook(void) {
 
 #endif /* not use_rl_getc_function */
 
-#endif /* not carbon and not MINGW */
-#endif /* not carbon */
+#endif /* not MINGW */
 #endif /* READLINE */
 #endif /* INTERVIEWS */
 

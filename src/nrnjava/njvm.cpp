@@ -38,10 +38,6 @@ jint nrn_CreateJavaVM(JavaVM** pvm, void** penv, void* args);
 // Java2 for mswin. Unix can use either (see njconf.h.in)
 // However, only Java2 is fully supported and allows additions to
 // the classpath from hoc.
-#if carbon
-#undef MAC
-#endif
-
 #ifndef USEJVM
 #if MAC
 #define USEJVM 1
