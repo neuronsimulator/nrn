@@ -86,6 +86,18 @@ def test_env_legacy():
         assert a == i
 
 
+def test_errorcode():
+    import sys, subprocess
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    process = subprocess.run(
+        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+    )
+    assert process.returncode > 0
+
+
 if __name__ == "__main__":
     test_mod_legacy()
     test_hoc_legacy()
