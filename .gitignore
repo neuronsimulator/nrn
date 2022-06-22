@@ -19,6 +19,7 @@ virtualenv
 .python-version
 *.o
 *.lo
+*.egg-info
 
 # These files are generated at build time
 # It would be a good idea to create them in the
