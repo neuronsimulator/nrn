@@ -34,9 +34,9 @@ inline void Erlang_random123::setState() {
 
 inline Erlang_random123::Erlang_random123(double mean, double variance, RNG_random123 *gen) : Random_random123(gen)
 {
-  setState();
   pMean = mean;
   pVariance = variance;
+  setState();
   d = std::gamma_distribution<>(a, b);
 }
 
