@@ -291,8 +291,6 @@ static struct { /* Builtin functions with multiple or variable args */
                  hoc_Numarg,
                  "argtype",
                  hoc_Argtype,
-                 "nrn_exit",
-                 hoc_exit,
                  "hoc_pointer_",
                  hoc_pointer, /* for internal use */
                  "nrn_mallinfo",

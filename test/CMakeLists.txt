@@ -170,6 +170,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)
+    # currently pytest --forked runs fail with rx3d tests as it seems
+    # they expose issues in CVODE that need to be addressed.
+    set(pytest_nofork ${pytest})
+    list(REMOVE_ITEM pytest_nofork --forked)
     nrn_add_test_group(
       NAME rxdmod_tests
       MODFILE_PATTERNS test/rxd/ecs/*.mod
@@ -186,7 +190,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME rxd_tests
       PRELOAD_SANITIZER
       COMMAND COVERAGE_FILE=.coverage.rxd_tests ${change_test_tolerance} ${PYTHON_EXECUTABLE}
-              ${pytest} ./test/rxd)
+              ${pytest_nofork} ./test/rxd)
     if(NRN_ENABLE_MPI)
       nrn_find_python_module(mpi4py)
       if(mpi4py_FOUND)
@@ -197,7 +201,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           COMMAND
             COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance} ${MPIEXEC_NAME}
             ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS} ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS}
-            ${pytest} ./test/rxd --mpi)
+            ${pytest_nofork} ./test/rxd --mpi)
       endif()
     endif()
   endif()

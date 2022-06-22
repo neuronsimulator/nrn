@@ -392,10 +392,6 @@ def test_nrn_mallinfo():
         return
     assert h.nrn_mallinfo(0) > 0
 
-def test_cpp_exit():
-    print("This is a message that would be really useful to debug the issue.")
-    h.nrn_exit(1)
-
 
 if __name__ == "__main__":
     set_quiet(False)
