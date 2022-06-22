@@ -91,7 +91,10 @@ class HocBaseObject(hoc.HocObject):
 
     def __init_subclass__(cls, hoc_type=None, **kwargs):
         if hoc_type is not None:
-            if not (isinstance(hoc_type, type) and issubclass(hoc_type, hoc.HocObject)):
+            if (
+                not (isinstance(hoc_type, type) and issubclass(hoc_type, hoc.HocObject)
+                and not isinstance(hoc_type, hoc.HocObject)
+            ):
                 raise TypeError(
                     f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
                 )
