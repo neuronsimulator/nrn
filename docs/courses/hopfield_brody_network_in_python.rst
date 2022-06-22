@@ -83,13 +83,13 @@ Beyond the GUI -- Saving and displaying spikes
 =============
 
 Spike times are being saved in a series of vectors in a template: sp.vecs[0] .. sp.vecs[ncell-1]
-----------
+++++++++++
 
 Count the total number of spikes using a *for* loop and *total+=sp.vecs[ii].size*
  
 
 We will instead save spike times in a single vector (*tvec*), using a second vector (*ind*) for indices
-----------
+++++++++++
 .. code::
     python
 
@@ -98,7 +98,7 @@ We will instead save spike times in a single vector (*tvec*), using a second vec
  
 
 Make sure that the same number of spikes are being saved as were saved in sp.vecs[]
-----------
+++++++++++
 
 .. code::
     python
@@ -106,10 +106,8 @@ Make sure that the same number of spikes are being saved as were saved in sp.vec
     >>> print ind.size(), tvec.size()
 
 Wise precaution -- check step by step to make sure that nothing's screwed up
-++++++++++
 
 Can use for ... : *vec.append(sp.vecs[ii]); vec.sort(); tvec.sort(); vec.eq(tvec)* to make sure have all the same spike times (still doesn't tell you they correspond to the same cells)
-++++++++++
 
 Graph spike times -- should look like SpikePlot1 graph
 ----------

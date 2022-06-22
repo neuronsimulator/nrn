@@ -54,12 +54,12 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`state_and_parameter_discontinuities`
     
 13.
-    Bulletin board parallelization
+    :ref:`Bulletin board parallelization <batch_runs_with_bulletin_board_parallelization>`
 
         * Speed up embarrassingly parallel tasks
     
 14.
-    HOC exercises
+    :ref:`hoc_exercises`
 
         * Introduction to the HOC programming language
     
@@ -80,7 +80,7 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     :ref:`Hopfield-Brody network in Python <hopfield_brody_network_in_python>`
     
 19.
-    MPI Parallelization
+    :ref:`MPI Parallelization <mpi_parallelization>`
     
 20.
     :ref:`using_nsg_portal`
@@ -105,10 +105,13 @@ These exercises are adapted from the 2018 NEURON summer course given in Atlanta,
     custom-initialization.rst
     introduction_to_the_linear_circuit.rst
     state_and_parameter_discontinuities.rst
+    batch_runs_with_bulletin_board.rst
+    hoc_exercises.rst
     multithread_parallelization.rst
     intro_to_the_network_builder.rst
     network_ready_cells_from_the_cellb.rst
     hopfield_brody_network_in_python.rst
+    mpi_parallelization.rst
     using_nsg_portal.rst
     numerical-methods-exercises.rst
     electrotonic_analysis.rst

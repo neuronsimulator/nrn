@@ -11,6 +11,7 @@ Guides
    saveses
    cellbuilder
    import3d
+   network_builder_tutorials
    optimization
    randomness
    faq
