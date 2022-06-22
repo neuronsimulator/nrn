@@ -5,7 +5,7 @@ extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if (MAC && !defined(carbon)) || defined(WIN32)
+#if MAC || defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
@@ -41,7 +41,7 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 extern "C" char* hoc_back2forward(char*);
 #endif
 
-#if MAC && !defined(carbon)
+#if MAC
 #include <fstream.h>
 #include <file_io.h>
 #undef IOS_OUT
@@ -337,9 +337,7 @@ class PaperItem;
     FileChooser* fc_save_;
     const Color* window_outline_;
     CopyString cur_ses_name_;
-#if carbon
-    void all2front();
-#endif
+
   private:
     friend class PrintableWindowManager;
     PWMImpl(ScreenScene*, PaperScene*, Rect*);
@@ -1038,7 +1036,7 @@ VirtualWindow::~VirtualWindow() {
     view_->unref();
     virt_win_ = NULL;
 }
-#if defined(WIN32) || carbon
+#if defined(WIN32)
 extern void ivoc_bring_to_top(Window*);
 #endif
 
@@ -1329,7 +1327,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC && !defined(carbon)
+#if MAC
     mi = K::menu_item("Setup Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
@@ -1537,11 +1535,6 @@ void PrintableWindowManager::update(Observable* o) {
     PrintableWindow* w = (PrintableWindow*) o;
     // printf("PrintableWindowManager::update(%p)\n", w);
     reconfigured(w);
-#if carbon
-    if (w->leader() == w) {
-        pwmi_->all2front();
-    }
-#endif
 }
 
 void PrintableWindowManager::disconnect(Observable* o) {
@@ -1793,7 +1786,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC && !defined(carbon)
+#if MAC
         if (!mprinter_) {
             continue_dialog("First select SetupPrinter");
         } else {
@@ -1821,7 +1814,7 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC && !defined(carbon)
+#if MAC
     if (use_printer) {
         mac_do_print();
         return;
@@ -1861,7 +1854,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC && !defined(carbon)
+#if MAC
     mprinter()->prolog();
     t.scale(sfac, sfac);
 #else
@@ -2540,21 +2533,6 @@ MacPrinter* PWMImpl::mprinter() {
         mprinter_ = new MacPrinter();
     }
     return mprinter_;
-}
-#endif
-
-#if carbon
-void PWMImpl::all2front() {
-    int i;
-    PrintableWindow* w;
-    if (screen_)
-        for (i = 0; i < screen_->count(); ++i) {
-            ScreenItem* si = (ScreenItem*) (screen_->component(i));
-            w = si->window();
-            if (w && w != w->leader() && w->is_mapped()) {
-                ivoc_bring_to_top(w);
-            }
-        }
 }
 #endif
 
@@ -3777,7 +3755,7 @@ void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC && !defined(carbon)
+#if MAC
     FSSpec spec;
     tmpfile = new char[512];
     __temp_file_name(tmpfile, &spec);
