@@ -22,7 +22,7 @@
 #endif
 
 extern PyTypeObject* psection_type;
-extern std::vector<const char*> class_name_list;
+extern std::vector<const char*> py_exposed_classes;
 
 // copied from nrnpy_nrn
 typedef struct {
@@ -3145,52 +3145,6 @@ static PyType_Spec obj_spec_from_name(const char* name) {
 }
 
 PyObject* nrnpy_hoc() {
-    // Neuron classes being exposed to Python as real types (nrn.xxx)
-    std::vector<const char*> class_name_list{"SectionList",
-                                             "SectionRef",
-                                             "PointProcessMark",
-                                             "Graph",
-                                             "HBox",
-                                             "VBox",
-                                             "GUIMath",
-                                             "PWManager",
-                                             "Glyph",
-                                             "ValueFieldEditor",
-                                             "Timer",
-                                             "Deck",
-                                             "SymChooser",
-                                             "StringFunctions",
-                                             "List",
-                                             "Vector",
-                                             "PtrVector",
-                                             "File",
-                                             "Pointer",
-                                             "Matrix",
-                                             "Random",
-                                             "Shape",
-                                             "PlotShape",
-                                             "PPShape",
-                                             "RangeVarPlot",
-                                             "SectionBrowser",
-                                             "MechanismStandard",
-                                             "MechanismType",
-                                             "NetCon",
-                                             "LinearMechanism",
-                                             "KSChan",
-                                             "KSGate",
-                                             "KSState",
-                                             "KSTrans",
-                                             "Impedance",
-                                             "SaveState",
-                                             "BBSaveState",
-                                             "FInitializeHandler",
-                                             "StateTransitionEvent",
-                                             "PythonObject",
-                                             "CVode",
-                                             "TQueue",
-                                             "SingleChan",
-                                             "ParallelContext"};
-
     PyObject* m;
     PyObject* bases;
     PyTypeObject* pto;
@@ -3230,7 +3184,7 @@ PyObject* nrnpy_hoc() {
 
     bases = PyTuple_Pack(1, hocobject_type);
     Py_INCREF(bases);
-    for (auto name: class_name_list) {
+    for (auto name: py_exposed_classes) {
         // TODO: obj_spec_from_name needs a hoc. prepended
         auto long_name = std::string("hoc.") + name;
         spec = obj_spec_from_name(long_name.c_str());

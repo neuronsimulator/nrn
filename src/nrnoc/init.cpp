@@ -794,13 +794,13 @@ int point_reg_helper(Symbol* s2) {
     return pointtype++;
 }
 
-extern void class2oc(const char*,
-                     void* (*cons)(Object*),
-                     void (*destruct)(void*),
-                     Member_func*,
-                     int (*checkpoint)(void**),
-                     Member_ret_obj_func*,
-                     Member_ret_str_func*);
+extern void class2oc_base(const char*,
+                          void* (*cons)(Object*),
+                          void (*destruct)(void*),
+                          Member_func*,
+                          int (*checkpoint)(void**),
+                          Member_ret_obj_func*,
+                          Member_ret_str_func*);
 
 
 extern "C" int point_register_mech(const char** m,
@@ -819,7 +819,7 @@ extern "C" int point_register_mech(const char** m,
     Symlist* sl;
     Symbol *s, *s2;
     nrn_load_name_check(m[1]);
-    class2oc(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
+    class2oc_base(m[1], constructor, destructor, fmember, nullptr, nullptr, nullptr);
     s = hoc_lookup(m[1]);
     sl = hoc_symlist;
     hoc_symlist = s->u.ctemplate->symtable;
