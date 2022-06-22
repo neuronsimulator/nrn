@@ -19,9 +19,9 @@ public:
 };
 
 
-inline Normal_random123::Normal_random123(double mean, double stddev, RNG_random123 *gen)
+inline Normal_random123::Normal_random123(double mean, double variance, RNG_random123 *gen)
 : Random_random123(gen) {
-  d = std::normal_distribution<>(mean, stddev);
+  d = std::normal_distribution<>(mean, std::sqrt(variance));
 }
 
 inline double Normal_random123::mean() {
