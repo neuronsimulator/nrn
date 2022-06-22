@@ -103,6 +103,9 @@ build_wheel_linux() {
         CMAKE_DEFS="${CMAKE_DEFS},CMAKE_CUDA_ARCHITECTURES=60;70;80,CMAKE_C_FLAGS=-tp=haswell,CMAKE_CXX_FLAGS=-tp=haswell"
     fi
 
+   # Workaround for https://github.com/pypa/manylinux/issues/1309
+    git config --global --add safe.directory "*"
+
     python setup.py build_ext --cmake-prefix="/nrnwheel/ncurses;/nrnwheel/readline" --cmake-defs="$CMAKE_DEFS" $setup_args bdist_wheel
 
     # For CI runs we skip wheelhouse repairs
