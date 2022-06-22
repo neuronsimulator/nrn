@@ -286,7 +286,9 @@ Item *
 makelist(int narg, ...)
 {
 #else
-makelist(va_alist) va_dcl {
+makelist(va_alist)
+	va_dcl
+{
     int narg;
 #endif
     va_list ap;
@@ -334,7 +336,9 @@ Item *
 #if HAVE_STDARG_H
 itemarray(int narg, ...) {
 #else
-itemarray(va_alist) va_dcl {
+itemarray(va_alist)
+	va_dcl
+{
     int narg;
 #endif
     va_list ap;
