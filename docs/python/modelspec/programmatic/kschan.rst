@@ -6,60 +6,35 @@ KSChan
 
 
 
-.. class:: KSChan
+.. class:: h.KSChan()
 
 
-    Syntax:
-        ``kschan = h.KSChan()``
-
-
-    Description:
-        Declare and manage a new density channel type which can 
-        be instantiated in sections with the :ref:`insert <keyword_insert>` 
-        statement. After the type comes into existence it 
-        is always a valid type and the conductance style, 
-        ligands, name, gating functions, etc can be changed 
-        at any time. The type cannot be destroyed. 
-         
-        This is an extension of the KSChan managed by the 
-        Java catacomb channel builder tool 
-        for the past several 
-        years. The primary functional extension is the 
-        ability to define HH-style gates in addition to 
-        kinetic scheme gates. The administrative extensions 
-        allowed a more convenient re-implementation of the 
-        channel builder gui in NEURON --- albeit substantially 
-        similar. The KSChan :meth:`KSChan.setstructure` method 
-        uses a slightly modified vector format so the old 
-        Java channelbuilder tool will not work without 
-        updating the Java implementation. 
+    Declare and manage a new density channel type which can 
+    be instantiated in sections with the :ref:`insert <keyword_insert>` 
+    statement. After the type comes into existence it 
+    is always a valid type and the conductance style, 
+    ligands, name, gating functions, etc can be changed 
+    at any time. The type cannot be destroyed. 
+        
+    This is an extension of the KSChan managed by the 
+    Java catacomb channel builder tool 
+    for the past several 
+    years. The primary functional extension is the 
+    ability to define HH-style gates in addition to 
+    kinetic scheme gates. The administrative extensions 
+    allowed a more convenient re-implementation of the 
+    channel builder gui in NEURON --- albeit substantially 
+    similar. The KSChan :meth:`KSChan.setstructure` method 
+    uses a slightly modified vector format so the old 
+    Java channelbuilder tool will not work without 
+    updating the Java implementation. 
          
 
 ----
 
 
 
-.. method:: KSChan.setstructure
-
-
-    Syntax:
-        ``kschan.setstructure(vec)``
-
-
-
-         
-
-----
-
-
-
-.. method:: KSChan.remove_state
-
-
-    Syntax:
-        ``kschan.remove_state(index)``
-
-        ``kschan.remove_state(ksstate)``
+.. method:: KSChan.setstructure(vec)
 
 
 
@@ -68,52 +43,28 @@ KSChan
 
 
 
-.. method:: KSChan.remove_transition
+.. method:: KSChan.remove_state(index)
+            KSChan.remove_state(ksstate)
 
 
-    Syntax:
-        ``kschan.remove_transition(index)``
-
-        ``kschan.remove_transition(kstrans)``
-
-
-
-         
+ 
 
 ----
 
 
 
-.. method:: KSChan.ngate
+.. method:: KSChan.remove_transition(index)
+            KSChan.remove_transition(kstrans)
 
 
-    Syntax:
-        ``n = kschan.ngate()``
-
-
-
+   
 
 ----
 
 
 
-.. method:: KSChan.nstate
+.. method:: KSChan.ngate()
 
-
-    Syntax:
-        ``n = kschan.nstate()``
-
-
-
-----
-
-
-
-.. method:: KSChan.ntrans
-
-
-    Syntax:
-        ``n = kschan.ntrans()``
 
 
 
@@ -122,11 +73,23 @@ KSChan
 
 
 
-.. method:: KSChan.nligand
+.. method:: KSChan.nstate()
 
 
-    Syntax:
-        ``n = kschan.nligand()``
+----
+
+
+
+.. method:: KSChan.ntrans()
+
+
+   
+
+----
+
+
+
+.. method:: KSChan.nligand()
 
 
 
@@ -135,69 +98,54 @@ KSChan
 
 
 
-.. method:: KSChan.pr
+.. method:: KSChan.pr()
 
 
-    Syntax:
-        ``kschan.pr()``
-
-
-
-         
+ 
 
 ----
 
 
 
-.. method:: KSChan.iv_type
+.. method:: KSChan.iv_type()
+            KSChan.iv_type(type)
 
 
-    Syntax:
-        ``type = kschan.iv_type()``
-
-        ``type = kschan.iv_type(type)``
-
-
+ 
 
 ----
 
 
 
-.. method:: KSChan.gmax
+.. method:: KSChan.gmax()
+            KSChan.gmax(val)
 
 
-    Syntax:
-        ``val = kschan.gmax()``
-
-        ``val = kschan.gmax(val)``
-
-
-
+   
 
 ----
 
 
 
-.. method:: KSChan.erev
+.. method:: KSChan.erev()
+            KSChan.erev(val)
 
-
-    Syntax:
-        ``val = kschan.erev()``
-
-        ``val = kschan.erev(val)``
-
-
-         
+   
 
 ----
 
 
 
-.. method:: KSChan.add_hhstate
+.. method:: KSChan.add_hhstate(name)
 
 
-    Syntax:
-        ``ksstate = kschan.add_hhstate(name)``
+   
+
+----
+
+
+
+.. method:: KSChan.add_ksstate(name)
 
 
 
@@ -206,11 +154,8 @@ KSChan
 
 
 
-.. method:: KSChan.add_ksstate
-
-
-    Syntax:
-        ``ksstate = kschan.add_ksstate(name)``
+.. method:: KSChan.add_transition(src_index, target_index)
+            KSChan.add_transition(src_ksstate, target_ksstate)
 
 
 
@@ -218,14 +163,8 @@ KSChan
 
 
 
-.. method:: KSChan.add_transition
-
-
-    Syntax:
-        ``kstrans = kschan.add_transition(src_index, target_index)``
-
-        ``kstrans = kschan.add_transition(src_ksstate, target_ksstate)``
-
+.. method:: KSChan.trans(index)
+            KSChan.trans(src_ksstate, target_ksstate)
 
 
 
@@ -233,14 +172,10 @@ KSChan
 
 
 
-.. method:: KSChan.trans
+.. method:: KSChan.state(index)
 
 
-    Syntax:
-        ``kstrans = kschan.trans(index)``
-
-        ``kstrans = kschan.trans(src_ksstate, target_ksstate)``
-
+    
 
 
 
@@ -248,25 +183,10 @@ KSChan
 
 
 
-.. method:: KSChan.state
+.. method:: KSChan.gate(index)
 
 
-    Syntax:
-        ``ksstate = kschan.state(index)``
-
-
-
-----
-
-
-
-.. method:: KSChan.gate
-
-
-    Syntax:
-        ``ksgate = kschan.gate(index)``
-
-
+  
 
          
 
@@ -274,14 +194,20 @@ KSChan
 
 
 
-.. method:: KSChan.name
+.. method:: KSChan.name()
+            KSChan.name(string)
+
+   
 
 
-    Syntax:
-        ``string = kschan.name()``
+----
 
-        ``string = kschan.name(string)``
 
+
+.. method:: KSChan.ion()
+            KSChan.ion(string)
+
+   
 
 
 
@@ -289,28 +215,10 @@ KSChan
 
 
 
-.. method:: KSChan.ion
+.. method:: KSChan.ligand(index)
 
 
-    Syntax:
-        ``string = kschan.ion()``
-
-        ``string = kschan.ion(string)``
-
-
-
-
-----
-
-
-
-.. method:: KSChan.ligand
-
-
-    Syntax:
-        ``string = kschan.ligand(index)``
-
-
+ 
 
          
 
@@ -321,16 +229,11 @@ KSChan
 .. class:: KSState
 
 
-    Syntax:
-        cannot be created directly
-
-
-    Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
-        these objects internally. It cannot be created directly 
-        with the "new" keyword. An error message will be printed 
-        if a reference is used after KSChan has destroyed 
-        the referenced KSState. 
+    A helper class for :class:`KSChan`. KSChan creates and destroys 
+    these objects internally. It cannot be created directly 
+    with the "new" keyword. An error message will be printed 
+    if a reference is used after KSChan has destroyed 
+    the referenced KSState. 
 
     .. seealso::
         :meth:`KSChan.add_hhstate`, :meth:`KSChan.add_ksstate`
@@ -341,14 +244,10 @@ KSChan
 
 
 
-.. method:: KSState.frac
+.. method:: KSState.frac()
+            KSState.frac(val)
 
-
-    Syntax:
-        ``val = ksstate.frac()``
-
-        ``val = ksstate.frac(val)``
-
+   
 
 
 
@@ -356,11 +255,8 @@ KSChan
 
 
 
-.. method:: KSState.index
+.. method:: KSState.index()
 
-
-    Syntax:
-        ``index = ksstate.index()``
 
 
 
@@ -370,29 +266,20 @@ KSChan
 
 
 
-.. method:: KSState.gate
+.. method:: KSState.gate()
 
 
-    Syntax:
-        ``ksgate = ksstate.gate()``
-
-
-
+  
          
 
 ----
 
 
 
-.. method:: KSState.name
+.. method:: KSState.name()
+            KSState.name(string)
 
-
-    Syntax:
-        ``string = ksstate.name()``
-
-        ``string = ksstate.name(string)``
-
-
+  
 
          
 
@@ -403,16 +290,11 @@ KSChan
 .. class:: KSGate
 
 
-    Syntax:
-        cannot be created directly
-
-
-    Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
-        these objects internally. It cannot be created directly 
-        with h.KSGate. An error message will be printed 
-        if a reference is used after KSChan has destroyed 
-        the referenced KSGate. 
+    A helper class for :class:`KSChan`. KSChan creates and destroys 
+    these objects internally. It cannot be created directly 
+    with h.KSGate. An error message will be printed 
+    if a reference is used after KSChan has destroyed 
+    the referenced KSGate. 
 
     .. seealso::
         :meth:`KSChan.gate`
@@ -423,26 +305,10 @@ KSChan
 
 
 
-.. method:: KSGate.nstate
+.. method:: KSGate.nstate()
 
 
-    Syntax:
-        ``n = ksgate.nstate()``
-
-
-
-
-----
-
-
-
-.. method:: KSGate.power
-
-
-    Syntax:
-        ``i = ksgate.power()``
-
-        ``i = ksgate.power(i)``
+   
 
 
 
@@ -450,27 +316,29 @@ KSChan
 
 
 
-.. method:: KSGate.sindex
+.. method:: KSGate.power()
+            KSGate.power(i)
+
+  
+
+----
 
 
-    Syntax:
-        ``i = ksgate.sindex()``
+
+.. method:: KSGate.sindex()
 
 
+ 
 
 
 ----
 
 
 
-.. method:: KSGate.index
+.. method:: KSGate.index()
 
 
-    Syntax:
-        ``i = ksgate.index()``
-
-
-         
+ 
 
 ----
 
@@ -479,16 +347,12 @@ KSChan
 .. class:: KSTrans
 
 
-    Syntax:
-        cannot be created directly
 
-
-    Description:
-        A helper class for :class:`KSChan`. KSChan creates and destroys 
-        these objects internally. It cannot be created directly 
-        by KSTrans. An error message will be printed 
-        if a reference is used after KSChan has destroyed 
-        the referenced KSTrans. 
+    A helper class for :class:`KSChan`. KSChan creates and destroys 
+    these objects internally. It cannot be created directly 
+    by KSTrans. An error message will be printed 
+    if a reference is used after KSChan has destroyed 
+    the referenced KSTrans. 
 
     .. seealso::
         :meth:`KSChan.add_transition`, :meth:`KSChan.trans`
@@ -499,11 +363,20 @@ KSChan
 
 
 
-.. method:: KSTrans.set_f
+.. method:: KSTrans.set_f(direction, ftype, parmvec)
 
 
-    Syntax:
-        ``kstrans.set_f(direction, ftype, parmvec)``
+    
+
+
+----
+
+
+
+.. method:: KSTrans.index()
+
+
+   
 
 
 
@@ -512,12 +385,30 @@ KSChan
 
 
 
-.. method:: KSTrans.index
+.. method:: KSTrans.type()
+            KSTrans.type(i)
+
+   
 
 
-    Syntax:
-        ``i = kstrans.index()``
+----
 
+
+
+.. method:: KSTrans.ftype(direction)
+
+
+   
+
+
+----
+
+
+
+.. method:: KSTrans.ab(vvec, avec, bvec)
+
+
+  
 
 
 
@@ -525,66 +416,20 @@ KSChan
 
 
 
-.. method:: KSTrans.type
+.. method:: KSTrans.inftau(vvec, infvec, tauvec)
 
 
-    Syntax:
-        ``i = kstrans.type()``
-
-        ``i = kstrans.type(i)``
-
-
+  
 
 
 ----
 
 
 
-.. method:: KSTrans.ftype
+.. method:: KSTrans.f(direction, v)
 
 
-    Syntax:
-        ``i = kstrans.ftype(direction)``
-
-
-
-
-----
-
-
-
-.. method:: KSTrans.ab
-
-
-    Syntax:
-        ``kstrans.ab(vvec, avec, bvec)``
-
-
-
-
-----
-
-
-
-.. method:: KSTrans.inftau
-
-
-    Syntax:
-        ``kstrans.inftau(vvec, infvec, tauvec)``
-
-
-
-
-----
-
-
-
-.. method:: KSTrans.f
-
-
-    Syntax:
-        ``val = kstrans.f(direction, v)``
-
+   
 
          
 
@@ -592,24 +437,10 @@ KSChan
 
 
 
-.. method:: KSTrans.src
+.. method:: KSTrans.src()
 
 
-    Syntax:
-        ``ksstate = kstrans.src()``
-
-
-
-
-----
-
-
-
-.. method:: KSTrans.target
-
-
-    Syntax:
-        ``ksstate = kstrans.target()``
+   
 
 
 
@@ -618,11 +449,19 @@ KSChan
 
 
 
-.. method:: KSTrans.parm
+.. method:: KSTrans.target()
 
 
-    Syntax:
-        ``parmvec = kstrans.parm(direction)``
+ 
+
+
+----
+
+
+
+.. method:: KSTrans.parm(direction)
+
+
 
 
 
@@ -632,15 +471,9 @@ KSChan
 
 
 
-.. method:: KSTrans.ligand
+.. method:: KSTrans.ligand()
+            KSTrans.ligand(string)
 
-
-    Syntax:
-        ``string = kstrans.ligand()``
-
-        ``string = kstrans.ligand(string)``
-
-
-
+   
          
 
