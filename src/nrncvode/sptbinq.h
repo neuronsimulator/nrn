@@ -79,7 +79,7 @@ class TQueue {
         return least_;
     }
     TQItem* second_least(double t);
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     double least_t() {
         double tt;
         MUTLOCK;
