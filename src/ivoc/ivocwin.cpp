@@ -32,6 +32,9 @@
 #undef min
 #include "graph.h"
 
+#include <condition_variable>
+#include <mutex>
+
 #ifdef MINGW
 // the link step needs liboc after libivoc but liboc refers to some
 // things in libivoc that wouldn't normally be linked because nothing
@@ -218,8 +221,10 @@ extern void (*nrnpy_restore_thread)(void*);
 static void* w_;
 static void (*nrn_gui_exec_)(void*);
 
-static pthread_mutex_t* mut_;
-static pthread_cond_t* cond_;
+namespace {
+std::unique_ptr<std::condition_variable> cond_;
+std::mutex mut_;
+}  // namespace
 
 bool nrn_is_gui_thread() {
     if (cond_ && GetCurrentThreadId() != bind_tid_) {
@@ -241,13 +246,12 @@ void nrn_gui_exec(void (*cb)(void*), void* v) {
     assert(GetCurrentThreadId() != bind_tid_);
     // wait for the gui thread to handle the operation
     void* gs = (*nrnpy_save_thread)();
-    pthread_mutex_lock(mut_);
-    w_ = v;
-    nrn_gui_exec_ = cb;
-    while (w_) {
-        pthread_cond_wait(cond_, mut_);
+    {
+        std::unique_lock<std::mutex> lock{mut_};
+        w_ = v;
+        nrn_gui_exec_ = cb;
+        cond_->wait(lock, [] { return !w_; });
     }
-    pthread_mutex_unlock(mut_);
     (*nrnpy_restore_thread)(gs);
 }
 
@@ -255,15 +259,14 @@ void nrniv_bind_call() {
     if (!cond_) {
         return;
     }
-    void* w;
-    pthread_mutex_lock(mut_);
-    w = w_;
+    std::lock_guard<std::mutex> _{mut_};
+    void* w = w_;
     if (w_) {
         w_ = NULL;
         (*nrn_gui_exec_)(w);
-        pthread_cond_signal(cond_);
+        // TODO: slight optimisation to release the mutex first
+        cond_->notify_one();
     }
-    pthread_mutex_unlock(mut_);
 }
 
 
@@ -277,10 +280,7 @@ void nrniv_bind_thread() {
     bind_tid_ = int(*hoc_getarg(1));
     // printf("nrniv_bind_thread %d\n", bind_tid_);
     iv_bind_enqueue_ = iv_bind_enqueue;
-    cond_ = new pthread_cond_t;
-    mut_ = new pthread_mutex_t;
-    pthread_cond_init(cond_, NULL);
-    pthread_mutex_init(mut_, NULL);
+    cond_ = std::make_unique<std::condition_variable>();
     w_ = NULL;
     ENDGUI
 #endif
