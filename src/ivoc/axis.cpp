@@ -1,14 +1,14 @@
 #include <../../nrnconf.h>
 #if HAVE_IV  // to end of file
 
-#include <stdio.h>
+#include <cstdio>
 #include <ivstream.h>
 #include <InterViews/background.h>
 #include <InterViews/canvas.h>
 #include <InterViews/printer.h>
 #include <InterViews/label.h>
 #include <IV-look/kit.h>
-#include <math.h>
+#include <cmath>
 #include "scenevie.h"
 #include "mymath.h"
 #include "axis.h"
@@ -207,7 +207,7 @@ void Axis::install() {
 
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * tic_space;
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             if (invert_ >= 0) {
@@ -314,7 +314,7 @@ void Axis::install() {
         tic->ref();
         for (i = 0; i <= ntic_; ++i) {
             x = amin_ + i * (amax_ - amin_) / float(ntic_);
-            if (Math::abs(x) < 1e-10) {
+            if (std::abs(x) < 1e-10) {
                 x = 0.;
             }
             s_->append_fixed(new GAxisItem(tic));
