@@ -210,7 +210,7 @@ if (WidgetKit::instance()->style()->find_attribute(gargstr(1)+1, s)) {
     hoc_pushx(1.);
 }
 
-#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC)
 /*static*/ class ReqErr1: public ReqErr {
   public:
     ReqErr1();
@@ -274,7 +274,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
     notify_change_ = new Observable();
     if (s) {
         helpmode_ = false;
-#if !defined(WIN32) && !defined(MAC) && !defined(carbon)
+#if !defined(WIN32) && !defined(MAC)
         reqerr1 = new ReqErr1;
         reqerr1->Install();
 #endif
@@ -305,7 +305,7 @@ Oc::Oc(Session* s, const char* pname, const char** env) {
 Oc::~Oc() {
     MUTLOCK
     if (--refcnt_ == 0) {
-#if !defined(MINGW) && !defined(MAC) && !defined(carbon)
+#if !defined(MINGW) && !defined(MAC)
         if (reqerr1 && reqerr1->count()) {
             fprintf(stderr, "total X Errors: %d\n", reqerr1->count());
         }
@@ -401,7 +401,7 @@ int run_til_stdin() {
 #endif
     session->run();
     WinDismiss::dismiss_defer();  // in case window was dismissed
-#if MAC && !defined(carbon)
+#if MAC
     extern Boolean IVOCGoodLine;
     if (IVOCGoodLine) {
         return 1;

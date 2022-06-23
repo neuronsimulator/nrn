@@ -381,24 +381,6 @@ Glyph* PrintableWindow::print_glyph() {
     return glyph();
 }
 
-#if MAC && carbon
-// Apparently the collapse item does not send an event to the application.
-// Would like to do this only for PrintableWindows but this handler must be
-// removed whenever theMacWindow is destroyed ( can unbind without deleteing he
-// PrintableWindow
-static EventTypeSpec myCollapseTypeSpec[] = {{kEventClassWindow, kEventWindowClickCollapseRgn}};
-static OSStatus MyHandleCollapse(EventHandlerCallRef, EventRef, void*);
-static OSStatus MyHandleCollapse(EventHandlerCallRef, EventRef, void* v) {
-    PrintableWindow* w = (PrintableWindow*) v;
-    if (PrintableWindow::leader() != w) {
-        w->unmap();
-    } else {
-        return eventNotHandledErr;
-    }
-    return noErr;
-}
-#endif
-
 void PrintableWindow::map() {
     if (mappable_) {
         DismissableWindow::map();
@@ -407,18 +389,6 @@ void PrintableWindow::map() {
         if (xplace_) {
             xmove(xleft_, xtop_);
         }
-#if carbon
-        // it's bound due to the map and according to my checking it will not become
-        // unbound til window deletion
-        EventHandlerUPP myHandleCollapse = NewEventHandlerUPP(
-            (EventHandlerProcPtr) MyHandleCollapse);
-        InstallWindowEventHandler(Window::rep()->macWindow(),
-                                  myHandleCollapse,
-                                  1,
-                                  myCollapseTypeSpec,
-                                  (void*) this,
-                                  NULL);
-#endif
 #endif
         single_event_run();
         notify();

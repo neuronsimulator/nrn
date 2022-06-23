@@ -143,6 +143,9 @@ function(nrn_add_test_group)
     # Add a rule to build the modfiles for this test group. Multiple groups may ask for exactly the
     # same thing (testcorenrn), so it's worth deduplicating.
     set(hash_components ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
+    # Escape special characters (problematic with Windows paths when calling nrnivmodl)
+    string(REGEX REPLACE "([][+.*()^])" "\\\\\\1" NRN_RUN_FROM_BUILD_DIR_ENV
+                         "${NRN_RUN_FROM_BUILD_DIR_ENV}")
     set(nrnivmodl_command cmake -E env ${NRN_RUN_FROM_BUILD_DIR_ENV}
                           ${CMAKE_BINARY_DIR}/bin/nrnivmodl ${NRN_ADD_TEST_GROUP_NRNIVMODL_ARGS})
     # The user decides whether or not this test group should have its MOD files compiled for
