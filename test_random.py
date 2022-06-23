@@ -1,6 +1,7 @@
 from neuron import h
 import matplotlib.pyplot as plt
 
+
 def create_plot(rand, type):
     values = []
     for i in range(100000):
@@ -10,6 +11,7 @@ def create_plot(rand, type):
     # plt.show()
     plt.savefig("hist_{}.pdf".format(type), format="pdf")
     plt.close()
+
 
 rand = h.Random()
 print("Test default rand")
