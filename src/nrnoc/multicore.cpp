@@ -336,11 +336,11 @@ static void slave_main(slave_conf_t* my_wc) {
     return;
 }
 
-static void threads_create_pthread() {
+static void threads_create() {
 #if NRNMPI
     if (nrn_nthread > 1 && nrnmpi_numprocs > 1 && nrn_cannot_use_threads_and_mpi == 1) {
         if (nrnmpi_myid == 0) {
-            printf("This MPI is not threadsafe so pthreads are disabled.\n");
+            printf("This MPI is not threadsafe so threads are disabled.\n");
         }
         nrn_thread_parallel_ = 0;
         return;
@@ -377,7 +377,7 @@ static void threads_create_pthread() {
     }
 }
 
-static void threads_free_pthread() {
+static void threads_free() {
     if (!slave_threads.empty()) {
         wait_for_workers();
         for (int i = 1; i < nrn_nthread; ++i) {
@@ -407,10 +407,10 @@ static void threads_free_pthread() {
 extern "C" void nrn_malloc_lock() {}
 extern "C" void nrn_malloc_unlock() {}
 
-static void threads_create_pthread() {
+static void threads_create() {
     nrn_thread_parallel_ = 0;
 }
-static void threads_free_pthread() {
+static void threads_free() {
     nrn_thread_parallel_ = 0;
 }
 #endif /* !NRN_ENABLE_THREADS */
@@ -514,9 +514,9 @@ void nrn_threads_create(int n, int parallel) {
         diam_changed = 1;
     }
     if (nrn_thread_parallel_ != parallel) {
-        threads_free_pthread();
+        threads_free();
         if (parallel) {
-            threads_create_pthread();
+            threads_create();
         }
     }
     /*printf("nrn_threads_create %d %d\n", nrn_nthread, nrn_thread_parallel_);*/
@@ -589,7 +589,7 @@ void nrn_fast_imem_alloc() {
 }
 
 void nrn_threads_free() {
-    threads_free_pthread();
+    threads_free();
     int it, i;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;

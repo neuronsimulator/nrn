@@ -2843,7 +2843,7 @@ static void point_receive_job(NrnThread* nt) {
 }
 
 void NetCvode::point_receive(int type, Point_process* pp, double* w, double f) {
-	// this is the master thread. need to execute the pthread associated
+	// this is the master thread. need to execute the thread associated
 	// with the pp.
 	int id = PP2NT(pp)->id;
 	if (id == 0) { // execute on this, the master thread
