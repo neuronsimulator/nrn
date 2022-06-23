@@ -357,9 +357,6 @@
    `char[]'. */
 #undef YYTEXT_POINTER
 
-/* define if using Carbon libraries */
-#undef carbon
-
 /* Define to the type of a signed integer type of width exactly 64 bits if
    such a type exists and the standard includes do not define it. */
 #undef int64_t
@@ -380,12 +377,6 @@
 
 #ifdef MINGW
 #define WIN32 1
-#endif
-
-
-#if defined(carbon) && defined(__cplusplus)
-#define MAC 1
-#include <Carbon/Carbon.h>
 #endif
 
 #endif /* H_nrnconf_included */

@@ -866,9 +866,7 @@ void vtplot(int mode, double x, double y) {
 #endif /*VT*/
 
 int set_color(int c) {
-    if (c >= 0 || c < 128) {
-        hoc_color = c;
-    }
+    hoc_color = c;
 #if defined(__TURBOC__)
     if (egagrph) {
         setcolor(hoc_color);

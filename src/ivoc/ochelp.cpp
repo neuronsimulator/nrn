@@ -15,7 +15,7 @@
 
 static FILE* help_pipe;
 
-#if MAC && !defined(carbon)
+#if MAC
 #define WIN32 1
 #endif
 
