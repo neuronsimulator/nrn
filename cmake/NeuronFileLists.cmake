@@ -450,31 +450,21 @@ set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 set(NRNGNU_FILES_LIST
     ACG.cpp
     Binomial.cpp
-    Binomial_random123.cpp
     DiscUnif.cpp
-    DiscUnif_random123.cpp
     Erlang.cpp
-    Erlang_random123.cpp
     Geom.cpp
-    Geom_random123.cpp
     HypGeom.cpp
     LogNorm.cpp
-    LogNorm_random123.cpp
     MLCG.cpp
     NegExp.cpp
-    NegExp_random123.cpp
     Normal.cpp
-    Normal_random123.cpp
     Poisson.cpp
-    Poisson_random123.cpp
     RNG.cpp
     RNG_random123.cpp
     Random.cpp
     RndInt.cpp
     Uniform.cpp
-    Uniform_random123.cpp
-    Weibull.cpp
-    Weibull_random123.cpp)
+    Weibull.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST

@@ -22,27 +22,17 @@
 #include <MLCG.h>
 #include <Random.h>
 #include <Poisson.h>
-#include <Poisson_random123.h>
 #include <Normal.h>
-#include <Normal_random123.h>
 #include <Uniform.h>
-#include <Uniform_random123.h>
 #include <Binomial.h>
-#include <Binomial_random123.h>
 #include <DiscUnif.h>
-#include <DiscUnif_random123.h>
 #include <Erlang.h>
-#include <Erlang_random123.h>
 #include <Geom.h>
-#include <Geom_random123.h>
 #include <LogNorm.h>
-#include <LogNorm_random123.h>
 #include <NegExp.h>
-#include <NegExp_random123.h>
 #include <RndInt.h>
 #include <HypGeom.h>
 #include <Weibull.h>
-#include <Weibull_random123.h>
 
 #if HAVE_IV
 #include "ivoc.h"
