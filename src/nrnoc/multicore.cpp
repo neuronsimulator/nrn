@@ -249,7 +249,7 @@ struct worker_conf_t {
     /* for nrn_solve etc.*/
     void* (*job)(NrnThread*) = nullptr;
 };
-}
+}  // namespace
 
 namespace {
 std::unique_ptr<std::condition_variable[]> cond;
