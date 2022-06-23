@@ -9,8 +9,8 @@ extern void (*nrn_multisplit_setup_)();
 
 extern int hoc_return_type_code;
 
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 #include "classreg.h"
 #include "nrnoc2iv.h"
 #include "datapath.h"
@@ -951,7 +951,7 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
     double* y = n_vector_data(y_, nt->id);
     double* m = n_vector_data(maxstate_, nt->id);
     for (i = 0; i < z.nvsize_; ++i) {
-        x = Math::abs(y[i]);
+        x = std::abs(y[i]);
         if (m[i] < x) {
             m[i] = x;
         }
@@ -960,7 +960,7 @@ void Cvode::maxstate(bool b, NrnThread* nt) {
         y = n_vector_data(acorvec(), nt->id);
         m = n_vector_data(maxacor_, nt->id);
         for (i = 0; i < z.nvsize_; ++i) {
-            x = Math::abs(y[i]);
+            x = std::abs(y[i]);
             if (m[i] < x) {
                 m[i] = x;
             }
