@@ -550,7 +550,7 @@ class geometry3d_Cone {
     double signed_distance(double px, double py, double pz);
 
   private:
-    double axisx, axisy, axisz, cx, cy, cz, h, rra, rrb, conelength;
+    double axisx, axisy, axisz, h, rra, rrb, conelength;
     double side1, side2, x0, y0, z0, r0, axislength;
 };
 
@@ -562,10 +562,7 @@ geometry3d_Cone::geometry3d_Cone(double x0,
                                  double y1,
                                  double z1,
                                  double r1)
-    : cx((x0 + x1) / 2.)
-    , cy((y0 + y1) / 2.)
-    , cz((z0 + z1) / 2.)
-    , rra(r0 * r0)
+    : rra(r0 * r0)
     , rrb(r1 * r1)
     , x0(x0)
     , y0(y0)

@@ -1183,8 +1183,7 @@ void nrnunit_dynamic_str(char* buf, const char* name, char* u1, char* u2) {
             name,
             name,
             modern,
-            legacy,
-            modern);
+            legacy);
 
 #else
 

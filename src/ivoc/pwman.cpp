@@ -5,7 +5,7 @@ extern char* ivoc_get_temp_file();
 extern int hoc_return_type_code;
 
 #if HAVE_IV
-#if (MAC && !defined(carbon)) || defined(WIN32)
+#if MAC || defined(WIN32)
 #define MACPRINT 1
 #else
 #define MACPRINT 0
@@ -27,6 +27,7 @@ extern int hoc_return_type_code;
 #include <stdlib.h>
 #include "classreg.h"
 #include "oc2iv.h"
+#include <cmath>
 
 #if HAVE_IV
 #include "utility.h"
@@ -41,7 +42,7 @@ void iv_display_scale(Coord, Coord);  // Make if fit into the screen
 extern "C" char* hoc_back2forward(char*);
 #endif
 
-#if MAC && !defined(carbon)
+#if MAC
 #include <fstream.h>
 #include <file_io.h>
 #undef IOS_OUT
@@ -337,9 +338,7 @@ class PaperItem;
     FileChooser* fc_save_;
     const Color* window_outline_;
     CopyString cur_ses_name_;
-#if carbon
-    void all2front();
-#endif
+
   private:
     friend class PrintableWindowManager;
     PWMImpl(ScreenScene*, PaperScene*, Rect*);
@@ -985,13 +984,13 @@ void PaperItem_handler::resize_action(Coord x, Coord y) {
     pwm_impl->paper()->allotment(index_, Dimension_Y, ay);
     Coord xs, ys;
     t_.transform(x, y, xs, ys);
-    float scl = Math::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
+    float scl = std::max((xs - ax.begin()) / ax.span(), (ys - ay.begin()) / ay.span());
     // printf("scl = %g\n", scl);
     scl = pi_->scale() * scl;
     scl = (scl > .1) ? scl : .1;
     Coord w1;
     w1 = pwm_impl->round(scl * pi_->width());
-    w1 = Math::max(w1, pwm_impl->round_factor());
+    w1 = std::max(w1, pwm_impl->round_factor());
     scl = w1 / pi_->width();
     pi_->scale(scl);
     pwm_impl->paper()->modified(index_);
@@ -1038,7 +1037,7 @@ VirtualWindow::~VirtualWindow() {
     view_->unref();
     virt_win_ = NULL;
 }
-#if defined(WIN32) || carbon
+#if defined(WIN32)
 extern void ivoc_bring_to_top(Window*);
 #endif
 
@@ -1233,11 +1232,11 @@ PrintableWindowManager::PrintableWindowManager() {
 
     Coord wp = pagewidth / pr_scl;
     Coord hp = pageheight / pr_scl;
-    Coord max = Math::max(wp, hp);
+    Coord max = std::max(wp, hp);
     Rect* r = new Rect(0, 0, wp, hp, outline_color);
     //        wp1 = wp1*1.2;
     //	Scene* paper = new Scene(-5, -1, hp*1.2, hp+1, r);
-    PaperScene* paper = new PaperScene(-5, -2, Math::max(max, d->width() / Scl), max + 2, r);
+    PaperScene* paper = new PaperScene(-5, -2, std::max(max, d->width() / Scl), max + 2, r);
 
     // PGH end
     pwmi_ = new PWMImpl(screen, paper, r);
@@ -1329,7 +1328,7 @@ PrintableWindowManager::PrintableWindowManager() {
     mi = K::menu_item("Ascii");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::ascii_control));
-#if MAC && !defined(carbon)
+#if MAC
     mi = K::menu_item("Setup Printer");
     mprint->append_item(mi);
     mi->action(new ActionCallback(PWMImpl)(pwmi_, &PWMImpl::paperscale));
@@ -1537,11 +1536,6 @@ void PrintableWindowManager::update(Observable* o) {
     PrintableWindow* w = (PrintableWindow*) o;
     // printf("PrintableWindowManager::update(%p)\n", w);
     reconfigured(w);
-#if carbon
-    if (w->leader() == w) {
-        pwmi_->all2front();
-    }
-#endif
 }
 
 void PrintableWindowManager::disconnect(Observable* o) {
@@ -1793,7 +1787,7 @@ void PWMImpl::do_print0() {
         if (none_selected("No windows to print", "Print Anyway")) {
             return;
         }
-#if MAC && !defined(carbon)
+#if MAC
         if (!mprinter_) {
             continue_dialog("First select SetupPrinter");
         } else {
@@ -1821,7 +1815,7 @@ void PWMImpl::do_print0() {
 }
 
 void PWMImpl::do_print(bool use_printer, const char* name) {
-#if MAC && !defined(carbon)
+#if MAC
     if (use_printer) {
         mac_do_print();
         return;
@@ -1861,7 +1855,7 @@ void PWMImpl::do_print_session(bool also_leader) {
     float yoff = mprinter()->height() / 2 / sfac - (e.top() + e.bottom() + 23.) / 2.;
     Transformer t;
     t.translate(xoff, yoff);
-#if MAC && !defined(carbon)
+#if MAC
     mprinter()->prolog();
     t.scale(sfac, sfac);
 #else
@@ -2409,7 +2403,7 @@ Coord PaperItem::fsize_;
 
 void PaperItem::request(Requisition& req) const {
     Requirement rx(scale_ * si_->w_->width_pw() / Scl);
-    Requirement ry(Math::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
+    Requirement ry(std::max(fsize_, scale_ * si_->w_->height_pw() / Scl));
     req.require_x(rx);
     req.require_y(ry);
 #if DBG
@@ -2543,21 +2537,6 @@ MacPrinter* PWMImpl::mprinter() {
 }
 #endif
 
-#if carbon
-void PWMImpl::all2front() {
-    int i;
-    PrintableWindow* w;
-    if (screen_)
-        for (i = 0; i < screen_->count(); ++i) {
-            ScreenItem* si = (ScreenItem*) (screen_->component(i));
-            w = si->window();
-            if (w && w != w->leader() && w->is_mapped()) {
-                ivoc_bring_to_top(w);
-            }
-        }
-}
-#endif
-
 void PWMImpl::map_all() {
     GlyphIndex i;
     PrintableWindow* pw = PrintableWindow::leader();
@@ -2671,7 +2650,7 @@ GlyphIndex PWMImpl::paper_index(PaperItem* pi) {
 }
 
 float PWMImpl::round(float x) {
-    return Math::round(x / round_factor_) * round_factor_;
+    return std::round(x / round_factor_) * round_factor_;
 }
 
 #if MACPRINT
@@ -3777,7 +3756,7 @@ void nrnjava_pwm_event(size_t ic, int type, int l, int t, int w, int h) {
 
 char* ivoc_get_temp_file() {
     char* tmpfile;
-#if MAC && !defined(carbon)
+#if MAC
     FSSpec spec;
     tmpfile = new char[512];
     __temp_file_name(tmpfile, &spec);

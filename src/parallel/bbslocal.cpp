@@ -56,14 +56,14 @@ void BBSLocal::perror(const char* s) {
 }
 
 int BBSLocal::upkint() {
-    int i;
+    int i{};
     if (!taking_ || taking_->upkint(&i))
         perror("upkint");
     return i;
 }
 
 double BBSLocal::upkdouble() {
-    double x;
+    double x{};
     if (!taking_ || taking_->upkdouble(&x)) {
         perror("upkdouble");
     }
@@ -77,7 +77,7 @@ void BBSLocal::upkvec(int n, double* x) {
 }
 
 char* BBSLocal::upkstr() {
-    int len;
+    int len{};
     char* s;
     if (!taking_ || taking_->upkint(&len)) {
         perror("upkstr length");
@@ -90,7 +90,7 @@ char* BBSLocal::upkstr() {
 }
 
 char* BBSLocal::upkpickle(size_t* n) {
-    int len;
+    int len{};
     char* s;
     if (!taking_ || taking_->upkint(&len)) {
         perror("upkpickle length");

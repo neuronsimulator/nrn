@@ -309,7 +309,7 @@ void OcDeck::remove_last() {
     bi_->deck_->remove(last);
 }
 
-void OcDeck::remove(int i) {
+void OcDeck::remove(long i) {
     if (bi_->deck_->card() == i) {
         flip_to(-1);
     }

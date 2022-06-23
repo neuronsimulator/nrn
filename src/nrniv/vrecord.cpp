@@ -2,7 +2,6 @@
 
 #include <OS/list.h>
 #include <OS/string.h>
-#include <OS/math.h>
 #if HAVE_IV
 #include "ivoc.h"
 #endif
