@@ -6,43 +6,39 @@ Glyph
 
 
 
-.. class:: Glyph
+.. class:: h.Glyph()
 
 
-    Syntax:
-        ``g = h.Glyph()``
+    Specification of a drawing. The drawing can be rendered on a Graph 
+    as many times as desired using 
 
+    .. code-block::
+        none
 
-    Description:
-        Specification of a drawing. The drawing can be rendered on a Graph 
-        as many times as desired using 
+        graph.glyph(g, x, y, scalex, scaley, angle) 
 
-        .. code-block::
-            none
-
-            graph.glyph(g, x, y, scalex, scaley, angle) 
-
-        The drawing style uses commands reminiscent of postscript. 
+    The drawing style uses commands reminiscent of postscript. 
 
     Example:
-        Rotated ellipse
 
-        .. code-block::
-            python
+    Rotated ellipse
+
+    .. code-block::
+        python
+    
+        from neuron import h, gui
         
-            from neuron import h, gui
-            
-            gr = h.Graph()
-            
-            gl = h.Glyph()
-            gl.circle(0,0,1)
-            gl.fill(3)
-            gl.s(2, 3)
-            
-            gr.glyph(gl, 150, 100, 30, 60, h.PI/4*h.DEG)
+        gr = h.Graph()
+        
+        gl = h.Glyph()
+        gl.circle(0,0,1)
+        gl.fill(3)
+        gl.s(2, 3)
+        
+        gr.glyph(gl, 150, 100, 30, 60, h.PI/4*h.DEG)
 
-        .. image:: ../images/glyphcircle.png
-                    :align: center
+    .. image:: ../images/glyphcircle.png
+                :align: center
 
 
     .. seealso::
@@ -54,15 +50,10 @@ Glyph
 
 
 
-.. method:: Glyph.path
+.. method:: Glyph.path()
 
 
-    Syntax:
-        ``g = g.path()``
-
-
-    Description:
-        Begin a new path. 
+    Begin a new path. 
 
          
 
@@ -70,15 +61,10 @@ Glyph
 
 
 
-.. method:: Glyph.m
+.. method:: Glyph.m(x, y)
 
 
-    Syntax:
-        ``g = g.m(x, y)``
-
-
-    Description:
-        Set the current point to the coordinates. 
+    Set the current point to the coordinates. 
 
          
 
@@ -86,15 +72,10 @@ Glyph
 
 
 
-.. method:: Glyph.l
+.. method:: Glyph.l(x, y)
 
 
-    Syntax:
-        ``g = g.l(x, y)``
-
-
-    Description:
-        A line from the current point to the coordinates. 
+    A line from the current point to the coordinates. 
 
          
 
@@ -102,15 +83,10 @@ Glyph
 
 
 
-.. method:: Glyph.curve
+.. method:: Glyph.curve(x,y, x1,y1, x2,y2)
 
 
-    Syntax:
-        ``g = g.curve(x,y, x1,y1, x2,y2)``
-
-
-    Description:
-        Draw a curve from the current point to x,y 
+    Draw a curve from the current point to x,y 
 
          
 
@@ -118,15 +94,10 @@ Glyph
 
 
 
-.. method:: Glyph.close
+.. method:: Glyph.close()
 
 
-    Syntax:
-        ``g = g.close()``
-
-
-    Description:
-        A line from the current point to the first point of the path. 
+    A line from the current point to the first point of the path. 
 
          
 
@@ -134,35 +105,23 @@ Glyph
 
 
 
-.. method:: Glyph.circle
+.. method:: Glyph.circle(x, y, r)
 
 
-    Syntax:
-        ``g = g.circle(x, y, r)``
-
-
-    Description:
-        A circle at location x, y and radius r. This is implemented using
-        the glyph methods new_path, move_to, curve_to, and close_path.
-        Can stroke and/or fill.
+    A circle at location x, y and radius r. This is implemented using
+    the glyph methods new_path, move_to, curve_to, and close_path.
+    Can stroke and/or fill.
 
 ----
 
 
 
-.. method:: Glyph.s
+.. method:: Glyph.s()
+            Glyph.s(colorindex)
+            Glyph.s(colorindex, brushindex)
 
-
-    Syntax:
-        ``g = g.s()``
-
-        ``g = g.s(colorindex)``
-
-        ``g = g.s(colorindex, brushindex)``
-
-
-    Description:
-        Render the current path as a line. 
+    
+    Render the current path as a line. 
 
          
 
@@ -170,17 +129,11 @@ Glyph
 
 
 
-.. method:: Glyph.fill
+.. method:: Glyph.fill()
+            Glyph.fill(colorindex)
 
-
-    Syntax:
-        ``g = g.fill()``
-
-        ``g = g.fill(colorindex)``
-
-
-    Description:
-        For a closed path, fill the interior with the indicated color. 
+    
+    For a closed path, fill the interior with the indicated color. 
 
          
 
@@ -188,17 +141,12 @@ Glyph
 
 
 
-.. method:: Glyph.cpt
+.. method:: Glyph.cpt(x,y)
 
 
-    Syntax:
-        ``g = g.cpt(x,y)``
-
-
-    Description:
-        Draw a small open rectangle at the coordinates. Intended to indicate 
-        special locations on the glyph which can be selected. Not very useful 
-        at this time. 
+    Draw a small open rectangle at the coordinates. Intended to indicate 
+    special locations on the glyph which can be selected. Not very useful 
+    at this time. 
 
          
 
@@ -206,15 +154,10 @@ Glyph
 
 
 
-.. method:: Glyph.erase
+.. method:: Glyph.erase()
 
 
-    Syntax:
-        ``g = g.erase()``
-
-
-    Description:
-        The drawing is empty 
+    The drawing is empty 
 
          
 
@@ -222,15 +165,10 @@ Glyph
 
 
 
-.. method:: Glyph.label
+.. method:: Glyph.label("string", x, y, fixtype, colorindex)
 
 
-    Syntax:
-        ``g = g.label("string", x, y, fixtype, colorindex)``
-
-
-    Description:
-        Not implemented 
+    Not implemented 
 
          
 
@@ -238,15 +176,10 @@ Glyph
 
 
 
-.. method:: Glyph.glyph
+.. method:: Glyph.glyph(glyphobject, x, y, scale, angle)
 
 
-    Syntax:
-        ``g = g.glyph(glyphobject, x, y, scale, angle)``
-
-
-    Description:
-        Not implemented 
+    Not implemented 
 
          
 
@@ -254,17 +187,12 @@ Glyph
 
 
 
-.. method:: Glyph.gif
+.. method:: Glyph.gif("filename")
 
 
-    Syntax:
-        ``g = g.gif("filename")``
-
-
-    Description:
-        Reads the gif image in the file. All :class:`Glyph` arguments still work 
-        when the glyph contains a gif image. The gif image is drawn first so 
-        other drawing specs will appear on top of it. 
+    Reads the gif image in the file. All :class:`Glyph` arguments still work 
+    when the glyph contains a gif image. The gif image is drawn first so 
+    other drawing specs will appear on top of it. 
 
     .. seealso::
         :meth:`Graph.gif`, :meth:`Graph.glyph`
