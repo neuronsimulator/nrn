@@ -8,7 +8,11 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
-#include <unistd.h>
+#ifdef WIN32
+#include <io.h>
+#else
+#include <io.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 

@@ -850,7 +850,9 @@ double* makevector(int nrows)
 }
 #endif  // 0
 
-int _ninits;
+extern "C" {
+  int _ninits;
+}
 extern "C" void _modl_cleanup(void) {}
 
 #if 1

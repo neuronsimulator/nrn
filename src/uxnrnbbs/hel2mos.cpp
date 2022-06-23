@@ -196,7 +196,11 @@ char* nrnhome;
 
 #else
 
-#include <unistd.h>
+#ifdef WIN32
+#include <io.h>
+#else
+#include <io.h>
+#endif
 #include <signal.h>
 
 static int mosaic_pid_; /* no longer used. 0 is fine */

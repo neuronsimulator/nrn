@@ -34,8 +34,6 @@
 
 /* the first arg may also be a file.mod (containing the .mod suffix)*/
 
-#include <getopt.h>
-
 #if MAC
 #include <sioux.h>
 #endif
@@ -81,20 +79,6 @@ static char pgm_name[] = "nmodl";
 extern char* RCS_version;
 extern char* RCS_date;
 
-static struct option long_options[] = {{"version", no_argument, 0, 'v'},
-                                       {"help", no_argument, 0, 'h'},
-                                       {"outdir", required_argument, 0, 'o'},
-                                       {0, 0, 0, 0}};
-
-static void show_options(char** argv) {
-    fprintf(stderr, "Source to source compiler from NMODL to C++\n");
-    fprintf(stderr, "Usage: %s [options] Inputfile\n", argv[0]);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr,
-            "\t-o | --outdir <OUTPUT_DIRECTORY>    directory where output files will be written\n");
-    fprintf(stderr, "\t-h | --help                         print this message\n");
-    fprintf(stderr, "\t-v | --version                      print version number\n");
-}
 
 static void openfiles(char* given_filename, char* output_dir);
 
@@ -104,39 +88,7 @@ int main(int argc, char** argv) {
     char* output_dir = NULL;
 
     if (argc < 2) {
-        show_options(argv);
         exit(1);
-    }
-
-    while ((option = getopt_long(argc, argv, ":vho:", long_options, &option_index)) != -1) {
-        switch (option) {
-        case 'v':
-            printf("%s\n", nmodl_version_);
-            exit(0);
-
-        case 'o':
-            output_dir = strdup(optarg);
-            break;
-
-        case 'h':
-            show_options(argv);
-            exit(0);
-
-        case ':':
-            fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
-            exit(-1);
-
-        case '?':
-        default:
-            fprintf(stderr, "%s: invalid option `-%c' \n", argv[0], optopt);
-            exit(-1);
-        }
-    }
-    if ((argc - optind) > 1) {
-        fprintf(stderr,
-                "%s: Warning several input files specified on command line but only one will be "
-                "processed\n",
-                argv[0]);
     }
 
     filetxtlist = newlist();
@@ -151,7 +103,7 @@ int main(int argc, char** argv) {
     init(); /* keywords into symbol table, initialize
              * lists, etc. */
 
-    finname = argv[optind];
+    finname = argv[1];
 
     openfiles(finname, output_dir); /* .mrg else .mod,  .var, .c */
 #if NMODL || HMODL

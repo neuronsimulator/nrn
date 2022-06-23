@@ -155,18 +155,13 @@ char *filename;
  *
  **************************************************************************/
 
-extern int _ninits;
-
 double 
-stepforce(reset_integ, old_value, t, filename)
-double t, *old_value;
-char *filename;
-int *reset_integ;
+stepforce(int* reset_integ, double* old_value, double t, char* filename)
 {
     double lookup(), return_val;
     Spline *sp;
     static int initialized = 0;
-    extern int _modl_cleanup();
+    extern int _ninits, _modl_cleanup();
 
     /* Check if Spline structure already made */
     /* Note: this function uses the Spline structure for storing */

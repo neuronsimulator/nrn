@@ -66,7 +66,11 @@ directly by hoc.
 #include "modl.h"
 #include "parse1.hpp"
 #include <stdlib.h>
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #define GETWD(buf) getcwd(buf, NRN_BUFSIZE)
 
 #if VECTORIZE

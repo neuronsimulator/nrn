@@ -274,7 +274,8 @@ void nrniv_bind_call() {
 
 #endif  // HAVE_IV
 
-void nrniv_bind_thread() {
+//extern "C" {
+void __cdecl nrniv_bind_thread(void) {
 #if HAVE_IV
     IFGUI
     bind_tid_ = int(*hoc_getarg(1));
@@ -287,6 +288,7 @@ void nrniv_bind_thread() {
     hoc_pushx(1.);
     hoc_ret();
 }
+//}
 
 int stdin_event_ready() {
 #if HAVE_IV

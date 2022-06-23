@@ -5,7 +5,7 @@
 #include "grids.h"
 #include "rxd.h"
 #include <nrnwrap_Python.h>
-#include <unistd.h>
+#include <io.h>
 
 #include <cmath>
 

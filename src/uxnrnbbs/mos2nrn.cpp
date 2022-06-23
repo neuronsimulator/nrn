@@ -3,7 +3,11 @@
 #include <assert.h>
 #include "../oc/nrnassrt.h"
 #include <stdlib.h>
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include "mos2nrn.h"
 
 static void getdname(char* dname);

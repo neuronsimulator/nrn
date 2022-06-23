@@ -884,10 +884,11 @@ void verify_structure(void) {
     nrn_solver_prepare(); /* cvode ready to be used */
 }
 
+extern "C" int _ninits;
+
 void nrn_finitialize(int setv, double v) {
     int iord, i;
     NrnThread* _nt;
-    extern int _ninits;
     extern short* nrn_is_artificial_;
     ++_ninits;
 

@@ -25,7 +25,9 @@ static double** cppp_pointer;
 static void free_one_point(Point_process* pnt);
 static void create_artcell_prop(Point_process* pnt, short type);
 
+extern "C" {
 Prop* nrn_point_prop_;
+}
 void (*nrnpy_o2loc_p_)(Object*, Section**, double*);
 void (*nrnpy_o2loc2_p_)(Object*, Section**, double*);
 
