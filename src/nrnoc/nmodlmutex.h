@@ -1,5 +1,5 @@
 #pragma once
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 #include <memory>
 #include <mutex>
 

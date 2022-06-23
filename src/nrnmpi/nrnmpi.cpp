@@ -110,7 +110,7 @@ for (i=0; i < *pargc; ++i) {
 
         /* only call MPI_Init if not already initialized */
         if (!flag) {
-#if (USE_PTHREAD)
+#if (NRN_ENABLE_THREADS)
             int required = MPI_THREAD_SERIALIZED;
             int provided;
             asrt(MPI_Init_thread(pargc, pargv, required, &provided));

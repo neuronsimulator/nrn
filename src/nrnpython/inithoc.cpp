@@ -38,7 +38,7 @@ extern char* nrnmpi_load(int is_python);
 extern int nrnpy_site_problem;
 #endif
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 #include <thread>
 static std::thread::id main_thread_;
 #endif
@@ -215,7 +215,7 @@ static int have_opt(const char* arg) {
 }
 
 void nrnpython_finalize() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (main_thread_ == std::this_thread::get_id()) {
 #else
     {
@@ -233,7 +233,7 @@ static char* env[] = {0};
 extern "C" PyObject* PyInit_hoc() {
     char buf[200];
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     main_thread_ = std::this_thread::get_id();
 #endif
 

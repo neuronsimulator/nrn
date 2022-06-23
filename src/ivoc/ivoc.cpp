@@ -18,7 +18,7 @@ extern double (*nrnpy_object_to_double_)(Object*);
 
 #include "bimap.hpp"
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 static MUTDEC;
 #endif
 

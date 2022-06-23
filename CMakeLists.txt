@@ -418,9 +418,7 @@ if(NRN_ENABLE_THREADS)
   # Note that at least GCC requires -pthread to be passed even when using std::thread.
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  # TODO: better to use a namespaced macro name like NRN_ENABLE_THREADS, leaving this for now to
-  # manage the size of the diff
-  list(APPEND NRN_COMPILE_DEFS USE_PTHREAD)
+  list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
 # =============================================================================

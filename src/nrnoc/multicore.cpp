@@ -99,7 +99,7 @@ static void* nulljob(NrnThread* nt) {
 }
 
 int nrn_inthread_;
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 /* abort if using threads and a call to malloc is unprotected */
 #define use_malloc_hook 0
 #if use_malloc_hook
@@ -402,7 +402,7 @@ static void threads_free_pthread() {
     nrn_thread_parallel_ = 0;
 }
 
-#else  /* USE_PTHREAD */
+#else  /* NRN_ENABLE_THREADS */
 
 extern "C" void nrn_malloc_lock() {}
 extern "C" void nrn_malloc_unlock() {}
@@ -413,7 +413,7 @@ static void threads_create_pthread() {
 static void threads_free_pthread() {
     nrn_thread_parallel_ = 0;
 }
-#endif /* !USE_PTHREAD */
+#endif /* !NRN_ENABLE_THREADS */
 
 void nrn_thread_error(const char* s) {
     if (nrn_nthread != 1) {
@@ -1068,7 +1068,7 @@ void nrn_thread_table_check() {
 /* if it is possible for more than one thread to get into the
    interpreter, lock it. */
 void nrn_hoc_lock() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_inthread_) {
         _interpreter_lock->lock();
         interpreter_locked = 1;
@@ -1076,7 +1076,7 @@ void nrn_hoc_lock() {
 #endif
 }
 void nrn_hoc_unlock() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (interpreter_locked) {
         interpreter_locked = 0;
         _interpreter_lock->unlock();
@@ -1086,7 +1086,7 @@ void nrn_hoc_unlock() {
 
 void nrn_multithread_job(void* (*job)(NrnThread*) ) {
     int i;
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     BENCHDECLARE
     if (nrn_thread_parallel_) {
         nrn_inthread_ = 1;
@@ -1117,7 +1117,7 @@ void nrn_multithread_job(void* (*job)(NrnThread*) ) {
 void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
     BENCHDECLARE
     assert(i >= 0 && i < nrn_nthread);
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_thread_parallel_) {
         if (i > 0) {
             send_job_to_slave(i, job);
@@ -1136,7 +1136,7 @@ void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
 }
 
 void nrn_wait_for_threads() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_thread_parallel_) {
         wait_for_workers();
     }
@@ -1236,7 +1236,7 @@ int nrn_user_partition() {
 }
 
 void nrn_use_busywait(int b) {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (allow_busywait_ && nrn_thread_parallel_) {
         if (b == 0 && busywait_main_ == 1) {
             busywait_ = 0;
@@ -1265,7 +1265,7 @@ int nrn_allow_busywait(int b) {
 }
 
 int nrn_how_many_processors() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     // For machines with hyperthreading this probably returns the number of
     // logical, not physical, cores.
     return std::thread::hardware_concurrency();

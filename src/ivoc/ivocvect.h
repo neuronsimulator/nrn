@@ -73,7 +73,7 @@ class IvocVect {
         vec_.push_back(v);
     }
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     void mutconstruct(int mkmut) {
         if (!mut_)
             MUTCONSTRUCT(mkmut)

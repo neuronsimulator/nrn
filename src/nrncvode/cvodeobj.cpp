@@ -24,7 +24,7 @@ extern int hoc_return_type_code;
 #include <OS/list.h>
 #include <nrnmutdec.h>
 
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
 static MUTDEC
 #endif
 
