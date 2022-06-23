@@ -1,5 +1,6 @@
 import neuron
 
+
 def test_builtin_templates():
     assert isinstance(neuron.hoc.Vector, type), "Type instance expected for hoc.Vector"
     assert isinstance(neuron.hoc.CVode, type), "Type instance expected for hoc.CVode"
@@ -9,6 +10,7 @@ def test_builtin_templates():
     assert neuron.h.Vector is neuron.hoc.Vector, "Redirect to hoc.Vector failed"
     assert neuron.h.Deck is neuron.hoc.Deck, "Redirect to hoc.Deck failed"
     assert neuron.h.List is neuron.hoc.List, "Redirect to hoc.List failed"
+
 
 def test_inheritance_builtin():
     v = neuron.h.Vector()

@@ -13,12 +13,8 @@ import sys
 
 
 def _is_hoc_pytype(hoc_type):
-    return (
-        hoc_type is nrn.Section
-        or (
-            isinstance(hoc_type, type)
-            and issubclass(hoc_type, hoc.HocObject)
-        )
+    return hoc_type is nrn.Section or (
+        isinstance(hoc_type, type) and issubclass(hoc_type, hoc.HocObject)
     )
 
 
@@ -112,9 +108,7 @@ class HocBaseObject(hoc.HocObject):
                     "Class keyword argument `hoc_type` is required for HocBaseObjects."
                 )
         elif not isinstance(hoc_type, hoc.HocObject):
-            raise TypeError(
-                f"Class's `hoc_type` {hoc_type} is not a valid HOC type."
-            )
+            raise TypeError(f"Class's `hoc_type` {hoc_type} is not a valid HOC type.")
         else:
             cls._hoc_type = hoc_type
         # HOC type classes may not be composed of multiple hoc types
@@ -122,9 +116,8 @@ class HocBaseObject(hoc.HocObject):
         # Subclasses that override `__init__` must also implement `__new__` to deal
         # with the arguments that have to be passed into `HocObject.__new__`.
         # See https://github.com/neuronsimulator/nrn/issues/1129
-        if (
-            _overrides(cls, hoc.HocObject, "__init__")
-            and not _overrides(cls, HocBaseObject, "__new__")
+        if _overrides(cls, hoc.HocObject, "__init__") and not _overrides(
+            cls, HocBaseObject, "__new__"
         ):
             raise TypeError(
                 f"`{cls.__qualname__}` implements `__init__` but misses `__new__`. "

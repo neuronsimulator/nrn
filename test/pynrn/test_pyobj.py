@@ -4,6 +4,7 @@ import pytest
 
 def test_builtin():
     with pytest.raises(TypeError):
+
         class MyList(neuron.HocBaseObject, hoc_type=neuron.h.List):
             pass
 
@@ -15,7 +16,6 @@ def test_hocbase():
     assert issubclass(MyStim, neuron.hoc.HocObject)
     assert issubclass(MyStim, neuron.HocBaseObject)
     assert MyStim._hoc_type == neuron.h.NetStim
-
 
 
 def test_hoc_template_hclass():
