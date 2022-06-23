@@ -1116,6 +1116,7 @@ void CodegenCVisitor::print_net_init_acc_serial_annotation_block_end() {
  */
 void CodegenCVisitor::print_channel_iteration_block_parallel_hint(BlockType type) {
     printer->add_line("#pragma ivdep");
+    printer->add_line("#pragma omp simd");
 }
 
 
@@ -4336,7 +4337,7 @@ void CodegenCVisitor::print_nrn_current(const BreakpointBlock& node) {
     printer->add_newline(2);
     print_device_method_annotation();
     printer->start_block(
-        fmt::format("static inline double nrn_current({})", get_parameter_str(args)));
+        fmt::format("inline double nrn_current_{}({})", info.mod_suffix, get_parameter_str(args)));
     printer->add_line("double current = 0.0;");
     print_statement_block(*block, false, false);
     for (auto& current: info.currents) {
@@ -4386,8 +4387,9 @@ void CodegenCVisitor::print_nrn_cur_conductance_kernel(const BreakpointBlock& no
 
 
 void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
-    printer->add_line(
-        fmt::format("double g = nrn_current({}+0.001);", internal_method_arguments()));
+    printer->add_line(fmt::format("double g = nrn_current_{}({}+0.001);",
+                                  info.mod_suffix,
+                                  internal_method_arguments()));
     for (auto& ion: info.ions) {
         for (auto& var: ion.writes) {
             if (ion.is_ionic_current(var)) {
@@ -4396,7 +4398,9 @@ void CodegenCVisitor::print_nrn_cur_non_conductance_kernel() {
             }
         }
     }
-    printer->add_line(fmt::format("double rhs = nrn_current({});", internal_method_arguments()));
+    printer->add_line(fmt::format("double rhs = nrn_current_{}({});",
+                                  info.mod_suffix,
+                                  internal_method_arguments()));
     printer->add_line("g = (g-rhs)/0.001;");
     for (auto& ion: info.ions) {
         for (auto& var: ion.writes) {
