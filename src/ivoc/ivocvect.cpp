@@ -14,6 +14,7 @@
 #include <functional>
 
 #include "fourier.h"
+#include "mymath.h"
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -145,11 +146,6 @@ static int narg() {
     while (ifarg(i++))
         ;
     return i - 2;
-}
-
-template <typename T>
-bool equal(T x, T y, T e) {
-    return x - y < e && y - x < e;
 }
 
 #define MAX_FIT_PARAMS 20
@@ -1490,7 +1486,7 @@ static double v_contains(void* v) {
     double g = *getarg(1);
     hoc_return_type_code = 2;
     for (int i = 0; i < x->size(); i++) {
-        if (equal(x->elem(i), g, hoc_epsilon))
+        if (MyMath::eq(x->elem(i), g, hoc_epsilon))
             return 1.;
     }
     return 0.;
@@ -1727,7 +1723,7 @@ static Object** v_where(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 //	      y->resize_chunk(++m);
                 //	      y->elem(m-1) = x->elem(i);
                 y->push_back(x->elem(i));
@@ -1735,7 +1731,7 @@ static Object** v_where(void* v) {
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(x->elem(i));
             }
         }
@@ -1815,13 +1811,13 @@ static double v_indwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
@@ -1901,13 +1897,13 @@ static Object** v_indvwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
@@ -2421,7 +2417,7 @@ static double v_eq(void* v1) {
         return false;
     }
     for (i = 0; i < n; ++i) {
-        if (!equal(x->elem(i), y->elem(i), hoc_epsilon)) {
+        if (!MyMath::eq(x->elem(i), y->elem(i), hoc_epsilon)) {
             return false;
         }
     }
