@@ -103,25 +103,25 @@ namespace py = pybind11;
 
 {% for node in nodes %}
 void PyVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERLOAD_PURE(void, Visitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
+    PYBIND11_OVERRIDE_PURE(void, Visitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyAstVisitor::visit_{{ node.class_name|snake_case }}(ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERLOAD(void, AstVisitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
+    PYBIND11_OVERRIDE(void, AstVisitor, visit_{{ node.class_name|snake_case }}, std::ref(node));
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyConstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERLOAD_PURE(void, ConstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
+    PYBIND11_OVERRIDE_PURE(void, ConstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
 }
 {% endfor %}
 
 {% for node in nodes %}
 void PyConstAstVisitor::visit_{{ node.class_name|snake_case }}(const ast::{{ node.class_name }}& node) {
-    PYBIND11_OVERLOAD(void, ConstAstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
+    PYBIND11_OVERRIDE(void, ConstAstVisitor, visit_{{ node.class_name|snake_case }}, std::cref(node));
 }
 {% endfor %}
 // clang-format on
