@@ -111,95 +111,74 @@ BBSaveState
 
 
 
-.. method:: BBSaveState.save_test
+.. method:: BBSaveState.save_test()
 
-
-    Syntax:
-        ``.save_test()``
-
-
-    Description:
-        State of the model is saved in files within the subdirectory, `out`.
+    
+    State of the model is saved in files within the subdirectory, `out`.
     The file `out/tmp` contains the value of t. Other files have the
-        filename format tmp.<gid>.<rank> . Only in the case of multisplit
-        is it possible to have the same gid in more than one filename. Note
-        that the out folder needs to be created by the user prior to a call
-        to save_test().
+    filename format tmp.<gid>.<rank> . Only in the case of multisplit
+    is it possible to have the same gid in more than one filename. Note
+    that the out folder needs to be created by the user prior to a call
+    to save_test().
 
-        To prepare for a restore, the tmp.<gid>.<rank> files should be copied
-        from the `out` subfolder to a subfolder called `in`, with the filename
-        in/tmp.<gid> . Each file should begin with a first line that specifies
-        the number of files in the `out` folder that had the same gid.
+    To prepare for a restore, the tmp.<gid>.<rank> files should be copied
+    from the `out` subfolder to a subfolder called `in`, with the filename
+    in/tmp.<gid> . Each file should begin with a first line that specifies
+    the number of files in the `out` folder that had the same gid.
 
-        The following out2in.sh script shows how to do this (not particularly
-        efficiently).
+    The following out2in.sh script shows how to do this (not particularly
+    efficiently).
 
-        .. code-block::
-          bash
+    .. code-block::
+      bash
 
-          #!/usr/bin/env bash
-          rm -f in/*
-          cat out/tmp > in/tmp
-          for f in out/tmp.*.* ; do
-            echo $f
-            i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
-            echo $i
-            if test ! -f in/tmp.$i ; then
-              cnt=`ls out/tmp.$i.* | wc -l`
-              echo $cnt > in/tmp.$i
-              cat out/tmp.$i.* >> in/tmp.$i
-            fi
-          done
+      #!/usr/bin/env bash
+      rm -f in/*
+      cat out/tmp > in/tmp
+      for f in out/tmp.*.* ; do
+        echo $f
+        i=`echo "$f" | sed 's/.*tmp\.\([0-9]*\)\..*/\1/'`
+        echo $i
+        if test ! -f in/tmp.$i ; then
+          cnt=`ls out/tmp.$i.* | wc -l`
+          echo $cnt > in/tmp.$i
+          cat out/tmp.$i.* >> in/tmp.$i
+        fi
+      done
 
 
 ----
 
 
 
-.. method:: BBSaveState.restore_test
+.. method:: BBSaveState.restore_test()
 
 
-    Syntax:
-        ``.restore_test()``
-
-
-
-    Description:
-        State of the model is restored from files within the
-        subdirectory, "in". The file "in/tmp" supplies the value of t.
+    
+    State of the model is restored from files within the
+    subdirectory, "in". The file "in/tmp" supplies the value of t.
     Other files have the filename format tmp.<gid> and are read when
-        that gid is restored. Note that in a multisplit context, the same
-        "in/tmp.<gid>" file will be read by multiple ranks, but only the state
-        assocated with sections that exist on a rank will be restored.
+    that gid is restored. Note that in a multisplit context, the same
+    "in/tmp.<gid>" file will be read by multiple ranks, but only the state
+    assocated with sections that exist on a rank will be restored.
 
 ----
 
 
 
 
-.. method:: BBSaveState.ignore
+.. method:: BBSaveState.ignore(ppobj)
 
 
-    Syntax:
-        ``.ignore(ppobj)``
-
-
-    Description:
-
-       Point processes can be marked IGNORE
-       which will skip them on save/restore.
-       The internal list of these ignored point processes must be the same
-       on save and restore.
+    Point processes can be marked IGNORE
+    which will skip them on save/restore.
+    The internal list of these ignored point processes must be the same
+    on save and restore.
 
 ----
 
-.. method:: BBSaveState.vector_play_init
+.. method:: BBSaveState.vector_play_init()
 
 
-    Syntax:
-        ``.vector_play_init()``
-
-
-    Description:
-        Allow :meth:`Vector.play` to work. Call this method after a restore
-        if there are any Vector.play in the model.
+    Allow :meth:`Vector.play` to work. Call this method after a restore
+    if there are any Vector.play in the model.
