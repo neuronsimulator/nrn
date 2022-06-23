@@ -239,21 +239,23 @@ extern "C" void nrn_malloc_unlock() {
     }
 }
 
+namespace {
 // With C++17 and alignment-aware allocators we could do something like
 // alignas(std::hardware_destructive_interference_size) here and then use a
 // regular vector.
-struct slave_conf_t {
+struct worker_conf_t {
     int flag{};
     int thread_id{};
     /* for nrn_solve etc.*/
     void* (*job)(NrnThread*) = nullptr;
 };
+}
 
 namespace {
 std::unique_ptr<std::condition_variable[]> cond;
 std::unique_ptr<std::mutex[]> mut;
-std::vector<std::thread> slave_threads;
-slave_conf_t* wc{};
+std::vector<std::thread> worker_threads;
+worker_conf_t* wc{};
 }  // namespace
 
 static void wait_for_workers() {
@@ -285,7 +287,7 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
     cond[i].notify_one();
 }
 
-static void slave_main(slave_conf_t* my_wc) {
+static void worker_main(worker_conf_t* my_wc) {
     auto& my_mut = mut[my_wc->thread_id];
     auto& my_cond = cond[my_wc->thread_id];
     BENCHDECLARE
@@ -347,19 +349,19 @@ static void threads_create() {
     }
 #endif
     if (nrn_nthread > 1) {
-        CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
+        CACHELINE_ALLOC(wc, worker_conf_t, nrn_nthread);
         // Cannot easily use std::vector because std::condition_variable is not
         // moveable.
         cond = std::make_unique<std::condition_variable[]>(nrn_nthread);
         // Cannot easily use std::vector because std::mutex is not moveable.
         mut = std::make_unique<std::mutex[]>(nrn_nthread);
-        slave_threads.reserve(nrn_nthread);
-        // slave_threads[0] does not appear to be used
-        slave_threads.emplace_back();
+        worker_threads.reserve(nrn_nthread);
+        // worker_threads[0] does not appear to be used
+        worker_threads.emplace_back();
         for (int i = 1; i < nrn_nthread; ++i) {
             wc[i].flag = 0;
             wc[i].thread_id = i;
-            slave_threads.emplace_back(slave_main, &(wc[i]));
+            worker_threads.emplace_back(worker_main, &(wc[i]));
         }
         if (!_interpreter_lock) {
             interpreter_locked = 0;
@@ -378,7 +380,7 @@ static void threads_create() {
 }
 
 static void threads_free() {
-    if (!slave_threads.empty()) {
+    if (!worker_threads.empty()) {
         wait_for_workers();
         for (int i = 1; i < nrn_nthread; ++i) {
             {
@@ -386,11 +388,11 @@ static void threads_free() {
                 wc[i].flag = -1;
             }
             cond[i].notify_one();
-            slave_threads[i].join();
+            worker_threads[i].join();
         }
         cond.reset();
         mut.reset();
-        slave_threads.clear();
+        worker_threads.clear();
         free(std::exchange(wc, nullptr));
     }
     if (_interpreter_lock) {
