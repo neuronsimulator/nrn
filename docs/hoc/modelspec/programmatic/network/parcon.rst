@@ -2903,7 +2903,7 @@ Parallel Transfer
         On a system that supports hyperthreading this will typically be double
         the number of physical cores available, and it may not take into account
         constraints such as MPI processes being bound to specific cores in a
-        cluser environment.
+        cluster environment.
 
 
 ----
