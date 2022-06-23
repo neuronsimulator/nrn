@@ -4,58 +4,52 @@
 CVode
 -----
 
-.. class:: CVode
+.. class:: h.CVode()
 
 
-    Syntax:
+    Multi order variable time step integration method which may be used in place 
+    of the default staggered fixed time step method.  The performance benefits 
+    can be substantial (factor of more than 10) for problems in which all states 
+    vary slowly for long periods of time between fast spikes. 
+        
+    Although for historical reasons, this class is called CVode at the hoc level, 
+    in fact it is an interface to a family of methods which are implemented on 
+    top of the CVODES and IDA integrators of the SUNDIALS package, 
 
-        ``cvode = h.CVode()``
+    .. code-block::
+        none
 
+            SUite of Nonlinear and DIfferential/ALgebraic equation Solvers 
+                            Release 2.0.1, January 2005 
+                Peter Brown, Aaron Collier, Keith Grant, Alan Hindmarsh, 
+                Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward 
+                    Center for Applied Scientific Computing, LLNL 
 
-    Description:
-        Multi order variable time step integration method which may be used in place 
-        of the default staggered fixed time step method.  The performance benefits 
-        can be substantial (factor of more than 10) for problems in which all states 
-        vary slowly for long periods of time between fast spikes. 
-         
-        Although for historical reasons, this class is called CVode at the hoc level, 
-        in fact it is an interface to a family of methods which are implemented on 
-        top of the CVODES and IDA integrators of the SUNDIALS package, 
-
-        .. code-block::
-            none
-
-              SUite of Nonlinear and DIfferential/ALgebraic equation Solvers 
-                               Release 2.0.1, January 2005 
-                 Peter Brown, Aaron Collier, Keith Grant, Alan Hindmarsh, 
-                  Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward 
-                      Center for Applied Scientific Computing, LLNL 
-
-        (see :meth:`CVode.use_local_dt` and :meth:`CVode.use_daspk`) 
-         
-        When this class is :meth:`CVode.active` the finitialize/fadvance calls use the CVode 
-        integrator. 
-        In the default variable step context, the integrator 
-        chooses the time step and fadvance returns after one step. Local accuracy 
-        is determined by :meth:`CVode.atol` and :meth:`CVode.rtol`. 
-         
-        The two major energy barriers to 
-        using the method are the requirement that hh type models be 
-        expressed in a DERIVATIVE block (instead of the explicit 
-        exponential integration step commonly implemented in a PROCEDURE) 
-        and that the solver be explicitly notified of 
-        the exact time of any discontinuity 
-        such as step changes, pulses, and synaptic conductance 
-        onset's. These issues are discussed in :ref:`Channels <ModelDescriptionIssues_Channels>` 
-        and :ref:`Events <ModelDescriptionIssues_Events>`. 
-         
-        After your mod files are generalized it will probably be 
-        convenient to compare the default method with CVode by 
-        toggling the Use variable dt checkbox in the :ref:`VariableStepControl` 
-        panel
-        :menuselection:`NEURON Main Menu --> Tools --> VariableStepControl`.
-         
-         
+    (see :meth:`CVode.use_local_dt` and :meth:`CVode.use_daspk`) 
+        
+    When this class is :meth:`CVode.active` the finitialize/fadvance calls use the CVode 
+    integrator. 
+    In the default variable step context, the integrator 
+    chooses the time step and fadvance returns after one step. Local accuracy 
+    is determined by :meth:`CVode.atol` and :meth:`CVode.rtol`. 
+        
+    The two major energy barriers to 
+    using the method are the requirement that hh type models be 
+    expressed in a DERIVATIVE block (instead of the explicit 
+    exponential integration step commonly implemented in a PROCEDURE) 
+    and that the solver be explicitly notified of 
+    the exact time of any discontinuity 
+    such as step changes, pulses, and synaptic conductance 
+    onset's. These issues are discussed in :ref:`Channels <ModelDescriptionIssues_Channels>` 
+    and :ref:`Events <ModelDescriptionIssues_Events>`. 
+        
+    After your mod files are generalized it will probably be 
+    convenient to compare the default method with CVode by 
+    toggling the Use variable dt checkbox in the :ref:`VariableStepControl` 
+    panel
+    :menuselection:`NEURON Main Menu --> Tools --> VariableStepControl`.
+        
+        
 
     .. seealso::
         :func:`fadvance`, :func:`finitialize`, :data:`secondorder`, :data:`dt`
@@ -92,27 +86,21 @@ CVode
 
 
 
-.. method:: CVode.solve
+.. method:: CVode.solve()
+            CVode.solve(tout)
 
-
-    Syntax:
-        ``cvode.solve()``
-
-        ``cvode.solve(tout)``
-
-
-    Description:
-        With no argument integrates for one step. All states and assigned variables 
-        are consistent at time t. dt is set to the size of the step. 
-        With the tout argument, cvode integrates til its step passes tout. Internally 
-        cvode returns the interpolated values of the states (at exactly tout) 
-        and the CVode class calls the functions necessary to update the assigned variables. 
-        Note that ``cvode.solve(tout)`` may be called for any value of tout greater than 
-        t-dt where dt is the size of its last single step. 
-         
-        For backward compatibility with :func:`finitialize`/:func:`fadvance`
-        it is better to use the :meth:`CVode.active` method instead of calling 
-        solve directly. 
+  
+    With no argument integrates for one step. All states and assigned variables 
+    are consistent at time t. dt is set to the size of the step. 
+    With the tout argument, cvode integrates til its step passes tout. Internally 
+    cvode returns the interpolated values of the states (at exactly tout) 
+    and the CVode class calls the functions necessary to update the assigned variables. 
+    Note that ``cvode.solve(tout)`` may be called for any value of tout greater than 
+    t-dt where dt is the size of its last single step. 
+        
+    For backward compatibility with :func:`finitialize`/:func:`fadvance`
+    it is better to use the :meth:`CVode.active` method instead of calling 
+    solve directly. 
          
 
 
@@ -120,16 +108,11 @@ CVode
 
 
 
-.. method:: CVode.statistics
+.. method:: CVode.statistics()
 
 
-    Syntax:
-        ``cvode.statistics()``
-
-
-    Description:
-        Prints information about the number of integration steps, function evaluations, 
-        newton iterations, etc. 
+    Prints information about the number of integration steps, function evaluations, 
+    newton iterations, etc. 
 
     .. seealso::
         :meth:`CVode.spike_stat`
@@ -140,35 +123,30 @@ CVode
 
 
 
-.. method:: CVode.spike_stat
+.. method:: CVode.spike_stat(vector)
 
 
-    Syntax:
-        ``cvode.spike_stat(vector)``
+    Similar to :meth:`CVode.statistics` but returns statistics information in the 
+    passed :class:`Vector` argument. The vector will be resized to length 
+    11 and the elements are: 
+
+    .. code-block::
+        none
+
+            0  total number of equations (0 unless cvode has been active). 
+            1  number of NetCon objects. 
+            2  total number of events delivered. 
+            3  number of NetCon events delivered. 
+            4  number of PreSyn events put onto queue. 
+            5  number of SelfEvents delivered. 
+            6  number of SelfEvents put onto queue (net_send from mod files). 
+            7  number of SelfEvents moved (net_move from mod files). 
+            8  number of items inserted into event queue. 
+            9  number of items moved to a new time in the event queue. 
+            10  number of items removed from event queue. 
 
 
-    Description:
-        Similar to :meth:`CVode.statistics` but returns statistics information in the 
-        passed :class:`Vector` argument. The vector will be resized to length 
-        11 and the elements are: 
-
-        .. code-block::
-            none
-
-              0  total number of equations (0 unless cvode has been active). 
-              1  number of NetCon objects. 
-              2  total number of events delivered. 
-              3  number of NetCon events delivered. 
-              4  number of PreSyn events put onto queue. 
-              5  number of SelfEvents delivered. 
-              6  number of SelfEvents put onto queue (net_send from mod files). 
-              7  number of SelfEvents moved (net_move from mod files). 
-              8  number of items inserted into event queue. 
-              9  number of items moved to a new time in the event queue. 
-             10  number of items removed from event queue. 
-
-
-     .. note::
+    .. note::
 
         ``vector`` must be an instance of :class:`Vector`
          
@@ -177,53 +155,41 @@ CVode
 
 
 
-.. method:: CVode.print_event_queue
+.. method:: CVode.print_event_queue()
+            CVode.print_event_queue(vector)
 
 
-    Syntax:
-        ``cvode.print_event_queue()``
-
-        ``cvode.print_event_queue(vector)``
-
-
-    Description:
-        With no arg, prints information on the event queue. 
-        It should only be called after an finitialize and before changing any 
-        aspect of the model structure. Many types of structure changes invalidate 
-        pointers used in the event queue. 
-         
-        With a ``vector`` argument, the delivery times are copied to the :class:`Vector` in 
-        proper monotonically increasing order. 
+    With no arg, prints information on the event queue. 
+    It should only be called after an finitialize and before changing any 
+    aspect of the model structure. Many types of structure changes invalidate 
+    pointers used in the event queue. 
+        
+    With a ``vector`` argument, the delivery times are copied to the :class:`Vector` in 
+    proper monotonically increasing order. 
 
 
 ----
 
 
 
-.. method:: CVode.event_queue_info
+.. method:: CVode.event_queue_info(2, tvec, list)
+            CVode.event_queue_info(3, tvec, flagvec, list)
 
-
-    Syntax:
-        ``cvode.event_queue_info(2, tvec, list)``
-
-        ``cvode.event_queue_info(3, tvec, flagvec, list)``
-
-
-    Description:
-        Returns NetCon (2) or SelfEvent (3) information currently on the event queue. 
-        If the type is 2,  NetCon information currently on the event queue 
-        is returned: delivery times are returned in tvec and the corresponding 
-        NetCon objects are returned in the :class:`List` arg. If the type is 3, 
-        SelfEvent information is returned: delivery times are returned in tvec, 
-        the flags are returned in flagvec, and the SelfEvent targets 
-        (ArtificialCells are PointProcesses) returned in the List arg. 
-         
-        It should only be called after an finitialize and before changing any 
-        aspect of the model structure. Many types of structure changes invalidate 
-        pointers used in the event queue. 
-         
-        The delivery times are copied to the Vector in 
-        proper monotonically increasing order. 
+    
+    Returns NetCon (2) or SelfEvent (3) information currently on the event queue. 
+    If the type is 2,  NetCon information currently on the event queue 
+    is returned: delivery times are returned in tvec and the corresponding 
+    NetCon objects are returned in the :class:`List` arg. If the type is 3, 
+    SelfEvent information is returned: delivery times are returned in tvec, 
+    the flags are returned in flagvec, and the SelfEvent targets 
+    (ArtificialCells are PointProcesses) returned in the List arg. 
+        
+    It should only be called after an finitialize and before changing any 
+    aspect of the model structure. Many types of structure changes invalidate 
+    pointers used in the event queue. 
+        
+    The delivery times are copied to the Vector in 
+    proper monotonically increasing order. 
 
      .. note::
 
@@ -233,119 +199,57 @@ CVode
 
 
 
-.. method:: CVode.rtol
+.. method:: CVode.rtol()
+            CVode.rtol(relative)
 
-
-    Syntax:
-        ``x = cvode.rtol()``
-
-        ``x = cvode.rtol(relative)``
-
-
-    Description:
-        Returns the local relative error tolerance. With arg, set the relative 
-        tolerance. The default relative tolerance is 0. 
-         
-        The solver attempts to use a step size so that the local error for each 
-        state is less than 
-
-        .. math::
-
-            	(\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
-
-        The error test passes if the error in each state, e[i], is such that 
-        e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
-        (the default atolscale_for_state is 1, see :meth:`atolscale` ) 
-         
-
-----
-
-
-
-.. method:: CVode.atol
-
-
-    Syntax:
-        ``x = cvode.atol()``
-
-        ``x = cvode.atol(absolute)``
-
-
-    Description:
-        Returns the default local absolute error tolerance. With args, set the 
-        default absolute tolerance. 
-        The default absolute tolerance is 1e-2. A multiplier for 
-        specific states may be set with the :meth:`CVode.atolscale` function and also may be 
-        specified in model descriptions. 
-         
-        The solver attempts to use a step size so that the local error for each 
-        state is less than 
-
-        .. math::
-
-                (\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
-
-        The error test passes if the error in each state, e[i], is such that 
-        e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
-         
-        Therefore states should be scaled (or the absolute tolerance reduced) 
-        so that when the value is close to 0, the error is not too large. 
-         
-        (See :meth:`atolscale` for how to set distinct absolute multiplier 
-        tolerances for different states.) 
-         
-        Either rtol or atol may be set to 0 but not both. (pure absolute tolerance 
-        or pure relative tolerance respectively). 
-
-         
-
-----
-
-
-
-.. method:: CVode.atolscale
-
-
-    Syntax:
-
-        **only works when called from HOC**
-
-        ``tol = cvode.atolscale(ptr_var, toleranceMultiplier)``
-
-        ``tol = cvode.atolscale(ptr_var)``
-
-        **works for both HOC and Python**
-
-        ``tol = cvode.atolscale("basename" [, toleranceMultiplier])``
-
-
-    Description:
-        Specifies the absolute tolerance scale multiplier (default is 1.0) 
-        for all STATE's of which the address 
-        of var is an instance.
-
-        **Only the last form is currently supported in Python**; the first two forms
-        work from HOC but not Python.
-
-        Specification of a particular STATEs absolute tolerance multiplier 
-        is only needed 
-        if its scale is extremely small or large and is best indicated within the 
-        model description file itself using the STATE declaration syntax:
-
-        .. code-block::
-            none
-
-                state (units) <tolerance> 
-
-        See nrn/demo/release/cabpump.mod for an example of a model which needs 
-        a specific scaling of absolute tolerances (ie, calcium concentration 
-        and pump density). 
+    
+    Returns the local relative error tolerance. With arg, set the relative 
+    tolerance. The default relative tolerance is 0. 
         
-        The "basename" form is simpler than the pointer form and was added to 
-        simplify the implementation of the AtolTool. The pointer form required 
-        the state to actually exist at the specified location. Base names are 
-        ``v``, ``vext``, state_suffix such as ``m_hh``, and PointProcessName.state such 
-        as ``ExpSyn.g``. 
+    The solver attempts to use a step size so that the local error for each 
+    state is less than 
+
+    .. math::
+
+            (\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
+
+    The error test passes if the error in each state, e[i], is such that 
+    e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
+    (the default atolscale_for_state is 1, see :meth:`atolscale` ) 
+         
+
+----
+
+
+
+.. method:: CVode.atol()
+            CVode.atol(absolute)
+
+    
+    Returns the default local absolute error tolerance. With args, set the 
+    default absolute tolerance. 
+    The default absolute tolerance is 1e-2. A multiplier for 
+    specific states may be set with the :meth:`CVode.atolscale` function and also may be 
+    specified in model descriptions. 
+        
+    The solver attempts to use a step size so that the local error for each 
+    state is less than 
+
+    .. math::
+
+            (\mathrm{rtol}) |\mathrm{state}| + (\mathrm{atol})(\mathrm{atolscale\_for\_state})
+
+    The error test passes if the error in each state, e[i], is such that 
+    e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
+        
+    Therefore states should be scaled (or the absolute tolerance reduced) 
+    so that when the value is close to 0, the error is not too large. 
+        
+    (See :meth:`atolscale` for how to set distinct absolute multiplier 
+    tolerances for different states.) 
+        
+    Either rtol or atol may be set to 0 but not both. (pure absolute tolerance 
+    or pure relative tolerance respectively). 
 
          
 
@@ -353,16 +257,63 @@ CVode
 
 
 
-.. method:: CVode.re_init
+.. method:: CVode.atolscale("basename" [, toleranceMultiplier])
+            
+
+    Specifies the absolute tolerance scale multiplier (default is 1.0) 
+    for all STATE's of which the address 
+    of var is an instance.
+
+    **Only the last form is currently supported in Python**; the first two forms
+    work from HOC but not Python.
+
+    Specification of a particular STATEs absolute tolerance multiplier 
+    is only needed 
+    if its scale is extremely small or large and is best indicated within the 
+    model description file itself using the STATE declaration syntax:
+
+    .. code-block::
+        none
+
+            state (units) <tolerance> 
+
+    See nrn/demo/release/cabpump.mod for an example of a model which needs 
+    a specific scaling of absolute tolerances (ie, calcium concentration 
+    and pump density). 
+    
+    The "basename" form is simpler than the pointer form and was added to 
+    simplify the implementation of the AtolTool. The pointer form required 
+    the state to actually exist at the specified location. Base names are 
+    ``v``, ``vext``, state_suffix such as ``m_hh``, and PointProcessName.state such 
+    as ``ExpSyn.g``. 
+
+    There are another two statements calls from the HOC, please see HOC document.
+        
+
+----
 
 
-    Syntax:
-        ``cvode.re_init()``
+
+.. method:: CVode.re_init()
 
 
-    Description:
-        Initializes the integrator. This is done by :func:`finitialize` when cvode 
-        is :meth:`~CVode.active`. 
+    Initializes the integrator. This is done by :func:`finitialize` when cvode 
+    is :meth:`~CVode.active`. 
+
+         
+----
+
+
+
+.. method:: CVode.stiff()
+            CVode.stiff(0-2)
+
+    
+    2 is the default. All states computed implicitly. 
+        
+    1 only membrane potential computed implicitly. 
+        
+    0 Adams-Bashforth integration. 
 
          
 
@@ -370,63 +321,30 @@ CVode
 
 
 
-.. method:: CVode.stiff
+.. method:: CVode.active()
+            CVode.active(False or True)
+            CVode.active(0 or 1)
+            CVode.active(True, dt)
+            CVode.active(tvec)
 
-
-    Syntax:
-        ``x = cvode.stiff()``
-
-        ``x = cvode.stiff(0-2)``
-
-
-    Description:
-        2 is the default. All states computed implicitly. 
-         
-        1 only membrane potential computed implicitly. 
-         
-        0 Adams-Bashforth integration. 
-
-         
-
-----
-
-
-
-.. method:: CVode.active
-
-
-    Syntax:
-        ``x = cvode.active()``
-
-        ``x = cvode.active(False or True)``
-
-        ``x = cvode.active(0 or 1)``
-
-        **following two not yet implemented**
-
-        ``x = cvode.active(True, dt)``
-
-        ``x = cvode.active(tvec)``
-
-
-    Description:
-        When CVode is active then :func:`finitialize` 
-        calls :meth:`CVode.re_init` and  :func:`fadvance` calls :meth:`CVode.solve`. 
-         
-        This function allows one to toggle between the normal integration 
-        method and the CVode method with no changes to existing interpreter 
-        code. The return value is True is CVode is active; otherwise it is
-        False.
-         
-        With only a single True (or 1) arg, the fadvance calls CVode to do a single 
-        variable time step. 
-         
-        With the dt arg, fadvance returns at t+dt. 
-         
-        With a Vector tvec argument, CVode is made active and a sequence of 
-        calls to fadvance returns at the times given by the elements of 
-        tvec. After the last tvec element, fadvance returns after each 
-        step. 
+    
+    When CVode is active then :func:`finitialize` 
+    calls :meth:`CVode.re_init` and  :func:`fadvance` calls :meth:`CVode.solve`. 
+        
+    This function allows one to toggle between the normal integration 
+    method and the CVode method with no changes to existing interpreter 
+    code. The return value is True is CVode is active; otherwise it is
+    False.
+        
+    With only a single True (or 1) arg, the fadvance calls CVode to do a single 
+    variable time step. 
+        
+    With the dt arg, fadvance returns at t+dt. 
+        
+    With a Vector tvec argument, CVode is made active and a sequence of 
+    calls to fadvance returns at the times given by the elements of 
+    tvec. After the last tvec element, fadvance returns after each 
+    step. 
 
          
 
@@ -434,18 +352,12 @@ CVode
 
 
 
-.. method:: CVode.maxorder
+.. method:: CVode.maxorder()
+            CVode.maxorder(0 - 12)
 
-
-    Syntax:
-        ``x = cvode.maxorder()``
-
-        ``x = cvode.maxorder(0 - 12)``
-
-
-    Description:
-        Default maximum order for implicit methods is 5. It is usually best to 
-        let cvode determine the order. 12 for Adams. 
+   
+    Default maximum order for implicit methods is 5. It is usually best to 
+    let cvode determine the order. 12 for Adams. 
 
          
 
@@ -453,21 +365,15 @@ CVode
 
 
 
-.. method:: CVode.jacobian
+.. method:: CVode.jacobian()
+            CVode.jacobian(0 - 2)
 
+    
+    0 is the default. Linear solvers supplied by NEURON. 
 
-    Syntax:
-        ``x = cvode.jacobian()``
+    1 use dense matrix 
 
-        ``x = cvode.jacobian(0 - 2)``
-
-
-    Description:
-        0 is the default. Linear solvers supplied by NEURON. 
-
-        1 use dense matrix 
-
-        2 use diagonal matrix 
+    2 use diagonal matrix 
 
          
 
@@ -475,20 +381,11 @@ CVode
 
 
 
-.. method:: CVode.states
+.. method:: CVode.states(states_copy)
 
 
-    Syntax:
-        .. code-block::
-            python
-
-            states_copy = h.Vector()
-            cvode.states(states_copy)
-
-
-    Description:
-        Fill the destination ``states_copy`` :class:`Vector` with the values of the states. 
-        On return ``states_copy.size()`` will be the number of states. 
+    Fill the destination ``states_copy`` :class:`Vector` with the values of the states. 
+    On return ``states_copy.size()`` will be the number of states. 
 
          
 
@@ -496,15 +393,10 @@ CVode
 
 
 
-.. method:: CVode.dstates
+.. method:: CVode.dstates(dest_vector)
 
 
-    Syntax:
-        ``cvode.dstates(dest_vector)``
-
-
-    Description:
-        Fill the destination :class:`Vector` with the values of d(state)/dt. 
+    Fill the destination :class:`Vector` with the values of d(state)/dt. 
 
          
 
@@ -512,19 +404,14 @@ CVode
 
 
 
-.. method:: CVode.f
+.. method:: CVode.f(t, yvec, ypvec)
 
 
-    Syntax:
-        ``cvode.f(t, yvec, ypvec)``
-
-
-    Description:
-        returns f(yvec, t) in the :class:`Vector` ypvec. f is the existing model. 
-        Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states`). ypvec will be resized to the proper size. 
-        Note that the order of the states in the vector is indicated by the 
-        names returned by :meth:`CVode.statename` 
+    returns f(yvec, t) in the :class:`Vector` ypvec. f is the existing model. 
+    Size of yvec must be equal to the number of states ( ie vector size 
+    returned by :meth:`CVode.states`). ypvec will be resized to the proper size. 
+    Note that the order of the states in the vector is indicated by the 
+    names returned by :meth:`CVode.statename` 
 
     .. warning::
         Works only for global variable time step method. 
@@ -536,18 +423,13 @@ CVode
 
 
 
-.. method:: CVode.yscatter
+.. method:: CVode.yscatter(yvec)
 
 
-    Syntax:
-        ``cvode.yscatter(yvec)``
-
-
-    Description:
-        Fills the state variables with the values specified in the :class:`Vector` yvec. 
-        Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states`). Note that active CVode requires a subsequent 
-        :meth:`CVode.re_init` if one wishes to integrate from the yvec state point. 
+    Fills the state variables with the values specified in the :class:`Vector` yvec. 
+    Size of yvec must be equal to the number of states ( ie vector size 
+    returned by :meth:`CVode.states`). Note that active CVode requires a subsequent 
+    :meth:`CVode.re_init` if one wishes to integrate from the yvec state point. 
 
     .. warning::
         Works only for global variable time step method. 
@@ -558,26 +440,21 @@ CVode
         ``yvec`` must be a NEURON :class:`Vector` object. To scatter from an arbitrary Python iterable
         ``data`` (at the cost of an extra copy), use, e.g.
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            h.CVode().yscatter(h.Vector(data))
+        h.CVode().yscatter(h.Vector(data))
          
 
 ----
 
 
 
-.. method:: CVode.ygather
+.. method:: CVode.ygather(yvec)
 
 
-    Syntax:
-        ``cvode.ygather(yvec)``
-
-
-    Description:
-        Fills the :class:`Vector` yvec with the state variables (will be resized to the number of 
-        states). This is analogous to :meth:`CVode.states` after a :meth:`CVode.re_init`. 
+    Fills the :class:`Vector` yvec with the state variables (will be resized to the number of 
+    states). This is analogous to :meth:`CVode.states` after a :meth:`CVode.re_init`. 
 
     .. warning::
         Works only for global variable time step method. 
@@ -589,40 +466,35 @@ CVode
 
 
 
-.. method:: CVode.fixed_step
+.. method:: CVode.fixed_step()
 
 
-    Syntax:
-        ``cvode.fixed_step()``
+    Uses the fixed step method to advance the simulation by :data:`dt` . 
+    The initial condition is whatever state values are present (eg subsequent 
+    to a previous integration step or :meth:`CVode.yscatter` or :meth:`CVode.f` or explicitly 
+    user modified state values). The model state values are those after the 
+    fixed step integration (but are NOT the same as the current state defined 
+    by CVode and returned by :meth:`CVode.states` (that would be the case only after 
+    a subsequent :meth:`CVode.re_init`)) To get the new current states in CVode 
+    vector order, use :meth:`CVode.ygather`. 
+        
+    Valid under all circumstances. This is basically an :func:`fadvance` using 
+    the fixed step method and avoids the overhead of 
 
+    .. code-block::
+        python
 
-    Description:
-        Uses the fixed step method to advance the simulation by :data:`dt` . 
-        The initial condition is whatever state values are present (eg subsequent 
-        to a previous integration step or :meth:`CVode.yscatter` or :meth:`CVode.f` or explicitly 
-        user modified state values). The model state values are those after the 
-        fixed step integration (but are NOT the same as the current state defined 
-        by CVode and returned by :meth:`CVode.states` (that would be the case only after 
-        a subsequent :meth:`CVode.re_init`)) To get the new current states in CVode 
-        vector order, use :meth:`CVode.ygather`. 
-         
-        Valid under all circumstances. This is basically an :func:`fadvance` using 
-        the fixed step method and avoids the overhead of 
+        h.CVode().active(False) 
+        h.fadvance() 
+        h.CVode().active(True) 
 
-        .. code-block::
-            python
+    in order to allow the use of the CVode functions assigning state and 
+    evaluating states and dstates/dt; use via:
 
-            h.CVode().active(False) 
-            h.fadvance() 
-            h.CVode().active(True) 
+    .. code-block::
+        python
 
-        in order to allow the use of the CVode functions assigning state and 
-        evaluating states and dstates/dt; use via:
-
-        .. code-block::
-            python
-
-            h.CVode().fixed_step()
+        h.CVode().fixed_step()
 
     .. warning::
         :meth:`CVode.dstates` are invalid and should be determined by a call to 
@@ -634,69 +506,53 @@ CVode
 
 
 
-.. method:: CVode.error_weights
+.. method:: CVode.error_weights(dest_vector)
 
 
-    Syntax:
-        ``cvode.error_weights(dest_vector)``
-
-
-    Description:
-
-        Fill the destination :class:`Vector` with the values of the weights used
-        to compute the norm of the local error in cvodes and ida.
+    Fill the destination :class:`Vector` with the values of the weights used
+    to compute the norm of the local error in cvodes and ida.
 
 ----
 
 
 
-.. method:: CVode.acor
+.. method:: CVode.acor(dest_vector)
 
 
-    Syntax:
-        ``cvode.acor(dest_vector)``
-
-    Description:
-        Fill the destination :class:`Vector` with the values of the local errors
-        on the last step.
+    Fill the destination :class:`Vector` with the values of the local errors
+    on the last step.
          
 
 ----
 
 
 
-.. method:: CVode.statename
+.. method:: CVode.statename(i, dest_string)
+            CVode.statename(i, dest_string, style)
 
-
-    Syntax:
-        ``cvode.statename(i, dest_string)``
-
-        ``cvode.statename(i, dest_string, style)``
-
-
-    Description:
-        Return the HOC name of the i'th string in ``dest_string``, a NEURON string reference. 
-        The default style, 0, is to attempt to specify the name in terms of 
-        object references such as cell[3].syn[2].g. Style 1 specifies the name 
-        in terms of the object id, eg. ExpSyn[25].g or Cell[25].soma.v(.5). 
-        Style 2 returns the basename, e.g. v, or ExpSyn.g . 
+    
+    Return the HOC name of the i'th string in ``dest_string``, a NEURON string reference. 
+    The default style, 0, is to attempt to specify the name in terms of 
+    object references such as cell[3].syn[2].g. Style 1 specifies the name 
+    in terms of the object id, eg. ExpSyn[25].g or Cell[25].soma.v(.5). 
+    Style 2 returns the basename, e.g. v, or ExpSyn.g . 
 
     Example:
 
-        .. code-block::
-            python
+    .. code-block::
+        python
 
-            from neuron import h
-            h.load_file('stdrun.hoc')    # defines h.cvode
+        from neuron import h
+        h.load_file('stdrun.hoc')    # defines h.cvode
 
-            result = h.ref('')
-            soma = h.Section(name='soma')
-            h.cvode_active(True)
-            h.cvode.statename(0, result)
-            print(result[0])         
+        result = h.ref('')
+        soma = h.Section(name='soma')
+        h.cvode_active(True)
+        h.cvode.statename(0, result)
+        print(result[0])         
 
 
-        The above code displays: ``soma.v(0.5)``
+    The above code displays: ``soma.v(0.5)``
 
     .. warning::
 
@@ -706,44 +562,39 @@ CVode
 
 
 
-.. method:: CVode.netconlist
+.. method:: CVode.netconlist(precell, postcell, target)
+            CVode.netconlist(precell, postcell, target, list)
 
-
-    Syntax:
-        ``List = cvode.netconlist(precell, postcell, target)``
-
-        ``List = cvode.netconlist(precell, postcell, target, list)``
-
-
-    Description:
-        Returns a new :class:`List` (or appends to the list in the 4th argument 
-        position and returns a reference to that) of :class:`NetCon` object 
-        references whose precell (or pre), postcell, and target match the pattern 
-        specified in the first three arguments. These arguments may each be either 
-        an object reference or a string. If an object, then each NetCon 
-        appended to the list will match that object exactly. String arguments 
-        are regular expressions 
-        and the NetCon will match if the name of the object has a substring that 
-        is accepted by the regular expression. 
-        (Object names are the 
-        internal names consisting of the template name followed by an index). 
-        An empty string, "", is equivalent to ".*" and 
-        matches everything in that field. A template 
-        name will match all the objects of that particular class. Note that 
-        some of the useful special regular expression characters are ".*+^$<>". 
-        The "<>" is used instead of the the standard special characters "[]" to specify 
-        a character range and obviates escaping the square bracket characters 
-        when attempting to match an array string. ie square brackets are not 
-        special and only match themselves. 
+    
+    Returns a new :class:`List` (or appends to the list in the 4th argument 
+    position and returns a reference to that) of :class:`NetCon` object 
+    references whose precell (or pre), postcell, and target match the pattern 
+    specified in the first three arguments. These arguments may each be either 
+    an object reference or a string. If an object, then each NetCon 
+    appended to the list will match that object exactly. String arguments 
+    are regular expressions 
+    and the NetCon will match if the name of the object has a substring that 
+    is accepted by the regular expression. 
+    (Object names are the 
+    internal names consisting of the template name followed by an index). 
+    An empty string, "", is equivalent to ".*" and 
+    matches everything in that field. A template 
+    name will match all the objects of that particular class. Note that 
+    some of the useful special regular expression characters are ".*+^$<>". 
+    The "<>" is used instead of the the standard special characters "[]" to specify 
+    a character range and obviates escaping the square bracket characters 
+    when attempting to match an array string. ie square brackets are not 
+    special and only match themselves. 
 
     Example:
-        To print all the postcells that the given ``precell`` connects to: 
 
-        .. code-block::
-            python
+    To print all the postcells that the given ``precell`` connects to: 
 
-            for nc in h.CVode().netconlist(precell, '', ''):
-                print(nc.postcell())
+    .. code-block::
+        python
+
+        for nc in h.CVode().netconlist(precell, '', ''):
+            print(nc.postcell())
 
 
          
@@ -752,135 +603,111 @@ CVode
 
 
 
-.. method:: CVode.record
+.. method:: CVode.record(_ref_rangevar, yvec, tvec)
+            CVode.record(_ref_rangevar, yvec, tvec, 1)
 
-
-    Syntax:
-        ``cvode.record(_ref_rangevar, yvec, tvec)``
-
-        ``cvode.record(_ref_rangevar, yvec, tvec, 1)``
-
-
-    Description:
-        Similar to the Vector :meth:`~Vector.record` function but also works correctly with 
-        the local variable time step method. Limited to recording only range variables 
-        of density mechanisms and point processes. 
-         
-        During a run, record the stream of values in the specified range 
-        variable into the yvec :class:`Vector` along with time values into the tvec :class:`Vector`. 
-        Note that each recorded range variable must have a separate tvec which 
-        will be different for different cells. On initialization 
-        the yvec and tvec Vectors are resized to 1 and the initial value of the 
-        range variable and time is stored in the Vectors. 
-         
-        To stop recording into a particular vector, remove all the references 
-        either to tvec or yvec or call :func:`record_remove` . 
-         
-        If the fourth argument is present and equal to 1, the yvec is recorded 
-        only at the existing t values in tvec. This option may slow integration 
-        since it requires calculation of states at those particular times. 
-
-         
-
-----
-
-
-
-.. method:: CVode.record_remove
-
-
-    Syntax:
-        ``cvode.record_remove(yvec)``
-
-
-    Description:
-        Remove yvec (and the corresponding xvec) 
-        from the list of recorded :class:`Vector`s. See :meth:`record`. 
-
-         
-
-----
-
-
-
-.. method:: CVode.event
-
-
-    Syntax:
-        ``cvode.event(t)``
-
-        ``cvode.event(t, function)``
-
-        ``cvode.event(t, function, pointprocess, re_init)``
-
-
-    Description:
-        With no argument, an event without a source or target 
-        is inserted into the event queue 
-        for "delivery" at time t. This has the side effect of causing a return 
-        from :func:`fadvance` (or :meth:`CVode.solve` or :meth:`ParallelContext.psolve` or :func:`batch_run` 
-        exactly at time t. This is used by the stdrun.hoc file 
-        to make sure a simulation stops at tstop or after the appropriate 
-        time on pressing "continuerun" or "continuefor". When :meth:`CVode.use_local_dt` 
-        is active, all cells are interpolated to the event time. 
-         
-        If the hoc statement argument is present, the statement is executed (in 
-        the object context of the call to cvode.event) when 
-        the event time arrives. 
-        This statement is normally a call to a procedure 
-        which may send another cvode.event. Note that since the event queue 
-        is cleared upon :func:`finitialize` the cvode.event must be sent after that. 
-         
-        Multiple threads and/or the local variable time step method, sometimes require 
-        a bit of extra thought about the purpose of the statement. Should it be executed 
-        only in the context of a single thread, should it be executed only in the 
-        context of a single cell, and should only the integrator associated with that 
-        cell be initialized due to a state change caused by the statement? 
-        When the third arg is absent, then before the statement is executed, all cells 
-        of all threads are interpolated to time t, all threads 
-        join at time t, and the statement is executed by the main thread. A call to 
-        :meth:`CVode.re_init` is allowed. If the third arg (a POINT_PROCESS object) is 
-        present, then, the integrator of the cell  (if lvardt) containing the POINT_PROCESS 
-        is interpolated to time t, and the statement is executed by the thread 
-        containing the POINT_PROCESS. Meanwhile, the other threads keep executing. 
-        The statement should only access states and parameters associated with the 
-        cell containing the POINT_PROCESS. If any states or parameters are changed, 
-        then the fourth arg should be set to 1 to cause a re-initialization of only 
-        the integrator managing the cell (:meth:`CVode.re_init` is nonsense in this context). 
-
-        Example:
-         
-        .. code-block::
-            python
     
-    	    from neuron import h, gui
-     
-    	    def hi():
-    	        print('hello from hi, h.t = %g' % h.t)
+    Similar to the Vector :meth:`~Vector.record` function but also works correctly with 
+    the local variable time step method. Limited to recording only range variables 
+    of density mechanisms and point processes. 
+        
+    During a run, record the stream of values in the specified range 
+    variable into the yvec :class:`Vector` along with time values into the tvec :class:`Vector`. 
+    Note that each recorded range variable must have a separate tvec which 
+    will be different for different cells. On initialization 
+    the yvec and tvec Vectors are resized to 1 and the initial value of the 
+    range variable and time is stored in the Vectors. 
+        
+    To stop recording into a particular vector, remove all the references 
+    either to tvec or yvec or call :func:`record_remove` . 
+        
+    If the fourth argument is present and equal to 1, the yvec is recorded 
+    only at the existing t values in tvec. This option may slow integration 
+    since it requires calculation of states at those particular times. 
 
-    	    h.finitialize(-65)
-
-    	    h.CVode().event(1.3, hi)
-
-    	    h.continuerun(2)
+         
 
 ----
 
 
 
-.. method:: CVode.minstep
+.. method:: CVode.record_remove(yvec)
 
 
-    Syntax:
-        ``hmin = cvode.minstep()``
+    Remove yvec (and the corresponding xvec) 
+    from the list of recorded :class:`Vector`s. See :meth:`record`. 
 
-        ``hmin = cvode.minstep(hmin)``
+         
+
+----
 
 
-    Description:
-        Gets (and sets in the arg form) the minimum time step allowed for 
-        a CVODE step. Default is 0.0 . An error message is printed if a time step less 
-        than the minimum step is used. 
+
+.. method:: CVode.event(t)
+            CVode.event(t, function)
+            CVode.event(t, function, pointprocess, re_init)
+
+   
+    With no argument, an event without a source or target 
+    is inserted into the event queue 
+    for "delivery" at time t. This has the side effect of causing a return 
+    from :func:`fadvance` (or :meth:`CVode.solve` or :meth:`ParallelContext.psolve` or :func:`batch_run` 
+    exactly at time t. This is used by the stdrun.hoc file 
+    to make sure a simulation stops at tstop or after the appropriate 
+    time on pressing "continuerun" or "continuefor". When :meth:`CVode.use_local_dt` 
+    is active, all cells are interpolated to the event time. 
+        
+    If the hoc statement argument is present, the statement is executed (in 
+    the object context of the call to cvode.event) when 
+    the event time arrives. 
+    This statement is normally a call to a procedure 
+    which may send another cvode.event. Note that since the event queue 
+    is cleared upon :func:`finitialize` the cvode.event must be sent after that. 
+        
+    Multiple threads and/or the local variable time step method, sometimes require 
+    a bit of extra thought about the purpose of the statement. Should it be executed 
+    only in the context of a single thread, should it be executed only in the 
+    context of a single cell, and should only the integrator associated with that 
+    cell be initialized due to a state change caused by the statement? 
+    When the third arg is absent, then before the statement is executed, all cells 
+    of all threads are interpolated to time t, all threads 
+    join at time t, and the statement is executed by the main thread. A call to 
+    :meth:`CVode.re_init` is allowed. If the third arg (a POINT_PROCESS object) is 
+    present, then, the integrator of the cell  (if lvardt) containing the POINT_PROCESS 
+    is interpolated to time t, and the statement is executed by the thread 
+    containing the POINT_PROCESS. Meanwhile, the other threads keep executing. 
+    The statement should only access states and parameters associated with the 
+    cell containing the POINT_PROCESS. If any states or parameters are changed, 
+    then the fourth arg should be set to 1 to cause a re-initialization of only 
+    the integrator managing the cell (:meth:`CVode.re_init` is nonsense in this context). 
+
+    Example:
+        
+    .. code-block::
+        python
+
+        from neuron import h, gui
+    
+        def hi():
+            print('hello from hi, h.t = %g' % h.t)
+
+        h.finitialize(-65)
+
+        h.CVode().event(1.3, hi)
+
+        h.continuerun(2)
+
+----
+
+
+
+.. method:: CVode.minstep()
+            CVode.minstep(hmin)
+
+    
+    Gets (and sets in the arg form) the minimum time step allowed for 
+    a CVODE step. Default is 0.0 . An error message is printed if a time step less 
+    than the minimum step is used. 
 
     .. warning::
         Not very useful. What we'd really like is a minimum first order implicit step. 
@@ -891,19 +718,13 @@ CVode
 
 
 
-.. method:: CVode.maxstep
+.. method:: CVode.maxstep()
+            CVode.maxstep(hmax)
 
-
-    Syntax:
-        ``hmax = cvode.maxstep()``
-
-        ``hmax = cvode.maxstep(hmax)``
-
-
-    Description:
-        Gets (and sets in the arg form) the maximum value of the step size 
-        allowed for a CVODE step. CVODE will not choose a step size larger than this. 
-        The default value is 0 and in this case means infinity. 
+    
+    Gets (and sets in the arg form) the maximum value of the step size 
+    allowed for a CVODE step. CVODE will not choose a step size larger than this. 
+    The default value is 0 and in this case means infinity. 
 
          
 
@@ -911,20 +732,14 @@ CVode
 
 
 
-.. method:: CVode.use_local_dt
+.. method:: CVode.use_local_dt()
+            CVode.use_local_dt(boolean)
 
-
-    Syntax:
-        ``boolean = cvode.use_local_dt()``
-
-        ``boolean = cvode.use_local_dt(boolean)``
-
-
-    Description:
-        Gets (and sets) the local variable time step method flag. 
-        When CVODE is :meth:`~CVode.active`, this implies a separate CVODE 
-        instance for every cell in the simulation. :meth:`CVode.record` is the only way 
-        at present that variables can be properly obtained when this method is used. 
+    
+    Gets (and sets) the local variable time step method flag. 
+    When CVODE is :meth:`~CVode.active`, this implies a separate CVODE 
+    instance for every cell in the simulation. :meth:`CVode.record` is the only way 
+    at present that variables can be properly obtained when this method is used. 
 
     .. warning::
         Not well integrated with the existing standard run system graphics 
@@ -941,18 +756,12 @@ CVode
 
 
 
-.. method:: CVode.debug_event
+.. method:: CVode.debug_event(1)
+            CVode.debug_event(2)
 
-
-    Syntax:
-        ``cvode.debug_event(1)``
-
-        ``cvode.debug_event(2)``
-
-
-    Description:
-        Prints information whenever an event is generated or delivered. When the 
-        argument is 2, information is printed at every integration step as well. 
+    
+    Prints information whenever an event is generated or delivered. When the 
+    argument is 2, information is printed at every integration step as well. 
 
          
 
@@ -960,28 +769,22 @@ CVode
 
 
 
-.. method:: CVode.use_long_double
+.. method:: CVode.use_long_double()
+            CVode.use_long_double(boolean)
 
-
-    Syntax:
-        ``boolean = cvode.use_long_double()``
-
-        ``booelan = cvode.use_long_double(boolean)``
-
-
-    Description:
-        When true, vector methods involving sums over the elements are accumulated 
-        in a long double variable. This is useful in debugging when the 
-        global variable time step method gives different results for different 
-        :meth:`ParallelContext.nthread` or numbers of processes. It may be the case that the difference is 
-        due to differences in round-off error due to the non-associativity of 
-        computer addition. I.e when threads are used each thread adds up its own 
-        group of numbers and then the group results are added together. When 
-        a long double is used as the accumulator for addition, the round off error 
-        is much more likely to be the same regardless of the order of addition. Note that 
-        this DOES NOT make the simulation more accurate --- just more likely to be identical for 
-        different numbers of threads or processes (if the difference without it was due to 
-        round off errors during summation). 
+    
+    When true, vector methods involving sums over the elements are accumulated 
+    in a long double variable. This is useful in debugging when the 
+    global variable time step method gives different results for different 
+    :meth:`ParallelContext.nthread` or numbers of processes. It may be the case that the difference is 
+    due to differences in round-off error due to the non-associativity of 
+    computer addition. I.e when threads are used each thread adds up its own 
+    group of numbers and then the group results are added together. When 
+    a long double is used as the accumulator for addition, the round off error 
+    is much more likely to be the same regardless of the order of addition. Note that 
+    this DOES NOT make the simulation more accurate --- just more likely to be identical for 
+    different numbers of threads or processes (if the difference without it was due to 
+    round off errors during summation). 
 
          
 
@@ -989,18 +792,12 @@ CVode
 
 
 
-.. method:: CVode.order
+.. method:: CVode.order()
+            CVode.order(i)
 
 
-    Syntax:
-        ``order = cvode.order()``
-
-        ``order = cvode.order(i)``
-
-
-    Description:
-        CVODE method order used on the last step. The arg form is for the ith 
-        cell instance with the local step method. 
+    CVODE method order used on the last step. The arg form is for the ith 
+    cell instance with the local step method. 
 
          
 
@@ -1008,25 +805,19 @@ CVode
 
 
 
-.. method:: CVode.use_daspk
+.. method:: CVode.use_daspk()
+            CVode.use_daspk(boolean)
 
-
-    Syntax:
-        ``boolean = cvode.use_daspk()``
-
-        ``boolean = cvode.use_daspk(boolean)``
-
-
-    Description:
-        Gets (sets for the arg form) the internal flag with regard to whether to 
-        use the IDA method when CVode is :meth:`~CVode.active`. If CVode is active 
-        and the simulation involves :func:`LinearMechanism` or :func:`extracellular` mechanisms 
-        then the IDA method is automatic and required. 
-         
-        Daspk refers to the Differential Algebraic Solver with the Preconditioned 
-        Krylov method. The SUNDIALS package now calls this the IDA (Integrator 
-        for Differential-Algebraic problems) integrator but it is really the same 
-        thing. 
+    
+    Gets (sets for the arg form) the internal flag with regard to whether to 
+    use the IDA method when CVode is :meth:`~CVode.active`. If CVode is active 
+    and the simulation involves :func:`LinearMechanism` or :func:`extracellular` mechanisms 
+    then the IDA method is automatic and required. 
+        
+    Daspk refers to the Differential Algebraic Solver with the Preconditioned 
+    Krylov method. The SUNDIALS package now calls this the IDA (Integrator 
+    for Differential-Algebraic problems) integrator but it is really the same 
+    thing. 
 
          
 
@@ -1034,25 +825,19 @@ CVode
 
 
 
-.. method:: CVode.condition_order
+.. method:: CVode.condition_order()
+            CVode.condition_order(1or2)
 
-
-    Syntax:
-        ``order = cvode.condition_order()``
-
-        ``order = cvode.condition_order(1or2)``
-
-
-    Description:
-        When condition_order is 1 then :func:`NetCon` threshold detection takes place at a time 
-        step boundary. This is the default. When condition_order is 2 then 
-        NetCon threshold detection times  are linearly interpolated within the 
-        integration step interval for which the threshold occurred. Second order 
-        threshold is limited to variable step methods and is ignored for the 
-        fixed step methods. Note that second order threshold detection time may change 
-        due to synaptic events within the interval or even be abandoned. 
-        It is useful for cells with approach threshold very slowly or with large 
-        time steps. 
+    
+    When condition_order is 1 then :func:`NetCon` threshold detection takes place at a time 
+    step boundary. This is the default. When condition_order is 2 then 
+    NetCon threshold detection times  are linearly interpolated within the 
+    integration step interval for which the threshold occurred. Second order 
+    threshold is limited to variable step methods and is ignored for the 
+    fixed step methods. Note that second order threshold detection time may change 
+    due to synaptic events within the interval or even be abandoned. 
+    It is useful for cells with approach threshold very slowly or with large 
+    time steps. 
 
          
 
@@ -1060,42 +845,35 @@ CVode
 
 
 
-.. method:: CVode.dae_init_dteps
+.. method:: CVode.dae_init_dteps()
+            CVode.dae_init_dteps(eps)
+            CVode.dae_init_dteps(eps, style)
 
-
-    Syntax:
-        ``eps = cvode.dae_init_dteps()``
-
-        ``eps = cvode.dae_init_dteps(eps)``
-
-        ``eps = cvode.dae_init_dteps(eps, style)``
-
-
-    Description:
-        The size of the "infinitesimal" fixed fully implicit step used for 
-        initialization of the DAE solver, see :func:`use_daspk` , in order to 
-        meet the the initial condition requirement of f(y',y,t)=0. The default 
-        is 1e-9 ms. 
-         
-        The default heuristic for meeting the initial condition requirement based 
-        on the pre-initialization value of all the states and an initialization time 
-        of t0 is: 
-         
-        t = t0 Vector.play continuous. 
-         
-        Two dteps voltage solve steps. (does not change t, or membrane mechanism 
-        states but changes v,vext). 
-        The initial value of  y is the present value of the 
-        states. 
-         
-        t = t0 + dteps Vector.play continuous 
-         
-        One dteps step without changing y but it does determine dy/dt of the 
-        v, vext portion of states. 
-         
-        t = t0 determine the dy/dt of the membrane mechanism states. 
-        (note: membrane mechanism states are all derivative or kinetic 
-        scheme states) 
+    
+    The size of the "infinitesimal" fixed fully implicit step used for 
+    initialization of the DAE solver, see :func:`use_daspk` , in order to 
+    meet the the initial condition requirement of f(y',y,t)=0. The default 
+    is 1e-9 ms. 
+        
+    The default heuristic for meeting the initial condition requirement based 
+    on the pre-initialization value of all the states and an initialization time 
+    of t0 is: 
+        
+    t = t0 Vector.play continuous. 
+        
+    Two dteps voltage solve steps. (does not change t, or membrane mechanism 
+    states but changes v,vext). 
+    The initial value of  y is the present value of the 
+    states. 
+        
+    t = t0 + dteps Vector.play continuous 
+        
+    One dteps step without changing y but it does determine dy/dt of the 
+    v, vext portion of states. 
+        
+    t = t0 determine the dy/dt of the membrane mechanism states. 
+    (note: membrane mechanism states are all derivative or kinetic 
+    scheme states) 
          
 
     .. warning::
@@ -1128,17 +906,12 @@ CVode
 
 
 
-.. method:: CVode.simgraph_remove
+.. method:: CVode.simgraph_remove()
 
 
-    Syntax:
-        ``cvode.simgraph_remove()``
-
-
-    Description:
-        Removes all items from the list of Graph lines recorded during 
-        a local variable step simulation. Graph lines would have been added to this 
-        list with :ref:`gui_graph`. 
+    Removes all items from the list of Graph lines recorded during 
+    a local variable step simulation. Graph lines would have been added to this 
+    list with :ref:`gui_graph`. 
 
          
 
@@ -1146,37 +919,29 @@ CVode
 
 
 
-.. method:: CVode.state_magnitudes
+.. method:: CVode.state_magnitudes(integer)
+            CVode.state_magnitudes(Vector, integer)
+            CVode.state_magnitudes("basename", _ref_maxacor)
 
-
-    Syntax:
-        ``cvode.state_magnitudes(integer)``
-
-        ``cvode.state_magnitudes(Vector, integer)``
-
-        ``maxstate = cvode.state_magnitudes("basename", _ref_maxacor)``
-
-
-    Description:
          
-        ``cvode.state_magnitudes(1)`` activates the calculation of the 
-        running maximum magnitudes of states and acor. 0 turns it off. 
-         
-        ``cvode.state_magnitudes(2)`` creates an internal 
-        list of the maximum of the maximum states and acors 
-        according to the state basename currently in the model. Statenames not 
-        in use have a maximum magnitude state and acor value of -1e9. 
-         
-        ``maxstate = cvode.state_magnitudes("basename", _ref_maxacor)`` 
-        returns the maxstate and maxacor for the state type, e.g. "v" or 
-        "ExpSyn.g", or "m_hh". Note: state type names can be determined from 
-        MechanismType and MechanismStandard 
-         
-        ``cvode.state_magnitudes(Vector, 0)`` returns all the maximum magnitudes for 
-        each state in the Vector. This is analogous to cvode.states(Vector). 
-        ``cvode.state_magnitudes(Vector, 1)`` returns the maximum magnitudes for 
-        each acor in the Vector. 
-         
+    ``cvode.state_magnitudes(1)`` activates the calculation of the 
+    running maximum magnitudes of states and acor. 0 turns it off. 
+        
+    ``cvode.state_magnitudes(2)`` creates an internal 
+    list of the maximum of the maximum states and acors 
+    according to the state basename currently in the model. Statenames not 
+    in use have a maximum magnitude state and acor value of -1e9. 
+        
+    ``maxstate = cvode.state_magnitudes("basename", _ref_maxacor)`` 
+    returns the maxstate and maxacor for the state type, e.g. "v" or 
+    "ExpSyn.g", or "m_hh". Note: state type names can be determined from 
+    MechanismType and MechanismStandard 
+        
+    ``cvode.state_magnitudes(Vector, 0)`` returns all the maximum magnitudes for 
+    each state in the Vector. This is analogous to cvode.states(Vector). 
+    ``cvode.state_magnitudes(Vector, 1)`` returns the maximum magnitudes for 
+    each acor in the Vector. 
+        
 
          
 
@@ -1184,34 +949,29 @@ CVode
 
 
 
-.. method:: CVode.current_method
+.. method:: CVode.current_method()
 
 
-    Syntax:
-        ``method = cvode.current_method()``
-
-
-    Description:
-        A value that indicates 
-         
-        modeltype + 10*use_sparse13 + 100*methodtype + 1000*localtype 
-         
-        where modeltype has the value: 
-        0 if there are no sections or LinearMechanisms (i.e. empty model) 
-        2 if the extracellular mechanism or LinearMechanism is present. (in this 
-        case the fully implicit fixed step or daspk methods are required and cvode 
-        cannot be used. 
-        1 otherwise 
-         
-        use_sparse13 is 0 if the tree structured matrix solver is used and 1 
-        if the general sparse matrix solver is used. The latter is required for 
-        daspk and not allowed for cvode. The fixed step methods can use either. 
-        The latter takes about twice as much time as the former. 
-         
-        methodtype = :data:`secondorder` if CVode is not active. It equals 3 if CVODE is 
-        being used and 4 is DASPK is used. 
-         
-        localtype = 1 if the local step method is used. This implies methodtype==3 
+    A value that indicates 
+        
+    modeltype + 10*use_sparse13 + 100*methodtype + 1000*localtype 
+        
+    where modeltype has the value: 
+    0 if there are no sections or LinearMechanisms (i.e. empty model) 
+    2 if the extracellular mechanism or LinearMechanism is present. (in this 
+    case the fully implicit fixed step or daspk methods are required and cvode 
+    cannot be used. 
+    1 otherwise 
+        
+    use_sparse13 is 0 if the tree structured matrix solver is used and 1 
+    if the general sparse matrix solver is used. The latter is required for 
+    daspk and not allowed for cvode. The fixed step methods can use either. 
+    The latter takes about twice as much time as the former. 
+        
+    methodtype = :data:`secondorder` if CVode is not active. It equals 3 if CVODE is 
+    being used and 4 is DASPK is used. 
+        
+    localtype = 1 if the local step method is used. This implies methodtype==3 
 
          
 
@@ -1219,111 +979,94 @@ CVode
 
 
 
-.. method:: CVode.use_mxb
+.. method:: CVode.use_mxb()
+            CVode.use_mxb(boolean)
 
-
-    Syntax:
-        ``boolean = cvode.use_mxb()``
-
-        ``boolean = cvode.use_mxb(boolean)``
-
-
-    Description:
-        Switch between the tree structured matrix solver (0) and the general 
-        sparse matrix solver (1). Either is acceptable for fixed step methods. 
-        For CVODE only the tree structured solver is allowed. For DASPK only the 
-        general sparse solver is allowed. 
+    
+    Switch between the tree structured matrix solver (0) and the general 
+    sparse matrix solver (1). Either is acceptable for fixed step methods. 
+    For CVODE only the tree structured solver is allowed. For DASPK only the 
+    general sparse solver is allowed. 
 
          
 
 ----
 
 
-.. method:: CVode.use_fast_imem
+.. method:: CVode.use_fast_imem()
+            CVode.use_fast_imem(boolean)
+
+    
+    When true, compute i_membrane\_ for all segments during a simulation.
+    This is closely related to i_membrane which is computed when the
+    extracellular mechanism is inserted. However, i_membrane\_ (note
+    the trailing '\_'), has dimensions of nA instead of mA/cm2 (ie. total
+    membrane current out of the segment), is available
+    at 0 area nodes (locations 0 and 1 of every section), does not require
+    that extracellular be inserted (and so is much faster), and works
+    during parallel simulations with variable step methods. (ie. does not
+    require IDA which is currently not available in parallel).
+    i_membrane\_ exists as a range variable only when ``use_fast_imem`` has
+    been called with an argument of 1. Conversely, i_membrane\_ is
+    not computed when ``use_fast_imem`` is not called or with an
+    argument of 0.
+
+    i_membrane\_ include capacity current and all transmembrane
+    ionic currents but not stimulus currents. POINT_PROCESS synaptic
+    currents are considered ionic currents and so are included
+    in i_membrane\_. From charge conservation
+    a fundamental property is that the sum of all i_membrane\_ is
+    identical to the sum of all ELECTRODE_CURRENT (Current cannot
+    flow axially out of a cell since the root and leaves of each
+    cell tree have sealed end boundary conditions.)
+
+    The following tests this conservation law, assuming that the only
+    ELECTRODE_CURRENTs are IClamp. Note the idiom that visits all segments
+    of a model but only once each segment to sum up i_membrane\_
+
+    .. code:: python
+
+        from neuron import h
+        h.CVode().use_fast_imem(1)
+
+        def assert_whole_model_charge_conservation():
+            # sum over all membrane current
+            total_imem = 0.0
+            for sec in h.allsec():
+                for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
+                    if seg.x == sec.orientation() and sec.parentseg() is not None:
+                        continue # skip segment shared with parent
+                    total_imem += seg.i_membrane_
+
+            # sum over all ELECTRODE_CURRENT (if only using IClamp)
+            total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
+
+            print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
+            assert(abs(total_imem - total_iclamp_cur) < 1e-12)
 
 
-    Syntax:
-        ``boolean = cvode.use_fast_imem()``
-
-        ``boolean = cvode.use_fast_imem(boolean)``
-
-
-    Description:
-        When true, compute i_membrane\_ for all segments during a simulation.
-        This is closely related to i_membrane which is computed when the
-        extracellular mechanism is inserted. However, i_membrane\_ (note
-        the trailing '\_'), has dimensions of nA instead of mA/cm2 (ie. total
-        membrane current out of the segment), is available
-        at 0 area nodes (locations 0 and 1 of every section), does not require
-        that extracellular be inserted (and so is much faster), and works
-        during parallel simulations with variable step methods. (ie. does not
-        require IDA which is currently not available in parallel).
-        i_membrane\_ exists as a range variable only when ``use_fast_imem`` has
-        been called with an argument of 1. Conversely, i_membrane\_ is
-        not computed when ``use_fast_imem`` is not called or with an
-        argument of 0.
-
-        i_membrane\_ include capacity current and all transmembrane
-        ionic currents but not stimulus currents. POINT_PROCESS synaptic
-        currents are considered ionic currents and so are included
-        in i_membrane\_. From charge conservation
-        a fundamental property is that the sum of all i_membrane\_ is
-        identical to the sum of all ELECTRODE_CURRENT (Current cannot
-        flow axially out of a cell since the root and leaves of each
-        cell tree have sealed end boundary conditions.)
-
-        The following tests this conservation law, assuming that the only
-        ELECTRODE_CURRENTs are IClamp. Note the idiom that visits all segments
-        of a model but only once each segment to sum up i_membrane\_
-
-        .. code:: python
-
-            from neuron import h
-            h.CVode().use_fast_imem(1)
-
-            def assert_whole_model_charge_conservation():
-                # sum over all membrane current
-                total_imem = 0.0
-                for sec in h.allsec():
-                    for seg in sec.allseg(): # also the 0 area nodes at 0 and 1
-                        if seg.x == sec.orientation() and sec.parentseg() is not None:
-                            continue # skip segment shared with parent
-                        total_imem += seg.i_membrane_
-
-                # sum over all ELECTRODE_CURRENT (if only using IClamp)
-                total_iclamp_cur = sum(ic.i for ic in h.List('IClamp'))
-
-                print("total_imem=%g total_iclamp_cur=%g" % (total_imem, total_iclamp_cur))
-                assert(abs(total_imem - total_iclamp_cur) < 1e-12)
-
-
-        In the above fragment ``sec.parentseg()`` is needed to count
-        the root and use of ``sec.trueparentseg()`` would count all sections
-        that connect to the root section at 0 because all those sections have
-        a trueparentseg of None.
-        Also, although an extremely rare edge case, ``sec.orientation()``
-        is needed to match which segment is closest to root.
+    In the above fragment ``sec.parentseg()`` is needed to count
+    the root and use of ``sec.trueparentseg()`` would count all sections
+    that connect to the root section at 0 because all those sections have
+    a trueparentseg of None.
+    Also, although an extremely rare edge case, ``sec.orientation()``
+    is needed to match which segment is closest to root.
 
 ----
 
 
 
-.. method:: CVode.store_events
+.. method:: CVode.store_events(vec)
 
 
-    Syntax:
-        ``cvode.store_events(vec)``
-
-
-    Description:
-        Accumulates all the sent events as adjacent pairs in the :class:`Vector` vec. 
-        The pairs are the time at which the event was sent and the time it 
-        is to be delivered. The user should do a vec.resize(0) before starting 
-        a run. Cvode will stop storing with cvode.store_event(). 
-        This is primarily for gathering data to design more efficient priority 
-        queues. It may be eliminated when the tq-exper branch is merged back to 
-        the main branch. Notice that there is no info about event type or where the 
-        event is coming from or going to. 
+    Accumulates all the sent events as adjacent pairs in the :class:`Vector` vec. 
+    The pairs are the time at which the event was sent and the time it 
+    is to be delivered. The user should do a vec.resize(0) before starting 
+    a run. Cvode will stop storing with cvode.store_event(). 
+    This is primarily for gathering data to design more efficient priority 
+    queues. It may be eliminated when the tq-exper branch is merged back to 
+    the main branch. Notice that there is no info about event type or where the 
+    event is coming from or going to. 
 
          
 
@@ -1331,44 +1074,39 @@ CVode
 
 
 
-.. method:: CVode.queue_mode
+.. method:: CVode.queue_mode(boolean use_fixed_step_bin_queue, boolean use_self_queue)
 
 
-    Syntax:
-        ``mode = cvode.queue_mode(boolean use_fixed_step_bin_queue, boolean use_self_queue)``
-
-
-    Description:
-        Normally, there is one event queue for all pending events. However, for the 
-        fixed step method one can obtain marginally better queue performance through 
-        the use of a bin queue for NetCon events. This utilizes a queue with 
-        bins of size dt which has a very fast insertion time and every time step 
-        all the events in a bin are delivered to their targets. Note that the 
-        numerics of the simulation will differ compared to the default splay 
-        tree queue (which stores double precision delivery times) if 
-        NetCon.delay values are not integer multiples of dt. Also, even with 
-        the fixed step method and and delays as integer multiples of dt, results 
-        can differ at the double precision round off level due to the different order 
-        that same time events can be received by the NET_RECEIVE block. 
-         
-        The optional "use_self_queue" (default 0) argument can only be used if the 
-        the simulation is run with :meth:`~ParallelContext.psolve` method 
-        of the :class:`ParallelContext` and must be selected prior to a call of 
-        :meth:`ParallelContext.set_maxstep`  since this special technique requires a 
-        computation of the global minimum :meth:`NetCon.delay` (not just the 
-        minimum interprocessor NetCon delay) and that delay must be 
-        greater than 0. The technique avoids the use of the  normal splay tree queue 
-        for self events for ARTIFICIAL_CELLs (events initiated by the net_send call 
-        and which may be manipulated by the net_move call in the NET_RECEIVE block). 
-        It may thus be considerably faster. However, every minimum NetCon delay interval, 
-        all the ARTIFICIAL_CELLS must be iterated to see if there are any outstanding 
-        net_send events that need to be handled. Thus it is likely to have a beneficial 
-        performance impact only for large numbers of ARTIFICIAL_CELLs which receive 
-        many external input events per reasonable minimum delay interval. This method 
-        has not receive much testing and the results should be compared with the 
-        default queuing method. 
-         
-        Returns ``2*use_self_queue + use_fixed_step_bin_queue``. 
+    Normally, there is one event queue for all pending events. However, for the 
+    fixed step method one can obtain marginally better queue performance through 
+    the use of a bin queue for NetCon events. This utilizes a queue with 
+    bins of size dt which has a very fast insertion time and every time step 
+    all the events in a bin are delivered to their targets. Note that the 
+    numerics of the simulation will differ compared to the default splay 
+    tree queue (which stores double precision delivery times) if 
+    NetCon.delay values are not integer multiples of dt. Also, even with 
+    the fixed step method and and delays as integer multiples of dt, results 
+    can differ at the double precision round off level due to the different order 
+    that same time events can be received by the NET_RECEIVE block. 
+        
+    The optional "use_self_queue" (default 0) argument can only be used if the 
+    the simulation is run with :meth:`~ParallelContext.psolve` method 
+    of the :class:`ParallelContext` and must be selected prior to a call of 
+    :meth:`ParallelContext.set_maxstep`  since this special technique requires a 
+    computation of the global minimum :meth:`NetCon.delay` (not just the 
+    minimum interprocessor NetCon delay) and that delay must be 
+    greater than 0. The technique avoids the use of the  normal splay tree queue 
+    for self events for ARTIFICIAL_CELLs (events initiated by the net_send call 
+    and which may be manipulated by the net_move call in the NET_RECEIVE block). 
+    It may thus be considerably faster. However, every minimum NetCon delay interval, 
+    all the ARTIFICIAL_CELLS must be iterated to see if there are any outstanding 
+    net_send events that need to be handled. Thus it is likely to have a beneficial 
+    performance impact only for large numbers of ARTIFICIAL_CELLs which receive 
+    many external input events per reasonable minimum delay interval. This method 
+    has not receive much testing and the results should be compared with the 
+    default queuing method. 
+        
+    Returns ``2*use_self_queue + use_fixed_step_bin_queue``. 
 
     .. seealso::
         :meth:`ParallelContext.spike_compress`
@@ -1379,61 +1117,46 @@ CVode
 
 
 
-.. method:: CVode.structure_change_count
+.. method:: CVode.structure_change_count()
 
 
-    Syntax:
-        ``intcnt = cvode.structure_change_count()``
-
-
-    Description:
-        Returns the integer internal value of structure_change_cnt.
-        Structure_change_cnt is internally incremented whenever the
-        low level computable structures of the model have been setup
-        due to a change in number of segments, sections, topology, etc,
-        and some internal function requires that the computable structures
-        are consistent with the user level description of the model such as
-        finitialize, fadvance, define_shape, and many others.
+    Returns the integer internal value of structure_change_cnt.
+    Structure_change_cnt is internally incremented whenever the
+    low level computable structures of the model have been setup
+    due to a change in number of segments, sections, topology, etc,
+    and some internal function requires that the computable structures
+    are consistent with the user level description of the model such as
+    finitialize, fadvance, define_shape, and many others.
 
          
 ----
 
 
 
-.. method:: CVode.diam_change_count
+.. method:: CVode.diam_change_count()
 
 
-    Syntax:
-        ``cnt = cvode.diam_change_count()``
-
-
-    Description:
-        Returns the integer internal value of diam_change_cnt.
-        Diam_change_cnt is internally incremented whenever some internal
-        function checks the diam_changed flag and calls the internal
-        recalc_diam() function.
+    Returns the integer internal value of diam_change_cnt.
+    Diam_change_cnt is internally incremented whenever some internal
+    function checks the diam_changed flag and calls the internal
+    recalc_diam() function.
          
 ----
 
 
 
-.. method:: CVode.extra_scatter_gather
+.. method:: CVode.extra_scatter_gather(direction, pycallable)
 
 
-    Syntax:
-        ``cvode.extra_scatter_gather(direction, pycallable)``
+    If the direction is 0, the pycallable is
+    called immediately AFTER cvode has scattered its state variables.
+    If the direction is 1, the pycallable is called immediately BEFORE
+    cvode gathers the values of the state variables.
 
-
-    Description:
-        If the direction is 0, the pycallable is
-        called immediately AFTER cvode has scattered its state variables.
-        If the direction is 1, the pycallable is called immediately BEFORE
-        cvode gathers the values of the state variables.
-
-        For the fixed step method, the direction 0 pycallable is called
-        after voltages have been updated and immediately before the
-        nonvint part (before DERIVATIVE, KINETIC, etc. blocks). It is also
-        called during cvode.re_init() when cvode is inactive.
+    For the fixed step method, the direction 0 pycallable is called
+    after voltages have been updated and immediately before the
+    nonvint part (before DERIVATIVE, KINETIC, etc. blocks). It is also
+    called during cvode.re_init() when cvode is inactive.
 
     .. warning::
         Works only for fixed and global variable time step methods.
@@ -1441,77 +1164,66 @@ CVode
         
     Example of setting and removing, with arguments:
     
-         .. code::
-         
-             from neuron import h
+    .. code::
+    
+        from neuron import h
 
-             def hello1(cort_secs):
-                 print('hello1')
-                 cort_secs.append('corticalcell')
+        def hello1(cort_secs):
+            print('hello1')
+            cort_secs.append('corticalcell')
 
-             def hello2(arg):
-                 print('hello2', arg)
+        def hello2(arg):
+            print('hello2', arg)
 
-             cort_secs = []
+        cort_secs = []
 
-             recording_callback = (hello1, cort_secs)
+        recording_callback = (hello1, cort_secs)
 
-             # declaring a function to run with every fadvance
-             h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+        # declaring a function to run with every fadvance
+        h.CVode().extra_scatter_gather(0, recording_callback)
+        h.finitialize(-65)
+        h.fadvance()
+        h.fadvance()
 
-             # removing the previous function
-             h.CVode().extra_scatter_gather_remove(recording_callback)
+        # removing the previous function
+        h.CVode().extra_scatter_gather_remove(recording_callback)
 
-             print('---')
+        print('---')
 
-             # declaring a new function to run with each fadvance
-             recording_callback = (hello2, cort_secs)
-             h.CVode().extra_scatter_gather(0, recording_callback)
-             h.finitialize(-65)
-             h.fadvance()
-             h.fadvance()
+        # declaring a new function to run with each fadvance
+        recording_callback = (hello2, cort_secs)
+        h.CVode().extra_scatter_gather(0, recording_callback)
+        h.finitialize(-65)
+        h.fadvance()
+        h.fadvance()
 
 
+----
+
+
+
+.. method:: CVode.extra_scatter_gather_remove(pycallable)
+
+
+    Removes the pycallable from list of callbacks used when cvode
+    scatters its state variables or gathers its dstate variable.
          
 ----
 
 
 
-.. method:: CVode.extra_scatter_gather_remove
+.. method:: CVode.cache_efficient(True or False)
 
 
-    Syntax:
-        ``cvode.extra_scatter_gather_remove(pycallable)``
-
-
-    Description:
-        Removes the pycallable from list of callbacks used when cvode
-        scatters its state variables or gathers its dstate variable.
-         
-----
-
-
-
-.. method:: CVode.cache_efficient
-
-
-    Syntax:
-        ``mode = cvode.cache_efficient(True or False)``
-
-
-    Description:
-        When set, G*v = R matrix and vectors are reallocated in tree order so that 
-        all the elements of each type are contiguous in memory. Pointers to these 
-        elements used by the GUI, Vector, Pointer, etc. are updated. 
-         
-        Much of the implementation was contributed by Hubert Eichner <eichnerh@in.tum.de> 
-         
-        :meth:`ParallelContext.multisplit` automatically sets h.CVode().cache_efficient(True) 
+    When set, G*v = R matrix and vectors are reallocated in tree order so that 
+    all the elements of each type are contiguous in memory. Pointers to these 
+    elements used by the GUI, Vector, Pointer, etc. are updated. 
         
-        0 or 1 can be used instead of ``False`` or ``True``, respectively.
+    Much of the implementation was contributed by Hubert Eichner <eichnerh@in.tum.de> 
+        
+    :meth:`ParallelContext.multisplit` automatically sets h.CVode().cache_efficient(True) 
+    
+    0 or 1 can be used instead of ``False`` or ``True``, respectively.
 
          
 
@@ -1522,30 +1234,30 @@ CVode
 ModelDescriptionIssues
 ======================
 
-        The following aspects of model descriptions (.mod files) 
-        are relevant to their use with CVode. 
-         
-        KINETIC block - No changes required. 
-         
-        DERIVATIVE block - No changes required. 
-        The Jacobian is approximated as a diagonal matrix. 
-        If the states are linear in state' = f(state) the diagonal elements 
-        are calculated analytically, otherwise the 
-        diagonal elements are calculated using the numerical 
-        derivative (f(s+.01) - f(s))/.001 . 
-         
-        LINEAR, NONLINEAR blocks - No changes required. 
-        However, at this 
-        time they can only be SOLVED from a PROCEDURE or FUNCTION, not 
-        from the BREAKPOINT block. The nrn/src/nrnoc/vclmp.mod file 
-        gives an example of correct usage in which the function 
-        icur is called from the BREAKPOINT block and in turn SOLVE's 
-        a LINEAR block. If desired, it will be a simple matter to 
-        allow these blocks to be solved from the BREAKPOINT block. 
-         
-        SOLVE PROCEDURE within a BREAKPOINT block - Changes probably required. 
-        Such a procedure is called once after each return from 
-        CVode.solve(). 
+    The following aspects of model descriptions (.mod files) 
+    are relevant to their use with CVode. 
+        
+    KINETIC block - No changes required. 
+        
+    DERIVATIVE block - No changes required. 
+    The Jacobian is approximated as a diagonal matrix. 
+    If the states are linear in state' = f(state) the diagonal elements 
+    are calculated analytically, otherwise the 
+    diagonal elements are calculated using the numerical 
+    derivative (f(s+.01) - f(s))/.001 . 
+        
+    LINEAR, NONLINEAR blocks - No changes required. 
+    However, at this 
+    time they can only be SOLVED from a PROCEDURE or FUNCTION, not 
+    from the BREAKPOINT block. The nrn/src/nrnoc/vclmp.mod file 
+    gives an example of correct usage in which the function 
+    icur is called from the BREAKPOINT block and in turn SOLVE's 
+    a LINEAR block. If desired, it will be a simple matter to 
+    allow these blocks to be solved from the BREAKPOINT block. 
+        
+    SOLVE PROCEDURE within a BREAKPOINT block - Changes probably required. 
+    Such a procedure is called once after each return from 
+    CVode.solve(). 
          
 
 
