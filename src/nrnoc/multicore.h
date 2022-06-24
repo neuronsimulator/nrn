@@ -95,6 +95,7 @@ typedef struct NrnThread {
 
 extern int nrn_nthread;
 extern NrnThread* nrn_threads;
+void nrn_threads_create(int n, bool parallel);
 extern void nrn_thread_error(const char*);
 extern void nrn_multithread_job(void* (*) (NrnThread*) );
 extern void nrn_onethread_job(int, void* (*) (NrnThread*) );

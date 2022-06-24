@@ -11,6 +11,7 @@
 #include "parse.hpp"
 #include "section.h"
 #include "membfunc.h"
+#include "multicore.h"
 #include "utils/profile/profiler_interface.h"
 #include <nrnmpi.h>
 #include <errno.h>
@@ -63,7 +64,6 @@ static void nrnmpi_dbl_broadcast(double*, int, int) {}
 #endif
 extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
-extern void nrn_threads_create(int, int);
 extern void nrn_thread_partition(int, Object*);
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
@@ -914,11 +914,11 @@ static double broadcast(void*) {
 }
 
 static double nthrd(void*) {
-    int ip = 1;
+    bool ip{true};
     hoc_return_type_code = 1;  // integer
     if (ifarg(1)) {
         if (ifarg(2)) {
-            ip = int(chkarg(2, 0, 1));
+            ip = bool(chkarg(2, 0, 1));
         }
         nrn_threads_create(int(chkarg(1, 1, 1e5)), ip);
     }
