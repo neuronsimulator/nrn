@@ -467,17 +467,7 @@ Rand* nrn_random_arg(int i) {
 // uniform random variable over the open interval [low...high)
 // syntax:
 //     r.uniform(low,high)
-
 static double r_uniform(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    double a2 = *getarg(2);
-    delete x->rand;
-    x->rand = new Uniform(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_uniform_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
@@ -489,17 +479,7 @@ static double r_uniform_random123(void* r) {
 // uniform random variable over the closed interval [low...high]
 // syntax:
 //     r.discunif(low,high)
-
 static double r_discunif(void* r) {
-    Rand* x = (Rand*) r;
-    long a1 = long(*getarg(1));
-    long a2 = long(*getarg(2));
-    delete x->rand;
-    x->rand = new DiscreteUniform(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_discunif_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     long a1 = long(*getarg(1));
     long a2 = long(*getarg(2));
@@ -508,21 +488,10 @@ static double r_discunif_random123(void* r) {
     return (*(x->rand))();
 }
 
-
 // normal (gaussian) distribution
 // syntax:
 //     r.normal(mean,variance)
-
 static double r_normal(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    double a2 = *getarg(2);
-    delete x->rand;
-    x->rand = new Normal(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_normal_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
@@ -534,17 +503,7 @@ static double r_normal_random123(void* r) {
 // logarithmic normal distribution
 // syntax:
 //     r.lognormal(mean)
-
 static double r_lognormal(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    double a2 = *getarg(2);
-    delete x->rand;
-    x->rand = new LogNormal(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_lognormal_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
@@ -556,16 +515,7 @@ static double r_lognormal_random123(void* r) {
 // poisson distribution
 // syntax:
 //   r.poisson(mean)
-
 static double r_poisson(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    delete x->rand;
-    x->rand = new Poisson(a1, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_poisson_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     delete x->rand;
@@ -573,23 +523,12 @@ static double r_poisson_random123(void* r) {
     return (*(x->rand))();
 }
 
-
 // binomial distribution, which models successfully drawing items from a pool
 // n is the number items in the pool and p is the probablity of each item
 // being successfully drawn (n>0, 0<=p<=1)
 // syntax:
 //     r.binomial(n,p)
-
 static double r_binomial(void* r) {
-    Rand* x = (Rand*) r;
-    int a1 = int(chkarg(1, 0, 1e99));
-    double a2 = chkarg(2, 0, 1);
-    delete x->rand;
-    x->rand = new Binomial(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_binomial_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     int a1 = int(chkarg(1, 0, 1e99));
     double a2 = chkarg(2, 0, 1);
@@ -604,16 +543,7 @@ static double r_binomial_random123(void* r) {
 // greater than 0.
 // syntax:
 //     r.geometric(mean)
-
 static double r_geometric(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = chkarg(1, 0, 1);
-    delete x->rand;
-    x->rand = new Geometric(a1, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_geometric_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = chkarg(1, 0, 1);
     delete x->rand;
@@ -638,16 +568,7 @@ static double r_hypergeo(void* r) {
 // negative exponential distribution
 // syntax:
 //     r.negexp(mean)
-
 static double r_negexp(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    delete x->rand;
-    x->rand = new NegativeExpntl(a1, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_negexp_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     delete x->rand;
@@ -658,17 +579,7 @@ static double r_negexp_random123(void* r) {
 // Erlang distribution
 // syntax:
 //     r.erlang(mean,variance)
-
 static double r_erlang(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    double a2 = *getarg(2);
-    delete x->rand;
-    x->rand = new Erlang(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_erlang_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
@@ -681,17 +592,7 @@ static double r_erlang_random123(void* r) {
 // Weibull distribution
 // syntax:
 //     r.weibull(alpha,beta)
-
 static double r_weibull(void* r) {
-    Rand* x = (Rand*) r;
-    double a1 = *getarg(1);
-    double a2 = *getarg(2);
-    delete x->rand;
-    x->rand = new Weibull(a1, a2, x->gen);
-    return (*(x->rand))();
-}
-
-static double r_weibull_random123(void* r) {
     Rand_random123* x = (Rand_random123*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
