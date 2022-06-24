@@ -31,12 +31,9 @@ static const char* mechanism[] = {/*just a template*/
                                   0,
                                   0};
 static DoubScal scdoub[] = {/* just a template*/
-                            "ci0_na_ion",
-                            0,
-                            "co0_na_ion",
-                            0,
-                            0,
-                            0};
+                            {"ci0_na_ion", 0},
+                            {"co0_na_ion", 0},
+                            {0, 0}};
 
 static void ion_alloc(Prop*);
 
