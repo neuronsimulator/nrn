@@ -87,10 +87,13 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    if (errno == EDOM) {
+    // errno is not set for macOs, check FE exceptions as well. See:
+    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+    if (errno == EDOM || std::fetestexcept(FE_INVALID)) {
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE) {
+    } else if (errno == ERANGE || std::fetestexcept(FE_DIVBYZERO) ||
+               std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) {
         errno = 0;
 #if 0
         hoc_execerror(s, "result out of range");
@@ -103,17 +106,6 @@ double errcheck(double d, const char* s) /* check result of library call */
             }
         }
 #endif
-    }
-    // errno is not set for macOs, check FE exceptions. See:
-    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
-    if (std::fetestexcept(FE_INVALID)) {
-        hoc_execerror(s, "argument out of domain");
-    } else if (std::fetestexcept(FE_DIVBYZERO)) {
-        hoc_execerror(s, "division by zero");
-    } else if (std::fetestexcept(FE_OVERFLOW)) {
-        hoc_execerror(s, "result overflow");
-    } else if (std::fetestexcept(FE_UNDERFLOW)) {
-        hoc_execerror(s, "result underflow");
     }
     return d;
 }
