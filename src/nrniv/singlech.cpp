@@ -8,7 +8,6 @@
 #include "singlech.h"
 #include "membfunc.h"
 #include "random1.h"
-#include "NegExp.h"
 
 extern "C" {
 

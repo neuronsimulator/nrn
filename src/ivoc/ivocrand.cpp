@@ -2,8 +2,8 @@
 
 // definition of random number generation from the g++ library
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include "random1.h"
 
 #include <InterViews/resource.h>
@@ -18,21 +18,9 @@
 
 #include <RNG.h>
 #include <RNG_random123.h>
-#include <ACG.h>
-#include <MLCG.h>
 #include <Random.h>
-#include <Poisson.h>
-#include <Normal.h>
-#include <Uniform.h>
-#include <Binomial.h>
-#include <DiscUnif.h>
-#include <Erlang.h>
-#include <Geom.h>
-#include <LogNorm.h>
-#include <NegExp.h>
 #include <RndInt.h>
 #include <HypGeom.h>
-#include <Weibull.h>
 
 #if HAVE_IV
 #include "ivoc.h"
@@ -203,28 +191,14 @@ void RandomPlay::update(Observable*) {
     list_remove();
 }
 
-Rand::Rand(unsigned long seed, int size, Object* obj) {
+Rand::Rand() {
     // printf("Rand\n");
-    gen = new ACG(seed, size);
-    rand = new Normal(0., 1., gen);
-    type_ = 0;
-    obj_ = obj;
-}
-
-Rand::~Rand() {
-    // printf("~Rand\n");
-    delete gen;
-    delete rand;
-}
-
-Rand_random123::Rand_random123() {
-    // printf("Rand_random123\n");
     gen = new RNG_random123();
     rand = new Normal_random123(0., 1., gen);
 }
 
-Rand_random123::~Rand_random123() {
-    // printf("~Rand_random123\n");
+Rand::~Rand() {
+    // printf("~Rand\n");
     delete gen;
     delete rand;
 }
@@ -245,64 +219,14 @@ static void* r_cons(Object* obj) {
     if (ifarg(2))
         size = int(chkarg(2, 7, 98));
 
-    Rand_random123* r = new Rand_random123();
+    Rand* r = new Rand();
     return (void*) r;
 }
 
 // destructor -- called when no longer referenced
 
 static void r_destruct(void* r) {
-    delete (Rand_random123*) r;
-}
-
-// Use a variant of the Linear Congruential Generator (algorithm M)
-// described in Knuth, Art of Computer Programming, Vol. III in
-// combination with a Fibonacci Additive Congruential Generator.
-// This is a "very high quality" random number generator,
-// Default size is 55, giving a size of 1244 bytes to the structure
-// minimum size is 7 (total 100 bytes), maximum size is 98 (total 2440 bytes)
-// syntax:
-// r.ACG([seed],[size])
-
-static double r_ACG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed = 0;
-    int size = 55;
-
-    if (ifarg(1))
-        seed = long(*getarg(1));
-    if (ifarg(2))
-        size = int(chkarg(2, 7, 98));
-
-    x->rand->generator(new ACG(seed, size));
-    x->type_ = 0;
-    delete x->gen;
-    x->gen = x->rand->generator();
-    return 1.;
-}
-
-// Use a Multiplicative Linear Congruential Generator.  Not as high
-// quality as the ACG, but uses only 8 bytes
-// syntax:
-// r.MLCG([seed1],[seed2])
-
-static double r_MLCG(void* r) {
-    Rand* x = (Rand*) r;
-
-    unsigned long seed1 = 0;
-    unsigned long seed2 = 0;
-
-    if (ifarg(1))
-        seed1 = long(*getarg(1));
-    if (ifarg(2))
-        seed2 = long(*getarg(2));
-
-    x->rand->generator(new MLCG(seed1, seed2));
-    delete x->gen;
-    x->gen = x->rand->generator();
-    x->type_ = 1;
-    return 1.;
+    delete (Rand*) r;
 }
 
 static double r_MCellRan4(void* r) {
@@ -439,7 +363,7 @@ static double r_repick(void* r) {
 }
 
 static double r_repick_random123(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     return (*(x->rand))();
 }
 
@@ -468,7 +392,7 @@ Rand* nrn_random_arg(int i) {
 // syntax:
 //     r.uniform(low,high)
 static double r_uniform(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
@@ -480,7 +404,7 @@ static double r_uniform(void* r) {
 // syntax:
 //     r.discunif(low,high)
 static double r_discunif(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     long a1 = long(*getarg(1));
     long a2 = long(*getarg(2));
     delete x->rand;
@@ -492,7 +416,7 @@ static double r_discunif(void* r) {
 // syntax:
 //     r.normal(mean,variance)
 static double r_normal(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
@@ -504,7 +428,7 @@ static double r_normal(void* r) {
 // syntax:
 //     r.lognormal(mean)
 static double r_lognormal(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
@@ -516,7 +440,7 @@ static double r_lognormal(void* r) {
 // syntax:
 //   r.poisson(mean)
 static double r_poisson(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     delete x->rand;
     x->rand = new Poisson_random123(a1, x->gen);
@@ -529,7 +453,7 @@ static double r_poisson(void* r) {
 // syntax:
 //     r.binomial(n,p)
 static double r_binomial(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     int a1 = int(chkarg(1, 0, 1e99));
     double a2 = chkarg(2, 0, 1);
     delete x->rand;
@@ -544,7 +468,7 @@ static double r_binomial(void* r) {
 // syntax:
 //     r.geometric(mean)
 static double r_geometric(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = chkarg(1, 0, 1);
     delete x->rand;
     x->rand = new Geometric_random123(a1, x->gen);
@@ -569,7 +493,7 @@ static double r_hypergeo(void* r) {
 // syntax:
 //     r.negexp(mean)
 static double r_negexp(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     delete x->rand;
     x->rand = new NegativeExpntl_random123(a1, x->gen);
@@ -580,7 +504,7 @@ static double r_negexp(void* r) {
 // syntax:
 //     r.erlang(mean,variance)
 static double r_erlang(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
@@ -593,7 +517,7 @@ static double r_erlang(void* r) {
 // syntax:
 //     r.weibull(alpha,beta)
 static double r_weibull(void* r) {
-    Rand_random123* x = (Rand_random123*) r;
+    Rand* x = (Rand*) r;
     double a1 = *getarg(1);
     double a2 = *getarg(2);
     delete x->rand;
@@ -613,9 +537,7 @@ extern "C" void nrn_random_play() {
 }
 
 
-static Member_func r_members[] = {{"ACG", r_ACG},
-                                  {"MLCG", r_MLCG},
-                                  {"Isaac64", r_Isaac64},
+static Member_func r_members[] = {{"Isaac64", r_Isaac64},
                                   {"MCellRan4", r_MCellRan4},
                                   {"Random123", r_nrnran123},
                                   {"Random123_globalindex", r_ran123_globalindex},
@@ -623,26 +545,16 @@ static Member_func r_members[] = {{"ACG", r_ACG},
                                   {"repick", r_repick},
                                   {"repick_random123", r_repick_random123},
                                   {"uniform", r_uniform},
-                                  {"uniform_random123", r_uniform_random123},
                                   {"discunif", r_discunif},
-                                  {"discunif_random123", r_discunif_random123},
                                   {"normal", r_normal},
-                                  {"normal_random123", r_normal_random123},
                                   {"lognormal", r_lognormal},
-                                  {"lognormal_random123", r_lognormal_random123},
                                   {"binomial", r_binomial},
-                                  {"binomial_random123", r_binomial_random123},
                                   {"poisson", r_poisson},
-                                  {"poisson_random123", r_poisson_random123},
                                   {"geometric", r_geometric},
-                                  {"geometric_random123", r_geometric_random123},
                                   {"hypergeo", r_hypergeo},
                                   {"negexp", r_negexp},
-                                  {"negexp_random123", r_negexp_random123},
                                   {"erlang", r_erlang},
-                                  {"erlang_random123", r_erlang_random123},
                                   {"weibull", r_weibull},
-                                  {"weibull_random123", r_weibull_random123},
                                   {"play", r_play},
                                   {nullptr, nullptr}};
 

@@ -23,7 +23,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #include <Random.h>
 
-class HyperGeometric: public Random {
+class HyperGeometric: public Random_random123 {
 protected:
     double pMean;
     double pVariance;
@@ -31,7 +31,7 @@ protected:
     void setState();
 
 public:
-    HyperGeometric(double mean, double variance, RNG *gen);
+    HyperGeometric(double mean, double variance, RNG_random123 *gen);
 
     double mean();
     double mean(double x);
@@ -47,8 +47,8 @@ inline void HyperGeometric::setState() {
   pP = 0.5 * (1.0 - sqrt((z - 1.0) / ( z + 1.0 )));
 }
 
-inline HyperGeometric::HyperGeometric(double mean, double variance, RNG *gen)
-: Random(gen) {
+inline HyperGeometric::HyperGeometric(double mean, double variance, RNG_random123 *gen)
+: Random_random123(gen) {
   pMean = mean; pVariance = variance;
   setState();
 }

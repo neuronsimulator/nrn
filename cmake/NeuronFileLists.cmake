@@ -448,23 +448,10 @@ set(SCOPMATH_FILES_LIST
 set(NRNMPI_FILES_LIST nrnmpi.cpp bbsmpipack.cpp mpispike.cpp)
 
 set(NRNGNU_FILES_LIST
-    ACG.cpp
-    Binomial.cpp
-    DiscUnif.cpp
-    Erlang.cpp
-    Geom.cpp
     HypGeom.cpp
-    LogNorm.cpp
-    MLCG.cpp
-    NegExp.cpp
-    Normal.cpp
-    Poisson.cpp
     RNG.cpp
     RNG_random123.cpp
-    Random.cpp
-    RndInt.cpp
-    Uniform.cpp
-    Weibull.cpp)
+    Random.cpp)
 
 # nrnpython sources (only if ${NRN_ENABLE_PYTHON_DYNAMIC} is OFF}
 set(NRNPYTHON_FILES_LIST
