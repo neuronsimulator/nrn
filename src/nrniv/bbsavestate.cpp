@@ -945,24 +945,22 @@ static double vector_play_init(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {
-    // text test
-    {"save", save},
-    {"restore", restore},
-    {"save_test", save_test},
-    {"restore_test", restore_test},
-    // binary test
-    {"save_test_bin", save_test_bin},
-    {"restore_test_bin", restore_test_bin},
-    // binary save/restore interface to interpreter
-    {"save_request", save_request},
-    {"save_gid", save_gid},
-    {"restore_gid", restore_gid},
-    // indicate which point processes are to be ignored
-    {"ignore", ppignore},
-    // allow Vector.play to work
-    {"vector_play_init", vector_play_init},
-    {0, 0}};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"save_test", save_test},
+                                {"restore_test", restore_test},
+                                // binary test
+                                {"save_test_bin", save_test_bin},
+                                {"restore_test_bin", restore_test_bin},
+                                // binary save/restore interface to interpreter
+                                {"save_request", save_request},
+                                {"save_gid", save_gid},
+                                {"restore_gid", restore_gid},
+                                // indicate which point processes are to be ignored
+                                {"ignore", ppignore},
+                                // allow Vector.play to work
+                                {"vector_play_init", vector_play_init},
+                                {0, 0}};
 
 void BBSaveState_reg() {
     class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);

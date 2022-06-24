@@ -83,7 +83,7 @@ static void* p_cons(Object*) {
     return 0;
 }
 static void p_destruct(void* v) {}
-static Member_func p_members[] = {0, 0};
+static Member_func p_members[] = {{0, 0}};
 
 #if NRNPYTHON_DYNAMICLOAD
 static char* nrnpy_pylib;

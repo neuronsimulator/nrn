@@ -66,14 +66,10 @@ static double sb_accept_action(void* v) {
 #endif
     return 1.;
 }
-static Member_func sb_members[] = {"select",
-                                   sb_select,
-                                   "select_action",
-                                   sb_select_action,
-                                   "accept_action",
-                                   sb_accept_action,
-                                   0,
-                                   0};
+static Member_func sb_members[] = {{"select", sb_select},
+                                   {"select_action", sb_select_action},
+                                   {"accept_action", sb_accept_action},
+                                   {0, 0}};
 static void* sb_cons(Object*) {
     TRY_GUI_REDIRECT_OBJ("SectionBrowser", NULL);
     Object* ob;

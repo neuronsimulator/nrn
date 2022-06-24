@@ -34,22 +34,18 @@ static const char* mechanism[] = {
     "vext[N]",
     0,
 };
-static HocParmLimits limits[] = {"xraxial", 1e-9, 1e15, "xg", 0., 1e15, "xc", 0., 1e15, 0, 0., 0.};
+static HocParmLimits limits[] = {{"xraxial", 1e-9, 1e15},
+                                 {"xg", 0., 1e15},
+                                 {"xc", 0., 1e15},
+                                 {0, 0., 0.}};
 
-static HocParmUnits units[] = {"xraxial",
-                               "MOhm/cm",
-                               "xg",
-                               "S/cm2",
-                               "xc",
-                               "uF/cm2",
-                               "e_extracellular",
-                               "mV",
-                               "vext",
-                               "mV",
-                               "i_membrane",
-                               "mA/cm2",
-                               0,
-                               0};
+static HocParmUnits units[] = {{"xraxial", "MOhm/cm"},
+                               {"xg", "S/cm2"},
+                               {"xc", "uF/cm2"},
+                               {"e_extracellular", "mV"},
+                               {"vext", "mV"},
+                               {"i_membrane", "mA/cm2"},
+                               {0, 0}};
 
 static void extcell_alloc(Prop*);
 static void extcell_init(NrnThread* nt, Memb_list* ml, int type);
