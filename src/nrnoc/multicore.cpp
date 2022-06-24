@@ -1,7 +1,6 @@
 /* included by treeset.cpp */
 /*#include <../../nrnconf.h>*/
 /*#include <multicore.h>*/
-#include <nrnpthread.h>
 #include <nrnmpi.h>
 
 
@@ -37,6 +36,14 @@ it. We have two major cases, call to pc.nthread and change in
 model structure. We want to use Node* as much as possible and defer
 the handling of v_structure_change as long as possible.
 */
+
+#include "nmodlmutex.h"
+
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+#include <utility>
+#include <vector>
 
 #define CACHELINE_ALLOC(name, type, size) \
     name = (type*) nrn_cacheline_alloc((void**) &name, size * sizeof(type))
@@ -92,11 +99,7 @@ static void* nulljob(NrnThread* nt) {
 }
 
 int nrn_inthread_;
-#if USE_PTHREAD
-
-#include <pthread.h>
-#include <sched.h> /* for sched_setaffinity */
-
+#if NRN_ENABLE_THREADS
 /* abort if using threads and a call to malloc is unprotected */
 #define use_malloc_hook 0
 #if use_malloc_hook
@@ -210,18 +213,17 @@ static void my_init_hook() {
 #endif
 
 static int interpreter_locked;
-static pthread_mutex_t interpreter_lock_;
-static pthread_mutex_t* _interpreter_lock;
+static std::unique_ptr<std::mutex> _interpreter_lock;
 
-static pthread_mutex_t nmodlmutex_;
-pthread_mutex_t* _nmodlmutex;
+namespace nrn {
+std::unique_ptr<std::mutex> nmodlmutex;
+}
 
-static pthread_mutex_t nrn_malloc_mutex_;
-static pthread_mutex_t* _nrn_malloc_mutex;
+static std::unique_ptr<std::mutex> _nrn_malloc_mutex;
 
 extern "C" void nrn_malloc_lock() {
     if (_nrn_malloc_mutex) {
-        pthread_mutex_lock(_nrn_malloc_mutex);
+        _nrn_malloc_mutex->lock();
 #if use_malloc_hook
         nrn_malloc_protected_ = 1;
 #endif
@@ -233,46 +235,39 @@ extern "C" void nrn_malloc_unlock() {
 #if use_malloc_hook
         nrn_malloc_protected_ = 0;
 #endif
-        pthread_mutex_unlock(_nrn_malloc_mutex);
+        _nrn_malloc_mutex->unlock();
     }
 }
 
-/* when PERMANENT is 0, we avoid false warnings with helgrind, but a bit slower */
-/* when 0, create/join instead of wait on condition. */
-#ifndef PERMANENT
-#define PERMANENT 1
-#endif
-
-typedef volatile struct {
-    int flag;
-    int thread_id;
+namespace {
+// With C++17 and alignment-aware allocators we could do something like
+// alignas(std::hardware_destructive_interference_size) here and then use a
+// regular vector.
+struct worker_conf_t {
+    int flag{};
+    int thread_id{};
     /* for nrn_solve etc.*/
-    void* (*job)(NrnThread*);
-} slave_conf_t;
+    void* (*job)(NrnThread*) = nullptr;
+};
+}  // namespace
 
-static pthread_cond_t* cond;
-static pthread_mutex_t* mut;
-static pthread_t* slave_threads;
-static slave_conf_t* wc;
+namespace {
+std::unique_ptr<std::condition_variable[]> cond;
+std::unique_ptr<std::mutex[]> mut;
+std::vector<std::thread> worker_threads;
+worker_conf_t* wc{};
+}  // namespace
 
 static void wait_for_workers() {
-    int i;
-    for (i = 1; i < nrn_nthread; ++i) {
-#if PERMANENT
+    for (int i = 1; i < nrn_nthread; ++i) {
         if (busywait_main_) {
             while (wc[i].flag != 0) {
                 ;
             }
         } else {
-            pthread_mutex_lock(mut + i);
-            while (wc[i].flag != 0) {
-                pthread_cond_wait(cond + i, mut + i);
-            }
-            pthread_mutex_unlock(mut + i);
+            std::unique_lock<std::mutex> lock{mut[i]};
+            cond[i].wait(lock, [&wc_i = wc[i]] { return wc_i.flag == 0; });
         }
-#else
-        pthread_join(slave_threads[i], nullptr);
-#endif
     }
 }
 
@@ -284,33 +279,17 @@ static void wait_for_workers_timeit() {
 }
 
 static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
-#if PERMANENT
-    pthread_mutex_lock(mut + i);
-    wc[i].job = job;
-    wc[i].flag = 1;
-    pthread_cond_signal(cond + i);
-    pthread_mutex_unlock(mut + i);
-#else
-    pthread_create(slave_threads + i, nullptr, (void* (*) (void*) ) job, (void*) (nrn_threads + i));
-#endif
+    {
+        std::lock_guard<std::mutex> _{mut[i]};
+        wc[i].job = job;
+        wc[i].flag = 1;
+    }
+    cond[i].notify_one();
 }
 
-void setaffinity(int i) {
-    int mask;
-    return;
-#if 0
-	cpu_set_t mask;
-	CPU_ZERO(&mask);
-	CPU_SET(i, &mask);
-	mask = (1 << i);
-	sched_setaffinity(0, 4, &mask);
-#endif
-}
-
-static void* slave_main(void* arg) {
-    slave_conf_t* my_wc = (slave_conf_t*) arg;
-    pthread_mutex_t* my_mut = mut + my_wc->thread_id;
-    pthread_cond_t* my_cond = cond + my_wc->thread_id;
+static void worker_main(worker_conf_t* my_wc) {
+    auto& my_mut = mut[my_wc->thread_id];
+    auto& my_cond = cond[my_wc->thread_id];
     BENCHDECLARE
 #if BENCHMARKING
     unsigned long* t_[BS];
@@ -320,8 +299,6 @@ static void* slave_main(void* arg) {
     t_[a1] = t1_[a1];
     t_[a2] = t1_[a2];
 #endif
-    setaffinity(my_wc->thread_id);
-
     for (;;) {
         if (busywait_) {
             while (my_wc->flag == 0) {
@@ -332,75 +309,69 @@ static void* slave_main(void* arg) {
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
                 BENCHADD(a2)
             } else {
-                return nullptr;
+                return;
             }
             my_wc->flag = 0;
-            pthread_cond_signal(my_cond);
+            my_cond.notify_one();
         } else {
-            pthread_mutex_lock(my_mut);
-            while (my_wc->flag == 0) {
-                pthread_cond_wait(my_cond, my_mut);
+            {
+                std::unique_lock<std::mutex> lock{my_mut};
+                my_cond.wait(lock, [my_wc] { return my_wc->flag != 0; });
             }
-            pthread_mutex_unlock(my_mut);
-            pthread_mutex_lock(my_mut);
+            my_mut.lock();
             if (my_wc->flag == 1) {
-                pthread_mutex_unlock(my_mut);
+                my_mut.unlock();
                 BENCHBEGIN(a1)
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
                 BENCHADD(a2)
             } else {
-                pthread_mutex_unlock(my_mut);
-                return nullptr;
+                my_mut.unlock();
+                return;
             }
-            pthread_mutex_lock(my_mut);
-            my_wc->flag = 0;
-            pthread_cond_signal(my_cond);
-            pthread_mutex_unlock(my_mut);
+            {
+                std::lock_guard<std::mutex> _{my_mut};
+                my_wc->flag = 0;
+            }
+            my_cond.notify_one();
         }
     }
-    return nullptr;
+    return;
 }
 
-static void threads_create_pthread() {
+static void threads_create() {
 #if NRNMPI
     if (nrn_nthread > 1 && nrnmpi_numprocs > 1 && nrn_cannot_use_threads_and_mpi == 1) {
         if (nrnmpi_myid == 0) {
-            printf("This MPI is not threadsafe so pthreads are disabled.\n");
+            printf("This MPI is not threadsafe so threads are disabled.\n");
         }
         nrn_thread_parallel_ = 0;
         return;
     }
 #endif
-    setaffinity(nrnmpi_myid);
     if (nrn_nthread > 1) {
-        int i;
-#if PERMANENT
-        CACHELINE_ALLOC(wc, slave_conf_t, nrn_nthread);
-        slave_threads = (pthread_t*) emalloc(sizeof(pthread_t) * nrn_nthread);
-        cond = (pthread_cond_t*) emalloc(sizeof(pthread_cond_t) * nrn_nthread);
-        mut = (pthread_mutex_t*) emalloc(sizeof(pthread_mutex_t) * nrn_nthread);
-        for (i = 1; i < nrn_nthread; ++i) {
+        CACHELINE_ALLOC(wc, worker_conf_t, nrn_nthread);
+        // Cannot easily use std::vector because std::condition_variable is not
+        // moveable.
+        cond = std::make_unique<std::condition_variable[]>(nrn_nthread);
+        // Cannot easily use std::vector because std::mutex is not moveable.
+        mut = std::make_unique<std::mutex[]>(nrn_nthread);
+        worker_threads.reserve(nrn_nthread);
+        // worker_threads[0] does not appear to be used
+        worker_threads.emplace_back();
+        for (int i = 1; i < nrn_nthread; ++i) {
             wc[i].flag = 0;
             wc[i].thread_id = i;
-            pthread_cond_init(cond + i, nullptr);
-            pthread_mutex_init(mut + i, nullptr);
-            pthread_create(slave_threads + i, nullptr, slave_main, (void*) (wc + i));
+            worker_threads.emplace_back(worker_main, &(wc[i]));
         }
-#else
-        slave_threads = (pthread_t*) emalloc(sizeof(pthread_t) * nrn_nthread);
-#endif /* PERMANENT */
         if (!_interpreter_lock) {
             interpreter_locked = 0;
-            _interpreter_lock = &interpreter_lock_;
-            pthread_mutex_init(_interpreter_lock, nullptr);
+            _interpreter_lock = std::make_unique<std::mutex>();
         }
-        if (!_nmodlmutex) {
-            _nmodlmutex = &nmodlmutex_;
-            pthread_mutex_init(_nmodlmutex, nullptr);
+        if (!nrn::nmodlmutex) {
+            nrn::nmodlmutex = std::make_unique<std::mutex>();
         }
         if (!_nrn_malloc_mutex) {
-            _nrn_malloc_mutex = &nrn_malloc_mutex_;
-            pthread_mutex_init(_nrn_malloc_mutex, nullptr);
+            _nrn_malloc_mutex = std::make_unique<std::mutex>();
         }
         nrn_thread_parallel_ = 1;
     } else {
@@ -408,61 +379,43 @@ static void threads_create_pthread() {
     }
 }
 
-static void threads_free_pthread() {
-    int i;
-    if (slave_threads) {
-#if PERMANENT
+static void threads_free() {
+    if (!worker_threads.empty()) {
         wait_for_workers();
-        for (i = 1; i < nrn_nthread; ++i) {
-            pthread_mutex_lock(mut + i);
-            wc[i].flag = -1;
-            pthread_cond_signal(cond + i);
-            pthread_mutex_unlock(mut + i);
-            pthread_join(slave_threads[i], nullptr);
-            pthread_cond_destroy(cond + i);
-            pthread_mutex_destroy(mut + i);
+        for (int i = 1; i < nrn_nthread; ++i) {
+            {
+                std::lock_guard<std::mutex> _{mut[i]};
+                wc[i].flag = -1;
+            }
+            cond[i].notify_one();
+            worker_threads[i].join();
         }
-        free((char*) slave_threads);
-        free((char*) cond);
-        free((char*) mut);
-        free((char*) wc);
-        slave_threads = (pthread_t*) 0;
-        cond = (pthread_cond_t*) 0;
-        mut = (pthread_mutex_t*) 0;
-        wc = (slave_conf_t*) 0;
-#else
-        free((char*) slave_threads);
-        slave_threads = (pthread_t*) 0;
-#endif /*PERMANENT*/
+        cond.reset();
+        mut.reset();
+        worker_threads.clear();
+        free(std::exchange(wc, nullptr));
     }
     if (_interpreter_lock) {
-        pthread_mutex_destroy(_interpreter_lock);
-        _interpreter_lock = (pthread_mutex_t*) 0;
+        _interpreter_lock.reset();
         interpreter_locked = 0;
     }
-    if (_nmodlmutex) {
-        pthread_mutex_destroy(_nmodlmutex);
-        _nmodlmutex = (pthread_mutex_t*) 0;
-    }
-    if (_nrn_malloc_mutex) {
-        pthread_mutex_destroy(_nrn_malloc_mutex);
-        _nrn_malloc_mutex = (pthread_mutex_t*) 0;
-    }
+    nrn::nmodlmutex.reset();
+    _nrn_malloc_mutex.reset();
     nrn_thread_parallel_ = 0;
 }
 
-#else  /* USE_PTHREAD */
+#else  /* NRN_ENABLE_THREADS */
 
 extern "C" void nrn_malloc_lock() {}
 extern "C" void nrn_malloc_unlock() {}
 
-static void threads_create_pthread() {
+static void threads_create() {
     nrn_thread_parallel_ = 0;
 }
-static void threads_free_pthread() {
+static void threads_free() {
     nrn_thread_parallel_ = 0;
 }
-#endif /* !USE_PTHREAD */
+#endif /* !NRN_ENABLE_THREADS */
 
 void nrn_thread_error(const char* s) {
     if (nrn_nthread != 1) {
@@ -507,7 +460,6 @@ void nrn_threads_create(int n, int parallel) {
     if (nrn_nthread != n) {
         /*printf("sizeof(NrnThread)=%d   sizeof(Memb_list)=%d\n", sizeof(NrnThread),
          * sizeof(Memb_list));*/
-        threads_free_pthread();
         nrn_threads_free();
         for (i = 0; i < nrn_nthread; ++i) {
             nt = nrn_threads + i;
@@ -564,9 +516,9 @@ void nrn_threads_create(int n, int parallel) {
         diam_changed = 1;
     }
     if (nrn_thread_parallel_ != parallel) {
-        threads_free_pthread();
+        threads_free();
         if (parallel) {
-            threads_create_pthread();
+            threads_create();
         }
     }
     /*printf("nrn_threads_create %d %d\n", nrn_nthread, nrn_thread_parallel_);*/
@@ -639,6 +591,7 @@ void nrn_fast_imem_alloc() {
 }
 
 void nrn_threads_free() {
+    threads_free();
     int it, i;
     for (it = 0; it < nrn_nthread; ++it) {
         NrnThread* nt = nrn_threads + it;
@@ -1117,25 +1070,25 @@ void nrn_thread_table_check() {
 /* if it is possible for more than one thread to get into the
    interpreter, lock it. */
 void nrn_hoc_lock() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_inthread_) {
-        pthread_mutex_lock(_interpreter_lock);
+        _interpreter_lock->lock();
         interpreter_locked = 1;
     }
 #endif
 }
 void nrn_hoc_unlock() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (interpreter_locked) {
         interpreter_locked = 0;
-        pthread_mutex_unlock(_interpreter_lock);
+        _interpreter_lock->unlock();
     }
 #endif
 }
 
 void nrn_multithread_job(void* (*job)(NrnThread*) ) {
     int i;
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     BENCHDECLARE
     if (nrn_thread_parallel_) {
         nrn_inthread_ = 1;
@@ -1166,7 +1119,7 @@ void nrn_multithread_job(void* (*job)(NrnThread*) ) {
 void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
     BENCHDECLARE
     assert(i >= 0 && i < nrn_nthread);
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_thread_parallel_) {
         if (i > 0) {
             send_job_to_slave(i, job);
@@ -1185,7 +1138,7 @@ void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
 }
 
 void nrn_wait_for_threads() {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (nrn_thread_parallel_) {
         wait_for_workers();
     }
@@ -1285,7 +1238,7 @@ int nrn_user_partition() {
 }
 
 void nrn_use_busywait(int b) {
-#if USE_PTHREAD
+#if NRN_ENABLE_THREADS
     if (allow_busywait_ && nrn_thread_parallel_) {
         if (b == 0 && busywait_main_ == 1) {
             busywait_ = 0;
@@ -1313,54 +1266,11 @@ int nrn_allow_busywait(int b) {
     return old;
 }
 
-#if USE_PTHREAD
-static long waste_;
-static void* waste(void* v) {
-    size_t i, j, n;
-    n = (size_t) v;
-    j = 0;
-    for (i = 0; i < n; ++i) {
-        j += i;
-    }
-    /* hoping it is  not optimized away */
-    waste_ = j;
-    return nullptr;
-}
-
-#define _nt_ 32
-static double trial(int ip) {
-    int i;
-    double t;
-    pthread_t* th;
-    th = (pthread_t*) ecalloc(ip, sizeof(pthread_t));
-    t = nrn_timeus();
-    for (i = 0; i < ip; ++i) {
-        pthread_create(th + i, nullptr, waste, (void*) 100000000);
-    }
-    for (i = 0; i < ip; ++i) {
-        pthread_join(th[i], nullptr);
-    }
-    t = nrn_timeus() - t;
-    free((char*) th);
-    return t;
-}
-#endif
-
 int nrn_how_many_processors() {
-#if USE_PTHREAD
-    int i, ip;
-    double t1, t2;
-    printf("nthread walltime (count to 1e8 on each thread)\n");
-    t1 = trial(1);
-    printf("%4d\t %g\n", 1, t1);
-    for (ip = 2; ip <= _nt_; ip *= 2) {
-        t2 = trial(ip);
-        printf("%4d\t %g\n", ip, t2);
-        if (t2 > 1.3 * t1) {
-            return ip / 2;
-        }
-    }
-    return _nt_;
+#if NRN_ENABLE_THREADS
+    // For machines with hyperthreading this probably returns the number of
+    // logical, not physical, cores.
+    return std::thread::hardware_concurrency();
 #else
     return 1;
 #endif

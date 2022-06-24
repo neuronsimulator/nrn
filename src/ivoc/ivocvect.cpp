@@ -5,16 +5,16 @@
 #endif
 
 //#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ivstream.h>
-#include <math.h>
-#include <errno.h>
+#include <cmath>
+#include <cerrno>
 #include <numeric>
 #include <functional>
 
-#include <OS/math.h>
 #include "fourier.h"
+#include "mymath.h"
 
 #if HAVE_IV
 #include <InterViews/glyph.h>
@@ -1486,7 +1486,7 @@ static double v_contains(void* v) {
     double g = *getarg(1);
     hoc_return_type_code = 2;
     for (int i = 0; i < x->size(); i++) {
-        if (Math::equal(x->elem(i), g, hoc_epsilon))
+        if (MyMath::eq(x->elem(i), g, hoc_epsilon))
             return 1.;
     }
     return 0.;
@@ -1723,7 +1723,7 @@ static Object** v_where(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 //	      y->resize_chunk(++m);
                 //	      y->elem(m-1) = x->elem(i);
                 y->push_back(x->elem(i));
@@ -1731,7 +1731,7 @@ static Object** v_where(void* v) {
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(x->elem(i));
             }
         }
@@ -1811,13 +1811,13 @@ static double v_indwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 return i;
             }
         }
@@ -1897,13 +1897,13 @@ static Object** v_indvwhere(void* v) {
 
     if (!strcmp(op, "==")) {
         for (i = 0; i < n; i++) {
-            if (Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
     } else if (!strcmp(op, "!=")) {
         for (i = 0; i < n; i++) {
-            if (!Math::equal(x->elem(i), value, hoc_epsilon)) {
+            if (!MyMath::eq(x->elem(i), value, hoc_epsilon)) {
                 y->push_back(i);
             }
         }
@@ -1995,7 +1995,7 @@ static Object** v_indgen(void* v) {
             start = *getarg(1);
             end = *getarg(2);
             step =
-                chkarg(3, Math::min(start - end, end - start), Math::max(start - end, end - start));
+                chkarg(3, std::min(start - end, end - start), std::max(start - end, end - start));
             double xn = floor((end - start) / step + EPSILON) + 1.;
             if (xn > dmaxint_) {
                 hoc_execerror("size too large", 0);
@@ -2417,7 +2417,7 @@ static double v_eq(void* v1) {
         return false;
     }
     for (i = 0; i < n; ++i) {
-        if (!Math::equal(x->elem(i), y->elem(i), hoc_epsilon)) {
+        if (!MyMath::eq(x->elem(i), y->elem(i), hoc_epsilon)) {
             return false;
         }
     }
@@ -3113,7 +3113,7 @@ static Object** v_rotate(void* v) {
     if (r > n)
         r = r % n;
     if (r < 0) {
-        r = n - (Math::abs(r) % n);
+        r = n - (std::abs(r) % n);
         rev = 1;
     }
 
@@ -3603,7 +3603,7 @@ static Object** v_abs(void* v) {
         ans->resize(n);
 
     for (int i = 0; i < n; i++) {
-        ans->elem(i) = Math::abs(v1->elem(i));
+        ans->elem(i) = std::abs(v1->elem(i));
     }
     return ans->temp_objvar();
 }

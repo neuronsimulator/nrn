@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <time.h>
 #include <InterViews/resource.h>
-#include <OS/math.h>
 #include <InterViews/regexp.h>
 #include "classreg.h"
 #include "nrnoc2iv.h"
@@ -2843,7 +2842,7 @@ static void point_receive_job(NrnThread* nt) {
 }
 
 void NetCvode::point_receive(int type, Point_process* pp, double* w, double f) {
-	// this is the master thread. need to execute the pthread associated
+	// this is the master thread. need to execute the thread associated
 	// with the pp.
 	int id = PP2NT(pp)->id;
 	if (id == 0) { // execute on this, the master thread
@@ -6473,7 +6472,7 @@ void VecRecordDiscrete::frecord_init(TQItem* q) {
 
 void VecRecordDiscrete::deliver(double tt, NetCvode* nc) {
     y_->push_back(*pd_);
-    assert(Math::equal(t_->elem(y_->size() - 1), tt, 1e-8));
+    assert(MyMath::eq(t_->elem(y_->size() - 1), tt, 1e-8));
     if (y_->size() < t_->size()) {
         e_->send(t_->elem(y_->size()), nc, nrn_threads);
     }

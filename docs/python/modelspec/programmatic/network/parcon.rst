@@ -3196,10 +3196,13 @@ Parallel Transfer
 
 
     Description:
-        Returns the number of cores/processors available for parallel simulation. 
-        The number is determined experimentally by repeatedly doubling the number 
-        of test threads each doing a count to 1e8 until the test time significantly 
-        increases. 
+        Returns the number of concurrent threads supported by the hardware. This
+        is the value returned by `std::thread::hardware_concurrency()
+        <https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency>`_.
+        On a system that supports hyperthreading this will typically be double
+        the number of physical cores available, and it may not take into account
+        constraints such as MPI processes being bound to specific cores in a
+        cluster environment.
 
 
 ----

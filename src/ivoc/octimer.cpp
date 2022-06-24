@@ -15,7 +15,7 @@
 #endif
 
 #if HAVE_IV
-#if carbon || defined(MINGW)
+#if defined(MINGW)
 class OcTimer {
 #else
 class OcTimer: public IOHandler {
@@ -34,23 +34,11 @@ class OcTimer: public IOHandler {
   private:
     double seconds_;
     HocCommand* hc_;
-#if carbon
-    EventLoopTimerRef timer_;
-#else
 #ifdef MINGW
     HANDLE wtimer_;
-    bool stopped_;
-#else
-    bool stopped_;
-#endif /* not MINGW */
-#endif /*not carbon*/
-};
-
-#if carbon
-static void timer_proc(EventLoopTimerRef, void* v) {
-    ((OcTimer*) v)->timerExpired(0, 0);
-}
 #endif
+    bool stopped_;
+};
 
 #ifdef MINGW
 static void CALLBACK callback(PVOID lpParameter, BOOLEAN TimerOrWaitFired) {
@@ -117,43 +105,24 @@ void OcTimer_reg() {
 OcTimer::OcTimer(const char* cmd) {
     hc_ = new HocCommand(cmd);
     seconds_ = .5;
-#if carbon
-    timer_ = 0;
-#else
 #ifdef MINGW
     wtimer_ = NULL;
-    stopped_ = true;
-#else
-    stopped_ = true;
 #endif
-#endif
+    stopped_ = true;
 }
 OcTimer::OcTimer(Object* cmd) {
     hc_ = new HocCommand(cmd);
     seconds_ = .5;
-#if carbon
-    timer_ = 0;
-#else
 #ifdef MINGW
     wtimer_ = NULL;
-    stopped_ = true;
-#else
-    stopped_ = true;
 #endif
-#endif
+    stopped_ = true;
 }
 OcTimer::~OcTimer() {
     stop();
     delete hc_;
 }
 void OcTimer::start() {
-#if carbon
-    if (timer_) {
-        return;
-    }
-    InstallEventLoopTimer(
-        GetMainEventLoop(), seconds_, seconds_, timer_proc, (void*) this, &timer_);
-#else
 #ifdef MINGW
     stopped_ = false;
     LARGE_INTEGER nsec100;
@@ -172,32 +141,18 @@ void OcTimer::start() {
     stopped_ = false;
     Dispatcher::instance().startTimer(s, us, this);
 #endif
-#endif
 }
 void OcTimer::stop() {
-#if carbon
-    if (timer_) {
-        RemoveEventLoopTimer(timer_);
-        timer_ = 0;
-    }
-#else
-#ifdef MINGW
     stopped_ = true;
-#else
-    stopped_ = true;
+#ifndef MINGW
     Dispatcher::instance().stopTimer(this);
-#endif
 #endif
 }
 void OcTimer::timerExpired(long, long) {
-#if carbon
-#else
-#ifdef MINGW
-#else
+#ifndef MINGW
     if (!stopped_) {
         this->start();
     }
-#endif
 #endif
     // want it to be part of interval just like on mac
     hc_->execute();

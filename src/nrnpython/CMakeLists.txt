@@ -182,7 +182,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
       ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
+      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
 
   add_custom_command(
     OUTPUT ${binary_dir_filename}
