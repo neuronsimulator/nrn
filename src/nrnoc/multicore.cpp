@@ -71,143 +71,11 @@ static void* nulljob(NrnThread* nt) {
 
 int nrn_inthread_;
 #if NRN_ENABLE_THREADS
-/* abort if using threads and a call to malloc is unprotected */
-#define use_malloc_hook 0
-#if use_malloc_hook
-#include <malloc.h>
-
-static int nrn_malloc_protected_;
-static void my_init_hook();
-static void* (*old_malloc_hook)(size_t, const void*);
-static void* (*old_memalign_hook)(size_t, size_t, const void*);
-static void* (*old_realloc_hook)(void*, size_t, const void*);
-static void (*old_free_hook)(void*, const void*);
-static void* my_malloc_hook(size_t, const void*);
-static void* my_memalign_hook(size_t, size_t, const void*);
-static void* my_realloc_hook(void*, size_t, const void*);
-static void my_free_hook(void*, const void*);
-void (*__malloc_initialize_hook)(void) = my_init_hook;
-
-static void* my_malloc_hook(size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = malloc(size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void* my_memalign_hook(size_t alignment, size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = memalign(alignment, size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void* my_realloc_hook(void* ptr, size_t size, const void* caller) {
-    void* result;
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    result = realloc(ptr, size);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-    return result;
-}
-static void my_free_hook(void* ptr, const void* caller) {
-    if (nrn_inthread_ && !nrn_malloc_protected_) {
-        abort();
-    }
-    __malloc_hook = old_malloc_hook;
-    __memalign_hook = old_memalign_hook;
-    __realloc_hook = old_realloc_hook;
-    __free_hook = old_free_hook;
-    free(ptr);
-    old_malloc_hook = __malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    old_free_hook = __free_hook;
-    __malloc_hook = my_malloc_hook;
-    __memalign_hook = my_memalign_hook;
-    __realloc_hook = my_realloc_hook;
-    __free_hook = my_free_hook;
-}
-static void my_init_hook() {
-    static int installed = 0;
-    if (installed) {
-        return;
-    }
-    installed = 1;
-    old_malloc_hook = __malloc_hook;
-    __malloc_hook = my_malloc_hook;
-    old_memalign_hook = __memalign_hook;
-    __memalign_hook = my_memalign_hook;
-    old_realloc_hook = __realloc_hook;
-    __realloc_hook = my_realloc_hook;
-    old_free_hook = __free_hook;
-    __free_hook = my_free_hook;
-}
-#endif
-
 static int interpreter_locked;
 static std::unique_ptr<std::mutex> _interpreter_lock;
 
 namespace nrn {
 std::unique_ptr<std::mutex> nmodlmutex;
-}
-
-static std::unique_ptr<std::mutex> _nrn_malloc_mutex;
-
-extern "C" void nrn_malloc_lock() {
-    if (_nrn_malloc_mutex) {
-        _nrn_malloc_mutex->lock();
-#if use_malloc_hook
-        nrn_malloc_protected_ = 1;
-#endif
-    }
-}
-
-extern "C" void nrn_malloc_unlock() {
-    if (_nrn_malloc_mutex) {
-#if use_malloc_hook
-        nrn_malloc_protected_ = 0;
-#endif
-        _nrn_malloc_mutex->unlock();
-    }
 }
 
 namespace {
@@ -325,9 +193,6 @@ static void threads_create() {
         if (!nrn::nmodlmutex) {
             nrn::nmodlmutex = std::make_unique<std::mutex>();
         }
-        if (!_nrn_malloc_mutex) {
-            _nrn_malloc_mutex = std::make_unique<std::mutex>();
-        }
         nrn_thread_parallel_ = 1;
     } else {
         nrn_thread_parallel_ = 0;
@@ -355,14 +220,10 @@ static void threads_free() {
         interpreter_locked = 0;
     }
     nrn::nmodlmutex.reset();
-    _nrn_malloc_mutex.reset();
     nrn_thread_parallel_ = 0;
 }
 
 #else  /* NRN_ENABLE_THREADS */
-
-extern "C" void nrn_malloc_lock() {}
-extern "C" void nrn_malloc_unlock() {}
 
 static void threads_create() {
     nrn_thread_parallel_ = 0;
