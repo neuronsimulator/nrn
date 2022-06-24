@@ -63,16 +63,11 @@ static double feround(void*) {
     return (double) nrn_feround(arg);
 }
 
-static Member_func members[] = {"d2line",
-                                distance_to_line,
-                                "d2line_seg",
-                                distance_to_line_segment,
-                                "inside",
-                                inside,
-                                "feround",
-                                feround,
-                                0,
-                                0};
+static Member_func members[] = {{"d2line", distance_to_line},
+                                {"d2line_seg", distance_to_line_segment},
+                                {"inside", inside},
+                                {"feround", feround},
+                                {0, 0}};
 
 static void* cons(Object*) {
     return NULL;

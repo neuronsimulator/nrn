@@ -246,11 +246,16 @@ static double printnames(void* v) {
 return 1.;
 }
 
-static Member_func members[] = {"append",     append,     "remove",   seclist_remove,
-                                "wholetree",  wholetree,  "subtree",  subtree,
-                                "children",   children,   "unique",   unique,
-                                "printnames", printnames, "contains", contains,
-                                "allroots",   allroots,   0,          0};
+static Member_func members[] = {{"append", append},
+                                {"remove", seclist_remove},
+                                {"wholetree", wholetree},
+                                {"subtree", subtree},
+                                {"children", children},
+                                {"unique", unique},
+                                {"printnames", printnames},
+                                {"contains", contains},
+                                {"allroots", allroots},
+                                {0, 0}};
 
 
 extern void class2oc(const char*,

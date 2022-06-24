@@ -78,24 +78,15 @@ static double stats(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"insrt",
-                                insert,
-                                "least",
-                                least,
-                                "move_least",
-                                mvleast,
-                                "remove_least",
-                                rmleast,
-                                "remove",
-                                remove,
-                                "find",
-                                find,
-                                "stats",
-                                stats,
-                                "printf",
-                                print,
-                                0,
-                                0};
+static Member_func members[] = {{"insrt", insert},
+                                {"least", least},
+                                {"move_least", mvleast},
+                                {"remove_least", rmleast},
+                                {"remove", remove},
+                                {"find", find},
+                                {"stats", stats},
+                                {"printf", print},
+                                {0, 0}};
 
 static void* cons(Object*) {
     assert(0);

@@ -72,12 +72,9 @@ static const char** pname(void* v) {
     return (const char**) &ocp->s_;
 }
 
-static Member_func members[] = {"val",
-                                0,  // will be changed below
-                                "assign",
-                                assign,  // will call assign_stmt if it exists
-                                0,
-                                0};
+static Member_func members[] = {{"val", 0},          // will be changed below
+                                {"assign", assign},  // will call assign_stmt if it exists
+                                {0, 0}};
 
 static Member_ret_str_func s_memb[] = {"s", pname, 0, 0};
 

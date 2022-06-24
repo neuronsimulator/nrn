@@ -866,48 +866,29 @@ static double pwman_deco(void* v) {
     return 1.;
 }
 
-static Member_func members[] = {"count",
-                                pwman_count,
-                                "is_mapped",
-                                pwman_is_mapped,
-                                "map",
-                                pwman_map,
-                                "hide",
-                                pwman_hide,
-                                "close",
-                                pwman_close,
-                                "iconify",
-                                pwman_iconify,
-                                "deiconify",
-                                pwman_deiconify,
-                                "leader",
-                                pwman_leader,
-                                "manager",
-                                pwman_manager,
-                                "save",
-                                pwman_save,
-                                "snap",
-                                pwman_snap,
-                                "jwindow",
-                                pwman_jwindow,
-                                "scale",
-                                pwman_scale,
-                                "window_place",
-                                pwman_window_place,
-                                "paper_place",
-                                pwman_paper_place,
-                                "printfile",
-                                pwman_printfile,
-                                "landscape",
-                                pwman_landscape,
-                                "deco",
-                                pwman_deco,
-                                0,
-                                0};
+static Member_func members[] = {{"count", pwman_count},
+                                {"is_mapped", pwman_is_mapped},
+                                {"map", pwman_map},
+                                {"hide", pwman_hide},
+                                {"close", pwman_close},
+                                {"iconify", pwman_iconify},
+                                {"deiconify", pwman_deiconify},
+                                {"leader", pwman_leader},
+                                {"manager", pwman_manager},
+                                {"save", pwman_save},
+                                {"snap", pwman_snap},
+                                {"jwindow", pwman_jwindow},
+                                {"scale", pwman_scale},
+                                {"window_place", pwman_window_place},
+                                {"paper_place", pwman_paper_place},
+                                {"printfile", pwman_printfile},
+                                {"landscape", pwman_landscape},
+                                {"deco", pwman_deco},
+                                {0, 0}};
 
-static Member_ret_obj_func retobj_members[] = {"group", pwman_group, 0, 0};
+static Member_ret_obj_func retobj_members[] = {{"group", pwman_group}, {0, 0}};
 
-static Member_ret_str_func s_memb[] = {"name", pwman_name, 0, 0};
+static Member_ret_str_func s_memb[] = {{"name", pwman_name}, {0, 0}};
 
 void PWManager_reg() {
     class2oc("PWManager", pwman_cons, pwman_destruct, members, NULL, retobj_members, s_memb);
