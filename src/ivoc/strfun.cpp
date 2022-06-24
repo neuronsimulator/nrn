@@ -317,32 +317,20 @@ static double l_is_artificial(void*) {
     return nrn_is_artificial(type) ? type : 0;
 }
 
-static Member_func l_members[] = {"substr",
-                                  l_substr,
-                                  "len",
-                                  l_len,
-                                  "head",
-                                  l_head,
-                                  "tail",
-                                  l_tail,
-                                  "right",
-                                  l_right,
-                                  "left",
-                                  l_left,
-                                  "is_name",
-                                  l_is_name,
-                                  "alias",
-                                  l_alias,
-                                  "references",
-                                  l_ref,
-                                  "is_point_process",
-                                  l_is_point,
-                                  "is_artificial",
-                                  l_is_artificial,
-                                  0,
-                                  0};
+static Member_func l_members[] = {{"substr", l_substr},
+                                  {"len", l_len},
+                                  {"head", l_head},
+                                  {"tail", l_tail},
+                                  {"right", l_right},
+                                  {"left", l_left},
+                                  {"is_name", l_is_name},
+                                  {"alias", l_alias},
+                                  {"references", l_ref},
+                                  {"is_point_process", l_is_point},
+                                  {"is_artificial", l_is_artificial},
+                                  {0, 0}};
 
-static Member_ret_obj_func l_obj_members[] = {"alias_list", l_alias_list, 0, 0};
+static Member_ret_obj_func l_obj_members[] = {{"alias_list", l_alias_list}, {0, 0}};
 
 static void* l_cons(Object*) {
     return NULL;

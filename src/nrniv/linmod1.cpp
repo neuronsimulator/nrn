@@ -55,7 +55,7 @@ static double valid(void* v) {
     return double(((LinearMechanism*) v)->valid());
 }
 
-static Member_func members[] = {"valid", valid, 0, 0};
+static Member_func members[] = {{"valid", valid}, {0, 0}};
 
 static void* cons(Object*) {
     LinearMechanism* m = new LinearMechanism();

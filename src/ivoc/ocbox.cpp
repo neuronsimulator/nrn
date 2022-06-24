@@ -414,34 +414,20 @@ static double dismiss_action(void* v) {
 #endif /* HAVE_IV  */
 }
 
-static Member_func members[] = {"intercept",
-                                intercept,  // #if HAVE_IV ok
-                                "adjuster",
-                                adjuster,  // #if HAVE_IV ok
-                                "adjust",
-                                adjust,  // #if HAVE_IV ok
-                                "full_request",
-                                full_request,  // #if HAVE_IV ok
-                                "save",
-                                save,  // #if HAVE_IV ok
-                                "map",
-                                map,  // #if HAVE_IV ok
-                                "unmap",
-                                unmap,  // #if HAVE_IV ok
-                                "ismapped",
-                                ismapped,  // #if HAVE_IV ok
-                                "ref",
-                                ref,  // #if HAVE_IV ok
-                                "dismiss_action",
-                                dismiss_action,  // #if HAVE_IV ok
-                                "dialog",
-                                dialog,  // #if HAVE_IV ok
-                                "priority",
-                                ses_pri,
-                                "size",
-                                b_size,
-                                0,
-                                0};
+static Member_func members[] = {{"intercept", intercept},            // #if HAVE_IV ok
+                                {"adjuster", adjuster},              // #if HAVE_IV ok
+                                {"adjust", adjust},                  // #if HAVE_IV ok
+                                {"full_request", full_request},      // #if HAVE_IV ok
+                                {"save", save},                      // #if HAVE_IV ok
+                                {"map", map},                        // #if HAVE_IV ok
+                                {"unmap", unmap},                    // #if HAVE_IV ok
+                                {"ismapped", ismapped},              // #if HAVE_IV ok
+                                {"ref", ref},                        // #if HAVE_IV ok
+                                {"dismiss_action", dismiss_action},  // #if HAVE_IV ok
+                                {"dialog", dialog},                  // #if HAVE_IV ok
+                                {"priority", ses_pri},
+                                {"size", b_size},
+                                {0, 0}};
 
 void HBox_reg() {
     class2oc("HBox", hcons, destruct, members, NULL, NULL, NULL);

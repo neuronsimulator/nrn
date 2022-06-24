@@ -527,20 +527,13 @@ void Xred(void) /* read with prompt string and default and limits */
 static struct { /* symbol types */
     char* name;
     short t_type;
-} type_sym[] = {"Builtins",
-                BLTIN,
-                "Other Builtins",
-                FUN_BLTIN,
-                "Functions",
-                FUNCTION,
-                "Procedures",
-                PROCEDURE,
-                "Undefined",
-                UNDEF,
-                "Scalars",
-                VAR,
-                0,
-                0};
+} type_sym[] = {{"Builtins", BLTIN},
+                {"Other Builtins", FUN_BLTIN},
+                {"Functions", FUNCTION},
+                {"Procedures", PROCEDURE},
+                {"Undefined", UNDEF},
+                {"Scalars", VAR},
+                {0, 0}};
 
 static void symdebug(const char* s, Symlist* list) /* for debugging display the symbol lists */
 {
