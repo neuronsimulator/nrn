@@ -1,6 +1,4 @@
 /* included by treeset.cpp */
-/*#include <../../nrnconf.h>*/
-/*#include <multicore.h>*/
 #include <nrnmpi.h>
 
 
@@ -66,33 +64,6 @@ void nrn_mk_table_check();
 static int table_check_cnt_;
 static Datum* table_check_;
 static int allow_busywait_;
-
-/* linux specfic for performance testing */
-/* eventually will be removed */
-#define BENCHMARKING 0
-#if BENCHMARKING
-/* for rdtscll() */
-#include <asm/msr.h>
-#define BENCHDECLARE unsigned long t1;
-#define BENCHBEGIN(arg)               \
-    if (t_[arg] < t1_[arg] + BSIZE) { \
-        rdtscl(t1);                   \
-        *(t_[arg]++) = t1;            \
-    }
-#define BENCHADD(arg) BENCHBEGIN(arg)
-#define WAIT          wait_for_workers_timeit
-#define CPU_MHZ       3192
-#define BSIZE         200000
-#define BS            10
-static unsigned long bcnt_, bcnt1_;
-static unsigned long t1_[BS][BSIZE], *t_[BS];
-#else
-#define BENCHDECLARE    /**/
-#define BENCHBEGIN(arg) /**/
-#define BENCHADD(arg)   /**/
-#define WAIT            wait_for_workers
-#define BS              0
-#endif
 
 static void* nulljob(NrnThread* nt) {
     return nullptr;
@@ -272,10 +243,7 @@ static void wait_for_workers() {
 }
 
 static void wait_for_workers_timeit() {
-    BENCHDECLARE
-    BENCHBEGIN(BS - 2)
     wait_for_workers();
-    BENCHADD(BS - 1)
 }
 
 static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
@@ -290,24 +258,13 @@ static void send_job_to_slave(int i, void* (*job)(NrnThread*) ) {
 static void worker_main(worker_conf_t* my_wc) {
     auto& my_mut = mut[my_wc->thread_id];
     auto& my_cond = cond[my_wc->thread_id];
-    BENCHDECLARE
-#if BENCHMARKING
-    unsigned long* t_[BS];
-    int a1, a2;
-    a1 = my_wc->thread_id;
-    a2 = my_wc->thread_id + nrn_nthread;
-    t_[a1] = t1_[a1];
-    t_[a2] = t1_[a2];
-#endif
     for (;;) {
         if (busywait_) {
             while (my_wc->flag == 0) {
                 ;
             }
             if (my_wc->flag == 1) {
-                BENCHBEGIN(a1)
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
-                BENCHADD(a2)
             } else {
                 return;
             }
@@ -321,9 +278,7 @@ static void worker_main(worker_conf_t* my_wc) {
             my_mut.lock();
             if (my_wc->flag == 1) {
                 my_mut.unlock();
-                BENCHBEGIN(a1)
                 (*my_wc->job)(nrn_threads + my_wc->thread_id);
-                BENCHADD(a2)
             } else {
                 my_mut.unlock();
                 return;
@@ -424,33 +379,6 @@ void nrn_thread_error(const char* s) {
 }
 
 void nrn_thread_stat() {
-#if BENCHMARKING
-    FILE* f;
-    long i, j, n;
-    char buf[50];
-    sprintf(buf, "bench.%d.dat", nrnmpi_myid);
-    f = fopen(buf, "w");
-#if 1
-    n = (t_[0] - t1_[0]);
-    for (i = 1; i < nrn_nthread; ++i) {
-        t_[i] = t1_[i] + n;
-        t_[i + nrn_nthread] = t1_[i + nrn_nthread] + n;
-    }
-#endif
-    n = 0;
-    for (i = 0; i < BS; ++i) {
-        n += t_[i] - t1_[i];
-    }
-    fprintf(f, "%ld\n", n);
-    n = 0;
-    for (j = 0; j < BS; ++j) {
-        n = t_[j] - t1_[j];
-        for (i = 0; i < n; ++i) {
-            fprintf(f, "%ld %d\n", t1_[j][i], j * nrnmpi_numprocs + nrnmpi_myid);
-        }
-    }
-    fclose(f);
-#endif /*BENCHMARKING*/
 }
 
 
@@ -467,18 +395,10 @@ void nrn_threads_create(int n, int parallel) {
                 hoc_obj_unref(nt->userpart);
             }
         }
-        free((char*) nrn_threads);
-#if BENCHMARKING
-#endif
-        nrn_threads = (NrnThread*) 0;
+        free(std::exchange(nrn_threads, nullptr));
         nrn_nthread = n;
         if (n > 0) {
             CACHELINE_ALLOC(nrn_threads, NrnThread, n);
-#if BENCHMARKING
-            for (i = 0; i < BS; ++i) {
-                t_[i] = t1_[i];
-            }
-#endif
             for (i = 0; i < n; ++i) {
                 nt = nrn_threads + i;
                 nt->_t = 0.;
@@ -1089,45 +1009,35 @@ void nrn_hoc_unlock() {
 void nrn_multithread_job(void* (*job)(NrnThread*) ) {
     int i;
 #if NRN_ENABLE_THREADS
-    BENCHDECLARE
     if (nrn_thread_parallel_) {
         nrn_inthread_ = 1;
         for (i = 1; i < nrn_nthread; ++i) {
             send_job_to_slave(i, job);
         }
-        BENCHBEGIN(0)
         (*job)(nrn_threads);
-        BENCHADD(nrn_nthread)
-        WAIT();
+        wait_for_workers();
         nrn_inthread_ = 0;
     } else { /* sequential */
 #else
     {
 #endif
         for (i = 1; i < nrn_nthread; ++i) {
-            BENCHBEGIN(i)
             (*job)(nrn_threads + i);
-            BENCHADD(i + nrn_nthread)
         }
-        BENCHBEGIN(0)
         (*job)(nrn_threads);
-        BENCHADD(nrn_nthread)
     }
 }
 
 
 void nrn_onethread_job(int i, void* (*job)(NrnThread*) ) {
-    BENCHDECLARE
     assert(i >= 0 && i < nrn_nthread);
 #if NRN_ENABLE_THREADS
     if (nrn_thread_parallel_) {
         if (i > 0) {
             send_job_to_slave(i, job);
-            WAIT();
+            wait_for_workers();
         } else {
-            BENCHBEGIN(0)
             (*job)(nrn_threads);
-            BENCHADD(nrn_nthread)
         }
     } else {
 #else
