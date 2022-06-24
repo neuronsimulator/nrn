@@ -65,7 +65,6 @@ extern double* nrn_mech_wtime_;
 extern int nrn_nthread;
 extern void nrn_threads_create(int, int);
 extern void nrn_thread_partition(int, Object*);
-extern void nrn_thread_stat();
 extern int nrn_allow_busywait(int);
 extern int nrn_how_many_processors();
 extern size_t nrncore_write();
@@ -947,7 +946,7 @@ static double partition(void*) {
 }
 
 static double thread_stat(void*) {
-    nrn_thread_stat();
+    // nrn_thread_stat was called here but didn't do anything
     return 0.0;
 }
 

@@ -239,10 +239,6 @@ void nrn_thread_error(const char* s) {
     }
 }
 
-void nrn_thread_stat() {
-}
-
-
 void nrn_threads_create(int n, int parallel) {
     int i, j;
     NrnThread* nt;
