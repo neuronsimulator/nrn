@@ -50,6 +50,7 @@
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
 #                 COMMAND command [arg ...]
+#                 [ENVIRONMENT VAR1=value1 ...]
 #                 [PRELOAD_SANITIZER]
 #                 [CONFLICTS feature1 ...]
 #                 [PRECOMMAND command ...]
@@ -235,6 +236,7 @@ function(nrn_add_test)
   set(oneValueArgs GROUP NAME PROCESSORS)
   set(multiValueArgs
       COMMAND
+      ENVIRONMENT
       CONFLICTS
       PRECOMMAND
       REQUIRES
@@ -374,14 +376,14 @@ function(nrn_add_test)
   #   same directory).
   add_test(
     NAME "${test_name}"
-    COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
+    COMMAND ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
   set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
   if(DEFINED NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
-      COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_PRECOMMAND}
+      COMMAND ${NRN_ADD_TEST_PRECOMMAND}
       WORKING_DIRECTORY "${simulation_directory}")
     list(APPEND test_names ${test_name}::preparation)
     set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
@@ -409,6 +411,9 @@ function(nrn_add_test)
     set(path_additions "${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
   list(APPEND test_env "PATH=${path_additions}${CMAKE_BINARY_DIR}/bin:$ENV{PATH}")
+  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
+      list(APPEND test_env ${NRN_ADD_TEST_ENVIRONMENT})
+  endif()
   set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}")
   if(NRN_ADD_TEST_PRELOAD_SANITIZER)
     set(preload PRELOAD)
