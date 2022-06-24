@@ -2,12 +2,13 @@
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */
 
-#include <math.h>
-#include <errno.h>
-#include <stdio.h>
+#include "hoc.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-#include "hoc.h"
+#include <cfenv>
+#include <cmath>
+#include <errno.h>
+#include <stdio.h>
 
 
 #define EPS         hoc_epsilon
@@ -102,6 +103,17 @@ double errcheck(double d, const char* s) /* check result of library call */
             }
         }
 #endif
+    }
+    // errno is not set for macOs, check FE exceptions. See:
+    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+    if (std::fetestexcept(FE_INVALID)) {
+        hoc_execerror(s, "argument out of domain");
+    } else if (std::fetestexcept(FE_DIVBYZERO)) {
+        hoc_execerror(s, "division by zero");
+    } else if (std::fetestexcept(FE_OVERFLOW)) {
+        hoc_execerror(s, "result overflow");
+    } else if (std::fetestexcept(FE_UNDERFLOW)) {
+        hoc_execerror(s, "result underflow");
     }
     return d;
 }
