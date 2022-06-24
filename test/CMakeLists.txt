@@ -170,8 +170,8 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
   if(NRN_ENABLE_RX3D)
-    # currently pytest --forked runs fail with rx3d tests as it seems
-    # they expose issues in CVODE that need to be addressed.
+    # currently pytest --forked runs fail with rx3d tests as it seems they expose issues in CVODE
+    # that need to be addressed.
     set(pytest_nofork ${pytest})
     list(REMOVE_ITEM pytest_nofork --forked)
     nrn_add_test_group(

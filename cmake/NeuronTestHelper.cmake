@@ -377,6 +377,7 @@ function(nrn_add_test)
     COMMAND ${CMAKE_COMMAND} -E env ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
+  set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
   if(DEFINED NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
