@@ -1262,7 +1262,7 @@ int moreinput(void) {
         hoc_print_first_instance = hpfi;
         hocstr_delete(hs);
         if (err) {
-            hoc_warning("arg not valid statement:", infile);
+            hoc_execerror("arg not valid statement:", infile);
         }
         return moreinput();
     } else if (strlen(infile) > 3 && strcmp(infile + strlen(infile) - 3, ".py") == 0) {

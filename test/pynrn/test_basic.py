@@ -393,6 +393,18 @@ def test_nrn_mallinfo():
     assert h.nrn_mallinfo(0) > 0
 
 
+def test_errorcode():
+    import sys, subprocess
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    process = subprocess.run(
+        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+    )
+    assert process.returncode > 0
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
