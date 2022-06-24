@@ -86,7 +86,7 @@ static struct { /* Keywords */
                 {"SUFFIX", SUFFIX},
                 {"POINT_PROCESS", SUFFIX},
                 {"ARTIFICIAL_CELL", SUFFIX},
-                {"nonspecific_current", NONSPECIFIC},
+                {"NONSPECIFIC_CURRENT", NONSPECIFIC},
                 {"ELECTRODE_CURRENT", ELECTRODE_CURRENT},
                 {"USEION", USEION},
                 {"READ", READ},
