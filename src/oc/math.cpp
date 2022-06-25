@@ -87,7 +87,7 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    // errno may not be enabled, rely of FE exceptions in that case. See:
+    // errno may not be enabled, rely on FE exceptions in that case. See:
     // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
     const auto errno_enabled = math_errhandling & MATH_ERRNO;
     const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
