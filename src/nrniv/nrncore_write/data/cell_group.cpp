@@ -78,7 +78,23 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                 auto& pv = ps->thvar_;
                 assert(pv);
                 if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
-                    hoc_execerr_ext("PreSyn source not a voltage pointer");
+                    hoc_execerr_ext("NetCon range variable reference source not a voltage");
+                }
+                if (ps->gid_ < 0) {
+                    bool b1 = bool(ps->dil_.size());
+                    bool b2 = b1 && bool(ps->dil_[0]->target_);
+                    std::string ncob(b1 ? hoc_object_name(ps->dil_[0]->obj_) : "");
+                    hoc_execerr_ext(
+                        "%s with voltage source has no gid."
+                        " (The source is %s(x)._ref_v"
+                        " and is the source for %zd NetCons. %s%s)",
+                        (b1 ? ncob.c_str() : "NetCon"),
+                        secname(ps->ssrc_),
+                        ps->dil_.size(),
+                        (b1 ? (ncob + " has target ").c_str() : ""),
+                        (b1 ? (b2 ? std::string(hoc_object_name(ps->dil_[0]->target_->ob)).c_str()
+                                  : "None")
+                            : ""));
                 }
                 ++npre;
             }

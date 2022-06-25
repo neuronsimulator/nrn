@@ -126,13 +126,29 @@ def test_multigid():
             h.CVode().cache_efficient(1)
             expect_err("run(10)")
             coreneuron.enable = False
-            h.CVode().cache_efficient(1)
+            h.CVode().cache_efficient(0)
 
-    print("done")
     pc.gid_clear()
     del s, net, std
     locals()
 
 
+def test_nogid():
+    net = Net(2)
+    s = h.Section("soma", net.cells[0])
+    syn = h.ExpSyn(net.cells[1].axon(0.5))
+    nc = h.NetCon(s(0.5)._ref_v, syn, sec=s)
+    if cn_avail:
+        coreneuron.enable = True
+        h.CVode().cache_efficient(1)
+        expect_err("run(10)")
+        coreneuron.enable = False
+        h.CVode().cache_efficient(0)
+    pc.gid_clear()
+    del nc, syn, s, net
+    locals()
+
+
 if __name__ == "__main__":
     test_multigid()
+    test_nogid()
