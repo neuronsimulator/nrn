@@ -5,6 +5,7 @@
 
 #include "mymath.h"
 #include "tqueue.h"
+#include <cmath>
 #include <vector>
 #include <unordered_map>
 
@@ -137,7 +138,7 @@ class NetCvode {
     void fixed_record_continuous(NrnThread*);
     void fixed_play_continuous(NrnThread*);
     static double eps(double x) {
-        return eps_ * Math::abs(x);
+        return eps_ * std::abs(x);
     }
     int condition_order() {
         return condition_order_;

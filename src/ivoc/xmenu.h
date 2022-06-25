@@ -269,9 +269,7 @@ class HocEditorForItem: public FieldSEditor {
 
   private:
     HocValEditor* hve_;
-    Coord y_;
     int index_;
-    EventButton b_;
 };
 
 class HocValStepper: public Stepper {

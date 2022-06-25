@@ -17,12 +17,13 @@ char** (*nrnpy_gui_helper3_str_)(const char* name, Object* obj, int handle_strpt
 
 #if HAVE_IV  // to end of file except for a few small fragments.
 
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
 #include <ivstream.h>
-#include <ctype.h>
-#include <errno.h>
+#include <cctype>
+#include <cerrno>
+
 
 #include <InterViews/box.h>
 #include <IV-look/kit.h>
@@ -1919,7 +1920,7 @@ double MyMath::resolution(double x) {
         set_format();
     }
     char buf[100];
-    sprintf(buf, xvalue_format->string(), Math::abs(x));
+    sprintf(buf, xvalue_format->string(), std::abs(x));
     char* cp;
     char* least = NULL;
     for (cp = buf; *cp; ++cp) {
@@ -3233,7 +3234,7 @@ static double vfe_default(void* v) {
 #endif
     return x;
 }
-static Member_func vfe_members[] = {"default", vfe_default, 0, 0};
+static Member_func vfe_members[] = {{"default", vfe_default}, {0, 0}};
 void ValueFieldEditor_reg() {
     class2oc("ValueFieldEditor", vfe_cons, vfe_destruct, vfe_members, NULL, NULL, NULL);
 }

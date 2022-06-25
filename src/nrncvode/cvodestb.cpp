@@ -1,6 +1,7 @@
 #include <../../nrnconf.h>
 // solver CVode stub to allow cvode as dll for mswindows version.
 
+#include <cmath>
 #include <InterViews/resource.h>
 #include "classreg.h"
 #include "nrncvode.h"

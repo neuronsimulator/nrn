@@ -882,7 +882,7 @@ static realtype VAllReduce_Parallel(realtype d, int op, MPI_Comm comm)
    * The operation is over all processors in the communicator 
    */
 
-  realtype out;
+  realtype out = 0.0;
 
 #if NRNMPI_DYNAMICLOAD
   nrnmpi_dbl_allreduce_vec(&d, &out, 1, op);

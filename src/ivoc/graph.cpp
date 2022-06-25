@@ -1143,94 +1143,51 @@ extern double gr_getline(void*);
 #endif
 extern double gr_addglyph(void*);
 
-static Member_func gr_members[] = {"plot",
-                                   gr_plot,
-                                   "fastflush",
-                                   gr_fast_flush,
-                                   "flush",
-                                   gr_flush,
-                                   "xaxis",
-                                   gr_xaxis,
-                                   "yaxis",
-                                   gr_yaxis,
-                                   "addvar",
-                                   gr_addvar,
-                                   "addexpr",
-                                   gr_addexpr,
-                                   "addobject",
-                                   gr_addobject,
-                                   "glyph",
-                                   gr_addglyph,
-                                   "vector",
-                                   gr_vector,
-                                   "xexpr",
-                                   gr_xexpr,
-                                   "begin",
-                                   gr_begin,
-                                   "erase",
-                                   ivoc_gr_erase,
-                                   "size",
-                                   ivoc_gr_size,
-                                   "label",
-                                   ivoc_gr_label,
-                                   "fixed",
-                                   gr_fixed,
-                                   "vfixed",
-                                   gr_vfixed,
-                                   "relative",
-                                   gr_relative,
-                                   "align",
-                                   gr_align,
-                                   "color",
-                                   gr_color,
-                                   "brush",
-                                   gr_brush,
-                                   "view",
-                                   gr_view,
-                                   "save_name",
-                                   gr_save_name,
-                                   "beginline",
-                                   ivoc_gr_begin_line,
-                                   "line",
-                                   ivoc_gr_line,
-                                   "mark",
-                                   ivoc_gr_mark,
-                                   "simgraph",
-                                   gr_simgraph,
-                                   "view_count",
-                                   gr_view_count,
-                                   "erase_all",
-                                   ivoc_erase_all,
-                                   "unmap",
-                                   gr_unmap,
-                                   "crosshair_action",
-                                   gr_set_cross_action,
-                                   "printfile",
-                                   gr_printfile,
-                                   "family",
-                                   gr_family,
-                                   "menu_action",
-                                   ivoc_gr_menu_action,
-                                   "menu_tool",
-                                   ivoc_gr_menu_tool,
-                                   "view_info",
-                                   ivoc_view_info,
-                                   "view_size",
-                                   ivoc_view_size,
+static Member_func gr_members[] = {{"plot", gr_plot},
+                                   {"fastflush", gr_fast_flush},
+                                   {"flush", gr_flush},
+                                   {"xaxis", gr_xaxis},
+                                   {"yaxis", gr_yaxis},
+                                   {"addvar", gr_addvar},
+                                   {"addexpr", gr_addexpr},
+                                   {"addobject", gr_addobject},
+                                   {"glyph", gr_addglyph},
+                                   {"vector", gr_vector},
+                                   {"xexpr", gr_xexpr},
+                                   {"begin", gr_begin},
+                                   {"erase", ivoc_gr_erase},
+                                   {"size", ivoc_gr_size},
+                                   {"label", ivoc_gr_label},
+                                   {"fixed", gr_fixed},
+                                   {"vfixed", gr_vfixed},
+                                   {"relative", gr_relative},
+                                   {"align", gr_align},
+                                   {"color", gr_color},
+                                   {"brush", gr_brush},
+                                   {"view", gr_view},
+                                   {"save_name", gr_save_name},
+                                   {"beginline", ivoc_gr_begin_line},
+                                   {"line", ivoc_gr_line},
+                                   {"mark", ivoc_gr_mark},
+                                   {"simgraph", gr_simgraph},
+                                   {"view_count", gr_view_count},
+                                   {"erase_all", ivoc_erase_all},
+                                   {"unmap", gr_unmap},
+                                   {"crosshair_action", gr_set_cross_action},
+                                   {"printfile", gr_printfile},
+                                   {"family", gr_family},
+                                   {"menu_action", ivoc_gr_menu_action},
+                                   {"menu_tool", ivoc_gr_menu_tool},
+                                   {"view_info", ivoc_view_info},
+                                   {"view_size", ivoc_view_size},
 #if HAVE_IV
-                                   "getline",
-                                   gr_getline,
+                                   {"getline", gr_getline},
 #endif
-                                   "exec_menu",
-                                   exec_menu,
-                                   "gif",
-                                   ivoc_gr_gif,
-                                   "menu_remove",
-                                   ivoc_gr_menu_remove,
-                                   "line_info",
-                                   gr_line_info,
-                                   0,
-                                   0};
+                                   {"exec_menu", exec_menu},
+                                   {"gif", ivoc_gr_gif},
+                                   {"menu_remove", ivoc_gr_menu_remove},
+                                   {"line_info", gr_line_info},
+                                   {0, 0}};
 
 static void* gr_cons(Object* ho) {
     TRY_GUI_REDIRECT_OBJ("Graph", NULL);
@@ -1870,19 +1827,19 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
         if (gi->is_polyline()) {
             GPolyLine* gpl = (GPolyLine*) gi->body();
             if (gpl->x_data()->count() > 1) {
-                l = Math::min(l, gpl->x_data()->min());
-                b = Math::min(b, gpl->y_data()->min());
-                r = Math::max(r, gpl->x_data()->max());
-                t = Math::max(t, gpl->y_data()->max());
+                l = std::min(l, gpl->x_data()->min());
+                b = std::min(b, gpl->y_data()->min());
+                r = std::max(r, gpl->x_data()->max());
+                t = std::max(t, gpl->y_data()->max());
             }
         }
         if (gi->is_mark()) {
             Coord x, y;
             location(i, x, y);
-            l = Math::min(l, x);
-            b = Math::min(b, y);
-            r = Math::max(r, x);
-            t = Math::max(t, y);
+            l = std::min(l, x);
+            b = std::min(b, y);
+            r = std::max(r, x);
+            t = std::max(t, y);
         }
     }
     if (l >= r || b >= t) {
@@ -1908,10 +1865,10 @@ void Graph::wholeplot(Coord& l, Coord& b, Coord& r, Coord& t) const {
 	}
 	for (i = 0; i < cnt; ++i) {
 		gl = line_list_.item(i);
-		l = Math::min(l, gl->x_data()->min());
-		b = Math::min(b, gl->y_data()->min());
-		r = Math::max(r, gl->x_data()->max());
-		t = Math::max(t, gl->y_data()->max());
+		l = std::min(l, gl->x_data()->min());
+		b = std::min(b, gl->y_data()->min());
+		r = std::max(r, gl->x_data()->max());
+		t = std::max(t, gl->y_data()->max());
 	}
 	if (l >= r || b >= t) {
 		Scene::wholeplot(l, b, r, t);
@@ -2301,7 +2258,7 @@ void Graph::new_axis() {
     }
     XYView* v = XYView::current_pick_view();
     erase_axis();
-    Coord x1, x2, y1, y2;
+    Coord x1{}, x2{}, y1{}, y2{};
     if (v) {
         v->zin(x1, y1, x2, y2);
     }

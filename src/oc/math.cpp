@@ -2,12 +2,13 @@
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */
 
-#include <math.h>
-#include <errno.h>
-#include <stdio.h>
+#include "hoc.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-#include "hoc.h"
+#include <cfenv>
+#include <cmath>
+#include <errno.h>
+#include <stdio.h>
 
 
 #define EPS         hoc_epsilon
@@ -86,10 +87,13 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    if (errno == EDOM) {
+    // errno is not set for macOs, check FE exceptions as well. See:
+    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+    if (errno == EDOM || std::fetestexcept(FE_INVALID)) {
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE) {
+    } else if (errno == ERANGE || std::fetestexcept(FE_DIVBYZERO) ||
+               std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) {
         errno = 0;
 #if 0
         hoc_execerror(s, "result out of range");
