@@ -2,25 +2,28 @@ additional_commands:
   nrn_add_test_group:
     pargs: 0
     kwargs:
+      CORENEURON: 0
       NAME: 1
-      SUBMODULE: '?'
-      MODFILE_PATTERNS: '*'
-      SCRIPT_PATTERNS: '*'
-      OUTPUT: '*'
+      MODFILE_PATTERNS: '+'
+      NRNIVMODL_ARGS: '+'
+      OUTPUT: '+'
+      SCRIPT_PATTERNS: '+'
+      SIM_DIRECTORY: 1
+      SUBMODULE: 1
   nrn_add_test:
     pargs: 0
     kwargs:
       GROUP: 1
       NAME: 1
-      SUBMODULE: '?'
-      MODFILE_PATTERNS: '*'
-      PRECOMMAND: '+'
       COMMAND: '+'
-      SCRIPT_PATTERNS: '*'
-      REQUIRES: '*'
-      CONFLICTS: '*'
+      CONFLICTS: '+'
+      PRECOMMAND: '+'
+      PRELOAD_SANITIZER: 0
+      PROCESSORS: 1
+      REQUIRES: '+'
       OUTPUT: '*'
-      PROCESSORS: '?'
+      SCRIPT_PATTERNS: '*'
+      SIM_DIRECTORY: '?'
   nrn_add_test_group_comparison:
     pargs: 0
     kwargs:

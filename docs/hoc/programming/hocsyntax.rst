@@ -1,6 +1,7 @@
 .. index::  syntax (HOC)
 
-.. _ocsyntax:
+
+.. _hoc_ocsyntax:
 
 HOC Syntax
 ----------
@@ -64,28 +65,28 @@ Options:
         logical equal, unequal, less than, less than or equal, greater than, 
         greater than or equal. These expressions have the numerical 
         value 1 (true) or 0 (false). The expression is considered true if it is 
-        within :data:`float_epsilon` of being mathematically exact.
+        within :hoc:data:`float_epsilon` of being mathematically exact.
          
         Special logical expressions of the form objref1 == objref2 (and obj != obj) 
         are also allowed and return 1 (0) if the object references label the same 
         object. This makes the former comparison idiom using 
-        :func:`object_id` obsolete. Logical expressions of the strdef1 == strdef2 
+        :hoc:func:`object_id` obsolete. Logical expressions of the strdef1 == strdef2
         cannot be directly compared because of parser consistency reasons. However 
         obj1.string1 == obj2.string2 will return true if the strings are identical 
-        in the sense of :func:`strcmp` . 
+        in the sense of :hoc:func:`strcmp` .
          
          
 
     ``e&&e`` 
         Logical and. Both expressions 
         are always evaluated. A subexpression is considered false if it is within 
-        :data:`float_epsilon` of 0 and true otherwise. If the entire expression is true 
+        :hoc:data:`float_epsilon` of 0 and true otherwise. If the entire expression is true
         its value is 1. 
 
     ``e||e`` 
         Logical or. Both expressions are always evaluated. 
         A subexpression is considered false if it is within 
-        :data:`float_epsilon` of 0 and true otherwise. If the entire expression is true 
+        :hoc:data:`float_epsilon` of 0 and true otherwise. If the entire expression is true
         its value is 1. 
 
     ``v=e  v+=e  v-=e  v*=e  v/=e`` 
@@ -97,7 +98,7 @@ Options:
      
 
 .. seealso::
-    :data:`float_epsilon`
+    :hoc:data:`float_epsilon`
         
 
          
@@ -149,7 +150,8 @@ Example:
          
 .. index::  proc
          
-.. _proc:
+
+.. _hoc_proc:
 
 
 proc
@@ -179,7 +181,7 @@ Example:
     prints the square of 5. 
      
     Procedures can also be called within other procedures. 
-    The code which produces the interactive examples for the :class:`Random` class contains procedures 
+    The code which produces the interactive examples for the :hoc:class:`Random` class contains procedures
     for both creating the buttons which allow you to select parameters as well as for creating 
     the histograms which appear on the screen. 
          
@@ -187,7 +189,8 @@ Example:
          
 .. index::  func
 
-.. _func:
+
+.. _hoc_func:
 
 func
 ~~~~
@@ -223,7 +226,8 @@ Example:
 
 .. index::  obfunc
 
-.. _obfunc:
+
+.. _hoc_obfunc:
 
 obfunc
 ~~~~~~
@@ -246,13 +250,14 @@ Example:
 
 
 .. seealso::
-    :ref:`localobj <keyword_localobj>`, :ref:`return <keyword_return>`
+    :ref:`localobj <hoc_keyword_localobj>`, :ref:`return <hoc_keyword_return>`
 
      
 
 .. index::  iterator
 
-.. _keyword_iterator:
+
+.. _hoc_keyword_iterator:
 
 iterator
 ~~~~~~~~
@@ -306,7 +311,8 @@ Example:
 
 .. index::  arguments
 
-.. _arguments:
+
+.. _hoc_arguments:
 
 Arguments
 ~~~~~~~~~
@@ -335,11 +341,11 @@ is a one dimensional array then ``$&1`` refers to the first (0th) element
 and index i is denoted ``$&1[i]``. Warning, NO array bounds checking is 
 done and the array is treated as being one-dimensional. A scalar or 
 array reference may be passed to another procedure with 
-``&$&1``. To save a scalar reference use the :class:`Pointer` class. 
+``&$&1``. To save a scalar reference use the :hoc:class:`Pointer` class.
  
 Retrieval of strdef arguments uses the syntax: ``$s1, $s2, ..., $si``. 
 Retrieval of objref arguments uses the syntax: ``$o1, $o2, ..., $oi``. 
-Arguments of type :ref:`strdef <keyword_strdef>` and ``objref`` use call by reference so the calling 
+Arguments of type :ref:`strdef <hoc_keyword_strdef>` and ``objref`` use call by reference so the calling
 value may be changed. 
 
 Example:
@@ -381,11 +387,11 @@ Example:
     assuming ``r`` refers to the first graph. 
 
 .. seealso::
-    :ref:`func`, :ref:`proc`, :ref:`objref`, :ref:`strdef <keyword_strdef>`, :class:`Pointer`, :func:`numarg`, :func:`argtype`
+    :ref:`hoc_func`, :ref:`hoc_proc`, :ref:`hoc_objref`, :ref:`strdef <hoc_keyword_strdef>`, :hoc:class:`Pointer`, :hoc:func:`numarg`, :hoc:func:`argtype`
 
 ----
 
-.. function:: numarg
+.. hoc:function:: numarg
 
     Syntax:
         ``n = numarg()``
@@ -394,12 +400,12 @@ Example:
         Number of arguments passed to a user written hoc function. 
 
     .. seealso::
-        :ref:`arguments`, :func:`argtype`
+        :ref:`hoc_arguments`, :hoc:func:`argtype`
          
 
 ----
 
-.. function:: argtype
+.. hoc:function:: argtype
 
     Syntax:
         ``itype = argtype(iarg)``
@@ -409,7 +415,7 @@ Example:
         2 for strdef, 3 for pointers to numbers, and -1 if the arg does not exist. 
 
     .. seealso::
-        :ref:`arguments`, :func:`numarg`    
+        :ref:`hoc_arguments`, :hoc:func:`numarg`
 
      
      

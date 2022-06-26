@@ -1,10 +1,11 @@
-.. _cvode:
+
+.. _hoc_cvode:
 
          
 CVode
 -----
 
-.. class:: CVode
+.. hoc:class:: CVode
 
 
     Syntax:
@@ -32,13 +33,13 @@ CVode
                   Steve Lee, Radu Serban, Dan Shumaker, Carol Woodward 
                       Center for Applied Scientific Computing, LLNL 
 
-        (see :meth:`CVode.use_local_dt` and :meth:`CVode.use_daspk`) 
+        (see :hoc:meth:`CVode.use_local_dt` and :hoc:meth:`CVode.use_daspk`)
          
-        When this class is :meth:`CVode.active` the finitialize/fadvance calls use the CVode 
+        When this class is :hoc:meth:`CVode.active` the finitialize/fadvance calls use the CVode
         integrator. 
         In the default variable step context, the integrator 
         chooses the time step and fadvance returns after one step. Local accuracy 
-        is determined by :meth:`CVode.atol` and :meth:`CVode.rtol`. 
+        is determined by :hoc:meth:`CVode.atol` and :hoc:meth:`CVode.rtol`.
          
         The two major energy barriers to 
         using the method are the requirement that hh type models be 
@@ -47,19 +48,19 @@ CVode
         and that the solver be explicitly notified of 
         the exact time of any discontinuity 
         such as step changes, pulses, and synaptic conductance 
-        onset's. These issues are discussed in :ref:`Channels <ModelDescriptionIssues_Channels>` 
-        and :ref:`Events <ModelDescriptionIssues_Events>`. 
+        onset's. These issues are discussed in :ref:`hoc_Channels <hoc_ModelDescriptionIssues_Channels>`
+        and :ref:`hoc_Events <hoc_ModelDescriptionIssues_Events>`.
          
         After your mod files are generalized it will probably be 
         convenient to compare the default method with CVode by 
-        toggling the Use variable dt checkbox in the :ref:`VariableStepControl` 
+        toggling the Use variable dt checkbox in the :ref:`hoc_VariableStepControl`
         panel
         :menuselection:`NEURON Main Menu --> Tools --> VariableStepControl`.
          
          
 
     .. seealso::
-        :func:`fadvance`, :func:`finitialize`, :data:`secondorder`, :data:`dt`
+        :hoc:func:`fadvance`, :hoc:func:`finitialize`, :hoc:data:`secondorder`, :hoc:data:`dt`
 
     .. warning::
         The consequences of solving continuous equations can be sometimes 
@@ -71,16 +72,16 @@ CVode
         Only the SEClamp works with CVode. VClamp cannot be used with this method. 
          
         Also .mod authors must take measures to handle step changes in parameters 
-        (:ref:`Events <ModelDescriptionIssues_Events>`) 
+        (:ref:`hoc_Events <hoc_ModelDescriptionIssues_Events>`)
          
 
     .. warning::
-        Alternative variable step methods such as :meth:`CVode.use_local_dt` 
-        and :meth:`CVode.use_daspk` have been folded into this class and it has become 
+        Alternative variable step methods such as :hoc:meth:`CVode.use_local_dt`
+        and :hoc:meth:`CVode.use_daspk` have been folded into this class and it has become
         a catchall class for invoking any of the numerical methods. For example, 
-        :meth:`CVode.use_mxb` is used to switch between the tree structured matrix solver 
+        :hoc:meth:`CVode.use_mxb` is used to switch between the tree structured matrix solver
         and the general sparse matrix solver. Not all components work together, see 
-        :meth:`CVode.current_method` for acceptable mixing. 
+        :hoc:meth:`CVode.current_method` for acceptable mixing.
 
          
 
@@ -88,7 +89,7 @@ CVode
 
 
 
-.. method:: CVode.solve
+.. hoc:method:: CVode.solve
 
 
     Syntax:
@@ -107,7 +108,7 @@ CVode
         t-dt where dt is the size of its last single step. 
          
         For backward compatibility with finitialize/fadvance 
-        it is better to use the :meth:`CVode.active` method instead of calling 
+        it is better to use the :hoc:meth:`CVode.active` method instead of calling
         solve directly. 
          
 
@@ -116,7 +117,7 @@ CVode
 
 
 
-.. method:: CVode.statistics
+.. hoc:method:: CVode.statistics
 
 
     Syntax:
@@ -128,7 +129,7 @@ CVode
         newton iterations, etc. 
 
     .. seealso::
-        :meth:`CVode.spike_stat`
+        :hoc:meth:`CVode.spike_stat`
 
          
 
@@ -136,7 +137,7 @@ CVode
 
 
 
-.. method:: CVode.spike_stat
+.. hoc:method:: CVode.spike_stat
 
 
     Syntax:
@@ -144,8 +145,8 @@ CVode
 
 
     Description:
-        Similar to :meth:`CVode.statistics` but returns statistics information in the 
-        passed :class:`Vector` argument. The vector will be resized to length 
+        Similar to :hoc:meth:`CVode.statistics` but returns statistics information in the
+        passed :hoc:class:`Vector` argument. The vector will be resized to length
         11 and the elements are: 
 
         .. code-block::
@@ -170,7 +171,7 @@ CVode
 
 
 
-.. method:: CVode.print_event_queue
+.. hoc:method:: CVode.print_event_queue
 
 
     Syntax:
@@ -193,7 +194,7 @@ CVode
 
 
 
-.. method:: CVode.event_queue_info
+.. hoc:method:: CVode.event_queue_info
 
 
     Syntax:
@@ -223,7 +224,7 @@ CVode
 
 
 
-.. method:: CVode.rtol
+.. hoc:method:: CVode.rtol
 
 
     Syntax:
@@ -246,14 +247,14 @@ CVode
 
         The error test passes if the error in each state, e[i], is such that 
         e[i]/state[i] < rtol OR e[i] < atol*atolscale_for_state 
-        (the default atolscale_for_state is 1, see :meth:`CVode.atolscale` ) 
+        (the default atolscale_for_state is 1, see :hoc:meth:`CVode.atolscale` )
          
 
 ----
 
 
 
-.. method:: CVode.atol
+.. hoc:method:: CVode.atol
 
 
     Syntax:
@@ -266,7 +267,7 @@ CVode
         Returns the default local absolute error tolerance. With args, set the 
         default absolute tolerance. 
         The default absolute tolerance is 1e-2. A multiplier for 
-        specific states may be set with the :meth:`CVode.atolscale` function and also may be 
+        specific states may be set with the :hoc:meth:`CVode.atolscale` function and also may be
         specified in model descriptions. 
          
         The solver attempts to use a step size so that the local error for each 
@@ -283,7 +284,7 @@ CVode
         Therefore states should be scaled (or the absolute tolerance reduced) 
         so that when the value is close to 0, the error is not too large. 
          
-        (See :func:`atolscale` for how to set distinct absolute multiplier 
+        (See :hoc:func:`atolscale` for how to set distinct absolute multiplier
         tolerances for different states.) 
          
         Either rtol or atol may be set to 0 but not both. (pure absolute tolerance 
@@ -295,7 +296,7 @@ CVode
 
 
 
-.. method:: CVode.atolscale
+.. hoc:method:: CVode.atolscale
 
 
     Syntax:
@@ -343,7 +344,7 @@ CVode
 
 
 
-.. method:: CVode.re_init
+.. hoc:method:: CVode.re_init
 
 
     Syntax:
@@ -351,8 +352,8 @@ CVode
 
 
     Description:
-        Initializes the integrator. This is done by :func:`finitialize` when cvode 
-        is :meth:`~CVode.active`. 
+        Initializes the integrator. This is done by :hoc:func:`finitialize` when cvode
+        is :hoc:meth:`~CVode.active`.
 
          
 
@@ -360,7 +361,7 @@ CVode
 
 
 
-.. method:: CVode.stiff
+.. hoc:method:: CVode.stiff
 
 
     Syntax:
@@ -382,7 +383,7 @@ CVode
 
 
 
-.. method:: CVode.active
+.. hoc:method:: CVode.active
 
 
     Syntax:
@@ -400,8 +401,8 @@ CVode
 
 
     Description:
-        When CVode is active then :func:`finitialize` 
-        calls :meth:`CVode.re_init` and  :func:`fadvance` calls :meth:`CVode.solve`. 
+        When CVode is active then :hoc:func:`finitialize`
+        calls :hoc:meth:`CVode.re_init` and  :hoc:func:`fadvance` calls :hoc:meth:`CVode.solve`.
          
         This function allows one to toggle between the normal integration 
         method and the CVode method with no changes to existing interpreter 
@@ -423,7 +424,7 @@ CVode
 
 
 
-.. method:: CVode.maxorder
+.. hoc:method:: CVode.maxorder
 
 
     Syntax:
@@ -442,7 +443,7 @@ CVode
 
 
 
-.. method:: CVode.jacobian
+.. hoc:method:: CVode.jacobian
 
 
     Syntax:
@@ -462,7 +463,7 @@ CVode
 
 
 
-.. method:: CVode.states
+.. hoc:method:: CVode.states
 
 
     Syntax:
@@ -474,7 +475,7 @@ CVode
 
 
     Description:
-        Fill the destination :class:`Vector` with the values of the states. 
+        Fill the destination :hoc:class:`Vector` with the values of the states.
         On return dest_vector.size will be the number of states. 
 
          
@@ -483,7 +484,7 @@ CVode
 
 
 
-.. method:: CVode.dstates
+.. hoc:method:: CVode.dstates
 
 
     Syntax:
@@ -491,7 +492,7 @@ CVode
 
 
     Description:
-        Fill the destination :class:`Vector` with the values of d(state)/dt. 
+        Fill the destination :hoc:class:`Vector` with the values of d(state)/dt.
 
          
 
@@ -499,7 +500,7 @@ CVode
 
 
 
-.. method:: CVode.f
+.. hoc:method:: CVode.f
 
 
     Syntax:
@@ -509,9 +510,9 @@ CVode
     Description:
         returns f(yvec, t) in ypvec. f is the existing model. 
         Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states`). ypvec will be resized to the proper size. 
+        returned by :hoc:meth:`CVode.states`). ypvec will be resized to the proper size.
         Note that the order of the states in the vector is indicated by the 
-        names returned by :meth:`CVode.statename` 
+        names returned by :hoc:meth:`CVode.statename`
 
     .. warning::
         Works only for global variable time step method. 
@@ -523,7 +524,7 @@ CVode
 
 
 
-.. method:: CVode.yscatter
+.. hoc:method:: CVode.yscatter
 
 
     Syntax:
@@ -533,8 +534,8 @@ CVode
     Description:
         Fills the state variables with the values specified in yvec. 
         Size of yvec must be equal to the number of states ( ie vector size 
-        returned by :meth:`CVode.states`). Note that active CVode requires a subsequent 
-        :meth:`CVode.re_init` if one wishes to integrate from the yvec state point. 
+        returned by :hoc:meth:`CVode.states`). Note that active CVode requires a subsequent
+        :hoc:meth:`CVode.re_init` if one wishes to integrate from the yvec state point.
 
     .. warning::
         Works only for global variable time step method. 
@@ -546,7 +547,7 @@ CVode
 
 
 
-.. method:: CVode.ygather
+.. hoc:method:: CVode.ygather
 
 
     Syntax:
@@ -555,7 +556,7 @@ CVode
 
     Description:
         Fills yvec with the state variables (will be resized to the number of 
-        states). This is analogous to :meth:`CVode.states` after a :meth:`CVode.re_init`. 
+        states). This is analogous to :hoc:meth:`CVode.states` after a :hoc:meth:`CVode.re_init`.
 
     .. warning::
         Works only for global variable time step method. 
@@ -567,7 +568,7 @@ CVode
 
 
 
-.. method:: CVode.fixed_step
+.. hoc:method:: CVode.fixed_step
 
 
     Syntax:
@@ -575,16 +576,16 @@ CVode
 
 
     Description:
-        Uses the fixed step method to advance the simulation by :data:`dt` . 
+        Uses the fixed step method to advance the simulation by :hoc:data:`dt` .
         The initial condition is whatever state values are present (eg subsequent 
-        to a previous integration step or :meth:`CVode.yscatter` or :meth:`CVode.f` or explicitly 
+        to a previous integration step or :hoc:meth:`CVode.yscatter` or :hoc:meth:`CVode.f` or explicitly
         user modified state values). The model state values are those after the 
         fixed step integration (but are NOT the same as the current state defined 
-        by CVode and returned by :meth:`CVode.states` (that would be the case only after 
-        a subsequent :meth:`CVode.re_init`)) To get the new current states in CVode 
-        vector order, use :meth:`CVode.ygather`. 
+        by CVode and returned by :hoc:meth:`CVode.states` (that would be the case only after
+        a subsequent :hoc:meth:`CVode.re_init`)) To get the new current states in CVode
+        vector order, use :hoc:meth:`CVode.ygather`.
          
-        Valid under all circumstances. This is basically an :func:`fadvance` using 
+        Valid under all circumstances. This is basically an :hoc:func:`fadvance` using
         the fixed step method and avoids the overhead of 
 
         .. code-block::
@@ -598,8 +599,8 @@ CVode
         evaluating states and dstates/dt 
 
     .. warning::
-        :meth:`CVode.dstates` are invalid and should be determined by a call to 
-        :meth:`CVode.f` using the current state from :meth:`CVode.ygather` . 
+        :hoc:meth:`CVode.dstates` are invalid and should be determined by a call to
+        :hoc:meth:`CVode.f` using the current state from :hoc:meth:`CVode.ygather` .
 
          
 
@@ -607,7 +608,7 @@ CVode
 
 
 
-.. method:: CVode.error_weights
+.. hoc:method:: CVode.error_weights
 
 
     Syntax:
@@ -616,21 +617,21 @@ CVode
 
     Description:
 
-        Fill the destination :class:`Vector` with the values of the weights used
+        Fill the destination :hoc:class:`Vector` with the values of the weights used
         to compute the norm of the local error in cvodes and ida.
 
 ----
 
 
 
-.. method:: CVode.acor
+.. hoc:method:: CVode.acor
 
 
     Syntax:
         ``cvode.acor(dest_vector)``
 
     Description:
-        Fill the destination :class:`Vector` with the values of the local errors
+        Fill the destination :hoc:class:`Vector` with the values of the local errors
         on the last step.
          
 
@@ -638,7 +639,7 @@ CVode
 
 
 
-.. method:: CVode.statename
+.. hoc:method:: CVode.statename
 
 
     Syntax:
@@ -661,7 +662,7 @@ CVode
 
 
 
-.. method:: CVode.netconlist
+.. hoc:method:: CVode.netconlist
 
 
     Syntax:
@@ -671,8 +672,8 @@ CVode
 
 
     Description:
-        Returns a new :class:`List` (or appends to the list in the 4th argument 
-        position and returns a reference to that) of :class:`NetCon` object 
+        Returns a new :hoc:class:`List` (or appends to the list in the 4th argument
+        position and returns a reference to that) of :hoc:class:`NetCon` object
         references whose precell (or pre), postcell, and target match the pattern 
         specified in the first three arguments. These arguments may each be either 
         an object reference or a string. If an object, then each NetCon 
@@ -725,7 +726,7 @@ CVode
 
 
 
-.. method:: CVode.record
+.. hoc:method:: CVode.record
 
 
     Syntax:
@@ -735,7 +736,7 @@ CVode
 
 
     Description:
-        Similar to the Vector :meth:`~Vector.record` function but also works correctly with 
+        Similar to the Vector :hoc:meth:`~Vector.record` function but also works correctly with
         the local variable time step method. Limited to recording only range variables 
         of density mechanisms and point processes. 
          
@@ -747,7 +748,7 @@ CVode
         range variable and time is stored in the Vectors. 
          
         To stop recording into a particular vector, remove all the references 
-        either to tvec or yvec or call :func:`record_remove` . 
+        either to tvec or yvec or call :hoc:func:`record_remove` .
          
         If the fourth argument is present and equal to 1, the yvec is recorded 
         only at the existing t values in tvec. This option may slow integration 
@@ -759,7 +760,7 @@ CVode
 
 
 
-.. method:: CVode.record_remove
+.. hoc:method:: CVode.record_remove
 
 
     Syntax:
@@ -768,7 +769,7 @@ CVode
 
     Description:
         Remove yvec (and the corresponding xvec) 
-        from the list of recorded vectors. See :func:`record`. 
+        from the list of recorded vectors. See :hoc:func:`record`.
 
          
 
@@ -776,7 +777,7 @@ CVode
 
 
 
-.. method:: CVode.event
+.. hoc:method:: CVode.event
 
 
     Syntax:
@@ -791,10 +792,10 @@ CVode
         With no argument, an event without a source or target 
         is inserted into the event queue 
         for "delivery" at time t. This has the side effect of causing a return 
-        from :func:`fadvance` (or :meth:`CVode.solve` or :meth:`ParallelContext.psolve` or :func:`batch_run` 
+        from :hoc:func:`fadvance` (or :hoc:meth:`CVode.solve` or :hoc:meth:`ParallelContext.psolve` or :hoc:func:`batch_run`
         exactly at time t. This is used by the stdrun.hoc file 
         to make sure a simulation stops at tstop or after the appropriate 
-        time on pressing "continuerun" or "continuefor". When :meth:`CVode.use_local_dt` 
+        time on pressing "continuerun" or "continuefor". When :hoc:meth:`CVode.use_local_dt`
         is active, all cells are interpolated to the event time. 
          
         If the hoc statement argument is present, the statement is executed (in 
@@ -802,7 +803,7 @@ CVode
         the event time arrives. 
         This statement is normally a call to a procedure 
         which may send another cvode.event. Note that since the event queue 
-        is cleared upon :func:`finitialize` the cvode.event must be sent after that. 
+        is cleared upon :hoc:func:`finitialize` the cvode.event must be sent after that.
          
         Multiple threads and/or the local variable time step method, sometimes require 
         a bit of extra thought about the purpose of the statement. Should it be executed 
@@ -812,7 +813,7 @@ CVode
         When the third arg is absent, then before the statement is executed, all cells 
         of all threads are interpolated to time t, all threads 
         join at time t, and the statement is executed by the main thread. A call to 
-        :meth:`CVode.re_init` is allowed. If the third arg (a POINT_PROCESS object) is 
+        :hoc:meth:`CVode.re_init` is allowed. If the third arg (a POINT_PROCESS object) is
         present, then, the integrator of the cell  (if lvardt) containing the POINT_PROCESS 
         is interpolated to time t, and the statement is executed by the thread 
         containing the POINT_PROCESS. Meanwhile, the other threads keep executing. 
@@ -827,7 +828,7 @@ CVode
 
 
 
-.. method:: CVode.minstep
+.. hoc:method:: CVode.minstep
 
 
     Syntax:
@@ -850,7 +851,7 @@ CVode
 
 
 
-.. method:: CVode.maxstep
+.. hoc:method:: CVode.maxstep
 
 
     Syntax:
@@ -870,7 +871,7 @@ CVode
 
 
 
-.. method:: CVode.use_local_dt
+.. hoc:method:: CVode.use_local_dt
 
 
     Syntax:
@@ -881,8 +882,8 @@ CVode
 
     Description:
         Gets (and sets) the local variable time step method flag. 
-        When CVODE is :meth:`~CVode.active`, this implies a separate CVODE 
-        instance for every cell in the simulation. :meth:`CVode.record` is the only way 
+        When CVODE is :hoc:meth:`~CVode.active`, this implies a separate CVODE
+        instance for every cell in the simulation. :hoc:meth:`CVode.record` is the only way
         at present that variables can be properly obtained when this method is used. 
 
     .. warning::
@@ -891,7 +892,7 @@ CVode
         generally at different times and an fadvance only changes the variables 
         for the earliest time cell. 
          
-        :meth:`CVode.use_daspk` and use_local_dt cannot both be 1 at present. Toggling one 
+        :hoc:meth:`CVode.use_daspk` and use_local_dt cannot both be 1 at present. Toggling one
         on will toggle the other off. 
 
          
@@ -900,7 +901,7 @@ CVode
 
 
 
-.. method:: CVode.debug_event
+.. hoc:method:: CVode.debug_event
 
 
     Syntax:
@@ -919,7 +920,7 @@ CVode
 
 
 
-.. method:: CVode.use_long_double
+.. hoc:method:: CVode.use_long_double
 
 
     Syntax:
@@ -932,7 +933,7 @@ CVode
         When true, vector methods involving sums over the elements are accumulated 
         in a long double variable. This is useful in debugging when the 
         global variable time step method gives different results for different 
-        :meth:`ParallelContext.nthread` or numbers of processes. It may be the case that the difference is 
+        :hoc:meth:`ParallelContext.nthread` or numbers of processes. It may be the case that the difference is
         due to differences in round-off error due to the non-associativity of 
         computer addition. I.e when threads are used each thread adds up its own 
         group of numbers and then the group results are added together. When 
@@ -948,7 +949,7 @@ CVode
 
 
 
-.. method:: CVode.order
+.. hoc:method:: CVode.order
 
 
     Syntax:
@@ -967,7 +968,7 @@ CVode
 
 
 
-.. method:: CVode.use_daspk
+.. hoc:method:: CVode.use_daspk
 
 
     Syntax:
@@ -978,8 +979,8 @@ CVode
 
     Description:
         Gets (sets for the arg form) the internal flag with regard to whether to 
-        use the IDA method when CVode is :meth:`~CVode.active`. If CVode is active 
-        and the simulation involves :func:`LinearMechanism` or :func:`extracellular` mechanisms 
+        use the IDA method when CVode is :hoc:meth:`~CVode.active`. If CVode is active
+        and the simulation involves :hoc:func:`LinearMechanism` or :hoc:func:`extracellular` mechanisms
         then the IDA method is automatic and required. 
          
         Daspk refers to the Differential Algebraic Solver with the Preconditioned 
@@ -993,7 +994,7 @@ CVode
 
 
 
-.. method:: CVode.condition_order
+.. hoc:method:: CVode.condition_order
 
 
     Syntax:
@@ -1003,7 +1004,7 @@ CVode
 
 
     Description:
-        When condition_order is 1 then :func:`NetCon` threshold detection takes place at a time 
+        When condition_order is 1 then :hoc:func:`NetCon` threshold detection takes place at a time
         step boundary. This is the default. When condition_order is 2 then 
         NetCon threshold detection times  are linearly interpolated within the 
         integration step interval for which the threshold occurred. Second order 
@@ -1019,7 +1020,7 @@ CVode
 
 
 
-.. method:: CVode.dae_init_dteps
+.. hoc:method:: CVode.dae_init_dteps
 
 
     Syntax:
@@ -1032,7 +1033,7 @@ CVode
 
     Description:
         The size of the "infinitesimal" fixed fully implicit step used for 
-        initialization of the DAE solver, see :func:`use_daspk` , in order to 
+        initialization of the DAE solver, see :hoc:func:`use_daspk` , in order to
         meet the the initial condition requirement of f(y',y,t)=0. The default 
         is 1e-9 ms. 
          
@@ -1087,7 +1088,7 @@ CVode
 
 
 
-.. method:: CVode.simgraph_remove
+.. hoc:method:: CVode.simgraph_remove
 
 
     Syntax:
@@ -1097,7 +1098,7 @@ CVode
     Description:
         Removes all items from the list of Graph lines recorded during 
         a local variable step simulation. Graph lines would have been added to this 
-        list with :ref:`gui_graph`. 
+        list with :ref:`hoc_gui_graph`.
 
          
 
@@ -1105,7 +1106,7 @@ CVode
 
 
 
-.. method:: CVode.state_magnitudes
+.. hoc:method:: CVode.state_magnitudes
 
 
     Syntax:
@@ -1143,7 +1144,7 @@ CVode
 
 
 
-.. method:: CVode.current_method
+.. hoc:method:: CVode.current_method
 
 
     Syntax:
@@ -1167,7 +1168,7 @@ CVode
         daspk and not allowed for cvode. The fixed step methods can use either. 
         The latter takes about twice as much time as the former. 
          
-        methodtype = :data:`secondorder` if CVode is not active. It equals 3 if CVODE is 
+        methodtype = :hoc:data:`secondorder` if CVode is not active. It equals 3 if CVODE is
         being used and 4 is DASPK is used. 
          
         localtype = 1 if the local step method is used. This implies methodtype==3 
@@ -1178,7 +1179,7 @@ CVode
 
 
 
-.. method:: CVode.use_mxb
+.. hoc:method:: CVode.use_mxb
 
 
     Syntax:
@@ -1198,7 +1199,7 @@ CVode
 ----
 
 
-.. method:: CVode.use_fast_imem
+.. hoc:method:: CVode.use_fast_imem
 
 
     Syntax:
@@ -1226,7 +1227,7 @@ CVode
 
 
 
-.. method:: CVode.store_events
+.. hoc:method:: CVode.store_events
 
 
     Syntax:
@@ -1249,7 +1250,7 @@ CVode
 
 
 
-.. method:: CVode.queue_mode
+.. hoc:method:: CVode.queue_mode
 
 
     Syntax:
@@ -1270,10 +1271,10 @@ CVode
         that same time events can be received by the NET_RECEIVE block. 
          
         The optional "use_self_queue" (default 0) argument can only be used if the 
-        the simulation is run with :meth:`~ParallelContext.psolve` method 
-        of the :class:`ParallelContext` and must be selected prior to a call of 
-        :meth:`ParallelContext.set_maxstep`  since this special technique requires a 
-        computation of the global minimum :meth:`NetCon.delay` (not just the 
+        the simulation is run with :hoc:meth:`~ParallelContext.psolve` method
+        of the :hoc:class:`ParallelContext` and must be selected prior to a call of
+        :hoc:meth:`ParallelContext.set_maxstep`  since this special technique requires a
+        computation of the global minimum :hoc:meth:`NetCon.delay` (not just the
         minimum interprocessor NetCon delay) and that delay must be 
         greater than 0. The technique avoids the use of the  normal splay tree queue 
         for self events for ARTIFICIAL_CELLs (events initiated by the net_send call 
@@ -1289,7 +1290,7 @@ CVode
         Returns ``2*use_self_queue + use_fixed_step_bin_queue``. 
 
     .. seealso::
-        :meth:`ParallelContext.spike_compress`
+        :hoc:meth:`ParallelContext.spike_compress`
 
          
 
@@ -1297,7 +1298,7 @@ CVode
 
 
 
-.. method:: CVode.cache_efficient
+.. hoc:method:: CVode.cache_efficient
 
 
     Syntax:
@@ -1317,7 +1318,7 @@ CVode
             <eichnerh@in.tum.de> 
 
          
-        :meth:`ParallelContext.multisplit` automatically sets cache_efficient(1) 
+        :hoc:meth:`ParallelContext.multisplit` automatically sets cache_efficient(1)
 
          
 
@@ -1355,7 +1356,8 @@ ModelDescriptionIssues
          
 
 
-.. _ModelDescriptionIssues_Channels:
+
+.. _hoc_ModelDescriptionIssues_Channels:
 
 Channels
 ~~~~~~~~
@@ -1389,7 +1391,7 @@ a DERIVATIVE form. To do this,
     step method since the exp(-dt...) is calculated instead of 
     looked up in tables. 
  
-In summary, no model should anymore depend on :data:`dt`. 
+In summary, no model should anymore depend on :hoc:data:`dt`.
          
 
 
@@ -1401,7 +1403,8 @@ Concentrations
 
 
 
-.. _ModelDescriptionIssues_Events:
+
+.. _hoc_ModelDescriptionIssues_Events:
 
 Events
 ~~~~~~

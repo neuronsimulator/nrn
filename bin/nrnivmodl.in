@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 
 ARCH=@host_cpu@
 MODSUBDIR=@modsubdir@
-USER_PWD="`pwd`"
+USER_PWD="$PWD"
 
-if test "x${NRNHOME}" = x ; then
+if [ -z "$NRNHOME" ] ; then
   prefix=@prefix@
   exec_prefix=@exec_prefix@
   bindir=@bindir@
@@ -17,32 +17,25 @@ else
   libdir="${prefix}/lib"
 fi
 
-if [ -z ${CORENRNHOME+x} ]; then
+if [ -z ${CORENRNHOME+x} ] ; then
   # CORENRNHOME wasn't set, use the install prefix
   cnrn_prefix=@cnrn_prefix@
 else
   cnrn_prefix="${CORENRNHOME}"
 fi
 
-if test "${NRNHOME_EXEC}" != "" ; then
+if [ "${NRNHOME_EXEC}" ] ; then
   exec_prefix="${NRNHOME_EXEC}"
   bindir="${exec_prefix}/bin"
   libdir="${exec_prefix}/lib"
-fi
-
-# Besides NRNHOME, one may set NRNBIN to override the default location of user binaries
-if test "x$NRNBIN" = "x"; then
-  NRNBIN=$bindir
 fi
 
 export prefix
 export bindir
 export libdir
 
-MAKEFILEDIR="${bindir}"
-
 if command -v xcrun; then
-    @NRN_OSX_BUILD_TRUE@export SDKROOT=`xcrun --sdk macosx --show-sdk-path`
+    @NRN_OSX_BUILD_TRUE@export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
     @NRN_OSX_BUILD_TRUE@export MACOSX_DEPLOYMENT_TARGET="@CMAKE_OSX_DEPLOYMENT_TARGET@"
     if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
         unset MACOSX_DEPLOYMENT_TARGET
@@ -50,26 +43,40 @@ if command -v xcrun; then
 fi
 
 LinkCoreNEURON=false
-if [ "$1" = "-coreneuron" ] ; then
-      LinkCoreNEURON=true
-      shift
-fi
-
 UserINCFLAGS=""
-if [ "$1" = "-incflags" ] ; then
-      UserINCFLAGS="$2"
-      shift
-      shift
-fi
-
 UserLDFLAGS=""
-if [ "$1" = "-loadflags" ] ; then
-       UserLDFLAGS="$2"
-       shift
-       shift
-fi
+UserCOREFLAGS=()
 
-pwd
+# - options come first but can be in any order.
+while [ "$1" ] ; do
+    case "$1" in
+    -coreneuron)
+        # also run nrnivmodl-core
+        LinkCoreNEURON=true
+        shift;;
+    -incflags)
+        # extra include flags and paths (NEURON only)
+        UserINCFLAGS="$2"
+        # extra include flags and paths for CoreNEURON
+        UserCOREFLAGS+=(-i "${2}")
+        shift
+        shift;;
+    -loadflags)
+        # extra link flags, paths, libraries (NEURON only)
+        UserLDFLAGS="$2"
+        # extra lin flags, paths. libraries (CoreNEURON)
+        UserCOREFLAGS+=(-l "${2}")
+        shift
+        shift;;
+    -*)
+        echo "$1 unrecognized"
+        exit 1;;
+    *)
+        break;;
+    esac
+done
+
+echo "$PWD"
 
 # Mod file paths may contain spaces which make variable lists of those
 # hard to manage as space is the item separator. Furthermore, when a
@@ -80,212 +87,140 @@ pwd
 # of an item, retranslate back to either a space or an escaped space.
 # Only do this for cmake
 
-hide_spaces() {
-  echo "$1" | sed 's/ /+++/g'
-}
-unhide_spaces() {
-  echo "$1" | sed 's/+++/ /g'
-}
-escape_spaces() {
-  echo "$1" | sed 's/+++/\\ /g'
-}
-remove_spaces() {
-  echo "$1" | sed 's/ //g'
-}
-
+shopt -s nullglob
 # files is the complete list of mod files to process
-files=""
-if test $# -gt 0 ; then
+files=()
+if [ $# -gt 0 ] ; then
   for i in "$@" ; do
-    i_hide=`hide_spaces "$i"`
-    if test -d "$i" ; then
-      set +e
-      for j in $(cd "$i"; unset LC_ALL; ls *.mod) ; do
-        files="$files $i_hide/$j"
-      done
-      set -e
+    if [ -d "$i" ] ; then
+      files+=( "$i"/*.mod )
+    elif [ -e "$i" ] || [ -e "$i.mod" ] ; then
+      files+=( "$i" )
     else
-      if test -e "$i" -o -e "$i.mod" ; then
-        files="$files $i_hide"
-      else
-        echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
+      echo "Arg Error: \"$i\" is not a folder or mod file name or prefix"
 
-        echo ""
-        echo -n "  Mod file, folder args:"
-        for j in "$@" ; do
-          echo -n " \"$j\""
-        done
-        echo ""
+      echo ""
+      echo -n "  Mod file, folder args:"
+      for j in "$@" ; do
+        echo -n " \"$j\""
+      done
+      echo ""
 
-        exit 1
-      fi
+      exit 1
     fi
   done
 else
-  # Unset LC_ALL for consistent mod order
-  files=$(unset LC_ALL; ls *.mod)
+  files=( *.mod )
 fi
 
-files=`echo "$files" | sed 's/^ *//'`
-
-base_names=""
-for i in $files ; do
-  base_names="$base_names `basename $i .mod`"
+base_names=()
+for i in "${files[@]}" ; do
+  base_names+=( "$(basename "$i" .mod)" )
 done
 
 echo -n "Mod files:"
-for i in $files ; do
-  base_name=`basename "$i" .mod`
-  dir_name=`dirname "$i"`
-  echo -n " \"`unhide_spaces $dir_name`/$base_name.mod\""
+for i in "${files[@]}" ; do
+  dir_name=$(dirname "$i")
+  echo -n " \"$dir_name/${i%.mod}.mod\""
 done
 echo ""
 echo ""
 
 
-if [ ! -d $MODSUBDIR ] ; then
-  echo "Creating $MODSUBDIR directory for .o files."
+if [ ! -d "$MODSUBDIR" ] ; then
+  echo "Creating '$MODSUBDIR' directory for .o files."
   echo
-  mkdir $MODSUBDIR
+  mkdir "$MODSUBDIR"
 fi
 
-files=`echo "$files" | sed 's/\.mod//g'`
-
-if test "$files" = '*' ; then
-  files=""
-fi
+files=( "${files[@]%.mod}" )
 
 cd $MODSUBDIR
-mdir="`pwd`"
+mdir="$PWD"
 
-  # construct file to be included by makefile to specify mod to c rule when
-  # executed in $MODSUBDIR (child folder of launch location folder)
-  MODMAKE=makemod2c_inc
-  echo "" > $MODMAKE
-  for i in $files ; do
-    case "$i" in
-      /*) f=$i;; # absolute, fine as is
-      *)  f=../$i;; # relative
-    esac
-    base_name="`basename $f`"
-    dir_name="`dirname $f`"
-    # Note: indentation for shell lines in make rules must be a tab
-    echo "\
-./$base_name.c: `escape_spaces "$f.mod"`
+# construct file to be included by makefile to specify mod to c rule when
+# executed in $MODSUBDIR (child folder of launch location folder)
+MODMAKE=makemod2c_inc
+> "$MODMAKE"
+for i in "${files[@]}" ; do
+  case "$i" in
+    /*) f="$i";; # absolute, fine as is
+    *)  f="../$i";; # relative
+  esac
+  base_name="$(basename "$f")"
+  dir_name="$(dirname "$f")"
+  # Note: indentation for shell lines in make rules must be a tab
+  echo "\
+./${base_name// /\\ }.cpp: ${f// /\\ }.mod
 	@printf \" -> \$(C_GREEN)NMODL\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; MODLUNIT=\$(NRNUNITS) \$(NOCMODL) $base_name.mod -o \"$mdir\")
+	(cd \"$dir_name\"; @NRN_NOCMODL_SANITIZER_ENVIRONMENT_STRING@ MODLUNIT=\$(NRNUNITS) \$(NOCMODL) \"$base_name.mod\" -o \"$mdir\")
 
-./$base_name.o: ./$base_name.c
+./${base_name// /\\ }.o: ./${base_name// /\\ }.cpp
 	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	\$(COMPILE) -I\"`unhide_spaces $dir_name`\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
-" >> $MODMAKE
-  done
-  if test "$nrnivmodl_cfiles" != "" ; then
-    # I find it very difficult to construct shell variables which are
-    # space separated lists of items containing spaces. So, for a cmake build,
-    # the nrnivmodl_cfiles variable is required to be a ';' separated list
-    # of c files which may contain spaces.
-    # Save the Internal Field Separator and interpret variables as ';'
-    # separated list of items (which may contain spaces). Restore after
-    # processing nrnivmodl_cfiles.
-    ifs="$IFS"
-    IFS=';'
-    for i in $nrnivmodl_cfiles ; do
-      i_hide=`hide_spaces "$i"`
-      case "$i_hide" in
-        /*) f=$i_hide;; # absolute, fine as is
-        *)  f=../$i_hide;; # relative
-      esac
-      base_name="`basename $f .c`"
-      dir_name="`dirname $f`"
-      echo "\
-./$base_name.o: `escape_spaces "$f"`
-	@printf \" -> \$(C_GREEN)Compiling\$(C_RESET) \$<\\\n\"
-	(cd \"`unhide_spaces $dir_name`\"; \$(COMPILE) \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c $base_name.c -o \"$mdir/$base_name.o\")
-" >> $MODMAKE
-    done
-    IFS="$ifs"
-  fi
+	\$(CXXCOMPILE) -I\"$dir_name\" \$(INCLUDES) @CMAKE_CXX_COMPILE_OPTIONS_PIC@ -c \$< -o \$@
+" >> "$MODMAKE"
+done
 
-COBJS=
 MODOBJS=
-if [ `echo "\n"` ] ; then
-  newline="\n"
-else
-  newline="\\\\n"
-fi
 
-echo '#include <stdio.h>
+{
+  echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
 #if defined(__cplusplus)
 extern "C" {
 #endif
-' > mod_func.cpp
-for i in $base_names ; do
-  echo 'extern void _'`remove_spaces "$i"`'_reg(void);'
-done >> mod_func.cpp
-echo '
-void modl_reg(){
-  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
-    fprintf(stderr, "Additional mechanisms from files'$newline'");
-' >> mod_func.cpp
+'
 
-for i in $files
-do
-  echo '    fprintf(stderr," \"'`unhide_spaces "$i"`'.mod\"");'
-done >>mod_func.cpp
+  for i in "${base_names[@]}" ; do
+    echo "extern void _${i// }_reg(void);"
+  done
 
-echo '    fprintf(stderr, "'$newline'");
-  }' >>mod_func.cpp
+  echo ""
+  echo "void modl_reg() {"
+  echo "  if (!nrn_nobanner_) if (nrnmpi_myid < 1) {"
+  printf '    fprintf(stderr, "Additional mechanisms from files\\n");\n'
 
-for i in $base_names; do
-  echo '  _'`remove_spaces "$i"`'_reg();'
-  MODOBJS="$MODOBJS ./$i.o"
-done >> mod_func.cpp
+  for i in "${files[@]}"
+  do
+    echo '    fprintf(stderr, " \"'"$i"'.mod\"");'
+  done
 
-echo "}" >> mod_func.cpp
+  printf '    fprintf(stderr, "\\n");\n'
 
-echo '
+  echo "  }"
+
+  for i in "${base_names[@]}" ; do
+    echo "  _${i// }_reg();"
+    MODOBJS="$MODOBJS ./${i// /\\ }.o"
+  done
+
+  echo "}"
+
+  echo '
 #if defined(__cplusplus)
 }
-#endif' >> mod_func.cpp
-
-if test -n "$nrnivmodl_cfiles" ; then
-  sp=""
-  COBJS=""
-  ifs="$IFS"
-  IFS=';'
-  for i in $nrnivmodl_cfiles ; do
-    base_name=`basename "$i" .c`
-    COBJS="${COBJS}${sp}./${base_name}.o"
-    sp=" "
-  done
-  IFS="$ifs"
-fi
-echo "COBJS='$COBJS'"
+#endif'
+} > mod_func.cpp
 
 # call nrnivmodl-core if CoreNEURON is enabled and requested via CLI
-UsingCoreNEURON="no"
-@CORENEURON_ENABLED_TRUE@UsingCoreNEURON="yes"
+UsingCoreNEURON=false
+@CORENEURON_ENABLED_TRUE@UsingCoreNEURON=true
 if [ "$LinkCoreNEURON" = true ] ; then
-  if [ "$UsingCoreNEURON" = "yes" ] ; then
-    cd $USER_PWD
-    args=""
-    # pass the nrnivmodl file args to nrnivmodl-core (with spaces escaped)
-    for i in "$@"; do
-      j=`hide_spaces "$i"`
-      j=`escape_spaces "$j"`
-      args="$args $j"
-    done
-    "${cnrn_prefix}/bin/nrnivmodl-core" $args
-    cd $MODSUBDIR
+  if [ "$UsingCoreNEURON" = true ] ; then
+    if [ "$#" -gt 1 ] ; then
+        printf "ERROR : when called with -coreneuron only 1 mod dir is accepted.\n"
+        exit 1
+    fi
+    cd "$USER_PWD"
+    "${cnrn_prefix}/bin/nrnivmodl-core" "${UserCOREFLAGS[@]}" "$@"
+    cd "$MODSUBDIR"
   else
     printf "ERROR : CoreNEURON support is not enabled!\n"
     exit 1
   fi
 fi
 
-make -j 4 -f "${MAKEFILEDIR}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
+make -j 4 -f "${bindir}/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "LinkCoreNEURON=$LinkCoreNEURON" special &&
 echo "Successfully created $MODSUBDIR/special"

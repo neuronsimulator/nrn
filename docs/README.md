@@ -1,65 +1,73 @@
-## NEURON Development
+## NEURON Documentation
 
-### Versioning and Release
-Please refer to [NEURON Versioning and Release Guidelines](./scm/guidelines/SCMGuidelines.md).
-
-### Source and Release Management Guide
-Please refer to [NEURON Source and Release Management Guide](./scm/guide/SCMGuide.md).
-
-### Developer documentation 
-
-#### Online
+### Online
 Latest NEURON documentation is available on:
+*  ReadTheDocs @ [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/).
 * GithubPages @ [https://neuronsimulator.github.io/nrn/](https://neuronsimulator.github.io/nrn/).
-* ReadTheDocs @ [https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/).
 
 Contents:
-* documentation on building NEURON
-* user documentation (HOC, Python, tutorials, rxd)
-* developer documentation (SCM, technical topics, Doxygen)
+* Documentation on building NEURON
+* User documentation (HOC, Python, tutorials, rxd)
+* Developer documentation (SCM, technical topics, Doxygen)
 
-#### Local build
+### Local build
 
-It is recommended using a `virtualenv`, for example:
+#### Setup
+It is recommended to use a Python virtual environment, for example:
 
 ```
 pip3 install virtualenv
-python3 -m virtualenv venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-In order to build documentation locally, you need to pip install the [docs_requirements](docs_requirements.txt) :
+In order to build documentation locally, you need to pip install the ``docs_requirements.txt`` :
 ```
 pip3 install --user -r docs/docs_requirements.txt --upgrade
 ```
 
-Also, make sure to have installed dependencies listed in [conda_environment.yml](conda_environment.yml).
-With all dependencies installed, configure project with CMake as described in [README](../README.md). 
+Also, make sure to have `Doxygen` and `pandoc` installed, and the dependencies listed in [conda_environment.yml](conda_environment.yml)
+Note that this file is tailored to the ReadTheDocs setup, but lists all desired requirements.
+
+With all dependencies installed, configure project with CMake as described in [CMake Build Options](cmake_doc/options.rst#nrn_enable_docsbooloff).
 
 e.g. in your CMake build folder:
 
 ```
-cmake .. -DNRN_ENABLE_INTERVIEWS=OFF -DNRN_ENABLE_MPI=OFF -DNRN_ENABLE_RX3D=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/install
+cmake .. -DNRN_ENABLE_DOCS=ON
 ```
 
-In order to execute the jupyter notebooks, make sure neuron python module can be imported.
+#### Building the documentation
 
-Then build docs using command:
+Note that executing the jupyter notebooks requires working NEURON installation. So make sure the neuron python
+module can be imported. For this, you can build and install neuron from source first or you could also do a
+`pip install neuron` (in case you don't want/need to compile NEURON from source).
+
+In order to build the full documentation (Doxygen, Jupyter notebooks, Sphinx):
 ```
 make docs
-```  
-That will build everything in the `nrn/docs/_build` folder and you can then open `index.html` locally. 
+```
+That will build everything in the `nrn/docs/_build` folder from where you can open `index.html` locally.
 
-When working locally on documentation, be aware of the following targets to speed up building process:
+In case you just want the Sphinx build to be performed(i.e. you are not working on Jupyter notebooks or doxygen):
+```
+make sphinx
+```
+
+#### Faster Local Iterations
+
+When working locally on documentation, depending on what you work on, be aware of the following targets to speed up building process:
 
 * `doxygen` 			- build the API documentation only. Ends up in [_generated](_generated)
-* `notebooks` 			- execute & convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
-* `notebooks-noexec`	- simply convert jupyter notebooks to html, see [notebooks.sh](notebooks.sh)
+* `notebooks` 			- execute & embed outputs in-place into jupyter notebooks, see [notebooks.sh](notebooks.sh)
+* `notebooks-clean`     - clears outputs from notebooks. Remember that executing notebooks will add outputs in-place, and we don't want those committed to the repo.
 * `sphinx` 				- build Sphinx documentation
 
-NOTE: `docs` target calls: `doxygen` `notebooks` `sphinx`. 
+**NOTE**:
+* `docs` target calls: `doxygen` `notebooks` `sphinx` and `notebooks-clean`.
+* `sphinx` target is the one that will assemble all generated output (doxygen, notebooks).
 
-### ReadTheDocs.io setup
+### ReadTheDocs setup
 #### Config file
 Configuration file is in the top directory: [../.readthedocs.yml](../.readthedocs.yml).
 
@@ -82,8 +90,8 @@ To achieve this, we parse the RTD environment variable `READTHEDOCS_VERSION` and
 #### New release on RTD
 Follow the following steps:
 * create a new release (see [GHA Neuron Release - Manual Workflow](https://github.com/neuronsimulator/nrn/actions?query=workflow%3A%22NEURON+Release%22))
-* publish wheels
-* go to [NRN RTD Versions page](https://readthedocs.org/projects/nrnalex/versions/) and activate the new tag.  
+* publish the wheels (these will be pip-installed by RTD)
+* go to [NRN RTD Versions page](https://readthedocs.org/projects/nrn/versions/) and activate the new tag.  
 
-Note: build can be re-launched as many times as needed
+**NOTE**: build can be re-launched as many times as needed
  

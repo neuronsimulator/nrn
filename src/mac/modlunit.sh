@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Mac os x intermediate between applescript and modlunit
 echo -e "\033]0;modlunit\007"
 MODLUNIT="modlunit"

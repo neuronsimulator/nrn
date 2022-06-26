@@ -3,8 +3,6 @@
 # sprinkled on zero and non-zero area nodes.
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -312,7 +310,9 @@ def test_fastimem_corenrn():
 
     coreneuron.enable = True
     coreneuron.verbose = 0
-    coreneuron.cell_permute = 0
+    coreneuron.gpu = distutils.util.strtobool(
+        os.environ.get("CORENRN_ENABLE_GPU", "false")
+    )
     run(tstop)
     compare()
     coreneuron.enable = False
@@ -349,9 +349,6 @@ def test_fastimem_corenrn():
     # args needed for offline run of coreneuron
     coreneuron.enable = True
     coreneuron.file_mode = True
-    coreneuron.gpu = bool(
-        distutils.util.strtobool(os.environ.get("CORENRN_ENABLE_GPU", "false"))
-    )
 
     arg = coreneuron.nrncore_arg(tstop)
     coreneuron.enable = False
@@ -362,12 +359,7 @@ def test_fastimem_corenrn():
 
 
 if __name__ == "__main__":
-    try:
-        test_allseg_unique_iter()
-        test_fastimem()
-        test_fastimem_corenrn()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    test_allseg_unique_iter()
+    test_fastimem()
+    test_fastimem_corenrn()
     h.quit()

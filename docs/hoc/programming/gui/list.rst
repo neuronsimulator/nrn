@@ -1,11 +1,12 @@
-.. _list:
+
+.. _hoc_list:
 
 List
 ----
 
 
 
-.. class:: List
+.. hoc:class:: List
 
     List of objects 
 
@@ -41,7 +42,7 @@ List
 
 
 
-.. method:: List.append
+.. hoc:method:: List.append
 
 
     Syntax:
@@ -57,7 +58,7 @@ List
 
 
 
-.. method:: List.prepend
+.. hoc:method:: List.prepend
 
 
     Syntax:
@@ -75,7 +76,7 @@ List
 
 
 
-.. method:: List.insrt
+.. hoc:method:: List.insrt
 
 
     Syntax:
@@ -87,7 +88,7 @@ List
         The inserted object has index *i*, following items have an incremented 
         index. 
          
-        Not called :ref:`insert <keyword_insert>` because that name is a keyword 
+        Not called :ref:`insert <hoc_keyword_insert>` because that name is a keyword
 
          
 
@@ -95,7 +96,7 @@ List
 
 
 
-.. method:: List.remove
+.. hoc:method:: List.remove
 
 
     Syntax:
@@ -113,7 +114,7 @@ List
 
 
 
-.. method:: List.remove_all
+.. hoc:method:: List.remove_all
 
 
     Syntax:
@@ -129,7 +130,7 @@ List
 
 
 
-.. method:: List.index
+.. hoc:method:: List.index
 
 
     Syntax:
@@ -146,7 +147,7 @@ List
 
 
 
-.. method:: List.count
+.. hoc:method:: List.count
 
 
     Syntax:
@@ -162,7 +163,7 @@ List
 
 
 
-.. method:: List.browser
+.. hoc:method:: List.browser
 
 
     Syntax:
@@ -184,7 +185,7 @@ List
 
         ``.browser("title", strdef, "command")`` 
             Browser labels are computed. For each item, command is executed 
-            with :data:`hoc_ac_` set to the index of the item. On return, the 
+            with :hoc:data:`hoc_ac_` set to the index of the item. On return, the
             contents of *strdef* are used as the label. Some objects 
             notify the List when they change, ie point processes when they change 
             their location notify the list. 
@@ -196,7 +197,7 @@ List
 
 
 
-.. method:: List.selected
+.. hoc:method:: List.selected
 
 
     Syntax:
@@ -207,7 +208,7 @@ List
         Return the index of the highlighted object or -1 if no object is highlighted. 
 
     .. seealso::
-        :meth:`List.browser`
+        :hoc:meth:`List.browser`
 
          
 
@@ -215,7 +216,7 @@ List
 
 
 
-.. method:: List.select
+.. hoc:method:: List.select
 
 
     Syntax:
@@ -226,7 +227,7 @@ List
         Highlight the object at index *i*. 
 
     .. seealso::
-        :meth:`List.browser`
+        :hoc:meth:`List.browser`
 
          
 
@@ -234,7 +235,7 @@ List
 
 
 
-.. method:: List.scroll_pos
+.. hoc:method:: List.scroll_pos
 
 
     Syntax:
@@ -249,7 +250,7 @@ List
         to the bottom. 
 
     .. seealso::
-        :meth:`List.browser`
+        :hoc:meth:`List.browser`
 
          
 
@@ -257,7 +258,7 @@ List
 
 
 
-.. method:: List.select_action
+.. hoc:method:: List.select_action
 
 
     Syntax:
@@ -268,15 +269,15 @@ List
 
     Description:
         Execute a command when an item in the 
-        list :meth:`List.browser` is selected by single clicking the mouse. 
-        :data:`hoc_ac_` contains the index when the command is executed. Thus 
+        list :hoc:meth:`List.browser` is selected by single clicking the mouse.
+        :hoc:data:`hoc_ac_` contains the index when the command is executed. Thus
         ``l.select_action("action(hoc_ac_)")`` is convenient usage. 
         action will be invoked within the object context that existed when 
         ``select_action`` was called. 
          
         If the second arg exists and is 1 then the action is only called on 
         the mouse button release. If nothing is selected at that time then 
-        :data:`hoc_ac_` = -1 
+        :hoc:data:`hoc_ac_` = -1
 
     Example:
         This example shows that the object context is saved when an action is 
@@ -312,7 +313,7 @@ List
 
 
 
-.. method:: List.accept_action
+.. hoc:method:: List.accept_action
 
 
     Syntax:
@@ -321,8 +322,8 @@ List
 
     Description:
         Execute a command when double clicking 
-        on an item displayed in the list :meth:`List.browser` by the mouse. 
-        :data:`hoc_ac_` contains the index when the command is executed. Command is 
+        on an item displayed in the list :hoc:meth:`List.browser` by the mouse.
+        :hoc:data:`hoc_ac_` contains the index when the command is executed. Command is
         executed within the object context that existed when ``accept_action`` 
         was called. 
 
@@ -352,7 +353,7 @@ List
 
 
 
-.. method:: List.object
+.. hoc:method:: List.object
 
 
     Syntax:
@@ -370,7 +371,7 @@ List
 
 
 
-.. method:: List.o
+.. hoc:method:: List.o
 
 
     Syntax:

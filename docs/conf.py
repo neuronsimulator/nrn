@@ -14,14 +14,17 @@ import os
 import sys
 import subprocess
 
-# Translators
+# Make translators & domains available for include
 sys.path.insert(0, os.path.abspath("./translators"))
-import html2
+sys.path.insert(0, os.path.abspath("./domains"))
+
+import html2  # responsible for creating jump tables in python and hoc documentation
+import hocdomain  # Sphinx HOC domain (hacked from the Python domain via docs/generate_hocdomain.py)
 
 # -- Project information -----------------------------------------------------
 
 project = "NEURON"
-copyright = "2021, Duke, Yale and the Blue Brain Project"
+copyright = "2022, Duke, Yale and the Blue Brain Project"
 author = "Michael Hines"
 
 # -- General configuration ---------------------------------------------------
@@ -35,6 +38,8 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "recommonmark",
     "sphinx.ext.mathjax",
+    "nbsphinx",
+    "sphinx_design",
 ]
 
 source_suffix = {
@@ -47,6 +52,9 @@ source_suffix = {
 def setup(app):
     """Setup connect events to the sitemap builder"""
     app.set_translator("html", html2.HTMLTranslator)
+
+    # Set-up HOC domain
+    hocdomain.setup(app)
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -79,7 +87,23 @@ html_css_files = [
     "custom.css",
 ]
 
-nbsphinx_allow_errors = True
+# We never execute the notebooks via nbsphinx (for faster local iterations)
+# notebooks are executed thanks to the `notebooks` CMake target
+nbsphinx_execute = "never"
+
+# Force mathjax@v2 due to plotly requirement
+# https://www.sphinx-doc.org/en/master/usage/extensions/math.html#module-sphinx.ext.mathjax
+mathjax_path = (
+    "https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+)
+mathjax2_config = {
+    "tex2jax": {
+        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+        "processEscapes": True,
+        "ignoreClass": "document",
+        "processClass": "math|output_area",
+    }
+}
 
 if os.environ.get("READTHEDOCS"):
     # Get RTD build version ('latest' for master and actual version for tags)

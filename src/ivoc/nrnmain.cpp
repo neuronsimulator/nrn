@@ -6,24 +6,24 @@
 #include <errno.h>
 #include "isoc99.h"
 
-	extern "C" int nrn_isdouble(double*, double, double);
-	extern int ivocmain(int, const char**, const char**);
-	extern int nrn_main_launch;
-	extern int nrn_noauto_dlopen_nrnmech;
+extern "C" int nrn_isdouble(double*, double, double);
+extern int ivocmain(int, const char**, const char**);
+extern int nrn_main_launch;
+extern int nrn_noauto_dlopen_nrnmech;
 #if NRNMPI_DYNAMICLOAD
-	extern void nrnmpi_stubs();
-	extern char* nrnmpi_load(int is_python);
+extern void nrnmpi_stubs();
+extern char* nrnmpi_load(int is_python);
 #endif
 #if NRNMPI
 extern "C" void nrnmpi_init(int nrnmpi_under_nrncontrol, int* pargc, char*** pargv);
 #endif
 
 int main(int argc, char** argv, char** env) {
-	nrn_isdouble(0,0,0);
-	nrn_main_launch = 1;
+    nrn_isdouble(0, 0, 0);
+    nrn_main_launch = 1;
 
 #if defined(AUTO_DLOPEN_NRNMECH) && AUTO_DLOPEN_NRNMECH == 0
-	nrn_noauto_dlopen_nrnmech = 1;
+    nrn_noauto_dlopen_nrnmech = 1;
 #endif
 
 #if 0
@@ -34,34 +34,34 @@ printf("argv[%d]=|%s|\n", i, argv[i]);
 #endif
 #if NRNMPI
 #if NRNMPI_DYNAMICLOAD
-	nrnmpi_stubs();
-	for (int i=0; i < argc; ++i) {
-		if (strcmp("-mpi", argv[i]) == 0) {
-			char* pmes;
-			pmes = nrnmpi_load(0);
-			if (pmes) {
-				printf("%s\n", pmes);
-				exit(1);
-			}
-			break;
-		}
-	}
+    nrnmpi_stubs();
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp("-mpi", argv[i]) == 0) {
+            char* pmes;
+            pmes = nrnmpi_load(0);
+            if (pmes) {
+                printf("%s\n", pmes);
+                exit(1);
+            }
+            break;
+        }
+    }
 #endif
-	nrnmpi_init(1, &argc, &argv); // may change argc and argv
-#endif	
-	errno = 0;
-	return ivocmain(argc, (const char**)argv, (const char**)env);
+    nrnmpi_init(1, &argc, &argv);  // may change argc and argv
+#endif
+    errno = 0;
+    return ivocmain(argc, (const char**) argv, (const char**) env);
 }
 
 #if USENCS
-void nrn2ncs_outputevent(int, double){}
+void nrn2ncs_outputevent(int, double) {}
 #endif
 
 // moving following to src/oc/ockludge.cpp since on
 // Darwin Kernel Version 8.9.1 on apple i686 (and the newest config.guess
 // thinks it is a i386, but that is a different story)
 // including mpi.h gives some errors like:
-// /Users/hines/mpich2-1.0.5p4/instl/include/mpicxx.h:26:2: error: #error 
+// /Users/hines/mpich2-1.0.5p4/instl/include/mpicxx.h:26:2: error: #error
 // SEEK_SET is #defined but must not be for the C++ binding of MPI"
 
 #if 0 && NRNMPI && DARWIN

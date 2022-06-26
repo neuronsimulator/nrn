@@ -18,25 +18,22 @@ static char* sarg = 0;
 static char configargs[] = NRN_CONFIG_ARGS;
 
 #if !defined(GIT_BRANCH)
-#define GIT_DATE "2018-08-24"
-#define GIT_BRANCH "unknown"
+#define GIT_DATE      "2018-08-24"
+#define GIT_BRANCH    "unknown"
 #define GIT_CHANGESET "d3ead4a+"
-#define GIT_DESCRIBE "7.6.2-2-gd3ead4a+"
+#define GIT_DESCRIBE  "7.6.2-2-gd3ead4a+"
 #endif
 
-char *nrn_version(int i) {
+char* nrn_version(int i) {
     char buf[1024];
     char head[1024];
-    char *cp;
+    char* cp;
     int b;
     buf[0] = '\0';
     if (strncmp(GIT_BRANCH, "Release", 7) == 0) {
         sprintf(head, "%s (%s)", GIT_BRANCH, GIT_CHANGESET);
     } else {
-        sprintf(head, "VERSION %s %s (%s)",
-                GIT_DESCRIBE,
-                GIT_BRANCH,
-                GIT_CHANGESET);
+        sprintf(head, "VERSION %s %s (%s)", GIT_DESCRIBE, GIT_BRANCH, GIT_CHANGESET);
     }
     if (i == 0) {
         sprintf(buf, "%s", PACKAGE_VERSION);
@@ -53,12 +50,12 @@ char *nrn_version(int i) {
     } else if (i == 7) {
         int j, size;
         if (!sarg) {
-            char *c;
+            char* c;
             int size = 0;
             for (j = 0; j < nrn_global_argc; ++j) {
                 size += strlen(nrn_global_argv[j]) + 1;
             }
-            sarg = (char *) calloc(size + 1, sizeof(char));
+            sarg = (char*) calloc(size + 1, sizeof(char));
             c = sarg;
             for (j = 0; j < nrn_global_argc; ++j) {
                 sprintf(c, "%s%s", j ? " " : "", nrn_global_argv[j]);
@@ -74,12 +71,12 @@ char *nrn_version(int i) {
         nrn_assert(snprintf(buf, 1024, "NEURON -- %s %s", head, GIT_DATE) < 1024);
     }
 
-    if (i > 9) { i = 1; }
+    if (i > 9) {
+        i = 1;
+    }
     if (!ver[i]) {
-      ver[i] = strdup(buf);
+        ver[i] = strdup(buf);
     }
 
     return ver[i];
 }
-
-

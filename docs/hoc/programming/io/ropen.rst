@@ -1,11 +1,12 @@
-.. _ropen:
+
+.. _hoc_ropen:
 
 Open and Write to Files (Obsolete)
 ----------------------------------
 
 
 
-.. function:: ropen
+.. hoc:function:: ropen
 
 
     Syntax:
@@ -40,7 +41,7 @@ Open and Write to Files (Obsolete)
          
 
     .. seealso::
-        :ref:`read <keyword_read>`, :func:`fscan`, :func:`getstr`, :class:`File`
+        :ref:`read <hoc_keyword_read>`, :hoc:func:`fscan`, :hoc:func:`getstr`, :hoc:class:`File`
         
 
     .. warning::
@@ -53,7 +54,7 @@ Open and Write to Files (Obsolete)
 
 
 
-.. function:: wopen
+.. hoc:function:: wopen
 
 
     Syntax:
@@ -65,7 +66,7 @@ Open and Write to Files (Obsolete)
     Description:
         ``Wopen`` is similar to ``ropen`` but opens a file for writing. Contents of an 
         already existing *outfile* are destroyed.  Wopened files are written to 
-        with :func:`fprint`. With no argument, the previously wopened file is closed. 
+        with :hoc:func:`fprint`. With no argument, the previously wopened file is closed.
         Wopen returns 0 on failure to open a file. 
 
     Example:
@@ -83,14 +84,14 @@ Open and Write to Files (Obsolete)
 
 
     .. seealso::
-        :func:`fprint`, :func:`File`
+        :hoc:func:`fprint`, :hoc:func:`File`
 
 
 ----
 
 
 
-.. function:: xopen
+.. hoc:function:: xopen
 
 
     Syntax:
@@ -112,8 +113,8 @@ Open and Write to Files (Obsolete)
 
 
 
-.. function:: fprint
+.. hoc:function:: fprint
 
-        Same as :func:`printf` but prints to a file opened with :func:`wopen`. If no file 
+        Same as :hoc:func:`printf` but prints to a file opened with :hoc:func:`wopen`. If no file
         is opened it prints to the standard output.
 

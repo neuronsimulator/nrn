@@ -15,11 +15,11 @@ on:
       - release/**
 
 env:
-  DEFAULT_PY_VERSION: 3.8
+  DEFAULT_PY_VERSION: '3.10'
 
 jobs:
   documentation:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     name: Documentation
 
@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo apt-get update --fix-missing
           sudo apt-get install build-essential libopenmpi-dev libmpich-dev libx11-dev libxcomposite-dev mpich openmpi-bin patchelf
-          sudo apt-get install ffmpeg doxygen
+          sudo apt-get install ffmpeg doxygen pandoc
         shell: bash
 
       - name: Set up Python@${{ env.DEFAULT_PY_VERSION }}

@@ -1,3 +1,4 @@
+import re
 import sys
 from neuron.expect_hocerr import expect_hocerr, expect_err, set_quiet
 
@@ -370,6 +371,40 @@ def test_py_alltoall_dict_err():
     expect_hocerr(pc.py_alltoall, src, ("hocobj_call error",))
 
 
+def test_nosection():
+    expect_err("h.IClamp(.5)")
+    expect_err("h.IClamp(5)")
+    s = h.Section()
+    expect_err("h.IClamp(5)")
+    del s
+    locals()
+
+
+def test_nrn_mallinfo():
+    # figure out if ASan was enabled, see comment in unit_test.cpp
+    cmake_args = h.nrnversion(6)
+    if re.search("'NRN_SANITIZERS=[a-z,]*address[a-z,]*'", cmake_args):
+        print(
+            "Skipping nrn_mallinfo checks because ASan was enabled ({})".format(
+                cmake_args
+            )
+        )
+        return
+    assert h.nrn_mallinfo(0) > 0
+
+
+def test_errorcode():
+    import sys, subprocess
+
+    process = subprocess.run('nrniv -c "1/0"', shell=True)
+    assert process.returncode > 0
+
+    process = subprocess.run(
+        '{} -c "from neuron import h; h.sqrt(-1)"'.format(sys.executable), shell=True
+    )
+    assert process.returncode > 0
+
+
 if __name__ == "__main__":
     set_quiet(False)
     test_soma()
@@ -378,3 +413,5 @@ if __name__ == "__main__":
     test_disconnect()
     h.topology()
     h.allobjects()
+    test_nosection()
+    test_nrn_mallinfo()

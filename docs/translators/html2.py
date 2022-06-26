@@ -19,7 +19,7 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
     def depart_document(self, node):
         methods_by_class = {}
         for i, tag in enumerate(self.body):
-            if re.match(r'<dl class="(py )?method">', tag):
+            if re.match(r'<dl class="((py|hoc) )?method">', tag):
                 method_id = self.body[i + 1].split("id=")[1].split('"')[1].split(".")
                 method_name = method_id[-1]
                 method_class = ".".join(method_id[:-1])
@@ -28,17 +28,17 @@ class HTMLTranslator(sphinx.writers.html.HTMLTranslator):
                 methods_by_class[method_class].append(method_name)
         class_names = set(methods_by_class.keys())
         for i, tag in enumerate(self.body):
-            if re.match(r'<dl class="(py )?class">', tag):
+            if re.match(r'<dl class="((py|hoc) )?class">', tag):
                 class_names.add(self.body[i + 1].split("id=")[1].split('"')[1])
         functions = []
         for i, tag in enumerate(self.body):
-            if re.match(r'<dl class="(py )?function">', tag):
+            if re.match(r'<dl class="((py|hoc) )?function">', tag):
                 try:
                     functions.append(self.body[i + 1].split("id=")[1].split('"')[1])
                 except:
                     functions.append(self.body[i + 3])
         for i, tag in enumerate(self.body):
-            if re.match(r'<dl class="(py )?data">', tag):
+            if re.match(r'<dl class="((py|hoc) )?data">', tag):
                 data_id = self.body[i + 1].split("id=")[1].split('"')[1].split(".")
                 data_name = data_id[-1]
                 data_class = ".".join(data_id[:-1])

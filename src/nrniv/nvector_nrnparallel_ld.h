@@ -1,9 +1,9 @@
 /*
-* N_Vector_NrnParallelLD derived from N_Vector_Parallel Sundials version
-* by replacing every occurrence of Parallel with NrnParallelLD and then
-* modifying relevant method implementations to allow long double
-* accumulation.
-*/
+ * N_Vector_NrnParallelLD derived from N_Vector_Parallel Sundials version
+ * by replacing every occurrence of Parallel with NrnParallelLD and then
+ * modifying relevant method implementations to allow long double
+ * accumulation.
+ */
 /*
 Macros changed with
 sed 's/NV_\([A-Za-z_]*\)_P/NV_\1_P_LD/g' nvector_nrnparallel_ld.h >temp
@@ -16,7 +16,7 @@ mv temp nvector_nrnparallel_ld.cpp
  * -----------------------------------------------------------------
  * $Revision: 855 $
  * $Date: 2005-02-10 00:15:46 +0100 (Thu, 10 Feb 2005) $
- * ----------------------------------------------------------------- 
+ * -----------------------------------------------------------------
  * Programmer(s): Scott D. Cohen, Alan C. Hindmarsh, Radu Serban,
  *                and Aaron Collier @ LLNL
  * -----------------------------------------------------------------
@@ -67,8 +67,8 @@ mv temp nvector_nrnparallel_ld.cpp
 #include <nrnmpiuse.h>
 #if NRNMPI_DYNAMICLOAD
 #define MPI_DOUBLE double
-#define MPI_LONG long
-#define MPI_Comm int
+#define MPI_LONG   long
+#define MPI_Comm   int
 #else
 #include <mpi.h>
 #endif
@@ -78,7 +78,7 @@ mv temp nvector_nrnparallel_ld.cpp
 
 /*
  * -----------------------------------------------------------------
- * PART I: PARALLEL implementation of N_Vector               
+ * PART I: PARALLEL implementation of N_Vector
  * -----------------------------------------------------------------
  */
 
@@ -106,14 +106,14 @@ mv temp nvector_nrnparallel_ld.cpp
    and a flag indicating ownership of the data */
 
 struct _N_VectorContent_NrnParallelLD {
-  long int local_length;   /* local vector length         */
-  long int global_length;  /* global vector length        */
-  booleantype own_data;    /* ownership of data           */
-  realtype *data;          /* local data array            */
-  MPI_Comm comm;           /* pointer to MPI communicator */
+    long int local_length;  /* local vector length         */
+    long int global_length; /* global vector length        */
+    booleantype own_data;   /* ownership of data           */
+    realtype* data;         /* local data array            */
+    MPI_Comm comm;          /* pointer to MPI communicator */
 };
 
-typedef struct _N_VectorContent_NrnParallelLD *N_VectorContent_NrnParallelLD;
+typedef struct _N_VectorContent_NrnParallelLD* N_VectorContent_NrnParallelLD;
 
 /*
  * -----------------------------------------------------------------
@@ -179,24 +179,24 @@ typedef struct _N_VectorContent_NrnParallelLD *N_VectorContent_NrnParallelLD;
  * -----------------------------------------------------------------
  */
 
-#define NV_CONTENT_P_LD(v)    ( (N_VectorContent_NrnParallelLD)(v->content) )
+#define NV_CONTENT_P_LD(v) ((N_VectorContent_NrnParallelLD) (v->content))
 
-#define NV_LOCLENGTH_P_LD(v)  ( NV_CONTENT_P_LD(v)->local_length )
+#define NV_LOCLENGTH_P_LD(v) (NV_CONTENT_P_LD(v)->local_length)
 
-#define NV_GLOBLENGTH_P_LD(v) ( NV_CONTENT_P_LD(v)->global_length )
+#define NV_GLOBLENGTH_P_LD(v) (NV_CONTENT_P_LD(v)->global_length)
 
-#define NV_OWN_DATA_P_LD(v)   ( NV_CONTENT_P_LD(v)->own_data )
+#define NV_OWN_DATA_P_LD(v) (NV_CONTENT_P_LD(v)->own_data)
 
-#define NV_DATA_P_LD(v)       ( NV_CONTENT_P_LD(v)->data )
+#define NV_DATA_P_LD(v) (NV_CONTENT_P_LD(v)->data)
 
-#define NV_COMM_P_LD(v)       ( NV_CONTENT_P_LD(v)->comm )
+#define NV_COMM_P_LD(v) (NV_CONTENT_P_LD(v)->comm)
 
-#define NV_Ith_P_LD(v,i)      ( NV_DATA_P_LD(v)[i] )
+#define NV_Ith_P_LD(v, i) (NV_DATA_P_LD(v)[i])
 
 /*
  * -----------------------------------------------------------------
  * PART III: functions exported by nvector_parallel
- * 
+ *
  * CONSTRUCTORS:
  *    N_VNew_NrnParallelLD
  *    N_VNewEmpty_NrnParallelLD
@@ -220,8 +220,8 @@ typedef struct _N_VectorContent_NrnParallelLD *N_VectorContent_NrnParallelLD;
  */
 
 extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
-                         long int local_length,
-                         long int global_length);
+                                         long int local_length,
+                                         long int global_length);
 
 /*
  * -----------------------------------------------------------------
@@ -232,9 +232,7 @@ extern "C" N_Vector N_VNew_NrnParallelLD(MPI_Comm comm,
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, 
-                              long int local_length,
-                              long int global_length);
+N_Vector N_VNewEmpty_NrnParallelLD(MPI_Comm comm, long int local_length, long int global_length);
 
 /*
  * -----------------------------------------------------------------
@@ -257,10 +255,10 @@ N_Vector N_VCloneEmpty_NrnParallelLD(N_Vector w);
  * -----------------------------------------------------------------
  */
 
-N_Vector N_VMake_NrnParallelLD(MPI_Comm comm, 
-                          long int local_length,
-                          long int global_length,
-                          realtype *v_data);
+N_Vector N_VMake_NrnParallelLD(MPI_Comm comm,
+                               long int local_length,
+                               long int global_length,
+                               realtype* v_data);
 
 /*
  * -----------------------------------------------------------------
@@ -272,35 +270,35 @@ N_Vector N_VMake_NrnParallelLD(MPI_Comm comm,
  * -----------------------------------------------------------------
  */
 
-N_Vector *N_VNewVectorArray_NrnParallelLD(int count, 
-                                     MPI_Comm comm, 
-                                     long int local_length,
-                                     long int global_length);
-
-/*
- * -----------------------------------------------------------------
- * Function : N_VNewVectorArrayEmpty_NrnParallelLD
- * -----------------------------------------------------------------
- * This function creates an array of 'count' parallel vectors each 
- * with an empty (NULL) data array.
- * -----------------------------------------------------------------
- */
-
-N_Vector *N_VNewVectorArrayEmpty_NrnParallelLD(int count, 
-                                          MPI_Comm comm, 
+N_Vector* N_VNewVectorArray_NrnParallelLD(int count,
+                                          MPI_Comm comm,
                                           long int local_length,
                                           long int global_length);
 
 /*
  * -----------------------------------------------------------------
+ * Function : N_VNewVectorArrayEmpty_NrnParallelLD
+ * -----------------------------------------------------------------
+ * This function creates an array of 'count' parallel vectors each
+ * with an empty (NULL) data array.
+ * -----------------------------------------------------------------
+ */
+
+N_Vector* N_VNewVectorArrayEmpty_NrnParallelLD(int count,
+                                               MPI_Comm comm,
+                                               long int local_length,
+                                               long int global_length);
+
+/*
+ * -----------------------------------------------------------------
  * Function : N_VDestroyVectorArray_NrnParallelLD
  * -----------------------------------------------------------------
- * This function frees an array of N_Vector created with 
+ * This function frees an array of N_Vector created with
  * N_VNewVectorArray_NrnParallelLD.
  * -----------------------------------------------------------------
  */
 
-void N_VDestroyVectorArray_NrnParallelLD(N_Vector *vs, int count);
+void N_VDestroyVectorArray_NrnParallelLD(N_Vector* vs, int count);
 
 /*
  * -----------------------------------------------------------------
@@ -320,9 +318,9 @@ void N_VPrint_NrnParallelLD(N_Vector v);
 
 N_Vector N_VClone_NrnParallelLD(N_Vector w);
 void N_VDestroy_NrnParallelLD(N_Vector v);
-void N_VSpace_NrnParallelLD(N_Vector v, long int *lrw, long int *liw);
-realtype *N_VGetArrayPointer_NrnParallelLD(N_Vector v);
-void N_VSetArrayPointer_NrnParallelLD(realtype *v_data, N_Vector v);
+void N_VSpace_NrnParallelLD(N_Vector v, long int* lrw, long int* liw);
+realtype* N_VGetArrayPointer_NrnParallelLD(N_Vector v);
+void N_VSetArrayPointer_NrnParallelLD(realtype* v_data, N_Vector v);
 void N_VLinearSum_NrnParallelLD(realtype a, N_Vector x, realtype b, N_Vector y, N_Vector z);
 void N_VConst_NrnParallelLD(realtype c, N_Vector z);
 void N_VProd_NrnParallelLD(N_Vector x, N_Vector y, N_Vector z);

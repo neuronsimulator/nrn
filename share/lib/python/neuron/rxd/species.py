@@ -9,15 +9,8 @@ import itertools
 from . import options
 from .rxdException import RxDException
 from . import initializer
+from collections.abc import Callable
 
-# Fix for deprecation above python 3.3
-# DeprecationWarning: Using or importing the ABCs from 'collections' instead
-# of from 'collections.abc' is deprecated since Python 3.3, and in 3.9 it will stop working
-# https://stackoverflow.com/questions/53978542/how-to-use-collections-abc-from-both-python-3-8-and-python-2-7
-try:
-    from collections.abc import Callable
-except ImportError:
-    from collections import Callable
 
 import ctypes
 import re
@@ -129,7 +122,7 @@ _ics_set_grid_currents.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
     ctypes.py_object,
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 
@@ -862,8 +855,8 @@ class _IntracellularSpecies(_SpeciesMathable):
 
     def create_alphas(self):
         self._isalive()
-        alphas = [vol / self._dx ** 3 for vol in self._region._vol]
-        return numpy.asarray(alphas, dtype=numpy.float)
+        alphas = [vol / self._dx**3 for vol in self._region._vol]
+        return numpy.asarray(alphas, dtype=float)
 
     def _import_concentration(self):
         self._isalive()
@@ -945,7 +938,6 @@ class _IntracellularSpecies(_SpeciesMathable):
                     # TODO: this better
                     if not isinstance(my_dx, tuple):
                         my_dx = (my_dx, my_dx, my_dx)
-                    scale_factor = tenthousand_over_charge_faraday / (numpy.prod(my_dx))
                     self._current_neuron_pointers = [
                         getattr(seg, ion_curr)
                         for seg in self._region._segs3d(
@@ -958,13 +950,13 @@ class _IntracellularSpecies(_SpeciesMathable):
                         for sec in self._region._secs3d
                     ]
                     node_area = [node.surface_area for node in self._nodes]
-                    scale = sum(node_area) / geom_area
+                    node_vol = [node.volume for node in self._nodes]
+                    scale = geom_area / sum(node_area)
                     scale_factors = [
-                        sign * area * scale * scale_factor for area in node_area
+                        sign * area * scale * tenthousand_over_charge_faraday / vol
+                        for area, vol in zip(node_area, node_vol)
                     ]
-                    self._scale_factors = numpy.asarray(
-                        scale_factors, dtype=numpy.float_
-                    )
+                    self._scale_factors = numpy.asarray(scale_factors, dtype=float)
                     _ics_set_grid_currents(
                         grid_list_start,
                         self._grid_id,
@@ -1063,9 +1055,7 @@ class _IntracellularSpecies(_SpeciesMathable):
         dc = None
         dgrid = None
         if callable(d) or (hasattr(d, "__len__") and callable(d[0])):
-            dgrid = numpy.ndarray(
-                (3, self._nodes_length), dtype=numpy.float64, order="C"
-            )
+            dgrid = numpy.ndarray((3, self._nodes_length), dtype=float, order="C")
             if hasattr(d, "__len__"):
                 if len(d) == 3:
                     for dr in range(3):
@@ -1110,15 +1100,15 @@ class _IntracellularSpecies(_SpeciesMathable):
                     )
         elif hasattr(d, "__len__"):
             if len(d) == 3:
-                dc = numpy.array(d, dtype=numpy.float64)
+                dc = numpy.array(d, dtype=float)
             elif len(d) == 1:
-                dc = numpy.array(d[0] * numpy.ones(3), dtype=numpy.float64)
+                dc = numpy.array(d[0] * numpy.ones(3), dtype=float)
             else:
                 raise RxDException(
                     "Intracellular diffusion coefficient may be a scalar or a tuple of length 3 for anisotropic diffusion, it can also be a function for inhomogeneous diffusion (or tuple of 3 functions) with arguments x, y, z location or node with optional argument for direction"
                 )
         else:
-            dc = numpy.array(d * numpy.ones(3), dtype=numpy.float64)
+            dc = numpy.array(d * numpy.ones(3), dtype=float)
         return (dc, dgrid)
 
     @property
@@ -1562,7 +1552,7 @@ class Species(_SpeciesMathable):
 
         d -- the diffusion constant of the species (optional; default is 0, i.e. non-diffusing)
 
-        name -- the name of the Species; used for syncing with HOC (optional; default is none)
+        name -- the name of the Species; used for syncing with NMODL and HOC (optional; default is none)
 
         charge -- the charge of the Species (optional; default is 0)
 
@@ -1919,115 +1909,40 @@ class Species(_SpeciesMathable):
 
     @property
     def states(self):
-        """A vector of all the states corresponding to this species"""
+        """A list of all the state values corresponding to this species"""
         all_states = node._get_states()
         return [all_states[i] for i in numpy.sort(self.indices())]
 
-    def _setup_matrices3d(self, euler_matrix):
-        return
-        # TODO: REmove this
-        for r in self._regions:
-            region_mesh = r._mesh.values
-            indices = {}
-            xs, ys, zs = region_mesh.nonzero()
-            diffs = node._diffs
-            offset = self._3doffset_by_region[r]
-            for i in range(len(xs)):
-                indices[(xs[i], ys[i], zs[i])] = i + offset
-            dx = self._regions[0]._dx
-            naf = self._regions[0]._geometry.neighbor_area_fraction
-            if not isinstance(naf, Callable):
-                areazl = areazr = areayl = areayr = areaxl = areaxr = dx * dx * naf
-                for nodeobj in self._nodes:
-                    i, j, k, index, vol = (
-                        nodeobj._i,
-                        nodeobj._j,
-                        nodeobj._k,
-                        nodeobj._index,
-                        nodeobj.volume,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j, k - 1),
-                        (i, j, k + 1),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areazl,
-                        areazr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j - 1, k),
-                        (i, j + 1, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areayl,
-                        areayr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i - 1, j, k),
-                        (i + 1, j, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areaxl,
-                        areaxr,
-                        dx,
-                    )
-            else:
-                for nodeobj in self._nodes:
-                    i, j, k, index, vol = (
-                        nodeobj._i,
-                        nodeobj._j,
-                        nodeobj._k,
-                        nodeobj._index,
-                        nodeobj.volume,
-                    )
-                    areaxl, areaxr, areayl, areayr, areazl, areazr = naf(i, j, k)
-                    _setup_matrices_process_neighbors(
-                        (i, j, k - 1),
-                        (i, j, k + 1),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areazl,
-                        areazr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i, j - 1, k),
-                        (i, j + 1, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areayl,
-                        areayr,
-                        dx,
-                    )
-                    _setup_matrices_process_neighbors(
-                        (i - 1, j, k),
-                        (i + 1, j, k),
-                        indices,
-                        euler_matrix,
-                        index,
-                        diffs,
-                        vol,
-                        areaxl,
-                        areaxr,
-                        dx,
-                    )
+    @property
+    def _state(self):
+        """return a bytestring representing the Species state"""
+        # format: version identifier (unsigned long long), size (unsigned long long), binary data
+        import array
+
+        version = 0
+        data = array.array("d", self.nodes.concentration).tobytes()
+        return array.array("Q", [version, len(data)]).tobytes() + data
+
+    @_state.setter
+    def _state(self, oldstate):
+        """restore Species state"""
+        import array
+
+        metadata_array = array.array("Q")
+        metadata_array.frombytes(oldstate[:16])
+        version, length = metadata_array
+        if version != 0:
+            raise RxdException("Unsupported state data version")
+        data = array.array("d")
+        try:
+            data.frombytes(oldstate[16:])
+        except ValueError:
+            # happens when not a multiple of 8 bytes
+            raise RxDException("Invalid state data length") from None
+        # at 8 bytes per data point, the total number of bytes should match the stored
+        if len(data) * 8 != length or len(data) != len(self.nodes):
+            raise RxDException("Invalid state data length")
+        self.nodes.concentration = data
 
     def re_init(self):
         """Reinitialize the rxd concentration of this species to match the NEURON grid"""
@@ -2105,7 +2020,7 @@ class Species(_SpeciesMathable):
     def charge(self):
         """Get or set the charge of the Species.
 
-        .. note:: Setting is new in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
+        .. note:: Setting was added in NEURON 7.4+ and is allowed only before the reaction-diffusion model is instantiated.
         """
         return self._charge
 
@@ -2438,18 +2353,18 @@ class Parameter(Species):
     """
     s = rxd.Parameter(regions, name=None, charge=0, value=None, represents=None)
 
-    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Speices a parameter will not change.
+    Declare a parameter, it can be used in place of a rxd.Species, but unlike rxd.Species a parameter will not change.
 
     Parameters:
-    regions -- a Region or list of Region objects containing the species
+    regions -- a Region or list of Region objects containing the parameter
 
-    name -- the name of the parameter; used for syncing with HOC (optional; default is none)
+    name -- the name of the parameter; used for syncing with NMODL and HOC (optional; default is none)
 
     charge -- the charge of the Parameter (optional; default is 0)
 
-    value -- the value or None (if None, then imports from HOC if the species is defined at finitialize, else 0)
+    value -- the value or None (if None, then imports from HOC if the parameter is defined at finitialize, else 0)
 
-    represents -- optionally provide CURIE (Compact URI) to annotate what the species represents e.g. CHEBI:29101 for sodium(1+)
+    represents -- optionally provide CURIE (Compact URI) to annotate what the parameter represents e.g. CHEBI:29101 for sodium(1+)
 
     Note:
     charge must match the charges specified in NMODL files for the same ion, if any.
@@ -2462,7 +2377,7 @@ class Parameter(Species):
                 and kwargs["initial"]
                 and kwargs["initial"] != kwargs["value"]
             ):
-                raise RxdException(
+                raise RxDException(
                     "Parameter cannot be assigned both a 'value=%g' and 'initial=%g'"
                     % (kwargs["value"], kwargs["initial"])
                 )

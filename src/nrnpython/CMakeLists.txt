@@ -1,6 +1,8 @@
 # Add directory-level default compiler flags -- these should be added to all NEURON targets, but not
 # targets from included projects like CoreNEURON and NMODL
-add_compile_options(${NRN_COMPILE_WARNING_SUPPRESSIONS})
+add_compile_options(${NRN_COMPILE_FLAGS})
+add_compile_definitions(${NRN_COMPILE_DEFS})
+add_link_options(${NRN_LINK_FLAGS})
 
 # =============================================================================
 # Definitions used in setup.py
@@ -70,11 +72,9 @@ endif()
 if(NRN_MACOS_BUILD)
   set(MAC_DARWIN_TRUE "")
   set(MAC_DARWIN_FALSE "#")
-  set(setup_extra_link_args "#extra_link_args")
 else()
   set(MAC_DARWIN_TRUE "#")
   set(MAC_DARWIN_FALSE "")
-  set(setup_extra_link_args "extra_link_args")
 endif()
 
 if(NRN_WINDOWS_BUILD)
@@ -131,6 +131,7 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
     if(NRNPYTHON_INCLUDE3)
       add_library(nrnpython3 SHARED ${NRN_NRNPYTHON_SRC_FILES})
       add_dependencies(nrnpython3 nrniv_lib)
+      target_include_directories(nrnpython3 PRIVATE "${NRN_OC_GENERATED_SOURCES}")
       list(APPEND nrnpython_lib_list nrnpython3)
       target_include_directories(nrnpython3 BEFORE PUBLIC ${NRNPYTHON_INCLUDE3} ${INCLUDE_DIRS})
       install(TARGETS nrnpython3 DESTINATION ${NRN_INSTALL_SHARE_LIB_DIR})
@@ -139,10 +140,14 @@ if(NRN_ENABLE_PYTHON_DYNAMIC)
 endif()
 
 # Install package files that were created in build (e.g. .py.in)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
-        DESTINATION ${NRN_LIBDIR}
-        FILES_MATCHING PATTERN *.py PATTERN *.so PATTERN *.dylib PATTERN *.dat)
-
+install(
+  DIRECTORY ${PROJECT_BINARY_DIR}/share/lib/python
+  DESTINATION ${NRN_LIBDIR}
+  FILES_MATCHING
+  PATTERN *.py
+  PATTERN *.so
+  PATTERN *.dylib
+  PATTERN *.dat)
 
 # =============================================================================
 # If NEURON python module installation is enabled
@@ -177,7 +182,7 @@ if(NRN_ENABLE_MODULE_INSTALL)
   set(source_dir_filename ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp)
   set(inithoc_hdeps
       ${CMAKE_CURRENT_SOURCE_DIR}/../oc/nrnmpi.h ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnmpiuse.h
-      ${CMAKE_CURRENT_BINARY_DIR}/../oc/nrnpthread.h ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
+      ${CMAKE_CURRENT_BINARY_DIR}/nrnpython_config.h)
 
   add_custom_command(
     OUTPUT ${binary_dir_filename}
@@ -214,15 +219,26 @@ if(NRN_ENABLE_MODULE_INSTALL)
   # Build python module
   # =============================================================================
   # for each python detected / provided by user, install module at install time
+  if(NRN_SANITIZERS)
+    # Make sure the same compiler (currently always clang in the sanitizer builds) is used to link
+    # as was used to build. By default, Python will try to use the compiler that was used to build
+    # Python, which is often gcc.
+    set(extra_env
+        ${CMAKE_COMMAND} -E env
+        "LDCSHARED=${CMAKE_C_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS}"
+        "LDCXXSHARED=${CMAKE_CXX_COMPILER} ${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS}")
+  endif()
   foreach(pyexe ${NRN_PYTHON_EXE_LIST})
     add_custom_command(
-      TARGET hoc_module POST_BUILD
+      TARGET hoc_module
+      POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/inithoc.cpp
               ${CMAKE_CURRENT_BINARY_DIR}/inithoc.cpp
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-              ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
-              ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
-      COMMAND ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
+      COMMAND
+        ${CMAKE_COMMAND} -E copy_if_different
+        ${PROJECT_SOURCE_DIR}/share/lib/python/neuron/help_data.dat
+        ${CMAKE_CURRENT_BINARY_DIR}/lib/python/neuron/help_data.dat
+      COMMAND ${extra_env} ${pyexe} setup.py --quiet build --build-lib=${NRN_PYTHON_BUILD_LIB}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Building python module with: ${pyexe}")
   endforeach(pyexe)
@@ -232,12 +248,12 @@ if(NRN_ENABLE_MODULE_INSTALL)
     add_dependencies(hoc_module rxd_cython_generated)
   endif()
 
-  #~~~
+  # ~~~
   # neuron module (possibly with multiple extension versions) was built
   # in NRN_PYTHON_BUILD_LIB. Not a problem if install overwrites multiple
   # times to same install folder or if each install ends up in different
   # place.
-  #~~~
+  # ~~~
   file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/neuron_module_install.sh
     "\

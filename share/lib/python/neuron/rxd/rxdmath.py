@@ -43,7 +43,7 @@ def _lgamma(objs):
 
 def _power(objs1, objs2):
     # TODO? assumes numpy arrays; won't work for lists
-    return objs1 ** objs2
+    return objs1**objs2
 
 
 def _neg(objs):
@@ -810,7 +810,7 @@ class _Arithmeticed:
 
     def __abs__(self):
         return _Arithmeticed(
-            _Function(self, "numpy.abs", "abs"), valid_reaction_term=False
+            _Function(self, "numpy.abs", "fabs"), valid_reaction_term=False
         )
 
     def __pos__(self):

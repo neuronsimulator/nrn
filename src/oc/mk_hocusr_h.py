@@ -59,7 +59,11 @@ for line in text.splitlines():
     names = line.replace(",", " ").replace(";", " ").split()
     if not skip and len(names) > 2:
         print(line)  # entire filtered neuron.h file without pgcc added lines.
-        process(names[1], names[2:])
+        assert names[0] == "extern"
+        names.pop(0)
+        if names[0] in {'"C"', '"C++"'}:
+            names.pop(0)
+        process(names[0], names[1:])
 
 
 print(
@@ -71,7 +75,9 @@ static VoidFunc functions[] = {
 
 for i in voidfun:
     if i:
-        print('"%s", %s,' % (i, i))
+        prefix = "nrnhoc_"
+        j = i[len(prefix) :] if i.startswith(prefix) else i
+        print('"%s", %s,' % (j, i))
 print(
     """0, 0
 };

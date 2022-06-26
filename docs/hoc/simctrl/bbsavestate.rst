@@ -1,13 +1,14 @@
-.. _bbsavestate:
+
+.. _hoc_bbsavestate:
 
 BBSaveState
 -----------
 
 
 
-.. class:: BBSaveState
+.. hoc:class:: BBSaveState
 
-    A more flexible, cell centered version of :class:`SaveState`
+    A more flexible, cell centered version of :hoc:class:`SaveState`
 
     The goal is to be able to save state to a file and restore state when the
     save and restore contexts have different numbers of processors, different
@@ -23,7 +24,7 @@ BBSaveState
     save time and continues to tstop.
 
     .. code-block::
-       none
+       python
 
         def prun(tstop, restore=False):
           pc.set_maxstep(10)
@@ -31,7 +32,7 @@ BBSaveState
           bbss = h.BBSaveState()
           if restore:
             bbss.restore_test()
-            print 'after restore t=%g'%h.t
+            print('after restore t=%g'%h.t)
           else:
             pc.psolve(tstop/2)
             bbss.save_test()
@@ -39,7 +40,7 @@ BBSaveState
 
     Note that files are saved in a subdirectory called "out" and restored
     from a subdirectory called "in". A script filter
-    (see :meth:`BBSaveState.save_test`) is needed to copy and sometimes
+    (see :hoc:meth:`BBSaveState.save_test`) is needed to copy and sometimes
     concatenate files from the out to the in subfolders. These files have
     an ascii format.
 
@@ -91,7 +92,7 @@ BBSaveState
     For example
 
     .. code-block::
-       none
+       C++
 
           FUNCTION bbsavestate() {
             bbsavestate = 0
@@ -109,7 +110,7 @@ BBSaveState
 
 
 
-.. method:: BBSaveState.save_test
+.. hoc:method:: BBSaveState.save_test
 
 
     Syntax:
@@ -131,9 +132,9 @@ BBSaveState
         efficiently).
 
         .. code-block::
-          none
+          bash
 
-          #!/bin/bash
+          #!/usr/bin/env bash
           rm -f in/*
           cat out/tmp > in/tmp
           for f in out/tmp.*.* ; do
@@ -152,7 +153,7 @@ BBSaveState
 
 
 
-.. method:: BBSaveState.restore_test
+.. hoc:method:: BBSaveState.restore_test
 
 
     Syntax:
@@ -173,7 +174,7 @@ BBSaveState
 
 
 
-.. method:: BBSaveState.ignore
+.. hoc:method:: BBSaveState.ignore
 
 
     Syntax:
@@ -189,7 +190,7 @@ BBSaveState
 
 ----
 
-.. method:: BBSaveState.vector_play_init
+.. hoc:method:: BBSaveState.vector_play_init
 
 
     Syntax:
@@ -197,6 +198,6 @@ BBSaveState
 
 
     Description:
-        Allow :meth:`Vector.play` to work. Call this method after a restore
+        Allow :hoc:meth:`Vector.play` to work. Call this method after a restore
         if there are any Vector.play in the model.
 

@@ -1,11 +1,12 @@
-.. _symchoos:
+
+.. _hoc_symchoos:
 
 SymChooser
 ----------
 
 
 
-.. class:: SymChooser
+.. hoc:class:: SymChooser
 
 
     Syntax:
@@ -54,7 +55,7 @@ SymChooser
 
 
 
-.. method:: SymChooser.run
+.. hoc:method:: SymChooser.run
 
 
     Syntax:
@@ -71,7 +72,7 @@ SymChooser
 
 
 
-.. method:: SymChooser.text
+.. hoc:method:: SymChooser.text
 
 
     Syntax:

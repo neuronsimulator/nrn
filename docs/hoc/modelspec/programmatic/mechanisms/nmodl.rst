@@ -1,4 +1,5 @@
-.. _nmodl:
+
+.. _hoc_nmodl:
 
 
 NMODL
@@ -14,7 +15,8 @@ NEURON's extensions to the NBSR language are described in:
     nmodl2.rst
 
 
-.. _modeldescriptionlanguage:
+
+.. _hoc_modeldescriptionlanguage:
 
 Model Description Language
 ==========================
@@ -160,34 +162,34 @@ potentials, and state variables
 and it is helpful to know how NEURON treats these variables in order to 
 correctly write a new membrane mechanism. 
  
-NEURON integrates its equations using the function :func:`fadvance`. 
-During a call to this function the value of the global time variable, :data:`t`, 
-is increased by the value of :data:`dt`  ``(t = t + dt)``, 
+NEURON integrates its equations using the function :hoc:func:`fadvance`.
+During a call to this function the value of the global time variable, :hoc:data:`t`,
+is increased by the value of :hoc:data:`dt`  ``(t = t + dt)``,
 and all the voltages, currents, 
 concentrations, etc. are changed to new values appropriate to the new 
 value of time.  The default numerical method used by NEURON produces 
-values which have an error proportional to :data:`dt`.  That is, it makes 
+values which have an error proportional to :hoc:data:`dt`.  That is, it makes
 no sense to ask at what time in the interval are the values most accurate. 
 However, by setting the global variable 
-:data:`secondorder` equal to 2, the values produced by ``fadvance`` have 
+:hoc:data:`secondorder` equal to 2, the values produced by ``fadvance`` have
 errors proportional to ``dt^2`` and it is important to realize that 
 
--   membrane potential is second order correct at time, :data:`t`. 
+-   membrane potential is second order correct at time, :hoc:data:`t`.
 -   currents are second order correct at time, ``t - dt/2``. 
 -   channel states are second order correct at time, ``t + dt/2``;. 
--   concentrations are second order correct at time, :data:`t`. 
+-   concentrations are second order correct at time, :hoc:data:`t`.
 
  
-:func:`fadvance` goes about its business by first setting up the current 
+:hoc:func:`fadvance` goes about its business by first setting up the current
 conservation matrix equation to be used in the calculation of membrane 
 potential.  To do this it calls the current functions for each mechanism 
 in each segment which compute conductance using the old values of states 
 and current using the old values of states and membrane potential. 
 The value of time when the BREAKPOINT block is called is t+dt/2 so models 
 which depend explicitly on time will be second order correct if they use 
-the value of :data:`t`. 
-:func:`fadvance` then solves the matrix equation for the new value of the membrane 
-potential.  Depending on the value of :data:`secondorder` it then 
+the value of :hoc:data:`t`.
+:hoc:func:`fadvance` then solves the matrix equation for the new value of the membrane
+potential.  Depending on the value of :hoc:data:`secondorder` it then
 may re-call these current functions with the average of the new and old 
 membrane potentials to get an accurate final value of the current. 
 It then calls the state integrator functions using the new 
@@ -228,7 +230,8 @@ Only a small part of the full model description language is relevant to
 neuron mechanisms.  The important concepts held in common are 
 the declaration of all variables as 
 
-.. _nmodl_parameter:
+
+.. _hoc_nmodl_parameter:
 
 Parameter
 """""""""
@@ -240,7 +243,7 @@ Description:
     and not changed by the model itself.  In a NEURON context some of these 
     parameters need to be range variables which can vary with position and some 
     are more useful as global variables.  Special variables to NEURON such as 
-    :data:`celsius`, :data:`area`, :data:`v`, etc. if used in a model 
+    :hoc:data:`celsius`, :hoc:data:`area`, :hoc:data:`v`, etc. if used in a model
     should be declared as 
     parameters. (and you should not assign values to them in the model). 
     Ionic concentrations, currents, and potentials 
@@ -256,7 +259,7 @@ Description:
     panel of variables is automatically created, PARAMETERS are displayed in 
     augmented field editors which make it easier to change values whereas ASSIGNED 
     variables are displayed in field editors in which the only way to change the 
-    value is to type it from the keyboard. (see :func:`xvalue`). 
+    value is to type it from the keyboard. (see :hoc:func:`xvalue`).
 
 
 State
@@ -313,7 +316,7 @@ Independent
 Description:
     This specifies the mathematical independent variable. 
     For NMODL this statement is unnecessary since the independent variable 
-    is always time, :data:`t`. 
+    is always time, :hoc:data:`t`.
 
 Pointer
 """""""
@@ -440,7 +443,7 @@ Description:
     This is the main computation block of the model.  Any 
     states are integrated by a SOLVE statement.  Currents are set with 
     assignment statements at the end of this block.  Think of this block 
-    as making sure that on exit, all variables are consistent at time, :data:`t`. 
+    as making sure that on exit, all variables are consistent at time, :hoc:data:`t`.
     The reason this block is named BREAKPOINT is because in SCoP it was 
     called for each value of the INDEPENDENT variable at which the user desired 
     to plot something. It was responsible for making all variables consistent 
@@ -463,7 +466,7 @@ Description:
     this block is used to assign values to the derivatives of the states. 
     Such statements are of the form :samp:`y' = {expr}`.  These equations 
     are normally integrated from the old values of the states to 
-    their new values at time, :data:`t`, via a SOLVE statement in the BREAKPOINT block. 
+    their new values at time, :hoc:data:`t`, via a SOLVE statement in the BREAKPOINT block.
     The expression may explicitly involve time. The SOLVE statement for a DERIVATIVE 
     block should explicitly invoke either 
 
@@ -480,7 +483,7 @@ Description:
     is a variable time step runge-kutta method which cannot work in a NEURON context. 
     The first two methods above are computationally cheap but are 
     numerically unstable when equations are stiff (states vary a lot within 
-    a :data:`dt` step). 
+    a :hoc:data:`dt` step).
      
     HH type mechanisms have state equations which are particularly 
     simple and  extra efficiency and accuracy is easily obtained by integrating 
@@ -530,7 +533,7 @@ Description:
     However if a procedure is called 
     by the user, and it makes use of any range variables, then the user is 
     responsible for telling the mechanism from what location it should get 
-    its range variable data. This is done with the hoc function: 
+    its range variable data. This is done with the hoc :hoc:function:
 
     .. code-block::
         none

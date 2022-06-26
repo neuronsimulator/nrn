@@ -29,7 +29,7 @@ http://www.deshawresearch.com/resources_random123.html
 typedef struct nrnran123_State nrnran123_State;
 
 typedef struct nrnran123_array4x32 {
-	uint32_t v[4];
+    uint32_t v[4];
 } nrnran123_array4x32;
 
 /* global index. eg. run number */
@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 extern nrnran123_State* nrnran123_newstream(uint32_t id1, uint32_t id2);
-extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2 , uint32_t id3);
+extern nrnran123_State* nrnran123_newstream3(uint32_t id1, uint32_t id2, uint32_t id3);
 extern void nrnran123_deletestream(nrnran123_State*);
 extern void nrnran123_getseq(nrnran123_State*, uint32_t* seq, char* which);
 extern void nrnran123_setseq(nrnran123_State*, uint32_t seq, char which);
@@ -66,6 +66,5 @@ extern double nrnran123_normal(nrnran123_State*); /* mean 0.0, std 1.0 */
 extern nrnran123_array4x32 nrnran123_iran(uint32_t seq, uint32_t id1, uint32_t id2);
 extern nrnran123_array4x32 nrnran123_iran3(uint32_t seq, uint32_t id1, uint32_t id2, uint32_t id3);
 extern double nrnran123_uint2dbl(uint32_t);
-
 
 #endif

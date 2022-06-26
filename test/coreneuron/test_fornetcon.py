@@ -3,8 +3,6 @@
 # in random order.
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -106,18 +104,18 @@ def test_fornetcon():
         runassert(mode)
 
     coreneuron.enable = False
+
+    # help cover/test_netcvode.cpp cover the NetCon.setpost method
+    # with respect to a change in weight vector size
+    assert len(nclist[0].weight) == 5
+    a = h.IntFire1()
+    nclist[0].setpost(a)
+    assert len(nclist[0].weight) == 1
+
     # teardown
     pc.gid_clear()
 
 
 if __name__ == "__main__":
-    try:
-        test_fornetcon()
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
-    # This test is not actually executed on GPU, but it has this logic anyway
-    # for consistency with the other .py tests in this folder when
-    # https://github.com/BlueBrain/CoreNeuron/issues/512 is resolved.
+    test_fornetcon()
     h.quit()

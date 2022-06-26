@@ -170,6 +170,7 @@ callback to bbss_early when needed.
 #include "bbsavestate.h"
 #include "classreg.h"
 #include "ndatclas.h"
+#include "nrncvode.h"
 #include "nrnoc2iv.h"
 #include "ocfile.h"
 #include <cmath>
@@ -214,16 +215,11 @@ extern double t;
 typedef void (*PFIO)(int, Object*);
 extern void nrn_gidout_iter(PFIO);
 extern short* nrn_is_artificial_;
-extern "C" {
-extern void net_send(void**, double*, Point_process*, double, double);
-extern void nrn_fake_fire(int gid, double firetime, int fake_out);
-}  // extern "C"
 extern Object* nrn_gid2obj(int gid);
 extern PreSyn* nrn_gid2presyn(int gid);
 extern int nrn_gid_exists(int gid);
 
 #if NRNMPI
-extern void nrn_spike_exchange(NrnThread*);
 extern void nrnmpi_barrier();
 extern void nrnmpi_int_alltoallv(int*, int*, int*, int*, int*, int*);
 extern void nrnmpi_dbl_alltoallv(double*, int*, int*, double*, int*, int*);
@@ -232,7 +228,6 @@ extern void nrnmpi_int_allgather(int* s, int* r, int n);
 extern void nrnmpi_int_allgatherv(int* s, int* r, int* n, int* dspl);
 extern void nrnmpi_dbl_allgatherv(double* s, double* r, int* n, int* dspl);
 #else
-static void nrn_spike_exchange(NrnThread*) {}
 static void nrnmpi_barrier() {}
 static void nrnmpi_int_alltoallv(int* s, int* scnt, int* sdispl, int* r, int* rcnt, int* rdispl) {
     for (int i = 0; i < scnt[0]; ++i) {
@@ -296,68 +291,6 @@ static TQItemList* tq_removal_list;
 #if QUEUECHECK
 static void bbss_queuecheck();
 #endif
-
-// API
-// see save_test_bin and restore_test_bin for an example of
-// the use of this following interface. Note in particular the
-// use in restore_test_bin of a prior clear_event_queue() in order
-// to allow bbss_buffer_counts to pass an assert during the restore
-// process.
-
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size);
-// First call to return the information needed to make the other
-// calls. Returns a pointer used by the other methods.
-// Caller is reponsible for freeing (using free() and not delete [])
-// the returned gids and sizes arrays
-// when finished. The sizes array and global_size are needed for the
-// caller to construct proper buffer sizes to pass to
-// bbss_save_global and bbss_save for filling in. The size of these
-// arrays is returned in *len.
-// They are not needed for restoring
-// (since the caller is passing already filled in buffers that are read
-// by bbss_restore_global and bbss_restore
-// The gids returned are base gids. It is the callers responsibility
-// to somehow concatenate buffers with the same gid (from different hosts)
-// either after save or before restore and preserve the piece count
-// of the number of concatenated buffers for each base gid.
-// Global_size will only be non_zero for host 0.
-
-extern "C" void bbss_save_global(void* bbss, char* buffer, int sz);
-// call only on host 0 with a buffer of size equal to the
-// global_size returned from the bbss_buffer_counts call on host 0
-// sz is the size of the buffer (for error checking only, buffer+sz is
-// out of bounds)
-
-extern "C" void bbss_restore_global(void* bbss, char* buffer, int sz);
-// call on all hosts with the buffer contents returned from the call
-// to bbss_save_global
-// This must be called prior to any calls to bbss_restore
-// sz is the size of the buffer (error checking only)
-// This also does some other important restore initializations.
-
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts along with
-// a buffer of size from the corresponding sizes array. The buffer will
-// be filled in with savestate information. The gid may be the same on
-// different hosts, in which case it is the callers responsibility to
-// concatentate buffers at some point to allow calling of bbss_restore
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_restore(void* bbss, int gid, int npiece, char* buffer, int sz);
-// Call this for each item of the gids from bbss_buffer_counts, the
-// number of buffers that were concatenated for the gid, and the
-// concatenated buffer (the concatenated buffer does NOT contain npiece
-// as the first value in the char* buffer pointer)
-// sz is the size of the buffer (error checking only)
-
-extern "C" void bbss_save_done(void* bbss);
-// At the end of the save process, call this to cleanup.
-// when this call returns, bbss will be invalid.
-
-extern "C" void bbss_restore_done(void* bbss);
-// At the end of the restore process, call this to do
-// some extra setting up and cleanup.
-// when this call returns, bbss will be invalid.
 
 // 0 no debug, 1 print to stdout, 2 read/write to IO file
 #define DEBUG 0
@@ -690,7 +623,7 @@ static double save_test(void* v) {
     BBSaveState* ss = (BBSaveState*) v;
     usebin_ = 0;
     if (nrnmpi_myid == 0) {  // save global time
-#if defined(MINGW)
+#ifdef MINGW
         mkdir("bbss_out");
 #else
         mkdir("bbss_out", 0770);
@@ -761,18 +694,18 @@ static double save_test_bin(void* v) {  // only for whole cells
 }
 
 typedef std::unordered_map<Point_process*, int> PointProcessMap;
-static PointProcessMap* pp_ignore_map;
+static std::unique_ptr<PointProcessMap> pp_ignore_map;
 
 static double ppignore(void* v) {
     if (ifarg(1)) {
         Point_process* pp = ob2pntproc(*(hoc_objgetarg(1)));
         if (!pp_ignore_map) {
-            pp_ignore_map = new PointProcessMap(100);
+            pp_ignore_map.reset(new PointProcessMap());
+            pp_ignore_map->reserve(100);
         }
         (*pp_ignore_map)[pp] = 0;  // naive set instead of map
     } else if (pp_ignore_map) {    // clear
-        delete pp_ignore_map;
-        pp_ignore_map = 0;
+        pp_ignore_map.reset();
     }
     return 0.;
 }
@@ -787,7 +720,7 @@ static int ignored(Prop* p) {
     return 0;
 }
 
-extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
+void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* global_size) {
     usebin_ = 1;
     BBSaveState* ss = new BBSaveState();
     *global_size = 0;
@@ -800,15 +733,15 @@ extern "C" void* bbss_buffer_counts(int* len, int** gids, int** sizes, int* glob
     *len = ss->counts(gids, sizes);
     return ss;
 }
-extern "C" void bbss_save_global(void* bbss, char* buffer,
-                                 int sz) {  // call only on host 0
+void bbss_save_global(void* bbss, char* buffer,
+                      int sz) {  // call only on host 0
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
     io->d(1, nrn_threads->_t);
     delete io;
 }
-extern "C" void bbss_restore_global(void* bbss, char* buffer,
-                                    int sz) {  // call on all hosts
+void bbss_restore_global(void* bbss, char* buffer,
+                         int sz) {  // call on all hosts
     usebin_ = 1;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
     io->d(1, nrn_threads->_t);
@@ -816,7 +749,7 @@ extern "C" void bbss_restore_global(void* bbss, char* buffer,
     delete io;
     bbss_restore_begin();
 }
-extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
+void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferOut(buffer, sz);
@@ -824,7 +757,7 @@ extern "C" void bbss_save(void* bbss, int gid, char* buffer, int sz) {
     ss->gidobj(gid);
     delete io;
 }
-extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
+void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int sz) {
     usebin_ = 1;
     BBSaveState* ss = (BBSaveState*) bbss;
     BBSS_IO* io = new BBSS_BufferIn(buffer, sz);
@@ -835,7 +768,7 @@ extern "C" void bbss_restore(void* bbss, int gid, int ngroup, char* buffer, int 
     }
     delete io;
 }
-extern "C" void bbss_save_done(void* bbss) {
+void bbss_save_done(void* bbss) {
     BBSaveState* ss = (BBSaveState*) bbss;
     delete ss;
 }
@@ -873,7 +806,7 @@ static void bbss_remove_delivered() {
     delete tq_removal_list;
 }
 
-extern "C" void bbss_restore_done(void* bbss) {
+void bbss_restore_done(void* bbss) {
     if (bbss) {
         BBSaveState* ss = (BBSaveState*) bbss;
         delete ss;
@@ -1012,24 +945,22 @@ static double vector_play_init(void* v) {
     return 0.;
 }
 
-static Member_func members[] = {
-    // text test
-    {"save", save},
-    {"restore", restore},
-    {"save_test", save_test},
-    {"restore_test", restore_test},
-    // binary test
-    {"save_test_bin", save_test_bin},
-    {"restore_test_bin", restore_test_bin},
-    // binary save/restore interface to interpreter
-    {"save_request", save_request},
-    {"save_gid", save_gid},
-    {"restore_gid", restore_gid},
-    // indicate which point processes are to be ignored
-    {"ignore", ppignore},
-    // allow Vector.play to work
-    {"vector_play_init", vector_play_init},
-    {0, 0}};
+static Member_func members[] = {{"save", save},
+                                {"restore", restore},
+                                {"save_test", save_test},
+                                {"restore_test", restore_test},
+                                // binary test
+                                {"save_test_bin", save_test_bin},
+                                {"restore_test_bin", restore_test_bin},
+                                // binary save/restore interface to interpreter
+                                {"save_request", save_request},
+                                {"save_gid", save_gid},
+                                {"restore_gid", restore_gid},
+                                // indicate which point processes are to be ignored
+                                {"ignore", ppignore},
+                                // allow Vector.play to work
+                                {"vector_play_init", vector_play_init},
+                                {0, 0}};
 
 void BBSaveState_reg() {
     class2oc("BBSaveState", cons, destruct, members, NULL, NULL, NULL);
@@ -1115,11 +1046,11 @@ typedef struct DEList {
     struct DEList* next;
 } DEList;
 typedef std::unordered_map<Point_process*, DEList*> PP2DE;
-static PP2DE* pp2de;
+static std::unique_ptr<PP2DE> pp2de;
 // NetCon.events
 typedef std::vector<double> DblList;
 typedef std::unordered_map<NetCon*, DblList*> NetCon2DblList;
-static NetCon2DblList* nc2dblist;
+static std::unique_ptr<NetCon2DblList> nc2dblist;
 
 class SEWrap: public DiscreteEvent {
   public:
@@ -1160,11 +1091,12 @@ typedef std::vector<SEWrap*> SEWrapList;
 static SEWrapList* sewrap_list;
 
 typedef std::unordered_map<int, int> Int2Int;
-static Int2Int* base2spgid;  // base gids are the host independent key for a cell
-                             // which was multisplit
+static std::unique_ptr<Int2Int> base2spgid{new Int2Int()};  // base gids are the host independent
+                                                            // key for a cell which was multisplit
 
 typedef std::unordered_map<int, DblList*> Int2DblList;
-static Int2DblList* src2send;  // gid to presyn send time map
+static std::unique_ptr<Int2DblList> src2send{new Int2DblList()};
+;  // gid to presyn send time map
 static int src2send_cnt;
 // the DblList was needed in place of just a double because there might
 // be several spikes from a single PreSyn (interval between spikes less
@@ -1193,7 +1125,7 @@ static int src2send_cnt;
 // we have factored out the relevant code so it can be used for both
 // save and restore (for the latter see bbss_queuecheck()).
 #if QUEUECHECK
-static Int2DblList* queuecheck_gid2unc;
+static std::unique_ptr<Int2DblList> queuecheck_gid2unc;
 #endif
 
 static double binq_time(double tt) {
@@ -1275,7 +1207,7 @@ static void tqcallback(const TQItem* tq, int i) {
         } else if (type == PreSynType) {
             ps = (PreSyn*) tq->data_;
             ts = tq->t_ - ps->delay_;
-            cntinc = ps->dil_.count();
+            cntinc = ps->dil_.size();
         } else {
             return;
         }
@@ -1407,7 +1339,8 @@ void BBSaveState::mk_pp2de() {
     hoc_Item* q;
     assert(!pp2de);  // one only or make it a field.
     int n = nct->count;
-    pp2de = new PP2DE(n + 1);
+    pp2de.reset(new PP2DE);
+    pp2de->reserve(n + 1);
     sewrap_list = new SEWrapList();
     ITERATE(q, nct->olist) {
         NetCon* nc = (NetCon*) OBJ(q)->u.this_pointer;
@@ -1421,7 +1354,7 @@ void BBSaveState::mk_pp2de() {
             continue;
         }
         // has a gid or else only one connection
-        assert(nc->src_->gid_ >= 0 || nc->src_->dil_.count() == 1);
+        assert(nc->src_->gid_ >= 0 || nc->src_->dil_.size() == 1);
         Point_process* pp = nc->target_;
         DEList* dl = new DEList;
         dl->de = nc;
@@ -1444,22 +1377,20 @@ void BBSaveState::mk_pp2de() {
     tq->forall_callback(tqcallback);
 }
 
-static Int2DblList* presyn_queue;
+static std::unique_ptr<Int2DblList> presyn_queue;
 
 static void del_presyn_info() {
     if (presyn_queue) {
         for (const auto& dl: *presyn_queue) {
             delete dl.second;
         }
-        delete presyn_queue;
-        presyn_queue = 0;
+        presyn_queue.reset();
     }
     if (nc2dblist) {
         for (const auto& dl: *nc2dblist) {
             delete dl.second;
         }
-        delete nc2dblist;
-        nc2dblist = 0;
+        nc2dblist.reset();
     }
 }
 
@@ -1479,8 +1410,7 @@ void BBSaveState::del_pp2de() {
             delete dl;
         }
     }
-    delete pp2de;
-    pp2de = 0;
+    pp2de.reset();
     if (sewrap_list) {
         for (SEWrap* sewrap: *sewrap_list) {
             delete sewrap;
@@ -1535,10 +1465,7 @@ void BBSaveState::init() {
 void BBSaveState::finish() {
     del_pp2de();
     del_presyn_info();
-    if (base2spgid) {
-        delete base2spgid;
-        base2spgid = 0;
-    }
+    base2spgid.reset();
     if (f->type() == BBSS_IO::IN) {
         nrn_spike_exchange(nrn_threads);
     }
@@ -1556,10 +1483,8 @@ static void base2spgid_item(int spgid, Object* obj) {
 }
 
 void BBSaveState::mk_base2spgid() {
-    if (base2spgid) {
-        delete base2spgid;
-    }
-    base2spgid = new Int2Int(1000);
+    base2spgid.reset(new Int2Int());
+    base2spgid->reserve(1000);
     nrn_gidout_iter(&base2spgid_item);
 }
 
@@ -1757,34 +1682,36 @@ static void pycell_name2sec_maps_clear() {
 static void pycell_name2sec_maps_fill() {
     pycell_name2sec_maps_clear();
     hoc_Item* qsec;
-    ForAllSections(sec)                                              // macro has the {
+    // ForAllSections(sec)
+    ITERATE(qsec, section_list) {
+        Section* sec = hocSEC(qsec);
         if (sec->prop && sec->prop->dparam[PROP_PY_INDEX]._pvoid) {  // PythonSection
-        // Assume we can associate with a Python Cell
-        // Sadly, cannot use nrn_sec2cell Object* as the key because it
-        // is not unique and the map needs definite PyObject* keys.
-        Object* ho = nrn_sec2cell(sec);
-        if (ho) {
-            void* pycell = nrn_opaque_obj2pyobj(ho);
-            hoc_obj_unref(ho);
-            if (pycell) {
-                SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
-                std::string name = secname(sec);
-                // basename is after the cell name component that ends in '.'.
-                size_t last_dot = name.rfind(".");
-                assert(last_dot != std::string::npos);
-                assert(name.size() > (last_dot + 1));
-                std::string basename = name.substr(last_dot + 1);
-                if (sn2s.find(basename) != sn2s.end()) {
-                    hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
-                                    name.c_str());
+            // Assume we can associate with a Python Cell
+            // Sadly, cannot use nrn_sec2cell Object* as the key because it
+            // is not unique and the map needs definite PyObject* keys.
+            Object* ho = nrn_sec2cell(sec);
+            if (ho) {
+                void* pycell = nrn_opaque_obj2pyobj(ho);
+                hoc_obj_unref(ho);
+                if (pycell) {
+                    SecName2Sec& sn2s = pycell_name2sec_maps[pycell];
+                    std::string name = secname(sec);
+                    // basename is after the cell name component that ends in '.'.
+                    size_t last_dot = name.rfind(".");
+                    assert(last_dot != std::string::npos);
+                    assert(name.size() > (last_dot + 1));
+                    std::string basename = name.substr(last_dot + 1);
+                    if (sn2s.find(basename) != sn2s.end()) {
+                        hoc_execerr_ext("Python Section name, %s, is not unique in the Python cell",
+                                        name.c_str());
+                    }
+                    sn2s[basename] = sec;
+                    continue;
                 }
-                sn2s[basename] = sec;
-                continue;
             }
+            hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
         }
-        hoc_execerr_ext("Python Section, %s, not associated with Python Cell.", secname(sec));
     }
-}
 }
 
 static SecName2Sec& pycell_name2sec_map(Object* c) {
@@ -2363,7 +2290,8 @@ static void scatteritems() {
     // to the round-robin host (we do not know the gid owner host yet).
     int i, host;
     src2send_cnt = 0;
-    src2send = new Int2DblList(1000);
+    src2send.reset(new Int2DblList());
+    src2send->reserve(1000);
     TQueue* tq = net_cvode_instance_event_queue(nrn_threads);
     // if event on queue at t we will not be able to decide whether or
     // not it should be delivered during restore.
@@ -2426,7 +2354,7 @@ static void scatteritems() {
     for (const auto& pair: *src2send) {
         delete pair.second;
     }
-    delete src2send;
+    src2send.reset();
 
     if (nrnmpi_numprocs > 1) {
         all2allv_int2(cnts, off, gidsrc, ndsrc);
@@ -2524,10 +2452,12 @@ static void construct_presyn_queue() {
     if (presyn_queue) {
         del_presyn_info();
     }
-    nc2dblist = new NetCon2DblList(20);
+    nc2dblist.reset(new NetCon2DblList());
+    nc2dblist->reserve(20);
     scatteritems();
     int cnt = giddest_size;
-    Int2DblList* m = new Int2DblList(cnt + 1);
+    std::unique_ptr<Int2DblList> m{new Int2DblList()};
+    m->reserve(cnt + 1);
     int mcnt = 0;
     int mdcnt = 0;
     int its = 0;
@@ -2607,9 +2537,9 @@ static void construct_presyn_queue() {
         ++mcnt;
         delete dl;
     }
-    delete m;
-    presyn_queue = m = new Int2DblList(127);
-    spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, m);
+    presyn_queue.reset(new Int2DblList());
+    presyn_queue->reserve(127);
+    spikes_on_correct_host(mcnt, gidsrc, tssrc_cnt, mdcnt, tssrc, presyn_queue.get());
     if (gidsrc) {
         delete[] gidsrc;
         delete[] tssrc_cnt;
@@ -2732,7 +2662,8 @@ void BBSaveState::possible_presyn(int gid) {
 #if QUEUECHECK
                 // map from gid to unc for later checking
                 if (!queuecheck_gid2unc) {
-                    queuecheck_gid2unc = new Int2DblList(1000);
+                    queuecheck_gid2unc.reset(new Int2DblList());
+                    queuecheck_gid2unc->reserve(1000);
                 }
                 DblList* dl = new DblList();
                 (*queuecheck_gid2unc)[i] = dl;
@@ -2834,8 +2765,7 @@ static void bbss_queuecheck() {
         for (const auto& pair: *queuecheck_gid2unc) {
             delete pair.second;
         }
-        delete queuecheck_gid2unc;
-        queuecheck_gid2unc = 0;
+        queuecheck_gid2unc.reset();
     }
     del_presyn_info();
 }

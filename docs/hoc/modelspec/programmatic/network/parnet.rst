@@ -1,11 +1,12 @@
-.. _parnet:
+
+.. _hoc_parnet:
 
 ParallelNetManager
 ------------------
 
 
 
-.. class:: ParallelNetManager
+.. hoc:class:: ParallelNetManager
 
 
     Syntax:
@@ -18,7 +19,7 @@ ParallelNetManager
         A version for PVM is also available. This class, implemented 
         in nrn/share/lib/hoc/netparmpi.hoc, presents an interface 
         compatible with the NetGUI style of network specification, and is implemented 
-        using the :ref:`ParallelNetwork` methods. Those methods are 
+        using the :ref:`hoc_ParallelNetwork` methods. Those methods are
         available only if NEURON has been built with the configuration option, 
         --with-mpi. The :file:`netparmpi.hoc` file at last count was only 285 lines long 
         so if you have questions about how it works that are not answered here, 
@@ -31,7 +32,7 @@ ParallelNetManager
         cpu. Basically, good performance will occur if there is a lot for each 
         machine to do and the amount of effort to simulate each machine's subnet 
         is about equal. If cell granularity causes load balance to be 
-        a signficant problem see :meth:`ParallelNetManager.splitcell`. 
+        a signficant problem see :hoc:meth:`ParallelNetManager.splitcell`.
         The "lot for each machine to do" is relative to the 
         number of spikes that must be exchanged between machines and how often 
         these exchanges take place. The latter is determined by the minimum 
@@ -90,7 +91,7 @@ ParallelNetManager
             number of cells to be created on this machine. 
          
         2)  Tell the system which gid's are on which machines. 
-            The simplest distribution mechanism is :func:`round_robin` 
+            The simplest distribution mechanism is :hoc:func:`round_robin`
 
             .. code-block::
                 none
@@ -100,7 +101,7 @@ ParallelNetManager
             which will certainly give good load balance if the number of each 
             cell type to be constructed is an integer multiple of the number 
             of machines. Otherwise specify which gid's are on which machines through 
-            the use of :meth:`ParallelNetManager.set_gid2node` . Note that you only 
+            the use of :hoc:meth:`ParallelNetManager.set_gid2node` . Note that you only
             HAVE to call \ ``pnm.set_gid2node(gid, myid)`` for the subset of gid's that 
             are supposed to be associated with this machines 
             particular \ ``myid = pnm.pc.id`` but it is usually simpler just to call 
@@ -115,7 +116,7 @@ ParallelNetManager
                 simple if all your cells take the same time to integrate over the same 
                 interval. If cells have very different sizes or cpu's end up with 
                 very different amounts of work to do so that load balance is a 
-                serious problem then :meth:`ParallelNetManager.splitcell` can be used to 
+                serious problem then :hoc:meth:`ParallelNetManager.splitcell` can be used to
                 solve it. 
          
             B)  Of lesser importance but still quite important is to maximize the 
@@ -124,8 +125,8 @@ ParallelNetManager
                 the maximum step size that each machine can integrate before having 
                 to share spikes. In principle, Metis can help with this and C) but don't 
                 waste your time unless you have established that communication overhead 
-                is your rate limiting step. See :meth:`ParallelNetManager.prstat` and 
-                :meth:`ParallelContext.wait_time` . 
+                is your rate limiting step. See :hoc:meth:`ParallelNetManager.prstat` and
+                :hoc:meth:`ParallelContext.wait_time` .
              
             C)  I am only guessing that this is less important than B, it is certainly 
                 related, but obviously 
@@ -134,7 +135,7 @@ ParallelNetManager
                 but the improvement may be too small to measure. 
          
         3)  Now create only the cells that are supposed to be on this machine 
-            using :meth:`ParallelNetManager.register_cell`. 
+            using :hoc:meth:`ParallelNetManager.register_cell`.
 
             .. code-block::
                 none
@@ -175,7 +176,7 @@ ParallelNetManager
             use the NetGUI tool on a single machine to construct a toy network consisting 
             of a few real and artificial cells and save it to a hoc file for examination. 
          
-        4)  Connect the cells using :meth:`ParallelNetManager.nc_append` 
+        4)  Connect the cells using :hoc:meth:`ParallelNetManager.nc_append`
 
             .. code-block::
                 none
@@ -234,9 +235,9 @@ ParallelNetManager
                 pnm.want_all_spikes() 
 
             If you want to record spikes from only a few cells you can use 
-            :meth:`ParallelNetManager.spike_record` explicitly. If you want to 
+            :hoc:meth:`ParallelNetManager.spike_record` explicitly. If you want to
             record range variable trajectories, check that the cell exists with 
-            :meth:`ParallelNetManager.gid_exists` and then use :meth:`Vector.record`. 
+            :hoc:meth:`ParallelNetManager.gid_exists` and then use :hoc:meth:`Vector.record`.
              
         7)  Initialize and run. 
 
@@ -263,9 +264,9 @@ ParallelNetManager
             \ ``sort -k 1n,1n -k 2n,2n temp1 > temp`` 
              
             A perhaps more flexible alternative is to separate the master from all the 
-            workers somewhere after item 4) and before item 8) using :meth:`ParallelContext.runworker` 
-            and then making use of the :meth:`ParallelNetManager.prun` and 
-            :meth:`ParallelNetManager.gatherspikes` with the normal ParallelContext control 
+            workers somewhere after item 4) and before item 8) using :hoc:meth:`ParallelContext.runworker`
+            and then making use of the :hoc:meth:`ParallelNetManager.prun` and
+            :hoc:meth:`ParallelNetManager.gatherspikes` with the normal ParallelContext control
             in a master worker framework. 
              
             At any rate, before we quit we have to call it so that the master can 
@@ -284,7 +285,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.set_gid2node
+.. hoc:method:: ParallelNetManager.set_gid2node
 
 
     Syntax:
@@ -294,7 +295,7 @@ ParallelNetManager
     Description:
         When MPI is being used, this is just 
         a wrapper for the ParallelContext version of 
-        :meth:`ParallelContext.set_gid2node` . 
+        :hoc:meth:`ParallelContext.set_gid2node` .
          
 
          
@@ -303,7 +304,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.round_robin
+.. hoc:method:: ParallelNetManager.round_robin
 
 
     Syntax:
@@ -313,7 +314,7 @@ ParallelNetManager
     Description:
         The gid ranging from 0 to ncell-1 
         is assigned to machine ``(gid + 1) % nhost``. There is no good reason 
-        anymore for the "+1". :meth:`ParallelContext.nhost` is the number of machines 
+        anymore for the "+1". :hoc:meth:`ParallelContext.nhost` is the number of machines
         available. 
 
          
@@ -322,7 +323,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.gid_exists
+.. hoc:method:: ParallelNetManager.gid_exists
 
 
     Syntax:
@@ -332,7 +333,7 @@ ParallelNetManager
     Description:
         Returns 1 if the gid exists on this machine, 2 if it exists and has been 
         declared to be an output cell. 0 otherwise. 
-        Just a wrapper for :meth:`ParallelContext.gid_exists` when MPI is being used. 
+        Just a wrapper for :hoc:meth:`ParallelContext.gid_exists` when MPI is being used.
 
          
 
@@ -340,7 +341,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.create_cell
+.. hoc:method:: ParallelNetManager.create_cell
 
 
     Syntax:
@@ -348,7 +349,7 @@ ParallelNetManager
 
 
     Description:
-        This is deprecated. Use :meth:`ParallelNetManager.register_cell` . 
+        This is deprecated. Use :hoc:meth:`ParallelNetManager.register_cell` .
          
         If the gid exists on this machine the obexpr is executed in a statement 
         equivalent to ``pnm.cells.append(obexpr)``. Obexpr should be something like 
@@ -372,7 +373,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.register_cell
+.. hoc:method:: ParallelNetManager.register_cell
 
 
     Syntax:
@@ -380,11 +381,11 @@ ParallelNetManager
 
 
     Description:
-        Associate gid and cellobject. If :meth:`ParallelContext.gid_exists` 
-        is zero then this procedure calls :meth:`ParallelContext.set_gid2node` 
+        Associate gid and cellobject. If :hoc:meth:`ParallelContext.gid_exists`
+        is zero then this procedure calls :hoc:meth:`ParallelContext.set_gid2node`
         If the cell is "real" or encapsulates a point process artificial cell, then 
         the cellobject.connect2target is called. The cellobject is declared to 
-        be an :meth:`ParallelContext.outputcell` . 
+        be an :hoc:meth:`ParallelContext.outputcell` .
          
         This method supersedes the create_cell method since it more easily handles 
         cell creation arguments. 
@@ -395,7 +396,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.nc_append
+.. hoc:method:: ParallelNetManager.nc_append
 
 
     Syntax:
@@ -416,16 +417,16 @@ ParallelNetManager
         the synapse_id should be -1 and the target artificial cell is 
         \ ``pnm.gid2obj(target_gid)``. Note that 
         the target is an unwrapped artificial cell if 
-        :meth:`StringFunctions.is_point_process` returns a non-zero value. 
+        :hoc:meth:`StringFunctions.is_point_process` returns a non-zero value.
          
         If the target exists but not the source, the netcon 
-        is created via :meth:`ParallelContext.gid_connect` and added to the 
+        is created via :hoc:meth:`ParallelContext.gid_connect` and added to the
         pnm.nclist. 
          
         If the source exists but not the target, and 
-        :meth:`ParallelContext.gid_exists` returns 
+        :hoc:meth:`ParallelContext.gid_exists` returns
         1 (instead of 2) then the cell is marked to be an 
-        :meth:`ParallelContext.outputcell` . 
+        :hoc:meth:`ParallelContext.outputcell` .
          
         If the source exists and is a real cell or wrapped artificial 
         cell \ ``pnm.gid2obj(src_id).connect2target(synapse_target_object, nc)`` 
@@ -444,7 +445,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.want_all_spikes
+.. hoc:method:: ParallelNetManager.want_all_spikes
 
 
     Syntax:
@@ -462,7 +463,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.spike_record
+.. hoc:method:: ParallelNetManager.spike_record
 
 
     Syntax:
@@ -470,8 +471,8 @@ ParallelNetManager
 
 
     Description:
-        Wraps :meth:`ParallelContext.spike_record` but calls it only if 
-        :meth:`ParallelContext.gid_exists` is nonzero and records the spikes 
+        Wraps :hoc:meth:`ParallelContext.spike_record` but calls it only if
+        :hoc:meth:`ParallelContext.gid_exists` is nonzero and records the spikes
         into the pnm.spikevec and pnm.gidvec Vector objects. 
 
          
@@ -481,7 +482,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.prun
+.. hoc:method:: ParallelNetManager.prun
 
 
     Syntax:
@@ -489,8 +490,8 @@ ParallelNetManager
 
 
     Description:
-        All the workers and the master are asked to :meth:`ParallelNetManager.pinit` 
-        and :meth:`ParallelNetManager.pcontinue` up to tstop. 
+        All the workers and the master are asked to :hoc:meth:`ParallelNetManager.pinit`
+        and :hoc:meth:`ParallelNetManager.pcontinue` up to tstop.
 
          
 
@@ -498,7 +499,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.psolve
+.. hoc:method:: ParallelNetManager.psolve
 
 
     Syntax:
@@ -506,7 +507,7 @@ ParallelNetManager
 
 
     Description:
-        Wraps :meth:`ParallelContext.psolve` . 
+        Wraps :hoc:meth:`ParallelContext.psolve` .
 
          
 
@@ -514,7 +515,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.pinit
+.. hoc:method:: ParallelNetManager.pinit
 
 
     Syntax:
@@ -523,7 +524,7 @@ ParallelNetManager
 
     Description:
         All the workers and the master execute a call to 
-        :meth:`ParallelContext.set_maxstep` to determine the maximum possible step size 
+        :hoc:meth:`ParallelContext.set_maxstep` to determine the maximum possible step size
         and all the workers and the master execute a call to 
         the stdinit() of the 
         standard run system. 
@@ -534,7 +535,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.pcontinue
+.. hoc:method:: ParallelNetManager.pcontinue
 
 
     Syntax:
@@ -542,7 +543,7 @@ ParallelNetManager
 
 
     Description:
-        All the workers and the master execute a call to :meth:`ParallelContext.psolve` 
+        All the workers and the master execute a call to :hoc:meth:`ParallelContext.psolve`
         to integrate from the current value of t to the argument value. 
 
          
@@ -551,7 +552,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.prstat
+.. hoc:method:: ParallelNetManager.prstat
 
 
     Syntax:
@@ -577,7 +578,7 @@ ParallelNetManager
 
 
     .. seealso::
-        :meth:`ParallelContext.wait_time`, :meth:`ParallelContext.spike_statistics`
+        :hoc:meth:`ParallelContext.wait_time`, :hoc:meth:`ParallelContext.spike_statistics`
 
          
 
@@ -585,7 +586,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.gatherspikes
+.. hoc:method:: ParallelNetManager.gatherspikes
 
 
     Syntax:
@@ -603,7 +604,7 @@ ParallelNetManager
 
 
 
-.. method:: ParallelNetManager.splitcell
+.. hoc:method:: ParallelNetManager.splitcell
 
 
     Syntax:
@@ -627,6 +628,6 @@ ParallelNetManager
         cannot be used with variable step methods at this time. A cell can 
         be split into only two pieces. 
          
-        Splitcell is implemented using the :meth:`ParallelContext.splitcell` method 
-        of :class:`ParallelContext`. 
+        Splitcell is implemented using the :hoc:meth:`ParallelContext.splitcell` method
+        of :hoc:class:`ParallelContext`.
 

@@ -1,6 +1,8 @@
-.. _nmodl2:
 
-.. _nmodltoneuron:
+.. _hoc_nmodl2:
+
+
+.. _hoc_nmodltoneuron:
 
 NEURON Extension to NMODL
 -------------------------
@@ -57,7 +59,7 @@ Description:
     The suffix, "``_name``" is appended to all variables, functions, and 
     procedures that are accessible from the user level of NEURON. If the ``SUFFIX``
     statement is absent, the file name is used as the suffix (with the addition 
-    of an underscore character).  If there is a :ref:`mech` statement, 
+    of an underscore character).  If there is a :ref:`hoc_mech` statement,
     that name 
     is used as the suffix.  Suffixes prevent overloading of names at the user 
     level of NEURON.  At some point in the future I may add something similar 
@@ -343,7 +345,8 @@ Description:
 
     in a ``VERBATIM`` block and use them with the proper suffix. 
 
-.. _connectingmechanismstogether:
+
+.. _hoc_connectingmechanismstogether:
 
 Connecting Mechanisms Together
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -452,4 +455,4 @@ Description:
     merging models into one larger 
     model may eliminate the instability. 
 
-
+.. include:: ../../../../nmodl/verbatim.rst

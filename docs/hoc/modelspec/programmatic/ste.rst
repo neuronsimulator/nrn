@@ -1,9 +1,10 @@
-.. _ste:
+
+.. _hoc_ste:
 
 StateTransitionEvent
 --------------------
 
-.. class:: StateTransitionEvent
+.. hoc:class:: StateTransitionEvent
 
   Syntax:
     ``ste = new StateTransitionEvent(nstate, [pointprocess])``
@@ -15,10 +16,10 @@ StateTransitionEvent
     case that when a transition occurs, a callback is executed
     
     `nstate` is the number of states available to the machine and must be > 0 (1 is valid). If a state index, ``istate``,
-    is not the destination of a :meth:`StateTransitionEvent.transition`, then the only way to reach
-    it is via an interpreter call to :meth:`StateTransitionEvent.state` with arg ``istate``.  If ``istate`` is not
+    is not the destination of a :hoc:meth:`StateTransitionEvent.transition`, then the only way to reach
+    it is via an interpreter call to :hoc:meth:`StateTransitionEvent.state` with arg ``istate``.  If ``istate`` is not
     the source for a transition, then the only exit from it is when a transition enters it an the consequent callback
-    executes a :meth:`StateTransitionEvent.state` with arg different from ``istate``.
+    executes a :hoc:meth:`StateTransitionEvent.state` with arg different from ``istate``.
     
     ``The pointprocess`` arg is needed only if the simulation uses multiple threads or the local variable time
     step method. (an admittedly grotesque requirement to give a hint as to which thread and cell is appropriate for
@@ -106,7 +107,7 @@ StateTransitionEvent
 
 ----
 
-.. method:: StateTransitionEvent.state
+.. hoc:method:: StateTransitionEvent.state
 
   Syntax:
     ``istate = ste.state()``
@@ -119,13 +120,13 @@ StateTransitionEvent
   When setting a state, the transitions from the previous state are deactivated and all the transitions leaving the
   ``istate`` index become possible during future time steps.
   
-  The user should supply a type 1 :class:`FInitializeHandler` callback to set the initial state index (and perhaps set
+  The user should supply a type 1 :hoc:class:`FInitializeHandler` callback to set the initial state index (and perhaps set
   state dependent transition trigger threshold values)
   when a new simulation run begins.
   
 ----
 
-.. method:: StateTransitionEvent.transition
+.. hoc:method:: StateTransitionEvent.transition
 
   Syntax:
     ``ste.transition(isrcstate, ideststate, &triggervar, &triggerthresh, "statement")``

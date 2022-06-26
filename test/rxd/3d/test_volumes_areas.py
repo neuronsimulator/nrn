@@ -15,9 +15,9 @@ def test_volumes_areas(neuron_instance):
     nodes_internal = [node for node in ca.nodes if not node.surface_area]
 
     correct_surface_area = 15.713551302745485
-    correct_surface_vol = 2.6875
+    correct_surface_vol = 2.398148148148151
     correct_internal_vol = 3.0
-    correct_vol = 5.6875
+    correct_vol = 5.398148148148163
 
     surface_area = sum([nd.surface_area for nd in nodes_on_surface])
     surface_vol = sum([nd.volume for nd in nodes_on_surface])

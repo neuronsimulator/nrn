@@ -1,4 +1,5 @@
-.. _glyph:
+
+.. _hoc_glyph:
 
          
 Glyph
@@ -6,7 +7,7 @@ Glyph
 
 
 
-.. class:: Glyph
+.. hoc:class:: Glyph
 
 
     Syntax:
@@ -25,7 +26,7 @@ Glyph
         The drawing style uses commands reminiscent of postscript. 
 
     .. seealso::
-        :class:`Graph`, :meth:`Graph.glyph`
+        :hoc:class:`Graph`, :hoc:meth:`Graph.glyph`
 
          
 
@@ -33,7 +34,7 @@ Glyph
 
 
 
-.. method:: Glyph.new_path
+.. hoc:method:: Glyph.new_path
 
 
     Syntax:
@@ -49,7 +50,7 @@ Glyph
 
 
 
-.. method:: Glyph.move_to
+.. hoc:method:: Glyph.move_to
 
 
     Syntax:
@@ -65,7 +66,7 @@ Glyph
 
 
 
-.. method:: Glyph.line_to
+.. hoc:method:: Glyph.line_to
 
 
     Syntax:
@@ -81,7 +82,7 @@ Glyph
 
 
 
-.. method:: Glyph.curve_to
+.. hoc:method:: Glyph.curve_to
 
 
     Syntax:
@@ -97,7 +98,7 @@ Glyph
 
 
 
-.. method:: Glyph.close_path
+.. hoc:method:: Glyph.close_path
 
 
     Syntax:
@@ -113,7 +114,7 @@ Glyph
 
 
 
-.. method:: Glyph.circle
+.. hoc:method:: Glyph.circle
 
 
     Syntax:
@@ -147,7 +148,7 @@ Glyph
 
 
 
-.. method:: Glyph.stroke
+.. hoc:method:: Glyph.stroke
 
 
     Syntax:
@@ -167,7 +168,7 @@ Glyph
 
 
 
-.. method:: Glyph.fill
+.. hoc:method:: Glyph.fill
 
 
     Syntax:
@@ -185,7 +186,7 @@ Glyph
 
 
 
-.. method:: Glyph.control_point
+.. hoc:method:: Glyph.control_point
 
 
     Syntax:
@@ -203,7 +204,7 @@ Glyph
 
 
 
-.. method:: Glyph.erase
+.. hoc:method:: Glyph.erase
 
 
     Syntax:
@@ -219,7 +220,7 @@ Glyph
 
 
 
-.. method:: Glyph.label
+.. hoc:method:: Glyph.label
 
 
     Syntax:
@@ -235,7 +236,7 @@ Glyph
 
 
 
-.. method:: Glyph.glyph
+.. hoc:method:: Glyph.glyph
 
 
     Syntax:
@@ -251,7 +252,7 @@ Glyph
 
 
 
-.. method:: Glyph.gif
+.. hoc:method:: Glyph.gif
 
 
     Syntax:
@@ -259,12 +260,12 @@ Glyph
 
 
     Description:
-        Reads the gif image in the file. All :class:`Glyph` arguments still work 
+        Reads the gif image in the file. All :hoc:class:`Glyph` arguments still work
         when the glyph contains a gif image. The gif image is drawn first so 
         other drawing specs will appear on top of it. 
 
     .. seealso::
-        :meth:`Graph.gif`, :meth:`Graph.glyph`
+        :hoc:meth:`Graph.gif`, :hoc:meth:`Graph.glyph`
 
          
          

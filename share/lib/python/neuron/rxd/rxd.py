@@ -117,7 +117,7 @@ ics_register_reaction.argtypes = [
     _int_ptr,
     numpy.ctypeslib.ndpointer(dtype=numpy.uint64),
     ctypes.c_int,
-    numpy.ctypeslib.ndpointer(dtype=numpy.float),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 ecs_register_reaction = nrn_dll_sym("ecs_register_reaction")
@@ -137,10 +137,10 @@ set_hybrid_data.argtypes = [
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
     numpy.ctypeslib.ndpointer(dtype=numpy.int64),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
-    numpy.ctypeslib.ndpointer(dtype=numpy.float_),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
+    numpy.ctypeslib.ndpointer(dtype=float),
 ]
 
 # ics_register_reaction = nrn_dll_sym('ics_register_reaction')
@@ -192,6 +192,7 @@ _c_headers = """#include <math.h>
 /*Some functions supported by numpy that aren't included in math.h
  * names and arguments match the wrappers used in rxdmath.py
  */
+extern "C" {
 double factorial(const double);
 double degrees(const double);
 void radians(const double, double*);
@@ -519,35 +520,35 @@ def _find_librxdmath():
     return dll
 
 
-def _c_compile(formula):
+def _cxx_compile(formula):
     filename = "rxddll" + str(uuid.uuid1())
-    with open(filename + ".c", "w") as f:
+    with open(filename + ".cpp", "w") as f:
         f.write(formula)
     math_library = "-lm"
     fpic = "-fPIC"
     try:
-        gcc = os.environ["CC"]
+        gcc = os.environ["CXX"]
     except:
         # when running on windows try and used the gcc included with NEURON
         if sys.platform.lower().startswith("win"):
             math_library = ""
             fpic = ""
             gcc = os.path.join(
-                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-gcc.exe"
+                h.neuronhome(), "mingw", "mingw64", "bin", "x86_64-w64-mingw32-g++.exe"
             )
             if not os.path.isfile(gcc):
                 raise RxDException(
-                    "unable to locate a C compiler. Please `set CC=<path to C compiler>`"
+                    "unable to locate a CXX compiler. Please `set CXX=<path to CXX compiler>`"
                 )
         else:
-            gcc = "gcc"
+            gcc = "g++"
     # TODO: Check this works on non-Linux machines
     gcc_cmd = "%s -I%s -I%s " % (
         gcc,
         sysconfig.get_path("include"),
         os.path.join(h.neuronhome(), "..", "..", "include", "nrn"),
     )
-    gcc_cmd += "-shared %s  %s.c %s " % (fpic, filename, _find_librxdmath())
+    gcc_cmd += "-shared %s  %s.cpp %s " % (fpic, filename, _find_librxdmath())
     gcc_cmd += "-o %s.so %s" % (filename, math_library)
     if sys.platform.lower().startswith("win"):
         my_path = os.getenv("PATH")
@@ -568,7 +569,7 @@ def _c_compile(formula):
         ctypes.POINTER(ctypes.c_double),
     ]
     reaction.restype = ctypes.c_double
-    os.remove(filename + ".c")
+    os.remove(filename + ".cpp")
     if sys.platform.lower().startswith("win"):
         # cannot remove dll that are in use
         _windows_dll.append(weakref.ref(dll))
@@ -647,7 +648,7 @@ def _update_node_data(force=False, newspecies=False):
 def _matrix_to_rxd_sparse(m):
     """precondition: assumes m a numpy array"""
     nonzero_i, nonzero_j = list(zip(*list(m.keys())))
-    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=numpy.float64)
+    nonzero_values = numpy.ascontiguousarray(list(m.values()), dtype=float)
 
     # number of rows
     n = m.shape[1]
@@ -673,25 +674,6 @@ def _setup_matrices():
 
         n = len(_node_get_states())
 
-        # TODO: Replace with ADI version
-        """
-        if species._has_3d:
-            _euler_matrix = _scipy_sparse_dok_matrix((n, n), dtype=float)
-    
-            for sr in list(_species_get_all_species().values()):
-                s = sr()
-                if s is not None: s._setup_matrices3d(_euler_matrix)
-    
-            _diffusion_matrix = -_euler_matrix
-    
-            _euler_matrix = _euler_matrix.tocsr()
-            _update_node_data(True)
-    
-            # NOTE: if we also have 1D, this will be replaced with the correct values below
-            _zero_volume_indices = []
-            _nonzero_volume_indices = list(range(len(_node_get_states())))
-            
-        """
         volumes = node._get_data()[0]
         zero_volume_indices = (numpy.where(volumes == 0)[0]).astype(numpy.int_)
         if species._has_1d:
@@ -742,9 +724,6 @@ def _setup_matrices():
                 #        _linmodadd_c[i, i] = 1
 
                 # _cvode_object.re_init()
-
-                # if species._has_3d:
-                #    _euler_matrix = -_diffusion_matrix
 
         # Hybrid logic
         if species._has_1d and species._has_3d:
@@ -855,7 +834,7 @@ def _setup_matrices():
                 sp = grid_id_species[grid_id]
                 # TODO: use 3D anisotropic diffusion coefficients
                 dc = grid_id_dc[grid_id]
-                grids_dx.append(sp._dx ** 3)
+                grids_dx.append(sp._dx**3)
                 num_1d_indices_per_grid.append(len(grid_id_indices1d[grid_id]))
                 grid_3d_indices_cnt = 0
                 for index1d in grid_id_indices1d[grid_id]:
@@ -905,10 +884,10 @@ def _setup_matrices():
             hybrid_grid_ids = numpy.asarray(hybrid_grid_ids, dtype=numpy.int64)
 
             hybrid_indices3d = numpy.asarray(hybrid_indices3d, dtype=numpy.int64)
-            rates = numpy.asarray(rates, dtype=numpy.float_)
-            volumes1d = numpy.asarray(volumes1d, dtype=numpy.float_)
-            volumes3d = numpy.asarray(volumes3d, dtype=numpy.float_)
-            dxs = numpy.asarray(grids_dx, dtype=numpy.float_)
+            rates = numpy.asarray(rates, dtype=float)
+            volumes1d = numpy.asarray(volumes1d, dtype=float)
+            volumes3d = numpy.asarray(volumes3d, dtype=float)
+            dxs = numpy.asarray(grids_dx, dtype=float)
             set_hybrid_data(
                 num_1d_indices_per_grid,
                 num_3d_indices_per_grid,
@@ -1489,7 +1468,7 @@ def _compile_reactions():
                                 operator,
                                 summed_mults[idx],
                             )
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             register_rate(
                 creg.num_species,
                 creg.num_params,
@@ -1503,7 +1482,7 @@ def _compile_reactions():
                 mc_mult_count,
                 numpy.array(mc_mult_list, dtype=ctypes.c_double),
                 _list_to_pyobject_array(creg._vptrs),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
     # Setup intracellular 3D reactions
@@ -1732,7 +1711,7 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             for i, ele in enumerate(mults):
                 if ele == []:
                     mults[i] = numpy.ones(len(reg._xs))
@@ -1745,7 +1724,7 @@ def _compile_reactions():
                 numpy.asarray(mc3d_indices_start, dtype=numpy.uint64),
                 mc3d_region_size,
                 numpy.asarray(mults),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
     # Setup extracellular reactions
     if len(ecs_regions_inv) > 0:
@@ -1855,13 +1834,13 @@ def _compile_reactions():
                             r._mult[idx],
                         )
                         idx += 1
-            fxn_string += "\n}\n"
+            fxn_string += "\n}\n}\n"
             ecs_register_reaction(
                 0,
                 len(all_gids),
                 len(param_gids),
                 _list_to_cint_array(all_gids + param_gids),
-                _c_compile(fxn_string),
+                _cxx_compile(fxn_string),
             )
 
 
@@ -1996,6 +1975,16 @@ def _do_nbs_register():
         # register scatter/gather mechanisms
         #
         _cvode_object.extra_scatter_gather(0, _after_advance)
+
+        # register save state mechanism
+        import neuron
+        from neuron import rxd
+
+        neuron.register_savestate(
+            "rxd-9e015bfa-93ba-485c-9dd2-09857ae58e4d",
+            rxd.save_state,
+            rxd.restore_state,
+        )
 
 
 # register the Python callbacks

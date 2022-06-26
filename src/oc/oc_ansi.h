@@ -20,18 +20,25 @@
  * @{
  */
 
-
-#if defined(__cplusplus)
+struct Arrayinfo;
+struct cTemplate;
+union Datum;
+struct DoubScal;
+struct DoubVec;
+struct HocSymExtension;
 class IvocVect;
-#else
-#define IvocVect void
-#endif
+struct Object;
+union Objectdata;
+struct Symbol;
+struct Symlist;
+struct VoidFunc;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-    // nocpout.cpp
+// nocpout.cpp
+extern Symbol* hoc_get_symbol(const char* var);
 extern void hoc_register_var(DoubScal*, DoubVec*, VoidFunc*);
 extern void ivoc_help(const char*);
 
@@ -46,28 +53,52 @@ extern void hoc_execerr_ext(const char* fmt, ...);
 extern char* hoc_object_name(Object*);
 extern void hoc_retpushx(double);
 
-extern double* getarg(int);
+extern double* hoc_getarg(int);
+double* hoc_pgetarg(int);
 extern int ifarg(int);
 
 extern int vector_instance_px(void*, double**);
-extern void install_vector_method(const char*, double(*)(void*));
+extern void install_vector_method(const char*, double (*)(void*));
 
-extern IvocVect* vector_arg(int);
 extern int vector_arg_px(int i, double** p);
-extern double* vector_vec(IvocVect*);
-extern int vector_capacity(IvocVect*);
-extern void vector_resize(IvocVect*, int);
 
 #if defined(__cplusplus)
 }
 #endif
+
+double hoc_Exp(double);
+int hoc_is_tempobj_arg(int narg);
+FILE* hoc_obj_file_arg(int i);
+void hoc_reg_nmodl_text(int type, const char* txt);
+void hoc_reg_nmodl_filename(int type, const char* filename);
+size_t nrn_mallinfo(int item);
+int nrn_mlh_gsort(double* vec, int* base_ptr, int total_elems, int (*cmp)(double, double));
+void state_discontinuity(int i, double* pd, double d);
+
+IvocVect* vector_arg(int);
+int vector_buffer_size(IvocVect*);
+int vector_capacity(IvocVect*);
+IvocVect* vector_new(int, Object* = nullptr);
+IvocVect* vector_new0();
+IvocVect* vector_new1(int);
+IvocVect* vector_new2(IvocVect*);
+Object** vector_pobj(IvocVect*);
+void vector_resize(IvocVect*, int);
+double* vector_vec(IvocVect*);
+
+// olupton 2022-01-21: These overloads are added for backwards compatibility
+//                     with pre-C++ mechanisms.
+[[deprecated("non-void* overloads are preferred")]] int vector_buffer_size(void*);
+[[deprecated("non-void* overloads are preferred")]] int vector_capacity(void*);
+[[deprecated("non-void* overloads are preferred")]] Object** vector_pobj(void*);
+[[deprecated("non-void* overloads are preferred")]] void vector_resize(void*, int);
+[[deprecated("non-void* overloads are preferred")]] double* vector_vec(void*);
 
 extern int nrnignore;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
 
 /**
  * \brief Brief explanation of hoc_obj_run
@@ -81,10 +112,9 @@ extern int hoc_is_double_arg(int);
 extern int hoc_is_pdouble_arg(int);
 extern int hoc_is_str_arg(int);
 extern int hoc_is_object_arg(int);
-extern char* gargstr(int);
+extern char* hoc_gargstr(int);
 extern char** hoc_pgargstr(int);
 
-extern double* hoc_pgetarg(int);
 extern Object** hoc_objgetarg(int);
 extern Object* hoc_name2obj(const char* name, int index);
 
@@ -92,8 +122,11 @@ extern char** hoc_temp_charptr(void);
 extern int hoc_is_temp_charptr(char** cpp);
 extern void hoc_assign_str(char** pstr, const char* buf);
 extern double chkarg(int, double low, double high);
-extern double hoc_call_func(Symbol*, int narg); /* push first arg first. Warning: if the function is inside an object make sure you know what you are doing.*/
-extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of an object.*/
+extern double hoc_call_func(Symbol*,
+                            int narg); /* push first arg first. Warning: if the function is inside
+                                          an object make sure you know what you are doing.*/
+extern double hoc_call_objfunc(Symbol*, int narg, Object*); /* call a fuction within the context of
+                                                               an object.*/
 extern double hoc_ac_;
 extern double hoc_epsilon;
 extern int nrn_inpython_;
@@ -112,10 +145,10 @@ extern void hoc_pushpx(double*);
 extern void hoc_pushs(Symbol*);
 extern void hoc_pushi(int);
 extern double hoc_xpop(void);
-extern Symbol *hoc_spop(void);
+extern Symbol* hoc_spop(void);
 extern double* hoc_pxpop(void);
 extern Object** hoc_objpop(void);
-extern Object*  hoc_pop_object(void);
+extern Object* hoc_pop_object(void);
 extern char** hoc_strpop(void);
 extern int hoc_ipop(void);
 extern void hoc_nopop(void);
@@ -137,7 +170,7 @@ extern char* hoc_object_pathname(Object*);
 extern const char* expand_env_var(const char*);
 extern void check_obj_type(Object*, const char*);
 extern int is_obj_type(Object*, const char*);
-extern void hoc_obj_ref(Object*); /* NULL allowed */
+extern void hoc_obj_ref(Object*);   /* NULL allowed */
 extern void hoc_obj_unref(Object*); /* NULL allowed */
 extern void hoc_dec_refcount(Object**);
 extern Object** hoc_temp_objvar(Symbol* template_symbol, void* cpp_object);
@@ -176,6 +209,7 @@ extern void hoc_fake_call(Symbol*);
 extern void hoc_last_init(void);
 extern void hoc_obj_notify(Object*);
 extern int ivoc_list_count(Object*);
+Object* ivoc_list_item(Object*, int);
 extern double hoc_func_table(void* functable, int n, double* args);
 extern void hoc_spec_table(void** pfunctable, int n);
 extern void* hoc_sec_internal_name2ptr(const char* s, int eflag);
@@ -183,15 +217,9 @@ extern void* hoc_pysec_name2ptr(const char* s, int eflag);
 extern void* nrn_parsing_pysec_;
 
 extern void vector_append(IvocVect*, double);
-extern IvocVect* vector_new(int, Object*); /*use this if possible*/
-extern IvocVect* vector_new0();
-extern IvocVect* vector_new1(int);
-extern IvocVect* vector_new2(IvocVect*);
 extern void vector_delete(IvocVect*);
-extern int vector_buffer_size(IvocVect*);
 
 extern Object** vector_temp_objvar(IvocVect*);
-extern Object** vector_pobj(IvocVect*);
 
 extern int is_vector_arg(int);
 
@@ -220,9 +248,9 @@ extern void hoc_audit_from_hoc_main1(int, const char**, const char**);
 extern void hoc_audit_from_final_exit(void);
 extern void hoc_audit_from_xopen1(const char*, const char*);
 extern void hoc_xopen_from_audit(const char* fname);
-extern int hoc_retrieving_audit (void);
-extern int hoc_retrieve_audit (int id);
-extern int hoc_saveaudit (void);
+extern int hoc_retrieving_audit(void);
+extern int hoc_retrieve_audit(int id);
+extern int hoc_saveaudit(void);
 
 extern void hoc_close_plot(void);
 extern void ivoc_cleanup(void);
@@ -256,7 +284,7 @@ extern void hoc_obj_disconnect(Object*);
 extern void hoc_free_object(Object*);
 extern void hoc_free_pstring(char**);
 extern int hoc_returning;
-extern void hoc_on_init_register(Pfrv);
+extern void hoc_on_init_register(void (*)());
 extern int hoc_pid(void);
 extern int hoc_ired(const char*, int, int, int);
 extern double hoc_xred(const char*, double, double, double);
@@ -267,7 +295,9 @@ extern void nrnpy_pass();
 extern void hoc_free_allobjects(cTemplate*, Symlist*, Objectdata*);
 extern int nrn_is_cable(void);
 extern int nrn_isdouble(double*, double, double);
-extern void* nrn_opaque_obj2pyobj(Object*); // PyObject reference not incremented
+extern void* nrn_opaque_obj2pyobj(Object*);  // PyObject reference not incremented
+extern Symbol* hoc_get_symbol(const char* var);
+
 
 #if defined(__cplusplus)
 }
@@ -277,7 +307,11 @@ extern int _nrnunit_use_legacy_; /* 1:legacy, 0:modern (default) */
 extern void bbs_done(void);
 extern int hoc_main1(int, const char**, const char**);
 extern char* cxx_char_alloc(size_t size);
-extern int stoprun;
+
+// olupton 2022-01-31: This has to have C linkage for now because it is used in
+//                     praxis.c.
+extern "C" int stoprun;
+extern int nrn_mpiabort_on_error_;
 
 #endif
 

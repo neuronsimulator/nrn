@@ -1,7 +1,8 @@
+.. _python_prog_ref:
 
 NEURON Python documentation
 ===========================
-(`Switch to HOC documentation <../hoc/index.html>`_)
+(:ref:`Switch to HOC documentation <hoc_prog_ref>`)
 
 Quick Links
 -----------

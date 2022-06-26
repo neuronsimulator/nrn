@@ -1,7 +1,7 @@
 # =============================================================================
 # Compiler specific settings
 # =============================================================================
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR NRN_MACOS_BUILD)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR NRN_MACOS_BUILD)
   set(UNDEFINED_SYMBOLS_IGNORE_FLAG "-undefined dynamic_lookup")
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
   string(APPEND CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS " ${UNDEFINED_SYMBOLS_IGNORE_FLAG}")
@@ -40,8 +40,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "PGI" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
     # "src/oc/fmenu.cpp", warning #941-D: missing return statement at end of non-void function "ibmgetc"
     # "src/modlunit/consist.cpp", warning #2465-D: conversion from a string literal to "char *" is deprecated
     # ~~~
-    set(NRN_COMPILE_WARNING_SUPPRESSIONS
-        --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
+    list(APPEND NRN_COMPILE_FLAGS
+         --diag_suppress=1,47,111,128,170,174,177,180,186,301,541,550,816,941,2465)
+  endif()
+  if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 21.11)
+    # Random123 does not play nicely with NVHPC 21.11+'s detection of ABM features, see:
+    # https://github.com/BlueBrain/CoreNeuron/issues/724 and
+    # https://github.com/DEShawResearch/random123/issues/6.
+    list(APPEND NRN_COMPILE_DEFS R123_USE_INTRIN_H=0)
   endif()
 else()
   set(NRN_HAVE_NVHPC_COMPILER OFF)
@@ -52,7 +58,5 @@ endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "PGI")
   # CMake adds strict standard complaint PGI flag "-A" which breaks compilation of old codes (e.g.
   # spdlog, fmt)
-  set(CMAKE_CXX98_STANDARD_COMPILE_OPTION "")
-  set(CMAKE_CXX11_STANDARD_COMPILE_OPTION --c++11)
   set(CMAKE_CXX14_STANDARD_COMPILE_OPTION --c++14)
 endif()

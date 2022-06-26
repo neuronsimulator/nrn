@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # All binaries that will be part of the package must be signed with a
 # Developer ID Application certificate in order to be notarized.

@@ -2,28 +2,29 @@
 /* a fake change */
 /* /local/src/master/nrn/src/oc/math.cpp,v 1.6 1999/07/16 13:43:10 hines Exp */
 
-#include <math.h>
-#include <errno.h>
-#include <stdio.h>
+#include "hoc.h"
 #include "nrnmpiuse.h"
 #include "ocfunc.h"
-# include	"hoc.h"
+#include <cfenv>
+#include <cmath>
+#include <errno.h>
+#include <stdio.h>
 
 
-#define EPS hoc_epsilon
+#define EPS         hoc_epsilon
 #define MAXERRCOUNT 5
 
 int hoc_errno_count;
 
 #if _CRAY
-#define log logl
+#define log   logl
 #define log10 log10l
-#define exp expl
-#define sqrt sqrtl
-#define pow powl
+#define exp   expl
+#define sqrt  sqrtl
+#define pow   powl
 #endif
 
-static double errcheck(double, const char *);
+static double errcheck(double, const char*);
 
 void hoc_atan2(void) {
     double d;
@@ -41,7 +42,7 @@ double Log10(double x) {
 }
 
 /* used by nmodl and other c, c++ code */
-extern "C" double hoc_Exp(double x) {
+double hoc_Exp(double x) {
     if (x < -700.) {
         return 0.;
     } else if (x > 700 && nrn_feenableexcept_ == 0) {
@@ -84,12 +85,15 @@ double integer(double x) {
     }
 }
 
-double errcheck(double d, const char *s)    /* check result of library call */
+double errcheck(double d, const char* s) /* check result of library call */
 {
-    if (errno == EDOM) {
+    // errno is not set for macOs, check FE exceptions as well. See:
+    // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
+    if (errno == EDOM || std::fetestexcept(FE_INVALID)) {
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE) {
+    } else if (errno == ERANGE || std::fetestexcept(FE_DIVBYZERO) ||
+               std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) {
         errno = 0;
 #if 0
         hoc_execerror(s, "result out of range");
@@ -132,7 +136,7 @@ int hoc_errno_check(void) {
             errno = 0;
             return 0;
         }
-#if defined(CYGWIN)
+#ifdef MINGW
         if (errno == EBUSY) {
             errno = 0;
             return 0;
@@ -140,18 +144,20 @@ int hoc_errno_check(void) {
 #endif
         switch (errno) {
         case EDOM:
-fprintf(stderr, "A math function was called with argument out of domain\n");
+            fprintf(stderr, "A math function was called with argument out of domain\n");
             break;
         case ERANGE:
-fprintf(stderr, "A math function was called that returned an out of range value\n");
+            fprintf(stderr, "A math function was called that returned an out of range value\n");
             break;
 #if LINDA
-/* regularly set by eval() and perhaps other linda commands */
-                case EAGAIN:
-                if (parallel_eagain++ == 0) {
+            /* regularly set by eval() and perhaps other linda commands */
+        case EAGAIN:
+            if (parallel_eagain++ == 0) {
                 perror("oc");
-fprintf(stderr, "oc: This error occurs often from LINDA and thus will not be further reported.\n");
-                }
+                fprintf(stderr,
+                        "oc: This error occurs often from LINDA and thus will not be further "
+                        "reported.\n");
+            }
             break;
 #endif
         default:
@@ -159,7 +165,7 @@ fprintf(stderr, "oc: This error occurs often from LINDA and thus will not be fur
             break;
         }
         if (hoc_errno_count == MAXERRCOUNT) {
-fprintf(stderr, "No more errno warnings during this execution\n");
+            fprintf(stderr, "No more errno warnings during this execution\n");
         }
     }
     ierr = errno;
@@ -167,4 +173,3 @@ fprintf(stderr, "No more errno warnings during this execution\n");
     return ierr;
 #endif
 }
-

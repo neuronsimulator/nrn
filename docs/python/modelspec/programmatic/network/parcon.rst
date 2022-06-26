@@ -3,6 +3,9 @@
 ParallelContext
 ---------------
 
+A video tutorial of parallelization in NEURON from the 2021 NEURON
+summer webinar series is available :ref:`here<parallel-neuron-sims-2021-07-13>`.
+
 .. toctree::
     :hidden:
 
@@ -312,6 +315,20 @@ ParallelContext
 
 ----
 
+.. method:: ParallelContext.mpiabort_on_error
+
+
+    Syntax:
+        ``oldflag = pc.mpiabort_on_error(newflag)``
+
+    Description:
+        Normally, when running with MPI, a hoc error causes a call to MPI_Abort
+        so that all processes can be notified to exit cleanly without
+        any processes hanging. (e.g. waiting for a communicator
+        collective to complete). The call to MPI_Abort can be avoided by
+        calling this method with newflag = 0. This occurs automatically
+        when :func:`execute1` is used.  The method returns the previous
+        value of the flag.
 
 
 .. method:: ParallelContext.submit
@@ -1371,6 +1388,9 @@ Description:
         environment varialble has not been exported.
 
         launched nrniv without -mpi argument.
+
+        Since ``nrnmpi_init`` turns off gui for all ranks > 0, do not ``from neuron import gui``
+        beforehand.
 
         The mpi_init method name was removed from ParallelContext and replaced
         with the HocTopLevelInterpreter method nrnmpi_init() because MPI
@@ -3176,10 +3196,13 @@ Parallel Transfer
 
 
     Description:
-        Returns the number of cores/processors available for parallel simulation. 
-        The number is determined experimentally by repeatedly doubling the number 
-        of test threads each doing a count to 1e8 until the test time significantly 
-        increases. 
+        Returns the number of concurrent threads supported by the hardware. This
+        is the value returned by `std::thread::hardware_concurrency()
+        <https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency>`_.
+        On a system that supports hyperthreading this will typically be double
+        the number of physical cores available, and it may not take into account
+        constraints such as MPI processes being bound to specific cores in a
+        cluster environment.
 
 
 ----
@@ -3373,7 +3396,7 @@ Parallel Transfer
             # run model
             from neuron import coreneuron
             coreneuron.enable = True
-            h.cvode.cache_efficient(1)
+            h.CVode().cache_efficient(1)
             h.stdinit()
             pc.psolve(h.tstop)
 

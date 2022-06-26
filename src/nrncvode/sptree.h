@@ -9,15 +9,15 @@
 **  with the compare function applied to the addresses of two keys.
 */
 
-# ifndef SPTREE_H
-# define SPTREE_H
+#ifndef SPTREE_H
+#define SPTREE_H
 
-# ifndef NULL
-# define NULL	0
-# endif
+#ifndef NULL
+#define NULL 0
+#endif
 
 #if 0
-# define STRCMP( a, b ) ( (Sct = *(a) - *(b)) ? Sct : strcmp( (a), (b) ) )
+#define STRCMP(a, b) ((Sct = *(a) - *(b)) ? Sct : strcmp((a), (b)))
 #else
 #define STRCMP(a, b) (a - b)
 #endif
@@ -36,40 +36,38 @@ typedef struct _spblk
 } SPBLK;
 #endif
 
-template<typename SPBLK>
-struct SPTREE
-{
-    SPBLK	* root;		/* root node */
+template <typename SPBLK>
+struct SPTREE {
+    SPBLK* root; /* root node */
 
     /* Statistics, not strictly necessary, but handy for tuning  */
 
-    int		lookups;	/* number of splookup()s */
-    int		lkpcmps;	/* number of lookup comparisons */
-    
-    int		enqs;		/* number of spenq()s */
-    int		enqcmps;	/* compares in spenq */
-    
-    int		splays;
-    int		splayloops;
+    int lookups; /* number of splookup()s */
+    int lkpcmps; /* number of lookup comparisons */
 
+    int enqs;    /* number of spenq()s */
+    int enqcmps; /* compares in spenq */
+
+    int splays;
+    int splayloops;
 };
 
-#define spinit sptq_spinit
-#define spempty sptq_spempty
-#define spenq sptq_spenq
-#define spdeq sptq_spdeq
-#define spenqprior sptq_spenqprior
-#define splay sptq_splay
-#define sphead sptq_sphead
-#define spdelete sptq_spdelete
-#define spnext sptq_spnext
-#define spprev sptq_spprev
+#define spinit      sptq_spinit
+#define spempty     sptq_spempty
+#define spenq       sptq_spenq
+#define spdeq       sptq_spdeq
+#define spenqprior  sptq_spenqprior
+#define splay       sptq_splay
+#define sphead      sptq_sphead
+#define spdelete    sptq_spdelete
+#define spnext      sptq_spnext
+#define spprev      sptq_spprev
 #define spenqbefore sptq_spenqbefore
-#define spenqafter sptq_spenqafter
-#define splookup sptq_splookup
+#define spenqafter  sptq_spenqafter
+#define splookup    sptq_splookup
 /*#define spinstall sptq_spinstall*/
-#define sptail sptq_sptail
-#define spscan sptq_spscan
+#define sptail  sptq_sptail
+#define spscan  sptq_spscan
 #define sprscan sptq_sprscan
 #define spfhead sptq_spfhead
 #define spfnext sptq_spfnext
@@ -77,7 +75,7 @@ struct SPTREE
 #define spstats sptq_spstats
 
 /*  Original file: sptree.cpp
- *  
+ *
  *  sptree.cpp:  The following code implements the basic operations on
  *  an event-set or priority-queue implemented using splay trees:
  *
@@ -134,10 +132,8 @@ Hines changed to void spinit(SPTREE<SPBLK>**) for use with TQueue.
  * spinit() -- initialize an empty splay tree
  *
  */
-template<typename SPBLK>
-void
-spinit(SPTREE<SPBLK>* q)
-{
+template <typename SPBLK>
+void spinit(SPTREE<SPBLK>* q) {
     q->lookups = 0;
     q->lkpcmps = 0;
     q->enqs = 0;
@@ -151,11 +147,9 @@ spinit(SPTREE<SPBLK>* q)
  *
  * spempty() -- is an event-set represented as a splay tree empty?
  */
-template<typename SPBLK>
-int
-spempty( SPTREE<SPBLK>* q )
-{
-    return( q == NULL || q->root == NULL );
+template <typename SPBLK>
+int spempty(SPTREE<SPBLK>* q) {
+    return (q == NULL || q->root == NULL);
 }
 
 
@@ -171,66 +165,61 @@ spempty( SPTREE<SPBLK>* q )
  *  performed along the way to shorten the left branch of the right subtree
  *  and the right branch of the left subtree
  */
-template<typename SPBLK>
-SPBLK *
-spenq( SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * left;	/* the rightmost node in the left tree */
-    SPBLK * right;	/* the leftmost node in the right tree */
-    SPBLK * next;	/* the root of the unsplit part */
-    SPBLK * temp;
+template <typename SPBLK>
+SPBLK* spenq(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* left;  /* the rightmost node in the left tree */
+    SPBLK* right; /* the leftmost node in the right tree */
+    SPBLK* next;  /* the root of the unsplit part */
+    SPBLK* temp;
 
     double key;
-    int Sct;		/* Strcmp value */
+    int Sct; /* Strcmp value */
 
     q->enqs++;
     n->uplink = NULL;
     next = q->root;
     q->root = n;
-    if( next == NULL )	/* trivial enq */
+    if (next == NULL) /* trivial enq */
     {
         n->leftlink = NULL;
         n->rightlink = NULL;
-    }
-    else		/* difficult enq */
+    } else /* difficult enq */
     {
         key = n->key;
         left = n;
         right = n;
 
         /* n's left and right children will hold the right and left
-	   splayed trees resulting from splitting on n->key;
-	   note that the children will be reversed! */
+       splayed trees resulting from splitting on n->key;
+       note that the children will be reversed! */
 
         q->enqcmps++;
-        if ( STRCMP( next->key, key ) > 0 )
+        if (STRCMP(next->key, key) > 0)
             goto two;
 
-        one:	/* assert next->key <= key */
+    one: /* assert next->key <= key */
 
-        do	/* walk to the right in the left tree */
+        do /* walk to the right in the left tree */
         {
             temp = next->rightlink;
-            if( temp == NULL )
-            {
+            if (temp == NULL) {
                 left->rightlink = next;
                 next->uplink = left;
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
             q->enqcmps++;
-            if( STRCMP( temp->key, key ) > 0 )
-            {
+            if (STRCMP(temp->key, key) > 0) {
                 left->rightlink = next;
                 next->uplink = left;
                 left = next;
                 next = temp;
-                goto two;	/* change sides */
+                goto two; /* change sides */
             }
 
             next->rightlink = temp->leftlink;
-            if( temp->leftlink != NULL )
+            if (temp->leftlink != NULL)
                 temp->leftlink->uplink = next;
             left->rightlink = temp;
             temp->uplink = left;
@@ -238,40 +227,37 @@ spenq( SPBLK* n, SPTREE<SPBLK>* q )
             next->uplink = temp;
             left = temp;
             next = temp->rightlink;
-            if( next == NULL )
-            {
+            if (next == NULL) {
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
             q->enqcmps++;
 
-        } while( STRCMP( next->key, key ) <= 0 );	/* change sides */
+        } while (STRCMP(next->key, key) <= 0); /* change sides */
 
-        two:	/* assert next->key > key */
+    two: /* assert next->key > key */
 
-        do	/* walk to the left in the right tree */
+        do /* walk to the left in the right tree */
         {
             temp = next->leftlink;
-            if( temp == NULL )
-            {
+            if (temp == NULL) {
                 right->leftlink = next;
                 next->uplink = right;
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
             q->enqcmps++;
-            if( STRCMP( temp->key, key ) <= 0 )
-            {
+            if (STRCMP(temp->key, key) <= 0) {
                 right->leftlink = next;
                 next->uplink = right;
                 right = next;
                 next = temp;
-                goto one;	/* change sides */
+                goto one; /* change sides */
             }
             next->leftlink = temp->rightlink;
-            if( temp->rightlink != NULL )
+            if (temp->rightlink != NULL)
                 temp->rightlink->uplink = next;
             right->leftlink = temp;
             temp->uplink = right;
@@ -279,19 +265,18 @@ spenq( SPBLK* n, SPTREE<SPBLK>* q )
             next->uplink = temp;
             right = temp;
             next = temp->leftlink;
-            if( next == NULL )
-            {
+            if (next == NULL) {
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
             q->enqcmps++;
 
-        } while( STRCMP( next->key, key ) > 0 );	/* change sides */
+        } while (STRCMP(next->key, key) > 0); /* change sides */
 
         goto one;
 
-        done:	/* split is done, branches of n need reversal */
+    done: /* split is done, branches of n need reversal */
 
         temp = n->leftlink;
         n->leftlink = n->rightlink;
@@ -301,7 +286,7 @@ spenq( SPBLK* n, SPTREE<SPBLK>* q )
 #if BBTQ != 4 && BBTQ != 5
     n->cnt++;
 #endif
-    return( n );
+    return (n);
 
 } /* spenq */
 
@@ -315,54 +300,47 @@ spenq( SPBLK* n, SPTREE<SPBLK>* q )
  *  subtree (if there is one); on the way to the leftmost node, rotations
  *  are performed to shorten the left branch of the tree
  */
-template<typename SPBLK>
-SPBLK *
-spdeq( SPBLK** np ) /* pointer to a node pointer */
+template <typename SPBLK>
+SPBLK* spdeq(SPBLK** np) /* pointer to a node pointer */
 
 {
-    SPBLK * deq;		/* one to return */
-    SPBLK * next;       	/* the next thing to deal with */
-    SPBLK * left;      	/* the left child of next */
-    SPBLK * farleft;		/* the left child of left */
-    SPBLK * farfarleft;	/* the left child of farleft */
+    SPBLK* deq;        /* one to return */
+    SPBLK* next;       /* the next thing to deal with */
+    SPBLK* left;       /* the left child of next */
+    SPBLK* farleft;    /* the left child of left */
+    SPBLK* farfarleft; /* the left child of farleft */
 
-    if( np == NULL || *np == NULL )
-    {
+    if (np == NULL || *np == NULL) {
         deq = NULL;
-    }
-    else
-    {
+    } else {
         next = *np;
         left = next->leftlink;
-        if( left == NULL )
-        {
+        if (left == NULL) {
             deq = next;
             *np = next->rightlink;
 
-            if( *np != NULL )
+            if (*np != NULL)
                 (*np)->uplink = NULL;
 
-        }
-        else for(;;)	/* left is not null */
+        } else
+            for (;;) /* left is not null */
             {
                 /* next is not it, left is not NULL, might be it */
                 farleft = left->leftlink;
-                if( farleft == NULL )
-                {
+                if (farleft == NULL) {
                     deq = left;
                     next->leftlink = left->rightlink;
-                    if( left->rightlink != NULL )
+                    if (left->rightlink != NULL)
                         left->rightlink->uplink = next;
                     break;
                 }
 
                 /* next, left are not it, farleft is not NULL, might be it */
                 farfarleft = farleft->leftlink;
-                if( farfarleft == NULL )
-                {
+                if (farfarleft == NULL) {
                     deq = farleft;
                     left->leftlink = farleft->rightlink;
-                    if( farleft->rightlink != NULL )
+                    if (farleft->rightlink != NULL)
                         farleft->rightlink->uplink = left;
                     break;
                 }
@@ -371,7 +349,7 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
                 next->leftlink = farleft;
                 farleft->uplink = next;
                 left->leftlink = farleft->rightlink;
-                if( farleft->rightlink != NULL )
+                if (farleft->rightlink != NULL)
                     farleft->rightlink->uplink = left;
                 farleft->rightlink = left;
                 left->uplink = farleft;
@@ -380,7 +358,7 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
             }
     }
 
-    return( deq );
+    return (deq);
 
 } /* spdeq */
 
@@ -399,61 +377,55 @@ spdeq( SPBLK** np ) /* pointer to a node pointer */
  *  same as that of spenq except for a substitution of comparison
  *  operators
  */
-template<typename SPBLK>
-SPBLK *
-spenqprior( SPBLK* n, SPTREE<SPBLK>* q )
-{
-
-    SPBLK * left;	/* the rightmost node in the left tree */
-    SPBLK * right;	/* the leftmost node in the right tree */
-    SPBLK * next;	/* the root of unsplit part of tree */
-    SPBLK * temp;
-    int Sct;		/* Strcmp value */
+template <typename SPBLK>
+SPBLK* spenqprior(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* left;  /* the rightmost node in the left tree */
+    SPBLK* right; /* the leftmost node in the right tree */
+    SPBLK* next;  /* the root of unsplit part of tree */
+    SPBLK* temp;
+    int Sct; /* Strcmp value */
     double key;
 
     n->uplink = NULL;
     next = q->root;
     q->root = n;
-    if( next == NULL )	/* trivial enq */
+    if (next == NULL) /* trivial enq */
     {
         n->leftlink = NULL;
         n->rightlink = NULL;
-    }
-    else		/* difficult enq */
+    } else /* difficult enq */
     {
         key = n->key;
         left = n;
         right = n;
 
         /* n's left and right children will hold the right and left
-	   splayed trees resulting from splitting on n->key;
-	   note that the children will be reversed! */
+       splayed trees resulting from splitting on n->key;
+       note that the children will be reversed! */
 
-        if( STRCMP( next->key, key ) >= 0 )
+        if (STRCMP(next->key, key) >= 0)
             goto two;
 
-        one:	/* assert next->key < key */
+    one: /* assert next->key < key */
 
-        do	/* walk to the right in the left tree */
+        do /* walk to the right in the left tree */
         {
             temp = next->rightlink;
-            if( temp == NULL )
-            {
+            if (temp == NULL) {
                 left->rightlink = next;
                 next->uplink = left;
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
-            if( STRCMP( temp->key, key ) >= 0 )
-            {
+            if (STRCMP(temp->key, key) >= 0) {
                 left->rightlink = next;
                 next->uplink = left;
                 left = next;
                 next = temp;
-                goto two;	/* change sides */
+                goto two; /* change sides */
             }
             next->rightlink = temp->leftlink;
-            if( temp->leftlink != NULL )
+            if (temp->leftlink != NULL)
                 temp->leftlink->uplink = next;
             left->rightlink = temp;
             temp->uplink = left;
@@ -461,36 +433,33 @@ spenqprior( SPBLK* n, SPTREE<SPBLK>* q )
             next->uplink = temp;
             left = temp;
             next = temp->rightlink;
-            if( next == NULL )
-            {
+            if (next == NULL) {
                 right->leftlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        } while( STRCMP( next->key, key ) < 0 );	/* change sides */
+        } while (STRCMP(next->key, key) < 0); /* change sides */
 
-        two:	/* assert next->key >= key */
+    two: /* assert next->key >= key */
 
-        do	 /* walk to the left in the right tree */
+        do /* walk to the left in the right tree */
         {
             temp = next->leftlink;
-            if( temp == NULL )
-            {
+            if (temp == NULL) {
                 right->leftlink = next;
                 next->uplink = right;
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
-            if( STRCMP( temp->key, key ) < 0 )
-            {
+            if (STRCMP(temp->key, key) < 0) {
                 right->leftlink = next;
                 next->uplink = right;
                 right = next;
                 next = temp;
-                goto one;	/* change sides */
+                goto one; /* change sides */
             }
             next->leftlink = temp->rightlink;
-            if( temp->rightlink != NULL )
+            if (temp->rightlink != NULL)
                 temp->rightlink->uplink = next;
             right->leftlink = temp;
             temp->uplink = right;
@@ -498,24 +467,23 @@ spenqprior( SPBLK* n, SPTREE<SPBLK>* q )
             next->uplink = temp;
             right = temp;
             next = temp->leftlink;
-            if( next == NULL )
-            {
+            if (next == NULL) {
                 left->rightlink = NULL;
-                goto done;	/* job done, entire tree split */
+                goto done; /* job done, entire tree split */
             }
 
-        } while( STRCMP( next->key, key ) >= 0 );	/* change sides */
+        } while (STRCMP(next->key, key) >= 0); /* change sides */
 
         goto one;
 
-        done:	/* split is done, branches of n need reversal */
+    done: /* split is done, branches of n need reversal */
 
         temp = n->leftlink;
         n->leftlink = n->rightlink;
         n->rightlink = temp;
     }
 
-    return( n );
+    return (n);
 
 } /* spenqprior */
 
@@ -535,19 +503,17 @@ spenqprior( SPBLK* n, SPTREE<SPBLK>* q )
  *  detect n not in q and complain
  */
 
-template<typename SPBLK>
-void
-splay( SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * up;	/* points to the node being dealt with */
-    SPBLK * prev;	/* a descendent of up, already dealt with */
-    SPBLK * upup;	/* the parent of up */
-    SPBLK * upupup;	/* the grandparent of up */
-    SPBLK * left;	/* the top of left subtree being built */
-    SPBLK * right;	/* the top of right subtree being built */
+template <typename SPBLK>
+void splay(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* up;     /* points to the node being dealt with */
+    SPBLK* prev;   /* a descendent of up, already dealt with */
+    SPBLK* upup;   /* the parent of up */
+    SPBLK* upupup; /* the grandparent of up */
+    SPBLK* left;   /* the top of left subtree being built */
+    SPBLK* right;  /* the top of right subtree being built */
 
 #if BBTQ != 4 && BBTQ != 5
-    n->cnt++;	/* bump reference count */
+    n->cnt++; /* bump reference count */
 #endif
 
     left = n->leftlink;
@@ -557,27 +523,26 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
 
     q->splays++;
 
-    while( up != NULL )
-    {
+    while (up != NULL) {
         q->splayloops++;
 
         /* walk up the tree towards the root, splaying all to the left of
-	   n into the left subtree, all to right into the right subtree */
+       n into the left subtree, all to right into the right subtree */
 
         upup = up->uplink;
-        if( up->leftlink == prev )	/* up is to the right of n */
+        if (up->leftlink == prev) /* up is to the right of n */
         {
-            if( upup != NULL && upup->leftlink == up )  /* rotate */
+            if (upup != NULL && upup->leftlink == up) /* rotate */
             {
                 upupup = upup->uplink;
                 upup->leftlink = up->rightlink;
-                if( upup->leftlink != NULL )
+                if (upup->leftlink != NULL)
                     upup->leftlink->uplink = upup;
                 up->rightlink = upup;
                 upup->uplink = up;
-                if( upupup == NULL )
+                if (upupup == NULL)
                     q->root = up;
-                else if( upupup->leftlink == upup )
+                else if (upupup->leftlink == upup)
                     upupup->leftlink = up;
                 else
                     upupup->rightlink = up;
@@ -585,24 +550,23 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
                 upup = upupup;
             }
             up->leftlink = right;
-            if( right != NULL )
+            if (right != NULL)
                 right->uplink = up;
             right = up;
 
-        }
-        else				/* up is to the left of n */
+        } else /* up is to the left of n */
         {
-            if( upup != NULL && upup->rightlink == up )	/* rotate */
+            if (upup != NULL && upup->rightlink == up) /* rotate */
             {
                 upupup = upup->uplink;
                 upup->rightlink = up->leftlink;
-                if( upup->rightlink != NULL )
+                if (upup->rightlink != NULL)
                     upup->rightlink->uplink = upup;
                 up->leftlink = upup;
                 upup->uplink = up;
-                if( upupup == NULL )
+                if (upupup == NULL)
                     q->root = up;
-                else if( upupup->rightlink == upup )
+                else if (upupup->rightlink == upup)
                     upupup->rightlink = up;
                 else
                     upupup->leftlink = up;
@@ -610,7 +574,7 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
                 upup = upupup;
             }
             up->rightlink = left;
-            if( left != NULL )
+            if (left != NULL)
                 left->uplink = up;
             left = up;
         }
@@ -618,19 +582,18 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
         up = upup;
     }
 
-# ifdef DEBUG
-    if( q->root != prev )
-    {
-/*	fprintf(stderr, " *** bug in splay: n not in q *** " ); */
-	abort();
+#ifdef DEBUG
+    if (q->root != prev) {
+        /*	fprintf(stderr, " *** bug in splay: n not in q *** " ); */
+        abort();
     }
-# endif
+#endif
 
     n->leftlink = left;
     n->rightlink = right;
-    if( left != NULL )
+    if (left != NULL)
         left->uplink = n;
-    if( right != NULL )
+    if (right != NULL)
         right->uplink = n;
     q->root = n;
     n->uplink = NULL;
@@ -702,15 +665,15 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
   Translated to C by David Brower, daveb@rtech.uucp
 
   Thu Oct  6 12:11:33 PDT 1988 (daveb) Fixed spdeq, which was broken
- 	handling one-node trees.  I botched the pascal translation of
- 	a VAR parameter.  Changed interface, so callers must also be
-	corrected to pass the node by address rather than value.
+    handling one-node trees.  I botched the pascal translation of
+    a VAR parameter.  Changed interface, so callers must also be
+    corrected to pass the node by address rather than value.
   Mon Apr  3 15:18:32 PDT 1989 (daveb)
-  	Apply fix supplied by Mark Moraes <moraes@csri.toronto.edu> to
-	spdelete(), which dropped core when taking out the last element
-	in a subtree -- that is, when the right subtree was empty and
-	the leftlink was also null, it tried to take out the leftlink's
-	uplink anyway.
+    Apply fix supplied by Mark Moraes <moraes@csri.toronto.edu> to
+    spdelete(), which dropped core when taking out the last element
+    in a subtree -- that is, when the right subtree was empty and
+    the leftlink was also null, it tried to take out the leftlink's
+    uplink anyway.
  */
 
 /*----------------
@@ -726,20 +689,17 @@ splay( SPBLK* n, SPTREE<SPBLK>* q )
  *	avoids splaying but just searches for and returns a pointer to
  *	the bottom of the left branch
  */
-template<typename SPBLK>
-SPBLK *
-sphead( SPTREE<SPBLK>* q )
-{
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* sphead(SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
     /* splay version, good amortized bound */
-    x = spdeq( &q->root );
-    if( x != NULL )
-    {
+    x = spdeq(&q->root);
+    if (x != NULL) {
         x->rightlink = q->root;
         x->leftlink = NULL;
         x->uplink = NULL;
-        if( q->root != NULL )
+        if (q->root != NULL)
             q->root->uplink = x;
     }
     q->root = x;
@@ -747,16 +707,15 @@ sphead( SPTREE<SPBLK>* q )
     /* alternative version, bad amortized bound,
        but faster on the average */
 
-# if 0
+#if 0
     x = q->root;
     while( x->leftlink != NULL )
 	x = x->leftlink;
-# endif
+#endif
 
-    return( x );
+    return (x);
 
 } /* sphead */
-
 
 
 /*----------------
@@ -767,33 +726,30 @@ sphead( SPTREE<SPBLK>* q )
  *	around its new root, which is the successor of n
  *
  */
-template<typename SPBLK>
-void
-spdelete( SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * x;
+template <typename SPBLK>
+void spdelete(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
-    splay( n, q );
-    x = spdeq( &q->root->rightlink );
-    if( x == NULL )		/* empty right subtree */
+    splay(n, q);
+    x = spdeq(&q->root->rightlink);
+    if (x == NULL) /* empty right subtree */
     {
         q->root = q->root->leftlink;
-        if (q->root) q->root->uplink = NULL;
-    }
-    else			/* non-empty right subtree */
+        if (q->root)
+            q->root->uplink = NULL;
+    } else /* non-empty right subtree */
     {
         x->uplink = NULL;
         x->leftlink = q->root->leftlink;
         x->rightlink = q->root->rightlink;
-        if( x->leftlink != NULL )
+        if (x->leftlink != NULL)
             x->leftlink->uplink = x;
-        if( x->rightlink != NULL )
+        if (x->rightlink != NULL)
             x->rightlink->uplink = x;
         q->root = x;
     }
 
 } /* spdelete */
-
 
 
 /*----------------
@@ -806,23 +762,20 @@ spdelete( SPBLK* n, SPTREE<SPBLK>* q )
  *	average because it does not do any splaying
  *
  */
-template<typename SPBLK>
-SPBLK *
-spnext( SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * next;
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spnext(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* next;
+    SPBLK* x;
 
     /* splay version */
-    splay( n, q );
-    x = spdeq( &n->rightlink );
-    if( x != NULL )
-    {
+    splay(n, q);
+    x = spdeq(&n->rightlink);
+    if (x != NULL) {
         x->leftlink = n;
         n->uplink = x;
         x->rightlink = n->rightlink;
         n->rightlink = NULL;
-        if( x->rightlink != NULL )
+        if (x->rightlink != NULL)
             x->rightlink->uplink = x;
         q->root = x;
         x->uplink = NULL;
@@ -832,7 +785,7 @@ spnext( SPBLK* n, SPTREE<SPBLK>* q )
     /* shorter slower version;
        deleting last "if" undoes the amortized bound */
 
-# if 0
+#if 0
     splay( n, q );
     x = n->rightlink;
     if( x != NULL )
@@ -841,12 +794,11 @@ spnext( SPBLK* n, SPTREE<SPBLK>* q )
     next = x;
     if( x != NULL )
 	splay( x, q );
-# endif
+#endif
 
-    return( next );
+    return (next);
 
 } /* spnext */
-
 
 
 /*----------------
@@ -859,29 +811,26 @@ spnext( SPBLK* n, SPTREE<SPBLK>* q )
  *	any splaying
  *
  */
-template<typename SPBLK>
-SPBLK *
-spprev( SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * prev;
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spprev(SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* prev;
+    SPBLK* x;
 
     /* splay version;
        note: deleting the last "if" undoes the amortized bound */
 
-    splay( n, q );
+    splay(n, q);
     x = n->leftlink;
-    if( x != NULL )
-        while( x->rightlink != NULL )
+    if (x != NULL)
+        while (x->rightlink != NULL)
             x = x->rightlink;
     prev = x;
-    if( x != NULL )
-        splay( x, q );
+    if (x != NULL)
+        splay(x, q);
 
-    return( prev );
+    return (prev);
 
 } /* spprev */
-
 
 
 /*----------------
@@ -895,23 +844,20 @@ spprev( SPBLK* n, SPTREE<SPBLK>* q )
  *	with n as its left son
  *
  */
-template<typename SPBLK>
-SPBLK *
-spenqbefore( SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q )
-{
-    splay( n1, q );
+template <typename SPBLK>
+SPBLK* spenqbefore(SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q) {
+    splay(n1, q);
     n->key = n1->key;
     n->leftlink = n1->leftlink;
-    if( n->leftlink != NULL )
+    if (n->leftlink != NULL)
         n->leftlink->uplink = n;
     n->rightlink = NULL;
     n->uplink = n1;
     n1->leftlink = n;
 
-    return( n );
+    return (n);
 
 } /* spenqbefore */
-
 
 
 /*----------------
@@ -924,26 +870,24 @@ spenqbefore( SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q )
  *	successor of n1; in doing so, n1 becomes the root of the tree
  *	with n as its right son
  */
-template<typename SPBLK>
-SPBLK *
-spenqafter( SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q )
-{
-    splay( n1, q );
+template <typename SPBLK>
+SPBLK* spenqafter(SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q) {
+    splay(n1, q);
     n->key = n1->key;
     n->rightlink = n1->rightlink;
-    if( n->rightlink != NULL )
+    if (n->rightlink != NULL)
         n->rightlink->uplink = n;
     n->leftlink = NULL;
     n->uplink = n1;
     n1->rightlink = n;
 
-    return( n );
+    return (n);
 
 } /* spenqafter */
 
 
 /* Original file: spdaveb.cpp
- * 
+ *
  * spdaveb.cpp -- daveb's new splay tree functions.
  *
  * The functions in this file provide an interface that is nearly
@@ -970,11 +914,9 @@ spenqafter( SPBLK* n, SPBLK* n1, SPTREE<SPBLK>* q )
  *
  *	Splays the found node to the root.
  */
-template<typename SPBLK>
-SPBLK *
-splookup( double key, SPTREE<SPBLK>* q )
-{
-    SPBLK * n;
+template <typename SPBLK>
+SPBLK* splookup(double key, SPTREE<SPBLK>* q) {
+    SPBLK* n;
     int Sct;
     int c;
 
@@ -982,19 +924,18 @@ splookup( double key, SPTREE<SPBLK>* q )
     n = q->root;
     c = ++(q->lkpcmps);
     q->lookups++;
-//    while( n && (Sct = STRCMP( key, n->key ) ) )
-    while( n && (Sct = key!= n->key ) )
-    {
+    //    while( n && (Sct = STRCMP( key, n->key ) ) )
+    while (n && (Sct = key != n->key)) {
         c++;
-        n = ( Sct < 0 ) ? n->leftlink : n->rightlink;
+        n = (Sct < 0) ? n->leftlink : n->rightlink;
     }
     q->lkpcmps = c;
 
     /* reorganize tree around this node */
-    if( n != NULL )
-        splay( n, q );
+    if (n != NULL)
+        splay(n, q);
 
-    return( n );
+    return (n);
 }
 
 
@@ -1040,7 +981,6 @@ SPTREE *q;
 #endif
 
 
-
 /*----------------
  *
  * spfhead() --	return the "lowest" element in the tree.
@@ -1049,21 +989,17 @@ SPTREE *q;
  *	avoids splaying but just searches for and returns a pointer to
  *	the bottom of the left branch.
  */
-template<typename SPBLK>
-SPBLK *
-spfhead( SPTREE<SPBLK>* q )
-{
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spfhead(SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
-    if( NULL != ( x = q->root ) )
-        while( x->leftlink != NULL )
+    if (NULL != (x = q->root))
+        while (x->leftlink != NULL)
             x = x->leftlink;
 
-    return( x );
+    return (x);
 
 } /* spfhead */
-
-
 
 
 /*----------------
@@ -1072,18 +1008,16 @@ spfhead( SPTREE<SPBLK>* q )
  *
  *	Fast version does not splay result or intermediate steps.
  */
-template<typename SPBLK>
-SPBLK *
-spftail( SPTREE<SPBLK>* q )
-{
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spftail(SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
 
-    if( NULL != ( x = q->root ) )
-        while( x->rightlink != NULL )
+    if (NULL != (x = q->root))
+        while (x->rightlink != NULL)
             x = x->rightlink;
 
-    return( x );
+    return (x);
 
 } /* spftail */
 
@@ -1097,16 +1031,13 @@ spftail( SPTREE<SPBLK>* q )
  */
 class TQItem;
 
-template<typename SPBLK>
-void
-spscan( void (*f)(const SPBLK*, int), SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK * x;
+template <typename SPBLK>
+void spscan(void (*f)(const SPBLK*, int), SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
-    for( x = n != NULL ? n : spfhead<SPBLK>( q ); x != NULL ; x = spfnext( x ) )
-        (*f)( x, 0);
+    for (x = n != NULL ? n : spfhead<SPBLK>(q); x != NULL; x = spfnext(x))
+        (*f)(x, 0);
 }
-
 
 
 /*----------------
@@ -1116,16 +1047,13 @@ spscan( void (*f)(const SPBLK*, int), SPBLK* n, SPTREE<SPBLK>* q )
  *	if n is given, start at that node, otherwise start from
  *	the tail.
  */
-template<typename SPBLK>
-void
-sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE<SPBLK>* q )
-{
-    SPBLK *x;
+template <typename SPBLK>
+void sprscan(void (*f)(const TQItem*, int), SPBLK* n, SPTREE<SPBLK>* q) {
+    SPBLK* x;
 
-    for( x = n != NULL ? n : spftail<SPBLK>( q ); x != NULL ; x = spfprev( x ) )
-        (*f)( x, 0 );
+    for (x = n != NULL ? n : spftail<SPBLK>(q); x != NULL; x = spfprev(x))
+        (*f)(x, 0);
 }
-
 
 
 /*----------------
@@ -1135,50 +1063,41 @@ sprscan( void (*f)(const TQItem*, int), SPBLK* n, SPTREE<SPBLK>* q )
  *	return the successor of n in q, represented as a splay tree.
  *	This is a fast (on average) version that does not splay.
  */
-template<typename SPBLK>
-SPBLK *
-spfnext( SPBLK* n )
-{
-    SPBLK * next;
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spfnext(SPBLK* n) {
+    SPBLK* next;
+    SPBLK* x;
 
     /* a long version, avoids splaying for fast average,
      * poor amortized bound
      */
 
-    if( n == NULL )
-        return( n );
+    if (n == NULL)
+        return (n);
 
     x = n->rightlink;
-    if( x != NULL )
-    {
-        while( x->leftlink != NULL )
+    if (x != NULL) {
+        while (x->leftlink != NULL)
             x = x->leftlink;
         next = x;
-    }
-    else	/* x == NULL */
+    } else /* x == NULL */
     {
         x = n->uplink;
         next = NULL;
-        while( x != NULL )
-        {
-            if( x->leftlink == n )
-            {
+        while (x != NULL) {
+            if (x->leftlink == n) {
                 next = x;
                 x = NULL;
-            }
-            else
-            {
+            } else {
                 n = x;
                 x = n->uplink;
             }
         }
     }
 
-    return( next );
+    return (next);
 
 } /* spfnext */
-
 
 
 /*----------------
@@ -1188,73 +1107,67 @@ spfnext( SPBLK* n )
  *	return the predecessor of n in q, represented as a splay tree.
  *	This is a fast (on average) version that does not splay.
  */
-template<typename SPBLK>
-SPBLK *
-spfprev( SPBLK* n )
-{
-    SPBLK * prev;
-    SPBLK * x;
+template <typename SPBLK>
+SPBLK* spfprev(SPBLK* n) {
+    SPBLK* prev;
+    SPBLK* x;
 
     /* a long version,
      * avoids splaying for fast average, poor amortized bound
      */
 
-    if( n == NULL )
-        return( n );
+    if (n == NULL)
+        return (n);
 
     x = n->leftlink;
-    if( x != NULL )
-    {
-        while( x->rightlink != NULL )
+    if (x != NULL) {
+        while (x->rightlink != NULL)
             x = x->rightlink;
         prev = x;
-    }
-    else
-    {
+    } else {
         x = n->uplink;
         prev = NULL;
-        while( x != NULL )
-        {
-            if( x->rightlink == n )
-            {
+        while (x != NULL) {
+            if (x->rightlink == n) {
                 prev = x;
                 x = NULL;
-            }
-            else
-            {
+            } else {
                 n = x;
                 x = n->uplink;
             }
         }
     }
 
-    return( prev );
+    return (prev);
 
 } /* spfprev */
 
 
-template<typename SPBLK>
-const char *
-spstats( SPTREE<SPBLK>* q )
-{
-    static char buf[ 128 ];
+template <typename SPBLK>
+const char* spstats(SPTREE<SPBLK>* q) {
+    static char buf[128];
     float llen;
     float elen;
     float sloops;
 
-    if( q == NULL )
-        return("");
+    if (q == NULL)
+        return ("");
 
-    llen = q->lookups ? (float)q->lkpcmps / q->lookups : 0;
-    elen = q->enqs ? (float)q->enqcmps/q->enqs : 0;
-    sloops = q->splays ? (float)q->splayloops/q->splays : 0;
+    llen = q->lookups ? (float) q->lkpcmps / q->lookups : 0;
+    elen = q->enqs ? (float) q->enqcmps / q->enqs : 0;
+    sloops = q->splays ? (float) q->splayloops / q->splays : 0;
 
-    sprintf(buf, "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
-            q->lookups, llen, q->enqs, elen, q->splays, sloops );
+    sprintf(buf,
+            "f(%d %4.2f) i(%d %4.2f) s(%d %4.2f)",
+            q->lookups,
+            llen,
+            q->enqs,
+            elen,
+            q->splays,
+            sloops);
 
-    return (const char*)buf;
+    return (const char*) buf;
 }
 
 
-
-# endif
+#endif

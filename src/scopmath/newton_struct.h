@@ -1,7 +1,10 @@
-#ifndef newton_struct_h
-#define newton_struct_h
+#pragma once
+// This header has to be both valid C and C++ because the scoplib sources are
+// compiled as C.
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <stdlib.h>
 /* avoid incessant alloc/free memory */
 typedef struct NewtonSpace {
 	int n;
@@ -13,25 +16,24 @@ typedef struct NewtonSpace {
 	double* rowmax;
 } NewtonSpace;
 
-typedef int (*FUN)(double*, void*, void*, void*);
+// Forward-declare for use in function pointer type declaration.
+typedef union Datum Datum;
+typedef struct NrnThread NrnThread;
 
+/* Memory allocation routines */
+double* makevector(int length);
+int freevector(double* vector);
+double** makematrix(int nrows, int ncols);
+int freematrix(double** matrix);
 
-extern void* hoc_Emalloc(size_t);
-extern void hoc_malchk();
-#define emalloc(arg) hoc_Emalloc(arg); hoc_malchk()
-extern int freevector();
-extern int freematrix();
-extern double* makevector(int n);
-extern double** makematrix(int n, int m);
-extern int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
-extern void nrn_scopmath_solve_thread(int n, double** a,
+int nrn_crout_thread(NewtonSpace* ns, int n, double** a, int* perm);
+void nrn_scopmath_solve_thread(int n, double** a,
  double* b, int* perm, double* p, int* y);
-extern int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
- FUN pfunc, double* value, void* ppvar, void* thread, void* nt);
-static void nrn_buildjacobian_thread(NewtonSpace* ns,
-  int n, int* index, double* x, FUN pfunc,
-  double* value, double** jacobian, void* ppvar, void* thread, void* nt);
-extern NewtonSpace* nrn_cons_newtonspace(int n);
-extern void nrn_destroy_newtonspace(NewtonSpace* ns);
- 
+int nrn_newton_thread(NewtonSpace* ns, int n, int* index, double* x,
+ int (*pfunc)(double *, Datum *, Datum *, NrnThread *), double* value, void* ppvar, void* thread, void* nt);
+NewtonSpace* nrn_cons_newtonspace(int n);
+void nrn_destroy_newtonspace(NewtonSpace* ns);
+
+#ifdef __cplusplus
+} // extern "C"
 #endif

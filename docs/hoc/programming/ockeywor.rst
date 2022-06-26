@@ -1,4 +1,5 @@
-.. _ockeywor:
+
+.. _hoc_ockeywor:
 
 HOC Keywords
 ------------
@@ -7,7 +8,8 @@ HOC Keywords
 
 .. index::  help (keyword)
 
-.. _keyword_help:
+
+.. _hoc_keyword_help:
 
 **help**
 
@@ -38,7 +40,8 @@ HOC Keywords
 
 .. index::  return (keyword)
 
-.. _keyword_return:
+
+.. _hoc_keyword_return:
 
 **return**
 
@@ -64,7 +67,7 @@ HOC Keywords
         return a value at any given time. 
          
         The ``return objref`` command must be used to return from an 
-        :ref:`obfunc`. 
+        :ref:`hoc_obfunc`.
          
 
     Example:
@@ -84,7 +87,7 @@ HOC Keywords
         first argument (3) and $2 is the second argument (6).  This use of ``max`` would return the value 6. 
 
     .. warning::
-        See restriction of the :ref:`break <keyword_break>` statement. 
+        See restriction of the :ref:`break <hoc_keyword_break>` statement.
 
          
 
@@ -94,7 +97,8 @@ HOC Keywords
 
 .. index::  break (keyword)
 
-.. _keyword_break:
+
+.. _hoc_keyword_break:
 
 **break**
 
@@ -157,7 +161,8 @@ HOC Keywords
 
 .. index::  continue (keyword)
 
-.. _keyword_continue:
+
+.. _hoc_keyword_continue:
 
 **continue**
 
@@ -201,7 +206,7 @@ HOC Keywords
          
 
     .. warning::
-        See restriction of the :ref:`break <keyword_break>` statement. 
+        See restriction of the :ref:`break <hoc_keyword_break>` statement.
 
          
 
@@ -211,7 +216,8 @@ HOC Keywords
 
 .. index::  stop (keyword)
 
-.. _keyword_stop:
+
+.. _hoc_keyword_stop:
 
 **stop**
 
@@ -228,7 +234,7 @@ HOC Keywords
         that lets you know if you have entered unacceptable arguments. 
 
     .. warning::
-        See restriction of the :ref:`break <keyword_break>` statement. 
+        See restriction of the :ref:`break <hoc_keyword_break>` statement.
 
          
 
@@ -238,7 +244,8 @@ HOC Keywords
 
 .. index::  if (keyword)
 
-.. _keyword_if:
+
+.. _hoc_keyword_if:
 
 **if**
 
@@ -278,7 +285,7 @@ HOC Keywords
          
 
     .. seealso::
-        :data:`float_epsilon`, :ref:`ifsec <keyword_ifsec>`
+        :hoc:data:`float_epsilon`, :ref:`ifsec <hoc_keyword_ifsec>`
 
          
 
@@ -288,13 +295,14 @@ HOC Keywords
 
 .. index::  else (keyword)
 
-.. _keyword_else:
+
+.. _hoc_keyword_else:
 
 **else**
 
 
     .. seealso::
-        :ref:`if <keyword_if>`
+        :ref:`if <hoc_keyword_if>`
 
 
 ----
@@ -303,7 +311,8 @@ HOC Keywords
 
 .. index::  while (keyword)
 
-.. _keyword_while:
+
+.. _hoc_keyword_while:
 
 **while**
 
@@ -335,7 +344,7 @@ HOC Keywords
          
 
     .. seealso::
-        :ref:`for <keyword_for>`, :ref:`break <keyword_break>`, :ref:`continue <keyword_continue>`
+        :ref:`for <hoc_keyword_for>`, :ref:`break <hoc_keyword_break>`, :ref:`continue <hoc_keyword_continue>`
         
 
          
@@ -346,7 +355,8 @@ HOC Keywords
 
 .. index::  for (keyword)
 
-.. _keyword_for:
+
+.. _hoc_keyword_for:
 
 **for**
 
@@ -398,11 +408,11 @@ HOC Keywords
         If the expression evaluates to a non-zero value, it is exactly equivalent 
         to 
         ``for (var) stmt`` 
-        If it evaluates to 0 (within :data:`float_epsilon` ) then the iteration does 
+        If it evaluates to 0 (within :hoc:data:`float_epsilon` ) then the iteration does
         not include the 0 or 1 points. Thus ``for(x, 0) { print x }`` 
         is exactly equivalent to ``for (x) if (x > 0 && x < 1) { print x }`` 
          
-        The :ref:`keyword_iterator` form of the for loop executes the statement with a looping 
+        The :ref:`hoc_keyword_iterator` form of the for loop executes the statement with a looping
         construct defined by the user. 
 
     Example:
@@ -435,8 +445,8 @@ HOC Keywords
 
 
     .. seealso::
-        :ref:`keyword_iterator`,
-        :ref:`break <keyword_break>`, :ref:`continue <keyword_continue>`, :ref:`while <keyword_while>`, :ref:`forall <keyword_forall>`, :ref:`forsec <keyword_forsec>`
+        :ref:`hoc_keyword_iterator`,
+        :ref:`break <hoc_keyword_break>`, :ref:`continue <hoc_keyword_continue>`, :ref:`while <hoc_keyword_while>`, :ref:`forall <hoc_keyword_forall>`, :ref:`forsec <hoc_keyword_forsec>`
 
          
          
@@ -447,7 +457,8 @@ HOC Keywords
 
 .. index::  print (keyword)
 
-.. _keyword_print:
+
+.. _hoc_keyword_print:
 
 **print**
 
@@ -489,7 +500,8 @@ HOC Keywords
 
 .. index::  delete (keyword)
 
-.. _keyword_delete:
+
+.. _hoc_keyword_delete:
 
 **delete**
 
@@ -514,7 +526,8 @@ HOC Keywords
 
 .. index::  read (keyword)
 
-.. _keyword_read:
+
+.. _hoc_keyword_read:
 
 **read**
 
@@ -546,7 +559,7 @@ HOC Keywords
          
 
     .. seealso::
-        :func:`xred`, :meth:`File.ropen`, :func:`fscan`, :func:`File`, :func:`getstr`
+        :hoc:func:`xred`, :hoc:meth:`File.ropen`, :hoc:func:`fscan`, :hoc:func:`File`, :hoc:func:`getstr`
         
 
          
@@ -557,7 +570,8 @@ HOC Keywords
 
 .. index::  debug (keyword)
 
-.. _keyword_debug:
+
+.. _hoc_keyword_debug:
 
 **debug**
 
@@ -571,7 +585,8 @@ HOC Keywords
 
 .. index::  double (keyword)
 
-.. _keyword_double:
+
+.. _hoc_keyword_double:
 
 **double**
 
@@ -595,7 +610,7 @@ HOC Keywords
         redeclared at any time, including within procedures.  Thus arrays may 
         have different lengths in different objects. 
          
-        The :class:`Vector` class for the ivoc interpreter provides convenient and powerful methods for 
+        The :hoc:class:`Vector` class for the ivoc interpreter provides convenient and powerful methods for
         manipulating arrays. 
          
 
@@ -626,7 +641,8 @@ HOC Keywords
 
 .. index::  depvar (keyword)
 
-.. _keyword_depvar:
+
+.. _hoc_keyword_depvar:
 
 **depvar**
 
@@ -660,7 +676,7 @@ HOC Keywords
          
 
     .. seealso::
-        :ref:`eqn <keyword_eqn>`, :func:`eqinit`, :func:`solve`, :func:`Matrix`
+        :ref:`eqn <hoc_keyword_eqn>`, :hoc:func:`eqinit`, :hoc:func:`solve`, :hoc:func:`Matrix`
         
 
          
@@ -671,7 +687,8 @@ HOC Keywords
 
 .. index::  eqn (keyword)
 
-.. _keyword_eqn:
+
+.. _hoc_keyword_eqn:
 
 **eqn**
 
@@ -718,7 +735,8 @@ HOC Keywords
 
 .. index::  local (keyword)
 
-.. _keyword_local:
+
+.. _hoc_keyword_local:
 
 **local**
 
@@ -759,7 +777,8 @@ HOC Keywords
 
 .. index::  localobj (keyword)
 
-.. _keyword_localobj:
+
+.. _hoc_keyword_localobj:
 
 **localobj**
 
@@ -770,7 +789,7 @@ HOC Keywords
 
     Description:
         Declare a list, comma separated, of local objrefs within a proc, func, iterator, or obfunc. 
-        Must be after the :ref:`local <keyword_local>` statement (if that exists) 
+        Must be after the :ref:`local <hoc_keyword_local>` statement (if that exists)
         on the same line as the function declaration 
 
     Example:
@@ -795,7 +814,8 @@ HOC Keywords
 
 .. index::  strdef (keyword)
 
-.. _keyword_strdef:
+
+.. _hoc_keyword_strdef:
 
 **strdef**
 
@@ -842,7 +862,8 @@ HOC Keywords
 
 .. index::  setpointer (keyword)
 
-.. _keyword_setpointer:
+
+.. _hoc_keyword_setpointer:
 
 **setpointer**
 
@@ -872,7 +893,8 @@ HOC Keywords
 
 .. index::  insert (keyword)
 
-.. _keyword_insert:
+
+.. _hoc_keyword_insert:
 
 **insert**
 
@@ -888,7 +910,7 @@ HOC Keywords
          
 
     .. seealso::
-        :ref:`hh <mech_hh>`, :ref:`pas <mech_pas>`, :ref:`fastpas <mech_fastpas>`, :func:`psection`, :ref:`mech`
+        :ref:`hh <hoc_mech_hh>`, :ref:`pas <hoc_mech_pas>`, :ref:`fastpas <hoc_mech_fastpas>`, :hoc:func:`psection`, :ref:`hoc_mech`
         
 
          
@@ -899,7 +921,8 @@ HOC Keywords
 
 .. index::  uninsert (keyword)
 
-.. _keyword_uninsert:
+
+.. _hoc_keyword_uninsert:
 
 **uninsert**
 

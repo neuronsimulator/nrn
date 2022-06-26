@@ -15,8 +15,8 @@ class Components:
     RX3D = True
     IV = True
     MPI = True
-    CORENRN = False # still early support
-    GPU = False     # still early support
+    CORENRN = False  # still early support
+    GPU = False  # still early support
 
 
 if os.name != "posix":
@@ -95,7 +95,7 @@ class CMakeAugmentedExtension(Extension):
         cmake_flags=None,
         cmake_collect_dirs=None,
         cmake_install_python_files="lib/python",
-        **kw
+        **kw,
     ):
         """Creates a CMakeAugmentedExtension.
 
@@ -200,6 +200,9 @@ class CMakeAugmentedBuilder(build_ext):
         # RTD neds quick config
         if self.docs and os.environ.get("READTHEDOCS"):
             cmake_args = ["-DNRN_ENABLE_MPI=OFF", "-DNRN_ENABLE_INTERVIEWS=OFF"]
+        if self.docs:
+            cmake_args.append("-DNRN_ENABLE_DOCS=ON")
+            cmake_args.append("-DNRN_ENABLE_DOCS_WITH_EXTERNAL_INSTALLATION=ON")
         if self.cmake_prefix:
             cmake_args.append("-DCMAKE_PREFIX_PATH=" + self.cmake_prefix)
         if self.cmake_defs:
@@ -264,6 +267,16 @@ class CMakeAugmentedBuilder(build_ext):
                     cwd=self.build_temp,
                     env=env,
                 )
+                if Components.GPU:
+                    subprocess.check_call(
+                        [
+                            ext.sourcedir
+                            + "/packaging/python/fix_target_processor_in_makefiles.sh",
+                            ext.cmake_install_prefix,
+                        ],
+                        cwd=self.build_temp,
+                        env=env,
+                    )
 
         except subprocess.CalledProcessError as exc:
             log.error("Status : FAIL. Log:\n%s", exc.output)
@@ -348,12 +361,18 @@ def setup_package():
                 "-DNRN_ENABLE_REL_RPATH=ON",
                 "-DLINK_AGAINST_PYTHON=OFF",
                 "-DCMAKE_VERBOSE_MAKEFILE=OFF",
-            ] + ([
-                "-DCORENRN_ENABLE_GPU=ON",
-                "-DCMAKE_C_COMPILER=nvc",   # use nvc and nvc++ for GPU support
-                "-DCMAKE_CXX_COMPILER=nvc++",
-                "-DCMAKE_CUDA_COMPILER=nvcc",
-            ] if Components.GPU else []),
+                "-DCORENRN_ENABLE_OPENMP=ON",  # TODO: manylinux portability questions
+            ]
+            + (
+                [
+                    "-DCORENRN_ENABLE_GPU=ON",
+                    "-DCMAKE_C_COMPILER=nvc",  # use nvc and nvc++ for GPU support
+                    "-DCMAKE_CXX_COMPILER=nvc++",
+                    "-DCMAKE_CUDA_COMPILER=nvcc",
+                ]
+                if Components.GPU
+                else []
+            ),
             include_dirs=[
                 "src",
                 "src/oc",
@@ -364,7 +383,7 @@ def setup_package():
                 # use relative rpath to .data/lib
                 "-Wl,-rpath,{}".format(REL_RPATH + "/.data/lib/")
             ],
-            **extension_common_params
+            **extension_common_params,
         )
     ]
 
@@ -393,13 +412,13 @@ def setup_package():
             CyExtension(
                 "neuron.rxd.geometry3d.graphicsPrimitives",
                 ["share/lib/python/neuron/rxd/geometry3d/graphicsPrimitives.pyx"],
-                **rxd_params
+                **rxd_params,
             ),
             CyExtension(
                 "neuron.rxd.geometry3d.ctng",
                 ["share/lib/python/neuron/rxd/geometry3d/ctng.pyx"],
                 include_dirs=include_dirs,
-                **rxd_params
+                **rxd_params,
             ),
             CyExtension(
                 "neuron.rxd.geometry3d.surfaces",
@@ -409,7 +428,7 @@ def setup_package():
                     "src/nrnpython/rxd_llgramarea.cpp",
                 ],
                 include_dirs=include_dirs,
-                **rxd_params
+                **rxd_params,
             ),
         ]
 
@@ -420,6 +439,10 @@ def setup_package():
 
     # For CI, we want to build separate wheel with "-nightly" suffix
     package_name += os.environ.get("NEURON_NIGHTLY_TAG", "-nightly")
+
+    # GPU wheels use patchelf to avoid duplicating NVIDIA runtime libraries when
+    # using nrnivmodl.
+    maybe_patchelf = ["patchelf"] if Components.GPU else []
 
     setup(
         name=package_name,
@@ -434,7 +457,7 @@ def setup_package():
             if f[0] != "_"
         ],
         cmdclass=dict(build_ext=CMakeAugmentedBuilder, docs=Docs),
-        install_requires=["numpy>=1.9.3"],
+        install_requires=["numpy>=1.9.3"] + maybe_patchelf,
         tests_require=["flake8", "pytest"],
         setup_requires=["wheel"] + maybe_docs + maybe_test_runner + maybe_rxd_reqs,
         dependency_links=[],

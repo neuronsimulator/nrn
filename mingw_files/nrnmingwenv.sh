@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -ex
 
-# Copies minimal compiler toolchain
+# Copies minimal g++ compiler toolchain
 # to allow nrnivmodl (mknrndll) to build nrnmech.dll .
 
 # if arg then assume it is destination, eg, c:/marshalnrn64/nrn
@@ -28,7 +28,7 @@ cp $HOME/.inputrc $NM/etc/inputrc
 #cp /msys2.ini $NM
 #cp /msys2_shell.cmd $NM
 
-binprog="basename bash cat cp dirname echo find grep ls make mintty
+binprog="basename bash cat cp dirname echo env find git grep ls make mintty
   mkdir mv rebase rm sed sh sort unzip which cygpath cygcheck uname"
 for i in $binprog ; do
   echo $i
@@ -63,9 +63,9 @@ cp_dlls $NM/usr/bin $NM/usr/bin
 
 M=$NM/mingw64
 X=x86_64-w64-mingw32
-gccver=`gcc --version | sed -n '1s/.* //p'`
+gccver=`g++ --version | sed -n '1s/.* //p'`
 if test ! -d "$gccver" ; then
-  gccver=`gcc --version | sed -n '1s/.*)  *\([^ ]*\).*/\1/p'` 
+  gccver=`g++ --version | sed -n '1s/.*)  *\([^ ]*\).*/\1/p'` 
 fi
 
 # all the folders involved that have files
@@ -85,27 +85,27 @@ copy() {
 copy mingw64/bin '
 as.exe
 ld.exe
-x86_64-w64-mingw32-gcc.exe
+x86_64-w64-mingw32-g++.exe
+libstdc++-6.dll
 '
 cp_dlls $NM/mingw64/bin $NM/mingw64/bin
 
 copy mingw64/lib/gcc/x86_64-w64-mingw32/$gccver '
-cc1.exe
+cc1plus.exe
 libgcc.a
-libgcc_s.a
 liblto_plugin.dll
 '
 cp_dlls $NM/mingw64/lib/gcc/x86_64-w64-mingw32/$gccver $NM/mingw64/bin
 rm -f $NM/mingw64/bin/libwinpthread-1.dll # already in $N/bin
 
-# copy all needed include files by processing output of gcc -E
+# copy all needed include files by processing output of g++ -E
 copyinc() {
-  echo "" > temp.c
+  echo "" > temp.cxx
   for i in $* ; do
     echo "#include <$i>"
-  done >> temp.c
-  echo "int main(int argc, char** argv){return 0;}" >> temp.c
-  gcc -E temp.c  | grep '^#.*include' > temp1
+  done >> temp.cxx
+  echo "int main(int argc, char** argv){return 0;}" >> temp.cxx
+  g++ -E temp.cxx  | grep '^#.*include' > temp1
   sed -n 's,^.*msys64/,,p' temp1 | sed -n 's,".*,,p' > temp2
   sort temp2 | uniq > temp3
   sed -n 's,/[^/]*$,,p' temp3 | sort  | uniq > temp4
@@ -117,6 +117,12 @@ copyinc() {
   done
 }
 
+
+copyinc '
+cstdint
+'
+
+# from gcc days and all (most) ModelDB include
 copyinc '
 _mingw.h
 _mingw_mac.h
@@ -127,7 +133,9 @@ corecrt.h
 corecrt_startup.h
 corecrt_wstdlib.h
 crtdefs.h
+ctype.h
 errno.h
+float.h
 inttypes.h
 limits.h
 malloc.h
@@ -138,18 +146,23 @@ pthread_compat.h
 pthread_signal.h
 pthread_unistd.h
 signal.h
-stdio.h
 stddef.h
 stdint.h
+stdio.h
 stdlib.h
 string.h
 swprintf.inl
 time.h
+sys/time.h
 unistd.h
 vadefs.h
 '
 
-copy mingw64/x86_64-w64-mingw32/lib '
+mlib=mingw64/x86_64-w64-mingw32/lib # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/dllcrt2.o ; then # gcc 11.2.0 Rev 9
+  mlib=mingw64/lib
+fi
+copy $mlib '
 crtbegin.o
 crtend.o
 dllcrt2.o
@@ -163,4 +176,13 @@ libpthread.a
 libpthread.dll.a
 libshell32.a
 libuser32.a
+'
+
+gcclib=mingw64/lib/gcc/x86_64-w64-mingw32/$gccver # gcc 11.2.0 Rev 1
+if test -f /mingw64/lib/libgcc_s.a ; then # gcc 11.2.0 Rev 10
+  gcclib=mingw64/lib
+fi
+copy $gcclib '
+libgcc_s.a
+libstdc++.dll.a
 '

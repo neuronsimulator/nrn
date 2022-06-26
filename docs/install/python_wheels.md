@@ -45,11 +45,18 @@ cd nrn/packaging/python
 docker build -t neuronsimulator/neuron_wheel[_gpu]:<tag> .
 ```
 where `<tag>` is:
-* `latest` for official publishing (after merging related PR)
+* `latest-x86_64` or `latest-aarch64` for official publishing on respective platforms (after merging related PR)
 * `feature-name` for updates (for local testing or for PR testing purposes where you can temporarily publish the tag on DockerHub and tweak Azure CI pipelines to use it - refer to
   `Job: 'ManyLinuxWheels'` or `Job: 'ManyLinuxGPUWheels'` in [azure-pipelines.yml](../../azure-pipelines.yml) )
 
 and `_gpu` is needed for the GPU wheel. 
+
+If you are building an image for AArch64 i.e. with `latest-aarch64` tag then you additionally pass `--build-arg` argument to docker build command in order to use compatible manylinux image for ARM64 platform (e.g. while building on Apple M1 or QEMU emulation):
+
+```
+docker build -t neuronsimulator/neuron_wheel:latest-aarch64 --build-arg MANYLINUX_IMAGE=manylinux2014_aarch64 -f Dockerfile .
+```
+
 
 ### Pushing to DockerHub
 
@@ -102,11 +109,18 @@ git clone ssh://bbpcode.epfl.ch/user/kumbhar/mpt-headers
 ```
 
 ## macOS wheels
-Note that for macOS there is no docker image needed, but all required dependencies must exist.
-In order to have the wheels working on multiple macOS target versions, special consideration must be made for MACOSX_DEPLOYMENT_TARGET.
 
-Taking Azure macOS wheels for example, `readline` has been manually built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
-See [packaging/python/Dockerfile](../../packaging/python/Dockerfile) for readline build instructions.
+Note that for macOS there is no docker image needed, but all required dependencies must exist.
+In order to have the wheels working on multiple macOS target versions, special consideration must be made for `MACOSX_DEPLOYMENT_TARGET`.
+
+
+Taking Azure macOS `x86_64` wheels for example, `readline` was built with `MACOSX_DEPLOYMENT_TARGET=10.9` and stored as secure file on Azure.
+For `arm64` we need to set `MACOSX_DEPLOYMENT_TARGET=11.0`. The wheels currently need to be built manually, using `universal2` Python installers. 
+For upcoming `universal2` wheels (targeting both `x86_64` and `arm64`) we will consider leveling everything to `MACOSX_DEPLOYMENT_TARGET=11.0`.
+
+
+You can use [packaging/python/build_static_readline_osx.bash](../../packaging/python/build_static_readline_osx.bash) to build a static readline library.
+You can have a look at the script for requirements and usage. 
 
 ## Launch the wheel building
 
@@ -159,6 +173,11 @@ bash packaging/python/test_wheels.sh python3.8 wheelhouse/NEURON-7.8.0.236-cp38-
 bash packaging/python/test_wheels.sh python3.8 "-i https://test.pypi.org/simple/NEURON==7.8.11.2"
 ```
 
+### MacOS considerations
+
+On MacOS, launching `nrniv -python` or `special -python` can fail to load `neuron` module due to security restrictions. 
+For this specific purpose, please `export SKIP_EMBEDED_PYTHON_TEST=true` before launching the tests.
+
 ### Testing on BB5
 On BB5, we can test CPU wheels with:
 
@@ -186,3 +205,74 @@ The `test_wheels.sh` will check if `nvc/nvc++` compilers are available and run t
 Also, it checks if GPU is available (using `pgaccelinfo -nvidia` command) and then runs a few tests on the GPU as well.
 
 Similar to BB5, the wheel can be tested on any desktop system provided that NVHPC compiler module is loaded or appropriate PATH environment variable is setup.
+
+
+## Publishing the wheels on Pypi via Azure
+
+### Official Release wheels
+
+Head over to the [neuronsimulator.nrn](https://dev.azure.com/neuronsimulator/nrn/_build?definitionId=1) pipeline on Azure.
+
+After creating the tag on the `release/x.y` or on the `master` branch, perform the following steps:
+
+1) Click on `Run pipeline`
+2) Input the release tag ref `refs/tags/x.y.z`
+3) Click on `Variables`
+4) We need to define three variables:
+   * `NRN_NIGHTLY_UPLOAD` : `false`
+   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
+
+   Do so by clicking `Add variable`, input the variable name and optionally the value and then click `Create`.
+5) Click on `Run`
+
+![](images/azure-release-no-upload.png)
+
+With above, wheel will be created like release from the provided tag but they won't be uploaded to the pypi.org ( as we have set  `NRN_RELEASE_UPLOAD=false`). These wheels now you can download from artifacts section and perform thorough testing. Once you are happy with the testing result, set `NRN_RELEASE_UPLOAD` to `true` and trigger the pipeline same way:
+   * `NRN_NIGHTLY_UPLOAD` : `true`
+   * `NRN_RELEASE_UPLOAD` : `false`
+   * `NEURON_NIGHTLY_TAG` : undefined (leave empty)
+
+![](images/azure-release.png)
+
+
+## Publishing the wheels on Pypi via CircleCI
+
+Currently CircleCI doesn't have automated pipeline for uploading `release` wheels to pypi.org (nightly wheels are uploaded automatically though). Currently we are using a **hacky**, semi-automated approach described below:
+
+* Checkout your tag as a new branch
+* Update `.circleci/config.yml` as shown below
+* Trigger CI pipeline manually for [the nrn project](https://app.circleci.com/pipelines/github/neuronsimulator/nrn)
+* Upload wheels from artifacts manually
+
+```
+# checkout release tag as a new branch
+$ git checkout 8.1a -b release/8.1a-aarch64
+
+# manually updated `.circleci/config.yml`
+$ git diff
+
+@@ -15,6 +15,10 @@ jobs:
+     machine:
+       image: ubuntu-2004:202101-01
++    environment:
++      NEURON_WHEEL_VERSION: 8.1a
++      NEURON_NIGHTLY_TAG: ""
++      NRN_NIGHTLY_UPLOAD: false
++      NRN_RELEASE_UPLOAD: false
+
+@@ -89,7 +95,7 @@ workflows:
+       - manylinux2014-aarch64:
+           matrix:
+             parameters:
+-              NRN_PYTHON_VERSION: ["310"]
++              NRN_PYTHON_VERSION: ["37", "38", "39", "310"]
+```
+
+The reason we are setting `NEURON_WHEEL_VERSION` to a desired version `8.1a` because `setup.py` uses `git describe` and it will give different version name as we are now on a new branch!
+
+
+### Nightly wheels
+
+Nightly wheels get automatically published from `master` in CRON mode.
+

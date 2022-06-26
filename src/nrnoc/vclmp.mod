@@ -99,10 +99,9 @@ INITIAL {
 		: stopping cvode here if the clamp is on still allows
 		: that tool to control a IClamp under cvode
 		VERBATIM
-		{extern int cvode_active_;
 		if (cvode_active_) {
 			hoc_execerror("VClamp", " does not work with CVODE");
-		}}
+		}
 		ENDVERBATIM
 	}}
 }

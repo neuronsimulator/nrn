@@ -2,8 +2,6 @@
 # mixed up with other instances.
 import distutils.util
 import os
-import sys
-import traceback
 
 from neuron import h
 
@@ -117,18 +115,13 @@ def test_netmove():
 
 
 if __name__ == "__main__":
-    try:
-        from neuron import gui
+    from neuron import gui
 
-        stdlist = test_netmove()
-        g = h.Graph()
-        print("n_netsend  n_netmove")
-        for result in stdlist:
-            print(result[0], result[1])
-            result[2].line(g)
-        g.exec_menu("View = plot")
-    except:
-        traceback.print_exc()
-        # Make the CTest test fail
-        sys.exit(42)
+    stdlist = test_netmove()
+    g = h.Graph()
+    print("n_netsend  n_netmove")
+    for result in stdlist:
+        print(result[0], result[1])
+        result[2].line(g)
+    g.exec_menu("View = plot")
     h.quit()
