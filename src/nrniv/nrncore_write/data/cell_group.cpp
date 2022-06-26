@@ -81,7 +81,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
                     hoc_execerr_ext("NetCon range variable reference source not a voltage");
                 }
                 if (ps->gid_ < 0) {
-                    bool b1 = bool(ps->dil_.size());
+                    bool b1 = !dil_.empty();
                     bool b2 = b1 && bool(ps->dil_[0]->target_);
                     std::string ncob(b1 ? hoc_object_name(ps->dil_[0]->obj_) : "");
                     hoc_execerr_ext(
