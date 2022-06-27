@@ -9,7 +9,7 @@ Although this is a minimal model, learning the ropes is still difficult. Therefo
 
 As you know, NEURON is optimized to handle the complex channel and compartment simulations that have been omitted from this exercise. The interested student might wish to convert this network into a network of spiking cells with realistic inhibitory interactions or a hybrid network with both realistic and artificial cells. Such an extended exercise would more clearly demonstrate NEURON's advantages for performing network simulations.
 
-Standard intfire implementation (eg IntFire1 from intfire1.mod))
+Standard intfire implementation (eg :hoc:class:`IntFire1` from ``intfire1.mod``))
 ---------------------
 
 Individual units are integrate-and-fire neurons.
@@ -41,12 +41,12 @@ IntIBFire is enclosed in a template named "Cell." An instantiation of this templ
     >>> mycell = Cell()
     >>> print mycell.pp, mycell.pp.tau, mycell.pp.invl
 
-The Cell template also provides 3 procedures. *connect2target()* is optionally used to hook this cell to a postsynaptic cell.
+The Cell template also provides 3 procedures. ``connect2target()`` is optionally used to hook this cell to a postsynaptic cell.
 
 Network
 -------
 
-The network has all-to-all inhibitory connectivity with all connections set to equal negative values. The network is initially set up with fast firing cells at the bottom of the graph (Cell[0], highest natural interval) and slower cells at the top (Cell[ncell-1], lowest natural interval). Cells in between have sequential evenly-spaced periods.
+The network has all-to-all inhibitory connectivity with all connections set to equal negative values. The network is initially set up with fast firing cells at the bottom of the graph (``Cell[0]``, highest natural interval) and slower cells at the top (``Cell[ncell-1]``, lowest natural interval). Cells in between have sequential evenly-spaced periods.
 
 How it works
 =============

@@ -11,7 +11,7 @@ The typical file organization is to have the python/hoc and mod files together i
 If you want to do everything with a UNIX-like terminal window, then in the folder containing the python/hoc and mod files type
 
 .. code::
-    python
+    bash
 
     nrnivmodl
     python your_starting_file.py

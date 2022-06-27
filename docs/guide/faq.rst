@@ -74,7 +74,7 @@ By specifying representations in the computer of the three basic physical compon
         specification of which variables to monitor and record time step, when to stop, integration method, optimization algorithms
 
 
-The classical approach to using NEURON is to specify all three components by writing a program in ``hoc``, NEURON's programming language. You can do this with any editor you prefer, as long as it can save your code to an ASCII text file. Make sure your ``hoc`` files end with the ``extension .hoc``
+The classical approach to using NEURON is to specify all three components by writing a program in ``hoc``, NEURON's programming language. You can do this with any editor you prefer, as long as it can save your code to an ASCII text file. Make sure your ``hoc`` files end with the extension ``.hoc``
 
 A more recent approach is to use the NEURON Main Menu toolbar's dropdown menus, which allow you to quickly create a wide range of models without having to write any code at all. You can save the GUI's windows and panels to session files that you can use later to recreate what you built (see the FAQ "What is a ses (session) file?").
 
@@ -117,7 +117,7 @@ The Mac, MSWin, and UNIX/Linux versions of NEURON can read ASCII text files crea
 How do I print a hard copy of a NEURON window?
 ----------------------------------------------
 
-Use the Print & File Window Manager (PFWM). Download :download:`printing.pdf <data/printing.pdf>` to learn how.
+Use the Print & File Window Manager (PFWM). View :ref:`Print & File Manager <print_file_manager>` to learn how.
 
 How do I plot something other than membrane potential?
 ------------------------------------------------------
@@ -296,19 +296,19 @@ Open this file with your browser and start the exercise.
 I just want a current clamp that will deliver a sequence of current pulses at regular intervals. Vector play seems like overkill for this.
 ---------------
 
-Right you are. Pick up pulsedistrib.zip, and unzip it into an empty directory. This creates a subdirectory called pulsedistrib, which contains ``Ipulse1.mod``, ``Ipulse2.mod``, ``readme.txt``, and ``test_1_and_2.hoc``. Read ``readme.txt``, compile the mod files, and then use NEURON to load ``test_1_and_2.hoc``, which is a simple demo of these two current pulse generators.
+Right you are. Pick up `pulsedistrib.zip <http://www.neuron.yale.edu/neuron/static/docs/repstim/pulsedistrib.zip>`_, and unzip it into an empty directory. This creates a subdirectory called pulsedistrib, which contains :download:`data/Ipulse1.mod`, :download:`data/Ipulse2.mod`, :download:`data/readme.txt`, and :download:`data/test_1_and_2.hoc`. Read :download:`data/readme.txt`, compile the mod files, and then use NEURON to load :download:`data/test_1_and_2.hoc`, which is a simple demo of these two current pulse generators.
 
-pulsedistrib also contains ``ipulse3.mod``, ``ipulse3rig.ses``, and ``test_3.hoc``, which address the next question in this list.
+pulsedistrib also contains :download:`data/ipulse3.mod`, :download:`data/ipulse3rig.ses`, and :download:`data/test_3.hoc`, which address the next question in this list.
 
 I want a current clamp that will generate a pulse when I send it an event, or that I can use to produce pulses at precalculated times.
 -----------------------
 
-Then get pulsedistrib.zip, and unzip it. Inside the pulsedistrib subdirectory you'll find ``ipulse3.mod``, ``ipulse3rig.ses``, and ``test_3.hoc`` (and some other files that pertain to the previous question). ``ipulse3.mod`` contains the NMODL code for a current clamp that produces a current pulse when it receives an input event. ``test_3.hoc`` is a simple demo of the Ipulse3 mechanism, and ``ipulse3rig.ses`` is used by ``test_3.hoc`` to create the GUI for a demo of Ipulse3. It uses a NetStim to generate the events that drive the Ipulse3. If you want to drive an Ipulse3 with recorded or precomputed event times, use the VecStim class as described under the topic `Driving a synapse with recorded or precomputed spike events <https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=2117>`_ in the "Hot tips" area of the `NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_.
+Then get `pulsedistrib.zip <http://www.neuron.yale.edu/neuron/static/docs/repstim/pulsedistrib.zip>`_, and unzip it. Inside the pulsedistrib subdirectory you'll find :download:`data/ipulse3.mod`, :download:`data/ipulse3rig.ses`, and :download:`data/test_3.hoc` (and some other files that pertain to the previous question). :download:`data/ipulse3.mod` contains the NMODL code for a current clamp that produces a current pulse when it receives an input event. :download:`data/test_3.hoc` is a simple demo of the Ipulse3 mechanism, and :download:`data/ipulse3rig.ses` is used by :download:`data/test_3.hoc` to create the GUI for a demo of Ipulse3. It uses a :hoc:class:`NetStim` to generate the events that drive the Ipulse3. If you want to drive an Ipulse3 with recorded or precomputed event times, use the VecStim class as described under the topic `Driving a synapse with recorded or precomputed spike events <https://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=2117>`_ in the "Hot tips" area of the `NEURON Forum <https://www.neuron.yale.edu/phpBB/>`_.
 
 I have a set of recorded or calculated spike times. How can I use these to drive a postsynaptic mechanism?
 ------------------------
 
-Assuming that your synaptic mechanism has a NET_RECEIVE block, so that it is driven by events delivered by a NetCon, I can think of two ways this might be done. Which one to use depends on how many calculated spike times you are dealing with.
+Assuming that your synaptic mechanism has a ``NET_RECEIVE`` block, so that it is driven by events delivered by a :hoc:class:`NetCon`, I can think of two ways this might be done. Which one to use depends on how many calculated spike times you are dealing with.
 
 If you only have a "few" spikes (up to a few dozen), you could just dump them into the spike queue at the onset of the simulation. Here's how: 
 
@@ -323,7 +323,7 @@ If you only have a "few" spikes (up to a few dozen), you could just dump them in
 For example, if the Vector that holds the event times is syntimes, and the NetCon that drives the synaptic point process is nc, this would work:
 
 .. code::
-    python
+    c++
 
     objref fih
     fih = new FInitializeHandler("loadqueue()")

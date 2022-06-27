@@ -8,7 +8,7 @@ The d_lambda rule is built into the CellBuilder and is available by clicking on 
 If you don't use the GUI, you can still use the d_lambda rule. Just save this code
 
 .. code::
-    Python
+    c++
 
     /* Sets nseg in each section to an odd value
         so that its segments are no longer than 
@@ -60,7 +60,7 @@ in a file called ``fixnseg.hoc``
 After specifying the topolgy, geometry, and biophysics of your model, execute the statements
 
 .. code::
-    Python
+    c++
 
     xopen("fixnseg.hoc")
     geom_nseg()

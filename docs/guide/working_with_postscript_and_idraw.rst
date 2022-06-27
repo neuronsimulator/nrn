@@ -116,7 +116,7 @@ Since an idraw file is an encapsulated postscript (EPS) file, it contains a Boun
 would be placed by
 
 .. code::
-    Python
+    c++
 
     \begin{figure}[htb]    
     \begin{center} \begin{picture}(261,161)

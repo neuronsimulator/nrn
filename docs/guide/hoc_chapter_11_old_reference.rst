@@ -13,7 +13,11 @@ Hoc has an object oriented syntax addition which can be used to implement abstra
 The interpreter in $NEURONHOME/bin/$CPU
 -----------
 
-The HOC interpreter has served as the general I/O module in many kinds of applications and as such is directly executed under many different names. The :download:`figure <fig/ocfig2>` illustrates some non-neural examples of hoc's use in different domains. The simplest interface between HOC and domain specific problems consist of a set of functions and variables that are callable from hoc. This was the level of implementation of the the original CABLE program (NEURON version 1). NEURON version 2 departed from this uniform interface style by introducing neuron specific syntax into the interpreter itself. This was meant to allow the user to specify neuron properties at a level of discourse more appropriate to neurons and help relieve the confusion and reduce the mental energy required to constantly shift between high level neural concepts and their low level representation on the computer. NEURON version 3, by introducing object syntax allows much better structuring of the conceptual pieces that are assembled to build a simulation.
+The HOC interpreter has served as the general I/O module in many kinds of applications and as such is directly executed under many different names. The below figure illustrates some non-neural examples of hoc's use in different domains. The simplest interface between HOC and domain specific problems consist of a set of functions and variables that are callable from hoc. This was the level of implementation of the the original CABLE program (NEURON version 1). NEURON version 2 departed from this uniform interface style by introducing neuron specific syntax into the interpreter itself. This was meant to allow the user to specify neuron properties at a level of discourse more appropriate to neurons and help relieve the confusion and reduce the mental energy required to constantly shift between high level neural concepts and their low level representation on the computer. NEURON version 3, by introducing object syntax allows much better structuring of the conceptual pieces that are assembled to build a simulation.
+
+.. image::
+    fig/ocfig.gif
+    :align: center
 
 When NEURON is installed, four programs are constructed from the combinations of whether or not the C++ graphical interface is included with the interpreter; and whether or not neuron specific syntax is included.
 
@@ -23,7 +27,7 @@ When NEURON is installed, four programs are constructed from the combinations of
 
 **nrnoc**
 
-    Analogous to version 2 of neuron but the interpreter is oc. Neuron specific c code is located in ``nrnoc/SRC``.
+    Analogous to version 2 of neuron but the interpreter is oc. Neuron specific c code is located in :file:`nrnoc/SRC`.
 
 **ivoc**
 

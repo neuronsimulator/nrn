@@ -64,7 +64,7 @@ What can go wrong, and how to fix it
 The most common cause of errors during retrieval of a session file is that one or more variables used by a window have not yet been defined. Thus, retrieving a point process manager window before the prerequisite cable section has been created will result in a hoc error. Retrieving a Graph of SEClamp[0].i will not succeed if SEClamp[0] does not exist. In most cases, loading the prerequisite sessions first will fix the error. To make sure that session files are loaded in the proper sequence, it can be helpful to create a file called init.hoc that contains a series of load_file statements, e.g.
 
 .. code::
-    Python
+    c++
 
     load_file("nrngui.hoc")
     load_file("cell.ses")
@@ -75,7 +75,7 @@ The most common cause of errors during retrieval of a session file is that one o
 Errors due to mismatched object IDs are easy to correct by editing the session file. Mismatched object IDs can occur from particular sequences of creation and destruction of windows by the user. For example, suppose you
 
 1.
-    Start a PointProcessManager and create the first instance of an IClamp. This will be IClamp[0]
+    Start a PointProcessManager and create the first instance of an :class:`IClamp`. This will be IClamp[0]
 
 2.
     Start another PointProcessManager and create a second instance of an IClamp. This will be IClamp[1]
@@ -90,13 +90,4 @@ Errors due to mismatched object IDs are easy to correct by editing the session f
     Save the session.
 
 If you now exit and re-launch NEURON and retrieve the session, the old IClamp[1] will be re-created as IClamp[0], and the creation of the Graph window will fail due to the invalid variable name it is attempting to define. The fix is just to edit the session file and change the IClamp[1].i string to IClamp[0].i
-
-
-
-
-
-
-
-
-
 

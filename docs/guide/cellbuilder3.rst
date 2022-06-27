@@ -11,7 +11,7 @@ For this tutorial, we return to our stylized model
     fig/cellp.gif
     :align: center
 
-but now we want gnabar_hh, gkbar_hh, and gl_hh in the apical dendrites to decrease linearly with distance from the origin of the apical tree.
+but now we want ``gnabar_hh``, ``gkbar_hh``, and ``gl_hh`` in the apical dendrites to decrease linearly with distance from the origin of the apical tree.
 
 **Geometry**
 
@@ -96,7 +96,7 @@ where *p* is one of the following distance metrics:
 If we were trying to do this by writing our own hoc code, we might come up with something like this:
 
 .. code::
-    Python
+    c++
 
     forsec subset for (x,0) { rangevar_suffix(x) = f(p(x)) }
 

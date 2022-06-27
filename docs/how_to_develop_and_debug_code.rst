@@ -1,7 +1,7 @@
 .. _how_to_develop_and_debug_your_own_code:
 
 How to develop and debug your own code
-===================================================================================
+======================================
 
 Rule I: Don't write a bunch of code (or create a bunch of GUI windows) all at once, and then expect everything to work the first time you try it.
 -------------------------------------------------------------------------------------------------------------------------------------------------
