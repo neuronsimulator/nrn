@@ -149,7 +149,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     list(APPEND pytest --cov-report=xml --cov=neuron)
   endif()
   # TODO: consider allowing the group-related parts to be dropped here
-  nrn_add_test_group(NAME pynrn MODFILE_PATTERNS test/pynrn/*.mod)
+  nrn_add_test_group(
+    CORENEURON
+    NAME pynrn
+    MODFILE_PATTERNS test/pynrn/*.mod)
   nrn_add_test(
     GROUP pynrn
     NAME basic_tests

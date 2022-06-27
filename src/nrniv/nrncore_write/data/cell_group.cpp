@@ -5,6 +5,8 @@
 #include "parse.hpp"
 #include "nrnmpi.h"
 #include "netcon.h"
+#include "netcvode.h"
+extern NetCvode* net_cvode_instance;
 
 #include <limits>
 #include <sstream>
@@ -12,7 +14,6 @@
 extern short* nrn_is_artificial_;
 extern bool corenrn_direct;
 extern int* bbcore_dparam_size;
-extern void nrncore_netpar_cellgroups_helper(CellGroup*);
 extern int nrn_has_net_event_cnt_;
 extern int* nrn_has_net_event_;
 extern short* nrn_is_artificial_;
@@ -62,8 +63,45 @@ CellGroup::~CellGroup() {
 
 CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
     for (int i = 0; i < nrn_nthread; ++i) {
-        int ncell = nrn_threads[i].ncell;  // real cell count
-        int npre = ncell;
+        auto& nt = nrn_threads[i];
+        cgs[i].n_real_cell = nt.ncell;  // real cell count
+
+        // Count PreSyn watching voltage (raise error if watching something else)
+        // Allows possibility of multiple outputs for a cell.
+        int npre = 0;
+        NetCvodeThreadData& nctd = net_cvode_instance->p[i];
+        hoc_Item* pth = nctd.psl_thr_;
+        if (pth) {
+            hoc_Item* q;
+            ITERATE(q, pth) {
+                PreSyn* ps = (PreSyn*) VOIDITM(q);
+                auto& pv = ps->thvar_;
+                assert(pv);
+                if (pv < nt._actual_v || pv >= (nt._actual_v + nt.end)) {
+                    hoc_execerr_ext("NetCon range variable reference source not a voltage");
+                }
+                if (ps->gid_ < 0) {
+                    bool b1 = !ps->dil_.empty();
+                    bool b2 = b1 && bool(ps->dil_[0]->target_);
+                    std::string ncob(b1 ? hoc_object_name(ps->dil_[0]->obj_) : "");
+                    hoc_execerr_ext(
+                        "%s with voltage source has no gid."
+                        " (The source is %s(x)._ref_v"
+                        " and is the source for %zd NetCons. %s%s)",
+                        (b1 ? ncob.c_str() : "NetCon"),
+                        secname(ps->ssrc_),
+                        ps->dil_.size(),
+                        (b1 ? (ncob + " has target ").c_str() : ""),
+                        (b1 ? (b2 ? std::string(hoc_object_name(ps->dil_[0]->target_->ob)).c_str()
+                                  : "None")
+                            : ""));
+                }
+                ++npre;
+            }
+        }
+        cgs[i].n_real_output = npre;
+
+        // Final count of n_presyn of thread
         MlWithArt& mla = cgs[i].mlwithart;
         for (size_t j = 0; j < mla.size(); ++j) {
             int type = mla[j].first;
@@ -74,7 +112,7 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             }
         }
         cgs[i].n_presyn = npre;
-        cgs[i].n_real_output = ncell;
+
         cgs[i].output_ps = new PreSyn*[npre];
         cgs[i].output_gid = new int[npre];
         cgs[i].output_vindex = new int[npre];
@@ -87,9 +125,24 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             cgs[i].output_vindex[j] = -1;
         }
 
+        // fill in the output_ps, output_gid, and output_vindex for the real cells.
+        npre = 0;
+        if (pth) {
+            hoc_Item* q;
+            ITERATE(q, pth) {
+                PreSyn* ps = (PreSyn*) VOIDITM(q);
+                auto& pv = ps->thvar_;
+                cgs[i].output_ps[npre] = ps;
+                cgs[i].output_gid[npre] = ps->output_index_;
+                cgs[i].output_vindex[npre] = pv - nt._actual_v;
+                ++npre;
+            }
+        }
+        assert(npre == cgs[i].n_real_output);
+
         // fill in the artcell info
-        npre = ncell;
-        cgs[i].n_output = ncell;  // add artcell (and PP with net_event) with gid in following loop
+        npre = cgs[i].n_real_output;
+        cgs[i].n_output = npre;  // add artcell (and PP with net_event) with gid in following loop
         for (size_t j = 0; j < mla.size(); ++j) {
             int type = mla[j].first;
             Memb_list* ml = mla[j].second;
@@ -144,9 +197,6 @@ CellGroup* CellGroup::mk_cellgroups(CellGroup* cgs) {
             }
         }
     }
-    // work at netpar.cpp because we don't have the output gid hash tables here.
-    // fill in the output_ps, output_gid, and output_vindex for the real cells.
-    nrncore_netpar_cellgroups_helper(cgs);
 
     // use first real cell gid, if it exists, as the group_id
     if (corenrn_direct == false)

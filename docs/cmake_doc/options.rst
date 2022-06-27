@@ -443,8 +443,9 @@ NRN_ENABLE_TESTS:BOOL=OFF
   seen with the CI tests, use ``ctest -VV`` (executed in the
   build folder) or an individual test with ``ctest -VV -R name_of_the_test``.
   One can also run individual test files
-  with ``python3 -m pytest <testfile.py>`` or all the test files in that
-  folder with ``python3 -m pytest``. Note: It is helpful to ``make test``
+  with ``python3 -m pytest -s <testfile.py>`` or all the test files in that
+  folder with ``python3 -m pytest -s``. (The ``-s`` shows all output on
+  the terminal.) Note: It is helpful to ``make test``
   first to ensure any mod files needed are available to the tests. If
   running a test outside the folder where the test is located, it may be
   necessary to add the folder to PYTHONPATH. Note: The last python
