@@ -176,9 +176,18 @@ size_t nrncore_write() {
 
 static size_t part1() {
     size_t rankbytes = 0;
-    if (!bbcore_dparam_size) {
+    static int bbcore_dparam_size_size = -1;
+
+    // In nrn/test/pynrn, "python -m pytest ." calls this with
+    // n_memb_func of 27 and then with 29. I don't see any explicit
+    // intervening h.nrn_load_dll in that folder but ...
+    if (bbcore_dparam_size_size != n_memb_func) {
+        if (bbcore_dparam_size) {
+            delete[] bbcore_dparam_size;
+        }
         bbcore_dparam_size = new int[n_memb_func];
     }
+
     for (int i = 0; i < n_memb_func; ++i) {
         int sz = nrn_prop_dparam_size_[i];
         bbcore_dparam_size[i] = sz;
