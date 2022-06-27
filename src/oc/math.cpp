@@ -87,17 +87,27 @@ double integer(double x) {
 
 double errcheck(double d, const char* s) /* check result of library call */
 {
-    // errno is not set for macOs, check FE exceptions as well. See:
+    // errno may not be enabled, rely on FE exceptions in that case. See:
     // https://en.cppreference.com/w/cpp/numeric/math/math_errhandling
-    if (errno == EDOM || std::fetestexcept(FE_INVALID)) {
+#ifdef MINGW
+    const auto errno_enabled = true;
+    const auto check_fe_except = false;
+#else
+    const auto errno_enabled = math_errhandling & MATH_ERRNO;
+    const auto check_fe_except = !errno_enabled && math_errhandling & MATH_ERREXCEPT;
+#endif
+    if ((errno_enabled && errno == EDOM) || (check_fe_except && std::fetestexcept(FE_INVALID))) {
+        if (check_fe_except)
+            std::feclearexcept(FE_ALL_EXCEPT);
         errno = 0;
         hoc_execerror(s, "argument out of domain");
-    } else if (errno == ERANGE || std::fetestexcept(FE_DIVBYZERO) ||
-               std::fetestexcept(FE_OVERFLOW) || std::fetestexcept(FE_UNDERFLOW)) {
+    } else if ((errno_enabled && errno == ERANGE) ||
+               (check_fe_except &&
+                (std::fetestexcept(FE_DIVBYZERO) || std::fetestexcept(FE_OVERFLOW) ||
+                 std::fetestexcept(FE_UNDERFLOW)))) {
+        if (check_fe_except)
+            std::feclearexcept(FE_ALL_EXCEPT);
         errno = 0;
-#if 0
-        hoc_execerror(s, "result out of range");
-#else
         if (++hoc_errno_count > MAXERRCOUNT) {
         } else {
             hoc_warning(s, "result out of range");
@@ -105,7 +115,6 @@ double errcheck(double d, const char* s) /* check result of library call */
                 fprintf(stderr, "No more errno warnings during this execution\n");
             }
         }
-#endif
     }
     return d;
 }

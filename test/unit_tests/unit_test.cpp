@@ -7,8 +7,6 @@
 #include <section.h>
 #include <neuron.h>
 
-extern void nrn_threads_create(int, int);
-extern void nrn_threads_free();
 extern int ivocmain_session(int, const char**, const char**, int);
 
 extern int nrn_main_launch;
