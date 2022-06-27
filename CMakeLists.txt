@@ -61,7 +61,7 @@ option(NRN_ENABLE_DISCRETE_EVENT_OBSERVER "Enable Observer to be a subclass of D
        ${NRN_ENABLE_DISCRETE_EVENT_OBSERVER_DEFAULT})
 option(NRN_ENABLE_PYTHON "Enable Python interpreter support (default python3 fallback to python)"
        ${NRN_ENABLE_PYTHON_DEFAULT})
-option(NRN_ENABLE_THREADS "Allow use of Pthreads" ${NRN_ENABLE_THREADS_DEFAULT})
+option(NRN_ENABLE_THREADS "Allow use of multithreading" ${NRN_ENABLE_THREADS_DEFAULT})
 option(NRN_ENABLE_MPI "Enable MPI support" ${NRN_ENABLE_MPI_DEFAULT})
 option(NRN_ENABLE_RX3D "Enable rx3d support" ${NRN_ENABLE_RX3D_DEFAULT})
 option(NRN_ENABLE_CORENEURON "Enable CoreNEURON support" ${NRN_ENABLE_CORENEURON_DEFAULT})
@@ -415,11 +415,10 @@ endif()
 # Enable Threads support
 # =============================================================================
 if(NRN_ENABLE_THREADS)
+  # Note that at least GCC requires -pthread to be passed even when using std::thread.
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  set(USE_PTHREAD 1)
-else()
-  set(USE_PTHREAD 0)
+  list(APPEND NRN_COMPILE_DEFS NRN_ENABLE_THREADS)
 endif()
 
 # =============================================================================
@@ -796,7 +795,7 @@ install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/share/lib/cleanup
 # find headers to install
 nrn_find_project_files(NRN_HEADERS_PATHS ${HEADER_FILES_TO_INSTALL})
 file(COPY ${NRN_HEADERS_PATHS} ${PROJECT_BINARY_DIR}/src/nrnoc/nrnsemanticversion.h
-          ${PROJECT_BINARY_DIR}/src/oc/nrnpthread.h DESTINATION ${PROJECT_BINARY_DIR}/include)
+     DESTINATION ${PROJECT_BINARY_DIR}/include)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 if(NRN_MACOS_BUILD)

@@ -12,6 +12,7 @@
 #include "cabvars.h"
 #include "neuron.h"
 #include "membdef.h"
+#include "multicore.h"
 #include "nrnmpi.h"
 
 
@@ -295,8 +296,6 @@ void hoc_nrn_load_dll(void) {
     }
 }
 
-extern void nrn_threads_create(int, int);
-
 static DoubScal scdoub[] = {"t", &t, "dt", &dt, 0, 0};
 
 void hoc_last_init(void) {
@@ -305,7 +304,7 @@ void hoc_last_init(void) {
     Symbol* s;
 
     hoc_register_var(scdoub, (DoubVec*) 0, (VoidFunc*) 0);
-    nrn_threads_create(1, 0);  // single thread
+    nrn_threads_create(1, false);  // single thread
 
     if (nrnmpi_myid < 1)
         if (nrn_nobanner_ == 0) {

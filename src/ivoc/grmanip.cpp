@@ -62,7 +62,6 @@ class MoveLabelBand: public Rubberband {
     GLabel* label_;
     GlyphIndex index_;
     Allocation a_;
-    Cursor* cursor_;
     Coord x0_, y0_;
 };
 
@@ -514,10 +513,6 @@ void MoveLabelBand::press(Event&) {
     }
     x0_ -= x_begin();
     y0_ -= y_begin();
-#if 0 && !defined(WIN32)
-	cursor_ = canvas()->window()->cursor();
-	canvas()->window()->cursor(noCursor);
-#endif
 #if !defined(WIN32) && !MAC
     undraw(x(), y());  // so initial draw does not make it disappear
 #endif
@@ -548,9 +543,6 @@ void MoveLabelBand::release(Event&) {
     }
     // printf("move to %g %g\n", x1, y1);
     gr->move(index_, x1, y1);
-#if 0 && !defined(WIN32)
-	canvas()->window()->cursor(cursor_);
-#endif
 }
 
 void MoveLabelBand::draw(Coord x, Coord y) {

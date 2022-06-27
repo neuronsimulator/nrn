@@ -1,12 +1,12 @@
 #include <../../nrnconf.h>
 #include <vector>
+#include <cmath>
 #include <InterViews/resource.h>
 
 #define v_elem(v, i) (*(vector_vec(v) + i))
 
 #include "ivocvect.h"
 #include "oc2iv.h"
-#include <OS/math.h>
 
 #undef error
 
@@ -330,21 +330,21 @@ for (int i = 0; i < n; ++i) {
         if (m == 0.0) {
             break;
         }
-        while (Math::abs(m) >= 1e12) {
+        while (std::abs(m) >= 1e12) {
             m *= 1e-12;
             *e += 12;
         }
-        while (Math::abs(m) < 1e-12) {
+        while (std::abs(m) < 1e-12) {
             m *= 1e12;
             *e -= 12;
         }
     }
     if (m) {
-        while (Math::abs(m) >= 10.0) {
+        while (std::abs(m) >= 10.0) {
             m *= 0.1;
             *e += 1;
         }
-        while (Math::abs(m) < 1.0) {
+        while (std::abs(m) < 1.0) {
             m *= 10.0;
             *e -= 1;
         }

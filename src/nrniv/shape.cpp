@@ -22,7 +22,7 @@
 #include <IV-look/kit.h>
 #include <OS/list.h>
 #include <ivstream.h>
-#include <math.h>
+#include <cmath>
 #include "mymath.h"
 #include "apwindow.h"
 // really only need colors from graph.h
@@ -528,75 +528,43 @@ extern double ivoc_gr_erase(void*);
 extern double ivoc_gr_gif(void*);
 extern double ivoc_erase_all(void*);
 
-static Member_func sh_members[] = {"nearest",
-                                   nrniv_sh_nearest,
-                                   "push_selected",
-                                   nrniv_sh_push,
-                                   "view",
-                                   sh_view,
-                                   "size",
-                                   ivoc_gr_size,
-                                   "flush",
-                                   sh_flush,
-                                   "begin",
-                                   sh_begin,
-                                   "view_count",
-                                   sh_view_count,
-                                   "select",
-                                   sh_select,
-                                   "action",
-                                   sh_select_action,
-                                   "save_name",
-                                   sh_save_name,
-                                   "unmap",
-                                   sh_unmap,
-                                   "color",
-                                   nrniv_sh_color,
-                                   "color_all",
-                                   nrniv_sh_color_all,
-                                   "color_list",
-                                   nrniv_sh_color_list,
-                                   "point_mark",
-                                   sh_point_mark,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "point_mark_remove",
-                                   sh_point_mark_remove,
-                                   "printfile",
-                                   sh_printfile,
-                                   "show",
-                                   sh_show,
-                                   "menu_action",
-                                   ivoc_gr_menu_action,
-                                   "menu_tool",
-                                   ivoc_gr_menu_tool,
-                                   "exec_menu",
-                                   exec_menu,
-                                   "observe",
-                                   nrniv_sh_observe,
-                                   "rotate",
-                                   nrniv_sh_rotate,
-                                   "beginline",
-                                   ivoc_gr_begin_line,
-                                   "line",
-                                   ivoc_gr_line,
-                                   "label",
-                                   ivoc_gr_label,
-                                   "mark",
-                                   ivoc_gr_mark,
-                                   "erase",
-                                   ivoc_gr_erase,
-                                   "erase_all",
-                                   ivoc_erase_all,
-                                   "len_scale",
-                                   nrniv_len_scale,
-                                   "gif",
-                                   ivoc_gr_gif,
-                                   0,
-                                   0};
+static Member_func sh_members[] = {{"nearest", nrniv_sh_nearest},
+                                   {"push_selected", nrniv_sh_push},
+                                   {"view", sh_view},
+                                   {"size", ivoc_gr_size},
+                                   {"flush", sh_flush},
+                                   {"begin", sh_begin},
+                                   {"view_count", sh_view_count},
+                                   {"select", sh_select},
+                                   {"action", sh_select_action},
+                                   {"save_name", sh_save_name},
+                                   {"unmap", sh_unmap},
+                                   {"color", nrniv_sh_color},
+                                   {"color_all", nrniv_sh_color_all},
+                                   {"color_list", nrniv_sh_color_list},
+                                   {"point_mark", sh_point_mark},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"point_mark_remove", sh_point_mark_remove},
+                                   {"printfile", sh_printfile},
+                                   {"show", sh_show},
+                                   {"menu_action", ivoc_gr_menu_action},
+                                   {"menu_tool", ivoc_gr_menu_tool},
+                                   {"exec_menu", exec_menu},
+                                   {"observe", nrniv_sh_observe},
+                                   {"rotate", nrniv_sh_rotate},
+                                   {"beginline", ivoc_gr_begin_line},
+                                   {"line", ivoc_gr_line},
+                                   {"label", ivoc_gr_label},
+                                   {"mark", ivoc_gr_mark},
+                                   {"erase", ivoc_gr_erase},
+                                   {"erase_all", ivoc_erase_all},
+                                   {"len_scale", nrniv_len_scale},
+                                   {"gif", ivoc_gr_gif},
+                                   {0, 0}};
 
-static Member_ret_obj_func retobj_members[] =
-    {"nearest_seg", nrniv_sh_nearest_seg, "selected_seg", nrniv_sh_selected_seg, NULL, NULL};
+static Member_ret_obj_func retobj_members[] = {{"nearest_seg", nrniv_sh_nearest_seg},
+                                               {"selected_seg", nrniv_sh_selected_seg},
+                                               {NULL, NULL}};
 
 
 static void* sh_cons(Object* ho) {
@@ -820,10 +788,10 @@ void OcShape::save_phase1(ostream& o) {
 ShapeView::ShapeView(ShapeScene* s)
     : View((s->x1() + s->x2()) / 2,
            (s->y1() + s->y2()) / 2,
-           Math::max(s->x2() - s->x1(), s->y2() - s->y1()) * 1.1,
+           std::max(s->x2() - s->x1(), s->y2() - s->y1()) * 1.1,
            s
-           //	,150*(s->x2() - s->x1())/Math::max(s->x2() - s->x1(), s->y2() - s->y1()),
-           //	150*(s->y2() - s->y1())/Math::max(s->x2() - s->x1(), s->y2() - s->y1())
+           //	,150*(s->x2() - s->x1())/std::max(s->x2() - s->x1(), s->y2() - s->y1()),
+           //	150*(s->y2() - s->y1())/std::max(s->x2() - s->x1(), s->y2() - s->y1())
       ) {}
 
 ShapeView::ShapeView(ShapeScene* s, Coord* x)
@@ -964,10 +932,10 @@ ShapeScene::ShapeScene(SectionList* sl)
     for (i = 0; i < cnt; ++i) {
         component(i)->request(req);
         MyMath::box(req, x1, y1, x2, y2);
-        xt1 = Math::min(x1, xt1);
-        yt1 = Math::min(y1, yt1);
-        xt2 = Math::max(x2, xt2);
-        yt2 = Math::max(y2, yt2);
+        xt1 = std::min(x1, xt1);
+        yt1 = std::min(y1, yt1);
+        xt2 = std::max(x2, xt2);
+        yt2 = std::max(y2, yt2);
     }
     Scene::new_size(xt1, yt1, xt2, yt2);
     color_value_ = new ColorValue();
@@ -1061,10 +1029,10 @@ void ShapeScene::wholeplot(Coord& x1, Coord& y1, Coord& x2, Coord& y2) const {
     x2 = y2 = -1e9;
     for (i = 0; i < n; ++i) {
         ((ShapeSection*) sg_->component(i))->size(l, b, r, t);
-        x1 = Math::min(x1, l);
-        x2 = Math::max(x2, r);
-        y1 = Math::min(y1, b);
-        y2 = Math::max(y2, t);
+        x1 = std::min(x1, l);
+        x2 = std::max(x2, r);
+        y1 = std::min(y1, b);
+        y2 = std::max(y2, t);
     }
     if (x1 >= x2 || y1 >= y2) {
         Scene::wholeplot(x1, y1, x2, y2);
@@ -1406,7 +1374,7 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     }
     Coord x = x_[0];
     Coord y = y_[0];
-    Coord d2 = Math::abs(sec_->pt3d[0].d) / 2 + 1;
+    Coord d2 = std::abs(sec_->pt3d[0].d) / 2 + 1;
 
     xmin_ = x - d2;
     xmax_ = x + d2;
@@ -1416,12 +1384,12 @@ void ShapeSection::transform3d(Rotation3d* rot) {
     for (i = 1; i < n_; i++) {
         x = x_[i];
         y = y_[i];
-        d2 = Math::abs(sec_->pt3d[i].d) / 2 + 1;
+        d2 = std::abs(sec_->pt3d[i].d) / 2 + 1;
 
-        xmin_ = Math::min(xmin_, x - d2);
-        xmax_ = Math::max(xmax_, x + d2);
-        ymin_ = Math::min(ymin_, y - d2);
-        ymax_ = Math::max(ymax_, y + d2);
+        xmin_ = std::min(xmin_, x - d2);
+        xmax_ = std::max(xmax_, x + d2);
+        ymin_ = std::min(ymin_, y - d2);
+        ymax_ = std::max(ymax_, y + d2);
     }
 }
 
@@ -1704,7 +1672,7 @@ void ShapeSection::fast_draw(Canvas* c, Coord x, Coord y, bool b) const {
                     }
                 }
             }
-            assert(Math::equal(xend, sec_->pt3d[sec_->npt3d - 1].arc, 1e-6));
+            assert(MyMath::eq(xend, sec_->pt3d[sec_->npt3d - 1].arc, 1e-6));
 #endif  // FASTIDIOUS
         ///////////////////////////////////////
         } else {
@@ -1761,8 +1729,8 @@ void ShapeSection::fastidious_draw(Canvas* c,
     switch (ShapeScene::current_draw_scene()->shape_type()) {
     case ShapeScene::show_diam:
         float d1, d2, t1, t2;
-        t1 = Math::abs(sec_->pt3d[i].d) / 2.;
-        t2 = Math::abs(sec_->pt3d[i1].d) / 2.;
+        t1 = std::abs(sec_->pt3d[i].d) / 2.;
+        t2 = std::abs(sec_->pt3d[i1].d) / 2.;
         d1 = f1 * (t2 - t1) + t1;
         d2 = f2 * (t2 - t1) + t1;
         trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1841,8 +1809,8 @@ void ShapeSection::draw_seg(Canvas* c, const Color* color, int iseg) const {
         switch (ShapeScene::current_draw_scene()->shape_type()) {
         case ShapeScene::show_diam:
             float d1, d2, t1, t2;
-            t1 = Math::abs(sec_->pt3d[0].d) / 2.;
-            t2 = Math::abs(sec_->pt3d[1].d) / 2.;
+            t1 = std::abs(sec_->pt3d[0].d) / 2.;
+            t2 = std::abs(sec_->pt3d[1].d) / 2.;
             d1 = darc * iseg * (t2 - t1) + t1;
             d2 = darc * (iseg + 1) * (t2 - t1) + t1;
             trapezoid(c, color, x1, y1, x2, y2, d1, d2);
@@ -1880,7 +1848,7 @@ void ShapeSection::draw_points(Canvas* c, const Color* color, int i, int j) cons
             trapezoid(c, color, i);
 #if BEVELJOIN
             if (beveljoin_) {
-                bevel_join(c, color, i - 1, Math::abs(sec_->pt3d[i - 1].d) / 2);
+                bevel_join(c, color, i - 1, std::abs(sec_->pt3d[i - 1].d) / 2);
             }
 #endif
         }
@@ -1909,8 +1877,8 @@ void ShapeSection::trapezoid(Canvas* c, const Color* color, int i) const {
               y_[i - 1],
               x_[i],
               y_[i],
-              Math::abs(sec_->pt3d[i - 1].d) / 2.,
-              Math::abs(sec_->pt3d[i].d) / 2.);
+              std::abs(sec_->pt3d[i - 1].d) / 2.,
+              std::abs(sec_->pt3d[i].d) / 2.);
 }
 
 void ShapeSection::trapezoid(Canvas* c,
@@ -2033,8 +2001,8 @@ bool ShapeSection::near_section(Coord x, Coord y, Coord mineps) const {
                                       y_[i - 1],
                                       x_[i],
                                       y_[i],
-                                      Math::max(float(Math::abs(sec_->pt3d[i - 1].d) / 2.),
-                                                float(mineps)))) {
+                                      std::max(float(std::abs(sec_->pt3d[i - 1].d) / 2.),
+                                               float(mineps)))) {
             return true;
         }
     }

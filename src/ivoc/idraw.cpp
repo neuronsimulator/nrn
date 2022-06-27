@@ -129,7 +129,6 @@ void OcIdraw::text(Canvas*,
                    const Transformer& t,
                    const Font* font,
                    const Color* color) {
-#if 1
     // ZFM tried to allow colors and fonts, but doesn't seem to work
     // 3/12/95
     char buf[100];
@@ -159,16 +158,6 @@ Helvetica 12 SetF\n\
 ";
     };
     out << "%I t" << endl;
-#else
-    out << "\n\
-Begin %I Text\n\
-%I cfg Black\n\
-0 0 0 SetCFg\n\
-%I f -*-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-*\n\
-Helvetica 12 SetF\n\
-%I t\
-" << endl;
-#endif
     Glyph* l = WidgetKit::instance()->label(s);
     Requisition req;
     l->request(req);
@@ -194,14 +183,6 @@ void OcIdraw::mline(Canvas*,
     int ixd[cnt_group], iyd[cnt_group];
     int i, size;
     float xmax = x[0], xmin = x[0], ymax = y[0], ymin = y[0];
-#if 0
-	for (i = 1; i < count; ++i) {
-		if (x[i] > xmax) xmax = x[i];
-		if (x[i] < xmin) xmin = x[i];
-		if (y[i] > ymax) ymax = y[i];
-		if (y[i] < ymin) ymin = y[i];
-	}
-#endif
     XYView* v = XYView::current_draw_view();
     xmax = v->right();
     xmin = v->left();
@@ -263,24 +244,10 @@ void OcIdraw::mline(Canvas*,
         if (size < 2) {
             break;
         }
-#if 1
         out << "\nBegin %I MLine\n";
         brush(b);
         ifill(color, false);
         out << "%I t" << endl;
-#else
-        out << "\n\
-Begin %I MLine\n\
-%I b 65535\n\
-0 0 0 [] 0 SetB\n\
-%I cfg Black\n\
-0 0 0 SetCFg\n\
-%I cbg White\n\
-1 1 1 SetCBg\n\
-none SetP %I p n\n\
-%I t\
-" << endl;
-#endif
         transformer(t);
         out << "%I " << size << endl;
 
@@ -374,15 +341,15 @@ void OcIdraw::poly(int count,
     y1 = MyMath::min(count, y);
     y2 = MyMath::max(count, y);
     float scalex, scaley;
-    if (Math::equal(x1, x2, float(.0001))) {
+    if (MyMath::eq(x1, x2, .0001f)) {
         scalex = 1;
     } else {
-        scalex = (x2 - x1) / 10000.;
+        scalex = (x2 - x1) / 10000.f;
     }
-    if (Math::equal(y1, y2, float(.0001))) {
+    if (MyMath::eq(y1, y2, .0001f)) {
         scaley = 1;
     } else {
-        scaley = (y2 - y1) / 10000.;
+        scaley = (y2 - y1) / 10000.f;
     }
     Transformer t;
     t.scale(scalex, scaley);
@@ -405,32 +372,17 @@ void OcIdraw::line(Canvas*,
                    Coord y2,
                    const Color* color,
                    const Brush* b) {
-#if 1
     out << "\nBegin %I Line\n";
     brush(b);
     ifill(color, false);
     out << "%I t" << endl;
-#else
-    out << "\n\
-Begin %I Line\n\
-%I b 65535\n\
-0 0 0 [] 0 SetB\n\
-%I cfg Black\n\
-0 0 0 SetCFg\n\
-%I cbg White\n\
-1 1 1 SetCBg\n\
-none SetP %I p n\n\
-%I t\
-" << endl;
-#endif
-
     float scalex, scaley;
-    if (Math::equal(x1, x2, float(.0001))) {
+    if (MyMath::eq(x1, x2, .0001f)) {
         scalex = 1;
     } else {
         scalex = (x2 - x1) / 10000;
     }
-    if (Math::equal(y1, y2, float(.0001))) {
+    if (MyMath::eq(y1, y2, .0001f)) {
         scaley = 1;
     } else {
         scaley = (y2 - y1) / 10000;
@@ -546,13 +498,7 @@ void OcIdraw::line_to(Coord x, Coord y) {
 
 void OcIdraw::curve_to(Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2) {
     curved_ = true;
-#if 0
-	add(x1, y1);
-	add(x2, y2);
-	add(x, y);
-#else  // http://www.timotheegroleau.com/Flash/articles/cubic_bezier_in_flash.htm
     rcurve(0, x, y, x1, y1, x2, y2);  // first arg is recursion level
-#endif
 }
 
 void OcIdraw::rcurve(int r, Coord x, Coord y, Coord x1, Coord y1, Coord x2, Coord y2) {

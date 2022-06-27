@@ -45,7 +45,9 @@ class OcFile {
   private:
     FileChooser* fc_;
     enum { N, R, W, A };
+#if HAVE_IV
     int chooser_type_;
+#endif
     CopyString filename_;
     CopyString dirname_;
     FILE* file_;
