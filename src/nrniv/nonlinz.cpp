@@ -181,6 +181,7 @@ void NonLinImp::compute(double omega, double deltafac, int maxiter) {
 
 int NonLinImp::solve(int curloc) {
     int rval = 0;
+    // Danger danger if there are multiple threads?
     NrnThread* _nt = nrn_threads;
     if (!rep_) {
         hoc_execerror("Must call Impedance.compute first", 0);
@@ -193,9 +194,13 @@ int NonLinImp::solve(int curloc) {
             rep_->jv_[i] = 0;
         }
         if (curloc >= 0) {
+            if(curloc >= rep_->neq_) {
+                std::cout << "curloc=" << curloc << std::endl;
+            }
             rep_->rv_[curloc] = 1.e2 / NODEAREA(_nt->_v_node[curloc]);
         }
         if (nrnthread_v_transfer_) {
+            nrn_assert(rep_);
             rval = rep_->gapsolve();
         } else {
             assert(rep_->m_);

@@ -625,6 +625,10 @@ void mpi_transfer() {
             nrnmpi_dbl_alltoallv_sparse(
                 outsrc_buf_, outsrccnt_, outsrcdspl_, insrc_buf_, insrccnt_, insrcdspl_);
         } else {
+            if(!outsrc_buf_ || !outsrccnt_ || !outsrcdspl_ || !insrc_buf_ || !insrccnt_ || !insrcdspl_) {
+                std::cout << "nrnmpi_dbl_alltoallv(" << outsrc_buf_ << ", " << outsrccnt_ << ", "
+                          << outsrcdspl_ << ", " << insrc_buf_ << ", " << insrccnt_ << ", " <<  insrcdspl_ << ')' << std::endl;
+            }
             nrnmpi_dbl_alltoallv(
                 outsrc_buf_, outsrccnt_, outsrcdspl_, insrc_buf_, insrccnt_, insrcdspl_);
         }
@@ -1034,6 +1038,9 @@ void pargap_jacobi_setup(int mode) {
 }
 
 void pargap_jacobi_rhs(double* b, double* x) {
+    if(!b || !x) {
+        std::cout << "pargap_jacobi_rhs(" << b << ", " << x << ')' << std::endl;
+    }
     // helper for complex impedance with parallel gap junctions
     // b = b - R*x  R are the off diagonal gap elements of the jacobian.
     // we presume 1 thread. First nrn_thread[0].end equations are in node order.

@@ -68,16 +68,27 @@ static void destruct(void* v) {
 }
 
 static double compute(void* v) {
+    if(!v) {
+        std::cout << "compute(" << v << ')' << std::endl;
+    }
     Imp* imp = (Imp*) v;
     int rval = 0;
     bool nonlin = false;
     if (ifarg(2)) {
-        nonlin = *getarg(2) ? true : false;
+        auto* arg2 = getarg(2);
+        if(!arg2) {
+            std::cout << "arg2=" << arg2 << std::endl;
+        }
+        nonlin = *arg2 ? true : false;
+    }
+    auto* arg1 = getarg(1);
+    if(!arg1) {
+        std::cout << "arg1=" << arg1 << std::endl;
     }
     if (ifarg(3)) {
-        rval = imp->compute(*getarg(1), nonlin, int(chkarg(3, 1, 1e9)));
+        rval = imp->compute(*arg1, nonlin, int(chkarg(3, 1, 1e9)));
     } else {
-        rval = imp->compute(*getarg(1), nonlin);
+        rval = imp->compute(*arg1, nonlin);
     }
     return double(rval);
 }
