@@ -11,7 +11,7 @@ nrn_add_test_group(
   SCRIPT_PATTERNS "*.py" "*.hoc")
 
 set(ringtest_mpi_ranks 2)
-set(ringtest_prefix ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks}
+set(ringtest_prefix ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks}
                     ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS})
 set(ringtest_special
     ${ringtest_prefix}

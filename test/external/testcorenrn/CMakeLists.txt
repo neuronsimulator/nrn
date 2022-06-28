@@ -73,7 +73,7 @@ foreach(test ${spike_comparison_tests})
     ENVIRONMENT OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=.
     REQUIRES mpi ${test_${test}_neuron_requirements}
     PROCESSORS ${num_ranks}
-    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
             ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 test${test}.hoc)
 
   # Set up tests that run the simulation using CoreNEURON. In principle we run all combinations of
@@ -92,7 +92,7 @@ foreach(test ${spike_comparison_tests})
           PROCESSORS ${num_ranks}
           ENVIRONMENT OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${SONATA_GIDS_ZERO}
           COMMAND
-            ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+            ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
             ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c
             arg_coreneuron=1 -c arg_psolve_test_mode=${psolve_test_mode}
             ${${processor}_args_online} test${test}.hoc)
@@ -118,7 +118,7 @@ foreach(test ${spike_comparison_tests})
         WRITE ${testcorenrn_patstim_script}
         "#!/bin/bash\n"
         "set -e\n"
-        "OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG}"
+        "OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG}"
         " ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special"
         " ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c arg_dump_coreneuron_model=1"
         " test${test}.hoc\n"
@@ -126,11 +126,11 @@ foreach(test ${spike_comparison_tests})
         "sed -n 2,1001p patstim.spk >> patstim.1.spk\n"
         "echo 1000 > patstim.2.spk\n"
         "sed -n 1002,2001p patstim.spk >> patstim.2.spk\n"
-        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
+        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
         " ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS}"
         " -d coredat --mpi -e 49 --pattern patstim.1.spk ${${processor}_args_offline}"
         " --checkpoint checkpoint -o part1\n"
-        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
+        "OMP_NUM_THREADS=1 ${SONATA_GIDS_ZERO} ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks}"
         " ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS}"
         " -d coredat --mpi -e 100 --pattern patstim.2.spk ${${processor}_args_offline}"
         " --restore checkpoint -o part2\n"
@@ -151,7 +151,7 @@ foreach(test ${spike_comparison_tests})
       CONFLICTS mpi_dynamic
       ENVIRONMENT OMP_NUM_THREADS=1 HOC_LIBRARY_PATH=. ${SONATA_GIDS_ZERO}
       PROCESSORS ${local_mpi_ranks}
-      PRECOMMAND ${MPIEXEC_EXECUTABLE}
+      PRECOMMAND ${MPIEXEC_NAME}
                  ${MPIEXEC_NUMPROC_FLAG}
                  ${local_mpi_ranks}
                  ${MPIEXEC_OVERSUBSCRIBE}
@@ -165,7 +165,7 @@ foreach(test ${spike_comparison_tests})
                  arg_dump_coreneuron_model=1
                  test${test}.hoc
       COMMAND
-        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${local_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS} special-core ${MPIEXEC_POSTFLAGS} -d coredat --mpi -e 100 ${extra_args}
         ${${processor}_args_offline}
       OUTPUT asciispikes::out.dat)
@@ -198,7 +198,7 @@ foreach(test ${direct_tests})
       PROCESSORS ${num_ranks}
       ENVIRONMENT HOC_LIBRARY_PATH=.
       COMMAND
-        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${num_ranks} ${MPIEXEC_OVERSUBSCRIBE}
         ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -c arg_tstop=100 -c
         arg_psolve_test_mode=${psolve_test_mode} test${test}.hoc)
   endforeach()

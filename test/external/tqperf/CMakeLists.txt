@@ -18,6 +18,6 @@ nrn_add_test(
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
   COMMAND
-    ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
     ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
     test1.py)

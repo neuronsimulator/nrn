@@ -3,7 +3,7 @@ set(prefix "benchmark/channels") # everything is under this prefix in the reposi
 set(channel_benchmark_sim_time 10)
 set(channel_benchmark_mpi_ranks 1)
 set(channel_benchmark_neuron_prefix
-    ${MPIEXEC_EXECUTABLE}
+    ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${channel_benchmark_mpi_ranks}
     ${MPIEXEC_OVERSUBSCRIBE}

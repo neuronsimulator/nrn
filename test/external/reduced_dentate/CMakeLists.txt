@@ -15,7 +15,7 @@ set(reduced_dentate_sim_time 10)
 # but it should be revisited. Ideally we would use a small model based on a newer version of
 # https://github.com/soltesz-lab/dentate.
 set(reduced_dentate_neuron_prefix
-    ${MPIEXEC_EXECUTABLE}
+    ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${reduced_dentate_mpi_ranks}
     ${MPIEXEC_OVERSUBSCRIBE}

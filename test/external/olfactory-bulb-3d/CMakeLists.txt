@@ -3,7 +3,7 @@ set(prefix "sim") # everything is under this prefix in the repository
 set(olfactory_bulb_3d_sim_time 50)
 set(olfactory_bulb_3d_mpi_ranks 4)
 set(olfactory_bulb_3d_neuron_prefix
-    ${MPIEXEC_EXECUTABLE}
+    ${MPIEXEC_NAME}
     ${MPIEXEC_NUMPROC_FLAG}
     ${olfactory_bulb_3d_mpi_ranks}
     ${MPIEXEC_OVERSUBSCRIBE}
