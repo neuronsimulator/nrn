@@ -203,36 +203,39 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       endif()
     endif()
   endif()
-  if(NRN_ENABLE_MPI)
-    add_test(
-      NAME parallel_tests
-      COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
-        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
-    set_tests_properties(parallel_tests PROPERTIES PROCESSORS 6)
-    add_test(
-      NAME parallel_partrans
-      COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
-    set_tests_properties(parallel_partrans PROPERTIES PROCESSORS 2)
-    list(APPEND TESTS parallel_tests parallel_partrans)
-    add_test(
-      NAME parallel_netpar
-      COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
-    set_tests_properties(parallel_netpar PROPERTIES PROCESSORS 2)
-    list(APPEND TESTS parallel_tests parallel_netpar)
-    add_test(
-      NAME parallel_bas
-      COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS}
-        -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
-    set_tests_properties(parallel_bas PROPERTIES PROCESSORS 2)
-    list(APPEND TESTS parallel_tests parallel_bas)
-  endif()
+  nrn_add_test_group(NAME parallel MODFILE_PATTERNS NONE)
+  nrn_add_test(
+    GROUP parallel
+    NAME subworld
+    PROCESSORS 6
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/parallel_tests/test_subworld.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_subworld.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME partrans
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/pynrn/test_partrans.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_partrans.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME netpar
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/pynrn/test_hoc_po.py test/pynrn/test_netpar.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
+            nrniv ${MPIEXEC_POSTFLAGS} -mpi -python test/pynrn/test_netpar.py)
+  nrn_add_test(
+    GROUP parallel
+    NAME bas
+    PROCESSORS 2
+    REQUIRES mpi
+    SCRIPT_PATTERNS test/parallel_tests/test_bas.py
+    COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv
+            ${MPIEXEC_POSTFLAGS} -mpi -python test/parallel_tests/test_bas.py)
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
   # workaround.
   if(CORENRN_ENABLE_REPORTING)
