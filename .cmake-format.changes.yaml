@@ -3,6 +3,7 @@ additional_commands:
     pargs: 0
     kwargs:
       CORENEURON: 0
+      ENVIRONMENT: '+'
       NAME: 1
       MODFILE_PATTERNS: '+'
       NRNIVMODL_ARGS: '+'

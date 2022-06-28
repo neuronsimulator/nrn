@@ -309,11 +309,6 @@ if(NRN_ENABLE_MPI)
   add_definitions("-DOMPI_SKIP_MPICXX=1")
   add_definitions("-DMPICH_SKIP_MPICXX=1")
 
-  # Launching mpi executable with full path can mangle different python versions and libraries (see
-  # issue #894). ${MPIEXEC_NAME} would reinsert the full path, but ${CMAKE_COMMAND} -E env
-  # ${MPIEXEC_NAME} does not.
-  get_filename_component(MPIEXEC_NAME ${MPIEXEC_EXECUTABLE} NAME)
-
   # Detect if we have an OpenMPI v2 or older.
   execute_process(
     COMMAND "${MPIEXEC_EXECUTABLE}" --version

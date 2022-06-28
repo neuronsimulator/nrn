@@ -5,6 +5,7 @@
 #
 # 1. nrn_add_test_group(NAME name
 #                       [CORENEURON]
+#                       [ENVIRONMENT var1=val2 ...]
 #                       [MODFILE_PATTERNS mod/file/dir/*.mod ...]
 #                       [NRNIVMODL_ARGS arg1 ...]
 #                       [OUTPUT datatype::file.ext ...]
@@ -21,6 +22,9 @@
 #                       CoreNEURON if CoreNEURON is enabled. You should pass
 #                       this if any test in the group is going to include
 #                       `coreneuron` in its REQUIRES clause.
+#    ENVIRONMENT      - extra environment variables that should be set when the
+#                       test is run. These must not overlap with the variables
+#                       that are automatically set internally, such as PATH.
 #    MODFILE_PATTERNS - a list of patterns that will be matched against the
 #                       submodule directory tree to find the modfiles that must
 #                       be compiled (using nrnivmodl) to run the test. The special
@@ -42,10 +46,10 @@
 #                       assumptions about directory layout.
 #    SUBMODULE        - the name of the git submodule containing test data.
 #
-#    The OUTPUT, SCRIPT_PATTERNS and SIM_DIRECTORY arguments are default values
-#    that will be inherited by tests that are added to this group using
-#    nrn_add_test. They can be overriden for specific tests by passing the same
-#    keyword arguments to nrn_add_test.
+#    The ENVIRONMENT, OUTPUT, SCRIPT_PATTERNS and SIM_DIRECTORY arguments are
+#    default values that will be inherited by tests that are added to this
+#    group using nrn_add_test. They can be overriden for specific tests by
+#    passing the same keyword arguments to nrn_add_test.
 #
 # 2. nrn_add_test(GROUP group_name
 #                 NAME test_name
@@ -100,7 +104,8 @@ function(nrn_add_test_group)
   # subsequent calls to nrn_add_test that actually set up CTest tests.
   set(options CORENEURON)
   set(oneValueArgs NAME SUBMODULE)
-  set(multiValueArgs MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS SIM_DIRECTORY)
+  set(multiValueArgs ENVIRONMENT MODFILE_PATTERNS NRNIVMODL_ARGS OUTPUT SCRIPT_PATTERNS
+                     SIM_DIRECTORY)
   cmake_parse_arguments(NRN_ADD_TEST_GROUP "${options}" "${oneValueArgs}" "${multiValueArgs}"
                         ${ARGN})
   if(DEFINED NRN_ADD_TEST_GROUP_MISSING_VALUES)
@@ -114,6 +119,9 @@ function(nrn_add_test_group)
 
   # Store the default values for this test group in parent-scope variables based on the group name
   set(prefix NRN_TEST_GROUP_${NRN_ADD_TEST_GROUP_NAME})
+  set(${prefix}_DEFAULT_ENVIRONMENT
+      "${NRN_ADD_TEST_GROUP_ENVIRONMENT}"
+      PARENT_SCOPE)
   set(${prefix}_DEFAULT_OUTPUT
       "${NRN_ADD_TEST_GROUP_OUTPUT}"
       PARENT_SCOPE)
@@ -310,10 +318,14 @@ function(nrn_add_test)
   # Path to the test repository.
   set(test_source_directory "${${prefix}_TEST_SOURCE_DIRECTORY}")
   # Get the variables that have global defaults but which can be overriden locally
+  set(extra_environment "${${prefix}_DEFAULT_ENVIRONMENT}")
   set(output_files "${${prefix}_DEFAULT_OUTPUT}")
   set(script_patterns "${${prefix}_DEFAULT_SCRIPT_PATTERNS}")
   set(sim_directory "${${prefix}_DEFAULT_SIM_DIRECTORY}")
   # Override them locally if appropriate
+  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
+    set(extra_environment "${NRN_ADD_TEST_ENVIRONMENT}")
+  endif()
   if(DEFINED NRN_ADD_TEST_OUTPUT)
     set(output_files "${NRN_ADD_TEST_OUTPUT}")
   endif()
@@ -422,20 +434,18 @@ function(nrn_add_test)
     list(TRANSFORM test_env REPLACE "^PATH="
                                     "PATH=${nrnivmodl_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}:")
   endif()
-  if(DEFINED NRN_ADD_TEST_ENVIRONMENT)
-    # Get the list of variables being set
-    set(extra_env_var_names ${NRN_ADD_TEST_ENVIRONMENT})
-    list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
-    # Make sure the new variables don't overlap with the old ones; otherwise we'd need to do some
-    # merging, which sounds hard in the general case.
-    list(APPEND new_vars_being_set ${extra_env_var_names})
-    list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
-    if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
-      message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
-                          "This is not supported.")
-    endif()
-    list(APPEND test_env ${NRN_ADD_TEST_ENVIRONMENT})
+  # Get the list of variables being set
+  set(extra_env_var_names ${extra_environment})
+  list(TRANSFORM extra_env_var_names REPLACE "^([^=]+)=.*$" "\\1")
+  # Make sure the new variables don't overlap with the old ones; otherwise we'd need to do some
+  # merging, which sounds hard in the general case.
+  list(APPEND new_vars_being_set ${extra_env_var_names})
+  list(REMOVE_ITEM new_vars_being_set ${test_env_var_names})
+  if(NOT "${new_vars_being_set}" STREQUAL "${extra_env_var_names}")
+    message(FATAL_ERROR "New (${extra_env_var_names}) vars overlap old (${test_env_var_names}). "
+                        "This is not supported.")
   endif()
+  list(APPEND test_env ${extra_environment})
   set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}" TIMEOUT 300)
   if(NRN_ADD_TEST_PRELOAD_SANITIZER)
     set(preload PRELOAD)

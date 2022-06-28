@@ -101,7 +101,7 @@ endif()
 include(NeuronTestHelper)
 nrn_add_test_group(NAME mpi_init MODFILE_PATTERNS NONE)
 set(mpi_init_requires_mpiexec mpi)
-set(mpi_init_prefix_mpiexec ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
+set(mpi_init_prefix_mpiexec ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS})
 set(mpi_init_suffix_mpiexec ${MPIEXEC_POSTFLAGS})
 foreach(mpiexec "" "_mpiexec")
   set(nrniv ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}})
@@ -205,7 +205,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
           NAME rxd_mpi_tests
           PRELOAD_SANITIZER
           ENVIRONMENT COVERAGE_FILE=.coverage.rxd_mpi_tests ${change_test_tolerance}
-          COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
+          COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
                   ${PYTHON_EXECUTABLE} ${MPIEXEC_POSTFLAGS} ${pytest_nofork} ./test/rxd --mpi)
       endif()
     endif()
@@ -214,28 +214,29 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     add_test(
       NAME parallel_tests
       COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
     add_test(
       NAME parallel_partrans
       COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
     add_test(
       NAME parallel_netpar
       COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
+        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
     list(APPEND TESTS parallel_tests parallel_netpar)
     add_test(
       NAME parallel_bas
       COMMAND
-        ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv
-        ${MPIEXEC_POSTFLAGS} -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
+        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
     list(APPEND TESTS parallel_tests parallel_bas)
   endif()
   # CoreNEURON's reports require MPI and segfault if it is not initialised. This is a crude
@@ -248,17 +249,14 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
   # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
   # be dynamically loaded by Python or nrniv. In that case (and only in that case, so we still test
-  # the dynamic loading) then launch the tests with `special [-python]`. If you consider changing
-  # how ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
-  # ${MPIEXEC}) then first refer to GitHub issue #894 and note that nrn_add_test prefixes the
-  # command with ${CMAKE_COMMAND} -E env.
+  # the dynamic loading) then launch the tests with `special [-python]`.
   if(${CORENRN_ENABLE_GPU})
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
     set(modtests_launch_py ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
     set(modtests_launch_py_mpi
-        ${MPIEXEC_NAME}
+        ${MPIEXEC_EXECUTABLE}
         ${MPIEXEC_NUMPROC_FLAG}
         2
         ${MPIEXEC_PREFLAGS}
@@ -272,7 +270,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${pytest})
     set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
-    set(modtests_launch_py_mpi ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
+    set(modtests_launch_py_mpi ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
   endif()
   set(modtests_processor_env ${processor_env} ${sonata_zero_gid_env})
@@ -435,7 +433,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
          AND NOT CORENEURON_ENABLE_GPU
          AND NRN_HAVE_OPENMPI2_OR_LESS)
         set(launch_spikes_mpi_file_mode_py
-            ${MPIEXEC_NAME}
+            ${MPIEXEC_EXECUTABLE}
             ${MPIEXEC_NUMPROC_FLAG}
             2
             ${MPIEXEC_PREFLAGS}
@@ -461,7 +459,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
         PROCESSORS 2
         COMMAND
-          ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
+          ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
           ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()

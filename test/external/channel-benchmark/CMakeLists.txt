@@ -5,7 +5,7 @@ set(channel_benchmark_mpi_ranks 1)
 set(channel_benchmark_neuron_prefix
     OMP_NUM_THREADS=1
     "HOC_LIBRARY_PATH=${prefix}/lib/hoclib"
-    ${MPIEXEC_NAME}
+    ${MPIEXEC_EXECUTABLE}
     ${MPIEXEC_NUMPROC_FLAG}
     ${channel_benchmark_mpi_ranks}
     ${MPIEXEC_OVERSUBSCRIBE}
