@@ -13,7 +13,15 @@ nrn_add_test_group(
 set(ringtest_mpi_ranks 2)
 set(ringtest_prefix ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${ringtest_mpi_ranks}
                     ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS})
-set(ringtest_special ${ringtest_prefix} special ${MPIEXEC_POSTFLAGS} -mpi -python ringtest.py)
+set(ringtest_special
+    ${ringtest_prefix}
+    special
+    ${MPIEXEC_POSTFLAGS}
+    -mpi
+    -python
+    -pyexe
+    ${PYTHON_EXECUTABLE}
+    ringtest.py)
 set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
 
 # Step 2 -- add configurations to the group (e.g. here NEURON without MPI) When CoreNEURON is

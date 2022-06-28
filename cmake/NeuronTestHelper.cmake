@@ -81,8 +81,6 @@
 #    flag controls whether or not the PRELOAD flag is passed to
 #    cpp_cc_configure_sanitizers; this needs to be set when the test executable
 #    is *not* built by NEURON, typically because it is `python`.
-#    The ENVIRONMENT argument takes a list of extra environment variables to
-#    set when running the test.
 #    The remaining arguments can documented in nrn_add_test_group. The default
 #    values specified there can be overriden on a test-by-test basis by passing
 #    the same arguments here.
