@@ -117,8 +117,7 @@ foreach(mpiexec "" "_mpiexec")
     COMMAND ${nrniv} -c "nrnmpi_init()" -c "quit()")
   # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein.
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
-    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python -pyexe
-               ${PYTHON_EXECUTABLE})
+    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python)
   else()
     set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
   endif()
@@ -209,31 +208,28 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME parallel_tests
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
     set_tests_properties(parallel_tests PROPERTIES PROCESSORS 6)
     add_test(
       NAME parallel_partrans
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
-        ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
+        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     set_tests_properties(parallel_partrans PROPERTIES PROCESSORS 2)
     list(APPEND TESTS parallel_tests parallel_partrans)
     add_test(
       NAME parallel_netpar
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE} ${MPIEXEC_PREFLAGS}
-        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
-        ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
+        nrniv ${MPIEXEC_POSTFLAGS} -mpi -python ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
     set_tests_properties(parallel_netpar PROPERTIES PROCESSORS 2)
     list(APPEND TESTS parallel_tests parallel_netpar)
     add_test(
       NAME parallel_bas
       COMMAND
         ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS}
-        -mpi -python -pyexe ${PYTHON_EXECUTABLE}
-        ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
+        -mpi -python ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
     set_tests_properties(parallel_bas PROPERTIES PROCESSORS 2)
     list(APPEND TESTS parallel_tests parallel_bas)
   endif()
@@ -252,7 +248,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
     set(modtests_launch_hoc special -notatty -mpi)
-    set(modtests_launch_py ${modtests_launch_hoc} -python -pyexe ${PYTHON_EXECUTABLE})
+    set(modtests_launch_py ${modtests_launch_hoc} -python)
     set(modtests_launch_py_mpi
         ${MPIEXEC_NAME}
         ${MPIEXEC_NUMPROC_FLAG}
@@ -261,9 +257,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         special
         ${MPIEXEC_POSTFLAGS}
         -notatty
-        -python
-        -pyexe
-        ${PYTHON_EXECUTABLE})
+        -python)
   else()
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${PYTHON_EXECUTABLE} ${pytest})
@@ -449,9 +443,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
             ${MPIEXEC_PREFLAGS}
             special
             ${MPIEXEC_POSTFLAGS}
-            -python
-            -pyexe
-            ${PYTHON_EXECUTABLE})
+            -python)
         message(STATUS "Hitting workaround")
       else()
         set(launch_spikes_mpi_file_mode_py ${modtests_launch_py_mpi})
@@ -470,7 +462,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
         PROCESSORS 2
         COMMAND
           ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} special
-          ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+          ${MPIEXEC_POSTFLAGS} -mpi -python
           ${PROJECT_SOURCE_DIR}/test/coreneuron/test_inputpresyn.py)
     endif()
   endforeach()

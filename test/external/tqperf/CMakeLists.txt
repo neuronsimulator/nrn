@@ -17,7 +17,5 @@ nrn_add_test(
   CONFLICTS nmodl # https://github.com/BlueBrain/nmodl/issues/794
   REQUIRES mpi python coreneuron
   PROCESSORS ${tqperf_mpi_ranks}
-  COMMAND
-    ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
-    ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
-    test1.py)
+  COMMAND ${MPIEXEC_NAME} ${MPIEXEC_NUMPROC_FLAG} ${tqperf_mpi_ranks} ${MPIEXEC_OVERSUBSCRIBE}
+          ${MPIEXEC_PREFLAGS} special ${MPIEXEC_POSTFLAGS} -mpi -python test1.py)
