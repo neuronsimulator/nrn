@@ -381,37 +381,6 @@ function(nrn_add_test)
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
-  # Special case to work around ctest not searching the PATH in the test environment for the test
-  # binary
-  list(
-    TRANSFORM NRN_ADD_TEST_COMMAND
-    REPLACE "^special$" "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special"
-    AT 0)
-  list(
-    TRANSFORM NRN_ADD_TEST_PRECOMMAND
-    REPLACE "^special$" "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special"
-    AT 0)
-  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
-  #
-  # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
-  # * Using CORENEURONLIB here introduces some differences between the tests and the standard way
-  #   that users run nrnivmodl and special. Ideally we would reduce such differences, without
-  #   increasing build time too much (by running nrnivmodl multiple times) or compromising our
-  #   ability to execute the tests in parallel (which precludes blindly running everything in the
-  #   same directory).
-  add_test(
-    NAME "${test_name}"
-    COMMAND ${NRN_ADD_TEST_COMMAND}
-    WORKING_DIRECTORY "${simulation_directory}")
-  set(test_names ${test_name})
-  if(NRN_ADD_TEST_PRECOMMAND)
-    add_test(
-      NAME ${test_name}::preparation
-      COMMAND ${NRN_ADD_TEST_PRECOMMAND}
-      WORKING_DIRECTORY "${simulation_directory}")
-    list(APPEND test_names ${test_name}::preparation)
-    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
-  endif()
   if(DEFINED NRN_ADD_TEST_PROCESSORS)
     set_tests_properties(${test_names} PROPERTIES PROCESSORS ${NRN_ADD_TEST_PROCESSORS})
   endif()
@@ -454,12 +423,32 @@ function(nrn_add_test)
                         "This is not supported.")
   endif()
   list(APPEND test_env ${extra_environment})
-  set_tests_properties(${test_names} PROPERTIES ENVIRONMENT "${test_env}" TIMEOUT 300)
-  if(NRN_ADD_TEST_PRELOAD_SANITIZER)
-    set(preload PRELOAD)
+  if(NRN_ADD_TEST_PRELOAD_SANITIZER AND NRN_SANITIZER_LIBRARY_PATH)
+    list(APPEND test_env LD_PRELOAD=${NRN_SANITIZER_LIBRARY_PATH})
   endif()
-  cpp_cc_configure_sanitizers(TEST ${test_names} ${preload})
-
+  list(APPEND test_env ${NRN_SANITIZER_ENABLE_ENVIRONMENT})
+  # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
+  #
+  # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
+  # * Using CORENEURONLIB here introduces some differences between the tests and the standard way
+  #   that users run nrnivmodl and special. Ideally we would reduce such differences, without
+  #   increasing build time too much (by running nrnivmodl multiple times) or compromising our
+  #   ability to execute the tests in parallel (which precludes blindly running everything in the
+  #   same directory).
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_COMMAND}
+    WORKING_DIRECTORY "${simulation_directory}")
+  set(test_names ${test_name})
+  if(NRN_ADD_TEST_PRECOMMAND)
+    add_test(
+      NAME ${test_name}::preparation
+      COMMAND ${CMAKE_COMMAND} -E env ${test_env} ${NRN_ADD_TEST_PRECOMMAND}
+      WORKING_DIRECTORY "${simulation_directory}")
+    list(APPEND test_names ${test_name}::preparation)
+    set_tests_properties(${test_name} PROPERTIES DEPENDS ${test_name}::preparation)
+  endif()
+  set_tests_properties(${test_names} PROPERTIES TIMEOUT 300)
   # Construct an expression containing the names of the test output files that will be passed to the
   # comparison script.
   set(output_file_string "${NRN_ADD_TEST_NAME}")
