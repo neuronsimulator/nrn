@@ -117,7 +117,8 @@ foreach(mpiexec "" "_mpiexec")
     COMMAND ${nrniv} -c "nrnmpi_init()" -c "quit()")
   # See https://www.neuron.yale.edu/phpBB/viewtopic.php?t=4297 and links therein.
   if(NRN_HAVE_OPENMPI2_OR_LESS AND NOT NRN_ENABLE_MPI_DYNAMIC)
-    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python -pyexe ${PYTHON_EXECUTABLE})
+    set(python ${mpi_init_prefix${mpiexec}} nrniv ${mpi_init_suffix${mpiexec}} -python -pyexe
+               ${PYTHON_EXECUTABLE})
   else()
     set(python ${mpi_init_prefix${mpiexec}} ${PYTHON_EXECUTABLE} ${mpi_init_suffix${mpiexec}})
   endif()
@@ -212,27 +213,27 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       NAME parallel_tests
       COMMAND
         ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 6 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_subworld.py)
     add_test(
       NAME parallel_partrans
       COMMAND
         ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_partrans.py)
     list(APPEND TESTS parallel_tests parallel_partrans)
     add_test(
       NAME parallel_netpar
       COMMAND
         ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_OVERSUBSCRIBE}
-        ${MPIEXEC_PREFLAGS} ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_PREFLAGS} nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/test/pynrn/test_netpar.py)
     list(APPEND TESTS parallel_tests parallel_netpar)
     add_test(
       NAME parallel_bas
       COMMAND
-        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
-        ${CMAKE_BINARY_DIR}/bin/nrniv ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
+        ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS} nrniv
+        ${MPIEXEC_POSTFLAGS} -mpi -python -pyexe ${PYTHON_EXECUTABLE}
         ${PROJECT_SOURCE_DIR}/test/parallel_tests/test_bas.py)
     list(APPEND TESTS parallel_tests parallel_bas)
   endif()
@@ -266,7 +267,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   else()
     set(modtests_preload_sanitizer PRELOAD_SANITIZER)
     set(modtests_launch_py ${nrnpython_mpi_env} ${PYTHON_EXECUTABLE} ${pytest})
-    set(modtests_launch_hoc ${CMAKE_BINARY_DIR}/bin/nrniv ${nrniv_mpi_arg})
+    set(modtests_launch_hoc nrniv ${nrniv_mpi_arg})
     set(modtests_launch_py_mpi ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2 ${MPIEXEC_PREFLAGS}
                                ${PYTHON_EXECUTABLE})
   endif()

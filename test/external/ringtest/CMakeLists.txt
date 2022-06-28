@@ -20,15 +20,12 @@ set(ringtest_special_core ${ringtest_prefix} special-core ${MPIEXEC_POSTFLAGS})
 # enabled then TABLE statements are disabled in hh.mod, which causes slight numerical differences in
 # the results from both NEURON and CoreNEURON. Consequently, if neither CoreNEURON nor
 # NRN_ENABLE_MOD_COMPATIBILITY is enabled then NEURON does not match the reference file. To work
-# around this only run the NEURON tests if CoreNEURON-compatible modfiles are used. `cmake -E env`
-# is used as a temporary workaround as ctest does not seem to search the PATH that is set in the
-# test environment
-
+# around this only run the NEURON tests if CoreNEURON-compatible modfiles are used.
 nrn_add_test(
   GROUP external_ringtest
   NAME neuron
   REQUIRES mod_compatibility python
-  COMMAND ${CMAKE_COMMAND} -E env special -python ringtest.py -tstop 100
+  COMMAND special -python ringtest.py -tstop 100
   OUTPUT asciispikes::spk1.std)
 
 nrn_add_test(

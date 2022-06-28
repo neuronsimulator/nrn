@@ -383,6 +383,16 @@ function(nrn_add_test)
   set(${prefix}_TESTS
       "${group_members}"
       PARENT_SCOPE)
+  # Special case to work around ctest not searching the PATH in the test environment for the test
+  # binary
+  list(
+    TRANSFORM NRN_ADD_TEST_COMMAND
+    REPLACE "^special$" "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special"
+    AT 0)
+  list(
+    TRANSFORM NRN_ADD_TEST_PRECOMMAND
+    REPLACE "^special$" "${working_directory}/${CMAKE_HOST_SYSTEM_PROCESSOR}/special"
+    AT 0)
   # Add the actual test job, including the `special` and `special-core` binaries in the path. TODOs:
   #
   # * Do we need to manipulate PYTHONPATH more to make `python options.py` invocations work?
@@ -396,7 +406,7 @@ function(nrn_add_test)
     COMMAND ${NRN_ADD_TEST_COMMAND}
     WORKING_DIRECTORY "${simulation_directory}")
   set(test_names ${test_name})
-  if(DEFINED NRN_ADD_TEST_PRECOMMAND)
+  if(NRN_ADD_TEST_PRECOMMAND)
     add_test(
       NAME ${test_name}::preparation
       COMMAND ${NRN_ADD_TEST_PRECOMMAND}
