@@ -168,7 +168,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
     GROUP coverage_tests
     NAME cover_tests
     PRELOAD_SANITIZER
-    ENVIRONMENT COVERAGE_FILE=.coverage.basic_tests
+    ENVIRONMENT COVERAGE_FILE=.coverage.cover_tests
     COMMAND ${PYTHON_EXECUTABLE} ${pytest} ./test/cover
     SCRIPT_PATTERNS test/cover/*.py test/cover/*.json)
 
@@ -411,7 +411,7 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
       REQUIRES coreneuron ${processor} ${modtests_preload_sanitizer}
       SCRIPT_PATTERNS test/coreneuron/test_ba.py
       ENVIRONMENT ${modtests_processor_env} ${nrnpython_mpi_env}
-                  COVERAGE_FILE=.coverage.coreneuron_test_psolve_py
+                  COVERAGE_FILE=.coverage.coreneuron_test_ba_py
       COMMAND ${modtests_launch_py} test/coreneuron/test_ba.py)
     nrn_add_test(
       GROUP coreneuron_modtests
