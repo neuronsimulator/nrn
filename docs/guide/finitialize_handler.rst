@@ -15,7 +15,7 @@ Syntax
 Description 
 -----------
 
-Install an initialization handler statement to be called during a call to `finitialize <https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html?highlight=finitialize#finitialize>`_. The default type is 1. The statement will be executed at the top level of the interpreter or else in the context of the optional obj arg.
+Install an initialization handler statement to be called during a call to :func:`finitialize`. The default type is 1. The statement will be executed at the top level of the interpreter or else in the context of the optional obj arg.
 
 Type 0 handlers are called before the mechanism INITIAL blocks.
 
@@ -25,11 +25,13 @@ Type 2 handlers are called just before return from finitialize. This is the best
 
 Type 3 handlers are called at the beginning of finitialize. At this point it is allowed to change the structure of the model.
 
-See `finitialize <https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html?highlight=finitialize#finitialize>`_ for more details about the order of initialization processes within that function.
+See :func:`finitialize` for more details about the order of initialization processes within that function.
 
-See also :class:`FInitializeHandler`
+.. seealso::
+    
+    :class:`FInitializeHandler`
 
-This class helps alleviate the administrative problems of maintaining variations of the proc `Init <https://nrn.readthedocs.io/en/latest/hoc/simctrl/runctrl.html?highlight=initrun#initrun>`_ .
+This class helps alleviate the administrative problems of maintaining variations of the proc :ref:`Init <runcontrol_initrun>`.
 
 Examples 
 --------
@@ -100,5 +102,5 @@ Syntax
 Description
 -----------
 
-Prints all the FInitializeHandler statements along with their object context in the order they will be executed during an `finitialize <https://nrn.readthedocs.io/en/latest/python/simctrl/programmatic.html?highlight=finitialize#finitialize>`_ call.
+Prints all the FInitializeHandler statements along with their object context in the order they will be executed during an :func:`finitialize` call.
 
