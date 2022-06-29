@@ -4,6 +4,10 @@
 _Release Date_ : 12-08-2022
 
 ### What's New
+* Allow multiple BEFORE/AFTER blocks of same type in a MOD file. #1722
+* Several documentation updates, including randomness in NEURON models #1727,
+  NEURON course exercise sets from 2018 #1735 and publications using NEURON #1819.
+* CMake: improved documentation targets. (#1725)  
 
 - Change mcomplex.dat normalization to hh/5. (#1895)
 - Jupyter support for ModelView #1907
