@@ -269,7 +269,7 @@ def test_fastimem_corenrn():
     cvode.use_fast_imem(1)
     # See https://github.com/neuronsimulator/nrn/issues/1888 for a discussion
     # of the next line, which is an ugly temporary workaround.
-    [cell.secs[3](0.5)._ref_i_membrane_ for cell in cells]
+    h.finitialize()
     imem = [h.Vector().record(cell.secs[3](0.5)._ref_i_membrane_) for cell in cells]
     tstop = 1.0
 
