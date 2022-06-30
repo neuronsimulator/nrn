@@ -34,10 +34,10 @@ static const char* mechanism[] = {
     "vext[N]",
     0,
 };
-static HocParmLimits limits[] = {{"xraxial", 1e-9, 1e15},
-                                 {"xg", 0., 1e15},
-                                 {"xc", 0., 1e15},
-                                 {0, 0., 0.}};
+static HocParmLimits limits[] = {{"xraxial", {1e-9, 1e15}},
+                                 {"xg", {0., 1e15}},
+                                 {"xc", {0., 1e15}},
+                                 {nullptr, {0., 0.}}};
 
 static HocParmUnits units[] = {{"xraxial", "MOhm/cm"},
                                {"xg", "S/cm2"},
