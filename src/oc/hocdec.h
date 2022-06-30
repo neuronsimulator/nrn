@@ -81,10 +81,10 @@ typedef struct Proc {
     int nobjauto;            /* the last of these are pointers to objects */
 } Proc;
 
-typedef struct Symlist {
+struct Symlist {
     HocStruct Symbol* first;
     HocStruct Symbol* last;
-} Symlist;
+};
 
 typedef char* Upoint;
 

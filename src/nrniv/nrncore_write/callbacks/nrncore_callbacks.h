@@ -20,8 +20,8 @@ typedef struct core2nrn_callback_t {
 // mechanism types of Memb_list(>0) or time(0) passed to CoreNeuron
 enum mech_type { voltage = -1, i_membrane_ = -2 };
 
-class Memb_list;
-class NrnThread;
+struct Memb_list;
+struct NrnThread;
 class CellGroup;
 class DatumIndices;
 
