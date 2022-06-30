@@ -42,6 +42,8 @@ extern void nrn_setup_cleanup();
 
 extern int nrn_i_layout(int i, int cnt, int j, int size, int layout);
 
+size_t memb_list_size(NrnThreadMembList* tml, bool include_data);
+
 size_t model_size(bool detailed_report);
 
 namespace coreneuron {

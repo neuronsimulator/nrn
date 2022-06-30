@@ -50,6 +50,13 @@ struct NetReceiveBuffer_t {
     int _displ_cnt; /* number of unique _pnt_index */
     int _size;      /* capacity */
     int _pnt_offset;
+    size_t size_of_object() {
+        size_t nbytes = 0;
+        nbytes += _size * sizeof(int) * 3;
+        nbytes += (_size + 1) * sizeof(int);
+        nbytes += _size * sizeof(double) * 2;
+        return nbytes;
+    }
 };
 
 struct NetSendBuffer_t: MemoryManaged {
@@ -76,6 +83,13 @@ struct NetSendBuffer_t: MemoryManaged {
         reallocated = 1;
         _nsb_t = (double*) ecalloc_align(_size, sizeof(double));
         _nsb_flag = (double*) ecalloc_align(_size, sizeof(double));
+    }
+
+    size_t size_of_object() {
+        size_t nbytes = 0;
+        nbytes += _size * sizeof(int) * 4;
+        nbytes += _size * sizeof(double) * 2;
+        return nbytes;
     }
 
     ~NetSendBuffer_t() {

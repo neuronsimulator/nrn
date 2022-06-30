@@ -35,7 +35,13 @@
 namespace coreneuron {
 
 struct corenrn_parameters_data {
-    enum verbose_level : std::uint32_t { NONE = 0, ERROR = 1, INFO = 2, DEBUG = 3, DEFAULT = INFO };
+    enum verbose_level : std::uint32_t {
+        NONE = 0,
+        ERROR = 1,
+        INFO = 2,
+        DEBUG_INFO = 3,
+        DEFAULT = INFO
+    };
 
     static constexpr int report_buff_size_default = 4;
 

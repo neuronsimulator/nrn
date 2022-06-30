@@ -40,7 +40,7 @@ corenrn_parameters::corenrn_parameters() {
     app.add_set(
         "--verbose",
         this->verbose,
-        {verbose_level::NONE, verbose_level::ERROR, verbose_level::INFO, verbose_level::DEBUG},
+        {verbose_level::NONE, verbose_level::ERROR, verbose_level::INFO, verbose_level::DEBUG_INFO},
         "Verbose level: 0 = NONE, 1 = ERROR, 2 = INFO, 3 = DEBUG. Default is INFO");
     app.add_flag("--model-stats",
                  this->model_stats,
