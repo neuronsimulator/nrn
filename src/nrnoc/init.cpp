@@ -106,16 +106,26 @@ extern double hoc_default_dll_loaded_;
 extern int nrn_istty_;
 extern int nrn_nobanner_;
 
-static HocParmLimits _hoc_parm_limits[] = {"Ra",   1e-6,   1e9,          "L",       1e-4,
-                                           1e20,   "diam", 1e-9,         1e9,       "cm",
-                                           0.,     1e9,    "rallbranch", 1.,        1e9,
-                                           "nseg", 1.,     1e9,          "celsius", -273.,
-                                           1e6,    "dt",   1e-9,         1e15,      0,
-                                           0.,     0.};
+static HocParmLimits _hoc_parm_limits[] = {{"Ra", {1e-6, 1e9}},
+                                           {"L", {1e-4, 1e20}},
+                                           {"diam", {1e-9, 1e9}},
+                                           {"cm", {0., 1e9}},
+                                           {"rallbranch", {1., 1e9}},
+                                           {"nseg", {1., 1e9}},
+                                           {"celsius", {-273., 1e6}},
+                                           {"dt", {1e-9, 1e15}},
+                                           {nullptr, {0., 0.}}};
 
-static HocParmUnits _hoc_parm_units[] = {"Ra",     "ohm-cm",  "L",     "um",     "diam", "um", "cm",
-                                         "uF/cm2", "celsius", "degC",  "dt",     "ms",   "t",  "ms",
-                                         "v",      "mV",      "i_cap", "mA/cm2", 0,      0};
+static HocParmUnits _hoc_parm_units[] = {{"Ra", "ohm-cm"},
+                                         {"L", "um"},
+                                         {"diam", "um"},
+                                         {"cm", "uF/cm2"},
+                                         {"celsius", "degC"},
+                                         {"dt", "ms"},
+                                         {"t", "ms"},
+                                         {"v", "mV"},
+                                         {"i_cap", "mA/cm2"},
+                                         {nullptr, nullptr}};
 
 extern Symlist* nrn_load_dll_called_;
 extern int nrn_load_dll_recover_error();
@@ -296,7 +306,7 @@ void hoc_nrn_load_dll(void) {
     }
 }
 
-static DoubScal scdoub[] = {"t", &t, "dt", &dt, 0, 0};
+static DoubScal scdoub[] = {{"t", &t}, {"dt", &dt}, {nullptr, nullptr}};
 
 void hoc_last_init(void) {
     int i;

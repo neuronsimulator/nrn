@@ -119,7 +119,10 @@ static struct { /* special output tokens */
     char* name;
     long subtype;
     Symbol** p;
-} special[] = {";", SEMI, &semi, "{", BEGINBLK, &beginblk, "}", ENDBLK, &endblk, 0, 0, 0};
+} special[] = {{";", SEMI, &semi},
+               {"{", BEGINBLK, &beginblk},
+               {"}", ENDBLK, &endblk},
+               {nullptr, 0, nullptr}};
 
 static struct { /* numerical methods */
     char* name;
