@@ -248,7 +248,7 @@ static struct { /* functions that return a string */
 static struct { /* functions that return an object */
     char* name;
     void (*objfun_blt)(void);
-} objfun_bltin[] = {"object_pushed", hoc_object_pushed, 0, 0};
+} objfun_bltin[] = {{"object_pushed", hoc_object_pushed}, {nullptr, nullptr}};
 
 double hoc_epsilon = 1.e-11;
 double hoc_ac_;         /*known to the interpreter to evaluate expressions with hoc_oc() */

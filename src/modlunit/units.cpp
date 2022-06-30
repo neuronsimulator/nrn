@@ -118,10 +118,23 @@ static struct dynam {
 static struct prefix {
     double factor;
     char* pname;
-} prefix[] = {1e-18,   "atto",  1e-15,   "femto", 1e-12,   "pico", 1e-9,   "nano", 1e-6,
-              "micro", 1e-3,    "milli", 1e-2,    "centi", 1e-1,   "deci", 1e1,    "deka",
-              1e2,     "hecta", 1e2,     "hecto", 1e3,     "kilo", 1e6,    "mega", 1e6,
-              "meg",   1e9,     "giga",  1e12,    "tera",  0.0,    0};
+} prefix[] = {{1e-18, "atto"},
+              {1e-15, "femto"},
+              {1e-12, "pico"},
+              {1e-9, "nano"},
+              {1e-6, "micro"},
+              {1e-3, "milli"},
+              {1e-2, "centi"},
+              {1e-1, "deci"},
+              {1e1, "deka"},
+              {1e2, "hecta"},
+              {1e2, "hecto"},
+              {1e3, "kilo"},
+              {1e6, "mega"},
+              {1e6, "meg"},
+              {1e9, "giga"},
+              {1e12, "tera"},
+              {0.0, nullptr}};
 static FILE* inpfile;
 static int fperrc;
 static int peekc;
