@@ -211,7 +211,7 @@ static void xopen_audit(void) {
     strcpy(buf, rm_str);
     bp = buf + strlen(buf);
     /* get the temporary file name */
-    nrn_assert(fgets(bp, 200 - 3, retrieve_audit.pipe));
+    nrn_assert(fgets(bp, 200 - strlen(rm_str), retrieve_audit.pipe));
     /*printf("xopen_audit: %s", bp);*/
     bp[strlen(bp) - 1] = '\0';
     hoc_xopen1(bp, "");
