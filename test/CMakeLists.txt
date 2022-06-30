@@ -246,7 +246,10 @@ if(NRN_ENABLE_PYTHON AND PYTEST_FOUND)
   endif()
   # When GPU support is enabled then CoreNEURON is linked statically (libcorenrnmech.a) and cannot
   # be dynamically loaded by Python or nrniv. In that case (and only in that case, so we still test
-  # the dynamic loading) then launch the tests with `special [-python]`.
+  # the dynamic loading) then launch the tests with `special [-python]`. If you consider changing
+  # how ${modtests_launch_py_mpi} is constructed (notably the use of ${MPIEXEC_NAME} instead of
+  # ${MPIEXEC}) then first refer to GitHub issue #894 and note that nrn_add_test prefixes the
+  # command with ${CMAKE_COMMAND} -E env.
   if(${CORENRN_ENABLE_GPU})
     # ${nrniv_mpi_arg} is not enough here, it crashes without -mpi even if CoreNEURON reports are
     # disabled.
