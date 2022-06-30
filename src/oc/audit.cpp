@@ -207,7 +207,8 @@ void hoc_Retrieveaudit(void) {
 static void xopen_audit(void) {
 #if !OCSMALL
     char buf[200], *bp;
-    strcpy(buf, "rm ");
+    constexpr auto rm_str = "rm ";
+    strcpy(buf, rm_str);
     bp = buf + strlen(buf);
     /* get the temporary file name */
     nrn_assert(fgets(bp, 200 - 3, retrieve_audit.pipe));
